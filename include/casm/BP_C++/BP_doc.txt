@@ -1,0 +1,61 @@
+
+/**	\mainpage BP_C++: A bunch of useful things in C++.
+
+	- This contains documentation on BP_C++
+	
+*/
+
+
+
+
+ /** @defgroup BP		BP
+ *
+ *  All BP_C++ code.
+ *  
+ */
+ 
+ 
+ 
+  /** @defgroup BP_Vec		BP_Vec
+ *
+ *	A vector class
+ *
+ *  \ingroup BP
+ */
+
+ /** @defgroup	BP_GVec		BP_GVec
+ *
+ *	Classes for groups and graphs
+ *
+ *  \ingroup BP
+ */
+ 
+ /** @defgroup BP_RVG		BP_RVG
+ *
+ *	Random variate generators
+ *
+ *  \ingroup BP
+ */
+ 
+ /** @defgroup BP_coords	BP_coords
+ *
+ *	Coordinate classes
+ *  
+ *  \ingroup BP
+ */
+
+/** @defgroup BP_Parse		BP_Parse
+ *
+ *	Tools for reading/writing
+ *  
+ *  \ingroup BP
+ */
+ 
+   /** @defgroup BP_useful	BP_useful
+ *
+ *	Other useful classes and functions
+ *
+ *  \ingroup BP
+ */
+ 
+ 
