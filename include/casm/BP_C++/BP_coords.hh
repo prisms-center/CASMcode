@@ -4,7 +4,6 @@
 #include "casm/BP_C++/BP_basic.hh"
 #include "casm/BP_C++/BP_Vec.hh"
 #include "casm/BP_C++/BP_Parse.hh"
-#include "casm/BP_C++/BP_zParse.hh"
 #include "casm/external/Eigen/Dense"
 
 // //////////////////////////////////////////////////////////
@@ -160,21 +159,6 @@ namespace BP {
     };
 
     void read(BP_bParse &fin) {
-      coord[0] = fin.next_int();
-      coord[1] = fin.next_int();
-      coord[2] = fin.next_int();
-      coord[3] = fin.next_int();
-    };
-
-    void write(BP_bzWrite &fout) {
-      fout.write_int(coord[0]);
-      fout.write_int(coord[1]);
-      fout.write_int(coord[2]);
-      fout.write_int(coord[3]);
-
-    };
-
-    void read(BP_bzParse &fin) {
       coord[0] = fin.next_int();
       coord[1] = fin.next_int();
       coord[2] = fin.next_int();
@@ -628,22 +612,6 @@ namespace BP {
     };
 
     void read(BP_bParse &fin) {
-      site.read(fin);
-
-      pbx[0] = fin.next_int();
-      pbx[1] = fin.next_int();
-      pbx[2] = fin.next_int();
-    };
-
-    void write(BP_bzWrite &fout) {
-      site.write(fout);
-      fout.write_int(pbx[0]);
-      fout.write_int(pbx[1]);
-      fout.write_int(pbx[2]);
-
-    };
-
-    void read(BP_bzParse &fin) {
       site.read(fin);
 
       pbx[0] = fin.next_int();

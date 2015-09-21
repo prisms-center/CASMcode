@@ -1,0 +1,36 @@
+# Download astyle (Artistic Style) at http://astyle.sourceforge.net/
+# Run using
+#       > astyle --options=astyle_options [file1 file2 file3 ...]
+
+## OPTIONS ##
+
+# set overal style to A2
+-A2
+
+# set minimum and maximum indentation for multi-line expressions
+-m0
+-M80
+
+# pad operators with single space
+-p
+
+# remove spaces after opening paren and before closing paren
+-U
+
+# custom line-breaks around 'else'
+-y
+
+# set indentation to 2 spaces
+-s2
+
+# align pointer reference and dereference symbols with variable name
+-k3
+
+# format files with unix newline characters
+-z2
+
+# align comments with code indentation
+-Y
+
+# indent body of namespace
+-N

@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+import casm
+import casm.vaspwrapper
+import sys
+
+print "Begin vasp.setup"
+
+if len(sys.argv) != 2:
+    print "Usage: vasp.setup configdir"
+    sys.exit()
+
+configdir = sys.argv[1]
+
+print "  Construct a VASP relaxation"
+relaxation = casm.vaspwrapper.Relax(configdir)
+
+print "  Setting up input files..."
+relaxation.setup()
+
+print "Finish vasp.setup"
+

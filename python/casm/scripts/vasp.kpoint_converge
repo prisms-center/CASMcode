@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+import casm
+import casm.vaspwrapper
+import sys
+
+print "Begin vasp.kpoint_converge"
+
+if len(sys.argv) != 2:
+    print "Usage: vasp.kpoint_converge configdir"
+    sys.exit()
+
+configdir = sys.argv[1]
+
+print "  Construct a VASP k-point convergence"
+convergence = casm.vaspwrapper.Converge(configdir, convtype="kpoint")
+
+print "  Submitting..."
+convergence.submit()
+
+print "Finish vasp.kpoint_converge"
+

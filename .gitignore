@@ -1,0 +1,58 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.os
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.ii
+*.s
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.d
+
+# Temporary backups
+*~
+*.orig
+[#]*[#]
+
+# Mac files
+.DS_Store
+
+# Custom stylize scripts
+my_stylize.sh
+stylized.sh
+my_style
+sedme.sh
+.is_stylized.txt
+
+# Python
+*.pyc
+
+#vim sessions
+*.vim
+*.local
+.*.swp
+.ycm_extra_conf.py
+.ycm_extra_conf.pyc
+types_c.taghl
+
+#ctags
+tags
+*.taghl
+
+#stuff in src/general that isn't good enough to share
+src/general/occucounter
+src/general/phononbox
+src/general/populator
+
+#scons
+.sconsign.dblite
+
+#binaries
+bin/*

@@ -1,0 +1,28 @@
+# http://www.scons.org/doc/production/HTML/scons-user.html
+# This is: apps/casm
+
+import os
+
+Import('env', 'casm_lib_install', 'version_obj')
+
+# Build instructions
+casm_include = env['CPPPATH'] + ['.', '../../h/version']
+libs = ['boost_system', 'boost_filesystem', 'boost_program_options', 'casm', 'dl']
+
+casm_obj = env.Object('casm.cpp', CPPPATH = casm_include)
+Default(casm_obj)
+Export('casm_obj')
+env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + [casm_obj]
+
+
+# Install instructions
+casm = env.Program(os.path.join(env['CASM_BIN'], "casm"),
+                   [casm_obj, version_obj],
+                   LIBS=libs)
+casm_install = env.Install(os.path.join(env['PREFIX'],'bin'), casm)
+env.Alias('casm_install', casm_install)
+Export('casm_install')
+env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [casm, casm_install]
+
+if 'casm_install' in COMMAND_LINE_TARGETS:
+    env['IS_INSTALL'] = 1

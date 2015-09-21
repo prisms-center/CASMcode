@@ -126,6 +126,11 @@ namespace CASM {
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  
+  template<typename Container>
+  Index container_size_1D(const Container &cont) {
+    return cont.size();
+  }
 
   template<typename _Container,
            typename DataObject,
@@ -147,10 +152,7 @@ namespace CASM {
                             const std::string &_desc,
                             Evaluator evaluator,
                             Validator validator = always_true<DataObject>,
-                            Sizer sizer =
-    [](const Container &cont)->Index{
-      return cont.size();
-    }) :
+                            Sizer sizer = container_size_1D<Container>) :
       BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator), m_validate(validator), m_size(sizer) {}
 
     BaseDatumFormatter<DataObject> *clone() const override {
@@ -211,7 +213,16 @@ namespace CASM {
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+  
+  template<typename Container>
+  std::vector<Index> container_size_2D(const Container &cont) {
+    std::vector<Index> tsize(2, 0);
+    tsize[0] = cont.size();
+    if(tsize[0] > 0)
+      tsize[1] = cont[0].size();
+    return tsize;
+  }
+  
   template<typename _Container,
            typename DataObject,
            typename _value_type = typename _Container::value_type,
@@ -232,14 +243,7 @@ namespace CASM {
                             const std::string &_desc,
                             Evaluator evaluator,
                             Validator validator = always_true<DataObject>,
-                            Sizer sizer =
-    [](const Container &cont)->std::vector<Index> {
-      std::vector<Index> tsize(2, 0);
-      tsize[0] = cont.size();
-      if(tsize[0] > 0)
-        tsize[1] = cont[0].size();
-      return tsize;
-    }) :
+                            Sizer sizer = container_size_2D<Container>) :
       BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator), m_validate(validator), m_size(sizer) {}
 
     BaseDatumFormatter<DataObject> *clone() const override {

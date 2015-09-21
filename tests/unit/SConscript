@@ -1,0 +1,57 @@
+# http://www.scons.org/doc/production/HTML/scons-user.html
+# This is: test/unit/SConscript
+
+import os, glob
+
+# Import dependencies
+Import('env', 'casm_lib')
+
+unit_obj = env.Object('unit_test.cpp')
+test_src = glob.glob('*/*_test.cpp')
+test_name = [ os.path.splitext(os.path.basename(src))[0] for src in test_src]
+test_obj = [env.Object(x) for x in test_src]
+
+unit_test = env.Program(os.path.join(env['UNIT_TEST_BIN'],'unit_test'), 
+                        [unit_obj, test_obj],
+                        LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem', 'dl'] + casm_lib)
+
+# Execute 'scons unit' to compile & run all unit tests
+env.Alias('unit', unit_test, unit_test[0].abspath + " --log_level=test_suite")
+AlwaysBuild(unit_test)
+
+if 'unit' in COMMAND_LINE_TARGETS:
+    env['IS_TEST'] = 1
+
+Structure_out = glob.glob('crystallography/*_out') + ['crystallography/POS1_prim.json']
+Clexulator_out = ['clex/test_Clexulator.o', 'clex/test_Clexulator.so']
+
+Clean(unit_test,  Structure_out + Clexulator_out)
+
+for i, src_name in enumerate(test_name):
+  if src_name[:-5] == "Structure":
+    test = env.Program(os.path.join(env['UNIT_TEST_BIN'], src_name), 
+                       [unit_obj, test_obj[i]],
+                       LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem'] + casm_lib)
+    Clean(test,  ['crystallography/PRIM1_out', 'crystallography/PRIM2_out', 'crystallography/POS1_out', 'crystallography/POS1_vasp5_out'])
+  
+  elif src_name[:-5] == "Clexulator":
+    test = env.Program(os.path.join(env['UNIT_TEST_BIN'], src_name), 
+                       [unit_obj, test_obj[i]],
+                       LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem', 'dl'])
+  else:
+    test = env.Program(os.path.join(env['UNIT_TEST_BIN'], src_name), 
+                       [unit_obj, test_obj[i]],
+                       LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem'])
+    
+  # Execute 'scons Motif' or 'scons Structure', etc. to compile & run some unit tests
+  env.Alias(src_name[:-5], test, test[0].abspath + " --log_level=test_suite")
+  AlwaysBuild(test)
+    
+  if src_name[:-5] == "Clexulator":
+    Clean(test, Clexulator_out)
+  
+  if src_name[:-5] == "Structure":
+    Clean(test, Structure_out)
+  
+  if src_name[:-5] in COMMAND_LINE_TARGETS:
+    env['IS_TEST'] = 1
