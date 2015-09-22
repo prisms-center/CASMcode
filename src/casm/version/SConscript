@@ -2,20 +2,49 @@
 # This is: h/casm/version/SConscript
 
 import subprocess
+
+# want to get the current git branch name, if in a git repository, else ''
 process = subprocess.Popen(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-GIT_VERSION, err = process.communicate()
+
+# get the stdout, split if any '/', and use the last bit (the branch name), strip any extra space
+branch = process.communicate()[0].split('/')[-1].strip()
 
 Import('env')
 
-if GIT_VERSION == '':
+# when compiling from an archive use the existing "version.cc" file
+if branch == '':
   version_obj = env.Object("version.cc")
   Export('version_obj')
   env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + [version_obj]
 
+# when compiling from a git repo use the developement version number
 else:
-  cmd = 'cd src/casm/version && sed -e "s/MY_VERSION/' + GIT_VERSION[:-1] + '/g" < version_template.cc > version.cc'
-  version_cc = env.Command('version.cc', 'version_template.cc', cmd)
+  
+  # write a 'release' version which just contains the branch name
+  rel_cmd = 'sed -e "s|MY_VERSION|' + branch + '|g" < version_template.cc > version.cc'
+  
+  # build a 'development' version which contains the branch name, short hash, and tag (if tagged)
+  
+  # get the short hash
+  process = subprocess.Popen('git rev-parse --short HEAD'.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  commit = process.communicate()[0].strip()
+  dev_version = commit
+  
+  # check if tracked files have changes, if so, add '+changes'
+  process = subprocess.Popen('git status --porcelain --untracked-files=no'.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  changes = process.communicate()[0].strip()
+  if changes != '':
+    dev_version += "+changes"
+  
+  dev_cmd = 'sed -e "s|MY_VERSION|' + dev_version + '|g" < version_template.cc > develop_version.cc'
+  
+  cmd = 'cd src/casm/version && ' + rel_cmd + ' && ' + dev_cmd
+  version_cc = env.Command(['develop_version.cc', 'version.cc'], 'version_template.cc', cmd)
+  
   AlwaysBuild(version_cc)
-  version_obj = env.Object(version_cc)
+  NoClean(version_cc, 'version.cc')
+  
+  version_obj = env.Object('develop_version.cc')
   Export('version_obj')
-  env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + [version_cc, version_obj]
+  env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + ['develop_version.cc', version_obj]
+
