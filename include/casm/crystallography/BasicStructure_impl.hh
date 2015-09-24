@@ -998,83 +998,85 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::print5(std::ostream &stream, COORD_TYPE mode, int Va_mode, char term, int prec, int pad) const {
-    std::string mol_name;
-    std::ostringstream num_mol_list, coord_stream;
-    Array<CoordType> vacancies;
-
+    
+    //declare hash mol name -> basis site index
+    std::map<std::string, std::vector<Index> > siteHash;
+    
     // this statement assumes that the scaling is 1.0 always, this may needed to be changed
-    stream << title << std::endl;
+    stream << title << "\n";
     lattice().print(stream);
-
-    //declare hash
-    std::map<std::string, Array<CoordType> > siteHash;
-    //declare iterator for hash
-    typename std::map<std::string, Array<CoordType> >::iterator it;
+    
     //loop through all sites
     for(Index i = 0; i < basis.size(); i++) {
-      CoordType tsite = basis[i];
-      mol_name = tsite.occ_name();
-
-      if(mol_name != "Va") {
-        //check if mol_name is already in the hash
-        it = siteHash.find(mol_name);
-        if(it != siteHash.end()) {
-          Array<CoordType> tarray = it-> second;
-          tarray.push_back(tsite);
-          siteHash[mol_name]  = tarray;
-        }
-        // otherwise add a new pair
-        else {
-          Array<CoordType> tarray;
-          tarray.push_back(tsite);
-          siteHash[mol_name] = tarray;
-        }
+      
+      if(basis[i].is_vacant()) {
+        siteHash["Va"].push_back(i);
       }
-      //store vacancies into a separate array
       else {
-        vacancies.push_back(tsite);
+        siteHash[basis[i].occ_name()].push_back(i);
       }
     }
-    //print names of molecules and numbers, also populate coord_stream
-    it = siteHash.begin();
-    stream << it -> first;
-    num_mol_list << it -> second.size();
-    for(Index i = 0; i < it->second.size(); i++) {
-      CoordType tsite = it->second.at(i);
-      tsite.Coordinate::print(coord_stream, mode, term, prec, pad);
-      coord_stream << std::endl;
-    }
-    it++;
-
-    for(; it != siteHash.end(); it++) {
-      stream << ' ' << it-> first;
-      num_mol_list << ' ' << it-> second.size();
-      for(Index i = 0; i < it->second.size(); i++) {
-        CoordType tsite = it->second.at(i);
-        tsite.Coordinate::print(coord_stream, mode, term, prec, pad);
-        coord_stream << std::endl;
+    
+    // print atom names
+    for(auto it=siteHash.begin(); it!= siteHash.end(); ++it) {
+      if(it->first != "Va") {
+        stream << it->first << " ";
       }
     }
-    // add vacancies depending on the mode
-    if(Va_mode == 2)
-      stream << " Va";
-    if(Va_mode != 0) {
-      for(Index i = 0; i < vacancies.size(); i++) {
-        CoordType tsite = vacancies.at(i);
-        tsite.Coordinate::print(coord_stream, mode, term, prec, pad);
-        coord_stream << std::endl;
+    
+    if(Va_mode == 2) {
+      if(siteHash.find("Va") != siteHash.end()) {
+        stream << "Va" << " ";
       }
     }
-    stream << std::endl;
-    stream << num_mol_list.str() << std::endl;
+    stream << "\n";
+    
+    // print numbers of atoms
+    for(auto it=siteHash.begin(); it!= siteHash.end(); ++it) {
+      if(it->first != "Va") {
+        stream << it->second.size() << " ";
+      }
+    }
+    
+    if(Va_mode == 2) {
+      if(siteHash.find("Va") != siteHash.end()) {
+        stream << siteHash["Va"].size() << " ";
+      }
+    }
+    stream << "\n";
+    
     //print the COORD_TYPE
-    if(mode == FRAC)
+    if(mode == FRAC) {
       stream << "Direct\n";
-    else if(mode == CART)
+    }
+    else if(mode == CART) {
       stream << "Cartesian\n";
-    else
-      std::cerr << "error the mode isn't defined";
-    stream << coord_stream.str() << std::endl;
+    }
+    else {
+      std::stringstream ss; 
+      ss << "Error in BasicStructure<CoordType>::print5'.\n"
+         << "  COORD_TYPE mode = " << mode << " not allowed. Use FRAC or CART.";
+      
+      throw std::runtime_error(ss.str());
+    }
+
+    // print coordinates
+    for(auto it=siteHash.begin(); it!=siteHash.end(); ++it) {
+      if(it->first != "Va") {
+        for(Index i = 0; i < it->second.size(); i++) {
+          basis[it->second.at(i)].Coordinate::print(stream, mode, term, prec, pad);
+        }
+      }
+    }
+    
+    if(Va_mode != 0) {
+      auto it = siteHash.find("Va");
+      for(Index i = 0; i < it->second.size(); i++) {
+        basis[it->second.at(i)].Coordinate::print(stream, mode, term, prec, pad);
+      }
+    }
+    stream << "\n";
+    
     return;
 
   }
@@ -1098,8 +1100,7 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::read(std::istream &stream) {
-    Index i;
-    int t_int;
+    int i, t_int;
     char ch;
     Array<double> num_elem;
     Array<std::string> elem_array;
@@ -1109,12 +1110,13 @@ namespace CASM {
 
     CoordType tsite(lattice());
 
+    SD_flag = false;
     getline(stream, title);
 
     m_lattice.read(stream);
 
     stream.ignore(100, '\n');
-
+    
     //Search for Element Names
     ch = stream.peek();
     while(ch != '\n' && !stream.eof()) {
@@ -1131,6 +1133,9 @@ namespace CASM {
       else if(ch >= '0' && ch <= '9') {
         break;
       }
+      else {
+        throw std::runtime_error(std::string("Error attempting to read Structure. Error reading atom names."));
+      }
     }
 
     if(read_elem == true) {
@@ -1139,7 +1144,7 @@ namespace CASM {
     }
 
     //Figure out how many species
-    Index num_sites = 0;
+    int num_sites = 0;
     while(ch != '\n' && !stream.eof()) {
       if(ch >= '0' && ch <= '9') {
         stream >> t_int;
@@ -1160,7 +1165,6 @@ namespace CASM {
 
     // fractional coordinates or cartesian
     COORD_MODE input_mode(FRAC);
-    bool SD_flag(false);
 
     stream.get(ch);
     while(ch == ' ' || ch == '\t') {
@@ -1200,7 +1204,7 @@ namespace CASM {
 
     if(read_elem) {
       int j = -1;
-      Index sum_elem = 0;
+      int sum_elem = 0;
       basis.reserve(num_sites);
       for(i = 0; i < num_sites; i++) {
         if(i == sum_elem) {
@@ -1217,8 +1221,20 @@ namespace CASM {
       basis.reserve(num_sites);
       for(i = 0; i < num_sites; i++) {
         tsite.read(stream, SD_flag);
+        if((stream.rdstate() & std::ifstream::failbit) != 0) {
+          std::cerr << "Error reading site " << i + 1 << " from structure input file." << std::endl;
+          exit(1);
+        }
         basis.push_back(tsite);
       }
+    }
+
+    // Check whether there are additional sites listed in the input file
+    Vector3< double > coord;
+    stream >> coord;
+    if((stream.rdstate() & std::ifstream::failbit) == 0) {
+      std::cerr << "ERROR: too many sites listed in structure input file." << std::endl;
+      exit(1);
     }
 
     update();
@@ -1230,23 +1246,15 @@ namespace CASM {
   // print structure and include all possible occupants on each site, using VASP4 format
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::print(std::ostream &stream, COORD_TYPE mode) {
+  void BasicStructure<CoordType>::print(std::ostream &stream, COORD_TYPE mode) const {
     main_print(stream, mode, false, 0);
-  }
-
-  //************************************************************
-  // print structure and include current occupant on each site, using VASP5 format
-
-  template<typename CoordType>
-  void BasicStructure<CoordType>::print5_occ(std::ostream &stream, COORD_TYPE mode) {
-    main_print(stream, mode, true, 1);
   }
 
   //************************************************************
   // print structure and include current occupant on each site, using VASP4 format
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::print_occ(std::ostream &stream, COORD_TYPE mode) {
+  void BasicStructure<CoordType>::print_occ(std::ostream &stream, COORD_TYPE mode) const {
     main_print(stream, mode, false, 1);
   }
 
@@ -1254,7 +1262,7 @@ namespace CASM {
   // Private print routine called by public routines
   //   by BP, collected and modified the existing print routines (by John G?) into 1 function
   template<typename CoordType>
-  void BasicStructure<CoordType>::main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option) {
+  void BasicStructure<CoordType>::main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option) const {
     //std::cout << "begin BasicStructure<CoordType>::main_print()" << std::endl;
     // No Sorting (For now... Figure out how to do this for molecules later...)
     // If option == 0 (print all possible occupants), make sure comparing all possible occupants
@@ -1283,7 +1291,7 @@ namespace CASM {
     }
 
     Array<int> site_order;
-    Array<int> curr_state;
+    //Array<int> curr_state;
     Array<std::string> site_names;
 
     // This is for sorting molecules by type. - NO LONGER USING THIS
@@ -1300,7 +1308,8 @@ namespace CASM {
 
     // if option == 0 (print all possible occupants), set current state to -1 (unknown occupant for comparison)
     //   we'll reset to the current state after counting num_each_specie_for_printing
-
+    
+    /*
     if(option == 0) {
       //std::cout << "  save curr state" << std::endl;
       for(Index j = 0; j < basis.size(); j++) {
@@ -1308,6 +1317,7 @@ namespace CASM {
         basis[j].set_occ_value(-1);
       }
     }
+    */
     // if option == 1 (print current occupants), check that current state is not -1 (unknown occupant)
     if(option == 1) {
       //std::cout << "  check curr state" << std::endl;
@@ -1327,7 +1337,8 @@ namespace CASM {
       if(option == 0) { //(print all possible occupants)
         if(i == 0)
           num_each_specie_for_printing.push_back(1);
-        else if(basis[i - 1].site_occupant() == basis[i].site_occupant())
+        //else if(basis[i - 1].site_occupant() == basis[i].site_occupant())
+        else if(basis[i - 1].site_occupant().get_domain() == basis[i].site_occupant().get_domain())
           num_each_specie_for_printing.back()++;
         else
           num_each_specie_for_printing.push_back(1);
@@ -1355,11 +1366,13 @@ namespace CASM {
     //   reset the current state
     //std::cout << "  reset curr state" << std::endl;
 
+    /*
     if(option == 0) {
       for(Index j = 0; j < basis.size(); j++)
         basis[j].set_occ_value(curr_state[j]);
     }
-
+    */
+    
     stream << title << '\n';
 
     // Output lattice: scaling factor and lattice vectors
@@ -1383,8 +1396,10 @@ namespace CASM {
     }
     stream << std::endl;
 
-
-
+    if(SD_flag) {
+      stream << "Selective Dynamics\n";
+    }
+    
     COORD_MODE output_mode(mode);
 
     stream << COORD_MODE::NAME() << '\n';
@@ -1393,8 +1408,17 @@ namespace CASM {
     //std::cout << "  print coords" << std::endl;
 
     for(Index i = 0; i < basis.size(); i++) {
-      basis[i].print(stream);
-      stream << '\n';
+      if(option == 0) {	// print all possible occupying molecules
+        basis[i].print(stream);
+        stream << '\n';
+      }
+      else if(option == 1 && basis[i].occ_name() != "Va") {	// print occupying molecule
+        basis[i].print_occ(stream);
+        stream << '\n';
+      }
+      else if(option == 2) { // print all atoms in molecule
+        basis[i].print_mol(stream, 0, '\n', SD_flag);
+      }
     }
     stream << std::flush;
 
@@ -1406,7 +1430,7 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::print_xyz(std::ostream &stream) {
+  void BasicStructure<CoordType>::print_xyz(std::ostream &stream) const {
     stream << basis.size() << '\n';
     stream << title << '\n';
     stream.precision(7);
@@ -1418,6 +1442,67 @@ namespace CASM {
       stream << std::setw(12) << basis[i](CART) << '\n';
     }
 
+  }
+  
+  //***********************************************************
+
+  template<typename CoordType>
+  void BasicStructure<CoordType>::print_cif(std::ostream &stream) const {
+    const char quote = '\'';
+    const char indent[] = "   ";
+
+    //double amag, bmag, cmag;
+    //double alpha, beta, gamma;
+
+    // Copying format based on VESTA .cif output.
+
+    // Heading text.
+
+    stream << '#';
+    for(int i = 0; i < 70; i++) {
+      stream << '=';
+    }
+    stream << "\n\n";
+    stream << "# CRYSTAL DATA\n\n";
+    stream << '#';
+    for(int i = 0; i < 70; i++) {
+      stream << '-';
+    }
+    stream << "\n\n";
+    stream << "data_CASM\n\n\n";
+
+    stream.precision(5);
+    stream.width(11);
+    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
+
+    stream << std::setw(40) << "_pd_phase_name" << quote << title << quote << '\n';
+    stream << std::setw(40) << "_cell_length_a" << lattice().lengths[0] << '\n';
+    stream << std::setw(40) << "_cell_length_b" << lattice().lengths[1] << '\n';
+    stream << std::setw(40) << "_cell_length_c" << lattice().lengths[2] << '\n';
+    stream << std::setw(40) << "_cell_angle_alpha" << lattice().angles[0] << '\n';
+    stream << std::setw(40) << "_cell_angle_beta" << lattice().angles[1] << '\n';
+    stream << std::setw(40) << "_cell_angle_gamma" << lattice().angles[2] << '\n';
+    stream << std::setw(40) << "_symmetry_space_group_name_H-M" << quote << "TBD" << quote << '\n';
+    stream << std::setw(40) << "_symmetry_Int_Tables_number" << "TBD" << "\n\n";
+
+    stream << "loop_\n";
+    stream << "_symmetry_equiv_pos_as_xyz\n";
+
+    // Equivalent atom positions here. Form: 'x, y, z', '-x, -y, -z', 'x+1/2, y+1/2, z', etc.
+    // Use stream << indent << etc.
+
+    stream << '\n';
+    stream << "loop_\n";
+    stream << indent << "_atom_site_label" << '\n';
+    stream << indent << "_atom_site_occupancy" << '\n';
+    stream << indent << "_atom_site_fract_x" << '\n';
+    stream << indent << "_atom_site_fract_y" << '\n';
+    stream << indent << "_atom_site_fract_z" << '\n';
+    stream << indent << "_atom_site_adp_type" << '\n';
+    stream << indent << "_atom_site_B_iso_or_equiv" << '\n';
+    stream << indent << "_atom_site_type_symbol" << '\n';
+
+    // Use stream << indent << etc.
   }
 
   //***********************************************************

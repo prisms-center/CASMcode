@@ -165,16 +165,6 @@ namespace BP {
       coord[3] = fin.next_int();
     };
 
-    /*void set( int i0, int i1, int i2, int i3)
-    {
-    	coord[0] = i0;
-    	coord[1] = i1;
-    	coord[2] = i2;
-    	coord[3] = i3;
-
-    };
-    */
-
     void set(long int i0, long int i1, long int i2, long int i3) {
       coord[0] = i0;
       coord[1] = i1;

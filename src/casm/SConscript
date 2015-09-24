@@ -1,5 +1,5 @@
 # http://www.scons.org/doc/production/HTML/scons-user.html
-# This is: h/casm/SConscript
+# This is: src/casm/SConscript
 
 import os, glob
 from glob import glob
@@ -15,9 +15,8 @@ SConscript(['version/SConscript'], {'env':env})
 
 # get source files
 casm_lib_src_dir = [
-  'casm_io', 'container', 'crystallography', 'symmetry', 
-  'basis_set', 'clusterography', 'kspace', 
-  'misc', 'strain', 'clex', 'hull', 'phonon'
+  'casm_io', 'container', 'crystallography', 'symmetry', 'basis_set', 'clusterography', 'kspace', 
+  'misc', 'strain', 'clex', 'hull', 'phonon', 'monte_carlo', 'monte_carlo/grand_canonical'
 ]
 casm_lib_src = ['CASM_global_definitions.cc'] + [glob(join(x,'*.cc')) for x in casm_lib_src_dir]
 

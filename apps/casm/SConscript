@@ -7,7 +7,7 @@ Import('env', 'casm_lib_install', 'version_obj')
 
 # Build instructions
 casm_include = env['CPPPATH'] + ['.']
-libs = ['boost_system', 'boost_filesystem', 'boost_program_options', 'casm', 'dl']
+libs = ['boost_system', 'boost_filesystem', 'boost_program_options', 'casm', 'dl', 'z']
 
 casm_obj = env.Object('casm.cpp', CPPPATH = casm_include)
 Default(casm_obj)

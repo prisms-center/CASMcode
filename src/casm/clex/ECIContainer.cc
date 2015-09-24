@@ -17,6 +17,19 @@ namespace CASM {
       result += (*eci_it) * _corr[*ind_it];
     return result;
   }
+  
+  /// \brief Evaluate property given an ECIContainer and pointer to beginning of range of correlation
+  double operator*(const ECIContainer &_eci, double const* _corr_begin) {
+    double result(0);
+    auto ind_it(_eci.eci_index_list().cbegin()), ind_end(_eci.eci_index_list().cend());
+    auto eci_it(_eci.eci_list().cbegin());
+    while(ind_it != ind_end) {
+      result += (*eci_it) * (*(_corr_begin + *ind_it));
+      ++ind_it;
+      ++eci_it;
+    }
+    return result;
+  }
 
   namespace ECIContainer_impl {
     /**

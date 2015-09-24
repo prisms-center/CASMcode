@@ -159,6 +159,7 @@ namespace CASM {
     //Supercell(PrimClex *_prim);
     Supercell(const Supercell &RHS);
     Supercell(PrimClex *_prim, const Lattice &superlattice);
+    Supercell(PrimClex *_prim, const Eigen::Matrix3i &superlattice_matrix);
     Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix);
     //Supercell(PrimClex *_prim, const Eigen::Matrix3i &superlattice_matrix);   //I wish
     //Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix, const Lattice &superlattice, const int warningFlag = 1);
@@ -501,9 +502,8 @@ namespace CASM {
     // 0			print no information about the vacancies
     // 1			print only the coordinates of the vacancies
     // 2			print the number of vacancies and the coordinates of the vacancies
-    void print(const Configuration &config, std::ostream &stream, COORD_TYPE mode, int Va_mode = 0, char term = 0, int prec = 7, int pad = 5) const;
-    void print(std::ostream &stream, Configuration tconfig) const;
-
+    void print(const Configuration &config, std::ostream &stream, COORD_TYPE mode, int Va_mode = 0, char term = '\n', int prec = 7, int pad = 5) const;
+    
     ///Call Configuration::write out every configuration in supercell
     jsonParser &write_config_list(jsonParser &json);
 

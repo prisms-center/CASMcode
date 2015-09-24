@@ -76,6 +76,9 @@ ccflags.append('-Wno-unused-parameter')
 ccflags.append('-Wno-deprecated-register')
 ccflags.append('-Wno-deprecated-declarations')
 ccflags.append('-DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long')
+# set gzstream namespace to 'gz'
+ccflags.append('-DGZSTREAM_NAMESPACE=gz')
+
 
 if 'OPTIMIZATIONLEVEL' in os.environ:
   opt_level = os.environ['OPTIMIZATIONLEVEL']
@@ -158,6 +161,9 @@ env['ENV']['TERM'] = os.environ['TERM']
 # build src/casm/BP_C++
 SConscript(['src/casm/BP_C++/SConscript'], {'env':env})
 
+# build src/casm/external/gzstream
+SConscript(['src/casm/external/gzstream/SConscript'], {'env':env})
+
 # build src/casm
 SConscript(['src/casm/SConscript'], {'env':env})
 
@@ -174,7 +180,7 @@ Export('casm_lib')
 Default(casm_lib)
 
 # Library Install instructions
-casm_lib_install = env.SharedLibrary(os.path.join(env['PREFIX'], 'lib', 'casm'), env['CASM_SOBJ'], LIBS=boost_libs)
+casm_lib_install = env.SharedLibrary(os.path.join(env['PREFIX'], 'lib', 'casm'), env['CASM_SOBJ'], LIBS=boost_libs + ['z'])
 Export('casm_lib_install')
 env.Alias('casm_lib_install', casm_lib_install)
 env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [casm_lib_install]

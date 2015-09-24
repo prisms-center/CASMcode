@@ -140,7 +140,7 @@ namespace CASM {
 
     using json_spirit::mValue::operator==;
 
-    bool operator!=(const jsonParser &json) {
+    bool operator!=(const jsonParser &json) const {
       return !(json_spirit::mValue::operator==(json));
     }
 
@@ -358,8 +358,11 @@ namespace CASM {
     from_json(value, json);
     return value;
   }
-
-
+  
+  /// Return the location at which jsonParser 'A' != 'B' as a boost::filesystem::path
+  boost::filesystem::path find_diff(const jsonParser &A, const jsonParser &B, boost::filesystem::path diff = boost::filesystem::path());
+        
+  
   /// jsonParser bidirectional Iterator class
   ///   Can iterate over a JSON object or JSON array or JSON value (though this is only one value)
   ///   When iterating over a JSON object, can return the 'name' of the current 'name':value pair being pointed at
