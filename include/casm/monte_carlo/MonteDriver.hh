@@ -133,7 +133,27 @@ namespace CASM {
     // Skip any conditions that have already been calculated and saved
     Index start_i = _find_starting_conditions();
     
-    // if no existing calculations
+    // check if we'll be repeating any calculations that already have files written
+    std::vector<Index> repeats;
+    for(Index i=start_i; i<m_conditions_list.size(); ++i) {
+      if(fs::exists(dir.conditions_dir(i))) {
+        repeats.push_back(i);
+      }
+    }
+    
+    // if existing calculations
+    if(start_i > 0 || repeats.size() > 0) {
+      
+      sout << "Found existing calculations. Will begin with condition " << start_i << ".\n\n";
+      
+      if(repeats.size()) {
+        jsonParser json;
+        to_json(repeats, json);
+        sout << "Will overwrite existing results for condition(s): " << json << "\n\n";
+      }
+    }
+    
+    // if starting from initial condition
     if(start_i == 0) {
       // perform any requested explicit equilibration passes
       if(m_settings.is_equilibration_passes_first_run()) {
@@ -149,24 +169,8 @@ namespace CASM {
         sout << "  DONE" << std::endl;
       }
     }
-    // if existing calculations
-    else if( start_i < m_conditions_list.size() ) {
-      
-      sout << "Found existing calculations. Will begin with condition " << start_i << ".\n\n";
-      
-      std::vector<Index> repeats;
-      for(Index i=start_i; i<m_conditions_list.size(); ++i) {
-        if(fs::exists(dir.conditions_dir(i))) {
-          repeats.push_back(i);
-        }
-      }
-      if(repeats.size()) {
-        jsonParser json;
-        to_json(repeats, json);
-        sout << "Will overwrite existing results for condition(s): " << json << "\n\n";
-      }
-      
-      // read end state of last condition
+    else {
+      // read end state of previous condition
       ConfigDoF configdof = m_mc.configdof();
       from_json(configdof, jsonParser(dir.final_state_json(start_i-1)));
       m_mc.reset(configdof);
@@ -199,9 +203,9 @@ namespace CASM {
     
     MonteCarloDirectoryStructure dir(m_settings.output_directory());
     Index start_i = 0;
-    Index start_json = 0;
-    Index start_csv = 0;
     Index start_max = m_conditions_list.size() - 1;
+    Index start_json = m_settings.write_json() ? 0 : start_max;
+    Index start_csv = m_settings.write_csv() ? 0 : start_max;
     jsonParser json_results;
     fs::ifstream csv_results;
     std::string str;
