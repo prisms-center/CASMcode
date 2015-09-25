@@ -1,6 +1,8 @@
 #ifndef DATASTREAM_HH
 #define DATASTREAM_HH
 #include <vector>
+#include <string>
+#include <iostream>
 namespace CASM {
 
   class DataStream {
@@ -39,6 +41,12 @@ namespace CASM {
     virtual DataStream &operator<<(char) {
       return *this;
     }
+
+    /*  Some day?  This seems annoying...
+    virtual DataStream &operator<<(std::complex<double>) {
+      return *this;
+    }
+    */
 
     DataStream &operator<<(DataStream & (*F)(DataStream &)) {
       return F(*this);
@@ -120,87 +128,147 @@ namespace CASM {
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  namespace ArrayDataStream_impl {
+
+  namespace VectorDataStream_impl {
     template<typename OutType>
     struct DataStreamPromoter {
       template<typename InType>
-      static OutType promote(InType);
+      static OutType promote(InType a) {
+        return static_cast<OutType>(a);
+      }
     };
 
     template<>
     struct DataStreamPromoter<std::string> {
       template<typename InType>
-      static std::string promote(InType);
+      static std::string promote(InType a) {
+        return static_cast<std::string>(a);
+      }
 
     };
+
+    // Specialized String Promoters
+    template<>
+    std::string DataStreamPromoter<std::string>::promote(long a);
+
+    template<>
+    std::string DataStreamPromoter<std::string>::promote(double a);
+
+    template<>
+    std::string DataStreamPromoter<std::string>::promote(char a);
+
+    template<>
+    std::string DataStreamPromoter<std::string>::promote(bool a);
+    //\End specialized string promoters
 
     template<>
     struct DataStreamPromoter<double> {
       template<typename InType>
-      static double promote(InType);
+      static double promote(InType a) {
+        return static_cast<double>(a);
+      }
 
     };
+
+    //Specialized double promoter
+    template<>
+    double DataStreamPromoter<double>::promote(std::string a);
 
     template<>
     struct DataStreamPromoter<long> {
       template<typename InType>
-      static long promote(InType);
+      static long promote(InType a) {
+        return static_cast<long>(a);
+      }
 
     };
+
+    //Specialized long promotion
+    template<>
+    long DataStreamPromoter<long>::promote(double a);
+
+    template<>
+    long DataStreamPromoter<long>::promote(std::string a);
+    //\End Specialized long promotion
 
     template<>
     struct DataStreamPromoter<bool> {
       template<typename InType>
-      static bool promote(InType);
+      static bool promote(InType a) {
+        return static_cast<bool>(a);
+      }
 
     };
+
+    // Specialized bool promotion
+    template<>
+    bool DataStreamPromoter<bool>:: promote(double a);
+
+    template<>
+    bool DataStreamPromoter<bool>:: promote(std::string a);
+
+    template<>
+    bool DataStreamPromoter<bool>:: promote(char a);
+    //\End Specialized bool promotion
 
     template<>
     struct DataStreamPromoter<char> {
       template<typename InType>
-      static char promote(InType);
-
+      static char promote(InType a) {
+        return static_cast<char>(a);
+      }
     };
+
+    //Specialized char promotion
+    template<>
+    char DataStreamPromoter<char>::promote(double a);
+
+    template<>
+    char DataStreamPromoter<char>::promote(std::string a);
+
+    template<>
+    char DataStreamPromoter<char>::promote(bool a);
+    //\End specialized char promotion
 
   }
 
-  template <typename T, typename Promoter = ArrayDataStream_impl::DataStreamPromoter<T> >
-  class ArrayDataStream : public DataStream {
+  template <typename T, typename Promoter = VectorDataStream_impl::DataStreamPromoter<T> >
+  class VectorDataStream : public DataStream {
   public:
 
-    ArrayDataStream(DataStreamTraits _traits = none) :
+    VectorDataStream(DataStreamTraits _traits = none) :
       DataStream(_traits) {}
 
     DataStream &operator<<(const std::string &val) {
-      m_array.push_back(Promoter::promote(val));
+      m_vector.push_back(Promoter::promote(val));
       return *this;
     }
 
     DataStream &operator<<(long val) {
-      m_array.push_back(Promoter::promote(val));
+      m_vector.push_back(Promoter::promote(val));
       return *this;
     }
 
     DataStream &operator<<(double val) {
-      m_array.push_back(Promoter::promote(val));
+      m_vector.push_back(Promoter::promote(val));
       return *this;
     }
 
     DataStream &operator<<(bool val) {
-      m_array.push_back(Promoter::promote(val));
+      m_vector.push_back(Promoter::promote(val));
       return *this;
     }
 
     DataStream &operator<<(char val) {
-      m_array.push_back(Promoter::promote(val));
+      m_vector.push_back(Promoter::promote(val));
       return *this;
     }
 
-    const std::vector<T> &array()const {
-      return m_array;
+    const std::vector<T> &vector()const {
+      return m_vector;
     }
   private:
-    std::vector<T> m_array;
+    std::vector<T> m_vector;
   };
 
   inline

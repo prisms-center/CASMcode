@@ -38,6 +38,56 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+  
+  int dl_string_dist(const std::string &a, const std::string &b) {
+    // "infinite" distance is just the max possible distance
+    int max_val = a.size() + b.size();
+
+    // make and initialize the character array indices
+    std::map<char,int> DA;
+    
+    // make the distance matrix H
+    Eigen::MatrixXi H(a.size()+2,b.size()+2);
+
+    // initialize the left and top edges of H
+    H(0,0) = max_val;
+    for (int i = 0; i <= a.size(); ++i){
+      DA[a[i]]=0;
+      H(i+1,0) = max_val;
+      H(i+1,1) = i;
+    }
+    for (int j = 0; j <= b.size(); ++j){
+      DA[b[j]]=0;
+      H(0,j+1) = max_val;
+      H(1,j+1) = j;
+    }
+
+    // fill in the distance matrix H
+    // look at each character in a
+    for (int i = 1; i <= a.size(); ++i) {
+      int DB = 0;
+      // look at each character in b
+      for (int j = 1; j <= b.size(); ++j){
+        int i1 = DA[b[j-1]];
+        int j1 = DB;
+        int cost;
+        if (a[i-1] == b[j-1]) {
+          cost = 0;
+          DB   = j;
+        }
+        else
+          cost = 1;
+        H(i+1,j+1) =min(min(H(i,j) + cost,  // substitution
+                            H(i+1,j) + 1),     // insertion
+                        min(H(i,j+1) + 1,     // deletion
+                            H(i1,j1) + (i-i1-1) + 1 + (j-j1-1)));
+          }
+        DA[a[i-1]] = i;
+      }
+    return H(a.size()+1,b.size()+1);
+  }
+
+  //*******************************************************************************************
   /// Find greatest common factor
   int gcf(int i1, int i2) {
     i1 = std::abs(i1);

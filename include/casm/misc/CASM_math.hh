@@ -101,7 +101,12 @@ namespace CASM {
     return result;
   }
 
-
+  
+  // *******************************************************************************************
+  /// \brief Computes the Damerescau-Levenshtein distance
+  ///   -- the number of edits (deletions, insertions, transpositions) to go from string 'a' to string 'b'
+  int dl_string_dist(const std::string &a, const std::string &b);
+      
   // *******************************************************************************************
 
   double ran0(int &idum);

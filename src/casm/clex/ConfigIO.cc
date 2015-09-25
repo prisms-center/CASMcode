@@ -231,6 +231,7 @@ namespace CASM {
     //****************************************************************************************
     void SiteFracConfigFormatter::init(const Configuration &_tmplt) const {
       Array<Molecule> struc_molecule = _tmplt.get_primclex().get_prim().get_struc_molecule();
+
       if(m_mol_names.size() == 0) {
         for(Index i = 0; i < struc_molecule.size(); i++) {
           _add_rule(std::vector<Index>({i}));
@@ -240,10 +241,12 @@ namespace CASM {
       else {
         for(Index n = 0; n < m_mol_names.size(); n++) {
           Index i = 0;
-          for(i = 0; i < struc_molecule.size(); i++)
+          for(i = 0; i < struc_molecule.size(); i++){
             if(struc_molecule[i].name == m_mol_names[n]) {
               _add_rule(std::vector<Index>({i}));
+              break;
             }
+          }
           if(i == struc_molecule.size())
             throw std::runtime_error(std::string("Format tag: 'site_frac(") + m_mol_names[n] + ")' does not correspond to a viable composition.\n");
         }
@@ -254,9 +257,9 @@ namespace CASM {
 
     std::string SiteFracConfigFormatter::long_header(const Configuration &_tmplt) const {
       std::string t_header;
-      for(Index c = 0; c < _index_rules().size(); c++) {
-        t_header += name() + "(" + m_mol_names[_index_rules()[c][0]] + ")";
-        if(c != _index_rules().size() - 1) {
+      for(Index c = 0; c < m_mol_names.size(); c++) {
+        t_header += name() + "(" + m_mol_names[c] + ")";
+        if(c != m_mol_names.size() - 1) {
           t_header += "   ";
         }
       }
@@ -320,10 +323,12 @@ namespace CASM {
       else {
         for(Index n = 0; n < m_mol_names.size(); n++) {
           Index i = 0;
-          for(i = 0; i < struc_molecule.size(); i++)
+          for(i = 0; i < struc_molecule.size(); i++){
             if(struc_molecule[i].name == m_mol_names[n]) {
               _add_rule(std::vector<Index>({i}));
+              break;
             }
+          }
           if(i == struc_molecule.size())
             throw std::runtime_error(std::string("Format tag: 'atom_frac(") + m_mol_names[n] + ")' does not correspond to a viable composition.\n");
         }
@@ -334,9 +339,9 @@ namespace CASM {
 
     std::string AtomFracConfigFormatter::long_header(const Configuration &_tmplt) const {
       std::string t_header;
-      for(Index c = 0; c < _index_rules().size(); c++) {
-        t_header += name() + "(" + m_mol_names[_index_rules()[c][0]] + ")";
-        if(c != _index_rules().size() - 1) {
+      for(Index c = 0; c < m_mol_names.size(); c++) {
+        t_header += name() + "(" + m_mol_names[c] + ")";
+        if(c != m_mol_names.size() - 1) {
           t_header += "   ";
         }
       }
@@ -607,7 +612,29 @@ namespace CASM {
                                                             + " from the convex hull of *cluster-expanded* formation energies."
                                                             + " Accepts argument $selection (one of: <filename>, 'all', MASTER <--default)"
                                                             /*and $composition_type (one of: comp, atom_frac, site_frac).  "*/
-                                                            + " Ex: on_hull(MASTER).", "clex(formation_energy)"));
+                                                            + " Ex: on_hull(MASTER).", "clex(formation_energy)"))
+        //Formatter operators
+        .add_formatter(format_operator_add<Configuration>())
+        .add_formatter(format_operator_sub<Configuration>())
+        .add_formatter(format_operator_mult<Configuration>())
+        .add_formatter(format_operator_div<Configuration>())
+        .add_formatter(format_operator_exp<Configuration>())
+        .add_formatter(format_operator_sq<Configuration>())
+        .add_formatter(format_operator_sqrt<Configuration>())
+        .add_formatter(format_operator_neg<Configuration>())
+        .add_formatter(format_operator_and<Configuration>())
+        .add_formatter(format_operator_or<Configuration>())
+        .add_formatter(format_operator_not<Configuration>())
+        .add_formatter(format_operator_min<Configuration>())
+        .add_formatter(format_operator_max<Configuration>())
+        .add_formatter(format_operator_imin<Configuration>())
+        .add_formatter(format_operator_imax<Configuration>())
+        .add_formatter(format_operator_eq<Configuration>())
+        .add_formatter(format_operator_lt<Configuration>())
+        .add_formatter(format_operator_le<Configuration>())
+        .add_formatter(format_operator_gt<Configuration>())
+        .add_formatter(format_operator_ge<Configuration>());
+
     }
 
     /*End ConfigIO*/
