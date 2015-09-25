@@ -174,7 +174,7 @@ SConscript(['src/casm/SConscript'], {'env':env})
 boost_libs = ['boost_system', 'boost_filesystem']
 
 # build casm shared library from all shared objects
-casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'), env['CASM_SOBJ'], LIBS=boost_libs)
+casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'), env['CASM_SOBJ'], LIBS=boost_libs + ['z'])
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + casm_lib
 Export('casm_lib')
 Default(casm_lib)
