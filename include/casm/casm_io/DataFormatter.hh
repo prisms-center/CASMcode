@@ -83,10 +83,10 @@ namespace CASM {
       clear();
     }
 
-    bool empty() const{
-      return m_data_formatters.size()==0;
+    bool empty() const {
+      return m_data_formatters.size() == 0;
     }
-    
+
     DataFormatter &operator=(const DataFormatter<DataObject> &RHS) {
       if(&RHS == this)
         return *this;
@@ -139,7 +139,7 @@ namespace CASM {
     ///Output data as specified by *this of the given DataObject
     jsonParser &to_json(const DataObject &_obj, jsonParser &json) const;
 
-    ///print the header, using _tmplt_obj to inspect array sizes, etc. 
+    ///print the header, using _tmplt_obj to inspect array sizes, etc.
     void print_header(const DataObject &_tmplt_obj, std::ostream &_stream) const;
 
     /// Add a particular BaseDatumFormatter to *this
@@ -209,7 +209,7 @@ namespace CASM {
   class BaseDatumFormatter {
   public:
 
-    enum FormatterType{Property, Operator};
+    enum FormatterType {Property, Operator};
     typedef long difference_type;
 
 
@@ -230,10 +230,10 @@ namespace CASM {
       return m_description;
     }
 
-    virtual FormatterType type() const{
+    virtual FormatterType type() const {
       return Property;
     }
-    
+
     /// \brief Make an exact copy of the formatter (including any initialized members)
     ///
     virtual BaseDatumFormatter *clone() const = 0;
@@ -443,20 +443,20 @@ namespace CASM {
       initializer(*this);
     }
 
-    const BaseDatumFormatter<DataObject>&  lookup(const std::string &_name) const{
-      BaseDatumFormatter<DataObject> const* bdf_ptr;
-      if(contains(_name,bdf_ptr)){
+    const BaseDatumFormatter<DataObject>  &lookup(const std::string &_name) const {
+      BaseDatumFormatter<DataObject> const *bdf_ptr;
+      if(contains(_name, bdf_ptr)) {
         return *bdf_ptr;
       }
-      else{
+      else {
         throw std::runtime_error("CRITICAL ERROR: Invalid format flag \"" + _name + "\" specified.\n"
                                  + "                Did you mean \"" + bdf_ptr->name() + "\"?\n");
 
       }
-                   
+
     }
 
-    
+
     DataFormatterDictionary &add_formatter(const BaseDatumFormatter<DataObject> &new_formatter) {
       if(m_formatter_map.find(new_formatter.name()) != m_formatter_map.end())
         throw std::runtime_error("DataFormatter " + new_formatter.name() + " already exists in parsing dictionary.\nDuplicates are not allowed.\n");
@@ -487,10 +487,10 @@ namespace CASM {
       it = m_formatter_map.begin();
       int min_dist(-1);
       for(; it != it_end; ++it) {
-        int dist=dl_string_dist(key, it->first);
-        if(min_dist < 0 || dist < min_dist){
-          min_dist=dist;
-          std::cout << "New best: \"" << it->first << "\" aka \"" << it->second->name()<< "\"\n";
+        int dist = dl_string_dist(key, it->first);
+        if(min_dist < 0 || dist < min_dist) {
+          min_dist = dist;
+          std::cout << "New best: \"" << it->first << "\" aka \"" << it->second->name() << "\"\n";
           result_ptr = (it->second).get();
         }
       }
@@ -504,7 +504,7 @@ namespace CASM {
       return (it->second).get();
     }
 
-    void print_help(std::ostream &_stream, 
+    void print_help(std::ostream &_stream,
                     typename BaseDatumFormatter<DataObject>::FormatterType ftype,
                     int width, int separation) const;
 
@@ -528,26 +528,26 @@ namespace CASM {
       return dictionary().size();
     }
 
-    static const BaseDatumFormatter<DataObject>& lookup(const std::string &_name){
+    static const BaseDatumFormatter<DataObject> &lookup(const std::string &_name) {
       return dictionary().lookup(_name);
     }
-    
+
     static DataFormatter<DataObject> parse(const std::string &input) {
       return dictionary().parse(input);
     }
-    
+
     static DataFormatter<DataObject> parse(const std::vector<std::string> &input) {
       return dictionary().parse(input);
     }
-    
+
     static void add_custom_formatter(const BaseDatumFormatter<DataObject> &new_formatter) {
       dictionary().add_formatter(new_formatter);
     }
 
     static void load_aliases(const fs::path &alias_path);
-    
+
     static void print_help(std::ostream &_stream,
-                           typename BaseDatumFormatter<DataObject>::FormatterType ftype=BaseDatumFormatter<DataObject>::Property,
+                           typename BaseDatumFormatter<DataObject>::FormatterType ftype = BaseDatumFormatter<DataObject>::Property,
                            int width = 60, int separation = 8) {
       dictionary().print_help(_stream, ftype, width, separation);
     }

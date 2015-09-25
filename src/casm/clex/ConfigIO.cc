@@ -241,7 +241,7 @@ namespace CASM {
       else {
         for(Index n = 0; n < m_mol_names.size(); n++) {
           Index i = 0;
-          for(i = 0; i < struc_molecule.size(); i++){
+          for(i = 0; i < struc_molecule.size(); i++) {
             if(struc_molecule[i].name == m_mol_names[n]) {
               _add_rule(std::vector<Index>({i}));
               break;
@@ -323,7 +323,7 @@ namespace CASM {
       else {
         for(Index n = 0; n < m_mol_names.size(); n++) {
           Index i = 0;
-          for(i = 0; i < struc_molecule.size(); i++){
+          for(i = 0; i < struc_molecule.size(); i++) {
             if(struc_molecule[i].name == m_mol_names[n]) {
               _add_rule(std::vector<Index>({i}));
               break;
@@ -613,27 +613,27 @@ namespace CASM {
                                                             + " Accepts argument $selection (one of: <filename>, 'all', MASTER <--default)"
                                                             /*and $composition_type (one of: comp, atom_frac, site_frac).  "*/
                                                             + " Ex: on_hull(MASTER).", "clex(formation_energy)"))
-        //Formatter operators
-        .add_formatter(format_operator_add<Configuration>())
-        .add_formatter(format_operator_sub<Configuration>())
-        .add_formatter(format_operator_mult<Configuration>())
-        .add_formatter(format_operator_div<Configuration>())
-        .add_formatter(format_operator_exp<Configuration>())
-        .add_formatter(format_operator_sq<Configuration>())
-        .add_formatter(format_operator_sqrt<Configuration>())
-        .add_formatter(format_operator_neg<Configuration>())
-        .add_formatter(format_operator_and<Configuration>())
-        .add_formatter(format_operator_or<Configuration>())
-        .add_formatter(format_operator_not<Configuration>())
-        .add_formatter(format_operator_min<Configuration>())
-        .add_formatter(format_operator_max<Configuration>())
-        .add_formatter(format_operator_imin<Configuration>())
-        .add_formatter(format_operator_imax<Configuration>())
-        .add_formatter(format_operator_eq<Configuration>())
-        .add_formatter(format_operator_lt<Configuration>())
-        .add_formatter(format_operator_le<Configuration>())
-        .add_formatter(format_operator_gt<Configuration>())
-        .add_formatter(format_operator_ge<Configuration>());
+      //Formatter operators
+      .add_formatter(format_operator_add<Configuration>())
+      .add_formatter(format_operator_sub<Configuration>())
+      .add_formatter(format_operator_mult<Configuration>())
+      .add_formatter(format_operator_div<Configuration>())
+      .add_formatter(format_operator_exp<Configuration>())
+      .add_formatter(format_operator_sq<Configuration>())
+      .add_formatter(format_operator_sqrt<Configuration>())
+      .add_formatter(format_operator_neg<Configuration>())
+      .add_formatter(format_operator_and<Configuration>())
+      .add_formatter(format_operator_or<Configuration>())
+      .add_formatter(format_operator_not<Configuration>())
+      .add_formatter(format_operator_min<Configuration>())
+      .add_formatter(format_operator_max<Configuration>())
+      .add_formatter(format_operator_imin<Configuration>())
+      .add_formatter(format_operator_imax<Configuration>())
+      .add_formatter(format_operator_eq<Configuration>())
+      .add_formatter(format_operator_lt<Configuration>())
+      .add_formatter(format_operator_le<Configuration>())
+      .add_formatter(format_operator_gt<Configuration>())
+      .add_formatter(format_operator_ge<Configuration>());
 
     }
 

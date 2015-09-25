@@ -182,15 +182,15 @@ namespace CASM {
   void DataFormatterDictionary<DataObject>::print_help(std::ostream &_stream,
                                                        typename BaseDatumFormatter<DataObject>::FormatterType ftype,
                                                        int width, int separation) const {
-    
+
     typename container::const_iterator it_begin(m_formatter_map.cbegin()), it_end(m_formatter_map.cend());
     std::string::size_type len(0);
     for(typename container::const_iterator it = it_begin; it != it_end; ++it) {
-      if(ftype==(it->second)->type())
+      if(ftype == (it->second)->type())
         len = max(len, it->first.size());
     }
     for(typename container::const_iterator it = it_begin; it != it_end; ++it) {
-      if(ftype!=(it->second)->type())
+      if(ftype != (it->second)->type())
         continue;
       _stream << std::string(5, ' ') << it->first << std::string(len - it->first.size() + separation, ' ');
       std::string::size_type wcount(0);
@@ -218,14 +218,14 @@ namespace CASM {
   DataFormatter<DataObject> DataFormatterDictionary<DataObject>::parse(const std::vector<std::string> &input) const {
     DataFormatter<DataObject> formatter;
     std::vector<std::string> format_tags, format_args;
-    for(Index i = 0; i < input.size(); i++){
+    for(Index i = 0; i < input.size(); i++) {
       split_formatter_expression(input[i], format_tags, format_args);
     }
     const BaseDatumFormatter<DataObject> *proto_format_ptr;
     for(Index i = 0; i < format_tags.size(); i++) {
       if(!contains(format_tags[i], proto_format_ptr)) {
         throw std::runtime_error("ERROR: Invalid format flag \"" + format_tags[i] + "\" specified.\n"
-                               + "       Did you mean \"" + proto_format_ptr->name() + "\"?\n");
+                                 + "       Did you mean \"" + proto_format_ptr->name() + "\"?\n");
       }
       formatter.push_back(*proto_format_ptr, format_args[i]);
     }
@@ -246,7 +246,7 @@ namespace CASM {
     for(Index i = 0; i < format_tags.size(); i++) {
       if(!contains(format_tags[i], proto_format_ptr)) {
         throw std::runtime_error("ERROR: Invalid format flag \"" + format_tags[i] + "\" specified.\n"
-                               + "       Did you mean \"" + proto_format_ptr->name() + "\"?\n");
+                                 + "       Did you mean \"" + proto_format_ptr->name() + "\"?\n");
       }
       formatter.push_back(*proto_format_ptr, format_args[i]);
     }
@@ -254,18 +254,18 @@ namespace CASM {
   }
 
   //****************************************************************************************
-  
+
   template<typename DataObject>
-  void DataFormatterParser<DataObject>::load_aliases(const fs::path &alias_path){
-    if(!fs::exists(alias_path)){
+  void DataFormatterParser<DataObject>::load_aliases(const fs::path &alias_path) {
+    if(!fs::exists(alias_path)) {
       return;
     }
     jsonParser mjson(alias_path);
-    
+
     auto it(mjson.cbegin()), it_end(mjson.cend());
-    for(;it!=it_end; ++it){
+    for(; it != it_end; ++it) {
       add_custom_formatter(datum_formatter_alias<DataObject>(it.name(), it->get<std::string>()));
     }
   }
-  
+
 }
