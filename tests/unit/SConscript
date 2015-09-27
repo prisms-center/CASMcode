@@ -28,7 +28,7 @@ Clexulator_out = ['clex/test_Clexulator.o', 'clex/test_Clexulator.so']
 Clean(unit_test,  Structure_out + Clexulator_out)
 
 for i, src_name in enumerate(test_name):
-  if src_name[:-5] == "Structure":
+  if src_name[:-5] in ["Structure", "BasicStructure"]:
     test = env.Program(os.path.join(env['UNIT_TEST_BIN'], src_name), 
                        [unit_obj, test_obj[i]],
                        LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem'] + casm_lib)

@@ -176,8 +176,10 @@ namespace CASM {
         const Configuration &con = primclex.configuration(configname);
         const Supercell &scel = con.get_supercell();
         scel.print(con, ss, FRAC);
+        
+        std::istringstream iss(ss.str());
         BasicStructure<Site> unit;
-        unit.read(ss);
+        unit.read(iss);
 
         std::cout << "Unit structure:";
         std::cout << "\n------\n";
