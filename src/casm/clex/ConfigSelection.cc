@@ -287,6 +287,10 @@ namespace CASM {
         return scel.get_name();
       if(q == "configname")
         return config.name();
+      if(q == "status")
+             return config.status();
+      if(q == "failure_type")
+             return config.failure_type();
       if(q == "scel_size")
         return std::to_string(scel.volume());
       if(q == "is_groundstate") {

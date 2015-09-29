@@ -68,7 +68,25 @@ namespace CASM {
       return _config.calc_properties().contains("volume_relaxation");
     }
 
-    //"Change in volume due to relaxation, expressed as the ratio V/V_0."
+    //"Calculation status."
+    std::string get_config_status(const Configuration &_config) {
+      return _config.status();
+    }
+
+    bool has_config_status(const Configuration &_config) {
+      return !_config.status().empty();
+    }
+
+    //"Reason for calculation failure."
+    std::string get_config_failure_type(const Configuration &_config) {
+      return _config.failure_type();
+    }
+
+    bool has_config_failure_type(const Configuration &_config) {
+      return !_config.failure_type().empty();
+    }
+
+    //"Distance from DFT hull, extracted from config_list database."
     double get_config_dist_from_hull(const Configuration &_config) {
       return _config.generated_properties().contains("dist_from_hull") ? _config.generated_properties()["dist_from_hull"].get<double>() : NAN;
     }
@@ -562,6 +580,20 @@ namespace CASM {
                                                            ConfigIO_impl::has_config_volume_relaxation);
     }
 
+    ConfigIO_impl::GenericConfigFormatter<std::string> status() {
+      return ConfigIO_impl::GenericConfigFormatter<std::string>("status",
+                                                           "Status of calculation.",
+                                                           ConfigIO_impl::get_config_status,
+                                                           ConfigIO_impl::has_config_status);
+    }
+
+    ConfigIO_impl::GenericConfigFormatter<std::string> failure_type() {
+      return ConfigIO_impl::GenericConfigFormatter<std::string>("failure_type",
+                                                           "Reason for calculation failure.",
+                                                           ConfigIO_impl::get_config_failure_type,
+                                                           ConfigIO_impl::has_config_failure_type);
+    }
+
     void initialize_formatting_dictionary(DataFormatterDictionary<Configuration> &dict) {
       dict // <-- add to dict
       //Self-contained formatters
@@ -583,6 +615,8 @@ namespace CASM {
       .add_formatter(ConfigIO::basis_deformation())
       .add_formatter(ConfigIO::lattice_deformation())
       .add_formatter(ConfigIO::volume_relaxation())
+      .add_formatter(ConfigIO::status())
+      .add_formatter(ConfigIO::failure_type())
 
       .add_formatter(ConfigIO_impl::StrucScoreConfigFormatter())
       //hull formatters with specialized naming to disambiguate

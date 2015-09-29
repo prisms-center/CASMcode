@@ -215,6 +215,11 @@ namespace CASM {
       return configuration_dir(configname) / _calctype(calctype) / "properties.calc.json";
     }
 
+    /// \brief Return calculation status file path
+    fs::path calc_status(std::string configname, std::string calctype) const {
+      return configuration_dir(configname) / _calctype(calctype) / "status.json";
+    }
+
 
     /// \brief Return calculation reference settings directory path, for global settings
     fs::path ref_dir(std::string calctype, std::string ref) const {

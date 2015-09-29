@@ -231,6 +231,9 @@ namespace CASM {
 
     ConfigIO_impl::GenericConfigFormatter<double> volume_relaxation();
 
+    ConfigIO_impl::GenericConfigFormatter<std::string> status();
+
+    ConfigIO_impl::GenericConfigFormatter<std::string> failure_type();
 
   }
 }

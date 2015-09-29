@@ -177,6 +177,7 @@ namespace CASM {
     void set_calc_properties(const jsonParser &json);
 
     bool read_calc_properties(jsonParser &parsed_props) const;
+
     /// Generate reference Properties from param_composition and reference states
     ///   For now only linear interpolation
     void generate_reference();
@@ -207,6 +208,10 @@ namespace CASM {
     }
 
     std::string name() const;
+
+    std::string status() const;
+
+    std::string failure_type() const;
 
     const jsonParser &source() const;
 
@@ -349,6 +354,7 @@ namespace CASM {
     void print_correlations_simple(std::ostream &corrstream) const;
 
     fs::path calc_properties_path() const;
+    fs::path calc_status_path() const;
     /// Path to various files
     fs::path get_pos_path() const;
 
@@ -396,7 +402,7 @@ namespace CASM {
 
   /// \brief Returns correlations using 'clexulator'.
   Correlation correlations(const Configuration &config, Clexulator &clexulator);
-
+ 
 }
 
 #endif
