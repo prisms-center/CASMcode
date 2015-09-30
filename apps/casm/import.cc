@@ -132,6 +132,8 @@ namespace CASM {
     PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
 
+    ConfigMapper configmapper(primclex,lattice_weight, vol_tol, tol);
+                              
     // import_map keeps track of mapping collisions -- only used if vm.count("data")
     // import_map[config_name] gives a list all the configuration paths that mapped onto configuration 'config_name' :  import_map[config_name][i].first
     //                         along with a list of the mapping properties {lattice_deformation, basis_deformation}  :  import_map[config_name][i].second
@@ -183,7 +185,7 @@ namespace CASM {
         }
 
 
-        if(import_structure_occupation(import_struc, primclex, imported_name, relax_data, !vm.count("ideal"), vm.count("rotate"), vm.count("strict"), tol, lattice_weight, vol_tol)) {
+        if(configmapper.import_structure_occupation(import_struc,imported_name, relax_data, !vm.count("ideal"), vm.count("rotate"), vm.count("strict"))) {
           std::cout << "  " << pos_path << "\nwas imported successfully as " << imported_name << std::endl << std::endl;
           n_unique++;
           new_import = true;

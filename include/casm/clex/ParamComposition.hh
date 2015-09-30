@@ -134,6 +134,9 @@ namespace CASM {
     Eigen::VectorXd calc_param_composition(const Eigen::VectorXd &num_atoms_per_prim) const;
     Eigen::VectorXd calc_num_atoms(const Eigen::VectorXd &param_composition) const;
 
+    // Lists components (species) of crystal whose compositions are fixed (i.e., are not involved in alloying)
+    // each pair gives (species_name, #in_prim)
+    std::vector<std::pair<std::string,Index> > fixed_components();
     //*************************************************************
     //PRINT Routines
 

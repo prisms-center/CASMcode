@@ -3,6 +3,7 @@
 
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/ConfigMapping.hh"
 
 
 namespace CASM {
@@ -17,8 +18,7 @@ namespace CASM {
     public:
       StrucScoreConfigFormatter() :
         BaseDatumFormatter<Configuration>("struc_score", "Evaluates the mapping of a configuration onto an arbitrary primitive structure, specified by it's path. Allowed options are 'basis_score', which is the mean-square displacement and 'lattice_score' which is a lattice deformation metric having units Angstr.^2. Ex: struc_score(path/to/PRIM, basis_score)"),
-        m_lattice_weight(0.5),
-        m_altprimclex(Structure()) {};
+        m_altprimclex(Structure()), m_configmapper(ConfigMapper(ConfigMapper::null_initializer)) {};
 
       BaseDatumFormatter<Configuration> *clone()const {
         return new StrucScoreConfigFormatter(*this);
@@ -38,8 +38,8 @@ namespace CASM {
 
       bool parse_args(const std::string &args);
     protected:
-      double m_lattice_weight;
       mutable PrimClex m_altprimclex;
+      mutable ConfigMapper m_configmapper;
       fs::path m_prim_path;
       std::vector<std::string> m_prop_names;
 
