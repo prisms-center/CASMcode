@@ -351,7 +351,7 @@ namespace CASM {
     //run_counter.debugprint(sout);
     
     // timing info:
-    curr_time = high_resolution_clock::now();
+    curr_time = steady_clock::now();
     float s = duration_cast<duration<float> >(curr_time - start_time).count();
     sout << "Run time: " << s << " (s),  " << s/run_counter.pass() << " (s/pass),  " << s/(run_counter.pass()*run_counter.steps_per_pass() + run_counter.step()) << "(s/step)" << std::endl;
     //start_time = curr_time;
