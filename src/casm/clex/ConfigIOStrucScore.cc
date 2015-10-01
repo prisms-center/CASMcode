@@ -86,7 +86,7 @@ namespace CASM {
 
       from_json(simple_json(relaxed_struc, "relaxed_"), jsonParser(_config.calc_properties_path()));
 
-      if(!m_configmapper.struc_to_configdof(relaxed_struc, mapped_configdof, mapped_lat, true, true)) {
+      if(!m_configmapper.struc_to_configdof(relaxed_struc, mapped_configdof, mapped_lat)) {
         for(Index i = 0; i < m_prop_names.size(); i++) {
           result_vec.push_back(1e9);
         }

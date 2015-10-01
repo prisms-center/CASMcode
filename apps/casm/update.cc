@@ -77,7 +77,9 @@ namespace CASM {
     std::cout << "Initialize primclex: " << root << std::endl << std::endl;
     PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
-    ConfigMapper configmapper(primclex,lattice_weight, vol_tol, tol);
+
+
+    ConfigMapper configmapper(primclex,lattice_weight, vol_tol,ConfigMapper::rotate | ConfigMapper::robust, tol);
     std::cout << "Reading calculation data... " << std::endl << std::endl;
     std::vector<std::string> bad_config_report;
     std::vector<std::string> prop_names = primclex.get_curr_property();
@@ -120,10 +122,16 @@ namespace CASM {
           BasicStructure<Site> relaxed_struc;
           jsonParser json(filepath);
           from_json(simple_json(relaxed_struc, "relaxed_"), json);
-
+          std::vector<Index> best_assignment;
+          Eigen::Matrix3d cart_op;
           json.put_obj();
           try {
-            new_config_flag = configmapper.import_structure_occupation(relaxed_struc, &(*it), imported_name, json, true, true, false);
+            new_config_flag = configmapper.import_structure_occupation(relaxed_struc,
+                                                                       &(*it),
+                                                                       imported_name,
+                                                                       json,
+                                                                       best_assignment,
+                                                                       cart_op);
           }
           catch(std::exception &e) {
             std::cerr << "\nError: Unable to map relaxed structure data contained in " << filepath << " onto PRIM.\n"

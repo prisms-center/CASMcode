@@ -1570,19 +1570,7 @@ namespace CASM {
    * make a reflected superlattice to fill it with.
    */
   //***********************************************************
-  Structure Structure::get_reflection(bool override) const {
-    if(!is_primitive()) {
-      if(override) {
-        std::cerr << "WARNING in Structure::get_reflection! Your structure isn't primitive but you've chosen to continue anyway." << std::endl;
-        std::cerr << "Your reflected structure will have a lattice that points to itself." << std::endl;
-      }
-
-      else {
-        std::cerr << "ERROR in Structure::get_reflection! Your structure isn't primitive." << std::endl;
-        std::cerr << "This function is for primitive cells." << std::endl;
-        exit(20);
-      }
-    }
+  Structure Structure::get_reflection() const {
 
     Structure reflectstruc(*this);
     Matrix3<double> zmat(0);
@@ -1590,15 +1578,8 @@ namespace CASM {
     zmat.at(1, 1) = 1;
     zmat.at(2, 2) = -1;
 
-    SymOp zmirror(zmat, lattice(), CASM::CART);
-
-    //reflectstruc.apply_sym(zmirror);
-    for(Index i = 0; i < reflectstruc.basis.size(); i++) {
-      reflectstruc.basis[i].apply_sym(zmirror);
-    }
-
-    Lattice reflectlat = m_lattice.get_reflection(override);
-    reflectstruc.set_lattice(reflectlat, CASM::CART);
+    // resets the lattice and reflects cartesian coordinates of the basis atoms
+    reflectstruc.set_lattice(Lattice(zmat*lattice().lat_column_mat()), CASM::FRAC);
 
     reflectstruc.update();
 

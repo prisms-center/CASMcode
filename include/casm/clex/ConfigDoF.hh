@@ -139,8 +139,7 @@ namespace CASM {
 
   private:
 
-    //I don't know what this is
-    //std::string m_id;
+    // ***DON'T FORGET: If you add something here, also update ConfigDoF::swap!!
 
     Index m_N;
 

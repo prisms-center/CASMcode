@@ -132,7 +132,12 @@ namespace CASM {
     PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
 
-    ConfigMapper configmapper(primclex,lattice_weight, vol_tol, tol);
+
+    int map_opt=ConfigMapper::none;
+    if(vm.count("rotate")) map_opt|=ConfigMapper::rotate;
+    if(vm.count("strict")) map_opt|=ConfigMapper::strict;
+    if(!vm.count("ideal")) map_opt|=ConfigMapper::robust;
+    ConfigMapper configmapper(primclex,lattice_weight, vol_tol, map_opt,tol);
                               
     // import_map keeps track of mapping collisions -- only used if vm.count("data")
     // import_map[config_name] gives a list all the configuration paths that mapped onto configuration 'config_name' :  import_map[config_name][i].first
@@ -184,8 +189,9 @@ namespace CASM {
           import_struc.read(struc_stream);
         }
 
-
-        if(configmapper.import_structure_occupation(import_struc,imported_name, relax_data, !vm.count("ideal"), vm.count("rotate"), vm.count("strict"))) {
+        Eigen::Matrix3d cart_op;
+        std::vector<Index> best_assignment;
+        if(configmapper.import_structure_occupation(import_struc,imported_name, relax_data,best_assignment, cart_op)) {
           std::cout << "  " << pos_path << "\nwas imported successfully as " << imported_name << std::endl << std::endl;
           n_unique++;
           new_import = true;

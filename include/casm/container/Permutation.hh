@@ -42,6 +42,11 @@ namespace CASM {
   public:
     Permutation(Index N): m_perm_array(Array<Index>::sequence(0, N - 1)) {};
 
+    Permutation(const std::vector<Index> &init_perm) {
+      m_perm_array.reserve(init_perm.size());
+      for(auto it=init_perm.cbegin(); it!=init_perm.cend(); ++it)
+        m_perm_array.push_back(*it);
+    };
     Permutation(const Array<Index> &init_perm): m_perm_array(init_perm) {};
     Permutation(ReturnArray<Index> &init_perm): m_perm_array(init_perm) {};
 
@@ -87,6 +92,10 @@ namespace CASM {
     template<typename T>
     ReturnArray<T> permute(const Array<T> &before_array) const;
 
+    /// Generate permuted copy of type-T vector
+    template<typename T>
+    std::vector<T> permute(const std::vector<T> &before_array) const;
+
     /// Generate inversely permuted copy of type-T Array
     template<typename T>
     ReturnArray<T> ipermute(const Array<T> &before_array) const;
@@ -124,6 +133,25 @@ namespace CASM {
       after_array.push_back(before_array[m_perm_array[i]]);
     }
     return after_array;
+  }
+
+
+  //************************************************************************************************************************************//
+
+  /// Generate permuted copy of type-T std::vector
+  /// THIS IMPLEMENTATION DEPENDS ON DEFINITION OF PERMUTATION CONVENTION
+  /// Note: To switch conventions, swap names of permute and ipermute
+  template<typename T>
+  std::vector<T> Permutation::permute(const std::vector<T> &before_vec) const {
+    assert(before_vec.size() == size() && "WARNING: You're trying to permute an Array with an incompatible permutation!");
+
+    std::vector<T> after_vec;
+    after_vec.reserve(size());
+
+    for(Index i = 0; i < size(); i++) {
+      after_vec.push_back(before_vec[m_perm_array[i]]);
+    }
+    return after_vec;
   }
 
   //**************************************************************
