@@ -136,7 +136,7 @@ namespace CASM {
 
     // Lists components (species) of crystal whose compositions are fixed (i.e., are not involved in alloying)
     // each pair gives (species_name, #in_prim)
-    std::vector<std::pair<std::string,Index> > fixed_components();
+    std::vector<std::pair<std::string, Index> > fixed_components();
     //*************************************************************
     //PRINT Routines
 

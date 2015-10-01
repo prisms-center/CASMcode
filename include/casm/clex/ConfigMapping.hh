@@ -8,30 +8,31 @@ namespace CASM {
   class SymGroup;
   class PrimClex;
 
-  class ConfigMapper{
+  class ConfigMapper {
   public:
-    enum NullInitializer{null_initializer};
-    enum Options{none=0,
-                 rotate=(1u<<0),
-                 strict=(1u<<1),
-                 robust=(1u<<2)};
-    
+    enum NullInitializer {null_initializer};
+    enum Options {none = 0,
+                  rotate = (1u << 0),
+                  strict = (1u << 1),
+                  robust = (1u << 2)
+                 };
+
     ConfigMapper(NullInitializer) : m_pclex(NULL) {}
     ConfigMapper(PrimClex &_pclex,
                  double _lattice_weight,
-                 double _max_volume_change=0.25,
-                 int options=robust, // this should actually be a bitwise-OR of ConfigMapper::Options
-                 double _tol=TOL);
+                 double _max_volume_change = 0.25,
+                 int options = robust, // this should actually be a bitwise-OR of ConfigMapper::Options
+                 double _tol = TOL);
 
 
-    PrimClex& primclex() const{
+    PrimClex &primclex() const {
       return *m_pclex;
     }
 
-    double lattice_weight() const{
+    double lattice_weight() const {
       return m_lattice_weight;
     }
-    
+
     bool import_structure_occupation(const fs::path &pos_path,
                                      std::string &imported_name,
                                      jsonParser &relaxation_properties,
@@ -86,18 +87,18 @@ namespace CASM {
                                      Lattice &mapped_lat,
                                      std::vector<Index> &best_assignment,
                                      Eigen::Matrix3d &cart_op) const;
-  
+
   private:
-    PrimClex * m_pclex;
+    PrimClex *m_pclex;
     mutable std::map<Index, std::vector<Lattice> > m_superlat_map;
     double m_lattice_weight, m_max_volume_change;
     bool m_robust_flag, m_strict_flag, m_rotate_flag;
     double m_tol;
-    std::vector<std::pair<std::string,Index> > m_fixed_components;
-    const std::vector<Lattice>& _lattices_of_vol(Index prim_vol) const;
+    std::vector<std::pair<std::string, Index> > m_fixed_components;
+    const std::vector<Lattice> &_lattices_of_vol(Index prim_vol) const;
   };
-  
-  namespace ConfigMap_impl{
+
+  namespace ConfigMap_impl {
 
     // Assignment Problem Routines
     // Find cost matrix for displacements between POS and relaxed structures.
@@ -106,18 +107,18 @@ namespace CASM {
                           const BasicStructure<Site> &rstruc,
                           const Coordinate &trans,
                           Eigen::MatrixXd &cost_matrix);
-    
+
     //\JSB
-    
-    
-    
+
+
+
     // mapping routine. Return an ideal configuration corresponding to a relaxed structure.
     // Return false if 'rstruc' is incompatible with supercell (can happen frequently when vacancies are allowed)
     // Options:
     //   TRANSLATE = true -> rigid-translations are removed. (typically this option should be used, especially if you care about vacancies)
     //
     //   TRANSLATE = false -> rigid translations are not considered. (less robust but more efficient -- use only if you know rigid translations are small or zero)
-    
+
     bool struc_to_configdof(const Supercell &scel,
                             BasicStructure<Site> rstruc,
                             ConfigDoF &config_dof,
@@ -126,7 +127,7 @@ namespace CASM {
                             const double _tol);
   }
   namespace ConfigMapping {
-    
+
     double strain_cost(const Lattice &relaxed_lat, const ConfigDoF &_dof);
 
     double basis_cost(const ConfigDoF &_dof);

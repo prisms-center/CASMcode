@@ -45,7 +45,7 @@ namespace CASM {
           m_prop_names.push_back(splt_vec[i]);
         }
       }
-      m_configmapper=ConfigMapper(m_altprimclex, _lattice_weight);
+      m_configmapper = ConfigMapper(m_altprimclex, _lattice_weight);
       return true;
     }
 

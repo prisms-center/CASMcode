@@ -833,7 +833,7 @@ namespace CASM {
   //Change bool to an array of SymOps you want to use, default point group
   //Overload to only use identity
   //Return N matrix
-  bool Lattice::is_supercell_of(const Lattice &tile, Matrix3<double> &multimat,double _tol) const {
+  bool Lattice::is_supercell_of(const Lattice &tile, Matrix3<double> &multimat, double _tol) const {
 
     multimat = tile.coord_trans_mat[CART] * coord_trans_mat[FRAC];
 
@@ -848,14 +848,14 @@ namespace CASM {
   //Return N matrix
   bool Lattice::is_supercell_of(const Lattice &tile, double _tol) const {
     Matrix3<double> multimat;
-    return is_supercell_of(tile,multimat,_tol);
+    return is_supercell_of(tile, multimat, _tol);
   }
 
   //********************************************************************
 
   bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist, double _tol) const {
     Matrix3<double> multimat;
-    return is_supercell_of(tile, symoplist, multimat,_tol);
+    return is_supercell_of(tile, symoplist, multimat, _tol);
   }
 
   //********************************************************************
@@ -1049,7 +1049,7 @@ namespace CASM {
   Lattice &Lattice::make_right_handed() {
 
     if(lat_column_mat().determinant() < 0) {
-      swap(vecs[0],vecs[1]);
+      swap(vecs[0], vecs[1]);
       calc_conversions();
       calc_properties();
     }
@@ -1514,7 +1514,7 @@ namespace CASM {
   };
 
   //********************************************************************
-  
+
   // read Lattice from a json array of Vector3<double>
   void from_json(Lattice &lat, const jsonParser &json) {
     try {

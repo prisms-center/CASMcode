@@ -143,12 +143,12 @@ namespace CASM {
 
     //John G 121212
     ///Checks if lattice is a supercell of tile, acting on multiplication matrix. Check is performed applying operations from symlist
-    bool is_supercell_of(const Lattice &tile, Matrix3<double> &multimat, double _tol=TOL) const;
+    bool is_supercell_of(const Lattice &tile, Matrix3<double> &multimat, double _tol = TOL) const;
     bool is_supercell_of(const Lattice &tile, const Array<SymOp> &symlist, Matrix3<double> &multimat, double _tol = TOL) const;
 
     ///Checks if lattice is a supercell of tile, applying operations from symlist
     bool is_supercell_of(const Lattice &tile, double _tol = TOL) const;
-    bool is_supercell_of(const Lattice &tile, const Array<SymOp> &symlist, double _tol=TOL) const;
+    bool is_supercell_of(const Lattice &tile, const Array<SymOp> &symlist, double _tol = TOL) const;
 
     /// Finds 'new_scel' equivalent to '*this' and 'new_prim' equivalent to 'prim', such that 'new_prim' perfectly tiles 'new_scel'
     /// Returns true if tesselation cannot be found.

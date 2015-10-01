@@ -37,8 +37,8 @@ namespace CASM {
 
           std::cout << "DESCRIPTION\n"
                     << "    Executes the requested command for each selected configuration,\n"
-                    << "    with the path to the configuration as an argument.             \n\n" 
-                    
+                    << "    with the path to the configuration as an argument.             \n\n"
+
                     << "    Example: casm run --exec \"vasp.relax\" --write-pos\n"
                     << "    - calls:\n"
                     << "        'vasp.relax $ROOT/training_data/$SCELNAME/$CONFIGID'\n"
@@ -93,11 +93,11 @@ namespace CASM {
       if(vm.count("write-pos")) {
         it->write_pos();
       }
-      
+
       Popen process;
-      
+
       process.popen(exec + " " + it->get_path().string());
-      
+
       process.print(std::cout);
 
     }

@@ -826,8 +826,8 @@ namespace CASM {
   // 2			print the number of vacancies and the coordinates of the vacancies
   void Supercell::print(const Configuration &config, std::ostream &stream, COORD_TYPE mode, int Va_mode, char term, int prec, int pad) const {
     //default to FRAC
-    if(mode!=CART)
-      mode=FRAC;
+    if(mode != CART)
+      mode = FRAC;
     std::string mol_name, tcoord;
     std::ostringstream num_mol_list, coord_stream;
     stream << config.name() << std::endl;

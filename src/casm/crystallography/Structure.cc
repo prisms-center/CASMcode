@@ -1579,7 +1579,7 @@ namespace CASM {
     zmat.at(2, 2) = -1;
 
     // resets the lattice and reflects cartesian coordinates of the basis atoms
-    reflectstruc.set_lattice(Lattice(zmat*lattice().lat_column_mat()), CASM::FRAC);
+    reflectstruc.set_lattice(Lattice(zmat * lattice().lat_column_mat()), CASM::FRAC);
 
     reflectstruc.update();
 

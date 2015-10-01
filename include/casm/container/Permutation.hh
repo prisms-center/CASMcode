@@ -44,7 +44,7 @@ namespace CASM {
 
     Permutation(const std::vector<Index> &init_perm) {
       m_perm_array.reserve(init_perm.size());
-      for(auto it=init_perm.cbegin(); it!=init_perm.cend(); ++it)
+      for(auto it = init_perm.cbegin(); it != init_perm.cend(); ++it)
         m_perm_array.push_back(*it);
     };
     Permutation(const Array<Index> &init_perm): m_perm_array(init_perm) {};

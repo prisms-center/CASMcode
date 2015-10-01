@@ -68,7 +68,7 @@ namespace CASM {
   */
   //*************************************************************
   void ParamComposition::generate_sublattice_map() {
-    if(components.size()==0)
+    if(components.size() == 0)
       generate_components();
     //figuring out the number of sublattices on which alloying is happening
     Array < Array< std::string> > tocc;
@@ -111,9 +111,9 @@ namespace CASM {
   //*************************************************************
 
   void ParamComposition::generate_prim_end_members() {
-    if(sublattice_map.rows()==0 || sublattice_map.cols()==0)
+    if(sublattice_map.rows() == 0 || sublattice_map.cols() == 0)
       generate_sublattice_map();
-      
+
     //the number of atoms of components[priority_index[0]] is
     //maximized first following this the number of atoms of
     //components[priority_index[1]] is maxed out and so on
@@ -489,7 +489,7 @@ namespace CASM {
   }
 
   //*************************************************************
-  
+
   Eigen::VectorXd ParamComposition::calc_param_composition(const Eigen::VectorXd &num_atoms_per_prim) const {
     return (comp[NUMBER_ATOMS] * (num_atoms_per_prim - origin)).head(rank_of_space - 1);
   }
@@ -499,21 +499,21 @@ namespace CASM {
   Eigen::VectorXd ParamComposition::calc_num_atoms(const Eigen::VectorXd &param_composition) const {
     return origin + comp[PARAM_COMP] * param_composition;
   }
-  
+
   //*************************************************************
-  
-  std::vector<std::pair<std::string,Index> > ParamComposition::fixed_components(){
-    std::vector<std::pair<std::string,Index> >  tcompon;
-    if(prim_end_members.cols()==0)
+
+  std::vector<std::pair<std::string, Index> > ParamComposition::fixed_components() {
+    std::vector<std::pair<std::string, Index> >  tcompon;
+    if(prim_end_members.cols() == 0)
       generate_prim_end_members();
-    Eigen::MatrixXd end_members=prim_end_members.transpose();
+    Eigen::MatrixXd end_members = prim_end_members.transpose();
     Eigen::VectorXd sum_vec(Eigen::VectorXd::Zero(end_members.rows()));
-    for(Index i=1; i<end_members.cols(); i++){
-      sum_vec+=((end_members.col(i)-end_members.col(0)).array().abs()).matrix();
+    for(Index i = 1; i < end_members.cols(); i++) {
+      sum_vec += ((end_members.col(i) - end_members.col(0)).array().abs()).matrix();
     }
-    for(Index i=0; i<sum_vec.size(); i++){
+    for(Index i = 0; i < sum_vec.size(); i++) {
       if(almost_zero(sum_vec[i]))
-        tcompon.push_back(std::pair<std::string,Index> (components[i],round(end_members(i,0))));
+        tcompon.push_back(std::pair<std::string, Index> (components[i], round(end_members(i, 0))));
     }
     return tcompon;
   }

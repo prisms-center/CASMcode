@@ -79,7 +79,7 @@ namespace CASM {
     std::cout << "  DONE." << std::endl << std::endl;
 
 
-    ConfigMapper configmapper(primclex,lattice_weight, vol_tol,ConfigMapper::rotate | ConfigMapper::robust, tol);
+    ConfigMapper configmapper(primclex, lattice_weight, vol_tol, ConfigMapper::rotate | ConfigMapper::robust, tol);
     std::cout << "Reading calculation data... " << std::endl << std::endl;
     std::vector<std::string> bad_config_report;
     std::vector<std::string> prop_names = primclex.get_curr_property();
