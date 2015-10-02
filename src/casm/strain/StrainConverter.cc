@@ -41,12 +41,12 @@ namespace CASM {
   //*******************************************************************************************
   /// HENCKY = log(C)/2
   Matrix3d StrainConverter::hencky(const Matrix3d &F) {
-    std::cerr << "CRITICAL ERROR: StrainConverter::hencky() not implemented yet!! Exiting...\n";
-    exit(1);
-    return Matrix3d::Identity();
-    // How to make the following work?  Eigen::Matrix::log() is unsupported, but should at least compile
-    // but it doesn't compile....
-    //return 0.5*(F.transpose()*F).log();
+    Eigen::SelfAdjointEigenSolver<Matrix3d> es(F.transpose()*F);
+    Matrix3d S=es.eigenvalues().asDiagonal();
+    S(0,0)=log(S(0,0))/2.0;
+    S(1,1)=log(S(1,1))/2.0;
+    S(2,2)=log(S(2,2))/2.0;
+    return es.eigenvectors()*S*es.eigenvectors().inverse();
   }
 
   //*******************************************************************************************
@@ -141,31 +141,31 @@ namespace CASM {
   void StrainConverter::set_mode(const std::string &mode_name) {
 
     /// GREEN_LAGRANGE = 1/2 * (F^{T} F - I)
-    if(mode_name == "STRAIN_GL") {
+    if(mode_name == "STRAIN_GL" || mode_name=="GL") {
       STRAIN_METRIC_MODE = GREEN_LAGRANGE;
       set_conventional_order_symmetric();
       curr_metric_func = &StrainConverter::green_lagrange;
     }
     /// BIOT = (U-I)
-    else if(mode_name == "STRAIN_B") {
+    else if(mode_name == "STRAIN_B" || mode_name == "B") {
       STRAIN_METRIC_MODE = BIOT;
       set_conventional_order_symmetric();
       curr_metric_func = &StrainConverter::biot;
     }
     /// HENCKY = log(C)/2
-    else if(mode_name == "STRAIN_H") {
+    else if(mode_name == "STRAIN_H" || mode_name=="H") {
       STRAIN_METRIC_MODE = HENCKY;
       set_conventional_order_symmetric();
       curr_metric_func = &StrainConverter::hencky;
     }
     /// EULER_ALMANSI = 0.5 * (I-(F F^{T})^(-1))
-    else if(mode_name == "STRAIN_EA") {
+    else if(mode_name == "STRAIN_EA" || mode_name=="EA") {
       STRAIN_METRIC_MODE = EULER_ALMANSI;
       set_conventional_order_symmetric();
       curr_metric_func = &StrainConverter::euler_almansi;
     }
     /// DISP_GRAD = F
-    else if(mode_name == "STRAIN_F") {
+    else if(mode_name == "STRAIN_F" || mode_name=="F") {
       STRAIN_METRIC_MODE = DISP_GRAD;
       set_conventional_order_unsymmetric();
       curr_metric_func = &StrainConverter::disp_grad;

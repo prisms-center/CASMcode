@@ -15,10 +15,8 @@ namespace CASM {
       return;
 
     Index size = m_size(m_evaluate(_template_obj));
-    std::vector<Index> rule(1);
     for(Index i = 0; i < size; i++) {
-      rule[0] = i;
-      _add_rule(rule);
+      _add_rule(std::vector<Index>({i}));
     }
   }
 
