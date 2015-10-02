@@ -579,12 +579,12 @@ namespace CASM {
       .add_formatter(ConfigIO::scel_size())
       .add_formatter(ConfigIO::formation_energy())
       .add_formatter(ConfigIO::is_calculated())
-        //.add_formatter(ConfigIO::relaxation_strain())
+      //.add_formatter(ConfigIO::relaxation_strain())
       .add_formatter(ConfigIO::rms_force())
       .add_formatter(ConfigIO::basis_deformation())
       .add_formatter(ConfigIO::lattice_deformation())
       .add_formatter(ConfigIO::volume_relaxation())
-        .add_formatter(ConfigIO_impl::RelaxationStrainConfigFormatter())
+      .add_formatter(ConfigIO_impl::RelaxationStrainConfigFormatter())
       .add_formatter(ConfigIO_impl::StrucScoreConfigFormatter())
       //hull formatters with specialized naming to disambiguate
       .add_formatter(ConfigIO_impl::OnHullConfigFormatter("on_hull",
