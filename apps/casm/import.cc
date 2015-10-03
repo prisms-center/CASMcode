@@ -1,17 +1,17 @@
 #include "import.hh"
 
 #include <cstring>
+#include <tuple>
 
 #include "casm_functions.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/casm_io/FileSystemInterface.hh"
 
 namespace CASM {
-
-  //I don't like declaring these functions here, but getting it to compile is something I don't want
-  //to waste time on right now and it didn't work the normal ways
-  //bool copyDirectory(fs::path const &source, fs::path const &destination);
-  //bool makeDirectory(boost::filesystem::path dirPath, std::ostream &stream = std::cerr, bool errorWarn = true);
+  namespace Import_impl {
+    enum DataType {path = 0, relaxjson = 1, contcar = 2};
+    using Data = std::tuple<fs::path, jsonParser, std::string>;
+  }
 
   // ///////////////////////////////////////
   // 'import' function for casm
@@ -40,7 +40,7 @@ namespace CASM {
     ("rotate,r", "Rotate structure to be consistent with setting of PRIM")
     ("ideal,i", "Assume imported structures are unstrained (ideal) for faster importing. Can be slower if used on deformed structures, in which case more robust methods will be used")
     //("strict,s", "Request that symmetrically equivalent configurations be treated as distinct.")
-    ("data,d", "Attempt to extract calculation data from the enclosing directory of the structure files.");
+    ("data,d", "Attempt to extract calculation data from the enclosing directory of the structure files, if it is available");
 
     try {
 
@@ -120,7 +120,7 @@ namespace CASM {
     fs::path root = find_casmroot(fs::current_path());
     if(root.empty()) {
       std::cerr << "ERROR in 'casm import': No casm project found." << std::endl;
-      return 7;
+      return 9;
     }
     fs::current_path(root);
 
@@ -139,10 +139,11 @@ namespace CASM {
     if(!vm.count("ideal")) map_opt |= ConfigMapper::robust;
     ConfigMapper configmapper(primclex, lattice_weight, vol_tol, map_opt, tol);
 
+
     // import_map keeps track of mapping collisions -- only used if vm.count("data")
     // import_map[config_name] gives a list all the configuration paths that mapped onto configuration 'config_name' :  import_map[config_name][i].first
     //                         along with a list of the mapping properties {lattice_deformation, basis_deformation}  :  import_map[config_name][i].second
-    std::map<std::string, std::vector<std::pair<std::string, std::vector<double> > > > import_map;
+    std::map<Configuration *, std::vector<Import_impl::Data> > import_map;
     std::vector<std::string > error_log;
     Index n_unique(0);
     // iterate over structure files
@@ -191,8 +192,8 @@ namespace CASM {
 
         Eigen::Matrix3d cart_op;
         std::vector<Index> best_assignment;
-        if(configmapper.import_structure_occupation(import_struc, imported_name, relax_data, best_assignment, cart_op)) {
-          std::cout << "  " << pos_path << "\nwas imported successfully as " << imported_name << std::endl << std::endl;
+        if(configmapper.import_structure_occupation(import_struc, imported_name, relax_data, best_assignment, cart_op, true)) {
+          std::cout << "  " << pos_path << "\n  was imported successfully as " << imported_name << std::endl << std::endl;
           n_unique++;
           new_import = true;
         }
@@ -216,72 +217,121 @@ namespace CASM {
 
       imported_config.push_back_source(json_pair("import_mapped", pos_path.string()));
 
-      import_path = imported_config.get_path();
-      import_path = fs::absolute(import_path);
 
 
       //Exit if user did not request not to copy data
       if(!vm.count("data"))
         continue;
 
+      std::stringstream contcar_ss;
+      import_struc.print5_occ(contcar_ss);
+      import_map[&imported_config].push_back(Import_impl::Data(pos_path, relax_data, contcar_ss.str()));
 
-      bool prevent_import(false);
-      std::vector<double> conflict_stats;
-      if(fs::exists(imported_config.calc_properties_path())) {
-        prevent_import = true;
-        if(import_map[imported_name].size() == 0) {
+    }
 
-          if(imported_config.calc_properties().contains("basis_deformation") && imported_config.calc_properties().contains("lattice_deformation")) {
-            conflict_stats.push_back(imported_config.calc_properties()["lattice_deformation"].get<double>());
-            conflict_stats.push_back(imported_config.calc_properties()["basis_deformation"].get<double>());
-            //if(imported_config.calc_properties().contains("relaxed_energy"))
-            //conflict_stats.push_back(imported_config.calc_properties()["relaxed_energy"].get<double>());
-          }
-          import_map[imported_name].push_back(std::make_pair("A pre-existing copy", conflict_stats));
-        }
-        //std::cout << "Calculation data already exists for configuration " << imported_name << ". I will not overwrite it.\n Continuing..." << std::endl;
-        //continue;
-      }
-
-
+    // All the mapping is finished; now we migrate data, if requested
+    std::stringstream conflict_log;
+    if(vm.count("data")) {
       std::cout << "  Attempting to import data..." << std::endl;
-      if(pos_path.extension() != ".json" && pos_path.extension() != ".JSON") {
-        std::cout << "  No calculation data was found in the enclosing directory. Continuing..." << std::endl;
-        continue;
+      auto it(import_map.begin()), end_it(import_map.end());
+      for(; it != end_it; ++it) {
+        Configuration &imported_config = *(it->first);
+        std::vector<Import_impl::Data> &data_vec(it->second);
+
+        fs::path import_path = fs::absolute(imported_config.get_path());
+        bool preexisting(false);
+        if(fs::exists(imported_config.calc_properties_path()))
+          preexisting = true;
+        Index mult = data_vec.size() + Index(preexisting);
+        double best_weight(1e19);
+        Index best_conflict(0), best_ind(0);
+        if(mult > 1) {
+          conflict_log <<  "  CONFLICT -> " <<  mult << " matching structures for config " << imported_config.name() << ": " <<  std::endl;
+          double w = lattice_weight;
+          Index conflict_ind(1);
+          if(preexisting) {
+            conflict_ind++;
+            conflict_log << "           1) Pre-existing data for " << imported_config.name() << " before import." << std::endl
+                         << "              Relaxation stats:" << std::endl;
+            if(imported_config.calc_properties().contains("basis_deformation") && imported_config.calc_properties().contains("lattice_deformation")) {
+              double ld = imported_config.calc_properties()["lattice_deformation"].get<double>();
+              double bd = imported_config.calc_properties()["basis_deformation"].get<double>();
+              conflict_log << "                -- lattice_deformation = " << ld << ";  basis_deformation = " << bd << ";  weighted avg = " << w *ld + (1.0 - w)*bd << std::endl;
+              best_weight = w * ld + (1.0 - w) * bd;
+              best_conflict = 0;
+              best_ind = -1;
+            }
+            else {
+              conflict_log << "                -- lattice_deformation = unknown;  basis_deformation = unknown;  weighted avg = unknown" << std::endl << std::endl;
+            }
+          }
+          for(Index i = 0; i < data_vec.size(); i++) {
+            fs::path pos_path = std::get<Import_impl::path>(data_vec[i]);
+            conflict_log << "           " << conflict_ind++ << ") Structure imported from " << pos_path << "." << std::endl
+                         << "              Relaxation stats:" << std::endl;
+            jsonParser &relaxjson = std::get<Import_impl::relaxjson>(data_vec[i]);
+            double ld = relaxjson["lattice_deformation"].get<double>();
+            double bd = relaxjson["basis_deformation"].get<double>();
+            conflict_log << "                -- lattice_deformation = " << ld << ";  basis_deformation = " << bd << ";  weighted avg = " << w *ld + (1.0 - w)*bd << std::endl;
+            if(w * ld + (1.0 - w)*bd < best_weight) {
+              best_weight = w * ld + (1.0 - w) * bd;
+              best_conflict = conflict_ind - 1;
+              best_ind = i;
+            }
+          }
+          if(preexisting) {
+            conflict_log << "          ==> Resolution: No data will be imported since data already exists" << std::endl;
+            if(valid_index(best_ind)) {
+              conflict_log << "          *** WARNING: Conflicting config #" << best_conflict << " maps more closely onto ideal crystal! ***" << std::endl;
+            }
+          }
+          else {
+            conflict_log << "          ==> Resolution: Import data from closest match, structure #" << best_conflict  << std::endl;
+          }
+          conflict_log << "\n          ----------------------------------------------\n" << std::endl;
+        }
+        if(preexisting) {
+          continue;
+        }
+
+        fs::path pos_path = std::get<Import_impl::path>(data_vec[best_ind]);
+        if(pos_path.extension() != ".json" && pos_path.extension() != ".JSON") {
+          std::cout << "  No calculation data was found in the enclosing directory of \n"
+                    << "    " << pos_path << std::endl
+                    << "  Continuing..." << std::endl;
+          continue;
+        }
+
+        fs::path import_target = import_path / ("calctype." + primclex.get_curr_calctype());
+        if(!fs::exists(import_target))
+          fs::create_directories(import_target);
+
+        fs::copy_file(pos_path, imported_config.calc_properties_path());
+
+        if(!fs::exists(imported_config.get_pos_path()))
+          imported_config.write_pos();
+
+        {
+          fs::ofstream contcar_out(import_target / "relaxed_structure.vasp");
+          contcar_out << std::get<Import_impl::contcar>(data_vec[best_ind]);
+        }
+
+        jsonParser calc_data;
+        if(!imported_config.read_calc_properties(calc_data)) {
+          std::cout << "  WARNING: Some properties from " << pos_path << " were not valid. Viable values will still be recorded.\n";
+        }
+
+        jsonParser &relaxjson = std::get<Import_impl::relaxjson>(data_vec[best_ind]);
+        //append relaxjson onto calc_data
+        auto jit = relaxjson.cbegin(), jit_end = relaxjson.cend();
+        for(; jit != jit_end; ++jit) {
+          calc_data[jit.name()] = *jit;
+        }
+        imported_config.set_calc_properties(calc_data);
+
+        imported_config.push_back_source(json_pair("data_inferred_from_mapping", pos_path.string()));
+
       }
-
-      if(relax_data.contains("basis_deformation") && relax_data.contains("lattice_deformation")) {
-        conflict_stats.clear();
-        conflict_stats.push_back(relax_data["lattice_deformation"].get<double>());
-        conflict_stats.push_back(relax_data["basis_deformation"].get<double>());
-        import_map[imported_name].push_back(std::make_pair(pos_path.string(), conflict_stats));
-      }
-
-      if(prevent_import)
-        continue;
-
-      fs::path import_target = import_path / ("calctype." + primclex.get_curr_calctype());
-      if(!fs::exists(import_target))
-        fs::create_directories(import_target);
-
-      fs::copy_file(pos_path, imported_config.calc_properties_path());
-
-      if(!fs::exists(imported_config.get_pos_path()))
-        primclex.configuration(imported_name).write_pos();
-
-      jsonParser calc_data;
-      if(!imported_config.read_calc_properties(calc_data)) {
-        std::cout << "  WARNING: Some properties from " << *it << " were not valid. Viable values will still be recorded.\n";
-      }
-      //append relax_data onto calc_data
-      auto jit = relax_data.cbegin(), jit_end = relax_data.cend();
-      for(; jit != jit_end; ++jit) {
-        calc_data[jit.name()] = *jit;
-      }
-      imported_config.set_calc_properties(calc_data);
-
-      imported_config.push_back_source(json_pair("data_inferred_from_mapping", pos_path.string()));
-
     }
     std::cout << "\n***************************\n" << std::endl;
 
@@ -307,36 +357,14 @@ namespace CASM {
       }
       std::cout << "\n" << std::endl;
     }
-    auto it = import_map.cbegin(), it_end = import_map.cend();
-    bool no_conflict = true;
-    for(; it != it_end; ++it) {
-      if(it->second.size() > 1) {
-        if(no_conflict) {
-          no_conflict = false;
-          std::cout << "  WARNING: --The following conflicts were found\n"
-                    << "           --for each conflict, calculation data was committed for the first duplicate listed\n";
-        }
-        std::cout   << "        " << it->second.size() << " copies of configuration " << it->first << " were found:\n";
-        for(auto it1 = it->second.cbegin(); it1 != it->second.cend(); ++it1) {
-          std::cout << "            " << it1->first << std::endl
-                    << "              -- lattice_deformation = ";
-          if(it1->second.size())
-            std::cout << (it1->second)[0];
-          else
-            std::cout << "unknown";
-          std::cout << " and basis_deformation = ";
-          if(it1->second.size())
-            std::cout << (it1->second)[1] << std::endl;
-          else
-            std::cout << "unknown" << std::endl;
-        }
-        std::cout << "\n        ----------------------------------------------\n" << std::endl;
-      }
+    if(conflict_log.str().size()) {
+      std::cout << "  WARNING: --The following conflicts were found\n"
+                << "           --for each conflict, calculation data was committed for the first duplicate listed\n"
+                << conflict_log.str() << std::endl;
 
-    }
-    if(!no_conflict)
       std::cout << "  Please review these conflicts.  A different resolution can be obtained by removing datafiles from\n"
                 << "  the training_data directory and performing an import using a manually reduced set of files.\n";
+    }
     std::cout << "  DONE" << std::endl << std::endl;
 
     std::cout << std::endl;

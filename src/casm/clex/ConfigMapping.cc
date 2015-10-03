@@ -116,7 +116,8 @@ namespace CASM {
                                                  Eigen::Matrix3d &cart_op) const {
 
     try {
-      return import_structure_occupation(BasicStructure<Site>(pos_path),
+      BasicStructure<Site> tstruc(pos_path);
+      return import_structure_occupation(tstruc,
                                          imported_name,
                                          relaxation_properties,
                                          best_assignment,
@@ -131,27 +132,30 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  bool ConfigMapper::import_structure_occupation(const BasicStructure<Site> &_struc,
+  bool ConfigMapper::import_structure_occupation(BasicStructure<Site> &_struc,
                                                  std::string &imported_name,
                                                  jsonParser &relaxation_properties,
                                                  std::vector<Index> &best_assignment,
-                                                 Eigen::Matrix3d &cart_op) const {
+                                                 Eigen::Matrix3d &cart_op,
+                                                 bool update_struc) const {
     return import_structure_occupation(_struc,
                                        nullptr,
                                        imported_name,
                                        relaxation_properties,
                                        best_assignment,
-                                       cart_op);
+                                       cart_op,
+                                       update_struc);
   }
 
   //*******************************************************************************************
 
-  bool ConfigMapper::import_structure_occupation(const BasicStructure<Site> &_struc,
+  bool ConfigMapper::import_structure_occupation(BasicStructure<Site> &_struc,
                                                  const Configuration *hint_ptr,
                                                  std::string &imported_name,
                                                  jsonParser &relaxation_properties,
                                                  std::vector<Index> &best_assignment,
-                                                 Eigen::Matrix3d &cart_op) const {
+                                                 Eigen::Matrix3d &cart_op,
+                                                 bool update_struc) const {
 
     //Indices for Configuration index and permutation operation index
     ConfigDoF tconfigdof;
@@ -239,6 +243,11 @@ namespace CASM {
     [num_atoms](Index i) {
       return i < num_atoms;
     });
+
+    if(update_struc) {
+      _struc.set_lattice(Lattice(Eigen::Matrix3d(cart_op.transpose()*tconfigdof.deformation()*Eigen::Matrix3d(mapped_lat.lat_column_mat()))), CART);
+      _struc.set_lattice(Lattice(tconfigdof.deformation()*Eigen::Matrix3d(mapped_lat.lat_column_mat())), FRAC);
+    }
     return new_config_flag;
   }
 
@@ -326,7 +335,7 @@ namespace CASM {
                                         Lattice &mapped_lat) const {
     std::vector<Index> t_assign;
     Eigen::Matrix3d t_op;
-    return struc_to_configdof(struc, mapped_configdof, mapped_lat);
+    return struc_to_configdof(struc, mapped_configdof, mapped_lat, t_assign, t_op);
   }
   //*******************************************************************************************
   bool ConfigMapper::struc_to_configdof(const BasicStructure<Site> &struc,
@@ -370,7 +379,7 @@ namespace CASM {
    *
    */
   //*******************************************************************************************
-  bool ConfigMapper::ideal_struc_to_configdof(BasicStructure<Site> struc,
+  bool ConfigMapper::ideal_struc_to_configdof(const BasicStructure<Site> &struc,
                                               ConfigDoF &mapped_configdof,
                                               Lattice &mapped_lat,
                                               std::vector<Index> &best_assignment,
@@ -385,6 +394,7 @@ namespace CASM {
       */
       return false;
     }
+    BasicStructure<Site> tstruc(struc);
 
     // We know struc.lattice() is a supercell of the prim, now we have to reorient 'struc' to match canonical lattice vectors
     mapped_lat = niggli(Lattice(primclex().get_prim().lattice().lat_column_mat() * trans_mat), primclex().get_prim().point_group(), m_tol);
@@ -392,20 +402,21 @@ namespace CASM {
 
     // note: trans_mat gets recycled here
     mapped_lat.is_supercell_of(struc.lattice(), primclex().get_prim().point_group(), trans_mat,  m_tol);
-    struc.set_lattice(Lattice(struc.lattice().lat_column_mat()*trans_mat), CART);
+    tstruc.set_lattice(Lattice(tstruc.lattice().lat_column_mat()*trans_mat), CART);
 
-    cart_op = Eigen::Matrix3d::Identity(3, 3);
-    if(m_rotate_flag) {
-      //cart_op goes from imported coordinate system to ideal (PRIM) coordinate system
-      cart_op = Eigen::Matrix3d(mapped_lat.lat_column_mat() * struc.lattice().inv_lat_column_mat());
-      struc.set_lattice(mapped_lat, FRAC);
+    //cart_op goes from imported coordinate system to ideal (PRIM) coordinate system
+    cart_op = Eigen::Matrix3d(mapped_lat.lat_column_mat() * tstruc.lattice().inv_lat_column_mat());
+    tstruc.set_lattice(mapped_lat, FRAC);
+    if(!m_rotate_flag) {
+      cart_op = Eigen::Matrix3d::Identity(3, 3);
     }
-    return ConfigMap_impl::struc_to_configdof(scel,
-                                              struc,
-                                              mapped_configdof,
-                                              best_assignment,
-                                              true,
-                                              m_tol);
+    return ConfigMap_impl::preconditioned_struc_to_configdof(scel,
+                                                             tstruc,
+                                                             Eigen::Matrix3d(cart_op.transpose()),//cart_op.transpose() is deformation in this case
+                                                             mapped_configdof,
+                                                             best_assignment,
+                                                             true,
+                                                             m_tol);
   }
 
   //*******************************************************************************************
@@ -499,21 +510,23 @@ namespace CASM {
       //std::cout << "best_cost " << best_cost << "   strain_cost " << strain_cost << "\n";
       tstruc = struc;
 
-      tstruc.set_lattice(Lattice(tF * Eigen::MatrixXd(tlat.lat_column_mat())), CART);
+      //make tstruc an un-rotated, un-strained version of struc
+      tstruc.set_lattice(Lattice(Eigen::Matrix3d(tlat.lat_column_mat())*ttrans_mat), FRAC);
+      tstruc.set_lattice(tlat, CART);
       rotF = tF;
       if(m_rotate_flag) {
         rotF = StrainConverter::right_stretch_tensor(tF);
-        tstruc.set_lattice(Lattice(rotF * Eigen::MatrixXd(tlat.lat_column_mat())), FRAC);
       }
 
       Supercell scel(&primclex(), tlat);
 
-      if(!ConfigMap_impl::struc_to_configdof(scel,
-                                             tstruc,
-                                             tdof,
-                                             assignment,
-                                             true,
-                                             m_tol))
+      if(!ConfigMap_impl::preconditioned_struc_to_configdof(scel,
+                                                            tstruc,
+                                                            rotF,
+                                                            tdof,
+                                                            assignment,
+                                                            true,
+                                                            m_tol))
         continue;
       basis_cost = bw * ConfigMapping::basis_cost(tdof);
       tot_cost = strain_cost + basis_cost;
@@ -552,19 +565,19 @@ namespace CASM {
         // If simplest mapping seems viable, check it further
         if(strain_cost < best_cost) {
           tstruc = struc;
-          tstruc.set_lattice(Lattice(tF * Eigen::MatrixXd(it->lat_column_mat())), CART);
+          tstruc.set_lattice(*it, FRAC);
           rotF = tF;
           if(m_rotate_flag) {
             rotF = StrainConverter::right_stretch_tensor(tF);
-            tstruc.set_lattice(Lattice(rotF * Eigen::MatrixXd(it->lat_column_mat())), FRAC);
           }
 
-          if(!ConfigMap_impl::struc_to_configdof(scel,
-                                                 tstruc,
-                                                 tdof,
-                                                 assignment,
-                                                 true,
-                                                 m_tol))
+          if(!ConfigMap_impl::preconditioned_struc_to_configdof(scel,
+                                                                tstruc,
+                                                                rotF,
+                                                                tdof,
+                                                                assignment,
+                                                                true,
+                                                                m_tol))
             break;
           basis_cost = bw * ConfigMapping::basis_cost(tdof);
           //std::cout << "\n**Starting strain_cost = " << strain_cost << ";   and basis_cost = " << basis_cost << "  TOTAL: " << strain_cost + basis_cost << "\n";
@@ -595,19 +608,21 @@ namespace CASM {
           tstruc = struc;
           // We modify the deformed structure so that its lattice is a deformed version of the nearest ideal lattice
           // Don't need matrixN if we use set_lattice(CART), because matrixF depends on matrixN implicitly
-          tstruc.set_lattice(Lattice(strainmap.matrixF() * Eigen::MatrixXd(it->lat_column_mat())), CART);
+          tstruc.set_lattice(Lattice(Eigen::Matrix3d(it->lat_column_mat())*strainmap.matrixN()), FRAC);
+          tstruc.set_lattice(*it, CART);
+          tF = strainmap.matrixF();
           rotF = tF;
           if(m_rotate_flag) {
-            rotF = StrainConverter::right_stretch_tensor(strainmap.matrixF());
-            tstruc.set_lattice(Lattice(rotF * Eigen::MatrixXd(it->lat_column_mat())), FRAC);
+            rotF = StrainConverter::right_stretch_tensor(tF);
           }
 
-          if(!ConfigMap_impl::struc_to_configdof(scel,
-                                                 tstruc,
-                                                 tdof,
-                                                 assignment,
-                                                 true,
-                                                 m_tol)) {
+          if(!ConfigMap_impl::preconditioned_struc_to_configdof(scel,
+                                                                tstruc,
+                                                                rotF,
+                                                                tdof,
+                                                                assignment,
+                                                                true,
+                                                                m_tol)) {
             break_early = true;
             break;
             //no longer unexpected
@@ -644,6 +659,7 @@ namespace CASM {
       //        << "         This Structure may be incompatible with the ideal crystal specified by the PRIM file. \n";
       return false;
     }
+
     //std::cout << "FINAL COST IS: " << best_cost << "\nFINAL TRANS MAT IS:\n" << best_trans << "\n\n";
     return true;
 
@@ -691,6 +707,7 @@ namespace CASM {
     bool calc_cost_matrix(const Supercell &scel,
                           const BasicStructure<Site> &rstruc,
                           const Coordinate &trans,
+                          const Matrix3<double> &metric,
                           Eigen::MatrixXd &cost_matrix) {
 
 
@@ -711,8 +728,7 @@ namespace CASM {
           // Check if relaxed atom j is allowed on site i
           // If so, populate cost_matrix normally
           if(scel.get_prim().basis[scel.get_b(i)].contains(rstruc.basis[j].occ_name())) {
-            dist = scel.coord(i).min_dist(current_relaxed_coord);
-            cost_matrix(i, j) = dist * dist;
+            cost_matrix(i, j) = scel.coord(i).min_dist2(current_relaxed_coord, metric);
           }
           // If not, set cost_matrix (i,j) = inf
           else {
@@ -772,7 +788,6 @@ namespace CASM {
     }
 
     //***************************************************************************************************
-    // New mapping routine. Return an ideal configuration corresponding to a relaxed structure.
     // Options:
     //
     // translate_flag = true means that the rigid-translations are removed. (typically this option should be used)
@@ -785,23 +800,36 @@ namespace CASM {
                             std::vector<Index> &best_assignments,
                             const bool translate_flag,
                             const double _tol) {
+      Eigen::Matrix3d deformation = Eigen::Matrix3d(rstruc.lattice().coord_trans(FRAC) * scel.get_real_super_lattice().coord_trans(CART));
+      // un-deform rstruc
+      rstruc.set_lattice(scel.get_real_super_lattice(), FRAC);
+      return preconditioned_struc_to_configdof(scel, rstruc, deformation, config_dof, best_assignments, translate_flag, _tol);
+    }
+    //***************************************************************************************************
+    // Options:
+    //
+    // translate_flag = true means that the rigid-translations are removed. (typically this option should be used)
+    //
+    // translate_flag = false means that rigid translations are not considered. (probably don't want to use this since structures should be considered equal if they are related by a rigid translation).
+    //
+    bool preconditioned_struc_to_configdof(const Supercell &scel,
+                                           const BasicStructure<Site> &rstruc,
+                                           const Eigen::Matrix3d &deformation,
+                                           ConfigDoF &config_dof,
+                                           std::vector<Index> &best_assignments,
+                                           const bool translate_flag,
+                                           const double _tol) {
       //std::cout << "CONVERTING TO CONFIGDOF:\n";
       //rstruc.print(std::cout);
       //std::cout << std::endl;
       // clear config_dof and set its deformation
       config_dof.clear();
 
-      Eigen::Matrix3d deformation = Eigen::Matrix3d(rstruc.lattice().coord_trans(FRAC) * scel.get_real_super_lattice().coord_trans(CART));
-
       config_dof.set_deformation(deformation);
-
-      // un-deform rstruc
-      rstruc.set_lattice(scel.get_real_super_lattice(), FRAC);
-
-
+      Matrix3<double> metric(Eigen::Matrix3d(deformation.transpose()*deformation));
       //Initialize everything
 
-      Eigen::MatrixXd cost_matrix(scel.num_sites(), scel.num_sites());
+      Eigen::MatrixXd cost_matrix;
       std::vector<Index> optimal_assignments;
       //BasicStructure<Site> best_ideal_struc(rstruc);
       Coordinate ttrans(Vector3<double>(0, 0, 0), rstruc.lattice(), FRAC), best_trans(Vector3<double>(0, 0, 0), rstruc.lattice(), FRAC);
@@ -842,7 +870,7 @@ namespace CASM {
         ttrans.set_lattice(rstruc.lattice(), CART);
         trans_dist = ttrans(CART).length();
         //shift_struc -= ttrans;
-        if(!ConfigMap_impl::calc_cost_matrix(scel, rstruc, ttrans, cost_matrix)) {
+        if(!ConfigMap_impl::calc_cost_matrix(scel, rstruc, ttrans, metric, cost_matrix)) {
           //std::cerr << "In Supercell::struc_to_config. Cannot construct cost matrix." << std::endl;
           //std::cerr << "This message is probably OK, if you are using translate_flag == true." << std::endl;
           //continue;
@@ -955,5 +983,6 @@ namespace CASM {
 
       return true;
     }
+
   }
 }

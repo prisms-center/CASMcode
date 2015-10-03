@@ -8,6 +8,9 @@ namespace CASM {
   class SymGroup;
   class PrimClex;
 
+  /// A class for mapping an arbitrary crystal structure as a configuration of a crystal template
+  /// as described by a PrimClex.  ConfigMapper manages options for the mapping algorithm and mapping cost function
+  /// It also caches some information about supercell lattices so that batch imports are more efficient
   class ConfigMapper {
   public:
     enum NullInitializer {null_initializer};
@@ -17,11 +20,40 @@ namespace CASM {
                   robust = (1u << 2)
                  };
 
+    ///\brief Default construction not allowed -- this constructor provides an override
     ConfigMapper(NullInitializer) : m_pclex(NULL) {}
+
+    ///\brief Construct and initialize a ConfigMapper
+    ///\param _pclex the PrimClex that describes the crystal template
+    ///
+    ///\param _lattice_weight
+    ///\parblock
+    ///          free parameter 'w' in the cost function: total_cost = w*lattice_deformation+(1-w)*basis_deformation
+    ///          can vary between 0 (completely basis-focused) and 1 (completely lattice-focused)
+    ///\endparblock
+    ///
+    ///\param _max_volume_change
+    ///\parblock
+    ///          constrains the search space by assuming a limit on allowed volume change
+    ///          only taken into account when non-interstitial vacancies are allowed
+    ///\endparblock
+    ///
+    ///\param _options
+    ///\parblock
+    ///          specify a combination of ConfigMapper::Options using bitwise OR: Ex. _options=ConfigMapper::rotate|ConfigMapper::strict
+    ///          Options are:
+    ///             'rotate': removes rigid rotation of the imported crystal, in a least-squares sense (i.e., yields a symmetric deformation tensor)
+    ///             'robust': does not assume the imported structure might be ideal ('robust' is much slower for importing ideal structures, but if 'robust' is not
+    ///                       set and a non-ideal structure is passed, this will be almost always be detected and robust methods will be used instead. Thus, 'robust'
+    ///                       is slightly faster if imported Structures are *not* ideal)
+    ///             'strict': prevents transformation into canonical form. Tries to preserve original orientation of imported structure if possible
+    ///\endparblock
+    ///
+    ///\param _tol tolerance for mapping comparisons
     ConfigMapper(PrimClex &_pclex,
                  double _lattice_weight,
                  double _max_volume_change = 0.25,
-                 int options = robust, // this should actually be a bitwise-OR of ConfigMapper::Options
+                 int _options = robust, // this should actually be a bitwise-OR of ConfigMapper::Options
                  double _tol = TOL);
 
 
@@ -33,41 +65,112 @@ namespace CASM {
       return m_lattice_weight;
     }
 
+    ///\brief imports structure specified by 'pos_path' into primclex() by finding optimal mapping
+    ///       and then setting displacements and strain to zero (only the mapped occupation is preserved)
+    ///\param imported_name is populated by the configname given to the imported structure
+    ///                     (or an existing equivalent structure if one exists)
+    ///\param relaxation_properties is populated by relaxation properties:
+    ///                     'lattice_deformation':    lattice mapping score
+    ///                     'basis_deformation':      atomic mapping score
+    ///                     'volume_relaxation':      V/V_ideal
+    ///                     'relaxation_deformation': 3x3 tensor describing cell relaxation
+    ///\param best_assignment is populated by the permutation of sites in the imported structure
+    ///                       that maps them onto sites of the ideal crystal (excluding vacancies)
+    ///\param cart_op is populated by the cartesian isometry that rotates the imported structure
+    ///               onto the coordinate system of the ideal crystal
     bool import_structure_occupation(const fs::path &pos_path,
                                      std::string &imported_name,
                                      jsonParser &relaxation_properties,
                                      std::vector<Index> &best_assignment,
                                      Eigen::Matrix3d &cart_op) const;
 
-    bool import_structure_occupation(const BasicStructure<Site> &_struc,
+    ///\brief imports structure specified by '_struc' into primclex()
+    /// \param update_struc if true, applies lattice similarity and/or rotation to _struc. If false, _struc is unchanged
+    /// update_struc=true is useful for preserving mapping info that is lost when only the occupation is imported
+    bool import_structure_occupation(BasicStructure<Site> &_struc,
                                      std::string &imported_name,
                                      jsonParser &relaxation_properties,
                                      std::vector<Index> &best_assignment,
-                                     Eigen::Matrix3d &cart_op) const;
+                                     Eigen::Matrix3d &cart_op,
+                                     bool update_struc = false) const;
 
-    bool import_structure_occupation(const BasicStructure<Site> &_struc,
+    ///\brief imports structure specified by '_struc' into primclex()
+    ///\param hint_ptr[in]
+    ///\parblock
+    ///                provides a suggestion for which Configuration _struc should map onto
+    ///                The hint is used to reduce search times, but may be used in the future
+    ///                in combination with Option 'strict' to force mapping onto a particular configuration
+    ///                or be used to provide user reports of the form "Suggested mapping: 0.372; Optimal mapping: 0.002"
+    ///\endparblock
+    /// \param update_struc if true, applies lattice similarity and/or rotation to _struc. If false, _struc is unchanged
+    /// update_struc=true is useful for preserving mapping info that is lost when only the occupation is imported
+    bool import_structure_occupation(BasicStructure<Site> &_struc,
                                      const Configuration *hint_ptr,
                                      std::string &imported_name,
                                      jsonParser &relaxation_properties,
                                      std::vector<Index> &best_assignment,
-                                     Eigen::Matrix3d &cart_op) const;
+                                     Eigen::Matrix3d &cart_op,
+                                     bool update_struc = false) const;
 
+
+    ///\brief imports structure specified by 'pos_path' into primclex() by finding optimal mapping
+    ///       unlike import_structure_occupation, displacements and strain are preserved
+    ///
+    ///\param imported_name[out]
+    ///\parblock
+    ///                 populated by the configname given to the imported structure
+    ///                 (or an existing equivalent structure if one exists)
+    ///\endparblock
+    ///
+    ///\param relaxation_properties[out]
+    ///\parblock
+    ///                 populated by relaxation properties:
+    ///                     'lattice_deformation':    lattice mapping score
+    ///                     'basis_deformation':      atomic mapping score
+    ///                     'volume_change':          V/V_ideal
+    ///                     'relaxation_deformation': Not recorded in this case, because it is a DoF
+    ///\endparblock
+    ///
+    ///\param best_assignment[out]
+    ///\parblock
+    ///                   populated by the permutation of sites in the imported structure
+    ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
+    ///\endparblock
+    ///
+    ///\param cart_op[out]
+    ///\parblock
+    ///                   populated by the cartesian isometry that rotates the imported structure
+    ///                   onto the coordinate system of the ideal crystal
+    ///\endparblock
     bool import_structure(const fs::path &pos_path,
                           std::string &imported_name,
                           jsonParser &relaxation_properties,
                           std::vector<Index> &best_assignment,
                           Eigen::Matrix3d &cart_op) const;
 
+    ///\brief imports structure specified by '_struc' into primclex() by finding optimal mapping
+    ///       unlike import_structure_occupation, displacements and strain are preserved
     bool import_structure(const BasicStructure<Site> &_struc,
                           std::string &imported_name,
                           jsonParser &relaxation_properties,
                           std::vector<Index> &best_assignment,
                           Eigen::Matrix3d &cart_op) const;
 
+    ///\brief Low-level routine to map a structure onto a ConfigDof
+    ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
+    ///\param mapped_lat[out] Ideal supercell lattice (in Niggli form) of mapped configuration
     bool struc_to_configdof(const BasicStructure<Site> &_struc,
                             ConfigDoF &mapped_configdof,
                             Lattice &mapped_lat) const;
 
+    ///\brief Low-level routine to map a structure onto a ConfigDof
+    ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
+    ///\param mapped_lat[out] Ideal supercell lattice (in Niggli form) of mapped configuration
+    ///\param best_assignment[out]
+    ///\parblock
+    ///                   populated by the permutation of sites in the imported structure
+    ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
+    ///\endparblock
     bool struc_to_configdof(const BasicStructure<Site> &_struc,
                             ConfigDoF &mapped_configdof,
                             Lattice &mapped_lat,
@@ -75,13 +178,29 @@ namespace CASM {
                             Eigen::Matrix3d &cart_op) const;
 
 
-    bool ideal_struc_to_configdof(BasicStructure<Site> struc,
+    ///\brief Low-level routine to map a structure onto a ConfigDof if it is known to be ideal
+    ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
+    ///\param mapped_lat[out] Ideal supercell lattice (in Niggli form) of mapped configuration
+    ///\param best_assignment[out]
+    ///\parblock
+    ///                   populated by the permutation of sites in the imported structure
+    ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
+    ///\endparblock
+    bool ideal_struc_to_configdof(const BasicStructure<Site> &struc,
                                   ConfigDoF &mapped_config_dof,
                                   Lattice &mapped_lat,
                                   std::vector<Index> &best_assignment,
                                   Eigen::Matrix3d &cart_op) const;
 
 
+    ///\brief Low-level routine to map a structure onto a ConfigDof. Does not assume structure is ideal
+    ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
+    ///\param mapped_lat[out] Ideal supercell lattice (in Niggli form) of mapped configuration
+    ///\param best_assignment[out]
+    ///\parblock
+    ///                   populated by the permutation of sites in the imported structure
+    ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
+    ///\endparblock
     bool deformed_struc_to_configdof(const BasicStructure<Site> &_struc,
                                      ConfigDoF &mapped_config_dof,
                                      Lattice &mapped_lat,
@@ -106,6 +225,7 @@ namespace CASM {
     bool calc_cost_matrix(const Supercell &scel,
                           const BasicStructure<Site> &rstruc,
                           const Coordinate &trans,
+                          const Eigen::Matrix3d &metric,
                           Eigen::MatrixXd &cost_matrix);
 
     //\JSB
@@ -120,17 +240,31 @@ namespace CASM {
     //   TRANSLATE = false -> rigid translations are not considered. (less robust but more efficient -- use only if you know rigid translations are small or zero)
 
     bool struc_to_configdof(const Supercell &scel,
-                            BasicStructure<Site> rstruc,
+                            const BasicStructure<Site> &rstruc,
                             ConfigDoF &config_dof,
                             std::vector<Index> &best_assignment,
                             const bool translate_flag,
                             const double _tol);
-  }
-  namespace ConfigMapping {
 
+    /// Same as struc_to_configdof, except 'rstruc' is de-rotated and de-strained. Any deformation is instead specified by 'deformation'
+    bool preconditioned_struc_to_configdof(const Supercell &scel,
+                                           const BasicStructure<Site> &rstruc,
+                                           const Eigen::Matrix3d &deformation,
+                                           ConfigDoF &config_dof,
+                                           std::vector<Index> &best_assignment,
+                                           const bool translate_flag,
+                                           const double _tol);
+
+
+  }
+
+  namespace ConfigMapping {
+    /// \brief Calculate the strain cost function of a ConfigDoF using LatticeMap::calc_strain_cost()
     double strain_cost(const Lattice &relaxed_lat, const ConfigDoF &_dof);
 
+    /// \brief Calculate the basis cost function of a ConfigDoF as the mean-square displacement of its atoms
     double basis_cost(const ConfigDoF &_dof);
+
 
     Lattice find_nearest_super_lattice(const Lattice &prim_lat,
                                        const Lattice &relaxed_lat,
