@@ -9,14 +9,30 @@
 
 namespace CASM {
   namespace Import_impl {
-    enum DataType {path = 0, relaxjson = 1, contcar = 2};
-    using Data = std::tuple<fs::path, jsonParser, std::string>;
+    // record some pieces of data from each import.  These are used to resolve conflicts at the end
+    // the 'relaxjson' datarecord stores relaxation properties that will be merged into Configuration::calc_properties() during the final step
+    enum DataType {path = 0, relaxjson = 1, contcar = 2, energy = 3};
+    using Data = std::tuple<fs::path, jsonParser, std::string, std::pair<bool, double> >;
   }
 
   // ///////////////////////////////////////
   // 'import' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
+  /// Import proceeds in two steps.
+  ///   1) read each file, map it onto a Configuration of the PrimClex
+  ///       - record relaxation data for each one
+  ///
+  ///   2) If data import was requested, iterate over each import record and do the following:
+  ///       - if multiple imported structures map onto a configuration for which there is no calculation data,
+  ///         import calculation data from the structure with the lowest mapping cost
+  ///       - if one or more imported structuress map onto a configuration for which calculation
+  ///         data already exist, do not import any new data
+  ///       - if data is imported, the corresponding properties.calc.json file is copied into the directory of the
+  ///         mapped configuration. A structure file, relaxed_structure.vasp is also written to the directory.
+  ///       - relaxed_structure.vasp gives the relaxed structure in a setting and orientation that matches the
+  ///         generated POS file
+  ///
   int import_command(int argc, char *argv[]) {
 
     double tol(TOL);
@@ -180,10 +196,15 @@ namespace CASM {
       //Import structure and make note of path
       bool new_import = false;
       jsonParser relax_data;
+      std::pair<bool, double> checkenergy(false, 0.0);
+      double energy;
       try {
-
         if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
-          from_json(simple_json(import_struc, "relaxed_"), jsonParser(pos_path));
+          jsonParser datajson(pos_path);
+          if(datajson.contains("relaxed_energy")) {
+            checkenergy = std::pair<bool, double>(true, datajson["relaxed_energy"].get<double>());
+          }
+          from_json(simple_json(import_struc, "relaxed_"), datajson);
         }
         else {
           fs::ifstream struc_stream(pos_path);
@@ -225,7 +246,7 @@ namespace CASM {
 
       std::stringstream contcar_ss;
       import_struc.print5_occ(contcar_ss);
-      import_map[&imported_config].push_back(Import_impl::Data(pos_path, relax_data, contcar_ss.str()));
+      import_map[&imported_config].push_back(Import_impl::Data(pos_path, relax_data, contcar_ss.str(), checkenergy));
 
     }
 
@@ -262,8 +283,13 @@ namespace CASM {
               best_ind = -1;
             }
             else {
-              conflict_log << "                -- lattice_deformation = unknown;  basis_deformation = unknown;  weighted avg = unknown" << std::endl << std::endl;
+              conflict_log << "                -- lattice_deformation = unknown;  basis_deformation = unknown;  weighted avg = unknown" << std::endl;
             }
+            if(imported_config.calc_properties().contains("relaxed_energy"))
+              conflict_log << "                -- relaxed_energy = " << imported_config.calc_properties()["relaxed_energy"].get<double>() << std::endl;
+            else
+              conflict_log << "                -- relaxed_energy = unknown" << std::endl;
+            conflict_log << std::endl;
           }
           for(Index i = 0; i < data_vec.size(); i++) {
             fs::path pos_path = std::get<Import_impl::path>(data_vec[i]);
@@ -273,6 +299,11 @@ namespace CASM {
             double ld = relaxjson["lattice_deformation"].get<double>();
             double bd = relaxjson["basis_deformation"].get<double>();
             conflict_log << "                -- lattice_deformation = " << ld << ";  basis_deformation = " << bd << ";  weighted avg = " << w *ld + (1.0 - w)*bd << std::endl;
+            if(std::get<Import_impl::energy>(data_vec[i]).first)
+              conflict_log << "                -- relaxed_energy = " << std::get<Import_impl::energy>(data_vec[i]).second << std::endl;
+            else
+              conflict_log << "                -- relaxed_energy = unknown" << std::endl;
+            conflict_log << std::endl;
             if(w * ld + (1.0 - w)*bd < best_weight) {
               best_weight = w * ld + (1.0 - w) * bd;
               best_conflict = conflict_ind - 1;
@@ -358,8 +389,7 @@ namespace CASM {
       std::cout << "\n" << std::endl;
     }
     if(conflict_log.str().size()) {
-      std::cout << "  WARNING: --The following conflicts were found\n"
-                << "           --for each conflict, calculation data was committed for the first duplicate listed\n"
+      std::cout << "  WARNING: -- The following conflicts were found\n" << std::endl
                 << conflict_log.str() << std::endl;
 
       std::cout << "  Please review these conflicts.  A different resolution can be obtained by removing datafiles from\n"
