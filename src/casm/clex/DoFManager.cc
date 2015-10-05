@@ -176,7 +176,9 @@ namespace CASM {
   //************************************************************
 
   void OccupationDoFEnvironment::print_to_clexulator_constructor(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const {
+    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
     stream.precision(10);
+
     for(Index b = 0; b < primclex.get_prim().basis.size(); b++) {
       for(Index f = 0; f < primclex.get_prim().basis[b].occupant_basis().size(); f++) {
         for(Index s = 0; s < primclex.get_prim().basis[b].site_occupant().size(); s++) {

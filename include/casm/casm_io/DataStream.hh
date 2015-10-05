@@ -296,10 +296,11 @@ namespace CASM {
   }
 
 }
-#include "casm/casm_io/jsonParser.hh"
+
+#include "casm/external/Eigen/Dense"
 namespace Eigen {
   template <typename Derived>
-  CASM::DataStream &operator<<(CASM::DataStream &_stream, const Eigen::MatrixBase<Derived> &value) {
+  CASM::DataStream &operator<<(CASM::DataStream &_stream, const MatrixBase<Derived> &value) {
     for(int i = 0; i < value.rows(); i++) {
       for(int j = 0; j < value.cols(); j++) {
         _stream << value(i, j);

@@ -378,23 +378,30 @@ namespace CASM {
     // ** step 1: find a generic 'B' matrix
 
     //Use SVD instead of eigendecomposition so that 'U' and 'V' matrices are orthogonal
-    Eigen::JacobiSVD<Eigen::MatrixXd> tsvd(gram_mat, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    Eigen::MatrixXd inv_sqrtS(Eigen::MatrixXd::Zero(N, N));
-    for(Index i = 0; i < N; i++) {
-      if(almost_zero(tsvd.singularValues()[i]) || tsvd.singularValues()[i] < 0) {
-        // we could 'fix' gram_mat, but that could cause mysterious behavior - leave it to the user
-        std::cerr << "CRITICAL ERROR: Passed a Gram Matrix to BasisSet::construct_orthonormal_discrete_functions that is not positive-definite.\n"
-                  << "                Gram Matrix is:\n" << gram_mat << "\nExiting...\n";
-        exit(1);
-      }
-      inv_sqrtS(i, i) = 1.0 / sqrt(tsvd.singularValues()[i]);
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> t_es(gram_mat);
+    if(t_es.eigenvalues().minCoeff() < TOL) {
+      // we could 'fix' gram_mat, but that could cause mysterious behavior - leave it to the user
+      std::cerr << "CRITICAL ERROR: Passed a Gram Matrix to BasisSet::construct_orthonormal_discrete_functions that is not positive-definite.\n"
+                << "                Gram Matrix is:\n" << gram_mat << "\nSmallest Eigenvalue = " << t_es.eigenvalues().minCoeff() << "; Exiting...\n";
+      exit(1);
     }
 
-    // B matrix is matrix square root of gram_mat.inverse(). Its columns form an orthonormal basis
-    // wrt gram_mat but it is ill-suited for our purposes.
-    Eigen::MatrixXd B(tsvd.matrixV()*inv_sqrtS * tsvd.matrixU().transpose());
+    // B matrix is matrix square root of gram_mat.inverse(). Its columns form an orthonormal basis wrt gram_mat
+    // In other words,
+    //         B = V*(1.0/sqrt(D))*V.inverse()
+    // where V is matrix of eigenvectors (as columns) of gram_mat and D is diagonal matrix of eigenvalues of gram_mat
+    // B is not ideally oriented for our purposes, so the rest of the algorithm will be focused on fixing the orientation
+    Eigen::MatrixXd B = t_es.eigenvectors() * (t_es.eigenvalues().array().cwiseInverse().cwiseSqrt().matrix().asDiagonal()) * t_es.eigenvectors().inverse();
 
-    // ** step 2: Make seed basis. This will be used to seed optimized transformation of 'B'
+    /*
+    std::cout << "Eigenvalues: " << t_es.eigenvalues().transpose() << std::endl
+              << "Operated: " << t_es.eigenvalues().array().cwiseInverse().cwiseSqrt().matrix().transpose() << std::endl
+              << "Eigenvectors: \n" << t_es.eigenvectors() << std::endl
+              << "B: \n" << B << std::endl;
+    */
+
+
+    // ** step 2: Make seed basis. This will be used to seed optimized orientation of 'B'
     Eigen::MatrixXd tseed(Eigen::MatrixXd::Zero(N, N));
     Eigen::MatrixXd::Index max_ind(0);
     if(conc_vec.maxCoeff(&max_ind) < 0.75) {
@@ -413,6 +420,7 @@ namespace CASM {
       tseed = tcos_table.householderQr().householderQ();
     }
     else {
+      // there is an outlier probability --> set seed matrix to occupation basis, with specis 'i==max_ind' as solvent
       Eigen::MatrixXd::Index curr_i(0);
       for(Eigen::MatrixXd::Index i = 0; i < B.rows(); i++) {
         tseed(i, 0) = 1;
@@ -426,7 +434,7 @@ namespace CASM {
       }
     }
 
-    // ** step 3: use seed matric to find a unitary matrix that rotates 'B' a more optimal form
+    // ** step 3: use seed matrix to find a unitary matrix that rotates 'B' a more 'intuitive' orientation
     // Assume: tseed = B * Q, with unitary Q
     // approximate Q by finding QR decomposition of (B.inverse() * tseed)
     Eigen::MatrixXd Q = (B.inverse() * tseed).householderQr().householderQ();
@@ -438,7 +446,24 @@ namespace CASM {
 
     // Columns of B are our basis functions, orthonormal wrt gram_mat
     for(Index i = 1; i < N; i++) {
-      OccupantFunction tOF(allowed_occs, B.col(i), size(), basis_ind, sym_rep_ind);
+      int sign_change = 1;
+      double max_abs(0.0);
+      // The sign of each OccupantFunction is ambiguous, so we use a convention
+      // Force sign convention max(function(occupation))=max(abs(function(occupation)))
+      // If multiple occupations evaluate to the same abs(phi) and it is the maximal abs(phi),
+      // then use convention that the last occurence is positive
+      // It IS confusing, but here's a simple example:
+      //
+      //    phi(occ) = {-1, 0, 1}  is always preferred over phi_alt(occ) = {1, 0, -1}
+      //
+      // even though they are otherwise both equally valid basis functions
+      for(Index j = 0; j < B.rows(); j++) {
+        if(std::abs(B(j, i)) > (max_abs - TOL)) {
+          max_abs = std::abs(B(j, i));
+          sign_change = sgn(B(j, i));
+        }
+      }
+      OccupantFunction tOF(allowed_occs, double(sign_change)*B.col(i), size(), basis_ind, sym_rep_ind);
 
       push_back(tOF.copy());
     }

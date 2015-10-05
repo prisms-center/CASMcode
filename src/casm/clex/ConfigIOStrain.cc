@@ -89,7 +89,9 @@ namespace CASM {
         _stream << DataStream::failbit << std::vector<double>(_index_rules().size(), NAN);
       }
       else {
-        _stream << _evaluate(_config);
+        Eigen::VectorXd strain_vec = _evaluate(_config);
+        for(auto it = _index_rules().cbegin(); it != _index_rules().cend(); ++it)
+          _stream << strain_vec[(*it)[0]];
       }
     }
 
