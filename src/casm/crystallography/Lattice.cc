@@ -811,9 +811,9 @@ namespace CASM {
   //Return N matrix
   bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist, Matrix3<double> &multimat, double _tol) const {
     if(symoplist.size() == 0) { //John G 121212 extra error
-      std::cerr << "ERROR in Lattice::is_supercell_of. You've passed a point group with no elements!" << std::endl;
-      std::cerr << "You need at least identity for this, did you for get to generate_point_group()?" << std::endl;
-      exit(50);
+      std::cerr << "ERROR: In Lattice::is_supercell_of. You've passed a point group with no elements!" << std::endl;
+      std::cerr << "       You need at least identity in your group. Exiting..." << std::endl;
+      exit(1);
     }
 
     Matrix3<double> tsym_lat_mat;
@@ -833,11 +833,11 @@ namespace CASM {
   //Change bool to an array of SymOps you want to use, default point group
   //Overload to only use identity
   //Return N matrix
-  bool Lattice::is_supercell_of(const Lattice &tile, Matrix3<double> &multimat) const {
+  bool Lattice::is_supercell_of(const Lattice &tile, Matrix3<double> &multimat, double _tol) const {
 
     multimat = tile.coord_trans_mat[CART] * coord_trans_mat[FRAC];
 
-    if(multimat.is_integer() && !multimat.is_zero())
+    if(multimat.is_integer(_tol) && !multimat.is_zero(_tol))
       return true;
 
     return false;
@@ -847,20 +847,15 @@ namespace CASM {
   //Overload to only use identity
   //Return N matrix
   bool Lattice::is_supercell_of(const Lattice &tile, double _tol) const {
-
-    Matrix3<double> multimat = tile.coord_trans_mat[CART] * coord_trans_mat[FRAC];
-
-    if(multimat.is_integer(_tol) && !multimat.is_zero(_tol))
-      return true;
-
-    return false;
+    Matrix3<double> multimat;
+    return is_supercell_of(tile, multimat, _tol);
   }
 
   //********************************************************************
 
-  bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist) const {
+  bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist, double _tol) const {
     Matrix3<double> multimat;
-    return is_supercell_of(tile, symoplist, multimat);
+    return is_supercell_of(tile, symoplist, multimat, _tol);
   }
 
   //********************************************************************
@@ -904,7 +899,7 @@ namespace CASM {
       prim.print(std::cerr);
       std::cerr << "Your scel was:" << std::endl;
       scel.print(std::cerr);
-      exit(41);
+      exit(1);
     }
 
     SymGroup prim_pg;
@@ -924,7 +919,7 @@ namespace CASM {
       if(minSDsize == 0 || minSDsize > factor * minSDsize) {
         std::cerr << "ERROR in Lattice::box (Are you using Lattice::superduper_size_me?)." << std::endl;
         std::cerr << "Minimum size exceeded integer limit. Your lattice could not find a big enough box to fit in." << std::endl << std::endl;
-        exit(42);
+        exit(1);
       }
 
       prime_factors = get_prime_factors(minSDsize * factor);
@@ -1052,16 +1047,11 @@ namespace CASM {
 
   //********************************************************************
   Lattice &Lattice::make_right_handed() {
-    Vector3<double> axb = vecs[0].cross(vecs[1]);
-    double dot = vecs[2].dot(axb);
 
-    if(dot < 0) {
-      vecs[2] = (-1) * vecs[2];
-    }
-
-    if(dot == 0) {
-      std::cerr << "ERROR in Lattice::make_right_handed! Your lattice is not allowed." << std::endl;
-      std::cerr << "Check your vectors, they only spawn 2D space between all three!" << std::endl;
+    if(lat_column_mat().determinant() < 0) {
+      swap(vecs[0], vecs[1]);
+      calc_conversions();
+      calc_properties();
     }
 
     return *this;
@@ -1418,50 +1408,6 @@ namespace CASM {
     return true;
   }
 
-  //********************************************************************
-  /**
-   * Reflects lattice across ab plane and returns new reflected lattice. Meant
-   * for primitive lattices, but can be forced on other lattices. If forced
-   * on a non primitive lattice the primitive pointer is updated to point
-   * at the new reflected lattice. To keep correct primitive of superlattice
-   * reflect primitive lattice, then make it into a superlattice via
-   * matrix multiplication.
-   */
-  //********************************************************************
-  Lattice Lattice::get_reflection(bool override) const {
-    /*
-    if(primitive != this) {
-      if(override) {
-        std::cerr << "WARNING in Lattice::get_reflection! Your lattice is not primitive but you've chosen to continue anyway." << std::endl;
-        std::cerr << "Your returned lattice will point to itself instead of its primitive. I hope you know what you're doing." << std::endl;
-      }
-
-      else {
-        std::cerr << "ERROR in Lattice::get_reflection! Your lattice is not primitive." << std::endl;
-        std::cerr << "Use a primitive cell, then make a supercell out of it to get your reflected superlattice." << std::endl;
-
-        exit(60);
-      }
-    }
-    */
-    Matrix3<double> zmat(0);
-    zmat(0, 0) = 1;
-    zmat(1, 1) = 1;
-    zmat(2, 2) = -1;
-
-    Array<Vector3<double> > reflectlatvecs(3);
-    reflectlatvecs[0] = zmat * vecs[0];
-    reflectlatvecs[1] = zmat * vecs[1];
-    reflectlatvecs[2] = zmat * vecs[2];
-
-    Lattice reflectlat(reflectlatvecs[0], reflectlatvecs[1], reflectlatvecs[2]);
-    reflectlat.make_right_handed();
-
-    return reflectlat;
-  }
-
-
-  //\John G 121015
 
   //John G 011013
   //********************************************************************
@@ -1557,55 +1503,6 @@ namespace CASM {
   }
 
   //********************************************************************
-  /*
-  bool Lattice::SelfTest() {
-    Vector3< double > vec1(2, 0, 0), vec2(0, 1, 0), vec3(0, 0, 3);
-
-
-    Lattice my_lat(vec1, vec2, vec3);
-
-    //the "correct answer" to conversion matrix check
-    Matrix3< double > correct_coord_trans_mat[2];
-
-    correct_coord_trans_mat[0](0, 0) = 2.0;
-    correct_coord_trans_mat[0](0, 1) = 0.0;
-    correct_coord_trans_mat[0](0, 2) = 0.0;
-
-    correct_coord_trans_mat[0](1, 0) = 0.0;
-    correct_coord_trans_mat[0](1, 1) = 1.0;
-    correct_coord_trans_mat[0](1, 2) = 0.0;
-
-    correct_coord_trans_mat[0](2, 0) = 0.0;
-    correct_coord_trans_mat[0](2, 1) = 0.0;
-    correct_coord_trans_mat[0](2, 2) = 3.0;
-
-    correct_coord_trans_mat[1] = correct_coord_trans_mat[0].inverse();
-
-
-    using namespace SelfTestable;
-    TestSet("Lattice");
-
-    // Tests that F to C matrix is correct.
-    if(!Test(my_lat.coord_trans_mat[0] == correct_coord_trans_mat[0],
-             "F to C Test")) return false;
-
-    // Tests that C to F matrix is correct.
-    if(!Test(my_lat.coord_trans_mat[1] == correct_coord_trans_mat[1],
-             "C to F Test")) return false;
-
-    // Tests lengths
-    if(!Test(((my_lat.lengths[0] - 2.0) < TOL)
-             && ((my_lat.lengths[1] - 1.0) < TOL)
-             && ((my_lat.lengths[2] - 3.0) < TOL), "Lengths Test")) return false;
-
-    // Tests angles
-    if(!Test(((my_lat.angles[0] - 90.0) < TOL)
-             && ((my_lat.angles[1] - 90.0) < TOL)
-             && ((my_lat.angles[2] - 90.0) < TOL) , "Angles Test")) return false;
-
-    return true;
-  }  //end of SelfTest
-  */
 
   // write Lattice in json as array of vectors
   jsonParser &to_json(const Lattice &lat, jsonParser &json) {
@@ -1615,6 +1512,8 @@ namespace CASM {
     json.push_back(lat[2]);
     return json;
   };
+
+  //********************************************************************
 
   // read Lattice from a json array of Vector3<double>
   void from_json(Lattice &lat, const jsonParser &json) {

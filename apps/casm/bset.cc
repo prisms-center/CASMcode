@@ -108,7 +108,7 @@ namespace CASM {
           fs::remove(dir.clexulator_src(set.name(), set.bset()));
           fs::remove(dir.clexulator_o(set.name(), set.bset()));
           fs::remove(dir.clexulator_so(set.name(), set.bset()));
-          
+
           std::cout << "\n***************************\n" << std::endl;
 
         }
@@ -174,27 +174,27 @@ namespace CASM {
 
     }
     else if(vm.count("orbits") || vm.count("clusters")) {
-      
+
       DirectoryStructure dir(root);
       ProjectSettings set(root);
-      
+
       if(!fs::exists(dir.clust(set.bset()))) {
         std::cerr << "ERROR: No 'clust.json' file found. Make sure to update your basis set with 'casm bset -u'.\n";
         return 1;
       }
-      
+
       std::cout << "Initialize primclex: " << root << std::endl << std::endl;
       PrimClex primclex(root, std::cout);
       std::cout << "  DONE." << std::endl << std::endl;
-      
+
       primclex.read_global_orbitree(dir.clust(set.bset()));
-      
-      if( vm.count("orbits")) {
+
+      if(vm.count("orbits")) {
         std::cout << "\n***************************\n" << std::endl;
         primclex.get_global_orbitree().print_proto_clust(std::cout);
         std::cout << "\n***************************\n" << std::endl;
       }
-      if( vm.count("clusters")) {
+      if(vm.count("clusters")) {
         std::cout << "\n***************************\n" << std::endl;
         primclex.get_global_orbitree().print_full_clust(std::cout);
         std::cout << "\n***************************\n" << std::endl;

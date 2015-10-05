@@ -2,6 +2,7 @@
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOHull.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
+#include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/DirectoryStructure.hh"
@@ -24,13 +25,13 @@ namespace CASM {
 
     //"Green-Lagrange strain of dft-relaxed configuration, relative to the ideal crystal.
     //Ordered as [E(0,0), E(1,1), E(2,2), E(1,2), E(0,2), E(0,1)].  Accepts index as argument on interval [0,5]"
-    std::vector<double> get_config_relaxation_strain(const Configuration &_config) {
-      return _config.calc_properties().contains("relaxation_strain") ? _config.calc_properties()["relaxation_strain"].get<std::vector<double> >() : std::vector<double>(6, NAN);
-    }
+    //std::vector<double> get_config_relaxation_strain(const Configuration &_config) {
+    //return _config.calc_properties().contains("relaxation_strain") ? _config.calc_properties()["relaxation_strain"].get<std::vector<double> >() : std::vector<double>(6, NAN);
+    //}
 
-    bool has_config_relaxation_strain(const Configuration &_config) {
-      return _config.calc_properties().contains("relaxation_strain");
-    }
+    //bool has_config_relaxation_strain(const Configuration &_config) {
+    //return _config.calc_properties().contains("relaxation_strain");
+    //}
 
     //"Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)"
     double get_config_rms_force(const Configuration &_config) {
@@ -510,7 +511,7 @@ namespace CASM {
                                                            ConfigIO_impl::has_config_formation_energy);
     }
 
-    Generic1DDatumFormatter<std::vector<double>, Configuration >relaxation_strain() {
+    /*Generic1DDatumFormatter<std::vector<double>, Configuration >relaxation_strain() {
       return Generic1DDatumFormatter<std::vector<double>, Configuration >("relaxation_strain",
                                                                           "Green-Lagrange strain of dft-relaxed configuration, relative to the ideal crystal.  Ordered as [E(0,0), E(1,1), E(2,2), E(1,2), E(0,2), E(0,1)].  Accepts index as argument on interval [0,5]",
                                                                           ConfigIO_impl::get_config_relaxation_strain,
@@ -518,7 +519,7 @@ namespace CASM {
       [](const std::vector<double> &cont)->Index{
         return 6;
       });
-    }
+      }*/
 
     ConfigIO_impl::GenericConfigFormatter<bool> is_calculated() {
       return ConfigIO_impl::GenericConfigFormatter<bool>("is_calculated",
@@ -583,12 +584,12 @@ namespace CASM {
       .add_formatter(ConfigIO::scel_size())
       .add_formatter(ConfigIO::formation_energy())
       .add_formatter(ConfigIO::is_calculated())
-      .add_formatter(ConfigIO::relaxation_strain())
+      //.add_formatter(ConfigIO::relaxation_strain())
       .add_formatter(ConfigIO::rms_force())
       .add_formatter(ConfigIO::basis_deformation())
       .add_formatter(ConfigIO::lattice_deformation())
       .add_formatter(ConfigIO::volume_relaxation())
-
+      .add_formatter(ConfigIO_impl::RelaxationStrainConfigFormatter())
       .add_formatter(ConfigIO_impl::StrucScoreConfigFormatter())
       //hull formatters with specialized naming to disambiguate
       .add_formatter(ConfigIO_impl::OnHullConfigFormatter("on_hull",

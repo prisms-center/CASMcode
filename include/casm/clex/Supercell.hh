@@ -374,10 +374,6 @@ namespace CASM {
       m_id = id;
     }
 
-    //void set_selection(const Array<std::string> &criteria);
-    //void set_selection(const Array<std::string> &criteria, Configuration &config);
-
-
     // **** Generating functions ****
 
     // Populate m_factor_group -- probably should be private
@@ -477,13 +473,6 @@ namespace CASM {
     bool is_supercell_of(const Structure &structure, Matrix3<double> &multimat) const;
     ReturnArray<int> vacant()const;
 
-    // used with set_selection()
-    //bool is_operator(const std::string &q) const;
-    //std::string operate(const std::string &q, const std::string &A) const;
-    //std::string operate(const std::string &q, const std::string &A, const std::string &B) const;
-    //bool is_unary(const std::string &q) const;
-    //std::string convert_variable(const std::string &q, const Configuration &config) const;
-
     // **** Printing ****
 
     void print_bijk(std::ostream &stream);
@@ -507,10 +496,6 @@ namespace CASM {
     ///Call Configuration::write out every configuration in supercell
     jsonParser &write_config_list(jsonParser &json);
 
-    //void printUCC(std::ostream &stream, COORD_TYPE mode, UnitCellCoord ucc);
-    // this function finds the displacements of a structure defined by the CONTCAR passed by stream, and the real_super_lattice
-    void findConfigDisplacements(Structure tstruc, Index config_num);
-    void findDisplacements();
     void printUCC(std::ostream &stream, COORD_TYPE mode, UnitCellCoord ucc, char term = 0, int prec = 7, int pad = 5) const;
     //\Michael 241013
 

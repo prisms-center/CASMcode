@@ -119,14 +119,6 @@ namespace CASM {
 };
 
 
-namespace Eigen {
-  template <typename Derived>
-  CASM::jsonParser &to_json(const Eigen::MatrixBase<Derived> &value, CASM::jsonParser &json);
-  template <typename Derived>
-  void from_json(Eigen::MatrixBase<Derived>  &value, const CASM::jsonParser &json);
-
-};
-
 //*****************************************************************************************************//
 
 //Templates need the implementation with the declaration!!

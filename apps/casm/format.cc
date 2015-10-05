@@ -171,7 +171,7 @@ namespace CASM {
       std::cout << "'prim.json' describes the primitive cell structure. It includes the lattice \n";
       std::cout << "vectors, crystal basis sites and a list of possible occupant molecules on each\n";
       std::cout << "basis site.\n\n";
-      
+
       std::cout << "- Molecule names are case sensitive.\n";
       std::cout << "- 'Va' is reserved for vacancies.\n";
       std::cout << "- The default tolerance for checking symmetry is 1e-5, so basis site coordinates\n";
@@ -190,12 +190,12 @@ namespace CASM {
       std::cout << "-------\n\n";
 
       std::cout << "\n### PRIM ##################\n\n";
-      
+
       std::cout << "DESCRIPTION:\n";
       std::cout << "PRIM is the input file used by previous version of casm. It can be read and        \n";
       std::cout << "converted to 'prim.json'. The format of PRIM is very similar to the VASP POSCAR    \n";
       std::cout << "except a list of possible occupant molecules is included with each basis site.     \n\n";
-      
+
       std::cout << "- Molecule names are case sensitive.\n";
       std::cout << "- 'Va' is reserved for vacancies.\n";
       std::cout << "- The default tolerance for checking symmetry is 1e-5, so basis site coordinates\n";
@@ -310,7 +310,7 @@ Direct\n\
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
       std::cout <<
-"{\n  \"supercells\" : {\n    \"SCEL1_1_1_1_0_0_0\" : {\n      \"0\" : {\n        \"calctype.default\" : {\n          \"ref.default\" : {\n            \"properties\" : {\n              \"calc\" : {\n                \"basis_deformation\" : 0.000000000000,\n                \"data_timestamp\" : 1441172550,\n                \"lattice_deformation\" : 0.000000676576,\n                \"relaxation_strain\" : [ 0.001443293898, 0.001443293305, 0.002332246990, 0.000000000000, 0.000000000000, -0.000000001264 ],\n                \"relaxed_energy\" : -17.093958770000,\n                \"rms_force\" : 0.000000000000,\n                \"volume_relaxation\" : 1.005222845232\n              },\n              \"delta\" : {\n                \"relaxed_energy\" : 0.000000000000\n              },\n              \"ref\" : {\n                \"relaxed_energy\" : -17.093958770000\n              }\n            }\n          }\n        },\n        \"dof\" : {\n          \"occupation\" : [ 0, 0, 0, 0 ]\n        },\n        \"selected\" : false,\n        \"source\" : [ \"occupation_enumeration\" ]\n      },\n\
+                "{\n  \"supercells\" : {\n    \"SCEL1_1_1_1_0_0_0\" : {\n      \"0\" : {\n        \"calctype.default\" : {\n          \"ref.default\" : {\n            \"properties\" : {\n              \"calc\" : {\n                \"basis_deformation\" : 0.000000000000,\n                \"data_timestamp\" : 1441172550,\n                \"lattice_deformation\" : 0.000000676576,\n                \"relaxation_strain\" : [ 0.001443293898, 0.001443293305, 0.002332246990, 0.000000000000, 0.000000000000, -0.000000001264 ],\n                \"relaxed_energy\" : -17.093958770000,\n                \"rms_force\" : 0.000000000000,\n                \"volume_relaxation\" : 1.005222845232\n              },\n              \"delta\" : {\n                \"relaxed_energy\" : 0.000000000000\n              },\n              \"ref\" : {\n                \"relaxed_energy\" : -17.093958770000\n              }\n            }\n          }\n        },\n        \"dof\" : {\n          \"occupation\" : [ 0, 0, 0, 0 ]\n        },\n        \"selected\" : false,\n        \"source\" : [ \"occupation_enumeration\" ]\n      },\n\
       ... other configurations ...\n\
     },\n\
     ... other supercells ... \n\
@@ -585,44 +585,44 @@ LCHARG = .FALSE.\n";
 
       std::cout << "DESCRIPTION:\n";
       std::cout << "This JSON file contains the currently selected composition axes, and \n" <<
-                   "a list of possible standard or custom composition axes.              \n\n" <<
-      
-                   "standard_axes:                                                      \n" <<
-                   "  A JSON object containing each possible standard composition axes  \n" <<
-                   "  as an attribute with its index as the key.                        \n\n" <<
-                   
-                   "custom_axes:                                                        \n" <<
-                   "  A JSON object containing each custom composition axes as an       \n" <<
-                   "  attribute with its index as the key. The keys should not be       \n" <<
-                   "  repeats of any of the standard_axes.                              \n\n" <<
-                   
-                   "standard_axes/composition_axes:components                           \n" <<
-                   "  A JSON array containing the names of possible species.            \n\n" <<
-                   
-                   "standard_axes/composition_axes:independent_compositions             \n" <<
-                   "  The number of independent composition axes.                       \n\n" <<
-                   
-                   "standard_axes/composition_axes:origin                               \n" <<
-                   "  The composition of origin the of composition axes in terms of     \n" <<
-                   "  number of each component species per primitive cell, ordered as in\n" <<
-                   "  the 'components' array.                                           \n\n" <<
-                   
-                   "standard_axes/composition_axes:a, b, c, ...                         \n" <<
-                   "  The composition of end members a, b, c, etc. in terms of number of\n" <<
-                   "  each component species per primitive cell, ordered as in the      \n" <<
-                   "  'components' array.                                               \n\n" <<
+                "a list of possible standard or custom composition axes.              \n\n" <<
 
-                   "standard_axes/composition_axes:param_formula:                       \n" <<
-                   "  The formula that converts 'comp_n' (# of each component per       \n" <<
-                   "  primitive cell) to 'comp' (composition relative the selected      \n" <<
-                   "  composition axes).                                                \n\n" <<
+                "standard_axes:                                                      \n" <<
+                "  A JSON object containing each possible standard composition axes  \n" <<
+                "  as an attribute with its index as the key.                        \n\n" <<
 
-                   "standard_axes/composition_axes:mol_formula:                         \n" <<
-                   "  The formula that converts 'comp' (composition relative the        \n" <<
-                   "  selected composition axes) to 'comp_n' (# of each component per   \n" <<
-                   "  primitive cell).                                                  \n\n\n";
+                "custom_axes:                                                        \n" <<
+                "  A JSON object containing each custom composition axes as an       \n" <<
+                "  attribute with its index as the key. The keys should not be       \n" <<
+                "  repeats of any of the standard_axes.                              \n\n" <<
 
-      
+                "standard_axes/composition_axes:components                           \n" <<
+                "  A JSON array containing the names of possible species.            \n\n" <<
+
+                "standard_axes/composition_axes:independent_compositions             \n" <<
+                "  The number of independent composition axes.                       \n\n" <<
+
+                "standard_axes/composition_axes:origin                               \n" <<
+                "  The composition of origin the of composition axes in terms of     \n" <<
+                "  number of each component species per primitive cell, ordered as in\n" <<
+                "  the 'components' array.                                           \n\n" <<
+
+                "standard_axes/composition_axes:a, b, c, ...                         \n" <<
+                "  The composition of end members a, b, c, etc. in terms of number of\n" <<
+                "  each component species per primitive cell, ordered as in the      \n" <<
+                "  'components' array.                                               \n\n" <<
+
+                "standard_axes/composition_axes:param_formula:                       \n" <<
+                "  The formula that converts 'comp_n' (# of each component per       \n" <<
+                "  primitive cell) to 'comp' (composition relative the selected      \n" <<
+                "  composition axes).                                                \n\n" <<
+
+                "standard_axes/composition_axes:mol_formula:                         \n" <<
+                "  The formula that converts 'comp' (composition relative the        \n" <<
+                "  selected composition axes) to 'comp_n' (# of each component per   \n" <<
+                "  primitive cell).                                                  \n\n\n";
+
+
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
       std::cout <<
@@ -641,19 +641,19 @@ LCHARG = .FALSE.\n";
 
       std::cout << "DESCRIPTION:\n";
       std::cout << "This JSON file contains specifications for generating the cluster\n" <<
-                   "basis functions.                                                    \n\n";
+                "basis functions.                                                    \n\n";
 
       std::cout << "The 'site_basis_functions' may be 'occupation' or 'chebychev'.      \n\n";
 
       std::cout << "The JSON object 'orbit_branch_specs' specifies the maximum size of pair,   \n" <<
-                   "triplet, quadruplet, etc. clusters in terms of the maximum distance \n" <<
-                   "between any two sites in the cluster.\n\n";
+                "triplet, quadruplet, etc. clusters in terms of the maximum distance \n" <<
+                "between any two sites in the cluster.\n\n";
 
       std::cout << "The JSON array 'orbit_specs' allows specifying particular custom orbits \n" <<
-                   "by providing the prototype cluster coordinates. The 'include_subclusters'\n" <<
-                   "option allows including all orbits of subclusters of the specified cluster\n\n\n";
+                "by providing the prototype cluster coordinates. The 'include_subclusters'\n" <<
+                "option allows including all orbits of subclusters of the specified cluster\n\n\n";
 
-      
+
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
       std::cout <<
@@ -692,8 +692,8 @@ LCHARG = .FALSE.\n";
 
                 "If you create custom 'properties.ref_state.i.json' files, only the \n" <<
                 "'param_composition' and 'ref_state' members are required.          \n\n\n";
-      
-      
+
+
       std::cout << "EXAMPLE: properties.ref_state.0.json\n";
       std::cout << "-------\n";
       std::cout <<
@@ -717,11 +717,11 @@ LCHARG = .FALSE.\n";
 
       std::cout << "DESCRIPTION:\n";
       std::cout << "Contains a list of all the generated and imported supercells. Each  \n" <<
-                   "entry gives the name of a supercell, its volume in number of        \n" <<
-                   "primitive volumes, and the transformation matrix to go from the     \n" <<
-                   "primitive cell to the supercell. The convention is                  \n" <<
-                   "            LAT.scel = LAT.prim*transf_matrix,                      \n" <<
-                   "where the columns of the LAT matrices are the lattice vectors.      \n\n\n";
+                "entry gives the name of a supercell, its volume in number of        \n" <<
+                "primitive volumes, and the transformation matrix to go from the     \n" <<
+                "primitive cell to the supercell. The convention is                  \n" <<
+                "            LAT.scel = LAT.prim*transf_matrix,                      \n" <<
+                "where the columns of the LAT matrices are the lattice vectors.      \n\n\n";
 
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
@@ -755,9 +755,9 @@ Supercell Transformation Matrix: \n\
 
       std::cout << "DESCRIPTION:\n";
       std::cout << "Contains the lattice vectors of a particular supercell of your CASM \n" <<
-                   "project. The format is the same as the first lines in a standard    \n" <<
-                   "vasp POSCAR file, excluding the title (scaling followed by the three\n" <<
-                   "lattice vectors as rows).\n\n\n";
+                "project. The format is the same as the first lines in a standard    \n" <<
+                "vasp POSCAR file, excluding the title (scaling followed by the three\n" <<
+                "lattice vectors as rows).\n\n\n";
 
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
@@ -779,10 +779,10 @@ Supercell Transformation Matrix: \n\
       std::cout << "DESCRIPTION:\n";
       std::cout << "This file is generated using the '--write-pos' option for 'casm run'.\n";
       std::cout << "Decorated configuration for a particular supercell. It is a         \n" <<
-                   "supercell of your primitive structure after the enumeration on the  \n" <<
-                   "alloying sites. The format is standard vasp 5.x format, and the     \n" <<
-                   "coordinates of the sites for the configuration are the ideal sites  \n" <<
-                   "specified in the PRIM file.\n\n\n";
+                "supercell of your primitive structure after the enumeration on the  \n" <<
+                "alloying sites. The format is standard vasp 5.x format, and the     \n" <<
+                "coordinates of the sites for the configuration are the ideal sites  \n" <<
+                "specified in the PRIM file.\n\n\n";
 
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
@@ -813,41 +813,41 @@ Direct\n\
 
       std::cout << "DESCRIPTION:\n";
       std::cout << "The 'energy' file contains information about every selected    \n" <<
-                   "configuration that will be included as training data for fitting ECI.\n\n" <<
+                "configuration that will be included as training data for fitting ECI.\n\n" <<
 
-                   "1st column:                                                        \n" <<
-                   "  Formation energy determined from the reference states.           \n" <<
-                   "  (See 'casm ref' and 'casm format --ref_state' for details)       \n\n" <<
+                "1st column:                                                        \n" <<
+                "  Formation energy determined from the reference states.           \n" <<
+                "  (See 'casm ref' and 'casm format --ref_state' for details)       \n\n" <<
 
-                   "2nd column:                                                        \n" <<
-                   "  Weight to be placed on configuration when fitting energies with  \n" <<
-                   "  eci_search.                                                      \n\n" <<
+                "2nd column:                                                        \n" <<
+                "  Weight to be placed on configuration when fitting energies with  \n" <<
+                "  eci_search.                                                      \n\n" <<
 
-                   "3rd and following columns:                                         \n" <<
-                   "  Composition of configuration. For a system with N independent    \n" <<
-                   "  occupants there will be N-1 columns (see 'casm comp')            \n\n" <<
+                "3rd and following columns:                                         \n" <<
+                "  Composition of configuration. For a system with N independent    \n" <<
+                "  occupants there will be N-1 columns (see 'casm comp')            \n\n" <<
 
-                   "2nd column from back:                                              \n" <<
-                   "  Distance to convex hull. Groundstates will have a value of 0.0000.\n\n" <<
+                "2nd column from back:                                              \n" <<
+                "  Distance to convex hull. Groundstates will have a value of 0.0000.\n\n" <<
 
-                   "Last column:                                                       \n" <<
-                   "  Path to configuration.                                           \n\n" <<
+                "Last column:                                                       \n" <<
+                "  Path to configuration.                                           \n\n" <<
 
-                   "The energy file is to be used together with the corr.in and eci.in \n" <<
-                   "files to fit the cluster expansion using the eci_search program.   \n\n";
+                "The energy file is to be used together with the corr.in and eci.in \n" <<
+                "files to fit the cluster expansion using the eci_search program.   \n\n";
 
       std::cout << "The 'corr.in' file contains a matrix of correlations for each   \n" <<
-                   "selected configuration.    \n\n";
+                "selected configuration.    \n\n";
 
       std::cout << "The 'eci.in' file contains a list of calculated correlations and \n" <<
-                   "can be used to control with correlations are fit by 'eci_search'. \n\n";
+                "can be used to control with correlations are fit by 'eci_search'. \n\n";
 
       std::cout << "The 'eci.out' file contains the fitted ECI as calculated by 'eci_search'.\n\n";
 
       std::cout << "EXAMPLE: energy\n";
       std::cout << "-------\n";
       std::cout <<
-"#formation_energy    n/a    n/a    n/a    path    \n\
+                "#formation_energy    n/a    n/a    n/a    path    \n\
 0.0000000000000  1.000000000000  1.000000000000  0.000000000000  /home/user/science/supercells/SCEL1_1_1_1_0_0_0/0  \n\
 0.0000000000000  1.000000000000  0.000000000000  0.000000000000  /home/user/science/supercells/SCEL1_1_1_1_0_0_0/1  \n\
 -0.415501770000  1.000000000000  0.500000000000  0.243052905000  /home/user/science/supercells/SCEL2_1_1_2_0_0_0/0  \n\

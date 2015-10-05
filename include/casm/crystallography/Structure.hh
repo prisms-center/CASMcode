@@ -177,7 +177,7 @@ namespace CASM {
 
     //John G 121212
     /// Return reflection of structure
-    Structure get_reflection(bool override = 0) const;
+    Structure get_reflection() const;
     /// If atoms are too close together, average their distance and make them one
     void clump_atoms(double maxdist); //Only for same atom types
     /// Rearrange basis by grouping atoms by type

@@ -180,6 +180,9 @@ namespace CASM {
     double min_dist(const Coordinate &neighbor) const;
     double min_dist(const Coordinate &neighbor, Coordinate &shift)const; //Added by Ivy 11/05/12
 
+    ///Finds same shift as min_dist but returns shift(CART).transpose()*metric*shift(CART)
+    double min_dist2(const Coordinate &neighbor, const Matrix3<double> &metric) const;
+
     ///Transform coordinate by symmetry operation (including translation)
     Coordinate &apply_sym(const SymOp &op); //AAB
     ///Transform coordinate by symmetry operation (without translation)

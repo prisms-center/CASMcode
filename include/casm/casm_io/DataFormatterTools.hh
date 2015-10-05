@@ -549,6 +549,11 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  template<typename Container>
+  Index container_size_1D(const Container &cont) {
+    return cont.size();
+  }
+
   template<typename _Container,
            typename DataObject,
            typename _value_type = typename _Container::value_type,
@@ -633,6 +638,15 @@ namespace CASM {
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  template<typename Container>
+  std::vector<Index> container_size_2D(const Container &cont) {
+    std::vector<Index> tsize(2, 0);
+    tsize[0] = cont.size();
+    if(tsize[0] > 0)
+      tsize[1] = cont[0].size();
+    return tsize;
+  }
 
   template<typename _Container,
            typename DataObject,
