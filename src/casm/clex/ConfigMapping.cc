@@ -7,15 +7,15 @@
 
 namespace CASM {
   namespace ConfigMapping {
-    double strain_cost(const Lattice &relaxed_lat, const ConfigDoF &_dof) {
-      return LatticeMap::calc_strain_cost(_dof.deformation(), relaxed_lat.vol() / double(_dof.size()));
+    double strain_cost(const Lattice &relaxed_lat, const ConfigDoF &_dof, const Index Nsites) {
+      return LatticeMap::calc_strain_cost(_dof.deformation(), relaxed_lat.vol() / double(Nsites));
     }
 
     //*******************************************************************************************
 
-    double basis_cost(const ConfigDoF &_dof) {
+    double basis_cost(const ConfigDoF &_dof, Index Nsites) {
       // mean square displacement distance in deformed coordinate system
-      return (_dof.deformation() * _dof.displacement() * _dof.displacement().transpose() * _dof.deformation().transpose()).trace() / double(_dof.size());
+      return (_dof.deformation() * _dof.displacement() * _dof.displacement().transpose() * _dof.deformation().transpose()).trace() / double(Nsites);
     }
 
     //*******************************************************************************************
@@ -218,8 +218,8 @@ namespace CASM {
       }
     }
 
-    relaxation_properties["basis_deformation"] = ConfigMapping::basis_cost(tconfigdof);
-    relaxation_properties["lattice_deformation"] = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof);
+    relaxation_properties["basis_deformation"] = ConfigMapping::basis_cost(tconfigdof, _struc.basis.size());
+    relaxation_properties["lattice_deformation"] = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof, _struc.basis.size());
     relaxation_properties["volume_relaxation"] = tconfigdof.deformation().determinant();
 
     // transform deformation tensor to match canonical form and apply operation to cart_op
@@ -289,8 +289,8 @@ namespace CASM {
                            cart_op))
       throw std::runtime_error("Structure is incompatible with PRIM.");
 
-    relaxation_properties["basis_deformation"] = ConfigMapping::basis_cost(tconfigdof);
-    relaxation_properties["lattice_deformation"] = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof);
+    relaxation_properties["basis_deformation"] = ConfigMapping::basis_cost(tconfigdof, _struc.basis.size());
+    relaxation_properties["lattice_deformation"] = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof, _struc.basis.size());
     relaxation_properties["volume_change"] = tconfigdof.deformation().determinant();
 
     Index import_scel_index = primclex().add_supercell(mapped_lat), import_config_index;
@@ -348,7 +348,7 @@ namespace CASM {
                                                best_assignment,
                                                cart_op);
       //std::cout << "valid_mapping is " << valid_mapping << "\n";
-      valid_mapping = valid_mapping && ConfigMapping::basis_cost(mapped_configdof) < (10 * m_tol);
+      valid_mapping = valid_mapping && ConfigMapping::basis_cost(mapped_configdof, struc.basis.size()) < (10 * m_tol);
     }
 
     // If structure's lattice is not a supercell of the primitive lattice, then import as deformed_structure
@@ -484,7 +484,7 @@ namespace CASM {
     //std::cout << "max_va_fraction: " << max_va_fraction << "   Volume range: " << min_vol << " to " << max_vol << "\n";
     Eigen::MatrixXd ttrans_mat, tF, rotF;
     //Eigen::MatrixXd best_trans;
-    double strain_cost(1e10), basis_cost(1e10), best_cost(1e20), tot_cost, best_strain_cost, best_basis_cost;
+    double strain_cost(1e10), basis_cost(1e10), best_cost(1e20), tot_cost;//, best_strain_cost, best_basis_cost;
     ConfigDoF tdof;
     BasicStructure<Site> tstruc(struc);
     Lattice tlat;
@@ -523,14 +523,14 @@ namespace CASM {
                                                             true,
                                                             m_tol))
         continue;
-      basis_cost = bw * ConfigMapping::basis_cost(tdof);
+      basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis.size());
       tot_cost = strain_cost + basis_cost;
       //std::cout << "\n**Starting strain_cost = " << strain_cost << ";   and basis_cost = " << basis_cost << "  TOTAL: " << strain_cost + basis_cost << "\n";
       if(tot_cost < best_cost) {
         best_cost = tot_cost - m_tol;
         swap(best_assignment, assignment);
-        best_strain_cost = strain_cost;
-        best_basis_cost = basis_cost;
+        //best_strain_cost = strain_cost;
+        //best_basis_cost = basis_cost;
         cart_op = rotF * tF.inverse();
 
         //best_trans = Eigen::MatrixXd(tlat.inv_lat_column_mat()) * rotF.inverse() * Eigen::MatrixXd(struc.lattice().lat_column_mat());
@@ -546,108 +546,18 @@ namespace CASM {
     for(Index i_vol = min_vol; i_vol <= max_vol; i_vol++) {
       //std::cout << "  vol = " << i_vol << "\n";
       const std::vector<Lattice> &lat_vec = _lattices_of_vol(i_vol);
-      bool break_early(false);
-      for(auto it = lat_vec.cbegin(); it != lat_vec.cend() && !break_early; ++it) {
-        Supercell scel(&primclex(), *it);
 
-        //Determine best mapping for this supercell
-
-        //Initialize with simplest mapping onto supercell 'i', so that we don't change the crystal setting unnecessarily
-        tF = struc.lattice().lat_column_mat() * it->inv_lat_column_mat();
-
-        strain_cost = lw * LatticeMap::calc_strain_cost(tF, struc.lattice().vol() / num_atoms);
-
-        // If simplest mapping seems viable, check it further
-        if(strain_cost < best_cost) {
-          tstruc = struc;
-          tstruc.set_lattice(*it, FRAC);
-          rotF = tF;
-          if(m_rotate_flag) {
-            rotF = StrainConverter::right_stretch_tensor(tF);
-          }
-
-          if(!ConfigMap_impl::preconditioned_struc_to_configdof(scel,
-                                                                tstruc,
-                                                                rotF,
-                                                                tdof,
-                                                                assignment,
-                                                                true,
-                                                                m_tol))
-            break;
-          basis_cost = bw * ConfigMapping::basis_cost(tdof);
-          //std::cout << "\n**Starting strain_cost = " << strain_cost << ";   and basis_cost = " << basis_cost << "  TOTAL: " << strain_cost + basis_cost << "\n";
-          tot_cost = strain_cost + basis_cost;
-          //std::cout << "    scel.name = " << scel.get_name()  << "  simple map: strain_cost " << strain_cost << "   best_cost " << best_cost << "    tot_cost " << tot_cost << "\n";
-          if(tot_cost < best_cost) {
-            best_cost = tot_cost - m_tol;
-            best_strain_cost = strain_cost;
-            swap(best_assignment, assignment);
-            best_basis_cost = basis_cost;
-            cart_op = rotF * tF.inverse();
-            //best_trans = Matrix3<double>::identity();
-            //std::cout << "tF is:\n" << tF << "\n and N is:\n" << best_trans << "\n";
-            swap(mapped_configdof, tdof);
-
-            mapped_lat = *it;
-          }
-        } // Done checking simplest mapping
-
-        // If the simplest mapping is best, we have avoided a lot of extra work, but we still need to check for
-        // non-trivial mappings that are better than both the simplest mapping and the best found mapping
-        LatticeMap strainmap(*it, struc.lattice(), round(num_atoms), m_tol, 1);
-        strain_cost = lw * strainmap.strain_cost();
-        if(best_cost < strain_cost)
-          strain_cost = lw * strainmap.next_mapping_better_than(best_cost).strain_cost();
-
-        while(strain_cost < best_cost) {  // only enter loop if there's a chance of improving on current best
-          tstruc = struc;
-          // We modify the deformed structure so that its lattice is a deformed version of the nearest ideal lattice
-          // Don't need matrixN if we use set_lattice(CART), because matrixF depends on matrixN implicitly
-          tstruc.set_lattice(Lattice(Eigen::Matrix3d(it->lat_column_mat())*strainmap.matrixN()), FRAC);
-          tstruc.set_lattice(*it, CART);
-          tF = strainmap.matrixF();
-          rotF = tF;
-          if(m_rotate_flag) {
-            rotF = StrainConverter::right_stretch_tensor(tF);
-          }
-
-          if(!ConfigMap_impl::preconditioned_struc_to_configdof(scel,
-                                                                tstruc,
-                                                                rotF,
-                                                                tdof,
-                                                                assignment,
-                                                                true,
-                                                                m_tol)) {
-            break_early = true;
-            break;
-            //no longer unexpected
-            //throw std::runtime_error("Unexpected error in deformed_struc_to_config_dof(). This should never happen!\n");
-          }
-          //std::cout << "New strain_cost = " << strain_cost << ";   and basis_cost = " << basis_cost << "  TOTAL: " << strain_cost + basis_cost << "\n";
-          //std::cout << "  Compare -> best_cost = " << best_cost << "\n";
-          basis_cost = bw * ConfigMapping::basis_cost(tdof);
-          tot_cost = strain_cost + basis_cost;
-          //std::cout << "      complex map: best_cost " << best_cost << "    strain_cost " << strain_cost << "    tot_cost " << tot_cost << "\n";
-          if(tot_cost < best_cost) {
-            //std::cout << "Old best_trans, with cost " << best_cost << ":\n" << best_trans << "\n";
-            best_cost = tot_cost - m_tol;
-            swap(best_assignment, assignment);
-            best_strain_cost = strain_cost;
-            best_basis_cost = basis_cost;
-            cart_op = rotF * tF.inverse();
-            //best_trans = strainmap.matrixN();
-            //std::cout << "New best_trans, with cost " << best_cost << ":\n" << best_trans << "\n";
-            swap(mapped_configdof, tdof);
-
-            mapped_lat = *it;
-          }
-          // This finds first decomposition:
-          //            struc.lattice() =  deformation*(supercell_list[import_scel_index].get_real_super_lattice())*equiv_mat
-          //   that has cost function less than best_cost
-          strain_cost = lw * strainmap.next_mapping_better_than(best_cost).strain_cost();
-        }
+      for(auto it = lat_vec.cbegin(); it != lat_vec.cend(); ++it) {
+        if(!deformed_struc_to_configdof_of_lattice(struc,
+                                                   *it,
+                                                   best_cost,
+                                                   mapped_configdof,
+                                                   best_assignment,
+                                                   cart_op))
+          break;
       }
     }
+
     //std::cout << "best_cost = " << best_cost << "    best_strain_cost = " << best_strain_cost << "    best_basis_cost = " << best_basis_cost << "\n";
     if(best_cost > 1e9) {
       //std::cerr << "WARNING: In Supercell::import_deformed_structure(), no successful mapping was found for Structure " << src << "\n"
@@ -657,11 +567,120 @@ namespace CASM {
 
     //std::cout << "FINAL COST IS: " << best_cost << "\nFINAL TRANS MAT IS:\n" << best_trans << "\n\n";
     return true;
-
   }
 
   //*******************************************************************************************
+  bool ConfigMapper::deformed_struc_to_configdof_of_lattice(const BasicStructure<Site> &struc,
+                                                            const Lattice &imposed_lat,
+                                                            double &best_cost,
+                                                            ConfigDoF &mapped_configdof,
+                                                            std::vector<Index> &best_assignment,
+                                                            Eigen::Matrix3d &cart_op) const {
+    double strain_cost, basis_cost, tot_cost;
+    ConfigDoF tdof;
+    BasicStructure<Site> tstruc(struc);
+    Eigen::MatrixXd tF, rotF;
+    std::vector<Index> assignment;
+    Supercell scel(&primclex(), imposed_lat);
 
+    double lw = m_lattice_weight;
+    double bw = 1.0 - lw;
+    double num_atoms = double(struc.basis.size());
+    //Determine best mapping for this supercell
+
+    //Initialize with simplest mapping onto supercell 'i', so that we don't change the crystal setting unnecessarily
+    tF = struc.lattice().lat_column_mat() * imposed_lat.inv_lat_column_mat();
+
+    strain_cost = lw * LatticeMap::calc_strain_cost(tF, struc.lattice().vol() / num_atoms);
+
+    // If simplest mapping seems viable, check it further
+    if(strain_cost < best_cost) {
+      tstruc = struc;
+      tstruc.set_lattice(imposed_lat, FRAC);
+      rotF = tF;
+      if(m_rotate_flag) {
+        rotF = StrainConverter::right_stretch_tensor(tF);
+      }
+
+      if(!ConfigMap_impl::preconditioned_struc_to_configdof(scel,
+                                                            tstruc,
+                                                            rotF,
+                                                            tdof,
+                                                            assignment,
+                                                            true,
+                                                            m_tol))
+        return false;
+      basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis.size());
+      //std::cout << "\n**Starting strain_cost = " << strain_cost << ";   and basis_cost = " << basis_cost << "  TOTAL: " << strain_cost + basis_cost << "\n";
+      tot_cost = strain_cost + basis_cost;
+      //std::cout << "    scel.name = " << scel.get_name()  << "  simple map: strain_cost " << strain_cost << "   best_cost " << best_cost << "    tot_cost " << tot_cost << "\n";
+      if(tot_cost < best_cost) {
+        best_cost = tot_cost - m_tol;
+        //best_strain_cost = strain_cost;
+        //best_basis_cost = basis_cost;
+        swap(best_assignment, assignment);
+        cart_op = rotF * tF.inverse();
+        //best_trans = Matrix3<double>::identity();
+        //std::cout << "tF is:\n" << tF << "\n and N is:\n" << best_trans << "\n";
+        swap(mapped_configdof, tdof);
+      }
+    } // Done checking simplest mapping
+
+    // If the simplest mapping is best, we have avoided a lot of extra work, but we still need to check for
+    // non-trivial mappings that are better than both the simplest mapping and the best found mapping
+    LatticeMap strainmap(imposed_lat, struc.lattice(), round(num_atoms), m_tol, 1);
+    strain_cost = lw * strainmap.strain_cost();
+    if(best_cost < strain_cost)
+      strain_cost = lw * strainmap.next_mapping_better_than(best_cost).strain_cost();
+
+    while(strain_cost < best_cost) {  // only enter loop if there's a chance of improving on current best
+      tstruc = struc;
+      // We modify the deformed structure so that its lattice is a deformed version of the nearest ideal lattice
+      // Don't need matrixN if we use set_lattice(CART), because matrixF depends on matrixN implicitly
+      tstruc.set_lattice(Lattice(Eigen::Matrix3d(imposed_lat.lat_column_mat())*strainmap.matrixN()), FRAC);
+      tstruc.set_lattice(imposed_lat, CART);
+      tF = strainmap.matrixF();
+      rotF = tF;
+      if(m_rotate_flag) {
+        rotF = StrainConverter::right_stretch_tensor(tF);
+      }
+
+      if(!ConfigMap_impl::preconditioned_struc_to_configdof(scel,
+                                                            tstruc,
+                                                            rotF,
+                                                            tdof,
+                                                            assignment,
+                                                            true,
+                                                            m_tol)) {
+        return false;
+        //no longer unexpected
+        //throw std::runtime_error("Unexpected error in deformed_struc_to_config_dof(). This should never happen!\n");
+      }
+      //std::cout << "New strain_cost = " << strain_cost << ";   and basis_cost = " << basis_cost << "  TOTAL: " << strain_cost + basis_cost << "\n";
+      //std::cout << "  Compare -> best_cost = " << best_cost << "\n";
+      basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis.size());
+      tot_cost = strain_cost + basis_cost;
+      //std::cout << "      complex map: best_cost " << best_cost << "    strain_cost " << strain_cost << "    tot_cost " << tot_cost << "\n";
+      if(tot_cost < best_cost) {
+        //std::cout << "Old best_trans, with cost " << best_cost << ":\n" << best_trans << "\n";
+        best_cost = tot_cost - m_tol;
+        swap(best_assignment, assignment);
+        //best_strain_cost = strain_cost;
+        //best_basis_cost = basis_cost;
+        cart_op = rotF * tF.inverse();
+        //best_trans = strainmap.matrixN();
+        //std::cout << "New best_trans, with cost " << best_cost << ":\n" << best_trans << "\n";
+        swap(mapped_configdof, tdof);
+      }
+      // This finds first decomposition:
+      //            struc.lattice() =  deformation*(supercell_list[import_scel_index].get_real_super_lattice())*equiv_mat
+      //   that has cost function less than best_cost
+      strain_cost = lw * strainmap.next_mapping_better_than(best_cost).strain_cost();
+    }
+    return true;
+  }
+
+  //*******************************************************************************************
   const std::vector<Lattice> &ConfigMapper::_lattices_of_vol(Index prim_vol) const {
     if(!valid_index(prim_vol)) {
       throw std::runtime_error("Cannot enumerate lattice of volume " + std::to_string(prim_vol) + ", which is out of bounds.\n");
