@@ -207,6 +207,23 @@ namespace CASM {
                                      std::vector<Index> &best_assignment,
                                      Eigen::Matrix3d &cart_op) const;
 
+    ///\brief Low-level routine to map a structure onto a ConfigDof assuming a specific Lattice, without assuming structure is ideal
+    ///       Will only identify mappings better than best_cost, and best_cost is updated to reflect cost of best mapping identified
+    ///\param imposed_lat[in] Supercell Lattice onto which struc will be mapped
+    ///\param best_cost Imposes an upper bound on cost of any mapping considered, and is updated to reflect best mapping encountered
+    ///\param mapped_configdof[out] ConfigDoF that is result of mapping procedure
+    ///\param best_assignment[out]
+    ///\parblock
+    ///                   populated by the permutation of sites in the imported structure
+    ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
+    ///\endparblock
+    bool deformed_struc_to_configdof_of_lattice(const BasicStructure<Site> &struc,
+                                                const Lattice &imposed_lat,
+                                                double &best_cost,
+                                                ConfigDoF &mapped_configdof,
+                                                std::vector<Index> &best_assignment,
+                                                Eigen::Matrix3d &cart_op) const;
+
   private:
     PrimClex *m_pclex;
     mutable std::map<Index, std::vector<Lattice> > m_superlat_map;
@@ -260,10 +277,12 @@ namespace CASM {
 
   namespace ConfigMapping {
     /// \brief Calculate the strain cost function of a ConfigDoF using LatticeMap::calc_strain_cost()
-    double strain_cost(const Lattice &relaxed_lat, const ConfigDoF &_dof);
+    /// \param Nsites number of atoms in the relaxed structure, for proper normalization
+    double strain_cost(const Lattice &relaxed_lat, const ConfigDoF &_dof, Index Nsites);
 
     /// \brief Calculate the basis cost function of a ConfigDoF as the mean-square displacement of its atoms
-    double basis_cost(const ConfigDoF &_dof);
+    /// \param Nsites number of atoms in the relaxed structure, for proper normalization
+    double basis_cost(const ConfigDoF &_dof, Index Nsites);
 
 
     Lattice find_nearest_super_lattice(const Lattice &prim_lat,

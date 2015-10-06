@@ -94,9 +94,9 @@ namespace CASM {
       }
       for(Index i = 0; i < m_prop_names.size(); i++) {
         if(m_prop_names[i] == "basis_score")
-          result_vec.push_back(ConfigMapping::basis_cost(mapped_configdof));
+          result_vec.push_back(ConfigMapping::basis_cost(mapped_configdof, relaxed_struc.basis.size()));
         else if(m_prop_names[i] == "lattice_score")
-          result_vec.push_back(ConfigMapping::strain_cost(relaxed_struc.lattice(), mapped_configdof));
+          result_vec.push_back(ConfigMapping::strain_cost(relaxed_struc.lattice(), mapped_configdof, relaxed_struc.basis.size()));
       }
 
       return result_vec;
