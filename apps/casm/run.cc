@@ -23,7 +23,7 @@ namespace CASM {
     ("help,h", "Write help documentation")
     ("write-pos", "Write POS file for each selected configuration before executing the command")
     ("exec,e", po::value<std::string>(&exec)->required(), "Command to execute")
-    ("config,e", po::value<std::string>(&selection)->default_value("MASTER"), "Config selection");
+    ("config,c", po::value<std::string>(&selection)->default_value("MASTER"), "Config selection");
 
     try {
       po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
