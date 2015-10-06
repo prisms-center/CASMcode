@@ -120,16 +120,15 @@ namespace CASM {
         {
           //Convert relaxed structure into a configuration, merge calculation data
           BasicStructure<Site> relaxed_struc;
-          jsonParser json(filepath);
-          from_json(simple_json(relaxed_struc, "relaxed_"), json);
+          from_json(simple_json(relaxed_struc, "relaxed_"), jsonParser(filepath));
           std::vector<Index> best_assignment;
           Eigen::Matrix3d cart_op;
-          json.put_obj();
+          jsonParser trelax_data;
           try {
             new_config_flag = configmapper.import_structure_occupation(relaxed_struc,
                                                                        &(*it),
                                                                        imported_name,
-                                                                       json,
+                                                                       trelax_data,
                                                                        best_assignment,
                                                                        cart_op);
           }
@@ -141,7 +140,8 @@ namespace CASM {
           }
 
           //copy data over
-          for(auto jit = json.cbegin(); jit != json.cend(); ++jit) {
+          for(auto jit = trelax_data.cbegin(); jit != trelax_data.cend(); ++jit) {
+            //std::cout << "appending: " << jit.name() << "\n";
             parsed_props[jit.name()] = *jit;
           }
         }

@@ -160,7 +160,7 @@ namespace CASM {
     //Indices for Configuration index and permutation operation index
     ConfigDoF tconfigdof;
     Lattice mapped_lat;
-    bool new_config_flag;
+    bool is_new_config(true);
 
     relaxation_properties.put_obj();
     //std::vector<Index> best_assignment;
@@ -176,6 +176,7 @@ namespace CASM {
 
     relaxed_occ.set_occupation(tconfigdof.occupation());
     Supercell::permute_const_iterator it_canon;
+
     if(hint_ptr != nullptr) {
       ConfigDoF canon_relaxed_occ, canon_ideal_occ;
       Supercell const &scel(hint_ptr->get_supercell());
@@ -183,49 +184,43 @@ namespace CASM {
         if(m_strict_flag && relaxed_occ.occupation() == (hint_ptr->configdof()).occupation()) {
           // config is unchanged
           imported_name = hint_ptr->name();
-          return false;
+          is_new_config = false;
         }
-        canon_relaxed_occ = relaxed_occ.canonical_form(scel.permute_begin(), scel.permute_end(), it_canon, m_tol);
+        else {
+          canon_relaxed_occ = relaxed_occ.canonical_form(scel.permute_begin(), scel.permute_end(), it_canon, m_tol);
 
-        canon_ideal_occ = (hint_ptr->configdof()).canonical_form(scel.permute_begin(), scel.permute_end(), m_tol);
-        //std::cout << "canon_relaxed_occ.occupation() is " << canon_relaxed_occ.occupation() << "\n";
-        //std::cout << "canon_ideal_occ.occupation() is " << canon_ideal_occ.occupation() << "\n";
+          canon_ideal_occ = (hint_ptr->configdof()).canonical_form(scel.permute_begin(), scel.permute_end(), m_tol);
+          //std::cout << "canon_relaxed_occ.occupation() is " << canon_relaxed_occ.occupation() << "\n";
+          //std::cout << "canon_ideal_occ.occupation() is " << canon_ideal_occ.occupation() << "\n";
 
-        if(canon_relaxed_occ.occupation() == canon_ideal_occ.occupation()) {
-          // config is unchanged
-          imported_name = hint_ptr->name();
-          return false;
+          if(canon_relaxed_occ.occupation() == canon_ideal_occ.occupation()) {
+            // config is unchanged
+            imported_name = hint_ptr->name();
+            is_new_config = false;
+          }
         }
       }
     }
 
+    if(is_new_config) {
+      Index import_scel_index = primclex().add_supercell(mapped_lat), import_config_index;
 
-    Index import_scel_index = primclex().add_supercell(mapped_lat), import_config_index;
+      Configuration import_config(primclex().get_supercell(import_scel_index), jsonParser(), relaxed_occ);
 
-    Configuration import_config(primclex().get_supercell(import_scel_index), jsonParser(), relaxed_occ);
-
-    if(m_strict_flag) {
-      it_canon = primclex().get_supercell(import_scel_index).permute_begin();
-      new_config_flag = primclex().get_supercell(import_scel_index).add_canon_config(import_config, import_config_index);
-      imported_name = primclex().get_supercell(import_scel_index).get_config(import_config_index).name();
-    }
-    else {
-      new_config_flag = primclex().get_supercell(import_scel_index).add_config(import_config, import_config_index, it_canon);
-      imported_name = primclex().get_supercell(import_scel_index).get_config(import_config_index).name();
+      if(m_strict_flag) {
+        it_canon = primclex().get_supercell(import_scel_index).permute_begin();
+        is_new_config = primclex().get_supercell(import_scel_index).add_canon_config(import_config, import_config_index);
+        imported_name = primclex().get_supercell(import_scel_index).get_config(import_config_index).name();
+      }
+      else {
+        is_new_config = primclex().get_supercell(import_scel_index).add_config(import_config, import_config_index, it_canon);
+        imported_name = primclex().get_supercell(import_scel_index).get_config(import_config_index).name();
+      }
     }
 
     relaxation_properties["basis_deformation"] = ConfigMapping::basis_cost(tconfigdof);
     relaxation_properties["lattice_deformation"] = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof);
     relaxation_properties["volume_relaxation"] = tconfigdof.deformation().determinant();
-    /*Eigen::Matrix3d E = StrainConverter::green_lagrange(tconfigdof.deformation());
-      std::vector<double> Evec(6);
-      Evec[0] = (E(0, 0));
-      Evec[1] = (E(1, 1));
-      Evec[2] = (E(2, 2));
-      Evec[3] = (sqrt(2.0) * E(1, 2));
-      Evec[4] = (sqrt(2.0) * E(0, 2));
-      Evec[5] = (sqrt(2.0) * E(0, 1));
-    */
 
     // transform deformation tensor to match canonical form and apply operation to cart_op
     Eigen::Matrix3d fg_cart_op = it_canon.sym_op().get_matrix(CART);
@@ -248,7 +243,7 @@ namespace CASM {
       _struc.set_lattice(Lattice(Eigen::Matrix3d(cart_op.transpose()*tconfigdof.deformation()*Eigen::Matrix3d(mapped_lat.lat_column_mat()))), CART);
       _struc.set_lattice(Lattice(tconfigdof.deformation()*Eigen::Matrix3d(mapped_lat.lat_column_mat())), FRAC);
     }
-    return new_config_flag;
+    return is_new_config;
   }
 
   //*******************************************************************************************
