@@ -35,11 +35,11 @@ namespace CASM {
 
     //"Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)"
     double get_config_rms_force(const Configuration &_config) {
-      return _config.calc_properties().contains("rms_force") ? _config.delta_properties()["rms_force"].get<double>() : NAN;
+      return _config.calc_properties().contains("rms_force") ? _config.calc_properties()["rms_force"].get<double>() : NAN;
     }
 
     bool has_config_rms_force(const Configuration &_config) {
-      return _config.delta_properties().contains("rms_force");
+      return _config.calc_properties().contains("rms_force");
     }
 
     //"Cost function that describes the degree to which basis sites have relaxed."
