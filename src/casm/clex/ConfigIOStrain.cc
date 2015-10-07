@@ -92,7 +92,7 @@ namespace CASM {
         Eigen::VectorXd strain_vec = _evaluate(_config);
 
         for(auto it = _index_rules().cbegin(); it != _index_rules().cend(); ++it)
-          _stream << "     " << strain_vec[(*it)[0]];
+          _stream  << strain_vec[(*it)[0]];
       }
     }
 
