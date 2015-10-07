@@ -24,7 +24,6 @@ namespace CASM {
         return false;
       if(m_prim_path.empty()) {
         m_prim_path = splt_vec[0];
-        std::cout << "\n\n   ****m_prim_path is " << m_prim_path << "\n\n";
         if(!fs::exists(m_prim_path)) {
           throw std::runtime_error("Attempted to initialize format tag " + name()
                                    + " invalid file path '" + fs::absolute(m_prim_path).string() + "'. File does not exist.\n");
