@@ -60,7 +60,7 @@ namespace CASM {
     std::string StrucScoreConfigFormatter::long_header(const Configuration &_tmplt) const {
       std::stringstream t_ss;
       for(Index i = 0; i < m_prop_names.size(); i++)
-        t_ss << "    " << name() << '(' << m_prim_path.string() << ',' << m_prop_names[i] << ')';
+        t_ss << "    " << name() << '(' << m_prim_path.string() << ',' << m_prop_names[i] << ',' << m_lattice_weight << ')';
       return t_ss.str();
     }
 
@@ -72,7 +72,7 @@ namespace CASM {
       t_ss << name() << '(' << m_prim_path.string();
       for(Index i = 0; i < m_prop_names.size(); i++)
         t_ss   << ',' << m_prop_names[i];
-      t_ss << ')';
+      t_ss << ',' << m_lattice_weight << ')';
       return t_ss.str();
     }
 
