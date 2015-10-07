@@ -36,8 +36,9 @@ namespace CASM {
       // Cases control which configurations to use for obtaining hull data
       if(m_selection == "all")
         mat_wrapper << m_format(_tmplt.get_primclex().config_cbegin(), _tmplt.get_primclex().config_cend());
-      else if(m_selection == "MASTER")
+      else if(m_selection == "MASTER" || m_selection.empty()){
         mat_wrapper << m_format(_tmplt.get_primclex().selected_config_cbegin(), _tmplt.get_primclex().selected_config_cend());
+      }
       else {
         ConstConfigSelection select(_tmplt.get_primclex(), m_selection);
         mat_wrapper << m_format(select.selected_config_cbegin(), select.selected_config_cend());
@@ -76,7 +77,8 @@ namespace CASM {
       m_hull.reset_points(reduced_mat, true);
 
       if(!m_hull.calc_CH()) { //calculates hull
-        throw std::runtime_error("Failure to construct convex hull from selection " + m_selection
+	std::string tselection= m_selection.empty() ? "MASTER" : m_selection;
+        throw std::runtime_error("Failure to construct convex hull from selection " + tselection
                                  + " for formatted output!\n");
       }
 
@@ -113,7 +115,7 @@ namespace CASM {
         return false;
       }
       m_independent_props.push_back(splt_vec.size() < 2 ? "comp" : splt_vec[1]);
-      m_selection = splt_vec.size() < 1 ? "all" : splt_vec[0];
+      m_selection = splt_vec.size() < 1 ? "MASTER" : splt_vec[0];
       return true;
     }
 
@@ -121,7 +123,7 @@ namespace CASM {
 
     std::string BaseHullConfigFormatter::short_header(const Configuration &_tmplt) const {
       std::stringstream t_ss;
-      t_ss << name() << "(" << m_selection << ",";
+      t_ss << name() << "(" << (m_selection.empty() ? "MASTER" : m_selection) << ",";
       for(Index i = 0; i < m_independent_props.size(); i++)
         t_ss << m_independent_props[i];
       t_ss << ")";
