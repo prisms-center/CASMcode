@@ -480,7 +480,8 @@ namespace CASM {
         min_vol = new_min_vol;
       }
     }
-
+    min_vol = max(min_vol, 1);
+    max_vol = max(max_vol, 1);
     //std::cout << "max_va_fraction: " << max_va_fraction << "   Volume range: " << min_vol << " to " << max_vol << "\n";
     Eigen::MatrixXd ttrans_mat, tF, rotF;
     //Eigen::MatrixXd best_trans;
@@ -724,7 +725,8 @@ namespace CASM {
                           const Matrix3<double> &metric,
                           Eigen::MatrixXd &cost_matrix) {
 
-
+      if(rstruc.basis.size() > scel.num_sites())
+        return false;
       double inf = 10E10;
       //if(cost_matrix.rows()!=scel.num_sites() || cost_matrix.cols()!=scel.num_sites())
       cost_matrix = Eigen::MatrixXd::Constant(scel.num_sites(), scel.num_sites(), inf);
