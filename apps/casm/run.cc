@@ -44,10 +44,6 @@ namespace CASM {
                   << "    - The '--write-pos' option makes casm write the POS file  \n"
                   << "      before executing the given command.                     \n\n";
 
-
-
-
-
         return 0;
       }
 
