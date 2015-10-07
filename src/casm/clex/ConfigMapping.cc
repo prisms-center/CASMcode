@@ -893,8 +893,15 @@ namespace CASM {
         }
 
         //std::cout << "cost_matrix is\n" << cost_matrix <<  "\n\n";
+
         // The mapping routine is called here
         mean = hungarian_method(cost_matrix, optimal_assignments, _tol);
+
+        // if optimal_assignments is smaller than rstruc.basis.size(), then rstruc is incompattible
+        // with the supercell (optimal_assignments.size()==0 if the hungarian routine detects an incompatibility)
+        if(optimal_assignments.size() < rstruc.basis.size())
+          return false;
+
         //std::cout << "mean is " << mean << " and stddev is " << stddev << "\n";
         // add small penalty (~_tol) for larger translation distances, so that shortest equivalent translation is used
         mean += _tol * trans_dist / 10.0;
