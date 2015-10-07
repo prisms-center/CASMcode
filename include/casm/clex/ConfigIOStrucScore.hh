@@ -17,7 +17,7 @@ namespace CASM {
     class StrucScoreConfigFormatter: public BaseDatumFormatter<Configuration> {
     public:
       StrucScoreConfigFormatter() :
-        BaseDatumFormatter<Configuration>("struc_score", "Evaluates the mapping of a configuration onto an arbitrary primitive structure, specified by it's path. Allowed options are 'basis_score', which is the mean-square displacement and 'lattice_score' which is a lattice deformation metric having units Angstr.^2. Ex: struc_score(path/to/PRIM, basis_score)"),
+        BaseDatumFormatter<Configuration>("struc_score", "Evaluates the mapping of a configuration onto an arbitrary primitive structure, specified by its path. Allowed options are [ 'basis_score' (mean-square site displacement) | 'lattice_score' (lattice deformation metric having units Angstr.^2) | 'total_score' (w*lattice_score+(1.0-w)*basis_score) ].  The struc_score weighting parameter 'w' can be provided as an optional decimal parameter from 0.0 to 1.0 (default 0.5). Ex: struc_score(path/to/PRIM, basis_score, 0.4)"),
         m_altprimclex(Structure()), m_configmapper(ConfigMapper(ConfigMapper::null_initializer)) {};
 
       BaseDatumFormatter<Configuration> *clone()const {
