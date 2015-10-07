@@ -306,28 +306,24 @@ namespace CASM {
 
     DatumFormatterAlias(const std::string &_name, const std::string &_command) :
       BaseDatumFormatter<DataObject> (_name, "User-specified alias for '" + _command + "'") {
-      std::vector<std::string> format_tags, subexprs;
-      split_formatter_expression(_command, format_tags, subexprs);
-      if(format_tags.size() != 1)
+
+      split_formatter_expression(_command, m_format_tags, m_subexprs);
+      if(m_format_tags.size() != 1)
         throw std::runtime_error("Expression '" + _command + "' is either empty or consists of multiple expressions.\n");
 
-      m_formatter.reset(DataFormatterParser<DataObject>::lookup(format_tags[0]).clone());
-      //Parse the arguments of of the command now.  Later, we may want to do expression substitution
-      // (e.g.,  "comp_plus = add(comp(a),$1)" where $1 specifies an argument)
-      if(!m_formatter->parse_args(subexprs[0])) {
-        throw std::runtime_error("Invalid arguments passed to '" + format_tags[0] + "'. Cannot accept expression '" + subexprs[0] + "'\n");
-      }
     }
 
     DatumFormatterAlias(const DatumFormatterAlias &_rhs) :
-      BaseDatumFormatter<DataObject> (_rhs), m_formatter(_rhs.m_formatter->clone()) {
-
+      BaseDatumFormatter<DataObject> (_rhs), m_format_tags(_rhs.m_format_tags), m_subexprs(_rhs.m_subexprs) {
+      if(_rhs.m_formatter)
+        m_formatter.reset(_rhs.m_formatter->clone());
     }
 
     DatumFormatterAlias &operator=(const DatumFormatterAlias &_rhs) {
 
       BaseDatumFormatter<DataObject> ::operator=(_rhs);
-      m_formatter.reset(_rhs.m_formatter->clone());
+      if(_rhs.m_formatter)
+        m_formatter.reset(_rhs.m_formatter->clone());
       return *this;
 
     }
@@ -411,10 +407,18 @@ namespace CASM {
     /// from which DerivedDatumFormatter::parse_args() receives the string "argument1,argument2,..."
     /// Returns true if parse is successful, false if not (e.g., takes no arguments, already initialized, malformed input, etc).
     bool parse_args(const std::string &args)  override {
+      m_formatter.reset(DataFormatterParser<DataObject>::lookup(m_format_tags[0]).clone());
+      //Parse the arguments of of the command now.  Later, we may want to do expression substitution
+      // (e.g.,  "comp_plus = add(comp(a),$1)" where $1 specifies an argument)
+      if(!m_formatter->parse_args(m_subexprs[0])) {
+        throw std::runtime_error("Invalid arguments passed to '" + m_format_tags[0] + "'. Cannot accept expression '" + m_subexprs[0] + "'\n");
+      }
+
       return args.size() == 0;
       //return m_formatter->parse_args(args);
     }
   private:
+    std::vector<std::string> m_format_tags, m_subexprs;
     std::unique_ptr<BaseDatumFormatter<DataObject> > m_formatter;
 
   };
