@@ -100,7 +100,7 @@ namespace CASM {
           result_vec.push_back(ConfigMapping::strain_cost(relaxed_struc.lattice(), mapped_configdof, relaxed_struc.basis.size()));
         else if(m_prop_names[i] == "total_score") {
           double sc = ConfigMapping::strain_cost(relaxed_struc.lattice(), mapped_configdof, relaxed_struc.basis.size());
-          double bc ConfigMapping::basis_cost(mapped_configdof, relaxed_struc.basis.size());
+          double bc = ConfigMapping::basis_cost(mapped_configdof, relaxed_struc.basis.size());
           double w = m_configmapper.lattice_weight();
           result_vec.push_back(w * sc + (1.0 - w)*bc);
         }
