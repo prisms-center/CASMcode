@@ -2,10 +2,9 @@
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOHull.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
+#include "casm/clex/ConfigIOSelected.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/app/DirectoryStructure.hh"
-#include "casm/app/ProjectSettings.hh"
 
 namespace CASM {
   int ConfigIOParser::hack = ConfigIOParser::init(std::function<void(DataFormatterDictionary<Configuration>&) >(ConfigIO::initialize_formatting_dictionary));
@@ -470,6 +469,21 @@ namespace CASM {
   }
 
   namespace ConfigIO {
+    template<>
+    ConfigIO_impl::SelectedConfigFormatter selected_in(const ConfigSelection<true> &_selection) {
+      return ConfigIO_impl::SelectedConfigFormatter(_selection);
+    }
+
+    template<>
+    ConfigIO_impl::SelectedConfigFormatter selected_in(const ConfigSelection<false> &_selection) {
+      return ConfigIO_impl::SelectedConfigFormatter(_selection);
+    }
+
+    ConfigIO_impl::SelectedConfigFormatter selected_in() {
+      return ConfigIO_impl::SelectedConfigFormatter();
+    }
+
+
     ConfigIO_impl::GenericConfigFormatter<std::string> configname() {
       return ConfigIO_impl::GenericConfigFormatter<std::string>("configname",
                                                                 "Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#'",
@@ -589,6 +603,7 @@ namespace CASM {
       .add_formatter(ConfigIO::lattice_deformation())
       .add_formatter(ConfigIO::volume_relaxation())
 
+      .add_formatter(ConfigIO::selected_in())
       .add_formatter(ConfigIO_impl::StrucScoreConfigFormatter())
       //hull formatters with specialized naming to disambiguate
       .add_formatter(ConfigIO_impl::OnHullConfigFormatter("on_hull",

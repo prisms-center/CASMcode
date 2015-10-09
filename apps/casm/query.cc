@@ -5,29 +5,30 @@
 #include "casm_functions.hh"
 #include "casm/CASM_classes.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/clex/ConfigIOSelected.hh"
 
 namespace CASM {
-  void query_help(std::ostream &_stream, std::string help_opt="") {
+  void query_help(std::ostream &_stream, std::string help_opt = "") {
     _stream << "Prints the properties for a set of configurations for the set of currently selected" << std::endl
             << "configurations or for a set of configurations specifed by a selection file." << std::endl
             << std::endl
             << "Property values are output in column-separated (default) or JSON format.  By default, " << std::endl
             << "entries for 'name' and 'selected' values are included in the output. " << std::endl
             << std::endl;
-      if(help_opt=="operators" || help_opt=="operator"){
-        _stream << "Available operators for use within queries:" <<std::endl;
-        ConfigIOParser::print_help(_stream,BaseDatumFormatter<Configuration>::Operator);
-      }
-      else if(help_opt=="property" || help_opt == "properties"){
-           _stream << "Available property tags are currently:" << std::endl;
-           ConfigIOParser::print_help(_stream);
-      }
+    if(help_opt == "operators" || help_opt == "operator") {
+      _stream << "Available operators for use within queries:" << std::endl;
+      ConfigIOParser::print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
+    }
+    else if(help_opt == "property" || help_opt == "properties") {
+      _stream << "Available property tags are currently:" << std::endl;
+      ConfigIOParser::print_help(_stream);
+    }
     _stream << std::endl;
   }
 
   int query_command(int argc, char *argv[]) {
 
-    std::string help_opt,new_alias;
+    std::string help_opt, new_alias;
     fs::path config_path, out_path;
     std::vector<std::string> columns;
     po::variables_map vm;
@@ -36,10 +37,10 @@ namespace CASM {
     po::options_description desc("'casm query' usage");
     // Set command line options using boost program_options
     desc.add_options()
-      ("help,h", po::value<std::string>(&help_opt)->implicit_value(""), "Print general help. Use '--help properties' for a list of query-able properties or '--help operators' for a list of query operators")
+    ("help,h", po::value<std::string>(&help_opt)->implicit_value(""), "Print general help. Use '--help properties' for a list of query-able properties or '--help operators' for a list of query operators")
     ("config,c", po::value<fs::path>(&config_path), "config_list files containing configurations for which to collect energies")
     ("columns,k", po::value<std::vector<std::string> >(&columns)->multitoken(), "List of values you want printed as columns")
-    ("learn,l", po::value<std::string>(&new_alias),"Teach casm a new command that will persist within this project. Ex: 'casm query --learn is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")
+    ("learn,l", po::value<std::string>(&new_alias), "Teach casm a new command that will persist within this project. Ex: 'casm query --learn is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")
     ("json,j", po::value(&json_flag)->zero_tokens(), "Print in JSON format (CSV otherwise, unless output extension is .json or .JSON)")
     ("verbatim,v", po::value(&verbatim_flag)->zero_tokens(), "Print exact properties specified, without prepending 'name' and 'selected' entries")
     ("output,o", po::value<fs::path>(&out_path), "Name for output file")
@@ -48,9 +49,9 @@ namespace CASM {
 
 
     try {
-      
+
       po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
-      
+
       /** Start --help option
        */
       if(vm.count("help")) {
@@ -58,16 +59,16 @@ namespace CASM {
       }
 
       po::notify(vm); // throws on error, so do after help in case of problems
-      
+
       /** Finish --help option
        */
-      if(vm.count("help")){
+      if(vm.count("help")) {
         fs::path root = find_casmroot(fs::current_path());
-        fs::path alias_file =root/".casm/query_alias.json";
-        if(fs::exists(alias_file)){
+        fs::path alias_file = root / ".casm/query_alias.json";
+        if(fs::exists(alias_file)) {
           ConfigIOParser::load_aliases(alias_file);
         }
-        query_help(std::cout,help_opt);
+        query_help(std::cout, help_opt);
         return 0;
       }
 
@@ -92,43 +93,43 @@ namespace CASM {
     }
     fs::current_path(root);
 
-    fs::path alias_file =root/".casm/query_alias.json";
-    if(vm.count("learn")){
+    fs::path alias_file = root / ".casm/query_alias.json";
+    if(vm.count("learn")) {
       jsonParser mjson;
-      if(fs::exists(alias_file)){
+      if(fs::exists(alias_file)) {
         mjson.read(alias_file);
       }
-      else{
+      else {
         mjson.put_obj();
       }
       auto it = std::find(new_alias.cbegin(), new_alias.cend(), '=');
-      std::string alias_name = boost::trim_copy(std::string(new_alias.cbegin(),it));
-      std::string alias_command = boost::trim_copy(std::string(++it,new_alias.cend()));
-      try{
+      std::string alias_name = boost::trim_copy(std::string(new_alias.cbegin(), it));
+      std::string alias_command = boost::trim_copy(std::string(++it, new_alias.cend()));
+      try {
         ConfigIOParser::add_custom_formatter(datum_formatter_alias<Configuration>(alias_name, alias_command));
       }
-      catch(std::runtime_error &e){
+      catch(std::runtime_error &e) {
         std::cerr << "That's confusing. I can't learn malformed input:\n"
                   << e.what() << std::endl;
         return 1;
       }
-      if(mjson.contains(alias_name)){
+      if(mjson.contains(alias_name)) {
         std::cerr << "WARNING: I already know '" << alias_name << "' as:\n"
                   << "             " << mjson[alias_name].get<std::string>() << "\n"
                   << "         I will forget it and learn '" << alias_name << "' as:\n"
                   << "             " << alias_command << std::endl;
       }
-      mjson[alias_name]=alias_command;
+      mjson[alias_name] = alias_command;
       mjson.write(alias_file);
-      std::cout << "  DONE"<<std::endl;
+      std::cout << "  DONE" << std::endl;
       return 0;
     }
-    if(!vm.count("columns")){
-      std::cerr<< "ERROR: the option '--columns' is required but missing" << std::endl;
+    if(!vm.count("columns")) {
+      std::cerr << "ERROR: the option '--columns' is required but missing" << std::endl;
       return 1;
     }
     //else{ //option is "columns"
-    if(fs::exists(alias_file)){
+    if(fs::exists(alias_file)) {
       ConfigIOParser::load_aliases(alias_file);
     }
 
@@ -151,63 +152,65 @@ namespace CASM {
     if(vm.count("output"))
       output_file.open(out_path.string().c_str());
 
-    const DirectoryStructure &dir = primclex.dir();
-    ProjectSettings &set = primclex.settings();
+    std::ostream &output_stream(vm.count("output") ? output_file : std::cout);
+    output_stream << FormatFlag(output_stream).print_header(!no_header);
+    DataFormatter<Configuration> formatter;
+    ConstConfigSelection selection;
 
     /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
+    const DirectoryStructure &dir = primclex.dir();
+    const ProjectSettings &set = primclex.settings();
     if(fs::exists(dir.clexulator_src(set.name(), set.bset()))) {
       primclex.read_global_orbitree(dir.clust(set.bset()));
       primclex.generate_full_nlist();
       primclex.generate_supercell_nlists();
-
     }
 
-
-    std::ostream &output_stream(vm.count("output") ? output_file : std::cout);
-    output_stream << FormatFlag(output_stream).print_header(!no_header);
-
-    auto it(columns.cbegin());
-    std::vector<std::string> all_columns;
-    if(!verbatim_flag) {
-      all_columns = std::vector<std::string>({"configname", "selected"});
-
-      while(it != columns.cend() && ((*it) == "configname" || (*it) == "selected")) {
-        ++it;
-      }
-    }
-    all_columns.insert(all_columns.end(), it, columns.cend());
-
-    // JSON output block
     try {
-      if(json_flag || out_path.extension() == ".json" || out_path.extension() == ".JSON") {
-        jsonParser json;
-        if(vm.count("config")) {
-          ConstConfigSelection selection(primclex, fs::absolute(config_path));
-          //std::cout << "Read in config selection... it is:\n" << selection;
+      if(vm.count("config"))
+        selection = ConstConfigSelection(primclex, fs::absolute(config_path));
+      else
+        selection = ConstConfigSelection(primclex);
 
-          json = ConfigIOParser::parse(all_columns)(selection.selected_config_begin(), selection.selected_config_end());
-        }
-        else {
-          json =  ConfigIOParser::parse(all_columns)(primclex.selected_config_begin(), primclex.selected_config_end());
-        }
-        output_stream << json;
-      }
-      // CSV output block
-      else {
-        if(vm.count("config")) {
-          ConstConfigSelection selection(primclex, fs::absolute(config_path));
-          //std::cout << "Read in config selection... it is:\n" << selection;
-          output_stream << ConfigIOParser::parse(all_columns)(selection.selected_config_begin(), selection.selected_config_end());
-        }
-        else {
-          output_stream << ConfigIOParser::parse(all_columns)(primclex.selected_config_begin(), primclex.selected_config_end());
+      auto it(columns.cbegin());
+      std::vector<std::string> all_columns;
+      if(!verbatim_flag) {
+        formatter.push_back(ConfigIO::configname());
+        formatter.push_back(datum_formatter_alias("selected", ConfigIO::selected_in(selection)));
+
+        while(it != columns.cend() && ((*it) == "configname" || (*it) == "selected")) {
+          ++it;
         }
       }
+      all_columns.insert(all_columns.end(), it, columns.cend());
+      formatter.append(ConfigIOParser::parse(all_columns));
     }
     catch(std::exception &e) {
       std::cerr << "Parsing error: " << e.what() << "\n\n";
       return 1;
     }
+
+    try {
+      // JSON output block
+      if(json_flag || out_path.extension() == ".json" || out_path.extension() == ".JSON") {
+        jsonParser json;
+
+        //std::cout << "Read in config selection... it is:\n" << selection;
+        json = formatter(selection.selected_config_begin(), selection.selected_config_end());
+
+        output_stream << json;
+      }
+      // CSV output block
+      else {
+        //std::cout << "Read in config selection... it is:\n" << selection;
+        output_stream << formatter(selection.selected_config_begin(), selection.selected_config_end());
+      }
+    }
+    catch(std::exception &e) {
+      std::cerr << "Initialization error: " << e.what() << "\n\n";
+      return 1;
+    }
+
     if(vm.count("output"))
       output_file.close();
     else {

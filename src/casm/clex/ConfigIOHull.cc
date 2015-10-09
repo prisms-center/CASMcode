@@ -36,7 +36,7 @@ namespace CASM {
       // Cases control which configurations to use for obtaining hull data
       if(m_selection == "all")
         mat_wrapper << m_format(_tmplt.get_primclex().config_cbegin(), _tmplt.get_primclex().config_cend());
-      else if(m_selection == "MASTER")
+      else if(m_selection == "MASTER" || m_selection.empty())
         mat_wrapper << m_format(_tmplt.get_primclex().selected_config_cbegin(), _tmplt.get_primclex().selected_config_cend());
       else {
         ConstConfigSelection select(_tmplt.get_primclex(), m_selection);
