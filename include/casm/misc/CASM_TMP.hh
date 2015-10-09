@@ -72,6 +72,10 @@ namespace CASM {
                typename value_type = typename Container::value_type,
                typename size_type = typename Container::size_type >
     struct BracketAccess {
+      BracketAccess() {}
+      BracketAccess &operator=(const BracketAccess &) {
+        return *this;
+      };
 
       /// \brief Identical to 'return container[index];'
       value_type &operator()(Container &container, size_type index) const {
@@ -119,6 +123,12 @@ namespace CASM {
                typename value_type = typename Container::value_type,
                typename size_type = typename Container::size_type >
     struct ParenthesesAccess {
+
+      ParenthesesAccess() {}
+      ParenthesesAccess &operator=(const ParenthesesAccess &) {
+        return *this;
+      };
+
 
       /// \brief Identical to 'return container(index);'
       value_type &operator()(Container &container, size_type index) const {

@@ -18,6 +18,7 @@ namespace CASM {
     using ConfigEnum<ConfigType>::current;
     using ConfigEnum<ConfigType>::num_steps;
     using ConfigEnum<ConfigType>::step;
+    using ConfigEnum<ConfigType>::source;
   private:
     typename value_type::displacement_matrix_t m_displacement_inc;
     Eigen::Matrix3d m_deformation_inc;

@@ -2,7 +2,7 @@
 #include "casm/misc/CASM_math.hh"
 
 namespace CASM {
-  namespace VectorDataStream_impl {
+  namespace DataStream_impl {
 
     /*template<typename OutType> template<>
     OutType DataStreamPromoter<OutType>::promote(OutType a){

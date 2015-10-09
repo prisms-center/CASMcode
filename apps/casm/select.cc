@@ -8,6 +8,13 @@
 namespace CASM {
 
   bool write_selection(const ConfigSelection<true> &config_select, bool force, const fs::path &out_path, bool write_json, bool only_selected) {
+    // Load query aliases so that custom headers will print correctly
+    fs::path root = find_casmroot(fs::current_path());
+    fs::path alias_file = root / ".casm/query_alias.json";
+    if(fs::exists(alias_file)) {
+      ConfigIOParser::load_aliases(alias_file);
+    }
+
     if(fs::exists(out_path) && !force) {
       std::cerr << "File " << out_path << " already exists. Use --force to force overwrite." << std::endl;
       return 1;
@@ -198,6 +205,7 @@ namespace CASM {
       return 1;
 
     }
+
 
     for(int i = 0; i < selection.size(); i++) {
       if(selection[i] != "MASTER") {

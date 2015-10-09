@@ -3,7 +3,8 @@
 #include <cstring>
 
 #include "casm_functions.hh"
-#include "casm/CASM_classes.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/FilteredConfigIterator.hh"
 
 namespace CASM {
 
@@ -18,7 +19,7 @@ namespace CASM {
     //- enumerate supercells and configs and hop local configurations
 
     int min_vol = 1, max_vol;
-    std::vector<std::string> scellname_list;
+    std::vector<std::string> scellname_list, filter_expr;
     //double tol;
     COORD_TYPE coordtype = CASM::CART;
     po::variables_map vm;
@@ -30,6 +31,7 @@ namespace CASM {
     ("help,h", "Write help documentation")
     ("min", po::value<int>(&min_vol), "Min volume")
     ("max", po::value<int>(&max_vol), "Max volume")
+    ("filter", po::value<std::vector<std::string> >(&filter_expr)->multitoken(), "Filter configuration enumeration so that only configurations matching a 'casm query'-type expression are recorded")
     ("scellname,n", po::value<std::vector<std::string> >(&scellname_list)->multitoken(), "Enumerate configs for given supercells")
     ("all,a", "Enumerate configurations for all supercells")
     ("supercells,s", "Enumerate supercells")
@@ -118,70 +120,74 @@ namespace CASM {
 
     }
     else if(vm.count("configs")) {
+      std::cout << "\n***************************\n" << std::endl;
+      std::vector<Supercell *> scel_selection;
+
+      //Build the supercell selection based on user input
       if(vm.count("all")) {
-        std::cout << "\n***************************\n" << std::endl;
-
         std::cout << "Enumerate all configurations" << std::endl << std::endl;
-        for(int j = 0; j < primclex.get_supercell_list().size(); j++) {
-          std::cout << "  Enumerate configurations for " << primclex.get_supercell(j).get_name() << " ... " << std::flush;
-          primclex.get_supercell(j).enumerate_all_occupation_configurations();
-          std::cout << primclex.get_supercell(j).get_config_list().size() << " configs." << std::endl;
-        }
-        std::cout << "  DONE." << std::endl << std::endl;
-
+        for(int j = 0; j < primclex.get_supercell_list().size(); j++)
+          scel_selection.push_back(&(primclex.get_supercell(j)));
       }
       else {
-        bool found_any = false;
-
         if(vm.count("max")) {
           std::cout << "Enumerate configurations from volume " << min_vol << " to " << max_vol << std::endl << std::endl;
           for(int j = 0; j < primclex.get_supercell_list().size(); j++) {
-            if(primclex.get_supercell(j).volume() >= min_vol && primclex.get_supercell(j).volume() <= max_vol) {
-              found_any = true;
-
-              std::cout << "  Enumerate configurations for " << primclex.get_supercell(j).get_name() << " ... " << std::flush;
-              primclex.get_supercell(j).enumerate_all_occupation_configurations();
-              std::cout << primclex.get_supercell(j).get_config_list().size() << " configs." << std::endl;
-            }
+            if(primclex.get_supercell(j).volume() >= min_vol && primclex.get_supercell(j).volume() <= max_vol)
+              scel_selection.push_back(&(primclex.get_supercell(j)));
           }
         }
-
         if(vm.count("scellname")) {
-          Index index;
+          Index j;
           std::cout << "Enumerate configurations for named supercells" << std::endl << std::endl;
           for(int i = 0; i < scellname_list.size(); i++) {
-            if(!primclex.contains_supercell(scellname_list[i], index)) {
+            if(!primclex.contains_supercell(scellname_list[i], j)) {
               std::cout << "Error in 'casm enum'. Did not find supercell: " << scellname_list[i] << std::endl;
               return 1;
             }
-
-            found_any = true;
-
-            std::cout << "  Enumerate configurations for " << primclex.get_supercell(index).get_name() << " ... " << std::flush;
-            primclex.get_supercell(index).enumerate_all_occupation_configurations();
-            std::cout << primclex.get_supercell(index).get_config_list().size() << " configs." << std::endl;
+            scel_selection.push_back(&(primclex.get_supercell(j)));
           }
         }
+      }
+      //\Finished building supercell selection
 
-        if(found_any) {
-          std::cout << "\n  DONE." << std::endl << std::endl;
-        }
-        else {
-          std::cout << "Did not find any supercells. Make sure to 'casm enum --supercells' first!" << std::endl << std::endl;
-
-          return 1;
-        }
+      if(scel_selection.empty()) {
+        std::cout << "Did not find any supercells. Make sure to 'casm enum --supercells' first!" << std::endl << std::endl;
+        return 1;
       }
 
-      //BP::BP_Write enumfile("ENUM");
-      //enumfile.newfile();
-      //primclex.print_enum_info(enumfile.get_ostream());
-      //std::cout << "Write ENUM" << std::endl;
+      //We have the selection. Now do enumeration
+      for(auto it = scel_selection.begin(); it != scel_selection.end(); ++it) {
+        std::cout << "  Enumerate configurations for " << (**it).get_name() << " ... " << std::flush;
 
-      std::cout << "Writing config_list..." << std::endl;
-      primclex.write_config_list();
-      std::cout << "  DONE" << std::endl;
+        ConfigEnumAllOccupations<Configuration> enumerator(**it);
+
+        if(vm.count("filter")) {
+          try {
+            fs::path alias_file = root / ".casm/query_alias.json";
+            if(fs::exists(alias_file)) {
+              ConfigIOParser::load_aliases(alias_file);
+            }
+
+            (**it).add_unique_canon_configs(filter_begin(enumerator.begin(), enumerator.end(), filter_expr), filter_end(enumerator.end()));
+          }
+          catch(std::exception &e) {
+            std::cerr << "Cannot filter configurations using the expression provided: \n" << e.what() << "\nExiting...\n";
+            return 1;
+          }
+        }
+        else
+          (**it).add_unique_canon_configs(enumerator.begin(), enumerator.end());
+
+        std::cout << (**it).get_config_list().size() << " configs." << std::endl;
+      }
+      std::cout << "  DONE." << std::endl << std::endl;
+
     }
+
+    std::cout << "Writing config_list..." << std::endl;
+    primclex.write_config_list();
+    std::cout << "  DONE" << std::endl;
 
     std::cout << std::endl;
 

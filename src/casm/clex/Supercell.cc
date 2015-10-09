@@ -8,9 +8,6 @@
 //#include "casm/clusterography/HopCluster.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigIterator.hh"
-#include "casm/clex/ConfigEnum.hh"
-#include "casm/clex/ConfigEnumAllOccupations.hh"
-#include "casm/clex/ConfigEnumInterpolation.hh"
 #include "casm/clex/Clexulator.hh"
 
 namespace CASM {
@@ -260,49 +257,7 @@ namespace CASM {
   }
 
   //*******************************************************************************
-
-  void Supercell::add_enumerated_configurations(ConfigEnum<Configuration> &enumerator) {
-    add_enumerated_configurations(enumerator.begin(), enumerator.end());
-  }
-
-  //*******************************************************************************
-
-  void Supercell::add_enumerated_configurations(ConfigEnumIterator<Configuration> it_begin, ConfigEnumIterator<Configuration> it_end) {
-
-    // Remember existing configs, to avoid duplicates
-    //   Enumerated configurations are added after existing configurations
-    Index N_existing = config_list.size();
-    Index N_existing_enumerated = 0;
-    //std::cout << "ADDING CONFIGS TO SUPERCELL; N_exiting: " << N_existing << " N_enumerated: " << N_existing_enumerated << "\n";
-    //std::cout << "beginning iterator: " << it_begin->occupation() << "\n";
-    // Loops through all possible configurations
-    for(; it_begin != it_end; ++it_begin) {
-      //std::cout << "Attempting to add configuration: " << it_begin->occupation() << "\n";
-      // Adds the configuration to the list, if not among previously existing configurations
-
-      bool add = true;
-      if(N_existing_enumerated != N_existing) {
-        for(Index i = 0; i < N_existing; i++) {
-          if(config_list[i].configdof() == it_begin->configdof()) {
-            config_list[i].push_back_source(it_begin.source());
-            add = false;
-            N_existing_enumerated++;
-            break;
-          }
-        }
-      }
-      if(add) {
-        config_list.push_back(*it_begin);
-        // get source info from enumerator
-        config_list.back().set_source(it_begin.source());
-        config_list.back().set_id(config_list.size() - 1);
-      }
-    }
-
-  }
-
-  //*******************************************************************************
-
+  /*
   void Supercell::enumerate_all_occupation_configurations() {
     Configuration init_config(*this), final_config(*this);
 
@@ -313,18 +268,7 @@ namespace CASM {
     add_enumerated_configurations(enumerator);
 
   }
-
-  //*******************************************************************************
-
-  void Supercell::enumerate_interpolated_configurations(Supercell::config_const_iterator initial, Supercell::config_const_iterator final,
-                                                        long Nstep, long begin_delta, long end_delta) {
-
-    ConfigEnumInterpolation<Configuration> enumerator(*initial, *final, Nstep);
-    ConfigEnumIterator<Configuration> it_begin(enumerator.begin() + begin_delta), it_end(enumerator.end() + end_delta);
-    add_enumerated_configurations(it_begin, it_end);
-
-  }
-
+  */
   //*******************************************************************************
   /**
    *   enumerate_perturb_configurations, using filename of 'background' structure
@@ -335,7 +279,7 @@ namespace CASM {
     fs::ifstream file(background);
     background_struc.read(file);
     enumerate_perturb_configurations(background_struc, CSPECS, tol, verbose, print);
-  };
+  }
 
   //*******************************************************************************
   /**
