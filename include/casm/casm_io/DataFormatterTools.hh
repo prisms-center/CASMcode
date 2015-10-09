@@ -313,6 +313,9 @@ namespace CASM {
 
     }
 
+    DatumFormatterAlias(const std::string &_name, const BaseDatumFormatter<DataObject> &_rhs) :
+      BaseDatumFormatter<DataObject> (_name, ""), m_formatter(_rhs.clone()) {    }
+
     DatumFormatterAlias(const DatumFormatterAlias &_rhs) :
       BaseDatumFormatter<DataObject> (_rhs), m_format_tags(_rhs.m_format_tags), m_subexprs(_rhs.m_subexprs) {
       if(_rhs.m_formatter)
@@ -327,7 +330,6 @@ namespace CASM {
       return *this;
 
     }
-
 
     typename BaseDatumFormatter<DataObject>::FormatterType type() const {
       return BaseDatumFormatter<DataObject>::Property;
@@ -426,6 +428,11 @@ namespace CASM {
   template<typename DataObject>
   DatumFormatterAlias<DataObject> datum_formatter_alias(const std::string &_name, const std::string &_command) {
     return DatumFormatterAlias<DataObject>(_name, _command);
+  }
+
+  template<typename DataObject>
+  DatumFormatterAlias<DataObject> datum_formatter_alias(const std::string &_name, const BaseDatumFormatter<DataObject> &_inside) {
+    return DatumFormatterAlias<DataObject>(_name, _inside);
   }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -13,7 +13,13 @@ namespace CASM {
     static int hack;
   };
 
+  template<bool IsConst>
+  class ConfigSelection;
+
   namespace ConfigIO_impl {
+
+    class SelectedConfigFormatter;
+
     template<typename ValueType>
     using GenericConfigFormatter = GenericDatumFormatter<ValueType, Configuration>;
 
@@ -214,6 +220,11 @@ namespace CASM {
     ConfigIO_impl::GenericConfigFormatter<Index> scel_size();
 
     ConfigIO_impl::GenericConfigFormatter<bool> selected();
+
+    template<bool IsConst>
+    ConfigIO_impl::SelectedConfigFormatter selected_in(const ConfigSelection<IsConst> &_selection);
+
+    ConfigIO_impl::SelectedConfigFormatter selected_in();
 
     ConfigIO_impl::GenericConfigFormatter<bool> is_calculated();
 

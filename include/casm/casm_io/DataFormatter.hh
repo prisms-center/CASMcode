@@ -171,6 +171,12 @@ namespace CASM {
       push_back(formatters...);
     }
 
+    void append(const DataFormatter<DataObject> &_tail) {
+      for(BaseDatumFormatter<DataObject> *frmtr : _tail.m_data_formatters)
+        push_back(*frmtr);
+    }
+
+
     DataFormatter<DataObject> &operator<<(const BaseDatumFormatter<DataObject> &new_formatter) {
       push_back(new_formatter);
       return *this;

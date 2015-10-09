@@ -102,6 +102,16 @@ namespace CASM {
     ///
     ConfigSelection(PrimClexType &_primclex, const fs::path &selection_path);
 
+    //ConfigSelection(const ConfigSelection &) =default;
+
+    ConfigSelection(const ConfigSelection<false> &RHS) :
+      m_primclex(RHS.m_primclex), m_name("MASTER"), m_config(RHS.m_config), m_col_headers(RHS.m_col_headers) {
+      //swap(m_col_headers,RHS.m_col_headers);
+      //swap(m_config,RHS.m_config);
+    }
+
+    ConfigSelection &operator=(const ConfigSelection &) = default;
+
     Index size() const {
       return m_config.size();
     }
@@ -180,11 +190,17 @@ namespace CASM {
       return m_col_headers;
     }
 
+    const std::string &name() const {
+      return m_name;
+    }
+
     void print(std::ostream &_out, bool only_selected = false) const;
 
   private:
-    PrimClexType *m_primclex;
+    friend class ConfigSelection < !IsConst >;
 
+    PrimClexType *m_primclex;
+    std::string m_name;
     std::map<std::string, bool> m_config;
     std::vector<std::string> m_col_headers;
 

@@ -36,9 +36,8 @@ namespace CASM {
       // Cases control which configurations to use for obtaining hull data
       if(m_selection == "all")
         mat_wrapper << m_format(_tmplt.get_primclex().config_cbegin(), _tmplt.get_primclex().config_cend());
-      else if(m_selection == "MASTER" || m_selection.empty()){
+      else if(m_selection == "MASTER" || m_selection.empty())
         mat_wrapper << m_format(_tmplt.get_primclex().selected_config_cbegin(), _tmplt.get_primclex().selected_config_cend());
-      }
       else {
         ConstConfigSelection select(_tmplt.get_primclex(), m_selection);
         mat_wrapper << m_format(select.selected_config_cbegin(), select.selected_config_cend());
@@ -77,7 +76,7 @@ namespace CASM {
       m_hull.reset_points(reduced_mat, true);
 
       if(!m_hull.calc_CH()) { //calculates hull
-	std::string tselection= m_selection.empty() ? "MASTER" : m_selection;
+        std::string tselection = m_selection.empty() ? "MASTER" : m_selection;
         throw std::runtime_error("Failure to construct convex hull from selection " + tselection
                                  + " for formatted output!\n");
       }

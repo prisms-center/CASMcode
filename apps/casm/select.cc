@@ -222,9 +222,6 @@ namespace CASM {
     PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
 
-    const DirectoryStructure &dir = primclex.dir();
-    const ProjectSettings &set = primclex.settings();
-
     if(vm.count("set")) {
 
       bool only_selected = false;
@@ -236,6 +233,8 @@ namespace CASM {
       std::cout << "Set selection: " << criteria << std::endl << std::endl;
 
       /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
+      const DirectoryStructure &dir = primclex.dir();
+      const ProjectSettings &set = primclex.settings();
       if(fs::exists(dir.clexulator_src(set.name(), set.bset()))) {
         primclex.read_global_orbitree(dir.clust(set.bset()));
         primclex.generate_full_nlist();
