@@ -76,7 +76,8 @@ namespace CASM {
       m_hull.reset_points(reduced_mat, true);
 
       if(!m_hull.calc_CH()) { //calculates hull
-        throw std::runtime_error("Failure to construct convex hull from selection " + m_selection
+        std::string tselection = m_selection.empty() ? "MASTER" : m_selection;
+        throw std::runtime_error("Failure to construct convex hull from selection " + tselection
                                  + " for formatted output!\n");
       }
 
@@ -113,7 +114,7 @@ namespace CASM {
         return false;
       }
       m_independent_props.push_back(splt_vec.size() < 2 ? "comp" : splt_vec[1]);
-      m_selection = splt_vec.size() < 1 ? "all" : splt_vec[0];
+      m_selection = splt_vec.size() < 1 ? "MASTER" : splt_vec[0];
       return true;
     }
 
@@ -121,7 +122,7 @@ namespace CASM {
 
     std::string BaseHullConfigFormatter::short_header(const Configuration &_tmplt) const {
       std::stringstream t_ss;
-      t_ss << name() << "(" << m_selection << ",";
+      t_ss << name() << "(" << (m_selection.empty() ? "MASTER" : m_selection) << ",";
       for(Index i = 0; i < m_independent_props.size(); i++)
         t_ss << m_independent_props[i];
       t_ss << ")";

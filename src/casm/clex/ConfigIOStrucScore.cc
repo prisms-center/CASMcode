@@ -96,6 +96,7 @@ namespace CASM {
         if(m_prop_names[i] == "basis_score")
           result_vec.push_back(ConfigMapping::basis_cost(mapped_configdof));
         else if(m_prop_names[i] == "lattice_score")
+
           result_vec.push_back(ConfigMapping::strain_cost(relaxed_struc.lattice(), mapped_configdof));
       }
 
