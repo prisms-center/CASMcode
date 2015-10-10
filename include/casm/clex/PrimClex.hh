@@ -306,7 +306,6 @@ namespace CASM {
     void generate_supercells(int volStart, int volEnd, bool verbose);
 
     //Enumerate configurations for all the supercells that are stored in 'supercell_list'
-    void enumerate_all_configurations();
     void print_enum_info(std::ostream &stream);
     void print_supercells() const;
     void print_supercells(std::ostream &stream) const;

@@ -1,5 +1,36 @@
+#include "casm/clex/Supercell.hh"
 
 namespace CASM {
+  template<typename ConfigType>
+  ConfigEnumAllOccupations<ConfigType>::ConfigEnumAllOccupations(Supercell &_scel) :
+    ConfigEnum<ConfigType>(Configuration(_scel, jsonParser(), Array<int>(_scel.num_sites(), 0)),
+                           Configuration(_scel, jsonParser(), _scel.max_allowed_occupation()), -1),
+    m_perm_begin(_scel.permute_begin()), m_perm_end(_scel.permute_end()) {
+    //Configuration init_config(_scel), final_config(_scel);
+    //init_config.set_occupation(Array<int>(_scel.num_sites(), 0));
+    //final_config.set_occupation(_scel.max_allowed_occupation());
+    //ConfigEnum<ConfigType>::initialize(init_config, final_config, -1);
+
+    m_counter = Counter<Array<int> >(initial().occupation(), final().occupation(), Array<int>(initial().size(), 1));
+    m_counter.reset();
+    m_perm_begin = _scel.permute_begin();
+    m_perm_end = _scel.permute_end();
+    _source() = "occupation_enumeration";
+
+    // Make sure that current() has primitive canonical config
+    if(!(current().is_primitive(_perm_begin()) && current().is_canonical(_perm_begin(), _perm_end()))) {
+      //std::cout << "INITIAL ENUMERATION STATE IS NOT CANONICAL!\n";
+      increment();
+    }
+
+    if(!m_counter.valid())
+      _step() = -1;
+    else
+      _step() = 0;
+  }
+
+  //*******************************************************************************************
+
   template<typename ConfigType>
   ConfigEnumAllOccupations<ConfigType>::ConfigEnumAllOccupations(const ConfigEnumAllOccupations<ConfigType>::value_type &_initial,
                                                                  const ConfigEnumAllOccupations<ConfigType>::value_type &_final,
@@ -51,6 +82,7 @@ namespace CASM {
       _step() = -1;
     }
     //std::cout << "--FINISHED SEARCH " << _step()<< "--\n";
+    _current().set_source(source());
     return current();
   }
 

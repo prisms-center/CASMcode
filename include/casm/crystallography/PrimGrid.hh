@@ -127,7 +127,7 @@ namespace CASM {
 
     /// const access to m_trans_permutations. Generates permutations if they don't already exist.
     const Array<Permutation> &translation_permutations() const {
-      if(m_trans_permutations.size() != m_NB * m_N_vol)
+      if(m_trans_permutations.size() != m_N_vol)
         m_trans_permutations = make_translation_permutations(m_NB);
       return m_trans_permutations;
     }

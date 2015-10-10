@@ -86,27 +86,27 @@ namespace CASM {
     CountDataStream(bool newline_reset = true) :
       DataStream(none), m_newline_reset(newline_reset), m_count(0) {}
 
-    DataStream &operator<<(const std::string &) {
+    DataStream &operator<<(const std::string &) override {
       return increment();
     }
 
-    DataStream &operator<<(long) {
+    DataStream &operator<<(long) override {
       return increment();
     }
 
-    DataStream &operator<<(double) {
+    DataStream &operator<<(double) override {
       return increment();
     }
 
-    DataStream &operator<<(bool) {
+    DataStream &operator<<(bool) override {
       return increment();
     }
 
-    DataStream &operator<<(char) {
+    DataStream &operator<<(char) override {
       return increment();
     }
 
-    DataStream &newline() {
+    DataStream &newline() override {
       if(m_newline_reset)
         m_count = 0;
       return *this;
@@ -129,7 +129,7 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  namespace VectorDataStream_impl {
+  namespace DataStream_impl {
     template<typename OutType>
     struct DataStreamPromoter {
       template<typename InType>
@@ -232,34 +232,74 @@ namespace CASM {
 
   }
 
-  template <typename T, typename Promoter = VectorDataStream_impl::DataStreamPromoter<T> >
+  template <typename T, typename Promoter = DataStream_impl::DataStreamPromoter<T> >
+  class ValueDataStream : public DataStream {
+  public:
+
+    ValueDataStream(DataStreamTraits _traits = none) :
+      DataStream(_traits) {}
+
+    DataStream &operator<<(const std::string &val) override {
+      m_value = Promoter::promote(val);
+      return *this;
+    }
+
+    DataStream &operator<<(long val) override {
+      m_value = Promoter::promote(val);
+      return *this;
+    }
+
+    DataStream &operator<<(double val) override {
+      m_value = Promoter::promote(val);
+      return *this;
+    }
+
+    DataStream &operator<<(bool val) override {
+      m_value = Promoter::promote(val);
+      return *this;
+    }
+
+    DataStream &operator<<(char val) override {
+      m_value = Promoter::promote(val);
+      return *this;
+    }
+
+    const T &value()const {
+      return m_value;
+    }
+  private:
+    T m_value;
+  };
+
+
+  template <typename T, typename Promoter = DataStream_impl::DataStreamPromoter<T> >
   class VectorDataStream : public DataStream {
   public:
 
     VectorDataStream(DataStreamTraits _traits = none) :
       DataStream(_traits) {}
 
-    DataStream &operator<<(const std::string &val) {
+    DataStream &operator<<(const std::string &val) override {
       m_vector.push_back(Promoter::promote(val));
       return *this;
     }
 
-    DataStream &operator<<(long val) {
+    DataStream &operator<<(long val) override {
       m_vector.push_back(Promoter::promote(val));
       return *this;
     }
 
-    DataStream &operator<<(double val) {
+    DataStream &operator<<(double val) override {
       m_vector.push_back(Promoter::promote(val));
       return *this;
     }
 
-    DataStream &operator<<(bool val) {
+    DataStream &operator<<(bool val) override {
       m_vector.push_back(Promoter::promote(val));
       return *this;
     }
 
-    DataStream &operator<<(char val) {
+    DataStream &operator<<(char val) override {
       m_vector.push_back(Promoter::promote(val));
       return *this;
     }
@@ -270,6 +310,7 @@ namespace CASM {
   private:
     std::vector<T> m_vector;
   };
+
 
   inline
   DataStream &operator<<(DataStream &_stream, int i) {
