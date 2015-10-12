@@ -61,6 +61,10 @@ namespace CASM {
       return *m_pclex;
     }
 
+    void set_primclex(PrimClex &_pclex) {
+      m_pclex = &_pclex;
+    }
+
     double lattice_weight() const {
       return m_lattice_weight;
     }
