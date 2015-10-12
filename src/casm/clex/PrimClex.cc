@@ -827,18 +827,6 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  /**  ENUMERATE_ALL_CONFIGURATIONS
-   *   Loops through all the supercells in supercell_list and calls
-   *   the enumerate_configuration routines on all of them
-   */
-  //*******************************************************************************************
-  void PrimClex::enumerate_all_configurations() {
-    for(Index i = 0; i < supercell_list.size(); i++) {
-      supercell_list[i].enumerate_all_occupation_configurations();
-    }
-  }
-
-  //*******************************************************************************************
   void PrimClex::print_supercells() const {
 
 
