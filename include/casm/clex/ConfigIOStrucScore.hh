@@ -24,6 +24,12 @@ namespace CASM {
         return new StrucScoreConfigFormatter(*this);
       }
 
+      StrucScoreConfigFormatter(const StrucScoreConfigFormatter &RHS) :
+        BaseDatumFormatter<Configuration>(RHS),
+        m_altprimclex(RHS.m_altprimclex), m_configmapper(RHS.m_configmapper), m_prim_path(RHS.m_prim_path), m_prop_names(RHS.m_prop_names) {
+        m_configmapper.set_primclex(m_altprimclex);
+      }
+
       bool validate(const Configuration &_config) const override;
 
       std::string short_header(const Configuration &_config) const override;
