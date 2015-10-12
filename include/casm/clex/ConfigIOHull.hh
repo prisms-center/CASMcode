@@ -12,7 +12,6 @@ namespace CASM {
   namespace ConfigIO_impl {
     /*
      */
-
     class BaseHullConfigFormatter: public BaseDatumFormatter<Configuration> {
     public:
       BaseHullConfigFormatter(const std::string &_name, const std::string &_desc, const std::string &_dependent_prop) :

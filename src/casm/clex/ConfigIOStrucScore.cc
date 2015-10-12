@@ -24,7 +24,6 @@ namespace CASM {
         return false;
       if(m_prim_path.empty()) {
         m_prim_path = splt_vec[0];
-        std::cout << "\n\n   ****m_prim_path is " << m_prim_path << "\n\n";
         if(!fs::exists(m_prim_path)) {
           throw std::runtime_error("Attempted to initialize format tag " + name()
                                    + " invalid file path '" + fs::absolute(m_prim_path).string() + "'. File does not exist.\n");
@@ -100,7 +99,9 @@ namespace CASM {
           result_vec.push_back(ConfigMapping::strain_cost(relaxed_struc.lattice(), mapped_configdof, relaxed_struc.basis.size()));
         else if(m_prop_names[i] == "total_score") {
           double sc = ConfigMapping::strain_cost(relaxed_struc.lattice(), mapped_configdof, relaxed_struc.basis.size());
+
           double bc = ConfigMapping::basis_cost(mapped_configdof, relaxed_struc.basis.size());
+
           double w = m_configmapper.lattice_weight();
           result_vec.push_back(w * sc + (1.0 - w)*bc);
         }
