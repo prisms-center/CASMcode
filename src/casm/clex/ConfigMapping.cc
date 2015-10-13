@@ -158,18 +158,55 @@ namespace CASM {
                                                  bool update_struc) const {
 
     //Indices for Configuration index and permutation operation index
-    ConfigDoF tconfigdof;
+    ConfigDoF tconfigdof, suggested_configdof;
     Lattice mapped_lat;
     bool is_new_config(true);
+    double bc(1e20), sc(1e20), hint_cost = 1e20, robust_cost = 1e20;
 
     relaxation_properties.put_obj();
     //std::vector<Index> best_assignment;
-    if(!struc_to_configdof(_struc,
-                           tconfigdof,
-                           mapped_lat,
-                           best_assignment,
-                           cart_op))
-      throw std::runtime_error("Structure is incompatible with PRIM.");
+
+    if(hint_ptr != nullptr) {
+      if(ConfigMap_impl::struc_to_configdof(*hint_ptr,
+                                            _struc,
+                                            suggested_configdof,
+                                            best_assignment,
+                                            m_robust_flag, // translate_flag -- not sure what to use for this
+                                            m_tol)) {
+
+        bc = ConfigMapping::basis_cost(suggested_configdof, _struc.basis.size());
+        sc = ConfigMapping::strain_cost(_struc.lattice(), suggested_configdof, _struc.basis.size());
+        relaxation_properties["suggested_mapping"]["basis_deformation"] = bc;
+        relaxation_properties["suggested_mapping"]["lattice_deformation"] = sc;
+        relaxation_properties["suggested_mapping"]["volume_relaxation"] = suggested_configdof.deformation().determinant();
+        hint_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
+      }
+      else {
+        relaxation_properties["suggested_mapping"] = "unknown";
+      }
+    }
+    if(struc_to_configdof(_struc,
+                          tconfigdof,
+                          mapped_lat,
+                          best_assignment,
+                          cart_op,
+                          hint_cost)) {
+
+      bc = ConfigMapping::basis_cost(tconfigdof, _struc.basis.size());
+      sc = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof, _struc.basis.size());
+      robust_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
+      relaxation_properties["suggested_mapping"]["basis_deformation"] = bc;
+      relaxation_properties["suggested_mapping"]["lattice_deformation"] = sc;
+      relaxation_properties["suggested_mapping"]["volume_relaxation"] = suggested_configdof.deformation().determinant();
+
+    }
+    else {
+      if(hint_cost > 1e10)
+        throw std::runtime_error("Structure is incompatible with PRIM.");
+
+      swap(tconfigdof, suggested_configdof);
+      relaxation_properties["best_mapping"] = relaxation_properties["suggested_mapping"];
+    }
 
 
     ConfigDoF relaxed_occ;
@@ -218,13 +255,9 @@ namespace CASM {
       }
     }
 
-    relaxation_properties["basis_deformation"] = ConfigMapping::basis_cost(tconfigdof, _struc.basis.size());
-    relaxation_properties["lattice_deformation"] = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof, _struc.basis.size());
-    relaxation_properties["volume_relaxation"] = tconfigdof.deformation().determinant();
-
     // transform deformation tensor to match canonical form and apply operation to cart_op
     Eigen::Matrix3d fg_cart_op = it_canon.sym_op().get_matrix(CART);
-    relaxation_properties["relaxation_deformation"] = fg_cart_op * tconfigdof.deformation() * fg_cart_op.transpose();
+    relaxation_properties["best_mapping"]["relaxation_deformation"] = fg_cart_op * tconfigdof.deformation() * fg_cart_op.transpose();
     cart_op = fg_cart_op * cart_op;
 
     // compose permutations
@@ -337,7 +370,8 @@ namespace CASM {
                                         ConfigDoF &mapped_configdof,
                                         Lattice &mapped_lat,
                                         std::vector<Index> &best_assignment,
-                                        Eigen::Matrix3d &cart_op) const {
+                                        Eigen::Matrix3d &cart_op,
+                                        double best_cost /*=1e20*/) const {
 
     bool valid_mapping(false);
     // If structure's lattice is a supercell of the primitive lattice, then import as ideal_structure
@@ -357,7 +391,8 @@ namespace CASM {
                                                   mapped_configdof,
                                                   mapped_lat,
                                                   best_assignment,
-                                                  cart_op);
+                                                  cart_op,
+                                                  best_cost);
 
     return valid_mapping;
   }
@@ -436,7 +471,8 @@ namespace CASM {
                                                  ConfigDoF &mapped_configdof,
                                                  Lattice &mapped_lat,
                                                  std::vector<Index> &best_assignment,
-                                                 Eigen::Matrix3d &cart_op) const {
+                                                 Eigen::Matrix3d &cart_op,
+                                                 double best_cost /*=1e20*/) const {
     //squeeze lattice_weight into [0,1] if necessary
     double lw = m_lattice_weight;
     double bw = 1.0 - lw;
@@ -485,7 +521,7 @@ namespace CASM {
     //std::cout << "max_va_fraction: " << max_va_fraction << "   Volume range: " << min_vol << " to " << max_vol << "\n";
     Eigen::MatrixXd ttrans_mat, tF, rotF;
     //Eigen::MatrixXd best_trans;
-    double strain_cost(1e10), basis_cost(1e10), best_cost(1e20), tot_cost;//, best_strain_cost, best_basis_cost;
+    double strain_cost(1e10), basis_cost(1e10), tot_cost;//, best_strain_cost, best_basis_cost;
     ConfigDoF tdof;
     BasicStructure<Site> tstruc(struc);
     Lattice tlat;
@@ -777,28 +813,77 @@ namespace CASM {
         }
       }
 
-      // See if a very simple (non-optimal) assignment is possible using the cost matrix.
-      // if not, the cost matrix is not viable -- only an issue in the presence of vacancies
-      //JCT: I'm not sure if this could fail in more complicated cases
-      //     (e.g., A-B alloying on one sublattice and A-Va disorder on another sublattice)
-      //  -- Update: it can fail.  For now, just rely on hungarian method to decide if assignment is possible
-      /*
-        std::vector<bool> assignable(scel.num_sites(), true);
+      // JCT: I'm not sure if there's an easy way to check if the cost matrix is viable in all cases
+      //      Some of the simpler checks I could think of failed for edge cases with vacancies.
+      //      If we return an invalid cost matrix, the Hungarian routines will detect that it is invalid,
+      //      so maybe there's no point in doing additional checks here.
+      return true;
+    }
+
+    //****************************************************************************************************************
+    bool calc_cost_matrix(const Configuration &config,
+                          const BasicStructure<Site> &rstruc,
+                          const Coordinate &trans,
+                          const Matrix3<double> &metric,
+                          Eigen::MatrixXd &cost_matrix) {
+
+
+      double inf = 10E10;
+      const Supercell &scel(config.get_supercell());
+      //if(cost_matrix.rows()!=scel.num_sites() || cost_matrix.cols()!=scel.num_sites())
+      cost_matrix = Eigen::MatrixXd::Constant(scel.num_sites(), scel.num_sites(), inf);
+      Index inf_counter;
+      double dist;
+      // loop through all the sites of the structure
+      Index j;
+      for(j = 0; j < rstruc.basis.size(); j++) {
+        Coordinate current_relaxed_coord(rstruc.basis[j](FRAC), scel.get_real_super_lattice(), FRAC);
+        current_relaxed_coord(CART) += trans(CART);
+        // loop through all the sites in the supercell
+        inf_counter = 0;
         for(Index i = 0; i < scel.num_sites(); i++) {
-        Index ii = 0;
-        for(; ii < scel.num_sites(); ii++) {
-        if(assignable[ii] && cost_matrix(i, ii) < (inf - TOL)) {
-        assignable[ii] = false;
-        break;
+
+          // Check if relaxed atom j is allowed on site i
+          // If so, populate cost_matrix normally
+          if(config.get_mol(i).name == rstruc.basis[j].occ_name()) {
+            cost_matrix(i, j) = scel.coord(i).min_dist2(current_relaxed_coord, metric);
+          }
+          // If not, set cost_matrix (i,j) = inf
+          else {
+            cost_matrix(i, j) = inf;
+            inf_counter++;
+          }
         }
+        if(inf_counter == scel.num_sites()) {
+          //std:: cerr << "Bail at 1\n";
+          return false;
         }
-        if(ii == scel.num_sites()) {
-        std::cerr << "Bail at 3\n"
-        << " cost_matrix is \n"<< cost_matrix << "\n";
-        return false;
+      }
+
+
+      for(; j < scel.num_sites(); j++) {
+        inf_counter = 0;
+        for(Index i = 0; i < scel.num_sites(); i++) {
+
+          // Check if vacancies are allowed at each position in the supercell
+          if(config.get_mol(i).name == "Va") {
+            cost_matrix(i, j) = 0;
+          }
+          else {
+            cost_matrix(i, j) = inf;
+            inf_counter++;
+          }
         }
+        if(inf_counter == scel.num_sites()) {
+          //std:: cerr << "Bail at 2\n";
+          return false;
         }
-      */
+      }
+
+      // JCT: I'm not sure if there's an easy way to check if the cost matrix is viable in all cases
+      //      Some of the simpler checks I could think of failed for edge cases with vacancies.
+      //      If we return an invalid cost matrix, the Hungarian routines will detect that it is invalid,
+      //      so maybe there's no point in doing additional checks here.
       return true;
     }
 
@@ -820,6 +905,27 @@ namespace CASM {
       rstruc.set_lattice(scel.get_real_super_lattice(), FRAC);
       return preconditioned_struc_to_configdof(scel, rstruc, deformation, config_dof, best_assignments, translate_flag, _tol);
     }
+
+    //***************************************************************************************************
+    // Options:
+    //
+    // translate_flag = true means that the rigid-translations are removed. (typically this option should be used)
+    //
+    // translate_flag = false means that rigid translations are not considered. (probably don't want to use this since structures should be considered equal if they are related by a rigid translation).
+    //
+    bool struc_to_configdof(const Configuration &config,
+                            BasicStructure<Site> rstruc,
+                            ConfigDoF &config_dof,
+                            std::vector<Index> &best_assignments,
+                            const bool translate_flag,
+                            const double _tol) {
+      const Lattice &mapped_lat(config.get_supercell().get_real_super_lattice());
+      Eigen::Matrix3d deformation = Eigen::Matrix3d(rstruc.lattice().coord_trans(FRAC) * mapped_lat.coord_trans(CART));
+      // un-deform rstruc
+      rstruc.set_lattice(mapped_lat, FRAC);
+      return preconditioned_struc_to_configdof(config, rstruc, deformation, config_dof, best_assignments, translate_flag, _tol);
+    }
+
     //***************************************************************************************************
     // Options:
     //
@@ -1001,6 +1107,178 @@ namespace CASM {
           //exit(1);
           return false;
         }
+      }
+
+      return true;
+    }
+
+
+
+    //***************************************************************************************************
+    // Options:
+    //
+    // translate_flag = true means that the rigid-translations are removed. (typically this option should be used)
+    //
+    // translate_flag = false means that rigid translations are not considered. (probably don't want to use this since structures should be considered equal if they are related by a rigid translation).
+    //
+    bool preconditioned_struc_to_configdof(const Configuration &config,
+                                           const BasicStructure<Site> &rstruc,
+                                           const Eigen::Matrix3d &deformation,
+                                           ConfigDoF &config_dof,
+                                           std::vector<Index> &best_assignments,
+                                           const bool translate_flag,
+                                           const double _tol) {
+
+      const Supercell &scel(config.get_supercell());
+
+      // clear config_dof and set its deformation
+      config_dof.clear();
+
+      config_dof.set_deformation(deformation);
+      Matrix3<double> metric(Eigen::Matrix3d(deformation.transpose()*deformation));
+      //Initialize everything
+
+      Eigen::MatrixXd cost_matrix;
+      std::vector<Index> optimal_assignments;
+      //BasicStructure<Site> best_ideal_struc(rstruc);
+      Coordinate ttrans(Vector3<double>(0, 0, 0), rstruc.lattice(), FRAC), best_trans(Vector3<double>(0, 0, 0), rstruc.lattice(), FRAC);
+
+      double min_mean = 10E10;
+      double trans_dist;
+
+      // We want to get rid of translations.
+      // trans_coord is a vector from IDEAL to RELAXED
+      // Subtract this from every rstruc coordinate
+      Index num_translations(1);
+      //if(translate_flag == true)
+      num_translations += config.size();
+      //num_translations = rstruc.basis.size();
+      //std::cout << "num_translations is " << num_translations << "\n";
+      for(Index n = 0; n < num_translations; n++) {
+        double mean;
+
+        //shift_struc has **ideal lattice**
+        //BasicStructure<Site> shift_struc(rstruc);
+
+
+        if(n > 0 && config.get_mol(n - 1).name != rstruc.basis[0].occ_name())
+          continue;
+
+        Coordinate ref_coord(rstruc.basis[0]);
+
+        if(n > 0)
+          ref_coord(FRAC) = scel.coord((n - 1) * scel.volume())(FRAC);
+
+
+        trans_dist = rstruc.basis[0].min_dist(ref_coord, ttrans);
+
+        ttrans.set_lattice(scel.get_prim().lattice(), CART);
+        //std::cout << "Before:  ttrans " << ttrans(FRAC) << "; V_number: " << ttrans.voronoi_number() << "\n";
+        ttrans.within();// <-- should be voronoi_within()?
+        //std::cout << "After:  ttrans " << ttrans(FRAC) << "; V_number: " << ttrans.voronoi_number() << "\n\n\n";
+        ttrans.set_lattice(rstruc.lattice(), CART);
+        trans_dist = ttrans(CART).length();
+        //shift_struc -= ttrans;
+        if(!ConfigMap_impl::calc_cost_matrix(scel, rstruc, ttrans, metric, cost_matrix)) {
+          //std::cerr << "In Supercell::struc_to_config. Cannot construct cost matrix." << std::endl;
+          //std::cerr << "This message is probably OK, if you are using translate_flag == true." << std::endl;
+          //continue;
+          return false;
+        }
+
+        //std::cout << "cost_matrix is\n" << cost_matrix <<  "\n\n";
+
+        // The mapping routine is called here
+        mean = hungarian_method(cost_matrix, optimal_assignments, _tol);
+
+        // if optimal_assignments is smaller than rstruc.basis.size(), then rstruc is incompattible
+        // with the supercell (optimal_assignments.size()==0 if the hungarian routine detects an incompatibility)
+        if(optimal_assignments.size() < rstruc.basis.size())
+          return false;
+
+        //std::cout << "mean is " << mean << " and stddev is " << stddev << "\n";
+        // add small penalty (~_tol) for larger translation distances, so that shortest equivalent translation is used
+        mean += _tol * trans_dist / 10.0;
+        if(mean < min_mean) {
+          //std::cout << "mean " << mean << " is better than min_mean " << min_mean <<"\n";
+
+          // new best
+          swap(best_assignments, optimal_assignments);
+
+          // best shifted structure
+          best_trans = ttrans;
+
+          // update the minimum mean costs
+          min_mean = mean;
+        }
+      }
+
+      // Now we are filling up displacements
+      //
+      // Make zero_vector for special vacancy cases.
+      Eigen::Vector3d zero_vector(0.0, 0.0, 0.0);
+
+      // initialize displacement matrix with all zeros
+      config_dof.set_displacement(ConfigDoF::displacement_matrix_t::Zero(3, scel.num_sites()));
+
+      Eigen::Vector3d avg_disp(0, 0, 0);
+      double avg2_disp(0);
+      Coordinate disp_coord(rstruc.lattice());
+
+      // Populate displacements given as the difference in the Coordinates
+      // as described by best_assignments.
+      for(Index i = 0; i < best_assignments.size(); i++) {
+
+        // If we are dealing with a vacancy, its displacment must be zero.
+        //if(best_assignments(i) >= rstruc.basis.size()) {
+        //  --DO NOTHING--
+        //}
+
+
+        // Using min_dist routine to calculate the displacement vector that corresponds
+        // to the distance used in the Cost Matrix and Hungarian Algorithm
+        // The method returns the displacement vector pointing from the
+        // IDEAL coordinate to the RELAXED coordinate
+        if(best_assignments[i] < rstruc.basis.size()) {
+
+          Coordinate ideal_coord(scel.coord(i)(FRAC), rstruc.lattice(), FRAC);
+
+          (rstruc.basis[best_assignments[i]] + best_trans).min_dist(ideal_coord, disp_coord);
+          //std::cout << "min_dist" << std::endl;
+          //std::cout << rstruc.basis[optimal_assignments(i)].min_dist(pos_coord, disp_coord);
+          for(Index j = 0; j < 3; j++) {
+            config_dof.disp(i)[j] = disp_coord(CART)[j];
+          }
+          avg_disp += config_dof.disp(i);
+          avg2_disp += config_dof.disp(i).squaredNorm();
+        }
+      }
+
+      avg_disp /= double(rstruc.basis.size());
+
+
+      // End of filling displacements
+
+
+      // Make the assignment bitstring
+      //
+      // Loop through all supercell sites
+      config_dof.set_occupation(Array<int>(scel.num_sites()));
+      std::string rel_basis_atom;
+      for(Index i = 0; i < best_assignments.size(); i++) {
+        // subtract off average displacement (non-vacant sites only)
+        // Any value of the assignment vector larger than the number
+        // of sites in the relaxed structure is by construction
+        // specified as a vacancy.
+        if(best_assignments[i] < rstruc.basis.size()) {
+          config_dof.disp(i) -= avg_disp;
+          // suppress small ugly numbers.
+          for(Index j = 0; j < 3; j++) {
+            if(almost_zero(config_dof.disp(i)[j], 1e-8))
+              config_dof.disp(i)[j] = 0;
+          }
+        }
+        config_dof.occ(i) = config.occ(i);
       }
 
       return true;

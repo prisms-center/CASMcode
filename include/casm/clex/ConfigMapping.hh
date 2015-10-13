@@ -175,11 +175,13 @@ namespace CASM {
     ///                   populated by the permutation of sites in the imported structure
     ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
     ///\endparblock
+    ///\param best_cost[in] optional parameter. Method will return false of no mapping is found better than 'best_cost'
     bool struc_to_configdof(const BasicStructure<Site> &_struc,
                             ConfigDoF &mapped_configdof,
                             Lattice &mapped_lat,
                             std::vector<Index> &best_assignment,
-                            Eigen::Matrix3d &cart_op) const;
+                            Eigen::Matrix3d &cart_op,
+                            double best_cost = 1e20) const;
 
 
     ///\brief Low-level routine to map a structure onto a ConfigDof if it is known to be ideal
@@ -205,11 +207,13 @@ namespace CASM {
     ///                   populated by the permutation of sites in the imported structure
     ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
     ///\endparblock
+    ///\param best_cost[in] optional parameter. Method will return false of no mapping is found better than 'best_cost'
     bool deformed_struc_to_configdof(const BasicStructure<Site> &_struc,
                                      ConfigDoF &mapped_config_dof,
                                      Lattice &mapped_lat,
                                      std::vector<Index> &best_assignment,
-                                     Eigen::Matrix3d &cart_op) const;
+                                     Eigen::Matrix3d &cart_op,
+                                     double best_cost = 1e20) const;
 
     ///\brief Low-level routine to map a structure onto a ConfigDof assuming a specific Lattice, without assuming structure is ideal
     ///       Will only identify mappings better than best_cost, and best_cost is updated to reflect cost of best mapping identified
@@ -241,9 +245,18 @@ namespace CASM {
   namespace ConfigMap_impl {
 
     // Assignment Problem Routines
-    // Find cost matrix for displacements between POS and relaxed structures.
-    // Returns false if lattices are incompatible
+    // Find cost matrix for displacements between ideal crystal and relaxed structure ('rstruc').
+    // Returns false if 'rstruc' is incompatible with 'scel'
     bool calc_cost_matrix(const Supercell &scel,
+                          const BasicStructure<Site> &rstruc,
+                          const Coordinate &trans,
+                          const Eigen::Matrix3d &metric,
+                          Eigen::MatrixXd &cost_matrix);
+
+    // Assignment Problem Routines
+    // Find cost matrix for displacements between ideal configuration and a relaxed structure ('rstruc').
+    // Returns false if 'rstruc' is incompatible with 'scel'
+    bool calc_cost_matrix(const Configuration &config,
                           const BasicStructure<Site> &rstruc,
                           const Coordinate &trans,
                           const Eigen::Matrix3d &metric,
@@ -261,7 +274,7 @@ namespace CASM {
     //   TRANSLATE = false -> rigid translations are not considered. (less robust but more efficient -- use only if you know rigid translations are small or zero)
 
     bool struc_to_configdof(const Supercell &scel,
-                            const BasicStructure<Site> &rstruc,
+                            BasicStructure<Site> rstruc,
                             ConfigDoF &config_dof,
                             std::vector<Index> &best_assignment,
                             const bool translate_flag,
@@ -269,6 +282,22 @@ namespace CASM {
 
     /// Same as struc_to_configdof, except 'rstruc' is de-rotated and de-strained. Any deformation is instead specified by 'deformation'
     bool preconditioned_struc_to_configdof(const Supercell &scel,
+                                           const BasicStructure<Site> &rstruc,
+                                           const Eigen::Matrix3d &deformation,
+                                           ConfigDoF &config_dof,
+                                           std::vector<Index> &best_assignment,
+                                           const bool translate_flag,
+                                           const double _tol);
+
+    bool struc_to_configdof(const Configuration &config,
+                            BasicStructure<Site> rstruc,
+                            ConfigDoF &config_dof,
+                            std::vector<Index> &best_assignment,
+                            const bool translate_flag,
+                            const double _tol);
+
+    /// Same as struc_to_configdof, except 'rstruc' is de-rotated and de-strained. Any deformation is instead specified by 'deformation'
+    bool preconditioned_struc_to_configdof(const Configuration &config,
                                            const BasicStructure<Site> &rstruc,
                                            const Eigen::Matrix3d &deformation,
                                            ConfigDoF &config_dof,
