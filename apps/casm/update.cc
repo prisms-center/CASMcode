@@ -309,9 +309,9 @@ namespace CASM {
             }
           }
           if(data_mismatch)
-            relax_log << "       WARNING: The data parsed from \n"
+            relax_log << "       WARNING: There are calculated properties from \n"
                       << "             " << filepath << "\n"
-                      << "         is incompatible with existing data for configuration " << imported_config.name() << "\n"
+                      << "         that do not match existing calculations for configuration " << imported_config.name() << " (they differ by more than 1E-04)\n"
                       << "         even though " << (best_it->first)->name() << " was found to relax to " << imported_config.name() << "\n";
         }
         relax_log << "\n          ----------------------------------------------\n" << std::endl;
