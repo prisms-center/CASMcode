@@ -315,6 +315,8 @@ namespace CASM {
                       << "         even though " << (best_it->first)->name() << " was found to relax to " << imported_config.name() << "\n";
         }
         relax_log << "\n          ----------------------------------------------\n" << std::endl;
+        if(self_mapped && datamap.find(&imported_config) != datamap.end())
+          imported_config.set_calc_properties(std::get<Update_impl::relaxjson>(datamap[&imported_config]));
       }
       else if(self_mapped) { //don't report anything, just record the data
         imported_config.set_calc_properties(std::get<Update_impl::relaxjson>(best_it->second));
