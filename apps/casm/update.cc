@@ -163,6 +163,7 @@ namespace CASM {
           for(; j_it != j_end; ++j_it) {
             parsed_props[j_it.name()] = *j_it;
           }
+
           update_map[&imported_config][&(*it)] = Update_impl::Data(parsed_props, it->name() == imported_name, new_config_flag);
 
         }
@@ -209,17 +210,18 @@ namespace CASM {
           best_cost = tcost;
           best_it = it2;
         }
+
         t_ss << "Starting configuration " << source_config.name() << ":" << std::endl;
-        t_ss << "           Result of mapping relaxation onto " << imported_config.name() << std::endl;
-        t_ss << "                -- lattice_deformation = " << ld << ";  basis_deformation = " << bd << ";  weighted_avg = " << tcost << std::endl;
+        t_ss << "                  Result of mapping relaxation onto " << imported_config.name() << std::endl;
+        t_ss << "                    -- lattice_deformation = " << ld << ";  basis_deformation = " << bd << ";  weighted_avg = " << tcost << std::endl;
 
         if(&source_config != &imported_config) {
           jsonParser const &alt_data(std::get<Update_impl::relaxjson>(update_map[&source_config][&source_config]));
           bd = alt_data["basis_deformation"].get<double>();
           ld = alt_data["lattice_deformation"].get<double>();
           tcost = w * ld + (1.0 - w) * bd;
-          t_ss << "           Result of mapping relaxation onto " <<  source_config.name() << std::endl;
-          t_ss << "                -- lattice_deformation = " << ld << ";  basis_deformation = " << bd << ";  weighted_avg = " << tcost << std::endl;
+          t_ss << "                  Result of mapping relaxation onto " <<  source_config.name() << std::endl;
+          t_ss << "                    -- lattice_deformation = " << ld << ";  basis_deformation = " << bd << ";  weighted_avg = " << tcost << std::endl;
         }
         if(source_data.contains("relaxed_energy")) {
           double energy = source_data["relaxed_energy"].get<double>();
@@ -227,25 +229,25 @@ namespace CASM {
             self_energy = energy;
           if(energy < lowest_energy)
             lowest_energy = energy;
-          t_ss << "                -- relaxed_energy = " << source_data["relaxed_energy"].get<double>() << std::endl;
+          t_ss << "                    -- relaxed_energy = " << source_data["relaxed_energy"].get<double>() << std::endl;
         }
         else
-          t_ss << "                -- relaxed_energy = unknown" << std::endl;
+          t_ss << "                    -- relaxed_energy = unknown" << std::endl;
         report.push_back(t_ss.str());
       }
       Index best_ind(std::distance(datamap.begin(), best_it));
-      if(!self_mapped || datamap.size() > 1) {
-        relax_log << " " << datamap.size() << " structure" << (datamap.size() > 1 ? "s have" : " has") <<  " mapped onto Configuration " << imported_config.name() << ",\n"
-                  << " which " << (std::get<Update_impl::new_config>(datamap.cbegin()->second)
-                                   ? " has been automatically added to your project"
-                                   : " already existed in your project")
-                  << std::endl;
+      if(datamap.size() > 1 || (!self_mapped && datamap.find(&imported_config) == datamap.end())) {
+        relax_log << " " << datamap.size() << " structure" << (datamap.size() > 1 ? "s have" : " has") <<  " mapped onto Configuration " << imported_config.name()
+                  << ", which " << (std::get<Update_impl::new_config>(datamap.cbegin()->second)
+                                    ? "has been automatically added to your project"
+                                    : "already existed in your project")
+                  << std::endl << std::endl;
 
         for(Index i = 0; i < report.size(); i++) {
           if(i == best_ind) {
             relax_log << "    best ==> " << i + 1 << ") " << report[i] << std::endl;
           }
-          if(i == best_ind) {
+          else {
             relax_log << "              " << i + 1 << ") " << report[i] << std::endl;
           }
         }
@@ -253,6 +255,7 @@ namespace CASM {
         // if imported_config has no properties, copy properties from best config
         fs::path filepath((best_it->first)->calc_properties_path());
         jsonParser &parsed_props(std::get<Update_impl::relaxjson>(best_it->second));
+
         if(!fs::exists(imported_config.calc_properties_path())
            && (imported_config.calc_properties().is_null() || imported_config.calc_properties().size() == 0)) {
           relax_log << "  Because no calculation data exists for configuration " << imported_config.name() << ",\n"
@@ -273,12 +276,11 @@ namespace CASM {
 
           imported_config.set_calc_properties(parsed_props);
           imported_config.push_back_source(json_pair("data_inferred_from_mapping", (best_it->first)->name()));
-
-          continue;
         }
 
         // prior data exist -- we won't copy data over, but do some validation to see if data are compatible
         else {
+          relax_log << "  There is already data associated with " << imported_config.name() << " -- it will not be overwritten.\n\n";
           const jsonParser &extant_props = imported_config.calc_properties();
           bool data_mismatch = false;
 
@@ -295,7 +297,7 @@ namespace CASM {
 
             if(!almost_equal(prop_it->get<double>(), parsed_props[prop_it.name()].get<double>(), 1e-4)) {
               if(parsed_props[prop_it.name()].get<double>() < prop_it->get<double>()) {
-                relax_log << "\nWARNING: Mapped configuration " << imported_config.name() << " has \n"
+                relax_log << "\n     WARNING: Mapped configuration " << imported_config.name() << " has \n"
                           << "                    " << prop_it.name() << "=" << prop_it->get<double>() << "\n"
                           << "         Which is higher than the relaxed value for mechanically unstable configuration " << (best_it->first)->name() << " which is\n"
                           << "                    " << prop_it.name() << "=" << parsed_props[prop_it.name()].get<double>() << "\n"
@@ -306,7 +308,7 @@ namespace CASM {
             }
           }
           if(data_mismatch)
-            relax_log << "WARNING: The data parsed from \n"
+            relax_log << "       WARNING: The data parsed from \n"
                       << "             " << filepath << "\n"
                       << "         is incompatible with existing data for configuration " << imported_config.name() << "\n"
                       << "         even though " << (best_it->first)->name() << " was found to relax to " << imported_config.name() << "\n";
@@ -315,6 +317,10 @@ namespace CASM {
       }
       else if(self_mapped) { //don't report anything, just record the data
         imported_config.set_calc_properties(std::get<Update_impl::relaxjson>(best_it->second));
+      }
+      else {
+        //relax_log << "Starting configuration " << source_config.name() << " is mechanically unstable.\n";
+        //relax_log << "\n          ----------------------------------------------\n" << std::endl;
       }
     }
 
