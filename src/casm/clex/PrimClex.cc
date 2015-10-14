@@ -781,12 +781,10 @@ namespace CASM {
    */
   //*******************************************************************************************
   Index PrimClex::add_canonical_supercell(const Lattice &superlat) {
-
     if(!superlat.is_supercell_of(prim.lattice())) {
-      std::cerr << "ERROR in PrimClex::add_canoical_supercell()." << std::endl
-                << "  'superlat' lattice primitive is not prim lattice primitive" << std::endl
-                << "  So that everything plays nicely, make sure the supercell lattice" << std::endl
-                << "  is based on PrimClex::prim." << std::endl;
+      std::cerr << "ERROR in PrimClex::add_canonical_supercell()." << std::endl
+                << "  Passed a Supercell Lattice that is not a superlattice of PRIM lattice\n" << std::endl;
+      assert(0);
       exit(1);
     }
 

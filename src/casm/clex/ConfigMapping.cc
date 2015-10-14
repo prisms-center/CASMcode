@@ -173,7 +173,7 @@ namespace CASM {
                                             best_assignment,
                                             m_robust_flag, // translate_flag -- not sure what to use for this
                                             m_tol)) {
-
+        mapped_lat = (hint_ptr->get_supercell()).get_real_super_lattice();
         bc = ConfigMapping::basis_cost(suggested_configdof, _struc.basis.size());
         sc = ConfigMapping::strain_cost(_struc.lattice(), suggested_configdof, _struc.basis.size());
         relaxation_properties["suggested_mapping"]["basis_deformation"] = bc;
@@ -182,7 +182,7 @@ namespace CASM {
         hint_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
       }
       else {
-        relaxation_properties["suggested_mapping"] = "unknown";
+        //relaxation_properties["suggested_mapping"] = "unknown";
       }
     }
     if(struc_to_configdof(_struc,
@@ -195,9 +195,9 @@ namespace CASM {
       bc = ConfigMapping::basis_cost(tconfigdof, _struc.basis.size());
       sc = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof, _struc.basis.size());
       robust_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
-      relaxation_properties["suggested_mapping"]["basis_deformation"] = bc;
-      relaxation_properties["suggested_mapping"]["lattice_deformation"] = sc;
-      relaxation_properties["suggested_mapping"]["volume_relaxation"] = suggested_configdof.deformation().determinant();
+      relaxation_properties["best_mapping"]["basis_deformation"] = bc;
+      relaxation_properties["best_mapping"]["lattice_deformation"] = sc;
+      relaxation_properties["best_mapping"]["volume_relaxation"] = suggested_configdof.deformation().determinant();
 
     }
     else {
@@ -473,6 +473,7 @@ namespace CASM {
                                                  std::vector<Index> &best_assignment,
                                                  Eigen::Matrix3d &cart_op,
                                                  double best_cost /*=1e20*/) const {
+
     //squeeze lattice_weight into [0,1] if necessary
     double lw = m_lattice_weight;
     double bw = 1.0 - lw;
@@ -485,6 +486,7 @@ namespace CASM {
     double num_atoms = double(struc.basis.size());
     int min_vol, max_vol;
 
+    mapped_configdof.clear();
     if(m_fixed_components.size() > 0) {
       std::string tcompon = m_fixed_components[0].first;
       int ncompon(0);
@@ -602,8 +604,8 @@ namespace CASM {
       return false;
     }
 
-    //std::cout << "FINAL COST IS: " << best_cost << "\nFINAL TRANS MAT IS:\n" << best_trans << "\n\n";
-    return true;
+    //std::cout << "FINAL COST IS: " << best_cost << "\n";//FINAL TRANS MAT IS:\n" << best_trans << "\n\n";
+    return mapped_configdof.size() >= struc.basis.size();
   }
 
   //*******************************************************************************************
@@ -1167,7 +1169,7 @@ namespace CASM {
         Coordinate ref_coord(rstruc.basis[0]);
 
         if(n > 0)
-          ref_coord(FRAC) = scel.coord((n - 1) * scel.volume())(FRAC);
+          ref_coord(FRAC) = scel.coord(n - 1)(FRAC);
 
 
         trans_dist = rstruc.basis[0].min_dist(ref_coord, ttrans);
