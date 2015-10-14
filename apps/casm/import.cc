@@ -213,7 +213,8 @@ namespace CASM {
 
         Eigen::Matrix3d cart_op;
         std::vector<Index> best_assignment;
-        if(configmapper.import_structure_occupation(import_struc, imported_name, relax_data, best_assignment, cart_op, true)) {
+        jsonParser fullrelax_data;
+        if(configmapper.import_structure_occupation(import_struc, imported_name, fullrelax_data, best_assignment, cart_op, true)) {
           std::cout << "  " << pos_path << "\n  was imported successfully as " << imported_name << std::endl << std::endl;
           n_unique++;
           new_import = true;
@@ -221,6 +222,7 @@ namespace CASM {
         else {
           std::cout << "  " << pos_path << "\n  mapped onto pre-existing equivalent structure " << imported_name << std::endl << std::endl;
         }
+        relax_data = fullrelax_data["best_mapping"];
         std::cout << "  Relaxation stats -> lattice_deformation = " << relax_data["lattice_deformation"].get<double>()
                   << "      basis_deformation = " << relax_data["basis_deformation"].get<double>() << std::endl << std::endl;;
       }
