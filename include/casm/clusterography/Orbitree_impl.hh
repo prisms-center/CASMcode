@@ -2545,22 +2545,29 @@ namespace CASM {
         << std::setw(12) << "length"
         << std::setw(8) << "hierarchy" << std::endl;
 
+
+    int clustcount = 0;
     for(Index i = 0; i < size(); i++) {
       for(Index j = 0; j < size(i); j++) {
-        out << std::left
-            << std::setw(8) << index[i][j]
-            << std::setw(8) << 0
-            << std::setw(8) << orbit(i, j).size()
-            << std::setw(8) << orbit(i, j).prototype.size()
-            << std::setw(12) << orbit(i, j).prototype.max_length();
 
-        // print hierarchy
-        out << std::left << std::setw(8) << 0;
-        for(Index k = 0; k < subcluster[ index[i][j]].size(); k++) {
+        for(Index k = 0; k < prototype(i, j).clust_basis.size(); k++, clustcount++) {
+
           out << std::left
-              << std::setw(8) << subcluster[ index[i][j] ][k];
+              //<< std::setw(8) << index[i][j]
+              << std::setw(8) << clustcount
+              << std::setw(8) << 0
+              << std::setw(8) << orbit(i, j).size()
+              << std::setw(8) << orbit(i, j).prototype.size()
+              << std::setw(12) << orbit(i, j).prototype.max_length();
+
+          // print hierarchy
+          out << std::left << std::setw(8) << 0;
+          for(Index l = 0; l < subcluster[ index[i][j]].size(); l++) {
+            out << std::left
+                << std::setw(8) << subcluster[ index[i][j] ][l];
+          }
+          out << '\n' << std::flush;
         }
-        out << '\n' << std::flush;
 
       }
     }
