@@ -108,64 +108,71 @@ namespace CASM {
       fs::path filepath = it->calc_properties_path();
       // determine if there is fresh data to read and put it in 'calc_properties'
       jsonParser parsed_props;
-      if(fs::exists(filepath)) {
-        time_t datatime, filetime;
-        // Compare 'datatime', from config_list database to 'filetime', from filesystem timestamp
-        it->calc_properties().get_if(datatime, "data_timestamp");
-        filetime = fs::last_write_time(filepath);
-
-        if(!vm.count("force") && filetime == datatime) {
-          continue;
+      if(it->calc_properties().size() > 0 && !(it->calc_properties().is_null())) {
+        if(!fs::exists(filepath)) {
+          //clear the calculated properties if the data file is missing -- this probably means that the user has deleted it
+          it->set_calc_properties(jsonParser());
         }
-        num_updated++;
-        std::cout << std::endl << "***************************" << std::endl << std::endl;
-        std::cout << "Working on " << filepath.string() << "\n";
+        else {
+          time_t datatime, filetime;
+          // Compare 'datatime', from config_list database to 'filetime', from filesystem timestamp
+          it->calc_properties().get_if(datatime, "data_timestamp");
+          filetime = fs::last_write_time(filepath);
 
-        //json relax_data;
-        it->read_calc_properties(parsed_props);
-        bool new_config_flag;
-        std::string imported_name;
-
-        {
-          //Convert relaxed structure into a configuration, merge calculation data
-          BasicStructure<Site> relaxed_struc;
-          jsonParser json(filepath);
-          from_json(simple_json(relaxed_struc, "relaxed_"), json);
-          std::vector<Index> best_assignment;
-          Eigen::Matrix3d cart_op;
-          //NOTE: reusing jsonParser to collect relaxation data
-          json.put_obj();
-          try {
-            new_config_flag = configmapper.import_structure_occupation(relaxed_struc,
-                                                                       &(*it),
-                                                                       imported_name,
-                                                                       json,
-                                                                       best_assignment,
-                                                                       cart_op);
+          if(!vm.count("force") && filetime == datatime) {
+            continue;
           }
-          catch(std::exception &e) {
-            std::cerr << "\nError: Unable to map relaxed structure data contained in " << filepath << " onto PRIM.\n"
-                      << "       " << e.what() << std::endl;
-            //throw std::runtime_error(std::string("Unable to map relaxed structure data contained in ") + filepath.string() + " onto PRIM.\n");
-            return 1;
-          }
+          num_updated++;
+          std::cout << std::endl << "***************************" << std::endl << std::endl;
+          std::cout << "Working on " << filepath.string() << "\n";
 
-          //copy data over
-          if(imported_name != it->name() && json.contains("suggested_mapping")) {
-            auto j_it(json["suggested_mapping"].cbegin()), j_end(json["suggested_mapping"].cend());
+          //json relax_data;
+          it->read_calc_properties(parsed_props);
+          bool new_config_flag;
+          std::string imported_name;
+
+          {
+            //Convert relaxed structure into a configuration, merge calculation data
+            BasicStructure<Site> relaxed_struc;
+            jsonParser json(filepath);
+            from_json(simple_json(relaxed_struc, "relaxed_"), json);
+            std::vector<Index> best_assignment;
+            Eigen::Matrix3d cart_op;
+            //NOTE: reusing jsonParser to collect relaxation data
+            json.put_obj();
+            try {
+              new_config_flag = configmapper.import_structure_occupation(relaxed_struc,
+                                                                         &(*it),
+                                                                         imported_name,
+                                                                         json,
+                                                                         best_assignment,
+                                                                         cart_op);
+            }
+            catch(std::exception &e) {
+              std::cerr << "\nError: Unable to map relaxed structure data contained in " << filepath << " onto PRIM.\n"
+                        << "       " << e.what() << std::endl;
+              //throw std::runtime_error(std::string("Unable to map relaxed structure data contained in ") + filepath.string() + " onto PRIM.\n");
+              return 1;
+            }
+
+            //copy data over
+            if(imported_name != it->name() && json.contains("suggested_mapping")) {
+              auto j_it(json["suggested_mapping"].cbegin()), j_end(json["suggested_mapping"].cend());
+              for(; j_it != j_end; ++j_it) {
+                parsed_props[j_it.name()] = *j_it;
+              }
+              update_map[&(*it)][&(*it)] = Update_impl::Data(parsed_props, false, new_config_flag);
+            }
+
+            Configuration &imported_config = primclex.configuration(imported_name);
+            auto j_it(json["best_mapping"].cbegin()), j_end(json["best_mapping"].cend());
             for(; j_it != j_end; ++j_it) {
               parsed_props[j_it.name()] = *j_it;
             }
-            update_map[&(*it)][&(*it)] = Update_impl::Data(parsed_props, false, new_config_flag);
+
+            update_map[&imported_config][&(*it)] = Update_impl::Data(parsed_props, it->name() == imported_name, new_config_flag);
           }
 
-          Configuration &imported_config = primclex.configuration(imported_name);
-          auto j_it(json["best_mapping"].cbegin()), j_end(json["best_mapping"].cend());
-          for(; j_it != j_end; ++j_it) {
-            parsed_props[j_it.name()] = *j_it;
-          }
-
-          update_map[&imported_config][&(*it)] = Update_impl::Data(parsed_props, it->name() == imported_name, new_config_flag);
 
         }
       }
