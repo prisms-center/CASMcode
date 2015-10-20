@@ -132,8 +132,10 @@ namespace CASM {
 
     jsonParser &to_json(jsonParser &_json, bool only_selected = false) const;
 
+    /// \brief check if configuration is selected (returns false if 'configname' cannot be found
     bool selected(const std::string &configname) const {
-      return m_config.find(configname)->second;
+      auto find_it = m_config.find(configname);
+      return find_it != m_config.end() && find_it->second;
     }
 
     void set_selected(const std::string &configname, bool is_selected) {
