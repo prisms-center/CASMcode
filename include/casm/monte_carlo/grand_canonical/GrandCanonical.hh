@@ -124,6 +124,8 @@ namespace CASM {
                         int current_occupant,
                         int new_occupant) const;
     
+    /// \brief Calculate properties given current conditions
+    void _update_properties();
     
     
     ///Keeps track of what sites can change to what
@@ -137,6 +139,9 @@ namespace CASM {
 
     /// This is the typical eci set that you use to get the energy
     ECIContainer m_formation_energy_eci;
+    
+    /// If true, calculate all correlations; if false, calculate correlations with non-zero eci
+    bool m_all_correlations;
     
     /// Event to propose, check, accept/reject:
     EventType m_event;

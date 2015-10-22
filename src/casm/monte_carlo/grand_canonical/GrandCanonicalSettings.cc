@@ -104,7 +104,32 @@ namespace CASM {
     }
 
   }
-
+  
+  // --- Sampler settings ---------------------
+  
+  /// \brief Return true if all correlations should be sampled
+  bool GrandCanonicalSettings::all_correlations() const {
+    
+    std::string level1 = "data";
+    std::string level2 = "measurements";
+    try {
+      const jsonParser& json = (*this)[level1][level2];
+      for(auto it=json.cbegin(); it!=json.cend(); ++it) {
+        if(it->contains("quantity") && (*it)["quantity"].get<std::string>() == "all_correlations") {
+          return true;
+        }
+      }
+      return false;
+    }
+    catch(std::runtime_error &e) {
+      std::cerr << "ERROR in GrandCanonicalSettings::all_correlations" << std::endl;
+      std::cerr << "Expected [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
+      throw e;
+    }
+    
+  }
+    
+  
   GrandCanonicalConditions GrandCanonicalSettings::_conditions(std::string name) const {
     
     std::string level1 = "driver";

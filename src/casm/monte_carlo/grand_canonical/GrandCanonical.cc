@@ -16,11 +16,10 @@ namespace CASM {
                                                   settings.calctype(), 
                                                   settings.ref(), 
                                                   settings.eci())),
+    m_all_correlations(settings.all_correlations()),
     m_event(primclex.composition_axes().components().size(), m_clexulator.corr_size()),
     m_minus_one_comp_n(-1.0/supercell().volume()),
     m_plus_one_comp_n(1.0/supercell().volume()) {
-    
-    
     
     /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
     const DirectoryStructure& dir = primclex.dir();
@@ -43,22 +42,10 @@ namespace CASM {
                     "  You need a smaller orbitree or a larger simulation cell.");
     }
     
-    
-    // initialize properties and store pointers to the data strucures
-    m_vector_property["corr"] = correlations_vec(m_configdof, supercell(), m_clexulator);
-    m_corr = &m_vector_property["corr"];
-    
-    m_vector_property["comp_n"] = CASM::comp_n(m_configdof, supercell());
-    m_comp_n = &m_vector_property["comp_n"];
-    
-    m_scalar_property["formation_energy"] = m_formation_energy_eci * corr().data();
-    m_formation_energy = &m_scalar_property["formation_energy"];
-    
-    m_scalar_property["potential_energy"] = formation_energy() - comp_n().dot(m_condition.mu());
-    m_potential_energy = &m_scalar_property["potential_energy"]; 
-    
-  }
+    _update_properties(); 
   
+  }
+    
   /// \brief Return number of steps per pass. Equals number of sites with variable occupation.
   Index GrandCanonical::steps_per_pass() const {
     return m_site_swaps.variable_sites().size();
@@ -76,6 +63,7 @@ namespace CASM {
     m_condition = new_conditions;
     
     clear_samples();
+    _update_properties();
     
     return;
   }
@@ -134,7 +122,7 @@ namespace CASM {
     // Next update all properties that changed from the event
     formation_energy() += event.dformation_energy();
     potential_energy() += event.dpotential_energy();
-    corr() += event.dcorr();
+    corr() += event.dcorr() / supercell().volume();
     comp_n() += event.dcomp_n();
     
     return;
@@ -271,12 +259,20 @@ namespace CASM {
     m_clexulator.set_nlist(supercell().get_nlist(mutating_site).begin());
 
     // Calculate the change in correlations due to this event
-    m_clexulator.calc_restricted_delta_point_corr(sublat,
-                                                  current_occupant,
-                                                  new_occupant,
-                                                  event.dcorr().data(),
-                                                  m_formation_energy_eci.eci_index_list().begin(),
-                                                  m_formation_energy_eci.eci_index_list().end());
+    if(m_all_correlations) {
+      m_clexulator.calc_delta_point_corr(sublat,
+                                         current_occupant,
+                                         new_occupant,
+                                         event.dcorr().data());
+    }
+    else {
+      m_clexulator.calc_restricted_delta_point_corr(sublat,
+                                                    current_occupant,
+                                                    new_occupant,
+                                                    event.dcorr().data(),
+                                                    m_formation_energy_eci.eci_index_list().begin(),
+                                                    m_formation_energy_eci.eci_index_list().end());
+    }
     
     // ---- set dformation_energy --------------
     
@@ -289,6 +285,25 @@ namespace CASM {
     event.set_dpotential_energy(event.dformation_energy() - event.dcomp_n().dot(m_condition.mu()));
     
   }
+  
+  /// \brief Calculate properties given current conditions
+  void GrandCanonical::_update_properties() {
+    
+    // initialize properties and store pointers to the data strucures
+    m_vector_property["corr"] = correlations_vec(m_configdof, supercell(), m_clexulator);
+    m_corr = &m_vector_property["corr"];
+    
+    m_vector_property["comp_n"] = CASM::comp_n(m_configdof, supercell());
+    m_comp_n = &m_vector_property["comp_n"];
+    
+    m_scalar_property["formation_energy"] = m_formation_energy_eci * corr().data();
+    m_formation_energy = &m_scalar_property["formation_energy"];
+    
+    m_scalar_property["potential_energy"] = formation_energy() - comp_n().dot(m_condition.mu());
+    m_potential_energy = &m_scalar_property["potential_energy"]; 
+    
+  }
+  
   
 
   

@@ -56,6 +56,8 @@ namespace CASM {
     template<typename SamplerInsertIterator>
     SamplerInsertIterator samplers(const PrimClex &primclex, SamplerInsertIterator result) const;
     
+    /// \brief Return true if all correlations should be sampled
+    bool all_correlations() const;
     
     
     private:
