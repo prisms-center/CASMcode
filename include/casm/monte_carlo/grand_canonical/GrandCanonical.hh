@@ -6,6 +6,7 @@
 #include "casm/monte_carlo/SiteExchanger.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalEvent.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh"
+#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
 
 
 namespace CASM {
@@ -32,10 +33,11 @@ namespace CASM {
 
     typedef GrandCanonicalEvent EventType;
     typedef GrandCanonicalConditions CondType;
+    typedef GrandCanonicalSettings SettingsType;
 
     
     /// \brief Constructs a GrandCanonical object and prepares it for running based on MonteSettings
-    GrandCanonical(PrimClex &primclex, const MonteSettings &settings);
+    GrandCanonical(PrimClex &primclex, const SettingsType &settings);
     
     
     /// \brief Return number of steps per pass. Equals number of sites with variable occupation.

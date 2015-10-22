@@ -8,7 +8,7 @@ namespace CASM {
   // ---- MonteCounter Definitions ---------------------------------
   
   /// \brief Construct a MonteCounter and initialize to all counts to zero
-  MonteCounter::MonteCounter(const MonteSettings &settings, size_type _steps_per_pass) :
+  MonteCounter::MonteCounter(const EquilibriumMonteSettings &settings, size_type _steps_per_pass) :
     m_steps_per_pass(_steps_per_pass) {
     
     // --- If not in 'must converge mode' -----

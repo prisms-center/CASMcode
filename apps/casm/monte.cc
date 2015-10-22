@@ -103,20 +103,10 @@ namespace CASM {
     
     if(monte_settings.type() == Monte::TYPE::GrandCanonical) {
     
-      /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
-      std::cout << "Read the global orbitree \n";
-      if(fs::exists(dir.clexulator_src(set.name(), set.bset()))) {
-        primclex.read_global_orbitree(dir.clust(set.bset()));
-        primclex.generate_full_nlist();
-        //primclex.generate_supercell_nlists();
-      }
-      std::cout << "  DONE." << std::endl << std::endl;
-
-      
       try {
         
         std::cout << "Constructing Grand Canonical Monte Carlo driver" << std::endl;
-        MonteDriver<GrandCanonical> driver(primclex, monte_settings);
+        MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(settings_path));
         std::cout << "  DONE." << std::endl << std::endl;
 
         std::cout << "Begin Grand Canonical Monte Carlo runs" << std::endl;

@@ -6,10 +6,10 @@
 namespace CASM {
 
   
-  GrandCanonical::GrandCanonical(PrimClex &primclex, const MonteSettings &settings):
+  GrandCanonical::GrandCanonical(PrimClex &primclex, const GrandCanonicalSettings &settings):
     MonteCarlo(primclex, settings), 
     m_site_swaps(supercell()),
-    m_condition(primclex, settings.initial_conditions()),
+    m_condition(settings.initial_conditions()),
     m_clexulator(primclex.global_clexulator()),
     m_formation_energy_eci(primclex.dir().eci_out(settings.clex(), 
                                                   settings.bset(), 
@@ -20,6 +20,17 @@ namespace CASM {
     m_minus_one_comp_n(-1.0/supercell().volume()),
     m_plus_one_comp_n(1.0/supercell().volume()) {
     
+    
+    
+    /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
+    const DirectoryStructure& dir = primclex.dir();
+    std::cout << "Read the global orbitree \n";
+    if(fs::exists(dir.clexulator_src(primclex.settings().name(), settings.bset()))) {
+      primclex.read_global_orbitree(dir.clust(settings.bset()));
+    }
+    std::cout << "  DONE." << std::endl << std::endl;
+    
+    primclex.generate_full_nlist();
     supercell().generate_neighbor_list();
     
     // Make sure the simulation is big enough to accommodate the clusters 

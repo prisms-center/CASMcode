@@ -109,6 +109,24 @@ namespace CASM {
     return json;
   }
   
+  /// \brief Read GrandCanonicalConditions from JSON format
+  void from_json(GrandCanonicalConditions &conditions, const CompositionConverter& comp_converter, const jsonParser &json) {  
+    
+    double temp = json["temperature"].get<double>();
+    double tol = json["tolerance"].get<double>();
+    
+    int Nparam = comp_converter.independent_compositions();
+    Eigen::VectorXd param_mu(Nparam);
+
+    int start = (int) 'a';
+
+    for(int i = 0; i < Nparam; i++) {
+      param_mu(i) = json["mu"][std::string(1, (char)(start + i))].get<double>();
+    }
+    
+    conditions = GrandCanonicalConditions(temp, param_mu, comp_converter, tol);
+  }
+  
   /// \brief Will create new file or append to existing results file the results of the latest run
   void write_results(const MonteSettings &settings, const GrandCanonical &mc) {
     try {
@@ -352,6 +370,111 @@ namespace CASM {
 
     return;
   }
+  
+  /// \brief Create a jsonParser object that can be used as a template.
+  ///
+  jsonParser example_grand_canonical_settings() {
+    
+    jsonParser example_settings;
+    
+    // ---- Initialization settings --------------------
+    
+    //Seed configuration
+    example_settings["initialization"]["motif"]["configname"] = "SCELV_A_B_C_D_E_F/X";
 
+    //Monte Carlo cell
+    Eigen::Matrix3i tmat = Eigen::Matrix3i::Zero();
+    tmat(0,0) = 10;
+    tmat(1,1) = 10;
+    tmat(2,2) = 10;
+    example_settings["initialization"]["matrix"] = tmat;
+
+    //Cluster expanstion to use, project clex name
+    example_settings["initialization"]["clex"] = "formation_energy";
+
+    //Basis set to use, project bset name
+    example_settings["initialization"]["bset"] = "default";
+
+    //Calctype settings to use, project calctype name
+    example_settings["initialization"]["calctype"] = "default";
+
+    //Calctype settings to use, project ref name
+    example_settings["initialization"]["ref"] = "ref";
+
+    //ECI settings name, project eci name
+    example_settings["initialization"]["eci"] = "default";
+    
+    
+    // ---- Data settings --------------------
+    
+    example_settings["data"]["sample_by"] = "pass";
+    example_settings["data"]["sample_period"] = 1;
+    
+    example_settings["data"]["max_pass"] = 10000;
+    example_settings["data"]["min_pass"] = 0;
+    
+    // also allowed:
+    //example_settings["data"]["equilibration_passes_first_run"] = 2000;
+    //example_settings["data"]["equilibration_passes_each_run"] = 1000;
+    
+    //example_settings["data"]["max_step"] = 10000;
+    //example_settings["data"]["min_step"] = 0;
+    
+    // also allowed:
+    //example_settings["data"]["max_sample"] = 10000;
+    //example_settings["data"]["min_sample"] = 0;
+    
+    // confidence level (default 0.95)
+    example_settings["data"]["confidence"] = 0.95;
+    
+    example_settings["data"]["measurements"] = jsonParser::array(5);
+    for(int i=0; i<5; i++) {
+      example_settings["data"]["measurements"].push_back(jsonParser::object());
+    }
+    example_settings["data"]["measurements"][0]["quantity"] = "formation_energy";
+    example_settings["data"]["measurements"][1]["quantity"] = "generalized_enthalpy";
+    example_settings["data"]["measurements"][2]["quantity"] = "mol_composition";
+    example_settings["data"]["measurements"][3]["quantity"] = "formation_energy";
+    example_settings["data"]["measurements"][4]["quantity"] = "formation_energy";
+    
+    // each of the above measurements can also have a requested precision, in which
+    // case the monte carlo calculation will run until that precision is reached (<X> +/- prec), 
+    // given the confidence level
+    // example_settings["data"]["measurements"][0]["precision"] = 0.01
+    
+    example_settings["data"]["storage"]["output_directory"] = "./mc_results";
+    example_settings["data"]["storage"]["write_observations"] = true;
+    example_settings["data"]["storage"]["write_trajectory"] = true;
+    example_settings["data"]["storage"]["write_POSCAR_snapshots"] = true;
+    
+    // output file format
+    //
+    // - may be single string or array of strings
+    // - csv is the default format if no 'output_format' given)
+    // - options are "csv"/"CSV" or "json"/"JSON"
+    example_settings["data"]["storage"]["output_format"] = jsonParser::array();
+    example_settings["data"]["storage"]["output_format"].push_back("csv"); // or "CSV"
+    example_settings["data"]["storage"]["output_format"].push_back("json"); // or "JSON"
+    
+    
+    
+    // ---- Driver settings -------------------
+    
+    example_settings["driver"]["mode"] = "incremental";
+    
+    example_settings["driver"]["initial_conditions"]["mu"]["a"] = 2.0;
+    example_settings["driver"]["initial_conditions"]["temperature"] = 100.0; // K
+    example_settings["driver"]["initial_conditions"]["tolerance"] = 0.001;
+    
+    example_settings["driver"]["final_conditions"]["mu"]["a"] = 2.0;
+    example_settings["driver"]["final_conditions"]["temperature"] = 1000.0; // K
+    example_settings["driver"]["final_conditions"]["tolerance"] = 0.001; 
+    
+    example_settings["driver"]["incremental_conditions"]["mu"]["a"] = 0.0;
+    example_settings["driver"]["incremental_conditions"]["temperature"] = 10.0; // K
+    example_settings["driver"]["incremental_conditions"]["tolerance"] = 0.001; 
+    
+    return example_settings;
+  }
 }
 

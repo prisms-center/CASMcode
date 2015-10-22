@@ -18,9 +18,18 @@ namespace CASM {
     /// \brief Default constructor
     GrandCanonicalConditions() {}
     
-    /// \brief Construct from MonteSettings
-    GrandCanonicalConditions(const PrimClex &primclex, const MonteSettings &settings);
-
+    /// \brief Constructor
+    ///
+    /// \param _temperature in K
+    /// \param _param_mu Parametric composition chemical potential
+    /// \param _comp_converter CompositionConverter for converting from parametric mu to atomic mu
+    /// \param _tol tolerance for comparing conditions
+    ///
+    GrandCanonicalConditions(double _temperature, 
+                             const Eigen::VectorXd &_param_mu,
+                             const CompositionConverter& _comp_converter,
+                             double _tol);
+    
     // ***************************************ACCESSORS********************************************** //
 
     double temperature() const;

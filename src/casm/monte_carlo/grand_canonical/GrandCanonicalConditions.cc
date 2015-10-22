@@ -6,41 +6,27 @@
 
 namespace CASM {
   
-  /// \brief Construct from MonteSettings
+  
+  /// \brief Constructor
   ///
-  /// Use MonteSettings::initial_conditions() as the input to this so that that the 
-  /// correct T, mu, and tol settings can be read
+  /// \param _temperature in K
+  /// \param _param_mu Parametric composition chemical potential
+  /// \param _comp_converter CompositionConverter for converting from parametric mu to atomic mu
+  /// \param _tol tolerance for comparing conditions
   ///
-  GrandCanonicalConditions::GrandCanonicalConditions(const PrimClex &primclex, const MonteSettings &settings) : 
-    m_tolerance(settings.tolerance()) {
+  GrandCanonicalConditions::GrandCanonicalConditions(double _temperature, 
+                                                     const Eigen::VectorXd &_param_mu,
+                                                     const CompositionConverter& _comp_converter,
+                                                     double _tol) : 
+    m_comp_converter(_comp_converter),
+    m_tolerance(_tol) {
     
     // -- set T ----
-    
-    set_temperature(settings.temperature());
+    set_temperature(_temperature);
 
     
     // -- set mu ----
-    
-    if(!primclex.has_composition_axes()) {
-      throw std::runtime_error(std::string("ERROR constructing GrandCanonicalConditions: No composition axes."));
-    }
-    m_comp_converter = primclex.composition_axes();
-    
-    int Nparam = primclex.composition_axes().independent_compositions();
-    Eigen::VectorXd param_mu(Nparam);
-
-    int start = (int) 'a';
-
-    for(int i = 0; i < Nparam; i++) {
-      std::stringstream ss;
-      ss << (char)(start + i);
-      param_mu(i) = settings.chemical_potential(ss.str());
-    }
-    
-    
-    Eigen::VectorXd atomic_mu = primclex.composition_axes().atomic_mu(param_mu);
-    
-    set_mu(atomic_mu);
+    set_mu(m_comp_converter.atomic_mu(_param_mu));
 
   }
   

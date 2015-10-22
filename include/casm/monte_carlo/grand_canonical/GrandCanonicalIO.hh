@@ -45,6 +45,9 @@ namespace CASM {
   /// \brief Store GrandCanonicalConditions in JSON format
   jsonParser &to_json(const GrandCanonicalConditions &conditions, jsonParser &json);  
   
+  /// \brief Read GrandCanonicalConditions from JSON format
+  void from_json(GrandCanonicalConditions &conditions, const CompositionConverter& comp_converter, const jsonParser &json);  
+  
   
   /// \brief Will create new file or append to existing file results of the latest run
   void write_results(const MonteSettings &settings, const GrandCanonical &mc);
@@ -60,6 +63,9 @@ namespace CASM {
   
   /// \brief For every snapshot taken, write a POSCAR file.
   void write_pos_trajectory(const MonteSettings& settings, const GrandCanonical &mc, Index cond_index);
+  
+  /// \brief Create a jsonParser object that can be used as a template.
+  jsonParser example_grand_canonical_settings();
 }
 
 #endif

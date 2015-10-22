@@ -6,7 +6,7 @@
 
 namespace CASM {
   
-  class MonteSettings;
+  class EquilibriumMonteSettings;
   class MonteCarlo;
   
   /// \brief Track the number of passes, steps and samples taken in a Monte Carlo calculation.
@@ -24,7 +24,7 @@ namespace CASM {
     
     
     /// \brief Construct a MonteCounter and initialize to all counts to zero
-    MonteCounter(const MonteSettings &settings, size_type _steps_per_pass);
+    MonteCounter(const EquilibriumMonteSettings &settings, size_type _steps_per_pass);
     
     
     /// \brief Number of complete passes performed

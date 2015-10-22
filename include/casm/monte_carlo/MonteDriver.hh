@@ -26,9 +26,10 @@ namespace CASM {
 
   public:
     typedef typename RunType::CondType CondType;
+    typedef typename RunType::SettingsType SettingsType;
     
     /// \brief Constructor via MonteSettings 
-    MonteDriver(PrimClex &primclex, const MonteSettings &settings);
+    MonteDriver(PrimClex &primclex, const SettingsType& settings);
 
     /// \brief Run everything requested by the MonteSettings
     void run(std::ostream &sout);
@@ -36,7 +37,7 @@ namespace CASM {
   private:
 
     ///Copy of initial settings given at construction. Will expand to have MonteCarlo states dumped into it.
-    MonteSettings m_settings;
+    SettingsType m_settings;
 
     ///Specifies how to build the conditions list from the settings
     const Monte::DRIVE_MODE m_drive_mode;
@@ -48,7 +49,7 @@ namespace CASM {
     const std::vector<CondType> m_conditions_list;
 
     ///Return the appropriate std::vector of conditions to visit based from settings. Use for construction.
-    std::vector<CondType> make_conditions_list(const PrimClex &primclex, const MonteSettings &settings);
+    std::vector<CondType> make_conditions_list(const PrimClex &primclex, const SettingsType &settings);
 
     ///Converge the MonteCarlo as it currently stands
     void single_run(std::ostream &sout);
@@ -65,7 +66,7 @@ namespace CASM {
   
   
   template<typename RunType>
-  MonteDriver<RunType>::MonteDriver(PrimClex &primclex, const MonteSettings &settings):
+  MonteDriver<RunType>::MonteDriver(PrimClex &primclex, const SettingsType& settings):
     m_settings(settings),
     m_drive_mode(m_settings.drive_mode()),
     m_mc(primclex, m_settings),
@@ -372,22 +373,22 @@ namespace CASM {
 
   template<typename RunType>
   std::vector<typename MonteDriver<RunType>::CondType> 
-  MonteDriver<RunType>::make_conditions_list(const PrimClex &primclex, const MonteSettings &settings) {
+  MonteDriver<RunType>::make_conditions_list(const PrimClex &primclex, const SettingsType &settings) {
     
     std::vector<CondType> conditions_list;
 
     switch(m_drive_mode) {
 
       case Monte::DRIVE_MODE::SINGLE: {
-        conditions_list.emplace_back(primclex, settings.initial_conditions());
+        conditions_list.push_back(settings.initial_conditions());
         break;
       }
 
       case Monte::DRIVE_MODE::INCREMENTAL: {
         
-        CondType init_cond(primclex, settings.initial_conditions());
-        CondType final_cond(primclex, settings.final_conditions());
-        CondType cond_increment(primclex, settings.incremental_conditions());
+        CondType init_cond(settings.initial_conditions());
+        CondType final_cond(settings.final_conditions());
+        CondType cond_increment(settings.incremental_conditions());
         
         conditions_list.push_back(init_cond);
         

@@ -147,7 +147,8 @@ namespace CASM {
   protected:
     
     /// \brief Construct with a starting ConfigDoF as specified the given MonteSettings and prepare data samplers
-    MonteCarlo(PrimClex &primclex, const MonteSettings &settings);
+    template<typename MonteTypeSettings>
+    MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings);
     
     /// \brief const Access the Supercell that *this is based on
     Supercell& supercell() {
@@ -222,6 +223,36 @@ namespace CASM {
     MonteSampler::size_type m_convergence_check_period = 100;
     
   };
+  
+  /// \brief Construct with a starting ConfigDoF as specified the given MonteSettings and prepare data samplers
+  template<typename MonteTypeSettings>
+  MonteCarlo::MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings) :
+    m_settings(settings),
+    m_primclex(primclex),
+    m_scel(&primclex, settings.simulation_cell_matrix()),
+    m_write_trajectory(settings.write_trajectory()) {
+    
+    try {
+      m_configdof = super_configdof_occ(primclex,
+                                        settings.simulation_cell_matrix(),
+                                        settings.motif_configname());
+      
+      settings.samplers(primclex, std::inserter(m_sampler, m_sampler.begin()));
+      
+      m_must_converge = false;
+      for(auto it = m_sampler.cbegin(); it != m_sampler.cend(); ++it) {
+        if(it->second->must_converge()) {
+          m_must_converge = true;
+          break;
+        }
+      }
+    
+    }
+    catch(...) {
+      std::cerr << "ERROR constructing MonteCarlo object" << std::endl;
+      throw;
+    }
+  }
   
 }
 #endif
