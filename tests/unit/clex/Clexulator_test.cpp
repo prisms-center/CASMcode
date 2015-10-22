@@ -15,11 +15,19 @@ BOOST_AUTO_TEST_SUITE(ClexulatorTest)
 
 BOOST_AUTO_TEST_CASE(MakeClexulatorTest) {
   namespace fs = boost::filesystem;
-
+  
+  std::string boost_path = "";
+  if(std::getenv("CASMBOOST_PATH") != nullptr) {
+    boost_path = (fs::path(std::getenv("CASMBOOST_PATH")) / "lib").string();
+  }
+  
+  std::string compile_opt = RuntimeLibrary::default_compile_options() + " -Iinclude";
+  std::string so_opt = RuntimeLibrary::default_so_options() + " -lboost_system -L" + boost_path;
+  
   Clexulator clexulator("test_Clexulator",
                         "tests/unit/clex",
-                        RuntimeLibrary::default_compile_options() + " --std=c++11 -Iinclude",
-                        RuntimeLibrary::default_so_options() + " -lboost_filesystem -lboost_system");
+                        compile_opt,
+                        so_opt);
 
   BOOST_CHECK_EQUAL(clexulator.corr_size(), 75);
 
