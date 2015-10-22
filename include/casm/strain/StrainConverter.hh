@@ -34,18 +34,23 @@ namespace CASM {
 
     /// GREEN_LAGRANGE = (C-I)/2
     static Matrix3d green_lagrange(const Matrix3d &F);
+    static Matrix3d green_lagrange_to_F(const Matrix3d &E);
 
     /// BIOT = (U-I)
     static Matrix3d biot(const Matrix3d &F);
+    static Matrix3d biot_to_F(const Matrix3d &B);
 
     /// HENCKY = log(C)/2
     static Matrix3d hencky(const Matrix3d &F);
+    static Matrix3d hencky_to_F(const Matrix3d &H);
 
     /// EULER_ALMANSI = (I-(F F^{T})^(-1))/2
     static Matrix3d euler_almansi(const Matrix3d &F);
+    static Matrix3d euler_almansi_to_F(const Matrix3d &A);
 
     /// DISP_GRAD = F
     static Matrix3d disp_grad(const Matrix3d &F);
+    static Matrix3d disp_grad_to_F(const Matrix3d &F){ return F;}
 
     //-------------------------------------------------
     // Routines that calculate derived quantities given the
@@ -85,16 +90,25 @@ namespace CASM {
         curr_metric_func = &StrainConverter::euler_almansi;
       else if(_MODE == DISP_GRAD)
         curr_metric_func = &StrainConverter::disp_grad;
-    };
+    }
+
+    StrainConverter(const std::string &mode_name) : 
+      StrainConverter(true){
+      set_mode(mode_name);
+    }
 
     //-------------------------------------------------
     /// Get the strain metric in the current mode
     Matrix3d strain_metric(const Matrix3d &F) const;
-
+    Matrix3d strain_metric_to_F(const Matrix3d &E) const;
+    
     /// Unrolls the green-lagrange metric ( or any symmetric metric)
     VectorXd unroll_E(const Matrix3d &E) const;
+    Matrix3d rollup_E(const VectorXd &_unrolled_E) const;
 
     VectorXd unrolled_strain_metric(const Matrix3d &F) const;
+    Matrix3d unrolled_strain_metric_to_F(const VectorXd &E) const;
+    
     VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Vector3d &eigenvalues,
                  Matrix3d &eigenvectors, const Matrix3d &F) const;
     VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Vector3d &eigenvalues,
@@ -122,6 +136,7 @@ namespace CASM {
     // typedef MetricFuncPtr for method pointers that take displacement gradient tensor as argument
     typedef Matrix3d(*MetricFuncPtr)(const Matrix3d &);
     MetricFuncPtr curr_metric_func;
+    MetricFuncPtr curr_inv_metric_func;
 
   };
 }
