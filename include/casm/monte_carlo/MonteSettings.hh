@@ -80,7 +80,7 @@ namespace CASM {
 
     // --- Driver ---------------------
     
-    /// \brief Given a settings jsonParser figure out the drive mode. Expects drive_mode/single,custom,incremental
+    /// \brief Given a settings jsonParser figure out the drive mode. Expects drive_mode/single,incremental
     virtual const Monte::DRIVE_MODE drive_mode() const;
     
     
