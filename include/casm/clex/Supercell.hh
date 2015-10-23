@@ -268,10 +268,12 @@ namespace CASM {
     Matrix3<int> get_transf_mat() const {
       return transf_mat;
     };
-    Lattice get_real_super_lattice() const {
+
+    const Lattice& get_real_super_lattice() const {
       return real_super_lattice;
     };
-    Lattice get_recip_prim_lattice() const {
+
+    const Lattice& get_recip_prim_lattice() const {
       return recip_prim_lattice;
     };
 
@@ -478,13 +480,6 @@ namespace CASM {
                             const Array< Array< Array<Index > > > &perturb_config_index,
                             const Array< Array< Array<permute_const_iterator> > > &perturb_config_symop_index,
                             bool print_config_name) const;
-
-    // Va_mode		description
-    // 0			print no information about the vacancies
-    // 1			print only the coordinates of the vacancies
-    // 2			print the number of vacancies and the coordinates of the vacancies
-    void print(const Configuration &config, std::ostream &stream, COORD_TYPE mode, int Va_mode = 0, char term = 0, int prec = 7, int pad = 5) const;
-    void print(std::ostream &stream, Configuration tconfig) const;
 
     ///Call Configuration::write out every configuration in supercell
     jsonParser &write_config_list(jsonParser &json);

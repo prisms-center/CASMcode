@@ -17,11 +17,16 @@ namespace CASM {
 
     _source() = "strain_enumeration";
 
+    std::cout << "Project matrix is \n" << m_proj << "\n";
 
-    if(!m_counter.valid())
+    m_counter.reset();
+    if(!m_counter.valid()){
+      std::cout << "COUNTER IS INVALID\n";
       _step() = -1;
-    else
+    }
+    else{
       _step() = 0;
+    }
   }
 
   //*******************************************************************************************
@@ -33,7 +38,10 @@ namespace CASM {
     //std::cout << "Incrementing...\n";
     //while(!is_valid_config && ++m_counter) {
     if(++m_counter) {
-      _current().set_deformation(m_strain_calc.unrolled_strain_metric_to_F(m_counter().transpose()*m_proj));
+      _current().set_deformation(m_strain_calc.unrolled_strain_metric_to_F(m_proj*m_counter()));
+      std::cout << "Counter is " << m_counter().transpose() << "\n\n";
+      //std::cout << "strain vector is \n" << m_proj*m_counter() << "\n\n";
+      //std::cout << "DEFORMATION IS\n" << _current().deformation() << "\n\n";
       //is_valid_config = current().is_canonical(_perm_begin(), _perm_end());
       //std::cout << "counter() is: " << m_counter() << ";  is_valid_config: " << is_valid_config
       //<< ";  is_valid_counter: " << m_counter.valid() << "\n";

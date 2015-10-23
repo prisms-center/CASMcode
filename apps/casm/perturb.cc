@@ -33,14 +33,14 @@ namespace CASM {
       ("config,c", po::value<fs::path>(&selection),
        "Selected configurations are used reference for generating perturbations. If not specified, or 'MASTER' given, uses master list selection.")
         ("strain,s","Generate strain perturbations")
-        ("init",po::value<std::vector<double> > (&init),"Initial vector")
-        ("final",po::value<std::vector<double> > (&final),"Final vector")
+        ("init",po::value<std::vector<double> > (&init)->multitoken(),"Initial vector")
+        ("final",po::value<std::vector<double> > (&final)->multitoken(),"Final vector")
         ("inc",po::value<double> (&inc_value)->default_value(0.02),"Strain increment")
-        ("inc",po::value<std::string> (&strain_mode)->default_value("GL"),"Strain mode name");
+        ("strainmode",po::value<std::string> (&strain_mode)->default_value("GL"),"Strain mode name");
 
         
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+        po::store(po::parse_command_line(argc, argv, desc,po::command_line_style::unix_style ^ po::command_line_style::allow_short), vm); // can throw
 
         /** --help option
         */
@@ -99,7 +99,7 @@ namespace CASM {
     ProjectSettings set(root);
 
     if(vm.count("strain")){
-      Eigen::MatrixXd tproj(2,6);
+      Eigen::MatrixXd tproj(6,2);
       tproj << 1.0/sqrt(2.0), -1.0/sqrt(6.0),
         -1.0/sqrt(2.0), -1.0/sqrt(6.0),
         0.0, 2.0/sqrt(6.0),
@@ -126,35 +126,37 @@ namespace CASM {
       bool verbose = false;
       bool print = true;
       for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
+	std::cout << "init_vec is " << _init_vec << "\n"; 
+	std::cout << "final_vec is " << _final_vec<< "\n"; 
         ConfigEnumStrain<Configuration> enumerator(it->get_supercell(),*it,tproj, _init_vec, _final_vec, inc_value,strain_mode);
         (it->get_supercell()).add_unique_canon_configs(enumerator.begin(), enumerator.end());        
       }
-      return 0;
     }
-    // want absolute paths
-    abs_cspecs_path = fs::absolute(cspecs_path);
-
-
-
-    ConfigSelection<false> config_select;
-    if(!vm.count("config") || selection == "MASTER") {
-      config_select = ConfigSelection<false>(primclex);
+    else{
+      // want absolute paths
+      abs_cspecs_path = fs::absolute(cspecs_path);
+      
+      
+      
+      ConfigSelection<false> config_select;
+      if(!vm.count("config") || selection == "MASTER") {
+	config_select = ConfigSelection<false>(primclex);
+      }
+      else {
+	config_select = ConfigSelection<false>(primclex, selection);
+      }
+      
+      std::cout << "\n***************************\n" << std::endl;
+      
+      std::cout << "Generating perturbations about configurations " << std::endl << std::endl;
+      
+      bool verbose = false;
+      bool print = true;
+      for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
+	std::cout << "  " << it->get_supercell().get_name() << "/" << it->get_id() << std::endl;
+	it->get_supercell().enumerate_perturb_configurations(*it, abs_cspecs_path, tol, verbose, print);
+      }
     }
-    else {
-      config_select = ConfigSelection<false>(primclex, selection);
-    }
-
-    std::cout << "\n***************************\n" << std::endl;
-
-    std::cout << "Generating perturbations about configurations " << std::endl << std::endl;
-
-    bool verbose = false;
-    bool print = true;
-    for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
-      std::cout << "  " << it->get_supercell().get_name() << "/" << it->get_id() << std::endl;
-      it->get_supercell().enumerate_perturb_configurations(*it, abs_cspecs_path, tol, verbose, print);
-    }
-
     std::cout << std::endl << "  DONE." << std::endl << std::endl;
 
     std::cout << "Writing config_list..." << std::endl;

@@ -341,6 +341,12 @@ namespace CASM {
 
   //********** ACCESSORS ***********
 
+  const Lattice &Configuration::ideal_lattice()const{
+    return get_supercell().get_real_super_lattice();
+  }
+
+  //*********************************************************************************
+
   std::string Configuration::get_id() const {
     return id;
   }
@@ -668,7 +674,82 @@ namespace CASM {
     }
 
     fs::ofstream file(get_pos_path());
-    get_supercell().print(*this, file, FRAC);
+    print(file, FRAC);
+    return;
+  }
+
+  //*******************************************************************************************
+
+  // Va_mode is default set to 0
+  // Va_modedescription
+  // 0print no information about the vacancies
+  // 1print only the coordinates of the vacancies
+  // 2print the number of vacancies and the coordinates of the vacancies
+  void Configuration::print(std::ostream &stream, COORD_TYPE mode, int Va_mode, char term, int prec, int pad) const {
+
+    std::ostringstream mol_name_list, num_mol_list, coord_stream;
+
+    Lattice ref_lat(ideal_lattice());
+    if(is_strained()) {
+      ref_lat = Lattice(Matrix3<double>(deformation()) * ideal_lattice().lat_column_mat());
+    }
+    //std::cout << "Starting lattice:\n";
+    //ideal_lattice().print(std::cout);
+    //std::cout << "\n\nDeformed lattice:\n";
+    //ref_lat.print(std::cout);
+    //std::cout << "\n\n";
+
+    Array<Index> vacancies;
+
+    //declare hash
+    std::map<std::string, Array<Index> > uccHash;
+
+    // loop through all sites and get the site indices
+    for(Index l = 0; l < size(); l++) {
+      if(!get_mol(l).is_vacancy()) {
+        uccHash[get_mol(l).name].push_back(l);
+      }
+      //store vacancies into a separate array
+      else {
+        vacancies.push_back(l);
+      }
+    }
+
+    // print names of molecules and numbers and start up coordinate stream
+    Coordinate tcoord(Vector3<double>(), ref_lat, FRAC);
+    std::map<std::string, Array<Index> >::iterator it;
+    for(it = uccHash.begin(); it != uccHash.end(); ++it) {
+      mol_name_list << it -> first << ' ';
+      num_mol_list << it -> second.size() << ' ';
+      for(Index i = 0; i < it->second.size(); i++) {
+        tcoord(FRAC) = get_supercell().coord(it->second.at(i))(FRAC);
+        //std::cout << "Coord " << it->second.at(i) << " goes from " << tcoord(FRAC);
+        if(has_displacement())//if(displacement_as_dof())
+          tcoord(CART) += Eigen::Vector3d(disp(it->second.at(i)));
+        //std::cout << "   to   " << tcoord(FRAC) << "\n";
+        tcoord.print(coord_stream, mode, term, prec, pad);
+      }
+    }
+
+    // add vacancies to list of molecules in the supercell -- should they also be added to number of molecules?
+    if(Va_mode == 2 && vacancies.size() > 0)
+      mol_name_list << " Va";
+    if(Va_mode != 0) {
+      for(Index i = 0; i < vacancies.size(); i++) {
+        tcoord(FRAC) = get_supercell().coord(vacancies.at(i))(FRAC);
+        tcoord.print(coord_stream, mode, term, prec, pad);
+      }
+    }
+
+    stream << get_supercell().get_name() << "/" << get_id() << term;
+    ref_lat.print(stream);
+    stream << mol_name_list.str() << term;
+    stream << num_mol_list.str() << term;
+
+    //print the COORD_TYPE
+    stream << COORD_MODE::NAME(mode) << term;
+
+    stream << coord_stream.str();
     return;
   }
 
@@ -978,7 +1059,7 @@ namespace CASM {
     // print POS to stringstream
     if(occupation() != get_supercell().vacant()) {
       std::stringstream ss;
-      get_supercell().print(*this, ss, FRAC);
+      print(ss, FRAC);
       json["pos"] = ss.str();
     }
     else {
