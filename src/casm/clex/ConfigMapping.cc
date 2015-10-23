@@ -322,9 +322,9 @@ namespace CASM {
                            cart_op))
       throw std::runtime_error("Structure is incompatible with PRIM.");
 
-    relaxation_properties["basis_deformation"] = ConfigMapping::basis_cost(tconfigdof, _struc.basis.size());
-    relaxation_properties["lattice_deformation"] = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof, _struc.basis.size());
-    relaxation_properties["volume_change"] = tconfigdof.deformation().determinant();
+    relaxation_properties["best_mapping"]["basis_deformation"] = ConfigMapping::basis_cost(tconfigdof, _struc.basis.size());
+    relaxation_properties["best_mapping"]["lattice_deformation"] = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof, _struc.basis.size());
+    relaxation_properties["best_mapping"]["volume_change"] = tconfigdof.deformation().determinant();
 
     Index import_scel_index = primclex().add_supercell(mapped_lat), import_config_index;
 
@@ -341,7 +341,9 @@ namespace CASM {
       imported_name = primclex().get_supercell(import_scel_index).get_config(import_config_index).name();
     }
 
-    cart_op = Eigen::Matrix3d(it_canon.sym_op().get_matrix(CART)) * cart_op;
+    Eigen::Matrix3d fg_cart_op = it_canon.sym_op().get_matrix(CART);
+    relaxation_properties["best_mapping"]["relaxation_deformation"] = fg_cart_op * tconfigdof.deformation() * fg_cart_op.transpose();
+    cart_op = fg_cart_op * cart_op;
     // compose permutations
     std::vector<Index>tperm = (*it_canon).permute(best_assignment);
 
