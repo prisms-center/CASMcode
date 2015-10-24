@@ -23,11 +23,9 @@ namespace CASM {
     
     /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
     const DirectoryStructure& dir = primclex.dir();
-    std::cout << "Read the global orbitree \n";
     if(fs::exists(dir.clexulator_src(primclex.settings().name(), settings.bset()))) {
       primclex.read_global_orbitree(dir.clust(settings.bset()));
     }
-    std::cout << "  DONE." << std::endl << std::endl;
     
     primclex.generate_full_nlist();
     supercell().generate_neighbor_list();
@@ -230,7 +228,7 @@ namespace CASM {
     write_conditions_json(settings(), *this, cond_index);
     write_observations(settings(), *this, cond_index);
     write_trajectory(settings(), *this, cond_index);
-    write_pos_trajectory(settings(), *this, cond_index);
+    //write_pos_trajectory(settings(), *this, cond_index);
   }
   
   /// \brief Update delta properties in 'event'

@@ -125,6 +125,7 @@ namespace CASM {
   private:
     
     fs::path m_root;
+    fs::path m_output_directory;
     
   };
   

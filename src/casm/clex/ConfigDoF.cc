@@ -11,6 +11,7 @@ namespace CASM {
 
   ConfigDoF::ConfigDoF(Index _N) :
     m_N(_N),
+    m_occupation(m_N),
     m_deformation(Eigen::Matrix3d::Identity()),
     m_is_strained(false) {
   }

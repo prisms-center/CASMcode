@@ -5,6 +5,7 @@
 
 #include "casm/clex/PrimClex.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
+#include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteDriver.hh"
 #include "casm_functions.hh"
@@ -16,6 +17,7 @@ namespace CASM {
     std::string settingsfile;
     fs::path settings_path;
     po::variables_map vm;
+    Index condition_index;
 
     try {
 
@@ -23,7 +25,9 @@ namespace CASM {
       po::options_description desc("'casm monte' usage");
       desc.add_options()
       ("help,h", "Print help message")
-      ("settings,s", po::value<std::string>(&settingsfile)->required(), "json file with all the settings you need for your simulation");
+      ("settings,s", po::value<std::string>(&settingsfile)->required(), "The Monte Carlo input file. See 'casm format --monte'.")
+      ("final-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
+      ("traj-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
 
       try {
         po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
@@ -33,9 +37,33 @@ namespace CASM {
         if(vm.count("help")) {
           std::cout << "\n";
           std::cout << desc << std::endl;
-
-          std::cout << "Monte is still under construction. Come back later." << std::endl;
-
+          
+          std::cout << "DESCRIPTION\n" <<
+                       "  Perform Monte Carlo calculations.                          \n\n" <<
+          
+                       "  casm monte --settings input_file.json                      \n" <<
+                       "    - Run Monte Carlo calculations given the input file      \n" <<
+                       "      settings.                                              \n" <<
+                       "    - See 'casm format --monte' for a description of the     \n" <<
+                       "      Monte Carlo input file.                                \n\n" <<
+                       
+                       "  casm monte --settings input_file.json --final-POSCAR 3     \n" <<
+                       "    - Write a POSCAR.final file containing the final state of\n" <<
+                       "      the Monte Carlo calculation. The argument is a condition\n" <<
+                       "      index specifying which run is being requested.\n" <<
+                       "    - Written at: output_directory/conditions.3/trajectory/POSCAR.final\n\n" <<
+                       
+                       "  casm monte --settings input_file.json --traj-POSCAR 5     \n" <<
+                       "    - Write the Monte Carlo calculation trajectory as a     \n" <<
+                       "      series of POSCAR files containing the state of the    \n" <<
+                       "      Monte Carlo calculation every time a sample was taken.\n" <<
+                       "      The argument is a condition index specifying which run\n" <<
+                       "      is being requested.                                   \n" <<
+                       "    - The trajectory file must exist. This is generated when\n" <<
+                       "      using input option \"data\"/\"storage\"/\"write_trajectory\" = true  \n" <<
+                       "    - Written at: output_directory/conditions.5/trajectory/POSCAR.i,\n" <<
+                       "      where i is the sample index.\n\n";
+                       
           return 0;
         }
 
@@ -72,12 +100,10 @@ namespace CASM {
 
     const DirectoryStructure &dir = primclex.dir();
     ProjectSettings &set = primclex.settings();
-
+    
     //Get path to settings json file
-    if(vm.count("settings")) {
-      settings_path = settingsfile;
-    }
-
+    settings_path = settingsfile;
+  
     //std::cout << "Example settings so far..." << std::endl;
     //jsonParser example_settings = Monte::example_testing_json_settings(primclex);
     //std::ofstream outsettings("monte_settings.json");
@@ -88,9 +114,6 @@ namespace CASM {
     try {
       std::cout << "Reading Monte Carlo settings: " << settings_path << std::endl;
       monte_settings = MonteSettings(settings_path);
-      std::cout << "\n-------------------------------\n";
-      monte_settings.print(std::cout);
-      std::cout << "\n-------------------------------\n\n";
       std::cout << "  DONE." << std::endl << std::endl;
     
     }
@@ -100,27 +123,56 @@ namespace CASM {
       return 1;
     }
     
-    
     if(monte_settings.type() == Monte::TYPE::GrandCanonical) {
-    
-      try {
-        
-        std::cout << "Constructing Grand Canonical Monte Carlo driver" << std::endl;
-        MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(settings_path));
-        std::cout << "  DONE." << std::endl << std::endl;
-
-        std::cout << "Begin Grand Canonical Monte Carlo runs" << std::endl;
-        driver.run(std::cout);
-        std::cout << "  DONE." << std::endl << std::endl;
-        
-      }
-      catch(std::exception& e) {
-        std::cerr << "ERROR running Grand Canonical Monte Carlo.\n\n";
-        std::cerr << e.what() << std::endl;
-        return 1;
-      }
       
+      if(vm.count("final-POSCAR")) {
+        try {
+          GrandCanonicalSettings gc_settings(settings_path);
+          const GrandCanonical gc(primclex, gc_settings);
+          write_POSCAR_final(gc, condition_index);
+        }
+        catch(std::exception& e) {
+          std::cerr << "ERROR printing Grand Canonical Monte Carlo final snapshot for condition: " << condition_index << "\n\n";
+          std::cerr << e.what() << std::endl;
+          return 1;
+        }
+      }
+      else if(vm.count("traj-POSCAR")) {
+        try {
+          GrandCanonicalSettings gc_settings(settings_path);
+          const GrandCanonical gc(primclex, gc_settings);
+          write_POSCAR_trajectory(gc, condition_index);
+        }
+        catch(std::exception& e) {
+          std::cerr << "ERROR printing Grand Canonical Monte Carlo path snapshots for condition: " << condition_index << "\n\n";
+          std::cerr << e.what() << std::endl;
+          return 1;
+        }
+      }
+      else {
+        try {
+          
+          //std::cout << "\n-------------------------------\n";
+          //monte_settings.print(std::cout);
+          //std::cout << "\n-------------------------------\n\n";
+          
+          std::cout << "Constructing Grand Canonical Monte Carlo driver" << std::endl;
+          MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(settings_path));
+          std::cout << "  DONE." << std::endl << std::endl;
+
+          std::cout << "Begin Grand Canonical Monte Carlo runs" << std::endl;
+          driver.run(std::cout);
+          std::cout << "  DONE." << std::endl << std::endl;
+          
+        }
+        catch(std::exception& e) {
+          std::cerr << "ERROR running Grand Canonical Monte Carlo.\n\n";
+          std::cerr << e.what() << std::endl;
+          return 1;
+        }
+      }
     }
+
     
     return 0;
   }

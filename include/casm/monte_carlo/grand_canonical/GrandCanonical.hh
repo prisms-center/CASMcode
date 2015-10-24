@@ -69,7 +69,7 @@ namespace CASM {
     
     /// \brief Write results to files
     void write_results(Index cond_index) const;
-        
+    
     
     /// \brief Calculate the low temperature expansion of the grand canonical free energy
     double lte_grand_canonical_free_energy() const;

@@ -308,7 +308,16 @@ namespace CASM {
       if(settings.write_json()) {
         
         jsonParser json = jsonParser::object();
-        formatter(observations.cbegin(), observations.cend()).to_json_arrays(json);
+        json["Pass"] = jsonParser::array();
+        json["Step"] = jsonParser::array();
+        json["DoF"] = jsonParser::array();
+        for(auto it=mc.sample_times().cbegin(); it!=mc.sample_times().cend(); ++it) {
+          json["Pass"].push_back(it->first);
+          json["Step"].push_back(it->second);
+        }
+        for(auto it=mc.trajectory().cbegin(); it!=mc.trajectory().cend(); ++it) {
+          json["DoF"].push_back(*it);
+        }
         gz::ogzstream sout((dir.trajectory_json(cond_index).string() + ".gz").c_str());
         sout << json;
         sout.close();
@@ -333,7 +342,7 @@ namespace CASM {
     
   }
   
-  /// \brief For every snapshot taken, write a POSCAR file.
+/*  /// \brief For every snapshot taken, write a POSCAR file.
   /// 
   /// The current naming convention is 'POSCAR.sample'
   /// POSCAR title comment is printed with "Sample: #  Pass: #  Step: #"
@@ -360,6 +369,137 @@ namespace CASM {
       // POSCAR title comment is printed with "Sample: #  Pass: #  Step: #" 
       std::stringstream ss;
       ss << "Sample: " << i << "  Pass: " << mc.sample_times()[i].first << "  Step: " << mc.sample_times()[i].second;
+      superstruc.title = ss.str();
+      
+      // write file
+      fs::ofstream sout(dir.POSCAR_snapshot(cond_index, i));
+      superstruc.print5(sout);
+      sout.close();
+    }
+
+    return;
+  }
+*/  
+
+  /// \brief For the final state, write a POSCAR file.
+  /// 
+  /// The current naming convention is 'POSCAR.final'
+  void write_POSCAR_final(const GrandCanonical& mc, Index cond_index) {
+    
+    GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
+    fs::create_directories(dir.trajectory_dir(cond_index));
+    
+    // create super structure matching supercell
+    BasicStructure<Site> primstruc = mc.supercell().get_prim();
+    BasicStructure<Site> superstruc = primstruc.create_superstruc(mc.supercell().get_real_super_lattice());
+    
+    if(!fs::exists(dir.final_state_json(cond_index))) {
+      throw std::runtime_error(
+        std::string("ERROR in 'write_POSCAR_final(const GrandCanonical &mc, Index cond_index)'\n") + 
+                    "  File not found: " + dir.final_state_json(cond_index).string());
+    }
+    
+    // read final_state.json
+    ConfigDoF config_dof;
+    from_json(config_dof, jsonParser(dir.final_state_json(cond_index)));
+    
+    // copy occupation
+    for(Index j = 0; j < config_dof.size(); j++) {
+      superstruc.basis[j].set_occ_value(config_dof.occ(j));
+    }
+      
+    // POSCAR title comment is printed with "Sample: #  Pass: #  Step: #" 
+    superstruc.title = "Final state";
+    
+    // write file
+    fs::ofstream sout(dir.POSCAR_final(cond_index));
+    superstruc.print5(sout);
+    sout.close();
+
+    return;
+  }
+  
+  /// \brief For every snapshot taken, write a POSCAR file.
+  /// 
+  /// The current naming convention is 'POSCAR.sample'
+  /// POSCAR title comment is printed with "Sample: #  Pass: #  Step: #"
+  void write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index) {
+    
+    GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
+    fs::create_directories(dir.trajectory_dir(cond_index));
+    
+    std::vector<Index> pass;
+    std::vector<Index> step;
+    std::vector<ConfigDoF> trajectory;
+    
+    // create super structure matching supercell
+    BasicStructure<Site> primstruc = mc.supercell().get_prim();
+    BasicStructure<Site> superstruc = primstruc.create_superstruc(mc.supercell().get_real_super_lattice());
+    
+    if(mc.settings().write_json()) {
+      
+      std::string filename = dir.trajectory_json(cond_index).string() + ".gz";
+      
+      if(!fs::exists(filename)) {
+        throw std::runtime_error(
+          std::string("ERROR in 'write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index)'\n") + 
+                      "  File not found: " + filename);
+      }
+      
+      gz::igzstream sin(filename.c_str());
+      jsonParser json(sin);
+      for(auto it=json["Pass"].cbegin(); it!=json["Pass"].cend(); ++it) {
+        pass.push_back(it->get<Index>());
+      }
+      for(auto it=json["Step"].cbegin(); it!=json["Step"].cend(); ++it) {
+        step.push_back(it->get<Index>());
+      }
+      ConfigDoF config_dof;
+      for(auto it=json["DoF"].cbegin(); it!=json["DoF"].cend(); ++it) {
+        from_json(config_dof, *it);
+        trajectory.push_back(config_dof);
+      }
+      
+    }
+    else if(mc.settings().write_csv()) {
+      
+      std::string filename = dir.trajectory_csv(cond_index).string() + ".gz";
+      
+      if(!fs::exists(filename)) {
+        throw std::runtime_error(
+          std::string("ERROR in 'write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index)'\n") + 
+                      "  File not found: " + filename);
+      }
+      
+      gz::igzstream sin(filename.c_str());
+      
+      // skip the header line
+      sin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      
+      Index _pass, _step;
+      ConfigDoF config_dof(superstruc.basis.size());
+      
+      while(sin) {
+        sin >> _pass >> _step;
+        pass.push_back(_pass);
+        step.push_back(_step);
+        for(Index i=0; i<superstruc.basis.size(); i++) {
+          sin >> config_dof.occ(i);
+        }
+        trajectory.push_back(config_dof);
+      }
+    }
+    
+    for(Index i = 0; i < trajectory.size(); i++) {
+      
+      // copy occupation
+      for(Index j = 0; j < trajectory[i].size(); j++) {
+        superstruc.basis[j].set_occ_value(trajectory[i].occ(j));
+      }
+      
+      // POSCAR title comment is printed with "Sample: #  Pass: #  Step: #" 
+      std::stringstream ss;
+      ss << "Sample: " << i << "  Pass: " << pass[i] << "  Step: " << step[i];
       superstruc.title = ss.str();
       
       // write file

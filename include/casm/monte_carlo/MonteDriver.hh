@@ -86,44 +86,6 @@ namespace CASM {
     
     MonteCarloDirectoryStructure dir(m_settings.output_directory());
     
-    // if run does not already exist
-    if(!fs::exists(dir.settings_json())) {
-      sout << "New calculation.\n\n"
-           << "Results will be written in: " << dir.output_dir() << "\n\n";
-      
-      // write settings file
-      fs::create_directories(dir.output_dir());
-      m_settings.write(dir.settings_json());
-      
-    }
-    // else, check if same settings
-    else {
-      
-      // read existing settings
-      jsonParser existing(dir.settings_json());
-      
-      // compare to current input, but do a print and read so that formatting is the same
-      std::stringstream tmp;
-      m_settings.print(tmp);
-      jsonParser input(tmp);
-      
-      if(existing != input) {
-        
-        fs::path diff = find_diff(existing, input);
-        
-        std::stringstream ss;
-        ss << "Error: Output directory '" << dir.output_dir() << "' has existing calculations with\n"
-           << "different input settings at: " << diff;
-        
-        throw std::runtime_error(ss.str());
-        
-      }
-      else {
-        sout << "Continuing calculation.\n\n" 
-             << "Results will be appended to those in: " << dir.output_dir() << "\n\n";
-      }
-    }
-    
     if(!m_settings.write_json() && !m_settings.write_csv()) {
       throw std::runtime_error(
         std::string("No valid monte carlo output format.\n") +

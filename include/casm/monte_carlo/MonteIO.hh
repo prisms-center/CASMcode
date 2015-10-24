@@ -21,11 +21,6 @@ namespace CASM {
       return m_output_dir;
     }
     
-    /// \brief Copy of input settings: "output_dir/settings.json"
-    fs::path settings_json() const {
-      return m_output_dir / "settings.json";
-    }
-    
     /// \brief Results summary: "output_dir/results.csv"
     fs::path results_csv() const {
       return m_output_dir / "results.csv";
@@ -71,6 +66,11 @@ namespace CASM {
     /// \brief "output_dir/conditions.cond_index/trajectory"
     fs::path trajectory_dir(int cond_index) const {
       return conditions_dir(cond_index) / "trajectory";
+    }
+    
+    /// \brief "output_dir/conditions.cond_index/trajectory/POSCAR.final"
+    fs::path POSCAR_final(int cond_index) {
+      return trajectory_dir(cond_index) / std::string("POSCAR.final");
     }
     
     /// \brief "output_dir/conditions.cond_index/trajectory/POSCAR.sample"

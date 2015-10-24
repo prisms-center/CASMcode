@@ -61,8 +61,11 @@ namespace CASM {
   /// \brief Will create (and possibly overwrite) new file with all observations from run with conditions.cond_index
   void write_trajectory(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index);
   
+  /// \brief For the final state, write a POSCAR file.
+  void write_POSCAR_final(const GrandCanonical& mc, Index cond_index);
+  
   /// \brief For every snapshot taken, write a POSCAR file.
-  void write_pos_trajectory(const MonteSettings& settings, const GrandCanonical &mc, Index cond_index);
+  void write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index);
   
   /// \brief Create a jsonParser object that can be used as a template.
   jsonParser example_grand_canonical_settings();

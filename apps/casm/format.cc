@@ -897,17 +897,17 @@ Direct\n\
                    "\"initialization\": (JSON object) Supercell and parameterization   \n"
                    "    initialization options.                                        \n\n" <<
                    
-                   "  \\\"clex\", \\\"bset\", \\\"calctype\", \\\"ref\", \\\"eci\": (string)\n" <<
+                   "  /\"clex\", /\"bset\", /\"calctype\", /\"ref\", /\"eci\": (string)\n" <<
                    "    The CASM project settings that should be used for the monte    \n" <<
                    "    carlo calculation.                                             \n\n" <<
                    
-                   "  \\\"matrix\": (3x3 JSON arrays of integers) The supercell        \n" <<
+                   "  /\"matrix\": (3x3 JSON arrays of integers) The supercell        \n" <<
                    "    transformation matrix.                                         \n\n" <<
                    
-                   "  \\\"motif\": (JSON object) Specifies the initial occupation of   \n" <<
+                   "  /\"motif\": (JSON object) Specifies the initial occupation of   \n" <<
                    "      the supercell.                                               \n\n" <<
                    
-                   "    \\\"configname\": (string) The configuration that is tiled to  \n" <<
+                   "    /\"configname\": (string) The configuration that is tiled to  \n" <<
                    "      fill the supercell (ex. \"SCEL3_3_1_1_0_2_2/0\").            \n" <<
                    "      An error is thrown if the \"matrix\" given is not a supercell\n" <<
                    "      of the specified configuration.                              \n\n\n" <<
@@ -915,17 +915,17 @@ Direct\n\
                    
                    "\"data\": (JSON object) Data collection options                    \n\n" <<
                    
-                   "  \\\"sample_by\": (string) Specify unit for the period between    \n" <<
+                   "  /\"sample_by\": (string) Specify unit for the period between    \n" <<
                    "    samples.  May be either \"step\" (sample after every \"sample_period\"\n" <<
                    "    proposed Monte Carlo events), or \"pass\" (sample after the    \n" <<
                    "    \"sample_period\" number of passes), where 1 pass is a number of\n" <<
                    "    steps equal to the number of sites in the supercell that have  \n" <<
                    "    variable occupation).                                          \n\n" <<
                    
-                   "  \\\"sample_period\": (integer) Specify how many steps or passes  \n" <<
+                   "  /\"sample_period\": (integer) Specify how many steps or passes  \n" <<
                    "    to wait between data samples.                                  \n\n" <<
                    
-                   "  \\\"measurements\": (JSON array containing JSON objects)         \n" <<
+                   "  /\"measurements\": (JSON array containing JSON objects)         \n" <<
                    "    Specifies which properties to sample. Each JSON object should  \n" <<
                    "    include \"quantity\" (string) specifying a property to be      \n" <<
                    "    sampled. Optionally, it may also include \"precision\" (number),\n" <<
@@ -948,53 +948,49 @@ Direct\n\
                    "        which have non-zero eci values.                            \n" <<
                    "      \"all_correlations\": correlations (per unit cell)           \n\n" <<
                    
-                   "  \\\"confidence\": (number, range (0.0, 1.0), default 0.95) The   \n" <<
+                   "  /\"confidence\": (number, range (0.0, 1.0), default 0.95) The   \n" <<
                    "    confidence level used for calculating the precision in the     \n" <<
                    "    average value of sampled quantities.                           \n\n" <<
                    
-                   "  \\\"min_pass\", \\\"min_step\", \\\"min_sample\": (integer) If in\n" <<
+                   "  /\"min_pass\", /\"min_step\", /\"min_sample\": (integer) If in\n" <<
                    "    automatic convergence mode, prevents the calculation from a    \n" <<
                    "    minimum number of passes, steps, or samples have occurred.     \n\n" <<
                    
-                   "  \\\"max_pass\", \\\"max_step\", \\\"max_sample\": (integer) If in\n" <<
+                   "  /\"max_pass\", /\"max_step\", /\"max_sample\": (integer) If in\n" <<
                    "    automatic convergence mode, stops the calculation if the       \n" <<
                    "    specified number of passes, steps, or samples have occurred.   \n\n" <<
                    
-                   "  \\\"N_pass\", \\\"N_step\", \\\"N_sample\": (integer) When not in\n" <<
+                   "  /\"N_pass\", /\"N_step\", /\"N_sample\": (integer) When not in\n" <<
                    "    automatic convergence mode (no precision has been specified for\n" <<
                    "    any quantities being sampled), stops the calculation when the  \n" <<
                    "    specified number of passes, steps, or samples have occurred.   \n\n" <<
                    
-                   "  \\\"equilibration_passes_first_run\": (integer) If included, the \n" <<
+                   "  /\"equilibration_passes_first_run\": (integer) If included, the \n" <<
                    "    requested number of passes will be performed at the initial    \n" <<
                    "    conditions as a preliminary step before the actual run begins. \n" <<
                    "    This may be useful when not running in automatic convergence   \n" <<
                    "    mode.                                                          \n\n" <<
                    
-                   "  \\\"equilibration_passes_each_run\": (integer) If included, the \n" <<
+                   "  /\"equilibration_passes_each_run\": (integer) If included, the \n" <<
                    "    requested number of passes will be performed at each condition \n" <<
                    "    as a preliminary step before the actual run begins. This may be\n" <<
                    "    useful when not running in automatic convergence mode.         \n\n" <<
                    
-                   "  \\\"storage\": (JSON object) Options for writing results.        \n\n" <<
+                   "  /\"storage\": (JSON object) Options for writing results.        \n\n" <<
                    
-                   "    \\\"output_directory\": (string) Path to the directory where   \n" <<
-                   "      results should be written. Will be created if not already    \n" <<
-                   "      existing.                                                    \n\n" <<
-                   
-                   "    \\\"output_format\": (string or JSON array of string) Specifies\n" <<
+                   "    /\"output_format\": (string or JSON array of string) Specifies\n" <<
                    "      the type or types of output files. Current options are \"csv\"\n" <<
                    "      or \"json\". Type names with either all lower case or all    \n" <<
                    "      upper case are accepted.                                     \n\n" <<
                    
-                   "    \\\"write_observations\": (boolean, default false) If true,    \n" <<
+                   "    /\"write_observations\": (boolean, default false) If true,    \n" <<
                    "      all individual observations of the quantities requested to be\n" <<
                    "      sampled will be written to compressed files:                 \n" <<
                    "        \"output_directory\"/conditions.i/observations.ext.gz      \n" <<
                    "      where 'i' is the condition index and 'ext' is the output     \n" <<
                    "      format.                                                      \n\n" <<
                    
-                   "    \\\"write_trajectory\": (boolean, default false) If true,      \n" <<
+                   "    /\"write_trajectory\": (boolean, default false) If true,      \n" <<
                    "      the value of all degrees of freedom at the time of each      \n" <<
                    "      sample will be written to compressed files:                  \n" <<
                    "        \"output_directory\"/conditions.i/trajectory.ext.gz        \n" <<
@@ -1005,7 +1001,7 @@ Direct\n\
                    "\"driver\": (JSON object) Contains options controlling the         \n" <<
                    "    conditions at which calculations are performed.                \n\n" <<
                    
-                   "  \\\"mode\": (string) Specify the drive mode.                     \n\n" <<
+                   "  /\"mode\": (string) Specify the drive mode.                     \n\n" <<
                    
                    "    Possible options for \"mode\" are:                             \n" <<
                    "      \"single\": perform one calculation at the initial conditions\n" <<
@@ -1013,34 +1009,34 @@ Direct\n\
                    "        initial conditions and incrementing by the incremental     \n" <<
                    "        conditions up to (and including) the final conditions.     \n\n" <<
                    
-                   "  \\\"initial_conditions\",\n" <<
-                   "  \\\"incremental_conditions\", \n" <<
-                   "  \\\"final_conditions\": \n" <<
+                   "  /\"initial_conditions\",\n" <<
+                   "  /\"incremental_conditions\", \n" <<
+                   "  /\"final_conditions\": \n" <<
                    "    (JSON object) Specifies the applied conditions for the         \n" <<
                    "    calculation. For \"incremental_conditions\", specifies the     \n" <<
                    "    change in conditions between individual calculations. Each JSON\n" <<
                    "    object should include:                                         \n\n" <<
                    
-                   "    \\\"temperature\": (number) The temperature in K.              \n\n" <<
+                   "    /\"temperature\": (number) The temperature in K.              \n\n" <<
                    
-                   "    \\\"mu\" (JSON object): The chemical potential(s)              \n\n" <<
+                   "    /\"mu\" (JSON object): The chemical potential(s)              \n\n" <<
                    
-                   "      \\\"a\", \\\"b\", ...: (number) Each chemical potential. For \n" <<
+                   "      /\"a\", /\"b\", ...: (number) Each chemical potential. For \n" <<
                    "      example, \"a\" specifies dG/dcomp(a) and \"b\" specifies     \n" <<
                    "      dG/dcomp(b). The number of chemical potentials provided must \n" <<
                    "      match the number of independent compositions.                \n\n" <<
                    
-                   "    \\\"tolerance\": (number) For \"incremental\" drive mode,      \n" <<
+                   "    /\"tolerance\": (number) For \"incremental\" drive mode,      \n" <<
                    "      specifies a numerical tolerance for comparing conditions.    \n\n\n";
 
       std::cout << "EXAMPLE: Settings for an incremental calculation with increasing temperature in manual convergence mode.\n";
       std::cout << "-------\n";
-      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like this one) are ignored.\",\n  \"type\" : \"grand_canonical\",\n  \"initialization\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\",\n    \"matrix\" : [\n      [9, 0, 0],\n      [0, 9, 0],\n      [0, 0, 9]\n    ],\n    \"motif\" : {\n      \"configname\" : \"SCEL3_3_1_1_0_2_2/0\"\n    }\n  },\n  \"data\" : {\n    \"sample_by\" : \"pass\",\n    \"sample_period\" : 10,\n    \"equilibration_passes_each_run\" : 1000,\n    \"N_pass\" : 10000,\n    \"measurements\" : [ \n      { \n        \"quantity\" : \"formation_energy\"\n      },\n      { \n        \"quantity\" : \"potential_energy\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp_n\"\n      },\n      { \n        \"quantity\" : \"all_correlations\"\n      }\n    ],\n    \"storage\" : {\n      \"output_directory\" : \"./mc_path\",\n      \"output_format\" : \"json\"\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\",\n    \"initial_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 200.0,\n      \"tolerance\" : 0.001\n    },\n    \"final_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 800.0,\n      \"tolerance\" : 0.001\n    },\n    \"incremental_conditions\" : {\n      \"mu\" : {\n        \"a\" : 0.00\n      },\n      \"temperature\" : 10.0,\n      \"tolerance\" : 0.001\n    }\n  }\n}\n";
+      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like this one) are ignored.\",\n  \"type\" : \"grand_canonical\",\n  \"initialization\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\",\n    \"matrix\" : [\n      [9, 0, 0],\n      [0, 9, 0],\n      [0, 0, 9]\n    ],\n    \"motif\" : {\n      \"configname\" : \"SCEL3_3_1_1_0_2_2/0\"\n    }\n  },\n  \"data\" : {\n    \"sample_by\" : \"pass\",\n    \"sample_period\" : 10,\n    \"equilibration_passes_each_run\" : 1000,\n    \"N_pass\" : 10000,\n    \"measurements\" : [ \n      { \n        \"quantity\" : \"formation_energy\"\n      },\n      { \n        \"quantity\" : \"potential_energy\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp_n\"\n      },\n      { \n        \"quantity\" : \"all_correlations\"\n      }\n    ],\n    \"storage\" : {\n      \"output_format\" : \"json\"\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\",\n    \"initial_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 200.0,\n      \"tolerance\" : 0.001\n    },\n    \"final_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 800.0,\n      \"tolerance\" : 0.001\n    },\n    \"incremental_conditions\" : {\n      \"mu\" : {\n        \"a\" : 0.00\n      },\n      \"temperature\" : 10.0,\n      \"tolerance\" : 0.001\n    }\n  }\n}\n";
       std::cout << "-------\n\n";
       
       std::cout << "EXAMPLE: Settings for an incremental calculation with increasing mu in automatic convergence mode.\n";
       std::cout << "-------\n";
-      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like this one) are ignored.\",\n  \"type\" : \"grand_canonical\",\n  \"initialization\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\",\n    \"matrix\" : [\n      [9, 0, 0],\n      [0, 9, 0],\n      [0, 0, 9]\n    ],\n    \"motif\" : {\n      \"configname\" : \"SCEL3_3_1_1_0_2_2/0\"\n    }\n  },\n  \"data\" : {\n    \"sample_by\" : \"pass\",\n    \"sample_period\" : 1,\n    \"max_pass\" : 1000000,\n    \"measurements\" : [ \n      { \n        \"quantity\" : \"formation_energy\"\n      },\n      { \n        \"quantity\" : \"potential_energy\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"atom_frac\"\n      },\n      { \n        \"quantity\" : \"site_frac\"\n      },\n      { \n        \"quantity\" : \"comp\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp_n\"\n      },\n      { \n        \"quantity\" : \"non_zero_eci_correlations\"\n      }\n    ],\n    \"storage\" : {\n      \"output_directory\" : \"./mc_path\",\n      \"write_observations\" : true,\n      \"write_trajectory\" : true,\n      \"output_format\" : \"csv\"\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\",\n    \"initial_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 800.0,\n      \"tolerance\" : 0.001\n    },\n    \"final_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.00\n      },\n      \"temperature\" : 800.0,\n      \"tolerance\" : 0.001\n    },\n    \"incremental_conditions\" : {\n      \"mu\" : {\n        \"a\" : 0.01\n      },\n      \"temperature\" : 0.0,\n      \"tolerance\" : 0.001\n    }\n  }\n}\n";
+      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like this one) are ignored.\",\n  \"type\" : \"grand_canonical\",\n  \"initialization\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\",\n    \"matrix\" : [\n      [9, 0, 0],\n      [0, 9, 0],\n      [0, 0, 9]\n    ],\n    \"motif\" : {\n      \"configname\" : \"SCEL3_3_1_1_0_2_2/0\"\n    }\n  },\n  \"data\" : {\n    \"sample_by\" : \"pass\",\n    \"sample_period\" : 1,\n    \"max_pass\" : 1000000,\n    \"measurements\" : [ \n      { \n        \"quantity\" : \"formation_energy\"\n      },\n      { \n        \"quantity\" : \"potential_energy\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"atom_frac\"\n      },\n      { \n        \"quantity\" : \"site_frac\"\n      },\n      { \n        \"quantity\" : \"comp\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp_n\"\n      },\n      { \n        \"quantity\" : \"non_zero_eci_correlations\"\n      }\n    ],\n    \"storage\" : {\n      \"write_observations\" : true,\n      \"write_trajectory\" : true,\n      \"output_format\" : \"csv\"\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\",\n    \"initial_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 800.0,\n      \"tolerance\" : 0.001\n    },\n    \"final_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.00\n      },\n      \"temperature\" : 800.0,\n      \"tolerance\" : 0.001\n    },\n    \"incremental_conditions\" : {\n      \"mu\" : {\n        \"a\" : 0.01\n      },\n      \"temperature\" : 0.0,\n      \"tolerance\" : 0.001\n    }\n  }\n}\n";
       std::cout << "-------\n";
 
     }

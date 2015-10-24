@@ -14,7 +14,8 @@ namespace CASM {
   MonteSettings::MonteSettings(const fs::path &read_path):
   jsonParser(read_path) {
     
-    m_root = find_casmroot(read_path);
+    m_root = find_casmroot(fs::absolute(read_path));
+    m_output_directory = fs::absolute(read_path).parent_path();
     
   }
   
@@ -114,19 +115,7 @@ namespace CASM {
   
   /// \brief Directory where output should go
   const fs::path MonteSettings::output_directory() const {
-    fs::path return_path;
-    try {
-      return_path = (*this)["data"]["storage"]["output_directory"].get<std::string>();
-    }
-
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in Monte::output_directory" << std::endl;
-      std::cerr << "No output path found" << std::endl;
-      std::cerr << "Expected [\"data\"][\"storage\"][\"output_directory\"]" << std::endl;
-      throw e;
-    }
-
-    return return_path;
+    return m_output_directory;
   }
   
   
