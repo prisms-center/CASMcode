@@ -244,5 +244,22 @@ namespace CASM {
 
 
   }
+
+
+
+  /*
+    if(q == "re") {
+    std::regex e(B);
+    //std::cout << "A: " << A << "  B: " << B << "  regex_match: " << boost::regex_match(A, e) << std::endl;
+    return std::regex_match(A, e) ? "1" : "0";
+    }
+    if(q == "rs") {
+    std::regex e(B);
+    //std::cout << "A: " << A << "  B: " << B << "  regex_search: " << boost::regex_search(A, e) << std::endl;
+    return std::regex_search(A, e) ? "1" : "0";
+    }
+  */
+
+
 }
 #endif

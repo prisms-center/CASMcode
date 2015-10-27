@@ -7,6 +7,44 @@
 
 namespace CASM {
 
+  template<typename ConfigIterType>
+  void set_selection(ConfigIterType begin, ConfigIterType end, const std::string &criteria, bool mk) {
+    //boost::trim(criteria);
+
+    if(criteria.size()) {
+      DataFormatter<Configuration> tformat(ConfigIOParser::parse(criteria));
+      for(; begin != end; ++begin) {
+        ValueDataStream<bool> select_stream;
+        select_stream << tformat(*begin);
+        if(select_stream.value())
+          begin.set_selected(mk);
+      }
+    }
+    else {
+      for(; begin != end; ++begin) {
+        begin.set_selected(mk);
+      }
+    }
+
+    return;
+  }
+
+  template<typename ConfigIterType>
+  void set_selection(ConfigIterType begin, ConfigIterType end, const std::string &criteria) {
+    //boost::trim(criteria);
+
+    if(criteria.size()) {
+      DataFormatter<Configuration> tformat(ConfigIOParser::parse(criteria));
+      for(; begin != end; ++begin) {
+        ValueDataStream<bool> select_stream;
+        select_stream << tformat(*begin);
+        begin.set_selected(select_stream.value());
+      }
+    }
+
+    return;
+  }
+
   bool write_selection(const ConfigSelection<true> &config_select, bool force, const fs::path &out_path, bool write_json, bool only_selected) {
     if(fs::exists(out_path) && !force) {
       std::cerr << "File " << out_path << " already exists. Use --force to force overwrite." << std::endl;
@@ -32,6 +70,22 @@ namespace CASM {
     return 0;
   }
 
+  void select_help(std::ostream &_stream, std::string help_opt = "") {
+    _stream << "DESCRIPTION" << std::endl
+            << "\n"
+            << "    Use '[--set | --on | --off] [criteria]' for specifying or editing a selection.\n";
+
+    if(help_opt == "operators" || help_opt == "operator") {
+      _stream << "Available operators for use within selection criteria:" << std::endl;
+      ConfigIOParser::print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
+    }
+    else if(help_opt == "property" || help_opt == "properties") {
+      _stream << "Available property tags are currently:" << std::endl;
+      ConfigIOParser::print_help(_stream);
+    }
+    _stream << std::endl;
+  }
+
   // ///////////////////////////////////////
   // 'select' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
@@ -41,162 +95,103 @@ namespace CASM {
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
 
-    std::vector<std::string> setcom;
+    std::string criteria, help_opt;
     std::vector<std::string> selection;
     fs::path out_path;
     COORD_TYPE coordtype;
     po::variables_map vm;
     bool force;
 
-    // casm select --set <RPN> -c ‘config_list_A’ (-i force in-place? -back for backup?)
-    // - Change ‘is_selected’ status in place
-    // - Use ‘master’, or just don’t provide -c to indicate master list
-    // casm select --set <RPN> -c ‘config_list_A’ -o ‘config_list_C’
-    // - Apply ‘--set’, then write all configurations (selected and unselected)
-    // - Use ‘master’, or just don’t provide -c to indicate master list
-    // casm select --subset -c ‘config_list_A’ -o ‘config_list_C’
-    // - Write selected configurations in A into C
-    // - Use ‘master’, or just don’t provide -c to indicate master list
-    // casm select --union -c ‘config_list_A’ ‘config_list_B’ ... -o ‘config_list_C’
-    // - Write configurations selected in any of A, B, etc. into C
-    // - Use ‘master’ to indicate master list
-    // casm select --intersection -c ‘config_list_A’, ‘config_list_B’ -o ‘config_list_C’
-    // - Write configurations selected in all of A, B, ... into C
-    // - Use ‘master’ to indicate master list
 
+    /// Set command line options using boost program_options
+    po::options_description desc("'casm select' usage");
+    desc.add_options()
+    ("help,h", po::value<std::string>(&help_opt)->implicit_value(""), "Write help documentation. Use '--help properties' for a list of selectable properties or '--help operators' for a list of selection operators")
+    ("config,c", po::value<std::vector<std::string> >(&selection)->multitoken(),
+     "One or more configuration files to operate on. If not given, or if given the keyword \"MASTER\" the master list is used.")
+    ("output,o", po::value<fs::path>(&out_path), "Name for output file")
+    ("json", "Write JSON output (otherwise CSV, unless output extension in .json or .JSON)")
+    ("subset", "Write selected configurations in input list")
+    ("union", "Write configurations selected in any of the input lists")
+    ("intersection", "Write configurations selected in all of the input lists")
+    ("on", po::value<std::string>(&criteria), "Add configurations to selection if they meet specified criteria.  Call using 'casm select -on [criteria]'")
+    ("off", po::value<std::string>(&criteria), "Remove configurations from selection if they meet specified criteria.  Call using 'casm select -off [criteria]'")
+    ("set", po::value<std::string>(&criteria), "Create a selection of Configurations that meet specified criteria.  Call using 'casm select -set [criteria]'")
+    ("force,f", po::value(&force)->zero_tokens(), "Overwrite output file");
 
     try {
+      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
 
-      /// Set command line options using boost program_options
-      po::options_description desc("'casm select' usage");
-      desc.add_options()
-      ("help,h", "Write help documentation")
-      ("config,c", po::value<std::vector<std::string> >(&selection)->multitoken(),
-       "One or more configuration files to operate on. If not given, or if given the keyword \"MASTER\" the master list is used.")
-      ("output,o", po::value<fs::path>(&out_path), "Name for output file")
-      ("json", "Write JSON output (otherwise CSV, unless output extension in .json or .JSON)")
-      ("subset", "Write selected configurations in input list")
-      ("union", "Write configurations selected in any of the input lists")
-      ("intersection", "Write configurations selected in all of the input lists")
-      ("set", po::value<std::vector<std::string> >(&setcom)->multitoken(), "Criteria for selecting configurations.  Call using --set [OPT ...]")
-      ("force,f", po::value(&force)->zero_tokens(), "Overwrite output file");
-
-      try {
-        po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
-
-
-
-        bool call_help = false;
-
-        if(!vm.count("help")) {
-          if(vm.count("set") + vm.count("subset") + vm.count("union") + vm.count("intersection") != 1) {
-            std::cout << desc << std::endl;
-            std::cout << "Error in 'casm select'. Must use one of --set, --subset, --union, or --intersection." << std::endl;
-            //call_help = true;
-            return 1;
-          }
-
-          if(vm.count("subset") && !vm.count("output")) {
-            std::cout << "Error in 'casm select --subset'. Please specify an --output file." << std::endl;
-            //call_help = true;
-            return 1;
-          }
-
-          if(vm.count("union") && !vm.count("output")) {
-            std::cout << "Error in 'casm select --union'. Please specify an --output file." << std::endl;
-            //call_help = true;
-            return 1;
-          }
-
-          if(vm.count("intersection") && !vm.count("output")) {
-            std::cout << "Error in 'casm select --intersection'. Please specify an --output file." << std::endl;
-            //call_help = true;
-            return 1;
-          }
-        }
-
-        /** --help option
-        */
-        if(vm.count("help") || call_help) {
-          std::cout << "\n";
+      if(!vm.count("help")) {
+        if(vm.count("on") + vm.count("off") + vm.count("set") + vm.count("subset") + vm.count("union") + vm.count("intersection") != 1) {
           std::cout << desc << std::endl;
-
-          std::cout << "DESCRIPTION" << std::endl;
-          std::cout << "\n";
-          std::cout << "    Use '--set [on | off] [options]' for setting 'selected'.\n";
-          std::cout << "    Options are listed using reverse polish notation.\n";
-          std::cout << "    Operators include: re (regex match whole string),\n";
-          std::cout << "    rs (regex match anywhere in string), eq (==), ne (!=),\n";
-          std::cout << "    lt (<), le (<=), gt (>), ge (>=), add, sub, mult, div, pow, \n";
-          std::cout << "    AND, OR, NOT, XOR. Variable keywords are:                   \n" <<
-                    "      'scelname': ex. SCELV_A_B_C_D_E_F                         \n" <<
-                    "      'configname': ex. SCELV_A_B_C_D_E_F/I                     \n" <<
-                    "      'scel_size': supercell volume, as number of primitive cells  \n" <<
-                    "      'is_calculated': \"1\" if properties have been calculated,\n" <<
-                    "         \"0\" otherwise                                        \n" <<
-                    "      'is_groundstate': \"1\" if ground state, \"0\" if not,    \n" <<
-                    "         \"unknown\" otherwise                                  \n" <<
-                    "      'dist_from_hull': distance of formation energy from convex\n" <<
-                    "         hull, or \"unknown\"                                   \n" <<
-                    "      'formation_energy': calculated formation energy, or \"unknown\"\n" <<
-                    "      'clex(formation_energy)': cluster expansion predicted     \n" <<
-                    "         formation energy                                       \n" <<
-                    "      'comp(x)': composition, where x is one of 'a', 'b', ...   \n" <<
-                    "      'atom_frac(X)': atomic fraction, where X is the name of an\n" <<
-                    "         atom in the prim. Vacancies are not included.          \n" <<
-                    "      'site_frac(X)': fraction of all sites occupied by X, where\n" <<
-                    "         X is the name of an atom in the prim. Vacancies are    \n" <<
-                    "         included.                                              \n";
-          std::cout << "\n";
-          std::cout << "    Examples:\n";
-          std::cout << "      casm select --set on scelname SCEL3 rs\n";
-          std::cout << "      - set 'selected'=true for all volume 3 configurations\n";
-          std::cout << "\n";
-          std::cout << "      casm select --set on scelname SCEL3 rs true_comp(A) 0.5 lt AND\n";
-          std::cout << "      - set 'selected'=true for all volume 3 configurations\n";
-          std::cout << "        with A true_composition less than 0.5.\n";
-          std::cout << "\n";
-          std::cout << "      casm select --set on comp(a) comp(b) add 0.75 lt\n";
-          std::cout << "      - set 'selected'=true for all configurations with\n";
-          std::cout << "        'a' + 'b' composition less than 0.75.\n";
-          std::cout << "\n";
-          std::cout << "    Use '--subset', '--union', and '--intersection' to operate on\n" <<
-                    "    configuration lists.\n\n";
-
-          std::cout << "    Note: It is currently necessary to use ' -X', with quotes and \n" <<
-                    "    a leading space to parse a negative number.\n\n";
-
-          if(call_help)
-            return 1;
-
-          return 0;
-        }
-
-        po::notify(vm); // throws on error, so do after help in case
-        // there are any problems
-
-        if(vm.count("set") && vm.count("config") && selection.size() != 1) {
-          std::cout << "Error in 'casm select --set'. Zero (implies using Master list) or one lists should be input." << std::endl;
+          std::cout << "Error in 'casm select'. Must use exactly one of --on, --off, --set, --subset, --union, or --intersection." << std::endl;
           return 1;
         }
 
-        if(vm.count("subset") && vm.count("config") && selection.size() != 1) {
-          std::cout << "Error in 'casm select --subset'. Zero (implies using Master list) or one lists should be input." << std::endl;
+        if(vm.count("subset") && !vm.count("output")) {
+          std::cout << "Error in 'casm select --subset'. Please specify an --output file." << std::endl;
           return 1;
         }
 
+        if(vm.count("union") && !vm.count("output")) {
+          std::cout << "Error in 'casm select --union'. Please specify an --output file." << std::endl;
+          return 1;
+        }
+
+        if(vm.count("intersection") && !vm.count("output")) {
+          std::cout << "Error in 'casm select --intersection'. Please specify an --output file." << std::endl;
+          return 1;
+        }
       }
-      catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
+
+      /** Start --help option
+       */
+      if(vm.count("help")) {
+        std::cout << std::endl << desc << std::endl;
+      }
+
+      po::notify(vm); // throws on error, so do after help in case of problems
+
+      /** Finish --help option
+       */
+      if(vm.count("help")) {
+        fs::path root = find_casmroot(fs::current_path());
+        fs::path alias_file = root / ".casm/query_alias.json";
+        if(fs::exists(alias_file)) {
+          ConfigIOParser::load_aliases(alias_file);
+        }
+        select_help(std::cout, help_opt);
+        return 0;
+      }
+
+
+      if((vm.count("on") || vm.count("off") || vm.count("set")) && vm.count("config") && selection.size() != 1) {
+        std::string cmd = "--on";
+        if(vm.count("off"))
+          cmd = "--off";
+        if(vm.count("set"))
+          cmd = "--set";
+
+        std::cout << "Error in 'casm select " << cmd << "'. " << selection.size() << " config selections were specified, but no more than one selection is allowed (MASTER list is used if none is specified)." << std::endl;
         return 1;
       }
+
+      if(vm.count("subset") && vm.count("config") && selection.size() != 1) {
+        std::cout << "Error in 'casm select --subset'. Zero (implies using Master list) or one lists should be input." << std::endl;
+        return 1;
+      }
+
+    }
+    catch(po::error &e) {
+      std::cerr << desc << std::endl;
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      return 1;
     }
     catch(std::exception &e) {
-      std::cerr << "Unhandled Exception reached the top of main: "
-                << e.what() << ", application will now exit" << std::endl;
+      std::cerr << desc << std::endl;
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
       return 1;
-
     }
 
     for(int i = 0; i < selection.size(); i++) {
@@ -222,13 +217,9 @@ namespace CASM {
     PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
 
-    if(vm.count("set")) {
-
+    if(vm.count("on") || vm.count("off") || vm.count("set")) {
+      bool select_switch = vm.count("on");
       bool only_selected = false;
-
-      Array<std::string> criteria;
-      for(int i = 0; i < setcom.size(); i++)
-        criteria.push_back(setcom[i]);
 
       std::cout << "Set selection: " << criteria << std::endl << std::endl;
 
@@ -245,34 +236,36 @@ namespace CASM {
       if(!vm.count("config") || (selection.size() == 1 && selection[0] == "MASTER")) {
 
         if(!vm.count("output")) {
-          for(auto it = primclex.config_begin(); it != primclex.config_end(); ++it) {
-            it->set_selected(get_selection(criteria, *it, it->selected()));
-          }
+          if(vm.count("set"))
+            set_selection(primclex.config_begin(), primclex.config_end(), criteria);
+          else
+            set_selection(primclex.config_begin(), primclex.config_end(), criteria, select_switch);
 
           std::cout << "  DONE." << std::endl << std::endl;
 
           std::cout << "Writing config_list..." << std::endl;
           primclex.write_config_list();
           std::cout << "  DONE." << std::endl;
-
+          return 0;
         }
         else {
           ConfigSelection<true> config_select(primclex);
-          for(auto it = config_select.config_begin(); it != config_select.config_end(); ++it) {
-            it.set_selected(get_selection(criteria, *it, it.selected()));
-          }
+          if(vm.count("set"))
+            set_selection(config_select.config_begin(), config_select.config_end(), criteria);
+          else
+            set_selection(config_select.config_begin(), config_select.config_end(), criteria, select_switch);
 
           std::cout << "  DONE." << std::endl << std::endl;
-
           return write_selection(config_select, vm.count("force"), out_path, vm.count("json"), only_selected);
-
         }
       }
       else {
         ConfigSelection<true> config_select(primclex, selection[0]);
-        for(auto it = config_select.config_begin(); it != config_select.config_end(); ++it) {
-          it.set_selected(get_selection(criteria, *it, it.selected()));
-        }
+
+        if(vm.count("set"))
+          set_selection(config_select.config_begin(), config_select.config_end(), criteria);
+        else
+          set_selection(config_select.config_begin(), config_select.config_end(), criteria, select_switch);
 
         bool force = vm.count("force");
         if(!vm.count("output")) {
