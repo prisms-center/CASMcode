@@ -648,7 +648,9 @@ namespace CASM {
       .add_formatter(format_operator_lt<Configuration>())
       .add_formatter(format_operator_le<Configuration>())
       .add_formatter(format_operator_gt<Configuration>())
-      .add_formatter(format_operator_ge<Configuration>());
+      .add_formatter(format_operator_ge<Configuration>())
+      .add_formatter(format_operator_regex_match<Configuration>())
+      .add_formatter(format_operator_regex_search<Configuration>());
 
     }
 
