@@ -2,6 +2,8 @@
 #define DATAFORMATTERTOOLS_HH
 #include <numeric>
 #include <iterator>
+#include <regex>
+#include <boost/algorithm/string.hpp>
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/misc/CASM_TMP.hh"
 

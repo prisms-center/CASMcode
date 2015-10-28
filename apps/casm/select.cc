@@ -45,13 +45,13 @@ namespace CASM {
     return;
   }
 
-  bool write_selection(const ConfigSelection<true> &config_select, bool force, const fs::path &out_path, bool write_json, bool only_selected) {
+  template<bool IsConst>
+  bool write_selection(const ConfigSelection<IsConst> &config_select, bool force, const fs::path &out_path, bool write_json, bool only_selected) {
     if(fs::exists(out_path) && !force) {
       std::cerr << "File " << out_path << " already exists. Use --force to force overwrite." << std::endl;
       return 1;
     }
 
-    std::cout  << "Writing selection: " << out_path << std::endl;
     if(write_json || out_path.extension() == ".json" || out_path.extension() == ".JSON") {
       jsonParser json;
       config_select.to_json(json);
@@ -66,7 +66,6 @@ namespace CASM {
       config_select.print(sout.ofstream(), only_selected);
       sout.close();
     }
-    std::cout << "  DONE." << std::endl;
     return 0;
   }
 
@@ -129,16 +128,16 @@ namespace CASM {
       po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
 
       if(!vm.count("help")) {
-        if(vm.count("set-on") + vm.count("set-off") + vm.count("set") + vm.count("subset") + vm.count("union") + vm.count("intersection") != 1) {
+        if(vm.count("set-on") + vm.count("set-off") + vm.count("set") + vm.count("union") + vm.count("intersection") > 1) {
           std::cout << desc << std::endl;
-          std::cout << "Error in 'casm select'. Must use exactly one of --set-on, --set-off, --set, --subset, --union, or --intersection." << std::endl;
+          std::cout << "Error in 'casm select'. Must use exactly one of --set-on, --set-off, --set, --union, or --intersection." << std::endl;
+          return 1;
+        }
+        else if(vm.count("subset") && vm.count("config") && selection.size() != 1) {
+          std::cout << "Error in 'casm select --subset'. Zero (implies using Master list) or one lists should be input." << std::endl;
           return 1;
         }
 
-        if(vm.count("subset") && !vm.count("output")) {
-          std::cout << "Error in 'casm select --subset'. Please specify an --output file." << std::endl;
-          return 1;
-        }
 
         if(vm.count("union") && !vm.count("output")) {
           std::cout << "Error in 'casm select --union'. Please specify an --output file." << std::endl;
@@ -151,16 +150,14 @@ namespace CASM {
         }
       }
 
-      /** Start --help option
-       */
+      // Start --help option
       if(vm.count("help")) {
         std::cout << std::endl << desc << std::endl;
       }
 
       po::notify(vm); // throws on error, so do after help in case of problems
 
-      /** Finish --help option
-       */
+      // Finish --help option
       if(vm.count("help")) {
         fs::path root = find_casmroot(fs::current_path());
         fs::path alias_file = root / ".casm/query_alias.json";
@@ -171,7 +168,6 @@ namespace CASM {
         return 0;
       }
 
-
       if((vm.count("set-on") || vm.count("set-off") || vm.count("set")) && vm.count("config") && selection.size() != 1) {
         std::string cmd = "--set-on";
         if(vm.count("set-off"))
@@ -179,12 +175,7 @@ namespace CASM {
         if(vm.count("set"))
           cmd = "--set";
 
-        std::cout << "Error in 'casm select " << cmd << "'. " << selection.size() << " config selections were specified, but no more than one selection is allowed (MASTER list is used if none is specified)." << std::endl;
-        return 1;
-      }
-
-      if(vm.count("subset") && vm.count("config") && selection.size() != 1) {
-        std::cout << "Error in 'casm select --subset'. Zero (implies using Master list) or one lists should be input." << std::endl;
+        std::cout << "Error in 'casm select " << cmd << "'. " << selection.size() << " config selections were specified, but no more than one selection is allowed (MASTER list is used if no other is specified)." << std::endl;
         return 1;
       }
 
@@ -200,19 +191,11 @@ namespace CASM {
       return 1;
     }
 
-    for(int i = 0; i < selection.size(); i++) {
-      if(selection[i] != "MASTER") {
-        selection[i] = fs::absolute(fs::path(selection[i])).string();
-      }
-    }
 
-    if(vm.count("output")){
-      if(out_path=="MASTER"){
-        std::cerr << desc << std::endl << std::endl;
-        std::cerr << "ERROR: '--output=MASTER' is not a valid option. Consider using 'casm select --set \"selected_in(path/to/selection.csv)\"' to achieve this result.\n" << std::endl;
-      }
+    if(vm.count("output") && out_path!="MASTER"){
+
       out_path = fs::absolute(out_path);
-      
+      //check now so we can exit early with an obvious error
       if(fs::exists(out_path) && !force) {
         std::cerr << desc << std::endl << std::endl;
         std::cerr << "ERROR: File " << out_path << " already exists. Use --force to force overwrite." << std::endl;
@@ -220,11 +203,22 @@ namespace CASM {
       }
     }
 
+    bool only_selected(false);
+    for(int i = 0; i < selection.size(); i++) {
+      if(selection[i] != "MASTER") {
+        selection[i] = fs::absolute(fs::path(selection[i])).string();
+      }
+    }
+    if(selection.empty()) {
+      only_selected=true;
+      selection.push_back("MASTER");
+    }
+    
     // switch to root directory
-    fs::path orig = fs::current_path();
-    fs::path root = find_casmroot(orig);
+    fs::path orig_path = fs::current_path();
+    fs::path root = find_casmroot(orig_path);
     if(root.empty()) {
-      std::cout << "Error: No casm project found." << std::endl;
+      std::cerr << "Error: No casm project found." << std::endl;
       return 1;
     }
     fs::current_path(root);
@@ -235,9 +229,12 @@ namespace CASM {
     PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
 
+    // load initial selection into config_select -- this is also the selection that will be printed at end
+    ConfigSelection<false> config_select(primclex,selection[0]);
+
+
     if(vm.count("set-on") || vm.count("set-off") || vm.count("set")) {
       bool select_switch = vm.count("set-on");
-      bool only_selected = false;
       std::string criteria;
       if(criteria_vec.size()==1){
         criteria=criteria_vec[0];
@@ -249,7 +246,7 @@ namespace CASM {
         return 1;
       }
       std::cout << "Set selection: " << criteria << std::endl << std::endl;
-
+      
       /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
       const DirectoryStructure &dir = primclex.dir();
       const ProjectSettings &set = primclex.settings();
@@ -260,170 +257,81 @@ namespace CASM {
 
       }
 
-      if(!vm.count("config") || (selection.size() == 1 && selection[0] == "MASTER")) {
-
-        if(!vm.count("output")) {
-          if(vm.count("set"))
-            set_selection(primclex.config_begin(), primclex.config_end(), criteria);
-          else
-            set_selection(primclex.config_begin(), primclex.config_end(), criteria, select_switch);
-
-          std::cout << "  DONE." << std::endl << std::endl;
-
-          std::cout << "Writing config_list..." << std::endl;
-          primclex.write_config_list();
-          std::cout << "  DONE." << std::endl;
-          return 0;
-        }
-        else {
-          ConfigSelection<true> config_select(primclex);
-          if(vm.count("set"))
-            set_selection(config_select.config_begin(), config_select.config_end(), criteria);
-          else
-            set_selection(config_select.config_begin(), config_select.config_end(), criteria, select_switch);
-
-          std::cout << "  DONE." << std::endl << std::endl;
-          only_selected=true;
-          return write_selection(config_select, vm.count("force"), out_path, vm.count("json"), only_selected);
-        }
-      }
-      else {
-        ConfigSelection<true> config_select(primclex, selection[0]);
-
-        if(vm.count("set"))
-          set_selection(config_select.config_begin(), config_select.config_end(), criteria);
-        else
-          set_selection(config_select.config_begin(), config_select.config_end(), criteria, select_switch);
-
-        bool force = vm.count("force");
-        if(!vm.count("output")) {
-          out_path = selection[0];
-          force = true;
-        }
-
-        return write_selection(config_select, force, out_path, vm.count("json"), only_selected);
-      }
+      
+      if(vm.count("set"))
+        set_selection(config_select.config_begin(), config_select.config_end(), criteria);
+      else
+        set_selection(config_select.config_begin(), config_select.config_end(), criteria, select_switch);
+      
+      std::cout << "  DONE." << std::endl << std::endl;
+      
+      //return write_selection(config_select, vm.count("force"), out_path, vm.count("json"), only_selected);
+      
     }
 
     if(vm.count("subset")) {
-
-      bool only_selected = true;
-
-      if(!vm.count("config") || (selection.size() == 1 && selection[0] == "MASTER")) {
-        ConfigSelection<true> config_select(primclex);
-        return write_selection(config_select, force, out_path, vm.count("json"), only_selected);
-      }
-      else {
-        ConfigSelection<true> config_select(primclex, selection[0]);
-        return write_selection(config_select, force, out_path, vm.count("json"), only_selected);
-      }
+      only_selected = true;
     }
 
     if(vm.count("union")) {
-
-      if(selection.size() == 0) {
-        selection.push_back("MASTER");
-      }
-
-      // load initial selection into config_select
-      ConfigSelection<true> config_select;
-      if(selection[0] == "MASTER") {
-        config_select = ConfigSelection<true>(primclex);
-      }
-      else {
-        config_select = ConfigSelection<true>(primclex, selection[0]);
-      }
-
-      // remove unselected configurations
-      auto it = config_select.config_cbegin();
-      while(it != config_select.config_cend()) {
-        if(!it.selected()) {
-          it = config_select.erase(it);
-        }
-        else {
-          ++it;
-        }
-      }
-
+      
       // loop through other lists, inserting all selected configurations
       for(int i = 1; i < selection.size(); i++) {
-        ConfigSelection<true> tselect;
-        if(selection[i] == "MASTER") {
-          tselect = ConfigSelection<true>(primclex);
-        }
-        else {
-          tselect = ConfigSelection<true>(primclex, selection[i]);
-        }
-        for(auto it = tselect.config_cbegin(); it != tselect.config_cend(); ++it) {
-          if(it.selected()) {
-            config_select.insert(std::make_pair(it.name(), it.selected()));
-          }
+        ConstConfigSelection tselect(primclex, selection[i]);
+        for(auto it = tselect.selected_config_cbegin(); it != tselect.selected_config_cend(); ++it) {
+          config_select.set_selected(it.name(), true);
         }
       }
 
-      bool only_selected = true;
-      return write_selection(config_select, force, out_path, vm.count("json"), only_selected);
-
+      only_selected = true;
     }
 
     if(vm.count("intersection")) {
-
-      if(selection.size() == 0) {
-        selection.push_back("MASTER");
-      }
-
-      // load initial selection into config_select
-      ConfigSelection<true> config_select;
-      if(selection[0] == "MASTER") {
-        config_select = ConfigSelection<true>(primclex);
-      }
-      else {
-        config_select = ConfigSelection<true>(primclex, selection[0]);
-      }
-
-      // remove unselected configurations
-      auto it = config_select.config_cbegin();
-      while(it != config_select.config_cend()) {
-        if(!it.selected()) {
-          it = config_select.erase(it);
-        }
-        else {
-          ++it;
-        }
-      }
-
       // loop through other lists, keeping only configurations selected in the other lists
       for(int i = 1; i < selection.size(); i++) {
-        ConfigSelection<true> tselect;
-        if(selection[i] == "MASTER") {
-          tselect = ConfigSelection<true>(primclex);
-        }
-        else {
-          tselect = ConfigSelection<true>(primclex, selection[i]);
-        }
-        auto it = config_select.config_cbegin();
-        while(it != config_select.config_cend()) {
-          auto find_it = tselect.find(it.name());
-          if(find_it == tselect.config_end()) {
-            it = config_select.erase(it);
-          }
-          else if(!find_it.selected()) {
-            it = config_select.erase(it);
-          }
-          else {
-            ++it;
-          }
+        ConstConfigSelection tselect(primclex, selection[i]);
+
+        auto it = config_select.selected_config_begin();
+        for(; it != config_select.selected_config_end(); ++it) {
+          it.set_selected(tselect.selected(it.name()));
         }
       }
 
-      bool only_selected = true;
-      return write_selection(config_select, force, out_path, vm.count("json"), only_selected);
-
+      only_selected = true;
+      
     }
 
-    std::cout << "\n***************************\n" << std::endl;
+    /// Only write selection to disk past this point
+    if(!vm.count("output") || out_path=="MASTER") {
+      auto pc_it=primclex.config_begin(), pc_end=primclex.config_end();
+      for(; pc_it!=pc_end; ++pc_it){
+        pc_it->set_selected(false);
+      }
 
-    std::cout << std::endl;
+      auto it=config_select.selected_config_begin(), it_end=config_select.selected_config_end();
+      for(; it!=it_end; ++it){
+        it->set_selected(true);
+      }
+      
+      std::cout << "Writing config_list..." << std::endl;
+      primclex.write_config_list();
+      std::cout << "  DONE." << std::endl;
+
+      std::cout << "\n***************************\n" << std::endl;
+      std::cout << std::endl;
+
+      return 0;    
+    }
+    else{
+      
+      std::cout << "Writing selection to " << out_path << std::endl;
+      int ret_code=write_selection(config_select, force, out_path, vm.count("json"), only_selected);
+      std::cout << "  DONE." << std::endl;
+      std::cout << "\n***************************\n" << std::endl;
+      
+      std::cout << std::endl;
+      return ret_code;
+    }
 
     return 0;
   };
