@@ -70,18 +70,21 @@ namespace CASM {
     return 0;
   }
 
-  void select_help(std::ostream &_stream, std::string help_opt = "") {
+  void select_help(std::ostream &_stream, std::vector<std::string> help_opt) {
     _stream << "DESCRIPTION" << std::endl
             << "\n"
-            << "    Use '[--set | --on | --off] [criteria]' for specifying or editing a selection.\n";
+            << "    Use '[--set | --set-on | --set-off] [criteria]' for specifying or editing a selection.\n";
 
-    if(help_opt == "operators" || help_opt == "operator") {
-      _stream << "Available operators for use within selection criteria:" << std::endl;
-      ConfigIOParser::print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
-    }
-    else if(help_opt == "property" || help_opt == "properties") {
-      _stream << "Available property tags are currently:" << std::endl;
-      ConfigIOParser::print_help(_stream);
+    for(const std::string &str : help_opt){
+      if(str == "operators" || str == "operator") {
+        _stream << "Available operators for use within selection criteria:" << std::endl;
+        ConfigIOParser::print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
+      }
+      else if(str == "property" || str == "properties") {
+        _stream << "Available property tags are currently:" << std::endl;
+        ConfigIOParser::print_help(_stream);
+      }
+      _stream << std::endl;
     }
     _stream << std::endl;
   }
@@ -95,37 +98,40 @@ namespace CASM {
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
 
-    std::string criteria, help_opt;
+    std::vector<std::string> criteria_vec, help_opt_vec;
     std::vector<std::string> selection;
+
     fs::path out_path;
     COORD_TYPE coordtype;
     po::variables_map vm;
-    bool force;
+    bool force(false);
 
 
     /// Set command line options using boost program_options
+    // NOTE: multitoken() is used instead of implicit_value() because implicit_value() is broken on some systems -- i.e., braid.cnsi.ucsb.edu
+    //       (not sure if it's an issue with a particular shell, or boost version, or something else)
     po::options_description desc("'casm select' usage");
     desc.add_options()
-    ("help,h", po::value<std::string>(&help_opt)->implicit_value(""), "Write help documentation. Use '--help properties' for a list of selectable properties or '--help operators' for a list of selection operators")
-    ("config,c", po::value<std::vector<std::string> >(&selection)->multitoken(),
-     "One or more configuration files to operate on. If not given, or if given the keyword \"MASTER\" the master list is used.")
-    ("output,o", po::value<fs::path>(&out_path), "Name for output file")
-    ("json", "Write JSON output (otherwise CSV, unless output extension in .json or .JSON)")
-    ("subset", "Write selected configurations in input list")
-    ("union", "Write configurations selected in any of the input lists")
-    ("intersection", "Write configurations selected in all of the input lists")
-    ("on", po::value<std::string>(&criteria), "Add configurations to selection if they meet specified criteria.  Call using 'casm select -on [criteria]'")
-    ("off", po::value<std::string>(&criteria), "Remove configurations from selection if they meet specified criteria.  Call using 'casm select -off [criteria]'")
-    ("set", po::value<std::string>(&criteria), "Create a selection of Configurations that meet specified criteria.  Call using 'casm select -set [criteria]'")
-    ("force,f", po::value(&force)->zero_tokens(), "Overwrite output file");
+      ("help,h", po::value<std::vector<std::string> >(&help_opt_vec)->multitoken(), "Write help documentation. Use '--help properties' for a list of selectable properties or '--help operators' for a list of selection operators")
+      ("config,c", po::value<std::vector<std::string> >(&selection)->multitoken(),
+       "One or more configuration files to operate on. If not given, or if given the keyword \"MASTER\" the master list is used.")
+      ("output,o", po::value<fs::path>(&out_path), "Name for output file")
+      ("json", "Write JSON output (otherwise CSV, unless output extension in .json or .JSON)")
+      ("subset", "Write selected configurations in input list")
+      ("union", "Write configurations selected in any of the input lists")
+      ("intersection", "Write configurations selected in all of the input lists")
+      ("set-on", po::value<std::vector<std::string> >(&criteria_vec)->multitoken(), "Add configurations to selection if they meet specified criteria.  Call using 'casm select --set-on [criteria]'")
+      ("set-off", po::value<std::vector<std::string> >(&criteria_vec)->multitoken(), "Remove configurations from selection if they meet specified criteria.  Call using 'casm select --set-off [criteria]'")
+      ("set", po::value<std::vector<std::string> >(&criteria_vec)->multitoken(), "Create a selection of Configurations that meet specified criteria.  Call using 'casm select --set [criteria]'")
+      ("force,f", po::value(&force)->zero_tokens(), "Overwrite output file");
 
     try {
       po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
 
       if(!vm.count("help")) {
-        if(vm.count("on") + vm.count("off") + vm.count("set") + vm.count("subset") + vm.count("union") + vm.count("intersection") != 1) {
+        if(vm.count("set-on") + vm.count("set-off") + vm.count("set") + vm.count("subset") + vm.count("union") + vm.count("intersection") != 1) {
           std::cout << desc << std::endl;
-          std::cout << "Error in 'casm select'. Must use exactly one of --on, --off, --set, --subset, --union, or --intersection." << std::endl;
+          std::cout << "Error in 'casm select'. Must use exactly one of --set-on, --set-off, --set, --subset, --union, or --intersection." << std::endl;
           return 1;
         }
 
@@ -161,15 +167,15 @@ namespace CASM {
         if(fs::exists(alias_file)) {
           ConfigIOParser::load_aliases(alias_file);
         }
-        select_help(std::cout, help_opt);
+        select_help(std::cout, help_opt_vec);
         return 0;
       }
 
 
-      if((vm.count("on") || vm.count("off") || vm.count("set")) && vm.count("config") && selection.size() != 1) {
-        std::string cmd = "--on";
-        if(vm.count("off"))
-          cmd = "--off";
+      if((vm.count("set-on") || vm.count("set-off") || vm.count("set")) && vm.count("config") && selection.size() != 1) {
+        std::string cmd = "--set-on";
+        if(vm.count("set-off"))
+          cmd = "--set-off";
         if(vm.count("set"))
           cmd = "--set";
 
@@ -199,8 +205,20 @@ namespace CASM {
         selection[i] = fs::absolute(fs::path(selection[i])).string();
       }
     }
-    out_path = fs::absolute(out_path);
 
+    if(vm.count("output")){
+      if(out_path=="MASTER"){
+        std::cerr << desc << std::endl << std::endl;
+        std::cerr << "ERROR: '--output=MASTER' is not a valid option. Consider using 'casm select --set \"selected_in(path/to/selection.csv)\"' to achieve this result.\n" << std::endl;
+      }
+      out_path = fs::absolute(out_path);
+      
+      if(fs::exists(out_path) && !force) {
+        std::cerr << desc << std::endl << std::endl;
+        std::cerr << "ERROR: File " << out_path << " already exists. Use --force to force overwrite." << std::endl;
+        return 1;
+      }
+    }
 
     // switch to root directory
     fs::path orig = fs::current_path();
@@ -217,10 +235,19 @@ namespace CASM {
     PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
 
-    if(vm.count("on") || vm.count("off") || vm.count("set")) {
-      bool select_switch = vm.count("on");
+    if(vm.count("set-on") || vm.count("set-off") || vm.count("set")) {
+      bool select_switch = vm.count("set-on");
       bool only_selected = false;
-
+      std::string criteria;
+      if(criteria_vec.size()==1){
+        criteria=criteria_vec[0];
+      }
+      else if(criteria_vec.size()>1){
+        std::cerr << "ERROR: Selection criteria must be a single string.  You provided " << criteria_vec.size() << " strings:\n";
+        for(const std::string &str : criteria_vec)
+          std::cerr << "     - " << str << "\n";
+        return 1;
+      }
       std::cout << "Set selection: " << criteria << std::endl << std::endl;
 
       /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
@@ -256,6 +283,7 @@ namespace CASM {
             set_selection(config_select.config_begin(), config_select.config_end(), criteria, select_switch);
 
           std::cout << "  DONE." << std::endl << std::endl;
+          only_selected=true;
           return write_selection(config_select, vm.count("force"), out_path, vm.count("json"), only_selected);
         }
       }
