@@ -41,7 +41,7 @@ namespace CASM {
     po::options_description desc("'casm query' usage");
     // Set command line options using boost program_options
     desc.add_options()
-      ("help,h", po::value<std::vector<std::string> >(&help_opt_vec)->multitoken(), "Print general help. Use '--help properties' for a list of query-able properties or '--help operators' for a list of query operators")
+      ("help,h", po::value<std::vector<std::string> >(&help_opt_vec)->multitoken()->zero_tokens(), "Print general help. Use '--help properties' for a list of query-able properties or '--help operators' for a list of query operators")
     ("config,c", po::value<fs::path>(&config_path), "config_list files containing configurations for which to collect energies")
     ("columns,k", po::value<std::vector<std::string> >(&columns)->multitoken(), "List of values you want printed as columns")
     ("learn,l", po::value<std::string>(&new_alias), "Teach casm a new command that will persist within this project. Ex: 'casm query --learn is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")
