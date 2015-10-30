@@ -1,6 +1,7 @@
 #include <functional>
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOHull.hh"
+#include "casm/clex/ConfigIONovelty.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigIOSelected.hh"
 #include "casm/clex/Configuration.hh"
@@ -605,6 +606,7 @@ namespace CASM {
 
       .add_formatter(ConfigIO::selected_in())
       .add_formatter(ConfigIO_impl::StrucScoreConfigFormatter())
+      .add_formatter(ConfigIO_impl::NoveltyConfigFormatter())
       //hull formatters with specialized naming to disambiguate
       .add_formatter(ConfigIO_impl::OnHullConfigFormatter("on_hull",
                                                           std::string("Whether configuration is the formation_energy convex hull (i.e., is a groundstate).")
