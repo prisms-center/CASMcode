@@ -26,10 +26,10 @@ namespace CASM {
         mat_wrapper << m_format(select.selected_config_cbegin(), select.selected_config_cend());
       }
 
-      m_mean = mat_wrapper.matrix().colwise().sum().transpose() / double(mat_wrapper.matrix().cols());
-      Eigen::MatrixXd tcovar = mat_wrapper.matrix().transpose() * mat_wrapper.matrix() / double(mat_wrapper.matrix().cols()) - m_mean * m_mean.transpose();
+      m_avg_corr = mat_wrapper.matrix().colwise().sum().transpose() / double(mat_wrapper.matrix().cols());
+      Eigen::MatrixXd tcovar = mat_wrapper.matrix().transpose() * mat_wrapper.matrix() / double(mat_wrapper.matrix().cols()) - m_avg_corr * m_avg_corr.transpose();
 
-      m_gram_mat = (tcovar + 0.00001 * Eigen::MatrixXd::Identity(tcovar.rows(), tcovar.cols())).inverse();
+      m_gram_mat = (double(tcovar.rows()) * tcovar + 1E-6 * Eigen::MatrixXd::Identity(tcovar.rows(), tcovar.cols())).inverse();
 
     }
 
@@ -78,7 +78,7 @@ namespace CASM {
       VectorDataStream<double> tstr;
       tstr << m_format(_config);
       Eigen::Map<const Eigen::VectorXd> corr(tstr.vector().data(), tstr.vector().size());
-      return (corr - m_mean).transpose() * m_gram_mat * (corr - m_mean);
+      return sqrt((corr - m_avg_corr).transpose() * m_gram_mat * (corr - m_avg_corr));
     }
   }
 }
