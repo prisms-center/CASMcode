@@ -14,7 +14,7 @@ namespace CASM {
     class NoveltyConfigFormatter: public BaseDatumFormatter<Configuration> {
     public:
       NoveltyConfigFormatter() :
-        BaseDatumFormatter<Configuration>("novelty", "Novelty of a configuration with respect to a set of configurations, measured using the Mahalanobis distance of its correlations. Accepts one argument, a configuration selection specifying the set used for measuring novelty. Ex: 'novelty(path/to/selection)'"), m_format(ConfigIOParser::parse("corr")) {}
+        BaseDatumFormatter<Configuration>("novelty", "Novelty of a configuration with respect to a set of configurations, measured using the Mahalanobis distance of its correlations. Accepts one argument, a configuration selection specifying the set used for measuring novelty. Ex: 'novelty(path/to/selection)'") {}
 
       BaseDatumFormatter<Configuration> *clone() const {
         return new NoveltyConfigFormatter(*this);
@@ -38,7 +38,7 @@ namespace CASM {
       mutable std::string m_selection;
       mutable Eigen::MatrixXd m_gram_mat;
       mutable Eigen::VectorXd m_mean;
-      DataFormatter<Configuration> m_format;
+      mutable DataFormatter<Configuration> m_format;
 
     };
   }

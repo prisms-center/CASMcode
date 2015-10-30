@@ -10,7 +10,7 @@ namespace CASM {
 
   namespace ConfigIO_impl {
     void NoveltyConfigFormatter::init(const Configuration &_tmplt) const {
-      //m_format=ConfigIOParser::parse("corr");
+      m_format = ConfigIOParser::parse("corr");
 
       // setup DataStream
       //    -- fills a matrix so that each row corresponds to a configuration and column corresponds to correlation value
