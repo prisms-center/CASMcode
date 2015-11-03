@@ -260,8 +260,6 @@ namespace CASM {
 
   void Site::set_basis_ind(Index new_ind) {
     Coordinate::set_basis_ind(new_ind);
-    if(valid_index(new_ind))
-      m_occupant_basis.accept(OccFuncBasisIndexer(new_ind));
   }
 
   //****************************************************
@@ -271,7 +269,7 @@ namespace CASM {
       return;
 
     m_site_occupant.set_ID(new_ind);
-    m_occupant_basis.update_dof_IDs(Array<Index>(1, m_nlist_ind), Array<Index>(1, new_ind));
+
     //for(Index i = 0; i < displacement.size(); i++) {
     //displacement[i].set_ID(new_ind);
     //}
@@ -458,44 +456,14 @@ namespace CASM {
     return stream;
   }
 
-  //****************************************************
-  /**
-   * Fill the occupation basis set of the site with a
-   * specified type of basis function (spin, occupation,
-   * chebychev etc)
-   */
-  //****************************************************
-
-  void Site::fill_occupant_basis(const char &basis_type) {
-    Array<double> site_conc(site_occupant().size(), 0.0);
-    switch(basis_type) {
-    case 'c':
-      site_conc.resize(site_occupant().size(), 1.0 / double(site_occupant().size()));
-      m_occupant_basis.construct_orthonormal_discrete_functions(site_occupant(), site_conc, basis_ind());
-      break;
-    case 'o':
-      if(site_conc.size())
-        site_conc[0] = 1.0;
-      m_occupant_basis.construct_orthonormal_discrete_functions(site_occupant(), site_conc, basis_ind());
-      break;
-    default:
-      std::cerr << "ERROR in Site::fill_occupant_basis" << std::endl;
-      std::cerr << "The specified type of basis functions does not exist. You picked " << basis_type << " ,but at the moment there's just chevychev and occupation." << std::endl;
-      break;
-    }
-    return;
-  }
   //\John G 011013
 
-  ///Copy another basis set into m_occupant_basis
   void Site::update_data_members(const Site &_ref_site) {
     //    std::cout<<"Updating data members"<<std::endl;
-    m_occupant_basis = _ref_site.occupant_basis();
     m_site_occupant = _ref_site.site_occupant();
     //displacement = _ref_site.displacement;
 
     m_site_occupant.set_ID(m_nlist_ind);
-    m_occupant_basis.update_dof_IDs(Array<Index>(1, _ref_site.nlist_ind()), Array<Index>(1, m_nlist_ind));
     //for(Index i = 0; i < displacement.size(); i++) {
     //displacement[i].set_ID(m_nlist_ind);
     //}
@@ -514,9 +482,6 @@ namespace CASM {
 
     // MoleculeOccupant site_occupant;
     json["site_occupant"] = site_occupant();
-
-    // BasisSet occupant_basis;
-    json["occupant_basis"] = m_occupant_basis;
 
     // Vector3<bool> SD_flag;
     json["SD_flag"] = SD_flag;
@@ -544,9 +509,6 @@ namespace CASM {
       //std::cout<<"Reading in site_occupant"<<std::endl;
       // MoleculeOccupant site_occupant;
       CASM::from_json(m_site_occupant, json["site_occupant"]);
-
-      // BasisSet occupant_basis; (no reading BasisSet right now)
-      // CASM::from_json(m_occupant_basis, json["occupant_basis"]);
 
       //std::cout<<"Reading in SD_flag"<<std::endl;
       // Vector3<bool> SD_flag;

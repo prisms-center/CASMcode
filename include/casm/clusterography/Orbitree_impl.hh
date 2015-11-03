@@ -168,8 +168,97 @@ namespace CASM {
 
   //********************************************************************
 
+  //****************************************************
+  /**
+   * Fill the occupation basis set of the site with a
+   * specified type of basis function (spin, occupation,
+   * chebychev etc)
+   */
+  //****************************************************
+  /*
+  void Site::fill_occupant_basis(const char &basis_type) {
+    Array<double> site_conc(site_occupant().size(), 0.0);
+    switch(basis_type) {
+    case 'c':
+      site_conc.resize(site_occupant().size(), 1.0 / double(site_occupant().size()));
+      m_occupant_basis.construct_orthonormal_discrete_functions(site_occupant(), site_conc, basis_ind());
+      break;
+    case 'o':
+      if(site_conc.size())
+        site_conc[0] = 1.0;
+      m_occupant_basis.construct_orthonormal_discrete_functions(site_occupant(), site_conc, basis_ind());
+      break;
+    default:
+      std::cerr << "ERROR in Site::fill_occupant_basis" << std::endl;
+      std::cerr << "The specified type of basis functions does not exist. You picked " << basis_type << " ,but at the moment there's just chevychev and occupation." << std::endl;
+      break;
+    }
+    return;
+  }
+  */
   template<typename ClustType>
   void GenericOrbitree<ClustType>::generate_config_clust_bases() {
+    if(bspecs()["basis_functions"]["site_basis_functions"].is_string()) {
+      std::string basis_functions = bspecs()["basis_functions"]["site_basis_functions"].get<std::string>();
+
+      std::cout << "Using " << basis_functions << " site basis functions." << std::endl << std::endl;
+      prim.fill_occupant_bases(basis_functions[0]);
+    }
+    else { // composition-optimized functions
+      typedef std::vector<std::pair<std::string, double> > SiteProb;
+      std::vector<SiteProb> prob_vec(prim.basis.size());
+
+      auto it = bspecs()["basis_functions"]["site_basis_functions"].cbegin(),
+           end_it = bspecs()["basis_functions"]["site_basis_functions"].cend();
+      bool sublat_spec = true;
+      Index num_spec = 0;
+      for(; it != end_it; ++it, num_spec++) {
+        SiteProb tprob;
+
+        auto it2 = (*it)["composition"].cbegin(), end_it2 = (*it)["composition"].cend();
+        for(; it2 != end_it2; ++it2) {
+          tprob.emplace_back(it2.name, it2->get<double>());
+        }
+
+        if(!(it->contains("sublat_indices")) || !sublat_spec) {
+          //we're using this block to check for errors *and* set 'sublat_spec'
+          if(num_spec > 0) {
+            throw std::runtime_error(std::string("Parse error: If multiple 'site_basis_functions' specifications are provided, 'sublat_indices' must be specified for each.\n")
+                                     + "   Example: \"site_basis_functions\" : [\n"
+                                     + "                {\n"
+                                     + "                    \"sublat_indices\" : [0],\n"
+                                     + "                    \"composition\" : [ \"SpeciesA\" : 0.2, \"SpeciesB\" : 0.8]\n"
+                                     + "                },\n"
+                                     + "                {\n"
+                                     + "                    \"sublat_indices\" : [1,2],\n"
+                                     + "                    \"composition\" : [ \"SpeciesA\" : 0.7, \"SpeciesB\" : 0.3]\n"
+                                     + "                }\n"
+                                     + "              ]\n";);
+          }
+          else if(num_spec == 0)
+            sublat_spec == false;
+        }
+
+        if(!sublat_spec) {
+          for(auto &_vec : prob_vec)
+            _vec = tprob;
+        }
+        else {
+          it2 = (*it)["sublat_indices"].cbegin();
+          end_it2 = (*it)["sublat_indices"].cend();
+          for(; it2 != end_it2; ++it2) {
+            Index b_ind = it2->get<long>();
+            if(!prob_vec[b_ind].empty())
+              throw std::runtime_error("Duplicate sublat_indices specified in BSPECS.JSON\n");
+
+            prob_vec[b_ind] = tprob;
+          }
+        }
+      }
+      std::cout << "Using concentration-optimized site basis functions." << std::endl << std::endl;
+      prim.fill_occupant_bases(prob_vec);
+    }
+
     for(Index i = 0; i < size(); i++) {
       for(Index j = 0; j < size(i); j++) {
         prototype(i, j).generate_config_clust_basis();

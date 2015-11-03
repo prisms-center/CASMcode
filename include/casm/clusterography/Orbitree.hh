@@ -97,6 +97,14 @@ namespace CASM {
     /// Count number of basis functions at each orbit and sum result
     Index basis_set_size() const;
 
+    const jsonParser &bspecs()const {
+      return m_bspecs;
+    }
+
+    void set_bspecs(const jsonParser &_bspecs) {
+      m_bsepecs = _bspecs
+    }
+
     /// Initialize NP orbitbranches in the Orbitree.  Any existing orbits get deleted.
     void resize(Index NP);
 
@@ -125,10 +133,6 @@ namespace CASM {
 
     /// Call get_s2s_vec on all clusters in orbitree
     void get_s2s_vec();
-
-    ///TODO: Search through (*this) and get one Orbitree for each basis site such that
-    /// out_trees[i] contains all clusters radiating from basis site 'i'
-    void get_clusters_by_site(Array<GenericOrbitree<ClustType> > &out_trees) const;
 
     /// get clust_basis for all equivalent clusters assuming configurational DoFs
     void generate_config_clust_bases();
@@ -228,6 +232,9 @@ namespace CASM {
                                         bool verbose = false);
 
     void add_subclusters(const ClustType &big_clust, const Structure &prim, bool verbose = false);
+
+  private:
+    jsonParser m_bspecs;
   };
 
   template<typename ClustType>

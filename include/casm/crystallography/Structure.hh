@@ -191,9 +191,6 @@ namespace CASM {
     Array<Array<Array<double> > > get_NN_table(const double &maxr);
     //\John G 050513
 
-    ///Populate basis set of every site in the structure
-    void fill_occupant_bases(const char &basis_type);	//John G 011013
-
     ///Add vacuum and shift c vector. The vacuum is always added parallel to c, and the shift vector should also be parallel to the ab plane (x,y,0)
     void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Vector3<double> shift, COORD_TYPE mode) const;
     void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Coordinate shift) const;  //Because Anton thought a coordinate would be better

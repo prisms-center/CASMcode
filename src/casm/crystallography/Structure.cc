@@ -1901,21 +1901,6 @@ namespace CASM {
 
   //***********************************************************
   /**
-   * Using char as a way to specify which occupation basis you're interested
-   * in. This routine will call the appropriate methods in every
-   * site to fill the basis sets with functions
-   */
-  //***********************************************************
-
-  void Structure::fill_occupant_bases(const char &basis_type) {
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i].fill_occupant_basis(basis_type);
-    }
-    return;
-  }
-
-  //***********************************************************
-  /**
    *  Call this on a structure to get new_surface_struc: the structure with a
    *  layer of vacuum added parallel to the ab plane.
    *  vacuum_thickness: thickness of vacuum layer (Angstroms)

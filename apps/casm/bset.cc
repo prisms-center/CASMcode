@@ -127,71 +127,10 @@ namespace CASM {
         jsonParser bspecs_json;
         bspecs_json.read(dir.bspecs(set.bset()));
 
-        if(bspecs_json["basis_functions"]["site_basis_functions"].is_string()) {
-          std::string basis_functions = bspecs_json["basis_functions"]["site_basis_functions"].get<std::string>();
-
-          std::cout << "Using " << basis_functions << " site basis functions." << std::endl << std::endl;
-          prim.fill_occupant_bases(basis_functions[0]);
-        }
-        else { // composition-optimized functions
-          typedef std::vector<std::pair<std::string, double> > SiteProb;
-          std::vector<SiteProb> prob_vec(prim.basis.size());
-
-          auto it = bspecs_json["basis_functions"]["site_basis_functions"].cbegin(),
-               end_it = bspecs_json["basis_functions"]["site_basis_functions"].cend();
-          bool sublat_spec = true;
-          Index num_spec = 0;
-          for(; it != end_it; ++it, num_spec++) {
-            SiteProb tprob;
-
-            auto it2 = (*it)["composition"].cbegin(), end_it2 = (*it)["composition"].cend();
-            for(; it2 != end_it2; ++it2) {
-              tprob.emplace_back(it2.name, it2->get<double>());
-            }
-
-            if(!(it->contains("sublat_indices")) || !sublat_spec) {
-              //we're using this block to check for errors *and* set 'sublat_spec'
-              if(num_spec > 0) {
-                throw std::runtime_error(std::string("Parse error: If multiple 'site_basis_functions' specifications are provided, 'sublat_indices' must be specified for each.\n")
-                                         + "   Example: \"site_basis_functions\" : [\n"
-                                         + "                {\n"
-                                         + "                    \"sublat_indices\" : [0],\n"
-                                         + "                    \"composition\" : [ \"SpeciesA\" : 0.2, \"SpeciesB\" : 0.8]\n"
-                                         + "                },\n"
-                                         + "                {\n"
-                                         + "                    \"sublat_indices\" : [1,2],\n"
-                                         + "                    \"composition\" : [ \"SpeciesA\" : 0.7, \"SpeciesB\" : 0.3]\n"
-                                         + "                }\n"
-                                         + "              ]\n";);
-              }
-              else if(num_spec == 0)
-                sublat_spec == false;
-            }
-
-            if(!sublat_spec) {
-              for(auto &_vec : prob_vec)
-                _vec = tprob;
-            }
-            else {
-              it2 = (*it)["sublat_indices"].cbegin();
-              end_it2 = (*it)["sublat_indices"].cend();
-              for(; it2 != end_it2; ++it2) {
-                Index b_ind = it2->get<long>();
-                if(!prob_vec[b_ind].empty())
-                  throw std::runtime_error("Duplicate sublat_indices specified in BSPECS.JSON\n");
-
-                prob_vec[b_ind] = tprob;
-              }
-            }
-          }
-          std::cout << "Using concentration-optimized site basis functions." << std::endl << std::endl;
-          prim.fill_occupant_bases(prob_vec);
-        }
         std::cout << "Generating orbitree: \n";
         tree = make_orbitree(prim, bspecs_json);
         std::cout << "  DONE.\n\n";
 
-        tree.collect_basis_info(prim);
         tree.generate_clust_bases();
       }
       catch(std::exception &e) {
