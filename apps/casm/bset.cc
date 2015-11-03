@@ -81,9 +81,19 @@ namespace CASM {
         return 1;
       }
 
-      bool any_existing_files = false;
 
-      auto lambda = [&](const fs::path & p) {
+      std::vector<fs::path> filepaths({dir.clust(set.bset()),
+                                       dir.eci_in(set.bset()),
+                                       dir.clexulator_src(set.name(), set.bset()),
+                                       dir.clexulator_o(set.name(), set.bset()),
+                                       dir.clexulator_so(set.name(), set.bset()),
+                                       dir.prim_nlist(set.bset())
+                                      });
+
+      bool any_existing_files = false;
+      std::for_each(filepaths.cbegin(),
+                    filepaths.cend(),
+      [&](const fs::path & p) {
         if(fs::exists(p)) {
           if(!any_existing_files) {
             std::cout << "Existing files:\n";
@@ -91,14 +101,7 @@ namespace CASM {
           }
           std::cout << "  " << p << "\n";
         }
-      };
-
-      lambda(dir.clust(set.bset()));
-      lambda(dir.eci_in(set.bset()));
-      lambda(dir.clexulator_src(set.name(), set.bset()));
-      lambda(dir.clexulator_o(set.name(), set.bset()));
-      lambda(dir.clexulator_so(set.name(), set.bset()));
-      lambda(dir.prim_nlist(set.bset()));
+      });
 
       std::cout << "\n";
 
@@ -108,7 +111,7 @@ namespace CASM {
           fs::remove(dir.clexulator_src(set.name(), set.bset()));
           fs::remove(dir.clexulator_o(set.name(), set.bset()));
           fs::remove(dir.clexulator_so(set.name(), set.bset()));
-          
+
           std::cout << "\n***************************\n" << std::endl;
 
         }
@@ -123,11 +126,67 @@ namespace CASM {
       try {
         jsonParser bspecs_json;
         bspecs_json.read(dir.bspecs(set.bset()));
-        std::string basis_functions = bspecs_json["basis_functions"]["site_basis_functions"].get<std::string>();
 
-        std::cout << "Using " << basis_functions << " site basis functions." << std::endl << std::endl;
-        prim.fill_occupant_bases(basis_functions[0]);
+        if(bspecs_json["basis_functions"]["site_basis_functions"].is_string()) {
+          std::string basis_functions = bspecs_json["basis_functions"]["site_basis_functions"].get<std::string>();
 
+          std::cout << "Using " << basis_functions << " site basis functions." << std::endl << std::endl;
+          prim.fill_occupant_bases(basis_functions[0]);
+        }
+        else { // composition-optimized functions
+          typedef std::vector<std::pair<std::string, double> > SiteProb;
+          std::vector<SiteProb> prob_vec(prim.basis.size());
+
+          auto it = bspecs_json["basis_functions"]["site_basis_functions"].cbegin(),
+               end_it = bspecs_json["basis_functions"]["site_basis_functions"].cend();
+          bool sublat_spec = true;
+          Index num_spec = 0;
+          for(; it != end_it; ++it, num_spec++) {
+            SiteProb tprob;
+
+            auto it2 = (*it)["composition"].cbegin(), end_it2 = (*it)["composition"].cend();
+            for(; it2 != end_it2; ++it2) {
+              tprob.emplace_back(it2.name, it2->get<double>());
+            }
+
+            if(!(it->contains("sublat_indices")) || !sublat_spec) {
+              //we're using this block to check for errors *and* set 'sublat_spec'
+              if(num_spec > 0) {
+                throw std::runtime_error(std::string("Parse error: If multiple 'site_basis_functions' specifications are provided, 'sublat_indices' must be specified for each.\n")
+                                         + "   Example: \"site_basis_functions\" : [\n"
+                                         + "                {\n"
+                                         + "                    \"sublat_indices\" : [0],\n"
+                                         + "                    \"composition\" : [ \"SpeciesA\" : 0.2, \"SpeciesB\" : 0.8]\n"
+                                         + "                },\n"
+                                         + "                {\n"
+                                         + "                    \"sublat_indices\" : [1,2],\n"
+                                         + "                    \"composition\" : [ \"SpeciesA\" : 0.7, \"SpeciesB\" : 0.3]\n"
+                                         + "                }\n"
+                                         + "              ]\n";);
+              }
+              else if(num_spec == 0)
+                sublat_spec == false;
+            }
+
+            if(!sublat_spec) {
+              for(auto &_vec : prob_vec)
+                _vec = tprob;
+            }
+            else {
+              it2 = (*it)["sublat_indices"].cbegin();
+              end_it2 = (*it)["sublat_indices"].cend();
+              for(; it2 != end_it2; ++it2) {
+                Index b_ind = it2->get<long>();
+                if(!prob_vec[b_ind].empty())
+                  throw std::runtime_error("Duplicate sublat_indices specified in BSPECS.JSON\n");
+
+                prob_vec[b_ind] = tprob;
+              }
+            }
+          }
+          std::cout << "Using concentration-optimized site basis functions." << std::endl << std::endl;
+          prim.fill_occupant_bases(prob_vec);
+        }
         std::cout << "Generating orbitree: \n";
         tree = make_orbitree(prim, bspecs_json);
         std::cout << "  DONE.\n\n";
@@ -174,27 +233,27 @@ namespace CASM {
 
     }
     else if(vm.count("orbits") || vm.count("clusters")) {
-      
+
       DirectoryStructure dir(root);
       ProjectSettings set(root);
-      
+
       if(!fs::exists(dir.clust(set.bset()))) {
         std::cerr << "ERROR: No 'clust.json' file found. Make sure to update your basis set with 'casm bset -u'.\n";
         return 1;
       }
-      
+
       std::cout << "Initialize primclex: " << root << std::endl << std::endl;
       PrimClex primclex(root, std::cout);
       std::cout << "  DONE." << std::endl << std::endl;
-      
+
       primclex.read_global_orbitree(dir.clust(set.bset()));
-      
-      if( vm.count("orbits")) {
+
+      if(vm.count("orbits")) {
         std::cout << "\n***************************\n" << std::endl;
         primclex.get_global_orbitree().print_proto_clust(std::cout);
         std::cout << "\n***************************\n" << std::endl;
       }
-      if( vm.count("clusters")) {
+      if(vm.count("clusters")) {
         std::cout << "\n***************************\n" << std::endl;
         primclex.get_global_orbitree().print_full_clust(std::cout);
         std::cout << "\n***************************\n" << std::endl;
