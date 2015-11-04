@@ -87,18 +87,13 @@ namespace CASM {
     // Alex did these
     ///If cluster is contained in OrbitBranch, return linear index of Orbit that contains it;
     ///else, return number of orbits in orbitree
-    Index find(const ClustType &test_clust);
-    ///If Orbit is contained in OrbitBranch, return its linear index
-    ///else, return number of orbits in orbitree
-    Index find(const GenericOrbit<ClustType> &test_orbit);
+    Index find(const ClustType &test_clust)const;
+
+    ///If cluster exists in current OrbitBranch, return true
+    bool contains(const ClustType &test_clust)const;
 
     ///apply_sym to everything in this OrbitBranch (i.e, pivot and all Orbits)
     GenericOrbitBranch &apply_sym(const SymOp &op);
-
-    ///If cluster exists in current OrbitBranch, return true
-    bool contains(const ClustType &test_clust);
-    ///If Orbit exists in current OrbitBranch, return true
-    bool contains(const GenericOrbit<ClustType> &test_orbit);
 
     void generate_asymmetric_unit(const Array<typename ClustType::WhichCoordType > &basis, const SymGroup &factor_group);
 

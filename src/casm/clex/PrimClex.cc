@@ -10,9 +10,6 @@
 
 
 namespace CASM {
-
-
-
   //*******************************************************************************************
   //                                **** Constructors ****
   //*******************************************************************************************
@@ -671,8 +668,6 @@ namespace CASM {
     global_orbitree.min_num_components = 2;     //What if we want other things?
     global_orbitree.min_length = 0.0001;
     from_json(jsonHelper(global_orbitree, prim), jsonParser(fclust_path.string()));
-    global_orbitree.collect_basis_info(prim);
-
   }
 
   //*******************************************************************************************
@@ -1162,25 +1157,6 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  void PrimClex::populate_structure_factor() {
-    for(Index i = 0; i < supercell_list.size(); i++)
-      populate_structure_factor(i);
-    return;
-  }
-
-  //*******************************************************************************************
-  void PrimClex::populate_structure_factor(const Index &scell_index) {
-    supercell_list[scell_index].populate_structure_factor();
-    return;
-  }
-
-  //*******************************************************************************************
-  void PrimClex::populate_structure_factor(const Index &scell_index, const Index &config_index) {
-    supercell_list[scell_index].populate_structure_factor(config_index);
-    return;
-  }
-
-  //*******************************************************************************************
   Clexulator PrimClex::global_clexulator() const {
     if(!m_global_clexulator.initialized()) {
       if(!fs::exists(dir().clexulator_src(settings().name(), settings().bset()))) {
@@ -1405,10 +1381,10 @@ namespace CASM {
     private_def_stream << ";\n\n";
     **/
 
-    dof_manager.print_clexulator_member_definitions(private_def_stream, prim, indent + "  ");
+    dof_manager.print_clexulator_member_definitions(private_def_stream, tree, indent + "  ");
 
     // perhaps some more correlation calculating options here
-    dof_manager.print_clexulator_private_method_definitions(private_def_stream, prim, indent + "  ");
+    dof_manager.print_clexulator_private_method_definitions(private_def_stream, tree, indent + "  ");
 
     private_def_stream <<
                        indent << "  //default functions for basis function evaluation \n" <<
@@ -1442,7 +1418,7 @@ namespace CASM {
                       indent << "  /// \\brief Calculate the change in select point correlations due to changing an occupant\n" <<
                       indent << "  void calc_restricted_delta_point_corr(int b_index, int occ_i, int occ_f, double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n";
 
-    dof_manager.print_clexulator_public_method_definitions(public_def_stream, prim, indent + "  ");
+    dof_manager.print_clexulator_public_method_definitions(public_def_stream, tree, indent + "  ");
 
 
     //linear function index
@@ -1500,73 +1476,78 @@ namespace CASM {
         make_newline = false;
 
         // loop over flowers (i.e., basis sites of prim)
-        for(Index nb = 0; nb < Nsublat; nb++) {
-          formulae = tree[np][no].flower_function_cpp_strings(labelers, nb);
-          for(Index nf = 0; nf < formulae.size(); nf++) {
-            if(!formulae[nf].size())
-              continue;
-            make_newline = true;
-            flower_method_names[nb][lf + nf] = "site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
-            private_def_stream <<
-                               indent << "  double " << flower_method_names[nb][lf + nf] << "() const;\n";
-
-            bfunc_imp_stream <<
-                             indent << "double " << class_name << "::" << flower_method_names[nb][lf + nf] << "() const{\n" <<
-                             indent << "  return " << formulae[nf] << ";\n" <<
-                             indent << "}\n";
-
-          }
-          if(make_newline) {
-            bfunc_imp_stream << '\n';
-            private_def_stream << '\n';
-          }
-          make_newline = false;
-
-          // Very configuration-centric -> Find a way to move this block to OccupationDoFEnvironment:
-          formulae.resize(formulae.size(), std::string());
-          // loop over site basis functions
-          for(Index nsbf = 0; nsbf < prim.basis[nb].site_occupant().size(); nsbf++) {
-            std::string delta_prefix = "(m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_f] - m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_i])";
-
-            tformulae = tree[np][no].delta_occfunc_flower_function_cpp_strings(labelers, nb, nsbf);
-            for(Index nf = 0; nf < tformulae.size(); nf++) {
-              if(!tformulae[nf].size())
+        const SiteOrbitBranch &asym_unit(tree.asym_unit());
+        for(Index no = 0; no < asym_unit.size(); no++) {
+          for(Index ne = 0; ne < asym_unit[ne].size(); ne++) {
+            Index nb = asym_unit[no][ne][0].basis_ind();
+            formulae = tree[np][no].flower_function_cpp_strings(labelers, nb);
+            for(Index nf = 0; nf < formulae.size(); nf++) {
+              if(!formulae[nf].size())
                 continue;
+              make_newline = true;
+              flower_method_names[nb][lf + nf] = "site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
+              private_def_stream <<
+                                 indent << "  double " << flower_method_names[nb][lf + nf] << "() const;\n";
 
-              if(formulae[nf].size())
-                formulae[nf] += " + ";
+              bfunc_imp_stream <<
+                               indent << "double " << class_name << "::" << flower_method_names[nb][lf + nf] << "() const{\n" <<
+                               indent << "  return " << formulae[nf] << ";\n" <<
+                               indent << "}\n";
 
-              formulae[nf] += delta_prefix;
-
-              if(tformulae[nf] == "1" || tformulae[nf] == "(1)")
-                continue;
-
-              formulae[nf] += "*";
-              formulae[nf] += tformulae[nf];
-              //formulae[nf] += ")";
             }
-          }
-          for(Index nf = 0; nf < formulae.size(); nf++) {
-            if(!formulae[nf].size())
-              continue;
-            make_newline = true;
+            if(make_newline) {
+              bfunc_imp_stream << '\n';
+              private_def_stream << '\n';
+            }
+            make_newline = false;
 
-            dflower_method_names[nb][lf + nf] = "delta_site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
-            private_def_stream <<
-                               indent << "  double " << dflower_method_names[nb][lf + nf] << "(int occ_i, int occ_f) const;\n";
+            // Very configuration-centric -> Find a way to move this block to OccupationDoFEnvironment:
+            formulae.resize(formulae.size(), std::string());
+            // loop over site basis functions
+            const BasisSet &site_basis(asym_unit[no][ne].clust_basis);
+            for(Index nsbf = 0; nsbf < site_basis.size(); nsbf++) {
+              std::string delta_prefix = "(m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_f] - m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_i])";
 
-            bfunc_imp_stream <<
-                             indent << "double " << class_name << "::" << dflower_method_names[nb][lf + nf] << "(int occ_i, int occ_f) const{\n" <<
-                             indent << "  return " << formulae[nf] << ";\n" <<
-                             indent << "}\n";
+              tformulae = tree[np][no].delta_occfunc_flower_function_cpp_strings(site_basis, labelers, nb, nsbf);
+              for(Index nf = 0; nf < tformulae.size(); nf++) {
+                if(!tformulae[nf].size())
+                  continue;
+
+                if(formulae[nf].size())
+                  formulae[nf] += " + ";
+
+                formulae[nf] += delta_prefix;
+
+                if(tformulae[nf] == "1" || tformulae[nf] == "(1)")
+                  continue;
+
+                formulae[nf] += "*";
+                formulae[nf] += tformulae[nf];
+                //formulae[nf] += ")";
+              }
+            }
+            for(Index nf = 0; nf < formulae.size(); nf++) {
+              if(!formulae[nf].size())
+                continue;
+              make_newline = true;
+
+              dflower_method_names[nb][lf + nf] = "delta_site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
+              private_def_stream <<
+                                 indent << "  double " << dflower_method_names[nb][lf + nf] << "(int occ_i, int occ_f) const;\n";
+
+              bfunc_imp_stream <<
+                               indent << "double " << class_name << "::" << dflower_method_names[nb][lf + nf] << "(int occ_i, int occ_f) const{\n" <<
+                               indent << "  return " << formulae[nf] << ";\n" <<
+                               indent << "}\n";
+            }
+            if(make_newline) {
+              bfunc_imp_stream << '\n';
+              private_def_stream << '\n';
+            }
+            make_newline = false;
+            // \End Configuration specific part
           }
-          if(make_newline) {
-            bfunc_imp_stream << '\n';
-            private_def_stream << '\n';
-          }
-          make_newline = false;
-        }
-        // \End Configuration specific part
+        }//\End loop over flowers
 
         lf += tlf;
       }
@@ -1583,7 +1564,7 @@ namespace CASM {
                          indent << class_name << "::" << class_name << "() :\n" <<
                          indent << "  Clexulator_impl::Base(" << nlist.size() << ", " << N_corr << ") {\n";
 
-    dof_manager.print_to_clexulator_constructor(interface_imp_stream, prim, indent + "  ");
+    dof_manager.print_to_clexulator_constructor(interface_imp_stream, tree, indent + "  ");
 
     for(Index nf = 0; nf < orbit_method_names.size(); nf++) {
       if(orbit_method_names[nf].size() == 0)
