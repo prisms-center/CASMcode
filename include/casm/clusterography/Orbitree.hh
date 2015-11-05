@@ -202,8 +202,8 @@ namespace CASM {
 
     void print_full_clust(std::ostream &out) const;
     void print_full_basis_info(std::ostream &out) const;
-    void print_full_clust_basis(std::ostream &out) const;
     void print_proto_clust(std::ostream &out) const;
+    void print_proto_clust_funcs(std::ostream &out) const;
     void print_full_decorated_clust(std::ostream &out) const;
     void print_proto_decorated_clust(std::ostream &out) const;
 

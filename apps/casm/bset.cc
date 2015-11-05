@@ -22,6 +22,7 @@ namespace CASM {
     ("help,h", "Write help documentation")
     ("update,u", "Update basis set")
     ("orbits", "Pretty-print orbit prototypes")
+    ("functions", "Pretty-print prototype cluster functions for each orbit")
     ("clusters", "Pretty-print all clusters")
     ("force,f", "Force overwrite");
 
@@ -171,7 +172,7 @@ namespace CASM {
       // -- clear correlations for all configurations
 
     }
-    else if(vm.count("orbits") || vm.count("clusters")) {
+    else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
 
       DirectoryStructure dir(root);
       ProjectSettings set(root);
@@ -195,6 +196,11 @@ namespace CASM {
       if(vm.count("clusters")) {
         std::cout << "\n***************************\n" << std::endl;
         primclex.get_global_orbitree().print_full_clust(std::cout);
+        std::cout << "\n***************************\n" << std::endl;
+      }
+      if(vm.count("functions")) {
+        std::cout << "\n***************************\n" << std::endl;
+        primclex.get_global_orbitree().print_proto_clust_funcs(std::cout);
         std::cout << "\n***************************\n" << std::endl;
       }
     }

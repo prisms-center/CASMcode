@@ -1923,6 +1923,68 @@ namespace CASM {
       if(size(i) != 0) out << '\n' << std::flush;
     }
   };
+  //***********************************************
+
+  template<typename ClustType>
+  void GenericOrbitree<ClustType>::print_proto_clust_funcs(std::ostream &out) const {
+    //Prints out all prototype clusters (CLUST file)
+    // Calls ClustType.print_clust_basis() to print each prototype cluster
+
+    if(index.size() != size()) get_index();
+
+    out << "COORD_MODE = " << COORD_MODE::NAME() << std::endl << std::endl;
+
+    out.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
+    out.precision(5);
+
+    for(Index no = 0; no < asym_unit().size(); no++) {
+      out << "Asymmetric unit " << no + 1 << ":\n";
+      for(Index ne = 0; ne < asym_unit()[no].size(); ne++) {
+        Index b = asym_unit()[no][ne][0].basis_ind();
+        out << "  Basis site " << b << ":\n"
+            << "  ";
+        asym_unit()[no][ne][0].print(out);
+        out << "\n";
+        if(asym_unit()[no][ne].clust_basis.size() == 0)
+          out << "   [No site basis functions]\n\n";
+        for(Index f = 0; f < asym_unit()[no][ne].clust_basis.size(); f++) {
+          for(Index s = 0; s < asym_unit()[no][ne][0].site_occupant().size(); s++) {
+            if(s == 0)
+              out << "    ";
+            out << "    \\phi_" << b << '_' << f << '[' << asym_unit()[no][ne][0].site_occupant()[s].name << "] = "
+                << asym_unit()[no][ne].clust_basis[f]->eval(Array<Index>(1, asym_unit()[no][ne][0].site_occupant().ID()), Array<Index>(1, s));
+            if(s + 1 == asym_unit()[no][ne][0].site_occupant().size())
+              out << "\n";
+            else
+              out << ",   ";
+          }
+        }
+      }
+    }
+    out << "\n\n";
+    for(Index i = 0; i < size(); i++) {
+      if(size(i) != 0) out << "** Branch " << i << " ** \n" << std::flush;
+      for(Index j = 0; j < size(i); j++) { //Loops over all i sized Orbits
+        out << "      ** " << index[i][j] << " of " << Norbits << " Orbits **"
+            << "  Orbit: " << i << " " << j
+            << "  Points: " << orbit(i, j).prototype.size()
+            << "  Mult: " << orbit(i, j).size()
+            << "  MinLength: " << orbit(i, j).prototype.min_length()
+            << "  MaxLength: " << orbit(i, j).prototype.max_length()
+            << '\n' << std::flush;
+
+        if(orbit(i, j).size() > 0) {
+          for(int k = 0; k < 1; k++) { // Loops over each equivalent cluster in j
+            out << "            " << "Prototype" << " of " << orbit(i, j).size() << " Equivalent Clusters in Orbit " << index[i][j] << '\n' << std::flush;
+            orbit(i, j).at(k).print_clust_basis(out, 18, '\n');
+
+          }
+        }
+        out << "\n\n" << std::flush;
+      }
+      if(size(i) != 0) out << '\n' << std::flush;
+    }
+  };
 
   //***********************************************
 
@@ -2973,8 +3035,9 @@ namespace CASM {
         m_asym_unit.back().get_cluster_symmetry();
         m_asym_unit.back().collect_basis_info(struc);
         for(Index ne = 0; ne < m_asym_unit.back().size(); ne++) {
-          m_b2asym[_asym_unit().back()[ne][0].basis_ind()][0] = _asym_unit().size();
-          m_b2asym[_asym_unit().back()[ne][0].basis_ind()][0] = ne;
+          m_b2asym[_asym_unit().back()[ne][0].basis_ind()][0] = _asym_unit().size() - 1;
+          m_b2asym[_asym_unit().back()[ne][0].basis_ind()][1] = ne;
+          m_asym_unit.back()[ne].set_nlist_inds(Array<Index>(1, _asym_unit().back()[ne][0].basis_ind()));
         }
       }
     }
@@ -2984,6 +3047,7 @@ namespace CASM {
 
   template<typename ClustType>
   void GenericOrbitree<ClustType>::_populate_site_bases() {
+
     if(bspecs()["basis_functions"]["site_basis_functions"].is_string()) {
       std::string func_type = bspecs()["basis_functions"]["site_basis_functions"].template get<std::string>();
 

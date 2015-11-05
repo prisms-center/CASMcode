@@ -668,6 +668,7 @@ namespace CASM {
     global_orbitree.min_num_components = 2;     //What if we want other things?
     global_orbitree.min_length = 0.0001;
     from_json(jsonHelper(global_orbitree, prim), jsonParser(fclust_path.string()));
+    global_orbitree.generate_clust_bases();
   }
 
   //*******************************************************************************************
@@ -1190,7 +1191,7 @@ namespace CASM {
     try {
 
       SiteOrbitree tree(prim.lattice());
-
+      tree.set_bspecs(json);
       // --- first generate global orbitree -------------
 
 
@@ -1477,9 +1478,9 @@ namespace CASM {
 
         // loop over flowers (i.e., basis sites of prim)
         const SiteOrbitBranch &asym_unit(tree.asym_unit());
-        for(Index no = 0; no < asym_unit.size(); no++) {
-          for(Index ne = 0; ne < asym_unit[ne].size(); ne++) {
-            Index nb = asym_unit[no][ne][0].basis_ind();
+        for(Index na = 0; na < asym_unit.size(); na++) {
+          for(Index ne = 0; ne < asym_unit[na].size(); ne++) {
+            Index nb = asym_unit[na][ne][0].basis_ind();
             formulae = tree[np][no].flower_function_cpp_strings(labelers, nb);
             for(Index nf = 0; nf < formulae.size(); nf++) {
               if(!formulae[nf].size())
@@ -1504,7 +1505,7 @@ namespace CASM {
             // Very configuration-centric -> Find a way to move this block to OccupationDoFEnvironment:
             formulae.resize(formulae.size(), std::string());
             // loop over site basis functions
-            const BasisSet &site_basis(asym_unit[no][ne].clust_basis);
+            const BasisSet &site_basis(asym_unit[na][ne].clust_basis);
             for(Index nsbf = 0; nsbf < site_basis.size(); nsbf++) {
               std::string delta_prefix = "(m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_f] - m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_i])";
 

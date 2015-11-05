@@ -1,4 +1,5 @@
 #include "casm/clusterography/SiteCluster.hh"
+#include "casm/basis_set/FunctionVisitor.hh"
 
 namespace CASM {
 
@@ -340,22 +341,23 @@ namespace CASM {
       mode = COORD_MODE::CHECK();
     COORD_MODE C(mode);
     for(Index np = 0; np < size(); np++) {
-      for(int i = 0; i < space; i++) {
-        stream << ' ';
-      }
+
+      stream << std::string(space, ' ');
+
       stream.setf(std::ios::showpoint, std::ios_base::fixed);
       stream.precision(5);
       stream.width(9);
       at(np).print(stream);
-      stream << "  " << at(np).basis_ind() << " ";
+      stream << "  basis_index: " << at(np).basis_ind() << "  clust_index: " << at(np).nlist_ind() << " ";
       if(delim)
         stream << delim;
     }
-    for(Index i = 0; i < clust_basis.size(); i++) {
-      for(int j = 0; j < space; j++) {
-        stream << ' ';
-      }
-      stream << "  \\Phi_" << i << "(x) = " << clust_basis[i]->tex_formula() << std::endl;
+    stream << "\n"
+           << "            Basis Functions:\n";
+    BasisSet tbasis(clust_basis);
+    tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
+    for(Index i = 0; i < tbasis.size(); i++) {
+      stream << "              \\Phi_" << i + 1 << " = " << tbasis[i]->tex_formula() << std::endl;
     }
   }
 
