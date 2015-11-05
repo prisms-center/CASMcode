@@ -230,10 +230,6 @@ namespace CASM {
 
     ConfigIO_impl::GenericConfigFormatter<double> lattice_deformation();
 
-    ConfigIO_impl::GenericConfigFormatter<double> hull_dist();
-    
-    ConfigIO_impl::GenericConfigFormatter<double> clex_hull_dist();
-
     ConfigIO_impl::GenericConfigFormatter<double> volume_relaxation();
 
 

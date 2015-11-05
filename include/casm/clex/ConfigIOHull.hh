@@ -191,7 +191,8 @@ namespace CASM {
 
     /// \brief Calculates the convex hull
     /// 
-    /// Uses the parsed args to determine the selection to use to calculate the hull
+    /// - Uses the parsed args to determine the selection to use to calculate the hull
+    /// - Constructs the hull
     ///
     template<typename ValueType>
     void BaseHullConfigFormatter<ValueType>::init(const Configuration &_tmplt) const {
@@ -236,7 +237,7 @@ namespace CASM {
     ///
     /// \returns 'name() + '(' + args + ')'
     /// - ex: 'on_hull(MASTER)' if name() is 'on_hull', and args is "MASTER"
-    /// - ex: 'on_clex_hull(all) if name() is 'on_clex_hull', and args is "all" or there are no args
+    /// - ex: 'on_clex_hull(ALL,comp) if name() is 'on_clex_hull', and args is "ALL,comp"
     ///
     template<typename ValueType>
     std::string BaseHullConfigFormatter<ValueType>::short_header(const Configuration &_config) const {
@@ -247,10 +248,17 @@ namespace CASM {
     
     /// \brief Determine the selection to use to generate the hull
     ///
-    /// Options are:
-    /// - "all", use all configurations (default for no args)
-    /// - "MASTER", use the current MASTER selection
+    /// Args are: ($selection, $composition)
+    ///
+    /// Options for $selection are:
+    /// - "ALL", use all configurations 
+    /// - "MASTER", use the current MASTER selection (default for no args)
+    /// - "CALCULATED", use configurations for which is_calculated is true
     /// - other, assume the argument is the filename for a selection to use
+    ///
+    /// Options for $composition are:
+    /// - "atom_frac", (default) use atom_frac for the composition and "formation_energy_per_species" for the energy
+    /// - "comp", use parametric composition for the composition and "formation_energy" for the energy
     ///
     template<typename ValueType>
     bool BaseHullConfigFormatter<ValueType>::parse_args(const std::string &args) {
