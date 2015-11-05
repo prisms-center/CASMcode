@@ -425,12 +425,6 @@ namespace CASM {
         basis.back().set_lattice(lattice(), CART);
 
         basis.back().within();
-        for(Index k = 0; k + 1 < basis.size(); k++) {
-          if(basis[k].compare(basis.back(), map_tol)) {
-            basis.pop_back();
-            break;
-          }
-        }
       }
     }
 
