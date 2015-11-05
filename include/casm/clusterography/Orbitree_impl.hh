@@ -1946,7 +1946,7 @@ namespace CASM {
         asym_unit()[no][ne][0].print(out);
         out << "\n";
         if(asym_unit()[no][ne].clust_basis.size() == 0)
-          out << "   [No site basis functions]\n\n";
+          out << "        [No site basis functions]\n\n";
         for(Index f = 0; f < asym_unit()[no][ne].clust_basis.size(); f++) {
           for(Index s = 0; s < asym_unit()[no][ne][0].site_occupant().size(); s++) {
             if(s == 0)
@@ -3047,7 +3047,7 @@ namespace CASM {
 
   template<typename ClustType>
   void GenericOrbitree<ClustType>::_populate_site_bases() {
-
+    std::cout << "bspecs() is \n" << bspecs() << "\n";
     if(bspecs()["basis_functions"]["site_basis_functions"].is_string()) {
       std::string func_type = bspecs()["basis_functions"]["site_basis_functions"].template get<std::string>();
 
@@ -3085,8 +3085,15 @@ namespace CASM {
       typedef std::map<std::string, double> SiteProb;
       std::vector<SiteProb> prob_vec(m_b2asym.size());
 
-      auto it = bspecs()["basis_functions"]["site_basis_functions"].cbegin(),
-           end_it = bspecs()["basis_functions"]["site_basis_functions"].cend();
+      auto it = bspecs()["basis_functions"].find("site_basis_functions");
+      auto end_it = it;
+      ++end_it;
+
+      if(it->is_array()) {
+        end_it = it->cend();
+        it = it->cbegin();
+      }
+
       bool sublat_spec = true;
       Index num_spec = 0;
       for(; it != end_it; ++it, num_spec++) {
@@ -3134,6 +3141,8 @@ namespace CASM {
       }
 
       for(Index i = 0; i < _asym_unit().size(); i++) {
+        if(_asym_unit().prototype(i)[0].site_occupant().size() < 2)
+          continue;
         Array<double> tprob(_asym_unit().prototype(i)[0].site_occupant().size(), 0.0);
         if(tprob.size() == 0)
           continue;
@@ -3149,7 +3158,7 @@ namespace CASM {
         for(Index j = 0; j < tprob.size(); j++)
           tprob[j] /= tsum;
         m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(), tprob, _asym_unit().prototype(i)[0].basis_ind());
-        for(Index ne = 0; ne < _asym_unit().size(); ne++)
+        for(Index ne = 0; ne < _asym_unit()[i].size(); ne++)
           m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind());
       }
 

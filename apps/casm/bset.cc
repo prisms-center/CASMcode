@@ -137,7 +137,7 @@ namespace CASM {
       catch(std::exception &e) {
         std::cerr << "\n\nError reading: " << dir.bspecs(set.bset()) << std::endl
                   << "               " << e.what() << std::endl;
-        throw;
+        return 1;
       }
 
       // -- write eci.in ----------------
