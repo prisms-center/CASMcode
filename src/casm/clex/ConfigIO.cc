@@ -639,6 +639,7 @@ namespace CASM {
       .add_formatter(format_operator_neg<Configuration>())
       .add_formatter(format_operator_and<Configuration>())
       .add_formatter(format_operator_or<Configuration>())
+      .add_formatter(format_operator_xor<Configuration>())
       .add_formatter(format_operator_not<Configuration>())
       .add_formatter(format_operator_min<Configuration>())
       .add_formatter(format_operator_max<Configuration>())

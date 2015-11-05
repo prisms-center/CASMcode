@@ -226,7 +226,7 @@ namespace CASM {
 
   template<typename DataObject>
   DataFormatterOperator<bool, bool, DataObject> format_operator_and() {
-    return DataFormatterOperator<bool, bool, DataObject>("and", "Boolean AND for sequence of bools",
+    return DataFormatterOperator<bool, bool, DataObject>("and", "Boolean AND for sequence of boolean values",
     [](const std::vector<bool> &vec)->bool{
       return std::accumulate(vec.cbegin(),
       vec.cend(),
@@ -240,7 +240,7 @@ namespace CASM {
 
   template<typename DataObject>
   DataFormatterOperator<bool, bool, DataObject> format_operator_or() {
-    return DataFormatterOperator<bool, bool, DataObject>("or", "Boolean OR for sequence of bools",
+    return DataFormatterOperator<bool, bool, DataObject>("or", "Boolean OR for sequence of boolean values",
     [](const std::vector<bool> &vec)->bool{
       return std::accumulate(vec.cbegin(),
       vec.cend(),
@@ -250,6 +250,15 @@ namespace CASM {
       });
     });
 
+  }
+
+  template<typename DataObject>
+  DataFormatterOperator<bool, bool, DataObject> format_operator_xor() {
+    return DataFormatterOperator<bool, bool, DataObject>("xor", "Boolean XOR for for two boolean values",
+    [](const std::vector<bool> &vec)->bool{
+      if(vec.size() != 2)
+        throw std::runtime_error("Boolean XOR operator expects exactly two values!");
+      return (vec[0] && !vec[1]) || (!vec[0] && vec[1]);});
   }
 
   template<typename DataObject>
