@@ -17,6 +17,11 @@ namespace CASM {
     double get_config_formation_energy(const Configuration &_config) {
       return _config.delta_properties().contains("relaxed_energy") ? _config.delta_properties()["relaxed_energy"].get<double>() : NAN;
     }
+    
+    //"DFT formation energy, normalized per atom and measured relative to current reference states"
+    double get_config_formation_energy_per_species(const Configuration &_config) {
+      return _config.delta_properties().contains("relaxed_energy") ? formation_energy_per_species(_config) : NAN;
+    }
 
     bool has_config_formation_energy(const Configuration &_config) {
       return _config.delta_properties().contains("relaxed_energy");
@@ -180,17 +185,48 @@ namespace CASM {
       if(m_clex_name.size())
         return false;
       m_clex_name = args;
+      
+      if(m_clex_name == "formation_energy") {
+        m_inject = [](const Configuration &_config, DataStream &_stream, Index) {
+          _stream << clex_formation_energy(_config);
+        };
+        
+        m_print = [](const Configuration &_config, std::ostream &_stream, Index) {
+          _stream << clex_formation_energy(_config);
+        };
+        
+        m_to_json = [](const Configuration &_config, jsonParser &json)->jsonParser& {
+          json = clex_formation_energy(_config);
+          return json;
+        };
+      }
+      else if(m_clex_name == "formation_energy_per_atom") {
+        m_inject = [](const Configuration &_config, DataStream &_stream, Index) {
+          _stream << clex_formation_energy_per_species(_config);
+        };
+        
+        m_print = [](const Configuration &_config, std::ostream &_stream, Index) {
+          _stream << clex_formation_energy_per_species(_config);
+        };
+        
+        m_to_json = [](const Configuration &_config, jsonParser &json)->jsonParser& {
+          json = clex_formation_energy_per_species(_config);
+          return json;
+        };
+      }
+      else {
+        throw std::runtime_error(
+          std::string("ERROR parsing '") + "clex(" + m_clex_name + ")' unknown argument." +
+          " Options are 'formation_energy' or 'formation_energy_per_atom'.");
+      }
+      
       return true;
     }
 
     //****************************************************************************************
 
     void ClexConfigFormatter::init(const Configuration &_tmplt) const {
-      if(!m_clexulator.initialized()) {
-        m_clexulator = _tmplt.get_primclex().global_clexulator();
-      }
-
-      m_eci = _tmplt.get_primclex().global_eci(m_clex_name);
+      
     };
 
     //****************************************************************************************
@@ -201,25 +237,24 @@ namespace CASM {
 
     //****************************************************************************************
 
-    void ClexConfigFormatter::inject(const Configuration &_config, DataStream &_stream, Index) const {
-      _stream << m_eci *correlations(_config, m_clexulator);
+    void ClexConfigFormatter::inject(const Configuration &_config, DataStream &_stream, Index i) const {
+      m_inject(_config, _stream, i);
     }
 
     //****************************************************************************************
 
-    void ClexConfigFormatter::print(const Configuration &_config, std::ostream &_stream, Index) const {
+    void ClexConfigFormatter::print(const Configuration &_config, std::ostream &_stream, Index i) const {
       _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
       _stream.precision(8);
-
-      _stream << m_eci *correlations(_config, m_clexulator);
-
+      
+      m_print(_config, _stream, i);
+      
     }
 
     //****************************************************************************************
 
     jsonParser &ClexConfigFormatter::to_json(const Configuration &_config, jsonParser &json)const {
-      json = m_eci * correlations(_config, m_clexulator);
-      return json;
+      return m_to_json(_config, json);
     }
 
     //****************************************************************************************
@@ -504,6 +539,13 @@ namespace CASM {
                                                            ConfigIO_impl::get_config_formation_energy,
                                                            ConfigIO_impl::has_config_formation_energy);
     }
+    
+    ConfigIO_impl::GenericConfigFormatter<double> formation_energy_per_species() {
+      return ConfigIO_impl::GenericConfigFormatter<double>("formation_energy_per_atom",
+                                                           "DFT formation energy, normalized per atom and measured relative to current reference states",
+                                                           ConfigIO_impl::get_config_formation_energy_per_species,
+                                                           ConfigIO_impl::has_config_formation_energy);
+    }
 
     Generic1DDatumFormatter<std::vector<double>, Configuration >relaxation_strain() {
       return Generic1DDatumFormatter<std::vector<double>, Configuration >("relaxation_strain",
@@ -518,13 +560,7 @@ namespace CASM {
     ConfigIO_impl::GenericConfigFormatter<bool> is_calculated() {
       return ConfigIO_impl::GenericConfigFormatter<bool>("is_calculated",
                                                          "True (1) if all current properties have been been calculated for the configuration",
-      [](const Configuration & config)->bool{
-        return std::all_of(config.get_primclex().get_curr_property().begin(),
-        config.get_primclex().get_curr_property().end(),
-        [&](const std::string & key) {
-          return config.calc_properties().contains(key);
-        });
-      });
+                                                         CASM::is_calculated);
     }
 
     ConfigIO_impl::GenericConfigFormatter<double> rms_force() {
@@ -548,13 +584,6 @@ namespace CASM {
                                                            ConfigIO_impl::has_config_lattice_deformation);
     }
 
-    ConfigIO_impl::GenericConfigFormatter<double> dist_from_hull() {
-      return ConfigIO_impl::GenericConfigFormatter<double>("dist_from_hull",
-                                                           "Distance from DFT hull, extracted from config_list database",
-                                                           ConfigIO_impl::get_config_dist_from_hull,
-                                                           ConfigIO_impl::has_config_dist_from_hull);
-    }
-
     ConfigIO_impl::GenericConfigFormatter<double> volume_relaxation() {
       return ConfigIO_impl::GenericConfigFormatter<double>("volume_relaxation",
                                                            "Change in volume due to relaxation, expressed as the ratio V/V_0.",
@@ -564,50 +593,34 @@ namespace CASM {
 
     void initialize_formatting_dictionary(DataFormatterDictionary<Configuration> &dict) {
       dict // <-- add to dict
+      
       //Self-contained formatters
       .add_formatter(ConfigIO_impl::CorrConfigFormatter())
       .add_formatter(ConfigIO_impl::ClexConfigFormatter())
       .add_formatter(ConfigIO_impl::CompConfigFormatter())
       .add_formatter(ConfigIO_impl::AtomFracConfigFormatter())
       .add_formatter(ConfigIO_impl::SiteFracConfigFormatter())
-
+      .add_formatter(ConfigIO_impl::StrucScoreConfigFormatter())
+      .add_formatter(ConfigIO_impl::OnHullConfigFormatter())
+      .add_formatter(ConfigIO_impl::HullDistConfigFormatter())
+      .add_formatter(ConfigIO_impl::OnClexHullConfigFormatter())
+      .add_formatter(ConfigIO_impl::ClexHullDistConfigFormatter())
+      
       //Generic formatters
       .add_formatter(ConfigIO::selected())
       .add_formatter(ConfigIO::configname())
       .add_formatter(ConfigIO::scelname())
       .add_formatter(ConfigIO::scel_size())
       .add_formatter(ConfigIO::formation_energy())
+      .add_formatter(ConfigIO::formation_energy_per_species())
       .add_formatter(ConfigIO::is_calculated())
       .add_formatter(ConfigIO::relaxation_strain())
       .add_formatter(ConfigIO::rms_force())
       .add_formatter(ConfigIO::basis_deformation())
       .add_formatter(ConfigIO::lattice_deformation())
-      .add_formatter(ConfigIO::volume_relaxation())
+      .add_formatter(ConfigIO::volume_relaxation());
 
-      .add_formatter(ConfigIO_impl::StrucScoreConfigFormatter())
-      //hull formatters with specialized naming to disambiguate
-      .add_formatter(ConfigIO_impl::OnHullConfigFormatter("on_hull",
-                                                          std::string("Whether configuration is the formation_energy convex hull (i.e., is a groundstate).")
-                                                          + " Accepts argument $selection (one of: <filename>, 'all', MASTER <--default)"
-                                                          /* and $composition_type (one of: comp, atom_frac, site_frac).  "*/
-                                                          + "  Ex: on_hull(MASTER" +/*,atom_frac*/ ").", "formation_energy"))
-      .add_formatter(ConfigIO_impl::OnHullConfigFormatter("on_clex_hull",
-                                                          std::string("Whether configuration is on the *cluster-expanded* formation_energy convex hull")
-                                                          + " (i.e., is a *predicted* groundstate)."
-                                                          + " Accepts argument $selection (one of: <filename>, 'all', MASTER <--default)"
-                                                          /*and $composition_type (one of: comp, atom_frac, site_frac).  "*/
-                                                          + " Ex: on_hull(MASTER).", "clex(formation_energy)"))
-      .add_formatter(ConfigIO_impl::HullDistConfigFormatter("hull_dist",
-                                                            std::string("Distance, in eV, of a configuration's formation_energy from the convex hull.")
-                                                            + " Accepts argument $selection (one of: <filename>, 'all', MASTER <--default)"
-                                                            /*and $composition_type (one of: comp, atom_frac, site_frac).  "*/
-                                                            + " Ex: on_hull(MASTER).", "formation_energy"))
-      .add_formatter(ConfigIO_impl::HullDistConfigFormatter("clex_hull_dist",
-                                                            std::string("Distance, in eV, of a configuration's *cluster-expanded* formation_energy")
-                                                            + " from the convex hull of *cluster-expanded* formation energies."
-                                                            + " Accepts argument $selection (one of: <filename>, 'all', MASTER <--default)"
-                                                            /*and $composition_type (one of: comp, atom_frac, site_frac).  "*/
-                                                            + " Ex: on_hull(MASTER).", "clex(formation_energy)"));
+      
     }
 
     /*End ConfigIO*/

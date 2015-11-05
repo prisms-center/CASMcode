@@ -1,14 +1,11 @@
 # http://www.scons.org/doc/production/HTML/scons-user.html
-# This is: h/casm/SConscript
+# This is: src/casm/SConscript
 
 import os, glob
 from glob import glob
 from os.path import join
 
 Import('env')
-
-#####
-# CASM non Monte Carlo code
 
 # build version
 SConscript(['version/SConscript'], {'env':env})
@@ -24,3 +21,19 @@ casm_lib_src = ['CASM_global_definitions.cc'] + [glob(join(x,'*.cc')) for x in c
 casm_lib_sobj = env.SharedObject(casm_lib_src)
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + casm_lib_sobj
 env['CASM_SOBJ'] = env['CASM_SOBJ'] + casm_lib_sobj
+
+# qhull c code
+include_qhull = join('..','..','include','casm','external','qhull','libqhull_r')
+qhull_src = glob( join('external','qhull','libqhull_r','*.c'))
+qhull_sobj = env.SharedObject(qhull_src, 
+                              CPPPATH=include_qhull)
+env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + qhull_sobj
+env['CASM_SOBJ'] = env['CASM_SOBJ'] + qhull_sobj
+
+# qhull cpp code
+include_qhullcpp = join('..','..','include','casm','external','qhull','libqhullcpp')
+qhullcpp_src = glob( join('external','qhull','libqhullcpp','*.cpp'))
+qhullcpp_sobj = env.SharedObject(qhullcpp_src, 
+                                 CPPPATH=[include_qhull, include_qhullcpp])
+env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + qhullcpp_sobj
+env['CASM_SOBJ'] = env['CASM_SOBJ'] + qhullcpp_sobj

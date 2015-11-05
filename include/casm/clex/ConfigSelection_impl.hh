@@ -151,10 +151,11 @@ namespace CASM {
     }
   }
   //******************************************************************************
-
+/*
   template< bool IsConst>
   typename ConfigSelection<IsConst>::value_type &ConfigSelection<IsConst>::operator[](const std::string &configname) const {
     return m_primclex->configuration(configname);
   }
+*/
 }
 

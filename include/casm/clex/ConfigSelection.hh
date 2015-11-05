@@ -114,8 +114,6 @@ namespace CASM {
       return const_iterator(m_config.find(configname), m_config.begin(), m_config.end(), m_primclex);
     }
 
-    value_type &operator[](const std::string &configname) const;
-
     void read(std::istream &_input);
 
     const jsonParser &from_json(const jsonParser &_json);

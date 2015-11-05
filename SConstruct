@@ -1,7 +1,7 @@
 # http://www.scons.org/doc/production/HTML/scons-user.html
 # This is: Sconstruct
 
-import os, glob
+import os, glob, copy
 
 from os.path import join
 
@@ -69,13 +69,9 @@ include_paths = [join(os.getcwd(),'include')]
 # lib paths
 lib_paths = []
 
-# command-line variables
+# command-line variables (C and C++)
 ccflags = []
-ccflags.append('--std=c++11')
 ccflags.append('-Wno-unused-parameter')
-ccflags.append('-Wno-deprecated-register')
-ccflags.append('-Wno-deprecated-declarations')
-ccflags.append('-DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long')
 
 if 'OPTIMIZATIONLEVEL' in os.environ:
   opt_level = os.environ['OPTIMIZATIONLEVEL']
@@ -94,6 +90,14 @@ if debug_level == '0':
 elif debug_level == '1':
   ccflags = ccflags + ['-g', '-save-temps']
 
+# C++ only
+cxxflags = []
+cxxflags.append('--std=c++11')
+cxxflags.append('-Wno-deprecated-register')
+cxxflags.append('-Wno-deprecated-declarations')
+cxxflags.append('-DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long')
+
+
 boost_path = None
 if 'boost_path' in ARGUMENTS:
   boost_path = ARGUMENTS.get('boost_path')
@@ -110,10 +114,10 @@ if 'prefix' in ARGUMENTS:
 elif 'CASMPREFIX' in os.environ:
   prefix = os.environ['CASMPREFIX']
 lib_paths.append(os.path.join(prefix, 'lib'))
-
   
 env = Environment(ENV = os.environ,
                   CCFLAGS = ccflags,
+                  CXXFLAGS = cxxflags,
                   CPPPATH = include_paths,
                   LIBPATH = lib_paths,
                   PREFIX = prefix)
