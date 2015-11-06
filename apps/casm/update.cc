@@ -108,7 +108,13 @@ namespace CASM {
       fs::path filepath = it->calc_properties_path();
       // determine if there is fresh data to read and put it in 'calc_properties'
       jsonParser parsed_props;
-      if(fs::exists(filepath)) {
+      if(!fs::exists(filepath)) {
+        if(it->calc_properties().size() > 0 && !(it->calc_properties().is_null())) {
+          //clear the calculated properties if the data file is missing -- this probably means that the user has deleted it
+          it->set_calc_properties(jsonParser());
+        }
+      }
+      else {
         time_t datatime, filetime;
         // Compare 'datatime', from config_list database to 'filetime', from filesystem timestamp
         it->calc_properties().get_if(datatime, "data_timestamp");
@@ -129,11 +135,12 @@ namespace CASM {
         {
           //Convert relaxed structure into a configuration, merge calculation data
           BasicStructure<Site> relaxed_struc;
-          from_json(simple_json(relaxed_struc, "relaxed_"), jsonParser(filepath));
+          jsonParser json(filepath);
+          from_json(simple_json(relaxed_struc, "relaxed_"), json);
           std::vector<Index> best_assignment;
           Eigen::Matrix3d cart_op;
-
-	  jsonParser json;
+          //NOTE: reusing jsonParser to collect relaxation data
+          json.put_obj();
           try {
             new_config_flag = configmapper.import_structure_occupation(relaxed_struc,
                                                                        &(*it),
@@ -165,9 +172,11 @@ namespace CASM {
           }
 
           update_map[&imported_config][&(*it)] = Update_impl::Data(parsed_props, it->name() == imported_name, new_config_flag);
-
         }
+
+
       }
+
     }
 
 

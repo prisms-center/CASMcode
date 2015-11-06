@@ -209,6 +209,12 @@ namespace CASM {
     /// Configuration iterator: end
     config_iterator config_end();
 
+    /// Configuration iterator: begin
+    config_const_iterator config_begin() const;
+
+    /// Configuration iterator: end
+    config_const_iterator config_end() const;
+
     /// const Configuration iterator: begin
     config_const_iterator config_cbegin() const;
 
