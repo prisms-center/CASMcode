@@ -19,7 +19,7 @@ namespace CASM {
   ///         PrimClexType = PrimClex or const PrimClex
   ///
   template <typename ConfigType, typename PrimClexType>
-  class ConfigIterator : std::iterator <std::bidirectional_iterator_tag, const ConfigType> {
+  class ConfigIterator : public std::iterator <std::bidirectional_iterator_tag, const ConfigType> {
 
     PrimClexType *m_primclex;
     Index m_scel_index;

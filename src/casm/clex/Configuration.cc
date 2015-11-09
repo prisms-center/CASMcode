@@ -6,14 +6,14 @@
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/crystallography/jsonStruc.hh"
-
+#include "casm/clex/ECIContainer.hh"
 
 namespace CASM {
 
   /// Construct a default Configuration
   Configuration::Configuration(Supercell &_supercell, const jsonParser &src, const ConfigDoF &_configdof)
     : id("none"), supercell(&_supercell), source_updated(true), multiplicity(-1), dof_updated(true),
-      m_configdof(_configdof), prop_updated(true), corr_updated(true), m_selected(false) {
+      m_configdof(_configdof), prop_updated(true), m_selected(false) {
     set_source(src);
   }
 
@@ -21,7 +21,7 @@ namespace CASM {
   /// Construct by reading from main data file (json)
   Configuration::Configuration(const jsonParser &json, Supercell &_supercell, Index _id)
     : supercell(&_supercell), source_updated(false), multiplicity(-1), dof_updated(false),
-      m_configdof(_supercell.num_sites()), prop_updated(false), corr_updated(false) {
+      m_configdof(_supercell.num_sites()), prop_updated(false) {
 
     std::stringstream ss;
     ss << _id;
@@ -35,7 +35,7 @@ namespace CASM {
   /// Construct a Configuration with occupation specified by string 'con_name'
   Configuration::Configuration(Supercell &_supercell, std::string con_name, bool select, const jsonParser &src)
     : id("none"), supercell(&_supercell), source_updated(true), multiplicity(-1), dof_updated(true),
-      m_configdof(_supercell.num_sites()), prop_updated(true), corr_updated(true), m_selected(select) {
+      m_configdof(_supercell.num_sites()), prop_updated(true), m_selected(select) {
 
     set_source(src);
 
@@ -70,7 +70,6 @@ namespace CASM {
 
     dof_updated = true;
     prop_updated = true;
-    corr_updated = true;
   }
 
   //*********************************************************************************
@@ -232,113 +231,7 @@ namespace CASM {
 
     return success;
   }
-  //*********************************************************************************
-  void Configuration::set_correlations_orbitree(const SiteOrbitree &site_orbitree) {
-    corr_updated = true;
-
-    const PrimClex &pc = get_primclex();
-
-    // records values for global dofs, like strain
-    pc.set_global_dof_state(*this);
-
-    Index scell_vol = get_supercell().volume();
-
-    match_shape(correlations, site_orbitree);
-
-    for(Index nl = 0; nl < scell_vol; nl++) {
-      // records values for local dofs, like occupation and displacement
-      pc.set_local_dof_state(*this, nl);
-      Index i = 0;
-      for(Index nb = 0; nb < site_orbitree.size(); nb++) {
-        for(Index no = 0; no < site_orbitree[nb].size(); no++) {
-          for(Index ne = 0; ne < site_orbitree[nb][no].size(); ne++) {
-            site_orbitree[nb][no][ne].clust_basis.remote_eval_and_add_to(&correlations[i], &correlations[i + site_orbitree[nb][no][ne].clust_basis.size()]);
-          }
-        }
-      }
-    }
-
-    // Divide by multiplicity
-    Index i = 0;
-    for(Index nb = 0; nb < site_orbitree.size(); nb++) {
-      for(Index no = 0; no < site_orbitree[nb].size(); no++) {
-        double multiplicity = site_orbitree[nb][no].size() * scell_vol;
-        for(Index ibasis = 0; ibasis < site_orbitree.prototype(nb, no).clust_basis.size(); ibasis++) {
-          correlations[i++] /= multiplicity;
-        }
-      }
-    }
-  }
-
-  //*********************************************************************************
-  void Configuration::set_correlations(Clexulator &clexulator) {
-
-    corr_updated = true;
-
-    const Supercell &scel = get_supercell();
-    //Size of the supercell will be used for normalizing correlations to a per primitive cell value
-    int scel_vol = scel.volume();
-
-    correlations.resize(clexulator.corr_size());
-
-    //Inform Clexulator of the bitstring
-
-    //TODO: This will probably get more complicated with displacements and stuff
-    clexulator.set_config_occ(m_configdof.occupation().begin());
-    //mc_clexor.set_config_disp(mc_confdof.m_displacements.begin());   //or whatever
-    //mc_clexor.set_config_strain(mc_confdof.m_strain.begin());   //or whatever
-
-    //Holds contribution to global correlations from a particular neighborhood
-    std::vector<double> tcorr(clexulator.corr_size(), 0.0);
-    std::vector<double> corr(clexulator.corr_size(), 0.0);
-
-    for(int v = 0; v < scel_vol; v++) {
-
-      //Point the Clexulator to the right neighborhood
-      clexulator.set_nlist(scel.get_nlist(v).begin());
-
-      //Fill up contributions
-      clexulator.calc_global_corr_contribution(&tcorr[0]);
-
-      //Add contributions to total correlations
-      for(int i = 0; i < tcorr.size(); i++) {
-        corr[i] += tcorr[i];
-      }
-
-    }
-
-    // normalize by supercell volume
-    for(int i = 0; i < clexulator.corr_size(); i++) {
-      correlations[i] /= (double) scel_vol;
-    }
-
-    return;
-  }
-
-  //*********************************************************************************
-  /**
-   * Simply updates the variables in delta properties that relate to information
-   * of the hull (whether it's a groundstate or not and the distance from the hull).
-   * If the variables aren't there they'll just get created.
-   *
-   * This was written specifically for PrimClex::update_hull
-   */
-
-  void Configuration::set_hull_data(bool is_groundstate, double dist_from_hull) {
-    generated["is_groundstate"] = is_groundstate;
-    generated["dist_from_hull"] = dist_from_hull;
-    prop_updated = true;
-    return;
-  }
-
-  //*********************************************************************************
-  /// Clear hull data in generated. Use if this configuration is not part of the set
-  /// of configurations used to calculate the hull
-  void Configuration::clear_hull_data() {
-    generated.put_obj();
-    prop_updated = true;
-  }
-
+  
   //********** ACCESSORS ***********
 
   std::string Configuration::get_id() const {
@@ -639,10 +532,6 @@ namespace CASM {
       write_source(json_config);
     }
 
-    if(corr_updated) {
-      //write_corr(json_bset);
-    }
-
     if(!json_ref.contains("param_composition") || prop_updated) {
       //write_param_composition(json_ref);
     }
@@ -758,24 +647,6 @@ namespace CASM {
   }
 
   //*********************************************************************************
-  /**
-   * Just regular old correlations, classic cluster expansion style.
-   * Think of this as a way to get corr.in. But we all know new CASM
-   * is going to have a better way to do this kind of thing,
-   * right guise?
-   */
-
-  void Configuration::print_correlations_simple(std::ostream &corrstream) const {
-    //correlations.print_simple(corrstream);
-    corrstream << correlations;
-    //Avoid printing empty lines
-    if(correlations.size() != 0) {
-      corrstream << std::endl;
-    }
-    return;
-  }
-
-  //*********************************************************************************
 
   /// Private members:
 
@@ -866,15 +737,6 @@ namespace CASM {
       from_json(m_configdof, json["dof"]);
     }
   }
-
-  //*********************************************************************************
-  /// Read corr.json file containing degree of freedom info
-  ///   location: json = supercells/SCEL_NAME/CONFIG_ID/CURR_CLEX
-  ///
-  void Configuration::read_corr(const jsonParser &json) {
-    json.get_if(correlations, "scalar_correlations");
-  }
-
 
   //*********************************************************************************
   /// Read configuration properties
@@ -984,23 +846,6 @@ namespace CASM {
     else {
       json["pos"].put_null();
     }
-
-    return json;
-
-  }
-
-  //*********************************************************************************
-  /// Write corr.json file containing correlations
-  ///   location: json = supercells/SCEL_NAME/CONFIG_ID/CURR_CLEX, adds: scalar_correlations
-  ///
-  jsonParser &Configuration::write_corr(jsonParser &json) const {
-
-    if(correlations.size() == 0) {
-      json.erase("scalar_correlations");
-      return json;
-    }
-
-    json["scalar_correlations"] = correlations;
 
     return json;
 
@@ -1384,47 +1229,89 @@ namespace CASM {
   Correlation correlations(const Configuration &config, Clexulator &clexulator) {
 
     return correlations(config.configdof(), config.get_supercell(), clexulator);
-
-    /*const Supercell &scel = config.get_supercell();
-    //Size of the supercell will be used for normalizing correlations to a per primitive cell value
-    int scel_vol = scel.volume();
-
-    Correlation correlations(clexulator.corr_size(), 0.0);
-
-    //Inform Clexulator of the bitstring
-
-    //TODO: This will probably get more complicated with displacements and stuff
-    clexulator.set_config_occ(config.configdof().occupation().begin());
-    //mc_clexor.set_config_disp(mc_confdof.m_displacements.begin());   //or whatever
-    //mc_clexor.set_config_strain(mc_confdof.m_strain.begin());   //or whatever
-
-    //Holds contribution to global correlations from a particular neighborhood
-    std::vector<double> tcorr(clexulator.corr_size(), 0.0);
-    //std::vector<double> corr(clexulator.corr_size(), 0.0);
-
-    for(int v = 0; v < scel_vol; v++) {
-
-      //Point the Clexulator to the right neighborhood
-      clexulator.set_nlist(scel.get_nlist(v).begin());
-
-      //Fill up contributions
-      clexulator.calc_global_corr_contribution(&tcorr[0]);
-
-      //Add contributions to total correlations
-      for(int i = 0; i < tcorr.size(); i++) {
-        correlations[i] += tcorr[i];
-      }
-
-    }
-
-    // normalize by supercell volume
-    for(int i = 0; i < clexulator.corr_size(); i++) {
-      correlations[i] /= (double) scel_vol;
-    }
-
-    return correlations;
-    */
   }
+  
+  /// Returns parametric composition, as calculated using PrimClex::param_comp
+  Eigen::VectorXd comp(const Configuration& config) {
+    return config.get_param_composition();
+  }
+  
+  /// \brief Returns the parametric composition
+  Eigen::VectorXd comp_n(const Configuration& config) {
+    return config.get_num_each_component();
+  }
+  
+  /// \brief Returns the composition as atom fraction, with [Va] = 0.0, in the order of Structure::get_struc_molecule
+  ///
+  /// - Currently, this is really a Molecule fraction
+  Eigen::VectorXd species_frac(const Configuration& config) {
+    double sum = 0.0;
+    Array<Molecule> struc_molecule = config.get_prim().get_struc_molecule();
+    Eigen::VectorXd result = config.get_num_each_component();
+    for(int i=0; i<result.size(); ++i) {
+      if(!struc_molecule[i].is_vacancy()) {
+        sum += result(i);
+      }
+      else {
+        result(i) = 0.0;
+      }
+    }
+    return result/sum;
+  }
+  
+  /// \brief Returns the composition as site fraction, in the order of Structure::get_struc_molecule
+  Eigen::VectorXd site_frac(const Configuration& config) {
+    return comp_n(config)/config.get_prim().basis.size();
+  }
+  
+  /// \brief Returns the formation energy, normalized per unit cell
+  double formation_energy(const Configuration& config) {
+    return config.delta_properties().contains("relaxed_energy") ? config.delta_properties()["relaxed_energy"].get<double>() : NAN;
+  }
+  
+  /// \brief Returns the formation energy, normalized per atom
+  ///
+  /// - Currently, this is really a Molecule fraction
+  double formation_energy_per_species(const Configuration& config) {
+    double sum = 0.0;
+    Array<Molecule> struc_molecule = config.get_prim().get_struc_molecule();
+    Eigen::VectorXd comp_n = config.get_num_each_component();
+    for(int i=0; i<comp_n.size(); ++i) {
+      if(!struc_molecule[i].is_vacancy()) {
+        sum += comp_n(i);
+      }
+    }
+    return formation_energy(config)/sum;
+  }
+  
+  /// \brief Returns the formation energy, normalized per unit cell
+  double clex_formation_energy(const Configuration& config) {
+    Clexulator clexulator = config.get_primclex().global_clexulator();
+    return config.get_primclex().global_eci("formation_energy")*correlations(config, clexulator);
+  }
+  
+  /// \brief Returns the formation energy, normalized per unit cell
+  double clex_formation_energy_per_species(const Configuration& config) {
+    double sum = 0.0;
+    Array<Molecule> struc_molecule = config.get_prim().get_struc_molecule();
+    Eigen::VectorXd comp_n = config.get_num_each_component();
+    for(int i=0; i<comp_n.size(); ++i) {
+      if(!struc_molecule[i].is_vacancy()) {
+        sum += comp_n(i);
+      }
+    }
+    return clex_formation_energy(config)/sum;
+  }
+  
+  /// \brief Return true if all current properties have been been calculated for the configuration
+  bool is_calculated(const Configuration& config) {
+    return std::all_of(config.get_primclex().get_curr_property().begin(),
+                       config.get_primclex().get_curr_property().end(),
+                       [&](const std::string & key) {
+                         return config.calc_properties().contains(key);
+                       });
+  }
+  
 
 }
 

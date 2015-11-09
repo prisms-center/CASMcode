@@ -34,7 +34,7 @@ CASM utilizes a wide variety of algorithms, many of which were developed by the 
 
 CASM also relies on algorithms and methods that have been published in the literature. The cluster expansion for configurational degrees of freedom was rigorously formalized by Sanchez *et al.* [ref5, ref6]. The anharmonic potential cluster expansion as implemented in CASM was developed by Thomas *et al.* [ref2]. The local cluster expansion for diffusion barriers was introduced by Van der Ven *et al.* [ref7]. 
 
-The algorithms in CASM that enumerate symmetrically distinct configurations rely on algebraic properties of principal ideal domains, which were brought to bear on the problem by Hart and Forcade [ref8]. The fitting of the interaction coefficients of a cluster expansion to first-principles data relies on a minimization of the cross-validation (CV) score, an approach introduced to cluster expansions by van de Walle *et al.* [ref9]. The approach of using a genetic algorithm to pick interaction coefficients that minimize the CV score was introduced by Hart *et al.* [ref10] while the depth first search approach is due to Puchala *et al.* [ref3]. The use of compressive sensing methods to parameterize a cluster expansion was introduced by Nelson *et al.* [ref11]. Convergence criteria for Monte Carlo sampling are due to van de Walle *et al.* [ref12].
+The algorithms in CASM that enumerate symmetrically distinct configurations rely on algebraic properties of principal ideal domains, which were brought to bear on the problem by Hart and Forcade [ref8]. The fitting of the interaction coefficients of a cluster expansion to first-principles data relies on a minimization of the cross-validation (CV) score, an approach introduced to cluster expansions by van de Walle *et al.* [ref9]. The approach of using a genetic algorithm to pick interaction coefficients that minimize the CV score was introduced by Hart *et al.* [ref10] while the depth first search approach is due to Puchala *et al.* [ref3]. The use of compressive sensing methods to parameterize a cluster expansion was introduced by Nelson *et al.* [ref11]. Convergence criteria for Monte Carlo sampling are due to van de Walle *et al.* [ref12]. Convex hulls are found using Qhull [ref13].
 
 
 - [ref5]: 	J. Sanchez, F. Ducastelle and D. Gratias, *Phys. A* **128**, 334–350 (1984).
@@ -45,6 +45,7 @@ The algorithms in CASM that enumerate symmetrically distinct configurations rely
 - [ref10]:      G. L. W. Hart, V. Blum, M. J. Walorski, and A. Zunger, *Nat. Mater.* **4**, 391 (2005).
 - [ref11]:      L.J. Nelson, G.L.W. Hart, F. Zhou, and V. Ozoliņš, *Phys. Rev. B* **87**, 035125 (2013).
 - [ref12]: 	A. van de Walle, M. Asta, *Modell. Simul. Mater. Sci. Eng.* **10**, 521 (2002).
+- [ref13]:  C.B. Barber, D.P. Dobkin, and H.T. Huhdanpaa, "The Quickhull algorithm for convex hulls," ACM Trans. on Mathematical Software, 22(4):469-483, Dec 1996, http://www.qhull.org.
 
 
 

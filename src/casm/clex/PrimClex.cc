@@ -276,7 +276,7 @@ namespace CASM {
     boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
     Index config_ind;
     if(splt_vec.size() != 2) {
-      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), cannot locate configuration " << configname << "\n"
+      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), cannot locate configuration named '" << configname << "'\n"
                 << "                Exiting...\n";
       assert(0);
       exit(1);
@@ -1330,7 +1330,7 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  ECIContainer PrimClex::global_eci(std::string clex_name)const {
+  ECIContainer PrimClex::global_eci(std::string clex_name) const {
     return ECIContainer(dir().eci_out(clex_name,
                                       settings().calctype(),
                                       settings().ref(),
