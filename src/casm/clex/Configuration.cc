@@ -423,19 +423,7 @@ namespace CASM {
   //*********************************************************************************
   /// Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::get_struc_molecule()
   ReturnArray<int> Configuration::get_num_each_molecule() const {
-
-    // [basis_site][site_occupant_index]
-    Array< Array<int> > convert = get_index_converter(get_prim(), get_prim().get_struc_molecule());
-
-    // create an array to count the number of each molecule
-    Array<int> num_each_molecule(get_prim().get_struc_molecule().size(), 0);
-
-    // count the number of each molecule
-    for(Index i = 0; i < size(); i++) {
-      num_each_molecule[ convert[ get_b(i) ][occ(i)] ]++;
-    }
-
-    return num_each_molecule;
+    return CASM::get_num_each_molecule(m_configdof, get_supercell());
   }
 
   //*********************************************************************************

@@ -6,6 +6,7 @@
 #include <string>
 #include <functional>
 #include <dlfcn.h>
+#include <cstdlib>
 #include "casm/system/Popen.hh"
 
 namespace CASM {
@@ -157,14 +158,27 @@ namespace CASM {
     ///
     /// \returns "g++ -O3 -Wall -fPIC"
     static std::string default_compile_options() {
-      return "g++ -O3 -Wall -fPIC --std=c++11";
+      
+      return cxx() + " -O3 -Wall -fPIC --std=c++11";
     }
 
     /// \brief Default shared library options
     ///
     /// \returns "g++ -shared"
     static std::string default_so_options() {
-      return "g++ -shared";
+      return cxx() + " -shared";
+    }
+    
+    /// \brief Return default compiler
+    ///
+    /// - if environment variable CXX exists, uses that, otherwise "g++"
+    static std::string cxx() {
+      std::string result = "g++";
+      char* CXX = std::getenv("CXX");
+      if(CXX != nullptr) {
+        result = std::string(CXX);
+      }
+      return result;
     }
 
   private:

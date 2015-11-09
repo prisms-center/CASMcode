@@ -30,9 +30,7 @@ namespace CASM {
     mutable MasterSymGroup factor_group_internal;
     /// This holds the representation id of the permutation representation
     mutable Index perm_rep_ID, basis_perm_rep_ID;
-    ///Specifies whether selectice dynamics is on or of for DFT calculations
-    bool SD_flag;
-
+    
 
   public: //PUBLIC DATA MEMBERS (Public for now)
 
@@ -213,22 +211,6 @@ namespace CASM {
 
 
     // ****Input/Output****
-
-    //CASM canonical input/output
-    void read(std::istream &stream);  //John do this
-
-    // print Structure, listing all possible molecules on each site
-    void print(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John do this too, modified by BP
-
-    void print5(std::ostream &stream, COORD_TYPE mode = FRAC, int Va_mode = 0, char term = 0, int prec = 7, int pad = 5) const; // added by Michael
-
-    // print Structure, listing current occupying molecules on each site
-    void print_occ(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John do this too, modified by BP
-    void print5_occ(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John G 050513, modified by BP
-
-    /// Output other formats
-    void print_xyz(std::ostream &stream) const;
-    void print_cif(std::ostream &stream);
 
     /// For each symmetrically distinct site, print the symmetry operations that map it onto itself
     void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag);

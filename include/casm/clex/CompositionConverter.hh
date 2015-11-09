@@ -32,7 +32,10 @@ namespace CASM {
 
     /// \brief The dimensionality of the composition space
     size_type independent_compositions() const;
-
+    
+    /// \brief Composition variable names: "a", "b", ...
+    std::string comp_var(size_type i) const;
+    
     /// \brief The order of components in mol composition vectors
     std::vector<std::string> components() const;
 

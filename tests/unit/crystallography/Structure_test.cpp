@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(PRIM1Test) {
   // Read new file and run tests again
   Structure struc2(fs::path(testdir / "PRIM1_out"));
   prim1_read_test(struc2);
-
+  
 }
 
 BOOST_AUTO_TEST_CASE(PRIM2Test) {
@@ -232,7 +232,7 @@ BOOST_AUTO_TEST_CASE(POS1Vasp5Test) {
   // Read new file and run tests again
   Structure struc2(fs::path(testdir / "POS1_vasp5_out"));
   pos1_read_test(struc2);
-
+  
 }
 
 BOOST_AUTO_TEST_CASE(POS1jsonPrimTest) {

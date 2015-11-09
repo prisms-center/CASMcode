@@ -36,6 +36,7 @@
 #include "query.hh"
 #include "run.hh"
 #include "import.hh"
+#include "monte.hh"
 
 using namespace CASM;
 
@@ -61,7 +62,8 @@ int print_casm_help(std::ostream &out) {
     "  run",
     "  fit",
     "  query",
-    "  import"
+    "  import",
+    "  monte"
   };
 
   std::sort(subcom.begin(), subcom.end());
@@ -206,6 +208,9 @@ int main(int argc, char *argv[]) {
   else if(args[1] == "import") {
     retcode = import_command(argc, argv);
   }
+  else if(args[1] == "monte") {
+    retcode = monte_command(argc, argv);
+  }
   else {
     print_casm_help(std::cout);
     retcode = 1;
@@ -241,6 +246,7 @@ int main(int argc, char *argv[]) {
 #include "fit.cc"
 #include "query.cc"
 #include "import.cc"
+#include "monte.cc"
 
 
 

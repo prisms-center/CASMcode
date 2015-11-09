@@ -720,6 +720,21 @@ namespace CASM {
 
   //*******************************************************************************
 
+  Supercell::Supercell(PrimClex *_prim, const Eigen::Matrix3i &transf_mat_init) :
+    primclex(_prim),
+    real_super_lattice((*primclex).get_prim().lattice().coord_trans(FRAC) * Matrix3<int>(transf_mat_init)),
+    recip_prim_lattice(real_super_lattice.get_reciprocal()),
+    m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
+    recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
+    m_perm_symrep_ID(-1),
+    transf_mat(transf_mat_init) {
+    scaling = 1.0;
+    generate_name();
+    //    fill_reciprocal_supercell();
+  }
+  
+  //*******************************************************************************
+
   Supercell::Supercell(PrimClex *_prim, const Matrix3<int> &transf_mat_init) :
     primclex(_prim),
     real_super_lattice((*primclex).get_prim().lattice().coord_trans(FRAC) * transf_mat_init),
@@ -769,74 +784,86 @@ namespace CASM {
   // 1			print only the coordinates of the vacancies
   // 2			print the number of vacancies and the coordinates of the vacancies
   void Supercell::print(const Configuration &config, std::ostream &stream, COORD_TYPE mode, int Va_mode, char term, int prec, int pad) const {
-    //default to FRAC
-    if(mode != CART)
-      mode = FRAC;
-    std::string mol_name, tcoord;
-    std::ostringstream num_mol_list, coord_stream;
-    stream << config.name() << std::endl;
+
+    //declare hash mol name -> basis site index
+    std::map<std::string, std::vector<Index> > siteHash;
+    
+    // this statement assumes that the scaling is 1.0 always, this may needed to be changed
+    stream << config.name() << "\n";
     real_super_lattice.print(stream);
-    Array<int> vacancies;
-
-    Array<Molecule> struc_molecule = get_prim().get_struc_molecule();
-
-    //declare hash
-    std::map<std::string, std::vector<int> > uccHash;
-    // declare hash iterator (for comparisons in the loop)
-    std::map<std::string, std::vector<int> >::iterator it;
-    // loop through all sites and get the unit cell coords
-    for(Index l = 0; l < num_sites(); l++) {
-      // config -> UnitCellCoord
-      //UnitCellCoord ucc = uccoord(l);
-
-      if(!config.get_mol(l).is_vacancy()) {
-        uccHash[config.get_mol(l).name].push_back(l);
+    
+    //loop through all sites
+    for(Index i = 0; i < config.size(); i++) {
+      
+      const Molecule &mol = config.get_mol(i);
+      if(mol.is_vacancy()) {
+        siteHash["Va"].push_back(i);
       }
-      //store vacancies into a separate array
       else {
-        vacancies.push_back(l);
+        siteHash[mol.name].push_back(i);
       }
     }
-
-
-    // print names of molecules and numbers and start up coordinate stream
-    it = uccHash.begin();
-    if(it != uccHash.end()) {
-      stream << it -> first;
-      num_mol_list << it -> second.size();
-      for(Index i = 0; i < it->second.size(); i++) {
-        coord(it->second.at(i)).print(coord_stream, mode, '\n', prec, pad);
-      }
-      it++;
-    }
-
-    for(; it != uccHash.end(); it++) {
-      stream << ' ' << it-> first;
-      num_mol_list << ' ' << it-> second.size();
-      for(Index i = 0; i < it->second.size(); i++) {
-        coord(it->second.at(i)).print(coord_stream, mode, '\n', prec, pad);
+    
+    // print atom names
+    for(auto it=siteHash.begin(); it!= siteHash.end(); ++it) {
+      if(it->first != "Va") {
+        stream << it->first << " ";
       }
     }
-
-    // add vacancies to list of molecules in the supercell
-    if(Va_mode == 2)
-      stream << " Va";
-    if(Va_mode != 0) {
-      for(Index i = 0; i < vacancies.size(); i++) {
-        coord(vacancies.at(i)).print(coord_stream, mode, '\n', prec, pad);
+    
+    if(Va_mode == 2) {
+      if(siteHash.find("Va") != siteHash.end()) {
+        stream << "Va" << " ";
       }
     }
-
-    stream << std::endl;
-    stream << num_mol_list.str() << std::endl;
-
+    stream << "\n";
+    
+    // print numbers of atoms
+    for(auto it=siteHash.begin(); it!= siteHash.end(); ++it) {
+      if(it->first != "Va") {
+        stream << it->second.size() << " ";
+      }
+    }
+    
+    if(Va_mode == 2) {
+      if(siteHash.find("Va") != siteHash.end()) {
+        stream << siteHash["Va"].size() << " ";
+      }
+    }
+    stream << "\n";
+    
     //print the COORD_TYPE
-    if(mode == FRAC)
+    if(mode == FRAC) {
       stream << "Direct\n";
-    else if(mode == CART)
+    }
+    else if(mode == CART) {
       stream << "Cartesian\n";
+    }
+    else {
+      std::stringstream ss; 
+      ss << "Error in BasicStructure<CoordType>::print5'.\n"
+         << "  COORD_TYPE mode = " << mode << " not allowed. Use FRAC or CART.";
+      
+      throw std::runtime_error(ss.str());
+    }
 
-    stream << coord_stream.str() << std::endl;
+    // print coordinates
+    for(auto it=siteHash.begin(); it!=siteHash.end(); ++it) {
+      if(it->first != "Va") {
+        for(Index i = 0; i < it->second.size(); i++) {
+          coord(it->second.at(i)).print(stream, mode, term, prec, pad);
+        }
+      }
+    }
+    
+    if(Va_mode != 0) {
+      auto it = siteHash.find("Va");
+      for(Index i = 0; i < it->second.size(); i++) {
+        coord(it->second.at(i)).print(stream, mode, term, prec, pad);
+      }
+    }
+    stream << "\n";
+    
     return;
   }
 

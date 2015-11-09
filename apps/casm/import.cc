@@ -4,8 +4,9 @@
 #include <tuple>
 
 #include "casm_functions.hh"
-#include "casm/clex/ConfigMapping.hh"
-#include "casm/casm_io/FileSystemInterface.hh"
+#include "casm/CASM_classes.hh"
+//#include "casm/clex/ConfigMapping.hh"
+//#include "casm/casm_io/FileSystemInterface.hh"
 
 namespace CASM {
   namespace Import_impl {

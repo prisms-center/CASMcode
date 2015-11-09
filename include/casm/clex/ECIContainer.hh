@@ -37,7 +37,10 @@ namespace CASM {
   };
 
   double operator*(const ECIContainer &_eci, const Correlation &_corr);
-
+  
+  /// \brief Evaluate property given an ECIContainer and pointer to beginning of range of correlation
+  double operator*(const ECIContainer &_eci, double const* _corr_begin);
+  
   namespace ECIContainer_impl {
     void populate_eci(const fs::path &filepath, ECIContainer::ScalarECI &mc_eci, Array<ECIContainer::size_type> &mc_eci_index);
   }

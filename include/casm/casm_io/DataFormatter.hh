@@ -136,8 +136,11 @@ namespace CASM {
     ///Output data as specified by *this of the given DataObject
     void print(const DataObject &_obj, std::ostream &_stream) const;
 
-    ///Output data as specified by *this of the given DataObject
+    ///Output data as specified by *this of the given DataObject to json with format {"name1":x, "name2":x, ...}
     jsonParser &to_json(const DataObject &_obj, jsonParser &json) const;
+    
+    ///Output data as specified by *this of the given DataObject to json with format {"name1":[..., x], "name2":[..., x], ...}
+    jsonParser &to_json_arrays(const DataObject &_obj, jsonParser &json) const;
 
     ///print the header, using _tmplt_obj to inspect array sizes, etc.
     void print_header(const DataObject &_tmplt_obj, std::ostream &_stream) const;
@@ -291,7 +294,7 @@ namespace CASM {
     ///          jsonParser my_big_data_object;
     ///          my_formatter.to_json(my_data_object, my_big_data_object["place_to_write"]["my_formatter_data"]);
     virtual jsonParser &to_json(const DataObject &_data_obj, jsonParser &json)const = 0;
-
+    
     /// If DatumFormatter accepts arguments, parse them here.  Arguments are assumed to be passed from the command line
     /// via:         formattername(argument1,argument2,...)
     ///
@@ -325,6 +328,7 @@ namespace CASM {
   bool always_true(const T &) {
     return true;
   };
+
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -384,6 +388,15 @@ namespace CASM {
         json.push_back((*m_formatter_ptr)(*it));
       return json;
     }
+    
+    ///Output data with format {"name1":[..., x], "name2":[..., x], ...}
+    jsonParser &to_json_arrays(jsonParser &json) const {
+      json = jsonParser::object();
+      for(IteratorType it(m_begin_it); it != m_end_it; ++it)
+        m_formatter_ptr->to_json_arrays(*it, json);
+      return json;
+    }
+
 
   };
 
@@ -416,6 +429,7 @@ namespace CASM {
       m_formatter_ptr->to_json(*m_obj_ptr, json);
       return json;
     }
+    
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -575,7 +589,7 @@ namespace CASM {
   inline jsonParser &to_json(const FormattedPrintable &_obj, jsonParser &json) {
     return _obj.to_json(json);
   }
-
+  
   //******************************************************************************
   inline std::ostream &operator<<(std::ostream &_stream, const FormattedPrintable &_formatted) {
     _formatted.print(_stream);

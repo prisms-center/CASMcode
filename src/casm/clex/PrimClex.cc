@@ -721,8 +721,6 @@ namespace CASM {
   //*******************************************************************************************
   void PrimClex::read_global_orbitree(const fs::path &fclust_path) {
 
-    std::cout  << "  Read " << fclust_path << std::endl << std::endl;
-
     global_orbitree.min_num_components = 2;     //What if we want other things?
     global_orbitree.min_length = 0.0001;
     from_json(jsonHelper(global_orbitree, prim), jsonParser(fclust_path.string()));
