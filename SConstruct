@@ -1,7 +1,7 @@
 # http://www.scons.org/doc/production/HTML/scons-user.html
 # This is: Sconstruct
 
-import os, glob
+import os, glob, copy
 
 from os.path import join
 
@@ -106,19 +106,26 @@ if(boost_path != None):
   include_paths.append(os.path.join(boost_path, 'include'))
   lib_paths.append(os.path.join(boost_path, 'lib'))
 
+# where everything is built
+build_lib_paths = copy.deepcopy(lib_paths)
+build_lib_paths.append(os.path.join(os.getcwd(), 'lib'))
+Export('build_lib_paths')
+
+
 # where everything should be installed
+install_lib_paths = copy.deepcopy(lib_paths)
 prefix = '/usr/local'
 if 'prefix' in ARGUMENTS:
   prefix = ARGUMENTS.get('prefix')
 elif 'CASMPREFIX' in os.environ:
   prefix = os.environ['CASMPREFIX']
-lib_paths.append(os.path.join(prefix, 'lib'))
+install_lib_paths.append(os.path.join(prefix, 'lib'))
+Export('install_lib_paths')
 
-  
+ 
 env = Environment(ENV = os.environ,
                   CCFLAGS = ccflags,
                   CPPPATH = include_paths,
-                  LIBPATH = lib_paths,
                   PREFIX = prefix)
 
 # set a non-default c++ compiler
@@ -177,7 +184,6 @@ boost_libs = ['boost_system', 'boost_filesystem']
 casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'), env['CASM_SOBJ'], LIBS=boost_libs + ['z'])
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + casm_lib
 Export('casm_lib')
-Default(casm_lib)
 
 # Library Install instructions
 casm_lib_install = env.SharedLibrary(os.path.join(env['PREFIX'], 'lib', 'casm'), env['CASM_SOBJ'], LIBS=boost_libs + ['z'])
@@ -195,8 +201,10 @@ if 'casm_lib_install' in COMMAND_LINE_TARGETS:
 # we'll create a dict of file -> install dir
 
 include_dir = os.path.join(env['PREFIX'],'include')
+casm_include = os.path.join('include', 'casm')
+Export('casm_include')
 
-casm_include_install = env.Install(include_dir, 'include/casm')
+casm_include_install = env.Install(include_dir, casm_include)
 
 Export('casm_include_install')
 env.Alias('casm_include_install', casm_include_install)

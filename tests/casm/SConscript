@@ -5,8 +5,8 @@ import os, glob
 from os.path import join
 
 # Import dependencies
-Import('env', 'casm_install', 'casm_lib_install', 'casm_include_install')
-dependencies = [casm_install, casm_lib_install, casm_include_install]
+Import('env', 'casm', 'casm_lib', 'casm_include')
+dependencies = [casm, casm_lib, casm_include]
 
 # Use command line environment for local environment
 lenv = env #Environment(ENV = os.environ)

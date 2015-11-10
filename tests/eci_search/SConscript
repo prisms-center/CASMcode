@@ -5,7 +5,7 @@ import os, glob
 from os.path import join
 
 # Import dependencies
-Import('env', 'eci_search_install')
+Import('env', 'eci_search')
 
 # Use command line environment for local environment
 lenv = env
@@ -14,7 +14,7 @@ lenv = env
 targets = ['below.hull', 'corr.covar', 'eci.out', 'population', 'energy.clex'] + glob.glob('clex_results*') + glob.glob('hull*')
 
 # Specify the command to run the test the Alias
-eci_search_test = lenv.Command(targets, eci_search_install, 'cd ' + os.getcwd() + ' && bash ' + os.path.join(os.getcwd(), 'test.sh'))
+eci_search_test = lenv.Command(targets, eci_search, 'cd ' + os.getcwd() + ' && bash ' + os.path.join(os.getcwd(), 'test.sh'))
 lenv.Alias('eci_search_test', eci_search_test)
 
 if 'eci_search_test' in COMMAND_LINE_TARGETS:
