@@ -18,7 +18,7 @@ env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + [casm_obj]
 # Install instructions
 casm = env.Program(os.path.join(env['CASM_BIN'], "casm"),
                    [casm_obj, version_obj, casm_lib],
-                   LIBPATHS=build_lib_paths,
+                   LIBPATH=build_lib_paths,
                    LIBS=libs)
 Default(casm)
 env.Alias('casm', casm)
@@ -27,7 +27,7 @@ env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + [casm]
 
 casm_install = env.Program(os.path.join(env['PREFIX'],'bin', "casm"),
                           [casm_obj, version_obj, casm_lib_install],
-                          LIBPATHS=install_lib_paths,
+                          LIBPATH=install_lib_paths,
                           LIBS=libs)
 env.Alias('casm_install', casm_install)
 Export('casm_install')

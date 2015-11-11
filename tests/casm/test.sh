@@ -3,6 +3,8 @@
 
 echo "Test" | casm init
 
+casm settings --set-compile-options "${CXX:=g++} -O3 -Wall -fPIC --std=c++11 -I../../include"
+
 casm composition --select 0
 
 casm sym

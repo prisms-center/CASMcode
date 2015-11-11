@@ -5,11 +5,13 @@ import os, glob
 from os.path import join
 
 # Import dependencies
-Import('env', 'casm', 'casm_lib', 'casm_include')
-dependencies = [casm, casm_lib, casm_include]
+Import('env', 'casm', 'casm_lib')
+dependencies = [casm, casm_lib]
 
 # Use command line environment for local environment
 lenv = env #Environment(ENV = os.environ)
+lenv['ENV']['PATH'] = lenv['ENV']['PATH'] + ":" + env['CASM_BIN']
+print lenv['ENV']['PATH']
 
 # Specify the targets: files and directories written by the test
 bset_dir = join('basis_sets', 'bset.default')

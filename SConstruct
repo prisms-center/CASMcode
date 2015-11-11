@@ -122,7 +122,6 @@ elif 'CASMPREFIX' in os.environ:
 install_lib_paths.append(os.path.join(prefix, 'lib'))
 Export('install_lib_paths')
 
- 
 env = Environment(ENV = os.environ,
                   CCFLAGS = ccflags,
                   CPPPATH = include_paths,
@@ -133,9 +132,6 @@ if 'CXX' in os.environ:
   env.Replace(CXX = env['CXX'])
 elif 'cxx' in ARGUMENTS:
   env.Replace(CXX = ARGUMENTS.get('cxx'))
-
-if 'speedy' in ARGUMENTS:
-  env.Decider('MD5-timestamp')
 
 # where the shared libraries should go
 env.Append(CASM_LIB = os.path.join(os.getcwd(), 'lib'))
@@ -177,16 +173,28 @@ SConscript(['src/casm/SConscript'], {'env':env})
 
 ##### Make single dynamic library 
 
+linkflags = ""
+if env['PLATFORM'] == 'darwin':
+  linkflags = ['-install_name', os.path.join(env['CASM_LIB'], 'libcasm.dylib')]
+
 # use boost libraries
 boost_libs = ['boost_system', 'boost_filesystem']
 
 # build casm shared library from all shared objects
-casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'), env['CASM_SOBJ'], LIBS=boost_libs + ['z'])
+casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'), 
+                             env['CASM_SOBJ'], 
+                             LIBPATH=build_lib_paths,
+                             LINKFLAGS=linkflags,
+                             LIBS=boost_libs + ['z'])
+                             
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + casm_lib
 Export('casm_lib')
 
 # Library Install instructions
-casm_lib_install = env.SharedLibrary(os.path.join(env['PREFIX'], 'lib', 'casm'), env['CASM_SOBJ'], LIBS=boost_libs + ['z'])
+casm_lib_install = env.SharedLibrary(os.path.join(env['PREFIX'], 'lib', 'casm'), 
+                                     env['CASM_SOBJ'], 
+                                     LIBPATH=install_lib_paths, 
+                                     LIBS=boost_libs + ['z'])
 Export('casm_lib_install')
 env.Alias('casm_lib_install', casm_lib_install)
 env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [casm_lib_install]
