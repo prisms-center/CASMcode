@@ -157,26 +157,26 @@ namespace CASM {
       }
 
       //We have the selection. Now do enumeration
-      if(vm.count("filter")){
-	/// Prepare for calculating correlations. Maybe this should get put into Clexulator.
-	const DirectoryStructure &dir = primclex.dir();
-	const ProjectSettings &set = primclex.settings();
-	if(fs::exists(dir.clexulator_src(set.name(), set.bset()))) {
-	  primclex.read_global_orbitree(dir.clust(set.bset()));
-	  primclex.generate_full_nlist();
-	  primclex.generate_supercell_nlists();
-	}
-	
-	fs::path alias_file = root / ".casm/query_alias.json";
-	if(fs::exists(alias_file)) {
-	  ConfigIOParser::load_aliases(alias_file);
-	}
+      if(vm.count("filter")) {
+        /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
+        const DirectoryStructure &dir = primclex.dir();
+        const ProjectSettings &set = primclex.settings();
+        if(fs::exists(dir.clexulator_src(set.name(), set.bset()))) {
+          primclex.read_global_orbitree(dir.clust(set.bset()));
+          primclex.generate_full_nlist();
+          primclex.generate_supercell_nlists();
+        }
+
+        fs::path alias_file = root / ".casm/query_alias.json";
+        if(fs::exists(alias_file)) {
+          ConfigIOParser::load_aliases(alias_file);
+        }
       }
       for(auto it = scel_selection.begin(); it != scel_selection.end(); ++it) {
         std::cout << "  Enumerate configurations for " << (**it).get_name() << " ... " << std::flush;
 
         ConfigEnumAllOccupations<Configuration> enumerator(**it);
-
+        Index num_before = (**it).get_config_list().size();
         if(vm.count("filter")) {
           try {
             (**it).add_unique_canon_configs(filter_begin(enumerator.begin(), enumerator.end(), filter_expr), filter_end(enumerator.end()));
@@ -189,7 +189,7 @@ namespace CASM {
         else
           (**it).add_unique_canon_configs(enumerator.begin(), enumerator.end());
 
-        std::cout << (**it).get_config_list().size() << " configs." << std::endl;
+        std::cout << ((**it).get_config_list().size() - num_before) << " configs." << std::endl;
       }
       std::cout << "  DONE." << std::endl << std::endl;
 
