@@ -1,4 +1,8 @@
+#include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymGroupRep.hh"
+#include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/strain/StrainConverter.hh"
+
 namespace CASM {
 
   //Calculates the metric tensor of the the deformation gradient as
@@ -239,6 +243,46 @@ namespace CASM {
     }
   }
 
+  //*******************************************************************************************
+
+  Eigen::MatrixXd StrainConverter::irreducible_sop_wedge(const SymGroup &pg, std::vector<Index> &multiplicities, std::vector<Index> &subspaces){
+    if(!valid_index(m_symrep_ID)){
+      set_symmetrized_sop(pg);
+    }
+
+    const SymGroupRep& srep(*pg.master_group().representation(m_symrep_ID));
+
+    return srep.irreducible_wedge(pg,multiplicities, subspaces);
+  }
+
+  //*******************************************************************************************
+
+  Eigen::MatrixXd StrainConverter::irreducible_wedge(const SymGroup &pg, std::vector<Index> &multiplicities, std::vector<Index> &subspaces){
+    return m_sop_transf_mat.transpose()*irreducible_sop_wedge(pg,multiplicities, subspaces);
+  }
+
+  //*******************************************************************************************
+
+  void StrainConverter::set_symmetrized_sop(const SymGroup &pg){
+    Eigen::VectorXd tvec(Eigen::VectorXd::Zero(m_order_strain.size()));
+    Eigen::Matrix3d tmat;
+    SymGroupRep strain_rep(pg);
+
+    for(Index g=0; g<pg.size(); g++){
+      Eigen::MatrixXd trep(tvec.size(),tvec.size());
+      for(Index i=0; i<tvec.size(); i++){
+        tvec[i]=1;
+        tmat=rollup_E(tvec);
+        tvec[i]=0;
+        tmat=Eigen::Matrix3d(pg[g].get_matrix(CART))*tmat*Eigen::Matrix3d(pg[g].get_matrix(CART)).transpose();
+        trep.col(i)=unroll_E(tmat);
+      }
+      strain_rep.set_rep(pg[g],SymMatrixXd(trep));
+    }
+    m_sop_transf_mat=strain_rep.get_irrep_trans_mat(pg).transpose();
+    m_symrep_ID=(strain_rep.coord_transformed_copy(m_sop_transf_mat.transpose()))->add_self_to_master();
+  }
+  
   //*******************************************************************************************
   //Conventional strain order parameters:
   //   e1 = (E11+E22+E33) / sqrt(3)

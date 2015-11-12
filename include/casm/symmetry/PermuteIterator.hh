@@ -5,10 +5,10 @@
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/container/Permutation.hh"
 
+
 namespace CASM {
-
   class PrimGrid;
-
+  
   /// Permutation bidirectional Iterator class
   ///   Can iterate over all combined factor group and translation permutations for a Supercell
   ///

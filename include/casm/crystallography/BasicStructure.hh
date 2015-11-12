@@ -114,7 +114,7 @@ namespace CASM {
     void generate_factor_group_slow(SymGroup &factor_group, double map_tol) const;
     void fg_converge(double small_tol, double large_tol, double increment);
     void fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
-    Index generate_permutation_representation(const MasterSymGroup &factor_group, bool verbose)const;
+
     Index generate_basis_permutation_representation(const MasterSymGroup &factor_group, bool verbose)const;
 
     void symmetrize(const SymGroup &relaxed_factors);

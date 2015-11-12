@@ -4,16 +4,6 @@
 #include <iostream>
 #include <cmath>
 
-//#include "casm/../CASM_global_definitions.cc"
-//#include "casm/../crystallography/CoordinateSystems.cc"
-//#include "casm/../container/LinearAlgebra.cc"
-//#include "casm/../container/Array.cc"
-//#include "casm/../container/Counter.cc"
-//#include "casm/../crystallography/Coordinate.hh"
-//#include "casm/../crystallography/Coordinate.hh"
-//#include "casm/../crystallography/Lattice.cc"
-//#include "casm/../container/Tensor.cc"
-
 namespace CASM {
   class MasterSymGroup;
   class Lattice;

@@ -25,7 +25,7 @@ namespace CASM {
     using ConfigEnum<ConfigType>::num_steps;
     using ConfigEnum<ConfigType>::step;
     using ConfigEnum<ConfigType>::source;
-  public:
+
     ConfigEnumStrain(Supercell &scel, const value_type &_init, const Eigen::MatrixXd &proj_mat, const Eigen::VectorXd &_init_vec,const Eigen::VectorXd &_final_vec, double _inc, std::string _mode);
 
     // **** Mutators ****

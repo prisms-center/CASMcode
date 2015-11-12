@@ -6,7 +6,7 @@
 
 namespace CASM {
 
-  //SymOpRepresentation::~SymOpRepresentation() {};
+  //SymOpRepresentation::~SymOpRepresentation() {}
 
   const Matrix3<double> &SymOp::get_matrix(COORD_TYPE mode) const {
     if(!calc(mode)) {
@@ -16,7 +16,7 @@ namespace CASM {
     return symmetry_mat[mode];
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   const Matrix3<double> &SymOp::get_matrix() const {
     if(!calc(COORD_MODE::CHECK())) {
@@ -26,25 +26,25 @@ namespace CASM {
     return symmetry_mat[mode_ind()];
   }
 
-  //**********************************************************
+  //*******************************************************************************************
   const Vector3<double> &SymOp::get_eigenvec(COORD_TYPE mode) const {
     return eigenvec(mode);
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   const Vector3<double> &SymOp::get_eigenvec() const {
     return eigenvec(COORD_MODE::CHECK());
   }
 
 
-  //**********************************************************
+  //*******************************************************************************************
 
   const double &SymOp::get_map_error() const {
     return map_error;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   void SymOp::set_map_error(const double &value) {
     map_error = value;
@@ -52,7 +52,7 @@ namespace CASM {
   }
 
 
-  //**********************************************************
+  //*******************************************************************************************
   double SymOp::operator()(int i, int j, COORD_TYPE mode) const {
     if(calc(mode))
       return symmetry_mat[mode](i, j);
@@ -60,19 +60,19 @@ namespace CASM {
     std::cerr << "WARNING: Attempting to access elements from improperly initialized symmetry matrix!\n";
     return NAN;
   }
-  //**********************************************************
+  //*******************************************************************************************
 
   const Vector3<double> &SymOp::tau(COORD_TYPE mode) const {
     return tau_vec(mode);
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   const Coordinate &SymOp::tau() const {
     return tau_vec;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   double SymOp::tau(int i, COORD_TYPE mode) const {
     if(mode == COORD_DEFAULT)
@@ -81,7 +81,7 @@ namespace CASM {
     return tau(mode)[i];
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   bool SymOp::calc(COORD_TYPE mode) const {
     COORD_TYPE tmode = mode;
@@ -98,7 +98,7 @@ namespace CASM {
 
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   void SymOp::set_lattice(const Lattice &new_lat, COORD_TYPE mode) {
     COORD_TYPE not_mode(FRAC);
@@ -114,13 +114,13 @@ namespace CASM {
     return;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   const Lattice &SymOp::get_home() const {
     return *home;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   void SymOp::set_index(const MasterSymGroup &new_group, Index new_index) {
     if((valid_index(new_index) && new_index < new_group.size())
@@ -130,12 +130,14 @@ namespace CASM {
       op_index = new_index;
     }
     else {
-      m_master_group = NULL;
+      m_master_group = &new_group;
+      //m_master_group = NULL;
       op_index = -1;
     }
   }
 
-  //**********************************************************
+  //*******************************************************************************************
+  
   void SymOp::set_rep(Index rep_ID, const SymOpRepresentation &op_rep) const {
     SymGroupRep const *tRep(master_group().representation(rep_ID));
     if(!tRep) {
@@ -143,52 +145,55 @@ namespace CASM {
                 << "                Exiting...\n";
       exit(1);
     }
-
+   
     tRep->set_rep(op_index, op_rep);
-
+   
     return;
   }
-
-  //**********************************************************
+ 
+  //*******************************************************************************************
+  
   Eigen::MatrixXd const *SymOp::get_matrix_rep(Index rep_ID) const {
     SymGroupRep const *tRep(master_group().representation(rep_ID));
     if(!tRep) return NULL;
-
+   
     return (tRep->at(op_index))->get_MatrixXd();
   }
-
-  //**********************************************************
+ 
+  //*******************************************************************************************
+  
   Array<UnitCellCoord> const *SymOp::get_basis_permute_rep(Index rep_ID) const {
-
+   
     SymGroupRep const *tRep(master_group().representation(rep_ID));
     if(!tRep) {
       std::cerr << "Warning: You have requested information from a nonexistent representation!\n"
                 << "m_master_group pointer is " << m_master_group << '\n';
       return NULL;
     }
-
+  
     return (tRep->at(op_index))->get_ucc_permutation();
   }
-
-  //**********************************************************
+  
+  //*******************************************************************************************
   Permutation const *SymOp::get_permutation_rep(Index rep_ID) const {
     SymGroupRep const *tRep(master_group().representation(rep_ID));
     if(!tRep) return NULL;
-
+  
     return (tRep->at(op_index))->get_permutation();
   }
-
-  //**********************************************************
+  
+  //*******************************************************************************************
+  
   Array<Eigen::MatrixXd const * > SymOp::get_matrix_reps(Array<Index> rep_IDs) const {
     Array<Eigen::MatrixXd const * > tmat;
     for(Index i = 0; i < rep_IDs.size(); i++) {
       tmat.push_back(get_matrix_rep(rep_IDs[i]));
-
+           
     }
     return tmat;
   }
-
-  //**********************************************************
+ 
+  //*******************************************************************************************
 
   SymOp SymOp::operator*(const SymOp &RHS) const {
     SymOp t_op(get_matrix(CART) * RHS.get_matrix(CART),
@@ -216,7 +221,7 @@ namespace CASM {
 
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   SymOp &SymOp::operator+=(const Coordinate &RHS) {
     tau_vec(CART) += RHS(CART) - get_matrix(CART) * RHS(CART);
@@ -224,7 +229,7 @@ namespace CASM {
     return (*this);
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   SymOp &SymOp::operator-=(const Coordinate &RHS) {
     tau_vec(CART) -= RHS(CART) - get_matrix(CART) * RHS(CART);
@@ -232,7 +237,7 @@ namespace CASM {
     return (*this);
   }
 
-  //**********************************************************
+  //*******************************************************************************************
   // SymOp matrix is unitary, so inverse is equivalent to transpose.
   // To do inverse of translation, you must perform
   // inverse matrix operaton on translation and subtract
@@ -251,7 +256,7 @@ namespace CASM {
     return t_op;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   SymOp SymOp::no_trans() const {
 
@@ -260,46 +265,45 @@ namespace CASM {
     t_op.tau_vec(CART) = Vector3<double>(0, 0, 0);
 
     return t_op;
-  };
+  }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   void SymOp::within() {
     tau_vec.within();
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   bool SymOp::compare(const SymOp &RHS, double eq_tol) const {
     return calc(CART) &&
-           RHS.calc(CART) &&
-           get_matrix(CART).is_equal(RHS.get_matrix(CART), eq_tol) &&
-           tau_vec.min_dist(RHS.tau_vec) < eq_tol;
-
+      RHS.calc(CART) &&
+      get_matrix(CART).is_equal(RHS.get_matrix(CART), eq_tol) &&
+      tau_vec.min_dist(RHS.tau_vec) < eq_tol;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   bool SymOp::operator==(const SymOp &RHS) const {
     return calc(CART) &&
-           RHS.calc(CART) &&
-           get_matrix(CART).is_equal(RHS.get_matrix(CART)) &&
-           tau(CART).is_equal(RHS.tau(CART));
-  };
+      RHS.calc(CART) &&
+      get_matrix(CART).is_equal(RHS.get_matrix(CART)) &&
+      tau(CART).is_equal(RHS.tau(CART));
+  }
 
-  //******************************************************
+  //*******************************************************************************************
   //
   // Functions to check symmetry type:
   //
-  //******************************************************
+  //*******************************************************************************************
 
   bool SymOp::is_identity() const {
     if(symmetry == invalid_op)
       get_sym_type();
     return symmetry == identity_op;
-  };
+  }
 
-  //******************************************************
+  //*******************************************************************************************
   /**
    * Find the invariant point after applying symmetry
 
@@ -412,7 +416,7 @@ namespace CASM {
   }
 
 
-  //******************************************************
+  //*******************************************************************************************
   /**
    * To find mirror plane H(x,y,z) which contains a point P(x,y,z) and perpendicular to eigenvec(l,m,n)
    *  [CART]
@@ -466,7 +470,7 @@ namespace CASM {
 
       for(int i = 0; i < 3; i++) {
         rec_eigenvec.at(i) = eigenvec(CART).at(0) * rec_trans(0, i) +
-                             eigenvec(CART).at(1) * rec_trans(1, i) + eigenvec(CART).at(2) * rec_trans(2, i);
+          eigenvec(CART).at(1) * rec_trans(1, i) + eigenvec(CART).at(2) * rec_trans(2, i);
 
       }
 
@@ -514,7 +518,7 @@ namespace CASM {
     }
     return;
   }
-  //*****************************************************
+  //*******************************************************************************************
 
   void SymOp::print_plane_axis(std::ostream &stream, COORD_TYPE mode) const {
     double	tol = 0.000001;
@@ -605,7 +609,7 @@ namespace CASM {
     return;
   }
 
-  //******************************************************
+  //*******************************************************************************************
   void SymOp::printII_plane_axis(std::ostream &stream, COORD_TYPE mode) const {
     double	tol = 0.000001;
     if(type() == identity_op || type() == inversion_op || type() == rotoinversion_op) {
@@ -638,7 +642,7 @@ namespace CASM {
             XYZ_equ[0][3] = get_screw_glide_shift(mode).at(0);
             XYZ_equ[1][3] = get_screw_glide_shift(mode).at(1);
             XYZ_equ[2][3] = get_screw_glide_shift(mode).at(2)
-                            - (plane_XYZ_equ[3] / plane_XYZ_equ[2]);
+              - (plane_XYZ_equ[3] / plane_XYZ_equ[2]);
           }
           else {
             XYZ_equ[0][3] = 0;
@@ -719,9 +723,9 @@ namespace CASM {
           if(type() == screw_op) {
             XYZ_equ[0][3] = get_screw_glide_shift(mode).at(0);
             XYZ_equ[1][3] = get_screw_glide_shift(mode).at(1)
-                            - (axis_XYZ_equ[3] / axis_XYZ_equ[1]) * (axis_XYZ_equ[0]) + axis_XYZ_equ[2];
+              - (axis_XYZ_equ[3] / axis_XYZ_equ[1]) * (axis_XYZ_equ[0]) + axis_XYZ_equ[2];
             XYZ_equ[2][3] = get_screw_glide_shift(mode).at(2)
-                            - (axis_XYZ_equ[5] / axis_XYZ_equ[1]) * (axis_XYZ_equ[0]) + axis_XYZ_equ[4];
+              - (axis_XYZ_equ[5] / axis_XYZ_equ[1]) * (axis_XYZ_equ[0]) + axis_XYZ_equ[4];
 
           }
           else {
@@ -745,7 +749,7 @@ namespace CASM {
             XYZ_equ[0][3] = get_screw_glide_shift(mode).at(0) + axis_XYZ_equ[0];
             XYZ_equ[1][3] = get_screw_glide_shift(mode).at(1);
             XYZ_equ[2][3] = get_screw_glide_shift(mode).at(2)
-                            - (axis_XYZ_equ[2] / axis_XYZ_equ[3]) * (axis_XYZ_equ[5]) + axis_XYZ_equ[4];
+              - (axis_XYZ_equ[2] / axis_XYZ_equ[3]) * (axis_XYZ_equ[5]) + axis_XYZ_equ[4];
 
           }
           else {
@@ -831,7 +835,7 @@ namespace CASM {
     }
     return;
   }
-  //******************************************************
+  //*******************************************************************************************
 
   bool SymOp::is_mirror() const {
     if(symmetry == invalid_op)
@@ -839,7 +843,7 @@ namespace CASM {
     return symmetry == mirror_op;
   }
 
-  //******************************************************
+  //*******************************************************************************************
 
   bool SymOp::is_glide() const {
     if(symmetry == invalid_op)
@@ -847,7 +851,7 @@ namespace CASM {
     return symmetry == glide_op;
   }
 
-  //******************************************************
+  //*******************************************************************************************
 
   bool SymOp::is_rotation() const {
     if(symmetry == invalid_op)
@@ -855,7 +859,7 @@ namespace CASM {
     return symmetry == rotation_op;
   }
 
-  //******************************************************
+  //*******************************************************************************************
 
   bool SymOp::is_screw() const {
     if(symmetry == invalid_op)
@@ -863,7 +867,7 @@ namespace CASM {
     return symmetry == screw_op;
   }
 
-  //******************************************************
+  //*******************************************************************************************
 
   bool SymOp::is_inversion() const {
     if(symmetry == invalid_op)
@@ -871,7 +875,7 @@ namespace CASM {
     return symmetry == inversion_op;
   }
 
-  //******************************************************
+  //*******************************************************************************************
 
   bool SymOp::is_rotoinversion() const {
     if(symmetry == invalid_op)
@@ -879,7 +883,7 @@ namespace CASM {
     return symmetry == rotoinversion_op;
   }
 
-  //******************************************************
+  //*******************************************************************************************
 
   bool SymOp::is_invalid() const {
     if(symmetry == invalid_op)
@@ -889,7 +893,7 @@ namespace CASM {
 
 
 
-  //******************************************************
+  //*******************************************************************************************
 
   SymOp &SymOp::apply_sym(const SymOp &op) {
     (*this) = op * (*this) * (op.inverse());
@@ -897,7 +901,7 @@ namespace CASM {
     return *this;
   }
 
-  //******************************************************
+  //*******************************************************************************************
   /**
    * Function tests a symmetry matrix and assigns symmetry type
    * to variable symmetry.
@@ -905,7 +909,7 @@ namespace CASM {
    * The function checks for (in this order) identity, inversion
    * mirror, glide, rotoinversion, rotation, and screw.
    */
-  //******************************************************
+  //*******************************************************************************************
   void SymOp::get_sym_type() const {
 
     double det = 0.0;
@@ -983,7 +987,7 @@ namespace CASM {
     //symmetry remains as invalid_op
   }
 
-  //******************************************************
+  //*******************************************************************************************
   /**
    * Checks for glide symmetry operation
    *
@@ -994,7 +998,7 @@ namespace CASM {
    * to the mirror plane (parallel to eigenvector), leaving
    * just the component parallel to the mirror plane.
    */
-  //******************************************************
+  //*******************************************************************************************
 
 
   void SymOp::glide_check() const {
@@ -1036,7 +1040,7 @@ namespace CASM {
 
 
 
-  //******************************************************
+  //*******************************************************************************************
   /**
    * Checks for screw symmetry operation
    *
@@ -1044,7 +1048,7 @@ namespace CASM {
    * was found first before checking for the eigenvector
    * of the screw symmetry operation.
    */
-  //******************************************************
+  //*******************************************************************************************
   void SymOp::screw_check() const {
 
     Coordinate tcoord(get_home());
@@ -1082,11 +1086,11 @@ namespace CASM {
 
   }
 
-  //******************************************************
+  //*******************************************************************************************
   /**
    * Checks for mirror symmetry operation.
    */
-  //******************************************************
+  //*******************************************************************************************
   void SymOp::mirror_check() const {
     int i;
 
@@ -1126,45 +1130,45 @@ namespace CASM {
     }
   }//end of MIRROR check
 
-  //******************************************************
+  //*******************************************************************************************
   /**
    * Calculates the rotation angle.
    *
    *
    */
-  //******************************************************
+  //*******************************************************************************************
 
   double SymOp::get_rotation_angle() const {
     return rotation_angle;
   }
 
-  //*****************************************************
+  //*******************************************************************************************
 
   const Coordinate &SymOp::get_location() const {
     return location;
   }
 
-  //*****************************************************
+  //*******************************************************************************************
 
   const Vector3<double> &SymOp::get_location(COORD_TYPE mode) const {
     return location(mode);
   }
-  //*****************************************************
+  //*******************************************************************************************
   const Coordinate &SymOp::get_screw_glide_shift() const {
     return screw_glide_shift;
   }
-  //*****************************************************
+  //*******************************************************************************************
   const Vector3<double> &SymOp::get_screw_glide_shift(COORD_TYPE mode) const {
     return screw_glide_shift(mode);
   }
 
-  //******************************************************
+  //*******************************************************************************************
   /**
    * Calculates the rotation angle.
    *
    *
    */
-  //******************************************************
+  //*******************************************************************************************
 
   void SymOp::calc_rotation_angle(Matrix3<double> mat, double det, double trace) const {
     int i, j;
@@ -1256,7 +1260,7 @@ namespace CASM {
     return;
   }
 
-  //*****************************************************
+  //*******************************************************************************************
   void SymOp::print_short(std::ostream &stream, COORD_TYPE mode) const {
     Matrix3 <double> tsym_mat;
 
@@ -1320,7 +1324,7 @@ namespace CASM {
 
   }
 
-  //*****************************************************
+  //*******************************************************************************************
 
   void SymOp::print(std::ostream &stream, COORD_TYPE mode) const {
     Matrix3 <double> tsym_mat;
@@ -1406,7 +1410,7 @@ namespace CASM {
     return;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   jsonParser &SymOp::to_json(jsonParser &json) const {
     json.put_obj();
@@ -1464,7 +1468,7 @@ namespace CASM {
     return json;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   void SymOp::from_json(const jsonParser &json) {
     try {
@@ -1521,13 +1525,13 @@ namespace CASM {
     }
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   jsonParser &to_json(const SymOp &sym, jsonParser &json) {
     return sym.to_json(json);
   }
 
-  //**********************************************************
+  //*******************************************************************************************
   void from_json(SymOp &sym, const jsonParser &json) {
     try {
       sym.from_json(json);
@@ -1540,4 +1544,3 @@ namespace CASM {
 
 
 }
-

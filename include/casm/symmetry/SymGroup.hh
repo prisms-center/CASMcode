@@ -7,12 +7,6 @@
 
 #include "casm/symmetry/SymOp.hh"
 
-//#include "casm/../CASM_global_definitions.cc"
-//#include "casm/../crystallography/CoordinateSystems.cc"
-//#include "casm/../container/Array.cc"
-//#include "casm/../symmetry/SymOp.hh"
-//#include "casm/../symmetry/SymGroup.hh"
-//#include "casm/../container/Counter.cc"
 
 namespace CASM {
   class SymGroup;
@@ -33,20 +27,20 @@ namespace CASM {
     PERIODICITY_TYPE group_periodicity;
 
     /// multi_table[i][j] gives index of operation that is result of at(i)*at(j)
-    mutable Array<Array<Index> > multi_table;
+    mutable Array<Index>::X2 multi_table;
 
     /// alt_multi_table[i][j] gives index of operation that is result of at(i).inverse()*at(j)
-    mutable Array<Array<Index> > alt_multi_table;
+    mutable Array<Index>::X2 alt_multi_table;
 
     // information about conjugacy classes
     // conjugacy_classes[i][j] gives index of SymOp 'j' in class 'i'
-    mutable Array<Array<Index> > conjugacy_classes;
+    mutable Array<Index>::X2 conjugacy_classes;
     mutable Array<std::string> class_names;
     mutable Array<Index> index2conjugacy_class;
 
     // Information about irreducible representations
     // character_table[i][j] is character of conjugacy class 'j' in irrep 'i'
-    mutable Array<Array<std::complex<double> > > character_table;
+    mutable Array<std::complex<double> >::X2 character_table;
     mutable Array<Index> irrep_IDs;
     mutable Array<bool> complex_irrep;
     mutable Array<std::string> irrep_names;
@@ -55,16 +49,16 @@ namespace CASM {
 
     // small_groups are cyclic subgroups.  Found by taking a group
     // element and multiplying it by itself until a group is generated
-    // small_groups[i][j][k] is index of symop 'k' in subgroup (i,j) -- the equivalent subroup 'j' of an orbit 'i' of equivalent subgroups
-    mutable Array<Array<Array<Index> > > small_groups;
+    // m_small_subgroups[i][j][k] is index of symop 'k' in subgroup (i,j) -- the equivalent subroup 'j' of an orbit 'i' of equivalent subgroups
+    mutable Array<Index>::X3 m_small_subgroups;
 
-    // large_groups are found by finding the closure for each possible union of small_groups
-    // organized the same way as small_groups
-    mutable Array<Array<Array<Index> > > large_groups;
+    // large_groups are found by finding the closure for each possible union of m_small_subgroups
+    // organized the same way as m_small_subgroups
+    mutable Array<Index>::X3 m_large_subgroups;
 
 
-    mutable Array<Array<Index> > centralizer_table;
-    mutable Array<Array<Index> > elem_order_table;
+    mutable Array<Index>::X2 centralizer_table;
+    mutable Array<Index>::X2 elem_order_table;
 
     mutable std::string name;
     mutable std::string latex_name;
@@ -73,7 +67,7 @@ namespace CASM {
     mutable double max_error;
 
     ///Space group (added by Donghee );
-    mutable Array<Array<SymOp> > rotation_groups;
+    mutable Array<SymOp>::X2 rotation_groups;
     mutable std::string crystal_system;
     mutable bool centric; // if it is centric, special point is same in reciprocal space
     mutable Array<int> group_number; // space group number (min and max)
@@ -94,14 +88,20 @@ namespace CASM {
 
   public:
     /// Initialize by setting periodicity mode (default mode is PERIODIC)
-    SymGroup(PERIODICITY_TYPE init_type = PERIODIC) : group_periodicity(init_type), max_error(-1) {
-      name.clear();
-      latex_name.clear();
-    };
+    SymGroup(PERIODICITY_TYPE init_type = PERIODIC) : group_periodicity(init_type), max_error(-1) {   };
+
+    SymGroup(const Array<SymOp> &from_array, PERIODICITY_TYPE init_type = PERIODIC);
 
     virtual void push_back(const SymOp &new_op);
     virtual void clear();
     virtual void clear_tables();
+
+    const MasterSymGroup &master_group() const {
+      assert(size() && at(0).has_valid_master());
+      return at(0).master_group();
+    };
+
+    ReturnArray<Index> op_indices() const;
 
     ///Check to see if a SymOp is contained in in SymGroup
     //maybe contains and find should account for group_periodicity
@@ -122,6 +122,7 @@ namespace CASM {
     /// of the SymOps in the group. Upon a successful matrix match, it will attempt to match the shift
     /// shift vector with min_dist.
     Index find_periodic(const SymOp &test_op, double tol = TOL) const;
+    ReturnArray<Index> find_all_periodic(const Array<SymOp> &subgroup, double tol = TOL) const;
 
     /// Sort SymOps in SymGroup
     /// Positive determinant SymOps come before negative determinant
@@ -151,6 +152,9 @@ namespace CASM {
     /// Get symrep ID of a particular irrep
     Index get_irrep_ID(Index i) const;
 
+    /// Get symrep ID of the representation that stores the Cartesian symop matrices
+    Index coord_rep_ID() const;
+
     /// Get symrep for a particular irrep
     SymGroupRep const *get_irrep(Index i) const;
 
@@ -169,7 +173,7 @@ namespace CASM {
     /// Check to see if SymGroup satisfies the group property
     bool is_group(double tol = TOL) const;
     /// Enforce group property by adding products of operations to the group
-    void enforce_group(double tol = TOL, Index max_size = 1000);  //AAB
+    void enforce_group(double tol = TOL, Index max_size = 200);  //AAB
 
     /// print locations of the symmetry-generating element of each SymOp
     void print_locations(std::ostream &stream);
@@ -189,14 +193,18 @@ namespace CASM {
     /// This returns the group's max_error
     double get_max_error();
 
-    const Array<Array<Index> > &get_multi_table() const;
-    const Array<Array<Index> > &get_alt_multi_table() const;
+    ReturnArray<Array<Index> > left_cosets(const Array<SymOp> &subgroup, double tol = TOL) const;
+    ReturnArray<Array<Index> > left_cosets(const Array<Index> &subgroup_inds) const;
+
+    const Array<Index>::X2 &get_multi_table() const;
+    const Array<Index>::X2 &get_alt_multi_table() const;
     void invalidate_multi_tables() const;
-    const Array<Array<Index> > &get_conjugacy_classes() const;
-    const Array<Array<std::complex<double> > > &get_character_table() const;
+    const Array<Index>::X2 &get_conjugacy_classes() const;
+    const Array<std::complex<double> >::X2 &get_character_table() const;
     const Array<bool> &get_complex_irrep_list() const;
     const std::string &get_name() const;
     const std::string &get_latex_name() const;
+
     PERIODICITY_TYPE get_periodicity() const {
       return group_periodicity;
     }
@@ -204,8 +212,9 @@ namespace CASM {
       return comment;
     }
 
-    const Array<Array<Array<Index> > > &get_large_subgroups() const;
-    const Array<Array<Array<Index> > > &get_small_subgroups() const;
+
+    const Array<Index>::X3 &get_large_subgroups() const;
+    const Array<Index>::X3 &get_small_subgroups() const;
 
     void print_character_table(std::ostream &stream);
     ReturnArray<Index> get_irrep_decomposition() const;
@@ -236,19 +245,32 @@ namespace CASM {
   //   it's just used to set the lattice for all the Molecules
   void from_json(SymGroup &group, const jsonParser &json);
 
+  // return SymGroup with all molecular point group sym ops
+  // I will centerize your coord_map, fyi.
+  SymGroup molecular_point_group(std::map<int,std::vector<Eigen::Vector3d> > coord_map, const Lattice mol_lat);
+
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   class MasterSymGroup : public SymGroup {
+    //NOTE: It may be useful to store a user-specified set of "favored directions" in MasterSymGroup
+    //      e.g., {(0,0,1), (1,0,0), (0,1,0)}, which would be used to arbitrate decisions in symmetry-related algorithms
+    //            Relevant applications include
+    //                - constucting orbit equivalence map
+    //                - optimizing the coordinate system of irreps
+    //                - deciding prototype cluster
+
+
     ///  Collection of alternate representations of this symmetry group
     /// (default is the coordinate representation)
-    mutable Array<SymGroupRep *> rep_array;
-    mutable Index coord_rep_ID, reg_rep_ID;
-
-    mutable SymGroup point_group_internal;
+    mutable Array<SymGroupRep *> m_rep_array;
+    mutable Index m_coord_rep_ID, m_reg_rep_ID;
+    // identity representations
+    mutable Array<Index> m_identity_rep_IDs;
+    mutable SymGroup m_point_group;
 
   public:
-    MasterSymGroup(PERIODICITY_TYPE init_type = PERIODIC) : SymGroup(init_type), coord_rep_ID(-1), reg_rep_ID(-1) {};
+    MasterSymGroup(PERIODICITY_TYPE init_type = PERIODIC) : SymGroup(init_type), m_coord_rep_ID(-1), m_reg_rep_ID(-1) {};
     MasterSymGroup(const MasterSymGroup &RHS);
     ~MasterSymGroup();
 
@@ -279,15 +301,17 @@ namespace CASM {
 
     /// Add a new representation by passing a reference.  SymGroup will store a copy
     Index add_representation(const SymGroupRep &new_rep) const;
-    Index get_reg_rep_ID() const;
-    Index get_coord_rep_ID() const;
+    Index reg_rep_ID() const;
+    Index coord_rep_ID() const;
+    Index identity_rep_ID(Index dim) const;
     SymGroupRep const *get_reg_rep() const;
     SymGroupRep const *get_coord_rep() const;
     Index add_reg_rep() const;
     Index add_coord_rep() const;
     Index add_kronecker_rep(Index ID1, Index ID2) const;
     Index add_direct_sum_rep(const Array<Index> &rep_IDs) const;
-    //Index add_transformed_rep(Index orig_ID, const Eigen::MatrixXd &trans_mat) const;
+    Index add_transformed_rep(Index orig_ID, const Eigen::MatrixXd &trans_mat) const;
+    Index add_rotation_rep() const;
 
     //Eigen::MatrixXd const* get_MatrixXd(Index i) const;
 
@@ -306,6 +330,6 @@ namespace CASM {
   void from_json(SymGroup &group, const jsonParser &json);
 
 
-};
+}
 
 #endif
