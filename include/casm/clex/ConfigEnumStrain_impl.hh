@@ -1,20 +1,44 @@
 #include "casm/clex/Supercell.hh"
 
 namespace CASM {
+
   template<typename ConfigType>
   ConfigEnumStrain<ConfigType>::ConfigEnumStrain(Supercell &_scel,
                                                  const value_type &_init,
-                                                 const Eigen::MatrixXd &proj_mat,
-                                                 const Eigen::VectorXd &_init_vec,
-                                                 const Eigen::VectorXd &_final_vec,
-                                                 double _inc,
+                                                 const std::vector<Index> & subspace_partitions,
+                                                 const std::vector<double> &magnitudes,
                                                  std::string _mode) :
     ConfigEnum<ConfigType>(_init,_init,-1),
-    m_counter(_init_vec, _final_vec, Eigen::VectorXd::Constant(_init_vec.size(), _inc)),
-    m_proj(proj_mat),
+    //m_counter(_init_vec, _final_vec, Eigen::VectorXd::Constant(_init_vec.size(), _inc)),
+    //m_proj(proj_mat),
     m_strain_calc(_mode),
     m_perm_begin(_scel.permute_begin()), m_perm_end(_scel.permute_end()) {
 
+    m_strain_calc.set_symmetrized_sop(_scel.get_primclex().get_prim().point_group());
+
+    //Eigen::MatrixXd axes=m_strain_calc.sop_transf_mat();
+    std::vector<Index> mult, subspaces;
+    m_proj=m_strain_calc.irreducible_wedge(_scel.get_primclex().get_prim().point_group(),mult,subspaces);
+    Eigen::VectorXd init(m_proj.cols()),final(m_proj.cols()),inc(m_proj.cols());
+    Index num_sub=subspaces.back()+1;
+
+    Index nc=0;
+    for(Index s=0; s<num_sub; s++){
+      while(nc<subspaces.size() && subspaces[nc]==s){
+        if(mult[nc]==1){
+          init(nc)=-magnitudes[nc];
+          //inc(nc)=2*magnitudes[nc]/double(subspace_partitions[nc]);
+        }
+        else{
+          init(nc)=0.0;
+          //inc(nc)=magnitudes[nc]/double(subspace_partitions[nc]);
+        }
+        final(nc)=magnitudes[nc]+TOL;
+        inc(nc)=magnitudes[nc]/double(subspace_partitions[nc]);
+        ++nc;
+      }
+    }
+    m_counter=EigenCounter<Eigen::VectorXd>(init,final,inc);
     _source() = "strain_enumeration";
 
     std::cout << "Project matrix is \n" << m_proj << "\n";
@@ -28,7 +52,6 @@ namespace CASM {
       _step() = 0;
     }
   }
-
   //*******************************************************************************************
   // **** Mutators ****
   // increment m_current and return a reference to it

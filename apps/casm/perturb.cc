@@ -20,7 +20,8 @@ namespace CASM {
     fs::path selection;
     COORD_TYPE coordtype;
     po::variables_map vm;
-    std::vector<double> init, final;
+    std::vector<Index> subgrids;
+    std::vector<double> mags;
     double inc_value;
     std::string strain_mode;
     try {
@@ -33,9 +34,8 @@ namespace CASM {
       ("config,c", po::value<fs::path>(&selection),
        "Selected configurations are used reference for generating perturbations. If not specified, or 'MASTER' given, uses master list selection.")
         ("strain,s","Generate strain perturbations")
-        ("init",po::value<std::vector<double> > (&init)->multitoken(),"Initial vector")
-        ("final",po::value<std::vector<double> > (&final)->multitoken(),"Final vector")
-        ("inc",po::value<double> (&inc_value)->default_value(0.02),"Strain increment")
+        ("gridsize",po::value<std::vector<Index> > (&subgrids)->multitoken(),"Size of grid for each subspace")
+        ("mag",po::value<std::vector<double> > (&mags)->multitoken(),"Magnitude of grid")
         ("strainmode",po::value<std::string> (&strain_mode)->default_value("GL"),"Strain mode name");
 
         
@@ -99,17 +99,29 @@ namespace CASM {
     ProjectSettings set(root);
 
     if(vm.count("strain")){
-      Eigen::MatrixXd tproj(6,2);
-      tproj << 1.0/sqrt(2.0), -1.0/sqrt(6.0),
-        -1.0/sqrt(2.0), -1.0/sqrt(6.0),
-        0.0, 2.0/sqrt(6.0),
-        0.0, 0.0,
-        0.0, 0.0,
-        0.0, 0.0;
+      StrainConverter sconvert(strain_mode);
+      sconvert.set_symmetrized_sop(primclex.get_prim().point_group());
       
-      Eigen::VectorXd _init_vec(2), _final_vec(2);
-      _init_vec << init[0], init[1];
-      _final_vec << final[0], final[1];
+      Eigen::MatrixXd axes=sconvert.sop_transf_mat();
+      std::vector<Index> mult, subspaces;
+      sconvert.irreducible_wedge(primclex.get_prim().point_group(),mult,subspaces);
+
+      Index num_sub=subspaces.back()+1;
+
+      if(num_sub!=subgrids.size() || num_sub!=mags.size()){
+        std::cout << "Option --strain selected.  Based on crystal symmetry, strains can be independently enumerated in the following subspaces:\n";
+        Index nc=0;
+        for(Index i=0; i<num_sub; i++){
+          std::cout << " Subspace " << i+1 << ":\n";
+          while(nc<subspaces.size() && subspaces[nc]==i){
+            std::cout << "    " << axes.col(nc) << "\n";
+            ++nc;
+          }
+          std::cout << "\n";
+        }
+        std::cout << "To proceed, you must specify " << num_sub << " values for both '--mag' and '--subgrids'\n";
+        return 1;
+      }
       
       ConfigSelection<false> config_select;
       if(!vm.count("config") || selection == "MASTER") {
@@ -126,9 +138,8 @@ namespace CASM {
       bool verbose = false;
       bool print = true;
       for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
-	std::cout << "init_vec is " << _init_vec << "\n"; 
-	std::cout << "final_vec is " << _final_vec<< "\n"; 
-        ConfigEnumStrain<Configuration> enumerator(it->get_supercell(),*it,tproj, _init_vec, _final_vec, inc_value,strain_mode);
+
+        ConfigEnumStrain<Configuration> enumerator(it->get_supercell(),*it, subgrids, mags, strain_mode);
         (it->get_supercell()).add_unique_canon_configs(enumerator.begin(), enumerator.end());        
       }
     }

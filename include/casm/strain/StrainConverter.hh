@@ -120,7 +120,9 @@ namespace CASM {
     // class
     void set_mode(const std::string &mode_name);
 
-    const Eigen::MatrixXd& sop_transf_mat() const;
+    const Eigen::MatrixXd& sop_transf_mat() const{
+      return m_sop_transf_mat;
+    }
     
     Index symrep_ID() const{
       return m_symrep_ID;
