@@ -7,6 +7,7 @@
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/symmetry/SymOpRepresentation.hh"
 
+
 namespace CASM {
   class MasterSymGroup;
   class Lattice;
@@ -122,7 +123,6 @@ namespace CASM {
         calc(FRAC);
     };
 
-
     /// Const access of elements of the symmetry matrix
     double operator()(int i, int j, COORD_TYPE mode = COORD_DEFAULT) const;
 
@@ -160,16 +160,16 @@ namespace CASM {
 
     /// set representation for SymOp corresponding to rep_ID
     void set_rep(Index rep_ID, const SymOpRepresentation &op_rep) const;
-
+    
     /// get pointer to matrix representation corresponding to rep_ID
     Eigen::MatrixXd const *get_matrix_rep(Index rep_ID) const;
-
+    
     /// get pointer to permutation representation corresponding to rep_ID
     Permutation const *get_permutation_rep(Index rep_ID) const;
-
+    
     /// get pointer to BasisPermute representation corresponding to rep_ID
     Array<UnitCellCoord> const *get_basis_permute_rep(Index rep_ID) const;
-
+    
     /// get array of pointers to matrix representations for representations corresponding to rep_IDs
     Array<Eigen::MatrixXd const * > get_matrix_reps(Array<Index> rep_IDs) const;
 
@@ -276,6 +276,11 @@ namespace CASM {
     bool is_rotoinversion() const;
     bool is_invalid() const;
 
+    SymOp unregistered_copy() const {
+      return SymOp(get_matrix(CART), tau(CART), *home, CART, map_error);
+    }
+
+
     /// Return pointer to a new copy of this SymOp
     SymOpRepresentation *copy() const {
       return new SymOp(*this);
@@ -285,6 +290,11 @@ namespace CASM {
 
     void from_json(const jsonParser &json);
   };
+  
+
+  //SymOp rotation_op(const Vector3<double> &rotation_axis, const double rotation_angle, const Lattice &home);
+  //SymOp rotation_op(const Eigen::Vector4d &rotation_params, const Lattice &home);
+  
 
   jsonParser &to_json(const SymOp &sym, jsonParser &json);
   void from_json(SymOp &sym, const jsonParser &json);

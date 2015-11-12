@@ -8,7 +8,7 @@ namespace CASM {
   template <typename CoordType>
   GenericCluster<CoordType>::GenericCluster(const Lattice &init_home) :
     home(&init_home), min_length_val(0.0), max_length_val(0.0),
-    DoF_rep(-1), clust_group(LOCAL), permute_group(SymGroupRep::NO_HOME) {
+    DoF_rep(-1), clust_group(LOCAL), permute_group(SymGroupRep::NO_HOME,0) {
 
     //nothing else to do for now
   };
@@ -114,7 +114,7 @@ namespace CASM {
         clust_group.push_back(SymOp(trans)*super_group[ng]);
         find(tclust, iperm);
 
-        permute_group.push_back(SymPermutation(iperm));
+        permute_group.push_back_copy(SymPermutation(iperm));
       }
     }
 
@@ -130,7 +130,7 @@ namespace CASM {
     for(Index i = 0; i < clust_group.size(); i++) {
       for(Index j = 0; j < size(); j++)
         iperm[j] = find(clust_group[i] * at(j));
-      permute_group.push_back(SymPermutation(iperm));
+      permute_group.push_back_copy(SymPermutation(iperm));
     }
 
   }

@@ -90,17 +90,17 @@ namespace CASM {
     ConfigSelection() {};
 
     /// \brief Construct a configuration selection from all configurations
-    explicit ConfigSelection(PrimClexType &_primclex);
+    //explicit ConfigSelection(PrimClexType &_primclex);
 
     /// \brief Reads a configuration selection from file at 'selection_path'
-    ///
+    /// - If selection_path=="MASTER", load master config_list as selection
     /// - Checks extension to determine file type:
     ///   - Ending in '.json' or '.JSON' for JSON formatted file
     ///   - Otherwise, CSV formatted file
     /// - If column headers are detected, they are also stored, and can be accessed using 'ConfigSelection::col_headers()'
     ///   - Currently, the first two columns are always 'name' and 'selected' so these headers are assumed and not stored
     ///
-    ConfigSelection(PrimClexType &_primclex, const fs::path &selection_path);
+    ConfigSelection(PrimClexType &_primclex, const fs::path &selection_path="MASTER");
 
     //ConfigSelection(const ConfigSelection &) =default;
 
@@ -138,8 +138,16 @@ namespace CASM {
       return find_it != m_config.end() && find_it->second;
     }
 
+    bool selected(const Configuration &config) const {
+      return selected(config.name());
+    }
+
     void set_selected(const std::string &configname, bool is_selected) {
       m_config[configname] = is_selected;
+    }
+
+    void set_selected(const Configuration &config, bool is_selected) {
+      set_selected(config.name(),is_selected);
     }
 
     iterator config_begin() {

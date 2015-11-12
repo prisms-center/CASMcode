@@ -1,5 +1,7 @@
 #include <boost/algorithm/string.hpp>
 #include "casm/clex/ConfigIO.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/ConfigIterator.hh"
 namespace CASM {
 
 
@@ -7,7 +9,12 @@ namespace CASM {
   template <bool IsConst>
   ConfigSelection<IsConst>::ConfigSelection(typename ConfigSelection<IsConst>::PrimClexType &_primclex, const fs::path &selection_path)
     : m_primclex(&_primclex), m_name(selection_path.string()) {
-    if(selection_path.extension() == ".json" || selection_path.extension() == ".JSON")
+    if(selection_path=="MASTER"){
+      for(auto it = _primclex.config_begin(); it != _primclex.config_end(); ++it) {
+        m_config[it->name()] = it->selected();
+      }
+    }
+    else if(selection_path.extension() == ".json" || selection_path.extension() == ".JSON")
       from_json(jsonParser(selection_path));
     else {
       std::ifstream select_file(selection_path.string().c_str());

@@ -42,6 +42,11 @@ namespace CASM {
 
     ConfigType *operator->() const;
 
+    // could be const, but that seems weird
+    void set_selected(bool _select);
+
+    bool selected() const;
+
     bool operator==(const ConfigIterator &iter) const;
 
     bool operator!=(const ConfigIterator &iter) const;
@@ -112,6 +117,11 @@ namespace CASM {
   template <typename ConfigType, typename PrimClexType>
   ConfigType *ConfigIterator<ConfigType, PrimClexType>::operator->() const {
     return &(operator*());
+  }
+
+  template <typename ConfigType, typename PrimClexType>
+  bool ConfigIterator<ConfigType, PrimClexType>::selected() const {
+    return (operator*()).selected();
   }
 
   template <typename ConfigType, typename PrimClexType>

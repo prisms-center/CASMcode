@@ -12,7 +12,7 @@ namespace CASM {
     return n_fix;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   //Makes permutation matrix from m_permute
   //Permute matrix P reorders elements of a column vector v via
@@ -28,7 +28,7 @@ namespace CASM {
     return;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   jsonParser &SymPermutation::to_json(jsonParser &json) const {
     json.put_obj();
@@ -51,7 +51,7 @@ namespace CASM {
     return json;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   void SymPermutation::from_json(const jsonParser &json) {
     try {
@@ -68,13 +68,13 @@ namespace CASM {
     }
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   jsonParser &to_json(const SymPermutation &sym, jsonParser &json) {
     return sym.to_json(json);
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   void from_json(SymPermutation &sym, const jsonParser &json) {
     try {
@@ -87,4 +87,3 @@ namespace CASM {
   }
 
 }
-

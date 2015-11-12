@@ -324,7 +324,6 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-
   /// Configuration iterator: begin
   PrimClex::config_iterator PrimClex::config_begin() {
     if(supercell_list.size() == 0 || supercell_list[0].get_config_list().size() > 0)
@@ -340,6 +339,20 @@ namespace CASM {
 
   //*******************************************************************************************
   /// const Configuration iterator: begin
+  PrimClex::config_const_iterator PrimClex::config_begin() const {
+    if(supercell_list.size() == 0 || supercell_list[0].get_config_list().size() > 0)
+      return config_const_iterator(this, 0, 0);
+    return ++config_const_iterator(this, 0, 0);
+  }
+
+  //*******************************************************************************************
+  /// const Configuration iterator: end
+  PrimClex::config_const_iterator PrimClex::config_end() const {
+    return config_const_iterator(this, supercell_list.size(), 0);
+  }
+
+  //*******************************************************************************************
+  /// const Configuration iterator: begin
   PrimClex::config_const_iterator PrimClex::config_cbegin() const {
     if(supercell_list.size() == 0 || supercell_list[0].get_config_list().size() > 0)
       return config_const_iterator(this, 0, 0);
@@ -351,7 +364,6 @@ namespace CASM {
   PrimClex::config_const_iterator PrimClex::config_cend() const {
     return config_const_iterator(this, supercell_list.size(), 0);
   }
-
 
   //*******************************************************************************************
   /// Configuration iterator: begin

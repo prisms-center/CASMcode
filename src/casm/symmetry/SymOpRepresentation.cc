@@ -5,7 +5,72 @@
 
 namespace CASM {
 
-  void SymOpRepresentation::set_rep(const MasterSymGroup &new_group, Index new_rep_ID) {
+  //*******************************************************************************************
+  Eigen::MatrixXd const *SymOpRepresentation::get_matrix_rep(Index rep_ID) const {
+    SymGroupRep const *tRep(master_group().representation(rep_ID));
+    if(!tRep) return NULL;
+
+    return (tRep->at(op_index))->get_MatrixXd();
+  }
+
+  //*******************************************************************************************
+  Array<UnitCellCoord> const *SymOpRepresentation::get_basis_permute_rep(Index rep_ID) const {
+
+    SymGroupRep const *tRep(master_group().representation(rep_ID));
+    if(!tRep) {
+      std::cerr << "Warning: You have requested information from a nonexistent representation!\n"
+                << "m_master_group pointer is " << m_master_group << '\n';
+      return NULL;
+    }
+
+    return (tRep->at(op_index))->get_ucc_permutation();
+  }
+
+  //*******************************************************************************************
+  Permutation const *SymOpRepresentation::get_permutation_rep(Index rep_ID) const {
+    SymGroupRep const *tRep(master_group().representation(rep_ID));
+    if(!tRep) return NULL;
+
+    return (tRep->at(op_index))->get_permutation();
+  }
+
+  //*******************************************************************************************
+  Array<Eigen::MatrixXd const * > SymOpRepresentation::get_matrix_reps(Array<Index> rep_IDs) const {
+    Array<Eigen::MatrixXd const * > tmat;
+    for(Index i = 0; i < rep_IDs.size(); i++) {
+      tmat.push_back(get_matrix_rep(rep_IDs[i]));
+
+    }
+    return tmat;
+  }
+
+  //*******************************************************************************************
+  void SymOpRepresentation::register_rep(Index rep_ID, const SymOpRepresentation &op_rep) const {
+    SymGroupRep const *tRep(master_group().representation(rep_ID));
+    if(!tRep) {
+      std::cerr << "CRITICAL ERROR: In SymOpRepresentation::set_matrix_rep(" << rep_ID << "), representation was not found.\n"
+                << "                Exiting...\n";
+      exit(1);
+    }
+
+    tRep->set_rep(*this, op_rep);
+
+    return;
+  }
+
+  //*******************************************************************************************
+
+  void SymOpRepresentation::set_identifiers(const MasterSymGroup &new_group, Index new_rep_ID, Index new_op_index) {
+    m_master_group = &new_group;
+    rep_ID = new_rep_ID;
+    op_index = new_op_index;
+
+    return;
+  }
+
+  //*******************************************************************************************
+
+  void SymOpRepresentation::set_identifiers(const MasterSymGroup &new_group, Index new_rep_ID) {
     m_master_group = &new_group;
     rep_ID = new_rep_ID;
     SymGroupRep const *trep(new_group.representation(rep_ID));
@@ -21,17 +86,22 @@ namespace CASM {
     return;
   }
 
-  //**********************************************************
 
-  void SymOpRepresentation::set_identifiers(const MasterSymGroup &new_group, Index new_rep_ID, Index new_op_index) {
-    m_master_group = &new_group;
-    rep_ID = new_rep_ID;
-    op_index = new_op_index;
+  //*******************************************************************************************
 
-    return;
+  Index SymOpRepresentation::ind_inverse()const {
+    assert(has_valid_master() && "In SymOpRepresentation::ind_inverse(), head_group is uninitialized!!");
+    return master_group().ind_inverse(index());
   }
 
-  //**********************************************************
+  //*******************************************************************************************
+
+  Index SymOpRepresentation::ind_prod(const SymOpRepresentation &RHS)const {
+    assert(has_valid_master() && "In SymOpRepresentation::ind_prod(), head_group is uninitialized!!");
+    return master_group().ind_prod(index(), RHS.index());
+  }
+
+  //*******************************************************************************************
 
 
   /// creates jsonParser using polymorphism
@@ -39,12 +109,12 @@ namespace CASM {
     return rep->to_json(json);
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   /// This allocates a new object to 'rep'.
   ///   It might need a Lattice
   ///
-  void from_json(SymOpRepresentation *rep, const jsonParser &json, const Lattice &lat) {
+  void from_json(SymOpRepresentation *rep, const jsonParser &json){
     try {
       if(json["SymOpRep_type"] == "SymPermutation") {
 
@@ -69,18 +139,10 @@ namespace CASM {
 
       }
       else if(json["SymOpRep_type"] == "SymOp") {
-
-        // prepare a SymMatrixXd and then read from json
-        Coordinate coord(lat);
-        SymOp trep(coord);
-        CASM::from_json(trep, json);
-
-        // copy to rep
-        rep = new SymOp(trep);
-
+        throw std::runtime_error("DO NOT USE JSON TO TRY TO READ A SYMOP FROM A JSON FILE");
       }
       else {
-        std::cout << "Error in 'void from_json(SymOpRepresentation *rep, const jsonParser &json, const Lattice &lat)'" << std::endl;
+        std::cout << "Error in 'void from_json(SymOpRepresentation *rep, const jsonParser &json)'" << std::endl;
         std::cout << "Unrecognized 'SymOpRep_type': '" << json["SymOpRep_type"] << "'." << std::endl;
         std::cout << "Options are: 'SymPermutation', 'SymMatrixXd', or 'SymOp'." << std::endl;
         exit(1);
@@ -91,7 +153,7 @@ namespace CASM {
       throw;
     }
   }
-  //**********************************************************
+  //*******************************************************************************************
 
   //enum symmetry_type {identity_op, mirror_op, glide_op, rotation_op, screw_op, inversion_op, rotoinversion_op, invalid_op};
 
@@ -124,7 +186,7 @@ namespace CASM {
     return json;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   void from_json(SymOpRepresentation::symmetry_type &stype, const jsonParser &json) {
     try {
@@ -157,5 +219,4 @@ namespace CASM {
       throw;
     }
   }
-};
-
+}

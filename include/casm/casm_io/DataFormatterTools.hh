@@ -2,6 +2,8 @@
 #define DATAFORMATTERTOOLS_HH
 #include <numeric>
 #include <iterator>
+#include <regex>
+#include <boost/algorithm/string.hpp>
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/misc/CASM_TMP.hh"
 
@@ -166,6 +168,29 @@ namespace CASM {
       return exp(vec[0]);
     });
 
+  }
+
+
+  template<typename DataObject>
+  DataFormatterOperator<bool, std::string, DataObject> format_operator_regex_match() {
+    return DataFormatterOperator<bool, std::string, DataObject>("re", "Check if string matches regular expression. Ex: re('input_string','regex_pattern')",
+    [](const std::vector<std::string> &vec)->bool{
+      if(vec.size() != 2)
+        throw std::runtime_error("Operator re('input_string','regex_pattern') must receive exactly 2 values!");
+      std::regex e(boost::trim_copy_if(vec[1], boost::is_any_of(" '")));
+      return std::regex_match(vec[0], e);
+    });
+  }
+
+  template<typename DataObject>
+  DataFormatterOperator<bool, std::string, DataObject> format_operator_regex_search() {
+    return DataFormatterOperator<bool, std::string, DataObject>("rs", "Check if string contains regular expression. Ex: rs('input_string','regex_pattern')",
+    [](const std::vector<std::string> &vec)->bool{
+      if(vec.size() != 2)
+        throw std::runtime_error("Operator re('input_string','regex_pattern') must receive exactly 2 values!");
+      std::regex e(boost::trim_copy_if(vec[1], boost::is_any_of(" '")));
+      return std::regex_search(vec[0], e);
+    });
   }
 
   template<typename DataObject>
