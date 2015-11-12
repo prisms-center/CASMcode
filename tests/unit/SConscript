@@ -14,6 +14,8 @@ test_obj = [env.Object(x) for x in test_src]
 linkflags = ""
 if env['PLATFORM'] == 'darwin':
   linkflags = ['-rpath', '@loader_path/../../../lib']
+else:
+  linkflags = ['-Wl,--rpath=\\$$ORIGIN/../../../lib', '-z', 'origin']
 
 unit_test = env.Program(os.path.join(env['UNIT_TEST_BIN'],'unit_test'), 
                         [unit_obj, test_obj],

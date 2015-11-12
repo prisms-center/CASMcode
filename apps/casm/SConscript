@@ -17,6 +17,8 @@ env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + [casm_obj]
 linkflags = ""
 if env['PLATFORM'] == 'darwin':
   linkflags = ['-rpath', '@loader_path/../lib']
+else:
+  linkflags = ['-Wl,--rpath=\\$$ORIGIN/../lib', '-z', 'origin']
 
 # Build instructions
 casm = env.Program(os.path.join(env['CASM_BIN'], "casm"),
