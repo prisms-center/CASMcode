@@ -125,6 +125,7 @@ Export('install_lib_paths')
 env = Environment(ENV = os.environ,
                   CCFLAGS = ccflags,
                   CPPPATH = include_paths,
+                  LIBPATH = lib_paths,
                   PREFIX = prefix)
 
 # set a non-default c++ compiler
@@ -158,6 +159,9 @@ env.Append(IS_INSTALL = 0)
 # make compiler errors and warnings in color
 env['ENV']['TERM'] = os.environ['TERM']
 
+# set testing environment
+env['ENV']['PATH'] += ":" + env['CASM_BIN']
+
 
 ##### Call all SConscript files for shared objects
 
@@ -175,7 +179,7 @@ SConscript(['src/casm/SConscript'], {'env':env})
 
 linkflags = ""
 if env['PLATFORM'] == 'darwin':
-  linkflags = ['-install_name', os.path.join(env['CASM_LIB'], 'libcasm.dylib')]
+  linkflags = ['-install_name', '@rpath/libcasm.dylib']
 
 # use boost libraries
 boost_libs = ['boost_system', 'boost_filesystem']
@@ -194,6 +198,7 @@ Export('casm_lib')
 casm_lib_install = env.SharedLibrary(os.path.join(env['PREFIX'], 'lib', 'casm'), 
                                      env['CASM_SOBJ'], 
                                      LIBPATH=install_lib_paths, 
+                                     LINKFLAGS=linkflags,
                                      LIBS=boost_libs + ['z'])
 Export('casm_lib_install')
 env.Alias('casm_lib_install', casm_lib_install)
@@ -221,7 +226,6 @@ env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + casm_include_install
 
 if 'casm_include_install' in COMMAND_LINE_TARGETS:
   env['IS_INSTALL'] = 1
-
 
 ##### Call all SConscript files for executables
 

@@ -14,21 +14,24 @@ Default(casm_obj)
 Export('casm_obj')
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + [casm_obj]
 
+linkflags = ""
+if env['PLATFORM'] == 'darwin':
+  linkflags = ['-rpath', '@loader_path/../lib']
 
-# Install instructions
+# Build instructions
 casm = env.Program(os.path.join(env['CASM_BIN'], "casm"),
-                   [casm_obj, version_obj, casm_lib],
+                   [casm_obj, version_obj],
                    LIBPATH=build_lib_paths,
+                   LINKFLAGS=linkflags,
                    LIBS=libs)
+Depends(casm, casm_lib)
 Default(casm)
 env.Alias('casm', casm)
 Export('casm')
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + [casm]
 
-casm_install = env.Program(os.path.join(env['PREFIX'],'bin', "casm"),
-                          [casm_obj, version_obj, casm_lib_install],
-                          LIBPATH=install_lib_paths,
-                          LIBS=libs)
+# Install instructions
+casm_install = env.Install(os.path.join(env['PREFIX'],'bin'), casm)
 env.Alias('casm_install', casm_install)
 Export('casm_install')
 env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [casm_install]

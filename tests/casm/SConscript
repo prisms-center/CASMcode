@@ -8,11 +8,6 @@ from os.path import join
 Import('env', 'casm', 'casm_lib')
 dependencies = [casm, casm_lib]
 
-# Use command line environment for local environment
-lenv = env #Environment(ENV = os.environ)
-lenv['ENV']['PATH'] = lenv['ENV']['PATH'] + ":" + env['CASM_BIN']
-print lenv['ENV']['PATH']
-
 # Specify the targets: files and directories written by the test
 bset_dir = join('basis_sets', 'bset.default')
 bset_files = glob.glob( join(bset_dir, '*CLUST*') )
@@ -24,11 +19,11 @@ targets = [
 ] + bset_files + clexulator_files + [ join(bset_dir, x) for x in ['eci.in', 'prim_nlist.json', 'corr.in', 'clust.json']]
 
 # Specify the command to run the test the Alias
-casm_test = lenv.Command(targets, dependencies, 'cd ' + os.getcwd() + ' && bash ' + os.path.join(os.getcwd(), 'test.sh'))
-lenv.Alias('casm_test', casm_test)
+casm_test = env.Command(targets, dependencies, 'cd ' + os.getcwd() + ' && bash ' + os.path.join(os.getcwd(), 'test.sh'))
+env.Alias('casm_test', casm_test)
 
 if 'casm_test' in COMMAND_LINE_TARGETS:
-    env['IS_TEST'] = 1
+  env['IS_TEST'] = 1
 
 # Specify how to clean up
 Clean(casm_test,  targets)

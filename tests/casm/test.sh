@@ -1,5 +1,4 @@
-#export DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH:../../lib
-#export PATH=$PATH::../../bin
+printenv
 
 echo "Test" | casm init
 
