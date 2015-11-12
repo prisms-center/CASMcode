@@ -263,9 +263,9 @@ namespace CASM {
 
     if(permute_rep_ID == -1) get_full_permutation_representation();
 
-    if(equivalence_map[0][0].master_group().get_coord_rep_ID() == -1) equivalence_map[0][0].master_group().add_coord_rep();
+    if(equivalence_map[0][0].master_group().coord_rep_ID() == -1) equivalence_map[0][0].master_group().add_coord_rep();
 
-    coord_rep_ID = equivalence_map[0][0].master_group().add_kronecker_rep(permute_rep_ID, equivalence_map[0][0].master_group().get_coord_rep_ID());
+    coord_rep_ID = equivalence_map[0][0].master_group().add_kronecker_rep(permute_rep_ID, equivalence_map[0][0].master_group().coord_rep_ID());
 
     return equivalence_map[0][0].master_group().representation(coord_rep_ID);
 

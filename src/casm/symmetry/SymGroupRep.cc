@@ -1411,7 +1411,7 @@ namespace CASM {
     }
 
     for(Index i = 0; i < sum_reps.size(); i++) {
-      if(sum_reps == NULL) {
+      if(sum_reps[i] == NULL) {
         continue;
       }
       if((permute_rep.has_valid_master() != sum_reps[i]->has_valid_master())
