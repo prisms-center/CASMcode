@@ -2,6 +2,7 @@
 #define CASM_MonteDefinitions_HH
 
 #include <string>
+#include <stdexcept>
 
 namespace CASM {
 
