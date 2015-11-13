@@ -7,6 +7,7 @@
 #include <functional>
 #include <dlfcn.h>
 #include <cstdlib>
+#include <boost/filesystem.hpp>
 #include "casm/system/Popen.hh"
 
 namespace CASM {
@@ -159,7 +160,7 @@ namespace CASM {
     /// \returns "g++ -O3 -Wall -fPIC"
     static std::string default_compile_options() {
       
-      return cxx() + " -O3 -Wall -fPIC --std=c++11";
+      return cxx() + " -O3 -Wall -fPIC --std=c++11 " + include_casmprefix();
     }
 
     /// \brief Default shared library options
@@ -177,6 +178,18 @@ namespace CASM {
       char* CXX = std::getenv("CXX");
       if(CXX != nullptr) {
         result = std::string(CXX);
+      }
+      return result;
+    }
+    
+    /// \brief Return CASMPREFIX include path option
+    ///
+    /// - if environment variable CASMPREFIX exists, returns "-I$CASMPREFIX/include", otherwise ""
+    static std::string include_casmprefix() {
+      std::string result = "";
+      char* CASMPREFIX = std::getenv("CASMPREFIX");
+      if(CASMPREFIX != nullptr) {
+        result = "-I" + (boost::filesystem::path(CASMPREFIX) / "include").string();
       }
       return result;
     }
