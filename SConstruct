@@ -109,14 +109,22 @@ if(boost_path != None):
   include_paths.append(os.path.join(boost_path, 'include'))
   lib_paths.append(os.path.join(boost_path, 'lib'))
 
+# where everything is built
+build_lib_paths = copy.deepcopy(lib_paths)
+build_lib_paths.append(os.path.join(os.getcwd(), 'lib'))
+Export('build_lib_paths')
+
+
 # where everything should be installed
+install_lib_paths = copy.deepcopy(lib_paths)
 prefix = '/usr/local'
 if 'prefix' in ARGUMENTS:
   prefix = ARGUMENTS.get('prefix')
 elif 'CASMPREFIX' in os.environ:
   prefix = os.environ['CASMPREFIX']
-lib_paths.append(os.path.join(prefix, 'lib'))
-  
+install_lib_paths.append(os.path.join(prefix, 'lib'))
+Export('install_lib_paths')
+
 env = Environment(ENV = os.environ,
                   CCFLAGS = ccflags,
                   CXXFLAGS = cxxflags,
@@ -129,9 +137,6 @@ if 'CXX' in os.environ:
   env.Replace(CXX = env['CXX'])
 elif 'cxx' in ARGUMENTS:
   env.Replace(CXX = ARGUMENTS.get('cxx'))
-
-if 'speedy' in ARGUMENTS:
-  env.Decider('MD5-timestamp')
 
 # where the shared libraries should go
 env.Append(CASM_LIB = os.path.join(os.getcwd(), 'lib'))
@@ -158,6 +163,9 @@ env.Append(IS_INSTALL = 0)
 # make compiler errors and warnings in color
 env['ENV']['TERM'] = os.environ['TERM']
 
+# set testing environment
+env['ENV']['PATH'] += ":" + env['CASM_BIN']
+
 
 ##### Call all SConscript files for shared objects
 
@@ -173,17 +181,29 @@ SConscript(['src/casm/SConscript'], {'env':env})
 
 ##### Make single dynamic library 
 
+linkflags = ""
+if env['PLATFORM'] == 'darwin':
+  linkflags = ['-install_name', '@rpath/libcasm.dylib']
+
 # use boost libraries
 boost_libs = ['boost_system', 'boost_filesystem']
 
 # build casm shared library from all shared objects
-casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'), env['CASM_SOBJ'], LIBS=boost_libs + ['z'])
+casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'), 
+                             env['CASM_SOBJ'], 
+                             LIBPATH=build_lib_paths,
+                             LINKFLAGS=linkflags,
+                             LIBS=boost_libs + ['z'])
+                             
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + casm_lib
 Export('casm_lib')
-Default(casm_lib)
 
 # Library Install instructions
-casm_lib_install = env.SharedLibrary(os.path.join(env['PREFIX'], 'lib', 'casm'), env['CASM_SOBJ'], LIBS=boost_libs + ['z'])
+casm_lib_install = env.SharedLibrary(os.path.join(env['PREFIX'], 'lib', 'casm'), 
+                                     env['CASM_SOBJ'], 
+                                     LIBPATH=install_lib_paths, 
+                                     LINKFLAGS=linkflags,
+                                     LIBS=boost_libs + ['z'])
 Export('casm_lib_install')
 env.Alias('casm_lib_install', casm_lib_install)
 env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [casm_lib_install]
@@ -198,8 +218,10 @@ if 'casm_lib_install' in COMMAND_LINE_TARGETS:
 # we'll create a dict of file -> install dir
 
 include_dir = os.path.join(env['PREFIX'],'include')
+casm_include = os.path.join('include', 'casm')
+Export('casm_include')
 
-casm_include_install = env.Install(include_dir, 'include/casm')
+casm_include_install = env.Install(include_dir, casm_include)
 
 Export('casm_include_install')
 env.Alias('casm_include_install', casm_include_install)
@@ -208,7 +230,6 @@ env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + casm_include_install
 
 if 'casm_include_install' in COMMAND_LINE_TARGETS:
   env['IS_INSTALL'] = 1
-
 
 ##### Call all SConscript files for executables
 

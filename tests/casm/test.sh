@@ -1,7 +1,8 @@
-#export DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH:../../lib
-#export PATH=$PATH::../../bin
+printenv
 
 echo "Test" | casm init
+
+casm settings --set-compile-options "${CXX:=g++} -O3 -Wall -fPIC --std=c++11 -I../../include"
 
 casm composition --select 0
 

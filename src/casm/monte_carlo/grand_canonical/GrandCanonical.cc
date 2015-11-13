@@ -120,7 +120,7 @@ namespace CASM {
     // Next update all properties that changed from the event
     formation_energy() += event.dformation_energy();
     potential_energy() += event.dpotential_energy();
-    corr() += event.dcorr() / supercell().volume();
+    corr() += event.dcorr();
     comp_n() += event.dcomp_n();
     
     return;
@@ -271,10 +271,11 @@ namespace CASM {
                                                     m_formation_energy_eci.eci_index_list().begin(),
                                                     m_formation_energy_eci.eci_index_list().end());
     }
+    event.dcorr() /= supercell().volume();
     
     // ---- set dformation_energy --------------
     
-    event.set_dformation_energy((m_formation_energy_eci * event.dcorr().data()) / supercell().volume());
+    event.set_dformation_energy((m_formation_energy_eci * event.dcorr().data()));
     
     
     // ---- set dpotential_energy --------------

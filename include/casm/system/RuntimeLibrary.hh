@@ -7,6 +7,9 @@
 #include <functional>
 #include <dlfcn.h>
 #include <cstdlib>
+#define BOOST_NO_SCOPED_ENUMS
+#define BOOST_NO_CXX11_SCOPED_ENUMS
+#include <boost/filesystem.hpp>
 #include "casm/system/Popen.hh"
 
 namespace CASM {
@@ -123,8 +126,6 @@ namespace CASM {
     template<typename Signature>
     std::function<Signature> get_function(std::string function_name) const {
 
-      dlerror();
-
       std::function<Signature> func = reinterpret_cast<Signature *>(dlsym(m_handle, function_name.c_str()));
 
       const char *dlsym_error = dlerror();
@@ -138,13 +139,15 @@ namespace CASM {
     /// \brief Close the current library
     ///
     /// This is also done on destruction.
-    void close() const {
+    void close() {
       // close
-      dlclose(m_handle);
+      if(m_handle != nullptr && m_filename_base != "") {
+        dlclose(m_handle);
+      }
     }
 
     /// \brief Remove the current library and source code
-    void rm() const {
+    void rm() {
       if(m_filename_base == "") {
         return;
       }
@@ -152,19 +155,32 @@ namespace CASM {
       // rm
       Popen p;
       p.popen(std::string("rm -f ") + m_filename_base + ".cc " + m_filename_base + ".o " + m_filename_base + ".so");
+      
+      m_filename_base = "";
     }
 
-    /// \brief Default compilation options
+    /// \brief Default compilation command
     ///
-    /// \returns "g++ -O3 -Wall -fPIC"
+    /// \returns "$CXX -O3 -Wall -fPIC --std=c++11 $CASM_INCLUDE"
+    ///
+    /// $CXX and $CASM_INCLUDE depend on current environment variables:
+    /// - $CXX is replaced with "$CXX" if CXX exists and "g++" otherwise
+    /// - $CASM_INCLUDE is replaced with "-I$CASMPREFIX/include" if CASMPREFIX exists
     static std::string default_compile_options() {
       
-      return cxx() + " -O3 -Wall -fPIC --std=c++11";
+      return cxx() + " " + default_cxxflags() + " " + casm_include();
+    }
+    
+    /// \brief Default c++ compiler options
+    ///
+    /// \returns "-O3 -Wall -fPIC --std=c++11"
+    static std::string default_cxxflags() {
+      return "-O3 -Wall -fPIC --std=c++11";
     }
 
     /// \brief Default shared library options
     ///
-    /// \returns "g++ -shared"
+    /// \returns "$CXX -shared"
     static std::string default_so_options() {
       return cxx() + " -shared";
     }
@@ -177,6 +193,18 @@ namespace CASM {
       char* CXX = std::getenv("CXX");
       if(CXX != nullptr) {
         result = std::string(CXX);
+      }
+      return result;
+    }
+    
+    /// \brief Return include path option for CASM
+    ///
+    /// \returns "-I$CASMPREFIX/include" if environment variable CASMPREFIX exists, otherwise an empty string
+    static std::string casm_include() {
+      std::string result = "";
+      char* CASMPREFIX = std::getenv("CASMPREFIX");
+      if(CASMPREFIX != nullptr) {
+        result = "-I" + (boost::filesystem::path(CASMPREFIX) / "include").string();
       }
       return result;
     }
