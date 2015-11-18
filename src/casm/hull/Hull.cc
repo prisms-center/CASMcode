@@ -3,6 +3,7 @@
 #include <iterator>
 
 #include "casm/clex/PrimClex.hh"
+#include "casm/misc/PCA.hh"
 #include "casm/external/Eigen/Dense"
 #include "casm/external/qhull/libqhullcpp/QhullFacetList.h"
 #include "casm/external/qhull/libqhullcpp/QhullVertexSet.h"
@@ -32,25 +33,9 @@ namespace CASM {
       ++i;
     }
     
-    // set the mean to zero
-    Eigen::MatrixXd mat_mean_zero = mat;
-    mat_mean_zero.topRows(Ncomp).colwise() -= (mat.topRows(Ncomp).rowwise().mean());
-    
-    // principle component analysis to rotate to composition space that spans the selected configurations
-    Eigen::JacobiSVD<Eigen::MatrixXd> svd(mat_mean_zero.topRows(Ncomp), Eigen::ComputeFullU);
-    int rank = 0;
-    for(Index i = 0; i < svd.singularValues().size(); i++) {
-      if(std::abs(svd.singularValues()[i]) <= _singular_value_tol) {
-        break;
-      }
-      else {
-        rank++;
-      }
-    }
-    
-    m_reduce.resize(rank+1,Ncomp+1);
-    m_reduce << svd.matrixU().block(0,0,Ncomp,rank).transpose(), Eigen::MatrixXd::Zero(rank, 1),
-                Eigen::MatrixXd::Zero(1, Ncomp), 1.0;
+    // principal component analysis to get rotation matrix 
+    PCA pca(mat.topRows(Ncomp), _singular_value_tol);
+    m_reduce = pad(pca.reduce(), 1);
     
     Eigen::MatrixXd reduced_mat = m_reduce*mat;
     
