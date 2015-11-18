@@ -84,10 +84,6 @@ namespace CASM {
     // transform full dimension comp/energy vector onto subspace range(comp)/energy
     Eigen::MatrixXd m_reduce;
     
-    // transform vector on subspace range(comp)/energy back to full dimension comp/energy 
-    //  - equal to m_reduce.transpose()
-    Eigen::MatrixXd m_expand;
-    
     // all 'bottom' facets, along with projection of 'm_bottom' along the unit outward normal
     std::vector< std::pair<orgQhull::QhullFacet, double> > m_bottom_facets;
     
