@@ -118,7 +118,7 @@ namespace CASM {
     [](const std::vector<double> &vec)->double{
       if(vec.size() != 2)
         throw std::runtime_error("Division operator must receive exactly two values!");
-      return vec[0] - vec[1];
+      return vec[0] / vec[1];
     });
 
   }
