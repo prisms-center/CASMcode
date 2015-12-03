@@ -610,10 +610,7 @@ namespace CASM {
                             const std::string &_desc,
                             Evaluator evaluator,
                             Validator validator = always_true<DataObject>,
-                            Sizer sizer =
-    [](const Container &cont)->Index{
-      return cont.size();
-    }) :
+                            Sizer sizer = container_size_1D<_Container>) :
       BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator), m_validate(validator), m_size(sizer) {}
 
     BaseDatumFormatter<DataObject> *clone() const override {
@@ -704,14 +701,7 @@ namespace CASM {
                             const std::string &_desc,
                             Evaluator evaluator,
                             Validator validator = always_true<DataObject>,
-                            Sizer sizer =
-    [](const Container &cont)->std::vector<Index> {
-      std::vector<Index> tsize(2, 0);
-      tsize[0] = cont.size();
-      if(tsize[0] > 0)
-        tsize[1] = cont[0].size();
-      return tsize;
-    }) :
+                            Sizer sizer = container_size_2D<_Container>) :
       BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator), m_validate(validator), m_size(sizer) {}
 
     BaseDatumFormatter<DataObject> *clone() const override {
