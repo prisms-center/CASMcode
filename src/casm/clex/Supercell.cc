@@ -398,7 +398,7 @@ namespace CASM {
         {
           if(fs::exists(config_path / "CSPECS"))
             fs::remove(config_path / "CSPECS");
-          fs::copy_file(fs::path(CSPECS), config_path / "CSPECS");
+          fs::copy(fs::path(CSPECS), config_path / "CSPECS");
         }
 
         // write CLUST
