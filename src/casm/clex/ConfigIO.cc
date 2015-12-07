@@ -18,7 +18,7 @@ namespace CASM {
     double get_config_formation_energy(const Configuration &_config) {
       return _config.delta_properties().contains("relaxed_energy") ? _config.delta_properties()["relaxed_energy"].get<double>() : NAN;
     }
-    
+
     //"DFT formation energy, normalized per atom and measured relative to current reference states"
     double get_config_formation_energy_per_species(const Configuration &_config) {
       return _config.delta_properties().contains("relaxed_energy") ? formation_energy_per_species(_config) : NAN;
@@ -186,31 +186,31 @@ namespace CASM {
       if(m_clex_name.size())
         return false;
       m_clex_name = args;
-      
+
       if(m_clex_name == "formation_energy") {
-        m_inject = [](const Configuration &_config, DataStream &_stream, Index) {
+        m_inject = [](const Configuration & _config, DataStream & _stream, Index) {
           _stream << clex_formation_energy(_config);
         };
-        
-        m_print = [](const Configuration &_config, std::ostream &_stream, Index) {
+
+        m_print = [](const Configuration & _config, std::ostream & _stream, Index) {
           _stream << clex_formation_energy(_config);
         };
-        
-        m_to_json = [](const Configuration &_config, jsonParser &json)->jsonParser& {
+
+        m_to_json = [](const Configuration & _config, jsonParser & json)->jsonParser& {
           json = clex_formation_energy(_config);
           return json;
         };
       }
       else if(m_clex_name == "formation_energy_per_atom") {
-        m_inject = [](const Configuration &_config, DataStream &_stream, Index) {
+        m_inject = [](const Configuration & _config, DataStream & _stream, Index) {
           _stream << clex_formation_energy_per_species(_config);
         };
-        
-        m_print = [](const Configuration &_config, std::ostream &_stream, Index) {
+
+        m_print = [](const Configuration & _config, std::ostream & _stream, Index) {
           _stream << clex_formation_energy_per_species(_config);
         };
-        
-        m_to_json = [](const Configuration &_config, jsonParser &json)->jsonParser& {
+
+        m_to_json = [](const Configuration & _config, jsonParser & json)->jsonParser& {
           json = clex_formation_energy_per_species(_config);
           return json;
         };
@@ -220,14 +220,14 @@ namespace CASM {
           std::string("ERROR parsing '") + "clex(" + m_clex_name + ")' unknown argument." +
           " Options are 'formation_energy' or 'formation_energy_per_atom'.");
       }
-      
+
       return true;
     }
 
     //****************************************************************************************
 
     void ClexConfigFormatter::init(const Configuration &_tmplt) const {
-      
+
     };
 
     //****************************************************************************************
@@ -247,9 +247,9 @@ namespace CASM {
     void ClexConfigFormatter::print(const Configuration &_config, std::ostream &_stream, Index i) const {
       _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
       _stream.precision(8);
-      
+
       m_print(_config, _stream, i);
-      
+
     }
 
     //****************************************************************************************
@@ -560,7 +560,7 @@ namespace CASM {
                                                            ConfigIO_impl::get_config_formation_energy,
                                                            ConfigIO_impl::has_config_formation_energy);
     }
-    
+
     ConfigIO_impl::GenericConfigFormatter<double> formation_energy_per_species() {
       return ConfigIO_impl::GenericConfigFormatter<double>("formation_energy_per_atom",
                                                            "DFT formation energy, normalized per atom and measured relative to current reference states",
@@ -614,7 +614,7 @@ namespace CASM {
 
     void initialize_formatting_dictionary(DataFormatterDictionary<Configuration> &dict) {
       dict // <-- add to dict
-      
+
       //Self-contained formatters
       .add_formatter(ConfigIO_impl::CorrConfigFormatter())
       .add_formatter(ConfigIO_impl::ClexConfigFormatter())
@@ -628,7 +628,7 @@ namespace CASM {
       .add_formatter(ConfigIO_impl::ClexHullDistConfigFormatter())
       .add_formatter(ConfigIO_impl::RelaxationStrainConfigFormatter())
       .add_formatter(ConfigIO_impl::NoveltyConfigFormatter())
-      
+
       //Generic formatters
       .add_formatter(ConfigIO::selected())
       .add_formatter(ConfigIO::configname())
@@ -642,7 +642,7 @@ namespace CASM {
       .add_formatter(ConfigIO::lattice_deformation())
       .add_formatter(ConfigIO::volume_relaxation())
       .add_formatter(ConfigIO::selected_in())
-      
+
       //Formatter operators
       .add_formatter(format_operator_add<Configuration>())
       .add_formatter(format_operator_sub<Configuration>())
@@ -654,6 +654,7 @@ namespace CASM {
       .add_formatter(format_operator_neg<Configuration>())
       .add_formatter(format_operator_and<Configuration>())
       .add_formatter(format_operator_or<Configuration>())
+      .add_formatter(format_operator_xor<Configuration>())
       .add_formatter(format_operator_not<Configuration>())
       .add_formatter(format_operator_min<Configuration>())
       .add_formatter(format_operator_max<Configuration>())
