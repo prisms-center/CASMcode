@@ -167,7 +167,7 @@ namespace CASM {
   //*******************************
 
   template<typename ClustType>
-  Index GenericOrbitBranch<ClustType>::find(const ClustType &test_clust) {
+  Index GenericOrbitBranch<ClustType>::find(const ClustType &test_clust) const {
     for(Index i = 0; i < size(); i++) {
       if(orbit(i).contains(test_clust))
         return i;
@@ -178,7 +178,7 @@ namespace CASM {
   //*******************************
 
   template<typename ClustType>
-  bool GenericOrbitBranch<ClustType>::contains(const ClustType &test_clust) {
+  bool GenericOrbitBranch<ClustType>::contains(const ClustType &test_clust) const {
     if(size() == 0) return false;
 
     if(find(test_clust) < size()) {
