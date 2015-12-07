@@ -229,6 +229,7 @@ namespace CASM {
                                                 const Lattice &imposed_lat,
                                                 double &best_cost,
                                                 ConfigDoF &mapped_configdof,
+                                                Lattice &mapped_lat,
                                                 std::vector<Index> &best_assignment,
                                                 Eigen::Matrix3d &cart_op) const;
 

@@ -101,6 +101,7 @@ namespace CASM {
       std::cerr << "CRITICAL ERROR: In ConfigDoF::set_occupation(), attempting to set occupation to size " << new_occupation.size() << ",\n"
                 << "                which does not match initialized size of ConfigDoF -> " << size() << "\n"
                 << "                Exiting...\n";
+      assert(0);
       exit(1);
     }
 
@@ -118,6 +119,7 @@ namespace CASM {
       std::cerr << "CRITICAL ERROR: In ConfigDoF::set_displacement(), attempting to set displacement to size " << new_displacement.cols() << ",\n"
                 << "                which does not match initialized size of ConfigDoF -> " << size() << "\n"
                 << "                Exiting...\n";
+      assert(0);
       exit(1);
     }
 
@@ -647,6 +649,7 @@ namespace CASM {
       std::cerr << "CRITICAL ERROR: In ConfigDoF::from_json(), parsing displacement having size " << displacement().cols() << ",\n"
                 << "                which does not match initialized size of ConfigDoF -> " << size() << "\n"
                 << "                Exiting...\n";
+      assert(0);
       exit(1);
     }
 
