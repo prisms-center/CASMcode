@@ -48,6 +48,18 @@ namespace CASM {
 
     Lattice(const Lattice &RHS);
 
+    /// \brief Construct FCC primitive cell of unit volume
+    static Lattice fcc();
+
+    /// \brief Construct BCC primitive cell of unit volume
+    static Lattice bcc();
+
+    /// \brief Construct simple cubic primitive cell of unit volume
+    static Lattice cubic();
+
+    /// \brief Construct cubic primitive cell of unit volume
+    static Lattice hexagonal();
+
     Lattice &operator=(const Lattice &RHS);
     const Vector3<double> &operator[](Index i)const {
       return vecs[i];
@@ -157,9 +169,6 @@ namespace CASM {
     ///Return a lattice with diagonal matrix that fits around starting lattice
     Lattice box(const Lattice &prim, const Lattice &scel, bool verbose = false) const;
 
-    ///Finds smallest supercell of given list of supercells that has the same angles as the primitive cell. The value boxed defaults to 0 to make calculations faster
-    void superduper_size_me(const Lattice &prim, const Array<Lattice> &supercells);
-
     ///Flip c vector if it's on the wrong side of a-b plane -- return (*this)
     Lattice &make_right_handed();
     ///Check if the lattice is right handed
@@ -215,6 +224,12 @@ namespace CASM {
   Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat);
 
   std::istream &operator>>(std::istream &in, const Lattice &lattice_in);
+
+  ///\brief returns Lattice that is smallest possible supercell of both \parm lat1 and \param lat2
+  Lattice superdupercell(const Lattice &lat1, const Lattice &lat2);
+
+  ///\brief returns Lattice that is smallest possible supercell of all lattices in \param lat_list
+  Lattice superdupercell(const Array<Lattice> &lat_list);
 
   //Implementation of template methods must live in *.hh file for proper compilation:
 

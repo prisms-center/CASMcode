@@ -33,6 +33,8 @@ namespace CASM {
     calc_properties();
   }
 
+  //********************************************************************
+
   ///Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
   ///(e.g., lat_mat is equivalent to coord_trans_mat[FRAC])
   Lattice::Lattice(const Eigen::Matrix3d &lat_mat) : vecs(3) {
@@ -50,6 +52,49 @@ namespace CASM {
     calc_conversions();
     calc_properties();
   }
+
+  //********************************************************************
+
+  Lattice Lattice::fcc() {
+    Eigen::Matrix3d latmat;
+    latmat <<
+           0, 1, 1,
+           1, 0, 1,
+           1, 1, 0;
+    latmat /= pow(latmat.determinant(), 1.0 / 3.0);
+    return Lattice(latmat);
+  }
+
+  //********************************************************************
+
+  Lattice Lattice::bcc() {
+    Eigen::Matrix3d latmat;
+    latmat <<
+           -1, 1, 1,
+           1, -1, 1,
+           1, 1, -1;
+    latmat /= pow(latmat.determinant(), 1.0 / 3.0);
+    return Lattice(latmat);
+  }
+
+  //********************************************************************
+
+  Lattice Lattice::cubic() {
+    return Lattice(Eigen::Matrix3d::Identity());
+  }
+
+  //********************************************************************
+
+  Lattice Lattice::hexagonal() {
+    Eigen::Matrix3d latmat;
+    latmat <<
+           1, -1.0 / sqrt(3.0), 0,
+           1, 1.0 / sqrt(3.0),  0,
+           0, 0, sqrt(3.0) / 2.0;
+
+    return Lattice(latmat.transpose());
+  }
+
 
   //********************************************************************
 
@@ -886,171 +931,6 @@ namespace CASM {
 
   //********************************************************************
 
-  //John G 121212
-  //********************************************************************
-  /**
-   *  Finds "boxes" for each individual supercell.
-   *  These boxes are simply a superdupercell that considers only ONE supercell,
-   *  i.e. a supercell of one supercell that has a diagonal matrix relative to the primitive
-   *  (default).
-   */
-  //********************************************************************
-
-  Lattice Lattice::box(const Lattice &prim, const Lattice &scel, bool verbose) const {
-
-    if(!scel.is_supercell_of(prim)) {
-      std::cerr << "ERROR in Lattice:box. prim and scel lattice mismatch!" << std::endl;
-      std::cerr << "Your prim was:" << std::endl;
-      prim.print(std::cerr);
-      std::cerr << "Your scel was:" << std::endl;
-      scel.print(std::cerr);
-      exit(41);
-    }
-
-    SymGroup prim_pg;
-    prim.generate_point_group(prim_pg);
-
-    Array<int> series;
-    int prim_vol = round(vol() / prim.vol());
-    series.push_back(prim_vol);
-
-    prim_vol = round(scel.vol() / prim.vol());
-    series.push_back(prim_vol);
-    int minSDsize = lcm(series);
-    int factor = 1;
-    Array<Array<int> > prime_factors;
-
-    while(true) {
-      if(minSDsize == 0 || minSDsize > factor * minSDsize) {
-        std::cerr << "ERROR in Lattice::box (Are you using Lattice::superduper_size_me?)." << std::endl;
-        std::cerr << "Minimum size exceeded integer limit. Your lattice could not find a big enough box to fit in." << std::endl << std::endl;
-        exit(42);
-      }
-
-      prime_factors = get_prime_factors(minSDsize * factor);
-
-      if(verbose) {
-        std::cerr << std::endl << "Minimum box size is: " << minSDsize *factor << std::endl << std::endl;
-        std::cerr << "The factors for this size are:" << std::endl;
-        std::cerr << prime_factors << std::endl << std::endl;
-      }
-
-      Array<int> zeroes(prime_factors.size(), 0);
-      Array<int> topexps;
-
-      for(Index i = 0; i < prime_factors.size(); i++) {
-        topexps.push_back(prime_factors[i].size());
-      }
-
-      Counter<Array<int> > exponentsA(zeroes, topexps, Array<int>(prime_factors.size(), 1));
-
-      do {
-        Counter<Array<int> > exponentsB(zeroes, topexps, Array<int>(prime_factors.size(), 1));
-        do {
-          //We know that the superdupercell is going to hold minSDsize*(int) primtive cells, where minSDsize
-          //is the least common multiple of all the supercell sizes. Knowing the possible sizes of
-          //the superdupercell, we have to get three vectors (A, B & C) whose product equals that size.
-          //For this reason we take the prime factors of the superduper size and distribute them in every
-          //possible combination. Since we can only use each prime factor once, we constrain the double counter
-          //to not repeat factors on A and B and set C accordingly.
-
-          bool non_overlap = true;
-
-          for(Index expo = 0; expo < prime_factors.size(); expo++) {
-            if(exponentsA[expo] + exponentsB[expo] > topexps[expo]) {
-              non_overlap = false;
-              break;
-            }
-          }
-
-          if(non_overlap == true) {
-            Array<int> exponentsC;
-            for(Index jc = 0; jc < prime_factors.size(); jc++) {
-              exponentsC.push_back(topexps[jc] - exponentsA[jc] - exponentsB[jc]);
-            }
-
-
-
-            Array<Vector3<double > > box_vecs(3);
-            box_vecs[0] = prim.vecs[0];
-            box_vecs[1] = prim.vecs[1];
-            box_vecs[2] = prim.vecs[2];
-            for(Index expo = 0; expo < prime_factors.size(); expo++) {
-
-              box_vecs[0] *= pow(double(prime_factors[expo][0]), exponentsA[expo]);
-              box_vecs[1] *= pow(double(prime_factors[expo][0]), exponentsB[expo]);
-              box_vecs[2] *= pow(double(prime_factors[expo][0]), exponentsC[expo]);
-
-            }
-
-            Lattice box_lat(box_vecs[0], box_vecs[1], box_vecs[2]);
-            box_lat.calc_properties();
-
-            bool fits = true;
-
-
-            if(!box_lat.is_supercell_of(*this, prim_pg) || !box_lat.is_supercell_of(scel, prim_pg)) {
-              fits = false;
-              if(verbose) std::cout << exponentsA.current() << "\t" << exponentsB.current() << "\t" << exponentsC << "\r";
-            }
-
-            if(fits) {
-
-              if(verbose) {
-                std::cout << std::endl << "Found it! Size: " << round(box_lat.vol() / prim.vol()) << std::endl;
-                std::cout << "Using  " << exponentsA.current() << "\t" << exponentsB.current() << "\t" << exponentsC << std::endl << std::endl;
-                std::cout << "Your superduper lattice is:" << std::endl;
-                box_lat.print(std::cout);
-                std::cout << "\nAnd its conversion matrix is:" << std::endl;
-                std::cout << prim.coord_trans_mat[FRAC].inverse()*box_lat.coord_trans_mat[FRAC] << std::endl;
-                std::cout << std::endl;
-              }
-
-              return box_lat;
-            }
-
-          }
-        }
-        while(++exponentsB);
-      }
-      while(++exponentsA);
-      factor++;       //None of the superdupercells for the current size worked. MAKE IT BIGGER!!
-    }
-
-  }
-
-
-  //********************************************************************
-  /**
-   *  superduper_size_me will first find "boxes" for each individual supercell.
-   *  Each of these boxes is simply a superdupercell that considers only ONE supercell,
-   *  i.e. a supercell of one supercell that has a diagonal matrix relative to the primitive
-   *  (presuperdupercell). Once all boxes have been found, the (final) superdupercell is
-   *  calculated, taking all presuperdupercells into account. Validity of superdupercells
-   *  take all point group operations into account.
-   *
-   *  Superdupercells are calculated by first determining the minimum required volume
-   *  (minSDsize), which is obtained by taking the least common multiple of all supercell
-   *  sizes. This minimum size is then split into factors and shared among three groups. Each
-   *  group will take the product of its members, corresponding to possible sizes for
-   *  each superdupercell lattice vector. If no combination of minSDsize factors yield
-   *  a valid superdupercell, the minimum size is increased.
-   *
-   *  ALL STRUCTURES MUST SHARE PRIMITIVE!!
-   */
-  //********************************************************************
-  void Lattice::superduper_size_me(const Lattice &prim, const Array<Lattice> &supercells) {
-    *this = supercells[0];
-
-    for(Index i = 1; i < supercells.size(); i++) {
-      //std::cout << "Boxing lattices " << i << " and " << i + 1 << " of " << supercells.size() << std::endl;
-      *this = box(prim, supercells[i]);
-    }
-    return;
-
-  }
-
-  //********************************************************************
   Lattice &Lattice::make_right_handed() {
     Vector3<double> axb = vecs[0].cross(vecs[1]);
     double dot = vecs[2].dot(axb);
@@ -2028,6 +1908,89 @@ namespace CASM {
     }
 
     return Lattice(best);
+  }
+
+
+  //*******************************************************************************************
+  //
+  //  Finds "superduper" Lattice L_{sd} (represented as a matrix with lattice vectors as its columns
+  //  such that L_{sd} satisfies
+  //        L_{sd} = L_1 * N_1 = L_2 * N_2,     (*1*)
+  //  where N_1 and N_2 are integer matrices such that Eq.(*1*) is satisfied and det(N_1) and det(N_2) are minimized.
+  //
+  //  It is assumed that L_1 = L * M_1 and L_2 = L * M_2  (i.e., L_1 and L_2 are supercells of PRIM lattice L having
+  //  integer transformation matrices M_1 and M_2, respectively).
+  //
+  //  Algorithm proceeds by noting inv(L_2)*L_1 = N_2*inv(N_1) = inv(M_2)*inv(M_1) = A/n, where A is an integer matrix and n = det(M_2). Assuming that
+  //  'n' is small (n<10000), we can attempt to find 'n' and 'A'.
+  //
+  //  Solution: N_2 = A*N_1/n, s.t. det(N_1) is minimized and N_2 is integer
+  //
+  //  To minimize det(N_1), find smith normal form A = U*S*V, where U and V have det(1), S is diagonal,
+  //  and all entries are integer.  Then choose N_1 = inv(V)*R, where R is a diagonal integer matrix with entries
+  //             R(i,i)=n/gcf(S(i,i),n)
+  //  The resulting solution will have det(M_1*N_1)>=lcm(det(M_1),det(M_2))
+  //
+  //*******************************************************************************************
+  Lattice superdupercell(const Lattice &lat1, const Lattice &lat2) {
+
+    Matrix3<double> dA(lat2.inv_lat_column_mat()*lat1.lat_column_mat());
+    Matrix3<long> iA;
+    long N = 1, num, denom;
+    //std::cout << "dA is:\n" << dA << "\n\n";
+    for(Index i = 0; i < 3; i++) {
+      for(Index j = 0; j < 3; j++) {
+        nearest_rational_number(dA(i, j), num, denom);
+        dA *= double(denom);
+        N *= denom;
+      }
+    }
+    for(Index i = 0; i < 3; i++) {
+      for(Index j = 0; j < 3; j++) {
+        iA(i, j) = round(dA(i, j));
+      }
+    }
+    //std::cout << "iA is:\n" << iA << "\n\n";
+
+    //std::cout << "and N is:\n" << N << "\n\n";
+    Matrix3<long> U, S, V;
+    iA.smith_normal_form(U, S, V);
+    //std::cout << "Smith U is:\n" << U << "\n\n";
+    //std::cout << "Smith S is:\n" << S << "\n\n";
+    //std::cout << "Smith V is:\n" << V << "\n\n";
+    //std::cout << "and U*S*V is:\n" << U*S*V << "\n\n";
+    denom = N;
+
+    //reuse matrix iA for matrix 'R', as above
+    iA = 0;
+    for(Index i = 0; i < 3; i++) {
+      iA(i, i) = N / gcf(S(i, i), N);
+    }
+    //Reuse matrix iA for matrix 'N_1', as above
+    iA = V.inverse() * iA;
+    //std::cout << "N_1 is: \n" << iA << "\n\n";
+    //Reuse matrix dA
+    for(Index i = 0; i < 3; i++) {
+      for(Index j = 0; j < 3; j++) {
+        dA(i, j) = double(iA(i, j));
+      }
+    }
+
+    Lattice tlat(lat1.lat_column_mat()*dA);
+    return tlat.get_reduced_cell();
+
+  }
+
+  //*******************************************************************************************
+
+  Lattice superdupercell(const std::vector<Lattice> &lat_list) {
+    if(lat_list.size() == 0)
+      return Lattice();
+
+    Lattice tsupdup(lat_list[0]);
+    for(Index i = 1; i < lat_list.size(); i++)
+      tsupdup = superdupercell(tsupdup, lat_list[i]);
+    return tsupdup;
   }
 
 
