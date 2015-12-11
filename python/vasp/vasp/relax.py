@@ -84,6 +84,8 @@ class Relax(object):
             self.settings["nrg_convergence"] = None
         if not "compress" in self.settings:
             self.settings["compress"] = []
+        if not "err_types" in self.settings:
+            self.settings["err_types"] = ['SubSpaceMatrixError']
 
         print "VASP Relax object constructed\n"
         sys.stdout.flush()
@@ -243,7 +245,7 @@ class Relax(object):
 
             while True:
                 # run vasp
-                result = vasp.run(self.rundir[-1],npar=self.settings["npar"],ncore=self.settings["ncore"],command=self.settings["vasp_cmd"],ncpus=self.settings["ncpus"],kpar=self.settings["kpar"])
+                result = vasp.run(self.rundir[-1],npar=self.settings["npar"],ncore=self.settings["ncore"],command=self.settings["vasp_cmd"],ncpus=self.settings["ncpus"],kpar=self.settings["kpar"],err_types=self.settings["err_types"])
 
                 # if no errors, continue
                 if result == None or self.not_converging():
