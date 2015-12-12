@@ -1,13 +1,20 @@
 #include <boost/algorithm/string.hpp>
 #include "casm/clex/ConfigIO.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/ConfigIterator.hh"
 namespace CASM {
 
 
 
   template <bool IsConst>
   ConfigSelection<IsConst>::ConfigSelection(typename ConfigSelection<IsConst>::PrimClexType &_primclex, const fs::path &selection_path)
-    : m_primclex(&_primclex) {
-    if(selection_path.extension() == ".json" || selection_path.extension() == ".JSON")
+    : m_primclex(&_primclex), m_name(selection_path.string()) {
+    if(selection_path=="MASTER"){
+      for(auto it = _primclex.config_begin(); it != _primclex.config_end(); ++it) {
+        m_config[it->name()] = it->selected();
+      }
+    }
+    else if(selection_path.extension() == ".json" || selection_path.extension() == ".JSON")
       from_json(jsonParser(selection_path));
     else {
       std::ifstream select_file(selection_path.string().c_str());
@@ -97,64 +104,44 @@ namespace CASM {
   jsonParser &ConfigSelection<IsConst>::to_json(jsonParser &_json, bool only_selected) const {
     _json.put_array();
 
-    DataFormatter<Configuration> tformat(ConfigIOParser::parse(m_col_headers));
+    DataFormatter<Configuration> tformat(ConfigIO::configname(), datum_formatter_alias("selected", ConfigIO::selected_in(*this)));
 
-    const_iterator it, it_end;
+    tformat.append(ConfigIOParser::parse(m_col_headers));
 
     if(only_selected) {
-      it = selected_config_cbegin();
-      it_end = selected_config_cend();
+      _json = tformat(selected_config_cbegin(),
+                      selected_config_cend());
     }
     else {
-      it = config_cbegin();
-      it_end = config_cend();
+      _json = tformat(config_cbegin(),
+                      config_cend());
     }
 
-    for(; it != it_end; ++it) {
-      _json.push_back(tformat(*it));
-      _json[_json.size() - 1]["name"] = it.name();
-      _json[_json.size() - 1]["selected"] = it.selected();
-    }
     return _json;
   }
   //******************************************************************************
   template <bool IsConst>
   void ConfigSelection<IsConst>::print(std::ostream &_out, bool only_selected) const {
-    DataFormatter<Configuration> tformat(ConfigIOParser::parse(m_col_headers));
-    tformat.set_header_prefix("                  name     selected");
-    _out << FormatFlag(_out).print_header(false);
+    DataFormatter<Configuration> tformat(ConfigIO::configname(), datum_formatter_alias("selected", ConfigIO::selected_in(*this)));
 
-    const_iterator it, it_end;
+    tformat.append(ConfigIOParser::parse(m_col_headers));
 
     if(only_selected) {
-      it = selected_config_cbegin();
-      it_end = selected_config_cend();
+      _out << tformat(selected_config_cbegin(),
+                      selected_config_cend());
     }
     else {
-      it = config_cbegin();
-      it_end = config_cend();
+      _out << tformat(config_cbegin(),
+                      config_cend());
     }
 
-    if(it == it_end)
-      return;
-
-    tformat.print_header(*it, _out);
-    std::ostream::streampos pos;
-    tformat.set_indent(-30);
-    for(; it != it_end; ++it) {
-
-
-      pos = _out.tellp();
-      _out << "    " << it.name() << "        " << it.selected() << "  ";
-
-      _out << tformat(*it);
-    }
   }
   //******************************************************************************
-
+/*
   template< bool IsConst>
   typename ConfigSelection<IsConst>::value_type &ConfigSelection<IsConst>::operator[](const std::string &configname) const {
     return m_primclex->configuration(configname);
   }
+*/
 }
 

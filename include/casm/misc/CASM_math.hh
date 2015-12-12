@@ -34,26 +34,26 @@ namespace CASM {
   // *******************************************************************************************
 
   /// \brief If T is not integral, use std::abs(val) < tol;
-  template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type* = nullptr>
+  template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type * = nullptr>
   inline
   bool almost_zero(const T &val, double tol = TOL) {
     return std::abs(val) < tol;
   }
-  
+
   /// \brief If std::complex<T>, use std::abs(val) < tol;
-  template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type* = nullptr>
+  template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type * = nullptr>
   inline
   bool almost_zero(const std::complex<T> &val, double tol = TOL) {
     return std::abs(val) < tol;
   }
-  
+
   /// \brief If T is integral, val == 0;
-  template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type* = nullptr>
+  template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type * = nullptr>
   inline
   bool almost_zero(const T &val, double tol = TOL) {
     return val == 0;
   }
-  
+
   /// \brief Equivalent to almost_zero(double(val.norm()), tol);
   inline
   bool almost_zero(const Eigen::MatrixXd &val, double tol = TOL) {
@@ -61,15 +61,15 @@ namespace CASM {
   }
 
   // *******************************************************************************************
-  
+
   /// \brief If T is not integral, use almost_zero(val1 - val2, tol);
-  template <typename T, typename std::enable_if<!std::is_integral<T>::value, T>::type* = nullptr>
+  template < typename T, typename std::enable_if < !std::is_integral<T>::value, T >::type * = nullptr >
   bool almost_equal(const T &val1, const T &val2, double tol = TOL) {
     return almost_zero(val1 - val2, tol);
   }
-  
+
   /// \brief If T is integral type, use val1 == val2;
-  template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type* = nullptr>
+  template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type * = nullptr>
   bool almost_equal(const T &val1, const T &val2, double tol = TOL) {
     return val1 == val2;
   }
@@ -101,6 +101,11 @@ namespace CASM {
     return result;
   }
 
+
+  // *******************************************************************************************
+  /// \brief Computes the Damerescau-Levenshtein distance
+  ///   -- the number of edits (deletions, insertions, transpositions) to go from string 'a' to string 'b'
+  int dl_string_dist(const std::string &a, const std::string &b);
 
   // *******************************************************************************************
 
@@ -305,17 +310,17 @@ namespace CASM {
     // *******************************************************************************************
     void hungarian_method(const Eigen::MatrixXd &cost_matrix_arg, std::vector<Index> &optimal_assignments, const double _tol);
 
-    void reduce_cost(Eigen::MatrixXd &cost_matrix);
+    //void reduce_cost(Eigen::MatrixXd &cost_matrix, double _infinity);
 
-    void find_zeros(const Eigen::MatrixXd &cost_matrix, Eigen::MatrixXi &zero_marks, double _tol);
+    //void find_zeros(const Eigen::MatrixXd &cost_matrix, Eigen::MatrixXi &zero_marks, double _tol);
 
-    bool check_assignment(const Eigen::MatrixXi &zero_marks, Eigen::VectorXi &col_covered);
+    //bool check_assignment(const Eigen::MatrixXi &zero_marks, Eigen::VectorXi &col_covered);
 
-    int prime_zeros(const Eigen::MatrixXd &cost_matrix, Eigen::VectorXi &row_covered, Eigen::VectorXi &col_covered, Eigen::MatrixXi &zero_marks, double &min, Eigen::VectorXi &first_prime_zero);
+    //int prime_zeros(const Eigen::MatrixXd &cost_matrix, Eigen::VectorXi &row_covered, Eigen::VectorXi &col_covered, Eigen::MatrixXi &zero_marks, double &min, Eigen::VectorXi &first_prime_zero);
 
-    int alternating_path(const Eigen::MatrixXd &cost_matrix, const Eigen::VectorXi &first_prime_zero, Eigen::MatrixXi &zero_marks, Eigen::VectorXi &row_covered, Eigen::VectorXi &col_covered);
+    //int alternating_path(const Eigen::MatrixXd &cost_matrix, const Eigen::VectorXi &first_prime_zero, Eigen::MatrixXi &zero_marks, Eigen::VectorXi &row_covered, Eigen::VectorXi &col_covered);
 
-    int update_costs(const Eigen::VectorXi &row_covered, const Eigen::VectorXi &col_covered, const double min, Eigen::MatrixXd &cost_matrix);
+    //int update_costs(const Eigen::VectorXi &row_covered, const Eigen::VectorXi &col_covered, const double min, Eigen::MatrixXd &cost_matrix);
   }
 }
 

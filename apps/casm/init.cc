@@ -77,11 +77,11 @@ namespace CASM {
 
       if(!fs::is_regular_file(dir.PRIM())) {
         std::cout << "Error in 'casm init': Neither 'prim.json' nor 'PRIM' found.\n\n";
-        
+
         std::cout << "Run 'casm format --prim' for the format of the 'prim.json' file.\n\n";
-        
+
         std::cout << "For step by step help use: 'casm status -n'\n\n";
-        
+
         return 1;
       }
 
@@ -92,13 +92,13 @@ namespace CASM {
         poscar_prim.close();
       }
       catch(std::runtime_error &e) {
-        
+
         std::cerr << "ERROR: No prim.json exists. PRIM exists, but it could not be read.\n";
         std::cerr << e.what() << std::endl;
         return 1;
       }
-      
-      
+
+
       std::string poscar_prim_title = prim.title;
       std::cout << "Converting 'PRIM' to 'prim.json'.\n\n" << std::endl;
 
@@ -117,21 +117,21 @@ namespace CASM {
       primfile.close();
 
     }
-    
+
     jsonParser prim_json;
-    
+
     try {
-    
+
       prim_json = jsonParser(dir.prim());
-      
+
       prim = Structure(read_prim(prim_json));
     }
     catch(std::runtime_error &e) {
       std::cerr << e.what() << std::endl;
-      
+
       return 1;
     }
-    
+
     /// Check if PRIM is primitive
     BasicStructure<Site> true_prim;
     true_prim.title = prim.title;

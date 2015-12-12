@@ -1,7 +1,8 @@
-#export DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH:../../lib
-#export PATH=$PATH::../../bin
+printenv
 
 echo "Test" | casm init
+
+casm settings --set-compile-options "${CXX:=g++} -O3 -Wall -fPIC --std=c++11 -I../../include"
 
 casm composition --select 0
 
@@ -15,8 +16,8 @@ casm bset -u
 casm enum --supercells --max 10
 casm enum --configs --max 6
 
-casm select --set on
-casm query -k composition corr -o query_results.txt
+casm select --set-on
+casm query -k comp corr -o query_results.txt
 
 casm super --configname SCEL4_2_2_1_1_1_0/0 --transf_mat M2
 casm super --configname SCEL4_2_2_1_1_1_0/0 --transf_mat M3

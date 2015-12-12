@@ -75,10 +75,10 @@ namespace CASM {
   }
 
   template < typename _Container,
-           typename _value_type = typename _Container::value_type,
-           typename _size_type = typename _Container::size_type,
-           typename _Access = CASM_TMP::BracketAccess<_Container, _value_type, _size_type>,
-           typename _Compare = CASM_TMP::MuchLessThan<_value_type> >
+             typename _value_type = typename _Container::value_type,
+             typename _size_type = typename _Container::size_type,
+             typename _Access = CASM_TMP::BracketAccess<_Container, _value_type, _size_type>,
+             typename _Compare = CASM_TMP::MuchLessThan<_value_type> >
   class IsoCounter : public BaseCounter<IsoCounter<_Container, _value_type, _size_type, _Access, _Compare> > {
     typedef typename CASM_TMP::traits<IsoCounter>::Base Base;
     using Base::_valid;

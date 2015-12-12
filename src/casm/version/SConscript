@@ -1,5 +1,5 @@
 # http://www.scons.org/doc/production/HTML/scons-user.html
-# This is: h/casm/version/SConscript
+# This is: src/casm/version/SConscript
 
 import subprocess
 

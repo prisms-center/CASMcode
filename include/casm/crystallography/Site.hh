@@ -23,14 +23,6 @@ namespace CASM {
       return m_displacement;
     }
 
-    const BasisSet &occupant_basis() const {
-      return m_occupant_basis;
-    }
-
-    ///Make basis functions of a type specified by std::string and store in occupant_basis
-    void fill_occupant_basis(const char &basis_type);
-
-    ///Copy another basis set into m_occupant_basis
     void update_data_members(const Site &_ref_site);
 
     /// Checks if current occupant is a vacancy
@@ -115,7 +107,6 @@ namespace CASM {
     //Index into PrimClex neighbor list
     Index m_nlist_ind;     //John G 230913
     mutable Index m_type_ID;
-    BasisSet m_occupant_basis;
 
     // displacement degrees of freedom of the molecule.
     // These may be x,y,z, or a subspace (e.g., displacement only in the x--y plane).

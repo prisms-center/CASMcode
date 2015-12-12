@@ -19,7 +19,7 @@ namespace CASM {
   ///         PrimClexType = PrimClex or const PrimClex
   ///
   template <typename ConfigType, typename PrimClexType>
-  class ConfigIterator : std::iterator <std::bidirectional_iterator_tag, const ConfigType> {
+  class ConfigIterator : public std::iterator <std::bidirectional_iterator_tag, const ConfigType> {
 
     PrimClexType *m_primclex;
     Index m_scel_index;
@@ -41,6 +41,11 @@ namespace CASM {
     ConfigType &operator*() const;
 
     ConfigType *operator->() const;
+
+    // could be const, but that seems weird
+    void set_selected(bool _select);
+
+    bool selected() const;
 
     bool operator==(const ConfigIterator &iter) const;
 
@@ -112,6 +117,11 @@ namespace CASM {
   template <typename ConfigType, typename PrimClexType>
   ConfigType *ConfigIterator<ConfigType, PrimClexType>::operator->() const {
     return &(operator*());
+  }
+
+  template <typename ConfigType, typename PrimClexType>
+  bool ConfigIterator<ConfigType, PrimClexType>::selected() const {
+    return (operator*()).selected();
   }
 
   template <typename ConfigType, typename PrimClexType>

@@ -82,7 +82,7 @@ namespace BP {
   //   ** Caution: arguments are passed as pointers, so you must make  **
   //   **          certain they remain valid until all work is done!   **
   //
-  void ThreadPool::add_work(void * (*fp)(void *), void *farg) {
+  void ThreadPool::add_work(void *(*fp)(void *), void *farg) {
     // lock the queue
     pthread_mutex_lock(&queue_mutex);
 

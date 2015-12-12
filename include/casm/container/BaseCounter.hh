@@ -349,10 +349,10 @@ namespace CASM {
 
   private:
     /// A functor that enables different ways of accessing the container, by default: container[index]
-    const Access m_access;
+    Access m_access;
 
     /// A functor that enables custom comparison, by default: operator<
-    const Compare m_compare;
+    Compare m_compare;
 
     /// Initial container values
     Container m_initial;

@@ -27,14 +27,21 @@ BOOST_AUTO_TEST_CASE(FunctionTest) {
             "   return a + b;\n" +
             "}\n";
 
-  RuntimeLibrary lib;
-
+  std::string compile_opt = RuntimeLibrary::cxx() + " " + RuntimeLibrary::default_cxxflags();
+  std::string so_opt = RuntimeLibrary::default_so_options();
+  
+  RuntimeLibrary lib(compile_opt, so_opt);
+  
   // write the library file and compile
   lib.compile("tests/unit/system/runtime_lib", cc_file.c_str());
+  
+  BOOST_CHECK_EQUAL(true, true);
 
   // load the library
   lib.load("tests/unit/system/runtime_lib");
-
+  
+  BOOST_CHECK_EQUAL(true, true);
+  
   // get the 'int forty_two()' function
   std::function<int()> forty_two = lib.get_function<int()>("forty_two");
 
@@ -49,9 +56,17 @@ BOOST_AUTO_TEST_CASE(FunctionTest) {
   
   // close the library
   lib.close();
+  
+  BOOST_CHECK_EQUAL(true,true);
+  
+  lib.close();
 
+  BOOST_CHECK_EQUAL(true,true);
+  
   // delete the library
   lib.rm();
+  
+  BOOST_CHECK_EQUAL(true, true);
   
 }
 

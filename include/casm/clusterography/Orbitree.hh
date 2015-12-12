@@ -72,7 +72,7 @@ namespace CASM {
 
     //BEGIN METHODS OF ORBITREE:
 
-    GenericOrbitree<ClustType>(const Lattice &t_lat) : lattice(t_lat), min_length(TOL) { };
+    GenericOrbitree<ClustType>(const Lattice &t_lat) : lattice(t_lat), min_length(TOL), m_asym_unit(lattice) { };
     //John G 011013 COPY CONSTRUCTOR
     GenericOrbitree<ClustType>(const GenericOrbitree<ClustType> &starttree);
 
@@ -97,6 +97,14 @@ namespace CASM {
     /// Count number of basis functions at each orbit and sum result
     Index basis_set_size() const;
 
+    const jsonParser &bspecs()const {
+      return m_bspecs;
+    }
+
+    void set_bspecs(const jsonParser &_bspecs) {
+      m_bspecs = _bspecs;
+    }
+
     /// Initialize NP orbitbranches in the Orbitree.  Any existing orbits get deleted.
     void resize(Index NP);
 
@@ -120,25 +128,21 @@ namespace CASM {
 
     /// Set basis_ind() of each site of each cluster in GenericOrbitree<ClustType>
     /// using the order of basis sites in 'struc'
-    void collect_basis_info(const Structure &struc, const Coordinate &shift);
+    //void collect_basis_info(const Structure &struc, const Coordinate &shift);
     void collect_basis_info(const Structure &struc);
 
     /// Call get_s2s_vec on all clusters in orbitree
     void get_s2s_vec();
 
-    ///TODO: Search through (*this) and get one Orbitree for each basis site such that
-    /// out_trees[i] contains all clusters radiating from basis site 'i'
-    void get_clusters_by_site(Array<GenericOrbitree<ClustType> > &out_trees) const;
-
     /// get clust_basis for all equivalent clusters assuming configurational DoFs
-    void generate_config_clust_bases();
+    // void generate_config_clust_bases();
 
     /// get clust_basis for all equivalent clusters
     void generate_clust_bases(const Array<BasisSet const *> &global_args, Index max_poly_order = -1);
     void generate_clust_bases(Index max_poly_order = -1);
 
     /// fill up cluster function evaluation tensors for every cluster
-    void fill_discrete_bases_tensors();
+    //void fill_discrete_bases_tensors();
 
     // Alex do these (there's already a placeholder for the first one):
     ///If cluster/orbit exists in current orbitree, return its linear index; else, return number of orbits in orbitree
@@ -198,8 +202,8 @@ namespace CASM {
 
     void print_full_clust(std::ostream &out) const;
     void print_full_basis_info(std::ostream &out) const;
-    void print_full_clust_basis(std::ostream &out) const;
     void print_proto_clust(std::ostream &out) const;
+    void print_proto_clust_funcs(std::ostream &out) const;
     void print_full_decorated_clust(std::ostream &out) const;
     void print_proto_decorated_clust(std::ostream &out) const;
 
@@ -228,6 +232,27 @@ namespace CASM {
                                         bool verbose = false);
 
     void add_subclusters(const ClustType &big_clust, const Structure &prim, bool verbose = false);
+
+    const GenericOrbitBranch<ClustType> &asym_unit() const {
+      return m_asym_unit;
+    }
+
+  private:
+    void _generate_asym_unit(const Structure &prim);
+    void _populate_site_bases();
+    const GenericOrbitBranch<ClustType> &_asym_unit() const {
+      return m_asym_unit;
+    }
+
+    // Asymmetric unit
+    GenericOrbitBranch<ClustType> m_asym_unit;
+
+    // m_asym_unit[m_b2asym[b][0]]  gives the orbit that contains basis site 'b'
+    // m_asym_unit[m_b2asym[b][0]][m_b2asym[b][1]]  gives the equivalent cluster that contains basis site 'b'
+    Array<Array<Index> > m_b2asym;
+
+    // BSPECS.JSON used to generate this orbitree
+    jsonParser m_bspecs;
   };
 
   template<typename ClustType>

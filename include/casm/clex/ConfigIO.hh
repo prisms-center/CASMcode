@@ -13,7 +13,13 @@ namespace CASM {
     static int hack;
   };
 
+  template<bool IsConst>
+  class ConfigSelection;
+
   namespace ConfigIO_impl {
+
+    class SelectedConfigFormatter;
+
     template<typename ValueType>
     using GenericConfigFormatter = GenericDatumFormatter<ValueType, Configuration>;
 
@@ -173,9 +179,12 @@ namespace CASM {
       bool parse_args(const std::string &args);
     private:
       mutable std::string m_clex_name;
-      mutable Clexulator m_clexulator;
-      mutable ECIContainer m_eci;
-
+      
+      // customize output based on parsed args
+      std::function<void (const Configuration&, DataStream&, Index)> m_inject;
+      std::function<void (const Configuration&, std::ostream&, Index)> m_print;
+      std::function<jsonParser& (const Configuration&, jsonParser&)> m_to_json;
+      
     };
 
   }
@@ -215,6 +224,11 @@ namespace CASM {
 
     ConfigIO_impl::GenericConfigFormatter<bool> selected();
 
+    template<bool IsConst>
+    ConfigIO_impl::SelectedConfigFormatter selected_in(const ConfigSelection<IsConst> &_selection);
+
+    ConfigIO_impl::SelectedConfigFormatter selected_in();
+
     ConfigIO_impl::GenericConfigFormatter<bool> is_calculated();
 
     ConfigIO_impl::GenericConfigFormatter<double> formation_energy();
@@ -227,8 +241,6 @@ namespace CASM {
 
     ConfigIO_impl::GenericConfigFormatter<double> lattice_deformation();
 
-    ConfigIO_impl::GenericConfigFormatter<double> dist_from_hull();
-
     ConfigIO_impl::GenericConfigFormatter<double> volume_relaxation();
 
     ConfigIO_impl::GenericConfigFormatter<std::string> status();
@@ -236,5 +248,7 @@ namespace CASM {
     ConfigIO_impl::GenericConfigFormatter<std::string> failure_type();
 
   }
+
+
 }
 #endif

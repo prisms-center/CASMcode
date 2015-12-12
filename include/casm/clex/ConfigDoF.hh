@@ -9,6 +9,7 @@ namespace CASM {
 
   class PermuteIterator;
   typedef Array<double> Correlation;
+  class PrimClex;
   class Supercell;
   class Clexulator;
 
@@ -139,9 +140,10 @@ namespace CASM {
 
   private:
 
-    //I don't know what this is
-    //std::string m_id;
+    // ***DON'T FORGET: If you add something here, also update ConfigDoF::swap!!
 
+    
+    /// \brief Number of sites in the Configuration
     Index m_N;
 
     ///With one value for each site in the Configuration, this Array describes which occupant is at each of the 'N' sites of the configuration
@@ -195,6 +197,22 @@ namespace CASM {
 
   /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
   Correlation correlations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator);
+  
+  /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
+  Eigen::VectorXd correlations_vec(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator);
+  
+  /// \brief Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::get_struc_molecule()
+  ReturnArray<int> get_num_each_molecule(const ConfigDoF &configdof, const Supercell &scel); 
+  
+  /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::get_struc_molecule()
+  Eigen::VectorXi get_num_each_molecule_vec(const ConfigDoF &configdof, const Supercell &scel);
+  
+  /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
+  Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel);
+  
+  /// \brief Return a super ConfigDoF (occupation only)
+  ConfigDoF super_configdof_occ(PrimClex &primclex, const Eigen::Matrix3i& transf_mat, const std::string &motif_configname);
+  
 
 }
 

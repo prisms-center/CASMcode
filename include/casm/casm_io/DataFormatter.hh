@@ -21,6 +21,16 @@ namespace CASM {
   template<typename DataObject>
   class BaseDatumFormatter;
 
+  // Given expression string
+  //   "subexpr1 subexpr2(subsub1) subexpr3(subsub2(subsubsub1))"
+  // splits expresion so that
+  //    tag_names = {"subexpr1", "subexpr2", "subexpr3"}
+  //    sub_exprs = {"","subsub1", "subsub2(subsubsub1)"}
+  // whitespace and commas are ignored
+  void split_formatter_expression(const std::string &input_expr,
+                                  std::vector<std::string> &tag_names,
+                                  std::vector<std::string> &sub_exprs);
+
   /* A DataFormatter performs extraction of disparate types of data from a 'DataObject' class that contains
    * various types of unasociated 'chunks' of data.
    * The DataFormatter is composed of one or more 'DatumFormatters', with each DatumFormatter knowing how to
@@ -73,6 +83,10 @@ namespace CASM {
       clear();
     }
 
+    bool empty() const {
+      return m_data_formatters.size() == 0;
+    }
+
     DataFormatter &operator=(const DataFormatter<DataObject> &RHS) {
       if(&RHS == this)
         return *this;
@@ -122,10 +136,13 @@ namespace CASM {
     ///Output data as specified by *this of the given DataObject
     void print(const DataObject &_obj, std::ostream &_stream) const;
 
-    ///Output data as specified by *this of the given DataObject
+    ///Output data as specified by *this of the given DataObject to json with format {"name1":x, "name2":x, ...}
     jsonParser &to_json(const DataObject &_obj, jsonParser &json) const;
+    
+    ///Output data as specified by *this of the given DataObject to json with format {"name1":[..., x], "name2":[..., x], ...}
+    jsonParser &to_json_arrays(const DataObject &_obj, jsonParser &json) const;
 
-    ///Manually define header
+    ///print the header, using _tmplt_obj to inspect array sizes, etc.
     void print_header(const DataObject &_tmplt_obj, std::ostream &_stream) const;
 
     /// Add a particular BaseDatumFormatter to *this
@@ -156,6 +173,12 @@ namespace CASM {
       push_back(new_formatter);
       push_back(formatters...);
     }
+
+    void append(const DataFormatter<DataObject> &_tail) {
+      for(BaseDatumFormatter<DataObject> *frmtr : _tail.m_data_formatters)
+        push_back(*frmtr);
+    }
+
 
     DataFormatter<DataObject> &operator<<(const BaseDatumFormatter<DataObject> &new_formatter) {
       push_back(new_formatter);
@@ -194,6 +217,8 @@ namespace CASM {
   template<typename DataObject>
   class BaseDatumFormatter {
   public:
+
+    enum FormatterType {Property, Operator};
     typedef long difference_type;
 
 
@@ -212,6 +237,10 @@ namespace CASM {
     /// This description is used to automatically generate help screens
     const std::string &description() const {
       return m_description;
+    }
+
+    virtual FormatterType type() const {
+      return Property;
     }
 
     /// \brief Make an exact copy of the formatter (including any initialized members)
@@ -265,7 +294,7 @@ namespace CASM {
     ///          jsonParser my_big_data_object;
     ///          my_formatter.to_json(my_data_object, my_big_data_object["place_to_write"]["my_formatter_data"]);
     virtual jsonParser &to_json(const DataObject &_data_obj, jsonParser &json)const = 0;
-
+    
     /// If DatumFormatter accepts arguments, parse them here.  Arguments are assumed to be passed from the command line
     /// via:         formattername(argument1,argument2,...)
     ///
@@ -299,6 +328,7 @@ namespace CASM {
   bool always_true(const T &) {
     return true;
   };
+
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -358,6 +388,15 @@ namespace CASM {
         json.push_back((*m_formatter_ptr)(*it));
       return json;
     }
+    
+    ///Output data with format {"name1":[..., x], "name2":[..., x], ...}
+    jsonParser &to_json_arrays(jsonParser &json) const {
+      json = jsonParser::object();
+      for(IteratorType it(m_begin_it); it != m_end_it; ++it)
+        m_formatter_ptr->to_json_arrays(*it, json);
+      return json;
+    }
+
 
   };
 
@@ -390,6 +429,7 @@ namespace CASM {
       m_formatter_ptr->to_json(*m_obj_ptr, json);
       return json;
     }
+    
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -423,17 +463,29 @@ namespace CASM {
       initializer(*this);
     }
 
+    const BaseDatumFormatter<DataObject>  &lookup(const std::string &_name) const {
+      BaseDatumFormatter<DataObject> const *bdf_ptr;
+      if(contains(_name, bdf_ptr)) {
+        return *bdf_ptr;
+      }
+      else {
+        throw std::runtime_error("CRITICAL ERROR: Invalid format flag \"" + _name + "\" specified.\n"
+                                 + "                Did you mean \"" + bdf_ptr->name() + "\"?\n");
+
+      }
+
+    }
+
+
     DataFormatterDictionary &add_formatter(const BaseDatumFormatter<DataObject> &new_formatter) {
       if(m_formatter_map.find(new_formatter.name()) != m_formatter_map.end())
-        std::cerr << "WARNING: Cannot add duplicate DataFormatter " << new_formatter.name() << " to parsing dictionary.\n";
+        throw std::runtime_error("DataFormatter " + new_formatter.name() + " already exists in parsing dictionary.\nDuplicates are not allowed.\n");
       else
         m_formatter_map[new_formatter.name()].reset(new_formatter.clone());
       return *this;
     }
 
     bool contains(std::string key, BaseDatumFormatter<DataObject> const *&result_ptr) const {
-      //in-place convert 'key' to lower case
-      std::transform(key.begin(), key.end(), key.begin(), ::tolower);
 
       typename container::const_iterator it, it_end(m_formatter_map.end());
 
@@ -442,19 +494,25 @@ namespace CASM {
         result_ptr = (it->second).get();
         return true;
       }
-      // If no match, try to use hamming distance to make a helpful suggestion -- I don't think this works very well
+      std::string lkey(key);
+      //convert 'key' to lower case and check that
+      std::transform(key.begin(), key.end(), lkey.begin(), tolower);
+      it = m_formatter_map.find(key);
+      if(it != it_end) {
+        result_ptr = (it->second).get();
+        return true;
+      }
+
+      // If no match, try to use demerescau-levenshtein distance to make a helpful suggestion
       it = m_formatter_map.begin();
-      int min_hdist(-1);
+      int min_dist(-1);
       for(; it != it_end; ++it) {
-        int len(min(key.size(), (it->first).size()));
-        //hdist(max(key.size(), (it->first).size()));
-        int hdist(len);
-        for(len--; len >= 0; len--)
-          hdist -= (int)(key[len] == (it->first)[len]);
-        if(min_hdist < 0 || hdist < min_hdist)
+        int dist = dl_string_dist(key, it->first);
+        if(min_dist < 0 || dist < min_dist) {
+          min_dist = dist;
+          std::cout << "New best: \"" << it->first << "\" aka \"" << it->second->name() << "\"\n";
           result_ptr = (it->second).get();
-        if(hdist == 0)
-          return true;
+        }
       }
       return false;
     }
@@ -466,7 +524,9 @@ namespace CASM {
       return (it->second).get();
     }
 
-    void print_help(std::ostream &_stream, int width, int separation) const;
+    void print_help(std::ostream &_stream,
+                    typename BaseDatumFormatter<DataObject>::FormatterType ftype,
+                    int width, int separation) const;
 
     DataFormatter<DataObject> parse(const std::string &input)const;
     DataFormatter<DataObject> parse(const std::vector<std::string> &input)const;
@@ -488,17 +548,28 @@ namespace CASM {
       return dictionary().size();
     }
 
-    static void add_custom_formatter(const BaseDatumFormatter<DataObject> &new_formatter) {
-      dictionary().add_formatter(new_formatter);
+    static const BaseDatumFormatter<DataObject> &lookup(const std::string &_name) {
+      return dictionary().lookup(_name);
     }
+
     static DataFormatter<DataObject> parse(const std::string &input) {
       return dictionary().parse(input);
     }
+
     static DataFormatter<DataObject> parse(const std::vector<std::string> &input) {
       return dictionary().parse(input);
     }
-    static void print_help(std::ostream &_stream, int width = 60, int separation = 8) {
-      dictionary().print_help(_stream, width, separation);
+
+    static void add_custom_formatter(const BaseDatumFormatter<DataObject> &new_formatter) {
+      dictionary().add_formatter(new_formatter);
+    }
+
+    static void load_aliases(const fs::path &alias_path);
+
+    static void print_help(std::ostream &_stream,
+                           typename BaseDatumFormatter<DataObject>::FormatterType ftype = BaseDatumFormatter<DataObject>::Property,
+                           int width = 60, int separation = 8) {
+      dictionary().print_help(_stream, ftype, width, separation);
     }
   private:
     static DataFormatterDictionary<DataObject> &dictionary();
@@ -518,7 +589,7 @@ namespace CASM {
   inline jsonParser &to_json(const FormattedPrintable &_obj, jsonParser &json) {
     return _obj.to_json(json);
   }
-
+  
   //******************************************************************************
   inline std::ostream &operator<<(std::ostream &_stream, const FormattedPrintable &_formatted) {
     _formatted.print(_stream);

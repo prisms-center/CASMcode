@@ -26,7 +26,7 @@ namespace BP {
 
     Work() {}
 
-    Work(void * (*_fp)(void *), void *_farg, WORKTAG _tag): fp(_fp), farg(_farg), tag(_tag) {}
+    Work(void *(*_fp)(void *), void *_farg, WORKTAG _tag): fp(_fp), farg(_farg), tag(_tag) {}
 
     // for now, no returning results
     void execute() {
@@ -77,7 +77,7 @@ namespace BP {
     //   ** Caution: arguments are passed as pointers, so you must make  **
     //   **          certain they remain valid until all work is done!   **
     //
-    void add_work(void * (*fp)(void *), void *farg);
+    void add_work(void *(*fp)(void *), void *farg);
 
     // Block until all work is finished
     //   (and do not allow adding more work until current work is finished)

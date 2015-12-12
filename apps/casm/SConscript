@@ -3,26 +3,40 @@
 
 import os
 
-Import('env', 'casm_lib_install', 'version_obj')
+Import('env', 'casm_lib', 'casm_lib_install', 'build_lib_paths', 'install_lib_paths', 'version_obj')
 
 # Build instructions
 casm_include = env['CPPPATH'] + ['.']
-libs = ['boost_system', 'boost_filesystem', 'boost_program_options', 'casm', 'dl']
+libs = ['boost_system', 'boost_filesystem', 'boost_program_options', 'casm', 'dl', 'z']
 
 casm_obj = env.Object('casm.cpp', CPPPATH = casm_include)
 Default(casm_obj)
 Export('casm_obj')
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + [casm_obj]
 
+linkflags = ""
+if env['PLATFORM'] == 'darwin':
+  linkflags = ['-rpath', '@loader_path/../lib']
+else:
+  linkflags = ['-Wl,--rpath=\\$$ORIGIN/../lib', '-z', 'origin']
 
-# Install instructions
+# Build instructions
 casm = env.Program(os.path.join(env['CASM_BIN'], "casm"),
                    [casm_obj, version_obj],
+                   LIBPATH=build_lib_paths,
+                   LINKFLAGS=linkflags,
                    LIBS=libs)
+Depends(casm, casm_lib)
+Default(casm)
+env.Alias('casm', casm)
+Export('casm')
+env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + [casm]
+
+# Install instructions
 casm_install = env.Install(os.path.join(env['PREFIX'],'bin'), casm)
 env.Alias('casm_install', casm_install)
 Export('casm_install')
-env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [casm, casm_install]
+env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [casm_install]
 
 if 'casm_install' in COMMAND_LINE_TARGETS:
     env['IS_INSTALL'] = 1

@@ -95,20 +95,6 @@ namespace CASM {
     Properties generated;   //Everything else you came up with through casm
 
 
-    /// Composition -- calculated on-the-fly, see functions below
-
-
-    /// Correlations
-
-
-    // Let's just deal with one orbitree at a time for now...
-
-    bool corr_updated;
-
-    //  correlations
-    // correlations can be used for multiple CLEX, if basis functions are the same
-    Correlation correlations;
-
     bool m_selected;
 
   public:
@@ -188,15 +174,6 @@ namespace CASM {
 
     void set_reference(const Properties &ref);
 
-
-    void set_correlations(Clexulator &clexulator);
-    void set_correlations_orbitree(const SiteOrbitree &site_orbitree);
-    //void set_correlations_old(const SiteOrbitree &site_orbitree);
-
-    ///Add or modify variables relating to hull
-    void set_hull_data(bool is_groundstate, double dist_from_hull);
-
-    void clear_hull_data();
 
     //********** ACCESSORS ***********
 
@@ -349,10 +326,7 @@ namespace CASM {
 
     void print_sublattice_composition(std::ostream &stream) const;
 
-    ///Old CASM style corr.in output for one configuration
-
-    void print_correlations_simple(std::ostream &corrstream) const;
-
+    
     fs::path calc_properties_path() const;
     fs::path calc_status_path() const;
     /// Path to various files
@@ -383,14 +357,12 @@ namespace CASM {
 
     /// Functions used to perform read()
     void read_dof(const jsonParser &json);
-    void read_corr(const jsonParser &json);
     void read_properties(const jsonParser &json);
 
     /// Functions used to perform write to config_list.json:
     jsonParser &write_dof(jsonParser &json) const;
     jsonParser &write_source(jsonParser &json) const;
     jsonParser &write_pos(jsonParser &json) const;
-    jsonParser &write_corr(jsonParser &json) const;
     jsonParser &write_param_composition(jsonParser &json) const;
     jsonParser &write_properties(jsonParser &json) const;
 
@@ -402,7 +374,34 @@ namespace CASM {
 
   /// \brief Returns correlations using 'clexulator'.
   Correlation correlations(const Configuration &config, Clexulator &clexulator);
- 
+  
+  /// Returns parametric composition, as calculated using PrimClex::param_comp
+  Eigen::VectorXd comp(const Configuration& config);
+  
+  /// \brief Returns the parametric composition
+  Eigen::VectorXd comp_n(const Configuration& config);
+  
+  /// \brief Returns the composition as atom fraction, with [Va] = 0.0, in the order of Structure::get_struc_molecule
+  Eigen::VectorXd species_frac(const Configuration& config);
+  
+  /// \brief Returns the composition as site fraction, in the order of Structure::get_struc_molecule
+  Eigen::VectorXd site_frac(const Configuration& config);
+  
+  /// \brief Returns the formation energy, normalized per unit cell
+  double formation_energy(const Configuration& config);
+  
+  /// \brief Returns the formation energy, normalized per species
+  double formation_energy_per_species(const Configuration& config);
+  
+  /// \brief Returns the formation energy, normalized per unit cell
+  double clex_formation_energy(const Configuration& config);
+  
+  /// \brief Returns the formation energy, normalized per species
+  double clex_formation_energy_per_species(const Configuration& config);
+  
+  /// \brief Return true if all current properties have been been calculated for the configuration
+  bool is_calculated(const Configuration& config);
+  
 }
 
 #endif

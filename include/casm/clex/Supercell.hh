@@ -6,7 +6,6 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/Configuration.hh"
-#include "casm/clex/ConfigEnumIterator.hh"
 #include "casm/clex/ConfigDoF.hh"
 
 namespace CASM {
@@ -159,6 +158,7 @@ namespace CASM {
     //Supercell(PrimClex *_prim);
     Supercell(const Supercell &RHS);
     Supercell(PrimClex *_prim, const Lattice &superlattice);
+    Supercell(PrimClex *_prim, const Eigen::Matrix3i &superlattice_matrix);
     Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix);
     //Supercell(PrimClex *_prim, const Eigen::Matrix3i &superlattice_matrix);   //I wish
     //Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix, const Lattice &superlattice, const int warningFlag = 1);
@@ -374,10 +374,6 @@ namespace CASM {
       m_id = id;
     }
 
-    //void set_selection(const Array<std::string> &criteria);
-    //void set_selection(const Array<std::string> &criteria, Configuration &config);
-
-
     // **** Generating functions ****
 
     // Populate m_factor_group -- probably should be private
@@ -415,23 +411,14 @@ namespace CASM {
 
     // **** Enumerating functions ****
 
-    /// Loop over all configurations enumerated by 'enumerator' and add them to the Supercell, if they are not already present
-    void add_enumerated_configurations(ConfigEnum<Configuration> &enumerator);
-
-    /// Loop over all configurations enumerated by some (invisible) enumerator from 'it_begin' to 'it_end', adding them to the Supercell, if they are not already present
-    void add_enumerated_configurations(ConfigEnumIterator<Configuration> it_begin, ConfigEnumIterator<Configuration> it_end);
-
-    /// Enumerate all possible occupation configurations that are symmetrically equivalent and fit inside this supercell (but cannot be described by a smaller supercell)
-    void enumerate_all_occupation_configurations();
-
     /// Enumerate 'Nstep' configurations that linearly interpolate deformation and displacement from 'initial' configuration to 'final' configuration
     /// 'initial' and 'final' must either have the same occupation or have unspecified occupation
     /// The range can be adjusted using 'being_delta' and 'end_delta' (which can be positive or negative). begin_delta<0 indicates interpolation starts
     /// abs(begin_delta) number of steps *before* 'initial'. positive values indicate interpolation starts the specified number of steps *after* initial.
     /// semantics are similar for 'end_delta', but for the final configuration.
-    void enumerate_interpolated_configurations(Supercell::config_const_iterator initial, Supercell::config_const_iterator final,
+    /*void enumerate_interpolated_configurations(Supercell::config_const_iterator initial, Supercell::config_const_iterator final,
                                                long Nstep, long begin_delta = 0, long end_delta = 0);
-
+    */
 
     //Functions for enumerating configurations that are perturbations of a 'background' structure
     void enumerate_perturb_configurations(const std::string &background, fs::path CSPECS, double tol = TOL, bool verbose = false, bool print = false);
@@ -451,6 +438,9 @@ namespace CASM {
     bool add_config(const Configuration &config, Index &index, Supercell::permute_const_iterator &permute_it);
     bool add_canon_config(const Configuration &config, Index &index);
     void read_config_list(const jsonParser &json);
+
+    template<typename ConfigIterType>
+    void add_unique_canon_configs(ConfigIterType it_begin, ConfigIterType it_end);
 
     template<typename ConfigIterType>
     void add_configs(ConfigIterType it_begin, ConfigIterType it_end);
@@ -477,13 +467,6 @@ namespace CASM {
     bool is_supercell_of(const Structure &structure, Matrix3<double> &multimat) const;
     ReturnArray<int> vacant()const;
 
-    // used with set_selection()
-    //bool is_operator(const std::string &q) const;
-    //std::string operate(const std::string &q, const std::string &A) const;
-    //std::string operate(const std::string &q, const std::string &A, const std::string &B) const;
-    //bool is_unary(const std::string &q) const;
-    //std::string convert_variable(const std::string &q, const Configuration &config) const;
-
     // **** Printing ****
 
     void print_bijk(std::ostream &stream);
@@ -501,16 +484,11 @@ namespace CASM {
     // 0			print no information about the vacancies
     // 1			print only the coordinates of the vacancies
     // 2			print the number of vacancies and the coordinates of the vacancies
-    void print(const Configuration &config, std::ostream &stream, COORD_TYPE mode, int Va_mode = 0, char term = 0, int prec = 7, int pad = 5) const;
-    void print(std::ostream &stream, Configuration tconfig) const;
-
+    void print(const Configuration &config, std::ostream &stream, COORD_TYPE mode, int Va_mode = 0, char term = '\n', int prec = 7, int pad = 5) const;
+    
     ///Call Configuration::write out every configuration in supercell
     jsonParser &write_config_list(jsonParser &json);
 
-    //void printUCC(std::ostream &stream, COORD_TYPE mode, UnitCellCoord ucc);
-    // this function finds the displacements of a structure defined by the CONTCAR passed by stream, and the real_super_lattice
-    void findConfigDisplacements(Structure tstruc, Index config_num);
-    void findDisplacements();
     void printUCC(std::ostream &stream, COORD_TYPE mode, UnitCellCoord ucc, char term = 0, int prec = 7, int pad = 5) const;
     //\Michael 241013
 
@@ -524,6 +502,44 @@ namespace CASM {
     //void populate_sublat_to_comp();
 
   };
+
+  //*******************************************************************************
+  // Warning: Assumes configurations are in canonical form
+  template<typename ConfigIterType>
+  void Supercell::add_unique_canon_configs(ConfigIterType it_begin, ConfigIterType it_end) {
+    // Remember existing configs, to avoid duplicates
+    //   Enumerated configurations are added after existing configurations
+    Index N_existing = config_list.size();
+    Index N_existing_enumerated = 0;
+    //std::cout << "ADDING CONFIGS TO SUPERCELL; N_exiting: " << N_existing << " N_enumerated: " << N_existing_enumerated << "\n";
+    //std::cout << "beginning iterator: " << it_begin->occupation() << "\n";
+    // Loops through all possible configurations
+    for(; it_begin != it_end; ++it_begin) {
+      //std::cout << "Attempting to add configuration: " << it_begin->occupation() << "\n";
+      // Adds the configuration to the list, if not among previously existing configurations
+
+      bool add = true;
+      if(N_existing_enumerated != N_existing) {
+        for(Index i = 0; i < N_existing; i++) {
+          if(config_list[i].configdof() == it_begin->configdof()) {
+            config_list[i].push_back_source(it_begin->source());
+            add = false;
+            N_existing_enumerated++;
+            break;
+          }
+        }
+      }
+      if(add) {
+        config_list.push_back(*it_begin);
+        // get source info from enumerator
+        //config_list.back().set_source(it_begin.source());
+        config_list.back().set_id(config_list.size() - 1);
+      }
+    }
+
+  }
+
+  //*******************************************************************************
 
   template<typename ConfigIterType>
   void Supercell::add_configs(ConfigIterType it_begin, ConfigIterType it_end) {

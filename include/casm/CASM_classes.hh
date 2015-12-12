@@ -111,7 +111,6 @@
 #include "clex/ConfigIO.hh"
 
 // Hull
-#include "casm/hull/GeometryPieces.hh"
 #include "casm/hull/Hull.hh"
 
 #endif

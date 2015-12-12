@@ -209,6 +209,12 @@ namespace CASM {
     /// Configuration iterator: end
     config_iterator config_end();
 
+    /// Configuration iterator: begin
+    config_const_iterator config_begin() const;
+
+    /// Configuration iterator: end
+    config_const_iterator config_end() const;
+
     /// const Configuration iterator: begin
     config_const_iterator config_cbegin() const;
 
@@ -275,15 +281,10 @@ namespace CASM {
     //Generate the global orbitree
     //John G 011013
     /// Use the given CSPECS
-    void generate_global_orbitree(const fs::path &cspecs);
 
     //Read the global Orbitree from a clust.json file
     void read_global_orbitree(const fs::path &fclust);
-    void read_global_orbitree(const std::string &fclust);
 
-    //Add clusters to the global orbitree from a custom clusters file
-    void read_custom_clusters(const fs::path &custom_clusters, bool subclusters);
-    void read_custom_clusters(const std::string &custom_clusters, bool subclusters);
 
     // Prepare neighbor lists
     /// Add one orbitree of sites to the nearest neighbor list and update sites in tree with index, only considering the first site of each cluster
@@ -296,17 +297,10 @@ namespace CASM {
     void populate_flowertrees();
     //\John G
 
-
-    ///Populate the basis sites with the values of the cluster functions
-    void populate_basis_tables(const char &basis_type);
-    ///Populate the cluster basis functions in global_orbitree
-    void populate_cluster_basis_function_tables();
-
     //Generate supercells of a certain volume and store them in the array of supercells
     void generate_supercells(int volStart, int volEnd, bool verbose);
 
     //Enumerate configurations for all the supercells that are stored in 'supercell_list'
-    void enumerate_all_configurations();
     void print_enum_info(std::ostream &stream);
     void print_supercells() const;
     void print_supercells(std::ostream &stream) const;
@@ -322,29 +316,6 @@ namespace CASM {
     void set_composition_axes(const CompositionConverter &_converter);
 
     void read_config_list();
-    //    void set_selection(const Array<std::string> &criteria);
-
-    ///Populate the structure factors for all the configurations that belong to this primclex
-    void populate_structure_factor();
-    void populate_structure_factor(const Index &scell_index);
-    void populate_structure_factor(const Index &scell_index, const Index &config_index);
-
-    /*
-        ///Use global orbitree to populate global correlations of the configuration specified by the index of the supercell
-        void populate_global_correlations(const Index &scell_index, const Index &config_index);
-        ///Fill up correlations of every configuration in the supercell
-        void populate_global_correlations(const Index &scell_index);
-        ///Fill up correlations of every configuration in every supercell;
-        void generate_global_correlations();
-        ///Print correlations to a stream in the old CASM style corr.in
-        void print_global_correlations_simple(std::ostream &corrstream) const;
-        ///See other routine in this class of the same name. This version takes a path as string instead of a stream
-        void print_global_correlations_simple(std::string &corrfile) const;
-        void print_correlations(std::string corrFileName);
-    */
-
-    void read_relaxed_structure(int superNum, int configNum);
-    void collect_clex_relaxations();
 
     ///Fill up props of every configuration for a partucluar supercell. This will be deprecated when props disappears
     void read_scel_props(int scel_index, const std::string &JSON_output);

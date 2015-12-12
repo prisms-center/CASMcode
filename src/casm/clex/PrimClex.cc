@@ -10,9 +10,6 @@
 
 
 namespace CASM {
-
-
-
   //*******************************************************************************************
   //                                **** Constructors ****
   //*******************************************************************************************
@@ -276,7 +273,7 @@ namespace CASM {
     boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
     Index config_ind;
     if(splt_vec.size() != 2) {
-      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), cannot locate configuration " << configname << "\n"
+      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), cannot locate configuration named '" << configname << "'\n"
                 << "                Exiting...\n";
       assert(0);
       exit(1);
@@ -324,7 +321,6 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-
   /// Configuration iterator: begin
   PrimClex::config_iterator PrimClex::config_begin() {
     if(supercell_list.size() == 0 || supercell_list[0].get_config_list().size() > 0)
@@ -340,6 +336,20 @@ namespace CASM {
 
   //*******************************************************************************************
   /// const Configuration iterator: begin
+  PrimClex::config_const_iterator PrimClex::config_begin() const {
+    if(supercell_list.size() == 0 || supercell_list[0].get_config_list().size() > 0)
+      return config_const_iterator(this, 0, 0);
+    return ++config_const_iterator(this, 0, 0);
+  }
+
+  //*******************************************************************************************
+  /// const Configuration iterator: end
+  PrimClex::config_const_iterator PrimClex::config_end() const {
+    return config_const_iterator(this, supercell_list.size(), 0);
+  }
+
+  //*******************************************************************************************
+  /// const Configuration iterator: begin
   PrimClex::config_const_iterator PrimClex::config_cbegin() const {
     if(supercell_list.size() == 0 || supercell_list[0].get_config_list().size() > 0)
       return config_const_iterator(this, 0, 0);
@@ -351,7 +361,6 @@ namespace CASM {
   PrimClex::config_const_iterator PrimClex::config_cend() const {
     return config_const_iterator(this, supercell_list.size(), 0);
   }
-
 
   //*******************************************************************************************
   /// Configuration iterator: begin
@@ -662,76 +671,14 @@ namespace CASM {
     return;
   };
 
-  //*******************************************************************************************
-  /**
-   * Makes flowertrees out of the global orbitree that lives
-   * in PrimClex
-   */
-  //*******************************************************************************************
-
-  void PrimClex::populate_flowertrees() {
-    //Populate flowertrees in one swoop
-    prim.generate_flowertrees(global_orbitree, flowertrees);
-    return;
-  };
-  //\John G 070713
-
-
-  //John G 011013
-  //*******************************************************************************************
-  /**
-   * Generates the global orbitree that lives
-   * in PrimClex using the given CSPECS
-   */
-  //*******************************************************************************************
-  void PrimClex::generate_global_orbitree(const fs::path &cspecs) {
-
-    std::cout  << "  Read " << cspecs << std::endl << std::endl;
-
-    fs::ifstream in_clust(cspecs);
-    global_orbitree.read_CSPECS(in_clust);
-    global_orbitree.min_num_components = 2;
-    global_orbitree.min_length = 0.0001;
-    in_clust.close();
-    global_orbitree.generate_orbitree(prim);
-    global_orbitree.collect_basis_info(prim);
-    //std::cout << "----------------------------------------------\n\t\tGLOBAL ORBITREE\n----------------------------------------------\n ";
-    //global_orbitree.print_full_clust(std::cout);
-    return;
-  };
-  //\John G 011013
-
-  //*******************************************************************************************
-  void PrimClex::read_global_orbitree(const std::string &fclust_path) {
-    read_global_orbitree(fs::path(fclust_path));
-  }
 
   //*******************************************************************************************
   void PrimClex::read_global_orbitree(const fs::path &fclust_path) {
 
-    std::cout  << "  Read " << fclust_path << std::endl << std::endl;
-
     global_orbitree.min_num_components = 2;     //What if we want other things?
     global_orbitree.min_length = 0.0001;
     from_json(jsonHelper(global_orbitree, prim), jsonParser(fclust_path.string()));
-    global_orbitree.collect_basis_info(prim);
-
-  }
-
-  //*******************************************************************************************
-  void PrimClex::read_custom_clusters(const std::string &custom_clusters, bool subclusters) {
-    read_custom_clusters(fs::path(custom_clusters), subclusters);
-  }
-  //*******************************************************************************************
-  void PrimClex::read_custom_clusters(const fs::path &custom_clusters, bool subclusters) {
-    //Empty Orbitrees seem to have nothing set, I dont think this is a
-    //safe way to create empty objects. It would be good if the
-    //default constructor set them to 'invalid' values
-    if(global_orbitree.size() == 0) {
-      global_orbitree.min_num_components = 2;
-      global_orbitree.min_length = 0.0001;
-    }
-    global_orbitree.read_custom_clusters_from_json(jsonParser(custom_clusters), prim, prim.factor_group(), subclusters);
+    global_orbitree.generate_clust_bases();
   }
 
   //*******************************************************************************************
@@ -781,12 +728,10 @@ namespace CASM {
    */
   //*******************************************************************************************
   Index PrimClex::add_canonical_supercell(const Lattice &superlat) {
-
     if(!superlat.is_supercell_of(prim.lattice())) {
-      std::cerr << "ERROR in PrimClex::add_canoical_supercell()." << std::endl
-                << "  'superlat' lattice primitive is not prim lattice primitive" << std::endl
-                << "  So that everything plays nicely, make sure the supercell lattice" << std::endl
-                << "  is based on PrimClex::prim." << std::endl;
+      std::cerr << "ERROR in PrimClex::add_canonical_supercell()." << std::endl
+                << "  Passed a Supercell Lattice that is not a superlattice of PRIM lattice\n" << std::endl;
+      assert(0);
       exit(1);
     }
 
@@ -824,18 +769,6 @@ namespace CASM {
   Index PrimClex::add_supercell(const Lattice &superlat) {
     return add_canonical_supercell(niggli(superlat, prim.point_group(), tol()));
 
-  }
-
-  //*******************************************************************************************
-  /**  ENUMERATE_ALL_CONFIGURATIONS
-   *   Loops through all the supercells in supercell_list and calls
-   *   the enumerate_configuration routines on all of them
-   */
-  //*******************************************************************************************
-  void PrimClex::enumerate_all_configurations() {
-    for(Index i = 0; i < supercell_list.size(); i++) {
-      supercell_list[i].enumerate_all_occupation_configurations();
-    }
   }
 
   //*******************************************************************************************
@@ -915,83 +848,6 @@ namespace CASM {
       }
     }
   }
-
-  //*******************************************************************************************
-  /**
-   * Use the global_orbitree of *this to populate the global correlations in the
-   * specified configuration config_index of the given supercell.
-   * The method will match the size of the correlations in the configuration
-   * to said orbitree and pass it down to methods of orbitree, filling up
-   * values.
-   */
-  //*******************************************************************************************
-  /*
-    void PrimClex::populate_global_correlations(const Index &scell_index, const Index &config_index) {
-      supercell_list[scell_index].populate_correlations(global_clexulator, config_index);
-      return;
-    }
-
-    void PrimClex::populate_global_correlations(const Index &scell_index) {
-      supercell_list[scell_index].populate_correlations(global_clexulator);
-      return;
-    }
-
-    void PrimClex::generate_global_correlations() {
-      for(Index i = 0; i < supercell_list.size(); i++) {
-        supercell_list[i].populate_correlations(global_clexulator);
-      }
-      return;
-    }
-
-    void PrimClex::print_correlations(std::string corrFileName) {
-      std::ofstream corrFile;
-      corrFile.open(corrFileName.c_str());
-      for(Index i = 0; i < supercell_list.size(); i++) {
-        supercell_list[i].print_clex_correlations(corrFile);
-      }
-    }
-  */
-  //*******************************************************************************************
-  /*
-   * Just calls print_global_correlations_simple on every supercell
-   * that lives in *this PrimClex, which in turns calls the required print
-   * routine on every one of its configurations. Meant for creating old CASM style
-   * corr.in files.
-   */
-  //*******************************************************************************************
-  /*
-    void PrimClex::print_global_correlations_simple(std::ostream &corrstream) const {
-      for(Index s = 0; s < supercell_list.size(); s++) {
-        supercell_list[s].print_global_correlations_simple(corrstream);
-      }
-      return;
-    }
-
-    */
-
-  //*******************************************************************************************
-  //Construct the basis set for each site
-  void PrimClex::populate_basis_tables(const char &basis_type) {
-    prim.fill_occupant_bases(basis_type);
-  }
-
-  //*******************************************************************************************
-  void PrimClex::populate_cluster_basis_function_tables() {
-    global_orbitree.generate_clust_bases();
-    //global_orbitree.fill_discrete_bases_tensors();
-  }
-
-  //*******************************************************************************************
-  // void PrimClex::read_relaxed_structure(Index superNum, Index configNum) {
-  //   supercell_list[superNum].read_relaxed_structure(configNum, prim.lattice);
-  // }
-
-  //*******************************************************************************************
-  // void PrimClex::collect_clex_relaxations() {
-  //   for(Index i = 0; i < supercell_list.size(); i++) {
-  //     supercell_list[i].read_clex_relaxations(prim.lattice);
-  //   }
-  // }
 
   //*******************************************************************************************
   /**
@@ -1298,25 +1154,6 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  void PrimClex::populate_structure_factor() {
-    for(Index i = 0; i < supercell_list.size(); i++)
-      populate_structure_factor(i);
-    return;
-  }
-
-  //*******************************************************************************************
-  void PrimClex::populate_structure_factor(const Index &scell_index) {
-    supercell_list[scell_index].populate_structure_factor();
-    return;
-  }
-
-  //*******************************************************************************************
-  void PrimClex::populate_structure_factor(const Index &scell_index, const Index &config_index) {
-    supercell_list[scell_index].populate_structure_factor(config_index);
-    return;
-  }
-
-  //*******************************************************************************************
   Clexulator PrimClex::global_clexulator() const {
     if(!m_global_clexulator.initialized()) {
       if(!fs::exists(dir().clexulator_src(settings().name(), settings().bset()))) {
@@ -1332,7 +1169,7 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  ECIContainer PrimClex::global_eci(std::string clex_name)const {
+  ECIContainer PrimClex::global_eci(std::string clex_name) const {
     return ECIContainer(dir().eci_out(clex_name,
                                       settings().calctype(),
                                       settings().ref(),
@@ -1350,7 +1187,7 @@ namespace CASM {
     try {
 
       SiteOrbitree tree(prim.lattice());
-
+      tree.set_bspecs(json);
       // --- first generate global orbitree -------------
 
 
@@ -1379,7 +1216,7 @@ namespace CASM {
         bool verbose = false;
         tree.read_custom_clusters_from_json(json["orbit_specs"], prim, prim.factor_group(), verbose);
       }
-
+      tree.collect_basis_info(prim);
       return tree;
     }
     catch(...) {
@@ -1473,14 +1310,14 @@ namespace CASM {
                         std::ostream &stream) {
 
     DoFManager dof_manager;
-
-    for(Index b = 0; b < prim.basis.size(); b++) {
+    Index Nsublat = prim.basis.size();
+    for(Index b = 0; b < Nsublat; b++) {
       if(prim.basis[b].site_occupant().size() > 1) {
         dof_manager.add_dof(prim.basis[b].site_occupant().type_name());
         break;
       }
     }
-    for(Index b = 0; b < prim.basis.size(); b++) {
+    for(Index b = 0; b < Nsublat; b++) {
       for(Index i = 0; i < prim.basis[i].displacement().size(); i++)
         dof_manager.add_dof(prim.basis[b].displacement()[i].type_name());
     }
@@ -1515,36 +1352,36 @@ namespace CASM {
                        indent << "  BasisFuncPtr m_orbit_func_list[" << N_corr << "];\n\n" <<
 
                        indent << "  // array of pointers to member functions for calculating flower functions\n" <<
-                       indent << "  BasisFuncPtr m_flower_func_lists[" << prim.basis.size() << "][" << N_corr << "];\n\n" <<
+                       indent << "  BasisFuncPtr m_flower_func_lists[" << Nsublat << "][" << N_corr << "];\n\n" <<
 
                        /**** for separate 1D method pointer lists:
                        indent << "  BasisFuncPtr
-                       for(Index i = 0; i < prim.basis.size(); i++) {
+                       for(Index i = 0; i < Nsublat; i++) {
                          private_def_stream << " m_flower_func_at_" << i << "_list[" << N_corr << "]";
-                         if(i + 1 < prim.basis.size())
+                         if(i + 1 < Nsublat)
                            private_def_stream << ',';
                        }
                        private_def_stream << ";\n\n" <<
                        **/
 
                        indent << "  // array of pointers to member functions for calculating DELTA flower functions\n" <<
-                       indent << "  DeltaBasisFuncPtr m_delta_func_lists[" << prim.basis.size() << "][" << N_corr << "];\n\n";
+                       indent << "  DeltaBasisFuncPtr m_delta_func_lists[" << Nsublat << "][" << N_corr << "];\n\n";
 
     /**** for separate 1D method pointer lists:
     indent << "  DeltaBasisFuncPtr";
 
-    for(Index i = 0; i < prim.basis.size(); i++) {
+    for(Index i = 0; i < Nsublat; i++) {
     private_def_stream << " m_delta_func_at_" << i << "_list[" << N_corr << "]";
-    if(i + 1 < prim.basis.size())
+    if(i + 1 < Nsublat)
     private_def_stream << ',';
     }
     private_def_stream << ";\n\n";
     **/
 
-    dof_manager.print_clexulator_member_definitions(private_def_stream, prim, indent + "  ");
+    dof_manager.print_clexulator_member_definitions(private_def_stream, tree, indent + "  ");
 
     // perhaps some more correlation calculating options here
-    dof_manager.print_clexulator_private_method_definitions(private_def_stream, prim, indent + "  ");
+    dof_manager.print_clexulator_private_method_definitions(private_def_stream, tree, indent + "  ");
 
     private_def_stream <<
                        indent << "  //default functions for basis function evaluation \n" <<
@@ -1578,7 +1415,7 @@ namespace CASM {
                       indent << "  /// \\brief Calculate the change in select point correlations due to changing an occupant\n" <<
                       indent << "  void calc_restricted_delta_point_corr(int b_index, int occ_i, int occ_f, double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n";
 
-    dof_manager.print_clexulator_public_method_definitions(public_def_stream, prim, indent + "  ");
+    dof_manager.print_clexulator_public_method_definitions(public_def_stream, tree, indent + "  ");
 
 
     //linear function index
@@ -1588,11 +1425,11 @@ namespace CASM {
     //std::cout << "Initialized " << labelers.size() << " labelers \n";
 
     Array<std::string> orbit_method_names(N_corr);
-    Array<Array<std::string> > flower_method_names(prim.basis.size(), Array<std::string>(N_corr));
-    //Array< Array<Array<std::string> > > dflower_method_names(N_corr, Array<Array<std::string> >(prim.basis.size()));
+    Array<Array<std::string> > flower_method_names(Nsublat, Array<std::string>(N_corr));
+    //Array< Array<Array<std::string> > > dflower_method_names(N_corr, Array<Array<std::string> >(Nsublat));
 
     //this is very configuration-centric
-    Array<Array<std::string> > dflower_method_names(prim.basis.size(), Array<std::string>(N_corr));
+    Array<Array<std::string> > dflower_method_names(Nsublat, Array<std::string>(N_corr));
 
     // temporary storage for formula
     Array<std::string> formulae, tformulae;
@@ -1636,74 +1473,78 @@ namespace CASM {
         make_newline = false;
 
         // loop over flowers (i.e., basis sites of prim)
-        for(Index nb = 0; nb < prim.basis.size(); nb++) {
-          formulae = tree[np][no].flower_function_cpp_strings(labelers, nb);
-          for(Index nf = 0; nf < formulae.size(); nf++) {
-            if(!formulae[nf].size())
-              continue;
-            make_newline = true;
-            flower_method_names[nb][lf + nf] = "site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
-            private_def_stream <<
-                               indent << "  double " << flower_method_names[nb][lf + nf] << "() const;\n";
-
-            bfunc_imp_stream <<
-                             indent << "double " << class_name << "::" << flower_method_names[nb][lf + nf] << "() const{\n" <<
-                             indent << "  return " << formulae[nf] << ";\n" <<
-                             indent << "}\n";
-
-            //dflower_method_names[nb][lf + nf].resize(prim.basis[nb].occupant_basis().size());
-          }
-          if(make_newline) {
-            bfunc_imp_stream << '\n';
-            private_def_stream << '\n';
-          }
-          make_newline = false;
-
-          // Very configuration-centric -> Find a way to move this block to OccupationDoFEnvironment:
-          formulae.resize(formulae.size(), std::string());
-          // loop over site basis functions
-          for(Index nsbf = 0; nsbf < prim.basis[nb].occupant_basis().size(); nsbf++) {
-            std::string delta_prefix = "(m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_f] - m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_i])";
-
-            tformulae = tree[np][no].delta_occfunc_flower_function_cpp_strings(labelers, nb, nsbf);
-            for(Index nf = 0; nf < tformulae.size(); nf++) {
-              if(!tformulae[nf].size())
+        const SiteOrbitBranch &asym_unit(tree.asym_unit());
+        for(Index na = 0; na < asym_unit.size(); na++) {
+          for(Index ne = 0; ne < asym_unit[na].size(); ne++) {
+            Index nb = asym_unit[na][ne][0].basis_ind();
+            formulae = tree[np][no].flower_function_cpp_strings(labelers, nb);
+            for(Index nf = 0; nf < formulae.size(); nf++) {
+              if(!formulae[nf].size())
                 continue;
+              make_newline = true;
+              flower_method_names[nb][lf + nf] = "site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
+              private_def_stream <<
+                                 indent << "  double " << flower_method_names[nb][lf + nf] << "() const;\n";
 
-              if(formulae[nf].size())
-                formulae[nf] += " + ";
+              bfunc_imp_stream <<
+                               indent << "double " << class_name << "::" << flower_method_names[nb][lf + nf] << "() const{\n" <<
+                               indent << "  return " << formulae[nf] << ";\n" <<
+                               indent << "}\n";
 
-              formulae[nf] += delta_prefix;
-
-              if(tformulae[nf] == "1" || tformulae[nf] == "(1)")
-                continue;
-
-              formulae[nf] += "*";
-              formulae[nf] += tformulae[nf];
-              //formulae[nf] += ")";
             }
-          }
-          for(Index nf = 0; nf < formulae.size(); nf++) {
-            if(!formulae[nf].size())
-              continue;
-            make_newline = true;
+            if(make_newline) {
+              bfunc_imp_stream << '\n';
+              private_def_stream << '\n';
+            }
+            make_newline = false;
 
-            dflower_method_names[nb][lf + nf] = "delta_site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
-            private_def_stream <<
-                               indent << "  double " << dflower_method_names[nb][lf + nf] << "(int occ_i, int occ_f) const;\n";
+            // Very configuration-centric -> Find a way to move this block to OccupationDoFEnvironment:
+            formulae.resize(formulae.size(), std::string());
+            // loop over site basis functions
+            const BasisSet &site_basis(asym_unit[na][ne].clust_basis);
+            for(Index nsbf = 0; nsbf < site_basis.size(); nsbf++) {
+              std::string delta_prefix = "(m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_f] - m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_i])";
 
-            bfunc_imp_stream <<
-                             indent << "double " << class_name << "::" << dflower_method_names[nb][lf + nf] << "(int occ_i, int occ_f) const{\n" <<
-                             indent << "  return " << formulae[nf] << ";\n" <<
-                             indent << "}\n";
+              tformulae = tree[np][no].delta_occfunc_flower_function_cpp_strings(site_basis, labelers, nb, nsbf);
+              for(Index nf = 0; nf < tformulae.size(); nf++) {
+                if(!tformulae[nf].size())
+                  continue;
+
+                if(formulae[nf].size())
+                  formulae[nf] += " + ";
+
+                formulae[nf] += delta_prefix;
+
+                if(tformulae[nf] == "1" || tformulae[nf] == "(1)")
+                  continue;
+
+                formulae[nf] += "*";
+                formulae[nf] += tformulae[nf];
+                //formulae[nf] += ")";
+              }
+            }
+            for(Index nf = 0; nf < formulae.size(); nf++) {
+              if(!formulae[nf].size())
+                continue;
+              make_newline = true;
+
+              dflower_method_names[nb][lf + nf] = "delta_site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
+              private_def_stream <<
+                                 indent << "  double " << dflower_method_names[nb][lf + nf] << "(int occ_i, int occ_f) const;\n";
+
+              bfunc_imp_stream <<
+                               indent << "double " << class_name << "::" << dflower_method_names[nb][lf + nf] << "(int occ_i, int occ_f) const{\n" <<
+                               indent << "  return " << formulae[nf] << ";\n" <<
+                               indent << "}\n";
+            }
+            if(make_newline) {
+              bfunc_imp_stream << '\n';
+              private_def_stream << '\n';
+            }
+            make_newline = false;
+            // \End Configuration specific part
           }
-          if(make_newline) {
-            bfunc_imp_stream << '\n';
-            private_def_stream << '\n';
-          }
-          make_newline = false;
-        }
-        // \End Configuration specific part
+        }//\End loop over flowers
 
         lf += tlf;
       }
@@ -1720,7 +1561,7 @@ namespace CASM {
                          indent << class_name << "::" << class_name << "() :\n" <<
                          indent << "  Clexulator_impl::Base(" << nlist.size() << ", " << N_corr << ") {\n";
 
-    dof_manager.print_to_clexulator_constructor(interface_imp_stream, prim, indent + "  ");
+    dof_manager.print_to_clexulator_constructor(interface_imp_stream, tree, indent + "  ");
 
     for(Index nf = 0; nf < orbit_method_names.size(); nf++) {
       if(orbit_method_names[nf].size() == 0)

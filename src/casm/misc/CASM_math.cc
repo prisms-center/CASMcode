@@ -38,6 +38,56 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+
+  int dl_string_dist(const std::string &a, const std::string &b) {
+    // "infinite" distance is just the max possible distance
+    int max_val = a.size() + b.size();
+
+    // make and initialize the character array indices
+    std::map<char, int> DA;
+
+    // make the distance matrix H
+    Eigen::MatrixXi H(a.size() + 2, b.size() + 2);
+
+    // initialize the left and top edges of H
+    H(0, 0) = max_val;
+    for(int i = 0; i <= a.size(); ++i) {
+      DA[a[i]] = 0;
+      H(i + 1, 0) = max_val;
+      H(i + 1, 1) = i;
+    }
+    for(int j = 0; j <= b.size(); ++j) {
+      DA[b[j]] = 0;
+      H(0, j + 1) = max_val;
+      H(1, j + 1) = j;
+    }
+
+    // fill in the distance matrix H
+    // look at each character in a
+    for(int i = 1; i <= a.size(); ++i) {
+      int DB = 0;
+      // look at each character in b
+      for(int j = 1; j <= b.size(); ++j) {
+        int i1 = DA[b[j - 1]];
+        int j1 = DB;
+        int cost;
+        if(a[i - 1] == b[j - 1]) {
+          cost = 0;
+          DB   = j;
+        }
+        else
+          cost = 1;
+        H(i + 1, j + 1) = min(min(H(i, j) + cost, // substitution
+                                  H(i + 1, j) + 1),  // insertion
+                              min(H(i, j + 1) + 1,  // deletion
+                                  H(i1, j1) + (i - i1 - 1) + 1 + (j - j1 - 1)));
+      }
+      DA[a[i - 1]] = i;
+    }
+    return H(a.size() + 1, b.size() + 1);
+  }
+
+  //*******************************************************************************************
   /// Find greatest common factor
   int gcf(int i1, int i2) {
     i1 = std::abs(i1);
@@ -405,7 +455,8 @@ namespace CASM {
     for(int i = 0; i < optimal_assignment.size(); i++) {
       tot_cost += cost_matrix(i, optimal_assignment[i]);
     }
-
+    if(optimal_assignment.size() == 0)
+      tot_cost = 1e20;
     return tot_cost;
   }
 
@@ -420,7 +471,7 @@ namespace CASM {
      */
     //*******************************************************************************************
 
-    void reduce_cost(Eigen::MatrixXd &cost_matrix) {
+    void reduce_cost(Eigen::MatrixXd &cost_matrix, double _infinity) {
 
       // cost matrix dimension
       int dim = cost_matrix.rows();
@@ -429,8 +480,10 @@ namespace CASM {
       // entry in that row.
       for(int i = 0; i < dim; i++) {
         double row_min = cost_matrix.row(i).minCoeff();
+        if(row_min > _infinity)
+          continue;
         for(int j = 0; j < dim; j++) {
-          cost_matrix(i, j) = cost_matrix(i, j) - row_min;
+          cost_matrix(i, j) -= row_min;
         }
       }
     }
@@ -488,7 +541,7 @@ namespace CASM {
 
     //*******************************************************************************************
 
-    int prime_zeros(const Eigen::MatrixXd &cost_matrix, Eigen::VectorXi &row_covered, Eigen::VectorXi &col_covered, Eigen::MatrixXi &zero_marks, double &min, Eigen::VectorXi &first_prime_zero, const double _tol) {
+    int prime_zeros(const Eigen::MatrixXd &cost_matrix, Eigen::VectorXi &row_covered, Eigen::VectorXi &col_covered, Eigen::MatrixXi &zero_marks, double &min, Eigen::VectorXi &first_prime_zero, const double _tol, const double _infinity) {
 
       int prime = 1;
       int covered = 1;
@@ -550,16 +603,18 @@ namespace CASM {
       // to find the minimum value remaining.
       // This will be used in step 6.
       //min = numeric_limits<double>::infinity();
-      min = 10E10;
+      min = _infinity;
+      int return_code(-1);
       for(int i = 0; i < cost_matrix.rows(); i++) {
         for(int j = 0; j < cost_matrix.cols(); j++) {
           if(row_covered(i) == 0 && col_covered(j) == 0 && cost_matrix(i, j) < min) {
             min = cost_matrix(i, j);
+            return_code = 6;
           }
         }
       }
       //update_costs(cost_matrix, zero_marks, row_covered, col_covered, min);
-      return 6;
+      return return_code;
     }
 
     //*******************************************************************************************
@@ -668,10 +723,10 @@ namespace CASM {
       for(int i = 0; i < cost_matrix.rows(); i++) {
         for(int j = 0; j < cost_matrix.cols(); j++) {
           if(row_covered(i) == 1) {
-            cost_matrix(i, j) = cost_matrix(i, j) + min;
+            cost_matrix(i, j) += min;
           }
           if(col_covered(j) == 0) {
-            cost_matrix(i, j) = cost_matrix(i, j) - min;
+            cost_matrix(i, j) -= min;
           }
         }
       }
@@ -682,7 +737,7 @@ namespace CASM {
     //*******************************************************************************************
 
     void hungarian_method(const Eigen::MatrixXd &cost_matrix_arg, std::vector<Index> &optimal_assignment, const double _tol) {
-
+      double _infinity = 1E10;
       Eigen::MatrixXd cost_matrix = cost_matrix_arg;
 
       // cost matrix dimension
@@ -702,8 +757,9 @@ namespace CASM {
       row_covered.fill(uncovered);
       col_covered.fill(uncovered);
 
+      //initialized by step 4
+      double min;
 
-      double min = 10E10;
       // Vector to track the first_prime_zero found in step 4 and used in step 5.
       Eigen::VectorXi first_prime_zero(2);
 
@@ -711,7 +767,7 @@ namespace CASM {
       // Calling munkres step 1 to
       // reduce the rows of the cost matrix
       // by the smallest element in each row
-      reduce_cost(cost_matrix);
+      reduce_cost(cost_matrix, _infinity);
 
       // Calling munkres step 2 to find
       // a zero in the reduced matrix and
@@ -751,9 +807,9 @@ namespace CASM {
           }
           else next_step = 4;
         }
-        // Step 4 returns an int, either 5 or 6.
+        // Step 4 returns an int, either 5 or 6 (or -1 if failure detected)
         if(next_step == 4) {
-          next_step = prime_zeros(cost_matrix, row_covered, col_covered, zero_marks, min, first_prime_zero, _tol);
+          next_step = prime_zeros(cost_matrix, row_covered, col_covered, zero_marks, min, first_prime_zero, _tol, _infinity);
         }
         // Step 5 returns an int, either 3 or 4.
         if(next_step == 5) {
@@ -762,6 +818,10 @@ namespace CASM {
         // Step 6 returns an int, always 4.
         if(next_step == 6) {
           next_step = update_costs(row_covered, col_covered, min, cost_matrix);
+        }
+        if(next_step == -1) {
+          optimal_assignment.clear();
+          return;
         }
         // Use loop counter if desired.
         // loop_counter++;
@@ -781,14 +841,25 @@ namespace CASM {
       // means that the atom with index '1' in
       // the ideal POSCAR is mapped onto the atom
       // with index '0' in the relaxed CONTCAR.
-      optimal_assignment.resize(cost_matrix.rows());
+      optimal_assignment.assign(cost_matrix.rows(), -1);
 
       for(int i = 0; i < zero_marks.rows(); i++) {
         for(int j = 0; j < zero_marks.cols(); j++) {
           if(zero_marks(i, j) == -1) {
-            optimal_assignment[i] = j;
+            if(!valid_index(optimal_assignment[i])) {
+              optimal_assignment[i] = j;
+            }
+            else {
+              optimal_assignment.clear();
+              break;
+            }
           }
         }
+        if(optimal_assignment.size() == 0 || !valid_index(optimal_assignment[i])) {
+          optimal_assignment.clear();
+          break;
+        }
+
       }
       //std::cout << cost_matrix << std::endl;
       return;

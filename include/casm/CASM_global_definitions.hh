@@ -76,13 +76,17 @@ namespace CASM {
 
 
   template<class T>
-  std::ostream &operator<<(std::ostream &out, const std::vector<T> &vec) {
-    if(vec.size() == 0)
-      out << "[empty]  ";
-    for(auto it = vec.cbegin(); it != vec.cend(); ++it) {
-      out << *it << "  ";
+  std::istream &operator>>(const std::vector<T> &vec, std::istream &_in) {
+    std::string line;
+    std::getline(_in,line,'\n');
+    std::stringstream tss(line);
+    T tval;
+    while(_in){
+      _in >> tval;
+      vec.push_back(tval);
     }
-    return out;
+
+    return _in;
   }
 
   ///For long integer indexing:
@@ -119,13 +123,17 @@ namespace CASM {
 };
 
 
-namespace Eigen {
-  template <typename Derived>
-  CASM::jsonParser &to_json(const Eigen::MatrixBase<Derived> &value, CASM::jsonParser &json);
-  template <typename Derived>
-  void from_json(Eigen::MatrixBase<Derived>  &value, const CASM::jsonParser &json);
-
-};
+  namespace std{
+    template<class T>
+    ostream &operator<<(ostream &out, const vector<T> &vec) {
+      if(vec.size() == 0)
+        out << "[empty]  ";
+      for(auto it = vec.cbegin(); it != vec.cend(); ++it) {
+        out << *it << "  ";
+      }
+      return out;
+    }
+  }
 
 //*****************************************************************************************************//
 

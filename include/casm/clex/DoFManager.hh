@@ -28,14 +28,14 @@ namespace CASM {
 
     //Clexulator printing routines
     ReturnArray<FunctionVisitor *> get_function_label_visitors() const;
-    void print_clexulator_member_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const;
-    void print_clexulator_private_method_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const;
-    void print_clexulator_private_method_implementations(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const;
+    void print_clexulator_member_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const;
+    void print_clexulator_private_method_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const;
+    void print_clexulator_private_method_implementations(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const;
 
-    void print_clexulator_public_method_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const;
-    void print_clexulator_public_method_implementations(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const;
+    void print_clexulator_public_method_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const;
+    void print_clexulator_public_method_implementations(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const;
 
-    void print_to_clexulator_constructor(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const;
+    void print_to_clexulator_constructor(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const;
   };
 
   /// DoFEnvironment is abstract class that handles interface between Configurations and BasisSets
@@ -70,15 +70,15 @@ namespace CASM {
       return NULL;
     };
 
-    virtual void print_clexulator_member_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent)const {};
+    virtual void print_clexulator_member_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent)const {};
 
-    virtual void print_clexulator_private_method_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent)const {};
-    virtual void print_clexulator_private_method_implementations(std::ostream &stream, const PrimClex &primclex, const std::string &indent)const {};
+    virtual void print_clexulator_private_method_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent)const {};
+    virtual void print_clexulator_private_method_implementations(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent)const {};
 
-    virtual void print_clexulator_public_method_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent)const {};
-    virtual void print_clexulator_public_method_implementations(std::ostream &stream, const PrimClex &primclex, const std::string &indent)const {};
+    virtual void print_clexulator_public_method_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent)const {};
+    virtual void print_clexulator_public_method_implementations(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent)const {};
 
-    virtual void print_to_clexulator_constructor(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const {};
+    virtual void print_to_clexulator_constructor(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const {};
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,13 +107,13 @@ namespace CASM {
       return new OccFuncLabeler("occ_func_%b_%f(%n)");
     };
 
-    void print_clexulator_member_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent)const;
+    void print_clexulator_member_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent)const;
 
-    void print_clexulator_private_method_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const;
+    void print_clexulator_private_method_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const;
 
-    void print_clexulator_public_method_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const;
+    void print_clexulator_public_method_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const;
 
-    void print_to_clexulator_constructor(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const;
+    void print_to_clexulator_constructor(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const;
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -129,7 +129,16 @@ namespace CASM {
 
     Array<double> m_neighbor_disp;
   public:
-    DisplacementDoFEnvironment(std::string dof_name, int _disp_index) : DoFEnvironment(dof_name), m_disp_index(_disp_index) {};
+    DisplacementDoFEnvironment(std::string dof_name) : DoFEnvironment(dof_name) {
+      if(dof_name == "disp_x")
+        m_disp_index = 0;
+      else if(dof_name == "disp_y")
+        m_disp_index = 1;
+      else if(dof_name == "disp_z")
+        m_disp_index = 2;
+      else
+        m_disp_index = -1;
+    };
 
     void set_global_state(const Configuration &config);
     void set_local_state(const Configuration &config, Index l);

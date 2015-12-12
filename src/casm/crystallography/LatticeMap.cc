@@ -120,7 +120,7 @@ namespace CASM {
     Eigen::Matrix3d cache = 0.5 * (F.transpose() * F / pow(std::abs(F.determinant()), 2.0 / 3.0) - Eigen::Matrix3d::Identity(3, 3));
 
     // geometric factor: (3*V/(4*pi))^(2/3)/3 = V^(2/3)/7.795554179
-    return std::pow(relaxed_atomic_vol, 2.0 / 3.0) * cache.squaredNorm() / 4.0;//7.795554179;
+    return std::pow(relaxed_atomic_vol, 2.0 / 3.0) * cache.squaredNorm() / 7.795554179;
   }
   //*******************************************************************************************
   double LatticeMap::_calc_strain_cost() const {
@@ -128,7 +128,7 @@ namespace CASM {
     m_cache.noalias() = 0.5 * (m_F.transpose() * m_F / (m_scale * m_scale) - Eigen::Matrix3d::Identity(3, 3));
 
     // geometric factor: (3*V/(4*pi))^(2/3)/3 = V^(2/3)/7.795554179
-    return std::pow(m_atomic_vol, 2.0 / 3.0) * m_cache.squaredNorm() / 4.0; //7.795554179;
+    return std::pow(m_atomic_vol, 2.0 / 3.0) * m_cache.squaredNorm() / 7.795554179;
   }
 
 

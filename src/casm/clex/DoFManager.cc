@@ -1,6 +1,7 @@
 #include "casm/clex/DoFManager.hh"
+#include "casm/clex/Supercell.hh"
 
-#include "casm/clex/PrimClex.hh"
+#include "casm/clusterography/Orbitree.hh"
 
 namespace CASM {
 
@@ -32,15 +33,11 @@ namespace CASM {
     if(contains(dof_name))
       return;
 
-    if(dof_name == "occupation")
+    if(dof_name.find("occ") == 0)
       m_environs.push_back(new OccupationDoFEnvironment(dof_name));
-    else if(dof_name == "x-displacemnt")
-      m_environs.push_back(new DisplacementDoFEnvironment(dof_name, 0));
-    else if(dof_name == "y-displacemnt")
-      m_environs.push_back(new DisplacementDoFEnvironment(dof_name, 1));
-    else if(dof_name == "z-displacemnt")
-      m_environs.push_back(new DisplacementDoFEnvironment(dof_name, 2));
-    else if(dof_name == "strain")
+    else if(dof_name.find("disp") == 0)
+      m_environs.push_back(new DisplacementDoFEnvironment(dof_name));
+    else if(dof_name.find("strain") == 0)
       m_environs.push_back(new StrainDoFEnvironment(dof_name));
     else {
       std::cerr << "CRITICAL ERROR: Unknown option '" << dof_name << "' passed to DoFManager::add_dof()!\n"
@@ -88,106 +85,121 @@ namespace CASM {
 
   //************************************************************
 
-  void DoFManager::print_clexulator_member_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const {
+  void DoFManager::print_clexulator_member_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const {
     for(Index i = 0; i < m_environs.size(); i++) {
-      m_environs[i]->print_clexulator_member_definitions(stream, primclex, indent);
+      m_environs[i]->print_clexulator_member_definitions(stream, tree, indent);
     }
   }
 
   //************************************************************
 
-  void DoFManager::print_clexulator_private_method_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const {
+  void DoFManager::print_clexulator_private_method_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const {
     for(Index i = 0; i < m_environs.size(); i++) {
-      m_environs[i]->print_clexulator_private_method_definitions(stream, primclex, indent);
+      m_environs[i]->print_clexulator_private_method_definitions(stream, tree, indent);
     }
   }
 
   //************************************************************
 
-  void DoFManager::print_clexulator_private_method_implementations(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const {
+  void DoFManager::print_clexulator_private_method_implementations(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const {
     for(Index i = 0; i < m_environs.size(); i++) {
-      m_environs[i]->print_clexulator_private_method_implementations(stream, primclex, indent);
+      m_environs[i]->print_clexulator_private_method_implementations(stream, tree, indent);
     }
   }
 
   //************************************************************
 
-  void DoFManager::print_clexulator_public_method_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const {
+  void DoFManager::print_clexulator_public_method_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const {
     for(Index i = 0; i < m_environs.size(); i++) {
-      m_environs[i]->print_clexulator_public_method_definitions(stream, primclex, indent);
+      m_environs[i]->print_clexulator_public_method_definitions(stream, tree, indent);
     }
   }
 
   //************************************************************
 
-  void DoFManager::print_clexulator_public_method_implementations(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const {
+  void DoFManager::print_clexulator_public_method_implementations(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const {
     for(Index i = 0; i < m_environs.size(); i++) {
-      m_environs[i]->print_clexulator_public_method_implementations(stream, primclex, indent);
+      m_environs[i]->print_clexulator_public_method_implementations(stream, tree, indent);
     }
   }
 
   //************************************************************
 
-  void DoFManager::print_to_clexulator_constructor(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const {
+  void DoFManager::print_to_clexulator_constructor(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const {
     for(Index i = 0; i < m_environs.size(); i++) {
-      m_environs[i]->print_to_clexulator_constructor(stream, primclex, indent);
+      m_environs[i]->print_to_clexulator_constructor(stream, tree, indent);
     }
   }
 
   //************************************************************
 
-  void OccupationDoFEnvironment::print_clexulator_member_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent)const {
-    for(Index b = 0; b < primclex.get_prim().basis.size(); b++) {
-      if(!primclex.get_prim().basis[b].occupant_basis().size())
+  void OccupationDoFEnvironment::print_clexulator_member_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent)const {
+    const SiteOrbitBranch &asym_unit(tree.asym_unit());
+    for(Index no = 0; no < asym_unit.size(); no++) {
+      if(asym_unit[no].size() == 0 || asym_unit[no][0].clust_basis.size() == 0)
         continue;
 
       stream <<
-             indent << "// Occupation Function table for basis site " << b << ":\n";
-      for(Index f = 0; f < primclex.get_prim().basis[b].occupant_basis().size(); f++) {
-        stream <<
-               indent << "double " << "m_occ_func_" << b << '_' << f << '[' << primclex.get_prim().basis[b].site_occupant().size() << "];\n";
+             indent << "// Occupation Function tables for basis sites in asymmetric unit " << no << ":\n";
+      for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
+        Index b = asym_unit[no][ne][0].basis_ind();
+        stream << indent << "//   - basis site " << b << ":\n";
+        for(Index f = 0; f < asym_unit[no][ne].clust_basis.size(); f++) {
+          stream <<
+                 indent << "double " << "m_occ_func_" << b << '_' << f << '[' << asym_unit[no][ne][0].site_occupant().size() << "];\n";
+        }
+        stream << '\n';
       }
-      stream << '\n';
+
     }
 
   }
-
   //************************************************************
-  void OccupationDoFEnvironment::print_clexulator_private_method_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const {
-    for(Index b = 0; b < primclex.get_prim().basis.size(); b++) {
-      if(!primclex.get_prim().basis[b].occupant_basis().size())
+  void OccupationDoFEnvironment::print_clexulator_private_method_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const {
+    const SiteOrbitBranch &asym_unit(tree.asym_unit());
+    for(Index no = 0; no < asym_unit.size(); no++) {
+      if(asym_unit[no].size() == 0 || asym_unit[no][0].clust_basis.size() == 0)
         continue;
 
-      stream <<
-             indent << "// Occupation Function accessors for basis site " << b << ":\n";
-      for(Index f = 0; f < primclex.get_prim().basis[b].occupant_basis().size(); f++) {
+      for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
+        Index b = asym_unit[no][ne][0].basis_ind();
         stream <<
-               indent << "const double &occ_func_" << b << '_' << f << "(const int &nlist_ind)const{return " << "m_occ_func_" << b << '_' << f << "[*(m_occ_ptr+*(m_nlist_ptr+nlist_ind))];}\n";
+               indent << "// Occupation Function accessors for basis site " << b << ":\n";
+        for(Index f = 0; f < asym_unit[no][ne].clust_basis.size(); f++) {
+          stream <<
+                 indent << "const double &occ_func_" << b << '_' << f << "(const int &nlist_ind)const{return " << "m_occ_func_" << b << '_' << f << "[*(m_occ_ptr+*(m_nlist_ptr+nlist_ind))];}\n";
+        }
+        stream << '\n';
       }
-      stream << '\n';
+
     }
   }
-
   //************************************************************
-  void OccupationDoFEnvironment::print_clexulator_public_method_definitions(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const {
+  void OccupationDoFEnvironment::print_clexulator_public_method_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const {
 
   }
 
   //************************************************************
 
-  void OccupationDoFEnvironment::print_to_clexulator_constructor(std::ostream &stream, const PrimClex &primclex, const std::string &indent) const {
+  void OccupationDoFEnvironment::print_to_clexulator_constructor(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const {
+    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
     stream.precision(10);
-    for(Index b = 0; b < primclex.get_prim().basis.size(); b++) {
-      for(Index f = 0; f < primclex.get_prim().basis[b].occupant_basis().size(); f++) {
-        for(Index s = 0; s < primclex.get_prim().basis[b].site_occupant().size(); s++) {
-          if(s == 0)
-            stream << indent;
-          stream << "m_occ_func_" << b << '_' << f << '[' << s << "] = "
-                 << primclex.get_prim().basis[b].occupant_basis()[f]->eval(Array<Index>(1, primclex.get_prim().basis[b].site_occupant().ID()), Array<Index>(1, s));
-          if(s + 1 == primclex.get_prim().basis[b].site_occupant().size())
-            stream << ";\n\n";
-          else
-            stream << ", ";
+
+    const SiteOrbitBranch &asym_unit(tree.asym_unit());
+    for(Index no = 0; no < asym_unit.size(); no++) {
+      for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
+        Index b = asym_unit[no][ne][0].basis_ind();
+        for(Index f = 0; f < asym_unit[no][ne].clust_basis.size(); f++) {
+          for(Index s = 0; s < asym_unit[no][ne][0].site_occupant().size(); s++) {
+            if(s == 0)
+              stream << indent;
+            stream << "m_occ_func_" << b << '_' << f << '[' << s << "] = "
+                   << asym_unit[no][ne].clust_basis[f]->eval(Array<Index>(1, asym_unit[no][ne][0].site_occupant().ID()), Array<Index>(1, s));
+            if(s + 1 == asym_unit[no][ne][0].site_occupant().size())
+              stream << ";\n\n";
+            else
+              stream << ", ";
+          }
         }
       }
     }

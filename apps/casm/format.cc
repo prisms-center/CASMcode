@@ -31,7 +31,8 @@ namespace CASM {
       ("scel", "Description and location of 'SCEL' file")
       ("lat", "Description and location of 'LAT' files")
       ("pos", "Description and location of 'POS' files")
-      ("fit", "Description and location of the 'energy', 'corr.in', and 'eci.in' files");
+      ("fit", "Description and location of the 'energy', 'corr.in', and 'eci.in' files")
+      ("monte", "Description and location of the Monte Carlo input file");
 
       try {
         po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -171,7 +172,7 @@ namespace CASM {
       std::cout << "'prim.json' describes the primitive cell structure. It includes the lattice \n";
       std::cout << "vectors, crystal basis sites and a list of possible occupant molecules on each\n";
       std::cout << "basis site.\n\n";
-      
+
       std::cout << "- Molecule names are case sensitive.\n";
       std::cout << "- 'Va' is reserved for vacancies.\n";
       std::cout << "- The default tolerance for checking symmetry is 1e-5, so basis site coordinates\n";
@@ -190,12 +191,12 @@ namespace CASM {
       std::cout << "-------\n\n";
 
       std::cout << "\n### PRIM ##################\n\n";
-      
+
       std::cout << "DESCRIPTION:\n";
       std::cout << "PRIM is the input file used by previous version of casm. It can be read and        \n";
       std::cout << "converted to 'prim.json'. The format of PRIM is very similar to the VASP POSCAR    \n";
       std::cout << "except a list of possible occupant molecules is included with each basis site.     \n\n";
-      
+
       std::cout << "- Molecule names are case sensitive.\n";
       std::cout << "- 'Va' is reserved for vacancies.\n";
       std::cout << "- The default tolerance for checking symmetry is 1e-5, so basis site coordinates\n";
@@ -310,7 +311,7 @@ Direct\n\
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
       std::cout <<
-"{\n  \"supercells\" : {\n    \"SCEL1_1_1_1_0_0_0\" : {\n      \"0\" : {\n        \"calctype.default\" : {\n          \"ref.default\" : {\n            \"properties\" : {\n              \"calc\" : {\n                \"basis_deformation\" : 0.000000000000,\n                \"data_timestamp\" : 1441172550,\n                \"lattice_deformation\" : 0.000000676576,\n                \"relaxation_strain\" : [ 0.001443293898, 0.001443293305, 0.002332246990, 0.000000000000, 0.000000000000, -0.000000001264 ],\n                \"relaxed_energy\" : -17.093958770000,\n                \"rms_force\" : 0.000000000000,\n                \"volume_relaxation\" : 1.005222845232\n              },\n              \"delta\" : {\n                \"relaxed_energy\" : 0.000000000000\n              },\n              \"ref\" : {\n                \"relaxed_energy\" : -17.093958770000\n              }\n            }\n          }\n        },\n        \"dof\" : {\n          \"occupation\" : [ 0, 0, 0, 0 ]\n        },\n        \"selected\" : false,\n        \"source\" : [ \"occupation_enumeration\" ]\n      },\n\
+                "{\n  \"supercells\" : {\n    \"SCEL1_1_1_1_0_0_0\" : {\n      \"0\" : {\n        \"calctype.default\" : {\n          \"ref.default\" : {\n            \"properties\" : {\n              \"calc\" : {\n                \"basis_deformation\" : 0.000000000000,\n                \"data_timestamp\" : 1441172550,\n                \"lattice_deformation\" : 0.000000676576,\n                \"relaxation_strain\" : [ 0.001443293898, 0.001443293305, 0.002332246990, 0.000000000000, 0.000000000000, -0.000000001264 ],\n                \"relaxed_energy\" : -17.093958770000,\n                \"rms_force\" : 0.000000000000,\n                \"volume_relaxation\" : 1.005222845232\n              },\n              \"delta\" : {\n                \"relaxed_energy\" : 0.000000000000\n              },\n              \"ref\" : {\n                \"relaxed_energy\" : -17.093958770000\n              }\n            }\n          }\n        },\n        \"dof\" : {\n          \"occupation\" : [ 0, 0, 0, 0 ]\n        },\n        \"selected\" : false,\n        \"source\" : [ \"occupation_enumeration\" ]\n      },\n\
       ... other configurations ...\n\
     },\n\
     ... other supercells ... \n\
@@ -585,44 +586,44 @@ LCHARG = .FALSE.\n";
 
       std::cout << "DESCRIPTION:\n";
       std::cout << "This JSON file contains the currently selected composition axes, and \n" <<
-                   "a list of possible standard or custom composition axes.              \n\n" <<
-      
-                   "standard_axes:                                                      \n" <<
-                   "  A JSON object containing each possible standard composition axes  \n" <<
-                   "  as an attribute with its index as the key.                        \n\n" <<
-                   
-                   "custom_axes:                                                        \n" <<
-                   "  A JSON object containing each custom composition axes as an       \n" <<
-                   "  attribute with its index as the key. The keys should not be       \n" <<
-                   "  repeats of any of the standard_axes.                              \n\n" <<
-                   
-                   "standard_axes/composition_axes:components                           \n" <<
-                   "  A JSON array containing the names of possible species.            \n\n" <<
-                   
-                   "standard_axes/composition_axes:independent_compositions             \n" <<
-                   "  The number of independent composition axes.                       \n\n" <<
-                   
-                   "standard_axes/composition_axes:origin                               \n" <<
-                   "  The composition of origin the of composition axes in terms of     \n" <<
-                   "  number of each component species per primitive cell, ordered as in\n" <<
-                   "  the 'components' array.                                           \n\n" <<
-                   
-                   "standard_axes/composition_axes:a, b, c, ...                         \n" <<
-                   "  The composition of end members a, b, c, etc. in terms of number of\n" <<
-                   "  each component species per primitive cell, ordered as in the      \n" <<
-                   "  'components' array.                                               \n\n" <<
+                "a list of possible standard or custom composition axes.              \n\n" <<
 
-                   "standard_axes/composition_axes:param_formula:                       \n" <<
-                   "  The formula that converts 'comp_n' (# of each component per       \n" <<
-                   "  primitive cell) to 'comp' (composition relative the selected      \n" <<
-                   "  composition axes).                                                \n\n" <<
+                "standard_axes:                                                      \n" <<
+                "  A JSON object containing each possible standard composition axes  \n" <<
+                "  as an attribute with its index as the key.                        \n\n" <<
 
-                   "standard_axes/composition_axes:mol_formula:                         \n" <<
-                   "  The formula that converts 'comp' (composition relative the        \n" <<
-                   "  selected composition axes) to 'comp_n' (# of each component per   \n" <<
-                   "  primitive cell).                                                  \n\n\n";
+                "custom_axes:                                                        \n" <<
+                "  A JSON object containing each custom composition axes as an       \n" <<
+                "  attribute with its index as the key. The keys should not be       \n" <<
+                "  repeats of any of the standard_axes.                              \n\n" <<
 
-      
+                "standard_axes/composition_axes:components                           \n" <<
+                "  A JSON array containing the names of possible species.            \n\n" <<
+
+                "standard_axes/composition_axes:independent_compositions             \n" <<
+                "  The number of independent composition axes.                       \n\n" <<
+
+                "standard_axes/composition_axes:origin                               \n" <<
+                "  The composition of origin the of composition axes in terms of     \n" <<
+                "  number of each component species per primitive cell, ordered as in\n" <<
+                "  the 'components' array.                                           \n\n" <<
+
+                "standard_axes/composition_axes:a, b, c, ...                         \n" <<
+                "  The composition of end members a, b, c, etc. in terms of number of\n" <<
+                "  each component species per primitive cell, ordered as in the      \n" <<
+                "  'components' array.                                               \n\n" <<
+
+                "standard_axes/composition_axes:param_formula:                       \n" <<
+                "  The formula that converts 'comp_n' (# of each component per       \n" <<
+                "  primitive cell) to 'comp' (composition relative the selected      \n" <<
+                "  composition axes).                                                \n\n" <<
+
+                "standard_axes/composition_axes:mol_formula:                         \n" <<
+                "  The formula that converts 'comp' (composition relative the        \n" <<
+                "  selected composition axes) to 'comp_n' (# of each component per   \n" <<
+                "  primitive cell).                                                  \n\n\n";
+
+
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
       std::cout <<
@@ -641,19 +642,46 @@ LCHARG = .FALSE.\n";
 
       std::cout << "DESCRIPTION:\n";
       std::cout << "This JSON file contains specifications for generating the cluster\n" <<
-                   "basis functions.                                                    \n\n";
+                "basis functions.                                                    \n\n";
 
-      std::cout << "The 'site_basis_functions' may be 'occupation' or 'chebychev'.      \n\n";
+      std::cout << "'site_basis_functions' may specify a string, which can be either 'occupation' or \n"
+                << "'chebychev'. Otherwise, specifies a JSON object containing a composition vector or\n"
+                << "a JSON array containing multiple composition vectors. A single composition vector\n"
+                << "is formatted as, e.g.\n"
+                << "   \"composition\" : [\"Au\" : 0.25, \"Cu\" : 0.75] \n"
+                << "The site basis functions will then be constructed as to be optimized for that composition.\n\n"
+
+                << "To specify different compositions on multiple sublattices, an array can be used. \n"
+                << "As an example, the following specifies a different composition on sublattice 0 than\n"
+                << "on sublattices 1 and 3: \n\n"
+
+                << "   \"site_basis_functions\" : [\n"
+                << "                                {\n"
+                << "                                  \"composition\" : [\"Ga\" : 0.3, \"In\" : 0.7],\n"
+                << "                                  \"sublat_indices\" : [0]\n"
+                << "                                },\n"
+                << "                                {\n"
+                << "                                  \"composition\" : [\"Ga\" : 1.0, \"In\" : 0.0],\n"
+                << "                                  \"sublat_indices\" : [1,2]\n"
+                << "                                }\n"
+                << "                             ]\n\n"
+
+                << "Sublattices are specified in the same order as in prim.json. Sublattice compositions\n"
+                << "are not allowed to break the symmetry of the crystal. If equivalent sublattices are\n"
+                << "assigned inequivalent compositions, one will be chosen arbitrarily and propagated to\n"
+                << "all equivalent sublattices.  The resulting site basis functions can be reviewed using\n"
+                << "'casm bset --functions'\n\n";
+
 
       std::cout << "The JSON object 'orbit_branch_specs' specifies the maximum size of pair,   \n" <<
-                   "triplet, quadruplet, etc. clusters in terms of the maximum distance \n" <<
-                   "between any two sites in the cluster.\n\n";
+                "triplet, quadruplet, etc. clusters in terms of the maximum distance \n" <<
+                "between any two sites in the cluster.\n\n";
 
       std::cout << "The JSON array 'orbit_specs' allows specifying particular custom orbits \n" <<
-                   "by providing the prototype cluster coordinates. The 'include_subclusters'\n" <<
-                   "option allows including all orbits of subclusters of the specified cluster\n\n\n";
+                "by providing the prototype cluster coordinates. The 'include_subclusters'\n" <<
+                "option allows including all orbits of subclusters of the specified cluster\n\n\n";
 
-      
+
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
       std::cout <<
@@ -692,8 +720,8 @@ LCHARG = .FALSE.\n";
 
                 "If you create custom 'properties.ref_state.i.json' files, only the \n" <<
                 "'param_composition' and 'ref_state' members are required.          \n\n\n";
-      
-      
+
+
       std::cout << "EXAMPLE: properties.ref_state.0.json\n";
       std::cout << "-------\n";
       std::cout <<
@@ -717,11 +745,11 @@ LCHARG = .FALSE.\n";
 
       std::cout << "DESCRIPTION:\n";
       std::cout << "Contains a list of all the generated and imported supercells. Each  \n" <<
-                   "entry gives the name of a supercell, its volume in number of        \n" <<
-                   "primitive volumes, and the transformation matrix to go from the     \n" <<
-                   "primitive cell to the supercell. The convention is                  \n" <<
-                   "            LAT.scel = LAT.prim*transf_matrix,                      \n" <<
-                   "where the columns of the LAT matrices are the lattice vectors.      \n\n\n";
+                "entry gives the name of a supercell, its volume in number of        \n" <<
+                "primitive volumes, and the transformation matrix to go from the     \n" <<
+                "primitive cell to the supercell. The convention is                  \n" <<
+                "            LAT.scel = LAT.prim*transf_matrix,                      \n" <<
+                "where the columns of the LAT matrices are the lattice vectors.      \n\n\n";
 
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
@@ -755,9 +783,9 @@ Supercell Transformation Matrix: \n\
 
       std::cout << "DESCRIPTION:\n";
       std::cout << "Contains the lattice vectors of a particular supercell of your CASM \n" <<
-                   "project. The format is the same as the first lines in a standard    \n" <<
-                   "vasp POSCAR file, excluding the title (scaling followed by the three\n" <<
-                   "lattice vectors as rows).\n\n\n";
+                "project. The format is the same as the first lines in a standard    \n" <<
+                "vasp POSCAR file, excluding the title (scaling followed by the three\n" <<
+                "lattice vectors as rows).\n\n\n";
 
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
@@ -779,10 +807,10 @@ Supercell Transformation Matrix: \n\
       std::cout << "DESCRIPTION:\n";
       std::cout << "This file is generated using the '--write-pos' option for 'casm run'.\n";
       std::cout << "Decorated configuration for a particular supercell. It is a         \n" <<
-                   "supercell of your primitive structure after the enumeration on the  \n" <<
-                   "alloying sites. The format is standard vasp 5.x format, and the     \n" <<
-                   "coordinates of the sites for the configuration are the ideal sites  \n" <<
-                   "specified in the PRIM file.\n\n\n";
+                "supercell of your primitive structure after the enumeration on the  \n" <<
+                "alloying sites. The format is standard vasp 5.x format, and the     \n" <<
+                "coordinates of the sites for the configuration are the ideal sites  \n" <<
+                "specified in the PRIM file.\n\n\n";
 
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
@@ -813,41 +841,41 @@ Direct\n\
 
       std::cout << "DESCRIPTION:\n";
       std::cout << "The 'energy' file contains information about every selected    \n" <<
-                   "configuration that will be included as training data for fitting ECI.\n\n" <<
+                "configuration that will be included as training data for fitting ECI.\n\n" <<
 
-                   "1st column:                                                        \n" <<
-                   "  Formation energy determined from the reference states.           \n" <<
-                   "  (See 'casm ref' and 'casm format --ref_state' for details)       \n\n" <<
+                "1st column:                                                        \n" <<
+                "  Formation energy determined from the reference states.           \n" <<
+                "  (See 'casm ref' and 'casm format --ref_state' for details)       \n\n" <<
 
-                   "2nd column:                                                        \n" <<
-                   "  Weight to be placed on configuration when fitting energies with  \n" <<
-                   "  eci_search.                                                      \n\n" <<
+                "2nd column:                                                        \n" <<
+                "  Weight to be placed on configuration when fitting energies with  \n" <<
+                "  eci_search.                                                      \n\n" <<
 
-                   "3rd and following columns:                                         \n" <<
-                   "  Composition of configuration. For a system with N independent    \n" <<
-                   "  occupants there will be N-1 columns (see 'casm comp')            \n\n" <<
+                "3rd and following columns:                                         \n" <<
+                "  Composition of configuration. For a system with N independent    \n" <<
+                "  occupants there will be N-1 columns (see 'casm comp')            \n\n" <<
 
-                   "2nd column from back:                                              \n" <<
-                   "  Distance to convex hull. Groundstates will have a value of 0.0000.\n\n" <<
+                "2nd column from back:                                              \n" <<
+                "  Distance to convex hull. Groundstates will have a value of 0.0000.\n\n" <<
 
-                   "Last column:                                                       \n" <<
-                   "  Path to configuration.                                           \n\n" <<
+                "Last column:                                                       \n" <<
+                "  Path to configuration.                                           \n\n" <<
 
-                   "The energy file is to be used together with the corr.in and eci.in \n" <<
-                   "files to fit the cluster expansion using the eci_search program.   \n\n";
+                "The energy file is to be used together with the corr.in and eci.in \n" <<
+                "files to fit the cluster expansion using the eci_search program.   \n\n";
 
       std::cout << "The 'corr.in' file contains a matrix of correlations for each   \n" <<
-                   "selected configuration.    \n\n";
+                "selected configuration.    \n\n";
 
       std::cout << "The 'eci.in' file contains a list of calculated correlations and \n" <<
-                   "can be used to control with correlations are fit by 'eci_search'. \n\n";
+                "can be used to control with correlations are fit by 'eci_search'. \n\n";
 
       std::cout << "The 'eci.out' file contains the fitted ECI as calculated by 'eci_search'.\n\n";
 
       std::cout << "EXAMPLE: energy\n";
       std::cout << "-------\n";
       std::cout <<
-"#formation_energy    n/a    n/a    n/a    path    \n\
+                "#formation_energy    n/a    n/a    n/a    path    \n\
 0.0000000000000  1.000000000000  1.000000000000  0.000000000000  /home/user/science/supercells/SCEL1_1_1_1_0_0_0/0  \n\
 0.0000000000000  1.000000000000  0.000000000000  0.000000000000  /home/user/science/supercells/SCEL1_1_1_1_0_0_0/1  \n\
 -0.415501770000  1.000000000000  0.500000000000  0.243052905000  /home/user/science/supercells/SCEL2_1_1_2_0_0_0/0  \n\
@@ -857,6 +885,185 @@ Direct\n\
 -0.388569660000  1.000000000000  0.666666666667  0.050714310000  /home/user/science/supercells/SCEL3_1_3_1_0_0_1/0  \n\
 -0.444539536667  1.000000000000  0.333333333333  0.076832028688  /home/user/science/supercells/SCEL3_1_3_1_0_0_1/1  \n\
 -0.377047050000  1.000000000000  0.666666666667  0.062236920000  /home/user/science/supercells/SCEL3_1_3_1_0_0_2/0  \n";
+      std::cout << "-------\n";
+
+    }
+
+    if(vm.count("monte")) {
+      std::cout << "\n### monte ##################\n\n";
+
+      std::cout << "LOCATION WHEN GENERATED:\n";
+      std::cout << "  User determined\n\n\n";
+
+      std::cout << "DESCRIPTION:\n";
+      std::cout << "  The Monte Carlo input file does not need to be in any particular \n" <<
+                "  location, as long as it is somewhere inside the CASM project     \n" <<
+                "  directory. The input file contains a JSON object with a \"type\" \n" <<
+                "  specifying the type of Monte Carlo calculation to be performed   \n" <<
+                "  and three main subcategories: \"initialization\", \"data\", and  \n" <<
+                "  \"driver\".                                                      \n\n" <<
+
+                "  Restarts: Monte Carlo calculations that are run in \"incremental\"\n" <<
+                "   drive mode and are stopped before the entire path has been      \n" <<
+                "   calculated can be restarted as long as the input settings do not\n" <<
+                "   change. Upon restart, the settings file is checked for changes, \n" <<
+                "   and the results summary file is checked for the last finished   \n" <<
+                "   conditions. Then the path is resumed from the next set of       \n" <<
+                "   conditions.                                                     \n\n" <<
+
+                "Input file parameters:                                             \n\n" <<
+
+                "\"type\" (string):                                                 \n\n" <<
+
+                "  \"grand_canonical\": Currently the only option.                  \n" <<
+                "    Semi-grand canonical Monte Carlo calculation in which the total\n" <<
+                "    number of sites is fixed, but the occupants on each site may   \n" <<
+                "    vary. One occupant change at a time is attempted.              \n\n\n" <<
+
+
+                "\"initialization\": (JSON object) Supercell and parameterization   \n"
+                "    initialization options.                                        \n\n" <<
+
+                "  /\"clex\", /\"bset\", /\"calctype\", /\"ref\", /\"eci\": (string)\n" <<
+                "    The CASM project settings that should be used for the monte    \n" <<
+                "    carlo calculation.                                             \n\n" <<
+
+                "  /\"matrix\": (3x3 JSON arrays of integers) The supercell        \n" <<
+                "    transformation matrix.                                         \n\n" <<
+
+                "  /\"motif\": (JSON object) Specifies the initial occupation of   \n" <<
+                "      the supercell.                                               \n\n" <<
+
+                "    /\"configname\": (string) The configuration that is tiled to  \n" <<
+                "      fill the supercell (ex. \"SCEL3_3_1_1_0_2_2/0\").            \n" <<
+                "      An error is thrown if the \"matrix\" given is not a supercell\n" <<
+                "      of the specified configuration.                              \n\n\n" <<
+
+
+                "\"data\": (JSON object) Data collection options                    \n\n" <<
+
+                "  /\"sample_by\": (string) Specify unit for the period between    \n" <<
+                "    samples.  May be either \"step\" (sample after every \"sample_period\"\n" <<
+                "    proposed Monte Carlo events), or \"pass\" (sample after the    \n" <<
+                "    \"sample_period\" number of passes), where 1 pass is a number of\n" <<
+                "    steps equal to the number of sites in the supercell that have  \n" <<
+                "    variable occupation).                                          \n\n" <<
+
+                "  /\"sample_period\": (integer) Specify how many steps or passes  \n" <<
+                "    to wait between data samples.                                  \n\n" <<
+
+                "  /\"measurements\": (JSON array containing JSON objects)         \n" <<
+                "    Specifies which properties to sample. Each JSON object should  \n" <<
+                "    include \"quantity\" (string) specifying a property to be      \n" <<
+                "    sampled. Optionally, it may also include \"precision\" (number),\n" <<
+                "    indicating the required (absolute) precision in the average of \n" <<
+                "    the quantity for the calculation to be considered converged. If\n" <<
+                "    a precision is given for any quantity, then the Monte Carlo    \n" <<
+                "    calculations run in automatic convergence mode and continue    \n" <<
+                "    until all quantities with a specified precision are converged  \n" <<
+                "    to level requested.                                            \n\n" <<
+
+                "    Possible options for \"quantity\" are:                         \n" <<
+                "      \"comp\": composition, relative the composition axes         \n" <<
+                "      \"comp_n\": composition, number of atoms per unit cell       \n" <<
+                "      \"site_frac\": composition, normalized per basis site        \n" <<
+                "      \"atom_frac\": composition, normalized per total number of atoms\n" <<
+                "      \"formation_energy\": formation energy (per unit cell)       \n" <<
+                "      \"potential_energy\": potential energy (per unit cell),      \n" <<
+                "        (= formation_energy - sum_i(mu_i*comp_i))                  \n" <<
+                "      \"non_zero_eci_correlations\": correlations (per unit cell)  \n" <<
+                "        which have non-zero eci values.                            \n" <<
+                "      \"all_correlations\": correlations (per unit cell)           \n\n" <<
+
+                "  /\"confidence\": (number, range (0.0, 1.0), default 0.95) The   \n" <<
+                "    confidence level used for calculating the precision in the     \n" <<
+                "    average value of sampled quantities.                           \n\n" <<
+
+                "  /\"min_pass\", /\"min_step\", /\"min_sample\": (integer) If in\n" <<
+                "    automatic convergence mode, prevents the calculation from a    \n" <<
+                "    minimum number of passes, steps, or samples have occurred.     \n\n" <<
+
+                "  /\"max_pass\", /\"max_step\", /\"max_sample\": (integer) If in\n" <<
+                "    automatic convergence mode, stops the calculation if the       \n" <<
+                "    specified number of passes, steps, or samples have occurred.   \n\n" <<
+
+                "  /\"N_pass\", /\"N_step\", /\"N_sample\": (integer) When not in\n" <<
+                "    automatic convergence mode (no precision has been specified for\n" <<
+                "    any quantities being sampled), stops the calculation when the  \n" <<
+                "    specified number of passes, steps, or samples have occurred.   \n\n" <<
+
+                "  /\"equilibration_passes_first_run\": (integer) If included, the \n" <<
+                "    requested number of passes will be performed at the initial    \n" <<
+                "    conditions as a preliminary step before the actual run begins. \n" <<
+                "    This may be useful when not running in automatic convergence   \n" <<
+                "    mode.                                                          \n\n" <<
+
+                "  /\"equilibration_passes_each_run\": (integer) If included, the \n" <<
+                "    requested number of passes will be performed at each condition \n" <<
+                "    as a preliminary step before the actual run begins. This may be\n" <<
+                "    useful when not running in automatic convergence mode.         \n\n" <<
+
+                "  /\"storage\": (JSON object) Options for writing results.        \n\n" <<
+
+                "    /\"output_format\": (string or JSON array of string) Specifies\n" <<
+                "      the type or types of output files. Current options are \"csv\"\n" <<
+                "      or \"json\". Type names with either all lower case or all    \n" <<
+                "      upper case are accepted.                                     \n\n" <<
+
+                "    /\"write_observations\": (boolean, default false) If true,    \n" <<
+                "      all individual observations of the quantities requested to be\n" <<
+                "      sampled will be written to compressed files:                 \n" <<
+                "        \"output_directory\"/conditions.i/observations.ext.gz      \n" <<
+                "      where 'i' is the condition index and 'ext' is the output     \n" <<
+                "      format.                                                      \n\n" <<
+
+                "    /\"write_trajectory\": (boolean, default false) If true,      \n" <<
+                "      the value of all degrees of freedom at the time of each      \n" <<
+                "      sample will be written to compressed files:                  \n" <<
+                "        \"output_directory\"/conditions.i/trajectory.ext.gz        \n" <<
+                "      where 'i' is the condition index and 'ext' is the output     \n" <<
+                "      format.                                                      \n\n\n" <<
+
+
+                "\"driver\": (JSON object) Contains options controlling the         \n" <<
+                "    conditions at which calculations are performed.                \n\n" <<
+
+                "  /\"mode\": (string) Specify the drive mode.                     \n\n" <<
+
+                "    Possible options for \"mode\" are:                             \n" <<
+                "      \"single\": perform one calculation at the initial conditions\n" <<
+                "      \"incremental\": perform several calculations, starting at the\n" <<
+                "        initial conditions and incrementing by the incremental     \n" <<
+                "        conditions up to (and including) the final conditions.     \n\n" <<
+
+                "  /\"initial_conditions\",\n" <<
+                "  /\"incremental_conditions\", \n" <<
+                "  /\"final_conditions\": \n" <<
+                "    (JSON object) Specifies the applied conditions for the         \n" <<
+                "    calculation. For \"incremental_conditions\", specifies the     \n" <<
+                "    change in conditions between individual calculations. Each JSON\n" <<
+                "    object should include:                                         \n\n" <<
+
+                "    /\"temperature\": (number) The temperature in K.              \n\n" <<
+
+                "    /\"mu\" (JSON object): The chemical potential(s)              \n\n" <<
+
+                "      /\"a\", /\"b\", ...: (number) Each chemical potential. For \n" <<
+                "      example, \"a\" specifies dG/dcomp(a) and \"b\" specifies     \n" <<
+                "      dG/dcomp(b). The number of chemical potentials provided must \n" <<
+                "      match the number of independent compositions.                \n\n" <<
+
+                "    /\"tolerance\": (number) For \"incremental\" drive mode,      \n" <<
+                "      specifies a numerical tolerance for comparing conditions.    \n\n\n";
+
+      std::cout << "EXAMPLE: Settings for an incremental calculation with increasing temperature in manual convergence mode.\n";
+      std::cout << "-------\n";
+      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like this one) are ignored.\",\n  \"type\" : \"grand_canonical\",\n  \"initialization\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\",\n    \"matrix\" : [\n      [9, 0, 0],\n      [0, 9, 0],\n      [0, 0, 9]\n    ],\n    \"motif\" : {\n      \"configname\" : \"SCEL3_3_1_1_0_2_2/0\"\n    }\n  },\n  \"data\" : {\n    \"sample_by\" : \"pass\",\n    \"sample_period\" : 10,\n    \"equilibration_passes_each_run\" : 1000,\n    \"N_pass\" : 10000,\n    \"measurements\" : [ \n      { \n        \"quantity\" : \"formation_energy\"\n      },\n      { \n        \"quantity\" : \"potential_energy\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp_n\"\n      },\n      { \n        \"quantity\" : \"all_correlations\"\n      }\n    ],\n    \"storage\" : {\n      \"output_format\" : \"json\"\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\",\n    \"initial_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 200.0,\n      \"tolerance\" : 0.001\n    },\n    \"final_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 800.0,\n      \"tolerance\" : 0.001\n    },\n    \"incremental_conditions\" : {\n      \"mu\" : {\n        \"a\" : 0.00\n      },\n      \"temperature\" : 10.0,\n      \"tolerance\" : 0.001\n    }\n  }\n}\n";
+      std::cout << "-------\n\n";
+
+      std::cout << "EXAMPLE: Settings for an incremental calculation with increasing mu in automatic convergence mode.\n";
+      std::cout << "-------\n";
+      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like this one) are ignored.\",\n  \"type\" : \"grand_canonical\",\n  \"initialization\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\",\n    \"matrix\" : [\n      [9, 0, 0],\n      [0, 9, 0],\n      [0, 0, 9]\n    ],\n    \"motif\" : {\n      \"configname\" : \"SCEL3_3_1_1_0_2_2/0\"\n    }\n  },\n  \"data\" : {\n    \"sample_by\" : \"pass\",\n    \"sample_period\" : 1,\n    \"max_pass\" : 1000000,\n    \"measurements\" : [ \n      { \n        \"quantity\" : \"formation_energy\"\n      },\n      { \n        \"quantity\" : \"potential_energy\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"atom_frac\"\n      },\n      { \n        \"quantity\" : \"site_frac\"\n      },\n      { \n        \"quantity\" : \"comp\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp_n\"\n      },\n      { \n        \"quantity\" : \"non_zero_eci_correlations\"\n      }\n    ],\n    \"storage\" : {\n      \"write_observations\" : true,\n      \"write_trajectory\" : true,\n      \"output_format\" : \"csv\"\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\",\n    \"initial_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 800.0,\n      \"tolerance\" : 0.001\n    },\n    \"final_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.00\n      },\n      \"temperature\" : 800.0,\n      \"tolerance\" : 0.001\n    },\n    \"incremental_conditions\" : {\n      \"mu\" : {\n        \"a\" : 0.01\n      },\n      \"temperature\" : 0.0,\n      \"tolerance\" : 0.001\n    }\n  }\n}\n";
       std::cout << "-------\n";
 
     }

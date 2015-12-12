@@ -238,6 +238,28 @@ namespace CASM {
 
 
   double Coordinate::min_dist(const Coordinate &neighbor, Coordinate &shift) const {
+    shift = (*this) - neighbor;
+
+    if(!shift.calc(FRAC)) {
+      std::cerr << "Attempting to find minimum distance between two points that have been initialized inproperly.\n";
+      return NAN;
+    }
+
+    for(int i = 0; i < 3; i++)
+      shift.at(i, FRAC) -= round(shift.get(i, FRAC));
+
+
+    return shift(CART).length();
+  };
+
+  //********************************************************************
+  /**
+   * Finds minimum distance from any periodic image of a coordinate to any
+   * periodic image of a neighboring coordinate
+   */
+  //********************************************************************
+
+  double Coordinate::min_dist2(const Coordinate &neighbor, const Matrix3<double> &metric) const {
     Coordinate tcoord(*this);
     tcoord -= neighbor;
 
@@ -249,11 +271,9 @@ namespace CASM {
     for(int i = 0; i < 3; i++)
       tcoord.at(i, FRAC) -= round(tcoord.get(i, FRAC));
 
-    shift = tcoord;
-    return tcoord(CART).length();
+    return tcoord(CART).dot(metric * tcoord(CART));
 
-
-  };
+  }
 
   //********************************************************************
   /**

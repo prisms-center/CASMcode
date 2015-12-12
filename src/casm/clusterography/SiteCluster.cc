@@ -1,4 +1,5 @@
 #include "casm/clusterography/SiteCluster.hh"
+#include "casm/basis_set/FunctionVisitor.hh"
 
 namespace CASM {
 
@@ -38,7 +39,7 @@ namespace CASM {
     }
     //std::cout << "Updating indices " << old_indices << " to " << new_indices << "\n";
     clust_basis.update_dof_IDs(old_indices, new_indices);
-    ccd_basis.update_dof_IDs(old_indices, new_indices);
+    //ccd_basis.update_dof_IDs(old_indices, new_indices);
 
     return;
   }
@@ -96,7 +97,7 @@ namespace CASM {
    * tensors and are accessed by the same (0,1,3).
    */
   //*************************************************
-
+  /*
   void SiteCluster::fill_discrete_basis_tensors() {
     Array<Index> tnlist_inds(nlist_inds());
 
@@ -123,43 +124,27 @@ namespace CASM {
     }
     return;
   }
+  */
   //\John G 011013
 
 
   //*************************************************
 
-  void SiteCluster::generate_clust_basis(Array<BasisSet const *> global_args, Index max_poly_order) {
+  void SiteCluster::generate_clust_basis(Array<BasisSet const *> local_args, Array<BasisSet const *> global_args, Index max_poly_order) {
     //std::cout<<"In SiteCluster::generate_clust_basis, the size of this cluster is:"<<size()<<std::endl;
     //std::cout<<"valid_index evaluates to:"<<valid_index(max_poly_order)<<std::endl;
     if(!valid_index(max_poly_order))
       max_poly_order = size();
     //std::cout<<"Max_poly_order "<<max_poly_order<<std::endl;
+    assert(local_args.size() == size() && "In SiteCluster::generate_clust_basis(), local_args must have same size as cluster.");
 
-    if(ccd_basis.size())
-      global_args.push_back(&ccd_basis);
-
-    //This needs to be done in a more generally way--
-    // perhaps keep a site_args member Array at each cluster site that is populated by the DoFManager prior to this step
+    Array<BasisSet> tlocal;
+    tlocal.reserve(local_args.size());
     Array<Array<BasisSet const *> > site_args(size());
-
-
-    for(Index i = 0; i < size(); i++) {
-      if(at(i).site_occupant().size() == 0)
-        continue;
-
-      // generate chebychev site basis if no site basis exists
-      if(at(i).occupant_basis().size() == 0) {
-        std::cerr << "WARNING in SiteCluster::generate_clust_basis Didnt find any occupant_basis initialized" << std::endl;
-        std::cerr << "Generating a Chebychef basis" << std::endl;
-        at(i).fill_occupant_basis('c');
-      }
-
-      if(at(i).occupant_basis().size() == 0) {
-        std::cerr << "WARNING in SiteCluster::generate_config_clust_basis." << std::endl;
-        std::cerr << "A site in your cluster has one or less components! Returning without constructing polynomials." << std::endl;
-        return;
-      }
-      site_args[i].push_back(&(at(i).occupant_basis()));
+    for(Index i = 0; i < local_args.size(); i++) {
+      tlocal.push_back(*local_args[i]);
+      tlocal.back().update_dof_IDs(Array<Index>(1, at(i).basis_ind()), Array<Index>(1, at(i).nlist_ind()));
+      site_args[i].push_back(&tlocal.back());
     }
 
     // BasisSet::construct_invariant_cluster_polynomials() does the heavy lifting
@@ -356,22 +341,23 @@ namespace CASM {
       mode = COORD_MODE::CHECK();
     COORD_MODE C(mode);
     for(Index np = 0; np < size(); np++) {
-      for(int i = 0; i < space; i++) {
-        stream << ' ';
-      }
+
+      stream << std::string(space, ' ');
+
       stream.setf(std::ios::showpoint, std::ios_base::fixed);
       stream.precision(5);
       stream.width(9);
       at(np).print(stream);
-      stream << "  " << at(np).basis_ind() << " ";
+      stream << "  basis_index: " << at(np).basis_ind() << "  clust_index: " << at(np).nlist_ind() << " ";
       if(delim)
         stream << delim;
     }
-    for(Index i = 0; i < clust_basis.size(); i++) {
-      for(int j = 0; j < space; j++) {
-        stream << ' ';
-      }
-      stream << "  \\Phi_" << i << "(x) = " << clust_basis[i]->tex_formula() << std::endl;
+    stream << "\n"
+           << "            Basis Functions:\n";
+    BasisSet tbasis(clust_basis);
+    tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
+    for(Index i = 0; i < tbasis.size(); i++) {
+      stream << "              \\Phi_" << i + 1 << " = " << tbasis[i]->tex_formula() << std::endl;
     }
   }
 
@@ -388,20 +374,20 @@ namespace CASM {
     GenericCluster<Site>::to_json(json);
 
     //BasisSet ccd_basis;
-    if(ccd_basis.size() > 0)
-      json["ccd_basis"] = ccd_basis;
+    //if(ccd_basis.size() > 0)
+    //json["ccd_basis"] = ccd_basis;
 
     // BasisSet clust_basis;
     if(clust_basis.size() > 0)
       json["clust_basis"] = clust_basis;
 
     // Array<Tensor<double> >occupation_basis_tensors;
-    if(occupation_basis_tensors.size() > 0)
-      json["occupation_basis_tensors"] = occupation_basis_tensors;
+    //if(occupation_basis_tensors.size() > 0)
+    //json["occupation_basis_tensors"] = occupation_basis_tensors;
 
     // Array<double> eci_coeffs;
-    if(eci_coeffs.size() > 0)
-      json["eci_coeffs"] = eci_coeffs;
+    //if(eci_coeffs.size() > 0)
+    //json["eci_coeffs"] = eci_coeffs;
 
     return json;
   }
@@ -426,14 +412,14 @@ namespace CASM {
 
 
       // Array<Tensor<double> >occupation_basis_tensors;
-      if(json.contains("occupation_basis_tensors")) {
-        CASM::from_json(occupation_basis_tensors, json["occupation_basis_tensors"]);
-      }
+      //if(json.contains("occupation_basis_tensors")) {
+      //CASM::from_json(occupation_basis_tensors, json["occupation_basis_tensors"]);
+      //}
 
       // Array<double> eci_coeffs;
-      if(json.contains("eci_coeffs")) {
-        CASM::from_json(eci_coeffs, json["eci_coeffs"]);
-      }
+      //if(json.contains("eci_coeffs")) {
+      //CASM::from_json(eci_coeffs, json["eci_coeffs"]);
+      //}
     }
     catch(...) {
       /// re-throw exceptions
