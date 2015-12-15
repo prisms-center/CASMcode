@@ -32,11 +32,14 @@ namespace CASM {
   SymGroupRep &SymGroupRep::operator=(const SymGroupRep &RHS) {
     m_master_group = RHS.m_master_group;
     clear();
-    resize(m_master_group->size(),NULL);
-    for(Index i = 0; i < RHS.size(); i++){
-      if(RHS[i])
-        set_rep(i,*RHS[i]);
+    if(RHS.size() > 0 && has_valid_master() && master_group().size() != RHS.size()) {
+      throw std::runtime_error("Invalid assignment of SymGroupRep.  Sizes are incompatible.\n");
     }
+    resize(RHS.size(), NULL);
+    for(Index i = 0; i < RHS.size(); i++) {
+      if(RHS[i])
+        set_rep(i, *RHS[i]);
+    } 
     return *this;
   }
 
