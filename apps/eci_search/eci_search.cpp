@@ -359,6 +359,8 @@ void print_eci_search_quick_man() {
   std::cout << "  Note: Use '-tol X' to set hull finding tolerances. Default is 1.0e-14." << std::endl << std::endl;
 
   std::cout << "  Note: Use '-old' to use deprecated serial functions." << std::endl << std::endl;
+  
+  std::cout << "  Note: Use '-maxstep X' to specify maximum number of FPC iterations during calc_cs_fpc and calc_cs_bi" << std::endl << std::endl;
 
 
 };
@@ -378,6 +380,8 @@ void print_eci_search_man() {
   std::cout << "  Note: Use '-tol X' to set hull finding tolerances. Default is 1.0e-14." << std::endl << std::endl;
 
   std::cout << "  Note: Use '-old' to use deprecated serial functions." << std::endl << std::endl;
+  
+  std::cout << "  Note: Use '-maxstep X' to specify maximum number of FPC iterations during calc_cs_fpc and calc_cs_bi" << std::endl << std::endl;
 
   print_calc_full_man();
   print_ecistats_full_man();
@@ -405,6 +409,7 @@ int main(int argc, char *argv[]) {
 
   //BP::BP_pause();
   int argc_adjustment = 0;
+  unsigned long int max_step;
 
   NEW = true;
 
@@ -442,6 +447,13 @@ int main(int argc, char *argv[]) {
       NEW = false;
       argc_adjustment += 1;
     }
+    else if(std::string(argv[i]) == "-maxstep") {
+      // use original functions
+      i++;
+      std::cout << argv[i] << " ";
+      max_step = static_cast<unsigned long int>(BP::stod(string(argv[i])));
+      argc_adjustment += 2;
+    }
     else {
       args.add(string(argv[i]));
     }
@@ -462,296 +474,342 @@ int main(int argc, char *argv[]) {
 
 
 
+  try {
+    if(argc == 1) {
+      //std::cout << "print_eci_search_man()" << std::endl;
+      print_eci_search_quick_man();
+      return 1;
+    }
+    else if(argc >= 2) {
+      if(args[1] == "-calc") {
+        if(!NEW) {
+          //eci_search -calc energy eci.in corr.in [bitstring | bitstring_file]
+          // writes eci.in with bitstring
+          // writes eci.out
+          if(argc == 5) {
+            BP::BP_Vec<ECISet> population;
 
-  if(argc == 1) {
-    //std::cout << "print_eci_search_man()" << std::endl;
-    print_eci_search_quick_man();
-    return 1;
-  }
-  else if(argc >= 2) {
-    if(args[1] == "-calc") {
-      if(!NEW) {
-        //eci_search -calc energy eci.in corr.in [bitstring | bitstring_file]
-        // writes eci.in with bitstring
-        // writes eci.out
-        if(argc == 5) {
-          BP::BP_Vec<ECISet> population;
+            calc_eci(args[2], args[3], args[4], population, HULLTOL);
+          }
+          else if(argc == 6) {
+            BP::BP_Vec<ECISet> population;
+            if(is_bitstring(args[5])) {
+              ECISet eci_in(args[3]);
+              eci_in.set_bit_string(args[5]);
+              population.add(eci_in);
+            }
+            else {
+              population = read_bit_strings_file(ECISet(args[3]), args[5]);
+              if(population.size() != 1) {
+                std::cout << "error, the file " << args[5] << " has multiple bit strings." << std::endl;
+                exit(1);
+              }
+            }
 
-          calc_eci(args[2], args[3], args[4], population, HULLTOL);
-        }
-        else if(argc == 6) {
-          BP::BP_Vec<ECISet> population;
-          if(is_bitstring(args[5])) {
-            ECISet eci_in(args[3]);
-            eci_in.set_bit_string(args[5]);
-            population.add(eci_in);
+            calc_eci(args[2], args[3], args[4], population);
           }
           else {
-            population = read_bit_strings_file(ECISet(args[3]), args[5]);
-            if(population.size() != 1) {
-              std::cout << "error, the file " << args[5] << " has multiple bit strings." << std::endl;
-              exit(1);
+            //std::cout << "print_eci_search_man()" << std::endl;
+            print_calc_man();
+            return 1;
+          }
+        }
+        else {
+          if(argc == 5 || argc == 6) {
+            Population population(0, 0, args[2], args[3], args[4]);
+
+            if(argc == 5) {
+              population.populate_with_base();
+            }
+            else {
+              if(is_bitstring(args[5]))
+                population.add(args[5]);
+              else
+                population.populate(args[5]);
+            }
+
+            if(population.size() == 1)
+              population.calc_details(0, "default", HULLTOL);
+            else
+              population.calc(PTHREADS);
+          }
+          else {
+            //std::cout << "print_eci_search_man()" << std::endl;
+            print_calc_man();
+
+            return 1;
+          }
+        }
+
+      }
+      else if(args[1] == "-convert-to-text") {
+        //eci_search -convert-to-text energy.json eci.in.json corr.in.json
+        if(argc == 5) {
+
+          EnergySet nrgset(args[2]);
+          nrgset.write(args[2], "text");
+
+          ECISet eciset(args[3]);
+          eciset.write_ECIin(args[3], "text");
+
+          Correlation corr(args[4]);
+          corr.write(args[4], "text");
+
+        }
+        else {
+          print_convert_man();
+        }
+
+      }
+      else if(args[1] == "-convert-to-json") {
+        //eci_search -convert-to-json energy eci.in corr.in
+        if(argc == 5) {
+
+          EnergySet nrgset(args[2]);
+          nrgset.write(args[2], "json");
+
+          ECISet eciset(args[3]);
+          eciset.write_ECIin(args[3], "json");
+
+          Correlation corr(args[4]);
+          corr.write(args[4], "json");
+
+        }
+        else {
+          print_convert_man();
+        }
+
+      }
+      else if(args[1] == "-convert-energy-to-text") {
+        //eci_search -convert-energy-to-text energy [...]
+        if(argc > 2) {
+
+          for(int i = 2; i < args.size(); i++) {
+            EnergySet nrgset(args[i]);
+            nrgset.write(args[i], "text");
+          }
+        }
+        else {
+          print_convert_man();
+        }
+
+      }
+      else if(args[1] == "-convert-energy-to-json") {
+        //eci_search -convert-energy-to-json energy [...]
+        if(argc > 2) {
+
+          for(int i = 2; i < args.size(); i++) {
+            EnergySet nrgset(args[i]);
+            nrgset.write(args[i], "json");
+          }
+        }
+        else {
+          print_convert_man();
+        }
+
+      }
+      else if(args[1] == "-convert-eci-to-text") {
+        //eci_search -convert-eci-to-text energy [...]
+        if(argc > 2) {
+
+          for(int i = 2; i < args.size(); i++) {
+            ECISet eciset(args[i]);
+            eciset.write_ECIin(args[i], "text");
+          }
+        }
+        else {
+          print_convert_man();
+        }
+
+      }
+      else if(args[1] == "-convert-eci-to-json") {
+        //eci_search -convert-eci-to-json energy [...]
+        if(argc > 2) {
+
+          for(int i = 2; i < args.size(); i++) {
+            ECISet eciset(args[i]);
+            eciset.write_ECIin(args[i], "json");
+          }
+        }
+        else {
+          print_convert_man();
+        }
+
+      }
+      else if(args[1] == "-convert-corr-to-text") {
+        //eci_search -convert-corr-to-text energy [...]
+        if(argc > 2) {
+
+          for(int i = 2; i < args.size(); i++) {
+            Correlation corr(args[i]);
+            corr.write(args[i], "text");
+          }
+        }
+        else {
+          print_convert_man();
+        }
+
+      }
+      else if(args[1] == "-convert-corr-to-json") {
+        //eci_search -convert-corr-to-json energy [...]
+        if(argc > 2) {
+
+          for(int i = 2; i < args.size(); i++) {
+            Correlation corr(args[i]);
+            corr.write(args[i], "json");
+          }
+        }
+        else {
+          print_convert_man();
+        }
+
+      }
+      else if(args[1] == "-calc_cs_fpc") {
+        //eci_search -calc_cs_fpc energy eci.in corr.in mu
+        if(argc == 6) {
+          BP::BP_Vec<double> mu;
+          mu.add(BP::stod(args[5]));
+
+          calc_cs_eci(args[2], args[3], args[4], mu, 0, HULLTOL, max_step);
+        }
+        else {
+          //std::cout << "print_eci_search_man()" << std::endl;
+          //print_calc_man();
+        }
+
+      }
+      else if(args[1] == "-calc_cs_bi") {
+        //eci_search -calc_cs_bi energy eci.in corr.in mu
+        if(argc == 6) {
+          BP::BP_Vec<double> mu;
+          mu.add(BP::stod(args[5]));
+
+          calc_cs_eci(args[2], args[3], args[4], mu, 1, HULLTOL, max_step);
+        }
+        else {
+          //std::cout << "print_eci_search_man()" << std::endl;
+          //print_calc_man();
+        }
+
+      }
+      else if(args[1] == "-ecistats") {
+        //eci_search -ecistats energy eci.in corr.in population_file
+
+        if(!NEW) {
+          // writes eci.in with bitstring
+          // writes eci.out
+          if(argc == 6) {
+            BP::BP_Vec<ECISet> population = read_bit_strings_file(ECISet(args[3]), args[5]);
+
+            calc_ecistats(args[2], args[3], args[4], population);
+          }
+          else {
+            //std::cout << "print_ecistats_man()" << std::endl;
+            print_ecistats_man();
+
+            return 1;
+          }
+        }
+        else {
+          if(argc == 6) {
+            Population population(0, 0, args[2], args[3], args[4]);
+            population.populate(args[5]);
+            population.calc_ecistats(PTHREADS);
+          }
+          else {
+            //std::cout << "print_ecistats_man()" << std::endl;
+            print_ecistats_man();
+
+            return 1;
+          }
+        }
+
+      }
+      else if(args[1] == "-calc_all") {
+        if(!NEW) {
+          if(argc == 6) {
+            //eci_search -calc_all N energy eci.in corr.in
+            calc_all_eci(BP::stoi(args[2]), args[3], args[4], args[5]);
+          }
+          else {
+            //std::cout << "print_eci_search_man()" << std::endl;
+            print_calc_all_man();
+
+            return 1;
+          }
+        }
+        else {
+          if(argc == 6) {
+            //eci_search -calc_all N energy eci.in corr.in
+            Population population(0, 0, args[3], args[4], args[5]);
+            population.calc_all(BP::stoi(args[2]), PTHREADS);
+          }
+          else {
+            //std::cout << "print_eci_search_man()" << std::endl;
+            print_calc_all_man();
+
+            return 1;
+          }
+        }
+      }
+      else if(args[1] == "-calc_directmin") {
+
+        //eci_search -calc_directmin Npop Nmin Nmax energy eci.in corr.in [population_file]
+        if(!NEW) {
+          if(argc == 8) {
+            int Nrand = BP::stoi(args[2]);
+            int Nmin = BP::stoi(args[3]);
+            int Nmax = BP::stoi(args[4]);
+            BP::BP_Vec<ECISet> population;
+
+            if(Nmin > 0 && Nmax > Nmin)
+              calc_directmin_eci(Nrand, Nmin, Nmax, args[5], args[6], args[7], population);
+            else {
+              //std::cout << "print_eci_search_man()" << std::endl;
+              print_calc_directmin_man();
+
+              return 1;
             }
           }
+          else if(argc == 9) {
+            int Nrand = BP::stoi(args[2]);
+            int Nmin = BP::stoi(args[3]);
+            int Nmax = BP::stoi(args[4]);
+            BP::BP_Vec<ECISet> population = read_bit_strings_file(ECISet(args[6]), args[8]);
 
-          calc_eci(args[2], args[3], args[4], population);
-        }
-        else {
-          //std::cout << "print_eci_search_man()" << std::endl;
-          print_calc_man();
-          return 1;
-        }
-      }
-      else {
-        if(argc == 5 || argc == 6) {
-          Population population(0, 0, args[2], args[3], args[4]);
+            if(Nmin > 0 && Nmax > Nmin)
+              calc_directmin_eci(Nrand, Nmin, Nmax, args[5], args[6], args[7], population);
+            else {
+              //std::cout << "print_eci_search_man()" << std::endl;
+              print_calc_directmin_man();
 
-          if(argc == 5) {
-            population.populate_with_base();
+              return 1;
+            }
           }
           else {
-            if(is_bitstring(args[5]))
-              population.add(args[5]);
+            //std::cout << "print_eci_search_man()" << std::endl;
+            print_calc_directmin_man();
+
+            return 1;
+          }
+        }
+        else {
+          if(argc == 8 || argc == 9) {
+            int Npop = BP::stoi(args[2]);
+            int Nmin = BP::stoi(args[3]);
+            int Nmax = BP::stoi(args[4]);
+
+            Population population(Nmin, Nmax, args[5], args[6], args[7]);
+
+            if(argc == 8)
+              population.populate(Npop);
             else
-              population.populate(args[5]);
+              population.populate(args[8]);
+
+            population.direct(PTHREADS, MTHREADS);
+
+            population.write(unique("population"), "default");
           }
-
-          if(population.size() == 1)
-            population.calc_details(0, "default", HULLTOL);
-          else
-            population.calc(PTHREADS);
-        }
-        else {
-          //std::cout << "print_eci_search_man()" << std::endl;
-          print_calc_man();
-
-          return 1;
-        }
-      }
-
-    }
-    else if(args[1] == "-convert-to-text") {
-      //eci_search -convert-to-text energy.json eci.in.json corr.in.json
-      if(argc == 5) {
-
-        EnergySet nrgset(args[2]);
-        nrgset.write(args[2], "text");
-
-        ECISet eciset(args[3]);
-        eciset.write_ECIin(args[3], "text");
-
-        Correlation corr(args[4]);
-        corr.write(args[4], "text");
-
-      }
-      else {
-        print_convert_man();
-      }
-
-    }
-    else if(args[1] == "-convert-to-json") {
-      //eci_search -convert-to-json energy eci.in corr.in
-      if(argc == 5) {
-
-        EnergySet nrgset(args[2]);
-        nrgset.write(args[2], "json");
-
-        ECISet eciset(args[3]);
-        eciset.write_ECIin(args[3], "json");
-
-        Correlation corr(args[4]);
-        corr.write(args[4], "json");
-
-      }
-      else {
-        print_convert_man();
-      }
-
-    }
-    else if(args[1] == "-convert-energy-to-text") {
-      //eci_search -convert-energy-to-text energy [...]
-      if(argc > 2) {
-
-        for(int i = 2; i < args.size(); i++) {
-          EnergySet nrgset(args[i]);
-          nrgset.write(args[i], "text");
-        }
-      }
-      else {
-        print_convert_man();
-      }
-
-    }
-    else if(args[1] == "-convert-energy-to-json") {
-      //eci_search -convert-energy-to-json energy [...]
-      if(argc > 2) {
-
-        for(int i = 2; i < args.size(); i++) {
-          EnergySet nrgset(args[i]);
-          nrgset.write(args[i], "json");
-        }
-      }
-      else {
-        print_convert_man();
-      }
-
-    }
-    else if(args[1] == "-convert-eci-to-text") {
-      //eci_search -convert-eci-to-text energy [...]
-      if(argc > 2) {
-
-        for(int i = 2; i < args.size(); i++) {
-          ECISet eciset(args[i]);
-          eciset.write_ECIin(args[i], "text");
-        }
-      }
-      else {
-        print_convert_man();
-      }
-
-    }
-    else if(args[1] == "-convert-eci-to-json") {
-      //eci_search -convert-eci-to-json energy [...]
-      if(argc > 2) {
-
-        for(int i = 2; i < args.size(); i++) {
-          ECISet eciset(args[i]);
-          eciset.write_ECIin(args[i], "json");
-        }
-      }
-      else {
-        print_convert_man();
-      }
-
-    }
-    else if(args[1] == "-convert-corr-to-text") {
-      //eci_search -convert-corr-to-text energy [...]
-      if(argc > 2) {
-
-        for(int i = 2; i < args.size(); i++) {
-          Correlation corr(args[i]);
-          corr.write(args[i], "text");
-        }
-      }
-      else {
-        print_convert_man();
-      }
-
-    }
-    else if(args[1] == "-convert-corr-to-json") {
-      //eci_search -convert-corr-to-json energy [...]
-      if(argc > 2) {
-
-        for(int i = 2; i < args.size(); i++) {
-          Correlation corr(args[i]);
-          corr.write(args[i], "json");
-        }
-      }
-      else {
-        print_convert_man();
-      }
-
-    }
-    else if(args[1] == "-calc_cs_fpc") {
-      //eci_search -calc_cs_fpc energy eci.in corr.in mu
-      if(argc == 6) {
-        BP::BP_Vec<double> mu;
-        mu.add(BP::stod(args[5]));
-
-        calc_cs_eci(args[2], args[3], args[4], mu, 0, HULLTOL);
-      }
-      else {
-        //std::cout << "print_eci_search_man()" << std::endl;
-        //print_calc_man();
-      }
-
-    }
-    else if(args[1] == "-calc_cs_bi") {
-      //eci_search -calc_cs_bi energy eci.in corr.in mu
-      if(argc == 6) {
-        BP::BP_Vec<double> mu;
-        mu.add(BP::stod(args[5]));
-
-        calc_cs_eci(args[2], args[3], args[4], mu, 1, HULLTOL);
-      }
-      else {
-        //std::cout << "print_eci_search_man()" << std::endl;
-        //print_calc_man();
-      }
-
-    }
-    else if(args[1] == "-ecistats") {
-      //eci_search -ecistats energy eci.in corr.in population_file
-
-      if(!NEW) {
-        // writes eci.in with bitstring
-        // writes eci.out
-        if(argc == 6) {
-          BP::BP_Vec<ECISet> population = read_bit_strings_file(ECISet(args[3]), args[5]);
-
-          calc_ecistats(args[2], args[3], args[4], population);
-        }
-        else {
-          //std::cout << "print_ecistats_man()" << std::endl;
-          print_ecistats_man();
-
-          return 1;
-        }
-      }
-      else {
-        if(argc == 6) {
-          Population population(0, 0, args[2], args[3], args[4]);
-          population.populate(args[5]);
-          population.calc_ecistats(PTHREADS);
-        }
-        else {
-          //std::cout << "print_ecistats_man()" << std::endl;
-          print_ecistats_man();
-
-          return 1;
-        }
-      }
-
-    }
-    else if(args[1] == "-calc_all") {
-      if(!NEW) {
-        if(argc == 6) {
-          //eci_search -calc_all N energy eci.in corr.in
-          calc_all_eci(BP::stoi(args[2]), args[3], args[4], args[5]);
-        }
-        else {
-          //std::cout << "print_eci_search_man()" << std::endl;
-          print_calc_all_man();
-
-          return 1;
-        }
-      }
-      else {
-        if(argc == 6) {
-          //eci_search -calc_all N energy eci.in corr.in
-          Population population(0, 0, args[3], args[4], args[5]);
-          population.calc_all(BP::stoi(args[2]), PTHREADS);
-        }
-        else {
-          //std::cout << "print_eci_search_man()" << std::endl;
-          print_calc_all_man();
-
-          return 1;
-        }
-      }
-    }
-    else if(args[1] == "-calc_directmin") {
-
-      //eci_search -calc_directmin Npop Nmin Nmax energy eci.in corr.in [population_file]
-      if(!NEW) {
-        if(argc == 8) {
-          int Nrand = BP::stoi(args[2]);
-          int Nmin = BP::stoi(args[3]);
-          int Nmax = BP::stoi(args[4]);
-          BP::BP_Vec<ECISet> population;
-
-          if(Nmin > 0 && Nmax > Nmin)
-            calc_directmin_eci(Nrand, Nmin, Nmax, args[5], args[6], args[7], population);
           else {
             //std::cout << "print_eci_search_man()" << std::endl;
             print_calc_directmin_man();
@@ -759,392 +817,353 @@ int main(int argc, char *argv[]) {
             return 1;
           }
         }
-        else if(argc == 9) {
-          int Nrand = BP::stoi(args[2]);
-          int Nmin = BP::stoi(args[3]);
-          int Nmax = BP::stoi(args[4]);
-          BP::BP_Vec<ECISet> population = read_bit_strings_file(ECISet(args[6]), args[8]);
 
-          if(Nmin > 0 && Nmax > Nmin)
-            calc_directmin_eci(Nrand, Nmin, Nmax, args[5], args[6], args[7], population);
+      }
+      else if(args[1] == "-calc_dfsmin") {
+        if(!NEW) {
+          if(argc == 9) {
+            //eci_search -calc_dfsmin Npop Nstop Nmin Nmax energy eci.in corr.in [population_file]
+            int Nrand = BP::stoi(args[2]);
+            int Nstop = BP::stoi(args[3]);
+            int Nmin = BP::stoi(args[4]);
+            int Nmax = BP::stoi(args[5]);
+            BP::BP_Vec<ECISet> population;
+
+            if(Nmin > 0 && Nmax > Nmin)
+              calc_dfsmin_eci(Nrand, Nstop, Nmin, Nmax, args[6], args[7], args[8], population);
+            else {
+              //std::cout << "print_eci_search_man()" << std::endl;
+              print_calc_dfsmin_man();
+
+              return 1;
+            }
+          }
+          else if(argc == 10) {
+            //eci_search -calc_dfsmin Npop Nstop Nmin Nmax energy eci.in corr.in [population_file]
+            int Nrand = BP::stoi(args[2]);
+            int Nstop = BP::stoi(args[3]);
+            int Nmin = BP::stoi(args[4]);
+            int Nmax = BP::stoi(args[5]);
+            BP::BP_Vec<ECISet> population = read_bit_strings_file(ECISet(args[7]), args[9]);
+
+            if(Nmin > 0 && Nmax > Nmin)
+              calc_dfsmin_eci(Nrand, Nstop, Nmin, Nmax, args[6], args[7], args[8], population);
+            else {
+              //std::cout << "print_eci_search_man()" << std::endl;
+              print_calc_dfsmin_man();
+
+              return 1;
+            }
+          }
           else {
             //std::cout << "print_eci_search_man()" << std::endl;
-            print_calc_directmin_man();
+            print_calc_dfsmin_man();
 
             return 1;
           }
         }
         else {
-          //std::cout << "print_eci_search_man()" << std::endl;
-          print_calc_directmin_man();
 
-          return 1;
+          if(argc == 9 || argc == 10) {
+            //eci_search -calc_dfsmin Npop Nstop Nmin Nmax energy eci.in corr.in [population_file]
+
+            int Npop = BP::stoi(args[2]);
+            int Nstop = BP::stoi(args[3]);
+            int Nmin = BP::stoi(args[4]);
+            int Nmax = BP::stoi(args[5]);
+
+            Population population(Nmin, Nmax, args[6], args[7], args[8]);
+
+            if(argc == 9)
+              population.populate(Npop);
+            else
+              population.populate(args[9]);
+
+            population.dfs(Nstop, PTHREADS, MTHREADS);
+
+            population.write(unique("population"), "default");
+
+          }
+          else {
+            print_calc_dfsmin_man();
+
+            return 1;
+          }
+        }
+
+      }
+      else if(args[1] == "-calc_ga") {
+        //eci_search -calc_ga Npop Nmin Nmax Nchild Nmut energy eci.in corr.in [population_file]
+        if(!NEW) {
+
+          if(argc == 10) {
+            int Npopulation = BP::stoi(args[2]);
+            int Nmin = BP::stoi(args[3]);
+            int Nmax = BP::stoi(args[4]);
+            int Nchildren = BP::stoi(args[5]);
+            int Nmutations = BP::stoi(args[6]);
+
+            BP::BP_Vec<ECISet> population;
+
+            if(Nmin > 0 && Nmax > Nmin)
+              calc_ga_eci(Npopulation, Nmin, Nmax, Nchildren, Nmutations, args[7], args[8], args[9], population);
+            else {
+              //std::cout << "print_eci_search_man()" << std::endl;
+              print_calc_ga_man();
+
+              return 1;
+            }
+          }
+          else if(argc == 11) {
+            int Npopulation = BP::stoi(args[2]);
+            int Nmin = BP::stoi(args[3]);
+            int Nmax = BP::stoi(args[4]);
+            int Nchildren = BP::stoi(args[5]);
+            int Nmutations = BP::stoi(args[6]);
+            BP::BP_Vec<ECISet> population = read_bit_strings_file(ECISet(args[8]), args[10]);
+
+            if(Nmin > 0 && Nmax > Nmin)
+              calc_ga_eci(Npopulation, Nmin, Nmax, Nchildren, Nmutations, args[7], args[8], args[9], population);
+            else {
+              //std::cout << "print_eci_search_man()" << std::endl;
+              print_calc_ga_man();
+
+              return 1;
+            }
+          }
+          else {
+            //std::cout << "print_eci_search_man()" << std::endl;
+            print_calc_ga_man();
+
+            return 1;
+          }
+        }
+        else {
+          //eci_search -calc_ga Npop Nmin Nmax Ngen Nmut energy eci.in corr.in [population_file]
+          if(argc == 10 || argc == 11) {
+            int Npopulation = BP::stoi(args[2]);
+            int Nmin = BP::stoi(args[3]);
+            int Nmax = BP::stoi(args[4]);
+            int Ngenerations = BP::stoi(args[5]);
+            int Nmutations = BP::stoi(args[6]);
+            Population population(Nmin, Nmax, args[7], args[8], args[9]);
+
+            if(argc == 10)
+              population.populate(Npopulation);
+            else
+              population.populate(args[10]);
+
+            population.ga(Ngenerations, Nmutations, PTHREADS);
+
+            population.write(unique("population"), "default");
+          }
+          else {
+            //std::cout << "print_eci_search_man()" << std::endl;
+            print_calc_ga_man();
+
+            return 1;
+          }
         }
       }
-      else {
-        if(argc == 8 || argc == 9) {
-          int Npop = BP::stoi(args[2]);
-          int Nmin = BP::stoi(args[3]);
-          int Nmax = BP::stoi(args[4]);
+      else if(args[1] == "-calc_ga_dir") {
+        //eci_search -calc_ga_dir Npop Nmin Nmax Nchild Nmut energy eci.in corr.in [population_file]
+        if(!NEW) {
+          if(argc == 10) {
+            int Npopulation = BP::stoi(args[2]);
+            int Nmin = BP::stoi(args[3]);
+            int Nmax = BP::stoi(args[4]);
+            int Nchildren = BP::stoi(args[5]);
+            int Nmutations = BP::stoi(args[6]);
 
-          Population population(Nmin, Nmax, args[5], args[6], args[7]);
+            BP::BP_Vec<ECISet> population;
 
-          if(argc == 8)
-            population.populate(Npop);
-          else
-            population.populate(args[8]);
+            if(Nmin > 0 && Nmax > Nmin)
+              calc_ga_dir_eci(Npopulation, Nmin, Nmax, Nchildren, Nmutations, args[7], args[8], args[9], population);
+            else {
+              //std::cout << "print_eci_search_man()" << std::endl;
+              print_calc_ga_dir_man();
 
-          population.direct(PTHREADS, MTHREADS);
+              return 1;
+            }
+          }
+          else if(argc == 11) {
+            int Npopulation = BP::stoi(args[2]);
+            int Nmin = BP::stoi(args[3]);
+            int Nmax = BP::stoi(args[4]);
+            int Nchildren = BP::stoi(args[5]);
+            int Nmutations = BP::stoi(args[6]);
+            BP::BP_Vec<ECISet> population = read_bit_strings_file(ECISet(args[8]), args[10]);
 
-          population.write(unique("population"), "default");
+            if(Nmin > 0 && Nmax > Nmin)
+              calc_ga_dir_eci(Npopulation, Nmin, Nmax, Nchildren, Nmutations, args[7], args[8], args[9], population);
+            else {
+              //std::cout << "print_eci_search_man()" << std::endl;
+              print_calc_ga_dir_man();
+
+              return 1;
+            }
+          }
+          else {
+            //std::cout << "print_eci_search_man()" << std::endl;
+            print_calc_ga_dir_man();
+
+            return 1;
+          }
+        }
+        else {
+          if(argc == 10 || argc == 11) {
+            int Npopulation = BP::stoi(args[2]);
+            int Nmin = BP::stoi(args[3]);
+            int Nmax = BP::stoi(args[4]);
+            int Ngenerations = BP::stoi(args[5]);
+            int Nmutations = BP::stoi(args[6]);
+            Population population(Nmin, Nmax, args[7], args[8], args[9]);
+
+            if(argc == 10)
+              population.populate(Npopulation);
+            else
+              population.populate(args[10]);
+
+            population.ga_dir(Ngenerations, Nmutations, PTHREADS);
+
+            population.write(unique("population"), "default");
+          }
+          else {
+            //std::cout << "print_eci_search_man()" << std::endl;
+            print_calc_ga_dir_man();
+
+            return 1;
+          }
+        }
+      }
+      else if(args[1] == "-calc_ga_dfs") {
+        //eci_search -calc_ga_dfs Npop Nmin Nmax Nchild Nmut Nstop energy eci.in corr.in [population_file]
+        if(!NEW) {
+          if(argc == 11) {
+            int Npopulation = BP::stoi(args[2]);
+            int Nmin = BP::stoi(args[3]);
+            int Nmax = BP::stoi(args[4]);
+            int Nchildren = BP::stoi(args[5]);
+            int Nmutations = BP::stoi(args[6]);
+            int Nstop = BP::stoi(args[7]);
+
+            BP::BP_Vec<ECISet> population;
+
+            if(Nmin > 0 && Nmax > Nmin)
+              calc_ga_dfs_eci(Npopulation, Nmin, Nmax, Nchildren, Nmutations, Nstop, args[8], args[9], args[10], population);
+            else {
+              //std::cout << "print_eci_search_man()" << std::endl;
+              print_calc_ga_dfs_man();
+
+              return 1;
+            }
+          }
+          else if(argc == 12) {
+            int Npopulation = BP::stoi(args[2]);
+            int Nmin = BP::stoi(args[3]);
+            int Nmax = BP::stoi(args[4]);
+            int Nchildren = BP::stoi(args[5]);
+            int Nmutations = BP::stoi(args[6]);
+            int Nstop = BP::stoi(args[7]);
+
+            BP::BP_Vec<ECISet> population = read_bit_strings_file(ECISet(args[9]), args[11]);
+
+            if(Nmin > 0 && Nmax > Nmin)
+              calc_ga_dfs_eci(Npopulation, Nmin, Nmax, Nchildren, Nmutations, Nstop, args[8], args[9], args[10], population);
+            else {
+              //std::cout << "print_eci_search_man()" << std::endl;
+              print_calc_ga_dfs_man();
+
+              return 1;
+            }
+          }
+          else {
+            //std::cout << "print_eci_search_man()" << std::endl;
+            print_calc_ga_dfs_man();
+
+            return 1;
+          }
+        }
+        else {
+          if(argc == 11 || argc == 12) {
+            int Npopulation = BP::stoi(args[2]);
+            int Nmin = BP::stoi(args[3]);
+            int Nmax = BP::stoi(args[4]);
+            int Ngenerations = BP::stoi(args[5]);
+            int Nmutations = BP::stoi(args[6]);
+            int Nstop = BP::stoi(args[7]);
+            Population population(Nmin, Nmax, args[8], args[9], args[10]);
+
+            if(argc == 11)
+              population.populate(Npopulation);
+            else
+              population.populate(args[11]);
+
+            population.ga_dfs(Nstop, Ngenerations, Nmutations, PTHREADS);
+
+            population.write(unique("population"), "default");
+          }
+          else {
+            //std::cout << "print_eci_search_man()" << std::endl;
+            print_calc_ga_dfs_man();
+
+            return 1;
+          }
+        }
+      }
+      else if(args[1] == "-weight_nrg") {
+        //eci_search -weight_nrg A B kT energy weighted_energy
+        if(argc == 7) {
+          weight_nrg(BP::stod(args[2]), BP::stod(args[3]), BP::stod(args[4]), args[5], args[6]);
+
         }
         else {
           //std::cout << "print_eci_search_man()" << std::endl;
-          print_calc_directmin_man();
+          print_weight_nrg_man();
 
           return 1;
+
         }
       }
-
-    }
-    else if(args[1] == "-calc_dfsmin") {
-      if(!NEW) {
+      else if(args[1] == "-nrg_diff") {
+        //eci_search -nrg_diff tot_corr.index.A AB_structs.energy eci.in.tot AB_structs.corr.in.tot eciset.A
+        //eci_search -nrg_diff   tot_corr.index.A    AB_structs.energy   eci.in.tot   AB_structs.corr.in.tot   A_structs.energy  A_structs.eci.in  A_structs.corr.in
         if(argc == 9) {
-          //eci_search -calc_dfsmin Npop Nstop Nmin Nmax energy eci.in corr.in [population_file]
-          int Nrand = BP::stoi(args[2]);
-          int Nstop = BP::stoi(args[3]);
-          int Nmin = BP::stoi(args[4]);
-          int Nmax = BP::stoi(args[5]);
-          BP::BP_Vec<ECISet> population;
+          calc_nrg_diff(args[2], args[3], args[4], args[5], args[6],  args[7],  args[8]);
 
-          if(Nmin > 0 && Nmax > Nmin)
-            calc_dfsmin_eci(Nrand, Nstop, Nmin, Nmax, args[6], args[7], args[8], population);
-          else {
-            //std::cout << "print_eci_search_man()" << std::endl;
-            print_calc_dfsmin_man();
-
-            return 1;
-          }
-        }
-        else if(argc == 10) {
-          //eci_search -calc_dfsmin Npop Nstop Nmin Nmax energy eci.in corr.in [population_file]
-          int Nrand = BP::stoi(args[2]);
-          int Nstop = BP::stoi(args[3]);
-          int Nmin = BP::stoi(args[4]);
-          int Nmax = BP::stoi(args[5]);
-          BP::BP_Vec<ECISet> population = read_bit_strings_file(ECISet(args[7]), args[9]);
-
-          if(Nmin > 0 && Nmax > Nmin)
-            calc_dfsmin_eci(Nrand, Nstop, Nmin, Nmax, args[6], args[7], args[8], population);
-          else {
-            //std::cout << "print_eci_search_man()" << std::endl;
-            print_calc_dfsmin_man();
-
-            return 1;
-          }
         }
         else {
           //std::cout << "print_eci_search_man()" << std::endl;
-          print_calc_dfsmin_man();
-
-          return 1;
+          std::cout << "eci_search -nrg_diff    tot_corr.index.A    AB_structs.energy   eci.in.tot   AB_structs.corr.in.tot   A_structs.energy  A_structs.eci.in  A_structs.corr.in" << std::endl;
         }
       }
-      else {
-
-        if(argc == 9 || argc == 10) {
-          //eci_search -calc_dfsmin Npop Nstop Nmin Nmax energy eci.in corr.in [population_file]
-
-          int Npop = BP::stoi(args[2]);
-          int Nstop = BP::stoi(args[3]);
-          int Nmin = BP::stoi(args[4]);
-          int Nmax = BP::stoi(args[5]);
-
-          Population population(Nmin, Nmax, args[6], args[7], args[8]);
-
-          if(argc == 9)
-            population.populate(Npop);
-          else
-            population.populate(args[9]);
-
-          population.dfs(Nstop, PTHREADS, MTHREADS);
-
-          population.write(unique("population"), "default");
-
-        }
-        else {
-          print_calc_dfsmin_man();
-
-          return 1;
-        }
-      }
-
-    }
-    else if(args[1] == "-calc_ga") {
-      //eci_search -calc_ga Npop Nmin Nmax Nchild Nmut energy eci.in corr.in [population_file]
-      if(!NEW) {
-
-        if(argc == 10) {
-          int Npopulation = BP::stoi(args[2]);
-          int Nmin = BP::stoi(args[3]);
-          int Nmax = BP::stoi(args[4]);
-          int Nchildren = BP::stoi(args[5]);
-          int Nmutations = BP::stoi(args[6]);
-
-          BP::BP_Vec<ECISet> population;
-
-          if(Nmin > 0 && Nmax > Nmin)
-            calc_ga_eci(Npopulation, Nmin, Nmax, Nchildren, Nmutations, args[7], args[8], args[9], population);
-          else {
-            //std::cout << "print_eci_search_man()" << std::endl;
-            print_calc_ga_man();
-
-            return 1;
-          }
-        }
-        else if(argc == 11) {
-          int Npopulation = BP::stoi(args[2]);
-          int Nmin = BP::stoi(args[3]);
-          int Nmax = BP::stoi(args[4]);
-          int Nchildren = BP::stoi(args[5]);
-          int Nmutations = BP::stoi(args[6]);
-          BP::BP_Vec<ECISet> population = read_bit_strings_file(ECISet(args[8]), args[10]);
-
-          if(Nmin > 0 && Nmax > Nmin)
-            calc_ga_eci(Npopulation, Nmin, Nmax, Nchildren, Nmutations, args[7], args[8], args[9], population);
-          else {
-            //std::cout << "print_eci_search_man()" << std::endl;
-            print_calc_ga_man();
-
-            return 1;
-          }
+      else if(args[1] == "-weight_emin") {
+        //eci_search -weight_emin A B kT energy weighted_energy
+        if(argc == 7) {
+          weight_EMin(BP::stod(args[2]), BP::stod(args[3]), BP::stod(args[4]), args[5], args[6]);
         }
         else {
           //std::cout << "print_eci_search_man()" << std::endl;
-          print_calc_ga_man();
+          print_weight_emin_man();
 
           return 1;
         }
       }
-      else {
-        //eci_search -calc_ga Npop Nmin Nmax Ngen Nmut energy eci.in corr.in [population_file]
-        if(argc == 10 || argc == 11) {
-          int Npopulation = BP::stoi(args[2]);
-          int Nmin = BP::stoi(args[3]);
-          int Nmax = BP::stoi(args[4]);
-          int Ngenerations = BP::stoi(args[5]);
-          int Nmutations = BP::stoi(args[6]);
-          Population population(Nmin, Nmax, args[7], args[8], args[9]);
-
-          if(argc == 10)
-            population.populate(Npopulation);
-          else
-            population.populate(args[10]);
-
-          population.ga(Ngenerations, Nmutations, PTHREADS);
-
-          population.write(unique("population"), "default");
+      else if(args[1] == "-weight_eref") {
+        //eci_search -weight_eref A B E0 kT energy weighted_energy
+        if(argc == 8) {
+          weight_ERef(BP::stod(args[2]), BP::stod(args[3]), BP::stod(args[4]), BP::stod(args[5]), args[6], args[7]);
         }
         else {
           //std::cout << "print_eci_search_man()" << std::endl;
-          print_calc_ga_man();
+          print_weight_eref_man();
 
           return 1;
         }
-      }
-    }
-    else if(args[1] == "-calc_ga_dir") {
-      //eci_search -calc_ga_dir Npop Nmin Nmax Nchild Nmut energy eci.in corr.in [population_file]
-      if(!NEW) {
-        if(argc == 10) {
-          int Npopulation = BP::stoi(args[2]);
-          int Nmin = BP::stoi(args[3]);
-          int Nmax = BP::stoi(args[4]);
-          int Nchildren = BP::stoi(args[5]);
-          int Nmutations = BP::stoi(args[6]);
-
-          BP::BP_Vec<ECISet> population;
-
-          if(Nmin > 0 && Nmax > Nmin)
-            calc_ga_dir_eci(Npopulation, Nmin, Nmax, Nchildren, Nmutations, args[7], args[8], args[9], population);
-          else {
-            //std::cout << "print_eci_search_man()" << std::endl;
-            print_calc_ga_dir_man();
-
-            return 1;
-          }
-        }
-        else if(argc == 11) {
-          int Npopulation = BP::stoi(args[2]);
-          int Nmin = BP::stoi(args[3]);
-          int Nmax = BP::stoi(args[4]);
-          int Nchildren = BP::stoi(args[5]);
-          int Nmutations = BP::stoi(args[6]);
-          BP::BP_Vec<ECISet> population = read_bit_strings_file(ECISet(args[8]), args[10]);
-
-          if(Nmin > 0 && Nmax > Nmin)
-            calc_ga_dir_eci(Npopulation, Nmin, Nmax, Nchildren, Nmutations, args[7], args[8], args[9], population);
-          else {
-            //std::cout << "print_eci_search_man()" << std::endl;
-            print_calc_ga_dir_man();
-
-            return 1;
-          }
-        }
-        else {
-          //std::cout << "print_eci_search_man()" << std::endl;
-          print_calc_ga_dir_man();
-
-          return 1;
-        }
-      }
-      else {
-        if(argc == 10 || argc == 11) {
-          int Npopulation = BP::stoi(args[2]);
-          int Nmin = BP::stoi(args[3]);
-          int Nmax = BP::stoi(args[4]);
-          int Ngenerations = BP::stoi(args[5]);
-          int Nmutations = BP::stoi(args[6]);
-          Population population(Nmin, Nmax, args[7], args[8], args[9]);
-
-          if(argc == 10)
-            population.populate(Npopulation);
-          else
-            population.populate(args[10]);
-
-          population.ga_dir(Ngenerations, Nmutations, PTHREADS);
-
-          population.write(unique("population"), "default");
-        }
-        else {
-          //std::cout << "print_eci_search_man()" << std::endl;
-          print_calc_ga_dir_man();
-
-          return 1;
-        }
-      }
-    }
-    else if(args[1] == "-calc_ga_dfs") {
-      //eci_search -calc_ga_dfs Npop Nmin Nmax Nchild Nmut Nstop energy eci.in corr.in [population_file]
-      if(!NEW) {
-        if(argc == 11) {
-          int Npopulation = BP::stoi(args[2]);
-          int Nmin = BP::stoi(args[3]);
-          int Nmax = BP::stoi(args[4]);
-          int Nchildren = BP::stoi(args[5]);
-          int Nmutations = BP::stoi(args[6]);
-          int Nstop = BP::stoi(args[7]);
-
-          BP::BP_Vec<ECISet> population;
-
-          if(Nmin > 0 && Nmax > Nmin)
-            calc_ga_dfs_eci(Npopulation, Nmin, Nmax, Nchildren, Nmutations, Nstop, args[8], args[9], args[10], population);
-          else {
-            //std::cout << "print_eci_search_man()" << std::endl;
-            print_calc_ga_dfs_man();
-
-            return 1;
-          }
-        }
-        else if(argc == 12) {
-          int Npopulation = BP::stoi(args[2]);
-          int Nmin = BP::stoi(args[3]);
-          int Nmax = BP::stoi(args[4]);
-          int Nchildren = BP::stoi(args[5]);
-          int Nmutations = BP::stoi(args[6]);
-          int Nstop = BP::stoi(args[7]);
-
-          BP::BP_Vec<ECISet> population = read_bit_strings_file(ECISet(args[9]), args[11]);
-
-          if(Nmin > 0 && Nmax > Nmin)
-            calc_ga_dfs_eci(Npopulation, Nmin, Nmax, Nchildren, Nmutations, Nstop, args[8], args[9], args[10], population);
-          else {
-            //std::cout << "print_eci_search_man()" << std::endl;
-            print_calc_ga_dfs_man();
-
-            return 1;
-          }
-        }
-        else {
-          //std::cout << "print_eci_search_man()" << std::endl;
-          print_calc_ga_dfs_man();
-
-          return 1;
-        }
-      }
-      else {
-        if(argc == 11 || argc == 12) {
-          int Npopulation = BP::stoi(args[2]);
-          int Nmin = BP::stoi(args[3]);
-          int Nmax = BP::stoi(args[4]);
-          int Ngenerations = BP::stoi(args[5]);
-          int Nmutations = BP::stoi(args[6]);
-          int Nstop = BP::stoi(args[7]);
-          Population population(Nmin, Nmax, args[8], args[9], args[10]);
-
-          if(argc == 11)
-            population.populate(Npopulation);
-          else
-            population.populate(args[11]);
-
-          population.ga_dfs(Nstop, Ngenerations, Nmutations, PTHREADS);
-
-          population.write(unique("population"), "default");
-        }
-        else {
-          //std::cout << "print_eci_search_man()" << std::endl;
-          print_calc_ga_dfs_man();
-
-          return 1;
-        }
-      }
-    }
-    else if(args[1] == "-weight_nrg") {
-      //eci_search -weight_nrg A B kT energy weighted_energy
-      if(argc == 7) {
-        weight_nrg(BP::stod(args[2]), BP::stod(args[3]), BP::stod(args[4]), args[5], args[6]);
-
       }
       else {
         //std::cout << "print_eci_search_man()" << std::endl;
-        print_weight_nrg_man();
-
-        return 1;
-
-      }
-    }
-    else if(args[1] == "-nrg_diff") {
-      //eci_search -nrg_diff tot_corr.index.A AB_structs.energy eci.in.tot AB_structs.corr.in.tot eciset.A
-      //eci_search -nrg_diff   tot_corr.index.A    AB_structs.energy   eci.in.tot   AB_structs.corr.in.tot   A_structs.energy  A_structs.eci.in  A_structs.corr.in
-      if(argc == 9) {
-        calc_nrg_diff(args[2], args[3], args[4], args[5], args[6],  args[7],  args[8]);
-
-      }
-      else {
-        //std::cout << "print_eci_search_man()" << std::endl;
-        std::cout << "eci_search -nrg_diff    tot_corr.index.A    AB_structs.energy   eci.in.tot   AB_structs.corr.in.tot   A_structs.energy  A_structs.eci.in  A_structs.corr.in" << std::endl;
-      }
-    }
-    else if(args[1] == "-weight_emin") {
-      //eci_search -weight_emin A B kT energy weighted_energy
-      if(argc == 7) {
-        weight_EMin(BP::stod(args[2]), BP::stod(args[3]), BP::stod(args[4]), args[5], args[6]);
-      }
-      else {
-        //std::cout << "print_eci_search_man()" << std::endl;
-        print_weight_emin_man();
-
-        return 1;
-      }
-    }
-    else if(args[1] == "-weight_eref") {
-      //eci_search -weight_eref A B E0 kT energy weighted_energy
-      if(argc == 8) {
-        weight_ERef(BP::stod(args[2]), BP::stod(args[3]), BP::stod(args[4]), BP::stod(args[5]), args[6], args[7]);
-      }
-      else {
-        //std::cout << "print_eci_search_man()" << std::endl;
-        print_weight_eref_man();
+        print_eci_search_man();
 
         return 1;
       }
@@ -1156,10 +1175,8 @@ int main(int argc, char *argv[]) {
       return 1;
     }
   }
-  else {
-    //std::cout << "print_eci_search_man()" << std::endl;
-    print_eci_search_man();
-
+  catch(std::exception& e) {
+    std::cerr << "Error in eci_search: " << e.what() << std::endl;
     return 1;
   }
 

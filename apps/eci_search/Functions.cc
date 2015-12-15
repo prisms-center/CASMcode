@@ -153,7 +153,7 @@ void calc_eci(std::string energy_filename, std::string eci_in_filename, std::str
 
 }
 
-void calc_cs_eci(std::string energy_filename, std::string eci_in_filename, std::string corr_in_filename, const BP::BP_Vec<double> &mu, int alg, double hulltol) {
+void calc_cs_eci(std::string energy_filename, std::string eci_in_filename, std::string corr_in_filename, const BP::BP_Vec<double> &mu, int alg, double hulltol, unsigned long int max_step) {
   // solve E = Corr*ECI, for ECI using compressive sensing L1 norm minimization (plus L2 norm in practice)
 
   Correlation corr(corr_in_filename);
@@ -169,11 +169,11 @@ void calc_cs_eci(std::string energy_filename, std::string eci_in_filename, std::
   for(i = 0; i < mu.size(); i++) {
     if(alg == 0) {
       // use Fixed-point continuation method, calc for single value of mu
-      eci_CS = calc_FPC_eci(mu[i], prec_shrink, prec_ECI, eci_in, corr, DFT_nrg, print_steps);
+      eci_CS = calc_FPC_eci(mu[i], prec_shrink, prec_ECI, eci_in, corr, DFT_nrg, print_steps, max_step);
     }
     else if(alg == 1) {
       // use Bregman iteration method, calc for single value of mu
-      eci_CS = calc_BI_eci(mu[i], prec_shrink, prec_ECI, eci_in, corr, DFT_nrg, print_steps);
+      eci_CS = calc_BI_eci(mu[i], prec_shrink, prec_ECI, eci_in, corr, DFT_nrg, print_steps, max_step);
     }
     else {
       std::cout << "Error in calc_cs_eci().  alg == '" << alg << "' is not a valid option." << std::endl;
@@ -959,7 +959,7 @@ ECISet dfs_min(long int Nstop, int Nmin, int Nmax, const ECISet &eci_start, Corr
 
 ////----------------------------
 /// compressive sensing functions
-ECISet calc_FPC_eci(double mu, double prec_shrink, double prec_ECI, const ECISet &eci_set, const Correlation &corr, const EnergySet &nrg_set, bool print_steps) {
+ECISet calc_FPC_eci(double mu, double prec_shrink, double prec_ECI, const ECISet &eci_set, const Correlation &corr, const EnergySet &nrg_set, bool print_steps, unsigned long int max_step) {
   std::cout << "begin calc_FPC_eci()" << std::endl;
 
   // method:
@@ -1050,7 +1050,7 @@ ECISet calc_FPC_eci(double mu, double prec_shrink, double prec_ECI, const ECISet
   //std::cout << "V1: " << V1 << std::endl;
 
   // do Fixed-Point continuation algorithm to find ECI
-  FPC(M1, V1, ECI, mu, tau, prec_shrink, prec_ECI, print_steps);
+  FPC(M1, V1, ECI, mu, tau, prec_shrink, prec_ECI, print_steps, max_step);
 
   //std::cout << "Final ECI:" << std::endl;
   //std::cout << ECI << std::endl;
@@ -1066,7 +1066,7 @@ ECISet calc_FPC_eci(double mu, double prec_shrink, double prec_ECI, const ECISet
 
 };
 
-ECISet calc_BI_eci(double mu, double prec_shrink, double prec_ECI, const ECISet &eci_set, const Correlation &corr, const EnergySet &nrg_set, bool print_steps) {
+ECISet calc_BI_eci(double mu, double prec_shrink, double prec_ECI, const ECISet &eci_set, const Correlation &corr, const EnergySet &nrg_set, bool print_steps, unsigned long int max_step) {
   std::cout << "begin calc_BI_eci()" << std::endl;
 
   // method:
@@ -1153,7 +1153,7 @@ ECISet calc_BI_eci(double mu, double prec_shrink, double prec_ECI, const ECISet 
   //std::cout << "V1: " << V1 << std::endl;
 
   // do Bergman Iteration algorithm to find ECI
-  BI(Cn, En, M1, ECI, mu, tau, prec_shrink, prec_ECI, print_steps);
+  BI(Cn, En, M1, ECI, mu, tau, prec_shrink, prec_ECI, print_steps, max_step);
 
   //std::cout << "Final ECI:" << std::endl;
   //std::cout << ECI << std::endl;
@@ -1169,7 +1169,7 @@ ECISet calc_BI_eci(double mu, double prec_shrink, double prec_ECI, const ECISet 
 
 };
 
-void BI(const Eigen::MatrixXd &Cn, const Eigen::VectorXd &En, const Eigen::MatrixXd &M1, Eigen::VectorXd &ECI, double mu, double tau, double prec_shrink, double prec_ECI, bool print_steps) {
+void BI(const Eigen::MatrixXd &Cn, const Eigen::VectorXd &En, const Eigen::MatrixXd &M1, Eigen::VectorXd &ECI, double mu, double tau, double prec_shrink, double prec_ECI, bool print_steps, unsigned long int max_step) {
   // Bergman iteration for fitting ECI that minimize L1 norm
 
   Eigen::VectorXd ECI_i;
@@ -1186,11 +1186,16 @@ void BI(const Eigen::MatrixXd &Cn, const Eigen::VectorXd &En, const Eigen::Matri
     ECI_i = ECI;
     F = En + F - Cn * ECI;
     V1 = Cn.transpose() * F;
-    FPC(M1, V1, ECI, mu, tau, prec_shrink, prec_ECI, false);
+    FPC(M1, V1, ECI, mu, tau, prec_shrink, prec_ECI, false, max_step);
 
     dECI = (ECI - ECI_i).norm() / ECI_i.norm();
 
     if(print_steps) {
+      
+      if(dECI != dECI) {
+        throw std::runtime_error("Error in BI iteration: dECI = nan\nTry a smaller mu value.");
+      }
+      
       if(step == 1) {
         std::cout << "    Step " << step << std::endl;
       }
@@ -1200,13 +1205,13 @@ void BI(const Eigen::MatrixXd &Cn, const Eigen::VectorXd &En, const Eigen::Matri
 
     if(dECI < prec_ECI)
       cont = false;
-
+    
   }
   while(cont);
 
 }
 
-void FPC(const Eigen::MatrixXd &M1, const Eigen::VectorXd &V1, Eigen::VectorXd &ECI, double mu, double tau, double prec_shrink, double prec_ECI, bool print_steps) {
+void FPC(const Eigen::MatrixXd &M1, const Eigen::VectorXd &V1, Eigen::VectorXd &ECI, double mu, double tau, double prec_shrink, double prec_ECI, bool print_steps, unsigned long int max_step) {
   //  Fixed-Point continuation algorithm for fitting ECI that minimize L1 norm
   //
   //
@@ -1231,10 +1236,21 @@ void FPC(const Eigen::MatrixXd &M1, const Eigen::VectorXd &V1, Eigen::VectorXd &
 
     if(print_steps) {
       if(step % 1000 == 0) {
+        
+        double _shrink = G.maxCoeff() / mu - 1.0;
+        double _dECI = (delta_mag / ECI_mag);
+        
+        if(_dECI != _dECI) {
+          throw std::runtime_error("Error in FPC iteration: dECI = nan\nTry a smaller mu value.");
+        }
+        if(std::isinf(_shrink)) {
+          throw std::runtime_error("Error in FPC iteration: shrink = inf\nTry a larger mu value.");
+        }
+        
         //rms = (C*ECI - E).norm()/sqrt(1.0*Nnrg);
         //std::cout << ECI << std::endl;
         //std::cout << "  Step " << step << "  rms: " << rms << "  shrink: " << G.maxCoeff()/mu - 1.0 << "  dECI: " << (delta_mag/ECI_mag) << std::endl;
-        std::cout << "  Step " << step << "  shrink: " << G.maxCoeff() / mu - 1.0 << "  dECI: " << (delta_mag / ECI_mag) << std::endl;
+        std::cout << "  Step " << step << "  shrink: " << _shrink << "  dECI: " << _dECI << std::endl;
 
       }
     }
@@ -1243,6 +1259,11 @@ void FPC(const Eigen::MatrixXd &M1, const Eigen::VectorXd &V1, Eigen::VectorXd &
     if(G.maxCoeff() / mu - 1.0 < prec_shrink) {
       if((delta_mag / ECI_mag) < prec_ECI)
         cont = false;
+    }
+    
+    if(step > max_step) {
+      std::cout << "STOPPING: Reached FPC iteration max step: " << max_step << std::endl;
+      cont = false;
     }
 
     //BP::BP_pause();
