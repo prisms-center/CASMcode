@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "casm/clex/Supercell.hh"
 
 namespace CASM {
@@ -5,15 +6,19 @@ namespace CASM {
   template<typename ConfigType>
   ConfigEnumStrain<ConfigType>::ConfigEnumStrain(Supercell &_scel,
                                                  const value_type &_init,
-                                                 const std::vector<Index> & subspace_partitions,
+                                                 const std::vector<Index> & linear_partitions,
                                                  const std::vector<double> &magnitudes,
                                                  std::string _mode) :
     ConfigEnum<ConfigType>(_init,_init,-1),
     //m_counter(_init_vec, _final_vec, Eigen::VectorXd::Constant(_init_vec.size(), _inc)),
     //m_proj(proj_mat),
     m_strain_calc(_mode),
-    m_perm_begin(_scel.permute_begin()), m_perm_end(_scel.permute_end()) {
+    m_perm_begin(_scel.permute_begin()),
+    m_perm_end(_scel.permute_end()) {
 
+    std::vector<double> absmags;
+    std::transform(magnitudes.cbegin(),magnitudes.cend(),std::back_inserter(absmags),std::abs<double>);
+                   
     m_strain_calc.set_symmetrized_sop(_scel.get_primclex().get_prim().point_group());
 
     //Eigen::MatrixXd axes=m_strain_calc.sop_transf_mat();
@@ -24,18 +29,24 @@ namespace CASM {
 
     Index nc=0;
     for(Index s=0; s<num_sub; s++){
-      while(nc<subspaces.size() && subspaces[nc]==s){
+      for(;nc<subspaces.size() && subspaces[nc]==s; nc++){
         if(mult[nc]==1){
-          init(nc)=-magnitudes[nc];
-          //inc(nc)=2*magnitudes[nc]/double(subspace_partitions[nc]);
+          init(nc)=-absmags[s];
+          //inc(nc)=2*absmags[s]/double(subspace_partitions[s]);
         }
         else{
           init(nc)=0.0;
-          //inc(nc)=magnitudes[nc]/double(subspace_partitions[nc]);
+          //inc(nc)=absmags[s]/double(subspace_partitions[s]);
         }
-        final(nc)=magnitudes[nc]+TOL;
-        inc(nc)=magnitudes[nc]/double(subspace_partitions[nc]);
-        ++nc;
+
+        if(linear_partitions[s]<2){
+          final(nc)=init(nc);
+          inc(nc)=10*TOL;
+        }
+        else{
+          final(nc)=absmags[s]+TOL;
+          inc(nc)=absmags[s]/double(linear_partitions[s]);
+        }
       }
     }
     m_counter=EigenCounter<Eigen::VectorXd>(init,final,inc);

@@ -72,6 +72,7 @@ lib_paths = []
 # command-line variables
 ccflags = []
 ccflags.append('--std=c++11')
+#ccflags.append('-Wall')
 ccflags.append('-Wno-unused-parameter')
 ccflags.append('-Wno-deprecated-register')
 ccflags.append('-Wno-deprecated-declarations')

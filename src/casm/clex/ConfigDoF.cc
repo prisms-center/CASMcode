@@ -8,29 +8,32 @@
 
 namespace CASM {
 
-  ConfigDoF::ConfigDoF(Index _N) :
+  ConfigDoF::ConfigDoF(Index _N, double _tol) :
     m_N(_N),
     m_deformation(Eigen::Matrix3d::Identity()),
-    m_is_strained(false) {
+    m_is_strained(false),
+    m_tol(_tol){
   }
 
   //*******************************************************************************
 
-  ConfigDoF::ConfigDoF(const Array<int> &_occ):
+  ConfigDoF::ConfigDoF(const Array<int> &_occ, double _tol):
     m_N(_occ.size()),
     m_occupation(_occ),
     m_deformation(Eigen::Matrix3d::Identity()),
-    m_is_strained(false) {
+    m_is_strained(false),
+    m_tol(_tol){
   }
 
   //*******************************************************************************
 
-  ConfigDoF::ConfigDoF(const Array<int> &_occ, const Eigen::MatrixXd &_disp, const Eigen::Matrix3d &_deformation):
+  ConfigDoF::ConfigDoF(const Array<int> &_occ, const Eigen::MatrixXd &_disp, const Eigen::Matrix3d &_deformation, double _tol):
     m_N(_occ.size()),
     m_occupation(_occ),
     m_displacement(_disp),
     m_deformation(_deformation),
-    m_is_strained(false) {
+    m_is_strained(false),
+    m_tol(_tol) {
     if(size() != occupation().size() || size() != displacement().cols()) {
       std::cerr << "CRITICAL ERROR: Attempting to initialize ConfigDoF with data structures of incompatible size: \n"
                 << "                occupation().size() = " << occupation().size() << " and displacement().size() = " << displacement().size() << "\n"
@@ -46,25 +49,35 @@ namespace CASM {
     if(occupation() != RHS.occupation())
       return false;
 
-    // floating-point comparison tolerance is m_tol
+    double _tol=max(tol(), RHS.tol());
+    // floating-point comparison tolerance is _tol
 
     if(!has_displacement()) {
-      if(RHS.has_displacement() && !almost_zero(RHS.displacement(), m_tol))
+      if(RHS.has_displacement() && !almost_zero(RHS.displacement(), _tol)){
+        //std::cout << "FALSE 1: " << _tol << "\n" << RHS.displacement() << "\n";
         return false;
+      }
     }
     //    has_displacement()==true;
     else if(!RHS.has_displacement()) {
-      if(!almost_zero(displacement(), m_tol))
+      if(!almost_zero(displacement(), _tol)){
+        //std::cout << "FALSE 2: " << _tol << "\n" << displacement() << "\n";
         return false;
+      }
     }
     //    has_displacement()==true && RHS.has_displacement==true;
-    else if(!almost_equal(displacement(), RHS.displacement(), m_tol))
+    else if(!almost_equal(displacement(), RHS.displacement(), _tol)){
+      //std::cout << "FALSE 3: " << _tol << "\n" << RHS.displacement() << "\n\n" << displacement() << "\n";;
       return false;
+    }
 
     if(is_strained() || RHS.is_strained()) {
       //Deformation defaults to identity--should work in all cases
-      if(!Eigen::almost_equal(deformation(), RHS.deformation(), m_tol))
+      if(!Eigen::almost_equal(deformation(), RHS.deformation(), _tol)){
+        //std::cout << "FALSE 4: " << _tol << "\n" << RHS.deformation() << "\n\n" << deformation() << "\n";;
         return false;
+
+      }
     }
 
     return true;
@@ -133,7 +146,7 @@ namespace CASM {
 
   //*******************************************************************************
 
-  bool ConfigDoF::is_primitive(PermuteIterator it_begin, double tol) const {
+  bool ConfigDoF::is_primitive(PermuteIterator it_begin, double _tol) const {
 
     Index i, j;
     Index permute_ind;
@@ -168,7 +181,7 @@ namespace CASM {
         for(i = 0; i < size(); i++) {
           for(j = 0; j < 3; j++) {
             permute_ind = it_begin.permute_ind(i);
-            if(almost_equal(disp(permute_ind)[j], disp(i)[j], tol)) {
+            if(almost_equal(disp(permute_ind)[j], disp(i)[j], _tol)) {
               proceed_to_next = true;
               break;
             }
@@ -189,7 +202,7 @@ namespace CASM {
 
   //*******************************************************************************
 
-  ReturnArray<PermuteIterator> ConfigDoF::factor_group(PermuteIterator it_begin, PermuteIterator it_end, double tol) const {
+  ReturnArray<PermuteIterator> ConfigDoF::factor_group(PermuteIterator it_begin, PermuteIterator it_end, double _tol) const {
     Array<PermuteIterator> factorgroup;
 
     Index i, j;
@@ -211,7 +224,7 @@ namespace CASM {
         new_F = fg_cart_op * deformation() * fg_cart_op.transpose();
         for(i = 0; i < 3; i++) {
           for(j = 0; j < 3; j++) {
-            if(!almost_equal(new_F(i, j), deformation()(i, j), tol)) {
+            if(!almost_equal(new_F(i, j), deformation()(i, j), _tol)) {
               proceed_to_next = true;
               break;
             }
@@ -257,7 +270,7 @@ namespace CASM {
           for(i = 0; i < size(); i++) {
             for(j = 0; j < 3; j++) {
               permute_ind = it_begin.permute_ind(i);
-              if(!almost_equal(new_disp(j, permute_ind), disp(i)[j], tol)) {
+              if(!almost_equal(new_disp(j, permute_ind), disp(i)[j], _tol)) {
                 proceed_to_next = true;
                 break;
               }
@@ -308,19 +321,19 @@ namespace CASM {
    */
   //*******************************************************************************
   /// Check if Configuration is canonical w.r.t. supercell factor group specified by it_begin && it_end
-  /// tolerance 'tol' is used for fuzzy comparisons
+  /// tolerance '_tol' is used for fuzzy comparisons
 
-  bool ConfigDoF::is_canonical(PermuteIterator it_begin, PermuteIterator it_end, double tol) const {
-    return _is_canonical(it_begin, it_end, NULL, tol);
+  bool ConfigDoF::is_canonical(PermuteIterator it_begin, PermuteIterator it_end, double _tol) const {
+    return _is_canonical(it_begin, it_end, NULL, _tol);
   }
 
   //*******************************************************************************
   /// Check if Configuration is canonical w.r.t. supercell factor group specified by it_begin && it_end
-  /// tolerance 'tol' is used for fuzzy comparisons
+  /// tolerance '_tol' is used for fuzzy comparisons
   /// populates factorgroup at the same time (only when is_canonical evaluates to 'true'), since algorithms are so similar
 
-  bool ConfigDoF::is_canonical(PermuteIterator it_begin, PermuteIterator it_end, Array<PermuteIterator> &factorgroup, double tol) const {
-    return _is_canonical(it_begin, it_end, &factorgroup, tol);
+  bool ConfigDoF::is_canonical(PermuteIterator it_begin, PermuteIterator it_end, Array<PermuteIterator> &factorgroup, double _tol) const {
+    return _is_canonical(it_begin, it_end, &factorgroup, _tol);
   }
 
   //*******************************************************************************
@@ -330,9 +343,9 @@ namespace CASM {
    */
   //*******************************************************************************
 
-  ConfigDoF ConfigDoF::canonical_form(PermuteIterator it_begin, PermuteIterator it_end, double tol) const {
+  ConfigDoF ConfigDoF::canonical_form(PermuteIterator it_begin, PermuteIterator it_end, double _tol) const {
     PermuteIterator it_canon;
-    return _canonical_form(it_begin, it_end, it_canon, NULL, tol);
+    return _canonical_form(it_begin, it_end, it_canon, NULL, _tol);
   }
 
   //*******************************************************************************
@@ -344,8 +357,8 @@ namespace CASM {
   //*******************************************************************************
 
   ConfigDoF ConfigDoF::canonical_form(PermuteIterator it_begin, PermuteIterator it_end,
-                                      PermuteIterator &it_canon, double tol) const {
-    return _canonical_form(it_begin, it_end, it_canon, NULL, tol);
+                                      PermuteIterator &it_canon, double _tol) const {
+    return _canonical_form(it_begin, it_end, it_canon, NULL, _tol);
   }
 
   //*******************************************************************************
@@ -359,14 +372,14 @@ namespace CASM {
   //*******************************************************************************
 
   ConfigDoF ConfigDoF::canonical_form(PermuteIterator it_begin, PermuteIterator it_end,
-                                      PermuteIterator &it_canon, Array<PermuteIterator> &factorgroup, double tol) const {
-    return _canonical_form(it_begin, it_end, it_canon, &factorgroup, tol);
+                                      PermuteIterator &it_canon, Array<PermuteIterator> &factorgroup, double _tol) const {
+    return _canonical_form(it_begin, it_end, it_canon, &factorgroup, _tol);
   }
 
   //*******************************************************************************
   /// This version calculates the factor group of the configuration, but only if it is canonical (i.e., returns true), since loop terminates
   /// early otherwise.  This private method uses the pointer fg_ptr so that we only need one implementation for the various different public methods above
-  bool ConfigDoF::_is_canonical(PermuteIterator it_begin, PermuteIterator it_end, Array<PermuteIterator> *fg_ptr, double tol) const {
+  bool ConfigDoF::_is_canonical(PermuteIterator it_begin, PermuteIterator it_end, Array<PermuteIterator> *fg_ptr, double _tol) const {
 
     if(fg_ptr)
       fg_ptr->clear();
@@ -389,12 +402,12 @@ namespace CASM {
         new_F = fg_cart_op * deformation() * fg_cart_op.transpose();
         for(i = 0; i < 3; i++) {
           for(j = 0; j < 3; j++) {
-            if(new_F(i, j) > deformation()(i, j) + tol) {
+            if(new_F(i, j) > deformation()(i, j) + _tol) {
               if(fg_ptr)
                 fg_ptr->clear();
               return false;
             }
-            else if(new_F(i, j) < deformation()(i, j) - tol) {
+            else if(new_F(i, j) < deformation()(i, j) - _tol) {
               skip_to_next_op = true;
               break;
             }
@@ -441,12 +454,12 @@ namespace CASM {
           for(i = 0; i < size(); i++) {
             for(j = 0; j < 3; j++) {
               permute_ind = it_begin.permute_ind(i);
-              if(disp(permute_ind)[j] > disp(i)[j] + tol) {
+              if(disp(permute_ind)[j] > disp(i)[j] + _tol) {
                 if(fg_ptr)
                   fg_ptr->clear();
                 return false;
               }
-              else if(disp(permute_ind)[j] < disp(i)[j] - tol) {
+              else if(disp(permute_ind)[j] < disp(i)[j] - _tol) {
                 skip_to_next_op = true; // for sake of consistency & calculating factorgroup
                 break;
               }
@@ -478,7 +491,7 @@ namespace CASM {
   //*******************************************************************************
 
   ConfigDoF ConfigDoF::_canonical_form(PermuteIterator it_begin, PermuteIterator it_end,
-                                       PermuteIterator &it_canon, Array<PermuteIterator> *fg_ptr, double tol) const {
+                                       PermuteIterator &it_canon, Array<PermuteIterator> *fg_ptr, double _tol) const {
     // canonical form is 'largest-valued' configuration bitstring
     if(fg_ptr)
       fg_ptr->clear();
@@ -505,7 +518,7 @@ namespace CASM {
         new_F = fg_cart_op * deformation() * fg_cart_op.transpose();
         for(i = 0; i < 3; i++) {
           for(j = 0; j < 3; j++) {
-            if(new_F(i, j) > best_config.deformation()(i, j) + tol) {
+            if(new_F(i, j) > best_config.deformation()(i, j) + _tol) {
               it_canon = it_begin;
               best_config = it_canon * (*this);
               //if we were filling up the factor group previously, we need to clear it and start over:
@@ -520,7 +533,7 @@ namespace CASM {
               ++it_begin;
               break;
             }
-            else if(new_F(i, j) < best_config.deformation()(i, j) - tol) {
+            else if(new_F(i, j) < best_config.deformation()(i, j) - _tol) {
               skip_to_next_op = true;
               break;
             }
@@ -578,7 +591,7 @@ namespace CASM {
           for(i = 0; i < size(); i++) {
             for(j = 0; j < 3; j++) {
               permute_ind = it_begin.permute_ind(i);
-              if(best_config.disp(i)[j] < new_disp(j, permute_ind) - tol) {
+              if(best_config.disp(i)[j] < new_disp(j, permute_ind) - _tol) {
                 skip_to_next_op = true; // not necessary, but in case we add other DoFs...
                 it_canon = it_begin;
                 best_config = it_canon * (*this);
@@ -590,7 +603,7 @@ namespace CASM {
 
                 break;
               }
-              else if(new_disp(j, permute_ind) < best_config.disp(i)[j] - tol) {
+              else if(new_disp(j, permute_ind) < best_config.disp(i)[j] - _tol) {
                 skip_to_next_op = true;
                 break;
               }

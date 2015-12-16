@@ -294,7 +294,7 @@ namespace CASM {
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
   SymGroupRep *SymGroupRep::coord_transformed_copy(const Eigen::MatrixXd &trans_mat) const {
-    SymGroupRep *new_rep(new SymGroupRep(m_master_group));
+    SymGroupRep *new_rep(new SymGroupRep(master_group()));
     if(!size())
       return new_rep;
     if(at(0) && !(at(0)->get_MatrixXd())) {
@@ -442,9 +442,11 @@ namespace CASM {
         irrep_dirs=irrep->_calc_special_irrep_directions(head_group);
       }
       for(Index s=0; s<irrep_dirs.size(); s++){
+        //std::cout << "Irrep dir " << i << ", " << s << ": \n";
         subspaces.push_back(i);
         sdirs.push_back(Array<Eigen::VectorXd>());
         for(Index d=0; d<irrep_dirs[s].size(); d++){
+          //std::cout << irrep_dirs[s][d].transpose() << std::endl;
           sdirs.back().push_back(subtrans_mat*irrep_dirs[s][d]);
         }
       }
@@ -461,6 +463,7 @@ namespace CASM {
     double best_proj, tproj;
     multiplicities.clear();
     for(Index i=0; i<sdirs.size(); i++){
+      //std::cout << "sdirs " << i << " sub " << subspaces[i] << ": " << sdirs[i][0].transpose() << "\n";
       Index j_best=0;
       best_proj=(wedge.transpose()*sdirs[i][0]).sum();
       for(Index j=1; j<sdirs[i].size(); j++){
@@ -489,9 +492,9 @@ namespace CASM {
     Eigen::VectorXd tdir;
     
     const Array<Array<Array<Index> > > &isubs(head_group.get_large_subgroups());
-    Eigen::FullPivHouseholderQR<Eigen::MatrixXd> QR(*(at(0)->get_MatrixXd()));
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> QR(*(at(0)->get_MatrixXd()));
     
-    QR.setThreshold(TOL);
+    QR.setThreshold(10*TOL);
     
     // i loops over subgroup "orbits". There are 0 to 'dim' special directions associated with each orbit.
     Eigen::MatrixXd Reynolds(*(at(0)->get_MatrixXd()));
@@ -500,15 +503,20 @@ namespace CASM {
         std::cerr << "CRITICAL ERROR: In SymGroupRep::_calc_special_irrep_directions(), attempting to use a zero-size subgroup.\n Exiting...\n";
         exit(1);
       }
-      for(Index s=0; s<isubs.size(); s++){
+      for(Index s=0; s<isubs[i].size(); s++){
         Reynolds.setZero();
         // j loops over elements of "prototype" subgroup to get the Reynold's operator for the vector
         // space on which the representation is defined
         for(j = 0; j < isubs[i][s].size(); j++) {
-          Reynolds += *(at(head_group[isubs[i][s][j]].index())->get_MatrixXd());
+          Reynolds += *get_MatrixXd(head_group[isubs[i][s][j]]);
         }
         
         Reynolds /= double(isubs[i][s].size());
+
+        //Need this because Eigen computes nonzero rank for matrix filled with small numbers close to zero.
+        //QR.setThreshold() doesn't help
+        if(almost_zero(Reynolds))
+          continue;
         
         // Column space of Reynold's matrix is invariant under the subgroup
         QR.compute(Reynolds);
@@ -516,12 +524,17 @@ namespace CASM {
         // We're only interested in 1-D invariant spaces
         if(QR.rank() != 1)
           continue;
-        
+
         //QR.matrixQ().col(0) is a special direction
+
+        Eigen::MatrixXd matrixQ(QR.householderQ());
+
+        //std::cout << "QR matrixR:\n" << Eigen::MatrixXd(QR.matrixQR().template triangularView<Eigen::Upper>()) << "\n";
+        //std::cout << "QR matrixQ:\n" << matrixQ << "\n";
         
         // See if QR.matrixQ().col(0) has been found
         for(j = 0; j < sdirs.size(); j++) {
-          if(sdirs[j].almost_contains(QR.matrixQ().col(0))) {
+          if(sdirs[j].almost_contains(matrixQ.col(0))) {
             break;
           }
         }
@@ -531,7 +544,7 @@ namespace CASM {
         //Get equivalents
         sdirs.push_back(Array<Eigen::VectorXd>());
         for(j = 0; j < head_group.size(); j++) {
-          tdir = (*(at(head_group[isubs[i][s][j]].index())->get_MatrixXd())) * QR.matrixQ().col(0);
+          tdir = (*get_MatrixXd(head_group[j])) * matrixQ.col(0);
           if(!sdirs.back().almost_contains(tdir))
             sdirs.back().push_back(tdir);
         }

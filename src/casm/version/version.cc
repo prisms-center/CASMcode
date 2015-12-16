@@ -8,6 +8,6 @@
 using namespace CASM;
 
 const std::string &CASM::version() {
-  static const std::string &ver = "v0.1.1_strain_enum";
+  static const std::string &ver = "HEAD";
   return ver;
 };

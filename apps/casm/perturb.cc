@@ -18,7 +18,7 @@ namespace CASM {
     bool is_trans = false;
     fs::path cspecs_path, abs_cspecs_path;
     fs::path selection;
-    COORD_TYPE coordtype;
+    COORD_TYPE coordtype=CASM::FRAC;
     po::variables_map vm;
     std::vector<Index> subgrids;
     std::vector<double> mags;
@@ -109,11 +109,14 @@ namespace CASM {
 
       if(num_sub!=subgrids.size() || num_sub!=mags.size()){
         std::cout << "Option --strain selected.  Based on crystal symmetry, strains can be independently enumerated in the following subspaces:\n";
+
+        std::cout.precision(8);
+        std::cout.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
         Index nc=0;
         for(Index i=0; i<num_sub; i++){
           std::cout << " Subspace " << i+1 << ":\n";
           while(nc<subspaces.size() && subspaces[nc]==i){
-            std::cout << "    " << axes.col(nc) << "\n";
+            std::cout << "    " << axes.col(nc).transpose() << "\n";
             ++nc;
           }
           std::cout << "\n";
