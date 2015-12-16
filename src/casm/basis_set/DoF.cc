@@ -2,6 +2,8 @@
 
 #include "casm/crystallography/Molecule.hh"
 
+#include "casm/casm_io/json_io/container.hh"
+
 namespace CASM {
 
   // ** OccupantDoF **
@@ -27,11 +29,10 @@ namespace CASM {
 
   void from_json(OccupantDoF<int> &dof, const jsonParser &json) {
     try {
-      std::string name = json["m_type_name"].get<std::string>();
       Array<int> domain = json["m_domain"].get<Array<int> >();
       int current_state = json["m_current_state"].get<int>();
 
-      dof = OccupantDoF<int>(name, domain, current_state);
+      dof = OccupantDoF<int>(domain, current_state);
     }
     catch(...) {
       /// re-throw exceptions
@@ -77,7 +78,7 @@ namespace CASM {
       //std::cout<<"Done adding the molecules to the list, trying to create"
       //               <<" OccupantDoF<Molecule>"<<std::endl;
 
-      dof = OccupantDoF<Molecule>(name, domain, current_state);
+      dof = OccupantDoF<Molecule>(domain, current_state);
     }
     catch(...) {
       /// re-throw exceptions
@@ -131,7 +132,7 @@ namespace CASM {
           // prepare a OccupantDoF<Molecule> and then read from json
           Array<Molecule> init_domain;
           init_domain.push_back(Molecule(lat));
-          OccupantDoF<Molecule> tdof(json["m_type_name"].get<std::string>(), init_domain);
+          OccupantDoF<Molecule> tdof(init_domain);
 
           // this expects dof.domain[0] has a Molecule with the right lattice
           CASM::from_json(tdof, json);

@@ -14,7 +14,12 @@ namespace CASM {
   class OccupantDoF;
   typedef OccupantDoF<Molecule> MoleculeOccupant;
   //****************************************************
-
+  
+  /// \brief A vacancy is any Specie/Molecule with (name == "VA" || name == "va" || name == "Va")
+  inline bool is_vacancy(const std::string& name) {
+    return (name == "VA" || name == "va" || name == "Va");
+  }
+  
   class Specie {
   public:
     std::string name;
@@ -23,7 +28,7 @@ namespace CASM {
     explicit Specie(std::string init_name) : name(init_name) { };
 
     bool is_vacancy() const {
-      return (name == "VA" || name == "va" || name == "Va");
+      return CASM::is_vacancy(name);
     }
 
 
@@ -100,7 +105,7 @@ namespace CASM {
     void generate_point_group(); //TODO
 
     bool is_vacancy() const {
-      return (name == "VA" || name == "va" || name == "Va");
+      return CASM::is_vacancy(name);
     };
 
     Molecule &apply_sym(const SymOp &op); //TODO
@@ -129,7 +134,15 @@ namespace CASM {
   Molecule operator*(const SymOp &LHS, const Molecule &RHS); //TODO
   Molecule operator+(const Coordinate &LHS, const Molecule &RHS); //TODO
   Molecule operator+(const Molecule &LHS, const Coordinate &RHS); //TODO
-
+  
+  /// \brief Return an atomic Molecule with specified name and Lattice
+  Molecule make_atom(std::string atom_name, const Lattice& lat);
+  
+  /// \brief Return an vacancy Molecule with specified Lattice
+  Molecule make_vacancy(const Lattice& lat);
+  
+  /// \brief Return true if Molecule name matches 'name', including Va checks
+  bool is_molecule_name(const Molecule& mol, std::string name);
 
 
   jsonParser &to_json(const Molecule &mol, jsonParser &json);

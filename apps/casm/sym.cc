@@ -48,13 +48,13 @@ namespace CASM {
       catch(po::error &e) {
         std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
         std::cerr << desc << std::endl;
-        return 1;
+        return ERR_INVALID_ARG;
       }
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "
                 << e.what() << ", application will now exit" << std::endl;
-      return 1;
+      return ERR_UNKNOWN;
 
     }
 
@@ -62,8 +62,8 @@ namespace CASM {
 
     fs::path root = find_casmroot(fs::current_path());
     if(root.empty()) {
-      std::cout << "Error: No casm project found." << std::endl;
-      return 1;
+      std::cerr << "Error: No casm project found." << std::endl;
+      return ERR_NO_PROJ;
     }
     fs::current_path(root);
 
@@ -81,7 +81,7 @@ namespace CASM {
 
 
     std::cout << "  Lattice point group size: " << prim_pg.size() << std::endl;
-    std::cout << "  Lattice point group is " << prim_pg.get_name() << std::endl << std::endl;
+    std::cout << "  Lattice point group is: " << prim_pg.get_name() << std::endl << std::endl;
 
     std::cout << "Generating factor group. " << std::endl << std::endl;
 

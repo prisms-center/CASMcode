@@ -50,12 +50,12 @@ namespace CASM {
     catch(po::error &e) {
       std::cerr << desc << std::endl;
       std::cerr << "\nERROR: " << e.what() << std::endl << std::endl;
-      return 1;
+      return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
       std::cerr << desc << std::endl;
       std::cerr << "\nERROR: "  << e.what() << std::endl;
-      return 1;
+      return ERR_UNKNOWN;
 
     }
 
@@ -63,7 +63,7 @@ namespace CASM {
     fs::path root = find_casmroot(fs::current_path());
     if(root.empty()) {
       std::cout << "Error in 'casm bset': No casm project found." << std::endl;
-      return 1;
+      return ERR_NO_PROJ;
     }
     fs::current_path(root);
 
@@ -79,7 +79,7 @@ namespace CASM {
 
       if(!fs::is_regular_file(dir.bspecs(set.bset()))) {
         std::cout << "Error in 'casm bset': No basis set specifications file found at: " << dir.bspecs(set.bset()) << std::endl;
-        return 1;
+        return ERR_MISSING_INPUT_FILE;
       }
 
 
@@ -118,7 +118,7 @@ namespace CASM {
         }
         else {
           std::cout << "Exiting due to existing files.  Use --force to force overwrite.\n\n";
-          return 1;
+          return ERR_EXISTING_FILE;
         }
       }
 
@@ -137,7 +137,7 @@ namespace CASM {
       catch(std::exception &e) {
         std::cerr << "\n\nError reading: " << dir.bspecs(set.bset()) << std::endl
                   << "               " << e.what() << std::endl;
-        return 1;
+        return ERR_INVALID_INPUT_FILE;
       }
 
       // -- write eci.in ----------------
@@ -179,7 +179,7 @@ namespace CASM {
 
       if(!fs::exists(dir.clust(set.bset()))) {
         std::cerr << "ERROR: No 'clust.json' file found. Make sure to update your basis set with 'casm bset -u'.\n";
-        return 1;
+        return ERR_MISSING_DEPENDS;
       }
 
       std::cout << "Initialize primclex: " << root << std::endl << std::endl;

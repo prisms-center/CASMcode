@@ -40,6 +40,7 @@
 
 // Misc
 #include "casm/misc/HierarchyID.hh"					// template //
+#include "casm/misc/cloneable_ptr.hh"
 
 // Crystallography - Coordinate
 #include "casm/crystallography/CoordinateSystems.hh"

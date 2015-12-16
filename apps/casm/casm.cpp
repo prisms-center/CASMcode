@@ -213,7 +213,12 @@ int main(int argc, char *argv[]) {
   }
   else {
     print_casm_help(std::cout);
-    retcode = 1;
+    if(!help) {
+      retcode = ERR_INVALID_ARG;
+    }
+    else {
+      retcode = 0;
+    }
   }
 
 

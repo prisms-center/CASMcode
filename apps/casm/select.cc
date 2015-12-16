@@ -49,7 +49,7 @@ namespace CASM {
   bool write_selection(const ConfigSelection<IsConst> &config_select, bool force, const fs::path &out_path, bool write_json, bool only_selected) {
     if(fs::exists(out_path) && !force) {
       std::cerr << "File " << out_path << " already exists. Use --force to force overwrite." << std::endl;
-      return 1;
+      return ERR_EXISTING_FILE;
     }
 
     if(write_json || out_path.extension() == ".json" || out_path.extension() == ".JSON") {
@@ -141,18 +141,18 @@ namespace CASM {
         if(num_cmd>1){
           std::cout << desc << std::endl;
           std::cout << "Error in 'casm select'. Must use exactly one of --set-on, --set-off, --set, --and, --or, --xor, or --not." << std::endl;
-          return 1;
+          return ERR_INVALID_ARG;
         }
         else if(vm.count("subset") && vm.count("config") && selection.size() != 1) {
           std::cout << "ERROR: 'casm select --subset' expects zero or one list as argument." << std::endl;
-          return 1;
+          return ERR_INVALID_ARG;
         }
 
         
 
         if(!vm.count("output") && (cmd=="or" || cmd=="and" || cmd=="xor" || cmd=="not")){
           std::cout << "ERROR: 'casm select --" << cmd << "' expects an --output file." << std::endl;
-          return 1;
+          return ERR_INVALID_ARG;
         }
 
       }
@@ -183,19 +183,19 @@ namespace CASM {
           cmd = "--set";
 
         std::cout << "Error in 'casm select " << cmd << "'. " << selection.size() << " config selections were specified, but no more than one selection is allowed (MASTER list is used if no other is specified)." << std::endl;
-        return 1;
+        return ERR_INVALID_ARG;
       }
 
     }
     catch(po::error &e) {
       std::cerr << desc << std::endl;
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      return 1;
+      return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
       std::cerr << desc << std::endl;
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      return 1;
+      return ERR_UNKNOWN;
     }
 
 
@@ -206,7 +206,7 @@ namespace CASM {
       if(fs::exists(out_path) && !vm.count("force")) {
         std::cerr << desc << std::endl << std::endl;
         std::cerr << "ERROR: File " << out_path << " already exists. Use --force to force overwrite." << std::endl;
-        return 1;
+        return ERR_EXISTING_FILE;
       }
     }
 
@@ -226,7 +226,7 @@ namespace CASM {
     fs::path root = find_casmroot(orig_path);
     if(root.empty()) {
       std::cerr << "Error: No casm project found." << std::endl;
-      return 1;
+      return ERR_NO_PROJ;
     }
     fs::current_path(root);
 
@@ -250,7 +250,7 @@ namespace CASM {
         std::cerr << "ERROR: Selection criteria must be a single string.  You provided " << criteria_vec.size() << " strings:\n";
         for(const std::string &str : criteria_vec)
           std::cerr << "     - " << str << "\n";
-        return 1;
+        return ERR_INVALID_ARG;
       }
       std::cout << "Set selection: " << criteria << std::endl << std::endl;
       
@@ -283,7 +283,7 @@ namespace CASM {
     if(vm.count("not")) {
       if(selection.size()!=1){
         std::cerr << "ERROR: Option --not requires exactly 1 selection as argument\n";
-        return 1;
+        return ERR_INVALID_ARG;
       }
       // loop through other lists, keeping only configurations selected in the other lists
       auto it = config_select.config_begin();

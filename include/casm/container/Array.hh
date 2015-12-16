@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include "casm/CASM_global_definitions.hh"
+#include "casm/misc/CASM_TMP.hh"
 #include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
@@ -72,6 +73,20 @@ namespace CASM {
       reserve(RHS.size());
       for(Index i = 0; i < RHS.size(); i++)
         push_back(RHS[i]);
+    }
+    
+    //*******************************************************************************************
+    
+    template<typename Iterator>
+    Array(Iterator begin, 
+          Iterator end, 
+          typename CASM_TMP::enable_if_iterator<Iterator>::type* = nullptr) : 
+      N(0), NMax(0), Vals(NULL) {
+      
+      reserve(std::distance(begin, end));
+      auto it = begin;
+      for(; it!=end; ++it)
+        push_back(*it);
     }
 
     //*******************************************************************************************

@@ -6,6 +6,7 @@
 
 /// What is being used to test it:
 #include "casm/clex/PrimClex.hh"
+#include "casm/app/AppIO.hh"
 
 using namespace CASM;
 

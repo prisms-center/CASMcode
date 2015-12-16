@@ -66,40 +66,39 @@ namespace CASM {
       if(vm.count("min") && !vm.count("max")) {
         std::cerr << "\n" << desc << "\n" << std::endl;
         std::cerr << "Error in 'casm enum'. If --min is given, --max must also be given." << std::endl;
-        return 1;
+        return ERR_INVALID_ARG;
       }
       if(!vm.count("supercells") && !vm.count("configs")) {
         std::cerr << "\n" << desc << "\n" << std::endl;
         std::cerr << "Error in 'casm enum'. Either --supercells or --configs must be given." << std::endl;
-        return 1;
+        return ERR_INVALID_ARG;
       }
       if(vm.count("supercells") && !vm.count("max")) {
         std::cerr << "\n" << desc << "\n" << std::endl;
         std::cerr << "Error in 'casm enum'. If --supercells is given, --max must be given." << std::endl;
-        return 1;
+        return ERR_INVALID_ARG;
       }
     }
     catch(po::error &e) {
       std::cerr << desc << std::endl;
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      return 1;
+      return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
       std::cerr << desc << std::endl;
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      return 1;
+      return ERR_UNKNOWN;
 
     }
-
+    
     COORD_MODE C(coordtype);
 
     fs::path root = find_casmroot(fs::current_path());
     if(root.empty()) {
       std::cerr << "Error in 'casm enum': No casm project found." << std::endl;
-      return 1;
+      return ERR_NO_PROJ;
     }
     fs::current_path(root);
-
 
     std::cout << "\n***************************\n" << std::endl;
 
@@ -153,7 +152,7 @@ namespace CASM {
 
       if(scel_selection.empty()) {
         std::cout << "Did not find any supercells. Make sure to 'casm enum --supercells' first!" << std::endl << std::endl;
-        return 1;
+        return ERR_MISSING_DEPENDS;
       }
 
       //We have the selection. Now do enumeration
@@ -183,7 +182,7 @@ namespace CASM {
           }
           catch(std::exception &e) {
             std::cerr << "Cannot filter configurations using the expression provided: \n" << e.what() << "\nExiting...\n";
-            return 1;
+            return ERR_INVALID_ARG;
           }
         }
         else

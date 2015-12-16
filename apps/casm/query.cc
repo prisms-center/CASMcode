@@ -4,7 +4,7 @@
 #include <boost/algorithm/string.hpp>
 #include "casm_functions.hh"
 #include "casm/CASM_classes.hh"
-#include "casm/app/ProjectSettings.hh"
+#include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOSelected.hh"
 
 namespace CASM {
@@ -80,12 +80,12 @@ namespace CASM {
     catch(po::error &e) {
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
       std::cerr << desc << std::endl;
-      return 1;
+      return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "
                 << e.what() << ", application will now exit" << std::endl;
-      return 1;
+      return ERR_UNKNOWN;
     }
 
     if(!vm.count("learn") && !vm.count("columns")) {
@@ -95,7 +95,7 @@ namespace CASM {
     fs::path root = find_casmroot(fs::current_path());
     if(root.empty()) {
       std::cerr << "Error in 'casm query': No casm project found." << std::endl;
-      return 1;
+      return ERR_NO_PROJ;
     }
     fs::current_path(root);
 
@@ -132,7 +132,7 @@ namespace CASM {
     }
     if(!vm.count("columns")) {
       std::cerr << "ERROR: the option '--columns' is required but missing" << std::endl;
-      return 1;
+      return ERR_INVALID_ARG;
     }
     //else{ //option is "columns"
     if(fs::exists(alias_file)) {
@@ -162,7 +162,7 @@ namespace CASM {
     output_stream << FormatFlag(output_stream).print_header(!no_header);
     DataFormatter<Configuration> formatter;
     ConstConfigSelection selection;
-
+    
     /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
     const DirectoryStructure &dir = primclex.dir();
     const ProjectSettings &set = primclex.settings();
@@ -173,6 +173,7 @@ namespace CASM {
     }
 
     try {
+      
       if(vm.count("config"))
         selection = ConstConfigSelection(primclex, fs::absolute(config_path));
       else
@@ -193,10 +194,11 @@ namespace CASM {
     }
     catch(std::exception &e) {
       std::cerr << "Parsing error: " << e.what() << "\n\n";
-      return 1;
+      return ERR_INVALID_ARG;
     }
 
     try {
+      
       // JSON output block
       if(json_flag || out_path.extension() == ".json" || out_path.extension() == ".JSON") {
         jsonParser json;
@@ -211,10 +213,11 @@ namespace CASM {
         //std::cout << "Read in config selection... it is:\n" << selection;
         output_stream << formatter(selection.selected_config_begin(), selection.selected_config_end());
       }
+      
     }
     catch(std::exception &e) {
       std::cerr << "Initialization error: " << e.what() << "\n\n";
-      return 1;
+      return ERR_UNKNOWN;
     }
 
     if(vm.count("output"))

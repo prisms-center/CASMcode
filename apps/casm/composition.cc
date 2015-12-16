@@ -88,7 +88,7 @@ namespace CASM {
           std::cout << "        on the contents of the 'composition_axes.json' file.\n";
           std::cout << "\n";
           if(call_help)
-            return 1;
+            return ERR_INVALID_ARG;
 
           return 0;
         }
@@ -100,20 +100,20 @@ namespace CASM {
       catch(po::error &e) {
         std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
         std::cerr << desc << std::endl;
-        return 1;
+        return ERR_INVALID_ARG;
       }
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "
                 << e.what() << ", application will now exit" << std::endl;
-      return 1;
+      return ERR_UNKNOWN;
 
     }
 
     fs::path root = find_casmroot(fs::current_path());
     if(root.empty()) {
       std::cout << "Error in 'casm composition': No casm project found." << std::endl;
-      return 1;
+      return ERR_NO_PROJ;
     }
     fs::current_path(root);
 
@@ -164,7 +164,7 @@ namespace CASM {
 
         std::cout << "Not Updating... Please fix your compostion axes. \n";
 
-        return 1;
+        return ERR_INVALID_INPUT_FILE;
 
       }
       else if(!opt.has_current_axes) {
@@ -175,7 +175,7 @@ namespace CASM {
 
         std::cout << "Please use 'casm composition --select' to choose your composition axes.\n\n";
 
-        return 1;
+        return ERR_MISSING_DEPENDS;
       }
       else {
 
@@ -238,7 +238,7 @@ namespace CASM {
           std::cout << "Please use 'casm composition --calc' to calculate standard composition axes,\n" <<
                     "or add custom composition axes to " << dir.composition_axes(calctype, ref) << "\n\n";
 
-          return 1;
+          return ERR_MISSING_DEPENDS;
 
         }
 
@@ -251,7 +251,7 @@ namespace CASM {
 
                     "File: " << dir.composition_axes(calctype, ref) << "\n\n";
 
-          return 1;
+          return ERR_INVALID_INPUT_FILE;
 
         }
         else if(opt.standard.find(choice) == opt.standard.end() &&
@@ -261,7 +261,7 @@ namespace CASM {
                     "be found in both the standard and custom compostion axes. Please\n" <<
                     "re-select composition axes.                                     \n\n";
 
-          return 1;
+          return ERR_INVALID_INPUT_FILE;
 
         }
 

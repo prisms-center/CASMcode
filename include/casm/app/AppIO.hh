@@ -4,6 +4,7 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/clex/CompositionConverter.hh"
+
 #include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
@@ -104,7 +105,7 @@ namespace CASM {
           tMol.push_back(AtomPosition(0, 0, 0, occ_name[i], prim.lattice()));
           tocc.push_back(tMol);
         }
-        site.set_site_occupant(MoleculeOccupant("occupation", tocc));
+        site.set_site_occupant(MoleculeOccupant(tocc));
         site.set_occ_value(0);
 
         // add site to prim
@@ -248,8 +249,7 @@ namespace CASM {
     json["multiplication_table"] = grp.get_multi_table();
     json["character_table"] = grp.get_character_table();
   }
-
-
+  
 
   // --------- CompositionAxes Declarations --------------------------------------------------
 

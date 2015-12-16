@@ -49,19 +49,19 @@ namespace CASM {
       catch(po::error &e) {
         std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
         std::cerr << desc << std::endl;
-        return 1;
+        return ERR_INVALID_ARG;
       }
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "
                 << e.what() << ", application will now exit" << std::endl;
-      return 1;
+      return ERR_UNKNOWN;
 
     }
 
     if(fs::current_path() == find_casmroot(fs::current_path())) {
       std::cout << "Already in a casm project." << std::endl;
-      return 1;
+      return ERR_OTHER_PROJ;
     }
 
     std::cout << "\n***************************\n" << std::endl;
@@ -82,7 +82,7 @@ namespace CASM {
 
         std::cout << "For step by step help use: 'casm status -n'\n\n";
 
-        return 1;
+        return ERR_MISSING_INPUT_FILE;
       }
 
       try {
@@ -95,7 +95,7 @@ namespace CASM {
 
         std::cerr << "ERROR: No prim.json exists. PRIM exists, but it could not be read.\n";
         std::cerr << e.what() << std::endl;
-        return 1;
+        return ERR_INVALID_INPUT_FILE;
       }
 
 
@@ -129,7 +129,7 @@ namespace CASM {
     catch(std::runtime_error &e) {
       std::cerr << e.what() << std::endl;
 
-      return 1;
+      return ERR_INVALID_INPUT_FILE;
     }
 
     /// Check if PRIM is primitive
@@ -153,7 +153,7 @@ namespace CASM {
 
         std::cerr << "If you want to use the current prim.json anyway, re-run with the --force option. Some\n"
                   << "CASM features cannot be used with a non-primitive starting structure.\n";
-        return 1;
+        return ERR_INVALID_INPUT_FILE;
       }
       else {
         std::cerr << "WARNING: The structure in the prim.json file is not primitive. Continuing anyway    \n"
@@ -187,7 +187,7 @@ namespace CASM {
         if(!is_standard_niggli) {
           std::cerr << "If you want to use the current prim.json anyway, re-run with the --force option. Some\n" <<
                     "CASM features cannot be used with a non-reduced starting structure.\n";
-          return 1;
+          return ERR_INVALID_INPUT_FILE;
         }
       }
       else {
@@ -210,7 +210,7 @@ namespace CASM {
         prim.within();
         prim.print(file);
         file.close();
-        return 1;
+        return ERR_INVALID_INPUT_FILE;
       }
       else {
         std::cerr << "WARNING: The structure in the PRIM file is not right-handed. Continuing anyway    \n"

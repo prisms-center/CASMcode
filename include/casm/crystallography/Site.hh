@@ -14,6 +14,9 @@ namespace CASM {
   public:
     explicit Site(const Lattice &init_home);
     Site(const Coordinate &init_pos, const std::string &occ_name);
+    
+    /// \brief Construct site with initial position and the allowed Molecule
+    Site(const Coordinate &init_pos, std::initializer_list<Molecule> site_occ);
 
     const MoleculeOccupant &site_occupant() const {
       return m_site_occupant;

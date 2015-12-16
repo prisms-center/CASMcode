@@ -2,18 +2,20 @@
 
 #include "casm/basis_set/FunctionVisitor.hh"
 
+#include "casm/casm_io/json_io/container.hh"
+
 namespace CASM {
 
 
   Site::Site(const Lattice &init_home) :
-    Coordinate(init_home), m_nlist_ind(-1), m_type_ID(-1), m_site_occupant("occupation", Array<Molecule>()) {
+    Coordinate(init_home), m_nlist_ind(-1), m_type_ID(-1), m_site_occupant(Array<Molecule>()) {
     //site_occupant.set_value(0);
   }
 
   //****************************************************
 
   Site::Site(const Coordinate &init_pos, const std::string &occ_name) :
-    Coordinate(init_pos), m_nlist_ind(-1), m_type_ID(-1), m_site_occupant("occupation", Array<Molecule>()) {
+    Coordinate(init_pos), m_nlist_ind(-1), m_type_ID(-1), m_site_occupant(Array<Molecule>()) {
 
     Molecule tMol(*home);
     tMol.name = occ_name;
@@ -26,6 +28,13 @@ namespace CASM {
 
     return;
   }
+  
+  /// \brief Construct site with initial position and the allowed Molecule
+  Site::Site(const Coordinate &init_pos, std::initializer_list<Molecule> site_occ) :
+    Coordinate(init_pos), m_nlist_ind(-1), m_type_ID(-1) {
+    set_site_occupant(MoleculeOccupant(site_occ));
+  }
+
 
   //****************************************************
 
