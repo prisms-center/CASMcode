@@ -16,6 +16,10 @@ namespace CASM {
   class PrimClex;
   class Clexulator;
 
+  /// \brief Represents a supercell of a PrimClex
+  ///
+  /// \ingroup Clex
+  ///
   class Supercell {
 
   public:

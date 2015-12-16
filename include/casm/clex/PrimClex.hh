@@ -24,7 +24,18 @@ namespace CASM {
   class ECIContainer;
 
   template<typename T, typename U> class ConfigIterator;
-
+  
+  
+  /// \defgroup Clex
+  ///    
+  /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
+  ///    
+  
+  
+  /// \brief PrimClex stores the primitive Structure and lots of related data
+  ///
+  /// \ingroup Clex
+  ///
   class PrimClex {
 
     fs::path root;

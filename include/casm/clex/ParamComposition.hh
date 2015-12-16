@@ -39,6 +39,7 @@ namespace CASM {
     Array< Eigen::VectorXd > spanning_end_members;
 
     // holds the list of all allowed end_members in the PRIM
+    //   each row is an end_member
     Eigen::MatrixXd prim_end_members;
 
     // gives the sublattices that components[i] can be allowed on  [component][sublat] (0/1)
@@ -118,7 +119,7 @@ namespace CASM {
     //GENERATE Routines
     void generate_components();
     void generate_prim_end_members();
-    void generate_composition_axes();
+    //void generate_composition_axes();
     void generate_composition_transf();
     void generate_sublattice_map();
     void generate_composition_space(bool verbose = false);
@@ -199,6 +200,11 @@ namespace CASM {
     const Array< Eigen::VectorXd > &get_spanning_end_members() const {
       return spanning_end_members;
     };
+    
+    /// \brief Return all possible end members as row matrix
+    Eigen::MatrixXd get_prim_end_members() const {
+      return prim_end_members;
+    }
 
     const Array< Eigen::MatrixXd > &get_comp() const {
       return comp;
@@ -216,6 +222,7 @@ namespace CASM {
       return rank_of_space;
     };
 
+    /// \brief Components are ordered as in Structure::get_struc_molecule
     const Array<std::string> &get_components() const {
       return components;
     };

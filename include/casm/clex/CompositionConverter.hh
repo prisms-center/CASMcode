@@ -12,6 +12,10 @@ namespace CASM {
 
   class Structure;
 
+  /// \brief Convert between number of species per unit cell and parametric composition
+  ///
+  /// \ingroup Clex
+  ///
   class CompositionConverter {
 
   public:
@@ -124,7 +128,16 @@ namespace CASM {
 
   /// \brief Deserialize CompositionConverter from JSON
   void from_json(CompositionConverter &f, const jsonParser &json);
-
+  
+  /// \brief Generate a column matrix containing all the possible molecular end members
+  Eigen::MatrixXd end_members(const Structure& prim);
+  
+  /// \brief Return the composition space of a Structure
+  Eigen::MatrixXd composition_space(const Structure& prim, double tol = 1e-14);
+  
+  /// \brief Return the null composition space of a Structure
+  Eigen::MatrixXd null_composition_space(const Structure& prim, double tol=1e-14);
+  
 
   // ------ Definitions ---------------------------------------------
 
@@ -212,6 +225,8 @@ namespace CASM {
 
     return result;
   }
+  
+  
 }
 
 #endif

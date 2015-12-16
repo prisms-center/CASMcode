@@ -391,5 +391,54 @@ namespace CASM {
       throw;
     }
   }
+  
+  /// \brief Generate a column matrix containing all the possible molecular end members
+  ///
+  /// \param prim A Structure to find the end members of (does 
+  ///             not check if it is actually primitive).
+  ///
+  /// - Each column corresponds to a point in composition space (specifying number 
+  ///   of each Molecule per prim)
+  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule,
+  ///   with units number Molecule / prim
+  Eigen::MatrixXd end_members(const Structure& prim) {
+    ParamComposition param_comp(prim);
+    param_comp.generate_components();
+    param_comp.generate_sublattice_map();
+    param_comp.generate_prim_end_members();
+    return param_comp.get_prim_end_members().transpose();
+  }
+  
+  /// \brief Return the composition space of a Structure
+  ///
+  /// \param prim A Structure to find the standard composition space for (does 
+  ///             not check if it is actually primitive).
+  /// \param tol tolerance for checking rank (default 1e-14)
+  ///
+  /// - Each column corresponds to an orthogonal vector in composition space
+  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule,
+  ///   with units number Molecule / prim
+  Eigen::MatrixXd composition_space(const Structure& prim, double tol) {
+    auto Qr = end_members(prim).fullPivHouseholderQr();
+    Qr.setThreshold(tol);
+    auto Q = Qr.matrixQ();
+    return Q.leftCols(Qr.rank());
+  }
+  
+  /// \brief Return the null composition space of a Structure
+  ///
+  /// \param prim A Structure to find the standard composition space for (does 
+  ///             not check if it is actually primitive).
+  /// \param tol tolerance for checking rank (default 1e-14)
+  ///
+  /// - Each column corresponds to an orthogonal vector in composition space
+  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule,
+  ///   with units number Molecule / prim
+  Eigen::MatrixXd null_composition_space(const Structure& prim, double tol) {
+    auto Qr = end_members(prim).fullPivHouseholderQr();
+    Qr.setThreshold(tol);
+    auto Q = Qr.matrixQ();
+    return Q.rightCols(Q.cols() - Qr.rank());
+  }
 
 }

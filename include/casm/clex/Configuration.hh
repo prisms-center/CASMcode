@@ -21,7 +21,19 @@ namespace CASM {
   class Supercell;
   class UnitCellCoord;
   class Clexulator;
-
+  
+  
+  /// \defgroup Configuration
+  ///    
+  /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
+  ///    
+  /// \ingroup Clex
+  
+  
+  /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
+  /// 
+  /// \ingroup Configuration
+  /// \ingroup Clex
   class Configuration {
   private:
 
