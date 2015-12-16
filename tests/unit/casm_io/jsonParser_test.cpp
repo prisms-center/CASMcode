@@ -32,6 +32,7 @@ R"({
   ]
 })";
 
+
 BOOST_AUTO_TEST_SUITE(jsonParserTest)
 
 BOOST_AUTO_TEST_CASE(Basic) {
@@ -50,6 +51,78 @@ BOOST_AUTO_TEST_CASE(Basic) {
   from_json(d, json["number"]);
   BOOST_CHECK_EQUAL(d, 4.0023);
   BOOST_CHECK_EQUAL(4.0023, json["number"].get<double>());
+}
+
+BOOST_AUTO_TEST_CASE(ArrayExtraTrailingComma) {
+  
+  std::string json_extra_trailing_comma = 
+R"({
+  "int" : 34,
+  "number" : 4.0023,
+  "string" : "hello",
+  "bool_true" : true,
+  "bool_false" : false,
+  "object" : {
+    "int" : 34,
+    "number" : 4.0023,
+    "string" : "hello",
+    "bool_true" : true,
+    "bool_false" : false
+  },
+  "uniform_array" : [1, 2, 3, 4,],
+  "mixed_array" : [
+    "hello",
+    34,
+    4.0023,
+    {"int" : 34, "number" : 4.0023}
+  ]
+})";
+  
+  jsonParser json;
+  
+  json.read(json_extra_trailing_comma);
+  
+  BOOST_CHECK_EQUAL(json.read(json_extra_trailing_comma), false);
+  
+  
+  BOOST_CHECK_THROW(jsonParser::parse(json_extra_trailing_comma), std::runtime_error);
+  
+}
+
+BOOST_AUTO_TEST_CASE(ArrayMissingComma) {
+  
+  std::string json_missing_comma = 
+R"({
+  "int" : 34,
+  "number" : 4.0023,
+  "string" : "hello",
+  "bool_true" : true,
+  "bool_false" : false,
+  "object" : {
+    "int" : 34,
+    "number" : 4.0023,
+    "string" : "hello",
+    "bool_true" : true,
+    "bool_false" : false
+  },
+  "uniform_array" : [1, 2 3, 4],
+  "mixed_array" : [
+    "hello",
+    34,
+    4.0023,
+    {"int" : 34, "number" : 4.0023}
+  ]
+})";
+  
+  jsonParser json;
+  
+  json.read(json_missing_comma);
+  
+  BOOST_CHECK_EQUAL(json.read(json_missing_comma), false);
+  
+  
+  BOOST_CHECK_THROW(jsonParser::parse(json_missing_comma), std::runtime_error);
+  
 }
 
 BOOST_AUTO_TEST_SUITE_END()

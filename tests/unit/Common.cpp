@@ -110,6 +110,44 @@ std::string str = R"({
   
   }
   
+  std::string Proj::invalid_bspecs() const {
+
+std::string str = R"({
+  "basis_functions" : {
+    "site_basis_functions" : "occupation"
+  },
+  "orbit_branch_specs" : {
+    "2" : {"max_length" : 4.01},
+    "3" : {"max_length" : 3.01}
+  },
+  "orbit_specs" : [
+    {
+      "coordinate_mode" : "Direct",
+      "prototype" : [
+        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 1.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 2.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 3.000000000000, 0.000000000000, 0.000000000000 ],
+      ],
+      "include_subclusters" : true  
+    },
+    {
+      "coordinate_mode" : "Direct",
+      "prototype" : [
+        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 0.000000000000, 1.000000000000, 0.000000000000 ],
+        [ 0.000000000000, 0.000000000000, 1.000000000000 ],
+        [ 1.000000000000, 1.000000000000, 1.000000000000 ]
+      ],
+      "include_subclusters" : true
+    }
+  ]
+})";
+    
+    return str;
+  
+  }
+  
   /// \brief Check that 'casm init' runs without error and expected files are created
   void Proj::check_init() {
       
@@ -167,6 +205,14 @@ std::string str = R"({
   ///        and that --orbits, --clusters, and --functions run without error.
   void Proj::check_bset() {
     
+    // check for failure with bspecs with invalid JSON
+    fs::ofstream file(dir / "basis_sets" / "bset.default" / "bspecs.json");
+    file << Proj::invalid_bspecs() << "\n";
+    file.close();
+    m_p.popen(cd_and() + "casm bset -u");
+    BOOST_CHECK_EQUAL_MESSAGE(m_p.exit_code(), 4, m_p.gets());
+    
+    // check for success with a valid bspecs
     Proj::bspecs().write(dir / "basis_sets" / "bset.default" / "bspecs.json");
     
     m_p.popen(cd_and() + "casm bset -u");
