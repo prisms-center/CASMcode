@@ -1,7 +1,8 @@
-#ifndef cloneable_ptr_HH
-#define cloneable_ptr_HH
+#ifndef CASM_cloneable_ptr_HH
+#define CASM_cloneable_ptr_HH
 
 #include <memory>
+#include <iostream>
 
 namespace notstd {
   
@@ -10,6 +11,19 @@ namespace notstd {
   std::unique_ptr<T> make_unique( Args&& ...args )
   {
     return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) );
+  }
+  
+  
+  
+  template<typename Type>
+  class cloneable_ptr;
+  
+  
+  /// \brief make a cloneable_ptr<T> via T(Args... args)
+  template<typename T, typename ...Args>
+  cloneable_ptr<T> make_cloneable( Args&& ...args )
+  {
+    return cloneable_ptr<T>( new T( std::forward<Args>(args)... ) );
   }
   
   
@@ -27,35 +41,91 @@ namespace notstd {
     
     public:
     
+    typedef Type element_type;
     typedef Type* pointer;
     typedef Type& reference;
     
-    cloneable_ptr(pointer ptr) : 
+    /// \brief Default constructor
+    cloneable_ptr() {}
+    
+    /// \brief Construct by taking ownership of ptr
+    explicit cloneable_ptr(pointer ptr) : 
       m_unique(ptr) {}
     
-    cloneable_ptr(const Type& obj) : 
+    /// \brief Construct by cloning obj
+    explicit cloneable_ptr(const Type& obj) : 
       m_unique(obj.clone()) {}
     
+    
+    /// \brief Construct by cloning other
     cloneable_ptr(const cloneable_ptr& other) : 
       m_unique(other->clone()) {}
+    
+    /// \brief Construct by cloning other
+    template<typename U>
+    cloneable_ptr(const cloneable_ptr<U>& other) : 
+      m_unique(other->clone()) {}
+    
+    /// \brief Construct by moving other
+    template<typename U>
+    cloneable_ptr(cloneable_ptr<U>&& other) : 
+      m_unique(std::move(other.unique())) {}
       
+    
+    /// \brief Construct by cloning other
+    template<typename U>
+    cloneable_ptr(const std::unique_ptr<U>& other) : 
+      m_unique(other->clone()) {}
+    
+    /// \brief Construct by moving
+    template<typename U>
+    cloneable_ptr(std::unique_ptr<U>&& other) : 
+      m_unique(std::move(other)) {}
+    
+    
+    /// \brief Assignment via copy-swap
     cloneable_ptr& operator=(cloneable_ptr other) {
       swap(*this, other);
       return *this;
     }
+    
+    /// \brief Assignment via move
+    template<typename U>
+    cloneable_ptr& operator=(cloneable_ptr<U>&& other) {
+      unique() = std::move(other.unique());
+      return *this;
+    }
+    
+    
+    /// \brief Assignment via clone
+    template<typename U>
+    cloneable_ptr& operator=(const std::unique_ptr<U>& other) {
+      unique() = other.clone();
+      return *this;
+    }
+    
+    /// \brief Assignment via move
+    template<typename U>
+    cloneable_ptr& operator=(std::unique_ptr<U>&& other) {
+      unique() = std::move(other);
+      return *this;
+    }
+    
     
     reference operator*() const {
       return *m_unique;
     }
     
     pointer operator->() const {
-      return m_unique.operator->();
+      return &(this->operator*());
     }
     
+    /// \brief Access contained unique_ptr
     std::unique_ptr<Type>& unique() {
       return m_unique;
     }
     
+    /// \brief const Access contained unique_ptr
     const std::unique_ptr<Type>& unique() const {
       return m_unique;
     }
@@ -69,6 +139,21 @@ namespace notstd {
   template<typename Type>
   void swap(cloneable_ptr<Type>& A, cloneable_ptr<Type>& B) {
     A.unique().swap(B.unique());
+  }
+  
+  template<typename Type>
+  bool operator<(const cloneable_ptr<Type>& A, const cloneable_ptr<Type>& B) {
+    return A.unique() < B.unique();
+  }
+  
+  template<typename Type>
+  bool operator==(const cloneable_ptr<Type>& A, const cloneable_ptr<Type>& B) {
+    return A.unique() == B.unique();
+  }
+  
+  template<typename Type>
+  bool operator!=(const cloneable_ptr<Type>& A, const cloneable_ptr<Type>& B) {
+    return A.unique() != B.unique();
   }
 }
 

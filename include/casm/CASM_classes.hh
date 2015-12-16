@@ -40,7 +40,6 @@
 
 // Misc
 #include "casm/misc/HierarchyID.hh"					// template //
-#include "casm/misc/cloneable_ptr.hh"
 
 // Crystallography - Coordinate
 #include "casm/crystallography/CoordinateSystems.hh"
@@ -110,6 +109,12 @@
 #include "casm/clex/ConfigIterator.hh"
 #include "clex/ConfigSelection.hh"
 #include "clex/ConfigIO.hh"
+#include "casm/clex/ConfigIOHull.hh"
+#include "casm/clex/ConfigIONovelty.hh"
+#include "casm/clex/ConfigIOStrucScore.hh"
+#include "casm/clex/ConfigIOStrain.hh"
+#include "casm/clex/ConfigIOSelected.hh"
+
 
 // Hull
 #include "casm/hull/Hull.hh"

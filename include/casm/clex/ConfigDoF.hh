@@ -2,25 +2,29 @@
 #define ConfigDoF_HH
 
 #include "casm/container/Array.hh"
+#include "casm/clex/Correlation.hh"
 //#include "casm/symmetry/PermuteIterator.hh"
 
 namespace CASM {
 
 
   class PermuteIterator;
-  typedef Array<double> Correlation;
   class PrimClex;
   class Supercell;
   class Clexulator;
 
 
-  /**
-   * This is just a container class for the different degrees of freedom a Configuration
-   * might have. Contains an id, an Array<int> that tells you the current occupant of each
-   * site, an Eigen::MatrixXd that tells you the displacements at each site, and a LatticeStrain
-   * that tells you the strain of the Configuration. Everything is public.
-   */
-
+  /// \brief A container class for the different degrees of freedom a Configuration
+  /// might have
+  ///
+  /// Contains an id, an Array<int> that tells you the current occupant of each
+  /// site, an Eigen::MatrixXd that tells you the displacements at each site, and 
+  /// a LatticeStrain that tells you the strain of the Configuration. Everything 
+  /// is public.
+  ///
+  /// \ingroup Clex
+  /// \ingroup Configuration
+  ///
   class ConfigDoF {
 
   public:

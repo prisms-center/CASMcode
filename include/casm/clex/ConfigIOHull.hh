@@ -1,7 +1,7 @@
 #ifndef CONFIGIOHULL_HH
 #define CONFIGIOHULL_HH
 
-#include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/casm_io/DataFormatter.hh"
 #include "casm/hull/Hull.hh"
 #include "casm/clex/ConfigIterator.hh"
 #include "casm/clex/PrimClex.hh"
@@ -10,16 +10,19 @@ namespace CASM {
 
   class Configuration;
 
-  namespace ConfigIO_impl {
+  namespace ConfigIO {
     
     /// \brief Base class for hull info formatters
+    ///
+    /// \ingroup ConfigIO
+    ///
     template<typename ValueType>
-    class BaseHullConfigFormatter: public BaseValueFormatter<ValueType, Configuration> {
+    class BaseHull: public BaseValueFormatter<ValueType, Configuration> {
     
       public:
       
       /// \brief Constructor
-      BaseHullConfigFormatter(const std::string &_name, 
+      BaseHull(const std::string &_name, 
                               const std::string &_desc, 
                               const std::string &_default_selection,
                               const std::string &_default_composition_type,
@@ -67,105 +70,183 @@ namespace CASM {
     
     /// \brief Returns a boolean indicating if a Configuration is a convex hull vertex
     ///
-    /// - Only one Configuration out of set that have identical or almost identical 
-    ///   points in composition/energy space will return true 
-    class OnHullConfigFormatter: public BaseHullConfigFormatter<bool> {
-      
-      public:
-      
-      /// \brief Constructor
-      OnHullConfigFormatter();
-      
-      /// \brief Clone
-      BaseDatumFormatter<Configuration>* clone() const override {
-        return new OnHullConfigFormatter(*this);
-      }
-      
-      
-      protected:
-      
-      /// \brief Validate that the Configuration has a formation energy per species
-      bool _validate(const Configuration &_config) const override;
-      
-      /// \brief Check if the Configuration is a hull vertex 
-      bool _evaluate(const Configuration &_config) const override;
-    };
-    
-    /// \brief Returns the distance of a Configuration above the convex hull along the energy axis
-    class HullDistConfigFormatter: public BaseHullConfigFormatter<double> {
-      
-      public:
-      
-      /// \brief Constructor
-      HullDistConfigFormatter();
-      
-      /// \brief Clone
-      BaseDatumFormatter<Configuration>* clone() const override {
-        return new HullDistConfigFormatter(*this);
-      }
-      
-      protected:
-      
-      /// \brief Validate that the Configuration has a formation energy per species
-      bool _validate(const Configuration &_config) const override;
-      
-      /// \brief Return the distance to the hull
-      double _evaluate(const Configuration &_config) const override;
-    };
-    
-    
-    /// \brief Returns a boolean indicating if a Configuration is a convex hull vertex
+    /// Whether configuration is a vertex on the formation_energy convex hull (i.e., is a groundstate).
+    /// Only one Configuration out of a set that have identical or almost identical points in 
+    /// composition/energy space will return true.
     ///
-    /// - Only one Configuration out of set that have identical or almost identical 
-    ///   points in composition/energy space will return true 
-    class OnClexHullConfigFormatter: public BaseHullConfigFormatter<bool> {
+    /// Accepts arguments ($selection, $composition):
+    /// - $selection may be one of: <filename>, 'ALL', 'CALCULATED', 'MASTER' <--default
+    /// - $composition may be one of: 'comp', 'atom_frac' <--default
+    ///   - For 'comp', 'formation_energy' is used. For 'atom_frac', 'formation_energy_per_atom' is used.
+    ///
+    /// Ex: 'on_hull', 'on_hull(MASTER,comp)'
+    ///
+    /// \ingroup ConfigIO
+    ///
+    class OnHull: public BaseHull<bool> {
       
-      public:
+    public:
       
+      static const std::string Name;
+      static const std::string Desc;
+    
+        
       /// \brief Constructor
-      OnClexHullConfigFormatter();
+      OnHull();
       
       /// \brief Clone
-      BaseDatumFormatter<Configuration>* clone() const override {
-        return new OnClexHullConfigFormatter(*this);
+      std::unique_ptr<OnHull> clone() const {
+        return std::unique_ptr<OnHull>(this->_clone());
       }
       
-      
-      protected:
-      
-      /// \brief Validate that the Configuration has a cluster expanded formation energy per species
-      virtual bool _validate(const Configuration &_config) const override;
+      /// \brief Validate that the Configuration has a formation energy per species
+      bool validate(const Configuration &_config) const override;
       
       /// \brief Check if the Configuration is a hull vertex 
-      virtual bool _evaluate(const Configuration &_config) const override;
-    };
+      bool evaluate(const Configuration &_config) const override;
     
-    /// \brief Returns the distance of a Configuration above the convex hull along the energy axis
-    class ClexHullDistConfigFormatter: public BaseHullConfigFormatter<double> {
-      
-      public:
-      
-      /// \brief Constructor
-      ClexHullDistConfigFormatter();
+    private:
       
       /// \brief Clone
-      BaseDatumFormatter<Configuration>* clone() const override {
-        return new ClexHullDistConfigFormatter(*this);
+      OnHull* _clone() const override{
+        return new OnHull(*this);
+      }
+    };
+    
+    /// \brief Returns the distance, in eV, of a configuration's formation_energy_per_atom above the convex hull
+    ///
+    /// Accepts arguments ($selection,$composition):
+    /// - $selection may be one of: <filename>, 'ALL', 'CALCULATED', 'MASTER' <--default
+    /// - $composition may be one of: 'comp', 'atom_frac' <--default
+    ///   - For 'comp', 'formation_energy' is used. For 'atom_frac', 'formation_energy_per_atom' is used.
+    ///
+    /// Ex: 'hull_dist', 'hull_dist(MASTER,comp)'
+    ///
+    /// \ingroup ConfigIO
+    ///
+    class HullDist: public BaseHull<double> {
+      
+    public:
+      
+      static const std::string Name;
+      static const std::string Desc;
+      
+      
+      /// \brief Constructor
+      HullDist();
+      
+      /// \brief Clone
+      std::unique_ptr<HullDist> clone() const {
+        return std::unique_ptr<HullDist>(this->_clone());
       }
       
-      protected:
-      
-      /// \brief Validate that the Configuration has a cluster expanded formation energy per species
-      virtual bool _validate(const Configuration &_config) const override;
+      /// \brief Validate that the Configuration has a formation energy per species
+      bool validate(const Configuration &_config) const override;
       
       /// \brief Return the distance to the hull
-      virtual double _evaluate(const Configuration &_config) const override;
+      double evaluate(const Configuration &_config) const override;
+    
+    private:
+      
+      /// \brief Clone
+      HullDist* _clone() const override{
+        return new HullDist(*this);
+      }
+    };
+    
+    
+    /// \brief Returns a boolean indicating if a Configuration is a predicted convex hull vertex
+    ///
+    /// Whether configuration is a vertex on the *cluster-expanded* formation_energy convex hull (i.e., is a *predicted* groundstate).
+    /// Only one Configuration out of a set that have identical or almost identical points in 
+    /// composition/energy space will return true.
+    ///
+    /// Accepts arguments ($selection, $composition):
+    /// - $selection may be one of: <filename>, 'ALL', 'CALCULATED', 'MASTER' <--default
+    /// - $composition may be one of: 'comp', 'atom_frac' <--default
+    ///   - For 'comp', 'clex(formation_energy)' is used. For 'atom_frac', 'clex(formation_energy_per_atom)' is used.
+    ///
+    /// Ex: 'on_clex_hull', 'on_clex_hull(MASTER,comp)'
+    ///
+    /// \ingroup ConfigIO
+    ///
+    class OnClexHull: public BaseHull<bool> {
+      
+    public:
+      
+      static const std::string Name;
+      static const std::string Desc;
+      
+      
+      /// \brief Constructor
+      OnClexHull();
+      
+      /// \brief Clone
+      std::unique_ptr<OnClexHull> clone() const {
+        return std::unique_ptr<OnClexHull>(this->_clone());
+      }
+      
+      /// \brief Validate that the Configuration has a cluster expanded formation energy per species
+      virtual bool validate(const Configuration &_config) const override;
+      
+      /// \brief Check if the Configuration is a hull vertex 
+      virtual bool evaluate(const Configuration &_config) const override;
+    
+    private:
+      
+      /// \brief Clone
+      OnClexHull* _clone() const override{
+        return new OnClexHull(*this);
+      }
+      
+    };
+    
+    /// \brief Returns the distance, in eV, of a configuration's clex(formation_energy_per_atom) above the predicted convex hull
+    ///
+    /// Accepts arguments ($selection,$composition):
+    /// - $selection may be one of: <filename>, 'ALL', 'CALCULATED', 'MASTER' <--default
+    /// - $composition may be one of: 'comp', 'atom_frac' <--default
+    ///   - For 'comp', 'clex(formation_energy)' is used. For 'atom_frac', 'clex(formation_energy_per_atom)' is used.
+    ///
+    /// Ex: 'clex_hull_dist', 'clex_hull_dist(MASTER,comp)'
+    ///
+    /// \ingroup ConfigIO
+    ///
+    class ClexHullDist: public BaseHull<double> {
+      
+    public:
+      
+      static const std::string Name;
+      static const std::string Desc;
+        
+      
+      /// \brief Constructor
+      ClexHullDist();
+      
+      /// \brief Clone
+      std::unique_ptr<ClexHullDist> clone() const {
+        return std::unique_ptr<ClexHullDist>(this->_clone());
+      }
+      
+      /// \brief Validate that the Configuration has a cluster expanded formation energy per species
+      virtual bool validate(const Configuration &_config) const override;
+      
+      /// \brief Return the distance to the hull
+      virtual double evaluate(const Configuration &_config) const override;
+    
+    private:
+      
+      /// \brief Clone
+      ClexHullDist* _clone() const override{
+        return new ClexHullDist(*this);
+      }
+      
     };
     
     
     
     
-    // --- BaseHullConfigFormatter Definitions -------------------
+    // --- BaseHull Definitions -------------------
     
     /// \brief Constructor
     ///
@@ -179,7 +260,7 @@ namespace CASM {
     /// - The units of composition and energy are determined by the calculator parameters
     ///
     template<typename ValueType>
-    BaseHullConfigFormatter<ValueType>::BaseHullConfigFormatter(const std::string &_name, 
+    BaseHull<ValueType>::BaseHull(const std::string &_name, 
                                                      const std::string &_desc, 
                                                      const std::string &_default_selection,
                                                      const std::string &_default_composition_type,
@@ -195,7 +276,7 @@ namespace CASM {
     /// - Constructs the hull
     ///
     template<typename ValueType>
-    void BaseHullConfigFormatter<ValueType>::init(const Configuration &_tmplt) const {
+    void BaseHull<ValueType>::init(const Configuration &_tmplt) const {
       
       ConstConfigSelection selection;
       const PrimClex& primclex = _tmplt.get_primclex();
@@ -240,7 +321,7 @@ namespace CASM {
     /// - ex: 'on_clex_hull(ALL,comp) if name() is 'on_clex_hull', and args is "ALL,comp"
     ///
     template<typename ValueType>
-    std::string BaseHullConfigFormatter<ValueType>::short_header(const Configuration &_config) const {
+    std::string BaseHull<ValueType>::short_header(const Configuration &_config) const {
       std::stringstream t_ss;
       t_ss << this->name() << "(" << m_selection << "," << m_composition_type << ")";
       return t_ss.str();
@@ -261,7 +342,7 @@ namespace CASM {
     /// - "comp", use parametric composition for the composition and "formation_energy" for the energy
     ///
     template<typename ValueType>
-    bool BaseHullConfigFormatter<ValueType>::parse_args(const std::string &args) {
+    bool BaseHull<ValueType>::parse_args(const std::string &args) {
       
       std::vector<std::string> splt_vec;
       boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
@@ -302,7 +383,7 @@ namespace CASM {
   
     /// \brief const Access the Hull object
     template<typename ValueType>
-    const Hull& BaseHullConfigFormatter<ValueType>::_hull() const {
+    const Hull& BaseHull<ValueType>::_hull() const {
       return *m_hull;
     }
     
@@ -310,5 +391,6 @@ namespace CASM {
     
   }
 }
+
 #endif
 

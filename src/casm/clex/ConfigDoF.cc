@@ -707,7 +707,7 @@ namespace CASM {
     //Size of the supercell will be used for normalizing correlations to a per primitive cell value
     int scel_vol = scel.volume();
 
-    Correlation correlations(clexulator.corr_size(), 0.0);
+    Correlation correlations = Correlation::Zero(clexulator.corr_size());
 
     //Inform Clexulator of the bitstring
 
@@ -783,7 +783,7 @@ namespace CASM {
   ReturnArray<int> get_num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
     
     // [basis_site][site_occupant_index]
-    Array< Array<int> > convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
+    auto convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
 
     // create an array to count the number of each molecule
     Array<int> num_each_molecule(scel.get_prim().get_struc_molecule().size(), 0);
@@ -800,7 +800,7 @@ namespace CASM {
   Eigen::VectorXi get_num_each_molecule_vec(const ConfigDoF &configdof, const Supercell &scel) {
     
     // [basis_site][site_occupant_index]
-    Array< Array<int> > convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
+    auto convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
 
     // create an array to count the number of each molecule
     Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.get_prim().get_struc_molecule().size());

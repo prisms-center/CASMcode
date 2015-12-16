@@ -142,7 +142,7 @@ namespace CASM {
     // -- write 'energy' file ----
     {
       DataFormatter<Configuration> formatter(ConfigIO::formation_energy(),
-                                             ConfigIO::constant_value("weight", 1.0),
+                                             ConfigIO::ConstantValue<double>("weight", 1.0),
                                              ConfigIO::configname());
 
       fs::ofstream sout;
@@ -156,7 +156,7 @@ namespace CASM {
     // -- write 'corr.in' file ----
     {
       DataFormatter<Configuration> formatter;
-      formatter.push_back(ConfigIO::corr(clexulator));
+      formatter.push_back(ConfigIO::Corr(clexulator));
 
       fs::ofstream sout;
       sout.open(corr_in_file);

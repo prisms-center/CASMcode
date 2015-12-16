@@ -1,6 +1,7 @@
 #include "casm/casm_io/DataStream.hh"
 #include "casm/container/Counter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
+
 namespace CASM {
 
 
@@ -193,35 +194,73 @@ namespace CASM {
     _stream <<  std::endl;
     return;
   }
+  
   //******************************************************************************
+  
   template<typename DataObject>
-  void DataFormatter<DataObject>::_initialize(const DataObject &_template_obj)const {
+  void DataFormatter<DataObject>::_initialize(const DataObject &_template_obj) const {
     for(Index i = 0; i < m_data_formatters.size(); i++)
       m_data_formatters[i]->init(_template_obj);
     m_initialized = true;
     return;
   }
-
+  
   //******************************************************************************
-
-  template<typename DataObject>
-  void DataFormatterDictionary<DataObject>::print_help(std::ostream &_stream,
-                                                       typename BaseDatumFormatter<DataObject>::FormatterType ftype,
-                                                       int width, int separation) const {
-
-    typename container::const_iterator it_begin(m_formatter_map.cbegin()), it_end(m_formatter_map.cend());
-    std::string::size_type len(0);
-    for(typename container::const_iterator it = it_begin; it != it_end; ++it) {
-      if(ftype == (it->second)->type())
-        len = max(len, it->first.size());
+  
+  
+  /// \brief Equivalent to find, but throw error with suggestion if _name not found 
+  template<typename DataObject, typename DatumFormatterType>
+  typename DataFormatterDictionary<DataObject, DatumFormatterType>::const_iterator 
+  DataFormatterDictionary<DataObject, DatumFormatterType>::lookup(
+      const key_type &_name) const {
+      
+    auto res = this->find(_name);
+    if(res != this->end()) {
+      return res;
     }
-    for(typename container::const_iterator it = it_begin; it != it_end; ++it) {
-      if(ftype != (it->second)->type())
+    else {
+      
+      // If no match, try to use demerescau-levenshtein distance to make a helpful suggestion
+      auto it = this->begin();
+      int min_dist(-1);
+      for(; it != this->end(); ++it) {
+        int dist = dl_string_dist(_name, it->name());
+        if(min_dist < 0 || dist < min_dist) {
+          min_dist = dist;
+          //std::cout << "New best: \"" << it->first << "\" aka \"" << it->second->name() << "\"\n";
+          res = it;
+        }
+      }
+      
+      throw std::runtime_error("CRITICAL ERROR: Invalid format flag \"" + _name + "\" specified.\n"
+                               + "                Did you mean \"" + res->name() + "\"?\n");
+
+    }
+    
+  }
+  
+  /// \brief Generates formatted help using the 'name' and 'description' of all
+  ///        contained BaseDatumFormatter
+  ///
+  template<typename DataObject, typename DatumFormatterType>
+  void DataFormatterDictionary<DataObject, DatumFormatterType>::print_help(
+      std::ostream &_stream,
+      typename BaseDatumFormatter<DataObject>::FormatterType ftype,
+      int width, int separation) const {
+
+    const_iterator it_begin(this->cbegin()), it_end(this->cend());
+    std::string::size_type len(0);
+    for(auto it = it_begin; it != it_end; ++it) {
+      if(ftype == it->type())
+        len = max(len, it->name().size());
+    }
+    for(auto it = it_begin; it != it_end; ++it) {
+      if(ftype != it->type())
         continue;
-      _stream << std::string(5, ' ') << it->first << std::string(len - it->first.size() + separation, ' ');
+      _stream << std::string(5, ' ') << it->name() << std::string(len - it->name().size() + separation, ' ');
       std::string::size_type wcount(0);
-      std::string::const_iterator str_end(it->second->description().cend());
-      for(std::string::const_iterator str_it = it->second->description().cbegin(); str_it != str_end; ++str_it) {
+      std::string::const_iterator str_end(it->description().cend());
+      for(std::string::const_iterator str_it = it->description().cbegin(); str_it != str_end; ++str_it) {
         if(wcount >= width && isspace(*str_it)) {
           _stream << std::endl << std::string(5 + len + separation, ' ');
           wcount = 0;
@@ -236,45 +275,45 @@ namespace CASM {
   }
 
 
-  //****************************************************************************************
-  /*
-   * Use the vector of strings to build a DataFormatter<DataObject>
-   */
-  template<typename DataObject>
-  DataFormatter<DataObject> DataFormatterDictionary<DataObject>::parse(const std::vector<std::string> &input) const {
+  /// \brief Use the vector of strings to build a DataFormatter<DataObject>
+  ///
+  /// Expects vector of "formattername(argument1,argument2,...)"
+  ///
+  /// Uses DataFormatterDictionary<DataObject>::lookup to suggest alternatives if
+  /// exact request not found.
+  ///
+  template<typename DataObject, typename DatumFormatterType>
+  DataFormatter<DataObject> DataFormatterDictionary<DataObject, DatumFormatterType>::parse(
+      const std::vector<std::string> &input) const {
+      
     DataFormatter<DataObject> formatter;
     std::vector<std::string> format_tags, format_args;
     for(Index i = 0; i < input.size(); i++) {
       split_formatter_expression(input[i], format_tags, format_args);
     }
-    const BaseDatumFormatter<DataObject> *proto_format_ptr;
     for(Index i = 0; i < format_tags.size(); i++) {
-      if(!contains(format_tags[i], proto_format_ptr)) {
-        throw std::runtime_error("ERROR: Invalid format flag \"" + format_tags[i] + "\" specified.\n"
-                                 + "       Did you mean \"" + proto_format_ptr->name() + "\"?\n");
-      }
-      formatter.push_back(*proto_format_ptr, format_args[i]);
+      formatter.push_back(*lookup(format_tags[i]), format_args[i]);
     }
     return formatter;
   }
 
-  //****************************************************************************************
-  /*
-   * Use a single string to build a DataFormatter<DataObject>
-   */
-  template<typename DataObject>
-  DataFormatter<DataObject> DataFormatterDictionary<DataObject>::parse(const std::string &input) const {
+  /// \brief Use a single string to build a DataFormatter<DataObject>
+  ///
+  /// Expects string of "formattername(argument1,argument2,...) formattername(argument1,argument2,...) ..."
+  ///
+  /// Uses DataFormatterDictionary<DataObject>::lookup to suggest alternatives if
+  /// exact request not found.
+  ///
+  template<typename DataObject, typename DatumFormatterType>
+  DataFormatter<DataObject> DataFormatterDictionary<DataObject, DatumFormatterType>::parse(
+      const std::string &input) const {
+      
     DataFormatter<DataObject> formatter;
     std::vector<std::string> format_tags, format_args;
     split_formatter_expression(input, format_tags, format_args);
-
-    const BaseDatumFormatter<DataObject> *proto_format_ptr;
+    
     for(Index i = 0; i < format_tags.size(); i++) {
-      if(!contains(format_tags[i], proto_format_ptr)) {
-        throw std::runtime_error("ERROR: Invalid format flag \"" + format_tags[i] + "\" specified.\n"
-                                 + "       Did you mean \"" + proto_format_ptr->name() + "\"?\n");
-      }
-      formatter.push_back(*proto_format_ptr, format_args[i]);
+      formatter.push_back(*lookup(format_tags[i]), format_args[i]);
     }
     return formatter;
   }
