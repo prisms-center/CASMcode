@@ -12,7 +12,7 @@
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/DataStream.hh"
 #include "casm/casm_io/FormatFlag.hh"
-
+#include "casm/container/multivector.hh"
 
 namespace CASM {
 

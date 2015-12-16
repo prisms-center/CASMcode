@@ -239,7 +239,7 @@ namespace CASM {
 
       Configuration &imported_config(primclex.configuration(imported_name));
 
-      imported_config.push_back_source(json_pair("import_mapped", pos_path.string()));
+      imported_config.push_back_source(jsonParser(std::make_pair("import_mapped", pos_path.string())));
 
 
 
@@ -363,7 +363,7 @@ namespace CASM {
         }
         imported_config.set_calc_properties(calc_data);
 
-        imported_config.push_back_source(json_pair("data_inferred_from_mapping", pos_path.string()));
+        imported_config.push_back_source(jsonParser(std::make_pair("data_inferred_from_mapping", pos_path.string())));
 
       }
     }

@@ -677,7 +677,7 @@ namespace CASM {
 
     global_orbitree.min_num_components = 2;     //What if we want other things?
     global_orbitree.min_length = 0.0001;
-    from_json(jsonHelper(global_orbitree, prim), jsonParser(fclust_path.string()));
+    from_json(jsonHelper(global_orbitree, prim), jsonParser(fclust_path));
     global_orbitree.generate_clust_bases();
   }
 

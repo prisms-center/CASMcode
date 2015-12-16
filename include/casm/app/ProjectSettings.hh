@@ -5,9 +5,12 @@
 #include <vector>
 #include <boost/filesystem.hpp>
 
-#include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/system/RuntimeLibrary.hh"
+#include "casm/app/DirectoryStructure.hh"
+
+#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
 

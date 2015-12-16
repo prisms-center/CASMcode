@@ -656,7 +656,7 @@ namespace CASM {
     }
 
     if(json.contains("deformation")) {
-      Eigen::from_json(_deformation(), json["deformation"]);
+      CASM::from_json(_deformation(), json["deformation"]);
       m_is_strained = true;
     }
   }

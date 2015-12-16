@@ -3047,11 +3047,11 @@ namespace CASM {
 
   template<typename ClustType>
   void GenericOrbitree<ClustType>::_populate_site_bases() {
-    std::cout << "bspecs() is \n" << bspecs() << "\n";
+    
     if(bspecs()["basis_functions"]["site_basis_functions"].is_string()) {
       std::string func_type = bspecs()["basis_functions"]["site_basis_functions"].template get<std::string>();
 
-      std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
+      //std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
       switch(std::tolower(func_type[0])) {
       case 'c': { //chebychev
         for(Index i = 0; i < _asym_unit().size(); i++) {
@@ -3162,7 +3162,7 @@ namespace CASM {
           m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind());
       }
 
-      std::cout << "Using concentration-optimized site basis functions." << std::endl << std::endl;
+      //std::cout << "Using concentration-optimized site basis functions." << std::endl << std::endl;
     }
   }
 

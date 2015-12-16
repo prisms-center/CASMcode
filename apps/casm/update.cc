@@ -207,9 +207,9 @@ namespace CASM {
         }
         else {
           // Note the instability:
-          source_config.push_back_source(json_unit("mechanically_unstable"));
-          source_config.push_back_source(json_pair("relaxed_to", imported_config.name()));
-          imported_config.push_back_source(json_pair("relaxation_of", source_config.name()));
+          source_config.push_back_source(jsonParser("mechanically_unstable"));
+          source_config.push_back_source(jsonParser(std::make_pair("relaxed_to", imported_config.name())));
+          imported_config.push_back_source(jsonParser(std::make_pair("relaxation_of", source_config.name())));
         }
         double bd = source_data["basis_deformation"].get<double>();
         double ld = source_data["lattice_deformation"].get<double>();
@@ -284,7 +284,7 @@ namespace CASM {
           parsed_props["data_timestamp"] = fs::last_write_time(imported_config.calc_properties_path());
 
           imported_config.set_calc_properties(parsed_props);
-          imported_config.push_back_source(json_pair("data_inferred_from_mapping", (best_it->first)->name()));
+          imported_config.push_back_source(jsonParser(std::make_pair("data_inferred_from_mapping", (best_it->first)->name())));
         }
 
         // prior data exist -- we won't copy data over, but do some validation to see if data are compatible

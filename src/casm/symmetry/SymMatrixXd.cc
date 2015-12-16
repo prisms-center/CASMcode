@@ -1,4 +1,5 @@
 #include "casm/symmetry/SymMatrixXd.hh"
+#include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
 
@@ -30,7 +31,7 @@ namespace CASM {
       CASM::from_json(op_index, json["op_index"]);
       CASM::from_json(rep_ID, json["rep_ID"]);
 
-      Eigen::from_json(mat, json["mat"]);
+      CASM::from_json(mat, json["mat"]);
     }
     catch(...) {
       /// re-throw exceptions

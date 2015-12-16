@@ -6,6 +6,9 @@
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 
+#include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/json_io/global.hh"
+
 namespace CASM {
 
   MasterSymGroup::MasterSymGroup(const MasterSymGroup &RHS) :
@@ -2108,11 +2111,11 @@ namespace CASM {
         }
 
         for(Index i = 0; i < tchar.size(); i++) {
-          if(abs(tchar[i].real()) < TOL) {
+          if(std::abs(tchar[i].real()) < TOL) {
             tchar[i] = std::complex<double>(0, tchar[i].imag());
             tcharconj[i] = std::complex<double>(0, tcharconj[i].imag());
           }
-          if(abs(tchar[i].imag()) < TOL) {
+          if(std::abs(tchar[i].imag()) < TOL) {
             tchar[i] = std::complex<double>(tchar[i].real(), 0);
             tcharconj[i] = std::complex<double>(tcharconj[i].real(), 0);
           }
@@ -2965,7 +2968,7 @@ namespace CASM {
   //***************************************************
 
   Index SymGroup::make_empty_representation() const {
-    if(!size() || !&(at(0).master_group())) {
+    if(!size() || !at(0).has_valid_master()) {
       std::cerr << "CRITICAL ERROR: In SymGroup::make_empty_representation(), SymGroup is improperly initialized.\n"
                 << "                Exiting...\n";
       exit(1);
