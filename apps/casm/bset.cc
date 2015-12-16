@@ -125,8 +125,7 @@ namespace CASM {
       SiteOrbitree tree(prim.lattice());
 
       try {
-        jsonParser bspecs_json;
-        bspecs_json.read(dir.bspecs(set.bset()));
+        jsonParser bspecs_json(dir.bspecs(set.bset()));
 
         std::cout << "Generating orbitree: \n";
         tree = make_orbitree(prim, bspecs_json);
@@ -135,8 +134,7 @@ namespace CASM {
         tree.generate_clust_bases();
       }
       catch(std::exception &e) {
-        std::cerr << "\n\nError reading: " << dir.bspecs(set.bset()) << std::endl
-                  << "               " << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
         return ERR_INVALID_INPUT_FILE;
       }
 

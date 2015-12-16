@@ -55,6 +55,8 @@ namespace test {
     
     virtual jsonParser bspecs() const;
     
+    virtual std::string invalid_bspecs() const;
+    
     /// \brief Check project initialization
     virtual void check_init();
     
