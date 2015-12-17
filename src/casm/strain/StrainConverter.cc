@@ -260,9 +260,7 @@ namespace CASM {
   std::vector<Eigen::MatrixXd> StrainConverter::irreducible_wedges(const SymGroup &pg, std::vector<Index> &multiplicities) {
     std::vector<Eigen::MatrixXd> wedges = irreducible_sop_wedges(pg, multiplicities);
     for(auto &w : wedges) {
-      std::cout << "wedge  before:\n" << w << "\n\n";
       w = m_sop_transf_mat * w; // Eigen handles aliasing
-      std::cout << "wedge after:\n" << w << "\n\n";
     }
     return wedges;
   }
@@ -285,8 +283,15 @@ namespace CASM {
       }
       strain_rep.set_rep(pg[g], SymMatrixXd(trep));
     }
-    m_sop_transf_mat = strain_rep.get_irrep_trans_mat(pg).transpose();
+    Eigen::VectorXd breathing = unroll_E(Eigen::Matrix3d::Identity());
+    breathing.normalize();
 
+    Eigen::MatrixXd bigmat(tvec.size(), tvec.size() + 1);
+    bigmat.col(0) = breathing;
+    bigmat.rightCols(tvec.size()) = strain_rep.get_irrep_trans_mat(pg).transpose();
+    //m_sop_transf_mat=strain_rep.get_irrep_trans_mat(pg).transpose();
+    Eigen::HouseholderQR<Eigen::MatrixXd> QR(bigmat);
+    m_sop_transf_mat = QR.householderQ();
     m_symrep_ID = (strain_rep.coord_transformed_copy(m_sop_transf_mat.transpose()))->add_self_to_master();
   }
 

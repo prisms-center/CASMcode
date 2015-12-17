@@ -483,7 +483,7 @@ namespace CASM {
   }
   //*******************************************************************************************
   ReturnArray<Array< Eigen::VectorXd> > SymGroupRep::_calc_special_irrep_directions(const SymGroup &head_group)const {
-    if(!size() || !at(0)->get_MatrixXd()) {
+    if(!size() || !(get_MatrixXd(head_group[0]))) {
       std::cerr << "CRITICAL ERROR: In SymGroupRep::_calc_special_irrep_directions() called on imcompatible SymGroupRep.\n Exiting...\n";
       exit(1);
     }
@@ -495,7 +495,9 @@ namespace CASM {
     Eigen::VectorXd tdir;
 
     const Array<Array<Array<Index> > > &isubs(head_group.get_large_subgroups());
-    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> QR(*(at(0)->get_MatrixXd()));
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> QR(*(get_MatrixXd(head_group[0])));
+
+    Index dim = get_MatrixXd(head_group[0])->cols();
 
     QR.setThreshold(10 * TOL);
 
@@ -506,48 +508,63 @@ namespace CASM {
         std::cerr << "CRITICAL ERROR: In SymGroupRep::_calc_special_irrep_directions(), attempting to use a zero-size subgroup.\n Exiting...\n";
         exit(1);
       }
-      for(Index s = 0; s < isubs[i].size(); s++) {
-        Reynolds.setZero();
-        // j loops over elements of "prototype" subgroup to get the Reynold's operator for the vector
-        // space on which the representation is defined
-        for(j = 0; j < isubs[i][s].size(); j++) {
-          Reynolds += *get_MatrixXd(head_group[isubs[i][s][j]]);
+      Index s = 0;
+      Reynolds.setZero();
+      // j loops over elements of "prototype" subgroup to get the Reynold's operator for the vector
+      // space on which the representation is defined
+      for(j = 0; j < isubs[i][s].size(); j++) {
+        Reynolds += *get_MatrixXd(head_group[isubs[i][s][j]]);
+      }
+
+      Reynolds /= double(isubs[i][s].size());
+
+      //Need this because Eigen computes nonzero rank for matrix filled with small numbers close to zero.
+      //QR.setThreshold() doesn't help
+      if(almost_zero(Reynolds))
+        continue;
+
+      // Column space of Reynold's matrix is invariant under the subgroup
+      QR.compute(Reynolds);
+
+      // We're only interested in 1-D invariant spaces
+      if(QR.rank() != 1)
+        continue;
+
+      //QR.matrixQ().col(0) is a special direction
+
+      Eigen::MatrixXd matrixQ(QR.householderQ());
+
+      //std::cout << "QR matrixR:\n" << Eigen::MatrixXd(QR.matrixQR().template triangularView<Eigen::Upper>()) << "\n";
+      //std::cout << "QR matrixQ:\n" << matrixQ << "\n";
+
+      // See if QR.matrixQ().col(0) has been found
+      for(j = 0; j < sdirs.size(); j++) {
+        if(sdirs[j].almost_contains(matrixQ.col(0))) {
+          break;
         }
-
-        Reynolds /= double(isubs[i][s].size());
-
-        //Need this because Eigen computes nonzero rank for matrix filled with small numbers close to zero.
-        //QR.setThreshold() doesn't help
-        if(almost_zero(Reynolds))
-          continue;
-
-        // Column space of Reynold's matrix is invariant under the subgroup
-        QR.compute(Reynolds);
-
-        // We're only interested in 1-D invariant spaces
-        if(QR.rank() != 1)
-          continue;
-
-        //QR.matrixQ().col(0) is a special direction
-
-        Eigen::MatrixXd matrixQ(QR.householderQ());
-
-        //std::cout << "QR matrixR:\n" << Eigen::MatrixXd(QR.matrixQR().template triangularView<Eigen::Upper>()) << "\n";
-        //std::cout << "QR matrixQ:\n" << matrixQ << "\n";
-
-        // See if QR.matrixQ().col(0) has been found
-        for(j = 0; j < sdirs.size(); j++) {
-          if(sdirs[j].almost_contains(matrixQ.col(0))) {
-            break;
-          }
-        }
-        if(j < sdirs.size())
-          continue;
+      }
+      if(j == sdirs.size()) {
 
         //Get equivalents
         sdirs.push_back(Array<Eigen::VectorXd>());
         for(j = 0; j < head_group.size(); j++) {
           tdir = (*get_MatrixXd(head_group[j])) * matrixQ.col(0);
+          if(!sdirs.back().almost_contains(tdir))
+            sdirs.back().push_back(tdir);
+        }
+      }
+
+      for(j = 0; j < sdirs.size(); j++) {
+        if(sdirs[j].almost_contains(-matrixQ.col(0))) {
+          break;
+        }
+      }
+      if(j == sdirs.size() && dim > 1) {
+
+        //Get equivalents
+        sdirs.push_back(Array<Eigen::VectorXd>());
+        for(j = 0; j < head_group.size(); j++) {
+          tdir = -(*get_MatrixXd(head_group[j])) * matrixQ.col(0);
           if(!sdirs.back().almost_contains(tdir))
             sdirs.back().push_back(tdir);
         }
