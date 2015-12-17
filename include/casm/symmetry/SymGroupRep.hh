@@ -33,21 +33,20 @@ namespace CASM {
     /// Use this constructor when MasterSymGroup is unknown or doesn't exist
     /// You must promise that you know what you're doing
     SymGroupRep(SymGroupRep::NullInitializer init, Index _size) :
-      Array<SymOpRepresentation*>(_size,NULL),
+      Array<SymOpRepresentation * >(_size, NULL),
       m_rep_ID(REP_COUNT++),
       m_master_group(NULL) { };
 
     SymGroupRep(const SymGroup &_head) :
-      m_rep_ID(REP_COUNT++), m_master_group(&_head.master_group())
-    {
+      m_rep_ID(REP_COUNT++), m_master_group(&_head.master_group()) {
       if(has_valid_master())
-        resize(master_group().size(),NULL);
-      else{
+        resize(master_group().size(), NULL);
+      else {
         std::cerr << "WARNING: SymGroupRep initialized without valid master_group!  Bad things may happen!\n";
         assert(0);
       }
     };
-    
+
     SymGroupRep(const SymGroupRep &RHS);
 
     ~SymGroupRep();
@@ -110,7 +109,7 @@ namespace CASM {
     // adds a copy of '_pushed' temporary workaround for 'masterless' SymGroupReps; to be deprecated
     // will throw if valid master exists.
     void push_back_copy(const SymOpRepresentation &_pushed);
-    
+
     Index get_ID() const {
       return m_rep_ID;
     };
@@ -119,8 +118,8 @@ namespace CASM {
       return m_rep_ID = REP_COUNT++;
     };
 
-    Eigen::MatrixXd irreducible_wedge(const SymGroup &head_group, std::vector<Index> &multiplicities, std::vector<Index> &subspaces)const;
-    ReturnArray<Array<Eigen::VectorXd> > calc_special_total_directions(const SymGroup &subgroup, std::vector<Index> &subspaces)const;
+    std::vector<Eigen::MatrixXd> irreducible_wedges(const SymGroup &head_group, std::vector<Index> &multiplicities)const;
+    multivector<Eigen::VectorXd>::X<3> calc_special_total_directions(const SymGroup &subgroup)const;
     ReturnArray<Array< Eigen::MatrixXd> > calc_special_subspaces(const SymGroup &subgroup)const;
 
     ReturnArray<Index> num_each_irrep() const;
@@ -139,7 +138,7 @@ namespace CASM {
 
     /// Make copy of (*this) that is transformed so that axes are oriented along high-symmetry direction
     /// and confined to subspaces that transform as irreps.
-    SymGroupRep* symmetry_adapted_copy(const SymGroup &head_group) const{
+    SymGroupRep *symmetry_adapted_copy(const SymGroup &head_group) const {
       return coord_transformed_copy(get_irrep_trans_mat(head_group));
     }
 
@@ -187,7 +186,7 @@ namespace CASM {
     ReturnArray<Array<Eigen::VectorXd> > _calc_special_irrep_directions(const SymGroup &subgroup)const;
 
     /// Find a new coordinate system oriented along high-symmetry directions in vector space 'V' as determined by
-    /// the subset of SymOpRepresentations specified by 'subgroup'. 
+    /// the subset of SymOpRepresentations specified by 'subgroup'.
     /// The ROWS of trans_mat are the new basis vectors in terms of the old such that
     /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
     Eigen::MatrixXd _symmetrized_irrep_trans_mat(const SymGroup &subgroup) const;
@@ -234,18 +233,18 @@ namespace CASM {
     }
 
     /// Matrix dimension of representation
-    Index dim() const{
+    Index dim() const {
       return (m_group_rep->get_MatrixXd(m_subgroup_op_inds[0]))->cols();
     }
-    
+
     SymGroupRep const *rep_ptr() const {
       return m_group_rep;
     }
 
-    SymGroupRep const *operator->() const{
+    SymGroupRep const *operator->() const {
       return rep_ptr();
     }
-    
+
     SymOpRepresentation const *operator[](Index i) const {
       return m_group_rep->at(m_subgroup_op_inds[i]);
     }

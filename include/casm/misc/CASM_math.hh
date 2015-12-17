@@ -1,8 +1,10 @@
 #ifndef CASM_MATH_HH
 #define CASM_MATH_HH
-
 #include "casm/CASM_global_definitions.hh"
 #include "casm/container/Array.hh"
+//Maybe we should transition to boost math library?
+//#include <boost/math/special_functions/binomial.hpp>
+#include <boost/math/special_functions/factorials.hpp>
 #include <iostream>
 #include <cmath>
 #include <cstddef>
@@ -110,6 +112,10 @@ namespace CASM {
   // *******************************************************************************************
 
   double ran0(int &idum);
+
+  // *******************************************************************************************
+
+  using boost::math::factorial;
 
   // *******************************************************************************************
   /// Find greatest common factor

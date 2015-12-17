@@ -19,7 +19,7 @@
 
 namespace CASM {
   class SymGroup;
-  
+
   typedef Eigen::VectorXd VectorXd;
   typedef Eigen::MatrixXd MatrixXd;
   typedef Eigen::Matrix3d Matrix3d;
@@ -51,7 +51,9 @@ namespace CASM {
 
     /// DISP_GRAD = F
     static Matrix3d disp_grad(const Matrix3d &F);
-    static Matrix3d disp_grad_to_F(const Matrix3d &F){ return F;}
+    static Matrix3d disp_grad_to_F(const Matrix3d &F) {
+      return F;
+    }
 
     //-------------------------------------------------
     // Routines that calculate derived quantities given the
@@ -64,7 +66,7 @@ namespace CASM {
     static Matrix3d strain_metric(const Matrix3d &F, STRAIN_METRIC MODE);
     //-------------------------------------------------
 
-    StrainConverter(bool override_flag = false) : m_symrep_ID(-1){
+    StrainConverter(bool override_flag = false) : m_symrep_ID(-1) {
       if(!override_flag) {
         std::cerr << "WARNING in CASM::StrainConverter you are calling the default constructor" << std::endl;
         std::cerr << "This is going to initialize a \"default\" sop_transf_mat and order_strain" << std::endl;
@@ -93,23 +95,27 @@ namespace CASM {
         curr_metric_func = &StrainConverter::disp_grad;
     }
 
-    StrainConverter(const std::string &mode_name) : 
-      StrainConverter(true){
+    StrainConverter(const std::string &mode_name) :
+      StrainConverter(true) {
       set_mode(mode_name);
+    }
+
+    Index dim() const {
+      return m_order_strain.size();
     }
 
     //-------------------------------------------------
     /// Get the strain metric in the current mode
     Matrix3d strain_metric(const Matrix3d &F) const;
     Matrix3d strain_metric_to_F(const Matrix3d &E) const;
-    
+
     /// Unrolls the green-lagrange metric ( or any symmetric metric)
     VectorXd unroll_E(const Matrix3d &E) const;
     Matrix3d rollup_E(const VectorXd &_unrolled_E) const;
 
     VectorXd unrolled_strain_metric(const Matrix3d &F) const;
     Matrix3d unrolled_strain_metric_to_F(const VectorXd &E) const;
-    
+
     VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Vector3d &eigenvalues,
                  Matrix3d &eigenvectors, const Matrix3d &F) const;
     VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Vector3d &eigenvalues,
@@ -120,17 +126,17 @@ namespace CASM {
     // class
     void set_mode(const std::string &mode_name);
 
-    const Eigen::MatrixXd& sop_transf_mat() const{
+    const Eigen::MatrixXd &sop_transf_mat() const {
       return m_sop_transf_mat;
     }
-    
-    Index symrep_ID() const{
+
+    Index symrep_ID() const {
       return m_symrep_ID;
     }
 
-    Eigen::MatrixXd irreducible_sop_wedge(const SymGroup &pg, std::vector<Index> &multiplicities, std::vector<Index> &subspaces);
+    std::vector<Eigen::MatrixXd> irreducible_sop_wedges(const SymGroup &pg, std::vector<Index> &multiplicities);
 
-    Eigen::MatrixXd irreducible_wedge(const SymGroup &pg, std::vector<Index> &multiplicities, std::vector<Index> &subspaces);
+    std::vector<Eigen::MatrixXd> irreducible_wedges(const SymGroup &pg, std::vector<Index> &multiplicities);
 
     void set_symmetrized_sop(const SymGroup &pg);
 

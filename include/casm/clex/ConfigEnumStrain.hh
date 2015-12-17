@@ -26,20 +26,21 @@ namespace CASM {
     using ConfigEnum<ConfigType>::step;
     using ConfigEnum<ConfigType>::source;
 
-    ConfigEnumStrain(Supercell &scel, const value_type &_init, const std::vector<Index> & subspace_partitions, const std::vector<double> &magnitudes,std::string _mode);
+    ConfigEnumStrain(Supercell &scel, const value_type &_init, const std::vector<Index> &subspace_partitions, const std::vector<double> &magnitudes, std::string _mode);
 
     // **** Mutators ****
     // increment m_current and return a reference to it
-    const value_type & increment();
+    const value_type &increment();
 
     // set m_current to correct value at specified step and return a reference to it
     const value_type &goto_step(step_type _step);
 
   private:
     EigenCounter<Eigen::VectorXd> m_counter;
-    Eigen::MatrixXd m_proj;
     StrainConverter m_strain_calc;
+    Eigen::MatrixXd m_proj;
     PermuteIterator m_perm_begin, m_perm_end;
+    Eigen::VectorXd m_shape_factor;
     using ConfigEnum<ConfigType>::_current;
     using ConfigEnum<ConfigType>::_step;
     using ConfigEnum<ConfigType>::_source;

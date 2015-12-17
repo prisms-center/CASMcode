@@ -39,8 +39,8 @@ namespace CASM {
   //*******************************************************************************************
   /// GREEN_LAGRANGE = 1/2 * (F^{T} F - I)
   Matrix3d StrainConverter::green_lagrange_to_F(const Matrix3d &E) {
-    Eigen::SelfAdjointEigenSolver<Matrix3d> es(2*E+Eigen::MatrixXd::Identity(3, 3));
-    return es.eigenvectors()*es.eigenvalues().array().sqrt().matrix().asDiagonal()*es.eigenvectors().inverse();
+    Eigen::SelfAdjointEigenSolver<Matrix3d> es(2 * E + Eigen::MatrixXd::Identity(3, 3));
+    return es.eigenvectors() * es.eigenvalues().array().sqrt().matrix().asDiagonal() * es.eigenvectors().inverse();
   }
 
   //*******************************************************************************************
@@ -59,7 +59,7 @@ namespace CASM {
   /// HENCKY = log(C)/2
   Matrix3d StrainConverter::hencky(const Matrix3d &F) {
     Eigen::SelfAdjointEigenSolver<Matrix3d> es(F.transpose()*F);
-    return es.eigenvectors()*es.eigenvalues().array().log().matrix().asDiagonal()*es.eigenvectors().inverse()/2.0;
+    return es.eigenvectors() * es.eigenvalues().array().log().matrix().asDiagonal() * es.eigenvectors().inverse() / 2.0;
 
     //Matrix3d S = es.eigenvectors()*es.eigenvalues().array().log().asDiagonal()*es.eigenvectors().inverse()/2.0;
     //S(0, 0) = log(S(0, 0)) / 2.0;
@@ -72,7 +72,7 @@ namespace CASM {
   /// HENCKY = log(C)/2
   Matrix3d StrainConverter::hencky_to_F(const Matrix3d &H) {
     Eigen::SelfAdjointEigenSolver<Matrix3d> es(H);
-      return es.eigenvectors()*es.eigenvalues().array().exp().matrix().asDiagonal()*es.eigenvectors().inverse();
+    return es.eigenvectors() * es.eigenvalues().array().exp().matrix().asDiagonal() * es.eigenvectors().inverse();
   }
 
   //*******************************************************************************************
@@ -84,8 +84,8 @@ namespace CASM {
   //*******************************************************************************************
   /// EULER_ALMANSI = (I-(F F^{T})^(-1))/2
   Matrix3d StrainConverter::euler_almansi_to_F(const Matrix3d &A) {
-    Eigen::SelfAdjointEigenSolver<Matrix3d> es((Eigen::MatrixXd::Identity(3, 3)-2*A).inverse());
-    return es.eigenvectors()*es.eigenvalues().array().sqrt().matrix().asDiagonal()*es.eigenvectors().inverse();
+    Eigen::SelfAdjointEigenSolver<Matrix3d> es((Eigen::MatrixXd::Identity(3, 3) - 2 * A).inverse());
+    return es.eigenvectors() * es.eigenvalues().array().sqrt().matrix().asDiagonal() * es.eigenvectors().inverse();
   }
 
   //*******************************************************************************************
@@ -141,7 +141,7 @@ namespace CASM {
     assert(curr_inv_metric_func && "StrainConverter object improperly initialized!");
     return (*curr_inv_metric_func)(E);
   }
-  
+
   //*******************************************************************************************
   //Returns the symmetrically unique elements of E (assuming your
   //strain metric is symmetric) ordered in a manner decided by
@@ -161,8 +161,8 @@ namespace CASM {
   Matrix3d StrainConverter::rollup_E(const VectorXd &_unrolled_E) const {
     Matrix3d _rolled_E;
     for(Index i = 0; i < m_order_strain.size(); i++) {
-      _rolled_E(m_order_strain[i][0], m_order_strain[i][1]) = _unrolled_E(i)/m_weight_strain[i];
-      _rolled_E(m_order_strain[i][1], m_order_strain[i][0]) = _unrolled_E(i)/m_weight_strain[i];
+      _rolled_E(m_order_strain[i][0], m_order_strain[i][1]) = _unrolled_E(i) / m_weight_strain[i];
+      _rolled_E(m_order_strain[i][1], m_order_strain[i][0]) = _unrolled_E(i) / m_weight_strain[i];
     }
     return _rolled_E;
   }
@@ -245,44 +245,47 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  Eigen::MatrixXd StrainConverter::irreducible_sop_wedge(const SymGroup &pg, std::vector<Index> &multiplicities, std::vector<Index> &subspaces){
-    if(!valid_index(m_symrep_ID)){
+  std::vector<Eigen::MatrixXd> StrainConverter::irreducible_sop_wedges(const SymGroup &pg, std::vector<Index> &multiplicities) {
+    if(!valid_index(m_symrep_ID)) {
       set_symmetrized_sop(pg);
     }
 
-    const SymGroupRep& srep(*pg.master_group().representation(m_symrep_ID));
+    const SymGroupRep &srep(*pg.master_group().representation(m_symrep_ID));
 
-    return srep.irreducible_wedge(pg,multiplicities, subspaces);
+    return srep.irreducible_wedges(pg, multiplicities);
   }
 
   //*******************************************************************************************
 
-  Eigen::MatrixXd StrainConverter::irreducible_wedge(const SymGroup &pg, std::vector<Index> &multiplicities, std::vector<Index> &subspaces){
-    return m_sop_transf_mat.transpose()*irreducible_sop_wedge(pg,multiplicities, subspaces);
+  std::vector<Eigen::MatrixXd> StrainConverter::irreducible_wedges(const SymGroup &pg, std::vector<Index> &multiplicities) {
+    std::vector<Eigen::MatrixXd> wedges = irreducible_sop_wedges(pg, multiplicities);
+    for(auto &w : wedges)
+      w = m_sop_transf_mat.transpose() * w; // Eigen handles aliasing
+    return wedges;
   }
 
   //*******************************************************************************************
 
-  void StrainConverter::set_symmetrized_sop(const SymGroup &pg){
+  void StrainConverter::set_symmetrized_sop(const SymGroup &pg) {
     Eigen::VectorXd tvec(Eigen::VectorXd::Zero(m_order_strain.size()));
     Eigen::Matrix3d tmat;
     SymGroupRep strain_rep(pg);
 
-    for(Index g=0; g<pg.size(); g++){
-      Eigen::MatrixXd trep(tvec.size(),tvec.size());
-      for(Index i=0; i<tvec.size(); i++){
-        tvec[i]=1;
-        tmat=rollup_E(tvec);
-        tvec[i]=0;
-        tmat=Eigen::Matrix3d(pg[g].get_matrix(CART))*tmat*Eigen::Matrix3d(pg[g].get_matrix(CART)).transpose();
-        trep.col(i)=unroll_E(tmat);
+    for(Index g = 0; g < pg.size(); g++) {
+      Eigen::MatrixXd trep(tvec.size(), tvec.size());
+      for(Index i = 0; i < tvec.size(); i++) {
+        tvec[i] = 1;
+        tmat = rollup_E(tvec);
+        tvec[i] = 0;
+        tmat = Eigen::Matrix3d(pg[g].get_matrix(CART)) * tmat * Eigen::Matrix3d(pg[g].get_matrix(CART)).transpose();
+        trep.col(i) = unroll_E(tmat);
       }
-      strain_rep.set_rep(pg[g],SymMatrixXd(trep));
+      strain_rep.set_rep(pg[g], SymMatrixXd(trep));
     }
-    m_sop_transf_mat=strain_rep.get_irrep_trans_mat(pg).transpose();
-    m_symrep_ID=(strain_rep.coord_transformed_copy(m_sop_transf_mat.transpose()))->add_self_to_master();
+    m_sop_transf_mat = strain_rep.get_irrep_trans_mat(pg).transpose();
+    m_symrep_ID = (strain_rep.coord_transformed_copy(m_sop_transf_mat.transpose()))->add_self_to_master();
   }
-  
+
   //*******************************************************************************************
   //Conventional strain order parameters:
   //   e1 = (E11+E22+E33) / sqrt(3)
