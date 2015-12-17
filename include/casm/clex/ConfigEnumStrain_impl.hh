@@ -32,12 +32,12 @@ namespace CASM {
 
     Index nc = 0;
     for(Index s = 0; s < num_sub; s++) {
-      Index nc2;
-
       double wedgevol = sqrt((wedges[s].transpose() * wedges[s]).determinant());
       Index N = round(pow(linear_partitions[s], wedges[s].cols()));
-      double density = double(N) / pow(magnitudes[s], wedges[s].cols());
-      N = max(1, (int) ceil(pow(wedgevol * density, 1.0 / double(wedges[s].cols())) - TOL));
+      //double density = double(N) / pow(magnitudes[s], wedges[s].cols());
+      std::cout << "wedgevol: " << wedgevol << ", N: " << N;// << ", density: " << density;
+      N = max(1, (int) ceil(pow(wedgevol * double(N), 1.0 / double(wedges[s].cols())) - TOL));
+      std::cout << ", linearN: " << N << "\n";
 
       for(Index w = 0; w < wedges[s].cols(); w++, nc++) {
         m_proj.col(nc) = wedges[s].col(w);

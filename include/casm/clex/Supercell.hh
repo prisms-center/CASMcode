@@ -269,11 +269,11 @@ namespace CASM {
       return transf_mat;
     };
 
-    const Lattice& get_real_super_lattice() const {
+    const Lattice &get_real_super_lattice() const {
       return real_super_lattice;
     };
 
-    const Lattice& get_recip_prim_lattice() const {
+    const Lattice &get_recip_prim_lattice() const {
       return recip_prim_lattice;
     };
 
@@ -529,6 +529,7 @@ namespace CASM {
         // get source info from enumerator
         //config_list.back().set_source(it_begin.source());
         config_list.back().set_id(config_list.size() - 1);
+        config_list.back().set_selected(false);
       }
     }
 

@@ -136,9 +136,10 @@ namespace CASM {
       bool verbose = false;
       bool print = true;
       for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
-
+        Index num_before = (it->get_supercell()).get_config_list().size();
         ConfigEnumStrain<Configuration> enumerator(it->get_supercell(), *it, subgrids, mags, strain_mode);
         (it->get_supercell()).add_unique_canon_configs(enumerator.begin(), enumerator.end());
+        std::cout << "Enumerated " << (it->get_supercell()).get_config_list().size() - num_before << " deformations.\n";
       }
     }
     else if(vm.count("occ")) {

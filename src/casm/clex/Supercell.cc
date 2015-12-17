@@ -655,6 +655,7 @@ namespace CASM {
       //std::cout << "new config" << std::endl;
       config_list.push_back(canon_config);
       config_list.back().set_id(config_list.size() - 1);
+      config_list.back().set_selected(false);
       return true;
       //std::cout << "    added" << std::endl;
     }
