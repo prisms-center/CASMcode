@@ -1260,18 +1260,9 @@ namespace CASM {
   //********************************************************************
 
   ///Are two lattices the same, even if they have different lattice vectors, uses CASM::TOL
-  bool Lattice::is_equivalent(const Lattice &B) const {
-
-    Lattice niggli_A = niggli_impl::_niggli(*this, TOL);
-    Lattice niggli_B = niggli_impl::_niggli(B, TOL);
-    SymGroup point_grp_A;
-    niggli_A.generate_point_group(point_grp_A, TOL);
-
-    return std::find_if(point_grp_A.cbegin(),
-                        point_grp_A.cend(),
-    [&](const SymOp & op) {
-      return niggli_B == Lattice(op.get_matrix(CART) * niggli_A.lat_column_mat());
-    }) != point_grp_A.cend();
+  bool Lattice::is_equivalent(const Lattice &B, double tol) const {
+    Eigen::Matrix3d T = lat_column_mat().inverse()*B.lat_column_mat();
+    return is_unimodular(T, tol) && is_integer(T, tol);
   }
 
   //********************************************************************
@@ -1810,6 +1801,8 @@ namespace CASM {
   }
 
 
+  ///\brief returns Lattice that is smallest possible supercell of both input Lattice
+  ///
   //*******************************************************************************************
   //
   //  Finds "superduper" Lattice L_{sd} (represented as a matrix with lattice vectors as its columns
@@ -1881,16 +1874,6 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-
-  Lattice superdupercell(const std::vector<Lattice> &lat_list) {
-    if(lat_list.size() == 0)
-      return Lattice();
-
-    Lattice tsupdup(lat_list[0]);
-    for(Index i = 1; i < lat_list.size(); i++)
-      tsupdup = superdupercell(tsupdup, lat_list[i]);
-    return tsupdup;
-  }
 
 
 

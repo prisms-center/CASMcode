@@ -17,8 +17,10 @@ namespace CASM {
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
 
-    std::string scelname, configname, unitscelname;
+    std::vector<std::string> scelname, configname;
+    std::string unitscelname;
     fs::path tmatfile, structfile;
+    std::vector<fs::path> config_path;
     fs::path abs_tmatfile, abs_structfile;
     double tol;
     COORD_TYPE coordtype;
@@ -33,9 +35,12 @@ namespace CASM {
       ("transf_mat", po::value<fs::path>(&tmatfile), "File containing a 3x3 transformation matrix used to create a supercell.")
       ("get_transf_mat", "If it exists, find the transformation matrix.")
       ("structure", po::value<fs::path>(&structfile), "File with structure (POSCAR type) to use.")
-      ("configname", po::value<std::string>(&configname), "Name of a configuration. For ex. \"SCEL4_2_2_1_0_0_0/4\".")
-      ("scelname", po::value<std::string>(&scelname), "Name of supercell. For ex. \"SCEL4_2_2_1_0_0_0\".")
+      ("configname", po::value<std::vector<std::string> >(&configname)->multitoken(), "Name of a configuration. For ex. \"SCEL4_2_2_1_0_0_0/4\".")
+      ("scelname", po::value<std::vector<std::string> >(&scelname)->multitoken(), "Name of supercell. For ex. \"SCEL4_2_2_1_0_0_0\".")
       ("unitcell", po::value<std::string>(&unitscelname), "Name of supercell to use as unit cell. For ex. \"SCEL2_2_1_1_0_0_0\".")
+      ("config,c", po::value<std::vector<fs::path> >(&config_path)->multitoken()->zero_tokens(), "Configuration selection file containing configurations to use")
+      ("duper", "Construct the superdupercell, the minimum supercell of all input supercells and configurations.")
+      ("fixed-orientation", "When constructing the superdupercell, do not consider other symmetrically equivalent orientations.")
       ("add-canonical,a", "Will add the generated super configuration in it's canonical form in the equivalent niggli supercell.")
       ("vasp5", "Print using VASP5 style (include atom name line)")
       ("tol", po::value<double>(&tol)->default_value(CASM::TOL), "Tolerance used for checking symmetry")
@@ -45,9 +50,13 @@ namespace CASM {
         po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
 
         if(!vm.count("help")) {
-          if(vm.count("transf_mat") + vm.count("get_transf_mat") != 1) {
-            std::cerr << "Error in 'casm super'. Either the --transf_mat or --get_transf_mat option must be included." << std::endl;
+          if(vm.count("transf_mat") + vm.count("get_transf_mat") + vm.count("duper") != 1) {
+            std::cerr << "Error in 'casm super'. One of --transf_mat, --get_transf_mat, --duper must be chosen." << std::endl;
             return 1;
+          }
+          if(vm.count("duper") && (configname.size() > 1 || scelname.size() > 1)) {
+            std::cerr << "ERROR: >1 configname or scelname is only allowed for option --duper" << std::endl;
+            return ERR_INVALID_ARG;
           }
         }
 
@@ -153,8 +162,103 @@ namespace CASM {
     std::cout << "Initialize primclex: " << root << std::endl << std::endl;
     PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
-
-    if(vm.count("transf_mat")) {
+    
+    
+    if(vm.count("duper")) {
+      
+      // collect all the Lattice to make the superdupercell of
+      std::map<std::string, Lattice> lat;
+      
+      // collect supercells from --scelname
+      if(vm.count("scelname")) {
+        for(auto it=scelname.begin(); it!=scelname.end(); ++it) {
+          lat[*it] = primclex.get_supercell(*it).get_real_super_lattice();
+        }
+      }
+      
+      // collect configs from --configname
+      if(vm.count("configname")) {
+        for(auto it=configname.begin(); it!=configname.end(); ++it) {
+          lat[*it] = primclex.configuration(*it).get_supercell().get_real_super_lattice();
+        }
+      }
+      
+      // collect configs from lists via --config 
+      if(vm.count("config")) {
+        
+        // MASTER config list if '--config' only
+        if(config_path.size() == 0) {
+          ConstConfigSelection selection(primclex);
+          for(auto it=selection.selected_config_begin(); it!=selection.selected_config_end(); ++it) {
+            lat[it.name()] = it->get_supercell().get_real_super_lattice();
+          }
+        }
+        // all input config list if '--config X Y ...'
+        else {
+          for(auto c_it=config_path.begin(); c_it!=config_path.end(); ++c_it) {
+            if(c_it->string() == "MASTER") {
+              ConstConfigSelection selection(primclex);
+              for(auto it=selection.selected_config_begin(); it!=selection.selected_config_end(); ++it) {
+                lat[it.name()] = it->get_supercell().get_real_super_lattice();
+              }
+            }
+            else {
+              ConstConfigSelection selection(primclex, fs::absolute(*c_it));
+              for(auto it=selection.selected_config_begin(); it!=selection.selected_config_end(); ++it) {
+                lat[it.name()] = it->get_supercell().get_real_super_lattice();
+              }
+            }
+          }
+        }
+        
+      }
+      
+      std::vector<Lattice> lat_only;
+      for(auto it=lat.begin(); it!=lat.end(); ++it) {
+        lat_only.push_back(it->second);
+      }
+      
+      // create superdupercell
+      auto begin = primclex.get_prim().point_group().begin();
+      auto end = primclex.get_prim().point_group().end();
+      if(vm.count("fixed_orientation")) {
+        end = begin;
+      }
+      Lattice superduper = superdupercell(lat_only.begin(), lat_only.end(), begin, end);
+      Index index = primclex.add_supercell(superduper);
+      std::cout << "  Scelname: " << primclex.get_supercell(index).get_name() << "\n\n";
+      
+      std::cout << "--- Lattices as column vector matrices ---\n\n";
+      
+      std::cout << "--- \n";
+      std::cout << "  Resulting Superdupercell: " << primclex.get_supercell(index).get_name() << "\n\n";
+      
+      std::cout << "  Superduper lattice: \n";
+      std::cout << primclex.get_supercell(index).get_real_super_lattice().lat_column_mat() << "\n";
+      std::cout << "\n";
+      std::cout << "Superduper = Prim * T, with T:\n";
+      std::cout << iround(primclex.get_prim().lattice().lat_column_mat().inverse()*superduper.lat_column_mat()) << "\n";
+      std::cout << "\n";
+      
+      std::cout << "--- \n";
+      std::cout << "Transformation matrices: \n";
+      for(auto it=lat.begin(); it!=lat.end(); ++it) {
+        std::cout << "--- \n";
+        std::cout << it->first << ":\n" << it->second.lat_column_mat() << "\n";
+        std::cout << "Superduper = (" << it->first << ") * T, with T:\n";
+        std::cout << iround(it->second.lat_column_mat().inverse()*superduper.lat_column_mat()) << "\n";
+        std::cout << "\n";
+      }
+      std::cout << "--- \n";
+      
+      
+      std::cout << "  Writing SCEL..." << std::endl;
+      primclex.print_supercells();
+      std::cout << "  DONE\n";
+      return 0;
+       
+    }
+    else if(vm.count("transf_mat")) {
 
       Matrix3<int> Tm;
       if(!fs::exists(abs_tmatfile)) {
@@ -174,7 +278,7 @@ namespace CASM {
       if(vm.count("configname")) {
 
         std::stringstream ss;
-        const Configuration &con = primclex.configuration(configname);
+        const Configuration &con = primclex.configuration(configname[0]);
         const Supercell &scel = con.get_supercell();
         scel.print(con, ss, FRAC);
         
@@ -235,7 +339,7 @@ namespace CASM {
           }
           
           jsonParser json_src;
-          json_src["supercell_of"] = configname;
+          json_src["supercell_of"] = configname[0];
           primclex.configuration(imported_name).push_back_source(json_src);
           
           //Update directories
@@ -315,7 +419,7 @@ namespace CASM {
         super_lat = BasicStructure<Site>(abs_structfile).lattice();
       }
       else if(vm.count("scelname")) {
-        super_lat = primclex.get_supercell(scelname).get_real_super_lattice();
+        super_lat = primclex.get_supercell(scelname[0]).get_real_super_lattice();
       }
       else {
         std::cout << "Error in 'casm super --get_transf_mat'. No --structure or --scelname given." << std::endl << std::endl;

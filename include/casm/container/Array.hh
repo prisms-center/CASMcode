@@ -51,6 +51,8 @@ namespace CASM {
 
     typedef T value_type;
     typedef Index size_type;
+    typedef T* iterator;
+    typedef const T* const_iterator;
 
     // CONSTRUCTORS/DESTRUCTORS
     Array() : N(0), NMax(0), Vals(NULL) { }

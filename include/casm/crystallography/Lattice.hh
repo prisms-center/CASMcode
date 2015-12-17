@@ -145,7 +145,7 @@ namespace CASM {
     //Lattice &operator*=(const Eigen::Matrix3d &RHS);
 
     ///Are two lattices the same, even if they have different lattice vectors
-    bool is_equivalent(const Lattice &RHS) const;
+    bool is_equivalent(const Lattice &RHS, double tol) const;
 
     ///Are lattice vectors identical for two lattices
     bool operator==(const Lattice &RHS) const;
@@ -225,14 +225,17 @@ namespace CASM {
 
   std::istream &operator>>(std::istream &in, const Lattice &lattice_in);
 
-  ///\brief returns Lattice that is smallest possible supercell of both \parm lat1 and \param lat2
+  ///\brief returns Lattice that is smallest possible supercell of both input Lattice
   Lattice superdupercell(const Lattice &lat1, const Lattice &lat2);
+  
+  ///\brief returns Lattice that is smallest possible supercell of all input Lattice
+  template<typename LatIterator, typename SymOpIterator>
+  Lattice superdupercell(LatIterator begin, 
+                         LatIterator end, 
+                         SymOpIterator op_begin = SymOpIterator(), 
+                         SymOpIterator op_end = SymOpIterator());
 
-  ///\brief returns Lattice that is smallest possible supercell of all lattices in \param lat_list
-  Lattice superdupercell(const Array<Lattice> &lat_list);
-
-  //Implementation of template methods must live in *.hh file for proper compilation:
-
+  
   //********************************************************************
   /**
    * This function generates a grid of points between max_radius and
@@ -274,6 +277,33 @@ namespace CASM {
     while(++grid_count);
 
     return gridstruc;
+  }
+  
+  
+  ///\brief returns Lattice that is smallest possible supercell of all input Lattice
+  ///
+  /// If SymOpIterator are provided they are applied to each Lattice in an attempt
+  /// to find the smallest possible superdupercell of all symmetrically transformed Lattice
+  template<typename LatIterator, typename SymOpIterator>
+  Lattice superdupercell(LatIterator begin, 
+                         LatIterator end, 
+                         SymOpIterator op_begin, 
+                         SymOpIterator op_end) {
+    
+    Lattice best = *begin;
+    for(auto it=++begin; it!=end; ++it) {
+      for(auto op_it=op_begin; op_it!=op_end; ++op_it) {
+        
+        Lattice lat2 = op_it->get_matrix(CART)*it->lat_column_mat();
+        Lattice test = superdupercell(best, lat2);
+        
+        if(volume(test) < volume(best)) {
+          best = test;
+        }
+        
+      }
+    }
+    return best;
   }
 
   //********************************************************************
