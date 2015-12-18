@@ -84,7 +84,7 @@ namespace CASM {
       return coord_trans_mat[FRAC];
     };
 
-    ///Access coord_trans[FRAC] in an intuitive way.
+    ///Access coord_trans[CART] in an intuitive way.
     const Matrix3< double > &inv_lat_column_mat() const {
       return coord_trans_mat[CART];
     };
@@ -220,8 +220,27 @@ namespace CASM {
   /// \brief Returns the volume of a Lattice
   double volume(const Lattice &lat);
 
+  /// \brief Apply SymOp to a Lattice
+  Lattice& apply(const SymOp &op, Lattice &lat);
+  
+  /// \brief Copy and apply SymOp to a Lattice
+  Lattice copy_apply(const SymOp &op, const Lattice& lat);
+  
   /// \brief Returns a super Lattice
   Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat);
+  
+  /// Check if scel is a supercell of unitcell unit and some integer transformation matrix T
+  std::pair<bool, Eigen::MatrixXi> is_supercell(const Lattice& scel, const Lattice& unit, double tol);
+  
+  /// Check if there is a symmetry operation, op, and transformation matrix T, 
+  ///   such that scel is a supercell of the result of applying op to unit
+  template<typename Object, typename OpIterator>
+  std::pair<OpIterator, Eigen::MatrixXi> is_supercell(
+    const Object& scel, 
+    const Object& unit, 
+    OpIterator begin, 
+    OpIterator end, 
+    double tol);
 
   std::istream &operator>>(std::istream &in, const Lattice &lattice_in);
 
@@ -292,16 +311,14 @@ namespace CASM {
     
     Lattice best = *begin;
     for(auto it=++begin; it!=end; ++it) {
+      Lattice tmp_best = superdupercell(best, *it);
       for(auto op_it=op_begin; op_it!=op_end; ++op_it) {
-        
-        Lattice lat2 = op_it->get_matrix(CART)*it->lat_column_mat();
-        Lattice test = superdupercell(best, lat2);
-        
-        if(volume(test) < volume(best)) {
-          best = test;
+        Lattice test = superdupercell(best, copy_apply(*op_it, *it));
+        if(std::abs(volume(test)) < std::abs(volume(tmp_best))) {
+          tmp_best = test;
         }
-        
       }
+      best = tmp_best;
     }
     return best;
   }
@@ -327,6 +344,28 @@ namespace CASM {
   /// \brief Returns a super Lattice
   inline Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat) {
     return Lattice(Eigen::Matrix3d(lat.lat_column_mat()) * transf_mat.cast<double>());
+  }
+  
+  /// Check if there is a symmetry operation, op, and transformation matrix T, 
+  ///   such that scel is a supercell of the result of applying op to unit
+  ///
+  /// \returns pair corresponding to first successful op and T, or with op=end if not successful
+  template<typename Object, typename OpIterator>
+  std::pair<OpIterator, Eigen::MatrixXi> is_supercell(
+      const Object& scel, 
+      const Object& unit, 
+      OpIterator begin, 
+      OpIterator end, 
+      double tol) {
+    
+    std::pair<bool, Eigen::MatrixXi> res;
+    for(auto it=begin; it!=end; ++it) {
+      res = is_supercell(scel, copy_apply(*it, unit), tol);
+      if(res.first) {
+        return std::make_pair(it, res.second);
+      }
+    }
+    return std::make_pair(end, res.second);
   }
 
 }

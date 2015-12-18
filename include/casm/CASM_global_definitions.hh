@@ -74,6 +74,13 @@ namespace CASM {
   // ************************************************************
 
   void print_splash(std::ostream &out);
+  
+  /// Copy and apply a transformation
+  /// - We can also include a specialization for cloneable objects, via SFINAE
+  template<typename Object, typename Transform>
+  Object copy_apply(const Transform& f, Object obj) {
+    return apply(f, obj);
+  }
 
 };
 

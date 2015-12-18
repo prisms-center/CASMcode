@@ -233,9 +233,31 @@ namespace CASM {
     m_write_trajectory(settings.write_trajectory()) {
     
     try {
-      m_configdof = super_configdof_occ(primclex,
-                                        settings.simulation_cell_matrix(),
-                                        settings.motif_configname());
+      
+      const Configuration& motif = primclex.configuration(settings.motif_configname());
+      const Lattice& motif_lat = motif.get_supercell().get_real_super_lattice();
+      const Lattice& scel_lat = m_scel.get_real_super_lattice();
+      auto begin = primclex.get_prim().point_group().begin();
+      auto end = primclex.get_prim().point_group().end();
+      
+      auto res = is_supercell(scel_lat, motif_lat, begin, end, TOL);
+      if(res.first == end) {
+        
+        std::cerr << "Requested supercell transformation matrix: \n" 
+                  << settings.simulation_cell_matrix() << "\n";
+        std::cerr << "Requested motif Configuration: " << 
+                      settings.motif_configname() << "\n";
+        std::cerr << "Configuration transformation matrix: \n" 
+                  << motif.get_supercell().get_transf_mat() << "\n";
+        
+        throw std::runtime_error(
+          "Error in 'MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings)'\n"
+          "  The specified Configuration cannot be tiled onto the specified supercell."
+        );
+      }
+      
+      ConfigTransform f(m_scel, *res.first);
+      m_configdof = copy_apply(f, motif).configdof();
       
       settings.samplers(primclex, std::inserter(m_sampler, m_sampler.begin()));
       

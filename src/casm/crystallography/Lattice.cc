@@ -1,6 +1,7 @@
 #include "casm/crystallography/Lattice.hh"
 
 #include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
 
@@ -855,23 +856,9 @@ namespace CASM {
   //Overload to only use identity
   //Return N matrix
   bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist, Matrix3<double> &multimat, double _tol) const {
-    if(symoplist.size() == 0) { //John G 121212 extra error
-      std::cerr << "ERROR: In Lattice::is_supercell_of. You've passed a point group with no elements!" << std::endl;
-      std::cerr << "       You need at least identity in your group. Exiting..." << std::endl;
-      exit(1);
-    }
-
-    Matrix3<double> tsym_lat_mat;
-    for(Index pg = 0; pg < symoplist.size(); pg++) {
-
-      tsym_lat_mat = symoplist[pg].get_matrix(CART) * coord_trans_mat[FRAC];
-      multimat = tile.coord_trans_mat[CART] * tsym_lat_mat;
-
-      if(multimat.is_integer(_tol) && !multimat.is_zero(_tol))
-        return true;
-
-    }
-    return false;
+    auto result = is_supercell(*this, tile, symoplist.begin(), symoplist.end(), _tol);
+    multimat = result.second.cast<double>(); 
+    return result.first != symoplist.end();
   }
 
   //********************************************************************
@@ -879,28 +866,22 @@ namespace CASM {
   //Overload to only use identity
   //Return N matrix
   bool Lattice::is_supercell_of(const Lattice &tile, Matrix3<double> &multimat, double _tol) const {
-
-    multimat = tile.coord_trans_mat[CART] * coord_trans_mat[FRAC];
-
-    if(multimat.is_integer(_tol) && !multimat.is_zero(_tol))
-      return true;
-
-    return false;
+    auto result = is_supercell(*this, tile, _tol);
+    multimat = result.second.cast<double>(); 
+    return result.first;
   }
 
   //********************************************************************
   //Overload to only use identity
   //Return N matrix
   bool Lattice::is_supercell_of(const Lattice &tile, double _tol) const {
-    Matrix3<double> multimat;
-    return is_supercell_of(tile, multimat, _tol);
+    return is_supercell(*this, tile, _tol).first;
   }
 
   //********************************************************************
 
   bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist, double _tol) const {
-    Matrix3<double> multimat;
-    return is_supercell_of(tile, symoplist, multimat, _tol);
+    return is_supercell(*this, tile, symoplist.begin(), symoplist.end(), _tol).first != symoplist.end();
   }
 
   //********************************************************************
@@ -1396,7 +1377,16 @@ namespace CASM {
       throw;
     }
   };
-
+  
+  /// \brief Apply SymOp to a Lattice
+  Lattice& apply(const SymOp &op, Lattice &lat) {
+    return lat = Lattice(op.get_matrix(CART)*lat.lat_column_mat());
+  }
+  
+  /// \brief Copy and apply SymOp to a Lattice
+  Lattice copy_apply(const SymOp &op, const Lattice& lat) {
+    return Lattice(op.get_matrix(CART)*lat.lat_column_mat());
+  }
 
   namespace niggli_impl {
 
@@ -1867,15 +1857,27 @@ namespace CASM {
         dA(i, j) = double(iA(i, j));
       }
     }
-
+    
     Lattice tlat(lat1.lat_column_mat()*dA);
-    return tlat.get_reduced_cell();
+    Lattice result = tlat.get_reduced_cell();
+    
+    return result;
 
   }
 
   //*******************************************************************************************
 
-
+  /// Check if scel is a supercell of unitcell unit and some integer transformation matrix T
+  std::pair<bool, Eigen::MatrixXi> is_supercell(const Lattice& scel, const Lattice& unit, double tol) {
+    
+    // check scel = unit*T, with integer T
+    Eigen::MatrixXd T = unit.lat_column_mat().inverse()*scel.lat_column_mat();
+    
+    if(is_integer(T, tol) && !almost_zero(T)) {
+      return std::make_pair(true, iround(T));
+    }
+    return std::make_pair(false, T.cast<int>());
+  }
 
 
 }
