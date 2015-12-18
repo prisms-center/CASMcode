@@ -7,6 +7,19 @@ namespace CASM {
 
   namespace ConfigIO {
     
+    /// Returns a map containing default hull calculators
+    Hull::CalculatorOptions hull_calculator_options() {
+      Hull::CalculatorOptions options;
+      options["atom_frac"] = Hull::CalculatorPair(SpeciesFrac().clone(), formation_energy_per_species().clone());
+      options["comp"] = Hull::CalculatorPair(Comp().clone(), formation_energy().clone());
+      return options;
+    }
+    
+    /// Returns "atom_frac"
+    std::string default_hull_calculator() {
+      return "atom_frac";
+    }
+    
     // --- OnHull Definitions -------------------
     
     const std::string OnHull::Name = "on_hull";
@@ -23,10 +36,7 @@ namespace CASM {
     
     /// \brief Constructor
     OnHull::OnHull() :
-      BaseHull<bool>(Name, Desc, "MASTER", "atom_frac", CASM::TOL) {
-      m_calculator_map["atom_frac"] = std::make_pair(CASM::species_frac, CASM::formation_energy_per_species);
-      m_calculator_map["comp"] = std::make_pair(CASM::comp, CASM::formation_energy);
-    }
+      BaseHull<bool>(Name, Desc) {}
     
     /// \brief Validate that the Configuration has a formation energy per species
     bool OnHull::validate(const Configuration &_config) const {
@@ -62,10 +72,7 @@ namespace CASM {
     
     /// \brief Constructor
     HullDist::HullDist() :
-      BaseHull<double>(Name, Desc, "MASTER", "atom_frac", CASM::TOL) {
-      m_calculator_map["atom_frac"] = std::make_pair(CASM::species_frac, CASM::formation_energy_per_species);
-      m_calculator_map["comp"] = std::make_pair(CASM::comp, CASM::formation_energy);
-    }
+      BaseHull<double>(Name, Desc) {}
     
     /// \brief Validate that the Configuration has a formation energy per species
     bool HullDist::validate(const Configuration &_config) const {
@@ -97,10 +104,7 @@ namespace CASM {
     
     /// \brief Constructor
     OnClexHull::OnClexHull() :
-      BaseHull<bool>(Name, Desc, "MASTER", "atom_frac", CASM::TOL) {
-      m_calculator_map["atom_frac"] = std::make_pair(CASM::species_frac, CASM::clex_formation_energy_per_species);
-      m_calculator_map["comp"] = std::make_pair(CASM::comp, CASM::clex_formation_energy);
-    }
+      BaseHull<bool>(Name, Desc) {}
     
     
     /// \brief Validate that the Configuration has a cluster expanded formation energy per species
@@ -140,10 +144,7 @@ namespace CASM {
     
     /// \brief Constructor
     ClexHullDist::ClexHullDist() :
-      BaseHull<double>(Name, Desc, "MASTER", "atom_frac", CASM::TOL) {
-      m_calculator_map["atom_frac"] = std::make_pair(CASM::species_frac, CASM::clex_formation_energy_per_species);
-      m_calculator_map["comp"] = std::make_pair(CASM::comp, CASM::clex_formation_energy);
-    }
+      BaseHull<double>(Name, Desc) {}
     
     /// \brief Validate that the Configuration has a cluster expanded formation energy per species
     ///

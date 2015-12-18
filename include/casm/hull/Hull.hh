@@ -16,13 +16,16 @@ namespace CASM {
     
     public:
     
-    typedef std::function<Eigen::VectorXd (Configuration)> CompCalculator;
-    typedef std::function<double (Configuration)> EnergyCalculator;
+    typedef VectorXdAttribute<Configuration> CompCalculator;
+    typedef ScalarAttribute<Configuration> EnergyCalculator;
+    typedef std::pair<notstd::cloneable_ptr<CompCalculator>, 
+                      notstd::cloneable_ptr<EnergyCalculator> > CalculatorPair;
+    typedef std::map<std::string, CalculatorPair> CalculatorOptions;
     
     /// \brief Constructor for convex hull in composition/energy space
     Hull(const ConstConfigSelection& _selection, 
-         const CompCalculator& _comp_calculator = CASM::species_frac,
-         const EnergyCalculator& _energy_calculator = CASM::formation_energy_per_species,
+         const CompCalculator& _comp_calculator = ConfigIO::SpeciesFrac(),
+         const EnergyCalculator& _energy_calculator = ConfigIO::formation_energy_per_species(),
          double _singular_value_tol = 1e-14);
     
     /// \brief const Access the hull object directly
@@ -45,6 +48,12 @@ namespace CASM {
     
     /// \brief Return the 0K ground state corresponding to the input chemical potential 
     const Configuration& groundstate(const Eigen::VectorXd& mu) const;
+    
+    /// \brief Use the EnergyCalculator to return the energy of a Configuration
+    double energy(const Configuration& config) const;
+    
+    /// \brief Use the CompCalculator to return the composition of a Configuration
+    Eigen::VectorXd composition(const Configuration& config) const;
     
     /// \brief Return a vector corresponding to the coordinate of a given configuration in full composition/energy space
     Eigen::VectorXd point(const Configuration& config) const;
@@ -76,10 +85,10 @@ namespace CASM {
     ConstConfigSelection m_selection;
     
     // get composition coordinates for Configuration
-    std::function<Eigen::VectorXd (Configuration)> m_comp_calculator;
+    notstd::cloneable_ptr<CompCalculator> m_comp_calculator;
     
     // get energy for a Configuration
-    std::function<double (Configuration)> m_energy_calculator;
+    notstd::cloneable_ptr<EnergyCalculator> m_energy_calculator;
     
     // transform full dimension comp/energy vector onto subspace range(comp)/energy
     Eigen::MatrixXd m_reduce;

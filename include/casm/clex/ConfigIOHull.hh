@@ -9,8 +9,15 @@
 namespace CASM {
 
   class Configuration;
-
+  
   namespace ConfigIO {
+    
+    /// Returns a map containing default hull calculators
+    Hull::CalculatorOptions hull_calculator_options();
+    
+    /// Returns "atom_frac"
+    std::string default_hull_calculator();
+    
     
     /// \brief Base class for hull info formatters
     ///
@@ -23,10 +30,11 @@ namespace CASM {
       
       /// \brief Constructor
       BaseHull(const std::string &_name, 
-                              const std::string &_desc, 
-                              const std::string &_default_selection,
-                              const std::string &_default_composition_type,
-                              double _singular_value_tol);
+               const std::string &_desc, 
+               const std::string &_default_selection = "MASTER",
+               const std::string &_default_composition_type = default_hull_calculator(),
+               const Hull::CalculatorOptions& _calculator_map = hull_calculator_options(),
+               double _singular_value_tol = 1e-14);
       
       /// \brief Calculates the convex hull
       void init(const Configuration &_tmplt) const override;
@@ -44,7 +52,7 @@ namespace CASM {
       const Hull& _hull() const;
       
       // for parse_args: determine energy type based on composition type
-      std::map<std::string, std::pair<Hull::CompCalculator,Hull::EnergyCalculator> > m_calculator_map;
+      Hull::CalculatorOptions m_calculator_map;
       
       // detect and avoid printing -0.0
       constexpr static double m_dist_to_hull_tol = 1e-14;
@@ -260,15 +268,21 @@ namespace CASM {
     /// - The units of composition and energy are determined by the calculator parameters
     ///
     template<typename ValueType>
-    BaseHull<ValueType>::BaseHull(const std::string &_name, 
-                                                     const std::string &_desc, 
-                                                     const std::string &_default_selection,
-                                                     const std::string &_default_composition_type,
-                                                     double _singular_value_tol) :
+    BaseHull<ValueType>::BaseHull( const std::string &_name, 
+                                   const std::string &_desc, 
+                                   const std::string &_default_selection,
+                                   const std::string &_default_composition_type,
+                                   const Hull::CalculatorOptions& _calculator_map,
+                                   double _singular_value_tol) :
       BaseValueFormatter<ValueType, Configuration>(_name, _desc), 
       m_selection(_default_selection),
       m_composition_type(_default_composition_type),
-      m_singular_value_tol(_singular_value_tol) {}
+      m_calculator_map(_calculator_map),
+      m_singular_value_tol(_singular_value_tol) {
+      
+      
+      
+    }
 
     /// \brief Calculates the convex hull
     /// 
@@ -308,8 +322,8 @@ namespace CASM {
       }
       
       m_hull = std::make_shared<Hull>(selection, 
-                                      m_calculator_map.find(m_composition_type)->second.first, 
-                                      m_calculator_map.find(m_composition_type)->second.second, 
+                                      *m_calculator_map.find(m_composition_type)->second.first, 
+                                      *m_calculator_map.find(m_composition_type)->second.second, 
                                       m_singular_value_tol);
       
     }
@@ -367,7 +381,7 @@ namespace CASM {
         std::stringstream ss;
         ss << "Composition type " << m_composition_type << " is not recognized. Options are: ";
         for(auto it=m_calculator_map.begin(); it!=m_calculator_map.end(); ++it) {
-          std::cout << it->first << " ";
+          std::cerr << it->first << " ";
           if(it != m_calculator_map.begin()) {
             ss << ", ";
           }

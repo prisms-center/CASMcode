@@ -39,7 +39,7 @@ namespace CASM {
       BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator), m_parser(parser) {}
 
     std::unique_ptr<DataFormatterOperator> clone() const {
-      return std::unique_ptr<DataFormatterOperator>(*this->_clone());
+      return std::unique_ptr<DataFormatterOperator>(this->_clone());
     }
 
     typename BaseDatumFormatter<DataObject>::FormatterType type() const override {
@@ -503,7 +503,7 @@ namespace CASM {
     }
     
     std::unique_ptr<DatumFormatterAlias> clone() const {
-      return std::unique_ptr<DatumFormatterAlias>(*this->_clone());
+      return std::unique_ptr<DatumFormatterAlias>(this->_clone());
     }
     
     void init(const DataObject &_template_obj) const  override {
@@ -622,7 +622,7 @@ namespace CASM {
       BaseDatumFormatter<DataObject>(_header, "Constant value that will be printed on each line"), m_value(_value), m_print_json(_print_json) {}
 
     std::unique_ptr<ConstantValueFormatter> clone() const {
-      return std::unique_ptr<ConstantValueFormatter>(*this->_clone());
+      return std::unique_ptr<ConstantValueFormatter>(this->_clone());
     }
     
     void inject(const DataObject &_data_obj, DataStream &_stream, Index pass_index) const {
@@ -790,7 +790,7 @@ namespace CASM {
     
     /// \brief Clone
     std::unique_ptr<GenericDatumFormatter> clone() const {
-      return std::unique_ptr<GenericDatumFormatter>(*this->_clone());
+      return std::unique_ptr<GenericDatumFormatter>(this->_clone());
     }
     
     
@@ -1009,7 +1009,7 @@ namespace CASM {
     
     /// \brief Clone using copy constructor
     std::unique_ptr<Generic1DDatumFormatter> clone() const {
-      return std::unique_ptr<Generic1DDatumFormatter>(*this->_clone());
+      return std::unique_ptr<Generic1DDatumFormatter>(this->_clone());
     }
     
     

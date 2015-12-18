@@ -7,8 +7,19 @@
 #include "casm/external/Eigen/Dense"
 #include "casm/external/qhull/libqhullcpp/QhullFacetList.h"
 #include "casm/external/qhull/libqhullcpp/QhullVertexSet.h"
+#include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/DataFormatterTools.hh"
 
 namespace CASM {
+  
+  namespace Hull_impl {
+  
+    /// \brief Print informational message and throw exception if input data is not valid
+    void _validate_input(const ConstConfigSelection& selection,
+                         const Hull::CompCalculator& comp_calculator,
+                         const Hull::EnergyCalculator& energy_calculator);
+  }
+  
 
   /// \brief Constructor for convex hull in atom_frac & Ef/atom space
   Hull::Hull(const ConstConfigSelection& _selection, 
@@ -19,17 +30,19 @@ namespace CASM {
     m_comp_calculator(_comp_calculator), 
     m_energy_calculator(_energy_calculator) {
     
+    Hull_impl::_validate_input(m_selection, *m_comp_calculator, *m_energy_calculator);
+    
     // get the number of configurations and compositions (full composition space)
     Index Nselected = std::distance(m_selection.selected_config_begin(), m_selection.selected_config_end());
-    Index Ncomp = m_comp_calculator(*m_selection.selected_config_begin()).size();
+    Index Ncomp = composition(*m_selection.selected_config_begin()).size();
     
     // generate initial set of points (col vector matrix)
     Eigen::MatrixXd mat(Ncomp+1, Nselected);
     
     Index i=0;
     for(auto it=m_selection.selected_config_begin(); it!=m_selection.selected_config_end(); ++it) {
-      mat.block(0,i,Ncomp,1) = m_comp_calculator(*it);
-      mat(Ncomp,i) = m_energy_calculator(*it);
+      mat.block(0,i,Ncomp,1) = composition(*it);
+      mat(Ncomp,i) = energy(*it);
       ++i;
     }
     
@@ -95,8 +108,6 @@ namespace CASM {
         m_bottom_vertices.insert(*vertex_it);
       }
     }
-    
-    //std::cout << "finish Hull()" << std::endl;
     
   }
   
@@ -183,11 +194,22 @@ namespace CASM {
     return configuration(_groundstate);
   }
   
+  /// \brief Use the EnergyCalculator to return the energy of a Configuration
+  double Hull::energy(const Configuration& config) const {
+    return (*m_energy_calculator)(config);
+  }
+  
+  /// \brief Use the CompCalculator to return the composition of a Configuration
+  Eigen::VectorXd Hull::composition(const Configuration& config) const {
+    return (*m_comp_calculator)(config);
+  }
+  
+  
   /// \brief Return a vector corresponding to the coordinate of a given configuration in full comp/energy space
   Eigen::VectorXd Hull::point(const Configuration& config) const {
     Eigen::VectorXd _point(m_reduce.cols());
-    _point.head(m_reduce.cols()-1) = m_comp_calculator(config);
-    _point.tail(1)(0) = m_energy_calculator(config);
+    _point.head(m_reduce.cols()-1) = composition(config);
+    _point.tail(1)(0) = energy(config);
     return _point;
   }
   
@@ -232,6 +254,43 @@ namespace CASM {
     return dist_to_hull;
   }
   
+  namespace Hull_impl {
+  
+    /// \brief Print informational message and throw exception if input data is not valid
+    void _validate_input(const ConstConfigSelection& selection,
+                         const Hull::CompCalculator& comp_calculator,
+                         const Hull::EnergyCalculator& energy_calculator) {
+      
+      typedef std::map<std::string, std::pair<bool, bool> > CheckMap;
+      
+      CheckMap invalid_data;
+      for(auto it=selection.selected_config_cbegin(); it!=selection.selected_config_cend(); ++it) {
+        if(!comp_calculator.validate(*it) || !energy_calculator.validate(*it)) {
+          invalid_data[it.name()] = std::make_pair(comp_calculator.validate(*it), energy_calculator.validate(*it));
+        }
+      }
+      
+      if(invalid_data.size()) {
+        std::cerr << "Invalid data for hull construction:\n";
+        typedef GenericDatumFormatter<std::string, CheckMap::value_type> Formatter;
+        
+        DataFormatter<CheckMap::value_type> f(
+          Formatter("configname", "", [](CheckMap::value_type v) {return v.first;}), 
+          Formatter("composition", "", [](CheckMap::value_type v) {return v.second.first ? "OK" : "invalid";}), 
+          Formatter("energy", "", [](CheckMap::value_type v) {return v.second.second ? "OK" : "invalid";})
+        );
+        
+        std::cerr << f(invalid_data.begin(), invalid_data.end()) << "\n";
+        
+        std::stringstream ss;
+        ss << "Error in Hull(): Invalid composition or energy data. "
+              "Make sure you have set composition axes and all selected configurations "
+              "have calculation results.";
+        throw std::runtime_error(ss.str());
+      }
+    }
+  
+  }
 
 
 }
