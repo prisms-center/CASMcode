@@ -168,7 +168,7 @@ namespace CASM {
     Permutation const *get_permutation_rep(Index rep_ID) const;
 
     /// get pointer to BasisPermute representation corresponding to rep_ID
-    Array<UnitCellCoord> const *get_basis_permute_rep(Index rep_ID) const;
+    SymBasisPermute const* get_basis_permute_rep(Index rep_ID) const;
 
     /// get array of pointers to matrix representations for representations corresponding to rep_IDs
     Array<Eigen::MatrixXd const * > get_matrix_reps(Array<Index> rep_IDs) const;

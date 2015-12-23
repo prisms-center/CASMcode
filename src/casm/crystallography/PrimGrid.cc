@@ -10,6 +10,7 @@
 
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymPermutation.hh"
+#include "casm/symmetry/SymBasisPermute.hh"
 
 namespace CASM {
   PrimGrid::PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB) {
@@ -242,7 +243,6 @@ namespace CASM {
   Index PrimGrid::make_permutation_representation(const SymGroup &group, Index basis_permute_ID)const {
 
     Index perm_rep_ID = group.make_empty_representation();
-    Array<UnitCellCoord> const *b_permute;
     Matrix3<int> frac_ijk, frac_mnp;
     UnitCellCoord bmnp_shift;
     Index old_l, new_l;
@@ -253,20 +253,22 @@ namespace CASM {
 
       frac_mnp = m_invU * frac_ijk * m_U;
 
-      b_permute = op.get_basis_permute_rep(basis_permute_ID);
-      if(!b_permute) {
+      auto rep = op.get_basis_permute_rep(basis_permute_ID);
+      if(!rep) {
         std::cerr << "CRITICAL ERROR: In PrimGrid::make_permutation_representation, BasisPermute representation is incorrectly initialized!\n"
                   << "                basis_permute_ID is " << basis_permute_ID << " and op index is " << op.index() << " and REP_COUNT is " << SymGroupRep::CURR_REP_COUNT() <<  '\n'
                   << "                Exiting...\n";
 
         exit(1);
       }
-      Array<Index> ipermute(b_permute->size()*size());
+      std::vector<UnitCellCoord> const &b_permute = rep->data();
+      
+      Array<Index> ipermute(b_permute.size()*size());
       //std::cerr << "PRINTING b_permute array for op " << ng << ":\n";
       //begin loop over sites
-      for(Index nb = 0; nb < b_permute->size(); nb++) {
-        //std::cerr << b_permute->at(nb) << '\n';
-        bmnp_shift = to_canonical(b_permute->at(nb));
+      for(Index nb = 0; nb < b_permute.size(); nb++) {
+        //std::cerr << b_permute.at(nb) << '\n';
+        bmnp_shift = to_canonical(b_permute.at(nb));
 
         Vector3<int> new_mnp, mnp_shift(bmnp_shift[1], bmnp_shift[2], bmnp_shift[3]);
         for(int m = 0; m < m_S[0]; m++) {

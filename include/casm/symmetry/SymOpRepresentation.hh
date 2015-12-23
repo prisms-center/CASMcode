@@ -13,6 +13,7 @@ namespace CASM {
 
   class Permutation;
   class UnitCellCoord;
+  class SymBasisPermute;
 
   ///\brief SymOpRepresentation is the base class for anything describes a symmetry operation
   class SymOpRepresentation {
@@ -50,7 +51,7 @@ namespace CASM {
       return NULL;
     };
 
-    virtual Array<UnitCellCoord> const *get_ucc_permutation() const {
+    virtual SymBasisPermute const* get_ucc_permutation() const {
       return NULL;
     };
 

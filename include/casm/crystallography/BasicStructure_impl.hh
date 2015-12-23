@@ -352,9 +352,6 @@ namespace CASM {
     SymGroupRep basis_permute_group(factor_group);
     Index rep_id;
 
-    CoordType tsite(basis[0]);
-    Array<UnitCellCoord> new_ucc(basis.size());
-
     std::string clr(100, ' ');
 
     for(Index ng = 0; ng < factor_group.size(); ng++) {
@@ -363,15 +360,7 @@ namespace CASM {
           std::cout << '\r' << clr.c_str() << '\r' << "Find permute rep for symOp " << ng << "/" << factor_group.size() << std::flush;
       }
 
-      // Applies the symmetry operation
-      //sym_tstruc = factor_group[ng] * (*this);  <-- slow due to memory copying
-      for(Index nb = 0; nb < basis.size(); nb++) {
-        tsite = basis[nb];
-        tsite.apply_sym(factor_group[ng]);
-        new_ucc[nb] = get_unit_cell_coord(tsite);
-      }
-      // Creates a new SymGroupRep
-      basis_permute_group.push_back(SymBasisPermute(new_ucc));
+      basis_permute_group.push_back(SymBasisPermute(factor_group[ng], *this, TOL));
     }
     // Adds the representation into the master sym group of this structure and returns the rep id
     rep_id = factor_group.add_representation(basis_permute_group);

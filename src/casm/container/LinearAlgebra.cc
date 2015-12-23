@@ -163,19 +163,37 @@ namespace CASM {
     return almost_equal(std::abs(M.determinant()), 1.0, tol);
   }
   
-  /// \brief Round Eigen::Matrix3d to Eigen::Matrix3i
+  /// \brief Round Eigen::MatrixXd to Eigen::MatrixXi
   ///
-  /// \returns an Eigen:Matrix3i
+  /// \returns an Eigen:MatrixXi
   ///
-  /// \param M Eigen::Matrix3d to be rounded to integer
+  /// \param M Eigen::MatrixXd to be rounded to integer
   ///
   /// For each coefficient, sets \code Mint(i,j) = boost::math::iround(Mdouble(i, j)) \endcode
   ///
-  Eigen::Matrix3i iround(const Eigen::Matrix3d &M) {
-    Eigen::Matrix3i Mint(M.rows(), M.cols());
+  Eigen::MatrixXi iround(const Eigen::MatrixXd &M) {
+    Eigen::MatrixXi Mint(M.rows(), M.cols());
     for(int i = 0; i < M.rows(); i++) {
       for(int j = 0; j < M.cols(); j++) {
         Mint(i, j) = boost::math::iround(M(i, j));
+      }
+    }
+    return Mint;
+  }
+  
+  /// \brief Round Eigen::MatrixXd to Eigen::MatrixXl
+  ///
+  /// \returns an Eigen:MatrixXl
+  ///
+  /// \param M Eigen::MatrixXd to be rounded to integer
+  ///
+  /// For each coefficient, sets \code Mint(i,j) = std::lround(Mdouble(i, j)) \endcode
+  ///
+  Eigen::MatrixXl lround(const Eigen::MatrixXd &M) {
+    Eigen::MatrixXl Mint(M.rows(), M.cols());
+    for(int i = 0; i < M.rows(); i++) {
+      for(int j = 0; j < M.cols(); j++) {
+        Mint(i, j) = std::lround(M(i, j));
       }
     }
     return Mint;

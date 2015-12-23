@@ -1301,7 +1301,6 @@ namespace CASM {
   }
   
   
-  
   /// \brief Application results in filling supercell 'scel' with reoriented motif, op*motif
   ///
   /// Currently only applies to occupation
@@ -1327,19 +1326,21 @@ namespace CASM {
     // for each site in motif
     for(Index s = 0 ; s < motif.size() ; s++) {
       
-      // re-orient and find unit cell coord (should be a symoprep for this...)
-      Coordinate oriented_coord = motif.get_supercell().coord(motif.get_uccoord(s)).apply_sym(f.op);
-      UnitCellCoord oriented_uccoord = prim.get_unit_cell_coord(oriented_coord, TOL);
+      // apply symmetry to re-orient and find unit cell coord
+      UnitCellCoord oriented_uccoord = copy_apply(f.op, motif.get_uccoord(s), prim);
       
-      // for each unit cell in the oriented_motif->fill grid
+      // for each unit cell of the oriented motif in the supercell, copy the occupation
       for(Index i = 0 ; i < prim_grid.size() ; i++) {
+        
+        
+        
+        //tscel_occ[f.scel.find(prim_grid.uccoord(i)) = motif.occ(s);
         
         Index prim_motif_tile_ind = f.scel.prim_grid().find(prim_grid.coord(i, PRIM));
         
-        UnitCellCoord mc_uccoord =  f.scel.prim_grid().uccoord(prim_motif_tile_ind) + oriented_uccoord;
-        
+        UnitCellCoord mc_uccoord =  f.scel.prim_grid().uccoord(prim_motif_tile_ind) + oriented_uccoord.unitcell();
         // b-index when doing UnitCellCoord addition is ambiguous; explicitly set it
-        mc_uccoord[0] = motif.get_uccoord(s)[0]; 
+        mc_uccoord.sublat() = oriented_uccoord.sublat(); 
         
         Index occ_ind = f.scel.find(mc_uccoord);
         
