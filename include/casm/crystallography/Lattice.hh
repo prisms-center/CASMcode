@@ -84,7 +84,7 @@ namespace CASM {
       return coord_trans_mat[FRAC];
     };
 
-    ///Access coord_trans[FRAC] in an intuitive way.
+    ///Access coord_trans[CART] in an intuitive way.
     const Matrix3< double > &inv_lat_column_mat() const {
       return coord_trans_mat[CART];
     };
@@ -145,7 +145,7 @@ namespace CASM {
     //Lattice &operator*=(const Eigen::Matrix3d &RHS);
 
     ///Are two lattices the same, even if they have different lattice vectors
-    bool is_equivalent(const Lattice &RHS) const;
+    bool is_equivalent(const Lattice &RHS, double tol) const;
 
     ///Are lattice vectors identical for two lattices
     bool operator==(const Lattice &RHS) const;
@@ -220,19 +220,41 @@ namespace CASM {
   /// \brief Returns the volume of a Lattice
   double volume(const Lattice &lat);
 
+  /// \brief Apply SymOp to a Lattice
+  Lattice& apply(const SymOp &op, Lattice &lat);
+  
+  /// \brief Copy and apply SymOp to a Lattice
+  Lattice copy_apply(const SymOp &op, const Lattice& lat);
+  
   /// \brief Returns a super Lattice
   Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat);
+  
+  /// Check if scel is a supercell of unitcell unit and some integer transformation matrix T
+  std::pair<bool, Eigen::MatrixXi> is_supercell(const Lattice& scel, const Lattice& unit, double tol);
+  
+  /// Check if there is a symmetry operation, op, and transformation matrix T, 
+  ///   such that scel is a supercell of the result of applying op to unit
+  template<typename Object, typename OpIterator>
+  std::pair<OpIterator, Eigen::MatrixXi> is_supercell(
+    const Object& scel, 
+    const Object& unit, 
+    OpIterator begin, 
+    OpIterator end, 
+    double tol);
 
   std::istream &operator>>(std::istream &in, const Lattice &lattice_in);
 
-  ///\brief returns Lattice that is smallest possible supercell of both \parm lat1 and \param lat2
+  ///\brief returns Lattice that is smallest possible supercell of both input Lattice
   Lattice superdupercell(const Lattice &lat1, const Lattice &lat2);
+  
+  ///\brief returns Lattice that is smallest possible supercell of all input Lattice
+  template<typename LatIterator, typename SymOpIterator>
+  Lattice superdupercell(LatIterator begin, 
+                         LatIterator end, 
+                         SymOpIterator op_begin = SymOpIterator(), 
+                         SymOpIterator op_end = SymOpIterator());
 
-  ///\brief returns Lattice that is smallest possible supercell of all lattices in \param lat_list
-  Lattice superdupercell(const Array<Lattice> &lat_list);
-
-  //Implementation of template methods must live in *.hh file for proper compilation:
-
+  
   //********************************************************************
   /**
    * This function generates a grid of points between max_radius and
@@ -275,6 +297,31 @@ namespace CASM {
 
     return gridstruc;
   }
+  
+  
+  ///\brief returns Lattice that is smallest possible supercell of all input Lattice
+  ///
+  /// If SymOpIterator are provided they are applied to each Lattice in an attempt
+  /// to find the smallest possible superdupercell of all symmetrically transformed Lattice
+  template<typename LatIterator, typename SymOpIterator>
+  Lattice superdupercell(LatIterator begin, 
+                         LatIterator end, 
+                         SymOpIterator op_begin, 
+                         SymOpIterator op_end) {
+    
+    Lattice best = *begin;
+    for(auto it=++begin; it!=end; ++it) {
+      Lattice tmp_best = superdupercell(best, *it);
+      for(auto op_it=op_begin; op_it!=op_end; ++op_it) {
+        Lattice test = superdupercell(best, copy_apply(*op_it, *it));
+        if(std::abs(volume(test)) < std::abs(volume(tmp_best))) {
+          tmp_best = test;
+        }
+      }
+      best = tmp_best;
+    }
+    return best;
+  }
 
   //********************************************************************
   // A column of trans_mat specifies a lattice vector of the supercell in terms of the
@@ -297,6 +344,28 @@ namespace CASM {
   /// \brief Returns a super Lattice
   inline Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat) {
     return Lattice(Eigen::Matrix3d(lat.lat_column_mat()) * transf_mat.cast<double>());
+  }
+  
+  /// Check if there is a symmetry operation, op, and transformation matrix T, 
+  ///   such that scel is a supercell of the result of applying op to unit
+  ///
+  /// \returns pair corresponding to first successful op and T, or with op=end if not successful
+  template<typename Object, typename OpIterator>
+  std::pair<OpIterator, Eigen::MatrixXi> is_supercell(
+      const Object& scel, 
+      const Object& unit, 
+      OpIterator begin, 
+      OpIterator end, 
+      double tol) {
+    
+    std::pair<bool, Eigen::MatrixXi> res;
+    for(auto it=begin; it!=end; ++it) {
+      res = is_supercell(scel, copy_apply(*it, unit), tol);
+      if(res.first) {
+        return std::make_pair(it, res.second);
+      }
+    }
+    return std::make_pair(end, res.second);
   }
 
 }

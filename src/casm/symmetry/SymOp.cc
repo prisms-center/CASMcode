@@ -158,7 +158,7 @@ namespace CASM {
   }
 
   //**********************************************************
-  Array<UnitCellCoord> const *SymOp::get_basis_permute_rep(Index rep_ID) const {
+  SymBasisPermute const *SymOp::get_basis_permute_rep(Index rep_ID) const {
 
     SymGroupRep const *tRep(master_group().representation(rep_ID));
     if(!tRep) {

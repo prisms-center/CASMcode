@@ -1300,6 +1300,59 @@ namespace CASM {
                        });
   }
   
+  
+  /// \brief Application results in filling supercell 'scel' with reoriented motif, op*motif
+  ///
+  /// Currently only applies to occupation
+  Configuration& apply(const ConfigTransform& f, Configuration& motif) {
+    
+    Configuration result(f.scel);
+    const PrimClex& primclex = motif.get_primclex();
+    const Structure& prim = motif.get_prim();
+    
+    Lattice oriented_motif_lat = copy_apply(f.op, motif.get_supercell().get_real_super_lattice());
+
+    // Create a PrimGrid linking the prim and the oriented motif each to the supercell
+    // So we can tile the decoration of the motif config onto the supercell correctly
+    PrimGrid prim_grid(oriented_motif_lat, f.scel.get_real_super_lattice()); 
+    
+    // For each site in the motif, re-orient and then translate by all possible 
+    // translations from prim_grid, index in the mc_prim_prim, and use index to 
+    // assign occupation
+    
+    // std::vector of occupations in the MonteCarlo cell
+    Array<int> tscel_occ(motif.size()*prim_grid.size()); 
+    
+    // for each site in motif
+    for(Index s = 0 ; s < motif.size() ; s++) {
+      
+      // apply symmetry to re-orient and find unit cell coord
+      UnitCellCoord oriented_uccoord = copy_apply(f.op, motif.get_uccoord(s), prim);
+      
+      // for each unit cell of the oriented motif in the supercell, copy the occupation
+      for(Index i = 0 ; i < prim_grid.size() ; i++) {
+        
+        
+        
+        //tscel_occ[f.scel.find(prim_grid.uccoord(i)) = motif.occ(s);
+        
+        Index prim_motif_tile_ind = f.scel.prim_grid().find(prim_grid.coord(i, PRIM));
+        
+        UnitCellCoord mc_uccoord =  f.scel.prim_grid().uccoord(prim_motif_tile_ind) + oriented_uccoord.unitcell();
+        // b-index when doing UnitCellCoord addition is ambiguous; explicitly set it
+        mc_uccoord.sublat() = oriented_uccoord.sublat(); 
+        
+        Index occ_ind = f.scel.find(mc_uccoord);
+        
+        tscel_occ[occ_ind] = motif.occ(s);
+      }
+    }
+    
+    result.set_occupation(tscel_occ);
+    
+    return motif = result;
+    
+  }
 
 }
 

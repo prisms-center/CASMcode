@@ -1929,9 +1929,9 @@ namespace CASM {
   template < typename T> template<int dim1, int dim2, int flag1>
   Vector3<T>::operator Eigen::Matrix<T, dim1, dim2, flag1>() const {
     Eigen::Matrix<T, dim1, dim2, flag1> tvec(3, 1);
-    tvec[0] = at(0);
-    tvec[1] = at(1);
-    tvec[2] = at(2);
+    tvec(0,0) = at(0);
+    tvec(1,0) = at(1);
+    tvec(2,0) = at(2);
     return tvec;
   }
 
@@ -2055,12 +2055,48 @@ namespace CASM {
     iA[2] = round(A[2]);
     return iA;
   }
-
-  /// \brief Round Eigen::Matrix3d to Eigen::Matrix3i
-  Eigen::Matrix3i iround(const Eigen::Matrix3d &M);
+  
+  /// \brief Check if Eigen::MatrixXd is integer
+  bool is_integer(const Eigen::MatrixXd& M, double tol);
+  
+  /// \brief Check if Eigen::MatrixXd is unimodular
+  bool is_unimodular(const Eigen::MatrixXd& M, double tol);
+  
+  /// \brief Round Eigen::MatrixXd to Eigen::MatrixXi
+  Eigen::MatrixXi iround(const Eigen::MatrixXd &M);
+  
+  /// \brief Round Eigen::MatrixXd to Eigen::MatrixXl
+  Eigen::MatrixXl lround(const Eigen::MatrixXd &M);
 
   /// \brief Return the hermite normal form, M == H*V
   std::pair<Eigen::MatrixXi, Eigen::MatrixXi> hermite_normal_form(const Eigen::MatrixXi &M);
+  
+  /// \brief Check if Eigen::MatrixXd is diagonal
+  bool is_diagonal(const Eigen::MatrixXd& M, double tol);
+  
+  /// \brief Check if Eigen::MatrixXi is diagonal
+  bool is_diagonal(const Eigen::MatrixXi& M);
+  
+  /// \brief Return the minor of integer Matrix M element row, col
+  int minor(const Eigen::MatrixXi& M, int row, int col);
+  
+  /// \brief Return cofactor matrix
+  Eigen::MatrixXi cofactor(const Eigen::MatrixXi& M);
+  
+  /// \brief Return adjugate matrix
+  Eigen::MatrixXi adjugate(const Eigen::MatrixXi& M);
+  
+  /// \brief Return the integer inverse matrix of an invertible integer matrix
+  Eigen::Matrix3i inverse(const Eigen::Matrix3i& M);
+  
+  /// \brief Return the smith normal form, M == U*S*V
+  void smith_normal_form(const Eigen::Matrix3i& M, 
+                         Eigen::Matrix3i& U, 
+                         Eigen::Matrix3i& S, 
+                         Eigen::Matrix3i& V);
+  
+  /// \brief Round entries that are within tol of being integer to that integer value
+  Eigen::MatrixXd pretty(const Eigen::MatrixXd& M, double tol);
 
 }
 #endif

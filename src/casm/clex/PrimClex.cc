@@ -508,7 +508,7 @@ namespace CASM {
           for(Index b = 0; b < new_tree[i][j][k].size(); b++) {
             //tuccb corresponds to a site that neighbors tuccl
             UnitCellCoord tuccb = prim.get_unit_cell_coord(new_tree[i][j][k][b]);
-            UnitCellCoord delta = tuccb - tuccl;
+            UnitCellCoord delta(tuccb.sublat(), tuccb.unitcell() - tuccl.unitcell());
 
             clust_nlist_inds[b] = prim_nlist.find(delta);
 
@@ -580,7 +580,7 @@ namespace CASM {
             for(Index b = 0; b < new_tree[i][j][k].size(); b++) {
               //tuccb corresponds to a site that neighbors tuccl
               UnitCellCoord tuccb = prim.get_unit_cell_coord(new_tree[i][j][k][b]);
-              UnitCellCoord delta = tuccb - tuccl;
+              UnitCellCoord delta(tuccb.sublat(), tuccb.unitcell() - tuccl.unitcell());
 
               clust_nlist_inds[b] = prim_nlist.find(delta);
 
@@ -1272,7 +1272,7 @@ namespace CASM {
             for(Index b = 0; b < tree[i][j][k].size(); b++) {
               //tuccb corresponds to a site that neighbors tuccl
               UnitCellCoord tuccb = prim.get_unit_cell_coord(tree[i][j][k][b]);
-              UnitCellCoord delta = tuccb - tuccl;
+              UnitCellCoord delta(tuccb.sublat(), tuccb.unitcell() - tuccl.unitcell());
 
               clust_nlist_inds[b] = nlist.find(delta);
 

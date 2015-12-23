@@ -36,8 +36,8 @@ namespace CASM {
       for(Index j = 0; j < nlists[i].size(); j++) {
 
         const UnitCellCoord &delta = get_primclex().get_nlist_uccoord(j);
-
-        nlists[i][j] = find(uccoord(i) + delta);
+        UnitCellCoord tmp(delta.sublat(), uccoord(i).unitcell() + delta.unitcell());
+        nlists[i][j] = find(tmp);
 
       }
     }

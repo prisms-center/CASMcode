@@ -74,8 +74,30 @@ namespace CASM {
   // ************************************************************
 
   void print_splash(std::ostream &out);
+  
+  /// Apply a transformation, in place
+  /// - Default is equivalent to \code obj.apply_sym(f, args...) \endcode
+  template<typename Object, typename Transform, typename...Args>
+  Object& apply(const Transform& f, Object& obj, Args&&...args) {
+    return obj.apply_sym(f, std::forward<Args>(args)...);
+  }
+  
+  /// Copy and apply a transformation
+  /// - We can also include a specialization for cloneable objects, via SFINAE
+  template<typename Object, typename Transform, typename...Args>
+  Object copy_apply(const Transform& f, Object obj, Args&&...args) {
+    return apply(f, obj, std::forward<Args>(args)...);
+  }
 
 };
+
+namespace Eigen {
+  
+  typedef Matrix<long int, 3, 3> Matrix3l;
+  typedef Matrix<long int, 3, 1> Vector3l;
+  typedef Matrix<long int, Dynamic, Dynamic> MatrixXl;
+
+}
 
 
 namespace std{

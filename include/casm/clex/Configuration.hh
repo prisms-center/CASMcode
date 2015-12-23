@@ -408,6 +408,25 @@ namespace CASM {
   /// \brief Return true if all current properties have been been calculated for the configuration
   bool is_calculated(const Configuration& config);
   
+  
+  
+  /// \brief Application results in filling supercell 'scel' with reoriented motif, op*config
+  ///
+  /// Currently only applies to occupation
+  struct ConfigTransform {
+    
+    ConfigTransform(Supercell& _scel, const SymOp& _op) :
+      scel(_scel), op(_op) {}
+    
+    Supercell& scel;
+    const SymOp& op;
+  };
+  
+  /// \brief Application results in filling supercell 'scel' with reoriented motif, op*config
+  ///
+  /// Currently only applies to occupation
+  Configuration& apply(const ConfigTransform& f, Configuration& motif);
+  
 }
 
 #endif
