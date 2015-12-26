@@ -342,11 +342,6 @@ namespace CASM {
     else {
       std::cout << "Analyzed new data for " << num_updated << " configurations." << std::endl << std::endl;
 
-      std::cout << "Generating references... " << std::endl << std::endl;
-      /// This also re-writes the config_list.json
-      primclex.generate_references();
-      std::cout << "  DONE" << std::endl << std::endl;
-
       if(relax_log.str().size() > 0) {
         std::cout << "WARNING: Abnormal relaxations were detected:\n" << std::endl
                   << "           *** Final Relaxation Report ***" << std::endl

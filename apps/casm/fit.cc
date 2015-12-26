@@ -120,25 +120,6 @@ namespace CASM {
       config_select = ConfigSelection<false>(primclex, selection);
     }
 
-    // -- count number of selected configurations, and check they all have properties
-    bool ok = true;
-    int N_values = 0;
-    for(auto it = config_select.selected_config_cbegin(); it != config_select.selected_config_cend(); ++it) {
-      if(!it->delta_properties().contains("relaxed_energy")) {
-        std::cerr << "Configuration: " << it->name() << " does not have a formation energy." << std::endl;
-        ok = false;
-      }
-      N_values++;
-    }
-    if(!ok) {
-      std::cerr << "\nPlease check your configurations and re-try." << std::endl;
-      return 1;
-    }
-
-    if(N_values == 0) {
-      std::cerr << "\nDid not find any selected values. Please update your selection and re-try." << std::endl;
-    }
-
     // -- write 'energy' file ----
     {
       DataFormatter<Configuration> formatter(ConfigIO::formation_energy(),
@@ -161,7 +142,7 @@ namespace CASM {
       fs::ofstream sout;
       sout.open(corr_in_file);
       sout << N_corr << " # basis functions\n";
-      sout << N_values << " # training values\n";
+      sout << std::distance(config_select.selected_config_begin(), config_select.selected_config_end()) << " # training values\n";
       sout << "Correlation matrix:\n";
       sout << FormatFlag(sout).print_header(false);
       sout << formatter(config_select.selected_config_cbegin(), config_select.selected_config_cend());

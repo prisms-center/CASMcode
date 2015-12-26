@@ -259,13 +259,13 @@ namespace CASM {
       return configdof().is_strained();
     }
 
-    fs::path get_reference_state_dir() const;
+    //fs::path get_reference_state_dir() const;
 
-    const Properties &ref_properties() const;
+    //const Properties &ref_properties() const;
 
     const Properties &calc_properties() const;
 
-    const DeltaProperties &delta_properties() const;
+    //const DeltaProperties &delta_properties() const;
 
     const Properties &generated_properties() const;
 
@@ -372,9 +372,9 @@ namespace CASM {
     jsonParser &write_param_composition(jsonParser &json) const;
     jsonParser &write_properties(jsonParser &json) const;
 
-    bool reference_states_exist() const;
-    void read_reference_states(Array<Properties> &ref_state_prop, Array<Eigen::VectorXd> &ref_state_comp) const;
-    void generate_reference_scalar(std::string propname, const Array<Properties> &ref_state_prop, const Array<Eigen::VectorXd> &ref_state_comp);
+    //bool reference_states_exist() const;
+    //void read_reference_states(Array<Properties> &ref_state_prop, Array<Eigen::VectorXd> &ref_state_comp) const;
+    //void generate_reference_scalar(std::string propname, const Array<Properties> &ref_state_prop, const Array<Eigen::VectorXd> &ref_state_comp);
 
   };
 
@@ -384,14 +384,27 @@ namespace CASM {
   /// Returns parametric composition, as calculated using PrimClex::param_comp
   Eigen::VectorXd comp(const Configuration& config);
   
-  /// \brief Returns the parametric composition
+  /// \brief Returns the composition, as number of each species per unit cell
   Eigen::VectorXd comp_n(const Configuration& config);
+   
+  /// \brief Returns the vacancy composition, as number per unit cell
+  double n_vacancy(const Configuration& config);
   
-  /// \brief Returns the composition as atom fraction, with [Va] = 0.0, in the order of Structure::get_struc_molecule
+  /// \brief Returns the total number species per unit cell
+  double n_species(const Configuration& config);
+  
+  /// \brief Returns the composition as species fraction, with [Va] = 0.0, in 
+  ///        the order of Structure::get_struc_molecule
   Eigen::VectorXd species_frac(const Configuration& config);
   
   /// \brief Returns the composition as site fraction, in the order of Structure::get_struc_molecule
   Eigen::VectorXd site_frac(const Configuration& config);
+  
+  /// \brief Returns the reference energy, normalized per unit cell
+  double reference_energy(const Configuration& config);
+  
+  /// \brief Returns the reference energy, normalized per species
+  double reference_energy_per_species(const Configuration& config);
   
   /// \brief Returns the formation energy, normalized per unit cell
   double formation_energy(const Configuration& config);

@@ -7,7 +7,7 @@
 #include "casm/clusterography/jsonClust.hh"
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/casm_io/SafeOfstream.hh"
-
+#include "casm/app/AppIO.hh"
 
 namespace CASM {
   //*******************************************************************************************
@@ -17,9 +17,11 @@ namespace CASM {
   PrimClex::PrimClex(const Structure &_prim) :
     prim(_prim),
     global_orbitree(_prim.lattice()) {
-    //prim.generate_factor_group();
+    
+    _init(std::cerr);
+
     return;
-  };
+  }
 
 
   //*******************************************************************************************
@@ -31,8 +33,30 @@ namespace CASM {
     m_settings(_root),
     prim(read_prim(m_dir.prim())),
     global_orbitree(prim.lattice()) {
+    
+    _init(sout);
+    
+  }
+  
+  /// Initialization routines
+  ///  - If !root.empty(), read all saved data to generate all Supercells and Configurations, etc.
+  PrimClex::_init(std::ostream& sout) { 
+    
+    std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
+    
+    m_vacancy_allowed = false;
+    for(int i=0; i<struc_mol_name.size(); ++i) {
+      if(is_vacancy(struc_mol_name[i]) {
+        m_vacancy_allowed = true;
+        m_vacancy_index = false;
+      }
+    }
+    
+    if(root.empty()) {
+      return;
+    }
 
-    //prim.generate_factor_group();
+
     bool any_print = false;
 
     // here add stuff to read directory structure...
@@ -67,6 +91,13 @@ namespace CASM {
         m_has_composition_axes = true;
         m_comp_converter = opt.curr;
       }
+    }
+      
+    // read chemical reference
+    auto chem_ref_path = m_dir.chemical_reference(m_settings.calctype(), m_settings.ref());
+    if(fs::is_regular_file(chem_ref_path)) {
+      sout << "  Read " << chem_ref_path << std::endl;
+      *m_chem_ref = read_chemical_reference(chem_ref_path, prim, 1e-14);
     }
 
     // read supercells
@@ -200,6 +231,19 @@ namespace CASM {
     return m_comp_converter;
   }
 
+  // ** Chemical reference **
+
+  //*******************************************************************************************
+  /// check if ChemicalReference object initialized
+  bool has_chemical_reference() const {
+    return m_chem_ref;
+  }
+
+  //*******************************************************************************************
+  /// const Access ChemicalReference object
+  const ChemicalReference &chemical_reference() const {
+    return *m_chem_ref;
+  }
 
 
   // ** Prim and Orbitree accessors **
@@ -221,6 +265,19 @@ namespace CASM {
   const Array<UnitCellCoord> &PrimClex::get_prim_nlist() const {
     return prim_nlist;
   }
+  
+  //*******************************************************************************************
+  /// returns true if vacancy are an allowed species
+  bool vacancy_allowed() const {
+    return m_vacancy_allowed;
+  }
+    
+  //*******************************************************************************************
+  /// returns the index of vacancies in composition vectors
+  Index vacancy_index() const {
+    return m_vacancy_index;
+  }
+
 
   // ** Supercell and Configuration accessors **
 

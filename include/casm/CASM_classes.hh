@@ -114,9 +114,17 @@
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/ConfigIOSelected.hh"
-
+#include "casm/clex/Norm.hh"
+#include "casm/clex/Reference.hh"
+#include "casm/clex/ChemicalReference.hh"
 
 // Hull
 #include "casm/hull/Hull.hh"
+
+// App
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/ProjectBuilder.hh"
+#include "casm/app/AppIO.hh"
 
 #endif

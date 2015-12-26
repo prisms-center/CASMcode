@@ -77,16 +77,6 @@ namespace CASM {
       return _config.delta_properties().contains("relaxed_energy");
     }
 
-    //"Green-Lagrange strain of dft-relaxed configuration, relative to the ideal crystal.
-    //Ordered as [E(0,0), E(1,1), E(2,2), E(1,2), E(0,2), E(0,1)].  Accepts index as argument on interval [0,5]"
-    //std::vector<double> get_config_relaxation_strain(const Configuration &_config) {
-    //return _config.calc_properties().contains("relaxation_strain") ? _config.calc_properties()["relaxation_strain"].get<std::vector<double> >() : std::vector<double>(6, NAN);
-    //}
-
-    //bool has_config_relaxation_strain(const Configuration &_config) {
-    //return _config.calc_properties().contains("relaxation_strain");
-    //}
-
     //"Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)"
     double get_config_rms_force(const Configuration &_config) {
       return _config.calc_properties().contains("rms_force") ? _config.calc_properties()["rms_force"].get<double>() : NAN;
@@ -122,16 +112,6 @@ namespace CASM {
     bool has_config_volume_relaxation(const Configuration &_config) {
       return _config.calc_properties().contains("volume_relaxation");
     }
-
-    //"Change in volume due to relaxation, expressed as the ratio V/V_0."
-    double get_config_dist_from_hull(const Configuration &_config) {
-      return _config.generated_properties().contains("dist_from_hull") ? _config.generated_properties()["dist_from_hull"].get<double>() : NAN;
-    }
-
-    bool has_config_dist_from_hull(const Configuration &_config) {
-      return _config.generated_properties().contains("dist_from_hull");
-    }
-
 
     double get_config_deformation_change(const Configuration &_config) {
       return std::abs(_config.deformation().determinant()) - 1.0;

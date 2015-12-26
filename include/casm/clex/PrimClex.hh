@@ -9,22 +9,21 @@
 
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/DoFManager.hh"
-#include "casm/clex/ParamComposition.hh"
+#include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Clexulator.hh"
+#include "casm/clex/ChemicalReference.hh"
+#include "casm/misc/cloneable_ptr.hh"
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/app/AppIO.hh"
 
 /// Cluster expansion class
 namespace CASM {
 
-  class ParamComposition;
   class ECIContainer;
 
   template<typename T, typename U> class ConfigIterator;
-  
   
   /// \defgroup Clex
   ///    
@@ -46,6 +45,8 @@ namespace CASM {
     std::string m_name;
 
     Structure prim;
+    bool m_vacancy_allowed;
+    Index m_vacancy_index;
 
     mutable DoFManager m_dof_manager;
 
@@ -77,6 +78,10 @@ namespace CASM {
     ///   parametric composition and mol composition
     bool m_has_composition_axes = false;
     CompositionConverter m_comp_converter;
+    
+    /// ChemicalReference specifies a reference for formation energies, chemical
+    /// potentials, etc.
+    notstd::cloneable_ptr<ChemicalReference> m_chem_ref;
 
 
     /// Stores the 'delta' UnitCellCoord needed to determine all the
@@ -174,11 +179,19 @@ namespace CASM {
 
     // ** Composition accessors **
 
-    /// const Access CompositionConverter object
+    /// check if CompositionConverter object initialized
     bool has_composition_axes() const;
 
     /// const Access CompositionConverter object
     const CompositionConverter &composition_axes() const;
+    
+    // ** Chemical reference **
+
+    /// check if ChemicalReference object initialized
+    bool has_chemical_reference() const;
+
+    /// const Access ChemicalReference object
+    const ChemicalReference &chemical_reference() const;
 
 
     // ** Prim and Orbitree accessors **
@@ -191,7 +204,12 @@ namespace CASM {
 
     ///const access to the primitive neighbor list
     const Array<UnitCellCoord> &get_prim_nlist() const;
-
+    
+    /// returns true if vacancy are an allowed species
+    bool vacancy_allowed() const;
+    
+    /// returns the index of vacancies in composition vectors
+    Index vacancy_index() const;
 
     // ** Supercell and Configuration accessors **
 
@@ -355,24 +373,24 @@ namespace CASM {
 
     /// Delete 'properties.ref_state.X.json' files,
     /// Then call 'clear_reference_properties'
-    void clear_reference_states();
+    //void clear_reference_states();
 
     /// Sets the root reference state to be the calculated properties of the chosen config
     /// Calls 'clear_reference_properties'
-    void set_reference_state(int refid, const Configuration &config);
+    //void set_reference_state(int refid, const Configuration &config);
 
     /// Check that it is valid to use 'config' as reference state 'refid', returns bool and if false, sets 'reason_invalid'
     ///   Currently checks:
     ///     1) that the necessary properties have been calculated,
     ///     2) that the same Configuration is not being used twice
     ///   Needs to check that reference states span composition space
-    bool valid_reference_state(int refid, const Configuration &config, std::string &reason_invalid) const;
+    //bool valid_reference_state(int refid, const Configuration &config, std::string &reason_invalid) const;
 
     /// find calculated configurations closest to
     /// [0, 0, 0, ...], [1, 0, 0, ...], [0, 1, 0, ...], [0, 0, 1, ...], ...
     /// and set them as the root reference states, also calls regenerate_references
     /// Clears reference states and properties whether or not it succeeds
-    void set_reference_state_auto();
+    //void set_reference_state_auto();
 
     /// Clear 'reference' and 'delta' properties from all Configurations
     /// Re-write all Configurations, updating:
@@ -380,7 +398,7 @@ namespace CASM {
     ///   properties.calc.json
     ///   properties.ref.json
     ///   properties.delta.json
-    void generate_references();
+    //void generate_references();
 
     Clexulator global_clexulator() const;
     ECIContainer global_eci(std::string clex_name) const;
