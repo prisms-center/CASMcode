@@ -70,6 +70,7 @@ EnergySet::EnergySet() {
   Nstruct_set = 0;
   set_Nstruct_on();
   set_E_vec();
+  m_format = "text";
 }
 
 EnergySet::EnergySet(BP::BP_Vec<Energy> energy_list) {
@@ -82,6 +83,7 @@ EnergySet::EnergySet(BP::BP_Vec<Energy> energy_list) {
 
   set_Nstruct_on();
   set_E_vec();
+  m_format = "text";
 }
 
 EnergySet::EnergySet(string energy_filename) {

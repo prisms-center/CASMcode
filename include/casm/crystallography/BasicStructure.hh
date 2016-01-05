@@ -24,6 +24,9 @@ namespace CASM {
   class BasicStructure {
   protected:
     Lattice m_lattice;
+    
+    ///Specifies whether selectice dynamics is on or of for DFT calculations
+    bool SD_flag;
 
   public: // PUBLIC DATA MEMBERS -- (long-term, at least lattice should be made private and only updated via Structure::set_lattice)
     /// User-specified name of this Structure
@@ -35,7 +38,7 @@ namespace CASM {
 
   private: // PRIVATE METHODS
 
-    void main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option);
+    void main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option) const;
 
   public: // PUBLIC METHODS
 
@@ -172,17 +175,17 @@ namespace CASM {
     virtual void read(std::istream &stream);  //John do this
 
     // print BasicStructure, listing all possible molecules on each site
-    void print(std::ostream &stream, COORD_TYPE mode = FRAC); //John do this too, modified by BP
+    void print(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John do this too, modified by BP
     //void print5(std::ostream &stream, COORD_TYPE mode = FRAC); //John G 050513, modified by BP - No longer allowed
-    void print5(std::ostream &stream, COORD_TYPE mode = FRAC, int Va_mode = 0, char term = 0, int prec = 7, int pad = 5) const; // added by Michael
+    void print5(std::ostream &stream, COORD_TYPE mode = FRAC, int Va_mode = 0, char term = '\n', int prec = 7, int pad = 5) const; // added by Michael
 
     // print BasicStructure, listing current occupying molecules on each site
-    void print_occ(std::ostream &stream, COORD_TYPE mode = FRAC); //John do this too, modified by BP
-    void print5_occ(std::ostream &stream, COORD_TYPE mode = FRAC); //John G 050513, modified by BP
+    void print_occ(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John do this too, modified by BP
+    void print5_occ(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John G 050513, modified by BP
 
     /// Output other formats
-    void print_xyz(std::ostream &stream);
-    void print_cif(std::ostream &stream);
+    void print_xyz(std::ostream &stream) const;
+    void print_cif(std::ostream &stream) const;
 
     jsonParser &to_json(jsonParser &json) const;
 

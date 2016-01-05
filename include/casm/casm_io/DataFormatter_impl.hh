@@ -140,7 +140,33 @@ namespace CASM {
 
     return json;
   }
+  
+  //******************************************************************************
 
+  template<typename DataObject>
+  jsonParser &DataFormatter<DataObject>::to_json_arrays(const DataObject &_obj, jsonParser &json) const {
+    if(!m_initialized) {
+      _initialize(_obj);
+    }
+    
+    jsonParser::iterator it;
+    jsonParser::iterator end = json.end();
+    
+    for(Index i = 0; i < m_data_formatters.size(); i++) {
+      jsonParser tmp;
+      m_data_formatters[i]->to_json(_obj, tmp);
+      it = json.find(m_data_formatters[i]->short_header(_obj));
+      if(it == end) {
+        json[m_data_formatters[i]->short_header(_obj)].put_array().push_back(tmp);
+      }
+      else {
+        it->push_back(tmp);
+      }
+    }
+
+    return json;
+  }
+  
   //******************************************************************************
 
   template<typename DataObject>

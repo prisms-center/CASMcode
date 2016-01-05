@@ -108,6 +108,10 @@ namespace CASM {
       for(Index i = 0; i < json["branches"].size(); i++) {
         from_json(jsonHelper(tree[i], struc), json["branches"][i]);
       }
+      if(json.contains("bspecs")) {
+        tree.set_bspecs(json["bspecs"]);
+      }
+      tree.collect_basis_info(struc);
     }
 
     catch(...) {
@@ -130,6 +134,7 @@ namespace CASM {
     for(Index i = 0; i < tree.size(); i++) {
       json["branches"].push_back(jsonHelper(tree[i], struc));
     }
+    json["bspecs"] = tree.bspecs();
     return json;
   }
 

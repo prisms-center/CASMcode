@@ -19,11 +19,7 @@ namespace CASM {
   class SiteCluster : public GenericCluster<Site> {
     Array<Array<Index> > m_trans_nlist_inds;
   public:
-    BasisSet ccd_basis;
     BasisSet clust_basis;
-    /// Evaluate every permutation of basis function products
-    Array<Tensor<double> >occupation_basis_tensors; //John G 011013
-    Array<double> eci_coeffs;
 
     //~~~~~~~~~
 
@@ -36,7 +32,7 @@ namespace CASM {
 
     void push_back(const Site &new_site);
 
-    void fill_discrete_basis_tensors();   //John G 011013
+    //void fill_discrete_basis_tensors();   //John G 011013
     void prepare_prototype();
 
     /// Use this method (and only this method) to set the nlist ind of each site
@@ -51,7 +47,7 @@ namespace CASM {
     const Array<Index> &trans_nlist(Index i) const;
     void add_trans_nlist(const Array<Index> &new_nlist);
 
-    void generate_clust_basis(Array<BasisSet const *> global_args, Index max_poly_order = -1);
+    void generate_clust_basis(Array<BasisSet const *> local_args, Array<BasisSet const *> global_args, Index max_poly_order = -1);
 
     inline void decorate(const Array<int> decor);
     ReturnArray<Array<int> > get_decor_map() const;

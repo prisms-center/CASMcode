@@ -398,7 +398,7 @@ namespace CASM {
         {
           if(fs::exists(config_path / "CSPECS"))
             fs::remove(config_path / "CSPECS");
-          fs::copy_file(fs::path(CSPECS), config_path / "CSPECS");
+          fs::copy(fs::path(CSPECS), config_path / "CSPECS");
         }
 
         // write CLUST
@@ -719,6 +719,21 @@ namespace CASM {
     m_id(RHS.m_id) {
   }
 
+  //*******************************************************************************
+
+  Supercell::Supercell(PrimClex *_prim, const Eigen::Matrix3i &transf_mat_init) :
+    primclex(_prim),
+    real_super_lattice((*primclex).get_prim().lattice().coord_trans(FRAC) * Matrix3<int>(transf_mat_init)),
+    recip_prim_lattice(real_super_lattice.get_reciprocal()),
+    m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
+    recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
+    m_perm_symrep_ID(-1),
+    transf_mat(transf_mat_init) {
+    scaling = 1.0;
+    generate_name();
+    //    fill_reciprocal_supercell();
+  }
+  
   //*******************************************************************************
 
   Supercell::Supercell(PrimClex *_prim, const Matrix3<int> &transf_mat_init) :

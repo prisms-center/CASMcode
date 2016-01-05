@@ -382,7 +382,7 @@ namespace CASM {
 
   //********************************************************************
 
-  /// b_index is the basis site index, f_index is the index of the configurational site basis function in Site::occupant_basis
+  /// b_index is the basis site index
   template<typename ClustType>
   ReturnArray<std::string>  GenericOrbit<ClustType>::flower_function_cpp_strings(const Array<FunctionVisitor *> &labelers, Index b_index) {
     Array<std::string> formulae(prototype.clust_basis.size(), std::string());
@@ -434,17 +434,19 @@ namespace CASM {
 
   /// b_index is the basis site index, f_index is the index of the configurational site basis function in Site::occupant_basis
   template<typename ClustType>
-  ReturnArray<std::string>  GenericOrbit<ClustType>::delta_occfunc_flower_function_cpp_strings(const Array<FunctionVisitor *> &labelers, Index b_index, Index f_index) {
+  ReturnArray<std::string>  GenericOrbit<ClustType>::delta_occfunc_flower_function_cpp_strings(BasisSet site_basis, // passed by value because we use it as a temporary
+      const Array<FunctionVisitor *> &labelers,
+      Index b_index,
+      Index f_index) {
     Array<std::string> formulae(prototype.clust_basis.size(), std::string());
     std::string suffix;
     Index ib;
-
+    Array<Index> old_id(1, b_index), new_id(1, 0);
     //normalize by multiplicity (by convention)
     if(size()*prototype.size() > 1) {
       formulae.resize(prototype.clust_basis.size(), std::string("("));
       suffix = ")/" + std::to_string(size()) + ".0";
     }
-
 
     for(Index ne = 0; ne < size(); ne++) {
       //std::cout << " **** for ne = " << ne << ":\n";
@@ -454,7 +456,12 @@ namespace CASM {
           continue;
         //std::cout << " **** for translist: " << at(ne).trans_nlist(nt) << ":\n";
         at(ne).set_nlist_inds(at(ne).trans_nlist(nt));
-        BasisSet quotient_basis = at(ne).clust_basis.poly_quotient_set(at(ne)[ib].occupant_basis()[f_index]);
+
+        new_id[0] = at(ne)[ib].nlist_ind();
+        site_basis.update_dof_IDs(old_id, new_id);
+        old_id = new_id;
+
+        BasisSet quotient_basis = at(ne).clust_basis.poly_quotient_set(site_basis[f_index]);
         for(Index nf = 0; nf < quotient_basis.size(); nf++) {
           if(!quotient_basis[nf])
             continue;

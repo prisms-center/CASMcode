@@ -158,6 +158,7 @@ namespace CASM {
     //Supercell(PrimClex *_prim);
     Supercell(const Supercell &RHS);
     Supercell(PrimClex *_prim, const Lattice &superlattice);
+    Supercell(PrimClex *_prim, const Eigen::Matrix3i &superlattice_matrix);
     Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix);
     //Supercell(PrimClex *_prim, const Eigen::Matrix3i &superlattice_matrix);   //I wish
     //Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix, const Lattice &superlattice, const int warningFlag = 1);

@@ -15,8 +15,8 @@ namespace CASM {
             << "Property values are output in column-separated (default) or JSON format.  By default, " << std::endl
             << "entries for 'name' and 'selected' values are included in the output. " << std::endl
             << std::endl;
-    for(std::string &help_opt : help_opt_vec){
-      boost::trim(help_opt);
+
+    for(const std::string &help_opt : help_opt_vec) {
       if(help_opt == "operators" || help_opt == "operator") {
         _stream << "Available operators for use within queries:" << std::endl;
         ConfigIOParser::print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
@@ -34,16 +34,16 @@ namespace CASM {
 
     std::string new_alias;
     fs::path config_path, out_path;
-    std::vector<std::string> columns,help_opt_vec;
+    std::vector<std::string> columns, help_opt_vec;
     po::variables_map vm;
     bool json_flag(false), no_header(false), verbatim_flag(false);
 
     po::options_description desc("'casm query' usage");
     // Set command line options using boost program_options
     desc.add_options()
-      ("help,h", po::value<std::vector<std::string> >(&help_opt_vec)->multitoken()->zero_tokens(), "Print general help. Use '--help properties' for a list of query-able properties or '--help operators' for a list of query operators")
+    ("help,h", po::value<std::vector<std::string> >(&help_opt_vec)->multitoken()->zero_tokens(), "Print general help. Use '--help properties' for a list of query-able properties or '--help operators' for a list of query operators")
     ("config,c", po::value<fs::path>(&config_path), "config_list files containing configurations for which to collect energies")
-    ("columns,k", po::value<std::vector<std::string> >(&columns)->multitoken(), "List of values you want printed as columns")
+    ("columns,k", po::value<std::vector<std::string> >(&columns)->multitoken()->zero_tokens(), "List of values you want printed as columns")
     ("learn,l", po::value<std::string>(&new_alias), "Teach casm a new command that will persist within this project. Ex: 'casm query --learn is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")
     ("json,j", po::value(&json_flag)->zero_tokens(), "Print in JSON format (CSV otherwise, unless output extension is .json or .JSON)")
     ("verbatim,v", po::value(&verbatim_flag)->zero_tokens(), "Print exact properties specified, without prepending 'name' and 'selected' entries")
@@ -53,8 +53,8 @@ namespace CASM {
 
 
     try {
-      po::store(po::parse_command_line(argc, argv, desc),vm); // can throw
-      
+      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+
       /** Start --help option
        */
       if(vm.count("help")) {
@@ -88,7 +88,7 @@ namespace CASM {
       return 1;
     }
 
-    if(!vm.count("learn")&&!vm.count("columns")){
+    if(!vm.count("learn") && !vm.count("columns")) {
       std::cout << std::endl << desc << std::endl;
     }
 

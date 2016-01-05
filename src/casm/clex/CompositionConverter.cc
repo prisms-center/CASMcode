@@ -16,6 +16,12 @@ namespace CASM {
   CompositionConverter::size_type CompositionConverter::independent_compositions() const {
     return m_to_x.rows();
   }
+  
+  /// \brief Composition variable names: "a", "b", ...
+  std::string CompositionConverter::comp_var(size_type i) const {
+    return std::string(1, (char) (i + (int) 'a'));
+  }
+  
 
   /// \brief The order of components in mol composition vectors
   std::vector<std::string> CompositionConverter::components() const {

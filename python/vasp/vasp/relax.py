@@ -321,8 +321,7 @@ class Relax(object):
 
             # if it is a final constant volume run
             if io.get_incar_tag("SYSTEM", self.rundir[-1]) != None:
-                if io.get_incar_tag("NSW", self.rundir[-1]) == 0 and \
-                   io.get_incar_tag("SYSTEM", self.rundir[-1]).split()[-1].strip().lower() == "final":
+                if io.get_incar_tag("SYSTEM", self.rundir[-1]).split()[-1].strip().lower() == "final":
                 # if io.get_incar_tag("ISIF", self.rundir[-1]) == 2 and \
                 #    io.get_incar_tag("NSW", self.rundir[-1]) == 0 and \
                 #    io.get_incar_tag("ISMEAR", self.rundir[-1]) == -5:

@@ -33,7 +33,6 @@ namespace CASM {
     ///Specifies whether selectice dynamics is on or of for DFT calculations
     bool SD_flag;
 
-
   public: //PUBLIC DATA MEMBERS (Public for now)
 
     /// *** Inherited from BasicStructure<Site>
@@ -188,9 +187,6 @@ namespace CASM {
     Array<Array<Array<double> > > get_NN_table(const double &maxr);
     //\John G 050513
 
-    ///Populate basis set of every site in the structure
-    void fill_occupant_bases(const char &basis_type);	//John G 011013
-
     ///Add vacuum and shift c vector. The vacuum is always added parallel to c, and the shift vector should also be parallel to the ab plane (x,y,0)
     void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Vector3<double> shift, COORD_TYPE mode) const;
     void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Coordinate shift) const;  //Because Anton thought a coordinate would be better
@@ -210,22 +206,6 @@ namespace CASM {
 
 
     // ****Input/Output****
-
-    //CASM canonical input/output
-    void read(std::istream &stream);  //John do this
-
-    // print Structure, listing all possible molecules on each site
-    void print(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John do this too, modified by BP
-
-    void print5(std::ostream &stream, COORD_TYPE mode = FRAC, int Va_mode = 0, char term = 0, int prec = 7, int pad = 5) const; // added by Michael
-
-    // print Structure, listing current occupying molecules on each site
-    void print_occ(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John do this too, modified by BP
-    void print5_occ(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John G 050513, modified by BP
-
-    /// Output other formats
-    void print_xyz(std::ostream &stream) const;
-    void print_cif(std::ostream &stream);
 
     /// For each symmetrically distinct site, print the symmetry operations that map it onto itself
     void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag);

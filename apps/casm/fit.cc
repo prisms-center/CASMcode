@@ -139,17 +139,10 @@ namespace CASM {
       std::cerr << "\nDid not find any selected values. Please update your selection and re-try." << std::endl;
     }
 
-    std::cout << "Calculating convex hull for selected configurations..." << std::endl << std::endl;
-    jsonParser hulljson;
-    hulljson = update_hull_props(primclex, config_select.selected_config_begin(), config_select.selected_config_end());
-    std::cout << "  DONE." << std::endl << std::endl;
-
     // -- write 'energy' file ----
     {
       DataFormatter<Configuration> formatter(ConfigIO::formation_energy(),
                                              ConfigIO::constant_value("weight", 1.0),
-                                             ConfigIO::param_composition(),
-                                             ConfigIO::dist_from_hull(),
                                              ConfigIO::configname());
 
       fs::ofstream sout;

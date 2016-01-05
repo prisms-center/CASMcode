@@ -22,6 +22,7 @@ namespace CASM {
     ("help,h", "Write help documentation")
     ("update,u", "Update basis set")
     ("orbits", "Pretty-print orbit prototypes")
+    ("functions", "Pretty-print prototype cluster functions for each orbit")
     ("clusters", "Pretty-print all clusters")
     ("force,f", "Force overwrite");
 
@@ -81,9 +82,19 @@ namespace CASM {
         return 1;
       }
 
-      bool any_existing_files = false;
 
-      auto lambda = [&](const fs::path & p) {
+      std::vector<fs::path> filepaths({dir.clust(set.bset()),
+                                       dir.eci_in(set.bset()),
+                                       dir.clexulator_src(set.name(), set.bset()),
+                                       dir.clexulator_o(set.name(), set.bset()),
+                                       dir.clexulator_so(set.name(), set.bset()),
+                                       dir.prim_nlist(set.bset())
+                                      });
+
+      bool any_existing_files = false;
+      std::for_each(filepaths.cbegin(),
+                    filepaths.cend(),
+      [&](const fs::path & p) {
         if(fs::exists(p)) {
           if(!any_existing_files) {
             std::cout << "Existing files:\n";
@@ -91,14 +102,7 @@ namespace CASM {
           }
           std::cout << "  " << p << "\n";
         }
-      };
-
-      lambda(dir.clust(set.bset()));
-      lambda(dir.eci_in(set.bset()));
-      lambda(dir.clexulator_src(set.name(), set.bset()));
-      lambda(dir.clexulator_o(set.name(), set.bset()));
-      lambda(dir.clexulator_so(set.name(), set.bset()));
-      lambda(dir.prim_nlist(set.bset()));
+      });
 
       std::cout << "\n";
 
@@ -123,22 +127,17 @@ namespace CASM {
       try {
         jsonParser bspecs_json;
         bspecs_json.read(dir.bspecs(set.bset()));
-        std::string basis_functions = bspecs_json["basis_functions"]["site_basis_functions"].get<std::string>();
-
-        std::cout << "Using " << basis_functions << " site basis functions." << std::endl << std::endl;
-        prim.fill_occupant_bases(basis_functions[0]);
 
         std::cout << "Generating orbitree: \n";
         tree = make_orbitree(prim, bspecs_json);
         std::cout << "  DONE.\n\n";
 
-        tree.collect_basis_info(prim);
         tree.generate_clust_bases();
       }
       catch(std::exception &e) {
         std::cerr << "\n\nError reading: " << dir.bspecs(set.bset()) << std::endl
                   << "               " << e.what() << std::endl;
-        throw;
+        return 1;
       }
 
       // -- write eci.in ----------------
@@ -173,7 +172,7 @@ namespace CASM {
       // -- clear correlations for all configurations
 
     }
-    else if(vm.count("orbits") || vm.count("clusters")) {
+    else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
 
       DirectoryStructure dir(root);
       ProjectSettings set(root);
@@ -197,6 +196,11 @@ namespace CASM {
       if(vm.count("clusters")) {
         std::cout << "\n***************************\n" << std::endl;
         primclex.get_global_orbitree().print_full_clust(std::cout);
+        std::cout << "\n***************************\n" << std::endl;
+      }
+      if(vm.count("functions")) {
+        std::cout << "\n***************************\n" << std::endl;
+        primclex.get_global_orbitree().print_proto_clust_funcs(std::cout);
         std::cout << "\n***************************\n" << std::endl;
       }
     }

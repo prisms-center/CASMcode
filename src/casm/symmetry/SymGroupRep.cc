@@ -462,9 +462,11 @@ namespace CASM {
     std::vector<Eigen::MatrixXd> wedges(sdirs.size());
     double best_proj, tproj;
     multiplicities.clear();
+
     for(Index s = 0; s < sdirs.size(); s++) {
       wedges[s] = Eigen::MatrixXd::Zero(dim, sdirs[s].size());
       wedges[s].col(0) = sdirs[s][0][0];
+      multiplicities.push_back(sdirs[s][0].size());
       for(Index i = 1; i < sdirs[s].size(); i++) {
         Index j_best = 0;
         best_proj = (wedges[s].transpose() * sdirs[s][i][0]).sum();

@@ -76,7 +76,7 @@ namespace CASM {
 
 
   template<class T>
-  std::istream &operator>>(const std::vector<T> &vec, std::istream &_in) {
+  std::istream &operator>>(std::istream &_in, std::vector<T> &vec) {
     std::string line;
     std::getline(_in,line,'\n');
     std::stringstream tss(line);

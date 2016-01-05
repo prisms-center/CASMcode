@@ -36,6 +36,7 @@ namespace CASM {
       ("configname", po::value<std::string>(&configname), "Name of a configuration. For ex. \"SCEL4_2_2_1_0_0_0/4\".")
       ("scelname", po::value<std::string>(&scelname), "Name of supercell. For ex. \"SCEL4_2_2_1_0_0_0\".")
       ("unitcell", po::value<std::string>(&unitscelname), "Name of supercell to use as unit cell. For ex. \"SCEL2_2_1_1_0_0_0\".")
+      ("add-canonical,a", "Will add the generated super configuration in it's canonical form in the equivalent niggli supercell.")
       ("vasp5", "Print using VASP5 style (include atom name line)")
       ("tol", po::value<double>(&tol)->default_value(CASM::TOL), "Tolerance used for checking symmetry")
       ("coord", po::value<COORD_TYPE>(&coordtype)->default_value(CASM::CART), "Coord mode: FRAC=0, or CART=1");
@@ -176,8 +177,10 @@ namespace CASM {
         const Configuration &con = primclex.configuration(configname);
         const Supercell &scel = con.get_supercell();
         con.print(ss, FRAC);
+
+        std::istringstream iss(ss.str());
         BasicStructure<Site> unit;
-        unit.read(ss);
+        unit.read(iss);
 
         std::cout << "Unit structure:";
         std::cout << "\n------\n";
@@ -203,6 +206,46 @@ namespace CASM {
           super.print(std::cout);
         }
         std::cout << "\n------\n";
+        
+        if(vm.count("add-canonical")) {
+          
+          int map_opt = ConfigMapper::none;
+          double tol = TOL;
+          double vol_tol = 0.25;
+          double lattice_weight = 0.5;
+          ConfigMapper configmapper(primclex, lattice_weight, vol_tol, map_opt, tol);
+
+          std::string imported_name;
+          Eigen::Matrix3d cart_op;
+          std::vector<Index> best_assignment;
+          jsonParser fullrelax_data;
+          if(configmapper.import_structure_occupation(super, 
+                                                      imported_name, 
+                                                      fullrelax_data, 
+                                                      best_assignment, 
+                                                      cart_op, 
+                                                      true)) {
+            std::cout << "  The configuration was imported successfully as " 
+                      << imported_name << std::endl << std::endl;
+            
+          }
+          else {
+            std::cout << "  The configuration was mapped onto pre-existing equivalent structure " 
+                      << imported_name << std::endl << std::endl;
+          }
+          
+          jsonParser json_src;
+          json_src["supercell_of"] = configname;
+          primclex.configuration(imported_name).push_back_source(json_src);
+          
+          //Update directories
+          std::cout << "  Writing SCEL..." << std::endl;
+          primclex.print_supercells();
+          std::cout << "  Writing config_list..." << std::endl << std::endl;
+          primclex.write_config_list();
+          std::cout << "  DONE" << std::endl << std::endl;
+
+        }
 
         return 0;
 

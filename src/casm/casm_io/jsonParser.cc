@@ -398,7 +398,28 @@ namespace CASM {
       throw;
     }
   }
-
+  
+  /// Return the location at which jsonParser 'A' != 'B' as a boost::filesystem::path
+  boost::filesystem::path find_diff(const jsonParser &A, const jsonParser &B, boost::filesystem::path diff) {
+    auto A_it = A.cbegin();
+    auto B_it = B.cbegin();
+    while(A_it != A.cend()) {
+      if(*A_it != *B_it) {
+        if( A.is_obj() && B.is_obj()) {
+          return find_diff(*A_it, *B_it, diff / A_it.name() );
+        }
+        else if( A.is_array() && B.is_array()) {
+          std::stringstream ss;
+          ss << "[" << std::distance(A.cbegin(), A_it) << "]";
+          return find_diff(*A_it, *B_it, diff / ss.str());
+        }
+        return diff;
+      }
+      ++A_it;
+      ++B_it;
+    }
+    return diff;
+  } 
 
   /// Returns array size if *this is a JSON array, object size if *this is a JSON object, 1 otherwise
   jsonParser::size_type jsonParser::size() const {

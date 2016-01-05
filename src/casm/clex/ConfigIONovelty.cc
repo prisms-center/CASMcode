@@ -78,7 +78,7 @@ namespace CASM {
       VectorDataStream<double> tstr;
       tstr << m_format(_config);
       Eigen::Map<const Eigen::VectorXd> corr(tstr.vector().data(), tstr.vector().size());
-      return sqrt((corr - m_avg_corr).transpose() * m_gram_mat * (corr - m_avg_corr));
+      return sqrt(double((corr - m_avg_corr).transpose() * m_gram_mat * (corr - m_avg_corr)));
     }
   }
 }

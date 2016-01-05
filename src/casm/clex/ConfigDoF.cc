@@ -3,6 +3,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/clex/Correlation.hh"
 #include "casm/clex/Clexulator.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 
 
@@ -10,6 +11,7 @@ namespace CASM {
 
   ConfigDoF::ConfigDoF(Index _N, double _tol) :
     m_N(_N),
+    m_occupation(m_N),
     m_deformation(Eigen::Matrix3d::Identity()),
     m_is_strained(false),
     m_tol(_tol){
@@ -114,6 +116,7 @@ namespace CASM {
       std::cerr << "CRITICAL ERROR: In ConfigDoF::set_occupation(), attempting to set occupation to size " << new_occupation.size() << ",\n"
                 << "                which does not match initialized size of ConfigDoF -> " << size() << "\n"
                 << "                Exiting...\n";
+      assert(0);
       exit(1);
     }
 
@@ -131,6 +134,7 @@ namespace CASM {
       std::cerr << "CRITICAL ERROR: In ConfigDoF::set_displacement(), attempting to set displacement to size " << new_displacement.cols() << ",\n"
                 << "                which does not match initialized size of ConfigDoF -> " << size() << "\n"
                 << "                Exiting...\n";
+      assert(0);
       exit(1);
     }
 
@@ -660,6 +664,7 @@ namespace CASM {
       std::cerr << "CRITICAL ERROR: In ConfigDoF::from_json(), parsing displacement having size " << displacement().cols() << ",\n"
                 << "                which does not match initialized size of ConfigDoF -> " << size() << "\n"
                 << "                Exiting...\n";
+      assert(0);
       exit(1);
     }
 
@@ -750,15 +755,148 @@ namespace CASM {
 
     return correlations;
   }
+  
+  /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
+  Eigen::VectorXd correlations_vec(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator) {
+
+    //Size of the supercell will be used for normalizing correlations to a per primitive cell value
+    int scel_vol = scel.volume();
+
+    Eigen::VectorXd correlations = Eigen::VectorXd::Zero(clexulator.corr_size());
+
+    //Inform Clexulator of the bitstring
+
+    //TODO: This will probably get more complicated with displacements and stuff
+    clexulator.set_config_occ(configdof.occupation().begin());
+    //mc_clexor.set_config_disp(mc_confdof.m_displacements.begin());   //or whatever
+    //mc_clexor.set_config_strain(mc_confdof.m_strain.begin());   //or whatever
+
+    //Holds contribution to global correlations from a particular neighborhood
+    Eigen::VectorXd tcorr = correlations;
+    //std::vector<double> corr(clexulator.corr_size(), 0.0);
+
+    for(int v = 0; v < scel_vol; v++) {
+
+      //Point the Clexulator to the right neighborhood
+      clexulator.set_nlist(scel.get_nlist(v).begin());
+
+      //Fill up contributions
+      clexulator.calc_global_corr_contribution(tcorr.data());
+
+      correlations += tcorr;
+
+    }
+
+    correlations /= (double) scel_vol;
+    
+    return correlations;
+  }
+
+  /// \brief Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::get_struc_molecule()
+  ReturnArray<int> get_num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
+    
+    // [basis_site][site_occupant_index]
+    Array< Array<int> > convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
+
+    // create an array to count the number of each molecule
+    Array<int> num_each_molecule(scel.get_prim().get_struc_molecule().size(), 0);
+
+    // count the number of each molecule
+    for(Index i = 0; i < configdof.size(); i++) {
+      num_each_molecule[ convert[ scel.get_b(i) ][ configdof.occ(i)] ]++;
+    }
+
+    return num_each_molecule;
+  }
+  
+  /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::get_struc_molecule()
+  Eigen::VectorXi get_num_each_molecule_vec(const ConfigDoF &configdof, const Supercell &scel) {
+    
+    // [basis_site][site_occupant_index]
+    Array< Array<int> > convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
+
+    // create an array to count the number of each molecule
+    Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.get_prim().get_struc_molecule().size());
+
+    // count the number of each molecule
+    for(Index i = 0; i < configdof.size(); i++) {
+      num_each_molecule(convert[ scel.get_b(i) ][ configdof.occ(i)] )++;
+    }
+
+    return num_each_molecule;
+  }
+  
+  /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
+  Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel) {
+    return get_num_each_molecule_vec(configdof, scel).cast<double>() / scel.volume();
+  }
+  
+  
+  /// \brief Return a super ConfigDoF (occupation only)
+  ///
+  /// Returns the ConfigDoF that is the result of tiling the 'motif' Configuration in a supercell created 
+  /// from the 'primclex' and transformation matrix 'transf_mat'. Only occupation is considered
+  ///
+  /// \throws if not possible to tile 'motif' in the specified supercell
+  ///
+  ConfigDoF super_configdof_occ(PrimClex &primclex, const Eigen::Matrix3i& transf_mat, const std::string &motif_configname) {
+    
+    Matrix3<int> super_mat(transf_mat);
+    
+    //we check to make sure it can be tiled onto the supercell.
+    Lattice scel_lat(primclex.get_prim().lattice().make_supercell(super_mat));
+    
+    //This matrix times the motif is the supercell
+    Matrix3<double> ttrans_mat_motif;                                                     
+    
+    //This is the motif config lattice
+    Lattice motif_lat(primclex.configuration(motif_configname).get_supercell().get_real_super_lattice());       
 
 
+    //Exit if lattices are not compatible
+    if(!scel_lat.is_supercell_of(motif_lat, ttrans_mat_motif)) {
+      throw std::runtime_error(
+        std::string("Error in 'super_configdof(PrimClex &primclex, const Eigen::Matrix3i& transf_mat, std::string &motif_configname)'\n") + 
+                    "The specified Configuration cannot be tiled onto the specified supercell.");
+    }
 
-  //ConfigDoF &apply(const Permutation &perm, ConfigDoF &dof) {
-  //  //apply(perm, dof.occupation);        //Apply permutation to occupation
-  //  //apply(perm, dof.displacement);      //Apply permutation to displacement (???)
-  //  //apply(perm, dof.id);                //Apply permutation to id (???)
-  //  return dof;
-  //}
+    // If they are compatible, create the supercell
+    Supercell tscel(&primclex, super_mat);
+
+    // Create a PrimGrid linking the prim and the motif each to the supercell
+    // So we can tile the decoration of the motif config onto the supercell correctly
+    PrimGrid prim_grid(motif_lat, scel_lat); 
+    
+    Configuration &motif_config = primclex.configuration(motif_configname);
+
+    // For each site in the motif, translate by all possible translations from prim_grid, 
+    // index in the mc_prim_prim, and use index to assign occupation
+    
+    // std::vector of occupations in the MonteCarlo cell
+    Array<int> tscel_occ(motif_config.size()*prim_grid.size()); 
+    
+    for(Index s = 0 ; s < motif_config.size() ; s++) {
+      for(Index i = 0 ; i < prim_grid.size() ; i++) {
+        
+        Index prim_motif_tile_ind = tscel.prim_grid().find(prim_grid.coord(i, PRIM));
+        
+        UnitCellCoord mc_uccoord =  tscel.prim_grid().uccoord(prim_motif_tile_ind) + motif_config.get_uccoord(s);
+        
+        // b-index when doing UnitCellCoord addition is ambiguous; explicitly set it
+        mc_uccoord[0] = motif_config.get_uccoord(s)[0]; 
+        
+        Index occ_ind = tscel.find(mc_uccoord);
+        
+        tscel_occ[occ_ind] = motif_config.occ(s);
+      }
+    }
+
+
+    //Place the std::vector of Occupations inside a ConfigDoF
+    ConfigDoF seed_configdof(tscel_occ);
+    
+    return seed_configdof;
+  }
 
 
 

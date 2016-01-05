@@ -595,6 +595,7 @@ namespace CASM {
                                                    *it,
                                                    best_cost,
                                                    mapped_configdof,
+                                                   mapped_lat,
                                                    best_assignment,
                                                    cart_op))
           break;
@@ -617,6 +618,7 @@ namespace CASM {
                                                             const Lattice &imposed_lat,
                                                             double &best_cost,
                                                             ConfigDoF &mapped_configdof,
+                                                            Lattice &mapped_lat,
                                                             std::vector<Index> &best_assignment,
                                                             Eigen::Matrix3d &cart_op) const {
     double strain_cost, basis_cost, tot_cost;
@@ -666,6 +668,7 @@ namespace CASM {
         //best_trans = Matrix3<double>::identity();
         //std::cout << "tF is:\n" << tF << "\n and N is:\n" << best_trans << "\n";
         swap(mapped_configdof, tdof);
+        mapped_lat = imposed_lat;
       }
     } // Done checking simplest mapping
 
@@ -714,6 +717,7 @@ namespace CASM {
         //best_trans = strainmap.matrixN();
         //std::cout << "New best_trans, with cost " << best_cost << ":\n" << best_trans << "\n";
         swap(mapped_configdof, tdof);
+        mapped_lat = imposed_lat;
       }
       // This finds first decomposition:
       //            struc.lattice() =  deformation*(supercell_list[import_scel_index].get_real_super_lattice())*equiv_mat

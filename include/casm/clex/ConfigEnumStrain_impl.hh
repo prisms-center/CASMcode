@@ -16,7 +16,7 @@ namespace CASM {
     m_proj(m_strain_calc.dim(), m_strain_calc.dim()),
     m_perm_begin(_scel.permute_begin()),
     m_perm_end(_scel.permute_end()),
-    m_shape_factor(Eigen::VectorXd::Ones(m_strain_calc.dim())) {
+    m_shape_factor((Eigen::VectorXd::Ones(m_strain_calc.dim())).asDiagonal()) {
 
     // Force magnitudes to be positive
     std::vector<double> absmags;
@@ -25,7 +25,7 @@ namespace CASM {
     m_strain_calc.set_symmetrized_sop(_scel.get_primclex().get_prim().point_group());
 
     //Eigen::MatrixXd axes=m_strain_calc.sop_transf_mat();
-    std::vector<Index> mult, subspaces;
+    std::vector<Index> mult;
     std::vector<Eigen::MatrixXd> wedges = m_strain_calc.irreducible_wedges(_scel.get_primclex().get_prim().point_group(), mult);
     Eigen::VectorXd init(m_proj.cols()), final(m_proj.cols()), inc(m_proj.cols());
     Index num_sub = wedges.size();
@@ -38,6 +38,10 @@ namespace CASM {
       std::cout << "wedgevol: " << wedgevol << ", N: " << N;// << ", density: " << density;
       N = max(1, (int) ceil(pow(wedgevol * double(N), 1.0 / double(wedges[s].cols())) - TOL));
       std::cout << ", linearN: " << N << "\n";
+      std::cout << "mult.size() is: " << mult.size() << "  and mult is ";
+      for( auto m : mult)
+        std::cout  << m << "  ";
+      std::cout << "\n";
 
       for(Index w = 0; w < wedges[s].cols(); w++, nc++) {
         m_proj.col(nc) = wedges[s].col(w);
@@ -51,7 +55,7 @@ namespace CASM {
         }
 
         if(absmags[s] > TOL)
-          m_shape_factor(nc) /= absmags[s] * absmags[s];
+          m_shape_factor(nc,nc) /= absmags[s] * absmags[s];
 
         if(linear_partitions[s] < 2) {
           final(nc) = init(nc);
@@ -67,9 +71,10 @@ namespace CASM {
     _source() = "strain_enumeration";
 
     std::cout << "Project matrix is \n" << m_proj << "\n";
+    m_shape_factor=m_proj.transpose()*m_shape_factor*m_proj;
 
     m_counter.reset();
-    while(m_counter.valid() && double(m_counter().transpose()*m_shape_factor.asDiagonal()*m_counter()) > 1.0 + TOL) {
+    while(m_counter.valid() && double(m_counter().transpose()*m_shape_factor*m_counter()) > 1.0 + TOL) {
       ++m_counter;
     }
 
@@ -89,7 +94,7 @@ namespace CASM {
     //bool is_valid_config(false);
     //std::cout << "Incrementing...\n";
     //while(!is_valid_config && ++m_counter) {
-    while(++m_counter && double(m_counter().transpose()*m_shape_factor.asDiagonal()*m_counter()) > 1.0 + TOL) {
+    while(++m_counter && double(m_counter().transpose()*m_shape_factor*m_counter()) > 1.0 + TOL) {
       //just burning throught the count
     }
 
