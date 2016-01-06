@@ -67,6 +67,8 @@ namespace CASM {
           settings.get_else(m_so_options, "so_options", RuntimeLibrary::default_so_options());
           from_json(m_name, settings["name"]);
           from_json(m_tol, settings["tol"]);
+          from_json(m_nlist_weight_matrix, settings["nlist_weight_matrix"]);
+          from_json(m_nlist_sublat_indices, settings["nlist_sublat_indices"]);
         }
         catch(std::exception &e) {
           std::cerr << "Error in ProjectSettings::ProjectSettings(const fs::path root).\n" <<
@@ -116,6 +118,16 @@ namespace CASM {
     /// \brief Get current eci name
     std::string eci() const {
       return m_eci;
+    }
+    
+    /// \brief Get neighbor list weight matrix
+    Eigen::Matrix3l nlist_weight_matrix() const {
+      return m_nlist_weight_matrix;
+    }
+    
+    /// \brief Get set of sublattice indices to include in neighbor lists
+    const std::set<int>& nlist_sublat_indices() const {
+      return m_nlist_sublat_indices;
     }
 
     /// \brief Get current compilation options string
@@ -258,6 +270,41 @@ namespace CASM {
       }
       return false;
     }
+    
+    /// \brief Set neighbor list weight matrix (will delete existing Clexulator 
+    /// source and compiled code)
+    bool set_nlist_weight_matrix(Eigen::Matrix3l M) {
+      
+      // changing the neighbor list properties requires updating Clexulator source code
+      // for now we just remove existing source/compiled files
+      auto all_bset = m_dir.all_bset();
+      for(auto it=all_bset.begin(); it!=all_bset.end(); ++it) {
+        fs::remove(m_dir.clexulator_src(name(), *it));
+        fs::remove(m_dir.clexulator_o(name(), *it));
+        fs::remove(m_dir.clexulator_so(name(), *it));
+      }
+      
+      m_nlist_weight_matrix = M;
+      return true;
+    }
+    
+    /// \brief Set range of sublattice indices to include in neighbor lists (will 
+    /// delete existing Clexulator source and compiled code)
+    template<typename SublatIterator>
+    bool set_nlist_sublat_indices(SublatIterator begin, SublatIterator end) {
+      
+      // changing the neighbor list properties requires updating Clexulator source code
+      // for now we just remove existing source/compiled files
+      auto all_bset = m_dir.all_bset();
+      for(auto it=all_bset.begin(); it!=all_bset.end(); ++it) {
+        fs::remove(m_dir.clexulator_src(name(), *it));
+        fs::remove(m_dir.clexulator_o(name(), *it));
+        fs::remove(m_dir.clexulator_so(name(), *it));
+      }
+      
+      m_nlist_sublat_indices = std::set<int>(begin, end);
+      return true;
+    }
 
     /// \brief Set compile options to 'opt'
     bool set_compile_options(std::string opt) {
@@ -294,6 +341,10 @@ namespace CASM {
     std::string m_ref;
     std::string m_clex;
     std::string m_eci;
+    
+    // neighbor list settings
+    Eigen::Matrix3l m_nlist_weight_matrix;
+    std::set<int> m_nlist_sublat_indices;
 
     // Properties to read from calculations
     std::vector<std::string> m_properties;
@@ -318,6 +369,8 @@ namespace CASM {
     json["curr_ref"] = set.ref();
     json["curr_bset"] = set.bset();
     json["curr_eci"] = set.eci();
+    json["nlist_weight_matrix"] = set.nlist_weight_matrix();
+    json["nlist_sublat_indices"] = set.nlist_sublat_indices();
     json["compile_options"] = set.compile_options();
     json["so_options"] = set.so_options();
     json["tol"] = set.tol();

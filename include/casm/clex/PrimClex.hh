@@ -7,11 +7,14 @@
 
 #include "casm/BP_C++/BP_Parse.hh"
 
+#include "casm/misc/cloneable_ptr.hh"
+
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/DoFManager.hh"
 #include "casm/clex/ParamComposition.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Clexulator.hh"
+#include "casm/clex/NeighborList.hh"
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
@@ -22,7 +25,7 @@ namespace CASM {
 
   class ParamComposition;
   class ECIContainer;
-
+  
   template<typename T, typename U> class ConfigIterator;
   
   
@@ -64,11 +67,6 @@ namespace CASM {
 
     SiteOrbitree global_orbitree;
 
-    //One flowertree for each site. The flowertrees contain all the clusters that have a particular site at the pivot, divided in branches of points, pairs etc. Probably what you
-    //thought a bouquet was to begin with (but you'd be wrong because bouquets have a branch for each basis site)
-    Array<SiteOrbitree> flowertrees;
-
-
     /// Contains all the supercells that were involved in the enumeration.
     boost::container::stable_vector< Supercell > supercell_list;
 
@@ -78,24 +76,16 @@ namespace CASM {
     bool m_has_composition_axes = false;
     CompositionConverter m_comp_converter;
 
+    /// Stores the neighboring UnitCell and which sublattices to include in neighbor lists
+    /// - mutable for lazy construction
+    mutable notstd::cloneable_ptr<PrimNeighborList> m_nlist;
 
-    /// Stores the 'delta' UnitCellCoord needed to determine all the
-    ///   sites in the neighborhood of a given primitive cell according to:
-    ///
-    ///    neighbor_unit_cell_coord = UnitCellCoord(b,i,j,k) + prim_nlist[nlist_index]
-    ///
-    ///  'delta' UnitCellCoord = prim_nlist[nlist_index]
-    ///
-
-    Array<UnitCellCoord> prim_nlist;
-
+  
   public:
 
     typedef ConfigIterator<Configuration, PrimClex> config_iterator;
     typedef ConfigIterator<const Configuration, const PrimClex> config_const_iterator;
-    //typedef ConfigIterator<Transition> trans_iterator;
-    //typedef ConfigIterator<const Transition> trans_const_iterator;
-
+  
     // **** Constructors ****
 
     /// Initial construction of a PrimClex, from a primitive Structure
@@ -190,7 +180,7 @@ namespace CASM {
     const SiteOrbitree &get_global_orbitree() const;
 
     ///const access to the primitive neighbor list
-    const Array<UnitCellCoord> &get_prim_nlist() const;
+    const PrimNeighborList &nlist() const;
 
 
     // ** Supercell and Configuration accessors **
@@ -244,29 +234,6 @@ namespace CASM {
     /// const Configuration iterator: end
     config_const_iterator selected_config_cend() const;
 
-    /*
-    /// Transition iterator: begin
-    trans_iterator trans_begin();
-
-    /// Transition iterator: end
-    trans_iterator trans_end();
-
-    /// const Transition iterator: begin
-    trans_const_iterator trans_cbegin() const;
-
-    /// const Transition iterator: end
-    trans_const_iterator trans_cend() const;
-    */
-
-
-    // ** Neighbor list accessors **
-
-    /// Returns number of neighbors
-    Index get_nlist_size() const;
-
-    /// Returns UnitCellCoord, 'delta', indicating where neighbor site 'nlist_index' is located in the neighborhood
-    ///    neighbor_unit_cell_coord = UnitCellCoord(b,i,j,k) + this->get_nlist_uccoord(nlist_index)
-    const UnitCellCoord &get_nlist_uccoord(Index nlist_index) const;
 
     Eigen::MatrixXd shift_vectors() const;
 
@@ -278,11 +245,6 @@ namespace CASM {
     ///Call Configuration::write on every configuration to update files
     ///  - call update to also read all files
     void write_config_list();
-
-    /// \brief Set the primitive neighbor list explicitly, useful when it has been saved
-    void set_prim_nlist(const Array<UnitCellCoord> &_prim_nlist) {
-      prim_nlist = _prim_nlist;
-    }
 
 
     // **** Operators ****
@@ -296,18 +258,6 @@ namespace CASM {
     //Read the global Orbitree from a clust.json file
     void read_global_orbitree(const fs::path &fclust);
 
-
-    // Prepare neighbor lists
-    /// Add one orbitree of sites to the nearest neighbor list and update sites in tree with index, only considering the first site of each cluster
-    void append_to_nlist(SiteOrbitree &new_tree);
-    /// Add one orbitree of sites to the nearest neighbor list and update sites in tree with index
-    void append_to_nlist_perm(SiteOrbitree &new_tree);
-    /// Add global_orbitree to nearest neighbor list and update sites in tree with index
-    void generate_full_nlist();
-    /// Generate basis flowers from global orbitree and divide them nicely into flowertrees
-    void populate_flowertrees();
-    //\John G
-
     //Generate supercells of a certain volume and store them in the array of supercells
     void generate_supercells(int volStart, int volEnd, bool verbose);
 
@@ -318,7 +268,6 @@ namespace CASM {
     void read_supercells(std::istream &stream);
     void print_clex_configurations();
 
-    void generate_supercell_nlists();
 
     //ParamComposition i/o and calculators in PrimClex
 
@@ -401,14 +350,9 @@ namespace CASM {
   /// \brief Print clexulator
   void print_clexulator(const Structure &prim,
                         SiteOrbitree &tree,
-                        const Array<UnitCellCoord> &nlist,
+                        const PrimNeighborList &nlist,
                         std::string class_name,
                         std::ostream &stream);
 
-
-  /// \brief Expand a neighbor list to include neighborhood of another SiteOrbitree
-  void expand_nlist(const Structure &prim,
-                    SiteOrbitree &tree,
-                    Array<UnitCellCoord> &nlist);
 }
 #endif

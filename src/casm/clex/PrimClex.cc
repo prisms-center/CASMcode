@@ -2,6 +2,7 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include "casm/misc/algorithm.hh"
 #include "casm/clex/ConfigIterator.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clusterography/jsonClust.hh"
@@ -218,8 +219,34 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  const Array<UnitCellCoord> &PrimClex::get_prim_nlist() const {
-    return prim_nlist;
+  const PrimNeighborList& PrimClex::nlist() const {
+    double tol = TOL;
+    
+    // lazy neighbor list generation
+    if(!m_nlist) {
+      
+      // for now, base which sublattices to include on global_orbitree.min_num_components
+      std::set<int> sublat_indices;
+      for(int b=0; b<get_prim().basis.size(); ++b) {
+        if(get_prim().basis[b].site_occupant().size() >= global_orbitree.min_num_components) {
+          sublat_indices.insert(b);
+        }
+      }
+      
+      // for now, just use a standard formula for the weight matrix and include
+      m_nlist = notstd::make_cloneable<PrimNeighborList>(
+        PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, tol),
+        sublat_indices.begin(),
+        sublat_indices.end()
+      );
+      
+      // expand the nlist to contain 'global_orbitree' (all that is needed for now)
+      std::set<UnitCellCoord> nbors;
+      neighborhood(std::inserter(nbors, nbors.begin()), global_orbitree, prim, tol);
+      m_nlist->expand(nbors.begin(), nbors.end());
+    }
+    
+    return *m_nlist;
   }
 
   // ** Supercell and Configuration accessors **
@@ -394,21 +421,6 @@ namespace CASM {
   }
 
 
-  // ** Neighbor list accessors **
-  //*******************************************************************************************
-  /// Return number of sites in primitive cell neighborhood
-  Index PrimClex::get_nlist_size() const {
-    return prim_nlist.size();
-  }
-
-  //*******************************************************************************************
-  /// Returns UnitCellCoord, 'delta', indicating where neighbor site 'nlist_index' is located in the neighborhood
-  ///    neighbor_unit_cell_coord = UnitCellCoord(b,i,j,k) + this->get_nlist_uccoord(nlist_index)
-  const UnitCellCoord &PrimClex::get_nlist_uccoord(Index nlist_index) const {
-    return prim_nlist[nlist_index];
-  }
-
-
   //*******************************************************************************************
   // **** IO ****
   //*******************************************************************************************
@@ -450,228 +462,6 @@ namespace CASM {
 
   // **** Unorganized mess of functions ... ****
 
-  //***********************************************************
-  /**
-   * Calculates the distances between all sites of a cluster from
-   * the first site in the cluster of all clusters in the orbitree,
-   * then stores this "delta" in the primitive neighbor list if it
-   * hasn't been added already.
-   * In the process, it updates the value
-   * of nlist_ind() of every site in the given orbitree to
-   * hold the index of where said site was placed in the neighbor
-   * list, relative to the first site of the cluster.
-   *
-   * Example:
-   * A triple cluster made from
-   * Cluster site       |       Site in primitive       |       nlist_ind
-   * 0                          2                               2
-   * 1                          6                               7
-   * 2                          1                               8
-   *
-   * Cluster site is just the index of the site inside the cluster (which is of type Array<Site>)
-   * Site in primitive tells you what site in the basis of your primitive your cluster site corresponds to (inconsequential here)
-   * nlist_ind is what you use to read prim_nlist and gets set in this routine.
-   *
-   * The entire prim_nlist is based off of the first site in the cluster. To get the
-   * distance between cluster site 0 and 1, you look at prim_nlist[7], to get
-   * the distance between cluster site 0 and 2, you look at prim_nlist[8].
-   *
-   */
-  //***********************************************************
-
-  void PrimClex::append_to_nlist(SiteOrbitree &new_tree) {
-    // We include all the primitive-cell neighbors by default at the front of the prim_nlist
-    // This might be overkill in the long term (e.g., for large primitive cells where only a few sites have DoFs)
-    // In that case, we may change tactics and construct a separate list of nlist_inds that correspond to prim-cell neighbors
-    // We need this information in some form for calculating differential correlations
-    if(!prim_nlist.size()) {
-      for(Index b = 0; b < prim.basis.size(); b++)
-        prim_nlist.push_back(UnitCellCoord(b, 0, 0, 0));
-    }
-
-    Array<Index> clust_nlist_inds;
-
-    //For each site we encounter we access the appropriate slot in the neighbor list and append all other sites
-    //to it in the form of UnitCellCoords
-
-    //branches
-    for(Index i = 0; i < new_tree.size(); i++) {
-      //orbits
-      for(Index j = 0; j < new_tree[i].size(); j++) {
-        //clusters
-        for(Index k = 0; k < new_tree[i][j].size(); k++) {
-          //tuccl corresponds to the first site in the cluster
-          UnitCellCoord tuccl = prim.get_unit_cell_coord(new_tree[i][j][k][0]);
-
-          clust_nlist_inds.resize(new_tree[i][j][k].size());
-          //neighbor sites
-          for(Index b = 0; b < new_tree[i][j][k].size(); b++) {
-            //tuccb corresponds to a site that neighbors tuccl
-            UnitCellCoord tuccb = prim.get_unit_cell_coord(new_tree[i][j][k][b]);
-            UnitCellCoord delta(tuccb.sublat(), tuccb.unitcell() - tuccl.unitcell());
-
-            clust_nlist_inds[b] = prim_nlist.find(delta);
-
-            //If delta is not already in prim_nlist, add it (the value of clust_nlist_inds[b] makes sense after the push_back)
-            if(clust_nlist_inds[b] == prim_nlist.size()) {
-              prim_nlist.push_back(delta);
-            }
-          }
-          //Update nlist_inds of the cluster sites so they know where they live in the neighbor list
-          new_tree[i][j][k].set_nlist_inds(clust_nlist_inds);
-        }
-      }
-    }
-
-    return;
-  };
-
-  //***********************************************************
-  /**
-   * Calculates the distances between all sites from each other
-   * in every cluster of the orbitree, then stores this "delta"
-   * in the primitive neighbor list if it hasn't been added already.
-   * In the process, it updates the value
-   * of nlist_ind of every site in the given orbitree to
-   * hold the index of where said site was placed in the neighbor
-   * list, relative to the first site of the cluster.
-   *
-   * This routine is essentially the same as PrimClex::append_to_nlist,
-   * except it compares all sites in a cluster to all other sites
-   * instead of just the first one (note additional loop over 'l').
-   * The result is a neighbor list that contains transitional "delta",
-   * without using flowertrees. It will be equal in size or larger than
-   * neighbor list generated by PrimClex::append_to_nlist
-   */
-  //***********************************************************
-
-  void PrimClex::append_to_nlist_perm(SiteOrbitree &new_tree) {
-
-    // We include all the primitive-cell neighbors by default at the front of the prim_nlist
-    // This might be overkill in the long term (e.g., for large primitive cells where only a few sites have DoFs)
-    // In that case, we may change tactics and construct a separate list of nlist_inds that correspond to prim-cell neighbors
-    // We need this information in some form for calculating differential correlations
-    if(!prim_nlist.size()) {
-      for(Index b = 0; b < prim.basis.size(); b++)
-        prim_nlist.push_back(UnitCellCoord(b, 0, 0, 0));
-    }
-
-
-
-    //For each site we encounter we access the appropriate slot in the neighbor list and append all other sites
-    //to it in the form of UnitCellCoords
-
-    Array<Index> clust_nlist_inds;
-
-    //branches
-    for(Index i = 0; i < new_tree.size(); i++) {
-      //orbits
-      for(Index j = 0; j < new_tree[i].size(); j++) {
-        //clusters
-        for(Index k = 0; k < new_tree[i][j].size(); k++) {
-
-          clust_nlist_inds.resize(new_tree[i][j][k].size());
-
-          //sites
-          for(Index l = 0; l < new_tree[i][j][k].size(); l++) {
-            //tuccl corresponds to a particular site we're looking at
-            UnitCellCoord tuccl = prim.get_unit_cell_coord(new_tree[i][j][k][l]);
-            //neighbor sites
-            for(Index b = 0; b < new_tree[i][j][k].size(); b++) {
-              //tuccb corresponds to a site that neighbors tuccl
-              UnitCellCoord tuccb = prim.get_unit_cell_coord(new_tree[i][j][k][b]);
-              UnitCellCoord delta(tuccb.sublat(), tuccb.unitcell() - tuccl.unitcell());
-
-              clust_nlist_inds[b] = prim_nlist.find(delta);
-
-              //If delta is not already in prim_nlist, add it (the value of clust_nlist_inds[b] makes sense after the push_back)
-              if(clust_nlist_inds[b] == prim_nlist.size()) {
-                prim_nlist.push_back(delta);
-              }
-            }
-
-            // we set the first set of nlist_inds as the current indices
-            if(l == 0) {
-              new_tree[i][j][k].set_nlist_inds(clust_nlist_inds);
-            }
-
-            // save any other unique ones that we find
-            Index t(0);
-            for(t = 0; t < new_tree[i][j][k].trans_nlists().size(); t++) {
-              if(clust_nlist_inds.all_in(new_tree[i][j][k].trans_nlist(t)))
-                break;
-            }
-            if(t == new_tree[i][j][k].trans_nlists().size())
-              new_tree[i][j][k].add_trans_nlist(clust_nlist_inds);
-          }
-        }
-      }
-    }
-
-    return;
-  };
-
-  //*******************************************************************************************
-  /**
-   * Begin by constructing the flowertrees from the global
-   * orbitree, then use every flowertree to get a full neighbor
-   * list and updated nlist_ind of the sites in the flowertree. Then
-   * update nlist_ind of each site the global orbitree, which won't add
-   * any new sites to the neighbor list.
-   *
-   * You might not want to actually use this routine if you're
-   * just interested in a global cluster expansion. You could
-   * generate fewer neighbors (no flowertrees) and have all the
-   * information you need. This routine would generate the
-   * FULL neighbor list for every orbitree that lives in
-   * the PrimClex.
-   */
-  //*******************************************************************************************
-
-  void PrimClex::generate_full_nlist() {
-    if(prim_nlist.size()) {
-      std::cerr << "WARNING: In PrimClex::generate_full_nlist(), prim_nlist was previously initialized and is about to be overwritten!!\n";
-      prim_nlist.clear();
-    }
-
-    for(Index b = 0; b < get_prim().basis.size(); b++) {
-      if(get_prim().basis[b].site_occupant().size() > 1) {
-        m_dof_manager.add_dof(get_prim().basis[b].site_occupant().type_name());
-        break;
-      }
-    }
-    for(Index b = 0; b < get_prim().basis.size(); b++) {
-      for(Index i = 0; i < get_prim().basis[i].displacement().size(); i++)
-        m_dof_manager.add_dof(get_prim().basis[b].displacement()[i].type_name());
-    }
-
-    //Update nlist_ind for global orbitree
-    append_to_nlist_perm(global_orbitree);
-
-    //Populate flowertrees for calculating correlations later and update indices of the sites
-    /*prim.generate_flowertrees(global_orbitree, flowertrees);
-
-    std::cout << "nlist size before flowertrees: " << prim_nlist.size() << " \n";
-    for(Index q = 0; q < flowertrees.size(); q++) {
-      append_to_nlist(flowertrees[q]);
-      //flowertrees[q].print_full_clust(std::cout);
-      //std::cout << std::endl;
-    }
-    std::cout << "nlist size after flowertrees: " << prim_nlist.size() << " \n";
-    */
-
-    m_dof_manager.resize_neighborhood(prim_nlist.size());
-
-    // We can add more as needed
-    m_dof_manager.register_dofs(global_orbitree);
-    //std::ofstream clex_stream("clexulator.cc");
-    //print_clexulator(clex_stream, "MyClexulator", global_orbitree);
-    //clex_stream.close();
-
-    return;
-  };
-
-
   //*******************************************************************************************
   void PrimClex::read_global_orbitree(const fs::path &fclust_path) {
 
@@ -679,6 +469,9 @@ namespace CASM {
     global_orbitree.min_length = 0.0001;
     from_json(jsonHelper(global_orbitree, prim), jsonParser(fclust_path));
     global_orbitree.generate_clust_bases();
+    
+    // reset nlist
+    m_nlist.unique().reset();
   }
 
   //*******************************************************************************************
@@ -706,12 +499,6 @@ namespace CASM {
 
     //std::cout << supercell_lattices.size() << " supercells were generated\n";
 
-  }
-  //*******************************************************************************************
-  void PrimClex::generate_supercell_nlists() {
-    for(Index i = 0; i < supercell_list.size(); i++) {
-      supercell_list[i].generate_neighbor_list();
-    }
   }
 
   //*******************************************************************************************
@@ -1144,6 +931,7 @@ namespace CASM {
 
 
   //*******************************************************************************************
+
   Eigen::MatrixXd PrimClex::shift_vectors() const {
     Eigen::MatrixXd tau(prim.basis.size(), 3);
     for(int i = 0; i < prim.basis.size(); i++) {
@@ -1183,7 +971,7 @@ namespace CASM {
   /// \param prim Primitive Structure. non-const due to Structure::set_site_internals.
   /// \param json bspecs.json file
   SiteOrbitree make_orbitree(Structure &prim, const jsonParser &json) {
-
+    
     try {
 
       SiteOrbitree tree(prim.lattice());
@@ -1226,34 +1014,19 @@ namespace CASM {
     }
 
   }
-
-  //*******************************************************************************************
-  /// \brief Expand a neighbor list to include neighborhood of another SiteOrbitree
-  /**
-   * Calculates the distances between all sites from each other
-   * in every cluster of the orbitree, then stores this "delta"
-   * in the primitive neighbor list if it hasn't been added already.
-   * In the process, it updates the value
-   * of nlist_ind of every site in the given orbitree to
-   * hold the index of where said site was placed in the neighbor
-   * list, relative to the first site of the cluster.
-   */
-  //*******************************************************************************************
-  void expand_nlist(const Structure &prim, SiteOrbitree &tree, Array<UnitCellCoord> &nlist) {
-
-    // We include all the primitive-cell neighbors by default at the front of the prim_nlist
-    // This might be overkill in the long term (e.g., for large primitive cells where only a few sites have DoFs)
-    // In that case, we may change tactics and construct a separate list of nlist_inds that correspond to prim-cell neighbors
-    // We need this information in some form for calculating differential correlations
-    if(!nlist.size()) {
-      for(Index b = 0; b < prim.basis.size(); b++)
-        nlist.push_back(UnitCellCoord(b, 0, 0, 0));
-    }
-
+  
+  void set_nlist_ind(const Structure &prim, SiteOrbitree &tree, const PrimNeighborList &nlist) {
+    
     //For each site we encounter we access the appropriate slot in the neighbor list and append all other sites
     //to it in the form of UnitCellCoords
-
+    
+    double tol = TOL;
+    
     Array<Index> clust_nlist_inds;
+    
+    const auto& sublat_indices = nlist.sublat_indices();
+    
+    Index N_sublat = sublat_indices.size();
 
     //branches
     for(Index i = 0; i < tree.size(); i++) {
@@ -1263,23 +1036,40 @@ namespace CASM {
         for(Index k = 0; k < tree[i][j].size(); k++) {
 
           clust_nlist_inds.resize(tree[i][j][k].size());
-
+          
+          std::cout << std::endl;
+          
           //sites
           for(Index l = 0; l < tree[i][j][k].size(); l++) {
+            
             //tuccl corresponds to a particular site we're looking at
-            UnitCellCoord tuccl = prim.get_unit_cell_coord(tree[i][j][k][l]);
+            UnitCellCoord tuccl(tree[i][j][k][l], prim, tol);
+            
             //neighbor sites
             for(Index b = 0; b < tree[i][j][k].size(); b++) {
+              
               //tuccb corresponds to a site that neighbors tuccl
-              UnitCellCoord tuccb = prim.get_unit_cell_coord(tree[i][j][k][b]);
-              UnitCellCoord delta(tuccb.sublat(), tuccb.unitcell() - tuccl.unitcell());
-
-              clust_nlist_inds[b] = nlist.find(delta);
-
-              //If delta is not already in nlist, add it (the value of clust_nlist_inds[b] makes sense after the push_back)
-              if(clust_nlist_inds[b] == nlist.size()) {
-                nlist.push_back(delta);
+              UnitCellCoord tuccb(tree[i][j][k][b], prim, tol);
+              UnitCell delta = tuccb.unitcell() - tuccl.unitcell();
+              
+              auto unitcell_index = find_index(nlist, delta);
+              if(unitcell_index == nlist.size()) {
+                std::cerr << "Error unitcell index" << std::endl;
+                exit(1);
               }
+              
+              auto sublat_index = find_index(sublat_indices, tuccb.sublat());
+              if(sublat_index == sublat_indices.size()) {
+                std::cerr << "Error sublat index" << std::endl;
+                exit(1);
+              }
+              
+              clust_nlist_inds[b] = unitcell_index*N_sublat + sublat_index;
+
+              // //If delta is not already in nlist, add it (the value of clust_nlist_inds[b] makes sense after the push_back)
+              // if(clust_nlist_inds[b] == nlist.size()) {
+              //  nlist.push_back(delta);
+              // }
             }
 
             // we set the first set of nlist_inds as the current indices
@@ -1305,10 +1095,12 @@ namespace CASM {
   /// \brief Print clexulator
   void print_clexulator(const Structure &prim,
                         SiteOrbitree &tree,
-                        const Array<UnitCellCoord> &nlist,
+                        const PrimNeighborList &nlist,
                         std::string class_name,
                         std::ostream &stream) {
-
+    
+    set_nlist_ind(prim, tree, nlist);
+    
     DoFManager dof_manager;
     Index Nsublat = prim.basis.size();
     for(Index b = 0; b < Nsublat; b++) {

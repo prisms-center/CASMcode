@@ -12,7 +12,7 @@ SConscript(['version/SConscript'], {'env':env})
 
 # get source files
 casm_lib_src_dir = [
-  'casm_io', 'casm_io/json_io', 'container', 'crystallography', 'symmetry', 
+  'app', 'casm_io', 'casm_io/json_io', 'container', 'crystallography', 'symmetry', 
   'basis_set', 'clusterography', 'kspace', 'misc', 'strain', 'clex', 'hull', 
   'phonon', 'monte_carlo', 'monte_carlo/grand_canonical', 'system'
 ]

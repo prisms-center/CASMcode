@@ -168,8 +168,8 @@ namespace CASM {
     const ProjectSettings &set = primclex.settings();
     if(fs::exists(dir.clexulator_src(set.name(), set.bset()))) {
       primclex.read_global_orbitree(dir.clust(set.bset()));
-      primclex.generate_full_nlist();
-      primclex.generate_supercell_nlists();
+      //primclex.generate_full_nlist();
+      //primclex.generate_supercell_nlists();
     }
 
     try {

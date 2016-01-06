@@ -54,13 +54,19 @@ namespace test {
     /// \brief Check "casm enum"
     void check_enum() {
       
-      m_p.popen(cd_and() + "casm enum --supercells --max 10");
-      m_p.popen(cd_and() + "casm enum --configs --max 6");
-      std::stringstream ss;
-      PrimClex primclex(dir, ss);
-      BOOST_CHECK_EQUAL(primclex.get_supercell_list().size(), 87);
-      BOOST_CHECK_EQUAL(std::distance(primclex.config_begin(), primclex.config_end()), 1081);
+      {
+        m_p.popen(cd_and() + "casm enum --supercells --max 10");
+        std::stringstream ss;
+        PrimClex primclex(dir, ss);
+        BOOST_CHECK_EQUAL_MESSAGE(primclex.get_supercell_list().size(), 87, m_p.gets());
+      }
       
+      {
+        m_p.popen(cd_and() + "casm enum --configs --max 6");
+        std::stringstream ss;
+        PrimClex primclex(dir, ss);
+        BOOST_CHECK_EQUAL_MESSAGE(std::distance(primclex.config_begin(), primclex.config_end()), 1081, m_p.gets());
+      }
     }
   
   };

@@ -27,12 +27,9 @@ namespace CASM {
       primclex.read_global_orbitree(dir.clust(settings.bset()));
     }
     
-    primclex.generate_full_nlist();
-    supercell().generate_neighbor_list();
-    
     // Make sure the simulation is big enough to accommodate the clusters 
     // you're using so that the delta formation energy is calculated accurately
-    if(supercell().neighbor_image_overlaps()) {
+    if(supercell().nlist().overlaps()) {
       throw std::runtime_error(
         std::string("ERROR in 'GrandCanonical(PrimClex &primclex, const MonteSettings &settings)'\n") +
                     "  The simulation cell is too small to fit all the clusters without periodic overlap.\n" +
@@ -254,7 +251,7 @@ namespace CASM {
     // ---- set dcorr --------------
     
     // Point the Clexulator to the right neighborhood 
-    m_clexulator.set_nlist(supercell().get_nlist(mutating_site).begin());
+    m_clexulator.set_nlist(supercell().nlist().sites(mutating_site).data());
 
     // Calculate the change in correlations due to this event
     if(m_all_correlations) {

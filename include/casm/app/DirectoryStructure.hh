@@ -161,6 +161,7 @@ namespace CASM {
     fs::path clexulator_o(std::string project, std::string bset) const {
       return bset_dir(bset) / (project + "_Clexulator.o");
     }
+    
     /// \brief Returns path to global clexulator so file
     fs::path clexulator_so(std::string project, std::string bset) const {
       return bset_dir(bset) / (project + "_Clexulator.so");
@@ -174,11 +175,6 @@ namespace CASM {
     /// \brief Returns path to corr.in, in bset directory
     fs::path corr_in(std::string bset) const {
       return bset_dir(bset) / "corr.in";
-    }
-
-    /// \brief Returns path to prim_nlist.json, in bset directory
-    fs::path prim_nlist(std::string bset) const {
-      return bset_dir(bset) / "prim_nlist.json";
     }
 
 

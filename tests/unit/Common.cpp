@@ -205,6 +205,9 @@ std::string str = R"({
   ///        and that --orbits, --clusters, and --functions run without error.
   void Proj::check_bset() {
     
+    std::cout << "Check 'casm bset': " << dir << std::endl;
+    
+    
     // check for failure with bspecs with invalid JSON
     fs::ofstream file(dir / "basis_sets" / "bset.default" / "bspecs.json");
     file << Proj::invalid_bspecs() << "\n";
@@ -216,16 +219,14 @@ std::string str = R"({
     Proj::bspecs().write(dir / "basis_sets" / "bset.default" / "bspecs.json");
     
     m_p.popen(cd_and() + "casm bset -u");
-    BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
+    BOOST_CHECK_EQUAL_MESSAGE(m_p.exit_code(), 0, m_p.gets());
     
     BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*eci\.in)")), true);
     BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*clust\.json)")), true);
-    BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*prim_nlist\.json)")), true);
     BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*)" + title + R"(_Clexulator\.cc)")), true);
     
     BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.eci_in(m_set.bset())));
     BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.clust(m_set.bset())));
-    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.prim_nlist(m_set.bset())));
     BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.bset())));
     
     std::string str;

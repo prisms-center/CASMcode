@@ -114,6 +114,7 @@
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/ConfigIOSelected.hh"
+#include "casm/clex/NeighborList.hh"
 
 
 // Hull

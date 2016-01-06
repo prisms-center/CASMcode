@@ -161,6 +161,12 @@ namespace CASM {
 
   //**********************************************************************************************
 
+  Index PrimGrid::find(const UnitCell& _unitcell) const {
+    return find(UnitCellCoord(-1, _unitcell));
+  }
+  
+  //**********************************************************************************************
+
   Index PrimGrid::find(const UnitCellCoord &bijk) const {
 
     UnitCellCoord bmnp = to_canonical(get_within(bijk));
@@ -226,6 +232,12 @@ namespace CASM {
     return coord(uccoord(l), lat_mode);
   }
 
+  //**********************************************************************************************
+
+  UnitCell PrimGrid::unitcell(Index i) const {
+    return uccoord(i).unitcell();
+  }
+  
   //**********************************************************************************************
 
   UnitCellCoord PrimGrid::uccoord(Index i)const {
