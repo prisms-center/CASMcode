@@ -42,8 +42,8 @@ namespace CASM {
       ("help,h", "Write help documentation")
       ("display,d", "Display composition axes file")
       ("calc,c", "Calculate the standard composition axes")
-      ("select,s", po::value<std::string>(&choice), "Select composition axes")
-      ("update,u", "Update composition and references based on current 'composition_axes.json' file");
+      ("select,s", po::value<std::string>(&choice), "Select composition axes");
+      //("update,u", "Update composition and references based on current 'composition_axes.json' file");
 
       try {
         po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -83,10 +83,10 @@ namespace CASM {
           std::cout << "      - Select the composition axes by key name.\n";
           std::cout << "      - Updates and writes compositions and reference properties.\n";
           std::cout << "\n";
-          std::cout << "      casm composition --update \n";
+          /*std::cout << "      casm composition --update \n";
           std::cout << "      - Updates and writes compositions and reference properties based.\n";
           std::cout << "        on the contents of the 'composition_axes.json' file.\n";
-          std::cout << "\n";
+          std::cout << "\n";*/
           if(call_help)
             return ERR_INVALID_ARG;
 
@@ -154,7 +154,7 @@ namespace CASM {
 
       return 0;
     }
-    else if(vm.count("update")) {
+/*    else if(vm.count("update")) {
 
       if(opt.err_code) {
 
@@ -190,6 +190,7 @@ namespace CASM {
         return 0;
       }
     }
+*/
     else {
 
       if(vm.count("calc")) {
@@ -264,7 +265,7 @@ namespace CASM {
           return ERR_INVALID_INPUT_FILE;
 
         }
-
+/*
         // set composition axes (also updates configuration info and json)
         else if(opt.standard.find(choice) != opt.standard.end()) {
           primclex.set_composition_axes(opt.standard[choice]);
@@ -272,7 +273,7 @@ namespace CASM {
         else {
           primclex.set_composition_axes(opt.custom[choice]);
         }
-
+*/
         opt.has_current_axes = true;
         opt.curr_key = choice;
 

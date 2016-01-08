@@ -312,6 +312,14 @@ namespace CASM {
     ConfigIO::Selected selected_in();
 
     ConfigIO::GenericConfigFormatter<bool> is_calculated();
+    
+    ConfigIO::GenericConfigFormatter<double> relaxed_energy();
+    
+    ConfigIO::GenericConfigFormatter<double> relaxed_energy_per_species();
+    
+    ConfigIO::GenericConfigFormatter<double> reference_energy();
+    
+    ConfigIO::GenericConfigFormatter<double> reference_energy_per_species();
 
     ConfigIO::GenericConfigFormatter<double> formation_energy();
     

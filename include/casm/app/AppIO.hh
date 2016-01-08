@@ -261,7 +261,7 @@ namespace CASM {
   
   void write_chemical_reference(const ChemicalReference& chem_ref, fs::path filename);
 
-  void write_chemical_reference(const ChemicalReference& chem_ref, const jsonParser& json);
+  void write_chemical_reference(const ChemicalReference& chem_ref, jsonParser& json);
   
   
   // --------- ChemicalReference IO Definitions --------------------------------------------------

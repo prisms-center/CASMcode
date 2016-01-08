@@ -59,12 +59,20 @@ namespace notstd {
     
     /// \brief Construct by cloning other
     cloneable_ptr(const cloneable_ptr& other) : 
-      m_unique(other->clone()) {}
+      m_unique() {
+      if(other) {
+        m_unique = std::move(other->clone());
+      }
+    }
     
     /// \brief Construct by cloning other
     template<typename U>
     cloneable_ptr(const cloneable_ptr<U>& other) : 
-      m_unique(other->clone()) {}
+      m_unique() {
+      if(other) {
+        m_unique = std::move(other->clone());
+      }
+    }
     
     /// \brief Construct by moving other
     template<typename U>
@@ -75,7 +83,11 @@ namespace notstd {
     /// \brief Construct by cloning other
     template<typename U>
     cloneable_ptr(const std::unique_ptr<U>& other) : 
-      m_unique(other->clone()) {}
+      m_unique() {
+      if(other) {
+        m_unique = std::move(other->clone());
+      }
+    }
     
     /// \brief Construct by moving
     template<typename U>
@@ -100,7 +112,12 @@ namespace notstd {
     /// \brief Assignment via clone
     template<typename U>
     cloneable_ptr& operator=(const std::unique_ptr<U>& other) {
-      unique() = other.clone();
+      if(other) {
+        unique() = other.clone();
+      }
+      else {
+        unique().reset();
+      }
       return *this;
     }
     
@@ -128,6 +145,11 @@ namespace notstd {
     /// \brief const Access contained unique_ptr
     const std::unique_ptr<Type>& unique() const {
       return m_unique;
+    }
+    
+    /// \brief Checks whether *this owns an object
+    explicit operator bool() const {
+      return static_cast<bool>(m_unique);
     }
     
     private:

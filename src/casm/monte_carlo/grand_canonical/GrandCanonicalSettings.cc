@@ -1,6 +1,7 @@
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
+#include "casm/app/AppIO.hh"
 
 namespace CASM {
   

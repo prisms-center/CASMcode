@@ -109,8 +109,7 @@ namespace CASM {
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
     PrimClex(const fs::path &_root, std::ostream &sout);
-
-
+    
 
     // **** Accessors ****
 
@@ -289,7 +288,10 @@ namespace CASM {
     Eigen::MatrixXd shift_vectors() const;
 
     // **** Mutators ****
-
+    
+    /// Sets the composition axes, updates all configuration references,
+    ///   and writes the updated configuration info
+    void set_composition_axes(const CompositionConverter &_converter);
 
     // **** IO ****
 
@@ -339,10 +341,6 @@ namespace CASM {
     void generate_supercell_nlists();
 
     //ParamComposition i/o and calculators in PrimClex
-
-    /// Sets the composition axes, updates all configuration references,
-    ///   and writes the updated configuration info
-    void set_composition_axes(const CompositionConverter &_converter);
 
     void read_config_list();
 
@@ -403,10 +401,13 @@ namespace CASM {
     Clexulator global_clexulator() const;
     ECIContainer global_eci(std::string clex_name) const;
   private:
+    
+    /// Initialization routines
+    void _init(std::ostream& sout);
 
     /// Return the configuration closest in param_composition to the target_param_comp
     ///   Tie break returns configuration in smallest supercell (first found at that size)
-    const Configuration &closest_calculated_config(const Eigen::VectorXd &target_param_comp) const;
+//    const Configuration &closest_calculated_config(const Eigen::VectorXd &target_param_comp) const;
 
 
     mutable Clexulator m_global_clexulator;

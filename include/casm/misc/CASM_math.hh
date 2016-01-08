@@ -325,9 +325,9 @@ namespace CASM {
 }
 
 namespace Eigen {
-  template <typename Derived>
+  template <typename Derived1, typename Derived2>
   inline
-  bool almost_equal(const Eigen::MatrixBase<Derived> &val1, const Eigen::MatrixBase<Derived> &val2, double tol = CASM::TOL) {
+  bool almost_equal(const Eigen::MatrixBase<Derived1> &val1, const Eigen::MatrixBase<Derived2> &val2, double tol = CASM::TOL) {
     return CASM::almost_zero(double((val1 - val2).norm()), tol);
   }
 }

@@ -61,62 +61,6 @@ namespace CASM {
   }
   
   namespace ConfigIO {
-
-
-    //"DFT formation energy, normalized per primitive cell and measured relative to current reference states"
-    double get_config_formation_energy(const Configuration &_config) {
-      return _config.delta_properties().contains("relaxed_energy") ? _config.delta_properties()["relaxed_energy"].get<double>() : NAN;
-    }
-
-    //"DFT formation energy, normalized per atom and measured relative to current reference states"
-    double get_config_formation_energy_per_species(const Configuration &_config) {
-      return _config.delta_properties().contains("relaxed_energy") ? formation_energy_per_species(_config) : NAN;
-    }
-
-    bool has_config_formation_energy(const Configuration &_config) {
-      return _config.delta_properties().contains("relaxed_energy");
-    }
-
-    //"Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)"
-    double get_config_rms_force(const Configuration &_config) {
-      return _config.calc_properties().contains("rms_force") ? _config.calc_properties()["rms_force"].get<double>() : NAN;
-    }
-
-    bool has_config_rms_force(const Configuration &_config) {
-      return _config.calc_properties().contains("rms_force");
-    }
-
-    //"Cost function that describes the degree to which basis sites have relaxed."
-    double get_config_basis_deformation(const Configuration &_config) {
-      return _config.calc_properties().contains("basis_deformation") ? _config.calc_properties()["basis_deformation"].get<double>() : NAN;
-    }
-
-    bool has_config_basis_deformation(const Configuration &_config) {
-      return _config.calc_properties().contains("basis_deformation");
-    }
-
-    //"Cost function that describes the degree to which lattice has relaxed."
-    double get_config_lattice_deformation(const Configuration &_config) {
-      return _config.calc_properties().contains("lattice_deformation") ? _config.calc_properties()["lattice_deformation"].get<double>() : NAN;
-    }
-
-    bool has_config_lattice_deformation(const Configuration &_config) {
-      return _config.calc_properties().contains("lattice_deformation");
-    }
-
-    //"Change in volume due to relaxation, expressed as the ratio V/V_0."
-    double get_config_volume_relaxation(const Configuration &_config) {
-      return _config.calc_properties().contains("volume_relaxation") ? _config.calc_properties()["volume_relaxation"].get<double>() : NAN;
-    }
-
-    bool has_config_volume_relaxation(const Configuration &_config) {
-      return _config.calc_properties().contains("volume_relaxation");
-    }
-
-    double get_config_deformation_change(const Configuration &_config) {
-      return std::abs(_config.deformation().determinant()) - 1.0;
-    }
-   
     
     // --- Comp implementations -----------
     
@@ -278,14 +222,46 @@ namespace CASM {
         return config.selected();
       });
     }
+    
+    ConfigIO::GenericConfigFormatter<double> relaxed_energy() {
+      return ConfigIO::GenericConfigFormatter<double>(
+        "relaxed_energy",
+        "DFT relaxed energy, normalized per primitive cell",
+        CASM::relaxed_energy,
+        has_relaxed_energy);
+    }
+    
+    ConfigIO::GenericConfigFormatter<double> relaxed_energy_per_species() {
+      return ConfigIO::GenericConfigFormatter<double>(
+        "relaxed_energy_per_atom",
+        "DFT relaxed energy, normalized per atom",
+        CASM::relaxed_energy_per_species,
+        has_relaxed_energy);
+    }
+    
+    ConfigIO::GenericConfigFormatter<double> reference_energy() {
+      return ConfigIO::GenericConfigFormatter<double>(
+        "reference_energy",
+        "reference energy, normalized per primitive cell, as determined by current reference states",
+        CASM::reference_energy,
+        has_reference_energy);
+    }
+    
+    ConfigIO::GenericConfigFormatter<double> reference_energy_per_species() {
+      return ConfigIO::GenericConfigFormatter<double>(
+        "reference_energy_per_atom",
+        "reference energy, normalized per atom, as determined by current reference states",
+        CASM::reference_energy_per_species,
+        has_reference_energy);
+    }
 
     ConfigIO::GenericConfigFormatter<double> formation_energy() {
       return ConfigIO::GenericConfigFormatter<double>(
         "formation_energy",
         "DFT formation energy, normalized per primitive cell and measured "
         "relative to current reference states",
-        ConfigIO::get_config_formation_energy,
-        ConfigIO::has_config_formation_energy);
+        CASM::formation_energy,
+        has_formation_energy);
     }
     
     ConfigIO::GenericConfigFormatter<double> formation_energy_per_species() {
@@ -293,15 +269,17 @@ namespace CASM {
         "formation_energy_per_atom",
         "DFT formation energy, normalized per atom and measured relative to "
         "current reference states",
-        ConfigIO::get_config_formation_energy_per_species,
-        ConfigIO::has_config_formation_energy);
+        CASM::formation_energy_per_species,
+        has_formation_energy);
     }
+    
+    
     
     /*Generic1DDatumFormatter<std::vector<double>, Configuration >relaxation_strain() {
       return Generic1DDatumFormatter<std::vector<double>, Configuration >("relaxation_strain",
                                                                           "Green-Lagrange strain of dft-relaxed configuration, relative to the ideal crystal.  Ordered as [E(0,0), E(1,1), E(2,2), E(1,2), E(0,2), E(0,1)].  Accepts index as argument on interval [0,5]",
-                                                                          ConfigIO::get_config_relaxation_strain,
-                                                                          ConfigIO::has_config_relaxation_strain,
+                                                                          CASM::relaxation_strain,
+                                                                          has_relaxation_strain,
       [](const std::vector<double> &cont)->Index{
         return 6;
       });
@@ -316,29 +294,29 @@ namespace CASM {
     ConfigIO::GenericConfigFormatter<double> rms_force() {
       return ConfigIO::GenericConfigFormatter<double>("rms_force",
                                                            "Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)",
-                                                           ConfigIO::get_config_rms_force,
-                                                           ConfigIO::has_config_rms_force);
+                                                           CASM::rms_force,
+                                                           has_rms_force);
     }
 
     ConfigIO::GenericConfigFormatter<double> basis_deformation() {
       return ConfigIO::GenericConfigFormatter<double>("basis_deformation",
                                                            "Cost function that describes the degree to which basis sites have relaxed",
-                                                           ConfigIO::get_config_basis_deformation,
-                                                           ConfigIO::has_config_basis_deformation);
+                                                           CASM::basis_deformation,
+                                                           has_basis_deformation);
     }
 
     ConfigIO::GenericConfigFormatter<double> lattice_deformation() {
       return ConfigIO::GenericConfigFormatter<double>("lattice_deformation",
                                                            "Cost function that describes the degree to which lattice has relaxed.",
-                                                           ConfigIO::get_config_lattice_deformation,
-                                                           ConfigIO::has_config_lattice_deformation);
+                                                           CASM::lattice_deformation,
+                                                           has_lattice_deformation);
     }
 
     ConfigIO::GenericConfigFormatter<double> volume_relaxation() {
       return ConfigIO::GenericConfigFormatter<double>("volume_relaxation",
                                                            "Change in volume due to relaxation, expressed as the ratio V/V_0.",
-                                                           ConfigIO::get_config_volume_relaxation,
-                                                           ConfigIO::has_config_volume_relaxation);
+                                                           CASM::volume_relaxation,
+                                                           has_volume_relaxation);
     }
 
     /*End ConfigIO*/
@@ -399,6 +377,10 @@ namespace CASM {
       HullDist(),
       ClexHullDist(),
       Novelty(),
+      relaxed_energy(),
+      relaxed_energy_per_species(),
+      reference_energy(),
+      reference_energy_per_species(),
       formation_energy(),
       formation_energy_per_species(),
       rms_force(),

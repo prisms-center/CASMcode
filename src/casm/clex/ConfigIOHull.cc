@@ -40,7 +40,7 @@ namespace CASM {
     
     /// \brief Validate that the Configuration has a formation energy per species
     bool OnHull::validate(const Configuration &_config) const {
-      return _config.delta_properties().contains("relaxed_energy");
+      return has_formation_energy(_config);
     }
     
     /// \brief Check if the Configuration is a hull vertex 
@@ -76,7 +76,7 @@ namespace CASM {
     
     /// \brief Validate that the Configuration has a formation energy per species
     bool HullDist::validate(const Configuration &_config) const {
-      return _config.delta_properties().contains("relaxed_energy");
+      return has_formation_energy(_config);
     }
     
     /// \brief Return the distance to the hull

@@ -56,7 +56,7 @@ namespace CASM {
     
     // normalize to give columns of atom_frac
     for(int i=0; i<N.cols(); i++) {
-      N.col(i) /= N.col(i).norm();
+      N.col(i) /= N.col(i).sum();
     }
     
     auto Qr = N.transpose().fullPivHouseholderQr();
@@ -86,26 +86,6 @@ namespace CASM {
       C.col(i) /= C.col(i).norm();
     }
     
-    // ensure that there is a solution X for:
-    //             C = N * X
-    //   (prim_space = input_space * X)
-    Eigen::MatrixXd X = N.fullPivHouseholderQr().solve(C);
-    
-    double relative_error = (N*X - C).norm() / C.norm();
-    
-    if( relative_error > tol) {
-      std::cerr << "Error in ChemicalReference::hyperplane " << std::endl;
-      std::cerr << "Input space does not span the composition space of your prim." << std::endl;
-      std::cerr << "Input space (column vectors of atom_frac):\n" << N << std::endl;
-      std::cerr << "Prim space (column vectors of atom_frac):\n" << C << std::endl;
-      std::cerr << "Rows correspond to: " << jsonParser(struc_mol_name) << std::endl;
-      
-      throw std::runtime_error("Error in ChemicalReference::hyperplane: Input space does not space prim space"); 
-    }
-    
-    
-    // --- solve N.topRows(prim_N_mol).transpose() * P = E, for P, the hyperplane reference --------
-    
     // get Molecule allowed in prim, and how many there are
     std::vector<Molecule> struc_mol = prim.get_struc_molecule();
     for(int i=0; i<struc_mol.size(); i++) {
@@ -117,29 +97,56 @@ namespace CASM {
     }
     Index prim_N_mol = struc_mol.size();
     
-    Eigen::VectorXd P = N.topRows(prim_N_mol).transpose().fullPivHouseholderQr().solve(E);
+    // ensure that there is a solution X for:
+    //             C = N.topRows(prim_N_mol) * X
+    //   (prim_space = input_space involving prim species * X)
+    Eigen::MatrixXd X = N.topRows(prim_N_mol).fullPivHouseholderQr().solve(C);
     
-    relative_error = (N.topRows(prim_N_mol).transpose()*P - E).norm() / E.norm();
+    double relative_error = (N.topRows(prim_N_mol)*X - C).norm() / C.norm();
+    
+    if( relative_error > tol) {
+      std::cerr << "Error in ChemicalReference::hyperplane " << std::endl;
+      std::cerr << "Input space does not span the composition space of your prim." << std::endl;
+      std::cerr << "Input space (column vectors of atom_frac):\n" << N.topRows(prim_N_mol) << std::endl;
+      std::cerr << "Prim space (column vectors of atom_frac):\n" << C << std::endl;
+      std::cerr << "Rows correspond to: " << jsonParser(struc_mol_name) << std::endl;
+      std::cerr << "X, prim_space = input_space*X: \n" << X << std::endl;
+      std::cerr << "input_space*X: \n" << N.topRows(prim_N_mol)*X << std::endl;
+      std::cerr << "relative_error: " << relative_error << std::endl;
+      
+      throw std::runtime_error("Error in ChemicalReference::hyperplane: Input space does not span prim space"); 
+    }
+    
+    
+    // --- solve N.transpose() * P = E, for P, the hyperplane reference --------
+    
+    Eigen::VectorXd P = N.transpose().fullPivHouseholderQr().solve(E);
+    
+    relative_error = (N.transpose()*P - E).norm() / E.norm();
     
     if( relative_error > tol) {
       std::cerr << "Error in ChemicalReference::hyperplane " << std::endl;
       std::cerr << "Could not solve for hyperplane reference." << std::endl;
-      std::cerr << "Input space (column vectors of atom_frac):\n" << N << std::endl;
+      std::cerr << "Input space (column vectors of atom_frac), N:\n" << N << std::endl;
       std::cerr << "Rows correspond to: " << jsonParser(struc_mol_name) << std::endl;
-      std::cerr << "Reference state energies:\n" << E << std::endl;
+      std::cerr << "Solve: N.transpose()*P = E" << std::endl;
+      std::cerr << "N.transpose():\n" << N.transpose() << std::endl;
+      std::cerr << "Reference state energies, E:\n" << E << std::endl;
+      std::cerr << "P:\n" << P.transpose() << std::endl;
+      std::cerr << "rel_err: " << relative_error << std::endl;
       
       throw std::runtime_error("Error in ChemicalReference::hyperplane: Could not solve for hyperplane reference"); 
     }
     
-    if(!almost_zero( P(Va_index)) ) {
+    if(has_Va && !almost_zero( P(Va_index)) ) {
       std::cerr << "Error in ChemicalReference::hyperplane " << std::endl;
       std::cerr << "Non-zero pure Va reference: " << P.transpose() << std::endl;
       std::cerr << "Elements correspond to: " << jsonParser(struc_mol_name) << std::endl;
       
-      throw std::runtime_error("Error in ChemicalReference::hyperplane: Input space does not space prim space"); 
+      throw std::runtime_error("Error in ChemicalReference::hyperplane: Input space does not span prim space"); 
     }
     
-    return P;
+    return P.head(prim_N_mol);
   }
   
   /// \brief Automatically set ChemicalReference using calculated Configurations 

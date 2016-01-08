@@ -187,11 +187,6 @@ namespace CASM {
   /// Returns an Array of each *possible* Molecule in this Structure
   std::vector<Molecule> Structure::get_struc_molecule() const {
 
-    //Check if basis is empty
-    if(basis.size() == 0) {
-      std::cerr << "Warning in Structure::get_struc_molecule():  basis.size() == 0" << std::endl;
-    }
-
     std::vector<Molecule> struc_molecule;
     Index i, j;
 

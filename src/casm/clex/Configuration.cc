@@ -1265,6 +1265,16 @@ namespace CASM {
     return comp_n(config)/config.get_prim().basis.size();
   }
   
+  /// \brief Returns the relaxed energy, normalized per unit cell
+  double relaxed_energy(const Configuration& config) {
+    return config.calc_properties()["relaxed_energy"].get<double>();
+  }
+  
+  /// \brief Returns the relaxed energy, normalized per species
+  double relaxed_energy_per_species(const Configuration& config) {
+    return config.calc_properties()["relaxed_energy"].get<double>()*n_species(config);
+  }
+  
   /// \brief Returns the reference energy, normalized per unit cell
   double reference_energy(const Configuration& config) {
     return reference_energy_per_species(config)*n_species(config); 
@@ -1307,6 +1317,59 @@ namespace CASM {
                        [&](const std::string & key) {
                          return config.calc_properties().contains(key);
                        });
+  }
+  
+  /// \brief Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)
+  double rms_force(const Configuration &_config) {
+    return _config.calc_properties()["rms_force"].get<double>();
+  }
+
+  /// \brief Cost function that describes the degree to which basis sites have relaxed
+  double basis_deformation(const Configuration &_config) {
+    return _config.calc_properties()["basis_deformation"].get<double>();
+  }
+
+  /// \brief Cost function that describes the degree to which lattice has relaxed
+  double lattice_deformation(const Configuration &_config) {
+    return _config.calc_properties()["lattice_deformation"].get<double>();
+  }
+
+  /// \brief Change in volume due to relaxation, expressed as the ratio V/V_0
+  double volume_relaxation(const Configuration &_config) {
+    return _config.calc_properties()["volume_relaxation"].get<double>();
+  }
+/*
+  double deformation_change(const Configuration &_config) {
+    return std::abs(_config.deformation().determinant()) - 1.0;
+  }
+*/
+  
+  bool has_relaxed_energy(const Configuration &_config) {
+    return _config.calc_properties().contains("relaxed_energy");
+  }
+  
+  bool has_reference_energy(const Configuration &_config) {
+    return _config.get_primclex().has_chemical_reference();
+  }
+  
+  bool has_formation_energy(const Configuration &_config) {
+    return has_relaxed_energy(_config) && has_reference_energy(_config);
+  }
+
+  bool has_rms_force(const Configuration &_config) {
+    return _config.calc_properties().contains("rms_force");
+  }
+
+  bool has_basis_deformation(const Configuration &_config) {
+    return _config.calc_properties().contains("basis_deformation");
+  }
+
+  bool has_lattice_deformation(const Configuration &_config) {
+    return _config.calc_properties().contains("lattice_deformation");
+  }
+
+  bool has_volume_relaxation(const Configuration &_config) {
+    return _config.calc_properties().contains("volume_relaxation");
   }
   
   

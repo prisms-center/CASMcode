@@ -40,13 +40,13 @@ namespace CASM {
   
   /// Initialization routines
   ///  - If !root.empty(), read all saved data to generate all Supercells and Configurations, etc.
-  PrimClex::_init(std::ostream& sout) { 
+  void PrimClex::_init(std::ostream& sout) { 
     
     std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
     
     m_vacancy_allowed = false;
     for(int i=0; i<struc_mol_name.size(); ++i) {
-      if(is_vacancy(struc_mol_name[i]) {
+      if(is_vacancy(struc_mol_name[i])) {
         m_vacancy_allowed = true;
         m_vacancy_index = false;
       }
@@ -97,7 +97,7 @@ namespace CASM {
     auto chem_ref_path = m_dir.chemical_reference(m_settings.calctype(), m_settings.ref());
     if(fs::is_regular_file(chem_ref_path)) {
       sout << "  Read " << chem_ref_path << std::endl;
-      *m_chem_ref = read_chemical_reference(chem_ref_path, prim, 1e-14);
+      m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim, 1e-14));
     }
 
     // read supercells
@@ -235,13 +235,13 @@ namespace CASM {
 
   //*******************************************************************************************
   /// check if ChemicalReference object initialized
-  bool has_chemical_reference() const {
-    return m_chem_ref;
+  bool PrimClex::has_chemical_reference() const {
+    return static_cast<bool>(m_chem_ref.unique());
   }
 
   //*******************************************************************************************
   /// const Access ChemicalReference object
-  const ChemicalReference &chemical_reference() const {
+  const ChemicalReference& PrimClex::chemical_reference() const {
     return *m_chem_ref;
   }
 
@@ -268,13 +268,13 @@ namespace CASM {
   
   //*******************************************************************************************
   /// returns true if vacancy are an allowed species
-  bool vacancy_allowed() const {
+  bool PrimClex::vacancy_allowed() const {
     return m_vacancy_allowed;
   }
     
   //*******************************************************************************************
   /// returns the index of vacancies in composition vectors
-  Index vacancy_index() const {
+  Index PrimClex::vacancy_index() const {
     return m_vacancy_index;
   }
 
@@ -975,6 +975,7 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+
   /// \brief Sets the composition axes
   ///
   /// Also:
@@ -986,12 +987,10 @@ namespace CASM {
     m_comp_converter = _converter;
     m_has_composition_axes = true;
 
-    // We need some way to make sure param compositions get updated...
-    generate_references();
-
   }
 
   //*******************************************************************************************
+/*
   /// Delete 'properties.ref_state.X.json' files,
   /// Then call 'clear_reference_properties'
   void PrimClex::clear_reference_states() {
@@ -1000,8 +999,9 @@ namespace CASM {
     }
     generate_references();
   }
-
+*/
   //*******************************************************************************************
+/*
   /// Sets the root reference state to be the calculated properties of the chosen config
   /// Does not call 'generate_references' so written files will be out-of-date until you do so!!!
   void PrimClex::set_reference_state(int refid, const Configuration &config) {
@@ -1031,8 +1031,9 @@ namespace CASM {
 
     //std::cout << "finish set_reference_state()" << std::endl;
   }
-
+*/
   //*******************************************************************************************
+/*
   /// Check that it is valid to use 'config' as reference state 'refid', returns bool and if false, sets 'reason_invalid'
   ///   Currently checks:
   ///     1) that the necessary properties have been calculated,
@@ -1073,8 +1074,9 @@ namespace CASM {
 
     return true;
   }
-
+*/
   //*******************************************************************************************
+/*
   /// find calculated configurations closest to
   /// [0, 0, 0, ...], [1, 0, 0, ...], [0, 1, 0, ...], [0, 0, 1, ...], ...
   /// and set them as the root reference states, also calls generate_references
@@ -1112,9 +1114,10 @@ namespace CASM {
     //std::cout << "finish set_reference_state_auto()" << std::endl;
 
   }
-
+*/
 
   //*******************************************************************************************
+/*
   /// Clear 'reference' and 'delta' properties from all Configurations
   /// Re-write all Configurations, updating:
   ///   param_composition.json
@@ -1134,12 +1137,13 @@ namespace CASM {
     //std::cout << "finish PrimClex::generate_references()" << std::endl;
 
   }
-
+*/
 
   //*******************************************************************************************
   /// private:
 
   //*******************************************************************************************
+/*
   /// Return the configuration closest in param_composition to the target_param_comp
   ///   Tie break returns configuration in smallest supercell (first found at that size)
   const Configuration &PrimClex::closest_calculated_config(const Eigen::VectorXd &target_param_comp) const {
@@ -1198,7 +1202,7 @@ namespace CASM {
 
     return supercell_list[close_super].get_config(close_config);
   }
-
+*/
 
   //*******************************************************************************************
   Eigen::MatrixXd PrimClex::shift_vectors() const {

@@ -225,7 +225,7 @@ namespace CASM {
     return type() == json_spirit::real_type;
   }
 
-  /// Check if number type (not including int)
+  /// Check if string
   bool jsonParser::is_string() const {
     return type() == json_spirit::str_type;
   }

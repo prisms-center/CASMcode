@@ -36,6 +36,7 @@ namespace CASM {
     
     typedef std::vector<ChemicalReferenceState> RefStateVec;
     typedef std::map<std::string, RefStateVec> RefStateMap;
+    typedef Index size_type;
     
     static const std::string Name;
     static const std::string Desc;
@@ -90,11 +91,17 @@ namespace CASM {
     
     // --- Global reference ---
     
+    /// \brief const Access the global reference
+    ///
+    const Eigen::VectorXd& global() const {
+      return HyperPlaneReferenceBase::global();
+    }
+    
     /// \brief Set global hyperplane reference
     ///
     /// - Erases associated RefStateVec
     void set_global(const Eigen::VectorXd& ref) {
-      global() = ref;
+      _global() = ref;
       m_global_ref_vec.clear();
     }
     
@@ -116,7 +123,7 @@ namespace CASM {
                     double tol) {
       Eigen::VectorXd ref = hyperplane(*m_prim, begin, end, tol);
       m_global_ref_vec = RefStateVec(begin, end);
-      global() = ref;
+      _global() = ref;
     }
     
     /// \brief const Access a map of configname to RefStateVec for Supercell
@@ -131,11 +138,18 @@ namespace CASM {
     
     // --- Supercell specialized references ---
     
+    /// \brief const Access a map of scelname to reference for Supercell 
+    ///        specialized references
+    ///
+    const std::map<std::string, Eigen::VectorXd>& supercell() const {
+      return HyperPlaneReferenceBase::supercell();
+    }
+    
     /// \brief Set hyperplane reference specialized for a Supercell
     ///
     /// - Erases associated RefStateVec
     void set_supercell(const std::string& scelname, const Eigen::VectorXd& ref) {
-      supercell()[scelname] = ref;
+      _supercell()[scelname] = ref;
       m_supercell_ref_map.erase(scelname);
     }
     
@@ -149,7 +163,14 @@ namespace CASM {
                        double tol) {
       Eigen::VectorXd ref = hyperplane(*m_prim, begin, end, tol);
       m_supercell_ref_map[scelname] = RefStateVec(begin, end);
-      supercell()[scelname] = ref;
+      _supercell()[scelname] = ref;
+    }
+    
+    /// \brief Erase hyperplane reference specialized for a Supercell
+    size_type erase_supercell(const std::string& scelname) {
+      auto result = _supercell().erase(scelname);
+      m_supercell_ref_map.erase(scelname);
+      return result;
     }
     
     /// \brief const Access a map of configname to RefStateVec for Supercell
@@ -165,11 +186,18 @@ namespace CASM {
     // --- Configuration specialized references ---
     
     
+    /// \brief const Access a map of configname to reference for Configuration 
+    ///        specialized references
+    ///
+    const std::map<std::string, Eigen::VectorXd>& config() const {
+      return HyperPlaneReferenceBase::config();
+    }
+    
     /// \brief Set hyperplane reference specialized for a Configuration
     ///
     /// - Erases associated RefStateVec
     void set_config(const std::string& configname, const Eigen::VectorXd& ref) {
-      config()[configname] = ref;
+      _config()[configname] = ref;
       m_config_ref_map.erase(configname);
     }
     
@@ -183,7 +211,14 @@ namespace CASM {
                     double tol) {
       Eigen::VectorXd ref = hyperplane(*m_prim, begin, end, tol);
       m_config_ref_map[configname] = RefStateVec(begin, end);
-      config()[configname] = ref;
+      _config()[configname] = ref;
+    }
+    
+    /// \brief Erase hyperplane reference specialized for a Configuration
+    size_type erase_config(const std::string& configname) {
+      auto result = _config().erase(configname);
+      m_config_ref_map.erase(configname);
+      return result;
     }
     
     /// \brief const Access a map of configname to RefStateVec for Configuration
@@ -213,6 +248,27 @@ namespace CASM {
                                       double tol);
   
   private:
+    
+    /// \brief Access the global reference
+    ///
+    Eigen::VectorXd& _global() {
+      return HyperPlaneReferenceBase::global();
+    }
+    
+    /// \brief const Access a map of scelname to reference for Supercell 
+    ///        specialized references
+    ///
+    std::map<std::string, Eigen::VectorXd>& _supercell() {
+      return HyperPlaneReferenceBase::supercell();
+    }
+    
+    /// \brief const Access a map of configname to reference for Configuration 
+    ///        specialized references
+    ///
+    std::map<std::string, Eigen::VectorXd>& _config() {
+      return HyperPlaneReferenceBase::config();
+    }
+    
     
     // --- For use in hyperplane() ------
     
@@ -279,11 +335,11 @@ namespace CASM {
       stream << std::string(indent, ' ') << str << "\n";
     }
     
-    // print plane as '<indent>mol_i: energy_per_species\n', for each molecule
+    // print plane as '<indent>mol_i(1): energy_per_species\n', for each molecule
     void print(const Eigen::VectorXd& plane) {
       for(int i=0; i<plane.size(); ++i) {
         if(!is_vacancy(struc_mol_name[i])) {
-          stream << std::string(indent, ' ') << struc_mol_name[i] << ": " << plane(i) << "\n";
+          stream << std::string(indent, ' ') << struc_mol_name[i] << "(1): " << plane(i) << "\n";
         }
       }
     }
@@ -299,22 +355,19 @@ namespace CASM {
         const ChemicalReferenceState& ref_state = *it;
         
         stream << std::string(indent, ' ');
-        for(int i=0; i<struc_mol_name.size(); ++i) {
-          auto res = ref_state.species_num.find(struc_mol_name[i]);
-          if(res != ref_state.species_num.end()) {
-            std::string name = res->first;
-            double num = res->second;
-            
-            stream << name << "(";
-            // print integer if ~integer
-            if(almost_equal(std::round(num), num, 1e-14)) {
-               stream << std::lround(num);
-            }
-            else {
-              stream << num;
-            }
-            stream << ")";
+        for(auto it=ref_state.species_num.begin(); it!=ref_state.species_num.end(); ++it) {
+          double num = it->second;
+          
+          stream << it->first << "(";
+          // print integer if ~integer
+          if(almost_equal(std::round(num), num, 1e-14)) {
+             stream << std::lround(num);
           }
+          else {
+            stream << num;
+          }
+          stream << ")";
+          
         }
         stream << ": " << ref_state.energy_per_species << "\n";
       }
@@ -353,12 +406,10 @@ namespace CASM {
     
     void print_supercell() {
       if(ref.supercell().size()) {
-        incr();
-        print("Supercell specific chemical references:\n");
+        print("Supercell specific chemical references:");
         for(auto it=ref.supercell().begin(); it!=ref.supercell().end(); ++it) {
           print_supercell(it->first);
         }
-        decr();
       }
     }
     
@@ -371,12 +422,10 @@ namespace CASM {
     
     void print_config() {
       if(ref.config().size()) {
-        incr();
-        print("Configuration specific chemical references:\n");
+        print("Configuration specific chemical references:");
         for(auto it=ref.config().begin(); it!=ref.config().end(); ++it) {
           print_config(it->first);
         }
-        decr();
       }
     }
     
@@ -389,10 +438,14 @@ namespace CASM {
     
     void print_all() {
       print_global();
-      print("\n\n");
-      print_supercell();
-      print("\n\n");
-      print_config();
+      if(ref.supercell().size()) {
+        print("");
+        print_supercell();
+      }
+      if(ref.config().size()) {
+        print("");
+        print_config();
+      }
     }
   };
   

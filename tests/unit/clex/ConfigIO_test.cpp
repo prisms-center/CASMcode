@@ -12,7 +12,59 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(ConfigIODictionaryTest)
+BOOST_AUTO_TEST_SUITE(ConfigIOTest)
+
+BOOST_AUTO_TEST_CASE(DatumFormatters) {
+  
+  using namespace ConfigIO;
+  
+  DataFormatterDictionary<Configuration> dict;
+  
+  auto check = [&](const BaseDatumFormatter<Configuration>& formatter) {
+    auto prev_size = dict.size();
+    dict.insert(formatter);
+    BOOST_CHECK_EQUAL_MESSAGE(prev_size+1, dict.size(), formatter.name());
+  };
+  
+  // String
+  check(configname());
+  check(scelname());
+  
+  // Boolean
+  check(OnHull());
+  check(OnClexHull());
+  check(selected());
+  check(is_calculated());
+  check(selected_in());
+  
+  // Integer
+  check(scel_size());
+  
+  // Scalar
+  //check(Clex());
+  check(HullDist());
+  check(ClexHullDist());
+  check(Novelty()); 
+  check(relaxed_energy()); 
+  check(relaxed_energy_per_species()); 
+  check(reference_energy()); 
+  check(reference_energy_per_species()); 
+  check(formation_energy()); 
+  check(formation_energy_per_species()); 
+  check(rms_force()); 
+  check(basis_deformation()); 
+  check(lattice_deformation()); 
+  check(volume_relaxation());
+  
+  // VectorXd
+  check(Corr());
+  check(CompN()); 
+  check(Comp()); 
+  check(AtomFrac()); 
+  check(SiteFrac()); 
+  check(StrucScore());
+  
+}
 
 BOOST_AUTO_TEST_CASE(Make) {
   

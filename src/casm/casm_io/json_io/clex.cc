@@ -107,33 +107,48 @@ namespace CASM {
     json["species_order"] = ref.prim().get_struc_molecule_name();
     
     if(ref.global_ref_states().empty()) {
-      to_json(ref.global(), json["global"]);
+      to_json(ref.global().transpose(), json["global"]);
+      json["global"].put_array();
+      for(int i=0; i<ref.global().size(); ++i) {
+        json["global"].push_back(ref.global()(i));
+      }
     }
     else {
       to_json(ref.global_ref_states(), json["global"]);
     }
     
-    jsonParser& s_json = json["supercell"];
-    for(auto it=ref.supercell().begin(); it!=ref.supercell().end(); ++it) {
-      auto res = ref.supercell_ref_states().find(it->first);
-      if(res == ref.supercell_ref_states().end()) {
-        to_json(it->second, s_json[it->first]);
-      }
-      else {
-        to_json(res->second, s_json[it->first]);
+    if(ref.supercell().size()) {
+      jsonParser& s_json = json["supercell"];
+      for(auto it=ref.supercell().begin(); it!=ref.supercell().end(); ++it) {
+        auto res = ref.supercell_ref_states().find(it->first);
+        if(res == ref.supercell_ref_states().end()) {
+          s_json[it->first].put_array();
+          for(int i=0; i<it->second.size(); ++i) {
+            s_json[it->first].push_back(it->second(i));
+          }
+        }
+        else {
+          to_json(res->second, s_json[it->first]);
+        }
       }
     }
     
-    jsonParser& c_json = json["config"];
-    for(auto it=ref.config().begin(); it!=ref.supercell().end(); ++it) {
-      auto res = ref.config_ref_states().find(it->first);
-      if(res == ref.config_ref_states().end()) {
-        to_json(it->second, c_json[it->first]);
-      }
-      else {
-        to_json(res->second, c_json[it->first]);
+    if(ref.config().size()) {
+      jsonParser& c_json = json["config"];
+      for(auto it=ref.config().begin(); it!=ref.config().end(); ++it) {
+        auto res = ref.config_ref_states().find(it->first);
+        if(res == ref.config_ref_states().end()) {
+          c_json[it->first].put_array();
+          for(int i=0; i<it->second.size(); ++i) {
+            c_json[it->first].push_back(it->second(i));
+          }
+        }
+        else {
+          to_json(res->second, c_json[it->first]);
+        }
       }
     }
+    
     return json;
   }
   
@@ -173,26 +188,29 @@ namespace CASM {
     
     // if: {"A": X, "C": X, "D": X} // expects all species in prim, except vacancy
     if(json.is_obj()) {
-      Eigen::VectorXd P = Eigen::VectorXd::Zero(struc_mol_name.size());
-      for(int i=0; i<struc_mol_name.size(); ++i) {
-        if(!is_vacancy(struc_mol_name[i])) {
-          if(json.find(struc_mol_name[i]) != json.end()) {
-            from_json(P(i), json[struc_mol_name[i]]);
-          }
-          else {
-            std::cerr << "Error reading chemical reference: " << json << std::endl;
-            throw std::runtime_error("Error reading chemical reference: Could not find " + struc_mol_name[i]);
-          }
-        }
+      for(auto it=json.begin(); it!=json.end(); ++it) {
+        ChemicalReferenceState r;
+        r.species_num[it.name()] = 1.0;
+        r.energy_per_species = it->get<double>();
+        result.second.push_back(r);
       }
-      result.first = P;
       return result;
     }
     else {
       
-      // if: [X, X, X, X] 
-      if(json.begin()->is_number()) {
-        result.first = json.get<Eigen::VectorXd>();
+      // if: [X, X, X, X]
+      if(json.begin()->is_number() || json.begin()->is_int()) {
+        
+        if(json.size() != struc_mol_name.size()) {
+          std::cerr << "received: " << json << std::endl;
+          std::cerr << "expected size: " << struc_mol_name.size() << std::endl;
+          throw std::runtime_error("Error in one_chemical_reference_from_json: Size mismatch with vector input.");
+        }
+        
+        result.first = Eigen::VectorXd(json.size());
+        for(int i=0; i<json.size(); ++i) {
+          result.first(i) = json[i].get<double>();
+        }
         return result;
       }
       
@@ -239,6 +257,7 @@ namespace CASM {
     std::unique_ptr<ChemicalReference> ref;
     
     auto res = one_chemical_reference_from_json(prim, json["global"]);
+    
     if(res.second.empty()) {
       ref = notstd::make_unique<ChemicalReference>(prim, res.first);
     }

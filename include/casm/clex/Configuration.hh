@@ -37,17 +37,12 @@ namespace CASM {
   class Configuration {
   private:
 
-    /// Configuration data is saved in several files:
-    ///
-    /// config.json:             casmroot/supercells/SCEL_NAME/CONFIG_ID/config.json
-    /// POS:                     casmroot/supercells/SCEL_NAME/CONFIG_ID/POS
-    /// corr.json:               casmroot/supercells/SCEL_NAME/CONFIG_ID/CURR_CLEX/corr.json
-    /// properties.calc.json:    casmroot/supercells/SCEL_NAME/CONFIG_ID/CURR_CALCTYPE/properties.calc.json
-    /// param_composition.json:  casmroot/supercells/SCEL_NAME/CONFIG_ID/CURR_CALCTYPE/CURR_REF/param_composition.json
-    /// properties.ref.json:     casmroot/supercells/SCEL_NAME/CONFIG_ID/CURR_CALCTYPE/CURR_REF/properties.ref.json
-    /// properties.calc.json:    casmroot/supercells/SCEL_NAME/CONFIG_ID/CURR_CALCTYPE/CURR_REF/properties.calc.json     // contains param_comp
-    /// properties.delta.json:   casmroot/supercells/SCEL_NAME/CONFIG_ID/CURR_CALCTYPE/CURR_REF/properties.delta.json
-
+    /// Configuration DFT data is expected in:
+    ///   casmroot/supercells/SCEL_NAME/CONFIG_ID/CURR_CALCTYPE/properties.calc.json
+    
+    /// POS files are written to:
+    ///  casmroot/supercells/SCEL_NAME/CONFIG_ID/POS
+    
 
     /// Identification
 
@@ -83,16 +78,9 @@ namespace CASM {
     /// Properties
     ///Keeps track of whether the Configuration properties change since reading. Be sure to set to true in your routine if it did!
     /// PROPERTIES (AS OF 07/27/15)
-    /*  reference:
-     *
-     *
-     *  calculated:
+    /*  calculated:
      *    calculated["energy"]
      *    calculated["relaxed_energy"]
-     *
-     *  delta:
-     *    delta["energy"]
-     *    delta["relaxed_energy"]
      *
      *  generated:
      *    generated["is_groundstate"]
@@ -101,9 +89,7 @@ namespace CASM {
      *    generated["struct_fact"]
      */
     bool prop_updated;
-    Properties reference;   //Stuff you use as reference to get delta properties
     Properties calculated;  //Stuff you got directly from your DFT calculations
-    DeltaProperties delta;  //calculated-reference
     Properties generated;   //Everything else you came up with through casm
 
 
@@ -400,6 +386,12 @@ namespace CASM {
   /// \brief Returns the composition as site fraction, in the order of Structure::get_struc_molecule
   Eigen::VectorXd site_frac(const Configuration& config);
   
+  /// \brief Returns the relaxed energy, normalized per unit cell
+  double relaxed_energy(const Configuration& config);
+  
+  /// \brief Returns the relaxed energy, normalized per species
+  double relaxed_energy_per_species(const Configuration& config);
+  
   /// \brief Returns the reference energy, normalized per unit cell
   double reference_energy(const Configuration& config);
   
@@ -421,7 +413,31 @@ namespace CASM {
   /// \brief Return true if all current properties have been been calculated for the configuration
   bool is_calculated(const Configuration& config);
   
+  /// \brief Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)
+  double rms_force(const Configuration &_config);
+
+  /// \brief Cost function that describes the degree to which basis sites have relaxed
+  double basis_deformation(const Configuration &_config);
+
+  /// \brief Cost function that describes the degree to which lattice has relaxed
+  double lattice_deformation(const Configuration &_config);
+
+  /// \brief Change in volume due to relaxation, expressed as the ratio V/V_0
+  double volume_relaxation(const Configuration &_config);
   
+  bool has_relaxed_energy(const Configuration &_config);
+  
+  bool has_reference_energy(const Configuration &_config);
+  
+  bool has_formation_energy(const Configuration &_config);
+
+  bool has_rms_force(const Configuration &_config);
+
+  bool has_basis_deformation(const Configuration &_config);
+
+  bool has_lattice_deformation(const Configuration &_config);
+
+  bool has_volume_relaxation(const Configuration &_config);
   
   /// \brief Application results in filling supercell 'scel' with reoriented motif, op*config
   ///
