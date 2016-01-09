@@ -156,7 +156,7 @@ namespace CASM {
                     "        all calctype there is no other reference called      \n" <<
                     "        'other_ref'. Otherwise it is required.               \n\n" <<
                     
-                    "      casm settings --set-view-command 'vesta.view \"open -a /Applications/VESTA/VESTA.app\"'\n" <<
+                    "      casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'\n" <<
                     "      - Sets the command used by 'casm view' to open         \n" <<
                     "        visualization software.                              \n" <<
                     "      - Will be executed with '/path/to/POSCAR' as an        \n" <<
