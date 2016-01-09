@@ -195,7 +195,7 @@ namespace CASM {
     // get 'origin' configuration
     std::vector<std::string> ref_config;
     ref_config.push_back(closest_calculated_config(target));
-
+    
     for(int i = 0; i < Naxes; i++) {
 
       target(i) = 1.0;
@@ -217,7 +217,7 @@ namespace CASM {
     for(auto it=ref_config.begin(); it!=ref_config.end(); ++it) {
       ref_states.emplace_back(primclex.configuration(*it), 
                               ConfigIO::SpeciesFrac(), 
-                              formation_energy_per_species);
+                              ConfigIO::relaxed_energy_per_species());
     }
     
     return ChemicalReference(primclex.get_prim(), ref_states.begin(), ref_states.end(), lin_alg_tol);

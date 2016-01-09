@@ -1272,7 +1272,7 @@ namespace CASM {
   
   /// \brief Returns the relaxed energy, normalized per species
   double relaxed_energy_per_species(const Configuration& config) {
-    return config.calc_properties()["relaxed_energy"].get<double>()*n_species(config);
+    return relaxed_energy(config)/n_species(config);
   }
   
   /// \brief Returns the reference energy, normalized per unit cell

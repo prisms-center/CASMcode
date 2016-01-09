@@ -48,7 +48,7 @@ namespace CASM {
     for(int i=0; i<struc_mol_name.size(); ++i) {
       if(is_vacancy(struc_mol_name[i])) {
         m_vacancy_allowed = true;
-        m_vacancy_index = false;
+        m_vacancy_index = i;
       }
     }
     
@@ -236,7 +236,7 @@ namespace CASM {
   //*******************************************************************************************
   /// check if ChemicalReference object initialized
   bool PrimClex::has_chemical_reference() const {
-    return static_cast<bool>(m_chem_ref.unique());
+    return static_cast<bool>(m_chem_ref);
   }
 
   //*******************************************************************************************

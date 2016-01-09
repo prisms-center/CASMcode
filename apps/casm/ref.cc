@@ -139,6 +139,29 @@ namespace CASM {
     int refid, configid;
     double lin_alg_tol = 1e-14;
     
+    std::string species_order_string = "\n\n";
+    
+    fs::path root = find_casmroot(fs::current_path());
+    if(!root.empty()) {
+      std::stringstream ss;
+      DirectoryStructure dir(root);
+      Structure prim(read_prim(dir.prim()));
+      
+      ss << "       For this project, the expected order is:\n"
+         << "        '[";
+      auto names = prim.get_struc_molecule_name();
+      for(int i=0; i<names.size(); i++) {
+        ss << names[i];
+        if(i!=names.size()-1) {
+          ss << ", ";
+        }
+      }
+      ss << "]'\n\n";
+      
+      species_order_string = ss.str();
+    }
+    
+    
     try {
       po::options_description desc("'casm ref' usage");
       desc.add_options()
@@ -210,7 +233,7 @@ namespace CASM {
           std::cout << "    The input to '--set' can be one of three forms:                      \n\n"
                      
                        "    1) Input the energy_per_species for pure states:                     \n" <<
-                      R"(       '{"A": X, "C": X, "D": X}')" << "\n\n" <<
+                      R"(       '{"A": X, "B": X, "C": X}')" << "\n\n" <<
                       
                        "    2) Input reference state composition and energy_per_species:         \n" <<
                       R"(       '[)" << "\n" <<
@@ -221,7 +244,8 @@ namespace CASM {
                       
                        "    3) Input an array of energy_per_species, for each species in prim,   \n"
                        "       including 0.0 for vacancy:                                        \n"
-                       "        '[X, X, X]'\n\n";
+                       "        '[X, X, X]'                                                      \n"
+                    << species_order_string;
           
           std::cout << "    When using '--set' it is also possible to specialize the chemical    \n"
                        "    reference at the supercell or configuration level by adding the      \n"
@@ -286,7 +310,6 @@ namespace CASM {
 
     }
 
-    fs::path root = find_casmroot(fs::current_path());
     if(root.empty()) {
       std::cout << "Error in 'casm ref': No casm project found." << std::endl;
       return ERR_NO_PROJ;

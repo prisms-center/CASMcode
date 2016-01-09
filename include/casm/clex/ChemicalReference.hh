@@ -357,6 +357,9 @@ namespace CASM {
         stream << std::string(indent, ' ');
         for(auto it=ref_state.species_num.begin(); it!=ref_state.species_num.end(); ++it) {
           double num = it->second;
+          if(almost_zero(num, 1e-14)) {
+            continue;
+          }
           
           stream << it->first << "(";
           // print integer if ~integer

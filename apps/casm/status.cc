@@ -162,7 +162,8 @@ Instructions for volume relaxed VASP energies:                         \n\n\
               "Set chemical reference\n"
 "                                                                       \n"
 "- The chemical reference determines the value of the formation energy  \n"
-"  and chemical potentials calculated by CASM.                          \n"
+"  and chemical potentials calculated by CASM.                          \n\n"
+
 "- Chemical references states are set by specifying a hyperplane in     \n"
 "  energy/atom - composition (as atom_frac) space. This may be done by  \n"
 "  specifying the hyperplane explicitly, or by specifying several       \n"
@@ -170,28 +171,20 @@ Instructions for volume relaxed VASP energies:                         \n\n\
 "  enough states to span the composition space of the allowed occupants \n"
 "  specified in the prim. For consistency with other CASM projects,     \n"
 "  additional reference states extending to other compositional         \n"
-"  dimensions may be included also.                                     \n"
-"- It is also possible to specialize the chemical reference at the      \n"
-"  supercell or configuration level.                                    \n"
-"                                                                       \n"
-"Several options are possible:                                          \n"
-"- Execute 'casm ref --set-auto' to automatically set project level     \n"
-"  references using configurations with extreme parametric compositions.\n"
-"                                                                       \n"
-"- Execute 'casm ref --set --index REFID --s SCEL --c CONFIGID' to set a\n"
-"  particular project level reference (REFID) to be the value of the    \n"
-"  properties calculated for configuration (SCEL, CONFIGID).            \n"
-"                                                                       \n"
-"- Configuration or supercell level references can be set manually by   \n"
-"  including 'properties.ref_state.X.json' files in the appropriate     \n"
-"  directories (#1 and #2 above).                                       \n"
-"                                                                       \n"
-"- Execute 'casm ref --update' to update calculated reference properties\n"
-"  if you have set reference state files manually.\n\n";
+"  dimensions may be included also.                                     \n\n"
 
-    std::cout <<
-              "- See 'casm format' for a description and location of   \n\
-   the 'properties.ref_state.X.json' files.\n\n";
+"- Execute 'casm ref --set-auto' to automatically set project level     \n"
+"  references using DFT calculated energies from configurations with    \n"
+"  extreme parametric compositions.\n\n"
+
+"- Execute 'casm ref --set '...JSON...'' to manually set the project    \n"
+"  level reference energies. See 'casm ref --help' for more information.\n\n"
+
+"- It is also possible to specialize the chemical reference at the      \n"
+"  supercell or configuration level.                                    \n\n"
+
+"- See 'casm format' for a description and location of the              \n"
+"  'chemical_reference.json' file.                                      \n\n";
 
   }
 
@@ -564,19 +557,12 @@ Instructions for fitting ECI:                                          \n\n\
     }
     std::cout << "\n";
     
-    if(vm.count("details") ) {
-      ChemicalReferencePrinter p(std::cout, primclex.chemical_reference());
-      p.print_all();
-      std::cout << "\n\n";
+    if(primclex.has_chemical_reference()) {
+      std::cout << "To show the chemical reference, run 'casm ref -d'\n\n";
     }
     else {
-      std::cout << "To show the chemical reference, run 'casm status -d'\n\n";
-    }
-    
-    
-    if(!primclex.has_chemical_reference()) {
 
-      std::cout << "No chemical reference chosen." << std::endl << std::endl;
+      std::cout << "No chemical reference set." << std::endl << std::endl;
       
       if(vm.count("next")) {
         std::cout << "\n#################################\n\n";
