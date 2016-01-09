@@ -101,8 +101,8 @@ namespace CASM {
     }
     else {
       primclex.read_global_orbitree(dir.clust(set.bset()));
-      primclex.generate_full_nlist();
-      primclex.generate_supercell_nlists();
+      //primclex.generate_full_nlist();
+      //primclex.generate_supercell_nlists();
     }
 
     Clexulator clexulator(set.global_clexulator(),

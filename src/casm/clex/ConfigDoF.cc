@@ -5,6 +5,7 @@
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/clex/NeighborList.hh"
 
 
 namespace CASM {
@@ -723,7 +724,7 @@ namespace CASM {
     for(int v = 0; v < scel_vol; v++) {
 
       //Point the Clexulator to the right neighborhood
-      clexulator.set_nlist(scel.get_nlist(v).begin());
+      clexulator.set_nlist(scel.nlist().sites(v).data());
 
       //Fill up contributions
       clexulator.calc_global_corr_contribution(&tcorr[0]);
@@ -765,7 +766,7 @@ namespace CASM {
     for(int v = 0; v < scel_vol; v++) {
 
       //Point the Clexulator to the right neighborhood
-      clexulator.set_nlist(scel.get_nlist(v).begin());
+      clexulator.set_nlist(scel.nlist().sites(v).data());
 
       //Fill up contributions
       clexulator.calc_global_corr_contribution(tcorr.data());

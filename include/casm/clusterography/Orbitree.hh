@@ -270,6 +270,35 @@ namespace CASM {
   void from_json(GenericOrbitree<ClustType> &tree, const jsonParser &json) {
     tree.from_json(json);
   }
+  
+  /// \brief Iterate over all sites in an orbitree and insert a UnitCellCoord
+  ///
+  /// \param result an OutputIterator for UnitCellCoord
+  /// \param tree the Orbitree to iterate over
+  /// \param struc the structure that UnitCellCoord are referenced to
+  /// \param tol tolerance for mapping Coordinate to UnitCellCoord
+  ///
+  /// \result the resulting OutputIterator
+  ///
+  /// This simply outputs all UnitCellCoord 'covered' by an Orbitree, without 
+  /// any standard order. It can be used to create a set of UnitCellCoord for 
+  /// input to expand a PrimNeighborList.
+  ///
+  template<typename OutputIterator, typename TreeType, typename StrucType>
+  OutputIterator neighborhood(OutputIterator result, const TreeType& tree, const StrucType& struc, double tol) {
+    // create a neighborhood of all UnitCellCoord that an Orbitree touches
+    for(int nb=0; nb<tree.size(); ++nb) {
+      for(int no=0; no<tree[nb].size(); ++no) {
+        for(int nc=0; nc<tree[nb][no].size(); ++nc) {
+          for(int ns=0; ns<tree[nb][no][nc].size(); ++ns) {
+            *result++ = UnitCellCoord(tree[nb][no][nc][ns], struc, tol);
+          }
+        }
+      }
+    }
+    return result;
+  }
+  
 };
 #include "casm/clusterography/Orbitree_impl.hh"
 #endif

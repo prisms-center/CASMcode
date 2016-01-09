@@ -87,8 +87,7 @@ namespace CASM {
                                        dir.eci_in(set.bset()),
                                        dir.clexulator_src(set.name(), set.bset()),
                                        dir.clexulator_o(set.name(), set.bset()),
-                                       dir.clexulator_so(set.name(), set.bset()),
-                                       dir.prim_nlist(set.bset())
+                                       dir.clexulator_so(set.name(), set.bset())
                                       });
 
       bool any_existing_files = false;
@@ -129,7 +128,7 @@ namespace CASM {
 
         std::cout << "Generating orbitree: \n";
         tree = make_orbitree(prim, bspecs_json);
-        std::cout << "  DONE.\n\n";
+        std::cout << "  DONE.\n" << std::endl;
 
         tree.generate_clust_bases();
       }
@@ -141,33 +140,37 @@ namespace CASM {
       // -- write eci.in ----------------
       tree.write_eci_in(dir.eci_in(set.bset()).string());
 
-      std::cout << "Wrote: " << dir.eci_in(set.bset()) << "\n\n";
+      std::cout << "Wrote: " << dir.eci_in(set.bset()) << "\n" << std::endl;
 
 
       // -- write clust.json ----------------
       jsonParser clust_json;
       to_json(jsonHelper(tree, prim), clust_json).write(dir.clust(set.bset()));
 
-      std::cout << "Wrote: " << dir.clust(set.bset()) << "\n\n";
+      std::cout << "Wrote: " << dir.clust(set.bset()) << "\n" << std::endl;
 
-
-      // -- generate and write prim_nlist.json ----------------
-      Array<UnitCellCoord> nlist;
-      expand_nlist(prim, tree, nlist);
-
-      write_prim_nlist(nlist, dir.prim_nlist(set.bset()));
-      std::cout << "Wrote: " << dir.prim_nlist(set.bset()) << "\n\n";
-
-
+      
       // -- write global Clexulator
+      
+      // get the neighbor list
+      PrimNeighborList nlist(
+        set.nlist_weight_matrix(),
+        set.nlist_sublat_indices().begin(),
+        set.nlist_sublat_indices().end()
+      );
+      
+      // expand the nlist to contain 'tree'
+      std::set<UnitCellCoord> nbors;
+      neighborhood(std::inserter(nbors, nbors.begin()), tree, prim, TOL);
+      nlist.expand(nbors.begin(), nbors.end());
+    
+      // write source code
       fs::ofstream outfile;
       outfile.open(dir.clexulator_src(set.name(), set.bset()));
       print_clexulator(prim, tree, nlist, set.global_clexulator(), outfile);
       outfile.close();
 
-      std::cout << "Wrote: " << dir.clexulator_src(set.name(), set.bset()) << "\n\n";
-
-      // -- clear correlations for all configurations
+      std::cout << "Wrote: " << dir.clexulator_src(set.name(), set.bset()) << "\n" << std::endl;
 
     }
     else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {

@@ -2867,7 +2867,7 @@ namespace CASM {
     }
 
     for(int i = 0; i < proto_clust.size(); i++) {
-      std::cout << "Working on cluster: " << i << std::endl;
+      //std::cout << "Working on cluster: " << i << std::endl;
       if(contains(proto_clust[i])) {
         std::cout << "Proto_clust: " << std::endl;
         proto_clust[i].print(std::cout);

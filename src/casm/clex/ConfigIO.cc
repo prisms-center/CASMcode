@@ -167,6 +167,9 @@ namespace CASM {
       if(!m_clexulator.initialized()) {
         m_clexulator = _tmplt.get_primclex().global_clexulator();
       }
+      
+      VectorXdAttribute<Configuration>::init(_tmplt);
+      
     }
         
     

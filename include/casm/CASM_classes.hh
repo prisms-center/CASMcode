@@ -117,6 +117,7 @@
 #include "casm/clex/Norm.hh"
 #include "casm/clex/Reference.hh"
 #include "casm/clex/ChemicalReference.hh"
+#include "casm/clex/NeighborList.hh"
 
 // Hull
 #include "casm/hull/Hull.hh"
