@@ -203,6 +203,24 @@ namespace CASM {
     }
 
     void print(std::ostream &_out, bool only_selected = false) const;
+    
+    /// \brief Construct a ConfigSelection with no Configurations selected
+    static ConfigSelection None(PrimClex& primclex) {
+      ConfigSelection selection(primclex);
+      for(auto it=selection.config_begin(); it!=selection.config_end(); ++it) {
+        it.set_selected(false);
+      }
+      return selection;
+    }
+    
+    /// \brief Construct a ConfigSelection with all Configurations selected
+    static ConfigSelection All(PrimClex& primclex) {
+      ConfigSelection selection(primclex);
+      for(auto it=selection.config_begin(); it!=selection.config_end(); ++it) {
+        it.set_selected(true);
+      }
+      return selection;
+    }
 
   private:
     friend class ConfigSelection < !IsConst >;

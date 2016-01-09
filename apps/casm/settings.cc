@@ -49,6 +49,8 @@ namespace CASM {
     std::cout << "Compiler settings: '" << set.compile_options() << "'\n\n";
 
     std::cout << "SO settings: '" << set.so_options() << "'\n\n";
+    
+    std::cout << "'casm view' command: '" << set.view_command() << "'\n\n";
 
 
   }
@@ -79,6 +81,7 @@ namespace CASM {
       ("set-calctype", po::value<std::vector<std::string> >(&multi_input)->multitoken(), "Set the current calculation type")
       ("set-ref", po::value<std::vector<std::string> >(&multi_input)->multitoken(), "Set the current calculation reference")
       ("set-eci", po::value<std::string>(&single_input), "Set the current effective clust interactions (ECI)")
+      ("set-view-command", po::value<std::string>(&single_input), "Set the command used by 'casm view'.")
       ("set-compile-options", po::value<std::string>(&single_input), "Set the compiler options.")
       ("set-so-options", po::value<std::string>(&single_input), "Set the options for generating shared libraries.");
 
@@ -89,7 +92,7 @@ namespace CASM {
 
         std::vector<std::string> all_opt = {"list", "new-bset", "new-calctype", "new-ref", "new-eci",
                                             "set-bset", "set-calctype", "set-ref", "set-eci",
-                                            "set-compile-options", "set-so-options"
+                                            "set-compile-options", "set-so-options", "set-view-command"
                                            };
         int option_count = 0;
         for(int i = 0; i < all_opt.size(); i++) {
@@ -151,7 +154,14 @@ namespace CASM {
                     "        'other_ref'. Otherwise it is required.               \n" <<
                     "      - For --set-ref, 'other_calctype' is optional if among \n" <<
                     "        all calctype there is no other reference called      \n" <<
-                    "        'other_ref'. Otherwise it is required.               \n" <<
+                    "        'other_ref'. Otherwise it is required.               \n\n" <<
+                    
+                    "      casm settings --set-view-command 'vesta.view \"open -a /Applications/VESTA/VESTA.app\"'\n" <<
+                    "      - Sets the command used by 'casm view' to open         \n" <<
+                    "        visualization software.                              \n" <<
+                    "      - Will be executed with '/path/to/POSCAR' as an        \n" <<
+                    "        argument, the location of a POSCAR for a configuration\n" <<
+                    "        selected for visualization.                          \n" <<
                     "\n";
 
           if(call_help)
@@ -481,6 +491,16 @@ namespace CASM {
       set.commit();
 
       std::cout << "Set so options to: '" << set.so_options() << "'\n\n";
+
+      return 0;
+    }
+    
+    // set compile options
+    else if(vm.count("set-view-command")) {
+      set.set_view_command(single_input);
+      set.commit();
+
+      std::cout << "Set view command to: '" << set.view_command() << "'\n\n";
 
       return 0;
     }

@@ -65,6 +65,7 @@ namespace CASM {
           from_json(m_eci, settings["curr_eci"]);
           settings.get_else(m_compile_options, "compile_options", RuntimeLibrary::default_compile_options());
           settings.get_else(m_so_options, "so_options", RuntimeLibrary::default_so_options());
+          settings.get_if(m_view_command, "view_command");
           from_json(m_name, settings["name"]);
           from_json(m_tol, settings["tol"]);
           from_json(m_nlist_weight_matrix, settings["nlist_weight_matrix"]);
@@ -138,6 +139,11 @@ namespace CASM {
     /// \brief Get current shared library options string
     std::string so_options() const {
       return m_so_options;
+    }
+    
+    /// \brief Get current command used by 'casm view'
+    std::string view_command() const {
+      return m_view_command;
     }
 
     /// \brief Get current project tol
@@ -317,6 +323,12 @@ namespace CASM {
       m_so_options = opt;
       return true;
     }
+    
+    /// \brief Set command used by 'casm view'
+    bool set_view_command(std::string opt) {
+      m_view_command = opt;
+      return true;
+    }
 
     /// \brief Set shared library options to 'opt'
     bool set_tol(double _tol) {
@@ -352,6 +364,9 @@ namespace CASM {
     // Runtime library compilation settings: compilation options
     std::string m_compile_options;
     std::string m_so_options;
+    
+    // Command executed by 'casm view'
+    std::string m_view_command;
 
     // Default tolerance
     double m_tol;
@@ -373,6 +388,7 @@ namespace CASM {
     json["nlist_sublat_indices"] = set.nlist_sublat_indices();
     json["compile_options"] = set.compile_options();
     json["so_options"] = set.so_options();
+    json["view_command"] = set.view_command();
     json["tol"] = set.tol();
 
     return json;
