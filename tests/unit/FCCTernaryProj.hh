@@ -52,7 +52,7 @@ namespace test {
     }
     
     /// \brief Check "casm enum"
-    void check_enum() {
+    void check_enum() override {
       
       {
         m_p.popen(cd_and() + "casm enum --supercells --max 10");

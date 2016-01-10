@@ -41,7 +41,7 @@ namespace CASM {
         return std::unique_ptr<RelaxationStrain>(this->_clone());
       }
       
-      Eigen::VectorXd evaluate(const Configuration &_config) const;
+      Eigen::VectorXd evaluate(const Configuration &_config) const override;
 
       
       // --- Specialized implementation -----------
@@ -60,7 +60,7 @@ namespace CASM {
 
       jsonParser &to_json(const Configuration &_config, jsonParser &json)const override;
 */
-      bool parse_args(const std::string &args);
+      bool parse_args(const std::string &args) override;
     
     protected:
       mutable StrainConverter m_straincalc;

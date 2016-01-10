@@ -27,11 +27,11 @@ namespace CASM {
   
   /// \brief Ensure that all intermediate UnitCell are included in our neighborhood
   void PrimNeighborList::_expand(Scalar prev_range) {
-      
+    
     // if some are new, we need to make sure we including all intermediate UnitCell in our neighborhood
     // get the score of the last element in the set
     m_range = _dist(*m_neighborhood.rbegin());
-  
+    
     // count over possible UnitCell, adding to neighborhood if prev_range < dist <= m_range
     // we're using a std::set for m_neighborhood, so it gets sorted
     
@@ -142,10 +142,25 @@ namespace CASM {
   PrimNeighborList::Matrix3Type PrimNeighborList::make_weight_matrix(const Eigen::Matrix3d lat_column_mat, Index max_element_value, double tol) {
     
     Eigen::Matrix3d W = lat_column_mat.transpose()*lat_column_mat;
-    W /= W.minCoeff();
+    
+    double min = std::numeric_limits<double>::max();
+    for(int i=0; i<3; ++i) {
+      for(int j=0; j<3; ++j) {
+        if(!almost_zero(W(i,j),tol) && std::abs(W(i,j)) < std::abs(min)) {
+          min = W(i,j);
+        }
+      }
+    }
+    W /= min;
+    
+    // make positive definite
+    Eigen::LLT<Eigen::MatrixXd> llt(W);
+    if(llt.info() != Eigen::Success) {
+      W = -W;
+    }
     
     double n = 1.0;
-    for(; (n*W).maxCoeff() < max_element_value; n += 1.0) {
+    for(; (n*W).cwiseAbs().maxCoeff() < max_element_value; n += 1.0) {
       if(is_integer(n*W, tol)) {
         return lround(n*W);
       }

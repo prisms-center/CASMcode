@@ -33,7 +33,7 @@ namespace CASM {
   public:
   
     /// \brief Return configuration supercell size
-    double operator()(const Configuration& config) const {
+    double operator()(const Configuration& config) const override {
       return config.get_supercell().volume();
     }
     
@@ -54,7 +54,7 @@ namespace CASM {
   public:
     
     /// \brief Return number of non-Va species in configuration
-    double operator()(const Configuration& config) const {
+    double operator()(const Configuration& config) const override {
       return n_species(config);
     }
     

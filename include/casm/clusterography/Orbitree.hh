@@ -280,9 +280,9 @@ namespace CASM {
   ///
   /// \result the resulting OutputIterator
   ///
-  /// This simply outputs all UnitCellCoord 'covered' by an Orbitree, without 
-  /// any standard order. It can be used to create a set of UnitCellCoord for 
-  /// input to expand a PrimNeighborList.
+  /// This simply outputs all UnitCellCoord for clusters that include the origin 
+  /// UnitCell, without any standard order. It can be used to create a set of 
+  /// UnitCellCoord for input to expand a PrimNeighborList.
   ///
   template<typename OutputIterator, typename TreeType, typename StrucType>
   OutputIterator neighborhood(OutputIterator result, const TreeType& tree, const StrucType& struc, double tol) {
@@ -290,8 +290,19 @@ namespace CASM {
     for(int nb=0; nb<tree.size(); ++nb) {
       for(int no=0; no<tree[nb].size(); ++no) {
         for(int nc=0; nc<tree[nb][no].size(); ++nc) {
-          for(int ns=0; ns<tree[nb][no][nc].size(); ++ns) {
-            *result++ = UnitCellCoord(tree[nb][no][nc][ns], struc, tol);
+          const auto& clust = tree[nb][no][nc];
+          
+          // UnitCellCoord for sites in cluster
+          std::vector<UnitCellCoord> coord;
+          for(int ns_i=0; ns_i<clust.size(); ++ns_i) {
+            coord.emplace_back(clust[ns_i], struc, tol);
+          }
+          // UnitCellCoord for 'flowertree': all clusters that touch origin unitcell
+          //  (includes translationally equivalent clusters)
+          for(int ns_i=0; ns_i<coord.size(); ++ns_i) {
+            for(int ns_j=0; ns_j<coord.size(); ++ns_j) {
+              *result++ = UnitCellCoord(coord[ns_j].sublat(), coord[ns_j].unitcell()-coord[ns_i].unitcell());
+            }
           }
         }
       }

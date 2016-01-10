@@ -53,7 +53,7 @@ namespace CASM {
         return std::unique_ptr<Novelty>(this->_clone());
       }
       
-      double evaluate(const Configuration &_config) const;
+      double evaluate(const Configuration &_config) const override;
 
       
       // --- Specialized implementation -----------
@@ -68,7 +68,7 @@ namespace CASM {
 
       jsonParser &to_json(const Configuration &_config, jsonParser &json)const override;
 */
-      bool parse_args(const std::string &args);
+      bool parse_args(const std::string &args) override;
 
     private:
       

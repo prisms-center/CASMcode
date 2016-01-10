@@ -269,19 +269,11 @@ namespace CASM {
     // lazy neighbor list generation
     if(!m_nlist) {
       
-      // for now, base which sublattices to include on global_orbitree.min_num_components
-      std::set<int> sublat_indices;
-      for(int b=0; b<get_prim().basis.size(); ++b) {
-        if(get_prim().basis[b].site_occupant().size() >= global_orbitree.min_num_components) {
-          sublat_indices.insert(b);
-        }
-      }
-      
-      // for now, just use a standard formula for the weight matrix and include
+      // construct nlist
       m_nlist = notstd::make_cloneable<PrimNeighborList>(
-        PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, tol),
-        sublat_indices.begin(),
-        sublat_indices.end()
+        settings().nlist_weight_matrix(),
+        settings().nlist_sublat_indices().begin(),
+        settings().nlist_sublat_indices().end()
       );
       
       // expand the nlist to contain 'global_orbitree' (all that is needed for now)
@@ -1098,8 +1090,6 @@ namespace CASM {
 
           clust_nlist_inds.resize(tree[i][j][k].size());
           
-          std::cout << std::endl;
-          
           //sites
           for(Index l = 0; l < tree[i][j][k].size(); l++) {
             
@@ -1115,13 +1105,15 @@ namespace CASM {
               
               auto unitcell_index = find_index(nlist, delta);
               if(unitcell_index == nlist.size()) {
-                std::cerr << "Error unitcell index" << std::endl;
+                std::cerr << "Error generating unitcell index." << std::endl;
+                std::cerr << "  Did not find unitcell: " << delta.transpose() << " in the prim nlist." << std::endl;
                 exit(1);
               }
               
               auto sublat_index = find_index(sublat_indices, tuccb.sublat());
               if(sublat_index == sublat_indices.size()) {
-                std::cerr << "Error sublat index" << std::endl;
+                std::cerr << "Error generating sublat index" << std::endl;
+                std::cerr << "  Did not find sublat: " << tuccb.sublat() << " in the nlist sublattice indices." << std::endl;
                 exit(1);
               }
               
@@ -1174,8 +1166,8 @@ namespace CASM {
       for(Index i = 0; i < prim.basis[i].displacement().size(); i++)
         dof_manager.add_dof(prim.basis[b].displacement()[i].type_name());
     }
-
-    dof_manager.resize_neighborhood(nlist.size());
+    
+    dof_manager.resize_neighborhood(nlist.size()*nlist.sublat_indices().size());
 
     // We can add more as needed
     dof_manager.register_dofs(tree);

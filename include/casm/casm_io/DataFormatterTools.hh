@@ -498,7 +498,7 @@ namespace CASM {
     DatumFormatterAlias(const std::string &_name, const BaseDatumFormatter<DataObject> &_rhs) :
       BaseDatumFormatter<DataObject> (_name, ""), m_formatter(_rhs.clone()) {    }
 
-    typename BaseDatumFormatter<DataObject>::FormatterType type() const {
+    typename BaseDatumFormatter<DataObject>::FormatterType type() const override {
       return BaseDatumFormatter<DataObject>::Property;
     }
     
@@ -625,7 +625,7 @@ namespace CASM {
       return std::unique_ptr<ConstantValueFormatter>(this->_clone());
     }
     
-    void inject(const DataObject &_data_obj, DataStream &_stream, Index pass_index) const {
+    void inject(const DataObject &_data_obj, DataStream &_stream, Index pass_index) const override {
       _stream << m_value;
     }
 

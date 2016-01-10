@@ -214,7 +214,7 @@ namespace CASM {
     };
     
     // add UnitCell to the neighborhood
-    if(std::none_of(begin, end, is_inserted)) {
+    if(!std::count_if(begin, end, is_inserted)) {
                     
       // if none are new, we can return;
       return;

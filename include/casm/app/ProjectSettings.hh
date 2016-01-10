@@ -31,310 +31,139 @@ namespace CASM {
     /// \param root Path to new CASM project directory
     /// \param name Name of new CASM project. Use a short title suitable for prepending to file names.
     ///
-    explicit ProjectSettings(fs::path root, std::string name) :
-      m_dir(root),
-      m_name(name) {
-
-      if(fs::exists(m_dir.casm_dir())) {
-        throw std::runtime_error(
-          std::string("Error in 'ProjectSettings(fs::path root, std::string name)'.\n") +
-          "  A CASM project already exists at this location: '" + root.string() + "'");
-      }
-
-    }
+    explicit ProjectSettings(fs::path root, std::string name);
 
     /// \brief Construct CASM project settings from existing project
     ///
     /// \param root Path to existing CASM project directory. Project settings will be read.
     ///
-    explicit ProjectSettings(fs::path root) :
-      m_dir(root) {
-
-      if(fs::exists(m_dir.casm_dir())) {
-        try {
-
-          // read .casmroot current settings
-          fs::ifstream file(m_dir.project_settings());
-          jsonParser settings(file);
-
-          from_json(m_properties, settings["curr_properties"]);
-          from_json(m_bset, settings["curr_bset"]);
-          from_json(m_calctype, settings["curr_calctype"]);
-          from_json(m_ref, settings["curr_ref"]);
-          from_json(m_clex, settings["curr_clex"]);
-          from_json(m_eci, settings["curr_eci"]);
-          settings.get_else(m_compile_options, "compile_options", RuntimeLibrary::default_compile_options());
-          settings.get_else(m_so_options, "so_options", RuntimeLibrary::default_so_options());
-          settings.get_if(m_view_command, "view_command");
-          from_json(m_name, settings["name"]);
-          from_json(m_tol, settings["tol"]);
-          from_json(m_nlist_weight_matrix, settings["nlist_weight_matrix"]);
-          from_json(m_nlist_sublat_indices, settings["nlist_sublat_indices"]);
-        }
-        catch(std::exception &e) {
-          std::cerr << "Error in ProjectSettings::ProjectSettings(const fs::path root).\n" <<
-                    "  Error reading " << m_dir.project_settings() << std::endl;
-          throw e;
-        }
-      }
-      else if(!fs::exists(m_dir.casm_dir())) {
-        throw std::runtime_error(
-          std::string("Error in 'ProjectSettings(fs::path root, std::string name)'.\n") +
-          "  A CASM project does not exist at this location: '" + root.string() + "'");
-      }
-
-    }
+    explicit ProjectSettings(fs::path root);
 
 
     /// \brief Get project name
-    std::string name() const {
-      return m_name;
-    }
+    std::string name() const;
 
     /// \brief Get current properties
-    const std::vector<std::string> &properties() const {
-      return m_properties;
-    }
+    const std::vector<std::string> &properties() const;
 
     /// \brief Get current basis set name
-    std::string bset() const {
-      return m_bset;
-    }
+    std::string bset() const;
 
     /// \brief Get current calctype name
-    std::string calctype() const {
-      return m_calctype;
-    }
+    std::string calctype() const;
 
     /// \brief Get current ref name
-    std::string ref() const {
-      return m_ref;
-    }
+    std::string ref() const;
 
     /// \brief Get current cluster expansion name
-    std::string clex() const {
-      return m_clex;
-    }
+    std::string clex() const;
 
     /// \brief Get current eci name
-    std::string eci() const {
-      return m_eci;
-    }
+    std::string eci() const;
     
     /// \brief Get neighbor list weight matrix
-    Eigen::Matrix3l nlist_weight_matrix() const {
-      return m_nlist_weight_matrix;
-    }
+    Eigen::Matrix3l nlist_weight_matrix() const;
     
     /// \brief Get set of sublattice indices to include in neighbor lists
-    const std::set<int>& nlist_sublat_indices() const {
-      return m_nlist_sublat_indices;
-    }
+    const std::set<int>& nlist_sublat_indices() const;
 
     /// \brief Get current compilation options string
-    std::string compile_options() const {
-      return m_compile_options;
-    }
+    std::string compile_options() const;
 
     /// \brief Get current shared library options string
-    std::string so_options() const {
-      return m_so_options;
-    }
+    std::string so_options() const;
     
     /// \brief Get current command used by 'casm view'
-    std::string view_command() const {
-      return m_view_command;
-    }
+    std::string view_command() const;
 
     /// \brief Get current project tol
-    double tol() const {
-      return m_tol;
-    }
+    double tol() const;
 
 
     // ** Clexulator names **
 
-    std::string global_clexulator() const {
-      return name() + "_Clexulator";
-    }
+    std::string global_clexulator() const;
 
 
     // ** Add directories for additional project data **
 
     /// \brief Create new project data directory
-    bool new_casm_dir() const {
-      return fs::create_directory(m_dir.casm_dir());
-    }
+    bool new_casm_dir() const;
 
     /// \brief Create new symmetry directory
-    bool new_symmetry_dir() const {
-      return fs::create_directory(m_dir.symmetry_dir());
-    }
+    bool new_symmetry_dir() const;
 
     /// \brief Add a basis set directory
-    bool new_bset_dir(std::string bset) const {
-      return fs::create_directories(m_dir.bset_dir(bset));
-    }
+    bool new_bset_dir(std::string bset) const;
 
     /// \brief Add a cluster expansion directory
-    bool new_clex_dir(std::string clex) const {
-      return fs::create_directories(m_dir.clex_dir(clex));
-    }
+    bool new_clex_dir(std::string clex) const;
 
 
     /// \brief Add calculation settings directory path
-    bool new_calc_settings_dir(std::string calctype) const {
-      return fs::create_directories(m_dir.calc_settings_dir(calctype));
-    }
+    bool new_calc_settings_dir(std::string calctype) const;
 
     /// \brief Add calculation settings directory path, for supercell specific settings
-    bool new_supercell_calc_settings_dir(std::string scelname, std::string calctype) const {
-      return fs::create_directories(m_dir.supercell_calc_settings_dir(scelname, calctype));
-    }
+    bool new_supercell_calc_settings_dir(std::string scelname, std::string calctype) const;
 
     /// \brief Add calculation settings directory path, for configuration specific settings
-    bool new_configuration_calc_settings_dir(std::string configname, std::string calctype) const {
-      return fs::create_directories(m_dir.configuration_calc_settings_dir(configname, calctype));
-    }
+    bool new_configuration_calc_settings_dir(std::string configname, std::string calctype) const;
 
 
     /// \brief Add a ref directory
-    bool new_ref_dir(std::string calctype, std::string ref) const {
-      return fs::create_directories(m_dir.ref_dir(calctype, ref));
-    }
+    bool new_ref_dir(std::string calctype, std::string ref) const;
 
     /// \brief Add calculation settings directory path, for supercell specific settings
-    bool new_supercell_ref_dir(std::string scelname, std::string calctype, std::string ref) const {
-      return fs::create_directories(m_dir.supercell_ref_dir(scelname, calctype, ref));
-    }
+    bool new_supercell_ref_dir(std::string scelname, std::string calctype, std::string ref) const;
 
     /// \brief Add calculation settings directory path, for configuration specific settings
-    bool new_configuration_ref_dir(std::string configname, std::string calctype, std::string ref) const {
-      return fs::create_directories(m_dir.configuration_ref_dir(configname, calctype, ref));
-    }
+    bool new_configuration_ref_dir(std::string configname, std::string calctype, std::string ref) const;
 
 
     /// \brief Add an eci directory
-    bool new_eci_dir(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
-      return fs::create_directories(m_dir.eci_dir(clex, calctype, ref, bset, eci));
-    }
+    bool new_eci_dir(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const;
 
 
     // ** Change current settings **
 
     /// \brief Access current properties
-    std::vector<std::string> &properties() {
-      return m_properties;
-    }
+    std::vector<std::string> &properties();
 
     /// \brief Set current basis set to 'bset', if 'bset' exists
-    bool set_bset(std::string bset) {
-      auto all = m_dir.all_bset();
-      if(std::find(all.begin(), all.end(), bset) != all.end()) {
-        m_bset = bset;
-        return true;
-      }
-      return false;
-    }
+    bool set_bset(std::string bset);
 
     /// \brief Set current calctype to 'calctype', if 'calctype' exists
-    bool set_calctype(std::string calctype) {
-      auto all = m_dir.all_calctype();
-      if(std::find(all.begin(), all.end(), calctype) != all.end()) {
-        m_calctype = calctype;
-        return true;
-      }
-      return false;
-    }
+    bool set_calctype(std::string calctype);
 
     /// \brief Set current calculation reference to 'ref', if 'ref' exists
-    bool set_ref(std::string calctype, std::string ref) {
-      auto all = m_dir.all_ref(calctype);
-      if(std::find(all.begin(), all.end(), ref) != all.end()) {
-        m_ref = ref;
-        return true;
-      }
-      return false;
-    }
+    bool set_ref(std::string calctype, std::string ref);
 
     /// \brief Set current cluster expansion to 'clex', if 'clex' exists
-    bool set_clex(std::string clex) {
-      auto all = m_dir.all_clex();
-      if(std::find(all.begin(), all.end(), clex) != all.end()) {
-        m_clex = clex;
-        return true;
-      }
-      return false;
-    }
+    bool set_clex(std::string clex);
 
     /// \brief Set current eci to 'eci', if 'eci' exists
-    bool set_eci(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) {
-      auto all = m_dir.all_eci(clex, calctype, ref, bset);
-      if(std::find(all.begin(), all.end(), eci) != all.end()) {
-        m_eci = eci;
-        return true;
-      }
-      return false;
-    }
+    bool set_eci(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci);
     
     /// \brief Set neighbor list weight matrix (will delete existing Clexulator 
     /// source and compiled code)
-    bool set_nlist_weight_matrix(Eigen::Matrix3l M) {
-      
-      // changing the neighbor list properties requires updating Clexulator source code
-      // for now we just remove existing source/compiled files
-      auto all_bset = m_dir.all_bset();
-      for(auto it=all_bset.begin(); it!=all_bset.end(); ++it) {
-        fs::remove(m_dir.clexulator_src(name(), *it));
-        fs::remove(m_dir.clexulator_o(name(), *it));
-        fs::remove(m_dir.clexulator_so(name(), *it));
-      }
-      
-      m_nlist_weight_matrix = M;
-      return true;
-    }
+    bool set_nlist_weight_matrix(Eigen::Matrix3l M);
     
     /// \brief Set range of sublattice indices to include in neighbor lists (will 
     /// delete existing Clexulator source and compiled code)
     template<typename SublatIterator>
-    bool set_nlist_sublat_indices(SublatIterator begin, SublatIterator end) {
-      
-      // changing the neighbor list properties requires updating Clexulator source code
-      // for now we just remove existing source/compiled files
-      auto all_bset = m_dir.all_bset();
-      for(auto it=all_bset.begin(); it!=all_bset.end(); ++it) {
-        fs::remove(m_dir.clexulator_src(name(), *it));
-        fs::remove(m_dir.clexulator_o(name(), *it));
-        fs::remove(m_dir.clexulator_so(name(), *it));
-      }
-      
-      m_nlist_sublat_indices = std::set<int>(begin, end);
-      return true;
-    }
+    bool set_nlist_sublat_indices(SublatIterator begin, SublatIterator end);
 
     /// \brief Set compile options to 'opt'
-    bool set_compile_options(std::string opt) {
-      m_compile_options = opt;
-      return true;
-    }
+    bool set_compile_options(std::string opt);
 
     /// \brief Set shared library options to 'opt'
-    bool set_so_options(std::string opt) {
-      m_so_options = opt;
-      return true;
-    }
+    bool set_so_options(std::string opt);
     
     /// \brief Set command used by 'casm view'
-    bool set_view_command(std::string opt) {
-      m_view_command = opt;
-      return true;
-    }
+    bool set_view_command(std::string opt);
 
     /// \brief Set shared library options to 'opt'
-    bool set_tol(double _tol) {
-      m_tol = _tol;
-      return true;
-    }
+    bool set_tol(double _tol);
 
 
     /// \brief Save settings to project settings file
@@ -342,7 +171,10 @@ namespace CASM {
 
 
   private:
-
+    
+    /// \brief Changing the neighbor list properties requires updating Clexulator source code
+    void _reset_clexulators();
+    
     DirectoryStructure m_dir;
 
     std::string m_name;
@@ -373,49 +205,18 @@ namespace CASM {
 
   };
 
-  inline jsonParser &to_json(const ProjectSettings &set, jsonParser &json) {
+  jsonParser &to_json(const ProjectSettings &set, jsonParser &json);
 
-    json = jsonParser::object();
 
-    json["name"] = set.name();
-    json["curr_properties"] = set.properties();
-    json["curr_clex"] = set.clex();
-    json["curr_calctype"] = set.calctype();
-    json["curr_ref"] = set.ref();
-    json["curr_bset"] = set.bset();
-    json["curr_eci"] = set.eci();
-    json["nlist_weight_matrix"] = set.nlist_weight_matrix();
-    json["nlist_sublat_indices"] = set.nlist_sublat_indices();
-    json["compile_options"] = set.compile_options();
-    json["so_options"] = set.so_options();
-    json["view_command"] = set.view_command();
-    json["tol"] = set.tol();
-
-    return json;
+  /// \brief Set range of sublattice indices to include in neighbor lists (will 
+  /// delete existing Clexulator source and compiled code)
+  template<typename SublatIterator>
+  bool ProjectSettings::set_nlist_sublat_indices(SublatIterator begin, SublatIterator end) {
+    _reset_clexulators();
+    m_nlist_sublat_indices = std::set<int>(begin, end);
+    return true;
   }
-
-
-  /// \brief Save settings to file
-  inline void ProjectSettings::commit() const {
-
-    try {
-      SafeOfstream file;
-      file.open(m_dir.project_settings());
-
-      jsonParser json;
-      to_json(*this, json);
-
-      json.print(file.ofstream());
-      file.close();
-    }
-    catch(...) {
-      std::cerr << "Uncaught exception in ProjectSettings::commit()" << std::endl;
-      /// re-throw exceptions
-      throw;
-    }
-
-  }
-
+  
 }
 
 #endif

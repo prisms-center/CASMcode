@@ -56,7 +56,7 @@ namespace CASM {
     }
 
     /// Return pointer to a copy of this SymBasisPermute
-    SymOpRepresentation *copy() const {
+    SymOpRepresentation *copy() const override {
       return new SymBasisPermute(*this);
     };
     
@@ -85,10 +85,10 @@ namespace CASM {
       return m_ucc_permute;
     }
     
-    jsonParser &to_json(jsonParser &json) const {
+    jsonParser &to_json(jsonParser &json) const override {
       return json;
     };
-    void from_json(const jsonParser &json) {};
+    void from_json(const jsonParser &json) override {};
 
   };
   
