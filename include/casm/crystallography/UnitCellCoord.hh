@@ -82,7 +82,7 @@ namespace CASM {
   
   inline std::ostream& operator<<(std::ostream &sout, const UnitCellCoord& site)
   {
-      return sout << site.unitcell().transpose() << ", " << site.sublat();
+      return sout << site.sublat() << ", " << site.unitcell().transpose();
   }
   
   /// \brief Add UnitCell to UnitCellCoord 
@@ -257,7 +257,7 @@ namespace CASM {
     fill_value.unitcell()(0) = read_json[1].get<Index>();
     fill_value.unitcell()(1) = read_json[2].get<Index>();
     fill_value.unitcell()(2) = read_json[3].get<Index>();
-
+    
     return;
   }
 }

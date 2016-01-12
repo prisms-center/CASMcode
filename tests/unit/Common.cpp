@@ -6,29 +6,6 @@
 
 namespace test {
 
-  BasicStructure<Site> ZrO_prim() {
-    
-    // lattice vectors as rows
-    Eigen::Matrix3d lat;
-    lat << 3.233986860000, 0.000000000000, 0.000000000000,
-           -1.616993430000, 2.800714770000, 0.000000000000,
-           0.000000000000, 0.000000000000, 5.168678340000;
-    
-    BasicStructure<Site> struc(Lattice(lat.transpose()));
-    struc.title = "ZrO";
-    
-    Molecule O = make_atom("O", struc.lattice());
-    Molecule Zr = make_atom("Zr", struc.lattice());
-    Molecule Va = make_vacancy(struc.lattice());
-    
-    struc.basis.push_back( Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice()), {Zr}) );
-    struc.basis.push_back( Site(Coordinate(Eigen::Vector3d(2./3., 1./3., 1./2.), struc.lattice()), {Zr}) );
-    struc.basis.push_back( Site(Coordinate(Eigen::Vector3d(1./3., 2./3., 1./4.), struc.lattice()), {Va, O}) );
-    struc.basis.push_back( Site(Coordinate(Eigen::Vector3d(1./3., 2./3., 3./4.), struc.lattice()), {Va, O}) );
-    
-    return struc;
-  }
-
   /// \brief Build a CASM project at 'proj_dir/title' using the prim
   void make_project(const Proj& proj) {
     
@@ -70,82 +47,6 @@ namespace test {
     for(auto i=0; i<json["multiplication_table"].size(); ++i) {
       BOOST_CHECK_EQUAL(json["multiplication_table"][i].size(), N_op);
     }
-  }
-  
-  jsonParser Proj::bspecs() const {
-
-std::string str = R"({
-  "basis_functions" : {
-    "site_basis_functions" : "occupation"
-  },
-  "orbit_branch_specs" : {
-    "2" : {"max_length" : 4.01},
-    "3" : {"max_length" : 3.01}
-  },
-  "orbit_specs" : [
-    {
-      "coordinate_mode" : "Direct",
-      "prototype" : [
-        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 1.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 2.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 3.000000000000, 0.000000000000, 0.000000000000 ]
-      ],
-      "include_subclusters" : true  
-    },
-    {
-      "coordinate_mode" : "Direct",
-      "prototype" : [
-        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 0.000000000000, 1.000000000000, 0.000000000000 ],
-        [ 0.000000000000, 0.000000000000, 1.000000000000 ],
-        [ 1.000000000000, 1.000000000000, 1.000000000000 ]
-      ],
-      "include_subclusters" : true
-    }
-  ]
-})";
-    
-    return jsonParser::parse(str);
-  
-  }
-  
-  std::string Proj::invalid_bspecs() const {
-
-std::string str = R"({
-  "basis_functions" : {
-    "site_basis_functions" : "occupation"
-  },
-  "orbit_branch_specs" : {
-    "2" : {"max_length" : 4.01},
-    "3" : {"max_length" : 3.01}
-  },
-  "orbit_specs" : [
-    {
-      "coordinate_mode" : "Direct",
-      "prototype" : [
-        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 1.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 2.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 3.000000000000, 0.000000000000, 0.000000000000 ],
-      ],
-      "include_subclusters" : true  
-    },
-    {
-      "coordinate_mode" : "Direct",
-      "prototype" : [
-        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 0.000000000000, 1.000000000000, 0.000000000000 ],
-        [ 0.000000000000, 0.000000000000, 1.000000000000 ],
-        [ 1.000000000000, 1.000000000000, 1.000000000000 ]
-      ],
-      "include_subclusters" : true
-    }
-  ]
-})";
-    
-    return str;
-  
   }
   
   /// \brief Check that 'casm init' runs without error and expected files are created
@@ -199,68 +100,6 @@ std::string str = R"({
   void Proj::check_composition() {
     m_p.popen(cd_and() + "casm composition -d");
     BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
-  }
-    
-  /// \brief Default uses Proj::bspecs and checks that 5 branches are generated,
-  ///        and that --orbits, --clusters, and --functions run without error.
-  void Proj::check_bset() {
-    
-    std::cout << "Check 'casm bset': " << dir << std::endl;
-    
-    
-    // check for failure with bspecs with invalid JSON
-    fs::ofstream file(dir / "basis_sets" / "bset.default" / "bspecs.json");
-    file << Proj::invalid_bspecs() << "\n";
-    file.close();
-    m_p.popen(cd_and() + "casm bset -u");
-    BOOST_CHECK_EQUAL_MESSAGE(m_p.exit_code(), 4, m_p.gets());
-    
-    // check for success with a valid bspecs
-    Proj::bspecs().write(dir / "basis_sets" / "bset.default" / "bspecs.json");
-    
-    m_p.popen(cd_and() + "casm bset -u");
-    BOOST_CHECK_EQUAL_MESSAGE(m_p.exit_code(), 0, m_p.gets());
-    
-    BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*eci\.in)")), true);
-    BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*clust\.json)")), true);
-    BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*)" + title + R"(_Clexulator\.cc)")), true);
-    
-    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.eci_in(m_set.bset())));
-    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.clust(m_set.bset())));
-    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.bset())));
-    
-    std::string str;
-    
-    // check that 5 branches are created (null - 4-pt)
-    // check that --orbits, --clusters, --functions all execute 
-    //   (derived Proj would have to check the actual results)
-    std::string pattern = R"(\*\* Branch [0-9]+ \*\*)";
-    std::regex re(pattern);
-    
-    std::vector<std::string> checks = {
-      "casm bset --orbits", 
-      "casm bset --clusters", 
-      "casm bset --functions"
-    };
-    
-    for(auto it=checks.begin(); it!=checks.end(); ++it) {
-      m_p.popen(cd_and() + *it);
-      str = m_p.gets();
-    
-      auto begin = std::sregex_iterator(str.begin(), str.end(), re);
-      auto end = std::sregex_iterator();
-      auto count = std::distance(begin, end);
-      
-      BOOST_CHECK_EQUAL(count, 5);
-    }
-    
-    // check that you can't overwrite without using -f
-    m_p.popen(cd_and() + "casm bset -u");
-    BOOST_CHECK_EQUAL(m_p.exit_code(), 6);
-    
-    m_p.popen(cd_and() + "casm bset -uf");
-    BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
-    
   }
   
   /// \brief Default checks that enumerating supercells and configurations can 

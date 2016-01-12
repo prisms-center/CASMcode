@@ -754,16 +754,20 @@ namespace CASM {
 
   template <typename T, Index N>
   void from_json(Matrix<T, N> &value, const jsonParser &json) {
-    try {
-      for(Index i = 0; i < value.num_rows(); i++) {
-        for(Index j = 0; j < value.num_cols(); j++) {
-          from_json(value.at(i, j), json[i][j]);
-        }
-      }
+    if(json.size() != N) {
+      std::cerr << "Matrix size: " << N << std::endl;
+      std::cerr << "JSON: " << json << std::endl;
+      throw std::runtime_error("Error reading Matrix from JSON");
     }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
+    for(Index i = 0; i < value.num_rows(); i++) {
+      if(json[i].size() != N) {
+        std::cerr << "Matrix size: " << N << std::endl;
+        std::cerr << "JSON: " << json << std::endl;
+        throw std::runtime_error("Error reading Matrix from JSON");
+      }
+      for(Index j = 0; j < value.num_cols(); j++) {
+        from_json(value.at(i, j), json[i][j]);
+      }
     }
   }
 
@@ -1488,13 +1492,13 @@ namespace CASM {
 
   template <typename T, Index N>
   void from_json(Vector<T, N> &value, const jsonParser &json) {
-    try {
-      for(Index i = 0; i < value.size(); i++)
-        from_json(value.at(i), json[i]);
+    if(json.size() != N) {
+      std::cerr << "Vector size: " << N << std::endl;
+      std::cerr << "JSON: " << json << std::endl;
+      throw std::runtime_error("Error reading Vector from JSON");
     }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
+    for(Index i = 0; i < value.size(); i++) {
+      from_json(value.at(i), json[i]);
     }
   }
 

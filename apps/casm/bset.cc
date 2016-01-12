@@ -73,7 +73,7 @@ namespace CASM {
       DirectoryStructure dir(root);
       ProjectSettings set(root);
       Structure prim(read_prim(dir.prim()));
-
+      
       std::cout << "\n***************************\n" << std::endl;
 
 
@@ -125,11 +125,28 @@ namespace CASM {
 
       try {
         jsonParser bspecs_json(dir.bspecs(set.bset()));
-
+        
         std::cout << "Generating orbitree: \n";
         tree = make_orbitree(prim, bspecs_json);
+        
+        if(tree.min_num_components < 2) {
+          std::cerr << "Error generating orbitree: Custom clusters include a site "
+                    << "with only 1 allowed component. This is not currently supported." << std::endl;
+          for(int nb=0; nb<tree.size(); ++nb) {
+            for(int no=0; no<tree[nb].size(); ++no) {
+              for(int ns=0; ns<tree[nb][no].prototype.size(); ++ns) {
+                if(tree[nb][no].prototype[ns].site_occupant().size() < 2) {
+                  std::cerr << "--- Prototype --- " << std::endl;
+                  tree[nb][no].prototype.print(std::cerr, '\n');
+                  break;
+                }
+              }
+            }
+          }
+          return ERR_INVALID_INPUT_FILE;
+        }
         std::cout << "  DONE.\n" << std::endl;
-
+        
         tree.generate_clust_bases();
       }
       catch(std::exception &e) {
@@ -148,7 +165,7 @@ namespace CASM {
       to_json(jsonHelper(tree, prim), clust_json).write(dir.clust(set.bset()));
 
       std::cout << "Wrote: " << dir.clust(set.bset()) << "\n" << std::endl;
-
+      
       
       // -- write global Clexulator
       

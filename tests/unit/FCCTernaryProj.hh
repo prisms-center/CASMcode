@@ -36,6 +36,82 @@ namespace test {
            "FCC_ternary", 
            "FCC Ternary with A, B, C occupation") {}
     
+    jsonParser bspecs() const {
+
+std::string str = R"({
+  "basis_functions" : {
+    "site_basis_functions" : "occupation"
+  },
+  "orbit_branch_specs" : {
+    "2" : {"max_length" : 4.01},
+    "3" : {"max_length" : 3.01}
+  },
+  "orbit_specs" : [
+    {
+      "coordinate_mode" : "Direct",
+      "prototype" : [
+        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 1.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 2.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 3.000000000000, 0.000000000000, 0.000000000000 ]
+      ],
+      "include_subclusters" : true  
+    },
+    {
+      "coordinate_mode" : "Direct",
+      "prototype" : [
+        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 0.000000000000, 1.000000000000, 0.000000000000 ],
+        [ 0.000000000000, 0.000000000000, 1.000000000000 ],
+        [ 1.000000000000, 1.000000000000, 1.000000000000 ]
+      ],
+      "include_subclusters" : true
+    }
+  ]
+})";
+    
+      return jsonParser::parse(str);
+    
+    }
+    
+    std::string invalid_bspecs() const {
+
+std::string str = R"({
+  "basis_functions" : {
+    "site_basis_functions" : "occupation"
+  },
+  "orbit_branch_specs" : {
+    "2" : {"max_length" : 4.01},
+    "3" : {"max_length" : 3.01}
+  },
+  "orbit_specs" : [
+    {
+      "coordinate_mode" : "Direct",
+      "prototype" : [
+        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 1.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 2.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 3.000000000000, 0.000000000000, 0.000000000000 ],
+      ],
+      "include_subclusters" : true  
+    },
+    {
+      "coordinate_mode" : "Direct",
+      "prototype" : [
+        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 0.000000000000, 1.000000000000, 0.000000000000 ],
+        [ 0.000000000000, 0.000000000000, 1.000000000000 ],
+        [ 1.000000000000, 1.000000000000, 1.000000000000 ]
+      ],
+      "include_subclusters" : true
+    }
+  ]
+})";
+    
+      return str;
+    
+    }
+    
     /// \brief Check symmetry
     void check_symmetry() override {
       _check_symmetry(48, 10, 48, 10, 48, 10, "Oh", "Oh");
@@ -49,6 +125,65 @@ namespace test {
       };
       
       _check_composition_axes(axes.begin(), axes.end());
+    }
+    
+    /// \brief Uses bspecs() and checks that 5 branches are generated,
+    ///        and that --orbits, --clusters, and --functions run without error.
+    void check_bset() override {
+      
+      // check for failure with bspecs with invalid JSON
+      fs::ofstream file(dir / "basis_sets" / "bset.default" / "bspecs.json");
+      file << invalid_bspecs() << "\n";
+      file.close();
+      m_p.popen(cd_and() + "casm bset -u");
+      BOOST_CHECK_EQUAL_MESSAGE(m_p.exit_code(), 4, m_p.gets());
+      
+      // check for success with a valid bspecs
+      bspecs().write(dir / "basis_sets" / "bset.default" / "bspecs.json");
+      
+      m_p.popen(cd_and() + "casm bset -u");
+      BOOST_CHECK_EQUAL_MESSAGE(m_p.exit_code(), 0, m_p.gets());
+      
+      BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*eci\.in)")), true);
+      BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*clust\.json)")), true);
+      BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*)" + title + R"(_Clexulator\.cc)")), true);
+      
+      BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.eci_in(m_set.bset())));
+      BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.clust(m_set.bset())));
+      BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.bset())));
+      
+      std::string str;
+      
+      // check that 5 branches are created (null - 4-pt)
+      // check that --orbits, --clusters, --functions all execute 
+      //   (derived Proj would have to check the actual results)
+      std::string pattern = R"(\*\* Branch [0-9]+ \*\*)";
+      std::regex re(pattern);
+      
+      std::vector<std::string> checks = {
+        "casm bset --orbits", 
+        "casm bset --clusters", 
+        "casm bset --functions"
+      };
+      
+      for(auto it=checks.begin(); it!=checks.end(); ++it) {
+        m_p.popen(cd_and() + *it);
+        str = m_p.gets();
+      
+        auto begin = std::sregex_iterator(str.begin(), str.end(), re);
+        auto end = std::sregex_iterator();
+        auto count = std::distance(begin, end);
+        
+        BOOST_CHECK_EQUAL(count, 5);
+      }
+      
+      // check that you can't overwrite without using -f
+      m_p.popen(cd_and() + "casm bset -u");
+      BOOST_CHECK_EQUAL(m_p.exit_code(), 6);
+      
+      m_p.popen(cd_and() + "casm bset -uf");
+      BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
+      
     }
     
     /// \brief Check "casm enum"

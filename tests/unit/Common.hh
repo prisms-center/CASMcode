@@ -53,10 +53,6 @@ namespace test {
       return "cd " + dir.string() + "&& ";
     };
     
-    virtual jsonParser bspecs() const;
-    
-    virtual std::string invalid_bspecs() const;
-    
     /// \brief Check project initialization
     virtual void check_init();
     
@@ -67,7 +63,7 @@ namespace test {
     virtual void check_composition();
     
     /// \brief Check "casm bset"
-    virtual void check_bset();
+    virtual void check_bset() = 0;
     
     /// \brief Check "casm enum"
     virtual void check_enum();
@@ -113,6 +109,7 @@ namespace test {
 }
 
 #include "FCCTernaryProj.hh"
+#include "ZrOProj.hh"
 
 namespace test {
   
@@ -122,10 +119,14 @@ namespace test {
     m_p.popen(cd_and() + "casm composition --select 0");
   
     for(auto it=begin; it!=end; ++it) {
-      BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(*it)), true);
+      BOOST_CHECK_EQUAL_MESSAGE(std::regex_search(m_p.gets(), m_match, std::regex(*it)), true, m_p.gets());
     }
     
-    BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Currently selected composition axes: 0)")), true);
+    BOOST_CHECK_EQUAL_MESSAGE(
+      std::regex_search(m_p.gets(), m_match, std::regex(R"(Currently selected composition axes: 0)")), 
+      true,
+      m_p.gets()
+    );
   }
 }
 

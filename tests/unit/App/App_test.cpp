@@ -57,7 +57,8 @@ BOOST_AUTO_TEST_CASE(ProjectCommands) {
   // checks of 'casm X' commands for several projects
   std::vector<std::unique_ptr<test::Proj> > proj;
   proj.push_back(notstd::make_unique<test::FCCTernaryProj>());
-
+  proj.push_back(notstd::make_unique<test::ZrOProj>());
+  
   for(auto proj_it=proj.begin(); proj_it!=proj.end(); ++proj_it) {
     (*proj_it)->check_init();
     (*proj_it)->check_symmetry();

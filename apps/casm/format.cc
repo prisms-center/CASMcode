@@ -674,18 +674,22 @@ LCHARG = .FALSE.\n";
 
 
       std::cout << "The JSON object 'orbit_branch_specs' specifies the maximum size of pair,   \n" <<
-                "triplet, quadruplet, etc. clusters in terms of the maximum distance \n" <<
-                "between any two sites in the cluster.\n\n";
+                   "triplet, quadruplet, etc. clusters in terms of the maximum distance \n" <<
+                   "between any two sites in the cluster.\n\n";
 
-      std::cout << "The JSON array 'orbit_specs' allows specifying particular custom orbits \n" <<
-                "by providing the prototype cluster coordinates. The 'include_subclusters'\n" <<
-                "option allows including all orbits of subclusters of the specified cluster\n\n\n";
+      std::cout << "The JSON array 'orbit_specs' allows specifying particular custom orbits    \n" <<
+                   "by providing the prototype cluster coordinates. The 'include_subclusters'  \n" <<
+                   "option allows including all orbits of subclusters of the specified cluster.\n" <<
+                   "The cluster coordinates may be in \"Direct\"/\"Fractional\" coordinates,   \n" 
+                   "\"Cartesian\" coordinates, or \"Integral\" coordinates. \"Integral\"       \n" 
+                   "coordinates are 4-element integer arrays indicating sublattice index, b,   \n"
+                   "followed by unit cell indices, i, j, k.                                    \n\n\n";
 
 
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
       std::cout <<
-                "{\n  \"basis_functions\" : {\n    \"site_basis_functions\" : \"occupation\"\n  },\n  \"orbit_branch_specs\" : {\n    \"2\" : {\"max_length\" : 4.01},\n    \"3\" : {\"max_length\" : 3.01}\n  },\n  \"orbit_specs\" : [\n    {\n      \"coordinate_mode\" : \"Direct\",\n      \"prototype\" : [\n        [ 0.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 1.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 2.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 3.000000000000, 0.000000000000, 0.000000000000 ]\n      ],\n      \"include_subclusters\" : true  \n    },\n    {\n      \"coordinate_mode\" : \"Direct\",\n      \"prototype\" : [\n        [ 0.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 0.000000000000, 1.000000000000, 0.000000000000 ],\n        [ 0.000000000000, 0.000000000000, 1.000000000000 ],\n        [ 1.000000000000, 1.000000000000, 1.000000000000 ]\n      ],\n      \"include_subclusters\" : true\n    }\n  ]\n}\n";
+                "{\n  \"basis_functions\" : {\n    \"site_basis_functions\" : \"occupation\"\n  },\n  \"orbit_branch_specs\" : {\n    \"2\" : {\"max_length\" : 4.01},\n    \"3\" : {\"max_length\" : 3.01}\n  },\n  \"orbit_specs\" : [\n    {\n      \"coordinate_mode\" : \"Direct\",\n      \"prototype\" : [\n        [ 0.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 1.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 2.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 3.000000000000, 0.000000000000, 0.000000000000 ]\n      ],\n      \"include_subclusters\" : true  \n    },\n    {\n      \"coordinate_mode\" : \"Integral\",\n      \"prototype\" : [\n        [ 0, 0, 0, 0 ],\n        [ 1, 0, 0, 0 ],\n        [ 0, 0, 0, 3 ]\n      ],\n      \"include_subclusters\" : true\n    }\n  ]\n}\n";
       std::cout << "-------\n";
 
     }
