@@ -55,7 +55,7 @@ namespace CASM {
                        "A script 'casm.view' is included with can be used to run \n"
                        "a command and then pause 1s, which is useful for opening \n"
                        "POSCARs with VESTA.  An example on Mac might look like:  \n"
-                       "  'casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"' \n\n";
+                       "  casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"' \n\n";
 
           return 0;
         }
@@ -92,7 +92,7 @@ namespace CASM {
       std::cerr << "Error in 'casm view': No command set. Use 'casm settings "
                    "--set-view-command' to set the command to open visualization "
                    "software. It should take one argument, the path to a POSCAR "
-                   "to be visualized. For example, to use VESTA on Mac: 'open -a /Applications/VESTA/VESTA.app'.\n";
+                   "to be visualized. For example, to use VESTA on Mac: casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'.\n";
       return ERR_MISSING_DEPENDS;
     }
     
