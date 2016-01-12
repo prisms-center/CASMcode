@@ -37,7 +37,6 @@
 #include "casm/casm_io/EigenDataStream.hh"
 #include "casm/casm_io/Args.hh"
 
-
 // Misc
 #include "casm/misc/HierarchyID.hh"					// template //
 
@@ -127,5 +126,9 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/AppIO.hh"
+
+// VaspIO
+#include "casm/casm_io/VaspIO.hh"
+
 
 #endif

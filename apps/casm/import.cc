@@ -248,7 +248,7 @@ namespace CASM {
         continue;
 
       std::stringstream contcar_ss;
-      import_struc.print5_occ(contcar_ss);
+      VaspIO::PrintPOSCAR(import_struc).print(contcar_ss);
       import_map[&imported_config].push_back(Import_impl::Data(pos_path, relax_data, contcar_ss.str(), checkenergy));
 
     }

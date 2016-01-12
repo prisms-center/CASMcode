@@ -174,15 +174,6 @@ namespace CASM {
     //CASM canonical input/output
     virtual void read(std::istream &stream);  //John do this
 
-    // print BasicStructure, listing all possible molecules on each site
-    void print(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John do this too, modified by BP
-    //void print5(std::ostream &stream, COORD_TYPE mode = FRAC); //John G 050513, modified by BP - No longer allowed
-    void print5(std::ostream &stream, COORD_TYPE mode = FRAC, int Va_mode = 0, char term = '\n', int prec = 7, int pad = 5) const; // added by Michael
-
-    // print BasicStructure, listing current occupying molecules on each site
-    void print_occ(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John do this too, modified by BP
-    void print5_occ(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John G 050513, modified by BP
-
     /// Output other formats
     void print_xyz(std::ostream &stream) const;
     void print_cif(std::ostream &stream) const;

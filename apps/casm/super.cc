@@ -84,7 +84,7 @@ namespace CASM {
         "Tolerance used for checking symmetry")
       
       ("coord", 
-        po::value<COORD_TYPE>(&coordtype)->default_value(CASM::CART), 
+        po::value<COORD_TYPE>(&coordtype)->default_value(CASM::FRAC), 
         "Coord mode: FRAC=0, or CART=1");
 
       try {
@@ -162,7 +162,24 @@ namespace CASM {
       return 1;
 
     }
+    
+    COORD_MODE C(coordtype);
 
+    // lambda for printing
+    auto print = [&](const BasicStructure<Site>& struc) {
+      VaspIO::PrintPOSCAR printer(struc);
+      
+      if(vm.count("vasp5")) {
+        printer.set_atom_names_on();
+      }
+      else {
+        printer.set_atom_names_off();
+      }
+      printer.set_coord_mode(coordtype);
+      printer.print(std::cout);
+    };
+
+    
 
     // -- no casm project necessary for super cell of a POSCAR -------
 
@@ -191,19 +208,13 @@ namespace CASM {
       file.close();
 
       auto super = unitcell.create_superstruc(make_supercell(unitcell.lattice(), Tm));
-
-      if(vm.count("vasp5")) {
-        super.print5(std::cout);
-      }
-      else {
-        super.print(std::cout);
-      }
-
+      super.title = std::string("Supercell of ") + unitcell.title;
+      
+      print(super);
+      
       return 0;
     }
 
-
-    COORD_MODE C(coordtype);
 
     fs::path orig = fs::current_path();
     fs::path root = find_casmroot(fs::current_path());
@@ -399,8 +410,7 @@ namespace CASM {
 
         std::stringstream ss;
         const Configuration &con = primclex.configuration(configname[0]);
-        const Supercell &scel = con.get_supercell();
-        scel.print(con, ss, FRAC);
+        VaspIO::PrintPOSCAR(con).print(ss); 
         
         std::istringstream iss(ss.str());
         BasicStructure<Site> unit;
@@ -408,12 +418,7 @@ namespace CASM {
 
         std::cout << "Unit structure:";
         std::cout << "\n------\n";
-        if(vm.count("vasp5")) {
-          unit.print5(std::cout);
-        }
-        else {
-          unit.print(std::cout);
-        }
+        print(unit);
         std::cout << "\n------\n";
         std::cout << "\n\n";
 
@@ -423,12 +428,7 @@ namespace CASM {
 
         std::cout << "Super structure:";
         std::cout << "\n------\n";
-        if(vm.count("vasp5")) {
-          super.print5(std::cout);
-        }
-        else {
-          super.print(std::cout);
-        }
+        print(super);
         std::cout << "\n------\n";
         
         if(vm.count("add-canonical")) {

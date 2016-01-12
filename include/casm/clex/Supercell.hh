@@ -396,12 +396,6 @@ namespace CASM {
                             const Array< Array< Array<Index > > > &perturb_config_index,
                             const Array< Array< Array<permute_const_iterator> > > &perturb_config_symop_index,
                             bool print_config_name) const;
-
-    // Va_mode		description
-    // 0			print no information about the vacancies
-    // 1			print only the coordinates of the vacancies
-    // 2			print the number of vacancies and the coordinates of the vacancies
-    void print(const Configuration &config, std::ostream &stream, COORD_TYPE mode, int Va_mode = 0, char term = '\n', int prec = 7, int pad = 5) const;
     
     ///Call Configuration::write out every configuration in supercell
     jsonParser &write_config_list(jsonParser &json);

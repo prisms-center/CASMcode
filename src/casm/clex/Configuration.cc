@@ -7,6 +7,7 @@
 #include "casm/clex/Clexulator.hh"
 #include "casm/crystallography/jsonStruc.hh"
 #include "casm/clex/ECIContainer.hh"
+#include "casm/casm_io/VaspIO.hh"
 
 namespace CASM {
 
@@ -546,7 +547,7 @@ namespace CASM {
     }
 
     fs::ofstream file(get_pos_path());
-    get_supercell().print(*this, file, FRAC);
+    VaspIO::PrintPOSCAR(*this).print(file);
     return;
   }
 
@@ -829,7 +830,7 @@ namespace CASM {
     // print POS to stringstream
     if(occupation() != get_supercell().vacant()) {
       std::stringstream ss;
-      get_supercell().print(*this, ss, FRAC);
+      VaspIO::PrintPOSCAR(*this).print(ss);
       json["pos"] = ss.str();
     }
     else {

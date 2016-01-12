@@ -203,11 +203,6 @@ namespace CASM {
     /// for exact interpolation, choose "LOCAL" or "1", for nearest-image interpolation, choose "PERIODIC" or "0"
     void intpol(Structure end_struc, int Nofimag, PERIODICITY_TYPE mode, Array<Structure> &images);
 
-    //void linear_interpolate(Structure end_struc, int num_images, Array<Structure> &images);
-    /// Print intpolated images in seperate directries
-    void print_hop_images(Array<Structure> images, std::string location);
-
-
     // ****Input/Output****
 
     /// For each symmetrically distinct site, print the symmetry operations that map it onto itself

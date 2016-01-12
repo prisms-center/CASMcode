@@ -681,7 +681,7 @@ namespace CASM {
   }
 
   //*******************************************************************************
-
+/*
   // Va_mode is default set to 0
   // Va_mode		description
   // 0			print no information about the vacancies
@@ -770,6 +770,7 @@ namespace CASM {
     
     return;
   }
+*/
 
   //*******************************************************************************
   /**

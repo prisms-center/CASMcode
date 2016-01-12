@@ -840,9 +840,9 @@ namespace CASM {
       std::cerr << "*******************************************\n"
                 << "ERROR in Structure::map_superstruc_to_prim:\n"
                 << "The structure \n";
-      print(std::cerr);
+      std::cerr << jsonParser(*this) << std::endl;
       std::cerr << "is not a supercell of the given prim!\n";
-      prim.print(std::cerr);
+      std::cerr << jsonParser(prim) << std::endl;
       std::cerr << "*******************************************\n";
       exit(1);
     }
@@ -1548,65 +1548,6 @@ namespace CASM {
     return;
   }
   */
-  //***********************************************************
-  /**
-   * Create numbered subdirectories and copies the appropriate
-   * POSCAR files into those.
-   * you can choose where you want to create subdirectories and name
-   */
-  //***********************************************************
-  void Structure::print_hop_images(Array<Structure> images, std::string location) {
-
-    std::ofstream out;
-    if(mkdir(location.c_str(), 0777) == -1) {
-      std::cerr << " This Directory is already existed, it will be over-written in previous files.  \n";
-    };
-
-
-
-    for(Index i = 0; i < images.size() ; i ++) {
-      std::stringstream convert;
-      std::string imag_num, POSCAR, name;
-
-      convert << i;
-      if(i > 10) {
-        name = location + "/POSCAR" + convert.str();
-      }
-      else {
-        name = location + "/POSCAR0" + convert.str();
-      }
-
-      out.open(name.c_str());
-      images[i].print(out);
-      out.close();
-
-      if(i > 10) {
-        imag_num = location + "/" + convert.str(); //it the name of subdirectories 10, 11
-        POSCAR = imag_num + "/POSCAR";
-      }
-      else {
-        imag_num = location + "/0" + convert.str(); // 01 02
-        POSCAR = imag_num + "/POSCAR";
-      }
-
-      if(mkdir(imag_num.c_str(), 0777) == -1) {
-        ;
-      }
-
-      out.open(POSCAR.c_str());
-      if(out.is_open()) {
-        images[i].print(out);
-      }
-      else {
-        std::cerr << "ERROR creating POSCAR " << i << "\n";
-      }
-      out.close();
-
-
-    }
-
-    return;
-  }
 
 
   //***********************************************************

@@ -1058,6 +1058,7 @@ namespace CASM {
         tree.read_custom_clusters_from_json(json["orbit_specs"], prim, prim.factor_group(), verbose);
       }
       tree.collect_basis_info(prim);
+        
       return tree;
     }
     catch(...) {
@@ -1113,7 +1114,7 @@ namespace CASM {
               auto sublat_index = find_index(sublat_indices, tuccb.sublat());
               if(sublat_index == sublat_indices.size()) {
                 std::cerr << "Error generating sublat index" << std::endl;
-                std::cerr << "  Did not find sublat: " << tuccb.sublat() << " in the nlist sublattice indices." << std::endl;
+                std::cerr << "  Did not find sublat: " << tuccb.sublat() << " in the nlist sublattice indices: " << jsonParser(sublat_indices) << std::endl;
                 exit(1);
               }
               
@@ -1505,8 +1506,10 @@ namespace CASM {
            "#include \"casm/clex/Clexulator.hh\"\n" <<
            "\n\n\n" <<
            "/****** CLEXULATOR CLASS FOR PRIM ******" << std::endl;
-
-    prim.print(stream);
+    
+    jsonParser json;
+    write_prim(prim, json, FRAC);
+    stream << json;
 
     stream <<
            "**/\n\n\n" <<

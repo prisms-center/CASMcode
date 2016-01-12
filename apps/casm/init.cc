@@ -198,22 +198,27 @@ namespace CASM {
 
     }
 
-    //Check if the lattice is right handed, and if not print PRIM.right_handed
+    //Check if the lattice is right handed, and if not print PRIM.right_handed.json
     if(!prim.lattice().is_right_handed()) {
       if(!vm.count("force")) {
-        std::cerr << "ERROR: The structure in PRIM is not right-handed. Some electronic-"
+        std::cerr << "ERROR: The structure in prim.json is not right-handed. Some electronic-"
                   << "structure codes will not accept this input. If you would like to "
                   << "keep this PRIM, re-run with the --force option. Writing the "
-                  << "right-handed structure to PRIM.right_handed" << std::endl;
-        fs::ofstream file(root / "PRIM.right_handed");
+                  << "right-handed structure to PRIM.right_handed.json" << std::endl;
+       
         prim.set_lattice(Lattice(prim.lattice()).make_right_handed(), CART);
         prim.within();
-        prim.print(file);
-        file.close();
+        
+        fs::ofstream primfile(root / "prim.right_handed.json");
+        jsonParser json;
+        write_prim(prim, json, FRAC);
+        json["description"] = prim_json["description"];
+        json.print(primfile);
+        primfile.close();
         return ERR_INVALID_INPUT_FILE;
       }
       else {
-        std::cerr << "WARNING: The structure in the PRIM file is not right-handed. Continuing anyway    \n"
+        std::cerr << "WARNING: The structure in the prim.json file is not right-handed. Continuing anyway    \n"
                   << "         because the --force option is on.\n\n";
       }
     }
