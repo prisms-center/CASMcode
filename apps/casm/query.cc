@@ -47,7 +47,7 @@ namespace CASM {
     ("learn,l", po::value<std::string>(&new_alias), "Teach casm a new command that will persist within this project. Ex: 'casm query --learn is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")
     ("json,j", po::value(&json_flag)->zero_tokens(), "Print in JSON format (CSV otherwise, unless output extension is .json or .JSON)")
     ("verbatim,v", po::value(&verbatim_flag)->zero_tokens(), "Print exact properties specified, without prepending 'name' and 'selected' entries")
-    ("output,o", po::value<fs::path>(&out_path), "Name for output file")
+    ("output,o", po::value<fs::path>(&out_path), "Name for output file. Use STDOUT to print results without extra messages.")
     //("force,f", po::value(&force)->zero_tokens(), "Overrwrite output file")
     ("no-header,n", po::value(&no_header)->zero_tokens(), "Print without header (CSV only)");
 
@@ -138,27 +138,30 @@ namespace CASM {
     if(fs::exists(alias_file)) {
       ConfigIOParser::load_aliases(alias_file);
     }
-
+    
+    bool output_to_file = vm.count("output") && out_path.string() != "STDOUT";
+    
     // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
-    std::cout << "  DONE." << std::endl << std::endl;
+    std::ostream &status_stream = (out_path.string() == "STDOUT") ? std::cerr : std::cout;
+    status_stream << "Initialize primclex: " << root << std::endl << std::endl;
+    PrimClex primclex(root, status_stream);
+    status_stream << "  DONE." << std::endl << std::endl;
 
     out_path = fs::absolute(out_path);
 
-    std::cout << "Print:" << std::endl;
+    status_stream << "Print:" << std::endl;
     for(int p = 0; p < columns.size(); p++) {
-      std::cout << "   - " << columns[p] << std::endl;
+      status_stream << "   - " << columns[p] << std::endl;
     }
 
     if(vm.count("config"))
-      std::cout << "to " << out_path << std::endl << std::endl;
+      status_stream << "to " << out_path << std::endl << std::endl;
 
     std::ofstream output_file;
-    if(vm.count("output"))
+    if(output_to_file)
       output_file.open(out_path.string().c_str());
 
-    std::ostream &output_stream(vm.count("output") ? output_file : std::cout);
+    std::ostream &output_stream(output_to_file ? output_file : std::cout);
     output_stream << FormatFlag(output_stream).print_header(!no_header);
     DataFormatter<Configuration> formatter;
     ConstConfigSelection selection;
@@ -220,13 +223,13 @@ namespace CASM {
       return ERR_UNKNOWN;
     }
 
-    if(vm.count("output"))
+    if(output_to_file)
       output_file.close();
     else {
       std::cerr << "\n   -Output printed to terminal, since no output file specified-\n";
     }
 
-    std::cout << "  DONE." << std::endl << std::endl;
+    status_stream << "  DONE." << std::endl << std::endl;
 
     return 0;
   };
