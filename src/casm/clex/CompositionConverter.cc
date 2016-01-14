@@ -19,7 +19,7 @@ namespace CASM {
   }
   
   /// \brief Composition variable names: "a", "b", ...
-  std::string CompositionConverter::comp_var(size_type i) const {
+  std::string CompositionConverter::comp_var(size_type i) {
     return std::string(1, (char) (i + (int) 'a'));
   }
   
@@ -78,13 +78,13 @@ namespace CASM {
   /// - so dnj/dxi = m_to_n(j,i)
   /// - that means m_to_mu_x == m_to_n.transpose()
   ///
-  Eigen::VectorXd CompositionConverter::param_mu(const Eigen::VectorXd atomic_mu) const {
-    return m_to_n.transpose() * atomic_mu;
+  Eigen::VectorXd CompositionConverter::param_chem_pot(const Eigen::VectorXd chem_pot) const {
+    return m_to_n.transpose() * chem_pot;
   }
 
   /// \brief Convert dG/dx to dG/dn
-  Eigen::VectorXd CompositionConverter::atomic_mu(const Eigen::VectorXd param_mu) const {
-    return m_to_x.transpose() * param_mu;
+  Eigen::VectorXd CompositionConverter::chem_pot(const Eigen::VectorXd param_chem_pot) const {
+    return m_to_x.transpose() * param_chem_pot;
   }
 
 
@@ -127,7 +127,7 @@ namespace CASM {
           tstr << '-';
         // print absolute value of x if |x|!=1
         if(!almost_equal(std::abs(m_to_n(i, j)), 1.0))
-          tstr << m_to_n(i, j);
+          tstr << std::abs(m_to_n(i, j));
         //print variable ('a','b',etc...)
         tstr << (char)(composition_var + j);
 
@@ -213,6 +213,25 @@ namespace CASM {
     return tstr.str();
 
   }
+  
+  /// \brief Return formula for param_chem_pot->chem_pot
+  std::string CompositionConverter::chem_pot_formula(int indent) const {
+    // chem_pot = m_to_x.transpose() * param_chem_pot;
+    std::stringstream ss;
+    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", std::string(' ', indent+2) + "[", "]");
+    ss << std::string(' ', indent) << "chem_pot = X * param_chem_pot, where X = \n" << m_to_x.transpose().format(CleanFmt);
+    return ss.str();
+  }
+
+  /// \brief Return formula for chem_pot->param_chem_pot
+  std::string CompositionConverter::param_chem_pot_formula(int indent) const {
+    // param_chem_pot = m_to_n.transpose() * chem_pot;
+    std::stringstream ss;
+    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", std::string(' ', indent+2) + "[", "]");
+    ss << std::string(' ', indent) << "param_chem_pot = X * chem_pot, where X = \n" << m_to_n.transpose().format(CleanFmt);
+    return ss.str();
+  }
+
 
   /// \brief Return formula for origin
   std::string CompositionConverter::origin_formula() const {

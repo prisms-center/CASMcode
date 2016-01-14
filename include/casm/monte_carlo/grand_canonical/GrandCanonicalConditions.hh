@@ -21,12 +21,12 @@ namespace CASM {
     /// \brief Constructor
     ///
     /// \param _temperature in K
-    /// \param _param_mu Parametric composition chemical potential
-    /// \param _comp_converter CompositionConverter for converting from parametric mu to atomic mu
+    /// \param _param_chem_pot Parametric composition chemical potential
+    /// \param _comp_converter CompositionConverter for converting from parametric chem_pot to species chem_pot
     /// \param _tol tolerance for comparing conditions
     ///
     GrandCanonicalConditions(double _temperature, 
-                             const Eigen::VectorXd &_param_mu,
+                             const Eigen::VectorXd &_param_chem_pot,
                              const CompositionConverter& _comp_converter,
                              double _tol);
     
@@ -36,14 +36,14 @@ namespace CASM {
 
     double beta() const;
 
-    /// \brief 'atomic' mu
-    const Eigen::VectorXd& mu() const;
+    /// \brief chemical potential: dg/dcomp_n
+    const Eigen::VectorXd& chem_pot() const;
 
-    /// \brief 'atomic' mu
-    double mu(Index mu_index) const;
+    /// \brief chemical potential: dg/dcomp_n(index)
+    double chem_pot(Index index) const;
     
-    /// \brief parametric composition mu
-    Eigen::VectorXd param_mu() const;
+    /// \brief parametric chemical potential: dg/dcomp
+    Eigen::VectorXd param_chem_pot() const;
 
 
     double tolerance() const;
@@ -53,11 +53,11 @@ namespace CASM {
     ///Set the temperature of the current grand canonical condition. Sets m_temperature and m_beta.
     void set_temperature(double in_temp);
 
-    ///Set all the chemical potentials of the current grand canonical condition. Sets array m_mu.
-    void set_mu(const Eigen::VectorXd &in_mu);
+    ///Set all the chemical potentials of the current grand canonical condition. Sets array m_chem_pot.
+    void set_chem_pot(const Eigen::VectorXd &in_chem_pot);
 
-    ///Set a single 'atomic' chemical potential by specifying an index and a value. Sets one value in m_mu.
-    void set_mu(Index ind, double in_mu);
+    ///Set a single 'atomic' chemical potential by specifying an index and a value. Sets one value in m_chem_pot.
+    void set_chem_pot(Index ind, double in_chem_pot);
 
     ///Acts as +=
     void increment_by(const GrandCanonicalConditions &cond_increment);
@@ -117,7 +117,7 @@ namespace CASM {
     double m_beta;
 
     ///Vector of the 'atomic' chemical potentials for each species. Ordered as primclex.get_param_comp().get_components()
-    Eigen::VectorXd m_mu;
+    Eigen::VectorXd m_chem_pot;
 
     ///Tolerance for comparison operators == and !=
     double m_tolerance;

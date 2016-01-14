@@ -65,6 +65,16 @@ namespace CASM {
       return m_scel;
     }
     
+    /// \brief Set a pointer to the SuperNeighborList once it is ready
+    void set_nlist() {
+      m_nlist = &(supercell().nlist());
+    }
+    
+    /// \brief const Access the SuperNeighborList via pointer stored by 'set_nlist'
+    const SuperNeighborList& nlist() const {
+      return *m_nlist;
+    }
+    
     /// \brief const Access current microstate
     const ConfigDoF& configdof() const {
       return m_configdof;
@@ -148,11 +158,16 @@ namespace CASM {
     
     /// \brief Construct with a starting ConfigDoF as specified the given MonteSettings and prepare data samplers
     template<typename MonteTypeSettings>
-    MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings);
+    MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings, std::ostream& _sout = std::cout);
     
     /// \brief const Access the Supercell that *this is based on
     Supercell& supercell() {
       return m_scel;
+    }
+    
+    /// \brief return true if running in debug mode
+    bool debug() const {
+      return m_debug;
     }
     
     /// \brief a map of keyname to property value
@@ -177,6 +192,9 @@ namespace CASM {
     
     /// \brief Supercell for the calculation.
     Supercell m_scel;
+    
+    /// \brief Pointer to SuperNeighborList
+    const SuperNeighborList* m_nlist;
 
     /// \brief Stores all degrees of freedom of the current microstate
     ConfigDoF m_configdof;
@@ -194,6 +212,8 @@ namespace CASM {
     /// \brief True if any Sampler must converge
     bool m_must_converge;
     
+    /// \brief Target for messages
+    std::ostream& sout;
     
   private:
     
@@ -222,15 +242,20 @@ namespace CASM {
     mutable MonteSampler::size_type m_next_convergence_check = 100;
     MonteSampler::size_type m_convergence_check_period = 100;
     
+    // in debug mode, allow printing or checking extra things
+    bool m_debug;
+    
   };
   
   /// \brief Construct with a starting ConfigDoF as specified the given MonteSettings and prepare data samplers
   template<typename MonteTypeSettings>
-  MonteCarlo::MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings) :
+  MonteCarlo::MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings, std::ostream& _sout) :
     m_settings(settings),
     m_primclex(primclex),
     m_scel(&primclex, settings.simulation_cell_matrix()),
-    m_write_trajectory(settings.write_trajectory()) {
+    m_write_trajectory(settings.write_trajectory()),
+    m_debug(m_settings.debug()),
+    sout(_sout) {
     
     try {
       

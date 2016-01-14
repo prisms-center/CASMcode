@@ -103,6 +103,34 @@ namespace CASM {
     double prec;
     MonteSampler*ptr;
     
+    // copy so we can add required measurements
+    std::string level1 = "data";
+    std::string level2 = "measurements";
+    jsonParser t_measurements = (*this)[level1][level2];
+    
+    // find existing measurements
+    std::set<std::string> input_measurements;
+    for(auto it = t_measurements.cbegin(); it != t_measurements.cend(); it++) {
+      input_measurements.insert((*it)["quantity"].get<std::string>());
+    }
+    
+    std::vector<std::string> required = {
+      "potential_energy",
+      "formation_energy",
+      "comp",
+      "comp_n"
+    };
+    
+    // add required if not already requested
+    for(auto it=required.begin(); it!=required.end(); ++it) {
+      if(std::find(input_measurements.begin(), input_measurements.end(), *it) == input_measurements.end()) {
+        jsonParser json;
+        json["quantity"] = *it;
+        t_measurements.push_back(json);
+      }
+    }
+    
+    
     
     // construct scalar property samplers
     {
@@ -111,10 +139,8 @@ namespace CASM {
         "potential_energy"};
         
       
-      std::string level1 = "data";
-      std::string level2 = "measurements";
       try {
-        const jsonParser& t_measurements = (*this)[level1][level2];
+        
         for(auto it = t_measurements.cbegin(); it != t_measurements.cend(); it++) {
           prop_name = (*it)["quantity"].get<std::string>();
           
@@ -156,12 +182,8 @@ namespace CASM {
         "all_correlations",
         "non_zero_eci_correlations"};
         
-      
-      std::string level1 = "data";
-      std::string level2 = "measurements";
       try {
         
-        const jsonParser& t_measurements = (*this)[level1][level2];
         for(auto it = t_measurements.cbegin(); it != t_measurements.cend(); it++) {
           
           std::string input_name = (*it)["quantity"].get<std::string>();

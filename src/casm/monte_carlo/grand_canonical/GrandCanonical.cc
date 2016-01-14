@@ -6,8 +6,8 @@
 namespace CASM {
 
   
-  GrandCanonical::GrandCanonical(PrimClex &primclex, const GrandCanonicalSettings &settings):
-    MonteCarlo(primclex, settings), 
+  GrandCanonical::GrandCanonical(PrimClex &primclex, const GrandCanonicalSettings &settings, std::ostream& _sout):
+    MonteCarlo(primclex, settings, _sout), 
     m_site_swaps(supercell()),
     m_condition(settings.initial_conditions()),
     m_clexulator(primclex.global_clexulator()),
@@ -27,9 +27,13 @@ namespace CASM {
       primclex.read_global_orbitree(dir.clust(settings.bset()));
     }
     
+    // temporary solution:
+    // Once all Clexulator have expanded the PrimNeighborList, set the SuperNeighborList... 
+    set_nlist();
+    
     // Make sure the simulation is big enough to accommodate the clusters 
     // you're using so that the delta formation energy is calculated accurately
-    if(supercell().nlist().overlaps()) {
+    if(nlist().overlaps()) {
       throw std::runtime_error(
         std::string("ERROR in 'GrandCanonical(PrimClex &primclex, const MonteSettings &settings)'\n") +
                     "  The simulation cell is too small to fit all the clusters without periodic overlap.\n" +
@@ -88,15 +92,70 @@ namespace CASM {
     // Update delta properties in m_event
     _update_deltas(m_event, mutating_site, sublat, current_occupant, new_occupant);
     
+    if(debug()) {
+      const auto& site_occ = primclex().get_prim().basis[sublat].site_occupant();
+      sout << "\n-- Proposed event -- \n\n"
+           
+           << "  Mutating site (linear index): " << mutating_site << "\n"
+           << "  Mutating site (b, i, j, k): " << supercell().uccoord(mutating_site) << "\n"
+           << "  Current occupant: " << current_occupant << " (" << site_occ[current_occupant].name << ")\n"
+           << "  Proposed occupant: " << new_occupant << " (" << site_occ[new_occupant].name << ")\n\n"
+           
+           << "  beta: " << m_condition.beta() << "\n"
+           << "  T: " << m_condition.temperature() << std::endl;
+           
+      sout << std::setw(12) << "i" << std::setw(16) << "ECI" << std::setw(16) << "dcorr" << std::endl;
+      
+      if(m_all_correlations) {
+        for(int i=0; i<m_event.dcorr().size(); ++i) {
+          
+          double eci = 0.0;
+          Index index = find_index(m_formation_energy_eci.eci_index_list(), i);
+          if(index != m_formation_energy_eci.eci_index_list().size()) {
+            eci = m_formation_energy_eci.eci_list()[index];
+          }
+          
+          sout << std::setw(12) << i 
+               << std::setw(16) << std::setprecision(8) << eci 
+               << std::setw(16) << std::setprecision(8) << m_event.dcorr()[i] << std::endl;
+        
+        }
+      }
+      else {
+        for(int i=0; i<m_formation_energy_eci.eci_list().size(); ++i) {
+          sout << std::setw(12) << m_formation_energy_eci.eci_index_list()[i] 
+               << std::setw(16) << std::setprecision(8) << m_formation_energy_eci.eci_list()[i] 
+               << std::setw(16) << std::setprecision(8) << m_event.dcorr()[m_formation_energy_eci.eci_index_list()[i]] << std::endl;
+        
+        }
+      }
+           
+      sout << "  dformation_energy: " << m_event.dformation_energy() << "\n"
+           << "  components: " << jsonParser(primclex().composition_axes().components()) << "\n"
+           << "  dcomp_n: " << m_event.dcomp_n().transpose() << "\n"
+           << "  chem_pot: " << m_condition.chem_pot().transpose() << "\n"
+           << "  dcomp: " << primclex().composition_axes().param_composition(m_event.dcomp_n()).transpose() << "\n"
+           << "  param_chem_pot: " << m_condition.param_chem_pot().transpose() << "\n"
+           << "  dpotential_energy: " << m_event.dpotential_energy() << "\n" << std::endl;
+           
+      
+    }
+    
     return m_event;
   }
   
   /// \brief Based on a random number, decide if the change in energy from the proposed event is low enough to be accepted.
   bool GrandCanonical::check(const GrandCanonicalEvent &event) {
     
+    double prob = exp(-event.dpotential_energy() * m_condition.beta() * supercell().volume());
     double rand = m_twister.rand53();
     
-    if(event.dpotential_energy() < 0.0 || rand < exp(-event.dpotential_energy() * m_condition.beta() * supercell().volume() )) {
+    if(debug()) {
+      sout << "Probability to accept: " << prob << "\n"
+           << "Random number: " << rand << "\n" << std::endl;
+    }
+    
+    if(event.dpotential_energy() < 0.0 || rand < prob) {
       return true;
     }
 
@@ -110,7 +169,11 @@ namespace CASM {
   /// generalized enthalpy, number of species and correlations values.
   ///
   void GrandCanonical::accept(const EventType& event) {
-
+    
+    if(debug()) {
+      sout << "** Accept event **" << std::endl;
+    }
+    
     // First apply changes to configuration (just a single occupant change)
     m_configdof.occ(event.occupational_change().site_index()) = event.occupational_change().to_value();
     
@@ -125,6 +188,9 @@ namespace CASM {
 
   /// \brief Nothing needs to be done to reject a GrandCanonicalEvent
   void GrandCanonical::reject(const EventType& event) {
+    if(debug()) {
+      sout << "** Reject event **" << std::endl;
+    }
     return;
   }
 
@@ -136,7 +202,7 @@ namespace CASM {
   /// Quick derivation:
   /// Z: partition function
   /// boltz(x): exp(-x/kBT)
-  /// \Omega: E-SUM(mu*comp_n)
+  /// \Omega: E-SUM(chem_pot*comp_n)
   /// 
   /// The partition function is
   /// Z=SUM(boltz(\Omega_s))    summing over all microstates s
@@ -209,12 +275,12 @@ namespace CASM {
   }
 
   /// \brief Print info when a run begins
-  void GrandCanonical::print_run_start_info(std::ostream &sout) const {
+  void GrandCanonical::print_run_start_info() const {
     sout << "Begin run.  T = " << m_condition.temperature() << "  ";
     
-    Eigen::VectorXd param_mu = primclex().composition_axes().param_mu(m_condition.mu());
-    for(int i=0; i<param_mu.size(); i++) {
-      sout << "mu_" << ((char) (i + (int) 'a')) << " = " << param_mu(i) << "  ";
+    Eigen::VectorXd param_chem_pot = primclex().composition_axes().param_chem_pot(m_condition.chem_pot());
+    for(int i=0; i<param_chem_pot.size(); i++) {
+      sout << "param_chem_pot_" << ((char) (i + (int) 'a')) << " = " << param_chem_pot(i) << "  ";
     }
     sout << std::endl;
   }
@@ -250,8 +316,8 @@ namespace CASM {
     
     // ---- set dcorr --------------
     
-    // Point the Clexulator to the right neighborhood 
-    m_clexulator.set_nlist(supercell().nlist().sites(mutating_site).data());
+    // Point the Clexulator to the right neighborhood
+    m_clexulator.set_nlist(nlist().sites(nlist().unitcell_index(mutating_site)).data());
 
     // Calculate the change in correlations due to this event
     if(m_all_correlations) {
@@ -278,7 +344,7 @@ namespace CASM {
     // ---- set dpotential_energy --------------
     
     
-    event.set_dpotential_energy(event.dformation_energy() - event.dcomp_n().dot(m_condition.mu()));
+    event.set_dpotential_energy(event.dformation_energy() - event.dcomp_n().dot(m_condition.chem_pot()));
     
   }
   
@@ -295,8 +361,18 @@ namespace CASM {
     m_scalar_property["formation_energy"] = m_formation_energy_eci * corr().data();
     m_formation_energy = &m_scalar_property["formation_energy"];
     
-    m_scalar_property["potential_energy"] = formation_energy() - comp_n().dot(m_condition.mu());
+    m_scalar_property["potential_energy"] = formation_energy() - comp_n().dot(m_condition.chem_pot());
     m_potential_energy = &m_scalar_property["potential_energy"]; 
+    
+    if(debug()) {
+      sout << "\n-- Supercell properties --\n"
+           << "corr: " << corr().transpose() << "\n"
+           << "components: " << jsonParser(primclex().composition_axes().components()) << "\n"
+           << "comp_n: " << comp_n().transpose() << "\n"
+           << "comp: " << primclex().composition_axes().param_composition(comp_n()) << "\n"
+           << "formation_energy: " << formation_energy() << "\n"
+           << "potential_energy: " << potential_energy() << "\n" << std::endl;
+    }
     
   }
   

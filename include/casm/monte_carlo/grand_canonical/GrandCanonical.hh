@@ -37,7 +37,7 @@ namespace CASM {
 
     
     /// \brief Constructs a GrandCanonical object and prepares it for running based on MonteSettings
-    GrandCanonical(PrimClex &primclex, const SettingsType &settings);
+    GrandCanonical(PrimClex &primclex, const SettingsType &settings, std::ostream& _sout = std::cout);
     
     
     /// \brief Return number of steps per pass. Equals number of sites with variable occupation.
@@ -65,7 +65,7 @@ namespace CASM {
     
     
     /// \brief Print info when a run begins
-    void print_run_start_info(std::ostream &sout) const;
+    void print_run_start_info() const;
     
     /// \brief Write results to files
     void write_results(Index cond_index) const;

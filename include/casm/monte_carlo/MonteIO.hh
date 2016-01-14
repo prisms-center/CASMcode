@@ -111,9 +111,13 @@ namespace CASM {
   template<typename MonteType>
   GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloBetaFormatter();
   
-  /// \brief Print mu_x
+  /// \brief Print param_chem_pot(x)
   template<typename MonteType>
-  GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloMuFormatter(const MonteType& mc, int index);
+  GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloParamChemPotFormatter(const MonteType& mc, int index);
+  
+  /// \brief Print chem_pot(N)
+  template<typename MonteType>
+  GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloChemPotFormatter(const MonteType& mc, int index);
   
   /// \brief Print number of samples used for equilibration (not counting explicitly requested equilibration)
   GenericDatumFormatter<MonteSampler::size_type, ConstMonteCarloPtr> MonteCarloNEquilSamplesFormatter();
@@ -157,15 +161,27 @@ namespace CASM {
     return GenericDatumFormatter<double, ConstMonteCarloPtr>("Beta", "Beta", evaluator);
   }
   
-  /// \brief Print mu_x for any class MonteType with valid 'double MonteType::conditions().param_mu()(index)'
+  /// \brief Print param_chem_pot(x) for any class MonteType with valid 'double MonteType::conditions().param_chem_pot()(index)'
   template<typename MonteType>
-  GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloMuFormatter(const MonteType& mc, int index) {
+  GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloParamChemPotFormatter(const MonteType& mc, int index) {
     typedef const MonteType* ConstMonteTypePtr;
     auto evaluator = [=](const ConstMonteCarloPtr& mc) {
       ConstMonteCarloPtr ptr = mc;
-      return static_cast<const MonteType*>(ptr)->conditions().param_mu()(index);
+      return static_cast<const MonteType*>(ptr)->conditions().param_chem_pot()(index);
     };
-    std::string header = std::string("mu_") + mc.primclex().composition_axes().comp_var(index);
+    std::string header = std::string("param_chem_pot(") + CompositionConverter::comp_var(index) + ")";
+    return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator);
+  }
+  
+  /// \brief Print chem_pot(N) for any class MonteType with valid 'double MonteType::conditions().chem_pot(index)'
+  template<typename MonteType>
+  GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloChemPotFormatter(const MonteType& mc, int index) {
+    typedef const MonteType* ConstMonteTypePtr;
+    auto evaluator = [=](const ConstMonteCarloPtr& mc) {
+      ConstMonteCarloPtr ptr = mc;
+      return static_cast<const MonteType*>(ptr)->conditions().chem_pot(index);
+    };
+    std::string header = std::string("chem_pot(") + mc.primclex().get_prim().get_struc_molecule_name()[index] + ")";
     return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator);
   }
   

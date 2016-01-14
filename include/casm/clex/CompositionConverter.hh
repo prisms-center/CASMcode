@@ -38,7 +38,7 @@ namespace CASM {
     size_type independent_compositions() const;
     
     /// \brief Composition variable names: "a", "b", ...
-    std::string comp_var(size_type i) const;
+    static std::string comp_var(size_type i);
     
     /// \brief The order of components in mol composition vectors
     std::vector<std::string> components() const;
@@ -56,10 +56,10 @@ namespace CASM {
     Eigen::VectorXd mol_composition(const Eigen::VectorXd &n) const;
 
     /// \brief Convert dG/dn to dG/dx
-    Eigen::VectorXd param_mu(const Eigen::VectorXd atomic_mu) const;
+    Eigen::VectorXd param_chem_pot(const Eigen::VectorXd chem_pot) const;
 
     /// \brief Convert dG/dx to dG/dn
-    Eigen::VectorXd atomic_mu(const Eigen::VectorXd param_mu) const;
+    Eigen::VectorXd chem_pot(const Eigen::VectorXd param_chem_pot) const;
 
 
     /// \brief Return formula for x->n
@@ -67,12 +67,18 @@ namespace CASM {
 
     /// \brief Return formula for n->x
     std::string param_formula() const;
-
+    
     /// \brief Return formula for origin
     std::string origin_formula() const;
 
     /// \brief Return formula for end member
     std::string end_member_formula(size_type i) const;
+    
+    /// \brief Return formula for param_chem_pot->chem_pot
+    std::string chem_pot_formula(int indent = 0) const;
+
+    /// \brief Return formula for chem_pot->param_chem_pot
+    std::string param_chem_pot_formula(int indent = 0) const;
 
 
   private:

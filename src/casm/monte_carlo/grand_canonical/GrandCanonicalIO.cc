@@ -4,6 +4,7 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
+#include "casm/casm_io/VaspIO.hh"
 
 namespace CASM {
 
@@ -11,14 +12,15 @@ namespace CASM {
   ///
   /// For csv:
   /// \code
-  /// # T Beta mu_a mu_b ... N_equil_samples N_avg_samples <X> prec(<X>) ... ... cov(X,X) ... 
+  /// # T Beta param_pot_a param_pot_b ... N_equil_samples N_avg_samples <X> prec(<X>) ... ... cov(X,X) ... 
   /// \endcode
   ///
   /// For JSON:
   /// \code
   /// {
-  ///   "T":[...], "Beta":[...], "mu_a":[...], "mu_b":[...], ..., 
-  ///   "N_equil_samples":[...], "N_avg_samples":[...], 
+  ///   "N_equil_samples":[...], "N_avg_samples":[...], "T":[...], "Beta":[...], 
+  ///   "param_chem_pot(a)":[...], "param_chem_pot(b)":[...], ..., "comp(a)":[...], "comp(b)":[...], ... 
+  ///   "chem_pot(A)":[...], "chem_pot(B)":[...], ..., "comp_n(A)":[...], "comp_n(B)":[...], ... 
   ///   "<X>":[...], "prec(<X>)":[...], ..., "cov(X,X)":[...], ... }
   /// \endcode
   ///
@@ -26,20 +28,63 @@ namespace CASM {
   
   DataFormatter<ConstMonteCarloPtr> formatter;
   
-  formatter.push_back(MonteCarloTFormatter<GrandCanonical>());
-  formatter.push_back(MonteCarloBetaFormatter<GrandCanonical>());
-  for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); ++i) {
-    formatter.push_back(MonteCarloMuFormatter<GrandCanonical>(mc, i));
-  }
-  
   formatter.push_back(MonteCarloNEquilSamplesFormatter());
   formatter.push_back(MonteCarloNAvgSamplesFormatter());
   
-  for(auto it=mc.samplers().cbegin(); it != mc.samplers().cend(); ++it) {
-    formatter.push_back(MonteCarloMeanFormatter(it->first));
-    formatter.push_back(MonteCarloPrecFormatter(it->first));
+  formatter.push_back(MonteCarloTFormatter<GrandCanonical>());
+  std::set<std::string> exclude;
+  std::string name;
+  
+  // always sample Beta, potential_energy, and formation_energy
+  {
+    formatter.push_back(MonteCarloBetaFormatter<GrandCanonical>());
+    name = "potential_energy";
+    formatter.push_back(MonteCarloMeanFormatter(name));
+    formatter.push_back(MonteCarloPrecFormatter(name));
+    exclude.insert(name);
+    
+    name = "formation_energy";
+    formatter.push_back(MonteCarloMeanFormatter(name));
+    formatter.push_back(MonteCarloPrecFormatter(name));
+    exclude.insert(name);
+  }
+    
+  
+  
+  // always sample param_chem_pot, comp
+  for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); ++i) {
+    formatter.push_back(MonteCarloParamChemPotFormatter<GrandCanonical>(mc, i));
   }
   
+  for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); i++) {
+    
+    name = std::string("comp(") + mc.primclex().composition_axes().comp_var(i) + ")";
+    formatter.push_back(MonteCarloMeanFormatter(name));
+    formatter.push_back(MonteCarloPrecFormatter(name));
+    exclude.insert(name);
+  }
+  
+  // always sample chem_pot, comp_n
+  for(int i=0; i<mc.primclex().composition_axes().components().size(); ++i) {
+    formatter.push_back(MonteCarloChemPotFormatter<GrandCanonical>(mc, i));
+  }
+  auto struc_mol_name = mc.primclex().get_prim().get_struc_molecule_name();
+  for(int i=0; i<struc_mol_name.size(); ++i) {
+    name = std::string("comp_n(") + struc_mol_name[i] + ")";
+    formatter.push_back(MonteCarloMeanFormatter(name));
+    formatter.push_back(MonteCarloPrecFormatter(name));
+    exclude.insert(name);
+  }
+  
+  // include mean/prec of other properties
+  for(auto it=mc.samplers().cbegin(); it != mc.samplers().cend(); ++it) {
+    if(exclude.find(it->first) == exclude.end()) {
+      formatter.push_back(MonteCarloMeanFormatter(it->first));
+      formatter.push_back(MonteCarloPrecFormatter(it->first));
+    }
+  }
+  
+  // then include cov(X,Y)
   for(auto it_X=mc.samplers().cbegin(); it_X != mc.samplers().cend(); ++it_X) {
     for(auto it_Y=mc.samplers().cbegin(); it_Y != mc.samplers().cend(); ++it_Y) {
       formatter.push_back(MonteCarloCovFormatter(it_X->first, it_Y->first));
@@ -99,10 +144,10 @@ namespace CASM {
   jsonParser &to_json(const GrandCanonicalConditions &conditions, jsonParser &json) {
 
     json["temperature"] = conditions.temperature();
-    json["mu"] = jsonParser::object();
-    auto param_mu = conditions.param_mu();
-    for(int i=0; i<param_mu.size(); i++) {
-      json["mu"][std::string(1, (char) (i + (int) 'a'))] = param_mu(i);
+    json["param_chem_pot"] = jsonParser::object();
+    auto param_chem_pot = conditions.param_chem_pot();
+    for(int i=0; i<param_chem_pot.size(); i++) {
+      json["param_chem_pot"][CompositionConverter::comp_var(i)] = param_chem_pot(i);
     }
     json["tolerance"] = conditions.tolerance();
 
@@ -116,15 +161,13 @@ namespace CASM {
     double tol = json["tolerance"].get<double>();
     
     int Nparam = comp_converter.independent_compositions();
-    Eigen::VectorXd param_mu(Nparam);
-
-    int start = (int) 'a';
+    Eigen::VectorXd param_chem_pot(Nparam);
 
     for(int i = 0; i < Nparam; i++) {
-      param_mu(i) = json["mu"][std::string(1, (char)(start + i))].get<double>();
+      param_chem_pot(i) = json["param_chem_pot"][CompositionConverter::comp_var(i)].get<double>();
     }
     
-    conditions = GrandCanonicalConditions(temp, param_mu, comp_converter, tol);
+    conditions = GrandCanonicalConditions(temp, param_chem_pot, comp_converter, tol);
   }
   
   /// \brief Will create new file or append to existing results file the results of the latest run
@@ -342,44 +385,6 @@ namespace CASM {
     
   }
   
-/*  /// \brief For every snapshot taken, write a POSCAR file.
-  /// 
-  /// The current naming convention is 'POSCAR.sample'
-  /// POSCAR title comment is printed with "Sample: #  Pass: #  Step: #"
-  void write_pos_trajectory(const MonteSettings& settings, const GrandCanonical &mc, Index cond_index) {
-    
-    if(!settings.write_POSCAR_snapshots() || !settings.write_trajectory() || mc.trajectory().size() == 0) {
-      return;
-    }
-    
-    GrandCanonicalDirectoryStructure dir(settings.output_directory());
-    fs::create_directories(dir.trajectory_dir(cond_index));
-      
-    // create super structure matching supercell
-    BasicStructure<Site> primstruc = mc.supercell().get_prim();
-    BasicStructure<Site> superstruc = primstruc.create_superstruc(mc.supercell().get_real_super_lattice());
-    
-    for(Index i = 0; i < mc.trajectory().size(); i++) {
-      
-      // copy occupation
-      for(Index j = 0; j < mc.configdof().size(); j++) {
-        superstruc.basis[j].set_occ_value(mc.configdof().occ(j));
-      }
-      
-      // POSCAR title comment is printed with "Sample: #  Pass: #  Step: #" 
-      std::stringstream ss;
-      ss << "Sample: " << i << "  Pass: " << mc.sample_times()[i].first << "  Step: " << mc.sample_times()[i].second;
-      superstruc.title = ss.str();
-      
-      // write file
-      fs::ofstream sout(dir.POSCAR_snapshot(cond_index, i));
-      superstruc.print5(sout);
-      sout.close();
-    }
-
-    return;
-  }
-*/  
 
   /// \brief For the final state, write a POSCAR file.
   /// 
@@ -389,9 +394,9 @@ namespace CASM {
     GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
     fs::create_directories(dir.trajectory_dir(cond_index));
     
-    // create super structure matching supercell
-    BasicStructure<Site> primstruc = mc.supercell().get_prim();
-    BasicStructure<Site> superstruc = primstruc.create_superstruc(mc.supercell().get_real_super_lattice());
+    // read final_state.json
+    ConfigDoF config_dof;
+    from_json(config_dof, jsonParser(dir.final_state_json(cond_index)));
     
     if(!fs::exists(dir.final_state_json(cond_index))) {
       throw std::runtime_error(
@@ -399,23 +404,9 @@ namespace CASM {
                     "  File not found: " + dir.final_state_json(cond_index).string());
     }
     
-    // read final_state.json
-    ConfigDoF config_dof;
-    from_json(config_dof, jsonParser(dir.final_state_json(cond_index)));
-    
-    // copy occupation
-    for(Index j = 0; j < config_dof.size(); j++) {
-      superstruc.basis[j].set_occ_value(config_dof.occ(j));
-    }
-      
-    // POSCAR title comment is printed with "Sample: #  Pass: #  Step: #" 
-    superstruc.title = "Final state";
-    
     // write file
     fs::ofstream sout(dir.POSCAR_final(cond_index));
-    superstruc.print5(sout);
-    sout.close();
-
+    VaspIO::PrintPOSCAR(mc.supercell(), mc.configdof()).print(sout);
     return;
   }
   
@@ -504,7 +495,9 @@ namespace CASM {
       
       // write file
       fs::ofstream sout(dir.POSCAR_snapshot(cond_index, i));
-      superstruc.print5(sout);
+      VaspIO::PrintPOSCAR p(mc.supercell(), trajectory[i]);
+      p.set_title(ss.str());
+      p.print(sout);
       sout.close();
     }
 
@@ -602,15 +595,15 @@ namespace CASM {
     
     example_settings["driver"]["mode"] = "incremental";
     
-    example_settings["driver"]["initial_conditions"]["mu"]["a"] = 2.0;
+    example_settings["driver"]["initial_conditions"]["param_chem_pot"]["a"] = 2.0;
     example_settings["driver"]["initial_conditions"]["temperature"] = 100.0; // K
     example_settings["driver"]["initial_conditions"]["tolerance"] = 0.001;
     
-    example_settings["driver"]["final_conditions"]["mu"]["a"] = 2.0;
+    example_settings["driver"]["final_conditions"]["param_chem_pot"]["a"] = 2.0;
     example_settings["driver"]["final_conditions"]["temperature"] = 1000.0; // K
     example_settings["driver"]["final_conditions"]["tolerance"] = 0.001; 
     
-    example_settings["driver"]["incremental_conditions"]["mu"]["a"] = 0.0;
+    example_settings["driver"]["incremental_conditions"]["param_chem_pot"]["a"] = 0.0;
     example_settings["driver"]["incremental_conditions"]["temperature"] = 10.0; // K
     example_settings["driver"]["incremental_conditions"]["tolerance"] = 0.001; 
     

@@ -127,6 +127,15 @@ namespace CASM {
     /// \brief Constructor
     SuperNeighborList(const PrimGrid& prim_grid, const PrimNeighborList& prim_nlist);
     
+    /// \brief get unit cell index from site index
+    size_type unitcell_index(size_type site_index) const {
+      return site_index % m_prim_grid_size;
+    }
+    
+    /// \brief get sublat index from site index
+    size_type sublat_index(size_type site_index) const {
+      return site_index / m_prim_grid_size;
+    }
     
     /// \brief const Access the list of sites neighboring a particular unit cell
     const std::vector<size_type>& sites(size_type unitcell_index) const;
@@ -143,6 +152,7 @@ namespace CASM {
   private:
     
     /// \brief store prim grid size for site index -> unitcell index conversion
+    /// unitcell_index = site_index % m_prim_grid_size
     size_type m_prim_grid_size;
     
     /// \brief m_site[unitcell_index][neighbor site index]

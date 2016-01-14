@@ -68,6 +68,9 @@ namespace CASM {
     /// \brief Return type of Monte Carlo calculation
     Monte::TYPE type() const;
     
+    /// \brief Run in debug mode?
+    bool debug() const;
+    
     
     // --- Initialization ---------------------
     

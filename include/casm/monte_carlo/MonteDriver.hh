@@ -29,13 +29,28 @@ namespace CASM {
     typedef typename RunType::SettingsType SettingsType;
     
     /// \brief Constructor via MonteSettings 
-    MonteDriver(PrimClex &primclex, const SettingsType& settings);
+    MonteDriver(PrimClex &primclex, const SettingsType& settings, std::ostream& _sout = std::cout);
 
     /// \brief Run everything requested by the MonteSettings
-    void run(std::ostream &sout);
+    void run();
 
   private:
+    
+    /// run in debug mode?
+    bool debug() const {
+      return m_debug;
+    }
+    
+    ///Return the appropriate std::vector of conditions to visit based from settings. Use for construction.
+    std::vector<CondType> make_conditions_list(const PrimClex &primclex, const SettingsType &settings);
+    
+    ///Converge the MonteCarlo as it currently stands
+    void single_run();
+    
+    ///Check for existing calculations to find starting conditions
+    Index _find_starting_conditions() const;
 
+    
     ///Copy of initial settings given at construction. Will expand to have MonteCarlo states dumped into it.
     SettingsType m_settings;
 
@@ -47,16 +62,13 @@ namespace CASM {
 
     ///List of specialized conditions to visit in sequential order. Does not include initial conditions.
     const std::vector<CondType> m_conditions_list;
-
-    ///Return the appropriate std::vector of conditions to visit based from settings. Use for construction.
-    std::vector<CondType> make_conditions_list(const PrimClex &primclex, const SettingsType &settings);
-
-    ///Converge the MonteCarlo as it currently stands
-    void single_run(std::ostream &sout);
     
-    ///Check for existing calculations to find starting conditions
-    Index _find_starting_conditions() const;
-
+    /// run in debug mode?
+    bool m_debug;
+    
+    /// target for log messages
+    std::ostream& sout;
+    
   };
 
   
@@ -66,11 +78,13 @@ namespace CASM {
   
   
   template<typename RunType>
-  MonteDriver<RunType>::MonteDriver(PrimClex &primclex, const SettingsType& settings):
+  MonteDriver<RunType>::MonteDriver(PrimClex &primclex, const SettingsType& settings, std::ostream& _sout):
     m_settings(settings),
     m_drive_mode(m_settings.drive_mode()),
     m_mc(primclex, m_settings),
-    m_conditions_list(make_conditions_list(primclex, m_settings)) {
+    m_conditions_list(make_conditions_list(primclex, m_settings)),
+    m_debug(m_settings.debug()),
+    sout(_sout) {
   
   }
   
@@ -82,8 +96,11 @@ namespace CASM {
   /// - If there are existing results, uses "output_dir/conditions.i/final_state.json" as 
   ///   the initial state for the next run
   template<typename RunType>
-  void MonteDriver<RunType>::run(std::ostream &sout) {
+  void MonteDriver<RunType>::run() {
     
+    if(debug()) {
+      sout << "Checking for existing calculations..." << std::endl;
+    }
     MonteCarloDirectoryStructure dir(m_settings.output_directory());
     
     if(!m_settings.write_json() && !m_settings.write_csv()) {
@@ -104,15 +121,20 @@ namespace CASM {
       }
     }
     
+    if(start_i == m_conditions_list.size()) {
+      sout << "Calculations already complete." << std::endl;
+      return;
+    }
+    
     // if existing calculations
     if(start_i > 0 || repeats.size() > 0) {
       
-      sout << "Found existing calculations. Will begin with condition " << start_i << ".\n\n";
+      sout << "Found existing calculations. Will begin with condition " << start_i << ".\n" << std::endl;
       
       if(repeats.size()) {
         jsonParser json;
         to_json(repeats, json);
-        sout << "Will overwrite existing results for condition(s): " << json << "\n\n";
+        sout << "Will overwrite existing results for condition(s): " << json << "\n" << std::endl;
       }
     }
     
@@ -144,7 +166,7 @@ namespace CASM {
       
       m_mc.set_conditions(m_conditions_list[i]);
       
-      single_run(sout);
+      single_run();
       sout << "Writing output files..." << std::endl;
       m_mc.write_results(i);
       jsonParser json;
@@ -240,7 +262,7 @@ namespace CASM {
   }
 
   template<typename RunType>
-  void MonteDriver<RunType>::single_run(std::ostream &sout) {
+  void MonteDriver<RunType>::single_run() {
     
     // perform any requested explicit equilibration passes
     if(m_settings.is_equilibration_passes_each_run()) {
@@ -263,20 +285,28 @@ namespace CASM {
     steady_clock::time_point start_time, curr_time;
     start_time = steady_clock::now();
   
-    m_mc.print_run_start_info(sout);
+    m_mc.print_run_start_info();
 
     MonteCounter run_counter(m_settings, m_mc.steps_per_pass());
     
     
     while(true) {
       
+      if(debug()) {
+        sout << "\n-----------------------------------------\n"
+             << "Pass: " << run_counter.pass() << "  "
+             << "Step: " << run_counter.step() << "  "
+             << "Samples: " << run_counter.samples() << std::endl;
+      }
+      
       if(m_mc.must_converge()) {
+        
         if(!run_counter.minimums_met()) {
           
           // keep going, but check for conflicts with maximums
           if(run_counter.maximums_met()) {
             throw std::runtime_error(
-              std::string("Error in 'MonteDriver<RunType>::single_run(std::ostream &sout)'\n") +
+              std::string("Error in 'MonteDriver<RunType>::single_run()'\n") +
                           "  Conflicting input: Minimum number of passes, steps, or samples not met,\n" +
                           "  but maximum number of passes, steps, or samples are met.");
           }
@@ -302,6 +332,9 @@ namespace CASM {
       run_counter++;
       
       if(run_counter.sample_time()) {
+        if(debug()) {
+          sout << "** Sample data **" << std::endl;
+        }
         m_mc.sample_data(run_counter.pass(), run_counter.step());
         run_counter.increment_samples();
       }

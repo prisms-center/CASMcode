@@ -161,7 +161,7 @@ namespace CASM {
           std::cout << "  DONE." << std::endl << std::endl;
 
           std::cout << "Begin Grand Canonical Monte Carlo runs" << std::endl;
-          driver.run(std::cout);
+          driver.run();
           std::cout << "  DONE." << std::endl << std::endl;
           
         }

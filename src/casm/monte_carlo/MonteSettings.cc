@@ -41,6 +41,15 @@ namespace CASM {
     }
   }
   
+  /// \brief Run in debug mode?
+  bool MonteSettings::debug() const {
+    auto it = find("debug");
+    if(it == end()) {
+      return false;
+    }
+    return it->get<bool>();
+  }
+  
   
   // --- Initialization ---------------------
     
@@ -112,7 +121,6 @@ namespace CASM {
     return dmode;
   }
 
-  
   /// \brief Directory where output should go
   const fs::path MonteSettings::output_directory() const {
     return m_output_directory;
