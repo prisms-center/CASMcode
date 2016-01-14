@@ -8,6 +8,7 @@
 
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/clex.hh"
+#include "casm/casm_io/SafeOfstream.hh"
 
 namespace CASM {
 

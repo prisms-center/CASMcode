@@ -4,6 +4,7 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/clex/Supercell.hh"
 #include "casm/clex/Configuration.hh"
 
 namespace CASM {

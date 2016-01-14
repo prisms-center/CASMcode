@@ -5,6 +5,7 @@
 #include <regex>
 #include <boost/algorithm/string.hpp>
 #include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/json_io/container.hh"
 #include "casm/container/ContainerTraits.hh"
 #include "casm/misc/CASM_TMP.hh"
 
