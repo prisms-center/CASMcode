@@ -18,7 +18,7 @@ namespace CASM {
     }
     
     std::unique_ptr<Norm> clone() const {
-      return notstd::make_unique<Norm>(this->_clone());
+      return std::unique_ptr<Norm>(this->_clone());
     }
   
   private:
@@ -53,7 +53,7 @@ namespace CASM {
   
   public:
     
-    /// \brief Return number of non-Va species in configuration
+    /// \brief Return number of non-Va species in configuration per unitcell
     double operator()(const Configuration& config) const override {
       return n_species(config);
     }

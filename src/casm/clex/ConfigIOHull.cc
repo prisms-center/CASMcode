@@ -2,6 +2,7 @@
 #include "casm/clex/ConfigIOHull.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/Norm.hh"
 
 namespace CASM {
 
@@ -14,6 +15,17 @@ namespace CASM {
       options["comp"] = Hull::CalculatorPair(Comp().clone(), formation_energy().clone());
       return options;
     }
+    
+    /// Returns a map containing default clex hull calculators
+    Hull::CalculatorOptions clex_hull_calculator_options() {
+      Hull::CalculatorOptions options;
+      Clex clex;
+      options["comp"] = Hull::CalculatorPair(Comp().clone(), clex.clone());
+      clex.parse_args("formation_energy_per_species");
+      options["atom_frac"] = Hull::CalculatorPair(SpeciesFrac().clone(), clex.clone());
+      return options;
+    }
+    
     
     /// Returns "atom_frac"
     std::string default_hull_calculator() {
@@ -104,7 +116,7 @@ namespace CASM {
     
     /// \brief Constructor
     OnClexHull::OnClexHull() :
-      BaseHull<bool>(Name, Desc) {}
+      BaseHull<bool>(Name, Desc, "MASTER", default_hull_calculator(), clex_hull_calculator_options()) {}
     
     
     /// \brief Validate that the Configuration has a cluster expanded formation energy per species
@@ -144,7 +156,7 @@ namespace CASM {
     
     /// \brief Constructor
     ClexHullDist::ClexHullDist() :
-      BaseHull<double>(Name, Desc) {}
+      BaseHull<double>(Name, Desc, "MASTER", default_hull_calculator(), clex_hull_calculator_options()) {}
     
     /// \brief Validate that the Configuration has a cluster expanded formation energy per species
     ///

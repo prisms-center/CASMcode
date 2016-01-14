@@ -3,6 +3,7 @@
 #include <functional>
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/Norm.hh"
 #include "casm/clex/ConfigIOHull.hh"
 #include "casm/clex/ConfigIONovelty.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
@@ -161,7 +162,7 @@ namespace CASM {
     Eigen::VectorXd Corr::evaluate(const Configuration& config) const {
       return correlations(config, m_clexulator);
     }
-      
+    
     /// \brief If not yet initialized, use the global clexulator from the PrimClex
     void Corr::init(const Configuration &_tmplt) const {
       if(!m_clexulator.initialized()) {
@@ -170,6 +171,77 @@ namespace CASM {
       
       VectorXdAttribute<Configuration>::init(_tmplt);
       
+    }
+    
+    // --- Clex implementations -----------
+    
+    const std::string Clex::Name ="clex";
+    
+    const std::string Clex::Desc =
+      "Predicted property value, currently supports 'clex(formation_energy)' and "
+      "'clex(formation_energy_per_species)'. Default is 'clex(formation_energy)'.";
+    
+    Clex::Clex() : 
+        ScalarAttribute<Configuration>(Name, Desc) {
+      parse_args("");
+    }
+      
+    Clex::Clex(const Clexulator& clexulator, const ECIContainer& eci, const std::string args) : 
+        ScalarAttribute<Configuration>(Name, Desc), 
+        m_clexulator(clexulator) {
+      parse_args(args);
+    }
+      
+    /// \brief Returns the atom fraction
+    double Clex::evaluate(const Configuration& config) const {
+      return m_eci*correlations(config, m_clexulator)/_norm(config);
+    }
+      
+    /// \brief Clone using copy constructor
+    std::unique_ptr<Clex> Clex::clone() const {
+      return std::unique_ptr<Clex>(this->_clone());
+    }
+      
+    /// \brief If not yet initialized, use the global clexulator and eci from the PrimClex
+    void Clex::init(const Configuration &_tmplt) const {
+      if(!m_clexulator.initialized()) {
+        m_clexulator = _tmplt.get_primclex().global_clexulator();
+        m_eci = _tmplt.get_primclex().global_eci("formation_energy");
+      }
+    }
+    
+    /// \brief Expects 'clex', 'clex(formation_energy)', or 'clex(formation_energy_per_species)'
+    bool Clex::parse_args(const std::string &args) {
+      m_clex_name = args;
+      if(args == "") {
+        m_norm = notstd::make_cloneable<Norm<Configuration> >();
+        return true;
+      }
+      if(args == "formation_energy") {
+        m_norm = notstd::make_cloneable<Norm<Configuration> >();
+        return true;
+      }
+      if(args == "formation_energy_per_species") {
+        m_norm = notstd::make_cloneable<NormPerSpecies>();
+        return true;
+      }
+      else {
+        std::stringstream ss;
+        ss << "Error parsing arguments for 'clex'.\n"
+              "  Received: " << args << "\n"
+              "  Allowed options are: 'formation_energy' (Default), or 'formation_energy_per_species'";
+        throw std::runtime_error(ss.str());
+      }
+    }
+    
+    /// \brief Returns the normalization
+    double Clex::_norm(const Configuration& config) const {
+      return (*m_norm)(config);
+    }
+    
+    /// \brief Clone using copy constructor
+    Clex* Clex::_clone() const {
+      return new Clex(*this);
     }
         
     
@@ -276,8 +348,6 @@ namespace CASM {
         has_formation_energy);
     }
     
-    
-    
     /*Generic1DDatumFormatter<std::vector<double>, Configuration >relaxation_strain() {
       return Generic1DDatumFormatter<std::vector<double>, Configuration >("relaxation_strain",
                                                                           "Green-Lagrange strain of dft-relaxed configuration, relative to the ideal crystal.  Ordered as [E(0,0), E(1,1), E(2,2), E(1,2), E(0,2), E(0,1)].  Accepts index as argument on interval [0,5]",
@@ -376,7 +446,7 @@ namespace CASM {
     ScalarAttributeDictionary<Configuration> dict;
     
     dict.insert(
-      //Clex(),
+      Clex(),
       HullDist(),
       ClexHullDist(),
       Novelty(),

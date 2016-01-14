@@ -17,6 +17,8 @@ namespace CASM {
   
   
   class Configuration;
+  template<typename DataObject>
+  class Norm;
   
   typedef DataFormatterParser<Configuration> ConfigIOParser;
   
@@ -288,6 +290,66 @@ namespace CASM {
 
       mutable Clexulator m_clexulator;
       
+    };
+    
+    /// \brief Returns predicted formation energy
+    ///
+    /// Returns predicted formation energy (only formation energy for now)
+    /// 
+    /// \ingroup ConfigIO
+    ///
+    class Clex : public ScalarAttribute<Configuration> {
+    
+    public:
+      
+      static const std::string Name;
+      
+      static const std::string Desc;
+      
+      
+      Clex();
+      
+      /// \brief Construct with Clexulator, ECI, and either 'formation_energy' or 'formation_energy_per_species'
+      Clex(const Clexulator& clexulator, const ECIContainer& eci, const std::string args = "formation_energy");
+      
+      
+      // --- Required implementations -----------
+      
+      /// \brief Returns the atom fraction
+      double evaluate(const Configuration& config) const override;
+      
+      /// \brief Clone using copy constructor
+      std::unique_ptr<Clex> clone() const;
+      
+      
+      // --- Specialized implementation -----------
+      
+      // validate: predicted property can always be calculated if clexulator and
+      // eci were obtained ok
+      
+      /// \brief If not yet initialized, use the global clexulator and eci from the PrimClex
+      void init(const Configuration &_tmplt) const override;
+      
+      /// \brief Expects 'clex', 'clex(formation_energy)', or 'clex(formation_energy_per_species)'
+      bool parse_args(const std::string &args) override;
+      
+      /// \brief Short header returns: 'clex(formation_energy)', 'clex(formation_energy_per_species)', etc.
+      std::string short_header(const Configuration &_tmplt) const override {
+        return "clex(" + m_clex_name + ")";
+      }
+      
+    private:
+      
+      /// \brief Returns the normalization
+      double _norm(const Configuration& config) const;
+      
+      /// \brief Clone using copy constructor
+      Clex* _clone() const override;
+      
+      mutable std::string m_clex_name;
+      mutable Clexulator m_clexulator;
+      mutable ECIContainer m_eci;
+      mutable notstd::cloneable_ptr<Norm<Configuration> > m_norm;
     };
 
   }

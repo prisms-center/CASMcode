@@ -15,6 +15,9 @@ namespace CASM {
     /// Returns a map containing default hull calculators
     Hull::CalculatorOptions hull_calculator_options();
     
+    /// Returns a map containing default clex hull calculators
+    Hull::CalculatorOptions clex_hull_calculator_options();
+    
     /// Returns "atom_frac"
     std::string default_hull_calculator();
     
@@ -287,6 +290,7 @@ namespace CASM {
     /// \brief Calculates the convex hull
     /// 
     /// - Uses the parsed args to determine the selection to use to calculate the hull
+    /// - Calls 'init' on the CompCalculator and EnergyCalculator
     /// - Constructs the hull
     ///
     template<typename ValueType>
@@ -320,6 +324,14 @@ namespace CASM {
         }
         selection = ConstConfigSelection(primclex, m_selection);
       }
+      
+      // Hull typedefs:
+      //typedef std::pair<notstd::cloneable_ptr<CompCalculator>, 
+      //                  notstd::cloneable_ptr<EnergyCalculator> > CalculatorPair;
+      //typedef std::map<std::string, CalculatorPair> CalculatorOptions;
+      
+      m_calculator_map.find(m_composition_type)->second.first->init(_tmplt);
+      m_calculator_map.find(m_composition_type)->second.second->init(_tmplt); 
       
       m_hull = std::make_shared<Hull>(selection, 
                                       *m_calculator_map.find(m_composition_type)->second.first, 
