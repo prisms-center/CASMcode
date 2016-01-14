@@ -382,10 +382,11 @@ namespace CASM {
 
   //********************************************************************
 
-  /// b_index is the basis site index
+  /// nlist_index is the index of the basis site in the neighbor list
   template<typename ClustType>
-  ReturnArray<std::string>  GenericOrbit<ClustType>::flower_function_cpp_strings(const Array<FunctionVisitor *> &labelers, Index b_index) {
-    Array<std::string> formulae(prototype.clust_basis.size(), std::string());
+  ReturnArray<std::string>  GenericOrbit<ClustType>::flower_function_cpp_strings(const Array<FunctionVisitor *> &labelers, Index nlist_index) {
+    
+     Array<std::string> formulae(prototype.clust_basis.size(), std::string());
     std::string suffix;
     Index ib;
 
@@ -394,11 +395,11 @@ namespace CASM {
       formulae.resize(prototype.clust_basis.size(), std::string("("));
       suffix = ")/" + std::to_string(size()) + ".0";
     }
-
+    
     for(Index ne = 0; ne < size(); ne++) {
       //std::cout << "# of translists: " << at(ne).trans_nlists().size() << "\n";
       for(Index nt = 0; nt < at(ne).trans_nlists().size(); nt++) {
-        ib = at(ne).trans_nlist(nt).find(b_index);
+        ib = at(ne).trans_nlist(nt).find(nlist_index);
 
         //std::cout << "ib is " << ib << " of " << at(ne).size() << "\n";
         if(ib == at(ne).size())
@@ -433,11 +434,14 @@ namespace CASM {
   //********************************************************************
 
   /// b_index is the basis site index, f_index is the index of the configurational site basis function in Site::occupant_basis
+  /// nlist_index is the index of the basis site in the neighbor list
   template<typename ClustType>
   ReturnArray<std::string>  GenericOrbit<ClustType>::delta_occfunc_flower_function_cpp_strings(BasisSet site_basis, // passed by value because we use it as a temporary
       const Array<FunctionVisitor *> &labelers,
+      Index nlist_index,
       Index b_index,
       Index f_index) {
+    
     Array<std::string> formulae(prototype.clust_basis.size(), std::string());
     std::string suffix;
     Index ib;
@@ -451,7 +455,7 @@ namespace CASM {
     for(Index ne = 0; ne < size(); ne++) {
       //std::cout << " **** for ne = " << ne << ":\n";
       for(Index nt = 0; nt < at(ne).trans_nlists().size(); nt++) {
-        ib = at(ne).trans_nlist(nt).find(b_index);
+        ib = at(ne).trans_nlist(nt).find(nlist_index);
         if(ib == at(ne).size())
           continue;
         //std::cout << " **** for translist: " << at(ne).trans_nlist(nt) << ":\n";

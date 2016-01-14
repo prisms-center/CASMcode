@@ -993,6 +993,16 @@ namespace CASM {
     }
     return tau;
   }
+  
+  //*******************************************************************************************
+  bool PrimClex::has_global_clexulator() const {
+    if(!m_global_clexulator.initialized()) {
+      if(!fs::exists(dir().clexulator_src(settings().name(), settings().bset()))) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   //*******************************************************************************************
   Clexulator PrimClex::global_clexulator() const {
@@ -1010,12 +1020,32 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  ECIContainer PrimClex::global_eci(std::string clex_name) const {
-    return ECIContainer(dir().eci_out(clex_name,
+  bool PrimClex::has_global_eci(std::string clex_name) const {
+    
+    if(m_global_eci.eci_list().size()) {
+      return true;
+    }
+    
+    return fs::exists(dir().eci_out(clex_name,
                                       settings().calctype(),
                                       settings().ref(),
                                       settings().bset(),
                                       settings().eci()));
+  }
+  
+  //*******************************************************************************************
+  const ECIContainer& PrimClex::global_eci(std::string clex_name) const {
+    if(!m_global_eci.eci_list().size()) {
+      fs::path eci_path = dir().eci_out(clex_name, settings().calctype(),
+                            settings().ref(), settings().bset(), settings().eci());
+      if(!fs::exists(eci_path) ) {
+        throw std::runtime_error(
+          std::string("Error loading global ECI. eci.out does not exist.\n")
+          + "  Expected at: " + eci_path.string());
+      }
+      m_global_eci = ECIContainer(eci_path);
+    }
+    return m_global_eci;
   }
 
   //*******************************************************************************************
@@ -1323,20 +1353,23 @@ namespace CASM {
         for(Index na = 0; na < asym_unit.size(); na++) {
           for(Index ne = 0; ne < asym_unit[na].size(); ne++) {
             Index nb = asym_unit[na][ne][0].basis_ind();
-            formulae = tree[np][no].flower_function_cpp_strings(labelers, nb);
-            for(Index nf = 0; nf < formulae.size(); nf++) {
-              if(!formulae[nf].size())
-                continue;
-              make_newline = true;
-              flower_method_names[nb][lf + nf] = "site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
-              private_def_stream <<
-                                 indent << "  double " << flower_method_names[nb][lf + nf] << "() const;\n";
+            auto nlist_index = find_index(nlist.sublat_indices(), nb);
+            if(nlist_index != nlist.sublat_indices().size()) {
+              formulae = tree[np][no].flower_function_cpp_strings(labelers, nlist_index);
+              for(Index nf = 0; nf < formulae.size(); nf++) {
+                if(!formulae[nf].size())
+                  continue;
+                make_newline = true;
+                flower_method_names[nb][lf + nf] = "site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
+                private_def_stream <<
+                                   indent << "  double " << flower_method_names[nb][lf + nf] << "() const;\n";
 
-              bfunc_imp_stream <<
-                               indent << "double " << class_name << "::" << flower_method_names[nb][lf + nf] << "() const{\n" <<
-                               indent << "  return " << formulae[nf] << ";\n" <<
-                               indent << "}\n";
+                bfunc_imp_stream <<
+                                 indent << "double " << class_name << "::" << flower_method_names[nb][lf + nf] << "() const{\n" <<
+                                 indent << "  return " << formulae[nf] << ";\n" <<
+                                 indent << "}\n";
 
+              }
             }
             if(make_newline) {
               bfunc_imp_stream << '\n';
@@ -1351,22 +1384,24 @@ namespace CASM {
             for(Index nsbf = 0; nsbf < site_basis.size(); nsbf++) {
               std::string delta_prefix = "(m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_f] - m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_i])";
 
-              tformulae = tree[np][no].delta_occfunc_flower_function_cpp_strings(site_basis, labelers, nb, nsbf);
-              for(Index nf = 0; nf < tformulae.size(); nf++) {
-                if(!tformulae[nf].size())
-                  continue;
+              if(nlist_index != nlist.sublat_indices().size()) {
+                tformulae = tree[np][no].delta_occfunc_flower_function_cpp_strings(site_basis, labelers, nlist_index, nb, nsbf);
+                for(Index nf = 0; nf < tformulae.size(); nf++) {
+                  if(!tformulae[nf].size())
+                    continue;
 
-                if(formulae[nf].size())
-                  formulae[nf] += " + ";
+                  if(formulae[nf].size())
+                    formulae[nf] += " + ";
 
-                formulae[nf] += delta_prefix;
+                  formulae[nf] += delta_prefix;
 
-                if(tformulae[nf] == "1" || tformulae[nf] == "(1)")
-                  continue;
+                  if(tformulae[nf] == "1" || tformulae[nf] == "(1)")
+                    continue;
 
-                formulae[nf] += "*";
-                formulae[nf] += tformulae[nf];
-                //formulae[nf] += ")";
+                  formulae[nf] += "*";
+                  formulae[nf] += tformulae[nf];
+                  //formulae[nf] += ")";
+                }
               }
             }
             for(Index nf = 0; nf < formulae.size(); nf++) {

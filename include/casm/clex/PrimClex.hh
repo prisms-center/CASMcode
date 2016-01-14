@@ -347,18 +347,17 @@ namespace CASM {
     ///   properties.delta.json
     //void generate_references();
 
+    bool has_global_clexulator() const;
     Clexulator global_clexulator() const;
-    ECIContainer global_eci(std::string clex_name) const;
+    
+    bool has_global_eci(std::string clex_name) const;
+    const ECIContainer& global_eci(std::string clex_name) const;
   private:
     
     /// Initialization routines
     void _init(std::ostream& sout);
 
-    /// Return the configuration closest in param_composition to the target_param_comp
-    ///   Tie break returns configuration in smallest supercell (first found at that size)
-//    const Configuration &closest_calculated_config(const Eigen::VectorXd &target_param_comp) const;
-
-
+    mutable ECIContainer m_global_eci;
     mutable Clexulator m_global_clexulator;
   };
 
