@@ -146,6 +146,11 @@ namespace CASM {
     fs::path clust(std::string bset) const {
       return bset_dir(bset) / "clust.json";
     }
+    
+    // \brief Returns path to the basis.json file
+    fs::path basis(std::string bset) const {
+      return bset_dir(bset) / "basis.json";
+    }
 
     /// \brief Returns path to directory containing global clexulator
     fs::path clexulator_dir(std::string bset) const {
@@ -217,16 +222,6 @@ namespace CASM {
       return calc_settings_dir(calctype) / _ref(ref);
     }
 
-    /// \brief Return calculation reference settings directory path, for supercell settings
-    fs::path supercell_ref_dir(std::string scelname, std::string calctype, std::string ref) const {
-      return supercell_calc_settings_dir(scelname, calctype) / _ref(ref);
-    }
-
-    /// \brief Return calculation reference settings directory path, for configuration settings
-    fs::path configuration_ref_dir(std::string configname, std::string calctype, std::string ref) const {
-      return configuration_calc_settings_dir(configname, calctype) / _ref(ref);
-    }
-
     /// \brief Return composition axes file path
     fs::path composition_axes(std::string calctype, std::string ref) const {
       return ref_dir(calctype, ref) / "composition_axes.json";
@@ -250,24 +245,9 @@ namespace CASM {
       return clex_dir(clex) / _calctype(calctype) / _ref(ref) / _bset(bset) / _eci(eci);
     }
 
-    /// \brief Returns path to eci.out
-    fs::path eci_out(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
-      return eci_dir(clex, calctype, ref, bset, eci) / "eci.out";
-    }
-
-    /// \brief Returns path to eci.in, in eci fitting directory
-    fs::path energy(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
-      return eci_dir(clex, calctype, ref, bset, eci) / "energy";
-    }
-
-    /// \brief Returns path to eci.in, in eci fitting directory
-    fs::path eci_in(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
-      return eci_dir(clex, calctype, ref, bset, eci) / "eci.in";
-    }
-
-    /// \brief Returns path to corr.in, in eci fitting directory
-    fs::path corr_in(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
-      return eci_dir(clex, calctype, ref, bset, eci) / "corr.in";
+    /// \brief Returns path to eci.json
+    fs::path eci(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
+      return eci_dir(clex, calctype, ref, bset, eci) / "eci.json";
     }
 
 

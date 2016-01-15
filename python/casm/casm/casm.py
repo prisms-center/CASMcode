@@ -75,3 +75,9 @@ def settings_path(name, calctype, configdir=None):
         else:
             curr = os.path.dirname(curr)
     return None
+
+
+
+
+
+

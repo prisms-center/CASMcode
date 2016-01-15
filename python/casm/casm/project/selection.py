@@ -17,7 +17,6 @@ class Selection(object):
         Args:
             proj: a Project
             path: path to selection file (Default="MASTER"). 
-            auto: True if using pbs module's JobDB to manage pbs jobs
 
         """
         if proj == None:
@@ -81,7 +80,7 @@ class Selection(object):
             output: Name of output file to write result to
         
         """
-        args = "casm select --" + command + " " + criteria + " -c " + self.path
+        args = "select --" + command + " " + criteria + " -c " + self.path
         if output != None:
           args += " -o " + output
         self.proj.command(args)
