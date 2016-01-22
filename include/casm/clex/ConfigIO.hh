@@ -364,6 +364,10 @@ namespace CASM {
 
     ConfigIO::GenericConfigFormatter<std::string> scelname();
 
+    ConfigIO::GenericConfigFormatter<std::string> calc_status();
+
+    ConfigIO::GenericConfigFormatter<std::string> failure_type();
+
     ConfigIO::GenericConfigFormatter<Index> scel_size();
 
     ConfigIO::GenericConfigFormatter<Index> multiplicity();
@@ -398,7 +402,6 @@ namespace CASM {
     ConfigIO::GenericConfigFormatter<double> lattice_deformation();
 
     ConfigIO::GenericConfigFormatter<double> volume_relaxation();
-
 
   }
 

@@ -281,6 +281,21 @@ namespace CASM {
       });
     }
 
+    ConfigIO::GenericConfigFormatter<std::string> calc_status() {
+      return ConfigIO::GenericConfigFormatter<std::string>("calc_status",
+                                                           "Status of calculation.",
+                                                           CASM::calc_status,
+                                                           CASM::has_calc_status);
+    }
+
+    ConfigIO::GenericConfigFormatter<std::string> failure_type() {
+      return ConfigIO::GenericConfigFormatter<std::string>("failure_type",
+                                                           "Reason for calculation failure.",
+                                                           CASM::failure_type,
+                                                           CASM::has_failure_type);
+    }
+
+
     ConfigIO::GenericConfigFormatter<Index> scel_size() {
       return ConfigIO::GenericConfigFormatter<Index>("scel_size",
                                                      "Supercell volume, given as the integer number of unit cells",
@@ -411,7 +426,9 @@ namespace CASM {
 
     dict.insert(
       configname(),
-      scelname()
+      scelname(),
+      calc_status(),
+      failure_type()
     );
 
     return dict;

@@ -51,6 +51,7 @@ namespace CASM {
     ("pos,p", po::value<std::vector<fs::path> >(&pos_paths)->multitoken(), "Path(s) to structure(s) being imported (multiple allowed, but no wild-card matching)")
     ("cost-weight,w", po::value<double>(&lattice_weight)->default_value(0.5),
      "Adjusts cost function for mapping optimization (cost=w*lattice_deformation+(1-w)*basis_deformation).")
+    ("min-energy", "Resolve mapping conflicts based on energy rather than deformation.")
     ("max-vol-change", po::value<double>(&vol_tol)->default_value(0.25),
      "Adjusts range of SCEL volumes searched while mapping imported structure onto ideal crystal (only necessary if the presence of vacancies makes the volume ambiguous). Default is +/- 25% of relaxed_vol/prim_vol. Smaller values yield faster import, larger values may yield more accurate mapping.")
     ("batch,b", po::value<fs::path>(&batch_path), "Path to batch file, which should list one structure file path per line (can be used in combination with --pos)")
@@ -268,6 +269,7 @@ namespace CASM {
           preexisting = true;
         Index mult = data_vec.size() + Index(preexisting);
         double best_weight(1e19);
+        double best_energy(1e19);
         Index best_conflict(0), best_ind(0);
         if(mult > 1) {
           conflict_log <<  "  CONFLICT -> " <<  mult << " matching structures for config " << imported_config.name() << ": " <<  std::endl;
@@ -281,15 +283,23 @@ namespace CASM {
               double ld = imported_config.calc_properties()["lattice_deformation"].get<double>();
               double bd = imported_config.calc_properties()["basis_deformation"].get<double>();
               conflict_log << "                -- lattice_deformation = " << ld << ";  basis_deformation = " << bd << ";  weighted avg = " << w *ld + (1.0 - w)*bd << std::endl;
-              best_weight = w * ld + (1.0 - w) * bd;
-              best_conflict = 0;
-              best_ind = -1;
+              if(!vm.count("min-energy")) {
+                best_weight = w * ld + (1.0 - w) * bd;
+                best_conflict = 0;
+                best_ind = -1;
+              }
             }
             else {
               conflict_log << "                -- lattice_deformation = unknown;  basis_deformation = unknown;  weighted avg = unknown" << std::endl;
             }
-            if(imported_config.calc_properties().contains("relaxed_energy"))
+            if(imported_config.calc_properties().contains("relaxed_energy")) {
               conflict_log << "                -- relaxed_energy = " << imported_config.calc_properties()["relaxed_energy"].get<double>() << std::endl;
+              if(vm.count("min-energy")) {
+                best_energy = imported_config.calc_properties()["relaxed_energy"].get<double>(); 
+                best_conflict = 0;
+                best_ind = -1;
+              }
+            } 
             else
               conflict_log << "                -- relaxed_energy = unknown" << std::endl;
             conflict_log << std::endl;
@@ -307,20 +317,37 @@ namespace CASM {
             else
               conflict_log << "                -- relaxed_energy = unknown" << std::endl;
             conflict_log << std::endl;
-            if(w * ld + (1.0 - w)*bd < best_weight) {
-              best_weight = w * ld + (1.0 - w) * bd;
-              best_conflict = conflict_ind - 1;
-              best_ind = i;
+            if(vm.count("min-energy")) {
+              if(std::get<Import_impl::energy>(data_vec[i]).first) {
+                if(std::get<Import_impl::energy>(data_vec[i]).second < best_energy) {
+                  best_energy = std::get<Import_impl::energy>(data_vec[i]).second;
+                  best_conflict = conflict_ind - 1;
+                  best_ind = i; 
+                }
+              }
+            }
+            else {
+              if(w * ld + (1.0 - w)*bd < best_weight) {
+                best_weight = w * ld + (1.0 - w) * bd;
+                best_conflict = conflict_ind - 1;
+                best_ind = i;
+              }
             }
           }
           if(preexisting) {
             conflict_log << "          ==> Resolution: No data will be imported since data already exists" << std::endl;
             if(valid_index(best_ind)) {
-              conflict_log << "          *** WARNING: Conflicting config #" << best_conflict << " maps more closely onto ideal crystal! ***" << std::endl;
+              if(!vm.count("min-energy"))
+                conflict_log << "          *** WARNING: Conflicting config #" << best_conflict << " maps more closely onto ideal crystal! ***" << std::endl;
+              else
+                conflict_log << "          *** WARNING: Conflicting config #" << best_conflict << " has a lower energy! ***" << std::endl;
             }
           }
           else {
-            conflict_log << "          ==> Resolution: Import data from closest match, structure #" << best_conflict  << std::endl;
+            if(!vm.count("min-energy"))
+              conflict_log << "          ==> Resolution: Import data from closest match, structure #" << best_conflict  << std::endl;
+            else
+              conflict_log << "          ==> Resolution: Import data from lowest energy config, structure #" << best_conflict  << std::endl;
           }
           conflict_log << "\n          ----------------------------------------------\n" << std::endl;
         }

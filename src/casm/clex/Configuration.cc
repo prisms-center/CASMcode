@@ -245,6 +245,26 @@ namespace CASM {
   }
 
   //*********************************************************************************
+  std::string Configuration::calc_status() const {
+      if(fs::exists(calc_status_path())) {
+        jsonParser json(calc_status_path());
+        if (json.contains("status"))
+          return json["status"].get<std::string>();
+      }
+	  return("not_submitted");
+  }
+
+  //*********************************************************************************
+  std::string Configuration::failure_type() const {
+      if(fs::exists(calc_status_path())) {
+        jsonParser json(calc_status_path());
+	    if (json.contains("failure_type"))
+	      return json["failure_type"].get<std::string>();
+      }
+	  return("none");
+  }
+
+  //*********************************************************************************
   const jsonParser &Configuration::source() const {
     return m_source;
   }
@@ -529,6 +549,7 @@ namespace CASM {
     if(prop_updated) {
       write_properties(json_prop);
     }
+
     //std::cout << "finish Configuration::write()" << std::endl;
 
     return json;
@@ -703,7 +724,6 @@ namespace CASM {
 
     read_properties(json_prop);
 
-
     //std::cout << "finish Configuration::read()" << std::endl;
   }
 
@@ -769,6 +789,11 @@ namespace CASM {
   //*********************************************************************************
   fs::path Configuration::calc_properties_path() const {
     return get_primclex().dir().calculated_properties(name(), get_primclex().settings().calctype());
+  }
+
+  //*********************************************************************************
+  fs::path Configuration::calc_status_path() const {
+    return get_primclex().dir().calc_status(name(), get_primclex().settings().calctype());
   }
 
   //*********************************************************************************

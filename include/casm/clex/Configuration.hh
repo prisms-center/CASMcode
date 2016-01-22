@@ -165,6 +165,7 @@ namespace CASM {
     void set_calc_properties(const jsonParser &json);
 
     bool read_calc_properties(jsonParser &parsed_props) const;
+
     /// Generate reference Properties from param_composition and reference states
     ///   For now only linear interpolation
     void generate_reference();
@@ -186,6 +187,10 @@ namespace CASM {
     }
 
     std::string name() const;
+
+    std::string calc_status() const;
+
+    std::string failure_type() const;
 
     const jsonParser &source() const;
 
@@ -325,6 +330,7 @@ namespace CASM {
 
 
     fs::path calc_properties_path() const;
+    fs::path calc_status_path() const;
     /// Path to various files
     fs::path get_pos_path() const;
 
@@ -429,6 +435,18 @@ namespace CASM {
   /// \brief Change in volume due to relaxation, expressed as the ratio V/V_0
   double volume_relaxation(const Configuration &_config);
 
+  /// \brief Status of calculation
+  inline
+  std::string calc_status(const Configuration &_config) {
+    return _config.calc_status();
+  }
+
+  // \brief Reason for calculation failure.
+  inline 
+  std::string failure_type(const Configuration &_config) {
+    return _config.failure_type();
+  }
+
   bool has_relaxed_energy(const Configuration &_config);
 
   bool has_reference_energy(const Configuration &_config);
@@ -443,6 +461,15 @@ namespace CASM {
 
   bool has_volume_relaxation(const Configuration &_config);
 
+  inline
+  bool has_calc_status(const Configuration &_config) {
+    return !_config.calc_status().empty();
+  }
+
+  inline
+  bool has_failure_type(const Configuration &_config) {
+    return !_config.failure_type().empty();
+  }
   /// \brief Application results in filling supercell 'scel' with reoriented motif, op*config
   ///
   /// Currently only applies to occupation

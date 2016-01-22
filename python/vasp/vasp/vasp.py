@@ -393,11 +393,19 @@ class FreezeError(object):
         print "  Kill job and try to continue"
 
 
-def error_check(jobdir, stdoutfile):
+def error_check(jobdir, stdoutfile, err_types):
     """ Check vasp stdout for errors """
     err = dict()
+    if err_types is None:
+        possible = [SubSpaceMatrixError()]
+    else:
+        err_objs = {'IbzkptError' : IbzkptError(), 'SubSpaceMatrixError' : SubSpaceMatrixError()}
+        for s in err_types:
+            if s not in err_objs.keys():
+                raise VaspError('Invalid err_type: %s'%s)
+        possible = [err_objs[s] for s in err_types]
+
     # Error to check line by line, only look for first of each type
-    possible = [IbzkptError(), SubSpaceMatrixError()]
     sout = open(stdoutfile, 'r')
     for line in sout:
         for p in possible:
@@ -418,7 +426,7 @@ def error_check(jobdir, stdoutfile):
         return err
 
 
-def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=None, command=None, ncpus=None, kpar=None, poll_check_time = 5.0, err_check_time = 60.0):
+def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=None, command=None, ncpus=None, kpar=None, poll_check_time = 5.0, err_check_time = 60.0, err_types=None):
     """ Run vasp using subprocess.
 
         The 'command' is executed in the directory 'jobdir'.
@@ -438,6 +446,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
                         if ncpus==None, $PBS_NP is used if it exists, else 1
             poll_check_time: how frequently to check if the vasp job is completed
             err_check_time: how frequently to parse vasp output to check for errors
+            err_types:  List of error types to check for. Supported errors: 'IbzkptError', 'SubSpaceMatrixError'. Default: None, in which case only SubSpaceMatrixErrors are checked.
 
     """
     print "Begin vasp run:"
@@ -487,7 +496,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
 
         if time.time() - last_check > err_check_time:
             last_check = time.time()
-            err = error_check(jobdir, os.path.join(jobdir,stdout))
+            err = error_check(jobdir, os.path.join(jobdir,stdout), err_types)
             if err != None:
                 # FreezeErrors are fatal and usually not helped with STOPCAR
                 if "FreezeError" in err.keys():
@@ -522,7 +531,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
 
     # check finished job for errors
     if err == None:
-        err = error_check(jobdir, os.path.join(jobdir,stdout))
+        err = error_check(jobdir, os.path.join(jobdir,stdout), err_types)
         if err != None:
             print "  Found errors:",
             for e in err:
