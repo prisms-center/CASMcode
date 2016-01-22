@@ -353,7 +353,7 @@ namespace CASM {
   /// The minor of element row, col of a matrix is the determinant of the submatrix of
   /// M which does not include any elements from row 'row' or column 'col'
   ///
-  int minor(const Eigen::MatrixXi& M, int row, int col) {
+  int matrix_minor(const Eigen::MatrixXi& M, int row, int col) {
     
     // create the submatrix of M which doesn't include any elements from M in 'row' or 'col'
     Eigen::MatrixXi subM(M.rows()-1, M.cols()-1);
@@ -378,14 +378,14 @@ namespace CASM {
   ///
   /// \param M matrix
   ///
-  /// The cofactor matrix is \code C(i,j) = pow(-1,i+j)*minor(M,i,j) \endcode
+  /// The cofactor matrix is \code C(i,j) = pow(-1,i+j)*matrix_minor(M,i,j) \endcode
   /// 
   Eigen::MatrixXi cofactor(const Eigen::MatrixXi& M) {
     
     Eigen::MatrixXi Mcof(M.rows(), M.cols());
     for( int i=0; i<Mcof.rows(); i++) {
       for( int j=0; j<Mcof.cols(); j++) {
-        (((i+j) % 2) == 0) ? Mcof(i,j) = minor(M, i, j) : Mcof(i,j) = -minor(M, i, j);
+        (((i+j) % 2) == 0) ? Mcof(i,j) = matrix_minor(M, i, j) : Mcof(i,j) = -matrix_minor(M, i, j);
       }
     }
     return Mcof;
