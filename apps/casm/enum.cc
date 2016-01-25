@@ -170,7 +170,7 @@ namespace CASM {
         }
       }
       for(auto it = scel_selection.begin(); it != scel_selection.end(); ++it) {
-        std::cout << "  Enumerate configurations for " << (**it).get_name() << " ... " << std::flush;
+        std::cout << "  Enumerate configurations for " << (**it).get_name() << " ...  " << std::flush;
 
         ConfigEnumAllOccupations<Configuration> enumerator(**it);
         Index num_before = (**it).get_config_list().size();
