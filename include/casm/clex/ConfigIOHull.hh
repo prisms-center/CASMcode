@@ -37,7 +37,7 @@ namespace CASM {
                const std::string &_default_selection = "MASTER",
                const std::string &_default_composition_type = default_hull_calculator(),
                const Hull::CalculatorOptions& _calculator_map = hull_calculator_options(),
-               double _singular_value_tol = 1e-14);
+               double _singular_value_tol = 1e-8);
       
       /// \brief Calculates the convex hull
       void init(const Configuration &_tmplt) const override;
