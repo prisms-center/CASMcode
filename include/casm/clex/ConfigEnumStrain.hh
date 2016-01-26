@@ -40,7 +40,7 @@ namespace CASM {
     StrainConverter m_strain_calc;
     Eigen::MatrixXd m_proj;
     PermuteIterator m_perm_begin, m_perm_end;
-    Eigen::MatrixXd m_shape_factor;
+    Eigen::VectorXd m_shape_factor;
     using ConfigEnum<ConfigType>::_current;
     using ConfigEnum<ConfigType>::_step;
     using ConfigEnum<ConfigType>::_source;

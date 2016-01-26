@@ -16,7 +16,7 @@ namespace CASM {
     m_proj(m_strain_calc.dim(), m_strain_calc.dim()),
     m_perm_begin(_scel.permute_begin()),
     m_perm_end(_scel.permute_end()),
-    m_shape_factor((Eigen::VectorXd::Ones(m_strain_calc.dim())).asDiagonal()) {
+    m_shape_factor(Eigen::VectorXd::Ones(m_strain_calc.dim())) {
 
     // Force magnitudes to be positive
     std::vector<double> absmags;
@@ -55,7 +55,7 @@ namespace CASM {
         }
 
         if(absmags[s] > TOL)
-          m_shape_factor(nc,nc) /= absmags[s] * absmags[s];
+          m_shape_factor[nc] /= absmags[s] * absmags[s];
 
         if(linear_partitions[s] < 2) {
           final(nc) = init(nc);
@@ -71,10 +71,10 @@ namespace CASM {
     _source() = "strain_enumeration";
 
     std::cout << "Project matrix is \n" << m_proj << "\n";
-    m_shape_factor=m_proj.transpose()*m_shape_factor*m_proj;
+    //m_shape_factor=m_proj.transpose()*m_shape_factor*m_proj;
 
     m_counter.reset();
-    while(m_counter.valid() && double(m_counter().transpose()*m_shape_factor*m_counter()) > 1.0 + TOL) {
+    while(m_counter.valid() && double(m_counter().transpose()*m_shape_factor.asDiagonal()*m_counter()) > 1.0 + TOL) {
       ++m_counter;
     }
 
@@ -94,7 +94,7 @@ namespace CASM {
     //bool is_valid_config(false);
     //std::cout << "Incrementing...\n";
     //while(!is_valid_config && ++m_counter) {
-    while(++m_counter && double(m_counter().transpose()*m_shape_factor*m_counter()) > 1.0 + TOL) {
+    while(++m_counter && double(m_counter().transpose()*m_shape_factor.asDiagonal()*m_counter()) > 1.0 + TOL) {
       //just burning throught the count
     }
 

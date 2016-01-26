@@ -38,6 +38,7 @@ class Relax(object):
 			"npar" or "ncore": number of ways to parallelize
                         "kpar": number of ways to parallelize k-points
                         "vasp_cmd": (default, see vasp.run) shell command to execute vasp, or None to use default mpirun
+                        "strict_kpoint": force strict copying of KPOINTS file, otherwise kpoints are scaled based on supercell size
                     used by not_converging():
                         "run_limit": (default 10) maximum number of runs to allow before setting status to "not_converging"
 
