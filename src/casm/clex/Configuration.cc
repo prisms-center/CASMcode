@@ -174,13 +174,13 @@ namespace CASM {
   }
 
   //*********************************************************************************
-/*
-  void Configuration::set_reference(const Properties &ref) {
-    prop_updated = true;
-    reference = ref;
-    delta = calculated - reference;
-  }
-*/
+  /*
+    void Configuration::set_reference(const Properties &ref) {
+      prop_updated = true;
+      reference = ref;
+      delta = calculated - reference;
+    }
+  */
   //*********************************************************************************
   void Configuration::set_calc_properties(const jsonParser &calc) {
     prop_updated = true;
@@ -232,7 +232,7 @@ namespace CASM {
 
     return success;
   }
-  
+
   //********** ACCESSORS ***********
 
   std::string Configuration::get_id() const {
@@ -301,22 +301,22 @@ namespace CASM {
   }
 
   //*********************************************************************************
-/*
-  const Properties &Configuration::ref_properties() const {
-    return reference;
-  }
-*/
+  /*
+    const Properties &Configuration::ref_properties() const {
+      return reference;
+    }
+  */
   //*********************************************************************************
   const Properties &Configuration::calc_properties() const {
     return calculated;
   }
 
   //*********************************************************************************
-/*
-  const DeltaProperties &Configuration::delta_properties() const {
-    return delta;
-  }
-*/
+  /*
+    const DeltaProperties &Configuration::delta_properties() const {
+      return delta;
+    }
+  */
   //*********************************************************************************
 
   const Properties &Configuration::generated_properties() const {
@@ -741,14 +741,14 @@ namespace CASM {
   /// Calculates delta = calculated - reference
   ///
   void Configuration::read_properties(const jsonParser &json) {
-/*
-    if(!json.contains("ref")) {
-      generate_reference();
-    }
-    else {
-      from_json(reference, json["ref"]);
-    }
-*/
+    /*
+        if(!json.contains("ref")) {
+          generate_reference();
+        }
+        else {
+          from_json(reference, json["ref"]);
+        }
+    */
     if(json.contains("calc")) {
       from_json(calculated, json["calc"]);
     }
@@ -757,7 +757,7 @@ namespace CASM {
       from_json(generated, json["gen"]);
     }
 
-//    delta = calculated - reference;
+    //    delta = calculated - reference;
 
   }
 
@@ -882,21 +882,21 @@ namespace CASM {
     else {
       json["calc"] = calculated;
     }
-/*
-    if(reference.size() == 0) {
-      json.erase("ref");
-    }
-    else {
-      json["ref"] = reference;
-    }
+    /*
+        if(reference.size() == 0) {
+          json.erase("ref");
+        }
+        else {
+          json["ref"] = reference;
+        }
 
-    if(delta.size() == 0) {
-      json.erase("delta");
-    }
-    else {
-      json["delta"] = delta;
-    }
-*/
+        if(delta.size() == 0) {
+          json.erase("delta");
+        }
+        else {
+          json["delta"] = delta;
+        }
+    */
     if(generated.size() == 0) {
       json.erase("gen");
     }
@@ -909,210 +909,210 @@ namespace CASM {
   }
 
   //*********************************************************************************
-/*
-  /// Generate reference Properties from param_composition and reference states
-  ///   For now only linear interpolation
-  void Configuration::generate_reference() {
+  /*
+    /// Generate reference Properties from param_composition and reference states
+    ///   For now only linear interpolation
+    void Configuration::generate_reference() {
 
-    //std::cout << "begin Configuration::generate_reference()" << std::endl;
+      //std::cout << "begin Configuration::generate_reference()" << std::endl;
 
-    prop_updated = true;
+      prop_updated = true;
 
-    /// If not enough reference states found, we can't generate reference properties
-    ///   Also, clear delta properties...
-    if(!reference_states_exist()) {
+      /// If not enough reference states found, we can't generate reference properties
+      ///   Also, clear delta properties...
+      if(!reference_states_exist()) {
+        reference = Properties();
+        delta = calculated - reference;
+        return;
+      }
+
+      /// Read reference states
+      Array<Properties> ref_state_prop;
+      Array<Eigen::VectorXd> ref_state_comp;
+
+      read_reference_states(ref_state_prop, ref_state_comp);
+
+      // Initialize reference Properties
       reference = Properties();
+
+      auto props = get_primclex().get_curr_property();
+
+      auto generate_ref = [&](const std::string & prop) {
+        if(std::find(props.cbegin(), props.cend(), prop) != props.cend()) {
+          generate_reference_scalar(prop, ref_state_prop, ref_state_comp);
+        }
+        return;
+      };
+
+      generate_ref("energy");
+      generate_ref("relaxed_energy");
+      // add more for other properties here
+
+      /// generating DeltaProperties from Reference and Calculated,
+      ///   not currently checking agreement with existing DeltaProperties file
       delta = calculated - reference;
-      return;
+
+      //std::cout << "finish Configuration::generate_reference()" << std::endl;
     }
-
-    /// Read reference states
-    Array<Properties> ref_state_prop;
-    Array<Eigen::VectorXd> ref_state_comp;
-
-    read_reference_states(ref_state_prop, ref_state_comp);
-
-    // Initialize reference Properties
-    reference = Properties();
-
-    auto props = get_primclex().get_curr_property();
-
-    auto generate_ref = [&](const std::string & prop) {
-      if(std::find(props.cbegin(), props.cend(), prop) != props.cend()) {
-        generate_reference_scalar(prop, ref_state_prop, ref_state_comp);
-      }
-      return;
-    };
-
-    generate_ref("energy");
-    generate_ref("relaxed_energy");
-    // add more for other properties here
-
-    /// generating DeltaProperties from Reference and Calculated,
-    ///   not currently checking agreement with existing DeltaProperties file
-    delta = calculated - reference;
-
-    //std::cout << "finish Configuration::generate_reference()" << std::endl;
-  }
-*/
+  */
   //*********************************************************************************
-/*
-  /// Checks that all needed reference state files exist
-  bool Configuration::reference_states_exist() const {
+  /*
+    /// Checks that all needed reference state files exist
+    bool Configuration::reference_states_exist() const {
 
-    if(!get_primclex().has_composition_axes() ||
-       !get_primclex().has_chemical_reference()) {
-      return false;
-    }
-
-    std::string calctype = get_primclex().settings().calctype();
-    std::string ref = get_primclex().settings().ref();
-
-    for(int i = 0; i < get_primclex().composition_axes().independent_compositions() + 1; i++) {
-      if(!fs::exists(get_primclex().dir().ref_state(calctype, ref, i)))
+      if(!get_primclex().has_composition_axes() ||
+         !get_primclex().has_chemical_reference()) {
         return false;
+      }
+
+      std::string calctype = get_primclex().settings().calctype();
+      std::string ref = get_primclex().settings().ref();
+
+      for(int i = 0; i < get_primclex().composition_axes().independent_compositions() + 1; i++) {
+        if(!fs::exists(get_primclex().dir().ref_state(calctype, ref, i)))
+          return false;
+      }
+      return true;
     }
-    return true;
-  }
-*/
+  */
   //*********************************************************************************
-/*
-  /// Sets the arrays with the reference state properties read from the CASM directory tree
-  ///
-  void Configuration::read_reference_states(Array<Properties> &ref_state_prop, Array<Eigen::VectorXd> &ref_state_comp) const {
+  /*
+    /// Sets the arrays with the reference state properties read from the CASM directory tree
+    ///
+    void Configuration::read_reference_states(Array<Properties> &ref_state_prop, Array<Eigen::VectorXd> &ref_state_comp) const {
 
-    int Nref = get_primclex().composition_axes().independent_compositions() + 1;
+      int Nref = get_primclex().composition_axes().independent_compositions() + 1;
 
-    ref_state_prop.clear();
-    ref_state_comp.clear();
+      ref_state_prop.clear();
+      ref_state_comp.clear();
 
-    fs::path ref_dir = get_reference_state_dir();
-    fs::path ref_file;
+      fs::path ref_dir = get_reference_state_dir();
+      fs::path ref_file;
 
-    for(int i = 0; i < Nref; i++) {
-      ref_file = ref_dir / ("properties.ref_state." + BP::itos(i) + ".json");
+      for(int i = 0; i < Nref; i++) {
+        ref_file = ref_dir / ("properties.ref_state." + BP::itos(i) + ".json");
 
-      if(!fs::exists(ref_file)) {
-        std::cerr << "Error in Configuration::read_reference_states" << std::endl;
-        std::cerr << "  File does not exist: " << ref_file << std::endl;
-        exit(1);
+        if(!fs::exists(ref_file)) {
+          std::cerr << "Error in Configuration::read_reference_states" << std::endl;
+          std::cerr << "  File does not exist: " << ref_file << std::endl;
+          exit(1);
+        }
+
+        jsonParser json(ref_file);
+
+        if(!json.contains("ref_state")) {
+          std::cerr << "Error in Configuration::read_reference_states" << std::endl;
+          std::cerr << "  File: " << ref_file << std::endl;
+          std::cerr << "  Does not contain 'ref_state'" << std::endl;
+          exit(1);
+        }
+        ref_state_prop.push_back(json["ref_state"]);
+
+        //std::cerr << "\nRef_file:" << ref_file << std::endl;
+        //std::cerr << "Properties:" << std::endl;
+        //std::cerr << ref_state_prop.back() << std::endl;
+
+        if(!json.contains("param_composition")) {
+          std::cerr << "Error in Configuration::read_reference_states" << std::endl;
+          std::cerr << "  File: " << ref_file << std::endl;
+          std::cerr << "  Does not contain 'param_composition'" << std::endl;
+          exit(1);
+        }
+        ref_state_comp.push_back(json["param_composition"].get<Eigen::VectorXd>());
+
+        //std::cerr << "Composition:" << std::endl;
+        //std::cerr << ref_state_comp.back() << std::endl << std::endl << std::endl;
+
       }
-
-      jsonParser json(ref_file);
-
-      if(!json.contains("ref_state")) {
-        std::cerr << "Error in Configuration::read_reference_states" << std::endl;
-        std::cerr << "  File: " << ref_file << std::endl;
-        std::cerr << "  Does not contain 'ref_state'" << std::endl;
-        exit(1);
-      }
-      ref_state_prop.push_back(json["ref_state"]);
-
-      //std::cerr << "\nRef_file:" << ref_file << std::endl;
-      //std::cerr << "Properties:" << std::endl;
-      //std::cerr << ref_state_prop.back() << std::endl;
-
-      if(!json.contains("param_composition")) {
-        std::cerr << "Error in Configuration::read_reference_states" << std::endl;
-        std::cerr << "  File: " << ref_file << std::endl;
-        std::cerr << "  Does not contain 'param_composition'" << std::endl;
-        exit(1);
-      }
-      ref_state_comp.push_back(json["param_composition"].get<Eigen::VectorXd>());
-
-      //std::cerr << "Composition:" << std::endl;
-      //std::cerr << ref_state_comp.back() << std::endl << std::endl << std::endl;
 
     }
-
-  }
-*/
+  */
   //*********************************************************************************
-/*
-  /// Read in the 'most local' reference states: either configuration, supercell, or root reference
-  ///   All reference states should be at the same level, so we look for the "properties.ref.0.json" file
-  fs::path Configuration::get_reference_state_dir() const {
+  /*
+    /// Read in the 'most local' reference states: either configuration, supercell, or root reference
+    ///   All reference states should be at the same level, so we look for the "properties.ref.0.json" file
+    fs::path Configuration::get_reference_state_dir() const {
 
-    const DirectoryStructure &dir = get_primclex().dir();
-    const ProjectSettings &set = get_primclex().settings();
+      const DirectoryStructure &dir = get_primclex().dir();
+      const ProjectSettings &set = get_primclex().settings();
 
-    fs::path ref_dir;
-    //fs::path set_path = fs::path("settings") / fs::path(get_primclex().get_curr_calctype()) / fs::path(get_primclex().get_curr_ref());
-    //fs::path ref_file("properties.ref_state.0.json");
+      fs::path ref_dir;
+      //fs::path set_path = fs::path("settings") / fs::path(get_primclex().get_curr_calctype()) / fs::path(get_primclex().get_curr_ref());
+      //fs::path ref_file("properties.ref_state.0.json");
 
-    // get_path() / set_path / ref_file
-    if(fs::exists(dir.ref_state(set.calctype(), set.ref(), 0))) {
-      // read in config ref
-      //ref_dir = get_path() / set_path;
-      ref_dir = dir.ref_dir(set.calctype(), set.ref());
+      // get_path() / set_path / ref_file
+      if(fs::exists(dir.ref_state(set.calctype(), set.ref(), 0))) {
+        // read in config ref
+        //ref_dir = get_path() / set_path;
+        ref_dir = dir.ref_dir(set.calctype(), set.ref());
+      }
+      // get_supercell().get_path() / set_path / ref_file
+      else if(fs::exists(dir.supercell_ref_state(get_supercell().get_name(), set.calctype(), set.ref(), 0))) {
+        // read in supercell ref
+        //ref_dir = get_supercell().get_path() / set_path;
+        ref_dir = dir.supercell_ref_dir(get_supercell().get_name(), set.calctype(), set.ref());
+      }
+      //get_primclex().get_path() / set_path / ref_file
+      else if(fs::exists(dir.configuration_ref_state(name(), set.calctype(), set.ref(), 0))) {
+        // read in root ref
+        //ref_dir = get_primclex().get_path() / set_path;
+        ref_dir = dir.configuration_ref_dir(name(), set.calctype(), set.ref());
+      }
+
+      return ref_dir;
+
     }
-    // get_supercell().get_path() / set_path / ref_file
-    else if(fs::exists(dir.supercell_ref_state(get_supercell().get_name(), set.calctype(), set.ref(), 0))) {
-      // read in supercell ref
-      //ref_dir = get_supercell().get_path() / set_path;
-      ref_dir = dir.supercell_ref_dir(get_supercell().get_name(), set.calctype(), set.ref());
-    }
-    //get_primclex().get_path() / set_path / ref_file
-    else if(fs::exists(dir.configuration_ref_state(name(), set.calctype(), set.ref(), 0))) {
-      // read in root ref
-      //ref_dir = get_primclex().get_path() / set_path;
-      ref_dir = dir.configuration_ref_dir(name(), set.calctype(), set.ref());
-    }
-
-    return ref_dir;
-
-  }
-*/
+  */
   //*********************************************************************************
-/*
-  void Configuration::generate_reference_scalar(std::string propname, const Array<Properties> &ref_state_prop, const Array<Eigen::VectorXd> &ref_state_comp) {
+  /*
+    void Configuration::generate_reference_scalar(std::string propname, const Array<Properties> &ref_state_prop, const Array<Eigen::VectorXd> &ref_state_comp) {
 
-    //std::cout << "begin generate_reference_scalar()" << std::endl;
-    /// Determine interpolating plane based on reference state property values
+      //std::cout << "begin generate_reference_scalar()" << std::endl;
+      /// Determine interpolating plane based on reference state property values
 
-    Index N = ref_state_prop.size();
-    Eigen::VectorXd value(N);
-    Eigen::MatrixXd comp(N, N);
+      Index N = ref_state_prop.size();
+      Eigen::VectorXd value(N);
+      Eigen::MatrixXd comp(N, N);
 
-    for(Index i = 0; i < N; i++) {
-      if(!ref_state_prop[i].contains(propname)) {
-        std::cerr << "Error in Configuration::generate_reference_scalar()" << std::endl;
-        std::cerr << "  The reference state does not contain '" << propname << "'" << std::endl;
-        exit(1);
+      for(Index i = 0; i < N; i++) {
+        if(!ref_state_prop[i].contains(propname)) {
+          std::cerr << "Error in Configuration::generate_reference_scalar()" << std::endl;
+          std::cerr << "  The reference state does not contain '" << propname << "'" << std::endl;
+          exit(1);
+        }
+        value(i) = ref_state_prop[i][propname].get<double>();
       }
-      value(i) = ref_state_prop[i][propname].get<double>();
-    }
 
-    for(Index i = 0; i < N; i++) {
-      for(Index j = 0; j < N - 1; j++) {
-        comp(i, j) = ref_state_comp[i](j);
+      for(Index i = 0; i < N; i++) {
+        for(Index j = 0; j < N - 1; j++) {
+          comp(i, j) = ref_state_comp[i](j);
+        }
+        comp(i, N - 1) = 1.0;
       }
-      comp(i, N - 1) = 1.0;
+
+      //std::cout << "ref state '" << propname << "': \n" << value.transpose() << std::endl;
+      //std::cout << "comp: \n" << comp << std::endl;
+
+
+      // b = Mx
+      // value = comp * interp_plane
+
+      Eigen::VectorXd interp_plane = comp.fullPivHouseholderQr().solve(value);
+
+      //std::cout << "interp_plane: " << interp_plane.transpose() << std::endl;
+
+      Eigen::VectorXd param_comp = Eigen::VectorXd::Ones(N);
+      param_comp.head(N - 1) = get_param_composition();
+
+      //std::cout << "param_comp: " << param_comp.transpose() << std::endl;
+
+      reference[propname] = param_comp.dot(interp_plane);
+
+      //std::cout << "'" << propname  << "': " << reference[propname].get<double>() << std::endl;
+
+      //std::cout << "finish generate_reference_scalar()" << std::endl;
     }
-
-    //std::cout << "ref state '" << propname << "': \n" << value.transpose() << std::endl;
-    //std::cout << "comp: \n" << comp << std::endl;
-
-
-    // b = Mx
-    // value = comp * interp_plane
-
-    Eigen::VectorXd interp_plane = comp.fullPivHouseholderQr().solve(value);
-
-    //std::cout << "interp_plane: " << interp_plane.transpose() << std::endl;
-
-    Eigen::VectorXd param_comp = Eigen::VectorXd::Ones(N);
-    param_comp.head(N - 1) = get_param_composition();
-
-    //std::cout << "param_comp: " << param_comp.transpose() << std::endl;
-
-    reference[propname] = param_comp.dot(interp_plane);
-
-    //std::cout << "'" << propname  << "': " << reference[propname].get<double>() << std::endl;
-
-    //std::cout << "finish generate_reference_scalar()" << std::endl;
-  }
-*/
+  */
   //--------------------------------------------------------------------------------------------------
   //Structure Factor
   Eigen::VectorXd Configuration::get_struct_fact_intensities() const {
@@ -1224,102 +1224,102 @@ namespace CASM {
   Correlation correlations(const Configuration &config, Clexulator &clexulator) {
     return correlations(config.configdof(), config.get_supercell(), clexulator);
   }
-  
+
   /// Returns parametric composition, as calculated using PrimClex::param_comp
-  Eigen::VectorXd comp(const Configuration& config) {
+  Eigen::VectorXd comp(const Configuration &config) {
     return config.get_param_composition();
   }
-  
+
   /// \brief Returns the composition, as number of each species per unit cell
-  Eigen::VectorXd comp_n(const Configuration& config) {
+  Eigen::VectorXd comp_n(const Configuration &config) {
     return config.get_num_each_component();
   }
-  
+
   /// \brief Returns the vacancy composition, as number per unit cell
-  double n_vacancy(const Configuration& config) {
+  double n_vacancy(const Configuration &config) {
     if(config.get_primclex().vacancy_allowed()) {
       return comp_n(config)[config.get_primclex().vacancy_index()];
     }
     return 0.0;
   }
-  
+
   /// \brief Returns the total number species per unit cell
   ///
   /// Equivalent to \code comp_n(config).sum() - n_vacancy(config) \endcode
-  double n_species(const Configuration& config) {
+  double n_species(const Configuration &config) {
     return comp_n(config).sum() - n_vacancy(config);
   }
-  
+
   /// \brief Returns the composition as species fraction, with [Va] = 0.0, in the order of Structure::get_struc_molecule
   ///
   /// - Currently, this is really a Molecule fraction
-  Eigen::VectorXd species_frac(const Configuration& config) {
+  Eigen::VectorXd species_frac(const Configuration &config) {
     Eigen::VectorXd v = comp_n(config);
     if(config.get_primclex().vacancy_allowed()) {
       v(config.get_primclex().vacancy_index()) = 0.0;
     }
     return v / v.sum();
   }
-  
+
   /// \brief Returns the composition as site fraction, in the order of Structure::get_struc_molecule
-  Eigen::VectorXd site_frac(const Configuration& config) {
-    return comp_n(config)/config.get_prim().basis.size();
+  Eigen::VectorXd site_frac(const Configuration &config) {
+    return comp_n(config) / config.get_prim().basis.size();
   }
-  
+
   /// \brief Returns the relaxed energy, normalized per unit cell
-  double relaxed_energy(const Configuration& config) {
+  double relaxed_energy(const Configuration &config) {
     return config.calc_properties()["relaxed_energy"].get<double>();
   }
-  
+
   /// \brief Returns the relaxed energy, normalized per species
-  double relaxed_energy_per_species(const Configuration& config) {
-    return relaxed_energy(config)/n_species(config);
+  double relaxed_energy_per_species(const Configuration &config) {
+    return relaxed_energy(config) / n_species(config);
   }
-  
+
   /// \brief Returns the reference energy, normalized per unit cell
-  double reference_energy(const Configuration& config) {
-    return reference_energy_per_species(config)*n_species(config); 
+  double reference_energy(const Configuration &config) {
+    return reference_energy_per_species(config) * n_species(config);
   }
-  
+
   /// \brief Returns the reference energy, normalized per species
   ///
   /// - Currently, this is per Molecule
-  double reference_energy_per_species(const Configuration& config) {
-    return config.get_primclex().chemical_reference()(config); 
+  double reference_energy_per_species(const Configuration &config) {
+    return config.get_primclex().chemical_reference()(config);
   }
 
   /// \brief Returns the formation energy, normalized per unit cell
-  double formation_energy(const Configuration& config) {
+  double formation_energy(const Configuration &config) {
     return relaxed_energy(config) - reference_energy(config);
   }
-  
+
   /// \brief Returns the formation energy, normalized per species
   ///
   /// - Currently, this is really a Molecule fraction
-  double formation_energy_per_species(const Configuration& config) {
-    return formation_energy(config)/n_species(config);
+  double formation_energy_per_species(const Configuration &config) {
+    return formation_energy(config) / n_species(config);
   }
-  
+
   /// \brief Returns the formation energy, normalized per unit cell
-  double clex_formation_energy(const Configuration& config) {
+  double clex_formation_energy(const Configuration &config) {
     Clexulator clexulator = config.get_primclex().global_clexulator();
-    return config.get_primclex().global_eci("formation_energy")*correlations(config, clexulator);
+    return config.get_primclex().global_eci("formation_energy") * correlations(config, clexulator);
   }
-  
+
   /// \brief Returns the formation energy, normalized per unit cell
-  double clex_formation_energy_per_species(const Configuration& config) {
-    return clex_formation_energy(config)/n_species(config);
+  double clex_formation_energy_per_species(const Configuration &config) {
+    return clex_formation_energy(config) / n_species(config);
   }
-  
+
   /// \brief Return true if all current properties have been been calculated for the configuration
-  bool is_calculated(const Configuration& config) {
+  bool is_calculated(const Configuration &config) {
     return std::all_of(config.get_primclex().get_curr_property().begin(),
                        config.get_primclex().get_curr_property().end(),
-                       [&](const std::string & key) {
-                         return config.calc_properties().contains(key);
-                       });
+    [&](const std::string & key) {
+      return config.calc_properties().contains(key);
+    });
   }
-  
+
   /// \brief Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)
   double rms_force(const Configuration &_config) {
     return _config.calc_properties()["rms_force"].get<double>();
@@ -1339,20 +1339,25 @@ namespace CASM {
   double volume_relaxation(const Configuration &_config) {
     return _config.calc_properties()["volume_relaxation"].get<double>();
   }
-/*
-  double deformation_change(const Configuration &_config) {
-    return std::abs(_config.deformation().determinant()) - 1.0;
+
+  /// \brief returns true if _config describes primitive cell of the configuration it describes
+  bool is_primitive(const Configuration &_config) {
+    return _config.is_primitive(_config.get_supercell().permute_begin());
   }
-*/
-  
+
+  /// \brief returns true if _config no symmetry transformation applied to _config will increase its lexicographic order
+  bool is_canonical(const Configuration &_config) {
+    return _config.is_canonical(_config.get_supercell().permute_begin(), _config.get_supercell().permute_end());
+  }
+
   bool has_relaxed_energy(const Configuration &_config) {
     return _config.calc_properties().contains("relaxed_energy");
   }
-  
+
   bool has_reference_energy(const Configuration &_config) {
     return _config.get_primclex().has_chemical_reference();
   }
-  
+
   bool has_formation_energy(const Configuration &_config) {
     return has_relaxed_energy(_config) && has_reference_energy(_config);
   }
@@ -1372,59 +1377,59 @@ namespace CASM {
   bool has_volume_relaxation(const Configuration &_config) {
     return _config.calc_properties().contains("volume_relaxation");
   }
-  
-  
+
+
   /// \brief Application results in filling supercell 'scel' with reoriented motif, op*motif
   ///
   /// Currently only applies to occupation
-  Configuration& apply(const ConfigTransform& f, Configuration& motif) {
-    
+  Configuration &apply(const ConfigTransform &f, Configuration &motif) {
+
     Configuration result(f.scel);
-    const PrimClex& primclex = motif.get_primclex();
-    const Structure& prim = motif.get_prim();
-    
+    const PrimClex &primclex = motif.get_primclex();
+    const Structure &prim = motif.get_prim();
+
     Lattice oriented_motif_lat = copy_apply(f.op, motif.get_supercell().get_real_super_lattice());
 
     // Create a PrimGrid linking the prim and the oriented motif each to the supercell
     // So we can tile the decoration of the motif config onto the supercell correctly
-    PrimGrid prim_grid(oriented_motif_lat, f.scel.get_real_super_lattice()); 
-    
-    // For each site in the motif, re-orient and then translate by all possible 
-    // translations from prim_grid, index in the mc_prim_prim, and use index to 
+    PrimGrid prim_grid(oriented_motif_lat, f.scel.get_real_super_lattice());
+
+    // For each site in the motif, re-orient and then translate by all possible
+    // translations from prim_grid, index in the mc_prim_prim, and use index to
     // assign occupation
-    
+
     // std::vector of occupations in the MonteCarlo cell
-    Array<int> tscel_occ(motif.size()*prim_grid.size()); 
-    
+    Array<int> tscel_occ(motif.size()*prim_grid.size());
+
     // for each site in motif
     for(Index s = 0 ; s < motif.size() ; s++) {
-      
+
       // apply symmetry to re-orient and find unit cell coord
       UnitCellCoord oriented_uccoord = copy_apply(f.op, motif.get_uccoord(s), prim);
-      
+
       // for each unit cell of the oriented motif in the supercell, copy the occupation
       for(Index i = 0 ; i < prim_grid.size() ; i++) {
-        
-        
-        
+
+
+
         //tscel_occ[f.scel.find(prim_grid.uccoord(i)) = motif.occ(s);
-        
+
         Index prim_motif_tile_ind = f.scel.prim_grid().find(prim_grid.coord(i, PRIM));
-        
+
         UnitCellCoord mc_uccoord =  f.scel.prim_grid().uccoord(prim_motif_tile_ind) + oriented_uccoord.unitcell();
         // b-index when doing UnitCellCoord addition is ambiguous; explicitly set it
-        mc_uccoord.sublat() = oriented_uccoord.sublat(); 
-        
+        mc_uccoord.sublat() = oriented_uccoord.sublat();
+
         Index occ_ind = f.scel.find(mc_uccoord);
-        
+
         tscel_occ[occ_ind] = motif.occ(s);
       }
     }
-    
+
     result.set_occupation(tscel_occ);
-    
+
     return motif = result;
-    
+
   }
 
 }

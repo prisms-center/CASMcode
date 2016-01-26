@@ -21,17 +21,17 @@ namespace CASM {
   class Supercell;
   class UnitCellCoord;
   class Clexulator;
-  
-  
+
+
   /// \defgroup Configuration
-  ///    
+  ///
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
-  ///    
+  ///
   /// \ingroup Clex
-  
-  
+
+
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
-  /// 
+  ///
   /// \ingroup Configuration
   /// \ingroup Clex
   class Configuration {
@@ -39,10 +39,10 @@ namespace CASM {
 
     /// Configuration DFT data is expected in:
     ///   casmroot/supercells/SCEL_NAME/CONFIG_ID/CURR_CALCTYPE/properties.calc.json
-    
+
     /// POS files are written to:
     ///  casmroot/supercells/SCEL_NAME/CONFIG_ID/POS
-    
+
 
     /// Identification
 
@@ -140,6 +140,10 @@ namespace CASM {
     void set_displacement(const displacement_matrix_t &_disp);
 
     void set_deformation(const Eigen::Matrix3d &_deformation);
+
+    std::vector<PermuteIterator> factor_group(PermuteIterator it_begin, PermuteIterator it_end, double tol = TOL) const {
+      return m_configdof.factor_group(it_begin, it_end, tol);
+    }
 
     Configuration canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, double tol = TOL) const;
 
@@ -319,7 +323,7 @@ namespace CASM {
 
     void print_sublattice_composition(std::ostream &stream) const;
 
-    
+
     fs::path calc_properties_path() const;
     /// Path to various files
     fs::path get_pos_path() const;
@@ -366,53 +370,53 @@ namespace CASM {
 
   /// \brief Returns correlations using 'clexulator'.
   Correlation correlations(const Configuration &config, Clexulator &clexulator);
-  
+
   /// Returns parametric composition, as calculated using PrimClex::param_comp
-  Eigen::VectorXd comp(const Configuration& config);
-  
+  Eigen::VectorXd comp(const Configuration &config);
+
   /// \brief Returns the composition, as number of each species per unit cell
-  Eigen::VectorXd comp_n(const Configuration& config);
-   
+  Eigen::VectorXd comp_n(const Configuration &config);
+
   /// \brief Returns the vacancy composition, as number per unit cell
-  double n_vacancy(const Configuration& config);
-  
+  double n_vacancy(const Configuration &config);
+
   /// \brief Returns the total number species per unit cell
-  double n_species(const Configuration& config);
-  
-  /// \brief Returns the composition as species fraction, with [Va] = 0.0, in 
+  double n_species(const Configuration &config);
+
+  /// \brief Returns the composition as species fraction, with [Va] = 0.0, in
   ///        the order of Structure::get_struc_molecule
-  Eigen::VectorXd species_frac(const Configuration& config);
-  
+  Eigen::VectorXd species_frac(const Configuration &config);
+
   /// \brief Returns the composition as site fraction, in the order of Structure::get_struc_molecule
-  Eigen::VectorXd site_frac(const Configuration& config);
-  
+  Eigen::VectorXd site_frac(const Configuration &config);
+
   /// \brief Returns the relaxed energy, normalized per unit cell
-  double relaxed_energy(const Configuration& config);
-  
+  double relaxed_energy(const Configuration &config);
+
   /// \brief Returns the relaxed energy, normalized per species
-  double relaxed_energy_per_species(const Configuration& config);
-  
+  double relaxed_energy_per_species(const Configuration &config);
+
   /// \brief Returns the reference energy, normalized per unit cell
-  double reference_energy(const Configuration& config);
-  
+  double reference_energy(const Configuration &config);
+
   /// \brief Returns the reference energy, normalized per species
-  double reference_energy_per_species(const Configuration& config);
-  
+  double reference_energy_per_species(const Configuration &config);
+
   /// \brief Returns the formation energy, normalized per unit cell
-  double formation_energy(const Configuration& config);
-  
+  double formation_energy(const Configuration &config);
+
   /// \brief Returns the formation energy, normalized per species
-  double formation_energy_per_species(const Configuration& config);
-  
+  double formation_energy_per_species(const Configuration &config);
+
   /// \brief Returns the formation energy, normalized per unit cell
-  double clex_formation_energy(const Configuration& config);
-  
+  double clex_formation_energy(const Configuration &config);
+
   /// \brief Returns the formation energy, normalized per species
-  double clex_formation_energy_per_species(const Configuration& config);
-  
+  double clex_formation_energy_per_species(const Configuration &config);
+
   /// \brief Return true if all current properties have been been calculated for the configuration
-  bool is_calculated(const Configuration& config);
-  
+  bool is_calculated(const Configuration &config);
+
   /// \brief Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)
   double rms_force(const Configuration &_config);
 
@@ -424,11 +428,17 @@ namespace CASM {
 
   /// \brief Change in volume due to relaxation, expressed as the ratio V/V_0
   double volume_relaxation(const Configuration &_config);
-  
+
+  /// \brief returns true if _config describes primitive cell of the configuration it describes
+  bool is_primitive(const Configuration &_config);
+
+  /// \brief returns true if _config no symmetry transformation applied to _config will increase its lexicographic order
+  bool is_canonical(const Configuration &_config);
+
   bool has_relaxed_energy(const Configuration &_config);
-  
+
   bool has_reference_energy(const Configuration &_config);
-  
+
   bool has_formation_energy(const Configuration &_config);
 
   bool has_rms_force(const Configuration &_config);
@@ -438,24 +448,24 @@ namespace CASM {
   bool has_lattice_deformation(const Configuration &_config);
 
   bool has_volume_relaxation(const Configuration &_config);
-  
+
   /// \brief Application results in filling supercell 'scel' with reoriented motif, op*config
   ///
   /// Currently only applies to occupation
   struct ConfigTransform {
-    
-    ConfigTransform(Supercell& _scel, const SymOp& _op) :
+
+    ConfigTransform(Supercell &_scel, const SymOp &_op) :
       scel(_scel), op(_op) {}
-    
-    Supercell& scel;
-    const SymOp& op;
+
+    Supercell &scel;
+    const SymOp &op;
   };
-  
+
   /// \brief Application results in filling supercell 'scel' with reoriented motif, op*config
   ///
   /// Currently only applies to occupation
-  Configuration& apply(const ConfigTransform& f, Configuration& motif);
-  
+  Configuration &apply(const ConfigTransform &f, Configuration &motif);
+
 }
 
 #endif

@@ -65,6 +65,7 @@ Help("""
 
 # include paths
 include_paths = [join(os.getcwd(),'include')]
+include_paths.append(os.path.join(os.getcwd(),'include/casm/external'))
 
 # lib paths
 lib_paths = []
