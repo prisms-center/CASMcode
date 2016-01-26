@@ -35,6 +35,8 @@ BOOST_AUTO_TEST_CASE(DatumFormatters) {
   check(OnClexHull());
   check(selected());
   check(is_calculated());
+  check(is_primitive());
+  check(is_canonical());
   check(selected_in());
 
   // Integer

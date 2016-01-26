@@ -251,95 +251,95 @@ namespace CASM {
   namespace ConfigIO {
 
     template<>
-    ConfigIO::Selected selected_in(const ConfigSelection<true> &_selection) {
-      return ConfigIO::Selected(_selection);
+    Selected selected_in(const ConfigSelection<true> &_selection) {
+      return Selected(_selection);
     }
 
     template<>
-    ConfigIO::Selected selected_in(const ConfigSelection<false> &_selection) {
-      return ConfigIO::Selected(_selection);
+    Selected selected_in(const ConfigSelection<false> &_selection) {
+      return Selected(_selection);
     }
 
-    ConfigIO::Selected selected_in() {
-      return ConfigIO::Selected();
+    Selected selected_in() {
+      return Selected();
     }
 
 
-    ConfigIO::GenericConfigFormatter<std::string> configname() {
-      return ConfigIO::GenericConfigFormatter<std::string>("configname",
-                                                           "Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#'",
+    GenericConfigFormatter<std::string> configname() {
+      return GenericConfigFormatter<std::string>("configname",
+                                                 "Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#'",
       [](const Configuration & config)->std::string{
         return config.name();
       });
     }
 
-    ConfigIO::GenericConfigFormatter<std::string> scelname() {
-      return ConfigIO::GenericConfigFormatter<std::string>("scelname",
-                                                           "Supercell name, in the form 'SCEL#_#_#_#_#_#_#'",
+    GenericConfigFormatter<std::string> scelname() {
+      return GenericConfigFormatter<std::string>("scelname",
+                                                 "Supercell name, in the form 'SCEL#_#_#_#_#_#_#'",
       [](const Configuration & config)->std::string{
         return config.get_supercell().get_name();
       });
     }
 
-    ConfigIO::GenericConfigFormatter<Index> scel_size() {
-      return ConfigIO::GenericConfigFormatter<Index>("scel_size",
-                                                     "Supercell volume, given as the integer number of unit cells",
+    GenericConfigFormatter<Index> scel_size() {
+      return GenericConfigFormatter<Index>("scel_size",
+                                           "Supercell volume, given as the integer number of unit cells",
       [](const Configuration & config)->Index{
         return config.get_supercell().volume();
       });
     }
 
-    ConfigIO::GenericConfigFormatter<Index> multiplicity() {
-      return ConfigIO::GenericConfigFormatter<Index>("multiplicity",
-                                                     "Symmetric multiplicity of the configuration, excluding translational equivalents.",
+    GenericConfigFormatter<Index> multiplicity() {
+      return GenericConfigFormatter<Index>("multiplicity",
+                                           "Symmetric multiplicity of the configuration, excluding translational equivalents.",
       [](const Configuration & config)->Index{
         return config.get_prim().factor_group().size() / config.factor_group(config.get_supercell().permute_begin(), config.get_supercell().permute_end()).size();
       });
     }
 
 
-    ConfigIO::GenericConfigFormatter<bool> selected() {
-      return ConfigIO::GenericConfigFormatter<bool>("selected",
-                                                    "Specifies whether configuration is selected (1/true) or not (0/false)",
+    GenericConfigFormatter<bool> selected() {
+      return GenericConfigFormatter<bool>("selected",
+                                          "Specifies whether configuration is selected (1/true) or not (0/false)",
       [](const Configuration & config)->bool{
         return config.selected();
       });
     }
 
-    ConfigIO::GenericConfigFormatter<double> relaxed_energy() {
-      return ConfigIO::GenericConfigFormatter<double>(
+    GenericConfigFormatter<double> relaxed_energy() {
+      return GenericConfigFormatter<double>(
                "relaxed_energy",
                "DFT relaxed energy, normalized per primitive cell",
                CASM::relaxed_energy,
                has_relaxed_energy);
     }
 
-    ConfigIO::GenericConfigFormatter<double> relaxed_energy_per_species() {
-      return ConfigIO::GenericConfigFormatter<double>(
+    GenericConfigFormatter<double> relaxed_energy_per_species() {
+      return GenericConfigFormatter<double>(
                "relaxed_energy_per_atom",
                "DFT relaxed energy, normalized per atom",
                CASM::relaxed_energy_per_species,
                has_relaxed_energy);
     }
 
-    ConfigIO::GenericConfigFormatter<double> reference_energy() {
-      return ConfigIO::GenericConfigFormatter<double>(
+    GenericConfigFormatter<double> reference_energy() {
+      return GenericConfigFormatter<double>(
                "reference_energy",
                "reference energy, normalized per primitive cell, as determined by current reference states",
                CASM::reference_energy,
                has_reference_energy);
     }
 
-    ConfigIO::GenericConfigFormatter<double> reference_energy_per_species() {
-      return ConfigIO::GenericConfigFormatter<double>(
+    GenericConfigFormatter<double> reference_energy_per_species() {
+      return GenericConfigFormatter<double>(
                "reference_energy_per_atom",
                "reference energy, normalized per atom, as determined by current reference states",
                CASM::reference_energy_per_species,
                has_reference_energy);
     }
 
-    ConfigIO::GenericConfigFormatter<double> formation_energy() {
-      return ConfigIO::GenericConfigFormatter<double>(
+    GenericConfigFormatter<double> formation_energy() {
+      return GenericConfigFormatter<double>(
                "formation_energy",
                "DFT formation energy, normalized per primitive cell and measured "
                "relative to current reference states",
@@ -347,8 +347,8 @@ namespace CASM {
                has_formation_energy);
     }
 
-    ConfigIO::GenericConfigFormatter<double> formation_energy_per_species() {
-      return ConfigIO::GenericConfigFormatter<double>(
+    GenericConfigFormatter<double> formation_energy_per_species() {
+      return GenericConfigFormatter<double>(
                "formation_energy_per_atom",
                "DFT formation energy, normalized per atom and measured relative to "
                "current reference states",
@@ -366,38 +366,50 @@ namespace CASM {
       });
       }*/
 
-    ConfigIO::GenericConfigFormatter<bool> is_calculated() {
-      return ConfigIO::GenericConfigFormatter<bool>("is_calculated",
-                                                    "True (1) if all current properties have been been calculated for the configuration",
-                                                    CASM::is_calculated);
+    GenericConfigFormatter<bool> is_calculated() {
+      return GenericConfigFormatter<bool>("is_calculated",
+                                          "True (1) if all current properties have been been calculated for the configuration",
+                                          CASM::is_calculated);
     }
 
-    ConfigIO::GenericConfigFormatter<double> rms_force() {
-      return ConfigIO::GenericConfigFormatter<double>("rms_force",
-                                                      "Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)",
-                                                      CASM::rms_force,
-                                                      has_rms_force);
+    GenericConfigFormatter<bool> is_primitive() {
+      return GenericConfigFormatter<bool>("is_primitive",
+                                          "True (1) if the configuration cannot be described within a smaller supercell",
+                                          CASM::is_primitive);
     }
 
-    ConfigIO::GenericConfigFormatter<double> basis_deformation() {
-      return ConfigIO::GenericConfigFormatter<double>("basis_deformation",
-                                                      "Cost function that describes the degree to which basis sites have relaxed",
-                                                      CASM::basis_deformation,
-                                                      has_basis_deformation);
+    GenericConfigFormatter<bool> is_canonical() {
+      return GenericConfigFormatter<bool>("is_canonical",
+                                          "True (1) if the configuration cannot be transfromed by symmetry to a configuration with higher lexicographic order",
+                                          CASM::is_canonical);
     }
 
-    ConfigIO::GenericConfigFormatter<double> lattice_deformation() {
-      return ConfigIO::GenericConfigFormatter<double>("lattice_deformation",
-                                                      "Cost function that describes the degree to which lattice has relaxed.",
-                                                      CASM::lattice_deformation,
-                                                      has_lattice_deformation);
+    GenericConfigFormatter<double> rms_force() {
+      return GenericConfigFormatter<double>("rms_force",
+                                            "Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)",
+                                            CASM::rms_force,
+                                            has_rms_force);
     }
 
-    ConfigIO::GenericConfigFormatter<double> volume_relaxation() {
-      return ConfigIO::GenericConfigFormatter<double>("volume_relaxation",
-                                                      "Change in volume due to relaxation, expressed as the ratio V/V_0.",
-                                                      CASM::volume_relaxation,
-                                                      has_volume_relaxation);
+    GenericConfigFormatter<double> basis_deformation() {
+      return GenericConfigFormatter<double>("basis_deformation",
+                                            "Cost function that describes the degree to which basis sites have relaxed",
+                                            CASM::basis_deformation,
+                                            has_basis_deformation);
+    }
+
+    GenericConfigFormatter<double> lattice_deformation() {
+      return GenericConfigFormatter<double>("lattice_deformation",
+                                            "Cost function that describes the degree to which lattice has relaxed.",
+                                            CASM::lattice_deformation,
+                                            has_lattice_deformation);
+    }
+
+    GenericConfigFormatter<double> volume_relaxation() {
+      return GenericConfigFormatter<double>("volume_relaxation",
+                                            "Change in volume due to relaxation, expressed as the ratio V/V_0.",
+                                            CASM::volume_relaxation,
+                                            has_volume_relaxation);
     }
 
     /*End ConfigIO*/
@@ -424,11 +436,13 @@ namespace CASM {
     BooleanAttributeDictionary<Configuration> dict;
 
     dict.insert(
-      OnHull(),
-      OnClexHull(),
-      selected(),
       is_calculated(),
-      selected_in()
+      is_canonical(),
+      is_primitive(),
+      selected(),
+      selected_in(),
+      OnClexHull(),
+      OnHull()
     );
 
     return dict;

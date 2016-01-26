@@ -429,6 +429,12 @@ namespace CASM {
   /// \brief Change in volume due to relaxation, expressed as the ratio V/V_0
   double volume_relaxation(const Configuration &_config);
 
+  /// \brief returns true if _config describes primitive cell of the configuration it describes
+  bool is_primitive(const Configuration &_config);
+
+  /// \brief returns true if _config no symmetry transformation applied to _config will increase its lexicographic order
+  bool is_canonical(const Configuration &_config);
+
   bool has_relaxed_energy(const Configuration &_config);
 
   bool has_reference_energy(const Configuration &_config);

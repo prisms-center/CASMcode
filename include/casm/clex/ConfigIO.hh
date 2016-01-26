@@ -377,6 +377,10 @@ namespace CASM {
 
     ConfigIO::GenericConfigFormatter<bool> is_calculated();
 
+    ConfigIO::GenericConfigFormatter<bool> is_primitive();
+
+    ConfigIO::GenericConfigFormatter<bool> is_canonical();
+
     ConfigIO::GenericConfigFormatter<double> relaxed_energy();
 
     ConfigIO::GenericConfigFormatter<double> relaxed_energy_per_species();
