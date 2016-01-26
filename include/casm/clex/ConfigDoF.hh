@@ -2,25 +2,29 @@
 #define ConfigDoF_HH
 
 #include "casm/container/Array.hh"
+#include "casm/clex/Correlation.hh"
 //#include "casm/symmetry/PermuteIterator.hh"
 
 namespace CASM {
 
 
   class PermuteIterator;
-  typedef Array<double> Correlation;
   class PrimClex;
   class Supercell;
   class Clexulator;
 
 
-  /**
-   * This is just a container class for the different degrees of freedom a Configuration
-   * might have. Contains an id, an Array<int> that tells you the current occupant of each
-   * site, an Eigen::MatrixXd that tells you the displacements at each site, and a LatticeStrain
-   * that tells you the strain of the Configuration. Everything is public.
-   */
-
+  /// \brief A container class for the different degrees of freedom a Configuration
+  /// might have
+  ///
+  /// Contains an id, an Array<int> that tells you the current occupant of each
+  /// site, an Eigen::MatrixXd that tells you the displacements at each site, and
+  /// a LatticeStrain that tells you the strain of the Configuration. Everything
+  /// is public.
+  ///
+  /// \ingroup Clex
+  /// \ingroup Configuration
+  ///
   class ConfigDoF {
 
   public:
@@ -36,7 +40,7 @@ namespace CASM {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     /// Initialize with number of sites -- defaults to zero
-    ConfigDoF(Index N = 0, double _tol=TOL);
+    ConfigDoF(Index N = 0, double _tol = TOL);
 
     ///Initialize with explicit occupation
     ConfigDoF(const Array<int> &_occupation, double _tol = TOL);
@@ -53,10 +57,10 @@ namespace CASM {
 
     bool operator==(const ConfigDoF &RHS) const;
 
-    double tol()const{
+    double tol()const {
       return m_tol;
     }
-    
+
     int &occ(Index i) {
       return m_occupation[i];
     };
@@ -125,17 +129,17 @@ namespace CASM {
     // pass iterator, 'it_begin', to first translation operation (indexed 0,0) to determine if configdof is a primitive cell
     bool is_primitive(PermuteIterator it_begin, double _tol = TOL) const;
 
-    ReturnArray<PermuteIterator> factor_group(PermuteIterator it_begin, PermuteIterator it_end, double _tol = TOL) const;
+    std::vector<PermuteIterator> factor_group(PermuteIterator it_begin, PermuteIterator it_end, double tol = TOL) const;
 
     bool is_canonical(PermuteIterator it_begin, PermuteIterator it_end, double _tol = TOL) const;
 
-    bool is_canonical(PermuteIterator it_begin, PermuteIterator it_end, Array<PermuteIterator> &factor_group, double _tol = TOL) const;
+    bool is_canonical(PermuteIterator it_begin, PermuteIterator it_end, std::vector<PermuteIterator> &factor_group, double tol = TOL) const;
 
     ConfigDoF canonical_form(PermuteIterator it_begin, PermuteIterator it_end, double _tol = TOL) const;
 
     ConfigDoF canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, double _tol = TOL) const;
 
-    ConfigDoF canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, Array<PermuteIterator> &factor_group, double _tol = TOL) const;
+    ConfigDoF canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, std::vector<PermuteIterator> &factor_group, double tol = TOL) const;
 
     //**** I/O ****
     jsonParser &to_json(jsonParser &json) const;
@@ -146,7 +150,7 @@ namespace CASM {
 
     // ***DON'T FORGET: If you add something here, also update ConfigDoF::swap!!
 
-    
+
     /// \brief Number of sites in the Configuration
     Index m_N;
 
@@ -182,9 +186,9 @@ namespace CASM {
     }
 
     // *** private implementation of is_canonical() and canonical_form()
-    bool _is_canonical(PermuteIterator it_begin, PermuteIterator it_end, Array<PermuteIterator> *fg_ptr = NULL, double _tol = TOL) const;
+    bool _is_canonical(PermuteIterator it_begin, PermuteIterator it_end, std::vector<PermuteIterator> *fg_ptr = NULL, double tol = TOL) const;
 
-    ConfigDoF _canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, Array<PermuteIterator> *fg_ptr = NULL, double _tol = TOL) const;
+    ConfigDoF _canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, std::vector<PermuteIterator> *fg_ptr = NULL, double tol = TOL) const;
 
   };
 
@@ -201,22 +205,19 @@ namespace CASM {
 
   /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
   Correlation correlations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator);
-  
+
   /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
   Eigen::VectorXd correlations_vec(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator);
-  
+
   /// \brief Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::get_struc_molecule()
-  ReturnArray<int> get_num_each_molecule(const ConfigDoF &configdof, const Supercell &scel); 
-  
+  ReturnArray<int> get_num_each_molecule(const ConfigDoF &configdof, const Supercell &scel);
+
   /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::get_struc_molecule()
   Eigen::VectorXi get_num_each_molecule_vec(const ConfigDoF &configdof, const Supercell &scel);
-  
+
   /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel);
-  
-  /// \brief Return a super ConfigDoF (occupation only)
-  ConfigDoF super_configdof_occ(PrimClex &primclex, const Eigen::Matrix3i& transf_mat, const std::string &motif_configname);
-  
+
 
 }
 

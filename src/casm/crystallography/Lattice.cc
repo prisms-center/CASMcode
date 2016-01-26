@@ -1,6 +1,7 @@
 #include "casm/crystallography/Lattice.hh"
 
 #include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
 
@@ -190,13 +191,13 @@ namespace CASM {
     int tprec = stream.precision();
     std::ios::fmtflags tflags = stream.flags();
     stream.precision(_prec);
-    stream.width(_prec+3);
+    stream.width(_prec + 3);
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
     stream  << 1.0 << '\n';
 
-    stream << ' ' << std::setw(_prec+8) << vecs[0] << '\n';
-    stream << ' ' << std::setw(_prec+8) << vecs[1] << '\n';
-    stream << ' ' << std::setw(_prec+8) << vecs[2] << '\n';
+    stream << ' ' << std::setw(_prec + 8) << vecs[0] << '\n';
+    stream << ' ' << std::setw(_prec + 8) << vecs[1] << '\n';
+    stream << ' ' << std::setw(_prec + 8) << vecs[2] << '\n';
 
     stream.precision(tprec);
     stream.flags(tflags);
@@ -855,23 +856,9 @@ namespace CASM {
   //Overload to only use identity
   //Return N matrix
   bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist, Matrix3<double> &multimat, double _tol) const {
-    if(symoplist.size() == 0) { //John G 121212 extra error
-      std::cerr << "ERROR: In Lattice::is_supercell_of. You've passed a point group with no elements!" << std::endl;
-      std::cerr << "       You need at least identity in your group. Exiting..." << std::endl;
-      exit(1);
-    }
-
-    Matrix3<double> tsym_lat_mat;
-    for(Index pg = 0; pg < symoplist.size(); pg++) {
-
-      tsym_lat_mat = symoplist[pg].get_matrix(CART) * coord_trans_mat[FRAC];
-      multimat = tile.coord_trans_mat[CART] * tsym_lat_mat;
-
-      if(multimat.is_integer(_tol) && !multimat.is_zero(_tol))
-        return true;
-
-    }
-    return false;
+    auto result = is_supercell(*this, tile, symoplist.begin(), symoplist.end(), _tol);
+    multimat = result.second.cast<double>();
+    return result.first != symoplist.end();
   }
 
   //********************************************************************
@@ -879,28 +866,22 @@ namespace CASM {
   //Overload to only use identity
   //Return N matrix
   bool Lattice::is_supercell_of(const Lattice &tile, Matrix3<double> &multimat, double _tol) const {
-
-    multimat = tile.coord_trans_mat[CART] * coord_trans_mat[FRAC];
-
-    if(multimat.is_integer(_tol) && !multimat.is_zero(_tol))
-      return true;
-
-    return false;
+    auto result = is_supercell(*this, tile, _tol);
+    multimat = result.second.cast<double>();
+    return result.first;
   }
 
   //********************************************************************
   //Overload to only use identity
   //Return N matrix
   bool Lattice::is_supercell_of(const Lattice &tile, double _tol) const {
-    Matrix3<double> multimat;
-    return is_supercell_of(tile, multimat, _tol);
+    return is_supercell(*this, tile, _tol).first;
   }
 
   //********************************************************************
 
   bool Lattice::is_supercell_of(const Lattice &tile, const Array<SymOp> &symoplist, double _tol) const {
-    Matrix3<double> multimat;
-    return is_supercell_of(tile, symoplist, multimat, _tol);
+    return is_supercell(*this, tile, symoplist.begin(), symoplist.end(), _tol).first != symoplist.end();
   }
 
   //********************************************************************
@@ -1260,18 +1241,9 @@ namespace CASM {
   //********************************************************************
 
   ///Are two lattices the same, even if they have different lattice vectors, uses CASM::TOL
-  bool Lattice::is_equivalent(const Lattice &B) const {
-
-    Lattice niggli_A = niggli_impl::_niggli(*this, TOL);
-    Lattice niggli_B = niggli_impl::_niggli(B, TOL);
-    SymGroup point_grp_A;
-    niggli_A.generate_point_group(point_grp_A, TOL);
-
-    return std::find_if(point_grp_A.cbegin(),
-                        point_grp_A.cend(),
-    [&](const SymOp & op) {
-      return niggli_B == Lattice(op.get_matrix(CART) * niggli_A.lat_column_mat());
-    }) != point_grp_A.cend();
+  bool Lattice::is_equivalent(const Lattice &B, double tol) const {
+    Eigen::Matrix3d T = lat_column_mat().inverse() * B.lat_column_mat();
+    return is_unimodular(T, tol) && is_integer(T, tol);
   }
 
   //********************************************************************
@@ -1406,6 +1378,15 @@ namespace CASM {
     }
   };
 
+  /// \brief Apply SymOp to a Lattice
+  Lattice &apply(const SymOp &op, Lattice &lat) {
+    return lat = Lattice(op.get_matrix(CART) * lat.lat_column_mat());
+  }
+
+  /// \brief Copy and apply SymOp to a Lattice
+  Lattice copy_apply(const SymOp &op, const Lattice &lat) {
+    return Lattice(op.get_matrix(CART) * lat.lat_column_mat());
+  }
 
   namespace niggli_impl {
 
@@ -1810,6 +1791,8 @@ namespace CASM {
   }
 
 
+  ///\brief returns Lattice that is smallest possible supercell of both input Lattice
+  ///
   //*******************************************************************************************
   //
   //  Finds "superduper" Lattice L_{sd} (represented as a matrix with lattice vectors as its columns
@@ -1876,23 +1859,25 @@ namespace CASM {
     }
 
     Lattice tlat(lat1.lat_column_mat()*dA);
-    return tlat.get_reduced_cell();
+    Lattice result = tlat.get_reduced_cell();
+
+    return result;
 
   }
 
   //*******************************************************************************************
 
-  Lattice superdupercell(const std::vector<Lattice> &lat_list) {
-    if(lat_list.size() == 0)
-      return Lattice();
+  /// Check if scel is a supercell of unitcell unit and some integer transformation matrix T
+  std::pair<bool, Eigen::MatrixXi> is_supercell(const Lattice &scel, const Lattice &unit, double tol) {
 
-    Lattice tsupdup(lat_list[0]);
-    for(Index i = 1; i < lat_list.size(); i++)
-      tsupdup = superdupercell(tsupdup, lat_list[i]);
-    return tsupdup;
+    // check scel = unit*T, with integer T
+    Eigen::MatrixXd T = unit.lat_column_mat().inverse() * scel.lat_column_mat();
+
+    if(is_integer(T, tol) && !almost_zero(T)) {
+      return std::make_pair(true, iround(T));
+    }
+    return std::make_pair(false, T.cast<int>());
   }
-
-
 
 
 }

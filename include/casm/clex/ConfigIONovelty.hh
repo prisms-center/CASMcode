@@ -1,13 +1,14 @@
 #ifndef CONFIGIONOVELTY_HH
 #define CONFIGIONOVELTY_HH
 
-#include "casm/casm_io/DataFormatter.hh"
-#include "casm/clex/ConfigIO.hh"
+#include "casm/casm_io/DataFormatterTools.hh"
+
 namespace CASM {
 
   class Configuration;
 
-  namespace ConfigIO_impl {
+  namespace ConfigIO {
+
     /// \brief A DatumFormatter class to measure the 'novelty' of a configuration with respect to a population of configurations
     /// Larger numbers indicate a more novel configuration, and a very large number (>~100) indicates a configuration that
     /// is linearly independent from the population (in terms of its correlations)
@@ -35,29 +36,46 @@ namespace CASM {
     ///
     /// Which is regularized by adding a small matrix (epsilon*identity, where epsilon is ~1e-5/Ncorr) and divided by Ncorr, in order
     /// to get a number that does not depend strongly on the number of basis functions in the basis set
+    ///
+    /// \ingroup ConfigIO
+    ///
+    class Novelty: public ScalarAttribute<Configuration> {
 
-    class NoveltyConfigFormatter: public BaseDatumFormatter<Configuration> {
     public:
-      NoveltyConfigFormatter() :
-        BaseDatumFormatter<Configuration>("novelty", "Novelty of a configuration with respect to a population of configurations, measured using the Mahalanobis distance of its correlations. Accepts one argument, a configuration selection specifying the population against which novelty is measured (default MASTER). Ex: novelty(path/to/selection)") {}
 
-      BaseDatumFormatter<Configuration> *clone() const {
-        return new NoveltyConfigFormatter(*this);
+      Novelty() :
+        ScalarAttribute<Configuration>("novelty", "Novelty of a configuration with respect to a population of configurations, measured using the Mahalanobis distance of its correlations. Accepts one argument, a configuration selection specifying the population against which novelty is measured (default MASTER). Ex: novelty(path/to/selection)") {}
+
+
+      // --- Required implementations -----------
+
+      std::unique_ptr<Novelty> clone() const {
+        return std::unique_ptr<Novelty>(this->_clone());
       }
+
+      double evaluate(const Configuration &_config) const override;
+
+
+      // --- Specialized implementation -----------
 
       void init(const Configuration &_tmplt) const override;
 
       std::string short_header(const Configuration &_config) const override;
+      /*
+            void inject(const Configuration &_config, DataStream &_stream, Index) const override;
 
-      void inject(const Configuration &_config, DataStream &_stream, Index) const override;
+            void print(const Configuration &_config, std::ostream &_stream, Index) const override;
 
-      void print(const Configuration &_config, std::ostream &_stream, Index) const override;
+            jsonParser &to_json(const Configuration &_config, jsonParser &json)const override;
+      */
+      bool parse_args(const std::string &args) override;
 
-      jsonParser &to_json(const Configuration &_config, jsonParser &json)const override;
-
-      bool parse_args(const std::string &args);
     private:
-      double _evaluate(const Configuration &_config) const;
+
+      /// \brief Clone
+      Novelty *_clone() const override {
+        return new Novelty(*this);
+      }
 
       /// specifies which selection to use as the population
       mutable std::string m_selection;

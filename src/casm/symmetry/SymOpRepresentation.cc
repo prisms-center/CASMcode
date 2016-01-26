@@ -14,7 +14,7 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  Array<UnitCellCoord> const *SymOpRepresentation::get_basis_permute_rep(Index rep_ID) const {
+  SymBasisPermute const *SymOpRepresentation::get_basis_permute_rep(Index rep_ID) const {
 
     SymGroupRep const *tRep(master_group().representation(rep_ID));
     if(!tRep) {
@@ -114,7 +114,7 @@ namespace CASM {
   /// This allocates a new object to 'rep'.
   ///   It might need a Lattice
   ///
-  void from_json(SymOpRepresentation *rep, const jsonParser &json){
+  void from_json(SymOpRepresentation *rep, const jsonParser &json) {
     try {
       if(json["SymOpRep_type"] == "SymPermutation") {
 

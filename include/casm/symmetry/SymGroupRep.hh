@@ -6,6 +6,7 @@
 #include <iomanip>
 
 #include "casm/container/Array.hh"
+#include "casm/container/multivector.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/SymGroup.hh"
 

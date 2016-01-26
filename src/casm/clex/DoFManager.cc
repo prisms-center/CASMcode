@@ -216,7 +216,7 @@ namespace CASM {
   void OccupationDoFEnvironment::set_local_state(const Configuration &config, Index l) {
     const Supercell &scel(config.get_supercell());
     for(Index n = 0; n < m_neighbor_occ.size(); n++) {
-      m_neighbor_occ[n] = config.occ(scel.get_nlist_l(l, n));
+      m_neighbor_occ[n] = config.occ(scel.nlist().sites(l)[n]);
     }
     return;
   }
@@ -232,7 +232,7 @@ namespace CASM {
   void DisplacementDoFEnvironment::set_local_state(const Configuration &config, Index l) {
     const Supercell &scel(config.get_supercell());
     for(Index n = 0; n < m_neighbor_disp.size(); n++) {
-      m_neighbor_disp[n] = config.disp(scel.get_nlist_l(l, n))[m_disp_index];
+      m_neighbor_disp[n] = config.disp(scel.nlist().sites(l)[n])[m_disp_index];
     }
     return;
   }

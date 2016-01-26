@@ -217,7 +217,7 @@ namespace CASM {
     if(hint_ptr != nullptr) {
       ConfigDoF canon_relaxed_occ, canon_ideal_occ;
       Supercell const &scel(hint_ptr->get_supercell());
-      if(mapped_lat.is_equivalent(scel.get_real_super_lattice())) {
+      if(mapped_lat.is_equivalent(scel.get_real_super_lattice(), m_tol)) {
         if(m_strict_flag && relaxed_occ.occupation() == (hint_ptr->configdof()).occupation()) {
           // config is unchanged
           imported_name = hint_ptr->name();

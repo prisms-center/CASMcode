@@ -38,7 +38,7 @@ namespace CASM {
     ("max-vol-change", po::value<double>(&vol_tol)->default_value(0.25),
      "Adjusts range of SCEL volumes searched while mapping imported structure onto ideal crystal (only necessary if the presence of vacancies makes the volume ambiguous). Default is +/- 25% of relaxed_vol/prim_vol. Smaller values yield faster import, larger values may yield more accurate mapping.")
     ("force,f", "Force all configurations to update (otherwise, use timestamps to determine which configurations to update)")
-      ("strict,s", "Attempt to import exact configuration.");
+    ("strict,s", "Attempt to import exact configuration.");
 
     try {
       po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -86,7 +86,7 @@ namespace CASM {
     std::cout << "  DONE." << std::endl << std::endl;
 
 
-    ConfigMapper configmapper(primclex, lattice_weight, vol_tol, ConfigMapper::rotate | ConfigMapper::robust | (vm.count("strict")? ConfigMapper::strict : 0), tol);
+    ConfigMapper configmapper(primclex, lattice_weight, vol_tol, ConfigMapper::rotate | ConfigMapper::robust | (vm.count("strict") ? ConfigMapper::strict : 0), tol);
     std::cout << "Reading calculation data... " << std::endl << std::endl;
     std::vector<std::string> bad_config_report;
     std::vector<std::string> prop_names = primclex.get_curr_property();
@@ -143,21 +143,21 @@ namespace CASM {
           //NOTE: reusing jsonParser to collect relaxation data
           json.put_obj();
           try {
-	    if(vm.count("strict")){
-	      new_config_flag = configmapper.import_structure(relaxed_struc,
-							      imported_name,
-							      json,
-							      best_assignment,
-							      cart_op);
-	    }
-	    else{
-	      new_config_flag = configmapper.import_structure_occupation(relaxed_struc,
-									 &(*it),
-									 imported_name,
-									 json,
-									 best_assignment,
-									 cart_op);
-	    }
+            if(vm.count("strict")) {
+              new_config_flag = configmapper.import_structure(relaxed_struc,
+                                                              imported_name,
+                                                              json,
+                                                              best_assignment,
+                                                              cart_op);
+            }
+            else {
+              new_config_flag = configmapper.import_structure_occupation(relaxed_struc,
+                                                                         &(*it),
+                                                                         imported_name,
+                                                                         json,
+                                                                         best_assignment,
+                                                                         cart_op);
+            }
           }
           catch(std::exception &e) {
             std::cerr << "\nError: Unable to map relaxed structure data contained in " << filepath << " onto PRIM.\n"
@@ -217,9 +217,9 @@ namespace CASM {
         }
         else {
           // Note the instability:
-          source_config.push_back_source(json_unit("mechanically_unstable"));
-          source_config.push_back_source(json_pair("relaxed_to", imported_config.name()));
-          imported_config.push_back_source(json_pair("relaxation_of", source_config.name()));
+          source_config.push_back_source(jsonParser("mechanically_unstable"));
+          source_config.push_back_source(jsonParser(std::make_pair("relaxed_to", imported_config.name())));
+          imported_config.push_back_source(jsonParser(std::make_pair("relaxation_of", source_config.name())));
         }
         double bd = source_data["basis_deformation"].get<double>();
         double ld = source_data["lattice_deformation"].get<double>();
@@ -294,7 +294,7 @@ namespace CASM {
           parsed_props["data_timestamp"] = fs::last_write_time(imported_config.calc_properties_path());
 
           imported_config.set_calc_properties(parsed_props);
-          imported_config.push_back_source(json_pair("data_inferred_from_mapping", (best_it->first)->name()));
+          imported_config.push_back_source(jsonParser(std::make_pair("data_inferred_from_mapping", (best_it->first)->name())));
         }
 
         // prior data exist -- we won't copy data over, but do some validation to see if data are compatible
@@ -351,11 +351,6 @@ namespace CASM {
       std::cout <<  "No new data were detected." << std::endl << std::endl;
     else {
       std::cout << "Analyzed new data for " << num_updated << " configurations." << std::endl << std::endl;
-
-      std::cout << "Generating references... " << std::endl << std::endl;
-      /// This also re-writes the config_list.json
-      primclex.generate_references();
-      std::cout << "  DONE" << std::endl << std::endl;
 
       if(relax_log.str().size() > 0) {
         std::cout << "WARNING: Abnormal relaxations were detected:\n" << std::endl

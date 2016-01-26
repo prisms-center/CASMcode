@@ -6,8 +6,8 @@
 
 namespace CASM {
 
-  namespace ConfigIO_impl {
-    bool RelaxationStrainConfigFormatter::parse_args(const std::string &args) {
+  namespace ConfigIO {
+    bool RelaxationStrain::parse_args(const std::string &args) {
 
       std::string tmetric_name = "GL";
       std::string index_expr;
@@ -43,7 +43,7 @@ namespace CASM {
 
     //****************************************************************************************
 
-    void RelaxationStrainConfigFormatter::init(const Configuration &_tmplt) const {
+    void RelaxationStrain::init(const Configuration &_tmplt) const {
       if(m_metric_name.size() == 0)
         m_metric_name = "GL";
       m_straincalc.set_mode(m_metric_name);
@@ -56,13 +56,13 @@ namespace CASM {
     }
     //****************************************************************************************
 
-    bool RelaxationStrainConfigFormatter::validate(const Configuration &_config) const {
+    bool RelaxationStrain::validate(const Configuration &_config) const {
       return _config.calc_properties().contains("relaxation_deformation");
     }
 
     //****************************************************************************************
 
-    std::string RelaxationStrainConfigFormatter::long_header(const Configuration &_tmplt) const {
+    std::string RelaxationStrain::long_header(const Configuration &_tmplt) const {
       std::stringstream t_ss;
       auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
       Index s = max(8 - int(name().size()), 0);
@@ -74,59 +74,18 @@ namespace CASM {
 
     //****************************************************************************************
 
-    std::string RelaxationStrainConfigFormatter::short_header(const Configuration &_tmplt) const {
+    std::string RelaxationStrain::short_header(const Configuration &_tmplt) const {
       return name() + "(" + m_metric_name + ")";
     }
 
     //****************************************************************************************
-    Eigen::VectorXd RelaxationStrainConfigFormatter::_evaluate(const Configuration &_config) const {
+    Eigen::VectorXd RelaxationStrain::evaluate(const Configuration &_config) const {
       return m_straincalc.unrolled_strain_metric(_config.calc_properties()["relaxation_deformation"].get<Eigen::Matrix3d>());
     }
 
     //****************************************************************************************
-    void RelaxationStrainConfigFormatter::inject(const Configuration &_config, DataStream &_stream, Index) const {
-      if(!validate(_config)) {
-        _stream << DataStream::failbit << std::vector<double>(_index_rules().size(), NAN);
-      }
-      else {
-        Eigen::VectorXd strain_vec = _evaluate(_config);
-        for(auto it = _index_rules().cbegin(); it != _index_rules().cend(); ++it)
-          _stream << strain_vec[(*it)[0]];
-      }
-    }
 
-    //****************************************************************************************
-
-    void RelaxationStrainConfigFormatter::print(const Configuration &_config, std::ostream &_stream, Index) const {
-      _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      _stream.precision(8);
-
-      if(!validate(_config)) {
-        for(auto it = _index_rules().cbegin(); it != _index_rules().cend(); ++it)
-          _stream << "     unknown";
-      }
-
-      else {
-        Eigen::VectorXd strain_vec = _evaluate(_config);
-
-        for(auto it = _index_rules().cbegin(); it != _index_rules().cend(); ++it)
-          _stream << "     " << strain_vec[(*it)[0]];
-      }
-
-    }
-
-    //****************************************************************************************
-
-    jsonParser &RelaxationStrainConfigFormatter::to_json(const Configuration &_config, jsonParser &json)const {
-      if(validate(_config))
-        json = _evaluate(_config);
-
-      return json;
-    }
-
-    //****************************************************************************************
-
-    bool DoFStrainConfigFormatter::parse_args(const std::string &args) {
+    bool DoFStrain::parse_args(const std::string &args) {
 
       std::string tmetric_name = "GL";
       std::string index_expr;
@@ -162,7 +121,7 @@ namespace CASM {
 
     //****************************************************************************************
 
-    void DoFStrainConfigFormatter::init(const Configuration &_tmplt) const {
+    void DoFStrain::init(const Configuration &_tmplt) const {
       if(m_metric_name.size() == 0)
         m_metric_name = "GL";
       m_straincalc.set_mode(m_metric_name);
@@ -173,15 +132,10 @@ namespace CASM {
         _add_rule(std::vector<Index>({i}));
 
     }
-    //****************************************************************************************
-
-    bool DoFStrainConfigFormatter::validate(const Configuration &_config) const {
-      return true;
-    }
 
     //****************************************************************************************
 
-    std::string DoFStrainConfigFormatter::long_header(const Configuration &_tmplt) const {
+    std::string DoFStrain::long_header(const Configuration &_tmplt) const {
       std::stringstream t_ss;
       auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
       Index s = max(8 - int(name().size()), 0);
@@ -193,54 +147,13 @@ namespace CASM {
 
     //****************************************************************************************
 
-    std::string DoFStrainConfigFormatter::short_header(const Configuration &_tmplt) const {
+    std::string DoFStrain::short_header(const Configuration &_tmplt) const {
       return name() + "(" + m_metric_name + ")";
     }
 
     //****************************************************************************************
-    Eigen::VectorXd DoFStrainConfigFormatter::_evaluate(const Configuration &_config) const {
+    Eigen::VectorXd DoFStrain::evaluate(const Configuration &_config) const {
       return m_straincalc.unrolled_strain_metric(_config.deformation());
-    }
-
-    //****************************************************************************************
-    void DoFStrainConfigFormatter::inject(const Configuration &_config, DataStream &_stream, Index) const {
-      if(!validate(_config)) {
-        _stream << DataStream::failbit << std::vector<double>(_index_rules().size(), NAN);
-      }
-      else {
-        Eigen::VectorXd strain_vec = _evaluate(_config);
-        for(auto it = _index_rules().cbegin(); it != _index_rules().cend(); ++it)
-          _stream << strain_vec[(*it)[0]];
-      }
-    }
-
-    //****************************************************************************************
-
-    void DoFStrainConfigFormatter::print(const Configuration &_config, std::ostream &_stream, Index) const {
-      _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      _stream.precision(8);
-
-      if(!validate(_config)) {
-        for(auto it = _index_rules().cbegin(); it != _index_rules().cend(); ++it)
-          _stream << "     unknown";
-      }
-
-      else {
-        Eigen::VectorXd strain_vec = _evaluate(_config);
-
-        for(auto it = _index_rules().cbegin(); it != _index_rules().cend(); ++it)
-          _stream << "     " << strain_vec[(*it)[0]];
-      }
-
-    }
-
-    //****************************************************************************************
-
-    jsonParser &DoFStrainConfigFormatter::to_json(const Configuration &_config, jsonParser &json)const {
-      if(validate(_config))
-        json = _evaluate(_config);
-
-      return json;
     }
 
   }

@@ -5,6 +5,7 @@
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/clex/NeighborList.hh"
 
 
 namespace CASM {
@@ -14,7 +15,7 @@ namespace CASM {
     m_occupation(m_N),
     m_deformation(Eigen::Matrix3d::Identity()),
     m_is_strained(false),
-    m_tol(_tol){
+    m_tol(_tol) {
   }
 
   //*******************************************************************************
@@ -24,7 +25,7 @@ namespace CASM {
     m_occupation(_occ),
     m_deformation(Eigen::Matrix3d::Identity()),
     m_is_strained(false),
-    m_tol(_tol){
+    m_tol(_tol) {
   }
 
   //*******************************************************************************
@@ -51,31 +52,31 @@ namespace CASM {
     if(occupation() != RHS.occupation())
       return false;
 
-    double _tol=max(tol(), RHS.tol());
+    double _tol = max(tol(), RHS.tol());
     // floating-point comparison tolerance is _tol
 
     if(!has_displacement()) {
-      if(RHS.has_displacement() && !almost_zero(RHS.displacement(), _tol)){
+      if(RHS.has_displacement() && !almost_zero(RHS.displacement(), _tol)) {
         //std::cout << "FALSE 1: " << _tol << "\n" << RHS.displacement() << "\n";
         return false;
       }
     }
     //    has_displacement()==true;
     else if(!RHS.has_displacement()) {
-      if(!almost_zero(displacement(), _tol)){
+      if(!almost_zero(displacement(), _tol)) {
         //std::cout << "FALSE 2: " << _tol << "\n" << displacement() << "\n";
         return false;
       }
     }
     //    has_displacement()==true && RHS.has_displacement==true;
-    else if(!almost_equal(displacement(), RHS.displacement(), _tol)){
+    else if(!almost_equal(displacement(), RHS.displacement(), _tol)) {
       //std::cout << "FALSE 3: " << _tol << "\n" << RHS.displacement() << "\n\n" << displacement() << "\n";;
       return false;
     }
 
     if(is_strained() || RHS.is_strained()) {
       //Deformation defaults to identity--should work in all cases
-      if(!Eigen::almost_equal(deformation(), RHS.deformation(), _tol)){
+      if(!Eigen::almost_equal(deformation(), RHS.deformation(), _tol)) {
         //std::cout << "FALSE 4: " << _tol << "\n" << RHS.deformation() << "\n\n" << deformation() << "\n";;
         return false;
 
@@ -206,8 +207,8 @@ namespace CASM {
 
   //*******************************************************************************
 
-  ReturnArray<PermuteIterator> ConfigDoF::factor_group(PermuteIterator it_begin, PermuteIterator it_end, double _tol) const {
-    Array<PermuteIterator> factorgroup;
+  std::vector<PermuteIterator> ConfigDoF::factor_group(PermuteIterator it_begin, PermuteIterator it_end, double _tol) const {
+    std::vector<PermuteIterator> factorgroup;
 
     Index i, j;
     Index permute_ind;
@@ -336,8 +337,8 @@ namespace CASM {
   /// tolerance '_tol' is used for fuzzy comparisons
   /// populates factorgroup at the same time (only when is_canonical evaluates to 'true'), since algorithms are so similar
 
-  bool ConfigDoF::is_canonical(PermuteIterator it_begin, PermuteIterator it_end, Array<PermuteIterator> &factorgroup, double _tol) const {
-    return _is_canonical(it_begin, it_end, &factorgroup, _tol);
+  bool ConfigDoF::is_canonical(PermuteIterator it_begin, PermuteIterator it_end, std::vector<PermuteIterator> &factorgroup, double tol) const {
+    return _is_canonical(it_begin, it_end, &factorgroup, tol);
   }
 
   //*******************************************************************************
@@ -376,14 +377,14 @@ namespace CASM {
   //*******************************************************************************
 
   ConfigDoF ConfigDoF::canonical_form(PermuteIterator it_begin, PermuteIterator it_end,
-                                      PermuteIterator &it_canon, Array<PermuteIterator> &factorgroup, double _tol) const {
-    return _canonical_form(it_begin, it_end, it_canon, &factorgroup, _tol);
+                                      PermuteIterator &it_canon, std::vector<PermuteIterator> &factorgroup, double tol) const {
+    return _canonical_form(it_begin, it_end, it_canon, &factorgroup, tol);
   }
 
   //*******************************************************************************
   /// This version calculates the factor group of the configuration, but only if it is canonical (i.e., returns true), since loop terminates
   /// early otherwise.  This private method uses the pointer fg_ptr so that we only need one implementation for the various different public methods above
-  bool ConfigDoF::_is_canonical(PermuteIterator it_begin, PermuteIterator it_end, Array<PermuteIterator> *fg_ptr, double _tol) const {
+  bool ConfigDoF::_is_canonical(PermuteIterator it_begin, PermuteIterator it_end, std::vector<PermuteIterator> *fg_ptr, double _tol) const {
 
     if(fg_ptr)
       fg_ptr->clear();
@@ -495,7 +496,7 @@ namespace CASM {
   //*******************************************************************************
 
   ConfigDoF ConfigDoF::_canonical_form(PermuteIterator it_begin, PermuteIterator it_end,
-                                       PermuteIterator &it_canon, Array<PermuteIterator> *fg_ptr, double _tol) const {
+                                       PermuteIterator &it_canon, std::vector<PermuteIterator> *fg_ptr, double _tol) const {
     // canonical form is 'largest-valued' configuration bitstring
     if(fg_ptr)
       fg_ptr->clear();
@@ -669,7 +670,7 @@ namespace CASM {
     }
 
     if(json.contains("deformation")) {
-      Eigen::from_json(_deformation(), json["deformation"]);
+      CASM::from_json(_deformation(), json["deformation"]);
       m_is_strained = true;
     }
   }
@@ -720,7 +721,7 @@ namespace CASM {
     //Size of the supercell will be used for normalizing correlations to a per primitive cell value
     int scel_vol = scel.volume();
 
-    Correlation correlations(clexulator.corr_size(), 0.0);
+    Correlation correlations = Correlation::Zero(clexulator.corr_size());
 
     //Inform Clexulator of the bitstring
 
@@ -736,7 +737,7 @@ namespace CASM {
     for(int v = 0; v < scel_vol; v++) {
 
       //Point the Clexulator to the right neighborhood
-      clexulator.set_nlist(scel.get_nlist(v).begin());
+      clexulator.set_nlist(scel.nlist().sites(v).data());
 
       //Fill up contributions
       clexulator.calc_global_corr_contribution(&tcorr[0]);
@@ -755,7 +756,7 @@ namespace CASM {
 
     return correlations;
   }
-  
+
   /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
   Eigen::VectorXd correlations_vec(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator) {
 
@@ -778,7 +779,7 @@ namespace CASM {
     for(int v = 0; v < scel_vol; v++) {
 
       //Point the Clexulator to the right neighborhood
-      clexulator.set_nlist(scel.get_nlist(v).begin());
+      clexulator.set_nlist(scel.nlist().sites(v).data());
 
       //Fill up contributions
       clexulator.calc_global_corr_contribution(tcorr.data());
@@ -788,15 +789,15 @@ namespace CASM {
     }
 
     correlations /= (double) scel_vol;
-    
+
     return correlations;
   }
 
   /// \brief Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::get_struc_molecule()
   ReturnArray<int> get_num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
-    
+
     // [basis_site][site_occupant_index]
-    Array< Array<int> > convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
+    auto convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
 
     // create an array to count the number of each molecule
     Array<int> num_each_molecule(scel.get_prim().get_struc_molecule().size(), 0);
@@ -808,95 +809,29 @@ namespace CASM {
 
     return num_each_molecule;
   }
-  
+
   /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::get_struc_molecule()
   Eigen::VectorXi get_num_each_molecule_vec(const ConfigDoF &configdof, const Supercell &scel) {
-    
+
     // [basis_site][site_occupant_index]
-    Array< Array<int> > convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
+    auto convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
 
     // create an array to count the number of each molecule
     Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.get_prim().get_struc_molecule().size());
 
     // count the number of each molecule
     for(Index i = 0; i < configdof.size(); i++) {
-      num_each_molecule(convert[ scel.get_b(i) ][ configdof.occ(i)] )++;
+      num_each_molecule(convert[ scel.get_b(i) ][ configdof.occ(i)])++;
     }
 
     return num_each_molecule;
   }
-  
+
   /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel) {
     return get_num_each_molecule_vec(configdof, scel).cast<double>() / scel.volume();
   }
-  
-  
-  /// \brief Return a super ConfigDoF (occupation only)
-  ///
-  /// Returns the ConfigDoF that is the result of tiling the 'motif' Configuration in a supercell created 
-  /// from the 'primclex' and transformation matrix 'transf_mat'. Only occupation is considered
-  ///
-  /// \throws if not possible to tile 'motif' in the specified supercell
-  ///
-  ConfigDoF super_configdof_occ(PrimClex &primclex, const Eigen::Matrix3i& transf_mat, const std::string &motif_configname) {
-    
-    Matrix3<int> super_mat(transf_mat);
-    
-    //we check to make sure it can be tiled onto the supercell.
-    Lattice scel_lat(primclex.get_prim().lattice().make_supercell(super_mat));
-    
-    //This matrix times the motif is the supercell
-    Matrix3<double> ttrans_mat_motif;                                                     
-    
-    //This is the motif config lattice
-    Lattice motif_lat(primclex.configuration(motif_configname).get_supercell().get_real_super_lattice());       
 
-
-    //Exit if lattices are not compatible
-    if(!scel_lat.is_supercell_of(motif_lat, ttrans_mat_motif)) {
-      throw std::runtime_error(
-        std::string("Error in 'super_configdof(PrimClex &primclex, const Eigen::Matrix3i& transf_mat, std::string &motif_configname)'\n") + 
-                    "The specified Configuration cannot be tiled onto the specified supercell.");
-    }
-
-    // If they are compatible, create the supercell
-    Supercell tscel(&primclex, super_mat);
-
-    // Create a PrimGrid linking the prim and the motif each to the supercell
-    // So we can tile the decoration of the motif config onto the supercell correctly
-    PrimGrid prim_grid(motif_lat, scel_lat); 
-    
-    Configuration &motif_config = primclex.configuration(motif_configname);
-
-    // For each site in the motif, translate by all possible translations from prim_grid, 
-    // index in the mc_prim_prim, and use index to assign occupation
-    
-    // std::vector of occupations in the MonteCarlo cell
-    Array<int> tscel_occ(motif_config.size()*prim_grid.size()); 
-    
-    for(Index s = 0 ; s < motif_config.size() ; s++) {
-      for(Index i = 0 ; i < prim_grid.size() ; i++) {
-        
-        Index prim_motif_tile_ind = tscel.prim_grid().find(prim_grid.coord(i, PRIM));
-        
-        UnitCellCoord mc_uccoord =  tscel.prim_grid().uccoord(prim_motif_tile_ind) + motif_config.get_uccoord(s);
-        
-        // b-index when doing UnitCellCoord addition is ambiguous; explicitly set it
-        mc_uccoord[0] = motif_config.get_uccoord(s)[0]; 
-        
-        Index occ_ind = tscel.find(mc_uccoord);
-        
-        tscel_occ[occ_ind] = motif_config.occ(s);
-      }
-    }
-
-
-    //Place the std::vector of Occupations inside a ConfigDoF
-    ConfigDoF seed_configdof(tscel_occ);
-    
-    return seed_configdof;
-  }
 
 
 

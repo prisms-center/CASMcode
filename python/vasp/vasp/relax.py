@@ -85,6 +85,8 @@ class Relax(object):
             self.settings["nrg_convergence"] = None
         if not "compress" in self.settings:
             self.settings["compress"] = []
+        if not "err_types" in self.settings:
+            self.settings["err_types"] = ['SubSpaceMatrixError']
 
         print "VASP Relax object constructed\n"
         sys.stdout.flush()
@@ -244,7 +246,7 @@ class Relax(object):
 
             while True:
                 # run vasp
-                result = vasp.run(self.rundir[-1],npar=self.settings["npar"],ncore=self.settings["ncore"],command=self.settings["vasp_cmd"],ncpus=self.settings["ncpus"],kpar=self.settings["kpar"])
+                result = vasp.run(self.rundir[-1],npar=self.settings["npar"],ncore=self.settings["ncore"],command=self.settings["vasp_cmd"],ncpus=self.settings["ncpus"],kpar=self.settings["kpar"],err_types=self.settings["err_types"])
 
                 # if no errors, continue
                 if result == None or self.not_converging():
@@ -330,6 +332,9 @@ class Relax(object):
 
             # elif constant volume run (but not the final one)
             if io.get_incar_tag("ISIF", self.rundir[-1]) in [0,1,2]:
+                if io.get_incar_tag("NSW", self.rundir[-1]) == len(io.Oszicar(os.path.join(self.rundir[-1],"OSZICAR"))):
+                    return ("incomplete", "relax")      # static run hit NSW limit and so isn't "done"
+                else:
                 return ("incomplete", "constant")
 
             # elif convergence criteria met

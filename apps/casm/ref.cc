@@ -4,9 +4,128 @@
 
 #include "casm_functions.hh"
 #include "casm/CASM_classes.hh"
+#include "casm/casm_io/json_io/clex.hh"
 
 namespace CASM {
 
+  namespace ref_impl {
+
+    int initialize_global(fs::path chem_ref_path, const PrimClex &primclex, const jsonParser &json_ref, double lin_alg_tol) {
+
+      jsonParser json = jsonParser::object();
+      json["chemical_reference"]["global"] = json_ref;
+
+      ChemicalReference chem_ref = read_chemical_reference(json, primclex.get_prim(), lin_alg_tol);
+
+      std::cout << "Initializing the chemical reference to: \n\n";
+      ChemicalReferencePrinter p(std::cout, chem_ref);
+      p.print_all();
+      write_chemical_reference(chem_ref, chem_ref_path);
+      return 0;
+    }
+
+    int update_global(fs::path chem_ref_path, const PrimClex &primclex, const jsonParser &json_ref, double lin_alg_tol) {
+
+      ChemicalReference chem_ref =
+        read_chemical_reference(chem_ref_path, primclex.get_prim(), lin_alg_tol);
+
+      auto input = one_chemical_reference_from_json(primclex.get_prim(), json_ref);
+
+      if(input.second.empty()) {
+        chem_ref.set_global(input.first);
+      }
+      else {
+        chem_ref.set_global(input.second.begin(), input.second.end(), lin_alg_tol);
+      }
+
+      std::cout << "Updating the project-wide chemical reference to: \n";
+      ChemicalReferencePrinter p(std::cout, chem_ref);
+      p.print_global();
+      write_chemical_reference(chem_ref, chem_ref_path);
+      return 0;
+    }
+
+    int update_config(std::string configname,
+                      fs::path chem_ref_path,
+                      const PrimClex &primclex,
+                      const jsonParser &json_ref,
+                      double lin_alg_tol) {
+
+      if(!fs::exists(chem_ref_path)) {
+        std::cerr << "Error using 'casm ref --set --configname': No reference found.\n";
+        std::cerr << "  Expected file at: " << chem_ref_path << "\n";
+        std::cerr << "Use 'casm ref --set' or 'casm ref --set-auto' to set a project-wide reference first.\n";
+        return ERR_MISSING_INPUT_FILE;
+      }
+
+      ChemicalReference chem_ref = read_chemical_reference(chem_ref_path, primclex.get_prim(), lin_alg_tol);
+
+      try {
+        const Configuration &config = primclex.configuration(configname);
+      }
+      catch(...) {
+        std::cerr << "Error using 'casm ref --set --configname': \n"
+                  "  Could not find configuration with name: " << configname << "\n";
+        return ERR_INVALID_ARG;
+      }
+
+      auto input = one_chemical_reference_from_json(primclex.get_prim(), json_ref);
+      if(input.second.empty()) {
+        chem_ref.set_config(configname, input.first);
+      }
+      else {
+        chem_ref.set_config(configname, input.second.begin(), input.second.end(), lin_alg_tol);
+      }
+
+      std::cout << "Updating the " << configname << " specialized reference to: \n";
+      ChemicalReferencePrinter p(std::cout, chem_ref);
+      p.print_config(configname);
+      write_chemical_reference(chem_ref, chem_ref_path);
+      return 0;
+
+    }
+
+    int update_supercell(std::string scelname,
+                         fs::path chem_ref_path,
+                         const PrimClex &primclex,
+                         const jsonParser &json_ref,
+                         double lin_alg_tol) {
+
+      if(!fs::exists(chem_ref_path)) {
+        std::cerr << "Error using 'casm ref --set --scelname': No reference found.\n";
+        std::cerr << "  Expected file at: " << chem_ref_path << "\n";
+        std::cerr << "Use 'casm ref --set' or 'casm ref --set-auto' to set a project-wide reference first.\n";
+        return ERR_MISSING_INPUT_FILE;
+      }
+
+      ChemicalReference chem_ref = read_chemical_reference(chem_ref_path, primclex.get_prim(), lin_alg_tol);
+
+      try {
+        const Supercell &scel = primclex.get_supercell(scelname);
+      }
+      catch(...) {
+        std::cerr << "Error using 'casm ref --set --scelname': \n"
+                  "  Could not find supercell with name: " << scelname << "\n";
+        return ERR_INVALID_ARG;
+      }
+
+      auto input = one_chemical_reference_from_json(primclex.get_prim(), json_ref);
+      if(input.second.empty()) {
+        chem_ref.set_supercell(scelname, input.first);
+      }
+      else {
+        chem_ref.set_supercell(scelname, input.second.begin(), input.second.end(), lin_alg_tol);
+      }
+
+      std::cout << "Updating the " << scelname << " specialized reference to: \n";
+      ChemicalReferencePrinter p(std::cout, chem_ref);
+      p.print_supercell(scelname);
+      write_chemical_reference(chem_ref, chem_ref_path);
+      return 0;
+
+    }
+
+  }
 
   // ///////////////////////////////////////
   // 'ref' function for casm
@@ -16,20 +135,50 @@ namespace CASM {
 
     po::variables_map vm;
     int choice;
-    std::string scellname;
+    std::string scelname, configname, set_str;
     int refid, configid;
+    double lin_alg_tol = 1e-14;
+
+    std::string species_order_string = "\n\n";
+
+    fs::path root = find_casmroot(fs::current_path());
+    if(!root.empty()) {
+      std::stringstream ss;
+      DirectoryStructure dir(root);
+      Structure prim(read_prim(dir.prim()));
+
+      ss << "       For this project, the expected order is:\n"
+         << "        '[";
+      auto names = prim.get_struc_molecule_name();
+      for(int i = 0; i < names.size(); i++) {
+        ss << names[i];
+        if(i != names.size() - 1) {
+          ss << ", ";
+        }
+      }
+      ss << "]'\n\n";
+
+      species_order_string = ss.str();
+    }
+
 
     try {
       po::options_description desc("'casm ref' usage");
       desc.add_options()
       ("help,h", "Write help documentation")
+      //("composition-space", "Display information on current composition space")
       ("display,d", "Display current reference states")
-      ("set", "Set reference state using existing calculated properties")
-      ("auto,a", "Set standard reference states")
-      ("index,i", po::value< int >(&refid), "Reference state index")
-      ("supercell,s", po::value< std::string >(&scellname), "Name of supercell")
-      ("configid,c", po::value< int >(&configid), "Configuration ID")
-      ("update,u", "Update references based on current reference states");
+      ("set-auto", "Automatically set project level reference states using DFT results")
+      ("set", po::value<std::string>(&set_str),
+       "Set reference states using user specified compositions and energies "
+       "(Default: set project-wide references). \n"
+       "See examples below for the form of expected input.")
+      ("erase", "Erase reference states (Default: clear project-wide references).")
+      ("scelname", po::value<std::string>(&scelname),
+       "Use references given via --set for a particular supercell only")
+      ("configname", po::value<std::string>(&configname),
+       "Use references given via --set for a particular configuration only");
+
 
       try {
         po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -38,17 +187,24 @@ namespace CASM {
 
         //quit out if there are no arguments
         if(!vm.count("help")) {
-          if(vm.count("set") + vm.count("display") != 1) {
-            std::cout << "Error in 'casm ref'. Please select one of --display \n";
-            std::cout << "or --set to use this option." << std::endl;
+          if(vm.count("set") + vm.count("display") + vm.count("erase") + vm.count("set-auto") != 1) {
+            std::cout << "Error in 'casm ref'. Please select one of --display, \n";
+            std::cout << "--set, --set-auto, or --erase to use this option." << std::endl;
 
             call_help = true;
           }
 
           if(vm.count("set")) {
-            if(vm.count("index") + vm.count("auto") + vm.count("update") != 1) {
-              std::cout << "Error in 'casm ref --set'. Please select one of --auto, --index, \n";
-              std::cout << "or --update to use this option." << std::endl;
+            if(vm.count("scelname") + vm.count("configname") > 1) {
+              std::cerr << "Error in 'casm ref --set'. Please select only one of --scelname, --configname \n";
+
+              call_help = true;
+            }
+          }
+
+          if(vm.count("erase")) {
+            if(vm.count("scelname") + vm.count("configname") > 1) {
+              std::cerr << "Error in 'casm ref --erase'. Please select only one of --scelname, --configname \n";
 
               call_help = true;
             }
@@ -62,40 +218,78 @@ namespace CASM {
           std::cout << desc << std::endl;
 
           std::cout << "DESCRIPTION" << std::endl;
-          std::cout << "    For a particular configuration (SCEL, CONFIGID), the following \n";
-          std::cout << "    directories are checked for reference state files:\n";
-          std::cout << "    1) root/supercells/SCEL/CONFIGID/settings/CURR_CALCTYPE/CURR_REF\n";
-          std::cout << "    2) root/supercells/SCEL/settings/CURR_CALCTYPE/CURR_REF\n";
-          std::cout << "    3) root/settings/CURR_CALCTYPE/CURR_REF\n";
-          std::cout << " \n";
-          std::cout << "    This option sets reference states at the project level (#3 above).\n";
-          std::cout << "    - Must have used 'casm composition' to select parametric \n";
-          std::cout << "      composition axes. \n";
-          std::cout << "    - display: prints current reference states \n";
-          std::cout << "    - set: set reference state to the calculated properties for \n";
-          std::cout << "           configuration CONFIGID of supercell SCEL \n";
-          std::cout << "    - set auto: tries to use configurations with extreme param \n";
-          std::cout << "                compositions for reference states \n";
-          std::cout << "    - set update: updates references based on current reference state files \n";
-          std::cout << " \n";
+          std::cout << "    The chemical reference determines the value of the formation energy  \n"
+                    "    and chemical potentials calculated by CASM.                          \n\n"
+
+                    "    Chemical references states are set by specifying a hyperplane in     \n"
+                    "    energy/atom - composition (as atom_frac) space. This may be done by  \n"
+                    "    specifying the hyperplane explicitly, or by specifying several       \n"
+                    "    reference states with energy/atom and composition (as atom_frac) for \n"
+                    "    enough states to span the composition space of the allowed occupants \n"
+                    "    specified in the prim. For consistency with other CASM projects,     \n"
+                    "    additional reference states extending to other compositional         \n"
+                    "    dimensions may be included also. The pure Va reference is always 0.  \n\n";
+
+          std::cout << "    The input to '--set' can be one of three forms:                      \n\n"
+
+                    "    1) Input the energy_per_species for pure states:                     \n" <<
+                    R"(       '{"A": X, "B": X, "C": X}')" << "\n\n" <<
+
+                    "    2) Input reference state composition and energy_per_species:         \n" <<
+                    R"(       '[)" << "\n" <<
+                    R"(          {"A": 3.4, "C": 2.0, "energy_per_species": 2.0},)" << "\n" <<
+                    R"(          {"B": 2.0, "energy_per_species": 4.0}, )" << "\n" <<
+                    R"(          {"C": 1.0, "energy_per_species": 3.0}  )" << "\n" <<
+                    R"(        ]')" << "\n\n" <<
+
+                    "    3) Input an array of energy_per_species, for each species in prim,   \n"
+                    "       including 0.0 for vacancy:                                        \n"
+                    "        '[X, X, X]'                                                      \n"
+                    << species_order_string;
+
+          std::cout << "    When using '--set' it is also possible to specialize the chemical    \n"
+                    "    reference at the supercell or configuration level by adding the      \n"
+                    "    --scelname or --configname option.                                   \n\n";
+
+
+
           std::cout << "    Examples:\n";
+          //std::cout << "      casm ref --composition-space \n";
+          //std::cout << "      - Print composition space column matrix of the primitive\n";
+          //std::cout << "      - Print null space column matrix\n";
+          //std::cout << "\n";
           std::cout << "      casm ref --display \n";
-          std::cout << "      - Print all reference states\n";
+          std::cout << "      - Print chemical reference\n";
           std::cout << "\n";
-          std::cout << "      casm ref --set --auto\n";
-          std::cout << "      - set all reference states using configurations with\n";
-          std::cout << "        extreme param compositions.\n";
+          std::cout << "      casm ref --set-auto\n";
+          std::cout << "      - set all reference states using DFT results for configurations with\n";
+          std::cout << "        extreme compositions.\n";
+          std::cout << "      - set reference for compositions outside range of this project to 0.0\n";
           std::cout << "\n";
-          std::cout << "      casm ref --set --index 1 --supercell SCEL4_2_2_1_1_0_1 --configid 12\n";
-          std::cout << "      - set reference state 1 to be configuration 12 of supercell SCEL4_2_2_1_1_0_1\n";
-          std::cout << "\n";
-          std::cout << "      casm ref --set --update\n";
-          std::cout << "      - updates reference properties based on current reference states files\n";
-          std::cout << "      - use this after manually customizing reference states\n";
-          std::cout << "\n";
+          std::cout << "      casm ref --set \n"
+                    "        '[{\"Zr\":1, \"energy_per_species\":-8.546979385}, \n"
+                    "          {\"Zr\":1, \"O\":1, \"energy_per_species\":-9.090697345}]'\n"
+                    "      - set Zr and ZrO, with given energy per species, as reference states\n\n";
+
+          std::cout << "      casm ref --scelname SCEL3_3_1_1_0_2_2 --set \n"
+                    "        '[{\"Zr\":1, \"energy_per_species\":-8.546979385}, \n"
+                    "          {\"Zr\":1, \"O\":1, \"energy_per_species\":-9.090697345}]'\n"
+                    "      - set reference states as specified for configurations in supercell SCEL3_3_1_1_0_2_2\n\n";
+
+          std::cout << "      casm ref --configname SCEL3_3_1_1_0_2_2/2 --set \n"
+                    "        '[{\"Zr\":1, \"energy_per_species\":-8.546979385}, \n"
+                    "          {\"Zr\":1, \"O\":1, \"energy_per_species\":-9.090697345}]'\n"
+                    "      - set reference states as specified for configuration SCEL3_3_1_1_0_2_2/2\n\n";
+
+          std::cout << "      casm ref --scelname SCEL3_3_1_1_0_2_2 --erase \n"
+                    "      - erase specialized reference states for configurations in supercell SCEL3_3_1_1_0_2_2\n\n";
+
+          std::cout << "      casm ref --configname SCEL3_3_1_1_0_2_2/2 --erase \n"
+                    "      - erase specialized reference states for configuration SCEL3_3_1_1_0_2_2/2\n\n";
+
 
           if(call_help)
-            return 1;
+            return ERR_INVALID_ARG;
 
           return 0;
         }
@@ -106,20 +300,19 @@ namespace CASM {
       catch(po::error &e) {
         std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
         std::cerr << desc << std::endl;
-        return 1;
+        return ERR_INVALID_ARG;
       }
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "
                 << e.what() << ", application will now exit" << std::endl;
-      return 1;
+      return ERR_UNKNOWN;
 
     }
 
-    fs::path root = find_casmroot(fs::current_path());
     if(root.empty()) {
       std::cout << "Error in 'casm ref': No casm project found." << std::endl;
-      return 1;
+      return ERR_NO_PROJ;
     }
     fs::current_path(root);
 
@@ -132,119 +325,130 @@ namespace CASM {
 
     std::string calctype = primclex.settings().calctype();
     std::string ref = primclex.settings().ref();
-
-    auto global_ref = [&](int i) {
-      return primclex.dir().ref_state(calctype, ref, i);
-    };
-
-    auto supercell_ref = [&](std::string scelname, int i) {
-      return primclex.dir().supercell_ref_state(scelname, calctype, ref, i);
-    };
-
-    auto configuration_ref = [&](std::string configname, int i) {
-      return primclex.dir().configuration_ref_state(configname, calctype, ref, i);
-    };
-
-    /// check that references exist:
-    if(!primclex.has_composition_axes()) {
-      std::cout << "Error in 'casm ref'. Please first use 'casm composition' \n";
-      std::cout << "to select your parametric composition axes." << std::endl;
-      return 1;
-    }
+    fs::path chem_ref_path = primclex.dir().chemical_reference(calctype, ref);
 
     if(vm.count("display")) {
-
-      std::cout << "\n***************************\n" << std::endl;
-      std::cout << "Display reference states:\n\n" << std::endl;
-
-      // Project level reference states
-      std::cout << "Project level reference states:" << std::endl;
-      for(int i = 0; i < primclex.composition_axes().independent_compositions() + 1; i++) {
-        fs::path filepath = global_ref(i);
-        if(fs::exists(filepath)) {
-          std::cout << "\n Reference: " << filepath << std::endl;
-          jsonParser json(filepath);
-          std::cout << json << std::endl;
-        }
+      if(!primclex.has_chemical_reference()) {
+        std::cerr << "Error using 'casm ref --display': No reference found.\n";
+        std::cerr << "  Expected file at: " << chem_ref_path << "\n";
+        std::cerr << "Use 'casm ref --set' or 'casm ref --set-auto' to set a reference\n";
+        return ERR_MISSING_INPUT_FILE;
       }
-      std::cout << std::endl;
 
-      // Supercell level reference states
-      std::cout << "Supercell level reference states:" << std::endl;
-      for(int i = 0; i < primclex.get_supercell_list().size(); i++) {
+      ChemicalReferencePrinter p(std::cout, primclex.chemical_reference());
+      p.print_all();
 
-        for(int j = 0; j < primclex.composition_axes().independent_compositions() + 1; j++) {
-          fs::path filepath = supercell_ref(primclex.get_supercell(i).get_name(), i);
-          if(fs::exists(filepath)) {
-            std::cout << "\n Reference: " << filepath << std::endl;
-            jsonParser json(filepath);
-            std::cout << json << std::endl;
-          }
-        }
+    }
+    else if(vm.count("set-auto")) {
+      try {
+        std::cout << "  Set reference states automatically.\n\n" << std::endl;
+        ChemicalReference chem_ref = auto_chemical_reference(primclex, lin_alg_tol);
+        ChemicalReferencePrinter p(std::cout, chem_ref);
+        p.print_all();
+        write_chemical_reference(chem_ref, chem_ref_path);
+        return 0;
       }
-      std::cout << std::endl;
-
-      // Supercell level reference states
-      std::cout << "Configuration level reference states:" << std::endl;
-      for(int i = 0; i < primclex.get_supercell_list().size(); i++) {
-        const Supercell &scel = primclex.get_supercell(i);
-        for(int j = 0; j < scel.get_config_list().size(); j++) {
-          for(int k = 0; k < primclex.composition_axes().independent_compositions() + 1; k++) {
-            fs::path filepath = configuration_ref(scel.get_config(i).name(), i);
-            if(fs::exists(filepath)) {
-              std::cout << "\n Reference: " << filepath << std::endl;
-              jsonParser json(filepath);
-              std::cout << json << std::endl;
-            }
-          }
-        }
+      catch(std::exception &e) {
+        std::cerr << "Error setting reference states automatically.\n\n";
+        std::cerr << e.what() << std::endl;
+        return ERR_UNKNOWN;
       }
-      std::cout << std::endl;
-
     }
     else if(vm.count("set")) {
 
-      std::cout << "\n***************************\n" << std::endl;
+      using namespace ref_impl;
 
-      if(vm.count("index")) {
-
-        std::cout << "  Set reference state " << refid << "." << std::endl;
-
-        primclex.set_reference_state(refid, primclex.get_supercell(scellname).get_config(configid));
-
-        std::cout << "  Update references... " << std::endl;
-        primclex.generate_references();
-        std::cout << "    DONE" << std::endl;
-
-        fs::path filepath = primclex.dir().ref_state(calctype, ref, refid);
-        std::cout << " Reference: " << filepath << std::endl;
-        jsonParser json(filepath);
-        std::cout << json << std::endl;
-
+      jsonParser json_ref;
+      try {
+        json_ref = jsonParser::parse(set_str);
       }
-      else if(vm.count("auto")) {
+      catch(std::exception &e) {
+        std::cerr << "Error parsing JSON input for 'casm ref --set ' with: \n"
+                  << set_str << std::endl;
+        std::cerr << e.what() << std::endl;
+        return ERR_INVALID_ARG;
+      }
 
-        std::cout << "  Set reference states automatically." << std::endl;
+      // --- Set project-wide ref
 
-        primclex.set_reference_state_auto();
+      if(!(vm.count("scelname") + vm.count("configname"))) {
 
-        for(int i = 0; i < primclex.composition_axes().independent_compositions() + 1; i++) {
-          fs::path filepath = global_ref(i);
-          std::cout << "\n Reference: " << filepath << std::endl;
-          jsonParser json(filepath);
-          std::cout << json << std::endl;
+        if(!fs::exists(chem_ref_path)) {
+          // -- Initializing ref
+          return initialize_global(chem_ref_path, primclex, json_ref, lin_alg_tol);
+        }
+        else {
+          // -- Updating project-wide ref
+          return update_global(chem_ref_path, primclex, json_ref, lin_alg_tol);
         }
       }
-      else if(vm.count("update")) {
 
-        std::cout << "  Update references... " << std::endl;
-        primclex.generate_references();
-        std::cout << "    DONE" << std::endl;
+      // --- Set config specific ref
+
+      else if(vm.count("configname")) {
+
+        return update_config(configname, chem_ref_path, primclex, json_ref, lin_alg_tol);
+      }
+
+      // --- Set supercell specific ref
+
+      else {
+
+        return update_supercell(scelname, chem_ref_path, primclex, json_ref, lin_alg_tol);
 
       }
-    }
 
-    std::cout << std::endl;
+    }
+    else if(vm.count("erase")) {
+
+      // --- Erase project-wide ref
+
+      if(!(vm.count("scelname") + vm.count("configname"))) {
+
+        if(!fs::exists(chem_ref_path)) {
+          std::cerr << "No chemical reference found. \n";
+          return ERR_INVALID_ARG;
+        }
+        else {
+          fs::remove(chem_ref_path);
+          std::cout << "Erased chemical reference" << std::endl;
+          return 0;
+        }
+      }
+
+      ChemicalReference chem_ref = primclex.chemical_reference();
+      bool result;
+
+      // --- Erase configuration specific ref
+
+      if(vm.count("configname")) {
+        if(!chem_ref.erase_config(configname)) {
+          std::cerr << "No " << configname << " specialized reference found. \n";
+          return ERR_INVALID_ARG;
+        }
+        else {
+          std::cout << "Erased specialized reference for " << configname << std::endl;
+          write_chemical_reference(chem_ref, chem_ref_path);
+          return 0;
+        }
+      }
+
+      // --- Erase supercell specific ref
+
+      else {
+        if(!chem_ref.erase_supercell(scelname)) {
+          std::cerr << "No " << scelname << " specialized reference found. \n";
+          return ERR_INVALID_ARG;
+        }
+        else {
+          std::cout << "Erased specialized reference for " << scelname << std::endl;
+          write_chemical_reference(chem_ref, chem_ref_path);
+          return 0;
+        }
+      }
+
+
+    }
 
     return 0;
   }

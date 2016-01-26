@@ -1,12 +1,14 @@
 #ifndef SUPERCELL_HH
 #define SUPERCELL_HH
 
+#include "casm/misc/cloneable_ptr.hh"
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/ConfigDoF.hh"
+#include "casm/clex/NeighborList.hh"
 
 namespace CASM {
 
@@ -16,6 +18,10 @@ namespace CASM {
   class PrimClex;
   class Clexulator;
 
+  /// \brief Represents a supercell of a PrimClex
+  ///
+  /// \ingroup Clex
+  ///
   class Supercell {
 
   public:
@@ -66,28 +72,6 @@ namespace CASM {
     //       (*this).superstruc().factor_group() is the group formed by the cosets of Tsuper in the supercell space group
     mutable SymGroup m_factor_group;
 
-    // m_trans_permute describes how translations by a primitive lattice translation permutes the sites
-    // of the Supercell. m_trans_permute[i] is the effect of translating all sites by (*this).uccoord[i]
-    // and mapping them back within the Supercell. m_trans_permute.size() == (*this).volume()
-    // NOTE: m_trans_permute can be thought of as the translational factor group formed by the the cosets
-    //       of the group Tsuper in the group Tprim, as they are defined above
-    //mutable Array<Permutation> m_trans_permute;
-
-    //Indices that map the linear index to the bijk point in real space
-    //  Generate in void Supercell::fill_supercell() which is called in constructors
-    //  This always exists and is populated
-    //Array < UnitCellCoord > config_index_to_bijk;
-
-    //Indices that map the linear index to the apqr point in reciprocal space
-    //Array < UnitCellCoord > config_index_to_apqr;
-
-    //Array of coordinates for both real and reciprocal space
-    //Array<Coordinate> real_coords;  //primitive=primitive
-    //Array<Coordinate> recip_coords; //primitive=recip(primitive)
-
-    //The current 'state' of the supercell in reciprocal space
-    //  Configuration recip_curr_state;
-
     /// unique name of the supercell based on hermite normal form (see generate_name() )
     std::string name;
 
@@ -136,7 +120,13 @@ namespace CASM {
     void generate_phase_factor(const Eigen::MatrixXd &shift_vectors, const Array<bool> &is_commensurate, const bool &override);
     ///************************************************************************************************
 
-    Array< Array<Index> >    nlists;  //[scell site][ nbor_indices]
+    /// SuperNeighborList, mutable for lazy construction
+    mutable notstd::cloneable_ptr<SuperNeighborList> m_nlist;
+
+    /// Store size of PrimNeighborList at time of construction of SuperNeighborList
+    /// to enable checking if SuperNeighborList should be re-constructed
+    mutable Index m_nlist_size_at_construction;
+
 
     // Could hold either enumerated configurations or any 'saved' configurations
     ConfigList config_list;
@@ -160,23 +150,13 @@ namespace CASM {
     Supercell(PrimClex *_prim, const Lattice &superlattice);
     Supercell(PrimClex *_prim, const Eigen::Matrix3i &superlattice_matrix);
     Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix);
-    //Supercell(PrimClex *_prim, const Eigen::Matrix3i &superlattice_matrix);   //I wish
-    //Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix, const Lattice &superlattice, const int warningFlag = 1);
-    //Supercell(PrimClex *_prim, std::string _name);
-    //Supercell(PrimClex *_prim, const Lattice &superlattice, std::string _name);
-    //Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix, std::string _name);
-    //Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix, const Lattice &superlattice, std::string _name, const int warningFlag = 1);
 
     // **** Coordinates ****
-    //UnitCellCoord get_bijk(Vector3<double> cartesian_coord, int b) const;
     Index get_linear_index(const Site &site, double tol = TOL) const;
     Index get_linear_index(const Coordinate &coord, double tol = TOL) const;
     Index find(const UnitCellCoord &bijk) const;
     Coordinate coord(const UnitCellCoord &bijk) const;
     Coordinate coord(Index linear_ind) const;
-
-    // only used for populate_bijk_l_map
-    //void location_within(const UnitCellCoord &supercell_point, Array< Array < Array <Array <Index > > > > &linear_index, const UnitCellCoord &centering);
 
     // returns maximum allowed occupation bitstring -- used for initializing enumeration counters
     ReturnArray<int> max_allowed_occupation() const;
@@ -200,9 +180,6 @@ namespace CASM {
     Eigen::MatrixXd recip_coordinates() const;
 
     // **** Accessors ****
-    //PrimClex &get_primclex() {
-    //return *primclex;
-    //}
 
     const PrimClex &get_primclex() const {
       return *primclex;
@@ -278,14 +255,8 @@ namespace CASM {
       return recip_prim_lattice;
     };
 
-    // get indices of neighbor sites ('nlist_index') in Configuration to some 'site'
-    Index get_nlist_l(Index pivot_l, Index nlist_index) const {
-      return nlists[pivot_l][nlist_index];
-    };
-
-    const Array<Index> &get_nlist(Index pivot_l) const {
-      return nlists[pivot_l];
-    };
+    /// \brief Returns the SuperNeighborList
+    const SuperNeighborList &nlist() const;
 
 
     ConfigList &get_config_list() {
@@ -311,32 +282,6 @@ namespace CASM {
     // begin and end const_iterators for iterating over configurations
     config_const_iterator config_cbegin() const;
     config_const_iterator config_cend() const;
-
-    /*
-    TransitionList &transition_list() {
-      return m_transition_list;
-    };
-
-    const TransitionList &transition_list() const {
-      return m_transition_list;
-    };
-
-    Transition &transition(int i) {
-      return m_transition_list[i];
-    }
-
-    const Transition &transition(int i) const {
-      return m_transition_list[i];
-    };
-
-    // begin and end iterators for iterating over transitions
-    trans_iterator trans_begin();
-    trans_iterator config_end();
-
-    // begin and end const_iterators for iterating over transitions
-    trans_const_iterator trans_cbegin() const;
-    trans_const_iterator trans_cend() const;
-    */
 
     Index get_id() const {
       return m_id;
@@ -384,13 +329,6 @@ namespace CASM {
     // Populate m_trans_permute -- probably should be private
     void generate_permutations() const;
 
-    //void fill_supercell();
-    //void populate_bijk_l_map(Array< Array < Array <Array <Index > > > > &linear_index, UnitCellCoord &centering);
-    void generate_neighbor_list();
-
-    ///Return true if the Supercell is smaller than the neighborhood of the sites, causing periodic overlap
-    bool neighbor_image_overlaps() const;
-
     //\John G 070713
     void generate_name();
 
@@ -412,15 +350,6 @@ namespace CASM {
     void populate_structure_factor(const Index &config_index);
 
     // **** Enumerating functions ****
-
-    /// Enumerate 'Nstep' configurations that linearly interpolate deformation and displacement from 'initial' configuration to 'final' configuration
-    /// 'initial' and 'final' must either have the same occupation or have unspecified occupation
-    /// The range can be adjusted using 'being_delta' and 'end_delta' (which can be positive or negative). begin_delta<0 indicates interpolation starts
-    /// abs(begin_delta) number of steps *before* 'initial'. positive values indicate interpolation starts the specified number of steps *after* initial.
-    /// semantics are similar for 'end_delta', but for the final configuration.
-    /*void enumerate_interpolated_configurations(Supercell::config_const_iterator initial, Supercell::config_const_iterator final,
-                                               long Nstep, long begin_delta = 0, long end_delta = 0);
-    */
 
     //Functions for enumerating configurations that are perturbations of a 'background' structure
     void enumerate_perturb_configurations(const std::string &background, fs::path CSPECS, double tol = TOL, bool verbose = false, bool print = false);
@@ -446,18 +375,6 @@ namespace CASM {
 
     template<typename ConfigIterType>
     void add_configs(ConfigIterType it_begin, ConfigIterType it_end);
-
-    // **** Correlations ****
-    //void calc_correlations_curr();
-    //void calc_corr_all();
-    //void calc_curr_energy();
-    //void calc_clex_correlations();
-
-    //Fill up values in the correlations of all configurations
-    //    void populate_correlations(Clexulator &clexulator);
-    //Fill up values in the correlations of configuration specified by index
-    //    void populate_correlations(Clexulator &clexulator, const Index &config_index);
-
 
     // **** Other ****
     // Reads a relaxed structure and calculates the strains and stretches using the reference structure
@@ -487,15 +404,6 @@ namespace CASM {
 
     void printUCC(std::ostream &stream, COORD_TYPE mode, UnitCellCoord ucc, char term = 0, int prec = 7, int pad = 5) const;
     //\Michael 241013
-
-    // **** ParamComposition Calculators ****
-    //    std::map < std::string , double > composition_calculate(int ConfigNum);
-    //    std::map < std::string , double > true_composition_calculate(int ConfigNum);
-    //    std::map < int , std::map <std::string , double > > sublattice_composition_calculate(int ConfigNum);
-    //Array< Array< double > > sublattice_composition_calculate(int ConfigNum);
-    //    std::map < std::string , double > calculate_composition(int ConfigName);
-    //    std::map < std::string , double > calculate_true_composition(int ConfigName);
-    //void populate_sublat_to_comp();
 
   };
 

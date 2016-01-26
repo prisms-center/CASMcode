@@ -5,6 +5,7 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/container/Array.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
 
@@ -165,8 +166,11 @@ namespace CASM {
 
   public:
     OccupantDoF() : DiscreteDoF() { };
-    OccupantDoF(const std::string &_name, const Array<T> &_domain, int _current_state = 0) :
-      DiscreteDoF(_name, _current_state), m_domain(_domain) { };
+    OccupantDoF(const Array<T> &_domain, int _current_state = 0) :
+      DiscreteDoF("occupation", _current_state), m_domain(_domain) { };
+
+    OccupantDoF(std::initializer_list<T> _domain, int _current_state = 0) :
+      DiscreteDoF("occupation", _current_state), m_domain(_domain.begin(), _domain.end()) { };
 
     const T &get_occ() const {
       return m_domain[m_current_state];

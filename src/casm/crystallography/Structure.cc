@@ -8,13 +8,14 @@
 #include "casm/clusterography/SiteCluster.hh"
 #include "casm/clusterography/Orbitree.hh"
 #include "casm/clusterography/jsonClust.hh"
+#include "casm/misc/algorithm.hh"
 
 
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  Structure::Structure(const fs::path &filepath) : BasicStructure<Site>(),basis_perm_rep_ID(-1) {
+  Structure::Structure(const fs::path &filepath) : BasicStructure<Site>(), basis_perm_rep_ID(-1) {
     if(!fs::exists(filepath)) {
       std::cerr << "Error in Structure::Structure(const fs::path &filepath)." << std::endl;
       std::cerr << "  File does not exist at: " << filepath << std::endl;
@@ -136,10 +137,10 @@ namespace CASM {
   //************************************************************
 
   /// Returns an Array of each *possible* Specie in this Structure
-  Array<Specie> Structure::get_struc_specie() const {
+  std::vector<Specie> Structure::get_struc_specie() const {
 
-    Array<Molecule> struc_molecule = get_struc_molecule();
-    Array<Specie> struc_specie;
+    std::vector<Molecule> struc_molecule = get_struc_molecule();
+    std::vector<Specie> struc_specie;
 
     Index i, j;
 
@@ -147,7 +148,7 @@ namespace CASM {
     for(i = 0; i < struc_molecule.size(); i++) {
       // For each atomposition in the molecule
       for(j = 0; j < struc_molecule[i].size(); j++) {
-        if(!struc_specie.contains(struc_molecule[i][j].specie)) {
+        if(!contains(struc_specie, struc_molecule[i][j].specie)) {
           struc_specie.push_back(struc_molecule[i][j].specie);
         }
       }
@@ -159,14 +160,9 @@ namespace CASM {
   //************************************************************
 
   /// Returns an Array of each *possible* Molecule in this Structure
-  Array<Molecule> Structure::get_struc_molecule() const {
+  std::vector<Molecule> Structure::get_struc_molecule() const {
 
-    //Check if basis is empty
-    if(basis.size() == 0) {
-      std::cerr << "Warning in Structure::get_struc_molecule():  basis.size() == 0" << std::endl;
-    }
-
-    Array<Molecule> struc_molecule;
+    std::vector<Molecule> struc_molecule;
     Index i, j;
 
     //loop over all Sites in basis
@@ -174,7 +170,7 @@ namespace CASM {
       //loop over all Molecules in Site
       for(j = 0; j < basis[i].site_occupant().size(); j++) {
         //Collect unique Molecules
-        if(!struc_molecule.contains(basis[i].site_occupant()[j])) {
+        if(!contains(struc_molecule, basis[i].site_occupant()[j])) {
           struc_molecule.push_back(basis[i].site_occupant()[j]);
         }
       }
@@ -183,14 +179,29 @@ namespace CASM {
     return struc_molecule;
   }
 
+  /// Returns an Array of each *possible* Molecule in this Structure
+  std::vector<std::string> Structure::get_struc_molecule_name() const {
+
+    // get Molecule allowed in prim, and how many there are
+    std::vector<Molecule> struc_mol = get_struc_molecule();
+
+    // store Molecule names in vector
+    std::vector<std::string> struc_mol_name;
+    for(int i = 0; i < struc_mol.size(); i++) {
+      struc_mol_name.push_back(struc_mol[i].name);
+    }
+
+    return struc_mol_name;
+  }
+
   //************************************************************
 
   /// Returns a list of how many of each specie exist in this Structure
   ///   The Specie types are ordered according to get_struc_specie()
-  Array<int> Structure::get_num_each_specie() const {
+  Eigen::VectorXi Structure::get_num_each_specie() const {
 
-    Array<Specie> struc_specie = get_struc_specie();
-    Array<int> num_each_specie(struc_specie.size(), 0);
+    std::vector<Specie> struc_specie = get_struc_specie();
+    Eigen::VectorXi num_each_specie = Eigen::VectorXi::Zero(struc_specie.size());
 
     Index i, j;
     // For each site
@@ -198,7 +209,7 @@ namespace CASM {
       // For each atomposition in the molecule on the site
       for(j = 0; j < basis[i].occ().size(); j++) {
         // Count the present specie
-        num_each_specie[ struc_specie.find(basis[i].occ()[j].specie)]++;
+        num_each_specie(find_index(struc_specie, basis[i].occ()[j].specie))++;
       }
     }
 
@@ -209,16 +220,16 @@ namespace CASM {
 
   /// Returns a list of how many of each molecule exist in this Structure
   ///   The molecule types are ordered according to get_struc_molecule()
-  Array<int> Structure::get_num_each_molecule() const {
+  Eigen::VectorXi Structure::get_num_each_molecule() const {
 
-    Array<Molecule> struc_molecule = get_struc_molecule();
-    Array<int> num_each_molecule(struc_molecule.size(), 0);
+    std::vector<Molecule> struc_molecule = get_struc_molecule();
+    Eigen::VectorXi num_each_molecule = Eigen::VectorXi(struc_molecule.size());
 
     Index i;
     // For each site
     for(i = 0; i < basis.size(); i++) {
       // Count the molecule
-      num_each_molecule[ struc_molecule.find(basis[i].occ())]++;
+      num_each_molecule(find_index(struc_molecule, basis[i].occ()))++;
     }
 
     return num_each_molecule;
@@ -804,9 +815,9 @@ namespace CASM {
       std::cerr << "*******************************************\n"
                 << "ERROR in Structure::map_superstruc_to_prim:\n"
                 << "The structure \n";
-      print(std::cerr);
+      std::cerr << jsonParser(*this) << std::endl;
       std::cerr << "is not a supercell of the given prim!\n";
-      prim.print(std::cerr);
+      std::cerr << jsonParser(prim) << std::endl;
       std::cerr << "*******************************************\n";
       exit(1);
     }
@@ -1512,65 +1523,6 @@ namespace CASM {
     return;
   }
   */
-  //***********************************************************
-  /**
-   * Create numbered subdirectories and copies the appropriate
-   * POSCAR files into those.
-   * you can choose where you want to create subdirectories and name
-   */
-  //***********************************************************
-  void Structure::print_hop_images(Array<Structure> images, std::string location) {
-
-    std::ofstream out;
-    if(mkdir(location.c_str(), 0777) == -1) {
-      std::cerr << " This Directory is already existed, it will be over-written in previous files.  \n";
-    };
-
-
-
-    for(Index i = 0; i < images.size() ; i ++) {
-      std::stringstream convert;
-      std::string imag_num, POSCAR, name;
-
-      convert << i;
-      if(i > 10) {
-        name = location + "/POSCAR" + convert.str();
-      }
-      else {
-        name = location + "/POSCAR0" + convert.str();
-      }
-
-      out.open(name.c_str());
-      images[i].print(out);
-      out.close();
-
-      if(i > 10) {
-        imag_num = location + "/" + convert.str(); //it the name of subdirectories 10, 11
-        POSCAR = imag_num + "/POSCAR";
-      }
-      else {
-        imag_num = location + "/0" + convert.str(); // 01 02
-        POSCAR = imag_num + "/POSCAR";
-      }
-
-      if(mkdir(imag_num.c_str(), 0777) == -1) {
-        ;
-      }
-
-      out.open(POSCAR.c_str());
-      if(out.is_open()) {
-        images[i].print(out);
-      }
-      else {
-        std::cerr << "ERROR creating POSCAR " << i << "\n";
-      }
-      out.close();
-
-
-    }
-
-    return;
-  }
 
 
   //***********************************************************
@@ -1703,15 +1655,15 @@ namespace CASM {
 
   /// Returns 'converter' which converts Site::site_occupant indices to 'mol_list' indices:
   ///   mol_list_index = converter[basis_site][site_occupant_index]
-  Array< Array<int> > get_index_converter(const Structure &struc, Array<Molecule> mol_list) {
+  std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<Molecule> mol_list) {
 
-    Array< Array<int> > converter(struc.basis.size());
+    std::vector< std::vector<Index> > converter(struc.basis.size());
 
     for(Index i = 0; i < struc.basis.size(); i++) {
       converter[i].resize(struc.basis[i].site_occupant().size());
 
       for(Index j = 0; j < struc.basis[i].site_occupant().size(); j++) {
-        converter[i][j] = mol_list.find(struc.basis[i].site_occupant()[j]);
+        converter[i][j] = find_index(mol_list, struc.basis[i].site_occupant()[j]);
       }
     }
 
@@ -1721,15 +1673,15 @@ namespace CASM {
 
   /// Returns 'converter' which converts Site::site_occupant indices to 'mol_name_list' indices:
   ///   mol_name_list_index = converter[basis_site][site_occupant_index]
-  Array< Array<int> > get_index_converter(const Structure &struc, Array<std::string> mol_name_list) {
+  std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<std::string> mol_name_list) {
 
-    Array< Array<int> > converter(struc.basis.size());
+    std::vector< std::vector<Index> > converter(struc.basis.size());
 
     for(Index i = 0; i < struc.basis.size(); i++) {
       converter[i].resize(struc.basis[i].site_occupant().size());
 
       for(Index j = 0; j < struc.basis[i].site_occupant().size(); j++) {
-        converter[i][j] = mol_name_list.find(struc.basis[i].site_occupant()[j].name);
+        converter[i][j] = find_index(mol_name_list, struc.basis[i].site_occupant()[j].name);
       }
     }
 

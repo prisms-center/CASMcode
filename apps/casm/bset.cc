@@ -50,12 +50,12 @@ namespace CASM {
     catch(po::error &e) {
       std::cerr << desc << std::endl;
       std::cerr << "\nERROR: " << e.what() << std::endl << std::endl;
-      return 1;
+      return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
       std::cerr << desc << std::endl;
       std::cerr << "\nERROR: "  << e.what() << std::endl;
-      return 1;
+      return ERR_UNKNOWN;
 
     }
 
@@ -63,7 +63,7 @@ namespace CASM {
     fs::path root = find_casmroot(fs::current_path());
     if(root.empty()) {
       std::cout << "Error in 'casm bset': No casm project found." << std::endl;
-      return 1;
+      return ERR_NO_PROJ;
     }
     fs::current_path(root);
 
@@ -79,7 +79,7 @@ namespace CASM {
 
       if(!fs::is_regular_file(dir.bspecs(set.bset()))) {
         std::cout << "Error in 'casm bset': No basis set specifications file found at: " << dir.bspecs(set.bset()) << std::endl;
-        return 1;
+        return ERR_MISSING_INPUT_FILE;
       }
 
 
@@ -87,8 +87,7 @@ namespace CASM {
                                        dir.eci_in(set.bset()),
                                        dir.clexulator_src(set.name(), set.bset()),
                                        dir.clexulator_o(set.name(), set.bset()),
-                                       dir.clexulator_so(set.name(), set.bset()),
-                                       dir.prim_nlist(set.bset())
+                                       dir.clexulator_so(set.name(), set.bset())
                                       });
 
       bool any_existing_files = false;
@@ -118,58 +117,77 @@ namespace CASM {
         }
         else {
           std::cout << "Exiting due to existing files.  Use --force to force overwrite.\n\n";
-          return 1;
+          return ERR_EXISTING_FILE;
         }
       }
 
       SiteOrbitree tree(prim.lattice());
 
       try {
-        jsonParser bspecs_json;
-        bspecs_json.read(dir.bspecs(set.bset()));
+        jsonParser bspecs_json(dir.bspecs(set.bset()));
 
         std::cout << "Generating orbitree: \n";
         tree = make_orbitree(prim, bspecs_json);
-        std::cout << "  DONE.\n\n";
+
+        if(tree.min_num_components < 2) {
+          std::cerr << "Error generating orbitree: Custom clusters include a site "
+                    << "with only 1 allowed component. This is not currently supported." << std::endl;
+          for(int nb = 0; nb < tree.size(); ++nb) {
+            for(int no = 0; no < tree[nb].size(); ++no) {
+              for(int ns = 0; ns < tree[nb][no].prototype.size(); ++ns) {
+                if(tree[nb][no].prototype[ns].site_occupant().size() < 2) {
+                  std::cerr << "--- Prototype --- " << std::endl;
+                  tree[nb][no].prototype.print(std::cerr, '\n');
+                  break;
+                }
+              }
+            }
+          }
+          return ERR_INVALID_INPUT_FILE;
+        }
+        std::cout << "  DONE.\n" << std::endl;
 
         tree.generate_clust_bases();
       }
       catch(std::exception &e) {
-        std::cerr << "\n\nError reading: " << dir.bspecs(set.bset()) << std::endl
-                  << "               " << e.what() << std::endl;
-        return 1;
+        std::cerr << e.what() << std::endl;
+        return ERR_INVALID_INPUT_FILE;
       }
 
       // -- write eci.in ----------------
       tree.write_eci_in(dir.eci_in(set.bset()).string());
 
-      std::cout << "Wrote: " << dir.eci_in(set.bset()) << "\n\n";
+      std::cout << "Wrote: " << dir.eci_in(set.bset()) << "\n" << std::endl;
 
 
       // -- write clust.json ----------------
       jsonParser clust_json;
       to_json(jsonHelper(tree, prim), clust_json).write(dir.clust(set.bset()));
 
-      std::cout << "Wrote: " << dir.clust(set.bset()) << "\n\n";
-
-
-      // -- generate and write prim_nlist.json ----------------
-      Array<UnitCellCoord> nlist;
-      expand_nlist(prim, tree, nlist);
-
-      write_prim_nlist(nlist, dir.prim_nlist(set.bset()));
-      std::cout << "Wrote: " << dir.prim_nlist(set.bset()) << "\n\n";
+      std::cout << "Wrote: " << dir.clust(set.bset()) << "\n" << std::endl;
 
 
       // -- write global Clexulator
+
+      // get the neighbor list
+      PrimNeighborList nlist(
+        set.nlist_weight_matrix(),
+        set.nlist_sublat_indices().begin(),
+        set.nlist_sublat_indices().end()
+      );
+
+      // expand the nlist to contain 'tree'
+      std::set<UnitCellCoord> nbors;
+      neighborhood(std::inserter(nbors, nbors.begin()), tree, prim, TOL);
+      nlist.expand(nbors.begin(), nbors.end());
+
+      // write source code
       fs::ofstream outfile;
       outfile.open(dir.clexulator_src(set.name(), set.bset()));
       print_clexulator(prim, tree, nlist, set.global_clexulator(), outfile);
       outfile.close();
 
-      std::cout << "Wrote: " << dir.clexulator_src(set.name(), set.bset()) << "\n\n";
-
-      // -- clear correlations for all configurations
+      std::cout << "Wrote: " << dir.clexulator_src(set.name(), set.bset()) << "\n" << std::endl;
 
     }
     else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
@@ -179,7 +197,7 @@ namespace CASM {
 
       if(!fs::exists(dir.clust(set.bset()))) {
         std::cerr << "ERROR: No 'clust.json' file found. Make sure to update your basis set with 'casm bset -u'.\n";
-        return 1;
+        return ERR_MISSING_DEPENDS;
       }
 
       std::cout << "Initialize primclex: " << root << std::endl << std::endl;

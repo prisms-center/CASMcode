@@ -13,6 +13,7 @@
 namespace CASM {
 
   class Lattice;
+  class UnitCell;
   class UnitCellCoord;
   class Coordinate;
   class SymOp;
@@ -109,6 +110,7 @@ namespace CASM {
 
     // find linear index that is translational equivalent to Coordinate or UnitCellCoord
     Index find(const Coordinate &_coord) const;
+    Index find(const UnitCell &_unitcell) const;
     Index find(const UnitCellCoord &_coord) const;
 
     // map a UnitCellCoord inside the supercell
@@ -117,6 +119,7 @@ namespace CASM {
     // get Coordinate or UnitCellCoord from linear index
     Coordinate coord(Index l, CELL_TYPE lat_mode)const;
     Coordinate coord(const UnitCellCoord &bijk, CELL_TYPE lat_mode)const;
+    UnitCell unitcell(Index i)const;
     UnitCellCoord uccoord(Index i)const;
 
     Index make_permutation_representation(const SymGroup &group, Index basis_permute_rep)const;

@@ -7,24 +7,37 @@
 
 #include "casm/BP_C++/BP_Parse.hh"
 
+#include "casm/misc/cloneable_ptr.hh"
+
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/DoFManager.hh"
-#include "casm/clex/ParamComposition.hh"
+#include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Clexulator.hh"
+#include "casm/clex/ChemicalReference.hh"
+#include "casm/misc/cloneable_ptr.hh"
+#include "casm/clex/NeighborList.hh"
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/app/AppIO.hh"
 
 /// Cluster expansion class
 namespace CASM {
 
-  class ParamComposition;
   class ECIContainer;
 
   template<typename T, typename U> class ConfigIterator;
 
+  /// \defgroup Clex
+  ///
+  /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
+  ///
+
+
+  /// \brief PrimClex stores the primitive Structure and lots of related data
+  ///
+  /// \ingroup Clex
+  ///
   class PrimClex {
 
     fs::path root;
@@ -35,6 +48,8 @@ namespace CASM {
     std::string m_name;
 
     Structure prim;
+    bool m_vacancy_allowed;
+    Index m_vacancy_index;
 
     mutable DoFManager m_dof_manager;
 
@@ -53,11 +68,6 @@ namespace CASM {
 
     SiteOrbitree global_orbitree;
 
-    //One flowertree for each site. The flowertrees contain all the clusters that have a particular site at the pivot, divided in branches of points, pairs etc. Probably what you
-    //thought a bouquet was to begin with (but you'd be wrong because bouquets have a branch for each basis site)
-    Array<SiteOrbitree> flowertrees;
-
-
     /// Contains all the supercells that were involved in the enumeration.
     boost::container::stable_vector< Supercell > supercell_list;
 
@@ -67,23 +77,19 @@ namespace CASM {
     bool m_has_composition_axes = false;
     CompositionConverter m_comp_converter;
 
+    /// ChemicalReference specifies a reference for formation energies, chemical
+    /// potentials, etc.
+    notstd::cloneable_ptr<ChemicalReference> m_chem_ref;
 
-    /// Stores the 'delta' UnitCellCoord needed to determine all the
-    ///   sites in the neighborhood of a given primitive cell according to:
-    ///
-    ///    neighbor_unit_cell_coord = UnitCellCoord(b,i,j,k) + prim_nlist[nlist_index]
-    ///
-    ///  'delta' UnitCellCoord = prim_nlist[nlist_index]
-    ///
+    /// Stores the neighboring UnitCell and which sublattices to include in neighbor lists
+    /// - mutable for lazy construction
+    mutable notstd::cloneable_ptr<PrimNeighborList> m_nlist;
 
-    Array<UnitCellCoord> prim_nlist;
 
   public:
 
     typedef ConfigIterator<Configuration, PrimClex> config_iterator;
     typedef ConfigIterator<const Configuration, const PrimClex> config_const_iterator;
-    //typedef ConfigIterator<Transition> trans_iterator;
-    //typedef ConfigIterator<const Transition> trans_const_iterator;
 
     // **** Constructors ****
 
@@ -93,7 +99,6 @@ namespace CASM {
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
     PrimClex(const fs::path &_root, std::ostream &sout);
-
 
 
     // **** Accessors ****
@@ -163,11 +168,19 @@ namespace CASM {
 
     // ** Composition accessors **
 
-    /// const Access CompositionConverter object
+    /// check if CompositionConverter object initialized
     bool has_composition_axes() const;
 
     /// const Access CompositionConverter object
     const CompositionConverter &composition_axes() const;
+
+    // ** Chemical reference **
+
+    /// check if ChemicalReference object initialized
+    bool has_chemical_reference() const;
+
+    /// const Access ChemicalReference object
+    const ChemicalReference &chemical_reference() const;
 
 
     // ** Prim and Orbitree accessors **
@@ -179,8 +192,13 @@ namespace CASM {
     const SiteOrbitree &get_global_orbitree() const;
 
     ///const access to the primitive neighbor list
-    const Array<UnitCellCoord> &get_prim_nlist() const;
+    const PrimNeighborList &nlist() const;
 
+    /// returns true if vacancy are an allowed species
+    bool vacancy_allowed() const;
+
+    /// returns the index of vacancies in composition vectors
+    Index vacancy_index() const;
 
     // ** Supercell and Configuration accessors **
 
@@ -233,45 +251,20 @@ namespace CASM {
     /// const Configuration iterator: end
     config_const_iterator selected_config_cend() const;
 
-    /*
-    /// Transition iterator: begin
-    trans_iterator trans_begin();
-
-    /// Transition iterator: end
-    trans_iterator trans_end();
-
-    /// const Transition iterator: begin
-    trans_const_iterator trans_cbegin() const;
-
-    /// const Transition iterator: end
-    trans_const_iterator trans_cend() const;
-    */
-
-
-    // ** Neighbor list accessors **
-
-    /// Returns number of neighbors
-    Index get_nlist_size() const;
-
-    /// Returns UnitCellCoord, 'delta', indicating where neighbor site 'nlist_index' is located in the neighborhood
-    ///    neighbor_unit_cell_coord = UnitCellCoord(b,i,j,k) + this->get_nlist_uccoord(nlist_index)
-    const UnitCellCoord &get_nlist_uccoord(Index nlist_index) const;
 
     Eigen::MatrixXd shift_vectors() const;
 
     // **** Mutators ****
 
+    /// Sets the composition axes, updates all configuration references,
+    ///   and writes the updated configuration info
+    void set_composition_axes(const CompositionConverter &_converter);
 
     // **** IO ****
 
     ///Call Configuration::write on every configuration to update files
     ///  - call update to also read all files
     void write_config_list();
-
-    /// \brief Set the primitive neighbor list explicitly, useful when it has been saved
-    void set_prim_nlist(const Array<UnitCellCoord> &_prim_nlist) {
-      prim_nlist = _prim_nlist;
-    }
 
 
     // **** Operators ****
@@ -285,18 +278,6 @@ namespace CASM {
     //Read the global Orbitree from a clust.json file
     void read_global_orbitree(const fs::path &fclust);
 
-
-    // Prepare neighbor lists
-    /// Add one orbitree of sites to the nearest neighbor list and update sites in tree with index, only considering the first site of each cluster
-    void append_to_nlist(SiteOrbitree &new_tree);
-    /// Add one orbitree of sites to the nearest neighbor list and update sites in tree with index
-    void append_to_nlist_perm(SiteOrbitree &new_tree);
-    /// Add global_orbitree to nearest neighbor list and update sites in tree with index
-    void generate_full_nlist();
-    /// Generate basis flowers from global orbitree and divide them nicely into flowertrees
-    void populate_flowertrees();
-    //\John G
-
     //Generate supercells of a certain volume and store them in the array of supercells
     void generate_supercells(int volStart, int volEnd, bool verbose);
 
@@ -307,13 +288,8 @@ namespace CASM {
     void read_supercells(std::istream &stream);
     void print_clex_configurations();
 
-    void generate_supercell_nlists();
 
     //ParamComposition i/o and calculators in PrimClex
-
-    /// Sets the composition axes, updates all configuration references,
-    ///   and writes the updated configuration info
-    void set_composition_axes(const CompositionConverter &_converter);
 
     void read_config_list();
 
@@ -344,24 +320,24 @@ namespace CASM {
 
     /// Delete 'properties.ref_state.X.json' files,
     /// Then call 'clear_reference_properties'
-    void clear_reference_states();
+    //void clear_reference_states();
 
     /// Sets the root reference state to be the calculated properties of the chosen config
     /// Calls 'clear_reference_properties'
-    void set_reference_state(int refid, const Configuration &config);
+    //void set_reference_state(int refid, const Configuration &config);
 
     /// Check that it is valid to use 'config' as reference state 'refid', returns bool and if false, sets 'reason_invalid'
     ///   Currently checks:
     ///     1) that the necessary properties have been calculated,
     ///     2) that the same Configuration is not being used twice
     ///   Needs to check that reference states span composition space
-    bool valid_reference_state(int refid, const Configuration &config, std::string &reason_invalid) const;
+    //bool valid_reference_state(int refid, const Configuration &config, std::string &reason_invalid) const;
 
     /// find calculated configurations closest to
     /// [0, 0, 0, ...], [1, 0, 0, ...], [0, 1, 0, ...], [0, 0, 1, ...], ...
     /// and set them as the root reference states, also calls regenerate_references
     /// Clears reference states and properties whether or not it succeeds
-    void set_reference_state_auto();
+    //void set_reference_state_auto();
 
     /// Clear 'reference' and 'delta' properties from all Configurations
     /// Re-write all Configurations, updating:
@@ -369,17 +345,19 @@ namespace CASM {
     ///   properties.calc.json
     ///   properties.ref.json
     ///   properties.delta.json
-    void generate_references();
+    //void generate_references();
 
+    bool has_global_clexulator() const;
     Clexulator global_clexulator() const;
-    ECIContainer global_eci(std::string clex_name) const;
+
+    bool has_global_eci(std::string clex_name) const;
+    const ECIContainer &global_eci(std::string clex_name) const;
   private:
 
-    /// Return the configuration closest in param_composition to the target_param_comp
-    ///   Tie break returns configuration in smallest supercell (first found at that size)
-    const Configuration &closest_calculated_config(const Eigen::VectorXd &target_param_comp) const;
+    /// Initialization routines
+    void _init(std::ostream &sout);
 
-
+    mutable ECIContainer m_global_eci;
     mutable Clexulator m_global_clexulator;
   };
 
@@ -390,14 +368,9 @@ namespace CASM {
   /// \brief Print clexulator
   void print_clexulator(const Structure &prim,
                         SiteOrbitree &tree,
-                        const Array<UnitCellCoord> &nlist,
+                        const PrimNeighborList &nlist,
                         std::string class_name,
                         std::ostream &stream);
 
-
-  /// \brief Expand a neighbor list to include neighborhood of another SiteOrbitree
-  void expand_nlist(const Structure &prim,
-                    SiteOrbitree &tree,
-                    Array<UnitCellCoord> &nlist);
 }
 #endif

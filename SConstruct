@@ -72,7 +72,6 @@ lib_paths = []
 # command-line variables (C and C++)
 ccflags = []
 
-ccflags.append('--std=c++11')
 #ccflags.append('-Wall')
 
 ccflags.append('-Wno-unused-parameter')
@@ -168,7 +167,7 @@ env.Append(IS_INSTALL = 0)
 env['ENV']['TERM'] = os.environ['TERM']
 
 # set testing environment
-env['ENV']['PATH'] += ":" + env['CASM_BIN']
+env['ENV']['PATH'] = env['CASM_BIN'] + ":" + env['ENV']['PATH']
 
 
 ##### Call all SConscript files for shared objects
@@ -201,6 +200,7 @@ casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'),
                              
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + casm_lib
 Export('casm_lib')
+env.Alias('libcasm', casm_lib)
 
 # Library Install instructions
 casm_lib_install = env.SharedLibrary(os.path.join(env['PREFIX'], 'lib', 'casm'), 

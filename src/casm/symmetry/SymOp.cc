@@ -137,7 +137,7 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  
+
   void SymOp::set_rep(Index rep_ID, const SymOpRepresentation &op_rep) const {
     SymGroupRep const *tRep(master_group().representation(rep_ID));
     if(!tRep) {
@@ -145,54 +145,53 @@ namespace CASM {
                 << "                Exiting...\n";
       exit(1);
     }
-   
+
     tRep->set_rep(op_index, op_rep);
-   
+
     return;
   }
- 
+
   //*******************************************************************************************
-  
+
   Eigen::MatrixXd const *SymOp::get_matrix_rep(Index rep_ID) const {
     SymGroupRep const *tRep(master_group().representation(rep_ID));
     if(!tRep) return NULL;
-   
+
     return (tRep->at(op_index))->get_MatrixXd();
   }
- 
-  //*******************************************************************************************
-  
-  Array<UnitCellCoord> const *SymOp::get_basis_permute_rep(Index rep_ID) const {
-   
+
+  //**********************************************************
+  SymBasisPermute const *SymOp::get_basis_permute_rep(Index rep_ID) const {
+
     SymGroupRep const *tRep(master_group().representation(rep_ID));
     if(!tRep) {
       std::cerr << "Warning: You have requested information from a nonexistent representation!\n"
                 << "m_master_group pointer is " << m_master_group << '\n';
       return NULL;
     }
-  
+
     return (tRep->at(op_index))->get_ucc_permutation();
   }
-  
+
   //*******************************************************************************************
   Permutation const *SymOp::get_permutation_rep(Index rep_ID) const {
     SymGroupRep const *tRep(master_group().representation(rep_ID));
     if(!tRep) return NULL;
-  
+
     return (tRep->at(op_index))->get_permutation();
   }
-  
+
   //*******************************************************************************************
-  
+
   Array<Eigen::MatrixXd const * > SymOp::get_matrix_reps(Array<Index> rep_IDs) const {
     Array<Eigen::MatrixXd const * > tmat;
     for(Index i = 0; i < rep_IDs.size(); i++) {
       tmat.push_back(get_matrix_rep(rep_IDs[i]));
-           
+
     }
     return tmat;
   }
- 
+
   //*******************************************************************************************
 
   SymOp SymOp::operator*(const SymOp &RHS) const {
@@ -277,18 +276,18 @@ namespace CASM {
 
   bool SymOp::compare(const SymOp &RHS, double eq_tol) const {
     return calc(CART) &&
-      RHS.calc(CART) &&
-      get_matrix(CART).is_equal(RHS.get_matrix(CART), eq_tol) &&
-      tau_vec.min_dist(RHS.tau_vec) < eq_tol;
+           RHS.calc(CART) &&
+           get_matrix(CART).is_equal(RHS.get_matrix(CART), eq_tol) &&
+           tau_vec.min_dist(RHS.tau_vec) < eq_tol;
   }
 
   //*******************************************************************************************
 
   bool SymOp::operator==(const SymOp &RHS) const {
     return calc(CART) &&
-      RHS.calc(CART) &&
-      get_matrix(CART).is_equal(RHS.get_matrix(CART)) &&
-      tau(CART).is_equal(RHS.tau(CART));
+           RHS.calc(CART) &&
+           get_matrix(CART).is_equal(RHS.get_matrix(CART)) &&
+           tau(CART).is_equal(RHS.tau(CART));
   }
 
   //*******************************************************************************************
@@ -470,7 +469,7 @@ namespace CASM {
 
       for(int i = 0; i < 3; i++) {
         rec_eigenvec.at(i) = eigenvec(CART).at(0) * rec_trans(0, i) +
-          eigenvec(CART).at(1) * rec_trans(1, i) + eigenvec(CART).at(2) * rec_trans(2, i);
+                             eigenvec(CART).at(1) * rec_trans(1, i) + eigenvec(CART).at(2) * rec_trans(2, i);
 
       }
 
@@ -642,7 +641,7 @@ namespace CASM {
             XYZ_equ[0][3] = get_screw_glide_shift(mode).at(0);
             XYZ_equ[1][3] = get_screw_glide_shift(mode).at(1);
             XYZ_equ[2][3] = get_screw_glide_shift(mode).at(2)
-              - (plane_XYZ_equ[3] / plane_XYZ_equ[2]);
+                            - (plane_XYZ_equ[3] / plane_XYZ_equ[2]);
           }
           else {
             XYZ_equ[0][3] = 0;
@@ -723,9 +722,9 @@ namespace CASM {
           if(type() == screw_op) {
             XYZ_equ[0][3] = get_screw_glide_shift(mode).at(0);
             XYZ_equ[1][3] = get_screw_glide_shift(mode).at(1)
-              - (axis_XYZ_equ[3] / axis_XYZ_equ[1]) * (axis_XYZ_equ[0]) + axis_XYZ_equ[2];
+                            - (axis_XYZ_equ[3] / axis_XYZ_equ[1]) * (axis_XYZ_equ[0]) + axis_XYZ_equ[2];
             XYZ_equ[2][3] = get_screw_glide_shift(mode).at(2)
-              - (axis_XYZ_equ[5] / axis_XYZ_equ[1]) * (axis_XYZ_equ[0]) + axis_XYZ_equ[4];
+                            - (axis_XYZ_equ[5] / axis_XYZ_equ[1]) * (axis_XYZ_equ[0]) + axis_XYZ_equ[4];
 
           }
           else {
@@ -749,7 +748,7 @@ namespace CASM {
             XYZ_equ[0][3] = get_screw_glide_shift(mode).at(0) + axis_XYZ_equ[0];
             XYZ_equ[1][3] = get_screw_glide_shift(mode).at(1);
             XYZ_equ[2][3] = get_screw_glide_shift(mode).at(2)
-              - (axis_XYZ_equ[2] / axis_XYZ_equ[3]) * (axis_XYZ_equ[5]) + axis_XYZ_equ[4];
+                            - (axis_XYZ_equ[2] / axis_XYZ_equ[3]) * (axis_XYZ_equ[5]) + axis_XYZ_equ[4];
 
           }
           else {

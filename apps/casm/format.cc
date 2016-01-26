@@ -27,7 +27,7 @@ namespace CASM {
       ("vasp", "Description and location of VASP settings files")
       ("comp", "Description and location of 'composition_axes.json' file")
       ("bspecs", "Description and location of 'bspecs.json' file")
-      ("ref_state", "Description and location of 'properties.ref_state.i.json' files")
+      ("ref", "Description and location of 'chemical_reference.json' files")
       ("scel", "Description and location of 'SCEL' file")
       ("lat", "Description and location of 'LAT' files")
       ("pos", "Description and location of 'POS' files")
@@ -99,7 +99,7 @@ namespace CASM {
       std::cout << "      POSCAR                                                        \n";
       std::cout << "    $ROOT/training_data/settings/$CURR_CALCTYPE/$CURR_REF/          \n";
       std::cout << "      composition_axes.json                                         \n";
-      std::cout << "      properties.ref_state.i.json                                   \n";
+      std::cout << "      chemical_reference.json                                       \n";
       std::cout << "    $ROOT/training_data/$SCELNAME/                                  \n";
       std::cout << "      LAT                                                           \n";
       std::cout << "    $ROOT/training_data/$SCELNAME/$CONFIGID                         \n";
@@ -300,7 +300,7 @@ Direct\n\
                 "  this configuration. The reference values are determined by a      \n" <<
                 "  linear interpolation of their values in the reference states to   \n" <<
                 "  the composition of this configuration. The most local reference   \n" <<
-                "  states are used; see 'casm format --ref_state' for details.       \n\n" <<
+                "  states are used; see 'casm format --ref' for details.             \n\n" <<
 
                 "properties:delta:                                                   \n" <<
                 "  This contains the difference between the properties listed in     \n" <<
@@ -677,62 +677,143 @@ LCHARG = .FALSE.\n";
                 "triplet, quadruplet, etc. clusters in terms of the maximum distance \n" <<
                 "between any two sites in the cluster.\n\n";
 
-      std::cout << "The JSON array 'orbit_specs' allows specifying particular custom orbits \n" <<
-                "by providing the prototype cluster coordinates. The 'include_subclusters'\n" <<
-                "option allows including all orbits of subclusters of the specified cluster\n\n\n";
+      std::cout << "The JSON array 'orbit_specs' allows specifying particular custom orbits    \n" <<
+                "by providing the prototype cluster coordinates. The 'include_subclusters'  \n" <<
+                "option allows including all orbits of subclusters of the specified cluster.\n" <<
+                "The cluster coordinates may be in \"Direct\"/\"Fractional\" coordinates,   \n"
+                "\"Cartesian\" coordinates, or \"Integral\" coordinates. \"Integral\"       \n"
+                "coordinates are 4-element integer arrays indicating sublattice index, b,   \n"
+                "followed by unit cell indices, i, j, k.                                    \n\n\n";
 
 
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
       std::cout <<
-                "{\n  \"basis_functions\" : {\n    \"site_basis_functions\" : \"occupation\"\n  },\n  \"orbit_branch_specs\" : {\n    \"2\" : {\"max_length\" : 4.01},\n    \"3\" : {\"max_length\" : 3.01}\n  },\n  \"orbit_specs\" : [\n    {\n      \"coordinate_mode\" : \"Direct\",\n      \"prototype\" : [\n        [ 0.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 1.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 2.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 3.000000000000, 0.000000000000, 0.000000000000 ]\n      ],\n      \"include_subclusters\" : true  \n    },\n    {\n      \"coordinate_mode\" : \"Direct\",\n      \"prototype\" : [\n        [ 0.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 0.000000000000, 1.000000000000, 0.000000000000 ],\n        [ 0.000000000000, 0.000000000000, 1.000000000000 ],\n        [ 1.000000000000, 1.000000000000, 1.000000000000 ]\n      ],\n      \"include_subclusters\" : true\n    }\n  ]\n}\n";
+                "{\n  \"basis_functions\" : {\n    \"site_basis_functions\" : \"occupation\"\n  },\n  \"orbit_branch_specs\" : {\n    \"2\" : {\"max_length\" : 4.01},\n    \"3\" : {\"max_length\" : 3.01}\n  },\n  \"orbit_specs\" : [\n    {\n      \"coordinate_mode\" : \"Direct\",\n      \"prototype\" : [\n        [ 0.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 1.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 2.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 3.000000000000, 0.000000000000, 0.000000000000 ]\n      ],\n      \"include_subclusters\" : true  \n    },\n    {\n      \"coordinate_mode\" : \"Integral\",\n      \"prototype\" : [\n        [ 0, 0, 0, 0 ],\n        [ 1, 0, 0, 0 ],\n        [ 0, 0, 0, 3 ]\n      ],\n      \"include_subclusters\" : true\n    }\n  ]\n}\n";
       std::cout << "-------\n";
 
     }
 
-    if(vm.count("ref_state")) {
-      std::cout << "\n### ref_state ##################\n\n";
+    if(vm.count("ref")) {
+      std::cout << "\n### ref ##################\n\n";
 
       std::cout << "LOCATION WHEN GENERATED:\n\n";
-      std::cout << "For global reference states:\n";
-      std::cout << "  $ROOT/training_data/settings/$CURR_CALCTYPE/$CURR_REF/properties.ref_state.i.json\n";
-      std::cout << "For supercell specific reference states:\n";
-      std::cout << "  $ROOT/training_data/$SCELNAME/settings/$CURR_CALCTYPE/$CURR_REF/properties.ref_state.i.json\n";
-      std::cout << "For configuration specific reference states:\n";
-      std::cout << "  $ROOT/training_data/$SCELNAME/$CONFIGID/settings/$CURR_CALCTYPE/$CURR_REF/properties.ref_state.i.json\n";
+      std::cout << "$ROOT/training_data/settings/$CURR_CALCTYPE/$CURR_REF/chemical_reference.json\n";
       std::cout << "\n\n";
 
       std::cout << "DESCRIPTION:\n";
-      std::cout << "For a particular configuration (SCELNAME, CONFIGID), the following \n" <<
-                "directories are checked for reference state files:                 \n" <<
-                "    1) $ROOT/training_data/$SCELNAME/$CONFIGID/settings/$CURR_CALCTYPE/$CURR_REF\n" <<
-                "    2) $ROOT/training_data/$SCELNAME/settings/$CURR_CALCTYPE/$CURR_REF        \n" <<
-                "    3) $ROOT/training_data/$CURR_CALCTYPE/$CURR_REF                        \n\n" <<
+      std::cout << "    The chemical reference determines the value of the formation energy  \n"
+                "    and chemical potentials calculated by CASM.                          \n\n"
 
-                "The most local references found are always used. There must be N     \n" <<
-                "reference states set, where N = param_composition.size()+1. See      \n" <<
-                "'casm ref' for how to set reference states.                        \n\n" <<
+                "    Chemical references states are set by specifying a hyperplane in     \n"
+                "    energy/atom - composition (as atom_frac) space. This may be done by  \n"
+                "    specifying the hyperplane explicitly, or by specifying several       \n"
+                "    reference states with energy/atom and composition (as atom_frac) for \n"
+                "    enough states to span the composition space of the allowed occupants \n"
+                "    specified in the prim. For consistency with other CASM projects,     \n"
+                "    additional reference states extending to other compositional         \n"
+                "    dimensions may be included also. The pure Va reference is always 0.  \n\n";
 
-                "The 'properties.ref_state.i.json' JSON files contain 'supercell_name',\n" <<
-                "'configid', 'param_composition' identifying the configuration used \n" <<
-                "as a reference, and 'ref_state', a JSON object that contains the   \n" <<
-                "values of each property in the reference state.                    \n\n" <<
+      std::cout << "    The reference states are stored in the 'chemical_reference.json' file\n"
+                "    in one of two formats:                                               \n\n"
 
-                "If you create custom 'properties.ref_state.i.json' files, only the \n" <<
-                "'param_composition' and 'ref_state' members are required.          \n\n\n";
+                "    1) Reference state composition and energy_per_species.               \n"
+                "       In this format each reference state is represented by a JSON      \n"
+                "       object storing the number of each species present in the reference\n"
+                "       state and the energy_per_species for that reference state. Species\n"
+                "       that are not in the primitive structure may also be included in   \n"
+                "       the reference states as long as the composition space of the      \n"
+                "       primitive structure is spanned by the hyperplane connecting the   \n"
+                "       provided reference states.                                        \n"
+                R"(       '[)" << "\n" <<
+                R"(          {"A": 3.4, "C": 2.0, "energy_per_species": 2.0},)" << "\n" <<
+                R"(          {"B": 2.0, "energy_per_species": 4.0}, )" << "\n" <<
+                R"(          {"C": 1.0, "energy_per_species": 3.0}  )" << "\n" <<
+                R"(        ]')" << "\n\n" <<
+
+                "    2) Input an array of energy_per_species, for each species in prim,   \n"
+                "       including 0.0 for vacancy:                                        \n"
+                "        '[X, X, X]'                                                      \n\n";
+
+      std::cout << "    When using '--set' it is also possible to specialize the chemical    \n"
+                "    reference at the supercell or configuration level by adding the      \n"
+                "    --scelname or --configname option.                                   \n\n";
 
 
-      std::cout << "EXAMPLE: properties.ref_state.0.json\n";
+      std::cout << "EXAMPLE: chemical_reference.json\n";
       std::cout << "-------\n";
       std::cout <<
-                "{\n\
-  \"configid\" : \"0\",\n\
-  \"param_composition\" : [ 0.0, 0.0 ],\n\
-  \"ref_state\" : {\n\
-    \"relaxed_energy\" : -3.699287870000\n\
-  },\n\
-  \"supercell_name\" : \"SCEL1_1_1_1_0_0_0\"\n\
-}\n";
+                R"({
+  "chemical_reference" : {
+    "config" : {
+      "SCEL4_2_2_1_1_1_0/0" : [
+        {
+          "A" : 1.000000000000,
+          "energy_per_species" : -1.500000000000
+        },
+        {
+          "B" : 1.000000000000,
+          "energy_per_species" : -2.000100000000
+        },
+        {
+          "C" : 1.000000000000,
+          "energy_per_species" : -8.030000000000
+        }
+      ],
+      "SCEL4_2_2_1_1_1_0/2" : [ -1.520000000000, -2.000100000000, -8.030000000000 ]
+    },
+    "global" : [
+      {
+        "A" : 0.500000000000,
+        "B" : 0.500000000000,
+        "energy_per_species" : -1.500000000000
+      },
+      {
+        "B" : 1.000000000000,
+        "energy_per_species" : -2.000000000000
+      },
+      {
+        "C" : 1.000000000000,
+        "energy_per_species" : -8.000000000000
+      },
+      {
+        "D" : 1.000000000000,
+        "energy_per_species" : -4.000000000000
+      }
+    ],
+    "species_order" : [ "A", "B", "C" ],
+    "supercell" : {
+      "SCEL3_1_3_1_1_0_0" : [
+        {
+          "A" : 1.000000000000,
+          "energy_per_species" : -1.500000000000
+        },
+        {
+          "B" : 1.000000000000,
+          "energy_per_species" : -2.000000000000
+        },
+        {
+          "C" : 1.000000000000,
+          "energy_per_species" : -8.001000000000
+        }
+      ],
+      "SCEL4_2_2_1_1_1_0" : [
+        {
+          "A" : 1.000000000000,
+          "energy_per_species" : -1.500000000000
+        },
+        {
+          "B" : 1.000000000000,
+          "energy_per_species" : -2.000000000000
+        },
+        {
+          "C" : 1.000000000000,
+          "energy_per_species" : -8.030000000000
+        }
+      ]
+    }
+  }
+})";
       std::cout << "-------\n";
 
     }

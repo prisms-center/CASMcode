@@ -53,6 +53,7 @@ def read_settings(filename):
         "extra_input_files": extra input files to be copied from the settings directory, e.g., a vdW kernel file.
         "initial" : location of INCAR with tags for the initial run, if desired (e.g. to generate a PBE WAVECAR for use with M06-L)
         "final" : location of INCAR with tags for the final run, if desired (e.g. "ISMEAR = -5", etc). Otherwise, the settings enforced are ("ISMEAR = -5", "NSW = 0", "IBRION = -1", "ISIF = 2")
+        "err_types" : list of errors to check for. Allowed entries are "IbzkptError" and "SubSpaceMatrixError". Default: ["SubSpaceMatrixError"]
     """
     try:
         file = open(filename)
@@ -65,7 +66,7 @@ def read_settings(filename):
     required = ["queue", "ppn", "atom_per_proc", "walltime"]
 
     optional = ["account","pmem","priority","message","email","qos","npar","ncore", "kpar", "ncpus","vasp_cmd","run_limit","nrg_convergence", \
-                "encut", "kpoints","extra_input_files", "move", "copy", "remove", "compress", "backup", "initial", "final", "strict_kpoints"]
+                "encut", "kpoints","extra_input_files", "move", "copy", "remove", "compress", "backup", "initial", "final", "strict_kpoints", "err_types"]
     for key in required:
         if not key in settings:
             raise VaspWrapperError( key + "' missing from: '" + filename + "'")

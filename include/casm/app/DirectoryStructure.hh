@@ -161,6 +161,7 @@ namespace CASM {
     fs::path clexulator_o(std::string project, std::string bset) const {
       return bset_dir(bset) / (project + "_Clexulator.o");
     }
+
     /// \brief Returns path to global clexulator so file
     fs::path clexulator_so(std::string project, std::string bset) const {
       return bset_dir(bset) / (project + "_Clexulator.so");
@@ -174,11 +175,6 @@ namespace CASM {
     /// \brief Returns path to corr.in, in bset directory
     fs::path corr_in(std::string bset) const {
       return bset_dir(bset) / "corr.in";
-    }
-
-    /// \brief Returns path to prim_nlist.json, in bset directory
-    fs::path prim_nlist(std::string bset) const {
-      return bset_dir(bset) / "prim_nlist.json";
     }
 
 
@@ -215,6 +211,11 @@ namespace CASM {
       return configuration_dir(configname) / _calctype(calctype) / "properties.calc.json";
     }
 
+    /// \brief Return calculation status file path
+    fs::path calc_status(std::string configname, std::string calctype) const {
+      return configuration_dir(configname) / _calctype(calctype) / "status.json";
+    }
+
 
     /// \brief Return calculation reference settings directory path, for global settings
     fs::path ref_dir(std::string calctype, std::string ref) const {
@@ -236,19 +237,9 @@ namespace CASM {
       return ref_dir(calctype, ref) / "composition_axes.json";
     }
 
-    /// \brief Return reference state file path, for global settings
-    fs::path ref_state(std::string calctype, std::string ref, int index) const {
-      return ref_dir(calctype, ref) / _ref_state(index);
-    }
-
-    /// \brief Return reference state file path, for supercell specific settings
-    fs::path supercell_ref_state(std::string scelname, std::string calctype, std::string ref, int index) const {
-      return supercell_ref_dir(scelname, calctype, ref) / _ref_state(index);
-    }
-
-    /// \brief Return reference state file path, for configuration specific settings
-    fs::path configuration_ref_state(std::string configname, std::string calctype, std::string ref, int index) const {
-      return configuration_ref_dir(configname, calctype, ref) / _ref_state(index);
+    /// \brief Return chemical reference file path
+    fs::path chemical_reference(std::string calctype, std::string ref) const {
+      return ref_dir(calctype, ref) / "chemical_reference.json";
     }
 
 

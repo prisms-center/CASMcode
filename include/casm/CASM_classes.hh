@@ -37,7 +37,6 @@
 #include "casm/casm_io/EigenDataStream.hh"
 #include "casm/casm_io/Args.hh"
 
-
 // Misc
 #include "casm/misc/HierarchyID.hh"					// template //
 
@@ -109,8 +108,27 @@
 #include "casm/clex/ConfigIterator.hh"
 #include "clex/ConfigSelection.hh"
 #include "clex/ConfigIO.hh"
+#include "casm/clex/ConfigIOHull.hh"
+#include "casm/clex/ConfigIONovelty.hh"
+#include "casm/clex/ConfigIOStrucScore.hh"
+#include "casm/clex/ConfigIOStrain.hh"
+#include "casm/clex/ConfigIOSelected.hh"
+#include "casm/clex/Norm.hh"
+#include "casm/clex/Reference.hh"
+#include "casm/clex/ChemicalReference.hh"
+#include "casm/clex/NeighborList.hh"
 
 // Hull
 #include "casm/hull/Hull.hh"
+
+// App
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/ProjectBuilder.hh"
+#include "casm/app/AppIO.hh"
+
+// VaspIO
+#include "casm/casm_io/VaspIO.hh"
+
 
 #endif

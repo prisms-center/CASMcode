@@ -74,10 +74,11 @@ namespace CASM {
     Index basis_permutation_symrep_ID();
     Index basis_permutation_symrep_ID()const;
 
-    Array<Specie> get_struc_specie() const;
-    Array<Molecule> get_struc_molecule() const;
-    Array<int> get_num_each_specie() const;
-    Array<int> get_num_each_molecule() const;
+    std::vector<Specie> get_struc_specie() const;
+    std::vector<Molecule> get_struc_molecule() const;
+    std::vector<std::string> get_struc_molecule_name() const;
+    Eigen::VectorXi get_num_each_specie() const;
+    Eigen::VectorXi get_num_each_molecule() const;
 
     // ****Mutators****
 
@@ -200,11 +201,6 @@ namespace CASM {
     /// for exact interpolation, choose "LOCAL" or "1", for nearest-image interpolation, choose "PERIODIC" or "0"
     void intpol(Structure end_struc, int Nofimag, PERIODICITY_TYPE mode, Array<Structure> &images);
 
-    //void linear_interpolate(Structure end_struc, int num_images, Array<Structure> &images);
-    /// Print intpolated images in seperate directries
-    void print_hop_images(Array<Structure> images, std::string location);
-
-
     // ****Input/Output****
 
     /// For each symmetrically distinct site, print the symmetry operations that map it onto itself
@@ -239,11 +235,11 @@ namespace CASM {
 
   /// Returns 'converter' which converts site_occupant indices to 'mol_list' indices:
   ///   mol_list_index = converter[basis_site][site_occupant_index]
-  Array< Array<int> > get_index_converter(const Structure &struc, Array<Molecule> mol_list);
+  std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<Molecule> mol_list);
 
   /// Returns 'converter' which converts site_occupant indices to 'mol_name_list' indices:
   ///   mol_name_list_index = converter[basis_site][site_occupant_index]
-  Array< Array<int> > get_index_converter(const Structure &struc, Array<std::string> mol_name_list);
+  std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<std::string> mol_name_list);
 
 };
 

@@ -160,16 +160,16 @@ namespace CASM {
 
     /// set representation for SymOp corresponding to rep_ID
     void set_rep(Index rep_ID, const SymOpRepresentation &op_rep) const;
-    
+
     /// get pointer to matrix representation corresponding to rep_ID
     Eigen::MatrixXd const *get_matrix_rep(Index rep_ID) const;
-    
+
     /// get pointer to permutation representation corresponding to rep_ID
     Permutation const *get_permutation_rep(Index rep_ID) const;
-    
+
     /// get pointer to BasisPermute representation corresponding to rep_ID
-    Array<UnitCellCoord> const *get_basis_permute_rep(Index rep_ID) const;
-    
+    SymBasisPermute const *get_basis_permute_rep(Index rep_ID) const;
+
     /// get array of pointers to matrix representations for representations corresponding to rep_IDs
     Array<Eigen::MatrixXd const * > get_matrix_reps(Array<Index> rep_IDs) const;
 
@@ -290,11 +290,11 @@ namespace CASM {
 
     void from_json(const jsonParser &json);
   };
-  
+
 
   //SymOp rotation_op(const Vector3<double> &rotation_axis, const double rotation_angle, const Lattice &home);
   //SymOp rotation_op(const Eigen::Vector4d &rotation_params, const Lattice &home);
-  
+
 
   jsonParser &to_json(const SymOp &sym, jsonParser &json);
   void from_json(SymOp &sym, const jsonParser &json);

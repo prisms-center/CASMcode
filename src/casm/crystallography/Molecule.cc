@@ -2,6 +2,8 @@
 
 #include "casm/symmetry/SymOp.hh"
 
+#include "casm/casm_io/json_io/container.hh"
+
 namespace CASM {
 
 
@@ -287,7 +289,29 @@ namespace CASM {
   }
 
 
+  /// \brief Return an atomic Molecule with specified name and Lattice
+  Molecule make_atom(std::string atom_name, const Lattice &lat) {
+    Molecule atom(lat);
+    atom.name = atom_name;
+    atom.push_back(AtomPosition(0.0, 0.0, 0.0, atom.name, lat));
+    return atom;
+  }
 
+  /// \brief Return an vacancy Molecule with specified Lattice
+  Molecule make_vacancy(const Lattice &lat) {
+    return make_atom("Va", lat);
+  }
+
+  /// \brief Return true if Molecule name matches 'name', including Va name checks
+  ///
+  /// Equivalent to:
+  /// \code
+  /// ( (is_vacancy(mol.name) && is_vacancy(name)) || (mol.name == name) )
+  /// \endcode
+  ///
+  bool is_molecule_name(const Molecule &mol, std::string name) {
+    return (is_vacancy(mol.name) && is_vacancy(name)) || (mol.name == name);
+  }
 
   jsonParser &to_json(const Molecule &mol, jsonParser &json) {
     return mol.to_json(json);

@@ -31,21 +31,12 @@ namespace CASM {
       std::cerr << " is not empty. Clearing it anyways.\n";
       components.clear();
     }
-    Array< std::string> tocc; //holds a list of allowed_occupants at a site
-    for(Index i = 0; i < prim_struc->basis.size(); i++) {
-      //gets the list of occupants at a site in prim
-      tocc = prim_struc->basis[i].allowed_occupants();
-      //Ignore any sites that have no alloying on them
-      // if(tocc.size() == 1) {
-      //   continue;
-      // }
-      //Loop through all the allowed occupants, find the ones that are not in the list
-      for(Index j = 0; j < tocc.size(); j++) {
-        if(!components.contains(tocc[j])) {
-          components.push_back(tocc[j]);
-        }
-      }
+
+    auto struc_molecule = prim_struc->get_struc_molecule();
+    for(auto it = struc_molecule.begin(); it != struc_molecule.end(); ++it) {
+      components.push_back(it->name);
     }
+
     return;
   }
 

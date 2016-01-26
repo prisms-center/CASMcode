@@ -7,6 +7,7 @@
 #include "casm/clex/Clexulator.hh"
 #include "casm/crystallography/jsonStruc.hh"
 #include "casm/clex/ECIContainer.hh"
+#include "casm/casm_io/VaspIO.hh"
 
 namespace CASM {
 
@@ -173,18 +174,18 @@ namespace CASM {
   }
 
   //*********************************************************************************
-
+  /*
   void Configuration::set_reference(const Properties &ref) {
     prop_updated = true;
     reference = ref;
     delta = calculated - reference;
   }
-
+  */
   //*********************************************************************************
   void Configuration::set_calc_properties(const jsonParser &calc) {
     prop_updated = true;
     calculated = calc;
-    delta = calculated - reference;
+    //delta = calculated - reference;
   }
 
   //*********************************************************************************
@@ -231,10 +232,10 @@ namespace CASM {
 
     return success;
   }
-  
+
   //********** ACCESSORS ***********
 
-  const Lattice &Configuration::ideal_lattice()const{
+  const Lattice &Configuration::ideal_lattice()const {
     return get_supercell().get_real_super_lattice();
   }
 
@@ -247,6 +248,26 @@ namespace CASM {
   //*********************************************************************************
   std::string Configuration::name() const {
     return get_supercell().get_name() + "/" + get_id();
+  }
+
+  //*********************************************************************************
+  std::string Configuration::calc_status() const {
+    if(fs::exists(calc_status_path())) {
+      jsonParser json(calc_status_path());
+      if(json.contains("status"))
+        return json["status"].get<std::string>();
+    }
+    return("not_submitted");
+  }
+
+  //*********************************************************************************
+  std::string Configuration::failure_type() const {
+    if(fs::exists(calc_status_path())) {
+      jsonParser json(calc_status_path());
+      if(json.contains("failure_type"))
+        return json["failure_type"].get<std::string>();
+    }
+    return("none");
   }
 
   //*********************************************************************************
@@ -306,21 +327,22 @@ namespace CASM {
   }
 
   //*********************************************************************************
-
+  /*
   const Properties &Configuration::ref_properties() const {
     return reference;
   }
-
+  */
   //*********************************************************************************
   const Properties &Configuration::calc_properties() const {
     return calculated;
   }
 
   //*********************************************************************************
+  /*
   const DeltaProperties &Configuration::delta_properties() const {
     return delta;
   }
-
+  */
   //*********************************************************************************
 
   const Properties &Configuration::generated_properties() const {
@@ -363,7 +385,7 @@ namespace CASM {
     Index i;
 
     // [basis_site][site_occupant_index]
-    Array< Array<int> > convert = get_index_converter(get_prim(), get_prim().get_struc_molecule());
+    auto convert = get_index_converter(get_prim(), get_prim().get_struc_molecule());
 
     // create an array to count the number of each molecule
     Array< Array<int> > sublat_num_each_molecule;
@@ -391,7 +413,7 @@ namespace CASM {
     int num_atoms = 0;
 
     // need to know which molecules are vacancies
-    Array<Molecule> struc_molecule = get_prim().get_struc_molecule();
+    auto struc_molecule = get_prim().get_struc_molecule();
 
     Index i;
     for(i = 0; i < struc_molecule.size(); i++) {
@@ -453,7 +475,7 @@ namespace CASM {
     std::vector<std::string> v_components = get_primclex().composition_axes().components();
 
     // copy to CASM::Array
-    Array<std::string> components;
+    std::vector<std::string> components;
     for(auto it = v_components.cbegin(); it != v_components.cend(); ++it) {
       components.push_back(*it);
     }
@@ -462,7 +484,7 @@ namespace CASM {
     Eigen::VectorXd num_each_component = Eigen::VectorXd::Zero(components.size());
 
     // [basis_site][site_occupant_index]
-    Array< Array<int> > convert = get_index_converter(get_prim(), components);
+    auto convert = get_index_converter(get_prim(), components);
 
     // count the number of each component
     for(Index i = 0; i < size(); i++) {
@@ -533,6 +555,7 @@ namespace CASM {
     if(prop_updated) {
       write_properties(json_prop);
     }
+
     //std::cout << "finish Configuration::write()" << std::endl;
 
     return json;
@@ -619,7 +642,7 @@ namespace CASM {
     }
 
     stream << get_supercell().get_name() << "/" << get_id() << term;
-    ref_lat.print(stream,prec);
+    ref_lat.print(stream, prec);
     stream << mol_name_list.str() << term;
     stream << num_mol_list.str() << term;
 
@@ -627,6 +650,7 @@ namespace CASM {
     stream << COORD_MODE::NAME(mode) << term;
 
     stream << coord_stream.str();
+
     return;
   }
 
@@ -671,7 +695,7 @@ namespace CASM {
   void Configuration::print_composition(std::ostream &stream) const {
 
     Array<double> comp = get_composition();
-    Array<Molecule> mol_list = get_prim().get_struc_molecule();
+    auto mol_list = get_prim().get_struc_molecule();
 
     for(Index i = 0; i < mol_list.size(); i++) {
       if(mol_list[i].is_vacancy()) {
@@ -782,7 +806,6 @@ namespace CASM {
 
     read_properties(json_prop);
 
-
     //std::cout << "finish Configuration::read()" << std::endl;
   }
 
@@ -820,14 +843,14 @@ namespace CASM {
   /// Calculates delta = calculated - reference
   ///
   void Configuration::read_properties(const jsonParser &json) {
-
+    /*
     if(!json.contains("ref")) {
       generate_reference();
     }
     else {
       from_json(reference, json["ref"]);
     }
-
+    */
     if(json.contains("calc")) {
       from_json(calculated, json["calc"]);
     }
@@ -836,7 +859,7 @@ namespace CASM {
       from_json(generated, json["gen"]);
     }
 
-    delta = calculated - reference;
+    //    delta = calculated - reference;
 
   }
 
@@ -848,6 +871,11 @@ namespace CASM {
   //*********************************************************************************
   fs::path Configuration::calc_properties_path() const {
     return get_primclex().dir().calculated_properties(name(), get_primclex().settings().calctype());
+  }
+
+  //*********************************************************************************
+  fs::path Configuration::calc_status_path() const {
+    return get_primclex().dir().calc_status(name(), get_primclex().settings().calctype());
   }
 
   //*********************************************************************************
@@ -910,6 +938,7 @@ namespace CASM {
     if(occupation() != get_supercell().vacant()) {
       std::stringstream ss;
       print(ss, FRAC);
+
       json["pos"] = ss.str();
     }
     else {
@@ -961,7 +990,7 @@ namespace CASM {
     else {
       json["calc"] = calculated;
     }
-
+    /*
     if(reference.size() == 0) {
       json.erase("ref");
     }
@@ -975,7 +1004,7 @@ namespace CASM {
     else {
       json["delta"] = delta;
     }
-
+    */
     if(generated.size() == 0) {
       json.erase("gen");
     }
@@ -988,7 +1017,7 @@ namespace CASM {
   }
 
   //*********************************************************************************
-
+  /*
   /// Generate reference Properties from param_composition and reference states
   ///   For now only linear interpolation
   void Configuration::generate_reference() {
@@ -1033,12 +1062,14 @@ namespace CASM {
 
     //std::cout << "finish Configuration::generate_reference()" << std::endl;
   }
-
+  */
   //*********************************************************************************
+  /*
   /// Checks that all needed reference state files exist
   bool Configuration::reference_states_exist() const {
 
-    if(!get_primclex().has_composition_axes()) {
+      if(!get_primclex().has_composition_axes() ||
+         !get_primclex().has_chemical_reference()) {
       return false;
     }
 
@@ -1051,8 +1082,9 @@ namespace CASM {
     }
     return true;
   }
-
+  */
   //*********************************************************************************
+  /*
   /// Sets the arrays with the reference state properties read from the CASM directory tree
   ///
   void Configuration::read_reference_states(Array<Properties> &ref_state_prop, Array<Eigen::VectorXd> &ref_state_comp) const {
@@ -1102,8 +1134,9 @@ namespace CASM {
     }
 
   }
-
+  */
   //*********************************************************************************
+  /*
   /// Read in the 'most local' reference states: either configuration, supercell, or root reference
   ///   All reference states should be at the same level, so we look for the "properties.ref.0.json" file
   fs::path Configuration::get_reference_state_dir() const {
@@ -1137,8 +1170,9 @@ namespace CASM {
     return ref_dir;
 
   }
-
+  */
   //*********************************************************************************
+  /*
   void Configuration::generate_reference_scalar(std::string propname, const Array<Properties> &ref_state_prop, const Array<Eigen::VectorXd> &ref_state_comp) {
 
     //std::cout << "begin generate_reference_scalar()" << std::endl;
@@ -1186,7 +1220,7 @@ namespace CASM {
 
     //std::cout << "finish generate_reference_scalar()" << std::endl;
   }
-
+  */
   //--------------------------------------------------------------------------------------------------
   //Structure Factor
   Eigen::VectorXd Configuration::get_struct_fact_intensities() const {
@@ -1197,7 +1231,7 @@ namespace CASM {
   }
 
   Eigen::VectorXd Configuration::get_struct_fact_intensities(const Eigen::VectorXd &component_intensities) const {
-    Array< Array<int> > convert = get_index_converter(get_prim(), get_prim().get_struc_molecule());
+    auto convert = get_index_converter(get_prim(), get_prim().get_struc_molecule());
     Eigen::VectorXd intensities(size());
     for(int i = 0; i < size(); i++) {
       intensities(i) = component_intensities(convert[get_b(i)][occ(i)]);
@@ -1296,91 +1330,215 @@ namespace CASM {
   /// In the future that shouldn't be necessary
   ///
   Correlation correlations(const Configuration &config, Clexulator &clexulator) {
-
     return correlations(config.configdof(), config.get_supercell(), clexulator);
   }
-  
+
   /// Returns parametric composition, as calculated using PrimClex::param_comp
-  Eigen::VectorXd comp(const Configuration& config) {
+  Eigen::VectorXd comp(const Configuration &config) {
     return config.get_param_composition();
   }
-  
-  /// \brief Returns the parametric composition
-  Eigen::VectorXd comp_n(const Configuration& config) {
+
+  /// \brief Returns the composition, as number of each species per unit cell
+  Eigen::VectorXd comp_n(const Configuration &config) {
     return config.get_num_each_component();
   }
-  
-  /// \brief Returns the composition as atom fraction, with [Va] = 0.0, in the order of Structure::get_struc_molecule
+
+  /// \brief Returns the vacancy composition, as number per unit cell
+  double n_vacancy(const Configuration &config) {
+    if(config.get_primclex().vacancy_allowed()) {
+      return comp_n(config)[config.get_primclex().vacancy_index()];
+    }
+    return 0.0;
+  }
+
+  /// \brief Returns the total number species per unit cell
+  ///
+  /// Equivalent to \code comp_n(config).sum() - n_vacancy(config) \endcode
+  double n_species(const Configuration &config) {
+    return comp_n(config).sum() - n_vacancy(config);
+  }
+
+  /// \brief Returns the composition as species fraction, with [Va] = 0.0, in the order of Structure::get_struc_molecule
   ///
   /// - Currently, this is really a Molecule fraction
-  Eigen::VectorXd species_frac(const Configuration& config) {
-    double sum = 0.0;
-    Array<Molecule> struc_molecule = config.get_prim().get_struc_molecule();
-    Eigen::VectorXd result = config.get_num_each_component();
-    for(int i=0; i<result.size(); ++i) {
-      if(!struc_molecule[i].is_vacancy()) {
-        sum += result(i);
-      }
-      else {
-        result(i) = 0.0;
-      }
+  Eigen::VectorXd species_frac(const Configuration &config) {
+    Eigen::VectorXd v = comp_n(config);
+    if(config.get_primclex().vacancy_allowed()) {
+      v(config.get_primclex().vacancy_index()) = 0.0;
     }
-    return result/sum;
+    return v / v.sum();
   }
-  
+
   /// \brief Returns the composition as site fraction, in the order of Structure::get_struc_molecule
-  Eigen::VectorXd site_frac(const Configuration& config) {
-    return comp_n(config)/config.get_prim().basis.size();
+  Eigen::VectorXd site_frac(const Configuration &config) {
+    return comp_n(config) / config.get_prim().basis.size();
   }
-  
+
+  /// \brief Returns the relaxed energy, normalized per unit cell
+  double relaxed_energy(const Configuration &config) {
+    return config.calc_properties()["relaxed_energy"].get<double>();
+  }
+
+  /// \brief Returns the relaxed energy, normalized per species
+  double relaxed_energy_per_species(const Configuration &config) {
+    return relaxed_energy(config) / n_species(config);
+  }
+
+  /// \brief Returns the reference energy, normalized per unit cell
+  double reference_energy(const Configuration &config) {
+    return reference_energy_per_species(config) * n_species(config);
+  }
+
+  /// \brief Returns the reference energy, normalized per species
+  ///
+  /// - Currently, this is per Molecule
+  double reference_energy_per_species(const Configuration &config) {
+    return config.get_primclex().chemical_reference()(config);
+  }
+
   /// \brief Returns the formation energy, normalized per unit cell
-  double formation_energy(const Configuration& config) {
-    return config.delta_properties().contains("relaxed_energy") ? config.delta_properties()["relaxed_energy"].get<double>() : NAN;
+  double formation_energy(const Configuration &config) {
+    return relaxed_energy(config) - reference_energy(config);
   }
-  
-  /// \brief Returns the formation energy, normalized per atom
+
+  /// \brief Returns the formation energy, normalized per species
   ///
   /// - Currently, this is really a Molecule fraction
-  double formation_energy_per_species(const Configuration& config) {
-    double sum = 0.0;
-    Array<Molecule> struc_molecule = config.get_prim().get_struc_molecule();
-    Eigen::VectorXd comp_n = config.get_num_each_component();
-    for(int i=0; i<comp_n.size(); ++i) {
-      if(!struc_molecule[i].is_vacancy()) {
-        sum += comp_n(i);
-      }
-    }
-    return formation_energy(config)/sum;
+  double formation_energy_per_species(const Configuration &config) {
+    return formation_energy(config) / n_species(config);
   }
-  
+
   /// \brief Returns the formation energy, normalized per unit cell
-  double clex_formation_energy(const Configuration& config) {
+  double clex_formation_energy(const Configuration &config) {
     Clexulator clexulator = config.get_primclex().global_clexulator();
-    return config.get_primclex().global_eci("formation_energy")*correlations(config, clexulator);
+    return config.get_primclex().global_eci("formation_energy") * correlations(config, clexulator);
   }
-  
+
   /// \brief Returns the formation energy, normalized per unit cell
-  double clex_formation_energy_per_species(const Configuration& config) {
-    double sum = 0.0;
-    Array<Molecule> struc_molecule = config.get_prim().get_struc_molecule();
-    Eigen::VectorXd comp_n = config.get_num_each_component();
-    for(int i=0; i<comp_n.size(); ++i) {
-      if(!struc_molecule[i].is_vacancy()) {
-        sum += comp_n(i);
-      }
-    }
-    return clex_formation_energy(config)/sum;
+  double clex_formation_energy_per_species(const Configuration &config) {
+    return clex_formation_energy(config) / n_species(config);
   }
-  
+
   /// \brief Return true if all current properties have been been calculated for the configuration
-  bool is_calculated(const Configuration& config) {
+  bool is_calculated(const Configuration &config) {
     return std::all_of(config.get_primclex().get_curr_property().begin(),
                        config.get_primclex().get_curr_property().end(),
-                       [&](const std::string & key) {
-                         return config.calc_properties().contains(key);
-                       });
+    [&](const std::string & key) {
+      return config.calc_properties().contains(key);
+    });
   }
-  
+
+  /// \brief Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)
+  double rms_force(const Configuration &_config) {
+    return _config.calc_properties()["rms_force"].get<double>();
+  }
+
+  /// \brief Cost function that describes the degree to which basis sites have relaxed
+  double basis_deformation(const Configuration &_config) {
+    return _config.calc_properties()["basis_deformation"].get<double>();
+  }
+
+  /// \brief Cost function that describes the degree to which lattice has relaxed
+  double lattice_deformation(const Configuration &_config) {
+    return _config.calc_properties()["lattice_deformation"].get<double>();
+  }
+
+  /// \brief Change in volume due to relaxation, expressed as the ratio V/V_0
+  double volume_relaxation(const Configuration &_config) {
+    return _config.calc_properties()["volume_relaxation"].get<double>();
+  }
+
+  /// \brief returns true if _config describes primitive cell of the configuration it describes
+  bool is_primitive(const Configuration &_config) {
+    return _config.is_primitive(_config.get_supercell().permute_begin());
+  }
+
+  /// \brief returns true if _config no symmetry transformation applied to _config will increase its lexicographic order
+  bool is_canonical(const Configuration &_config) {
+    return _config.is_canonical(_config.get_supercell().permute_begin(), _config.get_supercell().permute_end());
+  }
+
+  bool has_relaxed_energy(const Configuration &_config) {
+    return _config.calc_properties().contains("relaxed_energy");
+  }
+
+  bool has_reference_energy(const Configuration &_config) {
+    return _config.get_primclex().has_chemical_reference();
+  }
+
+  bool has_formation_energy(const Configuration &_config) {
+    return has_relaxed_energy(_config) && has_reference_energy(_config);
+  }
+
+  bool has_rms_force(const Configuration &_config) {
+    return _config.calc_properties().contains("rms_force");
+  }
+
+  bool has_basis_deformation(const Configuration &_config) {
+    return _config.calc_properties().contains("basis_deformation");
+  }
+
+  bool has_lattice_deformation(const Configuration &_config) {
+    return _config.calc_properties().contains("lattice_deformation");
+  }
+
+  bool has_volume_relaxation(const Configuration &_config) {
+    return _config.calc_properties().contains("volume_relaxation");
+  }
+
+
+  /// \brief Application results in filling supercell 'scel' with reoriented motif, op*motif
+  ///
+  /// Currently only applies to occupation
+  Configuration &apply(const ConfigTransform &f, Configuration &motif) {
+
+    Configuration result(f.scel);
+    const PrimClex &primclex = motif.get_primclex();
+    const Structure &prim = motif.get_prim();
+
+    Lattice oriented_motif_lat = copy_apply(f.op, motif.get_supercell().get_real_super_lattice());
+
+    // Create a PrimGrid linking the prim and the oriented motif each to the supercell
+    // So we can tile the decoration of the motif config onto the supercell correctly
+    PrimGrid prim_grid(oriented_motif_lat, f.scel.get_real_super_lattice());
+
+    // For each site in the motif, re-orient and then translate by all possible
+    // translations from prim_grid, index in the mc_prim_prim, and use index to
+    // assign occupation
+
+    // std::vector of occupations in the MonteCarlo cell
+    Array<int> tscel_occ(motif.size()*prim_grid.size());
+
+    // for each site in motif
+    for(Index s = 0 ; s < motif.size() ; s++) {
+
+      // apply symmetry to re-orient and find unit cell coord
+      UnitCellCoord oriented_uccoord = copy_apply(f.op, motif.get_uccoord(s), prim);
+
+      // for each unit cell of the oriented motif in the supercell, copy the occupation
+      for(Index i = 0 ; i < prim_grid.size() ; i++) {
+
+
+
+        //tscel_occ[f.scel.find(prim_grid.uccoord(i)) = motif.occ(s);
+
+        Index prim_motif_tile_ind = f.scel.prim_grid().find(prim_grid.coord(i, PRIM));
+
+        UnitCellCoord mc_uccoord =  f.scel.prim_grid().uccoord(prim_motif_tile_ind) + oriented_uccoord.unitcell();
+        // b-index when doing UnitCellCoord addition is ambiguous; explicitly set it
+        mc_uccoord.sublat() = oriented_uccoord.sublat();
+
+        Index occ_ind = f.scel.find(mc_uccoord);
+
+        tscel_occ[occ_ind] = motif.occ(s);
+      }
+    }
+
+    result.set_occupation(tscel_occ);
+
+    return motif = result;
+
+  }
 
 }
 

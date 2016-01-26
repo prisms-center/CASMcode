@@ -37,6 +37,7 @@
 #include "run.hh"
 #include "import.hh"
 #include "monte.hh"
+#include "view.hh"
 
 using namespace CASM;
 
@@ -63,6 +64,7 @@ int print_casm_help(std::ostream &out) {
     "  fit",
     "  query",
     "  import",
+    "  view",
     "  monte"
   };
 
@@ -211,9 +213,17 @@ int main(int argc, char *argv[]) {
   else if(args[1] == "monte") {
     retcode = monte_command(argc, argv);
   }
+  else if(args[1] == "view") {
+    retcode = view_command(argc, argv);
+  }
   else {
     print_casm_help(std::cout);
-    retcode = 1;
+    if(!help) {
+      retcode = ERR_INVALID_ARG;
+    }
+    else {
+      retcode = 0;
+    }
   }
 
 
@@ -247,6 +257,7 @@ int main(int argc, char *argv[]) {
 #include "query.cc"
 #include "import.cc"
 #include "monte.cc"
+#include "view.cc"
 
 
 

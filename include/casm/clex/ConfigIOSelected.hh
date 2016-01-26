@@ -6,36 +6,57 @@
 #include "casm/clex/ConfigSelection.hh"
 
 namespace CASM {
-  namespace ConfigIO_impl {
-    class SelectedConfigFormatter : public BaseDatumFormatter<Configuration> {
-    public:
-      SelectedConfigFormatter()
-        : BaseDatumFormatter<Configuration>("selected_in", "Returns true if configuration is specified in given selection (default MASTER). Ex: 'selected_in(myselection.txt)'") {}
+  namespace ConfigIO {
 
-      SelectedConfigFormatter(const SelectedConfigFormatter &) = default;
+    /// \brief Returns true if configuration is specified in given selection (default: MASTER)
+    ///
+    /// Ex: 'selected_in', 'selected_in(myselection.txt)'
+    ///
+    /// \ingroup ConfigIO
+    ///
+    class Selected : public BooleanAttribute<Configuration> {
+    public:
+      Selected()
+        : BooleanAttribute<Configuration>("selected_in", "Returns true if configuration is specified in given selection (default MASTER). Ex: 'selected_in(myselection.txt)'") {}
+
+      Selected(const Selected &) = default;
 
       template<bool IsConst>
-      SelectedConfigFormatter(ConfigSelection<IsConst> _selection):
-        BaseDatumFormatter<Configuration>("selected_in", "Returns true if configuration is specified in given selection (default MASTER). Ex: 'selected_in(myselection.txt)'"),
+      Selected(ConfigSelection<IsConst> _selection):
+        BooleanAttribute<Configuration>("selected_in", "Returns true if configuration is specified in given selection (default MASTER). Ex: 'selected_in(myselection.txt)'"),
         m_selection(_selection) {}
 
-      BaseDatumFormatter<Configuration> *clone() const {
-        return new SelectedConfigFormatter(*this);
+
+      // --- Required implementations -----------
+
+      std::unique_ptr<Selected> clone() const {
+        return std::unique_ptr<Selected>(this->_clone());
       }
+
+      bool evaluate(const Configuration &_config) const override;
+
+
+      // --- Specialized implementation -----------
 
       void init(const Configuration &_tmplt) const override;
 
       std::string short_header(const Configuration &_config) const override;
+      /*
+            void inject(const Configuration &_config, DataStream &_stream, Index) const override;
 
-      void inject(const Configuration &_config, DataStream &_stream, Index) const override;
+            void print(const Configuration &_config, std::ostream &_stream, Index) const override;
 
-      void print(const Configuration &_config, std::ostream &_stream, Index) const override;
-
-      jsonParser &to_json(const Configuration &_config, jsonParser &json)const override;
-
-      bool parse_args(const std::string &args);
+            jsonParser &to_json(const Configuration &_config, jsonParser &json)const override;
+      */
+      bool parse_args(const std::string &args) override;
 
     private:
+
+      /// \brief Clone
+      Selected *_clone() const override {
+        return new Selected(*this);
+      }
+
       mutable std::string m_selection_name;
       mutable ConstConfigSelection m_selection;
     };

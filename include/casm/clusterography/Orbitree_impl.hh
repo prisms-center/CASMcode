@@ -2630,22 +2630,29 @@ namespace CASM {
         << std::setw(12) << "length"
         << std::setw(8) << "hierarchy" << std::endl;
 
+
+    int clustcount = 0;
     for(Index i = 0; i < size(); i++) {
       for(Index j = 0; j < size(i); j++) {
-        out << std::left
-            << std::setw(8) << index[i][j]
-            << std::setw(8) << 0
-            << std::setw(8) << orbit(i, j).size()
-            << std::setw(8) << orbit(i, j).prototype.size()
-            << std::setw(12) << orbit(i, j).prototype.max_length();
 
-        // print hierarchy
-        out << std::left << std::setw(8) << 0;
-        for(Index k = 0; k < subcluster[ index[i][j]].size(); k++) {
+        for(Index k = 0; k < prototype(i, j).clust_basis.size(); k++, clustcount++) {
+
           out << std::left
-              << std::setw(8) << subcluster[ index[i][j] ][k];
+              //<< std::setw(8) << index[i][j]
+              << std::setw(8) << clustcount
+              << std::setw(8) << 0
+              << std::setw(8) << orbit(i, j).size()
+              << std::setw(8) << orbit(i, j).prototype.size()
+              << std::setw(12) << orbit(i, j).prototype.max_length();
+
+          // print hierarchy
+          out << std::left << std::setw(8) << 0;
+          for(Index l = 0; l < subcluster[ index[i][j]].size(); l++) {
+            out << std::left
+                << std::setw(8) << subcluster[ index[i][j] ][l];
+          }
+          out << '\n' << std::flush;
         }
-        out << '\n' << std::flush;
 
       }
     }
@@ -2761,106 +2768,95 @@ namespace CASM {
 
     // Initializing data
     Array<ClustType> proto_clust;
-    ClustType temp_clust(lattice);
-    COORD_TYPE json_coord_mode;
-    Vector3<double> json_coord;
-    Array< Vector3<double> > json_coord_list;
-    int custom_max_num_sites = 0;
-    int custom_min_num_components = 100;
 
     const jsonParser &orbit_specs = json;
 
-    if(verbose) std::cout << "Number of clusters found: " << orbit_specs.size() << std::endl;
     //proto_clust.resize(json["clusters"].size(), temp_clust);
     for(int i = 0; i < orbit_specs.size(); i++) {
-      try {
-        std::string in_mode = orbit_specs[i]["coordinate_mode"].template get<std::string>();
-        if(in_mode == "Cartesian") {
-          json_coord_mode = CART;
+
+      std::string in_mode = orbit_specs[i]["coordinate_mode"].template get<std::string>();
+
+      COORD_TYPE json_coord_mode;
+      if(in_mode == "Cartesian") {
+        json_coord_mode = CART;
+      }
+      else if(in_mode == "Direct" || in_mode == "Fractional") {
+        json_coord_mode = FRAC;
+      }
+      else if(in_mode != "Integral") {
+        std::cerr << "ERROR in GenericOrbitree<ClustType>::read_custom_clusters_from_json. "
+                  << "The specified coord_mode for custom orbit " << i << " is invalid." << std::endl;
+        std::cerr << "Prototype: \n" << orbit_specs[i] << std::endl;
+        std::cerr << "coordinate_mode: " << in_mode << std::endl;
+        std::cerr << "Valid options are: 'Cartesian', 'Direct', or 'Fractional'" << std::endl;
+        throw std::runtime_error(
+          "ERROR in GenericOrbitree<ClustType>::read_custom_clusters_from_json\n"
+          "  Invalid: \"coordinate_mode\": Expected one of \"Fractional\", \"Direct\", or \"Cartesian\""
+        );
+      }
+
+      const jsonParser &proto_json = orbit_specs[i]["prototype"];
+      ClustType temp_clust(lattice);
+      if(in_mode == "Integral") {
+        for(int j = 0; j < proto_json.size(); j++) {
+          temp_clust.push_back(struc.get_site(proto_json[j].get<UnitCellCoord>()));
         }
-        else if(in_mode == "Direct" || in_mode == "Fractional") {
-          json_coord_mode = FRAC;
-        }
-        else {
-          std::cerr << "ERROR in GenericOrbitree<ClustType>::read_custom_clusters_from_json. "
-                    << "The specified coord_mode for orbit " << i << " is invalid. Please try to re-read"
-                    << " the file after correcting the error." << std::endl;
-          throw 2000;
+      }
+      else {
+
+        Array< Vector3<double> > json_coord_list;
+        json_coord_list.clear();
+        for(int j = 0; j < proto_json.size(); j++) {
+          json_coord_list.push_back(proto_json[j].get< Vector3<double> >());
         }
 
-      }
-      catch(int exception_code) {
-        if(exception_code != 2000)
-          std::cerr << "ERROR in GenericOrbitree<ClustType>::read_custom_clusters_from_json. You have not specified 'coordinate_mode'"
-                    << " for orbit " << i << " in your json. Please correct it and try to re-read the file. Returning after"
-                    << " throwing an error" << std::endl;
-        throw;
-      }
-      try {
-        json_coord_list.clear();
-        if(verbose) std::cout << "Cluster " << i << " contains " << orbit_specs[i]["prototype"].size() << "sites" << std::endl;
-        //json_coord_list.resize(json["clusters"][i]["coordinate"].size());
-        for(int j = 0; j < orbit_specs[i]["prototype"].size(); j++) {
-          json_coord_list.push_back(orbit_specs[i]["prototype"][j].get< Vector3<double> >());
-        }
-        if(verbose) std::cout << "Added the clusters into the temporary array. The array is:" << std::endl << json_coord_list << std::endl;
-      }
-      catch(...) {
-        std::cerr << "ERROR in GenericOrbitree<ClustType>::read_custom_clusters_from_json. Ran into some trouble reading"
-                  << " the coordinates of orbit " << i << " in your json. Please correct it and try to re-read the file. "
-                  << "Returning after throwing an error" << std::endl;
-        throw;
-      }
-      if(verbose) std::cout << "Loaded all the sites in the cluster into memory, converting into CASM data structures" << std::endl;
-      //Looking for the correct sites in the PRIM and loading in the correct information
-      temp_clust.clear();
-      for(int j = 0; j < json_coord_list.size(); j++) {
-        //Converting to a Coordinate
-        Coordinate tcoord(json_coord_list[j], struc.lattice(), json_coord_mode);
-        int site_loc = struc.find(tcoord);
-        if(site_loc != struc.basis.size()) {
-          temp_clust.push_back(struc.basis[site_loc]);
-          temp_clust.back()(CART) = tcoord(CART);
+        //Looking for the correct sites in the PRIM and loading in the correct information
+        for(int j = 0; j < json_coord_list.size(); j++) {
+          //Converting to a Coordinate
+          Coordinate tcoord(json_coord_list[j], struc.lattice(), json_coord_mode);
+          int site_loc = struc.find(tcoord);
+          if(site_loc != struc.basis.size()) {
+            temp_clust.push_back(struc.basis[site_loc]);
+            temp_clust.back()(CART) = tcoord(CART);
+          }
+          else {
+            std::cerr << "ERROR in GenericOrbitree<ClustType>::read_custom_clusters_from_json. "
+                      << "Coordinate in custom orbit " << i << " does not match any site in the prim." << std::endl;
+            std::cerr << "Prototype: \n" << orbit_specs[i] << std::endl;
+            std::cerr << "coordinate_mode: " << in_mode << std::endl;
+            std::cerr << "Could not find: " << tcoord(json_coord_mode) << std::endl;
+            throw std::runtime_error(
+              "ERROR in GenericOrbitree<ClustType>::read_custom_clusters_from_json\n"
+              "  Coordinate does not match any site in the prim."
+            );
+          }
         }
       }
       temp_clust.calc_properties();
       proto_clust.push_back(temp_clust);
-      if(verbose) std::cout << "Finished initializing cluster " << i << std::endl;
-      //Checking to see if the cluster is already in the Orbitree
     }
 
     //Add the empty cluster if the Orbitree is empty
     if(this->size() == 0) {
       (*this).push_back(GenericOrbitBranch<ClustType>(lattice));
-      max_num_sites = 0;
-      min_num_components = 1 ; //IS THIS THE BEST WAY TO DO IT?
-      std::cerr << "WARNING in GenericOrbitree<ClustType>::read_custom_cluster_from_json your Orbitree "
-                << "is not initialized completely, (ie) max_num_sites was not set and the Orbitree did "
-                << "not contain the empty cluster. This has been fixed for you, but you may want to "
-                << "initialize it properly in the future before reading in custom clusters" << std::endl;
     }
 
-    if(verbose) std::cout << "Finished loading all the cluster data. Trying to import it into Orbitree" << std::endl;
-    if(verbose) std::cout << "The number of sites in this Orbitree is:" << max_num_sites << std::endl;
+    // update max_num_sites / min_num_components based on custom input
     for(int i = 0; i < proto_clust.size(); i++) {
-      if(proto_clust[i].size() > custom_max_num_sites)
-        custom_max_num_sites = proto_clust[i].size();
+      if(proto_clust[i].size() > max_num_sites)
+        max_num_sites = proto_clust[i].size();
       for(int j = 0; j < proto_clust[i].size(); j++) {
-        if(proto_clust[i][j].allowed_occupants().size() < custom_min_num_components)
-          custom_min_num_components = proto_clust[i][j].allowed_occupants().size();
+        if(proto_clust[i][j].allowed_occupants().size() < min_num_components)
+          min_num_components = proto_clust[i][j].allowed_occupants().size();
       }
     }
-    if(custom_min_num_components < min_num_components)
-      min_num_components = custom_min_num_components;
-    if(verbose) std::cout << "The min_num_components is: " << custom_min_num_components << std::endl;
-    if(verbose) std::cout << "The max num sites in the custom clusters is:" << custom_max_num_sites << std::endl;
-    while(size() <= custom_max_num_sites) {
+
+    while(size() <= max_num_sites) {
       push_back(GenericOrbitBranch<ClustType>(lattice));
-      max_num_sites = custom_max_num_sites;
     }
 
     for(int i = 0; i < proto_clust.size(); i++) {
-      std::cout << "Working on cluster: " << i << std::endl;
+      //std::cout << "Working on cluster: " << i << std::endl;
       if(contains(proto_clust[i])) {
         std::cout << "Proto_clust: " << std::endl;
         proto_clust[i].print(std::cout);
@@ -2874,19 +2870,13 @@ namespace CASM {
       //std::cout << "        get_cluster_symmetry()" << std::endl;
       at(proto_clust[i].size()).back().get_cluster_symmetry();
 
-      try {
-        bool include_subclusters;
-        // check if should include_subclusters.  default is true
-        orbit_specs[i].get_else(include_subclusters, "include_subclusters", true);
-        if(include_subclusters) {
-          add_subclusters(at(proto_clust[i].size()).back().prototype, struc, verbose);
-        }
+      bool include_subclusters;
+      // check if should include_subclusters.  default is true
+      orbit_specs[i].get_else(include_subclusters, "include_subclusters", true);
+      if(include_subclusters) {
+        add_subclusters(at(proto_clust[i].size()).back().prototype, struc, verbose);
       }
-      catch(...) {
-        std::cerr << "ERROR in GenericOrbitree<ClustType>::read_custom_clusters_from_json reading " <<
-                  "\"include_subclusters\"." << std::endl;
-        throw;
-      }
+
     }
     sort();
     get_index();
@@ -3047,11 +3037,11 @@ namespace CASM {
 
   template<typename ClustType>
   void GenericOrbitree<ClustType>::_populate_site_bases() {
-    std::cout << "bspecs() is \n" << bspecs() << "\n";
+
     if(bspecs()["basis_functions"]["site_basis_functions"].is_string()) {
       std::string func_type = bspecs()["basis_functions"]["site_basis_functions"].template get<std::string>();
 
-      std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
+      //std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
       switch(std::tolower(func_type[0])) {
       case 'c': { //chebychev
         for(Index i = 0; i < _asym_unit().size(); i++) {
@@ -3162,7 +3152,7 @@ namespace CASM {
           m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind());
       }
 
-      std::cout << "Using concentration-optimized site basis functions." << std::endl << std::endl;
+      //std::cout << "Using concentration-optimized site basis functions." << std::endl << std::endl;
     }
   }
 

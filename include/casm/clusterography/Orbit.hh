@@ -122,10 +122,12 @@ namespace CASM {
     /// returns Array of std::string, each of which is
     ReturnArray<std::string> orbit_function_cpp_strings(const Array<FunctionVisitor *> &labelers);
 
-    ReturnArray<std::string> flower_function_cpp_strings(const Array<FunctionVisitor *> &labelers, Index b_index);
+    /// nlist_index is the index into the nlist for the site the flower centers on
+    ReturnArray<std::string> flower_function_cpp_strings(const Array<FunctionVisitor *> &labelers, Index nlist_index);
 
     /// b_index is the basis site index, f_index is the index of the configurational site basis function in Site::occupant_basis
-    ReturnArray<std::string> delta_occfunc_flower_function_cpp_strings(BasisSet site_basis, const Array<FunctionVisitor *> &labelers, Index b_index, Index f_index);
+    /// nlist_index is the index into the nlist for the site the flower centers on
+    ReturnArray<std::string> delta_occfunc_flower_function_cpp_strings(BasisSet site_basis, const Array<FunctionVisitor *> &labelers, Index nlist_index, Index b_index, Index f_index);
 
     ///Calculates the ECI tensors of the clusters in the orbit.
     void calc_eci(Index rank);

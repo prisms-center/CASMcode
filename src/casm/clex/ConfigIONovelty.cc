@@ -8,9 +8,11 @@
 
 namespace CASM {
 
-  namespace ConfigIO_impl {
-    void NoveltyConfigFormatter::init(const Configuration &_tmplt) const {
-      m_format = ConfigIOParser::parse("corr");
+  namespace ConfigIO {
+    void Novelty::init(const Configuration &_tmplt) const {
+
+      m_format.clear();
+      m_format.push_back(Corr());
 
       // setup DataStream
       //    -- fills a matrix so that each row corresponds to a configuration and column corresponds to correlation value
@@ -34,7 +36,7 @@ namespace CASM {
     }
 
     //****************************************************************************************
-    bool NoveltyConfigFormatter::parse_args(const std::string &args) {
+    bool Novelty::parse_args(const std::string &args) {
       if(m_selection.size())
         return false;
       if(args.empty())
@@ -44,37 +46,38 @@ namespace CASM {
       return true;
     }
 
-    //****************************************************************************************
+    // ****************************************************************************************
 
-    std::string NoveltyConfigFormatter::short_header(const Configuration &_tmplt) const {
+    std::string Novelty::short_header(const Configuration &_tmplt) const {
       return name() + "(" + (m_selection.empty() ? "MASTER" : m_selection) + ")";
     }
 
+    // ****************************************************************************************
+    /*
+        void Novelty::inject(const Configuration &_config, DataStream &_stream, Index) const {
+          _stream << _evaluate(_config);
+        }
+
+        // ****************************************************************************************
+
+        void Novelty::print(const Configuration &_config, std::ostream &_stream, Index) const {
+          _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+          _stream.precision(8);
+
+          _stream << _evaluate(_config);
+        }
+
+        // ****************************************************************************************
+
+        jsonParser &Novelty::to_json(const Configuration &_config, jsonParser &json)const {
+          json = _evaluate(_config);
+          return json;
+        }
+    */
+
     //****************************************************************************************
 
-    void NoveltyConfigFormatter::inject(const Configuration &_config, DataStream &_stream, Index) const {
-      _stream << _evaluate(_config);
-    }
-
-    //****************************************************************************************
-
-    void NoveltyConfigFormatter::print(const Configuration &_config, std::ostream &_stream, Index) const {
-      _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      _stream.precision(8);
-
-      _stream << _evaluate(_config);
-    }
-
-    //****************************************************************************************
-
-    jsonParser &NoveltyConfigFormatter::to_json(const Configuration &_config, jsonParser &json)const {
-      json = _evaluate(_config);
-      return json;
-    }
-
-    //****************************************************************************************
-
-    double NoveltyConfigFormatter::_evaluate(const Configuration &_config) const {
+    double Novelty::evaluate(const Configuration &_config) const {
       VectorDataStream<double> tstr;
       tstr << m_format(_config);
       Eigen::Map<const Eigen::VectorXd> corr(tstr.vector().data(), tstr.vector().size());

@@ -689,6 +689,8 @@ void ECISet::fit(const Correlation &_corr, const EnergySet &nrg_set, bool &_sing
 
   rms = sqrt(rms / Nstruct);
   cv = sqrt(cv / Nstruct);
+  if(std::isnan(cv))
+    cv = inf;
 
   //std::cout << " set eci values" << std::endl;
   set_values(ECI);

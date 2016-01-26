@@ -9,8 +9,8 @@
 
 namespace CASM {
 
-  namespace ConfigIO_impl {
-    bool StrucScoreConfigFormatter::parse_args(const std::string &args) {
+  namespace ConfigIO {
+    bool StrucScore::parse_args(const std::string &args) {
       std::vector<std::string> splt_vec;
       double _lattice_weight(0.5);
       boost::split(splt_vec, args, boost::is_any_of(", "), boost::token_compress_on);
@@ -51,13 +51,13 @@ namespace CASM {
 
     //****************************************************************************************
 
-    bool StrucScoreConfigFormatter::validate(const Configuration &_config) const {
+    bool StrucScore::validate(const Configuration &_config) const {
       return fs::exists(_config.calc_properties_path());
     }
 
     //****************************************************************************************
 
-    std::string StrucScoreConfigFormatter::long_header(const Configuration &_tmplt) const {
+    std::string StrucScore::long_header(const Configuration &_tmplt) const {
       std::stringstream t_ss;
       for(Index i = 0; i < m_prop_names.size(); i++)
         t_ss << "    " << name() << '(' << m_prim_path.string() << ',' << m_prop_names[i] << ',' << m_configmapper.lattice_weight() << ')';
@@ -67,7 +67,7 @@ namespace CASM {
 
     //****************************************************************************************
 
-    std::string StrucScoreConfigFormatter::short_header(const Configuration &_tmplt) const {
+    std::string StrucScore::short_header(const Configuration &_tmplt) const {
       std::stringstream t_ss;
       t_ss << name() << '(' << m_prim_path.string();
       for(Index i = 0; i < m_prop_names.size(); i++)
@@ -77,12 +77,20 @@ namespace CASM {
     }
 
     //****************************************************************************************
-    std::vector<double> StrucScoreConfigFormatter::_evaluate(const Configuration &_config)const {
+    Eigen::VectorXd StrucScore::evaluate(const Configuration &_config)const {
       std::vector<double> result_vec;
 
       BasicStructure<Site> relaxed_struc;
       ConfigDoF mapped_configdof;
       Lattice mapped_lat;
+
+      auto lambda = [&](const std::vector<double> &result_vec) {
+        Eigen::VectorXd res = Eigen::VectorXd::Zero(result_vec.size());
+        for(Index i = 0; i < res.size(); ++i) {
+          res(i) = result_vec[i];
+        }
+        return res;
+      };
 
       from_json(simple_json(relaxed_struc, "relaxed_"), jsonParser(_config.calc_properties_path()));
 
@@ -90,7 +98,8 @@ namespace CASM {
         for(Index i = 0; i < m_prop_names.size(); i++) {
           result_vec.push_back(1e9);
         }
-        return result_vec;
+
+        return lambda(result_vec);
       }
       for(Index i = 0; i < m_prop_names.size(); i++) {
         if(m_prop_names[i] == "basis_score")
@@ -107,45 +116,47 @@ namespace CASM {
         }
       }
 
-      return result_vec;
+      return lambda(result_vec);
     }
-    //****************************************************************************************
-    void StrucScoreConfigFormatter::inject(const Configuration &_config, DataStream &_stream, Index) const {
-      if(!validate(_config)) {
-        _stream << DataStream::failbit << std::vector<double>(m_prop_names.size(), NAN);
-      }
-      else {
-        _stream << _evaluate(_config);
-      }
-    }
+    /*
+        // ****************************************************************************************
+        void StrucScore::inject(const Configuration &_config, DataStream &_stream, Index) const {
+          if(!validate(_config)) {
+            _stream << DataStream::failbit << std::vector<double>(m_prop_names.size(), NAN);
+          }
+          else {
+            _stream << _evaluate(_config);
+          }
+        }
 
-    //****************************************************************************************
+        // ****************************************************************************************
 
-    void StrucScoreConfigFormatter::print(const Configuration &_config, std::ostream &_stream, Index) const {
-      _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      _stream.precision(8);
+        void StrucScore::print(const Configuration &_config, std::ostream &_stream, Index) const {
+          _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+          _stream.precision(8);
 
-      if(!validate(_config)) {
-        for(auto it = m_prop_names.cbegin(); it != m_prop_names.cend(); ++it)
-          _stream << "     unknown";
-      }
+          if(!validate(_config)) {
+            for(auto it = m_prop_names.cbegin(); it != m_prop_names.cend(); ++it)
+              _stream << "     unknown";
+          }
 
-      else {
-        std::vector<double> result_vec(_evaluate(_config));
-        for(auto it = result_vec.cbegin(); it != result_vec.cend(); ++it)
-          _stream << "     " << *it;
-      }
+          else {
+            std::vector<double> result_vec(_evaluate(_config));
+            for(auto it = result_vec.cbegin(); it != result_vec.cend(); ++it)
+              _stream << "     " << *it;
+          }
 
-    }
+        }
 
-    //****************************************************************************************
+        // ****************************************************************************************
 
-    jsonParser &StrucScoreConfigFormatter::to_json(const Configuration &_config, jsonParser &json)const {
-      if(validate(_config))
-        json = _evaluate(_config);
+        jsonParser &StrucScore::to_json(const Configuration &_config, jsonParser &json)const {
+          if(validate(_config))
+            json = _evaluate(_config);
 
-      return json;
-    }
+          return json;
+        }
+    */
   }
 }
 

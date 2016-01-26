@@ -159,38 +159,32 @@ Instructions for volume relaxed VASP energies:                         \n\n\
     std::cout << "NEXT STEPS:\n\n";
 
     std::cout <<
-              "Set reference states\n\
-                                                                       \n\
-- References states can be set at the project, supercell or            \n\
-  configuration level. For a particular configuration (SCEL, CONFIGID),\n\
-  the following directories are checked for reference state files:     \n\
-  1) $ROOT/training_data/$SCELNAME/$CONFIGID/settings/$CURR_CALCTYPE/$CURR_REF\n\
-  2) $ROOT/training_data/$SCELNAME/settings/$CURR_CALCTYPE/$CURR_REF  \n\
-  3) $ROOT/training_data/settings/$CURR_CALCTYPE/$CURR_REF             \n\
-- Reference state files are named 'properties.ref_state.X.json', where \n\
-  X runs from 0 to the number of independent compositions              \n\
-- A reference property for a particular configuration is calculated    \n\
-  by linearly interpolating the value of the property in the reference \n\
-  states to the parametric composition of the configuration.           \n\
-                                                                       \n\
-Several options are possible:                                          \n\
-- Execute 'casm ref --set --auto' to automatically set project level   \n\
-  references using configurations with extreme parametric compositions.\n\
-                                                                       \n\
-- Execute 'casm ref --set --index REFID --s SCEL --c CONFIGID' to set a\n\
-  particular project level reference (REFID) to be the value of the    \n\
-  properties calculated for configuration (SCEL, CONFIGID).            \n\
-                                                                       \n\
-- Configuration or supercell level references can be set manually by   \n\
-  including 'properties.ref_state.X.json' files in the appropriate     \n\
-  directories (#1 and #2 above).                                       \n\
-                                                                       \n\
-- Execute 'casm ref --update' to update calculated reference properties\n\
-  if you have set reference state files manually.\n\n";
+              "Set chemical reference\n"
+              "                                                                       \n"
+              "- The chemical reference determines the value of the formation energy  \n"
+              "  and chemical potentials calculated by CASM.                          \n\n"
 
-    std::cout <<
-              "- See 'casm format' for a description and location of   \n\
-   the 'properties.ref_state.X.json' files.\n\n";
+              "- Chemical references states are set by specifying a hyperplane in     \n"
+              "  energy/atom - composition (as atom_frac) space. This may be done by  \n"
+              "  specifying the hyperplane explicitly, or by specifying several       \n"
+              "  reference states with energy/atom and composition (as atom_frac) for \n"
+              "  enough states to span the composition space of the allowed occupants \n"
+              "  specified in the prim. For consistency with other CASM projects,     \n"
+              "  additional reference states extending to other compositional         \n"
+              "  dimensions may be included also.                                     \n\n"
+
+              "- Execute 'casm ref --set-auto' to automatically set project level     \n"
+              "  references using DFT calculated energies from configurations with    \n"
+              "  extreme parametric compositions.\n\n"
+
+              "- Execute 'casm ref --set '...JSON...'' to manually set the project    \n"
+              "  level reference energies. See 'casm ref --help' for more information.\n\n"
+
+              "- It is also possible to specialize the chemical reference at the      \n"
+              "  supercell or configuration level.                                    \n\n"
+
+              "- See 'casm format' for a description and location of the              \n"
+              "  'chemical_reference.json' file.                                      \n\n";
 
   }
 
@@ -551,54 +545,24 @@ Instructions for fitting ECI:                                          \n\n\
     std::cout << std::endl;
 
 
-    /// 5) Choose reference states
+    /// 5) Choose chemical reference
 
-    std::cout << "5) Choose reference states\n";
-    std::cout << "- Current reference set: " << primclex.get_curr_ref() << "\n";
-    std::cout << "- Configurations with / without references: " << std::flush;
-
-    int N_ref_set = 0;
-    int N_ref_unset = 0;
-    for(int i = 0; i < primclex.get_supercell_list().size(); i++) {
-      const Supercell &scel = primclex.get_supercell(i);
-      for(int j = 0; j < scel.get_config_list().size(); j++) {
-        fs::path dir = scel.get_config(j).get_reference_state_dir();
-        if(dir == fs::path()) {
-          N_ref_unset++;
-        }
-        else {
-          N_ref_set++;
-        }
-      }
+    std::cout << "5) Choose chemical reference\n";
+    std::cout << "- Chemical reference set: ";
+    if(primclex.has_chemical_reference()) {
+      std::cout << "TRUE" << "\n";
     }
+    else {
+      std::cout << "FALSE" << "\n";
+    }
+    std::cout << "\n";
 
-    std::cout << N_ref_set << " / " << N_ref_unset << std::endl << std::endl;
+    if(primclex.has_chemical_reference()) {
+      std::cout << "To show the chemical reference, run 'casm ref -d'\n\n";
+    }
+    else {
 
-    if(N_ref_unset > 0) {
-
-      if(vm.count("details")) {
-
-        if(N_ref_set == 0) {
-          std::cout << "No references are set." << std::endl << std::endl;
-        }
-        else {
-          std::cout << "Configurations missing references:" << std::endl;
-
-          for(int i = 0; i < primclex.get_supercell_list().size(); i++) {
-            const Supercell &scel = primclex.get_supercell(i);
-            for(int j = 0; j < scel.get_config_list().size(); j++) {
-              fs::path dir = scel.get_config(j).get_reference_state_dir();
-              if(dir == fs::path()) {
-                std::cout << std::setw(30) << scel.get_name() << "/" << j << std::endl;
-              }
-            }
-          }
-          std::cout << std::endl;
-        }
-      }
-      else {
-        std::cout << "For a list of configurations missing references, run 'casm status -d'\n\n";
-      }
+      std::cout << "No chemical reference set." << std::endl << std::endl;
 
       if(vm.count("next")) {
         std::cout << "\n#################################\n\n";

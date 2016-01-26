@@ -4,6 +4,7 @@
 
 // currently still relies on this for getting standard composition axes
 #include "casm/clex/ParamComposition.hh"
+#include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
 
@@ -16,12 +17,12 @@ namespace CASM {
   CompositionConverter::size_type CompositionConverter::independent_compositions() const {
     return m_to_x.rows();
   }
-  
+
   /// \brief Composition variable names: "a", "b", ...
-  std::string CompositionConverter::comp_var(size_type i) const {
-    return std::string(1, (char) (i + (int) 'a'));
+  std::string CompositionConverter::comp_var(size_type i) {
+    return std::string(1, (char)(i + (int) 'a'));
   }
-  
+
 
   /// \brief The order of components in mol composition vectors
   std::vector<std::string> CompositionConverter::components() const {
@@ -77,13 +78,13 @@ namespace CASM {
   /// - so dnj/dxi = m_to_n(j,i)
   /// - that means m_to_mu_x == m_to_n.transpose()
   ///
-  Eigen::VectorXd CompositionConverter::param_mu(const Eigen::VectorXd atomic_mu) const {
-    return m_to_n.transpose() * atomic_mu;
+  Eigen::VectorXd CompositionConverter::param_chem_pot(const Eigen::VectorXd chem_pot) const {
+    return m_to_n.transpose() * chem_pot;
   }
 
   /// \brief Convert dG/dx to dG/dn
-  Eigen::VectorXd CompositionConverter::atomic_mu(const Eigen::VectorXd param_mu) const {
-    return m_to_x.transpose() * param_mu;
+  Eigen::VectorXd CompositionConverter::chem_pot(const Eigen::VectorXd param_chem_pot) const {
+    return m_to_x.transpose() * param_chem_pot;
   }
 
 
@@ -126,7 +127,7 @@ namespace CASM {
           tstr << '-';
         // print absolute value of x if |x|!=1
         if(!almost_equal(std::abs(m_to_n(i, j)), 1.0))
-          tstr << m_to_n(i, j);
+          tstr << std::abs(m_to_n(i, j));
         //print variable ('a','b',etc...)
         tstr << (char)(composition_var + j);
 
@@ -212,6 +213,25 @@ namespace CASM {
     return tstr.str();
 
   }
+
+  /// \brief Return formula for param_chem_pot->chem_pot
+  std::string CompositionConverter::chem_pot_formula(int indent) const {
+    // chem_pot = m_to_x.transpose() * param_chem_pot;
+    std::stringstream ss;
+    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", std::string(' ', indent + 2) + "[", "]");
+    ss << std::string(' ', indent) << "chem_pot = X * param_chem_pot, where X = \n" << m_to_x.transpose().format(CleanFmt);
+    return ss.str();
+  }
+
+  /// \brief Return formula for chem_pot->param_chem_pot
+  std::string CompositionConverter::param_chem_pot_formula(int indent) const {
+    // param_chem_pot = m_to_n.transpose() * chem_pot;
+    std::stringstream ss;
+    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", std::string(' ', indent + 2) + "[", "]");
+    ss << std::string(' ', indent) << "param_chem_pot = X * chem_pot, where X = \n" << m_to_n.transpose().format(CleanFmt);
+    return ss.str();
+  }
+
 
   /// \brief Return formula for origin
   std::string CompositionConverter::origin_formula() const {
@@ -389,6 +409,55 @@ namespace CASM {
       /// re-throw exceptions
       throw;
     }
+  }
+
+  /// \brief Generate a column matrix containing all the possible molecular end members
+  ///
+  /// \param prim A Structure to find the end members of (does
+  ///             not check if it is actually primitive).
+  ///
+  /// - Each column corresponds to a point in composition space (specifying number
+  ///   of each Molecule per prim)
+  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule,
+  ///   with units number Molecule / prim
+  Eigen::MatrixXd end_members(const Structure &prim) {
+    ParamComposition param_comp(prim);
+    param_comp.generate_components();
+    param_comp.generate_sublattice_map();
+    param_comp.generate_prim_end_members();
+    return param_comp.get_prim_end_members().transpose();
+  }
+
+  /// \brief Return the composition space of a Structure
+  ///
+  /// \param prim A Structure to find the standard composition space for (does
+  ///             not check if it is actually primitive).
+  /// \param tol tolerance for checking rank (default 1e-14)
+  ///
+  /// - Each column corresponds to an orthogonal vector in composition space
+  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule,
+  ///   with units number Molecule / prim
+  Eigen::MatrixXd composition_space(const Structure &prim, double tol) {
+    auto Qr = end_members(prim).fullPivHouseholderQr();
+    Qr.setThreshold(tol);
+    auto Q = Qr.matrixQ();
+    return Q.leftCols(Qr.rank());
+  }
+
+  /// \brief Return the null composition space of a Structure
+  ///
+  /// \param prim A Structure to find the standard composition space for (does
+  ///             not check if it is actually primitive).
+  /// \param tol tolerance for checking rank (default 1e-14)
+  ///
+  /// - Each column corresponds to an orthogonal vector in composition space
+  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule,
+  ///   with units number Molecule / prim
+  Eigen::MatrixXd null_composition_space(const Structure &prim, double tol) {
+    auto Qr = end_members(prim).fullPivHouseholderQr();
+    Qr.setThreshold(tol);
+    auto Q = Qr.matrixQ();
+    return Q.rightCols(Q.cols() - Qr.rank());
   }
 
 }

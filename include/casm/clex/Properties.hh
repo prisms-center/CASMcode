@@ -51,6 +51,7 @@ namespace CASM {
       config_index_to_bijk is ordered. The Coordinates are in
       Angstroms.
 
+    \ingroup Configuration
    */
   //***************************************************************
 

@@ -12,88 +12,6 @@
 
 namespace CASM {
 
-
-  /*****************************************************************/
-  // GENERATE_NEIGHBOR_LIST_REGULAR
-  // This generates the neighbor list for any non-diagonal supercell
-  // of the PRIM. It first generates the mapping between bijk and
-  // l(i.e. given bijk, we will know what its linear index is).
-  // It then assigns the jth neighbor to the linear index in linear_
-  // index[b][i+delta_i][j+delta_j][k+delta_k]
-  //
-  // ARN 082513
-  /*****************************************************************/
-
-  void Supercell::generate_neighbor_list() {
-
-    nlists.resize(num_sites());
-
-    //Use the bijk->l map to populate the linear index
-    for(Index i = 0; i < num_sites(); i++) {
-
-      nlists[i].resize(get_primclex().get_nlist_size());
-
-      for(Index j = 0; j < nlists[i].size(); j++) {
-
-        const UnitCellCoord &delta = get_primclex().get_nlist_uccoord(j);
-
-        nlists[i][j] = find(uccoord(i) + delta);
-
-      }
-    }
-
-    return;
-  }
-
-  /**
-   * If the size of *this is smaller than the CSPECS used to generate
-   * the neighbor list, then the neighborhood will overlap with its
-   * periodic image, causing issues with anything involving a
-   * Clexulator.
-   *
-   * This routine returns true if such a problem occurs.
-   * If any of the first N indices of any basis site neighbor list
-   * is repeated, then that means the neighborhood is larger than
-   * *this, where N is the number of sites in the primitive.
-   * It should only be necessary to check one of each primitive basis
-   * atom in the supercell basis.
-   */
-
-  bool Supercell::neighbor_image_overlaps() const {
-    //loop over one of each basis type in the supercell
-    //for(Index i = 0; i < num_sites(); i = i + volume()) {
-    for(Index i = 0; i < num_sites(); i++) {
-      //loop over the first N sites in the list of site i and check for repeated values
-      for(Index j = 0; j < basis_size(); j++) {
-        //if the neighbor appears more than once, then you have periodicity issues
-        if(nlists[i].reverse_find(nlists[i][j]) != j) {
-          return true;
-        }
-      }
-
-    }
-
-    return false;
-  }
-
-  /*****************************************************************/
-  /*
-    void Supercell::populate_correlations(Clexulator &clexulator) {
-      for(Index i = 0; i < config_list.size(); i++) {
-        config_list[i].set_correlations(clexulator);
-      }
-      return;
-    }
-
-
-    void Supercell::populate_correlations(Clexulator &clexulator, const Index &config_num) {
-
-      config_list[config_num].set_correlations(clexulator);
-
-    }
-  */
-  /*****************************************************************/
-
   //Given a Site and tolerance, return linear index into Configuration
   //   This may be slow, first converts Site -> UnitCellCoord,
   //   then finds UnitCellCoord in config_index_to_bijk
@@ -157,6 +75,25 @@ namespace CASM {
     return primclex->get_prim();
   }
 
+  /// \brief Returns the SuperNeighborList
+  const SuperNeighborList &Supercell::nlist() const {
+
+    // if any additions to the prim nlist, must update the super nlist
+    if(get_primclex().nlist().size() != m_nlist_size_at_construction) {
+      m_nlist.unique().reset();
+    }
+
+    // lazy construction of neighbor list
+    if(!m_nlist) {
+      m_nlist_size_at_construction = get_primclex().nlist().size();
+      m_nlist = notstd::make_cloneable<SuperNeighborList>(
+                  m_prim_grid,
+                  get_primclex().nlist()
+                );
+    }
+    return *m_nlist;
+  };
+
   /*****************************************************************/
 
   // begin and end iterators for iterating over configurations
@@ -176,26 +113,6 @@ namespace CASM {
   Supercell::config_const_iterator Supercell::config_cend() const {
     return ++config_const_iterator(primclex, m_id, config_list.size() - 1);
   }
-
-  /*
-  // begin and end iterators for iterating over transitions
-  Supercell::trans_iterator Supercell::trans_begin() {
-    return trans_iterator( primclex, m_id, 0);
-  }
-
-  Supercell::trans_iterator Supercell::config_end() {
-    return ++trans_iterator( primclex, m_id, trans_list.size()-1);
-  }
-
-  // begin and end const_iterators for iterating over transitions
-  Supercell::trans_const_iterator Supercell::trans_cbegin() const {
-    return trans_const_iterator( primclex, m_id, 0);
-  }
-
-  Supercell::trans_const_iterator Supercell::trans_cend() const {
-    return ++trans_const_iterator( primclex, m_id, trans_list.size()-1);
-  }
-  */
 
   /*****************************************************************/
 
@@ -256,19 +173,6 @@ namespace CASM {
     }
   }
 
-  //*******************************************************************************
-  /*
-  void Supercell::enumerate_all_occupation_configurations() {
-    Configuration init_config(*this), final_config(*this);
-
-    init_config.set_occupation(Array<int>(num_sites(), 0));
-    final_config.set_occupation(max_allowed_occupation());
-
-    ConfigEnumAllOccupations<Configuration> enumerator(init_config, final_config, permute_begin(), permute_end());
-    add_enumerated_configurations(enumerator);
-
-  }
-  */
   //*******************************************************************************
   /**
    *   enumerate_perturb_configurations, using filename of 'background' structure
@@ -712,7 +616,7 @@ namespace CASM {
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
     m_perm_symrep_ID(-1),
     name(RHS.name),
-    nlists(RHS.nlists),
+    m_nlist(RHS.m_nlist),
     config_list(RHS.config_list),
     transf_mat(RHS.transf_mat),
     scaling(RHS.scaling),
@@ -733,7 +637,7 @@ namespace CASM {
     generate_name();
     //    fill_reciprocal_supercell();
   }
-  
+
   //*******************************************************************************
 
   Supercell::Supercell(PrimClex *_prim, const Matrix3<int> &transf_mat_init) :
@@ -1106,23 +1010,6 @@ namespace CASM {
     }
     return superstructure(config_list[config_index]);
   }
-
-  //***********************************************************
-  /**  Returns a Structure equivalent to the Supercell
-   *  - basis sites are ordered to agree with Supercell::config_index_to_bijk
-   *  - occupation set to config
-   *  - prim set to the new Structure, not the (*primclex).prim
-   */
-  //***********************************************************
-  /*
-  Structure Supercell::structure(const Configuration &config) const {
-    Structure superstruc = superstructure(config);
-    Lattice lat(superstruc.lattice().coord_trans(FRAC));
-    superstruc.set_lattice(lat, CART);
-
-    return superstruc;
-  }
-  */
 
   //***********************************************************
   /**  Returns an Array<int> consistent with

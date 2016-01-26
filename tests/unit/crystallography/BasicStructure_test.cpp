@@ -6,6 +6,8 @@
 
 /// What is being used to test it:
 #include "casm/crystallography/Site.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/casm_io/VaspIO.hh"
 
 using namespace CASM;
 
@@ -92,7 +94,7 @@ void prim2_read_test(BasicStructure<Site> &struc) {
   }
 
   // ordering on FCC motif
-   MasterSymGroup factor_grp;
+  MasterSymGroup factor_grp;
   struc.generate_factor_group(factor_grp, tol);
   BOOST_CHECK_EQUAL(16, factor_grp.size());
 }
@@ -154,7 +156,7 @@ void pos1_read_test(BasicStructure<Site> &struc) {
   }
 
   // FCC structure
-   MasterSymGroup factor_grp;
+  MasterSymGroup factor_grp;
   struc.generate_factor_group(factor_grp, tol);
   BOOST_CHECK_EQUAL(16, factor_grp.size());
 }
@@ -171,28 +173,12 @@ BOOST_AUTO_TEST_CASE(PRIM1Test) {
 
   // Write test PRIM back out
   fs::path tmp_file = testdir / "PRIM1_out";
-  fs::ofstream sout(tmp_file);
-  struc.print(sout);
-  sout.close();
+  write_prim(struc, tmp_file, FRAC);
 
   // Read new file and run tests again
-  BasicStructure<Site> struc2(fs::path(testdir / "PRIM1_out"));
+  BasicStructure<Site> struc2(read_prim(tmp_file));
   prim1_read_test(struc2);
-  
-  
-  // Write test PRIM to stringstream
-  std::stringstream ss;
-  struc.print(ss);
-  
-  std::istringstream iss(ss.str());
-  
-  // Read from stringstream and run tests again
-  BasicStructure<Site> struc3;
-  struc3.read(iss);
-  
-  prim1_read_test(struc3);
-  
-  
+
 }
 
 BOOST_AUTO_TEST_CASE(PRIM2Test) {
@@ -202,17 +188,6 @@ BOOST_AUTO_TEST_CASE(PRIM2Test) {
   // Read in test PRIM and run tests
   BasicStructure<Site> struc(fs::path(testdir / "PRIM2"));
   prim2_read_test(struc);
-
-  // Write test PRIM back out, including occupant values
-  fs::path tmp_file = testdir / "PRIM2_out";
-  fs::ofstream sout(tmp_file);
-  struc.print_occ(sout);
-  sout.close();
-
-  // Read new file and run tests again
-  BasicStructure<Site> struc2(fs::path(testdir / "PRIM2_out"));
-  prim2_read_test(struc2);
-
 }
 
 BOOST_AUTO_TEST_CASE(POS1Test) {
@@ -226,7 +201,9 @@ BOOST_AUTO_TEST_CASE(POS1Test) {
   // Write test PRIM back out
   fs::path tmp_file = testdir / "POS1_out";
   fs::ofstream sout(tmp_file);
-  struc.print(sout);
+  VaspIO::PrintPOSCAR printer(struc);
+  printer.set_append_atom_names_off();
+  printer.print(sout);
   sout.close();
 
   // Read new file and run tests again
@@ -246,13 +223,13 @@ BOOST_AUTO_TEST_CASE(POS1Vasp5Test) {
   // Write test PRIM back out
   fs::path tmp_file = testdir / "POS1_vasp5_out";
   fs::ofstream sout(tmp_file);
-  struc.print5(sout);
+  VaspIO::PrintPOSCAR(struc).print(sout);
   sout.close();
 
   // Read new file and run tests again
   BasicStructure<Site> struc2(fs::path(testdir / "POS1_vasp5_out"));
   pos1_read_test(struc2);
-  
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -4,7 +4,11 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/clex/CompositionConverter.hh"
+#include "casm/clex/ChemicalReference.hh"
+
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/clex.hh"
+#include "casm/casm_io/SafeOfstream.hh"
 
 namespace CASM {
 
@@ -104,7 +108,7 @@ namespace CASM {
           tMol.push_back(AtomPosition(0, 0, 0, occ_name[i], prim.lattice()));
           tocc.push_back(tMol);
         }
-        site.set_site_occupant(MoleculeOccupant("occupation", tocc));
+        site.set_site_occupant(MoleculeOccupant(tocc));
         site.set_occ_value(0);
 
         // add site to prim
@@ -249,6 +253,84 @@ namespace CASM {
     json["character_table"] = grp.get_character_table();
   }
 
+
+  // --------- ChemicalReference IO Declarations --------------------------------------------------
+
+  ChemicalReference read_chemical_reference(fs::path filename, const Structure &prim, double tol = 1e-14);
+
+  ChemicalReference read_chemical_reference(const jsonParser &json, const Structure &prim, double tol = 1e-14);
+
+  void write_chemical_reference(const ChemicalReference &chem_ref, fs::path filename);
+
+  void write_chemical_reference(const ChemicalReference &chem_ref, jsonParser &json);
+
+
+  // --------- ChemicalReference IO Definitions --------------------------------------------------
+
+  /// \brief Read chemical reference states from JSON file
+  ///
+  /// See documentation in related function for expected form of the JSON
+  inline ChemicalReference read_chemical_reference(fs::path filename,
+                                                   const Structure &prim,
+                                                   double tol) {
+    try {
+      jsonParser json(filename);
+      return read_chemical_reference(json, prim, tol);
+    }
+    catch(...) {
+      std::cerr << "Error reading chemical reference states from " << filename << std::endl;
+      /// re-throw exceptions
+      throw;
+    }
+  }
+
+  /// \brief Read chemical reference states from JSON
+  ///
+  /// Example expected form:
+  /// \code
+  /// {
+  ///   "chemical_reference" : {
+  ///     "global" : ...,
+  ///     "supercell": {
+  ///       "SCELX": ...,
+  ///       "SCELY": ...
+  ///     },
+  ///     "config": {
+  ///       "SCELX/I": ...,
+  ///       "SCELY/J": ...
+  ///     }
+  ///   }
+  /// }
+  /// \endcode
+  ///
+  /// See one_chemical_reference_from_json for documentation of the \code {...} \endcode expected form.
+  inline ChemicalReference read_chemical_reference(const jsonParser &json,
+                                                   const Structure &prim,
+                                                   double tol) {
+
+    if(json.find("chemical_reference") == json.end()) {
+      throw std::runtime_error("Error reading chemical reference states: Expected \"chemical_reference\" entry");
+    }
+
+    return jsonConstructor<ChemicalReference>::from_json(json["chemical_reference"], prim, tol);
+
+  }
+
+  inline void write_chemical_reference(const ChemicalReference &chem_ref, fs::path filename) {
+    SafeOfstream outfile;
+    outfile.open(filename);
+
+    jsonParser json;
+    write_chemical_reference(chem_ref, json);
+    json.print(outfile.ofstream());
+
+    outfile.close();
+  }
+
+  inline void write_chemical_reference(const ChemicalReference &chem_ref, jsonParser &json) {
+    json.put_obj();
+    to_json(chem_ref, json["chemical_reference"]);
+  }
 
 
   // --------- CompositionAxes Declarations --------------------------------------------------

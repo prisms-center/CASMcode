@@ -1,6 +1,7 @@
 #include "casm/symmetry/SymPermutation.hh"
 
 #include "casm/container/Permutation.hh"
+#include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
 
@@ -60,7 +61,7 @@ namespace CASM {
       CASM::from_json(rep_ID, json["rep_ID"]);
 
       CASM::from_json(m_permute, json["m_permute"]);
-      Eigen::from_json(m_mat, json["m_mat"]);
+      CASM::from_json(m_mat, json["m_mat"]);
     }
     catch(...) {
       /// re-throw exceptions
