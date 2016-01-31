@@ -1,6 +1,59 @@
 import casm
-import os, subprocess, pandas, json
-import StringIO
+import os, subprocess, json
+import ctypes, glob
+
+if 'LIBCASM' in os.environ:
+  libname = os.environ['LIBCASM']
+elif 'CASMPREFIX' in os.environ:
+  libname = glob.glob(os.path.join(os.environ['CASMPREFIX'], 'lib', 'libcasm.*'))[0]
+else:
+  libname = glob.glob(os.path.join('usr', 'local', 'lib', 'libcasm.*'))[0]
+lib_casm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
+
+if 'LIBCCASM' in os.environ:
+  libname = os.environ['LIBCCASM']
+elif 'CASMPREFIX' in os.environ:
+  libname = glob.glob(os.path.join(os.environ['CASMPREFIX'], 'lib', 'libccasm.*'))[0]
+else:
+  libname = glob.glob(os.path.join('usr', 'local', 'lib', 'libccasm.*'))[0]
+lib_ccasm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
+
+#### Argument types
+lib_ccasm.STDOUT.restype = ctypes.c_void_p
+
+
+lib_ccasm.STDERR.restype = ctypes.c_void_p
+
+
+lib_ccasm.nullstream_new.restype = ctypes.c_void_p
+
+lib_ccasm.nullstream_delete.argtypes = [ctypes.c_void_p]
+lib_ccasm.nullstream_delete.restype = None
+
+
+lib_ccasm.ostringstream_new.restype = ctypes.c_void_p
+
+lib_ccasm.ostringstream_delete.argtypes = [ctypes.c_void_p]
+lib_ccasm.ostringstream_delete.restype = None
+
+lib_ccasm.ostringstream_size.argtypes = [ctypes.c_void_p]
+lib_ccasm.ostringstream_size.restype = ctypes.c_ulong
+
+lib_ccasm.ostringstream_strcpy.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_char)]
+lib_ccasm.ostringstream_strcpy.restype = ctypes.POINTER(ctypes.c_char)
+
+
+lib_ccasm.primclex_new.argtypes = [ctypes.c_char_p, ctypes.c_void_p]
+lib_ccasm.primclex_new.restype = ctypes.c_void_p
+
+lib_ccasm.primclex_delete.argtypes = [ctypes.c_void_p]
+lib_ccasm.primclex_delete.restype = None
+
+lib_ccasm.primclex_check.argtypes = [ctypes.c_void_p]
+lib_ccasm.primclex_check.restype = None
+
+lib_ccasm.query.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+# default lib_ccasm.query.restype
 
 
 class ProjectSettings(object):
@@ -20,9 +73,9 @@ class ProjectSettings(object):
             path: path to CASM project (Default=None, uses project containing current directory). 
 
         """
-        if path == None:
-          if casm.project_path(path) == None:
-            if path == None:
+        if path is None:
+          if casm.project_path(path) is None:
+            if path is None:
               raise Exception("No CASM project found using " + os.getcwd())
             else:
               raise Exception("No CASM project found using " + path)
@@ -93,9 +146,9 @@ class DirectoryStructure(object):
             path: path to CASM project (Default=None, uses project containing current directory). 
 
         """
-        if path == None:
-          if casm.project_path(path) == None:
-            if path == None:
+        if path is None:
+          if casm.project_path(path) is None:
+            if path is None:
               raise Exception("No CASM project found using " + os.getcwd())
             else:
               raise Exception("No CASM project found using " + path)
@@ -270,7 +323,7 @@ class DirectoryStructure(object):
 
     def eci(self, clex, calctype, ref, bset, eci):
       """Returns path to eci.json"""
-      return os.path.join(self.eci_dir(clex, calctype, ref, bset, eci), "eci.out")
+      return os.path.join(self.eci_dir(clex, calctype, ref, bset, eci), "eci.json")
 
 
     # private:
@@ -315,68 +368,85 @@ class DirectoryStructure(object):
 class Project(object):
     """The Project class contains information about a CASM project
     """
-    def __init__(self, path=None):
-        """
-        Construct a CASM Project representation.
+    def __init__(self, path=None, casm_exe=None):
+      """
+      Construct a CASM Project representation.
 
-        Args:
-            path: path to CASM project (Default=None, uses project containing current directory). 
-
-        """
-        if path == None:
-          if casm.project_path(path) == None:
-            if path == None:
-              raise Exception("No CASM project found using " + os.getcwd())
-            else:
-              raise Exception("No CASM project found using " + path)
-        self.path = casm.project_path(path)
-        self.dir = DirectoryStructure(path)
-        self.settings = ProjectSettings(path)
+      Args:
+          path: path to CASM project (Default=None, uses project containing 
+            current directory). 
+          case_exe: CASM executable to use for command line interface. (Default
+            uses $CASM if it exists in the environment, else "casm")
+      """
+      # set path to this CASM project
+      if path is None:
+        if casm.project_path(path) is None:
+          if path is None:
+            raise Exception("No CASM project found using " + os.getcwd())
+          else:
+            raise Exception("No CASM project found using " + path)
+      
+      # set executable name
+      if casm_exe is None:
+        if "CASM" in os.environ:
+          casm_exe = os.environ["CASM"]
+        else:
+          casm_exe = "casm"
+      
+      self.path = casm.project_path(path)
+      self.dir = DirectoryStructure(path)
+      self.settings = ProjectSettings(path)
+      self.casm_exe = casm_exe
+      
+      # will hold a ctypes.c_void_p when loading CASM project into memory
+      self._ptr = None
+    
+    
+    def __del__(self):
+      self.__unload()
+    
+    
+    def __load(self, streamptr=None):
+      """
+      Explicitly load CASM project into memory.
+      """
+      if self._ptr is None:
+        if streamptr is None:
+          streamptr = lib_ccasm.STDOUT()
+        self._ptr = lib_ccasm.primclex_new(self.path, streamptr)
+    
+    
+    def __unload(self):
+      """
+      Explicitly unload CASM project from memory.
+      """
+      if self._ptr is not None:
+        lib_ccasm.primclex_delete(self._ptr)
+        self._ptr = None
+        
+    
+    def data(self):
+      """
+      Returns a 'ctypes.c_void_p' that points to a CASM project. (PrimClex)
+      """
+      self.__load()
+      lib_ccasm.primclex_check(self._ptr)
+      return self._ptr
+    
         
     def command(self, args, execcasm = "casm"):
-        """
-        Execute a command via the command line interface. 
-        
-        Args:
-          args: A string containing the command to be executed. Ex: "select --set-on -o /abspath/to/my_selection"
-        
-        Returns:
-          (stdout, stderr): The result of running the command via the command line iterface
-        """
-        cwd = os.getcwd()
-        os.chdir(self.path)
-        result = subprocess.Popen([execcasm] + args.split(' '),stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()
-        os.chdir(cwd)
-        return result
-
-    def query(self, columns, selection=None, verbatim=True):
-        """Return a pandas DataFrame object containing the output of a 
-           'casm query' command.
-           
-           Args:
-             columns: iterable of strings corresponding to 'casm query -k' args
-             proj: Project to query (default is CASM project containing the current working directory)
-             verbatim: if True, use 'casm query --verbatim' option (default is True)
-             selection: a Selection to query (default is "MASTER" selection)
-          
-           Returns:
-             data: a pandas DataFrame containing the query results
-        """
-        if selection == None:
-          selection = casm.project.Selection(self)
-        elif not isinstance(selection, casm.project.Selection):
-          raise Exception("Error, argument 'selection' must be None or a Selection")
-        
-        args = "query -k "
-        for k in columns:
-          args += k + " "
-        if selection.path != "MASTER":
-          args += " -c " + selection.path
-        if verbatim == True:
-          args += " -v"
-        args += " -o STDOUT"
-        
-        (stdout, stderr) = self.command(args)
-        
-        return pandas.read_csv(StringIO.StringIO(stdout[1:]), sep=' *') 
+      """
+      Execute a command via the command line interface. 
+      
+      Args:
+        args: A string containing the command to be executed. Ex: "select --set-on -o /abspath/to/my_selection"
+      
+      Returns:
+        (stdout, stderr): The result of running the command via the command line iterface
+      """
+      cwd = os.getcwd()
+      os.chdir(self.path)
+      result = subprocess.Popen([self.casm_exe] + args.split(),stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()
+      os.chdir(cwd)
+      return result
 

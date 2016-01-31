@@ -244,17 +244,6 @@ namespace CASM {
     return fs::create_directories(m_dir.ref_dir(calctype, ref));
   }
 
-  /// \brief Add calculation settings directory path, for supercell specific settings
-  bool ProjectSettings::new_supercell_ref_dir(std::string scelname, std::string calctype, std::string ref) const {
-    return fs::create_directories(m_dir.supercell_ref_dir(scelname, calctype, ref));
-  }
-
-  /// \brief Add calculation settings directory path, for configuration specific settings
-  bool ProjectSettings::new_configuration_ref_dir(std::string configname, std::string calctype, std::string ref) const {
-    return fs::create_directories(m_dir.configuration_ref_dir(configname, calctype, ref));
-  }
-
-
   /// \brief Add an eci directory
   bool ProjectSettings::new_eci_dir(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
     return fs::create_directories(m_dir.eci_dir(clex, calctype, ref, bset, eci));

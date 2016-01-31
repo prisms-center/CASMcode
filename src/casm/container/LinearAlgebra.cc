@@ -1,6 +1,6 @@
 #include "casm/container/LinearAlgebra.hh"
 
-#include <boost/math/special_functions/round.hpp>
+#include "casm/external/boost.hh"
 
 namespace CASM {
 

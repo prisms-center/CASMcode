@@ -1,9 +1,7 @@
 #ifndef PARAMCOMPOSITION_HH
 #define PARAMCOMPOSITION_HH
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-
+#include "casm/external/boost.hh"
 using boost::property_tree::ptree;
 
 #include "casm/container/Array.hh"

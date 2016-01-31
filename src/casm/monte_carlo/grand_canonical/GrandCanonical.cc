@@ -11,11 +11,17 @@ namespace CASM {
     m_site_swaps(supercell()),
     m_condition(settings.initial_conditions()),
     m_clexulator(primclex.global_clexulator()),
-    m_formation_energy_eci(primclex.dir().eci_out(settings.clex(), 
-                                                  settings.bset(), 
-                                                  settings.calctype(), 
-                                                  settings.ref(), 
-                                                  settings.eci())),
+    m_formation_energy_eci(
+      read_eci(
+        primclex.dir().eci(
+          settings.clex(), 
+          settings.bset(), 
+          settings.calctype(), 
+          settings.ref(), 
+          settings.eci()
+        )
+      )
+    ),
     m_all_correlations(settings.all_correlations()),
     m_event(primclex.composition_axes().components().size(), m_clexulator.corr_size()),
     m_minus_one_comp_n(-1.0/supercell().volume()),
@@ -110,9 +116,9 @@ namespace CASM {
         for(int i=0; i<m_event.dcorr().size(); ++i) {
           
           double eci = 0.0;
-          Index index = find_index(m_formation_energy_eci.eci_index_list(), i);
-          if(index != m_formation_energy_eci.eci_index_list().size()) {
-            eci = m_formation_energy_eci.eci_list()[index];
+          Index index = find_index(m_formation_energy_eci.index(), i);
+          if(index != m_formation_energy_eci.index().size()) {
+            eci = m_formation_energy_eci.value()[index];
           }
           
           sout << std::setw(12) << i 
@@ -122,10 +128,10 @@ namespace CASM {
         }
       }
       else {
-        for(int i=0; i<m_formation_energy_eci.eci_list().size(); ++i) {
-          sout << std::setw(12) << m_formation_energy_eci.eci_index_list()[i] 
-               << std::setw(16) << std::setprecision(8) << m_formation_energy_eci.eci_list()[i] 
-               << std::setw(16) << std::setprecision(8) << m_event.dcorr()[m_formation_energy_eci.eci_index_list()[i]] << std::endl;
+        for(int i=0; i<m_formation_energy_eci.value().size(); ++i) {
+          sout << std::setw(12) << m_formation_energy_eci.index()[i] 
+               << std::setw(16) << std::setprecision(8) << m_formation_energy_eci.value()[i] 
+               << std::setw(16) << std::setprecision(8) << m_event.dcorr()[m_formation_energy_eci.index()[i]] << std::endl;
         
         }
       }
@@ -327,12 +333,14 @@ namespace CASM {
                                          event.dcorr().data());
     }
     else {
+      auto begin = m_formation_energy_eci.index().data();
+      auto end = begin + m_formation_energy_eci.index().size();
       m_clexulator.calc_restricted_delta_point_corr(sublat,
                                                     current_occupant,
                                                     new_occupant,
                                                     event.dcorr().data(),
-                                                    m_formation_energy_eci.eci_index_list().begin(),
-                                                    m_formation_energy_eci.eci_index_list().end());
+                                                    begin,
+                                                    end);
     }
     event.dcorr() /= supercell().volume();
     

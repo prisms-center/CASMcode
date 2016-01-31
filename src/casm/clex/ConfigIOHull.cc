@@ -40,9 +40,10 @@ namespace CASM {
       "Whether configuration is a vertex on the formation_energy convex hull (i.e., is a groundstate)."
       " Only one Configuration out of a set that have identical or almost identical points in" 
       " composition/energy space will return true."
-      " Accepts arguments ($selection, $composition)."
+      " Accepts arguments ($selection, $composition, $tol)."
       " ($selection may be one of: <filename>, 'ALL', 'CALCULATED', 'MASTER' <--default)"
       " ($composition may be one of: 'comp', 'atom_frac' <--default)"
+      " ($tol: tolerance for detecting composition dimensionality, default=1e-8)"
       " For 'comp', 'formation_energy' is used. For 'atom_frac', 'formation_energy_per_atom' is used."
       " Ex: on_hull, on_hull(MASTER,comp).";
     
@@ -79,6 +80,7 @@ namespace CASM {
       " Accepts arguments ($selection,$composition)."
       " ($selection may be one of: <filename>, 'ALL', 'CALCULATED', 'MASTER' <--default)"
       " ($composition may be one of: 'comp', 'atom_frac' <--default)."
+      " ($tol: tolerance for detecting composition dimensionality, default=1e-8)"
       " For 'comp', 'formation_energy' is used. For 'atom_frac', 'formation_energy_per_atom' is used."
       " Ex: hull_dist, hull_dist(MASTER,comp).";
     
@@ -111,6 +113,7 @@ namespace CASM {
       " Accepts arguments ($selection,$composition)."
       " ($selection may be one of: <filename>, 'ALL', 'CALCULATED', 'MASTER' <--default)"
       " ($composition may be one of: 'comp', 'atom_frac' <--default)"
+      " ($tol: tolerance for detecting composition dimensionality, default=1e-8)"
       " For 'comp', 'clex(formation_energy)' is used. For 'atom_frac', 'clex(formation_energy_per_atom)' is used."
       " Ex: clex_hull_dist, clex_hull_dist(MASTER,comp).";
     
@@ -151,6 +154,7 @@ namespace CASM {
       " Accepts arguments ($selection,$composition)."
       " ($selection may be one of: <filename>, 'ALL', 'CALCULATED', 'MASTER' <--default)"
       " ($composition may be one of: 'comp', 'atom_frac' <--default)"
+      " ($tol: tolerance for detecting composition dimensionality, default=1e-8)"
       " For 'comp', 'clex(formation_energy)' is used. For 'atom_frac', 'clex(formation_energy_per_atom)' is used."
       " Ex: clex_hull_dist, clex_hull_dist(MASTER,comp).";
     

@@ -530,7 +530,7 @@ namespace CASM {
         else {
           for(Index f = 0; f < equiv.clust_basis.size(); f++) {
             std::stringstream fname;
-            fname << "phi_" << b << '_' << f;
+            fname << "\\phi_" << b << '_' << f;
             for(Index s = 0; s < site.site_occupant().size(); s++) {
               
               // "\phi_b_f": {"Zr":0.0, ...}
@@ -589,7 +589,7 @@ namespace CASM {
     }
     
     for(Index i=0; i<orbitf.size(); ++i) {
-      orbitf[i]["linear_orbit_index"] = i;
+      orbitf[i]["linear_function_index"] = i;
     }
   }
   

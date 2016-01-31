@@ -10,14 +10,7 @@
 #include <vector>
 
 #include "casm/external/Eigen/Dense"
-
-#define BOOST_NO_SCOPED_ENUMS
-#define BOOST_NO_CXX11_SCOPED_ENUMS
-#include <boost/filesystem.hpp>
-#include <boost/program_options.hpp>
-#include <boost/regex.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/container/stable_vector.hpp>
+#include "casm/external/boost.hh"
 
 namespace CASM {
 

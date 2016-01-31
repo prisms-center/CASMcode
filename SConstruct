@@ -64,7 +64,7 @@ Help("""
 ##### Environment setup
 
 # include paths
-include_paths = [join(os.getcwd(),'include')]
+include_paths = [join(os.getcwd(), i) for i in ['include', 'include/casm/app'] ]
 
 # lib paths
 lib_paths = []
@@ -153,6 +153,9 @@ env.Append(CASM_SOBJ = [])
 # collect everything that will go into the casm library
 env.Append(CASM_SOBJ = [])
 
+# collect everything that will go into the casm c library
+env.Append(CCASM_SOBJ = [])
+
 # Whenever a new Alias is declared, provide a check for if a 'test' or 'installation' is being done
 # and store the result in these environment variables, then use this to prevent undesired clean up
 env.Append(COMPILE_TARGETS = [])
@@ -178,6 +181,9 @@ SConscript(['src/casm/external/gzstream/SConscript'], {'env':env})
 # build src/casm
 SConscript(['src/casm/SConscript'], {'env':env})
 
+# build src/ccasm
+SConscript(['src/ccasm/SConscript'], {'env':env})
+
 
 ##### Make single dynamic library 
 
@@ -186,7 +192,7 @@ if env['PLATFORM'] == 'darwin':
   linkflags = ['-install_name', '@rpath/libcasm.dylib']
 
 # use boost libraries
-boost_libs = ['boost_system', 'boost_filesystem']
+boost_libs = ['boost_system', 'boost_filesystem', 'boost_program_options']
 
 # build casm shared library from all shared objects
 casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'), 
@@ -210,6 +216,40 @@ env.Alias('casm_lib_install', casm_lib_install)
 env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [casm_lib_install]
 
 if 'casm_lib_install' in COMMAND_LINE_TARGETS:
+    env['IS_INSTALL'] = 1
+
+
+##### extern C dynamic library 
+
+linkflags = ""
+if env['PLATFORM'] == 'darwin':
+  linkflags = ['-install_name', '@rpath/libccasm.dylib']
+
+# use boost libraries
+boost_libs = ['boost_system', 'boost_filesystem', 'boost_program_options']
+
+# build casm shared library from all shared objects
+ccasm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'ccasm'), 
+                             env['CCASM_SOBJ'], 
+                             LIBPATH=build_lib_paths,
+                             LINKFLAGS=linkflags,
+                             LIBS=boost_libs + ['casm'])
+                             
+env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + ccasm_lib
+Export('ccasm_lib')
+env.Alias('libccasm', ccasm_lib)
+
+# Library Install instructions
+ccasm_lib_install = env.SharedLibrary(os.path.join(env['PREFIX'], 'lib', 'ccasm'), 
+                                     env['CCASM_SOBJ'], 
+                                     LIBPATH=install_lib_paths, 
+                                     LINKFLAGS=linkflags,
+                                     LIBS=boost_libs + ['casm'])
+Export('ccasm_lib_install')
+env.Alias('ccasm_lib_install', ccasm_lib_install)
+env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [ccasm_lib_install]
+
+if 'ccasm_lib_install' in COMMAND_LINE_TARGETS:
     env['IS_INSTALL'] = 1
 
 

@@ -1,4 +1,4 @@
-#include <boost/algorithm/string.hpp>
+#include "casm/external/boost.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigIterator.hh"

@@ -3,9 +3,7 @@
 
 #include <map>
 
-#define BOOST_NO_SCOPED_ENUMS
-#define BOOST_NO_CXX11_SCOPED_ENUMS
-#include <boost/filesystem.hpp>
+#include "casm/external/boost.hh"
 
 #include "casm/container/Array.hh"
 #include "casm/container/LinearAlgebra.hh"

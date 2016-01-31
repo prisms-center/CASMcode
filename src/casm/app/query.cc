@@ -8,6 +8,7 @@
 #include "casm/clex/ConfigIOSelected.hh"
 
 namespace CASM {
+  
   void query_help(std::ostream &_stream, std::vector<std::string > help_opt_vec) {
     _stream << "Prints the properties for a set of configurations for the set of currently selected" << std::endl
             << "configurations or for a set of configurations specifed by a selection file." << std::endl
@@ -30,25 +31,25 @@ namespace CASM {
     _stream << std::endl;
   }
 
-  int query_command(int argc, char *argv[]) {
+  int query_command(int argc, char *argv[], PrimClex* _primclex, std::ostream& sout, std::ostream& serr) {
 
-    std::string new_alias;
+    std::string new_alias, selection_str;
     fs::path config_path, out_path;
     std::vector<std::string> columns, help_opt_vec;
     po::variables_map vm;
-    bool json_flag(false), no_header(false), verbatim_flag(false);
+    bool json_flag(false), no_header(false), verbatim_flag(false), gz_flag(false);
 
     po::options_description desc("'casm query' usage");
     // Set command line options using boost program_options
     desc.add_options()
     ("help,h", po::value<std::vector<std::string> >(&help_opt_vec)->multitoken()->zero_tokens(), "Print general help. Use '--help properties' for a list of query-able properties or '--help operators' for a list of query operators")
-    ("config,c", po::value<fs::path>(&config_path), "config_list files containing configurations for which to collect energies")
+    ("config,c", po::value<std::string>(&selection_str)->default_value("MASTER"), "config_list files containing configurations for which to collect energies")
     ("columns,k", po::value<std::vector<std::string> >(&columns)->multitoken()->zero_tokens(), "List of values you want printed as columns")
     ("learn,l", po::value<std::string>(&new_alias), "Teach casm a new command that will persist within this project. Ex: 'casm query --learn is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")
-    ("json,j", po::value(&json_flag)->zero_tokens(), "Print in JSON format (CSV otherwise, unless output extension is .json or .JSON)")
+    ("json,j", po::value(&json_flag)->zero_tokens(), "Print in JSON format (CSV otherwise, unless output extension is .json/.JSON)")
     ("verbatim,v", po::value(&verbatim_flag)->zero_tokens(), "Print exact properties specified, without prepending 'name' and 'selected' entries")
-    ("output,o", po::value<fs::path>(&out_path), "Name for output file. Use STDOUT to print results without extra messages.")
-    //("force,f", po::value(&force)->zero_tokens(), "Overrwrite output file")
+    ("output,o", po::value<fs::path>(&out_path), "Name for output file. Use STDOUT to print results without extra messages. CSV format unless extension is .json/.JSON, or --json option used.")
+    ("gzip,z", po::value(&gz_flag)->zero_tokens(), "Write gzipped output file.")
     ("no-header,n", po::value(&no_header)->zero_tokens(), "Print without header (CSV only)");
 
 
@@ -58,7 +59,7 @@ namespace CASM {
       /** Start --help option
        */
       if(vm.count("help")) {
-        std::cout << std::endl << desc << std::endl;
+        sout << std::endl << desc << std::endl;
       }
 
       po::notify(vm); // throws on error, so do after help in case of problems
@@ -71,34 +72,42 @@ namespace CASM {
         if(fs::exists(alias_file)) {
           ConfigIOParser::load_aliases(alias_file);
         }
-        query_help(std::cout, help_opt_vec);
+        query_help(sout, help_opt_vec);
         return 0;
       }
 
 
     }
     catch(po::error &e) {
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      std::cerr << desc << std::endl;
+      serr << "ERROR: " << e.what() << std::endl << std::endl;
+      serr << desc << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      std::cerr << "Unhandled Exception reached the top of main: "
+      serr << "Unhandled Exception reached the top of main: "
                 << e.what() << ", application will now exit" << std::endl;
       return ERR_UNKNOWN;
     }
 
     if(!vm.count("learn") && !vm.count("columns")) {
-      std::cout << std::endl << desc << std::endl;
+      sout << std::endl << desc << std::endl;
     }
-
-    fs::path root = find_casmroot(fs::current_path());
-    if(root.empty()) {
-      std::cerr << "Error in 'casm query': No casm project found." << std::endl;
-      return ERR_NO_PROJ;
+    
+    // set current path to project root
+    fs::path root;
+    if(!_primclex) {
+      root = find_casmroot(fs::current_path());
+      if(root.empty()) {
+        serr << "Error in 'casm query': No casm project found." << std::endl;
+        return ERR_NO_PROJ;
+      }
+    }
+    else {
+      root = _primclex->get_path();
     }
     fs::current_path(root);
-
+    
+    // if learning new query command
     fs::path alias_file = root / ".casm/query_alias.json";
     if(vm.count("learn")) {
       jsonParser mjson;
@@ -115,73 +124,95 @@ namespace CASM {
         ConfigIOParser::add_custom_formatter(datum_formatter_alias<Configuration>(alias_name, alias_command));
       }
       catch(std::runtime_error &e) {
-        std::cerr << "That's confusing. I can't learn malformed input:\n"
+        serr << "That's confusing. I can't learn malformed input:\n"
                   << e.what() << std::endl;
         return 1;
       }
       if(mjson.contains(alias_name)) {
-        std::cerr << "WARNING: I already know '" << alias_name << "' as:\n"
+        serr << "WARNING: I already know '" << alias_name << "' as:\n"
                   << "             " << mjson[alias_name].get<std::string>() << "\n"
                   << "         I will forget it and learn '" << alias_name << "' as:\n"
                   << "             " << alias_command << std::endl;
       }
       mjson[alias_name] = alias_command;
       mjson.write(alias_file);
-      std::cout << "  DONE" << std::endl;
+      sout << "  DONE" << std::endl;
       return 0;
     }
     if(!vm.count("columns")) {
-      std::cerr << "ERROR: the option '--columns' is required but missing" << std::endl;
+      serr << "ERROR: the option '--columns' is required but missing" << std::endl;
       return ERR_INVALID_ARG;
     }
-    //else{ //option is "columns"
+    
+    
+    // -------------------------------------------------------------------------
+    // perform query operation
+    
     if(fs::exists(alias_file)) {
       ConfigIOParser::load_aliases(alias_file);
     }
     
-    bool output_to_file = vm.count("output") && out_path.string() != "STDOUT";
+    auto check_gz = [=](fs::path p) {
+      if(p.extension() == ".gz" || p.extension() == ".GZ") {
+        return true;
+      }
+      return false;
+    };
     
-    // initialize primclex
-    std::ostream &status_stream = (out_path.string() == "STDOUT") ? std::cerr : std::cout;
-    status_stream << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, status_stream);
-    status_stream << "  DONE." << std::endl << std::endl;
-
-    out_path = fs::absolute(out_path);
-
-    status_stream << "Print:" << std::endl;
-    for(int p = 0; p < columns.size(); p++) {
-      status_stream << "   - " << columns[p] << std::endl;
+    auto check_json = [=](fs::path p) {
+      if(p.extension() == ".json" || p.extension() == ".JSON") {
+        return true;
+      }
+      return false;
+    };
+    
+    
+    // Checks for: X.json.gz / X.json / X.gz  (also accepts .JSON or .GZ)
+    if(check_gz(out_path)) {
+      gz_flag = true;
+      json_flag = check_json(out_path.stem()) || json_flag;
     }
-
-    if(vm.count("config"))
-      status_stream << "to " << out_path << std::endl << std::endl;
-
-    std::ofstream output_file;
-    if(output_to_file)
-      output_file.open(out_path.string().c_str());
-
-    std::ostream &output_stream(output_to_file ? output_file : std::cout);
+    else {
+      json_flag = check_json(out_path) || json_flag;
+    }
+    
+    // set output_stream: where the query results are written
+    std::unique_ptr<std::ostream> uniq_fout;
+    std::ostream& output_stream = make_ostream_if(vm.count("output"), sout, uniq_fout, out_path, gz_flag);
     output_stream << FormatFlag(output_stream).print_header(!no_header);
-    DataFormatter<Configuration> formatter;
-    ConstConfigSelection selection;
+    
+    // set status_stream: where query settings and PrimClex initialization messages are sent
+    std::ostream &status_stream = (out_path.string() == "STDOUT") ? serr : sout;
+    
+    // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex& primclex = make_primclex_if_not(_primclex, uniq_primclex, root, status_stream);
     
     /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
     const DirectoryStructure &dir = primclex.dir();
     const ProjectSettings &set = primclex.settings();
     if(fs::exists(dir.clexulator_src(set.name(), set.bset()))) {
-      primclex.read_global_orbitree(dir.clust(set.bset()));
-      //primclex.generate_full_nlist();
-      //primclex.generate_supercell_nlists();
+      if(!primclex.get_global_orbitree().size()) {
+        primclex.read_global_orbitree(dir.clust(set.bset()));
+      }
     }
-
+    
+    // Get configuration selection
+    ConstConfigSelection selection = make_config_selection(selection_str, primclex);
+    
+    // Print info
+    status_stream << "Print:" << std::endl;
+    for(int p = 0; p < columns.size(); p++) {
+      status_stream << "   - " << columns[p] << std::endl;
+    }
+    if(vm.count("config"))
+      status_stream << "to " << fs::absolute(out_path) << std::endl << std::endl;
+    
+    // Construct DataFormatter
+    DataFormatter<Configuration> formatter;
     try {
       
-      if(vm.count("config"))
-        selection = ConstConfigSelection(primclex, fs::absolute(config_path));
-      else
-        selection = ConstConfigSelection(primclex);
-
       auto it(columns.cbegin());
       std::vector<std::string> all_columns;
       if(!verbatim_flag) {
@@ -196,43 +227,41 @@ namespace CASM {
       formatter.append(ConfigIOParser::parse(all_columns));
     }
     catch(std::exception &e) {
-      std::cerr << "Parsing error: " << e.what() << "\n\n";
+      serr << "Parsing error: " << e.what() << "\n\n";
       return ERR_INVALID_ARG;
     }
 
     try {
       
       // JSON output block
-      if(json_flag || out_path.extension() == ".json" || out_path.extension() == ".JSON") {
+      if(json_flag) {
         jsonParser json;
 
-        //std::cout << "Read in config selection... it is:\n" << selection;
+        //sout << "Read in config selection... it is:\n" << selection;
         json = formatter(selection.selected_config_begin(), selection.selected_config_end());
 
         output_stream << json;
       }
       // CSV output block
       else {
-        //std::cout << "Read in config selection... it is:\n" << selection;
+        //sout << "Read in config selection... it is:\n" << selection;
         output_stream << formatter(selection.selected_config_begin(), selection.selected_config_end());
       }
       
     }
     catch(std::exception &e) {
-      std::cerr << "Initialization error: " << e.what() << "\n\n";
+      serr << "Initialization error: " << e.what() << "\n\n";
       return ERR_UNKNOWN;
     }
 
-    if(output_to_file)
-      output_file.close();
-    else {
-      std::cerr << "\n   -Output printed to terminal, since no output file specified-\n";
+    if(!uniq_fout) {
+      status_stream << "\n   -Output printed to terminal, since no output file specified-\n";
     }
 
     status_stream << "  DONE." << std::endl << std::endl;
 
     return 0;
   };
-
 }
+
 

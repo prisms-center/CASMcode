@@ -1,7 +1,6 @@
 #include "casm/monte_carlo/MonteSettings.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/container/LinearAlgebra.hh"
-#include <boost/lexical_cast.hpp>
 
 namespace CASM {
 

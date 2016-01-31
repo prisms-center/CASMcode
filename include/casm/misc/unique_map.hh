@@ -3,8 +3,7 @@
 
 #include <map>
 #include <functional>
-#include <boost/iterator/transform_iterator.hpp>
-
+#include "casm/external/boost.hh"
 #include "casm/misc/CASM_TMP.hh"
 #include "casm/misc/cloneable_ptr.hh"
 

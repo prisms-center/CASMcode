@@ -2,9 +2,7 @@
 #define CLEXULATOR_HH
 #include <cstddef>
 
-#define BOOST_NO_SCOPED_ENUMS
-#define BOOST_NO_CXX11_SCOPED_ENUMS
-#include <boost/filesystem.hpp>
+#include "casm/external/boost.hh"
 #include "casm/system/RuntimeLibrary.hh"
 
 namespace CASM {

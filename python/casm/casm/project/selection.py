@@ -31,10 +31,21 @@ class Selection(object):
           self.path = os.path.abspath(path)
         else:
           raise Exception("No file exists named: " + path)
-        
     
     
-    def set_on(self, criteria="", output=None):
+    def df(self):
+        """
+        Read Selection file as a pandas.DataFrame
+        """
+        if self.path[-5:].lower() == ".json":
+          return pandas.read_json(self.path, orient='records')
+        else:
+          f = open(self.path, 'r')
+          f.read(1)
+          return pandas.read_csv(f, sep=' *', engine='python')
+    
+    
+    def set_on(self, criteria="", output=None, force=False):
         """
         Perform 'casm select --set-on' using this Selection as input
         
@@ -43,10 +54,10 @@ class Selection(object):
             output: Name of output file to write result to
         
         """
-        self._generic_set("set-on", criteria, output)
+        self._generic_set("set-on", criteria, output, force)
     
     
-    def set_off(self, criteria="", output=None):
+    def set_off(self, criteria="", output=None, force=False):
         """
         Perform 'casm select --set-off' using this Selection as input
         
@@ -55,10 +66,10 @@ class Selection(object):
             output: Name of output file to write result to
         
         """
-        self._generic_set("set-off", criteria, output)
+        self._generic_set("set-off", criteria, output, force)
     
     
-    def set(self, criteria="", output=None):
+    def set(self, criteria="", output=None, force=False):
         """
         Perform 'casm select --set' using this Selection as input
         
@@ -67,10 +78,10 @@ class Selection(object):
             output: Name of output file to write result to
         
         """
-        self._generic_set("set", criteria, output)
+        self._generic_set("set", criteria, output, force)
 
     
-    def _generic_set(self, command, criteria="", output=None):
+    def _generic_set(self, command, criteria="", output=None, force=False):
         """
         Perform 'casm select --command' using this Selection as input, where
         command='set-on','set-off', or 'set'
@@ -83,6 +94,8 @@ class Selection(object):
         args = "select --" + command + " " + criteria + " -c " + self.path
         if output != None:
           args += " -o " + output
+        if force:
+          args += " -f"
         self.proj.command(args)
         
 

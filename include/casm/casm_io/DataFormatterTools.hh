@@ -3,7 +3,7 @@
 #include <numeric>
 #include <iterator>
 #include <regex>
-#include <boost/algorithm/string.hpp>
+#include "casm/external/boost.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/container/ContainerTraits.hh"
