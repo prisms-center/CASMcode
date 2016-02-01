@@ -106,11 +106,9 @@ namespace CASM {
     using Base::operator bool;
 
     /// \brief Default construct a IsoCounter
-    /*
-    IsoCounter() {
-      this->Base::_increment().resize(1);
-    }
-    */
+    /// Container must be default constructible
+    /// value_type must be constructible with zero
+    IsoCounter() : IsoCounter(Container(), Container(), 0, 0) { }
 
     /// \brief Construct a IsoCounter-type object
     ///

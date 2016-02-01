@@ -232,7 +232,7 @@ namespace CASM {
           //std::cout << "Updating clust_basis of equiv:\n";
 
           // we may also need to permute the indices when updating dof IDs (but probably not)
-          equiv(i, j, k).clust_basis.update_dof_IDs(prototype(i, j).nlist_inds(), equiv(i, j, k).nlist_inds());
+          equiv(i, j, k).clust_basis.set_dof_IDs(equiv(i, j, k).nlist_inds());
         }
       }
     }

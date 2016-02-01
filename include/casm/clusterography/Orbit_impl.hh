@@ -4,7 +4,7 @@
 #include "casm/crystallography/Site.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/clusterography/SiteCluster.hh"
-
+#include "casm/basis_set/BasisSet.hh"
 namespace CASM {
   //**************************************************************************************
 
@@ -462,15 +462,14 @@ namespace CASM {
         at(ne).set_nlist_inds(at(ne).trans_nlist(nt));
 
         new_id[0] = at(ne)[ib].nlist_ind();
-        site_basis.update_dof_IDs(old_id, new_id);
+        site_basis.set_dof_IDs(new_id);
         old_id = new_id;
 
         BasisSet quotient_basis = at(ne).clust_basis.poly_quotient_set(site_basis[f_index]);
+        for(Index nl = 0; nl < labelers.size(); nl++)
+          quotient_basis.accept(*labelers[nl]);
+
         for(Index nf = 0; nf < quotient_basis.size(); nf++) {
-          if(!quotient_basis[nf])
-            continue;
-          for(Index nl = 0; nl < labelers.size(); nl++)
-            quotient_basis[nf]->accept(*labelers[nl]);
 
           if((quotient_basis[nf]->formula()) == "0")
             continue;

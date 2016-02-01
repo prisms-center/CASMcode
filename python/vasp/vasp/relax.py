@@ -335,7 +335,7 @@ class Relax(object):
                 if io.get_incar_tag("NSW", self.rundir[-1]) == len(io.Oszicar(os.path.join(self.rundir[-1],"OSZICAR"))):
                     return ("incomplete", "relax")      # static run hit NSW limit and so isn't "done"
                 else:
-                return ("incomplete", "constant")
+                    return ("incomplete", "constant")
 
             # elif convergence criteria met
             if self.converged():
@@ -355,7 +355,3 @@ class Relax(object):
 
         # else if the latest run is not complete, continue running it
         return ("incomplete", self.rundir[-1])
-
-
-
-

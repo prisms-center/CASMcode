@@ -21,6 +21,7 @@ namespace CASM {
 
   class FunctionVisitor;
 
+  class BasisSet;
 
   //GenericOrbit class definition begins here:
   /**GenericOrbit is the set of all clusters that are

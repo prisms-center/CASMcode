@@ -24,6 +24,7 @@ namespace CASM {
     std::vector<double> mags;
     double inc_value;
     std::string strain_mode;
+    Index poly_order;
 
     /// Set command line options using boost program_options
     po::options_description desc("'casm perturb' usage");
@@ -36,6 +37,7 @@ namespace CASM {
     ("strain,s", "Generate strain perturbations")
     ("gridsize", po::value<std::vector<Index> > (&subgrids)->multitoken(), "Size of grid for each subspace")
     ("mag", po::value<std::vector<double> > (&mags)->multitoken(), "Magnitude of grid")
+    ("poly-order", po::value<Index> (&poly_order)->default_value(6), "Max order of strain polynomials")
     ("strainmode", po::value<std::string> (&strain_mode)->default_value("GL"), "Strain mode name");
 
 
@@ -107,6 +109,35 @@ namespace CASM {
 
       Index num_sub = wedges.size();
 
+      BasisSet strain_vars;
+      Array<ContinuousDoF> tvars;
+      for(Index i = 1; i <= 6; i++) {
+        tvars.push_back(ContinuousDoF("E", i, -1e+15, 1e+15));
+        tvars.back().lock_ID();
+      }
+      strain_vars.set_variable_basis(tvars, sconvert.symrep_ID());
+      Eigen::MatrixXd trans_mat(2, 6);
+      trans_mat << 0, 1, 0, 0, 0, 0,
+                0, 0, 1, 0, 0, 0;
+      BasisSet sub_vars(strain_vars.transform_copy(trans_mat));
+      BasisSet poly;
+      for(Index i = 0; i <= poly_order; i++) {
+        BasisSet tmono;
+        tmono.construct_invariant_polynomials(Array<BasisSet const *>(1, &strain_vars), primclex.get_prim().point_group(), i);
+        poly.append(tmono);
+      }
+
+      poly.accept(VariableLabeler("E(:,%n)"));
+      fs::ofstream mfile(root / "poly.m");
+      mfile << "corr =[\n";
+      for(Index i = 0; i < poly.size(); i++) {
+        mfile << "    " << poly[i]->formula();
+        if(i + 1 < poly.size())
+          mfile << ",...";
+        mfile << "\n";
+      }
+      mfile << "];\n";
+      mfile.close();
       if(num_sub != subgrids.size() || num_sub != mags.size()) {
         std::cout << "Option --strain selected.  Based on crystal symmetry, strains can be independently enumerated in the following subspaces:\n";
 

@@ -3,7 +3,6 @@
 
 #include <iostream>
 
-#include "casm/basis_set/BasisSet.hh"
 #include "casm/crystallography/Molecule.hh"
 
 namespace CASM {

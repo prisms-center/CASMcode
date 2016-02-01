@@ -501,6 +501,11 @@ namespace CASM {
   /// Currently only applies to occupation
   Configuration &apply(const ConfigTransform &f, Configuration &motif);
 
+  inline
+  void reset_properties(Configuration &_config) {
+    _config.set_calc_properties(jsonParser());
+  }
+
 }
 
 #endif

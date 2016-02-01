@@ -418,7 +418,7 @@ class Relax(object):
     def report_properties(self):
         """Report results to properties.calc.json file in configuration directory, after checking for electronic convergence."""
 
-            output = dict()
+        output = dict()
 
         # Verify that the last relaxed-volume run reached electronic convergence
         relaxation = vasp.Relax(self.calcdir, self.run_settings())

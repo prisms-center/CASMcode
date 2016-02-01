@@ -36,11 +36,15 @@ namespace CASM {
     const value_type &goto_step(step_type _step);
 
   private:
+    // counts over strain grid
     EigenCounter<Eigen::VectorXd> m_counter;
+    // counts over transformation matrices
+    Index m_equiv_ind;
     StrainConverter m_strain_calc;
-    Eigen::MatrixXd m_proj;
+    //set of non-equivalent transformation matrices matrices that, along with m_counter define irreducible space
+    std::vector<Eigen::MatrixXd> m_trans_mats;
     PermuteIterator m_perm_begin, m_perm_end;
-    Eigen::VectorXd m_shape_factor;
+    Eigen::MatrixXd m_shape_factor;
     using ConfigEnum<ConfigType>::_current;
     using ConfigEnum<ConfigType>::_step;
     using ConfigEnum<ConfigType>::_source;

@@ -218,6 +218,10 @@ namespace CASM {
   /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel);
 
+  inline
+  void reset_properties(ConfigDoF &_dof) {
+    return;
+  }
 
 }
 
