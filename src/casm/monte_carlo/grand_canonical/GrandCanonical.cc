@@ -134,7 +134,7 @@ namespace CASM {
            << "  components: " << jsonParser(primclex().composition_axes().components()) << "\n"
            << "  dcomp_n: " << m_event.dcomp_n().transpose() << "\n"
            << "  chem_pot: " << m_condition.chem_pot().transpose() << "\n"
-           << "  dcomp: " << primclex().composition_axes().param_composition(m_event.dcomp_n()).transpose() << "\n"
+           << "  dcomp: " << primclex().composition_axes().dparam_composition(m_event.dcomp_n()).transpose() << "\n"
            << "  param_chem_pot: " << m_condition.param_chem_pot().transpose() << "\n"
            << "  dpotential_energy: " << m_event.dpotential_energy() << "\n" << std::endl;
            
@@ -147,19 +147,23 @@ namespace CASM {
   /// \brief Based on a random number, decide if the change in energy from the proposed event is low enough to be accepted.
   bool GrandCanonical::check(const GrandCanonicalEvent &event) {
     
-    double prob = exp(-event.dpotential_energy() * m_condition.beta() * supercell().volume());
+    if(event.dpotential_energy() < 0.0) {
+      
+      if(debug()) {
+        sout << "Probability to accept: 1.0\n" << std::endl;
+      }
+      return true;
+    }
+    
     double rand = m_twister.rand53();
+    double prob = exp(-event.dpotential_energy() * m_condition.beta() * supercell().volume());
     
     if(debug()) {
       sout << "Probability to accept: " << prob << "\n"
            << "Random number: " << rand << "\n" << std::endl;
     }
     
-    if(event.dpotential_energy() < 0.0 || rand < prob) {
-      return true;
-    }
-
-    return false;
+    return rand < prob;
   }
   
   /// \brief Accept proposed event. Change configuration accordingly and update energies etc.
@@ -369,7 +373,9 @@ namespace CASM {
            << "corr: " << corr().transpose() << "\n"
            << "components: " << jsonParser(primclex().composition_axes().components()) << "\n"
            << "comp_n: " << comp_n().transpose() << "\n"
-           << "comp: " << primclex().composition_axes().param_composition(comp_n()) << "\n"
+           << "chem_pot: " << m_condition.chem_pot().transpose() << "\n"
+           << "comp: " << primclex().composition_axes().param_composition(comp_n()).transpose() << "\n"
+           << "param_chem_pot: " << m_condition.param_chem_pot().transpose() << "\n"
            << "formation_energy: " << formation_energy() << "\n"
            << "potential_energy: " << potential_energy() << "\n" << std::endl;
     }

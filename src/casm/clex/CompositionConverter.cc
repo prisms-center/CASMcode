@@ -52,6 +52,14 @@ namespace CASM {
   Eigen::VectorXd CompositionConverter::param_composition(const Eigen::VectorXd &n) const {
     return m_to_x * (n - m_origin);
   }
+  
+  /// \brief Convert change in number of atoms per prim, 'dn' to change in parametric composition 'dx'
+  ///
+  /// \param dn mol composition, matches order from components()
+  ///
+  Eigen::VectorXd CompositionConverter::dparam_composition(const Eigen::VectorXd &dn) const {
+    return m_to_x * dn;
+  }
 
   /// \brief Convert parametric composition, 'x', to number of atoms per prim, 'n'
   ///
@@ -59,6 +67,14 @@ namespace CASM {
   ///
   Eigen::VectorXd CompositionConverter::mol_composition(const Eigen::VectorXd &x) const {
     return m_origin + m_to_n * x;
+  }
+  
+  /// \brief Convert change in parametric composition, 'dx', to change in number of atoms per prim, 'dn'
+  ///
+  /// - Matches order from components()
+  ///
+  Eigen::VectorXd CompositionConverter::dmol_composition(const Eigen::VectorXd &dx) const {
+    return m_to_n * dx;
   }
 
   /// \brief Convert dG/dn to dG/dx

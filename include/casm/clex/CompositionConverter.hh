@@ -51,9 +51,15 @@ namespace CASM {
 
     /// \brief Convert number of mol per prim, 'n' to parametric composition 'x'
     Eigen::VectorXd param_composition(const Eigen::VectorXd &n) const;
-
+    
+    /// \brief Convert change in number of atoms per prim, 'dn' to change in parametric composition 'dx'
+    Eigen::VectorXd dparam_composition(const Eigen::VectorXd &dn) const;
+    
     /// \brief Convert parametric composition, 'x', to number of mol per prim, 'n'
-    Eigen::VectorXd mol_composition(const Eigen::VectorXd &n) const;
+    Eigen::VectorXd mol_composition(const Eigen::VectorXd &x) const;
+    
+    /// \brief Convert change in parametric composition, 'dx', to change in number of mol per prim, 'dn'
+    Eigen::VectorXd dmol_composition(const Eigen::VectorXd &dx) const;
 
     /// \brief Convert dG/dn to dG/dx
     Eigen::VectorXd param_chem_pot(const Eigen::VectorXd chem_pot) const;
