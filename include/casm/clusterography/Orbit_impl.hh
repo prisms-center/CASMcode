@@ -220,13 +220,13 @@ namespace CASM {
   SymGroupRep const *GenericOrbit<ClustType>::get_full_permutation_representation() {
 
     if(!equivalence_map.size())
-      return NULL;
+      return nullptr;
 
     if(permute_rep_ID != -1) return (equivalence_map[0][0].master_group().representation(permute_rep_ID));
 
     SymGroupRep *tRep(new SymGroupRep((equivalence_map[0][0].master_group())));
 
-    tRep->resize(equivalence_map[0][0].master_group().size(), NULL);
+    tRep->resize(equivalence_map[0][0].master_group().size(), nullptr);
 
     Array<Index> iperm;
     //This is a hack for doing cubic-tetragonal
@@ -257,7 +257,7 @@ namespace CASM {
   template<typename ClustType>
   SymGroupRep const *GenericOrbit<ClustType>::get_full_coord_representation() {
 
-    if(!equivalence_map.size()) return NULL;
+    if(!equivalence_map.size()) return nullptr;
 
     if(coord_rep_ID != -1) return equivalence_map[0][0].master_group().representation(coord_rep_ID);
 

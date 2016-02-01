@@ -15,7 +15,7 @@ namespace CASM {
     typedef typename CounterType::size_type size_type;
     typedef typename SubCounterType::const_value_iterator sub_iterator;
 
-    CounterValueIterator(CounterType const *_counter_ptr = NULL,
+    CounterValueIterator(CounterType const *_counter_ptr = nullptr,
                          size_type _ind = 0,
                          sub_iterator _sub_iter = sub_iterator()) :
       m_counter_ptr(_counter_ptr), m_ind(_ind), m_sub_iter(_sub_iter) {}
@@ -31,7 +31,7 @@ namespace CASM {
 
     CounterValueIterator &operator++() {
       /* //assume user doesn't need safeguards
-      if(m_counter_ptr == NULL || m_ind < 0 || m_counter_ptr->size() <= m_ind)
+      if(m_counter_ptr == nullptr || m_ind < 0 || m_counter_ptr->size() <= m_ind)
       return *this;
       */
 

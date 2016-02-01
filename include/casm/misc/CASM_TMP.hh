@@ -21,9 +21,15 @@ namespace CASM {
     // ---------------------
   
     /// \brief Alias for void, to help SFINAE work
-    template <typename... >
-    using void_t = void;
-
+    template<typename... Ts>
+    struct make_void {
+      typedef void type;
+    };
+    
+    /// \brief Alias for void, to help SFINAE work
+    template<typename... Ts>
+    using void_t = typename make_void<Ts...>::type;
+    
     /// \brief Base type inherits from std::false_type if T is not iterator
     ///
     /// - T is considered an iterator if it is incrementable, dereferenceable, and comparable
@@ -50,8 +56,9 @@ namespace CASM {
     ///
     /// - example function argument: 'typename CASM_TMP::enable_if_iterator_of<IteratorType, ValueType>::type* = nullptr'
     template<typename T, typename V>
-    using enable_if_iterator_of = std::enable_if<is_iterator<T>::type::value &&
-                                                 std::is_same<typename std::iterator_traits<T>::value_type, V>::type::value, void>;
+    using enable_if_iterator_of = 
+      std::enable_if<is_iterator<T>::type::value &&
+      std::is_same<typename std::iterator_traits<T>::value_type, V>::type::value, void>;
     
     
     // --------------------

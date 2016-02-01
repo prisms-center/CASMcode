@@ -43,12 +43,12 @@ namespace CASM {
     // Function::extend_hierarchy() is called at first object initialization of a new derived type
     static void extend_hierarchy() {
       for(Index i = 0; i < inner_prod_table.size(); i++) {
-        operation_table[i].push_back(NULL);
-        inner_prod_table[i].push_back(NULL);
+        operation_table[i].push_back(nullptr);
+        inner_prod_table[i].push_back(nullptr);
       }
 
-      inner_prod_table.push_back(Array<InnerProduct * > (inner_prod_table.size() + 1, NULL));
-      operation_table.push_back(Array<FunctionOperation * > (operation_table.size() + 1, NULL));
+      inner_prod_table.push_back(Array<InnerProduct * > (inner_prod_table.size() + 1, nullptr));
+      operation_table.push_back(Array<FunctionOperation * > (operation_table.size() + 1, nullptr));
     };
 
     //Function 'owns' the Function pointers in argument.
@@ -117,7 +117,7 @@ namespace CASM {
     virtual void scale(double scale_factor) = 0;
 
     virtual Eigen::VectorXd const *get_eigen_coeffs() const {
-      return NULL;
+      return nullptr;
     };
 
     virtual double remote_eval() const = 0;

@@ -21,7 +21,7 @@ namespace CASM {
     subspaces(init_basis.subspaces) {
     for(Index i = 0; i < init_basis.size(); i++) {
       if(!init_basis[i])
-        push_back(NULL);
+        push_back(nullptr);
       else
         push_back(init_basis[i]->copy());
     }
@@ -42,7 +42,7 @@ namespace CASM {
 
     for(Index i = 0; i < RHS.size(); i++) {
       if(!RHS[i])
-        push_back(NULL);
+        push_back(nullptr);
       else
         push_back(RHS[i]->copy());
     }
@@ -55,7 +55,7 @@ namespace CASM {
   void BasisSet::append(const BasisSet &RHS) {
     for(Index i = 0; i < RHS.size(); i++) {
       if(!RHS[i])
-        push_back(NULL);
+        push_back(nullptr);
       else
         push_back(RHS[i]->copy());
     }
@@ -82,7 +82,7 @@ namespace CASM {
     BasisSet new_set;
     for(Index i = 0; i < size(); i++) {
       if(!at(i))
-        new_set.push_back(NULL);
+        new_set.push_back(nullptr);
       else
         new_set.push_back(at(i)->poly_quotient(divisor));
     }
@@ -551,14 +551,14 @@ namespace CASM {
   //******************************************************************************
 
   Function *BasisSet::linear_combination(const Eigen::VectorXd &coeffs) const {
-    if(!size()) return NULL;
+    if(!size()) return nullptr;
     if(size() != coeffs.size()) {
       std::cerr << "FATAL ERROR: In BasisSet::linear_combination, the number of basis functions \n"
                 << "does not match the size of the coefficient vector. Exiting...\n";
       exit(1);
     }
 
-    Function *combfunc(NULL), *tfunc(NULL);
+    Function *combfunc(nullptr), *tfunc(nullptr);
 
     for(EigenIndex i = 0; i < coeffs.size(); i++) {
       if(almost_zero(coeffs[i])) continue;
@@ -626,7 +626,7 @@ namespace CASM {
     bool is_unchanged(true);
     Index i, j;
     double tcoeff;
-    Function *tfunc(NULL);
+    Function *tfunc(nullptr);
 
     // loop over functions
     for(i = 0; i < size(); i++) {
@@ -739,7 +739,7 @@ namespace CASM {
     if(!head_group.size() || !head_group[0].has_valid_master()) return;
 
     m_basis_symrep_ID = head_group.make_empty_representation();
-    Function *tfunct(NULL);
+    Function *tfunct(nullptr);
     Eigen::MatrixXd tRep(size(), size());
 
     for(Index ng = 0; ng < head_group.size(); ng++) {

@@ -219,14 +219,14 @@ namespace CASM {
     // save the old range
     Scalar prev_range = m_range;
     
-    auto is_inserted = [&](const UnitCellCoord &uccoord) { 
-      return m_neighborhood.insert(uccoord.unitcell()).second;
-    };
+    bool any_new = false;
+    for(auto it=begin; it!=end; ++it) {
+      if(m_neighborhood.insert(it->unitcell()).second) {
+        any_new = true;
+      }
+    }
     
-    // add UnitCell to the neighborhood
-    if(!std::count_if(begin, end, is_inserted)) {
-                    
-      // if none are new, we can return;
+    if(!any_new) {
       return;
     }
     

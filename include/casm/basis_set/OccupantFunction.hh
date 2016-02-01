@@ -37,7 +37,7 @@ namespace CASM {
     Index m_occ_sym_rep_ind;
     Index m_occ_func_ind, m_basis_ind;
 
-    OccupantFunction() : m_var(NULL) {}; // no default construction
+    OccupantFunction() : m_var(nullptr) {}; // no default construction
   public:
     OccupantFunction(const DiscreteDoF &init_var, const Eigen::VectorXd &init_eval, int _occ_func_ind, int _basis_ind, Index sym_rep_ind = -2):
       m_var(init_var.copy()), m_eval_table(init_eval), m_occ_sym_rep_ind(sym_rep_ind), m_occ_func_ind(_occ_func_ind), m_basis_ind(_basis_ind) { };
