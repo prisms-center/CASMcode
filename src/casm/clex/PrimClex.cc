@@ -1011,6 +1011,7 @@ namespace CASM {
         throw std::runtime_error(
           std::string("Error loading clexulator ") + settings().bset() + ". No basis functions exist.");
       }
+      
       m_global_clexulator = Clexulator(settings().global_clexulator(),
                                        dir().clexulator_dir(settings().bset()),
                                        settings().compile_options(),

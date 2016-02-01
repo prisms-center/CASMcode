@@ -37,6 +37,9 @@ namespace CASM {
   ProjectSettings::ProjectSettings(fs::path root, std::string name) :
     m_dir(root),
     m_name(name) {
+    
+    m_compile_options = RuntimeLibrary::default_compile_options();
+    m_so_options = RuntimeLibrary::default_so_options();
 
     if(fs::exists(m_dir.casm_dir())) {
       throw std::runtime_error(
@@ -66,6 +69,10 @@ namespace CASM {
     m_dir(root) {
 
     if(fs::exists(m_dir.casm_dir())) {
+      
+      m_compile_options = RuntimeLibrary::default_compile_options();
+      m_so_options = RuntimeLibrary::default_so_options();
+      
       try {
 
         // read .casmroot current settings
@@ -78,8 +85,14 @@ namespace CASM {
         from_json(m_ref, settings["curr_ref"]);
         from_json(m_clex, settings["curr_clex"]);
         from_json(m_eci, settings["curr_eci"]);
-        settings.get_else(m_compile_options, "compile_options", RuntimeLibrary::default_compile_options());
-        settings.get_else(m_so_options, "so_options", RuntimeLibrary::default_so_options());
+        
+        if(settings.contains("compile_options")) {
+          settings["compile_options"].get(m_compile_options);
+        }
+        if(settings.contains("so_options")) {
+          settings["so_options"].get(m_so_options);
+        }
+        
         settings.get_if(m_view_command, "view_command");
         from_json(m_name, settings["name"]);
         from_json(m_tol, settings["tol"]);
@@ -400,8 +413,12 @@ namespace CASM {
     json["curr_eci"] = set.eci();
     json["nlist_weight_matrix"] = set.nlist_weight_matrix();
     json["nlist_sublat_indices"] = set.nlist_sublat_indices();
-    json["compile_options"] = set.compile_options();
-    json["so_options"] = set.so_options();
+    if(set.compile_options() != RuntimeLibrary::default_compile_options()) {
+      json["compile_options"] = set.compile_options();
+    }
+    if(set.so_options() != RuntimeLibrary::default_so_options()) {
+      json["so_options"] = set.so_options();
+    }
     json["view_command"] = set.view_command();
     json["tol"] = set.tol();
 

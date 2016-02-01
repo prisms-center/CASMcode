@@ -277,7 +277,7 @@ namespace CASM {
         else {
           throw std::runtime_error(
             std::string("Error in Clexulator constructor\n") +
-            "  Did not find '" + dirpath.string() + "/" + name + ".cc'");
+            "  Did not find '" + dirpath.string() + "/" + name + ".so'");
         }
       }
       catch(const std::exception &e) {
