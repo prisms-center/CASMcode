@@ -8,6 +8,7 @@
 *.so
 *.dylib
 *.ii
+*.i
 *.s
 
 # Compiled Static libraries
