@@ -351,6 +351,11 @@ namespace CASM {
       }
 
     }
+
+    if(num_updated > 0) {
+      std::cout << "Writing to configuration database..." << std::endl << std::endl;
+      primclex.write_config_list();
+    }
     return 0;
   }
 }
