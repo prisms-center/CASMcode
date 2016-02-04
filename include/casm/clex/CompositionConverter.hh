@@ -48,6 +48,12 @@ namespace CASM {
 
     /// \brief The mol composition of the parameteric composition axes end members
     Eigen::VectorXd end_member(size_type i) const;
+    
+    /// \brief Return the matrix Mij = dx_i/dn_j
+    Eigen::MatrixXd dparam_dmol() const;
+    
+    /// \brief Return the matrix Mij = dn_i/dx_j
+    Eigen::MatrixXd dmol_dparam() const;
 
     /// \brief Convert number of mol per prim, 'n' to parametric composition 'x'
     Eigen::VectorXd param_composition(const Eigen::VectorXd &n) const;

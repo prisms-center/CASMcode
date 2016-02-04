@@ -44,6 +44,16 @@ namespace CASM {
   Eigen::VectorXd CompositionConverter::end_member(size_type i) const {
     return m_end_members.col(i);
   }
+  
+  /// \brief Return the matrix Mij = dx_i/dn_j
+  Eigen::MatrixXd CompositionConverter::dparam_dmol() const {
+    return m_to_x;
+  }
+  
+  /// \brief Return the matrix Mij = dn_i/dx_j
+  Eigen::MatrixXd CompositionConverter::dmol_dparam() const {
+    return m_to_n;
+  }
 
   /// \brief Convert number of atoms per prim, 'n' to parametric composition 'x'
   ///

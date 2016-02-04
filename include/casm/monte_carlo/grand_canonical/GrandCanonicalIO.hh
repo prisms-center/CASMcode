@@ -32,8 +32,11 @@ namespace CASM {
   template<typename T>
   class DataFormatter;
   
-  /// \brief Make a results formatter
+  /// \brief Make a LTE results formatter
   DataFormatter<ConstMonteCarloPtr> make_results_formatter(const GrandCanonical& mc);
+  
+  /// \brief Make a results formatter
+  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical& mc);
   
   /// \brief Make a observation formatter
   DataFormatter<std::pair<ConstMonteCarloPtr, Index> > make_observation_formatter(const GrandCanonical& mc);
@@ -69,6 +72,13 @@ namespace CASM {
   
   /// \brief Create a jsonParser object that can be used as a template.
   jsonParser example_grand_canonical_settings();
+  
+  /// \brief Print single spin flip LTE
+  GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalLTEFormatter();
+  
+  /// \brief Will create new file or append to existing results file the results of the latest run
+  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc);
+  
 }
 
 #endif
