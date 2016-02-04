@@ -332,7 +332,7 @@ class Relax(object):
 
             # elif constant volume run (but not the final one)
             if io.get_incar_tag("ISIF", self.rundir[-1]) in [0,1,2]:
-                if io.get_incar_tag("NSW", self.rundir[-1]) == len(io.Oszicar(os.path.join(self.rundir[-1],"OSZICAR"))):
+                if io.get_incar_tag("NSW", self.rundir[-1]) == len(io.Oszicar(os.path.join(self.rundir[-1],"OSZICAR")).E):
                     return ("incomplete", "relax")      # static run hit NSW limit and so isn't "done"
                 else:
                     return ("incomplete", "constant")
