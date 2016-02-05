@@ -1,13 +1,18 @@
 
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/ConfigIterator.hh"
+#include "casm/clex/Norm.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
 
 namespace CASM {
 
   
   GrandCanonical::GrandCanonical(PrimClex &primclex, const GrandCanonicalSettings &settings, std::ostream& _sout):
-    MonteCarlo(primclex, settings, _sout), 
+    MonteCarlo(primclex, 
+               _select_motif(settings.motif_configname(), primclex, settings.initial_conditions(), _sout), 
+               settings, 
+               _sout), 
     m_site_swaps(supercell()),
     m_condition(settings.initial_conditions()),
     m_clexulator(primclex.global_clexulator()),
@@ -21,14 +26,7 @@ namespace CASM {
     m_minus_one_comp_n(-1.0/supercell().volume()),
     m_plus_one_comp_n(1.0/supercell().volume()) {
     
-    /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
-    const DirectoryStructure& dir = primclex.dir();
-    if(fs::exists(dir.clexulator_src(primclex.settings().name(), settings.bset()))) {
-      primclex.read_global_orbitree(dir.clust(settings.bset()));
-    }
-    
-    // temporary solution:
-    // Once all Clexulator have expanded the PrimNeighborList, set the SuperNeighborList... 
+    // set the SuperNeighborList... 
     set_nlist();
     
     // Make sure the simulation is big enough to accommodate the clusters 
@@ -483,6 +481,55 @@ namespace CASM {
     
   }
   
+  /// \brief Select initial motif configuration
+  ///
+  /// \param motif_configname If "auto", use 0K ground state at given mu; else 
+  ///        use configuration with given name
+  const Configuration& GrandCanonical::_select_motif(
+      std::string motif_configname, 
+      PrimClex& primclex, 
+      const GrandCanonicalConditions& cond,
+      std::ostream& _sout) const {
+    if(motif_configname == "auto") {
+      
+      std::cout << "Searching for minimum potential energy motif..." << std::endl;
+      
+      double tol = 1e-6;
+      auto compare = [&](double A, double B) {
+        return A < B - tol;
+      };
+      
+      ConfigIO::Clex clex(primclex.global_clexulator(), primclex.global_eci("formation_energy"));
+      
+      std::multimap<double, const Configuration*, decltype(compare)> configmap(compare);
+      for(auto it=primclex.config_begin(); it!=primclex.config_end(); ++it) {
+        configmap.insert(std::make_pair(clex(*it) - cond.chem_pot().dot(CASM::comp_n(*it)), &(*it)));
+      }
+      
+      const Configuration& min_config = *(configmap.begin()->second);
+      double min_potential_energy = configmap.begin()->first;
+      auto eq_range = configmap.equal_range(min_potential_energy);
+      if(std::distance(eq_range.first, eq_range.second) > 1) {
+        _sout << "Warning: Found degenerate ground states with potential energy: " 
+              << std::setprecision(8) << min_potential_energy << std::endl;
+        for(auto it=eq_range.first; it!=eq_range.second; ++it) {
+          _sout << "  " << it->second->name() << std::endl;
+        }
+        _sout << "Choosing: " << min_config.name() << std::endl;
+      }
+      else {
+        _sout << "Found: " << min_config.name() << " with potential energy: " 
+              << std::setprecision(8) << min_potential_energy << std::endl;
+      }
+      
+      return min_config;
+      
+      
+    }
+    else {
+      return m_primclex.configuration(motif_configname);
+    }
+  }
   
 
   

@@ -91,6 +91,8 @@ namespace CASM {
     if(!vm.count("learn") && !vm.count("columns")) {
       std::cout << std::endl << desc << std::endl;
     }
+    
+    out_path = fs::absolute(out_path);
 
     fs::path root = find_casmroot(fs::current_path());
     if(root.empty()) {
@@ -144,8 +146,6 @@ namespace CASM {
     PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
 
-    out_path = fs::absolute(out_path);
-
     std::cout << "Print:" << std::endl;
     for(int p = 0; p < columns.size(); p++) {
       std::cout << "   - " << columns[p] << std::endl;
@@ -163,15 +163,6 @@ namespace CASM {
     DataFormatter<Configuration> formatter;
     ConstConfigSelection selection;
     
-    /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
-    const DirectoryStructure &dir = primclex.dir();
-    const ProjectSettings &set = primclex.settings();
-    if(fs::exists(dir.clexulator_src(set.name(), set.bset()))) {
-      primclex.read_global_orbitree(dir.clust(set.bset()));
-      //primclex.generate_full_nlist();
-      //primclex.generate_supercell_nlists();
-    }
-
     try {
       
       if(vm.count("config"))

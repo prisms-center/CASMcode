@@ -191,8 +191,8 @@ namespace CASM {
     /// const Access to global orbitree
     const SiteOrbitree &get_global_orbitree() const;
 
-    ///const access to the primitive neighbor list
-    const PrimNeighborList &nlist() const;
+    ///Access to the primitive neighbor list
+    PrimNeighborList &nlist() const;
     
     /// returns true if vacancy are an allowed species
     bool vacancy_allowed() const;

@@ -127,6 +127,13 @@ namespace CASM {
     /// \brief Calculate properties given current conditions
     void _update_properties();
     
+    /// \brief Select initial motif configuration
+    const Configuration& _select_motif(
+      std::string motif_configname, 
+      PrimClex& primclex, 
+      const GrandCanonicalConditions& cond,
+      std::ostream& _sout) const;
+    
     
     ///Keeps track of what sites can change to what
     const SiteExchanger m_site_swaps;

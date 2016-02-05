@@ -99,14 +99,10 @@ namespace CASM {
       std::cerr << "No basis set found. Please use 'casm bset' first." << std::endl;
       return 1;
     }
-    else {
-      primclex.read_global_orbitree(dir.clust(set.bset()));
-      //primclex.generate_full_nlist();
-      //primclex.generate_supercell_nlists();
-    }
-
+    
     Clexulator clexulator(set.global_clexulator(),
                           dir.clexulator_dir(set.bset()),
+                          primclex.nlist(),
                           set.compile_options(),
                           set.so_options());
 
