@@ -960,9 +960,9 @@ namespace CASM {
       std::vector<Index> optimal_assignments;
       //BasicStructure<Site> best_ideal_struc(rstruc);
       Coordinate ttrans(Vector3<double>(0, 0, 0), rstruc.lattice(), FRAC), best_trans(Vector3<double>(0, 0, 0), rstruc.lattice(), FRAC);
-
+      Coordinate within_trans(ttrans);
       double min_mean = 10E10;
-      double trans_dist;
+      double trans_dist, within_trans_dist;
 
       // We want to get rid of translations.
       // trans_coord is a vector from IDEAL to RELAXED
@@ -987,16 +987,22 @@ namespace CASM {
         if(n > 0)
           ref_coord(FRAC) = scel.coord((n - 1) * scel.volume())(FRAC);
 
+        // find translation rstruc+ttrans such that rstruc.basis[0] is coincident with ref_coord
+        trans_dist = ref_coord.min_dist(rstruc.basis[0], ttrans);
 
-        trans_dist = rstruc.basis[0].min_dist(ref_coord, ttrans);
+        // within_trans is an attempt to find the smallest equivalent translation to ttrans -- really should use voronoi_within, if it worked
+        within_trans = ttrans;
+        within_trans.set_lattice(scel.get_prim().lattice(), CART);
+        //std::cout << "Before:  within_trans " << within_trans(FRAC) << "; V_number: " << within_trans.voronoi_number() << "\n";
+        within_trans.within();// <-- should be voronoi_within()?
+        //std::cout << "After:  within_trans " << within_trans(FRAC) << "; V_number: " << within_trans.voronoi_number() << "\n\n\n";
+        within_trans_dist = within_trans(CART).length();
+        if(within_trans_dist < trans_dist) {
+          within_trans.set_lattice(rstruc.lattice(), CART);
+          ttrans = within_trans;
+          trans_dist = within_trans_dist;
+        }
 
-        ttrans.set_lattice(scel.get_prim().lattice(), CART);
-        //std::cout << "Before:  ttrans " << ttrans(FRAC) << "; V_number: " << ttrans.voronoi_number() << "\n";
-        ttrans.within();// <-- should be voronoi_within()?
-        //std::cout << "After:  ttrans " << ttrans(FRAC) << "; V_number: " << ttrans.voronoi_number() << "\n\n\n";
-        ttrans.set_lattice(rstruc.lattice(), CART);
-        trans_dist = ttrans(CART).length();
-        //shift_struc -= ttrans;
         if(!ConfigMap_impl::calc_cost_matrix(scel, rstruc, ttrans, metric, cost_matrix)) {
           //std::cerr << "In Supercell::struc_to_config. Cannot construct cost matrix." << std::endl;
           //std::cerr << "This message is probably OK, if you are using translate_flag == true." << std::endl;
@@ -1040,7 +1046,7 @@ namespace CASM {
       config_dof.set_displacement(ConfigDoF::displacement_matrix_t::Zero(3, scel.num_sites()));
 
       Eigen::Vector3d avg_disp(0, 0, 0);
-      double avg2_disp(0);
+
       Coordinate disp_coord(rstruc.lattice());
 
       // Populate displacements given as the difference in the Coordinates
@@ -1068,7 +1074,6 @@ namespace CASM {
             config_dof.disp(i)[j] = disp_coord(CART)[j];
           }
           avg_disp += config_dof.disp(i);
-          avg2_disp += config_dof.disp(i).squaredNorm();
         }
       }
 
@@ -1148,9 +1153,10 @@ namespace CASM {
       std::vector<Index> optimal_assignments;
       //BasicStructure<Site> best_ideal_struc(rstruc);
       Coordinate ttrans(Vector3<double>(0, 0, 0), rstruc.lattice(), FRAC), best_trans(Vector3<double>(0, 0, 0), rstruc.lattice(), FRAC);
+      Coordinate within_trans(ttrans);
 
       double min_mean = 10E10;
-      double trans_dist;
+      double trans_dist, within_trans_dist;
 
       // We want to get rid of translations.
       // trans_coord is a vector from IDEAL to RELAXED
@@ -1175,16 +1181,19 @@ namespace CASM {
         if(n > 0)
           ref_coord(FRAC) = scel.coord(n - 1)(FRAC);
 
+        trans_dist = ref_coord.min_dist(rstruc.basis[0], ttrans);
+        within_trans = ttrans;
+        within_trans.set_lattice(scel.get_prim().lattice(), CART);
+        //std::cout << "Before:  within_trans " << within_trans(FRAC) << "; V_number: " << within_trans.voronoi_number() << "\n";
+        within_trans.within();// <-- should be voronoi_within()?
+        //std::cout << "After:  within_trans " << within_trans(FRAC) << "; V_number: " << within_trans.voronoi_number() << "\n\n\n";
+        within_trans_dist = within_trans(CART).length();
+        if(within_trans_dist < trans_dist) {
+          within_trans.set_lattice(rstruc.lattice(), CART);
+          ttrans = within_trans;
+          trans_dist = within_trans_dist;
+        }
 
-        trans_dist = rstruc.basis[0].min_dist(ref_coord, ttrans);
-
-        ttrans.set_lattice(scel.get_prim().lattice(), CART);
-        //std::cout << "Before:  ttrans " << ttrans(FRAC) << "; V_number: " << ttrans.voronoi_number() << "\n";
-        ttrans.within();// <-- should be voronoi_within()?
-        //std::cout << "After:  ttrans " << ttrans(FRAC) << "; V_number: " << ttrans.voronoi_number() << "\n\n\n";
-        ttrans.set_lattice(rstruc.lattice(), CART);
-        trans_dist = ttrans(CART).length();
-        //shift_struc -= ttrans;
         if(!ConfigMap_impl::calc_cost_matrix(scel, rstruc, ttrans, metric, cost_matrix)) {
           //std::cerr << "In Supercell::struc_to_config. Cannot construct cost matrix." << std::endl;
           //std::cerr << "This message is probably OK, if you are using translate_flag == true." << std::endl;
@@ -1228,7 +1237,7 @@ namespace CASM {
       config_dof.set_displacement(ConfigDoF::displacement_matrix_t::Zero(3, scel.num_sites()));
 
       Eigen::Vector3d avg_disp(0, 0, 0);
-      double avg2_disp(0);
+
       Coordinate disp_coord(rstruc.lattice());
 
       // Populate displacements given as the difference in the Coordinates
@@ -1256,7 +1265,6 @@ namespace CASM {
             config_dof.disp(i)[j] = disp_coord(CART)[j];
           }
           avg_disp += config_dof.disp(i);
-          avg2_disp += config_dof.disp(i).squaredNorm();
         }
       }
 
