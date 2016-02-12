@@ -1,90 +1,78 @@
 import sklearn.cross_validation
+import numpy as np
 from math import sqrt
 from casm.fit.linear_model import LinearRegressionForLOOCV
+from casm.fit.tools import indices
 
-
-def LeaveOneOutForLLS(n):
+def LeaveOneOutForLLS(n, **kwargs):
   """ Fake cv generator yields train and test sets including all n data points """
   return [(range(n), range(n))] 
 
 
-def evaluate_loocv_explicit(individual, fdata, model):
+def evaluate_loocv_explicit(individual, estimator, X, y, penalty=0.0):
   """
-  Evaluate weighted LOOCV by explicitly solving N least squares problems 
+  Evaluate LOOCV by explicitly solving N least squares problems: 
   
-  weighted LOOCV = sqrt(sum_i((value_i - pred_(-i))**2)/sum_i(w_i))
+    LOOCV = sqrt(sum_i((value_i - pred_(-i))**2)/sum_i(w_i)) + penalty*sum(individual)
   """
+  
+  Nvalue = X.shape[0]
   
   # explicitly calculate LOO
-  loo = sklearn.cross_validation.LeaveOneOut(fdata.Nvalue)
-  res_sqr = np.zeros(fdata.Nvalue)
+  loo = sklearn.cross_validation.LeaveOneOut(Nvalue)
+  res_sqr = np.zeros(Nvalue)
   for train, test in loo:
-    model.fit(fdata.corr[train,indices(individual)], fdata.value[train])
+    estimator.fit(X[train,indices(individual)], y[train])
     t = test[0]
-    res_sqr[t] = (fdata.value[test] - model.predict(fdata.corr[test,indices(individual)]))**2
+    res_sqr[t] = (y[test] - estimator.predict(X[test,indices(individual)]))**2
   cv = sqrt(np.mean(res_sqr))
   
-  return cv + fdata.penalty*sum(individual),
+  return cv + penalty*sum(individual),
 
 
-def evaluate_lls_loocv(individual, fdata):
+def evaluate_lls_loocv(individual, X, y, penalty=0.0):
   """ 
-  Evaluate the linear least squares LOOCV score using LinearRegressionForLOOCV
+  Evaluate the linear least squares LOOCV score using LinearRegressionForLOOCV:
+  
+  Equivalent to:
+    estimator = LinearRegressionForLOOCV()
+    C = X[:,indices(individual)]
+    estimator.fit(C, y)
+    return sqrt(estimator.score(C, y)) + penalty*sum(individual)
   """
-  model = LinearRegressionForLOOCV()
-  C = fdata.corr[:,indices(individual)]
-  model.fit(C, fdata.value)
-  return sqrt(model.score(C, fdata.value)) + fdata.penalty*sum(individual)
+  estimator = LinearRegressionForLOOCV()
+  C = X[:,indices(individual)]
+  estimator.fit(C, y)
+  return sqrt(estimator.score(C, y)) + penalty*sum(individual)
 
 
-def evaluate_lls_wloocv(individual, fdata):
-  """ 
-  Evaluate the weighted linear least squares LOOCV score using LinearRegressionForLOOCV
-  """
-  model = LinearRegressionForLOOCV()
-  C = fdata.wcorr[:,indices(individual)]
-  model.fit(C, fdata.wvalue)
-  return sqrt(model.score(C, fdata.wvalue)) + fdata.penalty*sum(individual)
-
-
-def evaluate_cv(individual, fdata, model):
+def cross_val_score(estimator, X, individual, y=None, scoring=None, cv=None, penalty=0.0, fit_params=None):
   """ 
   Equivalent to:
     scores = cross_val_score(
-      mdata.model,
-      fdata.corr[:,indices(individual)],
-      y=fdata.value,
-      scoring=mdata.scoring,
-      cv=fdata.cv)
-    return sqrt(np.mean(scores)),
+      estimator,
+      X[:,indices(individual)],
+      y=y,
+      scoring=scoring,
+      cv=cv,
+      fit_params=fit_params)
+    return sqrt(np.mean(scores)) + penalty*sum(individual),
   """
+  #print "begin casm.fit.cross_validation.cross_val_score"
   scores = sklearn.cross_validation.cross_val_score(
-    model,
-    fdata.corr[:,indices(individual)],
-    y=fdata.value,
-    scoring=fdata.scoring,
-    cv=fdata.cv)
+    estimator,
+    X[:,indices(individual)],
+    y=y,
+    scoring=scoring,
+    cv=cv,
+    fit_params=fit_params)
   
-  return sqrt(np.mean(scores)) + fdata.penalty*sum(individual),
-
-
-def evaluate_wcv(individual, fdata, model):
-  """ 
-  Equivalent to:
-    scores = cross_val_score(
-      mdata.model,
-      fdata.wcorr[:,indices(individual)],
-      y=fdata.wvalue,
-      scoring=mdata.scoring,
-      cv=fdata.cv)
-    return sqrt(np.mean(scores)),
-  """
-  scores = sklearn.cross_validation.cross_val_score(
-    model,
-    fdata.wcorr[:,indices(individual)],
-    y=fdata.wvalue,
-    scoring=fdata.scoring,
-    cv=fdata.cv)
+#  print "scores:", scores
+#  print "np.mean(scores):", np.mean(scores)
+#  print "sqrt(np.mean(scores)):", sqrt(np.mean(scores))
+#  print "sum(individual):", sum(individual)
+#  print "penalty*sum(individual):", penalty*sum(individual)
+#  print "total:", sqrt(np.mean(scores)) + penalty*sum(individual)
   
-  return sqrt(np.mean(scores)) + fdata.penalty*sum(individual),
+  return sqrt(np.mean(scores)) + penalty*sum(individual),
 

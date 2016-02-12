@@ -1,8 +1,15 @@
 import sklearn.linear_model
 import sklearn.cross_validation
+import sklearn.metrics
 import random
 import numpy as np
 from math import sqrt
+from casm.project import Selection, query
+import casm.fit.linear_model
+import casm.fit.feature_selection
+import casm.fit.cross_validation
+import casm.fit.tools
+import os, types, json, pickle, copy
 
 ## This part needs to be in global scope for parallization #####################  
 from deap import creator
@@ -25,13 +32,14 @@ def find_method(mods, attrname):
   print "Tried:", mods
   raise AttributeError("Could not find: " + attrname)
 
+
 def example_input():
   input = dict()
 
-  # regression model
-  input["model"] = dict()
-  input["model"]["method"] = "LinearRegression"
-  input["model"]["kwargs"] = None
+  # regression estimator
+  input["estimator"] = dict()
+  input["estimator"]["method"] = "LinearRegression"
+  input["estimator"]["kwargs"] = None
   
   # property begin fit
   input["property"] = "formation_energy"
@@ -48,7 +56,7 @@ def example_input():
   input["cv"]["penalty"] = 0.0
   
   # hall of fame
-  input["hall_of_fame_size"] = 25
+  input["halloffame_size"] = 25
   
   
   return input
@@ -67,7 +75,7 @@ def print_input_help():
   Generated files:
     'fit_data.pkl': Stores cross validation sets, training data, model weights and
       other information that can be used when running repeatedly.
-    'hall_of_fame.pkl': Stores the best ECI sets found, as determined by the CV
+    'halloffame.pkl': Stores the best ECI sets found, as determined by the CV
       score.
     'population_end.pkl': Stores the results of the most recent optimization. Can
       be renamed 'population_begin.pkl' to use as the initial state of a new run.
@@ -76,11 +84,11 @@ def print_input_help():
   ------------------------------------------------------------------------------
   {
   
-  # A scikit-learn linear model name and keyword args used to construct the model 
-  # object. Options include: 'LinearRegression', 'Ridge', 'Lasso', etc. 
+  # A scikit-learn linear model estimator name and keyword args used to construct  
+  # the estimator object. Options include: 'LinearRegression', 'Ridge', 'Lasso', etc. 
   # See: http://scikit-learn.org/stable/modules/linear_model.html
   # By default, the kwarg "fit_intercept" is set to False.
-    "model": {
+    "estimator": {
       "method": "LinearRegression", 
       "kwargs": null
     },
@@ -126,9 +134,9 @@ def print_input_help():
   # Name of property to be fit, as used for input to 'casm query -k'
     "property": "formation_energy", 
   
-  # Hall of fame size, the number of best sets of ECI to store in 'hall_of_fame.pkl',
+  # Hall of fame size, the number of best sets of ECI to store in 'halloffame.pkl',
   # as determined by CV score.
-    "hall_of_fame_size": 25, 
+    "halloffame_size": 25, 
   
   # A scikit-learn cross validation method to use to generate cross validation sets.
   #
@@ -247,8 +255,6 @@ def print_input_help():
   """
   
   
-
-
 class FittingData(object):
   """ 
   FittingData holds correlations, property values, sample weights, etc. used
@@ -275,15 +281,14 @@ class FittingData(object):
     wvalue: numpy array of calculated values to fit to, shape: (Nvalue, 1)
       wvalue = W'*value, where W = W' * W'.transpose()
     scoring: parameter for sklearn.cross_validation.cross_val_score
-        default = None, uses model.score()
+        default = None, uses estimator.score()
   """
   
-  def __init__(self, corr, value,cv, sample_weight=[], scoring=None):
+  def __init__(self, corr, value, cv, sample_weight=[], scoring=None, penalty=0.0):
     """
     Arguments:
       corr: numpy array of correlations, shape: (Nvalue, Nbfunc)
       value: numpy array of calculated values to fit to, shape: (Nvalue, 1)
-      model: scikit-learn type model used for fitting
       cv: a scikit-learn type cross validation iterator
       sample_weight: numpy array of sample weights, shape: (Nvalue,)
         if sample_weight == None: (default, unweighted)
@@ -293,7 +298,8 @@ class FittingData(object):
         if sample_weight is 2-dimensional (must be Hermitian, positive-definite):
           W = sample_weight*Nvalue/np.sum(sample_weight) 
       scoring: parameter for sklearn.cross_validation.cross_val_score
-        default = None, uses model.score()
+        default = None, uses score() method of the estimator
+      penalty: cv penalty per selected basis function
     """
     self.corr = corr
     self.value = value
@@ -321,6 +327,9 @@ class FittingData(object):
     
     # scoring
     self.scoring = scoring
+    
+    # penalty
+    self.penalty = penalty
 
 
 def make_fitting_data(proj, input, verbose = True):
@@ -334,54 +343,73 @@ def make_fitting_data(proj, input, verbose = True):
       
   """
   
+  # set weight defaults if not provided
+  sample_weight = None
+  if "weight" not in input:
+    input["weight"] = dict()
+  if "kwargs" not in input["weight"]:
+    input["weight"]["kwargs"] = dict()
+  if "method" not in input["weight"]:
+    input["weight"] = None
+  
+  # set cv kwargs and penalty (0.0) defaults
+  if "kwargs" not in input["cv"]:
+    input["cv"]["kwargs"] = dict()
+  if "penalty" not in input["cv"]:
+    input["cv"]["penalty"] = 0.0
+  
+  
   # property, weight, and cv inputs should remain constant
-  # model and feature_selection might change
+  # estimator and feature_selection might change
+  fit_data_filename = input.get("fit_data_filename", "fit_data.pkl")
   
-  filename = "fit_data.pkl"
-  
-  if os.path.exists(filename):
-    print "Reading existing fitting data from fit_data.pkl..."
-    fdata = pickle.load(open(filename, 'rb'))
+  if os.path.exists(fit_data_filename):
+    print "Reading existing fitting data from:", fit_data_filename
+    fdata = pickle.load(open(fit_data_filename, 'rb'))
     print "  DONE"
     
+    s = "Fitting scheme has changed.\n\n" + \
+        "To proceed with the existing scheme adjust your input file to match.\n" + \
+        "To proceed with the new scheme run in a new directory."
+    
     if fdata.input["property"] != input["property"]:
-      print \
-      """
-      ERROR: Input file and stored data differ. Input 'property' has changed.
-      """
-      print "Stored data:", fdata.input["property"]
-      print "Input:", input["property"]
+      print "ERROR: Input file and stored data differ. Input 'property' has changed."
+      print "Stored data:\n", json.dumps(fdata.input["property"], indent=2)
+      print "Input:\n", json.dumps(input["property"], indent=2)
+      print s
+      exit()
+    
     if fdata.input["cv"] != input["cv"]:
-      print \
-      """
-      ERROR: Input file and stored data differ. Input 'cv' has changed.
-      """
-      print "Stored data:", fdata.input["cv"]
-      print "Input:", input["cv"]
+      print "ERROR: Input file and stored data differ. Input 'cv' has changed."
+      print "Stored data:\n", json.dumps(fdata.input["cv"], indent=2)
+      print "Input:\n", json.dumps(input["cv"], indent=2)
+      print s
+      exit()
+    
     if fdata.input["weight"] != input["weight"]:
-      print \
-      """
-      ERROR: Input file and stored data differ. Input 'weight' has changed.
-      """
-      print "Stored data:", fdata.input["weight"]
-      print "Input:", input["weight"]
+      print "ERROR: Input file and stored data differ. Input 'weight' has changed."
+      print "Stored data:\n", json.dumps(fdata.input["weight"], indent=2)
+      print "Input:\n", json.dumps(input["weight"], indent=2)
+      print s
+      exit()
     
   else:
-  
+    
+    # selection of calculated configurations to train on
+    train_filename = input.get("train_filename", "train")
+    
     # get current training selection
-    sel = Selection(proj, path="train")
+    sel = Selection(proj, path=train_filename)
     
     ## property
     
     # get property name (required)
     property = input["property"]
-    if verbose:
-      print "Property:", property
     
     ## query data
     
     # values to query
-    columns = ["corr", property, "hull_dist(train,atom_frac)"]
+    columns = ["corr", property, "hull_dist(" + train_filename + ",atom_frac)"]
     
     # perform query
     df = query(proj, columns, sel)
@@ -396,23 +424,14 @@ def make_fitting_data(proj, input, verbose = True):
     Nvalue = value.shape[0]
     
     if verbose:
+      print "# Property:", property
       print "# Training configurations:", Nvalue
-    if verbose:
       print "# Basis functions:", i
     
     ## weight (optional)
     
-    # set defaults if not provided
-    sample_weight = None
-    if "weight" not in input:
-      input["weight"] = dict()
-    if "kwargs" not in input["weight"]:
-      input["weight"]["kwargs"] = dict()
-    if "method" not in input["weight"]:
-      input["weight"] = None
-    
     # get kwargs
-    kwargs = input["weight"]["kwargs"]
+    weight_kwargs = copy.deepcopy(input["weight"]["kwargs"])
           
     # use method to get weights
     if input["weight"]["method"] == "wCustom":
@@ -426,165 +445,328 @@ def make_fitting_data(proj, input, verbose = True):
       cols = ["weight(" + str(i) + ")" for i in range(len(Nvalue))]
       sample_weight = df.iloc[:,cols].values
     elif input["weight"]["method"] == "wHullDist":
-      sample_weight = wHullDist(hull_dist, **kwargs)
+      sample_weight = wHullDist(hull_dist, **weight_kwargs)
     elif input["weight"]["method"] == "wEmin":
-      sample_weight = wEmin(value, **kwargs)
+      sample_weight = wEmin(value, **weight_kwargs)
     elif input["weight"]["method"] == "wEref":
-      sample_weight = wEref(value, **kwargs)
+      sample_weight = wEref(value, **weight_kwargs)
           
     if verbose:
-      print "Weighting:", input["weight"]["method"]
-      print "  kwargs:", json.dumps(kwargs)
+      print "# Weighting:"
+      print json.dumps(input["weight"], indent=2), "\n"
     
     
     ## cv
+    cv_kwargs = copy.deepcopy(input["cv"]["kwargs"])
     
-    # set kwargs (shuffle=True) and penalty (0.0) defaults
-    if "kwargs" not in input["cv"]:
-      input["cv"]["kwargs"] = dict()
-    if "shuffle" not in input["cv"]["kwargs"]:
-      input["cv"]["kwargs"]["shuffle"] = True
-    kwargs = input["cv"]["kwargs"]
-    if "penalty" not in input["cv"]:
-      input["cv"]["penalty"] = 0.0
-    
-    
-    # get cv method (required)
-    cv_method = None
-    if input["model"]["method"] == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
-      cv_method = casm.fit.LeaveOneOutForLLS
-    else:
-      cv_method = getattr(sklearn.cross_validation, input["cv"]["method"])
-    cv = cv_method(Nvalue, **kwargs)
-    if verbose:
-      print "CV:", input["cv"]["method"]
-      print "  kwargs:", json.dumps(kwargs) 
-    
-    # set model (required) and scoring
-    scoring = sklearn.metrics.make_scorer(mean_squared_error, greater_is_better=True)
-    if input["model"]["method"] == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
-      model_method = casm.fit.LinearRegressionForLOOCV
-      scoring = None
-    else:
-      model_method = getattr(sklearn.cross_validation, input["model"]["method"])
-    model = mode_method(**kwargs)
+    # get cv method (required user input) and set scoring method
+    # For scoring, use sklearn.metrics.mean_squared_error unless basic least 
+    # squares regression is chosen, in which case use the CASM implementation
+#    cv_method = None
+#    if input["estimator"]["method"] == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
+#      cv_method = casm.fit.cross_validation.LeaveOneOutForLLS
+#    else:
+#      cv_method = find_method([sklearn.cross_validation], input["cv"]["method"])
+    cv_method = find_method([sklearn.cross_validation], input["cv"]["method"])
+    cv = cv_method(Nvalue, **cv_kwargs)
     
     # get penalty
     penalty = input["cv"]["penalty"]
-    if verbose:
-      print "  penalty:", penalty 
     
-    fdata = casm.fit.FittingData(corr, value, cv, sample_weight=sample_weight)
+    if verbose:
+      print "# CV:"
+      print json.dumps(input["cv"], indent=2), "\n"
+    
+    scoring = sklearn.metrics.make_scorer(sklearn.metrics.mean_squared_error, greater_is_better=True)
+#    if input["estimator"]["method"] == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
+#      scoring = None
+    
+    
+    fdata = casm.fit.FittingData(corr, value, cv, 
+      sample_weight=sample_weight, scoring=scoring, penalty=penalty)
     
     fdata.input = dict()
     fdata.input["cv"] = input["cv"]
     fdata.input["weight"] = input["weight"]
     fdata.input["property"] = input["property"]
     
-    pickle.dump(fdata, open(filename, 'wb'))
-    
-    
-
-#class ModelData(object):
-#  """ 
-#  FittingData holds a scikit-learn type model and scoring method
-#  
-#  Attributes:
-#    model: scikit-learn type model used for fitting
-#    
-#  """
-#  
-#  def __init__(self, model, scoring=None):
-#    """
-#    Arguments:
-#    
-#      model: a scikit-learn type linear model
-#      
-#    """
-#     
-#    # model used for fitting
-#    if model == None:
-#      model = casm.fit.standard_model()
-#    self.model = model
-    
+    pickle.dump(fdata, open(fit_data_filename, 'wb'))
+  
+  # during runtime only, if LinearRegression and LeaveOneOut, update fdata.cv and fdata.scoring
+  # to use optimized LOOCV score method
+  if input["estimator"]["method"] == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
+    fdata.scoring = None
+    fdata.cv = casm.fit.cross_validation.LeaveOneOutForLLS(fdata.wvalue.shape[0])
+  
+  return fdata
 
 
-def make_model(input, verbose = True):
+def make_estimator(input, verbose = True):
   """
-  Construct model object from input file settings.
+  Construct estimator object from input file settings.
   
   Arguments:
     input: input file as dict
   
   """""
   
-  ## model
+  ## estimator
   
   # get kwargs (default: fit_intercept=False)
   kwargs = dict()
-  if "kwargs" in input["model"]:
-    if input["model"]["kwargs"]:
-      kwargs = input["model"]["kwargs"]
+  if "kwargs" in input["estimator"]:
+    if input["estimator"]["kwargs"]:
+      kwargs = input["estimator"]["kwargs"]
   if "fit_intercept" not in kwargs:
     kwargs["fit_intercept"] = False
   
-  if input["model"]["method"] == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
-    model_method = casm.fit.LinearRegressionForLOOCV
+  if input["estimator"]["method"] == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
+    estimator_method = casm.fit.linear_model.LinearRegressionForLOOCV
   else:
-    model_method = getattr(sklearn.cross_validation, input["model"]["method"])
-  model = mode_method(**kwargs)
+    estimator_method = find_method([sklearn.linear_model], input["estimator"]["method"])
+  estimator = estimator_method(**kwargs)
   
   if verbose:
-    print "Model:", input["model"]["method"]
-    print "  kwargs:", json.dumps(kwargs)  
+    print "# Estimator:"
+    print json.dumps(input["estimator"], indent=2), "\n"
+    
   
-  return model
+  return estimator
 
+
+def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=True):
   
-def eci(individual, coef):
-  """ 
-  Return a list of tuple: [(index, coef), ...]
+  # read input, construct and return a feature selector
+  #
+  # The feature selector should act like a sklearn.feature_selection class and
+  # inherit from sklearn.base.BaseEstimator and sklearn.feature_selection.SelectorMixin,
   
-  index: a list containing the index of non-zero eci
-  coef: the eci value corresponding to the index
+  kwargs = copy.deepcopy(input["feature_selection"].get("kwargs", dict()))
+  if "evolve_params_kwargs" in kwargs:
+    if "halloffame_filename" not in kwargs["evolve_params_kwargs"]:
+      kwargs["evolve_params_kwargs"]["halloffame_filename"] = input.get("halloffame_filename", "halloffame.pkl")
+    if "halloffame_size" not in kwargs["evolve_params_kwargs"]:
+      kwargs["evolve_params_kwargs"]["halloffame_size"] = input.get("halloffame_size", 25)
   
+  if verbose:
+    print "# Feature Selection:"
+    print json.dumps(input["feature_selection"], indent=2), "\n"
+  
+  mods = [casm.fit.feature_selection, sklearn.feature_selection]
+  
+  selector_method = find_method(mods, input["feature_selection"]["method"])
+  
+  # check if 'cv', 'scoring', 'penalty' are allowed kwargs 
+  arg_count = selector_method.__init__.func_code.co_argcount
+  allowed_kwargs = selector_method.__init__.func_code.co_varnames[:arg_count]
+  
+  if "cv" in allowed_kwargs:
+    kwargs["cv"] = cv
+  if "scoring" in allowed_kwargs:
+    kwargs["scoring"] = scoring
+  if "penalty" in allowed_kwargs:
+    kwargs["penalty"] = penalty
+  
+  selector = selector_method(estimator, **kwargs)
+  
+  return selector
+
+
+def add_individual_detail(indiv, proj, estimator, fdata, selector, input):
   """
-  return zip(indices(individual), coef.tolist())
+  Adds attributes to an individual that will go into the HallOfFame describing 
+  the details of the method used it and the prediction ability. 
   
+  Adds attributes:
+    eci: as obtained from casm.fit.tools.eci(indiv, estimator.coef_)
+    rms: the root mean square prediction error of the unweighted problem
+    wrms: the root mean square prediction error of the weighted problem
+    estimator_method: the estimator method class name
+    feature_selection_method: the feature_selection method class name
+    note: the 'input["note"]' field, if it exists
+    input: the input file, as a dict
   
-def indices(individual):
-  """ convert bitstring to indices for slicing """
-  indices = []
-  for i in range(len(individual)):
-    if individual[i]:
-      indices.append(i)
-  return indices
+  Note: individuals should already have a 'fitness.values' attribute with the cv
+  score. Because of 'deap', the 'fitness.values' attribute is a tuple with the 
+  first element being the cv score.
+    
+  """
+  # eci
+  estimator.fit(fdata.wcorr[:,casm.fit.tools.indices(indiv)], fdata.wvalue)
+  indiv.eci = casm.fit.tools.eci(indiv, estimator.coef_)
+  
+  # rms and wrms
+  indiv.rms = sqrt(sklearn.metrics.mean_squared_error(
+    fdata.value, estimator.predict(fdata.corr[:,casm.fit.tools.indices(indiv)])))
+  indiv.wrms = sqrt(sklearn.metrics.mean_squared_error(
+    fdata.wvalue, estimator.predict(fdata.wcorr[:,casm.fit.tools.indices(indiv)])))
+  
+  # estimator (hide implementation detail)
+  indiv.estimator_method = type(estimator).__name__
+  if indiv.estimator_method == "LinearRegressionForLOOCV":
+    indiv.estimator_method = "LinearRegression"
+  
+  # feature_selection
+  indiv.feature_selection_method = type(selector).__name__
+  
+  # note
+  indiv.note = input.get("note", "")
+  
+  # input file
+  indiv.input = input
+  
+  return indiv
 
 
-def print_hall_of_fame(hall):
+def print_population(pop):
   """ 
-  Print all individual in hall of fame.
+  Print all individual in population.
   
-  Format:
-      0: 0111000100000000000000100001000000000100...   Nbfunc: 14      CV:  0.021686393   LOOCV:  0.020368764   Note: This was the best
-      1: 1111100100001100001010000000100001001000...   Nbfunc: 23      CV:  0.021858133   LOOCV:  0.018797794
-      2: 1111000100000000001000100000101001000010...   Nbfunc: 18      CV:  0.021908411   LOOCV:  0.019696178
+  Expects CV score in indiv.fitness.values[0]
+  
+  Index: Selected                                    #Selected    CV           
+  ----------------------------------------------------------------------------------------------------
+      0: 0111011110000111000001001100000100010000... 25           0.015609282  
+      1: 0111011110000111000001001101000100010000... 25           0.015611913  
+      2: 0111011110000111000001001100000100010000... 24           0.015619745  
   ...
   """
-  form_str = "{0:5}: {1}   Nbfunc: {2:<5}   CV: {3:< 12.8g}   WRMS: {4:< 12.8g}   RMS: {5:< 12.8g}"
-  for i in range(len(hall)):
+  print "{0:5}: {1:43} {2:<12} {3:<12}".format("Index", "Selected", "#Selected", "CV")
+  print "-"*100
+  form_str = "{0:5}: {1} {2:<12} {3:<12.8g}"
+  for i in range(len(pop)):
     bitstr = ""
-    for j in range(min(len(hall[i]),40)):
-      if hall[i][j]:
+    for j in range(min(len(pop[i]),40)):
+      if pop[i][j]:
         bitstr += '1'
       else:
         bitstr += '0'
-    if len(hall[i]) > 40:
+    if len(pop[i]) > 40:
       bitstr += "..."  
-    if hasattr(hall[i], 'note'):
-      print (form_str + "   Note: {5}").format(i, bitstr, sum(hall[i]), hall[i].fitness.values[0], hall[i].wrms, hall[i].rms, hall[i].note)
+    print form_str.format(i, bitstr, sum(pop[i]), pop[i].fitness.values[0])
+
+
+def to_json(index, indiv):
+  """
+  Serialize an individual. ECI are serialized using cls=casm.NoIndent, so when 
+  writing with json.dump or json.dumps, include 'cls=casm.NoIndentEncoder'.
+  
+  Arguments:
+    index: int, index in hall of fame
+    indiv: an individual fit
+  
+  """
+  d = dict()
+  bitstr = ""
+  for j in xrange(len(indiv)):
+    if indiv[j]:
+      bitstr += '1'
     else:
-      print form_str.format(i, bitstr, sum(hall[i]), hall[i].fitness.values[0], hall[i].wrms, hall[i].rms)
+      bitstr += '0'
+  d["basis_functions"] = bitstr
+  d["index"] = index
+  d["N_selected"] = sum(indiv)
+  d["cv"] = indiv.fitness.values[0]
+  d["rms"] = indiv.rms
+  d["wrms"] = indiv.wrms
+  d["estimator_method"] = indiv.estimator_method
+  d["feature_selection_method"] = indiv.feature_selection_method
+  d["note"] = indiv.note
+  d["eci"] = []
+  for bfunc in indiv.eci:
+    d["eci"].append(casm.NoIndent(bfunc))
+  d["input"] = indiv.input
+  return d
+
+
+def print_individual(index, indiv, format=None):
+  """ 
+  Print all individual in hall of fame.
+  
+  Index: Selected                                    #Selected    CV          wRMS        
+  ----------------------------------------------------------------------------------------------------
+      0: 0111011110000111000001001100000100010000... 25           0.015609282  0.014073401 
+      1: 0111011110000111000001001101000100010000... 25           0.015611913  0.014045382 
+      2: 0111011110000111000001001100000100010000... 24           0.015619745  0.01411583  
+  ...
+  """
+  if format is None:
+    if len(indiv) > 40:
+      bitstr_len = 43
+    else:
+      bitstr_len = len(indiv)
+    form_str = "{0:5}: {1:<" + str(bitstr_len) + "} {2:<12} {3:<12.8g} {4:<12.8g} {5:<12.8g} {6:<24} {7:<24} {8}"
+    bitstr = ""
+    for j in range(min(len(indiv),40)):
+      if indiv[j]:
+        bitstr += '1'
+      else:
+        bitstr += '0'
+    if len(indiv) > 40:
+      bitstr += "..."  
+    print form_str.format(index, bitstr, sum(indiv), indiv.fitness.values[0], 
+      indiv.rms, indiv.wrms, indiv.estimator_method, indiv.feature_selection_method, indiv.note)
+    return
+    
+  elif format.lower() == "json":
+    print json.dumps(to_json(index,indiv), indent=2, cls=casm.NoIndentEncoder)
+    return
+    
+  elif format.lower() == "details":
+    print "##"
+    print "Index:", index
+    
+    bitstr = ""
+    for j in xrange(len(indiv)):
+      if indiv[j]:
+        bitstr += '1'
+      else:
+        bitstr += '0'
+    print "BasisFunctions:", bitstr
+    print "#Selected:", sum(indiv)
+    print "CV:", indiv.fitness.values[0]
+    print "RMS:", indiv.rms
+    print "wRMS:", indiv.wrms
+    print "EstimatorMethod:", indiv.estimator_method
+    print "FeatureSelectionMethod:", indiv.feature_selection_method
+    print "Note:", indiv.note
+    print "ECI:\n"
+    print_eci(indiv.eci)
+    print "Input:\n", json.dumps(indiv.input, indent=2)
+    return
+
+
+def print_halloffame(hall, format=None):
+  """ 
+  Print all individual in hall of fame.
+  """
+  if format is None:
+    if len(hall[0]) > 40:
+      bitstr_len = 43
+    else:
+      bitstr_len = len(hall[0])
+    print ("{0:5}: {1:<" + str(bitstr_len) + "} {2:<12} {3:<12} {4:<12} {5:<12} {6:<24} {7:<24} {8}").format(
+      "Index", "Selected", "#Selected", "CV", "RMS", "wRMS", "Estimator", "Selection", "Note")
+    print "-"*(6+bitstr_len+13*4+25*3)
+    for index, indiv in enumerate(hall):
+      print_individual(index, indiv, format=format)
+      
+    return
+    
+  elif format.lower() == "json":
+    h = []
+    for index, indiv in enumerate(hall):
+      d = to_json(index, indiv)
+      h.append(d)
+    print json.dumps(h, indent=2, cls=casm.NoIndentEncoder)
+      
+    
+  elif format.lower() == "details":
+    for index, indiv in enumerate(hall):
+      print_individual(index, indiv, format=format)
+      print ""
+    
+    return
 
 
 def print_eci(eci):
@@ -601,77 +783,5 @@ def print_eci(eci):
     print "{index:>5}: {value:< .12g}".format(index=bfunc[0], value=bfunc[1])
 
 
-def main(proj, input):
-  
-  ## Filenames, for now fixed
-  
-  # selection of calculated configurations to train on
-  training_selection_filename = "train"
-  
-  # store cross validation sets so that the same ones are used to compare all 'individuals'
-  cv_filename = "cv.pkl"
-  
-  # if it exists, begin with this population, else generate randomly
-  population_begin_filename = "population_begin.pkl"
-  
-  # final population
-  population_end_filename = "population_end.pkl"
-  
-  # most optimal individuals of all time, if it exists will be read in and 
-  # continuely updated with addition runs
-  hall_of_fame_filename = "hall_of_fame.pkl"
-  
-  
-  # expect 'casm.fit input.json'
-  print input
-  
-  # construct FittingData
-  fdata = make_fitting_data(input)
-  
-  # construct ModelData
-  model = make_model(input)
-  
-  # construct hall of fame
-  if os.path.exists(hall_of_fame_filename):
-    hall = pickle.load(open(hall_of_fame_filename, 'rb'))
-  else
-    hall = deap.tools.HallOfFame(input["hall_of_fame_size"])
-  
-  # feature selection & fit method
-  selector = make_selector(model, input, fdata, hall)
-  selector.fit(model.wcorr, model.wvalue)
-  
-  # store and analyze results 
-  if not hasattr(selector, "halloffame"):
-    support = selector.get_support()
-    indiv = creator.Individual(input=input)
-    for i in range(len(suport)):
-      indiv[i] = support[i]
-    
-  # print hall of fame
-  
-  
 
-if __name__ == "__main__":
-  
-  parser = argparse.ArgumentParser(description = 'Fit cluster expansion coefficients (ECI)')
-  parser.add_argument('filename', nargs='?', help='Input file', type=str)
-  parser.add_argument('--path', help='Path to CASM project. Default assumes the current directory is in the CASM project.', type=str, default=os.getcwd())
-  parser.add_argument('--format', help='Print input file description', action="store_true")
-  parser.add_argument('--example_input', help='Print example input file', action="store_true")
-  args = parser.parse_args()
-  
-  if args.format:
-    casm.fit.print_input_help()
-    exit()
-  
-  if args.example_input:
-    print json.dumps(casm.fit.example_input(), indent=2)
-    exit()
-  
-  # for now, assume being run
-  proj = Project(args.path)
-  input = json.load(open(args.filename, 'r'))
-  
-  main(proj, input)
 

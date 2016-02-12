@@ -430,7 +430,7 @@ class Project(object):
       Returns a 'ctypes.c_void_p' that points to a CASM project. (PrimClex)
       """
       self.__load()
-      lib_ccasm.primclex_check(self._ptr)
+      #lib_ccasm.primclex_check(self._ptr)
       return self._ptr
     
         

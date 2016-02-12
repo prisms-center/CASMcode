@@ -1,4 +1,25 @@
 import numpy as np
+import random
+
+def eci(individual, coef):
+  """ 
+  Return a list of tuple: [(index, coef), ...]
+  
+  index: a list containing the index of non-zero eci
+  coef: the eci value corresponding to the index
+  
+  """
+  return zip(indices(individual), coef.tolist())
+  
+  
+def indices(individual):
+  """ convert bitstring to indices for slicing """
+  indices = []
+  for i in range(len(individual)):
+    if individual[i]:
+      indices.append(i)
+  return indices
+
 
 def wHullDist(hull_dist, A=1.0, B=1.0, kT=1.0):
   """
@@ -24,15 +45,25 @@ def wEref(value, A=1.0, B=1.0, kT=1.0, E0=0.0):
   return w
 
 
-def initNRandomOn(Nbfunc, Nbfunc_init):
+def initNRandomOn(container, Nbfunc, Nbfunc_init):
   """ Initialize a list of length 'Nbfunc' with 'Nbfunc_init' elements 1 and the rest 0""" 
   bits = [False]*Nbfunc
   for i in random.sample(range(Nbfunc), Nbfunc_init):
     bits[i] = True
-  return bits
+  return container(bits)
 
 
-def check_constraints(Nbfunc_min=0, Nbfunc_max="all", FixOn=[], FixOff=[]):
+class Constraints(object):
+  def __init__(self, Nbfunc_min=1, Nbfunc_max="all", FixOn=np.array([], dtype=int), FixOff=np.array([], dtype=int)):
+    if Nbfunc_min < 1:
+      raise ValueError("Nbfunc_min must be >= 1")
+    self.Nbfunc_min = Nbfunc_min
+    self.Nbfunc_max = Nbfunc_max
+    self.FixOn = np.array(FixOn, dtype=int)
+    self.FixOff = np.array(FixOff, dtype=int)
+    
+
+def check_constraints(constraints):
   """ 
   Ensure that number of basis functions is in range [min, max] while also
   ensuring that basis functions in FixOn remain on, and in FixOff remain off.
@@ -43,34 +74,38 @@ def check_constraints(Nbfunc_min=0, Nbfunc_max="all", FixOn=[], FixOff=[]):
       for child in offspring:
         
         # first ensure FixOn and FixOff
-        child[FixOn] = True
-        child[FixOff] = False
+        for i in constraints.FixOn:
+          child[i] = True
+        for i in constraints.FixOff:
+          child[i] = False
         
         # now make sure enough are 'on'
         Non = sum(child)
-        if Non < min:
+        if Non < constraints.Nbfunc_min:
           # get all 'off'
-          off = np.where(np.array(child) == False)[0].tolist()
+          off = np.where(np.asarray(child) == False)[0]
           
           # remove those that are FixOff
-          candidate = set(off).difference(set(FixOff))
+          candidate = set(off).difference(set(constraints.FixOff))
           
           # select enough of the candidates to reach the minimum
-          turn_on = random.sample(candidate, Nbfunc_min-Non)
-          child[turn_on] = True
+          turn_on = random.sample(candidate, constraints.Nbfunc_min-Non)
+          for i in turn_on:
+            child[i] = True
         
         # now make sure enough are 'off'
-        if Nbfunc_max != "all":
-          if Non > Nbfunc_max:
+        if constraints.Nbfunc_max != "all":
+          if Non > constraints.Nbfunc_max:
             # get all 'on'
-            on = np.where(np.array(child) == True)[0].tolist()
+            on = np.where(np.asarray(child) == True)[0]
             
             # remove those that are FixOn
-            candidate = set(on).difference(set(FixOn))
+            candidate = set(on).difference(set(constraints.FixOn))
             
             # select enough of the candidates to reach the maximum
-            turn_off = random.sample(candidate, Non-Nbfunc_max)
-            child[turn_off] = False
+            turn_off = random.sample(candidate, Non-constraints.Nbfunc_max)
+            for i in turn_off:
+              child[i] = False
         
       return offspring
     return wrapper

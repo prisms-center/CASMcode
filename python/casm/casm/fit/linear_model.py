@@ -1,11 +1,13 @@
 import numpy as np
+import sklearn
 
 class LinearRegressionForLOOCV(sklearn.base.BaseEstimator):
   """ LinearRegression estimator that fits by constructing hat matrix for faster
       LOOCV score calculations 
   """
   
-  def __init__(self):
+  def __init__(self, penalty=0.0, **kwargs):
+    self.penalty=penalty
     pass
   
   def fit(self, X, y):
@@ -31,7 +33,7 @@ class LinearRegressionForLOOCV(sklearn.base.BaseEstimator):
         where H = X*(X.transpose()*X).inverse()*X.transpose()
     
     """
-    
+    #print "begin casm.fit.linear_model.LinearRegressionForLOOCV.fit"
     S = np.linalg.pinv(X.transpose().dot(X)).dot(X.transpose())
     self.coef_ = np.dot(S, y)
     
@@ -40,10 +42,12 @@ class LinearRegressionForLOOCV(sklearn.base.BaseEstimator):
     
   
   def predict(self, X):
+    #print "begin casm.fit.linear_model.LinearRegressionForLOOCV.predict"
     return np.dot(X, self.coef_)
   
   
   def score(self, X, y):
     """LOOCV score"""
+    #print "begin casm.fit.linear_model.LinearRegressionForLOOCV.score"
     y_pred = np.dot(self.H_, y)
-    return np.mean(((y - y_pred)/(1.0 - np.diag(self.H_)))**2) + fdata.penalty*X.shape[1]
+    return np.mean(((y - y_pred)/(1.0 - np.diag(self.H_)))**2)
