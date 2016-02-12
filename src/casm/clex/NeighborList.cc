@@ -159,13 +159,12 @@ namespace CASM {
       W = -W;
     }
     
-    double n = 1.0;
-    for(; (n*W).cwiseAbs().maxCoeff() < max_element_value; n += 1.0) {
-      if(is_integer(n*W, tol)) {
-        return lround(n*W);
-      }
+    double n=1.0;
+    while(!is_integer(n*W, tol) && 
+          ((n+1.0)*W).cwiseAbs().maxCoeff() < max_element_value) {
+      n += 1.0;
     }
-    return lround((n-1.0)*W);
+    return lround(n*W);
   }
   
   /// \brief Clone
