@@ -410,13 +410,13 @@ namespace CASM {
         conditions_list.push_back(init_cond);
         
         CondType incrementing_cond = init_cond;
-        incrementing_cond.increment_by(cond_increment);
+        incrementing_cond += cond_increment;
 
         int num_increments = (final_cond - init_cond) / cond_increment;
         
         for(int i = 0; i < num_increments; i++) {
           conditions_list.push_back(incrementing_cond);
-          incrementing_cond.increment_by(cond_increment);
+          incrementing_cond += cond_increment;
         }
         
         if(conditions_list.size() == 1) {

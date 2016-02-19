@@ -132,20 +132,20 @@ namespace CASM {
       auto chem_pot = m_condition.chem_pot();
       auto param_chem_pot = m_condition.param_chem_pot();
       auto dcomp_n = m_event.dcomp_n();
-      auto dcomp = primclex().composition_axes().param_composition(dcomp_n);
+      auto dcomp_x = primclex().composition_axes().dparam_composition(dcomp_n);
       auto M = primclex().composition_axes().dparam_dmol();
+      auto V = supercell().volume();
            
       sout << "  components: " << jsonParser(primclex().composition_axes().components()) << "\n"
-           << "  dcomp_n: " << dcomp_n.transpose() << "\n"
+           << "  N*dcomp_n: " << V*dcomp_n.transpose() << "\n"
            << "  chem_pot: " << chem_pot.transpose() << "\n"
-           << "    chem_pot*dcomp_n: " << m_event.dcomp_n().dot(m_condition.chem_pot()) << "\n"
-           << "  dcomp: " << dcomp.transpose() << "\n"
+           << "  N*dcomp_x: " << V*dcomp_x.transpose() << "\n"
            << "  param_chem_pot: " << param_chem_pot.transpose() << "\n"
-           << "   param_chem_pot*dcomp: " << param_chem_pot.dot(dcomp) << "\n"
-           << "  dformation_energy: " << m_event.dformation_energy() << "\n"
-           << "    dformation_energy - chem_pot*dcomp_n: " << m_event.dformation_energy() - chem_pot.dot(dcomp_n) << "\n"
-           << "    dformation_energy - parm_chem_pot*dcomp: " << m_event.dformation_energy() - param_chem_pot.dot(dcomp) << "\n"
-           << "  dpotential_energy: " << m_event.dpotential_energy() << "\n" << std::endl;
+           << "   N*param_chem_pot*dcomp_x: " << V*param_chem_pot.dot(dcomp_x) << "\n"
+           << "  N*dformation_energy: " << V*m_event.dformation_energy() << "\n"
+           << "    N*(dformation_energy - chem_pot*dcomp_n): " << V*(m_event.dformation_energy() - chem_pot.dot(dcomp_n)) << "\n"
+           << "    N*(dformation_energy - parm_chem_pot*dcomp_x: " << V*(m_event.dformation_energy() - param_chem_pot.dot(dcomp_x)) << "\n"
+           << "  N*dpotential_energy: " << V*m_event.dpotential_energy() << "\n" << std::endl;
            
       
     }
@@ -367,8 +367,10 @@ namespace CASM {
     for(int i=0; i<event.dcomp_n().size(); ++i) {
       event.set_dcomp_n(i, 0.0);
     }
-    event.set_dcomp_n(m_site_swaps.sublat_to_mol()[sublat][current_occupant], m_minus_one_comp_n);
-    event.set_dcomp_n(m_site_swaps.sublat_to_mol()[sublat][new_occupant], m_plus_one_comp_n);
+    Index curr_species = m_site_swaps.sublat_to_mol()[sublat][current_occupant];
+    Index new_species = m_site_swaps.sublat_to_mol()[sublat][new_occupant];
+    event.set_dcomp_n(curr_species, m_minus_one_comp_n);
+    event.set_dcomp_n(new_species, m_plus_one_comp_n);
     
     
     // ---- set dcorr --------------
@@ -400,8 +402,7 @@ namespace CASM {
     
     // ---- set dpotential_energy --------------
     
-    
-    event.set_dpotential_energy(event.dformation_energy() - event.dcomp_n().dot(m_condition.chem_pot()));
+    event.set_dpotential_energy(event.dformation_energy() - m_condition.exchange_chem_pot(new_species, curr_species)*m_plus_one_comp_n);
     
   }
   
@@ -418,7 +419,7 @@ namespace CASM {
     m_scalar_property["formation_energy"] = m_formation_energy_eci * corr().data();
     m_formation_energy = &m_scalar_property["formation_energy"];
     
-    m_scalar_property["potential_energy"] = formation_energy() - comp_n().dot(m_condition.chem_pot());
+    m_scalar_property["potential_energy"] = formation_energy() - primclex().composition_axes().param_composition(comp_n()).dot(m_condition.param_chem_pot());
     m_potential_energy = &m_scalar_property["potential_energy"]; 
     
     if(debug()) {
@@ -451,31 +452,34 @@ namespace CASM {
       
       auto origin = primclex().composition_axes().origin();
       auto chem_pot = m_condition.chem_pot();
+      auto exchange_chem_pot = chem_pot;
+      exchange_chem_pot.array() -= chem_pot(0);
       auto param_chem_pot = m_condition.param_chem_pot();
-      auto comp = primclex().composition_axes().param_composition(comp_n());
+      auto comp_x = primclex().composition_axes().param_composition(comp_n());
       auto M = primclex().composition_axes().dparam_dmol();
       
       sout << "\n-- Properties --\n\n"
 
-           << "Lattice grand canonical ensemble: \n"
-           << "  Thermodynamic potential (per unitcell), Phi = -kT*ln(Z)/N \n"
+           << "Semi-grand canonical ensemble: \n"
+           << "  Thermodynamic potential (per unitcell), phi = -kT*ln(Z)/N \n"
            << "  Partition function, Z = sum_i exp(-N*potential_energy_i/kT) \n"
-           << "  potential_energy_i (per unitcell) = formation_energy_i - chem_pot*comp_n_i \n"
-           << "  parametric composition, comp = M * (comp_n - origin) \n"
-           << "  parametric chem potential, param_chem_pot = inv(M).transpose() * chem_pot \n\n"
+           << "  parametric composition, comp_x = M * (comp_n - origin) \n"
+           << "  parametric chem potential, param_chem_pot = inv(M).transpose() * chem_pot \n"
+           << "  potential_energy_i (per unitcell) = formation_energy_i - param_chem_pot*comp_x_i \n\n"
            
            << "components: " << jsonParser(primclex().composition_axes().components()) << "\n"
            << "M:\n" << M << "\n"
-           << "origin:\n" << origin << "\n"
+           << "origin:\n" << origin.transpose() << "\n"
            << "comp_n: " << comp_n().transpose() << "\n"
            << "chem_pot: " << chem_pot.transpose() << "\n"
-           << "  chem_pot*comp_n: " << comp_n().transpose()*chem_pot << "\n"
-           << "comp: " << comp.transpose() << "\n"
+           << "exchange_chem_pot: " << exchange_chem_pot.transpose() << "\n"
+           << "  exchange_chem_pot*(comp_n - origin): " << exchange_chem_pot.transpose()*(comp_n() - origin) << "\n"
+           << "comp_x: " << comp_x.transpose() << "\n"
            << "param_chem_pot: " << param_chem_pot.transpose() << "\n"
-           << "  param_chem_pot*(comp+dparam_dmol*origin): " << param_chem_pot.dot(comp + M*origin)  << "\n"
+           << "  param_chem_pot*comp_x: " << param_chem_pot.dot(comp_x)  << "\n"
            << "formation_energy: " << formation_energy() << "\n"
-           << "  formation_energy - chem_pot*comp_n: " << formation_energy() - chem_pot.dot(comp_n()) << "\n"
-           << "  formation_energy - param_chem_pot*(comp+dparam_dmol*origin): " << formation_energy() - param_chem_pot.dot(comp + M*origin) << "\n"
+           << "  formation_energy - exchange_chem_pot*(comp_n - origin): " << formation_energy() - exchange_chem_pot.transpose()*(comp_n() - origin) << "\n"
+           << "  formation_energy - param_chem_pot*(comp_x): " << formation_energy() - param_chem_pot.dot(comp_x) << "\n"
            << "potential_energy: " << potential_energy() << "\n" << std::endl;
     }
     
