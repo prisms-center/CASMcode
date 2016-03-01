@@ -307,8 +307,21 @@ class FittingData(object):
     # Number of configurations and basis functions
     self.Nvalue, self.Nbfunc = self.corr.shape
     
+    # weight
+    self.set_sample_weight(sample_weight=sample_weight)
+    
+    # cv sets
+    self.cv = cv
+    
+    # scoring
+    self.scoring = scoring
+    
+    # penalty
+    self.penalty = penalty
+  
+  def set_sample_weight(self, sample_weight=[]):
     # check sample_weight and convert to square matrix
-    if sample_weight == None:
+    if sample_weight is None:
       self.W = np.identity(self.value.shape[0])
     elif len(sample_weight.shape) == 1:
       self.W = np.diag(sample_weight)*self.Nvalue/np.sum(sample_weight)
@@ -322,14 +335,7 @@ class FittingData(object):
     self.wcorr = np.dot(self.L, self.corr)
     self.wvalue = np.dot(self.L, self.value)
     
-    # cv sets
-    self.cv = cv
     
-    # scoring
-    self.scoring = scoring
-    
-    # penalty
-    self.penalty = penalty
 
 
 def make_fitting_data(proj, input, verbose = True):
@@ -445,11 +451,11 @@ def make_fitting_data(proj, input, verbose = True):
       cols = ["weight(" + str(i) + ")" for i in range(len(Nvalue))]
       sample_weight = df.iloc[:,cols].values
     elif input["weight"]["method"] == "wHullDist":
-      sample_weight = wHullDist(hull_dist, **weight_kwargs)
+      sample_weight = casm.fit.tools.wHullDist(hull_dist, **weight_kwargs)
     elif input["weight"]["method"] == "wEmin":
-      sample_weight = wEmin(value, **weight_kwargs)
+      sample_weight = casm.fit.tools.wEmin(value, **weight_kwargs)
     elif input["weight"]["method"] == "wEref":
-      sample_weight = wEref(value, **weight_kwargs)
+      sample_weight = casm.fit.tools.wEref(value, **weight_kwargs)
           
     if verbose:
       print "# Weighting:"

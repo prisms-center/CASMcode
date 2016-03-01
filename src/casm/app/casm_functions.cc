@@ -59,39 +59,6 @@ namespace CASM {
     }
     
   }
-  
-  ConstConfigSelection make_config_selection(std::string selection_str, const PrimClex& primclex) {
-    if(selection_str == "MASTER") {
-      return ConstConfigSelection(primclex);
-    }
-    else if(selection_str == "ALL") {
-      ConstConfigSelection selection(primclex);
-      for(auto it=primclex.config_cbegin(); it!=primclex.config_cend(); ++it) {
-        selection.set_selected(it->name(), true);
-      }
-      return selection;
-    }
-    else if(selection_str == "CALCULATED") {
-      ConstConfigSelection selection(primclex);
-      for(auto it=primclex.config_cbegin(); it!=primclex.config_cend(); ++it) {
-        selection.set_selected(it->name(), is_calculated(*it));
-      }
-      return selection;
-    }
-    else {
-      fs::path selection_path = fs::absolute(fs::path(selection_str));
-      if(!fs::exists(selection_path)) {
-        std::stringstream ss;
-        ss << "ERROR in parsing configuation selection name. \n"
-           << "  Expected <filename>, 'ALL', 'CALCULATED', or 'MASTER' <--default \n"
-           << "  Received: '" << selection_str << "'\n"
-           << "  No file named '" << selection_path << "'.";
-        throw std::runtime_error(ss.str());
-      }
-      return ConstConfigSelection(primclex, selection_path);
-    }
-  }
-  
 
 
 }

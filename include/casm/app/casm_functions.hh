@@ -53,8 +53,6 @@ namespace CASM {
     fs::path out_path, 
     bool gzip);
   
-  ConstConfigSelection make_config_selection(std::string selection_str, const PrimClex& primclex);
-  
 }
 
 #endif

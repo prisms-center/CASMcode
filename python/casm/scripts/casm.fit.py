@@ -67,8 +67,8 @@ def main(proj, input, format=None, verbose=True):
     hall.update([indiv])
   
   # print hall of fame
-  print "\nHall of Fame:"
-  casm.fit.print_halloffame(hall, format=format)
+  #print "\nHall of Fame:"
+  #casm.fit.print_halloffame(hall, format=format)
   
   # pickle hall of fame
   print "\nPickling Hall of Fame to:", halloffame_filename

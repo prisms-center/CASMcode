@@ -211,11 +211,6 @@ namespace CASM {
     }
 
     bool only_selected(false);
-    for(int i = 0; i < selection.size(); i++) {
-      if(selection[i] != "MASTER") {
-        selection[i] = fs::absolute(fs::path(selection[i])).string();
-      }
-    }
     if(selection.empty()) {
       only_selected=true;
       selection.push_back("MASTER");

@@ -418,7 +418,6 @@ namespace CASM {
     dict.insert(
       OnHull(),
       OnClexHull(),
-      selected(),
       is_calculated(),
       selected_in()
     );
@@ -476,6 +475,7 @@ namespace CASM {
       CompN(),
       Comp(),
       AtomFrac(),
+      RelaxationStrain(),
       SiteFrac(),
       StrucScore()
     );

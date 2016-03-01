@@ -50,6 +50,7 @@ namespace CASM {
     ("verbatim,v", po::value(&verbatim_flag)->zero_tokens(), "Print exact properties specified, without prepending 'name' and 'selected' entries")
     ("output,o", po::value<fs::path>(&out_path), "Name for output file. Use STDOUT to print results without extra messages. CSV format unless extension is .json/.JSON, or --json option used.")
     ("gzip,z", po::value(&gz_flag)->zero_tokens(), "Write gzipped output file.")
+    ("all,a", "Print results all configurations in input selection, whether or not they are selected.")
     ("no-header,n", po::value(&no_header)->zero_tokens(), "Print without header (CSV only)");
 
 
@@ -72,6 +73,13 @@ namespace CASM {
         if(fs::exists(alias_file)) {
           ConfigIOParser::load_aliases(alias_file);
         }
+        ConfigIOParser::add_custom_formatter(
+          datum_formatter_alias(
+            "selected", 
+            ConfigIO::selected_in(), 
+            "Returns true if configuration is specified in the input selection"
+          )
+        );
         query_help(sout, help_opt_vec);
         return 0;
       }
@@ -152,6 +160,7 @@ namespace CASM {
       ConfigIOParser::load_aliases(alias_file);
     }
     
+    
     auto check_gz = [=](fs::path p) {
       if(p.extension() == ".gz" || p.extension() == ".GZ") {
         return true;
@@ -199,32 +208,38 @@ namespace CASM {
     }
     
     // Get configuration selection
-    ConstConfigSelection selection = make_config_selection(selection_str, primclex);
+    ConstConfigSelection selection(primclex, selection_str);
     
     // Print info
     status_stream << "Print:" << std::endl;
     for(int p = 0; p < columns.size(); p++) {
       status_stream << "   - " << columns[p] << std::endl;
     }
-    if(vm.count("config"))
-      status_stream << "to " << fs::absolute(out_path) << std::endl << std::endl;
+    if(vm.count("output"))
+      status_stream << "to " << fs::absolute(out_path) << std::endl;
+    status_stream << std::endl;
     
     // Construct DataFormatter
     DataFormatter<Configuration> formatter;
+    ConfigIOParser::add_custom_formatter(
+      datum_formatter_alias(
+        "selected", 
+        ConfigIO::selected_in(selection), 
+        "Returns true if configuration is specified in the input selection"
+      )
+    );
+        
     try {
       
-      auto it(columns.cbegin());
       std::vector<std::string> all_columns;
       if(!verbatim_flag) {
-        formatter.push_back(ConfigIO::configname());
-        formatter.push_back(datum_formatter_alias("selected", ConfigIO::selected_in(selection)));
-
-        while(it != columns.cend() && ((*it) == "configname" || (*it) == "selected")) {
-          ++it;
-        }
+        all_columns.push_back("configname");
+        all_columns.push_back("selected");
       }
-      all_columns.insert(all_columns.end(), it, columns.cend());
+      all_columns.insert(all_columns.end(), columns.cbegin(), columns.cend());
+      
       formatter.append(ConfigIOParser::parse(all_columns));
+      
     }
     catch(std::exception &e) {
       serr << "Parsing error: " << e.what() << "\n\n";
@@ -233,19 +248,22 @@ namespace CASM {
 
     try {
       
+      auto begin = vm.count("all") ? selection.config_begin() : selection.selected_config_begin();
+      auto end = vm.count("all") ? selection.config_end() : selection.selected_config_end();
+      
       // JSON output block
       if(json_flag) {
         jsonParser json;
 
         //sout << "Read in config selection... it is:\n" << selection;
-        json = formatter(selection.selected_config_begin(), selection.selected_config_end());
+        json = formatter(begin, end);
 
         output_stream << json;
       }
       // CSV output block
       else {
         //sout << "Read in config selection... it is:\n" << selection;
-        output_stream << formatter(selection.selected_config_begin(), selection.selected_config_end());
+        output_stream << formatter(begin, end);
       }
       
     }

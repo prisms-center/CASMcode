@@ -1,5 +1,7 @@
 import project
-import os, subprocess
+import query
+import os, subprocess, json
+import pandas
 
 class Selection(object):
     """
@@ -9,6 +11,10 @@ class Selection(object):
       proj: the CASM Project for this selection
       path: absolute path to selection file, or "MASTER" for master list
     
+    Properties:
+      data: A pandas.DataFrame describing the selected configurations. Has at least
+        'configname' and 'selected' (as bool) columns.
+      
     """
     def __init__(self, proj=None, path="MASTER"):
         """
@@ -16,7 +22,7 @@ class Selection(object):
 
         Args:
             proj: a Project
-            path: path to selection file (Default="MASTER"). 
+            path: path to selection file, or "MASTER" (Default="MASTER") 
 
         """
         if proj == None:
@@ -25,25 +31,133 @@ class Selection(object):
           raise Exception("Error constructing Selection: proj argument is not a CASM project")
         self.proj = proj
         
-        if path == "MASTER":
-          self.path = "MASTER"
-        elif os.path.isfile(path):
+        self.path = path
+        if os.path.isfile(path):
           self.path = os.path.abspath(path)
-        else:
-          raise Exception("No file exists named: " + path)
+
+#        if path == "MASTER":
+#          self.path = "MASTER"
+#        elif os.path.isfile(path):
+#          self.path = os.path.abspath(path)
+#        else:
+#          raise Exception("No file exists named: " + path)
+        
+        self._data = None
     
     
-    def df(self):
+    @property
+    def data(self):
         """
-        Read Selection file as a pandas.DataFrame
+        Get Selection data as a pandas.DataFrame
+        
+        If the data is modified, 'save' must be called for CASM to use the modified selection.
         """
-        if self.path[-5:].lower() == ".json":
-          return pandas.read_json(self.path, orient='records')
-        else:
-          f = open(self.path, 'r')
-          f.read(1)
-          return pandas.read_csv(f, sep=' *', engine='python')
+        if self._data is None:
+          if self.path in ["MASTER", "ALL", "CALCULATED"]:
+            self._data = query.query(self.proj, ['configname', 'selected'], self)
+          elif self._is_json():
+            self._data = pandas.read_json(self.path, orient='records')
+          else:
+            f = open(self.path, 'r')
+            f.read(1)
+            self._data = pandas.read_csv(f, sep=' *', engine='python')
+          self._clean_data()
+        return self._data
     
+    
+    def save(self, data=None, force=False):
+        """
+        Save the current selection. Also allows completely replacing the 'data'
+        describing the selected configurations.
+        
+        Args:
+          data: None (default), or pandas.DataFrame describing the Selection with 
+            'configname' and 'selected' columns. If path=="MASTER", Configurations 
+            not included in 'data' will be set to not selected.
+          force: Boolean, force overwrite existing files
+        """
+        if self.path == "MASTER":
+          
+          if data is not None:
+            self._data = data
+            self._clean_data()
+        
+          if self._data is None:
+            return
+          
+          clist = self.proj.dir.config_list()
+          backup = clist + ".tmp"
+          if os.path.exists(backup):
+            raise Exception("File: " + backup + " already exists")
+          
+          # read
+          j = json.load(open(clist, 'r'))
+          
+          for sk, sv in j["supercells"].iteritems():
+            for ck, cv in sv.iteritems():
+              sv[ck]["selected"] = False
+          
+          # set selection
+          for index, row in self._data.iterrows():
+            scelname, configid = row["configname"].split('/')
+            j["supercells"][scelname][configid]["selected"] = row["selected"]
+            
+          # write
+          f = open(backup, 'w')
+          json.dump(j, f)
+          os.rename(backup, clist)
+          
+        elif self.path in ["ALL", "CALCULATED"]:
+          raise Exception("Cannot save the '" + self.path + "' Selection")
+        
+        else:
+          
+          if data is not None:
+            self._data = data
+            self._clean_data()
+        
+          if os.path.exists(self.path) and not force:
+            raise Exception("File: " + self.path + " already exists")
+        
+          backup = self.path + ".tmp"
+          if os.path.exists(backup):
+            raise Exception("File: " + backup + " already exists")
+          
+          if self._is_json():
+            self._data.to_json(path_or_buf=backup, orient='records')
+          else:
+            f = open(backup, 'w')
+            f.write('#')
+            self._data["selected"] = self._data["selected"].astype(int)
+            self._data.to_csv(path_or_buf=f, sep=' ', index=False)
+            self._clean_data()
+          os.rename(backup, self.path)
+        
+        
+    
+    def saveas(self, path,force=False):
+        """
+        Create a new Selection from this one, save and return it
+        
+        Args:
+          path: path to selection file (Default="MASTER")
+          force: Boolean, force overwrite existing files
+        
+        Returns:
+          sel: the new Selection created from this one
+        """
+        sel = copy.deepcopy(self)
+        sel.path = path
+        sel.save(force=force)
+        return sel
+    
+    
+    def _is_json(self):
+        return self.path[-5:].lower() == ".json"
+    
+    def _clean_data(self):
+        self._data['selected'] = self._data['selected'].astype(bool)
+        
     
     def set_on(self, criteria="", output=None, force=False):
         """
@@ -97,7 +211,7 @@ class Selection(object):
         if force:
           args += " -f"
         self.proj.command(args)
-        
+        self._data = None
 
 
         
