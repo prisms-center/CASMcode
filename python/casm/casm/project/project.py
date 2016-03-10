@@ -434,7 +434,7 @@ class Project(object):
       return self._ptr
     
         
-    def command(self, args, execcasm = "casm"):
+    def command(self, args):
       """
       Execute a command via the command line interface. 
       

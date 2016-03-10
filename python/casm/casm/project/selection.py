@@ -1,6 +1,6 @@
 import project
 import query
-import os, subprocess, json
+import os, subprocess, json, copy
 import pandas
 
 class Selection(object):
@@ -43,6 +43,9 @@ class Selection(object):
 #          raise Exception("No file exists named: " + path)
         
         self._data = None
+        
+        # reserved for use by casm.plotting
+        self.src = None
     
     
     @property
@@ -126,16 +129,15 @@ class Selection(object):
           if self._is_json():
             self._data.to_json(path_or_buf=backup, orient='records')
           else:
+            self._data["selected"] = self._data["selected"].astype(int)
             f = open(backup, 'w')
             f.write('#')
-            self._data["selected"] = self._data["selected"].astype(int)
             self._data.to_csv(path_or_buf=f, sep=' ', index=False)
             self._clean_data()
           os.rename(backup, self.path)
         
-        
     
-    def saveas(self, path,force=False):
+    def saveas(self, path, force=False):
         """
         Create a new Selection from this one, save and return it
         
@@ -148,12 +150,13 @@ class Selection(object):
         """
         sel = copy.deepcopy(self)
         sel.path = path
-        sel.save(force=force)
+        sel.save(data=self.data, force=force)
         return sel
     
     
     def _is_json(self):
         return self.path[-5:].lower() == ".json"
+    
     
     def _clean_data(self):
         self._data['selected'] = self._data['selected'].astype(bool)
@@ -161,7 +164,8 @@ class Selection(object):
     
     def set_on(self, criteria="", output=None, force=False):
         """
-        Perform 'casm select --set-on' using this Selection as input
+        Perform 'casm select --set-on' using this Selection as input. Result
+        is immediately saved.
         
         Args:
             criteria: selection criteria string (Default="").
@@ -173,7 +177,8 @@ class Selection(object):
     
     def set_off(self, criteria="", output=None, force=False):
         """
-        Perform 'casm select --set-off' using this Selection as input
+        Perform 'casm select --set-off' using this Selection as input. Result
+        is immediately saved.
         
         Args:
             criteria: selection criteria string (Default="").
@@ -185,7 +190,8 @@ class Selection(object):
     
     def set(self, criteria="", output=None, force=False):
         """
-        Perform 'casm select --set' using this Selection as input
+        Perform 'casm select --set' using this Selection as input. Result
+        is immediately saved.
         
         Args:
             criteria: selection criteria string (Default="").
@@ -198,7 +204,8 @@ class Selection(object):
     def _generic_set(self, command, criteria="", output=None, force=False):
         """
         Perform 'casm select --command' using this Selection as input, where
-        command='set-on','set-off', or 'set'
+        command='set-on','set-off', or 'set'. Result
+        is immediately saved.
         
         Args:
             criteria: selection criteria string (Default="").
@@ -212,6 +219,37 @@ class Selection(object):
           args += " -f"
         self.proj.command(args)
         self._data = None
+
+
+    def query(self, columns, force=False):
+        """
+        Query requested columns and store them in 'data'. Will not overwrite
+        columns that already exist, unless 'force'==True.
+        """
+        if force == False:
+          _col = [x for x in columns if x not in self.data.columns]
+        else:
+          _col = columns
+        df = query.query(self.proj, _col, self)
+        
+        for c in df.columns:
+          self.data.loc[:,c] = df.loc[:,c]
+    
+    def add_data(self, name, data=None, force=False):
+        """
+        Equivalent to:
+        if name not in sel.data.columns or force == True:
+          if data is None:
+            sel.query([name], force)
+          else:
+            sel.data.loc[:,name] = data
+        """
+        if name not in self.data.columns or force == True:
+          if data is None:
+            self.query([name], force)
+          else:
+            self.data.loc[:,name] = data
+
 
 
         
