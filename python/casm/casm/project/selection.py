@@ -2,6 +2,7 @@ import project
 import query
 import os, subprocess, json, copy
 import pandas
+import numpy as np
 
 class Selection(object):
     """
@@ -129,11 +130,10 @@ class Selection(object):
           if self._is_json():
             self._data.to_json(path_or_buf=backup, orient='records')
           else:
-            self._data["selected"] = self._data["selected"].astype(int)
+            self._data.loc[:,"selected"] = self.data.loc[:,"selected"].astype(int)
             f = open(backup, 'w')
             f.write('#')
-            self._data.to_csv(path_or_buf=f, sep=' ', index=False)
-            self._clean_data()
+            self.data.to_csv(path_or_buf=f, sep=' ', index=False)
           os.rename(backup, self.path)
         
     
@@ -148,9 +148,9 @@ class Selection(object):
         Returns:
           sel: the new Selection created from this one
         """
-        sel = copy.deepcopy(self)
-        sel.path = path
-        sel.save(data=self.data, force=force)
+        sel = Selection(self.proj, path)
+        sel._data = self.data.copy()
+        sel.save(force=force)
         return sel
     
     
@@ -159,81 +159,27 @@ class Selection(object):
     
     
     def _clean_data(self):
-        self._data['selected'] = self._data['selected'].astype(bool)
+        self._data.loc[:,'selected'] = self._data.loc[:,'selected'].astype(bool)
         
     
-    def set_on(self, criteria="", output=None, force=False):
-        """
-        Perform 'casm select --set-on' using this Selection as input. Result
-        is immediately saved.
-        
-        Args:
-            criteria: selection criteria string (Default="").
-            output: Name of output file to write result to
-        
-        """
-        self._generic_set("set-on", criteria, output, force)
-    
-    
-    def set_off(self, criteria="", output=None, force=False):
-        """
-        Perform 'casm select --set-off' using this Selection as input. Result
-        is immediately saved.
-        
-        Args:
-            criteria: selection criteria string (Default="").
-            output: Name of output file to write result to
-        
-        """
-        self._generic_set("set-off", criteria, output, force)
-    
-    
-    def set(self, criteria="", output=None, force=False):
-        """
-        Perform 'casm select --set' using this Selection as input. Result
-        is immediately saved.
-        
-        Args:
-            criteria: selection criteria string (Default="").
-            output: Name of output file to write result to
-        
-        """
-        self._generic_set("set", criteria, output, force)
-
-    
-    def _generic_set(self, command, criteria="", output=None, force=False):
-        """
-        Perform 'casm select --command' using this Selection as input, where
-        command='set-on','set-off', or 'set'. Result
-        is immediately saved.
-        
-        Args:
-            criteria: selection criteria string (Default="").
-            output: Name of output file to write result to
-        
-        """
-        args = "select --" + command + " " + criteria + " -c " + self.path
-        if output != None:
-          args += " -o " + output
-        if force:
-          args += " -f"
-        self.proj.command(args)
-        self._data = None
-
-
     def query(self, columns, force=False):
         """
         Query requested columns and store them in 'data'. Will not overwrite
         columns that already exist, unless 'force'==True.
+        
+        Will query data for all configurations, whether selected or not.
         """
+        
         if force == False:
           _col = [x for x in columns if x not in self.data.columns]
         else:
           _col = columns
-        df = query.query(self.proj, _col, self)
+        
+        df = query.query(self.proj, _col, self, all=True)
         
         for c in df.columns:
           self.data.loc[:,c] = df.loc[:,c]
+    
     
     def add_data(self, name, data=None, force=False):
         """

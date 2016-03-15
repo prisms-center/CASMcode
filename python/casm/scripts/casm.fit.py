@@ -8,10 +8,10 @@ import argparse
 import deap.tools
 
 
-def main(proj, input, format=None, verbose=True):
+def main(sel, input, format=None, verbose=True):
   
   # construct FittingData
-  fdata = casm.fit.make_fitting_data(proj, input, verbose=verbose)
+  fdata = casm.fit.make_fitting_data(sel, input, verbose=verbose)
   
   # construct model used for fitting
   estimator = casm.fit.make_estimator(input, verbose=verbose)
@@ -45,7 +45,7 @@ def main(proj, input, format=None, verbose=True):
   if hasattr(selector, "halloffame"):
     print "Adding statistics..."
     for i in xrange(len(selector.halloffame)):
-      casm.fit.add_individual_detail(selector.halloffame[i], proj, estimator, fdata, selector, input)
+      casm.fit.add_individual_detail(selector.halloffame[i], estimator, fdata, selector, input)
     print "  DONE"
     
     print "Result:"
@@ -58,7 +58,7 @@ def main(proj, input, format=None, verbose=True):
     indiv.fitness.values = casm.fit.cross_validation.cross_val_score(
       estimator, fdata.wcorr, indiv, 
       y=fdata.wvalue, scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty)
-    casm.fit.add_individual_detail(indiv, proj, estimator, fdata, selector, input)
+    casm.fit.add_individual_detail(indiv, estimator, fdata, selector, input)
     print "  DONE"
     
     print "Result:"
@@ -104,7 +104,10 @@ if __name__ == "__main__":
     proj = Project(args.path)
     input = json.load(open(args.settings[0], 'r'))
     
-    main(proj, input, verbose=True, format=args.format)
+    # read training set
+    sel = Selection(proj, input.get("train_filename", "train"))
+    
+    main(sel, input, verbose=True, format=args.format)
   
   else:
     

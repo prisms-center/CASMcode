@@ -334,17 +334,18 @@ class FittingData(object):
     self.L = np.linalg.cholesky(self.W)
     self.wcorr = np.dot(self.L, self.corr)
     self.wvalue = np.dot(self.L, self.value)
-    
-    
 
 
-def make_fitting_data(proj, input, verbose = True):
+
+
+
+def make_fitting_data(sel, input, verbose = True):
   """ 
   Construct a FittingData instance, either by reading existing 'fit_data.pkl',
   or from an input file settings.
   
   Arguments:
-    proj: a casm.fit.Project
+    sel: a CASM Selection, the training set
     input: input file as dict
       
   """
@@ -401,12 +402,6 @@ def make_fitting_data(proj, input, verbose = True):
     
   else:
     
-    # selection of calculated configurations to train on
-    train_filename = input.get("train_filename", "train")
-    
-    # get current training selection
-    sel = Selection(proj, path=train_filename)
-    
     ## property
     
     # get property name (required)
@@ -415,10 +410,10 @@ def make_fitting_data(proj, input, verbose = True):
     ## query data
     
     # values to query
-    columns = ["corr", property, "hull_dist(" + train_filename + ",atom_frac)"]
+    columns = ["corr", property, "hull_dist(" + sel.path + ",atom_frac)"]
     
     # perform query
-    df = query(proj, columns, sel)
+    df = query(sel.proj, columns, sel)
 
     i = df.columns.tolist().index(property)
     
@@ -443,13 +438,13 @@ def make_fitting_data(proj, input, verbose = True):
     if input["weight"]["method"] == "wCustom":
       if verbose:
         print "Reading custom weights"
-      df = sel.df()
+      df = sel.data
       sample_weight = df["weight"].values
     elif input["weight"]["method"] == "wCustom2d":
       if verbose:
         print "Reading custom2d weights"
       cols = ["weight(" + str(i) + ")" for i in range(len(Nvalue))]
-      sample_weight = df.iloc[:,cols].values
+      sample_weight = sel.data.iloc[:,cols].values
     elif input["weight"]["method"] == "wHullDist":
       sample_weight = casm.fit.tools.wHullDist(hull_dist, **weight_kwargs)
     elif input["weight"]["method"] == "wEmin":
@@ -500,7 +495,7 @@ def make_fitting_data(proj, input, verbose = True):
   
   # during runtime only, if LinearRegression and LeaveOneOut, update fdata.cv and fdata.scoring
   # to use optimized LOOCV score method
-  if input["estimator"]["method"] == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
+  if input["estimator"].get("method", "LinearRegression") == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
     fdata.scoring = None
     fdata.cv = casm.fit.cross_validation.LeaveOneOutForLLS(fdata.wvalue.shape[0])
   
@@ -578,7 +573,7 @@ def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=
   return selector
 
 
-def add_individual_detail(indiv, proj, estimator, fdata, selector, input):
+def add_individual_detail(indiv, estimator, fdata, selector, input):
   """
   Adds attributes to an individual that will go into the HallOfFame describing 
   the details of the method used it and the prediction ability. 
