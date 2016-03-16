@@ -44,6 +44,35 @@ def wEref(value, A=1.0, B=1.0, kT=1.0, E0=0.0):
   w[np.where(value <= E0)[0].tolist()] = 1.0
   return w
 
+def set_sample_weight(sample_weight, value=None, corr=None):
+  """ Returns (wvalue, wcorr, W, L) """
+  # check sample_weight and convert to square matrix
+  Nvalue = len(sample_weight)
+  W = None
+  L = None
+  wvalue = None
+  wcorr = None
+  
+  if sample_weight is None:
+    W = np.identity(self.value.shape[0])
+  elif len(sample_weight.shape) == 1:
+    W = np.diag(sample_weight)*Nvalue/np.sum(sample_weight)
+  elif len(sample_weight.shape) == 2:
+    W = sample_weight*Nvalue/np.sum(sample_weight)
+  else:
+    raise Exception("Error in set_sample_weight: sample_weight dimension > 2")
+  
+  # weighted data
+  L = np.linalg.cholesky(W)
+  
+  if corr is not None:
+    wcorr = np.dot(L, corr)
+  
+  if value is not None:
+    wvalue = np.dot(L, value)
+  
+  return (wvalue, wcorr, W, L)
+
 
 def initNRandomOn(container, Nbfunc, Nbfunc_init):
   """ Initialize a list of length 'Nbfunc' with 'Nbfunc_init' elements 1 and the rest 0""" 

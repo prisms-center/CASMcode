@@ -5,10 +5,34 @@ import pandas
 import uuid
 import casm.project
 
-from bokeh.plotting import hplot, vplot
-from bokeh.client import push_session
-from bokeh.io import curdoc, vform
+import os
+import casm.fit
+import json
 
+import bokeh.client
+import bokeh.io
+
+from bokeh.plotting import hplot, vplot
+
+class Session(object):
+  def __init__(self, doc=None):
+    if doc is None:
+      doc = bokeh.io.curdoc()
+    self.doc = doc
+    self.session = bokeh.client.push_session(self.doc)
+  
+  def add_root(self, layout):
+    self.doc.add_root(layout)
+  
+  def begin(self):
+    self.session.show()
+  
+  def begin_interactive(self):
+    self.session.show()
+    self.session.loop_until_closed()
+  
+  def close(self):
+    self.session.close()
 
 class Messages(object):
   """TextInput for writing messages"""
@@ -23,35 +47,75 @@ class Messages(object):
   def value(self, _value):
     self.widget.value = str(_value)
 
+def _selected(sel):
+  """Selected configurations"""
+  if 'to_be_selected' in sel.data.columns:
+    return sel.data['to_be_selected']==True
+  else:
+    return sel.data['selected']==True
 
-def hull_dist():
-  """Equivalent to 'hull_dist(CALCULATED,comp)'"""
-  return 'hull_dist(CALCULATED,comp)'
+def _unselected(sel):
+  """Unselected configurations"""
+  if 'to_be_selected' in sel.data.columns:
+    return sel.data['to_be_selected']==False
+  else:
+    return sel.data['selected']==False
+  
 
-def hull_dist_per_atom():
-  """Equivalent to 'hull_dist(CALCULATED,atom_frac)'"""
-  return 'hull_dist(CALCULATED,atom_frac)'
+def hull_dist(path="CALCULATED"):
+  """
+  Equivalent to 'hull_dist(' + path + ',comp)'
+  
+  Arguments:
+    path: a CASM Selection path, default "CALCULATED"
+  
+  """
+  return 'hull_dist(' + path + ',comp)'
+
+def hull_dist_per_atom(path="CALCULATED"):
+  """
+  Equivalent to 'hull_dist(' + path + ',atom_frac)'
+  
+  Arguments:
+    path: a CASM Selection path, default "CALCULATED"
+  
+  """
+  return 'hull_dist(' + path + ',atom_frac)'
 
 def add_src_data(sel, name, data, force=False):
   if sel.src is None:
     sel.src = bokeh.models.ColumnDataSource(data={name:data})
-    sel.src_update = []
-    def callbacks(attrname, old, new):
-      for f in sel.src_update:
-        f(attrname, old, new)
-    sel.src.on_change('data', callbacks)
+    sel.selection_callbacks = []
+    def callbacks():
+      for f in sel.selection_callbacks:
+        f()
+    sel.update_selection = callbacks
   else:
     if name not in sel.src.data.keys() or force == True:
       sel.src.data[name] = data
     
-def add_hull_data(sel, hull_tol=1e-8):
+def add_hull_data(sel, hull_sel=None, hull_tol=1e-8, force=False):
+  """
+  Adds hull_dist, hull_dist_per_atom, and 'on_hull' to sel.data.
   
-  sel.add_data(hull_dist())
-  add_src_data(sel, hull_dist(), sel.data.loc[:,hull_dist()])
+  Arguments:
+    sel: a CASM Selection, to get hull distances for.
+    hull_sel: (Selection or None) a CASM Selection, to use for the hull. Default uses sel.
+    hull_tol: (number, default 1e-8) tolerance to decide if configuration is on the hull
+  """
+  if hull_sel is None:
+    hull_sel = sel
   
-  sel.add_data(hull_dist_per_atom())
+  path = hull_sel.path
   
-  sel.add_data('on_hull', sel.data.loc[:,hull_dist_per_atom()] < hull_tol, force=True)
+  sel.add_data(hull_dist(path), force=force)
+  sel.add_data(hull_dist_per_atom(path), force=force)
+  
+  if force or 'on_hull' not in sel.data.columns:
+    sel.data.loc[_unselected(sel),'on_hull'] = False
+    on_hull = map(lambda x: abs(x) < hull_tol, sel.data.loc[_selected(sel),hull_dist_per_atom(path)])
+    sel.data.loc[_selected(sel), 'on_hull'] = on_hull
+  
 
 def view_on_tap(sel, attrname, old, new):
   """
@@ -136,7 +200,8 @@ def update_glyphs(sel, selected=None, on_hull=None):
     selected = sel.data['selected']
   
   if on_hull is None:
-    on_hull = sel.data['on_hull']
+    if 'on_hull' in sel.data.columns:
+      on_hull = sel.data['on_hull']
   
   style = sel.style
   
@@ -157,9 +222,11 @@ def update_glyphs(sel, selected=None, on_hull=None):
   
   sel.src.data['color'] = map(lambda x: colormap[x], selected)
   sel.src.data['radii'] = map(lambda x: radiimap[x], selected)
-  sel.src.data['line_color'] = map(lambda x: linecolormap[x], on_hull)
-  sel.src.data['line_width'] = map(lambda x: linewidthmap[x], on_hull)
-  sel.src.data['line_alpha'] = map(lambda x: linealphamap[x], on_hull)
+  
+  if on_hull is not None:
+    sel.src.data['line_color'] = map(lambda x: linecolormap[x], on_hull)
+    sel.src.data['line_width'] = map(lambda x: linewidthmap[x], on_hull)
+    sel.src.data['line_alpha'] = map(lambda x: linealphamap[x], on_hull)
   
 
 class ConvexHullPlot(object):
@@ -169,18 +236,26 @@ class ConvexHullPlot(object):
     layout: a bokeh layout element holding p
     sel: a CASM Selection used to make the figure
     x: the value of the x-axis, 'comp(a)' by default
-    x_id: a UUID to use for the x-axis column name in the sel.src ColumnDataSource
+    y: the value of the y-axis, 'formation_energy' by default
   """
   
-  def __init__(self, sel, x='comp(a)'):
+  def __init__(self, sel, hull_sel=None, hull_tol=1e-8, x='comp(a)', y='formation_energy'):
     """
     Arguments:
       sel: A CASM Selection
       x: (str) column name to use as x axis. Default='comp(a)'.
+      y: (str) column name to use as y axis. Default='formation_energy'.
+      hull_sel: (Selection or None) a CASM Selection, to use for the hull. Default uses sel.
+      hull_tol: (number, default 1e-8) tolerance to decide if configuration is on the hull
     """
     self.sel = sel
-    self.x_id = str(uuid.uuid4())
     self.x = x
+    self.y = y
+    
+    if hull_sel is None:
+      hull_sel = sel
+    self.hull_sel = hull_sel
+    self.hull_tol = hull_tol
     
     # TOOLS in bokeh plot
     self.tools = "crosshair,pan,reset,resize,box_zoom"
@@ -193,11 +268,13 @@ class ConvexHullPlot(object):
     
     # store plot in layout
     self.layout = self.p
+    
+    # callbacks
+    self.sel.selection_callbacks.append(self.update)
+    
   
   @property
   def p(self):
-    if self.p_ is None:
-      self._plot()
     return self.p_
   
   def _plot(self):
@@ -210,27 +287,21 @@ class ConvexHullPlot(object):
     
     # plot formation energy vs comp, with convex hull states
     self.p_ = bokeh.plotting.Figure(plot_width=800, plot_height=400, tools=self.tools)
-    cr = self.p_.circle(self.x_id, 'formation_energy', source=self.sel.src, 
+    cr = self.p_.circle(self.x, self.y, source=self.sel.src, 
       size='radii', fill_color='color', fill_alpha=style.fill_alpha, 
       line_color='line_color', line_width='line_width', line_alpha='line_alpha',
-      hover_alpha=style.hover_alpha, hover_color=style.hover_color, 
-      legend="Formation energy")
-    hull_line = self.p_.line(self.x_id, 'formation_energy', source=self.calc_hull_src, 
-      line_color=style.on_hull_line_color, line_width=1.0, 
-      legend="Ground states")
-#    self.p_.circle(self.x_id, 'formation_energy',  source=self.calc_hull_src, 
-#      size=style.radiimap[True], fill_color=None, line_color=style.hull_color, line_width=1, 
-#      legend="Ground states")
+      hover_alpha=style.hover_alpha, hover_color=style.hover_color)
+    self.hull_line = self.p_.line(self.x, self.y, source=self.calc_hull_src, 
+      line_color=style.on_hull_line_color, line_width=1.0)
 
-    self.p_.legend.location = "bottom_left"
     self.p_.xaxis.axis_label = self.x
-    self.p_.yaxis.axis_label = "Formation energy"
+    self.p_.yaxis.axis_label = self.y
 
     # hover over a point to see 'configname', 'Ef', and 'comp(a)'
     tooltips = [
         ("configname","@configname"), 
         ("Ef","@formation_energy{1.1111}"),
-        ("hull_dist", "@{" + hull_dist() + "}{1.1111}")
+        ("hull_dist", "@{" + hull_dist(self.hull_sel.path) + "}{1.1111}")
     ]
     
     i = ord('a')
@@ -247,28 +318,55 @@ class ConvexHullPlot(object):
     self.p_.add_tools(bokeh.models.LassoSelectTool(renderers=[cr]))
   
   def _query(self):
-    #add data to sel.data if necessary
-    col = ['configname',
-           'selected',
-           'comp',
-           'comp_n',
-           'formation_energy']
     
-    df = casm.project.query(self.sel.proj, col, self.sel)
-    for c in df.columns:
-      self.sel.add_data(c, df[c])
-      add_src_data(self.sel, c, self.sel.data.loc[:,c])
+    self.sel.add_data(self.x)
+    add_src_data(self.sel, self.x, self.sel.data.loc[:,self.x])
     
-    add_hull_data(self.sel)
+    self.sel.add_data(self.y)
+    add_src_data(self.sel, self.y, self.sel.data.loc[:,self.y])
     
-    # add a column to selection src to use for the x-axis / x-data
-    # we use a uuid for the name so we can enable interactively changing it later
-    add_src_data(self.sel, self.x_id, self.sel.data.loc[:,self.x])
+    add_hull_data(self.sel, self.hull_sel, self.hull_tol, force=True)
+    add_src_data(self.sel, hull_dist(self.hull_sel.path), self.sel.data.loc[:,hull_dist(self.hull_sel.path)])
     
-    # get hull data, sorted by 'x' axis value for easy plotting
-    df_calc_hull = self.sel.data[self.sel.data['on_hull'] == True].sort_values([hull_dist(), self.x])
-    self.calc_hull_src = bokeh.models.ColumnDataSource(data=df_calc_hull)
-    self.calc_hull_src.data[self.x_id] = self.calc_hull_src.data[self.x]
+    # set hull line data
+    on_hull = self.sel.data.loc[:,'on_hull'] == True
+    df_on_hull = self.sel.data.loc[on_hull, [self.x, self.y, hull_dist(self.hull_sel.path)]]
+    sorted_df_on_hull = df_on_hull.sort_values([hull_dist(self.hull_sel.path), self.x])
+    self.sorted_hull_indices = sorted_df_on_hull.index
+    
+    # source for hull data
+    self.calc_hull_src = bokeh.models.ColumnDataSource(data=sorted_df_on_hull)
+  
+  def update(self):
+    """
+    Enable update of y values
+    """
+    
+    # update y-data
+    add_hull_data(self.sel, self.hull_sel, self.hull_tol, force=True)
+    add_src_data(self.sel, hull_dist(self.hull_sel.path), self.sel.data.loc[:,hull_dist(self.hull_sel.path)])
+    
+    # set hull line data
+    on_hull = self.sel.data.loc[:,'on_hull'] == True
+    df_on_hull = self.sel.data.loc[on_hull, [self.x, self.y, hull_dist(self.hull_sel.path)]]
+    sorted_df_on_hull = df_on_hull.sort_values([hull_dist(self.hull_sel.path), self.x])
+    self.sorted_hull_indices = sorted_df_on_hull.index
+    
+    # source for hull data
+    self.calc_hull_src.data[self.x] = self.sel.data.loc[self.sorted_hull_indices, self.x]
+    self.calc_hull_src.data[self.y] = self.sel.data.loc[self.sorted_hull_indices, self.y]
+  
+  def update_hull_line(self):
+    
+    # set hull line data
+    on_hull = self.sel.data.loc[:,'on_hull'] == True
+    df_on_hull = self.sel.data.loc[on_hull, [self.x, self.y, hull_dist(self.hull_sel.path)]]
+    sorted_df_on_hull = df_on_hull.sort_values([hull_dist(self.hull_sel.path), self.x])
+    self.sorted_hull_indices = sorted_df_on_hull.index
+    
+    # source for hull data
+    self.calc_hull_src.data[self.x] = self.sel.data.loc[self.sorted_hull_indices, self.x]
+    self.calc_hull_src.data[self.y] = self.sel.data.loc[self.sorted_hull_indices, self.y]
 
 
 class Scatter(object):
@@ -278,45 +376,32 @@ class Scatter(object):
     layout: a bokeh layout element holding p
     sel: a CASM Selection used to make the figure
     x: the value of the x-axis, 'comp(a)' by default
-    x_id: a UUID to use for the x-axis column name in the sel.src ColumnDataSource
     y: the value of the y-axis, 'comp(a)' by default
-    y_id: a UUID to use for the y-axis column name in the sel.src ColumnDataSource
   """
   
-  def __init__(self, sel, x='comp(a)', y='comp(a)', show_gs=True):
+  def __init__(self, sel, x='comp(a)', y='comp(a)'):
     """
     Arguments:
       sel: A CASM Selection
       x: (str) property name to use as x axis, 'comp(a)' by default.
       y: (str) property name to use as y axis, 'comp(a)' by default.
-      show_gs: (Boolean) whether to outline ground states
     """
-    print "begin Scatter"
+    
     self.sel = sel
     
     self.x = x
     self.sel.add_data('configname')
     add_src_data(self.sel, 'configname', self.sel.data['configname'])
+    
     self.sel.add_data(x)
-    # add a column to selection src to use for the x-axis / x-data
-    # we use a uuid for the name so we can enable interactively changing it later
-    self.x_id = str(uuid.uuid4())
-    add_src_data(self.sel, self.x_id, self.sel.data.loc[:,self.x])
+    add_src_data(self.sel, self.x, self.sel.data.loc[:,self.x])
     
     self.y = y
     self.sel.add_data(y)
-    # add a column to selection src to use for the y-axis / y-data
-    # we use a uuid for the name so we can enable interactively changing it later
-    self.y_id = str(uuid.uuid4())
-    add_src_data(self.sel, self.y_id, self.sel.data.loc[:,self.y])
+    add_src_data(self.sel, self.y, self.sel.data.loc[:,self.y])
     
     # TOOLS in bokeh plot
     self.tools = "crosshair,pan,reset,resize,box_zoom"
-    
-    # get hull data, sorted by 'x' axis value for easy plotting
-    self.show_gs = show_gs
-    if self.show_gs:
-      add_hull_data(self.sel)
     
     self._plot()
     
@@ -325,8 +410,6 @@ class Scatter(object):
   
   @property
   def p(self):
-    if self.p_ is None:
-      self._plot()
     return self.p_
   
   def _plot(self):
@@ -342,17 +425,17 @@ class Scatter(object):
     if True:
       self.p_ = bokeh.plotting.Figure(plot_width=400, plot_height=400, tools=self.tools)
       
-      cr = self.p_.circle(self.x_id, self.y_id, source=self.sel.src, 
+      cr = self.p_.circle(self.x, self.y, source=self.sel.src, 
         size='radii', fill_color='color', fill_alpha=style.fill_alpha,
         line_color='line_color', line_width='line_width', line_alpha='line_alpha',
         hover_alpha=style.hover_alpha, hover_color=style.hover_color)
     
     else:
       # rug plot
-      x_max = max(self.sel.src.data[self.x_id])
-      x_min = min(self.sel.src.data[self.x_id])
-      y_max = max(self.sel.src.data[self.y_id])
-      y_min = min(self.sel.src.data[self.y_id])
+      x_max = max(self.sel.src.data[self.x])
+      x_min = min(self.sel.src.data[self.x])
+      y_max = max(self.sel.src.data[self.y])
+      y_min = min(self.sel.src.data[self.y])
       x_rug_length = (y_max - y_min)/20.0
       y_rug_length = (x_max - x_min)/20.0
       
@@ -360,20 +443,20 @@ class Scatter(object):
         plot_width=400, plot_height=400, tools=self.tools,
         x_range=(x_min-y_rug_length, x_max+2*y_rug_length), y_range=(y_min-x_rug_length, y_max+2*x_rug_length))
       
-      cr = self.p_.circle(self.x_id, self.y_id, source=self.sel.src, 
+      cr = self.p_.circle(self.x, self.y, source=self.sel.src, 
         size='radii', fill_color='color', fill_alpha=style.fill_alpha,
         line_color='line_color', line_width='line_width', line_alpha='line_alpha',
         hover_alpha=style.hover_alpha, hover_color=style.hover_color)
       
       x_rug = self.p_.segment(
-        x0=self.x_id, x1=self.x_id,
+        x0=self.x, x1=self.x,
         y0=y_max + x_rug_length, y1=y_max + 2.0*x_rug_length,
         source=self.sel.src,
         line_color='line_color', line_width=1.0)
       
       y_rug = self.p_.segment(
         x0=x_max + y_rug_length, x1=x_max + 2.0*y_rug_length,
-        y0=self.y_id, y1=self.y_id,
+        y0=self.y, y1=self.y,
         source=self.sel.src,
         line_color='line_color', line_width=1.0)
     
@@ -384,8 +467,8 @@ class Scatter(object):
     # hover over a point to see 'configname', 'x', and 'y'
     tooltips = [
         ("configname","@configname"), 
-        (self.x,"@{" + self.x_id + "}{1.1111}"),
-        (self.y,"@{" + self.y_id + "}{1.1111}")
+        (self.x,"@{" + self.x + "}{1.1111}"),
+        (self.y,"@{" + self.y + "}{1.1111}")
     ]
     self.tap_action = ConfigurationTapAction(self.sel)
     self.p_.add_tools(self.tap_action.tool(view_on_tap, [cr]))
@@ -401,7 +484,6 @@ class Histogram(object):
     layout: a bokeh layout element holding p
     sel: a CASM Selection used to make the figure
     x: the value of the x-axis, 'comp(a)' by default
-    x_id: a UUID to use for the x-axis column name in the sel.src ColumnDataSource
   """
   
   def __init__(self, sel, x='comp(a)', **kwargs):
@@ -411,7 +493,7 @@ class Histogram(object):
       x: (str) property name to use as x axis, 'comp(a)' by default.
       kwargs: kwargs to pass to numpy.histogram
     """
-    print "begin Histogram"
+    
     self.sel = sel
     
     self.x = x
@@ -432,7 +514,7 @@ class Histogram(object):
     self._plot()
     
     # ensure that changes in 'sel.src' will update the histogram
-    self.sel.src_update.append(self.update)
+    self.sel.selection_callbacks.append(self.update)
     
     # store plot in layout
     self.layout = self.p
@@ -455,7 +537,7 @@ class Histogram(object):
     self.p_ = bokeh.plotting.Figure(plot_width=400, plot_height=400, tools=self.tools)
     
     # set data in 'self.src'
-    self.update(0, 0, 0)
+    self.update()
     
     qd = self.p_.quad(top='top', bottom='bottom', left='left', right='right', source=self.src, 
       fill_alpha=0.0, line_color='black', line_width=1)
@@ -475,7 +557,7 @@ class Histogram(object):
     
     self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[qd]))
   
-  def update(self, attrname, old, new):
+  def update(self):
     """
     Update plot data if sel.data['selected'] or sel.data['x'] change.
     """
@@ -524,7 +606,6 @@ class GridPlot(object):
     layout: a bokeh layout element holding p
     sel: a CASM Selection used to make the figure
     x: the value of the x-axis, 'comp(a)' by default
-    x_id: a UUID to use for the x-axis column name in the sel.src ColumnDataSource
   """
   
   def __init__(self, sel, 
@@ -542,7 +623,7 @@ class GridPlot(object):
       axis = (0 or 1) axis that type refer to
       kwargs: (list of dict) kwargs to pass to constructors
     """
-    print "begin GridPlot"
+    
     self.sel = sel
     
     self.x = x
@@ -561,12 +642,11 @@ class GridPlot(object):
     self._plot()
     
     # ensure that changes in 'sel.src' will update the histogram
-    self.sel.src_update.append(self.update)
+    self.sel.selection_callbacks.append(self.update)
     
     # layout
     self.layout = bokeh.models.GridPlot(children=self.p_)
     
-    print "finish GridPlot"
   
   @property
   def p(self):
@@ -618,11 +698,134 @@ class GridPlot(object):
         if y_range is not None:
           self.p_[r][c].y_range = y_range
   
-  def update(self, attrname, old, new):
+  def update(self):
     for row in self.casm_p_:
       for casm_p_ in row:
         if hasattr(casm_p_, 'update'):
-          casm_p_.update(attrname, old, new)
+          casm_p_.update()
+
+
+class RankPlot(object):
+  """
+  Attributes:
+    p: a bokeh Figure containing formation energies and the convex hull
+    layout: a bokeh layout element holding p
+    sel: a CASM Selection used to make the figure
+    scoring: a scoring function to operate on a row of sel.data
+    score_id: a UUID to use for the 'score' column name in the sel.src ColumnDataSource
+    rank_id: a UUID to use for the 'rank' column name in the sel.src ColumnDataSource
+    max_score: the maximum score
+    min_score: the minimum score
+  """
+  
+  def __init__(self, sel, scoring, name="Score", mode='set'):
+    """
+    Arguments:
+      sel: A CASM Selection
+      scoring: (function) a scoring function to operate on a row of sel.data
+      name: y-axis label to describe the scoring function
+    """
+    self.sel = sel
+    
+    self.scoring = scoring
+    self.name = name
+    
+    self.score_id = str(uuid.uuid4())
+    self.rank_id = str(uuid.uuid4())
+    
+    self._max_score = None
+    self._min_score = None
+    
+    # TOOLS in bokeh plot
+    self.tools = "crosshair,pan,reset,resize,box_zoom"
+    
+    self.score()
+    
+    self._plot()
+    
+    # store plot in layout
+    self.layout = self.p
+    
+  
+  @property
+  def p(self):
+    return self.p_
+  
+  def _plot(self):
+    
+    # add 'style' to the selection if not already existing
+    if not hasattr(self.sel, 'style'):
+      self.sel.style = ConfigStyle()
+      update_glyphs(self.sel)
+    
+    style = self.sel.style
+    
+    _tools = [self.tools]
+    
+    self.p_ = bokeh.plotting.Figure(plot_width=800, plot_height=400, tools=_tools)
+    p_stem = self.p_.segment(self.rank_id, 0, self.rank_id, self.score_id, source=self.sel.src, 
+      line_color='color', line_width=1.0,
+      hover_alpha=style.hover_alpha, hover_color=style.hover_color)
+    
+    p_circ = self.p_.circle(self.rank_id, self.score_id, source=self.sel.src, 
+      size='radii', fill_color='color', fill_alpha=style.fill_alpha,
+      line_color='line_color', line_width='line_width', line_alpha='line_alpha',
+      hover_alpha=style.hover_alpha, hover_color=style.hover_color)
+
+    self.p_.xaxis.axis_label = "Rank"
+    self.p_.yaxis.axis_label = "Score"
+
+    # hover over a point to see 'configname', 'score', Ef', and 'comp(a)'
+    tooltips = [
+        ("configname","@configname"), 
+        ("score","@{" + self.score_id + "}{1.1111}"), 
+        ("rank","@{" + self.rank_id + "}{1.1111}")
+    ]
+
+    self.tap_action = ConfigurationTapAction(self.sel)
+
+    self.p_.add_tools(self.tap_action.tool(view_on_tap, [p_circ]))
+    self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[p_circ]))
+    self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[p_circ]))
+    self.p_.add_tools(bokeh.models.LassoSelectTool(renderers=[p_circ]))
+  
+  @property
+  def max_score(self):
+    if self._max_score is None:
+      self._max_score = max(self.sel.src.data[self.score_id])
+    return self._max_score
+  
+  @property
+  def min_score(self):
+    if self._min_score is None:
+      self._min_score = min(self.sel.src.data[self.score_id])
+    return self._min_score
+  
+  def score(self, scoring=None):
+    """
+    Calculate 'score' and 'rank', but do not change selection. May also change the
+    'scoring' function.
+    """
+    if scoring is not None:
+      self.scoring = scoring
+    
+    try:
+      # score
+      self.df = pandas.DataFrame(self.sel.data.apply(self.scoring,axis='columns'), columns=['score'])
+      self.df.loc[:,'selected'] = self.sel.data.loc[:,'selected']
+    except:
+      print "Error applying scoring function"
+      raise
+      
+    # add 'score' to src, as self.score_id
+    add_src_data(self.sel, self.score_id, self.df['score'], force=True)
+    
+    # rank
+    self.df.loc[self.df.sort_values(['score']).index, 'rank'] = range(self.df.shape[0])
+    
+    # add 'rank' to src as self.rank_id
+    add_src_data(self.sel, self.rank_id, self.df['rank'], force=True)
+
 
 class RankSelect(object):
   """
@@ -637,12 +840,11 @@ class RankSelect(object):
     min_score: the minimum score
   """
   
-  def __init__(self, sel, scoring, session, name="Score", mode='set'):
+  def __init__(self, sel, scoring, name="Score", mode='set'):
     """
     Arguments:
       sel: A CASM Selection
       scoring: (function) a scoring function to operate on a row of sel.data
-      session: a bokeh push_session, if gui==True
       name: y-axis label to describe the scoring function
       mode: (str) 'set', 'set_on', 'set_off'
     """
@@ -661,10 +863,6 @@ class RankSelect(object):
     self._max_score = None
     self._min_score = None
     
-    # a 'RankSelectCutoff' instance
-    self.gui = True
-    self.session = session
-
     # TOOLS in bokeh plot
     self.tools = "crosshair,pan,reset,resize,box_zoom"
     
@@ -683,11 +881,9 @@ class RankSelect(object):
     self._plot()
     
     # store plot in layout with widgets
-    if self.gui:
-      _hplot = hplot(self.input['cutoff'].widget, self.select_mode, self.select_action)
-      self.layout = vplot(self.p, _hplot, self.msg.widget, width=self.p.plot_width)
-    else:
-      self.layout = vplot(self.p)
+    _hplot = hplot(self.input['cutoff'].widget, self.select_mode, self.select_action)
+    self.layout = vplot(self.p, _hplot, self.msg.widget, width=self.p.plot_width)
+    
   
   @property
   def p(self):
@@ -704,10 +900,7 @@ class RankSelect(object):
     
     style = self.sel.style
     
-    if self.gui:
-      _tools = [self.mouse, self.tools]
-    else:
-      _tools = [self.tools]
+    _tools = [self.mouse, self.tools]
     
     self.p_ = bokeh.plotting.Figure(plot_width=800, plot_height=400, tools=_tools)
     p_stem = self.p_.segment(self.rank_id, 0, self.rank_id, self.score_id, source=self.sel.src, 
@@ -742,18 +935,17 @@ class RankSelect(object):
       self.cutoff_line_src.on_change('data', f)
     
     
-    if self.gui:
-      self.tap_action = ConfigurationTapAction(self.sel)
-      self.p_.select(type=bokeh.models.CrosshairTool).dimensions = ['width']
-      
-      p_click=bokeh.models.CustomJS(args={'src':self.cutoff_line_src, 'loc': self.mouse_location_src}, code="""
-        var data = src.get('data');
-        data['y'][0] = loc.get('data')['y'][0];
-        data['y'][1] = loc.get('data')['y'][0];
-        src.set('data', data);
-        """)
-      self.p_.select(type=bokeh.models.CrosshairTool).dimensions = ['width']
-      self.p_.add_tools(bokeh.models.TapTool(callback=p_click))
+    self.tap_action = ConfigurationTapAction(self.sel)
+    self.p_.select(type=bokeh.models.CrosshairTool).dimensions = ['width']
+    
+    p_click=bokeh.models.CustomJS(args={'src':self.cutoff_line_src, 'loc': self.mouse_location_src}, code="""
+      var data = src.get('data');
+      data['y'][0] = loc.get('data')['y'][0];
+      data['y'][1] = loc.get('data')['y'][0];
+      src.set('data', data);
+      """)
+    self.p_.select(type=bokeh.models.CrosshairTool).dimensions = ['width']
+    self.p_.add_tools(bokeh.models.TapTool(callback=p_click))
     
     p_line = self.p_.line(x='x',y='y', source=self.cutoff_line_src,
       line_width=style.cutoff_line_width, line_alpha=style.cutoff_alpha, color=style.cutoff_color)
@@ -802,58 +994,55 @@ class RankSelect(object):
     """
     Construct gui widgets
     """
-    if self.gui:
-      
-      ### mouse location
-      self.mouse_location_src = bokeh.models.ColumnDataSource(data={'x':[0.0], 'y':[0.0]})
-      self.mouse = bokeh.models.HoverTool(
-        tooltips=None,
-        callback=bokeh.models.CustomJS(args={'src': self.mouse_location_src}, code="""
-          src.get('data')['y'][0] = cb_data.geometry.y;
-          src.get('data')['y'][1] = cb_data.geometry.y;
-          """))
-      
-      self.msg = Messages()
-      
-      self.select_mode = bokeh.models.Select(value="set", options=["set", "set_on", "set_off"])
-      def select_mode_f(attrname, old, new):
-        self.mode = new
-        self.update_cutoff(None, None, None)
-      self.select_mode.on_change(
-        'value', 
-        select_mode_f)
-      
-      self.select_action = bokeh.models.Select(
-        value="Select action", 
-        options=["Select action", "Revert", "Apply", "Save", "Close"])
-      def select_action_f(attrname, old, new):
-        if new == "Revert":
-          self.sel.data.loc[:,'to_be_selected'] = self.sel.data.loc[:,'selected']
-          update_glyphs(self.sel, selected=self.sel.data['to_be_selected'])
-          self.msg.value = "Reverted to original selection"
-        elif new == "Apply":
+    ### mouse location
+    self.mouse_location_src = bokeh.models.ColumnDataSource(data={'x':[0.0], 'y':[0.0]})
+    self.mouse = bokeh.models.HoverTool(
+      tooltips=None,
+      callback=bokeh.models.CustomJS(args={'src': self.mouse_location_src}, code="""
+        src.get('data')['y'][0] = cb_data.geometry.y;
+        src.get('data')['y'][1] = cb_data.geometry.y;
+        """))
+    
+    self.msg = Messages()
+    
+    self.select_mode = bokeh.models.Select(value="set", options=["set", "set_on", "set_off"])
+    def select_mode_f(attrname, old, new):
+      self.mode = new
+      self.update_cutoff(None, None, None)
+    self.select_mode.on_change('value', select_mode_f)
+    
+    self.select_action = bokeh.models.Select(
+      value="Select action", 
+      options=["Select action", "Revert", "Apply", "Apply and Save"])
+    def select_action_f(attrname, old, new):
+      if new == "Revert":
+        self.sel.data.loc[:,'to_be_selected'] = self.sel.data.loc[:,'selected']
+        self.sel.update_selection()
+        update_glyphs(self.sel, selected=self.sel.data['to_be_selected'])
+        self.msg.value = "Reverted to last applied selection"
+      elif new == "Apply":
+        self.sel.data.loc[:,'selected'] = self.sel.data.loc[:,'to_be_selected']
+        self.sel.update_selection()
+        update_glyphs(self.sel, selected=self.sel.data['to_be_selected'])
+        self.msg.value = "Applied selection"
+      elif new == "Apply and Save":
+        try:
           self.sel.data.loc[:,'selected'] = self.sel.data.loc[:,'to_be_selected']
+          self.sel.save(force=True)
+          self.sel.update_selection()
           update_glyphs(self.sel, selected=self.sel.data['to_be_selected'])
-          self.msg.value = "Applied selection"
-        elif new == "Save":
-          try:
-            self.sel.save(force=True)
-            self.msg.value = "Saved selection: " + self.sel.path
-          except Exception, e:
-            self.msg.value = str(e)
-        elif new == "Close":
-          self.msg.value = "Closing server connection"
-          self.session.close()
-        self.select_action.value = "Select action"
-      self.select_action.on_change('value', select_action_f)
+          self.msg.value = "Applied selection and saved: " + self.sel.path
+        except Exception, e:
+          self.msg.value = str(e)
+      self.select_action.value = "Select action"
+    self.select_action.on_change('value', select_action_f)
   
   def _post_score_input(self):
     """
     Construct gui widgets
     """
-    if self.gui:
-      self.input['cutoff'] = FloatInput(self.max_score, title="Cutoff:")
-      self.input['cutoff'].update.append(self.update_cutoff)
+    self.input['cutoff'] = FloatInput(self.max_score, title="Cutoff:")
+    self.input['cutoff'].update.append(self.update_cutoff)
   
   def update_cutoff(self, attrname, old, new):
     """
@@ -871,7 +1060,9 @@ class RankSelect(object):
     
     self.sel.data.loc[:,'to_be_selected'] = self.df.apply(f, axis='columns')
     self.cutoff_line_src.data['y'] = [self.input['cutoff'].value, self.input['cutoff'].value]
+    self.sel.update_selection()
     update_glyphs(self.sel, selected=self.sel.data['to_be_selected'])
+  
   
   def _set_f(self, r):
     return r['score'] < self.input['cutoff'].value
@@ -887,6 +1078,183 @@ class RankSelect(object):
       return False
     else:
       return r['selected']
+
+
+class HullDistWeightSelect(object):
+  
+  def __init__(self, sel, input_filename="fit_input.json",
+    hullplot_kwargs=None, 
+    A_params=None, B_params=None, kT_params=None):
+    """
+    Interactively set weights, via wHullDist.
+    
+    Weights for selected configurations are applied using: A*np.exp(-hull_dist/kT) + B
+    Weights for unselected configurations are set to 1.0
+    
+    Arguments:
+      proj: A CASM Project
+      input_filename: The name of a fitting input file. Defaults to "fit_input.json". 
+        If input_filename does not exist a default with that name is created.
+      sel: A CASM Selection to use for the training set
+      A_params, B_params, kT_params: (dict) Settings for input sliders. Options are:
+        'title', 'value', 'start', 'end', and 'step'. Units on kT are meV.
+    """
+    self.sel = sel
+    self.input_filename = input_filename
+    self.hullplot_kwargs = hullplot_kwargs
+    if not os.path.exists(input_filename):
+      self.fit_input = casm.fit.example_input()
+      with open(self.input_filename, 'w') as f:
+        json.dump(self.fit_input, f, indent=2)
+    else:
+      self.fit_input = json.load(open(self.input_filename, 'r'))
+    
+    weight_kwargs = self.fit_input["weight"].get("kwargs", dict())
+    if A_params is None:
+      A_params = {"title":"A", "value":0.0, "start":0.0, "end":10.0}
+      if 'A' in weight_kwargs:
+        A_params['value'] = weight_kwargs['A']
+    self.A_params = A_params
+    
+    if B_params is None:
+      B_params = {"title":"B", "value":1.0, "start":0.0, "end":10.0}
+      if 'B' in weight_kwargs:
+        B_params['value'] = weight_kwargs['B']
+    self.B_params = B_params
+    
+    if kT_params is None:
+      kT_params = {"title":"kT (meV)", "value":10.0, "start":1.0, "end":100.0, "step":1.0}
+      if 'kT' in weight_kwargs:
+        kT_params['value'] = weight_kwargs['kT']
+    self.kT_params = kT_params
+    
+    # create input widgets
+    self.input = dict()
+    self.input['A'] = bokeh.models.Slider(**self.A_params)
+    self.input['B'] = bokeh.models.Slider(**self.B_params)
+    self.input['kT'] = bokeh.models.Slider(**self.kT_params)
+    
+    for key, widget in self.input.iteritems():
+      widget.on_change('value', self._update_wvalue)
+    
+    # create select input
+    self.msg = Messages()
+    self.select_action = bokeh.models.Select(
+      value="Select action", 
+      options=["Select action", "Revert", "Apply", "Apply and Save"])
+    def select_action_f(attrname, old, new):
+      if new == "Revert":
+        self._revert()
+      elif new == "Apply":
+        self._apply()
+      elif new == "Apply and Save":
+        self._apply_and_save()
+      self.select_action.value = "Select action"
+    self.select_action.on_change('value', select_action_f)
+    
+    # callbacks
+    self.sel.selection_callbacks.append(self._update_selection)
+    
+    # add weighted property value to self.sel.src
+    self.wvalue_id = str(uuid.uuid4())
+    
+    # add convex hull plot
+    self.hullplot = None
+    self.layout = None
+    self._update_selection()
+    self.msg.value = "..."
+    
+  
+  def _apply(self):
+    self.A_params['value'] = self.input['A'].value
+    self.B_params['value'] = self.input['B'].value
+    self.kT_params['value'] = self.input['kT'].value
+    self.msg.value = "Applied sample weights"
+  
+  def _revert(self):
+    self.input['A'].value = self.A_params['value']
+    self.input['B'].value = self.B_params['value']
+    self.input['kT'].value = self.kT_params['value']
+    self.msg.value = "Reverted to last applied sample weights"
+  
+  def _save(self):
+    try:
+      self.fit_input["weight"]["method"] = "wHullDist"
+      self.fit_input["weight"]["kwargs"]["A"] = self.input['A'].value
+      self.fit_input["weight"]["kwargs"]["B"] = self.input['B'].value
+      self.fit_input["weight"]["kwargs"]["kT"] = self.input['kT'].value
+      with open(self.input_filename, 'w') as f:
+        json.dump(self.fit_input, f, indent=2)
+      self.msg.value = "Saved input file: " + self.input_filename
+    except Exception, e:
+      self.msg.value = str(e)
+  
+  def _apply_and_save(self):
+    try:
+      self._apply()
+      self._save()
+      self.msg.value = "Applied sample weights and saved input file: " + self.input_filename
+    except Exception, e:
+      self.msg.value = str(e)
+  
+  def _set_value(self):
+    """Set wvalue based on weighting parameters"""
+    self.sel.data.loc[:,self.wvalue_id] = self.sel.data.loc[:,'formation_energy']
+    add_src_data(self.sel, self.wvalue_id, self.sel.data.loc[:,self.wvalue_id], force=True)
+  
+  def _set_wvalue(self):
+    """Set wvalue based on weighting parameters"""
+    # calculate weights
+    w = casm.fit.tools.wHullDist(
+          self.hull_dist_values, 
+          self.input['A'].value, 
+          self.input['B'].value, 
+          self.input['kT'].value*0.001)
+    w[np.where(self._unselected)] = 1.0
+    
+    # update data (will update hullplot scatter points, but not convex hull line)
+    self.sel.data.loc[:,self.wvalue_id] = casm.fit.tools.set_sample_weight(w, value=self.sel.data.loc[:,'formation_energy'].values)[0]
+    add_src_data(self.sel, self.wvalue_id, self.sel.data.loc[:,self.wvalue_id], force=True)
+  
+  def _update_wvalue(self, attrname, old, new):
+    """Update due to changes in weighting paramaters, but no change in selection"""
+    self._set_wvalue()
+    self.hullplot.update_hull_line()
+  
+  def _update_selection(self):
+    """Update to reflect change in selection"""
+    
+    # use the unweighted values to initially plot the hull
+    self._set_value()
+    
+    if self.hullplot_kwargs is None:
+      self.hullplot_kwargs=dict()
+    self.hullplot_kwargs['y'] = self.wvalue_id
+    
+    # add convex hull plot, using unweighted formation energies
+    if self.hullplot is None:
+      self.hullplot = ConvexHullPlot(self.sel, **self.hullplot_kwargs)
+      self.hullplot.p.yaxis.axis_label = "Weighted Formation Energy"
+    else:
+      self.hullplot.update()
+    
+    
+    # set weights and update the hullplot
+    self.hull_dist_values = self.sel.data.loc[:, hull_dist(self.sel.path)].values
+    self._unselected = _unselected(self.sel)
+    self._update_wvalue(None, None, None)
+    self.msg.value = "Save selection to re-calculate the convex hull"
+    
+    # Set up layouts and add to document
+    if self.layout is None:
+      self.layout = vplot(
+        hplot(
+          vplot(self.input['kT'], 
+            self.input['A'], 
+            self.input['B'], 
+            self.select_action), 
+          self.hullplot.layout),
+        self.msg.widget, width=self.hullplot.p.plot_width + 300)
 
 
 class FloatInput(object):
@@ -989,5 +1357,51 @@ class StrInput(object):
   @value.setter
   def value(self, _value):
     self.widget.value = _value
+
+
+class GUIOptions(object):
+  """
+  Attributes:
+    self.widget: a bokeh.models.TextInput containing the value
+    self.layout: layout to include in page
+    self.update: A list of callables that should be called on changes of the cutoff value.
+      Signature should be f(attrname, old, new), where 'old' and 'new' are str.
+    self.session: a casm.plotting.Session
+  """
+  
+  def __init__(self, session):
+    """
+    Arguments:
+      session: the bokeh push_session
+    """
+    self.session = session
+    self.widget = bokeh.models.Select(
+      value="Options", 
+      options=["Options", "Close (without saving)"])
+    self.update = []
+    
+    def select_action_f(attrname, old, new):
+      if new == "Close (without saving)":
+        self.widget.options = ["Session is closed"]
+        self.widget.value = "Session is closed"
+        session.close()
+    
+    self.update.append(select_action_f)
+    
+    self.widget.on_change('value', self.on_change)
+    self.layout = hplot(self.widget, width=200)
+  
+  def on_change(self, attrname, old, new):
+    for f in self.update:
+      f(attrname, old, new)
+  
+  @property
+  def value(self):
+    return self.widget.value
+  
+  @value.setter
+  def value(self, _value):
+    self.widget.value = _value
+ 
  
 

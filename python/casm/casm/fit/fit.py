@@ -308,7 +308,8 @@ class FittingData(object):
     self.Nvalue, self.Nbfunc = self.corr.shape
     
     # weight
-    self.set_sample_weight(sample_weight=sample_weight)
+    self.wvalue, self.wcorr, self.W, self.L = casm.fit.tools.set_sample_weight(
+      sample_weight, corr=self.corr, value=self.value)
     
     # cv sets
     self.cv = cv
@@ -318,28 +319,9 @@ class FittingData(object):
     
     # penalty
     self.penalty = penalty
-  
-  def set_sample_weight(self, sample_weight=[]):
-    # check sample_weight and convert to square matrix
-    if sample_weight is None:
-      self.W = np.identity(self.value.shape[0])
-    elif len(sample_weight.shape) == 1:
-      self.W = np.diag(sample_weight)*self.Nvalue/np.sum(sample_weight)
-    elif len(sample_weight.shape) == 2:
-      self.W = sample_weight*self.Nvalue/np.sum(sample_weight)
-    else:
-      raise Exception("Error in LinearRegressionForLOOCV.fit: sample_weight dimension > 2")
-    
-    # weighted data
-    self.L = np.linalg.cholesky(self.W)
-    self.wcorr = np.dot(self.L, self.corr)
-    self.wvalue = np.dot(self.L, self.value)
 
 
-
-
-
-def make_fitting_data(sel, input, verbose = True):
+def make_fitting_data(sel, input, save=True, verbose=True, read_existing=True):
   """ 
   Construct a FittingData instance, either by reading existing 'fit_data.pkl',
   or from an input file settings.
@@ -357,7 +339,7 @@ def make_fitting_data(sel, input, verbose = True):
   if "kwargs" not in input["weight"]:
     input["weight"]["kwargs"] = dict()
   if "method" not in input["weight"]:
-    input["weight"] = None
+    input["weight"]["method"] = None
   
   # set cv kwargs and penalty (0.0) defaults
   if "kwargs" not in input["cv"]:
@@ -370,14 +352,14 @@ def make_fitting_data(sel, input, verbose = True):
   # estimator and feature_selection might change
   fit_data_filename = input.get("fit_data_filename", "fit_data.pkl")
   
-  if os.path.exists(fit_data_filename):
+  if read_existing and os.path.exists(fit_data_filename):
     print "Reading existing fitting data from:", fit_data_filename
     fdata = pickle.load(open(fit_data_filename, 'rb'))
     print "  DONE"
     
     s = "Fitting scheme has changed.\n\n" + \
         "To proceed with the existing scheme adjust your input file to match.\n" + \
-        "To proceed with the new scheme run in a new directory."
+        "To proceed with the new scheme run in a new directory or delete '" + fit_data_filename + "'."
     
     if fdata.input["property"] != input["property"]:
       print "ERROR: Input file and stored data differ. Input 'property' has changed."
@@ -470,6 +452,7 @@ def make_fitting_data(sel, input, verbose = True):
 #      cv_method = find_method([sklearn.cross_validation], input["cv"]["method"])
     cv_method = find_method([sklearn.cross_validation], input["cv"]["method"])
     cv = cv_method(Nvalue, **cv_kwargs)
+    print cv
     
     # get penalty
     penalty = input["cv"]["penalty"]
@@ -491,7 +474,8 @@ def make_fitting_data(sel, input, verbose = True):
     fdata.input["weight"] = input["weight"]
     fdata.input["property"] = input["property"]
     
-    pickle.dump(fdata, open(fit_data_filename, 'wb'))
+    if save == True:
+      pickle.dump(fdata, open(fit_data_filename, 'wb'))
   
   # during runtime only, if LinearRegression and LeaveOneOut, update fdata.cv and fdata.scoring
   # to use optimized LOOCV score method
@@ -501,6 +485,20 @@ def make_fitting_data(sel, input, verbose = True):
   
   return fdata
 
+
+def save_fitting_data(fdata, input, force=False):
+  """
+  Write pickle file containing fitting data.
+  """
+  # property, weight, and cv inputs should remain constant
+  # estimator and feature_selection might change
+  fit_data_filename = input.get("fit_data_filename", "fit_data.pkl")
+  
+  if not os.path.exists(fit_data_filename) or force:
+    with open(fit_data_filename, 'wb') as f:
+      pickle.dump(fdata, f)
+  
+  
 
 def make_estimator(input, verbose = True):
   """
