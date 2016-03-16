@@ -55,23 +55,23 @@ namespace CASM {
     typedef const T* const_iterator;
 
     // CONSTRUCTORS/DESTRUCTORS
-    Array() : N(0), NMax(0), Vals(NULL) { }
+    Array() : N(0), NMax(0), Vals(nullptr) { }
 
     //*******************************************************************************************
 
-    Array(Index init_N) : N(0), NMax(0), Vals(NULL) {
+    Array(Index init_N) : N(0), NMax(0), Vals(nullptr) {
       resize(init_N);
     }
 
     //*******************************************************************************************
 
-    Array(Index init_N, const T &init_val) : N(0), NMax(0), Vals(NULL) {
+    Array(Index init_N, const T &init_val) : N(0), NMax(0), Vals(nullptr) {
       resize(init_N, init_val);
     }
 
     //*******************************************************************************************
 
-    Array(const Array &RHS) : N(0), NMax(0), Vals(NULL) {
+    Array(const Array &RHS) : N(0), NMax(0), Vals(nullptr) {
       reserve(RHS.size());
       for(Index i = 0; i < RHS.size(); i++)
         push_back(RHS[i]);
@@ -83,7 +83,7 @@ namespace CASM {
     Array(Iterator begin, 
           Iterator end, 
           typename CASM_TMP::enable_if_iterator<Iterator>::type* = nullptr) : 
-      N(0), NMax(0), Vals(NULL) {
+      N(0), NMax(0), Vals(nullptr) {
       
       reserve(std::distance(begin, end));
       auto it = begin;
@@ -302,7 +302,7 @@ namespace CASM {
   //*******************************************************************************************
 
   template<typename T>
-  Array<T>::Array(ReturnArray<T> &RHS) : N(0), NMax(0), Vals(NULL) {
+  Array<T>::Array(ReturnArray<T> &RHS) : N(0), NMax(0), Vals(nullptr) {
     swap(RHS);
   }
 
@@ -461,7 +461,7 @@ namespace CASM {
 
     if(new_max <= N) return;
 
-    T *tVal(NULL);
+    T *tVal(nullptr);
     if(new_max) {
       tVal = static_cast<T *>(operator new(new_max * sizeof(T)));
       for(Index i = 0; i < N; i++) {
@@ -486,7 +486,7 @@ namespace CASM {
       Index new_Max = (N * ARRAY_EXTENSION_FACTOR() > N + ARRAY_MIN_EXTRA_SPACE()) ?
                       (Index)(N * ARRAY_EXTENSION_FACTOR()) : N + ARRAY_MIN_EXTRA_SPACE();
 
-      T *tVal(NULL);
+      T *tVal(nullptr);
 
       tVal = static_cast<T *>(operator new(new_Max * sizeof(T)));
 

@@ -813,7 +813,7 @@ namespace BP {
 
     swap(i1, N - 1);
     swap(N - 1, N_alloc - 1);
-    val[N_alloc - 1] = NULL;
+    val[N_alloc - 1] = nullptr;
 
     N--;
     N_alloc--;
@@ -1010,7 +1010,7 @@ namespace BP {
   template<class T> BP_GVec_Member<T> *add_once(BP_GVec<T> &gvec, const T &i1) {
     for(unsigned long int i = 0; i < gvec.size(); i++) {
       if(gvec[i] == i1) {
-        return NULL;
+        return nullptr;
       }
     }
     return gvec.add(i1);

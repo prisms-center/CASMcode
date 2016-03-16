@@ -1113,6 +1113,7 @@ Direct\n\
 
                 "    Possible options for \"mode\" are:                             \n" <<
                 "      \"single\": perform one calculation at the initial conditions\n" <<
+                "      if a calculation at those conditions has not already been run\n" <<
                 "      \"incremental\": perform several calculations, starting at the\n" <<
                 "        initial conditions and incrementing by the incremental     \n" <<
                 "        conditions up to (and including) the final conditions.     \n\n" <<

@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include <Eigen/Dense>
+#include "casm/external/Eigen/Dense"
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/jsonParser.hh"

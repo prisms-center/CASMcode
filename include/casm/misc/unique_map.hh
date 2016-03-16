@@ -175,7 +175,9 @@ namespace notstd {
     /// \brief Iterator range insert
     template<typename Iterator>
     void insert(Iterator begin, Iterator end, typename CASM::CASM_TMP::enable_if_iterator<Iterator>::type* = nullptr) {
-      std::for_each(begin, end, [=](const value_type& value){_insert(value);});
+      for(auto it=begin; it!=end; ++it) {
+        _insert(*it);
+      }
     }
     
     value_type& operator[](const key_type& key) {
@@ -247,7 +249,7 @@ namespace notstd {
 
     /// \brief Copy insert
     std::pair<iterator, bool> _insert(const value_type& value) {
-      auto result = m_map.emplace(key(value), m_converter(value)); 
+      auto result = m_map.insert(std::make_pair(key(value), std::move(m_converter(value)))); 
       return std::make_pair(iterator(result.first), result.second);
     }
     

@@ -1,4 +1,5 @@
 #include "casm/system/Popen.hh"
+#include <stdexcept>
 
 namespace CASM {
   
@@ -30,7 +31,7 @@ namespace CASM {
     m_popen_handler(fp);
 
     m_stdout = "";
-    while(fgets(path, PATH_MAX, fp) != NULL) {
+    while(fgets(path, PATH_MAX, fp) != nullptr) {
       m_stdout += path;
     }
     
@@ -57,7 +58,7 @@ namespace CASM {
 
   /// \brief Default popen error handler throws std::runtime_error if popen failed
   void Popen::default_popen_handler(FILE *fp) {
-    if(fp == NULL) {
+    if(fp == nullptr) {
       throw std::runtime_error("Error: popen failed.");
     }
   }

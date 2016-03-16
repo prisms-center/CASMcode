@@ -404,7 +404,7 @@ namespace CASM {
       if(it == m_calculator_map.end()) {
         
         std::stringstream ss;
-        ss << "Composition type " << m_composition_type << " is not recognized. Options are: ";
+        ss << "Composition type '" << m_composition_type << "' is not recognized. Options are: ";
         for(auto it=m_calculator_map.begin(); it!=m_calculator_map.end(); ++it) {
           std::cerr << it->first << " ";
           if(it != m_calculator_map.begin()) {

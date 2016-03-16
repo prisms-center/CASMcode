@@ -8,6 +8,6 @@
 using namespace CASM;
 
 const std::string &CASM::version() {
-  static const std::string &ver = "v0.1.1_fit";
+  static const std::string &ver = "v0.1.1_fit_merge";
   return ver;
 };

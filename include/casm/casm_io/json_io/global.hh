@@ -1,7 +1,7 @@
 #ifndef CASM_jsonIO_global
 #define CASM_jsonIO_global
 
-#include "casm/CASM_global_Definitions.hh"
+#include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {

@@ -78,8 +78,6 @@ def query_via_capi(proj, columns, selection=None, verbatim=True, all=False):
   ss = lib_ccasm.ostringstream_new()
   ss_err = lib_ccasm.ostringstream_new()
   
-  lib_ccasm.primclex_check(proj.data())
-  
   res = lib_ccasm.query(args, proj.data(), ss, ss_err)
   
   # copy string and delete stringstream

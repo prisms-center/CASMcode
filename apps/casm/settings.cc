@@ -83,7 +83,9 @@ namespace CASM {
       ("set-eci", po::value<std::string>(&single_input), "Set the current effective clust interactions (ECI)")
       ("set-view-command", po::value<std::string>(&single_input), "Set the command used by 'casm view'.")
       ("set-compile-options", po::value<std::string>(&single_input), "Set the compiler options.")
-      ("set-so-options", po::value<std::string>(&single_input), "Set the options for generating shared libraries.");
+      ("unset-compile-options", "Use the default compiler options.")
+      ("set-so-options", po::value<std::string>(&single_input), "Set the options for generating shared libraries.")
+      ("unset-so-options", "Use the default options for generating shared libraries.");
 
       try {
         po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
@@ -92,7 +94,8 @@ namespace CASM {
 
         std::vector<std::string> all_opt = {"list", "new-bset", "new-calctype", "new-ref", "new-eci",
                                             "set-bset", "set-calctype", "set-ref", "set-eci",
-                                            "set-compile-options", "set-so-options", "set-view-command"
+                                            "set-compile-options", "set-so-options", "set-view-command",
+                                            "unset-compile-options", "unset-so-options",
                                            };
         int option_count = 0;
         for(int i = 0; i < all_opt.size(); i++) {
@@ -484,10 +487,30 @@ namespace CASM {
 
       return 0;
     }
+    
+    // set compile options
+    else if(vm.count("unset-compile-options")) {
+      set.set_compile_options(RuntimeLibrary::default_compile_options());
+      set.commit();
+
+      std::cout << "Set compile options to: '" << set.compile_options() << "'\n\n";
+
+      return 0;
+    }
 
     // set compile options
     else if(vm.count("set-so-options")) {
       set.set_so_options(single_input);
+      set.commit();
+
+      std::cout << "Set so options to: '" << set.so_options() << "'\n\n";
+
+      return 0;
+    }
+    
+    // set compile options
+    else if(vm.count("unset-so-options")) {
+      set.set_so_options(RuntimeLibrary::default_so_options());
       set.commit();
 
       std::cout << "Set so options to: '" << set.so_options() << "'\n\n";

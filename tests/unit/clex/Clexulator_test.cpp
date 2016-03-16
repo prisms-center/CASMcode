@@ -25,8 +25,17 @@ BOOST_AUTO_TEST_CASE(MakeClexulatorTest) {
     so_opt += " -L" + (boost_path / "lib").string();
   }
   
+  std::vector<int> sublat_indices = {0};
+  PrimNeighborList::Matrix3Type W;
+  W.row(0) << 2, 1, 1;
+  W.row(1) << 1, 2, 1;
+  W.row(2) << 1, 1, 2;
+  
+  PrimNeighborList nlist(W, sublat_indices.begin(), sublat_indices.end());
+  
   Clexulator clexulator("test_Clexulator",
                         "tests/unit/clex",
+                        nlist,
                         compile_opt,
                         so_opt);
 

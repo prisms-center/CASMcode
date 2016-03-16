@@ -56,7 +56,7 @@
     ],
     "storage" : {
       "output_directory" : "./mc_path",
-      "write_observations" : true,
+      "write_observations" : false,
       "write_trajectory" : false,
       "output_format" : ["csv", "json"]
     }
@@ -64,21 +64,21 @@
   "driver" : {
     "mode" : "incremental",
     "initial_conditions" : {
-      "mu" : {
+      "param_chem_pot" : {
         "a" : -1.75
       },
       "temperature" : 100.0,
       "tolerance" : 0.001
     },
     "final_conditions" : {
-      "mu" : {
+      "param_chem_pot" : {
         "a" : -1.75
       },
       "temperature" : 1000.0,
       "tolerance" : 0.001
     },
     "incremental_conditions" : {
-      "mu" : {
+      "param_chem_pot" : {
         "a" : 0.0
       },
       "temperature" : 10.0,

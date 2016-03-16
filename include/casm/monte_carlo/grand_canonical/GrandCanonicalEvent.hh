@@ -47,10 +47,10 @@ namespace CASM {
     double dcomp_n(size_type species_type_index) const;
 
     
-    /// \brief Set change in (intensive) potential energy, dpotential_energy = dformation_energy - sum_i(mu_i * dcomp_n_i)
+    /// \brief Set change in (intensive) potential energy, dpotential_energy = dformation_energy - sum_i(param_chem_pot_i * dcomp_x_i)
     void set_dpotential_energy(double dpot_nrg);
     
-    /// \brief Return change in (intensive) potential energy, dpotential_energy = dformation_energy - sum_i(mu_i * dcomp_n_i)
+    /// \brief Return change in (intensive) potential energy, dpotential_energy = dformation_energy - sum_i(param_chem_pot_i * dcomp_x_i)
     double dpotential_energy() const;
 
     /// \brief Access the changes in (intensive) correlations associated with this event
@@ -75,7 +75,7 @@ namespace CASM {
     /// \brief Change in (intensive) formation energy due to this event
     double m_dformation_energy;
     
-    /// \brief Change in (intensive) potential energy, dpotential_energy = dformation_energy - sum_i(mu_i * dcomp_n_i) 
+    /// \brief Change in (intensive) potential energy, dpotential_energy = dformation_energy - sum_i(param_chem_pot_i * dcomp_x_i) 
     double m_dpotential_energy;
     
     /// \brief Change in number of each species per primitive cell due to this event. 
@@ -130,12 +130,12 @@ namespace CASM {
   }
 
   
-  /// \brief Set the change in potential energy: dpot_nrg = dform_nrg - sum_i(mu_i * dcomp_n_i)
+  /// \brief Set the change in potential energy: dpot_nrg = dform_nrg - sum_i(param_chem_pot_i * dcomp_x_i)
   inline void GrandCanonicalEvent::set_dpotential_energy(double dpot_nrg) {
     m_dpotential_energy = dpot_nrg;
   }
   
-  /// \brief Return change in potential energy: dpot_nrg = dform_nrg - sum_i(mu_i * dcomp_n_i)
+  /// \brief Return change in potential energy: dpot_nrg = dform_nrg - sum_i(param_chem_pot_i * dcomp_x_i)
   inline double GrandCanonicalEvent::dpotential_energy() const {
     return m_dpotential_energy;
   }

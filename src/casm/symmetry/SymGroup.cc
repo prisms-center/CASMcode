@@ -214,7 +214,7 @@ namespace CASM {
   //***************************************************
   Index MasterSymGroup::make_empty_representation() const {
     SymGroupRep *t_rep(new SymGroupRep(*this));
-    t_rep->resize(size(), NULL);
+    t_rep->resize(size(), nullptr);
     rep_array.push_back(t_rep);
 
     return rep_array.back()->get_ID();
@@ -240,7 +240,7 @@ namespace CASM {
         return rep_array[j];
     }
 
-    return NULL;
+    return nullptr;
   }
   //***************************************************
 
@@ -2981,7 +2981,7 @@ namespace CASM {
 
   SymGroupRep const *SymGroup::get_irrep(Index i) const {
     if(!size() || !valid_index(i) || i >= irrep_IDs.size())
-      return NULL;
+      return nullptr;
 
     return at(0).master_group().representation(irrep_IDs[i]);
 

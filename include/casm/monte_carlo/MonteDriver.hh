@@ -139,7 +139,7 @@ namespace CASM {
     }
     
     // if starting from initial condition
-    if(start_i == 0) {
+    if((m_drive_mode == Monte::DRIVE_MODE::SINGLE) || (start_i == 0) ) {
       // perform any requested explicit equilibration passes
       if(m_settings.is_equilibration_passes_first_run()) {
         auto equil_passes = m_settings.equilibration_passes_first_run();
@@ -188,7 +188,7 @@ namespace CASM {
     
     MonteCarloDirectoryStructure dir(m_settings.output_directory());
     Index start_i = 0;
-    Index start_max = m_conditions_list.size() - 1;
+    Index start_max = m_conditions_list.size();
     Index start_json = m_settings.write_json() ? 0 : start_max;
     Index start_csv = m_settings.write_csv() ? 0 : start_max;
     jsonParser json_results;
@@ -375,8 +375,30 @@ namespace CASM {
     switch(m_drive_mode) {
 
       case Monte::DRIVE_MODE::SINGLE: {
-        conditions_list.push_back(settings.initial_conditions());
-        break;
+        
+        // read existing conditions, and check if input conditions have already
+        // been calculated. If not, add to list.
+        CondType init_cond(settings.initial_conditions());
+        MonteCarloDirectoryStructure dir(m_settings.output_directory());
+        bool already_calculated = false;
+        int i=0;
+        while(fs::exists(dir.conditions_json(i))) {
+          
+          CondType existing;
+          jsonParser json(dir.conditions_json(i));
+          from_json(existing, primclex.composition_axes(), json);
+          conditions_list.push_back(existing);
+          if(existing == init_cond) {
+            already_calculated = true;
+          }
+          ++i;
+          
+        }
+        
+        if(!already_calculated) {
+          conditions_list.push_back(init_cond);
+        }
+        return conditions_list;
       }
 
       case Monte::DRIVE_MODE::INCREMENTAL: {
@@ -388,13 +410,13 @@ namespace CASM {
         conditions_list.push_back(init_cond);
         
         CondType incrementing_cond = init_cond;
-        incrementing_cond.increment_by(cond_increment);
+        incrementing_cond += cond_increment;
 
         int num_increments = (final_cond - init_cond) / cond_increment;
         
         for(int i = 0; i < num_increments; i++) {
           conditions_list.push_back(incrementing_cond);
-          incrementing_cond.increment_by(cond_increment);
+          incrementing_cond += cond_increment;
         }
         
         if(conditions_list.size() == 1) {
@@ -403,7 +425,7 @@ namespace CASM {
           std::cerr << "Only the initial condition will be calculated! (Is your increment too big or are you incrementing too many things?)" << std::endl;
         }
 
-        break;
+        return conditions_list;
       }
 
       default: {
@@ -414,8 +436,6 @@ namespace CASM {
       }
 
     }
-
-    return conditions_list;
   }
 
   template<typename RunType>

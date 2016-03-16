@@ -316,7 +316,7 @@ namespace CASM {
   /// tolerance 'tol' is used for fuzzy comparisons
 
   bool ConfigDoF::is_canonical(PermuteIterator it_begin, PermuteIterator it_end, double tol) const {
-    return _is_canonical(it_begin, it_end, NULL, tol);
+    return _is_canonical(it_begin, it_end, nullptr, tol);
   }
 
   //*******************************************************************************
@@ -337,7 +337,7 @@ namespace CASM {
 
   ConfigDoF ConfigDoF::canonical_form(PermuteIterator it_begin, PermuteIterator it_end, double tol) const {
     PermuteIterator it_canon;
-    return _canonical_form(it_begin, it_end, it_canon, NULL, tol);
+    return _canonical_form(it_begin, it_end, it_canon, nullptr, tol);
   }
 
   //*******************************************************************************
@@ -350,7 +350,7 @@ namespace CASM {
 
   ConfigDoF ConfigDoF::canonical_form(PermuteIterator it_begin, PermuteIterator it_end,
                                       PermuteIterator &it_canon, double tol) const {
-    return _canonical_form(it_begin, it_end, it_canon, NULL, tol);
+    return _canonical_form(it_begin, it_end, it_canon, nullptr, tol);
   }
 
   //*******************************************************************************

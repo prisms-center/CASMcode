@@ -21,7 +21,7 @@ namespace CASM {
                  };
 
     ///\brief Default construction not allowed -- this constructor provides an override
-    ConfigMapper(NullInitializer) : m_pclex(NULL) {}
+    ConfigMapper(NullInitializer) : m_pclex(nullptr) {}
 
     ///\brief Construct and initialize a ConfigMapper
     ///\param _pclex the PrimClex that describes the crystal template

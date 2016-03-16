@@ -2082,7 +2082,7 @@ namespace CASM {
   bool is_diagonal(const Eigen::MatrixXi& M);
   
   /// \brief Return the minor of integer Matrix M element row, col
-  int minor(const Eigen::MatrixXi& M, int row, int col);
+  int matrix_minor(const Eigen::MatrixXi& M, int row, int col);
   
   /// \brief Return cofactor matrix
   Eigen::MatrixXi cofactor(const Eigen::MatrixXi& M);

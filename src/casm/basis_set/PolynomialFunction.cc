@@ -397,11 +397,11 @@ namespace CASM {
     Function::operation_table[sclass_ID()][sclass_ID()] = new PolyPolyOperation();
 
     // IMPORTANT: Do
-    //       Function::operation_table[OTHER::sclass_ID()][sclass_ID()] = NULL;
+    //       Function::operation_table[OTHER::sclass_ID()][sclass_ID()] = nullptr;
     // Before
     //       Function::operation_table[sclass_ID()][OTHER::sclass_ID()] = Whatever;
 
-    Function::operation_table[OccupantFunction::sclass_ID()][sclass_ID()] = NULL;
+    Function::operation_table[OccupantFunction::sclass_ID()][sclass_ID()] = nullptr;
 
     Function::operation_table[sclass_ID()][OccupantFunction::sclass_ID()] = new PolyOccOperation();
 
@@ -812,7 +812,7 @@ namespace CASM {
         break;
     }
     if(i == m_argument.size()) {
-      return NULL;
+      return nullptr;
     }
 
     PolynomialFunction *tpoly(new PolynomialFunction(*this, PolyTrie<double>(m_coeffs.depth())));
@@ -893,7 +893,7 @@ namespace CASM {
     std::cerr << "WARNING: In-place multiplication of one PolynomialFunction with another is not yet implemented!!\n"
               << "         Exiting...\n";
     exit(1);
-    return NULL;
+    return nullptr;
   }
 
   //********************************************************
