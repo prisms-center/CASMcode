@@ -107,6 +107,23 @@ BOOST_AUTO_TEST_CASE(SuperNeighborListBasics) {
   
 }
 
+BOOST_AUTO_TEST_CASE(NeighborListTestLatticeTests) {
+  
+  Eigen::Matrix3d latvec;
+  latvec.col(0) <<  2.955270000000, 0.000000000000, 0.000000000000;
+  latvec.col(1) <<  1.477635000000, 2.559338895042, 0.000000000000;
+  latvec.col(2) << 1.477635000000, 0.853112965014, 11.758280000000;
+  
+  PrimNeighborList::Matrix3Type W = PrimNeighborList::make_weight_matrix(latvec, 10, TOL);
+  
+  PrimNeighborList::Matrix3Type W_check;
+  W_check.row(0) << 2, 1, 1;
+  W_check.row(1) << 1, 2, 1;
+  W_check.row(2) << 1, 1, 32;
+  
+  BOOST_CHECK_EQUAL(W == W_check, true);
+}
+
 BOOST_AUTO_TEST_CASE(Proj) {
   
   test::FCCTernaryProj proj;
