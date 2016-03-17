@@ -423,10 +423,9 @@ namespace CASM {
     /// - scale = 1.0
     /// - coordinate mode = frac (Direct)
     /// - atom names line is printed
-    /// - Atoms printed in order appearing in the Structure. (No sorting by atom types)
+    /// - Atoms printed in order appearing in the Configuration. (No sorting by atom types)
     /// - No selective dynamics
     /// - {"Va", "va", "VA"} atoms not printed
-    /// - sorted by atom name
     ///
     /// Currently:
     /// - no displacement
@@ -459,10 +458,9 @@ namespace CASM {
     /// - scale = 1.0
     /// - coordinate mode = frac (Direct)
     /// - atom names line is printed
-    /// - Atoms printed in order appearing in the Structure. (No sorting by atom types)
+    /// - Atoms printed in order appearing in the ConfigDoF. (No sorting by atom types)
     /// - No selective dynamics
     /// - {"Va", "va", "VA"} atoms not printed
-    /// - sorted by atom name
     ///
     /// Currently:
     /// - no displacement
@@ -487,7 +485,6 @@ namespace CASM {
         );
       }
       
-      sort();
     }
     
     

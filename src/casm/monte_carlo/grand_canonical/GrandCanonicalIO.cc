@@ -406,7 +406,9 @@ namespace CASM {
     
     // write file
     fs::ofstream sout(dir.POSCAR_final(cond_index));
-    VaspIO::PrintPOSCAR(mc.supercell(), mc.configdof()).print(sout);
+    VaspIO::PrintPOSCAR p(mc.supercell(), mc.configdof());
+    p.sort();
+    p.print(sout);
     return;
   }
   
@@ -497,6 +499,7 @@ namespace CASM {
       fs::ofstream sout(dir.POSCAR_snapshot(cond_index, i));
       VaspIO::PrintPOSCAR p(mc.supercell(), trajectory[i]);
       p.set_title(ss.str());
+      p.sort();
       p.print(sout);
       sout.close();
     }
