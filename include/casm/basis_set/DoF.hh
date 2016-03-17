@@ -84,10 +84,10 @@ namespace CASM {
     Index m_sym_rep_ID;
 
   public:
-    DiscreteDoF(): DoF(""), m_current_state(0), m_remote_state(NULL), m_sym_rep_ID(-2) {};
+    DiscreteDoF(): DoF(""), m_current_state(0), m_remote_state(nullptr), m_sym_rep_ID(-2) {};
 
     DiscreteDoF(const std::string &_name, int _current_state = 0):
-      DoF(_name), m_current_state(_current_state), m_remote_state(NULL), m_sym_rep_ID(-2) {};
+      DoF(_name), m_current_state(_current_state), m_remote_state(nullptr), m_sym_rep_ID(-2) {};
 
     virtual ~DiscreteDoF() {};
 
@@ -109,7 +109,7 @@ namespace CASM {
     };
 
     int remote_value() const {
-      assert(m_remote_state && "In DiscreteDoF::remote_value() m_remote_state is NULL.\n");
+      assert(m_remote_state && "In DiscreteDoF::remote_value() m_remote_state is nullptr.\n");
       return *m_remote_state;
     };
 
@@ -168,7 +168,7 @@ namespace CASM {
     OccupantDoF() : DiscreteDoF() { };
     OccupantDoF(const Array<T> &_domain, int _current_state = 0) :
       DiscreteDoF("occupation", _current_state), m_domain(_domain) { };
-    
+
     OccupantDoF(std::initializer_list<T> _domain, int _current_state = 0) :
       DiscreteDoF("occupation", _current_state), m_domain(_domain.begin(), _domain.end()) { };
 
@@ -295,15 +295,15 @@ namespace CASM {
     const double *m_remote_val;
   public:
     ContinuousDoF() : min_val(NAN), max_val(NAN), current_val(NAN),
-      current_min(NAN), current_max(NAN), m_remote_val(NULL) {};
+      current_min(NAN), current_max(NAN), m_remote_val(nullptr) {};
 
     ContinuousDoF(const std::string &tname, double tmin, double tmax) :
       DoF(tname), min_val(tmin), max_val(tmax), current_val(NAN),
-      current_min(min_val), current_max(max_val), m_remote_val(NULL) {};
+      current_min(min_val), current_max(max_val), m_remote_val(nullptr) {};
 
     ContinuousDoF(const std::string &tname, Index _ID, double tmin, double tmax) :
       DoF(tname, _ID), min_val(tmin), max_val(tmax), current_val(NAN),
-      current_min(min_val), current_max(max_val), m_remote_val(NULL) {};
+      current_min(min_val), current_max(max_val), m_remote_val(nullptr) {};
 
     double value() const {
       return current_val;
@@ -316,7 +316,7 @@ namespace CASM {
     };
 
     double remote_value() const {
-      assert(m_remote_val && "In ContinuousDoF::remote_value() m_remote_val is NULL.\n");
+      assert(m_remote_val && "In ContinuousDoF::remote_value() m_remote_val is nullptr.\n");
       return *m_remote_val;
     };
 

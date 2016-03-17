@@ -34,7 +34,7 @@ namespace CASM {
   public:
 
     /**NOTE: Coordinate does not have a default constructor
-       e.g: this is not allowed-> Coordinate() : home(NULL) { is_current[FRAC]=false; is_current[CART]=false;}; **/
+       e.g: this is not allowed-> Coordinate() : home(nullptr) { is_current[FRAC]=false; is_current[CART]=false;}; **/
 
     ///Minimal constructor only takes a lattice
     explicit Coordinate(const Lattice &init_home) : home(&init_home), m_basis_ind(-1) {

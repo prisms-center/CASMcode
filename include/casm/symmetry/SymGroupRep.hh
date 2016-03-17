@@ -52,7 +52,7 @@ namespace CASM {
 
     /// Use this constructor when MasterSymGroup is unknown or doesn't exist
     /// You must promise that you know what you're doing
-    SymGroupRep(SymGroupRep::NullInitializer init) : m_rep_ID(REP_COUNT++), m_home_group(NULL) { };
+    SymGroupRep(SymGroupRep::NullInitializer init) : m_rep_ID(REP_COUNT++), m_home_group(nullptr) { };
 
     SymGroupRep(const MasterSymGroup &_home) : m_rep_ID(REP_COUNT++), m_home_group(&_home) { };
     SymGroupRep(const SymGroupRep &RHS);
@@ -143,14 +143,14 @@ namespace CASM {
 
     jsonParser &to_json(jsonParser &json) const;
 
-    // If 'm_home_group' is not NULL, should be initialized accordingly
+    // If 'm_home_group' is not nullptr, should be initialized accordingly
     // Lattice may be necessary for constructing SymOps
     void from_json(const jsonParser &json, const Lattice &lat);
   };
 
   jsonParser &to_json(const SymGroupRep &rep, jsonParser &json);
 
-  // If 'm_home_group' is not NULL, should be initialized accordingly
+  // If 'm_home_group' is not nullptr, should be initialized accordingly
   // Lattice may be necessary for constructing SymOps
   void from_json(SymGroupRep &rep, const jsonParser &json, const Lattice &lat);
 
@@ -164,10 +164,10 @@ namespace CASM {
     SymGroupRep const *m_group_rep;
   public:
     SymGroupRepHandle():
-      m_head_group(NULL), m_group_rep(NULL) {}
+      m_head_group(nullptr), m_group_rep(nullptr) {}
 
     SymGroupRepHandle(const SymGroup &head_group, Index symrep_ID) :
-      m_head_group(&head_group), m_group_rep(NULL) {
+      m_head_group(&head_group), m_group_rep(nullptr) {
       assert(m_head_group->size() && valid_index(symrep_ID) && (*m_head_group)[0].has_valid_master());
       m_group_rep = (*m_head_group)[0].master_group().representation(symrep_ID);
       assert(m_group_rep);

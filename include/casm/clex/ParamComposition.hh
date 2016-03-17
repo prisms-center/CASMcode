@@ -200,7 +200,7 @@ namespace CASM {
     const Array< Eigen::VectorXd > &get_spanning_end_members() const {
       return spanning_end_members;
     };
-    
+
     /// \brief Return all possible end members as row matrix
     Eigen::MatrixXd get_prim_end_members() const {
       return prim_end_members;
@@ -237,7 +237,7 @@ namespace CASM {
     //TEST FUNCTIONS
 
     //A ParamComposition is defined as 'set' if origin is non-empty, the
-    //prim pointer does not point to NULL, rank_of_space is greater
+    //prim pointer does not point to nullptr, rank_of_space is greater
     //than 0, the comp matrices are non-empty and have their matrices
     //such that they are square
     bool is_set() const {

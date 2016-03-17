@@ -36,10 +36,10 @@ namespace CASM {
 
     /// \brief The dimensionality of the composition space
     size_type independent_compositions() const;
-    
+
     /// \brief Composition variable names: "a", "b", ...
     static std::string comp_var(size_type i);
-    
+
     /// \brief The order of components in mol composition vectors
     std::vector<std::string> components() const;
 
@@ -52,8 +52,14 @@ namespace CASM {
     /// \brief Convert number of mol per prim, 'n' to parametric composition 'x'
     Eigen::VectorXd param_composition(const Eigen::VectorXd &n) const;
 
+    /// \brief Convert change in number of atoms per prim, 'dn' to change in parametric composition 'dx'
+    Eigen::VectorXd dparam_composition(const Eigen::VectorXd &dn) const;
+
     /// \brief Convert parametric composition, 'x', to number of mol per prim, 'n'
-    Eigen::VectorXd mol_composition(const Eigen::VectorXd &n) const;
+    Eigen::VectorXd mol_composition(const Eigen::VectorXd &x) const;
+
+    /// \brief Convert change in parametric composition, 'dx', to change in number of mol per prim, 'dn'
+    Eigen::VectorXd dmol_composition(const Eigen::VectorXd &dx) const;
 
     /// \brief Convert dG/dn to dG/dx
     Eigen::VectorXd param_chem_pot(const Eigen::VectorXd chem_pot) const;
@@ -67,13 +73,13 @@ namespace CASM {
 
     /// \brief Return formula for n->x
     std::string param_formula() const;
-    
+
     /// \brief Return formula for origin
     std::string origin_formula() const;
 
     /// \brief Return formula for end member
     std::string end_member_formula(size_type i) const;
-    
+
     /// \brief Return formula for param_chem_pot->chem_pot
     std::string chem_pot_formula(int indent = 0) const;
 
@@ -134,16 +140,16 @@ namespace CASM {
 
   /// \brief Deserialize CompositionConverter from JSON
   void from_json(CompositionConverter &f, const jsonParser &json);
-  
+
   /// \brief Generate a column matrix containing all the possible molecular end members
-  Eigen::MatrixXd end_members(const Structure& prim);
-  
+  Eigen::MatrixXd end_members(const Structure &prim);
+
   /// \brief Return the composition space of a Structure
-  Eigen::MatrixXd composition_space(const Structure& prim, double tol = 1e-14);
-  
+  Eigen::MatrixXd composition_space(const Structure &prim, double tol = 1e-14);
+
   /// \brief Return the null composition space of a Structure
-  Eigen::MatrixXd null_composition_space(const Structure& prim, double tol=1e-14);
-  
+  Eigen::MatrixXd null_composition_space(const Structure &prim, double tol = 1e-14);
+
 
   // ------ Definitions ---------------------------------------------
 
@@ -231,8 +237,8 @@ namespace CASM {
 
     return result;
   }
-  
-  
+
+
 }
 
 #endif

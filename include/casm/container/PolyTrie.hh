@@ -59,7 +59,7 @@ namespace CASM {
 
   public:
     PTLeaf(PTNode<T> *_up, const Array<Index> &_key, const T &_val) :
-      PTNode<T>(_up, _val), next_leaf(NULL), prev_leaf_addr(NULL), m_key(_key) {};
+      PTNode<T>(_up, _val), next_leaf(nullptr), prev_leaf_addr(nullptr), m_key(_key) {};
 
     ~PTLeaf();
 
@@ -103,7 +103,7 @@ namespace CASM {
     using PTNode<T>::at;
   public:
 
-    PolyTrie(Index _depth) : PTNode<T>(NULL), m_depth(_depth), m_leaf_list(NULL) {};
+    PolyTrie(Index _depth) : PTNode<T>(nullptr), m_depth(_depth), m_leaf_list(nullptr) {};
     PolyTrie(const PolyTrie<T> &orig);
     // ~PTNode() should take care of PolyTrie destruction, except for the edge case m_depth=0
     ~PolyTrie();
@@ -163,7 +163,7 @@ namespace CASM {
   template<typename T>
   PTNode<T> *PTNode<T>::valid_node_at(Index i) {
     while(size() <= i) {
-      push_back(NULL);
+      push_back(nullptr);
     }
     return at(i) ? at(i) : at(i) = new PTNode<T>(this);
   }
@@ -179,7 +179,7 @@ namespace CASM {
     };
 
     while(size() <= ind.back()) {
-      push_back(NULL);
+      push_back(nullptr);
     }
 
     // Check if there's a valid leaf at 'ind' element and create a new one if not
@@ -205,7 +205,7 @@ namespace CASM {
 
     for(Index i = 0; i < up_node->size() && (remove_up || not_removed); i++) {
       if((up_node->at(i)) == this) {
-        up_node->at(i) = NULL;
+        up_node->at(i) = nullptr;
         not_removed = false;
       }
       remove_up = remove_up && !(up_node->at(i));
@@ -290,9 +290,9 @@ namespace CASM {
 
     if(next_leaf) {
       next_leaf->prev_leaf_addr = prev_leaf_addr;
-      next_leaf = NULL;
+      next_leaf = nullptr;
     }
-    prev_leaf_addr = NULL;
+    prev_leaf_addr = nullptr;
 
   }
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -308,7 +308,7 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   template<typename T>
-  PolyTrie<T>::PolyTrie(const PolyTrie<T> &orig) : PTNode<T>(NULL), m_depth(orig.m_depth), m_leaf_list(NULL) {
+  PolyTrie<T>::PolyTrie(const PolyTrie<T> &orig) : PTNode<T>(nullptr), m_depth(orig.m_depth), m_leaf_list(nullptr) {
     PTLeaf<T> const *current(orig.begin());
     //PolyTrie<T>::set() does all the work -- result is a pruned PolyTrie that is a copy of 'orig'
     while(current) {

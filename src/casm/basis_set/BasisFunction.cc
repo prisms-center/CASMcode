@@ -230,14 +230,14 @@ namespace CASM {
   // Multiplication (tensor product)
   Function *FunctionOperation::multiply(Function const *LHS, Function const *RHS) const {
     std::cerr << "WARNING: Multiplication of type " << LHS->type_name() << " with type " << RHS->type_name() << " is undefined!!!\n";
-    return NULL;
+    return nullptr;
   }
 
   //********************************************************
 
   Function *FunctionOperation::multiply_by(Function *LHS, Function const *RHS) const {
     std::cerr << "WARNING: Multiplication of type " << LHS->type_name() << " with type " << RHS->type_name() << " is undefined!!!\n";
-    return NULL;
+    return nullptr;
   }
 
   //********************************************************
@@ -245,14 +245,14 @@ namespace CASM {
   // Addition
   Function *FunctionOperation::add(Function const *LHS, Function const *RHS) const {
     std::cerr << "WARNING: Addition of type " << LHS->type_name() << " with type " << RHS->type_name() << " is undefined!!!\n";
-    return NULL;
+    return nullptr;
   }
 
   //********************************************************
 
   Function *FunctionOperation::add_to(Function *LHS, Function const *RHS) const {
     std::cerr << "WARNING: Addition of type " << LHS->type_name() << " with type " << RHS->type_name() << " is undefined!!!\n";
-    return NULL;
+    return nullptr;
   }
 
   //********************************************************
@@ -260,14 +260,14 @@ namespace CASM {
   // Subtraction
   Function *FunctionOperation::subtract(Function const *LHS, Function const *RHS) const {
     std::cerr << "WARNING: Subtraction of type " << LHS->type_name() << " with type " << RHS->type_name() << " is undefined!!!\n";
-    return NULL;
+    return nullptr;
   }
 
   //********************************************************
 
   Function *FunctionOperation::subtract_from(Function *LHS, Function const *RHS) const {
     std::cerr << "WARNING: Subtraction of type " << LHS->type_name() << " with type " << RHS->type_name() << " is undefined!!!\n";
-    return NULL;
+    return nullptr;
   }
 
   //********************************************************
@@ -275,14 +275,14 @@ namespace CASM {
   // Polynomial division
   Function *FunctionOperation::poly_quotient(Function const *LHS, Function const *RHS) const {
     std::cerr << "WARNING: Polynomial division of type " << LHS->type_name() << " with type " << RHS->type_name() << " is undefined!!!\n";
-    return NULL;
+    return nullptr;
   }
 
   //********************************************************
 
   Function *FunctionOperation::poly_remainder(Function const *LHS, Function const *RHS) const {
     std::cerr << "WARNING: Polynomial division of type " << LHS->type_name() << " with type " << RHS->type_name() << " is undefined!!!\n";
-    return NULL;
+    return nullptr;
   }
 
   //********************************************************
