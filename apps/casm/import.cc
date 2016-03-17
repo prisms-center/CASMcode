@@ -124,7 +124,7 @@ namespace CASM {
           if(!missing_files)
             std::cerr << "*** ERROR: Missing file(s):\n";
           missing_files = true;
-          std::cerr   << "           " << *it << "\n";
+          std::cerr   << "           " << fs::absolute(*it) << "\n";
         }
       }
       if(missing_files)
@@ -132,13 +132,13 @@ namespace CASM {
     }
 
     COORD_MODE C(coordtype);
-
-    fs::path root = find_casmroot(fs::current_path());
+    fs::path pwd = fs::current_path();
+    fs::path root = find_casmroot(pwd);
     if(root.empty()) {
       std::cerr << "ERROR in 'casm import': No casm project found." << std::endl;
       return 9;
     }
-    fs::current_path(root);
+
 
 
     std::cout << "\n***************************" << std::endl << std::endl;
@@ -170,7 +170,7 @@ namespace CASM {
 
       fs::path pos_path, import_path;
 
-      pos_path = fs::absolute(*it);
+      pos_path = fs::absolute(*it, pwd);
       std::string imported_name;
       BasicStructure<Site> import_struc;
 
@@ -261,7 +261,7 @@ namespace CASM {
         Configuration &imported_config = *(it->first);
         std::vector<Import_impl::Data> &data_vec(it->second);
 
-        fs::path import_path = fs::absolute(imported_config.get_path());
+        fs::path import_path = fs::absolute(imported_config.get_path(), pwd);
         bool preexisting(false);
         if(fs::exists(imported_config.calc_properties_path()))
           preexisting = true;
