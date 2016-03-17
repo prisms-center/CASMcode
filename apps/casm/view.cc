@@ -126,7 +126,9 @@ namespace CASM {
       fs::ofstream file;
       fs::path POSCARpath = tmp_dir / "POSCAR";
       file.open(POSCARpath);
-      VaspIO::PrintPOSCAR(*it).print(file);
+      VaspIO::PrintPOSCAR p(*it);
+      p.sort();
+      p.print(file);
       file.close();
       
       std::cout << it->name() << ":\n";
