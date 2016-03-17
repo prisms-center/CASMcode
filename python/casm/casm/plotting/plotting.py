@@ -811,7 +811,7 @@ class RankPlot(object):
     
     try:
       # score
-      self.df = pandas.DataFrame(self.sel.data.apply(self.scoring,axis='columns'), columns=['score'])
+      self.df = pandas.DataFrame(self.scoring(self.sel), columns=['score'])
       self.df.loc[:,'selected'] = self.sel.data.loc[:,'selected']
     except:
       print "Error applying scoring function"
@@ -975,7 +975,7 @@ class RankSelect(object):
     
     try:
       # score
-      self.df = pandas.DataFrame(self.sel.data.apply(self.scoring,axis='columns'), columns=['score'])
+      self.df = pandas.DataFrame(self.scoring(self.sel), columns=['score'])
       self.df.loc[:,'selected'] = self.sel.data.loc[:,'selected']
     except:
       print "Error applying scoring function"
@@ -1080,11 +1080,11 @@ class RankSelect(object):
       return r['selected']
 
 
-class HullDistWeightSelect(object):
+class WeightSelect(object):
   
   def __init__(self, sel, input_filename="fit_input.json",
-    hullplot_kwargs=None, 
-    A_params=None, B_params=None, kT_params=None):
+    hullplot_kwargs=None, A_params=None, B_params=None, kT_params=None, Eref_params=None,
+    show_weightplot=True):
     """
     Interactively set weights, via wHullDist.
     
@@ -1092,12 +1092,14 @@ class HullDistWeightSelect(object):
     Weights for unselected configurations are set to 1.0
     
     Arguments:
-      proj: A CASM Project
+      sel: A CASM Selection to use for the training set
       input_filename: The name of a fitting input file. Defaults to "fit_input.json". 
         If input_filename does not exist a default with that name is created.
-      sel: A CASM Selection to use for the training set
+      hullplot_kwargs: (dict) kwargs to pass to convex hull plots of formation energy
+        and weighted formation energy
       A_params, B_params, kT_params: (dict) Settings for input sliders. Options are:
         'title', 'value', 'start', 'end', and 'step'. Units on kT are meV.
+      show_weightplot: (boolean) Show a plot of sample weight values
     """
     self.sel = sel
     self.input_filename = input_filename
@@ -1109,6 +1111,15 @@ class HullDistWeightSelect(object):
     else:
       self.fit_input = json.load(open(self.input_filename, 'r'))
     
+    # create select box with weighting method options
+    self.select_method = SelectInput(
+      value="wHullDist", 
+      options=["wHullDist", "wEmin", "wEref"], 
+      title="Select Method:")
+    for method in self.select_method.options:
+      self.select_method.update[method] = self._update_method
+    
+    # create sliders for input of parameters, first set ranges
     weight_kwargs = self.fit_input["weight"].get("kwargs", dict())
     if A_params is None:
       A_params = {"title":"A", "value":0.0, "start":0.0, "end":10.0}
@@ -1128,16 +1139,31 @@ class HullDistWeightSelect(object):
         kT_params['value'] = weight_kwargs['kT']
     self.kT_params = kT_params
     
+    self.Ef_min = self.sel.data['formation_energy'].min()
+    self.Ef_max = self.sel.data['formation_energy'].max()
+    delta = self.Ef_max - self.Ef_min
+    if Eref_params is None:
+      Eref_params = {
+        "title":"Eref (meV)", 
+        "value":self.Ef_min, 
+        "start":(self.Ef_min - delta*1.0), 
+        "end":self.Ef_max, 
+        "step":0.001}
+      if 'Eref' in weight_kwargs:
+        Eref_params['value'] = weight_kwargs['Eref']
+    self.Eref_params = Eref_params
+    
     # create input widgets
     self.input = dict()
     self.input['A'] = bokeh.models.Slider(**self.A_params)
     self.input['B'] = bokeh.models.Slider(**self.B_params)
     self.input['kT'] = bokeh.models.Slider(**self.kT_params)
+    self.input['Eref'] = bokeh.models.Slider(**self.Eref_params)
     
     for key, widget in self.input.iteritems():
       widget.on_change('value', self._update_wvalue)
     
-    # create select input
+    # create select action input
     self.msg = Messages()
     self.select_action = bokeh.models.Select(
       value="Select action", 
@@ -1160,7 +1186,13 @@ class HullDistWeightSelect(object):
     
     # add convex hull plot
     self.hullplot = None
+    self.sel.data.loc[:,'weight'] = np.zeros((self.sel.data.shape[0],1))
+    self.show_weightplot = show_weightplot
+    self.weightplot = None
+    self.whullplot = None
     self.layout = None
+    self.ref_line = None
+    self.plot_width = 400
     self._update_selection()
     self.msg.value = "..."
     
@@ -1169,20 +1201,24 @@ class HullDistWeightSelect(object):
     self.A_params['value'] = self.input['A'].value
     self.B_params['value'] = self.input['B'].value
     self.kT_params['value'] = self.input['kT'].value
+    self.Eref_params['value'] = self.input['Eref'].value
     self.msg.value = "Applied sample weights"
   
   def _revert(self):
     self.input['A'].value = self.A_params['value']
     self.input['B'].value = self.B_params['value']
     self.input['kT'].value = self.kT_params['value']
+    self.input['Eref'].value = self.Eref_params['value']
     self.msg.value = "Reverted to last applied sample weights"
   
   def _save(self):
     try:
-      self.fit_input["weight"]["method"] = "wHullDist"
+      self.fit_input["weight"]["method"] = self.select_method.value
       self.fit_input["weight"]["kwargs"]["A"] = self.input['A'].value
       self.fit_input["weight"]["kwargs"]["B"] = self.input['B'].value
       self.fit_input["weight"]["kwargs"]["kT"] = self.input['kT'].value
+      if self.select_method.value == ["wEref"]:
+        self.fit_input["weight"]["kwargs"]["Eref"] = self.input['Eref'].value
       with open(self.input_filename, 'w') as f:
         json.dump(self.fit_input, f, indent=2)
       self.msg.value = "Saved input file: " + self.input_filename
@@ -1205,21 +1241,59 @@ class HullDistWeightSelect(object):
   def _set_wvalue(self):
     """Set wvalue based on weighting parameters"""
     # calculate weights
-    w = casm.fit.tools.wHullDist(
-          self.hull_dist_values, 
-          self.input['A'].value, 
-          self.input['B'].value, 
-          self.input['kT'].value*0.001)
-    w[np.where(self._unselected)] = 1.0
+    if self.select_method.value == "wHullDist":
+      w = casm.fit.tools.wHullDist(
+            self.hull_dist_values[np.where(self._selected)], 
+            self.input['A'].value, 
+            self.input['B'].value, 
+            self.input['kT'].value*0.001)
+    elif self.select_method.value == "wEmin":
+      w = casm.fit.tools.wEmin(
+            self.sel.data['formation_energy'].values[np.where(self._selected)], 
+            self.input['A'].value, 
+            self.input['B'].value, 
+            self.input['kT'].value*0.001)
+    elif self.select_method.value == "wEref":
+      w = casm.fit.tools.wEref(
+            self.sel.data['formation_energy'].values[np.where(self._selected)], 
+            self.input['A'].value, 
+            self.input['B'].value, 
+            self.input['kT'].value*0.001,
+            self.input['Eref'].value)
+    
+    self.sel.data.loc[:,'weight'] = 0.0
+    self.sel.data.loc[self._selected,'weight'] = w
+    add_src_data(self.sel, 'weight', self.sel.data.loc[:,'weight'], force=True)
     
     # update data (will update hullplot scatter points, but not convex hull line)
-    self.sel.data.loc[:,self.wvalue_id] = casm.fit.tools.set_sample_weight(w, value=self.sel.data.loc[:,'formation_energy'].values)[0]
+    self.sel.data.loc[self._selected,self.wvalue_id] = casm.fit.tools.set_sample_weight(
+      w, value=self.sel.data.loc[self._selected,'formation_energy'].values)[0]
+    self.sel.data.loc[self._unselected,self.wvalue_id] = self.sel.data.loc[self._unselected,'formation_energy']
     add_src_data(self.sel, self.wvalue_id, self.sel.data.loc[:,self.wvalue_id], force=True)
   
   def _update_wvalue(self, attrname, old, new):
     """Update due to changes in weighting paramaters, but no change in selection"""
     self._set_wvalue()
-    self.hullplot.update_hull_line()
+    
+    if self.ref_line is None:
+      if self.select_method.value in ["wEmin", "wEref"] :
+        self.ref_line_src = bokeh.models.ColumnDataSource(
+          data={'x':[self.x_min, self.x_max], 'y':[self.input['Eref'].value, self.input['Eref'].value]})
+        self.ref_line = self.hullplot.p.line('x', 'y', source=self.ref_line_src, line_color='red', line_width=1.0)
+    if self.ref_line is not None:
+      if self.select_method.value == "wEref":
+        self.ref_line_src.data['x'] = [self.x_min, self.x_max]
+        self.ref_line_src.data['y'] = [self.input['Eref'].value, self.input['Eref'].value]
+      elif self.select_method.value == "wEmin":
+        self.ref_line_src.data['x'] = [self.x_min, self.x_max]
+        self.ref_line_src.data['y'] = [self.Ef_min, self.Ef_min]
+      elif self.select_method.value == "wHullDist":
+        self.ref_line_src.data['x'] = []
+        self.ref_line_src.data['y'] = []
+    if self.select_method.value == "wEref":
+      self.ref_line_src.data['y'] = [self.input['Eref'].value, self.input['Eref'].value]
+    
+    self.whullplot.update_hull_line()
   
   def _update_selection(self):
     """Update to reflect change in selection"""
@@ -1229,33 +1303,71 @@ class HullDistWeightSelect(object):
     
     if self.hullplot_kwargs is None:
       self.hullplot_kwargs=dict()
-    self.hullplot_kwargs['y'] = self.wvalue_id
+    hullplot_kwargs = self.hullplot_kwargs
     
     # add convex hull plot, using unweighted formation energies
     if self.hullplot is None:
+      hullplot_kwargs['y'] = 'formation_energy'
       self.hullplot = ConvexHullPlot(self.sel, **self.hullplot_kwargs)
-      self.hullplot.p.yaxis.axis_label = "Weighted Formation Energy"
+      self.hullplot.p.plot_width = self.plot_width
+      self.hullplot.p.yaxis.axis_label = "Formation Energy"
+      self.x_min = self.sel.data[self.hullplot.x].min()
+      self.x_max = self.sel.data[self.hullplot.x].max()
     else:
-      self.hullplot.update()
+      self.whullplot.update()
     
+    if self.show_weightplot and self.weightplot is None:
+      self.weightplot = Scatter(self.sel, self.hullplot.x, 'weight')
+      self.weightplot.p.plot_width = self.plot_width
+      self.weightplot.p.yaxis.axis_label = "Weight"
+    
+    # add convex hull plot, using unweighted formation energies
+    if self.whullplot is None:
+      hullplot_kwargs['y'] = self.wvalue_id
+      self.whullplot = ConvexHullPlot(self.sel, **self.hullplot_kwargs)
+      self.whullplot.p.plot_width = self.plot_width
+      self.whullplot.p.yaxis.axis_label = "Weighted Formation Energy"
+    else:
+      self.whullplot.update()
     
     # set weights and update the hullplot
     self.hull_dist_values = self.sel.data.loc[:, hull_dist(self.sel.path)].values
+    self._selected = _selected(self.sel)
     self._unselected = _unselected(self.sel)
     self._update_wvalue(None, None, None)
     self.msg.value = "Save selection to re-calculate the convex hull"
     
     # Set up layouts and add to document
     if self.layout is None:
-      self.layout = vplot(
-        hplot(
-          vplot(self.input['kT'], 
-            self.input['A'], 
-            self.input['B'], 
-            self.select_action), 
-          self.hullplot.layout),
-        self.msg.widget, width=self.hullplot.p.plot_width + 300)
-
+      self.layout = self._layout()
+  
+  def _update_method(self, attrname, old, new):
+    self.layout.children[0].children[0].children = self._widget_layout()
+    self._update_wvalue(None, None, None)
+  
+  def _layout(self):
+    if self.show_weightplot:
+      children = [self.hullplot.layout, self.whullplot.layout, self.weightplot.layout]
+    else:
+      children = [self.hullplot.layout, self.whullplot.layout]
+    grid = bokeh.models.GridPlot(children=[children])
+    row = hplot(vplot(*self._widget_layout()), grid)
+    return vplot(row, self.msg.widget, width=self.whullplot.p.plot_width*3 + 300)
+  
+  def _widget_layout(self):
+    if self.select_method.value in ["wHullDist", "wEmin"]:
+      return [self.select_method.widget,
+              self.input['kT'], 
+              self.input['A'], 
+              self.input['B'], 
+              self.select_action]
+    else:
+      return [self.select_method.widget,
+              self.input['kT'], 
+              self.input['A'], 
+              self.input['B'],
+              self.input['Eref'], 
+              self.select_action]
 
 class FloatInput(object):
   """
@@ -1295,7 +1407,7 @@ class SelectInput(object):
   A dropdown selection menu.
   
   Attributes:
-    self.widget: a bokeh.models.SelectInput containing the cutoff value
+    self.widget: a bokeh.models.Select containing the cutoff value
     self.update: a dict of option name str -> list of callables that should be 
       called on change of value
   """
@@ -1308,14 +1420,13 @@ class SelectInput(object):
       title: display name
     """
     
-    self.widget = bokeh.models.SelectInput(value=value, title=title, options=options)
+    self.widget = bokeh.models.Select(value=value, title=title, options=options)
     self.update = dict()
     self.widget.on_change('value', self.on_change)
   
   def on_change(self, attrname, old, new):
     if new in self.update.keys():
-      for f in self.update[new]:
-        f(attrname, old, new)
+      self.update[new](attrname, old, new)
   
   @property
   def value(self):
@@ -1324,6 +1435,14 @@ class SelectInput(object):
   @value.setter
   def value(self, _value):
     self.widget.value = _value
+  
+  @property
+  def options(self):
+    return self.widget.options
+  
+  @options.setter
+  def options(self, _value):
+    self.widget.options = _value
 
 
 class StrInput(object):

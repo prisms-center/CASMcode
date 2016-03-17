@@ -38,10 +38,10 @@ def wEmin(value, A=1.0, B=1.0, kT=1.0):
 
 def wEref(value, A=1.0, B=1.0, kT=1.0, E0=0.0):
   """
-  Returns A*np.exp(-(value - E0)/kT) + B, where value > E0; 1.0 otherwise
+  Returns A*np.exp(-(value - E0)/kT) + B, where value >= E0; 1.0 otherwise
   """
   w = A*np.exp(-(value - E0)/kT) + B
-  w[np.where(value <= E0)[0].tolist()] = 1.0
+  w[np.where(value < E0)[0].tolist()] = 1.0
   return w
 
 def set_sample_weight(sample_weight, value=None, corr=None):
