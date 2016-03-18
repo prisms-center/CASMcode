@@ -1,7 +1,7 @@
 #include "casm/system/RuntimeLibrary.hh"
 
 namespace CASM {
-  
+
   /// \brief Construct a RuntimeLibrary object, with the options to be used for compile
   ///        the '.o' file and the '.so' file
   RuntimeLibrary::RuntimeLibrary(std::string _compile_options,
@@ -85,7 +85,7 @@ namespace CASM {
       std::cerr << p.gets() << std::endl;
       throw std::runtime_error("Can not compile " + m_filename_base + ".cc");
     }
-    
+
     cmd = m_so_options + " -o " + m_filename_base + ".so" + " " + m_filename_base + ".o";
     p.popen(cmd);
     if(p.exit_code()) {
@@ -134,7 +134,7 @@ namespace CASM {
     // rm
     Popen p;
     p.popen(std::string("rm -f ") + m_filename_base + ".cc " + m_filename_base + ".o " + m_filename_base + ".so");
-    
+
     m_filename_base = "";
   }
 
@@ -146,10 +146,10 @@ namespace CASM {
   /// - $CXX is replaced with "$CXX" if CXX exists and "g++" otherwise
   /// - $CASM_INCLUDE is replaced with "-I$CASMPREFIX/include" if CASMPREFIX exists
   std::string RuntimeLibrary::default_compile_options() {
-    
+
     return cxx() + " " + default_cxxflags() + " " + casm_include();
   }
-  
+
   /// \brief Default c++ compiler options
   ///
   /// \returns "-O3 -Wall -fPIC --std=c++11"
@@ -163,38 +163,38 @@ namespace CASM {
   std::string RuntimeLibrary::default_so_options() {
     return cxx() + " -shared" + " -lboost_system";
   }
-  
+
   /// \brief Return default compiler
   ///
   /// - if environment variable CXX exists, uses that, otherwise "g++"
   std::string RuntimeLibrary::cxx() {
     std::string result = "g++";
-    char* CXX = std::getenv("CXX");
+    char *CXX = std::getenv("CXX");
     if(CXX != nullptr) {
       result = std::string(CXX);
     }
     return result;
   }
-  
+
   /// \brief Return include path option for CASM
   ///
   /// \returns "-I$HHCASM/include" if environment variable HHCASM exists,
-  ///          "-I$CASMPREFIX/include" if environment variable CASMPREFIX exists, 
+  ///          "-I$CASMPREFIX/include" if environment variable CASMPREFIX exists,
   ///          otherwise an empty string
   std::string RuntimeLibrary::casm_include() {
     std::string result = "";
-    
-    char* HHCASM = std::getenv("HHCASM");
+
+    char *HHCASM = std::getenv("HHCASM");
     if(HHCASM != nullptr) {
       result = "-I" + (boost::filesystem::path(HHCASM) / "include").string();
     }
     else {
-      char* CASMPREFIX = std::getenv("CASMPREFIX");
+      char *CASMPREFIX = std::getenv("CASMPREFIX");
       if(CASMPREFIX != nullptr) {
         result = "-I" + (boost::filesystem::path(CASMPREFIX) / "include").string();
       }
     }
     return result;
   }
-  
+
 }

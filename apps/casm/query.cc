@@ -17,11 +17,14 @@ namespace CASM {
             << std::endl;
 
     for(const std::string &help_opt : help_opt_vec) {
-      if(help_opt == "operators" || help_opt == "operator") {
+      if(help_opt.empty())
+        continue;
+
+      if(help_opt[0] == 'o') {
         _stream << "Available operators for use within queries:" << std::endl;
         ConfigIOParser::print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
       }
-      else if(help_opt == "property" || help_opt == "properties") {
+      else if(help_opt[0] == 'p') {
         _stream << "Available property tags are currently:" << std::endl;
         ConfigIOParser::print_help(_stream);
       }
@@ -162,9 +165,8 @@ namespace CASM {
     output_stream << FormatFlag(output_stream).print_header(!no_header);
     DataFormatter<Configuration> formatter;
     ConstConfigSelection selection;
-    
     try {
-      
+
       if(vm.count("config"))
         selection = ConstConfigSelection(primclex, fs::absolute(config_path));
       else
@@ -189,7 +191,7 @@ namespace CASM {
     }
 
     try {
-      
+
       // JSON output block
       if(json_flag || out_path.extension() == ".json" || out_path.extension() == ".JSON") {
         jsonParser json;
@@ -204,7 +206,7 @@ namespace CASM {
         //std::cout << "Read in config selection... it is:\n" << selection;
         output_stream << formatter(selection.selected_config_begin(), selection.selected_config_end());
       }
-      
+
     }
     catch(std::exception &e) {
       std::cerr << "Initialization error: " << e.what() << "\n\n";

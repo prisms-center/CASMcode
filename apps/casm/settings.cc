@@ -49,7 +49,7 @@ namespace CASM {
     std::cout << "Compiler settings: '" << set.compile_options() << "'\n\n";
 
     std::cout << "SO settings: '" << set.so_options() << "'\n\n";
-    
+
     std::cout << "'casm view' command: '" << set.view_command() << "'\n\n";
 
 
@@ -158,7 +158,7 @@ namespace CASM {
                     "      - For --set-ref, 'other_calctype' is optional if among \n" <<
                     "        all calctype there is no other reference called      \n" <<
                     "        'other_ref'. Otherwise it is required.               \n\n" <<
-                    
+
                     "      casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'\n" <<
                     "      - Sets the command used by 'casm view' to open         \n" <<
                     "        visualization software.                              \n" <<
@@ -487,7 +487,7 @@ namespace CASM {
 
       return 0;
     }
-    
+
     // set compile options
     else if(vm.count("unset-compile-options")) {
       set.set_compile_options(RuntimeLibrary::default_compile_options());
@@ -507,7 +507,7 @@ namespace CASM {
 
       return 0;
     }
-    
+
     // set compile options
     else if(vm.count("unset-so-options")) {
       set.set_so_options(RuntimeLibrary::default_so_options());
@@ -517,7 +517,7 @@ namespace CASM {
 
       return 0;
     }
-    
+
     // set compile options
     else if(vm.count("set-view-command")) {
       set.set_view_command(single_input);

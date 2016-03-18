@@ -51,8 +51,8 @@ namespace CASM {
 
     typedef T value_type;
     typedef Index size_type;
-    typedef T* iterator;
-    typedef const T* const_iterator;
+    typedef T *iterator;
+    typedef const T *const_iterator;
 
     // CONSTRUCTORS/DESTRUCTORS
     Array() : N(0), NMax(0), Vals(nullptr) { }
@@ -76,18 +76,18 @@ namespace CASM {
       for(Index i = 0; i < RHS.size(); i++)
         push_back(RHS[i]);
     }
-    
+
     //*******************************************************************************************
-    
+
     template<typename Iterator>
-    Array(Iterator begin, 
-          Iterator end, 
-          typename CASM_TMP::enable_if_iterator<Iterator>::type* = nullptr) : 
+    Array(Iterator begin,
+          Iterator end,
+          typename CASM_TMP::enable_if_iterator<Iterator>::type * = nullptr) :
       N(0), NMax(0), Vals(nullptr) {
-      
+
       reserve(std::distance(begin, end));
       auto it = begin;
-      for(; it!=end; ++it)
+      for(; it != end; ++it)
         push_back(*it);
     }
 

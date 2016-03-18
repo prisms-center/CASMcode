@@ -68,14 +68,19 @@ namespace CASM {
         std::cerr << "Error in 'casm enum'. If --min is given, --max must also be given." << std::endl;
         return ERR_INVALID_ARG;
       }
-      if(!vm.count("supercells") && !vm.count("configs")) {
+      if(vm.count("supercells") + vm.count("configs") != 1) {
         std::cerr << "\n" << desc << "\n" << std::endl;
-        std::cerr << "Error in 'casm enum'. Either --supercells or --configs must be given." << std::endl;
+        std::cerr << "Error in 'casm enum'. Exactly one of either --supercells or --configs must be given." << std::endl;
         return ERR_INVALID_ARG;
       }
       if(vm.count("supercells") && !vm.count("max")) {
         std::cerr << "\n" << desc << "\n" << std::endl;
         std::cerr << "Error in 'casm enum'. If --supercells is given, --max must be given." << std::endl;
+        return ERR_INVALID_ARG;
+      }
+      if(vm.count("configs") && (vm.count("max") + vm.count("all") != 1)) {
+        std::cerr << "\n" << desc << "\n" << std::endl;
+        std::cerr << "Error in 'casm enum'. If --configs is given, exactly one of either --max or --all must be given." << std::endl;
         return ERR_INVALID_ARG;
       }
     }
@@ -90,7 +95,7 @@ namespace CASM {
       return ERR_UNKNOWN;
 
     }
-    
+
     COORD_MODE C(coordtype);
 
     fs::path root = find_casmroot(fs::current_path());
@@ -170,7 +175,7 @@ namespace CASM {
         }
       }
       for(auto it = scel_selection.begin(); it != scel_selection.end(); ++it) {
-        std::cout << "  Enumerate configurations for " << (**it).get_name() << " ... " << std::flush;
+        std::cout << "  Enumerate configurations for " << (**it).get_name() << " ...  " << std::flush;
 
         ConfigEnumAllOccupations<Configuration> enumerator(**it);
         Index num_before = (**it).get_config_list().size();

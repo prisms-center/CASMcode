@@ -385,8 +385,8 @@ namespace CASM {
   /// nlist_index is the index of the basis site in the neighbor list
   template<typename ClustType>
   ReturnArray<std::string>  GenericOrbit<ClustType>::flower_function_cpp_strings(const Array<FunctionVisitor *> &labelers, Index nlist_index) {
-    
-     Array<std::string> formulae(prototype.clust_basis.size(), std::string());
+
+    Array<std::string> formulae(prototype.clust_basis.size(), std::string());
     std::string suffix;
     Index ib;
 
@@ -395,7 +395,7 @@ namespace CASM {
       formulae.resize(prototype.clust_basis.size(), std::string("("));
       suffix = ")/" + std::to_string(size()) + ".0";
     }
-    
+
     for(Index ne = 0; ne < size(); ne++) {
       //std::cout << "# of translists: " << at(ne).trans_nlists().size() << "\n";
       for(Index nt = 0; nt < at(ne).trans_nlists().size(); nt++) {
@@ -441,7 +441,7 @@ namespace CASM {
       Index nlist_index,
       Index b_index,
       Index f_index) {
-    
+
     Array<std::string> formulae(prototype.clust_basis.size(), std::string());
     std::string suffix;
     Index ib;
