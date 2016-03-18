@@ -14,6 +14,14 @@ namespace CASM {
   class Lattice;
   class SymOp;
 
+  namespace Coordinate_impl {
+
+    class FracCoordinate;
+    class FracCoordinateComponent;
+    class CartCoordinate;
+    class CartCoordinateComponent;
+
+  }
 
   class Coordinate {
   protected:
@@ -21,88 +29,67 @@ namespace CASM {
     Lattice const *home;
 
   private:
-    //coords[FRAC] is fractional coordinate; coord[CART] is cartesian coordinate
-    mutable Vector3< double > coord[2];
-    mutable bool is_current[2];
+    Eigen::Vector3d m_frac_coord, m_cart_coord;
 
-
-    //Following routines added by Ivy to be used in SelfTest
-    bool switch_test();
-    bool calc_F_test();
-    bool calc_C_test();
     Index m_basis_ind;
   public:
 
     /**NOTE: Coordinate does not have a default constructor
-       e.g: this is not allowed-> Coordinate() : home(NULL) { is_current[FRAC]=false; is_current[CART]=false;}; **/
+       e.g: this is not allowed-> Coordinate() : home(nullptr) { is_current[FRAC]=false; is_current[CART]=false;}; **/
 
     ///Minimal constructor only takes a lattice
     explicit Coordinate(const Lattice &init_home) : home(&init_home), m_basis_ind(-1) {
-      is_current[FRAC] = false, is_current[CART] = false;
+
     };
 
-    Coordinate(const Coordinate &init_coord, const Lattice &init_home) : home(&init_home), m_basis_ind(-1) {
-      coord[CART] = init_coord(CART);
-      is_current[CART] = true;
-      is_current[FRAC] = false;
+    Coordinate(const Eigen::Vector3d &init_vec, const Lattice &init_home, COORD_TYPE mode) : home(&init_home), m_basis_ind(-1) {
+      if(mode == FRAC)
+        frac() = init_vec;
+      if(mode == CART)
+        cart() = init_vec;
     };
 
-    Coordinate(const Vector3<double> &init_vec, const Lattice &init_home) : home(&init_home), m_basis_ind(-1) {
-      coord[mode_ind()] = init_vec;
-      is_current[mode_ind()] = true;
-      is_current[!mode_ind()] = false;
-    };
+    /// \brief Set the fractional coordinate vector
+    Coordinate_impl::FracCoordinate frac();
 
-    Coordinate(const Vector3<double> &init_vec, const Lattice &init_home, COORD_TYPE mode) : home(&init_home), m_basis_ind(-1) {
-      coord[mode] = init_vec;
-      is_current[mode] = true;
-      is_current[!mode] = false;
-    };
+    /// \brief const Access the fractional coordinate vector
+    const Eigen::Vector3d &frac() const;
 
-    Coordinate &operator +=(const Coordinate &RHS); //Ivy
-    Coordinate operator +(const Coordinate &RHS) const;
+    /// \brief Set a component of the fractional coordinate vector
+    Coordinate_impl::FracCoordinateComponent frac(size_type index);
+
+    /// \brief const Access a component of the fractional coordinate vector
+    const double &frac(size_type index) const;
+
+
+
+    /// \brief Set Cartesian coordinate vector and update fractional coordiante vector
+    Coordinate_impl::CartCoordinate cart();
+
+    /// \brief const Access the Cartesian coordinate vector
+    const Eigen::Vector3d &cart() const;
+
+    /// \brief Set a component of the Cartesian coordinate vector
+    Coordinate_impl::CartCoordinateComponent cart(size_type index);
+
+    /// \brief const Access a component of the Cartesian coordinate vector
+    const double &cart(size_type index) const;
+
+    Coordinate &operator +=(const Coordinate &RHS);
     Coordinate &operator -=(const Coordinate &RHS);
-    Coordinate operator -(const Coordinate &RHS) const; //Ivy
-    Coordinate operator -() const; //Ivy
+
+    Coordinate operator -() const;
 
     bool operator ==(const Coordinate &RHS) const; //Ivy
     bool operator !=(const Coordinate &RHS) const {
       return !(*this == RHS);
     };
 
-    /** check if two Coordinates are the same without updating CART/FRAC
-    use following only if you are certain of initialization status of coordinates **/
-    bool unsafe_compare(const Coordinate &RHS, COORD_TYPE mode) const;
 
     ///These compares exist to make interface consistent with site
     bool compare(const Coordinate &RHS, double tol = TOL) const;
     bool compare(const Coordinate &RHS, Coordinate &shift, double tol = TOL) const;
     bool compare_type(const Coordinate &RHS)const;
-
-    ///Methods to check on the global COORD_MODE state
-    bool is_cart() const {
-      return COORD_MODE::IS_CART();
-    };
-    bool is_frac() const {
-      return COORD_MODE::IS_FRAC();
-    };
-    int  mode_ind() const {
-      return int(COORD_MODE::CHECK());
-    }; //this will index our arrays
-
-    ///calc() makes sure that that coordinate has up-to-date value in current mode, as determined by is_current[mode]
-    ///returns true as long as a valid value exists or can be calculated
-    bool calc() const;
-    bool calc(COORD_TYPE mode) const; //same as calc(), but for specified mode
-
-    //update() calls calc(FRAC) and calc(CART) and returns true if successful
-    //update(mode) refreshes the value of the specified mode, regardless of whether it is current
-    //returns true unless Coordinate is improperly initialized
-    bool update() const;
-    bool update(COORD_TYPE mode) const;
-
-    //invalidate(mode) does calc(!mode) and then marks value in specified mode as not current
-    bool invalidate(COORD_TYPE mode);
 
     ///Map coordinate into the unit cell using a lattice translation
     bool within();
@@ -155,17 +142,17 @@ namespace CASM {
     };
 
     ///Cast as vector in the current coordinate mode
-    operator Vector3< double >();
+    operator Eigen::Vector3d();
 
 
     /**Retur vector in the current coordinate mode
        example: Coordinate my_coord(prim);
-                Vector3<double> my_cart_coord = my_coord(CART); **/
-    Vector3< double > &operator()();  //Cast as vector in the current coordinate mode
-    Vector3< double > &operator()(COORD_TYPE mode);
+                Eigen::Vector3d my_cart_coord = my_coord(CART); **/
+    Eigen::Vector3d &operator()();  //Cast as vector in the current coordinate mode
+    Eigen::Vector3d &operator()(COORD_TYPE mode);
 
-    const Vector3< double > &operator()() const;  //Cast as vector in the current coordinate mode
-    const Vector3< double > &operator()(COORD_TYPE mode) const;
+    const Eigen::Vector3d &operator()() const;  //Cast as vector in the current coordinate mode
+    const Eigen::Vector3d &operator()(COORD_TYPE mode) const;
 
     //term is terminal character, prec is precision, pad is field width - precision  (should be greater than 3)
     void read(std::istream &stream);
@@ -199,6 +186,220 @@ namespace CASM {
   void from_json(Coordinate &value, const jsonParser &json);
 
   Coordinate operator*(const SymOp &LHS, const Coordinate &RHS); //AAB
+
+  namespace Coordinate_impl {
+
+    /// \brief A class to enable vector assignment to the fractional vector of a Coordinate
+    ///
+    /// Typically only used indirectly as a temporary when performing
+    /// \code
+    /// Coordinate coord;
+    /// coord.frac() = Eigen::Vector3d(a,b,c);
+    /// \endcode
+    ///
+    class FracCoordinate {
+
+    public:
+
+      explicit FracCoordinate(Coordinate &coord) :
+        m_coord(&coord) {}
+
+      template<typename Derived>
+      FracCoordinate &operator=(const Eigen::MatrixBase<Derived> &vec) {
+        m_coord->_set_frac(vec);
+        return *this;
+      }
+
+      template<typename Derived>
+      FracCoordinate &operator+=(const Eigen::MatrixBase<Derived> &vec) {
+        Eigen::Vector3d tmp = m_coord->m_vec[FRAC] + vec;
+        m_coord->_set_frac(tmp);
+        return *this;
+      }
+
+      template<typename Derived>
+      FracCoordinate &operator-=(const Eigen::MatrixBase<Derived> &vec) {
+        m_coord->_set_frac(m_coord->m_vec[FRAC] - vec);
+        return *this;
+      }
+
+      FracCoordinate &operator*=(double val) {
+        m_coord->_set_frac(m_coord->m_vec[FRAC]*val);
+        return *this;
+      }
+
+      FracCoordinate &operator/=(double val) {
+        m_coord->_set_frac(m_coord->m_vec[FRAC] / val);
+        return *this;
+      }
+
+      operator const Eigen::Vector3d &() const {
+        return m_coord->m_vec[FRAC];
+      }
+
+    private:
+
+      Coordinate *m_coord;
+    };
+
+    /// \brief A class to enable assignment to a component of the fractional vector of a Coordinate
+    ///
+    /// Typically only used indirectly as a temporary when performing
+    /// \code
+    /// Coordinate coord;
+    /// double a, b, c;
+    /// coord.frac(0) = a;
+    /// coord.frac(1) = b;
+    /// coord.frac(2) = c;
+    /// \endcode
+    ///
+    class FracCoordinateComponent {
+
+    public:
+
+      explicit FracCoordinateComponent(Coordinate &coord, Coordinate::size_type index) :
+        m_coord(&coord), m_index(index) {}
+
+      FracCoordinateComponent &operator=(double val) {
+        m_coord->_set_frac(m_index, val);
+        return *this;
+      }
+
+      FracCoordinateComponent &operator+=(double val) {
+        m_coord->_set_frac(m_index, m_coord->m_vec[FRAC](m_index) + val);
+        return *this;
+      }
+
+      FracCoordinateComponent &operator-=(double val) {
+        m_coord->_set_frac(m_index, m_coord->m_vec[FRAC](m_index) - val);
+        return *this;
+      }
+
+      FracCoordinateComponent &operator*=(double val) {
+        m_coord->_set_frac(m_index, m_coord->m_vec[FRAC](m_index)*val);
+        return *this;
+      }
+
+      FracCoordinateComponent &operator/=(double val) {
+        m_coord->_set_frac(m_index, m_coord->m_vec[FRAC](m_index) / val);
+        return *this;
+      }
+
+      operator const double &() const {
+        return m_coord->m_vec[FRAC](m_index);
+      }
+
+    private:
+
+      Coordinate *m_coord;
+      Coordinate::size_type m_index;
+    };
+
+    /// \brief A class to enable vector assignment to the Cartesian vector of a Coordinate
+    ///
+    /// Typically only used indirectly as a temporary when performing
+    /// \code
+    /// Coordinate coord;
+    /// coord.cart() = Eigen::Vector3d(a,b,c);
+    /// \endcode
+    ///
+    class CartCoordinate {
+
+    public:
+
+      explicit CartCoordinate(Coordinate &coord) :
+        m_coord(&coord) {}
+
+      template<typename Derived>
+      CartCoordinate &operator=(const Eigen::MatrixBase<Derived> &vec) {
+        m_coord->_set_cart(vec);
+        return *this;
+      }
+
+      template<typename Derived>
+      CartCoordinate &operator+=(const Eigen::MatrixBase<Derived> &vec) {
+        m_coord->_set_cart(m_coord->m_vec[CART] + vec);
+        return *this;
+      }
+
+      template<typename Derived>
+      CartCoordinate &operator-=(const Eigen::MatrixBase<Derived> &vec) {
+        m_coord->_set_cart(m_coord->m_vec[CART] - vec);
+        return *this;
+      }
+
+      CartCoordinate &operator*=(double val) {
+        m_coord->_set_cart(m_coord->m_vec[CART]*val);
+        return *this;
+      }
+
+      CartCoordinate &operator/=(double val) {
+        m_coord->_set_cart(m_coord->m_vec[CART] / val);
+        return *this;
+      }
+
+      operator const Eigen::Vector3d &() const {
+        return m_coord->m_vec[CART];
+      }
+
+    private:
+
+      Coordinate *m_coord;
+    };
+
+    /// \brief A class to enable assignment to a component of the Cartesian vector of a Coordinate
+    ///
+    /// Typically only used indirectly as a temporary when performing
+    /// \code
+    /// Coordinate coord;
+    /// double a, b, c;
+    /// coord.cart(0) = a;
+    /// coord.cart(1) = b;
+    /// coord.cart(2) = c;
+    /// \endcode
+    ///
+    class CartCoordinateComponent {
+
+    public:
+
+      explicit CartCoordinateComponent(Coordinate &coord, Coordinate::size_type index) :
+        m_coord(&coord), m_index(index) {}
+
+      CartCoordinateComponent &operator=(double val) {
+        m_coord->_set_cart(m_index, val);
+        return *this;
+      }
+
+      CartCoordinateComponent &operator+=(double val) {
+        m_coord->_set_cart(m_index, m_coord->m_vec[CART](m_index) + val);
+        return *this;
+      }
+
+      CartCoordinateComponent &operator-=(double val) {
+        m_coord->_set_cart(m_index, m_coord->m_vec[CART](m_index) - val);
+        return *this;
+      }
+
+      CartCoordinateComponent &operator*=(double val) {
+        m_coord->_set_cart(m_index, m_coord->m_vec[CART](m_index)*val);
+        return *this;
+      }
+
+      CartCoordinateComponent &operator/=(double val) {
+        m_coord->_set_cart(m_index, m_coord->m_vec[CART](m_index) / val);
+        return *this;
+      }
+
+      operator const double &() const {
+        return m_coord->m_vec[CART](m_index);
+      }
+
+    private:
+
+      Coordinate *m_coord;
+      Coordinate::size_type m_index;
+    };
+  }
 
 };
 #endif
