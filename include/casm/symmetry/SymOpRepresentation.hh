@@ -51,7 +51,7 @@ namespace CASM {
       return nullptr;
     };
 
-    virtual SymBasisPermute const* get_ucc_permutation() const {
+    virtual SymBasisPermute const *get_ucc_permutation() const {
       return nullptr;
     };
 

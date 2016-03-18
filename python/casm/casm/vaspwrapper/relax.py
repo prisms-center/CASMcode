@@ -110,35 +110,40 @@ class Relax(object):
                 POS: structure of the configuration to be relaxed
 
         """
+        # Find required input files in CASM project directory tree
         incarfile = casm.settings_path("INCAR",self.casm_settings["curr_calctype"],self.configdir)
         prim_kpointsfile = casm.settings_path("KPOINTS",self.casm_settings["curr_calctype"],self.configdir)
         prim_poscarfile = casm.settings_path("POSCAR",self.casm_settings["curr_calctype"],self.configdir)
         super_poscarfile = os.path.join(self.configdir,"POS")
         speciesfile = casm.settings_path("SPECIES",self.casm_settings["curr_calctype"],self.configdir)
-        if self.settings["extra_input_files"]:
-            extra_input_files = [ casm.settings_path(s,self.casm_settings["curr_calctype"],self.configdir) for s in self.settings["extra_input_files"]]
-        else:
-            extra_input_files = []
+
+        # Verify that required input files exist
+        if incarfile is None:
+            raise vasp.VaspError("Relax.setup failed. No INCAR file found in CASM project.")
+        if prim_kpointsfile is None:
+            raise vasp.VaspError("Relax.setup failed. No KPOINTS file found in CASM project.")
+        if prim_poscarfile is None:
+            warnings.warn("No reference POSCAR file found in CASM project. I hope your KPOINTS mode is A/AUTO/Automatic or this will fail!", vasp.VaspWarning)
+        if super_poscarfile is None:
+            raise vasp.VaspError("Relax.setup failed. No POS file found for this configuration.")
+        if speciesfile is None:
+            raise vasp.VaspError("Relax.setup failed. No SPECIES file found in CASM project.")
+
+        # Find optional input files
+        extra_input_files = []
+        for s in self.settings["extra_input_files"]:
+            extra_input_files.append(casm.settings_path(s,self.casm_settings["curr_calctype"],self.configdir))
+            if extra_input_files[-1] is None:
+                raise vasp.VaspError("Relax.setup failed. Extra input file " + s + " not found in CASM project.")
         if self.settings["initial"]:
             extra_input_files += [ casm.settings_path(self.settings["initial"],self.casm_settings["curr_calctype"],self.configdir) ]
+            if extra_input_files[-1] is None:
+                raise vasp.VaspError("Relax.setup failed. No initial INCAR file " + self.settings["initial"] + " found in CASM project.")
         if self.settings["final"]:
             extra_input_files += [ casm.settings_path(self.settings["final"],self.casm_settings["curr_calctype"],self.configdir) ]
-        if incarfile == None or not os.path.isfile(incarfile):
-            raise vasp.VaspError("Relax.setup failed. No incar file: '" + incarfile + "'")
-        if prim_kpointsfile == None or not os.path.isfile(prim_kpointsfile):
-            raise vasp.VaspError("Relax.setup failed. No kpoints file: '" + prim_kpointsfile + "'")
-        if prim_poscarfile == None or not os.path.isfile(prim_poscarfile):
-#            raise vasp.VaspError("Relax.setup failed. No prim poscar file: '" + prim_poscarfile + "'")
-            warnings.warn("No prim poscar file: '" + prim_poscarfile + "', I hope your KPOINTS mode is A/AUTO/Automatic \
-            or this will fail!!!", vasp.VaspWarning)
-            prim_poscarfile = None
-        if super_poscarfile == None or not os.path.isfile(super_poscarfile):
-            raise vasp.VaspError("Relax.setup failed. No pos file: '" + super_poscarfile + "'")
-        if speciesfile == None or not os.path.isfile(speciesfile):
-            raise vasp.VaspError("Relax.setup failed. No species file: '" + speciesfile + "'")
-        for s in extra_input_files:
-            if s == None or not os.path.isfile(s):
-                raise vasp.VaspError("Relax.setup failed. No input file: '" + s + "'")
+            if extra_input_files[-1] is None:
+                raise vasp.VaspError("Relax.setup failed. No final INCAR file " + self.settings["final"] + " found in CASM project.")
+
 
         sys.stdout.flush()
 
@@ -194,7 +199,7 @@ class Relax(object):
 
             # ensure results report written
             if not os.path.isfile(os.path.join(self.calcdir, "properties.calc.json")):
-                self.report()
+                self.report_properties()
 
             return
 
@@ -243,6 +248,7 @@ class Relax(object):
         sys.stdout.flush()
         # submit the job
         job.submit()
+        self.report_status("submitted")
 
         # return to current directory
         os.chdir(currdir)
@@ -310,12 +316,13 @@ class Relax(object):
                     print str(e)
                     sys.stdout.flush()
 
-            # write results to output.VASP
-            self.report()
+            # write results to properties.calc.json
+            self.report_properties()
             return
 
         elif status == "not_converging":
             print "Status:", status
+            self.report_status("failed","run_limit")
             print "Returning"
             sys.stdout.flush()
             return
@@ -325,9 +332,11 @@ class Relax(object):
             if task == "setup":
                 self.setup()
 
+            self.report_status("started")
             (status, task) = relaxation.run()
 
         else:
+            self.report_status("failed","unknown")
             raise vaspwrapper.VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
@@ -346,6 +355,7 @@ class Relax(object):
 
             print "Not Converging!"
             sys.stdout.flush()
+            self.report_status("failed","run_limit")
 
             # print a local settings file, so that the run_limit can be extended if the
             #   convergence problems are fixed
@@ -371,27 +381,63 @@ class Relax(object):
                     print str(e)
                     sys.stdout.flush()
 
-            # write results to output.VASP
-            self.report()
+            # write results to properties.calc.json
+            self.report_properties()
 
         else:
+            self.report_status("failed","unknown")
             raise vaspwrapper.VaspWrapperError("vasp relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
+    def report_status(self, status, failure_type=None):
+        """Report calculation status to status.json file in configuration directory.
+
+        Args:
+            status: string describing calculation status. Currently used values are
+                 not_submitted
+                 submitted
+                 complete
+                 failed
+             failure_type: optional string describing reason for failure. Currently used values are
+                 unknown
+                 electronic_convergence
+                 run_limit"""
+
+        output = dict()
+        output["status"] = status
+        if failure_type is not None:
+            output["failure_type"] = failure_type
+
+        outputfile = os.path.join(self.calcdir, "status.json")
+        with open(outputfile, 'w') as file:
+            file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
+        print "Wrote " + outputfile
+        sys.stdout.flush()
 
 
-    def report(self):
-        """Report final results to properties.calc.json file in configuration directory."""
+    def report_properties(self):
+        """Report results to properties.calc.json file in configuration directory, after checking for electronic convergence."""
 
-        outputfile = os.path.join(self.calcdir, "properties.calc.json")
+        output = dict()
 
-        if os.path.isfile(outputfile):
-            with open(outputfile, 'r') as file:
-                output = json.load(file)
-        else:
-            output = dict()
+        # Verify that the last relaxed-volume run reached electronic convergence
+        relaxation = vasp.Relax(self.calcdir, self.run_settings())
+        vrun = vasp.io.Vasprun( os.path.join(self.calcdir, relaxation.rundir[-1], "vasprun.xml"))
+        if len(vrun.all_e_0[-1]) >= vrun.nelm:
+            print('The last relaxation run (' +
+                os.path.basename(relaxation.rundir[-1]) +
+                ') failed to achieve electronic convergence; properties.calc.json will not be written.\n')
+            self.report_status('failed','electronic_convergence')
+            return
 
+        # Verify that the final run reached electronic convergence
         vrun = vasp.io.Vasprun( os.path.join(self.calcdir, "run.final", "vasprun.xml") )
+        if len(vrun.all_e_0[0]) >= vrun.nelm:
+            print('The final run failed to achieve electronic convergence; properties.calc.json will not be written.\n')
+            self.report_status('failed','electronic_convergence')
+            return
+
+        self.report_status('complete')
 
         # the calculation is run on the 'sorted' POSCAR, need to report results 'unsorted'
 
@@ -405,8 +451,6 @@ class Relax(object):
             # fake unsort_dict (unsort_dict[i] == i)
             unsort_dict = dict(zip(range(0,len(vrun.basis)),range(0,len(vrun.basis))))
 
-        print unsort_dict
-
         # unsort_dict:
         #   Returns 'unsort_dict', for which: unsorted_dict[orig_index] == sorted_index;
         #   unsorted_dict[sorted_index] == orig_index
@@ -414,35 +458,27 @@ class Relax(object):
         #     'unsort_dict[0]' returns the index into the unsorted POSCAR of the first atom in the sorted POSCAR
 
 
-        results = dict()
-        results["is_complete"] = vrun.is_complete
-        results["atom_type"] = super.type_atoms
-        results["atoms_per_type"] = super.num_atoms
-        results["coord_mode"] = vrun.coord_mode
-
+        output["atom_type"] = super.type_atoms
+        output["atoms_per_type"] = super.num_atoms
+        output["coord_mode"] = vrun.coord_mode
 
         # as lists
-        results["relaxed_forces"] = [ None for i in range(len(vrun.forces))]
+        output["relaxed_forces"] = [ None for i in range(len(vrun.forces))]
         for i, v in enumerate(vrun.forces):
-            results["relaxed_forces"][unsort_dict[i] ] = casm.NoIndent(vrun.forces[i])
+            output["relaxed_forces"][unsort_dict[i] ] = casm.NoIndent(vrun.forces[i])
 
-        results["relaxed_lattice"] = [casm.NoIndent(v) for v in vrun.lattice]
+        output["relaxed_lattice"] = [casm.NoIndent(v) for v in vrun.lattice]
 
-        results["relaxed_basis"] = [ None for i in range(len(vrun.basis))]
+        output["relaxed_basis"] = [ None for i in range(len(vrun.basis))]
         for i, v in enumerate(vrun.basis):
-            results["relaxed_basis"][unsort_dict[i] ] = casm.NoIndent(vrun.basis[i])
+            output["relaxed_basis"][unsort_dict[i] ] = casm.NoIndent(vrun.basis[i])
 
-        results["relaxed_energy"] = vrun.total_energy
+        output["relaxed_energy"] = vrun.total_energy
 
+
+        # write properties.calc.json
+        outputfile = os.path.join(self.calcdir, "properties.calc.json")
         with open(outputfile, 'w') as file:
-            file.write(json.dumps(results, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
-
-
+            file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
         print "Wrote " + outputfile
         sys.stdout.flush()
-
-
-
-
-
-

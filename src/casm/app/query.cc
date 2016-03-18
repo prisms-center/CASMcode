@@ -18,11 +18,14 @@ namespace CASM {
             << std::endl;
 
     for(const std::string &help_opt : help_opt_vec) {
-      if(help_opt == "operators" || help_opt == "operator") {
+      if(help_opt.empty())
+        continue;
+
+      if(help_opt[0] == 'o') {
         _stream << "Available operators for use within queries:" << std::endl;
         ConfigIOParser::print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
       }
-      else if(help_opt == "property" || help_opt == "properties") {
+      else if(help_opt[0] == 'p') {
         _stream << "Available property tags are currently:" << std::endl;
         ConfigIOParser::print_help(_stream);
       }
@@ -198,15 +201,6 @@ namespace CASM {
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex& primclex = make_primclex_if_not(_primclex, uniq_primclex, root, status_stream);
     
-    /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
-    const DirectoryStructure &dir = primclex.dir();
-    const ProjectSettings &set = primclex.settings();
-    if(fs::exists(dir.clexulator_src(set.name(), set.bset()))) {
-      if(!primclex.get_global_orbitree().size()) {
-        primclex.read_global_orbitree(dir.clust(set.bset()));
-      }
-    }
-    
     // Get configuration selection
     ConstConfigSelection selection(primclex, selection_str);
     
@@ -265,7 +259,7 @@ namespace CASM {
         //sout << "Read in config selection... it is:\n" << selection;
         output_stream << formatter(begin, end);
       }
-      
+
     }
     catch(std::exception &e) {
       serr << "Initialization error: " << e.what() << "\n\n";

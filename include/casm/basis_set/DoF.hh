@@ -168,7 +168,7 @@ namespace CASM {
     OccupantDoF() : DiscreteDoF() { };
     OccupantDoF(const Array<T> &_domain, int _current_state = 0) :
       DiscreteDoF("occupation", _current_state), m_domain(_domain) { };
-    
+
     OccupantDoF(std::initializer_list<T> _domain, int _current_state = 0) :
       DiscreteDoF("occupation", _current_state), m_domain(_domain.begin(), _domain.end()) { };
 

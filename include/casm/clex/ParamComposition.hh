@@ -198,7 +198,7 @@ namespace CASM {
     const Array< Eigen::VectorXd > &get_spanning_end_members() const {
       return spanning_end_members;
     };
-    
+
     /// \brief Return all possible end members as row matrix
     Eigen::MatrixXd get_prim_end_members() const {
       return prim_end_members;

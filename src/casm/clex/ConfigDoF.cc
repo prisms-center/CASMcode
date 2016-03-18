@@ -194,8 +194,8 @@ namespace CASM {
 
   //*******************************************************************************
 
-  ReturnArray<PermuteIterator> ConfigDoF::factor_group(PermuteIterator it_begin, PermuteIterator it_end, double tol) const {
-    Array<PermuteIterator> factorgroup;
+  std::vector<PermuteIterator> ConfigDoF::factor_group(PermuteIterator it_begin, PermuteIterator it_end, double tol) const {
+    std::vector<PermuteIterator> factorgroup;
 
     Index i, j;
     Index permute_ind;
@@ -324,7 +324,7 @@ namespace CASM {
   /// tolerance 'tol' is used for fuzzy comparisons
   /// populates factorgroup at the same time (only when is_canonical evaluates to 'true'), since algorithms are so similar
 
-  bool ConfigDoF::is_canonical(PermuteIterator it_begin, PermuteIterator it_end, Array<PermuteIterator> &factorgroup, double tol) const {
+  bool ConfigDoF::is_canonical(PermuteIterator it_begin, PermuteIterator it_end, std::vector<PermuteIterator> &factorgroup, double tol) const {
     return _is_canonical(it_begin, it_end, &factorgroup, tol);
   }
 
@@ -364,14 +364,14 @@ namespace CASM {
   //*******************************************************************************
 
   ConfigDoF ConfigDoF::canonical_form(PermuteIterator it_begin, PermuteIterator it_end,
-                                      PermuteIterator &it_canon, Array<PermuteIterator> &factorgroup, double tol) const {
+                                      PermuteIterator &it_canon, std::vector<PermuteIterator> &factorgroup, double tol) const {
     return _canonical_form(it_begin, it_end, it_canon, &factorgroup, tol);
   }
 
   //*******************************************************************************
   /// This version calculates the factor group of the configuration, but only if it is canonical (i.e., returns true), since loop terminates
   /// early otherwise.  This private method uses the pointer fg_ptr so that we only need one implementation for the various different public methods above
-  bool ConfigDoF::_is_canonical(PermuteIterator it_begin, PermuteIterator it_end, Array<PermuteIterator> *fg_ptr, double tol) const {
+  bool ConfigDoF::_is_canonical(PermuteIterator it_begin, PermuteIterator it_end, std::vector<PermuteIterator> *fg_ptr, double tol) const {
 
     if(fg_ptr)
       fg_ptr->clear();
@@ -483,7 +483,7 @@ namespace CASM {
   //*******************************************************************************
 
   ConfigDoF ConfigDoF::_canonical_form(PermuteIterator it_begin, PermuteIterator it_end,
-                                       PermuteIterator &it_canon, Array<PermuteIterator> *fg_ptr, double tol) const {
+                                       PermuteIterator &it_canon, std::vector<PermuteIterator> *fg_ptr, double tol) const {
     // canonical form is 'largest-valued' configuration bitstring
     if(fg_ptr)
       fg_ptr->clear();
@@ -743,7 +743,7 @@ namespace CASM {
 
     return correlations;
   }
-  
+
   /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
   Eigen::VectorXd correlations_vec(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator) {
 
@@ -776,13 +776,13 @@ namespace CASM {
     }
 
     correlations /= (double) scel_vol;
-    
+
     return correlations;
   }
 
   /// \brief Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::get_struc_molecule()
   ReturnArray<int> get_num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
-    
+
     // [basis_site][site_occupant_index]
     auto convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
 
@@ -796,10 +796,10 @@ namespace CASM {
 
     return num_each_molecule;
   }
-  
+
   /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::get_struc_molecule()
   Eigen::VectorXi get_num_each_molecule_vec(const ConfigDoF &configdof, const Supercell &scel) {
-    
+
     // [basis_site][site_occupant_index]
     auto convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
 
@@ -808,17 +808,17 @@ namespace CASM {
 
     // count the number of each molecule
     for(Index i = 0; i < configdof.size(); i++) {
-      num_each_molecule(convert[ scel.get_b(i) ][ configdof.occ(i)] )++;
+      num_each_molecule(convert[ scel.get_b(i) ][ configdof.occ(i)])++;
     }
 
     return num_each_molecule;
   }
-  
+
   /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel) {
     return get_num_each_molecule_vec(configdof, scel).cast<double>() / scel.volume();
   }
-  
+
 
 
 

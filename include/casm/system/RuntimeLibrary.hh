@@ -21,9 +21,9 @@ namespace CASM {
     ///        the '.o' file and the '.so' file
     RuntimeLibrary(std::string _compile_options = RuntimeLibrary::default_compile_options(),
                    std::string _so_options = RuntimeLibrary::default_so_options());
-    
+
     ~RuntimeLibrary();
-    
+
     /// \brief Compile a shared library
     void compile(std::string _filename_base,
                  std::string _source);
@@ -61,16 +61,16 @@ namespace CASM {
 
     /// \brief Default compilation command
     static std::string default_compile_options();
-    
+
     /// \brief Default c++ compiler options
     static std::string default_cxxflags();
 
     /// \brief Default shared library options
     static std::string default_so_options();
-    
+
     /// \brief Return default compiler
     static std::string cxx();
-    
+
     /// \brief Return include path option for CASM
     static std::string casm_include();
 

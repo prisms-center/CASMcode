@@ -165,7 +165,7 @@ namespace CASM {
     fs::path clexulator_o(std::string project, std::string bset) const {
       return bset_dir(bset) / (project + "_Clexulator.o");
     }
-    
+
     /// \brief Returns path to global clexulator so file
     fs::path clexulator_so(std::string project, std::string bset) const {
       return bset_dir(bset) / (project + "_Clexulator.so");
@@ -215,6 +215,11 @@ namespace CASM {
       return configuration_dir(configname) / _calctype(calctype) / "properties.calc.json";
     }
 
+    /// \brief Return calculation status file path
+    fs::path calc_status(std::string configname, std::string calctype) const {
+      return configuration_dir(configname) / _calctype(calctype) / "status.json";
+    }
+
 
     /// \brief Return calculation reference settings directory path, for global settings
     fs::path ref_dir(std::string calctype, std::string ref) const {
@@ -225,12 +230,12 @@ namespace CASM {
     fs::path composition_axes(std::string calctype, std::string ref) const {
       return ref_dir(calctype, ref) / "composition_axes.json";
     }
-    
+
     /// \brief Return chemical reference file path
     fs::path chemical_reference(std::string calctype, std::string ref) const {
       return ref_dir(calctype, ref) / "chemical_reference.json";
     }
-    
+
 
     // -- Cluster expansions --------
 
