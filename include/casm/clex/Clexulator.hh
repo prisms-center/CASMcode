@@ -202,8 +202,8 @@ namespace CASM {
   /// \brief Evaluates correlations
   ///
   /// CASM generates code for very efficient calculation of basis functions via
-  /// the print_clexulator function. This source code may be compiled, linked, 
-  /// and used at runtime via Clexulator. 
+  /// the print_clexulator function. This source code may be compiled, linked,
+  /// and used at runtime via Clexulator.
   ///
   /// \ingroup Clex
   ///

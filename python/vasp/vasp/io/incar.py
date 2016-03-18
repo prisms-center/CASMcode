@@ -11,7 +11,7 @@ VASP_TAG_INT_LIST = ['ialgo','ibrion','icharg','images','ismear','ispin',\
 VASP_TAG_FLOAT_LIST = ['ediff','ediffg','emax','emin','encut','potim','sigma',\
                      'enmax','symprec', 'time', 'hfscreen','amix','bmix',\
                      'amix_mag', 'bmix_mag']
-VASP_TAG_BOOL_LIST = ['lcharg','lreal','lsorbit','lwave','lscalapack', 'lscalu',\
+VASP_TAG_BOOL_LIST = ['lcharg','lsorbit','lwave','lscalapack', 'lscalu',\
                      'lplane', 'lhfcalc', 'shiftred', 'evenonly', 'oddonly',\
                      'addgrid', 'ldau', 'lasph']
 # Site-wise list of arrays of FLOAT
@@ -20,7 +20,7 @@ VASP_TAG_SITEF_LIST = ['magmom','rwigs']
 VASP_TAG_SPECF_LIST = ['ldauu', 'ldauj']
 # Site-wise list of arrays of INT
 VASP_TAG_SPECI_LIST = ['ldaul']
-VASP_TAG_STRING_LIST = ['algo','prec','system', 'precfock']
+VASP_TAG_STRING_LIST = ['algo','prec','system', 'precfock','lreal']
 
 # The master list of VASP tags is a union of the above -> need to allow for 'miscellaneous' ?
 VASP_TAG_LIST = VASP_TAG_INT_LIST + VASP_TAG_SITEF_LIST + VASP_TAG_SPECI_LIST + VASP_TAG_BOOL_LIST + VASP_TAG_FLOAT_LIST + VASP_TAG_STRING_LIST + VASP_TAG_SPECF_LIST

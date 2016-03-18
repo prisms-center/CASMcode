@@ -5,30 +5,30 @@
 #include "casm/clex/NeighborList.hh"
 
 namespace CASM {
-  
+
   /// \brief Default weight matrix for approximately spherical neighborhood in Cartesian coordinates
   ///
   /// Equivalent to:
   /// \code
   /// PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, tol());
   /// \endcode
-  Eigen::Matrix3l _default_nlist_weight_matrix(const Structure& prim, double tol) {
+  Eigen::Matrix3l _default_nlist_weight_matrix(const Structure &prim, double tol) {
     return PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, tol);
   }
-  
+
   /// \brief Default includes sublattices with >= 2 components
-  std::set<int> _default_nlist_sublat_indices(const Structure& prim) {
+  std::set<int> _default_nlist_sublat_indices(const Structure &prim) {
     // for now, include sublattices with >= 2 components
     std::set<int> sublat_indices;
-    for(int b=0; b<prim.basis.size(); ++b) {
+    for(int b = 0; b < prim.basis.size(); ++b) {
       if(prim.basis[b].site_occupant().size() >= 2) {
         sublat_indices.insert(b);
       }
     }
     return sublat_indices;
   }
-  
-  
+
+
   /// \brief Construct CASM project settings for a new project
   ///
   /// \param root Path to new CASM project directory
@@ -37,7 +37,7 @@ namespace CASM {
   ProjectSettings::ProjectSettings(fs::path root, std::string name) :
     m_dir(root),
     m_name(name) {
-    
+
     m_compile_options = RuntimeLibrary::default_compile_options();
     m_so_options = RuntimeLibrary::default_so_options();
 
@@ -46,19 +46,19 @@ namespace CASM {
         std::string("Error in 'ProjectSettings(fs::path root, std::string name)'.\n") +
         "  A CASM project already exists at this location: '" + root.string() + "'");
     }
-    
+
     // check for a prim.json
     if(!fs::is_regular_file(m_dir.prim())) {
       throw std::runtime_error(
         std::string("Error in 'ProjectSettings(fs::path root, std::string name)'.\n") +
         "  No prim.json file found at: " + m_dir.prim().string());
     }
-    
+
     // generate default nlist settings
     Structure prim(read_prim(m_dir.prim()));
     m_nlist_weight_matrix = _default_nlist_weight_matrix(prim, TOL);
     m_nlist_sublat_indices = _default_nlist_sublat_indices(prim);
-    
+
   }
 
   /// \brief Construct CASM project settings from existing project
@@ -69,10 +69,10 @@ namespace CASM {
     m_dir(root) {
 
     if(fs::exists(m_dir.casm_dir())) {
-      
+
       m_compile_options = RuntimeLibrary::default_compile_options();
       m_so_options = RuntimeLibrary::default_so_options();
-      
+
       try {
 
         // read .casmroot current settings
@@ -85,18 +85,18 @@ namespace CASM {
         from_json(m_ref, settings["curr_ref"]);
         from_json(m_clex, settings["curr_clex"]);
         from_json(m_eci, settings["curr_eci"]);
-        
+
         if(settings.contains("compile_options")) {
           settings["compile_options"].get(m_compile_options);
         }
         if(settings.contains("so_options")) {
           settings["so_options"].get(m_so_options);
         }
-        
+
         settings.get_if(m_view_command, "view_command");
         from_json(m_name, settings["name"]);
         from_json(m_tol, settings["tol"]);
-        
+
         // read nlist settings, or generate defaults
         Structure prim;
         bool and_commit = false;
@@ -105,25 +105,25 @@ namespace CASM {
           prim = Structure(read_prim(m_dir.prim()));
           and_commit = true;
         }
-        
+
         if(settings.contains("nlist_weight_matrix")) {
           from_json(m_nlist_weight_matrix, settings["nlist_weight_matrix"]);
         }
         else {
           m_nlist_weight_matrix = _default_nlist_weight_matrix(prim, tol());
         }
-        
+
         if(settings.contains("nlist_sublat_indices")) {
           from_json(m_nlist_sublat_indices, settings["nlist_sublat_indices"]);
         }
         else {
           m_nlist_sublat_indices = _default_nlist_sublat_indices(prim);
         }
-        
+
         if(and_commit) {
           commit();
         }
-        
+
       }
       catch(std::exception &e) {
         std::cerr << "Error in ProjectSettings::ProjectSettings(const fs::path root).\n" <<
@@ -174,14 +174,14 @@ namespace CASM {
   std::string ProjectSettings::eci() const {
     return m_eci;
   }
-  
+
   /// \brief Get neighbor list weight matrix
   Eigen::Matrix3l ProjectSettings::nlist_weight_matrix() const {
     return m_nlist_weight_matrix;
   }
-  
+
   /// \brief Get set of sublattice indices to include in neighbor lists
-  const std::set<int>& ProjectSettings::nlist_sublat_indices() const {
+  const std::set<int> &ProjectSettings::nlist_sublat_indices() const {
     return m_nlist_sublat_indices;
   }
 
@@ -194,7 +194,7 @@ namespace CASM {
   std::string ProjectSettings::so_options() const {
     return m_so_options;
   }
-  
+
   /// \brief Get current command used by 'casm view'
   std::string ProjectSettings::view_command() const {
     return m_view_command;
@@ -330,19 +330,19 @@ namespace CASM {
     }
     return false;
   }
-  
-  /// \brief Set neighbor list weight matrix (will delete existing Clexulator 
+
+  /// \brief Set neighbor list weight matrix (will delete existing Clexulator
   /// source and compiled code)
   bool ProjectSettings::set_nlist_weight_matrix(Eigen::Matrix3l M) {
-    
+
     // changing the neighbor list properties requires updating Clexulator source code
     // for now we just remove existing source/compiled files
     _reset_clexulators();
-    
+
     m_nlist_weight_matrix = M;
     return true;
   }
-  
+
   /// \brief Set compile options to 'opt'
   bool ProjectSettings::set_compile_options(std::string opt) {
     m_compile_options = opt;
@@ -354,7 +354,7 @@ namespace CASM {
     m_so_options = opt;
     return true;
   }
-  
+
   /// \brief Set command used by 'casm view'
   bool ProjectSettings::set_view_command(std::string opt) {
     m_view_command = opt;
@@ -388,12 +388,12 @@ namespace CASM {
     }
 
   }
-  
-  /// \brief Changing the neighbor list properties requires updating Clexulator 
+
+  /// \brief Changing the neighbor list properties requires updating Clexulator
   /// source code. This will remove existing source/compiled files
   void ProjectSettings::_reset_clexulators() {
     auto all_bset = m_dir.all_bset();
-    for(auto it=all_bset.begin(); it!=all_bset.end(); ++it) {
+    for(auto it = all_bset.begin(); it != all_bset.end(); ++it) {
       fs::remove(m_dir.clexulator_src(name(), *it));
       fs::remove(m_dir.clexulator_o(name(), *it));
       fs::remove(m_dir.clexulator_so(name(), *it));
@@ -424,6 +424,6 @@ namespace CASM {
 
     return json;
   }
-  
+
 }
 

@@ -26,6 +26,8 @@ class Vasprun:
             self.dos_efermi: Fermi level for DOS use (double)
             self.dos_lm: l or lm-projected DOS output (4d list of double or bool)
             self.eigenvalues: eigenvalues and energies for doing band structure plots (list of 2d list of double)
+            self.all_e_0: energy (e_0_energy) for each electronic step of each ionic step
+            self.nelm: NELM (max. number of electronic steps)
     """
     def __init__(self,filename, DOS=False, Band=False):
         """ Create a Vasprun object from a vasprun.xml file with name 'filename' """
@@ -78,120 +80,11 @@ class Vasprun:
         # is l or lm-projected DOS present?
         self.dos_lm = None
 
+        # Energy (e_0_energy) for each electronic step for each ionic step
+        self.all_e_0 = []
+
         ##### read from vasprun.xml file ########
         self.iter_read()
-
-
-    def read(self,filename):
-        """ Create a Vasprun object from a vasprun.xml file with name 'filename' """
-
-        tree = etree.parse(filename)
-        root = tree.getroot()
-
-        #finding the energy of the relaxation
-        self.total_energy = None
-        energy = root.findall('calculation')[-1].findall('energy')
-        for child in energy[-1]:
-            if child.attrib['name']=='e_wo_entrp':
-                self.total_energy = float(child.text)
-                break
-
-
-        #finding the forces on the atoms
-        varray = root.findall('calculation')[0].findall('varray')
-        forces = None
-        for v in varray:
-            if v.attrib['name'] == 'forces':
-                forces = v
-        self.forces = []
-        for child in forces:
-            self.forces.append([float(i) for i in child.text.strip().split()])
-
-        #finding the atom_type and atoms_per_type
-        temp_node = root.findall('atominfo')[0].findall('array')
-        for child in temp_node:
-            if child.attrib['name'] == 'atomtypes':
-                child_node = child
-                break
-        t_atom_info = child_node.findall('set')[0].findall('rc')
-        self.atom_type = []
-        self.atoms_per_type = []
-        for child in t_atom_info:
-            self.atom_type.append(child[1].text)
-            self.atoms_per_type.append(int(child[0].text))
-
-        #finding the final structure
-        strucs = root.findall('structure')
-        self.is_complete = False
-        for s in strucs:
-            if s.attrib['name']=='finalpos':
-                # calculation is complete
-                finalpos = s
-                self.is_complete = True
-
-        # collect the final lattice
-        self.lattice = []
-        for i in range(3):
-            self.lattice.append([float(x) for x in finalpos[0][0][i].text.strip().split()])
-
-        # collect the final basis
-        self.basis = []
-        for i,basis_atom in enumerate(finalpos[1]):
-            self.basis.append([float(x) for x in basis_atom.text.strip().split()])
-
-        if self.DOS:
-
-                # gather the DOS, if calculated and warranted
-                self.dos = None
-                self.dos_lm = None
-                self.efermi = None
-
-                is_dos = root.findall('calculation')[-1].findall('dos')
-
-                if is_dos:
-                    for child in is_dos[-1]:
-                        if child.attrib['name'] == 'efermi':
-                            self.efermi = float(child.text)
-                            break
-
-                    total = is_dos[-1].findall('total')[0].findall('array')
-
-
-                    spins = len(total[0].findall('set')[0].findall('set'))
-                    points = len(total[0].findall('set')[0].findall('set')[0].findall('r'))
-                    fields = len(total[0].findall('field'))
-
-                    total_array = np.zeros([spins, points, fields])
-
-                    for s in xrange(spins):
-                        my_set = total[0].findall('set')[0].findall('set')[s].findall('r')
-                        for r in xrange(points):
-                             total_array[s,r] = map(float, my_set[r].text.split())
-
-                    self.dos = total_array
-
-                    partial = is_dos[-1].findall('partial')
-                    if partial:
-                        partial = partial[0].findall('array')
-                    else:
-                        partial = None
-                    if partial:
-                        ions = len(partial[0].findall('set')[0].findall('set'))
-                        spins = len(partial[0].findall('set')[0].findall('set')[0].findall('set'))
-                        points = len(partial[0].findall('set')[0].findall('set')[0].findall('set')[0].findall('r'))
-                        fields = len(partial[0].findall('field'))
-
-                        partial_array = np.zeros([ions, spins, points, fields])
-
-                        for i in xrange(ions):
-                            i_set = partial[0].findall('set')[0].findall('set')[i].findall('set')
-                            for s in xrange(spins):
-                                my_set = i_set[s].findall('r')
-                                for r in xrange(points):
-                                     partial_array[i,s,r] = map(float, my_set[r].text.split())
-
-                        self.dos_lm = partial_array
-
 
     def is_complete(self):
         """ Return True if VASP calculation ran to completion """
@@ -210,6 +103,9 @@ class Vasprun:
             raise VasprunError("file not found: " + self.filename)
 
         for event, elem in etree.iterparse(f):
+                if elem.tag == 'parameters':
+                    self.nelm = int(elem.find(".//i[@name='NELM']").text)
+
                 if elem.tag == 'calculation':
 
                         #finding the energy of the relaxation
@@ -233,6 +129,10 @@ class Vasprun:
                             child.clear()
                         v.clear()
 
+                        # find energy (e_0_energy) for each electronic step in this ionic step
+                        self.all_e_0.append([])
+                        for i in elem.findall("./scstep/energy/i[@name='e_0_energy']"):
+                            self.all_e_0[-1].append(float(i.text))
 
                         if self.DOS:
 
