@@ -73,7 +73,7 @@ namespace CASM {
     if(t_rep == this)
       return m_rep_ID;
 
-    if(t_rep == NULL)
+    if(t_rep == nullptr)
       return m_home_group->add_representation(this);
 
     //else - update rep_ID and add this
@@ -98,7 +98,7 @@ namespace CASM {
       if(at(i)->get_permutation())
         stream << *(at(i)->get_permutation()) << '\n';
       else
-        stream << "NULL\n";
+        stream << "nullptr\n";
     }
     return;
   }
@@ -113,7 +113,7 @@ namespace CASM {
       if(at(i)->get_MatrixXd())
         stream << *(at(i)->get_MatrixXd()) << '\n';
       else
-        stream << "NULL\n";
+        stream << "nullptr\n";
       stream << "\n";
     }
     return;
@@ -127,7 +127,7 @@ namespace CASM {
       if(at(subgroup[i].index())->get_MatrixXd())
         stream << *(at(subgroup[i].index())->get_MatrixXd()) << '\n';
       else
-        stream << "NULL\n";
+        stream << "nullptr\n";
       stream << "\n";
     }
     return;
@@ -249,7 +249,7 @@ namespace CASM {
 
   //***************************************************
 
-  // If 'm_home_group' is not NULL, should be initialized accordingly
+  // If 'm_home_group' is not nullptr, should be initialized accordingly
   // Lattice may be necessary for constructing SymOps
   void SymGroupRep::from_json(const jsonParser &json, const Lattice &lat) {
     try {
@@ -297,7 +297,7 @@ namespace CASM {
     return rep.to_json(json);
   }
 
-  // If 'm_home_group' is not NULL, should be initialized accordingly
+  // If 'm_home_group' is not nullptr, should be initialized accordingly
   // Lattice may be necessary for constructing SymOps
   void from_json(SymGroupRep &rep, const jsonParser &json, const Lattice &lat) {
     try {

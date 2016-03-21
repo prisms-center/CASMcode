@@ -115,10 +115,9 @@ namespace CASM {
         }
       }
       else {
-        time_t datatime, filetime;
+        time_t datatime(0), filetime(fs::last_write_time(filepath));
         // Compare 'datatime', from config_list database to 'filetime', from filesystem timestamp
         it->calc_properties().get_if(datatime, "data_timestamp");
-        filetime = fs::last_write_time(filepath);
 
         if(!vm.count("force") && filetime == datatime) {
           continue;
@@ -278,10 +277,10 @@ namespace CASM {
           if(!fs::exists(import_target))
             fs::create_directories(import_target);
 
-          relax_log << "New file path is " << import_target << "\n";
-          fs::copy_file(filepath, imported_config.calc_properties_path());
+          //relax_log << "New file path is " << import_target << "\n";
+          //fs::copy_file(filepath, imported_config.calc_properties_path());
 
-          parsed_props["data_timestamp"] = fs::last_write_time(imported_config.calc_properties_path());
+          //parsed_props["data_timestamp"] = fs::last_write_time(imported_config.calc_properties_path());
 
           imported_config.set_calc_properties(parsed_props);
           imported_config.push_back_source(jsonParser(std::make_pair("data_inferred_from_mapping", (best_it->first)->name())));
@@ -356,6 +355,7 @@ namespace CASM {
       std::cout << "Writing to configuration database..." << std::endl << std::endl;
       primclex.write_config_list();
     }
+
     return 0;
   }
 }

@@ -67,7 +67,7 @@ namespace CASM {
 
     // Help with Clexulator printing
     virtual FunctionVisitor *get_function_label_visitor() const {
-      return NULL;
+      return nullptr;
     };
 
     virtual void print_clexulator_member_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent)const {};

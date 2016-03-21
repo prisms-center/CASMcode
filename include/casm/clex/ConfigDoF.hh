@@ -182,9 +182,9 @@ namespace CASM {
     }
 
     // *** private implementation of is_canonical() and canonical_form()
-    bool _is_canonical(PermuteIterator it_begin, PermuteIterator it_end, std::vector<PermuteIterator> *fg_ptr = NULL, double tol = TOL) const;
+    bool _is_canonical(PermuteIterator it_begin, PermuteIterator it_end, std::vector<PermuteIterator> *fg_ptr = nullptr, double tol = TOL) const;
 
-    ConfigDoF _canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, std::vector<PermuteIterator> *fg_ptr = NULL, double tol = TOL) const;
+    ConfigDoF _canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, std::vector<PermuteIterator> *fg_ptr = nullptr, double tol = TOL) const;
 
   };
 

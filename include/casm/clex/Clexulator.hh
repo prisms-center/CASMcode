@@ -202,8 +202,8 @@ namespace CASM {
   /// \brief Evaluates correlations
   ///
   /// CASM generates code for very efficient calculation of basis functions via
-  /// the print_clexulator function. This source code may be compiled, linked, 
-  /// and used at runtime via Clexulator. 
+  /// the print_clexulator function. This source code may be compiled, linked,
+  /// and used at runtime via Clexulator.
   ///
   /// \ingroup Clex
   ///
@@ -277,7 +277,7 @@ namespace CASM {
         else {
           throw std::runtime_error(
             std::string("Error in Clexulator constructor\n") +
-            "  Did not find '" + dirpath.string() + "/" + name + ".cc'");
+            "  Did not find '" + dirpath.string() + "/" + name + ".so'");
         }
       }
       catch(const std::exception &e) {

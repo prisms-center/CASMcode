@@ -32,7 +32,7 @@ namespace CASM {
 
 
   public:
-    SymOpRepresentation() : symmetry(invalid_op), m_master_group(NULL), op_index(-1), rep_ID(-1) {};
+    SymOpRepresentation() : symmetry(invalid_op), m_master_group(nullptr), op_index(-1), rep_ID(-1) {};
     SymOpRepresentation(const MasterSymGroup &_master_group, Index _rep_ID, Index _op_index) :
       symmetry(invalid_op), m_master_group(&_master_group), op_index(_op_index), rep_ID(_rep_ID) {};
 
@@ -45,14 +45,14 @@ namespace CASM {
       return NAN;
     };
     virtual Permutation  const *get_permutation() const {
-      return NULL;
+      return nullptr;
     };
     virtual Eigen::MatrixXd const *get_MatrixXd() const {
-      return NULL;
+      return nullptr;
     };
 
-    virtual SymBasisPermute const* get_ucc_permutation() const {
-      return NULL;
+    virtual SymBasisPermute const *get_ucc_permutation() const {
+      return nullptr;
     };
 
     /// Change m_master_group and determine op_index
@@ -68,7 +68,7 @@ namespace CASM {
     }
 
     bool has_valid_master() const {
-      return m_master_group != NULL;
+      return m_master_group != nullptr;
     }
 
     Index index()const {
