@@ -501,7 +501,7 @@ namespace CASM {
       std::string motif_configname, 
       PrimClex& primclex, 
       const GrandCanonicalConditions& cond,
-      std::ostream& _sout) const {
+      std::ostream& _sout) {
     if(motif_configname == "auto") {
       
       std::cout << "Searching for minimum potential energy motif..." << std::endl;
@@ -539,7 +539,7 @@ namespace CASM {
       
     }
     else {
-      return m_primclex.configuration(motif_configname);
+      return primclex.configuration(motif_configname);
     }
   }
   
