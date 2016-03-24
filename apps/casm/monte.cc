@@ -14,7 +14,6 @@ namespace CASM {
 
   int monte_command(int argc, char *argv[]) {
 
-    std::string settingsfile;
     fs::path settings_path;
     po::variables_map vm;
     Index condition_index;
@@ -25,7 +24,7 @@ namespace CASM {
       po::options_description desc("'casm monte' usage");
       desc.add_options()
       ("help,h", "Print help message")
-      ("settings,s", po::value<std::string>(&settingsfile)->required(), "The Monte Carlo input file. See 'casm format --monte'.")
+      ("settings,s", po::value<fs::path>(&settings_path)->required(), "The Monte Carlo input file. See 'casm format --monte'.")
       ("final-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
       ("traj-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
 
@@ -85,8 +84,8 @@ namespace CASM {
     }
 
 
-    fs::path rootpath = find_casmroot(fs::current_path());
-    if(rootpath.empty()) {
+    fs::path root = find_casmroot(fs::current_path());
+    if(root.empty()) {
       std::cout << "Error in 'casm monte': No casm project found." << std::endl;
       return 1;
     }
@@ -94,15 +93,15 @@ namespace CASM {
     std::cout << "\n***************************\n" << std::endl;
 
     // initialize primclex
-    std::cout << "Initialize primclex: " << rootpath << std::endl << std::endl;
-    PrimClex primclex(rootpath, std::cout);
+    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
+    PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
 
     const DirectoryStructure &dir = primclex.dir();
     ProjectSettings &set = primclex.settings();
     
     //Get path to settings json file
-    settings_path = settingsfile;
+    settings_path = fs::absolute(settings_path);
   
     //std::cout << "Example settings so far..." << std::endl;
     //jsonParser example_settings = Monte::example_testing_json_settings(primclex);
