@@ -100,8 +100,7 @@ namespace CASM {
       std::cerr << "Error in 'casm query': No casm project found." << std::endl;
       return ERR_NO_PROJ;
     }
-    fs::current_path(root);
-
+    
     fs::path alias_file = root / ".casm/query_alias.json";
     if(vm.count("learn")) {
       jsonParser mjson;
