@@ -115,8 +115,7 @@ namespace CASM {
       std::cout << "Error in 'casm composition': No casm project found." << std::endl;
       return ERR_NO_PROJ;
     }
-    fs::current_path(root);
-
+    
     std::cout << "\n***************************\n\n";
 
     // initialize primclex

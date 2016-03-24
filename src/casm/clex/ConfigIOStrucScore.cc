@@ -13,6 +13,8 @@ namespace CASM {
     bool StrucScore::parse_args(const std::string &args) {
       std::vector<std::string> splt_vec;
       double _lattice_weight(0.5);
+      bool already_initialized = !m_prim_path.empty();
+      int pushed_args = 0;
       boost::split(splt_vec, args, boost::is_any_of(", "), boost::token_compress_on);
       if(splt_vec.size() < 2 || splt_vec.size() > 4) {
         throw std::runtime_error("Attempted to initialize format tag " + name()
@@ -40,9 +42,15 @@ namespace CASM {
             throw std::runtime_error("Attempted to initialize format tag " + name()
                                      + " with invalid argument '" + splt_vec[i] + "'. Valid arguments are [ basis_score | lattice_score | total_score ]\n");
           }
+          if(already_initialized && !almost_equal(_lattice_weight, m_configmapper.lattice_weight())) {
+            for(; pushed_args > 0; pushed_args--)
+              m_prop_names.pop_back();
+            return false;
+          }
         }
         else {
           m_prop_names.push_back(splt_vec[i]);
+          ++pushed_args;
         }
       }
       m_configmapper = ConfigMapper(m_altprimclex, _lattice_weight);

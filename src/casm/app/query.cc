@@ -116,9 +116,7 @@ namespace CASM {
     else {
       root = _primclex->get_path();
     }
-    fs::current_path(root);
     
-    // if learning new query command
     fs::path alias_file = root / ".casm/query_alias.json";
     if(vm.count("learn")) {
       jsonParser mjson;
