@@ -86,6 +86,9 @@ if __name__ == "__main__":
   parser.add_argument('--path', help='Path to CASM project. Default assumes the current directory is in the CASM project.', type=str, default=os.getcwd())
   parser.add_argument('--settings_format', help='Print input file description', action="store_true")
   parser.add_argument('--settings_example', help='Print example input file', action="store_true")
+  parser.add_argument('--hall', help='Print hall of fame summary', action="store_true")
+  parser.add_argument('--indiv', nargs='+', help='Print individual summary. Expects index of individual in hall of fame', type=int)
+  parser.add_argument('--select', nargs=1, help='Select individual to use', type=int)
   args = parser.parse_args()
   
   if args.settings_format:
@@ -100,14 +103,44 @@ if __name__ == "__main__":
     
     print "Loading", args.settings[0]
     
-    # for now, assume being run
     proj = Project(args.path)
-    input = json.load(open(args.settings[0], 'r'))
+    with open(args.settings[0], 'r') as f:
+      try:
+        input = json.load(f)
+      except Exception as e:
+        print "Error parsing JSON in", args.settings[0]
+        raise e
     
-    # read training set
-    sel = Selection(proj, input.get("train_filename", "train"))
-    
-    main(sel, input, verbose=True, format=args.format)
+    if args.hall or args.indiv:
+      
+      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
+      # print Hall of Fame summary
+      print "Loading Hall of Fame:", halloffame_filename
+      with open(halloffame_filename, 'rb') as f:
+        existing_hall = pickle.load(f)
+      
+      if args.hall:
+        casm.fit.print_halloffame(existing_hall, format=args.format)
+      elif args.indiv:
+        casm.fit.print_individual(existing_hall, args.indiv, format=args.format)
+  
+    elif args.select:
+      
+      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
+      # print Hall of Fame summary
+      print "Loading Hall of Fame:", halloffame_filename
+      with open(halloffame_filename, 'rb') as f:
+        existing_hall = pickle.load(f)
+      
+      write_eci(proj, existing_hall[args.select[0]].eci, verbose=True)
+      
+    else:
+      # run fitting
+      
+      # read training set
+      sel = Selection(proj, input.get("train_filename", "train"))
+      
+      main(sel, input, verbose=True, format=args.format)
   
   else:
     

@@ -678,7 +678,7 @@ def to_json(index, indiv):
   return d
 
 
-def print_individual(index, indiv, format=None):
+def _print_individual(index, indiv, format=None):
   """ 
   Print all individual in hall of fame.
   
@@ -735,20 +735,69 @@ def print_individual(index, indiv, format=None):
     return
 
 
+def _print_halloffame_header(hall):
+  if len(hall[0]) > 40:
+    bitstr_len = 43
+  else:
+    bitstr_len = len(hall[0])
+  print ("{0:5}: {1:<" + str(bitstr_len) + "} {2:<12} {3:<12} {4:<12} {5:<12} {6:<24} {7:<24} {8}").format(
+    "Index", "Selected", "#Selected", "CV", "RMS", "wRMS", "Estimator", "Selection", "Note")
+  print "-"*(6+bitstr_len+13*4+25*3)
+
+
+def print_individual(hall, indices, format=None):
+  """ 
+  Print selected individuals from hall of fame.
+  
+  Arguments:
+  ----------
+  
+    hall: deap.tools.HallOfFame instance
+      A Hall Of Fame of ECI sets
+    
+    index: List(int)
+      Indices of individual in hall to be printed
+    
+    format: str, optional, default None
+      Options: None to print summary only, "details" to print more, "json" to print as JSON 
+  """
+  if format is None:
+    _print_halloffame_header(hall)
+    for index in indices:
+      _print_individual(index, hall[index], format=format)
+    return
+    
+  elif format.lower() == "json":
+    h = []
+    for index in indices:
+      d = to_json(index, hall[index])
+      h.append(d)
+    print json.dumps(h, indent=2, cls=casm.NoIndentEncoder)
+      
+    
+  elif format.lower() == "details":
+    for index in indices:
+      _print_individual(index, hall[index], format=format)
+    print ""
+  return
+
 def print_halloffame(hall, format=None):
   """ 
   Print all individual in hall of fame.
+  
+  Arguments:
+  ----------
+  
+    hall: deap.tools.HallOfFame instance
+      A Hall Of Fame of ECI sets
+    
+    format: str, optional, default None
+      Options: None to print summary only, "details" to print more, "json" to print as JSON 
   """
   if format is None:
-    if len(hall[0]) > 40:
-      bitstr_len = 43
-    else:
-      bitstr_len = len(hall[0])
-    print ("{0:5}: {1:<" + str(bitstr_len) + "} {2:<12} {3:<12} {4:<12} {5:<12} {6:<24} {7:<24} {8}").format(
-      "Index", "Selected", "#Selected", "CV", "RMS", "wRMS", "Estimator", "Selection", "Note")
-    print "-"*(6+bitstr_len+13*4+25*3)
+    _print_halloffame_header(hall)
     for index, indiv in enumerate(hall):
-      print_individual(index, indiv, format=format)
+      _print_individual(index, indiv, format=format)
       
     return
     
@@ -762,7 +811,7 @@ def print_halloffame(hall, format=None):
     
   elif format.lower() == "details":
     for index, indiv in enumerate(hall):
-      print_individual(index, indiv, format=format)
+      _print_individual(index, indiv, format=format)
       print ""
     
     return

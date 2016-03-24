@@ -1,7 +1,7 @@
 import casm
 import json
 
-def write_eci(proj, eci, proj_settings=None):
+def write_eci(proj, eci, proj_settings=None, verbose=False):
     """
     Write eci.json
     
@@ -20,9 +20,8 @@ def write_eci(proj, eci, proj_settings=None):
     
     # read basis.json
     filename = dir.basis(proj_settings.bset())
-    f = open(filename,'r')
-    j = json.load(f)
-    f.close()
+    with open(filename,'r') as f:
+      j = json.load(f)
     
     # edit to add eci
     for index, value in eci:
@@ -47,6 +46,8 @@ def write_eci(proj, eci, proj_settings=None):
                        proj_settings.bset(), 
                        proj_settings.eci())
     
-    f = open(filename, 'w')
-    f.write(json.dumps(j, indent=2, cls=casm.NoIndentEncoder))
-    f.close()
+    if verbose:
+      print "Writing:", filename
+      with open(filename, 'w') as f:
+        f.write(json.dumps(j, indent=2, cls=casm.NoIndentEncoder))
+
