@@ -310,7 +310,7 @@ if 'test' in COMMAND_LINE_TARGETS:
 ##### Make combined alias 'install'
 
 # Execute 'scons install' to install all binaries, scripts and python modules
-installable = ['casm_include_install', 'casm_lib_install', 'casm_install', 'eci_search_install', 'pycasm_install', 'pyvasp_install']
+installable = ['casm_include_install', 'casm_lib_install', 'ccasm_lib_install', 'casm_install', 'eci_search_install', 'pycasm_install', 'pyvasp_install']
 env.Alias('install', installable)
 
 if 'install' in COMMAND_LINE_TARGETS:
