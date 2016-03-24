@@ -65,8 +65,7 @@ namespace CASM {
       std::cout << "Error in 'casm bset': No casm project found." << std::endl;
       return ERR_NO_PROJ;
     }
-    fs::current_path(root);
-
+    
     if(vm.count("update")) {
 
       // initialize project info
