@@ -196,28 +196,27 @@ namespace CASM {
 
   };
 
-  /// \brief Counter for Eigen::VectorXd
-  typedef Counter < Eigen::VectorXd, double, unsigned int,
-          CASM_TMP::ParenthesesAccess<Eigen::VectorXd, double, unsigned int> > EigenVectorXdCounter;
-  /// \brief Counter for Eigen::MatrixXd
-  typedef Counter < Eigen::MatrixXd, double, unsigned int,
-          CASM_TMP::ParenthesesAccess<Eigen::MatrixXd, double, unsigned int> > EigenMatrixXdCounter;
-  /// \brief Counter for Eigen::Matrix3d
-  typedef Counter < Eigen::Matrix3d, double, unsigned int,
-          CASM_TMP::ParenthesesAccess<Eigen::Matrix3d, double, unsigned int> > EigenMatrix3dCounter;
-  /// \brief Counter for Eigen::VectorXi
-  typedef Counter < Eigen::VectorXi, int, unsigned int,
-          CASM_TMP::ParenthesesAccess<Eigen::VectorXi, int, unsigned int> > EigenVectorXiCounter;
-  /// \brief Counter for Eigen::MatrixXd
-  typedef Counter < Eigen::MatrixXi, int, unsigned int,
-          CASM_TMP::ParenthesesAccess<Eigen::MatrixXi, int, unsigned int> > EigenMatrixXiCounter;
-  /// \brief Counter for Eigen::MatrixXd
-  typedef Counter < Eigen::Matrix3i, int, unsigned int,
-          CASM_TMP::ParenthesesAccess<Eigen::Matrix3i, int, unsigned int> > EigenMatrix3iCounter;
 
   template <typename EigenType>
-  using EigenCounter = Counter< EigenType, typename EigenType::Scalar, unsigned int,
-        CASM_TMP::ParenthesesAccess< EigenType, typename EigenType::Scalar, unsigned int> >;
+  using EigenCounter = Counter< EigenType, typename EigenType::Scalar, typename EigenType::Index,
+        CASM_TMP::ParenthesesAccess< EigenType, typename EigenType::Scalar, typename EigenType::Index> >;
+
+  /// \brief Counter for Eigen::VectorXd
+  typedef EigenCounter<Eigen::VectorXd> EigenVectorXdCounter;
+  /// \brief Counter for Eigen::MatrixXd
+  typedef EigenCounter<Eigen::MatrixXd> EigenMatrixXdCounter;
+  /// \brief Counter for Eigen::Matrix3d
+  typedef EigenCounter<Eigen::Matrix3d> EigenMatrix3dCounter;
+  /// \brief Counter for Eigen::Vector3d
+  typedef EigenCounter<Eigen::Vector3d> EigenVector3dCounter;
+  /// \brief Counter for Eigen::Vector3i
+  typedef EigenCounter<Eigen::Vector3i> EigenVector3iCounter;
+  /// \brief Counter for Eigen::VectorXi
+  typedef EigenCounter<Eigen::VectorXi> EigenVectorXiCounter;
+  /// \brief Counter for Eigen::MatrixXd
+  typedef EigenCounter<Eigen::MatrixXi> EigenMatrixXiCounter;
+  /// \brief Counter for Eigen::MatrixXd
+  typedef EigenCounter<Eigen::Matrix3i> EigenMatrix3iCounter;
   /** @} */
 
 }

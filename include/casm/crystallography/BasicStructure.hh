@@ -24,7 +24,7 @@ namespace CASM {
   class BasicStructure {
   protected:
     Lattice m_lattice;
-    
+
     ///Specifies whether selectice dynamics is on or of for DFT calculations
     bool SD_flag;
 
@@ -154,7 +154,7 @@ namespace CASM {
     //Array<Array<Array<double> > > get_NN_table(const double &maxr);
 
     ///Add vacuum and shift c vector. The vacuum is always added parallel to c, and the shift vector should also be parallel to the ab plane (x,y,0)
-    void add_vacuum_shift(BasicStructure &new_surface_struc, double vacuum_thickness, Vector3<double> shift, COORD_TYPE mode) const;
+    void add_vacuum_shift(BasicStructure &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const;
     void add_vacuum_shift(BasicStructure &new_surface_struc, double vacuum_thickness, Coordinate shift) const;  //Because Anton thought a coordinate would be better
     ///Adds vacuum layer on top of ab plane
     void add_vacuum(BasicStructure &new_surface_struc, double vacuum_thickness) const;

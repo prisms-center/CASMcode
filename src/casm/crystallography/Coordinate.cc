@@ -1,14 +1,38 @@
 #include "casm/crystallography/Coordinate.hh"
 
+#include "casm/misc/CASM_math.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymOp.hh"
+#include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  Coordinate::Coordinate(const Eigen::Vector3d &init_vec,
+                         const Lattice &init_home,
+                         COORD_TYPE mode)
+    : m_home(&init_home),
+      m_basis_ind(-1) {
+    if(mode == FRAC)
+      frac() = init_vec;
+    if(mode == CART)
+      cart() = init_vec;
+  }
 
+  Coordinate::Coordinate(double _x, double _y, double _z, const Lattice &init_home, COORD_TYPE mode)
+    : m_home(&init_home),
+      m_basis_ind(-1) {
+    if(mode == FRAC) {
+      m_frac_coord << _x, _y, _z;
+      _update_cart();
+    }
+    if(mode == CART) {
+      m_cart_coord << _x, _y, _z;
+      _update_frac();
+    }
+  }
   //********************************************************************
   /**
    *
@@ -16,60 +40,14 @@ namespace CASM {
   //********************************************************************
 
   Coordinate &Coordinate::operator +=(const Coordinate &RHS) {
-    if(home == RHS.home && calc(FRAC)) {
-      coord[FRAC] += RHS(FRAC);
-      is_current[CART] = false;
-    }
-    else if(calc(CART)) {
-      coord[CART] += RHS(CART);
-      is_current[FRAC] = false;
-    }
-
-    else {
-      std::cerr << "WARNING: Attempting to add to a Coordinate that has been initialized improperly!\n";
-      assert(false);
-    }
+    cart() += RHS.cart();
     return *this;
   }
 
   Coordinate &Coordinate::operator -=(const Coordinate &RHS) {
-    if(home == RHS.home && calc(FRAC)) {
-      coord[FRAC] -= RHS(FRAC);
-      is_current[CART] = false;
-    }
-    else if(calc(CART)) {
-      coord[CART] -= RHS(CART);
-      is_current[FRAC] = false;
-    }
-    else {
-      std::cerr << "WARNING: Attempting to subtract from a Coordinate that has been initialized improperly!\n";
-      assert(false);
-    }
+    cart() -= RHS.cart();
     return *this;
 
-  }
-
-  //********************************************************************
-  /**
-   *
-   */
-  //********************************************************************
-
-
-  Coordinate Coordinate::operator +(const Coordinate &RHS) const {
-    Coordinate tcoord(*this);
-    return tcoord += RHS;
-  }
-
-  //********************************************************************
-  /**
-   *
-   */
-  //********************************************************************
-
-  Coordinate Coordinate::operator -(const Coordinate &RHS) const {
-    Coordinate tcoord(*this);
-    return tcoord -= RHS;
   }
 
   //********************************************************************
@@ -79,8 +57,7 @@ namespace CASM {
   //********************************************************************
 
   Coordinate Coordinate::operator-() const {
-    if(is_current[CART]) return Coordinate(-coord[CART], *home, CART);
-    return Coordinate(-coord[FRAC], *home, FRAC);
+    return Coordinate(-frac(), home(), FRAC);
   }
 
   //********************************************************************
@@ -90,16 +67,9 @@ namespace CASM {
   //********************************************************************
 
   bool Coordinate::operator ==(const Coordinate &RHS) const {
-    return (*this - RHS)().is_zero();
+    return almost_equal(m_cart_coord, RHS.m_cart_coord);
   }
 
-  //********************************************************************
-
-  bool Coordinate::unsafe_compare(const Coordinate &RHS, COORD_TYPE mode) const {
-    return (std::abs(coord[mode][0] - RHS.coord[mode][0]) < TOL &&
-            std::abs(coord[mode][1] - RHS.coord[mode][1]) < TOL &&
-            std::abs(coord[mode][2] - RHS.coord[mode][2]) < TOL);
-  }
 
   //********************************************************************
 
@@ -136,31 +106,18 @@ namespace CASM {
     return tcoord.apply_sym(LHS);
   }
 
-  //********************************************************************
-  /*
-  Coordinate operator*(const Coordinate &RHS, int m) {
-    Coordinate tcoord(RHS);
-    for(int i = 0; i < 3 ; i++) {
-      tcoord[i] = RHS[i] * m;
-    }
-    return tcoord;
-  }
-  */
-
-  //********************************************************************
-
-  void Coordinate::read(std::istream &stream) {
-    stream >> coord[mode_ind()];
-    is_current[mode_ind()] = true;
-    is_current[!mode_ind()] = false;
-    return;
-  }
 
   //********************************************************************
   void Coordinate::read(std::istream &stream, COORD_TYPE mode) {
-    stream >> coord[mode];
-    is_current[mode] = true;
-    is_current[!mode] = false;
+    if(mode == FRAC) {
+      stream >> m_frac_coord;
+      _update_cart();
+    }
+    else if(mode == CART) {
+      stream >> m_cart_coord;
+      _update_frac();
+    }
+
     return;
   }
 
@@ -171,26 +128,13 @@ namespace CASM {
     stream.width(prec + pad);
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
 
-    if(mode != COORD_DEFAULT)
-      stream << (*this)(mode);
-    else
-      stream << (*this)();
+    if(mode == CART)
+      stream << cart();
+    else if(mode == FRAC)
+      stream << frac();
     if(term) stream << term;
     return;
   }
-
-  //********************************************************************
-
-  void Coordinate::print(std::ostream &stream, char term, int prec, int pad) const {
-
-    stream.precision(prec);
-    stream.width(prec + pad);
-    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-    stream << (*this)();
-    if(term) stream << term;
-    return;
-  }
-
 
   //********************************************************************
   /**
@@ -200,8 +144,7 @@ namespace CASM {
 
   double Coordinate::dist(const Coordinate &neighbor) const {
 
-    return ((*this)(CART) - neighbor(CART)).length();
-
+    return (cart() - neighbor.cart()).norm();
   }
 
 
@@ -213,19 +156,12 @@ namespace CASM {
   //********************************************************************
 
   double Coordinate::min_dist(const Coordinate &neighbor) const {
-    Coordinate tcoord(*this);
-    tcoord -= neighbor;
-
-    if(!tcoord.calc(FRAC)) {
-      std::cerr << "Attempting to find minimum distance between two points that have been initialized inproperly.\n";
-      return NAN;
-    }
+    vector_type tfrac(frac() - neighbor.frac());
 
     for(int i = 0; i < 3; i++)
-      tcoord.at(i, FRAC) -= round(tcoord.get(i, FRAC));
+      tfrac(i) -= round(tfrac(i));
 
-    return tcoord(CART).length();
-
+    return (home().lat_column_mat() * tfrac).norm();
   }
 
   //********************************************************************
@@ -238,18 +174,16 @@ namespace CASM {
 
 
   double Coordinate::min_dist(const Coordinate &neighbor, Coordinate &shift) const {
-    shift = (*this) - neighbor;
+    shift.m_home = m_home;
 
-    if(!shift.calc(FRAC)) {
-      std::cerr << "Attempting to find minimum distance between two points that have been initialized inproperly.\n";
-      return NAN;
-    }
+    shift.m_frac_coord = (frac() - neighbor.frac());
 
     for(int i = 0; i < 3; i++)
-      shift.at(i, FRAC) -= round(shift.get(i, FRAC));
+      shift.m_frac_coord(i) -= round(shift.m_frac_coord(i));
 
+    shift._update_cart();
 
-    return shift(CART).length();
+    return length(shift.const_cart());
   };
 
   //********************************************************************
@@ -259,20 +193,13 @@ namespace CASM {
    */
   //********************************************************************
 
-  double Coordinate::min_dist2(const Coordinate &neighbor, const Matrix3<double> &metric) const {
-    Coordinate tcoord(*this);
-    tcoord -= neighbor;
-
-    if(!tcoord.calc(FRAC)) {
-      std::cerr << "Attempting to find minimum distance between two points that have been initialized inproperly.\n";
-      return NAN;
-    }
+  double Coordinate::min_dist2(const Coordinate &neighbor, const Eigen::Ref<const Eigen::Matrix3d> &metric) const {
+    vector_type tfrac(frac() - neighbor.frac());
 
     for(int i = 0; i < 3; i++)
-      tcoord.at(i, FRAC) -= round(tcoord.get(i, FRAC));
+      tfrac(i) -= round(tfrac(i));
 
-    return tcoord(CART).dot(metric * tcoord(CART));
-
+    return (home().lat_column_mat() * tfrac).dot(metric * (home().lat_column_mat() * tfrac));
   }
 
   //********************************************************************
@@ -282,14 +209,8 @@ namespace CASM {
   //********************************************************************
 
   Coordinate &Coordinate::apply_sym(const SymOp &op) {
-    if(calc()) {
-      coord[mode_ind()] = op.get_matrix() * coord[mode_ind()] + op.tau()();
-      is_current[!mode_ind()] = false;
-    }
-    else {
-      std::cerr << "WARNING: Failed to apply symmetry to Coordinate" << std::endl;
-      assert(false);
-    }
+    cart() = op.matrix() * const_cart() + op.tau();
+
     return *this;
   }
 
@@ -300,100 +221,15 @@ namespace CASM {
   //********************************************************************
 
   Coordinate &Coordinate::apply_sym_no_trans(const SymOp &op) {
-    if(calc()) {
-      coord[mode_ind()] = op.get_matrix() * coord[mode_ind()];
-      is_current[!mode_ind()] = false;
-    }
-    else
-      std::cerr << "WARNING: Failed to apply symmetry to Coordinate" << std::endl;
-
+    cart() = op.matrix() * const_cart();
     return *this;
   }
 
   //********************************************************************
-  /**
-   * Calculates the coordinate of the current mode.
-   *
-   * If the coordinate of the current mode has not been calculated, and
-   * the cooordinate of the other mode and the coordinate transformation
-   * matrix both exist, then the coordinates are calculated and the
-   * corresponding is_current is set to true.  On the other hand, if the
-   * indicated mode has been calculated or if the coordinate of the other
-   * mode does not exist, or the coordinate transformation matrix does not
-   * exist, then the function simlpy returns the is_current boolean value.
-   */
-  //********************************************************************
+  //Coordinate Coordinate::get_normal_vector(Coordinate coord_2, Coordinate coord_3) {
+  //return Coordinate((coord_2.cart()-cart()).cross(coord_3.cart()-cart()).normalize(),*home,CART);
+  //}
 
-  //inline
-  bool Coordinate::calc() const {
-    if(!is_current[mode_ind()] && is_current[!mode_ind()] && home) {
-      coord[mode_ind()] = (home->coord_trans(!mode_ind())) * coord[!mode_ind()];
-      is_current[mode_ind()] = true;
-    }
-
-    return is_current[mode_ind()];
-  }
-
-
-  //********************************************************************
-  /**
-   * Calculates the coordinates of the specified mode
-   *
-   * Returns true or false depending on whether the coordinates of the
-   * specified mode have been calculated.
-   * @param COORD_TYPE mode
-   */
-  //********************************************************************
-
-  //inline
-  bool Coordinate::calc(COORD_TYPE mode) const {
-    if(!is_current[mode] && is_current[!mode] && home) {
-      coord[mode] = (home->coord_trans(!mode)) * coord[!mode];
-      //Have to acces home's members using '->' since it's a pointer
-      is_current[mode] = true;
-    }
-
-    return is_current[mode];
-  }
-
-  //********************************************************************
-  Coordinate Coordinate::get_normal_vector(Coordinate coord_2, Coordinate coord_3) {
-    if(home != coord_2.get_home() || home != coord_3.get_home()) {
-      std::cout << "WARNING: Your coordinates don't live in the same home!" << std::endl;
-      std::cout << "See Coordinate::get_normal_vector" << std::endl << std::endl;
-    }
-    Vector3<double> normal;
-    Vector3< double > tvec_1;
-    Vector3< double > tvec_2;
-
-    tvec_1 = coord_2(CART) - (*this)(CART);
-    tvec_2 = coord_3(CART) - (*this)(CART);
-    normal = tvec_1.cross(tvec_2);
-    normal.normalize();
-
-    return Coordinate(normal, *home, CART);
-  }
-
-
-
-  //********************************************************************
-  /**
-   * Assigns lattice associated with Coordinate.
-   *
-   * @param Lattice new_lat
-   */
-  //********************************************************************
-
-  //inline
-  void Coordinate::set_lattice(const Lattice &new_lat) {
-    if(home == &new_lat)
-      return;
-
-    calc(CART);
-    home = &new_lat;
-    is_current[FRAC] = false;
-    return;
-  }
 
   //********************************************************************
   //John G. You decide which coordinates (FRAC or CART) to keep the same when you set a new lattice.
@@ -401,233 +237,19 @@ namespace CASM {
   //FRAC: Shear atoms with vectors
   //inline
   void Coordinate::set_lattice(const Lattice &new_lat, COORD_TYPE mode) {
-    if(home == &new_lat)
+    if(m_home == &new_lat)
       return;
 
-    calc(mode);
-    home = &new_lat;
-    is_current[(mode + 1) % 2] = false;
+    m_home = &new_lat;
+
+    if(mode == CART)
+      _update_cart();
+    else if(mode == FRAC)
+      _update_frac();
+
     return;
   }
 
-  //********************************************************************
-  /**
-   * Returns the value of a Coordinate specified by index ind.
-   *
-   * @param index ind
-   * @return coordinate values corresponding to index
-   */
-  //********************************************************************
-
-  //inline
-  double &Coordinate::operator[](int ind) {
-
-    calc();
-    is_current[mode_ind()] = true;
-    is_current[!mode_ind()] = false;
-    return coord[mode_ind()][ind];
-
-  }
-
-  //********************************************************************
-  /**
-   * Retrieves one of the coordinate values specified by index of the current mode.
-   * @param integer index
-   * @return coordinate value of index
-   * @return NAN
-   */
-  //********************************************************************
-  //inline
-  double Coordinate::get(int ind) const {
-    if(calc())
-      return coord[mode_ind()][ind];
-    else
-      return NAN;
-  }
-
-  //********************************************************************
-  /**
-   * Retrieves one of the coordinate values specified by index and mode.
-   * @param integer index
-   * @return coordinate value of index
-   * @return NAN
-   */
-  //********************************************************************
-
-  //inline
-  double Coordinate::get(int ind, COORD_TYPE mode) const {
-    if(calc(mode))
-      return coord[mode][ind];
-    else
-      return NAN;
-  }
-
-  //********************************************************************
-  /**
-   * Retrieves one of the coordinate values specified by index of the current mode.
-   * @param integer index
-   * @return coordinate value of index
-   * @return NAN
-   */
-  //********************************************************************
-
-  //inline
-  double &Coordinate::at(int ind) {
-    calc();
-    is_current[mode_ind()] = true;
-    is_current[!mode_ind()] = false;
-    return coord[mode_ind()][ind];
-  }
-
-  //********************************************************************
-  /**
-   * Retrieves one of the coordinate values specified by index and mode.
-   * @param integer index
-   * @return coordinate value of index
-   * @return NAN
-   */
-  //********************************************************************
-
-  //inline
-  double &Coordinate::at(int ind, COORD_TYPE mode) {
-    calc(mode);
-    is_current[mode] = true;
-    is_current[!mode] = false;
-    return coord[mode][ind];
-  }
-
-  //********************************************************************
-  /**
-   * Overloads () operator to allow casting as Vector3.
-   *
-   * Using () operator, casts the Coordinate as Vector3 in its current
-   * coordinate mode.
-   * @return coordinate in vector form
-   */
-  //********************************************************************
-  //inline
-  Vector3< double > &Coordinate::operator()() {
-    if(!calc()) {
-      std::cerr << "WARNING: Accessing uninitialized coordinate!" << std::endl;
-      assert(0);
-    }
-    is_current[mode_ind()] = true;
-    is_current[!mode_ind()] = false;
-    return coord[mode_ind()];
-  }
-
-  //inline
-  const Vector3< double > &Coordinate::operator()() const {
-    if(!calc()) {
-      std::cerr << "WARNING: Accessing uninitialized coordinate!" << std::endl;
-      assert(0);
-    }
-    return coord[mode_ind()];
-  }
-
-  //********************************************************************
-  /**
-   * Overloads () operator to allow casting as Vector3 for specified mode.
-   *
-   * Using () operator, casts the Coordinate as Vector3 in its current
-   * coordinate mode.
-   * @return coordinate in vector form
-   */
-  //********************************************************************
-
-  //inline
-  Vector3< double > &Coordinate::operator()(COORD_TYPE mode) {
-
-    if(!calc(mode) && !home) {
-      std::cerr << "WARNING:  Performing lookup of undefined coordinate." << std::endl;
-      assert(0);
-    }
-    is_current[mode] = true;
-    is_current[!mode] = false;
-    return coord[mode];
-  }
-
-  //inline
-  const Vector3< double > &Coordinate::operator()(COORD_TYPE mode) const {
-    if(!calc(mode)) {
-      std::cerr << "WARNING:  Performing lookup of undefined coordinate." << std::endl;
-      assert(0);
-    }
-    return coord[mode];
-  }
-  //********************************************************************
-  /**
-   * Overloads () operator to allow casting as Vector3.
-   *
-   * Casts as Vector3 in the current coordinate mode.
-   * @return coordinate in vector form
-   */
-  //********************************************************************
-
-  //inline
-  Coordinate::operator Vector3< double >() {
-    if(!calc()) {
-      std::cerr << "WARNING: Accessing uninitialized Coordinate!" << std::endl;
-      assert(0);
-    }
-    is_current[mode_ind()] = true;
-    is_current[!mode_ind()] = false;
-    return coord[mode_ind()];
-  }
-
-  //********************************************************************
-  /**
-   * Updates both cartesian and fractional coordinates
-   *
-   * Calls the calc(COORD_TYPE mode) function for both the fractional
-   * and cartesian modes.
-   */
-  //********************************************************************
-
-  //inline
-  bool Coordinate::update() const {
-    return calc(FRAC) && calc(CART);
-  }
-
-  //********************************************************************
-  /**
-   * Updates specified mode
-   *
-   * Refreshes value, regardless of whether it is already current
-   */
-  //********************************************************************
-
-  //inline
-  bool Coordinate::update(COORD_TYPE mode) const {
-    if(is_current[!mode] && home) {
-      coord[mode] = (home->coord_trans(!mode)) * coord[!mode];
-      //Have to acces home's members using '->' since it's a pointer
-      return is_current[mode] = true;
-    }
-    return false;
-
-  }
-
-
-  //********************************************************************
-  /**
-   * erases value of specifies mode
-   *
-   * First calculate value in !mode, and then set is_current[mode] to false
-   * returns true if at conclusion, !mode has valid value
-   */
-  //********************************************************************
-
-  //inline
-  bool Coordinate::invalidate(COORD_TYPE mode) {
-    if(is_current[!mode]) {
-      is_current[mode] = false;
-      return true;
-    }
-    update();
-    is_current[mode] = false;
-    return is_current[!mode];
-  }
 
   //********************************************************************
   /**
@@ -637,39 +259,28 @@ namespace CASM {
    */
   //********************************************************************
   bool Coordinate::within() {
-    if(!calc(FRAC)) {
-      std::cerr << " Coordinate::within() called on a coordinate that has no valid fractional coordinate." << std::endl;
-      std::cerr << "Frac: " << std::setw(10) <<  coord[FRAC] << " " << is_current[FRAC] << "\n Cart: " << std::setw(10) << coord[CART] << " " << is_current[CART] << '\n' << "Lattice: " << home;
-
-      exit(1);
-    }
     if(PERIODICITY_MODE::IS_LOCAL()) return true;
 
     bool is_within = true;
     double tshift;
     for(int i = 0; i < 3; i++) {
-      tshift = floor(coord[FRAC][i] + 1E-6);
+      tshift = floor(m_frac_coord[i] + 1E-6);
       if(std::abs(tshift) > TOL) {
         is_within = false;
-        coord[FRAC][i] -= tshift;
-        is_current[CART] = false;
+        m_frac_coord[i] -= tshift;
       }
     }
+    if(!is_within)
+      _update_cart();
     return is_within;
   };
   //***********************************
 
   bool Coordinate::is_within() const {
-    if(!calc(FRAC)) {
-      std::cerr << " Coordinate::within() called on a coordinate that has no valid fractional coordinate." << std::endl;
-      std::cerr << "Frac: " << std::setw(10) <<  coord[FRAC] << " " << is_current[FRAC] << "\n Cart: " << std::setw(10) << coord[CART] << " " << is_current[CART] << '\n' << "Lattice: " << home;
-
-      exit(1);
-    }
 
     double tshift;
     for(int i = 0; i < 3; i++) {
-      tshift = floor(coord[FRAC][i] + 1E-6);
+      tshift = floor(m_frac_coord[i] + 1E-6);
       if(std::abs(tshift) > TOL) {
         return false;
       }
@@ -677,39 +288,25 @@ namespace CASM {
     return true;
   };
 
-
-
-  //********************************************************************
-
-
   //********************************************************************
 
   bool Coordinate::within(Coordinate &translation) {
-
-    translation.set_lattice(*home);
-    if(!calc(FRAC)) {
-      std::cerr << " Coordinate::within called on a coordinate that has no valid fractional coordinate." << std::endl;
-      exit(1);
-    }
+    translation.m_home = m_home;
     if(PERIODICITY_MODE::IS_LOCAL()) return true;
 
     bool is_within = true;
-    double tshift;
+
     for(int i = 0; i < 3; i++) {
-      tshift = floor(coord[FRAC][i] + 1E-6);
-      if(std::abs(tshift) > TOL) {
+      translation.m_frac_coord[i] = -floor(m_frac_coord[i] + 1E-6);
+      if(std::abs(translation.m_frac_coord[i]) > TOL) {
         is_within = false;
-        coord[FRAC][i] -= tshift;
-        is_current[CART] = false;
-        translation.at(i, FRAC) = -tshift;
+        m_frac_coord[i] += translation.m_frac_coord[i];
       }
-      else
-        translation.at(i, FRAC) = 0.0;
     }
+
+    translation._update_cart();
     return is_within;
-
   };
-
 
   //********************************************************************
   /**
@@ -718,7 +315,7 @@ namespace CASM {
   //********************************************************************
 
   int Coordinate::voronoi_number() const {
-    return voronoi_number(*home);
+    return voronoi_number(home());
   }
 
   //********************************************************************
@@ -728,14 +325,8 @@ namespace CASM {
   //********************************************************************
 
   int Coordinate::voronoi_number(const Lattice &cell) const {
-    if(!calc(CART)) {
-      std::cerr << "WARNING: Attempting to find Voronoi number of improperly initialized coordinate! Exiting... \n";
-      return 0;
-    }
-    return cell.voronoi_number(coord[CART]);
-
+    return cell.voronoi_number(m_cart_coord);
   }
-
 
   //********************************************************************
   /**
@@ -747,20 +338,10 @@ namespace CASM {
   bool Coordinate::voronoi_within() {
     bool was_within(true);
 
-    if(!calc(CART)) {
-      std::cerr << "WARNING: Attempting to find Voronoi number of improperly initialized coordinate! Exiting... \n";
-      return 0;
-    }
-
     while(voronoi_number() < 0) {
       was_within = false;
-      Coordinate tcoord(home->max_voronoi_vector(coord[CART]), *home, CART);
-
-      Vector3<int> int_vec(round(coord[CART].dot(tcoord(CART)) / 2)*tcoord(FRAC).scale_to_int());
-
-      at(0, FRAC) -= int_vec[0];
-      at(1, FRAC) -= int_vec[1];
-      at(2, FRAC) -= int_vec[2];
+      Coordinate tcoord(home().max_voronoi_vector(m_cart_coord), home(), CART);
+      frac() = (round(const_cart().dot(tcoord.const_cart()) / 2) * scale_to_int(tcoord.const_frac())).cast<double>();
     }
 
     return was_within;
@@ -773,84 +354,16 @@ namespace CASM {
   //********************************************************************
 
   bool Coordinate::is_lattice_shift() {
-    if(!calc(FRAC)) {
-      //Return true if coordinate describes origin
-      if(calc(CART))
-        return std::abs(coord[CART][0]) < TOL && std::abs(coord[CART][1]) < TOL && std::abs(coord[CART][2]) < TOL;
-    }
 
     //If mode is local, return true only if coordinate describes origin
     if(PERIODICITY_MODE::IS_LOCAL())
-      return std::abs(coord[FRAC][0]) < TOL && std::abs(coord[FRAC][1]) < TOL && std::abs(coord[FRAC][2]) < TOL;
+      return std::abs(m_frac_coord[0]) < TOL && std::abs(m_frac_coord[1]) < TOL && std::abs(m_frac_coord[2]) < TOL;
 
-    return (std::abs(coord[FRAC][0] - round(coord[FRAC][0])) < TOL
-            && std::abs(coord[FRAC][1] - round(coord[FRAC][1])) < TOL
-            && std::abs(coord[FRAC][2] - round(coord[FRAC][2])) < TOL);
+    return (std::abs(m_frac_coord[0] - round(m_frac_coord[0])) < TOL
+            && std::abs(m_frac_coord[1] - round(m_frac_coord[1])) < TOL
+            && std::abs(m_frac_coord[2] - round(m_frac_coord[2])) < TOL);
   }
 
-  //********************************************************************
-  /**
-   * Used in Coordinate SelfTest() to test switching of modes.
-   */
-  //********************************************************************
-
-  bool Coordinate::switch_test() {
-    // Default COORD_MODE is fractional so there should be fractional coordinates
-    // and no cartesian coordinates
-    if(is_frac() && !is_cart() && is_current[FRAC] && is_current[CART] == false) {
-      COORD_MODE new_mode(CART);
-      calc(CART);
-
-      // Now that COORD_MODE is set to cart and cart has been calculated,
-      // test the mode and see if the cart component of is_currents is now true
-      if(is_cart() && !is_frac() && is_current[CART] && is_current[FRAC]) {
-        COORD_MODE new_mode(FRAC);
-        // Changed one of the frac coordinate values
-        (*this)[1] = 0.4;
-
-        // Because the value of frac was edited, the original cartesian coordinates are no longer valid
-        // so is_current[CART] would be false
-        if(is_frac() && !is_cart() && is_current[FRAC] && !is_current[CART]) {
-          (*this)[1] = 0.2; // Changed back to original value so subsequent tests would make sense
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-
-  //********************************************************************
-  /**
-   * Used in Coordinate SelfTest() to test that F is calculated properly
-   */
-  //********************************************************************
-
-  bool Coordinate::calc_F_test() {
-    if((((*this).get(0, FRAC) - 0.5) < TOL)
-       && (((*this).get(1, FRAC) - 0.2) < TOL)
-       && (((*this).get(2, FRAC) - 0.1) < TOL)) {
-      return true;
-    }
-    else return false;
-  }
-
-  //********************************************************************
-  /**
-   * Used in Coordinate SelfTest() to test that C is calculated properly
-   */
-  //********************************************************************
-
-  bool Coordinate::calc_C_test() {
-    if((((*this).get(0, CART) - 1.0) < TOL)
-       && (((*this).get(1, CART) - 0.2) < TOL)
-       && (((*this).get(2, CART) - 0.3) < TOL)) {
-      return true;
-    }
-    else return false;
-
-  }
 
   //********************************************************************
   /**
@@ -862,14 +375,8 @@ namespace CASM {
     json.put_obj();
 
     // mutable Vector3< double > coord[2];
-    update();
-    json["FRAC"] = coord[FRAC];
-    json["CART"] = coord[CART];
-
-    // mutable bool is_current[2];
-    json["is_current"] = jsonParser::object();
-    json["is_current"]["FRAC"] = is_current[FRAC];
-    json["is_current"]["CART"] = is_current[CART];
+    json["FRAC"] = m_frac_coord;
+    json["CART"] = m_cart_coord;
 
     // mutable int basis_ind;
     json["basis_ind"] = basis_ind();
@@ -878,23 +385,12 @@ namespace CASM {
   }
 
   void Coordinate::from_json(const jsonParser &json) {
-    try {
-      // mutable Vector3< double > coord[2];
-      CASM::from_json(coord[FRAC], json["FRAC"]);
-      CASM::from_json(coord[CART], json["CART"]);
+    // mutable Vector3< double > coord[2];
+    CASM::from_json(m_frac_coord, json["FRAC"]);
+    CASM::from_json(m_cart_coord, json["CART"]);
 
-      // mutable bool is_current[2];
-      CASM::from_json(is_current[FRAC], json["is_current"]["FRAC"]);
-      CASM::from_json(is_current[CART], json["is_current"]["CART"]);
-
-      // mutable int basis_ind;
-      CASM::from_json(m_basis_ind, json["basis_ind"]);
-
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    // mutable int basis_ind;
+    CASM::from_json(m_basis_ind, json["basis_ind"]);
   };
 
   jsonParser &to_json(const Coordinate &coord, jsonParser &json) {
@@ -902,13 +398,7 @@ namespace CASM {
   }
 
   void from_json(Coordinate &coord, const jsonParser &json) {
-    try {
-      coord.from_json(json);
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    coord.from_json(json);
   };
 
 
@@ -922,41 +412,6 @@ namespace CASM {
     coord.print(stream);
     return stream;
   }
-
-
-  //********************************************************************
-
-  /*
-  bool Coordinate::SelfTest() {
-    //set lattice parameters
-    Vector3< double > vec1(2, 0, 0), vec2(0, 1, 0), vec3(0, 0, 3);
-
-    Lattice my_lat(vec1, vec2, vec3);
-
-    Coordinate my_coord(my_lat);
-    my_coord.set_lattice(my_lat);
-    my_coord[0] = 0.5;
-    my_coord[1] = 0.2;
-    my_coord[2] = 0.1;
-
-
-    using namespace SelfTestable;
-    TestSet("Coordinate");
-
-    // Test that switches from F to C to F produces corresponding switch
-    // in is_currents
-    if(!Test(my_coord.switch_test() , "Switch Mode Test")) return false;
-
-    // Test get_F works
-    if(!Test(my_coord.calc_F_test() , "Calc Frac Test")) return false;
-
-    // Test get_C works
-    if(!Test(my_coord.calc_C_test() , "Calc Cart Test")) return false;
-
-    return true;
-  }; // end of SelfTest for Coordinate
-  */
-
 
 };
 

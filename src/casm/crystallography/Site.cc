@@ -17,9 +17,9 @@ namespace CASM {
   Site::Site(const Coordinate &init_pos, const std::string &occ_name) :
     Coordinate(init_pos), m_nlist_ind(-1), m_type_ID(-1), m_site_occupant(Array<Molecule>()) {
 
-    Molecule tMol(*home);
+    Molecule tMol(home());
     tMol.name = occ_name;
-    tMol.push_back(AtomPosition(0, 0, 0, occ_name, *home));
+    tMol.push_back(AtomPosition(0, 0, 0, occ_name, home(), CART));
 
     Array<Molecule> tocc;
     tocc.push_back(tMol);
@@ -28,7 +28,7 @@ namespace CASM {
 
     return;
   }
-  
+
   /// \brief Construct site with initial position and the allowed Molecule
   Site::Site(const Coordinate &init_pos, std::initializer_list<Molecule> site_occ) :
     Coordinate(init_pos), m_nlist_ind(-1), m_type_ID(-1) {
@@ -65,11 +65,6 @@ namespace CASM {
   };
 
   //****************************************************
-  Lattice const *Site::home_ptr() const {
-    return home;
-  };
-
-  //****************************************************
   /**
    *
    */
@@ -98,35 +93,6 @@ namespace CASM {
 
     return *this;
   }
-
-  //****************************************************
-  /**
-   *
-   */
-  //****************************************************
-
-  void Site::set_SD_flag(bool sdx, bool sdy, bool sdz) {
-    set_SD_flag(Vector3<bool>(sdx, sdy, sdz));
-    return;
-  }
-
-  //****************************************************
-  /**
-   *
-   */
-  //****************************************************
-  void Site::set_SD_flag(const Vector3<bool> &SDvec) {
-    SD_flag = SDvec;
-    Index nm, na;
-    for(nm = 0; nm < site_occupant().size(); nm++) {
-      for(na = 0; na < site_occupant()[nm].size(); na++) {
-        m_site_occupant[nm][na].SD_flag = SD_flag;
-      }
-    }
-    return;
-  }
-
-
 
   //****************************************************
   /**
@@ -227,16 +193,6 @@ namespace CASM {
 
   //****************************************************
 
-  void Site::invalidate(COORD_TYPE mode) {
-    Coordinate::invalidate(mode);
-    for(Index i = 0; i < site_occupant().size(); i++) {
-      m_site_occupant[i].invalidate(mode);
-    }
-    return;
-  }
-
-  //****************************************************
-
   void Site::set_lattice(const Lattice &new_lat) {
     Coordinate::set_lattice(new_lat);
     for(Index i = 0; i < site_occupant().size(); i++) {
@@ -291,7 +247,8 @@ namespace CASM {
   void Site::read(std::istream &stream, bool SD_is_on) {
     char ch;
 
-    Molecule tMol(*home);
+    Molecule tMol(home());
+    AtomPosition::sd_type SD_flag;
 
     Coordinate::read(stream);
     if(SD_is_on) {
@@ -322,7 +279,7 @@ namespace CASM {
         stream >> tMol.name;
 
 
-        tMol.push_back(AtomPosition(0, 0, 0, tMol.name, *home, SD_flag));
+        tMol.push_back(AtomPosition(0, 0, 0, tMol.name, home(), CART, SD_flag));
         tocc.push_back(tMol);
       }
       ch = stream.peek();
@@ -334,7 +291,7 @@ namespace CASM {
 
       tMol.clear();
       stream >> tMol.name;
-      tMol.push_back(AtomPosition(0, 0, 0, tMol.name, *home, SD_flag));
+      tMol.push_back(AtomPosition(0, 0, 0, tMol.name, home(), CART, SD_flag));
 
       if(tocc.size()) {
         m_site_occupant.set_domain(tocc);
@@ -381,7 +338,8 @@ namespace CASM {
   void Site::read(std::istream &stream, std::string &elem, bool SD_is_on) {
     char ch;
 
-    Molecule tMol(*home);
+    Molecule tMol(home());
+    AtomPosition::sd_type SD_flag;
 
     Coordinate::read(stream);
     if(SD_is_on) {
@@ -400,7 +358,7 @@ namespace CASM {
 
     tMol.clear();
     tMol.name = elem;
-    tMol.push_back(AtomPosition(0, 0, 0, tMol.name, *home, SD_flag));
+    tMol.push_back(AtomPosition(0, 0, 0, tMol.name, home(), CART, SD_flag));
     tocc.push_back(tMol);
 
     if(tocc.size()) {
@@ -492,9 +450,6 @@ namespace CASM {
     // MoleculeOccupant site_occupant;
     json["site_occupant"] = site_occupant();
 
-    // Vector3<bool> SD_flag;
-    json["SD_flag"] = SD_flag;
-
     // int m_nlist_ind;
     json["m_nlist_ind"] = m_nlist_ind;
 
@@ -513,15 +468,11 @@ namespace CASM {
       //std::cout<<"Reading in the Coordinate"<<std::endl;
       CASM::from_json(coord, json["coordinate"]);
 
-      Array<Molecule> temp_mol_array(1, Molecule(*home));
+      Array<Molecule> temp_mol_array(1, Molecule(home()));
       m_site_occupant.set_domain(temp_mol_array);
       //std::cout<<"Reading in site_occupant"<<std::endl;
       // MoleculeOccupant site_occupant;
       CASM::from_json(m_site_occupant, json["site_occupant"]);
-
-      //std::cout<<"Reading in SD_flag"<<std::endl;
-      // Vector3<bool> SD_flag;
-      CASM::from_json(SD_flag, json["SD_flag"]);
 
       //std::cout<<"Reading in m_list_ind"<<std::endl;
       // int m_nlist_ind;

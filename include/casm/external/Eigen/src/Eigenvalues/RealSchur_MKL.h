@@ -44,11 +44,7 @@ template<> inline \
 RealSchur<Matrix<EIGTYPE, Dynamic, Dynamic, EIGCOLROW> >& \
 RealSchur<Matrix<EIGTYPE, Dynamic, Dynamic, EIGCOLROW> >::compute(const Matrix<EIGTYPE, Dynamic, Dynamic, EIGCOLROW>& matrix, bool computeU) \
 { \
-  typedef Matrix<EIGTYPE, Dynamic, Dynamic, EIGCOLROW> MatrixType; \
-  typedef MatrixType::Scalar Scalar; \
-  typedef MatrixType::RealScalar RealScalar; \
-\
-  assert(matrix.cols() == matrix.rows()); \
+  eigen_assert(matrix.cols() == matrix.rows()); \
 \
   lapack_int n = matrix.cols(), sdim, info; \
   lapack_int lda = matrix.outerStride(); \

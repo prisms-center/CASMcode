@@ -133,8 +133,15 @@ namespace CASM {
   Eigen::VectorXd eigen_vector_from_string(const std::string &tstr, const int &size);
 
   // *******************************************************************************************
-  // calculates gcf(abs(i1),abs(i2)) and finds bezout coefficients p1 and p2 such that
-  //             p1*i1 + p2*i2 = gcf(abs(i1),abs(i2));
+  /// \brief Calculate greatest common factor of two integers, and bezout coefficients
+  ///
+  /// \returns greatest common factor
+  ////
+  /// \param i1,i2 two integers for which to find greatest common factor
+  /// \param[out] p1, p2 bezout coefficients such that p1*i1 + p2*i2 = gcf(abs(i1),abs(i2));
+  ///
+  /// \see smith_normal_form
+  ///
   template<typename IntType>
   IntType extended_gcf(IntType i1, IntType i2, IntType &p1, IntType &p2) {
     IntType s1 = sgn(i1);
@@ -272,7 +279,16 @@ namespace CASM {
     }
     return result;
   }
+
   // ************************************************************
+
+  template<typename Derived>
+  double length(const Eigen::MatrixBase<Derived> &value) {
+    return value.norm();
+  }
+
+  // ************************************************************
+
   template<typename Derived>
   ReturnArray<Index> partition_distinct_values(const Eigen::MatrixBase<Derived> &value, double tol = TOL) {
     Array<Index> subspace_dims;
@@ -322,6 +338,84 @@ namespace CASM {
 
     //int update_costs(const Eigen::VectorXi &row_covered, const Eigen::VectorXi &col_covered, const double min, Eigen::MatrixXd &cost_matrix);
   }
+
+  //*******************************************************************************************
+  ///Take a vector of doubles, and multiply by some factor that turns it into a vector of integers (within a tolerance)
+  template <typename Derived>
+  Eigen::Matrix<int,
+        Derived::RowsAtCompileTime,
+        Derived::ColsAtCompileTime>
+  scale_to_int(const Eigen::MatrixBase<Derived> &val, double _tol = TOL) {
+
+    typedef Eigen::Matrix<int, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> int_mat_type;
+    typedef Eigen::Matrix<double, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> dub_mat_type;
+
+    int_mat_type ints(int_mat_type::Zero(val.rows(), val.cols()));
+
+    dub_mat_type dubs(val);
+
+    Index min_i(-1), min_j(-1);
+    double min_coeff = 2; //all values are <=1;
+    for(Index i = 0; i < dubs.rows(); i++) {
+      for(Index j = 0; j < dubs.cols(); j++) {
+        if(almost_zero(dubs(i, j))) {
+          dubs(i, j) = 0.0;
+        }
+        else if(std::abs(dubs(i, j)) < std::abs(min_coeff)) {
+          min_coeff = dubs(i, j);
+          min_i = i;
+          min_j = j;
+        }
+      }
+    }
+    if(valid_index(min_i))
+      dubs /= std::abs(min_coeff);
+    else
+      return ints;
+
+
+    //We want to multiply the miller indeces by some factor such that all indeces become integers.
+    //In order to do this we pick a tolerance to work with and round the miller indeces if they are close
+    //enough to the integer value (e.g. 2.95 becomes 3). Choosing a tolerance that is too small will
+    //result in the "primitive-slab" blowing up.
+
+    //Begin choosing a factor and multiply all indeces by it (starting with 1). Then round the non-smallest
+    //miller indeces (smallest index requires no rounding, since it will always be a perfect
+    //integer thanks to the previous division).
+    //Next take absolute value of difference between rounded indeces and actual values (int_diff 1 & 2).
+    //If the difference for both indeces is smaller than the tolerance then you've reached the desired
+    //accuracy and the rounded indeces can be used to construct the "primitive-slab" cell. If not, increase the
+    //factor by 1 and try again, until the tolerance is met.
+    bool within_tol = false;
+
+    dub_mat_type tdubs;
+    Index i, j;
+    for(Index factor = 1; factor < 1000 && !within_tol; factor++) {
+      tdubs = double(factor) * dubs;
+      for(Index i = 0; i < dubs.rows(); i++) {
+        for(Index j = 0; j < dubs.cols(); j++) {
+          if(!almost_zero(round(tdubs(i, j)) - tdubs(i, j), _tol))
+            break;
+        }
+        if(j < dubs.cols())
+          break;
+      }
+      if(dubs.rows() <= i)
+        within_tol = true;
+    }
+
+    if(within_tol) {
+      for(Index i = 0; i < dubs.rows(); i++) {
+        for(Index j = 0; j < dubs.cols(); j++) {
+          ints(i, j) = round(tdubs(i, j));
+        }
+      }
+    }
+
+    return ints;
+  }
+
+
 }
 
 namespace Eigen {

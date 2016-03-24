@@ -43,7 +43,7 @@ namespace CASM {
 
     Index i, map_ind;
     ClustType t_cluster(prototype.get_home());
-    Coordinate map_shift(Vector3<double>(0, 0, 0), prototype.get_home());
+    Coordinate map_shift(prototype.get_home());
     Coordinate within_shift(map_shift);
     clear();
     equivalence_map.clear();
@@ -64,7 +64,7 @@ namespace CASM {
       //Case 1: Cluster already exists in orbit; update equivalence map to record
       //        symmetry operation that maps prototype onto equivalent cluster
       if(map_ind < size()) {
-        equivalence_map[map_ind].push_back(SymOp(map_shift)*sym_group[i]);
+        equivalence_map[map_ind].push_back(SymOp::translation(map_shift.cart())*sym_group[i]);
       }
 
       //Case 2: Identified new equivalent cluster; add it to orbit and update equivalence map
@@ -72,7 +72,7 @@ namespace CASM {
       else {
         t_cluster.within(0, within_shift); 	//make sure new equivalent cluster has first site within primitive cell
         this->push_back(t_cluster);   // add it
-        SymOp tsymm(SymOp(map_shift + within_shift)*sym_group[i]);
+        SymOp tsymm(SymOp(map_shift.const_cart() + within_shift.const_cart())*sym_group[i]);
         equivalence_map.push_back(Array<SymOp>(1, tsymm));
       }
 
@@ -151,8 +151,8 @@ namespace CASM {
   template<typename ClustType>
   Index GenericOrbit<ClustType>::find(const ClustType  &test_clust, Coordinate &trans) const {
     Index i;
-    trans(FRAC) = Vector3<double>(0, 0, 0);
-    ClustType  tclust(test_clust);
+    trans.frac() = Eigen::Vector3d::Zero();
+    ClustType tclust(test_clust);
     for(i = 0; i < size(); i++) {
       if(tclust.map_onto(at(i), trans)) {
         break;

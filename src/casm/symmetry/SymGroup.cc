@@ -1,8 +1,9 @@
 #include "casm/symmetry/SymGroup.hh"
 
 #include "casm/external/Eigen/CASM_AddOns"
-
+#include "casm/misc/CASM_math.hh"
 #include "casm/container/Counter.hh"
+#include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 
@@ -117,7 +118,7 @@ namespace CASM {
     SymGroupRep *coordrep(new SymGroupRep(*this));
     Eigen::MatrixXd coordrep_mat(3, 3);
     for(Index i = 0; i < size(); i++) {
-      Matrix3<double> tmat = at(i).get_matrix(CART);
+      Eigen::Matrix3d tmat = at(i).matrix();
       for(int j = 0; j < 3; j++) {
         for(int k = 0; k < 3; k++) {
           coordrep_mat(j, k) = tmat(j, k);
@@ -308,8 +309,8 @@ namespace CASM {
     Array<SymOp>::push_back(new_op);
     if(!size())
       std::cout << "PUSHING BACK INTO SYMGROUP " << this << "\n";
-    if(back().get_map_error() > max_error)
-      max_error = back().get_map_error();
+    if(back().map_error() > max_error)
+      max_error = back().map_error();
 
     return;
   }
@@ -1163,10 +1164,10 @@ namespace CASM {
 
     class_names.resize(conjugacy_classes.size());
 
-    Array<Vector3<double> > highsym_axes;
+    Array<Eigen::Vector3d > highsym_axes;
     Array<int> mult;
     double angle = 360;
-    Vector3<double> xprodvec;
+    Eigen::Vector3d xprodvec;
     double dprod;
     std::string symtype;
     Index to_name = conjugacy_classes.size();
@@ -1206,9 +1207,9 @@ namespace CASM {
     mult.clear();
 
     for(Index i = 0; i < size(); i++) {
-      Vector3<double> tvec;
+      Eigen::Vector3d tvec;
       if((at(i).type() == SymOp::rotation_op) || (at(i).type() == SymOp::screw_op)) {
-        tvec = at(i).get_eigenvec(CART);
+        tvec = at(i).eigenvec();
         if(highsym_axes.contains(tvec)) { //Otherwise, check if the axis has been found;
           mult[highsym_axes.find(tvec)]++;
         }
@@ -1219,13 +1220,13 @@ namespace CASM {
       }
     }
 
-    Vector3<double> hs_axis;
+    Eigen::Vector3d hs_axis;
     double hangle = 360;
 
     for(Index i = 0; i < size(); i++) {
       if((at(i).get_rotation_angle() < hangle) && (at(i).get_rotation_angle() > TOL)) {
         hangle = at(i).get_rotation_angle();
-        hs_axis = at(i).get_eigenvec(CART);
+        hs_axis = at(i).eigenvec();
       }
     }
 
@@ -1249,7 +1250,7 @@ namespace CASM {
 
     if(name == "D3d") {
       for(int i = int(mult.size()) - 1; i >= 0; i--) {
-        if(!(highsym_axes[i] - hs_axis).is_zero()) {
+        if(!almost_zero(highsym_axes[i] - hs_axis)) {
           highsym_axes.remove(i);
           mult.remove(i);
         }
@@ -1269,8 +1270,8 @@ namespace CASM {
       if(!class_names[ind].size()) { //Check to see if this has already been named
         bool normal = false;
         for(Index j = 0; j < highsym_axes.size() && !normal; j++) {
-          dprod = highsym_axes[j].dot(at(i).get_eigenvec(CART));
-          xprodvec = highsym_axes[j].cross(at(i).get_eigenvec(CART));
+          dprod = highsym_axes[j].dot(at(i).eigenvec());
+          xprodvec = highsym_axes[j].cross(at(i).eigenvec());
           if(almost_zero(xprodvec.norm())) {
             normal = true;
           }
@@ -1356,24 +1357,24 @@ namespace CASM {
     if(name == "D2h") {
       for(Index i = 0; i < conjugacy_classes.size(); i++) {
         if((at(conjugacy_classes[i][0]).type() == SymOp::rotation_op)) {
-          if((at(conjugacy_classes[i][0]).get_eigenvec(CART) - Vector3<double>(1, 0, 0)).is_zero()) {
+          if(almost_zero(at(conjugacy_classes[i][0]).eigenvec() - Eigen::Vector3d::UnitX())) {
             class_names[i].append("(x)");
           }
-          else if((at(conjugacy_classes[i][0]).get_eigenvec(CART) - Vector3<double>(0, 1, 0)).is_zero()) {
+          else if(almost_zero(at(conjugacy_classes[i][0]).eigenvec() -  Eigen::Vector3d::UnitY())) {
             class_names[i].append("(y)");
           }
-          else if((at(conjugacy_classes[i][0]).get_eigenvec(CART) - Vector3<double>(0, 0, 1)).is_zero()) {
+          else if(almost_zero(at(conjugacy_classes[i][0]).eigenvec() -  Eigen::Vector3d::UnitY())) {
             class_names[i].append("(z)");
           }
         }
         else if((at(conjugacy_classes[i][0]).type() == SymOp::mirror_op)) {
-          if((at(conjugacy_classes[i][0]).get_eigenvec(CART) - Vector3<double>(1, 0, 0)).is_zero()) {
+          if(almost_zero(at(conjugacy_classes[i][0]).eigenvec() -  Eigen::Vector3d::UnitX())) {
             class_names[i].append("(yz)");
           }
-          else if((at(conjugacy_classes[i][0]).get_eigenvec(CART) - Vector3<double>(0, 1, 0)).is_zero()) {
+          else if(almost_zero(at(conjugacy_classes[i][0]).eigenvec() -  Eigen::Vector3d::UnitY())) {
             class_names[i].append("(xz)");
           }
-          else if((at(conjugacy_classes[i][0]).get_eigenvec(CART) - Vector3<double>(0, 0, 1)).is_zero()) {
+          else if(almost_zero(at(conjugacy_classes[i][0]).eigenvec() -  Eigen::Vector3d::UnitZ())) {
             class_names[i].append("(xy)");
           }
         }
@@ -2179,7 +2180,7 @@ namespace CASM {
        */
 
       for(Index i = 0; i < size(); i++) {
-        if(at(i).get_matrix(CART).determinant() > 0) {
+        if(at(i).matrix().determinant() > 0) {
           subgroup.push_back(at(i));
         }
       }
@@ -2213,7 +2214,7 @@ namespace CASM {
       for(Index i = 0; i < subgroup.size(); i++) { //Loop over subgroup SymOps
         for(Index j = 0; j < size(); j++) { //Loop over big group SymOps
           //This loop is for the normal SymOps
-          if((subgroup[i].get_matrix()).is_equal(at(j).get_matrix(), TOL)) {
+          if(almost_equal(subgroup[i].matrix(), at(j).matrix(), TOL)) {
             //Index ind_i = subgroup.conjugacy_corr_table[0][i];
             //Index ind_j = conjugacy_corr_table[0][j];
             Index ind_i = subgroup.index2conjugacy_class[i];
@@ -2225,7 +2226,7 @@ namespace CASM {
             }
           }
           //This loop is for the inverted SymOps
-          if(((subgroup[i].get_matrix()*back().get_matrix()).is_equal(at(j).get_matrix(), TOL) && (inversion == true))) {
+          if(almost_equal(subgroup[i].matrix()*back().matrix(), at(j).matrix(), TOL) && inversion) {
             //Index ind_i = subgroup.conjugacy_corr_table[0][i];
             //Index ind_j = conjugacy_corr_table[0][j];
             Index ind_i = subgroup.index2conjugacy_class[i];
@@ -2294,7 +2295,7 @@ namespace CASM {
           //This loop is for mirrored SymOps when there is no inversion
           //This only happens in groups C3h and D3h
 
-          else if((subgroup[i].get_matrix()*at(sigma_h_ind).get_matrix()).is_equal(at(j).get_matrix(), TOL) && (mirror == true) && (inversion == false)) {
+          else if(almost_equal(subgroup[i].matrix()*at(sigma_h_ind).matrix(), at(j).matrix(), TOL) && mirror && !inversion) {
             //Index ind_i = subgroup.conjugacy_corr_table[0][i];
             //Index ind_j = conjugacy_corr_table[0][j];
             Index ind_i = subgroup.index2conjugacy_class[i];
@@ -3150,7 +3151,7 @@ namespace CASM {
 
   Index SymGroup::find_no_trans(const SymOp &test_op) const {
     for(Index i = 0; i < size(); i++) {
-      if(at(i).get_matrix(CART).is_equal(test_op.get_matrix(CART))) {
+      if(almost_equal(at(i).matrix(), test_op.matrix())) {
         return i;
       }
     }
@@ -3250,14 +3251,6 @@ namespace CASM {
 
   //***************************************************
 
-  void SymGroup::set_lattice(const Lattice &new_lat, COORD_TYPE mode) {
-    for(Index i = 0; i < size(); i++)
-      at(i).set_lattice(new_lat, mode);
-    return;
-  }
-
-  //***************************************************
-
   void SymGroup::write(std::string filename, COORD_TYPE mode) const {
     std::ofstream outfile;
     outfile.open(filename.c_str());
@@ -3284,19 +3277,17 @@ namespace CASM {
   void SymGroup::calc_space_group_in_cell(SymGroup &space_group_cell) const {
     if(!size()) return;
 
-    Vector3<int> max_trans(3, 3, 3);
-    Coordinate trans(Vector3<double>(0, 0, 0), at(0).get_home(), FRAC);
+    Eigen::Vector3i max_trans(3, 3, 3);
+    Coordinate trans(Eigen::Vector3d::Zero(), at(0).get_home(), FRAC);
 
     for(Index i = 0; i < size(); i++) {
-      Counter<Vector3<int> > lat_comb(-max_trans, max_trans, Vector3<int>(1, 1, 1));
+      EigenCounter<Eigen::Vector3i> lat_comb(-max_trans, max_trans, Eigen::Vector3i::Ones());
       do {
-        trans(FRAC) = Vector3<double>(lat_comb[0], lat_comb[1], lat_comb[2]);
+        trans.frac() = lat_comb.cast<double>();
+        SymOp new_sym(SymOp(trans.cart())*at(i));
 
-        SymOp new_sym(SymOp(trans)*at(i));
-        new_sym.get_sym_type();
-        new_sym.find_location();
-
-        if(!new_sym.get_location().is_within()) {
+        trans.cart() = new_sym.location();
+        if(!trans.is_within()) {
           continue;
         }
 
@@ -3304,10 +3295,10 @@ namespace CASM {
         bool new_location = true;
         for(Index j = 0; j < space_group_cell.size(); j++) {
 
-          if(new_sym.get_matrix().is_equal(space_group_cell[j].get_matrix()) && new_sym.get_location(CART).is_equal(space_group_cell[j].get_location(CART))) {
+          if(almost_equal(new_sym.matrix(), space_group_cell[j].matrix()) && almost_equal(new_sym.location(), space_group_cell[j].location())) {
             new_location = false;
             break;
-            //std:: cout << new_sym.location(FRAC) <<"\n";
+
           }
         }
         if(new_location) {
@@ -3318,37 +3309,22 @@ namespace CASM {
     }
 
     return;
-    /*SymGroup tspace_group_cell;
-
-    //get_space_group_in_range(space_group_cell, Vector3<int>(4, 4, 4));
-    //
-    for(Index i=0; i<space_group_cell.size(); i++){
-
-    if(!tspace_group_cell.contains(space_group_cell[i]) && space_group_cell[i].location.is_within()){
-    tspace_group_cell.push_back(space_group_cell[i]);
-
-    //std::cout << space_group_cell[i].location() << "  sym type is:	" <<space_group_cell[i].type()<<"  \n";
-    }
-    }
-    space_group_cell=tspace_group_cell;
-
-    return;
-    */
   }
 
   //***************************************************
 
-  void SymGroup::calc_space_group_in_range(SymGroup &space_group, Vector3<int> min_trans, Vector3<int> max_trans) const {
+  void SymGroup::calc_space_group_in_range(SymGroup &space_group, Eigen::Vector3i min_trans, Eigen::Vector3i max_trans) const {
     if(!size()) return;
-    Coordinate trans(Vector3<double>(0, 0, 0), at(0).get_home(), FRAC);
+
+
+    Coordinate trans(Eigen::Vector3d::Zero(), at(0).get_home(), FRAC);
+
     for(Index i = 0; i < size(); i++) {
-      Counter<Vector3<int> > lat_comb(min_trans, max_trans, Vector3<int>(1, 1, 1));
+      EigenCounter<Eigen::Vector3i> lat_comb(min_trans, max_trans, Eigen::Vector3i::Ones());
       do {
-        trans(FRAC) = Vector3<double>(lat_comb[0], lat_comb[1], lat_comb[2]);
+        trans.frac() = lat_comb.cast<double>();
 
-        SymOp new_sym(SymOp(trans)*at(i));
-
-        new_sym.get_sym_type();
+        SymOp new_sym(SymOp(trans.cart())*at(i));
 
         if(!space_group.contains(new_sym)) {
           space_group.push_back(new_sym);
@@ -3377,78 +3353,15 @@ namespace CASM {
         at(i).print(stream, CART);
         stream << std::endl;
 
-
-
-
-        /*
-          switch (at(i).type()){
-          case 0:
-          stream<<"Identity operation"<<std::endl;
-          break;
-
-          case 1:
-          stream<<"Mirror operation with matrix:"<<std::endl;
-          stream<<at(i).get_matrix(FRAC)<<std::endl<<std::endl;
-
-          stream<<"FRAC\t\t\t\t\t\tCART"<<std::endl;
-          stream<<"Eigenvector is:"<<std::endl;
-          stream<<at(i).get_eigenvec(FRAC)<<"\t\t\t"<<at(i).get_eigenvec(CART)<<std::endl<<std::endl;
-          case 2:
-          stream<<"Glide operation with matrix:"<<std::endl;
-          stream<<at(i).get_matrix(FRAC)<<std::endl<<std::endl;
-
-          stream<<"FRAC\t\t\t\t\t\tCART"<<std::endl;
-          stream<<"Eigenvector is:"<<std::endl;
-          stream<<at(i).get_eigenvec(FRAC)<<"\t\t\t"<<at(i).get_eigenvec(CART)<<std::endl<<std::endl;
-          break;
-          case 3:
-          stream<<at(i).get_rotation_angle()<<" rotation operation with matrix:"<<std::endl;
-          stream<<at(i).get_matrix(FRAC)<<std::endl<<std::endl;
-
-          stream<<"FRAC\t\t\t\t\t\tCART"<<std::endl;
-          stream<<"Eigenvector is:"<<std::endl;
-          stream<<at(i).get_eigenvec(FRAC)<<"\t\t\t"<<at(i).get_eigenvec(CART)<<std::endl<<std::endl;
-          break;
-          case 4:
-          stream<<at(i).get_rotation_angle()<<" screw operation with matrix:"<<std::endl;
-          stream<<at(i).get_matrix(FRAC)<<std::endl<<std::endl;
-
-          stream<<"FRAC\t\t\t\t\t\tCART"<<std::endl;
-          stream<<"Eigenvector is:"<<std::endl;
-          stream<<at(i).get_eigenvec(FRAC)<<"\t\t\t"<<at(i).get_eigenvec(CART)<<std::endl<<std::endl;
-          break;
-          case 5:
-          stream<<"Inversion operation with matrix:"<<std::endl;
-          stream<<at(i).get_matrix(FRAC)<<std::endl<<std::endl;
-
-          stream<<"FRAC\t\t\t\t\t\tCART"<<std::endl;
-          stream<<"Eigenvector is:"<<std::endl;
-          stream<<at(i).get_eigenvec(FRAC)<<"\t\t\t"<<at(i).get_eigenvec(CART)<<std::endl<<std::endl;
-          break;
-          case 6:
-          stream<<at(i).get_rotation_angle()<<" rotoinversion operation with matrix:"<<std::endl;
-          stream<<at(i).get_matrix(FRAC)<<std::endl<<std::endl;
-
-          stream<<"FRAC\t\t\t\t\t\tCART"<<std::endl;
-          stream<<"Eigenvector is:"<<std::endl;
-          stream<<at(i).get_eigenvec(FRAC)<<"\t\t\t"<<at(i).get_eigenvec(CART)<<std::endl<<std::endl;
-          break;
-          default:
-          stream<<"DISASTER at SymGroup::print_locations!!"<<std::endl;
-          break;
-          }
-        */
         stream << "Location:" << std::endl;
         stream << "FRAC\t\t\t\t\tCART" << std::endl;
       }
-      at(i).get_location().print(stream, FRAC);
+      stream << at(i).location();
       stream << "\t\t\t";
-      at(i).get_location().print(stream, CART);
+      stream << at(i).location();
       stream << std::endl;
-      //stream<<at(i).get_location(FRAC)<<"\t\t\t"<<at(i).get_location(CART)<<std::endl;
 
-
-      if((i + 1 < size()) && (at(i).type() == at(i + 1).type()) && (at(i).get_eigenvec() == at(i + 1).get_eigenvec())) {
+      if((i + 1 < size()) && (at(i).type() == at(i + 1).type()) && (at(i).eigenvec() == at(i + 1).eigenvec())) {
         //Is this enough to know if it's a new symmetry or not?
         new_op = false;
       }
@@ -3475,20 +3388,20 @@ namespace CASM {
       for(Index j = i + 1; j < size(); j++) {
 
         // added by Donghee - always non-translation symmetry showed up first;
-        if(at(j).tau(FRAC).is_zero()) {
+        if(almost_zero(at(j).tau())) {
           t_op = at(j);
           at(j) = at(i);
           at(i) = t_op;
         }
-        if((at(j).get_matrix(CART).determinant() - at(i).get_matrix(CART).determinant()) > TOL) {
+        if((at(j).matrix().determinant() - at(i).matrix().determinant()) > TOL) {
           t_op = at(j);
           at(j) = at(i);
           at(i) = t_op;
           continue;
         }
 
-        if(std::abs(at(j).get_matrix(CART).determinant() - at(i).get_matrix(CART).determinant()) < TOL
-           && (at(j).get_matrix(CART).trace() - at(i).get_matrix(CART).trace()) > TOL) {
+        if(std::abs(at(j).matrix().determinant() - at(i).matrix().determinant()) < TOL
+           && (at(j).matrix().trace() - at(i).matrix().trace()) > TOL) {
           t_op = at(j);
           at(j) = at(i);
           at(i) = t_op;
@@ -3548,7 +3461,7 @@ namespace CASM {
     double tvalue = 0;
 
     for(Index i = 0; i < size(); i++) {
-      tvalue += (at(i).get_matrix().trace()) * (at(i).get_matrix().trace());
+      tvalue += (at(i).matrix().trace()) * (at(i).matrix().trace());
     }
 
     if(Index(std::abs(tvalue)) == size()) {
@@ -3585,7 +3498,7 @@ namespace CASM {
     repchar.resize(conjugacy_classes.size());
 
     for(Index i = 0; i < conjugacy_classes.size(); i++) {
-      repchar[i] += at(conjugacy_classes[i][0]).get_matrix().trace();
+      repchar[i] += at(conjugacy_classes[i][0]).matrix().trace();
     }
 
     //    std::cout << "The reducible characters are:\n";
@@ -3710,7 +3623,7 @@ namespace CASM {
       SymOp op(at(0)); //NOT GOING TO WORK WHEN TRYING TO READ IN AN EMPTY SYMGROUP
       // Create a dummy SymOp, I dont think it matters whats in it
       // since its going to get overwritten
-      //      Coordinate dummy_trans(Vector3<double>(0.0,0.0,0.0),)
+
       clear();
       std::cout << "Reading in the symops" << std::endl;
       for(int i = 0; i < json["symop"].size(); i++) {

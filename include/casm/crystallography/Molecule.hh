@@ -2,7 +2,9 @@
 #define MOLECULE_HH
 
 #include <iostream>
+#include <array>
 
+#include "casm/casm_io/json_io/container.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/symmetry/SymOp.hh"
@@ -14,12 +16,12 @@ namespace CASM {
   class OccupantDoF;
   typedef OccupantDoF<Molecule> MoleculeOccupant;
   //****************************************************
-  
+
   /// \brief A vacancy is any Specie/Molecule with (name == "VA" || name == "va" || name == "Va")
-  inline bool is_vacancy(const std::string& name) {
+  inline bool is_vacancy(const std::string &name) {
     return (name == "VA" || name == "va" || name == "Va");
   }
-  
+
   class Specie {
   public:
     std::string name;
@@ -47,19 +49,22 @@ namespace CASM {
 
   class AtomPosition : public Coordinate {
   public:
+    typedef std::array<bool, 3> sd_type;
     Specie specie;
 
-    Vector3<bool> SD_flag;
+    sd_type SD_flag;
 
-    explicit AtomPosition(const Lattice &init_lattice) : Coordinate(Vector3<double>(0, 0, 0), init_lattice) { };
-    AtomPosition(double elem1, double elem2, double elem3, std::string sp_name, const Lattice &init_lattice) :
-      Coordinate(Vector3<double>(elem1, elem2, elem3), init_lattice),
-      specie(sp_name) { };
-
-    AtomPosition(double elem1, double elem2, double elem3, std::string sp_name, const Lattice &init_lattice, const Vector3<bool> &tSD_flag) :
-      Coordinate(Vector3<double>(elem1, elem2, elem3), init_lattice),
+    explicit AtomPosition(const Lattice &init_lattice) : Coordinate(0, 0, 0, init_lattice, CART) { };
+    AtomPosition(double elem1,
+                 double elem2,
+                 double elem3,
+                 std::string sp_name,
+                 const Lattice &init_lattice,
+                 COORD_TYPE mode,
+                 sd_type _SD_flag = {false, false, false}) :
+      Coordinate(elem1, elem2, elem3, init_lattice, mode),
       specie(sp_name),
-      SD_flag(tSD_flag) { };
+      SD_flag(_SD_flag) { };
 
 
     bool operator==(const AtomPosition &RHS) const;
@@ -94,7 +99,7 @@ namespace CASM {
     Coordinate center;
     std::string name;
 
-    explicit Molecule(const Lattice &init_home) : m_home(&init_home), center(Vector3<double>(0, 0, 0), init_home) {};
+    explicit Molecule(const Lattice &init_home) : m_home(&init_home), center(0, 0, 0, init_home, CART) {};
 
     Lattice const *home() const {
       return m_home;
@@ -111,7 +116,6 @@ namespace CASM {
     Molecule &apply_sym(const SymOp &op); //TODO
     Molecule &apply_sym_no_trans(const SymOp &op); //TODO
 
-    void invalidate(COORD_TYPE mode);
     void set_lattice(const Lattice &new_lat);
 
     Molecule get_union(const Molecule &RHS); //TODO
@@ -134,15 +138,15 @@ namespace CASM {
   Molecule operator*(const SymOp &LHS, const Molecule &RHS); //TODO
   Molecule operator+(const Coordinate &LHS, const Molecule &RHS); //TODO
   Molecule operator+(const Molecule &LHS, const Coordinate &RHS); //TODO
-  
+
   /// \brief Return an atomic Molecule with specified name and Lattice
-  Molecule make_atom(std::string atom_name, const Lattice& lat);
-  
+  Molecule make_atom(std::string atom_name, const Lattice &lat);
+
   /// \brief Return an vacancy Molecule with specified Lattice
-  Molecule make_vacancy(const Lattice& lat);
-  
+  Molecule make_vacancy(const Lattice &lat);
+
   /// \brief Return true if Molecule name matches 'name', including Va checks
-  bool is_molecule_name(const Molecule& mol, std::string name);
+  bool is_molecule_name(const Molecule &mol, std::string name);
 
 
   jsonParser &to_json(const Molecule &mol, jsonParser &json);

@@ -203,21 +203,21 @@ namespace CASM {
 
     return struc_molecule;
   }
-  
+
   /// Returns an Array of each *possible* Molecule in this Structure
   std::vector<std::string> Structure::get_struc_molecule_name() const {
 
     // get Molecule allowed in prim, and how many there are
     std::vector<Molecule> struc_mol = get_struc_molecule();
-    
+
     // store Molecule names in vector
     std::vector<std::string> struc_mol_name;
-    for(int i=0; i<struc_mol.size(); i++) {
+    for(int i = 0; i < struc_mol.size(); i++) {
       struc_mol_name.push_back(struc_mol[i].name);
     }
-    
+
     return struc_mol_name;
-  }  
+  }
 
   //************************************************************
 
@@ -489,8 +489,6 @@ namespace CASM {
   void Structure::fill_supercell(const Structure &prim, double map_tol) {
     Index i, j;
 
-    //Updating lattice_trans matrices that connect the supercell to primitive -- Changed 11/08/12
-    m_lattice.calc_conversions();
     SymGroup latvec_pg;
     m_lattice.generate_point_group(latvec_pg);
 
@@ -530,12 +528,10 @@ namespace CASM {
       }
       else {
         for(Index j = 0; j < prim_grid.size(); j++) {
-          factor_group_internal.push_back(SymOp(prim.factor_group()[i].get_matrix(CART),
-                                                prim.factor_group()[i].tau(CART) + prim_grid.coord(j, SCEL)(CART), lattice(), CART));
-          factor_group_internal.back().within();
-          //OLD VERSION:
-          //factor_group_internal.push_back(SymOp(prim_grid.coord(j, SCEL))*prim.factor_group()[i]);
-          //factor_group_internal.back().set_lattice(lattice, CART);
+          Coordinate t_tau(prim.factor_group()[i].tau() + prim_grid.coord(j, SCEL).const_cart(), lattice(), CART);
+          t_tau.within();
+          factor_group_internal.push_back(SymOp(prim.factor_group()[i].matrix(),
+                                                t_tau.cart()));
         }
       }
     }
@@ -908,109 +904,6 @@ namespace CASM {
       reset();
   }
 
-  //John G 051112
-  //***********************************************************
-  /**
-   * Given a rotational matrix rotate the
-   * ENTIRE structure in cartesian space. This yields the same
-   * structure, just with different cartesian definitions of
-   * the lattice vectors
-   *
-   * Non primitive structures aren't allowed because you can't
-   * update the new primitive pointer without having the new
-   * primitive structure you want it pointing at falling out of
-   * scope.
-   */
-  //***********************************************************
-
-  Structure Structure::reorient(const Matrix3<double> reorientmat, bool override) const {
-    if(!is_primitive() && !override) {
-      std::cerr << "ERROR in Structure::reorient" << std::endl;
-      std::cerr << "This function is for primitive cells only. Reduce your structure and try again." << std::endl;
-      exit(11);
-    }
-
-    Structure reorientstruc(*this);
-
-    Lattice reorientlat(reorientmat * lattice().lat_column_mat());
-    reorientstruc.set_lattice(reorientlat, FRAC);
-
-    if(override) {
-      std::cerr << "WARNING in Structure::reorient (are you using Structure::align_with or Structure::align_standard?)" << std::endl;
-      std::cerr << "You've chosen to forcibly reorient or align a non-primitive structure. The primitive lattice of your rotated structure will point to itself." << std::endl;
-    }
-
-    reorientstruc.update();
-
-    return reorientstruc;
-  }
-
-
-  //***********************************************************
-  /**
-   *	This function takes two structures and returns a third
-   *	structure identical to the one it is called on, only
-   *	its vectors are reoriented to match the the structure
-   *	it is passed. I.e. the returned structure is reoriented
-   *	to have a and axb pointing in the same direction as
-   *	the structure it is passed on.
-   *
-   *	This function was meant to be used with Structure::stack_on,
-   *	which effectively stacks different cells to create
-   *	heterostructures
-   */
-  //***********************************************************
-
-  Structure Structure::align_with(const Structure &refstruc, bool override) const {
-    if(!is_primitive() && !override) {
-      std::cerr << "ERROR in Structure::align_with" << std::endl;
-      std::cerr << "This function is for primitive cells only. Reduce your structure and try again." << std::endl;
-      exit(12);
-    }
-
-    Vector3<double> rotaxis;
-    double angle;
-    Matrix3<double> rotmat;
-
-    //First align the a vectors
-    rotaxis = lattice()[0].cross(refstruc.lattice()[0]);
-    angle = lattice()[0].get_signed_angle(refstruc.lattice()[0], rotaxis);
-
-    rotmat = rotaxis.get_rotation_mat(angle);
-
-    Structure aaligned = reorient(rotmat, override);
-
-    //Then turn axb along the a axis
-    rotaxis = aaligned.lattice()[0];
-    angle = (aaligned.lattice()[0].cross(aaligned.lattice()[1])).get_signed_angle(refstruc.lattice()[0].cross(refstruc.lattice()[1]), rotaxis);
-
-    rotmat = rotaxis.get_rotation_mat(angle);
-    return aaligned.reorient(rotmat, override);
-  }
-
-  //***********************************************************
-  /**
-   * Reorients structure to have a along (x,0,0), b along (x,y,0)
-   * and c along (x,y,z).
-   */
-  //***********************************************************
-
-  Structure Structure::align_standard(bool override) const {
-    if(!is_primitive() && !override) {
-      std::cerr << "ERROR in Structure::align_with_standard" << std::endl;
-      std::cerr << "This function is for primitive cells only. Reduce your structure and try again." << std::endl;
-      exit(15);
-    }
-
-    Lattice standardlat(Vector3<double>(1, 0, 0),
-                        Vector3<double>(0, 1, 0),
-                        Vector3<double>(0, 0, 1));
-
-    Structure standardstruc(standardlat);
-
-    return align_with(standardstruc, override);
-
-  }
 
   //***********************************************************
   /**
@@ -1076,7 +969,7 @@ namespace CASM {
     //Fill up empty space in heterostruc with overstruc
     for(Index i = 0; i < overstruc.basis.size(); i++) {
       Site tsite(overstruc.basis[i]);
-      tsite(CART) = tsite(CART) + understruc.lattice()[2];
+      tsite.cart() = tsite.const_cart() + understruc.lattice()[2];
       tsite.set_lattice(heterostruc.lattice(), CART);
       heterostruc.basis.push_back(tsite);
 
@@ -1105,13 +998,11 @@ namespace CASM {
   Structure Structure::get_reflection() const {
 
     Structure reflectstruc(*this);
-    Matrix3<double> zmat(0);
-    zmat.at(0, 0) = 1;
-    zmat.at(1, 1) = 1;
-    zmat.at(2, 2) = -1;
+    Eigen::Vector3d zreflect;
+    zreflect << 1, 1, -1;
 
     // resets the lattice and reflects cartesian coordinates of the basis atoms
-    reflectstruc.set_lattice(Lattice(zmat * lattice().lat_column_mat()), CASM::FRAC);
+    reflectstruc.set_lattice(Lattice(zreflect.asDiagonal() * lattice().lat_column_mat()), FRAC);
 
     reflectstruc.update();
 
@@ -1148,8 +1039,8 @@ namespace CASM {
     for(Index i = 0; i < siamese[2].size(); i++) {
       for(Index j = 0; j < siamese[2][i].size(); j++) {
         Site avgsite(siamese[2][i][j][1]);
-        avgsite(CART) = (siamese[2][i][j][0](CART) + siamese[2][i][j][1](CART)) * 0.5;
-        avgsite.set_lattice(lattice(), CASM::CART); //It's dumb that I need to do this
+        avgsite.cart() = (siamese[2][i][j][0]const_cart() + siamese[2][i][j][1].const_cart()) * 0.5;
+        avgsite.set_lattice(lattice(), CART); //It's dumb that I need to do this
         avgsite.within();
 
         std::cout << "###############" << std::endl;
@@ -1384,7 +1275,7 @@ namespace CASM {
             smallest = dist;
           }
         }
-        bshift(CART) *= (1.0 / relaxed_factors.size());
+        bshift.cart() *= (1.0 / relaxed_factors.size());
         avg_basis[b] += bshift;
       }
 
@@ -1426,8 +1317,8 @@ namespace CASM {
   void Structure::add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Vector3<double> shift, COORD_TYPE mode) const {
 
     Coordinate cshift(shift, lattice(), mode);    //John G 121030
-    if(!almost_zero(cshift(FRAC)[2])) {
-      std::cerr << cshift(FRAC) << std::endl;
+    if(!almost_zero(cshift.frac(2))) {
+      std::cerr << cshift.const_frac() << std::endl;
       std::cerr << "WARNING: You're shifting in the c direction! This will mess with your vacuum and/or structure!!" << std::endl;
       std::cerr << "See Structure::add_vacuum_shift" << std::endl;
     }
@@ -1437,7 +1328,7 @@ namespace CASM {
     vacuum_vec.normalize();
     Lattice new_lattice(lattice()[0],
                         lattice()[1],
-                        lattice()[2] + vacuum_thickness * vacuum_vec + cshift(CART)); //Add vacuum and shift to c vector
+                        lattice()[2] + vacuum_thickness * vacuum_vec + cshift.const_cart()); //Add vacuum and shift to c vector
 
     new_surface_struc = *this;
     new_surface_struc.set_lattice(new_lattice, CART);
@@ -1451,7 +1342,7 @@ namespace CASM {
       std::cerr << "See Structure::add_vacuum_shift" << std::endl << std::endl;
     }
 
-    add_vacuum_shift(new_surface_struc, vacuum_thickness, shift(CART), CART);
+    add_vacuum_shift(new_surface_struc, vacuum_thickness, shift.cart(), CART);
     return;
   }
 
@@ -1494,7 +1385,7 @@ namespace CASM {
       for(Index i = 0 ; i < basis.size(); i++) {
         Coordinate temp(lattice());
 
-        temp(FRAC) = (basis[i] - end_struc.basis[i])(FRAC) * m / (Nofimag + 1);
+        temp.frac() = (basis[i] - end_struc.basis[i]).const_frac() * m / (Nofimag + 1);
 
         tstruc.basis[i] = basis[i] + temp;
 

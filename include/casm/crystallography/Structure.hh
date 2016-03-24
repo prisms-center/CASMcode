@@ -167,10 +167,6 @@ namespace CASM {
 
 
     //John G 051112
-    //Return copy of *this that's reoriented to match a and axb of refstruc
-    Structure reorient(const Matrix3<double> reorientmat, bool override = 0) const;
-    Structure align_with(const Structure &refstruc, bool override = 0) const;
-    Structure align_standard(bool override = 0) const;
     Structure stack_on(const Structure &understruc, bool override = 0) const;
     //\John G 051112
 
@@ -191,7 +187,7 @@ namespace CASM {
     //\John G 050513
 
     ///Add vacuum and shift c vector. The vacuum is always added parallel to c, and the shift vector should also be parallel to the ab plane (x,y,0)
-    void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Vector3<double> shift, COORD_TYPE mode) const;
+    void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const;
     void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Coordinate shift) const;  //Because Anton thought a coordinate would be better
     ///Adds vacuum layer on top of ab plane
     void add_vacuum(Structure &new_surface_struc, double vacuum_thickness) const;

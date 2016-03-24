@@ -50,6 +50,7 @@ template<
   typename RhsScalar, int RhsStorageOrder, bool ConjugateRhs>
 struct general_matrix_matrix_product<Index,LhsScalar,LhsStorageOrder,ConjugateLhs,RhsScalar,RhsStorageOrder,ConjugateRhs,ColMajor>
 {
+
 typedef typename scalar_product_traits<LhsScalar, RhsScalar>::ReturnType ResScalar;
 static void run(Index rows, Index cols, Index depth,
   const LhsScalar* _lhs, Index lhsStride,
@@ -139,8 +140,10 @@ static void run(Index rows, Index cols, Index depth,
       // Release all the sub blocks B'_j of B' for the current thread,
       // i.e., we simply decrement the number of users by 1
       for(Index j=0; j<threads; ++j)
+      {
         #pragma omp atomic
-        --(info[j].users);
+        info[j].users -= 1;
+      }
     }
   }
   else
@@ -169,7 +172,6 @@ static void run(Index rows, Index cols, Index depth,
       // vertical panel which is, in practice, a very low number.
       pack_rhs(blockB, &rhs(k2,0), rhsStride, actual_kc, cols);
 
-
       // For each mc x kc block of the lhs's vertical panel...
       // (==GEPP_VAR1)
       for(Index i2=0; i2<rows; i2+=mc)
@@ -183,7 +185,6 @@ static void run(Index rows, Index cols, Index depth,
 
         // Everything is packed, we can now call the block * panel kernel:
         gebp(res+i2, resStride, blockA, blockB, actual_mc, actual_kc, cols, alpha, -1, -1, 0, 0, blockW);
-
       }
     }
   }
@@ -204,7 +205,7 @@ struct traits<GeneralProduct<Lhs,Rhs,GemmProduct> >
 template<typename Scalar, typename Index, typename Gemm, typename Lhs, typename Rhs, typename Dest, typename BlockingType>
 struct gemm_functor
 {
-  gemm_functor(const Lhs& lhs, const Rhs& rhs, Dest& dest, Scalar actualAlpha,
+  gemm_functor(const Lhs& lhs, const Rhs& rhs, Dest& dest, const Scalar& actualAlpha,
                   BlockingType& blocking)
     : m_lhs(lhs), m_rhs(rhs), m_dest(dest), m_actualAlpha(actualAlpha), m_blocking(blocking)
   {}
@@ -391,13 +392,17 @@ class GeneralProduct<Lhs, Rhs, GemmProduct>
 
     GeneralProduct(const Lhs& lhs, const Rhs& rhs) : Base(lhs,rhs)
     {
+#if !(defined(EIGEN_NO_STATIC_ASSERT) && defined(EIGEN_NO_DEBUG))
       typedef internal::scalar_product_op<LhsScalar,RhsScalar> BinOp;
       EIGEN_CHECK_BINARY_COMPATIBILIY(BinOp,LhsScalar,RhsScalar);
+#endif
     }
 
-    template<typename Dest> void scaleAndAddTo(Dest& dst, Scalar alpha) const
+    template<typename Dest> void scaleAndAddTo(Dest& dst, const Scalar& alpha) const
     {
       eigen_assert(dst.rows()==m_lhs.rows() && dst.cols()==m_rhs.cols());
+      if(m_lhs.cols()==0 || m_lhs.rows()==0 || m_rhs.cols()==0)
+        return;
 
       typename internal::add_const_on_value_type<ActualLhsType>::type lhs = LhsBlasTraits::extract(m_lhs);
       typename internal::add_const_on_value_type<ActualRhsType>::type rhs = RhsBlasTraits::extract(m_rhs);

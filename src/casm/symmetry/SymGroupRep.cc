@@ -1,6 +1,7 @@
 #include "casm/symmetry/SymGroupRep.hh"
 
 #include "casm/external/Eigen/CASM_AddOns"
+#include "casm/misc/CASM_math.hh"
 
 #include "casm/container/Permutation.hh"
 #include "casm/symmetry/SymMatrixXd.hh"

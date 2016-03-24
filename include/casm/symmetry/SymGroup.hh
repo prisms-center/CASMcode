@@ -8,7 +8,7 @@
 #include "casm/symmetry/SymOp.hh"
 
 //#include "casm/../CASM_global_definitions.cc"
-//#include "casm/../crystallography/CoordinateSystems.cc"
+
 //#include "casm/../container/Array.cc"
 //#include "casm/../symmetry/SymOp.hh"
 //#include "casm/../symmetry/SymGroup.hh"
@@ -28,58 +28,6 @@ namespace CASM {
   ///       SymGroup always contains an identity operation
   class SymGroup : public Array<SymOp> {
   protected:
-
-    /// Specifies whether to use lattice periodicity when testing for equivalence
-    PERIODICITY_TYPE group_periodicity;
-
-    /// multi_table[i][j] gives index of operation that is result of at(i)*at(j)
-    mutable Array<Array<Index> > multi_table;
-
-    /// alt_multi_table[i][j] gives index of operation that is result of at(i).inverse()*at(j)
-    mutable Array<Array<Index> > alt_multi_table;
-
-    // information about conjugacy classes
-    // conjugacy_classes[i][j] gives index of SymOp 'j' in class 'i'
-    mutable Array<Array<Index> > conjugacy_classes;
-    mutable Array<std::string> class_names;
-    mutable Array<Index> index2conjugacy_class;
-
-    // Information about irreducible representations
-    // character_table[i][j] is character of conjugacy class 'j' in irrep 'i'
-    mutable Array<Array<std::complex<double> > > character_table;
-    mutable Array<Index> irrep_IDs;
-    mutable Array<bool> complex_irrep;
-    mutable Array<std::string> irrep_names;
-
-    Array<SymGroup> unique_subgroups;
-
-    // small_groups are cyclic subgroups.  Found by taking a group
-    // element and multiplying it by itself until a group is generated
-    // small_groups[i][j][k] is index of symop 'k' in subgroup (i,j) -- the equivalent subroup 'j' of an orbit 'i' of equivalent subgroups
-    mutable Array<Array<Array<Index> > > small_groups;
-
-    // large_groups are found by finding the closure for each possible union of small_groups
-    // organized the same way as small_groups
-    mutable Array<Array<Array<Index> > > large_groups;
-
-
-    mutable Array<Array<Index> > centralizer_table;
-    mutable Array<Array<Index> > elem_order_table;
-
-    mutable std::string name;
-    mutable std::string latex_name;
-    mutable std::string comment;
-
-    mutable double max_error;
-
-    ///Space group (added by Donghee );
-    mutable Array<Array<SymOp> > rotation_groups;
-    mutable std::string crystal_system;
-    mutable bool centric; // if it is centric, special point is same in reciprocal space
-    mutable Array<int> group_number; // space group number (min and max)
-    mutable Array<std::string> group_name; // 0: International 1: Schonflies
-
-  protected:
     void calc_conjugacy_classes() const;
     void calc_character_table() const;
     void calc_centralizers() const;
@@ -93,11 +41,13 @@ namespace CASM {
 
 
   public:
+    typedef SymOp::vector_type vector_type;
+    typedef SymOp::matrix_type matrix_type;
     /// Initialize by setting periodicity mode (default mode is PERIODIC)
     SymGroup(PERIODICITY_TYPE init_type = PERIODIC) : group_periodicity(init_type), max_error(-1) {
       name.clear();
       latex_name.clear();
-    };
+    }
 
     virtual void push_back(const SymOp &new_op);
     virtual void clear();
@@ -164,7 +114,7 @@ namespace CASM {
 
     /// gets all teh space group operations corresponding to translations in the specified range
     /// max_trans sets boundary of parillellipiped centered at origin.
-    void calc_space_group_in_range(SymGroup &space_group, Vector3<int> min_trans, Vector3<int> max_trans) const;
+    void calc_space_group_in_range(SymGroup &space_group, Eigen::Vector3i min_trans,  Eigen::Vector3i max_trans) const;
 
     /// Check to see if SymGroup satisfies the group property
     bool is_group(double tol = TOL) const;
@@ -180,9 +130,9 @@ namespace CASM {
     /// Print the SymGroup to a stream
     void print(std::ostream &out, COORD_TYPE mode) const;
 
-    /// Cartesian translation of SymGroup origin Coordinate shift
-    SymGroup &operator+=(const Coordinate &shift);
-    SymGroup &operator-=(const Coordinate &shift);
+    /// Cartesian translation of SymGroup origin by vector 'shift'
+    SymGroup &operator+=(const SymOp::vector_type &shift);
+    SymGroup &operator-=(const SymOp::vector_type &shift);
 
     Eigen::MatrixXd const *get_MatrixXd(Index i) const;
 
@@ -227,6 +177,59 @@ namespace CASM {
     // Note: as a hack this expects at(0) to be present and have the right lattice!!!
     //   it's just used to set the lattice for all the SymOp
     void from_json(const jsonParser &json);
+
+  protected:
+
+    /// Specifies whether to use lattice periodicity when testing for equivalence
+    PERIODICITY_TYPE group_periodicity;
+
+    /// multi_table[i][j] gives index of operation that is result of at(i)*at(j)
+    mutable Array<Array<Index> > multi_table;
+
+    /// alt_multi_table[i][j] gives index of operation that is result of at(i).inverse()*at(j)
+    mutable Array<Array<Index> > alt_multi_table;
+
+    // information about conjugacy classes
+    // conjugacy_classes[i][j] gives index of SymOp 'j' in class 'i'
+    mutable Array<Array<Index> > conjugacy_classes;
+    mutable Array<std::string> class_names;
+    mutable Array<Index> index2conjugacy_class;
+
+    // Information about irreducible representations
+    // character_table[i][j] is character of conjugacy class 'j' in irrep 'i'
+    mutable Array<Array<std::complex<double> > > character_table;
+    mutable Array<Index> irrep_IDs;
+    mutable Array<bool> complex_irrep;
+    mutable Array<std::string> irrep_names;
+
+    Array<SymGroup> unique_subgroups;
+
+    // small_groups are cyclic subgroups.  Found by taking a group
+    // element and multiplying it by itself until a group is generated
+    // small_groups[i][j][k] is index of symop 'k' in subgroup (i,j) -- the equivalent subroup 'j' of an orbit 'i' of equivalent subgroups
+    mutable Array<Array<Array<Index> > > small_groups;
+
+    // large_groups are found by finding the closure for each possible union of small_groups
+    // organized the same way as small_groups
+    mutable Array<Array<Array<Index> > > large_groups;
+
+
+    mutable Array<Array<Index> > centralizer_table;
+    mutable Array<Array<Index> > elem_order_table;
+
+    mutable std::string name;
+    mutable std::string latex_name;
+    mutable std::string comment;
+
+    mutable double max_error;
+
+    ///Space group (added by Donghee );
+    mutable Array<Array<SymOp> > rotation_groups;
+    mutable std::string crystal_system;
+    mutable bool centric; // if it is centric, special point is same in reciprocal space
+    mutable Array<int> group_number; // space group number (min and max)
+    mutable Array<std::string> group_name; // 0: International 1: Schonflies
+
 
   };
 

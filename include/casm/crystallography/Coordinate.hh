@@ -7,6 +7,7 @@
 
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/container/LinearAlgebra.hh"
+#include "casm/crystallography/Lattice.hh"
 
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -23,37 +24,42 @@ namespace CASM {
 
   }
 
+
   class Coordinate {
-  protected:
-
-    Lattice const *home;
-
-  private:
-    Eigen::Vector3d m_frac_coord, m_cart_coord;
-
-    Index m_basis_ind;
   public:
+    typedef Eigen::Vector3d vector_type;
+    typedef vector_type::Index size_type;
 
     /**NOTE: Coordinate does not have a default constructor
        e.g: this is not allowed-> Coordinate() : home(nullptr) { is_current[FRAC]=false; is_current[CART]=false;}; **/
 
     ///Minimal constructor only takes a lattice
-    explicit Coordinate(const Lattice &init_home) : home(&init_home), m_basis_ind(-1) {
+    explicit Coordinate(const Lattice &init_home) :
+      m_home(&init_home),
+      m_frac_coord(vector_type::Zero()),
+      m_cart_coord(vector_type::Zero()),
+      m_basis_ind(-1) {
 
-    };
+    }
 
-    Coordinate(const Eigen::Vector3d &init_vec, const Lattice &init_home, COORD_TYPE mode) : home(&init_home), m_basis_ind(-1) {
-      if(mode == FRAC)
-        frac() = init_vec;
-      if(mode == CART)
-        cart() = init_vec;
-    };
+    Coordinate(const vector_type &init_vec, const Lattice &init_home, COORD_TYPE mode);
+
+    Coordinate(double _x, double _y, double _z, const Lattice &init_home, COORD_TYPE mode);
 
     /// \brief Set the fractional coordinate vector
     Coordinate_impl::FracCoordinate frac();
 
     /// \brief const Access the fractional coordinate vector
-    const Eigen::Vector3d &frac() const;
+    inline
+    const vector_type &frac() const {
+      return m_frac_coord;
+    }
+
+    /// \brief user override to force const Access the fractional coordinate vector
+    inline
+    const vector_type &const_frac() const {
+      return m_frac_coord;
+    }
 
     /// \brief Set a component of the fractional coordinate vector
     Coordinate_impl::FracCoordinateComponent frac(size_type index);
@@ -61,13 +67,20 @@ namespace CASM {
     /// \brief const Access a component of the fractional coordinate vector
     const double &frac(size_type index) const;
 
-
-
     /// \brief Set Cartesian coordinate vector and update fractional coordiante vector
     Coordinate_impl::CartCoordinate cart();
 
     /// \brief const Access the Cartesian coordinate vector
-    const Eigen::Vector3d &cart() const;
+    inline
+    const vector_type &cart() const {
+      return m_cart_coord;
+    }
+
+    /// \brief user override to force const Access the Cartesian coordinate vector
+    inline
+    const vector_type &const_cart() const {
+      return m_cart_coord;
+    }
 
     /// \brief Set a component of the Cartesian coordinate vector
     Coordinate_impl::CartCoordinateComponent cart(size_type index);
@@ -75,15 +88,15 @@ namespace CASM {
     /// \brief const Access a component of the Cartesian coordinate vector
     const double &cart(size_type index) const;
 
-    Coordinate &operator +=(const Coordinate &RHS);
-    Coordinate &operator -=(const Coordinate &RHS);
+    Coordinate &operator+=(const Coordinate &RHS);
+    Coordinate &operator-=(const Coordinate &RHS);
 
-    Coordinate operator -() const;
+    Coordinate operator-() const;
 
-    bool operator ==(const Coordinate &RHS) const; //Ivy
-    bool operator !=(const Coordinate &RHS) const {
+    bool operator==(const Coordinate &RHS) const; //Ivy
+    bool operator!=(const Coordinate &RHS) const {
       return !(*this == RHS);
-    };
+    }
 
 
     ///These compares exist to make interface consistent with site
@@ -119,40 +132,19 @@ namespace CASM {
     ///update the home lattice of a coordinate, keeping representation specified mode
     void set_lattice(const Lattice &new_lat, COORD_TYPE mode); //John G, use to specify whether to keep CART or FRAC the same, when assigning a new lattice
 
-    double &operator[](int ind);  //Access element of current coordinate mode
-
     void set_basis_ind(Index _basis_ind) {
       m_basis_ind = _basis_ind;
-    };
+    }
 
     Index basis_ind() const {
       return m_basis_ind;
-    };
-
-    // pseudoconstant access of element in current coordinate mode
-    // can't be const, since it calls calc_coord()
-    double get(int ind) const;
-    double get(int ind, COORD_TYPE mode) const;
-    double &at(int ind);
-    double &at(int ind, COORD_TYPE mode);
+    }
 
     ///Check the home lattice of the coordinate
-    Lattice const *get_home() const {
-      return home;
-    };
-
-    ///Cast as vector in the current coordinate mode
-    operator Eigen::Vector3d();
-
-
-    /**Retur vector in the current coordinate mode
-       example: Coordinate my_coord(prim);
-                Eigen::Vector3d my_cart_coord = my_coord(CART); **/
-    Eigen::Vector3d &operator()();  //Cast as vector in the current coordinate mode
-    Eigen::Vector3d &operator()(COORD_TYPE mode);
-
-    const Eigen::Vector3d &operator()() const;  //Cast as vector in the current coordinate mode
-    const Eigen::Vector3d &operator()(COORD_TYPE mode) const;
+    const Lattice &home() const {
+      assert(m_home && "Coordinate doesn't have valid home lattice");
+      return *m_home;
+    }
 
     //term is terminal character, prec is precision, pad is field width - precision  (should be greater than 3)
     void read(std::istream &stream);
@@ -168,7 +160,7 @@ namespace CASM {
     double min_dist(const Coordinate &neighbor, Coordinate &shift)const; //Added by Ivy 11/05/12
 
     ///Finds same shift as min_dist but returns shift(CART).transpose()*metric*shift(CART)
-    double min_dist2(const Coordinate &neighbor, const Matrix3<double> &metric) const;
+    double min_dist2(const Coordinate &neighbor, const Eigen::Ref<const Eigen::Matrix3d> &metric) const;
 
     ///Transform coordinate by symmetry operation (including translation)
     Coordinate &apply_sym(const SymOp &op); //AAB
@@ -178,6 +170,53 @@ namespace CASM {
 
     jsonParser &to_json(jsonParser &json) const;
     void from_json(const jsonParser &json);
+
+  private:
+    inline
+    void _update_cart() {
+      m_cart_coord = home().lat_column_mat() * m_frac_coord;
+    }
+
+    inline
+    void _update_frac() {
+      m_frac_coord = home().inv_lat_column_mat() * m_cart_coord;
+    }
+
+    inline
+    void _set_frac(const Eigen::Ref<const vector_type> &f) {
+      m_frac_coord = f;
+      _update_cart();
+    }
+
+
+    inline
+    void _set_frac(size_type ind, double val) {
+      m_frac_coord[ind] = val;
+      _update_cart();
+    }
+
+    inline
+    void _set_cart(const Eigen::Ref<const vector_type> &c) {
+      m_cart_coord = c;
+      _update_frac();
+    }
+
+    inline
+    void _set_cart(size_type ind, double val) {
+      m_cart_coord[ind] = val;
+      _update_frac();
+    }
+
+    friend Coordinate_impl::FracCoordinate;
+    friend Coordinate_impl::CartCoordinate;
+    friend Coordinate_impl::FracCoordinateComponent;
+    friend Coordinate_impl::CartCoordinateComponent;
+
+    Lattice const *m_home;
+
+    vector_type m_frac_coord, m_cart_coord;
+
+    Index m_basis_ind;
   };
 
   jsonParser &to_json(const Coordinate &value, jsonParser &json);
@@ -186,6 +225,13 @@ namespace CASM {
   void from_json(Coordinate &value, const jsonParser &json);
 
   Coordinate operator*(const SymOp &LHS, const Coordinate &RHS); //AAB
+  Coordinate operator+(const Coordinate &LHS, const Coordinate &RHS) {
+    return Coordinate(LHS) += RHS;
+  }
+
+  Coordinate operator-(const Coordinate &LHS, const Coordinate &RHS) {
+    return Coordinate(LHS) -= RHS;
+  }
 
   namespace Coordinate_impl {
 
@@ -194,7 +240,7 @@ namespace CASM {
     /// Typically only used indirectly as a temporary when performing
     /// \code
     /// Coordinate coord;
-    /// coord.frac() = Eigen::Vector3d(a,b,c);
+    /// coord.frac() = Coordinate::vector_type(a,b,c);
     /// \endcode
     ///
     class FracCoordinate {
@@ -204,37 +250,47 @@ namespace CASM {
       explicit FracCoordinate(Coordinate &coord) :
         m_coord(&coord) {}
 
-      template<typename Derived>
-      FracCoordinate &operator=(const Eigen::MatrixBase<Derived> &vec) {
+
+      FracCoordinate &operator=(const Eigen::Ref<const Coordinate::vector_type> &vec) {
         m_coord->_set_frac(vec);
         return *this;
       }
 
-      template<typename Derived>
-      FracCoordinate &operator+=(const Eigen::MatrixBase<Derived> &vec) {
-        Eigen::Vector3d tmp = m_coord->m_vec[FRAC] + vec;
-        m_coord->_set_frac(tmp);
+      FracCoordinate &operator+=(const Eigen::Ref<const Coordinate::vector_type> &vec) {
+        (m_coord->m_frac_coord) += vec;
+        m_coord->_update_cart();
         return *this;
       }
 
-      template<typename Derived>
-      FracCoordinate &operator-=(const Eigen::MatrixBase<Derived> &vec) {
-        m_coord->_set_frac(m_coord->m_vec[FRAC] - vec);
+      FracCoordinate &operator-=(const Eigen::Ref<const Coordinate::vector_type> &vec) {
+        (m_coord->m_frac_coord) -= vec;
+        m_coord->_update_cart();
         return *this;
       }
 
       FracCoordinate &operator*=(double val) {
-        m_coord->_set_frac(m_coord->m_vec[FRAC]*val);
+        (m_coord->m_frac_coord) *= val;
+        (m_coord->m_cart_coord) *= val;
         return *this;
       }
 
       FracCoordinate &operator/=(double val) {
-        m_coord->_set_frac(m_coord->m_vec[FRAC] / val);
+        (m_coord->m_frac_coord) /= val;
+        (m_coord->m_cart_coord) /= val;
         return *this;
       }
 
+
+      operator const Eigen::MatrixBase<Eigen::Vector3d> &() const {
+        return m_coord->m_frac_coord;
+      }
+
       operator const Eigen::Vector3d &() const {
-        return m_coord->m_vec[FRAC];
+        return m_coord->m_frac_coord;
+      }
+
+      operator Eigen::Ref<const Eigen::Vector3d> () const {
+        return m_coord->m_frac_coord;
       }
 
     private:
@@ -266,27 +322,27 @@ namespace CASM {
       }
 
       FracCoordinateComponent &operator+=(double val) {
-        m_coord->_set_frac(m_index, m_coord->m_vec[FRAC](m_index) + val);
+        m_coord->_set_frac(m_index, m_coord->m_frac_coord(m_index) + val);
         return *this;
       }
 
       FracCoordinateComponent &operator-=(double val) {
-        m_coord->_set_frac(m_index, m_coord->m_vec[FRAC](m_index) - val);
+        m_coord->_set_frac(m_index, m_coord->m_frac_coord(m_index) - val);
         return *this;
       }
 
       FracCoordinateComponent &operator*=(double val) {
-        m_coord->_set_frac(m_index, m_coord->m_vec[FRAC](m_index)*val);
+        m_coord->_set_frac(m_index, m_coord->m_frac_coord(m_index)*val);
         return *this;
       }
 
       FracCoordinateComponent &operator/=(double val) {
-        m_coord->_set_frac(m_index, m_coord->m_vec[FRAC](m_index) / val);
+        m_coord->_set_frac(m_index, m_coord->m_frac_coord(m_index) / val);
         return *this;
       }
 
       operator const double &() const {
-        return m_coord->m_vec[FRAC](m_index);
+        return m_coord->m_frac_coord(m_index);
       }
 
     private:
@@ -300,7 +356,7 @@ namespace CASM {
     /// Typically only used indirectly as a temporary when performing
     /// \code
     /// Coordinate coord;
-    /// coord.cart() = Eigen::Vector3d(a,b,c);
+    /// coord.cart() = Coordinate::vector_type(a,b,c);
     /// \endcode
     ///
     class CartCoordinate {
@@ -310,37 +366,47 @@ namespace CASM {
       explicit CartCoordinate(Coordinate &coord) :
         m_coord(&coord) {}
 
-      template<typename Derived>
-      CartCoordinate &operator=(const Eigen::MatrixBase<Derived> &vec) {
+      CartCoordinate &operator=(const Eigen::Ref<const Coordinate::vector_type> &vec) {
         m_coord->_set_cart(vec);
         return *this;
       }
 
-      template<typename Derived>
-      CartCoordinate &operator+=(const Eigen::MatrixBase<Derived> &vec) {
-        m_coord->_set_cart(m_coord->m_vec[CART] + vec);
+      CartCoordinate &operator+=(const Eigen::Ref<const Coordinate::vector_type> &vec) {
+        (m_coord->m_cart_coord) += vec;
+        m_coord->_update_frac();
         return *this;
       }
 
-      template<typename Derived>
-      CartCoordinate &operator-=(const Eigen::MatrixBase<Derived> &vec) {
-        m_coord->_set_cart(m_coord->m_vec[CART] - vec);
+      CartCoordinate &operator-=(const Eigen::Ref<const Coordinate::vector_type> &vec) {
+        (m_coord->m_cart_coord) -= vec;
+        m_coord->_update_frac();
         return *this;
       }
 
       CartCoordinate &operator*=(double val) {
-        m_coord->_set_cart(m_coord->m_vec[CART]*val);
+        (m_coord->m_frac_coord) *= val;
+        (m_coord->m_cart_coord) *= val;
         return *this;
       }
 
       CartCoordinate &operator/=(double val) {
-        m_coord->_set_cart(m_coord->m_vec[CART] / val);
+        (m_coord->m_frac_coord) /= val;
+        (m_coord->m_cart_coord) /= val;
         return *this;
       }
 
-      operator const Eigen::Vector3d &() const {
-        return m_coord->m_vec[CART];
+      operator const Eigen::MatrixBase<Eigen::Vector3d> &() const {
+        return m_coord->m_cart_coord;
       }
+
+      operator const Eigen::Vector3d &() const {
+        return m_coord->m_cart_coord;
+      }
+
+      operator Eigen::Ref<const Eigen::Vector3d> () const {
+        return m_coord->m_cart_coord;
+      }
+
 
     private:
 
@@ -371,27 +437,27 @@ namespace CASM {
       }
 
       CartCoordinateComponent &operator+=(double val) {
-        m_coord->_set_cart(m_index, m_coord->m_vec[CART](m_index) + val);
+        m_coord->_set_cart(m_index, m_coord->m_cart_coord(m_index) + val);
         return *this;
       }
 
       CartCoordinateComponent &operator-=(double val) {
-        m_coord->_set_cart(m_index, m_coord->m_vec[CART](m_index) - val);
+        m_coord->_set_cart(m_index, m_coord->m_cart_coord(m_index) - val);
         return *this;
       }
 
       CartCoordinateComponent &operator*=(double val) {
-        m_coord->_set_cart(m_index, m_coord->m_vec[CART](m_index)*val);
+        m_coord->_set_cart(m_index, m_coord->m_cart_coord(m_index)*val);
         return *this;
       }
 
       CartCoordinateComponent &operator/=(double val) {
-        m_coord->_set_cart(m_index, m_coord->m_vec[CART](m_index) / val);
+        m_coord->_set_cart(m_index, m_coord->m_cart_coord(m_index) / val);
         return *this;
       }
 
       operator const double &() const {
-        return m_coord->m_vec[CART](m_index);
+        return m_coord->m_cart_coord(m_index);
       }
 
     private:
@@ -401,5 +467,17 @@ namespace CASM {
     };
   }
 
-};
+}
+
+namespace std {
+  template<>
+  struct is_floating_point<CASM::Coordinate_impl::FracCoordinateComponent> {
+    static const bool value = true;
+  };
+
+  template<>
+  struct is_floating_point<CASM::Coordinate_impl::CartCoordinateComponent> {
+    static const bool value = true;
+  };
+}
 #endif

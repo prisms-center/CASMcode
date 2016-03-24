@@ -65,12 +65,34 @@ template<typename T> class variable_if_dynamic<T, Dynamic>
     void setValue(T value) { m_value = value; }
 };
 
+/** \internal like variable_if_dynamic but for DynamicIndex
+  */
+template<typename T, int Value> class variable_if_dynamicindex
+{
+  public:
+    EIGEN_EMPTY_STRUCT_CTOR(variable_if_dynamicindex)
+    explicit variable_if_dynamicindex(T v) { EIGEN_ONLY_USED_FOR_DEBUG(v); assert(v == T(Value)); }
+    static T value() { return T(Value); }
+    void setValue(T) {}
+};
+
+template<typename T> class variable_if_dynamicindex<T, DynamicIndex>
+{
+    T m_value;
+    variable_if_dynamicindex() { assert(false); }
+  public:
+    explicit variable_if_dynamicindex(T value) : m_value(value) {}
+    T value() const { return m_value; }
+    void setValue(T value) { m_value = value; }
+};
+
 template<typename T> struct functor_traits
 {
   enum
   {
     Cost = 10,
-    PacketAccess = false
+    PacketAccess = false,
+    IsRepeatable = false
   };
 };
 
@@ -319,7 +341,7 @@ template<typename T, int n=1, typename PlainObject = typename eval<T>::type> str
 };
 
 template<typename T>
-T* const_cast_ptr(const T* ptr)
+inline T* const_cast_ptr(const T* ptr)
 {
   return const_cast<T*>(ptr);
 }
@@ -344,17 +366,17 @@ struct dense_xpr_base<Derived, ArrayXpr>
 
 /** \internal Helper base class to add a scalar multiple operator
   * overloads for complex types */
-template<typename Derived,typename Scalar,typename OtherScalar,
+template<typename Derived, typename Scalar, typename OtherScalar, typename BaseType,
          bool EnableIt = !is_same<Scalar,OtherScalar>::value >
-struct special_scalar_op_base : public DenseCoeffsBase<Derived>
+struct special_scalar_op_base : public BaseType
 {
   // dummy operator* so that the
   // "using special_scalar_op_base::operator*" compiles
   void operator*() const;
 };
 
-template<typename Derived,typename Scalar,typename OtherScalar>
-struct special_scalar_op_base<Derived,Scalar,OtherScalar,true>  : public DenseCoeffsBase<Derived>
+template<typename Derived,typename Scalar,typename OtherScalar, typename BaseType>
+struct special_scalar_op_base<Derived,Scalar,OtherScalar,BaseType,true>  : public BaseType
 {
   const CwiseUnaryOp<scalar_multiple2_op<Scalar,OtherScalar>, Derived>
   operator*(const OtherScalar& scalar) const

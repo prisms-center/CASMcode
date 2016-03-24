@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/symmetry/SymPermutation.hh"
@@ -163,7 +164,7 @@ namespace CASM {
         //If all atoms in the basis are mapped successfully, try to add the corresponding
         //symmetry operation to the factor_group
         if(num_suc_maps == basis.size()) {
-          SymOp tSym(SymOp(t_tau)*point_group[pg]);
+          SymOp tSym(SymOp::translation(t_tau.cart())*point_group[pg]);
           tSym.set_map_error(max_error);
 
           if(!factor_group.contains(tSym)) {
@@ -213,9 +214,8 @@ namespace CASM {
       }
       else {
         for(Index j = 0; j < prim_grid.size(); j++) {
-          factor_group.push_back(SymOp(prim_grid.coord(j, SCEL))*prim_fg[i]);
+          factor_group.push_back(SymOp::translation(prim_grid.coord(j, SCEL).cart())*prim_fg[i]);
           // set lattice, in case SymOp::operator* ever changes
-          factor_group.back().set_lattice(lattice(), CART);
         }
       }
     }
@@ -391,9 +391,6 @@ namespace CASM {
   void BasicStructure<CoordType>::fill_supercell(const BasicStructure<CoordType> &prim, double map_tol) {
     Index i, j;
 
-    //Updating lattice_trans matrices that connect the supercell to primitive -- Changed 11/08/12
-    m_lattice.calc_conversions();
-
     copy_attributes_from(prim);
 
     PrimGrid prim_grid(prim.lattice(), lattice());
@@ -492,8 +489,8 @@ namespace CASM {
   template<typename CoordType>
   bool BasicStructure<CoordType>::is_primitive(BasicStructure<CoordType> &new_prim, double prim_tol) const {
     Coordinate tshift(lattice());//, bshift(lattice);
-    Vector3<double> prim_vec0(lattice()[0]), prim_vec1(lattice()[1]), prim_vec2(lattice()[2]);
-    Array<Vector3< double > > shift;
+    Eigen::Vector3d prim_vec0(lattice()[0]), prim_vec1(lattice()[1]), prim_vec2(lattice()[2]);
+    Array<Eigen::Vector3d > shift;
     Index b1, b2, b3, sh, sh1, sh2;
     Index num_suc_maps;
     double tvol, min_vol;
@@ -516,7 +513,7 @@ namespace CASM {
       }
       if(num_suc_maps == basis.size()) {
         prim_flag = false;
-        shift.push_back(tshift(CART));
+        shift.push_back(tshift.cart());
       }
     }
 
@@ -555,7 +552,7 @@ namespace CASM {
     //superstructures. We eliminate the noise by reconstructing it now via
     //rounded to integer transformation matrix.
 
-    Matrix3<double> transmat, invtransmat, reduced_new_lat_mat;
+    Eigen::Matrix3d transmat, invtransmat, reduced_new_lat_mat;
     SymGroup pgroup;
     reduced_new_lat.generate_point_group(pgroup, prim_tol);
 
@@ -634,11 +631,6 @@ namespace CASM {
       std::cout << "*******************************************\n";
       exit(1);
     }
-
-
-    // This is needed to update conversions from primitive to supercell -- probably no longer necessary
-    m_lattice.calc_conversions();
-    m_lattice.calc_properties(); // This updates prim_vol
 
     //Get prim grid of supercell to get the lattice translations
     //necessary to stamp the prim in the superstructure
@@ -731,8 +723,8 @@ namespace CASM {
     if(b == basis.size()) {
       std::cerr << "ERROR in BasicStructure::get_unit_cell_coord" << std::endl
                 << "Could not find a matching basis site." << std::endl
-                << "  Looking for: FRAC: " << tsite(FRAC) << "\n"
-                << "               CART: " << tsite(CART) << "\n";
+                << "  Looking for: FRAC: " << tsite.frac() << "\n"
+                << "               CART: " << tsite.cart() << "\n";
       exit(1);
     }
 
@@ -754,7 +746,7 @@ namespace CASM {
       assert(0);
       exit(1);
     }
-    Coordinate trans(Vector3<double>(ucc[1], ucc[2], ucc[3]), lattice(), FRAC);
+    Coordinate trans(Eigen::Vector3d(ucc[1], ucc[2], ucc[3]), lattice(), FRAC);
     return basis[ucc[0]] + trans;
   }
 
@@ -895,7 +887,7 @@ namespace CASM {
             smallest = dist;
           }
         }
-        bshift(CART) *= (1.0 / relaxed_factors.size());
+        bshift.cart() *= (1.0 / relaxed_factors.size());
         avg_basis[b] += bshift;
       }
 
@@ -935,21 +927,21 @@ namespace CASM {
   //***********************************************************
 
   template<typename CoordType>
-  void BasicStructure<CoordType>::add_vacuum_shift(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness, Vector3<double> shift, COORD_TYPE mode) const {
+  void BasicStructure<CoordType>::add_vacuum_shift(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const {
 
     Coordinate cshift(shift, lattice(), mode);    //John G 121030
-    if(!almost_zero(cshift(FRAC)[2])) {
-      std::cout << cshift(FRAC) << std::endl;
+    if(!almost_zero(cshift.frac(2))) {
+      std::cout << cshift.const_frac() << std::endl;
       std::cout << "WARNING: You're shifting in the c direction! This will mess with your vacuum and/or structure!!" << std::endl;
       std::cout << "See BasicStructure<CoordType>::add_vacuum_shift" << std::endl;
     }
 
-    Vector3<double> vacuum_vec;                 //unit vector perpendicular to ab plane
+    Eigen::Vector3d vacuum_vec;                 //unit vector perpendicular to ab plane
     vacuum_vec = lattice()[0].cross(lattice()[1]);
     vacuum_vec.normalize();
     Lattice new_lattice(lattice()[0],
                         lattice()[1],
-                        lattice()[2] + vacuum_thickness * vacuum_vec + cshift(CART)); //Add vacuum and shift to c vector
+                        lattice()[2] + vacuum_thickness * vacuum_vec + cshift.cart()); //Add vacuum and shift to c vector
 
     new_surface_struc = *this;
     new_surface_struc.set_lattice(new_lattice, CART);
@@ -960,19 +952,19 @@ namespace CASM {
   //***********************************************************
   template<typename CoordType>
   void BasicStructure<CoordType>::add_vacuum_shift(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness, Coordinate shift) const {
-    if(shift.get_home() != &lattice()) {
+    if(&(shift.home()) != &lattice()) {
       std::cout << "WARNING: The lattice from your shift coordinate does not match the lattice of your structure!" << std::endl;
       std::cout << "See BasicStructure<CoordType>::add_vacuum_shift" << std::endl << std::endl;
     }
 
-    add_vacuum_shift(new_surface_struc, vacuum_thickness, shift(CART), CART);
+    add_vacuum_shift(new_surface_struc, vacuum_thickness, shift.cart(), CART);
     return;
   }
 
   //***********************************************************
   template<typename CoordType>
   void BasicStructure<CoordType>::add_vacuum(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness) const {
-    Vector3<double> shift(0, 0, 0);
+    Eigen::Vector3d shift(0, 0, 0);
 
     add_vacuum_shift(new_surface_struc, vacuum_thickness, shift, FRAC);
 
@@ -1014,7 +1006,7 @@ namespace CASM {
     m_lattice.read(stream);
 
     stream.ignore(100, '\n');
-    
+
     //Search for Element Names
     ch = stream.peek();
     while(ch != '\n' && !stream.eof()) {
@@ -1128,7 +1120,7 @@ namespace CASM {
     }
 
     // Check whether there are additional sites listed in the input file
-    Vector3< double > coord;
+    Eigen::Vector3d coord;
     stream >> coord;
     if((stream.rdstate() & std::ifstream::failbit) == 0) {
       std::cerr << "ERROR: too many sites listed in structure input file." << std::endl;
@@ -1152,11 +1144,11 @@ namespace CASM {
 
     for(Index i = 0; i < basis.size(); i++) {
       stream << std::setw(2) << basis[i].occ_name() << " ";
-      stream << std::setw(12) << basis[i](CART) << '\n';
+      stream << std::setw(12) << basis[i].cart() << '\n';
     }
 
   }
-  
+
   //***********************************************************
 
   template<typename CoordType>

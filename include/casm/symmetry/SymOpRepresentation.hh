@@ -55,8 +55,24 @@ namespace CASM {
       return nullptr;
     };
 
+
+    /// get pointer to matrix representation corresponding to rep_ID
+    Eigen::MatrixXd const *get_matrix_rep(Index rep_ID) const;
+
+    /// get pointer to permutation representation corresponding to rep_ID
+    Permutation const *get_permutation_rep(Index rep_ID) const;
+
+    /// get pointer to BasisPermute representation corresponding to rep_ID
+    SymBasisPermute const *get_basis_permute_rep(Index rep_ID) const;
+
+    /// get array of pointers to matrix representations for representations corresponding to rep_IDs
+    Array<Eigen::MatrixXd const * > get_matrix_reps(Array<Index> rep_IDs) const;
+
+    /// set representation for SymOp corresponding to rep_ID
+    void set_rep(Index rep_ID, const SymOpRepresentation &op_rep) const;
+
     /// Change m_master_group and determine op_index
-    void set_rep(const MasterSymGroup &new_group, Index new_rep_ID);
+    void set_identifiers(const MasterSymGroup &new_group, Index new_rep_ID);
 
     /// Set m_master_group, rep_ID, and op_index
     void set_identifiers(const MasterSymGroup &new_group, Index new_rep_ID, Index new_op_index);

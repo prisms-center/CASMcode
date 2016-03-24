@@ -37,8 +37,6 @@ namespace CASM {
     /// \brief Construct cubic primitive cell of unit volume
     static Lattice hexagonal();
 
-    Lattice &operator=(const Lattice &RHS);
-
     LatVec operator[](Index i)const {
       return m_lat_mat.col(i);
     }
@@ -135,10 +133,6 @@ namespace CASM {
     ///Checks if lattice is a supercell of tile, applying operations from symlist
     bool is_supercell_of(const Lattice &tile, double _tol = TOL) const;
     bool is_supercell_of(const Lattice &tile, const Array<SymOp> &symlist, double _tol = TOL) const;
-
-    /// Finds 'new_scel' equivalent to '*this' and 'new_prim' equivalent to 'prim', such that 'new_prim' perfectly tiles 'new_scel'
-    /// Returns true if tesselation cannot be found.
-    bool find_tessellation(Lattice &prim, Lattice &new_scel, Lattice &new_prim) const;
 
     ///Return a lattice with diagonal matrix that fits around starting lattice
     Lattice box(const Lattice &prim, const Lattice &scel, bool verbose = false) const;
@@ -254,7 +248,7 @@ namespace CASM {
   Array<CoordType> Lattice::gridstruc_build(double max_radius, double min_radius, Array<CoordType> basis, CoordType2 lat_point) {
     Eigen::Vector3i dim;
     dim = enclose_sphere(max_radius);
-    Counter<Eigen::Vector3i > grid_count(-dim, dim, Eigen::Vector3i(1));
+    EigenCounter<Eigen::Vector3i > grid_count(-dim, dim, Eigen::Vector3i(1));
     double min_dist, dist;
     Array<CoordType> gridstruc;
     Eigen::Vector3i temp;
@@ -315,7 +309,7 @@ namespace CASM {
   // A column of trans_mat specifies a lattice vector of the supercell in terms of the
   // lattice vectors of (*this) lattice.
   template <typename T>
-  Lattice Lattice::make_supercell(const Matrix3<T> &trans_mat) const {
+  Lattice Lattice::make_supercell(const Eigen::Matrix<T, 3, 3> &trans_mat) const {
     return Lattice(lat_column_mat() * trans_mat);
   }
 
@@ -326,7 +320,7 @@ namespace CASM {
   /// \param lat a \ref Lattice
   ///
   inline double volume(const Lattice &lat) {
-    return lat[0].dot(lat[1].cross(lat[2]));
+    return lat.lat_column_mat().determinant();
   }
 
   /// \brief Returns a super Lattice

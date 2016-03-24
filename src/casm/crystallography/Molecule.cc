@@ -158,17 +158,6 @@ namespace CASM {
     return *this;
   }
 
-  //****************************************************
-  /**
-   *
-   */
-  //****************************************************
-
-  void Molecule::invalidate(COORD_TYPE mode) {
-    center.invalidate(mode);
-    for(Index i = 0; i < size(); i++)
-      at(i).invalidate(mode);
-  }
 
   //****************************************************
   /**
@@ -270,13 +259,10 @@ namespace CASM {
         push_back(apos);
       }
 
-      Coordinate coord(*home());
-      SymOp op(coord);
       point_group.clear();
       if(json.contains("point_group")) {
         for(int i = 0; i < json["point_group"].size(); i++) {
-          CASM::from_json(op, json["point_group"][i]);
-          point_group.push_back(op);
+          point_group.push_back(json["point_group"][i].get<SymOp>());
         }
       }
       CASM::from_json(center, json["center"]);
@@ -290,26 +276,26 @@ namespace CASM {
 
 
   /// \brief Return an atomic Molecule with specified name and Lattice
-  Molecule make_atom(std::string atom_name, const Lattice& lat) {
+  Molecule make_atom(std::string atom_name, const Lattice &lat) {
     Molecule atom(lat);
     atom.name = atom_name;
-    atom.push_back(AtomPosition(0.0, 0.0, 0.0, atom.name, lat));
+    atom.push_back(AtomPosition(0.0, 0.0, 0.0, atom.name, lat, CART));
     return atom;
   }
-  
+
   /// \brief Return an vacancy Molecule with specified Lattice
-  Molecule make_vacancy(const Lattice& lat) {
+  Molecule make_vacancy(const Lattice &lat) {
     return make_atom("Va", lat);
   }
-  
+
   /// \brief Return true if Molecule name matches 'name', including Va name checks
   ///
   /// Equivalent to:
   /// \code
   /// ( (is_vacancy(mol.name) && is_vacancy(name)) || (mol.name == name) )
-  /// \endcode 
+  /// \endcode
   ///
-  bool is_molecule_name(const Molecule& mol, std::string name) {
+  bool is_molecule_name(const Molecule &mol, std::string name) {
     return (is_vacancy(mol.name) && is_vacancy(name)) || (mol.name == name);
   }
 

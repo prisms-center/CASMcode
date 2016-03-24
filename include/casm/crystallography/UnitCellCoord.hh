@@ -132,8 +132,8 @@ namespace CASM {
   UnitCellCoord::UnitCellCoord(CoordType coord, const StrucType &struc, double tol) {
     for(Index b = 0; b < struc.basis.size(); ++b) {
       auto diff = coord - struc.basis[b];
-      if(is_integer(diff(FRAC), tol)) {
-        *this = UnitCellCoord(b, lround(diff(FRAC)));
+      if(is_integer(diff.frac(), tol)) {
+        *this = UnitCellCoord(b, lround(diff.frac()));
         return;
       }
     }

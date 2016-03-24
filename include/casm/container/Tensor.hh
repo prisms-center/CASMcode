@@ -71,7 +71,7 @@ namespace CASM {
       resize(N);
     };
 
-    Tensor(const Matrix3<T> &mat_init) : Nrank(2), Ndim(2, 3) {
+    Tensor(const Eigen::Matrix<T, 3, 3> &mat_init) : Nrank(2), Ndim(2, 3) {
       Index N = 1;
       idim.resize(Nrank);
       max_ind.resize(Nrank);
@@ -170,7 +170,7 @@ namespace CASM {
 
     void read(std::istream &stream); //Added by Ivy -- TODO: Make more general for not just rank 2 tensors
 
-    Tensor<T> matrix_multiply(Vector3<T> &tvec);
+    //Tensor<T> matrix_multiply(Vector3<T> &tvec);
 
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> convert_to_Eigen() const;
 
@@ -828,7 +828,7 @@ namespace CASM {
       do {
         tval = at(jcount());
         for(nd = 0; nd < Nrank; nd++)
-          tval *= op(icount[nd], jcount[nd], CART);
+          tval *= op.matrix()(icount[nd], jcount[nd]);
         ttens(icount()) += tval;
 
       }
@@ -865,7 +865,7 @@ namespace CASM {
    * a Vector3.  It returns a rank 2 tensor of dimension 3x1
    */
   //************************************************************
-  template<class T>
+  /*template<class T>
   Tensor<T> Tensor<T>::matrix_multiply(Vector3<T> &tvec) {
 
     Index j = 0;
@@ -884,7 +884,7 @@ namespace CASM {
     return result;
 
   };
-
+  */
   //************************************************************
 
   template<class T>
