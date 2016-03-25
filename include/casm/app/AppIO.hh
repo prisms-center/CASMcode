@@ -340,22 +340,25 @@ namespace CASM {
     CompositionAxes() {}
 
     /// \brief Read CompositionAxes from file
-    CompositionAxes(fs::path filename);
+    CompositionAxes(fs::path _filename);
 
     /// \brief Read CompositionAxes from JSON
     CompositionAxes(const jsonParser &json);
 
     /// \brief Read CompositionAxes from file
-    void read(fs::path filename);
+    void read(fs::path _filename);
 
     /// \brief Read CompositionAxes from JSON
     void read(const jsonParser &json, fs::path filename = fs::path());
 
     /// \brief Write CompositionAxes to file
-    void write(fs::path filename) const;
+    void write(fs::path _filename);
 
     /// \brief Write CompositionAxes to JSON
     void write(jsonParser &json) const;
+    
+    /// \brief Set this->curr using key
+    void select(std::string key);
 
 
     std::map<std::string, CompositionConverter> standard;
@@ -363,6 +366,7 @@ namespace CASM {
     bool has_current_axes = false;
     std::string curr_key;
     CompositionConverter curr;
+    fs::path filename;
 
     int err_code = 0;
     std::string err_message;
@@ -380,15 +384,15 @@ namespace CASM {
   ///
   /// - Stores err_code and err_message for non-fatal errors
   /// - Catches and throws any exceptions
-  inline CompositionAxes::CompositionAxes(fs::path filename) {
+  inline CompositionAxes::CompositionAxes(fs::path _filename) {
 
     try {
 
-      read(jsonParser(filename), filename);
+      read(jsonParser(_filename), _filename);
 
     }
     catch(...) {
-      std::cerr << "Error reading composition axes from " << filename << std::endl;
+      std::cerr << "Error reading composition axes from " << _filename << std::endl;
       throw;
     }
   }
@@ -401,25 +405,27 @@ namespace CASM {
     read(json);
   }
 
-  inline void CompositionAxes::read(fs::path filename) {
+  inline void CompositionAxes::read(fs::path _filename) {
 
     try {
 
-      read(jsonParser(filename), filename);
+      read(jsonParser(_filename), _filename);
 
     }
     catch(...) {
 
-      std::cerr << "Error reading composition axes from " << filename << std::endl;
+      std::cerr << "Error reading composition axes from " << _filename << std::endl;
       throw;
     }
   }
 
-  inline void CompositionAxes::read(const jsonParser &json, fs::path filename) {
+  inline void CompositionAxes::read(const jsonParser &json, fs::path _filename) {
 
     try {
-
+      
       *this = CompositionAxes();
+      
+      filename = _filename;
 
       if(json.contains("standard_axes")) {
         read_composition_axes(std::inserter(standard, standard.begin()), json["standard_axes"]);
@@ -428,48 +434,12 @@ namespace CASM {
       if(json.contains("custom_axes")) {
         read_composition_axes(std::inserter(custom, custom.begin()), json["custom_axes"]);
       }
-
-      has_current_axes = json.get_if(curr_key, "current_axes");
+      
+      std::string key;
+      has_current_axes = json.get_if(key, "current_axes");
 
       if(has_current_axes) {
-
-        if(standard.find(curr_key) != standard.cend() &&
-           custom.find(curr_key) != custom.cend()) {
-
-          std::string tmp = filename.empty() ? "the JSON" : filename.string();
-
-          std::stringstream ss;
-          ss << "Error: The current composition axes specified in " << tmp <<
-             " can found in both the standard and custom compostion axes.\n\n" <<
-             "Please edit the custom composition axes to remove this ambiguity.";
-
-          err_message = ss.str();
-
-          err_code = 1;
-
-        }
-        else if(standard.find(curr_key) == standard.cend() &&
-                custom.find(curr_key) == custom.cend()) {
-
-          std::string tmp = filename.empty() ? "the JSON" : filename.string();
-
-          std::stringstream ss;
-          ss << "Warning: The current composition axes specified in " << tmp <<
-             " can not be found in the standard or custom compostion axes.\n\n" <<
-             "Please use 'casm composition --select' to re-select your composition axes,\n" <<
-             "Please use 'casm composition --calc' to re-calc your standard axes,\n" <<
-             "or edit the custom composition axes.";
-
-          err_message = ss.str();
-
-          err_code = 2;
-        }
-        else if(standard.find(curr_key) != standard.cend()) {
-          curr = standard[curr_key];
-        }
-        else if(custom.find(curr_key) != custom.cend()) {
-          curr = custom[curr_key];
-        }
+        select(key);
       }
 
     }
@@ -479,8 +449,9 @@ namespace CASM {
   }
 
   /// \brief Write CompositionAxes to file
-  inline void CompositionAxes::write(fs::path filename) const {
-
+  inline void CompositionAxes::write(fs::path _filename) {
+    
+    filename = _filename;
     SafeOfstream outfile;
     outfile.open(filename);
     jsonParser json;
@@ -509,6 +480,47 @@ namespace CASM {
     }
 
   }
+  
+  /// \brief Set this->curr using key
+  inline void CompositionAxes::select(std::string key) {
+    if(standard.find(key) != standard.cend() &&
+       custom.find(key) != custom.cend()) {
+
+      std::stringstream ss;
+      ss << "Error: The composition axes " << key <<
+         " can found in both the standard and custom compostion axes.\n\n" <<
+         "Please edit the custom composition axes to remove this ambiguity.";
+
+      err_message = ss.str();
+
+      err_code = 1;
+
+    }
+    else if(standard.find(key) == standard.cend() &&
+            custom.find(key) == custom.cend()) {
+
+      std::stringstream ss;
+      ss << "Warning: The composition axes " << key <<
+         " can not be found in the standard or custom compostion axes.\n\n" <<
+         "Please use 'casm composition --select' to re-select your composition axes,\n" <<
+         "Please use 'casm composition --calc' to re-calc your standard axes,\n" <<
+         "or edit the custom composition axes.";
+
+      err_message = ss.str();
+
+      err_code = 2;
+    }
+    else if(standard.find(key) != standard.cend()) {
+      curr = standard[key];
+    }
+    else if(custom.find(key) != custom.cend()) {
+      curr = custom[key];
+    }
+    curr_key = key;
+    has_current_axes = true;
+        
+  }
+
 
   /// \brief Read standard axes from JSON, and output to std::map<std::string, CompositionConverter>
   ///
