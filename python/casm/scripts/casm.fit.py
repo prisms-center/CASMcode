@@ -3,6 +3,7 @@ import os, json, time, pickle
 from casm.project import Selection, Project, query, write_eci
 from math import sqrt
 from sklearn.metrics import mean_squared_error
+import sklearn.feature_selection
 import casm.fit
 import argparse
 import deap.tools
@@ -26,7 +27,13 @@ def main(sel, input, format=None, verbose=True):
   t = time.clock()
   selector.fit(fdata.wcorr, fdata.wvalue)
   if verbose:
+    # custom for SelectFromModel
+    if hasattr(selector, "estimator_") and hasattr(selector.estimator_, "n_iter_"):
+      print "#   Iterations:", selector.estimator_.n_iter_
+    if hasattr(selector, "threshold"):
+      print "#   Feature selection threshold:", selector.threshold
     print "#   DONE  Runtime:", time.clock() - t, "(s)\n"
+  
   
   # construct hall of fame
   halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
@@ -53,6 +60,7 @@ def main(sel, input, format=None, verbose=True):
     
     hall.update(selector.halloffame)
   else:
+    print [1 if x else 0 for x in selector.get_support()]
     indiv = casm.fit.creator.Individual(selector.get_support())
     print "Adding statistics..."
     indiv.fitness.values = casm.fit.cross_validation.cross_val_score(
@@ -85,7 +93,10 @@ if __name__ == "__main__":
   parser.add_argument('--format', help='Hall of fame print format', type=str, default=None)
   parser.add_argument('--path', help='Path to CASM project. Default assumes the current directory is in the CASM project.', type=str, default=os.getcwd())
   parser.add_argument('--settings_format', help='Print input file description', action="store_true")
-  parser.add_argument('--settings_example', help='Print example input file', action="store_true")
+  parser.add_argument('--exLasso', help='Print example input file using Lasso', action="store_true")
+  parser.add_argument('--exLassoCV', help='Print example input file using LassoCV', action="store_true")
+  parser.add_argument('--exRFE', help='Print example input file using Recursive Feature Elimination (RFE)', action="store_true")
+  parser.add_argument('--exGeneticAlgorithm', help='Print example input file using GeneticAlgorithm', action="store_true")
   parser.add_argument('--hall', help='Print hall of fame summary', action="store_true")
   parser.add_argument('--indiv', nargs='+', help='Print individual summary. Expects index of individual in hall of fame', type=int)
   parser.add_argument('--select', nargs=1, help='Select individual to use', type=int)
@@ -95,8 +106,17 @@ if __name__ == "__main__":
     casm.fit.print_input_help()
     exit()
   
-  if args.settings_example:
-    print json.dumps(casm.fit.example_input(), indent=2)
+  if args.exLasso:
+    print json.dumps(casm.fit.example_input_Lasso(), indent=2)
+    exit()
+  elif args.exLassoCV:
+    print json.dumps(casm.fit.example_input_LassoCV(), indent=2)
+    exit()
+  elif args.exRFE:
+    print json.dumps(casm.fit.example_input_RFE(), indent=2)
+    exit()
+  elif args.exGeneticAlgorithm:
+    print json.dumps(casm.fit.example_input_GeneticAlgorithm(), indent=2)
     exit()
   
   if args.settings:
@@ -143,6 +163,33 @@ if __name__ == "__main__":
       main(sel, input, verbose=True, format=args.format)
   
   else:
+    
+    print \
+    """
+    Fitting is performed in four steps:
+    
+    1) Select training data.
+      Create a selection of configurations to include in the regression problem.
+    
+    2) Select scoring metric.
+      Add sample weights to configurations if desired and select a cross validation
+      method.
+    
+    3) Select estimator.
+      Choose how to solve for ECI from calculated property and correlations. For
+      instance: LinearRegression, Lasso, or Ridge regression.
+    
+    4) Select features.
+      Select which basis functions to include in the cluster expansion. For instance,
+      SelectFromModel along with a l-1 norm minimizing estimator. Or GeneticAlgorithm.
+    
+    
+    To proceed, create a fitting directory: 
+      mkdir fit1; cd fit1
+    
+    
+    
+    """
     
     parser.print_help()
 

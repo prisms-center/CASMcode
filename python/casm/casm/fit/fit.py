@@ -33,31 +33,168 @@ def find_method(mods, attrname):
   raise AttributeError("Could not find: " + attrname)
 
 
-def example_input():
+def example_input_Lasso():
   input = dict()
 
   # regression estimator
   input["estimator"] = dict()
-  input["estimator"]["method"] = "LinearRegression"
-  input["estimator"]["kwargs"] = None
+  input["estimator"]["method"] = "Lasso"
+  input["estimator"]["kwargs"] = dict()
+  input["estimator"]["kwargs"]["alpha"] = 1e-4
+  input["estimator"]["kwargs"]["max_iter"] = 1e6
+  
+  # feature selection
+  input["feature_selection"] = dict()
+  input["feature_selection"]["method"] = "SelectFromModel"
+  input["feature_selection"]["kwargs"] = None
   
   # property begin fit
   input["property"] = "formation_energy"
   
   # sample weighting
   input["weight"] = dict()
-  input["weight"]["method"] = None
-  input["weight"]["kwargs"] = None
+  input["weight"]["method"] = "wHullDist"
+  input["weight"]["kwargs"] = dict()
+  input["weight"]["kwargs"]["A"] = 0.0
+  input["weight"]["kwargs"]["B"] = 1.0
+  input["weight"]["kwargs"]["kT"] = 0.01
   
   # cross validation
   input["cv"] = dict()
-  input["cv"]["method"] = "LeaveOneOut"
-  input["cv"]["kwargs"] = None
+  input["cv"]["method"] = "KFold"
+  input["cv"]["kwargs"] = dict()
+  input["cv"]["kwargs"]["n_folds"] = 10
   input["cv"]["penalty"] = 0.0
   
   # hall of fame
   input["halloffame_size"] = 25
   
+  return input
+
+def example_input_LassoCV():
+  input = dict()
+
+  # regression estimator
+  input["estimator"] = dict()
+  input["estimator"]["method"] = "LassoCV"
+  input["estimator"]["kwargs"] = dict()
+  input["estimator"]["kwargs"]["eps"] = 1e-6
+  input["estimator"]["kwargs"]["n_alphas"] = 100
+  input["estimator"]["kwargs"]["max_iter"] = 1e6
+  
+  # feature selection
+  input["feature_selection"] = dict()
+  input["feature_selection"]["method"] = "SelectFromModel"
+  input["feature_selection"]["kwargs"] = None
+  
+  # property begin fit
+  input["property"] = "formation_energy"
+  
+  # sample weighting
+  input["weight"] = dict()
+  input["weight"]["method"] = "wHullDist"
+  input["weight"]["kwargs"] = dict()
+  input["weight"]["kwargs"]["A"] = 0.0
+  input["weight"]["kwargs"]["B"] = 1.0
+  input["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  input["cv"] = dict()
+  input["cv"]["method"] = "KFold"
+  input["cv"]["kwargs"] = dict()
+  input["cv"]["kwargs"]["n_folds"] = 10
+  input["cv"]["penalty"] = 0.0
+  
+  # hall of fame
+  input["halloffame_size"] = 25
+  
+  return input
+
+def example_input_RFE():
+  input = dict()
+
+  # regression estimator
+  input["estimator"] = dict()
+  input["estimator"]["method"] = "LinearRegression"
+  
+  # feature selection
+  input["feature_selection"] = dict()
+  input["feature_selection"]["method"] = "RFE"
+  input["feature_selection"]["kwargs"] = dict()
+  input["feature_selection"]["kwargs"]["n_features_to_select"] = 25
+  
+  
+  # property begin fit
+  input["property"] = "formation_energy"
+  
+  # sample weighting
+  input["weight"] = dict()
+  input["weight"]["method"] = "wHullDist"
+  input["weight"]["kwargs"] = dict()
+  input["weight"]["kwargs"]["A"] = 0.0
+  input["weight"]["kwargs"]["B"] = 1.0
+  input["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  input["cv"] = dict()
+  input["cv"]["method"] = "LeaveOneOut"
+  input["cv"]["penalty"] = 0.0
+  
+  # hall of fame
+  input["halloffame_size"] = 25
+  
+  return input
+
+def example_input_GeneticAlgorithm():
+  input = dict()
+  
+  # regression estimator
+  input["estimator"] = dict()
+  input["estimator"]["method"] = "LinearRegression"
+  
+  # feature selection
+  input["feature_selection"] = dict()
+  input["feature_selection"]["method"] = "GeneticAlgorithm"
+  d = {
+    "constraints_kwargs": { 
+      "Nbfunc_max": "all", 
+      "Nbfunc_min": 5, 
+      "FixOff": [], 
+      "FixOn": []
+    }, 
+    "selTournamentSize": 3, 
+    "mutFlipBitProb": 0.01, 
+    "evolve_params_kwargs": {
+      "Ngen": 10, 
+      "Nrep": 10, 
+      "Nbfunc_init": 5, 
+      "Npop": 100, 
+      "halloffame_filename": "ga_halloffame.pkl", 
+      "halloffame_size": 50
+    }, 
+    "cxUniformProb": 0.5
+  }
+  input["feature_selection"]["kwargs"] = d
+  
+  
+  # property begin fit
+  input["property"] = "formation_energy"
+  
+  # sample weighting
+  input["weight"] = dict()
+  input["weight"]["method"] = "wHullDist"
+  input["weight"]["kwargs"] = dict()
+  input["weight"]["kwargs"]["A"] = 0.0
+  input["weight"]["kwargs"]["B"] = 1.0
+  input["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  input["cv"] = dict()
+  input["cv"]["method"] = "LeaveOneOut"
+  input["cv"]["penalty"] = 0.0
+  
+  # hall of fame
+  input["halloffame_size"] = 25
   
   return input
 
@@ -87,6 +224,15 @@ def print_input_help():
   # A scikit-learn linear model estimator name and keyword args used to construct  
   # the estimator object. Options include: 'LinearRegression', 'Ridge', 'Lasso', etc. 
   # See: http://scikit-learn.org/stable/modules/linear_model.html
+  #
+  # Note: The 'LinearRegression' estimator is implemented using 
+  # casm.fit.linear_model.LinearRegressionForLOOCV', which solves X*b=y using:
+  #
+  #   b = np.dot(S, y)
+  #   S = np.linalg.pinv(X.transpose().dot(X)).dot(X.transpose())
+  #   y_pred = np.dot(H, y)
+  #   H = np.dot(X, S)
+  #
   # By default, the kwarg "fit_intercept" is set to False.
     "estimator": {
       "method": "LinearRegression", 
@@ -151,10 +297,17 @@ def print_input_help():
   # each training/testing set, '(Number of non-zero ECI)' is the number of basis 
   # functions with non-zero ECI, and 'penalty' is the user-input penalty per basis 
   # function (default=0.0).
+  #
+  # Note: When the estimator is 'LinearRegression', the 'LeaveOneOut' cross-validation
+  # score is calculated via:
+  #
+  #   LOOCV = np.mean(((y - y_pred)/(1.0 - np.diag(H)))**2)
+  #   (see estimator description for definition of H) 
+  #
   # By default, the kwarg "shuffle" is set to True.
     "cv": {
       "method": "LeaveOneOut", 
-      "kwargs": null
+      "kwargs": null,
       "penalty": 0.0
     }, 
   
@@ -336,13 +489,13 @@ def make_fitting_data(sel, input, save=True, verbose=True, read_existing=True):
   sample_weight = None
   if "weight" not in input:
     input["weight"] = dict()
-  if "kwargs" not in input["weight"]:
+  if "kwargs" not in input["weight"] or input["weight"]["kwargs"] is None:
     input["weight"]["kwargs"] = dict()
   if "method" not in input["weight"]:
     input["weight"]["method"] = None
   
   # set cv kwargs and penalty (0.0) defaults
-  if "kwargs" not in input["cv"]:
+  if "kwargs" not in input["cv"] or input["cv"]["kwargs"] is None:
     input["cv"]["kwargs"] = dict()
   if "penalty" not in input["cv"]:
     input["cv"]["penalty"] = 0.0
@@ -452,7 +605,6 @@ def make_fitting_data(sel, input, save=True, verbose=True, read_existing=True):
 #      cv_method = find_method([sklearn.cross_validation], input["cv"]["method"])
     cv_method = find_method([sklearn.cross_validation], input["cv"]["method"])
     cv = cv_method(Nvalue, **cv_kwargs)
-    print cv
     
     # get penalty
     penalty = input["cv"]["penalty"]
@@ -512,14 +664,11 @@ def make_estimator(input, verbose = True):
   ## estimator
   
   # get kwargs (default: fit_intercept=False)
-  kwargs = dict()
-  if "kwargs" in input["estimator"]:
-    if input["estimator"]["kwargs"]:
-      kwargs = input["estimator"]["kwargs"]
+  kwargs = copy.deepcopy(input["estimator"].get("kwargs", dict()))
   if "fit_intercept" not in kwargs:
     kwargs["fit_intercept"] = False
   
-  if input["estimator"]["method"] == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
+  if input["estimator"]["method"] == "LinearRegression":
     estimator_method = casm.fit.linear_model.LinearRegressionForLOOCV
   else:
     estimator_method = find_method([sklearn.linear_model], input["estimator"]["method"])
@@ -541,6 +690,8 @@ def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=
   # inherit from sklearn.base.BaseEstimator and sklearn.feature_selection.SelectorMixin,
   
   kwargs = copy.deepcopy(input["feature_selection"].get("kwargs", dict()))
+  if kwargs is None:
+    kwargs = dict()
   if "evolve_params_kwargs" in kwargs:
     if "halloffame_filename" not in kwargs["evolve_params_kwargs"]:
       kwargs["evolve_params_kwargs"]["halloffame_filename"] = input.get("halloffame_filename", "halloffame.pkl")
