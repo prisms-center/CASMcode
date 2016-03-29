@@ -30,19 +30,6 @@ namespace CASM {
   ///       if 'A' is in SymGroup, then A.inverse() is in SymGroup
   ///       SymGroup always contains an identity operation
   class SymGroup : public Array<SymOp> {
-  protected:
-    void calc_conjugacy_classes() const;
-    void calc_character_table() const;
-    void calc_centralizers() const;
-    void calc_elem_order_table() const;
-    void generate_class_names() const;
-    void generate_irrep_names() const;
-    bool calc_multi_table() const;
-    void calc_alt_multi_table() const;
-    void calc_small_subgroups() const;
-    void calc_large_subgroups() const;
-
-
   public:
     typedef SymOp::vector_type vector_type;
     typedef SymOp::matrix_type matrix_type;
@@ -58,6 +45,8 @@ namespace CASM {
     virtual void push_back(const SymOp &new_op);
     virtual void clear();
     virtual void clear_tables();
+
+    void set_lattice(const Lattice &new_lat);
 
     ///Check to see if a SymOp is contained in in SymGroup
     //maybe contains and find should account for group_periodicity
@@ -112,8 +101,6 @@ namespace CASM {
 
     Index make_empty_representation() const;
 
-    void set_lattice(const Lattice &new_lat);
-
     /// Gets all the space group operations in unit cell and stores them in space_group
     /// assuming that this SymGroup contains the factor group
     void calc_space_group_in_cell(SymGroup &space_group, const Lattice &_cell) const;
@@ -128,13 +115,13 @@ namespace CASM {
     void enforce_group(double tol = TOL, Index max_size = 1000);  //AAB
 
     /// print locations of the symmetry-generating element of each SymOp
-    void print_locations(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2f_mat) const;
+    void print_locations(std::ostream &stream) const;
 
     /// Write the SymGroup to a file
-    void write(std::string filename, COORD_TYPE mode, const Eigen::Ref<const Eigen::Matrix3d> &c2f_mat) const;
+    void write(std::string filename, COORD_TYPE mode) const;
 
     /// Print the SymGroup to a stream
-    void print(std::ostream &out, COORD_TYPE mode, const Eigen::Ref<const Eigen::Matrix3d> &c2f_mat) const;
+    void print(std::ostream &out, COORD_TYPE mode) const;
 
     /// Cartesian translation of SymGroup origin by vector 'shift'
     SymGroup &operator+=(const Eigen::Ref<const SymOp::vector_type> &shift);
@@ -184,7 +171,20 @@ namespace CASM {
 
   protected:
     const Lattice &_lattice() const;
-    /// Pointer to a lattice for
+
+    void calc_conjugacy_classes() const;
+    void calc_character_table() const;
+    void calc_centralizers() const;
+    void calc_elem_order_table() const;
+    void generate_class_names() const;
+    void generate_irrep_names() const;
+    bool calc_multi_table() const;
+    void calc_alt_multi_table() const;
+    void calc_small_subgroups() const;
+    void calc_large_subgroups() const;
+
+
+    /// Pointer to a lattice for doing periodic comparisons
     Lattice const *m_lat_ptr;
 
     /// Specifies whether to use lattice periodicity when testing for equivalence

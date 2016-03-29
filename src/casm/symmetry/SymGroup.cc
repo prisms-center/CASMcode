@@ -306,6 +306,12 @@ namespace CASM {
 
   /*****************************************************************/
 
+  void SymGroup::set_lattice(const Lattice &lat) {
+    m_lat_ptr = &lat;
+  }
+
+  /*****************************************************************/
+
   void SymGroup::push_back(const SymOp &new_op) {
     Array<SymOp>::push_back(new_op);
     if(!size())
@@ -786,6 +792,13 @@ namespace CASM {
   double SymGroup::get_max_error() {
 
     return max_error;
+  }
+
+  //***************************************************
+
+  const Lattice &SymGroup::_lattice() const {
+    assert(m_home_lat && "Attempting to access Lattice of a SymGroup, but it has not been initialized!");
+    return *m_lat_ptr;
   }
 
   //***************************************************
@@ -3249,18 +3262,21 @@ namespace CASM {
 
   //***************************************************
 
-  void SymGroup::write(std::string filename, COORD_TYPE mode, const Eigen::Ref<const Eigen::Matrix3d> &c2f_mat) const {
+  void SymGroup::write(std::string filename, COORD_TYPE mode) const {
     std::ofstream outfile;
     outfile.open(filename.c_str());
-    print(outfile, mode, c2f_mat);
+    print(outfile, mode);
     outfile.close();
     return;
   }
 
   //***************************************************
 
-  void SymGroup::print(std::ostream &out, COORD_TYPE mode, const Eigen::Ref<const Eigen::Matrix3d> &c2f_mat) const {
+  void SymGroup::print(std::ostream &out, COORD_TYPE mode) const {
     out << size() << " # " << COORD_MODE::NAME(mode) << " representation of group containing " << size() << " elements:\n\n";
+    Eigen::Matrix3d c2f_mat(Eigen::Matrix3d::Identity());
+    if(mode == FRAC)
+      c2f_mat = _lattice().inv_lat_column_mat();
     for(Index i = 0; i < size(); i++) {
       out << i << "  ";
       at(i).print(out, c2f_mat);
@@ -3343,17 +3359,18 @@ namespace CASM {
   }
 
   //***************************************************
-  void SymGroup::print_locations(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2f_mat) const {
+  void SymGroup::print_locations(std::ostream &stream) const {
     //Assumes SymGroup is sorted with clumps of SymOps of common matrix type and eigenvec
     //sort();
 
     bool new_op = true;
     stream << "Locations for symmetry operations\n";
     SymOp::SymInfo info = at(0).info(), next_info;
-
+    Eigen::Matrix3d c2f_mat = _lattice().inv_lat_column_mat();
     for(Index i = 0; i < size(); i++) {
       if(new_op) {
         at(i).print(stream, c2f_mat);
+
         stream << std::endl;
         at(i).print(stream, Eigen::Matrix3d::Identity());
         stream << std::endl;

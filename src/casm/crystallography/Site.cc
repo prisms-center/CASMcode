@@ -240,7 +240,7 @@ namespace CASM {
     Molecule tMol(home());
     AtomPosition::sd_type SD_flag;
 
-    Coordinate::read(stream);
+    Coordinate::read(stream, COORD_MODE::CHECK());
     if(SD_is_on) {
       for(int i = 0; i < 3; i++) {
         stream >> ch;
@@ -331,7 +331,7 @@ namespace CASM {
     Molecule tMol(home());
     AtomPosition::sd_type SD_flag;
 
-    Coordinate::read(stream);
+    Coordinate::read(stream, COORD_MODE::CHECK());
     if(SD_is_on) {
       for(int i = 0; i < 3; i++) {
         stream >> ch;

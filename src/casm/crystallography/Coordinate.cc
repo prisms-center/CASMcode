@@ -125,6 +125,12 @@ namespace CASM {
   }
 
   //********************************************************************
+
+  void Coordinate::print(std::ostream &stream, char term, int prec, int pad) const {
+    print(stream, COORD_MODE::CHECK(), term, prec, pad);
+  }
+
+  //********************************************************************
   void Coordinate::print(std::ostream &stream, COORD_TYPE mode, char term, int prec, int pad) const {
 
     stream.precision(prec);

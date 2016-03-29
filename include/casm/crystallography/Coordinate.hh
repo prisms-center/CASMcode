@@ -34,12 +34,12 @@ namespace CASM {
        e.g: this is not allowed-> Coordinate() : home(nullptr) { is_current[FRAC]=false; is_current[CART]=false;}; **/
 
     ///Minimal constructor only takes a lattice
+    inline
     explicit Coordinate(const Lattice &init_home) :
       m_home(&init_home),
       m_frac_coord(vector_type::Zero()),
       m_cart_coord(vector_type::Zero()),
       m_basis_ind(-1) {
-
     }
 
     Coordinate(const vector_type &init_vec, const Lattice &init_home, COORD_TYPE mode);
@@ -94,6 +94,8 @@ namespace CASM {
     Coordinate operator-() const;
 
     bool operator==(const Coordinate &RHS) const; //Ivy
+
+    inline
     bool operator!=(const Coordinate &RHS) const {
       return !(*this == RHS);
     }
@@ -130,23 +132,25 @@ namespace CASM {
     ///update the home lattice of a coordinate, keeping representation specified mode
     void set_lattice(const Lattice &new_lat, COORD_TYPE mode); //John G, use to specify whether to keep CART or FRAC the same, when assigning a new lattice
 
+    inline
     void set_basis_ind(Index _basis_ind) {
       m_basis_ind = _basis_ind;
     }
 
+    inline
     Index basis_ind() const {
       return m_basis_ind;
     }
 
     ///Check the home lattice of the coordinate
+    inline
     const Lattice &home() const {
       assert(m_home && "Coordinate doesn't have valid home lattice");
       return *m_home;
     }
 
     //term is terminal character, prec is precision, pad is field width - precision  (should be greater than 3)
-    void read(std::istream &stream);
-    void read(std::istream &stream, COORD_TYPE mode); //not yet implemented
+    void read(std::istream &stream, COORD_TYPE mode);
     void print(std::ostream &stream, COORD_TYPE mode, char term = 0, int prec = 7, int pad = 5) const;
     void print(std::ostream &stream, char term = 0, int prec = 7, int pad = 5) const;
 
@@ -223,10 +227,13 @@ namespace CASM {
   void from_json(Coordinate &value, const jsonParser &json);
 
   Coordinate operator*(const SymOp &LHS, const Coordinate &RHS); //AAB
+
+  inline
   Coordinate operator+(const Coordinate &LHS, const Coordinate &RHS) {
     return Coordinate(LHS) += RHS;
   }
 
+  inline
   Coordinate operator-(const Coordinate &LHS, const Coordinate &RHS) {
     return Coordinate(LHS) -= RHS;
   }

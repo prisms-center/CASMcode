@@ -244,6 +244,7 @@ namespace CASM {
   ///    frac_vec_after = frac_mat*frac_vec
   /// where cart_vec = lat.lat_column_mat()*frac_vec
   /// and cart_vec_after = lat.lat_column_mat()*frac_vec_after
+  inline
   Eigen::Matrix3d cart2frac(const Eigen::Ref<const Eigen::Matrix3d> &cart_mat, const Lattice &lat) {
     return lat.inv_lat_column_mat() * cart_mat * lat.lat_column_mat();
   }
@@ -256,6 +257,7 @@ namespace CASM {
   ///    frac_vec_after = frac_mat*frac_vec
   /// where cart_vec = lat.lat_column_mat()*frac_vec
   /// and cart_vec_after = lat.lat_column_mat()*frac_vec_after
+  inline
   Eigen::Matrix3d frac2cart(const Eigen::Ref<const Eigen::Matrix3d> &frac_mat, const Lattice &lat) {
     return lat.lat_column_mat() * frac_mat * lat.inv_lat_column_mat();
   }

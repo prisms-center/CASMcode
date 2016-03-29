@@ -1,7 +1,5 @@
 #include "casm/container/LinearAlgebra.hh"
 
-#include <boost/math/special_functions/round.hpp>
-
 namespace CASM {
 
   //John G 020613

@@ -13,6 +13,8 @@
 #include <complex>
 #include <cassert>
 
+#include <boost/math/special_functions/round.hpp>
+
 #include "casm/external/Eigen/Dense"
 #include "casm/external/Eigen/Eigenvalues"
 
