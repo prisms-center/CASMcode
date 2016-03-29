@@ -7,7 +7,7 @@ import casm.project
 
 import os
 import casm.fit
-import json
+import json, pickle
 
 import bokeh.client
 import bokeh.io
@@ -711,19 +711,21 @@ class RankPlot(object):
     p: a bokeh Figure containing formation energies and the convex hull
     layout: a bokeh layout element holding p
     sel: a CASM Selection used to make the figure
-    scoring: a scoring function to operate on a row of sel.data
+    scoring: a scoring function to operate on a DataFrame and return a Series
     score_id: a UUID to use for the 'score' column name in the sel.src ColumnDataSource
     rank_id: a UUID to use for the 'rank' column name in the sel.src ColumnDataSource
     max_score: the maximum score
     min_score: the minimum score
   """
   
-  def __init__(self, sel, scoring, name="Score", mode='set'):
+  def __init__(self, sel, scoring, name="Score", mode='set', tooltips=None, on_tap=view_on_tap):
     """
     Arguments:
       sel: A CASM Selection
       scoring: (function) a scoring function to operate on a row of sel.data
       name: y-axis label to describe the scoring function
+      tooltips: Customize tooltips. Default includes configname, score, and rank.
+      on_tap: Customize callback that occurs upon tapping a point. Default is view_on_tap.
     """
     self.sel = sel
     
@@ -738,6 +740,8 @@ class RankPlot(object):
     
     # TOOLS in bokeh plot
     self.tools = "crosshair,pan,reset,resize,box_zoom"
+    self.tooltips = tooltips
+    self.on_tap = on_tap
     
     self.score()
     
@@ -773,19 +777,21 @@ class RankPlot(object):
       hover_alpha=style.hover_alpha, hover_color=style.hover_color)
 
     self.p_.xaxis.axis_label = "Rank"
-    self.p_.yaxis.axis_label = "Score"
-
-    # hover over a point to see 'configname', 'score', Ef', and 'comp(a)'
-    tooltips = [
-        ("configname","@configname"), 
-        ("score","@{" + self.score_id + "}{1.1111}"), 
-        ("rank","@{" + self.rank_id + "}{1.1111}")
-    ]
-
-    self.tap_action = ConfigurationTapAction(self.sel)
-
-    self.p_.add_tools(self.tap_action.tool(view_on_tap, [p_circ]))
-    self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[p_circ]))
+    self.p_.yaxis.axis_label = self.name
+    
+    if self.tooltips is None:
+      # hover over a point to see 'configname', 'score', Ef', and 'comp(a)'
+      self.tooltips = [
+          ("configname","@configname"), 
+          ("score","@{" + self.score_id + "}{1.1111}"), 
+          ("rank","@{" + self.rank_id + "}{1.1111}")
+      ]
+    
+    if self.on_tap is not None:
+      self.tap_action = ConfigurationTapAction(self.sel)
+      self.p_.add_tools(self.tap_action.tool(self.on_tap, [p_circ]))
+    
+    self.p_.add_tools(bokeh.models.HoverTool(tooltips=self.tooltips, renderers=[p_circ]))
     self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[p_circ]))
     self.p_.add_tools(bokeh.models.LassoSelectTool(renderers=[p_circ]))
   
@@ -825,7 +831,7 @@ class RankPlot(object):
     
     # add 'rank' to src as self.rank_id
     add_src_data(self.sel, self.rank_id, self.df['rank'], force=True)
-
+    
 
 class RankSelect(object):
   """
@@ -865,6 +871,7 @@ class RankSelect(object):
     
     # TOOLS in bokeh plot
     self.tools = "crosshair,pan,reset,resize,box_zoom"
+    self.tooltips = None
     
     # bokeh DataSource for cutoff line
     self.cutoff_line_src = None
@@ -915,13 +922,14 @@ class RankSelect(object):
     self.p_.xaxis.axis_label = "Rank"
     self.p_.yaxis.axis_label = "Score"
 
-    # hover over a point to see 'configname', 'score', Ef', and 'comp(a)'
-    tooltips = [
-        ("configname","@configname"), 
-        ("score","@{" + self.score_id + "}{1.1111}"), 
-        ("rank","@{" + self.rank_id + "}{1.1111}")
-    ]
-
+    if self.tooltips is None:
+      # hover over a point to see 'configname', 'score', Ef', and 'comp(a)'
+      tooltips = [
+          ("configname","@configname"), 
+          ("score","@{" + self.score_id + "}{1.1111}"), 
+          ("rank","@{" + self.rank_id + "}{1.1111}")
+      ]
+    
     if self.cutoff_line_src is None:
       self.cutoff_line_src = bokeh.models.ColumnDataSource(
         data={
@@ -935,7 +943,6 @@ class RankSelect(object):
       self.cutoff_line_src.on_change('data', f)
     
     
-    self.tap_action = ConfigurationTapAction(self.sel)
     self.p_.select(type=bokeh.models.CrosshairTool).dimensions = ['width']
     
     p_click=bokeh.models.CustomJS(args={'src':self.cutoff_line_src, 'loc': self.mouse_location_src}, code="""
@@ -950,7 +957,7 @@ class RankSelect(object):
     p_line = self.p_.line(x='x',y='y', source=self.cutoff_line_src,
       line_width=style.cutoff_line_width, line_alpha=style.cutoff_alpha, color=style.cutoff_color)
 
-    self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[p_circ]))
+    self.p_.add_tools(bokeh.models.HoverTool(tooltips=self.tooltips, renderers=[p_circ]))
     self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[p_circ]))
   
   @property
@@ -1368,6 +1375,166 @@ class WeightSelect(object):
               self.input['B'],
               self.input['Eref'], 
               self.select_action]
+
+
+class ECISelection(object):
+  def __init__(self, proj, input_filename="fit_input.json", cwd=None):
+    """
+    Arguments
+    ---------
+      proj: a casm.Project instance
+      
+      input_filename: str, optional, default "fit_input.json"
+        The name of the fitting input file
+      
+      cwd: str, optional, default current working directory
+        The directory containing input_filename
+    """
+    if cwd is None:
+      cwd = os.getcwd()
+    self.input_filename = os.path.join(cwd, input_filename,)
+    self.fit_input = json.load(open(self.input_filename, 'r'))
+    halloffame_filename = os.path.join(cwd, self.fit_input.get("halloffame_filename", "halloffame.pkl"))
+    self.hall = pickle.load(open(halloffame_filename, 'rb'))
+    
+    data = []
+    for index, indiv in enumerate(self.hall):
+      d = {
+        "selected":True, 
+        "index":index, 
+        "Nbfunc":sum(indiv),
+        "cv":indiv.fitness.values[0], 
+        "rms":indiv.rms, 
+        "wrms:":indiv.wrms,
+        "estimator_method":indiv.estimator_method,
+        "feature_selection_method":indiv.feature_selection_method,
+        "note":indiv.note}
+      data.append(d)
+    self.data = pandas.DataFrame(data)
+    
+    # shape: (#bfunc, #indiv)
+    eci = np.zeros((len(indiv), len(self.hall)))
+    for index, indiv in enumerate(self.hall):
+      for bfunc in indiv.eci:
+        eci[bfunc[0], index] = bfunc[1]
+    self.eci = pandas.DataFrame(eci, columns=[str(i) for i in xrange(len(self.hall))])
+    
+    self.src = None
+
+
+
+class ECISelect(object):
+  
+  def __init__(self, proj, input_filename="fit_input.json", cwd=None):
+    """
+    Arguments
+    ---------
+      proj: a casm.Project instance
+      
+      input_filename: str, optional, default "fit_input.json"
+        The name of the fitting input file
+      
+      cwd: str, optional, default current working directory
+        The directory containing input_filename
+    """
+    
+    self.proj = proj
+    
+    if cwd is None:
+      cwd = os.getcwd()
+    self.sel = ECISelection(proj, input_filename, cwd)
+    
+    # rankplot: showing cv
+    # scatter plot or median plot of all indiv
+    # indiv plot: value vs bfunc index, colored by branch
+    self._cv_rankplot()
+    self._eci_stemplot(0)
+    
+    self.layout = hplot(self.cv_rankplot.layout, self.eci_stemplot)
+    
+  
+  def _cv_rankplot(self):
+    tooltips = [
+        ("Index","@{index}"),
+        ("CV score","@{cv}{1.1111}"),
+        ("#Basis Functions", "@{Nbfunc}"),
+        ("Estimator","@{estimator_method}"),
+        ("Selection","@{feature_selection_method}"),
+        ("Note","@{note}")
+    ]
+    add_src_data(self.sel, "index", self.sel.data["index"])
+    add_src_data(self.sel, "cv", self.sel.data["cv"])
+    add_src_data(self.sel, "estimator_method", self.sel.data["estimator_method"])
+    add_src_data(self.sel, "feature_selection_method", self.sel.data["feature_selection_method"])
+    add_src_data(self.sel, "note", self.sel.data["note"])
+    add_src_data(self.sel, "Nbfunc", self.sel.data["Nbfunc"])
+    
+    def score(sel):
+      return sel.data.loc[:,"cv"].values
+    
+    def _update_eci_stemplot(sel, attrname, old, new):
+      """
+      Change viewed individual on tap
+      """
+      print "tap!"
+      if len(sel.src.selected['1d']['indices']) == 1:
+        print "update!"
+        index = sel.src.selected['1d']['indices'][0]
+        sel.eci_src.data["current"] = sel.eci_src.data[str(index)]
+    
+    # self, sel, scoring, name="Score", mode='set', tooltips=None, on_tap=view_on_tap)
+    self.cv_rankplot = RankPlot( self.sel, score, name="CV Score", 
+      tooltips=tooltips, on_tap=_update_eci_stemplot)
+    
+    self.cv_rankplot.p.xaxis.axis_label = "Individual"
+    self.cv_rankplot.p.plot_width = 400
+  
+  def _eci_stemplot(self, index):
+    
+    self.sel.eci_src = bokeh.models.ColumnDataSource(data=self.sel.eci)
+    
+    with open(self.proj.dir.basis(self.proj.settings.bset()), 'r') as f:
+      self.basis = json.load(f)
+    
+    self.sel.eci_src.data["index"] = range(self.sel.eci.shape[0])
+    self.sel.eci_src.data["branch"] = [j["orbit"][0] for j in self.basis["cluster_functions"] ]
+    self.sel.eci_src.data["mult"] = [j["mult"] for j in self.basis["cluster_functions"] ]
+    self.sel.eci_src.data["max_length"] = [j["prototype"]["max_length"] for j in self.basis["cluster_functions"] ]
+    self.sel.eci_src.data["min_length"] = [j["prototype"]["min_length"] for j in self.basis["cluster_functions"] ]
+    colormap = ["black", "blue", "red", "green", "cyan", "magenta", "yellow", "orange"]
+    self.sel.eci_src.data["color"] = map(lambda x: colormap[x % len(colormap)], self.sel.eci_src.data["branch"])
+    self.sel.eci_src.data["current"] = self.sel.eci_src.data[str(index)]
+    
+    self.sel.eci_src.data["median"] = 
+    
+    # TOOLS in bokeh plot
+    _tools = ["crosshair,pan,reset,resize,box_zoom"]
+    
+    self.eci_stemplot = bokeh.plotting.Figure(plot_width=800, plot_height=400, 
+      tools=_tools, y_range=(self.sel.eci.min().min()*1.1, self.sel.eci.max().max()*1.1))
+    p_stem = self.eci_stemplot.segment("index", 0, "index", "current", source=self.sel.eci_src, 
+      line_color='color', line_width=1.0)
+    
+    p_circ = self.eci_stemplot.circle("index", "current", source=self.sel.eci_src, 
+      size=10, fill_color='color')
+
+    self.eci_stemplot.xaxis.axis_label = "Basis Function Index"
+    self.eci_stemplot.yaxis.axis_label = "ECI Value"
+    
+    # hover over a point to see 'ECI', other info on basis function/cluster
+    tooltips = [
+        ("Index","@{index}"), 
+        ("ECI","@{current}{1.1111}"), 
+        ("Cluster size","@{branch}"),
+        ("Multiplicity", "@{mult}"),
+        ("Max length", "@{max_length}"),
+        ("Min length", "@{min_length}")
+    ]
+    
+    self.eci_stemplot.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[p_circ]))
+    self.eci_stemplot.add_tools(bokeh.models.BoxSelectTool(renderers=[p_circ]))
+    self.eci_stemplot.add_tools(bokeh.models.LassoSelectTool(renderers=[p_circ]))
+    
 
 class FloatInput(object):
   """
