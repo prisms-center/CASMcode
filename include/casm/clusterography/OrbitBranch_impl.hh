@@ -205,8 +205,8 @@ namespace CASM {
 
     if(basis.size() == 0)
       return;
-    set_lattice(*(basis[0].get_home()), FRAC);
-    ClustType tclust(*(basis[0].get_home()));
+    set_lattice(basis[0].home(), FRAC);
+    ClustType tclust(basis[0].home());
     Index nb, no;
 
 

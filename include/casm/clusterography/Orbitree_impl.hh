@@ -453,7 +453,7 @@ namespace CASM {
     for(i = 0; i < prim.basis.size(); i++) {
       if(prim.basis[i].site_occupant().size() >= min_num_components) {
         basis.push_back(prim.basis[i]);
-        basis.back().set_lattice(lattice);
+        basis.back().set_lattice(lattice, CART);
       }
     }
 
@@ -593,7 +593,7 @@ namespace CASM {
     for(i = 0; i < prim.basis.size(); i++) {
       if(prim.basis[i].site_occupant().size() >= min_num_components) {
         basis.push_back(prim.basis[i]);
-        basis.back().set_lattice(lattice);
+        basis.back().set_lattice(lattice, CART);
       }
     }
 
@@ -784,7 +784,7 @@ namespace CASM {
     for(i = 0; i < prim.basis.size(); i++) {
       if(prim.basis[i].site_occupant().size() >= min_num_components) {
         basis.push_back(prim.basis[i]);
-        basis.back().set_lattice(lattice);
+        basis.back().set_lattice(lattice, CART);
       }
     }
     //Get a ballpark estimate of the number of cells required
@@ -2388,7 +2388,7 @@ namespace CASM {
     for(i = 0; i < prim.basis.size(); i++) {
       if(prim.basis[i].site_occupant().size() >= min_num_components) {
         basis.push_back(prim.basis[i]);
-        basis.back().set_lattice(lattice);
+        basis.back().set_lattice(lattice, CART);
       }
     }
 

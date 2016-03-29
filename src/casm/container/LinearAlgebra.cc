@@ -130,38 +130,7 @@ namespace CASM {
     return false;
   }
 
-  /// \brief Check if Eigen::MatrixXd is integer
-  ///
-  /// \returns true if every coefficient of M is integer, with precision specified by tol
-  ///
-  /// \param M Eigen::Matrix begin checked
-  /// \param tol tolerance for checking
-  ///
-  /// For each coefficient, M(i,j), checks that \code std::abs(std::round(M(i, j)) - M(i, j)) > tol \endcode
-  ///
-  bool is_integer(const Eigen::MatrixXd &M, double tol) {
-    for(int i = 0; i < M.rows(); i++) {
-      for(int j = 0; j < M.cols(); j++) {
-        if(std::abs(std::round(M(i, j)) - M(i, j)) > tol) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
 
-  /// \brief Check if Eigen::MatrixXd is unimodular
-  ///
-  /// \returns true if M is unimodular, false otherwise
-  ///
-  /// \param M Eigen::MatrixXd to check
-  /// \param tol tolerance
-  ///
-  /// Equivalent to \code almost_equal(std::abs(M.determinant()), 1.0, tol) \endcode
-  ///
-  bool is_unimodular(const Eigen::MatrixXd &M, double tol) {
-    return almost_equal(std::abs(M.determinant()), 1.0, tol);
-  }
 
   /// \brief Return the hermite normal form, M == H*V
   ///
@@ -266,45 +235,6 @@ namespace CASM {
 
     // now we have M = H*V
     return std::make_pair(H, V);
-  }
-
-  /// \brief Check if Eigen::MatrixXd is diagonal
-  ///
-  /// \returns true if only diagonal elements are non-zero, with precision specified by tol
-  ///
-  /// \param M Eigen::Matrix begin checked
-  /// \param tol tolerance for checking
-  ///
-  bool is_diagonal(const Eigen::MatrixXd &M, double tol) {
-
-    for(int i = 0; i < M.rows(); i++) {
-      for(int j = 0; j < M.cols(); j++) {
-        if(i != j) {
-          if(std::abs(M(i, j)) > tol)
-            return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  /// \brief Check if Eigen::MatrixXi is diagonal
-  ///
-  /// \returns true if only diagonal elements are non-zero, with precision specified by tol
-  ///
-  /// \param M Eigen::Matrix begin checked
-  ///
-  bool is_diagonal(const Eigen::MatrixXi &M) {
-
-    for(int i = 0; i < M.rows(); i++) {
-      for(int j = 0; j < M.cols(); j++) {
-        if(i != j) {
-          if(M(i, j) != 0)
-            return false;
-        }
-      }
-    }
-    return true;
   }
 
 

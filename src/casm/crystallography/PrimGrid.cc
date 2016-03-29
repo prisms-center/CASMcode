@@ -143,7 +143,7 @@ namespace CASM {
   //**********************************************************************************************
   Index PrimGrid::find(const Coordinate &_coord) const {
 
-    UnitCellCoord bijk(-1, ((((m_lat[PRIM]->inv_lat_column_mat())*_coord.cart()).array() + TOL).unaryExpr(std::ptr_fun(floor))).matrix().cast<int>());
+    UnitCellCoord bijk(-1, ((((m_lat[PRIM]->inv_lat_column_mat())*_coord.cart()).array() + TOL).unaryExpr(std::ptr_fun(floor))).matrix().cast<long>());
 
     return find(bijk);
   }

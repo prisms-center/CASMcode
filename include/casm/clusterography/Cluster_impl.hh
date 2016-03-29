@@ -185,7 +185,7 @@ namespace CASM {
       return;
     }
 
-    trans.set_lattice(*home);
+    trans.set_lattice(*home, CART);
     at(pivot_ind).within(trans);
     for(Index i = 0; i < size(); i++) {
       if(i != pivot_ind)
@@ -595,10 +595,10 @@ namespace CASM {
     Array<CoordType>::push_back(new_coord);
 
     if(!home)
-      home = back().get_home();
+      home = &back().home();
 
-    else if(back().get_home() != home)
-      back().set_lattice(*home);
+    else if(&(back().home()) != home)
+      back().set_lattice(*home, CART);
 
     return;
   }

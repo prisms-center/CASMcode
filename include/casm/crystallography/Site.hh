@@ -52,9 +52,6 @@ namespace CASM {
     bool contains(const std::string &name) const;
     bool contains(const std::string &name, int &index) const;
 
-    void invalidate(COORD_TYPE mode);
-
-    void set_lattice(const Lattice &new_lat);
     void set_lattice(const Lattice &new_lat, COORD_TYPE mode);//John G
 
     void set_site_occupant(const MoleculeOccupant &new_dof) {

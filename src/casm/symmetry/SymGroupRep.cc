@@ -251,8 +251,7 @@ namespace CASM {
   //***************************************************
 
   // If 'm_home_group' is not nullptr, should be initialized accordingly
-  // Lattice may be necessary for constructing SymOps
-  void SymGroupRep::from_json(const jsonParser &json, const Lattice &lat) {
+  void SymGroupRep::from_json(const jsonParser &json) {
     try {
 
       // Member not included in json:
@@ -271,9 +270,8 @@ namespace CASM {
       std::cout << "Reading in the symmetry operations" << std::endl;
       for(int i = 0; i < json["symop_representations"].size(); i++) {
         /// This allocates a new object to 'at(i)'.
-        ///   It might need a Lattice
         std::cout << "Working on:" << i << std::endl;
-        CASM::from_json(at(i), json["symop_representations"][i], lat);
+        CASM::from_json(at(i), json["symop_representations"][i]);
       }
 
       std::cout << "Reading in REP_COUNT" << std::endl;
@@ -299,10 +297,9 @@ namespace CASM {
   }
 
   // If 'm_home_group' is not nullptr, should be initialized accordingly
-  // Lattice may be necessary for constructing SymOps
-  void from_json(SymGroupRep &rep, const jsonParser &json, const Lattice &lat) {
+  void from_json(SymGroupRep &rep, const jsonParser &json) {
     try {
-      rep.from_json(json, lat);
+      rep.from_json(json);
     }
     catch(...) {
       /// re-throw exceptions

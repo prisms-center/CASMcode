@@ -127,8 +127,6 @@ namespace CASM {
 
     Coordinate get_normal_vector(Coordinate coord2, Coordinate coord3);
 
-    ///update the home lattice of a coordinate, keeping original cartesian representation
-    void set_lattice(const Lattice &new_lat);
     ///update the home lattice of a coordinate, keeping representation specified mode
     void set_lattice(const Lattice &new_lat, COORD_TYPE mode); //John G, use to specify whether to keep CART or FRAC the same, when assigning a new lattice
 
@@ -467,6 +465,30 @@ namespace CASM {
     };
   }
 
+
+  /// \brief Set the fractional coordinate vector
+  inline
+  Coordinate_impl::FracCoordinate Coordinate::frac() {
+    return Coordinate_impl::FracCoordinate(*this);
+  }
+
+  /// \brief Set a component of the fractional coordinate vector
+  inline
+  Coordinate_impl::FracCoordinateComponent Coordinate::frac(Coordinate::size_type index) {
+    return Coordinate_impl::FracCoordinateComponent(*this, index);
+  }
+
+  /// \brief Set Cartesian coordinate vector and update fractional coordiante vector
+  inline
+  Coordinate_impl::CartCoordinate Coordinate::cart() {
+    return Coordinate_impl::CartCoordinate(*this);
+  }
+
+  /// \brief Set a component of the Cartesian coordinate vector
+  inline
+  Coordinate_impl::CartCoordinateComponent Coordinate::cart(Coordinate::size_type index) {
+    return Coordinate_impl::CartCoordinateComponent(*this, index);
+  }
 }
 
 namespace std {

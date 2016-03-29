@@ -256,7 +256,7 @@ namespace CASM {
     }
 
     // transform deformation tensor to match canonical form and apply operation to cart_op
-    Eigen::Matrix3d fg_cart_op = it_canon.sym_op().get_matrix(CART);
+    Eigen::Matrix3d fg_cart_op = it_canon.sym_op().matrix();
     relaxation_properties["best_mapping"]["relaxation_deformation"] = fg_cart_op * tconfigdof.deformation() * fg_cart_op.transpose();
     cart_op = fg_cart_op * cart_op;
 
@@ -273,8 +273,8 @@ namespace CASM {
     });
 
     if(update_struc) {
-      _struc.set_lattice(Lattice(Eigen::Matrix3d(cart_op.transpose()*tconfigdof.deformation()*Eigen::Matrix3d(mapped_lat.lat_column_mat()))), CART);
-      _struc.set_lattice(Lattice(tconfigdof.deformation()*Eigen::Matrix3d(mapped_lat.lat_column_mat())), FRAC);
+      _struc.set_lattice(Lattice(cart_op.transpose()*tconfigdof.deformation()*mapped_lat.lat_column_mat()), CART);
+      _struc.set_lattice(Lattice(tconfigdof.deformation()*mapped_lat.lat_column_mat()), FRAC);
     }
     return is_new_config;
   }
@@ -341,7 +341,7 @@ namespace CASM {
       imported_name = primclex().get_supercell(import_scel_index).get_config(import_config_index).name();
     }
 
-    cart_op = Eigen::Matrix3d(it_canon.sym_op().get_matrix(CART)) * cart_op;
+    cart_op = it_canon.sym_op().matrix() * cart_op;
     // compose permutations
     std::vector<Index>tperm = (*it_canon).permute(best_assignment);
 
@@ -416,7 +416,7 @@ namespace CASM {
                                               Eigen::Matrix3d &cart_op) const {
     // Lattice::is_supercell_of() isn't very smart right now, and will return false if the two lattices differ by a rigid rotation
     // In the future this may not be the case, so we will assume that struc may be rigidly rotated relative to prim
-    Matrix3<double> trans_mat;
+    Eigen::Matrix3d trans_mat;
     if(!struc.lattice().is_supercell_of(primclex().get_prim().lattice(), trans_mat,  m_tol)) {
       /*std::cerr << "CRITICAL ERROR: In ideal_struc_to_configdof(), primitive structure does not tile the provided\n"
         << "                superstructure. Please use deformed_struc_to_configdof() instead.\n"
@@ -435,14 +435,14 @@ namespace CASM {
     tstruc.set_lattice(Lattice(tstruc.lattice().lat_column_mat()*trans_mat), CART);
 
     //cart_op goes from imported coordinate system to ideal (PRIM) coordinate system
-    cart_op = Eigen::Matrix3d(mapped_lat.lat_column_mat() * tstruc.lattice().inv_lat_column_mat());
+    cart_op = mapped_lat.lat_column_mat() * tstruc.lattice().inv_lat_column_mat();
     tstruc.set_lattice(mapped_lat, FRAC);
     if(!m_rotate_flag) {
       cart_op = Eigen::Matrix3d::Identity(3, 3);
     }
     return ConfigMap_impl::preconditioned_struc_to_configdof(scel,
                                                              tstruc,
-                                                             Eigen::Matrix3d(cart_op.transpose()),//cart_op.transpose() is deformation in this case
+                                                             cart_op.transpose(),//cart_op.transpose() is deformation in this case
                                                              mapped_configdof,
                                                              best_assignment,
                                                              true,
@@ -547,7 +547,7 @@ namespace CASM {
       tstruc = struc;
 
       //make tstruc an un-rotated, un-strained version of struc
-      tstruc.set_lattice(Lattice(Eigen::Matrix3d(tlat.lat_column_mat())*ttrans_mat), FRAC);
+      tstruc.set_lattice(Lattice(tlat.lat_column_mat()*ttrans_mat), FRAC);
       tstruc.set_lattice(tlat, CART);
       rotF = tF;
       if(m_rotate_flag) {
@@ -681,7 +681,7 @@ namespace CASM {
       tstruc = struc;
       // We modify the deformed structure so that its lattice is a deformed version of the nearest ideal lattice
       // Don't need matrixN if we use set_lattice(CART), because matrixF depends on matrixN implicitly
-      tstruc.set_lattice(Lattice(Eigen::Matrix3d(imposed_lat.lat_column_mat())*strainmap.matrixN()), FRAC);
+      tstruc.set_lattice(Lattice(imposed_lat.lat_column_mat()*strainmap.matrixN()), FRAC);
       tstruc.set_lattice(imposed_lat, CART);
       tF = strainmap.matrixF();
       rotF = tF;
@@ -766,7 +766,7 @@ namespace CASM {
     bool calc_cost_matrix(const Supercell &scel,
                           const BasicStructure<Site> &rstruc,
                           const Coordinate &trans,
-                          const Matrix3<double> &metric,
+                          const Eigen::Matrix3d &metric,
                           Eigen::MatrixXd &cost_matrix) {
 
       if(rstruc.basis.size() > scel.num_sites())
@@ -779,8 +779,8 @@ namespace CASM {
       // loop through all the sites of the structure
       Index j = 0;
       for(; j < rstruc.basis.size(); j++) {
-        Coordinate current_relaxed_coord(rstruc.basis[j](FRAC), scel.get_real_super_lattice(), FRAC);
-        current_relaxed_coord(CART) += trans(CART);
+        Coordinate current_relaxed_coord(rstruc.basis[j].frac(), scel.get_real_super_lattice(), FRAC);
+        current_relaxed_coord.cart() += trans.cart();
         // loop through all the sites in the supercell
         inf_counter = 0;
         for(Index i = 0; i < scel.num_sites(); i++) {
@@ -833,7 +833,7 @@ namespace CASM {
     bool calc_cost_matrix(const Configuration &config,
                           const BasicStructure<Site> &rstruc,
                           const Coordinate &trans,
-                          const Matrix3<double> &metric,
+                          const Eigen::Matrix3d &metric,
                           Eigen::MatrixXd &cost_matrix) {
 
 
@@ -846,8 +846,8 @@ namespace CASM {
       // loop through all the sites of the structure
       Index j;
       for(j = 0; j < rstruc.basis.size(); j++) {
-        Coordinate current_relaxed_coord(rstruc.basis[j](FRAC), scel.get_real_super_lattice(), FRAC);
-        current_relaxed_coord(CART) += trans(CART);
+        Coordinate current_relaxed_coord(rstruc.basis[j].frac(), scel.get_real_super_lattice(), FRAC);
+        current_relaxed_coord.cart() += trans.cart();
         // loop through all the sites in the supercell
         inf_counter = 0;
         for(Index i = 0; i < scel.num_sites(); i++) {
@@ -909,7 +909,7 @@ namespace CASM {
                             std::vector<Index> &best_assignments,
                             const bool translate_flag,
                             const double _tol) {
-      Eigen::Matrix3d deformation = Eigen::Matrix3d(rstruc.lattice().coord_trans(FRAC) * scel.get_real_super_lattice().coord_trans(CART));
+      Eigen::Matrix3d deformation = rstruc.lattice().lat_column_mat() * scel.get_real_super_lattice().inv_lat_column_mat();
       // un-deform rstruc
       rstruc.set_lattice(scel.get_real_super_lattice(), FRAC);
       return preconditioned_struc_to_configdof(scel, rstruc, deformation, config_dof, best_assignments, translate_flag, _tol);
@@ -929,7 +929,7 @@ namespace CASM {
                             const bool translate_flag,
                             const double _tol) {
       const Lattice &mapped_lat(config.get_supercell().get_real_super_lattice());
-      Eigen::Matrix3d deformation = Eigen::Matrix3d(rstruc.lattice().coord_trans(FRAC) * mapped_lat.coord_trans(CART));
+      Eigen::Matrix3d deformation = rstruc.lattice().lat_column_mat() * mapped_lat.inv_lat_column_mat();
       // un-deform rstruc
       rstruc.set_lattice(mapped_lat, FRAC);
       return preconditioned_struc_to_configdof(config, rstruc, deformation, config_dof, best_assignments, translate_flag, _tol);
@@ -956,13 +956,13 @@ namespace CASM {
       config_dof.clear();
 
       config_dof.set_deformation(deformation);
-      Matrix3<double> metric(Eigen::Matrix3d(deformation.transpose()*deformation));
+      Eigen::Matrix3d metric(deformation.transpose()*deformation);
       //Initialize everything
 
       Eigen::MatrixXd cost_matrix;
       std::vector<Index> optimal_assignments;
       //BasicStructure<Site> best_ideal_struc(rstruc);
-      Coordinate ttrans(Vector3<double>(0, 0, 0), rstruc.lattice(), FRAC), best_trans(Vector3<double>(0, 0, 0), rstruc.lattice(), FRAC);
+      Coordinate ttrans(rstruc.lattice()), best_trans(rstruc.lattice());
       Coordinate within_trans(ttrans);
       double min_mean = 10E10;
       double trans_dist, within_trans_dist;
@@ -988,7 +988,7 @@ namespace CASM {
         Coordinate ref_coord(rstruc.basis[0]);
 
         if(n > 0)
-          ref_coord(FRAC) = scel.coord((n - 1) * scel.volume())(FRAC);
+          ref_coord.frac() = scel.coord((n - 1) * scel.volume()).frac();
 
         // find translation rstruc+ttrans such that rstruc.basis[0] is coincident with ref_coord
         trans_dist = ref_coord.min_dist(rstruc.basis[0], ttrans);
@@ -996,10 +996,10 @@ namespace CASM {
         // within_trans is an attempt to find the smallest equivalent translation to ttrans -- really should use voronoi_within, if it worked
         within_trans = ttrans;
         within_trans.set_lattice(scel.get_prim().lattice(), CART);
-        //std::cout << "Before:  within_trans " << within_trans(FRAC) << "; V_number: " << within_trans.voronoi_number() << "\n";
+        //std::cout << "Before:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n";
         within_trans.within();// <-- should be voronoi_within()?
-        //std::cout << "After:  within_trans " << within_trans(FRAC) << "; V_number: " << within_trans.voronoi_number() << "\n\n\n";
-        within_trans_dist = within_trans(CART).length();
+        //std::cout << "After:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n\n\n";
+        within_trans_dist = within_trans.const_cart().norm();
         if(within_trans_dist < trans_dist) {
           within_trans.set_lattice(rstruc.lattice(), CART);
           ttrans = within_trans;
@@ -1068,14 +1068,13 @@ namespace CASM {
         // IDEAL coordinate to the RELAXED coordinate
         if(best_assignments[i] < rstruc.basis.size()) {
 
-          Coordinate ideal_coord(scel.coord(i)(FRAC), rstruc.lattice(), FRAC);
+          Coordinate ideal_coord(scel.coord(i).frac(), rstruc.lattice(), FRAC);
 
           (rstruc.basis[best_assignments[i]] + best_trans).min_dist(ideal_coord, disp_coord);
           //std::cout << "min_dist" << std::endl;
           //std::cout << rstruc.basis[optimal_assignments(i)].min_dist(pos_coord, disp_coord);
-          for(Index j = 0; j < 3; j++) {
-            config_dof.disp(i)[j] = disp_coord(CART)[j];
-          }
+          config_dof.disp(i) = disp_coord.const_cart();
+
           avg_disp += config_dof.disp(i);
         }
       }
@@ -1149,13 +1148,13 @@ namespace CASM {
       config_dof.clear();
 
       config_dof.set_deformation(deformation);
-      Matrix3<double> metric(Eigen::Matrix3d(deformation.transpose()*deformation));
+      Eigen::Matrix3d metric(deformation.transpose()*deformation);
       //Initialize everything
 
       Eigen::MatrixXd cost_matrix;
       std::vector<Index> optimal_assignments;
       //BasicStructure<Site> best_ideal_struc(rstruc);
-      Coordinate ttrans(Vector3<double>(0, 0, 0), rstruc.lattice(), FRAC), best_trans(Vector3<double>(0, 0, 0), rstruc.lattice(), FRAC);
+      Coordinate ttrans(rstruc.lattice()), best_trans(rstruc.lattice());
       Coordinate within_trans(ttrans);
 
       double min_mean = 10E10;
@@ -1182,15 +1181,15 @@ namespace CASM {
         Coordinate ref_coord(rstruc.basis[0]);
 
         if(n > 0)
-          ref_coord(FRAC) = scel.coord(n - 1)(FRAC);
+          ref_coord.frac() = scel.coord(n - 1).frac();
 
         trans_dist = ref_coord.min_dist(rstruc.basis[0], ttrans);
         within_trans = ttrans;
         within_trans.set_lattice(scel.get_prim().lattice(), CART);
-        //std::cout << "Before:  within_trans " << within_trans(FRAC) << "; V_number: " << within_trans.voronoi_number() << "\n";
+        //std::cout << "Before:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n";
         within_trans.within();// <-- should be voronoi_within()?
-        //std::cout << "After:  within_trans " << within_trans(FRAC) << "; V_number: " << within_trans.voronoi_number() << "\n\n\n";
-        within_trans_dist = within_trans(CART).length();
+        //std::cout << "After:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n\n\n";
+        within_trans_dist = within_trans.const_cart().norm();
         if(within_trans_dist < trans_dist) {
           within_trans.set_lattice(rstruc.lattice(), CART);
           ttrans = within_trans;
@@ -1259,14 +1258,13 @@ namespace CASM {
         // IDEAL coordinate to the RELAXED coordinate
         if(best_assignments[i] < rstruc.basis.size()) {
 
-          Coordinate ideal_coord(scel.coord(i)(FRAC), rstruc.lattice(), FRAC);
+          Coordinate ideal_coord(scel.coord(i).frac(), rstruc.lattice(), FRAC);
 
           (rstruc.basis[best_assignments[i]] + best_trans).min_dist(ideal_coord, disp_coord);
           //std::cout << "min_dist" << std::endl;
           //std::cout << rstruc.basis[optimal_assignments(i)].min_dist(pos_coord, disp_coord);
-          for(Index j = 0; j < 3; j++) {
-            config_dof.disp(i)[j] = disp_coord(CART)[j];
-          }
+          config_dof.disp(i) = disp_coord.const_cart();
+
           avg_disp += config_dof.disp(i);
         }
       }

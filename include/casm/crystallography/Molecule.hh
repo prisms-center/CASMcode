@@ -116,7 +116,7 @@ namespace CASM {
     Molecule &apply_sym(const SymOp &op); //TODO
     Molecule &apply_sym_no_trans(const SymOp &op); //TODO
 
-    void set_lattice(const Lattice &new_lat);
+    void set_lattice(const Lattice &new_lat, COORD_TYPE invariant_mode);
 
     Molecule get_union(const Molecule &RHS); //TODO
 

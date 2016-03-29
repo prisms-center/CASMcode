@@ -15,6 +15,9 @@
 //#include "casm/../container/Counter.cc"
 
 namespace CASM {
+
+  class Lattice;
+
   class SymGroup;
   class MasterSymGroup;
   class SymGroupRep;
@@ -44,7 +47,10 @@ namespace CASM {
     typedef SymOp::vector_type vector_type;
     typedef SymOp::matrix_type matrix_type;
     /// Initialize by setting periodicity mode (default mode is PERIODIC)
-    SymGroup(PERIODICITY_TYPE init_type = PERIODIC) : group_periodicity(init_type), max_error(-1) {
+    SymGroup(PERIODICITY_TYPE init_type = PERIODIC) :
+      m_lat_ptr(nullptr),
+      m_group_periodicity(init_type),
+      max_error(-1) {
       name.clear();
       latex_name.clear();
     }
@@ -55,13 +61,13 @@ namespace CASM {
 
     ///Check to see if a SymOp is contained in in SymGroup
     //maybe contains and find should account for group_periodicity
-    bool contains(const SymOp &test_op) const; //Donghee
+    //bool contains(const SymOp &test_op) const; //Donghee
 
     bool contains_periodic(const SymOp &test_op, double tol = TOL) const;
 
 
     ///Check to see if a SymOp is contained in in SymGroup and return its index
-    Index find(const SymOp &test_op) const;   //Donghee
+    //Index find(const SymOp &test_op) const;   //Donghee
 
     /// Check to see if a SymOp matrix ONLY is contained in SymGroup and return the index of this operation.
     /// This was originally written for pruning the factor groups of primitive structures to construct the
@@ -106,15 +112,15 @@ namespace CASM {
 
     Index make_empty_representation() const;
 
-    void set_lattice(const Lattice &new_lat, COORD_TYPE mode);
+    void set_lattice(const Lattice &new_lat);
 
     /// Gets all the space group operations in unit cell and stores them in space_group
     /// assuming that this SymGroup contains the factor group
-    void calc_space_group_in_cell(SymGroup &space_group) const;
+    void calc_space_group_in_cell(SymGroup &space_group, const Lattice &_cell) const;
 
     /// gets all teh space group operations corresponding to translations in the specified range
     /// max_trans sets boundary of parillellipiped centered at origin.
-    void calc_space_group_in_range(SymGroup &space_group, Eigen::Vector3i min_trans,  Eigen::Vector3i max_trans) const;
+    void calc_space_group_in_range(SymGroup &space_group, const Lattice &_cell, Eigen::Vector3i min_trans,  Eigen::Vector3i max_trans) const;
 
     /// Check to see if SymGroup satisfies the group property
     bool is_group(double tol = TOL) const;
@@ -122,17 +128,17 @@ namespace CASM {
     void enforce_group(double tol = TOL, Index max_size = 1000);  //AAB
 
     /// print locations of the symmetry-generating element of each SymOp
-    void print_locations(std::ostream &stream);
+    void print_locations(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2f_mat) const;
 
     /// Write the SymGroup to a file
-    void write(std::string filename, COORD_TYPE mode) const;
+    void write(std::string filename, COORD_TYPE mode, const Eigen::Ref<const Eigen::Matrix3d> &c2f_mat) const;
 
     /// Print the SymGroup to a stream
-    void print(std::ostream &out, COORD_TYPE mode) const;
+    void print(std::ostream &out, COORD_TYPE mode, const Eigen::Ref<const Eigen::Matrix3d> &c2f_mat) const;
 
     /// Cartesian translation of SymGroup origin by vector 'shift'
-    SymGroup &operator+=(const SymOp::vector_type &shift);
-    SymGroup &operator-=(const SymOp::vector_type &shift);
+    SymGroup &operator+=(const Eigen::Ref<const SymOp::vector_type> &shift);
+    SymGroup &operator-=(const Eigen::Ref<const SymOp::vector_type> &shift);
 
     Eigen::MatrixXd const *get_MatrixXd(Index i) const;
 
@@ -147,8 +153,8 @@ namespace CASM {
     const Array<bool> &get_complex_irrep_list() const;
     const std::string &get_name() const;
     const std::string &get_latex_name() const;
-    PERIODICITY_TYPE get_periodicity() const {
-      return group_periodicity;
+    PERIODICITY_TYPE periodicity() const {
+      return m_group_periodicity;
     }
     std::string possible_space_groups() const {
       return comment;
@@ -174,14 +180,15 @@ namespace CASM {
 
     jsonParser &to_json(jsonParser &json) const;
 
-    // Note: as a hack this expects at(0) to be present and have the right lattice!!!
-    //   it's just used to set the lattice for all the SymOp
     void from_json(const jsonParser &json);
 
   protected:
+    const Lattice &_lattice() const;
+    /// Pointer to a lattice for
+    Lattice const *m_lat_ptr;
 
     /// Specifies whether to use lattice periodicity when testing for equivalence
-    PERIODICITY_TYPE group_periodicity;
+    PERIODICITY_TYPE m_group_periodicity;
 
     /// multi_table[i][j] gives index of operation that is result of at(i)*at(j)
     mutable Array<Array<Index> > multi_table;
@@ -251,7 +258,10 @@ namespace CASM {
     mutable SymGroup point_group_internal;
 
   public:
-    MasterSymGroup(PERIODICITY_TYPE init_type = PERIODIC) : SymGroup(init_type), coord_rep_ID(-1), reg_rep_ID(-1) {};
+    MasterSymGroup(PERIODICITY_TYPE init_type = PERIODIC) :
+      SymGroup(init_type),
+      coord_rep_ID(-1),
+      reg_rep_ID(-1) {};
     MasterSymGroup(const MasterSymGroup &RHS);
     ~MasterSymGroup();
 
@@ -308,6 +318,12 @@ namespace CASM {
   //   it's just used to set the lattice for all the Molecules
   void from_json(SymGroup &group, const jsonParser &json);
 
+  bool compare_periodic(const SymOp &a,
+                        const SymOp &b,
+                        const Lattice &lat,
+                        PERIODICITY_TYPE periodicity,
+                        double _tol);
+  SymOp within_cell(const SymOp &a, const Lattice &lat, PERIODICITY_TYPE periodicity);
 
 };
 

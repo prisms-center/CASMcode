@@ -72,20 +72,10 @@ namespace CASM {
     return iA;
   }
   */
-  /// \brief Check if Eigen::MatrixXd is integer
-  bool is_integer(const Eigen::MatrixXd &M, double tol);
-
-  /// \brief Check if Eigen::MatrixXd is unimodular
-  bool is_unimodular(const Eigen::MatrixXd &M, double tol);
 
   /// \brief Return the hermite normal form, M == H*V
   std::pair<Eigen::MatrixXi, Eigen::MatrixXi> hermite_normal_form(const Eigen::MatrixXi &M);
 
-  /// \brief Check if Eigen::MatrixXd is diagonal
-  bool is_diagonal(const Eigen::MatrixXd &M, double tol);
-
-  /// \brief Check if Eigen::MatrixXi is diagonal
-  bool is_diagonal(const Eigen::MatrixXi &M);
 
   /// \brief Return the smith normal form, M == U*S*V
   void smith_normal_form(const Eigen::Matrix3i &M,
@@ -103,6 +93,30 @@ namespace CASM {
 
   /// \brief Round entries that are within tol of being integer to that integer value
   Eigen::MatrixXd pretty(const Eigen::MatrixXd &M, double tol);
+
+  /// \brief Check if Eigen::Matrix is integer
+  template<typename Derived>
+  bool is_integer(const Eigen::MatrixBase<Derived> &M, double tol) {
+    for(Index i = 0; i < M.rows(); i++) {
+      for(Index j = 0; i < M.cols(); j++) {
+        if(!almost_zero(boost::math::lround(M(i, j)) - M(i, j), tol))
+          return false;
+      }
+    }
+    return true;
+  }
+
+  /// \brief Check if Eigen::Matrix is unimodular
+  template<typename Derived>
+  bool is_unimodular(const Eigen::MatrixBase<Derived> &M, double tol) {
+    return is_integer(M, tol) && almost_equal(M.determinant(), static_cast<typename Derived::Scalar>(1), tol);
+  }
+
+  /// \brief Check if Eigen::Matrix is diagonal
+  template<typename Derived>
+  bool is_diagonal(const Eigen::MatrixBase<Derived> &M, double tol = TOL) {
+    return M.isDiagonal(tol);
+  }
 
   /// \brief Round Eigen::MatrixXd to Eigen::MatrixXi
   ///

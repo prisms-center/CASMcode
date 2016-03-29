@@ -9,7 +9,6 @@
 
 namespace CASM {
   class MasterSymGroup;
-  class Lattice;
 
   class Permutation;
   class UnitCellCoord;
@@ -97,9 +96,7 @@ namespace CASM {
 
   jsonParser &to_json(const SymOpRepresentation *rep, jsonParser &json);
   /// This allocates a new object to 'rep'.
-  ///   It might need a Lattice
-  ///
-  void from_json(SymOpRepresentation *rep, const jsonParser &json, const Lattice &lat);
+  void from_json(SymOpRepresentation *rep, const jsonParser &json);
 
   jsonParser &to_json(const SymOpRepresentation::symmetry_type &stype, jsonParser &json);
   void from_json(SymOpRepresentation::symmetry_type &stype, const jsonParser &json);

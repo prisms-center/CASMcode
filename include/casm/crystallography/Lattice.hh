@@ -23,7 +23,7 @@ namespace CASM {
 
     ///Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
     ///(e.g., lat_mat is equivalent to coord_trans[FRAC])
-    Lattice(const Eigen::Matrix3d &lat_mat = Eigen::Matrix3d::Identity());
+    Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat = Eigen::Matrix3d::Identity());
 
     /// \brief Construct FCC primitive cell of unit volume
     static Lattice fcc();
@@ -236,6 +236,29 @@ namespace CASM {
                          SymOpIterator op_begin = SymOpIterator(),
                          SymOpIterator op_end = SymOpIterator());
 
+  //********************************************************************
+  ///\brief Returns 'frac_mat' which is transformation of 'cart_mat'
+  /// if
+  ///    cart_vec_after = cart_mat*cart_vec
+  /// then
+  ///    frac_vec_after = frac_mat*frac_vec
+  /// where cart_vec = lat.lat_column_mat()*frac_vec
+  /// and cart_vec_after = lat.lat_column_mat()*frac_vec_after
+  Eigen::Matrix3d cart2frac(const Eigen::Ref<const Eigen::Matrix3d> &cart_mat, const Lattice &lat) {
+    return lat.inv_lat_column_mat() * cart_mat * lat.lat_column_mat();
+  }
+
+  //********************************************************************
+  ///\brief Returns 'cart_mat' which is transformation of 'frac_mat'
+  /// if
+  ///    cart_vec_after = cart_mat*cart_vec
+  /// then
+  ///    frac_vec_after = frac_mat*frac_vec
+  /// where cart_vec = lat.lat_column_mat()*frac_vec
+  /// and cart_vec_after = lat.lat_column_mat()*frac_vec_after
+  Eigen::Matrix3d frac2cart(const Eigen::Ref<const Eigen::Matrix3d> &frac_mat, const Lattice &lat) {
+    return lat.lat_column_mat() * frac_mat * lat.inv_lat_column_mat();
+  }
 
   //********************************************************************
   /**

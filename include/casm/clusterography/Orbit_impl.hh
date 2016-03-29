@@ -15,10 +15,6 @@ namespace CASM {
     for(Index i = 0; i < size(); i++)
       at(i).set_lattice(new_home, mode);
 
-    for(Index i = 0; i < equivalence_map.size(); i++)
-      for(Index j = 0; j < equivalence_map[i].size(); j++)
-        equivalence_map[i][j].set_lattice(new_home, mode);
-
     return;
 
   }
@@ -72,7 +68,7 @@ namespace CASM {
       else {
         t_cluster.within(0, within_shift); 	//make sure new equivalent cluster has first site within primitive cell
         this->push_back(t_cluster);   // add it
-        SymOp tsymm(SymOp(map_shift.const_cart() + within_shift.const_cart())*sym_group[i]);
+        SymOp tsymm(SymOp::translation(map_shift.const_cart() + within_shift.const_cart())*sym_group[i]);
         equivalence_map.push_back(Array<SymOp>(1, tsymm));
       }
 

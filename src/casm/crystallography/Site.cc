@@ -192,21 +192,11 @@ namespace CASM {
   }
 
   //****************************************************
-
-  void Site::set_lattice(const Lattice &new_lat) {
-    Coordinate::set_lattice(new_lat);
-    for(Index i = 0; i < site_occupant().size(); i++) {
-      m_site_occupant[i].set_lattice(new_lat);
-    }
-    return;
-  }
-
-  //****************************************************
   //John G. This is to use with set_lattice from Coordinate
-  void Site::set_lattice(const Lattice &new_lat, COORD_TYPE mode) {
-    Coordinate::set_lattice(new_lat, mode);
+  void Site::set_lattice(const Lattice &new_lat, COORD_TYPE invariant_mode) {
+    Coordinate::set_lattice(new_lat, invariant_mode);
     for(Index i = 0; i < site_occupant().size(); i++) {
-      m_site_occupant[i].set_lattice(new_lat);
+      m_site_occupant[i].set_lattice(new_lat, invariant_mode);
     }
     return;
   }

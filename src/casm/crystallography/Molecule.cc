@@ -165,12 +165,12 @@ namespace CASM {
    */
   //****************************************************
 
-  void Molecule::set_lattice(const Lattice &new_lat) {
+  void Molecule::set_lattice(const Lattice &new_lat, COORD_TYPE invariant_mode) {
     m_home = &new_lat;
-    center.set_lattice(new_lat);
+    center.set_lattice(new_lat, invariant_mode);
 
     for(Index i = 0; i < size(); i++) {
-      at(i).set_lattice(new_lat);
+      at(i).set_lattice(new_lat, invariant_mode);
     }
   };
 

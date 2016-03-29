@@ -203,7 +203,7 @@ namespace CASM {
 
     /// For each symmetrically distinct site, print the symmetry operations that map it onto itself
     void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag);
-    void print_factor_group(std::ostream &stream) const;
+    //void print_factor_group(std::ostream &stream) const;
 
     bool read_species(); //Ivy 11/27/12
     void assign_species(Array<std::string> &names, Array<double> &masses, Array<double> &magmoms, Array<double> &Us, Array<double> &Js); //Added by Ivy

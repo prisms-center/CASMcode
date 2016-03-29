@@ -18,7 +18,7 @@ namespace CASM {
 
   ///Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
   ///(e.g., lat_mat is equivalent to lat_column_mat())
-  Lattice::Lattice(const Eigen::Matrix3d &lat_mat) :
+  Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat) :
     m_lat_mat(lat_mat),
     m_inv_lat_mat(lat_mat.inverse()) {
 
@@ -284,13 +284,6 @@ namespace CASM {
         point_group.push_back(SymOp(tOp_cart, sqrt(tMat.diagonal().maxCoeff())));
       }
 
-      /*** Old way of checking pg_count()
-
-           if(tOp_cart.is_unitary(pg_tol)) {
-           point_group.push_back(SymOp(tOp_cart, *this, CART));
-           point_group.back().get_sym_type();
-           }
-      **/
     }
     while(++pg_count);
 
@@ -305,10 +298,6 @@ namespace CASM {
     }
     //Sort point_group by trace/conjugacy class
     point_group.sort_by_class();
-
-    for(Index i = 0; i < point_group.size(); i++) {
-      point_group[i].get_sym_type();
-    }
 
     return;
   }

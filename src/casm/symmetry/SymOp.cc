@@ -3,21 +3,10 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRep.hh"
-
+#include "casm/casm_io/json_io/container.hh"
 namespace CASM {
 
   //SymOpRepresentation::~SymOpRepresentation() {};
-
-  const Eigen::Matrix3d &SymOp::matrix() const {
-    return m_mat;
-  }
-
-  //**********************************************************
-
-  const Vector3<double> &SymOp::eigenvec() const {
-    return m_eigenvec;
-  }
-
 
   //**********************************************************
 
@@ -35,23 +24,10 @@ namespace CASM {
 
   //**********************************************************
 
-  const Coordinate &SymOp::tau() const {
-    return m_tau;
-  }
-
-  //**********************************************************
-
-  double SymOp::tau(int i) const {
-    return m_tau[i];
-  }
-
-
-  //**********************************************************
-
   void SymOp::set_index(const MasterSymGroup &new_group, Index new_index) {
     if((valid_index(new_index) && new_index < new_group.size())
        && (this == &(new_group[new_index]) ||
-           matrix().is_equal(new_group[new_index].matrix()))) {
+           almost_equal(matrix(), new_group[new_index].matrix()))) {
       m_master_group = &new_group;
       op_index = new_index;
     }
@@ -62,78 +38,24 @@ namespace CASM {
   }
 
   //**********************************************************
-  void SymOp::set_rep(Index rep_ID, const SymOpRepresentation &op_rep) const {
-    SymGroupRep const *tRep(master_group().representation(rep_ID));
-    if(!tRep) {
-      std::cerr << "CRITICAL ERROR: In SymOp::set_matrix_rep(" << rep_ID << "), representation was not found.\n"
-                << "                Exiting...\n";
-      exit(1);
-    }
-
-    tRep->set_rep(op_index, op_rep);
-
-    return;
-  }
-
-  //**********************************************************
-  Eigen::MatrixXd const *SymOp::get_matrix_rep(Index rep_ID) const {
-    SymGroupRep const *tRep(master_group().representation(rep_ID));
-    if(!tRep) return NULL;
-
-    return (tRep->at(op_index))->get_MatrixXd();
-  }
-
-  //**********************************************************
-  SymBasisPermute const *SymOp::get_basis_permute_rep(Index rep_ID) const {
-
-    SymGroupRep const *tRep(master_group().representation(rep_ID));
-    if(!tRep) {
-      std::cerr << "Warning: You have requested information from a nonexistent representation!\n"
-                << "m_master_group pointer is " << m_master_group << '\n';
-      return NULL;
-    }
-
-    return (tRep->at(op_index))->get_ucc_permutation();
-  }
-
-  //**********************************************************
-  Permutation const *SymOp::get_permutation_rep(Index rep_ID) const {
-    SymGroupRep const *tRep(master_group().representation(rep_ID));
-    if(!tRep) return NULL;
-
-    return (tRep->at(op_index))->get_permutation();
-  }
-
-  //**********************************************************
-  Array<Eigen::MatrixXd const * > SymOp::get_matrix_reps(Array<Index> rep_IDs) const {
-    Array<Eigen::MatrixXd const * > tmat;
-    for(Index i = 0; i < rep_IDs.size(); i++) {
-      tmat.push_back(get_matrix_rep(rep_IDs[i]));
-
-    }
-    return tmat;
-  }
-
-  //**********************************************************
 
   SymOp SymOp::operator*(const SymOp &RHS) const {
     SymOp t_op(matrix() * RHS.matrix(),
-               tau() + matrix() * RHS.tau(),
-               *home);
+               tau() + matrix() * RHS.tau());
 
     if(m_master_group && (m_master_group == RHS.m_master_group)) {
       t_op.set_index(master_group(), master_group().ind_prod(index(), RHS.index()));
     }
-    else if(RHS.m_master_group && !m_master_group && symmetry == identity_op) {
+    else if(RHS.m_master_group && !m_master_group && is_identity()) {
       t_op.set_index(*RHS.m_master_group, RHS.index());
     }
-    else if(m_master_group && !RHS.m_master_group && RHS.symmetry == identity_op) {
+    else if(m_master_group && !RHS.m_master_group && RHS.is_identity()) {
       t_op.set_index(master_group(), index());
     }
-    else if(symmetry == identity_op && RHS.symmetry == identity_op) {
-      t_op.symmetry = identity_op;
-      //t_op.op_index = 0;
-    }
+    //The following blocks caused problems at some point (mainly for non-primitive structures)
+    //else if(is_identity() && RHS.is_identity()) {
+    //t_op.op_index = 0;
+    //}
     //else{
     //std::cout << "This symmetry is " << symmetry << " with head " << m_master_group << " and RHS symmetry is " << RHS.symmetry << " with head " << RHS.m_master_group << "\n";
     //}
@@ -144,17 +66,15 @@ namespace CASM {
 
   //**********************************************************
 
-  SymOp &SymOp::operator+=(const Coordinate &RHS) {
-    tau_vec(CART) += RHS(CART) - matrix() * RHS(CART);
-    location(CART) += RHS(CART);
+  SymOp &SymOp::operator+=(const Eigen::Ref<const SymOp::vector_type> &RHS) {
+    m_tau += RHS - matrix() * RHS;
     return (*this);
   }
 
   //**********************************************************
 
-  SymOp &SymOp::operator-=(const Coordinate &RHS) {
-    tau_vec(CART) -= RHS(CART) - matrix() * RHS(CART);
-    location(CART) -= RHS(CART);
+  SymOp &SymOp::operator-=(const Eigen::Ref<const SymOp::vector_type> &RHS) {
+    m_tau -= RHS - matrix() * RHS;
     return (*this);
   }
 
@@ -164,9 +84,7 @@ namespace CASM {
   // inverse matrix operaton on translation and subtract
   SymOp SymOp::inverse() const {
     SymOp t_op(matrix().transpose(),
-               -(matrix().transpose() * tau(CART)),
-               *home,
-               CART);
+               -(matrix().transpose() * tau()));
     if(m_master_group) {
       t_op.set_index(master_group(), master_group().ind_inverse(index()));
     }
@@ -181,48 +99,24 @@ namespace CASM {
 
   SymOp SymOp::no_trans() const {
 
-    SymOp t_op(*this);
-
-    t_op.tau_vec(CART) = Vector3<double>(0, 0, 0);
-
-    return t_op;
-  };
-
-  //**********************************************************
-
-  void SymOp::within() {
-    tau_vec.within();
+    return SymOp(matrix(), map_error());
   }
 
   //**********************************************************
-
+  /*
   bool SymOp::compare(const SymOp &RHS, double eq_tol) const {
-    return calc(CART) &&
-           RHS.calc(CART) &&
-           matrix().is_equal(RHS.matrix(), eq_tol) &&
-           tau_vec.min_dist(RHS.tau_vec) < eq_tol;
+    return
+      almost_equal(matrix(),RHS.matrix(), eq_tol) &&
+      tau_vec.min_dist(RHS.tau_vec) < eq_tol;
 
-  }
-
+      }
+  */
   //**********************************************************
 
   bool SymOp::operator==(const SymOp &RHS) const {
-    return calc(CART) &&
-           RHS.calc(CART) &&
-           matrix().is_equal(RHS.matrix()) &&
-           tau(CART).is_equal(RHS.tau(CART));
-  };
-
-  //******************************************************
-  //
-  // Functions to check symmetry type:
-  //
-  //******************************************************
-
-  bool SymOp::is_identity() const {
-    if(symmetry == invalid_op)
-      get_sym_type();
-    return symmetry == identity_op;
+    return
+      almost_equal(matrix(), RHS.matrix()) &&
+      almost_equal(tau(), RHS.tau());
   };
 
   //******************************************************
@@ -232,8 +126,8 @@ namespace CASM {
    *	- General equation
 
    * P is the invariant point
-   * P(CART) = Sym_op*P(CART) + tau(CART)
-   * P(CART) = (I-Sym_op).inverse()*tau(CART)
+   * P(CART) = Sym_op*P(CART) + tau()
+   * P(CART) = (I-Sym_op).inverse()*tau()
 
    *	- The General equation is only valid for point sysmetry
 
@@ -242,7 +136,7 @@ namespace CASM {
    *  P(CART) = -P(CART) + tau_per (perpendicular to eigenvec)
    *  P = tau_per/2
 
-   *	- aixes sysmmetry ( Rotation or Screw)
+   *	- axial sysmmetry ( Rotation or Screw)
    *   change the coordinate system having eigen vector as a z coordinate,
    *	 so, it makes 3D rotation to 2D roation
    *   find M coordinate transfer matrix
@@ -251,12 +145,12 @@ namespace CASM {
    *   Pnew = (Inew-Snew)^-1*tau_pp(new)
    *   P  = (MInewM.inverse() - S).inverse*tau_pp
    */
-
+  /*
   void SymOp::find_location() const {
 
-    location(CART) = Vector3<double>(0, 0, 0);
+
     Eigen::Matrix3d tMat, inv_tMat;
-    Vector3<double> tau_pp, tau_ll;
+    Eigen::Vector3d tau_pp, tau_ll;
 
     if(type() == invalid_op) {
       get_sym_type();
@@ -274,13 +168,13 @@ namespace CASM {
 
       tMat = Eigen::Matrix3d::identity() - m_mat;
       inv_tMat = tMat.inverse();
-      location(CART) = inv_tMat * tau(CART);
+      location(CART) = inv_tMat * tau();
 
       return;
     }
     if((type() == mirror_op) || (type() == glide_op)) {
       //component of tau parallel to eigenvector:
-      tau_ll = (eigenvec(CART).dot(tau(CART)) / eigenvec(CART).dot(eigenvec(CART))) * eigenvec(CART);
+      tau_ll = (eigenvec(CART).dot(tau()) / eigenvec(CART).dot(eigenvec(CART))) * eigenvec(CART);
 
       location(CART) = tau_ll / 2.0;
       return;
@@ -291,10 +185,10 @@ namespace CASM {
       // std::cout << "eigenvec norm is " << eigenvec(CART).norm() << '\n';
 
       //component of tau parallel to rotation axis
-      tau_ll = (eigenvec(CART).dot(tau(CART)) / eigenvec(CART).dot(eigenvec(CART))) * eigenvec(CART);
+      tau_ll = (eigenvec(CART).dot(tau()) / eigenvec(CART).dot(eigenvec(CART))) * eigenvec(CART);
 
       //component in the plane of rotation
-      tau_pp = tau(CART) - tau_ll;
+      tau_pp = tau() - tau_ll;
 
       if(tau_pp.is_zero()) {
         //rotation axis passes through origin
@@ -303,7 +197,7 @@ namespace CASM {
       }
 
 
-      Vector3<double> X, Y, Z, tY;
+      Eigen::Vector3d X, Y, Z, tY;
       Eigen::Matrix3d M, I_new(Eigen::Matrix3d::identity());
 
       tY = eigenvec(CART).cross(tau_pp);
@@ -331,475 +225,115 @@ namespace CASM {
 
     std::cerr << "DISASTER in SymOp::find_location!!\n Attempted to find symmetr location, but symmetry type is invalid!\n";
   }
-
-  //******************************************************
-
-  bool SymOp::is_mirror() const {
-    if(symmetry == invalid_op)
-      get_sym_type();
-    return symmetry == mirror_op;
-  }
-
-  //******************************************************
-
-  bool SymOp::is_glide() const {
-    if(symmetry == invalid_op)
-      get_sym_type();
-    return symmetry == glide_op;
-  }
-
-  //******************************************************
-
-  bool SymOp::is_rotation() const {
-    if(symmetry == invalid_op)
-      get_sym_type();
-    return symmetry == rotation_op;
-  }
-
-  //******************************************************
-
-  bool SymOp::is_screw() const {
-    if(symmetry == invalid_op)
-      get_sym_type();
-    return symmetry == screw_op;
-  }
-
-  //******************************************************
-
-  bool SymOp::is_inversion() const {
-    if(symmetry == invalid_op)
-      get_sym_type();
-    return symmetry == inversion_op;
-  }
-
-  //******************************************************
-
-  bool SymOp::is_rotoinversion() const {
-    if(symmetry == invalid_op)
-      get_sym_type();
-    return symmetry == rotoinversion_op;
-  }
-
-  //******************************************************
-
-  bool SymOp::is_invalid() const {
-    if(symmetry == invalid_op)
-      get_sym_type();
-    return symmetry == invalid_op;
-  }
-
-
-
+  */
   //******************************************************
 
   SymOp &SymOp::apply_sym(const SymOp &op) {
     (*this) = op * (*this) * (op.inverse());
-    //get_sym_type(); // why would we do this?
     return *this;
   }
 
   //******************************************************
   /**
-   * Function tests a symmetry matrix and assigns symmetry type
-   * to variable symmetry.
-   *
-   * The function checks for (in this order) identity, inversion
-   * mirror, glide, rotoinversion, rotation, and screw.
-   */
-  //******************************************************
-  void SymOp::get_sym_type() const {
-
-    double det = 0.0;
-    double trace = 0.0;
-
-    // temporary matrix
-    Eigen::Matrix3d tmat;
-
-    //Check to see if symmetry_mat exists
-    // if does not exist, update
-    if(!calc(CART)) {
-      std::cerr << "WARNING: Inside SymOp::get_sym_type(), can't get symmetry type because Cartesian transformation does not exist.\n";
-      return;
-    }
-
-
-    det = matrix().determinant();
-    trace = matrix().trace();
-
-    //Check for IDENTITY
-    //Trace = 3
-    if(std::abs(trace - 3.0) < TOL) {
-      symmetry = identity_op;
-      return;
-    }
-
-
-    //Check for INVERSION
-    //Trace = -3
-    if(std::abs(trace + 3.0) < TOL) {
-      symmetry = inversion_op;
-      return;
-    }
-
-    //Check for MIRROR
-    //Trace = 1; det = -1
-    if((det < (-TOL)) && (std::abs(trace - 1) < TOL)) {
-      mirror_check();
-      return;
-    }
-
-    //Check for ROTATION
-    //Check for ROTOINVERSION
-    //Rotation symmetry matrix det = 1 (does not change the orientation)
-    //Rotation has trace 1+2cos(theta)
-    //Rotoinversion det = -1
-    //Extract just rotation matrix
-    else {
-      tmat = matrix();
-
-      if(det < (-TOL)) {  //then rotoinversion
-        symmetry = rotoinversion_op;
-
-        //"undo" the inversion part of the trace and det
-        //to obtain trace, determinant of rotation matrix
-        // and rotation matrix itself.
-        trace = -trace;
-        det = -det;
-        tmat *= -1;
-        calc_rotation_angle(tmat, det, trace);
-
-      }
-      else { //rotation
-        symmetry = rotation_op;
-        calc_rotation_angle(tmat, det, trace);
-
-        screw_check();
-        return;
-      }
-
-
-    }//end of rotation/rotoinversion check
-
-    //If the symmetry matrix passes none of the tests
-    //symmetry remains as invalid_op
-  }
-
-  //******************************************************
-  /**
-   * Checks for glide symmetry operation
-   *
-   * Function requires that a mirror symmetry operation
-   * was found first before calculating the translational
-   * component (screw_glide_shift) of the glide. It takes
-   * tau_vec, subtracts off the component perpendicular
-   * to the mirror plane (parallel to eigenvector), leaving
-   * just the component parallel to the mirror plane.
-   */
-  //******************************************************
-
-
-  void SymOp::glide_check() const {
-
-    Coordinate tcoord(get_home());
-
-    // Check for GLIDE
-    // Mirror + Translation over half lattice vector // to mirror plane
-    if(symmetry != mirror_op) return;
-
-    //Find magnitude of translation parallel to sym_op eigenvector (normal to mirror plane)
-    double tnorm = tau_vec(CART).dot(eigenvec(CART));
-
-    if(std::abs(tnorm - tau_vec(CART).length()) < TOL) {
-      // vector tau and eigenvector parallel -- therefore not glide
-      return;
-    }
-
-    //subtract off component of translation that is parallel
-    //to eigenvector to obtain purely translational component
-    tcoord(CART) = tau_vec(CART) - eigenvec(CART) * tnorm;
-
-    // If tcoord is not a lattice translation
-    if(!tcoord.is_lattice_shift()) {
-      screw_glide_shift(CART) = tcoord(CART);
-      symmetry = glide_op;
-    } // But if it is a lattice shift and the coord is not zero
-    //     else if(!tcoord(CART).is_zero(TOL)) { //Added by Ivy 01/24/13
-    //       //std::cout << "LATTICE_GLIDE \n";
-    //       screw_glide_shift(CART) = tcoord(CART);
-    //       symmetry = lattice_glide_op;
-    //     }
-
-    // otherwise, symmetry remains a mirror_op
-    // when exiting this routine
-    return;
-
-  }
-
-
-
-  //******************************************************
-  /**
-   * Checks for screw symmetry operation
-   *
-   * Function requires that a rotation symmetry operation
-   * was found first before checking for the eigenvector
-   * of the screw symmetry operation.
-   */
-  //******************************************************
-  void SymOp::screw_check() const {
-
-    Coordinate tcoord(get_home());
-
-    //Rotation + Translation parallel to rotation axis
-    if(symmetry != rotation_op) return;
-
-    //Find magnitude of translation parallel to sym_op eigenvector (rotation axis)
-    //i.e. dot product of the two vectors, normalized
-    double tnorm = tau_vec(CART).dot(eigenvec(CART));
-
-    if(std::abs(tnorm) < TOL) {
-      // vector tau and eigenvector perpendicular -- therefore not screw
-      return;
-    }
-
-    //Get component of translation parallel to eigenvector
-    //i.e. dotproduct(tau, eigenvec)*eigenvec
-    tcoord(CART) = eigenvec(CART) * tnorm;
-
-    // If tcoord is not a lattice translation
-    if(!tcoord.is_lattice_shift()) {
-      screw_glide_shift(CART) = tcoord(CART);
-      symmetry = screw_op;
-    }// But if it is a lattice shift and the coord is not zero
-    //     else if(!tcoord(CART).is_zero(TOL)) { //Added by Ivy 01/24/13
-    //       //std::cout << "LATTICE_SCREW \n";
-    //       screw_glide_shift(CART) = tcoord(CART);
-    //       symmetry = lattice_screw_op;
-    //     }
-
-    // otherwise symmetry remains rotation_op
-    // when exiting this routine
-    return;
-
-  }
-
-  //******************************************************
-  /**
-   * Checks for mirror symmetry operation.
-   */
-  //******************************************************
-  void SymOp::mirror_check() const {
-    int i;
-
-    //Mirror = 180 degree rotation + inversion
-    //Check for 1) det < 0 (inversion) and 2) trace = 1 (180 rotation)
-    //Get normal vector of mirror plane
-
-    //Turn CART form of symmetry matrix into Eigen class Matrix
-    //Eigen::Matrix<double, 3, 3> tmat = (matrix());
-    Vector3< Vector3<std::complex<double> > > all_eigenvectors;
-    Vector3< std::complex<double> > all_eigenvalues;
-    all_eigenvalues = matrix().eigen(all_eigenvectors);
-
-
-    //Want the eigenvector that is perpendicular to the mirror plane.
-    //i.e. the eigenvector corresponding to the -1 eigenvalue.
-    //A mirror symmetry operation has 3 eigenvalues: 1, 1, -1
-    for(i = 0; i < 3; i++) {
-      if(all_eigenvalues.at(i).real() < TOL) {
-        //check that the imaginary parts of eigenvector are 0
-        if((all_eigenvectors.at(i)[0].imag() < TOL) &&
-           (all_eigenvectors.at(i)[1].imag() < TOL) &&
-           (all_eigenvectors.at(i)[2].imag() < TOL)) {
-          //eigenvec(CART) is a Vector3<double> whereas all_eigenvalues.at(i)
-          //is a Vector3<std::complex<double>>
-          eigenvec(CART).at(0) = all_eigenvectors.at(i)[0].real();
-          eigenvec(CART).at(1) = all_eigenvectors.at(i)[1].real();
-          eigenvec(CART).at(2) = all_eigenvectors.at(i)[2].real();
-
-          symmetry = mirror_op;
-
-          glide_check();
-
-          return;
-        }
-      }
-    }
-  }//end of MIRROR check
-
-  //******************************************************
-  /**
    * Calculates the rotation angle.
    *
    *
    */
   //******************************************************
 
-  double SymOp::get_rotation_angle() const {
-    return rotation_angle;
-  }
+  SymOp::SymInfo SymOp::info() const {
+    SymInfo result;
+    if(almost_equal(matrix().trace(), -3.0)) {
+      result.op_type = identity_op;
+      return result;
+    }
 
-  //*****************************************************
+    if(almost_equal(matrix().trace(), -3.0)) {
+      result.op_type = inversion_op;
+      return result;
+    }
 
-  const Coordinate &SymOp::get_location() const {
-    return location;
-  }
+    int det = round(matrix().determinant());
 
-  //*****************************************************
-
-  const Vector3<double> &SymOp::get_location(COORD_TYPE mode) const {
-    return location(mode);
-  }
-  //*****************************************************
-  const Coordinate &SymOp::get_screw_glide_shift() const {
-    return screw_glide_shift;
-  }
-  //*****************************************************
-  const Vector3<double> &SymOp::get_screw_glide_shift(COORD_TYPE mode) const {
-    return screw_glide_shift(mode);
-  }
-
-  //******************************************************
-  /**
-   * Calculates the rotation angle.
-   *
-   *
-   */
-  //******************************************************
-
-  void SymOp::calc_rotation_angle(Eigen::Matrix3d mat, double det, double trace) const {
     int i, j;
 
-    double vec_sum, vec_mag;
     //If rotation is 180 degrees
     //Rotation matrix becomes symmetric; 180 rotation can be
     //decomposed into 2 orthogonal mirror planes
     //handled the same way as in mirror_check
-    if(std::abs(trace + 1) < TOL) {
-      Vector3<double> test_vec(0, 0, 0), w_vec;
+    Eigen::EigenSolver<matrix_type> t_eig(det * matrix());
 
-      rotation_angle = 180;
-
-      Vector3< Vector3<std::complex<double> > > all_eigenvectors;
-      Vector3< std::complex<double> > all_eigenvalues;
-      all_eigenvalues = matrix().eigen(all_eigenvectors);
-
-      //Eigenvalues of 180 rotation are 1, -1, -1
-      for(j = 0; j < 3; j++) {
-        if(std::abs(all_eigenvalues.at(j).real() - 1) < TOL) {
-          if((all_eigenvectors.at(j)[0].imag() < TOL) &&
-             (all_eigenvectors.at(j)[1].imag() < TOL) &&
-             (all_eigenvectors.at(j)[2].imag() < TOL)) {
-            eigenvec(CART).at(0) = all_eigenvectors.at(j)[0].real();
-            eigenvec(CART).at(1) = all_eigenvectors.at(j)[1].real();
-            eigenvec(CART).at(2) = all_eigenvectors.at(j)[2].real();
-
-            return;
-          }
-        }
-      } //End loop over eigenvectors
-    }
-
-    //Extract rotation angle
-
-    // Use this method because arccos is only defined for 0 to pi.
-    // Using this axis-angle method produces unique angle of rotation.
-
-    // Following only evaluates if we have non-180 proper rotation
-    // Method uses inversion of axis-angle interpretation of a rotation matrix R
-    // With axis v=(x,y,z) and angle TH, with ||v||=1
-    //  c = cos(TH); s = sin(TH); C = 1-c
-    //      [ x*xC+c   xyC-zs   zxC+ys ]
-    //  R = [ xyC+zs   y*yC+c   yzC-xs ]
-    //      [ zxC-ys   yzC+xs   z*zC+c ]
-
-    vec_sum = 0.0;
-    vec_mag = 0.0;
-
+    //Eigenvalues of 180 rotation are 1, -1, -1
     for(i = 0; i < 3; i++) {
-      eigenvec.at(i, CART) = mat((i + 2) % 3, (i + 1) % 3) - mat((i + 1) % 3, (i + 2) % 3);
-
-      //right side of above expression evaluates to
-      //2xsin(TH) for i = 0, 2ysin(TH) for i = 1, 2zsin(TH) for i = 2
-
-      //if TH = 0 or 180, second condition won't ever be fulfilled
-      if((std::abs(vec_sum) < TOL) && (std::abs(eigenvec.at(i, CART)) > TOL)) {
-        //extract sign of eigenvec(i,CART)
-        vec_sum = eigenvec.at(i, CART);
+      if(almost_equal(t_eig.eigenvalues()(i), std::complex<double>(1, 0))) {
+        result.axis = t_eig.eigenvectors().col(i).real();
+        break;
+      }
+    }
+    for(i = 0; i < 3; i++) {
+      if(!almost_zero(result.axis[i])) {
+        result.axis *= sgn(result.axis[i]);
+        break;
       }
     }
 
-    vec_mag = eigenvec(CART).length();
+    vector_type ortho = result.axis.unitOrthogonal();
+    vector_type rot = matrix() * ortho;
+    if(almost_equal(ortho.dot(rot), 1.0))
+      result.angle = 0;
 
-    if(vec_sum < -TOL) {
-      //vec_mag = 2sin(TH) and trace - 1 = 2cos(TH)
-      //negative vec_mag used to preserve the sign of sin since above,
-      //the sign was lost when vec_mag = eigenvec(CART).length()
-      rotation_angle = int(round((180.0 / M_PI) * atan2(-vec_mag, (trace - 1)))) + 360;
-      eigenvec(CART).normalize();
-      eigenvec(CART) *= -1;
+    result.angle = int(round((180.0 / M_PI) * atan2(result.axis.dot(ortho.cross(rot)), ortho.dot(rot)))) + 180;
+    if(det < 0) {
+      if(almost_equal(result.angle, 180.0)) {
+        result.op_type = mirror_op;
+        result.screw_glide_shift = tau() - tau().dot(result.axis) * result.axis;
+      }
+      else {
+        result.screw_glide_shift = tau().dot(result.axis) * result.axis;
+        result.op_type = rotoinversion_op;
+      }
     }
     else {
-      //vec_mag = 2sin(TH) and trace - 1 = 2cos(TH)
-      rotation_angle = int(round((180.0 / M_PI) * atan2(vec_mag, (trace - 1))));
-      eigenvec(CART).normalize();
+      result.screw_glide_shift = tau().dot(result.axis) * result.axis;
+      result.op_type = rotation_op;
     }
-
-    /*
-      eigenvec(CART).normalize();
-
-      if (vec_sum < -TOL)
-      {
-      rotation_angle = 360 - rotation_angle;
-      eigenvec(CART) *= -1;
-      }
-    */
-    return;
+    return result;
   }
 
   //*****************************************************
-  void SymOp::print_short(std::ostream &stream, COORD_TYPE mode) const {
-    Matrix3 <double> tsym_mat;
-
-    get_sym_type();
-
-    if(mode == COORD_DEFAULT)
-      mode = COORD_MODE::CHECK();
-
-
-    if(!calc(mode))
-      std::cerr << "Trying to print out symmetry matrix, but it is not available in " << COORD_MODE::NAME(mode) << " mode\n";
+  void SymOp::print_short(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2f_mat) const {
 
     stream.precision(3);
+    SymInfo t_info = info();
 
-    switch(symmetry) {
+    switch(t_info.op_type) {
     case identity_op:
       stream << "Identity Operation \n";
       break;
 
     case mirror_op:
       stream.setf(std::ios::showpoint);
-      stream << "Mirror Operation with plane Normal = " << std::setw(7) << eigenvec(mode) << '\n';
+      stream << "Mirror Operation with plane Normal = " << std::setw(7) << c2f_mat *t_info.axis << '\n';
       break;
 
     case glide_op:
       stream.setf(std::ios::showpoint);
-      stream << "Glide Operation with plane Normal = " << std::setw(7) << eigenvec(mode) << '\n'
-             << "Glide Vector:" << std::setw(7) << screw_glide_shift(mode) << '\n';
+      stream << "Glide Operation with plane Normal = " << std::setw(7) << c2f_mat *t_info.axis << '\n'
+             << "Glide Vector:" << std::setw(7) << c2f_mat *t_info.screw_glide_shift << '\n';
       break;
 
     case rotation_op:
       stream.unsetf(std::ios::showpoint);
-      stream << std::setprecision(3) << rotation_angle << "-degree Rotation Operation about axis";
+      stream << std::setprecision(3) << t_info.angle << "-degree Rotation Operation about axis";
       stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << eigenvec(mode)  << '\n';
+      stream << std::setw(7) << c2f_mat *t_info.axis  << '\n';
       break;
 
     case screw_op:
       stream.unsetf(std::ios::showpoint);
-      stream << std::setprecision(3) << rotation_angle << "-degree Screw Operation along axis";
+      stream << std::setprecision(3) << t_info.angle << "-degree Screw Operation along axis";
       stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << eigenvec(mode) << "\n Screw Vector:" << std::setw(7) << screw_glide_shift(mode) << '\n';
+      stream << std::setw(7) << c2f_mat *t_info.axis << "\n Screw Vector:" << std::setw(7) << c2f_mat *t_info.screw_glide_shift << '\n';
       break;
 
     case inversion_op:
@@ -808,9 +342,9 @@ namespace CASM {
 
     case rotoinversion_op:
       stream.unsetf(std::ios::showpoint);
-      stream << std::setprecision(3) << rotation_angle << "-degree Rotoinversion Operation about axis";
+      stream << std::setprecision(3) << t_info.angle << "-degree Rotoinversion Operation about axis";
       stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << eigenvec(mode) << "\n";
+      stream << std::setw(7) << c2f_mat *t_info.axis << "\n";
       break;
 
     case invalid_op:
@@ -823,44 +357,42 @@ namespace CASM {
 
   //*****************************************************
 
-  void SymOp::print(std::ostream &stream) const {
-    Matrix3 <double> tsym_mat;
-
-    get_sym_type();
+  void SymOp::print(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2f_mat) const {
+    SymInfo t_info = info();
 
     int tprec = stream.precision();
     std::ios::fmtflags tflags = stream.flags();
 
     stream.precision(3);
 
-    switch(symmetry) {
+    switch(info().op_type) {
     case identity_op:
       stream << "Identity Operation \n";
       break;
 
     case mirror_op:
       stream.setf(std::ios::showpoint);
-      stream << "Mirror Operation with plane Normal = " << std::setw(7) << eigenvec() << '\n';
+      stream << "Mirror Operation with plane Normal = " << std::setw(7) << c2f_mat *t_info.axis << '\n';
       break;
 
     case glide_op:
       stream.setf(std::ios::showpoint);
-      stream << "Glide Operation with plane Normal = " << std::setw(7) << eigenvec() << '\n'
-             << "Glide Vector:" << std::setw(7) << screw_glide_shift() << '\n';
+      stream << "Glide Operation with plane Normal = " << std::setw(7) << c2f_mat *t_info.axis << '\n'
+             << "Glide Vector:" << std::setw(7) << c2f_mat *t_info.screw_glide_shift << '\n';
       break;
 
     case rotation_op:
       stream.unsetf(std::ios::showpoint);
-      stream << std::setprecision(3) << rotation_angle << "-degree Rotation Operation about axis";
+      stream << std::setprecision(3) << t_info.angle << "-degree Rotation Operation about axis";
       stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << eigenvec()  << '\n';
+      stream << std::setw(7) << c2f_mat *t_info.axis  << '\n';
       break;
 
     case screw_op:
       stream.unsetf(std::ios::showpoint);
-      stream << std::setprecision(3) << rotation_angle << "-degree Screw Operation along axis";
+      stream << std::setprecision(3) << t_info.angle << "-degree Screw Operation along axis";
       stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << eigenvec() << "\n Screw Vector:" << std::setw(7) << screw_glide_shift() << '\n';
+      stream << std::setw(7) << c2f_mat *t_info.axis << "\n Screw Vector:" << std::setw(7) << c2f_mat *t_info.screw_glide_shift << '\n';
       break;
 
     case inversion_op:
@@ -869,9 +401,9 @@ namespace CASM {
 
     case rotoinversion_op:
       stream.unsetf(std::ios::showpoint);
-      stream << std::setprecision(3) << rotation_angle << "-degree Rotoinversion Operation about axis";
+      stream << std::setprecision(3) << t_info.angle << "-degree Rotoinversion Operation about axis";
       stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << eigenvec() << "\n";
+      stream << std::setw(7) << c2f_mat *t_info.axis << "\n";
       break;
 
     case invalid_op:
@@ -885,14 +417,15 @@ namespace CASM {
 
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
     stream.precision(9);
-
+    Eigen::Matrix3d tmat(c2f_mat * matrix()*c2f_mat.inverse());
+    Eigen::Vector3d ttau(c2f_mat * tau());
     for(int i = 0; i < 3; i++) {
       //Print each row of the symmetry matrix separately
       for(int j = 0; j < 3; j++) {
-        stream << std::setw(14) << matrix()(i, j);
+        stream << std::setw(14) << tmat(i, j);
       }
 
-      stream << std::setw(22) << tau(i) << "\n";
+      stream << std::setw(22) << ttau(i) << "\n";
     }
 
     stream.precision(tprec);
@@ -904,6 +437,8 @@ namespace CASM {
 
   jsonParser &SymOp::to_json(jsonParser &json) const {
     json.put_obj();
+
+    auto t_info = info();
 
     // Members not included:
     //
@@ -917,7 +452,7 @@ namespace CASM {
     json["SymOpRep_type"] = "SymOp";
 
     ///type of symmetry, given by one of the allowed values of symmetry_type
-    json["symmetry"] = symmetry;
+    json["symmetry"] = t_info.op_type;
     json["op_index"] = op_index;
     json["rep_ID"] = rep_ID;
 
@@ -928,24 +463,19 @@ namespace CASM {
     json["tau"] = tau();
 
     // mutable Coordinate location;
-    find_location();
-    location.within();
-    if(location.calc())
-      json["location"] = location;
+    //json["location"] = location;
 
     // mutable Coordinate eigenvec;
-    if(eigenvec.calc())
-      json["eigenvec"] = eigenvec;
+    json["eigenvec"] = t_info.axis;
 
     // mutable double rotation_angle;
-    json["rotation_angle"] = rotation_angle;
+    json["rotation_angle"] = t_info.angle;
 
     // mutable Coordinate screw_glide_shift;
-    if(screw_glide_shift.calc())
-      json["screw_glide_shift"] = screw_glide_shift;
+    json["screw_glide_shift"] = t_info.screw_glide_shift;
 
     // double map_error;
-    json["map_error"] = map_error;
+    json["map_error"] = map_error();
 
     return json;
   }
@@ -955,8 +485,6 @@ namespace CASM {
   void SymOp::from_json(const jsonParser &json) {
     try {
       //std::cout<<"Inside of SymOp::from_json"<<std::endl;
-      //std::cout<<"Reading in symmetry"<<std::endl;
-      CASM::from_json(symmetry, json["symmetry"]);
       //std::cout<<"Reading in op_index"<<std::endl;
       CASM::from_json(op_index, json["op_index"]);
       //std::cout<<"Reading in rep_id"<<std::endl;
@@ -971,28 +499,9 @@ namespace CASM {
       if(json.contains("tau"))
         CASM::from_json(m_tau, json["tau"]);
 
-      //std::cout<<"Reading in location"<<std::endl;
-      // mutable Coordinate location;
-      if(json.contains("location"))
-        CASM::from_json(location, json["location"]);
-
-      //std::cout<<"Reading in eigenvec"<<std::endl;
-      // mutable Coordinate eigenvec;
-      if(json.contains("eigenvec"))
-        CASM::from_json(eigenvec, json["eigenvec"]);
-
-      //std::cout<<"Reading in rotation_angle"<<std::endl;
-      // mutable double rotation_angle;
-      CASM::from_json(rotation_angle, json["rotation_angle"]);
-
-      //std::cout<<"Reading in screw_glide_shift"<<std::endl;
-      // mutable Coordinate screw_glide_shift;
-      if(json.contains("screw_glide_shift"))
-        CASM::from_json(screw_glide_shift, json["screw_glide_shift"]);
-
       //std::cout<<"Reading in map_error"<<std::endl;
       // double map_error;
-      CASM::from_json(map_error, json["map_error"]);
+      CASM::from_json(m_map_error, json["map_error"]);
       //std::cout<<"Done Reading in the SymOp"<<std::endl;
     }
     catch(...) {

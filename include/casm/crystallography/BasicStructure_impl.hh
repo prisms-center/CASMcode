@@ -29,7 +29,7 @@ namespace CASM {
   BasicStructure<CoordType>::BasicStructure(const BasicStructure &RHS) :
     m_lattice(RHS.lattice()), title(RHS.title), basis(RHS.basis) {
     for(Index i = 0; i < basis.size(); i++) {
-      basis[i].set_lattice(lattice());
+      basis[i].set_lattice(lattice(), CART);
     }
   }
 
@@ -41,7 +41,7 @@ namespace CASM {
     title = RHS.title;
     basis = RHS.basis;
     for(Index i = 0; i < basis.size(); i++) {
-      basis[i].set_lattice(lattice());
+      basis[i].set_lattice(lattice(), CART);
     }
 
     return *this;
@@ -723,16 +723,12 @@ namespace CASM {
     if(b == basis.size()) {
       std::cerr << "ERROR in BasicStructure::get_unit_cell_coord" << std::endl
                 << "Could not find a matching basis site." << std::endl
-                << "  Looking for: FRAC: " << tsite.frac() << "\n"
-                << "               CART: " << tsite.cart() << "\n";
+                << "  Looking for: FRAC: " << tsite.const_frac() << "\n"
+                << "               CART: " << tsite.const_cart() << "\n";
       exit(1);
     }
 
-    x = round(tsite.get(0, FRAC) - basis[b].get(0, FRAC));
-    y = round(tsite.get(1, FRAC) - basis[b].get(1, FRAC));
-    z = round(tsite.get(2, FRAC) - basis[b].get(2, FRAC));
-
-    return UnitCellCoord(b, x, y, z);
+    return UnitCellCoord(b, lround(tsite.const_frac() - basis[b].const_frac()));
   };
 
 
@@ -754,21 +750,15 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::set_lattice(const Lattice &new_lat, COORD_TYPE mode) {
-    COORD_TYPE not_mode(CART);
-    if(mode == CART) {
-      not_mode = FRAC;
-    }
-
     for(Index nb = 0; nb < basis.size(); nb++) {
-      basis[nb].invalidate(not_mode);
+      basis[nb].set_lattice(new_lat, mode);
     }
 
     m_lattice = new_lat;
 
-    for(Index i = 0; i < basis.size(); i++) { //John G 121212
-      basis[i].within();
+    for(Index nb = 0; nb < basis.size(); nb++) {
+      basis[nb].set_lattice(m_lattice, mode);
     }
-
   }
 
   //\Liz D 032514

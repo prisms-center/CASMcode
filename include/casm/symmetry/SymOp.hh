@@ -15,6 +15,14 @@ namespace CASM {
   /// a symetry operation transforms 3D spatial coordinates
   class SymOp : public SymOpRepresentation {
   public:
+    struct SymInfo {
+      symmetry_type op_type;
+      Eigen::Vector3d axis;
+      double angle;
+      Eigen::Vector3d screw_glide_shift;
+      Eigen::Vector3d location;
+    };
+
     typedef Eigen::Matrix3d matrix_type;
     typedef Eigen::Vector3d vector_type;
 
@@ -23,6 +31,7 @@ namespace CASM {
       return SymOp(matrix_type::Identity(), _tau);
     }
 
+    SymOp() {};
     ///Create new SymOp from Matrix3 and tau translation
     /// by default, assume no translation
     SymOp(const Eigen::Ref<const matrix_type> &_mat,
@@ -30,9 +39,6 @@ namespace CASM {
           double _map_error = TOL) :
       m_mat(_mat),
       m_tau(_tau),
-      m_eigenvec(vector_type::Zero()),
-      m_location(m_eigenvec),
-      m_screw_glide_shift(m_eigenvec),
       m_map_error(_map_error) {
     }
 
@@ -42,26 +48,33 @@ namespace CASM {
 
     }
 
-
-    /// Const access of the cartesian translation vector, 'tau', in specified COORD_MODE
-    const vector_type &tau() const;
-
     /// Const access of entire cartesian symmetry matrix
-    const matrix_type &matrix() const;
+    inline
+    const matrix_type &matrix() const {
+      return m_mat;
+    }
 
-    /// Const access of cartesian eigenvector
-    const vector_type &eigenvec() const;
+    /// Const access of the cartesian translation vector, 'tau'
+    inline
+    const vector_type &tau() const {
+      return m_tau;
+    }
 
-    /// Const access of screw/glide shift vector in the specified COORD_MODE
-    const vector_type &screw_glide_shift() const;
+    /// Const access of the cartesian translation vector, 'tau'
+    //inline
+    //const double &tau(Index i) const{
+    //return m_tau[i];
+    //}
 
-    /// Const access of location Coordinate in the specified COORD_MODE
-    const vector_type &location() const;
+    ///\brief returns true if matrix part of operation is identity
+    inline
+    bool is_identity() const {
+      return matrix().isIdentity(TOL);
+    }
 
     /// set master_group and op_index for the SymOp
     /// Performs simple checks to ensure that (*this) is compatible with new_group[new_index]
     void set_index(const MasterSymGroup &new_group, Index new_index);
-
 
     /// Allows access to the map_error.
     const double &map_error() const;
@@ -81,72 +94,35 @@ namespace CASM {
     /// Get copy of the SymOp without translation
     SymOp no_trans() const;
 
-    /// Brings the shift vector within
-    void within();
-
     /// Check equality of SymOps, (matrix and translation). Does not necessarily return true for translational equivalents
     bool operator==(const SymOp &RHS) const;
     /// Check equality of SymOps, with specified tolerance, (matrix and translation). Returns true for translational equivalents
-    bool compare(const SymOp &RHS, double eq_tol = TOL) const;
-
-    /// Const access of the symmetry type
-    symmetry_type type() const {
-      if(symmetry == invalid_op)
-        get_sym_type();
-      return symmetry;
-    }
+    //bool compare(const SymOp &RHS, double eq_tol = TOL) const;
 
     /// Performs conjugation of this SymOp with SymOp 'op'
     /// In other words, transforms coordinates of this SymOp by
     /// transformation specified by 'op':  op.inverse()*(*this)*op
     SymOp &apply_sym(const SymOp &op);
 
-    /// Use 'symmetry_mat' and 'tau_vec' to populate 'location'
-    void find_location() const;
-
     /// Use 'symmetry_mat' and 'tau_vec' to populate 'symmetry'
-    void get_sym_type() const;
-
-    /// Auxiliary routines to get_sym_type()
-    void glide_check() const;
-    void screw_check() const;
-    void mirror_check() const;
-    void calc_rotation_angle(matrix_type mat, double det, double trace) const;
-
-    /// const access of 'rotation_angle'
-    double get_rotation_angle() const;
+    SymInfo info() const;
 
     /// calculate and return character of this SymOp
-    double get_character() const {
+    double character() const {
       return matrix().trace();
     }
 
     /// Print this SymOP as header, followed by symmetry_mat and tau_vec (aligned vertically)
     ///COORD_DEFAULT is default argument, this means default to the global mode
-    void print(std::ostream &stream, COORD_TYPE coord_mode = COORD_DEFAULT) const;
+    void print(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2fmat) const;
 
     ///Prints abridged description of SymOp, including its type, angle, and eigenvector
     ///does NOT print out the entire symmetry operation matrix
-    void print_short(std::ostream &stream, COORD_TYPE coord_mode = COORD_DEFAULT) const;
-
-    /// Read in a SymOp in the same format as it is printed by 'print(...)'
-    //  NOT YET IMPLEMENTED
-    void read(std::istream &stream, COORD_TYPE coord_mode = COORD_DEFAULT) {}
+    void print_short(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2fmat) const;
 
     /// Makes sure that all properties of SymOp are up to date in the specified COORD_MODE
     /// THIS HAS NOT BEEN IMPLEMENTED --- we should discuss specifics
     void update(COORD_TYPE coord_mode);
-
-
-    /// Methods for checking symmetry type.
-    bool is_identity() const;
-    bool is_mirror() const;
-    bool is_glide() const;
-    bool is_rotation() const;
-    bool is_screw() const;
-    bool is_inversion() const;
-    bool is_rotoinversion() const;
-    bool is_invalid() const;
 
     /// Return pointer to a new copy of this SymOp
     SymOpRepresentation *copy() const {
@@ -177,21 +153,11 @@ namespace CASM {
     ///a point after matrix transformation
     vector_type m_tau;
 
-    ///eigenvec describes the orientation of the symmetry-generating element
-    ///(i.e., mirror/glide plane normal or vector parallel to rotation/screw axis)
-    vector_type m_eigenvec;
-
     ///location is a point in the lattice that describes the location
     ///of the symmetry-generating element (e.g, mirror plane, rotation axis, inversion point)
     ///location is related to tau_vec in that
     /// new_coord=symmetry_mat*(old_coord-location) + location
-    vector_type m_location;
-
-    ///For rotation/rotoinversion, 'rotation_angle' is the corresponding angle (in degrees)
-    double m_rotation_angle;
-
-    ///shift vector for screw or glide, perpendicular to eigenvector
-    vector_type m_screw_glide_shift;
+    //vector_type m_location;
 
     /// This stores the mapping error associated with this SymOp, which will depend on the tolerances
     ///  you choose when you attempt to generate symmetry groups.

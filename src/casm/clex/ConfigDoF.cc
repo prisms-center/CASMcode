@@ -206,7 +206,7 @@ namespace CASM {
     displacement_matrix_t new_disp;
 
     while(it_begin != it_end) {
-      fg_cart_op = it_begin.sym_op().get_matrix(CART);
+      fg_cart_op = it_begin.sym_op().matrix();
       it_next_fg = it_begin.begin_next_fg_op();
 
       bool proceed_to_next = false;
@@ -386,7 +386,7 @@ namespace CASM {
 
     while(it_begin != it_end) {
       bool skip_to_next_op = false;
-      fg_cart_op = it_begin.sym_op().get_matrix(CART);
+      fg_cart_op = it_begin.sym_op().matrix();
       it_next_fg = it_begin.begin_next_fg_op();
 
       // check for canonical strain first, since it is fastest
@@ -500,7 +500,7 @@ namespace CASM {
     displacement_matrix_t new_disp;
 
     while(it_begin != it_end) {
-      fg_cart_op = it_begin.sym_op().get_matrix(CART);
+      fg_cart_op = it_begin.sym_op().matrix();
       it_next_fg = it_begin.begin_next_fg_op();
 
       bool skip_to_next_op = false;
@@ -678,7 +678,7 @@ namespace CASM {
 
   ConfigDoF operator*(const PermuteIterator &it, const ConfigDoF &dof) {
     ConfigDoF tconfig(dof.size());
-    Eigen::Matrix3d fg_cart_op = it.sym_op().get_matrix(CART);
+    Eigen::Matrix3d fg_cart_op = it.sym_op().matrix();
     if(dof.is_strained())
       tconfig.set_deformation(fg_cart_op * dof.deformation() * fg_cart_op.transpose());
 

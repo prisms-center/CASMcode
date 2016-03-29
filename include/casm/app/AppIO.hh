@@ -186,44 +186,44 @@ namespace CASM {
   // --------- SymmetryIO Declarations --------------------------------------------------
 
   inline void write_symop(const SymOp &op, jsonParser &json, int cclass, int inv) {
+    auto info = op.info();
     json = jsonParser::object();
-
     json["matrix"] = op.matrix();
     json["tau"] = op.tau();
     json["conjugacy_class"] = cclass;
     json["inverse"] = inv;
-    json["invariant_point"] = op.location();
+    json["invariant_point"] = info.location;
 
     // enum symmetry_type {identity_op, mirror_op, glide_op, rotation_op, screw_op, inversion_op, rotoinversion_op, invalid_op};
-    if(op.type() == SymOp::identity_op) {
+    if(info.op_type == SymOp::identity_op) {
       json["type"] = "identity";
     }
-    else if(op.type() == SymOp::mirror_op) {
+    else if(info.op_type == SymOp::mirror_op) {
       json["type"] = "mirror";
-      json["mirror_normal"] = op.eigenvec();
+      json["mirror_normal"] = info.axis;
     }
-    else if(op.type() == SymOp::glide_op) {
+    else if(info.op_type == SymOp::glide_op) {
       json["type"] = "glide";
-      json["mirror_normal"] = op.eigenvec();
-      json["shift"] = op.screw_glide_shift();
+      json["mirror_normal"] = info.axis;
+      json["shift"] = info.screw_glide_shift;
     }
-    else if(op.type() == SymOp::rotation_op) {
+    else if(info.op_type == SymOp::rotation_op) {
       json["type"] = "rotation";
-      json["rotation_axis"] = op.eigenvec();
-      json["rotation_angle"] = op.get_rotation_angle();
+      json["rotation_axis"] = info.axis;
+      json["rotation_angle"] = info.angle;
     }
-    else if(op.type() == SymOp::screw_op) {
+    else if(info.op_type == SymOp::screw_op) {
       json["type"] = "screw";
-      json["rotation_axis"] = op.eigenvec();
-      json["rotation_angle"] = op.get_rotation_angle();
-      json["shift"] = op.screw_glide_shift();
+      json["rotation_axis"] = info.axis;
+      json["rotation_angle"] = info.angle;
+      json["shift"] = info.screw_glide_shift;
     }
-    else if(op.type() == SymOp::rotoinversion_op) {
+    else if(info.op_type == SymOp::rotoinversion_op) {
       json["type"] = "rotoinversion";
-      json["rotation_axis"] = op.eigenvec();
-      json["rotation_angle"] = op.get_rotation_angle();
+      json["rotation_axis"] = info.axis;
+      json["rotation_angle"] = info.angle;
     }
-    else if(op.type() == SymOp::invalid_op) {
+    else if(info.op_type == SymOp::invalid_op) {
       json["type"] = "invalid";
     }
 
@@ -238,8 +238,8 @@ namespace CASM {
     }
     json["name"] = grp.get_name();
     json["latex_name"] = grp.get_latex_name();
-    json["periodicity"] = grp.get_periodicity();
-    if(grp.get_periodicity() == PERIODIC) {
+    json["periodicity"] = grp.periodicity();
+    if(grp.periodicity() == PERIODIC) {
       json["possible_space_groups"] = grp.possible_space_groups();
     }
     json["conjugacy_class"] = grp.get_conjugacy_classes();
