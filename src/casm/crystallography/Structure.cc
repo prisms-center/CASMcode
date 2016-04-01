@@ -68,41 +68,34 @@ namespace CASM {
     perm_rep_ID = RHS.perm_rep_ID; //this *should* work
     basis_perm_rep_ID = RHS.basis_perm_rep_ID; //this *should* work
 
-    factor_group_internal = RHS.factor_group_internal;
-    factor_group_internal.set_lattice(lattice());
+    m_factor_group = RHS.m_factor_group;
+    m_factor_group.set_lattice(lattice());
   }
 
-  //***********************************************************
-  /*
-  Structure &Structure::apply_sym(const SymOp &op) { //AAB
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i].apply_sym(op);
-    }
-    return *this;
-  }
-  */
   //***********************************************************
 
 
   void Structure::generate_factor_group_slow(double map_tol) const {
-    factor_group_internal.clear();
-    BasicStructure<Site>::generate_factor_group_slow(factor_group_internal, map_tol);
+    m_factor_group.clear();
+    m_factor_group.set_lattice(lattice());
+    BasicStructure<Site>::generate_factor_group_slow(m_factor_group, map_tol);
     return;
   }
 
   //************************************************************
   void Structure::generate_factor_group(double map_tol) const {
-    factor_group_internal.clear();
-    //std::cout << "GENERATING STRUCTURE FACTOR GROUP " << &factor_group_internal << "\n";
-    BasicStructure<Site>::generate_factor_group(factor_group_internal, map_tol);
+    m_factor_group.clear();
+    m_factor_group.set_lattice(lattice());
+    //std::cout << "GENERATING STRUCTURE FACTOR GROUP " << &m_factor_group << "\n";
+    BasicStructure<Site>::generate_factor_group(m_factor_group, map_tol);
     return;
   }
 
   //************************************************************
   const MasterSymGroup &Structure::factor_group() const {
-    if(!factor_group_internal.size())
+    if(!m_factor_group.size())
       generate_factor_group();
-    return factor_group_internal;
+    return m_factor_group;
   }
 
   //************************************************************
@@ -264,13 +257,13 @@ namespace CASM {
 
   //************************************************************
   void Structure::fg_converge(double small_tol, double large_tol, double increment) {
-    BasicStructure<Site>::fg_converge(factor_group_internal, small_tol, large_tol, increment);
+    BasicStructure<Site>::fg_converge(m_factor_group, small_tol, large_tol, increment);
     return;
   }
 
   //************************************************************
   void Structure::fg_converge(double large_tol) {
-    BasicStructure<Site>::fg_converge(factor_group_internal, TOL, large_tol, (large_tol - TOL) / 10.0);
+    BasicStructure<Site>::fg_converge(m_factor_group, TOL, large_tol, (large_tol - TOL) / 10.0);
     return;
   }
 
@@ -279,8 +272,8 @@ namespace CASM {
     stream << "Factor Group of " << title << ", containing "
            << factor_group().size() << " symmetry operations:\n";
 
-    for(Index i = 0; i < factor_group_internal.size(); i++) {
-      factor_group_internal[i].print(stream);
+    for(Index i = 0; i < m_factor_group.size(); i++) {
+      m_factor_group[i].print(stream);
     }
 
     return;
@@ -335,7 +328,7 @@ namespace CASM {
         }
       }
     }
-    //std::cout << "WORKING ON FACTOR GROUP " << &factor_group_internal << " for structure with volume " << prim_grid.size() << ":\n";
+    //std::cout << "WORKING ON FACTOR GROUP " << &m_factor_group << " for structure with volume " << prim_grid.size() << ":\n";
     //trans_and_expand primitive factor_group
     for(i = 0; i < prim.factor_group().size(); i++) {
       if(latvec_pg.find_no_trans(prim.factor_group()[i]) == latvec_pg.size()) {
@@ -345,18 +338,18 @@ namespace CASM {
         for(Index j = 0; j < prim_grid.size(); j++) {
           Coordinate t_tau(prim.factor_group()[i].tau() + prim_grid.coord(j, SCEL).const_cart(), lattice(), CART);
           t_tau.within();
-          factor_group_internal.push_back(SymOp(prim.factor_group()[i].matrix(),
-                                                t_tau.cart()));
+          m_factor_group.push_back(SymOp(prim.factor_group()[i].matrix(),
+                                         t_tau.cart()));
         }
       }
     }
-    if(factor_group_internal.size() > 200) {// how big is too big? this is at least big enough for FCC conventional cell
+    if(m_factor_group.size() > 200) {// how big is too big? this is at least big enough for FCC conventional cell
 #ifndef NDEBUG
       std::cerr << "WARNING: You have a very large factor group of a non-primitive structure. Certain symmetry features will be unavailable.\n";
 #endif
-      factor_group_internal.invalidate_multi_tables();
+      m_factor_group.invalidate_multi_tables();
     }
-    //std::cout << "Final size is: " << factor_group_internal.size() << "\n";
+    //std::cout << "Final size is: " << m_factor_group.size() << "\n";
     update();
 
     return;
@@ -430,7 +423,7 @@ namespace CASM {
       basis[nb].set_basis_ind(nb);
     }
     within();
-    factor_group_internal.clear();
+    m_factor_group.clear();
 
     /** Should we also invalidate the occupants?
     for(Index i = 0; i < basis.size(); i++) {
@@ -705,19 +698,14 @@ namespace CASM {
   void Structure::set_lattice(const Lattice &new_lat, COORD_TYPE mode) {
     bool is_equiv(lattice() == new_lat);
 
-    for(Index nb = 0; nb < basis.size(); nb++) {
-      basis[nb].set_lattice(new_lat, mode);
-    }
-
     m_lattice = new_lat;
 
     for(Index nb = 0; nb < basis.size(); nb++) {
-      basis[nb].set_lattice(m_lattice, mode);
+      basis[nb].set_lattice(lattice(), mode);
     }
 
-
     if(is_equiv)
-      factor_group_internal.set_lattice(new_lat);
+      m_factor_group.set_lattice(lattice());
     else
       reset();
   }
@@ -1272,7 +1260,7 @@ namespace CASM {
       basis[i] += shift;
     }
 
-    factor_group_internal += shift.cart();
+    m_factor_group += shift.cart();
     return (*this);
   }
 
@@ -1283,7 +1271,7 @@ namespace CASM {
     for(Index i = 0; i < basis.size(); i++) {
       basis[i] -= shift;
     }
-    factor_group_internal -= shift.cart();
+    m_factor_group -= shift.cart();
     return (*this);
   }
 
@@ -1294,8 +1282,8 @@ namespace CASM {
     // class Structure : public BasicStructure<Site>
     BasicStructure<Site>::to_json(json);
 
-    // mutable MasterSymGroup factor_group_internal;
-    json["factor_group"] = factor_group_internal;
+    // mutable MasterSymGroup m_factor_group;
+    json["factor_group"] = m_factor_group;
 
     // mutable int perm_rep_id;
     json["perm_rep_ID"] = perm_rep_ID;
@@ -1316,9 +1304,9 @@ namespace CASM {
       BasicStructure<Site> &basic = *this;
       basic.from_json(json);
 
-      // mutable MasterSymGroup factor_group_internal;
-      factor_group_internal.clear();
-      factor_group_internal.from_json(json["factor_group"]);
+      // mutable MasterSymGroup m_factor_group;
+      m_factor_group.clear();
+      m_factor_group.from_json(json["factor_group"]);
 
       // mutable int perm_rep_ID;
       CASM::from_json(perm_rep_ID, json["perm_rep_ID"]);

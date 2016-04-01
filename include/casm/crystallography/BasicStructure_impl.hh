@@ -117,7 +117,7 @@ namespace CASM {
       std::cerr << "The factor group passed isn't empty and it's about to be rewritten!" << std::endl;
       factor_group.clear();
     }
-
+    factor_group.set_lattice(lattice());
     //Loop over all point group ops of the lattice
     for(pg = 0; pg < point_group.size(); pg++) {
       tsite.clear();
@@ -188,7 +188,7 @@ namespace CASM {
     //std::cout << "begin generate_factor_group() " << this << std::endl;
     BasicStructure<CoordType> tprim;
     factor_group.clear();
-
+    factor_group.set_lattice(lattice());
     // CASE 1: Structure is primitive
     if(is_primitive(tprim, map_tol)) {
       generate_factor_group_slow(factor_group, map_tol);
@@ -750,14 +750,11 @@ namespace CASM {
 
   template<typename CoordType>
   void BasicStructure<CoordType>::set_lattice(const Lattice &new_lat, COORD_TYPE mode) {
-    for(Index nb = 0; nb < basis.size(); nb++) {
-      basis[nb].set_lattice(new_lat, mode);
-    }
 
     m_lattice = new_lat;
 
     for(Index nb = 0; nb < basis.size(); nb++) {
-      basis[nb].set_lattice(m_lattice, mode);
+      basis[nb].set_lattice(lattice(), mode);
     }
   }
 

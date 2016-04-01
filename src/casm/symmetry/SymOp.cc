@@ -103,15 +103,6 @@ namespace CASM {
   }
 
   //**********************************************************
-  /*
-  bool SymOp::compare(const SymOp &RHS, double eq_tol) const {
-    return
-      almost_equal(matrix(),RHS.matrix(), eq_tol) &&
-      tau_vec.min_dist(RHS.tau_vec) < eq_tol;
-
-      }
-  */
-  //**********************************************************
 
   bool SymOp::operator==(const SymOp &RHS) const {
     return
@@ -243,7 +234,7 @@ namespace CASM {
 
   SymOp::SymInfo SymOp::info() const {
     SymInfo result;
-    if(almost_equal(matrix().trace(), -3.0)) {
+    if(almost_equal(matrix().trace(), 3.0)) {
       result.op_type = identity_op;
       return result;
     }
@@ -313,27 +304,27 @@ namespace CASM {
 
     case mirror_op:
       stream.setf(std::ios::showpoint);
-      stream << "Mirror Operation with plane Normal = " << std::setw(7) << c2f_mat *t_info.axis << '\n';
+      stream << "Mirror Operation with plane Normal = " << std::setw(7) << (c2f_mat * t_info.axis).transpose() << '\n';
       break;
 
     case glide_op:
       stream.setf(std::ios::showpoint);
-      stream << "Glide Operation with plane Normal = " << std::setw(7) << c2f_mat *t_info.axis << '\n'
-             << "Glide Vector:" << std::setw(7) << c2f_mat *t_info.screw_glide_shift << '\n';
+      stream << "Glide Operation with plane Normal = " << std::setw(7) << (c2f_mat * t_info.axis).transpose() << '\n'
+             << "Glide Vector:" << std::setw(7) << (c2f_mat * t_info.screw_glide_shift).transpose() << '\n';
       break;
 
     case rotation_op:
       stream.unsetf(std::ios::showpoint);
       stream << std::setprecision(3) << t_info.angle << "-degree Rotation Operation about axis";
       stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << c2f_mat *t_info.axis  << '\n';
+      stream << std::setw(7) << (c2f_mat * t_info.axis).transpose()  << '\n';
       break;
 
     case screw_op:
       stream.unsetf(std::ios::showpoint);
       stream << std::setprecision(3) << t_info.angle << "-degree Screw Operation along axis";
       stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << c2f_mat *t_info.axis << "\n Screw Vector:" << std::setw(7) << c2f_mat *t_info.screw_glide_shift << '\n';
+      stream << std::setw(7) << (c2f_mat * t_info.axis).transpose() << "\n Screw Vector:" << std::setw(7) << (c2f_mat * t_info.screw_glide_shift).transpose() << '\n';
       break;
 
     case inversion_op:
@@ -344,7 +335,7 @@ namespace CASM {
       stream.unsetf(std::ios::showpoint);
       stream << std::setprecision(3) << t_info.angle << "-degree Rotoinversion Operation about axis";
       stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << c2f_mat *t_info.axis << "\n";
+      stream << std::setw(7) << (c2f_mat * t_info.axis).transpose() << "\n";
       break;
 
     case invalid_op:
@@ -372,27 +363,27 @@ namespace CASM {
 
     case mirror_op:
       stream.setf(std::ios::showpoint);
-      stream << "Mirror Operation with plane Normal = " << std::setw(7) << c2f_mat *t_info.axis << '\n';
+      stream << "Mirror Operation with plane Normal = " << std::setw(7) << (c2f_mat * t_info.axis).transpose() << '\n';
       break;
 
     case glide_op:
       stream.setf(std::ios::showpoint);
-      stream << "Glide Operation with plane Normal = " << std::setw(7) << c2f_mat *t_info.axis << '\n'
-             << "Glide Vector:" << std::setw(7) << c2f_mat *t_info.screw_glide_shift << '\n';
+      stream << "Glide Operation with plane Normal = " << std::setw(7) << (c2f_mat * t_info.axis).transpose() << '\n'
+             << "Glide Vector:" << std::setw(7) << (c2f_mat * t_info.screw_glide_shift).transpose() << '\n';
       break;
 
     case rotation_op:
       stream.unsetf(std::ios::showpoint);
       stream << std::setprecision(3) << t_info.angle << "-degree Rotation Operation about axis";
       stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << c2f_mat *t_info.axis  << '\n';
+      stream << std::setw(7) << (c2f_mat * t_info.axis).transpose()  << '\n';
       break;
 
     case screw_op:
       stream.unsetf(std::ios::showpoint);
       stream << std::setprecision(3) << t_info.angle << "-degree Screw Operation along axis";
       stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << c2f_mat *t_info.axis << "\n Screw Vector:" << std::setw(7) << c2f_mat *t_info.screw_glide_shift << '\n';
+      stream << std::setw(7) << (c2f_mat * t_info.axis).transpose() << "\n Screw Vector:" << std::setw(7) << (c2f_mat * t_info.screw_glide_shift).transpose() << '\n';
       break;
 
     case inversion_op:
@@ -403,7 +394,7 @@ namespace CASM {
       stream.unsetf(std::ios::showpoint);
       stream << std::setprecision(3) << t_info.angle << "-degree Rotoinversion Operation about axis";
       stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << c2f_mat *t_info.axis << "\n";
+      stream << std::setw(7) << (c2f_mat * t_info.axis).transpose() << "\n";
       break;
 
     case invalid_op:

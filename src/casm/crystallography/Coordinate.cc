@@ -6,7 +6,9 @@
 #include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
-
+  namespace Coordinate_impl {
+    bool verbose::val = false;
+  }
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -16,9 +18,9 @@ namespace CASM {
     : m_home(&init_home),
       m_basis_ind(-1) {
     if(mode == FRAC)
-      frac() = init_vec;
+      _set_frac(init_vec);
     if(mode == CART)
-      cart() = init_vec;
+      _set_cart(init_vec);
   }
 
   Coordinate::Coordinate(double _x, double _y, double _z, const Lattice &init_home, COORD_TYPE mode)
@@ -138,9 +140,9 @@ namespace CASM {
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
 
     if(mode == CART)
-      stream << cart();
+      stream << const_cart().transpose();
     else if(mode == FRAC)
-      stream << frac();
+      stream << const_frac().transpose();
     if(term) stream << term;
     return;
   }
@@ -235,26 +237,17 @@ namespace CASM {
   }
 
   //********************************************************************
-  //Coordinate Coordinate::get_normal_vector(Coordinate coord_2, Coordinate coord_3) {
-  //return Coordinate((coord_2.cart()-cart()).cross(coord_3.cart()-cart()).normalize(),*home,CART);
-  //}
-
-
-  //********************************************************************
   //John G. You decide which coordinates (FRAC or CART) to keep the same when you set a new lattice.
   //CART: Adds empty space around atoms (This is what previous set_lattice does)
   //FRAC: Shear atoms with vectors
   //inline
-  void Coordinate::set_lattice(const Lattice &new_lat, COORD_TYPE mode) {
-    if(m_home == &new_lat)
-      return;
-
+  void Coordinate::set_lattice(const Lattice &new_lat, COORD_TYPE invariant_mode) {
     m_home = &new_lat;
 
-    if(mode == CART)
-      _update_cart();
-    else if(mode == FRAC)
+    if(invariant_mode == CART)
       _update_frac();
+    else if(invariant_mode == FRAC)
+      _update_cart();
 
     return;
   }
@@ -384,8 +377,15 @@ namespace CASM {
     json.put_obj();
 
     // mutable Vector3< double > coord[2];
-    json["FRAC"] = m_frac_coord;
-    json["CART"] = m_cart_coord;
+    json["FRAC"].put_array();
+    json["FRAC"].push_back(m_frac_coord[0]);
+    json["FRAC"].push_back(m_frac_coord[1]);
+    json["FRAC"].push_back(m_frac_coord[2]);
+
+    json["CART"].put_array();
+    json["CART"].push_back(m_cart_coord[0]);
+    json["CART"].push_back(m_cart_coord[1]);
+    json["CART"].push_back(m_cart_coord[2]);
 
     // mutable int basis_ind;
     json["basis_ind"] = basis_ind();
@@ -395,8 +395,14 @@ namespace CASM {
 
   void Coordinate::from_json(const jsonParser &json) {
     // mutable Vector3< double > coord[2];
-    CASM::from_json(m_frac_coord, json["FRAC"]);
-    CASM::from_json(m_cart_coord, json["CART"]);
+    m_frac_coord[0] = json["FRAC"][0].get<double>();
+    m_frac_coord[1] = json["FRAC"][1].get<double>();
+    m_frac_coord[2] = json["FRAC"][2].get<double>();
+
+    m_cart_coord[0] = json["CART"][0].get<double>();
+    m_cart_coord[1] = json["CART"][1].get<double>();
+    m_cart_coord[2] = json["CART"][2].get<double>();
+
 
     // mutable int basis_ind;
     CASM::from_json(m_basis_ind, json["basis_ind"]);

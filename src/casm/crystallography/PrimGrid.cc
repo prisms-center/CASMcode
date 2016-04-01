@@ -269,7 +269,7 @@ namespace CASM {
         mnp_shift = to_canonical(b_permute.at(nb));
 
         vector_type old_mnp, new_mnp;
-        EigenCounter<vector_type> mnp_count(vector_type::Zero(), m_S, vector_type::Ones());
+        EigenCounter<vector_type> mnp_count(vector_type::Zero(), m_S - vector_type::Ones(), vector_type::Ones());
         for(; mnp_count.valid(); ++mnp_count) {
           new_mnp = mat_mnp * mnp_count() + mnp_shift.unitcell();
 
@@ -280,6 +280,7 @@ namespace CASM {
 
           old_l = mnp_count[0] + mnp_count[1] * m_stride[0] + mnp_count[2] * m_stride[1] + nb * size();
           new_l = new_mnp[0] + new_mnp[1] * m_stride[0] + new_mnp[2] * m_stride[1] + mnp_shift[0] * size();
+          assert(old_l < b_permute.size()*size() && new_l < b_permute.size()*size());
           // We have found uccoord(new_l) = symop*uccoord(old_l) -- this describes how indexing of the uccoordinates change
           // However, the indexing of the uccoords remains fixed, and we want to describe the permutation of something *at* the sites,
           // like an occupation bit. So if uccord(old_l) transforms into uccoord(new_l), we know that the object originally at 'new_l'

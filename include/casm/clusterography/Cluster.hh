@@ -169,11 +169,11 @@ namespace CASM {
 
 
     //Alex do this
-    void print(std::ostream &stream, char delim = 0, COORD_TYPE mode = COORD_DEFAULT) const;
-    void print_shifted(std::ostream &stream, const Coordinate &shift, char delim = 0, COORD_TYPE mode = COORD_DEFAULT) const;
-    void print_sites(std::ostream &stream, int space, char delim = 0, COORD_TYPE mode = COORD_DEFAULT) const;
-    void print_basis_info(std::ostream &stream, int space, char delim = 0, COORD_TYPE mode = COORD_DEFAULT) const;
-    void print_decorated_sites(std::ostream &stream, int space, char delim = 0, COORD_TYPE mode = COORD_DEFAULT) const;
+    void print(std::ostream &stream, char delim = '\n', COORD_TYPE mode = COORD_DEFAULT) const;
+    void print_shifted(std::ostream &stream, const Coordinate &shift, char delim = '\n', COORD_TYPE mode = COORD_DEFAULT) const;
+    void print_sites(std::ostream &stream, int space, char delim = '\n', COORD_TYPE mode = COORD_DEFAULT) const;
+    void print_basis_info(std::ostream &stream, int space, char delim = '\n', COORD_TYPE mode = COORD_DEFAULT) const;
+    void print_decorated_sites(std::ostream &stream, int space, char delim = '\n', COORD_TYPE mode = COORD_DEFAULT) const;
 
     ///adds unique points of 'RHS' to (*this)
     void merge(const GenericCluster &RHS);

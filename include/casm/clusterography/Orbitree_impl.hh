@@ -2801,20 +2801,24 @@ namespace CASM {
       }
       else {
 
-        Array< Eigen::Vector3d > json_coord_list;
-        json_coord_list.clear();
-        for(int j = 0; j < proto_json.size(); j++) {
-          json_coord_list.push_back(proto_json[j].get<Eigen::Vector3d>());
-        }
+        Eigen::MatrixXd coords_as_rows;
+        CASM::from_json(coords_as_rows, proto_json);
+        //std::cout << "coords_as_rows is:\n" << coords_as_rows << "\n";
 
         //Looking for the correct sites in the PRIM and loading in the correct information
-        for(int j = 0; j < json_coord_list.size(); j++) {
+        for(int j = 0; j < coords_as_rows.rows(); j++) {
           //Converting to a Coordinate
-          Coordinate tcoord(json_coord_list[j], struc.lattice(), json_coord_mode);
+          Coordinate tcoord(coords_as_rows.row(j).transpose(), struc.lattice(), json_coord_mode);
+          //std::cout << "tcoord FRAC is " << tcoord.const_frac().transpose() << "\n";
+          //std::cout << "tcoord CART is " << tcoord.const_cart().transpose() << "\n";
           int site_loc = struc.find(tcoord);
           if(site_loc != struc.basis.size()) {
             temp_clust.push_back(struc.basis[site_loc]);
+            //std::cout << "back before: " << temp_clust.back().const_cart() << "\n\n";
+            Coordinate_impl::verbose::val = true;
             temp_clust.back().cart() = tcoord.cart();
+            Coordinate_impl::verbose::val = false;
+            //std::cout << "back after: " << temp_clust.back().const_cart() << "\n\n";
           }
           else {
             std::cerr << "ERROR in GenericOrbitree<ClustType>::read_custom_clusters_from_json. "
@@ -2831,6 +2835,9 @@ namespace CASM {
             );
           }
         }
+        //std::cout << "Finished reading cluster \n";
+        //temp_clust.print(std::cout);
+        //std::cout << "\n";
       }
       temp_clust.calc_properties();
       proto_clust.push_back(temp_clust);
@@ -2858,9 +2865,9 @@ namespace CASM {
     for(int i = 0; i < proto_clust.size(); i++) {
       //std::cout << "Working on cluster: " << i << std::endl;
       if(contains(proto_clust[i])) {
-        std::cout << "Proto_clust: " << std::endl;
+        std::cerr << "Proto_clust: " << std::endl;
         proto_clust[i].print(std::cout);
-        std::cout << "This cluster is already in the Orbitree. Not adding it to the list" << std::endl;
+        std::cerr << "This cluster is already in the Orbitree. Not adding it to the list" << std::endl;
         continue;
       }
       //std::cout << "        Add orbit!" << std::endl;

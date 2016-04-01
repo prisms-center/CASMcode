@@ -27,7 +27,7 @@ namespace CASM {
 
     /// Group symmetry operations that map the lattice and basis of Structure onto themselves,
     /// assuming that the crystal is periodic
-    mutable MasterSymGroup factor_group_internal;
+    mutable MasterSymGroup m_factor_group;
     /// This holds the representation id of the permutation representation
     mutable Index perm_rep_ID, basis_perm_rep_ID;
 

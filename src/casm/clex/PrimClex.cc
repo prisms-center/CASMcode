@@ -8,6 +8,7 @@
 #include "casm/clusterography/jsonClust.hh"
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/casm_io/SafeOfstream.hh"
+#include "casm/crystallography/Coordinate.hh"
 #include "casm/app/AppIO.hh"
 
 namespace CASM {

@@ -16,7 +16,9 @@ namespace CASM {
   class SymOp;
 
   namespace Coordinate_impl {
-
+    struct verbose {
+      static bool val;
+    };
     class FracCoordinate;
     class FracCoordinateComponent;
     class CartCoordinate;
@@ -30,11 +32,10 @@ namespace CASM {
     typedef Eigen::Vector3d vector_type;
     typedef vector_type::Index size_type;
 
-    /**NOTE: Coordinate does not have a default constructor
-       e.g: this is not allowed-> Coordinate() : home(nullptr) { is_current[FRAC]=false; is_current[CART]=false;}; **/
+    // NOTE: Coordinate does not have a default constructor
+    // e.g: this is not allowed-> Coordinate() : home(nullptr) { is_current[FRAC]=false; is_current[CART]=false;};
 
     ///Minimal constructor only takes a lattice
-    inline
     explicit Coordinate(const Lattice &init_home) :
       m_home(&init_home),
       m_frac_coord(vector_type::Zero()),
@@ -65,7 +66,15 @@ namespace CASM {
     Coordinate_impl::FracCoordinateComponent frac(size_type index);
 
     /// \brief const Access a component of the fractional coordinate vector
-    const double &frac(size_type index) const;
+    const double &frac(size_type index) const {
+      return m_frac_coord(index);
+    }
+
+    /// \brief user override to force const Access the fractional coordinate vector
+    inline
+    const double &const_frac(size_type index) const {
+      return m_frac_coord(index);
+    }
 
     /// \brief Set Cartesian coordinate vector and update fractional coordiante vector
     Coordinate_impl::CartCoordinate cart();
@@ -86,7 +95,14 @@ namespace CASM {
     Coordinate_impl::CartCoordinateComponent cart(size_type index);
 
     /// \brief const Access a component of the Cartesian coordinate vector
-    const double &cart(size_type index) const;
+    const double &cart(size_type index) const {
+      return m_cart_coord(index);
+    }
+
+    /// \brief const Access a component of the Cartesian coordinate vector
+    const double &const_cart(size_type index) const {
+      return m_cart_coord(index);
+    }
 
     Coordinate &operator+=(const Coordinate &RHS);
     Coordinate &operator-=(const Coordinate &RHS);
@@ -190,7 +206,6 @@ namespace CASM {
       _update_cart();
     }
 
-
     inline
     void _set_frac(size_type ind, double val) {
       m_frac_coord[ind] = val;
@@ -249,7 +264,6 @@ namespace CASM {
     /// \endcode
     ///
     class FracCoordinate {
-
     public:
 
       explicit FracCoordinate(Coordinate &coord) :
@@ -258,6 +272,11 @@ namespace CASM {
 
       FracCoordinate &operator=(const Eigen::Ref<const Coordinate::vector_type> &vec) {
         m_coord->_set_frac(vec);
+        return *this;
+      }
+
+      FracCoordinate &operator=(const FracCoordinate &RHS) {
+        m_coord->_set_frac(RHS.m_coord->const_frac());
         return *this;
       }
 
@@ -315,7 +334,6 @@ namespace CASM {
     /// \endcode
     ///
     class FracCoordinateComponent {
-
     public:
 
       explicit FracCoordinateComponent(Coordinate &coord, Coordinate::size_type index) :
@@ -325,6 +343,12 @@ namespace CASM {
         m_coord->_set_frac(m_index, val);
         return *this;
       }
+
+      FracCoordinateComponent &operator=(const FracCoordinateComponent &RHS) {
+        m_coord->_set_frac(m_index, RHS.m_coord->const_frac(m_index));
+        return *this;
+      }
+
 
       FracCoordinateComponent &operator+=(double val) {
         m_coord->_set_frac(m_index, m_coord->m_frac_coord(m_index) + val);
@@ -365,7 +389,6 @@ namespace CASM {
     /// \endcode
     ///
     class CartCoordinate {
-
     public:
 
       explicit CartCoordinate(Coordinate &coord) :
@@ -373,6 +396,11 @@ namespace CASM {
 
       CartCoordinate &operator=(const Eigen::Ref<const Coordinate::vector_type> &vec) {
         m_coord->_set_cart(vec);
+        return *this;
+      }
+
+      CartCoordinate &operator=(const CartCoordinate &RHS) {
+        m_coord->_set_cart(RHS.m_coord->const_cart());
         return *this;
       }
 
@@ -430,7 +458,6 @@ namespace CASM {
     /// \endcode
     ///
     class CartCoordinateComponent {
-
     public:
 
       explicit CartCoordinateComponent(Coordinate &coord, Coordinate::size_type index) :
@@ -438,6 +465,11 @@ namespace CASM {
 
       CartCoordinateComponent &operator=(double val) {
         m_coord->_set_cart(m_index, val);
+        return *this;
+      }
+
+      CartCoordinateComponent &operator=(const CartCoordinateComponent &RHS) {
+        m_coord->_set_cart(m_index, RHS.m_coord->const_cart(m_index));
         return *this;
       }
 

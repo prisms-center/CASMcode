@@ -26,9 +26,9 @@ void prim1_read_test(Structure &struc) {
 
   double tol = 1e-5;
 
-  BOOST_CHECK_EQUAL(struc.lattice()[0].is_equal(Vector3<double>(0.0, 2.0, 2.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.lattice()[1].is_equal(Vector3<double>(2.0, 0.0, 2.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.lattice()[2].is_equal(Vector3<double>(2.0, 2.0, 0.0), tol), true);
+  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(0.0, 2.0, 2.0), tol), true);
+  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(2.0, 0.0, 2.0), tol), true);
+  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[2], Eigen::Vector3d(2.0, 2.0, 0.0), tol), true);
   BOOST_CHECK_EQUAL(struc.basis.size(), 1);
 
   // basis site 0 has three possible occupants
@@ -41,7 +41,7 @@ void prim1_read_test(Structure &struc) {
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
     BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i].name, check_name[i]);
-    BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i][0](FRAC).is_equal(Vector3<double>(0.0, 0.0, 0.0), tol), true);
+    BOOST_CHECK_EQUAL(almost_equal(struc.basis[0].site_occupant()[i][0].const_frac(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
     BOOST_CHECK_EQUAL(struc.basis[0].site_occupant()[i][0].specie.name, check_name[i]);
   }
 
@@ -67,9 +67,9 @@ void prim2_read_test(Structure &struc) {
 
   double tol = 1e-5;
 
-  BOOST_CHECK_EQUAL(struc.lattice()[0].is_equal(Vector3<double>(4.0, 0.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.lattice()[1].is_equal(Vector3<double>(0.0, 4.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.lattice()[2].is_equal(Vector3<double>(0.0, 0.0, 4.0), tol), true);
+  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
+  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
+  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
   BOOST_CHECK_EQUAL(struc.basis.size(), 4);
 
   // basis site 0 has three possible occupants
@@ -84,7 +84,7 @@ void prim2_read_test(Structure &struc) {
       // Molecule are composed of AtomPosition
       // An AtomPosition 'is' a Coordinate with a Specie
       BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j].name, check_name[j]);
-      BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j][0](FRAC).is_equal(Vector3<double>(0.0, 0.0, 0.0), tol), true);
+      BOOST_CHECK_EQUAL(almost_equal(struc.basis[i].site_occupant()[j][0].const_frac(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
       BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[j][0].specie.name, check_name[j]);
 
     }
@@ -132,9 +132,9 @@ void pos1_read_test(Structure &struc) {
 
   double tol = 1e-5;
 
-  BOOST_CHECK_EQUAL(struc.lattice()[0].is_equal(Vector3<double>(4.0, 0.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.lattice()[1].is_equal(Vector3<double>(0.0, 4.0, 0.0), tol), true);
-  BOOST_CHECK_EQUAL(struc.lattice()[2].is_equal(Vector3<double>(0.0, 0.0, 4.0), tol), true);
+  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
+  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
+  BOOST_CHECK_EQUAL(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
   BOOST_CHECK_EQUAL(struc.basis.size(), 4);
 
   std::string check_name[4] = {"A", "A", "B", "C"};
@@ -147,7 +147,7 @@ void pos1_read_test(Structure &struc) {
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
     BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0].name, check_name[i]);
-    BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0][0](FRAC).is_equal(Vector3<double>(0.0, 0.0, 0.0), tol), true);
+    BOOST_CHECK_EQUAL(almost_equal(struc.basis[i].site_occupant()[0][0].const_frac(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
     BOOST_CHECK_EQUAL(struc.basis[i].site_occupant()[0][0].specie.name, check_name[i]);
   }
 
@@ -168,11 +168,11 @@ BOOST_AUTO_TEST_CASE(PRIM1Test) {
   // Write test PRIM back out
   fs::path tmp_file = testdir / "PRIM1_out";
   write_prim(struc, tmp_file, FRAC);
-  
+
   // Read new file and run tests again
   Structure struc2(read_prim(tmp_file));
   prim1_read_test(struc2);
-  
+
 }
 
 BOOST_AUTO_TEST_CASE(PRIM2Test) {
@@ -223,7 +223,7 @@ BOOST_AUTO_TEST_CASE(POS1Vasp5Test) {
   // Read new file and run tests again
   Structure struc2(fs::path(testdir / "POS1_vasp5_out"));
   pos1_read_test(struc2);
-  
+
 }
 
 BOOST_AUTO_TEST_CASE(POS1jsonPrimTest) {

@@ -22,68 +22,12 @@
 #include "casm/misc/CASM_math.hh"
 namespace CASM {
 
-  ///Introduces a tolerance for a given nearest neighbor table
-  //Array<Array<double> > one_NN_blur(const Array<Array<double> > &one_NN, double range);
-  //Array<Array<Array<double> > > NN_blur(const Array<Array<Array<double> > > &NN, double range);
-
   void get_Hermitian(Eigen::MatrixXcd &original_mat, Eigen::MatrixXcd &hermitian_mat, Eigen::MatrixXcd &antihermitian_mat); //Ivy
   bool is_Hermitian(Eigen::MatrixXcd &mat); //Ivy
   void poly_fit(Eigen::VectorXcd &xvec, Eigen::VectorXcd &yvec, Eigen::VectorXcd &coeffs, int degree);
 
-
-
-  template<typename Derived>
-  typename Derived::Scalar triple_prod(const Derived &vec0,
-                                       const Derived &vec1,
-                                       const Derived &vec2) {
-    return vec0.dot(vec1.cross(vec2));
-  }
-
-  /*
-  template <typename T>
-  Vector3<T> cross_prod(const Vector3<T> &vec0, const Vector3<T> &vec1) {
-    Vector3<T> cross_vec;
-    cross_vec[0] = vec0[1] * vec1[2] - vec0[2] * vec1[1];
-    cross_vec[1] = vec0[2] * vec1[0] - vec0[0] * vec1[2];
-    cross_vec[2] = vec0[0] * vec1[1] - vec0[1] * vec1[0];
-    return cross_vec;
-  }
-
-
-  template <typename T>
-  Matrix3<int> round(const Matrix3<T> &A) {
-    Matrix3<int> iA;
-    iA[0] = round(A[0]);
-    iA[1] = round(A[1]);
-    iA[2] = round(A[2]);
-    iA[3] = round(A[3]);
-    iA[4] = round(A[4]);
-    iA[5] = round(A[5]);
-    iA[6] = round(A[6]);
-    iA[7] = round(A[7]);
-    iA[8] = round(A[8]);
-    return iA;
-  }
-
-  template <typename T>
-  Vector3<int> round(const Vector3<T> &A) {
-    Vector3<int> iA;
-    iA[0] = round(A[0]);
-    iA[1] = round(A[1]);
-    iA[2] = round(A[2]);
-    return iA;
-  }
-  */
-
   /// \brief Return the hermite normal form, M == H*V
   std::pair<Eigen::MatrixXi, Eigen::MatrixXi> hermite_normal_form(const Eigen::MatrixXi &M);
-
-
-  /// \brief Return the smith normal form, M == U*S*V
-  void smith_normal_form(const Eigen::Matrix3i &M,
-                         Eigen::Matrix3i &U,
-                         Eigen::Matrix3i &S,
-                         Eigen::Matrix3i &V);
 
   /// \brief Get angle, in radians, between two vectors on range [0,pi]
   double angle(const Eigen::Ref<const Eigen::Vector3d> &a, const Eigen::Ref<const Eigen::Vector3d> &b);
@@ -96,11 +40,19 @@ namespace CASM {
   /// \brief Round entries that are within tol of being integer to that integer value
   Eigen::MatrixXd pretty(const Eigen::MatrixXd &M, double tol);
 
+
+  template<typename Derived>
+  typename Derived::Scalar triple_prod(const Derived &vec0,
+                                       const Derived &vec1,
+                                       const Derived &vec2) {
+    return (vec0.cross(vec1)).dot(vec2);
+  }
+
   /// \brief Check if Eigen::Matrix is integer
   template<typename Derived>
   bool is_integer(const Eigen::MatrixBase<Derived> &M, double tol) {
     for(Index i = 0; i < M.rows(); i++) {
-      for(Index j = 0; i < M.cols(); j++) {
+      for(Index j = 0; j < M.cols(); j++) {
         if(!almost_zero(boost::math::lround(M(i, j)) - M(i, j), tol))
           return false;
       }
@@ -162,9 +114,9 @@ namespace CASM {
   typename Derived::Scalar matrix_minor(const Eigen::MatrixBase<Derived> &M, int row, int col) {
 
     // create the submatrix of M which doesn't include any elements from M in 'row' or 'col'
-    Eigen::Matrix<typename Derived::Scalar,
-          Derived::RowsAtCompileTime,
-          Derived::ColsAtCompileTime>
+    Eigen::Matrix < typename Derived::Scalar,
+          Derived::RowsAtCompileTime - 1,
+          Derived::ColsAtCompileTime - 1 >
           subM(M.rows() - 1, M.cols() - 1);
     int _i, _j;
     for(int i = 0; i < M.rows(); i++) {
@@ -216,6 +168,7 @@ namespace CASM {
   /// The adjugate matrix is related to the inverse of a matrix through
   /// \code M.inverse() == adjugate(M)/M.determinant() \endcode
   ///
+  // Note: If Eigen ever implements integer factorizations, we should probably change how this works
   template<typename Derived>
   Eigen::Matrix<typename Derived::Scalar,
         Derived::RowsAtCompileTime,
@@ -238,9 +191,8 @@ namespace CASM {
       typedef Eigen::Matrix<Scalar, 3, 3> matrix_type;
       matrix_type tmat = matrix_type::Identity();
       Scalar tgcf = extended_gcf(a, b, tmat(i, i), tmat(i, j));
-      if(!tgcf) {
-        tmat = matrix_type::Identity();
-        return tmat;
+      if(tgcf == 0) {
+        return matrix_type::Identity();
       }
       tmat(j, i) = -b / tgcf;
       tmat(j, j) = a / tgcf;
@@ -260,7 +212,7 @@ namespace CASM {
         Derived::RowsAtCompileTime,
         Derived::ColsAtCompileTime>
   inverse(const Eigen::MatrixBase<Derived> &M) {
-    return adjugate(M).transpose() / M.determinant();
+    return adjugate(M) / M.determinant();
   }
 
   /// \brief Return the smith normal form, M == U*S*V
@@ -274,7 +226,7 @@ namespace CASM {
   /// - http://www.mathworks.com/matlabcentral/newsreader/view_thread/13728
   ///
   template<typename Derived>
-  void smith_normal_form(const Eigen::MatrixBase<Derived> &M,
+  void smith_normal_form(const Eigen::Ref<const Eigen::Matrix<typename Derived::Scalar, 3, 3> > &M,
                          Eigen::MatrixBase<Derived> &U,
                          Eigen::MatrixBase<Derived> &S,
                          Eigen::MatrixBase<Derived> &V) {
@@ -284,6 +236,8 @@ namespace CASM {
 
     U = V = Derived::Identity();
     S = M;
+    //std::cout << "S is:\n" << S << "\n\n";
+
     Derived tmat = U;
 
     int i, j;
@@ -329,7 +283,8 @@ namespace CASM {
 
       if(S(b, b)) {
         Scalar q = S(b, b + 1) / S(b, b);
-        if(S(b, b + 1) % S(b, b) < 0) q -= 1;
+        if(S(b, b + 1) % S(b, b) < 0)
+          q -= 1;
         tmat = Derived::Identity();
         tmat(b + 1, b) = -q;
         S = S * tmat.transpose();
@@ -348,7 +303,9 @@ namespace CASM {
 
       }
 
-      if(!S(b, b + 1)) continue;
+      if(!S(b, b + 1))
+        continue;
+
       tmat = _elementary_hermite_op<Scalar>(S(b, b), S(b, b + 1), b, b + 1);
       S = S * tmat.transpose();
       V = inverse(tmat.transpose()) * V;
@@ -356,7 +313,10 @@ namespace CASM {
         tmat = _elementary_hermite_op<Scalar>(S(j, j), S(j + 1, j), j, j + 1);
         S = tmat * S;
         U = U * inverse(tmat);
-        if(j + 2 >= 3) continue;
+
+        if(j + 2 >= 3)
+          continue;
+
         tmat = _elementary_hermite_op<Scalar>(S(j, j + 1), S(j, j + 2), j + 1, j + 2);
         S = S * tmat.transpose();
         V = inverse(tmat.transpose()) * V;

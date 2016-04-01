@@ -10,8 +10,6 @@ namespace CASM {
                    const Eigen::Vector3d &vec3) {
     m_lat_mat << vec1, vec2, vec3;
     m_inv_lat_mat = m_lat_mat.inverse();
-
-
   }
 
   //********************************************************************
@@ -21,7 +19,6 @@ namespace CASM {
   Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat) :
     m_lat_mat(lat_mat),
     m_inv_lat_mat(lat_mat.inverse()) {
-
   }
 
   //********************************************************************
@@ -114,9 +111,9 @@ namespace CASM {
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
     stream  << 1.0 << '\n';
 
-    stream << ' ' << std::setw(16) << m_lat_mat.col(0) << '\n';
-    stream << ' ' << std::setw(16) << m_lat_mat.col(1) << '\n';
-    stream << ' ' << std::setw(16) << m_lat_mat.col(2) << '\n';
+    stream << ' ' << std::setw(16) << m_lat_mat.col(0).transpose() << '\n';
+    stream << ' ' << std::setw(16) << m_lat_mat.col(1).transpose() << '\n';
+    stream << ' ' << std::setw(16) << m_lat_mat.col(2).transpose() << '\n';
 
     stream.precision(tprec);
     stream.flags(tflags);
@@ -251,6 +248,8 @@ namespace CASM {
       point_group.clear();
     }
 
+    point_group.set_lattice(*this);
+
     //Enumerate all possible matrices with elements equal to -1, 0, or 1
     //These represent operations that reorder lattice vectors or replace one
     //or more lattice vectors with a face or body diagonal.
@@ -293,6 +292,8 @@ namespace CASM {
                 << "    (i.e., a well-defined point group could not be found with the supplied tolerance of " << pg_tol << ").\n"
                 << "    CASM will use the group closure of the symmetry operations that were found.  Please consider using the \n"
                 << "    CASM symmetrization tool on your input files.\n";
+      std::cout << "Lat_column_mat:\n" << lat_column_mat() << "\n\n";
+
       point_group.enforce_group(pg_tol);
 
     }
@@ -352,105 +353,6 @@ namespace CASM {
   }
 
 
-
-  //********************************************************************
-  // The mathematical description
-  // A : lattice vectors [ a00 a01 a02  a10 a11 a12 a20a21a22]
-  // M : transformation matrix
-  // A': new lattice vectors (transformed lattice vectors, A)
-  // A' = M*A
-  // If the matrix elements M[i][j] are intergers and ||M|| =1, then the lattices A and A' coincide.
-  // ||M|| > 1, then the lattice A' is superlattice of the lattice A', and the volume of the primitive
-  // cell in A' is ||M|| times greater than the volume of the primitive cell in A.
-
-  // Algorithm
-  // 1. Make lattice vectors as a upper triangular matrix where the product of the diagonal
-  //    elements equals the volume. for the elements above the diagonal choose all values less than
-  //	the diagnoal element.
-  //
-  // 2. To check the lattice vectors found by looping is linearly independece from
-  //	other previous lattice vectors A,
-  //		2.1 apply point sysmetry to the lattice vectors Ai ==> point_sy*Ai = Ai'
-  //		( M*B = Ai' ==> B is the lattice vectors previously found (stored in tsupercell))
-  // 		2.2 M = Ai' * B.inverse(); and check the matrix elements N[i][j] are non-intergers and
-  //			||M|| is great than 1.
-  //4. Add it to the supercell list.
-  /*
-    void Lattice::generate_supercells(Array<Lattice> &supercell, const SymGroup &effective_pg, int max_prim_vol, int min_prim_vol) const {
-    int vol;
-    Index pg, ts;
-    Matrix3<int> tslat(0);
-    Eigen::Matrix3d lin_com, tsup_lat_mat, tsym_lat_mat;
-    Array<Lattice> tsupercell;
-    supercell.clear();
-
-    for(vol = min_prim_vol; vol <= max_prim_vol; vol++) {
-    for(tslat(0, 0) = 1; tslat(0, 0) <= vol; tslat(0, 0)++) {
-    if(vol % tslat(0, 0) != 0) continue; //Changed by John
-    for(tslat(1, 1) = 1; tslat(1, 1) <= vol / tslat(0, 0); tslat(1, 1)++) {
-    if((vol / tslat(0, 0)) % tslat(1, 1) != 0) continue; //Changed by John
-    tslat(2, 2) = vol / (tslat(0, 0) * tslat(1, 1));
-
-    for(tslat(0, 1) = 0; tslat(0, 1) < tslat(0, 0); tslat(0, 1)++) {
-    for(tslat(0, 2) = 0; tslat(0, 2) < tslat(0, 0); tslat(0, 2)++) {
-    for(tslat(1, 2) = 0; tslat(1, 2) < tslat(1, 1); tslat(1, 2)++) {
-
-    tsup_lat_mat = lat_column_mat() * tslat;
-
-    bool is_unique = true; //added by John
-    for(ts = 0; ts < tsupercell.size(); ts++) {
-    for(pg = 0; pg < effective_pg.size(); pg++) {
-
-    //tsym_lat_mat is supercell lattice vectors transformed by point group symmetry operation
-    tsym_lat_mat = effective_pg[pg].matrix() * tsup_lat_mat;
-
-    //lin_com is matrix containing fractional coordinates of transformed candidate lattice vectors, in terms of supercell ts
-    lin_com = tsupercell[ts].inv_lat_column_mat() * tsym_lat_mat;
-
-    if(lin_com.is_integer()) {
-    is_unique = false;
-    break;
-    }
-
-    }
-    if(!is_unique) break;  //Break out of the outside loop if is_unique is already false;
-    }
-
-    //We add the supercell to the list if, after all the checks, it is unique
-    if(is_unique) {
-
-    Lattice n = niggli(Lattice(tsup_lat_mat), TOL);
-    Lattice r = Lattice(tsup_lat_mat).get_reduced_cell();
-
-    if(!(n == n)) {
-    std::cout << "Niggli cell:\n";
-    n.print(std::cout);
-    std::cout << "\n\nReduced:\n";
-    r.print(std::cout);
-    std::cout << "\n\n";
-    }
-
-    // std::cout<<"----------\n"<<tslat<<"\n----------\n";
-    tsupercell.push_back(niggli(Lattice(tsup_lat_mat), TOL));  //Lattice constructor takes matrix where rows are lattice vectors
-
-    }
-
-
-    }
-    }
-    }  //end loops over off-diagonals
-
-    }  //end loop over second diagonal
-    }    //end loop over third diagonal
-
-    supercell.append(tsupercell);
-    tsupercell.clear();
-    }//end loop over allowed volumes
-
-    return;
-    }
-  */
-
   /// \brief Generate super Lattice
   ///
   /// Use SupercellEnumerator to enumerate possible HNF transformation matrices. Unique supercells
@@ -473,63 +375,6 @@ namespace CASM {
   }
 
 
-  //********************************************************************
-  /*
-    void Lattice::generate_supercells(Array<Lattice> &supercell, const MasterSymGroup &factor_group, int max_prim_vol, int min_prim_vol) const {
-    generate_supercells(supercell, factor_group.point_group(), max_prim_vol, min_prim_vol);
-    return;
-    }
-  */
-  //********************************************************************
-  // Find the smallest strain that takes (*this) lattice to a lattice that is symmetrically
-  // equivalent to strained_lattice. "Equivalent" means that the resulting lattice may be rotated
-  // by an arbitrary axis-angle relative to strained_lattice, and is determined by the crystallographic
-  // setting of (*this) lattice.
-  /*
-    Eigen::Matrix3d Lattice::nearest_equivalent_strain(const Lattice &strained_lattice) const {
-    Lattice thislat(get_reduced_cell()), strained_lat(strained_lattice.get_reduced_cell());
-
-    Counter<Matrix3<int> > imat_count(Matrix3<int>(-2),
-    Matrix3<int>(2),
-    Matrix3<int>(1));
-
-    Eigen::Matrix3d FTF, L2TL2, L1Tinv, L1inv, FTFbest, identity(0);
-    Matrix3<int> Nbest;
-    identity(0, 0) = identity(1, 1) = identity(2, 2) = 1;
-    double min_norm(1e20), tnorm;
-    L1inv = thislat.lat_column_mat().inverse();
-    L1Tinv = L1inv.transpose();
-    std::cout << "Volume of lat1 is " << thislat.lat_column_mat().determinant() << "\n";
-    std::cout << "Volume of lat2 is " << strained_lat.lat_column_mat().determinant() << "\n";
-    L2TL2 = strained_lat.lat_column_mat().transpose() * strained_lat.lat_column_mat();
-    //For this algorithm to work, lattice needs to be in reduced form.
-    int n = 0;
-    do {
-    n++;
-    //continue if determinant is not 1, because it doesn't preserve volume
-    if(std::abs(imat_count().determinant()) != 1) continue;
-
-    FTF = (L1Tinv * imat_count().transpose()) * (L2TL2 * imat_count()) * L1inv;
-
-    tnorm = (FTF - identity).norm();
-    if(tnorm < min_norm) {
-    min_norm = tnorm;
-    FTFbest = FTF;
-    std::cout << "Found new FTFbest with n = " << n << " and min_norm = " << tnorm << '\n' << FTFbest << "\n\n";
-    }
-    }
-    while(++imat_count);
-    std::cout << "Nbest was \n" << Nbest << "\n\n";
-    Eigen::Matrix3d tmat;
-    for(int i = 0; i < 3; i++) {
-    for(int j = 0; j < 3; j++) {
-    tmat(i, j) = FTFbest(i, j);
-    }
-    }
-    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> sqrtsolver(tmat);
-    return sqrtsolver.operatorSqrt() - Eigen::Matrix3d::Identity();
-    }
-  */
   //********************************************************************
   /**This function finds the reduced cell from the given primitive cell.
    *
@@ -1181,30 +1026,8 @@ namespace CASM {
     return;
   }
 
-  //\John G
+  //***********************************************************
 
-  //********************************************************************
-  /**
-     Linearly interpolates the lattices to trace the path between
-     (*this) lattice and end_lattice.
-  */
-  //********************************************************************
-  /*
-    void Lattice::linear_interpolate(const Lattice &end_lattice, const int &num_images, Array<Lattice> &interp_lat) const {
-    Eigen::Matrix3d tlat_mat, inc_mat;
-    tlat_mat = lat_column_mat();
-    for(int i = 0; i < 3; i++) {
-    for(int j = 0; j < 3; j++) {
-    inc_mat(i, j) = (end_lattice.lat_column_mat()(i, j) - lat_column_mat()(i, j)) / (num_images + 1);
-    }
-    }
-    interp_lat.push_back(Lattice(tlat_mat));
-    for(int stepVal = 1; stepVal <= (num_images + 1); stepVal++) {
-    tlat_mat = tlat_mat + inc_mat;
-    interp_lat.push_back(Lattice(tlat_mat));
-    }
-    }
-  */
   bool Lattice::is_right_handed() const {
     if(vol() < 0)
       return false;
@@ -1213,7 +1036,6 @@ namespace CASM {
   }
 
   //********************************************************************
-
   // write Lattice in json as array of vectors
   jsonParser &to_json(const Lattice &lat, jsonParser &json) {
     json.put_array();
@@ -1224,7 +1046,6 @@ namespace CASM {
   };
 
   //********************************************************************
-
   // read Lattice from a json array of Eigen::Vector3d
   void from_json(Lattice &lat, const jsonParser &json) {
     try {
@@ -1674,9 +1495,7 @@ namespace CASM {
   Lattice superdupercell(const Lattice &lat1, const Lattice &lat2) {
 
     Eigen::Matrix3d dA(lat2.inv_lat_column_mat()*lat1.lat_column_mat());
-    Eigen::Matrix3l iA;
     long N = 1, num, denom;
-    //std::cout << "dA is:\n" << dA << "\n\n";
     for(Index i = 0; i < 3; i++) {
       for(Index j = 0; j < 3; j++) {
         nearest_rational_number(dA(i, j), num, denom);
@@ -1684,51 +1503,33 @@ namespace CASM {
         N *= denom;
       }
     }
-    for(Index i = 0; i < 3; i++) {
-      for(Index j = 0; j < 3; j++) {
-        iA(i, j) = round(dA(i, j));
-      }
-    }
-    //std::cout << "iA is:\n" << iA << "\n\n";
 
+    //std::cout << "dA is:\n" << dA << "\n\n";
     //std::cout << "and N is:\n" << N << "\n\n";
     Eigen::Matrix3l U, S, V;
-    smith_normal_form(iA, U, S, V);
+    smith_normal_form(lround(dA), U, S, V);
     //std::cout << "Smith U is:\n" << U << "\n\n";
     //std::cout << "Smith S is:\n" << S << "\n\n";
     //std::cout << "Smith V is:\n" << V << "\n\n";
     //std::cout << "and U*S*V is:\n" << U*S*V << "\n\n";
     denom = N;
 
-    //reuse matrix iA for matrix 'R', as above
-    iA.setZero();
+    //reuse matrix S for matrix 'R', as above
     for(Index i = 0; i < 3; i++) {
-      iA(i, i) = N / gcf(S(i, i), N);
+      S(i, i) = N / gcf(S(i, i), N);
     }
-    //Reuse matrix iA for matrix 'N_1', as above
-    iA = inverse(V) * iA;
-    //std::cout << "N_1 is: \n" << iA << "\n\n";
-    //Reuse matrix dA
-    for(Index i = 0; i < 3; i++) {
-      for(Index j = 0; j < 3; j++) {
-        dA(i, j) = double(iA(i, j));
-      }
-    }
+    //Matrix 'N_1', as above is now equal to inverse(V) * S
 
-    Lattice tlat(lat1.lat_column_mat()*dA);
-    Lattice result = tlat.get_reduced_cell();
-
-    return result;
-
+    Lattice tlat(lat1.lat_column_mat() * (inverse(V)*S).cast<double>());
+    return tlat.get_reduced_cell();
   }
 
   //*******************************************************************************************
 
   /// Check if scel is a supercell of unitcell unit and some integer transformation matrix T
   std::pair<bool, Eigen::MatrixXi> is_supercell(const Lattice &scel, const Lattice &unit, double tol) {
-
     // check scel = unit*T, with integer T
-    Eigen::MatrixXd T = unit.lat_column_mat().inverse() * scel.lat_column_mat();
+    Eigen::MatrixXd T = unit.inv_lat_column_mat() * scel.lat_column_mat();
 
     if(is_integer(T, tol) && !almost_zero(T)) {
       return std::make_pair(true, iround(T));

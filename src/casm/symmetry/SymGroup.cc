@@ -73,7 +73,7 @@ namespace CASM {
   //***************************************************
 
   void MasterSymGroup::clear() {
-    SymGroup :: clear();
+    SymGroup::clear();
     point_group_internal.clear();
     for(Index i = 0; i < rep_array.size(); i++) {
       delete rep_array[i];
@@ -774,7 +774,7 @@ namespace CASM {
       std::cerr << "The provided SymGroup wasn't empty and it's about to be erased. Say goodbye." << std::endl;
       shiftless.clear();
     }
-
+    shiftless.m_lat_ptr = m_lat_ptr;
     for(Index i = 0; i < size(); i++) {
       SymOp tsymop(at(i).no_trans());
       if(keep_repeated) {
@@ -797,7 +797,7 @@ namespace CASM {
   //***************************************************
 
   const Lattice &SymGroup::_lattice() const {
-    assert(m_home_lat && "Attempting to access Lattice of a SymGroup, but it has not been initialized!");
+    assert(m_lat_ptr && "Attempting to access Lattice of a SymGroup, but it has not been initialized!");
     return *m_lat_ptr;
   }
 
@@ -1761,6 +1761,7 @@ namespace CASM {
     bool mirror(false);
     bool inversion(false);
     SymGroup subgroup;
+    subgroup.m_lat_ptr = m_lat_ptr;
 
     std::vector<SymOp::SymInfo> info;
     for(Index i = 0; i < size(); i++)
@@ -2811,6 +2812,7 @@ namespace CASM {
     Array<bool> chosen_flag(large_groups.size(), false);
     for(Index i = 0; i < large_groups.size(); i++) {
       SymGroup sgroup;
+      sgroup.m_lat_ptr = m_lat_ptr;
       for(Index j = 0; j < large_groups[i][0].size(); j++) {
         sgroup.push_back(at(large_groups[i][0][j]));
       }
@@ -3690,6 +3692,7 @@ namespace CASM {
         SymGroup group(periodicity());
 
         CASM::from_json(group, json["unique_subgroups"][i]);
+        group.m_lat_ptr = m_lat_ptr;
         unique_subgroups.push_back(group);
       }
 
@@ -3846,15 +3849,22 @@ namespace CASM {
                         const Lattice &lat,
                         PERIODICITY_TYPE periodicity,
                         double _tol) {
-    if(!almost_equal(a.matrix(), b.matrix()))
+
+    if(!almost_equal(a.matrix(), b.matrix(), _tol))
       return false;
-
+    //std::cout << "Operations:\n"
+    //<< a.matrix() << "\n and \n"
+    //<< b.matrix() << "\n are equal \n"
+    //<< "a-tau " << a.tau().transpose() << "\n"
+    //<< "b-tau " << b.tau().transpose() << "\n";
     if(periodicity != PERIODIC)
-      return almost_equal(a.tau(), b.tau());
+      return almost_equal(a.tau(), b.tau(), _tol);
 
-    return almost_zero(Coordinate(a.tau(), lat, CART).min_dist(Coordinate(b.tau(), lat, CART)) < _tol);
+    return Coordinate(a.tau(), lat, CART).min_dist(Coordinate(b.tau(), lat, CART)) < _tol;
 
   }
+
+  //**********************************************************
 
   SymOp within_cell(const SymOp &a,
                     const Lattice &lat,

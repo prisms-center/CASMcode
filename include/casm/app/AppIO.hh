@@ -2,6 +2,7 @@
 #define CASM_AppIO
 
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Coordinate.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ChemicalReference.hh"
@@ -51,13 +52,11 @@ namespace CASM {
     try {
 
       // read lattice
-      Eigen::Vector3d vec0, vec1, vec2;
+      Eigen::Matrix3d latvec_transpose;
 
-      from_json(vec0, json["lattice_vectors"][0]);
-      from_json(vec1, json["lattice_vectors"][1]);
-      from_json(vec2, json["lattice_vectors"][2]);
+      from_json(latvec_transpose, json["lattice_vectors"]);
 
-      Lattice lat(vec0, vec1, vec2);
+      Lattice lat(latvec_transpose.transpose());
 
       // create prim using lat
       BasicStructure<Site> prim(lat);
@@ -87,12 +86,12 @@ namespace CASM {
       }
 
       // read basis sites
-      Eigen::Vector3d coord;
-
       for(int i = 0; i < json["basis"].size(); i++) {
 
         // read coordinate
-        from_json(coord, json["basis"][i]["coordinate"]);
+        Eigen::Vector3d coord(json["basis"][i]["coordinate"][0].get<double>(),
+                              json["basis"][i]["coordinate"][1].get<double>(),
+                              json["basis"][i]["coordinate"][2].get<double>());
         Site site(prim.lattice());
         if(mode == FRAC)
           site.frac() = coord;
@@ -147,10 +146,7 @@ namespace CASM {
 
     json["title"] = prim.title;
 
-    json["lattice_vectors"] = jsonParser::array();
-    json["lattice_vectors"].push_back(prim.lattice()[0]);
-    json["lattice_vectors"].push_back(prim.lattice()[1]);
-    json["lattice_vectors"].push_back(prim.lattice()[2]);
+    json["lattice_vectors"] = prim.lattice().lat_column_mat().transpose();
 
     if(mode == COORD_DEFAULT) {
       mode = COORD_MODE::CHECK();
@@ -165,12 +161,17 @@ namespace CASM {
 
     json["basis"] = jsonParser::array(prim.basis.size());
     for(int i = 0; i < prim.basis.size(); i++) {
-      json["basis"][i] = jsonParser::object();
+      json["basis"][i].put_obj();
+      json["basis"][i]["coordinate"].put_array();
       if(mode == FRAC) {
-        json["basis"][i]["coordinate"] = prim.basis[i].frac();
+        json["basis"][i]["coordinate"].push_back(prim.basis[i].frac(0));
+        json["basis"][i]["coordinate"].push_back(prim.basis[i].frac(1));
+        json["basis"][i]["coordinate"].push_back(prim.basis[i].frac(2));
       }
       else if(mode == CART) {
-        json["basis"][i]["coordinate"] = prim.basis[i].cart();
+        json["basis"][i]["coordinate"].push_back(prim.basis[i].cart(0));
+        json["basis"][i]["coordinate"].push_back(prim.basis[i].cart(1));
+        json["basis"][i]["coordinate"].push_back(prim.basis[i].cart(2));
       }
       json["basis"][i]["occupant_dof"] = jsonParser::array(prim.basis[i].site_occupant().size());
 
