@@ -669,23 +669,6 @@ namespace CASM {
     return param_comp.get_prim_end_members().transpose();
   }
   
-  /// \brief Generate a column matrix containing all the possible molecular end members
-  ///
-  /// \param prim A Structure to find the end members of (does
-  ///             not check if it is actually primitive).
-  ///
-  /// - Each column corresponds to a point in composition space (specifying number
-  ///   of each Molecule per prim)
-  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule,
-  ///   with units number Molecule / prim
-  Eigen::MatrixXd end_members_species_frac(const Structure &prim) {
-    ParamComposition param_comp(prim);
-    param_comp.generate_components();
-    param_comp.generate_sublattice_map();
-    param_comp.generate_prim_end_members();
-    return param_comp.get_prim_end_members().transpose();
-  }
-  
   /// \brief Non-orthogonal composition space
   Eigen::MatrixXd _composition_space(const Structure &prim, double tol) {
     // Get Va index if it exists, and store 0 or 1 in N_Va
