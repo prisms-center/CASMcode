@@ -60,12 +60,6 @@ namespace CASM {
       return m_tau;
     }
 
-    /// Const access of the cartesian translation vector, 'tau'
-    //inline
-    //const double &tau(Index i) const{
-    //return m_tau[i];
-    //}
-
     ///\brief returns true if matrix part of operation is identity
     inline
     bool is_identity() const {
@@ -96,42 +90,40 @@ namespace CASM {
 
     /// Check equality of SymOps, (matrix and translation). Does not necessarily return true for translational equivalents
     bool operator==(const SymOp &RHS) const;
-    /// Check equality of SymOps, with specified tolerance, (matrix and translation). Returns true for translational equivalents
-    //bool compare(const SymOp &RHS, double eq_tol = TOL) const;
 
     /// Performs conjugation of this SymOp with SymOp 'op'
     /// In other words, transforms coordinates of this SymOp by
     /// transformation specified by 'op':  op.inverse()*(*this)*op
     SymOp &apply_sym(const SymOp &op);
 
-    /// Use 'symmetry_mat' and 'tau_vec' to populate 'symmetry'
+    /// Use SymOp::matrix() and SymOp::tau() to populate a SymInfo object with type of symmetry,
+    /// axis (i.e., rotation axis or mirror normal), screw/glide shift, and location
+    /// because SymOp doesn't know any lattice info, it can't tell between rotation and screw or mirror and glide
+    /// it assumes that a rotation is a screw and that a mirror is a glide when populating SymInfo::screw_glide_shift
     SymInfo info() const;
 
-    /// calculate and return character of this SymOp
-    double character() const {
+    /// calculate and return character of this SymOp (neglecting tau)
+    double character() const override {
       return matrix().trace();
     }
 
     /// Print this SymOP as header, followed by symmetry_mat and tau_vec (aligned vertically)
-    ///COORD_DEFAULT is default argument, this means default to the global mode
-    void print(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2fmat) const;
+    /// \param c2fmat is a transformation matrix that can be passed to convert from Cartesian to fractional coordinates
+    void print(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2fmat = matrix_type::Identity()) const;
 
     ///Prints abridged description of SymOp, including its type, angle, and eigenvector
     ///does NOT print out the entire symmetry operation matrix
-    void print_short(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2fmat) const;
-
-    /// Makes sure that all properties of SymOp are up to date in the specified COORD_MODE
-    /// THIS HAS NOT BEEN IMPLEMENTED --- we should discuss specifics
-    void update(COORD_TYPE coord_mode);
+    /// \param c2fmat is a transformation matrix that can be passed to convert from Cartesian to fractional coordinates
+    void print_short(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2fmat = matrix_type::Identity()) const;
 
     /// Return pointer to a new copy of this SymOp
-    SymOpRepresentation *copy() const {
+    SymOpRepresentation *copy() const override {
       return new SymOp(*this);
     }
 
-    jsonParser &to_json(jsonParser &json) const;
+    jsonParser &to_json(jsonParser &json) const override;
 
-    void from_json(const jsonParser &json);
+    void from_json(const jsonParser &json) override;
 
   private:
 
@@ -152,12 +144,6 @@ namespace CASM {
     ///translation vector that is applied to
     ///a point after matrix transformation
     vector_type m_tau;
-
-    ///location is a point in the lattice that describes the location
-    ///of the symmetry-generating element (e.g, mirror plane, rotation axis, inversion point)
-    ///location is related to tau_vec in that
-    /// new_coord=symmetry_mat*(old_coord-location) + location
-    //vector_type m_location;
 
     /// This stores the mapping error associated with this SymOp, which will depend on the tolerances
     ///  you choose when you attempt to generate symmetry groups.

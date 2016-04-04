@@ -6,10 +6,6 @@
 #include "casm/casm_io/json_io/container.hh"
 namespace CASM {
 
-  //SymOpRepresentation::~SymOpRepresentation() {};
-
-  //**********************************************************
-
   const double &SymOp::map_error() const {
     return m_map_error;
   }
@@ -111,113 +107,6 @@ namespace CASM {
   };
 
   //******************************************************
-  /**
-   * Find the invariant point after applying symmetry
-
-   *	- General equation
-
-   * P is the invariant point
-   * P(CART) = Sym_op*P(CART) + tau()
-   * P(CART) = (I-Sym_op).inverse()*tau()
-
-   *	- The General equation is only valid for point sysmetry
-
-   *	- Plane symmetry ( Mirror or Glide)
-   *  SP = -P (always sture at the origin)
-   *  P(CART) = -P(CART) + tau_per (perpendicular to eigenvec)
-   *  P = tau_per/2
-
-   *	- axial sysmmetry ( Rotation or Screw)
-   *   change the coordinate system having eigen vector as a z coordinate,
-   *	 so, it makes 3D rotation to 2D roation
-   *   find M coordinate transfer matrix
-   *   M = ( tau_pp ; eigen x tau_pp ; eigen)
-   *	 define Inew = (1 0 0; 0 1 0; 0 0 0)
-   *   Pnew = (Inew-Snew)^-1*tau_pp(new)
-   *   P  = (MInewM.inverse() - S).inverse*tau_pp
-   */
-  /*
-  void SymOp::find_location() const {
-
-
-    Eigen::Matrix3d tMat, inv_tMat;
-    Eigen::Vector3d tau_pp, tau_ll;
-
-    if(type() == invalid_op) {
-      get_sym_type();
-    }
-
-
-    if(type() == identity_op) {
-      //std::cout<<"all points are high symmetry  points \n";
-      return;
-    }
-
-
-    if((type() == rotoinversion_op) || (type() == inversion_op)) {
-      //  std::cout << "eigenvec norm is " << eigenvec(CART).norm() << '\n';
-
-      tMat = Eigen::Matrix3d::identity() - m_mat;
-      inv_tMat = tMat.inverse();
-      location(CART) = inv_tMat * tau();
-
-      return;
-    }
-    if((type() == mirror_op) || (type() == glide_op)) {
-      //component of tau parallel to eigenvector:
-      tau_ll = (eigenvec(CART).dot(tau()) / eigenvec(CART).dot(eigenvec(CART))) * eigenvec(CART);
-
-      location(CART) = tau_ll / 2.0;
-      return;
-    }
-    if(((type() == rotation_op) || (type() == screw_op))) {
-
-
-      // std::cout << "eigenvec norm is " << eigenvec(CART).norm() << '\n';
-
-      //component of tau parallel to rotation axis
-      tau_ll = (eigenvec(CART).dot(tau()) / eigenvec(CART).dot(eigenvec(CART))) * eigenvec(CART);
-
-      //component in the plane of rotation
-      tau_pp = tau() - tau_ll;
-
-      if(tau_pp.is_zero()) {
-        //rotation axis passes through origin
-        //std::cout << location() << "\n";
-        return;
-      }
-
-
-      Eigen::Vector3d X, Y, Z, tY;
-      Eigen::Matrix3d M, I_new(Eigen::Matrix3d::identity());
-
-      tY = eigenvec(CART).cross(tau_pp);
-      Y = tY / tY.norm();
-      X = tau_pp / tau_pp.norm();
-      Z = eigenvec(CART) / eigenvec(CART).norm();
-      M(0, 0) = X.at(0);
-      M(1, 0) = X.at(1);
-      M(2, 0) = X.at(2);
-      M(0, 1) = Y.at(0);
-      M(1, 1) = Y.at(1);
-      M(2, 1) = Y.at(2);
-      M(0, 2) = Z.at(0);
-      M(1, 2) = Z.at(1);
-      M(2, 2) = Z.at(2);
-
-      I_new(2, 2) = 0;
-
-      inv_tMat = M * I_new * M.inverse() - m_mat;
-
-      location(CART) = inv_tMat.inverse() * tau_pp;
-
-      return;
-    }
-
-    std::cerr << "DISASTER in SymOp::find_location!!\n Attempted to find symmetr location, but symmetry type is invalid!\n";
-  }
-  */
-  //******************************************************
 
   SymOp &SymOp::apply_sym(const SymOp &op) {
     (*this) = op * (*this) * (op.inverse());
@@ -234,34 +123,39 @@ namespace CASM {
 
   SymOp::SymInfo SymOp::info() const {
     SymInfo result;
-    if(almost_equal(matrix().trace(), 3.0)) {
+
+    // Simplest case is identity: has no axis and no location
+    if(almost_equal(matrix().trace(), 3.)) {
       result.op_type = identity_op;
+      result.axis = vector_type::Zero();
+      result.location = vector_type::Zero();
       return result;
     }
 
-    if(almost_equal(matrix().trace(), -3.0)) {
+    // second simplest case is inversion: has no axis and location is tau()/2
+    if(almost_equal(matrix().trace(), -3.)) {
       result.op_type = inversion_op;
+      result.axis = vector_type::Zero();
+      result.location = tau() / 2.;
       return result;
     }
 
+    // det is -1 if improper and +1 if proper
     int det = round(matrix().determinant());
 
-    int i, j;
-
-    //If rotation is 180 degrees
-    //Rotation matrix becomes symmetric; 180 rotation can be
-    //decomposed into 2 orthogonal mirror planes
-    //handled the same way as in mirror_check
+    // Find eigen decomposition of proper operation (by multiplying by determinant)
     Eigen::EigenSolver<matrix_type> t_eig(det * matrix());
 
-    //Eigenvalues of 180 rotation are 1, -1, -1
-    for(i = 0; i < 3; i++) {
+    // 'axis' is eigenvector whose eigenvalue is +1
+    for(Index i = 0; i < 3; i++) {
       if(almost_equal(t_eig.eigenvalues()(i), std::complex<double>(1, 0))) {
         result.axis = t_eig.eigenvectors().col(i).real();
         break;
       }
     }
-    for(i = 0; i < 3; i++) {
+
+    // Sign convention for 'axis': first non-zero element is positive
+    for(Index i = 0; i < 3; i++) {
       if(!almost_zero(result.axis[i])) {
         result.axis *= sgn(result.axis[i]);
         break;
@@ -270,29 +164,41 @@ namespace CASM {
 
     vector_type ortho = result.axis.unitOrthogonal();
     vector_type rot = matrix() * ortho;
-    if(almost_equal(ortho.dot(rot), 1.0))
-      result.angle = 0;
 
-    result.angle = int(round((180.0 / M_PI) * atan2(result.axis.dot(ortho.cross(rot)), ortho.dot(rot)))) + 180;
+    result.angle = int(round((180. / M_PI) * atan2(result.axis.dot(ortho.cross(rot)), ortho.dot(rot)))) + 180;
     if(det < 0) {
-      if(almost_equal(result.angle, 180.0)) {
+      if(almost_equal(result.angle, 180.)) {
         result.op_type = mirror_op;
+        // shift is component of tau perpendicular to axis
         result.screw_glide_shift = tau() - tau().dot(result.axis) * result.axis;
+        // location is 1/2 of component of tau parallel to axis: matrix()*location+tau() = -location+tau() = location
+        result.location = tau().dot(result.axis) * result.axis / 2.;
       }
       else {
-        result.screw_glide_shift = tau().dot(result.axis) * result.axis;
         result.op_type = rotoinversion_op;
+        // shift is component of tau parallel to axis
+        result.screw_glide_shift = tau().dot(result.axis) * result.axis;
+        // rotoinversion is point symmetry, so we can solve matrix()*p+tau()=p for invariant point p
+        result.location = (matrix_type::Identity() - matrix()).inverse() * tau();
       }
     }
     else {
-      result.screw_glide_shift = tau().dot(result.axis) * result.axis;
       result.op_type = rotation_op;
+      // shift is component of tau parallel to axis
+      result.screw_glide_shift = tau().dot(result.axis) * result.axis;
+      // Can only solve 2d location problem
+      Eigen::MatrixXd tmat(3, 2);
+      tmat << ortho, ortho.cross(result.axis);
+      // if A = tmat.transpose()*matrix()*tmat and s=tmat.transpose()*tau()
+      // then 2d invariant point 'v' is solution to A*v+s=v
+      // implies 3d invariant point 'p' is p=tmat*(eye(2)-A).inverse()*s
+      result.location = tmat * (Eigen::MatrixXd::Identity(2, 2) - tmat.transpose() * matrix() * tmat).inverse() * tmat.transpose() * tau();
     }
     return result;
   }
 
   //*****************************************************
-  void SymOp::print_short(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2f_mat) const {
+  void SymOp::print_short(std::ostream &stream, const Eigen::Ref<const SymOp::matrix_type> &c2f_mat) const {
 
     stream.precision(3);
     SymInfo t_info = info();
@@ -348,7 +254,7 @@ namespace CASM {
 
   //*****************************************************
 
-  void SymOp::print(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2f_mat) const {
+  void SymOp::print(std::ostream &stream, const Eigen::Ref<const SymOp::matrix_type> &c2f_mat) const {
     SymInfo t_info = info();
 
     int tprec = stream.precision();
@@ -408,8 +314,8 @@ namespace CASM {
 
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
     stream.precision(9);
-    Eigen::Matrix3d tmat(c2f_mat * matrix()*c2f_mat.inverse());
-    Eigen::Vector3d ttau(c2f_mat * tau());
+    matrix_type tmat(c2f_mat * matrix()*c2f_mat.inverse());
+    vector_type ttau(c2f_mat * tau());
     for(int i = 0; i < 3; i++) {
       //Print each row of the symmetry matrix separately
       for(int j = 0; j < 3; j++) {
@@ -447,7 +353,7 @@ namespace CASM {
     json["op_index"] = op_index;
     json["rep_ID"] = rep_ID;
 
-    // mutable Eigen::Matrix3d symmetry_mat[2];
+    // mutable SymOp::matrix_type symmetry_mat[2];
     json["symmetry_mat"] = matrix();
 
     // mutable Coordinate tau_vec;
@@ -481,7 +387,7 @@ namespace CASM {
       //std::cout<<"Reading in rep_id"<<std::endl;
       CASM::from_json(rep_ID, json["rep_ID"]);
 
-      // mutable Eigen::Matrix3d symmetry_mat[2];
+      // mutable SymOp::matrix_type symmetry_mat[2];
       //std::cout<<"Reading in symmetry_mat"<<std::endl;
       CASM::from_json(m_mat, json["symmetry_mat"]);
 

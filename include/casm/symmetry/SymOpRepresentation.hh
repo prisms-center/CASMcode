@@ -31,28 +31,31 @@ namespace CASM {
 
 
   public:
-    SymOpRepresentation() : symmetry(invalid_op), m_master_group(nullptr), op_index(-1), rep_ID(-1) {};
+    SymOpRepresentation() : symmetry(invalid_op), m_master_group(nullptr), op_index(-1), rep_ID(-1) {}
     SymOpRepresentation(const MasterSymGroup &_master_group, Index _rep_ID, Index _op_index) :
-      symmetry(invalid_op), m_master_group(&_master_group), op_index(_op_index), rep_ID(_rep_ID) {};
+      symmetry(invalid_op), m_master_group(&_master_group), op_index(_op_index), rep_ID(_rep_ID) {}
 
     //SymOpRepresentation specifies how a symmetry operation acts on a certain type of object.
     //It is a virtual class, since we don't need to know the specifics of its behavior at higher levels of abstraction
-    virtual ~SymOpRepresentation() {}; // = 0;
+    virtual ~SymOpRepresentation() {} // = 0;
 
     virtual SymOpRepresentation *copy() const = 0;
-    virtual double get_character() const {
+
+    virtual double character() const {
       return NAN;
-    };
+    }
+
     virtual Permutation  const *get_permutation() const {
       return nullptr;
-    };
+    }
+
     virtual Eigen::MatrixXd const *get_MatrixXd() const {
       return nullptr;
-    };
+    }
 
     virtual SymBasisPermute const *get_ucc_permutation() const {
       return nullptr;
-    };
+    }
 
 
     /// get pointer to matrix representation corresponding to rep_ID
@@ -88,7 +91,7 @@ namespace CASM {
 
     Index index()const {
       return op_index;
-    };
+    }
 
     virtual jsonParser &to_json(jsonParser &json) const = 0;
     virtual void from_json(const jsonParser &json) = 0;
