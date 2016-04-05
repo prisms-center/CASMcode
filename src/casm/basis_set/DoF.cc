@@ -1,8 +1,7 @@
 #include "casm/basis_set/DoF.hh"
 
+// needed for to/from json... this should be fixed
 #include "casm/crystallography/Molecule.hh"
-
-#include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
 
@@ -29,10 +28,11 @@ namespace CASM {
 
   void from_json(OccupantDoF<int> &dof, const jsonParser &json) {
     try {
+      std::string name = json["m_type_name"].get<std::string>();
       Array<int> domain = json["m_domain"].get<Array<int> >();
       int current_state = json["m_current_state"].get<int>();
 
-      dof = OccupantDoF<int>(domain, current_state);
+      dof = OccupantDoF<int>(name, domain, current_state);
     }
     catch(...) {
       /// re-throw exceptions
@@ -68,7 +68,7 @@ namespace CASM {
       Array<Molecule> domain;
       //std::cout<<"The size of the dof is "<<dof.get_domain().size()<<std::endl;
       ////std::cout<<"The dof "
-      Molecule mol(*dof.get_domain().at(0).home());
+      Molecule mol(*(dof[0].home()));
       //domain.clear();
       //std::cout<<"Done initializing molecule"<<std::endl;
       for(int i = 0; i < json["m_domain"].size(); i++) {
@@ -78,7 +78,7 @@ namespace CASM {
       //std::cout<<"Done adding the molecules to the list, trying to create"
       //               <<" OccupantDoF<Molecule>"<<std::endl;
 
-      dof = OccupantDoF<Molecule>(domain, current_state);
+      dof = OccupantDoF<Molecule>(name, domain, current_state);
     }
     catch(...) {
       /// re-throw exceptions
@@ -132,7 +132,7 @@ namespace CASM {
           // prepare a OccupantDoF<Molecule> and then read from json
           Array<Molecule> init_domain;
           init_domain.push_back(Molecule(lat));
-          OccupantDoF<Molecule> tdof(init_domain);
+          OccupantDoF<Molecule> tdof(json["m_type_name"].get<std::string>(), init_domain);
 
           // this expects dof.domain[0] has a Molecule with the right lattice
           CASM::from_json(tdof, json);
@@ -170,5 +170,5 @@ namespace CASM {
     }
   }
 
-};
+}
 

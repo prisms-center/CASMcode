@@ -408,6 +408,7 @@ namespace CASM {
 
         std::stringstream ss;
         const Configuration &con = primclex.configuration(configname[0]);
+
         VaspIO::PrintPOSCAR p(con);
         p.sort();
         p.print(ss);

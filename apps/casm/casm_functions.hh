@@ -18,12 +18,12 @@
 // An expected input file can not be found
 #define ERR_MISSING_INPUT_FILE 5
 
-// A file might be overwritten 
+// A file might be overwritten
 #define ERR_EXISTING_FILE 6
 
 // Requested command can not be performed because some dependency needs to be
 //   done first (i.e. no basis set, so can't use clexulator)
-#define ERR_MISSING_DEPENDS 7  
+#define ERR_MISSING_DEPENDS 7
 
 // Unknown attempting to overwrite another CASM project
 #define ERR_OTHER_PROJ 8

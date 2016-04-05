@@ -29,8 +29,9 @@ namespace CASM {
     /// assuming that the crystal is periodic
     mutable MasterSymGroup m_factor_group;
     /// This holds the representation id of the permutation representation
-    mutable Index perm_rep_ID, basis_perm_rep_ID;
-
+    mutable Index basis_perm_rep_ID;
+    ///Specifies whether selectice dynamics is on or of for DFT calculations
+    bool SD_flag;
 
   public: //PUBLIC DATA MEMBERS (Public for now)
 
@@ -49,9 +50,9 @@ namespace CASM {
   public: //PUBLIC METHODS
 
     //  ****Constructors****
-    Structure() : BasicStructure<Site>(), perm_rep_ID(-1), basis_perm_rep_ID(-1) {}
-    explicit Structure(const Lattice &init_lat) : BasicStructure<Site>(init_lat), perm_rep_ID(-1), basis_perm_rep_ID(-1) {}
-    explicit Structure(const BasicStructure<Site> &base) : BasicStructure<Site>(base), perm_rep_ID(-1), basis_perm_rep_ID(-1) {}
+    Structure() : BasicStructure<Site>(), basis_perm_rep_ID(-1) {}
+    explicit Structure(const Lattice &init_lat) : BasicStructure<Site>(init_lat), basis_perm_rep_ID(-1) {}
+    explicit Structure(const BasicStructure<Site> &base) : BasicStructure<Site>(base), basis_perm_rep_ID(-1) {}
     explicit Structure(const fs::path &filepath);
 
     /// Have to explicitly define the copy constructor so that factor_group
@@ -114,9 +115,6 @@ namespace CASM {
     /// generate factor groups for a range of tol values, prints results to screen (for now)
     void fg_converge(double large_tol);
     void fg_converge(double small_tol, double large_tol, double increment);
-
-    /// Obtain the permutation representation of factor_group, returns its rep_id, and sets internal perm_rep_id
-    Index generate_permutation_representation(bool verbose = false) const;
 
     /// Obtain the basis permutation representation of factor_group, returns its rep_id, and sets internal basis_perm_rep_ID
     Index generate_basis_permutation_representation(bool verbose = false) const;

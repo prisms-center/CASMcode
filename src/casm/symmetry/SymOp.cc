@@ -10,7 +10,7 @@ namespace CASM {
     return m_map_error;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   void SymOp::set_map_error(const double &value) {
     m_map_error = value;
@@ -18,7 +18,7 @@ namespace CASM {
   }
 
 
-  //**********************************************************
+  //*******************************************************************************************
 
   void SymOp::set_index(const MasterSymGroup &new_group, Index new_index) {
     if((valid_index(new_index) && new_index < new_group.size())
@@ -28,12 +28,13 @@ namespace CASM {
       op_index = new_index;
     }
     else {
-      m_master_group = NULL;
+      m_master_group = &new_group;
+      //m_master_group = NULL;
       op_index = -1;
     }
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   SymOp SymOp::operator*(const SymOp &RHS) const {
     SymOp t_op(matrix() * RHS.matrix(),
@@ -60,21 +61,21 @@ namespace CASM {
 
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   SymOp &SymOp::operator+=(const Eigen::Ref<const SymOp::vector_type> &RHS) {
     m_tau += RHS - matrix() * RHS;
     return (*this);
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   SymOp &SymOp::operator-=(const Eigen::Ref<const SymOp::vector_type> &RHS) {
     m_tau -= RHS - matrix() * RHS;
     return (*this);
   }
 
-  //**********************************************************
+  //*******************************************************************************************
   // SymOp matrix is unitary, so inverse is equivalent to transpose.
   // To do inverse of translation, you must perform
   // inverse matrix operaton on translation and subtract
@@ -91,14 +92,14 @@ namespace CASM {
     return t_op;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   SymOp SymOp::no_trans() const {
 
     return SymOp(matrix(), map_error());
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   bool SymOp::operator==(const SymOp &RHS) const {
     return
@@ -106,20 +107,19 @@ namespace CASM {
       almost_equal(tau(), RHS.tau());
   };
 
-  //******************************************************
+  //*******************************************************************************************
 
   SymOp &SymOp::apply_sym(const SymOp &op) {
     (*this) = op * (*this) * (op.inverse());
     return *this;
   }
 
-  //******************************************************
+  //*******************************************************************************************
   /**
-   * Calculates the rotation angle.
    *
    *
    */
-  //******************************************************
+  //*******************************************************************************************
 
   SymOp::SymInfo SymOp::info() const {
     SymInfo result;
@@ -197,7 +197,8 @@ namespace CASM {
     return result;
   }
 
-  //*****************************************************
+
+  //*******************************************************************************************
   void SymOp::print_short(std::ostream &stream, const Eigen::Ref<const SymOp::matrix_type> &c2f_mat) const {
 
     stream.precision(3);
@@ -252,7 +253,7 @@ namespace CASM {
 
   }
 
-  //*****************************************************
+  //*******************************************************************************************
 
   void SymOp::print(std::ostream &stream, const Eigen::Ref<const SymOp::matrix_type> &c2f_mat) const {
     SymInfo t_info = info();
@@ -330,7 +331,7 @@ namespace CASM {
     return;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   jsonParser &SymOp::to_json(jsonParser &json) const {
     json.put_obj();
@@ -377,7 +378,7 @@ namespace CASM {
     return json;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   void SymOp::from_json(const jsonParser &json) {
     try {
@@ -407,13 +408,13 @@ namespace CASM {
     }
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   jsonParser &to_json(const SymOp &sym, jsonParser &json) {
     return sym.to_json(json);
   }
 
-  //**********************************************************
+  //*******************************************************************************************
   void from_json(SymOp &sym, const jsonParser &json) {
     try {
       sym.from_json(json);
@@ -426,4 +427,3 @@ namespace CASM {
 
 
 }
-

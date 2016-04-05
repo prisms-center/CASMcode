@@ -123,7 +123,7 @@ def write_stopcar(mode='e', jobdir=None):
 
 
 
-def write_vasp_input(dirpath, incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, sort=True, extra_input_files=[]):
+def write_vasp_input(dirpath, incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, sort=True, extra_input_files=[], strict_kpoints=False):
     """ Write VASP input files in directory 'dirpath' """
     print "Setting up VASP input files:", dirpath
 
@@ -144,7 +144,11 @@ def write_vasp_input(dirpath, incarfile, prim_kpointsfile, prim_poscarfile, supe
     print "  Reading INCAR:", incarfile
     super_incar = incar.Incar(incarfile, species_settings, super, sort)
     print "  Generating supercell KPOINTS"
-    super_kpoints = prim_kpoints.super_kpoints(prim, super)
+    if strict_kpoints:
+        super_kpoints = prim_kpoints
+    else:
+        super_kpoints = prim_kpoints.super_kpoints(prim, super)
+
 
     # write main input files
     print "  Writing supercell POSCAR:", os.path.join(dirpath,'POSCAR')

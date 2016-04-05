@@ -249,7 +249,7 @@ namespace CASM {
       json["inverse"][i] = grp.ind_inverse(i);
     }
     json["multiplication_table"] = grp.get_multi_table();
-    json["character_table"] = grp.get_character_table();
+    json["character_table"] = grp.character_table();
   }
 
 

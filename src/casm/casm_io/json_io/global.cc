@@ -2,7 +2,7 @@
 #include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
-  
+
   /// Gets string value as COORD_TYPE
   ///
   /// If first letter is:

@@ -141,7 +141,7 @@ namespace CASM {
 
     return json;
   }
-  
+
   //******************************************************************************
 
   template<typename DataObject>
@@ -149,10 +149,10 @@ namespace CASM {
     if(!m_initialized) {
       _initialize(_obj);
     }
-    
+
     jsonParser::iterator it;
     jsonParser::iterator end = json.end();
-    
+
     for(Index i = 0; i < m_data_formatters.size(); i++) {
       jsonParser tmp;
       m_data_formatters[i]->to_json(_obj, tmp);
@@ -167,7 +167,7 @@ namespace CASM {
 
     return json;
   }
-  
+
   //******************************************************************************
 
   template<typename DataObject>
@@ -194,9 +194,9 @@ namespace CASM {
     _stream <<  std::endl;
     return;
   }
-  
+
   //******************************************************************************
-  
+
   template<typename DataObject>
   void DataFormatter<DataObject>::_initialize(const DataObject &_template_obj) const {
     for(Index i = 0; i < m_data_formatters.size(); i++)
@@ -204,22 +204,22 @@ namespace CASM {
     m_initialized = true;
     return;
   }
-  
+
   //******************************************************************************
-  
-  
-  /// \brief Equivalent to find, but throw error with suggestion if _name not found 
+
+
+  /// \brief Equivalent to find, but throw error with suggestion if _name not found
   template<typename DataObject, typename DatumFormatterType>
-  typename DataFormatterDictionary<DataObject, DatumFormatterType>::const_iterator 
+  typename DataFormatterDictionary<DataObject, DatumFormatterType>::const_iterator
   DataFormatterDictionary<DataObject, DatumFormatterType>::lookup(
-      const key_type &_name) const {
-      
+    const key_type &_name) const {
+
     auto res = this->find(_name);
     if(res != this->end()) {
       return res;
     }
     else {
-      
+
       // If no match, try to use demerescau-levenshtein distance to make a helpful suggestion
       auto it = this->begin();
       int min_dist(-1);
@@ -231,22 +231,22 @@ namespace CASM {
           res = it;
         }
       }
-      
+
       throw std::runtime_error("CRITICAL ERROR: Invalid format flag \"" + _name + "\" specified.\n"
                                + "                Did you mean \"" + res->name() + "\"?\n");
 
     }
-    
+
   }
-  
+
   /// \brief Generates formatted help using the 'name' and 'description' of all
   ///        contained BaseDatumFormatter
   ///
   template<typename DataObject, typename DatumFormatterType>
   void DataFormatterDictionary<DataObject, DatumFormatterType>::print_help(
-      std::ostream &_stream,
-      typename BaseDatumFormatter<DataObject>::FormatterType ftype,
-      int width, int separation) const {
+    std::ostream &_stream,
+    typename BaseDatumFormatter<DataObject>::FormatterType ftype,
+    int width, int separation) const {
 
     const_iterator it_begin(this->cbegin()), it_end(this->cend());
     std::string::size_type len(0);
@@ -284,8 +284,8 @@ namespace CASM {
   ///
   template<typename DataObject, typename DatumFormatterType>
   DataFormatter<DataObject> DataFormatterDictionary<DataObject, DatumFormatterType>::parse(
-      const std::vector<std::string> &input) const {
-      
+    const std::vector<std::string> &input) const {
+
     DataFormatter<DataObject> formatter;
     std::vector<std::string> format_tags, format_args;
     for(Index i = 0; i < input.size(); i++) {
@@ -306,12 +306,12 @@ namespace CASM {
   ///
   template<typename DataObject, typename DatumFormatterType>
   DataFormatter<DataObject> DataFormatterDictionary<DataObject, DatumFormatterType>::parse(
-      const std::string &input) const {
-      
+    const std::string &input) const {
+
     DataFormatter<DataObject> formatter;
     std::vector<std::string> format_tags, format_args;
     split_formatter_expression(input, format_tags, format_args);
-    
+
     for(Index i = 0; i < format_tags.size(); i++) {
       formatter.push_back(*lookup(format_tags[i]), format_args[i]);
     }

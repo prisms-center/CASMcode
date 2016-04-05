@@ -7,12 +7,13 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/container/Array.hh"
 
+
 namespace CASM {
   class MasterSymGroup;
-
   class Permutation;
   class UnitCellCoord;
   class SymBasisPermute;
+
 
   ///\brief SymOpRepresentation is the base class for anything describes a symmetry operation
   class SymOpRepresentation {
@@ -20,8 +21,6 @@ namespace CASM {
     enum symmetry_type {identity_op, mirror_op, glide_op, rotation_op, screw_op, inversion_op, rotoinversion_op, invalid_op};
 
   protected:
-    ///type of symmetry, given by one of the allowed values of symmetry_type
-    mutable symmetry_type symmetry;
 
     /// Pointer to the MasterSymGroup where prototype of this SymOp lives
     MasterSymGroup const *m_master_group;
@@ -31,9 +30,9 @@ namespace CASM {
 
 
   public:
-    SymOpRepresentation() : symmetry(invalid_op), m_master_group(nullptr), op_index(-1), rep_ID(-1) {}
+    SymOpRepresentation() : m_master_group(nullptr), op_index(-1), rep_ID(-1) {}
     SymOpRepresentation(const MasterSymGroup &_master_group, Index _rep_ID, Index _op_index) :
-      symmetry(invalid_op), m_master_group(&_master_group), op_index(_op_index), rep_ID(_rep_ID) {}
+      m_master_group(&_master_group), op_index(_op_index), rep_ID(_rep_ID) {}
 
     //SymOpRepresentation specifies how a symmetry operation acts on a certain type of object.
     //It is a virtual class, since we don't need to know the specifics of its behavior at higher levels of abstraction
@@ -89,9 +88,17 @@ namespace CASM {
       return m_master_group != nullptr;
     }
 
+    void invalidate_index() {
+      op_index = -1;
+    }
+
     Index index()const {
       return op_index;
     }
+
+    Index ind_inverse()const;
+
+    Index ind_prod(const SymOpRepresentation &RHS)const;
 
     virtual jsonParser &to_json(jsonParser &json) const = 0;
     virtual void from_json(const jsonParser &json) = 0;

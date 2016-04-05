@@ -8,6 +8,6 @@
 using namespace CASM;
 
 const std::string &CASM::version() {
-  static const std::string &ver = "v0.2_eigen";
+  static const std::string &ver = "merge_strain";
   return ver;
 };

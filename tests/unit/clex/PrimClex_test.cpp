@@ -16,18 +16,18 @@ using namespace CASM;
 BOOST_AUTO_TEST_SUITE(PrimClexTest)
 
 BOOST_AUTO_TEST_CASE(Basics) {
-  
+
   Structure prim(test::FCC_ternary_prim());
   BOOST_CHECK_EQUAL(prim.basis.size(), 1);
-  
+
   // Construct from prim
   PrimClex primclex(prim);
   BOOST_CHECK_EQUAL(primclex.get_prim().basis.size(), 1);
-  
+
   // Copy construct
   PrimClex primclex2(primclex);
   BOOST_CHECK_EQUAL(primclex2.get_prim().basis.size(), 1);
-  
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

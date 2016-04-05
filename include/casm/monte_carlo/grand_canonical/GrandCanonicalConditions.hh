@@ -4,20 +4,20 @@
 #include "casm/clex/PrimClex.hh"
 
 namespace CASM {
-  
+
   class MonteSettings;
-  
+
   /// Conditions for a Grand Canonical run:
   /// Temperature
   /// Chemical potential
   /// Tolerance (for comparing conditions)
-  /// 
+  ///
   class GrandCanonicalConditions {
   public:
-    
+
     /// \brief Default constructor
     GrandCanonicalConditions() {}
-    
+
     /// \brief Constructor
     ///
     /// \param _temperature in K
@@ -25,11 +25,11 @@ namespace CASM {
     /// \param _comp_converter CompositionConverter for converting from parametric chem_pot to species chem_pot
     /// \param _tol tolerance for comparing conditions
     ///
-    GrandCanonicalConditions(double _temperature, 
+    GrandCanonicalConditions(double _temperature,
                              const Eigen::VectorXd &_param_chem_pot,
-                             const CompositionConverter& _comp_converter,
+                             const CompositionConverter &_comp_converter,
                              double _tol);
-    
+
     // ***************************************ACCESSORS********************************************** //
 
     double temperature() const;
@@ -37,11 +37,11 @@ namespace CASM {
     double beta() const;
 
     /// \brief chemical potential: dg/dcomp_n
-    const Eigen::VectorXd& chem_pot() const;
+    const Eigen::VectorXd &chem_pot() const;
 
     /// \brief chemical potential: dg/dcomp_n(index)
     double chem_pot(Index index) const;
-    
+
     /// \brief parametric chemical potential: dg/dcomp
     Eigen::VectorXd param_chem_pot() const;
 
@@ -103,13 +103,13 @@ namespace CASM {
     ///Divide ALL parameters and return the greatest number in absolute value
     int operator/(const GrandCanonicalConditions &RHS_inc) const;
 
-  
+
   protected:
 
-    
+
     /// Convert between num atoms per prim cell and parametric composition
     CompositionConverter m_comp_converter;
-    
+
     ///Temperature
     double m_temperature;
 
@@ -121,8 +121,8 @@ namespace CASM {
 
     ///Tolerance for comparison operators == and !=
     double m_tolerance;
-    
-    
+
+
   };
 
 }

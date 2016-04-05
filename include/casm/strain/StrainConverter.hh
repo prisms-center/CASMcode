@@ -18,6 +18,7 @@
 //       - sop: strain order parameter (sop = sop_transf_mat * unrolled_E)
 
 namespace CASM {
+  class SymGroup;
 
   typedef Eigen::VectorXd VectorXd;
   typedef Eigen::MatrixXd MatrixXd;
@@ -34,18 +35,25 @@ namespace CASM {
 
     /// GREEN_LAGRANGE = (C-I)/2
     static Matrix3d green_lagrange(const Matrix3d &F);
+    static Matrix3d green_lagrange_to_F(const Matrix3d &E);
 
     /// BIOT = (U-I)
     static Matrix3d biot(const Matrix3d &F);
+    static Matrix3d biot_to_F(const Matrix3d &B);
 
     /// HENCKY = log(C)/2
     static Matrix3d hencky(const Matrix3d &F);
+    static Matrix3d hencky_to_F(const Matrix3d &H);
 
     /// EULER_ALMANSI = (I-(F F^{T})^(-1))/2
     static Matrix3d euler_almansi(const Matrix3d &F);
+    static Matrix3d euler_almansi_to_F(const Matrix3d &A);
 
     /// DISP_GRAD = F
     static Matrix3d disp_grad(const Matrix3d &F);
+    static Matrix3d disp_grad_to_F(const Matrix3d &F) {
+      return F;
+    }
 
     //-------------------------------------------------
     // Routines that calculate derived quantities given the
@@ -58,7 +66,7 @@ namespace CASM {
     static Matrix3d strain_metric(const Matrix3d &F, STRAIN_METRIC MODE);
     //-------------------------------------------------
 
-    StrainConverter(bool override_flag = false) {
+    StrainConverter(bool override_flag = false) : m_symrep_ID(-1) {
       if(!override_flag) {
         std::cerr << "WARNING in CASM::StrainConverter you are calling the default constructor" << std::endl;
         std::cerr << "This is going to initialize a \"default\" sop_transf_mat and order_strain" << std::endl;
@@ -74,7 +82,7 @@ namespace CASM {
     StrainConverter(const STRAIN_METRIC &_MODE, const MatrixXd &_sop_transf_mat,
                     const Array< Array<int> > &_order_strain) :
       STRAIN_METRIC_MODE(_MODE), m_sop_transf_mat(_sop_transf_mat),
-      m_order_strain(_order_strain) {
+      m_order_strain(_order_strain), m_symrep_ID(-1) {
       if(_MODE == GREEN_LAGRANGE)
         curr_metric_func = &StrainConverter::green_lagrange;
       else if(_MODE == BIOT)
@@ -85,16 +93,29 @@ namespace CASM {
         curr_metric_func = &StrainConverter::euler_almansi;
       else if(_MODE == DISP_GRAD)
         curr_metric_func = &StrainConverter::disp_grad;
-    };
+    }
+
+    StrainConverter(const std::string &mode_name) :
+      StrainConverter(true) {
+      set_mode(mode_name);
+    }
+
+    Index dim() const {
+      return m_order_strain.size();
+    }
 
     //-------------------------------------------------
     /// Get the strain metric in the current mode
     Matrix3d strain_metric(const Matrix3d &F) const;
+    Matrix3d strain_metric_to_F(const Matrix3d &E) const;
 
     /// Unrolls the green-lagrange metric ( or any symmetric metric)
     VectorXd unroll_E(const Matrix3d &E) const;
+    Matrix3d rollup_E(const VectorXd &_unrolled_E) const;
 
     VectorXd unrolled_strain_metric(const Matrix3d &F) const;
+    Matrix3d unrolled_strain_metric_to_F(const VectorXd &E) const;
+
     VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Vector3d &eigenvalues,
                  Matrix3d &eigenvectors, const Matrix3d &F) const;
     VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Vector3d &eigenvalues,
@@ -104,6 +125,21 @@ namespace CASM {
     // Routines that set the internal parameters of the
     // class
     void set_mode(const std::string &mode_name);
+
+    const Eigen::MatrixXd &sop_transf_mat() const {
+      return m_sop_transf_mat;
+    }
+
+    Index symrep_ID() const {
+      return m_symrep_ID;
+    }
+
+    std::vector<Eigen::MatrixXd> irreducible_sop_wedges(const SymGroup &pg, std::vector<Index> &multiplicities);
+
+    std::vector<Eigen::MatrixXd> irreducible_wedges(const SymGroup &pg, std::vector<Index> &multiplicities);
+
+    void set_symmetrized_sop(const SymGroup &pg);
+
     void set_conventional_sop_transf_mat();
     void set_conventional_order_symmetric();
     void set_conventional_order_unsymmetric();
@@ -119,9 +155,11 @@ namespace CASM {
     Array< Array<int> > m_order_strain; //lists the order of strains to list unrolled_E
     Array<double> m_weight_strain; // weights for the elements of unrolled_E
 
+    Index m_symrep_ID;
     // typedef MetricFuncPtr for method pointers that take displacement gradient tensor as argument
     typedef Matrix3d(*MetricFuncPtr)(const Matrix3d &);
     MetricFuncPtr curr_metric_func;
+    MetricFuncPtr curr_inv_metric_func;
 
   };
 }

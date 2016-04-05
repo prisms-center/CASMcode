@@ -17,13 +17,13 @@
 
 
 namespace CASM {
-  
+
   /// \defgroup DataFormatter
   ///
   /// \brief Functions and classes related to formatting data
   ///
-  
-  
+
+
   class DataStream;
 
   template<typename DataObject>
@@ -62,27 +62,27 @@ namespace CASM {
    *
    * \ingroup DataFormatter
    */
-  
+
   /// \brief Functions and classes related to formatting data
   ///
-  /// A DataFormatter performs extraction of disparate types of data from objects 
-  /// of 'DataObject' class. The DataFormatter is composed of one or more  
-  /// 'DatumFormatters', with each DatumFormatter knowing how to access or 
+  /// A DataFormatter performs extraction of disparate types of data from objects
+  /// of 'DataObject' class. The DataFormatter is composed of one or more
+  /// 'DatumFormatters', with each DatumFormatter knowing how to access or
   /// calculate and then format a particular type of data from the 'DataObject'.
-  /// 
-  /// BaseDatumFormatter<DataObject> is a virtual class from which all DatumFormatters 
+  ///
+  /// BaseDatumFormatter<DataObject> is a virtual class from which all DatumFormatters
   /// that access the particular DataObject derive.
   ///
-  /// DataFormatterParser<DataObject> is a singleton that can be specialized for 
+  /// DataFormatterParser<DataObject> is a singleton that can be specialized for
   /// creating and using a DataFormatterDictionary<DataObject> containing all of
   /// the DatumFormatter that exist for a particular DataObject.
-  /// 
   ///
-  /// As an example, consider a Configuration object, which has numerous attributes 
+  ///
+  /// As an example, consider a Configuration object, which has numerous attributes
   /// (name, energy, composition, etc) which can either be accessed or calculated.
-  /// These attributes can be accessed or calculated and then formatted using a 
-  /// DataFormatter<Configuration>, which contains a number of DatumFormatter<Configuration> 
-  /// objects. 
+  /// These attributes can be accessed or calculated and then formatted using a
+  /// DataFormatter<Configuration>, which contains a number of DatumFormatter<Configuration>
+  /// objects.
   ///
   /// Example DatumFormatter<Configuration> include:
   /// - ConfigData::Name             (derived from DatumFormatter<Configuration>)
@@ -92,15 +92,15 @@ namespace CASM {
   ///
   ///
   /// A DataFormatter<Configuration> can either be constructed explicitly with the
-  /// desired set of DatumFormatter, or via a DataFormatterDictionary<Configuration> 
-  /// which parses a string containing descriptions of the DatumFormatter to 
-  /// include and optionally arguments for initializing the DatumParser. Additional 
-  /// DatumFormatter can also be added via 'DataFormatter::push_back' or the '<<' 
+  /// desired set of DatumFormatter, or via a DataFormatterDictionary<Configuration>
+  /// which parses a string containing descriptions of the DatumFormatter to
+  /// include and optionally arguments for initializing the DatumParser. Additional
+  /// DatumFormatter can also be added via 'DataFormatter::push_back' or the '<<'
   /// operator.
   ///
   /// Explicit construction example:
   /// \code
-  /// DataFormatter<Configuration> formatter( ConfigData::Name(), 
+  /// DataFormatter<Configuration> formatter( ConfigData::Name(),
   ///                                         ConfigData::Comp(),
   ///                                         ConfigData::FormationEnergy());
   /// \endcode
@@ -110,9 +110,9 @@ namespace CASM {
   /// std::string args = "name formation_energy comp(a) comp(c)"
   /// DataFormatter<Configuration> formatter = DataFormatterDictionary<Configuration>::parse(args);
   /// \endcode
-  /// Calling DataFormatterDictionary::parse will for each name in the 'args' 
-  /// push back the DatumFormatters with the same name and then call 
-  /// BaseDatumFormatter::parse_args with the content inside the parentheses (empty 
+  /// Calling DataFormatterDictionary::parse will for each name in the 'args'
+  /// push back the DatumFormatters with the same name and then call
+  /// BaseDatumFormatter::parse_args with the content inside the parentheses (empty
   /// string otherwise).
   ///
   /// Adding additional DatumFormatter:
@@ -194,7 +194,7 @@ namespace CASM {
 
     ///Output data as specified by *this of the given DataObject to json with format {"name1":x, "name2":x, ...}
     jsonParser &to_json(const DataObject &_obj, jsonParser &json) const;
-    
+
     ///Output data as specified by *this of the given DataObject to json with format {"name1":[..., x], "name2":[..., x], ...}
     jsonParser &to_json_arrays(const DataObject &_obj, jsonParser &json) const;
 
@@ -204,7 +204,7 @@ namespace CASM {
     /// Add a particular BaseDatumFormatter to *this
     /// If the previous Formatter matches the new formatter, try to just parse the new args into it
     void push_back(const BaseDatumFormatter<DataObject> &new_formatter, const std::string &args) {
-      
+
       //If the last formatter matches new_formatter, try to parse the new arguments into it
       if(m_data_formatters.size() > 0 && m_data_formatters.back()->name() == new_formatter.name()) {
         if(m_data_formatters.back()->parse_args(args))
@@ -215,7 +215,7 @@ namespace CASM {
       m_col_sep.push_back(0);
       m_col_width.push_back(0);
       m_data_formatters.back()->parse_args(args);
-      
+
     }
 
     void push_back(const BaseDatumFormatter<DataObject> &new_formatter) {
@@ -232,7 +232,7 @@ namespace CASM {
     }
 
     void append(const DataFormatter<DataObject> &_tail) {
-      for(const auto& frmtr : _tail.m_data_formatters)
+      for(const auto &frmtr : _tail.m_data_formatters)
         push_back(*frmtr);
     }
 
@@ -265,7 +265,7 @@ namespace CASM {
 
   /// \brief Abstract base class from which all other DatumFormatter<DataObject> classes inherit
   ///
-  /// The job of a DatumFormatter is to access and format a particular type of 
+  /// The job of a DatumFormatter is to access and format a particular type of
   /// data that is stored in a <DataObject> class, which is a template paramter.
   ///
   /// \ingroup DataFormatter
@@ -276,7 +276,7 @@ namespace CASM {
 
     enum FormatterType {Property, Operator};
     typedef long difference_type;
-    
+
 
     BaseDatumFormatter(const std::string &_init_name, const std::string &_desc) :
       m_name(_init_name), m_description(_desc) {}
@@ -352,7 +352,7 @@ namespace CASM {
     ///          jsonParser my_big_data_object;
     ///          my_formatter.to_json(my_data_object, my_big_data_object["place_to_write"]["my_formatter_data"]);
     virtual jsonParser &to_json(const DataObject &_data_obj, jsonParser &json)const = 0;
-    
+
     /// If DatumFormatter accepts arguments, parse them here.  Arguments are assumed to be passed from the command line
     /// via:         formattername(argument1,argument2,...)
     ///
@@ -364,35 +364,35 @@ namespace CASM {
   protected:
     typedef multivector<Index>::X<2> IndexContainer;
 
-    /// Derived DatumFormatters have some optional functionality for parsing index 
+    /// Derived DatumFormatters have some optional functionality for parsing index
     /// expressions in order to make it easy to handle ranges such as:
     /// \code
     ///       formatter_name(3,4:8)
     /// \endcode
     /// in which case, DerivedDatumFormatter::parse_args() is called with the string "3,4:8"
-    /// by dispatching that string to BaseDatumFormatter::_parse_index_expression(), 
+    /// by dispatching that string to BaseDatumFormatter::_parse_index_expression(),
     /// m_index_rules will be populated with {{3,4},{3,5},{3,6},{3,7},{3,8}}
     void _parse_index_expression(const std::string &_expr);
-    
+
     void _add_rule(const std::vector<Index> &new_rule) const {
       m_index_rules.push_back(new_rule);
     }
-    
+
     const IndexContainer &_index_rules() const {
       return m_index_rules;
     }
-  
+
   private:
-    
+
     /// \brief Make an exact copy of the formatter (including any initialized members)
     ///
-    virtual BaseDatumFormatter* _clone() const = 0;
+    virtual BaseDatumFormatter *_clone() const = 0;
     /**{ return notstd::make_unique<DerivedDatumFormatter>(*this);}**/
-    
+
     std::string m_name;
     std::string m_description;
     mutable IndexContainer  m_index_rules;
-    
+
   };
 
   template<typename T>
@@ -408,10 +408,10 @@ namespace CASM {
   /// \ingroup DataFormatter
   ///
   class FormattedPrintable {
-    
+
     // Couldn't figure out how to get compiler to correctly substitute names
     // virtual "FormattedPrintable" class is a workaround
-  
+
   public:
     virtual ~FormattedPrintable() {}
     virtual void inject(DataStream &stream)const = 0;
@@ -469,7 +469,7 @@ namespace CASM {
         json.push_back((*m_formatter_ptr)(*it));
       return json;
     }
-    
+
     ///Output data with format {"name1":[..., x], "name2":[..., x], ...}
     jsonParser &to_json_arrays(jsonParser &json) const {
       json = jsonParser::object();
@@ -514,81 +514,81 @@ namespace CASM {
       m_formatter_ptr->to_json(*m_obj_ptr, json);
       return json;
     }
-    
+
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  
+
   template<typename DataObject, typename DatumFormatterType>
   struct DictionaryConverter {
-    
+
     typedef DatumFormatterType formatter;
-    
-    
-    // performs a static_cast of value.clone().unique().release() 
+
+
+    // performs a static_cast of value.clone().unique().release()
     // (i.e. a BaseDatumFormatter*) to formatter*
-    
-    notstd::cloneable_ptr<formatter> operator()(const formatter& value){
-      return notstd::cloneable_ptr<formatter>(static_cast<formatter*>(value.clone().release()));
+
+    notstd::cloneable_ptr<formatter> operator()(const formatter &value) {
+      return notstd::cloneable_ptr<formatter>(static_cast<formatter *>(value.clone().release()));
     }
-  
+
   };
-  
+
   template<typename DataObject>
   struct DictionaryConverter<DataObject, BaseDatumFormatter<DataObject> > {
-    
+
     typedef BaseDatumFormatter<DataObject> formatter;
-    
-    notstd::cloneable_ptr<formatter> operator()(const formatter& value){
+
+    notstd::cloneable_ptr<formatter> operator()(const formatter &value) {
       return notstd::cloneable_ptr<formatter>(value);
     }
-  
+
   };
-  
-    
+
+
   /// \brief  Parsing dictionary for constructing a DataFormatter<DataObject> object.
   ///
   /// \ingroup DataFormatter
   ///
   template<typename DataObject, typename DatumFormatterType = BaseDatumFormatter<DataObject> >
-  class DataFormatterDictionary : 
+  class DataFormatterDictionary :
     public notstd::unique_cloneable_map<std::string, DatumFormatterType> {
-  
+
   public:
-  
+
     typedef notstd::unique_cloneable_map<std::string, DatumFormatterType> UniqueMapType;
     typedef typename UniqueMapType::key_type key_type;
     typedef typename UniqueMapType::value_type value_type;
     typedef typename UniqueMapType::size_type size_type;
     typedef typename UniqueMapType::iterator iterator;
     typedef typename UniqueMapType::const_iterator const_iterator;
-    
+
     DataFormatterDictionary() :
-      UniqueMapType([=](const value_type& value){
-                      return value.name();
-                    },
-                    DictionaryConverter<DataObject, DatumFormatterType>() ) {}
-    
+      UniqueMapType([ = ](const value_type & value) {
+      return value.name();
+    },
+    DictionaryConverter<DataObject, DatumFormatterType>()) {}
+
     /*
     /// \brief Construct from one Formatter
     explicit DataFormatterDictionary(const value_type& formatter) :
       DataFormatterDictionary() {
       insert(formatter);
     }
-    
+
     /// \brief Construct from many Formatter
     template<typename... Formatters>
     explicit DataFormatterDictionary(const Formatters&... more) :
       DataFormatterDictionary() {
       insert(more...);
     }
-    
+
     /// \brief Copy constructor
     DataFormatterDictionary(const DataFormatterDictionary& dict) :
       UniqueMapType(dict) {
     }
-    
+
     /// \brief Construct many Dictionary
     template<typename... Formatters>
     DataFormatterDictionary(const Formatters&... more) :
@@ -596,57 +596,57 @@ namespace CASM {
       insert(more...);
     }
     */
-    
+
     using UniqueMapType::insert;
-    
-    /// \brief Equivalent to find, but throw error with suggestion if _name not found 
+
+    /// \brief Equivalent to find, but throw error with suggestion if _name not found
     const_iterator lookup(const key_type &_name) const;
 
     void print_help(std::ostream &_stream,
                     typename BaseDatumFormatter<DataObject>::FormatterType ftype,
-                    int width, 
+                    int width,
                     int separation) const;
-    
+
     /// \brief Use the vector of strings to build a DataFormatter<DataObject>
     DataFormatter<DataObject> parse(const std::string &input)const;
-    
+
     /// \brief Use a single string to build a DataFormatter<DataObject>
     DataFormatter<DataObject> parse(const std::vector<std::string> &input)const;
-    
+
   };
-  
+
 
   // ******************************************************************************
-  
+
   /// \brief Dictionary of all DatumFormatterOperator
   template<typename DataObject>
   DataFormatterDictionary<DataObject> make_operator_dictionary();
-  
+
   /// \brief Dictionary of all AttributeFormatter (i.e. BaseValueFormatter<V, DataObject>)
   template<typename DataObject>
   DataFormatterDictionary<DataObject> make_attribute_dictionary();
-  
-  /// \brief Template to can be specialized for constructing dictionaries for particular DataObject 
+
+  /// \brief Template to can be specialized for constructing dictionaries for particular DataObject
   ///
   /// Default includes the make_attribute_dictionary() and make_operator_dictionary()
   template<typename DataObject>
   DataFormatterDictionary<DataObject> make_dictionary() {
     DataFormatterDictionary<DataObject> dict;
-    
+
     dict.insert(
       make_attribute_dictionary<DataObject>(),
       make_operator_dictionary<DataObject>()
     );
-    
+
     return dict;
   }
 
   /// \brief A singleton for creating and using a DataFormatterDictionary<DataObject>
   template<typename DataObject>
   class DataFormatterParser {
-    
+
   public:
-    
+
     static const BaseDatumFormatter<DataObject> &lookup(const std::string &_name) {
       return *dictionary().lookup(_name);
     }
@@ -670,34 +670,33 @@ namespace CASM {
                            int width = 60, int separation = 8) {
       dictionary().print_help(_stream, ftype, width, separation);
     }
-    
-    static DataFormatterDictionary<DataObject>& dictionary()
-    {
-        // Guaranteed to be destroyed, instantiated on first use.
-        static DataFormatterDictionary<DataObject> m_dict = make_dictionary<DataObject>(); 
-                              
-        return m_dict;
+
+    static DataFormatterDictionary<DataObject> &dictionary() {
+      // Guaranteed to be destroyed, instantiated on first use.
+      static DataFormatterDictionary<DataObject> m_dict = make_dictionary<DataObject>();
+
+      return m_dict;
     }
-    
+
   private:
-    
+
     /// \brief Constructor
     DataFormatterParser() {}
 
     /// \brief Prevent creating copies
-    DataFormatterParser(const DataFormatterParser&) = delete;
-    
+    DataFormatterParser(const DataFormatterParser &) = delete;
+
     /// \brief Prevent creating copies
-    void operator=(const DataFormatterParser&)  = delete;
+    void operator=(const DataFormatterParser &)  = delete;
   };
-  
-  
+
+
   // ******************************************************************************
 
   inline jsonParser &to_json(const FormattedPrintable &_obj, jsonParser &json) {
     return _obj.to_json(json);
   }
-  
+
   // ******************************************************************************
   inline std::ostream &operator<<(std::ostream &_stream, const FormattedPrintable &_formatted) {
     _formatted.print(_stream);

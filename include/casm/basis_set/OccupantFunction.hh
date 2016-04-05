@@ -2,10 +2,9 @@
 #define OCCUPANTFUNCTION_HH
 
 #include <iostream>
-#include <sstream>  //John G 010413
+#include <sstream>
 #include <map>
-
-#include "casm/basis_set/BasisSet.hh"
+#include "casm/basis_set/BasisFunction.hh"
 #include "casm/basis_set/DoF.hh"
 
 namespace CASM {
@@ -13,6 +12,7 @@ namespace CASM {
   class Function;
   class FunctionOperation;
   class InnerProduct;
+  class OccupantFunction;
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
@@ -75,6 +75,7 @@ namespace CASM {
 
 
     Function *copy() const;
+
     bool is_zero() const;
     Index num_terms() const;
 
@@ -87,18 +88,11 @@ namespace CASM {
     double get_coefficient(Index i) const;
 
 
-    bool accept(const FunctionVisitor &visitor);
     void small_to_zero(double tol = TOL);
-    Function *apply_sym(const SymOp &op);
     void scale(double scale_factor);
     void make_formula() const;
 
-    int register_remotes(const std::string &dof_name, const Array<int> &discrete_remotes);
-    int register_remotes(const std::string &dof_name, const Array<double> &continuous_remotes) {
-      return 0;
-    };
-
-    bool update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs);
+    int register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles);
 
     bool compare(const OccupantFunction *RHS) const;
 
@@ -106,10 +100,27 @@ namespace CASM {
     Eigen::VectorXd const *get_eigen_coeffs() const;
 
     double remote_eval() const;
+
+    double remote_deval(const DoF::RemoteHandle &dvar) const;
+
+    double cache_eval() const {
+      return remote_eval();
+    }
+
+    double cache_deval(const DoF::RemoteHandle &dvar)const {
+      return remote_deval(dvar);
+    }
+
     double eval(const Array<Index> &dof_IDs, const Array<Index> &var_states) const;
 
     jsonParser &to_json(jsonParser &json) const;
     void from_json(const jsonParser &json);
+  protected:
+    Function *_apply_sym(const SymOp &op);
+
+    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL);
+
+    bool _update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs);
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

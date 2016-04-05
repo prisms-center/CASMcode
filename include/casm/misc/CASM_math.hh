@@ -1,8 +1,10 @@
 #ifndef CASM_MATH_HH
 #define CASM_MATH_HH
-
 #include "casm/CASM_global_definitions.hh"
 #include "casm/container/Array.hh"
+//Maybe we should transition to boost math library?
+//#include <boost/math/special_functions/binomial.hpp>
+#include <boost/math/special_functions/factorials.hpp>
 #include <iostream>
 #include <cmath>
 #include <cstddef>
@@ -86,7 +88,7 @@ namespace CASM {
   // Works for signed and unsigned types
   template <typename IntType>
   IntType nchoosek(IntType n, IntType k) {
-    assert(k <= n && 0 < k);
+    assert(k <= n && 0 <= k);
     if(n < 2 * k)
       k = n - k;
 
@@ -112,6 +114,10 @@ namespace CASM {
   double ran0(int &idum);
 
   // *******************************************************************************************
+
+  using boost::math::factorial;
+
+  // *******************************************************************************************
   /// Find greatest common factor
   int gcf(int i1, int i2);
 
@@ -121,13 +127,17 @@ namespace CASM {
 
   // *******************************************************************************************
 
-  /* This creates Gaussians using the formula:
-   * f(x) = a*e^(-(x-b)^2/(c^2))
-   *************************************************************/
-
+  // evaluates Gaussians using the formula:
+  // f(x) = a*e^(-(x-b)^2/(c^2))
   double gaussian(double a, double x, double b, double c);
 
-  // *******************************************************************************************
+  // calculates Gaussian moments given by the integral:
+  // m = \int_{\infty}^{\infty} dx x^pow*exp[-x^2/(2*sigma^2)]/(\sqrt(2*\pi)*sigma)
+  double gaussian_moment(int expon, double sigma);
+
+  // calculates Gaussian moments given by the integral:
+  // m = \int_{\infty}^{\infty} dx x^pow*exp[-(x-x0)^2/(2*sigma^2)]/(\sqrt(2*\pi)*sigma)
+  double gaussian_moment(int expon, double sigma, double x0);
 
 
   Eigen::VectorXd eigen_vector_from_string(const std::string &tstr, const int &size);

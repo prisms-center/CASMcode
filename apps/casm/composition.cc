@@ -154,43 +154,43 @@ namespace CASM {
 
       return 0;
     }
-/*    else if(vm.count("update")) {
+    /*    else if(vm.count("update")) {
 
-      if(opt.err_code) {
+          if(opt.err_code) {
 
-        std::cout << "\n***************************\n\n";
+            std::cout << "\n***************************\n\n";
 
-        std::cout << opt.err_message << "\n\n";
+            std::cout << opt.err_message << "\n\n";
 
-        std::cout << "Not Updating... Please fix your compostion axes. \n";
+            std::cout << "Not Updating... Please fix your compostion axes. \n";
 
-        return ERR_INVALID_INPUT_FILE;
+            return ERR_INVALID_INPUT_FILE;
 
-      }
-      else if(!opt.has_current_axes) {
+          }
+          else if(!opt.has_current_axes) {
 
-        std::cout << "\n***************************\n\n";
+            std::cout << "\n***************************\n\n";
 
-        std::cout << "No composition axes selected.\n\n";
+            std::cout << "No composition axes selected.\n\n";
 
-        std::cout << "Please use 'casm composition --select' to choose your composition axes.\n\n";
+            std::cout << "Please use 'casm composition --select' to choose your composition axes.\n\n";
 
-        return ERR_MISSING_DEPENDS;
-      }
-      else {
+            return ERR_MISSING_DEPENDS;
+          }
+          else {
 
-        std::cout << "\n***************************\n\n";
+            std::cout << "\n***************************\n\n";
 
-        std::cout << "Updating composition and references...\n\n";
+            std::cout << "Updating composition and references...\n\n";
 
-        primclex.set_composition_axes(opt.curr);
+            primclex.set_composition_axes(opt.curr);
 
-        std::cout << "  DONE" << std::endl;
+            std::cout << "  DONE" << std::endl;
 
-        return 0;
-      }
-    }
-*/
+            return 0;
+          }
+        }
+    */
     else {
 
       if(vm.count("calc")) {
@@ -265,15 +265,15 @@ namespace CASM {
           return ERR_INVALID_INPUT_FILE;
 
         }
-/*
-        // set composition axes (also updates configuration info and json)
-        else if(opt.standard.find(choice) != opt.standard.end()) {
-          primclex.set_composition_axes(opt.standard[choice]);
-        }
-        else {
-          primclex.set_composition_axes(opt.custom[choice]);
-        }
-*/
+        /*
+                // set composition axes (also updates configuration info and json)
+                else if(opt.standard.find(choice) != opt.standard.end()) {
+                  primclex.set_composition_axes(opt.standard[choice]);
+                }
+                else {
+                  primclex.set_composition_axes(opt.custom[choice]);
+                }
+        */
         opt.has_current_axes = true;
         opt.curr_key = choice;
 

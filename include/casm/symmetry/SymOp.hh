@@ -6,6 +6,7 @@
 
 #include "casm/symmetry/SymOpRepresentation.hh"
 
+
 namespace CASM {
   class MasterSymGroup;
   class Lattice;
@@ -31,11 +32,10 @@ namespace CASM {
       return SymOp(matrix_type::Identity(), _tau);
     }
 
-    SymOp() {};
     ///Create new SymOp from Matrix3 and tau translation
     /// by default, assume no translation
-    SymOp(const Eigen::Ref<const matrix_type> &_mat,
-          const Eigen::Ref<const vector_type> &_tau,// = vector_type::Zero(),
+    SymOp(const Eigen::Ref<const matrix_type> &_mat = matrix_type::Identity(),
+          const Eigen::Ref<const vector_type> &_tau = vector_type::Zero(),
           double _map_error = TOL) :
       m_mat(_mat),
       m_tau(_tau),
@@ -43,7 +43,7 @@ namespace CASM {
     }
 
     SymOp(const Eigen::Ref<const matrix_type> &_mat,
-          double _map_error = TOL) :
+          double _map_error) :
       SymOp(_mat, vector_type::Zero(), _map_error) {
 
     }
@@ -121,6 +121,10 @@ namespace CASM {
       return new SymOp(*this);
     }
 
+    SymOp unregistered_copy() const {
+      return SymOp(matrix(), tau(), map_error());
+    }
+
     jsonParser &to_json(jsonParser &json) const override;
 
     void from_json(const jsonParser &json) override;
@@ -149,8 +153,12 @@ namespace CASM {
     ///  you choose when you attempt to generate symmetry groups.
     double m_map_error;
 
-
   };
+
+
+  //SymOp rotation_op(const Vector3<double> &rotation_axis, const double rotation_angle, const Lattice &home);
+  //SymOp rotation_op(const Eigen::Vector4d &rotation_params, const Lattice &home);
+
 
   jsonParser &to_json(const SymOp &sym, jsonParser &json);
   void from_json(SymOp &sym, const jsonParser &json);

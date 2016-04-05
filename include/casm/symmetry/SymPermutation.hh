@@ -24,6 +24,12 @@ namespace CASM {
 
     }
 
+    /// Initialize a SymPermutation with the permutation array.
+    /// The corresponding matrix is generated automatically
+    SymPermutation(const Permutation &init_permute) : m_permute(init_permute), m_has_mat(false) {
+
+    };
+
     double character() const override;
 
     /// Return pointer to a copy of this SymPermutation

@@ -38,6 +38,7 @@ class Relax(object):
 			"npar" or "ncore": number of ways to parallelize
                         "kpar": number of ways to parallelize k-points
                         "vasp_cmd": (default, see vasp.run) shell command to execute vasp, or None to use default mpirun
+                        "strict_kpoint": force strict copying of KPOINTS file, otherwise kpoints are scaled based on supercell size
                     used by not_converging():
                         "run_limit": (default 10) maximum number of runs to allow before setting status to "not_converging"
 
@@ -323,8 +324,7 @@ class Relax(object):
 
             # if it is a final constant volume run
             if io.get_incar_tag("SYSTEM", self.rundir[-1]) != None:
-                if io.get_incar_tag("NSW", self.rundir[-1]) == 0 or \
-                   io.get_incar_tag("SYSTEM", self.rundir[-1]).split()[-1].strip().lower() == "final":
+                if io.get_incar_tag("SYSTEM", self.rundir[-1]).split()[-1].strip().lower() == "final":
                 # if io.get_incar_tag("ISIF", self.rundir[-1]) == 2 and \
                 #    io.get_incar_tag("NSW", self.rundir[-1]) == 0 and \
                 #    io.get_incar_tag("ISMEAR", self.rundir[-1]) == -5:
@@ -355,7 +355,3 @@ class Relax(object):
 
         # else if the latest run is not complete, continue running it
         return ("incomplete", self.rundir[-1])
-
-
-
-

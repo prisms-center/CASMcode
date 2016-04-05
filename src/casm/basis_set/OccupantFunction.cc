@@ -1,52 +1,54 @@
+
 #include "casm/basis_set/OccupantFunction.hh"
 
-#include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/symmetry/SymOp.hh"
+#include "casm/basis_set/FunctionVisitor.hh"
+
 namespace CASM {
 
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   void OccupantFunction::fill_dispatch_table() {
     //Function::inner_prod_table[sclass_ID()][sclass_ID()] = new BasicVarVarScalarProd();
     Function::operation_table[sclass_ID()][sclass_ID()] = new OccOccOperation();
 
-    //BasicVarMonoProduct does not yet exist
-    //Function::inner_prod_table[sclass_ID()][MonomialFunction::sclass_ID()]=new BasicVarMonoProduct();
-  };
+    //BasicVarPolyProduct does not yet exist
+    //Function::inner_prod_table[sclass_ID()][PolynomialFunction::sclass_ID()]=new BasicVarMonoProduct();
+  }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   int OccupantFunction::class_ID() const {
     return DerivedID<OccupantFunction, Function>::get_class_ID();
-  };
+  }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   int OccupantFunction::sclass_ID() {
     return DerivedID<OccupantFunction, Function>::get_class_ID();
-  };
+  }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   Function *OccupantFunction::copy() const {
     return new OccupantFunction(*this);
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
-  bool OccupantFunction::accept(const FunctionVisitor &visitor) {
-    bool is_updated(Function::accept(visitor));
-    //std::cout << "INSIDE DERIVED OccupantFunction::accept\n";
-    return visitor.visit(*this) || is_updated;
+  //*******************************************************************************************
+
+  bool OccupantFunction::_accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr/*=NULL*/) {
+    return visitor.visit(*this, home_basis_ptr);
   }
 
-  //********************************************************
+  //*******************************************************************************************
   //John G 010413
 
 
@@ -55,7 +57,6 @@ namespace CASM {
     m_tex_formula.clear();
 
     std::stringstream tformula, ttex;
-    tformula.precision(10);
     Array<int> var_ind;
 
     // count the number of ones in var_ind;
@@ -125,28 +126,28 @@ namespace CASM {
     return;
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
-  int OccupantFunction::register_remotes(const std::string &dof_name, const Array<int> &discrete_remotes) {
+  int OccupantFunction::register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles) {
 
     if(dof().type_name() == dof_name) {
-      if(!valid_index(dof().ID()) || dof().ID() >= discrete_remotes.size()) {
+      if(!valid_index(dof().ID()) || dof().ID() >= remote_handles.size()) {
         std::cerr << "CRITICAL ERROR: In OccupantFunction::register_remotes(), dof().ID() = " << dof().ID() << " is out of bounds.\n"
                   << "                Exiting...\n";
         exit(1);
       }
       //std::cout << "Setting remote at Occ DoF " << dof().ID() << " of " << discrete_remotes.size() << "\n";
-      m_var->register_remote(discrete_remotes[dof().ID()]);
+      m_var->register_remote(remote_handles[dof().ID()]);
       return 1;
     }
 
     return 0;
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
-  bool OccupantFunction::update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs) {
+  bool OccupantFunction::_update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs) {
     if(dof().is_locked()) return false;
 
     Index ID_ind = before_IDs.find(dof().ID());
@@ -161,7 +162,7 @@ namespace CASM {
     return false;
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   bool OccupantFunction::compare(const OccupantFunction *RHS)const {
@@ -170,16 +171,16 @@ namespace CASM {
            && almost_equal(m_eval_table, RHS->m_eval_table);
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   Eigen::VectorXd const *OccupantFunction::get_eigen_coeffs() const {
     return &m_eval_table;
-  };
+  }
 
   //\John G 010413
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   bool OccupantFunction::is_zero() const {
@@ -192,7 +193,7 @@ namespace CASM {
     return true;
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   void OccupantFunction::small_to_zero(double tol) {
@@ -204,7 +205,7 @@ namespace CASM {
 
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   Index OccupantFunction::num_terms() const {
@@ -217,7 +218,7 @@ namespace CASM {
     return tnum;
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   double OccupantFunction::leading_coefficient() const {
@@ -229,7 +230,7 @@ namespace CASM {
     return 0.0;
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   double OccupantFunction::leading_coefficient(Index &index) const {
@@ -241,7 +242,7 @@ namespace CASM {
     return 0.0;
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   double OccupantFunction::get_coefficient(Index i) const {
@@ -251,10 +252,10 @@ namespace CASM {
     return 0.0;
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
-  Function *OccupantFunction::apply_sym(const SymOp &op) {
+  Function *OccupantFunction::_apply_sym(const SymOp &op) {
     if(m_occ_sym_rep_ind == Index(-2)) return this;
 
     m_formula.clear();
@@ -272,7 +273,7 @@ namespace CASM {
 
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   void OccupantFunction::scale(double scale_factor) {
@@ -281,14 +282,24 @@ namespace CASM {
     m_eval_table *= scale_factor;
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   double OccupantFunction::remote_eval() const {
     return m_eval_table[dof().remote_value()];
   }
 
-  //********************************************************
+  //*******************************************************************************************
+
+  double OccupantFunction::remote_deval(const DoF::RemoteHandle &dvar) const {
+    if(dvar.i_ptr() && dvar.i_ptr() == dof().remote_ptr()) {
+      std::cerr << "CRITICAL ERROR: OccupantFunction::remote_deval() is not implemented! Exiting...\n";
+      exit(1);
+    }
+    return 0.0;
+  }
+
+  //*******************************************************************************************
 
 
   double OccupantFunction::eval(const Array<Index> &dof_IDs, const Array<Index> &var_states) const {
@@ -302,7 +313,7 @@ namespace CASM {
     exit(1);
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
 
   bool OccOccOperation::compare(const Function *LHS, const Function *RHS) const {
@@ -310,9 +321,9 @@ namespace CASM {
 
   }
 
-  //********************************************************
+  //*******************************************************************************************
   //** jsonParser stuff - OccupantFunction
-  //********************************************************
+  //*******************************************************************************************
 
   jsonParser &OccupantFunction::to_json(jsonParser &json) const {
 
@@ -323,7 +334,7 @@ namespace CASM {
     return json;
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
   /*
   void OccupantFunction::from_json(const jsonParser &json) {
@@ -333,7 +344,7 @@ namespace CASM {
   }
   */
 
-  //********************************************************
+  //*******************************************************************************************
 
   jsonParser &to_json(const OccupantFunction &func, jsonParser &json) {
     return func.to_json(json);
@@ -347,4 +358,3 @@ namespace CASM {
   */
 
 }
-

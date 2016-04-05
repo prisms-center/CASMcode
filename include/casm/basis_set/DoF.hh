@@ -1,18 +1,18 @@
 #ifndef DOF_HH
 #define DOF_HH
-
-#include <string>
+#include<vector>
+#include<boost/algorithm/string.hpp>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/container/Array.hh"
 #include "casm/misc/CASM_math.hh"
-#include "casm/casm_io/jsonParser.hh"
+
+//#include "../basis_set/MathExpressions.cc"
 
 namespace CASM {
-
   class Molecule;
   class Lattice;
-
-  //****************************************************
+  class jsonParser;
+  //*******************************************************************************************
 
   // Since we will have different types of DoFs, we make DoF a virtual, or abstract class.
   // The specific implementation will depend on the type of site variable.
@@ -26,12 +26,45 @@ namespace CASM {
     Index m_dof_ID;
     bool m_ID_lock;
   public:
+    class RemoteHandle {
+      double const *const m_d_ptr;
+      int const *const m_i_ptr;
+    public:
+      RemoteHandle(const double &d) : m_d_ptr(&d), m_i_ptr(nullptr) {};
+      RemoteHandle(const int &i) : m_d_ptr(nullptr), m_i_ptr(&i) {};
+      const int *i_ptr() const {
+        return m_i_ptr;
+      };
+      const double *d_ptr() const {
+        return m_d_ptr;
+      };
+    };
+
+  public:
     DoF(const std::string &_name = "", Index _ID = -1) : m_type_name(_name), m_dof_ID(_ID), m_ID_lock(false) {};
     virtual ~DoF() {}; //= 0;
     //virtual double get_val() const = 0; // get the current value
 
     const std::string &type_name() const {
       return m_type_name;
+    };
+
+    std::string type_name_prefix() const {
+      std::vector<std::string> split_string;
+      boost::split(split_string, type_name(), boost::is_any_of("_"), boost::token_compress_on);
+      if(split_string.size())
+        return split_string[0];
+      else
+        return std::string();
+    };
+
+    std::string type_name_suffix() const {
+      std::vector<std::string> split_string;
+      boost::split(split_string, type_name(), boost::is_any_of("_"), boost::token_compress_on);
+      if(split_string.size())
+        return split_string.back();
+      else
+        return std::string();
     };
 
     Index ID() const {
@@ -71,7 +104,7 @@ namespace CASM {
 
   //DoF::~DoF() {};
 
-  //****************************************************
+  //*******************************************************************************************
 
   class DiscreteDoF : public DoF {
   protected:
@@ -85,6 +118,8 @@ namespace CASM {
 
   public:
     DiscreteDoF(): DoF(""), m_current_state(0), m_remote_state(nullptr), m_sym_rep_ID(-2) {};
+
+
 
     DiscreteDoF(const std::string &_name, int _current_state = 0):
       DoF(_name), m_current_state(_current_state), m_remote_state(nullptr), m_sym_rep_ID(-2) {};
@@ -113,8 +148,13 @@ namespace CASM {
       return *m_remote_state;
     };
 
-    void register_remote(const int &remote_state) {
-      m_remote_state = &remote_state;
+    int const *remote_ptr() const {
+      return m_remote_state;
+    };
+
+    void register_remote(const RemoteHandle &handle) {
+      assert(handle.i_ptr() && "In DiscreteDoF::register_remote(), attempting to register to nullptr!");
+      m_remote_state = handle.i_ptr();
     };
 
     virtual DiscreteDoF *copy() const = 0;
@@ -150,7 +190,7 @@ namespace CASM {
 
   };
 
-  //****************************************************
+  //*******************************************************************************************
   template< typename T>
   class OccupantDoF : public DiscreteDoF {
     /**** Inherited from DiscreteDoF ****
@@ -166,12 +206,14 @@ namespace CASM {
 
   public:
     OccupantDoF() : DiscreteDoF() { };
+    OccupantDoF(const std::string &_name, const Array<T> &_domain, int _current_state = 0) :
+      DiscreteDoF(_name, _current_state), m_domain(_domain) { };
+
     OccupantDoF(const Array<T> &_domain, int _current_state = 0) :
       DiscreteDoF("occupation", _current_state), m_domain(_domain) { };
 
     OccupantDoF(std::initializer_list<T> _domain, int _current_state = 0) :
       DiscreteDoF("occupation", _current_state), m_domain(_domain.begin(), _domain.end()) { };
-
     const T &get_occ() const {
       return m_domain[m_current_state];
     };
@@ -205,7 +247,7 @@ namespace CASM {
     }
 
     bool compare(const OccupantDoF &RHS, bool compare_value) const {
-      if(compare_value && value() != RHS.value())
+      if(compare_value && (value() != RHS.value()))
         return false;
 
       if(size() != RHS.size())
@@ -285,28 +327,36 @@ namespace CASM {
   void from_json(OccupantDoF<Molecule> &dof, const jsonParser &json);
 
 
-  //****************************************************
+  //*******************************************************************************************
 
   class ContinuousDoF : public DoF {
     double min_val, max_val, current_val;
     double current_min, current_max;
 
     /// Allows DoF to point to a remote value for faster/easier evaluation
-    const double *m_remote_val;
+    const double *m_remote_ptr;
   public:
     ContinuousDoF() : min_val(NAN), max_val(NAN), current_val(NAN),
-      current_min(NAN), current_max(NAN), m_remote_val(nullptr) {};
+      current_min(NAN), current_max(NAN), m_remote_ptr(nullptr) {};
 
     ContinuousDoF(const std::string &tname, double tmin, double tmax) :
       DoF(tname), min_val(tmin), max_val(tmax), current_val(NAN),
-      current_min(min_val), current_max(max_val), m_remote_val(nullptr) {};
+      current_min(min_val), current_max(max_val), m_remote_ptr(nullptr) {};
 
     ContinuousDoF(const std::string &tname, Index _ID, double tmin, double tmax) :
       DoF(tname, _ID), min_val(tmin), max_val(tmax), current_val(NAN),
-      current_min(min_val), current_max(max_val), m_remote_val(nullptr) {};
+      current_min(min_val), current_max(max_val), m_remote_ptr(nullptr) {};
 
     double value() const {
       return current_val;
+    };
+
+    bool compare(const ContinuousDoF &RHS, bool compare_value) const {
+      if(compare_value && !almost_equal(value(), RHS.value()))
+        return false;
+
+      return(type_name() == RHS.type_name()
+             && (ID() == RHS.ID()));
     };
 
     bool operator==(const ContinuousDoF &RHS) const {
@@ -316,12 +366,17 @@ namespace CASM {
     };
 
     double remote_value() const {
-      assert(m_remote_val && "In ContinuousDoF::remote_value() m_remote_val is nullptr.\n");
-      return *m_remote_val;
-    };
+      assert(m_remote_ptr && "In ContinuousDoF::remote_value() m_remote_val is nullptr.\n");
+      return *m_remote_ptr;
+    }
 
-    void register_remote(const double &remote_val) {
-      m_remote_val = &remote_val;
+    double const *remote_ptr() const {
+      return m_remote_ptr;
+    }
+
+    void register_remote(const RemoteHandle &handle) {
+      assert(handle.d_ptr() && "In ContinuousDoF::register_remote(), attempting to register to nullptr!");
+      m_remote_ptr = handle.d_ptr();
     };
 
     void perturb_dof() {} //sets current_val to something between min_val and max_val
@@ -348,5 +403,5 @@ namespace CASM {
 
   jsonParser &to_json(const ContinuousDoF &dof, jsonParser &json);
 
-};
+}
 #endif

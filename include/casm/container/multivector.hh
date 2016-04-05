@@ -4,7 +4,7 @@
 #include <vector>
 
 namespace CASM {
-  
+
   namespace multivector_impl {
     template<typename T, size_t N>
     struct multivector_tmp;
@@ -18,7 +18,7 @@ namespace CASM {
       using type = std::vector < typename multivector_tmp < T, N - 1 >::type >;
     };
   }
-  
+
   /// \brief Shortcut for multidimensional vector (std::vector< std::vector< ...)
   ///
   /// - multivector<Type>::X<D> is a D-dimensional container of std::vector<T>

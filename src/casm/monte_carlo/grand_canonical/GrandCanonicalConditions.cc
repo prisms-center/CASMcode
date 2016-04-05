@@ -5,8 +5,8 @@
 #include "casm/clex/PrimClex.hh"
 
 namespace CASM {
-  
-  
+
+
   /// \brief Constructor
   ///
   /// \param _temperature in K
@@ -14,22 +14,22 @@ namespace CASM {
   /// \param _comp_converter CompositionConverter for converting from parametric chem_pot to atomic chem_pot
   /// \param _tol tolerance for comparing conditions
   ///
-  GrandCanonicalConditions::GrandCanonicalConditions(double _temperature, 
+  GrandCanonicalConditions::GrandCanonicalConditions(double _temperature,
                                                      const Eigen::VectorXd &_param_chem_pot,
-                                                     const CompositionConverter& _comp_converter,
-                                                     double _tol) : 
+                                                     const CompositionConverter &_comp_converter,
+                                                     double _tol) :
     m_comp_converter(_comp_converter),
     m_tolerance(_tol) {
-    
+
     // -- set T ----
     set_temperature(_temperature);
 
-    
+
     // -- set chem_pot ----
     set_chem_pot(m_comp_converter.chem_pot(_param_chem_pot));
 
   }
-  
+
   // ***************************************ACCESSORS********************************************** //
 
   double GrandCanonicalConditions::temperature() const {
@@ -40,14 +40,14 @@ namespace CASM {
     return m_beta;
   }
 
-  const Eigen::VectorXd& GrandCanonicalConditions::chem_pot() const {
+  const Eigen::VectorXd &GrandCanonicalConditions::chem_pot() const {
     return m_chem_pot;
   }
 
   double GrandCanonicalConditions::chem_pot(Index index) const {
     return m_chem_pot(index);
   }
-  
+
   Eigen::VectorXd GrandCanonicalConditions::param_chem_pot() const {
     return m_comp_converter.param_chem_pot(m_chem_pot);
   }
@@ -208,8 +208,8 @@ namespace CASM {
 
     return max_division;
   }
-  
-  
+
+
 
 }
 

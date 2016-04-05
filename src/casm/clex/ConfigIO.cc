@@ -101,7 +101,7 @@ namespace CASM {
         t_header.push_back((char)('a' + _index_rules()[c][0]));
         t_header.push_back(')');
         if(c != _index_rules().size() - 1) {
-          t_header += "        ";
+          t_header += "   ";
         }
       }
       return t_header;
@@ -519,6 +519,7 @@ namespace CASM {
       CompN(),
       Corr(),
       RelaxationStrain(),
+      DoFStrain(),
       SiteFrac(),
       StrucScore()
     );

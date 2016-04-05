@@ -559,6 +559,7 @@ namespace CASM {
       //std::cout << "new config" << std::endl;
       config_list.push_back(canon_config);
       config_list.back().set_id(config_list.size() - 1);
+      config_list.back().set_selected(false);
       return true;
       //std::cout << "    added" << std::endl;
     }
@@ -664,98 +665,6 @@ namespace CASM {
     generate_name();
 
   }
-
-  //*******************************************************************************
-  /*
-    // Va_mode is default set to 0
-    // Va_mode		description
-    // 0			print no information about the vacancies
-    // 1			print only the coordinates of the vacancies
-    // 2			print the number of vacancies and the coordinates of the vacancies
-    void Supercell::print(const Configuration &config, std::ostream &stream, COORD_TYPE mode, int Va_mode, char term, int prec, int pad) const {
-
-      //declare hash mol name -> basis site index
-      std::map<std::string, std::vector<Index> > siteHash;
-
-      // this statement assumes that the scaling is 1.0 always, this may needed to be changed
-      stream << config.name() << "\n";
-      real_super_lattice.print(stream);
-
-      //loop through all sites
-      for(Index i = 0; i < config.size(); i++) {
-
-        const Molecule &mol = config.get_mol(i);
-        if(mol.is_vacancy()) {
-          siteHash["Va"].push_back(i);
-        }
-        else {
-          siteHash[mol.name].push_back(i);
-        }
-      }
-
-      // print atom names
-      for(auto it=siteHash.begin(); it!= siteHash.end(); ++it) {
-        if(it->first != "Va") {
-          stream << it->first << " ";
-        }
-      }
-
-      if(Va_mode == 2) {
-        if(siteHash.find("Va") != siteHash.end()) {
-          stream << "Va" << " ";
-        }
-      }
-      stream << "\n";
-
-      // print numbers of atoms
-      for(auto it=siteHash.begin(); it!= siteHash.end(); ++it) {
-        if(it->first != "Va") {
-          stream << it->second.size() << " ";
-        }
-      }
-
-      if(Va_mode == 2) {
-        if(siteHash.find("Va") != siteHash.end()) {
-          stream << siteHash["Va"].size() << " ";
-        }
-      }
-      stream << "\n";
-
-      //print the COORD_TYPE
-      if(mode == FRAC) {
-        stream << "Direct\n";
-      }
-      else if(mode == CART) {
-        stream << "Cartesian\n";
-      }
-      else {
-        std::stringstream ss;
-        ss << "Error in BasicStructure<CoordType>::print5'.\n"
-           << "  COORD_TYPE mode = " << mode << " not allowed. Use FRAC or CART.";
-
-        throw std::runtime_error(ss.str());
-      }
-
-      // print coordinates
-      for(auto it=siteHash.begin(); it!=siteHash.end(); ++it) {
-        if(it->first != "Va") {
-          for(Index i = 0; i < it->second.size(); i++) {
-            coord(it->second.at(i)).print(stream, mode, term, prec, pad);
-          }
-        }
-      }
-
-      if(Va_mode != 0) {
-        auto it = siteHash.find("Va");
-        for(Index i = 0; i < it->second.size(); i++) {
-          coord(it->second.at(i)).print(stream, mode, term, prec, pad);
-        }
-      }
-      stream << "\n";
-
-      return;
-    }
-  */
 
   //*******************************************************************************
   /**

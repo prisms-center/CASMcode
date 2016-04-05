@@ -40,13 +40,13 @@ namespace CASM {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     /// Initialize with number of sites -- defaults to zero
-    ConfigDoF(Index N = 0);
+    ConfigDoF(Index N = 0, double _tol = TOL);
 
     ///Initialize with explicit occupation
-    ConfigDoF(const Array<int> &_occupation);
+    ConfigDoF(const Array<int> &_occupation, double _tol = TOL);
 
     ///Initialize with explicit properties
-    ConfigDoF(const Array<int> &_occupation, const Eigen::MatrixXd &_displacement, const Eigen::Matrix3d &_deformation);
+    ConfigDoF(const Array<int> &_occupation, const Eigen::MatrixXd &_displacement, const Eigen::Matrix3d &_deformation, double _tol = TOL);
 
   public:
 
@@ -56,6 +56,10 @@ namespace CASM {
     }
 
     bool operator==(const ConfigDoF &RHS) const;
+
+    double tol()const {
+      return m_tol;
+    }
 
     int &occ(Index i) {
       return m_occupation[i];
@@ -123,17 +127,17 @@ namespace CASM {
     void swap(ConfigDoF &RHS);
 
     // pass iterator, 'it_begin', to first translation operation (indexed 0,0) to determine if configdof is a primitive cell
-    bool is_primitive(PermuteIterator it_begin, double tol = TOL) const;
+    bool is_primitive(PermuteIterator it_begin, double _tol = TOL) const;
 
     std::vector<PermuteIterator> factor_group(PermuteIterator it_begin, PermuteIterator it_end, double tol = TOL) const;
 
-    bool is_canonical(PermuteIterator it_begin, PermuteIterator it_end, double tol = TOL) const;
+    bool is_canonical(PermuteIterator it_begin, PermuteIterator it_end, double _tol = TOL) const;
 
     bool is_canonical(PermuteIterator it_begin, PermuteIterator it_end, std::vector<PermuteIterator> &factor_group, double tol = TOL) const;
 
-    ConfigDoF canonical_form(PermuteIterator it_begin, PermuteIterator it_end, double tol = TOL) const;
+    ConfigDoF canonical_form(PermuteIterator it_begin, PermuteIterator it_end, double _tol = TOL) const;
 
-    ConfigDoF canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, double tol = TOL) const;
+    ConfigDoF canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, double _tol = TOL) const;
 
     ConfigDoF canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, std::vector<PermuteIterator> &factor_group, double tol = TOL) const;
 
@@ -214,6 +218,10 @@ namespace CASM {
   /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel);
 
+  inline
+  void reset_properties(ConfigDoF &_dof) {
+    return;
+  }
 
 }
 
