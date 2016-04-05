@@ -1019,9 +1019,9 @@ namespace CASM {
    */
   //***********************************************************
 
-  void Lattice::symmetrize(const double &tolerance) {
+  void Lattice::symmetrize(double tol) {
     SymGroup point_group;
-    generate_point_group(point_group, tolerance);
+    generate_point_group(point_group, tol);
     symmetrize(point_group);
     return;
   }

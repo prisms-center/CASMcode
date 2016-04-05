@@ -22,8 +22,8 @@ namespace CASM {
     Lattice find_nearest_super_lattice(const Lattice &prim_lat,
                                        const Lattice &relaxed_lat,
                                        const SymGroup &sym_group,
-                                       Eigen::MatrixXd &deformation,
-                                       Eigen::MatrixXd &trans_mat,
+                                       Eigen::Matrix3d &deformation,
+                                       Eigen::Matrix3d &trans_mat,
                                        const std::vector<Lattice> &from_range,
                                        double _tol) {
       Lattice best_lat;
@@ -50,8 +50,8 @@ namespace CASM {
     Lattice find_nearest_super_lattice(const Lattice &prim_lat,
                                        const Lattice &relaxed_lat,
                                        const SymGroup &sym_group,
-                                       Eigen::MatrixXd &deformation,
-                                       Eigen::MatrixXd &trans_mat,
+                                       Eigen::Matrix3d &deformation,
+                                       Eigen::Matrix3d &trans_mat,
                                        Index min_vol,
                                        Index max_vol,
                                        double _tol) {
@@ -482,7 +482,7 @@ namespace CASM {
     std::vector<Index> assignment;
     //Add new Supercell if it doesn't exist already. Use primitive point group to check for equivalence and
     //store transformation matrix
-    Eigen::MatrixXd deformation;
+    Eigen::Matrix3d deformation;
     double num_atoms = double(struc.basis.size());
     int min_vol, max_vol;
 
@@ -523,8 +523,8 @@ namespace CASM {
     max_vol = max(max_vol, 1);
 
     //std::cout << "max_va_fraction: " << max_va_fraction << "   Volume range: " << min_vol << " to " << max_vol << "\n";
-    Eigen::MatrixXd ttrans_mat, tF, rotF;
-    //Eigen::MatrixXd best_trans;
+    Eigen::Matrix3d ttrans_mat, tF, rotF;
+    //Eigen::Matrix3d best_trans;
     double strain_cost(1e10), basis_cost(1e10), tot_cost;//, best_strain_cost, best_basis_cost;
     ConfigDoF tdof;
     BasicStructure<Site> tstruc(struc);
@@ -574,7 +574,7 @@ namespace CASM {
         //best_basis_cost = basis_cost;
         cart_op = rotF * tF.inverse();
 
-        //best_trans = Eigen::MatrixXd(tlat.inv_lat_column_mat()) * rotF.inverse() * Eigen::MatrixXd(struc.lattice().lat_column_mat());
+        //best_trans = tlat.inv_lat_column_mat() * rotF.inverse() * struc.lattice().lat_column_mat();
         //std::cout << "tF is:\n" << tF << "\n and N is:\n" << best_trans << "\n";
         swap(mapped_configdof, tdof);
 
@@ -622,7 +622,7 @@ namespace CASM {
     double strain_cost, basis_cost, tot_cost;
     ConfigDoF tdof;
     BasicStructure<Site> tstruc(struc);
-    Eigen::MatrixXd tF, rotF;
+    Eigen::Matrix3d tF, rotF;
     std::vector<Index> assignment;
     Supercell scel(&primclex(), imposed_lat);
 

@@ -37,55 +37,71 @@ namespace CASM {
     /// \brief Construct cubic primitive cell of unit volume
     static Lattice hexagonal();
 
+    /// \brief Get i'th lattice vector as column expression
     LatVec operator[](Index i)const {
       return m_lat_mat.col(i);
     }
 
+    /// \brief Return scaled copy of this lattice (Note: Volume will be scaled by scale^3)
     Lattice scaled_lattice(double scale) const;
 
+    /// \brief Return angle between lattice vectors (*this)[(i+1)%3] and (*this)[(i+2)%3]
     double angle(Index i)const;
 
+    /// \brief Return length of i'th lattice vector
     double length(Index i)const;
 
+    /// \brief Return *signed* volume of this lattice
     double vol()const {
       return lat_column_mat().determinant();
     }
 
-    ///Access coord_trans[FRAC] in an intuitive way.
+    /// \brief 3x3 matrix with lattice vectors as its columne
     const Eigen::Matrix3d &lat_column_mat() const {
       return m_lat_mat;
     }
 
-    ///Access coord_trans[CART] in an intuitive way.
+    /// \brief Inverse of Lattice::lat_column_mat()
+    /// It is the transformation matrix 'C2F', such that
+    ///    f = C2F * c
+    /// where 'c' is Cartesian coordinate/vector and 'f'
+    /// and 'f' is fractional coordinate/vector
     const Eigen::Matrix3d &inv_lat_column_mat() const {
       return m_inv_lat_mat;
     }
 
-    //Calculates the kpoint mesh for a supercell lattice given the kpoint mesh
-    //for the primitive
+    /// Calculates the kpoint mesh for a supercell lattice given the kpoint mesh
+    /// for the primitive lattice
     Array<int> calc_kpoints(Array<int> prim_kpoints, Lattice prim_lat);
 
-    ///Return reciprocal lattice
-    Lattice get_reciprocal() const;  //Anna did this
+    /// \brief Return reciprocal lattice
+    Lattice get_reciprocal() const;
 
-    /**pg_tol can be increased to find point group of lattice vectors
-       that are slightly distorted due to numerical noise **/
+    /// \brief Populate \param point_group with the point group of this lattice
+    /// \param point_group should be empty
+    /// \param pg_tol can be increased to find point group of lattice vectors
+    /// that are slightly distorted due to numerical noise
     void generate_point_group(SymGroup &point_group, double pg_tol = TOL) const;
 
+    /// \brief populate \param sub_group with  subset of \param super_group that leaves this lattice invariant
+    /// \param sub_group should be empty
     void find_invariant_subgroup(const SymGroup &super_group, SymGroup &sub_group, double pg_tol = TOL) const;
 
-    void generate_supercells(Array<Lattice> &supercell, const SymGroup &effective_pg, int max_prim_vol, int min_prim_vol = 1) const; //Donghee did this, ARN100113
-    //void generate_supercells(Array<Lattice> &supercell, const MasterSymGroup &factor_group, int max_prim_vol, int min_prim_vol)const;
+    /// \brief Populate \param supercell with symmetrically distinct supercells of this lattice
+    /// Superlattices are enumerated with volumes \param min_prim_vol <= volume <= \param max_prim_vol
+    /// \param effective_pg is a group that should either be equivalent to the full point group of this lattice
+    /// or be a subgroup of that full point group
+    void generate_supercells(Array<Lattice> &supercell, const SymGroup &effective_pg, int max_prim_vol, int min_prim_vol = 1) const;
 
+    /// \brief make a supercell of this lattice.
+    /// Equivalent to Lattice(lat_column_mat()*trans_mat)
     template <typename T>
     Lattice make_supercell(const Eigen::Matrix<T, 3, 3> &trans_mat) const;
 
-    ///Find the lattice vectors which give most compact unit cell
-    Lattice get_reduced_cell() const;  //Alex did this
+    /// \brief Find the lattice vectors which give most compact unit cell
+    /// Compactness is measured by how close lat_column_mat().transpose()*lat_column_mat() is to a diagonal matrix
+    Lattice get_reduced_cell() const;
 
-    /// populate voronoi information.
-    //It should get called in any method of Lattice that tries to use an empty voronoi table
-    void generate_voronoi_table() const;
     void print_voronoi_table(std::ostream &stream) const;
 
     /// Radius of largest sphere that totally fits inside the voronoi cell
@@ -95,31 +111,27 @@ namespace CASM {
     Eigen::Vector3d max_voronoi_vector(const Eigen::Vector3d &pos) const;
 
     /// return number of voronoi cell faces that 'pos' is on, within +/- TOL
-    /// 0 indicates that 'pos' is within the voronoi cell, -1 indicates that it is outside
+    ///  0 indicates that 'pos' is within the voronoi cell, and the origin is the nearest lattice site
+    /// -1 indicates that 'pos' is outside the voronoi cell, and there is a lattice site closer than the origin
+    /// Values of 1<=n<=7 indicate that there n lattice sites equally as close as the origin
     int voronoi_number(const Eigen::Vector3d &pos) const;
 
-    /**Gives a scaling of the lattice vectors such that after scaling,
-       The eight parallelipipeds touching the origin enclose a sphere
-       of given radius**/
+    /// Gives a scaling of the lattice vectors such that after scaling,
+    /// The eight parallelipipeds touching the origin enclose a sphere of given radius
     Eigen::Vector3i enclose_sphere(double radius) const;
 
+    /// Make a grid of lattice sites such that min_radius <= distance <= max_radius from \param lat_point
+    // ***This should live somewhere else
     template<typename CoordType, typename CoordType2>
-    Array<CoordType> gridstruc_build(double max_radius, double min_radius, Array<CoordType> basis, CoordType2 lat_point); //Anirudh
+    Array<CoordType> gridstruc_build(double max_radius, double min_radius, Array<CoordType> basis, CoordType2 lat_point);
 
     void read(std::istream &stream);
     void print(std::ostream &stream) const;
 
-    void symmetrize(double _tol = TOL);
-
-    //template <class T>
-    //Lattice &operator*=(const Matrix3<T> &RHS);
-
-    //Lattice &operator*=(const Eigen::Matrix3d &RHS);
-
-    ///Are two lattices the same, even if they have different lattice vectors
+    /// Are two lattices the same, even if they have different lattice vectors
     bool is_equivalent(const Lattice &RHS, double tol) const;
 
-    ///Are lattice vectors identical for two lattices
+    /// Are lattice vectors identical for two lattices, within TOL
     bool operator==(const Lattice &RHS) const;
 
     ///Matrix that relates two lattices (e.g., strain or slat)
@@ -139,26 +151,29 @@ namespace CASM {
 
     ///Flip c vector if it's on the wrong side of a-b plane -- return (*this)
     Lattice &make_right_handed();
+
     ///Check if the lattice is right handed
     bool is_right_handed() const;
+
     ///Given a normal vector, a Vector3 containing the miller indeces for the lattice is generated
     Eigen::Vector3i get_millers(Eigen::Vector3d plane_normal, double tolerance = TOL) const;
-    ///Generates a lattice with vectors a and b parallel to the plane described by the miller indeces
 
+    ///Generates a lattice with vectors a and b parallel to the plane described by the miller indeces
     Lattice get_lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; //John G 121030
 
     Array<double> pg_converge(double large_tol);
     void pg_converge(double small_tol, double large_tol, double increment);
 
-    ///Returns mirror image of lattice
-    //Lattice get_reflection(bool override = 0) const;
-    //\John G 121212
+    /// \brief Force this lattice to have symmetry of group \param relaxed_pg
+    void symmetrize(const SymGroup &relaxed_pg);
 
-    //John G 011013
-    void symmetrize(const SymGroup &relaxed_points);
-    void symmetrize(const double &tolerance);
+    /// \brief Force this lattice to have symmetry of point group calculated based on tolerance \param _tol
+    void symmetrize(double _tol);
 
   private:
+
+    /// \brief populate voronoi information.
+    void generate_voronoi_table() const;
 
     mutable std::vector<Eigen::Vector3d> voronoi_table;
 
