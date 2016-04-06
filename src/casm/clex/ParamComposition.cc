@@ -2,9 +2,7 @@
 
 #include <cmath>
 #include <unistd.h>
-#include <boost/algorithm/string.hpp>
-#include <boost/foreach.hpp>
-#include <boost/tokenizer.hpp>
+#include "casm/external/boost.hh"
 
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"

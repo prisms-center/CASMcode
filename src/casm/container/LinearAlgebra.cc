@@ -1,5 +1,7 @@
 #include "casm/container/LinearAlgebra.hh"
 
+#include "casm/external/boost.hh"
+
 namespace CASM {
 
   //*******************************************************************************************

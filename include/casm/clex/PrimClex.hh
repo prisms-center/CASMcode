@@ -1,9 +1,7 @@
 #ifndef PRIMCLEX_HH
 #define PRIMCLEX_HH
 
-#define BOOST_NO_SCOPED_ENUMS
-#define BOOST_NO_CXX11_SCOPED_ENUMS
-#include <boost/filesystem.hpp>
+#include "casm/external/boost.hh"
 
 #include "casm/BP_C++/BP_Parse.hh"
 

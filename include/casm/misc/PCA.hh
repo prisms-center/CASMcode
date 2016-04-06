@@ -17,14 +17,12 @@ namespace CASM {
     template<typename Derived>
     PCA(const Eigen::MatrixBase<Derived>& M, double singular_value_tol = 1e-14) {
       
-      auto Ninput = M.rows();
-      
       // set the mean to zero
       Eigen::MatrixXd mat_mean_zero = M;
-      mat_mean_zero.topRows(Ninput).colwise() -= (M.topRows(Ninput).rowwise().mean());
+      mat_mean_zero.colwise() -= (M.rowwise().mean());
       
       // principle component analysis to rotate to input space that to its range
-      Eigen::JacobiSVD<Eigen::MatrixXd> svd(mat_mean_zero.topRows(Ninput), Eigen::ComputeFullU);
+      Eigen::JacobiSVD<Eigen::MatrixXd> svd(mat_mean_zero, Eigen::ComputeFullU);
       int rank = 0;
       for(Index i = 0; i < svd.singularValues().size(); i++) {
         if(std::abs(svd.singularValues()[i]) <= singular_value_tol) {
@@ -35,7 +33,7 @@ namespace CASM {
         }
       }
       
-      m_reduce = svd.matrixU().block(0,0,Ninput,rank).transpose();
+      m_reduce = svd.matrixU().block(0,0,M.rows(),rank).transpose();
       
     }
     

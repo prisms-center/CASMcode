@@ -29,8 +29,30 @@
 #define ERR_OTHER_PROJ 8
 
 namespace CASM {
+  
+  class PrimClex;
+  
+  template <bool IsConst>
+  class ConfigSelection;
+  typedef ConfigSelection<true> ConstConfigSelection;
 
-
+  
+  /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then 
+  ///        return reference to existing or constructed PrimClex
+  PrimClex& make_primclex_if_not(
+    PrimClex* _primclex, 
+    std::unique_ptr<PrimClex>& uniq_primclex, 
+    fs::path root, 
+    std::ostream& sout);
+  
+  /// \brief Return a reference to proper std::ostream
+  std::ostream& make_ostream_if(
+    bool output, 
+    std::ostream& sout, 
+    std::unique_ptr<std::ostream>& fout, 
+    fs::path out_path, 
+    bool gzip);
+  
 }
 
 #endif

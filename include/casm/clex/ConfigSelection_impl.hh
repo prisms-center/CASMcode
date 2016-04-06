@@ -1,4 +1,4 @@
-#include <boost/algorithm/string.hpp>
+#include "casm/external/boost.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigIterator.hh"
@@ -11,15 +11,36 @@ namespace CASM {
     : m_primclex(&_primclex), m_name(selection_path.string()) {
     if(selection_path=="MASTER"){
       for(auto it = _primclex.config_begin(); it != _primclex.config_end(); ++it) {
-        m_config[it->name()] = it->selected();
+        set_selected(it->name(), it->selected());
       }
     }
-    else if(selection_path.extension() == ".json" || selection_path.extension() == ".JSON")
-      from_json(jsonParser(selection_path));
+    else if(selection_path == "ALL") {
+      for(auto it=_primclex.config_cbegin(); it!=_primclex.config_cend(); ++it) {
+        set_selected(it->name(), true);
+      }
+    }
+    else if(selection_path == "CALCULATED") {
+      for(auto it=_primclex.config_cbegin(); it!=_primclex.config_cend(); ++it) {
+        set_selected(it->name(), is_calculated(*it));
+      }
+    }
     else {
-      std::ifstream select_file(selection_path.string().c_str());
-      read(select_file);
-      select_file.close();
+      if(!fs::exists(selection_path)) {
+        std::stringstream ss;
+        ss << "ERROR in parsing configuation selection name. \n"
+           << "  Expected <filename>, 'ALL', 'CALCULATED', or 'MASTER' <--default \n"
+           << "  Received: '" << selection_path << "'\n"
+           << "  No file named '" << selection_path << "'.";
+        throw std::runtime_error(ss.str());
+      }
+      m_name = fs::absolute(selection_path).string();
+      if(selection_path.extension() == ".json" || selection_path.extension() == ".JSON")
+        from_json(jsonParser(selection_path));
+      else {
+        std::ifstream select_file(selection_path.string().c_str());
+        read(select_file);
+        select_file.close();
+      }
     }
   }
 
@@ -70,7 +91,7 @@ namespace CASM {
       tselected = true;  // default to selected
 
       for(; it != it_end; ++it) {
-        if(it.name() == "name") {
+        if(it.name() == "configname") {
           tname = it->get<std::string>();
           contains_name = true;
         }
@@ -83,7 +104,7 @@ namespace CASM {
 
       if(!contains_name) {
         throw std::runtime_error(
-          std::string("CRITICAL ERROR: Field 'name' is missing from Configuration ") +
+          std::string("CRITICAL ERROR: Field 'configname' is missing from Configuration ") +
           std::to_string(i) + " of json Array passed to ConfigSelection::from_json()." +
           " This field is required.");
       }

@@ -7,6 +7,30 @@ def jobname(configdir):
     tmp = os.path.split(os.path.abspath(configdir))
     return os.path.split(tmp[0])[1] + "." + tmp[1]
 
+def project_path(dir=None):
+    """
+    Crawl up from dir to find '.casm'. If found returns the directory containing the '.casm' directory.
+    If not found, return None.
+    
+    Args:
+    If dir == None, set to os.getcwd()
+    """
+    if dir == None:
+      dir = os.getcwd()
+    if not os.path.isdir(dir):
+      raise Exception("Error, no directory named: " + dir)
+    curr = dir
+    cont = True
+    while cont == True:
+        test_path = os.path.join(curr,".casm")
+        if os.path.isdir(test_path):
+            return curr
+        elif curr == os.path.dirname(curr):
+            return None
+        else:
+            curr = os.path.dirname(curr)
+    return None
+
 def casm_settings(dir=None):
     """
     Crawl up from dir to find '.casm'.  Read '.casm/project_settings.json' as json dict.
@@ -18,21 +42,12 @@ def casm_settings(dir=None):
     
     If dir == None, set to os.getcwd()
     """
+    path = project_path(dir)
     if dir == None:
-      dir = os.getcwd()
-    curr = dir
-    cont = True
-    while cont == True:
-        test_path = os.path.join(curr,".casm")
-        if os.path.isdir(test_path):
-            input = json.load( open(os.path.join(test_path, "project_settings.json")))
-            input["curr_calctype"] = "calctype." + input["curr_calctype"]
-            return input
-        elif curr == os.path.dirname(curr):
-            return None
-        else:
-            curr = os.path.dirname(curr)
-    return None
+      return None
+    input = json.load( open(os.path.join(path, ".casm", "project_settings.json")))
+    input["curr_calctype"] = "calctype." + input["curr_calctype"]
+    return input
 
 def settings_path(name, calctype, configdir=None):
     """
@@ -60,3 +75,9 @@ def settings_path(name, calctype, configdir=None):
         else:
             curr = os.path.dirname(curr)
     return None
+
+
+
+
+
+

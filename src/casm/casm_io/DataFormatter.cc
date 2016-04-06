@@ -1,6 +1,6 @@
 #include <vector>
-#include <boost/algorithm/string.hpp>
 #include <string>
+#include "casm/external/boost.hh"
 #include "casm/CASM_global_definitions.hh"
 
 namespace CASM {

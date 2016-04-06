@@ -6,7 +6,7 @@
 #include <sstream>
 #include <vector>
 #include <functional>
-#include <boost/tokenizer.hpp>
+#include "casm/external/boost.hh"
 #include "casm/CASM_global_definitions.hh"
 #include "casm/container/multivector.hh"
 #include "casm/misc/CASM_math.hh"
@@ -150,7 +150,9 @@ namespace CASM {
     class FormattedObject;
   public:
     DataFormatter(int _sep = 4, int _precision = 12, std::string _comment = "#") :
-      m_initialized(false), m_prec(_precision), m_sep(_sep), m_indent(0), m_comment(_comment) {}
+      m_initialized(false), m_prec(_precision), m_sep(_sep), m_indent(0), m_comment(_comment) {
+      m_data_formatters.reserve(100);
+    }
 
     template<typename ...Args>
     DataFormatter(const Args &... formatters)
@@ -207,19 +209,18 @@ namespace CASM {
 
       //If the last formatter matches new_formatter, try to parse the new arguments into it
       if(m_data_formatters.size() > 0 && m_data_formatters.back()->name() == new_formatter.name()) {
-        if(m_data_formatters.back()->parse_args(args))
+        if(m_data_formatters.back()->parse_args(args)) {
           return;
+        }
       }
 
-      m_data_formatters.push_back(new_formatter.clone());
+      m_data_formatters.emplace_back(new_formatter);
       m_col_sep.push_back(0);
       m_col_width.push_back(0);
       m_data_formatters.back()->parse_args(args);
-
     }
 
     void push_back(const BaseDatumFormatter<DataObject> &new_formatter) {
-
       m_data_formatters.emplace_back(new_formatter);
       m_col_sep.push_back(0);
       m_col_width.push_back(0);

@@ -3,7 +3,7 @@
 #include <numeric>
 #include <iterator>
 #include <regex>
-#include <boost/algorithm/string.hpp>
+#include "casm/external/boost.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/container/ContainerTraits.hh"
@@ -487,17 +487,18 @@ namespace CASM {
   public:
     using BaseDatumFormatter<DataObject>::name;
 
-    DatumFormatterAlias(const std::string &_name, const std::string &_command) :
-      BaseDatumFormatter<DataObject> (_name, "User-specified alias for '" + _command + "'") {
+    DatumFormatterAlias(const std::string &_name, const std::string &_command, const std::string& _help="") :
+      BaseDatumFormatter<DataObject> (_name, _help.empty() ? "User-specified alias for '" + _command + "'" : _help) {
 
       split_formatter_expression(_command, m_format_tags, m_subexprs);
       if(m_format_tags.size() != 1)
         throw std::runtime_error("Expression '" + _command + "' is either empty or consists of multiple expressions.\n");
 
     }
-
-    DatumFormatterAlias(const std::string &_name, const BaseDatumFormatter<DataObject> &_rhs) :
-      BaseDatumFormatter<DataObject> (_name, ""), m_formatter(_rhs.clone()) {    }
+    
+    DatumFormatterAlias(const std::string &_name, const BaseDatumFormatter<DataObject> &_rhs, const std::string& _help="") :
+      BaseDatumFormatter<DataObject> (_name,  _help.empty() ? "User-specified alias for '" + _rhs.name() + "'" : _help), 
+      m_formatter(_rhs.clone()) {}
 
     typename BaseDatumFormatter<DataObject>::FormatterType type() const override {
       return BaseDatumFormatter<DataObject>::Property;
@@ -574,10 +575,13 @@ namespace CASM {
     /// from which DerivedDatumFormatter::parse_args() receives the string "argument1,argument2,..."
     /// Returns true if parse is successful, false if not (e.g., takes no arguments, already initialized, malformed input, etc).
     bool parse_args(const std::string &args)  override {
-      m_formatter = DataFormatterParser<DataObject>::lookup(m_format_tags[0]).clone();
+      
+      if(!m_formatter) {
+        m_formatter = DataFormatterParser<DataObject>::lookup(m_format_tags[0]).clone();
+      }
       //Parse the arguments of of the command now.  Later, we may want to do expression substitution
       // (e.g.,  "comp_plus = add(comp(a),$1)" where $1 specifies an argument)
-      if(!m_formatter->parse_args(m_subexprs[0])) {
+      if(m_subexprs.size() && !m_formatter->parse_args(m_subexprs[0])) {
         throw std::runtime_error("Invalid arguments passed to '" + m_format_tags[0] + "'. Cannot accept expression '" + m_subexprs[0] + "'\n");
       }
 
@@ -598,13 +602,19 @@ namespace CASM {
   };
 
   template<typename DataObject>
-  DatumFormatterAlias<DataObject> datum_formatter_alias(const std::string &_name, const std::string &_command) {
-    return DatumFormatterAlias<DataObject>(_name, _command);
+  DatumFormatterAlias<DataObject> datum_formatter_alias(
+      const std::string &_name, 
+      const std::string &_command, 
+      const std::string& _help="") {
+    return DatumFormatterAlias<DataObject>(_name, _command, _help);
   }
 
   template<typename DataObject>
-  DatumFormatterAlias<DataObject> datum_formatter_alias(const std::string &_name, const BaseDatumFormatter<DataObject> &_inside) {
-    return DatumFormatterAlias<DataObject>(_name, _inside);
+  DatumFormatterAlias<DataObject> datum_formatter_alias(
+      const std::string &_name, 
+      const BaseDatumFormatter<DataObject> &_inside, 
+      const std::string& _help="") {
+    return DatumFormatterAlias<DataObject>(_name, _inside, _help);
   }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

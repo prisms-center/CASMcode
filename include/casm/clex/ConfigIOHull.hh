@@ -36,9 +36,9 @@ namespace CASM {
                const std::string &_desc,
                const std::string &_default_selection = "MASTER",
                const std::string &_default_composition_type = default_hull_calculator(),
-               const Hull::CalculatorOptions &_calculator_map = hull_calculator_options(),
+               const Hull::CalculatorOptions& _calculator_map = hull_calculator_options(),
                double _singular_value_tol = 1e-8);
-
+      
       /// \brief Calculates the convex hull
       void init(const Configuration &_tmplt) const override;
 
@@ -76,7 +76,10 @@ namespace CASM {
       //  -- what composition to use for constructing the hull
       //  -- determines comp calculator and energy calculator, via m_calculator_map
       std::string m_composition_type;
-
+      
+      // Prevent re-parsing args
+      bool m_initialized;
+      
     };
 
     /// \brief Returns a boolean indicating if a Configuration is a convex hull vertex
@@ -281,11 +284,8 @@ namespace CASM {
       m_selection(_default_selection),
       m_composition_type(_default_composition_type),
       m_calculator_map(_calculator_map),
-      m_singular_value_tol(_singular_value_tol) {
-
-
-
-    }
+      m_singular_value_tol(_singular_value_tol),
+      m_initialized(false) {}
 
     /// \brief Calculates the convex hull
     ///
@@ -367,26 +367,35 @@ namespace CASM {
     /// - "atom_frac", (default) use atom_frac for the composition and "formation_energy_per_species" for the energy
     /// - "comp", use parametric composition for the composition and "formation_energy" for the energy
     ///
+    /// $tol, default=1e-8
+    /// - singular value tolerance used for detecting composition dimensions
+    ///
     template<typename ValueType>
     bool BaseHull<ValueType>::parse_args(const std::string &args) {
-
-      std::vector<std::string> splt_vec;
-      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
-
-      if(splt_vec.size() > 2) {
-        throw std::runtime_error("Attempted to initialize format tag " + this->name()
-                                 + " with " + std::to_string(splt_vec.size()) + " arguments ("
-                                 + args + "), but only up to 2 arguments allowed.\n");
+      
+      if(m_initialized) {
         return false;
       }
-
-      while(splt_vec.size() < 2) {
+      
+      std::vector<std::string> splt_vec;
+      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+      
+      if(splt_vec.size() > 3) {
+        throw std::runtime_error("Attempted to initialize format tag " + this->name()
+                                 + " with " + std::to_string(splt_vec.size()) + " arguments ("
+                                 + args + "), but only up to 3 arguments allowed.\n");
+        return false;
+      }
+      
+      while(splt_vec.size() < 3) {
         splt_vec.push_back("");
       }
 
       m_selection = splt_vec[0].empty() ? m_selection : splt_vec[0];
       m_composition_type = splt_vec[1].empty() ? m_composition_type : splt_vec[1];
-
+      m_singular_value_tol = splt_vec[2].empty() ? m_singular_value_tol : std::stod(splt_vec[2]);
+      m_initialized = true;
+      
       auto it = m_calculator_map.find(m_composition_type);
       if(it == m_calculator_map.end()) {
 

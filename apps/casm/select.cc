@@ -94,7 +94,7 @@ namespace CASM {
   // 'select' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int select_command(int argc, char *argv[]) {
+  int select_command(int argc, char *argv[], PrimClex* _primclex) {
 
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
@@ -213,11 +213,6 @@ namespace CASM {
     }
 
     bool only_selected(false);
-    for(int i = 0; i < selection.size(); i++) {
-      if(selection[i] != "MASTER") {
-        selection[i] = fs::absolute(fs::path(selection[i])).string();
-      }
-    }
     if(selection.empty()) {
       only_selected = true;
       selection.push_back("MASTER");

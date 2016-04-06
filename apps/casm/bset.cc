@@ -83,7 +83,7 @@ namespace CASM {
 
 
       std::vector<fs::path> filepaths({dir.clust(set.bset()),
-                                       dir.eci_in(set.bset()),
+                                       dir.basis(set.bset()),
                                        dir.clexulator_src(set.name(), set.bset()),
                                        dir.clexulator_o(set.name(), set.bset()),
                                        dir.clexulator_so(set.name(), set.bset())
@@ -153,19 +153,21 @@ namespace CASM {
         return ERR_INVALID_INPUT_FILE;
       }
 
-      // -- write eci.in ----------------
-      tree.write_eci_in(dir.eci_in(set.bset()).string());
-
-      std::cout << "Wrote: " << dir.eci_in(set.bset()) << "\n" << std::endl;
-
-
       // -- write clust.json ----------------
       jsonParser clust_json;
       to_json(jsonHelper(tree, prim), clust_json).write(dir.clust(set.bset()));
 
       std::cout << "Wrote: " << dir.clust(set.bset()) << "\n" << std::endl;
-
-
+      
+      
+      // -- write basis.json ----------------
+      jsonParser basis_json;
+      write_basis(tree, prim, basis_json, TOL);
+      basis_json.write(dir.basis(set.bset()));
+      
+      std::cout << "Wrote: " << dir.basis(set.bset()) << "\n" << std::endl;
+      
+      
       // -- write global Clexulator
 
       // get the neighbor list
