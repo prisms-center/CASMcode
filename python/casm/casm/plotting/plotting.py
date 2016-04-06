@@ -1505,8 +1505,6 @@ class ECISelect(object):
     self.sel.eci_src.data["color"] = map(lambda x: colormap[x % len(colormap)], self.sel.eci_src.data["branch"])
     self.sel.eci_src.data["current"] = self.sel.eci_src.data[str(index)]
     
-    self.sel.eci_src.data["median"] = 
-    
     # TOOLS in bokeh plot
     _tools = ["crosshair,pan,reset,resize,box_zoom"]
     
