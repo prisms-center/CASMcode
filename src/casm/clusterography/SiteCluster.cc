@@ -38,7 +38,7 @@ namespace CASM {
       at(i).set_nlist_ind(new_indices[i]);
     }
     //std::cout << "Updating indices " << old_indices << " to " << new_indices << "\n";
-    clust_basis.update_dof_IDs(old_indices, new_indices);
+    clust_basis.set_dof_IDs(new_indices);
     //ccd_basis.update_dof_IDs(old_indices, new_indices);
 
     return;
@@ -143,12 +143,12 @@ namespace CASM {
     Array<Array<BasisSet const *> > site_args(size());
     for(Index i = 0; i < local_args.size(); i++) {
       tlocal.push_back(*local_args[i]);
-      tlocal.back().update_dof_IDs(Array<Index>(1, at(i).basis_ind()), Array<Index>(1, at(i).nlist_ind()));
+      tlocal.back().set_dof_IDs(Array<Index>(1, at(i).nlist_ind()));
       site_args[i].push_back(&tlocal.back());
     }
-
-    // BasisSet::construct_invariant_cluster_polynomials() does the heavy lifting
-    clust_basis.construct_invariant_cluster_polynomials(site_args, global_args, clust_group, permute_group, max_poly_order);
+    std::cerr << "WARNING: THIS VERSION OF CASM CANNOT PRODUCE CLUSTER FUNCTIONS!! YOU WILL HAVE NO CORRELATIONS\n";
+    // BasisSet::construct_invariant_cluster_polynomials() does the heavy lifting TODO: update to construct_invariant_polynomials
+    //clust_basis.construct_invariant_cluster_polynomials(site_args, global_args, clust_group, permute_group, max_poly_order);
 
   }
 

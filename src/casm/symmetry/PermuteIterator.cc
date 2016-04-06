@@ -198,4 +198,3 @@ namespace CASM {
   }
 
 }
-

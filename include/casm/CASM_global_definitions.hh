@@ -44,7 +44,7 @@ namespace CASM {
   const double PLANCK = 4.135667516E-15; //eV-s
 
   template<class T>
-  std::istream &operator>>(const std::vector<T> &vec, std::istream &_in) {
+  std::istream &operator>>(std::istream &_in, std::vector<T> &vec) {
     std::string line;
     std::getline(_in, line, '\n');
     std::stringstream tss(line);
@@ -74,7 +74,7 @@ namespace CASM {
 
   enum CASMfileTypes {TYPEFILE, TYPEDIR, TYPEOTHER, IOERR}; // Moved from FileSystemInterface.cc by Ivy 01/16/14
 
-  // ************************************************************
+  //************************************************************
 
   void print_splash(std::ostream &out);
 

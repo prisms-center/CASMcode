@@ -15,7 +15,7 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  Structure::Structure(const fs::path &filepath) : BasicStructure<Site>(), perm_rep_ID(-1), basis_perm_rep_ID(-1) {
+  Structure::Structure(const fs::path &filepath) : BasicStructure<Site>(), basis_perm_rep_ID(-1) {
     if(!fs::exists(filepath)) {
       std::cerr << "Error in Structure::Structure(const fs::path &filepath)." << std::endl;
       std::cerr << "  File does not exist at: " << filepath << std::endl;
@@ -65,7 +65,6 @@ namespace CASM {
 
     SD_flag = RHS.SD_flag;
 
-    perm_rep_ID = RHS.perm_rep_ID; //this *should* work
     basis_perm_rep_ID = RHS.basis_perm_rep_ID; //this *should* work
 
     m_factor_group = RHS.m_factor_group;
@@ -101,30 +100,6 @@ namespace CASM {
   //************************************************************
   const SymGroup &Structure::point_group() const {
     return factor_group().point_group();
-  }
-
-  //***********************************************************
-
-  SymGroupRep const *Structure::permutation_symrep() const {
-    if(perm_rep_ID == Index(-1))
-      generate_permutation_representation();
-
-    SymGroupRep const *perm_group(factor_group().representation(perm_rep_ID));
-    if(!perm_group) {
-      generate_permutation_representation();
-      perm_group = factor_group().representation(perm_rep_ID);
-    }
-
-    return perm_group;
-  }
-
-  //***********************************************************
-
-  Index Structure::permutation_symrep_ID() const {
-    if(perm_rep_ID == Index(-1))
-      generate_permutation_representation();
-
-    return perm_rep_ID;
   }
 
   //***********************************************************
@@ -494,7 +469,7 @@ namespace CASM {
 
 
     for(na = 0; na < asym_unit.size(); na++) {
-      asym_unit.prototype(na).clust_group.get_character_table();
+      asym_unit.prototype(na).clust_group.character_table();
       //std::cout << "Working on asym_unit element " << na + 1 << '\n';
       nb = out_tree.size();
 
@@ -1204,26 +1179,6 @@ namespace CASM {
 
   //***********************************************************
 
-  //This function gets the permutation representation of the
-  // factor group operations of the structure. It first applies
-  // the factor group operation to the structure, and then tries
-  // to map the new position of the basis atom to the various positions
-  // before symmetry was applied. It only checks the positions after
-  // it brings the basis within the crystal.
-
-  // ROUTINE STILL NEEDS TO BE TESTED!
-
-  //***********************************************************
-
-  // non-const version - calculates factor group if it doesn't already exist
-  Index Structure::generate_permutation_representation(bool verbose) const {
-    perm_rep_ID = BasicStructure<Site>::generate_permutation_representation(factor_group(), verbose);
-
-    return perm_rep_ID;
-  }
-
-  //***********************************************************
-
   //This function gets the basis_permutation representation of the
   // factor group operations of the structure. It first applies
   // the factor group operation to the structure, and then tries
@@ -1285,9 +1240,6 @@ namespace CASM {
     // mutable MasterSymGroup m_factor_group;
     json["factor_group"] = m_factor_group;
 
-    // mutable int perm_rep_id;
-    json["perm_rep_ID"] = perm_rep_ID;
-
     // bool SD_flag;
     json["SD_flag"] = SD_flag;
 
@@ -1307,9 +1259,6 @@ namespace CASM {
       // mutable MasterSymGroup m_factor_group;
       m_factor_group.clear();
       m_factor_group.from_json(json["factor_group"]);
-
-      // mutable int perm_rep_ID;
-      CASM::from_json(perm_rep_ID, json["perm_rep_ID"]);
 
       // bool SD_flag;
       CASM::from_json(SD_flag, json["SD_flag"]);

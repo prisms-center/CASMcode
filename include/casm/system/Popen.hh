@@ -26,7 +26,7 @@ namespace CASM {
 
     /// \brief Print the last command executed and the resulting stdout
     void print(std::ostream &sout) const;
-    
+
     /// \brief Returns pclose(fp)/256
     int exit_code() const;
 

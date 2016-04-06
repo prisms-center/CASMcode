@@ -175,7 +175,7 @@ namespace CASM {
     } //End loop over point_group operations
     factor_group.enforce_group(map_tol);
     factor_group.sort_by_class();
-    factor_group.get_max_error();
+    factor_group.max_error();
 
     //std::cout << "finish generate_factor_group_slow() " << this << std::endl;
     return;
@@ -250,7 +250,7 @@ namespace CASM {
       is_group.push_back(factor_group.is_group(i));
       factor_group.enforce_group(i);
       num_enforced_ops.push_back(factor_group.size());
-      factor_group.get_character_table();
+      factor_group.character_table();
       name.push_back(factor_group.get_name());
     }
 
@@ -259,76 +259,6 @@ namespace CASM {
     }
 
     return;
-  }
-
-  //***********************************************************
-
-  //This function gets the permutation representation of the
-  // factor group operations of the structure. It first applies
-  // the factor group operation to the structure, and then tries
-  // to map the new position of the basis atom to the various positions
-  // before symmetry was applied. It only checks the positions after
-  // it brings the basis within the crystal.
-
-  // ROUTINE STILL NEEDS TO BE TESTED!
-
-  // ARN 0531
-
-  template<typename CoordType>
-  Index BasicStructure<CoordType>::generate_permutation_representation(const MasterSymGroup &factor_group, bool verbose) const {
-    if(factor_group.size() <= 0) {
-      std::cerr << "ERROR in BasicStructure::generate_permutation_representation" << std::endl;
-      std::cerr << "You have NOT generated the factor group, or something is very wrong with your structure. I'm quitting!" << std::endl;;
-      exit(1);
-    }
-    SymGroupRep permute_group(factor_group);
-    Index rep_id;
-    CoordType tsite(basis[0]);
-    CASM::BasicStructure<CoordType> sym_tstruc = (*this);
-    Array<Index> tArr;
-
-    std::string clr(100, ' ');
-
-    for(Index symOp_num = 0; symOp_num < factor_group.size(); symOp_num++) {
-      if(verbose) {
-        if(symOp_num % 100 == 0)
-          std::cout << '\r' << clr.c_str() << '\r' << "Find permute rep for symOp " << symOp_num << "/" << factor_group.size() << std::flush;
-      }
-      int flag;
-      tArr.clear();
-      // Applies the symmetry operation
-      //sym_tstruc = factor_group[symOp_num] * (*this);  <-- slow due to memory copying
-      for(Index i = 0; i < basis.size(); i++) {
-        tsite = basis[i];
-        sym_tstruc.basis[i] = tsite.apply_sym(factor_group[symOp_num]);
-      }
-      for(Index i = 0; i < sym_tstruc.basis.size(); i++) {
-        // Moves the atom within the unit cell
-        sym_tstruc.basis[i].within();
-        flag = 0;
-        // tries to locate the transformed basis in the untransformed structure
-        for(Index j = 0; j < basis.size(); j++) {
-          if(sym_tstruc.basis[i].compare(basis[j])) {
-            tArr.push_back(j);
-            flag = 1;
-            break;
-          }
-        }
-        if(!flag) {
-          //Quits if it wasnt able to perform the mapping
-          std::cerr << "\nWARNING:  In BasicStructure::generate_permutation_representation ---"
-                    << "            Something is wrong with your factor group operations. I\'m quitting!\n";
-          exit(1);
-        }
-      }
-      // Creates a new SymGroupRep
-      permute_group.push_back(SymPermutation(tArr));
-    }
-    // Adds the representation into the master sym group of this structure and returns the rep id
-    rep_id = factor_group.add_representation(permute_group);
-
-    if(verbose) std::cout << '\r' << clr.c_str() << '\r' << std::flush;
-    return rep_id;
   }
 
   //***********************************************************
@@ -360,7 +290,7 @@ namespace CASM {
           std::cout << '\r' << clr.c_str() << '\r' << "Find permute rep for symOp " << ng << "/" << factor_group.size() << std::flush;
       }
 
-      basis_permute_group.push_back(SymBasisPermute(factor_group[ng], *this, TOL));
+      basis_permute_group.set_rep(ng, SymBasisPermute(factor_group[ng], *this, TOL));
     }
     // Adds the representation into the master sym group of this structure and returns the rep id
     rep_id = factor_group.add_representation(basis_permute_group);

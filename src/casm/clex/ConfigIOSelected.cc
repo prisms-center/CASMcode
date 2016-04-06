@@ -27,23 +27,23 @@ namespace CASM {
     std::string Selected::short_header(const Configuration &_config) const {
       return name() + "(" + m_selection_name + ")";
     }
-    
+
     bool Selected::evaluate(const Configuration &_config) const {
       return m_selection.selected(_config.name());
     }
-/*
-    void Selected::inject(const Configuration &_config, DataStream &_stream, Index) const {
-      _stream << m_selection.selected(_config.name());
-    }
+    /*
+        void Selected::inject(const Configuration &_config, DataStream &_stream, Index) const {
+          _stream << m_selection.selected(_config.name());
+        }
 
-    void Selected::print(const Configuration &_config, std::ostream &_stream, Index) const {
-      _stream << std::string(name().size() + m_selection_name.size() + 1, ' ') <<  m_selection.selected(_config.name());
-    }
+        void Selected::print(const Configuration &_config, std::ostream &_stream, Index) const {
+          _stream << std::string(name().size() + m_selection_name.size() + 1, ' ') <<  m_selection.selected(_config.name());
+        }
 
-    jsonParser &Selected::to_json(const Configuration &_config, jsonParser &json) const {
-      return json = m_selection.selected(_config.name());
-    }
-*/
+        jsonParser &Selected::to_json(const Configuration &_config, jsonParser &json) const {
+          return json = m_selection.selected(_config.name());
+        }
+    */
     bool Selected::parse_args(const std::string &args) {
       if(m_selection.size() || m_selection_name.size()) {
         return false;

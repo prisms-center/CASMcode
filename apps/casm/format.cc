@@ -674,16 +674,16 @@ LCHARG = .FALSE.\n";
 
 
       std::cout << "The JSON object 'orbit_branch_specs' specifies the maximum size of pair,   \n" <<
-                   "triplet, quadruplet, etc. clusters in terms of the maximum distance \n" <<
-                   "between any two sites in the cluster.\n\n";
+                "triplet, quadruplet, etc. clusters in terms of the maximum distance \n" <<
+                "between any two sites in the cluster.\n\n";
 
       std::cout << "The JSON array 'orbit_specs' allows specifying particular custom orbits    \n" <<
-                   "by providing the prototype cluster coordinates. The 'include_subclusters'  \n" <<
-                   "option allows including all orbits of subclusters of the specified cluster.\n" <<
-                   "The cluster coordinates may be in \"Direct\"/\"Fractional\" coordinates,   \n" 
-                   "\"Cartesian\" coordinates, or \"Integral\" coordinates. \"Integral\"       \n" 
-                   "coordinates are 4-element integer arrays indicating sublattice index, b,   \n"
-                   "followed by unit cell indices, i, j, k.                                    \n\n\n";
+                "by providing the prototype cluster coordinates. The 'include_subclusters'  \n" <<
+                "option allows including all orbits of subclusters of the specified cluster.\n" <<
+                "The cluster coordinates may be in \"Direct\"/\"Fractional\" coordinates,   \n"
+                "\"Cartesian\" coordinates, or \"Integral\" coordinates. \"Integral\"       \n"
+                "coordinates are 4-element integer arrays indicating sublattice index, b,   \n"
+                "followed by unit cell indices, i, j, k.                                    \n\n\n";
 
 
       std::cout << "EXAMPLE:\n";
@@ -703,47 +703,47 @@ LCHARG = .FALSE.\n";
 
       std::cout << "DESCRIPTION:\n";
       std::cout << "    The chemical reference determines the value of the formation energy  \n"
-                   "    and chemical potentials calculated by CASM.                          \n\n"
-                   
-                   "    Chemical references states are set by specifying a hyperplane in     \n"
-                   "    energy/atom - composition (as atom_frac) space. This may be done by  \n"
-                   "    specifying the hyperplane explicitly, or by specifying several       \n"
-                   "    reference states with energy/atom and composition (as atom_frac) for \n"
-                   "    enough states to span the composition space of the allowed occupants \n"
-                   "    specified in the prim. For consistency with other CASM projects,     \n"
-                   "    additional reference states extending to other compositional         \n"
-                   "    dimensions may be included also. The pure Va reference is always 0.  \n\n";
-                   
+                "    and chemical potentials calculated by CASM.                          \n\n"
+
+                "    Chemical references states are set by specifying a hyperplane in     \n"
+                "    energy/atom - composition (as atom_frac) space. This may be done by  \n"
+                "    specifying the hyperplane explicitly, or by specifying several       \n"
+                "    reference states with energy/atom and composition (as atom_frac) for \n"
+                "    enough states to span the composition space of the allowed occupants \n"
+                "    specified in the prim. For consistency with other CASM projects,     \n"
+                "    additional reference states extending to other compositional         \n"
+                "    dimensions may be included also. The pure Va reference is always 0.  \n\n";
+
       std::cout << "    The reference states are stored in the 'chemical_reference.json' file\n"
-                   "    in one of two formats:                                               \n\n"
-                 
-                   "    1) Reference state composition and energy_per_species.               \n"
-                   "       In this format each reference state is represented by a JSON      \n"
-                   "       object storing the number of each species present in the reference\n"
-                   "       state and the energy_per_species for that reference state. Species\n"
-                   "       that are not in the primitive structure may also be included in   \n"
-                   "       the reference states as long as the composition space of the      \n"
-                   "       primitive structure is spanned by the hyperplane connecting the   \n"
-                   "       provided reference states.                                        \n"
-                  R"(       '[)" << "\n" <<
-                  R"(          {"A": 3.4, "C": 2.0, "energy_per_species": 2.0},)" << "\n" <<
-                  R"(          {"B": 2.0, "energy_per_species": 4.0}, )" << "\n" <<
-                  R"(          {"C": 1.0, "energy_per_species": 3.0}  )" << "\n" <<
-                  R"(        ]')" << "\n\n" <<
-                  
-                   "    2) Input an array of energy_per_species, for each species in prim,   \n"
-                   "       including 0.0 for vacancy:                                        \n"
-                   "        '[X, X, X]'                                                      \n\n";
-      
+                "    in one of two formats:                                               \n\n"
+
+                "    1) Reference state composition and energy_per_species.               \n"
+                "       In this format each reference state is represented by a JSON      \n"
+                "       object storing the number of each species present in the reference\n"
+                "       state and the energy_per_species for that reference state. Species\n"
+                "       that are not in the primitive structure may also be included in   \n"
+                "       the reference states as long as the composition space of the      \n"
+                "       primitive structure is spanned by the hyperplane connecting the   \n"
+                "       provided reference states.                                        \n"
+                R"(       '[)" << "\n" <<
+                R"(          {"A": 3.4, "C": 2.0, "energy_per_species": 2.0},)" << "\n" <<
+                R"(          {"B": 2.0, "energy_per_species": 4.0}, )" << "\n" <<
+                R"(          {"C": 1.0, "energy_per_species": 3.0}  )" << "\n" <<
+                R"(        ]')" << "\n\n" <<
+
+                "    2) Input an array of energy_per_species, for each species in prim,   \n"
+                "       including 0.0 for vacancy:                                        \n"
+                "        '[X, X, X]'                                                      \n\n";
+
       std::cout << "    When using '--set' it is also possible to specialize the chemical    \n"
-                   "    reference at the supercell or configuration level by adding the      \n"
-                   "    --scelname or --configname option.                                   \n\n";
+                "    reference at the supercell or configuration level by adding the      \n"
+                "    --scelname or --configname option.                                   \n\n";
 
 
       std::cout << "EXAMPLE: chemical_reference.json\n";
       std::cout << "-------\n";
       std::cout <<
-R"({
+                R"({
   "chemical_reference" : {
     "config" : {
       "SCEL4_2_2_1_1_1_0/0" : [

@@ -8,7 +8,7 @@ namespace CASM {
   class Configuration;
 
   namespace ConfigIO {
-    
+
     /// \brief A DatumFormatter class to measure the 'novelty' of a configuration with respect to a population of configurations
     /// Larger numbers indicate a more novel configuration, and a very large number (>~100) indicates a configuration that
     /// is linearly independent from the population (in terms of its correlations)
@@ -42,41 +42,41 @@ namespace CASM {
     class Novelty: public ScalarAttribute<Configuration> {
 
     public:
-    
+
       Novelty() :
         ScalarAttribute<Configuration>("novelty", "Novelty of a configuration with respect to a population of configurations, measured using the Mahalanobis distance of its correlations. Accepts one argument, a configuration selection specifying the population against which novelty is measured (default MASTER). Ex: novelty(path/to/selection)") {}
 
-      
+
       // --- Required implementations -----------
-      
+
       std::unique_ptr<Novelty> clone() const {
         return std::unique_ptr<Novelty>(this->_clone());
       }
-      
+
       double evaluate(const Configuration &_config) const override;
 
-      
+
       // --- Specialized implementation -----------
-      
+
       void init(const Configuration &_tmplt) const override;
 
       std::string short_header(const Configuration &_config) const override;
-/*
-      void inject(const Configuration &_config, DataStream &_stream, Index) const override;
+      /*
+            void inject(const Configuration &_config, DataStream &_stream, Index) const override;
 
-      void print(const Configuration &_config, std::ostream &_stream, Index) const override;
+            void print(const Configuration &_config, std::ostream &_stream, Index) const override;
 
-      jsonParser &to_json(const Configuration &_config, jsonParser &json)const override;
-*/
+            jsonParser &to_json(const Configuration &_config, jsonParser &json)const override;
+      */
       bool parse_args(const std::string &args) override;
 
     private:
-      
+
       /// \brief Clone
-      Novelty* _clone() const override{
+      Novelty *_clone() const override {
         return new Novelty(*this);
       }
-      
+
       /// specifies which selection to use as the population
       mutable std::string m_selection;
 

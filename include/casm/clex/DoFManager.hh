@@ -99,7 +99,10 @@ namespace CASM {
     };
 
     int register_dofs(BasisSet &basis) const {
-      return basis.register_remotes(name(), m_neighbor_occ);
+      Array<DoF::RemoteHandle> handles;
+      for(Index i = 0; i < m_neighbor_occ.size(); i++)
+        handles.push_back(DoF::RemoteHandle(m_neighbor_occ[i]));
+      return basis.register_remotes(name(), handles);
     };
 
     FunctionVisitor *get_function_label_visitor() const {
@@ -149,7 +152,11 @@ namespace CASM {
     };
 
     int register_dofs(BasisSet &basis)const {
-      return basis.register_remotes(name(), m_neighbor_disp);
+      Array<DoF::RemoteHandle> handles;
+      for(Index i = 0; i < m_neighbor_disp.size(); i++)
+        handles.push_back(DoF::RemoteHandle(m_neighbor_disp[i]));
+      return basis.register_remotes(name(), handles);
+
     };
 
   };
@@ -170,7 +177,10 @@ namespace CASM {
 
 
     int register_dofs(BasisSet &basis)const {
-      return basis.register_remotes(name(), m_strain_vals);
+      Array<DoF::RemoteHandle> handles;
+      for(Index i = 0; i < m_strain_vals.size(); i++)
+        handles.push_back(DoF::RemoteHandle(m_strain_vals[i]));
+      return basis.register_remotes(name(), handles);
     };
 
   };

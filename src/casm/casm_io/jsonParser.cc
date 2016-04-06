@@ -282,17 +282,17 @@ namespace CASM {
 
     return (const jsonParser &) get_array()[element];
   }
-  
+
   /// Return the location at which jsonParser 'A' != 'B' as a boost::filesystem::path
   boost::filesystem::path find_diff(const jsonParser &A, const jsonParser &B, boost::filesystem::path diff) {
     auto A_it = A.cbegin();
     auto B_it = B.cbegin();
     while(A_it != A.cend()) {
       if(*A_it != *B_it) {
-        if( A.is_obj() && B.is_obj()) {
-          return find_diff(*A_it, *B_it, diff / A_it.name() );
+        if(A.is_obj() && B.is_obj()) {
+          return find_diff(*A_it, *B_it, diff / A_it.name());
         }
-        else if( A.is_array() && B.is_array()) {
+        else if(A.is_array() && B.is_array()) {
           std::stringstream ss;
           ss << "[" << std::distance(A.cbegin(), A_it) << "]";
           return find_diff(*A_it, *B_it, diff / ss.str());
@@ -303,7 +303,7 @@ namespace CASM {
       ++B_it;
     }
     return diff;
-  } 
+  }
 
   /// Returns array size if *this is a JSON array, object size if *this is a JSON object, 1 otherwise
   jsonParser::size_type jsonParser::size() const {
@@ -324,7 +324,7 @@ namespace CASM {
     else
       return iterator(this, 0);
   }
-  
+
   /// Returns const_iterator to beginning of JSON object or JSON array
   jsonParser::const_iterator jsonParser::begin() const {
     return cbegin();
@@ -349,7 +349,7 @@ namespace CASM {
     else
       return iterator(this, 0);
   }
-  
+
   /// Returns iterator to end of JSON object or JSON array
   jsonParser::const_iterator jsonParser::end() const {
     return cend();

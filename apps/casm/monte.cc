@@ -37,7 +37,7 @@ namespace CASM {
         if(vm.count("help")) {
           std::cout << "\n";
           std::cout << desc << std::endl;
-          
+
           std::cout << "DESCRIPTION\n" <<
                        "  Perform Monte Carlo calculations.                          \n\n" <<
           
@@ -68,7 +68,6 @@ namespace CASM {
                        "    - Print the single spin flip low temperature expansion  \n" <<
                        "      approximation for -kTlnZ, using the conditions given  \n" <<
                        "      by the provided settings.                             \n\n";
-                       
                        
           return 0;
         }
@@ -106,7 +105,7 @@ namespace CASM {
 
     const DirectoryStructure &dir = primclex.dir();
     ProjectSettings &set = primclex.settings();
-    
+
     //Get path to settings json file
     settings_path = fs::absolute(settings_path);
   
@@ -114,21 +113,21 @@ namespace CASM {
     //jsonParser example_settings = Monte::example_testing_json_settings(primclex);
     //std::ofstream outsettings("monte_settings.json");
     //example_settings.print(outsettings);
-    
+
     MonteSettings monte_settings;
-    
+
     try {
       std::cout << "Reading Monte Carlo settings: " << settings_path << std::endl;
       monte_settings = MonteSettings(settings_path);
       std::cout << "  DONE." << std::endl << std::endl;
-    
+
     }
-    catch(std::exception& e) {
+    catch(std::exception &e) {
       std::cerr << "ERROR reading Monte Carlo settings.\n\n";
       std::cerr << e.what() << std::endl;
       return 1;
     }
-    
+
     if(monte_settings.type() == Monte::TYPE::GrandCanonical) {
       
       if(vm.count("lte")) {
@@ -207,7 +206,7 @@ namespace CASM {
           const GrandCanonical gc(primclex, gc_settings);
           write_POSCAR_final(gc, condition_index);
         }
-        catch(std::exception& e) {
+        catch(std::exception &e) {
           std::cerr << "ERROR printing Grand Canonical Monte Carlo final snapshot for condition: " << condition_index << "\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
@@ -219,7 +218,7 @@ namespace CASM {
           const GrandCanonical gc(primclex, gc_settings);
           write_POSCAR_trajectory(gc, condition_index);
         }
-        catch(std::exception& e) {
+        catch(std::exception &e) {
           std::cerr << "ERROR printing Grand Canonical Monte Carlo path snapshots for condition: " << condition_index << "\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
@@ -227,11 +226,11 @@ namespace CASM {
       }
       else {
         try {
-          
+
           //std::cout << "\n-------------------------------\n";
           //monte_settings.print(std::cout);
           //std::cout << "\n-------------------------------\n\n";
-          
+
           std::cout << "Constructing Grand Canonical Monte Carlo driver" << std::endl;
           MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(settings_path));
           std::cout << "  DONE." << std::endl << std::endl;
@@ -239,9 +238,9 @@ namespace CASM {
           std::cout << "Begin Grand Canonical Monte Carlo runs" << std::endl;
           driver.run();
           std::cout << "  DONE." << std::endl << std::endl;
-          
+
         }
-        catch(std::exception& e) {
+        catch(std::exception &e) {
           std::cerr << "ERROR running Grand Canonical Monte Carlo.\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
@@ -249,7 +248,7 @@ namespace CASM {
       }
     }
 
-    
+
     return 0;
   }
 }

@@ -13,7 +13,7 @@
 namespace CASM {
 
   class MonteCarlo;
-  
+
   /*
    * MonteSettings is nothing more than a jsonParser that you can expect
    * to contain a set of values. It's a class meant to hold all the
@@ -43,7 +43,7 @@ namespace CASM {
   class MonteSettings: protected jsonParser {
 
   public:
-    
+
     using jsonParser::print;
     using jsonParser::write;
     using jsonParser::operator==;
@@ -53,203 +53,203 @@ namespace CASM {
 
     /// \brief Default constructor
     MonteSettings() {}
-    
+
     /// \brief Construct MonteSettings by reading a settings JSON file
     MonteSettings(const fs::path &read_path);
-    
-    
+
+
     // --- Project root directory ---------------------------
-    
+
     fs::path root() const;
-    
-    
+
+
     // --- Type ---------------------------
-    
+
     /// \brief Return type of Monte Carlo calculation
     Monte::TYPE type() const;
-    
+
     /// \brief Run in debug mode?
     bool debug() const;
-    
-    
+
+
     // --- Initialization ---------------------
-    
+
     /// \brief Configname of configuration to use as starting motif
     std::string motif_configname() const;
-    
+
     /// \brief Supercell matrix defining the simulation cell
     Eigen::Matrix3i simulation_cell_matrix() const;
-    
+
 
     // --- Driver ---------------------
-    
+
     /// \brief Given a settings jsonParser figure out the drive mode. Expects drive_mode/single,incremental
     virtual const Monte::DRIVE_MODE drive_mode() const;
-    
-    
+
+
     // --- Sampling -------------------
-    
+
     /// \brief Given a settings jsonParser figure out the global tolerance (probably for == operator). Expects tolerance/value
     //double tolerance() const;
-    
+
     /// \brief Requested confidence level. Default 0.95.
     double confidence() const;
-    
+
 
     /// \brief Returns true if snapshots are requested
     bool write_trajectory() const;
-    
+
     /// \brief Returns true if POSCARs of snapshots are requsted. Requires write_trajectory.
     bool write_POSCAR_snapshots() const;
-    
+
     /// \brief Writes all observations
     bool write_observations() const;
-    
+
     /// \brief Write csv versions of files? (csv is the default format if no 'output_format' given)
     bool write_csv() const;
-    
+
     /// \brief Write json versions of files?
     bool write_json() const;
-    
+
     /// \brief Directory where output should go
     const fs::path output_directory() const;
-    
-    
+
+
   protected:
-    
+
     /// \brief Returns true if (*this)[level1].contains(level2)
     bool _is_setting(std::string level1, std::string level2) const;
-    
+
     /// \brief Returns (*this)[level1][level2].get<T>();
     template<typename T>
     T _get_setting(std::string level1, std::string level2) const;
-  
-  
+
+
   private:
-    
+
     fs::path m_root;
     fs::path m_output_directory;
-    
+
   };
-  
+
   inline bool operator==(const jsonParser &json, const MonteSettings &settings) {
     return settings == json;
   }
-  
+
   inline bool operator!=(const jsonParser &json, const MonteSettings &settings) {
     return settings != json;
   }
 
-  
+
   class EquilibriumMonteSettings : public MonteSettings {
-  
-    
-    public:
-  
+
+
+  public:
+
     /// \brief Default constructor
     EquilibriumMonteSettings() {}
-    
+
     /// \brief Construct EquilibriumMonteSettings by reading a settings JSON file
     EquilibriumMonteSettings(const fs::path &read_path) :
       MonteSettings(read_path) {}
-    
-    
+
+
     // --- MCData / Sampling ---------------------
 
     /// \brief Sample by pass?
     bool sample_by_pass() const;
-    
+
     /// \brief Sample by step?
     bool sample_by_step() const;
 
     /// \brief Figure out how often to take samples
     size_type sample_period() const;
-    
-    
-    
-    
+
+
+
+
     /// \brief Returns true if explicit equilibration passes for the first run have been specified
     bool is_equilibration_passes_first_run() const;
-    
+
     /// \brief Number of explicit equilibration passes requsted for the first run
     size_type equilibration_passes_first_run() const;
-    
+
     /// \brief Returns true if explicit equilibration passes for each run have been specified
     bool is_equilibration_passes_each_run() const;
-    
+
     /// \brief Number of explicit equilibration passes requsted for each run
     size_type equilibration_passes_each_run() const;
-    
-    
-    
+
+
+
     /// \brief Returns true if the number of passes has been specified
     bool is_N_pass() const;
-    
+
     /// \brief Returns the number of passes requested
     size_type N_pass() const;
-    
+
     /// \brief Returns true if the number of steps has been specified
     bool is_N_step() const;
-  
+
     /// \brief Returns the number of steps requested
     size_type N_step() const;
-    
+
     /// \brief Returns true if the number of samples has been specified
     bool is_N_sample() const;
-  
+
     /// \brief Returns the number of samples requested
     size_type N_sample() const;
-  
-    
-    
+
+
+
     /// \brief Returns true if a maximum number of passes has been specified
     bool is_max_pass() const;
-  
+
     /// \brief Maximum number of passes, required if sample by pass
     size_type max_pass() const;
-    
+
     /// \brief Returns true if a minimum number of passes has been specified
     bool is_min_pass() const;
-    
+
     /// \brief Minimum number of passes, default 0 if sample by pass
     size_type min_pass() const;
 
-    
+
     /// \brief Returns true if a maximum number of steps has been specified
     bool is_max_step() const;
-    
+
     /// \brief Maximum number of steps, required if sample by step
     size_type max_step() const;
-    
+
     /// \brief Returns true if a minimum number of steps has been specified
     bool is_min_step() const;
-    
+
     /// \brief Minimum number of steps, default 0 if sample by step
     size_type min_step() const;
 
-    
+
     /// \brief Returns true if a maximum number of samples has been specified
     bool is_max_sample() const;
-    
+
     /// \brief Maximum number of steps, default std::numeric_limit<size_type>::max()
     size_type max_sample() const;
-    
+
     /// \brief Returns true if a minimum number of samples has been specified
     bool is_min_sample() const;
-    
+
     /// \brief Minimum number of steps, default 0
     size_type min_sample() const;
-    
-    
+
+
     // --- Data ---------------------
-    
+
     /// \brief Figure out how large data containers should be
     size_type max_data_length() const;
-    
-    
+
+
   };
-  
-  
+
+
   /// \brief Returns (*this)[level1][level2].get<T>();
   template<typename T>
   T MonteSettings::_get_setting(std::string level1, std::string level2) const {
@@ -273,7 +273,7 @@ namespace CASM {
       throw;
     }
   }
-  
+
 }
 
 #endif

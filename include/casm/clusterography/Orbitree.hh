@@ -315,12 +315,12 @@ namespace CASM {
   ///
   /// \result the resulting OutputIterator
   ///
-  /// This simply outputs all UnitCellCoord for clusters that include the origin 
-  /// UnitCell, without any standard order. It can be used to create a set of 
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It can be used to create a set of
   /// UnitCellCoord for input to expand a PrimNeighborList.
   ///
   template<typename OutputIterator, typename TreeType, typename StrucType>
-  OutputIterator neighborhood(OutputIterator result, const TreeType& tree, const StrucType& struc, double tol) {
+  OutputIterator neighborhood(OutputIterator result, const TreeType &tree, const StrucType &struc, double tol) {
     // create a neighborhood of all UnitCellCoord that an Orbitree touches
     for(int nb=0; nb<tree.size(); ++nb) {
       for(int no=0; no<tree[nb].size(); ++no) {
@@ -329,7 +329,7 @@ namespace CASM {
     }
     return result;
   }
-  
+
 };
 #include "casm/clusterography/Orbitree_impl.hh"
 #endif

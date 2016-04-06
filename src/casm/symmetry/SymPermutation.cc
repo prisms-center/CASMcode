@@ -13,7 +13,7 @@ namespace CASM {
     return n_fix;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   //Makes permutation matrix from m_permute
   //Permute matrix P reorders elements of a column vector v via
@@ -29,7 +29,7 @@ namespace CASM {
     return;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   jsonParser &SymPermutation::to_json(jsonParser &json) const {
     json.put_obj();
@@ -41,8 +41,6 @@ namespace CASM {
 
     json["SymOpRep_type"] = "SymPermutation";
 
-    ///type of symmetry, given by one of the allowed values of symmetry_type
-    json["symmetry"] = symmetry;
     json["op_index"] = op_index;
     json["rep_ID"] = rep_ID;
 
@@ -52,11 +50,10 @@ namespace CASM {
     return json;
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   void SymPermutation::from_json(const jsonParser &json) {
     try {
-      CASM::from_json(symmetry, json["symmetry"]);
       CASM::from_json(op_index, json["op_index"]);
       CASM::from_json(rep_ID, json["rep_ID"]);
 
@@ -69,13 +66,13 @@ namespace CASM {
     }
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   jsonParser &to_json(const SymPermutation &sym, jsonParser &json) {
     return sym.to_json(json);
   }
 
-  //**********************************************************
+  //*******************************************************************************************
 
   void from_json(SymPermutation &sym, const jsonParser &json) {
     try {
@@ -88,4 +85,3 @@ namespace CASM {
   }
 
 }
-

@@ -126,7 +126,7 @@ namespace CASM {
     Array<CoordType> gridstruc_build(double max_radius, double min_radius, Array<CoordType> basis, CoordType2 lat_point);
 
     void read(std::istream &stream);
-    void print(std::ostream &stream) const;
+    void print(std::ostream &stream, int _prec = 8) const;
 
     /// Are two lattices the same, even if they have different lattice vectors
     bool is_equivalent(const Lattice &RHS, double tol) const;

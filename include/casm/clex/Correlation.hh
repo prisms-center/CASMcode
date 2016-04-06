@@ -5,9 +5,9 @@
 #include "casm/clusterography/Orbitree.hh"
 
 namespace CASM {
-  
+
   typedef Eigen::VectorXd Correlation;
-  
+
   template<class U>
   void match_shape(Correlation &corr, const Array<Array<Array<U> > > &thing) {
 

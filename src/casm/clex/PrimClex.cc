@@ -105,7 +105,6 @@ namespace CASM {
     // read supercells
     if(fs::is_regular_file(root / "training_data" / "SCEL")) {
 
-      any_print = true;
       sout << "  Read " << root / "training_data" / "SCEL" << std::endl;
       fs::ifstream scel(root / "training_data" / "SCEL");
       read_supercells(scel);
@@ -115,13 +114,9 @@ namespace CASM {
     // read config_list
     if(fs::is_regular_file(get_config_list_path())) {
 
-      any_print = true;
       sout << "  Read " << get_config_list_path() << std::endl;
       read_config_list();
     }
-
-    if(any_print)
-      sout << "\n" << std::flush;
 
 
   }

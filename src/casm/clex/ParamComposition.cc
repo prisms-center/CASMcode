@@ -31,12 +31,12 @@ namespace CASM {
       std::cerr << " is not empty. Clearing it anyways.\n";
       components.clear();
     }
-    
+
     auto struc_molecule = prim_struc->get_struc_molecule();
-    for(auto it=struc_molecule.begin(); it!=struc_molecule.end(); ++it) {
+    for(auto it = struc_molecule.begin(); it != struc_molecule.end(); ++it) {
       components.push_back(it->name);
     }
-    
+
     return;
   }
 

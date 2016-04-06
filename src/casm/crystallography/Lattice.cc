@@ -103,17 +103,17 @@ namespace CASM {
 
   //********************************************************************
 
-  void Lattice::print(std::ostream &stream) const {
+  void Lattice::print(std::ostream &stream, int _prec) const {
     int tprec = stream.precision();
     std::ios::fmtflags tflags = stream.flags();
-    stream.precision(8);
-    stream.width(11);
+    stream.precision(_prec);
+    stream.width(_prec + 3);
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
     stream  << 1.0 << '\n';
 
-    stream << ' ' << std::setw(16) << m_lat_mat.col(0).transpose() << '\n';
-    stream << ' ' << std::setw(16) << m_lat_mat.col(1).transpose() << '\n';
-    stream << ' ' << std::setw(16) << m_lat_mat.col(2).transpose() << '\n';
+    stream << ' ' << std::setw(_prec + 8) << m_lat_mat.col(0).transpose() << '\n';
+    stream << ' ' << std::setw(_prec + 8) << m_lat_mat.col(1).transpose() << '\n';
+    stream << ' ' << std::setw(_prec + 8) << m_lat_mat.col(2).transpose() << '\n';
 
     stream.precision(tprec);
     stream.flags(tflags);
@@ -334,14 +334,14 @@ namespace CASM {
 
       tols.push_back(i);
       generate_point_group(point_group, i);
-      point_group.get_character_table();
+      point_group.character_table();
       old_name.push_back(point_group.get_name());
       num_ops.push_back(point_group.size());
       is_group.push_back(point_group.is_group(i));
       point_group.enforce_group(i);
       is_group_now.push_back(point_group.is_group(i));
       num_enforced_ops.push_back(point_group.size());
-      point_group.get_character_table();
+      point_group.character_table();
       new_name.push_back(point_group.get_name());
     }
 
