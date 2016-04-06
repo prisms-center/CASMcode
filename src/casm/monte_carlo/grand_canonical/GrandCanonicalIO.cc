@@ -92,8 +92,6 @@ namespace CASM {
     }
     return formatter;
   }
-  return formatter;
-}
   
   /// \brief Make a LTE results formatter
   ///

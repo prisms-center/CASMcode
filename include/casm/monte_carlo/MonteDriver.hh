@@ -428,21 +428,12 @@ namespace CASM {
         return conditions_list;
       }
 
-      if(conditions_list.size() == 1) {
-        std::cerr << "WARNING in MonteDriver::initialize" << std::endl;
-        std::cerr << "You specified incremental drive mode, but the specified increment resulted in single drive mode behavior." << std::endl;
-        std::cerr << "Only the initial condition will be calculated! (Is your increment too big or are you incrementing too many things?)" << std::endl;
+      default: {
+        throw std::runtime_error(
+          std::string("ERROR in MonteDriver::initialize\n") +
+          "  An invalid drive mode was given.");
+
       }
-
-      break;
-    }
-
-    default: {
-      throw std::runtime_error(
-        std::string("ERROR in MonteDriver::initialize\n") +
-        "  An invalid drive mode was given.");
-
-    }
 
     }
   }
