@@ -5,6 +5,7 @@
 #include "casm/container/Array.hh"
 #include "casm/container/Tensor.hh"
 #include "casm/clusterography/Cluster.hh"
+#include "casm/crystallography/Site.hh"
 #include "casm/basis_set/BasisSet.hh"
 
 namespace CASM {

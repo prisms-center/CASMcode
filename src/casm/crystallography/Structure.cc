@@ -363,13 +363,13 @@ namespace CASM {
       for(Index j = 0; j < asym_unit[i].size(); j++) {
         stream << "Site: ";
         asym_unit.at(i).at(j).at(0).print(stream); //Print the site (not cluster) for the asymmetric unit
-        stream << " Total Symmetry Operations: " << asym_unit[i][j].clust_group.size() << "\n";
+        stream << " Total Symmetry Operations: " << asym_unit[i][j].clust_group().size() << "\n";
 
-        for(Index nc = 0; nc < asym_unit[i][j].clust_group.size(); nc++) {
+        for(Index nc = 0; nc < asym_unit[i][j].clust_group().size(); nc++) {
           //print_short is a new fxn I added in SymOp to not print out the whole symmetry matrix
           if(shorttag == 0) {
             stream <<  std::setw(4)  << nc + 1 << ": ";
-            //asym_unit[i][j].clust_group[nc].print_short(stream); // I turned this off because the "print_short" function does not appear to exist...
+            //asym_unit[i][j].clust_group()[nc].print_short(stream); // I turned this off because the "print_short" function does not appear to exist...
           }
 
 
@@ -378,9 +378,9 @@ namespace CASM {
             stream << "\n" <<  std::setw(3)  << nc + 1 << ": ";
             stream.unsetf(std::ios::left);
             if(mode == CART)
-              asym_unit[i][j].clust_group[nc].print(stream, Eigen::Matrix3d::Identity());
+              asym_unit[i][j].clust_group()[nc].print(stream, Eigen::Matrix3d::Identity());
             else
-              asym_unit[i][j].clust_group[nc].print(stream, lattice().inv_lat_column_mat());
+              asym_unit[i][j].clust_group()[nc].print(stream, lattice().inv_lat_column_mat());
           }
         }
         stream << "\n  ---------------------------------------------------------------------   \n\n";
@@ -469,7 +469,7 @@ namespace CASM {
 
 
     for(na = 0; na < asym_unit.size(); na++) {
-      asym_unit.prototype(na).clust_group.character_table();
+      asym_unit.prototype(na).clust_group().character_table();
       //std::cout << "Working on asym_unit element " << na + 1 << '\n';
       nb = out_tree.size();
 
@@ -896,7 +896,7 @@ namespace CASM {
 
   Structure Structure::stamp_with(SiteCluster stamp, bool lat_override, bool im_override) const {
     //The following check may not work properly
-    if(!lat_override && !lattice().is_supercell_of((stamp.get_home()), point_group())) {
+    if(!lat_override && !lattice().is_supercell_of((stamp.home()), point_group())) {
       std::cerr << "ERROR in Structure::stamp_with (are you using Structure::bedazzle?)" << std::endl;
       std::cerr << "The lattice of your cluster is not related to the lattice of the structure you want to stamp!" << std::endl;
       exit(60);

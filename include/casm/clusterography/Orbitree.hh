@@ -8,6 +8,7 @@
 #include "casm/clusterography/OrbitBranch.hh"
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 
@@ -141,9 +142,6 @@ namespace CASM {
     void generate_clust_bases(const Array<BasisSet const *> &global_args, Index max_poly_order = -1);
     void generate_clust_bases(Index max_poly_order = -1);
 
-    /// fill up cluster function evaluation tensors for every cluster
-    //void fill_discrete_bases_tensors();
-
     // Alex do these (there's already a placeholder for the first one):
     ///If cluster/orbit exists in current orbitree, return its linear index; else, return number of orbits in orbitree
     Index find(const ClustType &test_clust) const;
@@ -182,18 +180,11 @@ namespace CASM {
 
     void read(std::istream &stream, int num_sites, COORD_TYPE mode);
     void read(std::istream &stream, COORD_TYPE mode);
-    ///Reads in tensor basis and ECI's of prototypes of each orbit
-    void read_prototype_tensor_basis(std::istream &stream, COORD_TYPE mode, const SymGroup &sym_group);//Modified by Ivy
+
     void read_CSPECS(std::istream &stream); //Added by Ivy -- temporary?
 
 
     void print(std::ostream &stream) const;
-    ///Writes the tensor basis of all the np size clusters to a file
-    void write_full_tensor_basis(std::string file, Index np) const; //Added by Ivy
-    ///Writes the prototype tensor basis of np size clusters to file
-    void write_prototype_tensor_basis(std::string file, Index np, std::string path = "") const; //Added by Ivy
-    ///Calculates the force constant tensors for each cluster in the Orbitree
-    void calc_tensors();
 
     void write_full_clust(std::string file) const;
     void write_proto_clust(std::string file) const;

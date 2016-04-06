@@ -186,8 +186,8 @@ namespace CASM {
 
     do {
       bool new_decoration = true;
-      for(Index i = 0; i < permute_group.size(); i++) {
-        if(decor_map.contains((permute_group[i]->get_permutation())->permute(ornaments()))) {
+      for(Index i = 0; i < permute_rep().size(); i++) {
+        if(decor_map.contains((permute_rep()[i]->get_permutation())->permute(ornaments()))) {
           new_decoration = false;
           break;
         }
@@ -233,9 +233,9 @@ namespace CASM {
 
     do {
       bool new_decoration = true;
-      for(Index i = 0; i < permute_group.size(); i++) {
+      for(Index i = 0; i < permute_rep().size(); i++) {
         // check if a symmetry equivalent to this arrangement has already been enumerated
-        if(decor_map.contains((permute_group[i]->get_permutation())->permute(ornaments()))) {
+        if(decor_map.contains((permute_rep()[i]->get_permutation())->permute(ornaments()))) {
           new_decoration = false;
           break;
         }

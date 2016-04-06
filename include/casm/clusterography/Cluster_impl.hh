@@ -7,19 +7,21 @@ namespace CASM {
   //****************************************************
   template <typename CoordType>
   GenericCluster<CoordType>::GenericCluster(const Lattice &init_home) :
-    home(&init_home), min_length_val(0.0), max_length_val(0.0),
-    DoF_rep(-1), clust_group(LOCAL), permute_group(SymGroupRep::NO_HOME, 0) {
+    m_lat_ptr(&init_home),
+    m_min_length(0.0),
+    m_max_length(0.0),
+    m_clust_group(LOCAL) {
 
     //nothing else to do for now
-  };
+  }
 
   //****************************************************
 
   template <typename CoordType>
   void GenericCluster<CoordType>::set_lattice(const Lattice &new_home, COORD_TYPE mode) {
-    if(home == &new_home)
+    if(m_lat_ptr == &new_home)
       return;
-    home = &new_home;
+    m_lat_ptr = &new_home;
     for(Index i = 0; i < size(); i++)
       at(i).set_lattice(new_home, mode);
 
@@ -57,9 +59,6 @@ namespace CASM {
     }
     Array<CoordType>::permute(iperm);
 
-    //Following lines will have to be updated as we add cluster basis, etc.
-    for(Index i = 0; i < tensor_basis.size(); i++)
-      tensor_basis[i].dim_permute(iperm);
     return *this;
   }
 
@@ -76,10 +75,7 @@ namespace CASM {
     for(Index i = 0; i < size(); i++)
       at(i).apply_sym(op);
 
-    //apply symmetry to eci, which is a tensor.  This will need to be revised to handle non-3d tensors
-    tensor_basis.apply_sym(op);
-    eci.apply_sym(op);
-    clust_group.apply_sym(op);
+    m_clust_group.apply_sym(op);
     return *this;
   }
 
@@ -90,65 +86,51 @@ namespace CASM {
     for(Index i = 0; i < size(); i++)
       at(i).apply_sym_no_trans(op);
 
-    tensor_basis.apply_sym(op);
-    eci.apply_sym(op);
-    clust_group.apply_sym(op);
+    m_clust_group.apply_sym(op);
     return *this;
   }
 
-  //********************************************
+
+  //*******************************************************************************************
   // Assuming that we have the factor group (or some similar group),
-  //what are the operations that leave the cluster unchanged
+  // what are the operations that leave the cluster unchanged
   // Find them, alter the translations, and store them in clust_group
 
-  template <typename CoordType>
-  void GenericCluster<CoordType>::get_clust_group(const SymGroup &super_group) {
-    Coordinate trans(*home);
-    clust_group.clear();
-    permute_group.clear();
+  template <typename _CoordType>
+  void GenericCluster<_CoordType>::generate_clust_group(const SymGroup &super_group, std::vector<Permutation> *perm_array_ptr) {
+    Coordinate trans(home());
+    _clust_group().clear();
+    if(perm_array_ptr)
+      perm_array_ptr->clear();
     Array<Index> iperm;
     for(Index ng = 0; ng < super_group.size(); ng++) {
-      GenericCluster<CoordType> tclust(*this);
+      GenericCluster<_CoordType> tclust(*this);
       tclust.apply_sym(super_group[ng]);
       if(tclust.map_onto(*this, trans)) {
-        clust_group.push_back(SymOp::translation(trans.cart())*super_group[ng]);
+        _clust_group().push_back(SymOp::translation(trans.cart())*super_group[ng]);
         find(tclust, iperm);
 
-        permute_group.push_back_copy(SymPermutation(iperm));
+        if(perm_array_ptr)
+          perm_array_ptr->push_back(Permutation(iperm));
       }
     }
 
     return;
   }
 
-  //********************************************
+  //*******************************************************************************************
 
-  template <typename CoordType>
-  void GenericCluster<CoordType>::get_permute_group() {
-    permute_group.clear();
+  template <typename _CoordType>
+  std::vector<Permutation> GenericCluster<_CoordType>::clust_group_permutations() const {
+    std::vector<Permutation> tperms;
+    tperms.reserve(clust_group().size());
     Array<Index> iperm(size());
-    for(Index i = 0; i < clust_group.size(); i++) {
+    for(Index i = 0; i < clust_group().size(); i++) {
       for(Index j = 0; j < size(); j++)
-        iperm[j] = find(clust_group[i] * at(j));
-      permute_group.push_back_copy(SymPermutation(iperm));
+        iperm[j] = find(clust_group()[i] * at(j));
+      tperms.push_back(Permutation(iperm));
     }
-
-  }
-
-  //********************************************
-
-  template <typename CoordType>
-  void GenericCluster<CoordType>::get_tensor_basis(Index nrank) {
-    if(!clust_group.size()) {
-      std::cerr << "WARNING: Attempting to find tensor basis of cluster \n";
-      print(std::cerr);
-      std::cerr << "but cluster point group symmetry has not been specified.  Continuing... \n";
-      return;
-    }
-
-    tensor_basis.generate_basis(nrank, clust_group, permute_group);
-
-    return;
+    return tperms;
   }
 
   //********************************************
@@ -163,7 +145,7 @@ namespace CASM {
       return;
     }
 
-    Coordinate tcoord(*home);
+    Coordinate tcoord(*m_lat_ptr);
     at(pivot_ind).within(tcoord);
     for(Index i = 0; i < size(); i++) {
       if(i != pivot_ind)
@@ -185,7 +167,7 @@ namespace CASM {
       return;
     }
 
-    trans.set_lattice(*home, CART);
+    trans.set_lattice(*m_lat_ptr, CART);
     at(pivot_ind).within(trans);
     for(Index i = 0; i < size(); i++) {
       if(i != pivot_ind)
@@ -217,7 +199,7 @@ namespace CASM {
 
   template <typename CoordType>
   bool GenericCluster<CoordType>::image_check(const Lattice &cell, int max_nV) const {
-    Coordinate tcoord(*home);
+    Coordinate tcoord(*m_lat_ptr);
     Index i, j;
     int tnV;
     for(i = 0; i < size(); i++) {
@@ -231,37 +213,13 @@ namespace CASM {
     return false;
   }
 
-  //********************************************
-  //Returns the indices of the supercells that are large enough, so
-  //that the cluster does not see an image of itself
-  template <typename CoordType>
-  ReturnArray<int> GenericCluster<CoordType>::SuperScreener(Array<Lattice> &s_cells, const Array<SymOp> &symoplist) {
-    Array<int> keepNums;
-    for(Index i = 0; i < s_cells.size(); i++) {
-      if(!image_check(s_cells[i])) {
-        keepNums.push_back(i);
-      }
-    }
-
-    for(Index i = 0; i < s_cells.size(); i++) {
-      for(Index j = 0; j < symoplist.size(); j++) {
-        if(!is_integer(s_cells[i].inv_lat_column_mat()*symoplist[j].matrix()*s_cells[i].lat_column_mat(), TOL)) {
-          if(keepNums.contains(i)) {
-            keepNums.remove(keepNums.find(i));
-          }
-        }
-      }
-    }
-
-    return keepNums;
-  }
 
   //********************************************
 
   template <typename CoordType>
   Coordinate GenericCluster<CoordType>::geometric_center() const {
     if(!size())
-      return Coordinate(*home);
+      return Coordinate(*m_lat_ptr);
 
     Coordinate tcoord(at(0));
     for(Index i = 1; i < size(); i++) {
@@ -327,7 +285,7 @@ namespace CASM {
   bool GenericCluster<CoordType>::map_onto_subcluster(const GenericCluster<CoordType> &pivot) {
     Index i, j, tsize;
 
-    if(!(get_home() == pivot.get_home())) {
+    if(!(home() == pivot.home())) {
       std::cerr << "WARNING in Cluster::map_onto_subcluser!!\n"
                 << "You are trying to map a pivot onto a cluster with\n"
                 << "a different lattice! \n";
@@ -383,7 +341,7 @@ namespace CASM {
   bool GenericCluster<CoordType>::map_onto_subcluster(const GenericCluster<CoordType> &pivot, int num_maps) {
     Index i, j, tsize;
 
-    if(!(get_home() == pivot.get_home())) {
+    if(!(home() == pivot.home())) {
       std::cerr << "WARNING in Cluster::map_onto_subcluser!!\n"
                 << "You are trying to map a pivot onto a cluster with\n"
                 << "a different lattice! \n";
@@ -476,21 +434,16 @@ namespace CASM {
   //********************************************
   /**
    * Reads the cluster in the specified mode
-   * and if read_tensors is set to true, it will
-   * read the corresponding tensor basis and the
-   * effective cluster interaction tensor.
    *
    * @param stream Input file stream
    * @param mode Cartesian or fractional mode
-   * @param read_tensors Flag determining whether
-   *    tensors should be read in or not
    */
   //********************************************
   template <typename CoordType>
-  void GenericCluster<CoordType>::read(std::istream &stream, COORD_TYPE mode, bool read_tensors) {
+  void GenericCluster<CoordType>::read(std::istream &stream, COORD_TYPE mode) {
 
     Index np;
-    CoordType t_coord(*home);
+    CoordType t_coord(*m_lat_ptr);
     std::string tstring;
     char tchar[256];
     char ch;
@@ -528,21 +481,15 @@ namespace CASM {
 #endif //DEBUG
 
     stream.getline(tchar, 1000, ':'); //Changed from = to :
-    stream >> max_length_val;
+    stream >> m_max_length;
     stream.getline(tchar, 1000, ':');
-    stream >> min_length_val;
+    stream >> m_min_length;
 
 #ifdef DEBUG
-    std::cout << "max_length_val is " << max_length_val << "\n";
-    std::cout << "min_length_val is " << min_length_val << "\n";
+    std::cout << "m_max_length is " << m_max_length << "\n";
+    std::cout << "m_min_length is " << m_min_length << "\n";
 #endif //DEBUG
 
-    // if it's the empty cluster, there isn't a tensor basis
-    // to be read
-    if(np == 0) {
-      //std::cout << "Setting read_tensors to be false \n";
-      //read_tensors = false;
-    }
 
     COORD_MODE input_mode(mode);
 
@@ -551,41 +498,10 @@ namespace CASM {
       push_back(t_coord);
     }
 
-    if(read_tensors == true) {
-      //starting to read tensor basis
-      tensor_basis.clear();
-      ch = stream.peek();
-#ifdef DEBUG
-      std::cout << "ch in cluster::read in read_tensors == true is " << ch << "\n";
-#endif //DEBUG
-      while((ch != 'T') && (ch != 't')) {
-        //stream.ignore(1000, '\n');
-        stream.ignore(1000, '\n');
-        ch = stream.peek();
-        //std::cout << "ch = " << ch << "\n";
-      }
-
-      if(!tensor_basis.read(stream)) return;
-
-      ch = stream.peek();
-      while((ch != 'F') && (ch != 'f')) {
-        stream.ignore(1000, '\n');
-        ch = stream.peek();
-      }
-
-      stream.ignore(1000, '\n');
-
-      ch = stream.peek();
-      if((eci == 0) && (ch != 'N') && (ch != 'n')) {
-        eci.redefine(Array<Index>(2, 3));
-        eci.read(stream);
-      }
-    } //end of if read_tensors
-
     return;
 
 
-  };
+  }
 
   //********************************************
 
@@ -594,11 +510,11 @@ namespace CASM {
 
     Array<CoordType>::push_back(new_coord);
 
-    if(!home)
-      home = &back().home();
+    if(!m_lat_ptr)
+      m_lat_ptr = &back().home();
 
-    else if(&(back().home()) != home)
-      back().set_lattice(*home, CART);
+    else if(&(back().home()) != m_lat_ptr)
+      back().set_lattice(*m_lat_ptr, CART);
 
     return;
   }
@@ -704,7 +620,7 @@ namespace CASM {
     if(PERIODICITY_MODE::IS_LOCAL()) return (*this) == test_clust;
 
     //tshift keeps track of translations
-    Coordinate tshift(*home), trans(*home);
+    Coordinate tshift(*m_lat_ptr), trans(*m_lat_ptr);
     for(Index i = 0; i < size(); i++) {
       tshift = test_clust[0] - at(i);
       if(tshift.is_lattice_shift()) {
@@ -730,7 +646,7 @@ namespace CASM {
       return (*this) == test_clust;
     }
 
-    Coordinate tshift(*home);
+    Coordinate tshift(*m_lat_ptr);
     for(Index i = 0; i < size(); i++) {
       tshift = test_clust[0] - at(i);
       if(tshift.is_lattice_shift()) {
@@ -748,55 +664,24 @@ namespace CASM {
   //********************************************
 
   template <typename CoordType>
-  std::complex<double> GenericCluster<CoordType>::get_phase(const Coordinate &k, int i, int j) {
-    double targ = k.cart().dot(s2s_vec[i][j].cart());
-    return std::complex<double>(cos(targ), sin(targ));
-  }
-
-  //********************************************
-  //fill s2s_vec with Coordinates that describe vectors
-  //pointing from site i to site j (recorded in s2s_vec[i][j])
-
-  template <typename CoordType>
-  void GenericCluster<CoordType>::get_s2s_vec() {
-    Index i, j;
-    s2s_vec.clear();
-    s2s_vec.resize(size());
-    s2s_norm_vec.resize(size());
-    for(i = 0; i < size(); i++) {
-      s2s_vec[i].reserve(size());
-      s2s_norm_vec[i].reserve(size());
-      for(j = 0; j < size(); j++) {
-        s2s_vec[i].push_back(at(j) - at(i));
-        s2s_norm_vec[i].push_back(s2s_vec[i].back());
-        s2s_norm_vec[i].back().cart() /= s2s_norm_vec[i].back().const_cart().norm();
-      }
-    }
-    return;
-  }
-
-
-  //********************************************
-
-  template <typename CoordType>
   void GenericCluster<CoordType>::calc_properties() {
     double tlength;
 
     //Point clusters don't have a max_length - (is this necessary?)
     if(size() <= 1)
-      max_length_val = min_length_val = 0;
+      m_max_length = m_min_length = 0;
 
     else if(size() > 1) {
       //Establish max and min as distance from first set
-      max_length_val = min_length_val = at(0).dist(at(1));
+      m_max_length = m_min_length = at(0).dist(at(1));
 
       for(Index i = 0; i < size(); i++) {
         for(Index j = i + 1; j < size(); j++) {
           tlength = at(i).dist(at(j));
-          if(tlength < min_length_val)
-            min_length_val = tlength;
-          if(tlength > max_length_val)
-            max_length_val = tlength;
+          if(tlength < m_min_length)
+            m_min_length = tlength;
+          if(tlength > m_max_length)
+            m_max_length = tlength;
         }
       }
     }
@@ -819,17 +704,17 @@ namespace CASM {
     double dist;
 
     // calculate min/max lengths relative the phenom_clust & this cluster
-    max_length_val = 0;
-    min_length_val = 1e20;
+    m_max_length = 0;
+    m_min_length = 1e20;
 
     // first check distances to phenom_clust
     for(Index i = 0; i < size(); i++) {
       for(Index k = 0; k < phenom_clust.size(); k++) {
         dist = phenom_clust[k].dist(at(i));
-        if(dist > max_length_val)
-          max_length_val = dist;
-        if(dist < min_length_val)		// only set min_length for length between sites in the cluster
-          min_length_val = dist;
+        if(dist > m_max_length)
+          m_max_length = dist;
+        if(dist < m_min_length)		// only set min_length for length between sites in the cluster
+          m_min_length = dist;
 
       }
     }
@@ -838,15 +723,15 @@ namespace CASM {
     for(Index i = 0; i < size(); i++) {
       for(Index k = i + 1; k < size(); k++) {
         dist = at(k).dist(at(i));
-        if(dist > max_length_val)
-          max_length_val = dist;
-        if(dist < min_length_val)
-          min_length_val = dist;
+        if(dist > m_max_length)
+          m_max_length = dist;
+        if(dist < m_min_length)
+          m_min_length = dist;
 
       }
     }
 
-    //std::cout << "  max_length: " << max_length_val << "  min_length: " << min_length_val << endl;
+    //std::cout << "  max_length: " << m_max_length << "  min_length: " << m_min_length << endl;
 
     return;
   }
@@ -869,7 +754,7 @@ namespace CASM {
     COORD_MODE C(mode);
 
     stream << "#Points: " << size() << std::endl
-           << "MaxLength: " << max_length_val << "  MinLength: " << min_length_val << std::endl;
+           << "MaxLength: " << m_max_length << "  MinLength: " << m_min_length << std::endl;
     for(Index np = 0; np < size(); np++) {
       stream.setf(std::ios::showpoint, std::ios_base::fixed);
       stream.precision(5);
@@ -877,8 +762,8 @@ namespace CASM {
       at(np).print(stream);//Changed by Ivy from at(np).print(stream,mode) -- the "mode" should actually be the SD_flag input 11/04/12
       if(delim)
         stream << delim;
-    };
-  };
+    }
+  }
 
   //********************************************
 
@@ -889,7 +774,7 @@ namespace CASM {
     COORD_MODE C(mode);
 
     stream << "#Points: " << size() << std::endl
-           << "MaxLength: " << max_length_val << "  MinLength: " << min_length_val << std::endl;
+           << "MaxLength: " << m_max_length << "  MinLength: " << m_min_length << std::endl;
     for(Index np = 0; np < size(); np++) {
       stream.setf(std::ios::showpoint, std::ios_base::fixed);
       stream.precision(5);
@@ -897,9 +782,9 @@ namespace CASM {
       (at(np) + shift).print(stream); //Changed by Ivy from at(np).print(stream,mode) -- the "mode" should actually be the SD_flag input 11/04/12
       if(delim)
         stream << delim;
-    };
+    }
 
-  };
+  }
 
   //********************************************
 
@@ -918,8 +803,8 @@ namespace CASM {
       at(np).print(stream);//Changed by Ivy from at(np).print(stream,mode) -- the "mode" should actually be the SD_flag input 11/04/12
       if(delim)
         stream << delim;
-    };
-  };
+    }
+  }
 
   //********************************************
 
@@ -939,8 +824,8 @@ namespace CASM {
       stream << "  " << at(np).basis_ind() << " ";
       if(delim)
         stream << delim;
-    };
-  };
+    }
+  }
 
   //********************************************
 
@@ -959,60 +844,8 @@ namespace CASM {
       at(np).print_occ(stream);//Changed by Ivy from at(np).print(stream,mode) -- the "mode" should actually be the SD_flag input 11/04/12
       if(delim)
         stream << delim;
-    };
-  };
-
-
-  // //****************************************************
-  // template <typename CoordType>
-  // GenericOrbitree< GenericCluster<CoordType> > GenericCluster<CoordType>::enumerate_subclusters(const Structure &prim, bool verbose) const {
-  //   if(prim.factor_group().size() == 0) {
-  //     std::cerr << "WARNING: In Orbitree::generate_orbitree, prim's factor_group is empty. It  must at least have one element (identity).\n";
-  //     assert(0);
-  //   }
-
-  //   //Ensure that the lattices are the same:
-  //   if ( !(*home==prim.lattice) ){
-  //     std::cerr<<"WARNING in GenericCluster<CoordType>::enumerate_subclusters, the lattice in prim and the lattice"
-  //              <<" that was used to construct this cluster are not the same"<<std::endl;
-  //     assert(0);
-  //   }
-
-  //   Index i,j;
-  //   std::string clean(80, ' ');
-  //   Array<int> master_choose(size(),0);
-  //   GenericOrbitree< GenericCluster<CoordType> > sub_orbitree(prim.lattice);
-  //   //Setup Orbitree here?
-  //   sub_orbitree.lattice = prim.lattice;
-  //   sub_orbitree.resize( size()+1, GenericOrbitBranch< GenericCluster<CoordType> >( GenericCluster<CoordType>(prim.lattice) ) );
-  //   // Add in the empty cluster
-  //   at(0).push_back(GenericOrbit< GenericCluster<CoordType>  >(GenericCluster<CoordType>(prim.lattice)));
-  //   at(0).back().get_equivalent(prim.factor_group());
-  //   at(0).back().get_cluster_symmetry();
-
-  //   for(i=1;i<=size();i++){
-  //     Array<int> choose = master_choose;
-  //     for(j=0;j<i;j++)
-  //       choose[choose.size()-i-1] = 1;
-  //     GenericCluster<CoordType> test_clust(prim.lattice);
-  //     do{
-  //       test_clust.clear();
-  //       for(j=0;j<choose.size();j++){
-  //         if(choose[j]==1)
-  //           test_clust.push_back(at(j));
-  //       }
-  //       test_clust.within();
-  //       test_clust.calc_properties();
-
-  //       if(!sub_orbitree.contains(test_clust)){
-  //         sub_orbitree[i].push_back( GenericOrbit< GenericCluster<CoordType> >(test_clust)  );
-  //         sub_orbitree[i].back().get_equivalent(prim.factor_group());
-  //         sub_orbitree[i].back().get_cluster_symmetry();
-  //       }
-  //     }while(choose.next_permute());
-  //   }
-  // }
-
+    }
+  }
 
   //********************************************
   /**
@@ -1023,7 +856,7 @@ namespace CASM {
   std::ostream &operator<< (std::ostream &stream, const GenericCluster<CoordType> &cluster) {
     cluster.print(stream, '\n'); //Ivy added newline delimiter 07/01/13
     return stream;
-  };
+  }
 
 
   //****************************************************
@@ -1046,5 +879,5 @@ namespace CASM {
   }
 
 
-};
+}
 

@@ -9,7 +9,6 @@
 
 namespace CASM {
   class MasterSymGroup;
-  class Lattice;
 
   ///\brief SymOp is the Coordinate representation of a symmetry operation
   /// it keeps fraction (FRAC) and Cartesian (CART) information about how
@@ -154,10 +153,6 @@ namespace CASM {
     double m_map_error;
 
   };
-
-
-  //SymOp rotation_op(const Vector3<double> &rotation_axis, const double rotation_angle, const Lattice &home);
-  //SymOp rotation_op(const Eigen::Vector4d &rotation_params, const Lattice &home);
 
 
   jsonParser &to_json(const SymOp &sym, jsonParser &json);
