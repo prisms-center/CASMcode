@@ -164,7 +164,7 @@ namespace CASM {
     /// Check that the PRIM is in reduced form:
     Lattice niggli_lat = niggli(prim.lattice(), prim.point_group(), TOL);
 
-    bool is_standard_niggli = niggli_lat.lat_column_mat().is_equal(prim.lattice().lat_column_mat());
+    bool is_standard_niggli = almost_equal(niggli_lat.lat_column_mat(), prim.lattice().lat_column_mat());
 
     if(!is_standard_niggli) {
       if(!vm.count("force")) {
@@ -205,10 +205,10 @@ namespace CASM {
                   << "structure codes will not accept this input. If you would like to "
                   << "keep this PRIM, re-run with the --force option. Writing the "
                   << "right-handed structure to PRIM.right_handed.json" << std::endl;
-       
+
         prim.set_lattice(Lattice(prim.lattice()).make_right_handed(), CART);
         prim.within();
-        
+
         fs::ofstream primfile(root / "prim.right_handed.json");
         jsonParser json;
         write_prim(prim, json, FRAC);

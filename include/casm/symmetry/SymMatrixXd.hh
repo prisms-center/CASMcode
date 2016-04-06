@@ -24,18 +24,22 @@ namespace CASM {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     SymMatrixXd(const Eigen::MatrixXd &init_mat) : mat(init_mat) {};
-    SymOpRepresentation *copy() const {
-      return new SymMatrixXd(*this);
-    };
-    Eigen::MatrixXd const *get_MatrixXd() const {
-      return &mat;
-    };
-    double get_character() const {
-      return mat.trace();
-    };
-    jsonParser &to_json(jsonParser &json) const;
 
-    void from_json(const jsonParser &json);
+    SymOpRepresentation *copy() const override {
+      return new SymMatrixXd(*this);
+    }
+
+    Eigen::MatrixXd const *get_MatrixXd() const override {
+      return &mat;
+    }
+
+    double character() const override {
+      return mat.trace();
+    }
+
+    jsonParser &to_json(jsonParser &json) const override;
+
+    void from_json(const jsonParser &json) override;
   };
 
   jsonParser &to_json(const SymMatrixXd &sym, jsonParser &json);

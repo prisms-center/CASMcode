@@ -5,7 +5,7 @@
 
 namespace CASM {
 
-  double SymPermutation::get_character() const {
+  double SymPermutation::character() const {
     int n_fix(0);
     for(Index i = 0; i < m_permute.size(); i++) {
       n_fix += int(i == m_permute[i]);
@@ -21,7 +21,7 @@ namespace CASM {
   //Therefore, we loop over m_permute and assign ones to the
   //appropriate row/column
 
-  void SymPermutation::calc_mat() const {
+  void SymPermutation::_calc_mat() const {
     m_mat.resize(m_permute.size(), m_permute.size());
     m_mat.setZero();
     for(Index i = 0; i < m_permute.size(); i++)

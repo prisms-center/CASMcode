@@ -46,9 +46,6 @@ template<typename Derived> class ArrayBase
 
     typedef ArrayBase Eigen_BaseClassForSpecializationOfGlobalMathFuncImpl;
 
-    using internal::special_scalar_op_base<Derived,typename internal::traits<Derived>::Scalar,
-                typename NumTraits<typename internal::traits<Derived>::Scalar>::Real>::operator*;
-
     typedef typename internal::traits<Derived>::StorageKind StorageKind;
     typedef typename internal::traits<Derived>::Index Index;
     typedef typename internal::traits<Derived>::Scalar Scalar;
@@ -56,6 +53,7 @@ template<typename Derived> class ArrayBase
     typedef typename NumTraits<Scalar>::Real RealScalar;
 
     typedef DenseBase<Derived> Base;
+    using Base::operator*;
     using Base::RowsAtCompileTime;
     using Base::ColsAtCompileTime;
     using Base::SizeAtCompileTime;
@@ -143,7 +141,7 @@ template<typename Derived> class ArrayBase
     ArrayBase<Derived>& array() { return *this; }
     const ArrayBase<Derived>& array() const { return *this; }
 
-    /** \returns an \link MatrixBase Matrix \endlink expression of this array
+    /** \returns an \link Eigen::MatrixBase Matrix \endlink expression of this array
       * \sa MatrixBase::array() */
     MatrixWrapper<Derived> matrix() { return derived(); }
     const MatrixWrapper<const Derived> matrix() const { return derived(); }

@@ -149,7 +149,7 @@ namespace CASM {
     // untranslated symop (described by m_fg_permute_rep.sym_op(it.m_factor_group_index))
     // Result is the portion of the inverse sym_op that needs to be described by a prim_grid translation
     it.m_translation_index =
-      m_prim_grid->find(sym_op().inverse().tau() - m_fg_permute_rep.sym_op(it.factor_group_index()).tau());
+      m_prim_grid->find_cart(sym_op().inverse().tau() - m_fg_permute_rep.sym_op(it.factor_group_index()).tau());
 
     return it;
   }
@@ -164,7 +164,7 @@ namespace CASM {
     // untranslated symop product (described by m_fg_permute_rep.sym_op(it.factor_group_index()))
     // Result is the portion of the product sym_op that needs to be described by a prim_grid translation
     it.m_translation_index =
-      m_prim_grid->find((sym_op() * RHS.sym_op()).tau() - m_fg_permute_rep.sym_op(it.factor_group_index()).tau());
+      m_prim_grid->find_cart((sym_op() * RHS.sym_op()).tau() - m_fg_permute_rep.sym_op(it.factor_group_index()).tau());
 
     return it;
   }

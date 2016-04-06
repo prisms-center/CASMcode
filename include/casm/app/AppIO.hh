@@ -2,6 +2,7 @@
 #define CASM_AppIO
 
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Coordinate.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ChemicalReference.hh"
@@ -51,13 +52,11 @@ namespace CASM {
     try {
 
       // read lattice
-      Vector3<double> vec0, vec1, vec2;
+      Eigen::Matrix3d latvec_transpose;
 
-      from_json(vec0, json["lattice_vectors"][0]);
-      from_json(vec1, json["lattice_vectors"][1]);
-      from_json(vec2, json["lattice_vectors"][2]);
+      from_json(latvec_transpose, json["lattice_vectors"]);
 
-      Lattice lat(vec0, vec1, vec2);
+      Lattice lat(latvec_transpose.transpose());
 
       // create prim using lat
       BasicStructure<Site> prim(lat);
@@ -65,7 +64,7 @@ namespace CASM {
       // read title
       from_json(prim.title, json["title"]);
 
-      Vector3<double> vec;
+      Eigen::Vector3d vec;
 
       // read basis coordinate mode
       std::string coordinate_mode;
@@ -87,14 +86,17 @@ namespace CASM {
       }
 
       // read basis sites
-      Vector3<double> coord;
-
       for(int i = 0; i < json["basis"].size(); i++) {
 
         // read coordinate
-        from_json(coord, json["basis"][i]["coordinate"]);
+        Eigen::Vector3d coord(json["basis"][i]["coordinate"][0].get<double>(),
+                              json["basis"][i]["coordinate"][1].get<double>(),
+                              json["basis"][i]["coordinate"][2].get<double>());
         Site site(prim.lattice());
-        site(mode) = coord;
+        if(mode == FRAC)
+          site.frac() = coord;
+        else if(mode == CART)
+          site.cart() = coord;
 
         // read atom occupant names
         Array<std::string> occ_name;
@@ -105,7 +107,7 @@ namespace CASM {
         for(int i = 0; i < occ_name.size(); i++) {
           Molecule tMol(prim.lattice());
           tMol.name = occ_name[i];
-          tMol.push_back(AtomPosition(0, 0, 0, occ_name[i], prim.lattice()));
+          tMol.push_back(AtomPosition(0, 0, 0, occ_name[i], prim.lattice(), CART));
           tocc.push_back(tMol);
         }
         site.set_site_occupant(MoleculeOccupant(tocc));
@@ -144,10 +146,7 @@ namespace CASM {
 
     json["title"] = prim.title;
 
-    json["lattice_vectors"] = jsonParser::array();
-    json["lattice_vectors"].push_back(prim.lattice()[0]);
-    json["lattice_vectors"].push_back(prim.lattice()[1]);
-    json["lattice_vectors"].push_back(prim.lattice()[2]);
+    json["lattice_vectors"] = prim.lattice().lat_column_mat().transpose();
 
     if(mode == COORD_DEFAULT) {
       mode = COORD_MODE::CHECK();
@@ -162,8 +161,18 @@ namespace CASM {
 
     json["basis"] = jsonParser::array(prim.basis.size());
     for(int i = 0; i < prim.basis.size(); i++) {
-      json["basis"][i] = jsonParser::object();
-      json["basis"][i]["coordinate"] = prim.basis[i](mode);
+      json["basis"][i].put_obj();
+      json["basis"][i]["coordinate"].put_array();
+      if(mode == FRAC) {
+        json["basis"][i]["coordinate"].push_back(prim.basis[i].frac(0));
+        json["basis"][i]["coordinate"].push_back(prim.basis[i].frac(1));
+        json["basis"][i]["coordinate"].push_back(prim.basis[i].frac(2));
+      }
+      else if(mode == CART) {
+        json["basis"][i]["coordinate"].push_back(prim.basis[i].cart(0));
+        json["basis"][i]["coordinate"].push_back(prim.basis[i].cart(1));
+        json["basis"][i]["coordinate"].push_back(prim.basis[i].cart(2));
+      }
       json["basis"][i]["occupant_dof"] = jsonParser::array(prim.basis[i].site_occupant().size());
 
       for(int j = 0; j < prim.basis[i].site_occupant().size(); j++) {
@@ -178,54 +187,44 @@ namespace CASM {
   // --------- SymmetryIO Declarations --------------------------------------------------
 
   inline void write_symop(const SymOp &op, jsonParser &json, int cclass, int inv) {
+    auto info = op.info();
     json = jsonParser::object();
-
-    json["matrix"]["CART"] = op.get_matrix(CART);
-    json["matrix"]["FRAC"] = op.get_matrix(FRAC);
-    json["tau"]["CART"] = op.tau(CART);
-    json["tau"]["FRAC"] = op.tau(FRAC);
+    json["matrix"] = op.matrix();
+    json["tau"] = op.tau();
     json["conjugacy_class"] = cclass;
     json["inverse"] = inv;
-    json["invariant_point"]["CART"] = op.get_location(CART);
-    json["invariant_point"]["FRAC"] = op.get_location(FRAC);
+    json["invariant_point"] = info.location;
 
     // enum symmetry_type {identity_op, mirror_op, glide_op, rotation_op, screw_op, inversion_op, rotoinversion_op, invalid_op};
-    if(op.type() == SymOp::identity_op) {
+    if(info.op_type == SymOp::identity_op) {
       json["type"] = "identity";
     }
-    else if(op.type() == SymOp::mirror_op) {
+    else if(info.op_type == SymOp::mirror_op) {
       json["type"] = "mirror";
-      json["mirror_normal"]["CART"] = op.get_eigenvec(CART);
-      json["mirror_normal"]["FRAC"] = op.get_eigenvec(FRAC);
+      json["mirror_normal"] = info.axis;
     }
-    else if(op.type() == SymOp::glide_op) {
+    else if(info.op_type == SymOp::glide_op) {
       json["type"] = "glide";
-      json["mirror_normal"]["CART"] = op.get_eigenvec(CART);
-      json["mirror_normal"]["FRAC"] = op.get_eigenvec(FRAC);
-      json["shift"]["CART"] = op.get_screw_glide_shift(CART);
-      json["shift"]["FRAC"] = op.get_screw_glide_shift(FRAC);
+      json["mirror_normal"] = info.axis;
+      json["shift"] = info.screw_glide_shift;
     }
-    else if(op.type() == SymOp::rotation_op) {
+    else if(info.op_type == SymOp::rotation_op) {
       json["type"] = "rotation";
-      json["rotation_axis"]["CART"] = op.get_eigenvec(CART);
-      json["rotation_axis"]["FRAC"] = op.get_eigenvec(FRAC);
-      json["rotation_angle"] = op.get_rotation_angle();
+      json["rotation_axis"] = info.axis;
+      json["rotation_angle"] = info.angle;
     }
-    else if(op.type() == SymOp::screw_op) {
+    else if(info.op_type == SymOp::screw_op) {
       json["type"] = "screw";
-      json["rotation_axis"]["CART"] = op.get_eigenvec(CART);
-      json["rotation_axis"]["FRAC"] = op.get_eigenvec(FRAC);
-      json["rotation_angle"] = op.get_rotation_angle();
-      json["shift"]["CART"] = op.get_screw_glide_shift(CART);
-      json["shift"]["FRAC"] = op.get_screw_glide_shift(FRAC);
+      json["rotation_axis"] = info.axis;
+      json["rotation_angle"] = info.angle;
+      json["shift"] = info.screw_glide_shift;
     }
-    else if(op.type() == SymOp::rotoinversion_op) {
+    else if(info.op_type == SymOp::rotoinversion_op) {
       json["type"] = "rotoinversion";
-      json["rotation_axis"]["CART"] = op.get_eigenvec(CART);
-      json["rotation_axis"]["FRAC"] = op.get_eigenvec(FRAC);
-      json["rotation_angle"] = op.get_rotation_angle();
+      json["rotation_axis"] = info.axis;
+      json["rotation_angle"] = info.angle;
     }
-    else if(op.type() == SymOp::invalid_op) {
+    else if(info.op_type == SymOp::invalid_op) {
       json["type"] = "invalid";
     }
 
@@ -240,8 +239,8 @@ namespace CASM {
     }
     json["name"] = grp.get_name();
     json["latex_name"] = grp.get_latex_name();
-    json["periodicity"] = grp.get_periodicity();
-    if(grp.get_periodicity() == PERIODIC) {
+    json["periodicity"] = grp.periodicity();
+    if(grp.periodicity() == PERIODIC) {
       json["possible_space_groups"] = grp.possible_space_groups();
     }
     json["conjugacy_class"] = grp.get_conjugacy_classes();
@@ -253,26 +252,26 @@ namespace CASM {
     json["character_table"] = grp.get_character_table();
   }
 
-  
+
   // --------- ChemicalReference IO Declarations --------------------------------------------------
-  
-  ChemicalReference read_chemical_reference(fs::path filename, const Structure& prim, double tol = 1e-14);
 
-  ChemicalReference read_chemical_reference(const jsonParser& json, const Structure& prim, double tol = 1e-14);
-  
-  void write_chemical_reference(const ChemicalReference& chem_ref, fs::path filename);
+  ChemicalReference read_chemical_reference(fs::path filename, const Structure &prim, double tol = 1e-14);
 
-  void write_chemical_reference(const ChemicalReference& chem_ref, jsonParser& json);
-  
-  
+  ChemicalReference read_chemical_reference(const jsonParser &json, const Structure &prim, double tol = 1e-14);
+
+  void write_chemical_reference(const ChemicalReference &chem_ref, fs::path filename);
+
+  void write_chemical_reference(const ChemicalReference &chem_ref, jsonParser &json);
+
+
   // --------- ChemicalReference IO Definitions --------------------------------------------------
-  
+
   /// \brief Read chemical reference states from JSON file
   ///
   /// See documentation in related function for expected form of the JSON
   inline ChemicalReference read_chemical_reference(fs::path filename,
-                                            const Structure& prim, 
-                                            double tol) {
+                                                   const Structure &prim,
+                                                   double tol) {
     try {
       jsonParser json(filename);
       return read_chemical_reference(json, prim, tol);
@@ -283,12 +282,12 @@ namespace CASM {
       throw;
     }
   }
-  
+
   /// \brief Read chemical reference states from JSON
   ///
   /// Example expected form:
   /// \code
-  /// { 
+  /// {
   ///   "chemical_reference" : {
   ///     "global" : ...,
   ///     "supercell": {
@@ -304,19 +303,19 @@ namespace CASM {
   /// \endcode
   ///
   /// See one_chemical_reference_from_json for documentation of the \code {...} \endcode expected form.
-  inline ChemicalReference read_chemical_reference(const jsonParser& json,
-                                            const Structure& prim, 
-                                            double tol) {
-    
+  inline ChemicalReference read_chemical_reference(const jsonParser &json,
+                                                   const Structure &prim,
+                                                   double tol) {
+
     if(json.find("chemical_reference") == json.end()) {
       throw std::runtime_error("Error reading chemical reference states: Expected \"chemical_reference\" entry");
     }
-    
+
     return jsonConstructor<ChemicalReference>::from_json(json["chemical_reference"], prim, tol);
-    
+
   }
-  
-  inline void write_chemical_reference(const ChemicalReference& chem_ref, fs::path filename) {
+
+  inline void write_chemical_reference(const ChemicalReference &chem_ref, fs::path filename) {
     SafeOfstream outfile;
     outfile.open(filename);
 
@@ -327,7 +326,7 @@ namespace CASM {
     outfile.close();
   }
 
-  inline void write_chemical_reference(const ChemicalReference& chem_ref, jsonParser& json) {
+  inline void write_chemical_reference(const ChemicalReference &chem_ref, jsonParser &json) {
     json.put_obj();
     to_json(chem_ref, json["chemical_reference"]);
   }

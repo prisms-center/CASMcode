@@ -5,7 +5,62 @@
 
 namespace CASM {
 
-  void SymOpRepresentation::set_rep(const MasterSymGroup &new_group, Index new_rep_ID) {
+
+  Eigen::MatrixXd const *SymOpRepresentation::get_matrix_rep(Index rep_ID) const {
+    SymGroupRep const *tRep(master_group().representation(rep_ID));
+    if(!tRep) return NULL;
+
+    return (tRep->at(op_index))->get_MatrixXd();
+  }
+
+  //**********************************************************
+  SymBasisPermute const *SymOpRepresentation::get_basis_permute_rep(Index rep_ID) const {
+
+    SymGroupRep const *tRep(master_group().representation(rep_ID));
+    if(!tRep) {
+      std::cerr << "Warning: You have requested information from a nonexistent representation!\n"
+                << "m_master_group pointer is " << m_master_group << '\n';
+      return NULL;
+    }
+
+    return (tRep->at(op_index))->get_ucc_permutation();
+  }
+
+  //**********************************************************
+  Permutation const *SymOpRepresentation::get_permutation_rep(Index rep_ID) const {
+    SymGroupRep const *tRep(master_group().representation(rep_ID));
+    if(!tRep) return NULL;
+
+    return (tRep->at(op_index))->get_permutation();
+  }
+
+  //**********************************************************
+  Array<Eigen::MatrixXd const * > SymOpRepresentation::get_matrix_reps(Array<Index> rep_IDs) const {
+    Array<Eigen::MatrixXd const * > tmat;
+    for(Index i = 0; i < rep_IDs.size(); i++) {
+      tmat.push_back(get_matrix_rep(rep_IDs[i]));
+
+    }
+    return tmat;
+  }
+
+  //**********************************************************
+  void SymOpRepresentation::set_rep(Index rep_ID, const SymOpRepresentation &op_rep) const {
+    SymGroupRep const *tRep(master_group().representation(rep_ID));
+    if(!tRep) {
+      std::cerr << "CRITICAL ERROR: In SymOpRepresentation::set_matrix_rep(" << rep_ID << "), representation was not found.\n"
+                << "                Exiting...\n";
+      exit(1);
+    }
+
+    tRep->set_rep(op_index, op_rep);
+
+    return;
+  }
+
+  //**********************************************************
+
+  void SymOpRepresentation::set_identifiers(const MasterSymGroup &new_group, Index new_rep_ID) {
     m_master_group = &new_group;
     rep_ID = new_rep_ID;
     SymGroupRep const *trep(new_group.representation(rep_ID));
@@ -42,9 +97,7 @@ namespace CASM {
   //**********************************************************
 
   /// This allocates a new object to 'rep'.
-  ///   It might need a Lattice
-  ///
-  void from_json(SymOpRepresentation *rep, const jsonParser &json, const Lattice &lat) {
+  void from_json(SymOpRepresentation *rep, const jsonParser &json) {
     try {
       if(json["SymOpRep_type"] == "SymPermutation") {
 
@@ -60,27 +113,27 @@ namespace CASM {
       else if(json["SymOpRep_type"] == "SymMatrixXd") {
 
         // prepare a SymMatrixXd and then read from json
-        Eigen::MatrixXd mat;
-        SymMatrixXd trep(mat);
-        CASM::from_json(trep, json);
+        SymMatrixXd  *op_ptr = new SymMatrixXd(Eigen::MatrixXd::Identity(1, 1));
+
+        CASM::from_json(*op_ptr, json);
 
         // copy to rep
-        rep = new SymMatrixXd(trep);
+        rep = op_ptr;
 
       }
       else if(json["SymOpRep_type"] == "SymOp") {
 
-        // prepare a SymMatrixXd and then read from json
-        Coordinate coord(lat);
-        SymOp trep(coord);
-        CASM::from_json(trep, json);
+        // prepare a SymOp and then read from json
+        SymOp *op_ptr = new SymOp();
+
+        CASM::from_json(*op_ptr, json);
 
         // copy to rep
-        rep = new SymOp(trep);
+        rep = op_ptr;
 
       }
       else {
-        std::cout << "Error in 'void from_json(SymOpRepresentation *rep, const jsonParser &json, const Lattice &lat)'" << std::endl;
+        std::cout << "Error in 'void from_json(SymOpRepresentation *rep, const jsonParser &json)'" << std::endl;
         std::cout << "Unrecognized 'SymOpRep_type': '" << json["SymOpRep_type"] << "'." << std::endl;
         std::cout << "Options are: 'SymPermutation', 'SymMatrixXd', or 'SymOp'." << std::endl;
         exit(1);

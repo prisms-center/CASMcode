@@ -17,7 +17,7 @@ namespace CASM {
   class PermuteIterator;
   class PrimClex;
   class Clexulator;
-  
+
   /// \brief Represents a supercell of a PrimClex
   ///
   /// \ingroup Clex
@@ -122,16 +122,16 @@ namespace CASM {
 
     /// SuperNeighborList, mutable for lazy construction
     mutable notstd::cloneable_ptr<SuperNeighborList> m_nlist;
-    
+
     /// Store size of PrimNeighborList at time of construction of SuperNeighborList
     /// to enable checking if SuperNeighborList should be re-constructed
     mutable Index m_nlist_size_at_construction;
-    
+
 
     // Could hold either enumerated configurations or any 'saved' configurations
     ConfigList config_list;
 
-    Matrix3 < int > transf_mat;
+    Eigen::Matrix3i transf_mat;
 
     double scaling;
 
@@ -148,8 +148,8 @@ namespace CASM {
     //Supercell(PrimClex *_prim);
     Supercell(const Supercell &RHS);
     Supercell(PrimClex *_prim, const Lattice &superlattice);
-    Supercell(PrimClex *_prim, const Eigen::Matrix3i &superlattice_matrix);
-    Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix);
+    Supercell(PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &superlattice_matrix);
+
 
     // **** Coordinates ****
     Index get_linear_index(const Site &site, double tol = TOL) const;
@@ -243,7 +243,7 @@ namespace CASM {
       return i / volume();
     }
 
-    Matrix3<int> get_transf_mat() const {
+    const Eigen::Matrix3i &get_transf_mat() const {
       return transf_mat;
     };
     Lattice get_real_super_lattice() const {
@@ -381,7 +381,7 @@ namespace CASM {
     void read_clex_relaxations(const Lattice &home_lattice);
 
     bool is_supercell_of(const Structure &structure) const;
-    bool is_supercell_of(const Structure &structure, Matrix3<double> &multimat) const;
+    bool is_supercell_of(const Structure &structure, Eigen::Matrix3d &multimat) const;
     ReturnArray<int> vacant()const;
 
     // **** Printing ****
@@ -396,7 +396,7 @@ namespace CASM {
                             const Array< Array< Array<Index > > > &perturb_config_index,
                             const Array< Array< Array<permute_const_iterator> > > &perturb_config_symop_index,
                             bool print_config_name) const;
-    
+
     ///Call Configuration::write out every configuration in supercell
     jsonParser &write_config_list(jsonParser &json);
 

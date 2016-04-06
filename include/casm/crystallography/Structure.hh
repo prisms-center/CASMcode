@@ -27,7 +27,7 @@ namespace CASM {
 
     /// Group symmetry operations that map the lattice and basis of Structure onto themselves,
     /// assuming that the crystal is periodic
-    mutable MasterSymGroup factor_group_internal;
+    mutable MasterSymGroup m_factor_group;
     /// This holds the representation id of the permutation representation
     mutable Index perm_rep_ID, basis_perm_rep_ID;
 
@@ -167,10 +167,6 @@ namespace CASM {
 
 
     //John G 051112
-    //Return copy of *this that's reoriented to match a and axb of refstruc
-    Structure reorient(const Matrix3<double> reorientmat, bool override = 0) const;
-    Structure align_with(const Structure &refstruc, bool override = 0) const;
-    Structure align_standard(bool override = 0) const;
     Structure stack_on(const Structure &understruc, bool override = 0) const;
     //\John G 051112
 
@@ -191,7 +187,7 @@ namespace CASM {
     //\John G 050513
 
     ///Add vacuum and shift c vector. The vacuum is always added parallel to c, and the shift vector should also be parallel to the ab plane (x,y,0)
-    void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Vector3<double> shift, COORD_TYPE mode) const;
+    void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const;
     void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Coordinate shift) const;  //Because Anton thought a coordinate would be better
     ///Adds vacuum layer on top of ab plane
     void add_vacuum(Structure &new_surface_struc, double vacuum_thickness) const;
@@ -207,7 +203,7 @@ namespace CASM {
 
     /// For each symmetrically distinct site, print the symmetry operations that map it onto itself
     void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag);
-    void print_factor_group(std::ostream &stream) const;
+    //void print_factor_group(std::ostream &stream) const;
 
     bool read_species(); //Ivy 11/27/12
     void assign_species(Array<std::string> &names, Array<double> &masses, Array<double> &magmoms, Array<double> &Us, Array<double> &Js); //Added by Ivy

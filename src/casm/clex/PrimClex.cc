@@ -8,6 +8,7 @@
 #include "casm/clusterography/jsonClust.hh"
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/casm_io/SafeOfstream.hh"
+#include "casm/crystallography/Coordinate.hh"
 #include "casm/app/AppIO.hh"
 
 namespace CASM {
@@ -664,7 +665,7 @@ namespace CASM {
     //  0 1 0
     //  0 0 2
 
-    Matrix3<double> mat;
+    Eigen::Matrix3d mat;
 
     std::string s;
     while(!stream.eof()) {
@@ -673,9 +674,7 @@ namespace CASM {
         std::getline(stream, s);
         stream >> mat;
 
-        //Lattice lat(prim.lattice.coord_trans(CASM::FRAC)*mat);
-        Lattice lat(prim.lattice().coord_trans(FRAC)*mat);
-        add_canonical_supercell(lat);
+        add_canonical_supercell(Lattice(prim.lattice().lat_column_mat()*mat));
       }
     }
   }
@@ -730,22 +729,14 @@ namespace CASM {
   };
 
   //*******************************************************************************************
-  Matrix3<int> PrimClex::calc_transf_mat(const Lattice &superlat) const {
-    Matrix3<int> tmp_transf_mat;
-    Matrix3<double> ttrans = prim.lattice().coord_trans(FRAC).inverse() * superlat.coord_trans(FRAC);
-    if(ttrans.is_integer()) {
-      for(int i = 0; i < 3; i++) {
-        for(int j = 0; j < 3; j++) {
-          tmp_transf_mat(i, j) = round(ttrans(i, j));
-        }
-      }
-    }
-    else {
+  Eigen::Matrix3i PrimClex::calc_transf_mat(const Lattice &superlat) const {
+    Eigen::Matrix3d ttrans = prim.lattice().inv_lat_column_mat() * superlat.lat_column_mat();
+    if(!is_integer(ttrans, TOL)) {
       std::cerr << "Error in PrimClex::calc_transf_mat(const Lattice &superlat)" << std::endl
                 << "  Bad supercell, the transformation matrix is not integer. Exiting!" << std::endl;
       exit(1);
     }
-    return tmp_transf_mat;
+    return iround(ttrans);
   }
 
   //*******************************************************************************************
@@ -983,8 +974,7 @@ namespace CASM {
   Eigen::MatrixXd PrimClex::shift_vectors() const {
     Eigen::MatrixXd tau(prim.basis.size(), 3);
     for(int i = 0; i < prim.basis.size(); i++) {
-      for(int j = 0; j < 3; j++)
-        tau(i, j) = prim.basis[i].get(j, CART);
+      tau.row(i) = prim.basis[i].const_cart().transpose();
     }
     return tau;
   }

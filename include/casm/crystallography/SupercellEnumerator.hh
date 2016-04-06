@@ -298,7 +298,7 @@ namespace CASM {
     for(int i = 0; i < m_enum->point_group().size(); i++) {
 
       Eigen::Matrix3d U = m_enum->lattice().lat_column_mat();
-      Eigen::Matrix3d op = m_enum->point_group()[i].get_matrix(CART);
+      Eigen::Matrix3d op = m_enum->point_group()[i].matrix();
 
       Eigen::Matrix3i transformed = iround(U.inverse() * op * U) * m_current;
 

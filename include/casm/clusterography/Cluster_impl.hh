@@ -111,7 +111,7 @@ namespace CASM {
       GenericCluster<CoordType> tclust(*this);
       tclust.apply_sym(super_group[ng]);
       if(tclust.map_onto(*this, trans)) {
-        clust_group.push_back(SymOp(trans)*super_group[ng]);
+        clust_group.push_back(SymOp::translation(trans.cart())*super_group[ng]);
         find(tclust, iperm);
 
         permute_group.push_back(SymPermutation(iperm));
@@ -185,7 +185,7 @@ namespace CASM {
       return;
     }
 
-    trans.set_lattice(*home);
+    trans.set_lattice(*home, CART);
     at(pivot_ind).within(trans);
     for(Index i = 0; i < size(); i++) {
       if(i != pivot_ind)
@@ -245,7 +245,7 @@ namespace CASM {
 
     for(Index i = 0; i < s_cells.size(); i++) {
       for(Index j = 0; j < symoplist.size(); j++) {
-        if(!(s_cells[i].coord_trans(CART)*symoplist[j].get_matrix(CART)*s_cells[i].coord_trans(FRAC)).is_integer()) {
+        if(!is_integer(s_cells[i].inv_lat_column_mat()*symoplist[j].matrix()*s_cells[i].lat_column_mat(), TOL)) {
           if(keepNums.contains(i)) {
             keepNums.remove(keepNums.find(i));
           }
@@ -260,13 +260,14 @@ namespace CASM {
 
   template <typename CoordType>
   Coordinate GenericCluster<CoordType>::geometric_center() const {
-    if(!size()) return Coordinate(Vector3<double>(0, 0, 0), *home);
+    if(!size())
+      return Coordinate(*home);
 
     Coordinate tcoord(at(0));
     for(Index i = 1; i < size(); i++) {
       tcoord += at(i);
     }
-    tcoord(CART) /= size();
+    tcoord.cart() /= size();
     return tcoord;
   }
 
@@ -594,10 +595,10 @@ namespace CASM {
     Array<CoordType>::push_back(new_coord);
 
     if(!home)
-      home = back().get_home();
+      home = &back().home();
 
-    else if(back().get_home() != home)
-      back().set_lattice(*home);
+    else if(&(back().home()) != home)
+      back().set_lattice(*home, CART);
 
     return;
   }
@@ -703,7 +704,7 @@ namespace CASM {
     if(PERIODICITY_MODE::IS_LOCAL()) return (*this) == test_clust;
 
     //tshift keeps track of translations
-    Coordinate tshift(*home), trans(Vector3<double> (0, 0, 0), *home);
+    Coordinate tshift(*home), trans(*home);
     for(Index i = 0; i < size(); i++) {
       tshift = test_clust[0] - at(i);
       if(tshift.is_lattice_shift()) {
@@ -722,7 +723,7 @@ namespace CASM {
   template <typename CoordType>
   bool GenericCluster<CoordType>::map_onto(const GenericCluster<CoordType> &test_clust, Coordinate &trans) {
     if(size() != test_clust.size()) return false;
-    trans(FRAC) = Vector3<double>(0, 0, 0);
+    trans.frac() = Eigen::Vector3d::Zero();
     if(size() == 0) return true;
 
     if(PERIODICITY_MODE::IS_LOCAL()) {
@@ -740,7 +741,7 @@ namespace CASM {
       }
     }
     (*this) -= trans;
-    trans(FRAC) = Vector3<double>(0, 0, 0);
+    trans.frac() = Eigen::Vector3d::Zero();
     return false;
   }
 
@@ -748,7 +749,7 @@ namespace CASM {
 
   template <typename CoordType>
   std::complex<double> GenericCluster<CoordType>::get_phase(const Coordinate &k, int i, int j) {
-    double targ = k(CART).dot(s2s_vec[i][j](CART));
+    double targ = k.cart().dot(s2s_vec[i][j].cart());
     return std::complex<double>(cos(targ), sin(targ));
   }
 
@@ -768,7 +769,7 @@ namespace CASM {
       for(j = 0; j < size(); j++) {
         s2s_vec[i].push_back(at(j) - at(i));
         s2s_norm_vec[i].push_back(s2s_vec[i].back());
-        s2s_norm_vec[i].back()(CART).normalize();
+        s2s_norm_vec[i].back().cart() /= s2s_norm_vec[i].back().const_cart().norm();
       }
     }
     return;

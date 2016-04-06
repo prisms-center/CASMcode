@@ -68,42 +68,34 @@ namespace CASM {
     perm_rep_ID = RHS.perm_rep_ID; //this *should* work
     basis_perm_rep_ID = RHS.basis_perm_rep_ID; //this *should* work
 
-    factor_group_internal = RHS.factor_group_internal;
-    factor_group_internal.set_lattice(lattice(), CART);
-
+    m_factor_group = RHS.m_factor_group;
+    m_factor_group.set_lattice(lattice());
   }
 
-  //***********************************************************
-  /*
-  Structure &Structure::apply_sym(const SymOp &op) { //AAB
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i].apply_sym(op);
-    }
-    return *this;
-  }
-  */
   //***********************************************************
 
 
   void Structure::generate_factor_group_slow(double map_tol) const {
-    factor_group_internal.clear();
-    BasicStructure<Site>::generate_factor_group_slow(factor_group_internal, map_tol);
+    m_factor_group.clear();
+    m_factor_group.set_lattice(lattice());
+    BasicStructure<Site>::generate_factor_group_slow(m_factor_group, map_tol);
     return;
   }
 
   //************************************************************
   void Structure::generate_factor_group(double map_tol) const {
-    factor_group_internal.clear();
-    //std::cout << "GENERATING STRUCTURE FACTOR GROUP " << &factor_group_internal << "\n";
-    BasicStructure<Site>::generate_factor_group(factor_group_internal, map_tol);
+    m_factor_group.clear();
+    m_factor_group.set_lattice(lattice());
+    //std::cout << "GENERATING STRUCTURE FACTOR GROUP " << &m_factor_group << "\n";
+    BasicStructure<Site>::generate_factor_group(m_factor_group, map_tol);
     return;
   }
 
   //************************************************************
   const MasterSymGroup &Structure::factor_group() const {
-    if(!factor_group_internal.size())
+    if(!m_factor_group.size())
       generate_factor_group();
-    return factor_group_internal;
+    return m_factor_group;
   }
 
   //************************************************************
@@ -203,21 +195,21 @@ namespace CASM {
 
     return struc_molecule;
   }
-  
+
   /// Returns an Array of each *possible* Molecule in this Structure
   std::vector<std::string> Structure::get_struc_molecule_name() const {
 
     // get Molecule allowed in prim, and how many there are
     std::vector<Molecule> struc_mol = get_struc_molecule();
-    
+
     // store Molecule names in vector
     std::vector<std::string> struc_mol_name;
-    for(int i=0; i<struc_mol.size(); i++) {
+    for(int i = 0; i < struc_mol.size(); i++) {
       struc_mol_name.push_back(struc_mol[i].name);
     }
-    
+
     return struc_mol_name;
-  }  
+  }
 
   //************************************************************
 
@@ -265,212 +257,28 @@ namespace CASM {
 
   //************************************************************
   void Structure::fg_converge(double small_tol, double large_tol, double increment) {
-    BasicStructure<Site>::fg_converge(factor_group_internal, small_tol, large_tol, increment);
+    BasicStructure<Site>::fg_converge(m_factor_group, small_tol, large_tol, increment);
     return;
   }
 
   //************************************************************
   void Structure::fg_converge(double large_tol) {
-    BasicStructure<Site>::fg_converge(factor_group_internal, TOL, large_tol, (large_tol - TOL) / 10.0);
+    BasicStructure<Site>::fg_converge(m_factor_group, TOL, large_tol, (large_tol - TOL) / 10.0);
     return;
   }
 
   //************************************************************
-  void Structure::print_factor_group(std::ostream &stream) const {
+  /*void Structure::print_factor_group(std::ostream &stream) const {
     stream << "Factor Group of " << title << ", containing "
            << factor_group().size() << " symmetry operations:\n";
-    for(Index i = 0; i < factor_group_internal.size(); i++) {
-      factor_group_internal[i].print(stream);
+
+    for(Index i = 0; i < m_factor_group.size(); i++) {
+      m_factor_group[i].print(stream);
     }
 
     return;
   }
-
-  //***********************************************************
-  /**
   */
-  //***********************************************************
-  /*bool Structure::read_species() {
-
-    Array<std::string> names;
-    Array<double> masses;
-    Array<double> magmoms;
-    Array<double> Us;
-    Array<double> Js;
-    std::string tstring;
-    double value;
-    Index i;
-    bool match = true;
-    std::ifstream stream;
-    stream.open("SPECIES");
-
-    Array<Specie> struc_species = get_struc_specie();
-
-    //If cannot open species file, will assign default masses
-    //read in from elements file.
-    if(!stream) {
-      std::cout << "*************************************\n"
-                << "ERROR in Structure::read_species: \n"
-                << "Could not open SPECIES file. \n"
-                << "Going to assign default masses. \n"
-                << "*************************************\n";
-      for(i = 0; i < struc_species.size(); i++) {
-        masses.push_back(Elements::get_mass(struc_species[i].name));
-        names.push_back(struc_species[i].name);
-      }
-
-      assign_species(names, masses, magmoms, Us, Js);
-      return false;
-    }
-
-    //Reading in from SPECIES
-    for(i = 0; i < struc_species.size(); i++) {
-      stream >> tstring;
-      names.push_back(tstring);
-    }
-
-    //Check to see the elements read in actually match
-    for(i = 0; i < names.size(); i++) {
-
-      Specie tspecie(names[i]);
-
-      if(struc_species.find(tspecie) == struc_species.size()) {
-        std::cout << "****************************************\n"
-                  << "ERROR in Structure::read_species: \n"
-                  << "None of species in SPECIES match those\n"
-                  << "belonging to this structure.\n"
-                  << "Going to assign default masses.\n"
-                  << "****************************************\n";
-        match = false;
-        break;
-      }
-    }
-
-    //If could not find elements of Structure in SPECIES,
-    //will look it up in default element list.
-    if(match == false) {
-
-
-      //This is so that the incorrect species names that were read in
-      //won't be used in assign_species
-      //names.clear();
-
-      for(i = 0; i < struc_species.size(); i++) {
-        masses.push_back(Elements::get_mass(struc_species[i].name));
-        names.push_back(struc_species[i].name);
-      }
-
-      assign_species(names, masses, magmoms, Us, Js);
-      return false;
-    }
-
-    while(stream >> tstring) {
-
-      if((tstring == "mass") || (tstring == "MASS")) {
-
-        for(i = 0; i < struc_species.size(); i++) {
-          stream >> value;
-          masses.push_back(value);
-        }
-        stream.ignore(256, '\n');
-      }
-      else if((tstring == "magmom") || (tstring == "MAGMOM")) {
-
-        for(i = 0; i < struc_species.size(); i++) {
-          stream >> value;
-          magmoms.push_back(value);
-        }
-        stream.ignore(256, '\n');
-      }
-      else if((tstring == "u") || (tstring == "U")) {
-
-        for(i = 0; i < struc_species.size(); i++) {
-          stream >> value;
-          Us.push_back(value);
-
-        }
-        stream.ignore(256, '\n');
-      }
-      else if((tstring == "j") || (tstring == "J")) {
-
-        for(i = 0; i < struc_species.size(); i++) {
-          stream >> value;
-          Js.push_back(value);
-
-        }
-        stream.ignore(256, '\n');
-      }
-      else {
-        std::cout << "***********************************\n"
-                  << "ERROR in Structure::read_species\n: "
-                  << stream.rdbuf()
-                  << " is not a valid field for SPECIES \n"
-                  << "***********************************\n";
-      }
-    }
-
-    stream.close();
-
-    assign_species(names, masses, magmoms, Us, Js);
-
-    return true;
-  };
-  */
-  //***********************************************************
-  /**
-   * Assigns the names, masses, magmoms, Us, and Js read in
-   * from SPECIES to the right atom.
-   */
-  //***********************************************************
-
-  // THIS NEEDS TO BE MOVED TO Site/Molecule
-  /*
-  void Structure::assign_species(Array<std::string> &names, Array<double> &masses, Array<double> &magmoms, Array<double> &Us, Array<double> &Js) {
-
-    Index j;
-
-    for(Index b = 0; b < basis.size(); b++) {
-
-      j = names.find(basis[b].site_occupant()[0][0].specie.name);
-
-      if(j == names.size()) {
-        std::cerr << "****************************************\n"
-                  << "ERROR in Structure::assign_species:\n"
-                  << "Could not find "
-                  << basis[b].site_occupant()[0][0].specie.name
-                  << "\n"
-                  << "****************************************\n";
-      }
-
-      if(masses.size() != 0) {
-
-        basis[b].site_occupant()[0][0].specie.mass = masses[j];
-
-      }
-
-      if(magmoms.size() != 0) {
-
-        basis[b].site_occupant[0][0].specie.magmom = magmoms[j];
-
-      }
-
-      if(Us.size() != 0) {
-
-        basis[b].site_occupant[0][0].specie.U = Us[j];
-
-      }
-
-      if(Js.size() != 0) {
-
-        basis[b].site_occupant[0][0].specie.J = Js[j];
-
-      }
-    }
-
-
-  };
-  */
-
   //***********************************************************
   /**
    * It is NOT wise to use this function unless you have already
@@ -489,8 +297,6 @@ namespace CASM {
   void Structure::fill_supercell(const Structure &prim, double map_tol) {
     Index i, j;
 
-    //Updating lattice_trans matrices that connect the supercell to primitive -- Changed 11/08/12
-    m_lattice.calc_conversions();
     SymGroup latvec_pg;
     m_lattice.generate_point_group(latvec_pg);
 
@@ -511,7 +317,7 @@ namespace CASM {
 
         //reset lattice for most recent superstructure Site
         //set_lattice() converts fractional coordinates to be compatible with new lattice
-        basis.back().set_lattice(lattice());
+        basis.back().set_lattice(lattice(), CART);
 
         basis.back().within();
         for(Index k = 0; k < basis.size() - 1; k++) {
@@ -522,7 +328,7 @@ namespace CASM {
         }
       }
     }
-    //std::cout << "WORKING ON FACTOR GROUP " << &factor_group_internal << " for structure with volume " << prim_grid.size() << ":\n";
+    //std::cout << "WORKING ON FACTOR GROUP " << &m_factor_group << " for structure with volume " << prim_grid.size() << ":\n";
     //trans_and_expand primitive factor_group
     for(i = 0; i < prim.factor_group().size(); i++) {
       if(latvec_pg.find_no_trans(prim.factor_group()[i]) == latvec_pg.size()) {
@@ -530,22 +336,20 @@ namespace CASM {
       }
       else {
         for(Index j = 0; j < prim_grid.size(); j++) {
-          factor_group_internal.push_back(SymOp(prim.factor_group()[i].get_matrix(CART),
-                                                prim.factor_group()[i].tau(CART) + prim_grid.coord(j, SCEL)(CART), lattice(), CART));
-          factor_group_internal.back().within();
-          //OLD VERSION:
-          //factor_group_internal.push_back(SymOp(prim_grid.coord(j, SCEL))*prim.factor_group()[i]);
-          //factor_group_internal.back().set_lattice(lattice, CART);
+          Coordinate t_tau(prim.factor_group()[i].tau() + prim_grid.coord(j, SCEL).const_cart(), lattice(), CART);
+          t_tau.within();
+          m_factor_group.push_back(SymOp(prim.factor_group()[i].matrix(),
+                                         t_tau.cart()));
         }
       }
     }
-    if(factor_group_internal.size() > 200) {// how big is too big? this is at least big enough for FCC conventional cell
+    if(m_factor_group.size() > 200) {// how big is too big? this is at least big enough for FCC conventional cell
 #ifndef NDEBUG
       std::cerr << "WARNING: You have a very large factor group of a non-primitive structure. Certain symmetry features will be unavailable.\n";
 #endif
-      factor_group_internal.invalidate_multi_tables();
+      m_factor_group.invalidate_multi_tables();
     }
-    //std::cout << "Final size is: " << factor_group_internal.size() << "\n";
+    //std::cout << "Final size is: " << m_factor_group.size() << "\n";
     update();
 
     return;
@@ -598,7 +402,10 @@ namespace CASM {
             stream.flags(std::ios::left);
             stream << "\n" <<  std::setw(3)  << nc + 1 << ": ";
             stream.unsetf(std::ios::left);
-            asym_unit[i][j].clust_group[nc].print(stream);
+            if(mode == CART)
+              asym_unit[i][j].clust_group[nc].print(stream, Eigen::Matrix3d::Identity());
+            else
+              asym_unit[i][j].clust_group[nc].print(stream, lattice().inv_lat_column_mat());
           }
         }
         stream << "\n  ---------------------------------------------------------------------   \n\n";
@@ -616,7 +423,7 @@ namespace CASM {
       basis[nb].set_basis_ind(nb);
     }
     within();
-    factor_group_internal.clear();
+    m_factor_group.clear();
 
     /** Should we also invalidate the occupants?
     for(Index i = 0; i < basis.size(); i++) {
@@ -890,127 +697,19 @@ namespace CASM {
   //
   void Structure::set_lattice(const Lattice &new_lat, COORD_TYPE mode) {
     bool is_equiv(lattice() == new_lat);
-    COORD_TYPE not_mode(CART);
-    if(mode == CART) {
-      not_mode = FRAC;
-    }
-
-    for(Index nb = 0; nb < basis.size(); nb++) {
-      basis[nb].invalidate(not_mode);
-    }
 
     m_lattice = new_lat;
 
+    for(Index nb = 0; nb < basis.size(); nb++) {
+      basis[nb].set_lattice(lattice(), mode);
+    }
 
     if(is_equiv)
-      factor_group_internal.set_lattice(new_lat, mode);
+      m_factor_group.set_lattice(lattice());
     else
       reset();
   }
 
-  //John G 051112
-  //***********************************************************
-  /**
-   * Given a rotational matrix rotate the
-   * ENTIRE structure in cartesian space. This yields the same
-   * structure, just with different cartesian definitions of
-   * the lattice vectors
-   *
-   * Non primitive structures aren't allowed because you can't
-   * update the new primitive pointer without having the new
-   * primitive structure you want it pointing at falling out of
-   * scope.
-   */
-  //***********************************************************
-
-  Structure Structure::reorient(const Matrix3<double> reorientmat, bool override) const {
-    if(!is_primitive() && !override) {
-      std::cerr << "ERROR in Structure::reorient" << std::endl;
-      std::cerr << "This function is for primitive cells only. Reduce your structure and try again." << std::endl;
-      exit(11);
-    }
-
-    Structure reorientstruc(*this);
-
-    Lattice reorientlat(reorientmat * lattice().lat_column_mat());
-    reorientstruc.set_lattice(reorientlat, FRAC);
-
-    if(override) {
-      std::cerr << "WARNING in Structure::reorient (are you using Structure::align_with or Structure::align_standard?)" << std::endl;
-      std::cerr << "You've chosen to forcibly reorient or align a non-primitive structure. The primitive lattice of your rotated structure will point to itself." << std::endl;
-    }
-
-    reorientstruc.update();
-
-    return reorientstruc;
-  }
-
-
-  //***********************************************************
-  /**
-   *	This function takes two structures and returns a third
-   *	structure identical to the one it is called on, only
-   *	its vectors are reoriented to match the the structure
-   *	it is passed. I.e. the returned structure is reoriented
-   *	to have a and axb pointing in the same direction as
-   *	the structure it is passed on.
-   *
-   *	This function was meant to be used with Structure::stack_on,
-   *	which effectively stacks different cells to create
-   *	heterostructures
-   */
-  //***********************************************************
-
-  Structure Structure::align_with(const Structure &refstruc, bool override) const {
-    if(!is_primitive() && !override) {
-      std::cerr << "ERROR in Structure::align_with" << std::endl;
-      std::cerr << "This function is for primitive cells only. Reduce your structure and try again." << std::endl;
-      exit(12);
-    }
-
-    Vector3<double> rotaxis;
-    double angle;
-    Matrix3<double> rotmat;
-
-    //First align the a vectors
-    rotaxis = lattice()[0].cross(refstruc.lattice()[0]);
-    angle = lattice()[0].get_signed_angle(refstruc.lattice()[0], rotaxis);
-
-    rotmat = rotaxis.get_rotation_mat(angle);
-
-    Structure aaligned = reorient(rotmat, override);
-
-    //Then turn axb along the a axis
-    rotaxis = aaligned.lattice()[0];
-    angle = (aaligned.lattice()[0].cross(aaligned.lattice()[1])).get_signed_angle(refstruc.lattice()[0].cross(refstruc.lattice()[1]), rotaxis);
-
-    rotmat = rotaxis.get_rotation_mat(angle);
-    return aaligned.reorient(rotmat, override);
-  }
-
-  //***********************************************************
-  /**
-   * Reorients structure to have a along (x,0,0), b along (x,y,0)
-   * and c along (x,y,z).
-   */
-  //***********************************************************
-
-  Structure Structure::align_standard(bool override) const {
-    if(!is_primitive() && !override) {
-      std::cerr << "ERROR in Structure::align_with_standard" << std::endl;
-      std::cerr << "This function is for primitive cells only. Reduce your structure and try again." << std::endl;
-      exit(15);
-    }
-
-    Lattice standardlat(Vector3<double>(1, 0, 0),
-                        Vector3<double>(0, 1, 0),
-                        Vector3<double>(0, 0, 1));
-
-    Structure standardstruc(standardlat);
-
-    return align_with(standardstruc, override);
-
-  }
 
   //***********************************************************
   /**
@@ -1029,8 +728,7 @@ namespace CASM {
 
     //Before doing anything check to see that lattices are aligned correctly (paralled ab planes)
     if(!override) {
-      double axbangle;
-      axbangle = (understruc.lattice()[0].cross(understruc.lattice()[1])).get_angle(overstruc.lattice()[0].cross(overstruc.lattice()[1]));
+      double axbangle = angle(understruc.lattice()[0].cross(understruc.lattice()[1]), overstruc.lattice()[0].cross(overstruc.lattice()[1]));
 
       if(!almost_zero(axbangle)) {
         std::cerr << "ERROR in Structure::stack_on" << std::endl;
@@ -1076,7 +774,7 @@ namespace CASM {
     //Fill up empty space in heterostruc with overstruc
     for(Index i = 0; i < overstruc.basis.size(); i++) {
       Site tsite(overstruc.basis[i]);
-      tsite(CART) = tsite(CART) + understruc.lattice()[2];
+      tsite.cart() = tsite.const_cart() + understruc.lattice()[2];
       tsite.set_lattice(heterostruc.lattice(), CART);
       heterostruc.basis.push_back(tsite);
 
@@ -1105,13 +803,11 @@ namespace CASM {
   Structure Structure::get_reflection() const {
 
     Structure reflectstruc(*this);
-    Matrix3<double> zmat(0);
-    zmat.at(0, 0) = 1;
-    zmat.at(1, 1) = 1;
-    zmat.at(2, 2) = -1;
+    Eigen::Vector3d zreflect;
+    zreflect << 1, 1, -1;
 
     // resets the lattice and reflects cartesian coordinates of the basis atoms
-    reflectstruc.set_lattice(Lattice(zmat * lattice().lat_column_mat()), CASM::FRAC);
+    reflectstruc.set_lattice(Lattice(zreflect.asDiagonal() * lattice().lat_column_mat()), FRAC);
 
     reflectstruc.update();
 
@@ -1148,8 +844,8 @@ namespace CASM {
     for(Index i = 0; i < siamese[2].size(); i++) {
       for(Index j = 0; j < siamese[2][i].size(); j++) {
         Site avgsite(siamese[2][i][j][1]);
-        avgsite(CART) = (siamese[2][i][j][0](CART) + siamese[2][i][j][1](CART)) * 0.5;
-        avgsite.set_lattice(lattice(), CASM::CART); //It's dumb that I need to do this
+        avgsite.cart() = (siamese[2][i][j][0].const_cart() + siamese[2][i][j][1].const_cart()) * 0.5;
+        avgsite.set_lattice(lattice(), CART); //It's dumb that I need to do this
         avgsite.within();
 
         std::cout << "###############" << std::endl;
@@ -1384,7 +1080,7 @@ namespace CASM {
             smallest = dist;
           }
         }
-        bshift(CART) *= (1.0 / relaxed_factors.size());
+        bshift.cart() *= (1.0 / relaxed_factors.size());
         avg_basis[b] += bshift;
       }
 
@@ -1423,21 +1119,21 @@ namespace CASM {
    */
   //***********************************************************
 
-  void Structure::add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Vector3<double> shift, COORD_TYPE mode) const {
+  void Structure::add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const {
 
     Coordinate cshift(shift, lattice(), mode);    //John G 121030
-    if(!almost_zero(cshift(FRAC)[2])) {
-      std::cerr << cshift(FRAC) << std::endl;
+    if(!almost_zero(cshift.frac(2))) {
+      std::cerr << cshift.const_frac() << std::endl;
       std::cerr << "WARNING: You're shifting in the c direction! This will mess with your vacuum and/or structure!!" << std::endl;
       std::cerr << "See Structure::add_vacuum_shift" << std::endl;
     }
 
-    Vector3<double> vacuum_vec;                 //unit vector perpendicular to ab plane
+    Eigen::Vector3d vacuum_vec;                 //unit vector perpendicular to ab plane
     vacuum_vec = lattice()[0].cross(lattice()[1]);
     vacuum_vec.normalize();
     Lattice new_lattice(lattice()[0],
                         lattice()[1],
-                        lattice()[2] + vacuum_thickness * vacuum_vec + cshift(CART)); //Add vacuum and shift to c vector
+                        lattice()[2] + vacuum_thickness * vacuum_vec + cshift.const_cart()); //Add vacuum and shift to c vector
 
     new_surface_struc = *this;
     new_surface_struc.set_lattice(new_lattice, CART);
@@ -1446,18 +1142,14 @@ namespace CASM {
 
   //***********************************************************
   void Structure::add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Coordinate shift) const {
-    if(shift.get_home() != &lattice()) {
-      std::cerr << "WARNING: The lattice from your shift coordinate does not match the lattice of your structure!" << std::endl;
-      std::cerr << "See Structure::add_vacuum_shift" << std::endl << std::endl;
-    }
 
-    add_vacuum_shift(new_surface_struc, vacuum_thickness, shift(CART), CART);
+    add_vacuum_shift(new_surface_struc, vacuum_thickness, shift.cart(), CART);
     return;
   }
 
   //***********************************************************
   void Structure::add_vacuum(Structure &new_surface_struc, double vacuum_thickness) const {
-    Vector3<double> shift(0, 0, 0);
+    Eigen::Vector3d shift(0, 0, 0);
 
     add_vacuum_shift(new_surface_struc, vacuum_thickness, shift, FRAC);
 
@@ -1494,7 +1186,7 @@ namespace CASM {
       for(Index i = 0 ; i < basis.size(); i++) {
         Coordinate temp(lattice());
 
-        temp(FRAC) = (basis[i] - end_struc.basis[i])(FRAC) * m / (Nofimag + 1);
+        temp.frac() = (basis[i] - end_struc.basis[i]).const_frac() * m / (Nofimag + 1);
 
         tstruc.basis[i] = basis[i] + temp;
 
@@ -1508,46 +1200,6 @@ namespace CASM {
     return ;
   }
 
-  //*****************************************************************************
-  /**
-     Creates num_images structures that are linearly interpolated between (*this)
-     and the end_struc
-     CAUTION: Use with caution currently. It DOES NOT check to find the atom closest to
-     itself in the end_struc, so if the basis sites are reorganized, structures
-     are bound to get messed up. Also ensure that the end_struc lattice is simply
-     a strained version of the current lattice, and that there are no rotations
-     in it. Or, for that matter that it is the same lattice that has been rela-
-     xed in some way
-     Checks and fixes coming soon
-  */
-  //*****************************************************************************
-  /*
-  void Structure::linear_interpolate(Structure end_struc, int num_images, Array<Structure> &images) {
-    std::cerr << "WARNING: This function assumes you are passing it structures in a certain way. I hope you know what you are doing.\n";
-    Array<Lattice> interp_lat;
-    lattice().linear_interpolate(end_struc.lattice(), num_images, interp_lat);
-    Array<Coordinate> increment_coord;
-    for(Index i = 0; i < basis.size(); i++) {
-      Vector3<double> ttrans;
-      for(int j = 0; j < 3; j++) {
-        ttrans[j] = (end_struc.basis[i](CART)[j] - basis[i](CART)[j]) / double(num_images + 1);
-      }
-      Coordinate tCoord(ttrans, lattice(), CART);
-      increment_coord.push_back(tCoord);
-    }
-    for(int i = 0; i <= (num_images + 1); i++) {
-      Structure tstruc(*this);
-      for(Index j = 0; j < basis.size(); j++) {
-        tstruc.basis[j].update(CART);
-        tstruc.basis[j](CART) += increment_coord[j](CART) * i;
-        tstruc.basis[j].update(FRAC);
-      }
-      tstruc.set_lattice(interp_lat[i], CART);
-      images.push_back(tstruc);
-    }
-    return;
-  }
-  */
 
 
   //***********************************************************
@@ -1608,7 +1260,7 @@ namespace CASM {
       basis[i] += shift;
     }
 
-    factor_group_internal += shift;
+    m_factor_group += shift.cart();
     return (*this);
   }
 
@@ -1619,7 +1271,7 @@ namespace CASM {
     for(Index i = 0; i < basis.size(); i++) {
       basis[i] -= shift;
     }
-    factor_group_internal -= shift;
+    m_factor_group -= shift.cart();
     return (*this);
   }
 
@@ -1630,8 +1282,8 @@ namespace CASM {
     // class Structure : public BasicStructure<Site>
     BasicStructure<Site>::to_json(json);
 
-    // mutable MasterSymGroup factor_group_internal;
-    json["factor_group"] = factor_group_internal;
+    // mutable MasterSymGroup m_factor_group;
+    json["factor_group"] = m_factor_group;
 
     // mutable int perm_rep_id;
     json["perm_rep_ID"] = perm_rep_ID;
@@ -1652,11 +1304,9 @@ namespace CASM {
       BasicStructure<Site> &basic = *this;
       basic.from_json(json);
 
-      // mutable MasterSymGroup factor_group_internal;
-      factor_group_internal.clear();
-      Coordinate coord(lattice());
-      factor_group_internal.push_back(SymOp(coord));
-      factor_group_internal.from_json(json["factor_group"]);
+      // mutable MasterSymGroup m_factor_group;
+      m_factor_group.clear();
+      m_factor_group.from_json(json["factor_group"]);
 
       // mutable int perm_rep_ID;
       CASM::from_json(perm_rep_ID, json["perm_rep_ID"]);

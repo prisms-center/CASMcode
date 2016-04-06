@@ -11,7 +11,6 @@
 
 namespace CASM {
   class SymGroupRep;
-  class Lattice;
   class MasterSymGroup;
 
   class SymOpRepresentation;
@@ -144,15 +143,13 @@ namespace CASM {
     jsonParser &to_json(jsonParser &json) const;
 
     // If 'm_home_group' is not nullptr, should be initialized accordingly
-    // Lattice may be necessary for constructing SymOps
-    void from_json(const jsonParser &json, const Lattice &lat);
+    void from_json(const jsonParser &json);
   };
 
   jsonParser &to_json(const SymGroupRep &rep, jsonParser &json);
 
   // If 'm_home_group' is not nullptr, should be initialized accordingly
-  // Lattice may be necessary for constructing SymOps
-  void from_json(SymGroupRep &rep, const jsonParser &json, const Lattice &lat);
+  void from_json(SymGroupRep &rep, const jsonParser &json);
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

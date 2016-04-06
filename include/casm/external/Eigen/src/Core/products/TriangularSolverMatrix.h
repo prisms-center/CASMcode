@@ -18,7 +18,7 @@ namespace internal {
 template <typename Scalar, typename Index, int Side, int Mode, bool Conjugate, int TriStorageOrder>
 struct triangular_solve_matrix<Scalar,Index,Side,Mode,Conjugate,TriStorageOrder,RowMajor>
 {
-  static EIGEN_DONT_INLINE void run(
+  static void run(
     Index size, Index cols,
     const Scalar*  tri, Index triStride,
     Scalar* _other, Index otherStride,
@@ -39,6 +39,13 @@ template <typename Scalar, typename Index, int Mode, bool Conjugate, int TriStor
 struct triangular_solve_matrix<Scalar,Index,OnTheLeft,Mode,Conjugate,TriStorageOrder,ColMajor>
 {
   static EIGEN_DONT_INLINE void run(
+    Index size, Index otherSize,
+    const Scalar* _tri, Index triStride,
+    Scalar* _other, Index otherStride,
+    level3_blocking<Scalar,Scalar>& blocking);
+};
+template <typename Scalar, typename Index, int Mode, bool Conjugate, int TriStorageOrder>
+EIGEN_DONT_INLINE void triangular_solve_matrix<Scalar,Index,OnTheLeft,Mode,Conjugate,TriStorageOrder,ColMajor>::run(
     Index size, Index otherSize,
     const Scalar* _tri, Index triStride,
     Scalar* _other, Index otherStride,
@@ -108,8 +115,9 @@ struct triangular_solve_matrix<Scalar,Index,OnTheLeft,Mode,Conjugate,TriStorageO
           {
             // TODO write a small kernel handling this (can be shared with trsv)
             Index i  = IsLower ? k2+k1+k : k2-k1-k-1;
-            Index s  = IsLower ? k2+k1 : i+1;
             Index rs = actualPanelWidth - k - 1; // remaining size
+            Index s  = TriStorageOrder==RowMajor ? (IsLower ? k2+k1 : i+1)
+                                                 :  IsLower ? i+1 : i-rs;
 
             Scalar a = (Mode & UnitDiag) ? Scalar(1) : Scalar(1)/conj(tri(i,i));
             for (Index j=j2; j<j2+actual_cols; ++j)
@@ -126,7 +134,6 @@ struct triangular_solve_matrix<Scalar,Index,OnTheLeft,Mode,Conjugate,TriStorageO
               }
               else
               {
-                Index s = IsLower ? i+1 : i-rs;
                 Scalar b = (other(i,j) *= a);
                 Scalar* r = &other(s,j);
                 const Scalar* l = &tri(s,i);
@@ -173,7 +180,6 @@ struct triangular_solve_matrix<Scalar,Index,OnTheLeft,Mode,Conjugate,TriStorageO
       }
     }
   }
-};
 
 /* Optimized triangular solver with multiple left hand sides and the trinagular matrix on the right
  */
@@ -181,6 +187,13 @@ template <typename Scalar, typename Index, int Mode, bool Conjugate, int TriStor
 struct triangular_solve_matrix<Scalar,Index,OnTheRight,Mode,Conjugate,TriStorageOrder,ColMajor>
 {
   static EIGEN_DONT_INLINE void run(
+    Index size, Index otherSize,
+    const Scalar* _tri, Index triStride,
+    Scalar* _other, Index otherStride,
+    level3_blocking<Scalar,Scalar>& blocking);
+};
+template <typename Scalar, typename Index, int Mode, bool Conjugate, int TriStorageOrder>
+EIGEN_DONT_INLINE void triangular_solve_matrix<Scalar,Index,OnTheRight,Mode,Conjugate,TriStorageOrder,ColMajor>::run(
     Index size, Index otherSize,
     const Scalar* _tri, Index triStride,
     Scalar* _other, Index otherStride,
@@ -289,9 +302,12 @@ struct triangular_solve_matrix<Scalar,Index,OnTheRight,Mode,Conjugate,TriStorage
                 for (Index i=0; i<actual_mc; ++i)
                   r[i] -= a[i] * b;
               }
-              Scalar b = (Mode & UnitDiag) ? Scalar(1) : Scalar(1)/conj(rhs(j,j));
-              for (Index i=0; i<actual_mc; ++i)
-                r[i] *= b;
+              if((Mode & UnitDiag)==0)
+              {
+                Scalar b = conj(rhs(j,j));
+                for (Index i=0; i<actual_mc; ++i)
+                  r[i] /= b;
+              }
             }
 
             // pack the just computed part of lhs to A
@@ -308,7 +324,6 @@ struct triangular_solve_matrix<Scalar,Index,OnTheRight,Mode,Conjugate,TriStorage
       }
     }
   }
-};
 
 } // end namespace internal
 

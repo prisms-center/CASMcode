@@ -25,15 +25,15 @@
 namespace CASM {
 
   class ECIContainer;
-  
+
   template<typename T, typename U> class ConfigIterator;
-  
+
   /// \defgroup Clex
-  ///    
+  ///
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
-  ///    
-  
-  
+  ///
+
+
   /// \brief PrimClex stores the primitive Structure and lots of related data
   ///
   /// \ingroup Clex
@@ -76,7 +76,7 @@ namespace CASM {
     ///   parametric composition and mol composition
     bool m_has_composition_axes = false;
     CompositionConverter m_comp_converter;
-    
+
     /// ChemicalReference specifies a reference for formation energies, chemical
     /// potentials, etc.
     notstd::cloneable_ptr<ChemicalReference> m_chem_ref;
@@ -85,12 +85,12 @@ namespace CASM {
     /// - mutable for lazy construction
     mutable notstd::cloneable_ptr<PrimNeighborList> m_nlist;
 
-  
+
   public:
 
     typedef ConfigIterator<Configuration, PrimClex> config_iterator;
     typedef ConfigIterator<const Configuration, const PrimClex> config_const_iterator;
-  
+
     // **** Constructors ****
 
     /// Initial construction of a PrimClex, from a primitive Structure
@@ -99,7 +99,7 @@ namespace CASM {
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
     PrimClex(const fs::path &_root, std::ostream &sout);
-    
+
 
     // **** Accessors ****
 
@@ -173,7 +173,7 @@ namespace CASM {
 
     /// const Access CompositionConverter object
     const CompositionConverter &composition_axes() const;
-    
+
     // ** Chemical reference **
 
     /// check if ChemicalReference object initialized
@@ -196,7 +196,7 @@ namespace CASM {
     
     /// returns true if vacancy are an allowed species
     bool vacancy_allowed() const;
-    
+
     /// returns the index of vacancies in composition vectors
     Index vacancy_index() const;
 
@@ -255,7 +255,7 @@ namespace CASM {
     Eigen::MatrixXd shift_vectors() const;
 
     // **** Mutators ****
-    
+
     /// Sets the composition axes, updates all configuration references,
     ///   and writes the updated configuration info
     void set_composition_axes(const CompositionConverter &_converter);
@@ -307,7 +307,7 @@ namespace CASM {
 
     Index add_canonical_supercell(const Lattice &superlat);
 
-    Matrix3<int> calc_transf_mat(const Lattice &superlat) const;
+    Eigen::Matrix3i calc_transf_mat(const Lattice &superlat) const;
 
     /// Set internal values of each DoFEnvironment
     void set_global_dof_state(const Configuration &curr_config)const {
@@ -349,13 +349,13 @@ namespace CASM {
 
     bool has_global_clexulator() const;
     Clexulator global_clexulator() const;
-    
+
     bool has_global_eci(std::string clex_name) const;
-    const ECIContainer& global_eci(std::string clex_name) const;
+    const ECIContainer &global_eci(std::string clex_name) const;
   private:
-    
+
     /// Initialization routines
-    void _init(std::ostream& sout);
+    void _init(std::ostream &sout);
 
     mutable ECIContainer m_global_eci;
     mutable Clexulator m_global_clexulator;

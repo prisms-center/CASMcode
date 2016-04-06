@@ -8,6 +8,6 @@
 using namespace CASM;
 
 const std::string &CASM::version() {
-  static const std::string &ver = "v0.1.1_grand_canonical";
+  static const std::string &ver = "v0.2.0_jct_merge_test";
   return ver;
 };
