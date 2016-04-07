@@ -1037,9 +1037,12 @@ namespace CASM {
     }
 
     // Check whether there are additional sites listed in the input file
+    std::string s;
+    getline(stream, s);
+    std::istringstream tmp_stream(s);
     Eigen::Vector3d coord;
-    stream >> coord;
-    if((stream.rdstate() & std::ifstream::failbit) == 0) {
+    tmp_stream >> coord;
+    if(tmp_stream.good()) {
       std::cerr << "ERROR: too many sites listed in structure input file." << std::endl;
       exit(1);
     }
