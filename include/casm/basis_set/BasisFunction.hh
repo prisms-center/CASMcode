@@ -231,7 +231,7 @@ namespace CASM {
 
     mutable std::string m_formula, m_tex_formula;
 
-    ReturnArray<Index> _sub_sym_reps() const;
+    ReturnArray<SymGroupRepID> _sub_sym_reps() const;
 
     Function const *_argument(Index i) const;
 

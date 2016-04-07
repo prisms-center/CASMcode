@@ -80,7 +80,7 @@ namespace CASM {
     prototype.set_clust_group(equivalence_map[0]);
     at(0).set_clust_group(equivalence_map[0]);
     std::vector<Permutation> proto_perms(prototype.clust_group_permutations());
-    Index perm_rep_ID(sym_group.make_empty_representation());
+    SymGroupRepID perm_rep_ID(sym_group.add_empty_representation());
     prototype.set_permute_rep(perm_rep_ID);
     at(0).set_permute_rep(perm_rep_ID);
     for(j = 0; j < prototype.clust_group().size(); j++)

@@ -34,15 +34,15 @@ namespace CASM {
 
   Variable::Variable(const Variable &old_var) :
     m_var_compon(old_var.var_compon()),
-    m_var_sym_rep_ind(old_var.sym_rep_ind()),
+    m_sym_rep_ID(old_var.sym_rep_ID()),
     m_coeffs(old_var.coeffs()) {
 
   }
   //*******************************************************************************************
 
-  Variable::Variable(const Array<ContinuousDoF> &_var_compon, int var_ind, Index _var_sym_rep_ind) :
+  Variable::Variable(const Array<ContinuousDoF> &_var_compon, int var_ind, SymGroupRepID _sym_rep_ID) :
     m_var_compon(_var_compon),
-    m_var_sym_rep_ind(_var_sym_rep_ind),
+    m_sym_rep_ID(_sym_rep_ID),
     m_coeffs(_var_compon.size()) {
 
     m_coeffs.setZero();
@@ -51,9 +51,9 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  Variable::Variable(const Array<ContinuousDoF> &_var_compon, const Eigen::VectorXd &_coeffs, Index _var_sym_rep_ind) :
+  Variable::Variable(const Array<ContinuousDoF> &_var_compon, const Eigen::VectorXd &_coeffs, SymGroupRepID _sym_rep_ID) :
     m_var_compon(_var_compon),
-    m_var_sym_rep_ind(_var_sym_rep_ind),
+    m_sym_rep_ID(_sym_rep_ID),
     m_coeffs(_coeffs) {
 
   }
@@ -202,12 +202,12 @@ namespace CASM {
     m_formula.clear();
     refresh_ID();
     Eigen::MatrixXd const *tmat;
-    tmat = op.get_matrix_rep(m_var_sym_rep_ind);
+    tmat = op.get_matrix_rep(m_sym_rep_ID);
     if(tmat) {
       m_coeffs = (*tmat) * m_coeffs;
     }
     else {
-      std::cerr << "WARNING: Attempting to reference invalid symmetry matrix (From rep_ID " << m_var_sym_rep_ind << ") in Variable::apply_sym!  Continuing...\n";
+      std::cerr << "WARNING: Attempting to reference invalid symmetry matrix (From rep_ID " << m_sym_rep_ID << ") in Variable::apply_sym!  Continuing...\n";
     }
     return this;
   }
@@ -343,7 +343,7 @@ namespace CASM {
     Variable const *VLHS(static_cast<Variable const *>(LHS));
     Variable const *VRHS(static_cast<Variable const *>(RHS));
     BasisSet LSet, RSet;
-    LSet.set_variable_basis(VLHS->var_compon(), VLHS->sym_rep_ind());
+    LSet.set_variable_basis(VLHS->var_compon(), VLHS->sym_rep_ID());
     std::vector<std::shared_ptr<BasisSet> > args;
 
     Index full_dim(LSet.size());
@@ -351,7 +351,7 @@ namespace CASM {
     args.push_back(LSet.shared_copy());
 
     if((VLHS->var_compon()) != (VRHS->var_compon())) {
-      RSet.set_variable_basis(VRHS->var_compon(), VRHS->sym_rep_ind());
+      RSet.set_variable_basis(VRHS->var_compon(), VRHS->sym_rep_ID());
       args.push_back(RSet.shared_copy());
       LOffset = LSet.size();
       full_dim += RSet.size();

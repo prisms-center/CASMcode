@@ -256,12 +256,12 @@ namespace CASM {
 
 
   Function *OccupantFunction::_apply_sym(const SymOp &op) {
-    if(m_occ_sym_rep_ind == Index(-2)) return this;
+    if(m_sym_rep_ID.is_identity()) return this;
 
     m_formula.clear();
     refresh_ID();
     Eigen::MatrixXd const *tmat;
-    tmat = op.get_matrix_rep(m_occ_sym_rep_ind);
+    tmat = op.get_matrix_rep(m_sym_rep_ID);
 
     //Eigen matrix multiplication is alias-safe
     if(tmat)

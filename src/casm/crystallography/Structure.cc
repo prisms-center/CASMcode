@@ -15,7 +15,7 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  Structure::Structure(const fs::path &filepath) : BasicStructure<Site>(), basis_perm_rep_ID(-1) {
+  Structure::Structure(const fs::path &filepath) : BasicStructure<Site>() {
     if(!fs::exists(filepath)) {
       std::cerr << "Error in Structure::Structure(const fs::path &filepath)." << std::endl;
       std::cerr << "  File does not exist at: " << filepath << std::endl;
@@ -105,22 +105,13 @@ namespace CASM {
   //***********************************************************
 
   SymGroupRep const *Structure::basis_permutation_symrep() const {
-    if(basis_perm_rep_ID == Index(-1))
-      generate_basis_permutation_representation();
-
-    SymGroupRep const *perm_group(factor_group().representation(basis_perm_rep_ID));
-    if(!perm_group) {
-      generate_basis_permutation_representation();
-      perm_group = factor_group().representation(basis_perm_rep_ID);
-    }
-
-    return perm_group;
+    return &(factor_group().representation(basis_permutation_symrep_ID()));
   }
 
   //***********************************************************
 
-  Index Structure::basis_permutation_symrep_ID() const {
-    if(basis_perm_rep_ID == Index(-1))
+  SymGroupRepID Structure::basis_permutation_symrep_ID() const {
+    if(basis_perm_rep_ID.empty())
       generate_basis_permutation_representation();
 
     return basis_perm_rep_ID;
@@ -1188,10 +1179,8 @@ namespace CASM {
 
   // ROUTINE STILL NEEDS TO BE TESTED!
 
-  // non-const version - calculates factor group if it doesn't already exist
-  Index Structure::generate_basis_permutation_representation(bool verbose) const {
+  SymGroupRepID Structure::generate_basis_permutation_representation(bool verbose) const {
     basis_perm_rep_ID = BasicStructure<Site>::generate_basis_permutation_representation(factor_group(), verbose);
-
     return basis_perm_rep_ID;
   }
 

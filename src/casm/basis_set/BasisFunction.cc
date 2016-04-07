@@ -104,8 +104,8 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  ReturnArray<Index> Function::_sub_sym_reps() const {
-    Array<Index> t_result(m_argument.size());
+  ReturnArray<SymGroupRepID> Function::_sub_sym_reps() const {
+    Array<SymGroupRepID> t_result(m_argument.size());
     for(Index i = 0; i < m_argument.size(); i++) {
       t_result[i] = m_argument[i]->basis_symrep_ID();
     }

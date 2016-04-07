@@ -10,22 +10,16 @@
 
 
 namespace CASM {
-  //INITIALIZE STATIC MEMBER SymGroupRep::REP_COUNT
-  //THIS MUST OCCUR IN A .CC FILE; MAY CAUSE PROBLEMS IF WE
-  //CHANGE COMPILING/LINKING STRATEGY
-  Index SymGroupRep::REP_COUNT(0);
-
-  //*******************************************************************************************
 
   SymGroupRep::SymGroupRep(const SymGroupRep &RHS) :
-    Array<SymOpRepresentation * > (RHS.size(), NULL), m_rep_ID(REP_COUNT++) {
+    Array<SymOpRepresentation * > (RHS.size(), NULL) {
     (*this) = RHS;
   }
 
   //*******************************************************************************************
 
   SymGroupRep::~SymGroupRep() {
-    for(Index i = 0; i < size(); i++) delete at(i);
+    clear();
   }
 
   //*******************************************************************************************
@@ -46,8 +40,12 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  void SymGroupRep::set_master_group(const MasterSymGroup &master) {
+  void SymGroupRep::set_master_group(const MasterSymGroup &master, const SymGroupRepID &_rep_ID) {
     m_master_group = &master;
+    if(_rep_ID.empty() || &(master.representation(_rep_ID)) != this) {
+      throw std::runtime_error(std::string("SymGroupRep::set_master_group() attempted to assign SymGroupRepID that does not match the current SymGroupRep!\n"));
+    }
+    m_rep_ID = _rep_ID;
     if(size() == 0)
       Array<SymOpRepresentation *>::resize(master.size());
     else if(size() == master.size()) {
@@ -122,29 +120,14 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  Index SymGroupRep::add_self_to_master() {
-    if(!has_valid_master()) return -1;
-
-    const SymGroupRep *t_rep(master_group().representation(m_rep_ID));
-    if(t_rep == this)
-      return m_rep_ID;
-
-    if(t_rep == nullptr)
-      return master_group().add_representation(this);
-
-    //else - update rep_ID and add this
-    m_rep_ID = REP_COUNT++;
-    return master_group().add_representation(this);
-  }
-
-  //*******************************************************************************************
-  Index SymGroupRep::add_copy_to_master() const {
-    return copy()->add_self_to_master();
+  SymGroupRepID SymGroupRep::add_copy_to_master() const {
+    return master_group().add_representation(*this);
   }
   //*******************************************************************************************
 
   void SymGroupRep::clear() {
-    for(Index i = 0; i < size(); i++) delete at(i);
+    for(Index i = 0; i < size(); i++)
+      delete at(i);
     Array<SymOpRepresentation *>::clear();
   }
 
@@ -294,8 +277,8 @@ namespace CASM {
   // Calculates new SymGroupRep that is the results of performing coordinate transformation specified by trans_mat
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  SymGroupRep *SymGroupRep::coord_transformed_copy(const Eigen::MatrixXd &trans_mat) const {
-    SymGroupRep *new_rep(new SymGroupRep(master_group()));
+  SymGroupRep SymGroupRep::coord_transformed_copy(const Eigen::MatrixXd &trans_mat) const {
+    SymGroupRep new_rep(master_group());
     if(!size())
       return new_rep;
     if(at(0) && !(at(0)->get_MatrixXd())) {
@@ -310,7 +293,7 @@ namespace CASM {
 
       tmat = trans_mat * (*(at(i)->get_MatrixXd())) * trans_mat.transpose();
       //std::cout << "tmat " << i << " is: \n" << tmat << "\n";
-      new_rep->set_rep(i, SymMatrixXd(tmat));
+      new_rep.set_rep(i, SymMatrixXd(tmat));
     }
     return new_rep;
   }
@@ -430,7 +413,7 @@ namespace CASM {
   /// that is invariant to 'my_group' (the irreducible 'wedge' spans that entire axis).  For a 2d irrep, the irreducible
   /// wedge must span <= one quadrant.  For a 3d irrep, it must span <= one octant
   multivector< Eigen::VectorXd>::X<3> SymGroupRep::calc_special_total_directions(const SymGroup &head_group)const {
-    Array<Index> irrep_IDs = get_irrep_IDs(head_group);
+    Array<SymGroupRepID> irrep_IDs = get_irrep_IDs(head_group);
 
     multivector<Eigen::VectorXd>::X<3> sdirs(irrep_IDs.size());
     Array<Array<Eigen::VectorXd> > irrep_dirs;
@@ -761,23 +744,23 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  ReturnArray<Index> SymGroupRep::get_irrep_IDs(const SymGroup &head_group) const {
+  ReturnArray<SymGroupRepID> SymGroupRep::get_irrep_IDs(const SymGroup &head_group) const {
     Array<Index> irrep_decomp(num_each_real_irrep(head_group));
-    Array<Index> irrep_IDs;
+    Array<SymGroupRepID> irrep_IDs;
     for(Index i = 0; i < irrep_decomp.size(); i++) {
       if(irrep_decomp[i] == 0)
         continue;
 
-      if(!valid_index(head_group.get_irrep_ID(i)))
+      if(head_group.get_irrep_ID(i).empty())
         calc_new_irreps(head_group);
 
-      if(!valid_index(head_group.get_irrep_ID(i))) {
+      if(head_group.get_irrep_ID(i).empty()) {
         std::cerr << "CRITICAL ERROR: In SymGroupRep::get_irrep_IDs(), cannot resolve irrep " << i << " which has multiplicity " << irrep_decomp[i] << ". Exiting...\n";
         assert(0);
         exit(1);
       }
 
-      irrep_IDs.append(Array<Index>(irrep_decomp[i], head_group.get_irrep_ID(i)));
+      irrep_IDs.append(Array<SymGroupRepID>(irrep_decomp[i], head_group.get_irrep_ID(i)));
     }
 
     return irrep_IDs;
@@ -937,23 +920,21 @@ namespace CASM {
       //Found end of block
       tmat.resize(i2 - i1, dim);
       tmat = trans_mat.block(i1, 0, i2 - i1, dim);
-      SymGroupRep *new_irrep(coord_transformed_copy(tmat));
+      SymGroupRep new_irrep(coord_transformed_copy(tmat));
 
-      Array<Index> tdecomp(new_irrep->num_each_real_irrep(head_group));
+      Array<Index> tdecomp(new_irrep.num_each_real_irrep(head_group));
       if(tdecomp.sum() != 1) {
         std::cerr << "CRITICAL ERROR: In SymGroupRep::calc_new_irreps(), representation identified as irreducible did not pass final tests. Exiting...\n";
         assert(0);
         exit(1);
       }
       Index i_irrep = tdecomp.find(1);
-      if(valid_index(head_group.get_irrep_ID(i_irrep))) {
+      if(!head_group.get_irrep_ID(i_irrep).empty()) {
         i1 = i2;
-        delete new_irrep;
         continue;
       }
 
-      Index irrep_ID = master_ptr->add_representation(new_irrep->coord_transformed_copy(new_irrep->_symmetrized_irrep_trans_mat(head_group)));
-      delete new_irrep;
+      SymGroupRepID irrep_ID = master_ptr->add_representation(new_irrep.coord_transformed_copy(new_irrep._symmetrized_irrep_trans_mat(head_group)));
 
       head_group.set_irrep_ID(i_irrep, irrep_ID);
       //std::cout << "Setting the rep_ID of irrep " << i_irrep << " to " << irrep_ID;
@@ -969,25 +950,23 @@ namespace CASM {
 
     tmat.resize(dim - i1, dim);
     tmat = trans_mat.block(i1, 0, dim - i1, dim);
-    SymGroupRep *new_irrep(coord_transformed_copy(tmat));
+    SymGroupRep new_irrep(coord_transformed_copy(tmat));
 
     //std::cout << "\nIts representation looks like this:\n";
     //new_irrep->print_MatrixXd(std::cout, head_group);
     //std::cout << '\n';
-    Array<Index> tdecomp(new_irrep->num_each_real_irrep(head_group));
+    Array<Index> tdecomp(new_irrep.num_each_real_irrep(head_group));
     if(tdecomp.sum() != 1) {
       std::cerr << "CRITICAL ERROR: In SymGroupRep::calc_new_irreps(), representation identified as irreducible did not pass final tests. Exiting...\n";
       assert(0);
       exit(1);
     }
     Index i_irrep = tdecomp.find(1);
-    if(valid_index(head_group.get_irrep_ID(i_irrep))) {
-      delete new_irrep;
+    if(!head_group.get_irrep_ID(i_irrep).empty()) {
       return;
     }
 
-    Index irrep_ID = master_ptr->add_representation(new_irrep->coord_transformed_copy(new_irrep->_symmetrized_irrep_trans_mat(head_group)));
-    delete new_irrep;
+    SymGroupRepID irrep_ID = master_ptr->add_representation(new_irrep.coord_transformed_copy(new_irrep._symmetrized_irrep_trans_mat(head_group)));
 
     //std::cout << "Setting the rep_ID of irrep " << i_irrep << " to " << irrep_ID;
     head_group.set_irrep_ID(i_irrep, irrep_ID);
@@ -1056,7 +1035,7 @@ namespace CASM {
     Array<Index> irrep_decomp(num_each_real_irrep(head_group));
 
     //get_irrep_IDs() harvests any new irreps that appear in this representation
-    Array<Index> irrep_IDs(get_irrep_IDs(head_group));
+    Array<SymGroupRepID> irrep_IDs(get_irrep_IDs(head_group));
 
     int rep_dim = get_MatrixXd(head_group[0])->rows();
 
@@ -1080,20 +1059,20 @@ namespace CASM {
       if(complex_irrep[i])
         c_mult = 2;
 
-      const SymGroupRep *t_irrep(head_group.get_irrep(i));
+      const SymGroupRep &t_irrep(head_group.get_irrep(i));
 
       int irrep_dim = c_mult * round(char_table[i][0].real());
 
       // make sure t_irrep is valid and has the correct dimension.
-      assert(t_irrep && (irrep_dim == ((t_irrep->get_MatrixXd(head_group[0]))->rows())));
+      assert(irrep_dim == (t_irrep.get_MatrixXd(head_group[0])->rows()));
 
       //get the (0,0) projection operator -> projects out vectors that transform as the first basis vector of irrep 'i'
       tproj.setZero();
       //std::cout << "PROJECTING OUT THE FOLLOWING IRREP\n";
       for(Index j = 0; j < head_group.size(); j++) {
         //std::cout << "OP " << j << ":\n";
-        //std::cout << (*(t_irrep->get_MatrixXd(head_group[j]))) << "\n\n";
-        tproj += (*(t_irrep->get_MatrixXd(head_group[j])))(0, 0) * (*get_MatrixXd(head_group[j]));
+
+        tproj += (*(t_irrep.get_MatrixXd(head_group[j])))(0, 0) * (*get_MatrixXd(head_group[j]));
       }
       tproj *= double(irrep_dim) / double(head_group.size());
 
@@ -1149,7 +1128,7 @@ namespace CASM {
         tproj.setZero();
         for(Index k = 0; k < head_group.size(); k++) {
           //tproj += (*(t_irrep->get_MatrixXd(head_group[k])))(0,j) * (*get_MatrixXd(head_group[k])); // <-- this is wrong, not totally sure why
-          tproj += (*(t_irrep->get_MatrixXd(head_group[k])))(j, 0) * (*get_MatrixXd(head_group[k]));
+          tproj += (*(t_irrep.get_MatrixXd(head_group[k])))(j, 0) * (*get_MatrixXd(head_group[k]));
         }
         tproj *= double(irrep_dim) / double(head_group.size());
 
@@ -1303,11 +1282,10 @@ namespace CASM {
                 if(rnk == 2 * subspace_dims[ns])
                   irrep_dims.push_back(subspace_dims[ns]);
                 ttrans_mat = Eigen::MatrixXd(qr.householderQ()).leftCols(rnk);
-                SymGroupRep *t_rep(coord_transformed_copy(ttrans_mat.transpose()));
+                SymGroupRep t_rep(coord_transformed_copy(ttrans_mat.transpose()));
                 //std::cout << "***Adding columns!\n" << Eigen::MatrixXd(qr.householderQ()).leftCols(rnk) << "\n\n";
                 //trans_mat.block(0, Nfound, dim, rnk) = Eigen::MatrixXd(qr.householderQ()).leftCols(rnk);
-                trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * (t_rep->_symmetrized_irrep_trans_mat(head_group)).transpose();
-                delete t_rep;
+                trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * (t_rep._symmetrized_irrep_trans_mat(head_group)).transpose();
                 Nfound += rnk;
                 found_new_irreps = true;
               }
@@ -1380,9 +1358,6 @@ namespace CASM {
       at(i)->to_json(json["symop_representations"]);
     }
 
-    // static int REP_COUNT;
-    json["REP_COUNT"] = REP_COUNT;
-
     // int m_rep_ID;
     json["m_rep_ID"] = m_rep_ID;
 
@@ -1394,7 +1369,7 @@ namespace CASM {
   SymGroupRep subset_permutation_rep(const SymGroupRep &permute_rep, const Array<Index>::X2 &subsets) {
     SymGroupRep new_rep(SymGroupRep::NO_HOME, permute_rep.size());
     if(permute_rep.has_valid_master())
-      new_rep.set_master_group(permute_rep.master_group());
+      new_rep = SymGroupRep(permute_rep.master_group());
 
     Array<Index> perm_sub;
     if(subsets.size())
@@ -1439,7 +1414,7 @@ namespace CASM {
   SymGroupRep permuted_direct_sum_rep(const SymGroupRep &permute_rep, const Array<SymGroupRep const *> &sum_reps) {
     SymGroupRep new_rep(SymGroupRep::NO_HOME, permute_rep.size());
     if(permute_rep.has_valid_master())
-      new_rep.set_master_group(permute_rep.master_group());
+      new_rep = SymGroupRep(permute_rep.master_group());
 
     Array<Index> rep_dims(sum_reps.size(), 0);
     if(permute_rep.get_permutation(0) == NULL) {
@@ -1490,7 +1465,7 @@ namespace CASM {
     }
     SymGroupRep new_rep(SymGroupRep::NO_HOME, LHS.size());
     if(LHS.has_valid_master())
-      new_rep.set_master_group(LHS.master_group());
+      new_rep = SymGroupRep(LHS.master_group());
 
     Eigen::MatrixXd tmat;
     for(Index i = 0; i < LHS.size(); i++) {
@@ -1529,10 +1504,6 @@ namespace CASM {
       /// This allocates a new object to 'at(i)'.
       CASM::from_json(at(i), json["symop_representations"][i]);
     }
-
-    //std::cout << "Reading in REP_COUNT" << std::endl;
-    // static int REP_COUNT;
-    CASM::from_json(REP_COUNT, json["REP_COUNT"]);
 
     //std::cout << "Reading in m_rep_id" << std::endl;
     // int m_rep_ID;

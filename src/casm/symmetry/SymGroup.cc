@@ -13,14 +13,24 @@
 #include "casm/casm_io/json_io/global.hh"
 
 namespace CASM {
+  //INITIALIZE STATIC MEMBER MasterSymGroup::GROUP_COUNT
+  //THIS MUST OCCUR IN A .CC FILE; MAY CAUSE PROBLEMS IF WE
+  //CHANGE COMPILING/LINKING STRATEGY
+  Index MasterSymGroup::GROUP_COUNT(0);
+
+  //*******************************************************************************************
 
   MasterSymGroup::MasterSymGroup(const MasterSymGroup &RHS) :
-    SymGroup(RHS), m_coord_rep_ID(RHS.m_coord_rep_ID),
-    m_reg_rep_ID(RHS.m_reg_rep_ID) {
+    SymGroup(RHS),
+    m_group_index(RHS.m_group_index),
+    m_coord_rep_ID(RHS.m_coord_rep_ID),
+    m_reg_rep_ID(RHS.m_reg_rep_ID),
+    m_identity_rep_IDs(RHS.m_identity_rep_IDs) {
+
     m_rep_array.reserve(RHS.m_rep_array.size());
+
     for(Index i = 0; i < RHS.m_rep_array.size(); i++) {
-      add_representation(RHS.m_rep_array[i]->copy());
-      m_rep_array.back()->set_master_group(*this);
+      _add_representation(RHS.m_rep_array[i]->copy());
     }
 
     for(Index i = 0; i < size(); i++)
@@ -30,8 +40,7 @@ namespace CASM {
   //*******************************************************************************************
 
   MasterSymGroup::~MasterSymGroup() {
-    for(Index i = 0; i < m_rep_array.size(); i++)
-      delete m_rep_array[i];
+    clear();
     return;
   }
 
@@ -42,7 +51,7 @@ namespace CASM {
     m_reg_rep_ID = RHS.m_reg_rep_ID;
     m_rep_array.reserve(RHS.m_rep_array.size());
     for(Index i = 0; i < RHS.m_rep_array.size(); i++)
-      add_representation(RHS.m_rep_array[i]->copy());
+      _add_representation(RHS.m_rep_array[i]->copy());
 
     for(Index i = 0; i < size(); i++)
       at(i).set_index(*this, i);
@@ -74,77 +83,83 @@ namespace CASM {
     SymGroup :: clear();
     m_point_group.clear();
     for(Index i = 0; i < m_rep_array.size(); i++) {
-      delete m_rep_array[i];
+      if(m_rep_array[i])
+        delete m_rep_array[i];
     }
     m_rep_array.clear();
 
-    m_reg_rep_ID = m_coord_rep_ID = -1;
+    m_reg_rep_ID = m_coord_rep_ID = SymGroupRepID();
 
+    m_identity_rep_IDs.clear();
     return;
   }
 
   //*******************************************************************************************
 
-  Index MasterSymGroup::coord_rep_ID() const {
-    if(m_coord_rep_ID == Index(-1)) add_coord_rep();
+  SymGroupRepID MasterSymGroup::coord_rep_ID() const {
+    if(m_coord_rep_ID.empty())
+      _add_coord_rep();
     return m_coord_rep_ID;
   }
 
   //*******************************************************************************************
 
-  Index MasterSymGroup::reg_rep_ID() const {
-    if(m_reg_rep_ID == Index(-1)) add_reg_rep();
+  SymGroupRepID MasterSymGroup::reg_rep_ID() const {
+    if(m_reg_rep_ID.empty())
+      _add_reg_rep();
     return m_reg_rep_ID;
   }
 
   //*******************************************************************************************
 
-  Index MasterSymGroup::identity_rep_ID(Index dim) const {
+  SymGroupRepID MasterSymGroup::identity_rep_ID(Index dim) const {
     if(m_identity_rep_IDs.size() < dim + 1)
-      m_identity_rep_IDs.append(Array<Index>(dim + 1 - m_identity_rep_IDs.size(), -1));
+      m_identity_rep_IDs.append(Array<SymGroupRepID>(dim + 1 - m_identity_rep_IDs.size()));
 
-    if(!valid_index(m_identity_rep_IDs[dim])) {
-      SymGroupRep *new_rep(new SymGroupRep(*this));
+    if(m_identity_rep_IDs[dim].empty()) {
+      m_rep_array.push_back(new SymGroupRep(*this));
       for(Index i = 0; i < size(); i++) {
-        new_rep->set_rep(i, SymMatrixXd(Eigen::MatrixXd::Identity(dim, dim)));
+        m_rep_array.back()->set_rep(i, SymMatrixXd(Eigen::MatrixXd::Identity(dim, dim)));
       }
-      m_identity_rep_IDs[dim] = add_representation(new_rep);
+      m_identity_rep_IDs[dim] = SymGroupRepID(group_index(), m_rep_array.size() - 1);
     }
     return m_identity_rep_IDs[dim];
   }
 
   //*******************************************************************************************
 
-  SymGroupRep const *MasterSymGroup::get_coord_rep() const {
-    if(m_coord_rep_ID == Index(-1)) add_coord_rep();
+  SymGroupRep const &MasterSymGroup::coord_rep() const {
+    if(m_coord_rep_ID.empty())
+      _add_coord_rep();
     return representation(m_coord_rep_ID);
   }
 
   //*******************************************************************************************
 
-  SymGroupRep const *MasterSymGroup::get_reg_rep() const {
-    if(m_reg_rep_ID == Index(-1)) add_reg_rep();
+  SymGroupRep const &MasterSymGroup::reg_rep() const {
+    if(m_reg_rep_ID.empty())
+      _add_reg_rep();
     return representation(m_reg_rep_ID);
   }
 
   //*******************************************************************************************
 
-  Index MasterSymGroup::add_coord_rep() const {
+  SymGroupRepID MasterSymGroup::_add_coord_rep() const {
     SymGroupRep *coordrep(new SymGroupRep(*this));
     for(Index i = 0; i < size(); i++)
       coordrep->set_rep(i, SymMatrixXd(at(i).matrix()));
 
-    m_coord_rep_ID = add_representation(coordrep);
+    m_coord_rep_ID = _add_representation(coordrep);
     return m_coord_rep_ID;
   }
 
   //*******************************************************************************************
-  Index MasterSymGroup::add_reg_rep() const {
+  SymGroupRepID MasterSymGroup::_add_reg_rep() const {
     SymGroupRep *regrep(new SymGroupRep(*this));
     Eigen::MatrixXd regrep_mat(size(), size());
 
     if(get_alt_multi_table().size() != size())
-      return -1;
+      return SymGroupRepID();
 
 
     for(Index i = 0; i < size(); i++) {
@@ -161,16 +176,18 @@ namespace CASM {
       regrep->set_rep(i, SymMatrixXd(regrep_mat));
     }
 
-    m_reg_rep_ID = add_representation(regrep);
+    m_reg_rep_ID = _add_representation(regrep);
 
     return m_reg_rep_ID;
   }
 
   //*******************************************************************************************
 
-  Index MasterSymGroup::add_kronecker_rep(Index ID1, Index ID2) const {
-    SymGroupRep const *rep1(representation(ID1)), *rep2(representation(ID2));
-    if(!(rep1 && rep2)) return -1;
+  SymGroupRepID MasterSymGroup::add_kronecker_rep(SymGroupRepID ID1, SymGroupRepID ID2) const {
+    SymGroupRep const *rep1(_representation_ptr(ID1)), *rep2(_representation_ptr(ID2));
+    if(!(rep1 && rep2))
+      return SymGroupRepID();
+
     SymGroupRep *new_rep(new SymGroupRep(*this));
     Eigen::MatrixXd tmat;
     for(Index i = 0; i < size(); i++) {
@@ -183,26 +200,26 @@ namespace CASM {
       //std::cout << "Total matrix:\n" << tmat << '\n';
       new_rep->set_rep(i, SymMatrixXd(tmat));
     }
-    return add_representation(new_rep);
+    return _add_representation(new_rep);
   }
 
   //*******************************************************************************************
 
-  Index MasterSymGroup::add_direct_sum_rep(const Array<Index> &rep_IDs) const {
+  SymGroupRepID MasterSymGroup::add_direct_sum_rep(const Array<SymGroupRepID> &rep_IDs) const {
     Array<SymGroupRep const *> treps;
     for(Index i = 0; i < rep_IDs.size(); i++) {
-      treps.push_back(representation(rep_IDs[i]));
+      treps.push_back(_representation_ptr(rep_IDs[i]));
       if(!treps.back())
-        return -1;
+        return SymGroupRepID();
     }
     SymGroupRep *new_rep(new SymGroupRep(*this));
 
     int dim = 0;
     for(Index i = 0; i < treps.size(); i++) {
       if(treps[i]->size() != size())
-        return -1;
+        return SymGroupRepID();
       if(!(treps[i]->get_MatrixXd(0)))
-        return -1;
+        return SymGroupRepID();
 
       dim += (treps[i]->get_MatrixXd(0))->cols();
     }
@@ -217,46 +234,32 @@ namespace CASM {
       }
       new_rep->set_rep(i, SymMatrixXd(tmat));
     }
-    return add_representation(new_rep);
+    return _add_representation(new_rep);
   }
 
   //*******************************************************************************************
 
-  Index MasterSymGroup::add_rotation_rep() const {
+  SymGroupRepID MasterSymGroup::add_rotation_rep() const {
 
     // make sure coord_rep_ID exists?
     //Index coord_rep_index((*this).coord_rep_ID());
     // make a new symmetry representation
     SymGroupRep *new_rep(new SymGroupRep(*this));
 
-    // Why is this the only RemoteHandle in this file?
-    // I'm prob missing something....
-    SymGroupRep::RemoteHandle coord_handle(point_group(), coord_rep_ID());
-
-
     // we are going to use our knowledge of how rotation
     // matrices transform under symmetry (in the coord_rep)
     // in order to build
     // up a representation in the rotation basis.
-    std::cout << " COORD_HANDLE SIZE = " << coord_handle.size() << std::endl;
-    for(Index i = 0; i < coord_handle.size(); i++) {
-      std::cout << " IN FOR" << std::endl;
-      // capital M in matrix!
-      // hmm so I need Handle to get SymOps
-      // but SymGroupRep to get_Matrix
-      Eigen::Matrix3d coord_rep_mat = *(get_coord_rep()->get_MatrixXd(i));
+    for(Index i = 0; i < size(); i++) {
+
       // build each 4d representaion for a = 1, b = 1, ...
       // rp = rotation parameter
-
-      std::cout << " COORD_REP \n" << coord_rep_mat << std::endl;
-      std::cout << " determinant == : " << coord_rep_mat.determinant() << std::endl;
+      Eigen::Matrix3d coord_rep_mat = at(i).matrix();
       if(!almost_equal(coord_rep_mat.determinant(), 1.)) {
         std::cout << "IN IF" << std::endl;
         coord_rep_mat *= coord_rep_mat.determinant();
         //continue;
       }
-
-      std::cout << " after if" << std::endl;
 
       Eigen::Quaterniond opq(coord_rep_mat);
 
@@ -332,76 +335,60 @@ namespace CASM {
       std::cout << "Rota Rep final mats " << i << "\n" << *(new_rep->get_MatrixXd(i)) << std::endl;
     }
 
-    return add_representation(new_rep);
+    return _add_representation(new_rep);
   }
 
   //*******************************************************************************************
-  Index MasterSymGroup::add_transformed_rep(Index orig_ID, const Eigen::MatrixXd &trans_mat) const {
-    SymGroupRep const *trep(representation(orig_ID));
-    if(!trep) return -1;
+
+  SymGroupRepID MasterSymGroup::add_transformed_rep(SymGroupRepID orig_ID, const Eigen::MatrixXd &trans_mat) const {
+    SymGroupRep const *trep(_representation_ptr(orig_ID));
+    if(!trep)
+      return SymGroupRepID();
     return add_representation(trep->coord_transformed_copy(trans_mat));
-
-  }
-
-  //*******************************************************************************************
-  Index MasterSymGroup::make_empty_representation() const {
-    m_rep_array.push_back(new SymGroupRep(*this));
-    return m_rep_array.back()->get_ID();
-  }
-  //*******************************************************************************************
-
-  Index MasterSymGroup::add_representation(SymGroupRep *new_ptr) const {
-    m_rep_array.push_back(new_ptr);
-    if(!m_rep_array.back()->has_valid_master() || this != &(m_rep_array.back()->master_group()))
-      m_rep_array.back()->set_master_group(*this);
-    return m_rep_array.back()->get_ID();
   }
 
   //*******************************************************************************************
 
-  Index MasterSymGroup::add_representation(const SymGroupRep &new_rep) const {
-    m_rep_array.push_back(new_rep.copy());
-    if(!m_rep_array.back()->has_valid_master() || this != &(m_rep_array.back()->master_group()))
-      m_rep_array.back()->set_master_group(*this);
-    return m_rep_array.back()->get_ID();
+  SymGroupRepID MasterSymGroup::add_empty_representation() const {
+    SymGroupRepID new_ID(group_index(), m_rep_array.size());
+    m_rep_array.push_back(new SymGroupRep(*this, new_ID));
+    return new_ID;
   }
 
   //*******************************************************************************************
-  SymGroupRep const *MasterSymGroup::representation(Index i) const {
-    for(Index j = 0; j < m_rep_array.size(); j++) {
-      if(m_rep_array[j]->get_ID() == i)
-        return m_rep_array[j];
+
+  SymGroupRepID MasterSymGroup::add_representation(const SymGroupRep &new_rep) const {
+    return _add_representation(new_rep.copy());
+  }
+
+  //*******************************************************************************************
+
+  SymGroupRepID MasterSymGroup::_add_representation(SymGroupRep *new_rep) const {
+    SymGroupRepID new_ID(group_index(), m_rep_array.size());
+    m_rep_array.push_back(new_rep);
+    m_rep_array.back()->set_master_group(*this, new_ID);
+    return new_ID;
+  }
+
+  //*******************************************************************************************
+  const SymGroupRep &MasterSymGroup::representation(SymGroupRepID _id) const {
+    return *_representation_ptr(_id);
+  }
+  //*******************************************************************************************
+  SymGroupRep *MasterSymGroup::_representation_ptr(SymGroupRepID _id) const {
+    if(_id.group_index() != group_index()) {
+      throw std::runtime_error("Attempting to access representation from MasterGroup #" + std::to_string(group_index())
+                               + " that resides in MasterGroup #" + std::to_string(_id.group_index()));
     }
 
-    return nullptr;
+    return m_rep_array[_id.rep_index()];
   }
+
   //*******************************************************************************************
 
   void MasterSymGroup::sort() {
-    SymGroup::sort();
-    m_point_group.clear();
-    bool broken_check(false);
-    Array<Index> perm_array(size(), 0);
-    for(Index i = 0; i < size(); i++) {
-      perm_array[i] = at(i).index();
-      if(at(i).index() != i) {
-        at(i).set_index(*this, i);
-        broken_check = true;
-      }
-    }
-    if(broken_check && m_rep_array.size()) {
-      std::cerr << "WARNING: Order of symmetry operations has been altered by MasterSymGroup::sort(). Attempting to repair "
-                << m_rep_array.size() << " symmetry representations.\n";
-      for(Index i = 0; i < m_rep_array.size(); i++) {
-        m_rep_array[i]->permute(perm_array);
-        for(Index j = 0; j < m_rep_array[i]->size(); j++) {
-          if(m_rep_array[i]->at(j)) {
-            (m_rep_array[i]->at(j))->set_identifiers(*this, m_rep_array[i]->get_ID(), perm_array[j]);
-          }
-        }
-      }
-    }
-    return;
+    // Assume that sorting a mastersymgroup always means sorting by class
+    sort_by_class();
   }
 
   //*******************************************************************************************
@@ -1925,7 +1912,7 @@ namespace CASM {
 
     m_character_table.resize(nc, Array<std::complex<double> >(nc, -7));
     complex_irrep.resize(nc, false);
-    irrep_IDs.resize(nc, -1);
+    irrep_IDs.resize(nc);
 
 
     /** We need to figure out the dimensionality of each irreducible representation.
@@ -3075,7 +3062,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  void SymGroup::set_irrep_ID(Index i, Index ID) const {
+  void SymGroup::set_irrep_ID(Index i, SymGroupRepID ID) const {
     assert((valid_index(i) && i < irrep_IDs.size()) && "Attempting to set ID for out-of-bounds irrep.");
     irrep_IDs[i] = ID;
     return;
@@ -3084,9 +3071,9 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  Index SymGroup::get_irrep_ID(Index i) const {
+  SymGroupRepID SymGroup::get_irrep_ID(Index i) const {
     if(!valid_index(i) || i >= irrep_IDs.size())
-      return -1;
+      return SymGroupRepID();
 
     return irrep_IDs[i];
 
@@ -3094,7 +3081,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  Index SymGroup::coord_rep_ID() const {
+  SymGroupRepID SymGroup::coord_rep_ID() const {
     if(!size() || !at(0).has_valid_master()) {
       std::cerr << "CRITICAL ERROR: In SymGroup::get_coord_rep_ID(), SymGroup is improperly initialized.\n"
                 << "                Exiting...\n";
@@ -3105,21 +3092,21 @@ namespace CASM {
   }
   //*******************************************************************************************
 
-  Index SymGroup::make_empty_representation() const {
+  SymGroupRepID SymGroup::add_empty_representation() const {
     if(!size() || !at(0).has_valid_master()) {
-      std::cerr << "CRITICAL ERROR: In SymGroup::make_empty_representation(), SymGroup is improperly initialized.\n"
+      std::cerr << "CRITICAL ERROR: In SymGroup::add_empty_representation(), SymGroup is improperly initialized.\n"
                 << "                Exiting...\n";
       exit(1);
     }
 
-    return at(0).master_group().make_empty_representation();
+    return at(0).master_group().add_empty_representation();
   }
 
   //*******************************************************************************************
 
-  SymGroupRep const *SymGroup::get_irrep(Index i) const {
+  SymGroupRep const &SymGroup::get_irrep(Index i) const {
     if(!size() || !valid_index(i) || i >= irrep_IDs.size())
-      return nullptr;
+      throw std::runtime_error(std::string("Cannot find irrep ") + std::to_string(i) + " in the current SymGroup\n");
 
     return at(0).master_group().representation(irrep_IDs[i]);
 

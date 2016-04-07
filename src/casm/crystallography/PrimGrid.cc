@@ -241,17 +241,17 @@ namespace CASM {
 
   //**********************************************************************************************
 
-  Index PrimGrid::make_permutation_representation(const SymGroup &group, Index basis_permute_ID)const {
+  SymGroupRepID PrimGrid::make_permutation_representation(const SymGroup &group, SymGroupRepID basis_permute_ID)const {
 
-    Index perm_rep_ID = group.make_empty_representation();
+    SymGroupRepID perm_rep_ID = group.add_empty_representation();
     PrimGrid::matrix_type mat_mnp;
     UnitCellCoord mnp_shift;
     Index old_l, new_l;
     for(Index ng = 0; ng < group.size(); ng++) {
-      auto rep = group[ng].get_basis_permute_rep(basis_permute_ID);
+      SymBasisPermute const *rep = group[ng].get_basis_permute_rep(basis_permute_ID);
       if(!rep) {
         std::cerr << "CRITICAL ERROR: In PrimGrid::make_permutation_representation, BasisPermute representation is incorrectly initialized!\n"
-                  << "                basis_permute_ID is " << basis_permute_ID << " and op index is " << group[ng].index() << " and REP_COUNT is " << SymGroupRep::CURR_REP_COUNT() <<  '\n'
+                  << "                basis_permute_ID is " << basis_permute_ID << " and op index is " << group[ng].index() << "\n"
                   << "                Exiting...\n";
 
         exit(1);

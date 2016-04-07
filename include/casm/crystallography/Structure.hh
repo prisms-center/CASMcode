@@ -29,7 +29,7 @@ namespace CASM {
     /// assuming that the crystal is periodic
     mutable MasterSymGroup m_factor_group;
     /// This holds the representation id of the permutation representation
-    mutable Index basis_perm_rep_ID;
+    mutable SymGroupRepID basis_perm_rep_ID;
     ///Specifies whether selectice dynamics is on or of for DFT calculations
     bool SD_flag;
 
@@ -50,9 +50,9 @@ namespace CASM {
   public: //PUBLIC METHODS
 
     //  ****Constructors****
-    Structure() : BasicStructure<Site>(), basis_perm_rep_ID(-1) {}
-    explicit Structure(const Lattice &init_lat) : BasicStructure<Site>(init_lat), basis_perm_rep_ID(-1) {}
-    explicit Structure(const BasicStructure<Site> &base) : BasicStructure<Site>(base), basis_perm_rep_ID(-1) {}
+    Structure() : BasicStructure<Site>() {}
+    explicit Structure(const Lattice &init_lat) : BasicStructure<Site>(init_lat) {}
+    explicit Structure(const BasicStructure<Site> &base) : BasicStructure<Site>(base) {}
     explicit Structure(const fs::path &filepath);
 
     /// Have to explicitly define the copy constructor so that factor_group
@@ -65,14 +65,8 @@ namespace CASM {
     //const MasterSymGroup &factor_group();
     const SymGroup &point_group() const;
     //const SymGroup &point_group();
-    SymGroupRep const *permutation_symrep();
-    SymGroupRep const *permutation_symrep()const;
-    Index permutation_symrep_ID();
-    Index permutation_symrep_ID()const;
-    SymGroupRep const *basis_permutation_symrep();
     SymGroupRep const *basis_permutation_symrep()const;
-    Index basis_permutation_symrep_ID();
-    Index basis_permutation_symrep_ID()const;
+    SymGroupRepID basis_permutation_symrep_ID()const;
 
     std::vector<Specie> get_struc_specie() const;
     std::vector<Molecule> get_struc_molecule() const;
@@ -117,7 +111,7 @@ namespace CASM {
     void fg_converge(double small_tol, double large_tol, double increment);
 
     /// Obtain the basis permutation representation of factor_group, returns its rep_id, and sets internal basis_perm_rep_ID
-    Index generate_basis_permutation_representation(bool verbose = false) const;
+    SymGroupRepID generate_basis_permutation_representation(bool verbose = false) const;
 
     void symmetrize(const SymGroup &relaxed_factors);
     void symmetrize(const double &tolerace);

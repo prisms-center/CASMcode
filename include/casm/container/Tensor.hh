@@ -159,12 +159,12 @@ namespace CASM {
 
     Tensor &transform(const Eigen::MatrixXd &op);
 
-    //rep_inds specify the representations that transform each dimension of tensor
-    Tensor &transform(const SymOp &op, Array<Index> rep_inds);
+    //rep_IDs specify the representations that transform each dimension of tensor
+    Tensor &transform(const SymOp &op, Array<SymGroupRepID> rep_IDs);
 
     Tensor &apply_sym(const SymOp &op);
 
-    Tensor &symmetrize_index(const SymOp &op, Array<Index> rep_inds, Array<Index> inner_ind);
+    Tensor &symmetrize_index(const SymOp &op, Array<SymGroupRepID> rep_IDs, Array<Index> inner_ind);
 
     Tensor slice(Array<Index> slice_Ndim, Array<Index> slice_ind);
 
@@ -762,9 +762,9 @@ namespace CASM {
 
   //************************************************************
   template<class T>
-  Tensor<T> &Tensor<T>::transform(const SymOp &op, Array<Index> rep_inds) {
+  Tensor<T> &Tensor<T>::transform(const SymOp &op, Array<SymGroupRepID> rep_IDs) {
     if(!rank()) return *this;
-    Array<Eigen::MatrixXd const *> rep_mats(op.get_matrix_reps(rep_inds));
+    Array<Eigen::MatrixXd const *> rep_mats(op.get_matrix_reps(rep_IDs));
 
     Tensor<T> ttens(Nrank, Ndim);
     Index nd;
@@ -792,9 +792,9 @@ namespace CASM {
 
   //************************************************************
   template<class T>
-  Tensor<T> &Tensor<T>::symmetrize_index(const SymOp &op, Array<Index> rep_inds, Array<Index> inner_ind) {
+  Tensor<T> &Tensor<T>::symmetrize_index(const SymOp &op, Array<SymGroupRepID> rep_IDs, Array<Index> inner_ind) {
     if(!rank()) return *this;
-    Array<Eigen::MatrixXd const *> rep_mats(op.get_matrix_reps(rep_inds));
+    Array<Eigen::MatrixXd const *> rep_mats(op.get_matrix_reps(rep_IDs));
 
     Index nd;
 

@@ -6,39 +6,27 @@
 namespace CASM {
 
   //*******************************************************************************************
-  Eigen::MatrixXd const *SymOpRepresentation::get_matrix_rep(Index rep_ID) const {
-    SymGroupRep const *tRep(master_group().representation(rep_ID));
-    if(!tRep) return NULL;
-
-    return (tRep->at(op_index))->get_MatrixXd();
+  Eigen::MatrixXd const *SymOpRepresentation::get_matrix_rep(SymGroupRepID rep_ID) const {
+    assert(has_valid_master() && !rep_ID.empty());
+    return (master_group().representation(rep_ID)[op_index])->get_MatrixXd();
   }
 
   //*******************************************************************************************
 
-  SymBasisPermute const *SymOpRepresentation::get_basis_permute_rep(Index rep_ID) const {
+  SymBasisPermute const *SymOpRepresentation::get_basis_permute_rep(SymGroupRepID rep_ID) const {
+    assert(has_valid_master() && !rep_ID.empty());
+    return (master_group().representation(rep_ID)[op_index])->get_ucc_permutation();
+  }
+  //*******************************************************************************************
 
-    SymGroupRep const *tRep(master_group().representation(rep_ID));
-    if(!tRep) {
-      std::cerr << "Warning: You have requested information from a nonexistent representation!\n"
-                << "m_master_group pointer is " << m_master_group << '\n';
-      return NULL;
-    }
-
-    return (tRep->at(op_index))->get_ucc_permutation();
+  Permutation const *SymOpRepresentation::get_permutation_rep(SymGroupRepID rep_ID) const {
+    assert(has_valid_master() && !rep_ID.empty());
+    return (master_group().representation(rep_ID)[op_index])->get_permutation();
   }
 
   //*******************************************************************************************
 
-  Permutation const *SymOpRepresentation::get_permutation_rep(Index rep_ID) const {
-    SymGroupRep const *tRep(master_group().representation(rep_ID));
-    if(!tRep) return NULL;
-
-    return (tRep->at(op_index))->get_permutation();
-  }
-
-  //*******************************************************************************************
-
-  Array<Eigen::MatrixXd const * > SymOpRepresentation::get_matrix_reps(Array<Index> rep_IDs) const {
+  Array<Eigen::MatrixXd const * > SymOpRepresentation::get_matrix_reps(Array<SymGroupRepID> rep_IDs) const {
     Array<Eigen::MatrixXd const * > tmat;
     for(Index i = 0; i < rep_IDs.size(); i++) {
       tmat.push_back(get_matrix_rep(rep_IDs[i]));
@@ -48,28 +36,20 @@ namespace CASM {
   }
 
   //**********************************************************
-  void SymOpRepresentation::set_rep(Index rep_ID, const SymOpRepresentation &op_rep) const {
-    SymGroupRep const *tRep(master_group().representation(rep_ID));
-    if(!tRep) {
-      std::cerr << "CRITICAL ERROR: In SymOpRepresentation::set_matrix_rep(" << rep_ID << "), representation was not found.\n"
-                << "                Exiting...\n";
-      exit(1);
-    }
-
-    tRep->set_rep(op_index, op_rep);
-
-    return;
+  void SymOpRepresentation::set_rep(SymGroupRepID rep_ID, const SymOpRepresentation &op_rep) const {
+    assert(has_valid_master() && !rep_ID.empty());
+    return master_group().representation(rep_ID).set_rep(op_index, op_rep);
   }
 
   //*******************************************************************************************
 
-  void SymOpRepresentation::set_identifiers(const MasterSymGroup &new_group, Index new_rep_ID) {
+  void SymOpRepresentation::set_identifiers(const MasterSymGroup &new_group, SymGroupRepID new_rep_ID) {
     m_master_group = &new_group;
     rep_ID = new_rep_ID;
-    SymGroupRep const *trep(new_group.representation(rep_ID));
+    SymGroupRep const &trep(new_group.representation(rep_ID));
     Index i;
-    for(i = 0; i < trep->size(); i++) {
-      if(this == trep->at(i)) {
+    for(i = 0; i < trep.size(); i++) {
+      if(this == trep[i]) {
         op_index = i;
         break;
       }
@@ -81,7 +61,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  void SymOpRepresentation::set_identifiers(const MasterSymGroup &new_group, Index new_rep_ID, Index new_op_index) {
+  void SymOpRepresentation::set_identifiers(const MasterSymGroup &new_group, SymGroupRepID new_rep_ID, Index new_op_index) {
     m_master_group = &new_group;
     rep_ID = new_rep_ID;
     op_index = new_op_index;

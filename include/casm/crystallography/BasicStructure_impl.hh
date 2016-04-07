@@ -271,7 +271,7 @@ namespace CASM {
   // it brings the basis within the crystal.
 
   template<typename CoordType>
-  Index BasicStructure<CoordType>::generate_basis_permutation_representation(const MasterSymGroup &factor_group, bool verbose) const {
+  SymGroupRepID BasicStructure<CoordType>::generate_basis_permutation_representation(const MasterSymGroup &factor_group, bool verbose) const {
 
     if(factor_group.size() <= 0 || !basis.size()) {
       std::cerr << "ERROR in BasicStructure::generate_basis_permutation_representation" << std::endl;
@@ -280,7 +280,7 @@ namespace CASM {
     }
 
     SymGroupRep basis_permute_group(factor_group);
-    Index rep_id;
+    SymGroupRepID rep_id;
 
     std::string clr(100, ' ');
 

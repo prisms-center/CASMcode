@@ -33,7 +33,7 @@ namespace CASM {
     using Array<Function *> :: swap_elem;
 
     BasisSet(const std::string &name = "") :
-      m_basis_symrep_ID(-1), m_name(name), m_basis_ID(_new_ID()), m_min_poly_order(0), m_max_poly_order(-1) {}
+      m_name(name), m_basis_ID(_new_ID()), m_min_poly_order(0), m_max_poly_order(-1) {}
     BasisSet(const BasisSet &init_basis);
     const BasisSet &operator=(const BasisSet &RHS);
 
@@ -46,7 +46,7 @@ namespace CASM {
       return m_name;
     }
 
-    Index basis_symrep_ID()const {
+    SymGroupRepID basis_symrep_ID()const {
       return m_basis_symrep_ID;
     }
 
@@ -101,7 +101,7 @@ namespace CASM {
       m_name = new_name;
     }
 
-    void set_basis_symrep_ID(Index new_ID) {
+    void set_basis_symrep_ID(SymGroupRepID new_ID) {
       m_basis_symrep_ID = new_ID;
     }
 
@@ -132,7 +132,7 @@ namespace CASM {
     void remote_deval_to(IteratorType result_begin, IteratorType result_end, const DoF::RemoteHandle &dvar)const;
 
     /// Define the basis set to contain only variables (e.g., x,y,z)
-    void set_variable_basis(const Array<ContinuousDoF> &tvar_compon, Index tsym_rep);
+    void set_variable_basis(const Array<ContinuousDoF> &tvar_compon, SymGroupRepID _sym_rep_ID);
 
     void set_dof_IDs(const Array<Index> &new_IDs);
 
@@ -161,11 +161,18 @@ namespace CASM {
     // spcecified by order.
     //void construct_polynomials_by_order(const Array<BasisSet const * > &tsubs, Index order);
 
-    void construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs, const Eigen::MatrixXd &gram_mat, Index basis_ind, Index sym_rep_ind = -2);
+    void construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
+                                                  const Eigen::MatrixXd &gram_mat,
+                                                  Index basis_ind);
 
-    void construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs, const Array<double> &occ_probs, Index basis_ind, Index sym_rep_ind = -2);
+    void construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
+                                                  const Array<double> &occ_probs,
+                                                  Index basis_ind);
 
-    void construct_invariant_polynomials(const Array<BasisSet const *> &tsubs, const SymGroup &head_sym_group, Index order, Index min_dof_order = 1);
+    void construct_invariant_polynomials(const Array<BasisSet const *> &tsubs,
+                                         const SymGroup &head_sym_group,
+                                         Index order,
+                                         Index min_dof_order = 1);
 
     void construct_green_lagrange_dot_prods(const Array<BasisSet const *> &site_disp_dofs, BasisSet const *LG_strain_dofs, const Eigen::MatrixXd &ref_clust);
     void construct_disp_grad_dot_prods(const Array<BasisSet const *> &site_disp_dofs, BasisSet const *F_strain_dofs, const Eigen::MatrixXd &ref_clust);
@@ -200,7 +207,7 @@ namespace CASM {
     void from_json(const jsonParser &json);
 
   private:
-    mutable Index m_basis_symrep_ID;
+    mutable SymGroupRepID m_basis_symrep_ID;
 
     std::string m_name;
     Index m_basis_ID;

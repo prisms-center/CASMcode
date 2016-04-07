@@ -27,20 +27,16 @@ namespace CASM {
   public:
     typedef SymGroupRepHandle RemoteHandle;
     enum NullInitializer {NO_HOME};
-    static Index CURR_REP_COUNT() {
-      return REP_COUNT;
-    };
 
     /// Use this constructor when MasterSymGroup is unknown or doesn't exist
     /// You must promise that you know what you're doing
 
     SymGroupRep(SymGroupRep::NullInitializer init, Index _size) :
       Array<SymOpRepresentation * >(_size, nullptr),
-      m_rep_ID(REP_COUNT++),
       m_master_group(nullptr) { }
 
-    SymGroupRep(const SymGroup &_head) :
-      m_rep_ID(REP_COUNT++), m_master_group(&_head.master_group()) {
+    SymGroupRep(const SymGroup &_head, SymGroupRepID _rep_ID = SymGroupRepID()) :
+      m_rep_ID(_rep_ID), m_master_group(&_head.master_group()) {
       if(has_valid_master())
         resize(master_group().size(), nullptr);
       else {
@@ -66,17 +62,15 @@ namespace CASM {
     const MasterSymGroup &master_group() const {
       assert(m_master_group);
       return *m_master_group;
-    };
+    }
 
     bool has_valid_master() const {
       return m_master_group != nullptr;
-    };
-    void set_master_group(const MasterSymGroup &master);
+    }
+    void set_master_group(const MasterSymGroup &master, const SymGroupRepID &_rep_ID);
 
-    /// Adds this representation its home_group, if it hasn't been added yet
-    /// returns its rep_ID
-    Index add_self_to_master();
-    Index add_copy_to_master() const;
+    /// Adds copy of this representation its home_group
+    SymGroupRepID add_copy_to_master() const;
 
     SymGroupRep &operator=(const SymGroupRep &RHS);
 
@@ -84,7 +78,7 @@ namespace CASM {
 
     SymGroupRep *copy()const {
       return new SymGroupRep(*this);
-    };
+    }
 
     //John G 050513
 
@@ -112,13 +106,9 @@ namespace CASM {
     // will throw if valid master exists.
     void push_back_copy(const SymOpRepresentation &_pushed);
 
-    Index get_ID() const {
+    SymGroupRepID get_ID() const {
       return m_rep_ID;
-    };
-
-    Index refresh_ID() {
-      return m_rep_ID = REP_COUNT++;
-    };
+    }
 
     std::vector<Eigen::MatrixXd> irreducible_wedges(const SymGroup &head_group, std::vector<Index> &multiplicities)const;
     multivector<Eigen::VectorXd>::X<3> calc_special_total_directions(const SymGroup &subgroup)const;
@@ -128,7 +118,7 @@ namespace CASM {
     ReturnArray<Index> num_each_irrep(const SymGroup &sub_group, bool verbose = false) const;
     ReturnArray<Index> num_each_real_irrep(const SymGroup &subgroup, bool verbose = false) const;
 
-    ReturnArray<Index> get_irrep_IDs(const SymGroup &subgroup) const;
+    ReturnArray<SymGroupRepID> get_irrep_IDs(const SymGroup &subgroup) const;
 
     bool is_irrep() const;
     bool is_irrep(const SymGroup &head_group) const;
@@ -136,11 +126,11 @@ namespace CASM {
     /// Make a copy of representation on vector space 'V' that is transformed into a representation on vector space 'W'
     /// 'trans_mat' is the unitary matrix that isomorphically maps 'V'->'W' (i.e., [w = trans_mat * v] and [v = trans_mat.transpose() * w] )
     /// If the original representation to be transformed is just a temporary standalone SymGroupRep, be sure to delete it before falling out of scope
-    SymGroupRep *coord_transformed_copy(const Eigen::MatrixXd &trans_mat) const;
+    SymGroupRep coord_transformed_copy(const Eigen::MatrixXd &trans_mat) const;
 
     /// Make copy of (*this) that is transformed so that axes are oriented along high-symmetry direction
     /// and confined to subspaces that transform as irreps.
-    SymGroupRep *symmetry_adapted_copy(const SymGroup &head_group) const {
+    SymGroupRep symmetry_adapted_copy(const SymGroup &head_group) const {
       return coord_transformed_copy(get_irrep_trans_mat(head_group));
     }
 
@@ -162,11 +152,9 @@ namespace CASM {
     // If 'm_master_group' is not nullptr, should be initialized accordingly
     void from_json(const jsonParser &json);
   private:
-    /// REP_COUNT keeps track of the rep_ID that will be given to the next SymGroupRep to be created
-    static Index REP_COUNT;
 
     /// rep_ID is unique identifier of a specific SymGroupRep instantiation
-    mutable Index m_rep_ID;
+    mutable SymGroupRepID m_rep_ID;
 
     /// Pointer to the home_group that generated this SymGroupRep
     MasterSymGroup const *m_master_group;
@@ -174,13 +162,13 @@ namespace CASM {
     SymGroupRep() {
       std::cerr << "Cannot perform default construction of SymGroupRep.\nExiting...\n";
       exit(1);
-    };
+    }
 
     using Array<SymOpRepresentation *>::push_back;
     using Array<SymOpRepresentation *>::resize;
 
     /// Pointer version of constructor is private for internal construction of master-less representations
-    SymGroupRep(const MasterSymGroup *_home) : m_rep_ID(REP_COUNT++), m_master_group(_home) { };
+    SymGroupRep(const MasterSymGroup *_home) :  m_master_group(_home) { }
 
     void calc_new_irreps(int max_iter = 1000) const;
     void calc_new_irreps(const SymGroup &sub_group, int max_iter = 1000) const;
@@ -216,15 +204,15 @@ namespace CASM {
     SymGroupRepHandle():
       m_group_rep(nullptr) {}
 
-    SymGroupRepHandle(const SymGroup &head_group, Index symrep_ID) :
+    SymGroupRepHandle(const SymGroup &head_group, SymGroupRepID symrep_ID) :
       m_group_rep(nullptr), m_subgroup_op_inds(head_group.op_indices()) {
       if(head_group.size() == 0 || !head_group[0].has_valid_master()) {
         std::cerr << "CRITICAL ERROR: Requested representation of an improperly initialized SymGroup.\n"
                   << "                Exiting...\n";
         assert(0);
       }
-      assert(valid_index(symrep_ID));
-      m_group_rep = head_group[0].master_group().representation(symrep_ID);
+      assert(!symrep_ID.empty());
+      m_group_rep = &(head_group[0].master_group().representation(symrep_ID));
       assert(m_group_rep);
     }
 
@@ -266,10 +254,10 @@ namespace CASM {
       return m_group_rep == RHS.m_group_rep && m_subgroup_op_inds == RHS.m_subgroup_op_inds;
     }
 
-    void set_rep(const SymGroup &head_group, Index symrep_ID) {
+    void set_rep(const SymGroup &head_group, SymGroupRepID symrep_ID) {
       m_subgroup_op_inds = head_group.op_indices();
-      assert(head_group.size() && valid_index(symrep_ID) && head_group[0].has_valid_master());
-      m_group_rep = head_group[0].master_group().representation(symrep_ID);
+      assert(head_group.size() && !symrep_ID.empty() && head_group[0].has_valid_master());
+      m_group_rep = &(head_group[0].master_group().representation(symrep_ID));
       assert(m_group_rep);
 
     }

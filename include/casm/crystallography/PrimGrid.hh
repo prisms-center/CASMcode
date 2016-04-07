@@ -16,6 +16,7 @@ namespace CASM {
   class UnitCell;
   class UnitCellCoord;
   class Coordinate;
+  class SymGroupRepID;
   class SymOp;
   class SymGroup;
 
@@ -132,7 +133,7 @@ namespace CASM {
     UnitCell unitcell(Index i)const;
     UnitCellCoord uccoord(Index i)const;
 
-    Index make_permutation_representation(const SymGroup &group, Index basis_permute_rep)const;
+    SymGroupRepID make_permutation_representation(const SymGroup &group, SymGroupRepID basis_permute_rep)const;
 
     // Returns Array of permutations.  Permutation 'l' describes the effect of translating PrimGrid site 'l'
     // to the origin.  NB is the number of primitive-cell basis sites. -- keep public for now

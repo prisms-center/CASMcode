@@ -55,7 +55,7 @@ namespace CASM {
       _clust_group() = new_group;
     }
 
-    void set_permute_rep(Index perm_rep_ID) {
+    void set_permute_rep(SymGroupRepID perm_rep_ID) {
       if(clust_group().size() == 0) {
         std::cerr << "CRITICAL ERROR: In GenericCluster<>::set_permute_rep(), Cluster::clust_group() has not yet been initialized!\n"
                   << "                Groups must always be initialized before their representations. Exiting...\n";
@@ -105,11 +105,10 @@ namespace CASM {
     void calc_properties();  //Alex do this
     void calc_properties(GenericCluster<CoordType> phenom_clust);
 
-    ///Call CoordType::update on each of the sites
-    void update();
     double max_length() const {
       return m_max_length;
     }
+
     double min_length() const {
       return m_min_length;
     }
@@ -120,27 +119,26 @@ namespace CASM {
     ///Performs preparatory steps on prototype before doing Orbit::get_equivalent()
     void prepare_prototype() {}
 
-    //Anna do this
     /// is test_cluster a subcluster of (*this)
     bool contains(const GenericCluster &test_cluster) const;
 
-    // Like Array<CoordType>::contains(), but takes periodicity mode into account
+    /// Like Array<CoordType>::contains(), but takes periodicity mode into account
     bool contains_periodic(const CoordType &test_coord) const;
 
-    /** is test_cluster a subcluster of (*this), and how do the indices map
-    'index' is populated with the indices of (*this) that correspond to the
-    points of test_cluster **/
+    /// \brief is test_cluster a subcluster of (*this), and how do the indices map
+    /// 'index' is populated with the indices of (*this) that correspond to the
+    /// points of test_cluster
     bool find(const GenericCluster &test_cluster, Array<Index> &index) const;
 
-    /** if pivot is a sub_cluster, return true and translate (*this) by a lattice translation
-    so that the points of 'pivot' are coincident with subcluster points in (*this) **/
+    /// if pivot is a sub_cluster, return true and translate (*this) by a lattice translation
+    /// so that the points of 'pivot' are coincident with subcluster points in (*this)
     bool map_onto_subcluster(const GenericCluster &pivot);
     bool map_onto_subcluster(const GenericCluster &pivot, int num_maps);
 
-    ///Figure out which basis atoms in basis correspond to the points in cluster (*this)
+    /// Figure out which basis atoms in basis correspond to the points in cluster (*this)
     void collect_basis_info(const Array<CoordType> &basis);
-    /**Figure out which basis atoms in basis correspond to the points in cluster (*this)
-       when cluster is translated by 'shift' **/
+    /// Figure out which basis atoms in basis correspond to the points in cluster (*this)
+    /// when cluster is translated by 'shift'
     void collect_basis_info(const Array<CoordType> &basis, const Coordinate &shift);
 
 
@@ -148,17 +146,15 @@ namespace CASM {
     /// Reads the cluster
     void read(std::istream &stream, COORD_TYPE mode); //Modified by Ivy
 
-
-    //Alex do this
     void print(std::ostream &stream, char delim = '\n', COORD_TYPE mode = COORD_DEFAULT) const;
     void print_shifted(std::ostream &stream, const Coordinate &shift, char delim = '\n', COORD_TYPE mode = COORD_DEFAULT) const;
     void print_sites(std::ostream &stream, int space, char delim = '\n', COORD_TYPE mode = COORD_DEFAULT) const;
     void print_basis_info(std::ostream &stream, int space, char delim = '\n', COORD_TYPE mode = COORD_DEFAULT) const;
     void print_decorated_sites(std::ostream &stream, int space, char delim = '\n', COORD_TYPE mode = COORD_DEFAULT) const;
 
-    ///adds unique points of 'RHS' to (*this)
+    /// adds unique points of 'RHS' to (*this)
     void merge(const GenericCluster &RHS);
-    ///Adds new point to cluster, but only if it is unique
+    /// Adds new point to cluster, but only if it is unique
     void merge(const CoordType &RHS);
 
     /// in=place translation of a cluster
@@ -173,8 +169,9 @@ namespace CASM {
 
     /// are two clusters identical, to within permutation and translation
     bool is_equivalent(const GenericCluster &test_clust) const;
-    /** are two clusters identical, to within permutation and translation
-    translation that maps clusters is stored in 'trans' **/
+
+    /// \brief are two clusters identical, to within permutation and translation
+    /// translation that maps clusters is stored in 'trans'
     bool is_equivalent(const GenericCluster &test_clust, Coordinate &trans) const;
 
     /// if is_equivalent(test_clust) is true, return true and map (*this) onto test_clust

@@ -735,15 +735,6 @@ namespace CASM {
 
     return;
   }
-  //********************************************
-
-  template <typename CoordType>
-  void GenericCluster<CoordType>::update() {
-    for(Index i = 0; i < size(); i++)
-      at(i).update();
-    calc_properties();
-    return;
-  }
 
   //********************************************
 

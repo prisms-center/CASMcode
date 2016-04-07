@@ -19,7 +19,7 @@ namespace CASM {
     for(i = 0; i < _args.size(); i++) {
       //m_subspaces.push_back(Array<Index>(init_args[i].size()));
       //m_sub_sym_reps.push_back(init_args[i].basis_symrep_ID());
-      if(_args[i]->basis_symrep_ID() == Index(-1)) {
+      if((_args[i]->basis_symrep_ID()).empty()) {
         std::cerr << "WARNING: Initializing a PolynomialFunction without knowing how to apply symmetry to it. \n"
                   << "         Something bad will probably happen; consider this your warning!\n";
       }
@@ -41,7 +41,7 @@ namespace CASM {
     for(i = 0; i < _args.size(); i++) {
       //m_subspaces.push_back(Array<Index>(init_args[i].size()));
       //m_sub_sym_reps.push_back(init_args[i].basis_symrep_ID());
-      if(_args[i]->basis_symrep_ID() == Index(-1)) {
+      if((_args[i]->basis_symrep_ID()).empty()) {
         std::cerr << "WARNING: Initializing a PolynomialFunction without knowing how to apply symmetry to it. \n"
                   << "         Something bad will probably happen; consider this your warning!\n";
       }

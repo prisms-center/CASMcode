@@ -283,9 +283,9 @@ namespace CASM {
 
   }
   //*******************************************************************************************
-  void BasisSet::set_variable_basis(const Array<ContinuousDoF> &tvar_compon, Index trep) {
+  void BasisSet::set_variable_basis(const Array<ContinuousDoF> &tvar_compon, SymGroupRepID _var_sym_rep_ID) {
     m_argument.clear();
-    m_basis_symrep_ID = trep;
+    m_basis_symrep_ID = _var_sym_rep_ID;
     Array<Index> tdof_IDs;
     for(Index i = 0; i < tvar_compon.size(); i++) {
       if(!tvar_compon[i].is_locked() && !tdof_IDs.contains(tvar_compon[i].ID()))
@@ -293,7 +293,7 @@ namespace CASM {
     }
     set_dof_IDs(tdof_IDs);
     for(Index i = 0; i < tvar_compon.size(); i++) {
-      push_back(new Variable(tvar_compon, i, trep));
+      push_back(new Variable(tvar_compon, i, _var_sym_rep_ID));
     }
     _refresh_ID();
   }
@@ -443,7 +443,7 @@ namespace CASM {
     _set_arguments(tsubs);
     std::cout << "Constructing invariant polynomials from DoFs:\n";
     for(Index i = 0; i < tsubs.size(); ++i) {
-      if(!valid_index(tsubs[i]->basis_symrep_ID())) {
+      if((tsubs[i]->basis_symrep_ID()).empty()) {
         tsubs[i]->get_symmetry_representation(head_group);
       }
 
@@ -975,7 +975,6 @@ namespace CASM {
       }
     }
 
-    SymGroupRep *block_rep; // Pointer used to refer to temporary subspace reps
     // we will symmetrize each subspace independently, and store the transformation matrix in block_trans_mat
     // Then, fill in appropriate block of ccd2symccd matrix using block_trans_mat
     Eigen::MatrixXd block_trans_mat, ccd2symccd(num_dists, num_dists);
@@ -986,11 +985,10 @@ namespace CASM {
       block_trans_mat.block(0, k, degeneracies[i], degeneracies[i]) = Eigen::MatrixXd::Identity(degeneracies[i], degeneracies[i]);
 
       if(degeneracies[i] > 1) { // deal with degeneracies greater than 1
-        block_rep = tccd_rep.coord_transformed_copy(block_trans_mat);
+        SymGroupRep block_rep(tccd_rep.coord_transformed_copy(block_trans_mat));
         // find (degeneracies[i] x num_dists) matrix that symmetrizes the subspace
-        Eigen::MatrixXd tmat(block_rep->get_irrep_trans_mat(head_group));
+        Eigen::MatrixXd tmat(block_rep.get_irrep_trans_mat(head_group));
         block_trans_mat = tmat * block_trans_mat; //Eigen assumes aliasing for multiplication
-        delete block_rep;
       }
       //place block in matrix
       ccd2symccd.block(k, 0, degeneracies[i], num_dists) = block_trans_mat;
@@ -1039,7 +1037,10 @@ namespace CASM {
   // The second property places constraints on 'W'.  We attempt to find a 'B' that is similar to the Chebychev
   // basis in certain limiting cases.
 
-  void BasisSet::construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs, const Eigen::MatrixXd &gram_mat, Index basis_ind, Index sym_rep_ind) {
+  void BasisSet::construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
+                                                          const Eigen::MatrixXd &gram_mat,
+                                                          Index basis_ind) {
+
     m_argument.clear();
     if(!allowed_occs.is_locked()) {
       set_dof_IDs(Array<Index>(1, allowed_occs.ID()));
@@ -1129,12 +1130,12 @@ namespace CASM {
 
     // Columns of B are our basis functions, orthonormal wrt gram_mat
     for(Index i = 1; i < N; i++) {
-      OccupantFunction tOF(allowed_occs, B.col(i), size(), basis_ind, sym_rep_ind);
+      OccupantFunction tOF(allowed_occs, B.col(i), size(), basis_ind, allowed_occs.sym_rep_ID());
 
       push_back(tOF.copy());
     }
-    if(sym_rep_ind == Index(-2))
-      m_basis_symrep_ID = -2;
+    // ********* TODO!!!!!!!!! ********
+    // Calculate BasisSet symmetry representation here, based on allowed_occs.sym_rep_ID() && B matrix
   }
 
   //*******************************************************************************************
@@ -1150,7 +1151,10 @@ namespace CASM {
   // of the Chebychev polynomials when the probabilities are equal, and orthonormality of the occupation basis when
   // only one probability is non-zero.
 
-  void BasisSet::construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs, const Array<double> &occ_probs, Index basis_ind, Index sym_rep_ind) {
+  void BasisSet::construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
+                                                          const Array<double> &occ_probs,
+                                                          Index basis_ind) {
+
     Index N = allowed_occs.size();
     if(allowed_occs.size() != occ_probs.size()) {
       std::cerr << "CRITICAL ERROR: In BasiSet::construct_orthonormal_discrete_functions(), occ_probs and allowed_occs are incompatible!\nExiting...\n";
@@ -1188,7 +1192,7 @@ namespace CASM {
         gram_mat(i, j) += occ_probs[i] * occ_probs[j];
       }
     }
-    construct_orthonormal_discrete_functions(allowed_occs, gram_mat, basis_ind, sym_rep_ind);
+    construct_orthonormal_discrete_functions(allowed_occs, gram_mat, basis_ind);
   }
 
 
@@ -1475,30 +1479,30 @@ namespace CASM {
 
   bool BasisSet::is_normal_basis_for(const SymGroup &head_group) {
     //First do some basic checks to ensure problem is well-defined
-    if(!valid_index(m_basis_symrep_ID)) {
+    if(m_basis_symrep_ID.empty()) {
       get_symmetry_representation(head_group);
     }
-    if(!valid_index(m_basis_symrep_ID)) {
+    if(m_basis_symrep_ID.empty()) {
       std::cerr << "CRITICAL ERROR: Inside BasisSet::is_normal_basis_for() and cannot calculate a valid SymGroup representation. Exiting...\n";
       exit(1);
     }
     if(!head_group.size())
       return true;
 
-    SymGroupRep const *t_rep(head_group[0].master_group().representation(m_basis_symrep_ID));
+    SymGroupRep const &t_rep(head_group[0].master_group().representation(m_basis_symrep_ID));
 
     //Check that block-diagonalization matches number of irreps
-    return t_rep->num_blocks(head_group) == (t_rep->num_each_real_irrep(head_group)).sum();
+    return t_rep.num_blocks(head_group) == (t_rep.num_each_real_irrep(head_group)).sum();
 
   }
 
   //*******************************************************************************************
 
   BasisSet BasisSet::calc_normal_basis(const SymGroup &head_group, Eigen::MatrixXd &trans_mat) const {
-    if(!valid_index(m_basis_symrep_ID)) {
+    if(m_basis_symrep_ID.empty()) {
       get_symmetry_representation(head_group);
     }
-    if(!valid_index(m_basis_symrep_ID)) {
+    if(m_basis_symrep_ID.empty()) {
       std::cerr << "CRITICAL ERROR: Inside BasisSet::calc_normal_basis() and cannot calculate a valid SymGroup representation. Exiting...\n";
       exit(1);
     }
@@ -1507,10 +1511,10 @@ namespace CASM {
     }
 
 
-    SymGroupRep const *t_rep(head_group[0].master_group().representation(m_basis_symrep_ID));
-    trans_mat = t_rep->get_irrep_trans_mat(head_group);
+    SymGroupRep const &t_rep(head_group[0].master_group().representation(m_basis_symrep_ID));
+    trans_mat = t_rep.get_irrep_trans_mat(head_group);
     BasisSet normal_basis(transform_copy(trans_mat));
-    normal_basis.m_basis_symrep_ID = (t_rep->coord_transformed_copy(trans_mat))->add_self_to_master();
+    normal_basis.m_basis_symrep_ID = (t_rep.coord_transformed_copy(trans_mat)).add_copy_to_master();
     return normal_basis;
   }
 
@@ -1664,7 +1668,7 @@ namespace CASM {
       }
 
     }
-    if(!is_unchanged) m_basis_symrep_ID = -1;
+    if(!is_unchanged) m_basis_symrep_ID = SymGroupRepID();
     return is_unchanged;
 
   }
@@ -1725,7 +1729,7 @@ namespace CASM {
       at(i)->small_to_zero(2 * TOL);
     }
 
-    if(!is_unchanged) m_basis_symrep_ID = -1;
+    if(!is_unchanged) m_basis_symrep_ID = SymGroupRepID();
 
     return is_unchanged;
 
@@ -1734,7 +1738,7 @@ namespace CASM {
   void BasisSet::get_symmetry_representation(const SymGroup &head_group) const {
     if(!head_group.size() || !head_group[0].has_valid_master()) return;
 
-    m_basis_symrep_ID = head_group.make_empty_representation();
+    m_basis_symrep_ID = head_group.add_empty_representation();
     Function *tfunct(nullptr);
     Eigen::MatrixXd tRep(size(), size());
 
@@ -1801,7 +1805,7 @@ namespace CASM {
       }
       ortho_flag = false;
       //You're changing the BasisSet, so the representation is no longer useable!
-      m_basis_symrep_ID = -1;
+      m_basis_symrep_ID = SymGroupRepID();
 
       tfunc->scale(tcoeff);
       at(i)->minus_in_place(tfunc);

@@ -5,6 +5,7 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/container/Array.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/symmetry/SymGroupRepID.hh"
 
 //#include "../basis_set/MathExpressions.cc"
 
@@ -30,24 +31,24 @@ namespace CASM {
       double const *const m_d_ptr;
       int const *const m_i_ptr;
     public:
-      RemoteHandle(const double &d) : m_d_ptr(&d), m_i_ptr(nullptr) {};
-      RemoteHandle(const int &i) : m_d_ptr(nullptr), m_i_ptr(&i) {};
+      RemoteHandle(const double &d) : m_d_ptr(&d), m_i_ptr(nullptr) {}
+      RemoteHandle(const int &i) : m_d_ptr(nullptr), m_i_ptr(&i) {}
       const int *i_ptr() const {
         return m_i_ptr;
-      };
+      }
       const double *d_ptr() const {
         return m_d_ptr;
-      };
+      }
     };
 
   public:
-    DoF(const std::string &_name = "", Index _ID = -1) : m_type_name(_name), m_dof_ID(_ID), m_ID_lock(false) {};
-    virtual ~DoF() {}; //= 0;
+    DoF(const std::string &_name = "", Index _ID = -1) : m_type_name(_name), m_dof_ID(_ID), m_ID_lock(false) {}
+    virtual ~DoF() {} //= 0;
     //virtual double get_val() const = 0; // get the current value
 
     const std::string &type_name() const {
       return m_type_name;
-    };
+    }
 
     std::string type_name_prefix() const {
       std::vector<std::string> split_string;
@@ -56,7 +57,7 @@ namespace CASM {
         return split_string[0];
       else
         return std::string();
-    };
+    }
 
     std::string type_name_suffix() const {
       std::vector<std::string> split_string;
@@ -65,30 +66,30 @@ namespace CASM {
         return split_string.back();
       else
         return std::string();
-    };
+    }
 
     Index ID() const {
       return m_dof_ID;
-    };
+    }
 
     void set_ID(Index new_ID) {
       if(m_ID_lock)
         return;
       //std::cout << "DoF " << this << " ID updated from " << ID() << " to " << new_ID << '\n';
       m_dof_ID = new_ID;
-    };
+    }
 
     bool is_locked() const {
       return m_ID_lock;
-    };
+    }
 
     void lock_ID() {
       m_ID_lock = true;
-    };
+    }
 
     void unlock_ID() {
       m_ID_lock = false;
-    };
+    }
 
     virtual jsonParser &to_json(jsonParser &json) const = 0;
 
@@ -102,7 +103,6 @@ namespace CASM {
   ///
   void from_json(DoF *dof, const jsonParser &json, const Lattice &lat);
 
-  //DoF::~DoF() {};
 
   //*******************************************************************************************
 
@@ -114,21 +114,28 @@ namespace CASM {
     /// Allows DoF to point to a remote value for faster/easier evaluation
     const int *m_remote_state;
 
-    Index m_sym_rep_ID;
+    SymGroupRepID m_sym_rep_ID;
 
   public:
-    DiscreteDoF(): DoF(""), m_current_state(0), m_remote_state(nullptr), m_sym_rep_ID(-2) {};
+    DiscreteDoF(): DoF(""), m_current_state(0), m_remote_state(nullptr), m_sym_rep_ID(SymGroupRepID::identity(0)) {}
 
+    DiscreteDoF(const std::string &_name, int _current_state = 0, SymGroupRepID _id = SymGroupRepID::identity(0)):
+      DoF(_name),
+      m_current_state(_current_state),
+      m_remote_state(nullptr),
+      m_sym_rep_ID(_id) {
 
+    }
 
-    DiscreteDoF(const std::string &_name, int _current_state = 0):
-      DoF(_name), m_current_state(_current_state), m_remote_state(nullptr), m_sym_rep_ID(-2) {};
+    virtual ~DiscreteDoF() {}
 
-    virtual ~DiscreteDoF() {};
-
-    Index sym_rep_ID()const {
+    SymGroupRepID sym_rep_ID()const {
       return m_sym_rep_ID;
-    };
+    }
+
+    void set_sym_rep_ID(SymGroupRepID _id) {
+      m_sym_rep_ID = _id;
+    }
 
     bool is_specified() const {
       return valid_index(m_current_state);
@@ -141,29 +148,29 @@ namespace CASM {
 
     int value() const {
       return m_current_state;
-    };
+    }
 
     int remote_value() const {
       assert(m_remote_state && "In DiscreteDoF::remote_value() m_remote_state is nullptr.\n");
       return *m_remote_state;
-    };
+    }
 
     int const *remote_ptr() const {
       return m_remote_state;
-    };
+    }
 
     void register_remote(const RemoteHandle &handle) {
       assert(handle.i_ptr() && "In DiscreteDoF::register_remote(), attempting to register to nullptr!");
       m_remote_state = handle.i_ptr();
-    };
+    }
 
     virtual DiscreteDoF *copy() const = 0;
     //      return new DiscreteDoF(*this);
-    //};
+    //}
 
     virtual Index size()const {
       return 0;
-    };
+    }
 
     //John G 050513
     //Make an operator for this
@@ -205,22 +212,25 @@ namespace CASM {
     Array<T> m_domain;
 
   public:
-    OccupantDoF() : DiscreteDoF() { };
+    OccupantDoF() : DiscreteDoF() { }
     OccupantDoF(const std::string &_name, const Array<T> &_domain, int _current_state = 0) :
-      DiscreteDoF(_name, _current_state), m_domain(_domain) { };
+      DiscreteDoF(_name, _current_state, SymGroupRepID::identity(_domain.size())), m_domain(_domain) { }
 
     OccupantDoF(const Array<T> &_domain, int _current_state = 0) :
-      DiscreteDoF("occupation", _current_state), m_domain(_domain) { };
+      DiscreteDoF("occupation", _current_state, SymGroupRepID::identity(_domain.size())), m_domain(_domain) { }
 
     OccupantDoF(std::initializer_list<T> _domain, int _current_state = 0) :
-      DiscreteDoF("occupation", _current_state), m_domain(_domain.begin(), _domain.end()) { };
+      DiscreteDoF("occupation", _current_state), m_domain(_domain.begin(), _domain.end()) {
+      set_sym_rep_ID(SymGroupRepID::identity(size()));
+    }
+
     const T &get_occ() const {
       return m_domain[m_current_state];
-    };
+    }
 
     DiscreteDoF *copy() const {
       return new OccupantDoF(*this);
-    };
+    }
 
 
     //John G 050513
@@ -271,7 +281,8 @@ namespace CASM {
         m_current_state = 0;
       else
         m_current_state = -1;
-    };
+      set_sym_rep_ID(SymGroupRepID::identity(new_dom.size()));
+    }
 
     const Array<T> &get_domain() const {
       return m_domain;
@@ -279,15 +290,15 @@ namespace CASM {
 
     T &operator[](Index i) {
       return m_domain[i];
-    };
+    }
 
     const T &operator[](Index i)const {
       return m_domain[i];
-    };
+    }
 
     Index size()const {
       return m_domain.size();
-    };
+    }
 
     void print(std::ostream &out) const {
       for(Index i = 0; i < size(); i++) {
@@ -337,19 +348,19 @@ namespace CASM {
     const double *m_remote_ptr;
   public:
     ContinuousDoF() : min_val(NAN), max_val(NAN), current_val(NAN),
-      current_min(NAN), current_max(NAN), m_remote_ptr(nullptr) {};
+      current_min(NAN), current_max(NAN), m_remote_ptr(nullptr) {}
 
     ContinuousDoF(const std::string &tname, double tmin, double tmax) :
       DoF(tname), min_val(tmin), max_val(tmax), current_val(NAN),
-      current_min(min_val), current_max(max_val), m_remote_ptr(nullptr) {};
+      current_min(min_val), current_max(max_val), m_remote_ptr(nullptr) {}
 
     ContinuousDoF(const std::string &tname, Index _ID, double tmin, double tmax) :
       DoF(tname, _ID), min_val(tmin), max_val(tmax), current_val(NAN),
-      current_min(min_val), current_max(max_val), m_remote_ptr(nullptr) {};
+      current_min(min_val), current_max(max_val), m_remote_ptr(nullptr) {}
 
     double value() const {
       return current_val;
-    };
+    }
 
     bool compare(const ContinuousDoF &RHS, bool compare_value) const {
       if(compare_value && !almost_equal(value(), RHS.value()))
@@ -357,13 +368,13 @@ namespace CASM {
 
       return(type_name() == RHS.type_name()
              && (ID() == RHS.ID()));
-    };
+    }
 
     bool operator==(const ContinuousDoF &RHS) const {
       return((type_name() == RHS.type_name())
              && (ID() == RHS.ID())
              && almost_equal(value(), RHS.value()));
-    };
+    }
 
     double remote_value() const {
       assert(m_remote_ptr && "In ContinuousDoF::remote_value() m_remote_val is nullptr.\n");
@@ -377,15 +388,15 @@ namespace CASM {
     void register_remote(const RemoteHandle &handle) {
       assert(handle.d_ptr() && "In ContinuousDoF::register_remote(), attempting to register to nullptr!");
       m_remote_ptr = handle.d_ptr();
-    };
+    }
 
     void perturb_dof() {} //sets current_val to something between min_val and max_val
 
-    //    ~ContinuousDoF(){}; //This has to be defined;
+    //    ~ContinuousDoF(){} //This has to be defined;
 
     ContinuousDoF *copy() const {
       return new ContinuousDoF(*this);
-    };
+    }
 
     jsonParser &to_json(jsonParser &json) const {
       json.put_obj();

@@ -126,7 +126,7 @@ namespace CASM {
 
   // permutation_symrep() populates permutation symrep if needed
   const Permutation &Supercell::factor_group_permute(Index i) const {
-    return *(permutation_symrep()->get_permutation(factor_group()[i]));
+    return *(permutation_symrep().get_permutation(factor_group()[i]));
   }
   /*****************************************************************/
 
@@ -614,7 +614,6 @@ namespace CASM {
     recip_prim_lattice(RHS.recip_prim_lattice),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
-    m_perm_symrep_ID(-1),
     name(RHS.name),
     m_nlist(RHS.m_nlist),
     config_list(RHS.config_list),
@@ -631,7 +630,6 @@ namespace CASM {
     recip_prim_lattice(real_super_lattice.get_reciprocal()),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
-    m_perm_symrep_ID(-1),
     transf_mat(transf_mat_init) {
     scaling = 1.0;
     generate_name();
@@ -647,7 +645,6 @@ namespace CASM {
     recip_prim_lattice(real_super_lattice.get_reciprocal()),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
-    m_perm_symrep_ID(-1),
     transf_mat(primclex->calc_transf_mat(superlattice)) {
     /*std::cerr << "IN SUPERCELL CONSTRUCTOR:\n"
               << "transf_mat is\n" << transf_mat << '\n'
@@ -746,7 +743,7 @@ namespace CASM {
   //***********************************************************
 
   void Supercell::generate_permutations()const {
-    if(m_perm_symrep_ID != Index(-1)) {
+    if(!m_perm_symrep_ID.empty()) {
       std::cerr << "WARNING: In Supercell::generate_permutations(), but permutations data already exists.\n"
                 << "         It will be overwritten.\n";
     }

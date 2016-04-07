@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <sstream>
+#include "casm/symmetry/SymGroupRepID.hh"
 #include "casm/basis_set/BasisFunction.hh"
 
 
@@ -32,13 +33,13 @@ namespace CASM {
     Array<ContinuousDoF> m_var_compon;
 
     //Symmetry representation for variable space (e.g., {x,y,z})
-    Index m_var_sym_rep_ind;
+    SymGroupRepID m_sym_rep_ID;
 
     //coeffs defines linear combination (i.e., vector) of m_var_compon
     Eigen::VectorXd m_coeffs;
 
     //Default construction not allowed
-    //Variable(){};
+    //Variable(){}
 
     // Copy construction is private.
     // Copy construction should only occur in Variable::copy()
@@ -46,18 +47,18 @@ namespace CASM {
 
   public:
 
-    Variable(const Array<ContinuousDoF> &tvar, int var_ind, Index rep_ind);
-    Variable(const Array<ContinuousDoF> &tvar, const Eigen::VectorXd &init_coeffs, Index rep_ind);
+    Variable(const Array<ContinuousDoF> &tvar, int var_ind, SymGroupRepID rep_ID);
+    Variable(const Array<ContinuousDoF> &tvar, const Eigen::VectorXd &init_coeffs, SymGroupRepID rep_ID);
 
     static void fill_dispatch_table();
 
     std::string type_name() const {
       return "Variable";
-    };
+    }
 
     Function *copy()const {
       return new Variable(*this);
-    };
+    }
 
     bool is_zero() const;
     void small_to_zero(double tol = TOL);
@@ -69,14 +70,14 @@ namespace CASM {
 
     const Array<ContinuousDoF> &var_compon() const {
       return m_var_compon;
-    };
-    Index sym_rep_ind() const {
-      return m_var_sym_rep_ind;
-    };
+    }
+    SymGroupRepID sym_rep_ID() const {
+      return m_sym_rep_ID;
+    }
 
     const Eigen::VectorXd &coeffs() const {
       return m_coeffs;
-    };
+    }
 
     void make_formula()const;
     void make_formula(double prefactor)const;
@@ -87,10 +88,10 @@ namespace CASM {
 
     int class_ID() const {
       return DerivedID<Variable, Function>::get_class_ID();
-    };
+    }
     static int sclass_ID() {
       return DerivedID<Variable, Function>::get_class_ID();
-    };
+    }
 
     double dot(Function const *RHS) const;
     void scale(double scale_factor);

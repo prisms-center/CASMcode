@@ -94,18 +94,20 @@ namespace CASM {
     Index class_of_op(Index i) const;
 
     /// set symrep ID of a particular irrep
-    void set_irrep_ID(Index i, Index ID) const;
+    void set_irrep_ID(Index i, SymGroupRepID ID) const;
 
     /// Get symrep ID of a particular irrep
-    Index get_irrep_ID(Index i) const;
+    SymGroupRepID get_irrep_ID(Index i) const;
 
     /// Get symrep ID of the representation that stores the Cartesian symop matrices
-    Index coord_rep_ID() const;
+    SymGroupRepID coord_rep_ID() const;
 
     /// Get symrep for a particular irrep
-    SymGroupRep const *get_irrep(Index i) const;
+    SymGroupRep const &get_irrep(Index i) const;
 
-    Index make_empty_representation() const;
+    /// Add a new empty representation
+    SymGroupRepID add_empty_representation() const;
+
 
     /// Gets all the space group operations in unit cell and stores them in space_group
     /// assuming that this SymGroup contains the factor group
@@ -132,8 +134,6 @@ namespace CASM {
     /// Cartesian translation of SymGroup origin by vector 'shift'
     SymGroup &operator+=(const Eigen::Ref<const SymOp::vector_type> &shift);
     SymGroup &operator-=(const Eigen::Ref<const SymOp::vector_type> &shift);
-
-    Eigen::MatrixXd const *get_MatrixXd(Index i) const;
 
     /// This returns the group's max_error
     double max_error();
@@ -219,7 +219,7 @@ namespace CASM {
     // Information about irreducible representations
     // m_character_table[i][j] is character of conjugacy class 'j' in irrep 'i'
     mutable Array<Array<std::complex<double> > > m_character_table;
-    mutable Array<Index> irrep_IDs;
+    mutable Array<SymGroupRepID> irrep_IDs;
     mutable Array<bool> complex_irrep;
     mutable Array<std::string> irrep_names;
 
@@ -268,23 +268,18 @@ namespace CASM {
     //                - optimizing the coordinate system of irreps
     //                - deciding prototype cluster
 
-
-    ///  Collection of alternate representations of this symmetry group
-    /// (default is the coordinate representation)
-    mutable Array<SymGroupRep *> m_rep_array;
-    mutable Index m_coord_rep_ID, m_reg_rep_ID;
-    // identity representations
-    mutable Array<Index> m_identity_rep_IDs;
-    mutable SymGroup m_point_group;
-
   public:
     MasterSymGroup(PERIODICITY_TYPE init_type = PERIODIC) :
       SymGroup(init_type),
-      m_coord_rep_ID(-1),
-      m_reg_rep_ID(-1) {};
+      m_group_index(GROUP_COUNT++) {
+    }
 
     MasterSymGroup(const MasterSymGroup &RHS);
     ~MasterSymGroup();
+
+    Index group_index() const {
+      return m_group_index;
+    }
 
     MasterSymGroup &operator=(const MasterSymGroup &RHS);
 
@@ -302,37 +297,62 @@ namespace CASM {
     const SymGroup &point_group() const;
 
     /// Const access of alternate Representations of a SymGroup
-    SymGroupRep const *representation(Index i) const;
+    SymGroupRep const &representation(SymGroupRepID i) const;
 
-    /// Add a new representation by passing a pointer;
-    /// SymGroup assumes ownership (user promises that no other object will delete new_ptr)
-    Index add_representation(SymGroupRep *new_ptr) const;
+    SymGroupRep const &reg_rep() const;
 
-    /// Add a new empty representation
-    Index make_empty_representation() const;
+    SymGroupRep const &coord_rep() const;
 
     /// Add a new representation by passing a reference.  SymGroup will store a copy
-    Index add_representation(const SymGroupRep &new_rep) const;
-    Index reg_rep_ID() const;
-    Index coord_rep_ID() const;
-    Index identity_rep_ID(Index dim) const;
-    SymGroupRep const *get_reg_rep() const;
-    SymGroupRep const *get_coord_rep() const;
-    Index add_reg_rep() const;
-    Index add_coord_rep() const;
-    Index add_kronecker_rep(Index ID1, Index ID2) const;
-    Index add_direct_sum_rep(const Array<Index> &rep_IDs) const;
-    Index add_transformed_rep(Index orig_ID, const Eigen::MatrixXd &trans_mat) const;
-    Index add_rotation_rep() const;
+    SymGroupRepID add_representation(const SymGroupRep &new_rep) const;
 
-    //Eigen::MatrixXd const* get_MatrixXd(Index i) const;
+    /// Add a new empty representation
+    SymGroupRepID add_empty_representation() const;
+
+    SymGroupRepID reg_rep_ID() const;
+    SymGroupRepID coord_rep_ID() const;
+    SymGroupRepID identity_rep_ID(Index dim) const;
+    SymGroupRepID add_kronecker_rep(SymGroupRepID ID1, SymGroupRepID ID2) const;
+    SymGroupRepID add_direct_sum_rep(const Array<SymGroupRepID> &rep_IDs) const;
+    SymGroupRepID add_transformed_rep(SymGroupRepID orig_ID, const Eigen::MatrixXd &trans_mat) const;
+    SymGroupRepID add_rotation_rep() const;
 
     jsonParser &to_json(jsonParser &json) const;
 
-    // Note: as a hack this expects at(0) to be present and have the right lattice!!!
-    //   it's just used to set the lattice for all the SymOp
     void from_json(const jsonParser &json);
 
+  private:
+
+    SymGroupRep *_representation_ptr(SymGroupRepID _id) const;
+
+    SymGroupRepID _add_reg_rep() const;
+    SymGroupRepID _add_coord_rep() const;
+
+    /// Add a new representation by passing a pointer to SymGroupRep allocated via 'new'.
+    /// MasterSymGroup will store the pointer, so don't delete it after calling
+    SymGroupRepID _add_representation(SymGroupRep *_rep_ptr) const;
+
+    /// Counts number of instantiated MasterSymGroups, excluding ones created via copy
+    static Index GROUP_COUNT;
+
+    /// Index of this group, initialized from value of GROUP_COUNT upon construction
+    Index m_group_index;
+
+    /// Collection of alternate representations of this symmetry group
+    /// Stored as pointers to avoid weird behavior with resizing
+    mutable Array<SymGroupRep *> m_rep_array;
+
+    /// ID of Cartesian representation
+    mutable SymGroupRepID m_coord_rep_ID;
+
+    /// ID of 'regular representation', which is (size() X size()) representation constructed from alt_multi_table()
+    mutable SymGroupRepID m_reg_rep_ID;
+
+    /// identity representations: m_identity_rep_IDs[dim] refers to the Identity representation of dimention 'dim'
+    mutable Array<SymGroupRepID> m_identity_rep_IDs;
+
+    /// Copy of *this with translations removed
+    mutable SymGroup m_point_group;
   };
 
   jsonParser &to_json(const SymGroup &group, jsonParser &json);

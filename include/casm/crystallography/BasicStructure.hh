@@ -11,6 +11,7 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  class SymGroupRepID;
   class Coordinate;
   class UnitCellCoord;
   class SiteCluster;
@@ -118,7 +119,7 @@ namespace CASM {
     void fg_converge(double small_tol, double large_tol, double increment);
     void fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
 
-    Index generate_basis_permutation_representation(const MasterSymGroup &factor_group, bool verbose)const;
+    SymGroupRepID generate_basis_permutation_representation(const MasterSymGroup &factor_group, bool verbose)const;
 
     void symmetrize(const SymGroup &relaxed_factors);
     void symmetrize(const double &tolerance);

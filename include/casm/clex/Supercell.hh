@@ -57,7 +57,7 @@ namespace CASM {
     //       operations that aren't in m_factor_group. You should access elements of the SymGroupRep using
     //       the the Supercel::factor_group_permute(int) method, so that you don't encounter the gaps
     //       OR, see note for Supercell::permutation_symrep() below.
-    mutable Index m_perm_symrep_ID;
+    mutable SymGroupRepID m_perm_symrep_ID;
 
     // m_factor_group is factor group of the super cell, found by identifying the subgroup of
     // (*this).get_prim().factor_group() that leaves the supercell lattice vectors unchanged
@@ -229,13 +229,13 @@ namespace CASM {
     //       SymGroupRep::get_representation(m_factor_group[i]) or SymGroupRep::get_permutation(m_factor_group[i]),
     //       so that you don't encounter the gaps (i.e., the representation can be indexed using the
     //       SymOps of m_factor_group
-    Index permutation_symrep_ID()const {
-      if(m_perm_symrep_ID == Index(-1))
+    SymGroupRepID permutation_symrep_ID()const {
+      if(m_perm_symrep_ID.empty())
         generate_permutations();
       return m_perm_symrep_ID;
     }
 
-    SymGroupRep const *permutation_symrep() const {
+    SymGroupRep const &permutation_symrep() const {
       return get_prim().factor_group().representation(permutation_symrep_ID());
     }
 
