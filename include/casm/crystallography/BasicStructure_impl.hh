@@ -919,6 +919,10 @@ namespace CASM {
 
     SD_flag = false;
     getline(stream, title);
+    if(title.back() == '\r') {
+      std::cerr << "ERROR: Structure file is formatted for DOS. Please convert to Unix format. (This can be done with the dos2unix command.)" << std::endl;
+      exit(1);
+    }
 
     m_lattice.read(stream);
 
