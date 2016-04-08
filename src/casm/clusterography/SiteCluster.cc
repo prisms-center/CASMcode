@@ -15,12 +15,6 @@ namespace CASM {
   }
 
   //*************************************************
-
-  void SiteCluster::prepare_prototype() {
-    //generate_config_clust_basis();
-  }
-
-  //*************************************************
   ReturnArray<Index> SiteCluster::nlist_inds() const {
     Array<Index> inds(size(), 0);
     for(Index i = 0; i < size(); i++)
@@ -67,89 +61,51 @@ namespace CASM {
   }
 
 
-  //John G 011013
-  //*************************************************
-  /*
-   * A tensor for each cluster function is created and
-   * populated with every possible outcome for the
-   * allowed occupations. This is done by making every
-   * possible combination of basis functions
-   * (occupation basis functions) and evaluating the product
-   * of them. The results are then stored in the tensor array
-   * occupation_basis_tensors.
-   *
-   * By specifying the element in the tensors you want to
-   * access you determine which combination of occupants
-   * your interested in populating in the cluster for
-   * the evaluation of the basis functions.
-   *
-   * E.g. for a ternary cluster with sites
-   * 1    Ni || Al || Cr
-   * 2    Ni || Al
-   * 3    Ni || Al || Cr || Fe
-   *
-   * you'd get several 3x2x4 tensor (the amount of tensors
-   * you get depends on the symmetry of the cluster).
-   * Accessing element (0,1,3) of any of the tensors
-   * would give you the products of all site basis functions
-   * for the occupation Ni-Al-Fe. The other products for
-   * the same occupation Ni-Al-Fe are stored in the other
-   * tensors and are accessed by the same (0,1,3).
-   */
-  //*************************************************
-  /*
-  void SiteCluster::fill_discrete_basis_tensors() {
-    Array<Index> tnlist_inds(nlist_inds());
-
-    //Go through cluster sites and store how many degrees of freedom are at each site, these will be the dimensions of our tensors
-    Array<Index> dimensions;
-    for(Index i = 0; i < size(); i++) {
-      dimensions.push_back(at(i).site_occupant().size());
-    }
-
-    //Go through every cluster function (we'll be making one tensor for each)
-    for(Index cb = 0; cb < clust_basis.size(); cb++) {
-      //Initialize tensor with appropriate dimensions and a counter to go with it
-      Tensor<double> tbasis_tensor(dimensions.size(), dimensions);
-      Counter<Array<Index> > combo_count = tbasis_tensor.element_counter();
-
-      //Go through every element in the tensor, evaluate the cluster function for the
-      //corresponding occupancy, and store the result in the tensor element
-      do {
-        double combination = clust_basis[cb]->eval(tnlist_inds, combo_count.current());
-        tbasis_tensor.at(combo_count.current()) = combination;
-      }
-      while(++combo_count);
-      occupation_basis_tensors.push_back(tbasis_tensor);
-    }
-    return;
-  }
-  */
-  //\John G 011013
-
-
   //*************************************************
 
-  void SiteCluster::generate_clust_basis(Array<BasisSet const *> local_args, Array<BasisSet const *> global_args, Index max_poly_order) {
+  void SiteCluster::generate_clust_basis(multivector<BasisSet const *>::X<2> const &local_args, std::vector<BasisSet const *> const &global_args, Index max_poly_order) {
     //std::cout<<"In SiteCluster::generate_clust_basis, the size of this cluster is:"<<size()<<std::endl;
     //std::cout<<"valid_index evaluates to:"<<valid_index(max_poly_order)<<std::endl;
     if(!valid_index(max_poly_order))
       max_poly_order = size();
     //std::cout<<"Max_poly_order "<<max_poly_order<<std::endl;
-    assert(local_args.size() == size() && "In SiteCluster::generate_clust_basis(), local_args must have same size as cluster.");
 
-    Array<BasisSet> tlocal;
-    tlocal.reserve(local_args.size());
-    Array<Array<BasisSet const *> > site_args(size());
-    for(Index i = 0; i < local_args.size(); i++) {
-      tlocal.push_back(*local_args[i]);
-      tlocal.back().set_dof_IDs(Array<Index>(1, at(i).nlist_ind()));
-      site_args[i].push_back(&tlocal.back());
+    Array<BasisSet> all_local;
+    all_local.reserve(local_args.size());
+    Array<BasisSet const *> all_subsets;
+    for(BasisSet const *global_ptr : global_args) {
+      if(global_ptr)
+        all_subsets.push_back(global_ptr);
     }
-    std::cerr << "WARNING: THIS VERSION OF CASM CANNOT PRODUCE CLUSTER FUNCTIONS!! YOU WILL HAVE NO CORRELATIONS\n";
-    // BasisSet::construct_invariant_cluster_polynomials() does the heavy lifting TODO: update to construct_invariant_polynomials
-    //clust_basis.construct_invariant_cluster_polynomials(site_args, global_args, clust_group, permute_group, max_poly_order);
 
+    //Loop over dof's
+    for(Index d = 0; d < local_args.size(); d++) {
+      assert(local_args[d].size() == size() && "In SiteCluster::generate_clust_basis(), local_args must have same size as cluster.");
+      // Make copies of local arguments to ensure that they are distinguishable by their DoF_IDs
+      // i.e., make copies in 'tlocal' and reset the DoF_IDs to {0,1,2,etc...}
+      std::vector<BasisSet> tlocal;
+      tlocal.reserve(local_args.size());
+      std::vector<BasisSet const *> site_args(size());
+      //Loop over sites
+      for(Index i = 0; i < local_args[d].size(); i++) {
+        if(local_args[d][i]) {
+          tlocal.push_back(*local_args[d][i]);
+          tlocal.back().set_dof_IDs(Array<Index>(1, at(i).nlist_ind()));
+          site_args.push_back(&tlocal.back());
+        }
+        else {
+          site_args.push_back(nullptr);
+        }
+      }
+      all_local.push_back(SiteCluster_impl::construct_clust_dof_basis(*this, site_args));
+      if(all_local.back().size())
+        all_subsets.push_back(&(all_local.back()));
+    }
+
+    std::cerr << "WARNING: THIS VERSION OF CASM CANNOT PRODUCE CLUSTER FUNCTIONS!! YOU WILL HAVE NO CORRELATIONS\n";
+    // BasisSet::construct_invariant_cluster_polynomials() does the heavy lifting
+    //clust_basis.construct_invariant_cluster_polynomials(site_args, global_args, clust_group, permute_group, max_poly_order);
+    clust_basis.construct_invariant_polynomials(all_subsets, clust_group(), max_poly_order, 1);
   }
 
   //*************************************************
@@ -438,6 +394,27 @@ namespace CASM {
       /// re-throw exceptions
       throw;
     }
+  }
+
+  namespace SiteCluster_impl {
+
+    BasisSet construct_clust_dof_basis(SiteCluster const &_clust, std::vector<BasisSet const *> const &site_dof_sets) {
+      BasisSet result;
+
+      Array<SymGroupRep const *> subspace_reps;
+      for(BasisSet const *site_bset_ptr : site_dof_sets) {
+        if(site_bset_ptr) {
+          result.append(*site_bset_ptr);
+          subspace_reps.push_back(SymGroupRep::RemoteHandle(_clust.clust_group(), site_bset_ptr->basis_symrep_ID()).rep_ptr());
+        }
+        else {
+          subspace_reps.push_back(SymGroupRep::RemoteHandle(_clust.clust_group(), SymGroupRepID::identity(0)).rep_ptr());
+        }
+      }
+      result.set_basis_symrep_ID(permuted_direct_sum_rep(*(_clust.permute_rep().rep_ptr()), subspace_reps).add_copy_to_master());
+      return result;
+    }
+
   }
 
 }

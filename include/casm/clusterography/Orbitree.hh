@@ -135,11 +135,8 @@ namespace CASM {
     /// Call get_s2s_vec on all clusters in orbitree
     void get_s2s_vec();
 
-    /// get clust_basis for all equivalent clusters assuming configurational DoFs
-    // void generate_config_clust_bases();
-
     /// get clust_basis for all equivalent clusters
-    void generate_clust_bases(const Array<BasisSet const *> &global_args, Index max_poly_order = -1);
+    void generate_clust_bases(std::vector<BasisSet const *> const &global_args, Index max_poly_order = -1);
     void generate_clust_bases(Index max_poly_order = -1);
 
     // Alex do these (there's already a placeholder for the first one):

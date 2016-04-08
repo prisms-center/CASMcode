@@ -18,7 +18,6 @@ namespace CASM {
 
   // For future consideration - maybe we shouldn't allow non-const access of sites
   class SiteCluster : public GenericCluster<Site> {
-    Array<Array<Index> > m_trans_nlist_inds;
   public:
     BasisSet clust_basis;
 
@@ -33,9 +32,6 @@ namespace CASM {
 
     void push_back(const Site &new_site);
 
-    //void fill_discrete_basis_tensors();   //John G 011013
-    void prepare_prototype();
-
     /// Use this method (and only this method) to set the nlist ind of each site
     /// it automatically reassigns DoF IDs for the associated basis functions.
     void set_nlist_inds(const Array<Index> &new_indices);
@@ -48,7 +44,7 @@ namespace CASM {
     const Array<Index> &trans_nlist(Index i) const;
     void add_trans_nlist(const Array<Index> &new_nlist);
 
-    void generate_clust_basis(Array<BasisSet const *> local_args, Array<BasisSet const *> global_args, Index max_poly_order = -1);
+    void generate_clust_basis(multivector<BasisSet const *>::X<2> const &local_args, std::vector<BasisSet const *> const &global_args, Index max_poly_order = -1);
 
     inline void decorate(const Array<int> decor);
     ReturnArray<Array<int> > get_decor_map() const;
@@ -62,6 +58,8 @@ namespace CASM {
 
     jsonParser &to_json(jsonParser &json) const;
     void from_json(const jsonParser &json);
+  private:
+    Array<Array<Index> > m_trans_nlist_inds;
   };
 
   SiteCluster operator*(const SymOp &LHS, const SiteCluster &RHS);
@@ -76,10 +74,13 @@ namespace CASM {
     for(Index i = 0; i < decor.size(); i++) {
       at(i).set_occ_value(decor[i]);
     }
-  };
+  }
 
   jsonParser &to_json(const SiteCluster &clust, jsonParser &json);
   void from_json(SiteCluster &clust, const jsonParser &json);
-};
 
+  namespace SiteCluster_impl {
+    BasisSet construct_clust_dof_basis(SiteCluster const &_clust, std::vector<BasisSet const *> const &site_dof_sets);
+  }
+}
 #endif

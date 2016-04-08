@@ -174,13 +174,12 @@ namespace CASM {
                                          Index order,
                                          Index min_dof_order = 1);
 
-    void construct_green_lagrange_dot_prods(const Array<BasisSet const *> &site_disp_dofs, BasisSet const *LG_strain_dofs, const Eigen::MatrixXd &ref_clust);
-    void construct_disp_grad_dot_prods(const Array<BasisSet const *> &site_disp_dofs, BasisSet const *F_strain_dofs, const Eigen::MatrixXd &ref_clust);
-    void construct_quadratic_ccds(const Array<BasisSet const *> &site_disp_dofs, BasisSet const *strain_dofs, const Eigen::MatrixXd &ref_clust,
-                                  const Array<Array<SymOp> > &equiv_map, const SymGroupRep &permute_group, double sigma);
+    //void construct_green_lagrange_dot_prods(const Array<BasisSet const *> &site_disp_dofs, BasisSet const *LG_strain_dofs, const Eigen::MatrixXd &ref_clust);
+    //void construct_disp_grad_dot_prods(const Array<BasisSet const *> &site_disp_dofs, BasisSet const *F_strain_dofs, const Eigen::MatrixXd &ref_clust);
+    //void construct_quadratic_ccds(const Array<BasisSet const *> &site_disp_dofs, BasisSet const *strain_dofs, const Eigen::MatrixXd &ref_clust,
+    //                              const Array<Array<SymOp> > &equiv_map, const SymGroupRep &permute_group, double sigma);
 
-    //void construct_harmonic_polynomials_old(const Array<BasisSet const *> &rotation_dofs,Index order,Index min_order);
-    void construct_harmonic_polynomials(const Array<BasisSet const *> &rotation_dofs, Index order, Index min_order, bool even);
+    //void construct_harmonic_polynomials(const Array<BasisSet const *> &rotation_dofs, Index order, Index min_order, bool even);
 
     void calc_invariant_functions(const SymGroup &head_sym_group);
 

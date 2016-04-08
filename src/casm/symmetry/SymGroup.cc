@@ -376,7 +376,11 @@ namespace CASM {
   }
   //*******************************************************************************************
   SymGroupRep *MasterSymGroup::_representation_ptr(SymGroupRepID _id) const {
-    if(_id.group_index() != group_index()) {
+    if(_id.is_identity()) {
+      // _id.rep_index() stores dimension of representation
+      _id = identity_rep_id(_id.rep_index());
+    }
+    else if(_id.group_index() != group_index()) {
       throw std::runtime_error("Attempting to access representation from MasterGroup #" + std::to_string(group_index())
                                + " that resides in MasterGroup #" + std::to_string(_id.group_index()));
     }

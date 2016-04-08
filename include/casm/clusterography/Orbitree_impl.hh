@@ -166,7 +166,7 @@ namespace CASM {
   //********************************************************************
 
   template<typename ClustType>
-  void GenericOrbitree<ClustType>::sort(Index np) { //(Line 4810 in clusters11.0.h)
+  void GenericOrbitree<ClustType>::sort(Index np) {
     at(np).sort();
   }
 
@@ -174,23 +174,24 @@ namespace CASM {
 
   template<typename ClustType>
   void GenericOrbitree<ClustType>::generate_clust_bases(Index max_poly_order) {
-    generate_clust_bases(Array<BasisSet const *>(), max_poly_order);
+    generate_clust_bases(std::vector<BasisSet const *>(), max_poly_order);
   }
 
   //********************************************************************
 
   template<typename ClustType>
-  void GenericOrbitree<ClustType>::generate_clust_bases(const Array<BasisSet const *> &global_args, Index max_poly_order) {
+  void GenericOrbitree<ClustType>::generate_clust_bases(std::vector<BasisSet const *> const &global_args, Index max_poly_order) {
     _populate_site_bases();
 
     Array<BasisSet> sitebases(m_b2asym.size());
     for(Index b = 0; b < m_b2asym.size(); b++)
       sitebases[b] = _asym_unit().equiv(m_b2asym[b][0], m_b2asym[b][1]).clust_basis;
+
     for(Index i = 0; i < size(); i++) {
       for(Index j = 0; j < size(i); j++) {
-        Array<const BasisSet *> local_args;
+        multivector<const BasisSet *>::X<2> local_args(1);
         for(Index ns = 0; ns < prototype(i, j).size(); ns++) {
-          local_args.push_back(&sitebases[prototype(i, j)[ns].basis_ind()]);
+          local_args.back().push_back(&sitebases[prototype(i, j)[ns].basis_ind()]);
         }
 
         // Should this step be a method of Orbit?
