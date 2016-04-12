@@ -55,22 +55,25 @@ namespace CASM {
     CompositionAxes() {}
 
     /// \brief Read CompositionAxes from file
-    CompositionAxes(fs::path filename);
+    CompositionAxes(fs::path _filename);
 
     /// \brief Read CompositionAxes from JSON
     CompositionAxes(const jsonParser &json);
 
     /// \brief Read CompositionAxes from file
-    void read(fs::path filename);
+    void read(fs::path _filename);
 
     /// \brief Read CompositionAxes from JSON
     void read(const jsonParser &json, fs::path filename = fs::path());
 
     /// \brief Write CompositionAxes to file
-    void write(fs::path filename) const;
+    void write(fs::path _filename);
 
     /// \brief Write CompositionAxes to JSON
     void write(jsonParser &json) const;
+    
+    /// \brief Set this->curr using key
+    void select(std::string key);
 
 
     std::map<std::string, CompositionConverter> standard;
@@ -78,6 +81,7 @@ namespace CASM {
     bool has_current_axes = false;
     std::string curr_key;
     CompositionConverter curr;
+    fs::path filename;
 
     int err_code = 0;
     std::string err_message;

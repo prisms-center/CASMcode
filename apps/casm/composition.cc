@@ -23,9 +23,22 @@ namespace CASM {
 
     std::cout << "\n";
     if(opt.has_current_axes) {
-      std::cout << "Currently selected composition axes: " << opt.curr_key;
+      std::cout << "Currently selected composition axes: " << opt.curr_key << "\n";
+      
+      std::cout << "\n";
+      std::cout << "Parametric composition:\n";
+      display_comp(sout, opt.curr, 2);
+      
+      std::cout << "\n";
+      std::cout << "Composition:\n";
+      display_comp_n(sout, opt.curr, 2);
+      
+      std::cout << "\n";
+      std::cout << "Parametric chemical potentials:\n";
+      display_param_chem_pot(sout, opt.curr, 2);
     }
-
+    
+    
   }
 
   // ///////////////////////////////////////
@@ -258,24 +271,15 @@ namespace CASM {
                 opt.custom.find(choice) == opt.custom.end()) {
 
           std::cout << "Error: The selected composition axes '" << choice << "' can not \n" <<
-                    "be found in both the standard and custom compostion axes. Please\n" <<
+                    "be found in either the standard or custom compostion axes. Please\n" <<
                     "re-select composition axes.                                     \n\n";
 
           return ERR_INVALID_INPUT_FILE;
 
         }
-/*
-        // set composition axes (also updates configuration info and json)
-        else if(opt.standard.find(choice) != opt.standard.end()) {
-          primclex.set_composition_axes(opt.standard[choice]);
-        }
-        else {
-          primclex.set_composition_axes(opt.custom[choice]);
-        }
-*/
-        opt.has_current_axes = true;
-        opt.curr_key = choice;
 
+        opt.select(choice);
+        
         display(std::cout, opt);
 
         std::cout << "\n\n";
