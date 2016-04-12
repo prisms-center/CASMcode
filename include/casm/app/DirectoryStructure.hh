@@ -266,7 +266,13 @@ namespace CASM {
     fs::path FCLUST(std::string bset) const {
       return bset_dir(bset) / "FCLUST.json";
     }
-
+    
+    // -- deprecated ------------------------------------
+    
+    /// \brief Returns path to eci.out
+    fs::path eci_out(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
+      return eci_dir(clex, calctype, ref, bset, eci) / "eci.out";
+    }
 
 
   private:
