@@ -156,13 +156,43 @@ namespace CASM {
     return json;
   }
   
+  /// \brief Write Eigen Matrix with 1 row or 1 column to JSON array
+  template <typename Derived>
+  CASM::jsonParser &to_json_array(const Eigen::MatrixBase<Derived> &value, CASM::jsonParser &json) {
+    json.put_array();
+    if(value.rows() == 1) {
+      for(int i=0; i<value.cols(); ++i) {
+        json.push_back(value(0,i));
+      }
+    }
+    else if(value.cols() == 1) {
+      for(int i=0; i<value.rows(); ++i) {
+        json.push_back(value(i,0));
+      }
+    }
+    else {
+      throw std::runtime_error("Error in 'to_json_array': Not a vector");
+    }
+    return json;
+  }
+  
   /// \brief Read Eigen Matrix/Vector from JSON
+  ///
+  /// - Reads 1d JSON array as column vector
   template <typename Derived>
   void from_json(Eigen::MatrixBase<Derived>  &value, const CASM::jsonParser &json) {
-    value.derived().resize(json.size(), json[0].size());
-    for(int i = 0; i < value.rows(); i++) {
-      for(int j = 0; j < value.cols(); j++) {
-        from_json(value(i, j), json[i][j]);
+    if(json.is_array() && !json[0].is_array()) {
+      value.derived().resize(json.size(), 1);
+      for(int i = 0; i < value.rows(); i++) {
+        from_json(value(i,0), json[i]);
+      }
+    }
+    else {
+      value.derived().resize(json.size(), json[0].size());
+      for(int i = 0; i < value.rows(); i++) {
+        for(int j = 0; j < value.cols(); j++) {
+          from_json(value(i, j), json[i][j]);
+        }
       }
     }
   }
