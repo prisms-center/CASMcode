@@ -761,30 +761,27 @@ namespace CASM {
     
     // ---- Initialization settings --------------------
     
-    //Seed configuration
-    example_settings["initialization"]["motif"]["configname"] = "SCELV_A_B_C_D_E_F/X";
-
     //Monte Carlo cell
     Eigen::Matrix3i tmat = Eigen::Matrix3i::Zero();
     tmat(0,0) = 10;
     tmat(1,1) = 10;
     tmat(2,2) = 10;
-    example_settings["initialization"]["matrix"] = tmat;
+    example_settings["supercell"] = tmat;
 
     //Cluster expanstion to use, project clex name
-    example_settings["initialization"]["clex"] = "formation_energy";
+    example_settings["model"]["clex"] = "formation_energy";
 
     //Basis set to use, project bset name
-    example_settings["initialization"]["bset"] = "default";
+    example_settings["model"]["bset"] = "default";
 
     //Calctype settings to use, project calctype name
-    example_settings["initialization"]["calctype"] = "default";
+    example_settings["model"]["calctype"] = "default";
 
     //Calctype settings to use, project ref name
-    example_settings["initialization"]["ref"] = "ref";
+    example_settings["model"]["ref"] = "ref";
 
     //ECI settings name, project eci name
-    example_settings["initialization"]["eci"] = "default";
+    example_settings["model"]["eci"] = "default";
     
     
     // ---- Data settings --------------------
@@ -855,6 +852,9 @@ namespace CASM {
     example_settings["driver"]["incremental_conditions"]["param_chem_pot"]["a"] = 0.0;
     example_settings["driver"]["incremental_conditions"]["temperature"] = 10.0; // K
     example_settings["driver"]["incremental_conditions"]["tolerance"] = 0.001; 
+    
+    //Seed configuration
+    example_settings["driver"]["motif"]["configname"] = "SCELV_A_B_C_D_E_F/X";
     
     return example_settings;
   }

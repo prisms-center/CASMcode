@@ -26,7 +26,7 @@ namespace CASM {
   
   /// \brief Given a settings jsonParser figure out what the project clex settings to use are:
   std::string GrandCanonicalSettings::clex() const {
-    std::string level1 = "initialization";
+    std::string level1 = "model";
     std::string level2 = "clex";
     try {
       return (*this)[level1][level2].get<std::string>();
@@ -42,7 +42,7 @@ namespace CASM {
 
   /// \brief Given a settings jsonParser figure out what the project bset settings to use are:
   std::string GrandCanonicalSettings::bset() const {
-    std::string level1 = "initialization";
+    std::string level1 = "model";
     std::string level2 = "bset";
     try {
       return (*this)[level1][level2].get<std::string>();
@@ -58,7 +58,7 @@ namespace CASM {
 
   /// \brief Given a settings jsonParser figure out what the project calctype settings to use are:
   std::string GrandCanonicalSettings::calctype() const {
-    std::string level1 = "initialization";
+    std::string level1 = "model";
     std::string level2 = "calctype";
     try {
       return (*this)[level1][level2].get<std::string>();
@@ -74,7 +74,7 @@ namespace CASM {
 
   /// \brief Given a settings jsonParser figure out what the project ref settings to use are:
   std::string GrandCanonicalSettings::ref() const {
-    std::string level1 = "initialization";
+    std::string level1 = "model";
     std::string level2 = "ref";
     try {
       return (*this)[level1][level2].get<std::string>();
@@ -91,7 +91,7 @@ namespace CASM {
 
   /// \brief Given a settings jsonParser figure out what the project eci settings to use are:
   std::string GrandCanonicalSettings::eci() const {
-    std::string level1 = "initialization";
+    std::string level1 = "model";
     std::string level2 = "eci";
     try {
       return (*this)[level1][level2].get<std::string>();

@@ -66,7 +66,7 @@ namespace CASM {
     
   /// \brief Configname of configuration to use as starting motif
   std::string MonteSettings::motif_configname() const {
-    std::string level1 = "initialization";
+    std::string level1 = "driver";
     std::string level2 = "motif";
     std::string level3 = "configname";
 
@@ -75,7 +75,7 @@ namespace CASM {
     }
 
     catch(std::runtime_error &e) {
-      std::cerr << "ERROR in Monte::motif_config_index" << std::endl;
+      std::cerr << "ERROR in Monte::motif_configname" << std::endl;
       std::cerr << "Expected [" << level1 << "][" << level2 << "][" << level3 << "]" << std::endl;
       throw e;
     }
@@ -84,13 +84,13 @@ namespace CASM {
   /// \brief Supercell matrix defining the simulation cell
   Eigen::Matrix3i MonteSettings::simulation_cell_matrix() const {
     try {
-      return (*this)["initialization"]["matrix"].get<Eigen::Matrix3i>();
+      return (*this)["supercell"].get<Eigen::Matrix3i>();
     }
 
     catch(std::runtime_error &e) {
       std::cerr << "ERROR in Monte::simulation_cell_matrix" << std::endl;
       std::cerr << "No matrix given to construct Monte Carlo cell." << std::endl;
-      std::cerr << "Expected [\"initialization\"][\"matrix\"]" << std::endl;
+      std::cerr << "Expected [\"supercell\"]" << std::endl;
       throw e;
     }
   }
