@@ -28,14 +28,26 @@ namespace CASM {
   
   // --- Type ---------------------------
     
-  /// \brief Return type of Monte Carlo calculation
-  Monte::TYPE MonteSettings::type() const {
+  /// \brief Return type of Monte Carlo ensemble
+  Monte::ENSEMBLE MonteSettings::ensemble() const {
     try {
-      return Monte::monte_type((*this)["type"].get<std::string>());
+      return Monte::monte_ensemble((*this)["ensemble"].get<std::string>());
     }
     catch(std::runtime_error &e) {
-      std::cerr << "ERROR in Monte::type" << std::endl;
-      std::cerr << "Expected [\"type\"]" << std::endl;
+      std::cerr << "ERROR in Monte::ensemble" << std::endl;
+      std::cerr << "Expected [\"ensemble\"]" << std::endl;
+      throw e;
+    }
+  }
+  
+  /// \brief Return type of Monte Carlo method
+  Monte::METHOD MonteSettings::method() const {
+    try {
+      return Monte::monte_method((*this)["method"].get<std::string>());
+    }
+    catch(std::runtime_error &e) {
+      std::cerr << "ERROR in Monte::method" << std::endl;
+      std::cerr << "Expected [\"method\"]" << std::endl;
       throw e;
     }
   }

@@ -65,8 +65,11 @@ namespace CASM {
     
     // --- Type ---------------------------
     
-    /// \brief Return type of Monte Carlo calculation
-    Monte::TYPE type() const;
+    /// \brief Return type of Monte Carlo ensemble
+    Monte::ENSEMBLE ensemble() const;
+    
+    /// \brief Return type of Monte Carlo method
+    Monte::METHOD method() const;
     
     /// \brief Run in debug mode?
     bool debug() const;

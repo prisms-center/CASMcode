@@ -25,7 +25,6 @@ namespace CASM {
       desc.add_options()
       ("help,h", "Print help message")
       ("settings,s", po::value<fs::path>(&settings_path)->required(), "The Monte Carlo input file. See 'casm format --monte'.")
-      ("lte", "Print the single spin flip low temperature expansion of the free energy.")
       ("final-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
       ("traj-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
 
@@ -62,12 +61,7 @@ namespace CASM {
                        "    - The trajectory file must exist. This is generated when\n" <<
                        "      using input option \"data\"/\"storage\"/\"write_trajectory\" = true  \n" <<
                        "    - Written at: output_directory/conditions.5/trajectory/POSCAR.i,\n" <<
-                       "      where i is the sample index.                          \n\n" <<
-                       
-                       "  casm monte --settings input_file.json --lte               \n" <<
-                       "    - Print the single spin flip low temperature expansion  \n" <<
-                       "      approximation for -kTlnZ, using the conditions given  \n" <<
-                       "      by the provided settings.                             \n\n";
+                       "      where i is the sample index.                          \n\n";
                        
                        
           return 0;
@@ -129,9 +123,33 @@ namespace CASM {
       return 1;
     }
     
-    if(monte_settings.type() == Monte::TYPE::GrandCanonical) {
+    if(monte_settings.ensemble() == Monte::ENSEMBLE::GrandCanonical) {
       
-      if(vm.count("lte")) {
+      if(vm.count("final-POSCAR")) {
+        try {
+          GrandCanonicalSettings gc_settings(settings_path);
+          const GrandCanonical gc(primclex, gc_settings);
+          write_POSCAR_final(gc, condition_index);
+        }
+        catch(std::exception& e) {
+          std::cerr << "ERROR printing Grand Canonical Monte Carlo final snapshot for condition: " << condition_index << "\n\n";
+          std::cerr << e.what() << std::endl;
+          return 1;
+        }
+      }
+      else if(vm.count("traj-POSCAR")) {
+        try {
+          GrandCanonicalSettings gc_settings(settings_path);
+          const GrandCanonical gc(primclex, gc_settings);
+          write_POSCAR_trajectory(gc, condition_index);
+        }
+        catch(std::exception& e) {
+          std::cerr << "ERROR printing Grand Canonical Monte Carlo path snapshots for condition: " << condition_index << "\n\n";
+          std::cerr << e.what() << std::endl;
+          return 1;
+        }
+      }
+      else if(monte_settings.method() == Monte::METHOD::LTE1) {
         try {
           
           GrandCanonicalSettings gc_settings(settings_path);
@@ -201,31 +219,7 @@ namespace CASM {
           return 1;
         }
       }
-      else if(vm.count("final-POSCAR")) {
-        try {
-          GrandCanonicalSettings gc_settings(settings_path);
-          const GrandCanonical gc(primclex, gc_settings);
-          write_POSCAR_final(gc, condition_index);
-        }
-        catch(std::exception& e) {
-          std::cerr << "ERROR printing Grand Canonical Monte Carlo final snapshot for condition: " << condition_index << "\n\n";
-          std::cerr << e.what() << std::endl;
-          return 1;
-        }
-      }
-      else if(vm.count("traj-POSCAR")) {
-        try {
-          GrandCanonicalSettings gc_settings(settings_path);
-          const GrandCanonical gc(primclex, gc_settings);
-          write_POSCAR_trajectory(gc, condition_index);
-        }
-        catch(std::exception& e) {
-          std::cerr << "ERROR printing Grand Canonical Monte Carlo path snapshots for condition: " << condition_index << "\n\n";
-          std::cerr << e.what() << std::endl;
-          return 1;
-        }
-      }
-      else {
+      else if(monte_settings.method() == Monte::METHOD::Metropolis) {
         try {
           
           //std::cout << "\n-------------------------------\n";
@@ -246,6 +240,10 @@ namespace CASM {
           std::cerr << e.what() << std::endl;
           return 1;
         }
+      }
+      else {
+        std::cerr << "ERROR running Grand Canonical Monte Carlo. No valid option given.\n\n";
+        return ERR_INVALID_INPUT_FILE; 
       }
     }
 
