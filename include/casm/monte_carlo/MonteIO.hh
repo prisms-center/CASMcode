@@ -31,16 +31,6 @@ namespace CASM {
       return m_output_dir / "results.json";
     }
     
-    /// \brief Results summary: "output_dir/lte_results.csv"
-    fs::path lte_results_csv() const {
-      return m_output_dir / "lte_results.csv";
-    }
-    
-    /// \brief Results summary: "output_dir/lte_results.json" 
-    fs::path lte_results_json() const {
-      return m_output_dir / "lte_results.json";
-    }
-    
     
     /// \brief "output_dir/conditions.cond_index/"
     fs::path conditions_dir(int cond_index) const {
@@ -109,6 +99,19 @@ namespace CASM {
   
   /// \brief Print calculated precision of property values: prec(<prop_name>)
   GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloPrecFormatter(std::string prop_name);
+  
+  /// \brief Functor to help evaluate covariance
+  struct CovEvaluator {
+    
+    CovEvaluator(std::string _prop_name1, std::string _prop_name2):
+      prop_name1(_prop_name1), prop_name2(_prop_name2) {}
+    
+    double operator()(const ConstMonteCarloPtr& mc);
+    
+    std::string prop_name1;
+    std::string prop_name2;
+    
+  };
   
   /// \brief Print covariance: cov(prop_name1, prop_name2)
   GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloCovFormatter(std::string prop_name1, std::string prop_name2);

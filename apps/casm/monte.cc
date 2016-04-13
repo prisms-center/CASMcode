@@ -137,15 +137,15 @@ namespace CASM {
           GrandCanonicalSettings gc_settings(settings_path);
           GrandCanonicalDirectoryStructure dir(gc_settings.output_directory());
           if(gc_settings.write_csv()) {
-            if(fs::exists(dir.lte_results_csv())) {
-              std::cout << "Existing file at: " << dir.lte_results_csv() << std::endl;
+            if(fs::exists(dir.results_csv())) {
+              std::cout << "Existing file at: " << dir.results_csv() << std::endl;
               std::cout << "  Exiting..." << std::endl;
               return ERR_EXISTING_FILE;
             }
           }
           if(gc_settings.write_json()) {
-            if(fs::exists(dir.lte_results_json())) {
-              std::cout << "Existing file at: " << dir.lte_results_json() << std::endl;
+            if(fs::exists(dir.results_json())) {
+              std::cout << "Existing file at: " << dir.results_json() << std::endl;
               std::cout << "  Exiting..." << std::endl;
               return ERR_EXISTING_FILE;
             }
@@ -188,10 +188,10 @@ namespace CASM {
           }
           
           if(gc_settings.write_csv()) {
-            std::cout << "\nWrote results to: " << dir.lte_results_csv() << std::endl;
+            std::cout << "\nWrote results to: " << dir.results_csv() << std::endl;
           }
           if(gc_settings.write_json()) {
-            std::cout << "\nWrote results to: " << dir.lte_results_json() << std::endl;
+            std::cout << "\nWrote results to: " << dir.results_json() << std::endl;
           }
           
         }

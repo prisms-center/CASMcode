@@ -32,6 +32,25 @@ namespace CASM {
   template<typename T>
   class DataFormatter;
   
+  /// \brief Print heat capacity, 'heat_capacity'
+  GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalHeatCapacityFormatter();
+  
+  /// \brief Print parametric susceptibility, 'susc_x(a,b)'
+  GenericDatumFormatter<double, ConstMonteCarloPtr> 
+  GrandCanonicalSuscXFormatter(std::string comp_var_i, std::string comp_var_j);
+  
+  /// \brief Print susceptibility, 'susc_n(A,B)'
+  GenericDatumFormatter<double, ConstMonteCarloPtr> 
+  GrandCanonicalSuscNFormatter(std::string species_i, std::string species_j);
+  
+  /// \brief Print parametric thermo-chemical susceptibility, 'susc_x(S,a)'
+  GenericDatumFormatter<double, ConstMonteCarloPtr> 
+  GrandCanonicalThermoChemSuscXFormatter(std::string comp_var_i);
+  
+  /// \brief Print thermo-chemical susceptibility, 'susc_n(S,A)'
+  GenericDatumFormatter<double, ConstMonteCarloPtr> 
+  GrandCanonicalThermoChemSuscNFormatter(std::string species_i);
+  
   /// \brief Make a LTE results formatter
   DataFormatter<ConstMonteCarloPtr> make_results_formatter(const GrandCanonical& mc);
   

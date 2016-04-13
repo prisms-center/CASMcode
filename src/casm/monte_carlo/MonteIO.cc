@@ -34,37 +34,39 @@ namespace CASM {
     return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator, validator);
   }
   
+  double CovEvaluator::operator()(const ConstMonteCarloPtr& mc) {
+    auto equil = mc->is_equilibrated();
+    
+    // cov = <X*Y> - <X>*<Y>
+    const MonteSampler& sampler1 = *(mc->samplers().find(prop_name1)->second);
+    const Eigen::VectorXd& obs1 = sampler1.data().observations();
+    const Eigen::VectorXd& X = obs1.segment(equil.second, obs1.size() - equil.second);
+    double k1 = X(0);
+    
+    const MonteSampler& sampler2 = *(mc->samplers().find(prop_name2)->second);
+    const Eigen::VectorXd& obs2 = sampler2.data().observations();
+    const Eigen::VectorXd& Y = obs2.segment(equil.second, obs2.size() - equil.second);
+    double k2 = Y(0);
+    
+    double Xsum = 0.0;
+    double Ysum = 0.0;
+    double XYsum = 0.0;
+    Index N = X.size();
+    
+    for(Index i =0; i<N; ++i) {
+      Xsum += X(i);
+      Ysum += Y(i);
+      XYsum += X(i)*Y(i);
+    }
+    
+    //return X.cwiseProduct(Y).mean() - X.mean()*Y.mean();
+    return (XYsum - Xsum*Ysum/N)/N;
+  }
+    
   /// \brief Print covariance: cov(prop_name1, prop_name2)
   GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloCovFormatter(std::string prop_name1, std::string prop_name2) {
     
-    auto evaluator = [=](const ConstMonteCarloPtr& mc) {
-      auto equil = mc->is_equilibrated();
-      
-      // cov = <X*Y> - <X>*<Y>
-      const MonteSampler& sampler1 = *(mc->samplers().find(prop_name1)->second);
-      const Eigen::VectorXd& obs1 = sampler1.data().observations();
-      const Eigen::VectorXd& X = obs1.segment(equil.second, obs1.size() - equil.second);
-      double k1 = X(0);
-      
-      const MonteSampler& sampler2 = *(mc->samplers().find(prop_name2)->second);
-      const Eigen::VectorXd& obs2 = sampler2.data().observations();
-      const Eigen::VectorXd& Y = obs2.segment(equil.second, obs2.size() - equil.second);
-      double k2 = Y(0);
-      
-      double Xsum = 0.0;
-      double Ysum = 0.0;
-      double XYsum = 0.0;
-      Index N = X.size();
-      
-      for(Index i =0; i<N; ++i) {
-        Xsum += X(i);
-        Ysum += Y(i);
-        XYsum += X(i)*Y(i);
-      }
-      
-      //return X.cwiseProduct(Y).mean() - X.mean()*Y.mean();
-      return (XYsum - Xsum*Ysum/N)/N;
-    };
+    auto evaluator = CovEvaluator(prop_name1, prop_name2);
     
     auto validator = [=](const ConstMonteCarloPtr& mc) {
       return mc->is_equilibrated().first;
