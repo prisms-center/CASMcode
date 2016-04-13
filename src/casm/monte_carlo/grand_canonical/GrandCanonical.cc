@@ -263,18 +263,17 @@ namespace CASM {
     
     //Loop over sites that can change occupants
     for(Index exch_ind = 0; exch_ind < site_exch.variable_sites().size(); exch_ind++) {
-
+      
       //Transform exchanger index to ConfigDoF index
       Index mutating_site = site_exch.variable_sites()[exch_ind];
       int sublat = site_exch.sublat()[exch_ind];
       int current_occupant = config_dof.occ(mutating_site);
 
       //Loop over possible occupants for site that can change
-      for(Index new_occupant_ind = 0; new_occupant_ind < site_exch.possible_swap()[sublat][current_occupant].size(); new_occupant_ind++) {
-
-        int new_occupant = site_exch.sublat_to_mol()[sublat][new_occupant_ind];
-
-        _update_deltas(event, mutating_site, sublat, current_occupant, new_occupant);
+      const auto& possible = site_exch.possible_swap()[sublat][current_occupant];
+      for(auto new_occ_it=possible.begin(); new_occ_it!=possible.end(); ++new_occ_it) {
+      
+        _update_deltas(event, mutating_site, sublat, current_occupant, *new_occ_it);
 
         //save the result
         double dpot_nrg = event.dpotential_energy() * supercell().volume();
@@ -306,9 +305,9 @@ namespace CASM {
     
     sout << std::setw(16) << "N/unitcell" << " "
          << std::setw(16) << "dPE" << " "
-         << std::setw(24) << "N*exp(-dPE_i/kT)" << " "
-         << std::setw(16) << "dPhi" << " "
-         << std::setw(16) << "Phi" << std::endl;
+         << std::setw(24) << "N*exp(-dPE/kT)" << " "
+         << std::setw(16) << "dphi" << " "
+         << std::setw(16) << "phi" << std::endl;
       
     double tsum = 0.0;
     double phi = 0.0;
@@ -331,7 +330,7 @@ namespace CASM {
       
     }
     
-    sout << "Phi_LTE(1): " << std::setprecision(12) << potential_energy() - phi << std::endl;
+    sout << "phi_LTE(1): " << std::setprecision(12) << potential_energy() - phi << std::endl;
     
     return potential_energy() - phi;
 
