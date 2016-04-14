@@ -44,8 +44,8 @@ namespace CASM {
     ///Return the appropriate std::vector of conditions to visit based from settings. Use for construction.
     std::vector<CondType> make_conditions_list(const PrimClex &primclex, const SettingsType &settings);
     
-    ///Converge the MonteCarlo as it currently stands
-    void single_run();
+    ///Converge the MonteCarlo for conditions 'cond_index'
+    void single_run(Index cond_index);
     
     ///Check for existing calculations to find starting conditions
     Index _find_starting_conditions() const;
@@ -69,6 +69,9 @@ namespace CASM {
     /// target for log messages
     std::ostream& sout;
     
+    /// describes where to write output
+    MonteCarloDirectoryStructure m_dir;
+    
   };
 
   
@@ -84,7 +87,8 @@ namespace CASM {
     m_mc(primclex, m_settings),
     m_conditions_list(make_conditions_list(primclex, m_settings)),
     m_debug(m_settings.debug()),
-    sout(_sout) {
+    sout(_sout),
+    m_dir(m_settings.output_directory()) {
   
   }
   
@@ -101,7 +105,6 @@ namespace CASM {
     if(debug()) {
       sout << "Checking for existing calculations..." << std::endl;
     }
-    MonteCarloDirectoryStructure dir(m_settings.output_directory());
     
     if(!m_settings.write_json() && !m_settings.write_csv()) {
       throw std::runtime_error(
@@ -116,7 +119,7 @@ namespace CASM {
     // check if we'll be repeating any calculations that already have files written
     std::vector<Index> repeats;
     for(Index i=start_i; i<m_conditions_list.size(); ++i) {
-      if(fs::exists(dir.conditions_dir(i))) {
+      if(fs::exists(m_dir.conditions_dir(i))) {
         repeats.push_back(i);
       }
     }
@@ -145,6 +148,10 @@ namespace CASM {
         auto equil_passes = m_settings.equilibration_passes_first_run();
         sout << "Begin " << equil_passes << " equilibration passes..." << std::endl;
         
+        jsonParser json;
+        fs::create_directories(m_dir.conditions_dir(0));
+        to_json(m_mc.configdof(), json).write(m_dir.initial_state_firstruneq_json(0));
+        
         MonteCounter equil_counter(m_settings, m_mc.steps_per_pass());
         while(equil_counter.pass() != equil_passes) {
           monte_carlo_step(m_mc);
@@ -157,22 +164,13 @@ namespace CASM {
     else {
       // read end state of previous condition
       ConfigDoF configdof = m_mc.configdof();
-      from_json(configdof, jsonParser(dir.final_state_json(start_i-1)));
+      from_json(configdof, jsonParser(m_dir.final_state_json(start_i-1)));
       m_mc.reset(configdof);
     }
     
     // Run for all conditions, outputting data as you finish each one
     for(Index i = start_i; i < m_conditions_list.size(); i++) {
-      
-      m_mc.set_conditions(m_conditions_list[i]);
-      
-      single_run();
-      sout << "Writing output files..." << std::endl;
-      m_mc.write_results(i);
-      jsonParser json;
-      to_json(m_mc.configdof(), json).write(dir.final_state_json(i));
-      sout << "  DONE" << std::endl << std::endl;
-      
+      single_run(i);
     }
 
     return;
@@ -186,7 +184,6 @@ namespace CASM {
   template<typename RunType>
   Index MonteDriver<RunType>::_find_starting_conditions() const {
     
-    MonteCarloDirectoryStructure dir(m_settings.output_directory());
     Index start_i = 0;
     Index start_max = m_conditions_list.size();
     Index start_json = m_settings.write_json() ? 0 : start_max;
@@ -199,12 +196,12 @@ namespace CASM {
     // can start with condition i+1 if results (i) and final_state.json (i) exist
       
     // check JSON files 
-    if(m_settings.write_json() && fs::exists(dir.results_json())) {
+    if(m_settings.write_json() && fs::exists(m_dir.results_json())) {
         
-      json_results.read(dir.results_json());
+      json_results.read(m_dir.results_json());
       
       // can start with i+1 if results[i] and final_state.json (i) exist
-      while(json_results.begin()->size() > start_json && fs::exists(dir.final_state_json(start_i)) && start_i < start_max) {
+      while(json_results.begin()->size() > start_json && fs::exists(m_dir.final_state_json(start_i)) && start_i < start_max) {
         ++start_json;
       }
       
@@ -212,16 +209,16 @@ namespace CASM {
     }
     
     // check CSV files 
-    if(m_settings.write_csv() && fs::exists(dir.results_csv())) {
+    if(m_settings.write_csv() && fs::exists(m_dir.results_csv())) {
         
-      csv_results.open(dir.results_csv());
+      csv_results.open(m_dir.results_csv());
       
       // read header
       std::getline(csv_results, str);
       ss << str << "\n";
       
       // can start with i+1 if results[i] and final_state.json (i) exist
-      while(!csv_results.eof() && fs::exists(dir.final_state_json(start_csv)) && start_i < start_max) {
+      while(!csv_results.eof() && fs::exists(m_dir.final_state_json(start_csv)) && start_i < start_max) {
         ++start_csv;
         std::getline(csv_results, str);
         ss << str << "\n";
@@ -238,7 +235,7 @@ namespace CASM {
     // update results summary files to remove any conditions that must be re-calculated
     
     // for JSON
-    if(m_settings.write_json() && fs::exists(dir.results_json())) {
+    if(m_settings.write_json() && fs::exists(m_dir.results_json())) {
       
       // if results size > start_i, must fix results by removing results that will be re-run
       jsonParser finished_results;
@@ -248,12 +245,12 @@ namespace CASM {
           ref.push_back((*it)[i]);
         }
       }
-      finished_results.write(dir.results_json());
+      finished_results.write(m_dir.results_json());
     }
     
     // for csv
-    if(m_settings.write_csv() && fs::exists(dir.results_csv())) {
-      fs::ofstream out(dir.results_csv());
+    if(m_settings.write_csv() && fs::exists(m_dir.results_csv())) {
+      fs::ofstream out(m_dir.results_csv());
       out << ss.rdbuf();
       out.close();
     }
@@ -262,11 +259,16 @@ namespace CASM {
   }
 
   template<typename RunType>
-  void MonteDriver<RunType>::single_run() {
+  void MonteDriver<RunType>::single_run(Index cond_index) {
     
+    fs::create_directories(m_dir.conditions_dir(cond_index));
+    m_mc.set_conditions(m_conditions_list[cond_index]);
+      
     // perform any requested explicit equilibration passes
     if(m_settings.is_equilibration_passes_each_run()) {
       
+      jsonParser json;
+      to_json(m_mc.configdof(), json).write(m_dir.initial_state_runeq_json(cond_index));
       auto equil_passes = m_settings.equilibration_passes_each_run();
       sout << "Begin " << equil_passes << " equilibration passes..." << std::endl;
       
@@ -279,7 +281,10 @@ namespace CASM {
       sout << "  DONE" << std::endl;
     }
     
-    
+    // initial state (after any equilibriation passes)
+    jsonParser json;
+    to_json(m_mc.configdof(), json).write(m_dir.initial_state_json(cond_index));
+      
     // timing info:
     using namespace std::chrono;
     steady_clock::time_point start_time, curr_time;
@@ -350,7 +355,13 @@ namespace CASM {
     curr_time = steady_clock::now();
     float s = duration_cast<duration<float> >(curr_time - start_time).count();
     sout << "Run time: " << s << " (s),  " << s/run_counter.pass() << " (s/pass),  " << s/(run_counter.pass()*run_counter.steps_per_pass() + run_counter.step()) << "(s/step)" << std::endl;
+    
+    to_json(m_mc.configdof(), json).write(m_dir.final_state_json(cond_index));
     //start_time = curr_time;
+    
+    sout << "Writing output files..." << std::endl;
+    m_mc.write_results(cond_index);
+    sout << "  DONE" << std::endl << std::endl;
     
     return;
   }
@@ -379,13 +390,12 @@ namespace CASM {
         // read existing conditions, and check if input conditions have already
         // been calculated. If not, add to list.
         CondType init_cond(settings.initial_conditions());
-        MonteCarloDirectoryStructure dir(m_settings.output_directory());
         bool already_calculated = false;
         int i=0;
-        while(fs::exists(dir.conditions_json(i))) {
+        while(fs::exists(m_dir.conditions_json(i))) {
           
           CondType existing;
-          jsonParser json(dir.conditions_json(i));
+          jsonParser json(m_dir.conditions_json(i));
           from_json(existing, primclex.composition_axes(), json);
           conditions_list.push_back(existing);
           if(existing == init_cond) {
