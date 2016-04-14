@@ -6,11 +6,6 @@
 #include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
-  namespace Coordinate_impl {
-    bool verbose::val = false;
-  }
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   Coordinate::Coordinate(const Eigen::Vector3d &init_vec,
                          const Lattice &init_home,
@@ -49,6 +44,8 @@ namespace CASM {
     return *this;
   }
 
+  //********************************************************************
+
   Coordinate &Coordinate::operator -=(const Coordinate &RHS) {
     cart() -= RHS.cart();
     return *this;
@@ -56,29 +53,20 @@ namespace CASM {
   }
 
   //********************************************************************
-  /**
-   *
-   */
-  //********************************************************************
 
   Coordinate Coordinate::operator-() const {
     return Coordinate(-frac(), home(), FRAC);
   }
 
   //********************************************************************
-  /**
-   *
-   */
-  //********************************************************************
 
-  bool Coordinate::operator ==(const Coordinate &RHS) const {
+  bool Coordinate::operator==(const Coordinate &RHS) const {
     return almost_equal(m_cart_coord, RHS.m_cart_coord);
   }
 
 
   //********************************************************************
 
-  ///These compares exist to make interface consistent with site
   bool Coordinate::compare(const Coordinate &RHS, double compare_tol) const {
     return (compare_type(RHS)) && (min_dist(RHS) < compare_tol);
 
@@ -86,8 +74,8 @@ namespace CASM {
 
   //********************************************************************
 
-  bool Coordinate::compare(const Coordinate &RHS, Coordinate &shift, double compare_tol) const {
-    return (compare_type(RHS)) && (min_dist(RHS + shift) < compare_tol);
+  bool Coordinate::compare(const Coordinate &RHS, Coordinate &translation, double compare_tol) const {
+    return (compare_type(RHS)) && (min_dist(RHS + translation) < compare_tol);
   }
 
   //********************************************************************
@@ -97,22 +85,7 @@ namespace CASM {
   }
 
   //********************************************************************
-  /**
-   * Applies symmetry to a coordinate.
-   *
-   * Overloads the * operator to apply symmetry to a coordinate in
-   * the current mode unless otherwise specified. Returns the
-   * transformed coordinate.
-   */
-  //********************************************************************
 
-  Coordinate operator*(const SymOp &LHS, const Coordinate &RHS) {
-    Coordinate tcoord(RHS);
-    return tcoord.apply_sym(LHS);
-  }
-
-
-  //********************************************************************
   void Coordinate::read(std::istream &stream, COORD_TYPE mode) {
     if(mode == FRAC) {
       stream >> m_frac_coord;
@@ -154,7 +127,6 @@ namespace CASM {
   //********************************************************************
 
   double Coordinate::dist(const Coordinate &neighbor) const {
-
     return (cart() - neighbor.cart()).norm();
   }
 
@@ -179,23 +151,23 @@ namespace CASM {
   /**
    * Finds minimum distance from any periodic image of a coordinate to any
    * periodic image of a neighboring coordinate.  Also passes the
-   * calculated shift in the argument.
+   * calculated translation in the argument.
    */
   //********************************************************************
 
 
-  double Coordinate::min_dist(const Coordinate &neighbor, Coordinate &shift) const {
-    shift.m_home = m_home;
+  double Coordinate::min_dist(const Coordinate &neighbor, Coordinate &translation) const {
+    translation.m_home = m_home;
 
-    shift.m_frac_coord = (frac() - neighbor.frac());
+    translation.m_frac_coord = (frac() - neighbor.frac());
 
     for(int i = 0; i < 3; i++)
-      shift.m_frac_coord(i) -= round(shift.m_frac_coord(i));
+      translation.m_frac_coord(i) -= round(translation.m_frac_coord(i));
 
-    shift._update_cart();
+    translation._update_cart();
 
-    return length(shift.const_cart());
-  };
+    return length(translation.const_cart());
+  }
 
   //********************************************************************
   /**
@@ -275,7 +247,8 @@ namespace CASM {
     if(!is_within)
       _update_cart();
     return is_within;
-  };
+  }
+
   //***********************************
 
   bool Coordinate::is_within() const {
@@ -288,7 +261,7 @@ namespace CASM {
       }
     }
     return true;
-  };
+  }
 
   //********************************************************************
 
@@ -306,9 +279,11 @@ namespace CASM {
       }
     }
 
+    if(!is_within)
+      _update_cart();
     translation._update_cart();
     return is_within;
-  };
+  }
 
   //********************************************************************
   /**
@@ -346,6 +321,8 @@ namespace CASM {
       frac() = (round(const_cart().dot(tcoord.const_cart()) / 2) * scale_to_int(tcoord.const_frac())).cast<double>();
     }
 
+    if(!was_within)
+      _update_frac();
     return was_within;
   }
 
@@ -355,7 +332,7 @@ namespace CASM {
    */
   //********************************************************************
 
-  bool Coordinate::is_lattice_shift() {
+  bool Coordinate::is_lattice_shift() const {
 
     //If mode is local, return true only if coordinate describes origin
     if(PERIODICITY_MODE::IS_LOCAL())
@@ -406,7 +383,7 @@ namespace CASM {
 
     // mutable int basis_ind;
     CASM::from_json(m_basis_ind, json["basis_ind"]);
-  };
+  }
 
   jsonParser &to_json(const Coordinate &coord, jsonParser &json) {
     return coord.to_json(json);
@@ -414,8 +391,23 @@ namespace CASM {
 
   void from_json(Coordinate &coord, const jsonParser &json) {
     coord.from_json(json);
-  };
+  }
 
+
+  //********************************************************************
+  /**
+   * Applies symmetry to a coordinate.
+   *
+   * Overloads the * operator to apply symmetry to a coordinate in
+   * the current mode unless otherwise specified. Returns the
+   * transformed coordinate.
+   */
+  //********************************************************************
+
+  Coordinate operator*(const SymOp &LHS, const Coordinate &RHS) {
+    Coordinate tcoord(RHS);
+    return tcoord.apply_sym(LHS);
+  }
 
   //********************************************************************
   /**
@@ -428,5 +420,5 @@ namespace CASM {
     return stream;
   }
 
-};
+}
 

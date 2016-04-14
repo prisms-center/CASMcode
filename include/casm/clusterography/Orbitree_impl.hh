@@ -2315,9 +2315,7 @@ namespace CASM {
           if(site_loc != struc.basis.size()) {
             temp_clust.push_back(struc.basis[site_loc]);
             //std::cout << "back before: " << temp_clust.back().const_cart() << "\n\n";
-            Coordinate_impl::verbose::val = true;
             temp_clust.back().cart() = tcoord.cart();
-            Coordinate_impl::verbose::val = false;
             //std::cout << "back after: " << temp_clust.back().const_cart() << "\n\n";
           }
           else {

@@ -16,9 +16,6 @@ namespace CASM {
   class SymOp;
 
   namespace Coordinate_impl {
-    struct verbose {
-      static bool val;
-    };
     class FracCoordinate;
     class FracCoordinateComponent;
     class CartCoordinate;
@@ -117,15 +114,24 @@ namespace CASM {
     }
 
 
-    ///These compares exist to make interface consistent with site
+    /// Returns true if this->min_dist(RHS)<tol
     bool compare(const Coordinate &RHS, double tol = TOL) const;
-    bool compare(const Coordinate &RHS, Coordinate &shift, double tol = TOL) const;
+
+    /// Returns true if this->min_dist(RHS)<tol
+    /// if true, calculates @param translation such that
+    /// *this = (RHS+translation)
+    bool compare(const Coordinate &RHS, Coordinate &translation, double tol = TOL) const;
+
+    /// Return true -- Exists to allow duck-typing with Site
     bool compare_type(const Coordinate &RHS)const;
 
-    ///Map coordinate into the unit cell using a lattice translation
+    /// Map coordinate into the unit cell using a lattice translation
+    /// returns true if *this was already within the unit cell
     bool within();
 
-    ///Same as within(), but lattice translation is stored in Coordinate translation
+    ///Same as within(), but lattice translation is stored in Coordinate translation, such that
+    /// coord_after = coord_before + translation
+    /// returns true if *this was already within the unit cell
     bool within(Coordinate &translation);
 
     ///Checks to see if coordinate is in the unit cell, but does not translate it
@@ -141,9 +147,7 @@ namespace CASM {
     bool voronoi_within(Coordinate &translation);
 
     ///Checks to see if coordinate is at a lattice translation with respect to the origin
-    bool is_lattice_shift();
-
-    Coordinate get_normal_vector(Coordinate coord2, Coordinate coord3);
+    bool is_lattice_shift() const;
 
     ///update the home lattice of a coordinate, keeping representation specified mode
     void set_lattice(const Lattice &new_lat, COORD_TYPE mode); //John G, use to specify whether to keep CART or FRAC the same, when assigning a new lattice
@@ -175,7 +179,11 @@ namespace CASM {
     ///Returns distance from periodic image of neighbor that is closest
     ///Is unsafe if min_dist is comparable to half a lattice vector in length
     double min_dist(const Coordinate &neighbor) const;
-    double min_dist(const Coordinate &neighbor, Coordinate &shift)const; //Added by Ivy 11/05/12
+
+    /// Returns distance from periodic image of neighbor that is closest
+    /// and calculates the translation such that
+    /// (neighbor+translation) is the periodic image of this coordinate that is closest to @param neighbor
+    double min_dist(const Coordinate &neighbor, Coordinate &translation)const;
 
     ///Finds same shift as min_dist but returns shift(CART).transpose()*metric*shift(CART)
     double min_dist2(const Coordinate &neighbor, const Eigen::Ref<const Eigen::Matrix3d> &metric) const;
