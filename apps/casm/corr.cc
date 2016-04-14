@@ -109,8 +109,6 @@ namespace CASM {
     for(int i = 0; i < config_path.size(); i++)
       abs_config_path.push_back(fs::absolute(config_path[i]));
 
-    fs::current_path(root);
-
     jsonParser json_bspecs(dir.bspecs(set.bset()));
     std::string basis_type_str;
     basis_type_str = json_bspecs["orbitree_specs"]["basis_functions"].get<std::string>();

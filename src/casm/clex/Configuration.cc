@@ -568,7 +568,9 @@ namespace CASM {
     }
 
     fs::ofstream file(get_pos_path());
-    VaspIO::PrintPOSCAR(*this).print(file);
+    VaspIO::PrintPOSCAR p(*this);
+    p.sort();
+    p.print(file);
     return;
   }
 
@@ -855,7 +857,9 @@ namespace CASM {
     // print POS to stringstream
     if(occupation() != get_supercell().vacant()) {
       std::stringstream ss;
-      VaspIO::PrintPOSCAR(*this).print(ss);
+      VaspIO::PrintPOSCAR p(*this);
+      p.sort();
+      p.print(ss);
       json["pos"] = ss.str();
     }
     else {

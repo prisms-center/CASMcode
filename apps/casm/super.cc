@@ -222,8 +222,7 @@ namespace CASM {
       std::cout << "Error: No casm project found." << std::endl;
       return 1;
     }
-    fs::current_path(root);
-
+    
 
     std::cout << "\n***************************\n" << std::endl;
 
@@ -410,7 +409,9 @@ namespace CASM {
 
         std::stringstream ss;
         const Configuration &con = primclex.configuration(configname[0]);
-        VaspIO::PrintPOSCAR(con).print(ss); 
+        VaspIO::PrintPOSCAR p(con);
+        p.sort();
+        p.print(ss); 
         
         std::istringstream iss(ss.str());
         BasicStructure<Site> unit;
