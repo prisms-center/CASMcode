@@ -1959,6 +1959,7 @@ namespace CASM {
       }
     }
     out << "\n\n";
+    Index nf = 0;
     for(Index i = 0; i < size(); i++) {
       if(size(i) != 0) out << "** Branch " << i << " ** \n" << std::flush;
       for(Index j = 0; j < size(i); j++) { //Loops over all i sized Orbits
@@ -1970,13 +1971,9 @@ namespace CASM {
             << "  MaxLength: " << orbit(i, j).prototype.max_length()
             << '\n' << std::flush;
 
-        if(orbit(i, j).size() > 0) {
-          for(int k = 0; k < 1; k++) { // Loops over each equivalent cluster in j
-            out << "            " << "Prototype" << " of " << orbit(i, j).size() << " Equivalent Clusters in Orbit " << index[i][j] << '\n' << std::flush;
-            orbit(i, j).at(k).print_clust_basis(out, 18, '\n');
-
-          }
-        }
+        out << "            " << "Prototype" << " of " << orbit(i, j).size() << " Equivalent Clusters in Orbit " << index[i][j] << '\n' << std::flush;
+        prototype(i, j).print_clust_basis(out, nf, 18, '\n');
+        nf += prototype(i, j).clust_basis.size();
         out << "\n\n" << std::flush;
       }
       if(size(i) != 0) out << '\n' << std::flush;
