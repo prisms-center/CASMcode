@@ -133,10 +133,12 @@ namespace CASM {
     /*** Inherited from SymOpRepresentation ***/
     /*
     ///Index into MasterSymGroup that specifies the operation
-    Index op_index, rep_ID;
+    Index m_op_index;
+
+    SymGroupRepID m_rep_ID;
 
     /// Pointer to the MasterSymGroup where prototype of this SymOp lives
-    MasterSymGroup const *master_group;
+    MasterSymGroup const *m_master_group;
     */
 
     ///matrix representation of symettry operation in

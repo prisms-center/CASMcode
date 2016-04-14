@@ -41,8 +41,8 @@ namespace CASM {
 
     json["SymOpRep_type"] = "SymPermutation";
 
-    json["op_index"] = op_index;
-    json["rep_ID"] = rep_ID;
+    json["op_index"] = index();
+    json["rep_ID"] = rep_ID();
 
     json["m_permute"] = m_permute;
     if(m_has_mat)
@@ -54,8 +54,8 @@ namespace CASM {
 
   void SymPermutation::from_json(const jsonParser &json) {
     try {
-      CASM::from_json(op_index, json["op_index"]);
-      CASM::from_json(rep_ID, json["rep_ID"]);
+      CASM::from_json(m_op_index, json["op_index"]);
+      CASM::from_json(m_rep_ID, json["rep_ID"]);
 
       CASM::from_json(m_permute, json["m_permute"]);
       CASM::from_json(m_mat, json["m_mat"]);

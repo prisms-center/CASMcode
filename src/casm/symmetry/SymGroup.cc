@@ -378,7 +378,7 @@ namespace CASM {
   SymGroupRep *MasterSymGroup::_representation_ptr(SymGroupRepID _id) const {
     if(_id.is_identity()) {
       // _id.rep_index() stores dimension of representation
-      _id = identity_rep_id(_id.rep_index());
+      _id = identity_rep_ID(_id.rep_index());
     }
     else if(_id.group_index() != group_index()) {
       throw std::runtime_error("Attempting to access representation from MasterGroup #" + std::to_string(group_index())
@@ -3590,13 +3590,13 @@ namespace CASM {
       return;
     }
 
-    sort();
+    SymGroup::sort();
+
     if(get_multi_table().size() != size()) {
       return;
     }
 
     _generate_conjugacy_classes();
-    //_generate_conjugacy_corr_table();
 
     SymOp t_op(at(0));
     Array<int> tarray;

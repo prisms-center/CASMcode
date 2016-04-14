@@ -20,21 +20,12 @@ namespace CASM {
   public:
     enum symmetry_type {identity_op, mirror_op, glide_op, rotation_op, screw_op, inversion_op, rotoinversion_op, invalid_op};
 
-  protected:
-
-    /// Pointer to the MasterSymGroup where prototype of this SymOp lives
-    MasterSymGroup const *m_master_group;
-
-    ///Index into MasterSymGroup that specifies the operation
-    Index op_index;
-
-    SymGroupRepID rep_ID;
 
 
   public:
-    SymOpRepresentation() : m_master_group(nullptr), op_index(-1) {}
+    SymOpRepresentation() : m_master_group(nullptr), m_op_index(-1) {}
     SymOpRepresentation(const MasterSymGroup &_master_group, SymGroupRepID _rep_ID, Index _op_index) :
-      m_master_group(&_master_group), op_index(_op_index), rep_ID(_rep_ID) {}
+      m_master_group(&_master_group), m_op_index(_op_index), m_rep_ID(_rep_ID) {}
 
     //SymOpRepresentation specifies how a symmetry operation acts on a certain type of object.
     //It is a virtual class, since we don't need to know the specifics of its behavior at higher levels of abstraction
@@ -60,24 +51,24 @@ namespace CASM {
 
 
     /// get pointer to matrix representation corresponding to rep_ID
-    Eigen::MatrixXd const *get_matrix_rep(SymGroupRepID rep_ID) const;
+    Eigen::MatrixXd const *get_matrix_rep(SymGroupRepID _rep_ID) const;
 
-    /// get pointer to permutation representation corresponding to rep_ID
-    Permutation const *get_permutation_rep(SymGroupRepID rep_ID) const;
+    /// get pointer to permutation representation corresponding to _rep_ID
+    Permutation const *get_permutation_rep(SymGroupRepID _rep_ID) const;
 
-    /// get pointer to BasisPermute representation corresponding to rep_ID
-    SymBasisPermute const *get_basis_permute_rep(SymGroupRepID rep_ID) const;
+    /// get pointer to BasisPermute representation corresponding to _rep_ID
+    SymBasisPermute const *get_basis_permute_rep(SymGroupRepID _rep_ID) const;
 
-    /// get array of pointers to matrix representations for representations corresponding to rep_IDs
-    Array<Eigen::MatrixXd const * > get_matrix_reps(Array<SymGroupRepID> rep_IDs) const;
+    /// get array of pointers to matrix representations for representations corresponding to _rep_IDs
+    Array<Eigen::MatrixXd const * > get_matrix_reps(Array<SymGroupRepID> _rep_IDs) const;
 
-    /// set representation for SymOp corresponding to rep_ID
-    void set_rep(SymGroupRepID rep_ID, const SymOpRepresentation &op_rep) const;
+    /// set representation for SymOp corresponding to _rep_ID
+    void set_rep(SymGroupRepID _rep_ID, const SymOpRepresentation &op_rep) const;
 
     /// Change m_master_group and determine op_index
     void set_identifiers(const MasterSymGroup &new_group, SymGroupRepID new_rep_ID);
 
-    /// Set m_master_group, rep_ID, and op_index
+    /// Set m_master_group, _rep_ID, and op_index
     void set_identifiers(const MasterSymGroup &new_group, SymGroupRepID new_rep_ID, Index new_op_index);
 
     /// const access of head group
@@ -91,19 +82,38 @@ namespace CASM {
     }
 
     void invalidate_index() {
-      op_index = -1;
+      m_op_index = -1;
     }
 
+    /// Index of this operation within the master_group
     Index index()const {
-      return op_index;
+      return m_op_index;
     }
 
+    /// ID of representation that this operation belongs to within the master_group
+    SymGroupRepID rep_ID()const {
+      return m_rep_ID;
+    }
+
+    /// Get the operation index of the inverse of this operation, using the master_group's multiplication table
     Index ind_inverse()const;
 
+    /// Get the operation index of operation that is the product of this operation and @param RHS,
+    /// using the master_group's multiplication table
     Index ind_prod(const SymOpRepresentation &RHS)const;
 
     virtual jsonParser &to_json(jsonParser &json) const = 0;
     virtual void from_json(const jsonParser &json) = 0;
+
+  protected:
+
+    /// Pointer to the MasterSymGroup where prototype of this SymOp lives
+    MasterSymGroup const *m_master_group;
+
+    ///Index into MasterSymGroup that specifies the operation
+    Index m_op_index;
+
+    SymGroupRepID m_rep_ID;
   };
 
   jsonParser &to_json(const SymOpRepresentation *rep, jsonParser &json);

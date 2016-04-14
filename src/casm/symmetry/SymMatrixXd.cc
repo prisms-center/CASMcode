@@ -14,8 +14,8 @@ namespace CASM {
 
     json["SymOpRep_type"] = "SymMatrixXd";
 
-    json["op_index"] = op_index;
-    json["rep_ID"] = rep_ID;
+    json["op_index"] = index();
+    json["rep_ID"] = rep_ID();
 
     json["mat"] = mat;
     return json;
@@ -25,8 +25,8 @@ namespace CASM {
 
   void SymMatrixXd::from_json(const jsonParser &json) {
     try {
-      CASM::from_json(op_index, json["op_index"]);
-      CASM::from_json(rep_ID, json["rep_ID"]);
+      CASM::from_json(m_op_index, json["op_index"]);
+      CASM::from_json(m_rep_ID, json["rep_ID"]);
 
       CASM::from_json(mat, json["mat"]);
     }

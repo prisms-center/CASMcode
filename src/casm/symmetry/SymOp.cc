@@ -25,12 +25,12 @@ namespace CASM {
        && (this == &(new_group[new_index]) ||
            almost_equal(matrix(), new_group[new_index].matrix()))) {
       m_master_group = &new_group;
-      op_index = new_index;
+      m_op_index = new_index;
     }
     else {
       m_master_group = &new_group;
       //m_master_group = NULL;
-      op_index = -1;
+      m_op_index = -1;
     }
   }
 
@@ -51,7 +51,7 @@ namespace CASM {
     }
     //The following blocks caused problems at some point (mainly for non-primitive structures)
     //else if(is_identity() && RHS.is_identity()) {
-    //t_op.op_index = 0;
+    //t_op.m_op_index = 0;
     //}
     //else{
     //std::cout << "This symmetry is " << symmetry << " with head " << m_master_group << " and RHS symmetry is " << RHS.symmetry << " with head " << RHS.m_master_group << "\n";
@@ -86,7 +86,7 @@ namespace CASM {
       t_op.set_index(master_group(), master_group().ind_inverse(index()));
     }
     else if(is_identity()) {
-      t_op.op_index = 0;
+      t_op.m_op_index = 0;
     }
 
     return t_op;
@@ -351,8 +351,8 @@ namespace CASM {
 
     ///type of symmetry, given by one of the allowed values of symmetry_type
     json["symmetry"] = t_info.op_type;
-    json["op_index"] = op_index;
-    json["rep_ID"] = rep_ID;
+    json["op_index"] = m_op_index;
+    json["rep_ID"] = m_rep_ID;
 
     // mutable SymOp::matrix_type symmetry_mat[2];
     json["symmetry_mat"] = matrix();
@@ -384,9 +384,9 @@ namespace CASM {
     try {
       //std::cout<<"Inside of SymOp::from_json"<<std::endl;
       //std::cout<<"Reading in op_index"<<std::endl;
-      CASM::from_json(op_index, json["op_index"]);
+      CASM::from_json(m_op_index, json["op_index"]);
       //std::cout<<"Reading in rep_id"<<std::endl;
-      CASM::from_json(rep_ID, json["rep_ID"]);
+      CASM::from_json(m_rep_ID, json["rep_ID"]);
 
       // mutable SymOp::matrix_type symmetry_mat[2];
       //std::cout<<"Reading in symmetry_mat"<<std::endl;
