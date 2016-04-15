@@ -62,21 +62,53 @@ namespace CASM {
 
 
   //*************************************************
-
-  void SiteCluster::generate_clust_basis(multivector<BasisSet const *>::X<2> const &local_args, std::vector<BasisSet const *> const &global_args, Index max_poly_order) {
+  // @param local_args[i][j] is BasisSet for i'th DoFspace at j'th site of cluster
+  //                            site  0            site 1            site 2
+  // DoFType 0: displacement       {x0,y0,z0}       {x1, y1, z1}       {x2,y2,z2}
+  // DoFType 1: configuration       {pA0,pB0}            {}            {pA2, pB2}
+  //
+  // Step 1:  Get the kroenecker product of cluster permutation with DoF symrep
+  //
+  //  permutation  |    kronecker prod  |    DoF Symrep (e.g., x--y displacement)
+  //   [ 0  1 ]              v                     [cos -sin]
+  //   [ 1  0 ]             XkX                    [sin  cos]
+  //
+  //       [x0]      [  0    0   cos -sin ]   [x0]
+  //       [y0]      [  0    0   sin  cos ]   [y0]
+  //   S * [x1]  =   [ cos -sin   0    0  ]   [x1]
+  //       [x2]      [ sin  cos   0    0  ]   [x2]
+  //
+  // ----------------------------------------------------------------------
+  //
+  // Step 2: mix-in @param global_args to get all_argsets
+  //
+  // GLOBAL ARGS
+  //
+  // strain             { e1, e2, e3, e4, e5, e6}
+  // composition        { comp_a, comp_b }
+  //
+  // arg_subsets =   [ {x0,y0,z0,x1,y1,z1,x2,y2,z2},
+  //                   {pA0,pB0,pA2,pB2},
+  //                   {e1,e2,e3,e4,e5,e6},
+  //                   {comp_a,comp_b}]
+  //
+  void SiteCluster::generate_clust_basis(multivector<BasisSet const *>::X<2> const &local_args,
+                                         std::vector<BasisSet const *> const &global_args,
+                                         Index max_poly_order) {
     //std::cout<<"In SiteCluster::generate_clust_basis, the size of this cluster is:"<<size()<<std::endl;
     //std::cout<<"valid_index evaluates to:"<<valid_index(max_poly_order)<<std::endl;
     if(!valid_index(max_poly_order))
       max_poly_order = size();
     //std::cout<<"Max_poly_order "<<max_poly_order<<std::endl;
 
-    Array<BasisSet> all_local;
-    all_local.reserve(local_args.size());
-    Array<BasisSet const *> all_subsets;
+    Array<BasisSet const *> arg_subsets;
     for(BasisSet const *global_ptr : global_args) {
       if(global_ptr)
-        all_subsets.push_back(global_ptr);
+        arg_subsets.push_back(global_ptr);
     }
+
+    Array<BasisSet> all_local;
+    all_local.reserve(local_args.size());
 
     //Loop over dof's
     for(Index d = 0; d < local_args.size(); d++) {
@@ -99,13 +131,13 @@ namespace CASM {
       }
       all_local.push_back(SiteCluster_impl::construct_clust_dof_basis(*this, site_args));
       if(all_local.back().size())
-        all_subsets.push_back(&(all_local.back()));
+        arg_subsets.push_back(&(all_local.back()));
     }
 
     std::cerr << "WARNING: THIS VERSION OF CASM CANNOT PRODUCE CLUSTER FUNCTIONS!! YOU WILL HAVE NO CORRELATIONS\n";
     // BasisSet::construct_invariant_cluster_polynomials() does the heavy lifting
     //clust_basis.construct_invariant_cluster_polynomials(site_args, global_args, clust_group, permute_group, max_poly_order);
-    clust_basis.construct_invariant_polynomials(all_subsets, clust_group(), max_poly_order, 1);
+    clust_basis.construct_invariant_polynomials(arg_subsets, clust_group(), max_poly_order, 1);
   }
 
   //*************************************************
@@ -400,18 +432,21 @@ namespace CASM {
 
     BasisSet construct_clust_dof_basis(SiteCluster const &_clust, std::vector<BasisSet const *> const &site_dof_sets) {
       BasisSet result;
-
+      result.set_dof_IDs(_clust.nlist_inds());
       Array<SymGroupRep const *> subspace_reps;
       for(BasisSet const *site_bset_ptr : site_dof_sets) {
         if(site_bset_ptr) {
           result.append(*site_bset_ptr);
-          subspace_reps.push_back(SymGroupRep::RemoteHandle(_clust.clust_group(), site_bset_ptr->basis_symrep_ID()).rep_ptr());
+          subspace_reps.push_back(SymGroupRep::RemoteHandle(_clust.clust_group(),
+                                                            site_bset_ptr->basis_symrep_ID()).rep_ptr());
         }
         else {
-          subspace_reps.push_back(SymGroupRep::RemoteHandle(_clust.clust_group(), SymGroupRepID::identity(0)).rep_ptr());
+          subspace_reps.push_back(SymGroupRep::RemoteHandle(_clust.clust_group(),
+                                                            SymGroupRepID::identity(0)).rep_ptr());
         }
       }
-      result.set_basis_symrep_ID(permuted_direct_sum_rep(*(_clust.permute_rep().rep_ptr()), subspace_reps).add_copy_to_master());
+      result.set_basis_symrep_ID(permuted_direct_sum_rep(*(_clust.permute_rep().rep_ptr()),
+                                                         subspace_reps).add_copy_to_master());
       return result;
     }
 

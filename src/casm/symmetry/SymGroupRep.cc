@@ -286,14 +286,14 @@ namespace CASM {
       assert(0);
       exit(1);
     }
-    Eigen::MatrixXd tmat;
+    Eigen::MatrixXd rightmat;
+    rightmat = Eigen::JacobiSVD<Eigen::MatrixXd>(trans_mat.transpose()).solve(Eigen::MatrixXd::Identity(trans_mat.rows(), trans_mat.rows()));
+
     for(Index i = 0; i < size(); i++) {
       if(!at(i))
         continue;
 
-      tmat = trans_mat * (*(at(i)->get_MatrixXd())) * trans_mat.transpose();
-      //std::cout << "tmat " << i << " is: \n" << tmat << "\n";
-      new_rep.set_rep(i, SymMatrixXd(tmat));
+      new_rep.set_rep(i, SymMatrixXd(trans_mat * (*(at(i)->get_MatrixXd())) * rightmat));
     }
     return new_rep;
   }
@@ -1436,8 +1436,10 @@ namespace CASM {
         assert(0);
         exit(1);
       }
+      rep_dims[i] = (*sum_reps[i])[0]->get_MatrixXd()->cols();
     }
-
+    std::cout << "SUM_REPS is " << sum_reps << "\n";
+    std::cout << "REP_DIMS is " << rep_dims << "\n";
     Array<Index> sum_inds(cum_sum(rep_dims));
     Eigen::MatrixXd sum_mat(rep_dims.sum(), rep_dims.sum());
     Eigen::MatrixXd const *rep_mat_ptr(NULL);

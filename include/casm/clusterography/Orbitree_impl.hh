@@ -2547,9 +2547,9 @@ namespace CASM {
       case 'c': { //chebychev
         for(Index i = 0; i < _asym_unit().size(); i++) {
           Array<double> tprob(m_asym_unit.prototype(i)[0].site_occupant().size(), 1.0 / double(_asym_unit().prototype(i)[0].site_occupant().size()));
-          m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(), tprob, _asym_unit().prototype(i)[0].basis_ind());
+          m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(), tprob, _asym_unit().prototype(i)[0].basis_ind(), asym_unit().prototype(i).clust_group());
           for(Index ne = 0; ne < _asym_unit()[i].size(); ne++)
-            m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind());
+            m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind(), asym_unit().prototype(i).clust_group());
         }
         break;
       }
@@ -2558,9 +2558,9 @@ namespace CASM {
           Array<double> tprob(_asym_unit().prototype(i)[0].site_occupant().size(), 0.0);
           if(tprob.size()) {
             tprob[0] = 1.0;
-            m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(), tprob, _asym_unit().prototype(i)[0].basis_ind());
+            m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(), tprob, _asym_unit().prototype(i)[0].basis_ind(), asym_unit().prototype(i).clust_group());
             for(Index ne = 0; ne < _asym_unit()[i].size(); ne++)
-              m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind());
+              m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind(), asym_unit().prototype(i).clust_group());
           }
         }
         break;
@@ -2648,9 +2648,9 @@ namespace CASM {
         }
         for(Index j = 0; j < tprob.size(); j++)
           tprob[j] /= tsum;
-        m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(), tprob, _asym_unit().prototype(i)[0].basis_ind());
+        m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(), tprob, _asym_unit().prototype(i)[0].basis_ind(), asym_unit().prototype(i).clust_group());
         for(Index ne = 0; ne < _asym_unit()[i].size(); ne++)
-          m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind());
+          m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind(), asym_unit().prototype(i).clust_group());
       }
 
       //std::cout << "Using concentration-optimized site basis functions." << std::endl << std::endl;

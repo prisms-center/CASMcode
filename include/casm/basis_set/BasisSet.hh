@@ -163,11 +163,13 @@ namespace CASM {
 
     void construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
                                                   const Eigen::MatrixXd &gram_mat,
-                                                  Index basis_ind);
+                                                  Index basis_ind,
+                                                  const SymGroup &symgroup);
 
     void construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
                                                   const Array<double> &occ_probs,
-                                                  Index basis_ind);
+                                                  Index basis_ind,
+                                                  const SymGroup &symgroup);
 
     void construct_invariant_polynomials(const Array<BasisSet const *> &tsubs,
                                          const SymGroup &head_sym_group,

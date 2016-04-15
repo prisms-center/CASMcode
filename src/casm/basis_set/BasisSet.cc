@@ -498,7 +498,8 @@ namespace CASM {
 
   void BasisSet::construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
                                                           const Eigen::MatrixXd &gram_mat,
-                                                          Index basis_ind) {
+                                                          Index basis_ind,
+                                                          const SymGroup &symgroup) {
 
     m_argument.clear();
     if(!allowed_occs.is_locked()) {
@@ -593,8 +594,14 @@ namespace CASM {
 
       push_back(tOF.copy());
     }
-    // ********* TODO!!!!!!!!! ********
-    // Calculate BasisSet symmetry representation here, based on allowed_occs.sym_rep_ID() && B matrix
+    // ** step 4: Calculate BasisSet symmetry representation, based on allowed_occs.sym_rep_ID() && B matrix
+    // Q*B.T=B.T*S, where we know S (how to transform a column vector), and we want Q (how to transform row vector)
+    // so Q=B.T*S*inv(B.T)
+    if(allowed_occs.sym_rep_ID().is_identity())
+      m_basis_symrep_ID = SymGroupRepID::identity(N - 1);
+    else
+      m_basis_symrep_ID = symgroup.master_group().add_transformed_rep(allowed_occs.sym_rep_ID(), Eigen::MatrixXd(B.transpose()));
+
   }
 
   //*******************************************************************************************
@@ -612,7 +619,8 @@ namespace CASM {
 
   void BasisSet::construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
                                                           const Array<double> &occ_probs,
-                                                          Index basis_ind) {
+                                                          Index basis_ind,
+                                                          const SymGroup &symgroup) {
 
     Index N = allowed_occs.size();
     if(allowed_occs.size() != occ_probs.size()) {
@@ -651,7 +659,7 @@ namespace CASM {
         gram_mat(i, j) += occ_probs[i] * occ_probs[j];
       }
     }
-    construct_orthonormal_discrete_functions(allowed_occs, gram_mat, basis_ind);
+    construct_orthonormal_discrete_functions(allowed_occs, gram_mat, basis_ind, symgroup);
   }
 
 
