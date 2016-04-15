@@ -417,6 +417,7 @@ class Relax(object):
     def finalize(self):
       if self.is_converged():
         self.report_properties()
+        self.report_status('complete')
 
     def is_converged(self):
       # Check for electronic convergence in completed calculations. Returns True or False.
@@ -448,7 +449,6 @@ class Relax(object):
     def report_properties(self):
         """Report results to properties.calc.json file in configuration directory, after checking for electronic convergence."""
 
-        self.report_status('complete')
         output = dict()
         vrun = vasp.io.Vasprun( os.path.join(self.calcdir, "run.final", "vasprun.xml") )
 
