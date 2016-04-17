@@ -2,39 +2,82 @@ import numpy as np
 import sklearn
 
 class LinearRegressionForLOOCV(sklearn.base.BaseEstimator):
-  """ LinearRegression estimator that fits by constructing hat matrix for faster
-      LOOCV score calculations 
+  """ 
+  LinearRegression estimator that fits by constructing hat matrix for faster
+  LOOCV score calculations.
+  
+  Attributes
+  ----------
+    
+    penalty: float, optional, default=0.0
+      CV score is increased by 'penalty*(number of selected basis function)'
+    
+    pinv: boolean, optional, default=True
+      If true, use the psuedo-inverse in solving the least squares problem.
+    
+    coef_: array-like of shape (n_samples, 1)
+      Estimated coefficients for the linear regression problem.
+        
+    H_: array-like of shape (n_samples, n_features)
+      H = X*(X.transpose()*X).inverse()*X.transpose()
   """
   
-  def __init__(self, penalty=0.0, **kwargs):
+  def __init__(self, penalty=0.0, pinv=True):
+     """
+    Calculates linear least squares solution for X*b = y.
+    
+    Arguments
+    ---------
+    
+      penalty: float, optional, default=0.0
+        CV score is increased by 'penalty*(number of selected basis function)'
+      
+      pinv: boolean, optional, default=True
+        If true, use the psuedo-inverse in solving the least squares problem.
+      
+    """
     self.penalty=penalty
-    pass
+    self.pinv = pinv
+  
   
   def fit(self, X, y):
     """
-    Calculates linear least squares solution for:
-      X*b = y,
+    Calculates linear least squares solution for X*b = y.
     
-    Derivation:
-      X.t*X*b = X.t*y, orthogonal projection
-      b = (X.t*X).inv * X.t * y, solves the least squares problem
-      b = S * y,
-    where
-      S = ( X.t * X ).inv * X.t
     
-    and 
-      y_pred = X * b = H * y,
-    where
-      H = X * S
+    Arguments
+    ---------
     
-    Calculates attributes:
-      coef_: numpy array, length matches X.shape[1]
-      H_: numpy matrix, shape: (X.shape[0], X.shape[0])
-        where H = X*(X.transpose()*X).inverse()*X.transpose()
+      X: array-like of shape (n_samples, n_features)
+        The input data
+      
+      y: array-like of shape (n_samples, 1)
+        The values
+      
     
+    Notes
+    -----
+    
+      Derivation:
+        X.t*X*b = X.t*y, orthogonal projection
+        b = (X.t*X).inv * X.t * y, solves the least squares problem
+        b = S * y,
+      where
+        S = ( X.t * X ).inv * X.t
+      
+      and 
+        y_pred = X * b = H * y,
+      where
+        H = X * S
+      
+      Calculates attributes: coef_, H_
     """
-    #print "begin casm.fit.linear_model.LinearRegressionForLOOCV.fit"
-    S = np.linalg.pinv(X.transpose().dot(X)).dot(X.transpose())
+    if self.pinv == False:
+      S = np.linalg.inv(X.transpose().dot(X)).dot(X.transpose())
+    else:
+      S = np.linalg.pinv(X.transpose().dot(X)).dot(X.transpose())
+    
+    # coef
     self.coef_ = np.dot(S, y)
     
     # stores results for LOOCV formula
@@ -42,12 +85,51 @@ class LinearRegressionForLOOCV(sklearn.base.BaseEstimator):
     
   
   def predict(self, X):
-    #print "begin casm.fit.linear_model.LinearRegressionForLOOCV.predict"
+    """
+    Predict using the linear model.
+    
+    
+    Arguments
+    ---------
+    
+      X: array-like of shape (n_samples, n_features)
+        The input data
+    
+    
+    Returns
+    -----
+    
+      y_pred: array-like of shape (n_samples, 1)
+        The predicted values
+    """
     return np.dot(X, self.coef_)
   
   
   def score(self, X, y):
-    """LOOCV score"""
-    #print "begin casm.fit.linear_model.LinearRegressionForLOOCV.score"
+    """
+    Return the LOOCV score using the linear model.
+    
+    
+    Arguments
+    ---------
+    
+      X: array-like of shape (n_samples, n_features)
+        The input data. (This parameter is ignored)
+      
+      y: array-like of shape (n_samples, 1)
+        The values
+      
+    
+    Returns
+    -----
+    
+      loocv: float
+        The LOOCV score, np.mean(((y - y_pred)/(1.0 - np.diag(self.H_)))**2)
+    
+    Notes
+    -----
+      Must already be fit. 'X' parameter is ignored.
+      
+    """
     y_pred = np.dot(self.H_, y)
     return np.mean(((y - y_pred)/(1.0 - np.diag(self.H_)))**2)

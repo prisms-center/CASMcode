@@ -2,7 +2,7 @@
 import os, sys, json, time, pickle, copy
 from math import sqrt
 
-import casm.fit
+import casm.learn
 import pandas
 import numpy as np
 from sklearn.base import BaseEstimator
@@ -13,29 +13,48 @@ import deap.tools
 import deap.algorithms
 
 class EvolutionaryParams(object):
-  def __init__(self, Npop=100, Ngen=10, Nrep=100, Nbfunc_init=1, 
+  """
+  Holds parameters used by evolutionary algorithms.
+  
+  Attributes
+  ----------
+    
+    n_population: int
+      Population size.
+    
+    n_generation: int
+      Number of generations to for each repitition. Results are saved between
+      repetitions.
+    
+    n_repetition: int
+      Number of repititions to perform.
+    
+    
+  """
+  
+  def __init__(self, n_population=100, n_generation=10, n_repetition=100, n_features_init=1, 
                pop_begin_filename = "population_begin.pkl",
                pop_end_filename = "population_end.pkl",
                halloffame_filename = "halloffame.pkl",
-               halloffame_size = 25):
+               n_halloffame = 25):
     """
     Arguments:
-      Npop: integer, population size
-      Ngen: integer, number of generations between saving results
-      Nrep: integer, number of repetitions of Ngen generations to perform
-      Nbfunc_init: integer, number of basis functions per individual to select in 
+      n_population: integer, population size
+      n_generation: integer, number of generations between saving results
+      n_repetition: integer, number of repetitions of n_generation generations to perform
+      n_features_init: integer, number of basis functions per individual to select in 
                    the initial population
     """
-    self.Npop = Npop
-    self.Ngen = Ngen
-    self.Nrep = Nrep
+    self.n_population = n_population
+    self.n_generation = n_generation
+    self.n_repetition = n_repetition
     
-    self.Nbfunc_init = Nbfunc_init
+    self.n_features_init = n_features_init
     
     self.pop_begin_filename = pop_begin_filename
     self.pop_end_filename = pop_end_filename
     self.halloffame_filename = halloffame_filename
-    self.halloffame_size = halloffame_size
+    self.n_halloffame = n_halloffame
     
 
 class GeneticAlgorithm(BaseEstimator, SelectorMixin):
@@ -52,7 +71,7 @@ class GeneticAlgorithm(BaseEstimator, SelectorMixin):
     self.cv = cv
     
     self.evolve_params = EvolutionaryParams(**evolve_params_kwargs)
-    self.constraints = casm.fit.tools.Constraints(**constraints_kwargs)
+    self.constraints = casm.learn.tools.Constraints(**constraints_kwargs)
     
     # currently fixed:
     self.CrossOverProb = 1.0
@@ -63,11 +82,11 @@ class GeneticAlgorithm(BaseEstimator, SelectorMixin):
     
     ## Crossover 
     self.toolbox.register("mate", deap.tools.cxUniform, indpb=cxUniformProb)
-    self.toolbox.decorate("mate", casm.fit.tools.check_constraints(self.constraints))
+    self.toolbox.decorate("mate", casm.learn.tools.check_constraints(self.constraints))
       
     ## Mutation
     self.toolbox.register("mutate", deap.tools.mutFlipBit, indpb=mutFlipBitProb)
-    self.toolbox.decorate("mutate", casm.fit.tools.check_constraints(self.constraints))
+    self.toolbox.decorate("mutate", casm.learn.tools.check_constraints(self.constraints))
     
     ## penalty
     self.penalty = penalty
@@ -78,14 +97,14 @@ class GeneticAlgorithm(BaseEstimator, SelectorMixin):
   
   def fit(self, X, y):
     
-    self.toolbox.register("individual", casm.fit.tools.initNRandomOn, 
-      casm.fit.creator.Individual, X.shape[1], self.evolve_params.Nbfunc_init)
+    self.toolbox.register("individual", casm.learn.tools.initNRandomOn, 
+      casm.learn.creator.Individual, X.shape[1], self.evolve_params.n_features_init)
     self.toolbox.register("population", deap.tools.initRepeat, list, self.toolbox.individual)
     
     ## read or construct hall of fame
     halloffame_filename = self.evolve_params.halloffame_filename
-    self.halloffame = deap.tools.HallOfFame(self.evolve_params.halloffame_size)
-    print "# GeneticAlgorithm Hall of Fame size:", self.evolve_params.halloffame_size, "\n"
+    self.halloffame = deap.tools.HallOfFame(self.evolve_params.n_halloffame)
+    print "# GeneticAlgorithm Hall of Fame size:", self.evolve_params.n_halloffame, "\n"
     
     if os.path.exists(self.evolve_params.halloffame_filename):
       existing_hall = pickle.load(open(self.evolve_params.halloffame_filename, 'rb'))
@@ -99,17 +118,17 @@ class GeneticAlgorithm(BaseEstimator, SelectorMixin):
       self.pop = pickle.load(open(self.evolve_params.pop_begin_filename, 'rb'))
     else:
       print "Constructing random initial population"
-      self.pop = self.toolbox.population(self.evolve_params.Npop)
+      self.pop = self.toolbox.population(self.evolve_params.n_population)
     self.pop_begin = copy.deepcopy(self.pop)
     
     ## Fitness evaluation
-    self.toolbox.register("evaluate", casm.fit.cross_validation.cross_val_score, 
+    self.toolbox.register("evaluate", casm.learn.cross_validation.cross_val_score, 
       self.estimator, X, y=y, scoring=self.scoring, cv=self.cv, penalty=self.penalty)
     
     ## Run algorithm
     
-    for rep in range(self.evolve_params.Nrep):
-      print "Begin", rep+1, "of", self.evolve_params.Nrep, "repetitions"
+    for rep in range(self.evolve_params.n_repetition):
+      print "Begin", rep+1, "of", self.evolve_params.n_repetition, "repetitions"
       # Stats to show during run
       self.stats = deap.tools.Statistics(key=lambda ind: ind.fitness.values)
       self.stats.register("avg", np.mean)
@@ -117,17 +136,17 @@ class GeneticAlgorithm(BaseEstimator, SelectorMixin):
       self.stats.register("min", np.min)
       self.stats.register("max", np.max)
 
-      print "Begin", self.evolve_params.Ngen, "generations"
+      print "Begin", self.evolve_params.n_generation, "generations"
       t = time.clock()
       self.pop, self.log = deap.algorithms.eaSimple(self.pop, self.toolbox, self.CrossOverProb, self.MutateProb, 
-        self.evolve_params.Ngen, verbose=True, halloffame=self.halloffame, stats=self.stats)
+        self.evolve_params.n_generation, verbose=True, halloffame=self.halloffame, stats=self.stats)
       print "Runtime:", time.clock() - t, "(s)\n"
       self.pop_final = copy.deepcopy(self.pop)
       
       ## Print end population
       if self.verbose:
         print "\nFinal population:"
-        casm.fit.print_population(self.pop_final)
+        casm.learn.print_population(self.pop_final)
       
       # pickle end population
       print "\nPickling end population to:", self.evolve_params.pop_end_filename
@@ -139,7 +158,7 @@ class GeneticAlgorithm(BaseEstimator, SelectorMixin):
       ## Print hall of fame
       if self.verbose:
         print "\nGeneticAlgorithm Hall of Fame:"
-        casm.fit.print_population(self.halloffame)
+        casm.learn.print_population(self.halloffame)
 
       # pickle hall of fame
       print "\nPickling GeneticAlgorithm Hall of Fame to:", self.evolve_params.halloffame_filename
@@ -155,12 +174,12 @@ class GeneticAlgorithm(BaseEstimator, SelectorMixin):
       
 #      ## Save the overall best
 #      print "\nSaving best ECI:"
-#      casm.fit.print_eci(hall[0].eci)
+#      casm.learn.print_eci(hall[0].eci)
 #      write_eci(proj, hall[0].eci) 
 #      
     
 #    
-#    print "\nUse casm.fit.plot to analyze cluster expansion predictions"
+#    print "\nUse casm.learn.plot to analyze cluster expansion predictions"
 #
 #
 #def main(proj, input):
@@ -184,7 +203,7 @@ class GeneticAlgorithm(BaseEstimator, SelectorMixin):
 #  hall_of_fame_filename = "hall_of_fame.pkl"
 #  
 #  
-#  # expect 'casm.fit input.json'
+#  # expect 'casm.learn input.json'
 #  print input
 #  
 #  # construct FittingData
@@ -213,11 +232,11 @@ class GeneticAlgorithm(BaseEstimator, SelectorMixin):
 #  args = parser.parse_args()
 #  
 #  if args.format:
-#    casm.fit.print_input_help()
+#    casm.learn.print_input_help()
 #    exit()
 #  
 #  if args.example_input:
-#    print json.dumps(casm.fit.example_input(), indent=2)
+#    print json.dumps(casm.learn.example_input(), indent=2)
 #    exit()
 #  
 #  # for now, assume being run

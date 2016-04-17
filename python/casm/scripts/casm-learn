@@ -4,21 +4,18 @@ from casm.project import Selection, Project, query, write_eci
 from math import sqrt
 from sklearn.metrics import mean_squared_error
 import sklearn.feature_selection
-import casm.fit
+import casm.learn
 import argparse
 import deap.tools
 
 
-def main(sel, input, format=None, verbose=True):
-  
-  # construct FittingData
-  fdata = casm.fit.make_fitting_data(sel, input, verbose=verbose)
+def fit(fdata, input, format=None, verbose=True, hall=None):
   
   # construct model used for fitting
-  estimator = casm.fit.make_estimator(input, verbose=verbose)
+  estimator = casm.learn.make_estimator(input, verbose=verbose)
   
-  # feature selection & fit method
-  selector = casm.fit.make_selector(input, estimator, 
+  # feature selection
+  selector = casm.learn.make_selector(input, estimator, 
     scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty, verbose=verbose)
   
   # fit
@@ -26,6 +23,8 @@ def main(sel, input, format=None, verbose=True):
     print "# Fit and select..."
   t = time.clock()
   selector.fit(fdata.wcorr, fdata.wvalue)
+  
+  # print calculation properties that may be of interest
   if verbose:
     # custom for SelectFromModel
     if hasattr(selector, "estimator_") and hasattr(selector.estimator_, "n_iter_"):
@@ -34,55 +33,34 @@ def main(sel, input, format=None, verbose=True):
       print "#   Feature selection threshold:", selector.threshold
     print "#   DONE  Runtime:", time.clock() - t, "(s)\n"
   
-  
-  # construct hall of fame
-  halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
-  halloffame_size = input.get("halloffame_size", 25)
-  hall = deap.tools.HallOfFame(halloffame_size)
-  print "# Hall of Fame size:", halloffame_size, "\n"
-  
-  if os.path.exists(halloffame_filename):
-    existing_hall = pickle.load(open(halloffame_filename, 'rb'))
-    if verbose:
-      print "Loading Hall of Fame:", halloffame_filename
-    hall.update(existing_hall)
-    
+  if hall is not None:
+    # store results: Assume selector either has a 'get_halloffame()' attribute, or 'get_support()' member
+    if hasattr(selector, "halloffame"):
+      print "Adding statistics..."
+      for i in xrange(len(selector.halloffame)):
+        casm.learn.add_individual_detail(selector.halloffame[i], estimator, fdata, selector, input)
+      print "  DONE"
       
-  # store results: Assume selector either has a 'halloffame' attribute, or 'get_support()' member
-  if hasattr(selector, "halloffame"):
-    print "Adding statistics..."
-    for i in xrange(len(selector.halloffame)):
-      casm.fit.add_individual_detail(selector.halloffame[i], estimator, fdata, selector, input)
-    print "  DONE"
-    
-    print "Result:"
-    casm.fit.print_halloffame(selector.halloffame)
-    
-    hall.update(selector.halloffame)
-  else:
-    print [1 if x else 0 for x in selector.get_support()]
-    indiv = casm.fit.creator.Individual(selector.get_support())
-    print "Adding statistics..."
-    indiv.fitness.values = casm.fit.cross_validation.cross_val_score(
-      estimator, fdata.wcorr, indiv, 
-      y=fdata.wvalue, scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty)
-    casm.fit.add_individual_detail(indiv, estimator, fdata, selector, input)
-    print "  DONE"
-    
-    print "Result:"
-    casm.fit.print_halloffame([indiv])
-    
-    hall.update([indiv])
+      print "Result:"
+      casm.learn.print_halloffame(selector.halloffame)
+      
+      hall.update(selector.halloffame)
+    else:
+      print [1 if x else 0 for x in selector.get_support()]
+      indiv = casm.learn.creator.Individual(selector.get_support())
+      print "Adding statistics..."
+      indiv.fitness.values = casm.learn.cross_validation.cross_val_score(
+        estimator, fdata.wcorr, indiv, 
+        y=fdata.wvalue, scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty)
+      casm.learn.add_individual_detail(indiv, estimator, fdata, selector, input)
+      print "  DONE"
+      
+      print "Result:"
+      casm.learn.print_halloffame([indiv])
+      
+      hall.update([indiv])
   
-  # print hall of fame
-  #print "\nHall of Fame:"
-  #casm.fit.print_halloffame(hall, format=format)
-  
-  # pickle hall of fame
-  print "\nPickling Hall of Fame to:", halloffame_filename
-  f = open(halloffame_filename, 'wb')
-  pickle.dump(hall, f)
-  f.close()
+  return (estimator, selector)
 
   
 
@@ -103,20 +81,20 @@ if __name__ == "__main__":
   args = parser.parse_args()
   
   if args.settings_format:
-    casm.fit.print_input_help()
+    casm.learn.print_input_help()
     exit()
   
   if args.exLasso:
-    print json.dumps(casm.fit.example_input_Lasso(), indent=2)
+    print json.dumps(casm.learn.example_input_Lasso(), indent=2)
     exit()
   elif args.exLassoCV:
-    print json.dumps(casm.fit.example_input_LassoCV(), indent=2)
+    print json.dumps(casm.learn.example_input_LassoCV(), indent=2)
     exit()
   elif args.exRFE:
-    print json.dumps(casm.fit.example_input_RFE(), indent=2)
+    print json.dumps(casm.learn.example_input_RFE(), indent=2)
     exit()
   elif args.exGeneticAlgorithm:
-    print json.dumps(casm.fit.example_input_GeneticAlgorithm(), indent=2)
+    print json.dumps(casm.learn.example_input_GeneticAlgorithm(), indent=2)
     exit()
   
   if args.settings:
@@ -140,9 +118,9 @@ if __name__ == "__main__":
         existing_hall = pickle.load(f)
       
       if args.hall:
-        casm.fit.print_halloffame(existing_hall, format=args.format)
+        casm.learn.print_halloffame(existing_hall, format=args.format)
       elif args.indiv:
-        casm.fit.print_individual(existing_hall, args.indiv, format=args.format)
+        casm.learn.print_individual(existing_hall, args.indiv, format=args.format)
   
     elif args.select:
       
@@ -157,16 +135,33 @@ if __name__ == "__main__":
     else:
       # run fitting
       
-      # read training set
-      sel = Selection(proj, input.get("train_filename", "train"))
+      # construct FittingData
+      fdata = casm.learn.make_fitting_data(input, proj=proj, verbose=verbose)
       
-      main(sel, input, verbose=True, format=args.format)
-  
+      # construct hall of fame
+      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
+      halloffame_size = input.get("halloffame_size", 25)
+      hall = deap.tools.HallOfFame(halloffame_size)
+      print "# Hall of Fame size:", halloffame_size, "\n"
+      
+      if os.path.exists(halloffame_filename):
+        existing_hall = pickle.load(open(halloffame_filename, 'rb'))
+        print "Loading Hall of Fame:", halloffame_filename
+        hall.update(existing_hall)
+    
+      casm.learn.fit(fdata, verbose=True, format=args.format, hall=hall)
+      
+      # pickle hall of fame
+      print "\nPickling Hall of Fame to:", halloffame_filename
+      f = open(halloffame_filename, 'wb')
+      pickle.dump(hall, f)
+      f.close()
+      
   else:
     
     print \
     """
-    Fitting is performed in four steps:
+    Learning is performed in four steps:
     
     1) Select training data.
       Create a selection of configurations to include in the regression problem.
@@ -182,13 +177,6 @@ if __name__ == "__main__":
     4) Select features.
       Select which basis functions to include in the cluster expansion. For instance,
       SelectFromModel along with a l-1 norm minimizing estimator. Or GeneticAlgorithm.
-    
-    
-    To proceed, create a fitting directory: 
-      mkdir fit1; cd fit1
-    
-    
-    
     """
     
     parser.print_help()
