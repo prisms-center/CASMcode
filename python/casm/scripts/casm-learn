@@ -20,7 +20,7 @@ if __name__ == "__main__":
   parser.add_argument('--hall', help='Print hall of fame summary', action="store_true")
   parser.add_argument('--indiv', nargs='+', help='Print individual summary. Expects index of individual in hall of fame', type=int)
   parser.add_argument('--select', nargs=1, help='Select individual to use', type=int)
-  parser.add_argument('--verbose', help='Verbose print', action="store_true")
+  parser.add_argument('-v','--verbose', help='Verbose print', action="store_true", default=False)
   args = parser.parse_args()
   
   if args.settings_format:

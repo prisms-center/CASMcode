@@ -24,7 +24,7 @@ creator.create("Individual", list, fitness=creator.FitnessMin, input=None)
 ################################################################################  
 
 
-def find_method(mods, attrname):
+def _find_method(mods, attrname):
   for m in mods:
     if hasattr(m, attrname):
       return getattr(m, attrname)
@@ -68,6 +68,7 @@ def example_input_Lasso():
   
   return input
 
+
 def example_input_LassoCV():
   input = dict()
 
@@ -104,6 +105,7 @@ def example_input_LassoCV():
   
   return input
 
+
 def example_input_RFE():
   input = dict()
 
@@ -135,6 +137,7 @@ def example_input_RFE():
   input["n_halloffame"] = 25
   
   return input
+
 
 def example_input_GeneticAlgorithm():
   input = dict()
@@ -338,7 +341,9 @@ def print_input_help():
       "kwargs": null
     }
     
-  # Hall of fame size, the number of best sets of ECI to store in 'halloffame.pkl',
+  # Hall of fame size. 
+  #
+  # he number of individuals to store in t'halloffame.pkl',
   # as determined by CV score. Default=25.
   
     "n_halloffame": 25, 
@@ -411,7 +416,7 @@ def print_input_help():
   #   
   #   "GeneticAlgorithm": Implements deap.algorithms.eaSimple, using selTournament,
   #     for selection, cxUniform for mating, and mutFlipBit for mutation. The
-  #     probabilty of mating and mutating is set to 1.0.
+  #     probability of mating and mutating is set to 1.0.
   #
   #     Options for "kwargs":
   #
@@ -439,7 +444,11 @@ def print_input_help():
   #           Probability of swapping bits during mating.
   #
   #       "mutFlipBitProb": float, optional, default=0.01 
-  #           Probability of mutating bits "constraints": See below.
+  #           Probability of mutating bits
+  #
+  #       "constraints": dict, optional, default=dict()
+  #           Keyword arguments for setting constraints on allowed individuals. 
+  #           See below for options.
   #
   #
   #   coming soon:
@@ -466,7 +475,9 @@ def print_input_help():
   #          Number of randomly selected features to initialize each individual 
   #          with.
   #
-  #       "constraints": See below.
+  #       "constraints": dict, optional, default=dict()
+  #           Keyword arguments for setting constraints on allowed individuals. 
+  #           See below for options.
   #
   #
   #   coming soon:
@@ -495,7 +506,9 @@ def print_input_help():
   #          Number of randomly selected features to initialize each individual 
   #          with.
   #
-  #       "constraints": See below.
+  #       "constraints": dict, optional, default=dict()
+  #           Keyword arguments for setting constraints on allowed individuals. 
+  #           See below for options.
   #
   #   The evolutionary algorithms have an optional set of "constraints" parameters
   #   that may restrict the number of basis functions selected to some range, or
@@ -683,46 +696,36 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
   if "method" not in input["weight"]:
     input["weight"]["method"] = None
   
-  # set cv kwargs and penalty (0.0) defaults
+  # set cv kwargs defaults
   if "kwargs" not in input["cv"] or input["cv"]["kwargs"] is None:
     input["cv"]["kwargs"] = dict()
-  if "penalty" not in input["cv"]:
-    input["cv"]["penalty"] = 0.0
-  
   
   # property, weight, and cv inputs should remain constant
   # estimator and feature_selection might change
   fit_data_filename = input.get("fit_data_filename", "fit_data.pkl")
   
   if read_existing and os.path.exists(fit_data_filename):
-    print "Reading existing fitting data from:", fit_data_filename
+    if verbose:
+      print "Reading existing fitting data from:", fit_data_filename
     fdata = pickle.load(open(fit_data_filename, 'rb'))
-    print "  DONE"
+    if verbose:
+      print "  DONE"
     
     s = "Fitting scheme has changed.\n\n" + \
         "To proceed with the existing scheme adjust your input settings to match.\n" + \
         "To proceed with the new scheme run in a new directory or delete '" + fit_data_filename + "'."
     
-    if fdata.input["data"] != input["data"]:
-      print "ERROR: Input file and stored data differ. Input 'data' has changed."
-      print "Stored data:\n", json.dumps(fdata.input["data"], indent=2)
-      print "Input:\n", json.dumps(input["data"], indent=2)
-      print s
-      exit()
+    def check_input(name):
+      if fdata.input[name] != input[name]:
+        print "ERROR: Input file and stored data differ. Input '" + name + "' has changed."
+        print "Stored data:\n", json.dumps(fdata.input[name], indent=2)
+        print "Input:\n", json.dumps(input[name], indent=2)
+        print s
+        exit()
     
-    if fdata.input["cv"] != input["cv"]:
-      print "ERROR: Input file and stored data differ. Input 'cv' has changed."
-      print "Stored data:\n", json.dumps(fdata.input["cv"], indent=2)
-      print "Input:\n", json.dumps(input["cv"], indent=2)
-      print s
-      exit()
+    for name in ["data", "cv", "weight"]:
+      check_input(name)
     
-    if fdata.input["weight"] != input["weight"]:
-      print "ERROR: Input file and stored data differ. Input 'weight' has changed."
-      print "Stored data:\n", json.dumps(fdata.input["weight"], indent=2)
-      print "Input:\n", json.dumps(input["weight"], indent=2)
-      print s
-      exit()
     
   else:
     
@@ -807,28 +810,19 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
     ## cv
     cv_kwargs = copy.deepcopy(input["cv"]["kwargs"])
     
-    # get cv method (required user input) and set scoring method
-    # For scoring, use sklearn.metrics.mean_squared_error unless basic least 
-    # squares regression is chosen, in which case use the CASM implementation
-#    cv_method = None
-#    if input["estimator"]["method"] == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
-#      cv_method = casm.learn.cross_validation.LeaveOneOutForLLS
-#    else:
-#      cv_method = find_method([sklearn.cross_validation], input["cv"]["method"])
-    cv_method = find_method([sklearn.cross_validation], input["cv"]["method"])
+    # get cv method (required user input) 
+    cv_method = _find_method([sklearn.cross_validation], input["cv"]["method"])
     cv = cv_method(n_samples, **cv_kwargs)
-    
-    # get penalty
-    penalty = input["cv"]["penalty"]
     
     if verbose:
       print "# CV:"
       print json.dumps(input["cv"], indent=2), "\n"
     
-    scoring = sklearn.metrics.make_scorer(sklearn.metrics.mean_squared_error, greater_is_better=True)
-#    if input["estimator"]["method"] == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
-#      scoring = None
+    ## scoring
+    scoring = sklearn.metrics.make_scorer(sklearn.metrics.mean_squared_error, greater_is_better=False)
     
+    ## penalty
+    penalty = input["cv"].get("penalty", 0.0)
     
     fdata = casm.learn.FittingData(X, y, cv, 
       sample_weight=sample_weight, scoring=scoring, penalty=penalty)
@@ -879,10 +873,11 @@ def make_estimator(input, verbose = True):
   if "fit_intercept" not in kwargs:
     kwargs["fit_intercept"] = False
   
+  # Use casm version of LinearRegression
   if input["estimator"]["method"] == "LinearRegression":
     estimator_method = casm.learn.linear_model.LinearRegressionForLOOCV
   else:
-    estimator_method = find_method([sklearn.linear_model], input["estimator"]["method"])
+    estimator_method = _find_method([sklearn.linear_model], input["estimator"]["method"])
   estimator = estimator_method(**kwargs)
   
   if verbose:
@@ -947,7 +942,7 @@ def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=
   
   mods = [casm.learn.feature_selection, sklearn.feature_selection]
   
-  selector_method = find_method(mods, input["feature_selection"]["method"])
+  selector_method = _find_method(mods, input["feature_selection"]["method"])
   
   # check if 'cv', 'scoring', 'penalty' are allowed kwargs 
   arg_count = selector_method.__init__.func_code.co_argcount
@@ -959,6 +954,8 @@ def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=
     kwargs["scoring"] = scoring
   if "penalty" in allowed_kwargs:
     kwargs["penalty"] = penalty
+  if "verbose" in allowed_kwargs:
+    kwargs["verbose"] = verbose
   
   selector = selector_method(estimator, **kwargs)
   
@@ -1006,9 +1003,10 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
       
   
   """
-    
+  print "verbose:", verbose
+  
   # construct FittingData
-  fdata = casm.learn.make_fitting_data(input, save=True, verbose=True, read_existing=True)
+  fdata = casm.learn.make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
     
   # construct model used for fitting
   estimator = casm.learn.make_estimator(input, verbose=verbose)
@@ -1016,6 +1014,9 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
   # feature selection
   selector = casm.learn.make_selector(input, estimator, 
     scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty, verbose=verbose)
+  
+  if not hasattr(selector, "get_halloffame") and not hasattr(selector, "get_support"):
+    raise Exception("Selector has neither 'get_halloffame' nor 'get_support'")
   
   # fit
   if verbose:
@@ -1028,37 +1029,45 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
     # custom for SelectFromModel
     if hasattr(selector, "estimator_") and hasattr(selector.estimator_, "n_iter_"):
       print "#   Iterations:", selector.estimator_.n_iter_
+    if hasattr(selector, "estimator_") and hasattr(selector.estimator_, "alpha_"):
+      print "#   Alpha:", selector.estimator_.alpha_
     if hasattr(selector, "threshold"):
       print "#   Feature selection threshold:", selector.threshold
     print "#   DONE  Runtime:", time.clock() - t, "(s)\n"
   
   if hall is not None:
     # store results: Assume selector either has a 'get_halloffame()' attribute, or 'get_support()' member
-    if hasattr(selector, "halloffame"):
-      print "Adding statistics..."
+    if hasattr(selector, "get_halloffame"):
+      if verbose:
+        print "Adding statistics..."
       for i in xrange(len(selector.halloffame)):
         casm.learn.add_individual_detail(selector.halloffame[i], estimator, fdata, selector, input)
-      print "  DONE\n"
+      if verbose:
+        print "  DONE\n"
       
-      print "Result:"
+      if verbose:
+        print "Result:"
       casm.learn.print_halloffame(selector.halloffame)
       
       hall.update(selector.halloffame)
-    else:
-      print [1 if x else 0 for x in selector.get_support()]
+    
+    elif hasattr(selector, "get_support"):
       indiv = casm.learn.creator.Individual(selector.get_support())
-      print "Adding statistics..."
+      if verbose:
+        print "Adding statistics..."
       indiv.fitness.values = casm.learn.cross_validation.cross_val_score(
         estimator, fdata.weighted_X, indiv, 
         y=fdata.weighted_y, scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty)
       casm.learn.add_individual_detail(indiv, estimator, fdata, selector, input)
-      print "  DONE\n"
+      if verbose:
+        print "  DONE\n"
       
-      print "Result:"
+      if verbose:
+        print "Result:"
       casm.learn.print_halloffame([indiv])
       
       hall.update([indiv])
-  
+    
   return (fdata, estimator, selector)
 
 
