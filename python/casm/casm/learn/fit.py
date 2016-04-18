@@ -1,15 +1,15 @@
 import sklearn.linear_model
 import sklearn.cross_validation
 import sklearn.metrics
-import random
+import random, re, time, os, types, json, pickle, copy
 import numpy as np
 from math import sqrt
-from casm.project import Selection, query
+from casm.project import Project, Selection, query
 import casm.learn.linear_model
 import casm.learn.feature_selection
 import casm.learn.cross_validation
 import casm.learn.tools
-import os, types, json, pickle, copy
+import pandas
 
 ## This part needs to be in global scope for parallization #####################  
 from deap import creator
@@ -48,9 +48,6 @@ def example_input_Lasso():
   input["feature_selection"]["method"] = "SelectFromModel"
   input["feature_selection"]["kwargs"] = None
   
-  # property begin fit
-  input["property"] = "formation_energy"
-  
   # sample weighting
   input["weight"] = dict()
   input["weight"]["method"] = "wHullDist"
@@ -87,9 +84,6 @@ def example_input_LassoCV():
   input["feature_selection"]["method"] = "SelectFromModel"
   input["feature_selection"]["kwargs"] = None
   
-  # property begin fit
-  input["property"] = "formation_energy"
-  
   # sample weighting
   input["weight"] = dict()
   input["weight"]["method"] = "wHullDist"
@@ -124,9 +118,6 @@ def example_input_RFE():
   input["feature_selection"]["kwargs"]["n_features_to_select"] = 25
   
   
-  # property begin fit
-  input["property"] = "formation_energy"
-  
   # sample weighting
   input["weight"] = dict()
   input["weight"]["method"] = "wHullDist"
@@ -157,10 +148,10 @@ def example_input_GeneticAlgorithm():
   input["feature_selection"]["method"] = "GeneticAlgorithm"
   d = {
     "constraints_kwargs": { 
-      "Nbfunc_max": "all", 
-      "Nbfunc_min": 5, 
-      "FixOff": [], 
-      "FixOn": []
+      "n_features_max": "all", 
+      "n_features_min": 5, 
+      "fix_off": [], 
+      "fix_on": []
     }, 
     "selTournamentSize": 3, 
     "mutFlipBitProb": 0.01, 
@@ -176,9 +167,6 @@ def example_input_GeneticAlgorithm():
   }
   input["feature_selection"]["kwargs"] = d
   
-  
-  # property begin fit
-  input["property"] = "formation_energy"
   
   # sample weighting
   input["weight"] = dict()
@@ -203,37 +191,92 @@ def print_input_help():
   
   print \
   """
-  Input files:
-    Settings file: A JSON file containing settings describing how to perform the fit.
-    'train': A configuration selection file used to fit the cluster expansion. 
-    'population_begin.pkl': An optional input file providing an initial set of
-      candidate solutions.
-  
-  Generated files:
-    'fit_data.pkl': Stores cross validation sets, training data, model weights and
-      other information that can be used when running repeatedly.
-    'halloffame.pkl': Stores the best ECI sets found, as determined by the CV
-      score.
-    'population_end.pkl': Stores the results of the most recent optimization. Can
-      be renamed 'population_begin.pkl' to use as the initial state of a new run.
-  
   Settings file description:
   ------------------------------------------------------------------------------
   {
   
-  # A scikit-learn linear model estimator name and keyword args used to construct  
-  # the estimator object. Options include: 'LinearRegression', 'Ridge', 'Lasso', etc. 
-  # See: http://scikit-learn.org/stable/modules/linear_model.html
+  # Specifies the data to use for learning
   #
-  # Note: The 'LinearRegression' estimator is implemented using 
-  # casm.learn.linear_model.LinearRegressionForLOOCV', which solves X*b=y using:
+  #   A filename and filetype describing where to find data to use for learning. 
+  #   Also includes the labels of the sample ('X') and target ('y') data to use 
+  #   and kwargs containing additional options.
   #
-  #   b = np.dot(S, y)
-  #   S = np.linalg.pinv(X.transpose().dot(X)).dot(X.transpose())
-  #   y_pred = np.dot(H, y)
-  #   H = np.dot(X, S)
   #
-  # By default, the kwarg "fit_intercept" is set to False.
+  # Object attributes
+  # -----------------
+  #
+  # filename: string, optional, default="train"
+  #   The path to a file containing the training data
+  #
+  # filetype: string, optional, default="selection"
+  #   Options:
+  #     "selection": path to a CASM selection file. Only the selected 
+  #        configurations included in the file will be used for training. The
+  #        data, typically correlations and a property, can be queried separately
+  #        and do not need to be included. If they do exist, the data in the file
+  #        will be used.
+  #     "csv": path to a CSV file
+  #     "json": path to a JSON file 
+  #
+  # X: string, optional, default="corr"
+  #   The name of sample data. Expected to take the form "X(0)", "X(1)", etc...
+  #
+  # y: string, optional, default="formation_energy"
+  #   The name of the target value to train with.
+  #
+  # kwargs: dict or null, optional, default=dict()
+  #   Additional parameters to be used to get training data. 
+  #  
+  #   Options for 'filetype' "selection":
+  #     "project_path": indicate the path to a CASM project. Default null uses
+  #       the CASM project containing the current working directory.
+  #   
+  #   Options for 'filetype' "csv":
+  #     Any options to pass to pandas.read_csv
+  #
+  #   Options for 'filetype' "json":
+  #     Any options to pass to pandas.read_json
+  
+    "data" : {
+      "filename": "train",
+      "filetype": "selection",
+      "X": "corr",
+      "y": "formation_energy",
+      "kwargs": null
+    }
+  
+  # A scikit-learn linear model estimator.
+  #
+  #
+  # Object attributes
+  # -----------------
+  #
+  # method: string
+  #   A scikit-learn linear model estimator. 
+  #  
+  #   Options: 'LinearRegression', 'Ridge', 'Lasso', 'LassoCV', etc.
+  #     See: http://scikit-learn.org/stable/modules/linear_model.html
+  #
+  #   Note: The 'LinearRegression' estimator is implemented using 
+  #   casm.learn.linear_model.LinearRegressionForLOOCV', which solves X*b=y using:
+  #     b = np.dot(S, y)
+  #     S = np.linalg.pinv(X.transpose().dot(X)).dot(X.transpose())
+  #     y_pred = np.dot(H, y)
+  #     H = np.dot(X, S)
+  #
+  # kwargs: dict or null, optional, default=dict()
+  #   Additional parameters to be used to construct the estimator 
+  #
+  #   Options for "LinearRegression":
+  #     "pinv": bool, optional, default=True
+  #       If True, use the pseudo-inverse via np.linalg.pinv; else use np.linalg.inv.
+  #   
+  #   Options for other methods:
+  #     Any options to pass to the estimator construtor.
+  #
+  #   By default, the kwarg "fit_intercept" is set to False.
+  #
+  
     "estimator": {
       "method": "LinearRegression", 
       "kwargs": null
@@ -241,24 +284,31 @@ def print_input_help():
   
   # Method to use for weighting training data. 
   #
-  # If weights are included, then the linear model is changed from
-  #   X*b = y  ->  L*X*b = L*y, 
+  #   If weights are included, then the linear model is changed from
+  #     X*b = y  ->  L*X*b = L*y, 
   #
-  # where 'X' is the correlation matrix of shape (Nvalue, Nbfunc),
-  # and 'property' is a vector of Nvalue calculated properties, and 
-  # W = L*L.transpose() is the weight matrix.
+  #   where 'X' is the correlation matrix of shape (Nvalue, Nbfunc),
+  #   and 'property' is a vector of Nvalue calculated properties, and 
+  #   W = L*L.transpose() is the weight matrix.
   #
-  # By default, W = np.matlib.eye(Nvalue) (unweighted).
+  #   By default, W = np.matlib.eye(Nvalue) (unweighted).
   #
-  # If the weighting method provides 1-dimensional input (this is typical), in
-  # a numpy array called 'w':
-  #   W = np.diag(w)*Nvalue/np.sum(w)
+  #   If the weighting method provides 1-dimensional input (this is typical), in
+  #   a numpy array called 'w':
+  #     W = np.diag(w)*Nvalue/np.sum(w)
   #
-  # If the 'custom2d' method is used, the input W_in must by Hermitian, 
-  # positive-definite and is normalized by:
-  #   W = W_in*Nvalue/np.sum(W_in)
+  #   If the 'custom2d' method is used, the input W_in must by Hermitian, 
+  #   positive-definite and is normalized by:
+  #     W = W_in*Nvalue/np.sum(W_in)
   #
-  # The weighting methods are:
+  #
+  # Object attributes
+  # -----------------
+  #
+  # method: string, optional, default=null
+  #   The weighting method to use
+  #  
+  #   Options:
   #   'wHullDist': Weight according to w_i = A*exp(-hull_dist/kT) + B, where A, B, 
   #     and kT are user-defined kwargs parameters, and hull_dist is the distance 
   #     from the convex hull of the training data
@@ -271,120 +321,199 @@ def print_input_help():
   #   'wCustom': Weights are read from a column titled 'weight' in the training data 
   #     selection file.
   #   'wCustom2d': Weights are read from columns in the training data selection file,
-  #     which are expected to be titled 'weight(0)' ... 'weight(Nvalue-1)'  
+  #     which are expected to be titled 'weight(0)' ... 'weight(Nvalue-1)'
+  #
+  #
+  # kwargs: dict or null, optional, default=dict()
+  #   Additional parameters to be used to construct the estimator 
+  #
+  #   Options: (as described above)
+  #     "A": float
+  #     "B": float
+  #     "kT": float
+  #     "E0": float
+    
     "weight": {
       "method": null, 
       "kwargs": null
     }
     
-  # Name of property to be fit, as used for input to 'casm query -k'
-    "property": "formation_energy", 
-  
   # Hall of fame size, the number of best sets of ECI to store in 'halloffame.pkl',
-  # as determined by CV score.
+  # as determined by CV score. Default=25.
+  
     "n_halloffame": 25, 
   
   # A scikit-learn cross validation method to use to generate cross validation sets.
   #
-  # Options include 'KFold', 'ShuffleSplit', 'LeaveOneOut', etc.
-  # See: http://scikit-learn.org/stable/modules/cross_validation.html
+  #   The cv score reported is:
   #
-  # The cv score reported is:
+  #     cv = sqrt(np.mean(scores)) + (Number of non-zero ECI)*penalty, 
   #
-  #   cv = sqrt(np.mean(scores)) + (Number of non-zero ECI)*penalty, 
+  #   where 'scores' is an array containing the mean squared error calculated for  
+  #   each training/testing set, '(Number of non-zero ECI)' is the number of basis 
+  #   functions with non-zero ECI, and 'penalty' is the user-input penalty per basis 
+  #   function (default=0.0).
   #
-  # where 'scores' is an array containing the mean squared error calculated for  
-  # each training/testing set, '(Number of non-zero ECI)' is the number of basis 
-  # functions with non-zero ECI, and 'penalty' is the user-input penalty per basis 
-  # function (default=0.0).
   #
-  # Note: When the estimator is 'LinearRegression', the 'LeaveOneOut' cross-validation
-  # score is calculated via:
+  # Object attributes
+  # -----------------
   #
-  #   LOOCV = np.mean(((y - y_pred)/(1.0 - np.diag(H)))**2)
-  #   (see estimator description for definition of H) 
+  # method: string
+  #   A scikit-learn cross validation method. 
+  #  
+  #   Options include 'KFold', 'ShuffleSplit', 'LeaveOneOut', etc.
+  #     See: http://scikit-learn.org/stable/modules/cross_validation.html
   #
-  # By default, the kwarg "shuffle" is set to True.
+  #     Note: The 'LinearRegression' estimator is implemented using 
+  #     casm.learn.linear_model.LinearRegressionForLOOCV', which solves X*b=y using:
+  #       b = np.dot(S, y)
+  #       S = np.linalg.pinv(X.transpose().dot(X)).dot(X.transpose())
+  #       y_pred = np.dot(H, y)
+  #       H = np.dot(X, S)
+  #
+  #     Note: When the estimator is 'LinearRegression', the 'LeaveOneOut' 
+  #     cross-validation score is calculated via:
+  #
+  #       LOOCV = np.mean(((y - y_pred)/(1.0 - np.diag(H)))**2)
+  #       (see estimator description for definition of H) 
+  #
+  # kwargs: dict or null, optional, default=dict()
+  #   Additional parameters to be used to construct the cross-validation method constructor.
+  #
+  #     By default, the kwarg "shuffle" is set to True.
+  #
+  # penalty: float, optional, default=0.0
+  #   The CV score is increased by 'penalty*(number of selected basis function)'
+  #
+  #
+  
     "cv": {
       "method": "LeaveOneOut", 
       "kwargs": null,
       "penalty": 0.0
     }, 
   
-  # Feature selection method to use:
+  # A scikit-learn or casm.feature_selection feature selection method.
   #
-  # Options include classes in casm.learn.feature_selection and sklearn.feature_selection:
-  # Evolutionary algorithms, from casm.learn.feature_selection, are implemented
-  # using deap: http://deap.readthedocs.org/en/master/index.html
-  #   "GeneticAlgorithm": implements deap.algorithms.eaSimple, using selTournament,
+  #
+  # Object attributes
+  # -----------------
+  #
+  # method: string
+  #   A scikit-learn or casm.feature_selection feature selection method. 
+  #  
+  #   Options from sklearn.feature_selection: "SelectFromModel", "RFE", etc.
+  #     See: http://scikit-learn.org/stable/modules/feature_selection.html
+  #
+  #   Options from casm.feature_selection: 
+  #     Evolutionary algorithms, from casm.learn.feature_selection, are implemented
+  #     using deap: http://deap.readthedocs.org/en/master/index.html
+  #   
+  #   "GeneticAlgorithm": Implements deap.algorithms.eaSimple, using selTournament,
   #     for selection, cxUniform for mating, and mutFlipBit for mutation. The
   #     probabilty of mating and mutating is set to 1.0.
+  #
   #     Options for "kwargs":
-  #       "n_population": int, (default 100) Population size. This many random initial 
-  #         starting individuals are created.
-  #       "n_generation": int, (default 10) Number of generations between saving the hall 
-  #         of fame.
-  #       "n_repetition": int, (default 100) Number of repetitions of n_generation generations. 
-  #         Each repetition begins with the existing final population.
-  #       "n_features_init: int or "all", (default 0) Number of randomly selected 
-  #          basis functions to initialize each individual with.
-  #       "selTournamentSize": int, (default 3). Tournament size. A larger 
-  #          tournament size weeds out less fit individuals more quickly, while
-  #          a smaller tournament size weeds out less fit individuals more
-  #          gradually.
-  #       "cxUniformProb": number, (default 0.5) Probability of swapping bits 
-  #         during mating.
-  #       "mutFlipBitProb": number, (default 0.01) Probability of mutating bits
-  #       "constraints": See below.
+  #
+  #       "n_population": int, optional, default=100
+  #          Population size. This many random initial starting individuals are 
+  #          created.
+  #       
+  #       "n_generation": int, optional, default=10
+  #          Number of generations between saving the hall of fame.
+  #
+  #       "n_repetition": int, optional, default=100
+  #           Number of repetitions of n_generation generations. Each repetition 
+  #           begins with the existing final population.
+  #
+  #       "n_features_init: int or "all", optional, default=0
+  #           Number of randomly selected features to initialize each individual 
+  #           with.
+  #
+  #       "selTournamentSize": int, optional, default=3
+  #           Tournament size. A larger tournament size weeds out less fit 
+  #           individuals more quickly, while a smaller tournament size weeds out 
+  #           less fit individuals more gradually.
+  #
+  #       "cxUniformProb": float, optional, default=0.5
+  #           Probability of swapping bits during mating.
+  #
+  #       "mutFlipBitProb": float, optional, default=0.01 
+  #           Probability of mutating bits "constraints": See below.
+  #
+  #
+  #   coming soon:
   #   "IndividualBestFirst": Best first search optimization for each individual 
   #     in the initial population. At each step, all the 'children' that differ
   #     by +/- 1 selected basis function are evaluated and the most fit child
   #     of each child is chosen to replace it's parent, until the CV score is 
   #     minimized.
+  #
   #     Options for "kwargs":
-  #       "n_population": int, (default 100) Population size. This many random initial 
-  #         starting individuals are minimized and the results saved in the hall 
-  #         of fame.
-  #       "n_generation": int, (default 10) Number of generations between saving the hall 
-  #         of fame.
-  #       "n_repetition": int, (default 10) Number of repetitions for minimizing n_population 
-  #         individuals. Each repetition begins with a new population of random 
-  #         individuals.
-  #       "n_features_init: (default 5) Number of randomly selected basis functions 
-  #          to initialize each individual with.
+  #
+  #       "n_population": int, optional, default=100 
+  #          Population size. This many random initial starting individuals are 
+  #          minimized and the results saved in the hall of fame.
+  #
+  #       "n_generation": int, optional, default=10
+  #          Number of generations between saving the hall of fame.
+  #
+  #       "n_repetition": int, optional, default=10
+  #          Number of repetitions for minimizing n_population individuals. Each 
+  #          repetition begins with a new population of random individuals.
+  #
+  #       "n_features_init: int, optional, default=5
+  #          Number of randomly selected features to initialize each individual 
+  #          with.
+  #
   #       "constraints": See below.
+  #
+  #
+  #   coming soon:
   #   "PopulationBestFirst": Each individual is associated with a 'status' that 
   #     is '1' if that individuals children have been evaluated, and '0' if they  
   #     have not been evaluated. At each step, the children of the most fit 
   #     individual with status '0' are evaluated and the population is updated to 
   #     keep only the 'n_population' most fit individuals. The algorithm stops when all 
   #     individuals in the population have status '1'.
-  #       "n_population": int, (default 100) Population size. This many random initial 
-  #         starting individuals are minimized and the results saved in the hall 
-  #         of fame.
-  #       "n_generation": int, (default 10) Number of generations between saving the hall 
-  #         of fame.
-  #       "n_repetition": int, (default 10) Number of repetitions for minimizing n_population 
-  #         individuals. Each repetition begins with a new population of random 
-  #         individuals.
-  #       "n_features_init: Number of randomly selected basis functions to initialize
-  #          each individual with.
+  #
+  #     Options for "kwargs":
+  #
+  #       "n_population": int, optional, default=100 
+  #          Population size. This many random initial starting individuals are 
+  #          included in the starting population, which is minimized, and the 
+  #          results are saved in the hall of fame.
+  #
+  #       "n_generation": int, optional, default=10
+  #          Number of generations between saving the hall of fame.
+  #
+  #       "n_repetition": int, optional, default=10
+  #          Number of repetitions for minimizing the population. Each repetition 
+  #          begins with a new population of random individuals.
+  #
+  #       "n_features_init: int, optional, default=5
+  #          Number of randomly selected features to initialize each individual 
+  #          with.
+  #
   #       "constraints": See below.
   #
-  # The evolutionary algorithms have an optional set of "constraints" parameters
-  # that may restrict the number of basis functions selected to some range, or
-  # enforce some basis functions to have or not have coefficients:
-  #   "Nbfunc_min": (integer) At least Nbfunc_min basis functions must be selected at all times
-  #   "Nbfunc_max": (integer or "all") No more than Nbfunc_max basis functions may be selected at 
-  #     any time. Default is "all".
-  #   "FixOn": An array of indices of basis functions that must be included.
-  #   "FixOff": An array of indices of basis functions that may not be included.
+  #   The evolutionary algorithms have an optional set of "constraints" parameters
+  #   that may restrict the number of basis functions selected to some range, or
+  #   enforce some basis functions to have or not have coefficients:
   #
-  # From sklearn.feature_selection, see: http://scikit-learn.org/stable/modules/feature_selection.html
-  #   "SelectFromModel": Directly fit the chosen model using all basis functions  
-  #     and select only basis functions with coefficents smaller than a "threshold"
-  #     (default None). 
-  #   "RFE", "RFECV": Recursive feature selection
+  #   Options for "constraints":
+  #     "n_features_min": int, optional, default=1
+  #        The minimum allowed number of selected features. Must be >=1.
+  #
+  #     "n_features_max": int or str, optionals, default="all"
+  #        The maximum allowed number of selected features. String "all" for no limit.
+  #
+  #     "fix_on": 1d array-like of int, optional, default=[]
+  #        The indices of features to fix on
+  #  
+  #     "fix_off": 1d array-like of int, optional, default=[]
+  #        The indices of features to fix off
+  
     "feature_selection" : {
       "method": "GeneticAlgorithm",
       "kwargs": {
@@ -396,10 +525,10 @@ def print_input_help():
         "cxUniformProb": 0.5,
         "mutFlipBitProb": 0.01,
         "constraints": {
-          "Nbfunc_min": 0,
-          "Nbfunc_max": "all",
-          "FixOn": [],
-          "FixOff": []
+          "n_features_min": 0,
+          "n_features_max": "all",
+          "fix_on": [],
+          "fix_off": []
         }
       }
     }
@@ -456,7 +585,7 @@ class FittingData(object):
       The CV score is increased by 'penalty*(number of selected basis function)'
   """
   
-  def __init__(self, X, value, cv, sample_weight=[], scoring=None, penalty=0.0):
+  def __init__(self, X, y, cv, sample_weight=[], scoring=None, penalty=0.0):
     """
     Arguments
     ---------
@@ -489,7 +618,7 @@ class FittingData(object):
         The CV score is increased by 'penalty*(number of selected basis function)'
     """
     self.X = X
-    self.value = value
+    self.y = y
     
     # Number of configurations and basis functions
     self.n_samples, self.n_features = self.X.shape
@@ -508,7 +637,7 @@ class FittingData(object):
     self.penalty = penalty
 
 
-def make_fitting_data(input, proj=None, save=True, verbose=True, read_existing=True):
+def make_fitting_data(input, save=True, verbose=True, read_existing=True):
   """ 
   Construct a FittingData instance, either by reading existing 'fit_data.pkl',
   or from an input settings.
@@ -518,9 +647,6 @@ def make_fitting_data(input, proj=None, save=True, verbose=True, read_existing=T
     
     input: dict
       The input settings as a dict
-    
-    proj: casm.project.Project, optional, default=casm.project.Project()
-      A CASM project to query for training data, if input["data"]["type"] == "selection".
     
     save: boolean, optional, default=True
       Save a pickle file containing the training data and scoring metric. The file
@@ -543,6 +669,8 @@ def make_fitting_data(input, proj=None, save=True, verbose=True, read_existing=T
       
   """
   # set data defaults if not provided
+  if "data" not in input:
+    input["data"] = dict()
   if "kwargs" not in input["data"] or input["data"]["kwargs"] is None:
     input["data"]["kwargs"] = dict()
   
@@ -575,10 +703,10 @@ def make_fitting_data(input, proj=None, save=True, verbose=True, read_existing=T
         "To proceed with the existing scheme adjust your input settings to match.\n" + \
         "To proceed with the new scheme run in a new directory or delete '" + fit_data_filename + "'."
     
-    if fdata.input["property"] != input["property"]:
-      print "ERROR: Input file and stored data differ. Input 'property' has changed."
-      print "Stored data:\n", json.dumps(fdata.input["property"], indent=2)
-      print "Input:\n", json.dumps(input["property"], indent=2)
+    if fdata.input["data"] != input["data"]:
+      print "ERROR: Input file and stored data differ. Input 'data' has changed."
+      print "Stored data:\n", json.dumps(fdata.input["data"], indent=2)
+      print "Input:\n", json.dumps(input["data"], indent=2)
       print s
       exit()
     
@@ -609,7 +737,8 @@ def make_fitting_data(input, proj=None, save=True, verbose=True, read_existing=T
     if data_type == "selection":
         
       # read training set
-      proj = casm.project.Project()
+      proj = Project(input["data"]["kwargs"].get("project_path", None))
+      
       sel = Selection(proj, filename)
       
       # get property name (required)
@@ -705,9 +834,9 @@ def make_fitting_data(input, proj=None, save=True, verbose=True, read_existing=T
       sample_weight=sample_weight, scoring=scoring, penalty=penalty)
     
     fdata.input = dict()
+    fdata.input["data"] = input["data"]
     fdata.input["cv"] = input["cv"]
     fdata.input["weight"] = input["weight"]
-    fdata.input["property"] = input["property"]
     
     if save == True:
       pickle.dump(fdata, open(fit_data_filename, 'wb'))
@@ -836,6 +965,103 @@ def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=
   return selector
 
 
+def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None):
+  """
+  Arguments
+  ---------
+    
+    input: dict
+      The input settings as a dict
+    
+    save: boolean, optional, default=True
+      Save a pickle file containing the training data and scoring metric. The file
+      name, which can be specified by input["fit_data_filename"], defaults to "fit_data.pkl".
+    
+    verbose: boolean, optional, default=True
+      Print information to stdout.
+    
+    read_existing: boolean, optional, default=True
+      If it exists, read the pickle file containing the training data and scoring 
+      metric. The file name, which can be specified by input["fit_data_filename"], 
+      defaults to "fit_data.pkl".
+    
+    hall: deap.tools.HallOfFame, optional, default=None
+      A Hall Of Fame to add resulting individuals to
+    
+  
+  Returns
+  -------
+    
+    (fdata, estimator, selector)
+    
+    fdata: casm.learn.FittingData
+      A FittingData instance containing the problem data.
+    
+    estimator:  estimator object implementing 'fit'
+      The estimator specified by the input settings.
+    
+    selector:  selector object implementing 'fit' and having either a 
+               'get_support()' or 'get_halloffame()' member
+      The feature selector specified by the input settings.
+      
+  
+  """
+    
+  # construct FittingData
+  fdata = casm.learn.make_fitting_data(input, save=True, verbose=True, read_existing=True)
+    
+  # construct model used for fitting
+  estimator = casm.learn.make_estimator(input, verbose=verbose)
+  
+  # feature selection
+  selector = casm.learn.make_selector(input, estimator, 
+    scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty, verbose=verbose)
+  
+  # fit
+  if verbose:
+    print "# Fit and select..."
+  t = time.clock()
+  selector.fit(fdata.weighted_X, fdata.weighted_y)
+  
+  # print calculation properties that may be of interest
+  if verbose:
+    # custom for SelectFromModel
+    if hasattr(selector, "estimator_") and hasattr(selector.estimator_, "n_iter_"):
+      print "#   Iterations:", selector.estimator_.n_iter_
+    if hasattr(selector, "threshold"):
+      print "#   Feature selection threshold:", selector.threshold
+    print "#   DONE  Runtime:", time.clock() - t, "(s)\n"
+  
+  if hall is not None:
+    # store results: Assume selector either has a 'get_halloffame()' attribute, or 'get_support()' member
+    if hasattr(selector, "halloffame"):
+      print "Adding statistics..."
+      for i in xrange(len(selector.halloffame)):
+        casm.learn.add_individual_detail(selector.halloffame[i], estimator, fdata, selector, input)
+      print "  DONE\n"
+      
+      print "Result:"
+      casm.learn.print_halloffame(selector.halloffame)
+      
+      hall.update(selector.halloffame)
+    else:
+      print [1 if x else 0 for x in selector.get_support()]
+      indiv = casm.learn.creator.Individual(selector.get_support())
+      print "Adding statistics..."
+      indiv.fitness.values = casm.learn.cross_validation.cross_val_score(
+        estimator, fdata.weighted_X, indiv, 
+        y=fdata.weighted_y, scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty)
+      casm.learn.add_individual_detail(indiv, estimator, fdata, selector, input)
+      print "  DONE\n"
+      
+      print "Result:"
+      casm.learn.print_halloffame([indiv])
+      
+      hall.update([indiv])
+  
+  return (fdata, estimator, selector)
+
+
 def add_individual_detail(indiv, estimator, fdata, selector, input):
   """
   Adds attributes to an individual describing the details of the method used 
@@ -900,7 +1126,7 @@ def add_individual_detail(indiv, estimator, fdata, selector, input):
   
   # rms and wrms
   indiv.rms = sqrt(sklearn.metrics.mean_squared_error(
-    fdata.value, estimator.predict(fdata.X[:,casm.learn.tools.indices(indiv)])))
+    fdata.y, estimator.predict(fdata.X[:,casm.learn.tools.indices(indiv)])))
   indiv.wrms = sqrt(sklearn.metrics.mean_squared_error(
     fdata.weighted_y, estimator.predict(fdata.weighted_X[:,casm.learn.tools.indices(indiv)])))
   
@@ -960,9 +1186,21 @@ def print_population(pop):
 
 def to_json(index, indiv):
   """
-  Serialize an individual to JSON. 
+  Serialize an individual to JSON records. 
   
-  
+  Keys in each record: 
+    "index": index of individual in hall of fame
+    "selected": str of 0's and 1's indicating selected features
+    "n_selected": number of selected features
+    "cv": CV score
+    "rms": root-mean-square error
+    "wrms": weighted root-mean-square error
+    "estimator_method": name of estimator method
+    "features_selection_method": name of feature selection method
+    "note": a descriptive note
+    "eci": List of (feature index, coefficient value) pairs
+    "input": input settings dict
+    
   Arguments
   ---------
     
@@ -1002,6 +1240,41 @@ def to_json(index, indiv):
     d["eci"].append(casm.NoIndent(bfunc))
   d["input"] = indiv.input
   return d
+
+
+def to_dataframe(indices, hall):
+  """
+  Convert hall of fame data to pandas.DataFrame. 
+  
+  Columns: 
+    "index": index of individual in hall of fame
+    "selected": str of 0's and 1's indicating selected features
+    "n_selected": number of selected features
+    "cv": CV score
+    "rms": root-mean-square error
+    "wrms": weighted root-mean-square error
+    "estimator_method": name of estimator method
+    "features_selection_method": name of feature selection method
+    "note": a descriptive note
+    "eci": JSON string of a List of (feature index, coefficient value) pairs
+    "input": input settings dict
+  
+  
+  Arguments
+  ---------
+    
+    indices: List[int]
+      The indices in hall of fame of the individuals to include
+      
+    hall: deap.tools.HallOfFame
+      A Hall Of Fame of ECI sets
+    
+  """
+  data = [to_json(i, hall[i]) for i in indices]
+  for d in data:
+    d["eci"] = json.dumps(d["eci"], cls=casm.NoIndentEncoder)
+  return pandas.DataFrame.from_records(data)
+    
 
 
 def _print_individual(index, indiv, format=None):
@@ -1091,6 +1364,7 @@ def print_individual(hall, indices, format=None):
       Options: 
         None:      to print summary only
         "details": to print more
+        "csv":     to print as CSV 
         "json":    to print as JSON  
   """
   if format is None:
@@ -1105,13 +1379,17 @@ def print_individual(hall, indices, format=None):
       d = to_json(index, hall[index])
       h.append(d)
     print json.dumps(h, indent=2, cls=casm.NoIndentEncoder)
-      
+  
+  elif format.lower() == "csv":
+    df = to_dataframe(range(len(hall)), hall) 
+    print df.to_csv()
     
   elif format.lower() == "details":
     for index in indices:
       _print_individual(index, hall[index], format=format)
     print ""
   return
+
 
 def print_halloffame(hall, format=None):
   """ 
@@ -1127,6 +1405,7 @@ def print_halloffame(hall, format=None):
       Options: 
         None:      to print summary only
         "details": to print more
+        "csv":     to print as CSV 
         "json":    to print as JSON 
   """
   if format is None:
@@ -1143,6 +1422,10 @@ def print_halloffame(hall, format=None):
       h.append(d)
     print json.dumps(h, indent=2, cls=casm.NoIndentEncoder)
       
+    
+  elif format.lower() == "csv":
+    df = to_dataframe(range(len(hall)), hall) 
+    print df.to_csv()
     
   elif format.lower() == "details":
     for index, indiv in enumerate(hall):

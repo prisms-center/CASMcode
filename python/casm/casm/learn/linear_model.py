@@ -9,9 +9,6 @@ class LinearRegressionForLOOCV(sklearn.base.BaseEstimator):
   Attributes
   ----------
     
-    penalty: float, optional, default=0.0
-      CV score is increased by 'penalty*(number of selected basis function)'
-    
     pinv: boolean, optional, default=True
       If true, use the psuedo-inverse in solving the least squares problem.
     
@@ -22,21 +19,19 @@ class LinearRegressionForLOOCV(sklearn.base.BaseEstimator):
       H = X*(X.transpose()*X).inverse()*X.transpose()
   """
   
-  def __init__(self, penalty=0.0, pinv=True):
-     """
+  def __init__(self, pinv=True, **kwargs):
+    """
     Calculates linear least squares solution for X*b = y.
     
     Arguments
     ---------
     
-      penalty: float, optional, default=0.0
-        CV score is increased by 'penalty*(number of selected basis function)'
-      
       pinv: boolean, optional, default=True
         If true, use the psuedo-inverse in solving the least squares problem.
       
+      kwargs: keyword args
+        Other keyword args are ignored
     """
-    self.penalty=penalty
     self.pinv = pinv
   
   
