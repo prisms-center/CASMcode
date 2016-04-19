@@ -256,7 +256,7 @@ namespace CASM {
     }
 
     // transform deformation tensor to match canonical form and apply operation to cart_op
-    Eigen::Matrix3d fg_cart_op = it_canon.sym_op().get_matrix();
+    Eigen::Matrix3d fg_cart_op = it_canon.sym_op().matrix();
     ConfigDoF trans_configdof = it_canon * tconfigdof;
     relaxation_properties["best_mapping"]["relaxation_deformation"] = trans_configdof.deformation();
     relaxation_properties["best_mapping"]["relaxation_displacement"] = trans_configdof.displacement().transpose();
