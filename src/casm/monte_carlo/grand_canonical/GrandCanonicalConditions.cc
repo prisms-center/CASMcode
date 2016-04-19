@@ -25,8 +25,8 @@ namespace CASM {
     set_temperature(_temperature);
 
 
-    // -- set chem_pot ----
-    set_chem_pot(m_comp_converter.chem_pot(_param_chem_pot));
+    // -- set param_chem_pot ----
+    set_param_chem_pot(_param_chem_pot);
 
   }
 
@@ -48,8 +48,16 @@ namespace CASM {
     return m_chem_pot(index);
   }
 
+  double GrandCanonicalConditions::exchange_chem_pot(Index index_new, Index index_curr) const {
+    return m_chem_pot(index_new) - m_chem_pot(index_curr);
+  }
+
   Eigen::VectorXd GrandCanonicalConditions::param_chem_pot() const {
-    return m_comp_converter.param_chem_pot(m_chem_pot);
+    return m_param_chem_pot;
+  }
+
+  double GrandCanonicalConditions::param_chem_pot(Index index) const {
+    return m_param_chem_pot(index);
   }
 
   double GrandCanonicalConditions::tolerance() const {
@@ -67,30 +75,25 @@ namespace CASM {
 
   void GrandCanonicalConditions::set_chem_pot(const Eigen::VectorXd &in_chem_pot) {
     m_chem_pot = in_chem_pot;
+    m_param_chem_pot = m_comp_converter.param_chem_pot(m_chem_pot);
     return;
   }
 
   void GrandCanonicalConditions::set_chem_pot(Index ind, double in_chem_pot) {
     m_chem_pot(ind) = in_chem_pot;
+    m_param_chem_pot = m_comp_converter.param_chem_pot(m_chem_pot);
     return;
   }
 
-  void GrandCanonicalConditions::increment_by(const GrandCanonicalConditions &cond_increment) {
-    m_temperature += cond_increment.m_temperature;
-    for(int i = 0; i < m_chem_pot.size(); i++) {
-      m_chem_pot(i) += cond_increment.m_chem_pot(i);
-    }
-    m_beta = 1.0 / (CASM::KB * m_temperature);
+  void GrandCanonicalConditions::set_param_chem_pot(const Eigen::VectorXd &in_param_chem_pot) {
+    m_param_chem_pot = in_param_chem_pot;
+    m_chem_pot = m_comp_converter.chem_pot(m_param_chem_pot);
     return;
   }
 
-  void GrandCanonicalConditions::decrement_by(const GrandCanonicalConditions &cond_decrement) {
-    m_temperature -= cond_decrement.m_temperature;
-    for(int i = 0; i < m_chem_pot.size(); i++) {
-      m_chem_pot(i) -= cond_decrement.m_chem_pot(i);
-    }
-
-    m_beta = 1.0 / (CASM::KB * m_temperature);
+  void GrandCanonicalConditions::set_param_chem_pot(Index ind, double in_param_chem_pot) {
+    m_param_chem_pot(ind) = in_param_chem_pot;
+    m_chem_pot = m_comp_converter.chem_pot(m_param_chem_pot);
     return;
   }
 
@@ -98,7 +101,12 @@ namespace CASM {
   // ***************************************OPERATORS********************************************** //
 
   GrandCanonicalConditions &GrandCanonicalConditions::operator+=(const GrandCanonicalConditions &RHS) {
-    increment_by(RHS);
+    m_temperature += RHS.m_temperature;
+    for(int i = 0; i < m_param_chem_pot.size(); i++) {
+      m_param_chem_pot(i) += RHS.m_param_chem_pot(i);
+    }
+    m_chem_pot = m_comp_converter.chem_pot(m_param_chem_pot);
+    m_beta = 1.0 / (CASM::KB * m_temperature);
     return *this;
   }
 
@@ -108,7 +116,13 @@ namespace CASM {
 
   ///Subtract temperature and all chemical potentials to *this
   GrandCanonicalConditions &GrandCanonicalConditions::operator-=(const GrandCanonicalConditions &RHS) {
-    decrement_by(RHS);
+    m_temperature -= RHS.m_temperature;
+    for(int i = 0; i < m_param_chem_pot.size(); i++) {
+      m_param_chem_pot(i) -= RHS.m_param_chem_pot(i);
+    }
+
+    m_chem_pot = m_comp_converter.chem_pot(m_param_chem_pot);
+    m_beta = 1.0 / (CASM::KB * m_temperature);
     return *this;
   }
 
@@ -121,8 +135,8 @@ namespace CASM {
       return false;
     }
 
-    for(int i = 0; i < m_chem_pot.size(); i++) {
-      if(!almost_zero(m_chem_pot(i) - RHS.m_chem_pot(i), m_tolerance)) {
+    for(int i = 0; i < m_param_chem_pot.size(); i++) {
+      if(!almost_zero(m_param_chem_pot(i) - RHS.m_param_chem_pot(i), m_tolerance)) {
         return false;
       }
     }
@@ -132,63 +146,6 @@ namespace CASM {
 
   bool GrandCanonicalConditions::operator!=(const GrandCanonicalConditions &RHS) const {
     return !(*this == RHS);
-  }
-
-  bool GrandCanonicalConditions::operator<(const GrandCanonicalConditions &RHS) const {
-    // all parameters <
-
-    //equal is not less than
-    if(*this == RHS) {
-      return false;
-    }
-
-    //check temperature
-    if(m_temperature > RHS.m_temperature) {
-      return false;
-    }
-
-    //check all chemical potentials
-    for(int i = 0; i < m_chem_pot.size(); i++) {
-      if(m_chem_pot(i) > RHS.m_chem_pot(i)) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  bool GrandCanonicalConditions::operator<=(const GrandCanonicalConditions &RHS) const {
-    // all parameters <=
-    if(*this == RHS || *this < RHS) {
-      return true;
-    }
-    return false;
-  }
-
-  bool GrandCanonicalConditions::operator>(const GrandCanonicalConditions &RHS) const {
-    // all parameters >
-
-    //equal is not greater
-    if(*this == RHS) {
-      return false;
-    }
-    if(m_temperature < RHS.m_temperature) {
-      return false;
-    }
-    for(int i = 0; i < m_chem_pot.size(); i++) {
-      if(m_chem_pot(i) < RHS.m_chem_pot(i)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  bool GrandCanonicalConditions::operator>=(const GrandCanonicalConditions &RHS) const {
-    // all parameters >=
-    if(*this == RHS || *this > RHS) {
-      return true;
-    }
-    return false;
   }
 
   int GrandCanonicalConditions::operator/(const GrandCanonicalConditions &RHS_inc) const {

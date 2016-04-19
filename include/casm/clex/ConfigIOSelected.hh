@@ -29,9 +29,7 @@ namespace CASM {
 
       // --- Required implementations -----------
 
-      std::unique_ptr<Selected> clone() const {
-        return std::unique_ptr<Selected>(this->_clone());
-      }
+      std::unique_ptr<Selected> clone() const;
 
       bool evaluate(const Configuration &_config) const override;
 
@@ -53,9 +51,7 @@ namespace CASM {
     private:
 
       /// \brief Clone
-      Selected *_clone() const override {
-        return new Selected(*this);
-      }
+      Selected *_clone() const override;
 
       mutable std::string m_selection_name;
       mutable ConstConfigSelection m_selection;

@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <boost/filesystem.hpp>
 
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/system/RuntimeLibrary.hh"
@@ -112,12 +111,6 @@ namespace CASM {
 
     /// \brief Add a ref directory
     bool new_ref_dir(std::string calctype, std::string ref) const;
-
-    /// \brief Add calculation settings directory path, for supercell specific settings
-    bool new_supercell_ref_dir(std::string scelname, std::string calctype, std::string ref) const;
-
-    /// \brief Add calculation settings directory path, for configuration specific settings
-    bool new_configuration_ref_dir(std::string configname, std::string calctype, std::string ref) const;
 
 
     /// \brief Add an eci directory

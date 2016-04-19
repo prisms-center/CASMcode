@@ -1,6 +1,6 @@
 #include "casm/clex/PrimClex.hh"
 
-#include <boost/algorithm/string.hpp>
+#include "casm/external/boost.hh"
 
 #include "casm/misc/algorithm.hh"
 #include "casm/clex/ConfigIterator.hh"
@@ -259,7 +259,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  const PrimNeighborList &PrimClex::nlist() const {
+  PrimNeighborList &PrimClex::nlist() const {
     double tol = TOL;
 
     // lazy neighbor list generation
@@ -271,11 +271,6 @@ namespace CASM {
                   settings().nlist_sublat_indices().begin(),
                   settings().nlist_sublat_indices().end()
                 );
-
-      // expand the nlist to contain 'global_orbitree' (all that is needed for now)
-      std::set<UnitCellCoord> nbors;
-      neighborhood(std::inserter(nbors, nbors.begin()), global_orbitree, prim, tol);
-      m_nlist->expand(nbors.begin(), nbors.end());
     }
 
     return *m_nlist;
@@ -510,6 +505,9 @@ namespace CASM {
   //*******************************************************************************************
   void PrimClex::read_global_orbitree(const fs::path &fclust_path) {
 
+    // force re-read
+    global_orbitree = SiteOrbitree(get_prim().lattice());
+
     global_orbitree.min_num_components = 2;     //What if we want other things?
     global_orbitree.min_length = 0.0001;
     from_json(jsonHelper(global_orbitree, prim), jsonParser(fclust_path));
@@ -517,6 +515,7 @@ namespace CASM {
 
     // reset nlist
     m_nlist.unique().reset();
+
   }
 
   //*******************************************************************************************
@@ -992,6 +991,7 @@ namespace CASM {
   //*******************************************************************************************
   Clexulator PrimClex::global_clexulator() const {
     if(!m_global_clexulator.initialized()) {
+
       if(!fs::exists(dir().clexulator_src(settings().name(), settings().bset()))) {
         throw std::runtime_error(
           std::string("Error loading clexulator ") + settings().bset() + ". No basis functions exist.");
@@ -999,6 +999,7 @@ namespace CASM {
 
       m_global_clexulator = Clexulator(settings().global_clexulator(),
                                        dir().clexulator_dir(settings().bset()),
+                                       nlist(),
                                        settings().compile_options(),
                                        settings().so_options());
     }
@@ -1008,28 +1009,28 @@ namespace CASM {
   //*******************************************************************************************
   bool PrimClex::has_global_eci(std::string clex_name) const {
 
-    if(m_global_eci.eci_list().size()) {
+    if(m_global_eci.value().size()) {
       return true;
     }
 
-    return fs::exists(dir().eci_out(clex_name,
-                                    settings().calctype(),
-                                    settings().ref(),
-                                    settings().bset(),
-                                    settings().eci()));
+    return fs::exists(dir().eci(clex_name,
+                                settings().calctype(),
+                                settings().ref(),
+                                settings().bset(),
+                                settings().eci()));
   }
 
   //*******************************************************************************************
   const ECIContainer &PrimClex::global_eci(std::string clex_name) const {
-    if(!m_global_eci.eci_list().size()) {
-      fs::path eci_path = dir().eci_out(clex_name, settings().calctype(),
-                                        settings().ref(), settings().bset(), settings().eci());
+    if(!m_global_eci.value().size()) {
+      fs::path eci_path = dir().eci(clex_name, settings().calctype(),
+                                    settings().ref(), settings().bset(), settings().eci());
       if(!fs::exists(eci_path)) {
         throw std::runtime_error(
-          std::string("Error loading global ECI. eci.out does not exist.\n")
+          std::string("Error loading global ECI. eci.json does not exist.\n")
           + "  Expected at: " + eci_path.string());
       }
-      m_global_eci = ECIContainer(eci_path);
+      m_global_eci = read_eci(eci_path);
     }
     return m_global_eci;
   }
@@ -1463,6 +1464,53 @@ namespace CASM {
       }
       interface_imp_stream << "\n\n";
     }
+
+    // Write weight matrix used for the neighbor list
+    PrimNeighborList::Matrix3Type W = nlist.weight_matrix();
+    interface_imp_stream << indent << "  m_weight_matrix.row(0) << " << W(0, 0) << ", " << W(0, 1) << ", " << W(0, 2) << ";\n";
+    interface_imp_stream << indent << "  m_weight_matrix.row(1) << " << W(1, 0) << ", " << W(1, 1) << ", " << W(1, 2) << ";\n";
+    interface_imp_stream << indent << "  m_weight_matrix.row(2) << " << W(2, 0) << ", " << W(2, 1) << ", " << W(2, 2) << ";\n\n";
+
+    // Write neighborhood of UnitCellCoord
+    // expand the nlist to contain 'global_orbitree' (all that is needed for now)
+    std::set<UnitCellCoord> nbors;
+    neighborhood(std::inserter(nbors, nbors.begin()), tree, prim, TOL);
+
+    for(auto it = nbors.begin(); it != nbors.end(); ++it) {
+      interface_imp_stream << indent << "  m_neighborhood.insert(UnitCellCoord("
+                           << it->sublat() << ", "
+                           << it->unitcell(0) << ", "
+                           << it->unitcell(1) << ", "
+                           << it->unitcell(2) << "));\n";
+    }
+    interface_imp_stream << "\n\n";
+
+    interface_imp_stream << indent <<  "  m_orbit_neighborhood.resize(corr_size());\n";
+    Index lno = 0;
+    for(Index nb = 0; nb < tree.size(); ++nb) {
+      for(Index no = 0; no < tree[nb].size(); ++no) {
+        std::set<UnitCellCoord> orbit_nbors;
+        orbit_neighborhood(std::inserter(orbit_nbors, orbit_nbors.begin()), tree, prim, nb, no, TOL);
+
+        Index proto_index = lno;
+        for(auto it = orbit_nbors.begin(); it != orbit_nbors.end(); ++it) {
+          interface_imp_stream << indent << "  m_orbit_neighborhood[" << lno << "].insert(UnitCellCoord("
+                               << it->sublat() << ", "
+                               << it->unitcell(0) << ", "
+                               << it->unitcell(1) << ", "
+                               << it->unitcell(2) << "));\n";
+        }
+        ++lno;
+        for(Index nf = 1; nf < tree.prototype(nb, no).clust_basis.size(); ++nf) {
+          interface_imp_stream << indent << "  m_orbit_neighborhood[" << lno << "] = m_orbit_neighborhood[" << proto_index << "];\n";
+          ++lno;
+        }
+        interface_imp_stream << "\n";
+
+      }
+    }
+
+
     interface_imp_stream <<
                          indent << "}\n\n";
 

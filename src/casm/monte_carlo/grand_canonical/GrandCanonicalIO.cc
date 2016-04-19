@@ -93,6 +93,86 @@ namespace CASM {
     return formatter;
   }
 
+  /// \brief Make a LTE results formatter
+  ///
+  /// For csv:
+  /// \code
+  /// # T Beta param_pot_a param_pot_b ... Phi_LTE
+  /// \endcode
+  ///
+  /// For JSON:
+  /// \code
+  /// {
+  ///   "N_equil_samples":[...], "N_avg_samples":[...], "T":[...], "Beta":[...],
+  ///   "param_chem_pot(a)":[...], "param_chem_pot(b)":[...], ..., "comp(a)":[...], "comp(b)":[...], ...
+  ///   "chem_pot(A)":[...], "chem_pot(B)":[...], ..., "comp_n(A)":[...], "comp_n(B)":[...], ...
+  ///   "Phi_LTE":[...] }
+  /// \endcode
+  ///
+  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc) {
+
+    DataFormatter<ConstMonteCarloPtr> formatter;
+
+    formatter.push_back(MonteCarloTFormatter<GrandCanonical>());
+    formatter.push_back(GrandCanonicalLTEFormatter());
+    std::set<std::string> exclude;
+    std::string name;
+
+    // always sample Beta, potential_energy, and formation_energy
+    {
+      formatter.push_back(MonteCarloBetaFormatter<GrandCanonical>());
+      name = "potential_energy";
+      auto evaluator = [ = ](const ConstMonteCarloPtr & ptr) {
+        return static_cast<const GrandCanonical *>(ptr)->potential_energy();
+      };
+      formatter.push_back(GenericDatumFormatter<double, ConstMonteCarloPtr>(name, name, evaluator));
+      exclude.insert(name);
+    }
+
+    {
+      name = "formation_energy";
+      auto evaluator = [ = ](const ConstMonteCarloPtr & ptr) {
+        return static_cast<const GrandCanonical *>(ptr)->formation_energy();
+      };
+      formatter.push_back(GenericDatumFormatter<double, ConstMonteCarloPtr>(name, name, evaluator));
+      exclude.insert(name);
+    }
+
+
+
+    // always sample param_chem_pot, comp
+    for(int i = 0; i < mc.primclex().composition_axes().independent_compositions(); ++i) {
+      formatter.push_back(MonteCarloParamChemPotFormatter<GrandCanonical>(mc, i));
+    }
+
+    for(int i = 0; i < mc.primclex().composition_axes().independent_compositions(); i++) {
+
+      name = std::string("comp(") + mc.primclex().composition_axes().comp_var(i) + ")";
+      auto evaluator = [ = ](const ConstMonteCarloPtr & ptr) {
+        const GrandCanonical *_ptr = static_cast<const GrandCanonical *>(ptr);
+        return _ptr->primclex().composition_axes().param_composition(_ptr->comp_n())[i];
+      };
+      formatter.push_back(GenericDatumFormatter<double, ConstMonteCarloPtr>(name, name, evaluator));
+      exclude.insert(name);
+    }
+
+    // always sample chem_pot, comp_n
+    for(int i = 0; i < mc.primclex().composition_axes().components().size(); ++i) {
+      formatter.push_back(MonteCarloChemPotFormatter<GrandCanonical>(mc, i));
+    }
+    auto struc_mol_name = mc.primclex().get_prim().get_struc_molecule_name();
+    for(int i = 0; i < struc_mol_name.size(); ++i) {
+      name = std::string("comp_n(") + struc_mol_name[i] + ")";
+      auto evaluator = [ = ](const ConstMonteCarloPtr & ptr) {
+        return static_cast<const GrandCanonical *>(ptr)->comp_n()[i];
+      };
+      formatter.push_back(GenericDatumFormatter<double, ConstMonteCarloPtr>(name, name, evaluator));
+      exclude.insert(name);
+    }
+
+    return formatter;
+  }
+
   /// \brief Make a observation formatter
   ///
   /// For csv:
@@ -142,7 +222,7 @@ namespace CASM {
 
   /// \brief Store GrandCanonicalConditions in JSON format
   jsonParser &to_json(const GrandCanonicalConditions &conditions, jsonParser &json) {
-
+    json.put_obj();
     json["temperature"] = conditions.temperature();
     json["param_chem_pot"] = jsonParser::object();
     auto param_chem_pot = conditions.param_chem_pot();
@@ -611,6 +691,64 @@ namespace CASM {
     example_settings["driver"]["incremental_conditions"]["tolerance"] = 0.001;
 
     return example_settings;
+  }
+
+  /// \brief Print single spin flip LTE
+  GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalLTEFormatter() {
+    auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
+      ConstMonteCarloPtr ptr = mc;
+      return static_cast<const GrandCanonical *>(ptr)->lte_grand_canonical_free_energy(std::cout);
+    };
+    return GenericDatumFormatter<double, ConstMonteCarloPtr>("Phi_LTE", "Phi_LTE", evaluator);
+  }
+
+  /// \brief Will create new file or append to existing results file the results of the latest run
+  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc) {
+    try {
+
+      fs::create_directories(settings.output_directory());
+      GrandCanonicalDirectoryStructure dir(settings.output_directory());
+      auto formatter = make_lte_results_formatter(mc);
+
+      // write csv path results
+      if(settings.write_csv()) {
+        fs::path file = dir.lte_results_csv();
+        fs::ofstream sout;
+
+        if(!fs::exists(file)) {
+          sout.open(file);
+          formatter.print_header(&mc, sout);
+        }
+        else {
+          sout.open(file, std::ios::app);
+        }
+
+        formatter.print(&mc, sout);
+
+        sout.close();
+      }
+
+      // write json path results
+      if(settings.write_json()) {
+        fs::path file = dir.lte_results_json();
+
+        jsonParser results;
+        if(fs::exists(file)) {
+          results.read(file);
+        }
+        else {
+          results = jsonParser::object();
+        }
+
+        formatter.to_json_arrays(&mc, results);
+        results.write(file);
+      }
+    }
+    catch(...) {
+      std::cerr << "ERROR writing results" << std::endl;
+      throw;
+    }
+
   }
 }
 

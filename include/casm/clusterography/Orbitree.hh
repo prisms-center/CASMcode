@@ -259,6 +259,41 @@ namespace CASM {
     tree.from_json(json);
   }
 
+  /// \brief Iterate over all sites in an orbit and insert a UnitCellCoord
+  ///
+  /// \param result an OutputIterator for UnitCellCoord
+  /// \param tree the Orbitree to iterate over
+  /// \param struc the structure that UnitCellCoord are referenced to
+  /// \param tol tolerance for mapping Coordinate to UnitCellCoord
+  ///
+  /// \result the resulting OutputIterator
+  ///
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It can be used to create a set of
+  /// UnitCellCoord for input to expand a PrimNeighborList.
+  ///
+  template<typename OutputIterator, typename TreeType, typename StrucType>
+  OutputIterator orbit_neighborhood(OutputIterator result, const TreeType &tree, const StrucType &struc, Index nb, Index no, double tol) {
+    // create a neighborhood of all UnitCellCoord that an Orbitree touches
+    for(int nc = 0; nc < tree[nb][no].size(); ++nc) {
+      const auto &clust = tree[nb][no][nc];
+
+      // UnitCellCoord for sites in cluster
+      std::vector<UnitCellCoord> coord;
+      for(int ns_i = 0; ns_i < clust.size(); ++ns_i) {
+        coord.emplace_back(clust[ns_i], struc, tol);
+      }
+      // UnitCellCoord for 'flowertree': all clusters that touch origin unitcell
+      //  (includes translationally equivalent clusters)
+      for(int ns_i = 0; ns_i < coord.size(); ++ns_i) {
+        for(int ns_j = 0; ns_j < coord.size(); ++ns_j) {
+          *result++ = UnitCellCoord(coord[ns_j].sublat(), coord[ns_j].unitcell() - coord[ns_i].unitcell());
+        }
+      }
+    }
+    return result;
+  }
+
   /// \brief Iterate over all sites in an orbitree and insert a UnitCellCoord
   ///
   /// \param result an OutputIterator for UnitCellCoord
@@ -277,22 +312,7 @@ namespace CASM {
     // create a neighborhood of all UnitCellCoord that an Orbitree touches
     for(int nb = 0; nb < tree.size(); ++nb) {
       for(int no = 0; no < tree[nb].size(); ++no) {
-        for(int nc = 0; nc < tree[nb][no].size(); ++nc) {
-          const auto &clust = tree[nb][no][nc];
-
-          // UnitCellCoord for sites in cluster
-          std::vector<UnitCellCoord> coord;
-          for(int ns_i = 0; ns_i < clust.size(); ++ns_i) {
-            coord.emplace_back(clust[ns_i], struc, tol);
-          }
-          // UnitCellCoord for 'flowertree': all clusters that touch origin unitcell
-          //  (includes translationally equivalent clusters)
-          for(int ns_i = 0; ns_i < coord.size(); ++ns_i) {
-            for(int ns_j = 0; ns_j < coord.size(); ++ns_j) {
-              *result++ = UnitCellCoord(coord[ns_j].sublat(), coord[ns_j].unitcell() - coord[ns_i].unitcell());
-            }
-          }
-        }
+        result = orbit_neighborhood(result, tree, struc, nb, no, tol);
       }
     }
     return result;

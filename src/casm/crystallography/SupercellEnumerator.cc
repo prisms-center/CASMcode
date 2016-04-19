@@ -1,6 +1,6 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 
-#include <boost/math/special_functions/round.hpp>
+#include "casm/external/boost.hh"
 #include "casm/external/Eigen/Dense"
 
 #include "casm/crystallography/Structure.hh"

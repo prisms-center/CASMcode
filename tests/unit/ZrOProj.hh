@@ -89,13 +89,11 @@ namespace test {
       m_p.popen(cd_and() + "casm bset -u");
       BOOST_CHECK_EQUAL_MESSAGE(m_p.exit_code(), 0, m_p.gets());
 
-      BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*eci\.in)")), true);
-      BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*clust\.json)")), true);
-      BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*)" + title + R"(_Clexulator\.cc)")), true);
+      BOOST_CHECK_EQUAL_MESSAGE(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*clust\.json)")), true, m_p.gets());
+      BOOST_CHECK_EQUAL_MESSAGE(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*)" + title + R"(_Clexulator\.cc)")), true, m_p.gets());
 
-      BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.eci_in(m_set.bset())));
-      BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.clust(m_set.bset())));
-      BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.bset())));
+      BOOST_CHECK_EQUAL_MESSAGE(true, fs::exists(m_dirs.clust(m_set.bset())), m_p.gets());
+      BOOST_CHECK_EQUAL_MESSAGE(true, fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.bset())), m_p.gets());
 
       std::string str;
 

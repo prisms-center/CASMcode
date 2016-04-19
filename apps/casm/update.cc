@@ -76,7 +76,6 @@ namespace CASM {
       std::cerr << "Error in 'casm update': No casm project found." << std::endl;
       return 1;
     }
-    fs::current_path(root);
 
     std::cout << "\n***************************\n" << std::endl;
 
@@ -350,7 +349,7 @@ namespace CASM {
       std::cout <<  "No new data were detected." << std::endl << std::endl;
     else {
       std::cout << "Analyzed new data for " << num_updated << " configurations." << std::endl << std::endl;
-
+      primclex.write_config_list();
       if(relax_log.str().size() > 0) {
         std::cout << "WARNING: Abnormal relaxations were detected:\n" << std::endl
                   << "           *** Final Relaxation Report ***" << std::endl

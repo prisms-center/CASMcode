@@ -5,6 +5,7 @@
 // currently still relies on this for getting standard composition axes
 #include "casm/clex/ParamComposition.hh"
 #include "casm/casm_io/json_io/container.hh"
+#include "casm/misc/algorithm.hh"
 
 namespace CASM {
 
@@ -43,6 +44,16 @@ namespace CASM {
   ///
   Eigen::VectorXd CompositionConverter::end_member(size_type i) const {
     return m_end_members.col(i);
+  }
+
+  /// \brief Return the matrix Mij = dx_i/dn_j
+  Eigen::MatrixXd CompositionConverter::dparam_dmol() const {
+    return m_to_x;
+  }
+
+  /// \brief Return the matrix Mij = dn_i/dx_j
+  Eigen::MatrixXd CompositionConverter::dmol_dparam() const {
+    return m_to_n;
   }
 
   /// \brief Convert number of atoms per prim, 'n' to parametric composition 'x'
@@ -109,7 +120,6 @@ namespace CASM {
 
     // n = origin + m_to_n * x
 
-    int composition_var = (int)'a';
     std::stringstream tstr;
 
     // for each molecule:
@@ -145,7 +155,7 @@ namespace CASM {
         if(!almost_equal(std::abs(m_to_n(i, j)), 1.0))
           tstr << std::abs(m_to_n(i, j));
         //print variable ('a','b',etc...)
-        tstr << (char)(composition_var + j);
+        tstr << comp_var(j);
 
         first_char = false;
       }
@@ -163,7 +173,6 @@ namespace CASM {
 
     // x_i = m_to_x*(n - origin) = m_to_x*n - m_to_x*origin
 
-    int composition_var = (int)'a';
     std::stringstream tstr;
 
     Eigen::VectorXd v = -m_to_x * m_origin;
@@ -174,7 +183,7 @@ namespace CASM {
       bool first_char = true;
 
       // print mol name 'a('
-      tstr << (char)(composition_var + i) << "(";
+      tstr << comp_var(i) << "(";
 
       // constant term from origin
       // print 'x' if x != 0
@@ -230,21 +239,188 @@ namespace CASM {
 
   }
 
-  /// \brief Return formula for param_chem_pot->chem_pot
-  std::string CompositionConverter::chem_pot_formula(int indent) const {
-    // chem_pot = m_to_x.transpose() * param_chem_pot;
+  /// \brief Return formula for comp(i) in terms of comp_n(A), comp_n(B), ...
+  std::string CompositionConverter::comp_formula(size_type i) const {
+
+    // comp(i) = m_to_x(i,j)*(comp_n(j) - m_origin(j)) + ...
+
     std::stringstream ss;
-    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", std::string(' ', indent + 2) + "[", "]");
-    ss << std::string(' ', indent) << "chem_pot = X * param_chem_pot, where X = \n" << m_to_x.transpose().format(CleanFmt);
+
+    auto comp_x_str = [&]() {
+      return "comp(" + comp_var(i) + ")";
+    };
+
+    auto comp_n_str = [&](int j) {
+      return "comp_n(" + m_components[j] + ")";
+    };
+
+    auto delta_str = [&](int j) {
+      std::stringstream tss;
+      // print '(comp_n(J) - m_origin(j))' if m_origin(j) != 0
+      if(!almost_zero(m_origin(j))) {
+        tss << "(" << comp_n_str(j) << " - " << m_origin(j) << ")";
+      }
+      // print 'comp_n(J)'
+      else {
+        tss << comp_n_str(j);
+      }
+      return tss.str();
+    };
+
+    ss << comp_x_str() << " = ";
+    bool first_term = true;
+    for(int j = 0; j < m_to_x.cols(); ++j) {
+
+      double coeff = m_to_x(i, j);
+
+      // print nothing if coeff == 0
+      if(almost_zero(coeff)) {
+        continue;
+      }
+
+      // if coeff < 0
+      if(coeff < 0) {
+        if(!first_term) {
+          ss << " - " << -coeff << "*" << delta_str(j);
+        }
+        else {
+          ss << coeff << "*" << delta_str(j);
+        }
+      }
+
+      // if coeff > 0
+      else {
+        if(!first_term) {
+          ss << " + " << coeff << "*" << delta_str(j);
+        }
+        else {
+          ss << coeff << "*" << delta_str(j);
+        }
+      }
+      ss << " ";
+
+      first_term = false;
+
+    }
+
     return ss.str();
   }
 
-  /// \brief Return formula for chem_pot->param_chem_pot
-  std::string CompositionConverter::param_chem_pot_formula(int indent) const {
-    // param_chem_pot = m_to_n.transpose() * chem_pot;
+  /// \brief Return formula for comp_n(component(i)) in terms of comp(a), comp(b), ...
+  std::string CompositionConverter::comp_n_formula(size_type i) const {
+
+    // comp_n(i) = m_origin(j) + m_to_n(i,j)*comp(j) + ...
+
     std::stringstream ss;
-    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", std::string(' ', indent + 2) + "[", "]");
-    ss << std::string(' ', indent) << "param_chem_pot = X * chem_pot, where X = \n" << m_to_n.transpose().format(CleanFmt);
+
+    auto comp_x_str = [&](int j) {
+      return "comp(" + comp_var(j) + ")";
+    };
+
+    auto comp_n_str = [&](int j) {
+      return "comp_n(" + m_components[j] + ")";
+    };
+
+    ss << comp_n_str(i) << " = ";
+    bool first_term = true;
+    // print nothing if coeff == 0
+    if(!almost_zero(m_origin(i))) {
+      ss << m_origin(i);
+      first_term = false;
+    }
+
+    for(int j = 0; j < m_to_n.cols(); ++j) {
+
+      double coeff = m_to_n(i, j);
+
+      // print nothing if coeff == 0
+      if(almost_zero(coeff)) {
+        continue;
+      }
+
+      // if coeff < 0
+      if(coeff < 0) {
+        if(!first_term) {
+          ss << " - " << -coeff << "*" << comp_x_str(j);
+        }
+        else {
+          ss << coeff << "*" << comp_x_str(j);
+        }
+      }
+
+      // if coeff > 0
+      else {
+        if(!first_term) {
+          ss << " + " << coeff << "*" << comp_x_str(j);
+        }
+        else {
+          ss << coeff << "*" << comp_x_str(j);
+        }
+      }
+      ss << " ";
+
+      first_term = false;
+
+    }
+
+    return ss.str();
+  }
+
+  /// \brief Return formula for param_chem_pot(i) in terms of chem_pot(A), chem_pot(B), ...
+  ///
+  /// Ex: param_chem_pot(a) = c0*chem_pot(A) + c1*chem_pot(B) + ...
+  ///
+  /// Assumes chem_pot(Va) == 0
+  std::string CompositionConverter::param_chem_pot_formula(size_type i) const {
+    // param_chem_pot = m_to_n.transpose() * chem_pot;
+
+    std::stringstream ss;
+
+    auto print_chem_pot = [&](int j) {
+      return "chem_pot(" + m_components[j] + ") ";
+    };
+
+    ss << "param_chem_pot(" << comp_var(i) << ") = ";
+    Eigen::MatrixXd Mt = m_to_n.transpose();
+    bool first_term = true;
+    for(int j = 0; j < Mt.cols(); ++j) {
+
+      double coeff = Mt(i, j);
+
+      // print nothing if n == 0
+      if(almost_zero(coeff) || is_vacancy(m_components[j])) {
+        continue;
+      }
+
+      // print 'A' or '+A' if n == 1
+      if(almost_zero(coeff - 1)) {
+        if(!first_term) {
+          ss << "+ ";
+        }
+        ss << print_chem_pot(j);
+      }
+
+      // print '-A' if n == -1
+      else if(almost_zero(coeff + 1)) {
+        ss << "- " << print_chem_pot(j);
+      }
+
+      // print 'nA' or '+nA' if n > 0
+      else if(coeff > 0) {
+        if(!first_term) {
+          ss << "+ ";
+        }
+        ss << coeff << "*" << print_chem_pot(j);
+      }
+
+      // print '-nA' if n < 0
+      else {
+        ss << coeff << "*" << print_chem_pot(j);
+      }
+
+      first_term = false;
+    }
+
     return ss.str();
   }
 
@@ -351,10 +527,12 @@ namespace CASM {
       return;
     }
 
+    auto comp_var = CompositionConverter::comp_var;
+
     stream << std::setw(10) << "KEY" << " ";
     stream << std::setw(10) << "ORIGIN" << " ";
     for(int i = 0; i < map.begin()->second.independent_compositions(); i++) {
-      stream << std::setw(10) << (char)((int)'a' + i) << " ";
+      stream << std::setw(10) << comp_var(i) << " ";
     }
     stream << "    ";
     stream << "GENERAL FORMULA";
@@ -379,6 +557,54 @@ namespace CASM {
     }
   }
 
+  /// \brief Pretty-print comp in terms of comp_n
+  ///
+  /// Example:
+  /// \code
+  /// comp(a) = c00*(comp_n(A) - 1) + c01*comp_n(B) + ...
+  /// comp(b) = c00*comp_n(A) + c01*(comp_n(B) - 2) + ...
+  /// ...
+  /// \endcode
+  void display_comp(std::ostream &stream, const CompositionConverter &f, int indent) {
+
+    for(int i = 0; i < f.independent_compositions(); ++i) {
+      stream << std::string(indent, ' ') << f.comp_formula(i) << "\n";
+    }
+
+  }
+
+  /// \brief Pretty-print comp in terms of comp_n
+  ///
+  /// Example:
+  /// \code
+  /// comp_n(A) = nAo + c00*comp(a) + c01*comp(b) + ...
+  /// comp_n(B) = nBo + c10*comp(a) + c11*comp(b) + ...
+  /// ...
+  /// \endcode
+  void display_comp_n(std::ostream &stream, const CompositionConverter &f, int indent) {
+
+    for(int i = 0; i < f.components().size(); ++i) {
+      stream << std::string(indent, ' ') << f.comp_n_formula(i) << "\n";
+    }
+
+  }
+
+  /// \brief Pretty-print param_chem_pot in terms of chem_pot
+  ///
+  /// Example:
+  /// \code
+  /// param_chem_pot(a) = c00*chem_pot(A) + c01*chem_pot(B) + ...
+  /// param_chem_pot(b) = c10*chem_pot(A) + c11*chem_pot(B) + ...
+  /// ...
+  /// \endcode
+  void display_param_chem_pot(std::ostream &stream, const CompositionConverter &f, int indent) {
+
+    for(int i = 0; i < f.independent_compositions(); ++i) {
+      stream << std::string(indent, ' ') << f.param_chem_pot_formula(i) << "\n";
+    }
+
+  }
+
   /// \brief Serialize CompositionConverter to JSON
   jsonParser &to_json(const CompositionConverter &f, jsonParser &json) {
 
@@ -386,9 +612,8 @@ namespace CASM {
     json["components"] = f.components();
     json["independent_compositions"] = f.independent_compositions();
     json["origin"] = f.origin();
-    int var = (int) 'a';
     for(int i = 0; i < f.independent_compositions(); i++) {
-      json[std::string(1, (char)(var + i)) ] = f.end_member(i);
+      json[CompositionConverter::comp_var(i)] = f.end_member(i);
     }
     json["mol_formula"] = f.mol_formula();
     json["param_formula"] = f.param_formula();
@@ -414,7 +639,7 @@ namespace CASM {
       int var = (int) 'a';
       Eigen::VectorXd tvec;
       for(int i = 0; i < independent_compositions; i++) {
-        from_json(tvec, json[std::string(1, (char)(var + i))]);
+        from_json(tvec, json[CompositionConverter::comp_var(i)]);
         end_members.col(i) = tvec;
       }
 
@@ -444,17 +669,42 @@ namespace CASM {
     return param_comp.get_prim_end_members().transpose();
   }
 
+  /// \brief Non-orthogonal composition space
+  Eigen::MatrixXd _composition_space(const Structure &prim, double tol) {
+    // Get Va index if it exists, and store 0 or 1 in N_Va
+    std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
+    Index Va_index = find_index_if(struc_mol_name, [ = ](const std::string & str) {
+      return is_vacancy(str);
+    });
+    bool has_Va = (Va_index != struc_mol_name.size());
+
+    // convert to atom frac
+    Eigen::MatrixXd E = end_members(prim);
+    if(has_Va) {
+      E.row(Va_index) = Eigen::VectorXd::Zero(E.cols());
+    }
+    for(int i = 0; i < E.cols(); i++) {
+      E.col(i) /= E.col(i).sum();
+    }
+
+    // convert to atom frac space
+    Eigen::MatrixXd M(E.rows(), E.cols() - 1);
+    for(int i = 0; i < M.cols(); ++i) {
+      M.col(i) = E.col(i + 1) - E.col(0);
+    }
+    return M;
+  }
+
   /// \brief Return the composition space of a Structure
   ///
   /// \param prim A Structure to find the standard composition space for (does
   ///             not check if it is actually primitive).
   /// \param tol tolerance for checking rank (default 1e-14)
   ///
-  /// - Each column corresponds to an orthogonal vector in composition space
-  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule,
-  ///   with units number Molecule / prim
+  /// - Each column corresponds to an orthogonal vector in atom fraction space
+  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule
   Eigen::MatrixXd composition_space(const Structure &prim, double tol) {
-    auto Qr = end_members(prim).fullPivHouseholderQr();
+    auto Qr = _composition_space(prim, tol).fullPivHouseholderQr();
     Qr.setThreshold(tol);
     auto Q = Qr.matrixQ();
     return Q.leftCols(Qr.rank());
@@ -466,11 +716,10 @@ namespace CASM {
   ///             not check if it is actually primitive).
   /// \param tol tolerance for checking rank (default 1e-14)
   ///
-  /// - Each column corresponds to an orthogonal vector in composition space
-  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule,
-  ///   with units number Molecule / prim
+  /// - Each column corresponds to an orthogonal vector in atom fraction space
+  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule
   Eigen::MatrixXd null_composition_space(const Structure &prim, double tol) {
-    auto Qr = end_members(prim).fullPivHouseholderQr();
+    auto Qr = _composition_space(prim, tol).fullPivHouseholderQr();
     Qr.setThreshold(tol);
     auto Q = Qr.matrixQ();
     return Q.rightCols(Q.cols() - Qr.rank());

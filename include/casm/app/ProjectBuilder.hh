@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <boost/filesystem.hpp>
 
 #include "casm/casm_io/jsonParser.hh"
 

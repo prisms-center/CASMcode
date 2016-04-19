@@ -1,6 +1,8 @@
 #ifndef CASM_JSONPARSER_HH
 #define CASM_JSONPARSER_HH
 
+#define BOOST_NO_SCOPED_ENUMS
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include "casm/external/json_spirit/json_spirit_reader_template.h"
 #include "casm/external/json_spirit/json_spirit_writer_template.h"
 
@@ -9,10 +11,7 @@
 #include <exception>
 #include <complex>
 
-#define BOOST_NO_SCOPED_ENUMS
-#define BOOST_NO_CXX11_SCOPED_ENUMS
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
+#include "casm/external/boost.hh"
 
 namespace CASM {
 

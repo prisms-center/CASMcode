@@ -71,19 +71,11 @@ namespace CASM {
     void write_results(Index cond_index) const;
 
 
-    /// \brief Calculate the low temperature expansion of the grand canonical free energy
-    double lte_grand_canonical_free_energy() const;
-
-
-  private:
+    /// \brief Calculate the single spin flip low temperature expansion of the grand canonical potential
+    double lte_grand_canonical_free_energy(std::ostream &sout) const;
 
     /// \brief Formation energy, normalized per primitive cell
     const double &formation_energy() const {
-      return *m_formation_energy;
-    }
-
-    /// \brief Formation energy, normalized per primitive cell
-    double &formation_energy() {
       return *m_formation_energy;
     }
 
@@ -92,18 +84,8 @@ namespace CASM {
       return *m_potential_energy;
     }
 
-    /// \brief Potential energy, normalized per primitive cell
-    double &potential_energy() {
-      return *m_potential_energy;
-    }
-
     /// \brief Correlations, normalized per primitive cell
     const Eigen::VectorXd &corr() const {
-      return *m_corr;
-    }
-
-    /// \brief Correlations, normalized per primitive cell
-    Eigen::VectorXd &corr() {
       return *m_corr;
     }
 
@@ -112,8 +94,26 @@ namespace CASM {
       return *m_comp_n;
     }
 
+
+  private:
+
+    /// \brief Formation energy, normalized per primitive cell
+    double &_formation_energy() {
+      return *m_formation_energy;
+    }
+
+    /// \brief Potential energy, normalized per primitive cell
+    double &_potential_energy() {
+      return *m_potential_energy;
+    }
+
+    /// \brief Correlations, normalized per primitive cell
+    Eigen::VectorXd &_corr() {
+      return *m_corr;
+    }
+
     /// \brief Number of atoms of each type, normalized per primitive cell
-    Eigen::VectorXd &comp_n() {
+    Eigen::VectorXd &_comp_n() {
       return *m_comp_n;
     }
 
@@ -126,6 +126,13 @@ namespace CASM {
 
     /// \brief Calculate properties given current conditions
     void _update_properties();
+
+    /// \brief Select initial motif configuration
+    static const Configuration &_select_motif(
+      std::string motif_configname,
+      PrimClex &primclex,
+      const GrandCanonicalConditions &cond,
+      std::ostream &_sout);
 
 
     ///Keeps track of what sites can change to what

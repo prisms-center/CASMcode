@@ -1,9 +1,7 @@
 #ifndef PRIMCLEX_HH
 #define PRIMCLEX_HH
 
-#define BOOST_NO_SCOPED_ENUMS
-#define BOOST_NO_CXX11_SCOPED_ENUMS
-#include <boost/filesystem.hpp>
+#include "casm/external/boost.hh"
 
 #include "casm/BP_C++/BP_Parse.hh"
 
@@ -191,8 +189,8 @@ namespace CASM {
     /// const Access to global orbitree
     const SiteOrbitree &get_global_orbitree() const;
 
-    ///const access to the primitive neighbor list
-    const PrimNeighborList &nlist() const;
+    ///Access to the primitive neighbor list
+    PrimNeighborList &nlist() const;
 
     /// returns true if vacancy are an allowed species
     bool vacancy_allowed() const;

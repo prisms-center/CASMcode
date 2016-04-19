@@ -49,6 +49,12 @@ namespace CASM {
     /// \brief The mol composition of the parameteric composition axes end members
     Eigen::VectorXd end_member(size_type i) const;
 
+    /// \brief Return the matrix Mij = dx_i/dn_j
+    Eigen::MatrixXd dparam_dmol() const;
+
+    /// \brief Return the matrix Mij = dn_i/dx_j
+    Eigen::MatrixXd dmol_dparam() const;
+
     /// \brief Convert number of mol per prim, 'n' to parametric composition 'x'
     Eigen::VectorXd param_composition(const Eigen::VectorXd &n) const;
 
@@ -80,11 +86,14 @@ namespace CASM {
     /// \brief Return formula for end member
     std::string end_member_formula(size_type i) const;
 
-    /// \brief Return formula for param_chem_pot->chem_pot
-    std::string chem_pot_formula(int indent = 0) const;
+    /// \brief Return formula for comp(i) in terms of comp_n(A), comp_n(B), ...
+    std::string comp_formula(size_type i) const;
 
-    /// \brief Return formula for chem_pot->param_chem_pot
-    std::string param_chem_pot_formula(int indent = 0) const;
+    /// \brief Return formula for comp_n(components()[i]) in terms of comp(a), comp(b), ...
+    std::string comp_n_formula(size_type i) const;
+
+    /// \brief Return formula for param_chem_pot(i) in terms of chem_pot(A), chem_pot(B), ...
+    std::string param_chem_pot_formula(size_type i) const;
 
 
   private:
@@ -134,6 +143,15 @@ namespace CASM {
 
   /// \brief Pretty-print map of name/CompositionConverter pairs
   void display_composition_axes(std::ostream &stream, const std::map<std::string, CompositionConverter> &map);
+
+  /// \brief Pretty-print comp in terms of comp_n
+  void display_comp(std::ostream &stream, const CompositionConverter &f, int indent = 0);
+
+  /// \brief Pretty-print comp_n in terms of comp
+  void display_comp_n(std::ostream &stream, const CompositionConverter &f, int indent = 0);
+
+  /// \brief Pretty-print param_chem_pot in terms of chem_pot
+  void display_param_chem_pot(std::ostream &stream, const CompositionConverter &f, int indent = 0);
 
   /// \brief Serialize CompositionConverter to JSON
   jsonParser &to_json(const CompositionConverter &f, jsonParser &json);

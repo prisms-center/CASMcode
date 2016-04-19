@@ -94,18 +94,21 @@ namespace CASM {
 
     /// \brief Reads a configuration selection from file at 'selection_path'
     /// - If selection_path=="MASTER", load master config_list as selection
-    /// - Checks extension to determine file type:
-    ///   - Ending in '.json' or '.JSON' for JSON formatted file
-    ///   - Otherwise, CSV formatted file
-    /// - If column headers are detected, they are also stored, and can be accessed using 'ConfigSelection::col_headers()'
-    ///   - Currently, the first two columns are always 'name' and 'selected' so these headers are assumed and not stored
+    /// - If selection_path=="ALL", load all from config_list as selection
+    /// - If selection_path=="CALCULATED", load configurations for which 'is_calculated' returns true
+    /// - Else, assume path to file:
+    ///   - Checks extension to determine file type:
+    ///     - Ending in '.json' or '.JSON' for JSON formatted file
+    ///     - Otherwise, CSV formatted file
+    ///   - If column headers are detected, they are also stored, and can be accessed using 'ConfigSelection::col_headers()'
+    ///     - Currently, the first two columns are always 'name' and 'selected' so these headers are assumed and not stored
     ///
     ConfigSelection(PrimClexType &_primclex, const fs::path &selection_path = "MASTER");
 
     //ConfigSelection(const ConfigSelection &) =default;
 
     ConfigSelection(const ConfigSelection<false> &RHS) :
-      m_primclex(RHS.m_primclex), m_name("MASTER"), m_config(RHS.m_config), m_col_headers(RHS.m_col_headers) {
+      m_primclex(RHS.m_primclex), m_name(RHS.m_name), m_config(RHS.m_config), m_col_headers(RHS.m_col_headers) {
       //swap(m_col_headers,RHS.m_col_headers);
       //swap(m_config,RHS.m_config);
     }

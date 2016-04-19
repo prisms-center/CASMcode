@@ -31,6 +31,16 @@ namespace CASM {
       return m_output_dir / "results.json";
     }
 
+    /// \brief Results summary: "output_dir/lte_results.csv"
+    fs::path lte_results_csv() const {
+      return m_output_dir / "lte_results.csv";
+    }
+
+    /// \brief Results summary: "output_dir/lte_results.json"
+    fs::path lte_results_json() const {
+      return m_output_dir / "lte_results.json";
+    }
+
 
     /// \brief "output_dir/conditions.cond_index/"
     fs::path conditions_dir(int cond_index) const {

@@ -42,33 +42,37 @@ namespace CASM {
     /// \brief chemical potential: dg/dcomp_n(index)
     double chem_pot(Index index) const;
 
-    /// \brief parametric chemical potential: dg/dcomp
+    /// \brief exchange chemical potential: chem_pot(new) - chem_pot(curr)
+    double exchange_chem_pot(Index index_new, Index index_curr) const;
+
+    /// \brief parametric chemical potential: dg/dcomp_x
     Eigen::VectorXd param_chem_pot() const;
+
+    /// \brief parametric chemical potential: dg/dcomp_x(index)
+    double param_chem_pot(Index index) const;
 
 
     double tolerance() const;
 
     // ***************************************MUTATORS*********************************************** //
 
-    ///Set the temperature of the current grand canonical condition. Sets m_temperature and m_beta.
+    ///Set the temperature of the current grand canonical condition.
     void set_temperature(double in_temp);
 
-    ///Set all the chemical potentials of the current grand canonical condition. Sets array m_chem_pot.
+    ///Set all the chemical potentials of the current grand canonical condition.
     void set_chem_pot(const Eigen::VectorXd &in_chem_pot);
 
-    ///Set a single 'atomic' chemical potential by specifying an index and a value. Sets one value in m_chem_pot.
+    ///Set a single 'atomic' chemical potential by specifying an index and a value.
     void set_chem_pot(Index ind, double in_chem_pot);
 
-    ///Acts as +=
-    void increment_by(const GrandCanonicalConditions &cond_increment);
+    ///Set all the parametric chemical potentials of the current grand canonical condition.
+    void set_param_chem_pot(const Eigen::VectorXd &in_chem_pot);
 
-    ///Acts as -=
-    void decrement_by(const GrandCanonicalConditions &cond_decrement);
+    ///Set a single parametric chemical potential by specifying an index and a value.
+    void set_param_chem_pot(Index ind, double in_chem_pot);
+
 
     // ***************************************OPERATORS********************************************** //
-
-    ///Assignment operator
-    //GrandCanonicalConditions &operator=(const GrandCanonicalConditions &RHS);
 
     ///Add temperature and all chemical potentials to *this
     GrandCanonicalConditions &operator+=(const GrandCanonicalConditions &RHS);
@@ -88,18 +92,6 @@ namespace CASM {
     ///Compare temperature and all chemical potentials to *this
     bool operator!=(const GrandCanonicalConditions &RHS) const;
 
-    ///Returns true if ALL parameters satisfy the inequality
-    bool operator<(const GrandCanonicalConditions &RHS) const;
-
-    ///Returns true if ALL parameters satisfy the inequality
-    bool operator<=(const GrandCanonicalConditions &RHS) const;
-
-    ///Returns true if ALL parameters satisfy the inequality
-    bool operator>(const GrandCanonicalConditions &RHS) const;
-
-    ///Returns true if ALL parameters satisfy the inequality
-    bool operator>=(const GrandCanonicalConditions &RHS) const;
-
     ///Divide ALL parameters and return the greatest number in absolute value
     int operator/(const GrandCanonicalConditions &RHS_inc) const;
 
@@ -118,6 +110,9 @@ namespace CASM {
 
     ///Vector of the 'atomic' chemical potentials for each species. Ordered as primclex.get_param_comp().get_components()
     Eigen::VectorXd m_chem_pot;
+
+    ///Vector of the parametric chemical potentials conjugate to the parametric compositions.
+    Eigen::VectorXd m_param_chem_pot;
 
     ///Tolerance for comparison operators == and !=
     double m_tolerance;

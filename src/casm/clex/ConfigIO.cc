@@ -188,7 +188,8 @@ namespace CASM {
 
     Clex::Clex(const Clexulator &clexulator, const ECIContainer &eci, const std::string args) :
       ScalarAttribute<Configuration>(Name, Desc),
-      m_clexulator(clexulator) {
+      m_clexulator(clexulator),
+      m_eci(eci) {
       parse_args(args);
     }
 

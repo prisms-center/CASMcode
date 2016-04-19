@@ -48,15 +48,30 @@ namespace CASM {
   Eigen::VectorXd ChemicalReference::_calc_hyperplane(
     const Structure &prim,
     const std::vector<std::string> &struc_mol_name,
-    Eigen::MatrixXd N,
+    Eigen::MatrixXd _N,
     Eigen::VectorXd E,
     double tol) {
 
+    // --- convert input compositions to atom_frac
+
+    Index Va_index = find_index_if(struc_mol_name, [ = ](const std::string & str) {
+      return is_vacancy(str);
+    });
+    bool has_Va = (Va_index != struc_mol_name.size());
+
+    if(has_Va) {
+      _N.row(Va_index) = Eigen::VectorXd::Zero(_N.cols());
+    }
+    for(int i = 0; i < _N.cols(); i++) {
+      _N.col(i) /= _N.col(i).sum();
+    }
+
     // --- check that the input space is full rank (excluding Va) --------------
 
-    // normalize to give columns of atom_frac
+    // The input space
+    Eigen::MatrixXd N(_N.rows(), _N.cols() - 1);
     for(int i = 0; i < N.cols(); i++) {
-      N.col(i) /= N.col(i).sum();
+      N.col(i) = _N.col(i + 1) - _N.col(0);
     }
 
     auto Qr = N.transpose().fullPivHouseholderQr();
@@ -71,22 +86,8 @@ namespace CASM {
 
     //  --- check that the input space spans the prim space --------------------
 
-    // Get Va index if it exists, and store 0 or 1 in N_Va
-    Index Va_index = find_index_if(struc_mol_name, [ = ](const std::string & str) {
-      return is_vacancy(str);
-    });
-    bool has_Va = (Va_index != struc_mol_name.size());
-
     // get the prim composition space (column vectors are comp_n)
     Eigen::MatrixXd C = composition_space(prim, tol);
-
-    // convert to atom_frac
-    if(has_Va) {
-      C.row(Va_index) = Eigen::VectorXd::Zero(C.cols());
-    }
-    for(int i = 0; i < C.cols(); i++) {
-      C.col(i) /= C.col(i).norm();
-    }
 
     // get Molecule allowed in prim, and how many there are
     std::vector<Molecule> struc_mol = prim.get_struc_molecule();
@@ -109,8 +110,10 @@ namespace CASM {
     if(relative_error > tol) {
       std::cerr << "Error in ChemicalReference::hyperplane " << std::endl;
       std::cerr << "Input space does not span the composition space of your prim." << std::endl;
-      std::cerr << "Input space (column vectors of atom_frac):\n" << N.topRows(prim_N_mol) << std::endl;
-      std::cerr << "Prim space (column vectors of atom_frac):\n" << C << std::endl;
+
+      std::cerr << "Input space (column vectors in atom_frac space):\n" << N.topRows(prim_N_mol) << std::endl;
+      std::cerr << "End members:\n" << end_members(prim) << std::endl;
+      std::cerr << "Prim space (column vectors in atom_frac space):\n" << C << std::endl;
       std::cerr << "Rows correspond to: " << jsonParser(struc_mol_name) << std::endl;
       std::cerr << "X, prim_space = input_space*X: \n" << X << std::endl;
       std::cerr << "input_space*X: \n" << N.topRows(prim_N_mol)*X << std::endl;
@@ -122,17 +125,18 @@ namespace CASM {
 
     // --- solve N.transpose() * P = E, for P, the hyperplane reference --------
 
-    Eigen::VectorXd P = N.transpose().fullPivHouseholderQr().solve(E);
+    Eigen::VectorXd P = _N.transpose().fullPivHouseholderQr().solve(E);
 
-    relative_error = (N.transpose() * P - E).norm() / E.norm();
+    relative_error = (_N.transpose() * P - E).norm() / E.norm();
 
     if(relative_error > tol) {
       std::cerr << "Error in ChemicalReference::hyperplane " << std::endl;
       std::cerr << "Could not solve for hyperplane reference." << std::endl;
-      std::cerr << "Input space (column vectors of atom_frac), N:\n" << N << std::endl;
+
+      std::cerr << "Input space (column vectors in atom_frac space), N:\n" << N << std::endl;
       std::cerr << "Rows correspond to: " << jsonParser(struc_mol_name) << std::endl;
-      std::cerr << "Solve: N.transpose()*P = E" << std::endl;
-      std::cerr << "N.transpose():\n" << N.transpose() << std::endl;
+      std::cerr << "Solve: _N.transpose()*P = E" << std::endl;
+      std::cerr << "_N.transpose():\n" << _N.transpose() << std::endl;
       std::cerr << "Reference state energies, E:\n" << E << std::endl;
       std::cerr << "P:\n" << P.transpose() << std::endl;
       std::cerr << "rel_err: " << relative_error << std::endl;

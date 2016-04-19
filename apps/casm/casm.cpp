@@ -18,7 +18,7 @@
 #include "casm/app/DirectoryStructure.hh"
 
 // include new casm tool header files here:
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "status.hh"
 #include "format.hh"
 #include "init.hh"
@@ -31,9 +31,8 @@
 #include "super.hh"
 #include "perturb.hh"
 #include "bset.hh"
-#include "fit.hh"
 #include "select.hh"
-#include "query.hh"
+#include "casm/app/query.hh"
 #include "run.hh"
 #include "import.hh"
 #include "monte.hh"
@@ -61,7 +60,6 @@ int print_casm_help(std::ostream &out) {
     "  perturb",
     "  select",
     "  run",
-    "  fit",
     "  query",
     "  import",
     "  view",
@@ -201,9 +199,6 @@ int main(int argc, char *argv[]) {
   else if(args[1] == "run") {
     retcode = run_command(argc, argv);
   }
-  else if(args[1] == "fit") {
-    retcode = fit_command(argc, argv);
-  }
   else if(args[1] == "query") {
     retcode = query_command(argc, argv);
   }
@@ -237,7 +232,7 @@ int main(int argc, char *argv[]) {
   return retcode;
 }
 
-#include "casm_functions.cc"
+//#include "casm_functions.cc"
 
 #include "status.cc"
 #include "format.cc"
@@ -253,8 +248,7 @@ int main(int argc, char *argv[]) {
 #include "bset.cc"
 #include "perturb.cc"
 #include "run.cc"
-#include "fit.cc"
-#include "query.cc"
+//#include "query.cc"
 #include "import.cc"
 #include "monte.cc"
 #include "view.cc"

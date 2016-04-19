@@ -14,7 +14,6 @@ namespace CASM {
 
   int monte_command(int argc, char *argv[]) {
 
-    std::string settingsfile;
     fs::path settings_path;
     po::variables_map vm;
     Index condition_index;
@@ -25,7 +24,8 @@ namespace CASM {
       po::options_description desc("'casm monte' usage");
       desc.add_options()
       ("help,h", "Print help message")
-      ("settings,s", po::value<std::string>(&settingsfile)->required(), "The Monte Carlo input file. See 'casm format --monte'.")
+      ("settings,s", po::value<fs::path>(&settings_path)->required(), "The Monte Carlo input file. See 'casm format --monte'.")
+      ("lte", "Print the single spin flip low temperature expansion of the free energy.")
       ("final-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
       ("traj-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
 
@@ -62,7 +62,12 @@ namespace CASM {
                     "    - The trajectory file must exist. This is generated when\n" <<
                     "      using input option \"data\"/\"storage\"/\"write_trajectory\" = true  \n" <<
                     "    - Written at: output_directory/conditions.5/trajectory/POSCAR.i,\n" <<
-                    "      where i is the sample index.\n\n";
+                    "      where i is the sample index.                          \n\n" <<
+
+                    "  casm monte --settings input_file.json --lte               \n" <<
+                    "    - Print the single spin flip low temperature expansion  \n" <<
+                    "      approximation for -kTlnZ, using the conditions given  \n" <<
+                    "      by the provided settings.                             \n\n";
 
           return 0;
         }
@@ -85,8 +90,8 @@ namespace CASM {
     }
 
 
-    fs::path rootpath = find_casmroot(fs::current_path());
-    if(rootpath.empty()) {
+    fs::path root = find_casmroot(fs::current_path());
+    if(root.empty()) {
       std::cout << "Error in 'casm monte': No casm project found." << std::endl;
       return 1;
     }
@@ -94,15 +99,15 @@ namespace CASM {
     std::cout << "\n***************************\n" << std::endl;
 
     // initialize primclex
-    std::cout << "Initialize primclex: " << rootpath << std::endl << std::endl;
-    PrimClex primclex(rootpath, std::cout);
+    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
+    PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
 
     const DirectoryStructure &dir = primclex.dir();
     ProjectSettings &set = primclex.settings();
 
     //Get path to settings json file
-    settings_path = settingsfile;
+    settings_path = fs::absolute(settings_path);
 
     //std::cout << "Example settings so far..." << std::endl;
     //jsonParser example_settings = Monte::example_testing_json_settings(primclex);
@@ -125,7 +130,77 @@ namespace CASM {
 
     if(monte_settings.type() == Monte::TYPE::GrandCanonical) {
 
-      if(vm.count("final-POSCAR")) {
+      if(vm.count("lte")) {
+        try {
+
+          GrandCanonicalSettings gc_settings(settings_path);
+          GrandCanonicalDirectoryStructure dir(gc_settings.output_directory());
+          if(gc_settings.write_csv()) {
+            if(fs::exists(dir.lte_results_csv())) {
+              std::cout << "Existing file at: " << dir.lte_results_csv() << std::endl;
+              std::cout << "  Exiting..." << std::endl;
+              return ERR_EXISTING_FILE;
+            }
+          }
+          if(gc_settings.write_json()) {
+            if(fs::exists(dir.lte_results_json())) {
+              std::cout << "Existing file at: " << dir.lte_results_json() << std::endl;
+              std::cout << "  Exiting..." << std::endl;
+              return ERR_EXISTING_FILE;
+            }
+          }
+
+          GrandCanonical gc(primclex, gc_settings);
+
+          // config, param_potential, T,
+          std::cout << "Phi_LTE(1) = potential_energy_gs - kT*ln(Z'(1))/N" << std::endl;
+          std::cout << "Z'(1) = sum_i(exp(-dPE_i/kT), summing over ground state and single spin flips" << std::endl;
+          std::cout << "dPE_i: (potential_energy_i - potential_energy_gs)*N" << std::endl;
+          std::cout << "configuration: " << gc_settings.motif_configname() << std::endl;
+
+          auto init = gc_settings.initial_conditions();
+          auto incr = gc_settings.incremental_conditions();
+          auto final = gc_settings.final_conditions();
+          int num_conditions = (final - init) / incr;
+
+          auto cond = init;
+          for(int index = 0; index <= num_conditions; ++index) {
+
+            if(index != 0) {
+              gc.set_conditions(cond);
+            }
+            std::cout << "\n\n-- Conditions: " << index << " --\n";
+            std::cout << jsonParser(cond) << std::endl << std::endl;
+
+            const auto &comp_converter = gc.primclex().composition_axes();
+            std::cout << "formation_energy: " << std::setprecision(12) << gc.formation_energy() << std::endl;
+            std::cout << "  components: " << jsonParser(gc.primclex().composition_axes().components()) << std::endl;
+            std::cout << "  chem_pot: " << gc.conditions().chem_pot().transpose() << std::endl;
+            std::cout << "  comp_n: " << gc.comp_n().transpose() << std::endl;
+            std::cout << "  param_chem_pot: " << gc.conditions().param_chem_pot().transpose() << std::endl;
+            std::cout << "  comp_x: " << comp_converter.param_composition(gc.comp_n()).transpose() << std::endl;
+            std::cout << "potential energy: " << std::setprecision(12) << gc.potential_energy() << std::endl << std::endl;
+
+            write_lte_results(gc_settings, gc);
+            cond += incr;
+
+          }
+
+          if(gc_settings.write_csv()) {
+            std::cout << "\nWrote results to: " << dir.lte_results_csv() << std::endl;
+          }
+          if(gc_settings.write_json()) {
+            std::cout << "\nWrote results to: " << dir.lte_results_json() << std::endl;
+          }
+
+        }
+        catch(std::exception &e) {
+          std::cerr << "ERROR calculating single spin flip LTE grand canonical potential.\n\n";
+          std::cerr << e.what() << std::endl;
+          return 1;
+        }
+      }
+      else if(vm.count("final-POSCAR")) {
         try {
           GrandCanonicalSettings gc_settings(settings_path);
           const GrandCanonical gc(primclex, gc_settings);

@@ -126,6 +126,8 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/AppIO.hh"
+#include "casm/app/casm_functions.hh"
+#include "casm/app/query.hh"
 
 // VaspIO
 #include "casm/casm_io/VaspIO.hh"

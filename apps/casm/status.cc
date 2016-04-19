@@ -344,7 +344,6 @@ Instructions for fitting ECI:                                          \n\n\
     std::cout << "Initialize primclex: " << root << std::endl << std::endl;
     PrimClex primclex(root, tmp);
     std::cout << "  DONE." << std::endl << std::endl;
-    fs::current_path(root);
 
     const DirectoryStructure &dir = primclex.dir();
     const ProjectSettings &settings = primclex.settings();
@@ -606,7 +605,7 @@ Instructions for fitting ECI:                                          \n\n\
 
     std::cout << "7) Fit effective cluster interactions (ECI): ";
 
-    if(!fs::exists(dir.eci_out(clex, calctype, ref, bset, eci))) {
+    if(!fs::exists(dir.eci(clex, calctype, ref, bset, eci))) {
       std::cout << "FALSE\n\n";
 
       if(vm.count("next")) {

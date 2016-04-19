@@ -94,7 +94,7 @@ namespace CASM {
   // 'select' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int select_command(int argc, char *argv[]) {
+  int select_command(int argc, char *argv[], PrimClex *_primclex) {
 
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
@@ -213,11 +213,6 @@ namespace CASM {
     }
 
     bool only_selected(false);
-    for(int i = 0; i < selection.size(); i++) {
-      if(selection[i] != "MASTER") {
-        selection[i] = fs::absolute(fs::path(selection[i])).string();
-      }
-    }
     if(selection.empty()) {
       only_selected = true;
       selection.push_back("MASTER");
@@ -230,7 +225,6 @@ namespace CASM {
       std::cerr << "Error: No casm project found." << std::endl;
       return ERR_NO_PROJ;
     }
-    fs::current_path(root);
 
 
     // initialize primclex
@@ -255,15 +249,6 @@ namespace CASM {
         return ERR_INVALID_ARG;
       }
       std::cout << "Set selection: " << criteria << std::endl << std::endl;
-
-      /// Prepare for calculating correlations. Maybe this should get put into Clexulator.
-      const DirectoryStructure &dir = primclex.dir();
-      const ProjectSettings &set = primclex.settings();
-      if(fs::exists(dir.clexulator_src(set.name(), set.bset()))) {
-        primclex.read_global_orbitree(dir.clust(set.bset()));
-      }
-
-
       if(vm.count("set"))
         set_selection(config_select.config_begin(), config_select.config_end(), criteria);
       else

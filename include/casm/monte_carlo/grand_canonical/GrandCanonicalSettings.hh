@@ -457,16 +457,17 @@ namespace CASM {
     std::string print_name;
     bool must_converge;
     double prec;
+
     MonteSampler *ptr;
 
-    ECIContainer _eci = primclex.dir().eci_out(clex(), bset(), calctype(), ref(), eci());
+    ECIContainer _eci = read_eci(primclex.dir().eci(clex(), bset(), calctype(), ref(), eci()));
 
-    for(size_type ii = 0; ii < _eci.eci_index_list().size(); ii++) {
+    for(size_type ii = 0; ii < _eci.index().size(); ii++) {
 
       prop_name = "corr";
 
       // store non-zero eci index in i
-      size_type i = _eci.eci_index_list()[ii];
+      size_type i = _eci.index()[ii];
 
       print_name = std::string("corr(") + std::to_string(i) + ")";
 

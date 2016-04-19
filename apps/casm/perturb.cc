@@ -86,7 +86,6 @@ namespace CASM {
       std::cout << "Error in 'casm perturb': No casm project found." << std::endl;
       return 1;
     }
-    fs::current_path(root);
 
 
     std::cout << "\n***************************\n" << std::endl;

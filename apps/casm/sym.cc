@@ -65,7 +65,6 @@ namespace CASM {
       std::cerr << "Error: No casm project found." << std::endl;
       return ERR_NO_PROJ;
     }
-    fs::current_path(root);
 
 
     std::cout << "\n***************************\n" << std::endl;
