@@ -97,6 +97,8 @@ namespace CASM {
                                          Index max_poly_order) {
     //std::cout<<"In SiteCluster::generate_clust_basis, the size of this cluster is:"<<size()<<std::endl;
     //std::cout<<"valid_index evaluates to:"<<valid_index(max_poly_order)<<std::endl;
+
+    clust_basis.set_dof_IDs(nlist_inds());
     if(!valid_index(max_poly_order))
       max_poly_order = size();
     //std::cout<<"Max_poly_order "<<max_poly_order<<std::endl;
@@ -116,17 +118,14 @@ namespace CASM {
       // Make copies of local arguments to ensure that they are distinguishable by their DoF_IDs
       // i.e., make copies in 'tlocal' and reset the DoF_IDs to {0,1,2,etc...}
       std::vector<BasisSet> tlocal;
-      tlocal.reserve(local_args.size());
-      std::vector<BasisSet const *> site_args(size());
+      tlocal.reserve(local_args[d].size());
+      std::vector<BasisSet const *> site_args(size(), nullptr);
       //Loop over sites
       for(Index i = 0; i < local_args[d].size(); i++) {
         if(local_args[d][i]) {
           tlocal.push_back(*local_args[d][i]);
           tlocal.back().set_dof_IDs(Array<Index>(1, at(i).nlist_ind()));
-          site_args.push_back(&tlocal.back());
-        }
-        else {
-          site_args.push_back(nullptr);
+          site_args[i] = &tlocal.back();
         }
       }
       all_local.push_back(SiteCluster_impl::construct_clust_dof_basis(*this, site_args));
@@ -134,7 +133,7 @@ namespace CASM {
         arg_subsets.push_back(&(all_local.back()));
     }
 
-    std::cerr << "WARNING: THIS VERSION OF CASM CANNOT PRODUCE CLUSTER FUNCTIONS!! YOU WILL HAVE NO CORRELATIONS\n";
+    //std::cerr << "WARNING: THIS VERSION OF CASM CANNOT PRODUCE CLUSTER FUNCTIONS!! YOU WILL HAVE NO CORRELATIONS\n";
     // BasisSet::construct_invariant_cluster_polynomials() does the heavy lifting
     //clust_basis.construct_invariant_cluster_polynomials(site_args, global_args, clust_group, permute_group, max_poly_order);
     clust_basis.construct_invariant_polynomials(arg_subsets, clust_group(), max_poly_order, 1);

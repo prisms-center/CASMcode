@@ -168,9 +168,7 @@ namespace CASM {
     //      return new DiscreteDoF(*this);
     //}
 
-    virtual Index size()const {
-      return 0;
-    }
+    virtual Index size() const = 0;
 
     //John G 050513
     //Make an operator for this
@@ -217,10 +215,10 @@ namespace CASM {
       DiscreteDoF(_name, _current_state, SymGroupRepID::identity(_domain.size())), m_domain(_domain) { }
 
     OccupantDoF(const Array<T> &_domain, int _current_state = 0) :
-      DiscreteDoF("occupation", _current_state, SymGroupRepID::identity(_domain.size())), m_domain(_domain) { }
+      DiscreteDoF("occupation_occ", _current_state, SymGroupRepID::identity(_domain.size())), m_domain(_domain) { }
 
     OccupantDoF(std::initializer_list<T> _domain, int _current_state = 0) :
-      DiscreteDoF("occupation", _current_state), m_domain(_domain.begin(), _domain.end()) {
+      DiscreteDoF("occupation_occ", _current_state), m_domain(_domain.begin(), _domain.end()) {
       set_sym_rep_ID(SymGroupRepID::identity(size()));
     }
 
@@ -296,7 +294,7 @@ namespace CASM {
       return m_domain[i];
     }
 
-    Index size()const {
+    Index size() const override {
       return m_domain.size();
     }
 

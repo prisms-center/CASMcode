@@ -204,7 +204,7 @@ namespace CASM {
       else
         m_sub_strings.back().push_back(_template[i]);
     }
-    std::cout << "substring expression: " << m_sub_strings << " and bset_name is " << m_bset_name << '\n';
+    //std::cout << "substring expression: " << m_sub_strings << " and bset_name is " << m_bset_name << '\n';
   }
 
   //*******************************************************************************************

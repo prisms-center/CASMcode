@@ -118,8 +118,9 @@ namespace CASM {
         m_dof_IDs.push_back(RHS.m_dof_IDs[i]);
         m_dof_subbases.push_back(SubBasis());
       }
-      m_dof_subbases[ID_ind].reserve(m_dof_subbases[ID_ind].size() + RHS.m_dof_subbases[i].size());
+
       for(Index j = 0; j < RHS.m_dof_subbases[i].size(); j++) {
+        //std::cout << "*** Push back " << j << " to subbases " << ID_ind << " value " << RHS.m_dof_subbases[i][j] + size() << "\n\n";
         m_dof_subbases[ID_ind].push_back(RHS.m_dof_subbases[i][j] + size());
       }
     }
@@ -140,10 +141,12 @@ namespace CASM {
     }
 
     //Convert RHS.min_poly_order() and RHS.max_poly_order into polynomial constraints
-    if(RHS.min_poly_order() > 0)
+    if(RHS.min_poly_order() > 0) {
       _min_poly_constraints().push_back(PolyConstraint(Array<Index>::sequence(size(), size() + RHS.size() - 1), RHS.min_poly_order()));
-    if(valid_index(RHS.max_poly_order()))
+    }
+    if(valid_index(RHS.max_poly_order())) {
       _max_poly_constraints().push_back(PolyConstraint(Array<Index>::sequence(size(), size() + RHS.size() - 1), RHS.max_poly_order()));
+    }
     for(Index i = 0; i < RHS.size(); i++) {
       if(!RHS[i])
         push_back(nullptr);
@@ -388,18 +391,23 @@ namespace CASM {
   void BasisSet::construct_invariant_polynomials(const Array<BasisSet const *> &tsubs, const SymGroup &head_group, Index order, Index min_dof_order) {
 
     _set_arguments(tsubs);
-    std::cout << "Constructing invariant polynomials from DoFs:\n";
+    //std::cout << "Constructing invariant polynomials from DoFs:\n";
     for(Index i = 0; i < tsubs.size(); ++i) {
       if((tsubs[i]->basis_symrep_ID()).empty()) {
         tsubs[i]->get_symmetry_representation(head_group);
       }
-
-      std::cout << tsubs[i]->name() << "  ";
-
+      //std::cout << tsubs[i]->name() << "  ";
     }
-    std::cout << "\n\n";
-    std::cout << "dof_IDs are: " << dof_IDs() << "\n\n";
-    std::cout << "dof_sub_bases are: " << dof_sub_bases() << "\n\n";
+
+    if(tsubs.size() == 0 && min_poly_order() < 1) {
+      PolyTrie<double> ttrie(0);
+      ttrie(Array<Index>(0)) = 1.0;
+      push_back(new PolynomialFunction(m_argument, ttrie));
+      return;
+    }
+    //std::cout << "\n\n";
+    //std::cout << "dof_IDs are: " << dof_IDs() << "\n\n";
+    //std::cout << "dof_sub_bases are: " << dof_sub_bases() << "\n\n";
     PolynomialFunction *tpoly;
     Array<Index> curr_exp;
     typedef BasisSet::SubBasis SubBasis;
@@ -411,7 +419,7 @@ namespace CASM {
       SubBasis big_sub_basis;
       Index offset = 0;
       for(Index j = 0; j < tsubs.size(); j++) {
-        std::cout << "dof_IDs of tsub " << j << " are " << tsubs[j]->dof_IDs() << "\n";
+        //std::cout << "dof_IDs of tsub " << j << " are " << tsubs[j]->dof_IDs() << "\n";
         Index ID_ind = (tsubs[j]->dof_IDs()).find(dof_IDs()[i]);
         if(ID_ind == (tsubs[j]->dof_IDs()).size())
           continue;
@@ -421,7 +429,7 @@ namespace CASM {
         }
         offset += tsubs[j]->size();
       }
-      std::cout << "Adding min constraint: " << big_sub_basis << ":  " << min_dof_order << "\n";
+      //std::cout << "Adding min constraint: " << big_sub_basis << ":  " << min_dof_order << "\n";
       add_min_poly_constraint(big_sub_basis, min_dof_order);
     }
     //\ end DoFset constraints
@@ -433,7 +441,7 @@ namespace CASM {
       if(valid_index(tsubs[i]->max_poly_order()))
         final_order[i] = tsubs[i]->max_poly_order();
     }
-    std::cout << "order_count from: " << initial_order << " to final order: " << final_order << "\n\n";
+    //std::cout << "order_count from: " << initial_order << " to final order: " << final_order << "\n\n";
     OrderCount order_count(initial_order, final_order, 1, order);
 
     ExpCount exp_count;
@@ -471,10 +479,10 @@ namespace CASM {
       }
     }
     Gram_Schmidt();
-    accept(SubExpressionLabeler("CCD", "Q_%n[%f]"));
-    std::cout << "Result, with " << size() << " invariant functions:\n";
-    for(Index i = 0; i < size(); i++)
-      std::cout << "F_" << i << " = " << at(i)->tex_formula() << "\n\n";
+
+    //std::cout << "Result, with " << size() << " invariant functions:\n";
+    //for(Index i = 0; i < size(); i++)
+    //std::cout << "F_" << i << " = " << at(i)->tex_formula() << "\n\n";
     return;
   }
 
@@ -502,11 +510,17 @@ namespace CASM {
                                                           const SymGroup &symgroup) {
 
     m_argument.clear();
-    if(!allowed_occs.is_locked()) {
-      set_dof_IDs(Array<Index>(1, allowed_occs.ID()));
-    }
     m_max_poly_order = 1;
     Index N = allowed_occs.size();
+    if(N <= 1) {
+      m_basis_symrep_ID = SymGroupRepID::identity(0);
+      return;
+    }
+
+    if(!allowed_occs.is_locked()) {
+      set_dof_IDs(Array<Index>(1, allowed_occs.ID()));
+      m_dof_subbases[0] = Array<Index>::sequence(0, N - 2);
+    }
     //std::cout << "INSIDE construct_orthonormal_discrete_functions and gram_mat is \n";
     //std::cout << gram_mat << "\n\n";
     if(!almost_zero(Eigen::MatrixXd(gram_mat - gram_mat.transpose()))) {
@@ -531,22 +545,22 @@ namespace CASM {
 
     //Use SVD instead of eigendecomposition so that 'U' and 'V' matrices are orthogonal
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> teig(gram_mat, Eigen::ComputeEigenvectors);
-    Eigen::MatrixXd inv_sqrtE(Eigen::MatrixXd::Zero(N, N));
-    for(Index i = 0; i < N; i++) {
-      if(almost_zero(teig.eigenvalues()[i]) || teig.eigenvalues()[i] < 0) {
-        // we could 'fix' gram_mat, but that could cause mysterious behavior - leave it to the user
-        std::cerr << "CRITICAL ERROR: Passed a Gram Matrix to BasisSet::construct_orthonormal_discrete_functions that is not positive-definite.\n"
-                  << "                Gram Matrix is:\n" << gram_mat << "\nExiting...\n";
-        exit(1);
-      }
-      inv_sqrtE(i, i) = 1.0 / sqrt(teig.eigenvalues()[i]);
+    if(teig.eigenvalues().minCoeff() < TOL) {
+      // we could 'fix' gram_mat, but that could cause mysterious behavior - leave it to the user
+      std::cerr << "CRITICAL ERROR: Passed a Gram Matrix to BasisSet::construct_orthonormal_discrete_functions that is not positive-definite.\n"
+                << "                Gram Matrix is:\n" << gram_mat << "\nSmallest Eigenvalue = " << teig.eigenvalues().minCoeff() << "; Exiting...\n";
+      exit(1);
     }
 
-    // B matrix is matrix square root of gram_mat.inverse(). Its columns form an orthonormal basis
-    // wrt gram_mat but it is ill-suited for our purposes.
-    Eigen::MatrixXd B(teig.eigenvectors()*inv_sqrtE * teig.eigenvectors().inverse());
+    // B matrix is matrix square root of gram_mat.inverse(). Its columns form an orthonormal basis wrt gram_mat
+    // In other words,
+    //         B = V*(1.0/sqrt(D))*V.inverse()
+    // where V is matrix of eigenvectors (as columns) of gram_mat and D is diagonal matrix of eigenvalues of gram_mat
+    // B is not ideally oriented for our purposes, so the rest of the algorithm will be focused on fixing the orientation
+    Eigen::MatrixXd B = teig.eigenvectors() * (teig.eigenvalues().array().cwiseInverse().cwiseSqrt().matrix().asDiagonal()) * teig.eigenvectors().inverse();
 
-    // ** step 2: Make seed basis. This will be used to seed optimized transformation of 'B'
+
+    // ** step 2: Make seed basis. This will be used to seed optimized orientation of 'B'
     Eigen::MatrixXd tseed(Eigen::MatrixXd::Zero(N, N));
     Eigen::MatrixXd::Index max_ind(0);
     if(conc_vec.maxCoeff(&max_ind) < 0.75) {
@@ -565,6 +579,7 @@ namespace CASM {
       tseed = tcos_table.householderQr().householderQ();
     }
     else {
+      // there is an outlier probability --> set seed matrix to occupation basis, with specis 'i==max_ind' as solvent
       Eigen::MatrixXd::Index curr_i(0);
       for(Eigen::MatrixXd::Index i = 0; i < B.rows(); i++) {
         tseed(i, 0) = 1;
@@ -590,10 +605,28 @@ namespace CASM {
 
     // Columns of B are our basis functions, orthonormal wrt gram_mat
     for(Index i = 1; i < N; i++) {
-      OccupantFunction tOF(allowed_occs, B.col(i), size(), basis_ind, allowed_occs.sym_rep_ID());
+      int sign_change = 1;
+      double max_abs(0.0);
+      // The sign of each OccupantFunction is ambiguous, so we use a convention
+      // Force sign convention max(function(occupation))=max(abs(function(occupation)))
+      // If multiple occupations evaluate to the same abs(phi) and it is the maximal abs(phi),
+      // then use convention that the last occurence is positive
+      // It IS confusing, but here's a simple example:
+      //
+      //    phi(occ) = {-1, 0, 1}  is always preferred over phi_alt(occ) = {1, 0, -1}
+      //
+      // even though they are otherwise both equally valid basis functions
+      for(Index j = 0; j < B.rows(); j++) {
+        if(std::abs(B(j, i)) > (max_abs - TOL)) {
+          max_abs = std::abs(B(j, i));
+          sign_change = sgn(B(j, i));
+        }
+      }
+      OccupantFunction tOF(allowed_occs, double(sign_change)*B.col(i), size(), basis_ind, allowed_occs.sym_rep_ID());
 
       push_back(tOF.copy());
     }
+
     // ** step 4: Calculate BasisSet symmetry representation, based on allowed_occs.sym_rep_ID() && B matrix
     // Q*B.T=B.T*S, where we know S (how to transform a column vector), and we want Q (how to transform row vector)
     // so Q=B.T*S*inv(B.T)
