@@ -321,9 +321,8 @@ namespace CASM {
     return *this;
   }
 
-
   //********************************************
-  void SiteCluster::print_clust_basis(std::ostream &stream, int space, char delim, COORD_TYPE mode) const {
+  void SiteCluster::print_clust_basis(std::ostream &stream, Index begin_ind, int space, char delim, COORD_TYPE mode) const {
     if(mode == COORD_DEFAULT)
       mode = COORD_MODE::CHECK();
     COORD_MODE C(mode);
@@ -344,7 +343,7 @@ namespace CASM {
     BasisSet tbasis(clust_basis);
     tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
     for(Index i = 0; i < tbasis.size(); i++) {
-      stream << "              \\Phi_" << i + 1 << " = " << tbasis[i]->tex_formula() << std::endl;
+      stream << "              \\Phi_" << begin_ind + i << " = " << tbasis[i]->tex_formula() << std::endl;
     }
   }
 

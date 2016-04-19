@@ -54,7 +54,9 @@ namespace CASM {
     ///Extracts bits in bitstring corresponding to the cluster and returns them as an array
     ReturnArray<int> get_occ_array(const Array<int> &bitstring) const;
 
-    void print_clust_basis(std::ostream &stream, int space, char delim = 0, COORD_TYPE mode = COORD_DEFAULT) const;
+    /// Print cluster with basis_index and nlist_index (from 0 to size()-1), followed by cluster basis functions
+    /// Functions are labeled \Phi_{i}, starting from i = @param begin_ind
+    void print_clust_basis(std::ostream &stream, Index begin_ind = 0, int space = 18, char delim = 0, COORD_TYPE mode = COORD_DEFAULT) const;
 
     jsonParser &to_json(jsonParser &json) const;
     void from_json(const jsonParser &json);
