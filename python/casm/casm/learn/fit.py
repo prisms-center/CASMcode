@@ -48,6 +48,7 @@ def example_input_Lasso():
   input["cv"]["method"] = "KFold"
   input["cv"]["kwargs"] = dict()
   input["cv"]["kwargs"]["n_folds"] = 10
+  input["cv"]["kwargs"]["shuffle"] = True
   input["cv"]["penalty"] = 0.0
   
   # hall of fame
@@ -85,6 +86,7 @@ def example_input_LassoCV():
   input["cv"]["method"] = "KFold"
   input["cv"]["kwargs"] = dict()
   input["cv"]["kwargs"]["n_folds"] = 10
+  input["cv"]["kwargs"]["shuffle"] = True
   input["cv"]["penalty"] = 0.0
   
   # hall of fame
@@ -454,21 +456,18 @@ def print_input_help():
   #
   #     Note: The 'LinearRegression' estimator is implemented using 
   #     casm.learn.linear_model.LinearRegressionForLOOCV', which solves X*b=y using:
-  #       b = np.dot(S, y)
   #       S = np.linalg.pinv(X.transpose().dot(X)).dot(X.transpose())
-  #       y_pred = np.dot(H, y)
+  #       b = np.dot(S, y)
   #       H = np.dot(X, S)
+  #       y_pred = np.dot(H, y)
   #
   #     Note: When the estimator is 'LinearRegression', the 'LeaveOneOut' 
   #     cross-validation score is calculated via:
   #
   #       LOOCV = np.mean(((y - y_pred)/(1.0 - np.diag(H)))**2)
-  #       (see estimator description for definition of H) 
   #
   # kwargs: dict or null, optional, default=dict()
   #   Additional parameters to be used to construct the cross-validation method constructor.
-  #
-  #     By default, the kwarg "shuffle" is set to True.
   #
   # penalty: float, optional, default=0.0
   #   The CV score is increased by 'penalty*(number of selected basis function)'
