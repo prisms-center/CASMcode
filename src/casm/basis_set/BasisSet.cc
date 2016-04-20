@@ -348,6 +348,40 @@ namespace CASM {
 
   //*******************************************************************************************
 
+  std::vector< std::set<Index> > BasisSet::independent_sub_bases() const {
+    std::vector< std::set<Index> > result;
+    std::vector<bool> unclaimed(size(), true);
+    for(Index i = 0; i < dof_sub_bases().size(); i++) {
+      if(dof_sub_basis(i).size() == 0)
+        continue;
+      Index j = 0;
+      for(j = 0; j < result.size(); j++) {
+        if(result[j].find(dof_sub_basis(i)[0]) != result[j].end()) {
+          break;
+        }
+      }
+      if(j == result.size())
+        result.emplace_back();
+      for(Index k = 0; k < dof_sub_basis(i).size(); k++) {
+        unclaimed[dof_sub_basis(i)[k]] = false;
+        result[j].insert(dof_sub_basis(i)[k]);
+      }
+    }
+    bool has_unclaimed = false;
+    for(Index i = 0; i < unclaimed.size(); i++) {
+      if(unclaimed[i]) {
+        if(!has_unclaimed) {
+          result.emplace_back();
+          has_unclaimed = true;
+        }
+        result.back().insert(i);
+      }
+    }
+    return result;
+  }
+
+  //*******************************************************************************************
+
   int BasisSet::register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles) {
     int sum(0);
     for(Index i = 0; i < size(); i++)

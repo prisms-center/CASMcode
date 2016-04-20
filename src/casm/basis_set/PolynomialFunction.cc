@@ -850,17 +850,25 @@ namespace CASM {
     //std::cout << "Scalar product of depth " << m_coeffs.depth() << " and depth " << RHS.m_coeffs.depth() << "\n";
     //std::cout << "               arg_size " << num_args() << " and arg_size " << RHS.num_args() << "\n";
     PolyTrie<double>::const_iterator it(RHS.m_coeffs.begin()), it_end(RHS.m_coeffs.end());
+    std::vector<std::vector<std::set<Index> > > indep;
+    indep.reserve(m_argument.size());
+    for(Index i = 0; i < m_argument.size(); i++)
+      indep.push_back(m_argument[i]->independent_sub_bases());
+
     for(; it != it_end; ++it) {
       tprod = (*it) * m_coeffs.get(it.key());
       if(almost_zero(tprod, TOL * TOL))
         continue;
       Index l = 0;
-
-      for(Index i = 0; i < m_argument.size(); i++) {
-        texp.clear();
-        for(Index ii = 0; ii < m_argument[i]->size(); ii++)
-          texp.push_back(it.key()[l++]);
-        tprod /= multinomial_coeff(texp);
+      for(Index i = 0; i < indep.size(); i++) {
+        for(auto const &indep_set : indep[i]) {
+          texp.clear();
+          for(Index const &func_ind : indep_set) {
+            texp.push_back(it.key()[l + func_ind]);
+          }
+          tprod /= multinomial_coeff(texp);
+        }
+        l += m_argument[i]->size();
       }
       prod_result += tprod;
     }

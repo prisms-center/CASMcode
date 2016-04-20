@@ -1767,7 +1767,7 @@ namespace CASM {
             << '\n' << std::flush;
 
         out << "            " << "Prototype" << " of " << orbit(i, j).size() << " Equivalent Clusters in Orbit " << index[i][j] << '\n' << std::flush;
-        prototype(i, j).print_clust_basis(out, nf, 18, '\n');
+        prototype(i, j).print_clust_basis(out, nf, 8, '\n');
         nf += prototype(i, j).clust_basis.size();
         out << "\n\n" << std::flush;
       }
