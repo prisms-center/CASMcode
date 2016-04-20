@@ -1091,8 +1091,6 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
       
   
   """
-  print "verbose:", verbose
-  
   # construct FittingData
   fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
     
