@@ -87,6 +87,5 @@ def cross_val_score(estimator, X, individual, y=None, scoring=None, cv=None, pen
     scoring=scoring,
     cv=cv,
     fit_params=fit_params)
-  
   return sqrt(np.mean(scores)) + penalty*sum(individual),
   

@@ -17,6 +17,8 @@ if __name__ == "__main__":
   parser.add_argument('--exLassoCV', help='Print example input file using LassoCV', action="store_true")
   parser.add_argument('--exRFE', help='Print example input file using Recursive Feature Elimination (RFE)', action="store_true")
   parser.add_argument('--exGeneticAlgorithm', help='Print example input file using GeneticAlgorithm', action="store_true")
+  parser.add_argument('--exIndividualBestFirst', help='Print example input file using IndividualBestFirst', action="store_true")
+  parser.add_argument('--exPopulationBestFirst', help='Print example input file using PopulationBestFirst', action="store_true")
   parser.add_argument('--hall', help='Print hall of fame summary', action="store_true")
   parser.add_argument('--indiv', nargs='+', help='Print individual summary. Expects index of individual in hall of fame', type=int)
   parser.add_argument('--select', nargs=1, help='Select individual to use', type=int)
@@ -38,6 +40,12 @@ if __name__ == "__main__":
     exit()
   elif args.exGeneticAlgorithm:
     print json.dumps(casm.learn.example_input_GeneticAlgorithm(), indent=2)
+    exit()
+  elif args.exIndividualBestFirst:
+    print json.dumps(casm.learn.example_input_IndividualBestFirst(), indent=2)
+    exit()
+  elif args.exPopulationBestFirst:
+    print json.dumps(casm.learn.example_input_PopulationBestFirst(), indent=2)
     exit()
   
   if args.settings:

@@ -11,19 +11,6 @@ import casm.learn.cross_validation
 import casm.learn.tools
 import pandas
 
-## This part needs to be in global scope for parallization #####################  
-from deap import creator
-from deap import base
-
-# we'll want to minimize a cv score
-creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-
-# each individual is a list of True or False indicating if each basis function should 
-# be included in the model
-creator.create("Individual", list, fitness=creator.FitnessMin, input=None)
-################################################################################  
-
-
 def _find_method(mods, attrname):
   for m in mods:
     if hasattr(m, attrname):
@@ -160,13 +147,109 @@ def example_input_GeneticAlgorithm():
     "mutFlipBitProb": 0.01, 
     "evolve_params_kwargs": {
       "n_generation": 10, 
-      "n_repetition": 10, 
+      "n_repetition": 100, 
       "n_features_init": 5, 
       "n_population": 100, 
       "halloffame_filename": "ga_halloffame.pkl", 
       "n_halloffame": 50
     }, 
     "cxUniformProb": 0.5
+  }
+  input["feature_selection"]["kwargs"] = d
+  
+  
+  # sample weighting
+  input["weight"] = dict()
+  input["weight"]["method"] = "wHullDist"
+  input["weight"]["kwargs"] = dict()
+  input["weight"]["kwargs"]["A"] = 0.0
+  input["weight"]["kwargs"]["B"] = 1.0
+  input["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  input["cv"] = dict()
+  input["cv"]["method"] = "LeaveOneOut"
+  input["cv"]["penalty"] = 0.0
+  
+  # hall of fame
+  input["n_halloffame"] = 25
+  
+  return input
+
+
+def example_input_IndividualBestFirst():
+  input = dict()
+  
+  # regression estimator
+  input["estimator"] = dict()
+  input["estimator"]["method"] = "LinearRegression"
+  
+  # feature selection
+  input["feature_selection"] = dict()
+  input["feature_selection"]["method"] = "IndividualBestFirst"
+  d = {
+    "constraints_kwargs": { 
+      "n_features_max": "all", 
+      "n_features_min": 5, 
+      "fix_off": [], 
+      "fix_on": []
+    }, 
+    "evolve_params_kwargs": {
+      "n_generation": 10, 
+      "n_repetition": 100, 
+      "n_features_init": 5, 
+      "n_population": 10, 
+      "halloffame_filename": "indiv_bestfirst_halloffame.pkl", 
+      "n_halloffame": 50
+    }
+  }
+  input["feature_selection"]["kwargs"] = d
+  
+  
+  # sample weighting
+  input["weight"] = dict()
+  input["weight"]["method"] = "wHullDist"
+  input["weight"]["kwargs"] = dict()
+  input["weight"]["kwargs"]["A"] = 0.0
+  input["weight"]["kwargs"]["B"] = 1.0
+  input["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  input["cv"] = dict()
+  input["cv"]["method"] = "LeaveOneOut"
+  input["cv"]["penalty"] = 0.0
+  
+  # hall of fame
+  input["n_halloffame"] = 25
+  
+  return input
+
+
+def example_input_PopulationBestFirst():
+  input = dict()
+  
+  # regression estimator
+  input["estimator"] = dict()
+  input["estimator"]["method"] = "LinearRegression"
+  
+  # feature selection
+  input["feature_selection"] = dict()
+  input["feature_selection"]["method"] = "PopulationBestFirst"
+  d = {
+    "constraints_kwargs": { 
+      "n_features_max": "all", 
+      "n_features_min": 5, 
+      "fix_off": [], 
+      "fix_on": []
+    }, 
+    "evolve_params_kwargs": {
+      "n_generation": 10, 
+      "n_repetition": 100, 
+      "n_features_init": 5, 
+      "n_population": 50, 
+      "halloffame_filename": "pop_bestfirst_halloffame.pkl", 
+      "n_halloffame": 50
+    }
   }
   input["feature_selection"]["kwargs"] = d
   
@@ -428,35 +511,37 @@ def print_input_help():
   #          Number of generations between saving the hall of fame.
   #
   #       "n_repetition": int, optional, default=100
-  #           Number of repetitions of n_generation generations. Each repetition 
-  #           begins with the existing final population.
+  #          Number of repetitions of n_generation generations. Each repetition 
+  #          begins with the existing final population.
   #
   #       "n_features_init: int or "all", optional, default=0
-  #           Number of randomly selected features to initialize each individual 
-  #           with.
+  #          Number of randomly selected features to initialize each individual 
+  #          with.
   #
   #       "selTournamentSize": int, optional, default=3
-  #           Tournament size. A larger tournament size weeds out less fit 
-  #           individuals more quickly, while a smaller tournament size weeds out 
-  #           less fit individuals more gradually.
+  #          Tournament size. A larger tournament size weeds out less fit 
+  #          individuals more quickly, while a smaller tournament size weeds out 
+  #          less fit individuals more gradually.
   #
   #       "cxUniformProb": float, optional, default=0.5
-  #           Probability of swapping bits during mating.
+  #          Probability of swapping bits during mating.
   #
   #       "mutFlipBitProb": float, optional, default=0.01 
-  #           Probability of mutating bits
+  #          Probability of mutating bits
   #
   #       "constraints": dict, optional, default=dict()
-  #           Keyword arguments for setting constraints on allowed individuals. 
-  #           See below for options.
+  #          Keyword arguments for setting constraints on allowed individuals. 
+  #          See below for options.
   #
   #
-  #   coming soon:
-  #   "IndividualBestFirst": Best first search optimization for each individual 
-  #     in the initial population. At each step, all the 'children' that differ
-  #     by +/- 1 selected basis function are evaluated and the most fit child
-  #     of each child is chosen to replace it's parent, until the CV score is 
-  #     minimized.
+  #   "IndividualBestFirst": 
+  #     Implements a best first search optimization for each individual in the initial 
+  #     population. Each individual in the population is minimized by repeatedly begin 
+  #     replaced by its most fit child.
+  #
+  #     Children are generated by generating all the individual that differ from
+  #     the parent by +/- 1 selected feature. 
+  #
   #
   #     Options for "kwargs":
   #
@@ -467,26 +552,30 @@ def print_input_help():
   #       "n_generation": int, optional, default=10
   #          Number of generations between saving the hall of fame.
   #
-  #       "n_repetition": int, optional, default=10
-  #          Number of repetitions for minimizing n_population individuals. Each 
-  #          repetition begins with a new population of random individuals.
+  #       "n_repetition": int, optional, default=100
+  #          Number of repetitions of n_generation generations. Each repetition 
+  #          begins with the existing final population.
   #
   #       "n_features_init: int, optional, default=5
   #          Number of randomly selected features to initialize each individual 
   #          with.
   #
   #       "constraints": dict, optional, default=dict()
-  #           Keyword arguments for setting constraints on allowed individuals. 
-  #           See below for options.
+  #          Keyword arguments for setting constraints on allowed individuals. 
+  #          See below for options.
   #
   #
-  #   coming soon:
-  #   "PopulationBestFirst": Each individual is associated with a 'status' that 
-  #     is '1' if that individuals children have been evaluated, and '0' if they  
-  #     have not been evaluated. At each step, the children of the most fit 
-  #     individual with status '0' are evaluated and the population is updated to 
-  #     keep only the 'n_population' most fit individuals. The algorithm stops when all 
-  #     individuals in the population have status '1'.
+  #   "PopulationBestFirst": 
+  #     Implements a best first search optimization for a population of individual
+  #     solutions. Each individual is associated with a 'status' that indicates
+  #     whether it has had children yet or not. At each step, the most fit individual
+  #     that hasn't had children has children and the population is updated to keep
+  #     only the 'n_population' most fit individuals. The algorithm stops when all 
+  #     individuals in the population have had children.
+  #
+  #     Children are generated by generating all the individual that differ from
+  #     the parent by +/- 1 selected feature. 
+  #     
   #
   #     Options for "kwargs":
   #
@@ -498,17 +587,17 @@ def print_input_help():
   #       "n_generation": int, optional, default=10
   #          Number of generations between saving the hall of fame.
   #
-  #       "n_repetition": int, optional, default=10
-  #          Number of repetitions for minimizing the population. Each repetition 
-  #          begins with a new population of random individuals.
+  #       "n_repetition": int, optional, default=100
+  #          Number of repetitions of n_generation generations. Each repetition 
+  #          begins with the existing final population.
   #
   #       "n_features_init: int, optional, default=5
   #          Number of randomly selected features to initialize each individual 
   #          with.
   #
   #       "constraints": dict, optional, default=dict()
-  #           Keyword arguments for setting constraints on allowed individuals. 
-  #           See below for options.
+  #          Keyword arguments for setting constraints on allowed individuals. 
+  #          See below for options.
   #
   #   The evolutionary algorithms have an optional set of "constraints" parameters
   #   that may restrict the number of basis functions selected to some range, or
@@ -819,7 +908,7 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
       print json.dumps(input["cv"], indent=2), "\n"
     
     ## scoring
-    scoring = sklearn.metrics.make_scorer(sklearn.metrics.mean_squared_error, greater_is_better=False)
+    scoring = sklearn.metrics.make_scorer(sklearn.metrics.mean_squared_error, greater_is_better=True)
     
     ## penalty
     penalty = input["cv"].get("penalty", 0.0)
@@ -1006,13 +1095,13 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
   print "verbose:", verbose
   
   # construct FittingData
-  fdata = casm.learn.make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
+  fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
     
   # construct model used for fitting
-  estimator = casm.learn.make_estimator(input, verbose=verbose)
+  estimator = make_estimator(input, verbose=verbose)
   
   # feature selection
-  selector = casm.learn.make_selector(input, estimator, 
+  selector = make_selector(input, estimator, 
     scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty, verbose=verbose)
   
   if not hasattr(selector, "get_halloffame") and not hasattr(selector, "get_support"):
@@ -1040,16 +1129,17 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
     if hasattr(selector, "get_halloffame"):
       if verbose:
         print "Adding statistics..."
-      for i in xrange(len(selector.halloffame)):
-        casm.learn.add_individual_detail(selector.halloffame[i], estimator, fdata, selector, input)
+      selector_hall = selector.get_halloffame()
+      for i in xrange(len(selector_hall)):
+        add_individual_detail(selector_hall[i], estimator, fdata, selector, input)
       if verbose:
         print "  DONE\n"
       
       if verbose:
         print "Result:"
-      casm.learn.print_halloffame(selector.halloffame)
+      print_halloffame(selector_hall)
       
-      hall.update(selector.halloffame)
+      hall.update(selector_hall)
     
     elif hasattr(selector, "get_support"):
       indiv = casm.learn.creator.Individual(selector.get_support())
@@ -1058,13 +1148,13 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
       indiv.fitness.values = casm.learn.cross_validation.cross_val_score(
         estimator, fdata.weighted_X, indiv, 
         y=fdata.weighted_y, scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty)
-      casm.learn.add_individual_detail(indiv, estimator, fdata, selector, input)
+      add_individual_detail(indiv, estimator, fdata, selector, input)
       if verbose:
         print "  DONE\n"
       
       if verbose:
         print "Result:"
-      casm.learn.print_halloffame([indiv])
+      print_halloffame([indiv])
       
       hall.update([indiv])
     
@@ -1156,6 +1246,20 @@ def add_individual_detail(indiv, estimator, fdata, selector, input):
   return indiv
 
 
+def bitstr(indiv, n_bits_max=None):
+  if n_bits_max is None:
+    n_bits_max = len(indiv)
+  bitstr = ""
+  for j in range(min(len(indiv),n_bits_max)):
+    if indiv[j]:
+      bitstr += '1'
+    else:
+      bitstr += '0'
+  if len(indiv) > n_bits_max:
+    bitstr += "..." 
+  return bitstr
+  
+
 def print_population(pop):
   """ 
   Print all individual in a population.
@@ -1182,15 +1286,7 @@ def print_population(pop):
   print "-"*100
   form_str = "{0:5}: {1} {2:<12} {3:<12.8g}"
   for i in range(len(pop)):
-    bitstr = ""
-    for j in range(min(len(pop[i]),40)):
-      if pop[i][j]:
-        bitstr += '1'
-      else:
-        bitstr += '0'
-    if len(pop[i]) > 40:
-      bitstr += "..."  
-    print form_str.format(i, bitstr, sum(pop[i]), pop[i].fitness.values[0])
+    print form_str.format(i, bitstr(pop[i], 40), sum(pop[i]), pop[i].fitness.values[0])
 
 
 def to_json(index, indiv):
@@ -1229,13 +1325,7 @@ def to_json(index, indiv):
   
   """
   d = dict()
-  bitstr = ""
-  for j in xrange(len(indiv)):
-    if indiv[j]:
-      bitstr += '1'
-    else:
-      bitstr += '0'
-  d["selected"] = bitstr
+  d["selected"] = bitstr(indiv)
   d["index"] = index
   d["n_selected"] = sum(indiv)
   d["cv"] = indiv.fitness.values[0]
@@ -1303,15 +1393,7 @@ def _print_individual(index, indiv, format=None):
     else:
       bitstr_len = len(indiv)
     form_str = "{0:5}: {1:<" + str(bitstr_len) + "} {2:<12} {3:<12.8g} {4:<12.8g} {5:<12.8g} {6:<24} {7:<24} {8}"
-    bitstr = ""
-    for j in range(min(len(indiv),40)):
-      if indiv[j]:
-        bitstr += '1'
-      else:
-        bitstr += '0'
-    if len(indiv) > 40:
-      bitstr += "..."  
-    print form_str.format(index, bitstr, sum(indiv), indiv.fitness.values[0], 
+    print form_str.format(index, bitstr(indiv,40), sum(indiv), indiv.fitness.values[0], 
       indiv.rms, indiv.wrms, indiv.estimator_method, indiv.feature_selection_method, indiv.note)
     return
     
@@ -1322,14 +1404,7 @@ def _print_individual(index, indiv, format=None):
   elif format.lower() == "details":
     print "##"
     print "Index:", index
-    
-    bitstr = ""
-    for j in xrange(len(indiv)):
-      if indiv[j]:
-        bitstr += '1'
-      else:
-        bitstr += '0'
-    print "Selected:", bitstr
+    print "Selected:", bitstr(indiv)
     print "#Selected:", sum(indiv)
     print "CV:", indiv.fitness.values[0]
     print "RMS:", indiv.rms
