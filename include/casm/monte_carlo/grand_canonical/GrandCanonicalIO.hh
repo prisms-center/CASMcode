@@ -83,6 +83,9 @@ namespace CASM {
   /// \brief Will create (and possibly overwrite) new file with all observations from run with conditions.cond_index
   void write_trajectory(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index);
   
+  /// \brief For the initial state, write a POSCAR file.
+  void write_POSCAR_initial(const GrandCanonical& mc, Index cond_index);
+  
   /// \brief For the final state, write a POSCAR file.
   void write_POSCAR_final(const GrandCanonical& mc, Index cond_index);
   

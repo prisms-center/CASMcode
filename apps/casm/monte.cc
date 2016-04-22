@@ -25,6 +25,7 @@ namespace CASM {
       desc.add_options()
       ("help,h", "Print help message")
       ("settings,s", po::value<fs::path>(&settings_path)->required(), "The Monte Carlo input file. See 'casm format --monte'.")
+      ("initial-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print a POSCAR for the initial state of a monte carlo run.")
       ("final-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
       ("traj-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
 
@@ -45,6 +46,12 @@ namespace CASM {
                        "      settings.                                              \n" <<
                        "    - See 'casm format --monte' for a description of the     \n" <<
                        "      Monte Carlo input file.                                \n\n" <<
+                       
+                       "  casm monte --settings input_file.json --initial-POSCAR 3     \n" <<
+                       "    - Write a POSCAR.initial file containing the initial state of\n" <<
+                       "      the Monte Carlo calculation. The argument is a condition\n" <<
+                       "      index specifying which run is being requested.\n" <<
+                       "    - Written at: output_directory/conditions.3/trajectory/POSCAR.initial\n\n" <<
                        
                        "  casm monte --settings input_file.json --final-POSCAR 3     \n" <<
                        "    - Write a POSCAR.final file containing the final state of\n" <<
@@ -125,7 +132,19 @@ namespace CASM {
     
     if(monte_settings.ensemble() == Monte::ENSEMBLE::GrandCanonical) {
       
-      if(vm.count("final-POSCAR")) {
+      if(vm.count("initial-POSCAR")) {
+        try {
+          GrandCanonicalSettings gc_settings(settings_path);
+          const GrandCanonical gc(primclex, gc_settings);
+          write_POSCAR_initial(gc, condition_index);
+        }
+        catch(std::exception& e) {
+          std::cerr << "ERROR printing Grand Canonical Monte Carlo initial snapshot for condition: " << condition_index << "\n\n";
+          std::cerr << e.what() << std::endl;
+          return 1;
+        }
+      }
+      else if(vm.count("final-POSCAR")) {
         try {
           GrandCanonicalSettings gc_settings(settings_path);
           const GrandCanonical gc(primclex, gc_settings);

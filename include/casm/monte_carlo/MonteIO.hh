@@ -68,6 +68,11 @@ namespace CASM {
       return conditions_dir(cond_index) / "trajectory";
     }
     
+    /// \brief "output_dir/conditions.cond_index/trajectory/POSCAR.initial"
+    fs::path POSCAR_initial(int cond_index) {
+      return trajectory_dir(cond_index) / std::string("POSCAR.initial");
+    }
+    
     /// \brief "output_dir/conditions.cond_index/trajectory/POSCAR.final"
     fs::path POSCAR_final(int cond_index) {
       return trajectory_dir(cond_index) / std::string("POSCAR.final");
@@ -92,7 +97,7 @@ namespace CASM {
       return conditions_dir(cond_index) / "initial_state_runeq.json";
     }
     
-    /// \brief "output_dir/conditions.cond_index/final_state.json"
+    /// \brief "output_dir/conditions.cond_index/initial_state.json"
     ///
     /// - Initial state before first pass / step
     fs::path initial_state_json(int cond_index) const {

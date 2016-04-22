@@ -632,6 +632,32 @@ namespace CASM {
   }
   
 
+  /// \brief For the initial state, write a POSCAR file.
+  /// 
+  /// The current naming convention is 'POSCAR.initial'
+  void write_POSCAR_initial(const GrandCanonical& mc, Index cond_index) {
+    
+    GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
+    fs::create_directories(dir.trajectory_dir(cond_index));
+    
+    // read initial_state.json
+    ConfigDoF config_dof;
+    from_json(config_dof, jsonParser(dir.initial_state_json(cond_index)));
+    
+    if(!fs::exists(dir.initial_state_json(cond_index))) {
+      throw std::runtime_error(
+        std::string("ERROR in 'write_POSCAR_initial(const GrandCanonical &mc, Index cond_index)'\n") + 
+                    "  File not found: " + dir.initial_state_json(cond_index).string());
+    }
+    
+    // write file
+    fs::ofstream sout(dir.POSCAR_initial(cond_index));
+    VaspIO::PrintPOSCAR p(mc.supercell(), mc.configdof());
+    p.sort();
+    p.print(sout);
+    return;
+  }
+  
   /// \brief For the final state, write a POSCAR file.
   /// 
   /// The current naming convention is 'POSCAR.final'
