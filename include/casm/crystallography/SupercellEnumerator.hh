@@ -191,8 +191,35 @@ namespace CASM {
     /// \brief The past-the-last volume supercells to be iterated over (what cend uses)
     int m_end_volume;
   };
-
-
+  
+  
+  /// \brief Return a transformation matrix that ensures a supercell of at least 
+  ///        some volume
+  ///
+  /// \param unit The thing that is tiled to form supercells. May not be the 
+  ///        primitive cell.
+  /// \param T The transformation matrix of the unit, relative the prim. The  
+  ///        volume of the unit is determined from T.determinant().
+  /// \param point_grp Point group operations to use for checking supercell uniqueness.
+  /// \param volume The beginning volume to enumerate
+  /// \param end_volume The past-the-last volume to enumerate
+  /// \param fix_shape If true, enforce that S = T*m*I, where m is a scalar and
+  ///        I is the identity matrix.
+  ///
+  /// \returns M, a transformation matrix, S = T*M, where M is an integer matrix 
+  ///          and S.determinant() >= volume
+  ///
+  ///
+  template<typename UnitType>
+  Eigen::Matrix3i enforce_min_volume(
+      const UnitType& unit, 
+      const Eigen::Matrix3i& T, 
+      const SymGroup &point_grp, 
+      Index volume, 
+      bool fix_shape = false);
+  
+  
+  
   template<typename UnitType>
   SupercellIterator<UnitType>::SupercellIterator(const SupercellEnumerator<UnitType> &enumerator,
                                                  int volume) :
@@ -250,6 +277,11 @@ namespace CASM {
       m_super_updated = true;
     }
     return &m_super;
+  }
+
+  template<typename UnitType>
+  const Eigen::Matrix3i& SupercellIterator<UnitType>::matrix() const {
+    return m_current;
   }
 
   template<typename UnitType>
@@ -470,6 +502,15 @@ namespace CASM {
                                                     const SymGroup &point_grp,
                                                     size_type begin_volume,
                                                     size_type end_volume);
+  
+  template<>
+  Eigen::Matrix3i enforce_min_volume<Lattice>(
+      const Lattice& unit, 
+      const Eigen::Matrix3i& T, 
+      const SymGroup &point_grp, 
+      Index volume, 
+      bool fix_shape);
+
 
   /// \brief Return canonical hermite normal form of the supercell matrix, and op used to find it
   std::pair<Eigen::MatrixXi, Eigen::MatrixXd>

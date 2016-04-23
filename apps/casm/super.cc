@@ -22,6 +22,7 @@ namespace CASM {
     fs::path structfile;
     std::vector<fs::path> tmatfile, abs_tmatfile, config_path;
     fs::path abs_structfile;
+    Index min_vol;
     double tol;
     COORD_TYPE coordtype;
     po::variables_map vm;
@@ -68,6 +69,13 @@ namespace CASM {
       ("fixed-orientation", 
         "When constructing the superdupercell, do not consider other symmetrically "
         "equivalent orientations.")
+      
+      ("min-volume",
+        po::value<Index>(&min_vol),
+        "Ensure that the resulting supercell has volume >= V.")
+      
+      ("fixed-shape", 
+        "Use to prevent --min-volume from changing the shape of the resulting supercell.")
       
       ("verbose", 
         "When used with --duper, show how the input lattices are transformed "
@@ -307,6 +315,38 @@ namespace CASM {
         end = begin;
       }
       Lattice superduper = superdupercell(lat_only.begin(), lat_only.end(), begin, end);
+      
+      /// enforce a minimum volume
+      if(vm.count("min-volume")) {
+        
+        std::cout << "  Enforcing minimum volume: " << min_vol;
+        if(vm.count("fixed-shape")) {
+          std::cout << " (with fixed shape)";
+        }
+        std::cout << "\n\n";
+        
+        auto prim_lat = primclex.get_prim().lattice();
+        const SymGroup& pg = primclex.get_prim().point_group();
+        auto T = is_supercell(superduper, prim_lat, TOL).second;
+        
+        std::cout << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
+        
+        std::cout << "    Initial transformation matrix:\n" << T 
+                  << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
+        
+        auto M = enforce_min_volume(prim_lat, T, pg, min_vol, vm.count("fixed-shape"));
+        
+        superduper = niggli(make_supercell(superduper, M), pg, TOL);
+        
+        auto S = is_supercell(superduper, prim_lat, TOL).second;
+        
+        std::cout << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
+        
+        std::cout << "    Transformation matrix, after enforcing mininum volume:\n" 
+                  << S << "\n    (volume = " << (S).cast<double>().determinant() << ")\n\n";
+        
+      }
+      
       Index index = primclex.add_supercell(superduper);
       Supercell& superduper_scel = primclex.get_supercell(index);
       
@@ -377,9 +417,38 @@ namespace CASM {
       file.close();
 
       Eigen::Matrix3i T = Tm;
-
       std::cout << "Read transformation matrix, T: \n" << T << "\n\n";
-
+      
+      /// enforce a minimum volume
+      if(vm.count("min-volume")) {
+        
+        std::cout << "  Enforcing minimum volume: " << min_vol;
+        if(vm.count("fixed-shape")) {
+          std::cout << " (with fixed shape)";
+        }
+        std::cout << "\n\n";
+        
+        auto prim_lat = primclex.get_prim().lattice();
+        const SymGroup& pg = primclex.get_prim().point_group();
+        
+        std::cout << "    Initial transformation matrix:\n" << T 
+                  << "\n    (volume = " << T.determinant() << ")\n\n";
+        
+        auto M = enforce_min_volume(
+            primclex.get_prim().lattice(),
+            T,
+            pg,
+            min_vol,
+            vm.count("fixed-shape"));
+        
+        Lattice niggli_lat = niggli(make_supercell(prim_lat, T*M), pg, TOL);
+        auto T = is_supercell(niggli_lat, prim_lat, TOL).second;
+        
+        std::cout << "    Transformation matrix, after enforcing mininum volume:\n" 
+                  << T << "\n    (volume = " << T.determinant() << ")\n\n";
+      }
+      
+      
       // super lattice
       if(vm.count("scelname")) {
         
@@ -426,7 +495,7 @@ namespace CASM {
 
         BasicStructure<Site> super = unit.create_superstruc(make_supercell(unit.lattice(), T));
         super.title = std::string("Supercell of ") + con.name();
-
+        
         std::cout << "Super structure:";
         std::cout << "\n------\n";
         print(super);

@@ -31,6 +31,48 @@ namespace CASM {
     m_point_group(point_grp),
     m_begin_volume(begin_volume),
     m_end_volume(end_volume) {}
+  
+  
+  template<>
+  Eigen::Matrix3i enforce_min_volume<Lattice>(
+      const Lattice& unit, 
+      const Eigen::Matrix3i& T, 
+      const SymGroup &point_grp, 
+      Index volume, 
+      bool fix_shape) {
+    
+    if(fix_shape) {
+      auto init_vol = T.determinant();
+      Index m = 1;
+      while(m*m*m*init_vol < volume) {
+        ++m;
+      }
+    
+      return m*Eigen::Matrix3i::Identity();
+    }
+    else {
+      auto init_vol = T.determinant();
+      Index m = 1;
+      while(m*init_vol<volume) {
+        ++m;
+      }
+      
+      auto compactness = [](const Lattice& lat) {
+        Eigen::Matrix3d L = lat.lat_column_mat();
+        return (L.transpose()*L).trace();
+      };
+      
+      auto compare = [&](const Lattice& A, const Lattice& B) {
+        return compactness(A) < compactness(B);
+      };
+      
+      SupercellEnumerator<Lattice> scel(unit, point_grp, m, m+1);
+      auto best_it = std::min_element(scel.begin(), scel.end(), compare);
+      return best_it.matrix();
+    }
+    
+  }
+
 
   /// \brief Return canonical hermite normal form of the supercell matrix, and op used to find it
   ///
