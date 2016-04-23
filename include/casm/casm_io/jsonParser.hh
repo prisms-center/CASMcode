@@ -80,7 +80,7 @@ namespace CASM {
     /// Create a new empty jsonParser
     jsonParser() :
       json_spirit::mValue(json_spirit::mObject()) {}
-    
+
     /// Create a jsonParser from any other object for which 'to_json(t, json)' is defined
     ///
     /// To parse a std::string as JSON, rather than store it verbatim, use jsonParser::parse
@@ -88,7 +88,7 @@ namespace CASM {
     explicit jsonParser(T &t) {
       to_json(t, *this);
     }
-    
+
     /// Create a jsonParser from any other object for which 'to_json(t, json)' is defined
     ///
     /// To parse a std::string as JSON, rather than store it verbatim, use jsonParser::parse
@@ -177,13 +177,13 @@ namespace CASM {
 
     /// Returns const_iterator to beginning of JSON object or JSON array
     iterator begin();
-    
+
     /// Returns iterator to beginning of JSON object or JSON array
     const_iterator begin() const;
 
     /// Returns iterator to end of JSON object or JSON array
     iterator end();
-    
+
     /// Returns const_iterator to end of JSON object or JSON array
     const_iterator end() const;
 
@@ -246,7 +246,7 @@ namespace CASM {
     jsonParser &put_obj() {
       return *this = object();
     }
-    
+
     /// Puts new JSON object, from iterators over a range of values of type std::pair<std::string, T>
     template<typename Iterator>
     jsonParser &put_obj(Iterator begin, Iterator end);
@@ -260,16 +260,16 @@ namespace CASM {
     jsonParser &put_array(size_type N) {
       return *this = array(N);
     }
-    
+
     /// Puts new JSON array, using the same value
     template<typename T>
-    jsonParser &put_array(size_type N, const T& t);
-    
+    jsonParser &put_array(size_type N, const T &t);
+
     /// Puts new JSON array, from iterators
     template<typename Iterator>
-    jsonParser &put_array(Iterator begin, 
+    jsonParser &put_array(Iterator begin,
                           Iterator end,
-                          typename CASM_TMP::enable_if_iterator<Iterator>::type* = nullptr);
+                          typename CASM_TMP::enable_if_iterator<Iterator>::type * = nullptr);
 
     /// Puts 'null' JSON value
     jsonParser &put_null() {
@@ -279,28 +279,28 @@ namespace CASM {
     // ---- static Methods -------------------------------------
 
     /// Construct a jsonParser from a string containing JSON data
-    static jsonParser parse(const std::string& str) {
+    static jsonParser parse(const std::string &str) {
       std::stringstream ss;
       ss << str;
       return jsonParser(ss);
     }
-    
+
     /// Construct a jsonParser from a file containing JSON data
-    static jsonParser parse(const fs::path& path) {
+    static jsonParser parse(const fs::path &path) {
       return jsonParser(path);
     }
-    
+
     /// Construct a jsonParser from a stream containing JSON data
-    static jsonParser parse(std::istream& stream) {
+    static jsonParser parse(std::istream &stream) {
       return jsonParser(stream);
     }
-    
+
     /// Returns an empty json object
     static jsonParser object() {
       jsonParser json;
       return json = json_spirit::mValue(json_spirit::mObject());
     }
-    
+
     /// Puts new JSON object, from iterators over a range of values of type std::pair<std::string, T>
     template<typename Iterator>
     static jsonParser object(Iterator begin, Iterator end) {
@@ -319,19 +319,19 @@ namespace CASM {
       jsonParser json;
       return json = json_spirit::mValue(json_spirit::mArray(N));
     }
-    
+
     /// Puts new JSON array, using the same value
     template<typename T>
-    static jsonParser array(size_type N, const T& t) {
+    static jsonParser array(size_type N, const T &t) {
       jsonParser json;
       return json.put_array(N, t);
     }
-    
+
     /// Puts new JSON array, from iterators
     template<typename Iterator>
-    static jsonParser array(Iterator begin, 
+    static jsonParser array(Iterator begin,
                             Iterator end,
-                            typename CASM_TMP::enable_if_iterator<Iterator>::type* = nullptr) {
+                            typename CASM_TMP::enable_if_iterator<Iterator>::type * = nullptr) {
       jsonParser json;
       return json.put_array(begin, end);
     }
@@ -366,12 +366,12 @@ namespace CASM {
   jsonParser &to_json(const std::string &value, jsonParser &json);
   jsonParser &to_json(const char *value, jsonParser &json);
   jsonParser &to_json(const jsonParser &value, jsonParser &json);
-  
-  
+
+
   /// From JSON for basic types
   template<typename T>
   T from_json(const jsonParser &json);
-  
+
 
   template<> bool from_json<bool>(const jsonParser &json);
   template<> int from_json<int>(const jsonParser &json);
@@ -381,7 +381,7 @@ namespace CASM {
   template<> double from_json<double>(const jsonParser &json);
   template<> std::string from_json<std::string>(const jsonParser &json);
   template<> jsonParser from_json<jsonParser>(const jsonParser &json);
-  
+
   /// From JSON for basic types
   void from_json(bool &value, const jsonParser &json);
   void from_json(int &value, const jsonParser &json);
@@ -393,7 +393,7 @@ namespace CASM {
   void from_json(jsonParser &value, const jsonParser &json);
   void from_json(std::istream &stream, const jsonParser &json);
   void from_json(fs::path filename, const jsonParser &json);
-  
+
   /// Create a jsonParser from a stream
   inline void to_json(std::istream &stream, jsonParser &json) {
     if(!json.read(stream)) {
@@ -402,7 +402,7 @@ namespace CASM {
                     "For instance, try http://www.jsoneditoronline.org."));
     }
   }
-  
+
   /// Create a jsonParser by reading a file
   ///
   /// This function reads the contents of the file at 'file_path' as if it were JSON.
@@ -411,7 +411,7 @@ namespace CASM {
     if(!json.read(file_path)) {
       throw std::runtime_error(
         std::string("ERROR: Could not read JSON file: '") + file_path.string() +
-          "'.\n\nPlease check your formatting. For instance, try http://www.jsoneditoronline.org.");
+        "'.\n\nPlease check your formatting. For instance, try http://www.jsoneditoronline.org.");
     }
   }
 
@@ -436,7 +436,7 @@ namespace CASM {
     }
   }
 
-  
+
   /// To JSON for std::pair<std::string, T>
   template<typename Key, typename T>
   jsonParser &to_json(const std::pair<Key, T> &value, jsonParser &json);
@@ -454,14 +454,14 @@ namespace CASM {
   /// as needed.
   template<typename ReturnType>
   struct jsonConstructor {
-    
+
     /// \brief Default from_json is equivalent to \code CASM::from_json<ReturnType>(json) \endcode
-    static ReturnType from_json(const jsonParser& json) {
+    static ReturnType from_json(const jsonParser &json) {
       return CASM::from_json<ReturnType>(json);
     }
   };
 
-  
+
   /// Default works if T::T(args...) and 'void from_json(T&, const jsonParser&)' exist
   template<typename T>
   T from_json(const jsonParser &json) {
@@ -470,11 +470,11 @@ namespace CASM {
     return value;
   }
 
-  
+
   /// Return the location at which jsonParser 'A' != 'B' as a boost::filesystem::path
   boost::filesystem::path find_diff(const jsonParser &A, const jsonParser &B, boost::filesystem::path diff = boost::filesystem::path());
-        
-  
+
+
   /// jsonParser bidirectional Iterator class
   ///   Can iterate over a JSON object or JSON array or JSON value (though this is only one value)
   ///   When iterating over a JSON object, can return the 'name' of the current 'name':value pair being pointed at
@@ -674,29 +674,29 @@ namespace CASM {
 
   /// Get data from json, using one of several alternatives
   ///
-  /// Use for any type T for which the either of the following is specialized   
+  /// Use for any type T for which the either of the following is specialized
   /// (they are called in the following order):
-  /// - \code 
-  ///   template<typename T> 
-  ///   template<typename...Args> 
+  /// - \code
+  ///   template<typename T>
+  ///   template<typename...Args>
   ///   T jsonConstructor<T>::from_json(const jsonParser& json, Args...args);
   ///   \endcode
-  /// - \code 
-  ///   template<typename T> 
-  ///   T from_json(const jsonParser &json); 
+  /// - \code
+  ///   template<typename T>
+  ///   T from_json(const jsonParser &json);
   ///   \endcode
   /// If neither is specialized, then this is equivalent to:
-  /// - \code 
+  /// - \code
   ///   T value;
   ///   from_json(value, *this);
   ///   return value;
   ///   \endcode
-  /// 
+  ///
   template<typename T, typename...Args>
   T jsonParser::get(Args... args) const {
     return jsonConstructor<T>::from_json(*this, args...);
   }
-  
+
   template<typename T, typename...Args>
   void jsonParser::get(T &t, Args... args) const {
     from_json(t, *this, args...);
@@ -728,37 +728,37 @@ namespace CASM {
   jsonParser &jsonParser::put(const T &value) {
     return to_json(value, *this);
   }
-  
+
   /// Puts new JSON object, from iterators over a range of values of type std::pair<std::string, T>
   template<typename Iterator>
-  jsonParser &jsonParser::put_obj(Iterator begin, 
+  jsonParser &jsonParser::put_obj(Iterator begin,
                                   Iterator end) {
     *this = object();
-    for(auto it=begin; it!=end; ++it) {
+    for(auto it = begin; it != end; ++it) {
       to_json(it->second, (*this)[it->first]);
     }
     return *this;
   }
-  
+
   /// Puts new JSON array, using the same value
   template<typename T>
-  jsonParser &jsonParser::put_array(size_type N, const T& t) {
+  jsonParser &jsonParser::put_array(size_type N, const T &t) {
     *this = array();
-    for(auto i=0; i<N; ++i) {
+    for(auto i = 0; i < N; ++i) {
       push_back(t);
     }
     return *this;
   }
-  
+
   /// Puts new JSON array, from iterators
   template<typename Iterator>
   jsonParser &jsonParser::put_array(
-    Iterator begin, 
+    Iterator begin,
     Iterator end,
-    typename CASM_TMP::enable_if_iterator<Iterator>::type*) {
-    
+    typename CASM_TMP::enable_if_iterator<Iterator>::type *) {
+
     *this = array();
-    for(auto it=begin; it!=end; ++it) {
+    for(auto it = begin; it != end; ++it) {
       push_back(*it);
     }
     return *this;

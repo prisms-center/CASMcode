@@ -37,7 +37,8 @@ namespace CASM {
      "Adjusts cost function for mapping optimization (cost=w*lattice_deformation+(1-w)*basis_deformation)")
     ("max-vol-change", po::value<double>(&vol_tol)->default_value(0.25),
      "Adjusts range of SCEL volumes searched while mapping imported structure onto ideal crystal (only necessary if the presence of vacancies makes the volume ambiguous). Default is +/- 25% of relaxed_vol/prim_vol. Smaller values yield faster import, larger values may yield more accurate mapping.")
-    ("force,f", "Force all configurations to update (otherwise, use timestamps to determine which configurations to update)");
+    ("force,f", "Force all configurations to update (otherwise, use timestamps to determine which configurations to update)")
+    ("strict,s", "Attempt to import exact configuration.");
 
     try {
       po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -75,7 +76,7 @@ namespace CASM {
       std::cerr << "Error in 'casm update': No casm project found." << std::endl;
       return 1;
     }
-    
+
     std::cout << "\n***************************\n" << std::endl;
 
     // initialize primclex
@@ -84,7 +85,7 @@ namespace CASM {
     std::cout << "  DONE." << std::endl << std::endl;
 
 
-    ConfigMapper configmapper(primclex, lattice_weight, vol_tol, ConfigMapper::rotate | ConfigMapper::robust, tol);
+    ConfigMapper configmapper(primclex, lattice_weight, vol_tol, ConfigMapper::rotate | ConfigMapper::robust | (vm.count("strict") ? ConfigMapper::strict : 0), tol);
     std::cout << "Reading calculation data... " << std::endl << std::endl;
     std::vector<std::string> bad_config_report;
     std::vector<std::string> prop_names = primclex.get_curr_property();
@@ -140,12 +141,21 @@ namespace CASM {
           //NOTE: reusing jsonParser to collect relaxation data
           json.put_obj();
           try {
-            new_config_flag = configmapper.import_structure_occupation(relaxed_struc,
-                                                                       &(*it),
-                                                                       imported_name,
-                                                                       json,
-                                                                       best_assignment,
-                                                                       cart_op);
+            if(vm.count("strict")) {
+              new_config_flag = configmapper.import_structure(relaxed_struc,
+                                                              imported_name,
+                                                              json,
+                                                              best_assignment,
+                                                              cart_op);
+            }
+            else {
+              new_config_flag = configmapper.import_structure_occupation(relaxed_struc,
+                                                                         &(*it),
+                                                                         imported_name,
+                                                                         json,
+                                                                         best_assignment,
+                                                                         cart_op);
+            }
           }
           catch(std::exception &e) {
             std::cerr << "\nError: Unable to map relaxed structure data contained in " << filepath << " onto PRIM.\n"
@@ -349,10 +359,12 @@ namespace CASM {
       }
 
     }
+
     if(num_updated > 0) {
       std::cout << "Writing to configuration database..." << std::endl << std::endl;
       primclex.write_config_list();
-    }    
+    }
+
     return 0;
   }
 }

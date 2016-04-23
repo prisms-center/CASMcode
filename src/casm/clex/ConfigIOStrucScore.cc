@@ -91,10 +91,10 @@ namespace CASM {
       BasicStructure<Site> relaxed_struc;
       ConfigDoF mapped_configdof;
       Lattice mapped_lat;
-      
-      auto lambda = [&](const std::vector<double>& result_vec) {
+
+      auto lambda = [&](const std::vector<double> &result_vec) {
         Eigen::VectorXd res = Eigen::VectorXd::Zero(result_vec.size());
-        for(Index i=0; i<res.size(); ++i) {
+        for(Index i = 0; i < res.size(); ++i) {
           res(i) = result_vec[i];
         }
         return res;
@@ -106,7 +106,7 @@ namespace CASM {
         for(Index i = 0; i < m_prop_names.size(); i++) {
           result_vec.push_back(1e9);
         }
-        
+
         return lambda(result_vec);
       }
       for(Index i = 0; i < m_prop_names.size(); i++) {
@@ -126,45 +126,45 @@ namespace CASM {
 
       return lambda(result_vec);
     }
-/*    
-    // ****************************************************************************************
-    void StrucScore::inject(const Configuration &_config, DataStream &_stream, Index) const {
-      if(!validate(_config)) {
-        _stream << DataStream::failbit << std::vector<double>(m_prop_names.size(), NAN);
-      }
-      else {
-        _stream << _evaluate(_config);
-      }
-    }
+    /*
+        // ****************************************************************************************
+        void StrucScore::inject(const Configuration &_config, DataStream &_stream, Index) const {
+          if(!validate(_config)) {
+            _stream << DataStream::failbit << std::vector<double>(m_prop_names.size(), NAN);
+          }
+          else {
+            _stream << _evaluate(_config);
+          }
+        }
 
-    // ****************************************************************************************
+        // ****************************************************************************************
 
-    void StrucScore::print(const Configuration &_config, std::ostream &_stream, Index) const {
-      _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      _stream.precision(8);
+        void StrucScore::print(const Configuration &_config, std::ostream &_stream, Index) const {
+          _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+          _stream.precision(8);
 
-      if(!validate(_config)) {
-        for(auto it = m_prop_names.cbegin(); it != m_prop_names.cend(); ++it)
-          _stream << "     unknown";
-      }
+          if(!validate(_config)) {
+            for(auto it = m_prop_names.cbegin(); it != m_prop_names.cend(); ++it)
+              _stream << "     unknown";
+          }
 
-      else {
-        std::vector<double> result_vec(_evaluate(_config));
-        for(auto it = result_vec.cbegin(); it != result_vec.cend(); ++it)
-          _stream << "     " << *it;
-      }
+          else {
+            std::vector<double> result_vec(_evaluate(_config));
+            for(auto it = result_vec.cbegin(); it != result_vec.cend(); ++it)
+              _stream << "     " << *it;
+          }
 
-    }
+        }
 
-    // ****************************************************************************************
+        // ****************************************************************************************
 
-    jsonParser &StrucScore::to_json(const Configuration &_config, jsonParser &json)const {
-      if(validate(_config))
-        json = _evaluate(_config);
+        jsonParser &StrucScore::to_json(const Configuration &_config, jsonParser &json)const {
+          if(validate(_config))
+            json = _evaluate(_config);
 
-      return json;
-    }
-*/
+          return json;
+        }
+    */
   }
 }
 

@@ -5,8 +5,8 @@
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/container/Permutation.hh"
 
-namespace CASM {
 
+namespace CASM {
   class PrimGrid;
 
   /// Permutation bidirectional Iterator class

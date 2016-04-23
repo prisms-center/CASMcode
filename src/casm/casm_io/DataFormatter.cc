@@ -6,10 +6,10 @@
 namespace CASM {
   //****************************************************************************************
 
-  std::string::const_iterator end_of_literal(std::string::const_iterator it,std::string::const_iterator end_it){
+  std::string::const_iterator end_of_literal(std::string::const_iterator it, std::string::const_iterator end_it) {
 
-    for(++it;it!=end_it; ++it){
-      if((*it)=='\'')
+    for(++it; it != end_it; ++it) {
+      if((*it) == '\'')
         return ++it;
     }
     return it;
@@ -23,7 +23,7 @@ namespace CASM {
                                   std::vector<std::string> &tag_names,
                                   std::vector<std::string> &sub_exprs) {
     std::string::const_iterator it(input_expr.cbegin()), it_end(input_expr.cend()), t_it1, t_it2;
-    bool is_literal=true;
+    bool is_literal = true;
     while(it != it_end) {
       while(it != it_end && (isspace(*it) || boost::is_any_of(",#")(*it)))
         ++it;
@@ -31,19 +31,19 @@ namespace CASM {
         break;
       // Identified a formatter tag, save starting iterator
       t_it1 = it;
-      if((*it)=='\''){
-        it=end_of_literal(it,it_end);
-        t_it2=it;
+      if((*it) == '\'') {
+        it = end_of_literal(it, it_end);
+        t_it2 = it;
         --t_it2;
-        if(t_it2==t_it1 || (*t_it2)!='\''){
+        if(t_it2 == t_it1 || (*t_it2) != '\'') {
           throw std::runtime_error("Mismatched quotation marks in expression:\n    \"" + input_expr + "\"\n");
         }
       }
-      else{
+      else {
         // find end of formatter tag
         while(it != it_end && !(isspace(*it) || (*it) == ',') && (*it) != '(' && (*it) != ')')
           ++it;
-        
+
         if(*it == ')')
           throw std::runtime_error("Mismatched parentheses in expression:\n    \"" + input_expr + "\"\n");
       }

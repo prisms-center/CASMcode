@@ -37,7 +37,7 @@ namespace CASM {
         if(vm.count("help")) {
           std::cout << "\n";
           std::cout << desc << std::endl;
-          
+
           std::cout << "DESCRIPTION\n" <<
                        "  Perform Monte Carlo calculations.                          \n\n" <<
           
@@ -107,24 +107,24 @@ namespace CASM {
 
     const DirectoryStructure &dir = primclex.dir();
     ProjectSettings &set = primclex.settings();
-    
+
     //Get path to settings json file
     settings_path = fs::absolute(settings_path);
-  
+
     //std::cout << "Example settings so far..." << std::endl;
     //jsonParser example_settings = Monte::example_testing_json_settings(primclex);
     //std::ofstream outsettings("monte_settings.json");
     //example_settings.print(outsettings);
-    
+
     MonteSettings monte_settings;
-    
+
     try {
       std::cout << "Reading Monte Carlo settings: " << settings_path << std::endl;
       monte_settings = MonteSettings(settings_path);
       std::cout << "  DONE." << std::endl << std::endl;
-    
+
     }
-    catch(std::exception& e) {
+    catch(std::exception &e) {
       std::cerr << "ERROR reading Monte Carlo settings.\n\n";
       std::cerr << e.what() << std::endl;
       return 1;
@@ -187,30 +187,30 @@ namespace CASM {
               return ERR_EXISTING_FILE;
             }
           }
-          
+
           GrandCanonical gc(primclex, gc_settings);
-          
-          // config, param_potential, T, 
+
+          // config, param_potential, T,
           std::cout << "Phi_LTE(1) = potential_energy_gs - kT*ln(Z'(1))/N" << std::endl;
           std::cout << "Z'(1) = sum_i(exp(-dPE_i/kT), summing over ground state and single spin flips" << std::endl;
           std::cout << "dPE_i: (potential_energy_i - potential_energy_gs)*N" << std::endl;
           std::cout << "configuration: " << gc_settings.motif_configname() << std::endl;
-          
+
           auto init = gc_settings.initial_conditions();
           auto incr = gc_settings.incremental_conditions();
           auto final = gc_settings.final_conditions();
-          int num_conditions = (final - init)/incr;
-          
+          int num_conditions = (final - init) / incr;
+
           auto cond = init;
-          for(int index =0; index <= num_conditions; ++index) {
-            
+          for(int index = 0; index <= num_conditions; ++index) {
+
             if(index != 0) {
               gc.set_conditions(cond);
             }
             std::cout << "\n\n-- Conditions: " << index << " --\n";
             std::cout << jsonParser(cond) << std::endl << std::endl;
-            
-            const auto& comp_converter = gc.primclex().composition_axes();
+
+            const auto &comp_converter = gc.primclex().composition_axes();
             std::cout << "formation_energy: " << std::setprecision(12) << gc.formation_energy() << std::endl;
             std::cout << "  components: " << jsonParser(gc.primclex().composition_axes().components()) << std::endl;
             std::cout << "  chem_pot: " << gc.conditions().chem_pot().transpose() << std::endl;
@@ -218,21 +218,21 @@ namespace CASM {
             std::cout << "  param_chem_pot: " << gc.conditions().param_chem_pot().transpose() << std::endl;
             std::cout << "  comp_x: " << comp_converter.param_composition(gc.comp_n()).transpose() << std::endl;
             std::cout << "potential energy: " << std::setprecision(12) << gc.potential_energy() << std::endl << std::endl;
-            
+
             write_lte_results(gc_settings, gc);
             cond += incr;
-            
+
           }
-          
+
           if(gc_settings.write_csv()) {
             std::cout << "\nWrote results to: " << dir.results_csv() << std::endl;
           }
           if(gc_settings.write_json()) {
             std::cout << "\nWrote results to: " << dir.results_json() << std::endl;
           }
-          
+
         }
-        catch(std::exception& e) {
+        catch(std::exception &e) {
           std::cerr << "ERROR calculating single spin flip LTE grand canonical potential.\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
@@ -244,7 +244,7 @@ namespace CASM {
           //std::cout << "\n-------------------------------\n";
           //monte_settings.print(std::cout);
           //std::cout << "\n-------------------------------\n\n";
-          
+
           std::cout << "Constructing Grand Canonical Monte Carlo driver" << std::endl;
           MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(settings_path));
           std::cout << "  DONE." << std::endl << std::endl;
@@ -252,9 +252,9 @@ namespace CASM {
           std::cout << "Begin Grand Canonical Monte Carlo runs" << std::endl;
           driver.run();
           std::cout << "  DONE." << std::endl << std::endl;
-          
+
         }
-        catch(std::exception& e) {
+        catch(std::exception &e) {
           std::cerr << "ERROR running Grand Canonical Monte Carlo.\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
@@ -266,7 +266,7 @@ namespace CASM {
       }
     }
 
-    
+
     return 0;
   }
 }

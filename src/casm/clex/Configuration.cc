@@ -235,6 +235,12 @@ namespace CASM {
 
   //********** ACCESSORS ***********
 
+  const Lattice &Configuration::ideal_lattice()const {
+    return get_supercell().get_real_super_lattice();
+  }
+
+  //*********************************************************************************
+
   std::string Configuration::get_id() const {
     return id;
   }
@@ -382,7 +388,7 @@ namespace CASM {
     auto convert = get_index_converter(get_prim(), get_prim().get_struc_molecule());
 
     // create an array to count the number of each molecule
-    Array<Array<int> > sublat_num_each_molecule;
+    Array< Array<int> > sublat_num_each_molecule;
     for(i = 0; i < get_prim().basis.size(); i++) {
       sublat_num_each_molecule.push_back(Array<int>(get_prim().basis[i].site_occupant().size(), 0));
     }
@@ -860,6 +866,7 @@ namespace CASM {
       VaspIO::PrintPOSCAR p(*this);
       p.sort();
       p.print(ss);
+
       json["pos"] = ss.str();
     }
     else {

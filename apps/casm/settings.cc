@@ -199,7 +199,7 @@ namespace CASM {
       std::cout << "Error: No casm project found." << std::endl;
       return 1;
     }
-    
+
     std::cout << "\n***************************\n" << std::endl;
 
     DirectoryStructure dir(root);

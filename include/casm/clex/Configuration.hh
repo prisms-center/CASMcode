@@ -177,6 +177,8 @@ namespace CASM {
 
     //********** ACCESSORS ***********
 
+    const Lattice &ideal_lattice()const;
+
     std::string get_id() const;
 
 
@@ -315,6 +317,12 @@ namespace CASM {
 
     /// Write the POS file to get_pos_path
     void write_pos() const;
+
+    // Va_mode		description
+    // 0			print no information about the vacancies
+    // 1			print only the coordinates of the vacancies
+    // 2			print the number of vacancies and the coordinates of the vacancies
+    void print(std::ostream &stream, COORD_TYPE mode, int Va_mode = 0, char term = '\n', int prec = 10, int pad = 5) const;
 
     void print_occupation(std::ostream &stream) const;
 
@@ -490,6 +498,11 @@ namespace CASM {
   ///
   /// Currently only applies to occupation
   Configuration &apply(const ConfigTransform &f, Configuration &motif);
+
+  inline
+  void reset_properties(Configuration &_config) {
+    _config.set_calc_properties(jsonParser());
+  }
 
 }
 

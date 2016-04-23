@@ -7,11 +7,11 @@
 
 namespace CASM {
   namespace ConfigIO {
-    
+
     /// \brief Returns true if configuration is specified in given selection (default: MASTER)
     ///
     /// Ex: 'selected_in', 'selected_in(myselection.txt)'
-    /// 
+    ///
     /// \ingroup ConfigIO
     ///
     class Selected : public BooleanAttribute<Configuration> {
@@ -28,31 +28,31 @@ namespace CASM {
 
 
       // --- Required implementations -----------
-      
+
       std::unique_ptr<Selected> clone() const;
-      
+
       bool evaluate(const Configuration &_config) const override;
 
-      
+
       // --- Specialized implementation -----------
-      
+
       void init(const Configuration &_tmplt) const override;
 
       std::string short_header(const Configuration &_config) const override;
-/*
-      void inject(const Configuration &_config, DataStream &_stream, Index) const override;
+      /*
+            void inject(const Configuration &_config, DataStream &_stream, Index) const override;
 
-      void print(const Configuration &_config, std::ostream &_stream, Index) const override;
+            void print(const Configuration &_config, std::ostream &_stream, Index) const override;
 
-      jsonParser &to_json(const Configuration &_config, jsonParser &json)const override;
-*/
+            jsonParser &to_json(const Configuration &_config, jsonParser &json)const override;
+      */
       bool parse_args(const std::string &args) override;
 
     private:
-      
+
       /// \brief Clone
-      Selected* _clone() const override;
-      
+      Selected *_clone() const override;
+
       mutable std::string m_selection_name;
       mutable ConstConfigSelection m_selection;
     };

@@ -8,7 +8,7 @@
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {
-  
+
   /// \brief The dimensionality of the composition space
   ///
   /// Examples:
@@ -45,12 +45,12 @@ namespace CASM {
   Eigen::VectorXd CompositionConverter::end_member(size_type i) const {
     return m_end_members.col(i);
   }
-  
+
   /// \brief Return the matrix Mij = dx_i/dn_j
   Eigen::MatrixXd CompositionConverter::dparam_dmol() const {
     return m_to_x;
   }
-  
+
   /// \brief Return the matrix Mij = dn_i/dx_j
   Eigen::MatrixXd CompositionConverter::dmol_dparam() const {
     return m_to_n;
@@ -238,22 +238,22 @@ namespace CASM {
     return tstr.str();
 
   }
-  
+
   /// \brief Return formula for comp(i) in terms of comp_n(A), comp_n(B), ...
   std::string CompositionConverter::comp_formula(size_type i) const {
-    
+
     // comp(i) = m_to_x(i,j)*(comp_n(j) - m_origin(j)) + ...
-    
+
     std::stringstream ss;
-    
+
     auto comp_x_str = [&]() {
       return "comp(" + comp_var(i) + ")";
     };
-    
+
     auto comp_n_str = [&](int j) {
       return "comp_n(" + m_components[j] + ")";
     };
-    
+
     auto delta_str = [&](int j) {
       std::stringstream tss;
       // print '(comp_n(J) - m_origin(j))' if m_origin(j) != 0
@@ -266,18 +266,18 @@ namespace CASM {
       }
       return tss.str();
     };
-    
+
     ss << comp_x_str() << " = ";
     bool first_term = true;
-    for(int j=0; j<m_to_x.cols(); ++j) {
-      
-      double coeff = m_to_x(i,j);
+    for(int j = 0; j < m_to_x.cols(); ++j) {
+
+      double coeff = m_to_x(i, j);
 
       // print nothing if coeff == 0
       if(almost_zero(coeff)) {
         continue;
       }
-      
+
       // if coeff < 0
       if(coeff < 0) {
         if(!first_term) {
@@ -287,7 +287,7 @@ namespace CASM {
           ss << coeff << "*" << delta_str(j);
         }
       }
-      
+
       // if coeff > 0
       else {
         if(!first_term) {
@@ -298,29 +298,29 @@ namespace CASM {
         }
       }
       ss << " ";
-      
+
       first_term = false;
-      
+
     }
-    
+
     return ss.str();
   }
-  
+
   /// \brief Return formula for comp_n(component(i)) in terms of comp(a), comp(b), ...
   std::string CompositionConverter::comp_n_formula(size_type i) const {
-    
+
     // comp_n(i) = m_origin(j) + m_to_n(i,j)*comp(j) + ...
-    
+
     std::stringstream ss;
-    
+
     auto comp_x_str = [&](int j) {
       return "comp(" + comp_var(j) + ")";
     };
-    
+
     auto comp_n_str = [&](int j) {
       return "comp_n(" + m_components[j] + ")";
     };
-    
+
     ss << comp_n_str(i) << " = ";
     bool first_term = true;
     // print nothing if coeff == 0
@@ -328,16 +328,16 @@ namespace CASM {
       ss << m_origin(i);
       first_term = false;
     }
-    
-    for(int j=0; j<m_to_n.cols(); ++j) {
-      
-      double coeff = m_to_n(i,j);
+
+    for(int j = 0; j < m_to_n.cols(); ++j) {
+
+      double coeff = m_to_n(i, j);
 
       // print nothing if coeff == 0
       if(almost_zero(coeff)) {
         continue;
       }
-      
+
       // if coeff < 0
       if(coeff < 0) {
         if(!first_term) {
@@ -347,7 +347,7 @@ namespace CASM {
           ss << coeff << "*" << comp_x_str(j);
         }
       }
-      
+
       // if coeff > 0
       else {
         if(!first_term) {
@@ -358,11 +358,11 @@ namespace CASM {
         }
       }
       ss << " ";
-      
+
       first_term = false;
-      
+
     }
-    
+
     return ss.str();
   }
 
@@ -373,18 +373,18 @@ namespace CASM {
   /// Assumes chem_pot(Va) == 0
   std::string CompositionConverter::param_chem_pot_formula(size_type i) const {
     // param_chem_pot = m_to_n.transpose() * chem_pot;
-    
+
     std::stringstream ss;
-    
+
     auto print_chem_pot = [&](int j) {
       return "chem_pot(" + m_components[j] + ") ";
     };
-    
+
     ss << "param_chem_pot(" << comp_var(i) << ") = ";
     Eigen::MatrixXd Mt = m_to_n.transpose();
     bool first_term = true;
-    for(int j=0; j<Mt.cols(); ++j) {
-      
+    for(int j = 0; j < Mt.cols(); ++j) {
+
       double coeff = Mt(i, j);
 
       // print nothing if n == 0
@@ -417,10 +417,10 @@ namespace CASM {
       else {
         ss << coeff << "*" << print_chem_pot(j);
       }
-      
+
       first_term = false;
     }
-    
+
     return ss.str();
   }
 
@@ -526,8 +526,8 @@ namespace CASM {
     if(map.size() == 0) {
       return;
     }
-    
-    auto comp_var = CompositionConverter::comp_var; 
+
+    auto comp_var = CompositionConverter::comp_var;
 
     stream << std::setw(10) << "KEY" << " ";
     stream << std::setw(10) << "ORIGIN" << " ";
@@ -556,7 +556,7 @@ namespace CASM {
       stream << std::setw(10) << it->second.mol_formula() << "\n";
     }
   }
-  
+
   /// \brief Pretty-print comp in terms of comp_n
   ///
   /// Example:
@@ -566,13 +566,13 @@ namespace CASM {
   /// ...
   /// \endcode
   void display_comp(std::ostream &stream, const CompositionConverter &f, int indent) {
-    
-    for(int i=0; i<f.independent_compositions(); ++i) {
+
+    for(int i = 0; i < f.independent_compositions(); ++i) {
       stream << std::string(indent, ' ') << f.comp_formula(i) << "\n";
     }
-    
+
   }
-  
+
   /// \brief Pretty-print comp in terms of comp_n
   ///
   /// Example:
@@ -582,13 +582,13 @@ namespace CASM {
   /// ...
   /// \endcode
   void display_comp_n(std::ostream &stream, const CompositionConverter &f, int indent) {
-    
-    for(int i=0; i<f.components().size(); ++i) {
+
+    for(int i = 0; i < f.components().size(); ++i) {
       stream << std::string(indent, ' ') << f.comp_n_formula(i) << "\n";
     }
-    
+
   }
-  
+
   /// \brief Pretty-print param_chem_pot in terms of chem_pot
   ///
   /// Example:
@@ -598,11 +598,11 @@ namespace CASM {
   /// ...
   /// \endcode
   void display_param_chem_pot(std::ostream &stream, const CompositionConverter &f, int indent) {
-    
-    for(int i=0; i<f.independent_compositions(); ++i) {
+
+    for(int i = 0; i < f.independent_compositions(); ++i) {
       stream << std::string(indent, ' ') << f.param_chem_pot_formula(i) << "\n";
     }
-    
+
   }
 
   /// \brief Serialize CompositionConverter to JSON
@@ -668,27 +668,29 @@ namespace CASM {
     param_comp.generate_prim_end_members();
     return param_comp.get_prim_end_members().transpose();
   }
-  
+
   /// \brief Non-orthogonal composition space
   Eigen::MatrixXd _composition_space(const Structure &prim, double tol) {
     // Get Va index if it exists, and store 0 or 1 in N_Va
     std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
-    Index Va_index = find_index_if(struc_mol_name, [=](const std::string& str){return is_vacancy(str);});
+    Index Va_index = find_index_if(struc_mol_name, [ = ](const std::string & str) {
+      return is_vacancy(str);
+    });
     bool has_Va = (Va_index != struc_mol_name.size());
-    
+
     // convert to atom frac
     Eigen::MatrixXd E = end_members(prim);
     if(has_Va) {
       E.row(Va_index) = Eigen::VectorXd::Zero(E.cols());
     }
-    for(int i=0; i<E.cols(); i++) {
+    for(int i = 0; i < E.cols(); i++) {
       E.col(i) /= E.col(i).sum();
     }
-    
+
     // convert to atom frac space
-    Eigen::MatrixXd M(E.rows(), E.cols()-1);
-    for(int i=0; i<M.cols(); ++i) {
-      M.col(i) = E.col(i+1) - E.col(0);
+    Eigen::MatrixXd M(E.rows(), E.cols() - 1);
+    for(int i = 0; i < M.cols(); ++i) {
+      M.col(i) = E.col(i + 1) - E.col(0);
     }
     return M;
   }

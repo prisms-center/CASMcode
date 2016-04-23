@@ -4,26 +4,26 @@
 #include "casm/app/AppIO.hh"
 
 namespace CASM {
-  
+
   // --- GrandCanonicalConditions settings ---------------------
-    
+
   /// \brief Expects initial_conditions
   GrandCanonicalConditions GrandCanonicalSettings::initial_conditions() const {
     return _conditions("initial_conditions");
   }
-  
+
   /// \brief Expects final_conditions
   GrandCanonicalConditions GrandCanonicalSettings::final_conditions() const {
     return _conditions("final_conditions");
   }
-  
+
   /// \brief Expects incremental_conditions
   GrandCanonicalConditions GrandCanonicalSettings::incremental_conditions() const {
     return _conditions("incremental_conditions");
   }
 
   // --- Project settings ---------------------
-  
+
   /// \brief Given a settings jsonParser figure out what the project clex settings to use are:
   std::string GrandCanonicalSettings::clex() const {
     std::string level1 = "model";
@@ -105,17 +105,17 @@ namespace CASM {
     }
 
   }
-  
+
   // --- Sampler settings ---------------------
-  
+
   /// \brief Return true if all correlations should be sampled
   bool GrandCanonicalSettings::all_correlations() const {
-    
+
     std::string level1 = "data";
     std::string level2 = "measurements";
     try {
-      const jsonParser& json = (*this)[level1][level2];
-      for(auto it=json.cbegin(); it!=json.cend(); ++it) {
+      const jsonParser &json = (*this)[level1][level2];
+      for(auto it = json.cbegin(); it != json.cend(); ++it) {
         if(it->contains("quantity") && (*it)["quantity"].get<std::string>() == "all_correlations") {
           return true;
         }
@@ -127,27 +127,27 @@ namespace CASM {
       std::cerr << "Expected [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
       throw e;
     }
-    
+
   }
-    
-  
+
+
   GrandCanonicalConditions GrandCanonicalSettings::_conditions(std::string name) const {
-    
+
     std::string level1 = "driver";
     std::string level2 = name;
     try {
-      
+
       DirectoryStructure dir(root());
       CompositionAxes axes(dir.composition_axes(calctype(), ref()));
       CompositionConverter comp_converter;
-      
+
       if(axes.has_current_axes) {
         comp_converter = axes.curr;
       }
       else {
         throw std::runtime_error("No composition axes selected.");
       }
-      
+
       GrandCanonicalConditions result;
       from_json(result, comp_converter, (*this)[level1][level2]);
       return result;
@@ -158,6 +158,6 @@ namespace CASM {
       throw e;
     }
   }
-  
+
 }
 

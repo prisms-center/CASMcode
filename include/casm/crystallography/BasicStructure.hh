@@ -11,6 +11,7 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  class SymGroupRepID;
   class Coordinate;
   class UnitCellCoord;
   class SiteCluster;
@@ -24,7 +25,7 @@ namespace CASM {
   class BasicStructure {
   protected:
     Lattice m_lattice;
-    
+
     ///Specifies whether selectice dynamics is on or of for DFT calculations
     bool SD_flag;
 
@@ -117,8 +118,8 @@ namespace CASM {
     void generate_factor_group_slow(SymGroup &factor_group, double map_tol) const;
     void fg_converge(double small_tol, double large_tol, double increment);
     void fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
-    Index generate_permutation_representation(const MasterSymGroup &factor_group, bool verbose)const;
-    Index generate_basis_permutation_representation(const MasterSymGroup &factor_group, bool verbose)const;
+
+    SymGroupRepID generate_basis_permutation_representation(const MasterSymGroup &factor_group, bool verbose)const;
 
     void symmetrize(const SymGroup &relaxed_factors);
     void symmetrize(const double &tolerance);
@@ -154,7 +155,7 @@ namespace CASM {
     //Array<Array<Array<double> > > get_NN_table(const double &maxr);
 
     ///Add vacuum and shift c vector. The vacuum is always added parallel to c, and the shift vector should also be parallel to the ab plane (x,y,0)
-    void add_vacuum_shift(BasicStructure &new_surface_struc, double vacuum_thickness, Vector3<double> shift, COORD_TYPE mode) const;
+    void add_vacuum_shift(BasicStructure &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const;
     void add_vacuum_shift(BasicStructure &new_surface_struc, double vacuum_thickness, Coordinate shift) const;  //Because Anton thought a coordinate would be better
     ///Adds vacuum layer on top of ab plane
     void add_vacuum(BasicStructure &new_surface_struc, double vacuum_thickness) const;

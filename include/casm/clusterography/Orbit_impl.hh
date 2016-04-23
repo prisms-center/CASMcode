@@ -4,7 +4,7 @@
 #include "casm/crystallography/Site.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/clusterography/SiteCluster.hh"
-
+#include "casm/basis_set/BasisSet.hh"
 namespace CASM {
   //**************************************************************************************
 
@@ -15,16 +15,12 @@ namespace CASM {
     for(Index i = 0; i < size(); i++)
       at(i).set_lattice(new_home, mode);
 
-    for(Index i = 0; i < equivalence_map.size(); i++)
-      for(Index j = 0; j < equivalence_map[i].size(); j++)
-        equivalence_map[i][j].set_lattice(new_home, mode);
-
     return;
 
   }
 
 
-  //****************************************************************************************************
+  //*******************************************************************************************
   //void get_equivalent(const Array<SymOp> &sym_group);
   //Take prototype cluster, find all of the equivalent clusters (fills orbit array)
   //Also, fill equivalence_map
@@ -35,15 +31,15 @@ namespace CASM {
   //If it is already in the orbit array, record the SymOp that mapped the prototype onto that cluster
 
   template<typename ClustType>
-  void GenericOrbit<ClustType>::get_equivalent(const Array<SymOp> &sym_group) {
+  void GenericOrbit<ClustType>::get_equivalent(const SymGroup &sym_group) {
     if(sym_group.size() == 0) {
       std::cerr << "WARNING: In Orbit::get_equivalent, sym_group must at least have one element (identity).\n";
       assert(0);
     }
 
-    Index i, map_ind;
-    ClustType t_cluster(prototype.get_home());
-    Coordinate map_shift(Vector3<double>(0, 0, 0), prototype.get_home());
+    Index i, j, map_ind;
+    ClustType t_cluster(prototype.home());
+    Coordinate map_shift(Eigen::Vector3d::Zero(), prototype.home(), CART);
     Coordinate within_shift(map_shift);
     clear();
     equivalence_map.clear();
@@ -64,7 +60,9 @@ namespace CASM {
       //Case 1: Cluster already exists in orbit; update equivalence map to record
       //        symmetry operation that maps prototype onto equivalent cluster
       if(map_ind < size()) {
-        equivalence_map[map_ind].push_back(SymOp(map_shift)*sym_group[i]);
+        if(map_ind == 0) {
+          equivalence_map[map_ind].push_back(SymOp::translation(map_shift.cart())*sym_group[i]);
+        }
       }
 
       //Case 2: Identified new equivalent cluster; add it to orbit and update equivalence map
@@ -72,11 +70,33 @@ namespace CASM {
       else {
         t_cluster.within(0, within_shift); 	//make sure new equivalent cluster has first site within primitive cell
         this->push_back(t_cluster);   // add it
-        SymOp tsymm(SymOp(map_shift + within_shift)*sym_group[i]);
+        SymOp tsymm(SymOp::translation((map_shift + within_shift).cart())*sym_group[i]);
         equivalence_map.push_back(Array<SymOp>(1, tsymm));
       }
 
     }
+
+    // record symmetry info for all equivalent clusters
+    prototype.set_clust_group(equivalence_map[0]);
+    at(0).set_clust_group(equivalence_map[0]);
+    std::vector<Permutation> proto_perms(prototype.clust_group_permutations());
+    SymGroupRepID perm_rep_ID(sym_group.add_empty_representation());
+    prototype.set_permute_rep(perm_rep_ID);
+    at(0).set_permute_rep(perm_rep_ID);
+    for(j = 0; j < prototype.clust_group().size(); j++)
+      prototype.clust_group()[j].set_rep(perm_rep_ID, SymPermutation(proto_perms[j]));
+    for(i = 1; i < size(); i++) {
+      equivalence_map[i][0].set_rep(perm_rep_ID, SymPermutation(proto_perms[0]));
+      for(j = 1; j < prototype.clust_group().size(); j++) {
+        equivalence_map[i].push_back(equivalence_map[i][0]*prototype.clust_group()[j]);
+        equivalence_map[i][j].set_rep(perm_rep_ID, SymPermutation(proto_perms[j]));
+      }
+      SymGroup tclust_group(prototype.clust_group());
+      tclust_group.apply_sym(equivalence_map[i][0]);
+      at(i).set_clust_group(tclust_group);
+      at(i).set_permute_rep(perm_rep_ID);
+    }
+
     return;
   }
 
@@ -151,8 +171,8 @@ namespace CASM {
   template<typename ClustType>
   Index GenericOrbit<ClustType>::find(const ClustType  &test_clust, Coordinate &trans) const {
     Index i;
-    trans(FRAC) = Vector3<double>(0, 0, 0);
-    ClustType  tclust(test_clust);
+    trans.frac() = Eigen::Vector3d::Zero();
+    ClustType tclust(test_clust);
     for(i = 0; i < size(); i++) {
       if(tclust.map_onto(at(i), trans)) {
         break;
@@ -161,20 +181,6 @@ namespace CASM {
     return i;
   }
 
-
-  //********************************************************************
-
-  template<typename ClustType>
-  void GenericOrbit<ClustType>::collect_basis_info(const BasicStructure<Site> &struc, const Coordinate &shift) {
-    collect_basis_info(struc.basis, shift);
-  }
-
-  //********************************************************************
-
-  template<typename ClustType>
-  void GenericOrbit<ClustType>::collect_basis_info(const BasicStructure<Site> &struc) {
-    collect_basis_info(struc.basis);
-  }
 
   //********************************************************************
 
@@ -195,97 +201,16 @@ namespace CASM {
   }
 
   //********************************************************************
-
-  template<typename ClustType>
-  void GenericOrbit<ClustType>::get_cluster_symmetry() {
-    prototype.clust_group.clear();
-
-    for(Index i = 0; i < equivalence_map[0].size(); i++) {
-      prototype.clust_group.push_back(equivalence_map[0][i]);
-    }
-    prototype.get_permute_group();
-
-    for(Index i = 0; i < size(); i++) {
-      at(i).clust_group = prototype.clust_group;
-      if(i > 0)
-        at(i).clust_group.apply_sym(equivalence_map[i][0]);
-      at(i).get_permute_group();//JCT - I think this is correct; the relation between equivalence_map and permutations is ill-defined
-    }
-  }
-
-  //********************************************************************
-
-  /// get permutation representation of every operation in equivalence_map to describe how operations permute site order
-  template<typename ClustType>
-  SymGroupRep const *GenericOrbit<ClustType>::get_full_permutation_representation() {
-
-    if(!equivalence_map.size())
-      return nullptr;
-
-    if(permute_rep_ID != -1) return (equivalence_map[0][0].master_group().representation(permute_rep_ID));
-
-    SymGroupRep *tRep(new SymGroupRep((equivalence_map[0][0].master_group())));
-
-    tRep->resize(equivalence_map[0][0].master_group().size(), nullptr);
-
-    Array<Index> iperm;
-    //This is a hack for doing cubic-tetragonal
-    if(equivalence_map.size() > 1) {
-      //std::cout << "*********** equivalence_map.size() is " << equivalence_map.size() << '\n';
-      equivalence_map[1].swap_elem(equivalence_map[1].size() - 1, 0);
-      //std::cout << "I think this matrix is inversion:\n" << equivalence_map[1][0].get_matrix(CART) << "\n";
-      at(1) = equivalence_map[1][0] * prototype;
-    }
-    for(Index i = 0; i < equivalence_map.size(); i++) {
-      for(Index j = 0; j < equivalence_map[i].size(); j++) {
-        //std::cout << "i= " << i << " and j= " << j << std::endl;
-        iperm.clear();
-        (equivalence_map[i][j]*prototype).find(at(i), iperm);
-        //std::cout << "After mapping, iperm is " << iperm << std::endl;
-        tRep->at(equivalence_map[i][j].index()) = new SymPermutation(iperm);
-        //std::cout << "inserted new permutations in tRep" << std::endl;
-      }
-    }
-
-    permute_rep_ID = equivalence_map[0][0].master_group().add_representation(tRep);
-    return tRep;
-  }
-
-  //********************************************************************
-
-  /// get permutation representation of every operation in equivalence_map to describe how operations permute site order
-  template<typename ClustType>
-  SymGroupRep const *GenericOrbit<ClustType>::get_full_coord_representation() {
-
-    if(!equivalence_map.size()) return nullptr;
-
-    if(coord_rep_ID != -1) return equivalence_map[0][0].master_group().representation(coord_rep_ID);
-
-    if(permute_rep_ID == -1) get_full_permutation_representation();
-
-    if(equivalence_map[0][0].master_group().get_coord_rep_ID() == -1) equivalence_map[0][0].master_group().add_coord_rep();
-
-    coord_rep_ID = equivalence_map[0][0].master_group().add_kronecker_rep(permute_rep_ID, equivalence_map[0][0].master_group().get_coord_rep_ID());
-
-    return equivalence_map[0][0].master_group().representation(coord_rep_ID);
-
-  }
-
-  //********************************************************************
   /**
    * Reads the orbit in the specified mode.
-   * If read_tensors is set to true, then the Cluster read will read
-   * in the tensor basis.
    *
    * @param stream Input file stream
    * @param mode  Cartesian or fractional mode
-   * @param read_tensors Flag determining whether tensors should be read
-   *        in or not
    */
   //********************************************************************
 
   template<typename ClustType>
-  void GenericOrbit<ClustType>::read(std::istream &stream, COORD_TYPE mode, const SymGroup &sym_group, bool read_tensors) {
+  void GenericOrbit<ClustType>::read(std::istream &stream, COORD_TYPE mode, const SymGroup &sym_group) {
 
     int num_clust;
     char ch;
@@ -314,13 +239,13 @@ namespace CASM {
     for(int i = 0; i < num_clust; i++) {
       if(i == 0) {
         prototype.clear();
-        prototype.read(stream, mode, read_tensors);
+        prototype.read(stream, mode);
         (*this).push_back(prototype);
       }
       else {
-        SiteCluster tclust(prototype.get_home());
+        SiteCluster tclust(prototype.home());
         (*this).push_back(tclust);
-        (*this).back().read(stream, mode, read_tensors);
+        (*this).back().read(stream, mode);
       }
     }
     //    }
@@ -462,15 +387,14 @@ namespace CASM {
         at(ne).set_nlist_inds(at(ne).trans_nlist(nt));
 
         new_id[0] = at(ne)[ib].nlist_ind();
-        site_basis.update_dof_IDs(old_id, new_id);
+        site_basis.set_dof_IDs(new_id);
         old_id = new_id;
 
         BasisSet quotient_basis = at(ne).clust_basis.poly_quotient_set(site_basis[f_index]);
+        for(Index nl = 0; nl < labelers.size(); nl++)
+          quotient_basis.accept(*labelers[nl]);
+
         for(Index nf = 0; nf < quotient_basis.size(); nf++) {
-          if(!quotient_basis[nf])
-            continue;
-          for(Index nl = 0; nl < labelers.size(); nl++)
-            quotient_basis[nf]->accept(*labelers[nl]);
 
           if((quotient_basis[nf]->formula()) == "0")
             continue;
@@ -493,71 +417,6 @@ namespace CASM {
     return formulae;
   }
 
-  //********************************************************************
-  /**
-   * Calculates the ECI's of the prototype cluster, then calculates
-   * the ECI of the clusters in the orbit.  Note that clusters in the
-   * same orbit should have the same tensor coefficients.
-   *
-   * @param[in] rank The rank of the tensors.
-   */
-  //********************************************************************
-
-  template<typename ClustType>
-  void GenericOrbit<ClustType>::calc_eci(Index rank) {
-
-    prototype.eci.redefine(Array<Index>(rank, 3));
-
-    //loop over tensor_basis of each prototype
-    for(Index i = 0; i < prototype.tensor_basis.size(); i++) {
-      if(std::isnan(prototype.tensor_basis.eci(i))) {
-        std::cerr << "WARNING: One of your ECI's have not been entered in the input file. \n"
-                  << "It has been set to 0. \n";
-        prototype.tensor_basis.eci(i) = 0;
-      }
-      prototype.eci += (prototype.tensor_basis.eci(i) * prototype.tensor_basis[i]);
-    }
-
-    for(Index j = 0; j < size(); j++) {
-      at(j).eci.redefine(Array<Index>(rank, 3));
-
-      for(Index k = 0; k < at(j).tensor_basis.size(); k++) {
-        if(std::isnan(prototype.tensor_basis.eci(k))) {
-          std::cerr << "WARNING: One of your ECI's have not been entered in the input file. \n"
-                    << "It has been set to 0. \n";
-          prototype.tensor_basis.eci(k) = 0;
-        }
-        at(j).eci += (prototype.tensor_basis.eci(k) * at(j).tensor_basis[k]);
-        at(j).tensor_basis.eci(k) = prototype.tensor_basis.eci(k);
-      }
-
-    }
-  }
-
-  //********************************************************************
-  /**
-   * Gets the tensor basis for each prototype and maps it onto the
-   * equivalent clusters.
-   *
-   * Gets the tensor basis for the prototype cluster before using
-   * equivalence_map to symmetrically transform the tensor basis of the
-   * clusters in the orbit.
-   *
-   * @param[in] rank The rank of the tensors in the tensor basis.
-   */
-  //********************************************************************
-
-  template<typename ClustType>
-  void GenericOrbit<ClustType>::get_tensor_basis(Index rank) {
-
-    prototype.get_tensor_basis(rank);
-
-    // looping over clusters in orbit
-    for(Index i = 0; i < size(); i++) {
-      at(i).tensor_basis = prototype.tensor_basis;
-      at(i).tensor_basis.apply_sym(equivalence_map[i][0]);
-    }
-  }
 
   //********************************************************************
 
@@ -628,7 +487,7 @@ namespace CASM {
       // std::cout<<"Generating the equivalent clusters"<<std::endl;
 
       // // Array< Array<SymOp> > equivalence_map;
-      // SymOp op(prototype.get_home());
+      // SymOp op(prototype.home());
       // Array<SymOp> equiv;
       // equivalence_map.clear();
       // std::cout<<"Reading in the equivalence_map"<<std::endl;

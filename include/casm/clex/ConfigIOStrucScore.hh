@@ -26,30 +26,30 @@ namespace CASM {
         m_altprimclex(RHS.m_altprimclex), m_configmapper(RHS.m_configmapper), m_prim_path(RHS.m_prim_path), m_prop_names(RHS.m_prop_names) {
         m_configmapper.set_primclex(m_altprimclex);
       }
-      
+
       // --- Required implementations -----------
-      
+
       std::unique_ptr<StrucScore> clone()const {
         return std::unique_ptr<StrucScore>(this->_clone());
       }
 
       Eigen::VectorXd evaluate(const Configuration &_config) const override;
 
-      
+
       // --- Specialized implementation -----------
-      
+
       bool validate(const Configuration &_config) const override;
 
       std::string short_header(const Configuration &_config) const override;
 
       std::string long_header(const Configuration &_config) const override;
-/*
-      void inject(const Configuration &_config, DataStream &_stream, Index) const override;
+      /*
+            void inject(const Configuration &_config, DataStream &_stream, Index) const override;
 
-      void print(const Configuration &_config, std::ostream &_stream, Index) const override;
+            void print(const Configuration &_config, std::ostream &_stream, Index) const override;
 
-      jsonParser &to_json(const Configuration &_config, jsonParser &json)const override;
-*/
+            jsonParser &to_json(const Configuration &_config, jsonParser &json)const override;
+      */
       bool parse_args(const std::string &args) override;
 
     protected:
@@ -57,10 +57,10 @@ namespace CASM {
       mutable ConfigMapper m_configmapper;
       fs::path m_prim_path;
       std::vector<std::string> m_prop_names;
-    
+
     private:
       /// \brief Clone
-      StrucScore* _clone() const override{
+      StrucScore *_clone() const override {
         return new StrucScore(*this);
       }
     };

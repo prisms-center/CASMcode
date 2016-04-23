@@ -155,7 +155,7 @@ struct assign_DefaultTraversal_CompleteUnrolling<Derived1, Derived2, Stop, Stop>
 template<typename Derived1, typename Derived2, int Index, int Stop>
 struct assign_DefaultTraversal_InnerUnrolling
 {
-  static EIGEN_STRONG_INLINE void run(Derived1 &dst, const Derived2 &src, int outer)
+  static EIGEN_STRONG_INLINE void run(Derived1 &dst, const Derived2 &src, typename Derived1::Index outer)
   {
     dst.copyCoeffByOuterInner(outer, Index, src);
     assign_DefaultTraversal_InnerUnrolling<Derived1, Derived2, Index+1, Stop>::run(dst, src, outer);
@@ -165,7 +165,7 @@ struct assign_DefaultTraversal_InnerUnrolling
 template<typename Derived1, typename Derived2, int Stop>
 struct assign_DefaultTraversal_InnerUnrolling<Derived1, Derived2, Stop, Stop>
 {
-  static EIGEN_STRONG_INLINE void run(Derived1 &, const Derived2 &, int) {}
+  static EIGEN_STRONG_INLINE void run(Derived1 &, const Derived2 &, typename Derived1::Index) {}
 };
 
 /***********************
@@ -218,7 +218,7 @@ struct assign_innervec_CompleteUnrolling<Derived1, Derived2, Stop, Stop>
 template<typename Derived1, typename Derived2, int Index, int Stop>
 struct assign_innervec_InnerUnrolling
 {
-  static EIGEN_STRONG_INLINE void run(Derived1 &dst, const Derived2 &src, int outer)
+  static EIGEN_STRONG_INLINE void run(Derived1 &dst, const Derived2 &src, typename Derived1::Index outer)
   {
     dst.template copyPacketByOuterInner<Derived2, Aligned, Aligned>(outer, Index, src);
     assign_innervec_InnerUnrolling<Derived1, Derived2,
@@ -229,7 +229,7 @@ struct assign_innervec_InnerUnrolling
 template<typename Derived1, typename Derived2, int Stop>
 struct assign_innervec_InnerUnrolling<Derived1, Derived2, Stop, Stop>
 {
-  static EIGEN_STRONG_INLINE void run(Derived1 &, const Derived2 &, int) {}
+  static EIGEN_STRONG_INLINE void run(Derived1 &, const Derived2 &, typename Derived1::Index) {}
 };
 
 /***************************************************************************
@@ -439,19 +439,26 @@ struct assign_impl<Derived1, Derived2, SliceVectorizedTraversal, NoUnrolling, Ve
   typedef typename Derived1::Index Index;
   static inline void run(Derived1 &dst, const Derived2 &src)
   {
-    typedef packet_traits<typename Derived1::Scalar> PacketTraits;
+    typedef typename Derived1::Scalar Scalar;
+    typedef packet_traits<Scalar> PacketTraits;
     enum {
       packetSize = PacketTraits::size,
       alignable = PacketTraits::AlignedOnScalar,
-      dstAlignment = alignable ? Aligned : int(assign_traits<Derived1,Derived2>::DstIsAligned) ,
+      dstIsAligned = assign_traits<Derived1,Derived2>::DstIsAligned,
+      dstAlignment = alignable ? Aligned : int(dstIsAligned),
       srcAlignment = assign_traits<Derived1,Derived2>::JointAlignment
     };
+    const Scalar *dst_ptr = &dst.coeffRef(0,0);
+    if((!bool(dstIsAligned)) && (size_t(dst_ptr) % sizeof(Scalar))>0)
+    {
+      // the pointer is not aligend-on scalar, so alignment is not possible
+      return assign_impl<Derived1,Derived2,DefaultTraversal,NoUnrolling>::run(dst, src);
+    }
     const Index packetAlignedMask = packetSize - 1;
     const Index innerSize = dst.innerSize();
     const Index outerSize = dst.outerSize();
     const Index alignedStep = alignable ? (packetSize - dst.outerStride() % packetSize) & packetAlignedMask : 0;
-    Index alignedStart = ((!alignable) || assign_traits<Derived1,Derived2>::DstIsAligned) ? 0
-                       : internal::first_aligned(&dst.coeffRef(0,0), innerSize);
+    Index alignedStart = ((!alignable) || bool(dstIsAligned)) ? 0 : internal::first_aligned(dst_ptr, innerSize);
 
     for(Index outer = 0; outer < outerSize; ++outer)
     {
@@ -507,19 +514,19 @@ EIGEN_STRONG_INLINE Derived& DenseBase<Derived>
 namespace internal {
 
 template<typename Derived, typename OtherDerived,
-         bool EvalBeforeAssigning = (int(OtherDerived::Flags) & EvalBeforeAssigningBit) != 0,
-         bool NeedToTranspose = Derived::IsVectorAtCompileTime
-                && OtherDerived::IsVectorAtCompileTime
-                && ((int(Derived::RowsAtCompileTime) == 1 && int(OtherDerived::ColsAtCompileTime) == 1)
-                      |  // FIXME | instead of || to please GCC 4.4.0 stupid warning "suggest parentheses around &&".
-                         // revert to || as soon as not needed anymore.
-                    (int(Derived::ColsAtCompileTime) == 1 && int(OtherDerived::RowsAtCompileTime) == 1))
-                && int(Derived::SizeAtCompileTime) != 1>
+         bool EvalBeforeAssigning = (int(internal::traits<OtherDerived>::Flags) & EvalBeforeAssigningBit) != 0,
+         bool NeedToTranspose = ((int(Derived::RowsAtCompileTime) == 1 && int(OtherDerived::ColsAtCompileTime) == 1)
+                              |   // FIXME | instead of || to please GCC 4.4.0 stupid warning "suggest parentheses around &&".
+                                  // revert to || as soon as not needed anymore.
+                                  (int(Derived::ColsAtCompileTime) == 1 && int(OtherDerived::RowsAtCompileTime) == 1))
+                              && int(Derived::SizeAtCompileTime) != 1>
 struct assign_selector;
 
 template<typename Derived, typename OtherDerived>
 struct assign_selector<Derived,OtherDerived,false,false> {
   static EIGEN_STRONG_INLINE Derived& run(Derived& dst, const OtherDerived& other) { return dst.lazyAssign(other.derived()); }
+  template<typename ActualDerived, typename ActualOtherDerived>
+  static EIGEN_STRONG_INLINE Derived& evalTo(ActualDerived& dst, const ActualOtherDerived& other) { other.evalTo(dst); return dst; }
 };
 template<typename Derived, typename OtherDerived>
 struct assign_selector<Derived,OtherDerived,true,false> {
@@ -528,6 +535,8 @@ struct assign_selector<Derived,OtherDerived,true,false> {
 template<typename Derived, typename OtherDerived>
 struct assign_selector<Derived,OtherDerived,false,true> {
   static EIGEN_STRONG_INLINE Derived& run(Derived& dst, const OtherDerived& other) { return dst.lazyAssign(other.transpose()); }
+  template<typename ActualDerived, typename ActualOtherDerived>
+  static EIGEN_STRONG_INLINE Derived& evalTo(ActualDerived& dst, const ActualOtherDerived& other) { Transpose<ActualDerived> dstTrans(dst); other.evalTo(dstTrans); return dst; }
 };
 template<typename Derived, typename OtherDerived>
 struct assign_selector<Derived,OtherDerived,true,true> {
@@ -566,16 +575,14 @@ template<typename Derived>
 template <typename OtherDerived>
 EIGEN_STRONG_INLINE Derived& MatrixBase<Derived>::operator=(const EigenBase<OtherDerived>& other)
 {
-  other.derived().evalTo(derived());
-  return derived();
+  return internal::assign_selector<Derived,OtherDerived,false>::evalTo(derived(), other.derived());
 }
 
 template<typename Derived>
 template<typename OtherDerived>
 EIGEN_STRONG_INLINE Derived& MatrixBase<Derived>::operator=(const ReturnByValue<OtherDerived>& other)
 {
-  other.evalTo(derived());
-  return derived();
+  return internal::assign_selector<Derived,OtherDerived,false>::evalTo(derived(), other.derived());
 }
 
 } // end namespace Eigen

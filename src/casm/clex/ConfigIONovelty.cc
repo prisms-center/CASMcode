@@ -10,7 +10,7 @@ namespace CASM {
 
   namespace ConfigIO {
     void Novelty::init(const Configuration &_tmplt) const {
-      
+
       m_format.clear();
       m_format.push_back(Corr());
 
@@ -53,27 +53,27 @@ namespace CASM {
     }
 
     // ****************************************************************************************
-/*
-    void Novelty::inject(const Configuration &_config, DataStream &_stream, Index) const {
-      _stream << _evaluate(_config);
-    }
+    /*
+        void Novelty::inject(const Configuration &_config, DataStream &_stream, Index) const {
+          _stream << _evaluate(_config);
+        }
 
-    // ****************************************************************************************
+        // ****************************************************************************************
 
-    void Novelty::print(const Configuration &_config, std::ostream &_stream, Index) const {
-      _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      _stream.precision(8);
+        void Novelty::print(const Configuration &_config, std::ostream &_stream, Index) const {
+          _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+          _stream.precision(8);
 
-      _stream << _evaluate(_config);
-    }
+          _stream << _evaluate(_config);
+        }
 
-    // ****************************************************************************************
+        // ****************************************************************************************
 
-    jsonParser &Novelty::to_json(const Configuration &_config, jsonParser &json)const {
-      json = _evaluate(_config);
-      return json;
-    }
-*/
+        jsonParser &Novelty::to_json(const Configuration &_config, jsonParser &json)const {
+          json = _evaluate(_config);
+          return json;
+        }
+    */
 
     //****************************************************************************************
 

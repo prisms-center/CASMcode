@@ -7,32 +7,32 @@
 
 namespace CASM {
 
-  
-  GrandCanonical::GrandCanonical(PrimClex &primclex, const GrandCanonicalSettings &settings, std::ostream& _sout):
-    MonteCarlo(primclex, 
-               _select_motif(settings.motif_configname(), primclex, settings.initial_conditions(), _sout), 
-               settings, 
-               _sout), 
+
+  GrandCanonical::GrandCanonical(PrimClex &primclex, const GrandCanonicalSettings &settings, std::ostream &_sout):
+    MonteCarlo(primclex,
+               _select_motif(settings.motif_configname(), primclex, settings.initial_conditions(), _sout),
+               settings,
+               _sout),
     m_site_swaps(supercell()),
     m_condition(settings.initial_conditions()),
     m_clexulator(primclex.global_clexulator()),
     m_formation_energy_eci(
       read_eci(
         primclex.dir().eci(
-          settings.clex(), 
-          settings.calctype(), 
-          settings.ref(), 
-          settings.bset(), 
+          settings.clex(),
+          settings.calctype(),
+          settings.ref(),
+          settings.bset(),
           settings.eci()
         )
       )
     ),
     m_all_correlations(settings.all_correlations()),
     m_event(primclex.composition_axes().components().size(), m_clexulator.corr_size()),
-    m_minus_one_comp_n(-1.0/supercell().volume()),
-    m_plus_one_comp_n(1.0/supercell().volume()) {
-    
-    // set the SuperNeighborList... 
+    m_minus_one_comp_n(-1.0 / supercell().volume()),
+    m_plus_one_comp_n(1.0 / supercell().volume()) {
+
+    // set the SuperNeighborList...
     set_nlist();
 
     // Make sure the simulation is big enough to accommodate the clusters
@@ -126,14 +126,14 @@ namespace CASM {
         }
       }
       else {
-        for(int i=0; i<m_formation_energy_eci.value().size(); ++i) {
-          sout << std::setw(12) << m_formation_energy_eci.index()[i] 
-               << std::setw(16) << std::setprecision(8) << m_formation_energy_eci.value()[i] 
+        for(int i = 0; i < m_formation_energy_eci.value().size(); ++i) {
+          sout << std::setw(12) << m_formation_energy_eci.index()[i]
+               << std::setw(16) << std::setprecision(8) << m_formation_energy_eci.value()[i]
                << std::setw(16) << std::setprecision(8) << m_event.dcorr()[m_formation_energy_eci.index()[i]] << std::endl;
-        
+
         }
       }
-      
+
       auto origin = primclex().composition_axes().origin();
       auto chem_pot = m_condition.chem_pot();
       auto param_chem_pot = m_condition.param_chem_pot();
@@ -141,19 +141,19 @@ namespace CASM {
       auto dcomp_x = primclex().composition_axes().dparam_composition(dcomp_n);
       auto M = primclex().composition_axes().dparam_dmol();
       auto V = supercell().volume();
-           
+
       sout << "  components: " << jsonParser(primclex().composition_axes().components()) << "\n"
-           << "  N*dcomp_n: " << V*dcomp_n.transpose() << "\n"
+           << "  N*dcomp_n: " << V *dcomp_n.transpose() << "\n"
            << "  chem_pot: " << chem_pot.transpose() << "\n"
-           << "  N*dcomp_x: " << V*dcomp_x.transpose() << "\n"
+           << "  N*dcomp_x: " << V *dcomp_x.transpose() << "\n"
            << "  param_chem_pot: " << param_chem_pot.transpose() << "\n"
-           << "   N*param_chem_pot*dcomp_x: " << V*param_chem_pot.dot(dcomp_x) << "\n"
-           << "  N*dformation_energy: " << V*m_event.dformation_energy() << "\n"
+           << "   N*param_chem_pot*dcomp_x: " << V *param_chem_pot.dot(dcomp_x) << "\n"
+           << "  N*dformation_energy: " << V *m_event.dformation_energy() << "\n"
            << "    N*(dformation_energy - chem_pot*dcomp_n): " << V*(m_event.dformation_energy() - chem_pot.dot(dcomp_n)) << "\n"
            << "    N*(dformation_energy - parm_chem_pot*dcomp_x: " << V*(m_event.dformation_energy() - param_chem_pot.dot(dcomp_x)) << "\n"
-           << "  N*dpotential_energy: " << V*m_event.dpotential_energy() << "\n" << std::endl;
-           
-      
+           << "  N*dpotential_energy: " << V *m_event.dpotential_energy() << "\n" << std::endl;
+
+
     }
 
     return m_event;
@@ -201,7 +201,7 @@ namespace CASM {
     _potential_energy() += event.dpotential_energy();
     _corr() += event.dcorr();
     _comp_n() += event.dcomp_n();
-    
+
     return;
   }
 
@@ -215,7 +215,7 @@ namespace CASM {
 
   /// \brief Calculate the single spin flip low temperature expansion of the grand canonical potential
   ///
-  /// \param sout Stream to print spin flip details 
+  /// \param sout Stream to print spin flip details
   ///
   /// Returns low temperature expansion estimate of the grand canonical free energy.
   /// Works with the current ConfigDoF as groundstate.
@@ -225,7 +225,7 @@ namespace CASM {
   /// boltz(x): exp(-x/kBT)
   /// \Omega: (E-SUM(chem_pot*comp_n))*N
   /// N: number of unit cells in supercell
-  /// 
+  ///
   /// The partition function is
   /// Z=SUM(boltz(\Omega_s))    summing over all microstates s
   ///
@@ -240,27 +240,27 @@ namespace CASM {
   /// The free energy is
   /// Phi=-kB*T*ln(Z)
   /// Phi=-kB*T*(-\Omega_0/kBT+ln(SUM(boltz(D\Omega_s))    Sum is over point defects and no defects (in which case D\Omega_s == 0)
-  /// Phi=(\Omega_0-kB*T(ln(SUM(boltz(D\Omega_s)))))/N            
-  /// 
-  double GrandCanonical::lte_grand_canonical_free_energy(std::ostream& sout) const {
+  /// Phi=(\Omega_0-kB*T(ln(SUM(boltz(D\Omega_s)))))/N
+  ///
+  double GrandCanonical::lte_grand_canonical_free_energy(std::ostream &sout) const {
 
-    const SiteExchanger& site_exch = m_site_swaps;
-    const ConfigDoF& config_dof = m_configdof;
+    const SiteExchanger &site_exch = m_site_swaps;
+    const ConfigDoF &config_dof = m_configdof;
     GrandCanonicalEvent event = m_event;
-    
+
     double tol = 1e-12;
-    
-    auto less = [&](const double& A, const double& B) {
+
+    auto less = [&](const double & A, const double & B) {
       return A < B - tol;
     };
-    
+
     std::map<double, unsigned long, decltype(less)> hist(less);
-    
+
     // no defect case
     hist[0.0] = 1;
-    
+
     double sum_exp = 0.0;
-    
+
     //Loop over sites that can change occupants
     for(Index exch_ind = 0; exch_ind < site_exch.variable_sites().size(); exch_ind++) {
       
@@ -277,15 +277,15 @@ namespace CASM {
 
         //save the result
         double dpot_nrg = event.dpotential_energy() * supercell().volume();
-        
+
         if(dpot_nrg < 0.0) {
           std::cerr << "Error calculating low temperature expansion: \n"
                     << "  Defect lowered the potential energy. Your motif configuration "
                     << "is not the 0K ground state." << std::endl;
           throw std::runtime_error("Error calculating low temperature expansion. Not in the ground state.");
         }
-        
-        
+
+
         auto it = hist.find(dpot_nrg);
         if(it == hist.end()) {
           hist[dpot_nrg] = 1;
@@ -295,14 +295,14 @@ namespace CASM {
         }
       }
     }
-    
-    
+
+
     sout << "\n-- Ground state and point defect potential energy details --\n\n";
-    
+
     sout << "T: " << m_condition.temperature() << std::endl;
-    sout << "kT: " << 1.0/m_condition.beta() << std::endl;
+    sout << "kT: " << 1.0 / m_condition.beta() << std::endl;
     sout << "Beta: " << m_condition.beta() << std::endl << std::endl;
-    
+
     sout << std::setw(16) << "N/unitcell" << " "
          << std::setw(16) << "dPE" << " "
          << std::setw(24) << "N*exp(-dPE/kT)" << " "
@@ -312,22 +312,22 @@ namespace CASM {
     double tsum = 0.0;
     double phi = 0.0;
     double phi_prev;
-    for(auto it=hist.rbegin(); it!=hist.rend(); ++it) {
+    for(auto it = hist.rbegin(); it != hist.rend(); ++it) {
       phi_prev = phi;
-      tsum += it->second*exp(-(it->first)*m_condition.beta());
-      phi = std::log(tsum)/m_condition.beta()/supercell().volume();
-      
+      tsum += it->second * exp(-(it->first) * m_condition.beta());
+      phi = std::log(tsum) / m_condition.beta() / supercell().volume();
+
       if(almost_equal(it->first, 0.0, tol)) {
         sout << std::setw(16) << "(gs)" << " ";
       }
       else {
-        sout << std::setw(16) << std::setprecision(8) << (1.0*it->second)/supercell().volume() << " ";
+        sout << std::setw(16) << std::setprecision(8) << (1.0 * it->second) / supercell().volume() << " ";
       }
       sout << std::setw(16) << std::setprecision(8) << it->first << " "
-           << std::setw(24) << std::setprecision(8) << it->second*exp(-it->first*m_condition.beta()) << " "
+           << std::setw(24) << std::setprecision(8) << it->second *exp(-it->first * m_condition.beta()) << " "
            << std::setw(16) << std::setprecision(8) << phi - phi_prev << " "
            << std::setw(16) << std::setprecision(8) << potential_energy() - phi << std::endl;
-      
+
     }
     
     sout << "phi_LTE(1): " << std::setprecision(12) << potential_energy() - phi << std::endl;
@@ -376,8 +376,8 @@ namespace CASM {
     Index new_species = m_site_swaps.sublat_to_mol()[sublat][new_occupant];
     event.set_dcomp_n(curr_species, m_minus_one_comp_n);
     event.set_dcomp_n(new_species, m_plus_one_comp_n);
-    
-    
+
+
     // ---- set dcorr --------------
 
     // Point the Clexulator to the right neighborhood
@@ -408,9 +408,9 @@ namespace CASM {
 
 
     // ---- set dpotential_energy --------------
-    
+
     event.set_dpotential_energy(event.dformation_energy() - m_condition.exchange_chem_pot(new_species, curr_species)*m_plus_one_comp_n);
-    
+
   }
 
   /// \brief Calculate properties given current conditions
@@ -425,38 +425,38 @@ namespace CASM {
 
     m_scalar_property["formation_energy"] = m_formation_energy_eci * corr().data();
     m_formation_energy = &m_scalar_property["formation_energy"];
-    
+
     m_scalar_property["potential_energy"] = formation_energy() - primclex().composition_axes().param_composition(comp_n()).dot(m_condition.param_chem_pot());
-    m_potential_energy = &m_scalar_property["potential_energy"]; 
-    
+    m_potential_energy = &m_scalar_property["potential_energy"];
+
     if(debug()) {
-      
+
       sout << std::setw(12) << "i" << std::setw(16) << "ECI" << std::setw(16) << "corr" << std::endl;
-      
+
       if(m_all_correlations) {
-        for(int i=0; i<corr().size(); ++i) {
-          
+        for(int i = 0; i < corr().size(); ++i) {
+
           double eci = 0.0;
           Index index = find_index(m_formation_energy_eci.index(), i);
           if(index != m_formation_energy_eci.index().size()) {
             eci = m_formation_energy_eci.value()[index];
           }
-          
-          sout << std::setw(12) << i 
-               << std::setw(16) << std::setprecision(8) << eci 
+
+          sout << std::setw(12) << i
+               << std::setw(16) << std::setprecision(8) << eci
                << std::setw(16) << std::setprecision(8) << corr()[i] << std::endl;
-        
+
         }
       }
       else {
-        for(int i=0; i<m_formation_energy_eci.value().size(); ++i) {
-          sout << std::setw(12) << m_formation_energy_eci.index()[i] 
-               << std::setw(16) << std::setprecision(8) << m_formation_energy_eci.value()[i] 
+        for(int i = 0; i < m_formation_energy_eci.value().size(); ++i) {
+          sout << std::setw(12) << m_formation_energy_eci.index()[i]
+               << std::setw(16) << std::setprecision(8) << m_formation_energy_eci.value()[i]
                << std::setw(16) << std::setprecision(8) << corr()[m_formation_energy_eci.index()[i]] << std::endl;
-        
+
         }
       }
-      
+
       auto origin = primclex().composition_axes().origin();
       auto chem_pot = m_condition.chem_pot();
       auto exchange_chem_pot = chem_pot;
@@ -464,7 +464,7 @@ namespace CASM {
       auto param_chem_pot = m_condition.param_chem_pot();
       auto comp_x = primclex().composition_axes().param_composition(comp_n());
       auto M = primclex().composition_axes().dparam_dmol();
-      
+
       sout << "\n-- Properties --\n\n"
 
            << "Semi-grand canonical ensemble: \n"
@@ -473,7 +473,7 @@ namespace CASM {
            << "  parametric composition, comp_x = M * (comp_n - origin) \n"
            << "  parametric chem potential, param_chem_pot = inv(M).transpose() * chem_pot \n"
            << "  potential_energy_i (per unitcell) = formation_energy_i - param_chem_pot*comp_x_i \n\n"
-           
+
            << "components: " << jsonParser(primclex().composition_axes().components()) << "\n"
            << "M:\n" << M << "\n"
            << "origin:\n" << origin.transpose() << "\n"
@@ -491,57 +491,57 @@ namespace CASM {
     }
 
   }
-  
+
   /// \brief Select initial motif configuration
   ///
-  /// \param motif_configname If "auto", use 0K ground state at given mu; else 
+  /// \param motif_configname If "auto", use 0K ground state at given mu; else
   ///        use configuration with given name
-  const Configuration& GrandCanonical::_select_motif(
-      std::string motif_configname, 
-      PrimClex& primclex, 
-      const GrandCanonicalConditions& cond,
-      std::ostream& _sout) {
+  const Configuration &GrandCanonical::_select_motif(
+    std::string motif_configname,
+    PrimClex &primclex,
+    const GrandCanonicalConditions &cond,
+    std::ostream &_sout) {
     if(motif_configname == "auto") {
-      
+
       std::cout << "Searching for minimum potential energy motif..." << std::endl;
-      
+
       double tol = 1e-6;
       auto compare = [&](double A, double B) {
         return A < B - tol;
       };
-      
+
       ConfigIO::Clex clex(primclex.global_clexulator(), primclex.global_eci("formation_energy"));
-      
-      std::multimap<double, const Configuration*, decltype(compare)> configmap(compare);
-      for(auto it=primclex.config_begin(); it!=primclex.config_end(); ++it) {
+
+      std::multimap<double, const Configuration *, decltype(compare)> configmap(compare);
+      for(auto it = primclex.config_begin(); it != primclex.config_end(); ++it) {
         configmap.insert(std::make_pair(clex(*it) - cond.chem_pot().dot(CASM::comp_n(*it)), &(*it)));
       }
-      
-      const Configuration& min_config = *(configmap.begin()->second);
+
+      const Configuration &min_config = *(configmap.begin()->second);
       double min_potential_energy = configmap.begin()->first;
       auto eq_range = configmap.equal_range(min_potential_energy);
       if(std::distance(eq_range.first, eq_range.second) > 1) {
-        _sout << "Warning: Found degenerate ground states with potential energy: " 
+        _sout << "Warning: Found degenerate ground states with potential energy: "
               << std::setprecision(8) << min_potential_energy << std::endl;
-        for(auto it=eq_range.first; it!=eq_range.second; ++it) {
+        for(auto it = eq_range.first; it != eq_range.second; ++it) {
           _sout << "  " << it->second->name() << std::endl;
         }
         _sout << "Choosing: " << min_config.name() << std::endl;
       }
       else {
-        _sout << "Found: " << min_config.name() << " with potential energy: " 
+        _sout << "Found: " << min_config.name() << " with potential energy: "
               << std::setprecision(8) << min_potential_energy << std::endl;
       }
-      
+
       return min_config;
-      
-      
+
+
     }
     else {
       return primclex.configuration(motif_configname);
     }
   }
-  
+
 
 
 

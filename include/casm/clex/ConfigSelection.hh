@@ -103,7 +103,7 @@ namespace CASM {
     ///   - If column headers are detected, they are also stored, and can be accessed using 'ConfigSelection::col_headers()'
     ///     - Currently, the first two columns are always 'name' and 'selected' so these headers are assumed and not stored
     ///
-    ConfigSelection(PrimClexType &_primclex, const fs::path &selection_path="MASTER");
+    ConfigSelection(PrimClexType &_primclex, const fs::path &selection_path = "MASTER");
 
     //ConfigSelection(const ConfigSelection &) =default;
 
@@ -148,7 +148,7 @@ namespace CASM {
     }
 
     void set_selected(const Configuration &config, bool is_selected) {
-      set_selected(config.name(),is_selected);
+      set_selected(config.name(), is_selected);
     }
 
     iterator config_begin() {
@@ -206,20 +206,20 @@ namespace CASM {
     }
 
     void print(std::ostream &_out, bool only_selected = false) const;
-    
+
     /// \brief Construct a ConfigSelection with no Configurations selected
-    static ConfigSelection None(PrimClex& primclex) {
+    static ConfigSelection None(PrimClex &primclex) {
       ConfigSelection selection(primclex);
-      for(auto it=selection.config_begin(); it!=selection.config_end(); ++it) {
+      for(auto it = selection.config_begin(); it != selection.config_end(); ++it) {
         it.set_selected(false);
       }
       return selection;
     }
-    
+
     /// \brief Construct a ConfigSelection with all Configurations selected
-    static ConfigSelection All(PrimClex& primclex) {
+    static ConfigSelection All(PrimClex &primclex) {
       ConfigSelection selection(primclex);
-      for(auto it=selection.config_begin(); it!=selection.config_end(); ++it) {
+      for(auto it = selection.config_begin(); it != selection.config_end(); ++it) {
         it.set_selected(true);
       }
       return selection;

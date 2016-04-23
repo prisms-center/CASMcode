@@ -166,60 +166,32 @@ namespace CASM {
   //********************************************************************
 
   template<typename ClustType>
-  void GenericOrbitree<ClustType>::sort(Index np) { //(Line 4810 in clusters11.0.h)
+  void GenericOrbitree<ClustType>::sort(Index np) {
     at(np).sort();
   }
 
   //********************************************************************
-  /*template<typename ClustType>
-  void GenericOrbitree<ClustType>::generate_config_clust_bases() {
-    _populate_site_bases();
-
-    Array<BasisSet> sitebases(m_b2asym.size());
-    for(Index b=0; b<m_b2asym.size(); b++)
-      sitebases[b]=_asym_unit().equiv(m_b2asym[b][0],m_b2asym[b][1]).clust_basis;
-    for(Index i = 0; i < size(); i++) {
-      for(Index j = 0; j < size(i); j++) {
-        Array<const BasisSet*> tbases;
-        for(Index ns=0; ns<prototype(i,j).size(); ns++){
-          tbases.push_back(&sitebases[prototype(i,j)[ns].basis_ind()]);
-        }
-        prototype(i, j).generate_config_clust_basis(tbases);
-        for(Index k = 0; k < size(i, j); k++) {
-          equiv(i, j, k).clust_basis = prototype(i, j).clust_basis;
-
-          // next: critical step -- make sure that dof IDs are up to date in equivalent basis functions
-          //std::cout << "Updating clust_basis of equiv:\n";
-
-          // if symmetry need to consider the effect of equivalence_map symmetry on basis sets a later date
-          // we may also need to permute the indices when updating dof IDs (but probably not)
-          equiv(i, j, k).clust_basis.update_dof_IDs(prototype(i, j).nlist_inds(), equiv(i, j, k).nlist_inds());
-        }
-      }
-    }
-  }
-  */
-  //********************************************************************
 
   template<typename ClustType>
   void GenericOrbitree<ClustType>::generate_clust_bases(Index max_poly_order) {
-    generate_clust_bases(Array<BasisSet const *>(), max_poly_order);
+    generate_clust_bases(std::vector<BasisSet const *>(), max_poly_order);
   }
 
   //********************************************************************
 
   template<typename ClustType>
-  void GenericOrbitree<ClustType>::generate_clust_bases(const Array<BasisSet const *> &global_args, Index max_poly_order) {
+  void GenericOrbitree<ClustType>::generate_clust_bases(std::vector<BasisSet const *> const &global_args, Index max_poly_order) {
     _populate_site_bases();
 
     Array<BasisSet> sitebases(m_b2asym.size());
     for(Index b = 0; b < m_b2asym.size(); b++)
       sitebases[b] = _asym_unit().equiv(m_b2asym[b][0], m_b2asym[b][1]).clust_basis;
+
     for(Index i = 0; i < size(); i++) {
       for(Index j = 0; j < size(i); j++) {
-        Array<const BasisSet *> local_args;
+        multivector<const BasisSet *>::X<2> local_args(1);
         for(Index ns = 0; ns < prototype(i, j).size(); ns++) {
-          local_args.push_back(&sitebases[prototype(i, j)[ns].basis_ind()]);
+          local_args.back().push_back(&sitebases[prototype(i, j)[ns].basis_ind()]);
         }
 
         // Should this step be a method of Orbit?
@@ -232,34 +204,12 @@ namespace CASM {
           //std::cout << "Updating clust_basis of equiv:\n";
 
           // we may also need to permute the indices when updating dof IDs (but probably not)
-          equiv(i, j, k).clust_basis.update_dof_IDs(prototype(i, j).nlist_inds(), equiv(i, j, k).nlist_inds());
+          equiv(i, j, k).clust_basis.set_dof_IDs(equiv(i, j, k).nlist_inds());
         }
       }
     }
   }
 
-  //********************************************************************
-  /*
-  template<typename ClustType>
-  void GenericOrbitree<ClustType>::fill_discrete_bases_tensors() {
-    for(Index i = 0; i < size(); i++) {
-      for(Index j = 0; j < size(i); j++) {
-        for(Index k = 0; k < size(i, j); k++) {
-          at(i)[j][k].fill_discrete_basis_tensors();
-        }
-      }
-    }
-  }
-  */
-  //********************************************************************
-  /*
-  template<typename ClustType>
-  void GenericOrbitree<ClustType>::collect_basis_info(const Structure &struc, const Coordinate &shift) {
-    for(Index np = 0; np < size(); np++)
-      for(Index no = 0; no < size(np); no++)
-        orbit(np, no).collect_basis_info(struc, shift);
-  }
-  */
   //********************************************************************
 
   template<typename ClustType>
@@ -268,24 +218,8 @@ namespace CASM {
 
     for(Index np = 0; np < size(); np++)
       for(Index no = 0; no < size(np); no++)
-        orbit(np, no).collect_basis_info(struc);
+        orbit(np, no).collect_basis_info(struc.basis);
   }
-
-  //***********************************************************
-
-  template<typename ClustType>
-  void GenericOrbitree<ClustType>::get_s2s_vec() {
-
-    for(Index nb = 0; nb < size(); nb++) {
-      for(Index no = 0; no < at(nb).size(); no++) {
-        prototype(nb, no).get_s2s_vec();
-        for(Index ne = 0; ne < orbit(nb, no).size(); ne++) {
-          equiv(nb, no, ne).get_s2s_vec();
-        }
-      }
-    }
-
-  };
 
   //********************************************************************
   template<typename ClustType>
@@ -364,24 +298,6 @@ namespace CASM {
     return false;
 
   }
-  /*
-    template<typename ClustType>
-    bool GenericOrbitree<ClustType>::tmp_contains(const ClustType &test_clust){
-    if (at(test_clust.size()).size()==0) return false;
-
-    for(Index i = 0; i < size(); i++)
-    {
-    for (Index j = 0; j < orbit(test_clust.size(),i).size(); j++){
-    if (orbit(test_clust.size(),i)[j].is_equivalent(test_clust))
-    {
-    return true;
-    }
-
-    }
-    }
-    return false;
-    }
-  */
 
   //*******************************
 
@@ -437,7 +353,7 @@ namespace CASM {
     }
 
     Index i, j, np, no;
-    Vector3<int> dim; //size of gridstruc
+    Eigen::Vector3i dim; //size of gridstruc
     double dist, min_dist;
     Array<typename ClustType::WhichCoordType> basis, gridstruc;
     std::string clean(80, ' ');
@@ -453,17 +369,17 @@ namespace CASM {
     for(i = 0; i < prim.basis.size(); i++) {
       if(prim.basis[i].site_occupant().size() >= min_num_components) {
         basis.push_back(prim.basis[i]);
-        basis.back().set_lattice(lattice);
+        basis.back().set_lattice(lattice, CART);
       }
     }
 
     double max_radius = max_length.max();
     dim = lattice.enclose_sphere(max_radius);
-    Counter<Vector3<int> > grid_count(-dim, dim, Vector3<int>(1));
+    EigenCounter<Eigen::Vector3i > grid_count(-dim, dim, Eigen::Vector3i::Constant(1));
     if(verbose) std::cout << "dim is " << dim << '\n';
     if(verbose) std::cout << "\n Finding Grid_struc:\n";
     do {
-      lat_point(FRAC) = grid_count();
+      lat_point.frac() = grid_count().cast<double>();
 
       for(i = 0; i < basis.size(); i++) {
         typename ClustType::WhichCoordType tatom(basis[i] + lat_point);
@@ -494,7 +410,6 @@ namespace CASM {
     // Add orbit corresponding to empty cluster
     at(0).push_back(GenericOrbit<ClustType>(ClustType(lattice)));
     at(0).back().get_equivalent(prim.factor_group());
-    at(0).back().get_cluster_symmetry();
 
 
     //for each cluster of the previous size, add points from gridstruc
@@ -536,15 +451,11 @@ namespace CASM {
           if(np == 1 && !contains(tclust)) {
             at(np).push_back(GenericOrbit<ClustType>(tclust));
             at(np).back().get_equivalent(prim.factor_group());
-            at(np).back().get_cluster_symmetry();
-            //at(np).back().get_tensor_basis(np); //temporarily works as rank = np
           }
           else if(tclust.max_length() < max_length[np] && tclust.min_length() > min_length && !contains(tclust)) {
             at(np).push_back(GenericOrbit<ClustType>(tclust));
 
             at(np).back().get_equivalent(prim.factor_group());
-            at(np).back().get_cluster_symmetry();
-            //at(np).back().get_tensor_basis(np); //temporarily works as rank = np
           }
           tclust.pop_back();
         }
@@ -578,11 +489,12 @@ namespace CASM {
   void GenericOrbitree<ClustType>::generate_orbitree(const Structure &prim, const int maxClust) {
     Index i, j, np, no;
     int numClust, ctr;
-    Vector3<int> dim; //size of gridstruc
+    Eigen::Vector3i dim; //size of gridstruc
     double maxClustLength;
     Array<typename ClustType::WhichCoordType> basis;
     Array<typename ClustType::WhichCoordType> gridstruc;
     lattice = prim.lattice();
+    double min_lat_length = min(min(prim.lattice().length(0), prim.lattice().length(1)), prim.lattice().length(2));
     Coordinate lat_point(lattice);
 
     //first get the basis sites
@@ -592,7 +504,7 @@ namespace CASM {
     for(i = 0; i < prim.basis.size(); i++) {
       if(prim.basis[i].site_occupant().size() >= min_num_components) {
         basis.push_back(prim.basis[i]);
-        basis.back().set_lattice(lattice);
+        basis.back().set_lattice(lattice, CART);
       }
     }
 
@@ -600,7 +512,7 @@ namespace CASM {
     int cellSize = ceil(pow(((maxClust - (basis.size() * (basis.size() - 1)) / 2.0) / (basis.size() * (2 * basis.size() - 1.0)) + 1.0), 1.0 / 3.0));
 
     //Build initial grid
-    double max_radius = (cellSize) * prim.lattice().lengths.min();
+    double max_radius = (cellSize) * min_lat_length;
     ctr = 0;
     dim = lattice.enclose_sphere(max_radius);
     gridstruc = lattice.gridstruc_build(max_radius, double(0), basis, lat_point);
@@ -620,7 +532,6 @@ namespace CASM {
     // Add orbit corresponding to empty cluster
     at(0).push_back(GenericOrbit<ClustType>(ClustType(lattice)));
     at(0).back().get_equivalent(prim.factor_group());
-    at(0).back().get_cluster_symmetry();
 
 
     //for each cluster of the previous size, add points from gridstruc
@@ -665,7 +576,6 @@ namespace CASM {
                 std::cout << "The minimum length is " << min_length << "\n";
                 at(np).push_back(GenericOrbit<ClustType>(tclust));
                 at(np).back().get_equivalent(prim.factor_group());
-                at(np).back().get_cluster_symmetry();
                 numClust = numClust + 1;
                 if(maxClustLength < tclust.max_length()) {
                   maxClustLength = tclust.max_length();
@@ -676,10 +586,10 @@ namespace CASM {
           }
           if(numClust < maxClust) {
             //Building a bigger grid!
-            dim = dim + 1;
-            ctr = ctr + 1;
+            dim += Eigen::Vector3i::Ones();
+            ctr += 1;
             std::cout << "Max Radius" << max_radius << "\n";
-            max_radius = (cellSize + ctr) * prim.lattice().lengths.min();
+            max_radius = (cellSize + ctr) * min_lat_length;
             std::cout << "Max Radius" << max_radius << "\n";
             gridstruc.append(lattice.gridstruc_build(max_radius, min_radius, basis, lat_point));
             min_radius = max_radius;
@@ -736,8 +646,6 @@ namespace CASM {
           if(np == 1 && !contains(tclust)) {
             at(np).push_back(GenericOrbit<ClustType>(tclust));
             at(np).back().get_equivalent(prim.factor_group());
-            at(np).back().get_cluster_symmetry();
-
           }
           else if(tclust.max_length() < max_length[np] && tclust.min_length() > min_length && !contains(tclust)) {
             std::cout << "Found a new cluster.... adding to Orbitree!\n";
@@ -749,7 +657,6 @@ namespace CASM {
                       << tclust << "\n";
 #endif //DEBUG
             at(np).back().get_equivalent(prim.factor_group());
-            at(np).back().get_cluster_symmetry();
           }
           tclust.pop_back();
         }
@@ -767,13 +674,14 @@ namespace CASM {
   void GenericOrbitree<ClustType>::generate_orbitree_neighbour(const Structure &prim, const Array<int> maxNeighbour) {
     Index i, j, np, no;
     int numClust, ctr;
-    Vector3<int> dim; //size of gridstruc
+    Eigen::Vector3i dim; //size of gridstruc
     double maxClustLength;
     Array<typename ClustType::WhichCoordType> basis;
     Array<typename ClustType::WhichCoordType> gridstruc;
     Array<double> neighbour_lengths;
     lattice = prim.lattice();
     Coordinate lat_point(lattice);
+    double min_lat_length = min(min(prim.lattice().length(0), prim.lattice().length(1)), prim.lattice().length(2));
 
     //first get the basis sites
     std::cout << "*** Finding Basis:\n";
@@ -782,14 +690,14 @@ namespace CASM {
     for(i = 0; i < prim.basis.size(); i++) {
       if(prim.basis[i].site_occupant().size() >= min_num_components) {
         basis.push_back(prim.basis[i]);
-        basis.back().set_lattice(lattice);
+        basis.back().set_lattice(lattice, CART);
       }
     }
     //Get a ballpark estimate of the number of cells required
     int cellSize = 1;
 
     //Build initial grid
-    double max_radius = (cellSize) * prim.lattice().lengths.min();
+    double max_radius = (cellSize) * min_lat_length;
     ctr = 0;
     dim = lattice.enclose_sphere(max_radius);
     gridstruc = lattice.gridstruc_build(max_radius, double(0), basis, lat_point);
@@ -807,7 +715,6 @@ namespace CASM {
     // Add orbit corresponding to empty cluster
     at(0).push_back(GenericOrbit<ClustType>(ClustType(lattice)));
     at(0).back().get_equivalent(prim.factor_group());
-    at(0).back().get_cluster_symmetry();
 
     //for each cluster of the previous size, add points from gridstruc
     //   - see if the new cluster satisfies the size requirements
@@ -850,7 +757,6 @@ namespace CASM {
               if(tclust.min_length() > min_length && !contains(tclust)) {
                 at(np).push_back(GenericOrbit<ClustType>(tclust));
                 at(np).back().get_equivalent(prim.factor_group());
-                at(np).back().get_cluster_symmetry();
                 if(maxClustLength < tclust.max_length()) {
                   maxClustLength = tclust.max_length();
                 }
@@ -873,9 +779,9 @@ namespace CASM {
 
           if(numClust < maxNeighbour[0]) {
             //Building a bigger grid!
-            dim = dim + 1;
+            dim += Eigen::Vector3i::Ones();
             ctr = ctr + 1;
-            max_radius = (cellSize + ctr) * prim.lattice().lengths.min();
+            max_radius = (cellSize + ctr) * min_lat_length;
             gridstruc.append(lattice.gridstruc_build(max_radius, min_radius, basis, lat_point));
             min_radius = max_radius;
             //End of building a bigger grid
@@ -934,13 +840,10 @@ namespace CASM {
           if(np == 1 && !contains(tclust)) {
             at(np).push_back(GenericOrbit<ClustType>(tclust));
             at(np).back().get_equivalent(prim.factor_group());
-            at(np).back().get_cluster_symmetry();
-
           }
           else if((tclust.max_length() < max_length[np] || almost_zero(tclust.max_length() - max_length[np]))  && tclust.min_length() > min_length && !contains(tclust)) {
             at(np).push_back(GenericOrbit<ClustType>(tclust));
             at(np).back().get_equivalent(prim.factor_group());
-            at(np).back().get_cluster_symmetry();
           }
           tclust.pop_back();
         }
@@ -974,7 +877,6 @@ namespace CASM {
     // add empty cluster
     at(0).push_back(GenericOrbit<ClustType>(ClustType(lattice)));
     at(0).back().get_equivalent(symgroup);
-    at(0).back().get_cluster_symmetry();
 
     Index np, no, i;
     //Array<Array<int> > full_decor_map;
@@ -1005,7 +907,6 @@ namespace CASM {
           // add orbit
           at(np).push_back(GenericOrbit<ClustType>(tclust));
           at(np).back().get_equivalent(symgroup);
-          at(np).back().get_cluster_symmetry();
 
         } // unique decorations
 
@@ -1155,8 +1056,6 @@ namespace CASM {
               at(np).push_back(GenericOrbit<ClustType>(tclust));
               //std::cout << "        get_equivalent()" << std::endl;
               at(np).back().get_equivalent(prim.factor_group());
-              //std::cout << "        get_cluster_symmetry()" << std::endl;
-              at(np).back().get_cluster_symmetry();
 
               // // write HopClusters & HopGroup to file
               // for(ne = 0; ne < at(np).back().size(); ne++)
@@ -1175,8 +1074,6 @@ namespace CASM {
               //    outfile.close();
               // }
 
-              //std::cout << "        get_tensor_basis()" << std::endl;
-              //at(np).back().get_tensor_basis(np); //temporarily works as rank = np
               //std::cout << "        Finish adding orbit" << std::endl;
 
             }
@@ -1298,8 +1195,6 @@ namespace CASM {
       at(prototype_list[i].size()).push_back(GenericOrbit<ClustType>(prototype_list[i]));
       //std::cout << "        get_equivalent()" << std::endl;
       at(prototype_list[i].size()).back().get_equivalent(sym_group);
-      //std::cout << "        get_cluster_symmetry()" << std::endl;
-      at(prototype_list[i].size()).back().get_cluster_symmetry();
 
       if(n_equiv[i] != at(prototype_list[i].size()).back().size()) {
         std::cerr << "Error in Orbitree::generate_orbitree_from_proto_file()." << std::endl
@@ -1332,8 +1227,6 @@ namespace CASM {
 
   template<typename ClustType>
   void GenericOrbitree<ClustType>::generate_in_cell(const Structure &prim, const Lattice &cell, int num_images) {
-
-
     Index i, j, np, no;
 
     Array<typename ClustType::WhichCoordType> gridstruc;
@@ -1343,16 +1236,13 @@ namespace CASM {
 
     PrimGrid prim_grid(lattice, reduced_cell);
 
-
-
     // make the grid from which the sites for the clusters are to be picked
-
-    Counter<Vector3<int> > shift_count(Vector3<int> (0, 0, 0), Vector3<int> (1, 1, 1), Vector3<int> (1, 1, 1));
+    EigenCounter<Eigen::Vector3i > shift_count(Eigen::Vector3i::Zero(), Eigen::Vector3i::Ones(), Eigen::Vector3i::Ones());
     Coordinate shift(reduced_cell);
 
     do {
       for(i = 0; i < 3; i++)
-        shift.at(i, FRAC) = shift_count[i];
+        shift.frac(i) = shift_count[i];
 
       for(i = 0; i < prim.basis.size(); i++) {
         if(prim.basis[i].site_occupant().size() < min_num_components) continue;
@@ -1360,10 +1250,10 @@ namespace CASM {
         for(j = 0; j < prim_grid.size(); j++) {
           gridstruc.push_back(prim.basis[i] + prim_grid.coord(j, PRIM));
           //          gridstruc.back().set_lattice(cell);
-          gridstruc.back().set_lattice(reduced_cell);
+          gridstruc.back().set_lattice(reduced_cell, CART);
           gridstruc.back().within();
           gridstruc.back() -= shift;
-          gridstruc.back().set_lattice(lattice);
+          gridstruc.back().set_lattice(lattice, CART);
         }
       }
 
@@ -1381,8 +1271,6 @@ namespace CASM {
     // Add orbit corresponding to empty cluster
     at(0).push_back(GenericOrbit<ClustType>(ClustType(lattice)));
     at(0).back().get_equivalent(prim.factor_group());
-    at(0).back().get_cluster_symmetry();
-
 
     //for each cluster of the previous size, add points from gridstruc
     //   - see if the new cluster satisfies the size requirements
@@ -1422,8 +1310,6 @@ namespace CASM {
           if(!contains(tclust) && tclust.min_length() > min_length) {
             at(np).push_back(GenericOrbit<ClustType>(tclust));
             at(np).back().get_equivalent(prim.factor_group());
-            at(np).back().get_cluster_symmetry();
-            //at(np).back().get_tensor_basis(np); //temporarily works as rank = np
           }
 
           tclust.pop_back();
@@ -1489,100 +1375,6 @@ namespace CASM {
     return;
   }
 
-
-  //***********************************************************
-  //
-  //
-  //
-  //
-  //***********************************************************
-  template<typename ClustType>
-  void GenericOrbitree<ClustType>::read_prototype_tensor_basis(std::istream &stream, COORD_TYPE mode, const SymGroup &sym_group) {
-
-    int num_orbit = 0, num_branches = 0;
-    char ch;
-    if(size())
-      std::cerr << "WARNING:  Orbitree is about to be overwritten! Execution will continue normally, but side effects may occur.\n";
-
-    ch = stream.peek();
-    while((ch != 'B') && (ch != 'b') && !stream.eof()) {
-      stream.ignore(256, '\n');
-      ch = stream.peek();
-      if(stream.eof()) {
-        std::cerr << "Did not specify total number of Branches! \n";
-        exit(1);
-      }
-    }
-
-    stream.ignore(256, ' ');
-    stream >> num_branches;
-#ifdef DEBUG
-    std::cout << "Read in number of branches is " << num_branches << "\n";
-#endif //DEBUG
-
-    //Size outer arry to have sufficient space to create orbitree
-    //resize(max_num_sites+1, GenericOrbitBranch<CoordType>(lattice));
-    resize(num_branches);
-
-    for(int b = 0; b < num_branches; b++) {
-#ifdef DEBUG
-      std::cout << "Branch b = " << b << "\n";
-#endif //DEBUG
-
-      stream.ignore(256, '\n');
-      stream.ignore(256, '\n');
-
-      ClustType tclust(lattice);
-      GenericOrbit<ClustType> torbit(tclust);
-
-      // Reading in total number of orbits
-      ch = stream.peek();
-# ifdef DEBUG
-      std::cout << "ch1 is " << ch << "\n";
-# endif //DEBUG
-
-      while((ch != 'O') && (ch != 'o') && !stream.eof()) {
-        stream.ignore(1000, '\n');
-        ch = stream.peek();
-
-# ifdef DEBUG
-        std::cout << "ch2 is " << ch << "\n";
-# endif //DEBUG
-
-        if(stream.eof()) {
-          std::cerr << "Did not specify total number of Orbits!\n";
-          exit(1);
-        }
-      }
-
-      stream.ignore(256, ' ');
-      stream >> num_orbit;
-      stream.ignore(1000, '\n');
-
-# ifdef DEBUG
-      std::cout << "Number of orbits is " << num_orbit << "\n";
-# endif //DEBUG
-
-      if(num_orbit == 0) {
-        std::cerr << "ERROR: Did not specify total number of orbits! \n";
-        exit(1);
-      }
-
-      for(int i = 0; i < num_orbit; i++) {
-# ifdef DEBUG
-        std::cout << "Orbit " << i << "\n";
-# endif //DEBUG
-
-        torbit.clear();
-        torbit.read(stream, mode, sym_group, true);
-        at(b).push_back(torbit);
-      }
-    }
-    sort();
-    get_index();
-    return;
-
-  };
 
 
   //***********************************************************
@@ -1962,6 +1754,7 @@ namespace CASM {
       }
     }
     out << "\n\n";
+    Index nf = 0;
     for(Index i = 0; i < size(); i++) {
       if(size(i) != 0) out << "** Branch " << i << " ** \n" << std::flush;
       for(Index j = 0; j < size(i); j++) { //Loops over all i sized Orbits
@@ -1973,13 +1766,9 @@ namespace CASM {
             << "  MaxLength: " << orbit(i, j).prototype.max_length()
             << '\n' << std::flush;
 
-        if(orbit(i, j).size() > 0) {
-          for(int k = 0; k < 1; k++) { // Loops over each equivalent cluster in j
-            out << "            " << "Prototype" << " of " << orbit(i, j).size() << " Equivalent Clusters in Orbit " << index[i][j] << '\n' << std::flush;
-            orbit(i, j).at(k).print_clust_basis(out, 18, '\n');
-
-          }
-        }
+        out << "            " << "Prototype" << " of " << orbit(i, j).size() << " Equivalent Clusters in Orbit " << index[i][j] << '\n' << std::flush;
+        prototype(i, j).print_clust_basis(out, nf, 8, '\n');
+        nf += prototype(i, j).clust_basis.size();
         out << "\n\n" << std::flush;
       }
       if(size(i) != 0) out << '\n' << std::flush;
@@ -2059,295 +1848,6 @@ namespace CASM {
   };
 
 
-  //*********************************************************
-  /**
-   *
-   *
-   */
-  //*********************************************************
-  template<typename ClustType>
-  void GenericOrbitree<ClustType>::write_full_tensor_basis(std::string file, Index np) const {
-
-    bool read_eci;
-
-    std::ofstream out;
-    out.open(file.c_str());
-    if(index.size() != size()) {
-      get_index();
-    }
-
-    if(!out) {
-      std::cerr << "Can't open " << file << ".\n";
-      return;
-    }
-
-    out.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
-    out.precision(5);
-
-    int no = 0, io = 0;
-    for(Index i = 0; i < size(); i++) {
-      for(Index j = 0; j < at(i).size(); j++) { //Loops over all i sized Orbits
-        if(prototype(i, j).size() >= np)
-          no++;
-      }
-    }
-
-    out << "Branches " << size() << "\n";
-    //out << "Orbits " << no << "\n";
-
-    // std::cout << "INSIDE ORBITREE::WRITE_TENSOR_BASIS.  NUMBER OF BRANCHES IS "
-    // 	      << size() << "\n";
-
-
-    //Loop over branches
-    for(Index i = 0; i < size(); i++) {
-      out << "Branch " << (i + 1) << " of " << size() << "\n";
-      out << "Orbits " << at(i).size() << "\n";
-      //Loop over orbits
-      for(Index j = 0; j < at(i).size(); j++) { //Loops over all i sized Orbits
-
-        if(prototype(i, j).size() >= np) {
-          io++;
-          //out << "Orbit " << io << " of " << no << "\n";
-          out << "Orbit " << (j + 1) << " of " << at(i).size() << "\n";
-          out << "Clusters in Orbit: "
-              << orbit(i, j).size() << "\n";
-
-          for(Index k = 0; k < orbit(i, j).size(); k++) {
-            equiv(i, j, k).print(out, '\n');
-            out << "\n";
-            out << "Tensor Basis \n";
-
-            if(equiv(i, j, k).tensor_basis.size()) {
-
-              out << equiv(i, j, k).tensor_basis.size() << "  "
-                  << equiv(i, j, k).tensor_basis[0].rank() << "  "
-                  << equiv(i, j, k).tensor_basis[0].dim() << "\n";
-
-              for(Index t = 0; t < equiv(i, j, k).tensor_basis.size(); t++) {
-
-                if(std::isnan(equiv(i, j, k).tensor_basis.eci(t))) {
-                  out << "<ECI> * \n";
-                  out << equiv(i, j, k).tensor_basis[t] << "\n\n";
-                  read_eci = false;
-                }
-                else {
-                  out << equiv(i, j, k).tensor_basis.eci(t) << " * \n";
-                  out << equiv(i, j, k).tensor_basis[t] << "\n\n";
-                  read_eci = true;
-                }
-              }
-              if(read_eci == false) {
-                out << "Force Constant Tensor of this Cluster is \n"
-                    << "N/A\n\n";
-              }
-              else {
-                out << "Force Constant Tensor of this Cluster is \n"
-                    << equiv(i, j, k).eci << "\n\n";
-              }
-
-            }
-            out << "************************************************ \n";
-          } //End loop over clusters
-        }
-      }
-    }
-
-
-  };
-
-  //*********************************************************
-  /**
-   *
-   * @param file Name of the file being written to
-   * @param np Number of points in the prototype cluster
-   */
-  //*********************************************************
-  template<typename ClustType>
-  void GenericOrbitree<ClustType>::write_prototype_tensor_basis(std::string file, Index np, std::string path) const {
-
-    path.append(file);
-    std::ofstream out;
-    bool read_eci;
-    //out.open(file.c_str());
-    out.open(path.c_str());
-    if(index.size() != size()) {
-      get_index();
-    }
-
-    if(!out) {
-      std::cerr << "Can't open " << file << ".\n";
-      return;
-    }
-
-    out.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
-    out.precision(5);
-
-    int no = 0, io = 0;
-    for(Index i = 0; i < size(); i++) {
-      for(Index j = 0; j < at(i).size(); j++) { //Loops over all i sized Orbits
-
-        if(prototype(i, j).size() >= np)
-          no++;
-      }
-    }
-
-    out << "Branches " << size() << "\n";
-    //out << "Orbits " << no << "\n";
-
-    for(Index i = 0; i < size(); i++) {
-      out << "Branch " << (i + 1) << " of " << size() << "\n";
-      out << "Orbits " << at(i).size() << "\n";
-
-      for(Index j = 0; j < at(i).size(); j++) { //Loops over all i sized Orbits
-
-        if(prototype(i, j).size() >= np) {
-          io++;
-          //out << "Orbit " << io << " of " << no << "\n";
-          out << "Orbit " << (j + 1) << " of " << at(i).size() << "\n";
-          out << "Clusters in Orbit: 1 \n";
-          orbit(i, j).prototype.print(out, '\n'); //Changed 04/04/13 to accomodate new cluster print
-          out << "\n"; //Added 04/04/13 to accomodate new cluster print
-          out << "Tensor Basis \n";
-
-          if(orbit(i, j).prototype.tensor_basis.size()) {
-
-            out << orbit(i, j).prototype.tensor_basis.size() << "  "
-                << orbit(i, j).prototype.tensor_basis[0].rank() << "  "
-                << orbit(i, j).prototype.tensor_basis[0].dim() << "\n";
-
-            for(Index t = 0; t < orbit(i, j).prototype.tensor_basis.size(); t++) {
-
-              if(std::isnan(orbit(i, j).prototype.tensor_basis.eci(t))) {
-                out << "<ECI> * \n";
-                out << orbit(i, j).prototype.tensor_basis[t] << "\n\n";
-                read_eci = false;
-              }
-              else {
-                out << orbit(i, j).prototype.tensor_basis.eci(t) << " * \n";
-                out << orbit(i, j).prototype.tensor_basis[t] << "\n\n";
-                read_eci = true;
-              }
-            }
-            if(read_eci == false) {
-              out << "Force Constant Tensor of this Cluster is \n"
-                  << "N/A\n\n";
-            }
-            else {
-              out << "Force Constant Tensor of this Cluster is \n"
-                  << orbit(i, j).prototype.eci << "\n\n";
-            }
-          }
-          else {
-            out << 0 << " " << 0 << " " << 0 << "\n";
-          }
-          out << "************************************************ \n";
-        }
-      }
-
-    } //End loop over Branches
-
-
-  };
-
-  //***********************************************
-
-  template<typename ClustType>
-  void GenericOrbitree<ClustType>::get_dynamical_matrix(MatrixXcd &dmat, const Coordinate &k, Index bands_per_site) {
-    Index np, no, ne, i, j;
-    std::complex<double> tphase;
-
-    //loop over all the orbits of orbitree
-    for(np = 0; np < size(); np++) {
-      for(no = 0; no < size(np); no++) {
-
-        //Loop over all equivalent clusters
-        for(ne = 0; ne < size(np, no); ne++) {
-          /*
-          //check rank for extra safety, but seems like a waste to do it for every k-point
-          if(equiv(np,no,ne).eci.rank()<2){
-          std::cerr << "FATAL ERROR: Attempting to construct dynamical matrix, "
-          << "but an eci has been initialized improperly! Exiting...\n";
-          exit(0);
-          }
-          */
-          tphase = equiv(np, no, ne).get_phase(k);
-
-          //Loop over all elements of the eci tensor.  These correspond to the number of bands per site.
-          for(i = 0; i < bands_per_site; i++) {
-            for(j = 0; j < bands_per_site; j++) {
-              // Multiply each element of the eci tensor by the phase factor and
-              // add it to the block of the matrix corresponding to that equivalent cluster.
-
-              dmat(equiv(np, no, ne)[0].basis_ind() * bands_per_site + i,
-                   equiv(np, no, ne)[1].basis_ind() * bands_per_site + j)
-              += tphase * equiv(np, no, ne).eci(i, j);
-            }
-          }
-        }
-      }
-    }
-    return;
-  }
-
-  //********************************************************************
-  /**
-   * It calculates the ECI tensors for the
-   * clusters (petals).  The ECI tensors for the self-interaction pairs
-   * (the pivot point with itself) is the negative of the sum of
-   * the force constant tensors of the petals of its flower.
-   */
-  //********************************************************************
-  template<typename CoordType>
-  void GenericOrbitree<CoordType>::calc_tensors() {
-    std::cout << "********* In Orbitree::calc_tensors! **********\n";
-    // Calculate ECI's
-    // Loop over branches of tree
-    std::cout << "The size of the branch is " << size() << "\n";
-    for(Index i = 0; i < size(); i++) {
-
-      std::cout << "Number of orbits: " << at(i).size() << "\n";
-      // Loop over orbits of orbitbranch
-      for(Index j = 0; j < at(i).size(); j++) {
-        orbit(i, j).calc_eci(2);
-      }
-    }
-
-    std::cout << "Done with first two for loops \n";
-    //Generate self-interaction pair(s') ECI tensors
-    //Loop over branches
-    //std::cout << "size of flower tree is " << size() << "\n";
-    //std::cout << "size of orbit(0,0) is " << orbit(0,0).size() << "\n";
-    for(Index b = 0; b < size(); b++) {
-
-      std::cout << "b = " << b << "\n\n";
-      // std::cout << "The self interaction term is "
-      // 		<< equiv(b,0,0) << "\nand\n"
-      // 		<< prototype(b,0) << "\n";
-      equiv(b, 0, 0).eci.redefine(Array<Index>(2, 3));
-      equiv(b, 0, 0).eci = 0.0;
-      prototype(b, 0).eci.redefine(Array<Index>(2, 3));
-      prototype(b, 0).eci = 0.0;
-
-      //TODO: Change this so if it reads in a self-interaction,
-      //won't overwrite?
-
-      //loop over orbits (flower)
-      for(Index d = 1; d < at(b).size(); d++) {
-        //loop over clusters (petals)
-        //summing over all the eci's in the flower (ECI of
-        //self-interaction pair has to be invariant under symmetry)
-        for(Index e = 0; e < orbit(b, d).size(); e++) {
-          equiv(b, 0, 0).eci -= equiv(b, d, e).eci;
-          prototype(b, 0).eci -= equiv(b, d, e).eci;
-        }
-      }
-      std::cout << "Self-interaction force constant for cluster \n";
-      prototype(b, 0).print(std::cout, '\n');
-      std::cout << "\n is: \n" << prototype(b, 0).eci << "\n";
-    } // End loop over branches to generate self-interaction pair
-  };
-
   //John G 050513
   //************************************************************
   /**
@@ -2378,7 +1878,7 @@ namespace CASM {
 
 
     Index i, j, np, no;
-    Vector3<int> dim;			//size of gridstruc
+    Eigen::Vector3i dim;			//size of gridstruc
     double dist, max_dist;
     Array<typename ClustType::WhichCoordType> basis, gridstruc;
 
@@ -2391,7 +1891,7 @@ namespace CASM {
     for(i = 0; i < prim.basis.size(); i++) {
       if(prim.basis[i].site_occupant().size() >= min_num_components) {
         basis.push_back(prim.basis[i]);
-        basis.back().set_lattice(lattice);
+        basis.back().set_lattice(lattice, CART);
       }
     }
 
@@ -2403,13 +1903,13 @@ namespace CASM {
 
     // 'dim' is size of grid so that all sites within max_radius are included
     dim = lattice.enclose_sphere(max_radius);
-    Counter<Vector3<int> > grid_count(-dim, dim, Vector3<int>(1));
+    EigenCounter<Eigen::Vector3i > grid_count(-dim, dim, Eigen::Vector3i::Ones());
     //std::cout << "dim is " << dim << '\n' << std::flush;
     //std::cout << "\n Finding Grid_struc:\n" << std::flush;
 
     // check all sites to see if they are close enough to 'phenom_clust' that they might be included in the local clusters
     do {
-      lat_point(FRAC) = grid_count();
+      lat_point.frac() = grid_count().cast<double>();
 
       for(i = 0; i < basis.size(); i++) {
         // check site at basis[i] + lat_point
@@ -2505,8 +2005,6 @@ namespace CASM {
     // Add orbit corresponding to empty cluster
     at(0).push_back(GenericOrbit<ClustType>(ClustType(lattice)));
     at(0).back().get_equivalent(phenom_clust.clust_group);
-    at(0).back().get_cluster_symmetry();
-
 
     // loop through OrbitBranches of Orbits of clusters of np sites
     for(np = 1; np <= max_num_sites; np++) {
@@ -2565,8 +2063,6 @@ namespace CASM {
             //std::cout << "-- add point cluster" << std::endl << std::endl;
             at(np).push_back(GenericOrbit<ClustType>(tclust));
             at(np).back().get_equivalent(phenom_clust.clust_group);
-            at(np).back().get_cluster_symmetry();
-
           }
           else if(tclust.max_length() < max_length[np] && tclust.min_length() > min_length && !contains(tclust)) {
             //std::cout << "-- Found a new cluster.... adding to Orbitree!\n" << std::flush;
@@ -2578,7 +2074,6 @@ namespace CASM {
 #endif //DEBUG
 
             at(np).back().get_equivalent(phenom_clust.clust_group);
-            at(np).back().get_cluster_symmetry();
           }
 
           tclust.pop_back();
@@ -2734,7 +2229,6 @@ namespace CASM {
     for(np = 0; np < (*this).size(); np++) {
       for(no = 0; no < at(np).size(); no++) {
         at(np).at(no).get_equivalent(sym_group);
-        at(np).at(no).get_cluster_symmetry();
         // std::cout<<"Sym Group of np: "<<np<<"  no:"<<no<<std::endl;
         // at(np).at(no).prototype.clust_group.print(std::cout,FRAC);
         // std::cout<<"Permute group of the same"<<std::endl;
@@ -2768,14 +2262,14 @@ namespace CASM {
 
     // Initializing data
     Array<ClustType> proto_clust;
-    
+
     const jsonParser &orbit_specs = json;
 
     //proto_clust.resize(json["clusters"].size(), temp_clust);
     for(int i = 0; i < orbit_specs.size(); i++) {
-      
+
       std::string in_mode = orbit_specs[i]["coordinate_mode"].template get<std::string>();
-      
+
       COORD_TYPE json_coord_mode;
       if(in_mode == "Cartesian") {
         json_coord_mode = CART;
@@ -2795,7 +2289,7 @@ namespace CASM {
         );
       }
 
-      const jsonParser& proto_json = orbit_specs[i]["prototype"];
+      const jsonParser &proto_json = orbit_specs[i]["prototype"];
       ClustType temp_clust(lattice);
       if(in_mode == "Integral") {
         for(int j = 0; j < proto_json.size(); j++) {
@@ -2803,34 +2297,42 @@ namespace CASM {
         }
       }
       else {
-        
-        Array< Vector3<double> > json_coord_list;
-        json_coord_list.clear();
-        for(int j = 0; j < proto_json.size(); j++) {
-          json_coord_list.push_back(proto_json[j].get< Vector3<double> >());
-        }
-        
+
+        Eigen::MatrixXd coords_as_rows;
+        CASM::from_json(coords_as_rows, proto_json);
+        //std::cout << "coords_as_rows is:\n" << coords_as_rows << "\n";
+
         //Looking for the correct sites in the PRIM and loading in the correct information
-        for(int j = 0; j < json_coord_list.size(); j++) {
+        for(int j = 0; j < coords_as_rows.rows(); j++) {
           //Converting to a Coordinate
-          Coordinate tcoord(json_coord_list[j], struc.lattice(), json_coord_mode);
+          Coordinate tcoord(coords_as_rows.row(j).transpose(), struc.lattice(), json_coord_mode);
+          //std::cout << "tcoord FRAC is " << tcoord.const_frac().transpose() << "\n";
+          //std::cout << "tcoord CART is " << tcoord.const_cart().transpose() << "\n";
           int site_loc = struc.find(tcoord);
           if(site_loc != struc.basis.size()) {
             temp_clust.push_back(struc.basis[site_loc]);
-            temp_clust.back()(CART) = tcoord(CART);
+            //std::cout << "back before: " << temp_clust.back().const_cart() << "\n\n";
+            temp_clust.back().cart() = tcoord.cart();
+            //std::cout << "back after: " << temp_clust.back().const_cart() << "\n\n";
           }
           else {
             std::cerr << "ERROR in GenericOrbitree<ClustType>::read_custom_clusters_from_json. "
                       << "Coordinate in custom orbit " << i << " does not match any site in the prim." << std::endl;
             std::cerr << "Prototype: \n" << orbit_specs[i] << std::endl;
             std::cerr << "coordinate_mode: " << in_mode << std::endl;
-            std::cerr << "Could not find: " << tcoord(json_coord_mode) << std::endl;
+            if(json_coord_mode == FRAC)
+              std::cerr << "Could not find: " << tcoord.const_frac() << std::endl;
+            else
+              std::cerr << "Could not find: " << tcoord.const_cart() << std::endl;
             throw std::runtime_error(
               "ERROR in GenericOrbitree<ClustType>::read_custom_clusters_from_json\n"
               "  Coordinate does not match any site in the prim."
             );
           }
         }
+        //std::cout << "Finished reading cluster \n";
+        //temp_clust.print(std::cout);
+        //std::cout << "\n";
       }
       temp_clust.calc_properties();
       proto_clust.push_back(temp_clust);
@@ -2840,7 +2342,7 @@ namespace CASM {
     if(this->size() == 0) {
       (*this).push_back(GenericOrbitBranch<ClustType>(lattice));
     }
-    
+
     // update max_num_sites / min_num_components based on custom input
     for(int i = 0; i < proto_clust.size(); i++) {
       if(proto_clust[i].size() > max_num_sites)
@@ -2850,25 +2352,23 @@ namespace CASM {
           min_num_components = proto_clust[i][j].allowed_occupants().size();
       }
     }
-    
+
     while(size() <= max_num_sites) {
       push_back(GenericOrbitBranch<ClustType>(lattice));
     }
-    
+
     for(int i = 0; i < proto_clust.size(); i++) {
       //std::cout << "Working on cluster: " << i << std::endl;
       if(contains(proto_clust[i])) {
-        std::cout << "Proto_clust: " << std::endl;
+        std::cerr << "Proto_clust: " << std::endl;
         proto_clust[i].print(std::cout);
-        std::cout << "This cluster is already in the Orbitree. Not adding it to the list" << std::endl;
+        std::cerr << "This cluster is already in the Orbitree. Not adding it to the list" << std::endl;
         continue;
       }
       //std::cout << "        Add orbit!" << std::endl;
       at(proto_clust[i].size()).push_back(GenericOrbit<ClustType>(proto_clust[i]));
       //std::cout << "        get_equivalent()" << std::endl;
       at(proto_clust[i].size()).back().get_equivalent(sym_group);
-      //std::cout << "        get_cluster_symmetry()" << std::endl;
-      at(proto_clust[i].size()).back().get_cluster_symmetry();
 
       bool include_subclusters;
       // check if should include_subclusters.  default is true
@@ -2876,7 +2376,7 @@ namespace CASM {
       if(include_subclusters) {
         add_subclusters(at(proto_clust[i].size()).back().prototype, struc, verbose);
       }
-      
+
     }
     sort();
     get_index();
@@ -2935,7 +2435,6 @@ namespace CASM {
           if(verbose) std::cout << "Adding this cluster: " << test_clust << std::endl;
           at(i).push_back(GenericOrbit< ClustType >(test_clust));
           at(i).back().get_equivalent(prim.factor_group());
-          at(i).back().get_cluster_symmetry();
         }
       }
       while(choose.next_permute());
@@ -3022,8 +2521,7 @@ namespace CASM {
       if(!_asym_unit().contains(tclust)) {
         m_asym_unit.push_back(GenericOrbit<ClustType>(tclust));
         m_asym_unit.back().get_equivalent(struc.factor_group());
-        m_asym_unit.back().get_cluster_symmetry();
-        m_asym_unit.back().collect_basis_info(struc);
+        m_asym_unit.back().collect_basis_info(struc.basis);
         for(Index ne = 0; ne < m_asym_unit.back().size(); ne++) {
           m_b2asym[_asym_unit().back()[ne][0].basis_ind()][0] = _asym_unit().size() - 1;
           m_b2asym[_asym_unit().back()[ne][0].basis_ind()][1] = ne;
@@ -3037,7 +2535,7 @@ namespace CASM {
 
   template<typename ClustType>
   void GenericOrbitree<ClustType>::_populate_site_bases() {
-    
+
     if(bspecs()["basis_functions"]["site_basis_functions"].is_string()) {
       std::string func_type = bspecs()["basis_functions"]["site_basis_functions"].template get<std::string>();
 
@@ -3046,9 +2544,9 @@ namespace CASM {
       case 'c': { //chebychev
         for(Index i = 0; i < _asym_unit().size(); i++) {
           Array<double> tprob(m_asym_unit.prototype(i)[0].site_occupant().size(), 1.0 / double(_asym_unit().prototype(i)[0].site_occupant().size()));
-          m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(), tprob, _asym_unit().prototype(i)[0].basis_ind());
+          m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(), tprob, _asym_unit().prototype(i)[0].basis_ind(), asym_unit().prototype(i).clust_group());
           for(Index ne = 0; ne < _asym_unit()[i].size(); ne++)
-            m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind());
+            m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind(), asym_unit().prototype(i).clust_group());
         }
         break;
       }
@@ -3057,9 +2555,9 @@ namespace CASM {
           Array<double> tprob(_asym_unit().prototype(i)[0].site_occupant().size(), 0.0);
           if(tprob.size()) {
             tprob[0] = 1.0;
-            m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(), tprob, _asym_unit().prototype(i)[0].basis_ind());
+            m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(), tprob, _asym_unit().prototype(i)[0].basis_ind(), asym_unit().prototype(i).clust_group());
             for(Index ne = 0; ne < _asym_unit()[i].size(); ne++)
-              m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind());
+              m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind(), asym_unit().prototype(i).clust_group());
           }
         }
         break;
@@ -3147,9 +2645,9 @@ namespace CASM {
         }
         for(Index j = 0; j < tprob.size(); j++)
           tprob[j] /= tsum;
-        m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(), tprob, _asym_unit().prototype(i)[0].basis_ind());
+        m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(), tprob, _asym_unit().prototype(i)[0].basis_ind(), asym_unit().prototype(i).clust_group());
         for(Index ne = 0; ne < _asym_unit()[i].size(); ne++)
-          m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind());
+          m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(), tprob, _asym_unit()[i][ne][0].basis_ind(), asym_unit().prototype(i).clust_group());
       }
 
       //std::cout << "Using concentration-optimized site basis functions." << std::endl << std::endl;

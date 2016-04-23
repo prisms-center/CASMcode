@@ -9,18 +9,18 @@ namespace CASM {
   template <bool IsConst>
   ConfigSelection<IsConst>::ConfigSelection(typename ConfigSelection<IsConst>::PrimClexType &_primclex, const fs::path &selection_path)
     : m_primclex(&_primclex), m_name(selection_path.string()) {
-    if(selection_path=="MASTER"){
+    if(selection_path == "MASTER") {
       for(auto it = _primclex.config_begin(); it != _primclex.config_end(); ++it) {
         set_selected(it->name(), it->selected());
       }
     }
     else if(selection_path == "ALL") {
-      for(auto it=_primclex.config_cbegin(); it!=_primclex.config_cend(); ++it) {
+      for(auto it = _primclex.config_cbegin(); it != _primclex.config_cend(); ++it) {
         set_selected(it->name(), true);
       }
     }
     else if(selection_path == "CALCULATED") {
-      for(auto it=_primclex.config_cbegin(); it!=_primclex.config_cend(); ++it) {
+      for(auto it = _primclex.config_cbegin(); it != _primclex.config_cend(); ++it) {
         set_selected(it->name(), is_calculated(*it));
       }
     }
@@ -158,11 +158,11 @@ namespace CASM {
 
   }
   //******************************************************************************
-/*
-  template< bool IsConst>
-  typename ConfigSelection<IsConst>::value_type &ConfigSelection<IsConst>::operator[](const std::string &configname) const {
-    return m_primclex->configuration(configname);
-  }
-*/
+  /*
+    template< bool IsConst>
+    typename ConfigSelection<IsConst>::value_type &ConfigSelection<IsConst>::operator[](const std::string &configname) const {
+      return m_primclex->configuration(configname);
+    }
+  */
 }
 

@@ -59,19 +59,19 @@ namespace CASM {
 
     /// \brief Get current eci name
     std::string eci() const;
-    
+
     /// \brief Get neighbor list weight matrix
     Eigen::Matrix3l nlist_weight_matrix() const;
-    
+
     /// \brief Get set of sublattice indices to include in neighbor lists
-    const std::set<int>& nlist_sublat_indices() const;
+    const std::set<int> &nlist_sublat_indices() const;
 
     /// \brief Get current compilation options string
     std::string compile_options() const;
 
     /// \brief Get current shared library options string
     std::string so_options() const;
-    
+
     /// \brief Get current command used by 'casm view'
     std::string view_command() const;
 
@@ -136,12 +136,12 @@ namespace CASM {
 
     /// \brief Set current eci to 'eci', if 'eci' exists
     bool set_eci(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci);
-    
-    /// \brief Set neighbor list weight matrix (will delete existing Clexulator 
+
+    /// \brief Set neighbor list weight matrix (will delete existing Clexulator
     /// source and compiled code)
     bool set_nlist_weight_matrix(Eigen::Matrix3l M);
-    
-    /// \brief Set range of sublattice indices to include in neighbor lists (will 
+
+    /// \brief Set range of sublattice indices to include in neighbor lists (will
     /// delete existing Clexulator source and compiled code)
     template<typename SublatIterator>
     bool set_nlist_sublat_indices(SublatIterator begin, SublatIterator end);
@@ -151,7 +151,7 @@ namespace CASM {
 
     /// \brief Set shared library options to 'opt'
     bool set_so_options(std::string opt);
-    
+
     /// \brief Set command used by 'casm view'
     bool set_view_command(std::string opt);
 
@@ -164,10 +164,10 @@ namespace CASM {
 
 
   private:
-    
+
     /// \brief Changing the neighbor list properties requires updating Clexulator source code
     void _reset_clexulators();
-    
+
     DirectoryStructure m_dir;
 
     std::string m_name;
@@ -178,7 +178,7 @@ namespace CASM {
     std::string m_ref;
     std::string m_clex;
     std::string m_eci;
-    
+
     // neighbor list settings
     Eigen::Matrix3l m_nlist_weight_matrix;
     std::set<int> m_nlist_sublat_indices;
@@ -189,7 +189,7 @@ namespace CASM {
     // Runtime library compilation settings: compilation options
     std::string m_compile_options;
     std::string m_so_options;
-    
+
     // Command executed by 'casm view'
     std::string m_view_command;
 
@@ -201,7 +201,7 @@ namespace CASM {
   jsonParser &to_json(const ProjectSettings &set, jsonParser &json);
 
 
-  /// \brief Set range of sublattice indices to include in neighbor lists (will 
+  /// \brief Set range of sublattice indices to include in neighbor lists (will
   /// delete existing Clexulator source and compiled code)
   template<typename SublatIterator>
   bool ProjectSettings::set_nlist_sublat_indices(SublatIterator begin, SublatIterator end) {
@@ -209,7 +209,7 @@ namespace CASM {
     m_nlist_sublat_indices = std::set<int>(begin, end);
     return true;
   }
-  
+
 }
 
 #endif

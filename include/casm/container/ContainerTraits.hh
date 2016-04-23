@@ -17,7 +17,7 @@ namespace CASM {
   ///
   template<typename _Container>
   struct ContainerTraits {};
-  
+
   /// \brief Eigen::VectorXd container traits
   template<>
   struct ContainerTraits<Eigen::VectorXd> {
@@ -25,14 +25,13 @@ namespace CASM {
     typedef Eigen::VectorXd::Index size_type;
     typedef Eigen::VectorXd::Scalar value_type;
     typedef CASM_TMP::ParenthesesAccess<Container, value_type, size_type> Access;
-    
+
     /// \brief Return size of container
-    static size_type size(const Eigen::VectorXd& vec) {
+    static size_type size(const Eigen::VectorXd &vec) {
       return vec.size();
     }
   };
-  
+
 }
 
 #endif
-  

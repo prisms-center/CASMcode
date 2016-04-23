@@ -2,7 +2,7 @@
 #include "casm/clex/NeighborList.hh"
 
 namespace CASM {
-  
+
   /// \brief Builds a new CASM project
   ///
   /// - requires a prim.json in the project directory
@@ -30,9 +30,9 @@ namespace CASM {
           std::string("Error in 'ProjectBuilder::build()'.\n") +
           "  No prim.json file found at: " + dir.prim().string());
       }
-      
+
       ProjectSettings set(m_root, m_name);
-      
+
       // create basic directories
       set.new_casm_dir();
       set.new_symmetry_dir();
@@ -77,25 +77,25 @@ namespace CASM {
       }
 
       set.commit();
-      
-      
+
+
       // Read prim
       Structure prim;
       fs::ifstream primfile(dir.prim());
       prim = Structure(read_prim(jsonParser(primfile)));
       primfile.close();
 
-      
+
       // Calculate symmetry  --------------------
       // get lattice point group and character table
       SymGroup lattice_point_grp;
       prim.lattice().generate_point_group(lattice_point_grp, m_tol);
-      lattice_point_grp.get_character_table();
+      lattice_point_grp.character_table();
 
       // get factor group
       prim.generate_factor_group(m_tol);
       prim.set_site_internals();
-      
+
       // Write symmetry info files
 
       // Write lattice point group
@@ -128,7 +128,7 @@ namespace CASM {
         outfile.close();
       }
 
-      
+
       // Generate standard composition axes --------------------
       CompositionAxes opt;
 

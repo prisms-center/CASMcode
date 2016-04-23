@@ -8,6 +8,7 @@
 #include "casm/clusterography/OrbitBranch.hh"
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 
@@ -134,15 +135,9 @@ namespace CASM {
     /// Call get_s2s_vec on all clusters in orbitree
     void get_s2s_vec();
 
-    /// get clust_basis for all equivalent clusters assuming configurational DoFs
-    // void generate_config_clust_bases();
-
     /// get clust_basis for all equivalent clusters
-    void generate_clust_bases(const Array<BasisSet const *> &global_args, Index max_poly_order = -1);
+    void generate_clust_bases(std::vector<BasisSet const *> const &global_args, Index max_poly_order = -1);
     void generate_clust_bases(Index max_poly_order = -1);
-
-    /// fill up cluster function evaluation tensors for every cluster
-    //void fill_discrete_bases_tensors();
 
     // Alex do these (there's already a placeholder for the first one):
     ///If cluster/orbit exists in current orbitree, return its linear index; else, return number of orbits in orbitree
@@ -182,18 +177,11 @@ namespace CASM {
 
     void read(std::istream &stream, int num_sites, COORD_TYPE mode);
     void read(std::istream &stream, COORD_TYPE mode);
-    ///Reads in tensor basis and ECI's of prototypes of each orbit
-    void read_prototype_tensor_basis(std::istream &stream, COORD_TYPE mode, const SymGroup &sym_group);//Modified by Ivy
+
     void read_CSPECS(std::istream &stream); //Added by Ivy -- temporary?
 
 
     void print(std::ostream &stream) const;
-    ///Writes the tensor basis of all the np size clusters to a file
-    void write_full_tensor_basis(std::string file, Index np) const; //Added by Ivy
-    ///Writes the prototype tensor basis of np size clusters to file
-    void write_prototype_tensor_basis(std::string file, Index np, std::string path = "") const; //Added by Ivy
-    ///Calculates the force constant tensors for each cluster in the Orbitree
-    void calc_tensors();
 
     void write_full_clust(std::string file) const;
     void write_proto_clust(std::string file) const;
@@ -270,7 +258,7 @@ namespace CASM {
   void from_json(GenericOrbitree<ClustType> &tree, const jsonParser &json) {
     tree.from_json(json);
   }
-  
+
   /// \brief Iterate over all sites in an orbit and insert a UnitCellCoord
   ///
   /// \param result an OutputIterator for UnitCellCoord
@@ -280,32 +268,32 @@ namespace CASM {
   ///
   /// \result the resulting OutputIterator
   ///
-  /// This simply outputs all UnitCellCoord for clusters that include the origin 
-  /// UnitCell, without any standard order. It can be used to create a set of 
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It can be used to create a set of
   /// UnitCellCoord for input to expand a PrimNeighborList.
   ///
   template<typename OutputIterator, typename TreeType, typename StrucType>
-  OutputIterator orbit_neighborhood(OutputIterator result, const TreeType& tree, const StrucType& struc, Index nb, Index no, double tol) {
+  OutputIterator orbit_neighborhood(OutputIterator result, const TreeType &tree, const StrucType &struc, Index nb, Index no, double tol) {
     // create a neighborhood of all UnitCellCoord that an Orbitree touches
-    for(int nc=0; nc<tree[nb][no].size(); ++nc) {
-      const auto& clust = tree[nb][no][nc];
-      
+    for(int nc = 0; nc < tree[nb][no].size(); ++nc) {
+      const auto &clust = tree[nb][no][nc];
+
       // UnitCellCoord for sites in cluster
       std::vector<UnitCellCoord> coord;
-      for(int ns_i=0; ns_i<clust.size(); ++ns_i) {
+      for(int ns_i = 0; ns_i < clust.size(); ++ns_i) {
         coord.emplace_back(clust[ns_i], struc, tol);
       }
       // UnitCellCoord for 'flowertree': all clusters that touch origin unitcell
       //  (includes translationally equivalent clusters)
-      for(int ns_i=0; ns_i<coord.size(); ++ns_i) {
-        for(int ns_j=0; ns_j<coord.size(); ++ns_j) {
-          *result++ = UnitCellCoord(coord[ns_j].sublat(), coord[ns_j].unitcell()-coord[ns_i].unitcell());
+      for(int ns_i = 0; ns_i < coord.size(); ++ns_i) {
+        for(int ns_j = 0; ns_j < coord.size(); ++ns_j) {
+          *result++ = UnitCellCoord(coord[ns_j].sublat(), coord[ns_j].unitcell() - coord[ns_i].unitcell());
         }
       }
     }
     return result;
   }
-  
+
   /// \brief Iterate over all sites in an orbitree and insert a UnitCellCoord
   ///
   /// \param result an OutputIterator for UnitCellCoord
@@ -315,21 +303,21 @@ namespace CASM {
   ///
   /// \result the resulting OutputIterator
   ///
-  /// This simply outputs all UnitCellCoord for clusters that include the origin 
-  /// UnitCell, without any standard order. It can be used to create a set of 
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It can be used to create a set of
   /// UnitCellCoord for input to expand a PrimNeighborList.
   ///
   template<typename OutputIterator, typename TreeType, typename StrucType>
-  OutputIterator neighborhood(OutputIterator result, const TreeType& tree, const StrucType& struc, double tol) {
+  OutputIterator neighborhood(OutputIterator result, const TreeType &tree, const StrucType &struc, double tol) {
     // create a neighborhood of all UnitCellCoord that an Orbitree touches
-    for(int nb=0; nb<tree.size(); ++nb) {
-      for(int no=0; no<tree[nb].size(); ++no) {
+    for(int nb = 0; nb < tree.size(); ++nb) {
+      for(int no = 0; no < tree[nb].size(); ++no) {
         result = orbit_neighborhood(result, tree, struc, nb, no, tol);
       }
     }
     return result;
   }
-  
+
 };
 #include "casm/clusterography/Orbitree_impl.hh"
 #endif

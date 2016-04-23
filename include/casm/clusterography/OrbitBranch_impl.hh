@@ -72,11 +72,11 @@ namespace CASM {
 
   template<typename ClustType>
   void GenericOrbitBranch<ClustType>::set_pivot(const ClustType &new_pivot) {
-    if(&(pivot.get_home()) != &(new_pivot.get_home())) {
+    if(&(pivot.home()) != &(new_pivot.home())) {
       std::cerr << "WARNING!!! In GenericOrbitBranch::set_pivot(), the new 'pivot' clust has a different home lattice than the old pivot cluster.\n"
                 << "           This may result in unexpected behavior!\n";
       assert(0);
-      set_lattice(new_pivot.get_home(), CART); // <-- this makes it slightly safer
+      set_lattice(new_pivot.home(), CART); // <-- this makes it slightly safer
       pivot = new_pivot;
     }
 
@@ -205,8 +205,8 @@ namespace CASM {
 
     if(basis.size() == 0)
       return;
-    set_lattice(*(basis[0].get_home()), FRAC);
-    ClustType tclust(*(basis[0].get_home()));
+    set_lattice(basis[0].home(), FRAC);
+    ClustType tclust(basis[0].home());
     Index nb, no;
 
 
@@ -217,7 +217,6 @@ namespace CASM {
       //Make point cluster for each site
       tclust.push_back(basis[nb]);
       tclust.within();
-      //tclust.get_clust_group(factor_group);
 
       //Check if that point is among the asymmetric points already found
       for(no = 0; no < size(); no++) {
@@ -233,7 +232,6 @@ namespace CASM {
       if(no >= size()) {
         push_back(GenericOrbit<ClustType >(tclust));
         back().get_equivalent(factor_group);
-        back().get_cluster_symmetry();
       }
     }
     for(no = 0; no < size(); no++) {
@@ -252,7 +250,7 @@ namespace CASM {
   template<typename ClustType>
   bool GenericOrbitBranch<ClustType>::extract_orbits_including(const ClustType &pivot, GenericOrbitBranch<ClustType> &flowerbranch) const {
     Index no, ne;
-    ClustType tclust(pivot.get_home());
+    ClustType tclust(pivot.home());
     bool found_any = false;
 
     for(no = 0; no < size(); no++) {

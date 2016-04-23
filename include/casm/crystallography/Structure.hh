@@ -27,10 +27,11 @@ namespace CASM {
 
     /// Group symmetry operations that map the lattice and basis of Structure onto themselves,
     /// assuming that the crystal is periodic
-    mutable MasterSymGroup factor_group_internal;
+    mutable MasterSymGroup m_factor_group;
     /// This holds the representation id of the permutation representation
-    mutable Index perm_rep_ID, basis_perm_rep_ID;
-
+    mutable SymGroupRepID basis_perm_rep_ID;
+    ///Specifies whether selectice dynamics is on or of for DFT calculations
+    bool SD_flag;
 
   public: //PUBLIC DATA MEMBERS (Public for now)
 
@@ -49,9 +50,9 @@ namespace CASM {
   public: //PUBLIC METHODS
 
     //  ****Constructors****
-    Structure() : BasicStructure<Site>(), perm_rep_ID(-1), basis_perm_rep_ID(-1) {}
-    explicit Structure(const Lattice &init_lat) : BasicStructure<Site>(init_lat), perm_rep_ID(-1), basis_perm_rep_ID(-1) {}
-    explicit Structure(const BasicStructure<Site> &base) : BasicStructure<Site>(base), perm_rep_ID(-1), basis_perm_rep_ID(-1) {}
+    Structure() : BasicStructure<Site>() {}
+    explicit Structure(const Lattice &init_lat) : BasicStructure<Site>(init_lat) {}
+    explicit Structure(const BasicStructure<Site> &base) : BasicStructure<Site>(base) {}
     explicit Structure(const fs::path &filepath);
 
     /// Have to explicitly define the copy constructor so that factor_group
@@ -64,14 +65,8 @@ namespace CASM {
     //const MasterSymGroup &factor_group();
     const SymGroup &point_group() const;
     //const SymGroup &point_group();
-    SymGroupRep const *permutation_symrep();
-    SymGroupRep const *permutation_symrep()const;
-    Index permutation_symrep_ID();
-    Index permutation_symrep_ID()const;
-    SymGroupRep const *basis_permutation_symrep();
     SymGroupRep const *basis_permutation_symrep()const;
-    Index basis_permutation_symrep_ID();
-    Index basis_permutation_symrep_ID()const;
+    SymGroupRepID basis_permutation_symrep_ID()const;
 
     std::vector<Specie> get_struc_specie() const;
     std::vector<Molecule> get_struc_molecule() const;
@@ -115,11 +110,8 @@ namespace CASM {
     void fg_converge(double large_tol);
     void fg_converge(double small_tol, double large_tol, double increment);
 
-    /// Obtain the permutation representation of factor_group, returns its rep_id, and sets internal perm_rep_id
-    Index generate_permutation_representation(bool verbose = false) const;
-
     /// Obtain the basis permutation representation of factor_group, returns its rep_id, and sets internal basis_perm_rep_ID
-    Index generate_basis_permutation_representation(bool verbose = false) const;
+    SymGroupRepID generate_basis_permutation_representation(bool verbose = false) const;
 
     void symmetrize(const SymGroup &relaxed_factors);
     void symmetrize(const double &tolerace);
@@ -167,10 +159,6 @@ namespace CASM {
 
 
     //John G 051112
-    //Return copy of *this that's reoriented to match a and axb of refstruc
-    Structure reorient(const Matrix3<double> reorientmat, bool override = 0) const;
-    Structure align_with(const Structure &refstruc, bool override = 0) const;
-    Structure align_standard(bool override = 0) const;
     Structure stack_on(const Structure &understruc, bool override = 0) const;
     //\John G 051112
 
@@ -191,7 +179,7 @@ namespace CASM {
     //\John G 050513
 
     ///Add vacuum and shift c vector. The vacuum is always added parallel to c, and the shift vector should also be parallel to the ab plane (x,y,0)
-    void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Vector3<double> shift, COORD_TYPE mode) const;
+    void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const;
     void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Coordinate shift) const;  //Because Anton thought a coordinate would be better
     ///Adds vacuum layer on top of ab plane
     void add_vacuum(Structure &new_surface_struc, double vacuum_thickness) const;
@@ -207,7 +195,7 @@ namespace CASM {
 
     /// For each symmetrically distinct site, print the symmetry operations that map it onto itself
     void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag);
-    void print_factor_group(std::ostream &stream) const;
+    //void print_factor_group(std::ostream &stream) const;
 
     bool read_species(); //Ivy 11/27/12
     void assign_species(Array<std::string> &names, Array<double> &masses, Array<double> &magmoms, Array<double> &Us, Array<double> &Js); //Added by Ivy

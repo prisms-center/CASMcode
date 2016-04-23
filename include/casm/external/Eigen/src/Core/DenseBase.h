@@ -13,6 +13,16 @@
 
 namespace Eigen {
 
+namespace internal {
+  
+// The index type defined by EIGEN_DEFAULT_DENSE_INDEX_TYPE must be a signed type.
+// This dummy function simply aims at checking that at compile time.
+static inline void check_DenseIndex_is_signed() {
+  EIGEN_STATIC_ASSERT(NumTraits<DenseIndex>::IsSigned,THE_INDEX_TYPE_MUST_BE_A_SIGNED_TYPE); 
+}
+
+} // end namespace internal
+  
 /** \class DenseBase
   * \ingroup Core_Module
   *
@@ -30,15 +40,14 @@ namespace Eigen {
   */
 template<typename Derived> class DenseBase
 #ifndef EIGEN_PARSED_BY_DOXYGEN
-  : public internal::special_scalar_op_base<Derived,typename internal::traits<Derived>::Scalar,
-                                     typename NumTraits<typename internal::traits<Derived>::Scalar>::Real>
+  : public internal::special_scalar_op_base<Derived, typename internal::traits<Derived>::Scalar,
+                                            typename NumTraits<typename internal::traits<Derived>::Scalar>::Real,
+                                            DenseCoeffsBase<Derived> >
 #else
   : public DenseCoeffsBase<Derived>
 #endif // not EIGEN_PARSED_BY_DOXYGEN
 {
   public:
-    using internal::special_scalar_op_base<Derived,typename internal::traits<Derived>::Scalar,
-                typename NumTraits<typename internal::traits<Derived>::Scalar>::Real>::operator*;
 
     class InnerIterator;
 
@@ -53,8 +62,9 @@ template<typename Derived> class DenseBase
     typedef typename internal::traits<Derived>::Scalar Scalar;
     typedef typename internal::packet_traits<Scalar>::type PacketScalar;
     typedef typename NumTraits<Scalar>::Real RealScalar;
+    typedef internal::special_scalar_op_base<Derived,Scalar,RealScalar, DenseCoeffsBase<Derived> > Base;
 
-    typedef DenseCoeffsBase<Derived> Base;
+    using Base::operator*;
     using Base::derived;
     using Base::const_cast_derived;
     using Base::rows;
@@ -173,10 +183,6 @@ template<typename Derived> class DenseBase
     /** \returns the number of nonzero coefficients which is in practice the number
       * of stored coefficients. */
     inline Index nonZeros() const { return size(); }
-    /** \returns true if either the number of rows or the number of columns is equal to 1.
-      * In other words, this function returns
-      * \code rows()==1 || cols()==1 \endcode
-      * \sa rows(), cols(), IsVectorAtCompileTime. */
 
     /** \returns the outer size.
       *
@@ -204,21 +210,21 @@ template<typename Derived> class DenseBase
       * Matrix::resize() and Array::resize(). The present method only asserts that the new size equals the old size, and does
       * nothing else.
       */
-    void resize(Index size)
+    void resize(Index newSize)
     {
-      EIGEN_ONLY_USED_FOR_DEBUG(size);
-      eigen_assert(size == this->size()
+      EIGEN_ONLY_USED_FOR_DEBUG(newSize);
+      eigen_assert(newSize == this->size()
                 && "DenseBase::resize() does not actually allow to resize.");
     }
     /** Only plain matrices/arrays, not expressions, may be resized; therefore the only useful resize methods are
       * Matrix::resize() and Array::resize(). The present method only asserts that the new size equals the old size, and does
       * nothing else.
       */
-    void resize(Index rows, Index cols)
+    void resize(Index nbRows, Index nbCols)
     {
-      EIGEN_ONLY_USED_FOR_DEBUG(rows);
-      EIGEN_ONLY_USED_FOR_DEBUG(cols);
-      eigen_assert(rows == this->rows() && cols == this->cols()
+      EIGEN_ONLY_USED_FOR_DEBUG(nbRows);
+      EIGEN_ONLY_USED_FOR_DEBUG(nbCols);
+      eigen_assert(nbRows == this->rows() && nbCols == this->cols()
                 && "DenseBase::resize() does not actually allow to resize.");
     }
 
@@ -256,11 +262,13 @@ template<typename Derived> class DenseBase
     template<typename OtherDerived>
     Derived& operator=(const ReturnByValue<OtherDerived>& func);
 
-#ifndef EIGEN_PARSED_BY_DOXYGEN
-    /** Copies \a other into *this without evaluating other. \returns a reference to *this. */
+    /** \internal Copies \a other into *this without evaluating other. \returns a reference to *this. */
     template<typename OtherDerived>
     Derived& lazyAssign(const DenseBase<OtherDerived>& other);
-#endif // not EIGEN_PARSED_BY_DOXYGEN
+
+    /** \internal Evaluates \a other into *this. \returns a reference to *this. */
+    template<typename OtherDerived>
+    Derived& lazyAssign(const ReturnByValue<OtherDerived>& other);
 
     CommaInitializer<Derived> operator<< (const Scalar& s);
 
@@ -271,7 +279,7 @@ template<typename Derived> class DenseBase
     CommaInitializer<Derived> operator<< (const DenseBase<OtherDerived>& other);
 
     Eigen::Transpose<Derived> transpose();
-    typedef const Transpose<const Derived> ConstTransposeReturnType;
+	typedef typename internal::add_const<Transpose<const Derived> >::type ConstTransposeReturnType;
     ConstTransposeReturnType transpose() const;
     void transposeInPlace();
 #ifndef EIGEN_NO_DEBUG
@@ -281,29 +289,6 @@ template<typename Derived> class DenseBase
   public:
 #endif
 
-    typedef VectorBlock<Derived> SegmentReturnType;
-    typedef const VectorBlock<const Derived> ConstSegmentReturnType;
-    template<int Size> struct FixedSegmentReturnType { typedef VectorBlock<Derived, Size> Type; };
-    template<int Size> struct ConstFixedSegmentReturnType { typedef const VectorBlock<const Derived, Size> Type; };
-    
-    // Note: The "DenseBase::" prefixes are added to help MSVC9 to match these declarations with the later implementations.
-    SegmentReturnType segment(Index start, Index size);
-    typename DenseBase::ConstSegmentReturnType segment(Index start, Index size) const;
-
-    SegmentReturnType head(Index size);
-    typename DenseBase::ConstSegmentReturnType head(Index size) const;
-
-    SegmentReturnType tail(Index size);
-    typename DenseBase::ConstSegmentReturnType tail(Index size) const;
-
-    template<int Size> typename FixedSegmentReturnType<Size>::Type head();
-    template<int Size> typename ConstFixedSegmentReturnType<Size>::Type head() const;
-
-    template<int Size> typename FixedSegmentReturnType<Size>::Type tail();
-    template<int Size> typename ConstFixedSegmentReturnType<Size>::Type tail() const;
-
-    template<int Size> typename FixedSegmentReturnType<Size>::Type segment(Index start);
-    template<int Size> typename ConstFixedSegmentReturnType<Size>::Type segment(Index start) const;
 
     static const ConstantReturnType
     Constant(Index rows, Index cols, const Scalar& value);
@@ -348,17 +333,20 @@ template<typename Derived> class DenseBase
 
     template<typename OtherDerived>
     bool isApprox(const DenseBase<OtherDerived>& other,
-                  RealScalar prec = NumTraits<Scalar>::dummy_precision()) const;
+                  const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const;
     bool isMuchSmallerThan(const RealScalar& other,
-                           RealScalar prec = NumTraits<Scalar>::dummy_precision()) const;
+                           const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const;
     template<typename OtherDerived>
     bool isMuchSmallerThan(const DenseBase<OtherDerived>& other,
-                           RealScalar prec = NumTraits<Scalar>::dummy_precision()) const;
+                           const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const;
 
-    bool isApproxToConstant(const Scalar& value, RealScalar prec = NumTraits<Scalar>::dummy_precision()) const;
-    bool isConstant(const Scalar& value, RealScalar prec = NumTraits<Scalar>::dummy_precision()) const;
-    bool isZero(RealScalar prec = NumTraits<Scalar>::dummy_precision()) const;
-    bool isOnes(RealScalar prec = NumTraits<Scalar>::dummy_precision()) const;
+    bool isApproxToConstant(const Scalar& value, const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const;
+    bool isConstant(const Scalar& value, const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const;
+    bool isZero(const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const;
+    bool isOnes(const RealScalar& prec = NumTraits<Scalar>::dummy_precision()) const;
+    
+    inline bool hasNaN() const;
+    inline bool allFinite() const;
 
     inline Derived& operator*=(const Scalar& other);
     inline Derived& operator/=(const Scalar& other);
@@ -438,8 +426,6 @@ template<typename Derived> class DenseBase
       return derived().coeff(0,0);
     }
 
-/////////// Array module ///////////
-
     bool all(void) const;
     bool any(void) const;
     Index count() const;
@@ -465,17 +451,19 @@ template<typename Derived> class DenseBase
 
     template<typename ThenDerived>
     inline const Select<Derived,ThenDerived, typename ThenDerived::ConstantReturnType>
-    select(const DenseBase<ThenDerived>& thenMatrix, typename ThenDerived::Scalar elseScalar) const;
+    select(const DenseBase<ThenDerived>& thenMatrix, const typename ThenDerived::Scalar& elseScalar) const;
 
     template<typename ElseDerived>
     inline const Select<Derived, typename ElseDerived::ConstantReturnType, ElseDerived >
-    select(typename ElseDerived::Scalar thenScalar, const DenseBase<ElseDerived>& elseMatrix) const;
+    select(const typename ElseDerived::Scalar& thenScalar, const DenseBase<ElseDerived>& elseMatrix) const;
 
     template<int p> RealScalar lpNorm() const;
 
     template<int RowFactor, int ColFactor>
-    const Replicate<Derived,RowFactor,ColFactor> replicate() const;
-    const Replicate<Derived,Dynamic,Dynamic> replicate(Index rowFacor,Index colFactor) const;
+    inline const Replicate<Derived,RowFactor,ColFactor> replicate() const;
+    
+    typedef Replicate<Derived,Dynamic,Dynamic> ReplicateReturnType;
+    inline const ReplicateReturnType replicate(Index rowFacor,Index colFactor) const;
 
     typedef Reverse<Derived, BothDirections> ReverseReturnType;
     typedef const Reverse<const Derived, BothDirections> ConstReverseReturnType;

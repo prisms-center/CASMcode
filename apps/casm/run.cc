@@ -67,7 +67,7 @@ namespace CASM {
       std::cout << "Error in 'casm perturb': No casm project found." << std::endl;
       return 1;
     }
-    
+
     std::cout << "\n***************************\n" << std::endl;
 
     // initialize primclex

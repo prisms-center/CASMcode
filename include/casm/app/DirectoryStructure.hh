@@ -145,7 +145,7 @@ namespace CASM {
     fs::path clust(std::string bset) const {
       return bset_dir(bset) / "clust.json";
     }
-    
+
     // \brief Returns path to the basis.json file
     fs::path basis(std::string bset) const {
       return bset_dir(bset) / "basis.json";

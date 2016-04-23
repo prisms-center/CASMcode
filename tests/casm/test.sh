@@ -1,4 +1,6 @@
-echo "Test" | casm init
+rm -r .casm prim.json training_data
+
+echo "Test" | casm init -f
 
 casm settings --set-compile-options "${CXX:=g++} -O3 -Wall -fPIC --std=c++11 -I../../include"
 

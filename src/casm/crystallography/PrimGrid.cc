@@ -19,7 +19,7 @@ namespace CASM {
 
     m_NB = NB;
 
-    Matrix3<double> dtrans_mat(p_lat.lat_column_mat().inverse()*s_lat.lat_column_mat());
+    Eigen::Matrix3d dtrans_mat(p_lat.lat_column_mat().inverse()*s_lat.lat_column_mat());
 
     for(int i = 0; i < 3; i++) {
       for(int j = 0; j < 3; j++) {
@@ -44,16 +44,12 @@ namespace CASM {
 
     std::cerr << "dtrans_mat is\n" << dtrans_mat << '\n';
     */
-    Matrix3<int> Smat, V;
-    m_trans_mat.smith_normal_form(m_U, Smat, V);
+    matrix_type Smat, V;
+    smith_normal_form(m_trans_mat, m_U, Smat, V);
 
-    m_invU = m_U.inverse();
+    m_invU = inverse(m_U);
 
-    for(int i = 0; i < 3; i++) {
-      if(Smat(i, i) == 0)
-        Smat(i, i) = 1;
-      m_S[i] = Smat(i, i);
-    }
+    m_S = Smat.diagonal();
 
     //std::cerr << "Smith decomposition is:\n";
     //std::cerr << m_U << "\n\n" << Smat << "\n\n" << V << "\n\n";
@@ -66,7 +62,7 @@ namespace CASM {
     Smat(0, 0) = m_N_vol / Smat(0, 0);
     Smat(1, 1) = m_N_vol / Smat(1, 1);
     Smat(2, 2) = m_N_vol / Smat(2, 2);
-    m_plane_mat = V.inverse() * Smat * m_U.inverse();
+    m_plane_mat = inverse(V) * Smat * inverse(m_U);
 
     /*
     std::cerr << "trans_mat is:\n" << m_trans_mat << "\n\nplane_mat is:\n" << m_plane_mat << "\n\n";
@@ -85,13 +81,17 @@ namespace CASM {
 
   //**********************************************************************************************
   // Constructor for forcing specific choice of 'U' matrix.  Use only in very specific cases (such as applying symmetry to a PrimGrid
-  PrimGrid::PrimGrid(const Lattice &p_lat, const Lattice &s_lat, const Matrix3<int> &U, const Matrix3<int> &Smat, Index NB) : m_U(U) {
+  PrimGrid::PrimGrid(const Lattice &p_lat,
+                     const Lattice &s_lat,
+                     const Eigen::Ref<const PrimGrid::matrix_type> &U,
+                     const Eigen::Ref<const PrimGrid::matrix_type> &Smat,
+                     Index NB) : m_U(U) {
     m_lat[PRIM] = &p_lat;
     m_lat[SCEL] = &s_lat;
 
     m_NB = NB;
 
-    Matrix3<double> dtrans_mat(p_lat.lat_column_mat().inverse()*s_lat.lat_column_mat());
+    Eigen::Matrix3d dtrans_mat(p_lat.lat_column_mat().inverse()*s_lat.lat_column_mat());
 
     for(int i = 0; i < 3; i++) {
       for(int j = 0; j < 3; j++) {
@@ -107,7 +107,7 @@ namespace CASM {
       exit(1);
     }
 
-    m_invU = m_U.inverse();
+    m_invU = inverse(m_U);
 
     for(int i = 0; i < 3; i++) {
       m_S[i] = Smat(i, i);
@@ -118,7 +118,7 @@ namespace CASM {
     m_stride[1] = m_S[0] * m_S[1];
     m_N_vol = m_S[0] * m_S[1] * m_S[2];
 
-    m_plane_mat = m_trans_mat.adjugate();
+    m_plane_mat = adjugate(m_trans_mat);
 
     /*
     std::cerr << "trans_mat is:\n" << m_trans_mat << "\n\nplane_mat is:\n" << m_plane_mat << "\n\n";
@@ -137,34 +137,23 @@ namespace CASM {
 
   //**********************************************************************************************
 
-  Matrix3<int> PrimGrid::matrixS()const {
-    Matrix3<int> Smat(0);
-    Smat(0, 0) = S(0);
-    Smat(1, 1) = S(1);
-    Smat(2, 2) = S(2);
-    return Smat;
+  const Eigen::DiagonalWrapper<const PrimGrid::vector_type> PrimGrid::matrixS()const {
+    return m_S.asDiagonal();
   }
   //**********************************************************************************************
   Index PrimGrid::find(const Coordinate &_coord) const {
 
-    Coordinate tcoord(_coord);
-
-    tcoord.set_lattice(*(m_lat[PRIM]), CART);
-
-    UnitCellCoord bijk(-1,
-                       floor(tcoord(FRAC)[0] + TOL),
-                       floor(tcoord(FRAC)[1] + TOL),
-                       floor(tcoord(FRAC)[2] + TOL));
+    UnitCellCoord bijk(-1, ((((m_lat[PRIM]->inv_lat_column_mat())*_coord.cart()).array() + TOL).unaryExpr(std::ptr_fun(floor))).matrix().cast<long>());
 
     return find(bijk);
   }
 
   //**********************************************************************************************
 
-  Index PrimGrid::find(const UnitCell& _unitcell) const {
+  Index PrimGrid::find(const UnitCell &_unitcell) const {
     return find(UnitCellCoord(-1, _unitcell));
   }
-  
+
   //**********************************************************************************************
 
   Index PrimGrid::find(const UnitCellCoord &bijk) const {
@@ -172,6 +161,12 @@ namespace CASM {
     UnitCellCoord bmnp = to_canonical(get_within(bijk));
 
     return bmnp[1] + bmnp[2] * m_stride[0] + bmnp[3] * m_stride[1];
+  }
+
+  //**********************************************************************************************
+
+  Index PrimGrid::find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord) const {
+    return find(Coordinate(_cart_coord, *m_lat[PRIM], CART));
   }
 
   //**********************************************************************************************
@@ -200,27 +195,21 @@ namespace CASM {
   /// be on the interval [0,m_N_vol-1] if it is within the supercell.
 
   UnitCellCoord PrimGrid::get_within(const UnitCellCoord &bijk)const {
-    Vector3<int> vec1(bijk[1], bijk[2], bijk[3]);
 
-    Vector3<int> vec2 = m_plane_mat * vec1;
+    vector_type vec2 = m_plane_mat * bijk.unitcell();
 
     vec2[0] = ((vec2[0] % m_N_vol) + m_N_vol) % m_N_vol;
     vec2[1] = ((vec2[1] % m_N_vol) + m_N_vol) % m_N_vol;
     vec2[2] = ((vec2[2] % m_N_vol) + m_N_vol) % m_N_vol;
 
-    vec1 = m_trans_mat * vec2;
-
-    return UnitCellCoord(bijk[0], vec1[0] / m_N_vol, vec1[1] / m_N_vol, vec1[2] / m_N_vol);
-
+    return UnitCellCoord(bijk[0], (m_trans_mat * vec2) / m_N_vol);
   }
 
   //**********************************************************************************************
 
   Coordinate PrimGrid::coord(const UnitCellCoord &bijk, CELL_TYPE lat_mode)const {
 
-    Vector3<double> pfrac(bijk[1], bijk[2], bijk[3]);
-
-    Coordinate tcoord(pfrac, *(m_lat[PRIM]), FRAC);
+    Coordinate tcoord(bijk.unitcell().cast<double>(), *(m_lat[PRIM]), FRAC);
 
     tcoord.set_lattice(*(m_lat[lat_mode]), CART);
     return tcoord;
@@ -237,7 +226,7 @@ namespace CASM {
   UnitCell PrimGrid::unitcell(Index i) const {
     return uccoord(i).unitcell();
   }
-  
+
   //**********************************************************************************************
 
   UnitCellCoord PrimGrid::uccoord(Index i)const {
@@ -252,63 +241,58 @@ namespace CASM {
 
   //**********************************************************************************************
 
-  Index PrimGrid::make_permutation_representation(const SymGroup &group, Index basis_permute_ID)const {
+  SymGroupRepID PrimGrid::make_permutation_representation(const SymGroup &group, SymGroupRepID basis_permute_ID)const {
 
-    Index perm_rep_ID = group.make_empty_representation();
-    Matrix3<int> frac_ijk, frac_mnp;
-    UnitCellCoord bmnp_shift;
+    SymGroupRepID perm_rep_ID = group.add_empty_representation();
+    PrimGrid::matrix_type mat_mnp;
+    UnitCellCoord mnp_shift;
     Index old_l, new_l;
     for(Index ng = 0; ng < group.size(); ng++) {
-      SymOp op(group[ng]);
-      op.set_lattice(*(m_lat[PRIM]), CART);
-      frac_ijk = round(op.get_matrix(FRAC));
-
-      frac_mnp = m_invU * frac_ijk * m_U;
-
-      auto rep = op.get_basis_permute_rep(basis_permute_ID);
+      SymBasisPermute const *rep = group[ng].get_basis_permute_rep(basis_permute_ID);
       if(!rep) {
         std::cerr << "CRITICAL ERROR: In PrimGrid::make_permutation_representation, BasisPermute representation is incorrectly initialized!\n"
-                  << "                basis_permute_ID is " << basis_permute_ID << " and op index is " << op.index() << " and REP_COUNT is " << SymGroupRep::CURR_REP_COUNT() <<  '\n'
+                  << "                basis_permute_ID is " << basis_permute_ID << " and op index is " << group[ng].index() << "\n"
                   << "                Exiting...\n";
 
         exit(1);
       }
+
+      mat_mnp = m_invU * rep->matrix() * m_U;
+
       std::vector<UnitCellCoord> const &b_permute = rep->data();
-      
+
       Array<Index> ipermute(b_permute.size()*size());
       //std::cerr << "PRINTING b_permute array for op " << ng << ":\n";
       //begin loop over sites
       for(Index nb = 0; nb < b_permute.size(); nb++) {
         //std::cerr << b_permute.at(nb) << '\n';
-        bmnp_shift = to_canonical(b_permute.at(nb));
+        mnp_shift = to_canonical(b_permute.at(nb));
 
-        Vector3<int> new_mnp, mnp_shift(bmnp_shift[1], bmnp_shift[2], bmnp_shift[3]);
-        for(int m = 0; m < m_S[0]; m++) {
-          for(int n = 0; n < m_S[1]; n++) {
-            for(int p = 0; p < m_S[2]; p++) {
-              new_mnp = frac_mnp * Vector3<int>(m, n, p) + mnp_shift;
+        vector_type old_mnp, new_mnp;
+        EigenCounter<vector_type> mnp_count(vector_type::Zero(), m_S - vector_type::Ones(), vector_type::Ones());
+        for(; mnp_count.valid(); ++mnp_count) {
+          new_mnp = mat_mnp * mnp_count() + mnp_shift.unitcell();
 
-              //map within bounds
-              for(int i = 0; i < 3; i++) {
-                new_mnp[i] = ((new_mnp[i] % m_S[i]) + m_S[i]) % m_S[i];
-              }
-
-              old_l = m + n * m_stride[0] + p * m_stride[1] + nb * size();
-              new_l = new_mnp[0] + new_mnp[1] * m_stride[0] + new_mnp[2] * m_stride[1] + bmnp_shift[0] * size();
-              // We have found uccoord(new_l) = symop*uccoord(old_l) -- this describes how indexing of the uccoordinates change
-              // However, the indexing of the uccoords remains fixed, and we want to describe the permutation of something *at* the sites,
-              // like an occupation bit. So if uccord(old_l) transforms into uccoord(new_l), we know that the object originally at 'new_l'
-              // was effectively transformed into the object that was originally at 'old_l'. (in other words, the objects permute inversely to the labels)
-              //             i.e., new_occ(new_l) = old_occ(old_l)  --> this matches our permutation convention, which is specified as
-              //                   new_occ(new_l) = old_occ(ipermute[new_l])
-              // and thus:
-              ipermute[new_l] = old_l;
-            }
+          //map within bounds
+          for(int i = 0; i < 3; i++) {
+            new_mnp[i] = ((new_mnp[i] % m_S[i]) + m_S[i]) % m_S[i];
           }
+
+          old_l = mnp_count[0] + mnp_count[1] * m_stride[0] + mnp_count[2] * m_stride[1] + nb * size();
+          new_l = new_mnp[0] + new_mnp[1] * m_stride[0] + new_mnp[2] * m_stride[1] + mnp_shift[0] * size();
+          assert(old_l < b_permute.size()*size() && new_l < b_permute.size()*size());
+          // We have found uccoord(new_l) = symop*uccoord(old_l) -- this describes how indexing of the uccoordinates change
+          // However, the indexing of the uccoords remains fixed, and we want to describe the permutation of something *at* the sites,
+          // like an occupation bit. So if uccord(old_l) transforms into uccoord(new_l), we know that the object originally at 'new_l'
+          // was effectively transformed into the object that was originally at 'old_l'. (in other words, the objects permute inversely to the labels)
+          //             i.e., new_occ(new_l) = old_occ(old_l)  --> this matches our permutation convention, which is specified as
+          //                   new_occ(new_l) = old_occ(ipermute[new_l])
+          // and thus:
+          ipermute[new_l] = old_l;
         }
       }//end loop over sites
       //std::cerr << "\\end " << ng << '\n';
-      op.set_rep(perm_rep_ID, SymPermutation(ipermute));
+      group[ng].set_rep(perm_rep_ID, SymPermutation(ipermute));
     }
     return perm_rep_ID;
   }
@@ -386,7 +370,7 @@ namespace CASM {
 
   //==============================================================================================
   SymOp PrimGrid::sym_op(Index l) const {
-    return SymOp(coord(l, PRIM));
+    return SymOp::translation(coord(l, PRIM).cart());
   }
 }
 

@@ -359,7 +359,7 @@ void print_eci_search_quick_man() {
   std::cout << "  Note: Use '-tol X' to set hull finding tolerances. Default is 1.0e-14." << std::endl << std::endl;
 
   std::cout << "  Note: Use '-old' to use deprecated serial functions." << std::endl << std::endl;
-  
+
   std::cout << "  Note: Use '-maxstep X' to specify maximum number of FPC iterations during calc_cs_fpc and calc_cs_bi" << std::endl << std::endl;
 
 
@@ -380,7 +380,7 @@ void print_eci_search_man() {
   std::cout << "  Note: Use '-tol X' to set hull finding tolerances. Default is 1.0e-14." << std::endl << std::endl;
 
   std::cout << "  Note: Use '-old' to use deprecated serial functions." << std::endl << std::endl;
-  
+
   std::cout << "  Note: Use '-maxstep X' to specify maximum number of FPC iterations during calc_cs_fpc and calc_cs_bi" << std::endl << std::endl;
 
   print_calc_full_man();
@@ -1175,7 +1175,7 @@ int main(int argc, char *argv[]) {
       return 1;
     }
   }
-  catch(std::exception& e) {
+  catch(std::exception &e) {
     std::cerr << "Error in eci_search: " << e.what() << std::endl;
     return 1;
   }

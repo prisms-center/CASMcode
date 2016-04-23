@@ -16,6 +16,7 @@ namespace CASM {
   class UnitCell;
   class UnitCellCoord;
   class Coordinate;
+  class SymGroupRepID;
   class SymOp;
   class SymGroup;
 
@@ -24,6 +25,8 @@ namespace CASM {
 
   class PrimGrid {
   private:
+    typedef Eigen::Matrix<long, 3, 3> matrix_type;
+    typedef Eigen::Matrix<long, 3, 1> vector_type;
     ///m_lat[PRIM] is primitive lattice, lat[SCEL] is super lattice
     Lattice const *m_lat[2];
 
@@ -36,10 +39,10 @@ namespace CASM {
     /// The transformation matrix, 'trans_mat', is:
     ///   lat[SCEL]->lat_column_mat() = (lat[PRIM]->lat_column_mat())*trans_mat;
     ///   plane_mat = trans_mat.determinant()*trans_mat.inverse();
-    Matrix3<int> m_plane_mat, m_trans_mat;
+    matrix_type m_plane_mat, m_trans_mat;
 
     /// The Smith Normal Form decomposition is: trans_mat = U*S*V, with det(U)=det(V)=1; S is diagonal
-    Matrix3<int> m_U, m_invU;
+    matrix_type m_U, m_invU;
 
     /// Permutations that describe how translation permutes sites of the supercell
     mutable Array<Permutation> m_trans_permutations;
@@ -77,7 +80,8 @@ namespace CASM {
 
     // stride maps canonical 3d index (m,n,p) onto linear index -- l = m + n*stride[0] + p*stride[1]
     // S is diagonals of smith normal form S matrix
-    int m_stride[2], m_S[3];
+    int m_stride[2];
+    Eigen::Matrix<long, 3, 1> m_S;
 
 
     /// Convert UnitCellCoord (bijk) to canonical UnitCellCoord (bmnp)
@@ -91,27 +95,34 @@ namespace CASM {
 
   public:
     PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB = 1);
-    PrimGrid(const Lattice &p_lat, const Lattice &s_lat, const Matrix3<int> &U, const Matrix3<int> &Smat, Index NB);
+    PrimGrid(const Lattice &p_lat,
+             const Lattice &s_lat,
+             const Eigen::Ref<const PrimGrid::matrix_type> &U,
+             const Eigen::Ref<const PrimGrid::matrix_type> &Smat,
+             Index NB);
 
     Index size() const {
       return m_N_vol;
     }
 
-    const Matrix3<int> &matrixU()const {
+    const matrix_type &matrixU()const {
       return m_U;
     };
-    const Matrix3<int> &invU()const {
+    const matrix_type &invU()const {
       return m_invU;
     };
-    Matrix3<int> matrixS()const;
+
+    const Eigen::DiagonalWrapper<const PrimGrid::vector_type> matrixS()const;
+
     int S(Index i) const {
       return m_S[i];
     };
 
     // find linear index that is translational equivalent to Coordinate or UnitCellCoord
     Index find(const Coordinate &_coord) const;
-    Index find(const UnitCell& _unitcell) const;
+    Index find(const UnitCell &_unitcell) const;
     Index find(const UnitCellCoord &_coord) const;
+    Index find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord) const;
 
     // map a UnitCellCoord inside the supercell
     UnitCellCoord get_within(const UnitCellCoord &_uccoord)const;
@@ -122,7 +133,7 @@ namespace CASM {
     UnitCell unitcell(Index i)const;
     UnitCellCoord uccoord(Index i)const;
 
-    Index make_permutation_representation(const SymGroup &group, Index basis_permute_rep)const;
+    SymGroupRepID make_permutation_representation(const SymGroup &group, SymGroupRepID basis_permute_rep)const;
 
     // Returns Array of permutations.  Permutation 'l' describes the effect of translating PrimGrid site 'l'
     // to the origin.  NB is the number of primitive-cell basis sites. -- keep public for now

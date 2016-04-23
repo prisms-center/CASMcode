@@ -39,21 +39,21 @@ namespace CASM {
       std::unique_ptr<Base> clone() const {
         return std::unique_ptr<Base>(_clone());
       }
-      
-      /// \brief The UnitCellCoord involved in calculating the basis functions, 
+
+      /// \brief The UnitCellCoord involved in calculating the basis functions,
       /// relative origin UnitCell
-      const std::set<UnitCellCoord>& neighborhood() const {
+      const std::set<UnitCellCoord> &neighborhood() const {
         return m_neighborhood;
       }
-      
-      /// \brief The UnitCellCoord involved in calculating the basis functions 
+
+      /// \brief The UnitCellCoord involved in calculating the basis functions
       /// for a particular orbit, relative origin UnitCell
-      const std::set<UnitCellCoord>& neighborhood(size_type linear_orbit_index) const {
+      const std::set<UnitCellCoord> &neighborhood(size_type linear_orbit_index) const {
         return m_orbit_neighborhood[linear_orbit_index];
       }
-      
+
       /// \brief The weight matrix used for ordering the neighbor list
-      const PrimNeighborList::Matrix3Type& weight_matrix() const {
+      const PrimNeighborList::Matrix3Type &weight_matrix() const {
         return m_weight_matrix;
       }
 
@@ -204,8 +204,8 @@ namespace CASM {
 
       /// \brief The number of correlations
       size_type m_corr_size;
-      
-      
+
+
     protected:
 
       /// \brief Pointer to beginning of data structure containing occupation variables
@@ -213,18 +213,18 @@ namespace CASM {
 
       /// \brief Pointer to neighbor list
       const long int *m_nlist_ptr;
-      
-      /// \brief The UnitCellCoord involved in calculating the basis functions, 
+
+      /// \brief The UnitCellCoord involved in calculating the basis functions,
       /// relative origin UnitCell
       std::set<UnitCellCoord> m_neighborhood;
-      
-      /// \brief The UnitCellCoord involved in calculating the basis functions 
+
+      /// \brief The UnitCellCoord involved in calculating the basis functions
       /// for a particular orbit, relative origin UnitCell
       std::vector<std::set<UnitCellCoord> > m_orbit_neighborhood;
-      
+
       /// \brief The weight matrix used for ordering the neighbor list
       PrimNeighborList::Matrix3Type m_weight_matrix;
-      
+
     };
   }
 
@@ -250,7 +250,7 @@ namespace CASM {
     /// \param name Class name for the Clexulator, typically 'X_Clexulator', with X
     ///             referring to the system of interest (i.e. 'NiAl_Clexulator')
     /// \param dirpath Directory containing the source code and compiled object file.
-    /// \param nlist, A PrimNeighborList to be updated to include the neighborhood 
+    /// \param nlist, A PrimNeighborList to be updated to include the neighborhood
     ///        of this Clexulator
     /// \param compile_options Compilation options, by default "g++ -O3 -Wall -fPIC"
     /// \param so_options Shared library compilation options, by default "g++ -shared"
@@ -266,12 +266,12 @@ namespace CASM {
     ///
     Clexulator(std::string name,
                boost::filesystem::path dirpath,
-               PrimNeighborList& nlist,
+               PrimNeighborList &nlist,
                std::string compile_options = RuntimeLibrary::default_compile_options(),
                std::string so_options = RuntimeLibrary::default_so_options()) {
 
       namespace fs = boost::filesystem;
-      
+
       try {
 
         // Construct the RuntimeLibrary that will store the loaded clexulator library
@@ -311,19 +311,19 @@ namespace CASM {
             std::string("Error in Clexulator constructor\n") +
             "  Did not find '" + dirpath.string() + "/" + name + ".so'");
         }
-        
+
         // Check nlist has the right weight_matrix
         if(nlist.weight_matrix() != m_clex->weight_matrix()) {
           std::cerr << "Error in Clexulator constructor: weight matrix of neighbor "
-                       "list does not match the weight matrix used to print the "
-                       "clexulator." << std::endl;
+                    "list does not match the weight matrix used to print the "
+                    "clexulator." << std::endl;
           std::cerr << "nlist weight matrix: \n" << nlist.weight_matrix() << std::endl;
           std::cerr << "clexulator weight matrix: \n" << m_clex->weight_matrix() << std::endl;
           throw std::runtime_error(
             "Error in Clexulator constructor: weight matrix of neighbor list does "
             "not match the weight matrix used to print the clexulator. Try 'casm bset -uf'.");
         }
-        
+
         // Expand the given neighbor list as necessary
         nlist.expand(neighborhood().begin(), neighborhood().end());
       }
@@ -394,20 +394,20 @@ namespace CASM {
       return m_clex->corr_size();
     }
 
-    /// \brief The UnitCellCoord involved in calculating the basis functions, 
+    /// \brief The UnitCellCoord involved in calculating the basis functions,
     /// relative origin UnitCell
-    const std::set<UnitCellCoord>& neighborhood() const {
+    const std::set<UnitCellCoord> &neighborhood() const {
       return m_clex->neighborhood();
     }
-    
-    /// \brief The UnitCellCoord involved in calculating the basis functions 
+
+    /// \brief The UnitCellCoord involved in calculating the basis functions
     /// for a particular orbit, relative origin UnitCell
-    const std::set<UnitCellCoord>& neighborhood(size_type linear_orbit_index) const {
+    const std::set<UnitCellCoord> &neighborhood(size_type linear_orbit_index) const {
       return m_clex->neighborhood(linear_orbit_index);
     }
-    
+
     /// \brief The weight matrix used for ordering the neighbor list
-    const PrimNeighborList::Matrix3Type& weight_matrix() const {
+    const PrimNeighborList::Matrix3Type &weight_matrix() const {
       return m_clex->weight_matrix();
     }
 

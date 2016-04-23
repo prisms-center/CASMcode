@@ -11,9 +11,9 @@ namespace CASM {
       result += (*eci_it) * _corr[*ind_it];
     return result;
   }
-  
+
   /// \brief Evaluate property given an ECIContainer and pointer to beginning of range of correlation
-  double operator*(const ECIContainer &_eci, double const* _corr_begin) {
+  double operator*(const ECIContainer &_eci, double const *_corr_begin) {
     double result(0);
     auto ind_it(_eci.index().cbegin()), ind_end(_eci.index().cend());
     auto eci_it(_eci.value().cbegin());
@@ -46,10 +46,10 @@ namespace CASM {
   /// \endcode
   ///
   ECIContainer read_eci_out(const fs::path &filepath) {
-    
+
     std::vector<double> value;
     std::vector<ECIContainer::size_type> index;
-    
+
     //read in from eci,out file
     std::ifstream ecistream(filepath.string().c_str());
 
@@ -78,12 +78,12 @@ namespace CASM {
     }
     return ECIContainer(value.begin(), value.end(), index.begin());
   }
-  
-  
+
+
   /// \brief Read eci.json file from specified path
   ///
   /// Format:
-  /// \code 
+  /// \code
   /// {
   ///   "site_functions":[
   ///     {
@@ -95,7 +95,7 @@ namespace CASM {
   ///     },
   ///     ...
   ///   ],
-  ///   "cluster_functions":[ 
+  ///   "cluster_functions":[
   ///     {
   ///       "eci": X.XXXXX,
   ///       "prototype_function": "\phi_b_i(s_j)...",
@@ -113,12 +113,12 @@ namespace CASM {
   /// \endcode
   ///
   ECIContainer read_eci(const fs::path &filepath) {
-    
+
     std::vector<double> value;
     std::vector<ECIContainer::size_type> index;
-    
+
     jsonParser json(filepath);
-    for(auto it=json["cluster_functions"].begin(); it!=json["cluster_functions"].end(); ++it) {
+    for(auto it = json["cluster_functions"].begin(); it != json["cluster_functions"].end(); ++it) {
       auto eci = it->find("eci");
       if(eci != it->end()) {
         value.push_back(eci->get<double>());

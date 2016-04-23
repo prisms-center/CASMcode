@@ -2,6 +2,7 @@
 #define CASM_AppIO
 
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Coordinate.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ChemicalReference.hh"
@@ -30,24 +31,27 @@ namespace CASM {
   void write_prim(const BasicStructure<Site> &prim, jsonParser &json, COORD_TYPE mode);
 
 
+
   // --------- SymmetryIO Declarations --------------------------------------------------
 
   void write_symop(const SymOp &op, jsonParser &json, int cclass, int inv);
 
   void write_symgroup(const SymGroup &grp, jsonParser &json);
 
-  
+
   // --------- ChemicalReference IO Declarations --------------------------------------------------
-  
-  ChemicalReference read_chemical_reference(fs::path filename, const Structure& prim, double tol = 1e-14);
 
-  ChemicalReference read_chemical_reference(const jsonParser& json, const Structure& prim, double tol = 1e-14);
-  
-  void write_chemical_reference(const ChemicalReference& chem_ref, fs::path filename);
+  ChemicalReference read_chemical_reference(fs::path filename, const Structure &prim, double tol = 1e-14);
 
-  void write_chemical_reference(const ChemicalReference& chem_ref, jsonParser& json);
-  
-  
+  ChemicalReference read_chemical_reference(const jsonParser &json, const Structure &prim, double tol = 1e-14);
+
+  void write_chemical_reference(const ChemicalReference &chem_ref, fs::path filename);
+
+  void write_chemical_reference(const ChemicalReference &chem_ref, jsonParser &json);
+
+  void write_chemical_reference(const ChemicalReference &chem_ref, jsonParser &json);
+
+
   // --------- CompositionAxes Declarations --------------------------------------------------
 
   struct CompositionAxes {
@@ -71,7 +75,7 @@ namespace CASM {
 
     /// \brief Write CompositionAxes to JSON
     void write(jsonParser &json) const;
-    
+
     /// \brief Set this->curr using key
     void select(std::string key);
 
@@ -116,11 +120,11 @@ namespace CASM {
     return result;
   }
 
-  
+
   // ---------- basis.json IO ------------------------------------------------------------------
-  
+
   /// \brief Write summary of basis functions
-  void write_basis(const SiteOrbitree& tree, const Structure& prim, jsonParser& json, double tol);
+  void write_basis(const SiteOrbitree &tree, const Structure &prim, jsonParser &json, double tol);
 }
 
 #endif

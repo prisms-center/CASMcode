@@ -13,14 +13,14 @@ namespace CASM {
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  
+
   /** \defgroup DataFormatterOperator
-      
+
       \brief Operators on other DatumFormatters
-      
+
       \ingroup DataFormatter
   */
-  
+
 
   /// \brief Base class for DataFormatter that operate on the results of other DataFormatters
   ///
@@ -84,18 +84,18 @@ namespace CASM {
       return m_evaluate(vec_stream.vector());
     }
   private:
-    
-    DataFormatterOperator* _clone() const override {
+
+    DataFormatterOperator *_clone() const override {
       return new DataFormatterOperator(*this);
     }
-    
+
     Evaluator m_evaluate;
     Parser m_parser;
     DataFormatter<DataObject> m_arg_formatter;
   };
-  
-  
-  
+
+
+
   /// \brief Makes a DataFormatterOperator that adds two or more numbers
   ///
   /// \ingroup DataFormatterOperator
@@ -172,7 +172,7 @@ namespace CASM {
     });
   }
 
-   /// \brief Makes a DataFormatterOperator that returns the minimum of two or more numbers
+  /// \brief Makes a DataFormatterOperator that returns the minimum of two or more numbers
   ///
   /// \ingroup DataFormatterOperator
   ///
@@ -227,7 +227,7 @@ namespace CASM {
   }
 
 
-  /// \brief Makes a DataFormatterOperator that checks if a string matches a regular expression. 
+  /// \brief Makes a DataFormatterOperator that checks if a string matches a regular expression.
   ///
   /// Ex: re('input_string','regex_pattern')"
   ///
@@ -244,7 +244,7 @@ namespace CASM {
     });
   }
 
-  /// \brief Makes a DataFormatterOperator that checks if a string contains a regular expression. 
+  /// \brief Makes a DataFormatterOperator that checks if a string contains a regular expression.
   ///
   /// Ex: rs('input_string','regex_pattern')
   ///
@@ -261,7 +261,7 @@ namespace CASM {
     });
   }
 
-  /// \brief Makes a DataFormatterOperator that returns the square of a number 
+  /// \brief Makes a DataFormatterOperator that returns the square of a number
   ///
   /// \ingroup DataFormatterOperator
   ///
@@ -276,7 +276,7 @@ namespace CASM {
 
   }
 
-  /// \brief Makes a DataFormatterOperator that returns the square root of a number 
+  /// \brief Makes a DataFormatterOperator that returns the square root of a number
   ///
   /// \ingroup DataFormatterOperator
   ///
@@ -291,7 +291,7 @@ namespace CASM {
 
   }
 
-  /// \brief Makes a DataFormatterOperator that returns the negative of a number 
+  /// \brief Makes a DataFormatterOperator that returns the negative of a number
   ///
   /// \ingroup DataFormatterOperator
   ///
@@ -306,7 +306,7 @@ namespace CASM {
 
   }
 
-  /// \brief Makes a DataFormatterOperator that returns the boolean AND for a sequence of boolean values 
+  /// \brief Makes a DataFormatterOperator that returns the boolean AND for a sequence of boolean values
   ///
   /// \ingroup DataFormatterOperator
   ///
@@ -324,7 +324,7 @@ namespace CASM {
 
   }
 
-  /// \brief Makes a DataFormatterOperator that returns the boolean OR for a sequence of boolean values 
+  /// \brief Makes a DataFormatterOperator that returns the boolean OR for a sequence of boolean values
   ///
   /// \ingroup DataFormatterOperator
   ///
@@ -342,7 +342,7 @@ namespace CASM {
 
   }
 
-  /// \brief Makes a DataFormatterOperator that returns the boolean NOT for a single boolean value 
+  /// \brief Makes a DataFormatterOperator that returns the boolean NOT for a single boolean value
   ///
   /// \ingroup DataFormatterOperator
   ///
@@ -366,7 +366,7 @@ namespace CASM {
 
   }
 
-  /// \brief Makes a DataFormatterOperator for equality comparison of two numbers 
+  /// \brief Makes a DataFormatterOperator for equality comparison of two numbers
   ///
   /// \ingroup DataFormatterOperator
   ///
@@ -396,7 +396,7 @@ namespace CASM {
 
   }
 
-  /// \brief Makes a DataFormatterOperator for less-than-or-equal comparison of two numbers 
+  /// \brief Makes a DataFormatterOperator for less-than-or-equal comparison of two numbers
   ///
   /// \ingroup DataFormatterOperator
   ///
@@ -411,11 +411,11 @@ namespace CASM {
 
   }
 
- /// \brief Makes a DataFormatterOperator for greater-than comparison of two numbers 
+  /// \brief Makes a DataFormatterOperator for greater-than comparison of two numbers
   ///
   /// \ingroup DataFormatterOperator
   ///
-   template<typename DataObject>
+  template<typename DataObject>
   DataFormatterOperator<bool, double, DataObject> format_operator_gt() {
     return DataFormatterOperator<bool, double, DataObject>("gt", "Greater-than comparison for two values",
     [](const std::vector<double> &vec)->bool{
@@ -426,7 +426,7 @@ namespace CASM {
 
   }
 
-  /// \brief Makes a DataFormatterOperator for greater-than-or-equal comparison of two numbers 
+  /// \brief Makes a DataFormatterOperator for greater-than-or-equal comparison of two numbers
   ///
   /// \ingroup DataFormatterOperator
   ///
@@ -440,12 +440,12 @@ namespace CASM {
     });
 
   }
-  
+
   /// \brief Dictionary of all DatumFormatterOperator
   template<typename DataObject>
   DataFormatterDictionary<DataObject> make_operator_dictionary() {
     DataFormatterDictionary<DataObject> dict;
-    
+
     dict.insert(
       format_operator_add<DataObject>(),
       format_operator_sub<DataObject>(),
@@ -470,10 +470,10 @@ namespace CASM {
       format_operator_re<DataObject>(),
       format_operator_rs<DataObject>()
     );
-    
+
     return dict;
   }
-  
+
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -487,7 +487,7 @@ namespace CASM {
   public:
     using BaseDatumFormatter<DataObject>::name;
 
-    DatumFormatterAlias(const std::string &_name, const std::string &_command, const std::string& _help="") :
+    DatumFormatterAlias(const std::string &_name, const std::string &_command, const std::string &_help = "") :
       BaseDatumFormatter<DataObject> (_name, _help.empty() ? "User-specified alias for '" + _command + "'" : _help) {
 
       split_formatter_expression(_command, m_format_tags, m_subexprs);
@@ -495,19 +495,19 @@ namespace CASM {
         throw std::runtime_error("Expression '" + _command + "' is either empty or consists of multiple expressions.\n");
 
     }
-    
-    DatumFormatterAlias(const std::string &_name, const BaseDatumFormatter<DataObject> &_rhs, const std::string& _help="") :
-      BaseDatumFormatter<DataObject> (_name,  _help.empty() ? "User-specified alias for '" + _rhs.name() + "'" : _help), 
+
+    DatumFormatterAlias(const std::string &_name, const BaseDatumFormatter<DataObject> &_rhs, const std::string &_help = "") :
+      BaseDatumFormatter<DataObject> (_name,  _help.empty() ? "User-specified alias for '" + _rhs.name() + "'" : _help),
       m_formatter(_rhs.clone()) {}
 
     typename BaseDatumFormatter<DataObject>::FormatterType type() const override {
       return BaseDatumFormatter<DataObject>::Property;
     }
-    
+
     std::unique_ptr<DatumFormatterAlias> clone() const {
       return std::unique_ptr<DatumFormatterAlias>(this->_clone());
     }
-    
+
     void init(const DataObject &_template_obj) const  override {
       m_formatter->init(_template_obj);
     }
@@ -575,7 +575,7 @@ namespace CASM {
     /// from which DerivedDatumFormatter::parse_args() receives the string "argument1,argument2,..."
     /// Returns true if parse is successful, false if not (e.g., takes no arguments, already initialized, malformed input, etc).
     bool parse_args(const std::string &args)  override {
-      
+
       if(!m_formatter) {
         m_formatter = DataFormatterParser<DataObject>::lookup(m_format_tags[0]).clone();
       }
@@ -589,10 +589,10 @@ namespace CASM {
       //return m_formatter->parse_args(args);
     }
   private:
-    
+
     /// \brief Make an exact copy of the formatter (including any initialized members)
     ///
-    DatumFormatterAlias* _clone() const override {
+    DatumFormatterAlias *_clone() const override {
       return new DatumFormatterAlias(*this);
     }
 
@@ -603,23 +603,23 @@ namespace CASM {
 
   template<typename DataObject>
   DatumFormatterAlias<DataObject> datum_formatter_alias(
-      const std::string &_name, 
-      const std::string &_command, 
-      const std::string& _help="") {
+    const std::string &_name,
+    const std::string &_command,
+    const std::string &_help = "") {
     return DatumFormatterAlias<DataObject>(_name, _command, _help);
   }
 
   template<typename DataObject>
   DatumFormatterAlias<DataObject> datum_formatter_alias(
-      const std::string &_name, 
-      const BaseDatumFormatter<DataObject> &_inside, 
-      const std::string& _help="") {
+    const std::string &_name,
+    const BaseDatumFormatter<DataObject> &_inside,
+    const std::string &_help = "") {
     return DatumFormatterAlias<DataObject>(_name, _inside, _help);
   }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  
+
   /// \brief Prints a string value specified at construction.  A header string can also be passed.
   ///
   /// \ingroup DataFormatter
@@ -635,7 +635,7 @@ namespace CASM {
     std::unique_ptr<ConstantValueFormatter> clone() const {
       return std::unique_ptr<ConstantValueFormatter>(this->_clone());
     }
-    
+
     void inject(const DataObject &_data_obj, DataStream &_stream, Index pass_index) const override {
       _stream << m_value;
     }
@@ -651,24 +651,24 @@ namespace CASM {
     }
 
   private:
-    
-    ConstantValueFormatter* _clone() const override {
+
+    ConstantValueFormatter *_clone() const override {
       return new ConstantValueFormatter(*this);
     }
 
-    
+
     ValueType m_value;
     bool m_print_json;
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
-  
+
+
   /// \brief Base class for creating scalar DatumFormatter
   ///
   /// A scalar DatumFormatter accepts an object of type DataObject and returns a
-  /// scalar object of ValueType. 
+  /// scalar object of ValueType.
   ///
   /// To implement MyDatumFormatter, you must:
   /// - Write the MyDatumFormatter class:
@@ -678,7 +678,7 @@ namespace CASM {
   /// };
   /// \endcode
   ///
-  /// The MyDatumFormatter class is required to provide an implementation for: 
+  /// The MyDatumFormatter class is required to provide an implementation for:
   /// - ValueType evaluate(const DataObject& obj) const;
   /// - BaseDatumFormatter<DataObject> *clone() const;
   ///
@@ -688,38 +688,38 @@ namespace CASM {
   ///
   ///
   template<typename ValueType, typename DataObject>
-  class BaseValueFormatter : 
+  class BaseValueFormatter :
     public BaseDatumFormatter<DataObject> {
-    
+
   public:
-    
+
     /// \brief Constructor
-    BaseValueFormatter(const std::string& _name, const std::string& _desc) :
+    BaseValueFormatter(const std::string &_name, const std::string &_desc) :
       BaseDatumFormatter<DataObject>(_name, _desc) {}
-    
+
     /// \brief Destructor
     virtual ~BaseValueFormatter() {}
-    
+
     std::unique_ptr<BaseValueFormatter> clone() const {
       return std::unique_ptr<BaseValueFormatter>(this->_clone());
     }
-    
+
     /// \brief Return requested data from obj, throwing std::runtime_error if not valid
-    virtual ValueType operator()(const DataObject& obj) const {
+    virtual ValueType operator()(const DataObject &obj) const {
       if(!this->validate(obj)) {
         throw std::runtime_error(std::string("Invalid DataObject in ") + this->name());
       }
       return evaluate(obj);
     }
-    
-    
+
+
     // --- Derived classes require an evaluate member ----
-    
-    virtual ValueType evaluate(const DataObject& obj) const = 0;
-    
-    
+
+    virtual ValueType evaluate(const DataObject &obj) const = 0;
+
+
     // --- These methods specialize virtual BaseDatumFormatter<DataObject> methods ----
-    
+
     /// \brief Default implementation injects each element, via operator<<
     ///
     /// - sets DataStream::failbit if validation fails
@@ -749,28 +749,28 @@ namespace CASM {
         json = this->evaluate(_data_obj);
       return json;
     }
-  
+
   private:
-    
+
     /// \brief Clone
-    virtual BaseValueFormatter* _clone() const override = 0;
+    virtual BaseValueFormatter *_clone() const override = 0;
   };
-  
+
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-  /// \brief A DatumFormatter that returns a value of specified type, via functions 
+  /// \brief A DatumFormatter that returns a value of specified type, via functions
   ///        that may be specified at runtime
   ///
   /// \ingroup DataFormatter
   ///
   template<typename ValueType, typename DataObject>
   class GenericDatumFormatter : public BaseValueFormatter<ValueType, DataObject> {
-  
+
   public:
-    
+
     using Evaluator = std::function<ValueType(const DataObject &)>;
     using Validator = std::function<bool(const DataObject &)>;
 
@@ -781,46 +781,46 @@ namespace CASM {
     /// \param _evaluator Returns a ValueType type piece of data about a DataObject
     /// \param _validator Returns boolean indicating if the _evaluator can be used successfully
     ///
-    GenericDatumFormatter(const std::string &_init_name, 
-                          const std::string &_desc, 
-                          Evaluator _evaluator, 
+    GenericDatumFormatter(const std::string &_init_name,
+                          const std::string &_desc,
+                          Evaluator _evaluator,
                           Validator _validator = always_true<DataObject>) :
-      BaseValueFormatter<ValueType, DataObject>(_init_name, _desc), 
-      m_evaluate(_evaluator), 
+      BaseValueFormatter<ValueType, DataObject>(_init_name, _desc),
+      m_evaluate(_evaluator),
       m_validate(_validator) {}
-    
+
     // /// \brief Destructor
     // virtual ~GenericDatumFormatter() {}
-    
+
     // --- Required implementations -----------
-    
+
     /// \brief Returns Container type piece of data about a DataObject, the result of the Evaluator
-    ValueType evaluate(const DataObject& obj) const override {
+    ValueType evaluate(const DataObject &obj) const override {
       return m_evaluate(obj);
     }
-    
+
     /// \brief Clone
     std::unique_ptr<GenericDatumFormatter> clone() const {
       return std::unique_ptr<GenericDatumFormatter>(this->_clone());
     }
-    
-    
+
+
     // --- Specialized implementation -----------
-    
+
     /// \brief Returns boolean indicating if the _evaluator can be used successfully,
     ///        the result of the Validator
-    bool validate(const DataObject& obj) const override {
+    bool validate(const DataObject &obj) const override {
       return m_validate(obj);
     }
 
-    
+
   private:
-    
+
     /// \brief Clone
-    GenericDatumFormatter* _clone() const override {
+    GenericDatumFormatter *_clone() const override {
       return new GenericDatumFormatter(*this);
     }
-    
+
     Evaluator m_evaluate;
     Validator m_validate;
 
@@ -832,7 +832,7 @@ namespace CASM {
   /// \brief Abstract base class for creating 1D DatumFormatter
   ///
   /// A 1D DatumFormatter accepts an object of type DataObject and returns a
-  /// one-dimensional Container object. 
+  /// one-dimensional Container object.
   ///
   /// To implement My1DDatumFormatter, you must:
   /// - Write the My1DDatumFormatter class:
@@ -856,43 +856,43 @@ namespace CASM {
   /// - typename Access // such as CASM_TMP::BracketAccess or CASM_TMP::ParenthesesAccess
   /// - size_type size(const Container&) const;
   ///
-  /// The My1DDatumFormatter class is required to provide an implementation for: 
+  /// The My1DDatumFormatter class is required to provide an implementation for:
   /// - Container evaluate(const DataObject& obj) const;
   /// - BaseDatumFormatter<DataObject> *clone() const;
   ///
-  /// See BaseDatumFormatter and BaseValueFormatter for default implementations 
+  /// See BaseDatumFormatter and BaseValueFormatter for default implementations
   /// which may be specialized.
   ///
-  /// \seealso Generic1DDatumFormatter to specialize a 1D DatumFormatter at runtime. 
+  /// \seealso Generic1DDatumFormatter to specialize a 1D DatumFormatter at runtime.
   ///
   ///
   template<typename Container, typename DataObject>
-  class Base1DDatumFormatter : 
-    public BaseValueFormatter<Container, DataObject>, 
+  class Base1DDatumFormatter :
+    public BaseValueFormatter<Container, DataObject>,
     public ContainerTraits<Container> {
-    
+
   public:
-    
+
     /// \brief Access methods for Container
     typedef typename ContainerTraits<Container>::Access Access;
-    
-    
+
+
     /// \brief Constructor
-    Base1DDatumFormatter(const std::string& _name, const std::string& _desc) :
+    Base1DDatumFormatter(const std::string &_name, const std::string &_desc) :
       BaseValueFormatter<Container, DataObject>(_name, _desc) {}
-    
+
     /// \brief Destructor
     virtual ~Base1DDatumFormatter() {}
-    
+
     /// \brief Clone
     std::unique_ptr<Base1DDatumFormatter> clone() const {
       return std::unique_ptr<Base1DDatumFormatter>(this->_clone());
     }
-    
-    
+
+
     // --- These methods specialize virtual BaseValueFormatter<Container, DataObject> methods ----
-    
-    
+
+
     /// \brief Default initialization adds rules for each element
     virtual void init(const DataObject &_template_obj) const override {
       if(_index_rules().size())
@@ -903,7 +903,7 @@ namespace CASM {
         _add_rule(std::vector<Index>({i}));
       }
     }
-    
+
     /// \brief Default long_header uses 'name(index)' for each column
     ///
     /// Ex: "corr(0)   corr(1)   corr(5)   corr(6)"
@@ -916,7 +916,7 @@ namespace CASM {
       }
       return t_ss.str();
     }
-    
+
     /// \brief Default implementation calls _parse_index_expression
     virtual bool parse_args(const std::string &args) override {
       _parse_index_expression(args);
@@ -927,12 +927,12 @@ namespace CASM {
     ///
     /// - sets DataStream::failbit if validation fails
     virtual void inject(const DataObject &_data_obj, DataStream &_stream, Index pass_index = 0) const override {
-      
+
       // add_rules to print all elements if not set yet
       if(!_index_rules().size()) {
         init(_data_obj);
       }
-      
+
       Container val = this->evaluate(_data_obj);
       auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
       if(!this->validate(_data_obj))
@@ -946,12 +946,12 @@ namespace CASM {
     ///
     /// - Prints "unknown" if validation fails
     virtual void print(const DataObject &_data_obj, std::ostream &_stream, Index pass_index = 0) const override {
-      
+
       // add_rules to print all elements if not set yet
       if(!_index_rules().size()) {
         init(_data_obj);
       }
-      
+
       _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
       _stream.precision(8);
       bool known = this->validate(_data_obj);
@@ -967,34 +967,34 @@ namespace CASM {
 
       }
     }
-    
+
   protected:
-    
+
     using BaseDatumFormatter<DataObject>::_add_rule;
     using BaseDatumFormatter<DataObject>::_index_rules;
     using BaseDatumFormatter<DataObject>::_parse_index_expression;
-  
+
   private:
-    
+
     /// \brief Clone
-    virtual Base1DDatumFormatter* _clone() const override = 0;
-    
+    virtual Base1DDatumFormatter *_clone() const override = 0;
+
   };
-  
-  
-  /// \brief A DatumFormatter that returns a 1D value of specified type, via functions 
+
+
+  /// \brief A DatumFormatter that returns a 1D value of specified type, via functions
   ///        that may be specified at runtime
   ///
   /// \ingroup DataFormatter
   ///
   template<typename Container, typename DataObject>
   class Generic1DDatumFormatter : public Base1DDatumFormatter<Container, DataObject> {
-    
+
   public:
-    
+
     typedef std::function<Container(const DataObject &)> Evaluator;
     typedef std::function<bool (const DataObject &)> Validator;
-    
+
     /// \brief Constructor
     ///
     /// \param _name Name of formatter
@@ -1002,115 +1002,115 @@ namespace CASM {
     /// \param _evaluator Returns a Container type piece of data about a DataObject
     /// \param _validator Returns boolean indicating if the _evaluator can be used successfully
     ///
-    Generic1DDatumFormatter(const std::string& _name,
-                            const std::string& _desc,
+    Generic1DDatumFormatter(const std::string &_name,
+                            const std::string &_desc,
                             Evaluator _evaluator,
-                            Validator _validator = always_true<DataObject>) : 
+                            Validator _validator = always_true<DataObject>) :
       Base1DDatumFormatter<DataObject, Container>(_name, _desc),
       m_evaluate(_evaluator),
       m_validate(_validator) {}
-    
-    
+
+
     // --- Required implementations -----------
-    
+
     /// \brief Returns Container type piece of data about a DataObject, the result of the Evaluator
-    Container evaluate(const DataObject& obj) const override {
+    Container evaluate(const DataObject &obj) const override {
       return m_evaluate(obj);
     }
-    
+
     /// \brief Clone using copy constructor
     std::unique_ptr<Generic1DDatumFormatter> clone() const {
       return std::unique_ptr<Generic1DDatumFormatter>(this->_clone());
     }
-    
-    
+
+
     // --- Specialized implementation -----------
-    
+
     /// \brief Returns boolean indicating if the _evaluator can be used successfully,
     ///        the result of the Validator
-    bool validate(const DataObject& obj) const override {
+    bool validate(const DataObject &obj) const override {
       return m_validate(obj);
     }
-    
+
   private:
-    
+
     /// \brief Clone using copy constructor
-    Generic1DDatumFormatter* _clone() const {
+    Generic1DDatumFormatter *_clone() const {
       return new Generic1DDatumFormatter(*this);
     }
-    
+
     Evaluator m_evaluate;
     Validator m_validate;
   };
-  
-  
+
+
   template<typename DataObject>
   using StringAttribute = BaseValueFormatter<std::string, DataObject>;
-  
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject 
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
   template<typename DataObject>
   using StringAttributeDictionary = DataFormatterDictionary<DataObject, StringAttribute<DataObject> >;
-  
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject 
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
   template<typename DataObject>
   StringAttributeDictionary<DataObject> make_string_dictionary();
 
-  
+
   template<typename DataObject>
   using BooleanAttribute = BaseValueFormatter<bool, DataObject>;
-  
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject 
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
   template<typename DataObject>
   using BooleanAttributeDictionary = DataFormatterDictionary<DataObject, BooleanAttribute<DataObject> >;
-  
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject 
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
   template<typename DataObject>
   BooleanAttributeDictionary<DataObject> make_boolean_dictionary();
 
-  
+
   template<typename DataObject>
   using IntegerAttribute = BaseValueFormatter<Index, DataObject>;
-  
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject 
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
   template<typename DataObject>
   using IntegerAttributeDictionary = DataFormatterDictionary<DataObject, IntegerAttribute<DataObject> >;
-  
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject 
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
   template<typename DataObject>
   IntegerAttributeDictionary<DataObject> make_integer_dictionary();
 
-  
+
   template<typename DataObject>
   using ScalarAttribute = BaseValueFormatter<double, DataObject>;
-  
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject 
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
   template<typename DataObject>
   using ScalarAttributeDictionary = DataFormatterDictionary<DataObject, ScalarAttribute<DataObject> >;
-  
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject 
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
   template<typename DataObject>
   ScalarAttributeDictionary<DataObject> make_scalar_dictionary();
 
-  
+
   template<typename DataObject>
   using VectorXdAttribute = Base1DDatumFormatter<Eigen::VectorXd, DataObject>;
-  
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject 
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
   template<typename DataObject>
   using VectorXdAttributeDictionary = DataFormatterDictionary<DataObject, VectorXdAttribute<DataObject> >;
-  
-  /// \brief Template to be specialized for constructing dictionaries for particular DataObject 
+
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
   template<typename DataObject>
   VectorXdAttributeDictionary<DataObject> make_vectorxd_dictionary();
 
-  
+
   /// \brief Dictionary of all Attribute
   ///
   /// Default includes String, Boolean, Integer, Scalar, and VectorXd attributes
   template<typename DataObject>
   DataFormatterDictionary<DataObject> make_attribute_dictionary() {
     DataFormatterDictionary<DataObject> dict;
-    
+
     dict.insert(
       make_string_dictionary<DataObject>(),
       make_boolean_dictionary<DataObject>(),
@@ -1118,109 +1118,109 @@ namespace CASM {
       make_scalar_dictionary<DataObject>(),
       make_vectorxd_dictionary<DataObject>()
     );
-    
+
     return dict;
   }
-    
-/*  
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  template<typename Container>
-  std::vector<Index> container_size_2D(const Container &cont) {
-    std::vector<Index> tsize(2, 0);
-    tsize[0] = cont.size();
-    if(tsize[0] > 0)
-      tsize[1] = cont[0].size();
-    return tsize;
-  }
+  /*
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  /// \brief A DatumFormatter that returns a value of specified 2d container
-  ///
-  /// Functionality is specified via template parameters at compile time
-  ///
-  /// \ingroup DataFormatter
-  ///
-  template<typename _Container,
-           typename DataObject,
-           typename _value_type = typename _Container::value_type,
-           typename _size_type = typename _Container::value_type,
-           typename Access = CASM_TMP::BracketAccess<_Container, _value_type, _size_type> >
-  class Generic2DDatumFormatter : public BaseDatumFormatter<DataObject> {
-  public:
-    using BaseDatumFormatter<DataObject>::name;
-    using BaseDatumFormatter<DataObject>::_add_rule;
-    using BaseDatumFormatter<DataObject>::_index_rules;
-    using BaseDatumFormatter<DataObject>::_parse_index_expression;
-    using Container = _Container;
-    using Evaluator = std::function<Container(const DataObject &)>;
-    using Sizer = std::function<std::vector<Index>(const Container &)>;
-    using Validator = std::function<bool(const DataObject &)>;
-
-    Generic2DDatumFormatter(const std::string &_init_name,
-                            const std::string &_desc,
-                            Evaluator evaluator,
-                            Validator validator = always_true<DataObject>,
-                            Sizer sizer = container_size_2D<_Container>) :
-      BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator), m_validate(validator), m_size(sizer) {}
-
-    BaseDatumFormatter<DataObject> *clone() const override {
-      return new Generic2DDatumFormatter(*this);
+    template<typename Container>
+    std::vector<Index> container_size_2D(const Container &cont) {
+      std::vector<Index> tsize(2, 0);
+      tsize[0] = cont.size();
+      if(tsize[0] > 0)
+        tsize[1] = cont[0].size();
+      return tsize;
     }
 
-    void init(const DataObject &_template_obj) const override;
+    /// \brief A DatumFormatter that returns a value of specified 2d container
+    ///
+    /// Functionality is specified via template parameters at compile time
+    ///
+    /// \ingroup DataFormatter
+    ///
+    template<typename _Container,
+             typename DataObject,
+             typename _value_type = typename _Container::value_type,
+             typename _size_type = typename _Container::value_type,
+             typename Access = CASM_TMP::BracketAccess<_Container, _value_type, _size_type> >
+    class Generic2DDatumFormatter : public BaseDatumFormatter<DataObject> {
+    public:
+      using BaseDatumFormatter<DataObject>::name;
+      using BaseDatumFormatter<DataObject>::_add_rule;
+      using BaseDatumFormatter<DataObject>::_index_rules;
+      using BaseDatumFormatter<DataObject>::_parse_index_expression;
+      using Container = _Container;
+      using Evaluator = std::function<Container(const DataObject &)>;
+      using Sizer = std::function<std::vector<Index>(const Container &)>;
+      using Validator = std::function<bool(const DataObject &)>;
 
-    std::string long_header(const DataObject &_template_obj) const override;
-    std::string short_header(const DataObject &_template_obj) const override;
+      Generic2DDatumFormatter(const std::string &_init_name,
+                              const std::string &_desc,
+                              Evaluator evaluator,
+                              Validator validator = always_true<DataObject>,
+                              Sizer sizer = container_size_2D<_Container>) :
+        BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator), m_validate(validator), m_size(sizer) {}
 
-    bool validate(const DataObject &_data_obj) const override {
-      return m_validate(_data_obj);
-    }
-
-    bool parse_args(const std::string &args) override {
-      _parse_index_expression(args);
-      return true;
-    }
-
-    void inject(const DataObject &_data_obj, DataStream &_stream, Index pass_index) const override {
-      Container val = m_evaluate(_data_obj);
-      auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
-      if(!validate(_data_obj))
-        _stream << DataStream::failbit;
-      for(; it != end_it; ++it) {
-        _stream << Access::at(val, (*it)[0], (*it)[1]);
+      BaseDatumFormatter<DataObject> *clone() const override {
+        return new Generic2DDatumFormatter(*this);
       }
-    }
 
-    void print(const DataObject &_data_obj, std::ostream &_stream, Index pass_index) const override {
-      _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      _stream.precision(8);
-      bool known = validate(_data_obj);
-      Container val;
-      if(known)
-        val = m_evaluate(_data_obj);
-      auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
-      for(; it != end_it; ++it) {
+      void init(const DataObject &_template_obj) const override;
+
+      std::string long_header(const DataObject &_template_obj) const override;
+      std::string short_header(const DataObject &_template_obj) const override;
+
+      bool validate(const DataObject &_data_obj) const override {
+        return m_validate(_data_obj);
+      }
+
+      bool parse_args(const std::string &args) override {
+        _parse_index_expression(args);
+        return true;
+      }
+
+      void inject(const DataObject &_data_obj, DataStream &_stream, Index pass_index) const override {
+        Container val = m_evaluate(_data_obj);
+        auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
+        if(!validate(_data_obj))
+          _stream << DataStream::failbit;
+        for(; it != end_it; ++it) {
+          _stream << Access::at(val, (*it)[0], (*it)[1]);
+        }
+      }
+
+      void print(const DataObject &_data_obj, std::ostream &_stream, Index pass_index) const override {
+        _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+        _stream.precision(8);
+        bool known = validate(_data_obj);
+        Container val;
         if(known)
-          _stream << "    " << Access::at(val, (*it)[0], (*it)[1]);
-        else
-          _stream << "    unknown";
+          val = m_evaluate(_data_obj);
+        auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
+        for(; it != end_it; ++it) {
+          if(known)
+            _stream << "    " << Access::at(val, (*it)[0], (*it)[1]);
+          else
+            _stream << "    unknown";
+        }
       }
-    }
 
-    jsonParser &to_json(const DataObject &_data_obj, jsonParser &json)const override {
-      if(validate(_data_obj))
-        json = m_evaluate(_data_obj);
-      return json;
-    }
+      jsonParser &to_json(const DataObject &_data_obj, jsonParser &json)const override {
+        if(validate(_data_obj))
+          json = m_evaluate(_data_obj);
+        return json;
+      }
 
-  private:
-    Evaluator m_evaluate;
-    Validator m_validate;
-    Sizer m_size;
-  };
+    private:
+      Evaluator m_evaluate;
+      Validator m_validate;
+      Sizer m_size;
+    };
 
-*/
+  */
 
 }
 

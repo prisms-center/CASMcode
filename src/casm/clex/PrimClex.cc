@@ -8,6 +8,7 @@
 #include "casm/clusterography/jsonClust.hh"
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/casm_io/SafeOfstream.hh"
+#include "casm/crystallography/Coordinate.hh"
 #include "casm/app/AppIO.hh"
 
 namespace CASM {
@@ -104,7 +105,6 @@ namespace CASM {
     // read supercells
     if(fs::is_regular_file(root / "training_data" / "SCEL")) {
 
-      any_print = true;
       sout << "  Read " << root / "training_data" / "SCEL" << std::endl;
       fs::ifstream scel(root / "training_data" / "SCEL");
       read_supercells(scel);
@@ -114,13 +114,9 @@ namespace CASM {
     // read config_list
     if(fs::is_regular_file(get_config_list_path())) {
 
-      any_print = true;
       sout << "  Read " << get_config_list_path() << std::endl;
       read_config_list();
     }
-
-    if(any_print)
-      sout << "\n" << std::flush;
 
 
   }
@@ -263,7 +259,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  PrimNeighborList& PrimClex::nlist() const {
+  PrimNeighborList &PrimClex::nlist() const {
     double tol = TOL;
 
     // lazy neighbor list generation
@@ -271,10 +267,10 @@ namespace CASM {
 
       // construct nlist
       m_nlist = notstd::make_cloneable<PrimNeighborList>(
-        settings().nlist_weight_matrix(),
-        settings().nlist_sublat_indices().begin(),
-        settings().nlist_sublat_indices().end()
-      );
+                  settings().nlist_weight_matrix(),
+                  settings().nlist_sublat_indices().begin(),
+                  settings().nlist_sublat_indices().end()
+                );
     }
 
     return *m_nlist;
@@ -508,10 +504,10 @@ namespace CASM {
 
   //*******************************************************************************************
   void PrimClex::read_global_orbitree(const fs::path &fclust_path) {
-    
+
     // force re-read
     global_orbitree = SiteOrbitree(get_prim().lattice());
-    
+
     global_orbitree.min_num_components = 2;     //What if we want other things?
     global_orbitree.min_length = 0.0001;
     from_json(jsonHelper(global_orbitree, prim), jsonParser(fclust_path));
@@ -519,7 +515,7 @@ namespace CASM {
 
     // reset nlist
     m_nlist.unique().reset();
-    
+
   }
 
   //*******************************************************************************************
@@ -668,7 +664,7 @@ namespace CASM {
     //  0 1 0
     //  0 0 2
 
-    Matrix3<double> mat;
+    Eigen::Matrix3d mat;
 
     std::string s;
     while(!stream.eof()) {
@@ -677,9 +673,7 @@ namespace CASM {
         std::getline(stream, s);
         stream >> mat;
 
-        //Lattice lat(prim.lattice.coord_trans(CASM::FRAC)*mat);
-        Lattice lat(prim.lattice().coord_trans(FRAC)*mat);
-        add_canonical_supercell(lat);
+        add_canonical_supercell(Lattice(prim.lattice().lat_column_mat()*mat));
       }
     }
   }
@@ -734,22 +728,14 @@ namespace CASM {
   };
 
   //*******************************************************************************************
-  Matrix3<int> PrimClex::calc_transf_mat(const Lattice &superlat) const {
-    Matrix3<int> tmp_transf_mat;
-    Matrix3<double> ttrans = prim.lattice().coord_trans(FRAC).inverse() * superlat.coord_trans(FRAC);
-    if(ttrans.is_integer()) {
-      for(int i = 0; i < 3; i++) {
-        for(int j = 0; j < 3; j++) {
-          tmp_transf_mat(i, j) = round(ttrans(i, j));
-        }
-      }
-    }
-    else {
+  Eigen::Matrix3i PrimClex::calc_transf_mat(const Lattice &superlat) const {
+    Eigen::Matrix3d ttrans = prim.lattice().inv_lat_column_mat() * superlat.lat_column_mat();
+    if(!is_integer(ttrans, TOL)) {
       std::cerr << "Error in PrimClex::calc_transf_mat(const Lattice &superlat)" << std::endl
                 << "  Bad supercell, the transformation matrix is not integer. Exiting!" << std::endl;
       exit(1);
     }
-    return tmp_transf_mat;
+    return iround(ttrans);
   }
 
   //*******************************************************************************************
@@ -987,8 +973,7 @@ namespace CASM {
   Eigen::MatrixXd PrimClex::shift_vectors() const {
     Eigen::MatrixXd tau(prim.basis.size(), 3);
     for(int i = 0; i < prim.basis.size(); i++) {
-      for(int j = 0; j < 3; j++)
-        tau(i, j) = prim.basis[i].get(j, CART);
+      tau.row(i) = prim.basis[i].const_cart().transpose();
     }
     return tau;
   }
@@ -1006,7 +991,7 @@ namespace CASM {
   //*******************************************************************************************
   Clexulator PrimClex::global_clexulator() const {
     if(!m_global_clexulator.initialized()) {
-      
+
       if(!fs::exists(dir().clexulator_src(settings().name(), settings().bset()))) {
         throw std::runtime_error(
           std::string("Error loading clexulator ") + settings().bset() + ". No basis functions exist.");
@@ -1023,11 +1008,11 @@ namespace CASM {
 
   //*******************************************************************************************
   bool PrimClex::has_global_eci(std::string clex_name) const {
-    
+
     if(m_global_eci.value().size()) {
       return true;
     }
-    
+
     return fs::exists(dir().eci(clex_name,
                                 settings().calctype(),
                                 settings().ref(),
@@ -1036,11 +1021,11 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  const ECIContainer& PrimClex::global_eci(std::string clex_name) const {
+  const ECIContainer &PrimClex::global_eci(std::string clex_name) const {
     if(!m_global_eci.value().size()) {
       fs::path eci_path = dir().eci(clex_name, settings().calctype(),
-                            settings().ref(), settings().bset(), settings().eci());
-      if(!fs::exists(eci_path) ) {
+                                    settings().ref(), settings().bset(), settings().eci());
+      if(!fs::exists(eci_path)) {
         throw std::runtime_error(
           std::string("Error loading global ECI. eci.json does not exist.\n")
           + "  Expected at: " + eci_path.string());
@@ -1479,53 +1464,53 @@ namespace CASM {
       }
       interface_imp_stream << "\n\n";
     }
-    
+
     // Write weight matrix used for the neighbor list
     PrimNeighborList::Matrix3Type W = nlist.weight_matrix();
-    interface_imp_stream << indent << "  m_weight_matrix.row(0) << " << W(0,0) << ", " << W(0,1) << ", " << W(0,2) << ";\n";
-    interface_imp_stream << indent << "  m_weight_matrix.row(1) << " << W(1,0) << ", " << W(1,1) << ", " << W(1,2) << ";\n";
-    interface_imp_stream << indent << "  m_weight_matrix.row(2) << " << W(2,0) << ", " << W(2,1) << ", " << W(2,2) << ";\n\n";
-    
+    interface_imp_stream << indent << "  m_weight_matrix.row(0) << " << W(0, 0) << ", " << W(0, 1) << ", " << W(0, 2) << ";\n";
+    interface_imp_stream << indent << "  m_weight_matrix.row(1) << " << W(1, 0) << ", " << W(1, 1) << ", " << W(1, 2) << ";\n";
+    interface_imp_stream << indent << "  m_weight_matrix.row(2) << " << W(2, 0) << ", " << W(2, 1) << ", " << W(2, 2) << ";\n\n";
+
     // Write neighborhood of UnitCellCoord
     // expand the nlist to contain 'global_orbitree' (all that is needed for now)
     std::set<UnitCellCoord> nbors;
     neighborhood(std::inserter(nbors, nbors.begin()), tree, prim, TOL);
-    
-    for(auto it=nbors.begin(); it!=nbors.end(); ++it) {
+
+    for(auto it = nbors.begin(); it != nbors.end(); ++it) {
       interface_imp_stream << indent << "  m_neighborhood.insert(UnitCellCoord("
-        << it->sublat() << ", "
-        << it->unitcell(0) << ", "
-        << it->unitcell(1) << ", "
-        << it->unitcell(2) << "));\n";
+                           << it->sublat() << ", "
+                           << it->unitcell(0) << ", "
+                           << it->unitcell(1) << ", "
+                           << it->unitcell(2) << "));\n";
     }
     interface_imp_stream << "\n\n";
-    
+
     interface_imp_stream << indent <<  "  m_orbit_neighborhood.resize(corr_size());\n";
     Index lno = 0;
-    for(Index nb=0; nb<tree.size(); ++nb) {
-      for(Index no=0; no<tree[nb].size(); ++no) {
+    for(Index nb = 0; nb < tree.size(); ++nb) {
+      for(Index no = 0; no < tree[nb].size(); ++no) {
         std::set<UnitCellCoord> orbit_nbors;
         orbit_neighborhood(std::inserter(orbit_nbors, orbit_nbors.begin()), tree, prim, nb, no, TOL);
-        
+
         Index proto_index = lno;
-        for(auto it=orbit_nbors.begin(); it!=orbit_nbors.end(); ++it) {
+        for(auto it = orbit_nbors.begin(); it != orbit_nbors.end(); ++it) {
           interface_imp_stream << indent << "  m_orbit_neighborhood[" << lno << "].insert(UnitCellCoord("
-            << it->sublat() << ", "
-            << it->unitcell(0) << ", "
-            << it->unitcell(1) << ", "
-            << it->unitcell(2) << "));\n";
+                               << it->sublat() << ", "
+                               << it->unitcell(0) << ", "
+                               << it->unitcell(1) << ", "
+                               << it->unitcell(2) << "));\n";
         }
         ++lno;
-        for(Index nf=1; nf<tree.prototype(nb,no).clust_basis.size(); ++nf) {
+        for(Index nf = 1; nf < tree.prototype(nb, no).clust_basis.size(); ++nf) {
           interface_imp_stream << indent << "  m_orbit_neighborhood[" << lno << "] = m_orbit_neighborhood[" << proto_index << "];\n";
           ++lno;
         }
         interface_imp_stream << "\n";
-        
+
       }
     }
-    
-    
+
+
     interface_imp_stream <<
                          indent << "}\n\n";
 

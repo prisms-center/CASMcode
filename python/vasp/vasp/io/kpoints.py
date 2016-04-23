@@ -125,10 +125,10 @@ class Kpoints:
                 min_index = linear_density.index(min(linear_density))
                 super_kpoints.subdivisions[min_index] += 1
                 
-                # set all subdivisions to be at similar linear density
+                # set all subdivisions to be at similar linear density 
                 scale = super_kpoints.subdivisions[min_index] / super_recip_vec_lengths[min_index]
                 for i in range(3):
-                    super_kpoints.subdivisions[i] = int(math.ceil(scale * super_recip_vec_lengths[i]))
+                    super_kpoints.subdivisions[i] = int(math.ceil(scale * super_recip_vec_lengths[i]-0.1))
             
             # end while
                 

@@ -1191,11 +1191,11 @@ void BI(const Eigen::MatrixXd &Cn, const Eigen::VectorXd &En, const Eigen::Matri
     dECI = (ECI - ECI_i).norm() / ECI_i.norm();
 
     if(print_steps) {
-      
+
       if(dECI != dECI) {
         throw std::runtime_error("Error in BI iteration: dECI = nan\nTry a smaller mu value.");
       }
-      
+
       if(step == 1) {
         std::cout << "    Step " << step << std::endl;
       }
@@ -1205,7 +1205,7 @@ void BI(const Eigen::MatrixXd &Cn, const Eigen::VectorXd &En, const Eigen::Matri
 
     if(dECI < prec_ECI)
       cont = false;
-    
+
   }
   while(cont);
 
@@ -1236,17 +1236,17 @@ void FPC(const Eigen::MatrixXd &M1, const Eigen::VectorXd &V1, Eigen::VectorXd &
 
     if(print_steps) {
       if(step % 1000 == 0) {
-        
+
         double _shrink = G.maxCoeff() / mu - 1.0;
         double _dECI = (delta_mag / ECI_mag);
-        
+
         if(_dECI != _dECI) {
           throw std::runtime_error("Error in FPC iteration: dECI = nan\nTry a smaller mu value.");
         }
         if(std::isinf(_shrink)) {
           throw std::runtime_error("Error in FPC iteration: shrink = inf\nTry a larger mu value.");
         }
-        
+
         //rms = (C*ECI - E).norm()/sqrt(1.0*Nnrg);
         //std::cout << ECI << std::endl;
         //std::cout << "  Step " << step << "  rms: " << rms << "  shrink: " << G.maxCoeff()/mu - 1.0 << "  dECI: " << (delta_mag/ECI_mag) << std::endl;
@@ -1260,7 +1260,7 @@ void FPC(const Eigen::MatrixXd &M1, const Eigen::VectorXd &V1, Eigen::VectorXd &
       if((delta_mag / ECI_mag) < prec_ECI)
         cont = false;
     }
-    
+
     if(step > max_step) {
       std::cout << "STOPPING: Reached FPC iteration max step: " << max_step << std::endl;
       cont = false;

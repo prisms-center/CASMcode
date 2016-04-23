@@ -71,6 +71,10 @@ lib_paths = []
 
 # command-line variables (C and C++)
 ccflags = []
+cxxflags = []
+
+#ccflags.append('-Wall')
+
 ccflags.append('-Wno-unused-parameter')
 
 if 'OPTIMIZATIONLEVEL' in os.environ:
@@ -78,6 +82,7 @@ if 'OPTIMIZATIONLEVEL' in os.environ:
 else:
   opt_level = '3'
 ccflags.append("-O" + ARGUMENTS.get('opt',opt_level))
+cxxflags.append("-O" + ARGUMENTS.get('opt',opt_level))
 
 debug_level = '0'
 if 'debug' in ARGUMENTS:
@@ -87,11 +92,13 @@ elif 'DEBUGSTATE' in os.environ:
 
 if debug_level == '0':
   ccflags = ccflags + ['-DNDEBUG']
+  cxxflags = cxxflags + ['-DNDEBUG']
 elif debug_level == '1':
   ccflags = ccflags + ['-g', '-save-temps']
+  cxxflags = cxxflags + ['-g', '-save-temps']  
 
 # C++ only
-cxxflags = []
+#cxxflags = []
 cxxflags.append('--std=c++11')
 cxxflags.append('-Wno-deprecated-register')
 cxxflags.append('-Wno-deprecated-declarations')
@@ -325,4 +332,3 @@ if not env['IS_INSTALL']:
   env.NoClean(env['INSTALL_TARGETS'])
   if debug_level == '1':
     env.Clean(casm_lib, Glob('*.s') + Glob('*.ii'))
-

@@ -160,31 +160,31 @@ Instructions for volume relaxed VASP energies:                         \n\n\
 
     std::cout <<
               "Set chemical reference\n"
-"                                                                       \n"
-"- The chemical reference determines the value of the formation energy  \n"
-"  and chemical potentials calculated by CASM.                          \n\n"
+              "                                                                       \n"
+              "- The chemical reference determines the value of the formation energy  \n"
+              "  and chemical potentials calculated by CASM.                          \n\n"
 
-"- Chemical references states are set by specifying a hyperplane in     \n"
-"  energy/atom - composition (as atom_frac) space. This may be done by  \n"
-"  specifying the hyperplane explicitly, or by specifying several       \n"
-"  reference states with energy/atom and composition (as atom_frac) for \n"
-"  enough states to span the composition space of the allowed occupants \n"
-"  specified in the prim. For consistency with other CASM projects,     \n"
-"  additional reference states extending to other compositional         \n"
-"  dimensions may be included also.                                     \n\n"
+              "- Chemical references states are set by specifying a hyperplane in     \n"
+              "  energy/atom - composition (as atom_frac) space. This may be done by  \n"
+              "  specifying the hyperplane explicitly, or by specifying several       \n"
+              "  reference states with energy/atom and composition (as atom_frac) for \n"
+              "  enough states to span the composition space of the allowed occupants \n"
+              "  specified in the prim. For consistency with other CASM projects,     \n"
+              "  additional reference states extending to other compositional         \n"
+              "  dimensions may be included also.                                     \n\n"
 
-"- Execute 'casm ref --set-auto' to automatically set project level     \n"
-"  references using DFT calculated energies from configurations with    \n"
-"  extreme parametric compositions.\n\n"
+              "- Execute 'casm ref --set-auto' to automatically set project level     \n"
+              "  references using DFT calculated energies from configurations with    \n"
+              "  extreme parametric compositions.\n\n"
 
-"- Execute 'casm ref --set '...JSON...'' to manually set the project    \n"
-"  level reference energies. See 'casm ref --help' for more information.\n\n"
+              "- Execute 'casm ref --set '...JSON...'' to manually set the project    \n"
+              "  level reference energies. See 'casm ref --help' for more information.\n\n"
 
-"- It is also possible to specialize the chemical reference at the      \n"
-"  supercell or configuration level.                                    \n\n"
+              "- It is also possible to specialize the chemical reference at the      \n"
+              "  supercell or configuration level.                                    \n\n"
 
-"- See 'casm format' for a description and location of the              \n"
-"  'chemical_reference.json' file.                                      \n\n";
+              "- See 'casm format' for a description and location of the              \n"
+              "  'chemical_reference.json' file.                                      \n\n";
 
   }
 
@@ -397,7 +397,7 @@ Instructions for fitting ECI:                                          \n\n\
     std::cout << "Initialize primclex: " << root << std::endl << std::endl;
     PrimClex primclex(root, tmp);
     std::cout << "  DONE." << std::endl << std::endl;
-    
+
     const DirectoryStructure &dir = primclex.dir();
     const ProjectSettings &settings = primclex.settings();
 
@@ -415,7 +415,7 @@ Instructions for fitting ECI:                                          \n\n\
     // it'd be nice to just read this...
     SymGroup prim_pg;
     primclex.get_prim().lattice().generate_point_group(prim_pg);
-    prim_pg.get_character_table();
+    prim_pg.character_table();
     std::cout << "- Lattice point group size: " << prim_pg.size() << std::endl;
     std::cout << "- Lattice point group is " << prim_pg.get_name() << std::endl;
     std::cout << "- Factor group size: " << primclex.get_prim().factor_group().size() << std::endl;
@@ -608,14 +608,14 @@ Instructions for fitting ECI:                                          \n\n\
       std::cout << "FALSE" << "\n";
     }
     std::cout << "\n";
-    
+
     if(primclex.has_chemical_reference()) {
       std::cout << "To show the chemical reference, run 'casm ref -d'\n\n";
     }
     else {
 
       std::cout << "No chemical reference set." << std::endl << std::endl;
-      
+
       if(vm.count("next")) {
         std::cout << "\n#################################\n\n";
 

@@ -48,6 +48,9 @@ template<> struct is_arithmetic<__m128d> { enum { value = true }; };
 #define _EIGEN_DECLARE_CONST_Packet4f(NAME,X) \
   const Packet4f p4f_##NAME = pset1<Packet4f>(X)
 
+#define _EIGEN_DECLARE_CONST_Packet2d(NAME,X) \
+  const Packet2d p2d_##NAME = pset1<Packet2d>(X)
+
 #define _EIGEN_DECLARE_CONST_Packet4f_FROM_INT(NAME,X) \
   const Packet4f p4f_##NAME = _mm_castsi128_ps(pset1<Packet4i>(X))
 
@@ -63,7 +66,7 @@ template<> struct packet_traits<float>  : default_packet_traits
     AlignedOnScalar = 1,
     size=4,
 
-    HasDiv    = 1,
+    HasDiv  = 1,
     HasSin  = EIGEN_FAST_MATH,
     HasCos  = EIGEN_FAST_MATH,
     HasLog  = 1,
@@ -79,7 +82,9 @@ template<> struct packet_traits<double> : default_packet_traits
     AlignedOnScalar = 1,
     size=2,
 
-    HasDiv    = 1
+    HasDiv  = 1,
+    HasExp  = 1,
+    HasSqrt = 1
   };
 };
 template<> struct packet_traits<int>    : default_packet_traits
@@ -137,6 +142,10 @@ template<> EIGEN_STRONG_INLINE Packet4i pnegate(const Packet4i& a)
   return psub(_mm_setr_epi32(0,0,0,0), a);
 }
 
+template<> EIGEN_STRONG_INLINE Packet4f pconj(const Packet4f& a) { return a; }
+template<> EIGEN_STRONG_INLINE Packet2d pconj(const Packet2d& a) { return a; }
+template<> EIGEN_STRONG_INLINE Packet4i pconj(const Packet4i& a) { return a; }
+
 template<> EIGEN_STRONG_INLINE Packet4f pmul<Packet4f>(const Packet4f& a, const Packet4f& b) { return _mm_mul_ps(a,b); }
 template<> EIGEN_STRONG_INLINE Packet2d pmul<Packet2d>(const Packet2d& a, const Packet2d& b) { return _mm_mul_pd(a,b); }
 template<> EIGEN_STRONG_INLINE Packet4i pmul<Packet4i>(const Packet4i& a, const Packet4i& b)
@@ -169,18 +178,26 @@ template<> EIGEN_STRONG_INLINE Packet4f pmin<Packet4f>(const Packet4f& a, const 
 template<> EIGEN_STRONG_INLINE Packet2d pmin<Packet2d>(const Packet2d& a, const Packet2d& b) { return _mm_min_pd(a,b); }
 template<> EIGEN_STRONG_INLINE Packet4i pmin<Packet4i>(const Packet4i& a, const Packet4i& b)
 {
+#ifdef EIGEN_VECTORIZE_SSE4_1
+  return _mm_min_epi32(a,b);
+#else
   // after some bench, this version *is* faster than a scalar implementation
   Packet4i mask = _mm_cmplt_epi32(a,b);
   return _mm_or_si128(_mm_and_si128(mask,a),_mm_andnot_si128(mask,b));
+#endif
 }
 
 template<> EIGEN_STRONG_INLINE Packet4f pmax<Packet4f>(const Packet4f& a, const Packet4f& b) { return _mm_max_ps(a,b); }
 template<> EIGEN_STRONG_INLINE Packet2d pmax<Packet2d>(const Packet2d& a, const Packet2d& b) { return _mm_max_pd(a,b); }
 template<> EIGEN_STRONG_INLINE Packet4i pmax<Packet4i>(const Packet4i& a, const Packet4i& b)
 {
+#ifdef EIGEN_VECTORIZE_SSE4_1
+  return _mm_max_epi32(a,b);
+#else
   // after some bench, this version *is* faster than a scalar implementation
   Packet4i mask = _mm_cmpgt_epi32(a,b);
   return _mm_or_si128(_mm_and_si128(mask,a),_mm_andnot_si128(mask,b));
+#endif
 }
 
 template<> EIGEN_STRONG_INLINE Packet4f pand<Packet4f>(const Packet4f& a, const Packet4f& b) { return _mm_and_ps(a,b); }
@@ -218,63 +235,27 @@ template<> EIGEN_STRONG_INLINE Packet4i pload<Packet4i>(const int*     from) { E
     return _mm_loadu_ps(from);
     #endif
   }
-  template<> EIGEN_STRONG_INLINE Packet2d ploadu<Packet2d>(const double* from) { EIGEN_DEBUG_UNALIGNED_LOAD return _mm_loadu_pd(from); }
-  template<> EIGEN_STRONG_INLINE Packet4i ploadu<Packet4i>(const int*    from) { EIGEN_DEBUG_UNALIGNED_LOAD return _mm_loadu_si128(reinterpret_cast<const Packet4i*>(from)); }
 #else
-// Fast unaligned loads. Note that here we cannot directly use intrinsics: this would
-// require pointer casting to incompatible pointer types and leads to invalid code
-// because of the strict aliasing rule. The "dummy" stuff are required to enforce
-// a correct instruction dependency.
-// TODO: do the same for MSVC (ICC is compatible)
 // NOTE: with the code below, MSVC's compiler crashes!
-
-#if defined(__GNUC__) && defined(__i386__)
-  // bug 195: gcc/i386 emits weird x87 fldl/fstpl instructions for _mm_load_sd
-  #define EIGEN_AVOID_CUSTOM_UNALIGNED_LOADS 1
-#elif defined(__clang__)
-  // bug 201: Segfaults in __mm_loadh_pd with clang 2.8
-  #define EIGEN_AVOID_CUSTOM_UNALIGNED_LOADS 1
-#else
-  #define EIGEN_AVOID_CUSTOM_UNALIGNED_LOADS 0
-#endif
 
 template<> EIGEN_STRONG_INLINE Packet4f ploadu<Packet4f>(const float* from)
 {
   EIGEN_DEBUG_UNALIGNED_LOAD
-#if EIGEN_AVOID_CUSTOM_UNALIGNED_LOADS
   return _mm_loadu_ps(from);
-#else
-  __m128d res;
-  res =  _mm_load_sd((const double*)(from)) ;
-  res =  _mm_loadh_pd(res, (const double*)(from+2)) ;
-  return _mm_castpd_ps(res);
-#endif
 }
+#endif
+
 template<> EIGEN_STRONG_INLINE Packet2d ploadu<Packet2d>(const double* from)
 {
   EIGEN_DEBUG_UNALIGNED_LOAD
-#if EIGEN_AVOID_CUSTOM_UNALIGNED_LOADS
   return _mm_loadu_pd(from);
-#else
-  __m128d res;
-  res = _mm_load_sd(from) ;
-  res = _mm_loadh_pd(res,from+1);
-  return res;
-#endif
 }
 template<> EIGEN_STRONG_INLINE Packet4i ploadu<Packet4i>(const int* from)
 {
   EIGEN_DEBUG_UNALIGNED_LOAD
-#if EIGEN_AVOID_CUSTOM_UNALIGNED_LOADS
-  return _mm_loadu_si128(reinterpret_cast<const Packet4i*>(from));
-#else
-  __m128d res;
-  res =  _mm_load_sd((const double*)(from)) ;
-  res =  _mm_loadh_pd(res, (const double*)(from+2)) ;
-  return _mm_castpd_si128(res);
-#endif
+  return _mm_loadu_si128(reinterpret_cast<const __m128i*>(from));
 }
-#endif
+
 
 template<> EIGEN_STRONG_INLINE Packet4f ploaddup<Packet4f>(const float*   from)
 {
@@ -491,8 +472,8 @@ template<> EIGEN_STRONG_INLINE int predux_min<Packet4i>(const Packet4i& a)
   // for GCC (eg., it does not like using std::min after the pstore !!)
   EIGEN_ALIGN16 int aux[4];
   pstore(aux, a);
-  register int aux0 = aux[0]<aux[1] ? aux[0] : aux[1];
-  register int aux2 = aux[2]<aux[3] ? aux[2] : aux[3];
+  int aux0 = aux[0]<aux[1] ? aux[0] : aux[1];
+  int aux2 = aux[2]<aux[3] ? aux[2] : aux[3];
   return aux0<aux2 ? aux0 : aux2;
 }
 
@@ -512,8 +493,8 @@ template<> EIGEN_STRONG_INLINE int predux_max<Packet4i>(const Packet4i& a)
   // for GCC (eg., it does not like using std::min after the pstore !!)
   EIGEN_ALIGN16 int aux[4];
   pstore(aux, a);
-  register int aux0 = aux[0]>aux[1] ? aux[0] : aux[1];
-  register int aux2 = aux[2]>aux[3] ? aux[2] : aux[3];
+  int aux0 = aux[0]>aux[1] ? aux[0] : aux[1];
+  int aux2 = aux[2]>aux[3] ? aux[2] : aux[3];
   return aux0>aux2 ? aux0 : aux2;
 }
 

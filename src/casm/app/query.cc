@@ -8,7 +8,7 @@
 #include "casm/clex/ConfigIOSelected.hh"
 
 namespace CASM {
-  
+
   void query_help(std::ostream &_stream, std::vector<std::string > help_opt_vec) {
     _stream << "Prints the properties for a set of configurations for the set of currently selected" << std::endl
             << "configurations or for a set of configurations specifed by a selection file." << std::endl
@@ -34,7 +34,7 @@ namespace CASM {
     _stream << std::endl;
   }
 
-  int query_command(int argc, char *argv[], PrimClex* _primclex, std::ostream& sout, std::ostream& serr) {
+  int query_command(int argc, char *argv[], PrimClex *_primclex, std::ostream &sout, std::ostream &serr) {
 
     std::string new_alias, selection_str;
     fs::path config_path, out_path;
@@ -78,8 +78,8 @@ namespace CASM {
         }
         ConfigIOParser::add_custom_formatter(
           datum_formatter_alias(
-            "selected", 
-            ConfigIO::selected_in(), 
+            "selected",
+            ConfigIO::selected_in(),
             "Returns true if configuration is specified in the input selection"
           )
         );
@@ -96,14 +96,14 @@ namespace CASM {
     }
     catch(std::exception &e) {
       serr << "Unhandled Exception reached the top of main: "
-                << e.what() << ", application will now exit" << std::endl;
+           << e.what() << ", application will now exit" << std::endl;
       return ERR_UNKNOWN;
     }
 
     if(!vm.count("learn") && !vm.count("columns")) {
       sout << std::endl << desc << std::endl;
     }
-    
+
     // set current path to project root
     fs::path root;
     if(!_primclex) {
@@ -116,7 +116,7 @@ namespace CASM {
     else {
       root = _primclex->get_path();
     }
-    
+
     fs::path alias_file = root / ".casm/query_alias.json";
     if(vm.count("learn")) {
       jsonParser mjson;
@@ -134,14 +134,14 @@ namespace CASM {
       }
       catch(std::runtime_error &e) {
         serr << "That's confusing. I can't learn malformed input:\n"
-                  << e.what() << std::endl;
+             << e.what() << std::endl;
         return 1;
       }
       if(mjson.contains(alias_name)) {
         serr << "WARNING: I already know '" << alias_name << "' as:\n"
-                  << "             " << mjson[alias_name].get<std::string>() << "\n"
-                  << "         I will forget it and learn '" << alias_name << "' as:\n"
-                  << "             " << alias_command << std::endl;
+             << "             " << mjson[alias_name].get<std::string>() << "\n"
+             << "         I will forget it and learn '" << alias_name << "' as:\n"
+             << "             " << alias_command << std::endl;
       }
       mjson[alias_name] = alias_command;
       mjson.write(alias_file);
@@ -152,31 +152,31 @@ namespace CASM {
       serr << "ERROR: the option '--columns' is required but missing" << std::endl;
       return ERR_INVALID_ARG;
     }
-    
-    
+
+
     // -------------------------------------------------------------------------
     // perform query operation
-    
+
     if(fs::exists(alias_file)) {
       ConfigIOParser::load_aliases(alias_file);
     }
-    
-    
-    auto check_gz = [=](fs::path p) {
+
+
+    auto check_gz = [ = ](fs::path p) {
       if(p.extension() == ".gz" || p.extension() == ".GZ") {
         return true;
       }
       return false;
     };
-    
-    auto check_json = [=](fs::path p) {
+
+    auto check_json = [ = ](fs::path p) {
       if(p.extension() == ".json" || p.extension() == ".JSON") {
         return true;
       }
       return false;
     };
-    
-    
+
+
     // Checks for: X.json.gz / X.json / X.gz  (also accepts .JSON or .GZ)
     if(check_gz(out_path)) {
       gz_flag = true;
@@ -185,23 +185,23 @@ namespace CASM {
     else {
       json_flag = check_json(out_path) || json_flag;
     }
-    
+
     // set output_stream: where the query results are written
     std::unique_ptr<std::ostream> uniq_fout;
-    std::ostream& output_stream = make_ostream_if(vm.count("output"), sout, uniq_fout, out_path, gz_flag);
+    std::ostream &output_stream = make_ostream_if(vm.count("output"), sout, uniq_fout, out_path, gz_flag);
     output_stream << FormatFlag(output_stream).print_header(!no_header);
-    
+
     // set status_stream: where query settings and PrimClex initialization messages are sent
     std::ostream &status_stream = (out_path.string() == "STDOUT") ? serr : sout;
-    
+
     // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex& primclex = make_primclex_if_not(_primclex, uniq_primclex, root, status_stream);
-    
+    PrimClex &primclex = make_primclex_if_not(_primclex, uniq_primclex, root, status_stream);
+
     // Get configuration selection
     ConstConfigSelection selection(primclex, selection_str);
-    
+
     // Print info
     status_stream << "Print:" << std::endl;
     for(int p = 0; p < columns.size(); p++) {
@@ -210,28 +210,28 @@ namespace CASM {
     if(vm.count("output"))
       status_stream << "to " << fs::absolute(out_path) << std::endl;
     status_stream << std::endl;
-    
+
     // Construct DataFormatter
     DataFormatter<Configuration> formatter;
     ConfigIOParser::add_custom_formatter(
       datum_formatter_alias(
-        "selected", 
-        ConfigIO::selected_in(selection), 
+        "selected",
+        ConfigIO::selected_in(selection),
         "Returns true if configuration is specified in the input selection"
       )
     );
-        
+
     try {
-      
+
       std::vector<std::string> all_columns;
       if(!verbatim_flag) {
         all_columns.push_back("configname");
         all_columns.push_back("selected");
       }
       all_columns.insert(all_columns.end(), columns.cbegin(), columns.cend());
-      
+
       formatter.append(ConfigIOParser::parse(all_columns));
-      
+
     }
     catch(std::exception &e) {
       serr << "Parsing error: " << e.what() << "\n\n";
@@ -239,10 +239,10 @@ namespace CASM {
     }
 
     try {
-      
+
       auto begin = vm.count("all") ? selection.config_begin() : selection.selected_config_begin();
       auto end = vm.count("all") ? selection.config_end() : selection.selected_config_end();
-      
+
       // JSON output block
       if(json_flag) {
         jsonParser json;

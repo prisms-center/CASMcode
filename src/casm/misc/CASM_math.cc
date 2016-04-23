@@ -136,21 +136,18 @@ namespace CASM {
     return tvec;
   }
 
-  /* This evaluates Gaussians using the formula:
-   * f(x) = a*e^(-(x-b)^2/(c^2))
-   */
+  //*******************************************************************************************
+  // This evaluates Gaussians using the formula:
+  // f(x) = a*e^(-(x-b)^2/(c^2))
   //*******************************************************************************************
 
   double gaussian(double a, double x, double b, double c) {
     return a * exp(-((x - b) * (x - b)) / (c * c));
   }
 
-
   //*******************************************************************************************
-
-  /* This calculates Gaussian moments given by the integral:
-   * m = \int_{\infty}^{\infty} dx x^pow*exp[-x^2/(2*sigma^2)]/(\sqrt(2*\pi)*sigma)
-   */
+  // This calculates Gaussian moments given by the integral:
+  // m = \int_{\infty}^{\infty} dx x^pow*exp[-x^2/(2*sigma^2)]/(\sqrt(2*\pi)*sigma)
   //*******************************************************************************************
 
   double gaussian_moment(int expon, double sigma) {
@@ -168,10 +165,8 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-
-  /* This calculates Gaussian moments given by the integral:
-   * m = \int_{\infty}^{\infty} dx x^pow*exp[-(x-x0)^2/(2*sigma^2)]/(\sqrt(2*\pi)*sigma)
-   */
+  // This calculates Gaussian moments given by the integral:
+  // m = \int_{\infty}^{\infty} dx x^pow*exp[-(x-x0)^2/(2*sigma^2)]/(\sqrt(2*\pi)*sigma)
   //*******************************************************************************************
 
   double gaussian_moment(int expon, double sigma, double x0) {

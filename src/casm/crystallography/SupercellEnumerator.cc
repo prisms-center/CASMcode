@@ -118,7 +118,7 @@ namespace CASM {
 
     for(int i = 0; i < pg.size(); i++) {
 
-      Eigen::Matrix3i transformed = iround(lat.inverse() * (Eigen::Matrix3d(pg[i].get_matrix(CART)) * lat)) * H_init;
+      Eigen::Matrix3i transformed = iround(lat.inverse() * pg[i].matrix() * lat) * H_init;
 
       H = hermite_normal_form(transformed).first;
 
@@ -173,8 +173,7 @@ namespace CASM {
 
     }
 
-    Eigen::Matrix3d op_canon = pg[i_canon].get_matrix(CART);
-    return std::make_pair<Eigen::MatrixXi, Eigen::MatrixXd>(H_canon, op_canon);
+    return std::make_pair<Eigen::MatrixXi, Eigen::MatrixXd>(H_canon, pg[i_canon].matrix());
   }
 
 }

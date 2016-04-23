@@ -76,14 +76,17 @@ template<typename Derived>
 template<typename Visitor>
 void DenseBase<Derived>::visit(Visitor& visitor) const
 {
+  typedef typename internal::remove_all<typename Derived::Nested>::type ThisNested;
+  typename Derived::Nested thisNested(derived());
+
   enum { unroll = SizeAtCompileTime != Dynamic
                    && CoeffReadCost != Dynamic
                    && (SizeAtCompileTime == 1 || internal::functor_traits<Visitor>::Cost != Dynamic)
                    && SizeAtCompileTime * CoeffReadCost + (SizeAtCompileTime-1) * internal::functor_traits<Visitor>::Cost
                       <= EIGEN_UNROLLING_LIMIT };
-  return internal::visitor_impl<Visitor, Derived,
+  return internal::visitor_impl<Visitor, ThisNested,
       unroll ? int(SizeAtCompileTime) : Dynamic
-    >::run(derived(), visitor);
+    >::run(thisNested, visitor);
 }
 
 namespace internal {
@@ -164,25 +167,25 @@ struct functor_traits<max_coeff_visitor<Scalar> > {
 
 } // end namespace internal
 
-/** \returns the minimum of all coefficients of *this
-  * and puts in *row and *col its location.
+/** \returns the minimum of all coefficients of *this and puts in *row and *col its location.
+  * \warning the result is undefined if \c *this contains NaN.
   *
   * \sa DenseBase::minCoeff(Index*), DenseBase::maxCoeff(Index*,Index*), DenseBase::visitor(), DenseBase::minCoeff()
   */
 template<typename Derived>
 template<typename IndexType>
 typename internal::traits<Derived>::Scalar
-DenseBase<Derived>::minCoeff(IndexType* row, IndexType* col) const
+DenseBase<Derived>::minCoeff(IndexType* rowId, IndexType* colId) const
 {
   internal::min_coeff_visitor<Derived> minVisitor;
   this->visit(minVisitor);
-  *row = minVisitor.row;
-  if (col) *col = minVisitor.col;
+  *rowId = minVisitor.row;
+  if (colId) *colId = minVisitor.col;
   return minVisitor.res;
 }
 
-/** \returns the minimum of all coefficients of *this
-  * and puts in *index its location.
+/** \returns the minimum of all coefficients of *this and puts in *index its location.
+  * \warning the result is undefined if \c *this contains NaN. 
   *
   * \sa DenseBase::minCoeff(IndexType*,IndexType*), DenseBase::maxCoeff(IndexType*,IndexType*), DenseBase::visitor(), DenseBase::minCoeff()
   */
@@ -198,25 +201,25 @@ DenseBase<Derived>::minCoeff(IndexType* index) const
   return minVisitor.res;
 }
 
-/** \returns the maximum of all coefficients of *this
-  * and puts in *row and *col its location.
+/** \returns the maximum of all coefficients of *this and puts in *row and *col its location.
+  * \warning the result is undefined if \c *this contains NaN. 
   *
   * \sa DenseBase::minCoeff(IndexType*,IndexType*), DenseBase::visitor(), DenseBase::maxCoeff()
   */
 template<typename Derived>
 template<typename IndexType>
 typename internal::traits<Derived>::Scalar
-DenseBase<Derived>::maxCoeff(IndexType* row, IndexType* col) const
+DenseBase<Derived>::maxCoeff(IndexType* rowPtr, IndexType* colPtr) const
 {
   internal::max_coeff_visitor<Derived> maxVisitor;
   this->visit(maxVisitor);
-  *row = maxVisitor.row;
-  if (col) *col = maxVisitor.col;
+  *rowPtr = maxVisitor.row;
+  if (colPtr) *colPtr = maxVisitor.col;
   return maxVisitor.res;
 }
 
-/** \returns the maximum of all coefficients of *this
-  * and puts in *index its location.
+/** \returns the maximum of all coefficients of *this and puts in *index its location.
+  * \warning the result is undefined if \c *this contains NaN.
   *
   * \sa DenseBase::maxCoeff(IndexType*,IndexType*), DenseBase::minCoeff(IndexType*,IndexType*), DenseBase::visitor(), DenseBase::maxCoeff()
   */

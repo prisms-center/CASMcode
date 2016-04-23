@@ -60,9 +60,7 @@ namespace CASM {
       std::enable_if < is_iterator<T>::type::value &&
       std::is_same<typename std::iterator_traits<T>::value_type, V>::type::value, void >;
 
-
     // --------------------
-
 
     // Definitions for IfIntegralTol
     template <typename tol_type, bool IsIntegral>

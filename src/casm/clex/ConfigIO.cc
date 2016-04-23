@@ -101,7 +101,7 @@ namespace CASM {
         t_header.push_back((char)('a' + _index_rules()[c][0]));
         t_header.push_back(')');
         if(c != _index_rules().size() - 1) {
-          t_header += "        ";
+          t_header += "   ";
         }
       }
       return t_header;
@@ -185,11 +185,11 @@ namespace CASM {
       ScalarAttribute<Configuration>(Name, Desc) {
       parse_args("");
     }
-      
-    Clex::Clex(const Clexulator& clexulator, const ECIContainer& eci, const std::string args) : 
-        ScalarAttribute<Configuration>(Name, Desc), 
-        m_clexulator(clexulator),
-        m_eci(eci) {
+
+    Clex::Clex(const Clexulator &clexulator, const ECIContainer &eci, const std::string args) :
+      ScalarAttribute<Configuration>(Name, Desc),
+      m_clexulator(clexulator),
+      m_eci(eci) {
       parse_args(args);
     }
 
@@ -520,6 +520,7 @@ namespace CASM {
       CompN(),
       Corr(),
       RelaxationStrain(),
+      DoFStrain(),
       SiteFrac(),
       StrucScore()
     );

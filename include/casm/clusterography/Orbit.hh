@@ -21,6 +21,7 @@ namespace CASM {
 
   class FunctionVisitor;
 
+  class BasisSet;
 
   //GenericOrbit class definition begins here:
   /**GenericOrbit is the set of all clusters that are
@@ -35,9 +36,6 @@ namespace CASM {
     Index permute_rep_ID, coord_rep_ID;
     ///Pointers to all orbits whose clusters are subclusters of clusters in this orbit
     Array<GenericOrbit *> sub_cluster;
-
-    ///Later we should probably have a controller for turning site DOFs into the appropriate cluster DOFs
-    //ClustDOFPlugin *ClustDOFController;
 
   public:
     using Array<ClustType > :: size;
@@ -62,7 +60,7 @@ namespace CASM {
     ///Also, fill equivalence_map
     ///example:  GenericOrbit<SiteCluster> my_orbit(my_cluster); //specifies prototype
     ///          my_orbit.get_equivalent(my_point_group);      //maps protype onto all its equivalents
-    void get_equivalent(const Array<SymOp> &sym_group); //Hang will do this
+    void get_equivalent(const SymGroup &sym_group); //Hang will do this
 
     ///Apply symmetry to prototype and all the clusters in the orbit
     GenericOrbit &apply_sym(const SymOp &op);
@@ -83,17 +81,9 @@ namespace CASM {
     Index find(const ClustType  &test_clust, Coordinate &trans) const;
 
     /// calls collect_basis_info on all clusters in orbit
-    void collect_basis_info(const BasicStructure<Site> &struc, const Coordinate &shift);
-    /// calls collect_basis_info on all clusters in orbit, with respect to a translation
-    void collect_basis_info(const BasicStructure<Site> &struc);
-
-    /// calls collect_basis_info on all clusters in orbit
     void collect_basis_info(const Array<typename ClustType::WhichCoordType> &basis, const Coordinate &shift);
     /// calls collect_basis_info on all clusters in orbit, with respect to a translation
     void collect_basis_info(const Array<typename ClustType::WhichCoordType> &basis);
-
-    /// populates clust_group of all equivalent clusters using equivalence_map
-    void get_cluster_symmetry();
 
     /// get permutation representation of every operation in equivalence_map to describe how operations permute site order
     SymGroupRep const *get_full_permutation_representation();
@@ -101,8 +91,6 @@ namespace CASM {
     /// get symmetry representation of every operation in equivalence_map to describe how operations map coordinates at site 'i' of prototype
     /// onto coordinates of site 'j' of equivalent cluster
     SymGroupRep const *get_full_coord_representation();
-
-    void define_cluster_dof(const Eigen::MatrixXd &trans_mat);
 
     /// return max_length of clusters in Orbit
     double max_length() const {
@@ -116,7 +104,7 @@ namespace CASM {
     //Not implemented
     void read(std::istream &stream, int num_sites, COORD_TYPE mode);
     /// reads in an Orbit
-    void read(std::istream &stream, COORD_TYPE mode, const SymGroup &sym_group, bool read_tensors); //Modified by Ivy
+    void read(std::istream &stream, COORD_TYPE mode, const SymGroup &sym_group); //Modified by Ivy
 
 
     /// returns Array of std::string, each of which is
@@ -128,13 +116,6 @@ namespace CASM {
     /// b_index is the basis site index, f_index is the index of the configurational site basis function in Site::occupant_basis
     /// nlist_index is the index into the nlist for the site the flower centers on
     ReturnArray<std::string> delta_occfunc_flower_function_cpp_strings(BasisSet site_basis, const Array<FunctionVisitor *> &labelers, Index nlist_index, Index b_index, Index f_index);
-
-    ///Calculates the ECI tensors of the clusters in the orbit.
-    void calc_eci(Index rank);
-
-    ///Get tensor_basis for prototype, and map it onto each equivalent cluster
-    void get_tensor_basis(Index rank);
-
 
     //Access index, which is private
     Index get_index() const {

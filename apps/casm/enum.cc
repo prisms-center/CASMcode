@@ -103,7 +103,7 @@ namespace CASM {
       std::cerr << "Error in 'casm enum': No casm project found." << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
     std::cout << "\n***************************\n" << std::endl;
 
     // initialize primclex

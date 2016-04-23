@@ -94,7 +94,7 @@ namespace CASM {
   // 'select' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int select_command(int argc, char *argv[], PrimClex* _primclex) {
+  int select_command(int argc, char *argv[], PrimClex *_primclex) {
 
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
@@ -225,7 +225,7 @@ namespace CASM {
       std::cerr << "Error: No casm project found." << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
 
     // initialize primclex
     std::cout << "Initialize primclex: " << root << std::endl << std::endl;

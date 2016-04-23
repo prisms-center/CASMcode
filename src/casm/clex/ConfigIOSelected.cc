@@ -15,19 +15,19 @@ namespace CASM {
           m_selection_name = "unknown";
       }
     }
-    
+
     std::unique_ptr<Selected> Selected::clone() const {
       return std::unique_ptr<Selected>(this->_clone());
     }
-    
-    Selected* Selected::_clone() const {
+
+    Selected *Selected::_clone() const {
       return new Selected(*this);
     }
-    
+
     std::string Selected::short_header(const Configuration &_config) const {
       return name() + "(" + m_selection_name + ")";
     }
-    
+
     bool Selected::evaluate(const Configuration &_config) const {
       return m_selection.selected(_config.name());
     }

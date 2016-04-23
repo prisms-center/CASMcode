@@ -59,7 +59,7 @@ template<typename MatrixType,typename Rhs> struct homogeneous_right_product_impl
 } // end namespace internal
 
 template<typename MatrixType,int _Direction> class Homogeneous
-  : public MatrixBase<Homogeneous<MatrixType,_Direction> >
+  : internal::no_assignment_operator, public MatrixBase<Homogeneous<MatrixType,_Direction> >
 {
   public:
 
@@ -79,7 +79,7 @@ template<typename MatrixType,int _Direction> class Homogeneous
     {
       if(  (int(Direction)==Vertical   && row==m_matrix.rows())
         || (int(Direction)==Horizontal && col==m_matrix.cols()))
-        return 1;
+        return Scalar(1);
       return m_matrix.coeff(row, col);
     }
 

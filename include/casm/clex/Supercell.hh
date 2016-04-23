@@ -17,7 +17,7 @@ namespace CASM {
   class PermuteIterator;
   class PrimClex;
   class Clexulator;
-  
+
   /// \brief Represents a supercell of a PrimClex
   ///
   /// \ingroup Clex
@@ -57,7 +57,7 @@ namespace CASM {
     //       operations that aren't in m_factor_group. You should access elements of the SymGroupRep using
     //       the the Supercel::factor_group_permute(int) method, so that you don't encounter the gaps
     //       OR, see note for Supercell::permutation_symrep() below.
-    mutable Index m_perm_symrep_ID;
+    mutable SymGroupRepID m_perm_symrep_ID;
 
     // m_factor_group is factor group of the super cell, found by identifying the subgroup of
     // (*this).get_prim().factor_group() that leaves the supercell lattice vectors unchanged
@@ -122,16 +122,16 @@ namespace CASM {
 
     /// SuperNeighborList, mutable for lazy construction
     mutable notstd::cloneable_ptr<SuperNeighborList> m_nlist;
-    
+
     /// Store size of PrimNeighborList at time of construction of SuperNeighborList
     /// to enable checking if SuperNeighborList should be re-constructed
     mutable Index m_nlist_size_at_construction;
-    
+
 
     // Could hold either enumerated configurations or any 'saved' configurations
     ConfigList config_list;
 
-    Matrix3 < int > transf_mat;
+    Eigen::Matrix3i transf_mat;
 
     double scaling;
 
@@ -148,8 +148,8 @@ namespace CASM {
     //Supercell(PrimClex *_prim);
     Supercell(const Supercell &RHS);
     Supercell(PrimClex *_prim, const Lattice &superlattice);
-    Supercell(PrimClex *_prim, const Eigen::Matrix3i &superlattice_matrix);
-    Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix);
+    Supercell(PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &superlattice_matrix);
+
 
     // **** Coordinates ****
     Index get_linear_index(const Site &site, double tol = TOL) const;
@@ -229,13 +229,13 @@ namespace CASM {
     //       SymGroupRep::get_representation(m_factor_group[i]) or SymGroupRep::get_permutation(m_factor_group[i]),
     //       so that you don't encounter the gaps (i.e., the representation can be indexed using the
     //       SymOps of m_factor_group
-    Index permutation_symrep_ID()const {
-      if(m_perm_symrep_ID == Index(-1))
+    SymGroupRepID permutation_symrep_ID()const {
+      if(m_perm_symrep_ID.empty())
         generate_permutations();
       return m_perm_symrep_ID;
     }
 
-    SymGroupRep const *permutation_symrep() const {
+    SymGroupRep const &permutation_symrep() const {
       return get_prim().factor_group().representation(permutation_symrep_ID());
     }
 
@@ -243,13 +243,15 @@ namespace CASM {
       return i / volume();
     }
 
-    Matrix3<int> get_transf_mat() const {
+    const Eigen::Matrix3i &get_transf_mat() const {
       return transf_mat;
     };
-    Lattice get_real_super_lattice() const {
+
+    const Lattice &get_real_super_lattice() const {
       return real_super_lattice;
     };
-    Lattice get_recip_prim_lattice() const {
+
+    const Lattice &get_recip_prim_lattice() const {
       return recip_prim_lattice;
     };
 
@@ -381,7 +383,7 @@ namespace CASM {
     void read_clex_relaxations(const Lattice &home_lattice);
 
     bool is_supercell_of(const Structure &structure) const;
-    bool is_supercell_of(const Structure &structure, Matrix3<double> &multimat) const;
+    bool is_supercell_of(const Structure &structure, Eigen::Matrix3d &multimat) const;
     ReturnArray<int> vacant()const;
 
     // **** Printing ****
@@ -396,7 +398,7 @@ namespace CASM {
                             const Array< Array< Array<Index > > > &perturb_config_index,
                             const Array< Array< Array<permute_const_iterator> > > &perturb_config_symop_index,
                             bool print_config_name) const;
-    
+
     ///Call Configuration::write out every configuration in supercell
     jsonParser &write_config_list(jsonParser &json);
 
@@ -436,6 +438,7 @@ namespace CASM {
         // get source info from enumerator
         //config_list.back().set_source(it_begin.source());
         config_list.back().set_id(config_list.size() - 1);
+        config_list.back().set_selected(false);
       }
     }
 

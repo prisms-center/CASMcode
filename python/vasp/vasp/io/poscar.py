@@ -241,10 +241,11 @@ class Poscar:
                 lat.append([float(x) for x in line.split()])
             except ValueError:
                 raise PoscarError("Could not read lattice vector: '" + line + "'")
-        self._lattice = np.array(lat)
+        self._lattice = self.scaling*np.array(lat)
         if self._lattice.shape!=(3,3):
             raise PoscarError("Lattice shape error: " + np.array_str(self._lattice))
         self._reciprocal_lattice = 2.0*math.pi*np.linalg.inv(np.transpose(self._lattice))
+        self.scaling=1.0
         return
 
 

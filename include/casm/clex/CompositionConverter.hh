@@ -48,10 +48,10 @@ namespace CASM {
 
     /// \brief The mol composition of the parameteric composition axes end members
     Eigen::VectorXd end_member(size_type i) const;
-    
+
     /// \brief Return the matrix Mij = dx_i/dn_j
     Eigen::MatrixXd dparam_dmol() const;
-    
+
     /// \brief Return the matrix Mij = dn_i/dx_j
     Eigen::MatrixXd dmol_dparam() const;
 
@@ -88,10 +88,10 @@ namespace CASM {
 
     /// \brief Return formula for comp(i) in terms of comp_n(A), comp_n(B), ...
     std::string comp_formula(size_type i) const;
-    
+
     /// \brief Return formula for comp_n(components()[i]) in terms of comp(a), comp(b), ...
     std::string comp_n_formula(size_type i) const;
-    
+
     /// \brief Return formula for param_chem_pot(i) in terms of chem_pot(A), chem_pot(B), ...
     std::string param_chem_pot_formula(size_type i) const;
 
@@ -143,10 +143,10 @@ namespace CASM {
 
   /// \brief Pretty-print map of name/CompositionConverter pairs
   void display_composition_axes(std::ostream &stream, const std::map<std::string, CompositionConverter> &map);
-  
+
   /// \brief Pretty-print comp in terms of comp_n
   void display_comp(std::ostream &stream, const CompositionConverter &f, int indent = 0);
-  
+
   /// \brief Pretty-print comp_n in terms of comp
   void display_comp_n(std::ostream &stream, const CompositionConverter &f, int indent = 0);
 

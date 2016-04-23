@@ -44,7 +44,7 @@ namespace CASM {
 
   Coordinate Supercell::coord(const UnitCellCoord &bijk) const {
     Coordinate tcoord(m_prim_grid.coord(bijk, SCEL));
-    tcoord(CART) += (*primclex).get_prim().basis[bijk[0]](CART);
+    tcoord.cart() += (*primclex).get_prim().basis[bijk[0]].cart();
     return tcoord;
   };
 
@@ -52,7 +52,7 @@ namespace CASM {
 
   Coordinate Supercell::coord(Index l) const {
     Coordinate tcoord(m_prim_grid.coord(l % volume(), SCEL));
-    tcoord(CART) += (*primclex).get_prim().basis[get_b(l)](CART);
+    tcoord.cart() += (*primclex).get_prim().basis[get_b(l)].cart();
     return tcoord;
   };
 
@@ -74,22 +74,22 @@ namespace CASM {
   const Structure &Supercell::get_prim() const {
     return primclex->get_prim();
   }
-  
+
   /// \brief Returns the SuperNeighborList
   const SuperNeighborList &Supercell::nlist() const {
-      
+
     // if any additions to the prim nlist, must update the super nlist
     if(get_primclex().nlist().size() != m_nlist_size_at_construction) {
       m_nlist.unique().reset();
     }
-    
+
     // lazy construction of neighbor list
     if(!m_nlist) {
       m_nlist_size_at_construction = get_primclex().nlist().size();
       m_nlist = notstd::make_cloneable<SuperNeighborList>(
-        m_prim_grid, 
-        get_primclex().nlist()
-      );
+                  m_prim_grid,
+                  get_primclex().nlist()
+                );
     }
     return *m_nlist;
   };
@@ -126,7 +126,7 @@ namespace CASM {
 
   // permutation_symrep() populates permutation symrep if needed
   const Permutation &Supercell::factor_group_permute(Index i) const {
-    return *(permutation_symrep()->get_permutation(factor_group()[i]));
+    return *(permutation_symrep().get_permutation(factor_group()[i]));
   }
   /*****************************************************************/
 
@@ -559,6 +559,7 @@ namespace CASM {
       //std::cout << "new config" << std::endl;
       config_list.push_back(canon_config);
       config_list.back().set_id(config_list.size() - 1);
+      config_list.back().set_selected(false);
       return true;
       //std::cout << "    added" << std::endl;
     }
@@ -613,7 +614,6 @@ namespace CASM {
     recip_prim_lattice(RHS.recip_prim_lattice),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
-    m_perm_symrep_ID(-1),
     name(RHS.name),
     m_nlist(RHS.m_nlist),
     config_list(RHS.config_list),
@@ -624,28 +624,12 @@ namespace CASM {
 
   //*******************************************************************************
 
-  Supercell::Supercell(PrimClex *_prim, const Eigen::Matrix3i &transf_mat_init) :
+  Supercell::Supercell(PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
     primclex(_prim),
-    real_super_lattice((*primclex).get_prim().lattice().coord_trans(FRAC) * Matrix3<int>(transf_mat_init)),
+    real_super_lattice((*primclex).get_prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
     recip_prim_lattice(real_super_lattice.get_reciprocal()),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
-    m_perm_symrep_ID(-1),
-    transf_mat(transf_mat_init) {
-    scaling = 1.0;
-    generate_name();
-    //    fill_reciprocal_supercell();
-  }
-  
-  //*******************************************************************************
-
-  Supercell::Supercell(PrimClex *_prim, const Matrix3<int> &transf_mat_init) :
-    primclex(_prim),
-    real_super_lattice((*primclex).get_prim().lattice().coord_trans(FRAC) * transf_mat_init),
-    recip_prim_lattice(real_super_lattice.get_reciprocal()),
-    m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
-    recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
-    m_perm_symrep_ID(-1),
     transf_mat(transf_mat_init) {
     scaling = 1.0;
     generate_name();
@@ -661,7 +645,6 @@ namespace CASM {
     recip_prim_lattice(real_super_lattice.get_reciprocal()),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
-    m_perm_symrep_ID(-1),
     transf_mat(primclex->calc_transf_mat(superlattice)) {
     /*std::cerr << "IN SUPERCELL CONSTRUCTOR:\n"
               << "transf_mat is\n" << transf_mat << '\n'
@@ -679,98 +662,6 @@ namespace CASM {
     generate_name();
 
   }
-
-  //*******************************************************************************
-/*
-  // Va_mode is default set to 0
-  // Va_mode		description
-  // 0			print no information about the vacancies
-  // 1			print only the coordinates of the vacancies
-  // 2			print the number of vacancies and the coordinates of the vacancies
-  void Supercell::print(const Configuration &config, std::ostream &stream, COORD_TYPE mode, int Va_mode, char term, int prec, int pad) const {
-
-    //declare hash mol name -> basis site index
-    std::map<std::string, std::vector<Index> > siteHash;
-    
-    // this statement assumes that the scaling is 1.0 always, this may needed to be changed
-    stream << config.name() << "\n";
-    real_super_lattice.print(stream);
-    
-    //loop through all sites
-    for(Index i = 0; i < config.size(); i++) {
-      
-      const Molecule &mol = config.get_mol(i);
-      if(mol.is_vacancy()) {
-        siteHash["Va"].push_back(i);
-      }
-      else {
-        siteHash[mol.name].push_back(i);
-      }
-    }
-    
-    // print atom names
-    for(auto it=siteHash.begin(); it!= siteHash.end(); ++it) {
-      if(it->first != "Va") {
-        stream << it->first << " ";
-      }
-    }
-    
-    if(Va_mode == 2) {
-      if(siteHash.find("Va") != siteHash.end()) {
-        stream << "Va" << " ";
-      }
-    }
-    stream << "\n";
-    
-    // print numbers of atoms
-    for(auto it=siteHash.begin(); it!= siteHash.end(); ++it) {
-      if(it->first != "Va") {
-        stream << it->second.size() << " ";
-      }
-    }
-    
-    if(Va_mode == 2) {
-      if(siteHash.find("Va") != siteHash.end()) {
-        stream << siteHash["Va"].size() << " ";
-      }
-    }
-    stream << "\n";
-    
-    //print the COORD_TYPE
-    if(mode == FRAC) {
-      stream << "Direct\n";
-    }
-    else if(mode == CART) {
-      stream << "Cartesian\n";
-    }
-    else {
-      std::stringstream ss; 
-      ss << "Error in BasicStructure<CoordType>::print5'.\n"
-         << "  COORD_TYPE mode = " << mode << " not allowed. Use FRAC or CART.";
-      
-      throw std::runtime_error(ss.str());
-    }
-
-    // print coordinates
-    for(auto it=siteHash.begin(); it!=siteHash.end(); ++it) {
-      if(it->first != "Va") {
-        for(Index i = 0; i < it->second.size(); i++) {
-          coord(it->second.at(i)).print(stream, mode, term, prec, pad);
-        }
-      }
-    }
-    
-    if(Va_mode != 0) {
-      auto it = siteHash.find("Va");
-      for(Index i = 0; i < it->second.size(); i++) {
-        coord(it->second.at(i)).print(stream, mode, term, prec, pad);
-      }
-    }
-    stream << "\n";
-    
-    return;
-  }
-*/
 
   //*******************************************************************************
   /**
@@ -845,14 +736,14 @@ namespace CASM {
 
   void Supercell::generate_factor_group()const {
     real_super_lattice.find_invariant_subgroup(get_prim().factor_group(), m_factor_group);
-    m_factor_group.set_lattice(real_super_lattice, CART);
+    m_factor_group.set_lattice(real_super_lattice);
     return;
   }
 
   //***********************************************************
 
   void Supercell::generate_permutations()const {
-    if(m_perm_symrep_ID != Index(-1)) {
+    if(!m_perm_symrep_ID.empty()) {
       std::cerr << "WARNING: In Supercell::generate_permutations(), but permutations data already exists.\n"
                 << "         It will be overwritten.\n";
     }
@@ -893,7 +784,7 @@ namespace CASM {
     name.append(tname.str());
     */
 
-    Eigen::Matrix3i H = hermite_normal_form(Eigen::Matrix3i(transf_mat)).first;
+    Eigen::Matrix3i H = hermite_normal_form(transf_mat).first;
     name = "SCEL";
     std::stringstream tname;
     tname << H(0, 0)*H(1, 1)*H(2, 2) << "_" << H(0, 0) << "_" << H(1, 1) << "_" << H(2, 2) << "_" << H(1, 2) << "_" << H(0, 2) << "_" << H(0, 1);
@@ -928,7 +819,7 @@ namespace CASM {
    */
   //***********************************************************
   bool Supercell::is_supercell_of(const Structure &structure) const {
-    Matrix3<double> mat;
+    Eigen::Matrix3d mat;
     return is_supercell_of(structure, mat);
   };
 
@@ -938,7 +829,7 @@ namespace CASM {
    *  - Does *NOT* check basis sites
    */
   //***********************************************************
-  bool Supercell::is_supercell_of(const Structure &structure, Matrix3<double> &mat) const {
+  bool Supercell::is_supercell_of(const Structure &structure, Eigen::Matrix3d &mat) const {
     Structure tstruct = structure;
     SymGroup point_group;
     tstruct.lattice().generate_point_group(point_group);
@@ -960,7 +851,7 @@ namespace CASM {
   //***********************************************************
   Configuration Supercell::configuration(const BasicStructure<Site> &structure_to_config, double tol) {
     //Because the user is a fool and the supercell may not be a supercell (This still doesn't check the basis!)
-    Matrix3<double> transmat;
+    Eigen::Matrix3d transmat;
     if(!structure_to_config.lattice().is_supercell_of(get_prim().lattice(), get_prim().factor_group(), transmat)) {
       std::cerr << "ERROR in Supercell::configuration" << std::endl;
       std::cerr << "The provided structure is not a supercell of the PRIM. Tranformation matrix was:" << std::endl;
@@ -1130,8 +1021,7 @@ namespace CASM {
     for(int i = 0; i < volume(); i++) {
       Coordinate temp_real_point = m_prim_grid.coord(i, SCEL);
       temp_real_point.within(); //should this also be voronoi within?
-      for(int j = 0; j < 3; j++)
-        real_coords(i, j) = temp_real_point.get(j, CART);
+      real_coords.row(i) = temp_real_point.const_cart().transpose();
     }
     return real_coords;
   }
@@ -1151,20 +1041,14 @@ namespace CASM {
       Coordinate temp_kpoint = recip_grid.coord(i, PRIM);
       temp_kpoint.set_lattice(temp_recip_lattice, CART);
       temp_kpoint.within(); //This is temporary, should be replaced by a call to voronoi_within()
-      temp_kpoint.update();
-      for(int j = 0; j < 3; j++)
-        kpoint_coords(i, j) = temp_kpoint.get(j, CART);
+
+      kpoint_coords.row(i) = temp_kpoint.const_cart().transpose();
     }
     return kpoint_coords;
   }
 
   Array< bool > Supercell::is_commensurate_kpoint(const Eigen::MatrixXd &recip_coordinates, double tol) {
-    Eigen::MatrixXd recip_lat(3, 3);
-    Matrix3<double> lat_vectors = recip_prim_lattice.coord_trans(FRAC);
-    for(int i = 0; i < 3; i++)
-      for(int j = 0; j < 3; j++)
-        recip_lat(i, j) = lat_vectors(j, i);
-    Eigen::MatrixXd recip_frac_coords = recip_coordinates * recip_lat.inverse();
+    Eigen::MatrixXd recip_frac_coords = recip_coordinates * recip_prim_lattice.inv_lat_column_mat();
     //    std::cout<<"Recip Frac Coords"<<std::endl<<recip_frac_coords<<std::endl;
     Array<bool> is_commensurate(recip_coordinates.rows(), true);
     for(int i = 0; i < recip_frac_coords.rows(); i++) {

@@ -65,7 +65,7 @@ namespace CASM {
       std::cerr << "Error: No casm project found." << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
 
     std::cout << "\n***************************\n" << std::endl;
 
@@ -76,7 +76,7 @@ namespace CASM {
     std::cout << "Generating lattice point group. " << std::endl << std::endl;
     SymGroup prim_pg;
     prim.lattice().generate_point_group(prim_pg, set.tol());
-    prim_pg.get_character_table();
+    prim_pg.character_table();
 
 
     std::cout << "  Lattice point group size: " << prim_pg.size() << std::endl;
