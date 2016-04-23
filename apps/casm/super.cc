@@ -343,7 +343,7 @@ namespace CASM {
         std::cout << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
         
         std::cout << "    Transformation matrix, after enforcing mininum volume:\n" 
-                  << S << "\n    (volume = " << (S).cast<double>().determinant() << ")\n\n";
+                  << S << "\n    (volume = " << S.cast<double>().determinant() << ")\n\n";
         
       }
       
@@ -431,7 +431,7 @@ namespace CASM {
         const SymGroup& pg = primclex.get_prim().point_group();
         
         std::cout << "    Initial transformation matrix:\n" << T 
-                  << "\n    (volume = " << T.determinant() << ")\n\n";
+                  << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
         
         auto M = enforce_min_volume(
             primclex.get_prim().lattice(),
@@ -444,7 +444,7 @@ namespace CASM {
         auto T = is_supercell(niggli_lat, prim_lat, TOL).second;
         
         std::cout << "    Transformation matrix, after enforcing mininum volume:\n" 
-                  << T << "\n    (volume = " << T.determinant() << ")\n\n";
+                  << T << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
       }
       
       

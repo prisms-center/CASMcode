@@ -226,14 +226,14 @@ namespace CASM {
       return m_domain[m_current_state];
     }
 
-    DiscreteDoF *copy() const {
+    DiscreteDoF *copy() const override {
       return new OccupantDoF(*this);
     }
 
 
     //John G 050513
     //Make an operator for this
-    void set_value(int new_state) {
+    void set_value(int new_state) override {
       if(Index(new_state) >= m_domain.size()) {
         std::cerr << "In OccupantDoF::set_value(): Bad Assignment, new_state>=size Go check! EXITING \n";
         assert(0);
@@ -314,7 +314,7 @@ namespace CASM {
         out << '?';
     }
 
-    jsonParser &to_json(jsonParser &json) const;
+    jsonParser &to_json(jsonParser &json) const override;
 
   };
 

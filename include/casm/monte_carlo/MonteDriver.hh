@@ -404,49 +404,46 @@ namespace CASM {
           ++i;
           
         }
-        ++i;
-
+      
+        if(!already_calculated) {
+          conditions_list.push_back(init_cond);
+        }
+        return conditions_list;
       }
 
-      if(!already_calculated) {
+      case Monte::DRIVE_MODE::INCREMENTAL: {
+
+        CondType init_cond(settings.initial_conditions());
+        CondType final_cond(settings.final_conditions());
+        CondType cond_increment(settings.incremental_conditions());
+
         conditions_list.push_back(init_cond);
-      }
-      return conditions_list;
-    }
 
-    case Monte::DRIVE_MODE::INCREMENTAL: {
-
-      CondType init_cond(settings.initial_conditions());
-      CondType final_cond(settings.final_conditions());
-      CondType cond_increment(settings.incremental_conditions());
-
-      conditions_list.push_back(init_cond);
-
-      CondType incrementing_cond = init_cond;
-      incrementing_cond += cond_increment;
-
-      int num_increments = (final_cond - init_cond) / cond_increment;
-
-      for(int i = 0; i < num_increments; i++) {
-        conditions_list.push_back(incrementing_cond);
+        CondType incrementing_cond = init_cond;
         incrementing_cond += cond_increment;
+
+        int num_increments = (final_cond - init_cond) / cond_increment;
+
+        for(int i = 0; i < num_increments; i++) {
+          conditions_list.push_back(incrementing_cond);
+          incrementing_cond += cond_increment;
+        }
+
+        if(conditions_list.size() == 1) {
+          std::cerr << "WARNING in MonteDriver::initialize" << std::endl;
+          std::cerr << "You specified incremental drive mode, but the specified increment resulted in single drive mode behavior." << std::endl;
+          std::cerr << "Only the initial condition will be calculated! (Is your increment too big or are you incrementing too many things?)" << std::endl;
+        }
+
+        return conditions_list;
       }
 
-      if(conditions_list.size() == 1) {
-        std::cerr << "WARNING in MonteDriver::initialize" << std::endl;
-        std::cerr << "You specified incremental drive mode, but the specified increment resulted in single drive mode behavior." << std::endl;
-        std::cerr << "Only the initial condition will be calculated! (Is your increment too big or are you incrementing too many things?)" << std::endl;
+      default: {
+        throw std::runtime_error(
+          std::string("ERROR in MonteDriver::initialize\n") +
+          "  An invalid drive mode was given.");
+
       }
-
-      return conditions_list;
-    }
-
-    default: {
-      throw std::runtime_error(
-        std::string("ERROR in MonteDriver::initialize\n") +
-        "  An invalid drive mode was given.");
-
-    }
 
     }
   }
