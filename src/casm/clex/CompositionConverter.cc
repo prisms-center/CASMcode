@@ -5,6 +5,7 @@
 // currently still relies on this for getting standard composition axes
 #include "casm/clex/ParamComposition.hh"
 #include "casm/casm_io/json_io/container.hh"
+#include "casm/misc/algorithm.hh"
 
 namespace CASM {
   
@@ -667,6 +668,30 @@ namespace CASM {
     param_comp.generate_prim_end_members();
     return param_comp.get_prim_end_members().transpose();
   }
+  
+  /// \brief Non-orthogonal composition space
+  Eigen::MatrixXd _composition_space(const Structure &prim, double tol) {
+    // Get Va index if it exists, and store 0 or 1 in N_Va
+    std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
+    Index Va_index = find_index_if(struc_mol_name, [=](const std::string& str){return is_vacancy(str);});
+    bool has_Va = (Va_index != struc_mol_name.size());
+    
+    // convert to atom frac
+    Eigen::MatrixXd E = end_members(prim);
+    if(has_Va) {
+      E.row(Va_index) = Eigen::VectorXd::Zero(E.cols());
+    }
+    for(int i=0; i<E.cols(); i++) {
+      E.col(i) /= E.col(i).sum();
+    }
+    
+    // convert to atom frac space
+    Eigen::MatrixXd M(E.rows(), E.cols()-1);
+    for(int i=0; i<M.cols(); ++i) {
+      M.col(i) = E.col(i+1) - E.col(0);
+    }
+    return M;
+  }
 
   /// \brief Return the composition space of a Structure
   ///
@@ -674,11 +699,10 @@ namespace CASM {
   ///             not check if it is actually primitive).
   /// \param tol tolerance for checking rank (default 1e-14)
   ///
-  /// - Each column corresponds to an orthogonal vector in composition space
-  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule,
-  ///   with units number Molecule / prim
+  /// - Each column corresponds to an orthogonal vector in atom fraction space
+  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule
   Eigen::MatrixXd composition_space(const Structure &prim, double tol) {
-    auto Qr = end_members(prim).fullPivHouseholderQr();
+    auto Qr = _composition_space(prim, tol).fullPivHouseholderQr();
     Qr.setThreshold(tol);
     auto Q = Qr.matrixQ();
     return Q.leftCols(Qr.rank());
@@ -690,11 +714,10 @@ namespace CASM {
   ///             not check if it is actually primitive).
   /// \param tol tolerance for checking rank (default 1e-14)
   ///
-  /// - Each column corresponds to an orthogonal vector in composition space
-  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule,
-  ///   with units number Molecule / prim
+  /// - Each column corresponds to an orthogonal vector in atom fraction space
+  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule
   Eigen::MatrixXd null_composition_space(const Structure &prim, double tol) {
-    auto Qr = end_members(prim).fullPivHouseholderQr();
+    auto Qr = _composition_space(prim, tol).fullPivHouseholderQr();
     Qr.setThreshold(tol);
     auto Q = Qr.matrixQ();
     return Q.rightCols(Q.cols() - Qr.rank());
