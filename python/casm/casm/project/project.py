@@ -368,7 +368,7 @@ class DirectoryStructure(object):
 class Project(object):
     """The Project class contains information about a CASM project
     """
-    def __init__(self, path=None, casm_exe=None):
+    def __init__(self, path=None, casm_exe=None, verbose=True):
       """
       Construct a CASM Project representation.
 
@@ -397,6 +397,7 @@ class Project(object):
       self.dir = DirectoryStructure(path)
       self.settings = ProjectSettings(path)
       self.casm_exe = casm_exe
+      self.verbose = verbose
       
       # will hold a ctypes.c_void_p when loading CASM project into memory
       self._ptr = None
@@ -406,15 +407,22 @@ class Project(object):
       self.__unload()
     
     
-    def __load(self, streamptr=None):
+    def __load(self):
       """
       Explicitly load CASM project into memory.
       """
       if self._ptr is None:
-        if streamptr is None:
+        if self.verbose:
           streamptr = lib_ccasm.STDOUT()
+        else:
+          streamptr = lib_ccasm.ostringstream_new()
+        
         self._ptr = lib_ccasm.primclex_new(self.path, streamptr)
-    
+        
+        if not self.verbose:
+          #qstr = ctypes.create_string_buffer(lib_ccasm.ostringstream_size(ss))
+          lib_ccasm.ostringstream_delete(streamptr)
+        
     
     def __unload(self):
       """

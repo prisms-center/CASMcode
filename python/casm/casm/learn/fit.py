@@ -22,7 +22,15 @@ def _find_method(mods, attrname):
 
 def example_input_Lasso():
   input = dict()
-
+  
+  # data
+  input["data"] = dict()
+  input["data"]["filename"] = "train"
+  input["data"]["type"] = "selection"
+  input["data"]["X"] = "corr"
+  input["data"]["y"] = "formation_energy"
+  input["data"]["kwargs"] = None
+  
   # regression estimator
   input["estimator"] = dict()
   input["estimator"]["method"] = "Lasso"
@@ -60,6 +68,14 @@ def example_input_Lasso():
 def example_input_LassoCV():
   input = dict()
 
+  # data
+  input["data"] = dict()
+  input["data"]["filename"] = "train"
+  input["data"]["type"] = "selection"
+  input["data"]["X"] = "corr"
+  input["data"]["y"] = "formation_energy"
+  input["data"]["kwargs"] = None
+  
   # regression estimator
   input["estimator"] = dict()
   input["estimator"]["method"] = "LassoCV"
@@ -98,6 +114,14 @@ def example_input_LassoCV():
 def example_input_RFE():
   input = dict()
 
+  # data
+  input["data"] = dict()
+  input["data"]["filename"] = "train"
+  input["data"]["type"] = "selection"
+  input["data"]["X"] = "corr"
+  input["data"]["y"] = "formation_energy"
+  input["data"]["kwargs"] = None
+  
   # regression estimator
   input["estimator"] = dict()
   input["estimator"]["method"] = "LinearRegression"
@@ -131,6 +155,14 @@ def example_input_RFE():
 def example_input_GeneticAlgorithm():
   input = dict()
   
+  # data
+  input["data"] = dict()
+  input["data"]["filename"] = "train"
+  input["data"]["type"] = "selection"
+  input["data"]["X"] = "corr"
+  input["data"]["y"] = "formation_energy"
+  input["data"]["kwargs"] = None
+  
   # regression estimator
   input["estimator"] = dict()
   input["estimator"]["method"] = "LinearRegression"
@@ -149,7 +181,7 @@ def example_input_GeneticAlgorithm():
     "mutFlipBitProb": 0.01, 
     "evolve_params_kwargs": {
       "n_generation": 10, 
-      "n_repetition": 100, 
+      "n_repetition": 25, 
       "n_features_init": 5, 
       "n_population": 100, 
       "halloffame_filename": "ga_halloffame.pkl", 
@@ -182,6 +214,14 @@ def example_input_GeneticAlgorithm():
 def example_input_IndividualBestFirst():
   input = dict()
   
+  # data
+  input["data"] = dict()
+  input["data"]["filename"] = "train"
+  input["data"]["type"] = "selection"
+  input["data"]["X"] = "corr"
+  input["data"]["y"] = "formation_energy"
+  input["data"]["kwargs"] = None
+  
   # regression estimator
   input["estimator"] = dict()
   input["estimator"]["method"] = "LinearRegression"
@@ -198,7 +238,7 @@ def example_input_IndividualBestFirst():
     }, 
     "evolve_params_kwargs": {
       "n_generation": 10, 
-      "n_repetition": 100, 
+      "n_repetition": 25, 
       "n_features_init": 5, 
       "n_population": 10, 
       "halloffame_filename": "indiv_bestfirst_halloffame.pkl", 
@@ -230,6 +270,14 @@ def example_input_IndividualBestFirst():
 def example_input_PopulationBestFirst():
   input = dict()
   
+  # data
+  input["data"] = dict()
+  input["data"]["filename"] = "train"
+  input["data"]["type"] = "selection"
+  input["data"]["X"] = "corr"
+  input["data"]["y"] = "formation_energy"
+  input["data"]["kwargs"] = None
+  
   # regression estimator
   input["estimator"] = dict()
   input["estimator"]["method"] = "LinearRegression"
@@ -246,7 +294,7 @@ def example_input_PopulationBestFirst():
     }, 
     "evolve_params_kwargs": {
       "n_generation": 10, 
-      "n_repetition": 100, 
+      "n_repetition": 25, 
       "n_features_init": 5, 
       "n_population": 50, 
       "halloffame_filename": "pop_bestfirst_halloffame.pkl", 
@@ -399,7 +447,9 @@ def print_input_help():
   #   Options:
   #   'wHullDist': Weight according to w_i = A*exp(-hull_dist/kT) + B, where A, B, 
   #     and kT are user-defined kwargs parameters, and hull_dist is the distance 
-  #     from the convex hull of the training data
+  #     from the convex hull of the training data, using the kwarg "hull_selection"
+  #     to determine which selection of configurations to use to find the hull.
+  #     The default hull_selection is "CALCULATED".
   #   'wEmin': Weight according to w_i = A*exp(-dist_from_minE/kT) + B,
   #     where A, B, and kT are user-defined kwargs parameters, and dist_from_minE 
   #     is calculated from the training data
@@ -420,6 +470,7 @@ def print_input_help():
   #     "B": float
   #     "kT": float
   #     "E0": float
+  #     "hull_selection": string
     
     "weight": {
       "method": null, 
@@ -826,23 +877,30 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
     hull_dist_name = "hull_dist"
     
     if data_type == "selection":
-        
-      # read training set
-      proj = Project(input["data"]["kwargs"].get("project_path", None))
       
-      sel = Selection(proj, filename)
+      # read training set
+      proj = Project(input["data"]["kwargs"].get("project_path", None), verbose=verbose)
+      
+      sel = Selection(proj, filename, all=False)
       
       # get property name (required)
       property = input["data"].get("filename", "formation_energy")
       
       ## if necessary, query data
-      columns = [X_name, y_name]
+      columns = [X_name, y_name, 'is_calculated']
       if input["weight"]["method"] == "wHullDist":
-        hull_dist_name = "hull_dist(" + sel.path + ",atom_frac)"
+        hull_selection = input["weight"]["kwargs"].get("hull_selection", "CALCULATED")
+        hull_dist_name = "hull_dist(" + hull_selection + ",atom_frac)"
+        if verbose:
+          print "# wHullDist: Will calculate hull distance:", hull_dist_name
         columns.append(hull_dist_name)
       
       # perform query
+      if verbose:
+        print "# Querying CASM"
       sel.query(columns)
+      if verbose:
+        print "# DONE"
       
       data = sel.data
       

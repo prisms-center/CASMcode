@@ -8,22 +8,41 @@ class Selection(object):
     """
     A Selection object contains information about a CASM project
     
-    Attributes:
-      proj: the CASM Project for this selection
-      path: absolute path to selection file, or "MASTER" for master list
-    
-    Properties:
-      data: A pandas.DataFrame describing the selected configurations. Has at least
+    Attributes
+    ----------
+      
+      proj: casm.Project, optional, default=Project containing the current working directory
+        the CASM project the selection belongs to
+          
+      path: string, optional, default="MASTER"
+        path to selection file, or "MASTER" (Default="MASTER")
+      
+      all: bool, optional, default=True
+        if True, self.data will include all configurations, whether selected or
+        not. If False, only selected configurations will be included.
+      
+      data: pandas.DataFrame
+        A pandas.DataFrame describing the selected configurations. Has at least
         'configname' and 'selected' (as bool) columns.
       
     """
-    def __init__(self, proj=None, path="MASTER"):
+    def __init__(self, proj=None, path="MASTER", all=True):
         """
         Construct a CASM Project representation.
 
-        Args:
-            proj: a Project
-            path: path to selection file, or "MASTER" (Default="MASTER") 
+        Arguments
+        ---------
+          
+          proj: casm.Project, optional, default=Project containing the current working directory
+            the CASM project the selection belongs to
+          
+          path: string, optional, default="MASTER"
+            path to selection file, or "MASTER" (Default="MASTER")
+          
+          all: bool, optional, default=True
+            if True, self.data will include all configurations, whether selected or
+            not. If False, only selected configurations will be included.
+          
 
         """
         if proj == None:
@@ -36,12 +55,7 @@ class Selection(object):
         if os.path.isfile(path):
           self.path = os.path.abspath(path)
 
-#        if path == "MASTER":
-#          self.path = "MASTER"
-#        elif os.path.isfile(path):
-#          self.path = os.path.abspath(path)
-#        else:
-#          raise Exception("No file exists named: " + path)
+        self.all = all
         
         self._data = None
         
@@ -65,7 +79,12 @@ class Selection(object):
             f = open(self.path, 'r')
             f.read(1)
             self._data = pandas.read_csv(f, sep=' *', engine='python')
+          
           self._clean_data()
+          
+          if not self.all:
+            self._data = self._data[self._data['selected']==True] 
+          
         return self._data
     
     
@@ -148,7 +167,7 @@ class Selection(object):
         Returns:
           sel: the new Selection created from this one
         """
-        sel = Selection(self.proj, path)
+        sel = Selection(self.proj, path, all=self.all)
         sel._data = self.data.copy()
         sel.save(force=force)
         return sel
@@ -167,7 +186,8 @@ class Selection(object):
         Query requested columns and store them in 'data'. Will not overwrite
         columns that already exist, unless 'force'==True.
         
-        Will query data for all configurations, whether selected or not.
+        Will query data for all configurations, whether selected or not, if
+        self.all == True.
         """
         
         if force == False:
@@ -175,10 +195,14 @@ class Selection(object):
         else:
           _col = columns
         
-        df = query.query(self.proj, _col, self, all=True)
+        df = query.query(self.proj, _col, self, all=self.all)
+        
+        msg = "querying different numbers of records: {0}, {1}".format(
+          self.data.shape, df.shape)
+        assert self.data.shape[0] == df.shape[0], msg
         
         for c in df.columns:
-          self.data.loc[:,c] = df.loc[:,c]
+          self.data.loc[:,c] = df.loc[:,c].values
     
     
     def add_data(self, name, data=None, force=False):

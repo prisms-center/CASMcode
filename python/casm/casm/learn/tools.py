@@ -49,7 +49,7 @@ def indices(individual):
   return [i for i in xrange(len(individual)) if individual[i] ]
 
 
-def wHullDist(hull_dist, A=1.0, B=1.0, kT=1.0):
+def wHullDist(hull_dist, A=1.0, B=1.0, kT=1.0, **kwargs):
   """
   Returns A*np.exp(-hull_dist/kT) + B
   """
