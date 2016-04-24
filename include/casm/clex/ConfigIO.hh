@@ -372,8 +372,6 @@ namespace CASM {
 
     ConfigIO::GenericConfigFormatter<Index> multiplicity();
 
-    ConfigIO::GenericConfigFormatter<bool> selected();
-
     template<bool IsConst>
     ConfigIO::Selected selected_in(const ConfigSelection<IsConst> &_selection);
 

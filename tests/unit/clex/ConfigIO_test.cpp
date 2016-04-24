@@ -33,7 +33,6 @@ BOOST_AUTO_TEST_CASE(DatumFormatters) {
   // Boolean
   check(OnHull());
   check(OnClexHull());
-  check(selected());
   check(is_calculated());
   check(is_primitive());
   check(is_canonical());
@@ -82,7 +81,6 @@ BOOST_AUTO_TEST_CASE(Make) {
     dict0.insert(
       Corr(),
       CompN(),
-      selected(),
       format_operator_add<Configuration>()
     );
 
@@ -123,7 +121,6 @@ BOOST_AUTO_TEST_CASE(Make) {
     std::vector<cloner> dict;
     dict.emplace_back(ConfigIO::Corr());
     dict.emplace_back(ConfigIO::CompN());
-    dict.emplace_back(ConfigIO::selected());
     dict.emplace_back(format_operator_add<Configuration>());
     dict.emplace_back(format_operator_sub<Configuration>());
     dict.emplace_back(format_operator_eq<Configuration>());
@@ -144,7 +141,6 @@ BOOST_AUTO_TEST_CASE(Make) {
     std::map<std::string, cloner > dict;
     dict["corr"] = cloner(ConfigIO::Corr());
     dict["comp_n"] =  cloner(ConfigIO::CompN());
-    dict["selected"] = cloner(ConfigIO::selected());
     dict["add"] = cloner(format_operator_add<Configuration>());
     dict["sub"] = cloner(format_operator_sub<Configuration>());
     dict["eq"] = cloner(format_operator_eq<Configuration>());

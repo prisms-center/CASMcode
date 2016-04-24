@@ -566,7 +566,7 @@ namespace CASM {
     typedef typename UniqueMapType::const_iterator const_iterator;
 
     DataFormatterDictionary() :
-      UniqueMapType([ = ](const value_type & value) {
+      UniqueMapType([](const value_type & value)->std::string {
       return value.name();
     },
     DictionaryConverter<DataObject, DatumFormatterType>()) {}
@@ -600,8 +600,13 @@ namespace CASM {
 
     using UniqueMapType::insert;
 
-    /// \brief Equivalent to find, but throw error with suggestion if _name not found
+    /// \brief Equivalent to find, but throw error with suggestion if @param _name not found
     const_iterator lookup(const key_type &_name) const;
+
+    /// \brief True if dictionary contains entry for @param _name
+    bool contains(const key_type &_name) const {
+      return this->find(_name) != this->end();
+    }
 
     void print_help(std::ostream &_stream,
                     typename BaseDatumFormatter<DataObject>::FormatterType ftype,
@@ -661,6 +666,8 @@ namespace CASM {
     }
 
     static void add_custom_formatter(const BaseDatumFormatter<DataObject> &new_formatter) {
+      if(dictionary().contains(new_formatter.name()))
+        throw std::runtime_error(std::string("Naming collision: Parsing dictionary already contains entry for '") + new_formatter.name() + "'.\n");
       dictionary().insert(new_formatter);
     }
 

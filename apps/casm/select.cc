@@ -173,6 +173,14 @@ namespace CASM {
         if(fs::exists(alias_file)) {
           ConfigIOParser::load_aliases(alias_file);
         }
+        ConfigIOParser::add_custom_formatter(
+          datum_formatter_alias(
+            "selected",
+            ConfigIO::selected_in(),
+            "Returns true if configuration is specified in the input selection"
+          )
+        );
+
         select_help(std::cout, help_opt_vec);
         return 0;
       }
@@ -226,6 +234,11 @@ namespace CASM {
       return ERR_NO_PROJ;
     }
 
+    // load query aliases
+    fs::path alias_file = root / ".casm/query_alias.json";
+    if(fs::exists(alias_file)) {
+      ConfigIOParser::load_aliases(alias_file);
+    }
 
     // initialize primclex
     std::cout << "Initialize primclex: " << root << std::endl << std::endl;
@@ -235,6 +248,13 @@ namespace CASM {
     // load initial selection into config_select -- this is also the selection that will be printed at end
     ConfigSelection<false> config_select(primclex, selection[0]);
 
+    ConfigIOParser::add_custom_formatter(
+      datum_formatter_alias(
+        "selected",
+        ConfigIO::selected_in(config_select),
+        "Returns true if configuration is specified in the input selection"
+      )
+    );
 
     if(vm.count("set-on") || vm.count("set-off") || vm.count("set")) {
       bool select_switch = vm.count("set-on");
