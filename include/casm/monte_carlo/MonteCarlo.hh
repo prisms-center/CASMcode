@@ -261,8 +261,8 @@ namespace CASM {
 
       const Lattice &motif_lat = motif.get_supercell().get_real_super_lattice();
       const Lattice &scel_lat = m_scel.get_real_super_lattice();
-      auto begin = primclex.get_prim().point_group().begin();
-      auto end = primclex.get_prim().point_group().end();
+      auto begin = primclex.get_prim().factor_group().begin();
+      auto end = primclex.get_prim().factor_group().end();
 
       auto res = is_supercell(scel_lat, motif_lat, begin, end, TOL);
       if(res.first == end) {
