@@ -36,12 +36,9 @@ namespace CASM {
 
     double beta() const;
 
-    /// \brief chemical potential: dg/dcomp_n
-    const Eigen::VectorXd &chem_pot() const;
-
-    /// \brief chemical potential: dg/dcomp_n(index)
-    double chem_pot(Index index) const;
-
+    /// \brief matrix of exchange chemical potential, M(new, curr) = chem_pot(new) - chem_pot(curr)
+    Eigen::MatrixXd exchange_chem_pot() const;
+    
     /// \brief exchange chemical potential: chem_pot(new) - chem_pot(curr)
     double exchange_chem_pot(Index index_new, Index index_curr) const;
 
@@ -58,12 +55,6 @@ namespace CASM {
 
     ///Set the temperature of the current grand canonical condition.
     void set_temperature(double in_temp);
-
-    ///Set all the chemical potentials of the current grand canonical condition.
-    void set_chem_pot(const Eigen::VectorXd &in_chem_pot);
-
-    ///Set a single 'atomic' chemical potential by specifying an index and a value.
-    void set_chem_pot(Index ind, double in_chem_pot);
 
     ///Set all the parametric chemical potentials of the current grand canonical condition.
     void set_param_chem_pot(const Eigen::VectorXd &in_chem_pot);
@@ -113,6 +104,9 @@ namespace CASM {
 
     ///Vector of the parametric chemical potentials conjugate to the parametric compositions.
     Eigen::VectorXd m_param_chem_pot;
+    
+    ///Matrix(i,j) of chem_pot(i) - chem_pot(j)
+    Eigen::MatrixXd m_exchange_chem_pot;
 
     ///Tolerance for comparison operators == and !=
     double m_tolerance;

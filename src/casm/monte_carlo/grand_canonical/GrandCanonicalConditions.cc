@@ -40,16 +40,12 @@ namespace CASM {
     return m_beta;
   }
 
-  const Eigen::VectorXd &GrandCanonicalConditions::chem_pot() const {
-    return m_chem_pot;
+  Eigen::MatrixXd GrandCanonicalConditions::exchange_chem_pot() const {
+    return m_exchange_chem_pot;
   }
-
-  double GrandCanonicalConditions::chem_pot(Index index) const {
-    return m_chem_pot(index);
-  }
-
+  
   double GrandCanonicalConditions::exchange_chem_pot(Index index_new, Index index_curr) const {
-    return m_chem_pot(index_new) - m_chem_pot(index_curr);
+    return m_exchange_chem_pot(index_new, index_curr);
   }
 
   Eigen::VectorXd GrandCanonicalConditions::param_chem_pot() const {
@@ -73,27 +69,27 @@ namespace CASM {
     return;
   }
 
-  void GrandCanonicalConditions::set_chem_pot(const Eigen::VectorXd &in_chem_pot) {
-    m_chem_pot = in_chem_pot;
-    m_param_chem_pot = m_comp_converter.param_chem_pot(m_chem_pot);
-    return;
-  }
-
-  void GrandCanonicalConditions::set_chem_pot(Index ind, double in_chem_pot) {
-    m_chem_pot(ind) = in_chem_pot;
-    m_param_chem_pot = m_comp_converter.param_chem_pot(m_chem_pot);
-    return;
-  }
-
   void GrandCanonicalConditions::set_param_chem_pot(const Eigen::VectorXd &in_param_chem_pot) {
     m_param_chem_pot = in_param_chem_pot;
-    m_chem_pot = m_comp_converter.chem_pot(m_param_chem_pot);
+    m_chem_pot = m_comp_converter.dparam_dmol().transpose() * m_param_chem_pot;
+    
+    int Ncomp = m_comp_converter.components().size();
+    m_exchange_chem_pot = Eigen::MatrixXd(Ncomp, Ncomp);
+    for(int index_new=0; index_new<Ncomp; ++index_new) {
+      for(int index_curr=0; index_curr<Ncomp; ++index_curr) {
+        Eigen::VectorXl dn = Eigen::VectorXl::Zero(Ncomp);
+        dn(index_new) += 1;
+        dn(index_curr) -= 1;
+        m_exchange_chem_pot(index_new, index_curr) = m_param_chem_pot.transpose() * m_comp_converter.dparam_dmol() * dn.cast<double>();
+      }
+    }
+    
     return;
   }
 
   void GrandCanonicalConditions::set_param_chem_pot(Index ind, double in_param_chem_pot) {
     m_param_chem_pot(ind) = in_param_chem_pot;
-    m_chem_pot = m_comp_converter.chem_pot(m_param_chem_pot);
+    set_param_chem_pot(m_param_chem_pot);
     return;
   }
 
@@ -105,7 +101,7 @@ namespace CASM {
     for(int i = 0; i < m_param_chem_pot.size(); i++) {
       m_param_chem_pot(i) += RHS.m_param_chem_pot(i);
     }
-    m_chem_pot = m_comp_converter.chem_pot(m_param_chem_pot);
+    set_param_chem_pot(m_param_chem_pot);
     m_beta = 1.0 / (CASM::KB * m_temperature);
     return *this;
   }
@@ -120,8 +116,7 @@ namespace CASM {
     for(int i = 0; i < m_param_chem_pot.size(); i++) {
       m_param_chem_pot(i) -= RHS.m_param_chem_pot(i);
     }
-
-    m_chem_pot = m_comp_converter.chem_pot(m_param_chem_pot);
+    set_param_chem_pot(m_param_chem_pot);
     m_beta = 1.0 / (CASM::KB * m_temperature);
     return *this;
   }
@@ -155,10 +150,10 @@ namespace CASM {
       max_division = round(temperature() / RHS_inc.temperature());
     }
 
-    for(Index i = 0; i < chem_pot().size(); i++) {
-      int temp_division = round(chem_pot(i) / RHS_inc.chem_pot(i));
+    for(Index i = 0; i < param_chem_pot().size(); i++) {
+      int temp_division = round(param_chem_pot(i) / RHS_inc.param_chem_pot(i));
 
-      if(temp_division > max_division && !almost_zero(RHS_inc.chem_pot(i))) {
+      if(temp_division > max_division && !almost_zero(RHS_inc.param_chem_pot(i))) {
         max_division = temp_division;
       }
     }

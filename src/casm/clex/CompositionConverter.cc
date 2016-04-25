@@ -88,32 +88,10 @@ namespace CASM {
     return m_to_n * dx;
   }
 
-  /// \brief Convert dG/dn to dG/dx
-  ///
-  /// Notes:
-  ///
-  /// For conversion from dG/dx to dG/dn:
-  /// - dG/dni = sum_j dG/dxj * dxj/dni
-  /// - mu_n = m_to_mu_n * mu_x, where m_to_mu_n(i,j) = dxj/dni
-  /// - Also, x = m_to_x*(n - origin)
-  /// - so, dxj/dni = m_to_x(j,i)
-  /// - that means m_to_mu_n == m_to_x.transpose()
-  ///
-  /// Similarly, for conversion from dG/dn to dG/dx:
-  /// - mu_x = m_to_mu_x*mu_n, where m_to_mu_x(i,j) = dnj/dxi
-  /// - and n = m_origin + m_to_n * x,
-  /// - so dnj/dxi = m_to_n(j,i)
-  /// - that means m_to_mu_x == m_to_n.transpose()
-  ///
+  /// \brief Convert chemical potential, 'chem_pot', to parametric chemical potential, 'param_chem_pot'
   Eigen::VectorXd CompositionConverter::param_chem_pot(const Eigen::VectorXd chem_pot) const {
     return m_to_n.transpose() * chem_pot;
   }
-
-  /// \brief Convert dG/dx to dG/dn
-  Eigen::VectorXd CompositionConverter::chem_pot(const Eigen::VectorXd param_chem_pot) const {
-    return m_to_x.transpose() * param_chem_pot;
-  }
-
 
   /// \brief Return formula for x->n
   std::string CompositionConverter::mol_formula() const {
@@ -461,11 +439,11 @@ namespace CASM {
   /// \brief Calculate conversion matrices m_to_n and m_to_x
   void CompositionConverter::_calc_conversion_matrices() {
 
-    // calculate m_to_x and m_to_n:
+    // calculate m_to_n and m_to_x:
     //
-    // x = m_to_x*(n - origin)
     // n = origin + m_to_n*x
-
+    // x = m_to_x*(n - origin)
+    
     // end_members.col(i) corresponds to x such that x[i] = 1, x[j!=i] = 0,
     //  -> end_members.col(i) = origin + m_to_n.col(i)
 
@@ -481,16 +459,15 @@ namespace CASM {
     // x = m_to_x*(n - origin)
     //   -> x = m_to_x*(origin + m_to_n*x - origin)
     //   -> x = m_to_x*m_to_n*x
-    Eigen::MatrixXd tmp = Eigen::MatrixXd::Identity(r, r);
-    tmp.leftCols(c) = m_to_n;
-
-    // to ensure tmp is full rank, fill right cols with vectors orthogonal to the m_to_n space
-    Eigen::FullPivHouseholderQR<Eigen::MatrixXd> qr(m_to_n);
-    Eigen::MatrixXd Q = qr.matrixQ();
-    tmp.rightCols(r - c) = Q.rightCols(r - c);
-
-    // get the m_to_x matrix
-    m_to_x = tmp.inverse().topRows(c);
+    
+    // m_to_x is left pseudoinverse of m_to_n, which must have full column rank,
+    // because it describes the composition space:
+    //
+    // I = A+ * A, (A+ is the left pseudoinverse)
+    // if A has full column rank, (A.t * A) is invertible, so
+    //   A+ = (A.t * A).inv * A.t
+    m_to_x = (m_to_n.transpose()*m_to_n).inverse() * m_to_n.transpose();
+    
   }
 
   /// \brief Return formula for 'n'

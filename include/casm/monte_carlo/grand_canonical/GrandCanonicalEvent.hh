@@ -27,37 +27,37 @@ namespace CASM {
     GrandCanonicalEvent(size_type Nspecies, size_type Ncorr);
 
 
-    /// \brief Set the change in (intensive) formation energy associated with this event
-    void set_dformation_energy(double dE);
+    /// \brief Set the change in (extensive) formation energy associated with this event
+    void set_dEf(double dE);
 
-    /// \brief Return change in (intensive) formation energy associated with this event
-    double dformation_energy() const;
-
-
-    /// \brief Access change in number of species per primitive cell. Order as in CompositionConverter::components().
-    Eigen::VectorXd &dcomp_n();
-
-    /// \brief const Access change in number of species per primitive cell. Order as in CompositionConverter::components().
-    const Eigen::VectorXd &dcomp_n() const;
-
-    /// \brief Set the change in number of species per primitive cell described by size_type. Order as in CompositionConverter::components().
-    void set_dcomp_n(size_type species_type_index, double dn);
-
-    /// \brief Return change in number of species per primitive cell described by size_type. Order as in CompositionConverter::components().
-    double dcomp_n(size_type species_type_index) const;
+    /// \brief Return change in (extensive) formation energy associated with this event
+    double dEf() const;
 
 
-    /// \brief Set change in (intensive) potential energy, dpotential_energy = dformation_energy - sum_i(param_chem_pot_i * dcomp_x_i)
-    void set_dpotential_energy(double dpot_nrg);
+    /// \brief Access change in number of species per supercell. Order as in CompositionConverter::components().
+    Eigen::VectorXl &dN();
 
-    /// \brief Return change in (intensive) potential energy, dpotential_energy = dformation_energy - sum_i(param_chem_pot_i * dcomp_x_i)
-    double dpotential_energy() const;
+    /// \brief const Access change in number of species per supercell. Order as in CompositionConverter::components().
+    const Eigen::VectorXl &dN() const;
 
-    /// \brief Access the changes in (intensive) correlations associated with this event
-    Eigen::VectorXd &dcorr();
+    /// \brief Set the change in number of species in supercell. Order as in CompositionConverter::components().
+    void set_dN(size_type species_type_index, long int dn);
 
-    /// \brief const Access the changes in (intensive) correlations associated with this event
-    const Eigen::VectorXd &dcorr() const;
+    /// \brief Return change in number of species in supercell. Order as in CompositionConverter::components().
+    long int dN(size_type species_type_index) const;
+
+
+    /// \brief Set change in (extensive) potential energy, dEpot = dEf - sum_i(Nunit * param_chem_pot_i * dcomp_x_i)
+    void set_dEpot(double dpot_nrg);
+
+    /// \brief Return change in (extensive) potential energy, dEpot = dEf - sum_i(Nunit * param_chem_pot_i * dcomp_x_i)
+    double dEpot() const;
+
+    /// \brief Access the changes in (extensive) correlations associated with this event
+    Eigen::VectorXd &dCorr();
+
+    /// \brief const Access the changes in (extensive) correlations associated with this event
+    const Eigen::VectorXd &dCorr() const;
 
 
     /// \brief Access the occupational modification for this event
@@ -69,18 +69,18 @@ namespace CASM {
 
   private:
 
-    /// \brief Change in (intensive) correlations due to this event
-    Eigen::VectorXd m_dcorr;
+    /// \brief Change in (extensive) correlations due to this event
+    Eigen::VectorXd m_dCorr;
 
-    /// \brief Change in (intensive) formation energy due to this event
-    double m_dformation_energy;
+    /// \brief Change in (extensive) formation energy due to this event
+    double m_dEf;
 
-    /// \brief Change in (intensive) potential energy, dpotential_energy = dformation_energy - sum_i(param_chem_pot_i * dcomp_x_i)
-    double m_dpotential_energy;
+    /// \brief Change in (extensive) potential energy, dEpot = dEf - sum_i(Nunit * param_chem_pot_i * dcomp_x_i)
+    double m_dEpot;
 
-    /// \brief Change in number of each species per primitive cell due to this event.
+    /// \brief Change in number of each species in supercell due to this event.
     ///        The order is determined by primclex.get_param_comp().get_components()
-    Eigen::VectorXd m_dcomp_n;
+    Eigen::VectorXl m_dN;
 
     /// \brief The ConfigDoF modification performed by this event
     OccMod m_occ_mod;
@@ -94,60 +94,60 @@ namespace CASM {
   /// \param Ncorr The total number of correlations that could be calculated (use Clexulator::corr_size)
   ///
   inline GrandCanonicalEvent::GrandCanonicalEvent(size_type Nspecies, size_type Ncorr) :
-    m_dcomp_n(Eigen::VectorXd(Nspecies)),
-    m_dcorr(Eigen::VectorXd(Ncorr)) { }
+    m_dN(Eigen::VectorXl(Nspecies)),
+    m_dCorr(Eigen::VectorXd(Ncorr)) { }
 
 
   /// \brief Set the change in total (formation) energy associated with this event
-  inline void GrandCanonicalEvent::set_dformation_energy(double dE) {
-    m_dformation_energy = dE;
+  inline void GrandCanonicalEvent::set_dEf(double dEf) {
+    m_dEf = dEf;
   }
 
   /// \brief Return change in total (formation) energy associated with this event
-  inline double GrandCanonicalEvent::dformation_energy() const {
-    return m_dformation_energy;
+  inline double GrandCanonicalEvent::dEf() const {
+    return m_dEf;
   }
 
 
   /// \brief Access change in number of all species (extensive). Order as in CompositionConverter::components().
-  inline Eigen::VectorXd &GrandCanonicalEvent::dcomp_n() {
-    return m_dcomp_n;
+  inline Eigen::VectorXl &GrandCanonicalEvent::dN() {
+    return m_dN;
   }
 
   /// \brief const Access change in number of all species (extensive). Order as in CompositionConverter::components().
-  inline const Eigen::VectorXd &GrandCanonicalEvent::dcomp_n() const {
-    return m_dcomp_n;
+  inline const Eigen::VectorXl &GrandCanonicalEvent::dN() const {
+    return m_dN;
   }
 
   /// \brief Set the change in number of species (extensive) described by size_type. Order as in CompositionConverter::components().
-  inline void GrandCanonicalEvent::set_dcomp_n(size_type species_type_index, double dn) {
-    m_dcomp_n(species_type_index) = dn;
+  inline void GrandCanonicalEvent::set_dN(size_type species_type_index, long int dNi) {
+    m_dN(species_type_index) = dNi;
   }
 
   /// \brief Return change in number of species (extensive) described by size_type. Order as in CompositionConverter::components().
-  inline double GrandCanonicalEvent::dcomp_n(size_type species_type_index) const {
-    return m_dcomp_n(species_type_index);
+  inline long int GrandCanonicalEvent::dN(size_type species_type_index) const {
+    return m_dN(species_type_index);
   }
 
 
-  /// \brief Set the change in potential energy: dpot_nrg = dform_nrg - sum_i(param_chem_pot_i * dcomp_x_i)
-  inline void GrandCanonicalEvent::set_dpotential_energy(double dpot_nrg) {
-    m_dpotential_energy = dpot_nrg;
+  /// \brief Set the change in potential energy: dEpot = dEf - sum_i(Nunit * param_chem_pot_i * dcomp_x_i)
+  inline void GrandCanonicalEvent::set_dEpot(double dEpot) {
+    m_dEpot = dEpot;
   }
 
-  /// \brief Return change in potential energy: dpot_nrg = dform_nrg - sum_i(param_chem_pot_i * dcomp_x_i)
-  inline double GrandCanonicalEvent::dpotential_energy() const {
-    return m_dpotential_energy;
+  /// \brief Return change in potential energy: dEpot = dEf - sum_i(Nunit * param_chem_pot_i * dcomp_x_i)
+  inline double GrandCanonicalEvent::dEpot() const {
+    return m_dEpot;
   }
 
   /// \brief Access the changes in correlations associated with this event
-  inline Eigen::VectorXd &GrandCanonicalEvent::dcorr() {
-    return m_dcorr;
+  inline Eigen::VectorXd &GrandCanonicalEvent::dCorr() {
+    return m_dCorr;
   }
 
   /// \brief const Access the changes in correlations associated with this event
-  inline const Eigen::VectorXd &GrandCanonicalEvent::dcorr() const {
-    return m_dcorr;
+  inline const Eigen::VectorXd &GrandCanonicalEvent::dCorr() const {
+    return m_dCorr;
   }
 
 

@@ -162,140 +162,104 @@ namespace CASM {
   ///
   DataFormatter<ConstMonteCarloPtr> make_results_formatter(const GrandCanonical& mc) {
   
-  DataFormatter<ConstMonteCarloPtr> formatter;
-  
-  formatter.push_back(MonteCarloNEquilSamplesFormatter());
-  formatter.push_back(MonteCarloNAvgSamplesFormatter());
-  
-  formatter.push_back(MonteCarloTFormatter<GrandCanonical>());
-  std::set<std::string> exclude;
-  std::string name;
-  
-  // always sample Beta, potential_energy, and formation_energy
-  {
-    formatter.push_back(MonteCarloBetaFormatter<GrandCanonical>());
-    name = "potential_energy";
-    formatter.push_back(MonteCarloMeanFormatter(name));
-    formatter.push_back(MonteCarloPrecFormatter(name));
-    exclude.insert(name);
+    DataFormatter<ConstMonteCarloPtr> formatter;
     
-    name = "formation_energy";
-    formatter.push_back(MonteCarloMeanFormatter(name));
-    formatter.push_back(MonteCarloPrecFormatter(name));
-    exclude.insert(name);
-  }
+    formatter.push_back(MonteCarloNEquilSamplesFormatter());
+    formatter.push_back(MonteCarloNAvgSamplesFormatter());
     
-  
-  
-  // always sample param_chem_pot, comp
-  for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); ++i) {
-    formatter.push_back(MonteCarloParamChemPotFormatter<GrandCanonical>(mc, i));
-  }
-  
-  for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); i++) {
+    formatter.push_back(MonteCarloTFormatter<GrandCanonical>());
+    std::set<std::string> exclude;
+    std::string name;
     
-    name = std::string("comp(") + mc.primclex().composition_axes().comp_var(i) + ")";
-    formatter.push_back(MonteCarloMeanFormatter(name));
-    formatter.push_back(MonteCarloPrecFormatter(name));
-    exclude.insert(name);
-  }
-  
-  // always sample comp_n
-  auto struc_mol_name = mc.primclex().get_prim().get_struc_molecule_name();
-  for(int i=0; i<struc_mol_name.size(); ++i) {
-    name = std::string("comp_n(") + struc_mol_name[i] + ")";
-    formatter.push_back(MonteCarloMeanFormatter(name));
-    formatter.push_back(MonteCarloPrecFormatter(name));
-    exclude.insert(name);
-  }
-  
-  // include mean/prec of other properties
-  for(auto it=mc.samplers().cbegin(); it != mc.samplers().cend(); ++it) {
-    if(exclude.find(it->first) == exclude.end()) {
-      formatter.push_back(MonteCarloMeanFormatter(it->first));
-      formatter.push_back(MonteCarloPrecFormatter(it->first));
+    // always sample Beta, potential_energy, and formation_energy
+    {
+      formatter.push_back(MonteCarloBetaFormatter<GrandCanonical>());
+      name = "potential_energy";
+      formatter.push_back(MonteCarloMeanFormatter(name));
+      formatter.push_back(MonteCarloPrecFormatter(name));
+      exclude.insert(name);
+      
+      name = "formation_energy";
+      formatter.push_back(MonteCarloMeanFormatter(name));
+      formatter.push_back(MonteCarloPrecFormatter(name));
+      exclude.insert(name);
     }
-  }
-  
-  // include heat_capacity
-  formatter.push_back(GrandCanonicalHeatCapacityFormatter());
-  
-  // include susc_x
-  for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); i++) {
-    for(int j=i; j<mc.primclex().composition_axes().independent_compositions(); j++) {
-  
-      auto comp_var_i = mc.primclex().composition_axes().comp_var(i);
-      auto comp_var_j = mc.primclex().composition_axes().comp_var(j);
-      formatter.push_back(GrandCanonicalSuscXFormatter(comp_var_i, comp_var_j));
-  
+      
+    
+    
+    // always sample param_chem_pot, comp
+    for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); ++i) {
+      formatter.push_back(MonteCarloParamChemPotFormatter<GrandCanonical>(mc, i));
     }
-
-    for(int i = 0; i < mc.primclex().composition_axes().independent_compositions(); i++) {
-
+    
+    for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); i++) {
+      
       name = std::string("comp(") + mc.primclex().composition_axes().comp_var(i) + ")";
       formatter.push_back(MonteCarloMeanFormatter(name));
       formatter.push_back(MonteCarloPrecFormatter(name));
       exclude.insert(name);
     }
-
-    // always sample chem_pot, comp_n
-    for(int i = 0; i < mc.primclex().composition_axes().components().size(); ++i) {
-      formatter.push_back(MonteCarloChemPotFormatter<GrandCanonical>(mc, i));
-    }
+    
+    // always sample comp_n
     auto struc_mol_name = mc.primclex().get_prim().get_struc_molecule_name();
-    for(int i = 0; i < struc_mol_name.size(); ++i) {
+    for(int i=0; i<struc_mol_name.size(); ++i) {
       name = std::string("comp_n(") + struc_mol_name[i] + ")";
       formatter.push_back(MonteCarloMeanFormatter(name));
       formatter.push_back(MonteCarloPrecFormatter(name));
       exclude.insert(name);
     }
-
+    
     // include mean/prec of other properties
-    for(auto it = mc.samplers().cbegin(); it != mc.samplers().cend(); ++it) {
+    for(auto it=mc.samplers().cbegin(); it != mc.samplers().cend(); ++it) {
       if(exclude.find(it->first) == exclude.end()) {
         formatter.push_back(MonteCarloMeanFormatter(it->first));
         formatter.push_back(MonteCarloPrecFormatter(it->first));
       }
     }
-
-    // then include cov(X,Y)
-    for(auto it_X = mc.samplers().cbegin(); it_X != mc.samplers().cend(); ++it_X) {
-      for(auto it_Y = mc.samplers().cbegin(); it_Y != mc.samplers().cend(); ++it_Y) {
-        formatter.push_back(MonteCarloCovFormatter(it_X->first, it_Y->first));
+    
+    // include heat_capacity
+    formatter.push_back(GrandCanonicalHeatCapacityFormatter());
+    
+    // include susc_x
+    for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); i++) {
+      for(int j=i; j<mc.primclex().composition_axes().independent_compositions(); j++) {
+    
+        auto comp_var_i = mc.primclex().composition_axes().comp_var(i);
+        auto comp_var_j = mc.primclex().composition_axes().comp_var(j);
+        formatter.push_back(GrandCanonicalSuscXFormatter(comp_var_i, comp_var_j));
+    
       }
     }
+    
+    // include thermo-chem susc
+    for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); i++) {
+    
+      auto comp_var_i = mc.primclex().composition_axes().comp_var(i);
+      formatter.push_back(GrandCanonicalThermoChemSuscXFormatter(comp_var_i));
+    
+    }
+    
+    // include susc_n
+    for(int i=0; i<struc_mol_name.size(); ++i) {
+      for(int j=i; j<struc_mol_name.size(); ++j) {
+    
+        auto species_i = struc_mol_name[i];
+        auto species_j = struc_mol_name[j];
+        formatter.push_back(GrandCanonicalSuscNFormatter(species_i, species_j));
+    
+      }
+    }
+    
+    // include thermo-chem susc
+    for(int i=0; i<struc_mol_name.size(); ++i) {
+      
+      auto species_i = struc_mol_name[i];
+      formatter.push_back(GrandCanonicalThermoChemSuscNFormatter(species_i));
+      
+    }
+    
     return formatter;
   }
-  
-  // include thermo-chem susc
-  for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); i++) {
-  
-    auto comp_var_i = mc.primclex().composition_axes().comp_var(i);
-    formatter.push_back(GrandCanonicalThermoChemSuscXFormatter(comp_var_i));
-  
-  }
-  
-  // include susc_n
-  for(int i=0; i<struc_mol_name.size(); ++i) {
-    for(int j=i; j<struc_mol_name.size(); ++j) {
-  
-      auto species_i = struc_mol_name[i];
-      auto species_j = struc_mol_name[j];
-      formatter.push_back(GrandCanonicalSuscNFormatter(species_i, species_j));
-  
-    }
-  }
-  
-  // include thermo-chem susc
-  for(int i=0; i<struc_mol_name.size(); ++i) {
-    
-    auto species_i = struc_mol_name[i];
-    formatter.push_back(GrandCanonicalThermoChemSuscNFormatter(species_i));
-    
-  }
-  
-  return formatter;
-}
   
   /// \brief Make a LTE results formatter
   ///

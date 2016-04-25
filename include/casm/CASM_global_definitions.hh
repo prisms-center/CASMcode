@@ -92,6 +92,7 @@ namespace Eigen {
   typedef Matrix<long int, 3, 3> Matrix3l;
   typedef Matrix<long int, 3, 1> Vector3l;
   typedef Matrix<long int, Dynamic, Dynamic> MatrixXl;
+  typedef Matrix<long int, Dynamic, 1> VectorXl;
 
   template<typename Derived>
   std::istream &operator >> (std::istream &s, MatrixBase<Derived> &m) {

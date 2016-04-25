@@ -213,7 +213,6 @@ namespace CASM {
             const auto &comp_converter = gc.primclex().composition_axes();
             std::cout << "formation_energy: " << std::setprecision(12) << gc.formation_energy() << std::endl;
             std::cout << "  components: " << jsonParser(gc.primclex().composition_axes().components()) << std::endl;
-            std::cout << "  chem_pot: " << gc.conditions().chem_pot().transpose() << std::endl;
             std::cout << "  comp_n: " << gc.comp_n().transpose() << std::endl;
             std::cout << "  param_chem_pot: " << gc.conditions().param_chem_pot().transpose() << std::endl;
             std::cout << "  comp_x: " << comp_converter.param_composition(gc.comp_n()).transpose() << std::endl;
