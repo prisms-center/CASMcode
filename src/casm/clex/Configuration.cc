@@ -1026,7 +1026,7 @@ namespace CASM {
       fs::path ref_file;
 
       for(int i = 0; i < Nref; i++) {
-        ref_file = ref_dir / ("properties.ref_state." + BP::itos(i) + ".json");
+        ref_file = ref_dir / ("properties.ref_state." + std::to_string(i) + ".json");
 
         if(!fs::exists(ref_file)) {
           std::cerr << "Error in Configuration::read_reference_states" << std::endl;

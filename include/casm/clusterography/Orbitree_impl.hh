@@ -1,6 +1,5 @@
-#include "casm/BP_C++/BP_Vec.hh"
-#include "casm/BP_C++/BP_Parse.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/misc/algorithm.hh"
 
 namespace CASM {
 
@@ -1117,8 +1116,8 @@ namespace CASM {
     PERIODICITY_MODE P(ptype);
     this->clear();
 
-    BP::BP_Vec<Index> n_equiv;
-    BP::BP_Vec<std::string> s_list;
+    std::vector<std::string> s_list;
+    std::vector<Index> n_equiv;
     Array<ClustType> prototype_list;
     ClustType tclust(lattice);
     Index i, j;
@@ -1129,16 +1128,19 @@ namespace CASM {
 
     // Read the prototype file
     //   - as going check for max number of sites in a cluster:
-    BP::BP_Parse file(filename);
+    std::ifstream file(filename);
     //std::cout << "begin reading file: " << filename << std::endl;
 
     COORD_MODE C(CART);
 
     this->max_num_sites = 0;
     //BP_Vec needs unsigned long int
-    ulint index;
-    while(!file.eof()) {
-      s_list = file.getline_string();
+    Index index;
+    while(!file.eof()) { 
+      s_list.clear();
+      std::copy(std::istream_iterator<std::string>(file),
+                std::istream_iterator<std::string>(),
+                std::back_inserter(s_list));
       if(s_list.size() == 0)
         continue;
 
@@ -1160,9 +1162,9 @@ namespace CASM {
           exit(1);
         }
       }
-      else if(s_list.find_first("Points:", index)) {
+      else if( s_list.size() != (index = find_index(s_list, "Points:")) ) {
         //std::cout << "  read Points" << std::endl;
-        Index pts = BP::stoi(s_list[index + 1]);
+        Index pts = std::stol(s_list[index + 1]);
         if(pts > this->max_num_sites)
           this->max_num_sites = pts;
 
@@ -1170,15 +1172,17 @@ namespace CASM {
         //std::cout << "  read line" << std::endl;
 
         // Read line "Prototype of X Equivalent Clusters in Orbit Y"
-        s_list = file.getline_string();
-
+        s_list.clear();
+        std::copy(std::istream_iterator<std::string>(file),
+                  std::istream_iterator<std::string>(),
+                  std::back_inserter(s_list));
+        
         // Store the number of equivalent clusters expected
-        //std::cout << "  add n_equiv: " << BP::stoi(s_list[2]) << std::endl;
-        n_equiv.add(BP::stoi(s_list[2]));
+        n_equiv.push_back(std::stol(s_list[2]));
 
         // Read the cluster
         //std::cout << "  read cluster" << std::endl;
-        tclust.read(file.get_istream(), pts, C.check(), SD_is_on);
+        tclust.read(file, pts, C.check(), SD_is_on);
 
         // Add to the list of prototypes
         tclust.calc_properties();
@@ -2103,10 +2107,9 @@ namespace CASM {
 
   template<typename ClustType>
   void GenericOrbitree<ClustType>::write_eci_in(std::string filename) const {
-    BP::BP_Write file(filename);
-    file.newfile();
-
-    print_eci_in(file.get_ostream());
+    std::ofstream file(filename);
+    
+    print_eci_in(file);
 
   }
 

@@ -1,7 +1,5 @@
 #include "casm/casm_io/Args.hh"
 
-#include "casm/BP_C++/BP_Parse.hh"
-
 namespace CASM {
 
   // ////////////////////////////////////////
@@ -88,7 +86,7 @@ namespace CASM {
       else if(args[i] == "-TOL") {
         if(((i + 1) < args.size()) && (args[i + 1][0] != '-')) {
           i++;
-          tol = BP::stod(args[i]);
+          tol = std::stod(args[i]);
         }
         else {
           all_ok = false;
