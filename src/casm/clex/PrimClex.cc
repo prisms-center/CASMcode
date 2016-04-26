@@ -615,10 +615,9 @@ namespace CASM {
       std::cerr << ex.what() << std::endl;
     }
 
-    BP::BP_Write scelfile((fs::path("training_data") / "SCEL").string());
-    scelfile.newfile();
-
-    print_supercells(scelfile.get_ostream());
+    fs::ofstream scelfile(fs::path("training_data") / "SCEL");
+    
+    print_supercells(scelfile);
 
     for(Index i = 0; i < supercell_list.size(); i++) {
       try {
@@ -626,9 +625,8 @@ namespace CASM {
 
         fs::path latpath = supercell_list[i].get_path() / "LAT";
         if(!fs::exists(latpath)) {
-          BP::BP_Write latfile(latpath.string());
-          latfile.newfile();
-          supercell_list[i].get_real_super_lattice().print(latfile.get_ostream());
+          fs::ofstream latfile(latpath);
+          supercell_list[i].get_real_super_lattice().print(latfile);
         }
       }
       catch(const fs::filesystem_error &ex) {

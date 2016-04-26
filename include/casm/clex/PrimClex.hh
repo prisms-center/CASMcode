@@ -3,8 +3,6 @@
 
 #include "casm/external/boost.hh"
 
-#include "casm/BP_C++/BP_Parse.hh"
-
 #include "casm/misc/cloneable_ptr.hh"
 
 #include "casm/crystallography/Structure.hh"

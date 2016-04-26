@@ -179,9 +179,6 @@ env['ENV']['PATH'] = env['CASM_BIN'] + ":" + env['ENV']['PATH']
 
 ##### Call all SConscript files for shared objects
 
-# build src/casm/BP_C++
-SConscript(['src/casm/BP_C++/SConscript'], {'env':env})
-
 # build src/casm/external/gzstream
 SConscript(['src/casm/external/gzstream/SConscript'], {'env':env})
 
@@ -284,17 +281,11 @@ if 'casm_include_install' in COMMAND_LINE_TARGETS:
 # build apps/casm
 SConscript(['apps/casm/SConscript'], {'env':env})
 
-# build src/eci_search
-SConscript(['apps/eci_search/SConscript'], {'env':env})
-
 # tests/unit
 SConscript(['tests/unit/SConscript'], {'env': env})
 
 # tests/casm
 SConscript(['tests/casm/SConscript'], {'env': env})
-
-# tests/eci_search
-SConscript(['tests/eci_search/SConscript'], {'env': env})
 
 
 ##### Python packages
@@ -308,7 +299,7 @@ SConscript(['python/vasp/SConscript'], {'env':env})
 ##### Make combined alias 'test'
 
 # Execute 'scons test' to compile & run integration and unit tests
-env.Alias('test', ['unit', 'casm_test', 'eci_search_test'])
+env.Alias('test', ['unit', 'casm_test'])
 
 if 'test' in COMMAND_LINE_TARGETS:
     env['IS_TEST'] = 1
@@ -317,7 +308,7 @@ if 'test' in COMMAND_LINE_TARGETS:
 ##### Make combined alias 'install'
 
 # Execute 'scons install' to install all binaries, scripts and python modules
-installable = ['casm_include_install', 'casm_lib_install', 'ccasm_lib_install', 'casm_install', 'eci_search_install', 'pycasm_install', 'pyvasp_install']
+installable = ['casm_include_install', 'casm_lib_install', 'ccasm_lib_install', 'casm_install', 'pycasm_install', 'pyvasp_install']
 env.Alias('install', installable)
 
 if 'install' in COMMAND_LINE_TARGETS:

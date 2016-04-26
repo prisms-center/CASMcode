@@ -78,6 +78,14 @@ int print_casm_help(std::ostream &out) {
   return 0;
 };
 
+std::string date_time() {
+  auto t = std::time(nullptr);
+  auto tm = *std::localtime(&t);
+  std::ostringstream ss;
+  ss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+  return ss.str();
+};
+
 
 // ///////////////////////////////////////
 // casm main:
@@ -106,7 +114,6 @@ int main(int argc, char *argv[]) {
     help = true;
   }
 
-  BP::BP_StopWatch clock;
   int retcode = 2;
 
   bool write_log = true;
@@ -119,9 +126,9 @@ int main(int argc, char *argv[]) {
   }
   if(write_log) {
     // If not a 'version', or 'help' command, write to LOG
-    BP::BP_Write log((root / "LOG").string());
-    log << "# " << clock.date_time() << "\n";
-
+    fs::ofstream log(root / "LOG", std::ofstream::out | std::ofstream::app);
+    log << "# " << date_time() << std::endl;
+    
     // record whoami@hostname
 
     std::string whoami, hostname;
@@ -155,7 +162,10 @@ int main(int argc, char *argv[]) {
     log << "\n";
     log.close();
   }
-  clock.set_start();
+  // timing info:
+  using namespace std::chrono;
+  steady_clock::time_point start_time, curr_time;
+  start_time = steady_clock::now();
 
   if(args[1] == "status") {
     retcode = status_command(argc, argv);
@@ -224,8 +234,10 @@ int main(int argc, char *argv[]) {
 
   if(write_log) {
     // If not a 'version', or 'help' command, write to LOG
-    BP::BP_Write log((root / "LOG").string());
-    log << "# return: " << retcode << " runtime(s): " << clock.total_time_s() << "\n\n";
+    fs::ofstream log(root / "LOG", std::ofstream::out | std::ofstream::app);
+    curr_time = steady_clock::now();
+    float s = duration_cast<duration<float> >(curr_time - start_time).count();
+    log << "# return: " << retcode << " runtime(s): " << s << "\n\n";
     log.close();
   }
 
