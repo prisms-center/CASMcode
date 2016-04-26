@@ -76,9 +76,18 @@ namespace CASM {
 
 
     // --- Initialization ---------------------
-
+    
+    /// \brief Returns true if configname of configuration to use as starting motif has been specified
+    bool is_motif_configname() const;
+    
     /// \brief Configname of configuration to use as starting motif
     std::string motif_configname() const;
+    
+    /// \brief Returns true if path to ConfigDoF file to use as starting motif has been specified
+    bool is_motif_configdof() const;
+    
+    /// \brief Path to ConfigDoF file to use as starting motif
+    ConfigDoF motif_configdof() const;
 
     /// \brief Supercell matrix defining the simulation cell
     Eigen::Matrix3i simulation_cell_matrix() const;
@@ -122,10 +131,17 @@ namespace CASM {
 
     /// \brief Returns true if (*this)[level1].contains(level2)
     bool _is_setting(std::string level1, std::string level2) const;
+    
+    /// \brief Returns true if (*this)[level1][level2].contains(level3)
+    bool _is_setting(std::string level1, std::string level2, std::string level3) const;
 
     /// \brief Returns (*this)[level1][level2].get<T>();
     template<typename T>
     T _get_setting(std::string level1, std::string level2) const;
+    
+    /// \brief Returns (*this)[level1][level2][level3].get<T>();
+    template<typename T>
+    T _get_setting(std::string level1, std::string level2, std::string level3) const;
 
 
   private:
@@ -268,6 +284,37 @@ namespace CASM {
       if(this->contains(level1)) {
         std::cerr << "Found Settings[\"" << level1 << "\"], but not [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
         std::cerr << "Settings[\"" << level1 << "\"]:\n" << (*this)[level1] << std::endl;
+      }
+      else {
+        std::cerr << "No Settings[\"" << level1 << "\"] found" << std::endl;
+        std::cerr << "Settings:\n" << (*this) << std::endl;
+      }
+      throw;
+    }
+  }
+  
+  /// \brief Returns (*this)[level1][level2][level3].get<T>();
+  template<typename T>
+  T MonteSettings::_get_setting(std::string level1, std::string level2, std::string level3) const {
+    try {
+      return (*this)[level1][level2][level3].get<T>();
+    }
+
+    catch(std::runtime_error &e) {
+      T t;
+      std::cerr << "ERROR in MonteSettings::" << level2 << std::endl;
+      std::cerr << "Expected [\"" << level1 << "\"][\"" << level2 << "\"][\"" << level3 << "\"]" << std::endl;
+      std::cerr << "  Either this was not found, or the type is wrong." << std::endl;
+      if(this->contains(level1)) {
+        if(this->contains(level2)) {
+          std::cerr << "Found Settings[\"" << level1 << "\"][\"" << level2 << "\"], \n"
+                       "but not [\"" << level1 << "\"][\"" << level2 << "\"][\"" << level3 << "\"]" << std::endl;
+          std::cerr << "Settings[\"" << level1 << "\"][\"" << level2 << "\"]:\n" << (*this)[level1][level2] << std::endl;
+        }
+        else {
+          std::cerr << "No Settings[\"" << level1 << "\"][\"" << level2 << "\"] found" << std::endl;
+          std::cerr << "Settings:\n" << (*this)[level1] << std::endl;
+        }
       }
       else {
         std::cerr << "No Settings[\"" << level1 << "\"] found" << std::endl;

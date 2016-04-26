@@ -10,7 +10,6 @@ namespace CASM {
 
   GrandCanonical::GrandCanonical(PrimClex &primclex, const GrandCanonicalSettings &settings, std::ostream &_sout):
     MonteCarlo(primclex,
-               _select_motif(settings.motif_configname(), primclex, settings.initial_conditions(), _sout),
                settings,
                _sout),
     m_site_swaps(supercell()),
@@ -43,8 +42,8 @@ namespace CASM {
         "  You need a smaller orbitree or a larger simulation cell.");
     }
 
-    _update_properties();
-
+    set_configdof(_initial_configdof(primclex, m_scel, settings, _sout));
+    
   }
 
   /// \brief Return number of steps per pass. Equals number of sites with variable occupation.
@@ -69,6 +68,11 @@ namespace CASM {
     return;
   }
 
+  /// \brief Set configdof and clear previously collected data
+  void GrandCanonical::set_configdof(const ConfigDoF& configdof) {
+    reset(configdof);
+    _update_properties();
+  }
 
   /// \brief Propose a new event, calculate delta properties, and return reference to it
   ///
@@ -482,59 +486,70 @@ namespace CASM {
 
   }
 
-  /// \brief Select initial motif configuration
+  /// \brief Select initial configdof
   ///
-  /// \param motif_configname If "auto", use 0K ground state at given mu; else
-  ///        use configuration with given name
-  const Configuration &GrandCanonical::_select_motif(
-    std::string motif_configname,
-    PrimClex &primclex,
-    const GrandCanonicalConditions &cond,
-    std::ostream &_sout) {
-    if(motif_configname == "auto") {
+  /// - "motif"/"configname": If "auto", use 0K ground state at given mu; else 
+  ///   use configuration with given name
+  /// - "motif"/"configdof": Open configdof file with given name; must be for 
+  ///   the specified supercell.
+  ConfigDoF GrandCanonical::_initial_configdof(
+      PrimClex &primclex,
+      Supercell &scel,
+      const GrandCanonicalSettings &settings,
+      std::ostream &_sout) {
+    
+    if( settings.is_motif_configname() ) {
+      
+      std::string motif_configname = settings.motif_configname();
+      
+      if(motif_configname == "auto") {
 
-      std::cout << "Searching for minimum potential energy motif..." << std::endl;
+        std::cout << "Searching for minimum potential energy motif..." << std::endl;
 
-      double tol = 1e-6;
-      auto compare = [&](double A, double B) {
-        return A < B - tol;
-      };
+        double tol = 1e-6;
+        auto compare = [&](double A, double B) {
+          return A < B - tol;
+        };
 
-      ConfigIO::Clex clex(primclex.global_clexulator(), primclex.global_eci("formation_energy"));
+        ConfigIO::Clex clex(primclex.global_clexulator(), primclex.global_eci("formation_energy"));
+        
+        GrandCanonicalConditions cond = settings.initial_conditions();
 
-      std::multimap<double, const Configuration *, decltype(compare)> configmap(compare);
-      for(auto it = primclex.config_begin(); it != primclex.config_end(); ++it) {
-        configmap.insert(std::make_pair(clex(*it) - cond.param_chem_pot().dot(CASM::comp(*it)), &(*it)));
-      }
-
-      const Configuration &min_config = *(configmap.begin()->second);
-      double min_potential_energy = configmap.begin()->first;
-      auto eq_range = configmap.equal_range(min_potential_energy);
-      if(std::distance(eq_range.first, eq_range.second) > 1) {
-        _sout << "Warning: Found degenerate ground states with potential energy: "
-              << std::setprecision(8) << min_potential_energy << std::endl;
-        for(auto it = eq_range.first; it != eq_range.second; ++it) {
-          _sout << "  " << it->second->name() << std::endl;
+        std::multimap<double, const Configuration *, decltype(compare)> configmap(compare);
+        for(auto it = primclex.config_begin(); it != primclex.config_end(); ++it) {
+          configmap.insert(std::make_pair(clex(*it) - cond.param_chem_pot().dot(CASM::comp(*it)), &(*it)));
         }
-        _sout << "Choosing: " << min_config.name() << std::endl;
+
+        const Configuration &min_config = *(configmap.begin()->second);
+        double min_potential_energy = configmap.begin()->first;
+        auto eq_range = configmap.equal_range(min_potential_energy);
+        if(std::distance(eq_range.first, eq_range.second) > 1) {
+          _sout << "Warning: Found degenerate ground states with potential energy: "
+                << std::setprecision(8) << min_potential_energy << std::endl;
+          for(auto it = eq_range.first; it != eq_range.second; ++it) {
+            _sout << "  " << it->second->name() << std::endl;
+          }
+          _sout << "Choosing: " << min_config.name() << std::endl;
+        }
+        else {
+          _sout << "Found: " << min_config.name() << " with potential energy: "
+                << std::setprecision(8) << min_potential_energy << std::endl;
+        }
+        
+        return fill_supercell(scel, min_config);
       }
       else {
-        _sout << "Found: " << min_config.name() << " with potential energy: "
-              << std::setprecision(8) << min_potential_energy << std::endl;
+        return fill_supercell(scel, primclex.configuration(motif_configname));
       }
-
-      return min_config;
-
-
+    
+    }
+    else if(settings.is_motif_configdof() ) {
+      return settings.motif_configdof();
     }
     else {
-      return primclex.configuration(motif_configname);
+      throw std::runtime_error("Error: Must specify motif \"configname\" or \"configdof\"");
     }
   }
-
-
-
-
 
 }
 

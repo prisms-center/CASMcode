@@ -50,6 +50,8 @@ namespace CASM {
     /// \brief Set conditions and clear previously collected data
     void set_conditions(const CondType &new_conditions);
 
+    /// \brief Set configdof and clear previously collected data
+    void set_configdof(const ConfigDoF& configdof);
 
     /// \brief Propose a new event, calculate delta properties, and return reference to it
     const EventType &propose();
@@ -127,11 +129,11 @@ namespace CASM {
     /// \brief Calculate properties given current conditions
     void _update_properties();
 
-    /// \brief Select initial motif configuration
-    static const Configuration &_select_motif(
-      std::string motif_configname,
+    /// \brief Select initial configdof
+    static ConfigDoF _initial_configdof(
       PrimClex &primclex,
-      const GrandCanonicalConditions &cond,
+      Supercell &scel,
+      const GrandCanonicalSettings &settings,
       std::ostream &_sout);
 
 
@@ -176,6 +178,7 @@ namespace CASM {
     Eigen::VectorXd *m_comp_n;
 
   };
+  
 }
 
 #endif

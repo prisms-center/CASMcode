@@ -64,23 +64,28 @@ namespace CASM {
 
   // --- Initialization ---------------------
 
-  /// \brief Configname of configuration to use as starting motif
-  std::string MonteSettings::motif_configname() const {
-    std::string level1 = "driver";
-    std::string level2 = "motif";
-    std::string level3 = "configname";
-
-    try {
-      return (*this)[level1][level2][level3].get<std::string>();
-    }
-
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in Monte::motif_configname" << std::endl;
-      std::cerr << "Expected [" << level1 << "][" << level2 << "][" << level3 << "]" << std::endl;
-      throw e;
-    }
+  /// \brief Returns true if configname of configuration to use as starting motif has been specified
+  bool MonteSettings::is_motif_configname() const {
+    return _is_setting("driver", "motif", "configname");
   }
 
+  /// \brief Configname of configuration to use as starting motif
+  std::string MonteSettings::motif_configname() const {
+    return _get_setting<std::string>("driver", "motif", "configname");
+  }
+  
+  /// \brief Returns true if path to ConfigDoF file to use as starting motif has been specified
+  bool MonteSettings::is_motif_configdof() const {
+    return _is_setting("driver", "motif", "configdof");
+  }
+  
+  /// \brief Path to ConfigDoF file to use as starting motif
+  ConfigDoF MonteSettings::motif_configdof() const {
+    fs::path configdof_path = _get_setting<fs::path>("driver", "motif", "configdof");
+    return jsonParser(configdof_path).get<ConfigDoF>();
+  }
+
+  
   /// \brief Supercell matrix defining the simulation cell
   Eigen::Matrix3i MonteSettings::simulation_cell_matrix() const {
     try {
@@ -318,9 +323,26 @@ namespace CASM {
 
     catch(std::runtime_error &e) {
       std::cerr << "ERROR in MonteSettings::is_" << level2 << std::endl;
-      std::cerr << "No '" << level1 << "' setting found" << std::endl;
-      std::cerr << "Expected [\"" << level1 << "\"]" << std::endl;
+      std::cerr << "No [\"" << level1 << "\"] setting found" << std::endl;
       throw e;
+    }
+  }
+  
+  /// \brief Returns true if (*this)[level1][level2].contains(level3)
+  bool MonteSettings::_is_setting(std::string level1, std::string level2, std::string level3) const {
+    try {
+      return (*this)[level1][level2].contains(level3);
+    }
+
+    catch(std::runtime_error &e) {
+      std::cerr << "ERROR in MonteSettings::is_" << level2 << "_" << level3 << std::endl;
+      if(this->contains(level1)) {
+        std::cerr << "No [\"" << level1 << "\"][\"" << level2 << "\"] setting found" << std::endl;
+      }
+      else {
+        std::cerr << "No [\"" << level1 << "\"] setting found" << std::endl;
+      }
+      throw;
     }
   }
 

@@ -165,7 +165,7 @@ namespace CASM {
       // read end state of previous condition
       ConfigDoF configdof = m_mc.configdof();
       from_json(configdof, jsonParser(m_dir.final_state_json(start_i-1)));
-      m_mc.reset(configdof);
+      m_mc.set_configdof(configdof);
     }
 
     // Run for all conditions, outputting data as you finish each one

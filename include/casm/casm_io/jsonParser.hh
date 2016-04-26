@@ -392,7 +392,7 @@ namespace CASM {
   void from_json(std::string &value, const jsonParser &json);
   void from_json(jsonParser &value, const jsonParser &json);
   void from_json(std::istream &stream, const jsonParser &json);
-  void from_json(fs::path filename, const jsonParser &json);
+  void from_json(fs::path &value, const jsonParser &json);
 
   /// Create a jsonParser from a stream
   inline void to_json(std::istream &stream, jsonParser &json) {

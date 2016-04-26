@@ -158,7 +158,7 @@ namespace CASM {
 
     /// \brief Construct with a starting ConfigDoF as specified the given MonteSettings and prepare data samplers
     template<typename MonteTypeSettings>
-    MonteCarlo(PrimClex &primclex, const Configuration &motif, const MonteTypeSettings &settings, std::ostream &_sout = std::cout);
+    MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings, std::ostream &_sout = std::cout);
 
     /// \brief const Access the Supercell that *this is based on
     Supercell &supercell() {
@@ -246,10 +246,13 @@ namespace CASM {
     bool m_debug;
 
   };
+  
+  /// \brief Fill supercell with motif, applying a factor group operation if necessary
+  ConfigDoF fill_supercell(Supercell &mc_scel, const Configuration& motif);
 
   /// \brief Construct with a starting ConfigDoF as specified the given MonteSettings and prepare data samplers
   template<typename MonteTypeSettings>
-  MonteCarlo::MonteCarlo(PrimClex &primclex, const Configuration &motif, const MonteTypeSettings &settings, std::ostream &_sout) :
+  MonteCarlo::MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings, std::ostream &_sout) :
     m_settings(settings),
     m_primclex(primclex),
     m_scel(&primclex, settings.simulation_cell_matrix()),
@@ -258,30 +261,6 @@ namespace CASM {
     sout(_sout) {
 
     try {
-
-      const Lattice &motif_lat = motif.get_supercell().get_real_super_lattice();
-      const Lattice &scel_lat = m_scel.get_real_super_lattice();
-      auto begin = primclex.get_prim().factor_group().begin();
-      auto end = primclex.get_prim().factor_group().end();
-
-      auto res = is_supercell(scel_lat, motif_lat, begin, end, TOL);
-      if(res.first == end) {
-
-        std::cerr << "Requested supercell transformation matrix: \n"
-                  << settings.simulation_cell_matrix() << "\n";
-        std::cerr << "Requested motif Configuration: " <<
-                  settings.motif_configname() << "\n";
-        std::cerr << "Configuration transformation matrix: \n"
-                  << motif.get_supercell().get_transf_mat() << "\n";
-
-        throw std::runtime_error(
-          "Error in 'MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings)'\n"
-          "  The specified Configuration cannot be tiled onto the specified supercell."
-        );
-      }
-
-      ConfigTransform f(m_scel, *res.first);
-      m_configdof = copy_apply(f, motif).configdof();
 
       settings.samplers(primclex, std::inserter(m_sampler, m_sampler.begin()));
 
@@ -299,7 +278,7 @@ namespace CASM {
       throw;
     }
   }
-
+  
 }
 #endif
 

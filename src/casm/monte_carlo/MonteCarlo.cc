@@ -1,4 +1,5 @@
 #include "casm/monte_carlo/MonteCarlo.hh"
+#include "casm/clex/Configuration.hh"
 
 namespace CASM {
   
@@ -126,6 +127,34 @@ namespace CASM {
     
     m_next_convergence_check = m_sample_time.size() + m_convergence_check_period;
     
+  }
+  
+  /// \brief Fill supercell with motif, applying a factor group operation if necessary
+  ConfigDoF fill_supercell(Supercell &mc_scel, const Configuration& motif) {
+    
+    const Lattice &motif_lat = motif.get_supercell().get_real_super_lattice();
+    const Lattice &scel_lat = mc_scel.get_real_super_lattice();
+    auto begin = mc_scel.get_primclex().get_prim().factor_group().begin();
+    auto end = mc_scel.get_primclex().get_prim().factor_group().end();
+
+    auto res = is_supercell(scel_lat, motif_lat, begin, end, TOL);
+    if(res.first == end) {
+
+      std::cerr << "Requested supercell transformation matrix: \n"
+                << mc_scel.get_transf_mat() << "\n";
+      std::cerr << "Requested motif Configuration: " <<
+                motif.name() << "\n";
+      std::cerr << "Configuration transformation matrix: \n"
+                << motif.get_supercell().get_transf_mat() << "\n";
+
+      throw std::runtime_error(
+        "Error in 'fill_supercell(const Supercell &mc_scel, const Configuration& motif)'\n"
+        "  The motif cannot be tiled onto the specified supercell."
+      );
+    }
+
+    ConfigTransform f(mc_scel, *res.first);
+    return copy_apply(f, motif).configdof();
   }
   
 }

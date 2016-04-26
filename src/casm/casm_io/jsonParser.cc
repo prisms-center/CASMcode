@@ -152,6 +152,11 @@ namespace CASM {
   void from_json(jsonParser &value, const jsonParser &json) {
     value = json;
   }
+  
+  void from_json(fs::path &value, const jsonParser &json) {
+    value = fs::path(json.get_str());
+  }
+
 
 
   // ---- Read/Print JSON  ----------------------------------
