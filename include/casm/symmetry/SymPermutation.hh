@@ -15,9 +15,6 @@ namespace CASM {
   /// For example, Coordinates in a Cluster, basis atoms in a Structure, Clusters in an Orbit, etc.
   class SymPermutation: public SymOpRepresentation {
   public:
-    /// fixes alignment of m_mat
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
     /// Initialize a SymPermutation with the permutation array.
     /// The corresponding matrix is generated automatically
     SymPermutation(const Array<Index> &init_permute) : m_permute(init_permute), m_has_mat(false) {
@@ -28,7 +25,7 @@ namespace CASM {
     /// The corresponding matrix is generated automatically
     SymPermutation(const Permutation &init_permute) : m_permute(init_permute), m_has_mat(false) {
 
-    };
+    }
 
     double character() const override;
 

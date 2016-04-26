@@ -15,11 +15,29 @@ namespace CASM {
   /// a symetry operation transforms 3D spatial coordinates
   class SymOp : public SymOpRepresentation {
   public:
+
+    /// \brief Simple struct to be used as return type for SymOp::info().
     struct SymInfo {
+      /// One of: identity_op, mirror_op, glide_op, rotation_op, screw_op,
+      ///         inversion_op, rotoinversion_op, or invalid_op
       symmetry_type op_type;
+
+      /// Rotation axis if operation S is rotation/screw operation
+      /// If improper operation, rotation axis of inversion*S
+      /// (implying that axis is normal vector for a mirror plane)
+      /// normalized to length 1
+      /// axis is zero if operation is identity or inversion
       Eigen::Vector3d axis;
+
+      /// Rotation angle, if operation S is rotation/screw operation
+      /// If improper operation, rotation angle of inversion*S
       double angle;
+
+      /// Component of tau parallel to 'axis' (for rotation)
+      /// or perpendicular to 'axis', for mirror operation
       Eigen::Vector3d screw_glide_shift;
+
+      /// A Cartesian coordinate that is invariant to the operation (if one exists)
       Eigen::Vector3d location;
     };
 
@@ -28,7 +46,7 @@ namespace CASM {
 
     /// static method to create operation that describes pure translation
     static SymOp translation(const Eigen::Ref<const vector_type> &_tau) {
-      return SymOp(matrix_type::Identity(), _tau);
+      return SymOp(matrix_type::Identity(), _tau, TOL, 0, nullptr);
     }
 
     ///Create new SymOp from Matrix3 and tau translation
@@ -36,11 +54,11 @@ namespace CASM {
     SymOp(const Eigen::Ref<const matrix_type> &_mat = matrix_type::Identity(),
           const Eigen::Ref<const vector_type> &_tau = vector_type::Zero(),
           double _map_error = TOL) :
-      m_mat(_mat),
-      m_tau(_tau),
-      m_map_error(_map_error) {
+      SymOp(_mat, _tau, _map_error, -1, nullptr) {
     }
 
+    /// Create new SymOp from Matrix3 and no translation,
+    /// but include mapping error
     SymOp(const Eigen::Ref<const matrix_type> &_mat,
           double _map_error) :
       SymOp(_mat, vector_type::Zero(), _map_error) {
@@ -108,12 +126,12 @@ namespace CASM {
 
     /// Print this SymOP as header, followed by symmetry_mat and tau_vec (aligned vertically)
     /// \param c2fmat is a transformation matrix that can be passed to convert from Cartesian to fractional coordinates
-    void print(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2fmat = matrix_type::Identity()) const;
+    void print(std::ostream &stream, const Eigen::Ref<const matrix_type> &c2fmat = matrix_type::Identity()) const;
 
     ///Prints abridged description of SymOp, including its type, angle, and eigenvector
     ///does NOT print out the entire symmetry operation matrix
     /// \param c2fmat is a transformation matrix that can be passed to convert from Cartesian to fractional coordinates
-    void print_short(std::ostream &stream, const Eigen::Ref<const Eigen::Matrix3d> &c2fmat = matrix_type::Identity()) const;
+    void print_short(std::ostream &stream, const Eigen::Ref<const matrix_type> &c2fmat = matrix_type::Identity()) const;
 
     /// Return pointer to a new copy of this SymOp
     SymOpRepresentation *copy() const override {
@@ -129,6 +147,18 @@ namespace CASM {
     void from_json(const jsonParser &json) override;
 
   private:
+    ///Create new SymOp from Matrix3 and tau translation
+    /// by default, assume no translation
+    SymOp(const Eigen::Ref<const matrix_type> &_mat,
+          const Eigen::Ref<const vector_type> &_tau,
+          double _map_error,
+          Index _op_index,
+          MasterSymGroup const *_master_ptr) :
+      SymOpRepresentation(_master_ptr, SymGroupRepID(), _op_index),
+      m_mat(_mat),
+      m_tau(_tau),
+      m_map_error(_map_error) {
+    }
 
     /*** Inherited from SymOpRepresentation ***/
     /*
