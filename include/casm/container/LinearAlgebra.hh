@@ -81,10 +81,10 @@ namespace CASM {
   /// For each coefficient, sets \code Mint(i,j) = boost::math::iround(Mdouble(i, j)) \endcode
   ///
   template<typename Derived>
-  Eigen::CwiseUnaryOp< std::function<int(typename Derived::Scalar const&)> , const Derived >
+  Eigen::CwiseUnaryOp< std::function<int(typename Derived::Scalar const &)> , const Derived >
   iround(const Eigen::MatrixBase<Derived> &val) {
-    return val.unaryExpr(std::function<int(typename Derived::Scalar const&)>
-			 (boost::math::iround<typename Derived::Scalar>));
+    return val.unaryExpr(std::function<int(typename Derived::Scalar const &)>
+                         (boost::math::iround<typename Derived::Scalar>));
   }
 
   /// \brief Round Eigen::MatrixXd to Eigen::MatrixXl
@@ -96,10 +96,10 @@ namespace CASM {
   /// For each coefficient, sets \code Mint(i,j) = std::lround(Mdouble(i, j)) \endcode
   ///
   template<typename Derived>
-  Eigen::CwiseUnaryOp< std::function<long(typename Derived::Scalar const&)> , const Derived >
+  Eigen::CwiseUnaryOp< std::function<long(typename Derived::Scalar const &)> , const Derived >
   lround(const Eigen::MatrixBase<Derived> &val) {
-    return val.unaryExpr(std::function<long(typename Derived::Scalar const&)>
-			 (boost::math::lround<typename Derived::Scalar>));
+    return val.unaryExpr(std::function<long(typename Derived::Scalar const &)>
+                         (boost::math::lround<typename Derived::Scalar>));
   }
 
   /// \brief Return the minor of integer Matrix M element row, col
@@ -227,12 +227,14 @@ namespace CASM {
   /// Adapted from Matlab implementation written by John Gilbert (gilbert@parc.xerox.com):
   /// - http://www.mathworks.com/matlabcentral/newsreader/view_thread/13728
   ///
-  template<typename DerivedIn,typename DerivedOut>
+  template<typename DerivedIn, typename DerivedOut>
   void smith_normal_form(const Eigen::MatrixBase<DerivedIn> &M,
                          Eigen::MatrixBase<DerivedOut> &U,
                          Eigen::MatrixBase<DerivedOut> &S,
                          Eigen::MatrixBase<DerivedOut> &V) {
 
+    static_assert(std::is_same<typename DerivedIn::Scalar, typename DerivedOut::Scalar>::value,
+                  "ALL ARGUMENTS TO CASM::smith_normal_form() MUST BE BASED ON SAME SCALAR TYPE!");
     using namespace normal_form_impl;
     typedef typename DerivedOut::Scalar Scalar;
 
