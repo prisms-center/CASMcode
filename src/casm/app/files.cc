@@ -132,9 +132,9 @@ namespace CASM {
                      "        creating sub-directories as necessary.             \n"
                      "      - **Must run from project root directory**           \n" 
                      "      - Replace 'destination' with '-e ssh user@host:destination' \n"
-                     "        for a remote destination.\n\n"
+                     "        for a remote destination.\n"
                      "      - \"-n\" option is for a \"dry-run\". Remove it when ready \n"
-                     "        to do the transfer.\n"
+                     "        to do the transfer.\n\n"
                      
                      "      rsync -avPR --files-from=relfiles.txt src destination -n \n"
                      "      - Copy project files to the 'destination' directory, \n"
@@ -142,7 +142,7 @@ namespace CASM {
                      "      - 'src' is the path to the root directory of the CASM\n"
                      "        project you are copying from.                      \n"
                      "      - Replace 'destination' with '-e ssh user@host:destination' \n"
-                     "        for a remote destination.\n\n"
+                     "        for a remote destination.\n"
                      "      - \"-n\" option is for a \"dry-run\". Remove it when ready \n"
                      "        to do the transfer.\n";
                      
