@@ -86,26 +86,33 @@ namespace CASM {
         std::cout << desc << std::endl;
 
 
-        std::cout << "DESCRIPTION" << std::endl;
-        std::cout << "    Enumerate files used by this CASM project\n";
-        std::cout << "    - If --all given, include files from all settings (bset, \n"
+        std::cout << "DESCRIPTION  \n"
+                     "    Enumerate files used by this CASM project\n"
+                     "    - If --all given, include files from all settings (bset, \n"
                      "      calctype, ref, clex, eci). Otherwise only include files\n"
-                     "      relevant to the current settings.\n";
-        std::cout << "    - If --calc given, include training data files. This option\n"
-                     "      accepts one or more of: 'settings', 'status', or 'all'.\n";   
-        std::cout << "    - If --calc 'settings' given, include files from the       \n"   
-                     "      'training_data' settings directories.\n";
-        std::cout << "    - If --calc 'status' given, include 'properties.calc.json' \n"
-                     "      and 'status.json' files.\n";
-        std::cout << "    - If --calc 'all' given, include all files in the          \n"
-                     "      'training_data' directory, recursively.\n";
+                     "      relevant to the current settings.\n"
+                     "    - If --calc given, include training data files. This option\n"
+                     "      accepts one or more of: 'settings', 'status', or 'all'.\n"  
+                     "    - If --calc 'settings' given, include files from the       \n"   
+                     "      'training_data' settings directories.\n"
+                     "    - If --calc 'status' given, include 'properties.calc.json' \n"
+                     "      and 'status.json' files.\n"
+                     "    - If --calc 'all' given, include all files in the          \n"
+                     "      'training_data' directory, recursively.\n\n"
+                     
+                     "    Examples:\n"
+                     "      casm files -o files.txt\n"
+                     "      - Output basic project files for the current settings.\n\n"
         
-        std::cout << " \n";
-        std::cout << "    Examples:\n";
-        std::cout << "      casm files -o projfile.txt
-        std::cout << "      
-        std::cout << "    - If --calc 'all' given, include all files in the          \n"
-                     "      'training_data' directory, recursively.\n";
+                     "      tar -czvf proj.tar.gz `casm files -o STDOUT` \n"
+                     "      tar -czvf proj.tar.gz -T files.txt \n"
+                     "      - Use tar to create an archive of your CASM project. \n\n"
+                     
+                     "      rsync -avP --relative `casm files -o STDOUT` destination -n \n"
+                     "      rsync -avP --relative --files-from=files.txt destination -n \n"
+                     "      - Use rsync to syncronize casm project files to 'destination' \n"
+                     "      - \"-n\" option is for a \"dry-run\". Remove it when ready \n"
+                     "        to do the transfer.\n";
                      
         return 0;
       }
