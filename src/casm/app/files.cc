@@ -110,6 +110,7 @@ namespace CASM {
                      
                      "      rsync -avP --relative `casm files -o STDOUT` destination -n \n"
                      "      rsync -avP --relative --files-from=files.txt destination -n \n"
+                     "      rsync -avP --relative --files-from=files.txt -e ssh user@host:destination -n \n"
                      "      - Use rsync to syncronize casm project files to 'destination' \n"
                      "      - \"-n\" option is for a \"dry-run\". Remove it when ready \n"
                      "        to do the transfer.\n";
