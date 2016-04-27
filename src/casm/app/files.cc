@@ -41,11 +41,6 @@ namespace CASM {
       "Which calculation files to include. "
       "May be zero (default) or more of: 'settings', 'status', 'all'.")
     
-    ("archive,a", 
-      po::value<std::vector<std::string> >(&calc)->multitoken(), 
-      "Which calculation files to include. "
-      "May be zero (default) or more of: 'settings', 'status', 'all'.")
-    
     ("relative,R", 
       "Print relative path from project root directory.")
     
@@ -96,12 +91,12 @@ namespace CASM {
                      "      relevant to the current settings.\n"
                      "    - If --calc given, include training data files. This option\n"
                      "      accepts one or more of: 'settings', 'status', or 'all'.\n"  
-                     "    - If --calc 'settings' given, include files from the       \n"   
-                     "      'training_data' settings directories.\n"
-                     "    - If --calc 'status' given, include 'properties.calc.json' \n"
-                     "      and 'status.json' files.\n"
-                     "    - If --calc 'all' given, include all files in the          \n"
-                     "      'training_data' directory, recursively.\n\n"
+                     "      'settings': include files from the 'training_data' \n"
+                     "                  settings directories.\n"
+                     "      'status':   include 'properties.calc.json' and     \n"
+                     "                  'status.json' files.\n"
+                     "      'all':      include all files in the 'training_data'\n"
+                     "                  directory, recursively.\n\n"
                      
                      "    Examples:\n"
                      "      casm files\n"
