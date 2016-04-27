@@ -21,6 +21,20 @@ namespace CASM {
     }
     return dir;
   };
+  
+  /// return relative path to current or parent directory containing ".casm" directory
+  ///   if none found, return empty path
+  inline fs::path relative_casmroot(const fs::path &cwd) {
+    fs::path dir(cwd);
+    fs::path casmroot = find_casmroot(cwd);
+    fs::path relpath("");
+
+    while(dir != casmroot) {
+      dir = dir.parent_path();
+      relpath /= "..";
+    }
+    return relpath;
+  };
 
   /// \brief Specification of CASM project directory structure
   class DirectoryStructure {

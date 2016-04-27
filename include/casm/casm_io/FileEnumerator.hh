@@ -13,7 +13,8 @@ namespace CASM {
     /// \brief A CASM project file enumerator
     FileEnumerator(
       const PrimClex& _primclex, 
-      bool _all_settings = false);
+      bool _all_settings = false,
+      bool _relative = false);
     
     /// \brief Enumerate all setting independent files
     template<typename OutputIterator>
@@ -46,8 +47,8 @@ namespace CASM {
     
     private:
     
-    /// make paths relative to m_primclex.get_path() (depends on all having common root)
-    fs::path _relative(fs::path path);
+    /// make paths relative to m_primclex.get_path() if m_relative
+    fs::path _if_relative(fs::path path);
     
     /// output path if it exists
     template<typename OutputIterator>
@@ -63,6 +64,7 @@ namespace CASM {
     DirectoryStructure m_dir;
     ProjectSettings m_set;
     bool m_all_settings;
+    bool m_relative;
     
     std::vector<std::string> m_all_bset;
     std::vector<std::string> m_all_calctype;
@@ -72,40 +74,44 @@ namespace CASM {
   
   /// \brief A CASM project file enumerator
   ///
-  /// \param _primclex The PrimClex representing the project to enumerate files for
-  /// \param _result OutputIterator taking list of fs::path relative to the 
-  ///        project root directory
+  /// \param _primclex The PrimClex representing the project to enumerate files
+  /// \param _result OutputIterator taking list of fs::path
   /// \param _all_settings If true, output files for all settings combinations.
-  /// \param _training_data If true, include all files in 'training_data', recursively.
-  ///        If false, only include summary and settings files.
+  /// \param _relative If true, enumerate paths relative to the project root 
+  ///         directory. If false, use absolute paths.
   ///
   /// \result Iterator to end of region containing the output file paths
   ///
   FileEnumerator::FileEnumerator(
     const PrimClex& _primclex, 
-    bool _all_settings) :
+    bool _all_settings,
+    bool _relative) :
   
   m_primclex(_primclex),
   m_dir(m_primclex.dir()),
   m_set(m_primclex.settings()),
   m_all_settings(_all_settings),
+  m_relative(_relative),
   m_all_bset(m_dir.all_bset()),
   m_all_calctype(m_dir.all_calctype()),
   m_all_clex(m_dir.all_clex()) {}
   
   
-  /// make paths relative to m_primclex.get_path() (depends on all having common root)
-  inline fs::path FileEnumerator::_relative(fs::path path) {
-    auto a = m_primclex.get_path().string().size() + 1;
-    auto b = path.string().size();
-    return fs::path(path.string().substr(a,b));
+  /// make paths relative to CASM project root directory 
+  inline fs::path FileEnumerator::_if_relative(fs::path path) {
+    if(m_relative) {
+      auto a = m_primclex.get_path().string().size() + 1;
+      auto b = path.string().size();
+      return fs::path(path.string().substr(a,b));
+    }
+    return path;
   }
   
   /// output path if it exists
   template<typename OutputIterator>
   OutputIterator FileEnumerator::_if_exists(OutputIterator result, fs::path path) {
     if(fs::exists(path)) {
-      *result++ = _relative(path);
+      *result++ = _if_relative(path);
     }
     return result;
   }
@@ -124,7 +130,7 @@ namespace CASM {
     fs::directory_iterator end_it;
     for(; it != end_it; ++it) {
       if(fs::is_regular_file(*it)) {
-        *result++ = _relative(it->path());
+        *result++ = _if_relative(it->path());
       }
     }
     return result;
@@ -300,7 +306,7 @@ namespace CASM {
       }
       
       if(fs::is_regular_file(*it)) {
-        *result++ = _relative(it->path());
+        *result++ = _if_relative(it->path());
       }
     }
     return result;

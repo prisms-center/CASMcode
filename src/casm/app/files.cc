@@ -46,6 +46,9 @@ namespace CASM {
       "Which calculation files to include. "
       "May be zero (default) or more of: 'settings', 'status', 'all'.")
     
+    ("relative,R", 
+      "Print relative path from project root directory.")
+    
     ("gzip,z", 
       po::value(&gz_flag)->zero_tokens(), 
       "Write gzipped output file.")
@@ -101,17 +104,45 @@ namespace CASM {
                      "      'training_data' directory, recursively.\n\n"
                      
                      "    Examples:\n"
-                     "      casm files -o files.txt\n"
-                     "      - Output basic project files for the current settings.\n\n"
-        
-                     "      tar -czvf proj.tar.gz `casm files -o STDOUT` \n"
-                     "      tar -czvf proj.tar.gz -T files.txt \n"
-                     "      - Use tar to create an archive of your CASM project. \n\n"
+                     "      casm files\n"
+                     "      - Prints basic project files for the current settings.\n"
+                     "      - Prints absolute paths.\n\n"
                      
-                     "      rsync -avP --relative `casm files -o STDOUT` destination -n \n"
-                     "      rsync -avP --relative --files-from=files.txt destination -n \n"
-                     "      rsync -avP --relative --files-from=files.txt -e ssh user@host:destination -n \n"
-                     "      - Use rsync to syncronize casm project files to 'destination' \n"
+                     "      casm files -R\n"
+                     "      - Prints basic project files for the current settings.\n"
+                     "      - Prints relative paths from project root directory.\n\n"
+                     
+                     "      casm files -o absfiles.txt\n"
+                     "      - Write 'absfiles.txt' with basic project files for \n"
+                     "        the current settings.\n"
+                     "      - Prints absolute paths.\n\n"
+                     
+                     "      casm files -R -o relfiles.txt\n"
+                     "      - Write 'relfiles.txt' with basic project files for \n"
+                     "        the current settings.\n"
+                     "      - Prints relative paths from project root directory.\n\n"
+                     
+                     "      tar -czvf proj.tar.gz `casm files -o STDOUT` \n"
+                     "      tar -czvf proj.tar.gz -T absfiles.txt \n"
+                     "      - Use tar to create an archive of your CASM project. \n"
+                     "      - Extract with 'tar -xzvf proj.tar.gz'. \n\n"
+                     
+                     "      rsync -avPR `casm files -R -o STDOUT` destination -n \n"
+                     "      - Copy project files to the 'destination' directory, \n"
+                     "        creating sub-directories as necessary.             \n"
+                     "      - **Must run from project root directory**           \n" 
+                     "      - Replace 'destination' with '-e ssh user@host:destination' \n"
+                     "        for a remote destination.\n\n"
+                     "      - \"-n\" option is for a \"dry-run\". Remove it when ready \n"
+                     "        to do the transfer.\n"
+                     
+                     "      rsync -avPR --files-from=relfiles.txt src destination -n \n"
+                     "      - Copy project files to the 'destination' directory, \n"
+                     "        creating sub-directories as necessary.             \n"
+                     "      - 'src' is the path to the root directory of the CASM\n"
+                     "        project you are copying from.                      \n"
+                     "      - Replace 'destination' with '-e ssh user@host:destination' \n"
+                     "        for a remote destination.\n\n"
                      "      - \"-n\" option is for a \"dry-run\". Remove it when ready \n"
                      "        to do the transfer.\n";
                      
@@ -133,7 +164,6 @@ namespace CASM {
       std::cerr << desc << std::endl;
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_UNKNOWN;
-
     }
     
     // find project root
@@ -174,7 +204,7 @@ namespace CASM {
     
     std::vector<fs::path> files;
     auto result = std::back_inserter(files);
-    FileEnumerator enumerate(primclex, settings=="all");
+    FileEnumerator enumerate(primclex, settings=="all", vm.count("relative"));
     
     result = enumerate.basic_files(result);
     result = enumerate.bset_files(result);
