@@ -61,7 +61,7 @@ namespace CASM {
                  std::string sp_name,
                  const Lattice &init_lattice,
                  COORD_TYPE mode,
-                 sd_type _SD_flag = {false, false, false}) :
+                 sd_type _SD_flag = sd_type{false, false, false}) :
       Coordinate(elem1, elem2, elem3, init_lattice, mode),
       specie(sp_name),
       SD_flag(_SD_flag) { };
