@@ -184,6 +184,16 @@ namespace CASM {
 
     // -- Calculations and reference --------
 
+    /// \brief Return 'training_data' directorty path
+    fs::path training_data() const {
+      return m_root / m_calc_dir;
+    }
+    
+    /// \brief Return SCEL path
+    fs::path SCEL() const {
+      return m_root / m_calc_dir / "SCEL";
+    }
+    
     /// \brief Return supercell directory path (scelname has format SCELV_A_B_C_D_E_F)
     fs::path supercell_dir(std::string scelname) const {
       return m_root / m_calc_dir / scelname;
