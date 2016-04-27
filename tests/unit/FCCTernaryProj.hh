@@ -144,8 +144,8 @@ namespace test {
       m_p.popen(cd_and() + "casm bset -u");
       BOOST_CHECK_EQUAL_MESSAGE(m_p.exit_code(), 0, m_p.gets());
 
-      BOOST_CHECK_EQUAL_MESSAGE(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*clust\.json)")), true, m_p.gets());
-      BOOST_CHECK_EQUAL_MESSAGE(std::regex_search(m_p.gets(), m_match, std::regex(R"(Wrote.*)" + title + R"(_Clexulator\.cc)")), true, m_p.gets());
+      BOOST_CHECK_EQUAL_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*clust\.json)")), true, m_p.gets());
+      BOOST_CHECK_EQUAL_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*)" + title + R"(_Clexulator\.cc)")), true, m_p.gets());
 
       BOOST_CHECK_EQUAL_MESSAGE(true, fs::exists(m_dirs.clust(m_set.bset())), m_p.gets());
       BOOST_CHECK_EQUAL_MESSAGE(true, fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.bset())), m_p.gets());
@@ -156,7 +156,7 @@ namespace test {
       // check that --orbits, --clusters, --functions all execute
       //   (derived Proj would have to check the actual results)
       std::string pattern = R"(\*\* Branch [0-9]+ \*\*)";
-      std::regex re(pattern);
+      boost::regex re(pattern);
 
       std::vector<std::string> checks = {
         "casm bset --orbits",
@@ -168,8 +168,8 @@ namespace test {
         m_p.popen(cd_and() + *it);
         str = m_p.gets();
 
-        auto begin = std::sregex_iterator(str.begin(), str.end(), re);
-        auto end = std::sregex_iterator();
+        auto begin = boost::sregex_iterator(str.begin(), str.end(), re);
+        auto end = boost::sregex_iterator();
         auto count = std::distance(begin, end);
 
         BOOST_CHECK_EQUAL(count, 5);

@@ -92,8 +92,8 @@ namespace test {
 
     m_p.popen(cd_and() + "casm sym");
 
-    BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Lattice point group is:\s+)" + lat_pg_name)), true);
-    BOOST_CHECK_EQUAL(std::regex_search(m_p.gets(), m_match, std::regex(R"(Crystal point group is:\s+)" + xtal_pg_name)), true);
+    BOOST_CHECK_EQUAL(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Lattice point group is:\s+)" + lat_pg_name)), true);
+    BOOST_CHECK_EQUAL(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Crystal point group is:\s+)" + xtal_pg_name)), true);
   }
 
   /// \brief Default checks '-d' runs without error

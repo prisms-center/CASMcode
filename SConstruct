@@ -199,7 +199,7 @@ if env['PLATFORM'] == 'darwin':
   linkflags = ['-install_name', '@rpath/libcasm.dylib']
 
 # use boost libraries
-boost_libs = ['boost_system', 'boost_filesystem', 'boost_program_options']
+boost_libs = ['boost_system', 'boost_filesystem', 'boost_program_options', 'boost_regex']
 
 # build casm shared library from all shared objects
 casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'), 
@@ -231,9 +231,6 @@ if 'casm_lib_install' in COMMAND_LINE_TARGETS:
 linkflags = ""
 if env['PLATFORM'] == 'darwin':
   linkflags = ['-install_name', '@rpath/libccasm.dylib']
-
-# use boost libraries
-boost_libs = ['boost_system', 'boost_filesystem', 'boost_program_options']
 
 # build casm shared library from all shared objects
 ccasm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'ccasm'), 
