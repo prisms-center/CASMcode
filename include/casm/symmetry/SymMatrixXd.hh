@@ -19,9 +19,6 @@ namespace CASM {
   private:
     Eigen::MatrixXd mat;
   public:
-    /// fixes alignment of mat
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
     SymMatrixXd(const Eigen::MatrixXd &init_mat) : mat(init_mat) {};
 
     SymOpRepresentation *copy() const override {

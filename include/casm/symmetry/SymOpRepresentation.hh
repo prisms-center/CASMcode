@@ -18,21 +18,30 @@ namespace CASM {
   ///\brief SymOpRepresentation is the base class for anything describes a symmetry operation
   class SymOpRepresentation {
   public:
-    enum symmetry_type {identity_op, mirror_op, glide_op, rotation_op, screw_op, inversion_op, rotoinversion_op, invalid_op};
-
-
+    enum symmetry_type {identity_op,
+                        mirror_op,
+                        glide_op,
+                        rotation_op,
+                        screw_op,
+                        inversion_op,
+                        rotoinversion_op,
+                        invalid_op
+                       };
 
   public:
     SymOpRepresentation() : m_master_group(nullptr), m_op_index(-1) {}
-    SymOpRepresentation(const MasterSymGroup &_master_group, SymGroupRepID _rep_ID, Index _op_index) :
-      m_master_group(&_master_group), m_op_index(_op_index), m_rep_ID(_rep_ID) {}
 
-    //SymOpRepresentation specifies how a symmetry operation acts on a certain type of object.
-    //It is a virtual class, since we don't need to know the specifics of its behavior at higher levels of abstraction
+    SymOpRepresentation(const MasterSymGroup &_master_group, SymGroupRepID _rep_ID, Index _op_index) :
+      SymOpRepresentation(&_master_group, _rep_ID, _op_index) {}
+
+    /// SymOpRepresentation specifies how a symmetry operation acts on a certain type of object.
+    /// It is a virtual class, since we don't need to know the specifics of its behavior at higher levels of abstraction
     virtual ~SymOpRepresentation() {} // = 0;
 
+    /// \brief Make copy of Derived object through Base-class interface
     virtual SymOpRepresentation *copy() const = 0;
 
+    /// \brief Calculates character of the representation (if well-defined)
     virtual double character() const {
       return NAN;
     }
@@ -77,6 +86,7 @@ namespace CASM {
       return *m_master_group;
     }
 
+    /// \brief check if this representation is registered with a MasterSymGroup
     bool has_valid_master() const {
       return m_master_group != nullptr;
     }
@@ -106,14 +116,18 @@ namespace CASM {
     virtual void from_json(const jsonParser &json) = 0;
 
   protected:
+    /// Protected constructor to allow internal construction of masterless symops
+    SymOpRepresentation(MasterSymGroup const *_master_group_ptr, SymGroupRepID _rep_ID, Index _op_index) :
+      m_master_group(_master_group_ptr), m_op_index(_op_index), m_rep_ID(_rep_ID) {}
 
     /// Pointer to the MasterSymGroup where prototype of this SymOp lives
     MasterSymGroup const *m_master_group;
 
+    /// ID of this representation within the master_group.  Default is uninitialized.
+    SymGroupRepID m_rep_ID;
+
     ///Index into MasterSymGroup that specifies the operation
     Index m_op_index;
-
-    SymGroupRepID m_rep_ID;
   };
 
   jsonParser &to_json(const SymOpRepresentation *rep, jsonParser &json);

@@ -95,8 +95,7 @@ namespace CASM {
   //*******************************************************************************************
 
   SymOp SymOp::no_trans() const {
-
-    return SymOp(matrix(), map_error());
+    return SymOp(matrix(), vector_type::Zero(), map_error(), index(), m_master_group);
   }
 
   //*******************************************************************************************
@@ -126,6 +125,7 @@ namespace CASM {
 
     // Simplest case is identity: has no axis and no location
     if(almost_equal(matrix().trace(), 3.)) {
+      result.angle = 0;
       result.op_type = identity_op;
       result.axis = vector_type::Zero();
       result.location = vector_type::Zero();
@@ -134,6 +134,7 @@ namespace CASM {
 
     // second simplest case is inversion: has no axis and location is tau()/2
     if(almost_equal(matrix().trace(), -3.)) {
+      result.angle = 0;
       result.op_type = inversion_op;
       result.axis = vector_type::Zero();
       result.location = tau() / 2.;
