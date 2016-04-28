@@ -81,7 +81,7 @@ namespace CASM {
   /// For each coefficient, sets \code Mint(i,j) = boost::math::iround(Mdouble(i, j)) \endcode
   ///
   template<typename Derived>
-  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::iround<typename Derived::Scalar>)), const Derived >
+  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::iround<typename Derived::Scalar>)) , const Derived >
   iround(const Eigen::MatrixBase<Derived> &val) {
     return val.unaryExpr(std::ptr_fun(boost::math::iround<typename Derived::Scalar>));
   }
@@ -95,7 +95,7 @@ namespace CASM {
   /// For each coefficient, sets \code Mint(i,j) = std::lround(Mdouble(i, j)) \endcode
   ///
   template<typename Derived>
-  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::lround<typename Derived::Scalar>)), const Derived >
+  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::lround<typename Derived::Scalar>)) , const Derived >
   lround(const Eigen::MatrixBase<Derived> &val) {
     return val.unaryExpr(std::ptr_fun(boost::math::lround<typename Derived::Scalar>));
   }
@@ -225,20 +225,22 @@ namespace CASM {
   /// Adapted from Matlab implementation written by John Gilbert (gilbert@parc.xerox.com):
   /// - http://www.mathworks.com/matlabcentral/newsreader/view_thread/13728
   ///
-  template<typename Derived>
-  void smith_normal_form(const Eigen::Ref<const Eigen::Matrix<typename Derived::Scalar, 3, 3> > &M,
-                         Eigen::MatrixBase<Derived> &U,
-                         Eigen::MatrixBase<Derived> &S,
-                         Eigen::MatrixBase<Derived> &V) {
+  template<typename DerivedIn, typename DerivedOut>
+  void smith_normal_form(const Eigen::MatrixBase<DerivedIn> &M,
+                         Eigen::MatrixBase<DerivedOut> &U,
+                         Eigen::MatrixBase<DerivedOut> &S,
+                         Eigen::MatrixBase<DerivedOut> &V) {
 
+    static_assert(std::is_same<typename DerivedIn::Scalar, typename DerivedOut::Scalar>::value,
+                  "ALL ARGUMENTS TO CASM::smith_normal_form() MUST BE BASED ON SAME SCALAR TYPE!");
     using namespace normal_form_impl;
-    typedef typename Derived::Scalar Scalar;
+    typedef typename DerivedOut::Scalar Scalar;
 
-    U = V = Derived::Identity();
+    U = V = DerivedOut::Identity();
     S = M;
     //std::cout << "S is:\n" << S << "\n\n";
 
-    Derived tmat = U;
+    DerivedOut tmat = U;
 
     int i, j;
 
@@ -285,7 +287,7 @@ namespace CASM {
         Scalar q = S(b, b + 1) / S(b, b);
         if(S(b, b + 1) % S(b, b) < 0)
           q -= 1;
-        tmat = Derived::Identity();
+        tmat = DerivedOut::Identity();
         tmat(b + 1, b) = -q;
         S = S * tmat.transpose();
         V = inverse(tmat.transpose()) * V;
@@ -293,7 +295,7 @@ namespace CASM {
         //std::cout << "S after q:\n" << S << '\n';
       }
       else {
-        tmat = Derived::Identity();
+        tmat = DerivedOut::Identity();
         tmat(b, b) = 0;
         tmat(b, b + 1) = 1;
         tmat(b + 1, b + 1) = 0;
@@ -350,8 +352,8 @@ namespace CASM {
       for(j = i + 1; j < 3; j++) {
         if(S(j, j) % S(i, i) == 0) continue;
         //Replace S(i,i), S(j,j) by their gcd and lcm respectively.
-        tmat = Derived::Identity();
-        Derived tmat2(tmat);
+        tmat = DerivedOut::Identity();
+        DerivedOut tmat2(tmat);
         Scalar a(S(i, i)), b(S(j, j)), c, d, tgcf;
         tgcf = extended_gcf(a, b, c, d);
         tmat(i, i) = 1;

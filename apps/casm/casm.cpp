@@ -33,6 +33,7 @@
 #include "bset.hh"
 #include "select.hh"
 #include "casm/app/query.hh"
+#include "casm/app/files.hh"
 #include "run.hh"
 #include "import.hh"
 #include "monte.hh"
@@ -61,6 +62,7 @@ int print_casm_help(std::ostream &out) {
     "  select",
     "  run",
     "  query",
+    "  files",
     "  import",
     "  view",
     "  monte"
@@ -212,6 +214,9 @@ int main(int argc, char *argv[]) {
   else if(args[1] == "query") {
     retcode = query_command(argc, argv);
   }
+  else if(args[1] == "files") {
+    retcode = files_command(argc, argv);
+  }
   else if(args[1] == "import") {
     retcode = import_command(argc, argv);
   }
@@ -260,7 +265,6 @@ int main(int argc, char *argv[]) {
 #include "bset.cc"
 #include "perturb.cc"
 #include "run.cc"
-//#include "query.cc"
 #include "import.cc"
 #include "monte.cc"
 #include "view.cc"
