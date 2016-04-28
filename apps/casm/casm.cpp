@@ -16,6 +16,7 @@
 #include "casm/core"
 
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/external/boost.hh"
 
 // include new casm tool header files here:
 #include "casm/app/casm_functions.hh"
@@ -82,10 +83,9 @@ int print_casm_help(std::ostream &out) {
 
 std::string date_time() {
   auto t = std::time(nullptr);
-  auto tm = *std::localtime(&t);
-  std::ostringstream ss;
-  ss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-  return ss.str();
+  char str[255];
+  strftime(str, sizeof(str), "%Y-%m-%d %H:%M:%S", std::localtime(&t));
+  return std::string(str);
 };
 
 
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
     log.close();
   }
   // timing info:
-  using namespace std::chrono;
+  using namespace boost::chrono;
   steady_clock::time_point start_time, curr_time;
   start_time = steady_clock::now();
 

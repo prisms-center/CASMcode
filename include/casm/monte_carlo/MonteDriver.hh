@@ -2,7 +2,7 @@
 #define CASM_MonteDriver_HH
 
 #include <string>
-#include <chrono>
+#include "casm/external/boost.hh"
 
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
@@ -286,7 +286,7 @@ namespace CASM {
     to_json(m_mc.configdof(), json).write(m_dir.initial_state_json(cond_index));
       
     // timing info:
-    using namespace std::chrono;
+    using namespace boost::chrono;
     steady_clock::time_point start_time, curr_time;
     start_time = steady_clock::now();
 
