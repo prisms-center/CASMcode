@@ -36,9 +36,9 @@ namespace CASM {
 
   int query_command(int argc, char *argv[], PrimClex *_primclex, std::ostream &sout, std::ostream &serr) {
 
-    std::string new_alias, selection_str;
+    std::string selection_str;
     fs::path config_path, out_path;
-    std::vector<std::string> columns, help_opt_vec;
+    std::vector<std::string> columns, help_opt_vec, new_alias;
     po::variables_map vm;
     bool json_flag(false), no_header(false), verbatim_flag(false), gz_flag(false);
 
@@ -48,13 +48,13 @@ namespace CASM {
     ("help,h", po::value<std::vector<std::string> >(&help_opt_vec)->multitoken()->zero_tokens(), "Print general help. Use '--help properties' for a list of query-able properties or '--help operators' for a list of query operators")
     ("config,c", po::value<std::string>(&selection_str)->default_value("MASTER"), "config_list files containing configurations for which to collect energies")
     ("columns,k", po::value<std::vector<std::string> >(&columns)->multitoken()->zero_tokens(), "List of values you want printed as columns")
-    ("learn,l", po::value<std::string>(&new_alias), "Teach casm a new command that will persist within this project. Ex: 'casm query --learn is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")
     ("json,j", po::value(&json_flag)->zero_tokens(), "Print in JSON format (CSV otherwise, unless output extension is .json/.JSON)")
     ("verbatim,v", po::value(&verbatim_flag)->zero_tokens(), "Print exact properties specified, without prepending 'name' and 'selected' entries")
     ("output,o", po::value<fs::path>(&out_path), "Name for output file. Use STDOUT to print results without extra messages. CSV format unless extension is .json/.JSON, or --json option used.")
     ("gzip,z", po::value(&gz_flag)->zero_tokens(), "Write gzipped output file.")
     ("all,a", "Print results all configurations in input selection, whether or not they are selected.")
-    ("no-header,n", po::value(&no_header)->zero_tokens(), "Print without header (CSV only)");
+    ("no-header,n", po::value(&no_header)->zero_tokens(), "Print without header (CSV only)")
+    ("alias", po::value<std::vector<std::string> >(&new_alias)->multitoken(), "Create an alias for a query that will persist within this project. Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
 
 
     try {
@@ -100,7 +100,7 @@ namespace CASM {
       return ERR_UNKNOWN;
     }
 
-    if(!vm.count("learn") && !vm.count("columns")) {
+    if(!vm.count("alias") && !vm.count("columns")) {
       sout << std::endl << desc << std::endl;
     }
 
@@ -118,7 +118,7 @@ namespace CASM {
     }
 
     fs::path alias_file = root / ".casm/query_alias.json";
-    if(vm.count("learn")) {
+    if(vm.count("alias")) {
       jsonParser mjson;
       if(fs::exists(alias_file)) {
         mjson.read(alias_file);
@@ -126,14 +126,20 @@ namespace CASM {
       else {
         mjson.put_obj();
       }
-      auto it = std::find(new_alias.cbegin(), new_alias.cend(), '=');
-      std::string alias_name = boost::trim_copy(std::string(new_alias.cbegin(), it));
-      std::string alias_command = boost::trim_copy(std::string(++it, new_alias.cend()));
+      std::string new_alias_str;
+      for(auto const &substr : new_alias) {
+        new_alias_str += substr;
+      }
+
+      auto it = std::find(new_alias_str.cbegin(), new_alias_str.cend(), '=');
+      std::string alias_name = boost::trim_copy(std::string(new_alias_str.cbegin(), it));
+      std::string alias_command = boost::trim_copy(std::string(++it, new_alias_str.cend()));
       try {
         ConfigIOParser::add_custom_formatter(datum_formatter_alias<Configuration>(alias_name, alias_command));
       }
       catch(std::runtime_error &e) {
-        serr << "That's confusing. I can't learn malformed input:\n"
+        serr << "Unable to learn alias\n"
+             << "   \"" << alias_name << " = " << alias_command << "\"\n"
              << e.what() << std::endl;
         return 1;
       }

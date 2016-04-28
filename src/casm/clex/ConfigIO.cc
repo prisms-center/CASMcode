@@ -316,6 +316,7 @@ namespace CASM {
     }
 
 
+    /*
     GenericConfigFormatter<bool> selected() {
       return GenericConfigFormatter<bool>("selected",
                                           "Specifies whether configuration is selected (1/true) or not (0/false)",
@@ -323,6 +324,7 @@ namespace CASM {
         return config.selected();
       });
     }
+    */
 
     GenericConfigFormatter<double> relaxed_energy() {
       return GenericConfigFormatter<double>(
@@ -459,7 +461,7 @@ namespace CASM {
       is_calculated(),
       is_canonical(),
       is_primitive(),
-      selected(),
+      //selected(),
       selected_in(),
       OnClexHull(),
       OnHull()
