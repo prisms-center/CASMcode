@@ -78,7 +78,7 @@ namespace test {
   protected:
 
     Popen m_p;
-    std::smatch m_match;
+    boost::smatch m_match;
     DirectoryStructure m_dirs;
     ProjectSettings m_set;
 
@@ -119,11 +119,11 @@ namespace test {
     m_p.popen(cd_and() + "casm composition --select 0");
 
     for(auto it = begin; it != end; ++it) {
-      BOOST_CHECK_EQUAL_MESSAGE(std::regex_search(m_p.gets(), m_match, std::regex(*it)), true, m_p.gets());
+      BOOST_CHECK_EQUAL_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(*it)), true, m_p.gets());
     }
 
     BOOST_CHECK_EQUAL_MESSAGE(
-      std::regex_search(m_p.gets(), m_match, std::regex(R"(Currently selected composition axes: 0)")),
+      boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Currently selected composition axes: 0)")),
       true,
       m_p.gets()
     );

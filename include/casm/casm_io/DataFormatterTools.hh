@@ -2,7 +2,6 @@
 #define DATAFORMATTERTOOLS_HH
 #include <numeric>
 #include <iterator>
-#include <regex>
 #include "casm/external/boost.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/json_io/container.hh"
@@ -239,8 +238,8 @@ namespace CASM {
     [](const std::vector<std::string> &vec)->bool{
       if(vec.size() != 2)
         throw std::runtime_error("Operator re('input_string','regex_pattern') must receive exactly 2 values!");
-      std::regex e(boost::trim_copy_if(vec[1], boost::is_any_of(" '")));
-      return std::regex_match(vec[0], e);
+      boost::regex e(boost::trim_copy_if(vec[1], boost::is_any_of(" '")));
+      return boost::regex_match(vec[0], e);
     });
   }
 
@@ -256,8 +255,8 @@ namespace CASM {
     [](const std::vector<std::string> &vec)->bool{
       if(vec.size() != 2)
         throw std::runtime_error("Operator re('input_string','regex_pattern') must receive exactly 2 values!");
-      std::regex e(boost::trim_copy_if(vec[1], boost::is_any_of(" '")));
-      return std::regex_search(vec[0], e);
+      boost::regex e(boost::trim_copy_if(vec[1], boost::is_any_of(" '")));
+      return boost::regex_search(vec[0], e);
     });
   }
 
