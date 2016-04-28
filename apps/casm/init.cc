@@ -223,11 +223,17 @@ namespace CASM {
       }
     }
 
-    std::cout << "Initializing CASM project '" << prim.title << "'" << std::endl;
-
-    ProjectBuilder builder(root, prim.title, "formation_energy");
-    builder.build();
-
+    try {
+      std::cout << "Initializing CASM project '" << prim.title << "'" << std::endl;
+      ProjectBuilder builder(root, prim.title, "formation_energy");
+      builder.build();
+    }
+    catch(std::runtime_error &e) {
+      std::cerr << "ERROR: Could not build CASM project.\n";
+      std::cerr << e.what() << std::endl;
+      return ERR_INVALID_INPUT_FILE;
+    }
+    
     std::cout << "  DONE" << std::endl;
     std::cout << std::endl;
 

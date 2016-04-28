@@ -25,7 +25,19 @@ namespace CASM {
     ProjectBuilder(fs::path _root, std::string _name, std::string _cluster_expansion) :
       m_root(_root),
       m_name(_name),
-      m_clex(_cluster_expansion) {}
+      m_clex(_cluster_expansion) {
+      
+      /// check if m_name is suitable:
+      if(!boost::regex_match(m_name, boost::regex(R"([_a-zA-Z]\w*)"))) {
+        throw std::runtime_error(
+          std::string("Error constructing ProjectBuilder.\n") +
+            "  Invalid Project name: '" + m_name + "'\n"
+            "  Must be a valid C++ identifier: \n"
+            "  - only alphanumeric characters and underscores allowed\n"
+            "  - cannot start with a number");
+      }
+    
+    }
 
 
     ProjectBuilder &set_bset(std::string _bset) {
