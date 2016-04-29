@@ -1,8 +1,6 @@
 #ifndef CASM_BOOST_INCLUDE
 #define CASM_BOOST_INCLUDE
 
-#define BOOST_NO_CXX11_SCOPED_ENUMS
-
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
