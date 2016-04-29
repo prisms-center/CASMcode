@@ -130,7 +130,7 @@ class Relax(object):
             raise vasp.VaspError("Relax.setup failed. No SPECIES file found in CASM project.")
 
         # Find optional input files
-            extra_input_files = []
+        extra_input_files = []
         for s in self.settings["extra_input_files"]:
             extra_input_files.append(casm.settings_path(s,self.casm_settings["curr_calctype"],self.configdir))
             if extra_input_files[-1] is None:
