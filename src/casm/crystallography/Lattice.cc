@@ -1401,9 +1401,9 @@ namespace CASM {
 
     Eigen::Matrix3d start = lat.lat_column_mat();
     Eigen::Matrix3d best = start;
-
+    bool is_symm = almost_equal(best, best.transpose(), tol);
     // rotate cell so that the lattice vectors are mostly aligned
-    //    with Cartesian coordinate axes...
+    //    with Cartesian coordinate axes... and the lattice matrix is symmetric (if possible)
     for(int i = 0; i < point_grp.size(); i++) {
 
       Eigen::Matrix3d tmp = point_grp[i].matrix() * start;
@@ -1411,6 +1411,16 @@ namespace CASM {
         continue;
 
       bool better = false;
+
+      bool tmp_sym = (almost_equal(tmp, tmp.transpose(), tol));
+      if(is_symm) {
+        if(!tmp_sym)
+          continue;
+      }
+      else if(tmp_sym) {
+        best = tmp;
+        continue;
+      }
 
       if(almost_equal(best(0, 0), tmp(0, 0), tol)) {
         if(almost_equal(best(1, 0), tmp(1, 0), tol)) {
