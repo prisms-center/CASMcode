@@ -8,9 +8,6 @@ Import('env', 'casm_lib', 'casm', 'build_lib_paths')
 
 lenv = env.Clone(CPPPATH = env['CPPPATH'] + [os.getcwd()])
 
-if os.environ.has_key('DYLD_FALLBACK_LIBRARY_PATH'):
-  print "$$$$$$", os.environ['DYLD_FALLBACK_LIBRARY_PATH']
-
 common_obj = lenv.Object('Common.cpp')
 unit_obj = lenv.Object('unit_test.cpp')
 test_src = glob.glob('*/*_test.cpp')
