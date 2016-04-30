@@ -1,7 +1,7 @@
 # http://www.scons.org/doc/production/HTML/scons-user.html
 # This is: Sconstruct
 
-import os, glob, copy
+import os, glob, copy, shutil
 
 from os.path import join
 
@@ -315,6 +315,14 @@ env.Alias('install', installable)
 if 'install' in COMMAND_LINE_TARGETS:
     env['IS_INSTALL'] = 1
 
+# scons is not checking if any header files changed
+# if we're supposed to install them, rm -r include_dir/casm
+would_install_include = ['casm_include_install', 'install']
+if [i for i in would_install_include if i in COMMAND_LINE_TARGETS]:
+  path = os.path.join(include_dir, 'casm')
+  if os.path.exists(path):
+    print "rm", path
+    shutil.rmtree(path)
 
 ##### Clean up instructions
 
