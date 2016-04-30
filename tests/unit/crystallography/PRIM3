@@ -1,0 +1,9 @@
+Simple cubic w/ extra site (invalid PRIM)
+1.0                          
+2.0 0 0                    
+0 2.0 0                    
+0 0 2.0                    
+1                            
+D                            
+0.00 0.00 0.00 A B C
+0.50 0.50 0.50 A B C
