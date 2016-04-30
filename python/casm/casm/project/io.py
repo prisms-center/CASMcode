@@ -48,6 +48,6 @@ def write_eci(proj, eci, proj_settings=None, verbose=False):
     
     if verbose:
       print "Writing:", filename
-      with open(filename, 'w') as f:
-        f.write(json.dumps(j, indent=2, cls=casm.NoIndentEncoder))
+    with open(filename, 'w') as f:
+      f.write(json.dumps(j, indent=2, cls=casm.NoIndentEncoder))
 

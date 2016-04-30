@@ -16,7 +16,7 @@ setup(name='casm',
       version='{0}',
       url='{1}',
       description='An interface between CASM and DFT codes.',
-      packages=['casm','casm.vaspwrapper'],
+      packages=['casm','casm.vaspwrapper', 'casm.learn', 'casm.project', 'casm.plotting'],
       scripts=glob.glob('scripts/*')
       )
 """.format(version, url)

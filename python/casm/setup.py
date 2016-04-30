@@ -1,9 +1,9 @@
 from distutils.core import setup
 import glob
 setup(name='casm',
-      version='0.1.1_strain_enum',
-      url='https://github.com/jcthomas/CASM_JCT.git',
+      version='0.2.X',
+      url='',
       description='An interface between CASM and DFT codes.',
-      packages=['casm','casm.vaspwrapper'],
+      packages=['casm','casm.vaspwrapper', 'casm.learn', 'casm.project', 'casm.plotting'],
       scripts=glob.glob('scripts/*')
       )
