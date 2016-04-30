@@ -919,10 +919,8 @@ namespace CASM {
 
     SD_flag = false;
     getline(stream, title);
-    if(title.back() == '\r') {
-      std::cerr << "ERROR: Structure file is formatted for DOS. Please convert to Unix format. (This can be done with the dos2unix command.)" << std::endl;
-      exit(1);
-    }
+    if(title.back() == '\r')
+      throw std::runtime_error(std::string("Structure file is formatted for DOS. Please convert to Unix format. (This can be done with the dos2unix command.)"));
 
     m_lattice.read(stream);
 
@@ -968,8 +966,7 @@ namespace CASM {
         ch = stream.peek();
       }
       else {
-        std::cerr << "Error in line 6 of structure input file. Line 6 of structure input file should contain the number of sites." << std::endl;
-        exit(1);
+        throw std::runtime_error(std::string("Error in line 6 of structure input file. Line 6 of structure input file should contain the number of sites."));
       }
     }
     stream.get(ch);
@@ -998,12 +995,10 @@ namespace CASM {
       input_mode.set(CART);
     }
     else if(!SD_flag) {
-      std::cerr << "Error in line 7 of structure input file. Line 7 of structure input file should specify Direct, Cartesian, or Selective Dynamics." << std::endl;
-      exit(1);
+      throw std::runtime_error(std::string("Error in line 7 of structure input file. Line 7 of structure input file should specify Direct, Cartesian, or Selective Dynamics."));
     }
     else if(SD_flag) {
-      std::cerr << "Error in line 8 of structure input file. Line 8 of structure input file should specify Direct or Cartesian when Selective Dynamics is on." << std::endl;
-      exit(1);
+      throw std::runtime_error(std::string("Error in line 8 of structure input file. Line 8 of structure input file should specify Direct or Cartesian when Selective Dynamics is on."));
     }
 
     stream.ignore(1000, '\n');
@@ -1047,8 +1042,7 @@ namespace CASM {
     Eigen::Vector3d coord;
     tmp_stream >> coord;
     if(tmp_stream.good()) {
-      std::cerr << "ERROR: too many sites listed in structure input file." << std::endl;
-      exit(1);
+      throw std::runtime_error(std::string("ERROR: too many sites listed in structure input file."));
     }
 
     update();
