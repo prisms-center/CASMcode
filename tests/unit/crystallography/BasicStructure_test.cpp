@@ -190,6 +190,15 @@ BOOST_AUTO_TEST_CASE(PRIM2Test) {
   prim2_read_test(struc);
 }
 
+BOOST_AUTO_TEST_CASE(PRIM3Test) {
+
+  fs::path testdir = "tests/unit/crystallography";
+
+  // Read in an incorrectly formatted PRIM and check that an exception is thrown
+  BOOST_CHECK_THROW(BasicStructure<Site>(fs::path(testdir / "PRIM3")), std::runtime_error);
+
+}
+
 BOOST_AUTO_TEST_CASE(POS1Test) {
 
   fs::path testdir = "tests/unit/crystallography";
