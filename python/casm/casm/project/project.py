@@ -7,7 +7,7 @@ if 'LIBCASM' in os.environ:
 elif 'CASMPREFIX' in os.environ:
   libname = glob.glob(os.path.join(os.environ['CASMPREFIX'], 'lib', 'libcasm.*'))[0]
 else:
-  libname = glob.glob(os.path.join('usr', 'local', 'lib', 'libcasm.*'))[0]
+  libname = glob.glob(os.path.join('/usr', 'local', 'lib', 'libcasm.*'))[0]
 lib_casm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
 
 if 'LIBCCASM' in os.environ:
@@ -15,7 +15,7 @@ if 'LIBCCASM' in os.environ:
 elif 'CASMPREFIX' in os.environ:
   libname = glob.glob(os.path.join(os.environ['CASMPREFIX'], 'lib', 'libccasm.*'))[0]
 else:
-  libname = glob.glob(os.path.join('usr', 'local', 'lib', 'libccasm.*'))[0]
+  libname = glob.glob(os.path.join('/usr', 'local', 'lib', 'libccasm.*'))[0]
 lib_ccasm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
 
 #### Argument types
