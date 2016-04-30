@@ -416,7 +416,16 @@ class Relax(object):
 
     def finalize(self):
       if self.is_converged():
-        self.report_properties()
+        # write properties.calc.json
+        vaspdir = os.path.join(self.calcdir, "run.final")
+	super_poscarfile = os.path.join(self.configdir,"POS")
+        speciesfile = casm.settings_path("SPECIES",self.casm_settings["curr_calctype"],self.configdir)
+        output = self.properties(vaspdir, super_poscarfile, speciesfile)
+        outputfile = os.path.join(self.calcdir, "properties.calc.json")
+        with open(outputfile, 'w') as file:
+            file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
+        print "Wrote " + outputfile
+        sys.stdout.flush()
         self.report_status('complete')
 
     def is_converged(self):
@@ -446,23 +455,23 @@ class Relax(object):
 
       return True
 
-    def report_properties(self):
+    @staticmethod
+    def properties(vaspdir, super_poscarfile = None, speciesfile = None):
         """Report results to properties.calc.json file in configuration directory, after checking for electronic convergence."""
 
         output = dict()
-        vrun = vasp.io.Vasprun( os.path.join(self.calcdir, "run.final", "vasprun.xml") )
+        vrun = vasp.io.Vasprun( os.path.join(vaspdir, "vasprun.xml") )
 
         # the calculation is run on the 'sorted' POSCAR, need to report results 'unsorted'
 
-        if self.sort:
-            super_poscarfile = os.path.join(self.configdir,"POS")
-            speciesfile = casm.settings_path("SPECIES",self.casm_settings["curr_calctype"],self.configdir)
+        if (super_poscarfile is not None) and (speciesfile is not None):
             species_settings = vasp.io.species_settings(speciesfile)
             super = vasp.io.Poscar(super_poscarfile, species_settings)
             unsort_dict = super.unsort_dict()
         else:
             # fake unsort_dict (unsort_dict[i] == i)
             unsort_dict = dict(zip(range(0,len(vrun.basis)),range(0,len(vrun.basis))))
+	    super = vasp.io.Poscar(os.path.join(vaspdir,"POSCAR"))
 
         # unsort_dict:
         #   Returns 'unsort_dict', for which: unsorted_dict[orig_index] == sorted_index;
@@ -488,10 +497,6 @@ class Relax(object):
 
         output["relaxed_energy"] = vrun.total_energy
 
+	return output
 
-        # write properties.calc.json
-        outputfile = os.path.join(self.calcdir, "properties.calc.json")
-        with open(outputfile, 'w') as file:
-            file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
-        print "Wrote " + outputfile
-        sys.stdout.flush()
+
