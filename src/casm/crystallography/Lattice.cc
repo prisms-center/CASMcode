@@ -96,6 +96,7 @@ namespace CASM {
     stream >> scale;
     stream >> m_lat_mat;
     m_lat_mat *= scale;
+    m_lat_mat.transposeInPlace();
     m_inv_lat_mat = m_lat_mat.inverse();
 
     return;

@@ -8,6 +8,6 @@
 using namespace CASM;
 
 const std::string &CASM::version() {
-  static const std::string &ver = "0.2.X";
+  static const std::string &ver = "0.2.X_read_lattice";
   return ver;
 };
