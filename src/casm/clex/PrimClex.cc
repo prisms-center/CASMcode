@@ -608,15 +608,15 @@ namespace CASM {
 
     // also write supercells/supercell_path directories with LAT files
     try {
-      fs::create_directory("training_data");
+      fs::create_directory(get_path() / "training_data");
     }
     catch(const fs::filesystem_error &ex) {
       std::cerr << "Error in PrimClex::print_supercells()." << std::endl;
       std::cerr << ex.what() << std::endl;
     }
 
-    fs::ofstream scelfile(fs::path("training_data") / "SCEL");
-    
+    fs::ofstream scelfile(get_path() / "training_data" / "SCEL");
+
     print_supercells(scelfile);
 
     for(Index i = 0; i < supercell_list.size(); i++) {

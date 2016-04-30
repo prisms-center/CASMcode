@@ -2,7 +2,7 @@
 #define CASM_MonteDriver_HH
 
 #include <string>
-#include <chrono>
+#include "casm/external/boost.hh"
 
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
@@ -43,10 +43,10 @@ namespace CASM {
 
     ///Return the appropriate std::vector of conditions to visit based from settings. Use for construction.
     std::vector<CondType> make_conditions_list(const PrimClex &primclex, const SettingsType &settings);
-    
+
     ///Converge the MonteCarlo for conditions 'cond_index'
     void single_run(Index cond_index);
-    
+
     ///Check for existing calculations to find starting conditions
     Index _find_starting_conditions() const;
 
@@ -67,11 +67,11 @@ namespace CASM {
     bool m_debug;
 
     /// target for log messages
-    std::ostream& sout;
-    
+    std::ostream &sout;
+
     /// describes where to write output
     MonteCarloDirectoryStructure m_dir;
-    
+
   };
 
 
@@ -89,7 +89,7 @@ namespace CASM {
     m_debug(m_settings.debug()),
     sout(_sout),
     m_dir(m_settings.output_directory()) {
-  
+
   }
 
   /// \brief Run calculations for all conditions, outputting data as you finish each one
@@ -105,7 +105,7 @@ namespace CASM {
     if(debug()) {
       sout << "Checking for existing calculations..." << std::endl;
     }
-    
+
     if(!m_settings.write_json() && !m_settings.write_csv()) {
       throw std::runtime_error(
         std::string("No valid monte carlo output format.\n") +
@@ -118,7 +118,7 @@ namespace CASM {
 
     // check if we'll be repeating any calculations that already have files written
     std::vector<Index> repeats;
-    for(Index i=start_i; i<m_conditions_list.size(); ++i) {
+    for(Index i = start_i; i < m_conditions_list.size(); ++i) {
       if(fs::exists(m_dir.conditions_dir(i))) {
         repeats.push_back(i);
       }
@@ -147,11 +147,11 @@ namespace CASM {
       if(m_settings.is_equilibration_passes_first_run()) {
         auto equil_passes = m_settings.equilibration_passes_first_run();
         sout << "Begin " << equil_passes << " equilibration passes..." << std::endl;
-        
+
         jsonParser json;
         fs::create_directories(m_dir.conditions_dir(0));
         to_json(m_mc.configdof(), json).write(m_dir.initial_state_firstruneq_json(0));
-        
+
         MonteCounter equil_counter(m_settings, m_mc.steps_per_pass());
         while(equil_counter.pass() != equil_passes) {
           monte_carlo_step(m_mc);
@@ -164,7 +164,7 @@ namespace CASM {
     else {
       // read end state of previous condition
       ConfigDoF configdof = m_mc.configdof();
-      from_json(configdof, jsonParser(m_dir.final_state_json(start_i-1)));
+      from_json(configdof, jsonParser(m_dir.final_state_json(start_i - 1)));
       m_mc.set_configdof(configdof);
     }
 
@@ -183,7 +183,7 @@ namespace CASM {
   ///
   template<typename RunType>
   Index MonteDriver<RunType>::_find_starting_conditions() const {
-    
+
     Index start_i = 0;
     Index start_max = m_conditions_list.size();
     Index start_json = m_settings.write_json() ? 0 : start_max;
@@ -194,12 +194,12 @@ namespace CASM {
     std::stringstream ss;
 
     // can start with condition i+1 if results (i) and final_state.json (i) exist
-      
-    // check JSON files 
+
+    // check JSON files
     if(m_settings.write_json() && fs::exists(m_dir.results_json())) {
-        
+
       json_results.read(m_dir.results_json());
-      
+
       // can start with i+1 if results[i] and final_state.json (i) exist
       while(json_results.begin()->size() > start_json && fs::exists(m_dir.final_state_json(start_i)) && start_i < start_max) {
         ++start_json;
@@ -207,12 +207,12 @@ namespace CASM {
 
       start_max = start_json;
     }
-    
-    // check CSV files 
+
+    // check CSV files
     if(m_settings.write_csv() && fs::exists(m_dir.results_csv())) {
-        
+
       csv_results.open(m_dir.results_csv());
-      
+
       // read header
       std::getline(csv_results, str);
       ss << str << "\n";
@@ -236,7 +236,7 @@ namespace CASM {
 
     // for JSON
     if(m_settings.write_json() && fs::exists(m_dir.results_json())) {
-      
+
       // if results size > start_i, must fix results by removing results that will be re-run
       jsonParser finished_results;
       for(auto it = json_results.begin(); it != json_results.end(); ++it) {
@@ -260,13 +260,13 @@ namespace CASM {
 
   template<typename RunType>
   void MonteDriver<RunType>::single_run(Index cond_index) {
-    
+
     fs::create_directories(m_dir.conditions_dir(cond_index));
     m_mc.set_conditions(m_conditions_list[cond_index]);
-      
+
     // perform any requested explicit equilibration passes
     if(m_settings.is_equilibration_passes_each_run()) {
-      
+
       jsonParser json;
       to_json(m_mc.configdof(), json).write(m_dir.initial_state_runeq_json(cond_index));
       auto equil_passes = m_settings.equilibration_passes_each_run();
@@ -280,13 +280,13 @@ namespace CASM {
 
       sout << "  DONE" << std::endl;
     }
-    
+
     // initial state (after any equilibriation passes)
     jsonParser json;
     to_json(m_mc.configdof(), json).write(m_dir.initial_state_json(cond_index));
-      
+
     // timing info:
-    using namespace std::chrono;
+    using namespace boost::chrono;
     steady_clock::time_point start_time, curr_time;
     start_time = steady_clock::now();
 
@@ -354,15 +354,15 @@ namespace CASM {
     // timing info:
     curr_time = steady_clock::now();
     float s = duration_cast<duration<float> >(curr_time - start_time).count();
-    sout << "Run time: " << s << " (s),  " << s/run_counter.pass() << " (s/pass),  " << s/(run_counter.pass()*run_counter.steps_per_pass() + run_counter.step()) << "(s/step)" << std::endl;
-    
+    sout << "Run time: " << s << " (s),  " << s / run_counter.pass() << " (s/pass),  " << s / (run_counter.pass()*run_counter.steps_per_pass() + run_counter.step()) << "(s/step)" << std::endl;
+
     to_json(m_mc.configdof(), json).write(m_dir.final_state_json(cond_index));
     //start_time = curr_time;
-    
+
     sout << "Writing output files..." << std::endl;
     m_mc.write_results(cond_index);
     sout << "  DONE" << std::endl << std::endl;
-    
+
     return;
   }
 
@@ -385,65 +385,65 @@ namespace CASM {
 
     switch(m_drive_mode) {
 
-      case Monte::DRIVE_MODE::SINGLE: {
-        
-        // read existing conditions, and check if input conditions have already
-        // been calculated. If not, add to list.
-        CondType init_cond(settings.initial_conditions());
-        bool already_calculated = false;
-        int i=0;
-        while(fs::exists(m_dir.conditions_json(i))) {
-          
-          CondType existing;
-          jsonParser json(m_dir.conditions_json(i));
-          from_json(existing, primclex.composition_axes(), json);
-          conditions_list.push_back(existing);
-          if(existing == init_cond) {
-            already_calculated = true;
-          }
-          ++i;
-          
+    case Monte::DRIVE_MODE::SINGLE: {
+
+      // read existing conditions, and check if input conditions have already
+      // been calculated. If not, add to list.
+      CondType init_cond(settings.initial_conditions());
+      bool already_calculated = false;
+      int i = 0;
+      while(fs::exists(m_dir.conditions_json(i))) {
+
+        CondType existing;
+        jsonParser json(m_dir.conditions_json(i));
+        from_json(existing, primclex.composition_axes(), json);
+        conditions_list.push_back(existing);
+        if(existing == init_cond) {
+          already_calculated = true;
         }
-      
-        if(!already_calculated) {
-          conditions_list.push_back(init_cond);
-        }
-        return conditions_list;
+        ++i;
+
       }
 
-      case Monte::DRIVE_MODE::INCREMENTAL: {
-
-        CondType init_cond(settings.initial_conditions());
-        CondType final_cond(settings.final_conditions());
-        CondType cond_increment(settings.incremental_conditions());
-
+      if(!already_calculated) {
         conditions_list.push_back(init_cond);
+      }
+      return conditions_list;
+    }
 
-        CondType incrementing_cond = init_cond;
+    case Monte::DRIVE_MODE::INCREMENTAL: {
+
+      CondType init_cond(settings.initial_conditions());
+      CondType final_cond(settings.final_conditions());
+      CondType cond_increment(settings.incremental_conditions());
+
+      conditions_list.push_back(init_cond);
+
+      CondType incrementing_cond = init_cond;
+      incrementing_cond += cond_increment;
+
+      int num_increments = (final_cond - init_cond) / cond_increment;
+
+      for(int i = 0; i < num_increments; i++) {
+        conditions_list.push_back(incrementing_cond);
         incrementing_cond += cond_increment;
-
-        int num_increments = (final_cond - init_cond) / cond_increment;
-
-        for(int i = 0; i < num_increments; i++) {
-          conditions_list.push_back(incrementing_cond);
-          incrementing_cond += cond_increment;
-        }
-
-        if(conditions_list.size() == 1) {
-          std::cerr << "WARNING in MonteDriver::initialize" << std::endl;
-          std::cerr << "You specified incremental drive mode, but the specified increment resulted in single drive mode behavior." << std::endl;
-          std::cerr << "Only the initial condition will be calculated! (Is your increment too big or are you incrementing too many things?)" << std::endl;
-        }
-
-        return conditions_list;
       }
 
-      default: {
-        throw std::runtime_error(
-          std::string("ERROR in MonteDriver::initialize\n") +
-          "  An invalid drive mode was given.");
-
+      if(conditions_list.size() == 1) {
+        std::cerr << "WARNING in MonteDriver::initialize" << std::endl;
+        std::cerr << "You specified incremental drive mode, but the specified increment resulted in single drive mode behavior." << std::endl;
+        std::cerr << "Only the initial condition will be calculated! (Is your increment too big or are you incrementing too many things?)" << std::endl;
       }
+
+      return conditions_list;
+    }
+
+    default: {
+      throw std::runtime_error(
+        std::string("ERROR in MonteDriver::initialize\n") +
+        "  An invalid drive mode was given.");
+
+    }
 
     }
   }

@@ -24,7 +24,7 @@ unit_test = lenv.Program(os.path.join(lenv['UNIT_TEST_BIN'],'unit_test'),
                         [unit_obj, test_obj, common_obj],
                         LINKFLAGS=linkflags,
                         LIBPATH=build_lib_paths,
-                        LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem', 'boost_regex', 'dl', 'casm'])
+                        LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem', 'boost_regex', 'boost_chrono', 'dl', 'casm'])
 Depends(unit_test, [casm_lib, casm])
 
 # Execute 'scons unit' to compile & run all unit tests

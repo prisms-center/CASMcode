@@ -1,11 +1,10 @@
 #ifndef CASM_BOOST_INCLUDE
 #define CASM_BOOST_INCLUDE
 
-#define BOOST_NO_CXX11_SCOPED_ENUMS
-
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
+#include <boost/chrono.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/container/stable_vector.hpp>
 #include <boost/tokenizer.hpp>

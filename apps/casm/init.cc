@@ -169,8 +169,9 @@ namespace CASM {
     if(!is_standard_niggli) {
       if(!vm.count("force")) {
         if(!is_standard_niggli) {
-          std::cerr << "ERROR: The structure in the prim.json file is not the niggli cell in the CASM standard\n" <<
-                    "       orientation. Writing the suggested structure to 'prim.niggli.json'.\n\n";
+          std::cerr << "ERROR: The structure in the prim.json file is not the niggli cell in the CASM standard\n"
+                    << "       orientation. Writing the suggested structure to 'prim.niggli.json'.\n\n"
+                    << "       If you want to use the current prim.json anyway, re-run with the --force option.\n";
         }
 
         Structure tmp(true_prim);
@@ -184,11 +185,7 @@ namespace CASM {
         json.print(primfile);
         primfile.close();
 
-        if(!is_standard_niggli) {
-          std::cerr << "If you want to use the current prim.json anyway, re-run with the --force option. Some\n" <<
-                    "CASM features cannot be used with a non-reduced starting structure.\n";
-          return ERR_INVALID_INPUT_FILE;
-        }
+        return ERR_INVALID_INPUT_FILE;
       }
       else {
         std::cerr << "WARNING: The structure in the prim.json file is not the standard orientation Niggli\n"
@@ -233,7 +230,7 @@ namespace CASM {
       std::cerr << e.what() << std::endl;
       return ERR_INVALID_INPUT_FILE;
     }
-    
+
     std::cout << "  DONE" << std::endl;
     std::cout << std::endl;
 
