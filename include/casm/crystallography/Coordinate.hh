@@ -48,13 +48,13 @@ namespace CASM {
     Coordinate_impl::FracCoordinate frac();
 
     /// \brief const Access the fractional coordinate vector
-    inline
+
     const vector_type &frac() const {
       return m_frac_coord;
     }
 
     /// \brief user override to force const Access the fractional coordinate vector
-    inline
+
     const vector_type &const_frac() const {
       return m_frac_coord;
     }
@@ -68,7 +68,6 @@ namespace CASM {
     }
 
     /// \brief user override to force const Access the fractional coordinate vector
-    inline
     const double &const_frac(size_type index) const {
       return m_frac_coord(index);
     }
@@ -77,13 +76,11 @@ namespace CASM {
     Coordinate_impl::CartCoordinate cart();
 
     /// \brief const Access the Cartesian coordinate vector
-    inline
     const vector_type &cart() const {
       return m_cart_coord;
     }
 
     /// \brief user override to force const Access the Cartesian coordinate vector
-    inline
     const vector_type &const_cart() const {
       return m_cart_coord;
     }
@@ -108,11 +105,9 @@ namespace CASM {
 
     bool operator==(const Coordinate &RHS) const; //Ivy
 
-    inline
     bool operator!=(const Coordinate &RHS) const {
       return !(*this == RHS);
     }
-
 
     /// Returns true if this->min_dist(RHS)<tol
     bool compare(const Coordinate &RHS, double tol = TOL) const;
@@ -152,18 +147,15 @@ namespace CASM {
     ///update the home lattice of a coordinate, keeping representation specified mode
     void set_lattice(const Lattice &new_lat, COORD_TYPE mode); //John G, use to specify whether to keep CART or FRAC the same, when assigning a new lattice
 
-    inline
     void set_basis_ind(Index _basis_ind) {
       m_basis_ind = _basis_ind;
     }
 
-    inline
     Index basis_ind() const {
       return m_basis_ind;
     }
 
     ///Check the home lattice of the coordinate
-    inline
     const Lattice &home() const {
       assert(m_home && "Coordinate doesn't have valid home lattice");
       return *m_home;
@@ -198,35 +190,35 @@ namespace CASM {
     void from_json(const jsonParser &json);
 
   private:
-    inline
+
     void _update_cart() {
       m_cart_coord = home().lat_column_mat() * m_frac_coord;
     }
 
-    inline
+
     void _update_frac() {
       m_frac_coord = home().inv_lat_column_mat() * m_cart_coord;
     }
 
-    inline
+
     void _set_frac(const Eigen::Ref<const vector_type> &f) {
       m_frac_coord = f;
       _update_cart();
     }
 
-    inline
+
     void _set_frac(size_type ind, double val) {
       m_frac_coord[ind] = val;
       _update_cart();
     }
 
-    inline
+
     void _set_cart(const Eigen::Ref<const vector_type> &c) {
       m_cart_coord = c;
       _update_frac();
     }
 
-    inline
+
     void _set_cart(size_type ind, double val) {
       m_cart_coord[ind] = val;
       _update_frac();

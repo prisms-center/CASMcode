@@ -140,9 +140,7 @@ namespace CASM {
 
   double Coordinate::min_dist(const Coordinate &neighbor) const {
     vector_type tfrac(frac() - neighbor.frac());
-
-    for(int i = 0; i < 3; i++)
-      tfrac(i) -= round(tfrac(i));
+    tfrac -= lround(tfrac).cast<double>();
 
     return (home().lat_column_mat() * tfrac).norm();
   }
@@ -159,14 +157,9 @@ namespace CASM {
   double Coordinate::min_dist(const Coordinate &neighbor, Coordinate &translation) const {
     translation.m_home = m_home;
 
-    translation.m_frac_coord = (frac() - neighbor.frac());
+    translation.frac() = lround(frac() - neighbor.frac()).cast<double>();
 
-    for(int i = 0; i < 3; i++)
-      translation.m_frac_coord(i) -= round(translation.m_frac_coord(i));
-
-    translation._update_cart();
-
-    return length(translation.const_cart());
+    return ((const_cart() - neighbor.const_cart()) - translation.const_cart()).norm();
   }
 
   //********************************************************************
@@ -235,18 +228,18 @@ namespace CASM {
   bool Coordinate::within() {
     if(PERIODICITY_MODE::IS_LOCAL()) return true;
 
-    bool is_within = true;
+    bool was_within = true;
     double tshift;
     for(int i = 0; i < 3; i++) {
       tshift = floor(m_frac_coord[i] + 1E-6);
-      if(std::abs(tshift) > TOL) {
-        is_within = false;
+      if(!almost_zero(tshift, TOL)) {
+        was_within = false;
         m_frac_coord[i] -= tshift;
       }
     }
-    if(!is_within)
+    if(!was_within)
       _update_cart();
-    return is_within;
+    return was_within;
   }
 
   //***********************************
@@ -269,20 +262,19 @@ namespace CASM {
     translation.m_home = m_home;
     if(PERIODICITY_MODE::IS_LOCAL()) return true;
 
-    bool is_within = true;
+    bool was_within = true;
 
     for(int i = 0; i < 3; i++) {
       translation.m_frac_coord[i] = -floor(m_frac_coord[i] + 1E-6);
-      if(std::abs(translation.m_frac_coord[i]) > TOL) {
-        is_within = false;
-        m_frac_coord[i] += translation.m_frac_coord[i];
+      if(!almost_zero(translation.m_frac_coord[i], TOL)) {
+        was_within = false;
       }
     }
-
-    if(!is_within)
-      _update_cart();
     translation._update_cart();
-    return is_within;
+
+    if(!was_within)
+      (*this) += translation;
+    return was_within;
   }
 
   //********************************************************************
