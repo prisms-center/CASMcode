@@ -77,13 +77,6 @@ cxxflags = []
 
 ccflags.append('-Wno-unused-parameter')
 
-if 'OPTIMIZATIONLEVEL' in os.environ:
-  opt_level = os.environ['OPTIMIZATIONLEVEL']
-else:
-  opt_level = '3'
-ccflags.append("-O" + ARGUMENTS.get('opt',opt_level))
-cxxflags.append("-O" + ARGUMENTS.get('opt',opt_level))
-
 debug_level = '0'
 if 'debug' in ARGUMENTS:
   debug_level = ARGUMENTS.get('debug')
@@ -96,6 +89,17 @@ if debug_level == '0':
 elif debug_level == '1':
   ccflags = ccflags + ['-g', '-save-temps']
   cxxflags = cxxflags + ['-g', '-save-temps']  
+
+if 'OPTIMIZATIONLEVEL' in os.environ:
+  opt_level = os.environ['OPTIMIZATIONLEVEL']
+else:
+  if debug_level == '0':
+    opt_level = '3'
+  else:
+    opt_level = '0'
+
+ccflags.append("-O" + ARGUMENTS.get('opt',opt_level))
+cxxflags.append("-O" + ARGUMENTS.get('opt',opt_level))
 
 # C++ only
 #cxxflags = []

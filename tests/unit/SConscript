@@ -46,7 +46,7 @@ for i, src_name in enumerate(test_name):
     test = lenv.Program(os.path.join(lenv['UNIT_TEST_BIN'], src_name), 
                        [unit_obj, common_obj, test_obj[i]],
                        LINKFLAGS=linkflags,
-                       LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem'] + casm_lib)
+                       LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem', 'boost_regex'] + casm_lib)
     if src_name[:-5] == "Structure":
       Clean(test,  Structure_out)
     if src_name[:-5] == "Clexulator":
@@ -59,7 +59,7 @@ for i, src_name in enumerate(test_name):
     test = lenv.Program(os.path.join(lenv['UNIT_TEST_BIN'], src_name), 
                        [unit_obj, common_obj, test_obj[i]],
                        LINKFLAGS=linkflags,
-                       LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem', 'dl'] + casm_lib)
+                       LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem', 'boost_regex', 'dl'] + casm_lib)
   else:
     test = lenv.Program(os.path.join(lenv['UNIT_TEST_BIN'], src_name), 
                        [unit_obj, test_obj[i]],
