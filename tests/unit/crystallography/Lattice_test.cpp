@@ -36,6 +36,22 @@ void lattice_pg_test() {
   }
 }
 
+void lattice_read_test() {
+  std::stringstream lat_stream("   2.5000\n"
+                               "   1.1 1.2 1.3\n"
+                               "   1.4 1.5 1.6\n"
+                               "   1.7 1.8 1.9\n");
+  Lattice testlat;
+  testlat.read(lat_stream);
+  Eigen::Matrix3d latmat;
+  latmat <<
+         2.75, 3.5, 4.25,
+               3.0, 3.75, 4.5,
+               3.25, 4.0, 4.75;
+  BOOST_CHECK(almost_equal(testlat.lat_column_mat(), latmat, 1e-8));
+
+}
+
 void lattice_superduper_test() {
   SymGroup pg;
   Lattice lat(Lattice::fcc());
@@ -58,10 +74,12 @@ void lattice_superduper_test() {
 
 BOOST_AUTO_TEST_SUITE(LatticeTest)
 
+BOOST_AUTO_TEST_CASE(ReadTest) {
+  lattice_read_test();
+}
+
 BOOST_AUTO_TEST_CASE(PointGroupTest) {
-
   lattice_pg_test();
-
 }
 
 BOOST_AUTO_TEST_CASE(SuperDuperTest) {

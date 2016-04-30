@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
     // If not a 'version', or 'help' command, write to LOG
     fs::ofstream log(root / "LOG", std::ofstream::out | std::ofstream::app);
     log << "# " << date_time() << std::endl;
-    
+
     // record whoami@hostname
 
     std::string whoami, hostname;
