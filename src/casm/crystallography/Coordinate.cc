@@ -18,6 +18,8 @@ namespace CASM {
       _set_cart(init_vec);
   }
 
+  //********************************************************************
+
   Coordinate::Coordinate(double _x, double _y, double _z, const Lattice &init_home, COORD_TYPE mode)
     : m_home(&init_home),
       m_basis_ind(-1) {
@@ -31,12 +33,6 @@ namespace CASM {
     }
   }
 
-
-
-  //********************************************************************
-  /**
-   *
-   */
   //********************************************************************
 
   Coordinate &Coordinate::operator +=(const Coordinate &RHS) {
@@ -121,21 +117,15 @@ namespace CASM {
   }
 
   //********************************************************************
-  /**
-   * Finds distance between two coordinates
-   */
-  //********************************************************************
+  // Finds distance between two coordinates
 
   double Coordinate::dist(const Coordinate &neighbor) const {
     return (cart() - neighbor.cart()).norm();
   }
 
-
   //********************************************************************
-  /**
-   * Finds minimum distance from any periodic image of a coordinate to any
-   * periodic image of a neighboring coordinate
-   */
+  // Finds minimum distance from any periodic image of a coordinate to any
+  // periodic image of a neighboring coordinate
   //********************************************************************
 
   double Coordinate::min_dist(const Coordinate &neighbor) const {
@@ -146,42 +136,57 @@ namespace CASM {
   }
 
   //********************************************************************
-  /**
-   * Finds minimum distance from any periodic image of a coordinate to any
-   * periodic image of a neighboring coordinate.  Also passes the
-   * calculated translation in the argument.
-   */
+  // Finds minimum distance from any periodic image of a coordinate to any
+  // periodic image of a neighboring coordinate.  Also passes the
+  // calculated translation in the argument.
   //********************************************************************
 
 
   double Coordinate::min_dist(const Coordinate &neighbor, Coordinate &translation) const {
-    translation.m_home = m_home;
+    translation = (*this) - neighbor;
+    translation.frac() -= lround(translation.const_frac()).cast<double>();
+    return translation.const_cart().norm();
+  }
+  //********************************************************************
+  // Finds minimum distance from any periodic image of a coordinate to any
+  // periodic image of a neighboring coordinate
+  //********************************************************************
 
-    translation.frac() = lround(frac() - neighbor.frac()).cast<double>();
-
-    return ((const_cart() - neighbor.const_cart()) - translation.const_cart()).norm();
+  double Coordinate::robust_min_dist(const Coordinate &neighbor) const {
+    Coordinate translation(home());
+    return robust_min_dist(neighbor, translation);
   }
 
   //********************************************************************
-  /**
-   * Finds minimum distance from any periodic image of a coordinate to any
-   * periodic image of a neighboring coordinate
-   */
+  // Finds minimum distance from any periodic image of a coordinate to any
+  // periodic image of a neighboring coordinate.  Also passes the
+  // calculated translation in the argument.
+  //********************************************************************
+
+  double Coordinate::robust_min_dist(const Coordinate &neighbor, Coordinate &translation) const {
+    double fast_result = min_dist(neighbor, translation);
+
+    if(fast_result < (home().inner_voronoi_radius() + TOL))
+      return fast_result;
+
+    translation.voronoi_within();
+    return translation.const_cart().norm();
+  }
+
+  //********************************************************************
+  // Finds minimum distance from any periodic image of a coordinate to any
+  // periodic image of a neighboring coordinate
   //********************************************************************
 
   double Coordinate::min_dist2(const Coordinate &neighbor, const Eigen::Ref<const Eigen::Matrix3d> &metric) const {
     vector_type tfrac(frac() - neighbor.frac());
-
-    for(int i = 0; i < 3; i++)
-      tfrac(i) -= round(tfrac(i));
+    tfrac -= lround(tfrac).cast<double>();
 
     return (home().lat_column_mat() * tfrac).dot(metric * (home().lat_column_mat() * tfrac));
   }
 
   //********************************************************************
-  /**
-   * Applies symmetry to a coordinate.
-   */
+  // Applies symmetry to a coordinate.
   //********************************************************************
 
   Coordinate &Coordinate::apply_sym(const SymOp &op) {
@@ -191,9 +196,7 @@ namespace CASM {
   }
 
   //********************************************************************
-  /**
-   * Applies symmetry to a coordinate, but doesn't apply translation
-   */
+  // Applies symmetry to a coordinate, but doesn't apply translation
   //********************************************************************
 
   Coordinate &Coordinate::apply_sym_no_trans(const SymOp &op) {
@@ -202,10 +205,19 @@ namespace CASM {
   }
 
   //********************************************************************
-  //John G. You decide which coordinates (FRAC or CART) to keep the same when you set a new lattice.
-  //CART: Adds empty space around atoms (This is what previous set_lattice does)
-  //FRAC: Shear atoms with vectors
-  //inline
+  // Change the home lattice of the coordinate, selecting one representation (either CART or FRAC)
+  // that remains invariant
+  //
+  // invariant_mode == CART: Cartesian coordinates stay the same, and fractional coordinates are updated
+  //    Ex: (my_coord.set_lattice(superlattice, CART); // this is how superlattices get filled.
+  //
+  // invariant_mode == FRAC: Fractional coordinates stay the same, and Cartesian coordinates are updated
+  //    Ex:  you can apply a strain by changing the lattice and keepin FRAC invariant
+  //            (my_coord.set_lattice(strained_lattice, FRAC);
+  //    Ex:  you can apply a rotation by changing the lattice and keeping FRAC invariant
+  //            (my_coord.set_lattice(rotated_lattice, FRAC);
+  //********************************************************************
+
   void Coordinate::set_lattice(const Lattice &new_lat, COORD_TYPE invariant_mode) {
     m_home = &new_lat;
 
@@ -217,14 +229,11 @@ namespace CASM {
     return;
   }
 
+  //********************************************************************
+  // Within: if a point is outiside the cell defined by Lattice home
+  // then map that point back into the cell via translation by lattice vectors
+  //********************************************************************
 
-  //********************************************************************
-  /**
-   * Within: if a point is outiside the cell defined by Lattice home
-   * then map that point back into the cell via translation by lattice vectors
-   *
-   */
-  //********************************************************************
   bool Coordinate::within() {
     if(PERIODICITY_MODE::IS_LOCAL()) return true;
 
@@ -240,20 +249,6 @@ namespace CASM {
     if(!was_within)
       _update_cart();
     return was_within;
-  }
-
-  //***********************************
-
-  bool Coordinate::is_within() const {
-
-    double tshift;
-    for(int i = 0; i < 3; i++) {
-      tshift = floor(m_frac_coord[i] + 1E-6);
-      if(std::abs(tshift) > TOL) {
-        return false;
-      }
-    }
-    return true;
   }
 
   //********************************************************************
@@ -278,9 +273,21 @@ namespace CASM {
   }
 
   //********************************************************************
-  /**
-   * Checks to see if coordinate is within voronoi cell of its home lattice.
-   */
+
+  bool Coordinate::is_within() const {
+
+    double tshift;
+    for(int i = 0; i < 3; i++) {
+      tshift = floor(m_frac_coord[i] + 1E-6);
+      if(std::abs(tshift) > TOL) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  //********************************************************************
+  // Checks to see if coordinate is within voronoi cell of its home lattice.
   //********************************************************************
 
   int Coordinate::voronoi_number() const {
@@ -288,40 +295,49 @@ namespace CASM {
   }
 
   //********************************************************************
-  /**
-   * Checks to see if coordinate is within voronois cell of specified lattice
-   */
+  // Checks to see if coordinate is within voronoi cell of specified lattice
   //********************************************************************
 
   int Coordinate::voronoi_number(const Lattice &cell) const {
-    return cell.voronoi_number(m_cart_coord);
+    return cell.voronoi_number(const_cart());
   }
 
   //********************************************************************
-  /**
-   * Applies Lattice translations until coordinate is within voronois cell of its home lattice.
-   * **** HAS NOT BEEN PROPERLY TESTED
-   */
+  // Applies Lattice translations until coordinate is within voronoi cell of its home lattice.
   //********************************************************************
 
   bool Coordinate::voronoi_within() {
     bool was_within(true);
-
-    while(voronoi_number() < 0) {
+    Eigen::Vector3d lattice_trans;
+    while(home().max_voronoi_measure(cart(), lattice_trans) > (1. + TOL)) {
       was_within = false;
-      Coordinate tcoord(home().max_voronoi_vector(m_cart_coord), home(), CART);
-      frac() = (round(const_cart().dot(tcoord.const_cart()) / 2) * scale_to_int(tcoord.const_frac())).cast<double>();
+      cart() -= lattice_trans;
     }
 
-    if(!was_within)
-      _update_frac();
     return was_within;
   }
 
   //********************************************************************
-  /**
-   * Checks to see if coordinate describes shift by a general lattice vector l*V1+m*V2+n*V3, where l, m, n are integer
-   */
+  // Applies Lattice translations until coordinate is within voronoi cell of its home lattice.
+  //********************************************************************
+
+  bool Coordinate::voronoi_within(Coordinate &translation) {
+    translation.m_home = m_home;
+    translation.cart() = vector_type::Zero();
+
+    Eigen::Vector3d lattice_trans;
+    bool was_within(true);
+    while(home().max_voronoi_measure(cart(), lattice_trans) > (1. + TOL)) {
+      was_within = false;
+      cart() -= lattice_trans;
+      translation.cart() -= lattice_trans;
+    }
+
+    return was_within;
+  }
+
+  //********************************************************************
+  // Checks to see if coordinate describes shift by a general lattice vector l*V1+m*V2+n*V3, where l, m, n are integer
   //********************************************************************
 
   bool Coordinate::is_lattice_shift() const {
@@ -337,9 +353,7 @@ namespace CASM {
 
 
   //********************************************************************
-  /**
-   * Read/write coordinate to json
-   */
+  // Read/write coordinate to json
   //********************************************************************
 
   jsonParser &Coordinate::to_json(jsonParser &json) const {
@@ -362,6 +376,8 @@ namespace CASM {
     return json;
   }
 
+  //********************************************************************
+
   void Coordinate::from_json(const jsonParser &json) {
     // mutable Vector3< double > coord[2];
     m_frac_coord[0] = json["FRAC"][0].get<double>();
@@ -377,23 +393,23 @@ namespace CASM {
     CASM::from_json(m_basis_ind, json["basis_ind"]);
   }
 
+  //********************************************************************
+
   jsonParser &to_json(const Coordinate &coord, jsonParser &json) {
     return coord.to_json(json);
   }
+
+  //********************************************************************
 
   void from_json(Coordinate &coord, const jsonParser &json) {
     coord.from_json(json);
   }
 
-
   //********************************************************************
-  /**
-   * Applies symmetry to a coordinate.
-   *
-   * Overloads the * operator to apply symmetry to a coordinate in
-   * the current mode unless otherwise specified. Returns the
-   * transformed coordinate.
-   */
+  // Applies symmetry to a coordinate.
+  //
+  // Overloads the * operator to apply symmetry to a coordinate
+  // using its Cartesian representation
   //********************************************************************
 
   Coordinate operator*(const SymOp &LHS, const Coordinate &RHS) {
@@ -402,9 +418,7 @@ namespace CASM {
   }
 
   //********************************************************************
-  /**
-   * Allows direct printing of Coordinate with the << operator.
-   */
+  // Allows direct printing of Coordinate with the << operator.
   //********************************************************************
 
   std::ostream &operator << (std::ostream &stream, const Coordinate &coord) {

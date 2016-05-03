@@ -10,8 +10,7 @@
 #include "casm/crystallography/Lattice.hh"
 
 namespace CASM {
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
   class Lattice;
   class SymOp;
 
@@ -33,28 +32,26 @@ namespace CASM {
     // e.g: this is not allowed-> Coordinate() : home(nullptr) { is_current[FRAC]=false; is_current[CART]=false;};
 
     ///Minimal constructor only takes a lattice
-    explicit Coordinate(const Lattice &init_home) :
-      m_home(&init_home),
+    explicit Coordinate(const Lattice &_home) :
+      m_home(&_home),
       m_frac_coord(vector_type::Zero()),
       m_cart_coord(vector_type::Zero()),
       m_basis_ind(-1) {
     }
 
-    Coordinate(const vector_type &init_vec, const Lattice &init_home, COORD_TYPE mode);
+    Coordinate(const vector_type &_vec, const Lattice &_home, COORD_TYPE _mode);
 
-    Coordinate(double _x, double _y, double _z, const Lattice &init_home, COORD_TYPE mode);
+    Coordinate(double _x, double _y, double _z, const Lattice &_home, COORD_TYPE _mode);
 
     /// \brief Set the fractional coordinate vector
     Coordinate_impl::FracCoordinate frac();
 
     /// \brief const Access the fractional coordinate vector
-
     const vector_type &frac() const {
       return m_frac_coord;
     }
 
     /// \brief user override to force const Access the fractional coordinate vector
-
     const vector_type &const_frac() const {
       return m_frac_coord;
     }
@@ -72,7 +69,7 @@ namespace CASM {
       return m_frac_coord(index);
     }
 
-    /// \brief Set Cartesian coordinate vector and update fractional coordiante vector
+    /// \brief Set Cartesian coordinate vector and update fractional coordinate vector
     Coordinate_impl::CartCoordinate cart();
 
     /// \brief const Access the Cartesian coordinate vector
@@ -98,12 +95,16 @@ namespace CASM {
       return m_cart_coord(index);
     }
 
+    /// \brief Positive translation of this coordinate by RHS.cart()
     Coordinate &operator+=(const Coordinate &RHS);
+
+    /// \brief Negative translation of this coordinate by RHS.cart()
     Coordinate &operator-=(const Coordinate &RHS);
 
+    /// \brief unary minus of this coordinate
     Coordinate operator-() const;
 
-    bool operator==(const Coordinate &RHS) const; //Ivy
+    bool operator==(const Coordinate &RHS) const;
 
     bool operator!=(const Coordinate &RHS) const {
       return !(*this == RHS);
@@ -129,33 +130,55 @@ namespace CASM {
     /// returns true if *this was already within the unit cell
     bool within(Coordinate &translation);
 
-    ///Checks to see if coordinate is in the unit cell, but does not translate it
+    /// Checks to see if coordinate is in the unit cell, but does not translate it
     bool is_within() const;
 
+    /// Number of periodic images of this coordinate that are on voronoi cell boundary
+    /// of its home lattice
     int voronoi_number() const;
+
+    /// Number of periodic images of this coordinate that are on voronoi cell boundary
+    /// of 'cell'
     int voronoi_number(const Lattice &cell) const;
 
     ///Map coordinate into the voronoi cell using a lattice translation
     bool voronoi_within();
 
-    ///Same as voronoi_within(), but lattice translation is stored in Coordinate translation
+    ///Same as voronoi_within(), but lattice translation is stored in Coordinate translation such that
+    /// coord_after = coord_before + translation
+    /// returns true if *this was already within the voronoi cell
     bool voronoi_within(Coordinate &translation);
 
     ///Checks to see if coordinate is at a lattice translation with respect to the origin
     bool is_lattice_shift() const;
 
-    ///update the home lattice of a coordinate, keeping representation specified mode
+    /// \brief  Change the home lattice of the coordinate, selecting one representation
+    ///         (either CART or FRAC) that remains invariant
+    ///
+    /// \param invariant_mode
+    /// \parblock
+    /// invariant_mode == CART: Cartesian coordinates stay the same, and fractional coordinates are updated
+    ///    Ex: (my_coord.set_lattice(superlattice, CART); // this is how superlattices get filled.
+    ///
+    /// invariant_mode == FRAC: Fractional coordinates stay the same, and Cartesian coordinates are updated
+    ///    Ex:  you can apply a strain by changing the lattice and keepin FRAC invariant
+    ///            (my_coord.set_lattice(strained_lattice, FRAC);
+    ///    Ex:  you can apply a rotation by changing the lattice and keeping FRAC invariant
+    ///            (my_coord.set_lattice(rotated_lattice, FRAC);
+    /// \endparblock
     void set_lattice(const Lattice &new_lat, COORD_TYPE mode); //John G, use to specify whether to keep CART or FRAC the same, when assigning a new lattice
 
+    /// \brief Set basis Index
     void set_basis_ind(Index _basis_ind) {
       m_basis_ind = _basis_ind;
     }
 
+    /// \brief Access basis Index
     Index basis_ind() const {
       return m_basis_ind;
     }
 
-    ///Check the home lattice of the coordinate
+    /// \brief Access the home lattice of the coordinate
     const Lattice &home() const {
       assert(m_home && "Coordinate doesn't have valid home lattice");
       return *m_home;
@@ -166,25 +189,42 @@ namespace CASM {
     void print(std::ostream &stream, COORD_TYPE mode, char term = 0, int prec = 7, int pad = 5) const;
     void print(std::ostream &stream, char term = 0, int prec = 7, int pad = 5) const;
 
+    /// \brief distance (in Angstr) of neighbor from *this
     double dist(const Coordinate &neighbor) const;
 
-    ///Returns distance from periodic image of neighbor that is closest
-    ///Is unsafe if min_dist is comparable to half a lattice vector in length
+    /// \brief Returns distance (in Angstr) to nearest periodic image of neighbor
+    ///
+    /// Is unsafe if min_dist is comparable to half a lattice vector in length
     double min_dist(const Coordinate &neighbor) const;
 
-    /// Returns distance from periodic image of neighbor that is closest
-    /// and calculates the translation such that
-    /// (neighbor+translation) is the periodic image of this coordinate that is closest to @param neighbor
+    /// \brief Returns distance (in Angstr) to nearest periodic image of neighbor
+    ///
+    /// This version calculates the translation such that
+    /// (neighbor+translation) is the periodic nearest period image of neighbor
     double min_dist(const Coordinate &neighbor, Coordinate &translation)const;
+
+    /// \brief Returns distance (in Angstr) to nearest periodic image of neighbor
+    ///
+    /// It is safe in all cases, because it uses the lattice Wigner-Seitz cell to
+    /// determine the nearest image, but this makes it slower than min_dist
+    double robust_min_dist(const Coordinate &neighbor) const;
+
+    /// \brief Returns distance (in Angstr) to nearest periodic image of neighbor
+    ///
+    /// This version calculates the translation such that
+    /// (neighbor+translation) is the periodic nearest period image of neighbor
+    /// It is safe in all cases, because it uses the lattice Wigner-Seitz cell to
+    /// determine the nearest image, but this makes it slower than min_dist
+    double robust_min_dist(const Coordinate &neighbor, Coordinate &translation)const;
 
     ///Finds same shift as min_dist but returns shift(CART).transpose()*metric*shift(CART)
     double min_dist2(const Coordinate &neighbor, const Eigen::Ref<const Eigen::Matrix3d> &metric) const;
 
     ///Transform coordinate by symmetry operation (including translation)
     Coordinate &apply_sym(const SymOp &op); //AAB
+
     ///Transform coordinate by symmetry operation (without translation)
     Coordinate &apply_sym_no_trans(const SymOp &op); //AAB
-    //static bool SelfTest();
 
     jsonParser &to_json(jsonParser &json) const;
     void from_json(const jsonParser &json);
@@ -517,7 +557,7 @@ namespace CASM {
     return Coordinate_impl::FracCoordinateComponent(*this, index);
   }
 
-  /// \brief Set Cartesian coordinate vector and update fractional coordiante vector
+  /// \brief Set Cartesian coordinate vector and update fractional coordinate vector
   inline
   Coordinate_impl::CartCoordinate Coordinate::cart() {
     return Coordinate_impl::CartCoordinate(*this);

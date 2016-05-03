@@ -169,18 +169,18 @@ void coordinate_periodicity_test() {
   Lattice lat(Lattice::hexagonal());
   double tol = 1e-5;
 
-  Coordinate::vector_type vec1(0.1, 0.2, 0.3);
-  Coordinate::vector_type vec2(0.6, 0.4, 0.2);
-  Coordinate coord1(vec1, lat, FRAC);
-  Coordinate coord2(vec2, lat, FRAC);
   /// min_dist
   {
+    Coordinate::vector_type vec1(0.1, 0.2, 0.3);
+    Coordinate::vector_type vec2(0.5, 0.35, 0.2);
+    Coordinate coord1(vec1, lat, FRAC);
+    Coordinate coord2(vec2, lat, FRAC);
     // 27 translations
     EigenCounter<Eigen::Vector3i> trans_count(Eigen::Vector3i(-2, -2, -2),
                                               Eigen::Vector3i(2, 2, 2),
                                               Eigen::Vector3i(2, 2, 2));
     Coordinate transcoord1(lat);
-    Coordinate lat_trans(lat);
+    Coordinate nearest_trans(lat);
     for(; trans_count.valid(); ++trans_count) {
       transcoord1.frac() = trans_count().cast<double>() + coord1.const_frac();
 
@@ -195,60 +195,42 @@ void coordinate_periodicity_test() {
       BOOST_CHECK(almost_zero(coord1.min_dist(transcoord1), tol));
 
       // min_dist transcoord1 to coord1 w/ translation check
-      BOOST_CHECK(almost_zero(transcoord1.min_dist(coord1, lat_trans), tol));
-      BOOST_CHECK(almost_equal(lat_trans.const_frac(), trans_count().cast<double>(), tol));
+      BOOST_CHECK(almost_zero(transcoord1.min_dist(coord1, nearest_trans), tol));
+      BOOST_CHECK(almost_zero(nearest_trans.const_frac(), tol));
 
       // min_dist coord1 to transcoord1 w/ translation check
-      BOOST_CHECK(almost_zero(coord1.min_dist(transcoord1, lat_trans), tol));
-      BOOST_CHECK(almost_equal(lat_trans.const_frac(), -trans_count().cast<double>(), tol));
+      BOOST_CHECK(almost_zero(coord1.min_dist(transcoord1, nearest_trans), tol));
+      BOOST_CHECK(almost_zero(nearest_trans.const_frac(), tol));
 
     }
   }
 
-  ///within
+  /// voronoi min_dist
   {
-    // 27 translations
-    EigenCounter<Eigen::Vector3i> trans_count(Eigen::Vector3i(-2, -2, -2),
-                                              Eigen::Vector3i(2, 2, 2),
-                                              Eigen::Vector3i(2, 2, 2));
+    Coordinate::vector_type vec1(1.1, 2.1, 3.1);
+    Coordinate coord1(vec1, lat, FRAC);
 
-    Coordinate transcoord1(lat);
-    Coordinate lat_trans(lat);
-    for(; trans_count.valid(); ++trans_count) {
-      transcoord1.frac() = trans_count().cast<double>() + coord1.const_frac();
+    // 180 points inside the primitive cell
+    EigenCounter<Eigen::Vector3d> point_count(Eigen::Vector3d(0., 0., 0.),
+                                              Eigen::Vector3d(1., 1., 1.),
+                                              Eigen::Vector3d(0.2, 0.2, 0.25));
+    for(; point_count.valid(); ++point_count) {
+      Coordinate coord2(point_count(), lat, FRAC);
+      // optimality of robust_min_dist
+      BOOST_CHECK(coord1.robust_min_dist(coord2) < (coord1.min_dist(coord2) + tol));
+      //std::cout << "A: " << coord1.robust_min_dist(coord2)<< ";   B: " << coord1.min_dist(coord2)<< "\n";
+      // commutativity of robust_min_dist
+      BOOST_CHECK(almost_equal(coord2.robust_min_dist(coord1), coord1.robust_min_dist(coord2), tol));
+      Coordinate trans(lat);
 
-      // is_lattice_shift
-      BOOST_CHECK((transcoord1 - coord1).is_lattice_shift());
-      BOOST_CHECK(!transcoord1.is_lattice_shift());
+      // equivalence of both versions of robust_min_dist
+      BOOST_CHECK(almost_equal(coord2.robust_min_dist(coord1, trans), coord1.robust_min_dist(coord2), tol));
+      BOOST_CHECK(almost_equal(coord2.robust_min_dist(coord1), coord1.robust_min_dist(coord2, trans), tol));
 
-
-      // check is_within
-      BOOST_CHECK(transcoord1.is_within() == almost_zero(trans_count().cast<double>(), tol));
-
-      // check return value (true if within edits coordinate)
-      BOOST_CHECK(transcoord1.within() == almost_zero(trans_count().cast<double>(), tol));
-
-      // Check cart and frac equality of coord1 and transcoord1
-      BOOST_CHECK(almost_equal(transcoord1.const_cart(), coord1.const_cart()));
-      BOOST_CHECK(almost_equal(transcoord1.const_frac(), coord1.const_frac()));
-
-
-      transcoord1.frac() = trans_count().cast<double>() + coord1.const_frac();
-
-      // check return value (true if within edits coordinate)
-      BOOST_CHECK(transcoord1.within(lat_trans) == almost_zero(trans_count().cast<double>(), tol));
-
-      // Check cart and frac equality of coord1 and transcoord1
-      BOOST_CHECK(almost_equal(transcoord1.const_cart(), coord1.const_cart()));
-      BOOST_CHECK(almost_equal(transcoord1.const_frac(), coord1.const_frac()));
-
-      // check lat_trans == trans_count().cast<double>()
-      BOOST_CHECK(almost_equal(lat_trans.const_frac(), -trans_count().cast<double>(), tol));
-
+      BOOST_CHECK(almost_equal(trans.const_cart().norm(), coord2.robust_min_dist(coord1)));
     }
   }
 }
-
 
 BOOST_AUTO_TEST_SUITE(CoordinateTest)
 
