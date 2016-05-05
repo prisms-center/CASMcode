@@ -9,6 +9,54 @@
 #include "casm/crystallography/Site.hh"
 
 namespace CASM {
+  /**
+   * Given the dimensions of a square matrix and its determinant,
+   * HermiteCounter will cycle through every possible matrix that
+   * maintains it's Hermite normal form:
+   *  -Upper triangular matrix
+   *  -Determinant remains constant
+   *  -row values to the right of the diagonal will always be smaller than
+   *  the value of the diagonal
+   *
+   * For a determinant det, the initial value of the counter will be
+   * a n x n identity matrix H with H(0,0)=det.
+   * The final position will be a n x n identity matrix with H(n-1,n-1)=det.
+   *
+   * There are two main steps in the counter:
+   *  -Incrementing the diagonal of the matrix such that its product remains
+   *  equal to the determinant
+   *  -Incrementing the upper triangular values such that they never exceed
+   *  the diagonal
+   *
+   * The diagonal increments are achieved by working only with two adjacent
+   * values at a time, distributing factors to the next diagonal element
+   * only if it equals 1. If not, the next adjacent pair is selected.
+   */
+
+  class HermiteCounter {
+  public:
+    /// \brief constructor given the desired determinant and square matrix dimensions
+    HermiteCounter(int init_determinant, int init_dim);
+
+    //You probably will never need these. They're just here for testing more than anything.
+    int pos() const;
+    int att() const;
+    Eigen::VectorXi diagonal() const;
+
+  private:
+
+    /// \brief Keeps track of the current adjacent diagonal element pair
+    int m_pos;
+
+    /// \brief The last value attempted to factorize a diagonal element
+    int m_att;
+
+    /// \brief Vector holding diagonal element values
+    Eigen::VectorXi m_diagonal;
+
+  };
+
+  //******************************************************************************************************************//
 
   template <typename UnitType> class SupercellEnumerator;
 
@@ -191,14 +239,14 @@ namespace CASM {
     /// \brief The past-the-last volume supercells to be iterated over (what cend uses)
     int m_end_volume;
   };
-  
-  
-  /// \brief Return a transformation matrix that ensures a supercell of at least 
+
+
+  /// \brief Return a transformation matrix that ensures a supercell of at least
   ///        some volume
   ///
-  /// \param unit The thing that is tiled to form supercells. May not be the 
+  /// \param unit The thing that is tiled to form supercells. May not be the
   ///        primitive cell.
-  /// \param T The transformation matrix of the unit, relative the prim. The  
+  /// \param T The transformation matrix of the unit, relative the prim. The
   ///        volume of the unit is determined from T.determinant().
   /// \param point_grp Point group operations to use for checking supercell uniqueness.
   /// \param volume The beginning volume to enumerate
@@ -206,20 +254,20 @@ namespace CASM {
   /// \param fix_shape If true, enforce that S = T*m*I, where m is a scalar and
   ///        I is the identity matrix.
   ///
-  /// \returns M, a transformation matrix, S = T*M, where M is an integer matrix 
+  /// \returns M, a transformation matrix, S = T*M, where M is an integer matrix
   ///          and S.determinant() >= volume
   ///
   ///
   template<typename UnitType>
   Eigen::Matrix3i enforce_min_volume(
-      const UnitType& unit, 
-      const Eigen::Matrix3i& T, 
-      const SymGroup &point_grp, 
-      Index volume, 
-      bool fix_shape = false);
-  
-  
-  
+    const UnitType &unit,
+    const Eigen::Matrix3i &T,
+    const SymGroup &point_grp,
+    Index volume,
+    bool fix_shape = false);
+
+
+
   template<typename UnitType>
   SupercellIterator<UnitType>::SupercellIterator(const SupercellEnumerator<UnitType> &enumerator,
                                                  int volume) :
@@ -227,8 +275,9 @@ namespace CASM {
     m_enum(&enumerator) {
 
     (volume < 1) ? m_vol = 1 : m_vol = volume;
-    if(volume < 1)
+    if(volume < 1) { //Redundant if statement?
       m_vol = 1;
+    }
     m_current = Eigen::Matrix3i::Identity();
     m_current(2, 2) = m_vol;
 
@@ -280,7 +329,7 @@ namespace CASM {
   }
 
   template<typename UnitType>
-  const Eigen::Matrix3i& SupercellIterator<UnitType>::matrix() const {
+  const Eigen::Matrix3i &SupercellIterator<UnitType>::matrix() const {
     return m_current;
   }
 
@@ -337,35 +386,47 @@ namespace CASM {
       H = hermite_normal_form(transformed).first;
 
       // canonical only if m_current is '>' H, so if H '>' m_current, return false
-      if(H(0, 0) > m_current(0, 0))
+      if(H(0, 0) > m_current(0, 0)) {
         return false;
-      if(H(0, 0) < m_current(0, 0))
+      }
+      if(H(0, 0) < m_current(0, 0)) {
         continue;
+      }
 
-      if(H(1, 1) > m_current(1, 1))
+      if(H(1, 1) > m_current(1, 1)) {
         return false;
-      if(H(1, 1) < m_current(1, 1))
+      }
+      if(H(1, 1) < m_current(1, 1)) {
         continue;
+      }
 
-      if(H(2, 2) > m_current(2, 2))
+      if(H(2, 2) > m_current(2, 2)) {
         return false;
-      if(H(2, 2) < m_current(2, 2))
+      }
+      if(H(2, 2) < m_current(2, 2)) {
         continue;
+      }
 
-      if(H(1, 2) > m_current(1, 2))
+      if(H(1, 2) > m_current(1, 2)) {
         return false;
-      if(H(1, 2) < m_current(1, 2))
+      }
+      if(H(1, 2) < m_current(1, 2)) {
         continue;
+      }
 
-      if(H(0, 2) > m_current(0, 2))
+      if(H(0, 2) > m_current(0, 2)) {
         return false;
-      if(H(0, 2) < m_current(0, 2))
+      }
+      if(H(0, 2) < m_current(0, 2)) {
         continue;
+      }
 
-      if(H(0, 1) > m_current(0, 1))
+      if(H(0, 1) > m_current(0, 1)) {
         return false;
-      if(H(0, 1) < m_current(0, 1))
+      }
+      if(H(0, 1) < m_current(0, 1)) {
         continue;
+      }
 
     }
     return true;
@@ -502,14 +563,14 @@ namespace CASM {
                                                     const SymGroup &point_grp,
                                                     size_type begin_volume,
                                                     size_type end_volume);
-  
+
   template<>
   Eigen::Matrix3i enforce_min_volume<Lattice>(
-      const Lattice& unit, 
-      const Eigen::Matrix3i& T, 
-      const SymGroup &point_grp, 
-      Index volume, 
-      bool fix_shape);
+    const Lattice &unit,
+    const Eigen::Matrix3i &T,
+    const SymGroup &point_grp,
+    Index volume,
+    bool fix_shape);
 
 
   /// \brief Return canonical hermite normal form of the supercell matrix, and op used to find it

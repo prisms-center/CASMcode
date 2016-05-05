@@ -31,11 +31,13 @@ stylized.sh
 my_style
 sedme.sh
 .is_stylized.txt
+.color_coded
 
 # Python
 *.pyc
 
 #vim sessions
+vimrc
 *.vim
 *.local
 .*.swp
@@ -57,3 +59,4 @@ src/general/populator
 
 #binaries
 bin/*
+builds/*
