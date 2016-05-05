@@ -7,11 +7,18 @@
 
 namespace CASM {
 
+  /**
+   * If you really need a n x m (vs n x n) matrix, or to allow
+   * zeros along the longest diagonal, this class won't work.
+   */
 
   HermiteCounter::HermiteCounter(int init_determinant, int init_dim):
     m_pos(0),
-    m_att(2),
     m_diagonal(Eigen::VectorXi::Ones(init_dim)) {
+    if(init_determinant < 1 || init_dim < 1) {
+      throw std::runtime_error("Determinant and matrix dimensions must be greater than 0.");
+    }
+
     m_diagonal(0) = init_determinant;
   }
 
@@ -19,12 +26,59 @@ namespace CASM {
     return m_pos;
   }
 
-  int HermiteCounter::att() const {
-    return m_att;
-  }
-
   Eigen::VectorXi HermiteCounter::diagonal() const {
     return m_diagonal;
+  }
+
+  void HermiteCounter::_increment_diagonal() {
+    m_pos = HermiteCounter_impl::next_spill_position(m_diagonal, m_pos);
+    return;
+  }
+
+  namespace HermiteCounter_impl {
+    int _spill_factor(Eigen::VectorXi &diag, int position, int attempt) {
+      //If you fall into these traps you're using this wrong
+      assert(attempt <= diag(position));
+      assert(position < diag.size() - 1);
+      assert(diag(position + 1) == 1);
+      assert(diag(position) > 1);
+      assert(attempt >= 2);
+
+
+      //Use the given attempt as a starting guess for factorizing the element at position,
+      //but if that doesn't work, keep increasing the value of the attempt until it does.
+      while(diag(position) % attempt != 0) {
+        attempt++;
+      }
+
+      diag(position) = diag(position) / attempt;
+      diag(position + 1) = attempt;
+
+      position++;
+
+      return position;
+    }
+
+    int next_spill_position(Eigen::VectorXi &diag, int position) {
+      int attempt = 2;
+
+      //If you reached the end of the diagonal, backtrack to nearest non-1 value
+      //and perform the next spill
+      if(position == diag.size() - 1) {
+        do {
+          position--;
+        }
+        while(diag(position) == 1);
+
+        //Flush everything to the right of position with ones, and reset the value at position
+        //with the next attempt for factorization
+        attempt = diag(diag.size() - 1) + 1;
+        diag(position) = diag(position) * diag(diag.size() - 1);
+        diag(diag.size() - 1) = 1;
+      }
+
+      return _spill_factor(diag, position, attempt);
+    }
   }
 
 

@@ -9,6 +9,7 @@
 #include "casm/crystallography/Site.hh"
 
 namespace CASM {
+
   /**
    * Given the dimensions of a square matrix and its determinant,
    * HermiteCounter will cycle through every possible matrix that
@@ -17,6 +18,10 @@ namespace CASM {
    *  -Determinant remains constant
    *  -row values to the right of the diagonal will always be smaller than
    *  the value of the diagonal
+   *
+   * In addition, this class is limited to SQUARE matrices, and NONZERO
+   * determinants. The idea is to use it for supcercell enumerations,
+   * where these conditions are always met.
    *
    * For a determinant det, the initial value of the counter will be
    * a n x n identity matrix H with H(0,0)=det.
@@ -40,21 +45,30 @@ namespace CASM {
 
     //You probably will never need these. They're just here for testing more than anything.
     int pos() const;
-    int att() const;
     Eigen::VectorXi diagonal() const;
 
   private:
 
-    /// \brief Keeps track of the current adjacent diagonal element pair
+    /// \brief Keeps track of the current diagonal element that needs to be factored
     int m_pos;
-
-    /// \brief The last value attempted to factorize a diagonal element
-    int m_att;
 
     /// \brief Vector holding diagonal element values
     Eigen::VectorXi m_diagonal;
 
+
+
+    /// \brief Go to the next values of diagonal elements that keep the same determinant
+    void _increment_diagonal();
+
   };
+
+  namespace HermiteCounter_impl {
+    /// \brief Find the next factor of the specified position and share with next element. Use attempt as starting point.
+    int _spill_factor(Eigen::VectorXi &diag, int position, int attempt);
+
+    /// \brief Spill the next factor of the specified element with its neighbor, and return new position
+    int next_spill_position(Eigen::VectorXi &diag, int position);
+  }
 
   //******************************************************************************************************************//
 
