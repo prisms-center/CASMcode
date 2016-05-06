@@ -8,6 +8,8 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
 
+#include "casm/container/Counter.hh"
+
 namespace CASM {
 
   /**
@@ -40,20 +42,34 @@ namespace CASM {
 
   class HermiteCounter {
   public:
+    typedef Eigen::VectorXi::Scalar value_type;
+    typedef CASM::Index Index;
+
+
     /// \brief constructor given the desired determinant and square matrix dimensions
+    HermiteCounter(int init_start_determinant, int init_end_determinant, int init_dim);
     HermiteCounter(int init_determinant, int init_dim);
 
     //You probably will never need these. They're just here for testing more than anything.
-    int pos() const;
+    Index pos() const;
     Eigen::VectorXi diagonal() const;
 
   private:
 
     /// \brief Keeps track of the current diagonal element that needs to be factored
-    int m_pos;
+    Index m_pos;
+
+    /// \brief The lowest allowed determinant (beginning of counter)
+    value_type m_low_det;
+
+    /// \brief The highest allowed determinant (end of counter)
+    value_type m_high_det;
 
     /// \brief Vector holding diagonal element values
     Eigen::VectorXi m_diagonal;
+
+    /// \brief unrolled vector of the upper triangle (does not include diagonal elements)
+    EigenVectorXiCounter m_upper_tri;
 
 
 
@@ -64,10 +80,16 @@ namespace CASM {
 
   namespace HermiteCounter_impl {
     /// \brief Find the next factor of the specified position and share with next element. Use attempt as starting point.
-    int _spill_factor(Eigen::VectorXi &diag, int position, int attempt);
+    HermiteCounter::Index _spill_factor(Eigen::VectorXi &diag, HermiteCounter::Index position, HermiteCounter::value_type attempt);
 
     /// \brief Spill the next factor of the specified element with its neighbor, and return new position
-    int next_spill_position(Eigen::VectorXi &diag, int position);
+    HermiteCounter::Index next_spill_position(Eigen::VectorXi &diag, HermiteCounter::Index position);
+
+    /// \brief Determine the number of elements in the upper triangular matrix (excluding diagonal)
+    HermiteCounter::Index upper_size(HermiteCounter::Index init_dim);
+
+    /// \brief Create a counter for the elements above the diagonal based on the current diagonal value
+    EigenVectorXiCounter _upper_tri_counter(const Eigen::VectorXi &current_diag);
   }
 
   //******************************************************************************************************************//

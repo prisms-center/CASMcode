@@ -12,17 +12,29 @@ namespace CASM {
    * zeros along the longest diagonal, this class won't work.
    */
 
-  HermiteCounter::HermiteCounter(int init_determinant, int init_dim):
+  HermiteCounter::HermiteCounter(int init_start_determinant, int init_end_determinant, int init_dim):
     m_pos(0),
-    m_diagonal(Eigen::VectorXi::Ones(init_dim)) {
-    if(init_determinant < 1 || init_dim < 1) {
-      throw std::runtime_error("Determinant and matrix dimensions must be greater than 0.");
+    m_low_det(init_start_determinant),
+    m_high_det(init_end_determinant) {
+    if(init_start_determinant * init_end_determinant < 1 || init_dim < 1) {
+      throw std::runtime_error("Determinants and matrix dimensions must be greater than 0.");
     }
 
-    m_diagonal(0) = init_determinant;
+    if(init_end_determinant > init_start_determinant) {
+      throw std::runtime_error("End determinant must be greater or equal to the starting determinant value.");
+    }
+
+    m_diagonal = Eigen::VectorXi::Ones(init_dim);
+    m_diagonal(0) = m_low_det;
+
+    m_upper_tri = HermiteCounter_impl::_upper_tri_counter(m_diagonal);
   }
 
-  int HermiteCounter::pos() const {
+  HermiteCounter::HermiteCounter(int init_determinant, int init_dim):
+    HermiteCounter(init_determinant, init_determinant, init_dim) {
+  }
+
+  Index HermiteCounter::pos() const {
     return m_pos;
   }
 
@@ -36,7 +48,7 @@ namespace CASM {
   }
 
   namespace HermiteCounter_impl {
-    int _spill_factor(Eigen::VectorXi &diag, int position, int attempt) {
+    HermiteCounter::Index _spill_factor(Eigen::VectorXi &diag, HermiteCounter::Index position, HermiteCounter::value_type attempt) {
       //If you fall into these traps you're using this wrong
       assert(attempt <= diag(position));
       assert(position < diag.size() - 1);
@@ -59,8 +71,8 @@ namespace CASM {
       return position;
     }
 
-    int next_spill_position(Eigen::VectorXi &diag, int position) {
-      int attempt = 2;
+    HermiteCounter::Index next_spill_position(Eigen::VectorXi &diag, HermiteCounter::Index position) {
+      HermiteCounter::value_type attempt = 2;
 
       //If you reached the end of the diagonal, backtrack to nearest non-1 value
       //and perform the next spill
@@ -68,7 +80,12 @@ namespace CASM {
         do {
           position--;
         }
-        while(diag(position) == 1);
+        while(diag(position) == 1 && position >= 0);
+
+        //You're at the last spill already. Your diagonal is 1 1 ... 1 1 det. No more increments are possible.
+        if(position < 0) {
+          return diag.size();
+        }
 
         //Flush everything to the right of position with ones, and reset the value at position
         //with the next attempt for factorization
@@ -79,6 +96,49 @@ namespace CASM {
 
       return _spill_factor(diag, position, attempt);
     }
+
+
+    HermiteCounter::Index upper_size(HermiteCounter::Index init_dim) {
+      assert(init_dim > 0);
+
+      HermiteCounter::Index tritotal = 0;
+
+      for(int i = 0; i < init_dim; i++) {
+        tritotal += i;
+      }
+
+      return tritotal;
+    }
+
+    EigenVectorXiCounter _upper_tri_counter(const Eigen::VectorXi &current_diag) {
+      //Find out how many slots you need for all the elements above the diagonal
+      HermiteCounter::Index uppersize = upper_size(current_diag.size());
+
+      //Start the counter with zero everywhere
+      Eigen::VectorXi begincount(Eigen::VectorXi::Zero(uppersize));
+
+      //Increments always go one at a time
+      Eigen::VectorXi stepcount(Eigen::VectorXi::Ones(uppersize));
+
+      //The m_upper_tri is unrolled left to right, top to bottom
+      Eigen::VectorXi endcount(Eigen::VectorXi::Zero(uppersize));
+      HermiteCounter::Index slot = 0;
+      for(HermiteCounter::Index i = 0; i < current_diag.size(); i++) {
+        for(HermiteCounter::Index j = 0; j < current_diag.size() - i - 1; j++) {
+          //The counter value should always be smaller than the diagonal
+          endcount(slot) = current_diag(i) - 1;
+          slot++;
+        }
+      }
+
+      std::cout << "DEBUGGING: current_diag.transpose() is " << current_diag.transpose() << std::endl;
+      std::cout << "DEBUGGING: begincount.transpose() is " << begincount.transpose() << std::endl;
+      std::cout << "DEBUGGING: endcount.transpose() is " << endcount.transpose() << std::endl;
+
+
+      return EigenVectorXiCounter(begincount, endcount, stepcount);
+    }
+
   }
 
 

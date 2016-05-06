@@ -28,6 +28,26 @@ void hermite_init() {
   BOOST_CHECK_EQUAL(init_diagonal, hermit_test.diagonal());
   BOOST_CHECK_EQUAL(0, hermit_test.pos());
 
+  auto tricounter = HermiteCounter_impl::_upper_tri_counter(hermit_test.diagonal());
+  Eigen::VectorXi startcount(Eigen::VectorXi::Zero(HermiteCounter_impl::upper_size(dims)));
+  BOOST_CHECK_EQUAL(tricounter.current(), startcount);
+
+
+  Eigen::VectorXi endcount(Eigen::VectorXi::Zero(HermiteCounter_impl::upper_size(dims)));
+  endcount(0) = (det - 1);
+  endcount(1) = (det - 1);
+  endcount(2) = (det - 1);
+  endcount(3) = (det - 1);
+
+  auto finalcounterstate = tricounter;
+
+  for(; tricounter.valid(); ++tricounter) {
+    finalcounterstate = tricounter;
+  }
+
+  BOOST_CHECK_EQUAL(finalcounterstate.current(), endcount);
+
+
   return;
 }
 
@@ -70,6 +90,7 @@ void spill_test() {
 }
 
 void next_position_test() {
+  //Example increment from one possible diagonal to the next
   Eigen::VectorXi diagonal(Eigen::VectorXi::Ones(5));
   Eigen::VectorXi next_diagonal(Eigen::VectorXi::Ones(5));
   diagonal(0) = 6;
@@ -97,18 +118,70 @@ void next_position_test() {
   BOOST_CHECK_EQUAL(diagonal, next_diagonal);
   BOOST_CHECK_EQUAL(p, 2);
 
+  //*************/
+  //Make sure every enumerated diagonal has the right determinant
+
+  int det = 2 * 3 * 5 * 7;
+  int dims = 5;
+
+  Eigen::VectorXi diag = Eigen::VectorXi::Ones(dims);
+  diag(0) = det;
+
+  p = 0;
+  while(p != diag.size()) {
+    int testdet = 1;
+    for(int i = 0; i < diag.size(); i++) {
+      testdet = testdet * diag(i);
+    }
+    BOOST_CHECK_EQUAL(det, testdet);
+    p = CASM::HermiteCounter_impl::next_spill_position(diag, p);
+  }
+
+
+  return;
+}
+
+void triangle_count_test() {
+  HermiteCounter::Index totals = HermiteCounter_impl::upper_size(7);
+  BOOST_CHECK_EQUAL(totals, -7 + 7 + 6 + 5 + 4 + 3 + 2 + 1);
+
+  int dims = 5;
+  int det = 30;
+
+  Eigen::VectorXi mid_diagonal(Eigen::VectorXi::Ones(dims));
+  mid_diagonal(0) = 5;
+  mid_diagonal(1) = 3;
+  mid_diagonal(4) = 2;
+
+  auto countertest = HermiteCounter_impl::_upper_tri_counter(mid_diagonal);
+  auto finalcount = countertest;
+
+  for(; countertest.valid(); countertest++) {
+    finalcount = countertest;
+  }
+
+  Eigen::VectorXi end_count_value(Eigen::VectorXi::Zero(dims));
+  end_count_value(0) = 4;
+  end_count_value(1) = 4;
+  end_count_value(2) = 4;
+  end_count_value(3) = 4;
+  end_count_value(4) = 2;
+  end_count_value(5) = 2;
+  end_count_value(6) = 2;
+
   return;
 }
 
 BOOST_AUTO_TEST_SUITE(SupercellEnumeratorTest)
 
-BOOST_AUTO_TEST_CASE(HermitConstruction) {
+BOOST_AUTO_TEST_CASE(HermiteConstruction) {
   hermite_init();
 }
 
-BOOST_AUTO_TEST_CASE(HermitImpl) {
+BOOST_AUTO_TEST_CASE(HermiteImpl) {
   spill_test();
   next_position_test();
+  triangle_count_test();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
