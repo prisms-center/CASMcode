@@ -26,7 +26,7 @@ void hermite_init() {
   init_diagonal(0) = det;
 
   BOOST_CHECK_EQUAL(init_diagonal, hermit_test.diagonal());
-  BOOST_CHECK_EQUAL(0, hermit_test.pos());
+  BOOST_CHECK_EQUAL(0, hermit_test.position());
 
   auto tricounter = HermiteCounter_impl::_upper_tri_counter(hermit_test.diagonal());
   Eigen::VectorXi startcount(Eigen::VectorXi::Zero(HermiteCounter_impl::upper_size(dims)));
@@ -172,6 +172,141 @@ void triangle_count_test() {
   return;
 }
 
+void matrix_construction_test() {
+  Eigen::VectorXi diag;
+  diag.resize(4);
+  diag << 2, 4, 6, 8;
+  Eigen::VectorXi upper;
+  upper.resize(3 + 2 + 1);
+  upper << 11, 12, 13,
+        21, 22,
+        33;
+
+  Eigen::MatrixXi diagmat;
+  diagmat.resize(4, 4);
+  diagmat << 2, 11, 12, 13,
+          0, 4, 21, 22,
+          0, 0, 6, 33,
+          0, 0, 0, 8;
+
+  BOOST_CHECK_EQUAL(diagmat, HermiteCounter_impl::_zip_matrix(diag, upper));
+
+  return;
+}
+
+void increment_test() {
+  HermiteCounter hermit_test(6, 4);
+
+  Eigen::MatrixXi hermmat;
+  hermmat.resize(4, 4);
+
+  //Test starting status
+  hermmat << 6, 0, 0, 0,
+          0, 1, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 1;
+
+  BOOST_CHECK_EQUAL(hermmat, hermit_test());
+
+  //Test next status
+  ++hermit_test;
+  hermmat << 6, 1, 0, 0,
+          0, 1, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 1;
+
+  BOOST_CHECK_EQUAL(hermmat, hermit_test());
+
+  //Jump to just before you need a new diagonal
+  hermmat << 6, 5, 5, 5,
+          0, 1, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 1;
+
+  while(hermit_test() != hermmat) {
+    ++hermit_test;
+  }
+
+  //Check diagonal jump
+  ++hermit_test;
+  hermmat << 3, 0, 0, 0,
+          0, 2, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 1;
+
+  BOOST_CHECK_EQUAL(hermmat, hermit_test());
+
+  //Check invalidation and last status
+  while(hermit_test.valid()) {
+    ++hermit_test;
+  }
+
+  hermmat << 1, 0, 0, 0,
+          0, 1, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 6;
+
+  BOOST_CHECK_EQUAL(hermmat, hermit_test());
+
+  //Check determinant jump
+  hermit_test = HermiteCounter(3, 5, 4);
+
+  //Jump to just before you need a new determinant
+
+  hermmat << 1, 0, 0, 0,
+          0, 1, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 3;
+
+  while(hermit_test() != hermmat) {
+    ++hermit_test;
+  }
+
+  //Check determinant jump
+  ++hermit_test;
+
+  hermmat << 4, 0, 0, 0,
+          0, 1, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 1;
+
+  BOOST_CHECK_EQUAL(hermmat, hermit_test());
+  return;
+}
+
+void reset_test() {
+  HermiteCounter hermit_test(1, 6, 3);
+
+  Eigen::MatrixXi hermmat;
+  hermmat.resize(3, 3);
+
+
+  Eigen::MatrixXi startmat = hermit_test();
+
+  //Skip to one of the bigger determinants
+  hermmat << 2, 1, 1,
+          0, 2, 1,
+          0, 0, 1;
+
+  while(hermit_test() != hermmat) {
+    ++hermit_test;
+  }
+
+  hermmat << 4, 0, 0,
+          0, 1, 0,
+          0, 0, 1;
+
+  hermit_test.reset_current();
+
+  BOOST_CHECK_EQUAL(hermmat, hermit_test());
+
+  hermit_test.reset_full();
+
+  BOOST_CHECK_EQUAL(startmat, hermit_test());
+
+  return;
+}
+
 BOOST_AUTO_TEST_SUITE(SupercellEnumeratorTest)
 
 BOOST_AUTO_TEST_CASE(HermiteConstruction) {
@@ -182,6 +317,9 @@ BOOST_AUTO_TEST_CASE(HermiteImpl) {
   spill_test();
   next_position_test();
   triangle_count_test();
+  matrix_construction_test();
+  increment_test();
+  reset_test();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

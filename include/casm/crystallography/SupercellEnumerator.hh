@@ -51,8 +51,36 @@ namespace CASM {
     HermiteCounter(int init_determinant, int init_dim);
 
     //You probably will never need these. They're just here for testing more than anything.
-    Index pos() const;
+    Index position() const;
     Eigen::VectorXi diagonal() const;
+
+    /// \brief If this returns true, there's still more matrices you haven't counted over
+    bool valid() const;
+
+    /// \brief Get the current matrix the counter is on
+    Eigen::MatrixXi current() const;
+
+    /// \brief Get the current determinant
+    value_type determinant() const;
+
+    /// \brief Get the dimensions of *this
+    Index dim() const;
+
+    /// \brief reset the counter to the first iteration of the lowest determinant
+    void reset_full();
+
+    /// \brief reset the counter to the first iteration of the current determinant
+    void reset_current();
+
+    /// \brief Skip the remaining iterations and start at the next determinant value
+    void next_determinant();
+
+    /// \brief Jump to the next available HNF matrix. Returns false if you hit the last counter.
+    HermiteCounter &operator++();
+
+    /// \brief Get the current matrix the counter is on
+    Eigen::MatrixXi operator()() const;
+
 
   private:
 
@@ -71,10 +99,18 @@ namespace CASM {
     /// \brief unrolled vector of the upper triangle (does not include diagonal elements)
     EigenVectorXiCounter m_upper_tri;
 
+    /// \brief Keeps track of whether you've surpassed the last countable matrix
+    bool m_valid;
 
 
     /// \brief Go to the next values of diagonal elements that keep the same determinant
-    void _increment_diagonal();
+    Index _increment_diagonal();
+
+    /// \brief Reset the diagonal to the specified determinant and set the other elements to zero
+    void _jump_to_determinant(value_type new_det);
+
+    /// \brief Assemble all the internals into matrix form
+    //Eigen::MatrixXi _matrix();
 
   };
 
@@ -90,6 +126,9 @@ namespace CASM {
 
     /// \brief Create a counter for the elements above the diagonal based on the current diagonal value
     EigenVectorXiCounter _upper_tri_counter(const Eigen::VectorXi &current_diag);
+
+    /// \brief Assemble a matrix diagonal and unrolled upper triangle values into a matrix
+    Eigen::MatrixXi _zip_matrix(const Eigen::VectorXi &current_diag, const Eigen::VectorXi &current_upper_tri);
   }
 
   //******************************************************************************************************************//

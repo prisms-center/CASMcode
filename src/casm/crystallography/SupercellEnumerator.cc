@@ -13,6 +13,7 @@ namespace CASM {
    */
 
   HermiteCounter::HermiteCounter(int init_start_determinant, int init_end_determinant, int init_dim):
+    m_valid(true),
     m_pos(0),
     m_low_det(init_start_determinant),
     m_high_det(init_end_determinant) {
@@ -20,7 +21,7 @@ namespace CASM {
       throw std::runtime_error("Determinants and matrix dimensions must be greater than 0.");
     }
 
-    if(init_end_determinant > init_start_determinant) {
+    if(init_start_determinant > init_end_determinant) {
       throw std::runtime_error("End determinant must be greater or equal to the starting determinant value.");
     }
 
@@ -28,13 +29,22 @@ namespace CASM {
     m_diagonal(0) = m_low_det;
 
     m_upper_tri = HermiteCounter_impl::_upper_tri_counter(m_diagonal);
+
+    //Nothing to count over
+    if(m_high_det == 1) {
+      m_valid = false;
+    }
   }
 
   HermiteCounter::HermiteCounter(int init_determinant, int init_dim):
     HermiteCounter(init_determinant, init_determinant, init_dim) {
   }
 
-  Index HermiteCounter::pos() const {
+  bool HermiteCounter::valid() const {
+    return m_valid;
+  }
+
+  HermiteCounter::Index HermiteCounter::position() const {
     return m_pos;
   }
 
@@ -42,8 +52,105 @@ namespace CASM {
     return m_diagonal;
   }
 
-  void HermiteCounter::_increment_diagonal() {
+  Eigen::MatrixXi HermiteCounter::current() const {
+    return HermiteCounter_impl::_zip_matrix(m_diagonal, m_upper_tri.current());
+  }
+
+  HermiteCounter::Index HermiteCounter::dim() const {
+    return m_diagonal.size();
+  }
+
+  Eigen::MatrixXi HermiteCounter::operator()() const {
+    return current();
+  }
+
+  HermiteCounter::value_type HermiteCounter::determinant() const {
+    value_type det = 1;
+
+    for(Index i = 0; i < dim(); i++) {
+      det = det * m_diagonal(i);
+    }
+
+    return det;
+  }
+
+  void HermiteCounter::reset_full() {
+    m_valid = true;
+    _jump_to_determinant(m_low_det);
+
+    return;
+  }
+
+  void HermiteCounter::reset_current() {
+    m_valid = true;
+    _jump_to_determinant(determinant());
+
+    return;
+  }
+
+  void HermiteCounter::next_determinant() {
+    if(determinant() == m_high_det) {
+      m_valid = false;
+    }
+
+    else {
+      _jump_to_determinant(determinant() + 1);
+    }
+
+    return;
+  }
+
+  Index HermiteCounter::_increment_diagonal() {
     m_pos = HermiteCounter_impl::next_spill_position(m_diagonal, m_pos);
+    return m_pos;
+  }
+
+  HermiteCounter &HermiteCounter::operator++() {
+    if(!m_valid) {
+      return *this;
+    }
+
+    //Vary elements above diagonal
+    m_upper_tri++;
+
+    //Nothing to permute for identity
+    if(determinant() == 1) {
+      _jump_to_determinant(2);
+    }
+
+    //Still other matrices available for current diagonal
+    else if(m_upper_tri.valid()) {
+      m_valid = true;
+    }
+
+    //Find next diagonal, reset elements above diagonal
+    else if(_increment_diagonal() < dim()) {
+      m_upper_tri = HermiteCounter_impl::_upper_tri_counter(m_diagonal);
+    }
+
+    //Reset diagonal with next determinant value, reset elements above diagonal
+    else if(determinant() < m_high_det) {
+      _jump_to_determinant(determinant() + 1);
+    }
+
+    //Nothing left to count
+    else {
+      m_valid = false;
+    }
+
+
+    return *this;
+  }
+
+  void HermiteCounter::_jump_to_determinant(value_type new_det) {
+    assert(new_det >= m_low_det && new_det <= m_high_det);
+
+    m_diagonal = Eigen::VectorXi::Ones(dim());
+    m_diagonal(0) = new_det;
+
+    m_upper_tri = HermiteCounter_impl::_upper_tri_counter(m_diagonal);
+    m_pos = 0;
+
     return;
   }
 
@@ -80,7 +187,7 @@ namespace CASM {
         do {
           position--;
         }
-        while(diag(position) == 1 && position >= 0);
+        while(position >= 0 && diag(position) == 1);
 
         //You're at the last spill already. Your diagonal is 1 1 ... 1 1 det. No more increments are possible.
         if(position < 0) {
@@ -96,7 +203,6 @@ namespace CASM {
 
       return _spill_factor(diag, position, attempt);
     }
-
 
     HermiteCounter::Index upper_size(HermiteCounter::Index init_dim) {
       assert(init_dim > 0);
@@ -124,21 +230,31 @@ namespace CASM {
       Eigen::VectorXi endcount(Eigen::VectorXi::Zero(uppersize));
       HermiteCounter::Index slot = 0;
       for(HermiteCounter::Index i = 0; i < current_diag.size(); i++) {
-        for(HermiteCounter::Index j = 0; j < current_diag.size() - i - 1; j++) {
+        for(HermiteCounter::Index j = i + 1; j < current_diag.size(); j++) {
           //The counter value should always be smaller than the diagonal
           endcount(slot) = current_diag(i) - 1;
           slot++;
         }
       }
 
-      std::cout << "DEBUGGING: current_diag.transpose() is " << current_diag.transpose() << std::endl;
-      std::cout << "DEBUGGING: begincount.transpose() is " << begincount.transpose() << std::endl;
-      std::cout << "DEBUGGING: endcount.transpose() is " << endcount.transpose() << std::endl;
-
-
       return EigenVectorXiCounter(begincount, endcount, stepcount);
     }
 
+    Eigen::MatrixXi _zip_matrix(const Eigen::VectorXi &current_diag, const Eigen::VectorXi &current_upper_tri) {
+      assert(current_upper_tri.size() == upper_size(current_diag.size()));
+
+      Eigen::MatrixXi hmat(current_diag.asDiagonal());
+
+      Index slot = 0;
+      for(Index i = 0; i < current_diag.size() - 1; i++) {
+        for(Index j = i + 1; j < current_diag.size(); j++) {
+          hmat(i, j) = current_upper_tri(slot);
+          slot++;
+        }
+      }
+
+      return hmat;
+    }
   }
 
 
