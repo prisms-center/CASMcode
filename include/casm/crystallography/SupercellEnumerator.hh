@@ -513,55 +513,64 @@ namespace CASM {
   template<typename UnitType>
   void SupercellIterator<UnitType>::_try_increment() {
 
+    /*
     // order: try to increment m_current(1,2), (0,2), (0,1), (1,1), (0,0), m_vol
     //   but ensure still in valid hermite_normal_form with correct volume
 
     // try to increment m_current(1,2)
-    if(m_current(1, 2) < m_current(1, 1) - 1) {
-      m_current(1, 2)++;
-      return;
+    if(m_current(1, 2) < m_current(1, 1) - 1)
+    {
+        m_current(1, 2)++;
+        return;
     }
     m_current(1, 2) = 0;
 
     // try to increment m_current(0,2)
-    if(m_current(0, 2) < m_current(0, 0) - 1) {
-      m_current(0, 2)++;
-      return;
+    if(m_current(0, 2) < m_current(0, 0) - 1)
+    {
+        m_current(0, 2)++;
+        return;
     }
     m_current(0, 2) = 0;
 
     // try to increment m_current(0,1)
-    if(m_current(0, 1) < m_current(0, 0) - 1) {
-      m_current(0, 1)++;
-      return;
+    if(m_current(0, 1) < m_current(0, 0) - 1)
+    {
+        m_current(0, 1)++;
+        return;
     }
     m_current(0, 1) = 0;
 
     // try to increment m_current(1,1)
-    do {
-      m_current(1, 1)++;
+    do
+    {
+        m_current(1, 1)++;
     }
     while((m_vol / m_current(0, 0) % m_current(1, 1) != 0) && (m_current(1, 1) <= m_vol));
-    if(m_current(1, 1) <= m_vol) {
-      m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
-      return;
+    if(m_current(1, 1) <= m_vol)
+    {
+        m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
+        return;
     }
     m_current(1, 1) = 1;
 
     // try to increment m_current(0,0)
-    do {
-      m_current(0, 0)++;
+    do
+    {
+        m_current(0, 0)++;
     }
     while((m_vol % m_current(0, 0) != 0) && (m_current(0, 0) <= m_vol));
-    if(m_current(0, 0) <= m_vol) {
-      m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
-      return;
+    if(m_current(0, 0) <= m_vol)
+    {
+        m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
+        return;
     }
     m_current(0, 0) = 1;
 
     // increment m_vol
     m_vol++;
     m_current(2, 2) = m_vol;
+    */
 
     return;
 
@@ -582,10 +591,13 @@ namespace CASM {
     return m_point_group;
   }
 
+  /*
   template<typename UnitType>
-  void SupercellEnumerator<UnitType>::begin_volume(size_type _begin_volume) {
-    m_begin_volume = _begin_volume;
+  void SupercellEnumerator<UnitType>::begin_volume(size_type _begin_volume)
+  {
+      m_begin_volume = _begin_volume;
   }
+  */
 
   template<typename UnitType>
   typename SupercellEnumerator<UnitType>::size_type SupercellEnumerator<UnitType>::begin_volume() const {

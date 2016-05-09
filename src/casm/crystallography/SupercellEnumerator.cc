@@ -65,7 +65,6 @@ namespace CASM {
   }
 
   HermiteCounter::value_type HermiteCounter::determinant() const {
-
     return m_diagonal.prod();
   }
 
@@ -132,7 +131,6 @@ namespace CASM {
     else {
       m_valid = false;
     }
-
 
     return *this;
   }
