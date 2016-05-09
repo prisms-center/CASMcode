@@ -129,6 +129,9 @@ namespace CASM {
 
     /// \brief Assemble a matrix diagonal and unrolled upper triangle values into a matrix
     Eigen::MatrixXi _zip_matrix(const Eigen::VectorXi &current_diag, const Eigen::VectorXi &current_upper_tri);
+
+    /// \brief Expand a n x n Hermite normal matrix into a m x m one (e.g. for 2D supercells)
+    Eigen::MatrixXi _expand_dims(const Eigen::MatrixXi &hermit_mat, const Eigen::VectorXi &active_dims);
   }
 
   //******************************************************************************************************************//

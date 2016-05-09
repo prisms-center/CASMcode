@@ -65,13 +65,8 @@ namespace CASM {
   }
 
   HermiteCounter::value_type HermiteCounter::determinant() const {
-    value_type det = 1;
 
-    for(Index i = 0; i < dim(); i++) {
-      det = det * m_diagonal(i);
-    }
-
-    return det;
+    return m_diagonal.prod();
   }
 
   void HermiteCounter::reset_full() {
@@ -254,6 +249,67 @@ namespace CASM {
       }
 
       return hmat;
+    }
+
+    /**
+     * A particular Hermit normal form matrix can have its dimensions expanded by inserting
+     * extra 0s and a 1 in the diagonal. Specify the "active" indexes (n values of 1) and
+     * "inactive" indexes (m-n values of 0) in a vector.
+     *
+     * For example, you can expand a 4 x 4 matrix
+     *  2 1 0 0
+     *  0 5 2 2
+     *  0 0 6 1
+     *  0 0 0 3
+     *
+     * into a 6 x 6 matrix by specifying the vector [101110]
+     *  2 0 1 0 0 0
+     *  0 1 0 0 0 0
+     *  0 0 5 2 2 0
+     *  0 0 0 6 1 0
+     *  0 0 0 0 3 0
+     *  0 0 0 0 0 1
+     *
+     * Rows/columns where a 0 was specified are all zero except for the diagonal element, which is 1.
+     */
+
+    Eigen::MatrixXi _expand_dims(const Eigen::MatrixXi &hermit_mat, const Eigen::VectorXi &active_dims) {
+      assert(hermit_mat.rows() == active_dims.sum() && hermit_mat.cols() == active_dims.sum());
+      assert(active_dims.maxCoeff() == 1 && active_dims.minCoeff() == 0);
+
+      Eigen::MatrixXi expanded(Eigen::MatrixXi::Identity(active_dims.size(), active_dims.size()));
+
+      HermiteCounter::Index i, j, si, sj;
+      si = -1;
+      sj = -1;
+
+      for(i = 0; i < expanded.rows(); i++) {
+        if(active_dims(i) == 0) {
+          continue;
+        }
+
+        else {
+          si++;
+        }
+
+
+        for(j = 0; j < expanded.cols(); j++) {
+          if(active_dims(j) == 0) {
+            continue;
+          }
+
+          else {
+            sj++;
+          }
+
+          expanded(i, j) = hermit_mat(si, sj);
+        }
+
+        j = 0;
+        sj = -1;
+      }
+
+      return expanded;
     }
   }
 

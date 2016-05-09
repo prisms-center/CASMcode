@@ -137,7 +137,6 @@ void next_position_test() {
     p = CASM::HermiteCounter_impl::next_spill_position(diag, p);
   }
 
-
   return;
 }
 
@@ -307,6 +306,28 @@ void reset_test() {
   return;
 }
 
+void expand_dims_test() {
+  Eigen::MatrixXi expandmat(Eigen::MatrixXi::Ones(5, 5));
+  expandmat = expandmat * 3;
+
+  Eigen::VectorXi expanddims(8);
+  expanddims << 1, 1, 1, 0, 1, 0, 0, 1;
+
+  Eigen::MatrixXi expandedmat(8, 8);
+  expandmat << 3, 3, 3, 0, 3, 0, 0, 3,
+            3, 3, 3, 0, 3, 0, 0, 3,
+            3, 3, 3, 0, 3, 0, 0, 3,
+            0, 0, 0, 1, 0, 0, 0, 0,
+            3, 3, 3, 0, 3, 0, 0, 3,
+            0, 0, 0, 0, 0, 1, 0, 0,
+            0, 0, 0, 0, 0, 0, 1, 0,
+            3, 3, 3, 0, 3, 0, 0, 1;
+
+  BOOST_CHECK_EQUAL(expandmat, HermiteCounter_impl::_expand_dims(expandmat, expanddims));
+
+  return;
+}
+
 BOOST_AUTO_TEST_SUITE(SupercellEnumeratorTest)
 
 BOOST_AUTO_TEST_CASE(HermiteConstruction) {
@@ -318,8 +339,11 @@ BOOST_AUTO_TEST_CASE(HermiteImpl) {
   next_position_test();
   triangle_count_test();
   matrix_construction_test();
-  increment_test();
   reset_test();
+}
+
+BOOST_AUTO_TEST_CASE(HermiteCounting) {
+  increment_test();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
