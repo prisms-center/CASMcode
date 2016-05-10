@@ -4,6 +4,9 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/NeighborList.hh"
 
+#include "casm/clex/ConfigIOSelected.hh"
+#include "casm/clex/ConfigSelection.hh"
+
 namespace CASM {
 
   /// \brief Default weight matrix for approximately spherical neighborhood in Cartesian coordinates
@@ -58,7 +61,12 @@ namespace CASM {
     Structure prim(read_prim(m_dir.prim()));
     m_nlist_weight_matrix = _default_nlist_weight_matrix(prim, TOL);
     m_nlist_sublat_indices = _default_nlist_sublat_indices(prim);
-
+    
+    // load ConfigIO
+    m_config_io_dict = make_dictionary<Configuration>();
+    
+    // default 'selected' uses MASTER
+    set_selected(ConfigIO::Selected());
   }
 
   /// \brief Construct CASM project settings from existing project
@@ -123,7 +131,21 @@ namespace CASM {
         if(and_commit) {
           commit();
         }
-
+        
+        // load ConfigIO
+        m_config_io_dict = make_dictionary<Configuration>();
+        
+        // default 'selected' uses MASTER
+        set_selected(ConfigIO::Selected());
+        
+        // add aliases
+        auto alias_it = settings.find("query_alias");
+        if(alias_it != settings.end()) {
+          for(auto it=alias_it->begin(); it!=alias_it->end(); ++it) {
+            add_alias(it.name(), it->get<std::string>(), std::cerr);
+          }
+        }
+        
       }
       catch(std::exception &e) {
         std::cerr << "Error in ProjectSettings::ProjectSettings(const fs::path root).\n" <<
@@ -203,6 +225,78 @@ namespace CASM {
   /// \brief Get current project tol
   double ProjectSettings::tol() const {
     return m_tol;
+  }
+  
+  
+  // ** Configuration properties **
+  
+  const DataFormatterDictionary<Configuration>& ProjectSettings::config_io() const {
+    return m_config_io_dict;
+  }
+  
+  /// \brief Set the selection to be used for the 'selected' column
+  void ProjectSettings::set_selected(const ConfigIO::Selected& selection) {
+    m_config_io_dict.insert(
+      datum_formatter_alias(
+        "selected",
+        selection,
+        "Returns true if configuration is specified in the input selection"
+      )
+    );
+  }
+    
+  /// \brief Set the selection to be used for the 'selected' column
+  void ProjectSettings::set_selected(const ConstConfigSelection& selection) {
+    // the 'selected' column depends on the context
+    m_config_io_dict.insert(
+      datum_formatter_alias(
+        "selected",
+        ConfigIO::selected_in(selection),
+        "Returns true if configuration is specified in the input selection"
+      )
+    );
+  }
+  
+  /// \brief Add user-defined query alias
+  void ProjectSettings::add_alias(const std::string& alias_name, 
+                                  const std::string& alias_command, 
+                                  std::ostream &serr) {
+    
+    auto new_formatter =  datum_formatter_alias<Configuration>(alias_name, alias_command, m_config_io_dict);
+    auto key = m_config_io_dict.key(new_formatter);
+    
+    const auto& op_dict = operator_dictionary<Configuration>(m_config_io_dict);
+    
+    // if not in dictionary (includes operator dictionary), add
+    if(m_config_io_dict.find(key) == m_config_io_dict.end() && op_dict.find(key) == op_dict.end()) {
+      m_config_io_dict.insert(new_formatter);
+    }
+    // if a user-created alias, over-write with message
+    else if(m_aliases.find(alias_name) != m_aliases.end()) {
+      serr << "WARNING: I already know '" << alias_name << "' as:\n"
+           << "             " << m_aliases[alias_name] << "\n"
+           << "         I will forget it and learn '" << alias_name << "' as:\n"
+           << "             " << alias_command << std::endl;
+      m_config_io_dict.insert(new_formatter);
+    }
+    // else do not add, throw error
+    else {
+      std::stringstream ss;
+      ss << "Error: Attempted to over-write standard CASM query name with user alias.\n";
+      throw std::runtime_error(ss.str());
+    }
+    
+    // save alias
+    m_aliases[alias_name] = alias_command;
+    
+  }
+  
+  /// \brief Return map containing aliases
+  ///
+  /// - key: alias name
+  /// - value: alias command
+  const std::map<std::string, std::string>& ProjectSettings::aliases() const {
+    return m_aliases;
   }
 
 
@@ -410,6 +504,7 @@ namespace CASM {
     }
     json["view_command"] = set.view_command();
     json["tol"] = set.tol();
+    json["query_alias"] = set.aliases();
 
     return json;
   }

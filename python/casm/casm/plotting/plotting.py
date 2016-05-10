@@ -6,7 +6,7 @@ import uuid
 import casm.project
 
 import os
-import casm.fit
+import casm.learn
 import json, pickle
 
 import bokeh.client

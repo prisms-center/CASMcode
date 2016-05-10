@@ -28,8 +28,11 @@ namespace CASM {
 
     FilteredConfigIterator() {};
 
-    FilteredConfigIterator(const IteratorType &_begin, const IteratorType &_end, const std::string &filter_expr): m_it(_begin), m_end(_end) {
-      m_filter = ConfigIOParser::parse(filter_expr);
+    FilteredConfigIterator(const IteratorType &_begin, 
+                           const IteratorType &_end, 
+                           const std::string &filter_expr,
+                           const DataFormatterDictionary<Configuration>& _dict): m_it(_begin), m_end(_end) {
+      m_filter = _dict.parse(filter_expr);
       ValueDataStream<bool> _stream;
       if(m_it != m_end) {
         _stream << m_filter(*m_it);
@@ -38,8 +41,11 @@ namespace CASM {
       }
     }
 
-    FilteredConfigIterator(const IteratorType &_begin, const IteratorType &_end, const std::vector<std::string> &filter_expr): m_it(_begin), m_end(_end) {
-      m_filter = ConfigIOParser::parse(filter_expr);
+    FilteredConfigIterator(const IteratorType &_begin, 
+                           const IteratorType &_end, 
+                           const std::vector<std::string> &filter_expr,
+                           const DataFormatterDictionary<Configuration>& _dict): m_it(_begin), m_end(_end) {
+      m_filter = _dict.parse(filter_expr);
       ValueDataStream<bool> _stream;
       if(m_it != m_end) {
         _stream << m_filter(*m_it);
@@ -106,8 +112,12 @@ namespace CASM {
   }
 
   template<typename IteratorType>
-  FilteredConfigIterator<IteratorType> filter_begin(const IteratorType &it, const IteratorType &it_end, const std::vector<std::string> &filter_expr) {
-    return FilteredConfigIterator<IteratorType>(it, it_end, filter_expr);
+  FilteredConfigIterator<IteratorType> filter_begin(
+      const IteratorType &it, 
+      const IteratorType &it_end, 
+      const std::vector<std::string> &filter_expr,
+      const DataFormatterDictionary<Configuration>& _dict) {
+    return FilteredConfigIterator<IteratorType>(it, it_end, filter_expr, _dict);
   }
 
   template<typename IteratorType>

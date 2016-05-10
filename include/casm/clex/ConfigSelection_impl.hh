@@ -14,6 +14,11 @@ namespace CASM {
         set_selected(it->name(), it->selected());
       }
     }
+    else if(selection_path == "NONE") {
+      for(auto it = _primclex.config_cbegin(); it != _primclex.config_cend(); ++it) {
+        set_selected(it->name(), false);
+      }
+    }
     else if(selection_path == "ALL") {
       for(auto it = _primclex.config_cbegin(); it != _primclex.config_cend(); ++it) {
         set_selected(it->name(), true);
@@ -28,7 +33,7 @@ namespace CASM {
       if(!fs::exists(selection_path)) {
         std::stringstream ss;
         ss << "ERROR in parsing configuation selection name. \n"
-           << "  Expected <filename>, 'ALL', 'CALCULATED', or 'MASTER' <--default \n"
+           << "  Expected <filename>, 'ALL', 'NONE', 'CALCULATED', or 'MASTER' <--default \n"
            << "  Received: '" << selection_path << "'\n"
            << "  No file named '" << selection_path << "'.";
         throw std::runtime_error(ss.str());
@@ -122,12 +127,15 @@ namespace CASM {
   //******************************************************************************
 
   template <bool IsConst>
-  jsonParser &ConfigSelection<IsConst>::to_json(jsonParser &_json, bool only_selected) const {
+  jsonParser &ConfigSelection<IsConst>::to_json(
+      const DataFormatterDictionary<Configuration>& _dict,
+      jsonParser &_json, 
+      bool only_selected) const {
     _json.put_array();
 
     DataFormatter<Configuration> tformat(ConfigIO::configname(), datum_formatter_alias("selected", ConfigIO::selected_in(*this)));
 
-    tformat.append(ConfigIOParser::parse(m_col_headers));
+    tformat.append(_dict.parse(m_col_headers));
 
     if(only_selected) {
       _json = tformat(selected_config_cbegin(),
@@ -142,10 +150,13 @@ namespace CASM {
   }
   //******************************************************************************
   template <bool IsConst>
-  void ConfigSelection<IsConst>::print(std::ostream &_out, bool only_selected) const {
+  void ConfigSelection<IsConst>::print(
+      const DataFormatterDictionary<Configuration>& _dict,
+      std::ostream &_out, 
+      bool only_selected) const {
     DataFormatter<Configuration> tformat(ConfigIO::configname(), datum_formatter_alias("selected", ConfigIO::selected_in(*this)));
 
-    tformat.append(ConfigIOParser::parse(m_col_headers));
+    tformat.append(_dict.parse(m_col_headers));
 
     if(only_selected) {
       _out << tformat(selected_config_cbegin(),

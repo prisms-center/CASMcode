@@ -600,7 +600,8 @@ namespace CASM {
 
     using UniqueMapType::insert;
 
-    /// \brief Equivalent to find, but throw error with suggestion if @param _name not found
+    /// \brief Equivalent to find, but includes operators and throws error with 
+    /// suggestion if @param _name not found
     const_iterator lookup(const key_type &_name) const;
 
     /// \brief True if dictionary contains entry for @param _name
@@ -610,23 +611,27 @@ namespace CASM {
 
     void print_help(std::ostream &_stream,
                     typename BaseDatumFormatter<DataObject>::FormatterType ftype,
-                    int width,
-                    int separation) const;
+                    int width = 60,
+                    int separation = 8) const;
 
     /// \brief Use the vector of strings to build a DataFormatter<DataObject>
-    DataFormatter<DataObject> parse(const std::string &input)const;
+    DataFormatter<DataObject> parse(const std::string &input) const;
 
     /// \brief Use a single string to build a DataFormatter<DataObject>
-    DataFormatter<DataObject> parse(const std::vector<std::string> &input)const;
+    DataFormatter<DataObject> parse(const std::vector<std::string> &input) const;
 
   };
+  
+  /// \brief Const access the static operator dictionary
+  template<typename DataObject>
+  const DataFormatterDictionary<DataObject>& operator_dictionary(const DataFormatterDictionary<DataObject>& target);
 
 
   // ******************************************************************************
 
   /// \brief Dictionary of all DatumFormatterOperator
   template<typename DataObject>
-  DataFormatterDictionary<DataObject> make_operator_dictionary();
+  DataFormatterDictionary<DataObject>& insert_operators(DataFormatterDictionary<DataObject>& dict);
 
   /// \brief Dictionary of all AttributeFormatter (i.e. BaseValueFormatter<V, DataObject>)
   template<typename DataObject>
@@ -637,16 +642,10 @@ namespace CASM {
   /// Default includes the make_attribute_dictionary() and make_operator_dictionary()
   template<typename DataObject>
   DataFormatterDictionary<DataObject> make_dictionary() {
-    DataFormatterDictionary<DataObject> dict;
-
-    dict.insert(
-      make_attribute_dictionary<DataObject>(),
-      make_operator_dictionary<DataObject>()
-    );
-
-    return dict;
+    return make_attribute_dictionary<DataObject>();
   }
 
+/*
   /// \brief A singleton for creating and using a DataFormatterDictionary<DataObject>
   template<typename DataObject>
   class DataFormatterParser {
@@ -697,7 +696,7 @@ namespace CASM {
     /// \brief Prevent creating copies
     void operator=(const DataFormatterParser &)  = delete;
   };
-
+*/
 
   // ******************************************************************************
 

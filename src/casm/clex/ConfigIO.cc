@@ -11,8 +11,7 @@
 #include "casm/clex/ConfigIOSelected.hh"
 
 namespace CASM {
-  //int ConfigIOParser::hack = ConfigIOParser::init(std::function<void(DataFormatterDictionary<Configuration>&) >(ConfigIO::initialize_formatting_dictionary));
-
+  
   namespace ConfigIO_impl {
 
     /// \brief Expects arguments of the form 'name' or 'name(Au)', 'name(Pt)', etc.
