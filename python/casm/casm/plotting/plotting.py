@@ -1112,7 +1112,7 @@ class WeightSelect(object):
     self.input_filename = input_filename
     self.hullplot_kwargs = hullplot_kwargs
     if not os.path.exists(input_filename):
-      self.fit_input = casm.fit.example_input()
+      self.fit_input = casm.learn.example_input()
       with open(self.input_filename, 'w') as f:
         json.dump(self.fit_input, f, indent=2)
     else:
@@ -1249,19 +1249,19 @@ class WeightSelect(object):
     """Set wvalue based on weighting parameters"""
     # calculate weights
     if self.select_method.value == "wHullDist":
-      w = casm.fit.tools.wHullDist(
+      w = casm.learn.tools.wHullDist(
             self.hull_dist_values[np.where(self._selected)], 
             self.input['A'].value, 
             self.input['B'].value, 
             self.input['kT'].value*0.001)
     elif self.select_method.value == "wEmin":
-      w = casm.fit.tools.wEmin(
+      w = casm.learn.tools.wEmin(
             self.sel.data['formation_energy'].values[np.where(self._selected)], 
             self.input['A'].value, 
             self.input['B'].value, 
             self.input['kT'].value*0.001)
     elif self.select_method.value == "wEref":
-      w = casm.fit.tools.wEref(
+      w = casm.learn.tools.wEref(
             self.sel.data['formation_energy'].values[np.where(self._selected)], 
             self.input['A'].value, 
             self.input['B'].value, 
@@ -1273,8 +1273,8 @@ class WeightSelect(object):
     add_src_data(self.sel, 'weight', self.sel.data.loc[:,'weight'], force=True)
     
     # update data (will update hullplot scatter points, but not convex hull line)
-    self.sel.data.loc[self._selected,self.wvalue_id] = casm.fit.tools.set_sample_weight(
-      w, value=self.sel.data.loc[self._selected,'formation_energy'].values)[0]
+    self.sel.data.loc[self._selected,self.wvalue_id] = casm.learn.tools.set_sample_weight(
+      w, y=self.sel.data.loc[self._selected,'formation_energy'].values)[0]
     self.sel.data.loc[self._unselected,self.wvalue_id] = self.sel.data.loc[self._unselected,'formation_energy']
     add_src_data(self.sel, self.wvalue_id, self.sel.data.loc[:,self.wvalue_id], force=True)
   
