@@ -28,6 +28,9 @@ namespace CASM {
 
   template<typename DataObject>
   class BaseDatumFormatter;
+  
+  template<typename DataObject, typename DatumFormatterType>
+  class DataFormatterDictionary;
 
   // Given expression string
   //   "subexpr1 subexpr2(subsub1) subexpr3(subsub2(subsubsub1))"
@@ -277,6 +280,7 @@ namespace CASM {
 
     enum FormatterType {Property, Operator};
     typedef long difference_type;
+    typedef DataFormatterDictionary<DataObject, BaseDatumFormatter<DataObject> > DictType;
 
 
     BaseDatumFormatter(const std::string &_init_name, const std::string &_desc) :
@@ -298,6 +302,16 @@ namespace CASM {
 
     virtual FormatterType type() const {
       return Property;
+    }
+    
+    /// \brief const Access the dictionary containing this formatter, set during DictType::lookup 
+    const DictType& home() const {
+      return *m_home;
+    }
+    
+    /// \brief Set the dictionary containing this formatter, set during DictType::lookup 
+    void set_home(const DictType& home) const {
+      m_home = &home;
     }
 
     /// \brief Make an exact copy of the formatter (including any initialized members)
@@ -393,7 +407,7 @@ namespace CASM {
     std::string m_name;
     std::string m_description;
     mutable IndexContainer  m_index_rules;
-
+    mutable const DictType* m_home;
   };
 
   template<typename T>
@@ -600,7 +614,7 @@ namespace CASM {
 
     using UniqueMapType::insert;
 
-    /// \brief Equivalent to find, but includes operators and throws error with 
+    /// \brief Equivalent to find, but set 'home' and throws error with 
     /// suggestion if @param _name not found
     const_iterator lookup(const key_type &_name) const;
 
@@ -622,27 +636,29 @@ namespace CASM {
 
   };
   
-  /// \brief Const access the static operator dictionary
-  template<typename DataObject>
-  const DataFormatterDictionary<DataObject>& operator_dictionary(const DataFormatterDictionary<DataObject>& target);
-
-
+  
   // ******************************************************************************
-
-  /// \brief Dictionary of all DatumFormatterOperator
-  template<typename DataObject>
-  DataFormatterDictionary<DataObject>& insert_operators(DataFormatterDictionary<DataObject>& dict);
-
+  
   /// \brief Dictionary of all AttributeFormatter (i.e. BaseValueFormatter<V, DataObject>)
   template<typename DataObject>
   DataFormatterDictionary<DataObject> make_attribute_dictionary();
-
+  
+  /// \brief Dictionary of all DatumFormatterOperator
+  template<typename DataObject>
+  DataFormatterDictionary<DataObject> make_operator_dictionary();
+  
   /// \brief Template to can be specialized for constructing dictionaries for particular DataObject
   ///
   /// Default includes the make_attribute_dictionary() and make_operator_dictionary()
   template<typename DataObject>
   DataFormatterDictionary<DataObject> make_dictionary() {
-    return make_attribute_dictionary<DataObject>();
+    DataFormatterDictionary<DataObject> dict;
+    dict.insert(
+      make_attribute_dictionary<DataObject>(),
+      make_operator_dictionary<DataObject>()
+    );
+    
+    return dict;
   }
 
 /*

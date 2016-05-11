@@ -21,43 +21,12 @@ namespace CASM {
   */
   
   
-  template<typename DataObject>
-  class BaseDataFormatterOperator : public BaseDatumFormatter<DataObject> {
-    
-    public:
-    
-    BaseDataFormatterOperator(
-        const std::string &_init_name, 
-        const std::string &_desc) :
-      BaseDatumFormatter<DataObject>(_init_name, _desc) {}
-      
-    const DataFormatterDictionary<DataObject>& target() const {
-      return *m_target;
-    }
-    
-    void set_target(const DataFormatterDictionary<DataObject>& target) const {
-      m_target = &target;
-    }
-    
-    std::unique_ptr<BaseDataFormatterOperator> clone() const {
-      return std::unique_ptr<BaseDataFormatterOperator>(this->_clone());
-    }
-    
-    
-    private:
-    
-    virtual BaseDataFormatterOperator* _clone() const = 0;
-    
-    mutable const DataFormatterDictionary<DataObject>* m_target;
-    
-  };
-
-  /// \brief Base class for DataFormatter that operate on the results of other DataFormatters
+  /// \brief DataFormatters that operate on the results of other DataFormatters
   ///
   /// \ingroup DataFormatterOperator
   ///
   template<typename ValueType, typename ArgType, typename DataObject>
-  class DataFormatterOperator : public BaseDataFormatterOperator<DataObject> {
+  class DataFormatterOperator : public BaseDatumFormatter<DataObject> {
   public:
 
     using BaseDatumFormatter<DataObject>::name;
@@ -69,7 +38,7 @@ namespace CASM {
         const std::string &_init_name, 
         const std::string &_desc, 
         Evaluator evaluator) :
-      BaseDataFormatterOperator<DataObject>(_init_name, _desc), m_evaluate(evaluator) {}
+      BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator) {}
 
     std::unique_ptr<DataFormatterOperator> clone() const {
       return std::unique_ptr<DataFormatterOperator>(this->_clone());

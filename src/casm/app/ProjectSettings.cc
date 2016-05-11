@@ -128,22 +128,31 @@ namespace CASM {
           m_nlist_sublat_indices = _default_nlist_sublat_indices(prim);
         }
 
-        if(and_commit) {
-          commit();
-        }
-        
         // load ConfigIO
         m_config_io_dict = make_dictionary<Configuration>();
         
         // default 'selected' uses MASTER
         set_selected(ConfigIO::Selected());
         
-        // add aliases
-        auto alias_it = settings.find("query_alias");
-        if(alias_it != settings.end()) {
-          for(auto it=alias_it->begin(); it!=alias_it->end(); ++it) {
-            add_alias(it.name(), it->get<std::string>(), std::cerr);
+        // migrate existing query_alias from deprecated 'query_alias.json'
+        jsonParser& alias_json = settings["query_alias"];
+        if(fs::exists(m_dir.query_alias())) {
+          jsonParser depr(m_dir.query_alias());
+          for(auto it=depr.begin(); it!=depr.end(); ++it) {
+            if(!alias_json.contains(it.name())) {
+              alias_json[it.name()] = it->get<std::string>();
+              and_commit = true;
+            }
           }
+        }
+        
+        // add aliases to dictionary
+        for(auto it=alias_json.begin(); it!=alias_json.end(); ++it) {
+          add_alias(it.name(), it->get<std::string>(), std::cerr);
+        }
+        
+        if(and_commit) {
+          commit();
         }
         
       }
@@ -265,10 +274,8 @@ namespace CASM {
     auto new_formatter =  datum_formatter_alias<Configuration>(alias_name, alias_command, m_config_io_dict);
     auto key = m_config_io_dict.key(new_formatter);
     
-    const auto& op_dict = operator_dictionary<Configuration>(m_config_io_dict);
-    
     // if not in dictionary (includes operator dictionary), add
-    if(m_config_io_dict.find(key) == m_config_io_dict.end() && op_dict.find(key) == op_dict.end()) {
+    if(m_config_io_dict.find(key) == m_config_io_dict.end()) {
       m_config_io_dict.insert(new_formatter);
     }
     // if a user-created alias, over-write with message

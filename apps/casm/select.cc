@@ -79,8 +79,7 @@ namespace CASM {
 
       if(str[0] == 'o') {
         _stream << "Available operators for use within selection criteria:" << std::endl;
-        const auto& op_dict = operator_dictionary<Configuration>(_dict);
-        op_dict.print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
+        _dict.print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
       }
       else if(str[0] == 'p') {
         _stream << "Available property tags are currently:" << std::endl;

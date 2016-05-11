@@ -9,7 +9,7 @@
 
 namespace CASM {
 
-  void query_help(const DataFormatterDictionary<Configuration>& config_io, std::ostream &_stream, std::vector<std::string > help_opt_vec) {
+  void query_help(const DataFormatterDictionary<Configuration>& _dict, std::ostream &_stream, std::vector<std::string > help_opt_vec) {
     _stream << "Prints the properties for a set of configurations for the set of currently selected" << std::endl
             << "configurations or for a set of configurations specifed by a selection file." << std::endl
             << std::endl
@@ -23,12 +23,11 @@ namespace CASM {
 
       if(help_opt[0] == 'o') {
         _stream << "Available operators for use within queries:" << std::endl;
-        const auto& op_dict = operator_dictionary<Configuration>(config_io);
-        op_dict.print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
+        _dict.print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
       }
       else if(help_opt[0] == 'p') {
         _stream << "Available property tags are currently:" << std::endl;
-        config_io.print_help(_stream, BaseDatumFormatter<Configuration>::Property);
+        _dict.print_help(_stream, BaseDatumFormatter<Configuration>::Property);
       }
       _stream << std::endl;
     }

@@ -208,7 +208,7 @@ namespace CASM {
   //******************************************************************************
 
 
-  /// \brief Equivalent to find, but includes operators and throws error with 
+  /// \brief Equivalent to find, but set 'home' and throws error with 
   /// suggestion if @param _name not found
   template<typename DataObject, typename DatumFormatterType>
   typename DataFormatterDictionary<DataObject, DatumFormatterType>::const_iterator
@@ -217,36 +217,24 @@ namespace CASM {
     
     typedef DataFormatterDictionary<DataObject, DatumFormatterType> dict_type;
     
-    // search operator dictionary
-    const auto& op_dict = operator_dictionary(*this);
-    
-    auto res = op_dict.find(_name);
-    if(res != op_dict.end()) {
-      return res;
-    }
-    res = this->find(_name);
+    auto res = this->find(_name);
     if(res != this->end()) {
+      res->set_home(*this);
       return res;
     }
     else {
       
+      // If no match, try to use demerescau-levenshtein distance to make a helpful suggestion
       int min_dist(-1);
-      
-      auto suggest = [&](const key_type& _name, const dict_type& dict) {
-        // If no match, try to use demerescau-levenshtein distance to make a helpful suggestion
-        auto it = dict.begin();
-        for(; it != dict.end(); ++it) {
-          int dist = dl_string_dist(_name, it->name());
-          if(min_dist < 0 || dist < min_dist) {
-            min_dist = dist;
-            //std::cout << "New best: \"" << it->first << "\" aka \"" << it->second->name() << "\"\n";
-            res = it;
-          }
+      auto it = this->begin();
+      for(; it != this->end(); ++it) {
+        int dist = dl_string_dist(_name, it->name());
+        if(min_dist < 0 || dist < min_dist) {
+          min_dist = dist;
+          //std::cout << "New best: \"" << it->first << "\" aka \"" << it->second->name() << "\"\n";
+          res = it;
         }
-      };
-      
-      suggest(_name, op_dict);
-      suggest(_name, *this);
+      }
       
       throw std::runtime_error("CRITICAL ERROR: Invalid format flag \"" + _name + "\" specified.\n"
                                + "                Did you mean \"" + res->name() + "\"?\n");
@@ -349,15 +337,5 @@ namespace CASM {
     }
   }
   */
-  
-  /// \brief Const access the static operator dictionary
-  template<typename DataObject>
-  const DataFormatterDictionary<DataObject>& operator_dictionary(const DataFormatterDictionary<DataObject>& target) {
-    static DataFormatterDictionary<DataObject> op_dict = make_operator_dictionary<DataObject>();
-    for(auto it=op_dict.begin(); it!=op_dict.end(); ++it) {
-      static_cast<BaseDataFormatterOperator<DataObject>&>(*it).set_target(target);
-    }
-    return op_dict;
-  }
 
 }
