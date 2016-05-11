@@ -17,6 +17,9 @@ setup(name='vasp',
       version='{0}',
       url='{1}',
       description='A wrapper for submitting and collecting VASP jobs developed for CASM',
+      author='CASM developers',
+      author_email='casm-developers@lists.engr.ucsb.edu',
+      license='LGPL2.1',
       packages=['vasp','vasp.io']
       )
 """.format(version, url)

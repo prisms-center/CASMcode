@@ -18,7 +18,7 @@ installed_files = []
 if os.path.isfile('installed.txt'):
   installed_files = [line.rstrip('\n') for line in open('installed.txt')]
 
-env.Clean('pyvasp_install', installed_files + ['build'])
+env.Clean('pyvasp_install', installed_files + ['build', 'dist', 'vasp.egg-info'])
 
 if 'pyvasp_install' in COMMAND_LINE_TARGETS:
   env['IS_INSTALL'] = 1

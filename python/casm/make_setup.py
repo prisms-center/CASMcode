@@ -17,6 +17,9 @@ setup(name='casm',
       version='{0}',
       url='{1}',
       description='CASM Python API and interface with DFT codes.',
+      author='CASM developers',
+      author_email='casm-developers@lists.engr.ucsb.edu',
+      license='LGPL2.1',
       packages=['casm','casm.vaspwrapper', 'casm.learn', 'casm.project', 'casm.plotting'],
       scripts=glob.glob('scripts/*')
       )
