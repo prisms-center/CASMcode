@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE(DatumFormatters) {
   auto check = [&](const BaseDatumFormatter<Configuration> &formatter) {
     auto prev_size = dict.size();
     dict.insert(formatter);
-    BOOST_CHECK_EQUAL_MESSAGE(prev_size + 1, dict.size(), formatter.name());
+    BOOST_CHECK_MESSAGE(prev_size + 1 == dict.size(), formatter.name());
   };
 
   // String

@@ -123,7 +123,7 @@ namespace test {
   /// \brief Default checks that several options run without error
   void Proj::check_query() {
     m_p.popen(cd_and() + "casm query --columns comp");
-    BOOST_CHECK_EQUAL_MESSAGE(m_p.exit_code(), 0, m_p.gets());
+    BOOST_CHECK_MESSAGE(m_p.exit_code() == 0, m_p.gets());
 
   }
 
