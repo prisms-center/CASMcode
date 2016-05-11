@@ -49,16 +49,22 @@ Help("""
         On Mac OS X, this variable is $DYLD_FALLBACK_LIBRARY_PATH.
         This should be added to your ~/.bash_profile (Linux) or ~/.profile (Mac).
       
+      $CASMBOOST_NO_CXX11_SCOPED_ENUMS:
+        If defined, will compile with -DCASMBOOST_NO_CXX11_SCOPED_ENUMS. Use this
+        if linking to boost libraries compiled without c++11.
+      
       
       Additional options that override environment variables:
       
       Use 'cxx=X' to set the C++ compiler. Default is chosen by scons.
           'opt=X' to set optimization level, '-OX'. Default is 3.
           'debug=X' with X=0 to use '-DNDEBUG', 
-                    or with X=1 to set debug mode compiler options '-O0 -g -save-temps'.
-                    Overrides $DEBUGSTATE.
+             or with X=1 to set debug mode compiler options '-O0 -g -save-temps'.
+             Overrides $DEBUGSTATE.
           'prefix=X' to set installation directory. Default is '/usr/local'. Overrides $CASMPREFIX.
           'boost_path=X' set boost search path. Overrides $CASMBOOST_PATH.
+          'boost_no_cxx11_scoped_enums=1' to use '-DBOOST_NO_CXX11_SCOPED_ENUMS'.
+             Overrides $CASMBOOST_NO_CXX11_SCOPED_ENUMS.
      """)
 
 def version(version_number):
@@ -153,6 +159,13 @@ cxxflags.append('--std=c++11')
 cxxflags.append('-Wno-deprecated-register')
 cxxflags.append('-Wno-deprecated-declarations')
 cxxflags.append('-DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long')
+
+boost_no_cxx11_scoped_enums = ARGUMENTS.get('boost_no_cxx11_scoped_enums', '0')
+if 'CASMBOOST_NO_CXX11_SCOPED_ENUMS' in os.environ:
+  boost_no_cxx11_scoped_enums = '1'
+if boost_no_cxx11_scoped_enums == '1':
+  cxxflags.append('-DBOOST_NO_CXX11_SCOPED_ENUMS')
+
 # set gzstream namespace to 'gz'
 ccflags.append('-DGZSTREAM_NAMESPACE=gz')
 
