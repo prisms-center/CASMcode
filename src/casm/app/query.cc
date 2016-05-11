@@ -9,7 +9,7 @@
 
 namespace CASM {
 
-  void query_help(std::ostream &_stream, std::vector<std::string > help_opt_vec) {
+  void query_help(const DataFormatterDictionary<Configuration>& _dict, std::ostream &_stream, std::vector<std::string > help_opt_vec) {
     _stream << "Prints the properties for a set of configurations for the set of currently selected" << std::endl
             << "configurations or for a set of configurations specifed by a selection file." << std::endl
             << std::endl
@@ -23,11 +23,11 @@ namespace CASM {
 
       if(help_opt[0] == 'o') {
         _stream << "Available operators for use within queries:" << std::endl;
-        ConfigIOParser::print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
+        _dict.print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
       }
       else if(help_opt[0] == 'p') {
         _stream << "Available property tags are currently:" << std::endl;
-        ConfigIOParser::print_help(_stream);
+        _dict.print_help(_stream, BaseDatumFormatter<Configuration>::Property);
       }
       _stream << std::endl;
     }
@@ -54,7 +54,9 @@ namespace CASM {
     ("gzip,z", po::value(&gz_flag)->zero_tokens(), "Write gzipped output file.")
     ("all,a", "Print results all configurations in input selection, whether or not they are selected.")
     ("no-header,n", po::value(&no_header)->zero_tokens(), "Print without header (CSV only)")
-    ("alias", po::value<std::vector<std::string> >(&new_alias)->multitoken(), "Create an alias for a query that will persist within this project. Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
+    ("alias", po::value<std::vector<std::string> >(&new_alias)->multitoken(), 
+      "Create an alias for a query that will persist within this project. "
+      "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
 
 
     try {
@@ -72,18 +74,14 @@ namespace CASM {
        */
       if(vm.count("help")) {
         fs::path root = find_casmroot(fs::current_path());
-        fs::path alias_file = root / ".casm/query_alias.json";
-        if(fs::exists(alias_file)) {
-          ConfigIOParser::load_aliases(alias_file);
+        if(root.empty()) {
+          auto dict = make_dictionary<Configuration>();
+          query_help(dict, std::cout, help_opt_vec);
         }
-        ConfigIOParser::add_custom_formatter(
-          datum_formatter_alias(
-            "selected",
-            ConfigIO::selected_in(),
-            "Returns true if configuration is specified in the input selection"
-          )
-        );
-        query_help(sout, help_opt_vec);
+        else {
+          ProjectSettings set(root);
+          query_help(set.config_io(), sout, help_opt_vec);
+        }
         return 0;
       }
 
@@ -117,42 +115,33 @@ namespace CASM {
       root = _primclex->get_path();
     }
 
-    fs::path alias_file = root / ".casm/query_alias.json";
     if(vm.count("alias")) {
-      jsonParser mjson;
-      if(fs::exists(alias_file)) {
-        mjson.read(alias_file);
-      }
-      else {
-        mjson.put_obj();
-      }
+      
+      ProjectSettings set(root);
+      
+      // get user input
       std::string new_alias_str;
       for(auto const &substr : new_alias) {
         new_alias_str += substr;
       }
-
+      
+      // parse new_alias_str to create formatter
       auto it = std::find(new_alias_str.cbegin(), new_alias_str.cend(), '=');
       std::string alias_name = boost::trim_copy(std::string(new_alias_str.cbegin(), it));
       std::string alias_command = boost::trim_copy(std::string(++it, new_alias_str.cend()));
+      
       try {
-        ConfigIOParser::add_custom_formatter(datum_formatter_alias<Configuration>(alias_name, alias_command));
+        set.add_alias(alias_name, alias_command, serr);
+        set.commit();
+        return 0;
       }
       catch(std::runtime_error &e) {
         serr << "Unable to learn alias\n"
              << "   \"" << alias_name << " = " << alias_command << "\"\n"
              << e.what() << std::endl;
-        return 1;
+        return ERR_UNKNOWN;
       }
-      if(mjson.contains(alias_name)) {
-        serr << "WARNING: I already know '" << alias_name << "' as:\n"
-             << "             " << mjson[alias_name].get<std::string>() << "\n"
-             << "         I will forget it and learn '" << alias_name << "' as:\n"
-             << "             " << alias_command << std::endl;
-      }
-      mjson[alias_name] = alias_command;
-      mjson.write(alias_file);
-      sout << "  DONE" << std::endl;
-      return 0;
+      
     }
     if(!vm.count("columns")) {
       serr << "ERROR: the option '--columns' is required but missing" << std::endl;
@@ -162,11 +151,6 @@ namespace CASM {
 
     // -------------------------------------------------------------------------
     // perform query operation
-
-    if(fs::exists(alias_file)) {
-      ConfigIOParser::load_aliases(alias_file);
-    }
-
 
     auto check_gz = [ = ](fs::path p) {
       if(p.extension() == ".gz" || p.extension() == ".GZ") {
@@ -218,15 +202,9 @@ namespace CASM {
     status_stream << std::endl;
 
     // Construct DataFormatter
+    primclex.settings().set_selected(selection);
     DataFormatter<Configuration> formatter;
-    ConfigIOParser::add_custom_formatter(
-      datum_formatter_alias(
-        "selected",
-        ConfigIO::selected_in(selection),
-        "Returns true if configuration is specified in the input selection"
-      )
-    );
-
+    
     try {
 
       std::vector<std::string> all_columns;
@@ -236,7 +214,7 @@ namespace CASM {
       }
       all_columns.insert(all_columns.end(), columns.cbegin(), columns.cend());
 
-      formatter.append(ConfigIOParser::parse(all_columns));
+      formatter.append(primclex.settings().config_io().parse(all_columns));
 
     }
     catch(std::exception &e) {
