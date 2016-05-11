@@ -1,7 +1,7 @@
 # http://www.scons.org/doc/production/HTML/scons-user.html
 # This is: Sconstruct
 
-import os, glob, copy, shutil
+import os, glob, copy, shutil, subprocess
 
 from os.path import join
 
@@ -60,6 +60,52 @@ Help("""
           'prefix=X' to set installation directory. Default is '/usr/local'. Overrides $CASMPREFIX.
           'boost_path=X' set boost search path. Overrides $CASMBOOST_PATH.
      """)
+
+def version(version_number):
+  
+  # check if git installed
+  try:
+    # pipe output to /dev/null for silence
+    null = open("/dev/null", "w")
+    subprocess.Popen("git", stdout=null, stderr=null)
+    null.close()
+
+  except OSError:
+    return version_number
+
+  # want to get the current git branch name, if in a git repository, else ''
+  process = subprocess.Popen(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  
+  # get the stdout, split if any '/', and use the last bit (the branch name), strip any extra space
+  branch = process.communicate()[0].split('/')[-1].strip()
+
+  if branch == '':
+    return version_number
+
+  # when compiling from a git repo use a developement version number
+  # which contains the branch name, short hash, and tag (if tagged)
+    
+  # get the short hash
+  process = subprocess.Popen('git rev-parse --short HEAD'.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  commit = process.communicate()[0].strip()
+  version_number += '+' + commit
+  
+  # check if tracked files have changes, if so, add '+changes'
+  process = subprocess.Popen('git status --porcelain --untracked-files=no'.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  changes = process.communicate()[0].strip()
+  if changes != '':
+    version_number += ".changes"
+  
+  return version_number
+  
+
+
+##### Set version_number
+
+version_number = version('0.2a0')
+url = 'https://github.com/prisms-center/CASMcode'
+Export('version_number', 'url')
+
 
 ##### Environment setup
 
