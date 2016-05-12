@@ -1,8 +1,10 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
+#include<boost/filesystem.hpp>
 
 /// What is being tested:
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Structure.hh"
 
 /// What is being used to test it:
 #include "casm/crystallography/SupercellEnumerator.hh"
@@ -10,6 +12,7 @@
 #include "casm/external/Eigen/Dense"
 
 using namespace CASM;
+boost::filesystem::path testdir("tests/unit/crystallography");
 
 void autofail() {
   BOOST_CHECK_EQUAL(1, 0);
@@ -328,6 +331,39 @@ void expand_dims_test() {
   return;
 }
 
+void it_matrix_test(boost::filesystem::path expected_mats) {
+  jsonParser readmats(expected_mats);
+
+  Array<Eigen::Matrix3Xi> past_enumerated_mat;
+  int minvol, maxvol;
+
+  from_json(minvol, readmats["min_vol"]);
+  from_json(maxvol, readmats["max_vol"]);
+  from_json(past_enumerated_mat, readmats["mats"]);
+
+  boost::filesystem::path posfile;
+  Array<Eigen::Matrix3Xi> enumerated_mat;
+
+  from_json(posfile, readmats["source"]);
+  Structure test_struc(testdir / posfile);
+  Lattice test_lat = test_struc.lattice();
+  const auto effective_pg = test_struc.factor_group();
+
+  SupercellEnumerator<Lattice> test_enumerator(test_lat, effective_pg, minvol, maxvol);
+
+  for(auto it = test_enumerator.begin(); it != test_enumerator.end(); ++it) {
+    enumerated_mat.push_back(it.matrix());
+  }
+
+  BOOST_CHECK_EQUAL(past_enumerated_mat.size(), enumerated_mat.size());
+
+  for(Index i = 0; i < past_enumerated_mat.size(); i++) {
+    BOOST_CHECK(enumerated_mat.contains(past_enumerated_mat[i]));
+  }
+
+  return;
+}
+
 BOOST_AUTO_TEST_SUITE(SupercellEnumeratorTest)
 
 BOOST_AUTO_TEST_CASE(HermiteConstruction) {
@@ -344,6 +380,17 @@ BOOST_AUTO_TEST_CASE(HermiteImpl) {
 
 BOOST_AUTO_TEST_CASE(HermiteCounting) {
   increment_test();
+}
+
+//Tests in here were created by first getting results from
+//before HermiteCounter existed and then making sure the results
+//didn't change after it was introduced
+BOOST_AUTO_TEST_CASE(EnumeratorConsistency) {
+
+  it_matrix_test(boost::filesystem::path(testdir / "POS1_1_6_mats.json"));
+  it_matrix_test(boost::filesystem::path(testdir / "PRIM1_2_9_mats.json"));
+  it_matrix_test(boost::filesystem::path(testdir / "PRIM2_4_7_mats.json"));
+  it_matrix_test(boost::filesystem::path(testdir / "PRIM4_1_8_mats.json"));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

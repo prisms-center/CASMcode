@@ -351,6 +351,9 @@ namespace CASM {
                                                  int volume) :
     m_super_updated(false),
     m_enum(&enumerator) {
+    if(enumerator.begin_volume() > enumerator.end_volume()) {
+      throw std::runtime_error("The beginning volume of the SupercellEnumerator cannot be greater than the end volume!");
+    }
 
     (volume < 1) ? m_vol = 1 : m_vol = volume;
     if(volume < 1) { //Redundant if statement?
@@ -464,6 +467,8 @@ namespace CASM {
       H = hermite_normal_form(transformed).first;
 
       // canonical only if m_current is '>' H, so if H '>' m_current, return false
+
+
       if(H(0, 0) > m_current(0, 0)) {
         return false;
       }
@@ -513,67 +518,57 @@ namespace CASM {
   template<typename UnitType>
   void SupercellIterator<UnitType>::_try_increment() {
 
-    /*
     // order: try to increment m_current(1,2), (0,2), (0,1), (1,1), (0,0), m_vol
     //   but ensure still in valid hermite_normal_form with correct volume
 
     // try to increment m_current(1,2)
-    if(m_current(1, 2) < m_current(1, 1) - 1)
-    {
-        m_current(1, 2)++;
-        return;
+    if(m_current(1, 2) < m_current(1, 1) - 1) {
+      m_current(1, 2)++;
+      return;
     }
     m_current(1, 2) = 0;
 
     // try to increment m_current(0,2)
-    if(m_current(0, 2) < m_current(0, 0) - 1)
-    {
-        m_current(0, 2)++;
-        return;
+    if(m_current(0, 2) < m_current(0, 0) - 1) {
+      m_current(0, 2)++;
+      return;
     }
     m_current(0, 2) = 0;
 
     // try to increment m_current(0,1)
-    if(m_current(0, 1) < m_current(0, 0) - 1)
-    {
-        m_current(0, 1)++;
-        return;
+    if(m_current(0, 1) < m_current(0, 0) - 1) {
+      m_current(0, 1)++;
+      return;
     }
     m_current(0, 1) = 0;
 
     // try to increment m_current(1,1)
-    do
-    {
-        m_current(1, 1)++;
+    do {
+      m_current(1, 1)++;
     }
     while((m_vol / m_current(0, 0) % m_current(1, 1) != 0) && (m_current(1, 1) <= m_vol));
-    if(m_current(1, 1) <= m_vol)
-    {
-        m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
-        return;
+    if(m_current(1, 1) <= m_vol) {
+      m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
+      return;
     }
     m_current(1, 1) = 1;
 
     // try to increment m_current(0,0)
-    do
-    {
-        m_current(0, 0)++;
+    do {
+      m_current(0, 0)++;
     }
     while((m_vol % m_current(0, 0) != 0) && (m_current(0, 0) <= m_vol));
-    if(m_current(0, 0) <= m_vol)
-    {
-        m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
-        return;
+    if(m_current(0, 0) <= m_vol) {
+      m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
+      return;
     }
     m_current(0, 0) = 1;
 
     // increment m_vol
     m_vol++;
     m_current(2, 2) = m_vol;
-    */
 
     return;
-
   }
 
   template<typename UnitType>
@@ -604,10 +599,13 @@ namespace CASM {
     return m_begin_volume;
   }
 
+  /*
   template<typename UnitType>
-  void SupercellEnumerator<UnitType>::end_volume(size_type _end_volume) {
-    m_end_volume = _end_volume;
+  void SupercellEnumerator<UnitType>::end_volume(size_type _end_volume)
+  {
+      m_end_volume = _end_volume;
   }
+  */
 
   template<typename UnitType>
   typename SupercellEnumerator<UnitType>::size_type SupercellEnumerator<UnitType>::end_volume() const {
