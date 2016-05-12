@@ -364,6 +364,36 @@ void it_matrix_test(boost::filesystem::path expected_mats) {
   return;
 }
 
+void it_lat_test(boost::filesystem::path expected_lats) {
+  jsonParser readlats(expected_lats);
+
+  Array<Lattice> past_enumerated_lats;
+  int minvol, maxvol;
+
+  from_json(minvol, readlats["min_vol"]);
+  from_json(maxvol, readlats["max_vol"]);
+  from_json(past_enumerated_lats, readlats["lats"]);
+
+  boost::filesystem::path posfile;
+  Array<Lattice> enumerated_lats;
+
+  from_json(posfile, readlats["source"]);
+  Structure test_struc(testdir / posfile);
+  Lattice test_lat = test_struc.lattice();
+  const auto effective_pg = test_struc.factor_group();
+
+  test_lat.generate_supercells(enumerated_lats, effective_pg, maxvol, minvol);
+
+
+  BOOST_CHECK_EQUAL(past_enumerated_lats.size(), enumerated_lats.size());
+
+  for(Index i = 0; i < past_enumerated_lats.size(); i++) {
+    BOOST_CHECK(enumerated_lats.contains(past_enumerated_lats[i]));
+  }
+
+  return;
+}
+
 BOOST_AUTO_TEST_SUITE(SupercellEnumeratorTest)
 
 BOOST_AUTO_TEST_CASE(HermiteConstruction) {
@@ -391,6 +421,11 @@ BOOST_AUTO_TEST_CASE(EnumeratorConsistency) {
   it_matrix_test(boost::filesystem::path(testdir / "PRIM1_2_9_mats.json"));
   it_matrix_test(boost::filesystem::path(testdir / "PRIM2_4_7_mats.json"));
   it_matrix_test(boost::filesystem::path(testdir / "PRIM4_1_8_mats.json"));
+
+  it_lat_test(boost::filesystem::path(testdir / "POS1_2_6_lats.json"));
+  it_lat_test(boost::filesystem::path(testdir / "PRIM1_2_9_lats.json"));
+  it_lat_test(boost::filesystem::path(testdir / "PRIM2_3_7_lats.json"));
+  it_lat_test(boost::filesystem::path(testdir / "PRIM4_1_8_lats.json"));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
