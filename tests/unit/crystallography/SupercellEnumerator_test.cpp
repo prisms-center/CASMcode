@@ -239,7 +239,9 @@ void increment_test() {
   BOOST_CHECK_EQUAL(hermmat, hermit_test());
 
   //Check invalidation and last status
-  while(hermit_test.valid()) {
+  auto lastherm = hermmat;
+  while(hermit_test.determinant() != 7) {
+    lastherm = hermit_test();
     ++hermit_test;
   }
 
@@ -248,10 +250,10 @@ void increment_test() {
           0, 0, 1, 0,
           0, 0, 0, 6;
 
-  BOOST_CHECK_EQUAL(hermmat, hermit_test());
+  BOOST_CHECK_EQUAL(hermmat, lastherm);
 
   //Check determinant jump
-  hermit_test = HermiteCounter(3, 5, 4);
+  hermit_test = HermiteCounter(3, 4);
 
   //Jump to just before you need a new determinant
 
@@ -277,7 +279,7 @@ void increment_test() {
 }
 
 void reset_test() {
-  HermiteCounter hermit_test(1, 6, 3);
+  HermiteCounter hermit_test(1, 3);
 
   Eigen::MatrixXi hermmat;
   hermmat.resize(3, 3);
@@ -302,7 +304,7 @@ void reset_test() {
 
   BOOST_CHECK_EQUAL(hermmat, hermit_test());
 
-  hermit_test.reset_full();
+  hermit_test.jump_to_determinant(1);
 
   BOOST_CHECK_EQUAL(startmat, hermit_test());
 

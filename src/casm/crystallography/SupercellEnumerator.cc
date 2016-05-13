@@ -12,36 +12,12 @@ namespace CASM {
    * zeros along the longest diagonal, this class won't work.
    */
 
-  HermiteCounter::HermiteCounter(int init_start_determinant, int init_end_determinant, int init_dim):
-    m_valid(true),
-    m_pos(0),
-    m_low_det(init_start_determinant),
-    m_high_det(init_end_determinant) {
-    if(init_start_determinant * init_end_determinant < 1 || init_dim < 1) {
-      throw std::runtime_error("Determinants and matrix dimensions must be greater than 0.");
-    }
-
-    if(init_start_determinant > init_end_determinant) {
-      throw std::runtime_error("End determinant must be greater or equal to the starting determinant value.");
-    }
-
+  HermiteCounter::HermiteCounter(int init_start_determinant, int init_dim):
+    m_pos(0) {
     m_diagonal = Eigen::VectorXi::Ones(init_dim);
-    m_diagonal(0) = m_low_det;
+    m_diagonal(0) = init_start_determinant;
 
     m_upper_tri = HermiteCounter_impl::_upper_tri_counter(m_diagonal);
-
-    //Nothing to count over
-    if(m_high_det == 1) {
-      m_valid = false;
-    }
-  }
-
-  HermiteCounter::HermiteCounter(int init_determinant, int init_dim):
-    HermiteCounter(init_determinant, init_determinant, init_dim) {
-  }
-
-  bool HermiteCounter::valid() const {
-    return m_valid;
   }
 
   HermiteCounter::Index HermiteCounter::position() const {
@@ -68,29 +44,13 @@ namespace CASM {
     return m_diagonal.prod();
   }
 
-  void HermiteCounter::reset_full() {
-    m_valid = true;
-    _jump_to_determinant(m_low_det);
-
-    return;
-  }
-
   void HermiteCounter::reset_current() {
-    m_valid = true;
-    _jump_to_determinant(determinant());
-
+    jump_to_determinant(determinant());
     return;
   }
 
   void HermiteCounter::next_determinant() {
-    if(determinant() == m_high_det) {
-      m_valid = false;
-    }
-
-    else {
-      _jump_to_determinant(determinant() + 1);
-    }
-
+    jump_to_determinant(determinant() + 1);
     return;
   }
 
@@ -100,21 +60,17 @@ namespace CASM {
   }
 
   HermiteCounter &HermiteCounter::operator++() {
-    if(!m_valid) {
-      return *this;
-    }
-
     //Vary elements above diagonal
     m_upper_tri++;
 
     //Nothing to permute for identity
     if(determinant() == 1) {
-      _jump_to_determinant(2);
+      jump_to_determinant(2);
     }
 
     //Still other matrices available for current diagonal
     else if(m_upper_tri.valid()) {
-      m_valid = true;
+      return *this;
     }
 
     //Find next diagonal, reset elements above diagonal
@@ -123,20 +79,17 @@ namespace CASM {
     }
 
     //Reset diagonal with next determinant value, reset elements above diagonal
-    else if(determinant() < m_high_det) {
-      _jump_to_determinant(determinant() + 1);
-    }
-
-    //Nothing left to count
     else {
-      m_valid = false;
+      jump_to_determinant(determinant() + 1);
     }
 
     return *this;
   }
 
-  void HermiteCounter::_jump_to_determinant(value_type new_det) {
-    assert(new_det >= m_low_det && new_det <= m_high_det);
+  void HermiteCounter::jump_to_determinant(value_type new_det) {
+    if(new_det < 1) {
+      throw std::runtime_error("Determinants of Hermite normal form matrices must be greater than 0");
+    }
 
     m_diagonal = Eigen::VectorXi::Ones(dim());
     m_diagonal(0) = new_det;

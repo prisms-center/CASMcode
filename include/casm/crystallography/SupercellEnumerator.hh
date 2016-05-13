@@ -28,6 +28,8 @@ namespace CASM {
    * For a determinant det, the initial value of the counter will be
    * a n x n identity matrix H with H(0,0)=det.
    * The final position will be a n x n identity matrix with H(n-1,n-1)=det.
+   * Once the final position for a particular determinant is reached,
+   * the counter starts over with the next integer determinant value.
    *
    * There are two main steps in the counter:
    *  -Incrementing the diagonal of the matrix such that its product remains
@@ -47,15 +49,14 @@ namespace CASM {
 
 
     /// \brief constructor given the desired determinant and square matrix dimensions
-    HermiteCounter(int init_start_determinant, int init_end_determinant, int init_dim);
     HermiteCounter(int init_determinant, int init_dim);
 
     //You probably will never need these. They're just here for testing more than anything.
+    //Either way, they're safe to call.
     Index position() const;
     Eigen::VectorXi diagonal() const;
-
-    /// \brief If this returns true, there's still more matrices you haven't counted over
-    bool valid() const;
+    //value_type low() const;
+    //value_type high() const;
 
     /// \brief Get the current matrix the counter is on
     Eigen::MatrixXi current() const;
@@ -66,16 +67,16 @@ namespace CASM {
     /// \brief Get the dimensions of *this
     Index dim() const;
 
-    /// \brief reset the counter to the first iteration of the lowest determinant
-    void reset_full();
-
     /// \brief reset the counter to the first iteration of the current determinant
     void reset_current();
 
     /// \brief Skip the remaining iterations and start at the next determinant value
     void next_determinant();
 
-    /// \brief Jump to the next available HNF matrix. Returns false if you hit the last counter.
+    /// \brief Reset the diagonal to the specified determinant and set the other elements to zero
+    void jump_to_determinant(value_type new_det);
+
+    /// \brief Jump to the next available HNF matrix.
     HermiteCounter &operator++();
 
     /// \brief Get the current matrix the counter is on
@@ -87,27 +88,15 @@ namespace CASM {
     /// \brief Keeps track of the current diagonal element that needs to be factored
     Index m_pos;
 
-    /// \brief The lowest allowed determinant (beginning of counter)
-    value_type m_low_det;
-
-    /// \brief The highest allowed determinant (end of counter)
-    value_type m_high_det;
-
     /// \brief Vector holding diagonal element values
     Eigen::VectorXi m_diagonal;
 
     /// \brief unrolled vector of the upper triangle (does not include diagonal elements)
     EigenVectorXiCounter m_upper_tri;
 
-    /// \brief Keeps track of whether you've surpassed the last countable matrix
-    bool m_valid;
-
 
     /// \brief Go to the next values of diagonal elements that keep the same determinant
     Index _increment_diagonal();
-
-    /// \brief Reset the diagonal to the specified determinant and set the other elements to zero
-    void _jump_to_determinant(value_type new_det);
 
     /// \brief Assemble all the internals into matrix form
     //Eigen::MatrixXi _matrix();
@@ -164,9 +153,9 @@ namespace CASM {
     SupercellIterator<UnitType>(const SupercellEnumerator<UnitType> &enumerator,
                                 int volume);
 
-    SupercellIterator<UnitType>(const SupercellIterator<UnitType> &B);
+    //SupercellIterator<UnitType>(const SupercellIterator<UnitType> &B); TODO
 
-    SupercellIterator<UnitType> &operator=(const SupercellIterator<UnitType> &B);
+    //SupercellIterator<UnitType> &operator=(const SupercellIterator<UnitType> &B); TODO
 
     /// \brief Iterator comparison
     bool operator==(const SupercellIterator<UnitType> &B) const;
@@ -180,8 +169,11 @@ namespace CASM {
     /// \brief Access the supercell
     pointer operator->() const;
 
-    /// \brief const reference to the supercell matrix
-    const Eigen::Matrix3i &matrix() const;
+    /// \brief constructed supercell matrix
+    Eigen::Matrix3i matrix() const;
+
+    /// \brief current volume
+    HermiteCounter::value_type volume() const;
 
     /// \brief const reference to the SupercellEnumerator this is iterating with
     const SupercellEnumerator<UnitType> &enumerator() const;
@@ -190,7 +182,7 @@ namespace CASM {
     SupercellIterator<UnitType> &operator++();
 
     /// \brief Postfix increment operator. Increment to next unique supercell.
-    SupercellIterator<UnitType> operator++(int);
+    //SupercellIterator<UnitType> operator++(int);  TODO
 
 
   private:
@@ -214,11 +206,8 @@ namespace CASM {
     /// \brief Pointer to SupercellEnumerator which holds the unit cell and point group
     const SupercellEnumerator<UnitType> *m_enum;
 
-    /// \brief m_current supercell volume
-    int m_vol;
-
-    /// \brief Current supercell matrix
-    Eigen::Matrix3i m_current;
+    /// \brief Current supercell matrix in HermitCounter form
+    HermiteCounter m_current;
 
     /// \brief A supercell, stored here so that iterator dereferencing will be OK. Only used when requested.
     mutable UnitType m_super;
@@ -235,7 +224,7 @@ namespace CASM {
 
   public:
 
-    typedef unsigned long int size_type;
+    typedef long int size_type;
 
     typedef SupercellIterator<UnitType> const_iterator;
 
@@ -250,8 +239,8 @@ namespace CASM {
     ///
     SupercellEnumerator(UnitType unit,
                         double tol,
-                        size_type begin_volume = 1,
-                        size_type end_volume = ULONG_MAX);
+                        size_type begin_volume,
+                        size_type end_volume);
 
     /// \brief Construct a SupercellEnumerator using custom point group operations
     ///
@@ -264,8 +253,8 @@ namespace CASM {
     ///
     SupercellEnumerator(UnitType unit,
                         const SymGroup &point_grp,
-                        size_type begin_volume = 1,
-                        size_type end_volume = ULONG_MAX);
+                        size_type begin_volume,
+                        size_type end_volume);
 
     /// \brief Access the unit the is being made into supercells
     const UnitType &unit() const;
@@ -352,41 +341,39 @@ namespace CASM {
   template<typename UnitType>
   SupercellIterator<UnitType>::SupercellIterator(const SupercellEnumerator<UnitType> &enumerator,
                                                  int volume) :
+    m_current(volume, 3),
     m_super_updated(false),
     m_enum(&enumerator) {
     if(enumerator.begin_volume() > enumerator.end_volume()) {
       throw std::runtime_error("The beginning volume of the SupercellEnumerator cannot be greater than the end volume!");
     }
 
-    (volume < 1) ? m_vol = 1 : m_vol = volume;
-    if(volume < 1) { //Redundant if statement?
-      m_vol = 1;
-    }
-    m_current = Eigen::Matrix3i::Identity();
-    m_current(2, 2) = m_vol;
-
     if(!_is_canonical()) {
       _increment();
     }
   }
 
+  /*
   template<typename UnitType>
-  SupercellIterator<UnitType>::SupercellIterator(const SupercellIterator &B) {
-    *this = B;
+  SupercellIterator<UnitType>::SupercellIterator(const SupercellIterator &B)
+  {
+      *this = B;
   };
 
   template<typename UnitType>
-  SupercellIterator<UnitType> &SupercellIterator<UnitType>::operator=(const SupercellIterator &B) {
-    m_enum = B.m_enum;
-    m_current = B.m_current;
-    m_vol = B.m_vol;
-    m_super_updated = false;
-    return *this;
+  SupercellIterator<UnitType> &SupercellIterator<UnitType>::operator=(const SupercellIterator &B)
+  {
+      m_enum = B.m_enum;
+      m_current = B.m_current;
+      //m_vol = B.m_vol;
+      m_super_updated = false;
+      return *this;
   }
+  */
 
   template<typename UnitType>
   bool SupercellIterator<UnitType>::operator==(const SupercellIterator &B) const {
-    return (m_enum == B.m_enum) && (m_vol == B.m_vol) && (m_current - B.m_current).isZero();
+    return (m_enum == B.m_enum) && (matrix() - B.matrix()).isZero();
   }
 
   template<typename UnitType>
@@ -397,7 +384,7 @@ namespace CASM {
   template<typename UnitType>
   typename SupercellIterator<UnitType>::reference SupercellIterator<UnitType>::operator*() const {
     if(!m_super_updated) {
-      m_super = make_supercell(m_enum->unit(), m_current);
+      m_super = make_supercell(m_enum->unit(), matrix());
       m_super_updated = true;
     }
     return m_super;
@@ -406,15 +393,20 @@ namespace CASM {
   template<typename UnitType>
   typename SupercellIterator<UnitType>::pointer SupercellIterator<UnitType>::operator->() const {
     if(!m_super_updated) {
-      m_super = make_supercell(m_enum->unit(), m_current);
+      m_super = make_supercell(m_enum->unit(), matrix());
       m_super_updated = true;
     }
     return &m_super;
   }
 
   template<typename UnitType>
-  const Eigen::Matrix3i &SupercellIterator<UnitType>::matrix() const {
-    return m_current;
+  HermiteCounter::value_type SupercellIterator<UnitType>::volume() const {
+    return m_current.determinant();
+  }
+
+  template<typename UnitType>
+  Eigen::Matrix3i SupercellIterator<UnitType>::matrix() const {
+    return m_current();
   }
 
   template<typename UnitType>
@@ -429,19 +421,23 @@ namespace CASM {
     return *this;
   }
 
+  /*
   // postfix
   template<typename UnitType>
-  SupercellIterator<UnitType> SupercellIterator<UnitType>::operator++(int) {
-    SupercellIterator result(*this);
-    _increment();
-    return result;
+  SupercellIterator<UnitType> SupercellIterator<UnitType>::operator++(int)
+  {
+      SupercellIterator result(*this);
+      _increment();
+      return result;
   }
+  */
 
 
   template<typename UnitType>
   void SupercellIterator<UnitType>::_increment() {
     do {
-      _try_increment();
+      //_try_increment();
+      ++m_current;
     }
     while(!_is_canonical());
     m_super_updated = false;
@@ -457,13 +453,15 @@ namespace CASM {
     // op*U*T = U*T'
     // U.inv*op*U*T = T'
 
-    const Eigen::VectorXi unrolled_current = HermiteCounter_impl::_canonical_unroll(m_current);
+    const Eigen::Matrix3i curr_mat = matrix();
+    const Eigen::VectorXi unrolled_current = HermiteCounter_impl::_canonical_unroll(curr_mat);
 
     for(int i = 0; i < m_enum->point_group().size(); i++) {
 
       const Eigen::Matrix3d U = m_enum->lattice().lat_column_mat();
       const Eigen::Matrix3d op = m_enum->point_group()[i].matrix();
-      const Eigen::Matrix3i transformed = iround(U.inverse() * op * U) * m_current;
+      const Eigen::Matrix3i transformed = iround(U.inverse() * op * U) * curr_mat;
+      //const Eigen::Matrix3i transformed = iround(U.inverse() * op * U) * m_current;
       const Eigen::Matrix3i H = hermite_normal_form(transformed).first;
 
       const Eigen::VectorXi unrolled_H = HermiteCounter_impl::_canonical_unroll(H);
@@ -484,58 +482,69 @@ namespace CASM {
   template<typename UnitType>
   void SupercellIterator<UnitType>::_try_increment() {
 
+    /*
     // order: try to increment m_current(1,2), (0,2), (0,1), (1,1), (0,0), m_vol
     //   but ensure still in valid hermite_normal_form with correct volume
 
     // try to increment m_current(1,2)
-    if(m_current(1, 2) < m_current(1, 1) - 1) {
-      m_current(1, 2)++;
-      return;
+    if(m_current(1, 2) < m_current(1, 1) - 1)
+    {
+        m_current(1, 2)++;
+        return;
     }
     m_current(1, 2) = 0;
 
     // try to increment m_current(0,2)
-    if(m_current(0, 2) < m_current(0, 0) - 1) {
-      m_current(0, 2)++;
-      return;
+    if(m_current(0, 2) < m_current(0, 0) - 1)
+    {
+        m_current(0, 2)++;
+        return;
     }
     m_current(0, 2) = 0;
 
     // try to increment m_current(0,1)
-    if(m_current(0, 1) < m_current(0, 0) - 1) {
-      m_current(0, 1)++;
-      return;
+    if(m_current(0, 1) < m_current(0, 0) - 1)
+    {
+        m_current(0, 1)++;
+        return;
     }
     m_current(0, 1) = 0;
 
     // try to increment m_current(1,1)
-    do {
-      m_current(1, 1)++;
+    do
+    {
+        m_current(1, 1)++;
     }
     while((m_vol / m_current(0, 0) % m_current(1, 1) != 0) && (m_current(1, 1) <= m_vol));
-    if(m_current(1, 1) <= m_vol) {
-      m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
-      return;
+    if(m_current(1, 1) <= m_vol)
+    {
+        m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
+        return;
     }
     m_current(1, 1) = 1;
 
     // try to increment m_current(0,0)
-    do {
-      m_current(0, 0)++;
+    do
+    {
+        m_current(0, 0)++;
     }
     while((m_vol % m_current(0, 0) != 0) && (m_current(0, 0) <= m_vol));
-    if(m_current(0, 0) <= m_vol) {
-      m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
-      return;
+    if(m_current(0, 0) <= m_vol)
+    {
+        m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
+        return;
     }
     m_current(0, 0) = 1;
 
     // increment m_vol
     m_vol++;
     m_current(2, 2) = m_vol;
+    */
 
     return;
   }
+
+  //********************************************************************************************************//
 
   template<typename UnitType>
   const UnitType &SupercellEnumerator<UnitType>::unit() const {
