@@ -98,9 +98,6 @@ namespace CASM {
     /// \brief Go to the next values of diagonal elements that keep the same determinant
     Index _increment_diagonal();
 
-    /// \brief Assemble all the internals into matrix form
-    //Eigen::MatrixXi _matrix();
-
   };
 
   namespace HermiteCounter_impl {
@@ -120,7 +117,10 @@ namespace CASM {
     Eigen::MatrixXi _zip_matrix(const Eigen::VectorXi &current_diag, const Eigen::VectorXi &current_upper_tri);
 
     /// \brief Expand a n x n Hermite normal matrix into a m x m one (e.g. for 2D supercells)
-    Eigen::MatrixXi _expand_dims(const Eigen::MatrixXi &hermit_mat, const Eigen::VectorXi &active_dims);
+    Eigen::MatrixXi _expand_dims_old(const Eigen::MatrixXi &hermit_mat, const Eigen::VectorXi &active_dims);
+
+    /// \brief Expand a n x n Hermite normal matrix (H) into a m x m one through a m x m transformation matrix (T) (e.g. for arbitrary 2D supercells)
+    Eigen::MatrixXi _expand_dims(const Eigen::MatrixXi &H, const Eigen::MatrixXi &T);
 
     /// \brief Unroll a Hermit normal form square matrix into a vector such that it's canonical form is easy to compare
     Eigen::VectorXi _canonical_unroll(const Eigen::MatrixXi &hermit_mat);

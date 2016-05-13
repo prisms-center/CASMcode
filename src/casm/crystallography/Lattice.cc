@@ -373,7 +373,6 @@ namespace CASM {
                                     const SymGroup &effective_pg,
                                     int max_prim_vol,
                                     int min_prim_vol) const {
-    std::cout << "Inside generate_supercells" << std::endl;
     SupercellEnumerator<Lattice> enumerator(*this, effective_pg, min_prim_vol, max_prim_vol + 1);
     supercell.clear();
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {

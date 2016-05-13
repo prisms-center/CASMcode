@@ -328,7 +328,50 @@ void expand_dims_test() {
             0, 0, 0, 0, 0, 0, 1, 0,
             3, 3, 3, 0, 3, 0, 0, 1;
 
-  BOOST_CHECK_EQUAL(expandmat, HermiteCounter_impl::_expand_dims(expandmat, expanddims));
+  BOOST_CHECK_EQUAL(expandmat, HermiteCounter_impl::_expand_dims_old(expandmat, expanddims));
+
+  HermiteCounter minicount(1, 4);
+  for(int i = 0; i < 12; i++) {
+    ++minicount;
+  }
+
+  Eigen::MatrixXi endcount(4, 4);
+  endcount << 1, 0, 0, 0,
+           0, 2, 1, 1,
+           0, 0, 1, 0,
+           0, 0, 0, 1;
+
+  BOOST_CHECK_EQUAL(endcount, minicount());
+
+  Eigen::MatrixXi transmat(Eigen::MatrixXi::Identity(6, 6));
+
+  Eigen::MatrixXi expanded = HermiteCounter_impl::_expand_dims(minicount(), transmat);
+  Eigen::MatrixXi blockmat(6, 6);
+  blockmat << 1, 0, 0, 0, 0, 0,
+           0, 2, 1, 1, 0, 0,
+           0, 0, 1, 0, 0, 0,
+           0, 0, 0, 1, 0, 0,
+           0, 0, 0, 0, 1, 0,
+           0, 0, 0, 0, 0, 1;
+
+  BOOST_CHECK_EQUAL(blockmat, expanded);
+
+  Eigen::Matrix2Xi miniherm;
+  miniherm << 2, 1,
+           0, 3;
+
+  Eigen::Matrix3i minitrans;
+  minitrans << 1, 0, 0,
+            0, 0, 1,
+            0, 1, 0;
+
+  Eigen::Matrix3i miniexpand;
+  miniexpand << 2, 1, 0,
+             0, 0, 1,
+             0, 3, 0;
+
+  BOOST_CHECK_EQUAL(HermiteCounter_impl::_expand_dims(miniherm, minitrans), miniexpand);
+
 
   return;
 }

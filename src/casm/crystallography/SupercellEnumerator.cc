@@ -224,7 +224,7 @@ namespace CASM {
      * Rows/columns where a 0 was specified are all zero except for the diagonal element, which is 1.
      */
 
-    Eigen::MatrixXi _expand_dims(const Eigen::MatrixXi &hermit_mat, const Eigen::VectorXi &active_dims) {
+    Eigen::MatrixXi _expand_dims_old(const Eigen::MatrixXi &hermit_mat, const Eigen::VectorXi &active_dims) {
       assert(hermit_mat.rows() == active_dims.sum() && hermit_mat.cols() == active_dims.sum());
       assert(active_dims.maxCoeff() == 1 && active_dims.minCoeff() == 0);
 
@@ -261,6 +261,66 @@ namespace CASM {
       }
 
       return expanded;
+    }
+
+    /*
+     * This is a generalized way to insert new dimensions into a HNF matrix.
+     * If there is a n x n HNF matrix H, it will be expanded to a new non-HNF
+     * m x m matrix E through a m x m transformation matrix T.
+     *
+     * The first n columns of T will be multiplied with the values of H, while
+     * the last m-n columns of T will remain unaffected. For example, if you
+     * are counting over a 2x2 H matrix and currently have
+     *
+     * 2 1
+     * 0 3
+     *
+     * Then you can specify that you want a 3x3 matrix E so that the values of
+     * H work on your lattice vectors a and c, but not b with a T matrix
+     *
+     * 1 0 0
+     * 0 0 1
+     * 0 1 0
+     *
+     * The resulting expanded matrix E is now
+     *
+     * 2 1 0
+     * 0 0 1
+     * 0 3 0
+     *
+     * This is achieved by converting H to a block matrix of dimensions m x m,
+     * which is an identity matrix with the upper left block equal to H. For
+     * the example above B would be
+     *
+     * 2 1 0
+     * 0 3 0
+     * 0 0 1
+     *
+     * This way E=T*B
+     *
+     * You may specify arbitrary combinations of vectors in the columns of T that
+     * H will work on.
+     *
+     * Note that the resulting matrix will probably *NOT* retain it's Hermite normal
+     * form. For use in the SupercellEnumerator class, the order within the first n
+     * vectors and the order within the last m-n vectors will not affect your enumerations.
+     */
+
+    Eigen::MatrixXi _expand_dims(const Eigen::MatrixXi &H, const Eigen::MatrixXi &T) {
+      assert(H.rows() == H.cols());
+      assert(T.rows() == T.cols());
+      assert(T.rows() >= H.rows());
+
+      Index n = H.rows();
+      Index m = T.rows();
+
+      //First convert H into a block matrix with dimensions m x m, the H block is on the upper left
+      Eigen::MatrixXi B(m, m);
+      Eigen::MatrixXi I_block(Eigen::MatrixXi::Identity(m - n, m - n));
+      Eigen::MatrixXi Z_block(Eigen::MatrixXi::Zero(n, m - n));
+      B << H, Z_block, Z_block.transpose(), I_block;
+
+      return T * B;
     }
 
 
@@ -450,69 +510,22 @@ namespace CASM {
     // get T in hermite normal form
     H = hermite_normal_form(T).first;
     H_canon = H;
+    Eigen::VectorXi unrolled_H_canon = HermiteCounter_impl::_canonical_unroll(H_canon);
     H_init = H;
 
     for(int i = 0; i < pg.size(); i++) {
-
       Eigen::Matrix3i transformed = iround(lat.inverse() * pg[i].matrix() * lat) * H_init;
 
       H = hermite_normal_form(transformed).first;
+      Eigen::VectorXi unrolled_H = HermiteCounter_impl::_canonical_unroll(H);
 
       // canonical only if H_canon is '>=' H, for all H, so if H '>' m_current, make H the H_canon
-      if(H(0, 0) > H_canon(0, 0)) {
+      for(Index j = 0; j < unrolled_H.size(); j++) {
         i_canon = i;
         H_canon = H;
-        continue;
+        unrolled_H_canon = HermiteCounter_impl::_canonical_unroll(H_canon);
+        break;
       }
-      if(H(0, 0) < H_canon(0, 0)) {
-        continue;
-      }
-
-      if(H(1, 1) > H_canon(1, 1)) {
-        i_canon = i;
-        H_canon = H;
-        continue;
-      }
-      if(H(1, 1) < H_canon(1, 1)) {
-        continue;
-      }
-
-      if(H(2, 2) > H_canon(2, 2)) {
-        i_canon = i;
-        H_canon = H;
-        continue;
-      }
-      if(H(2, 2) < H_canon(2, 2)) {
-        continue;
-      }
-
-      if(H(1, 2) > H_canon(1, 2)) {
-        i_canon = i;
-        H_canon = H;
-        continue;
-      }
-      if(H(1, 2) < H_canon(1, 2)) {
-        continue;
-      }
-
-      if(H(0, 2) > H_canon(0, 2)) {
-        i_canon = i;
-        H_canon = H;
-        continue;
-      }
-      if(H(0, 2) < H_canon(0, 2)) {
-        continue;
-      }
-
-      if(H(0, 1) > H_canon(0, 1)) {
-        i_canon = i;
-        H_canon = H;
-        continue;
-      }
-      if(H(0, 1) < H_canon(0, 1)) {
-        continue;
-      }
-
     }
 
     return std::make_pair<Eigen::MatrixXi, Eigen::MatrixXd>(H_canon, pg[i_canon].matrix());
