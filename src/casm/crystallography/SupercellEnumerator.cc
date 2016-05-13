@@ -309,6 +309,81 @@ namespace CASM {
 
       return expanded;
     }
+
+
+    /**
+     * When comparing two Hermite normal form matrices, the canonical one is determined on which one
+     * has larger elements along a particular order. This routine unrolls a matrix in the following
+     * manner:
+     *
+     * 1 6 5
+     * 0 2 4
+     * 0 0 3
+     *
+     * But also works for higher dimensional matrices, such as
+     *
+     * 1  12 11 10 9
+     * 0  2  13 15 8
+     * 0  0  3  14 7
+     * 0  0  0  4  6
+     * 0  0  0  0  5
+     */
+
+    Eigen::VectorXi _canonical_unroll(const Eigen::MatrixXi &hermit_mat) {
+      assert(hermit_mat.rows() == hermit_mat.cols());
+
+      int dims = hermit_mat.rows();
+      int unrolldim = 0;
+
+      for(int i = dims; i > 0; i--) {
+        unrolldim += i;
+      }
+
+      Eigen::VectorXi unrolled_herm(unrolldim);
+
+      Index lasti, lastj;
+      lasti = lastj = -1;
+
+      enum STEP {DOWN, UP, LEFT};
+      STEP curr_step = DOWN;
+
+      Index unroll_ind = 0;
+
+      for(Index i = 0; i < dims; i++) {
+        for(Index j = 0; j < dims - i; j++) {
+          switch(curr_step) {
+          case DOWN:
+            lasti = lasti + 1;
+            lastj = lastj + 1;
+            break;
+          case UP:
+            lasti = lasti - 1;
+            break;
+          case LEFT:
+            lastj = lastj - 1;
+            break;
+          }
+
+          unrolled_herm(unroll_ind) = hermit_mat(lasti, lastj);
+          unroll_ind++;
+        }
+
+        switch(curr_step) {
+        case DOWN:
+          curr_step = UP;
+          break;
+        case UP:
+          curr_step = LEFT;
+          break;
+        case LEFT:
+          curr_step = DOWN;
+          break;
+        }
+      }
+
+      return unrolled_herm;
+    }
+
   }
 
 

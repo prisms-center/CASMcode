@@ -394,6 +394,36 @@ void it_lat_test(boost::filesystem::path expected_lats) {
   return;
 }
 
+void unroll_test() {
+  Eigen::MatrixXi mat5(5, 5);
+  mat5 << 1, 12, 11, 10, 9,
+       0, 2, 13, 15, 8,
+       0, 0, 3, 14, 7,
+       0, 0, 0, 4, 6,
+       0, 0, 0, 0, 5;
+
+  Eigen::VectorXi vec5(5 + 4 + 3 + 2 + 1);
+  vec5 << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15;
+
+  BOOST_CHECK_EQUAL(vec5, HermiteCounter_impl::_canonical_unroll(mat5));
+
+  return;
+
+  Eigen::Matrix3i mat3;
+  mat3 << 1, 6, 5,
+       0, 2, 4,
+       0, 0, 3;
+
+  Eigen::Vector3i vec3(3 + 2 + 1);
+  vec3 << 1, 2, 3, 4, 5, 6;
+
+  BOOST_CHECK_EQUAL(vec3, HermiteCounter_impl::_canonical_unroll(mat3));
+
+  return;
+}
+
+
+
 BOOST_AUTO_TEST_SUITE(SupercellEnumeratorTest)
 
 BOOST_AUTO_TEST_CASE(HermiteConstruction) {
@@ -406,6 +436,7 @@ BOOST_AUTO_TEST_CASE(HermiteImpl) {
   triangle_count_test();
   matrix_construction_test();
   reset_test();
+  unroll_test();
 }
 
 BOOST_AUTO_TEST_CASE(HermiteCounting) {

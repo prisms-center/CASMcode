@@ -132,6 +132,9 @@ namespace CASM {
 
     /// \brief Expand a n x n Hermite normal matrix into a m x m one (e.g. for 2D supercells)
     Eigen::MatrixXi _expand_dims(const Eigen::MatrixXi &hermit_mat, const Eigen::VectorXi &active_dims);
+
+    /// \brief Unroll a Hermit normal form square matrix into a vector such that it's canonical form is easy to compare
+    Eigen::VectorXi _canonical_unroll(const Eigen::MatrixXi &hermit_mat);
   }
 
   //******************************************************************************************************************//
@@ -446,9 +449,6 @@ namespace CASM {
 
   template<typename UnitType>
   bool SupercellIterator<UnitType>::_is_canonical() const {
-
-    Eigen::Matrix3i H, V;
-
     // apply point group operations to the supercell matrix to check if it is canonical form
     // S: supercell lattice column vectors,  U: unit cell lattice column vectors,  T: supercell transformation matrix
     //
@@ -457,60 +457,26 @@ namespace CASM {
     // op*U*T = U*T'
     // U.inv*op*U*T = T'
 
+    const Eigen::VectorXi unrolled_current = HermiteCounter_impl::_canonical_unroll(m_current);
+
     for(int i = 0; i < m_enum->point_group().size(); i++) {
 
-      Eigen::Matrix3d U = m_enum->lattice().lat_column_mat();
-      Eigen::Matrix3d op = m_enum->point_group()[i].matrix();
+      const Eigen::Matrix3d U = m_enum->lattice().lat_column_mat();
+      const Eigen::Matrix3d op = m_enum->point_group()[i].matrix();
+      const Eigen::Matrix3i transformed = iround(U.inverse() * op * U) * m_current;
+      const Eigen::Matrix3i H = hermite_normal_form(transformed).first;
 
-      Eigen::Matrix3i transformed = iround(U.inverse() * op * U) * m_current;
-
-      H = hermite_normal_form(transformed).first;
+      const Eigen::VectorXi unrolled_H = HermiteCounter_impl::_canonical_unroll(H);
 
       // canonical only if m_current is '>' H, so if H '>' m_current, return false
-
-
-      if(H(0, 0) > m_current(0, 0)) {
-        return false;
+      for(Index i = 0; i < unrolled_current.size(); i++) {
+        if(unrolled_H(i) > unrolled_current(i)) {
+          return false;
+        }
+        else if(unrolled_H(i) < unrolled_current(i)) {
+          break;
+        }
       }
-      if(H(0, 0) < m_current(0, 0)) {
-        continue;
-      }
-
-      if(H(1, 1) > m_current(1, 1)) {
-        return false;
-      }
-      if(H(1, 1) < m_current(1, 1)) {
-        continue;
-      }
-
-      if(H(2, 2) > m_current(2, 2)) {
-        return false;
-      }
-      if(H(2, 2) < m_current(2, 2)) {
-        continue;
-      }
-
-      if(H(1, 2) > m_current(1, 2)) {
-        return false;
-      }
-      if(H(1, 2) < m_current(1, 2)) {
-        continue;
-      }
-
-      if(H(0, 2) > m_current(0, 2)) {
-        return false;
-      }
-      if(H(0, 2) < m_current(0, 2)) {
-        continue;
-      }
-
-      if(H(0, 1) > m_current(0, 1)) {
-        return false;
-      }
-      if(H(0, 1) < m_current(0, 1)) {
-        continue;
-      }
-
     }
     return true;
   }
