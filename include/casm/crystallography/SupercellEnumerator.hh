@@ -151,7 +151,9 @@ namespace CASM {
     SupercellIterator<UnitType>() {}
 
     SupercellIterator<UnitType>(const SupercellEnumerator<UnitType> &enumerator,
-                                int volume);
+                                int volume,
+                                int dims,
+                                Eigen::Matrix3i init_trans_mat);
 
     //SupercellIterator<UnitType>(const SupercellIterator<UnitType> &B); TODO
 
@@ -208,6 +210,9 @@ namespace CASM {
 
     /// \brief Current supercell matrix in HermitCounter form
     HermiteCounter m_current;
+
+    /// \brief The transformation matrix to go from 1x1 or 2x2 Hermite normal form to 3x3 (for guiding enumeration). Vectors specified column-wise.
+    Eigen::Matrix3i m_trans_mat;
 
     /// \brief A supercell, stored here so that iterator dereferencing will be OK. Only used when requested.
     mutable UnitType m_super;
@@ -277,20 +282,20 @@ namespace CASM {
     /// \brief Get the end volume
     size_type end_volume() const;
 
-    /// \brief A const iterator to the beginning volume
-    const_iterator begin() const;
+    /// \brief A const iterator to the beginning volume, specify here how the iterator should jump through the enumeration
+    const_iterator begin(int dims = 3, const Eigen::Matrix3i &trans_mat = Eigen::Matrix3i::Identity()) const;
 
     /// \brief A const iterator to the past-the-last volume
-    const_iterator end() const;
+    const_iterator end(int dims = 3, const Eigen::Matrix3i &trans_mat = Eigen::Matrix3i::Identity()) const;
 
     /// \brief A const iterator to the beginning volume
-    const_iterator cbegin() const;
+    const_iterator cbegin(int dims = 3, const Eigen::Matrix3i &trans_mat = Eigen::Matrix3i::Identity()) const;
 
     /// \brief A const iterator to the past-the-last volume
-    const_iterator cend() const;
+    const_iterator cend(int dims = 3, const Eigen::Matrix3i &trans_mat = Eigen::Matrix3i::Identity()) const;
 
     /// \brief A const iterator to a specified volume
-    const_iterator citerator(size_type volume) const;
+    const_iterator citerator(size_type volume, int dims = 3, const Eigen::Matrix3i &trans_mat = Eigen::Matrix3i::Identity()) const;
 
   private:
 
@@ -340,12 +345,19 @@ namespace CASM {
 
   template<typename UnitType>
   SupercellIterator<UnitType>::SupercellIterator(const SupercellEnumerator<UnitType> &enumerator,
-                                                 int volume) :
-    m_current(volume, 3),
+                                                 int volume,
+                                                 int dims,
+                                                 Eigen::Matrix3i init_trans_mat) :
+    m_current(volume, dims),
+    m_trans_mat(init_trans_mat),
     m_super_updated(false),
     m_enum(&enumerator) {
     if(enumerator.begin_volume() > enumerator.end_volume()) {
       throw std::runtime_error("The beginning volume of the SupercellEnumerator cannot be greater than the end volume!");
+    }
+
+    if(m_trans_mat.determinant() < 1) {
+      throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
     }
 
     if(!_is_canonical()) {
@@ -406,7 +418,7 @@ namespace CASM {
 
   template<typename UnitType>
   Eigen::Matrix3i SupercellIterator<UnitType>::matrix() const {
-    return m_current();
+    return hermite_normal_form(m_trans_mat * m_current()).first;
   }
 
   template<typename UnitType>
@@ -479,71 +491,6 @@ namespace CASM {
     return true;
   }
 
-  template<typename UnitType>
-  void SupercellIterator<UnitType>::_try_increment() {
-
-    /*
-    // order: try to increment m_current(1,2), (0,2), (0,1), (1,1), (0,0), m_vol
-    //   but ensure still in valid hermite_normal_form with correct volume
-
-    // try to increment m_current(1,2)
-    if(m_current(1, 2) < m_current(1, 1) - 1)
-    {
-        m_current(1, 2)++;
-        return;
-    }
-    m_current(1, 2) = 0;
-
-    // try to increment m_current(0,2)
-    if(m_current(0, 2) < m_current(0, 0) - 1)
-    {
-        m_current(0, 2)++;
-        return;
-    }
-    m_current(0, 2) = 0;
-
-    // try to increment m_current(0,1)
-    if(m_current(0, 1) < m_current(0, 0) - 1)
-    {
-        m_current(0, 1)++;
-        return;
-    }
-    m_current(0, 1) = 0;
-
-    // try to increment m_current(1,1)
-    do
-    {
-        m_current(1, 1)++;
-    }
-    while((m_vol / m_current(0, 0) % m_current(1, 1) != 0) && (m_current(1, 1) <= m_vol));
-    if(m_current(1, 1) <= m_vol)
-    {
-        m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
-        return;
-    }
-    m_current(1, 1) = 1;
-
-    // try to increment m_current(0,0)
-    do
-    {
-        m_current(0, 0)++;
-    }
-    while((m_vol % m_current(0, 0) != 0) && (m_current(0, 0) <= m_vol));
-    if(m_current(0, 0) <= m_vol)
-    {
-        m_current(2, 2) = m_vol / (m_current(0, 0) * m_current(1, 1));
-        return;
-    }
-    m_current(0, 0) = 1;
-
-    // increment m_vol
-    m_vol++;
-    m_current(2, 2) = m_vol;
-    */
-
-    return;
-  }
-
   //********************************************************************************************************//
 
   template<typename UnitType>
@@ -588,28 +535,28 @@ namespace CASM {
   }
 
   template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::begin() const {
-    return const_iterator(*this, m_begin_volume);
+  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::begin(int dims, const Eigen::Matrix3i &trans_mat) const {
+    return const_iterator(*this, m_begin_volume * trans_mat.determinant(), dims, trans_mat);
   }
 
   template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::end() const {
-    return const_iterator(*this, m_end_volume);
+  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::end(int dims, const Eigen::Matrix3i &trans_mat) const {
+    return const_iterator(*this, m_end_volume * trans_mat.determinant(), dims, trans_mat);
   }
 
   template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::cbegin() const {
-    return const_iterator(*this, m_begin_volume);
+  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::cbegin(int dims, const Eigen::Matrix3i &trans_mat) const {
+    return const_iterator(*this, m_begin_volume * trans_mat.determinant(), dims, trans_mat);
   }
 
   template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::cend() const {
-    return const_iterator(*this, m_end_volume);
+  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::cend(int dims, const Eigen::Matrix3i &trans_mat) const {
+    return const_iterator(*this, m_end_volume * trans_mat.determinant(), dims, trans_mat);
   }
 
   template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::citerator(size_type volume) const {
-    return SupercellIterator<UnitType>(*this, volume);
+  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::citerator(size_type volume, int dims, const Eigen::Matrix3i &trans_mat) const {
+    return SupercellIterator<UnitType>(*this, volume * trans_mat.determinant(), dims, trans_mat);
   }
 
 
