@@ -47,6 +47,8 @@ namespace CASM {
     typedef Eigen::VectorXi::Scalar value_type;
     typedef CASM::Index Index;
 
+    /// \brief constructor to satisfy iterator requirements. Do not recommend.
+    HermiteCounter() {};
 
     /// \brief constructor given the desired determinant and square matrix dimensions
     HermiteCounter(int init_determinant, int init_dim);
@@ -150,15 +152,18 @@ namespace CASM {
     typedef const UnitType &reference;
     typedef const UnitType *pointer;
 
+    //required for forward iterator
     SupercellIterator<UnitType>() {}
 
     SupercellIterator<UnitType>(const SupercellEnumerator<UnitType> &enumerator,
                                 int volume,
                                 int dims);
 
-    //SupercellIterator<UnitType>(const SupercellIterator<UnitType> &B); TODO
+    //required for all iterators
+    SupercellIterator<UnitType>(const SupercellIterator<UnitType> &B);
 
-    //SupercellIterator<UnitType> &operator=(const SupercellIterator<UnitType> &B); TODO
+    //required for all iterators
+    SupercellIterator<UnitType> &operator=(const SupercellIterator<UnitType> &B);
 
     /// \brief Iterator comparison
     bool operator==(const SupercellIterator<UnitType> &B) const;
@@ -381,27 +386,24 @@ namespace CASM {
     */
   }
 
-  /*
   template<typename UnitType>
-  SupercellIterator<UnitType>::SupercellIterator(const SupercellIterator &B)
-  {
-      *this = B;
+  SupercellIterator<UnitType>::SupercellIterator(const SupercellIterator &B) {
+    *this = B;
   };
 
   template<typename UnitType>
-  SupercellIterator<UnitType> &SupercellIterator<UnitType>::operator=(const SupercellIterator &B)
-  {
-      m_enum = B.m_enum;
-      m_current = B.m_current;
-      //m_vol = B.m_vol;
-      m_super_updated = false;
-      return *this;
+  SupercellIterator<UnitType> &SupercellIterator<UnitType>::operator=(const SupercellIterator &B) {
+    m_enum = B.m_enum;
+    m_current = B.m_current;
+    m_super_updated = false;
+
+    m_canon_hist = B.m_canon_hist;
+    return *this;
   }
-  */
 
   template<typename UnitType>
   bool SupercellIterator<UnitType>::operator==(const SupercellIterator &B) const {
-    return (m_enum == B.m_enum) && (m_current() - B.m_current()).isZero();
+    return (m_enum == B.m_enum) && (matrix() - B.matrix()).isZero();
   }
 
   template<typename UnitType>
@@ -435,8 +437,7 @@ namespace CASM {
   template<typename UnitType>
   Eigen::Matrix3i SupercellIterator<UnitType>::matrix() const {
     Eigen::Matrix3i expanded = HermiteCounter_impl::_expand_dims(m_current(), m_enum->trans_mat());
-    return canonical_hnf(expanded, m_enum->point_group(), m_enum->lattice()).first;
-    //return hermite_normal_form(expanded).first;
+    return canonical_hnf(expanded, m_enum->point_group(), m_enum->lattice());
   }
 
   template<typename UnitType>
@@ -477,7 +478,6 @@ namespace CASM {
       ++m_current;
     }
 
-    std::cout << matrix() << std::endl << std::endl;
     m_super_updated = false;
   }
 
@@ -629,8 +629,7 @@ namespace CASM {
 
 
   /// \brief Return canonical hermite normal form of the supercell matrix, and op used to find it
-  std::pair<Eigen::MatrixXi, Eigen::MatrixXd>
-  canonical_hnf(const Eigen::MatrixXi &T, const SymGroup &effective_pg, const Lattice &ref_lattice);
+  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const SymGroup &effective_pg, const Lattice &ref_lattice);
 
 }
 

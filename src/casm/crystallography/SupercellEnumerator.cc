@@ -530,7 +530,7 @@ namespace CASM {
 
   /// \brief Return canonical hermite normal form of the supercell matrix, and op used to find it
   ///
-  /// \returns std::pair<Eigen::Matrix3i, Eigen::Matrix3d> of H in canonical form, and op used to find it from T
+  /// \returns Eigen::Matrix3i of H in canonical form
   ///
   /// \param T a supercell matrix (Eigen::Matrix3i), such that S = U*T,
   ///          where S is the superlattice and U the unit lattice, as column vector matrices
@@ -555,10 +555,8 @@ namespace CASM {
   ///
   /// \relatesalso Lattice
   ///
-  std::pair<Eigen::MatrixXi, Eigen::MatrixXd> canonical_hnf(const Eigen::MatrixXi &T, const SymGroup &effective_pg, const Lattice &ref_lattice) {
+  Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const SymGroup &effective_pg, const Lattice &ref_lattice) {
     Eigen::Matrix3d lat = ref_lattice.lat_column_mat();
-
-    Index i_canon = -1;
 
     //get T in hermite normal form
     //H is the canonical form of the initial T matrix
@@ -575,11 +573,11 @@ namespace CASM {
       //If you fall in here then transformed was greater than H
       if(HermiteCounter_impl::_canonical_compare(H_best, H_transformed) == 1) {
         H_best = H_transformed;
-        i_canon = i;
       }
     }
 
-    return std::make_pair<Eigen::MatrixXi, Eigen::MatrixXd>(H_best, effective_pg[i_canon].matrix());
+    return H_best;
+    //return std::make_pair<Eigen::Matrix3i, Eigen::MatrixXd>(H_best, effective_pg[i_canon].matrix());
   }
 
 }
