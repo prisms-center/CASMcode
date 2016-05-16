@@ -397,6 +397,44 @@ namespace CASM {
       return unrolled_herm;
     }
 
+    /**
+     * Unrolls the two matrices in the canonical order and then compares the values element-wise
+     * to see which of the two is lexicographically greatest.
+     *
+     * For example if M0 is
+     * 1 3 3
+     * 0 3 1
+     * 0 0 2
+     *
+     * and M1 is
+     * 2 1 1
+     * 0 3 4
+     * 0 0 1
+     *
+     * Then this function will return 1 because 231411>132133
+     * If both are equal then 0 is returned.
+     *
+     * This routine expects your matrices to already be in canonical form.
+     */
+
+    bool _canonical_compare(const Eigen::MatrixXi &H0, const Eigen::MatrixXi &H1) {
+      const Eigen::VectorXi unrolled_H0 = _canonical_unroll(H0);
+      const Eigen::VectorXi unrolled_H1 = _canonical_unroll(H1);
+
+      assert(unrolled_H0.size() == unrolled_H1.size());
+
+      for(Index i = 0; i < unrolled_H0.size(); i++) {
+        if(unrolled_H0(i) > unrolled_H1(i)) {
+          return 0;
+        }
+
+        else if(unrolled_H0(i) < unrolled_H1(i)) {
+          return 1;
+        }
+      }
+
+      return 0;
+    }
   }
 
 
@@ -518,7 +556,6 @@ namespace CASM {
   /// \relatesalso Lattice
   ///
   std::pair<Eigen::MatrixXi, Eigen::MatrixXd> canonical_hnf(const Eigen::MatrixXi &T, const SymGroup &effective_pg, const Lattice &ref_lattice) {
-
     Eigen::Matrix3d lat = ref_lattice.lat_column_mat();
 
     Index i_canon = -1;
@@ -531,21 +568,14 @@ namespace CASM {
     Eigen::Matrix3i H_best;
     H_best = H;
 
-    Eigen::VectorXi unrolled_H_best = HermiteCounter_impl::_canonical_unroll(H_best);
-
     for(Index i = 0; i < effective_pg.size(); i++) {
       Eigen::Matrix3i transformed = iround(lat.inverse() * effective_pg[i].matrix() * lat) * H;
       Eigen::Matrix3i H_transformed = hermite_normal_form(transformed).first;
-      Eigen::VectorXi unrolled_H_transformed = HermiteCounter_impl::_canonical_unroll(H_transformed);
 
-      // canonical only if H_best is '>=' H, for all H, so if H '>' m_current, make H the H_best
-      for(Index j = 0; j < unrolled_H_best.size(); j++) {
-        if(unrolled_H_transformed(j) > unrolled_H_best(j)) {
-          i_canon = i;
-          H_best = H_transformed;
-          unrolled_H_best = HermiteCounter_impl::_canonical_unroll(H_best);
-          break;
-        }
+      //If you fall in here then transformed was greater than H
+      if(HermiteCounter_impl::_canonical_compare(H_best, H_transformed) == 1) {
+        H_best = H_transformed;
+        i_canon = i;
       }
     }
 
