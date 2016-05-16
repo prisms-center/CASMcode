@@ -529,7 +529,7 @@ namespace CASM {
   //*******************************************************************************************
   void PrimClex::generate_supercells(int volStart, int volEnd, bool verbose) {
     Array < Lattice > supercell_lattices;
-    prim.lattice().generate_supercells(supercell_lattices, prim.factor_group(), volEnd, volStart);    //point_group?
+    prim.lattice().generate_supercells(supercell_lattices, prim.factor_group(), volEnd, volStart);
     for(Index i = 0; i < supercell_lattices.size(); i++) {
       Index list_size = supercell_list.size();
       Index index = add_canonical_supercell(supercell_lattices[i]);

@@ -407,11 +407,19 @@ namespace CASM {
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
                                                     double tol,
                                                     size_type begin_volume,
-                                                    size_type end_volume) :
+                                                    size_type end_volume,
+                                                    int init_dims,
+                                                    Eigen::Matrix3i init_trans_mat) :
     m_unit(unit),
     m_lat(unit),
     m_begin_volume(begin_volume),
-    m_end_volume(end_volume) {
+    m_end_volume(end_volume),
+    m_dims(init_dims),
+    m_trans_mat(init_trans_mat) {
+
+    if(m_trans_mat.determinant() < 1) {
+      throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
+    }
 
     m_lat.generate_point_group(m_point_group, tol);
 
@@ -421,12 +429,24 @@ namespace CASM {
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
                                                     const SymGroup &point_grp,
                                                     size_type begin_volume,
-                                                    size_type end_volume) :
+                                                    size_type end_volume,
+                                                    int init_dims,
+                                                    Eigen::Matrix3i init_trans_mat) :
     m_unit(unit),
     m_lat(unit),
     m_point_group(point_grp),
     m_begin_volume(begin_volume),
-    m_end_volume(end_volume) {}
+    m_end_volume(end_volume),
+    m_dims(init_dims),
+    m_trans_mat(init_trans_mat)
+
+  {
+    if(m_trans_mat.determinant() < 1) {
+      throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
+    }
+
+  }
+
 
 
   template<>
@@ -497,38 +517,39 @@ namespace CASM {
   ///
   /// \relatesalso Lattice
   ///
-  std::pair<Eigen::MatrixXi, Eigen::MatrixXd> canonical_hnf(const Eigen::MatrixXi &T, const BasicStructure<Site> &unitcell) {
+  std::pair<Eigen::MatrixXi, Eigen::MatrixXd> canonical_hnf(const Eigen::MatrixXi &T, const SymGroup &effective_pg, const Lattice &ref_lattice) {
 
-    Eigen::Matrix3d lat = unitcell.lattice().lat_column_mat();
-    Structure unitstruc(unitcell);
-    SymGroup pg = unitstruc.point_group();
+    Eigen::Matrix3d lat = ref_lattice.lat_column_mat();
 
-    Eigen::Matrix3i H, H_init, H_canon;
+    Index i_canon = -1;
 
-    int i_canon = 0;
+    //get T in hermite normal form
+    //H is the canonical form of the initial T matrix
+    const Eigen::Matrix3i H = hermite_normal_form(T).first;
 
-    // get T in hermite normal form
-    H = hermite_normal_form(T).first;
-    H_canon = H;
-    Eigen::VectorXi unrolled_H_canon = HermiteCounter_impl::_canonical_unroll(H_canon);
-    H_init = H;
+    //H_best will be the most canonical version and is returned
+    Eigen::Matrix3i H_best;
+    H_best = H;
 
-    for(int i = 0; i < pg.size(); i++) {
-      Eigen::Matrix3i transformed = iround(lat.inverse() * pg[i].matrix() * lat) * H_init;
+    Eigen::VectorXi unrolled_H_best = HermiteCounter_impl::_canonical_unroll(H_best);
 
-      H = hermite_normal_form(transformed).first;
-      Eigen::VectorXi unrolled_H = HermiteCounter_impl::_canonical_unroll(H);
+    for(Index i = 0; i < effective_pg.size(); i++) {
+      Eigen::Matrix3i transformed = iround(lat.inverse() * effective_pg[i].matrix() * lat) * H;
+      Eigen::Matrix3i H_transformed = hermite_normal_form(transformed).first;
+      Eigen::VectorXi unrolled_H_transformed = HermiteCounter_impl::_canonical_unroll(H_transformed);
 
-      // canonical only if H_canon is '>=' H, for all H, so if H '>' m_current, make H the H_canon
-      for(Index j = 0; j < unrolled_H.size(); j++) {
-        i_canon = i;
-        H_canon = H;
-        unrolled_H_canon = HermiteCounter_impl::_canonical_unroll(H_canon);
-        break;
+      // canonical only if H_best is '>=' H, for all H, so if H '>' m_current, make H the H_best
+      for(Index j = 0; j < unrolled_H_best.size(); j++) {
+        if(unrolled_H_transformed(j) > unrolled_H_best(j)) {
+          i_canon = i;
+          H_best = H_transformed;
+          unrolled_H_best = HermiteCounter_impl::_canonical_unroll(H_best);
+          break;
+        }
       }
     }
 
-    return std::make_pair<Eigen::MatrixXi, Eigen::MatrixXd>(H_canon, pg[i_canon].matrix());
+    return std::make_pair<Eigen::MatrixXi, Eigen::MatrixXd>(H_best, effective_pg[i_canon].matrix());
   }
 
 }

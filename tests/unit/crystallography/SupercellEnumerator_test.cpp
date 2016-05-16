@@ -411,7 +411,6 @@ void it_matrix_test(boost::filesystem::path expected_mats) {
 
 void it_lat_test(boost::filesystem::path expected_lats) {
   jsonParser readlats(expected_lats);
-
   Array<Lattice> past_enumerated_lats;
   int minvol, maxvol;
 
@@ -502,6 +501,7 @@ BOOST_AUTO_TEST_CASE(EnumeratorConsistency) {
   it_lat_test(boost::filesystem::path(testdir / "PRIM1_2_9_lats.json"));
   it_lat_test(boost::filesystem::path(testdir / "PRIM2_3_7_lats.json"));
   it_lat_test(boost::filesystem::path(testdir / "PRIM4_1_8_lats.json"));
+  it_lat_test(boost::filesystem::path(testdir / "PRIM5_1_8_lats.json"));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

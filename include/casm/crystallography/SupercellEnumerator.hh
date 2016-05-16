@@ -94,7 +94,6 @@ namespace CASM {
     /// \brief unrolled vector of the upper triangle (does not include diagonal elements)
     EigenVectorXiCounter m_upper_tri;
 
-
     /// \brief Go to the next values of diagonal elements that keep the same determinant
     Index _increment_diagonal();
 
@@ -152,8 +151,7 @@ namespace CASM {
 
     SupercellIterator<UnitType>(const SupercellEnumerator<UnitType> &enumerator,
                                 int volume,
-                                int dims,
-                                Eigen::Matrix3i init_trans_mat);
+                                int dims);
 
     //SupercellIterator<UnitType>(const SupercellIterator<UnitType> &B); TODO
 
@@ -193,7 +191,7 @@ namespace CASM {
     void _increment();
 
     /// \brief Check if the current supercell matrix hermite normal form is in a canonical form
-    bool _is_canonical() const;
+    //bool _is_canonical() const;
 
     /// \brief Increment the supercell matrix by one (maintaining hermite normal form)
     void _try_increment();
@@ -211,11 +209,12 @@ namespace CASM {
     /// \brief Current supercell matrix in HermitCounter form
     HermiteCounter m_current;
 
-    /// \brief The transformation matrix to go from 1x1 or 2x2 Hermite normal form to 3x3 (for guiding enumeration). Vectors specified column-wise.
-    Eigen::Matrix3i m_trans_mat;
-
     /// \brief A supercell, stored here so that iterator dereferencing will be OK. Only used when requested.
     mutable UnitType m_super;
+
+    /// \brief Keep track of the HNF matrices for the current determinant value
+    std::vector<Eigen::Matrix3i> m_canon_hist;
+
   };
 
 
@@ -245,7 +244,9 @@ namespace CASM {
     SupercellEnumerator(UnitType unit,
                         double tol,
                         size_type begin_volume,
-                        size_type end_volume);
+                        size_type end_volume,
+                        int init_dims = 3,
+                        Eigen::Matrix3i init_trans_mat = Eigen::Matrix3i::Identity());
 
     /// \brief Construct a SupercellEnumerator using custom point group operations
     ///
@@ -259,7 +260,9 @@ namespace CASM {
     SupercellEnumerator(UnitType unit,
                         const SymGroup &point_grp,
                         size_type begin_volume,
-                        size_type end_volume);
+                        size_type end_volume,
+                        int init_dims = 3,
+                        Eigen::Matrix3i init_trans_mat = Eigen::Matrix3i::Identity());
 
     /// \brief Access the unit the is being made into supercells
     const UnitType &unit() const;
@@ -282,37 +285,50 @@ namespace CASM {
     /// \brief Get the end volume
     size_type end_volume() const;
 
+    /// \brief Get the transformation matrix that's being applied to the unit vectors
+    const Eigen::Matrix3i &trans_mat() const;
+
+    /// \brief Get the dimensions of the enumerator (1D, 2D or 3D)
+    int dimension() const;
+
     /// \brief A const iterator to the beginning volume, specify here how the iterator should jump through the enumeration
-    const_iterator begin(int dims = 3, const Eigen::Matrix3i &trans_mat = Eigen::Matrix3i::Identity()) const;
+    const_iterator begin() const;
 
     /// \brief A const iterator to the past-the-last volume
-    const_iterator end(int dims = 3, const Eigen::Matrix3i &trans_mat = Eigen::Matrix3i::Identity()) const;
+    const_iterator end() const;
 
     /// \brief A const iterator to the beginning volume
-    const_iterator cbegin(int dims = 3, const Eigen::Matrix3i &trans_mat = Eigen::Matrix3i::Identity()) const;
+    const_iterator cbegin() const;
 
     /// \brief A const iterator to the past-the-last volume
-    const_iterator cend(int dims = 3, const Eigen::Matrix3i &trans_mat = Eigen::Matrix3i::Identity()) const;
+    const_iterator cend() const;
 
     /// \brief A const iterator to a specified volume
-    const_iterator citerator(size_type volume, int dims = 3, const Eigen::Matrix3i &trans_mat = Eigen::Matrix3i::Identity()) const;
+    const_iterator citerator(size_type volume) const;
 
   private:
 
     /// \brief The unit cell of the supercells
-    UnitType m_unit;
+    const UnitType m_unit;
 
     /// \brief The lattice of the unit cell
     Lattice m_lat;
 
     /// \brief The point group of the unit cell
-    SymGroup m_point_group;
+    SymGroup m_point_group;         //factor group...?
 
     /// \brief The first volume supercells to be iterated over (what cbegin uses)
-    int m_begin_volume;
+    const int m_begin_volume;
 
     /// \brief The past-the-last volume supercells to be iterated over (what cend uses)
-    int m_end_volume;
+    const int m_end_volume;
+
+    /// \brief The transformation matrix to go from 1x1 or 2x2 Hermite normal form to 3x3 (for guiding enumeration). Vectors specified column-wise.
+    const Eigen::Matrix3i m_trans_mat;
+
+    /// \brief The number of lattice directions the enumeration is being done in
+    const int m_dims;
+
   };
 
 
@@ -346,23 +362,20 @@ namespace CASM {
   template<typename UnitType>
   SupercellIterator<UnitType>::SupercellIterator(const SupercellEnumerator<UnitType> &enumerator,
                                                  int volume,
-                                                 int dims,
-                                                 Eigen::Matrix3i init_trans_mat) :
+                                                 int dims):
     m_current(volume, dims),
-    m_trans_mat(init_trans_mat),
     m_super_updated(false),
     m_enum(&enumerator) {
     if(enumerator.begin_volume() > enumerator.end_volume()) {
       throw std::runtime_error("The beginning volume of the SupercellEnumerator cannot be greater than the end volume!");
     }
 
-    if(m_trans_mat.determinant() < 1) {
-      throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
+    /*
+    if(!_is_canonical())
+    {
+        _increment();
     }
-
-    if(!_is_canonical()) {
-      _increment();
-    }
+    */
   }
 
   /*
@@ -385,7 +398,7 @@ namespace CASM {
 
   template<typename UnitType>
   bool SupercellIterator<UnitType>::operator==(const SupercellIterator &B) const {
-    return (m_enum == B.m_enum) && (matrix() - B.matrix()).isZero();
+    return (m_enum == B.m_enum) && (m_current() - B.m_current()).isZero();
   }
 
   template<typename UnitType>
@@ -418,7 +431,9 @@ namespace CASM {
 
   template<typename UnitType>
   Eigen::Matrix3i SupercellIterator<UnitType>::matrix() const {
-    return hermite_normal_form(m_trans_mat * m_current()).first;
+    Eigen::Matrix3i expanded = HermiteCounter_impl::_expand_dims(m_current(), m_enum->trans_mat());
+    return canonical_hnf(expanded, m_enum->point_group(), m_enum->lattice()).first;
+    //return hermite_normal_form(expanded).first;
   }
 
   template<typename UnitType>
@@ -447,49 +462,62 @@ namespace CASM {
 
   template<typename UnitType>
   void SupercellIterator<UnitType>::_increment() {
-    do {
-      //_try_increment();
+    m_canon_hist.push_back(matrix());
+    HermiteCounter::value_type last_determinant = m_current.determinant();
+    ++m_current;
+
+    if(last_determinant != m_current.determinant()) {
+      m_canon_hist.clear();
+    }
+
+    while(std::find(m_canon_hist.begin(), m_canon_hist.end(), matrix()) != m_canon_hist.end()) {
       ++m_current;
     }
-    while(!_is_canonical());
+
+    std::cout << matrix() << std::endl << std::endl;
     m_super_updated = false;
   }
 
+  /*
   template<typename UnitType>
-  bool SupercellIterator<UnitType>::_is_canonical() const {
-    // apply point group operations to the supercell matrix to check if it is canonical form
-    // S: supercell lattice column vectors,  U: unit cell lattice column vectors,  T: supercell transformation matrix
-    //
-    // S = U*T  and  op*S = U*T', solve for T' = f(T)
-    //
-    // op*U*T = U*T'
-    // U.inv*op*U*T = T'
+  bool SupercellIterator<UnitType>::_is_canonical() const
+  {
+      // apply point group operations to the supercell matrix to check if it is canonical form
+      // S: supercell lattice column vectors,  U: unit cell lattice column vectors,  T: supercell transformation matrix
+      //
+      // S = U*T  and  op*S = U*T', solve for T' = f(T)
+      //
+      // op*U*T = U*T'
+      // U.inv*op*U*T = T'
 
-    const Eigen::Matrix3i curr_mat = matrix();
-    const Eigen::VectorXi unrolled_current = HermiteCounter_impl::_canonical_unroll(curr_mat);
+      const Eigen::Matrix3i curr_mat = matrix();
+      const Eigen::VectorXi unrolled_current = HermiteCounter_impl::_canonical_unroll(curr_mat);
 
-    for(int i = 0; i < m_enum->point_group().size(); i++) {
+      for(Index i = 0; i < m_enum->point_group().size(); i++)
+      {
+          const Eigen::Matrix3d U = m_enum->lattice().lat_column_mat();
+          const Eigen::Matrix3d op = m_enum->point_group()[i].matrix();
+          const Eigen::Matrix3i transformed = iround(U.inverse() * op * U) * curr_mat;
+          //const Eigen::Matrix3i transformed = iround(U.inverse() * op * U) * m_current;
+          const Eigen::Matrix3i H = hermite_normal_form(transformed).first;
+          const Eigen::VectorXi unrolled_H = HermiteCounter_impl::_canonical_unroll(H);
 
-      const Eigen::Matrix3d U = m_enum->lattice().lat_column_mat();
-      const Eigen::Matrix3d op = m_enum->point_group()[i].matrix();
-      const Eigen::Matrix3i transformed = iround(U.inverse() * op * U) * curr_mat;
-      //const Eigen::Matrix3i transformed = iround(U.inverse() * op * U) * m_current;
-      const Eigen::Matrix3i H = hermite_normal_form(transformed).first;
-
-      const Eigen::VectorXi unrolled_H = HermiteCounter_impl::_canonical_unroll(H);
-
-      // canonical only if m_current is '>' H, so if H '>' m_current, return false
-      for(Index i = 0; i < unrolled_current.size(); i++) {
-        if(unrolled_H(i) > unrolled_current(i)) {
-          return false;
-        }
-        else if(unrolled_H(i) < unrolled_current(i)) {
-          break;
-        }
+          // canonical only if m_current is '>' H, so if H '>' m_current, return false
+          for(Index i = 0; i < unrolled_current.size(); i++)
+          {
+              if(unrolled_H(i) > unrolled_current(i))
+              {
+                  return false;
+              }
+              else if(unrolled_H(i) < unrolled_current(i))
+              {
+                  break;
+              }
+          }
       }
-    }
-    return true;
+      return true;
   }
+  */
 
   //********************************************************************************************************//
 
@@ -506,6 +534,16 @@ namespace CASM {
   template<typename UnitType>
   const SymGroup &SupercellEnumerator<UnitType>::point_group() const {
     return m_point_group;
+  }
+
+  template<typename UnitType>
+  const Eigen::Matrix3i &SupercellEnumerator<UnitType>::trans_mat() const {
+    return m_trans_mat;
+  }
+
+  template<typename UnitType>
+  int SupercellEnumerator<UnitType>::dimension() const {
+    return m_dims;
   }
 
   /*
@@ -535,28 +573,28 @@ namespace CASM {
   }
 
   template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::begin(int dims, const Eigen::Matrix3i &trans_mat) const {
-    return const_iterator(*this, m_begin_volume * trans_mat.determinant(), dims, trans_mat);
+  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::begin() const {
+    return const_iterator(*this, m_begin_volume, dimension());
   }
 
   template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::end(int dims, const Eigen::Matrix3i &trans_mat) const {
-    return const_iterator(*this, m_end_volume * trans_mat.determinant(), dims, trans_mat);
+  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::end() const {
+    return const_iterator(*this, m_end_volume, dimension());
   }
 
   template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::cbegin(int dims, const Eigen::Matrix3i &trans_mat) const {
-    return const_iterator(*this, m_begin_volume * trans_mat.determinant(), dims, trans_mat);
+  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::cbegin() const {
+    return const_iterator(*this, m_begin_volume, dimension());
   }
 
   template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::cend(int dims, const Eigen::Matrix3i &trans_mat) const {
-    return const_iterator(*this, m_end_volume * trans_mat.determinant(), dims, trans_mat);
+  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::cend() const {
+    return const_iterator(*this, m_end_volume, dimension());
   }
 
   template<typename UnitType>
-  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::citerator(size_type volume, int dims, const Eigen::Matrix3i &trans_mat) const {
-    return SupercellIterator<UnitType>(*this, volume * trans_mat.determinant(), dims, trans_mat);
+  typename SupercellEnumerator<UnitType>::const_iterator SupercellEnumerator<UnitType>::citerator(size_type volume) const {
+    return SupercellIterator<UnitType>(*this, volume, dimension());
   }
 
 
@@ -566,13 +604,17 @@ namespace CASM {
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
                                                     double tol,
                                                     size_type begin_volume,
-                                                    size_type end_volume);
+                                                    size_type end_volume,
+                                                    int init_dims,
+                                                    Eigen::Matrix3i init_trans_mat);
 
   template<>
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
                                                     const SymGroup &point_grp,
                                                     size_type begin_volume,
-                                                    size_type end_volume);
+                                                    size_type end_volume,
+                                                    int init_dims,
+                                                    Eigen::Matrix3i init_trans_mat);
 
   template<>
   Eigen::Matrix3i enforce_min_volume<Lattice>(
@@ -585,7 +627,7 @@ namespace CASM {
 
   /// \brief Return canonical hermite normal form of the supercell matrix, and op used to find it
   std::pair<Eigen::MatrixXi, Eigen::MatrixXd>
-  canonical_hnf(const Eigen::MatrixXi &T, const BasicStructure<Site> &unitcell);
+  canonical_hnf(const Eigen::MatrixXi &T, const SymGroup &effective_pg, const Lattice &ref_lattice);
 
 }
 
