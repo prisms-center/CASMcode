@@ -26,7 +26,8 @@ namespace CASM {
     Hull(const ConstConfigSelection &_selection,
          const CompCalculator &_comp_calculator = ConfigIO::SpeciesFrac(),
          const EnergyCalculator &_energy_calculator = ConfigIO::formation_energy_per_species(),
-         double _singular_value_tol = 1e-14);
+         double _singular_value_tol = 1e-14,
+         double _bottom_facet_tol = 1e-14);
 
     /// \brief const Access the hull object directly
     const orgQhull::Qhull &data() const;
