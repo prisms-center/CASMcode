@@ -2,9 +2,11 @@
 
 #include <cstring>
 
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/ConfigEnumIterator.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
+#include "casm/clex/ConfigEnumAllOccupations.hh"
 
 namespace CASM {
 
@@ -22,6 +24,11 @@ namespace CASM {
     std::vector<std::string> scellname_list, filter_expr;
     //double tol;
     COORD_TYPE coordtype = CASM::CART;
+
+    int dims = 3;
+    Eigen::Matrix3i T = Eigen::Matrix3i::Identity();
+    fs::path matrix_path;
+    std::string ezmode;
     po::variables_map vm;
 
 
@@ -35,7 +42,10 @@ namespace CASM {
     ("scellname,n", po::value<std::vector<std::string> >(&scellname_list)->multitoken(), "Enumerate configs for given supercells")
     ("all,a", "Enumerate configurations for all supercells")
     ("supercells,s", "Enumerate supercells")
-    ("configs,c", "Enumerate configurations");
+    ("configs,c", "Enumerate configurations")
+    ("dimensions,d", po::value<int>(&dims), "Enumerate 1D, 2D or 3D supercells")
+    ("matrix,m", po::value<fs::path>(&matrix_path), "Specify lattice vectors to create supercells over")
+    ("easy-restrict,z", po::value<std::string>(&ezmode), "Restrict enumeration along a, b or c primitive lattice vectors");
 
     // currently unused...
     //("tol", po::value<double>(&tol)->default_value(CASM::TOL), "Tolerance used for checking symmetry")
@@ -55,6 +65,7 @@ namespace CASM {
         std::cout << "    Enumerate supercells and configurations\n";
         std::cout << "    - expects a PRIM file in the project root directory \n";
         std::cout << "    - if --min is given, then --max must be given \n";
+        std::cout << "    - if --dimensions is given, then --matrix must be given \n";
 
 
         return 0;
@@ -67,6 +78,34 @@ namespace CASM {
         std::cerr << "\n" << desc << "\n" << std::endl;
         std::cerr << "Error in 'casm enum'. If --min is given, --max must also be given." << std::endl;
         return ERR_INVALID_ARG;
+      }
+      if(vm.count("dimensions") && !vm.count("matrix")) {
+        std::cerr << "\n" << desc << "\n" << std::endl;
+        std::cerr << "Error in 'casm enum'. If --dimensions is given, --matrix must also be given." << std::endl;
+        return ERR_INVALID_ARG;
+      }
+      if(vm.count("easy-restrict")) {
+        bool bad_args = false;
+        if(ezmode.size() > 3 || ezmode.size() < 1) {
+          bad_args = true;
+        }
+        for(int i = 0; i < ezmode.size(); i++) {
+          if(ezmode[i] != 'a' && ezmode[i] != 'b' && ezmode[i] != 'c') {
+            bad_args = true;
+            break;
+          }
+        }
+        if(bad_args) {
+          std::cerr << std::endl << desc << std::endl << std::endl;
+          std::cerr << "When using --easy-restrict, specify the primitive lattice vectors you want to enumerate over with a string." << std::endl;
+          std::cerr << "For example, to enumerate over only a and b, pass 'ab'. To enumerate over only c pass 'c'." << std::endl;
+
+          return ERR_INVALID_ARG;
+        }
+        if(vm.count("matrix") || vm.count("dimensions")) {
+          std::cerr << "Option --easy-restrict cannot be used with --dimensions or --matrix" << std::endl;
+          return ERR_INVALID_ARG;
+        }
       }
       if(vm.count("supercells") + vm.count("configs") != 1) {
         std::cerr << "\n" << desc << "\n" << std::endl;
@@ -111,11 +150,37 @@ namespace CASM {
     PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
 
+    if(vm.count("easy-restrict")) {
+      dims = ezmode.size();
+      while(ezmode.size() != 3) {
+        if(std::find(ezmode.begin(), ezmode.end(), 'a') == ezmode.end()) {
+          ezmode.push_back('a');
+        }
+        if(std::find(ezmode.begin(), ezmode.end(), 'b') == ezmode.end()) {
+          ezmode.push_back('b');
+        }
+        if(std::find(ezmode.begin(), ezmode.end(), 'c') == ezmode.end()) {
+          ezmode.push_back('c');
+        }
+      }
+      T = Eigen::Matrix3i::Zero();
+      T(ezmode[0] - 'a', 0) = 1;
+      T(ezmode[1] - 'a', 1) = 1;
+      T(ezmode[2] - 'a', 2) = 1;
+    }
+    if(vm.count("matrix")) {
+      fs::ifstream matstream(matrix_path);
+      for(int i = 0; i < 9; i++) {
+        matstream >> T;
+      }
+    }
+
+
     if(vm.count("supercells")) {
       std::cout << "\n***************************\n" << std::endl;
 
       std::cout << "Generating supercells from " << min_vol << " to " << max_vol << std::endl << std::endl;
-      primclex.generate_supercells(min_vol, max_vol, 3, Eigen::Matrix3i::Identity(), true);
+      primclex.generate_supercells(min_vol, max_vol, dims, T, true);
       std::cout << "\n  DONE." << std::endl << std::endl;
 
       std::cout << "Write SCEL." << std::endl << std::endl;
@@ -123,21 +188,28 @@ namespace CASM {
 
     }
     else if(vm.count("configs")) {
+      if(vm.count("dimensions") || vm.count("matrix") || vm.count("easy-restrict")) {
+        std::cerr << "Option --configs in conjunction with limited supercell enumeration is currently unsupported" << std::endl;
+        return ERR_INVALID_ARG;
+      }
+
       std::cout << "\n***************************\n" << std::endl;
       std::vector<Supercell *> scel_selection;
 
       //Build the supercell selection based on user input
       if(vm.count("all")) {
         std::cout << "Enumerate all configurations" << std::endl << std::endl;
-        for(int j = 0; j < primclex.get_supercell_list().size(); j++)
+        for(int j = 0; j < primclex.get_supercell_list().size(); j++) {
           scel_selection.push_back(&(primclex.get_supercell(j)));
+        }
       }
       else {
         if(vm.count("max")) {
           std::cout << "Enumerate configurations from volume " << min_vol << " to " << max_vol << std::endl << std::endl;
           for(int j = 0; j < primclex.get_supercell_list().size(); j++) {
-            if(primclex.get_supercell(j).volume() >= min_vol && primclex.get_supercell(j).volume() <= max_vol)
+            if(primclex.get_supercell(j).volume() >= min_vol && primclex.get_supercell(j).volume() <= max_vol) {
               scel_selection.push_back(&(primclex.get_supercell(j)));
+            }
           }
         }
         if(vm.count("scellname")) {
@@ -187,8 +259,9 @@ namespace CASM {
             return ERR_INVALID_ARG;
           }
         }
-        else
+        else {
           (**it).add_unique_canon_configs(enumerator.begin(), enumerator.end());
+        }
 
         std::cout << ((**it).get_config_list().size() - num_before) << " configs." << std::endl;
       }
