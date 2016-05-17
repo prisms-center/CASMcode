@@ -115,7 +115,7 @@ namespace CASM {
       std::cout << "\n***************************\n" << std::endl;
 
       std::cout << "Generating supercells from " << min_vol << " to " << max_vol << std::endl << std::endl;
-      primclex.generate_supercells(min_vol, max_vol, true);
+      primclex.generate_supercells(min_vol, max_vol, 3, Eigen::Matrix3i::Identity(), true);
       std::cout << "\n  DONE." << std::endl << std::endl;
 
       std::cout << "Write SCEL." << std::endl << std::endl;

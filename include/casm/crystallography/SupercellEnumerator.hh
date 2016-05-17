@@ -48,7 +48,7 @@ namespace CASM {
     typedef CASM::Index Index;
 
     /// \brief constructor to satisfy iterator requirements. Do not recommend.
-    HermiteCounter() {};
+    //HermiteCounter() {};
 
     /// \brief constructor given the desired determinant and square matrix dimensions
     HermiteCounter(int init_determinant, int init_dim);
@@ -153,16 +153,16 @@ namespace CASM {
     typedef const UnitType *pointer;
 
     //required for forward iterator
-    SupercellIterator<UnitType>() {}
+    //SupercellIterator<UnitType>() {}
 
     SupercellIterator<UnitType>(const SupercellEnumerator<UnitType> &enumerator,
                                 int volume,
                                 int dims);
 
     //required for all iterators
-    SupercellIterator<UnitType>(const SupercellIterator<UnitType> &B);
+    //SupercellIterator<UnitType>(const SupercellIterator<UnitType> &B);
 
-    //required for all iterators
+    //required for all iterators?
     SupercellIterator<UnitType> &operator=(const SupercellIterator<UnitType> &B);
 
     /// \brief Iterator comparison
@@ -378,18 +378,18 @@ namespace CASM {
       throw std::runtime_error("The beginning volume of the SupercellEnumerator cannot be greater than the end volume!");
     }
 
-    /*
-    if(!_is_canonical())
-    {
-        _increment();
+    if(dims < 1) {
+      throw std::runtime_error("Dimensions to count over must be greater than 0!");
     }
-    */
   }
 
+  /*
   template<typename UnitType>
-  SupercellIterator<UnitType>::SupercellIterator(const SupercellIterator &B) {
-    *this = B;
+  SupercellIterator<UnitType>::SupercellIterator(const SupercellIterator &B)
+  {
+      *this = B;
   };
+  */
 
   template<typename UnitType>
   SupercellIterator<UnitType> &SupercellIterator<UnitType>::operator=(const SupercellIterator &B) {

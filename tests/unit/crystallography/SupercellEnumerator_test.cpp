@@ -5,6 +5,7 @@
 /// What is being tested:
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/container/LinearAlgebra.hh"
 
 /// What is being used to test it:
 #include "casm/crystallography/SupercellEnumerator.hh"
@@ -426,7 +427,7 @@ void it_lat_test(boost::filesystem::path expected_lats) {
   Lattice test_lat = test_struc.lattice();
   const auto effective_pg = test_struc.factor_group();
 
-  test_lat.generate_supercells(enumerated_lats, effective_pg, maxvol, minvol);
+  test_lat.generate_supercells(enumerated_lats, effective_pg, minvol, maxvol, 3, Eigen::Matrix3i::Identity());
 
 
   BOOST_CHECK_EQUAL(past_enumerated_lats.size(), enumerated_lats.size());
@@ -466,6 +467,119 @@ void unroll_test() {
   return;
 }
 
+void compare_test() {
+  Eigen::Matrix3i low, high;
+
+  low << 1, 9, 9,
+      0, 9, 9,
+      0, 9, 9;
+
+  high << 2, 0, 0,
+       0, 1, 0,
+       0, 0, 1;
+
+  BOOST_CHECK_EQUAL(HermiteCounter_impl::_canonical_compare(low, high), 1);
+
+  low << 1, 9, 9,
+      0, 9, 9,
+      0, 9, 9;
+
+  high << 1, 10, 9,
+       0, 9, 9,
+       0, 9, 9;
+
+  BOOST_CHECK_EQUAL(HermiteCounter_impl::_canonical_compare(low, high), 1);
+
+  return;
+}
+
+void trans_enum_test() {
+  Lattice testlat(Lattice::fcc());
+  SymGroup pg;
+  testlat.generate_point_group(pg);
+  int dims = 3;
+  Eigen::Matrix3i transmat;
+
+  transmat << -1, 1, 1,
+           1, -1, 1,
+           1, 1, -1;
+
+  Lattice bigunit = make_supercell(testlat, transmat);
+
+  SupercellEnumerator<Lattice> enumerator(testlat, pg, 1, 5 + 1, dims, transmat);
+
+  std::vector<Lattice> enumerated_lat(enumerator.begin(), enumerator.end());
+
+  for(Index i = 0; i > enumerated_lat.size(); i++) {
+    BOOST_CHECK(enumerated_lat[i].is_supercell_of(bigunit));
+  }
+
+  return;
+}
+
+/*
+void restricted_test()
+{
+    Lattice testlat=Lattice::fcc();
+    SymGroup pg;
+    testlat.generate_point_group(pg);
+    int dims=1;
+
+    SupercellEnumerator<Lattice> enumerator(testlat,pg,1,5+1,dims);
+    std::vector<Lattice> enumerated_lat(enumerator.begin(), enumerator.end());
+
+    BOOST_CHECK_EQUAL(enumerated_lat.size(),5);
+
+    int l=1;
+    for(auto it=enumerated_lat.begin(); it!=enumerated_lat.end(); ++it)
+    {
+        Eigen::Matrix3i comp_transmat;
+        comp_transmat<<(l),0,0,
+            0,1,0,
+            0,0,1;
+
+        Lattice comparelat=make_supercell(testlat,comp_transmat);
+
+        Lattice nigglicompare=niggli(comparelat,pg,TOL);
+        Lattice nigglitest=niggli(*it,pg,TOL);
+
+        BOOST_CHECK(nigglicompare==nigglitest);
+        l++;
+    }
+
+    return;
+}
+*/
+
+void restricted_test() {
+  std::vector<Lattice> all_test_lats;
+  all_test_lats.push_back(Lattice::fcc());
+  all_test_lats.push_back(Lattice::bcc());
+  all_test_lats.push_back(Lattice::cubic());
+  all_test_lats.push_back(Lattice::hexagonal());
+
+  for(Index t = 0; t < all_test_lats.size(); t++) {
+    Lattice testlat = all_test_lats[t];
+    SymGroup pg;
+    testlat.generate_point_group(pg);
+    int dims = 1;
+
+    SupercellEnumerator<Lattice> enumerator(testlat, pg, 1, 15 + 1, dims);
+
+    int l = 1;
+    for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
+      Eigen::Matrix3i comp_transmat;
+      comp_transmat << (l), 0, 0,
+                    0, 1, 0,
+                    0, 0, 1;
+
+      BOOST_CHECK(it.matrix() == canonical_hnf(comp_transmat, pg, testlat));
+      l++;
+    }
+  }
+
+  return;
+}
 
 
 BOOST_AUTO_TEST_SUITE(SupercellEnumeratorTest)
@@ -481,6 +595,7 @@ BOOST_AUTO_TEST_CASE(HermiteImpl) {
   matrix_construction_test();
   reset_test();
   unroll_test();
+  compare_test();
 }
 
 BOOST_AUTO_TEST_CASE(HermiteCounting) {
@@ -502,6 +617,12 @@ BOOST_AUTO_TEST_CASE(EnumeratorConsistency) {
   it_lat_test(boost::filesystem::path(testdir / "PRIM2_3_7_lats.json"));
   it_lat_test(boost::filesystem::path(testdir / "PRIM4_1_8_lats.json"));
   it_lat_test(boost::filesystem::path(testdir / "PRIM5_1_8_lats.json"));
+}
+
+BOOST_AUTO_TEST_CASE(RestrictedEnumeration) {
+  trans_enum_test();
+  restricted_test();
+  //restricted_trans_enum_test();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

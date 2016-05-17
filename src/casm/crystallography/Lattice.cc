@@ -371,9 +371,11 @@ namespace CASM {
   ///
   void Lattice::generate_supercells(Array<Lattice> &supercell,
                                     const SymGroup &effective_pg,
+                                    int min_prim_vol,
                                     int max_prim_vol,
-                                    int min_prim_vol) const {
-    SupercellEnumerator<Lattice> enumerator(*this, effective_pg, min_prim_vol, max_prim_vol + 1);
+                                    int dims,
+                                    const Eigen::Matrix3i &T) const {
+    SupercellEnumerator<Lattice> enumerator(*this, effective_pg, min_prim_vol, max_prim_vol + 1, dims, T);
     supercell.clear();
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
       supercell.push_back(niggli(*it, effective_pg, TOL));
