@@ -118,8 +118,7 @@ namespace CASM {
     fs::path config_list() const {
       return m_root / m_casm_dir / "config_list.json";
     }
-
-
+    
     // -- Symmetry --------
 
     /// \brief Return symmetry directory path
@@ -296,6 +295,11 @@ namespace CASM {
     /// \brief Returns path to eci.out
     fs::path eci_out(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
       return eci_dir(clex, calctype, ref, bset, eci) / "eci.out";
+    }
+    
+    /// \brief Query aliases file
+    fs::path query_alias() const {
+      return m_root / m_casm_dir / "query_alias.json";
     }
 
 

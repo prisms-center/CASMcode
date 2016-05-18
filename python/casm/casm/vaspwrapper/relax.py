@@ -199,7 +199,7 @@ class Relax(object):
 
             # ensure results report written
             if not os.path.isfile(os.path.join(self.calcdir, "properties.calc.json")):
-                self.report_properties()
+                self.finalize()
 
             return
 
@@ -317,7 +317,7 @@ class Relax(object):
                     sys.stdout.flush()
 
             # write results to properties.calc.json
-            self.report_properties()
+            self.finalize()
             return
 
         elif status == "not_converging":
@@ -382,7 +382,7 @@ class Relax(object):
                     sys.stdout.flush()
 
             # write results to properties.calc.json
-            self.report_properties()
+            self.finalize()
 
         else:
             self.report_status("failed","unknown")
@@ -414,42 +414,64 @@ class Relax(object):
         print "Wrote " + outputfile
         sys.stdout.flush()
 
+    def finalize(self):
+      if self.is_converged():
+        # write properties.calc.json
+        vaspdir = os.path.join(self.calcdir, "run.final")
+	super_poscarfile = os.path.join(self.configdir,"POS")
+        speciesfile = casm.settings_path("SPECIES",self.casm_settings["curr_calctype"],self.configdir)
+        output = self.properties(vaspdir, super_poscarfile, speciesfile)
+        outputfile = os.path.join(self.calcdir, "properties.calc.json")
+        with open(outputfile, 'w') as file:
+            file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
+        print "Wrote " + outputfile
+        sys.stdout.flush()
+        self.report_status('complete')
 
-    def report_properties(self):
+    def is_converged(self):
+      # Check for electronic convergence in completed calculations. Returns True or False.
+
+      # Verify that the last relaxation reached electronic convergence
+      relaxation = vasp.Relax(self.calcdir, self.run_settings())
+      for i in range(len(relaxation.rundir)):
+        try:
+          vrun = vasp.io.Vasprun( os.path.join(self.calcdir, relaxation.rundir[-i-1], "vasprun.xml"))
+          if len(vrun.all_e_0[-1]) >= vrun.nelm:
+            print('The last relaxation run (' +
+                os.path.basename(relaxation.rundir[-i-1]) +
+                ') failed to achieve electronic convergence; properties.calc.json will not be written.\n')
+            self.report_status('failed','electronic_convergence')
+            return False
+          break
+        except:
+          pass
+
+      # Verify that the final static run reached electronic convergence
+      vrun = vasp.io.Vasprun( os.path.join(self.calcdir, "run.final", "vasprun.xml") )
+      if len(vrun.all_e_0[0]) >= vrun.nelm:
+          print('The final run failed to achieve electronic convergence; properties.calc.json will not be written.\n')
+          self.report_status('failed','electronic_convergence')
+          return False
+
+      return True
+
+    @staticmethod
+    def properties(vaspdir, super_poscarfile = None, speciesfile = None):
         """Report results to properties.calc.json file in configuration directory, after checking for electronic convergence."""
 
         output = dict()
-
-        # Verify that the last relaxed-volume run reached electronic convergence
-        relaxation = vasp.Relax(self.calcdir, self.run_settings())
-        vrun = vasp.io.Vasprun( os.path.join(self.calcdir, relaxation.rundir[-1], "vasprun.xml"))
-        if len(vrun.all_e_0[-1]) >= vrun.nelm:
-            print('The last relaxation run (' +
-                os.path.basename(relaxation.rundir[-1]) +
-                ') failed to achieve electronic convergence; properties.calc.json will not be written.\n')
-            self.report_status('failed','electronic_convergence')
-            return
-
-        # Verify that the final run reached electronic convergence
-        vrun = vasp.io.Vasprun( os.path.join(self.calcdir, "run.final", "vasprun.xml") )
-        if len(vrun.all_e_0[0]) >= vrun.nelm:
-            print('The final run failed to achieve electronic convergence; properties.calc.json will not be written.\n')
-            self.report_status('failed','electronic_convergence')
-            return
-
-        self.report_status('complete')
+        vrun = vasp.io.Vasprun( os.path.join(vaspdir, "vasprun.xml") )
 
         # the calculation is run on the 'sorted' POSCAR, need to report results 'unsorted'
 
-        if self.sort:
-            super_poscarfile = os.path.join(self.configdir,"POS")
-            speciesfile = casm.settings_path("SPECIES",self.casm_settings["curr_calctype"],self.configdir)
+        if (super_poscarfile is not None) and (speciesfile is not None):
             species_settings = vasp.io.species_settings(speciesfile)
             super = vasp.io.Poscar(super_poscarfile, species_settings)
             unsort_dict = super.unsort_dict()
         else:
             # fake unsort_dict (unsort_dict[i] == i)
             unsort_dict = dict(zip(range(0,len(vrun.basis)),range(0,len(vrun.basis))))
+	    super = vasp.io.Poscar(os.path.join(vaspdir,"POSCAR"))
 
         # unsort_dict:
         #   Returns 'unsort_dict', for which: unsorted_dict[orig_index] == sorted_index;
@@ -475,10 +497,6 @@ class Relax(object):
 
         output["relaxed_energy"] = vrun.total_energy
 
+	return output
 
-        # write properties.calc.json
-        outputfile = os.path.join(self.calcdir, "properties.calc.json")
-        with open(outputfile, 'w') as file:
-            file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
-        print "Wrote " + outputfile
-        sys.stdout.flush()
+

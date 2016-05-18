@@ -22,7 +22,7 @@ namespace CASM {
       Selected(const Selected &) = default;
 
       template<bool IsConst>
-      Selected(ConfigSelection<IsConst> _selection):
+      explicit Selected(ConfigSelection<IsConst> _selection):
         BooleanAttribute<Configuration>("selected_in", "Returns true if configuration is specified in given selection (default MASTER). Ex: 'selected_in(myselection.txt)'"),
         m_selection(_selection) {}
 
