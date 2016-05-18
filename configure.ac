@@ -5,6 +5,7 @@ AC_PREREQ([2.69])
 AC_INIT([autocasm], [0.0.0], [casm@casm.edu])
 AC_CONFIG_SRCDIR([include/casm/CASM_global_definitions.hh])
 AC_CONFIG_HEADERS([config.h])
+#Rules to apply to every Makefile.am
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 # Checks for programs.
@@ -12,20 +13,25 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CPP
 
-# Checks for libraries.
-# FIXME: Replace `main' with a function in `-lgzstream':
-AC_CHECK_LIB([gzstream], [main])
-# FIXME: Replace `main' with a function in `-lz':
-AC_CHECK_LIB([z], [main])
+## Checks for libraries.
+## FIXME: Replace `main' with a function in `-lgzstream':
+#AC_CHECK_LIB([gzstream], [main])
+## FIXME: Replace `main' with a function in `-lz':
+AC_CHECK_LIB([z], [gzread])
+#AC_CHECK_LIB([z], [gzwrite])
+#AC_CHECK_LIB([z], [gzopen])
+#AC_CHECK_LIB([z], [gzclose])
 
 #I added this
 LT_INIT
 AX_CXX_COMPILE_STDCXX_11
-INCLUDES= -src
+BOOSTV=1.52
+AX_BOOST_BASE([$BOOSTV],[],[AC_MSG_ERROR(You need Boost $BOOSTV libraries or higher.)])
 AX_BOOST_FILESYSTEM
 AX_BOOST_SYSTEM
 AX_BOOST_REGEX
 AX_BOOST_PROGRAM_OPTIONS
+AC_DISABLE_STATIC
 
 # Checks for header files.
 AC_CHECK_HEADERS([float.h limits.h stdlib.h string.h sys/time.h unistd.h])
