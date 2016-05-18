@@ -20,9 +20,6 @@ namespace CASM {
   template<typename DataObject>
   class Norm;
 
-  typedef DataFormatterParser<Configuration> ConfigIOParser;
-
-
   ///
   template<bool IsConst>
   class ConfigSelection;

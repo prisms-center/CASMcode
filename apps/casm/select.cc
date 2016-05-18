@@ -8,11 +8,11 @@
 namespace CASM {
 
   template<typename ConfigIterType>
-  void set_selection(ConfigIterType begin, ConfigIterType end, const std::string &criteria, bool mk) {
+  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, bool mk) {
     //boost::trim(criteria);
 
     if(criteria.size()) {
-      DataFormatter<Configuration> tformat(ConfigIOParser::parse(criteria));
+      DataFormatter<Configuration> tformat(dict.parse(criteria));
       for(; begin != end; ++begin) {
         ValueDataStream<bool> select_stream;
         select_stream << tformat(*begin);
@@ -30,11 +30,11 @@ namespace CASM {
   }
 
   template<typename ConfigIterType>
-  void set_selection(ConfigIterType begin, ConfigIterType end, const std::string &criteria) {
+  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria) {
     //boost::trim(criteria);
 
     if(criteria.size()) {
-      DataFormatter<Configuration> tformat(ConfigIOParser::parse(criteria));
+      DataFormatter<Configuration> tformat(dict.parse(criteria));
       for(; begin != end; ++begin) {
         ValueDataStream<bool> select_stream;
         select_stream << tformat(*begin);
@@ -46,7 +46,7 @@ namespace CASM {
   }
 
   template<bool IsConst>
-  bool write_selection(const ConfigSelection<IsConst> &config_select, bool force, const fs::path &out_path, bool write_json, bool only_selected) {
+  bool write_selection(const DataFormatterDictionary<Configuration> &dict, const ConfigSelection<IsConst> &config_select, bool force, const fs::path &out_path, bool write_json, bool only_selected) {
     if(fs::exists(out_path) && !force) {
       std::cerr << "File " << out_path << " already exists. Use --force to force overwrite." << std::endl;
       return ERR_EXISTING_FILE;
@@ -54,7 +54,7 @@ namespace CASM {
 
     if(write_json || out_path.extension() == ".json" || out_path.extension() == ".JSON") {
       jsonParser json;
-      config_select.to_json(json);
+      config_select.to_json(dict, json);
       SafeOfstream sout;
       sout.open(out_path);
       json.print(sout.ofstream(), only_selected);
@@ -63,13 +63,13 @@ namespace CASM {
     else {
       SafeOfstream sout;
       sout.open(out_path);
-      config_select.print(sout.ofstream(), only_selected);
+      config_select.print(dict, sout.ofstream(), only_selected);
       sout.close();
     }
     return 0;
   }
 
-  void select_help(std::ostream &_stream, std::vector<std::string> help_opt) {
+  void select_help(const DataFormatterDictionary<Configuration> &_dict, std::ostream &_stream, std::vector<std::string> help_opt) {
     _stream << "DESCRIPTION" << std::endl
             << "\n"
             << "    Use '[--set | --set-on | --set-off] [criteria]' for specifying or editing a selection.\n";
@@ -79,11 +79,11 @@ namespace CASM {
 
       if(str[0] == 'o') {
         _stream << "Available operators for use within selection criteria:" << std::endl;
-        ConfigIOParser::print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
+        _dict.print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
       }
       else if(str[0] == 'p') {
         _stream << "Available property tags are currently:" << std::endl;
-        ConfigIOParser::print_help(_stream);
+        _dict.print_help(_stream, BaseDatumFormatter<Configuration>::Property);
       }
       _stream << std::endl;
     }
@@ -169,19 +169,14 @@ namespace CASM {
       // Finish --help option
       if(vm.count("help")) {
         fs::path root = find_casmroot(fs::current_path());
-        fs::path alias_file = root / ".casm/query_alias.json";
-        if(fs::exists(alias_file)) {
-          ConfigIOParser::load_aliases(alias_file);
+        if(root.empty()) {
+          auto dict = make_dictionary<Configuration>();
+          select_help(dict, std::cout, help_opt_vec);
         }
-        ConfigIOParser::add_custom_formatter(
-          datum_formatter_alias(
-            "selected",
-            ConfigIO::selected_in(),
-            "Returns true if configuration is specified in the input selection"
-          )
-        );
-
-        select_help(std::cout, help_opt_vec);
+        else {
+          ProjectSettings set(root);
+          select_help(set.config_io(), std::cout, help_opt_vec);
+        }
         return 0;
       }
 
@@ -234,27 +229,16 @@ namespace CASM {
       return ERR_NO_PROJ;
     }
 
-    // load query aliases
-    fs::path alias_file = root / ".casm/query_alias.json";
-    if(fs::exists(alias_file)) {
-      ConfigIOParser::load_aliases(alias_file);
-    }
-
     // initialize primclex
     std::cout << "Initialize primclex: " << root << std::endl << std::endl;
     PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
+    ProjectSettings &set = primclex.settings();
 
     // load initial selection into config_select -- this is also the selection that will be printed at end
     ConfigSelection<false> config_select(primclex, selection[0]);
 
-    ConfigIOParser::add_custom_formatter(
-      datum_formatter_alias(
-        "selected",
-        ConfigIO::selected_in(config_select),
-        "Returns true if configuration is specified in the input selection"
-      )
-    );
+    set.set_selected(config_select);
 
     if(vm.count("set-on") || vm.count("set-off") || vm.count("set")) {
       bool select_switch = vm.count("set-on");
@@ -270,9 +254,9 @@ namespace CASM {
       }
       std::cout << "Set selection: " << criteria << std::endl << std::endl;
       if(vm.count("set"))
-        set_selection(config_select.config_begin(), config_select.config_end(), criteria);
+        set_selection(set.config_io(), config_select.config_begin(), config_select.config_end(), criteria);
       else
-        set_selection(config_select.config_begin(), config_select.config_end(), criteria, select_switch);
+        set_selection(set.config_io(), config_select.config_begin(), config_select.config_end(), criteria, select_switch);
 
       std::cout << "  DONE." << std::endl << std::endl;
 
@@ -368,7 +352,7 @@ namespace CASM {
     else {
 
       std::cout << "Writing selection to " << out_path << std::endl;
-      int ret_code = write_selection(config_select, vm.count("force"), out_path, vm.count("json"), only_selected);
+      int ret_code = write_selection(set.config_io(), config_select, vm.count("force"), out_path, vm.count("json"), only_selected);
       std::cout << "  DONE." << std::endl;
       std::cout << "\n***************************\n" << std::endl;
 

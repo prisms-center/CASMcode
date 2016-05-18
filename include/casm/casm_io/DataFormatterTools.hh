@@ -21,7 +21,7 @@ namespace CASM {
   */
 
 
-  /// \brief Base class for DataFormatter that operate on the results of other DataFormatters
+  /// \brief DataFormatters that operate on the results of other DataFormatters
   ///
   /// \ingroup DataFormatterOperator
   ///
@@ -31,12 +31,14 @@ namespace CASM {
 
     using BaseDatumFormatter<DataObject>::name;
     using Evaluator = std::function<ValueType(const std::vector<ArgType> &)>;
-    using Parser = std::function<const BaseDatumFormatter<DataObject>&(const std::string &)>;
     //validator probably not necessary?
     //using Validator = std::function<bool(const DataObject &)>;
 
-    DataFormatterOperator(const std::string &_init_name, const std::string &_desc, Evaluator evaluator, Parser parser = DataFormatterParser<DataObject>::lookup) :
-      BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator), m_parser(parser) {}
+    DataFormatterOperator(
+      const std::string &_init_name,
+      const std::string &_desc,
+      Evaluator evaluator) :
+      BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator) {}
 
     std::unique_ptr<DataFormatterOperator> clone() const {
       return std::unique_ptr<DataFormatterOperator>(this->_clone());
@@ -89,7 +91,6 @@ namespace CASM {
     }
 
     Evaluator m_evaluate;
-    Parser m_parser;
     DataFormatter<DataObject> m_arg_formatter;
   };
 
@@ -486,13 +487,16 @@ namespace CASM {
   public:
     using BaseDatumFormatter<DataObject>::name;
 
-    DatumFormatterAlias(const std::string &_name, const std::string &_command, const std::string &_help = "") :
+    DatumFormatterAlias(const std::string &_name,
+                        const std::string &_command,
+                        const DataFormatterDictionary<DataObject> &_dict,
+                        const std::string &_help = "") :
       BaseDatumFormatter<DataObject> (_name, _help.empty() ? "User-specified alias for '" + _command + "'" : _help) {
 
       split_formatter_expression(_command, m_format_tags, m_subexprs);
       if(m_format_tags.size() != 1)
         throw std::runtime_error("Expression '" + _command + "' is either empty or consists of multiple expressions.\n");
-
+      m_formatter = _dict.lookup(m_format_tags[0])->clone();
     }
 
     DatumFormatterAlias(const std::string &_name, const BaseDatumFormatter<DataObject> &_rhs, const std::string &_help = "") :
@@ -576,7 +580,7 @@ namespace CASM {
     bool parse_args(const std::string &args)  override {
 
       if(!m_formatter) {
-        m_formatter = DataFormatterParser<DataObject>::lookup(m_format_tags[0]).clone();
+        throw std::runtime_error("ERROR: DataFormatterAlias has no formatter");
       }
       //Parse the arguments of of the command now.  Later, we may want to do expression substitution
       // (e.g.,  "comp_plus = add(comp(a),$1)" where $1 specifies an argument)
@@ -604,8 +608,9 @@ namespace CASM {
   DatumFormatterAlias<DataObject> datum_formatter_alias(
     const std::string &_name,
     const std::string &_command,
+    const DataFormatterDictionary<DataObject> &_dict,
     const std::string &_help = "") {
-    return DatumFormatterAlias<DataObject>(_name, _command, _help);
+    return DatumFormatterAlias<DataObject>(_name, _command, _dict, _help);
   }
 
   template<typename DataObject>

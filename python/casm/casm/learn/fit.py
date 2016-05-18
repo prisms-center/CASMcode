@@ -657,7 +657,7 @@ def print_input_help():
   #     "n_features_min": int, optional, default=1
   #        The minimum allowed number of selected features. Must be >=1.
   #
-  #     "n_features_max": int or str, optionals, default="all"
+  #     "n_features_max": int or str, optional, default="all"
   #        The maximum allowed number of selected features. String "all" for no limit.
   #
   #     "fix_on": 1d array-like of int, optional, default=[]
@@ -677,7 +677,7 @@ def print_input_help():
         "cxUniformProb": 0.5,
         "mutFlipBitProb": 0.01,
         "constraints": {
-          "n_features_min": 0,
+          "n_features_min": 1,
           "n_features_max": "all",
           "fix_on": [],
           "fix_off": []

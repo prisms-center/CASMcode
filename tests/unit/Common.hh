@@ -4,26 +4,6 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
-// adapted from: http://stackoverflow.com/questions/26652904/boost-check-equal-and-dervatives-add-custom-message
-//____________________________________________________________________________//
-
-#define BOOST_TEST_REL_EQ_MESSAGE_EXTENSION(L, R, M, CMP, ICMP, CT)         \
-    {                                                                       \
-        auto _1(L);                                                         \
-        auto _2(R);                                                         \
-        std::stringstream ss;                                               \
-        ss << "check " << BOOST_TEST_STRINGIZE(L) << " " << BOOST_TEST_STRINGIZE(CMP) \
-           << " " << BOOST_TEST_STRINGIZE(R) << " failed [" << _1 << " " \
-           << BOOST_TEST_STRINGIZE(ICMP) << " " << _2 << "] : \n---\n" << M \
-           << "\n---\n";\
-        BOOST_CHECK_IMPL( (_1 CMP _2), ss.str(), CT, CHECK_MSG );           \
-    }                                                                       \
-/**/
-
-#define BOOST_CHECK_EQUAL_MESSAGE(L, R, M)      BOOST_TEST_REL_EQ_MESSAGE_EXTENSION(L, R, M, ==, !=, CHECK )
-#define BOOST_WARN_EQUAL_MESSAGE(L, R, M)       BOOST_TEST_REL_EQ_MESSAGE_EXTENSION(L, R, M, ==, !=, WARN )
-#define BOOST_REQUIRE_EQUAL_MESSAGE(L, R, M)    BOOST_TEST_REL_EQ_MESSAGE_EXTENSION(L, R, M, ==, !=, REQUIRE )
-
 #include "casm/core"
 
 using namespace CASM;
@@ -119,11 +99,11 @@ namespace test {
     m_p.popen(cd_and() + "casm composition --select 0");
 
     for(auto it = begin; it != end; ++it) {
-      BOOST_CHECK_EQUAL_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(*it)), true, m_p.gets());
+      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(*it)) == true, m_p.gets());
     }
 
-    BOOST_CHECK_EQUAL_MESSAGE(
-      boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Currently selected composition axes: 0)")),
+    BOOST_CHECK_MESSAGE(
+      boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Currently selected composition axes: 0)")) ==
       true,
       m_p.gets()
     );

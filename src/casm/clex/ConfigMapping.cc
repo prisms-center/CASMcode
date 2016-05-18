@@ -1201,7 +1201,7 @@ namespace CASM {
           trans_dist = within_trans_dist;
         }
 
-        if(!ConfigMap_impl::calc_cost_matrix(scel, rstruc, ttrans, metric, cost_matrix)) {
+        if(!ConfigMap_impl::calc_cost_matrix(config, rstruc, ttrans, metric, cost_matrix)) {
           //std::cerr << "In Supercell::struc_to_config. Cannot construct cost matrix." << std::endl;
           //std::cerr << "This message is probably OK, if you are using translate_flag == true." << std::endl;
           //continue;

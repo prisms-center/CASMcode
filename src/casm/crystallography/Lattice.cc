@@ -491,7 +491,7 @@ namespace CASM {
 
   //********************************************************************
 
-  Eigen::Vector3d Lattice::max_voronoi_vector(const Eigen::Vector3d &pos)const {
+  double Lattice::max_voronoi_measure(const Eigen::Vector3d &pos, Eigen::Vector3d &lattice_trans)const {
 
     double tproj(-1), maxproj(-1);
     int maxv;
@@ -507,8 +507,9 @@ namespace CASM {
       }
     }
 
+    lattice_trans = (2.*floor(maxproj / 2. + (0.5 - TOL)) / voronoi_table[maxv].squaredNorm()) * voronoi_table[maxv];
 
-    return voronoi_table[maxv];
+    return maxproj;
 
   }
 
@@ -524,7 +525,7 @@ namespace CASM {
 
     for(Index nv = 0; nv < voronoi_table.size(); nv++) {
       tproj = pos.dot(voronoi_table[nv]);
-      if(almost_equal(tproj, 1.0) < TOL) {
+      if(almost_equal(tproj, 1.0)) {
         tnum++;
       }
       else if(tproj > 1.0) {
@@ -542,6 +543,8 @@ namespace CASM {
     //There are no fewer than 12 points in the voronoi table
     voronoi_table.reserve(12);
 
+    m_inner_voronoi_radius = 1e20;
+
     Eigen::Vector3d tpoint;
     int i;
 
@@ -554,13 +557,8 @@ namespace CASM {
 
     //std::cout << "For angles " << angles[0] << ", " << angles[1] << ", " << angles[2] << ", Voronoi table is: \n";
     //For each linear combination, check to see if it is on a face, edge, or vertex of the voronoi cell
-    do {
-
-
-      if(!(combo_count[0] || combo_count[1] || combo_count[2])) {
-        continue;
-      }
-
+    for(; combo_count.valid(); ++combo_count) {
+      if(combo_count().isZero()) continue;
       //A linear combination does not fall on the voronoi boundary if the angle between
       //any two of the vectors forming that combination are obtuse
       for(i = 0; i < 3; i++) {
@@ -572,15 +570,18 @@ namespace CASM {
 
       if(i == 3) {
         tpoint = tlat_reduced.lat_column_mat() * combo_count().cast<double>();
-        double tval(tpoint.norm());
 
-        tpoint /= tval * tval / 2;
+        double t_rad = tpoint.norm();
+        if((t_rad / 2.) < m_inner_voronoi_radius)
+          m_inner_voronoi_radius = t_rad / 2.;
+
+        tpoint *= (2. / (t_rad * t_rad));
         voronoi_table.push_back(tpoint);
         //std::cout << voronoi_table.back();
       }
 
     }
-    while(++combo_count);
+
     return;
   }
 

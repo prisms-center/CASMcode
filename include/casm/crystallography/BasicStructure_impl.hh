@@ -103,7 +103,7 @@ namespace CASM {
     //std::cout << "SLOW GENERATION OF FACTOR GROUP " << &factor_group << "\n";
     //std::cout << "begin generate_factor_group_slow() " << this << std::endl;
 
-    Array<CoordType> tsite;
+    Array<CoordType> trans_basis;
     Index pg, b0, b1, b2;
     Coordinate t_tau(lattice());
     Index num_suc_maps;
@@ -120,21 +120,21 @@ namespace CASM {
     factor_group.set_lattice(lattice());
     //Loop over all point group ops of the lattice
     for(pg = 0; pg < point_group.size(); pg++) {
-      tsite.clear();
+      trans_basis.clear();
       //First, generate the symmetrically transformed basis sites
       //Loop over all sites in basis
       for(b0 = 0; b0 < basis.size(); b0++) {
-        tsite.push_back(point_group[pg]*basis[b0]);
+        trans_basis.push_back(point_group[pg]*basis[b0]);
       }
 
       //Using the symmetrically transformed basis, find all possible translations
       //that MIGHT map the symmetrically transformed basis onto the original basis
-      for(b0 = 0; b0 < tsite.size(); b0++) {
+      for(b0 = 0; b0 < trans_basis.size(); b0++) {
 
-        if(!basis[0].compare_type(tsite[b0]))
+        if(!basis[0].compare_type(trans_basis[b0]))
           continue;
 
-        t_tau = basis[0] - tsite[b0];
+        t_tau = basis[0] - trans_basis[b0];
 
         t_tau.within();
         num_suc_maps = 0; //Keeps track of number of old->new basis site mappings that are found
@@ -142,11 +142,11 @@ namespace CASM {
         double tdist = 0.0;
         double max_error = 0.0;
         for(b1 = 0; b1 < basis.size(); b1++) { //Loop over original basis sites
-          for(b2 = 0; b2 < tsite.size(); b2++) { //Loop over symmetrically transformed basis sites
+          for(b2 = 0; b2 < trans_basis.size(); b2++) { //Loop over symmetrically transformed basis sites
 
             //see if translation successfully maps the two sites
-            if(basis[b1].compare(tsite[b2], t_tau, map_tol)) {
-              tdist = basis[b1].min_dist(tsite[b2], t_tau);
+            if(basis[b1].compare(trans_basis[b2], t_tau, map_tol)) {
+              tdist = basis[b1].min_dist(Coordinate(trans_basis[b2]) + t_tau);
               if(tdist > max_error) {
                 max_error = tdist;
               }
@@ -156,7 +156,7 @@ namespace CASM {
           }
 
           //break out of outer loop if inner loop finds no successful map
-          if(b2 == tsite.size()) {
+          if(b2 == trans_basis.size()) {
             break;
           }
         }

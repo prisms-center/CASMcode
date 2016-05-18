@@ -56,6 +56,13 @@ namespace CASM {
       return lat_column_mat().determinant();
     }
 
+    /// \brief Radius of the largest sphere that fits wholly within the voronoi cell
+    double inner_voronoi_radius() const {
+      if(voronoi_table.empty())
+        generate_voronoi_table();
+      return m_inner_voronoi_radius;
+    }
+
     /// \brief 3x3 matrix with lattice vectors as its columne
     const Eigen::Matrix3d &lat_column_mat() const {
       return m_lat_mat;
@@ -107,8 +114,12 @@ namespace CASM {
     /// Radius of largest sphere that totally fits inside the voronoi cell
     double min_voronoi_radius() const;
 
-    /// returns voronoi vector that maximizes dot product with 'pos'
-    Eigen::Vector3d max_voronoi_vector(const Eigen::Vector3d &pos) const;
+    /// Given cartesian vector 'pos', returns double v_dist and populates 'lattice_trans'.
+    /// v_dist is the fractional number of half lattice-planes along 'lattice_trans' between 'pos' and the lattice plane that passes through the origin.
+    /// lattice_trans is a lattice translation that is normal to a face of the voronoi cell and translating pos to 'pos-lattice_trans'
+    /// will yield a translationally-equivalent vector between the -1 and +1 half-plane.
+    /// v_dist is maximized over all faces of the voronoi cell.
+    double max_voronoi_measure(const Eigen::Vector3d &pos, Eigen::Vector3d &lattice_trans) const;
 
     /// return number of voronoi cell faces that 'pos' is on, within +/- TOL
     ///  0 indicates that 'pos' is within the voronoi cell, and the origin is the nearest lattice site
@@ -175,6 +186,7 @@ namespace CASM {
     /// \brief populate voronoi information.
     void generate_voronoi_table() const;
 
+    mutable double m_inner_voronoi_radius;
     mutable std::vector<Eigen::Vector3d> voronoi_table;
 
     //Coordinate Conversion Matrices

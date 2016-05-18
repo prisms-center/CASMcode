@@ -122,6 +122,7 @@ namespace CASM {
         if(!vm.count("force") && filetime == datatime) {
           continue;
         }
+        it->set_calc_properties(jsonParser());
         num_updated++;
         std::cout << std::endl << "***************************" << std::endl << std::endl;
         std::cout << "Working on " << filepath.string() << "\n";

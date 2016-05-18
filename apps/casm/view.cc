@@ -103,7 +103,7 @@ namespace CASM {
 
     ConfigSelection<false> config_select;
     if(!vm.count("config")) {
-      config_select = ConfigSelection<false>::None(primclex);
+      config_select = ConfigSelection<false>(primclex, "NONE");
     }
     else if(selection == "MASTER") {
       config_select = ConfigSelection<false>(primclex);
