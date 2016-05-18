@@ -97,10 +97,9 @@ namespace CASM {
     }
 
     // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
-    std::cout << "  DONE." << std::endl << std::endl;
-
+    Log log(std::cout);
+    PrimClex primclex(root, log);
+    
     ConfigSelection<false> config_select;
     if(!vm.count("config")) {
       config_select = ConfigSelection<false>(primclex, "NONE");

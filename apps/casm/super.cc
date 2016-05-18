@@ -231,14 +231,10 @@ namespace CASM {
       return 1;
     }
 
-
-    std::cout << "\n***************************\n" << std::endl;
-
     // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
-    std::cout << "  DONE." << std::endl << std::endl;
-
+    Log log(std::cout);
+    PrimClex primclex(root, log);
+    
 
     if(vm.count("duper")) {
 

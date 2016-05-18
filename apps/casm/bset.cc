@@ -201,10 +201,9 @@ namespace CASM {
         return ERR_MISSING_DEPENDS;
       }
 
-      std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-      PrimClex primclex(root, std::cout);
-      std::cout << "  DONE." << std::endl << std::endl;
-
+      Log log(std::cout);
+      PrimClex primclex(root, log);
+      
       primclex.read_global_orbitree(dir.clust(set.bset()));
 
       if(vm.count("orbits")) {

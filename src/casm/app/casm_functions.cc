@@ -17,11 +17,9 @@ namespace CASM {
   /// \returns reference to PrimClex (either newly constructed managed by
   ///          uniq_primclex, or existing pointed at by _primclex)
   ///
-  PrimClex &make_primclex_if_not(PrimClex *_primclex, std::unique_ptr<PrimClex> &uniq_primclex, fs::path root, std::ostream &sout) {
+  PrimClex &make_primclex_if_not(PrimClex *_primclex, std::unique_ptr<PrimClex> &uniq_primclex, fs::path root, Log& log) {
     if(!_primclex) {
-      sout << "Initialize primclex: " << root << std::endl << std::endl;
-      uniq_primclex.reset(new PrimClex(root, sout));
-      sout << "  DONE." << std::endl << std::endl;
+      uniq_primclex.reset(new PrimClex(root, log));
       return *uniq_primclex;
     }
     return *_primclex;

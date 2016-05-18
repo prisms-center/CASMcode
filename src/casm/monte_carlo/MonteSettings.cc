@@ -60,6 +60,11 @@ namespace CASM {
     }
     return it->get<bool>();
   }
+  
+  /// \brief Set debug mode
+  void MonteSettings::set_debug(bool _debug) {
+    (*this)["debug"] = _debug;
+  }
 
 
   // --- Initialization ---------------------
@@ -79,10 +84,15 @@ namespace CASM {
     return _is_setting("driver", "motif", "configdof");
   }
   
-  /// \brief Path to ConfigDoF file to use as starting motif
+  /// \brief ConfigDoF to use as starting motif
   ConfigDoF MonteSettings::motif_configdof() const {
     fs::path configdof_path = _get_setting<fs::path>("driver", "motif", "configdof");
     return jsonParser(configdof_path).get<ConfigDoF>();
+  }
+  
+  /// \brief Path to ConfigDoF file to use as starting motif
+  fs::path MonteSettings::motif_configdof_path() const {
+    return _get_setting<fs::path>("driver", "motif", "configdof");
   }
 
   
@@ -135,6 +145,15 @@ namespace CASM {
     }
 
     return dmode;
+  }
+  
+  /// \brief If dependent runs, start subsequent calculations with the final state 
+  ///        of the previous calculation. Default true.
+  bool MonteSettings::dependent_runs() const {
+    if(!_is_setting("driver", "dependent_runs")) {
+      return true;
+    }
+    return _get_setting<bool>("driver", "dependent_runs");
   }
 
   /// \brief Directory where output should go
@@ -557,7 +576,10 @@ namespace CASM {
   /// \brief Figure out how large data containers should be
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::max_data_length() const {
     try {
-      if(sample_by_pass()) {
+      if(!_is_setting("data", "sample_by")) {
+        return 1024;
+      } 
+      else if(sample_by_pass()) {
         if(is_max_pass()) {
           return (max_pass() / sample_period());
         }

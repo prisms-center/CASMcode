@@ -113,6 +113,8 @@ namespace CASM {
 
 
   };
+  
+  std::ostream& operator<<(std::ostream &sout, const GrandCanonicalConditions& cond);
 
 }
 

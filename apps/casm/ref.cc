@@ -315,13 +315,10 @@ namespace CASM {
       return ERR_NO_PROJ;
     }
 
-    std::cout << "\n***************************\n" << std::endl;
-
     // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
-    std::cout << "  DONE." << std::endl << std::endl;
-
+    Log log(std::cout);
+    PrimClex primclex(root, log);
+    
     std::string calctype = primclex.settings().calctype();
     std::string ref = primclex.settings().ref();
     fs::path chem_ref_path = primclex.dir().chemical_reference(calctype, ref);

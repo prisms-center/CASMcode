@@ -10,6 +10,16 @@ using namespace CASM;
 
 extern "C" {
 
+  cLog *log_new(costream *ptr, int verbosity, bool show_clock) {
+    std::ostream &_sout = *reinterpret_cast<std::ostream *>(ptr);
+    Log *log_ptr = new Log(_sout, verbosity, show_clock);
+    return reinterpret_cast<cLog *>(log_ptr); 
+  }
+  
+  void log_delete(cLog *ptr) {
+    delete reinterpret_cast<Log*>(ptr);
+  }
+  
   costream *STDOUT() {
     return reinterpret_cast<costream *>(&std::cout);
   }
@@ -49,9 +59,9 @@ extern "C" {
   }
 
 
-  cPrimClex *primclex_new(char *path, costream *sout) {
-    std::ostream &_sout = *reinterpret_cast<std::ostream *>(sout);
-    PrimClex *ptr = new PrimClex(fs::path(path), _sout);
+  cPrimClex *primclex_new(char *path, cLog *log) {
+    Log &_log = *reinterpret_cast<Log*>(log);
+    PrimClex *ptr = new PrimClex(fs::path(path), _log);
     return reinterpret_cast<cPrimClex *>(ptr);
   }
 
@@ -63,9 +73,9 @@ extern "C" {
     std::cout << reinterpret_cast<PrimClex *>(ptr)->get_path() << std::endl;
   }
 
-  int query(char *args, cPrimClex *_primclex, costream *sout, costream *serr) {
+  int query(char *args, cPrimClex *_primclex, cLog *log, costream *serr) {
     PrimClex *ptr = reinterpret_cast<PrimClex *>(_primclex);
-    std::ostream &_sout = *reinterpret_cast<std::ostream *>(sout);
+    Log &_log = *reinterpret_cast<Log *>(log);
     std::ostream &_serr = *reinterpret_cast<std::ostream *>(serr);
 
     fs::path curr = fs::current_path();
@@ -87,7 +97,7 @@ extern "C" {
       }
       return res;
     }
-    res = query_command(p.we_wordc, p.we_wordv, ptr, _sout, _serr);
+    res = query_command(p.we_wordc, p.we_wordv, ptr, _log, _serr);
     wordfree(&p);
 
     fs::current_path(curr);

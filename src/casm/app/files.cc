@@ -17,7 +17,7 @@ namespace CASM {
     int argc,
     char *argv[],
     PrimClex *_primclex,
-    std::ostream &sout,
+    Log &log,
     std::ostream &serr) {
     
     po::variables_map vm;
@@ -187,15 +187,12 @@ namespace CASM {
 
     // set output_stream: where the file paths are written
     std::unique_ptr<std::ostream> uniq_fout;
-    std::ostream &output_stream = make_ostream_if(vm.count("output"), sout, uniq_fout, out_path, gz_flag);
+    std::ostream &output_stream = make_ostream_if(vm.count("output"), log, uniq_fout, out_path, gz_flag);
     
-    // set status_stream: where query settings and PrimClex initialization messages are sent
-    std::ostream &status_stream = (out_path.string() == "STDOUT") ? serr : sout;
-
     // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(_primclex, uniq_primclex, root, status_stream);
+    PrimClex &primclex = make_primclex_if_not(_primclex, uniq_primclex, root, log);
     
     std::vector<fs::path> files;
     auto result = std::back_inserter(files);

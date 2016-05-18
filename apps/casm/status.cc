@@ -393,11 +393,9 @@ Instructions for fitting ECI:                                          \n\n\
     }
 
 
-    std::ostringstream tmp;
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, tmp);
-    std::cout << "  DONE." << std::endl << std::endl;
-
+    Log log(std::cout);
+    PrimClex primclex(root, log);
+    
     const DirectoryStructure &dir = primclex.dir();
     const ProjectSettings &settings = primclex.settings();
 

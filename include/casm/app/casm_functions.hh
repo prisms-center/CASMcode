@@ -35,7 +35,8 @@ namespace CASM {
   template <bool IsConst>
   class ConfigSelection;
   typedef ConfigSelection<true> ConstConfigSelection;
-
+  
+  class Log;
 
   /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
   ///        return reference to existing or constructed PrimClex
@@ -43,7 +44,7 @@ namespace CASM {
     PrimClex *_primclex,
     std::unique_ptr<PrimClex> &uniq_primclex,
     fs::path root,
-    std::ostream &sout);
+    Log &log);
 
   /// \brief Return a reference to proper std::ostream
   std::ostream &make_ostream_if(

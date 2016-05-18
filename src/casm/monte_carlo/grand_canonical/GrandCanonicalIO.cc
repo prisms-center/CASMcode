@@ -278,12 +278,12 @@ namespace CASM {
   /// { "key0":[...], "key1":[...], ... }
   /// \endcode
   ///
-  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc) {
+  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc, const double& phi_LTE1) {
 
     DataFormatter<ConstMonteCarloPtr> formatter;
 
     formatter.push_back(MonteCarloTFormatter<GrandCanonical>());
-    formatter.push_back(GrandCanonicalLTEFormatter());
+    formatter.push_back(GrandCanonicalLTEFormatter(phi_LTE1));
     std::set<std::string> exclude;
     std::string name;
 
@@ -417,7 +417,7 @@ namespace CASM {
   }
 
   /// \brief Will create new file or append to existing results file the results of the latest run
-  void write_results(const MonteSettings &settings, const GrandCanonical &mc) {
+  void write_results(const MonteSettings &settings, const GrandCanonical &mc, Log &_log) {
     try {
 
       fs::create_directories(settings.output_directory());
@@ -426,6 +426,7 @@ namespace CASM {
 
       // write csv path results
       if(settings.write_csv()) {
+        _log << "write: " << dir.results_csv() << "\n";
         fs::path file = dir.results_csv();
         fs::ofstream sout;
 
@@ -444,6 +445,7 @@ namespace CASM {
 
       // write json path results
       if(settings.write_json()) {
+        _log << "write: " << dir.results_json() << "\n";
         fs::path file = dir.results_json();
 
         jsonParser results;
@@ -466,12 +468,13 @@ namespace CASM {
   }
 
   /// \brief Write conditions to conditions.cond_index directory
-  void write_conditions_json(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index) {
+  void write_conditions_json(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index, Log &_log) {
     try {
       GrandCanonicalDirectoryStructure dir(settings.output_directory());
       fs::create_directories(dir.conditions_dir(cond_index));
       jsonParser json;
       to_json(mc.conditions(), json);
+      _log << "write: " << dir.conditions_json(cond_index) << "\n";
       json.write(dir.conditions_json(cond_index));
     }
     catch(...) {
@@ -481,7 +484,7 @@ namespace CASM {
   }
 
   /// \brief Will create (and possibly overwrite) new file with all observations from run with conditions.cond_index
-  void write_observations(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index) {
+  void write_observations(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index, Log &_log) {
     try {
       if(!settings.write_observations()) {
         return;
@@ -499,12 +502,14 @@ namespace CASM {
 
       if(settings.write_csv()) {
         gz::ogzstream sout((dir.observations_csv(cond_index).string() + ".gz").c_str());
+        _log << "write: " << fs::path(dir.observations_csv(cond_index).string() + ".gz") << "\n";
         sout << formatter(observations.cbegin(), observations.cend());
         sout.close();
       }
 
       if(settings.write_json()) {
         gz::ogzstream sout((dir.observations_json(cond_index).string() + ".gz").c_str());
+        _log << "write: " << fs::path(dir.observations_json(cond_index).string() + ".gz") << "\n";
         jsonParser json = jsonParser::object();
         formatter(observations.cbegin(), observations.cend()).to_json_arrays(json);
         sout << json;
@@ -535,7 +540,7 @@ namespace CASM {
   /// [["A", "B"],["A" "C"], ... ]
   /// \endcode
   ///
-  void write_trajectory(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index) {
+  void write_trajectory(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index, Log &_log) {
     try {
 
       if(!settings.write_trajectory()) {
@@ -555,6 +560,7 @@ namespace CASM {
 
       if(settings.write_csv()) {
         gz::ogzstream sout((dir.trajectory_csv(cond_index).string() + ".gz").c_str());
+        _log << "write: " << fs::path(dir.trajectory_csv(cond_index).string() + ".gz") << "\n";
         sout << formatter(observations.cbegin(), observations.cend());
         sout.close();
 
@@ -572,6 +578,7 @@ namespace CASM {
         // 1          Ni          -
         // ...
         fs::ofstream keyout(dir.occupation_key_csv());
+        _log << "write: " << dir.occupation_key_csv() << "\n";
         keyout << "site_index";
         for(int i = 0; i < max_allowed; i++) {
           keyout << "\tocc_index_" << i;
@@ -608,6 +615,7 @@ namespace CASM {
           json["DoF"].push_back(*it);
         }
         gz::ogzstream sout((dir.trajectory_json(cond_index).string() + ".gz").c_str());
+        _log << "write: " << fs::path(dir.trajectory_json(cond_index).string() + ".gz") << "\n";
         sout << json;
         sout.close();
 
@@ -620,7 +628,8 @@ namespace CASM {
           key.push_back(prim.basis[i].allowed_occupants());
         }
         key.write(dir.occupation_key_json());
-
+        _log << "write: " << dir.occupation_key_json() << "\n";
+        
       }
 
     }
@@ -634,7 +643,7 @@ namespace CASM {
   /// \brief For the initial state, write a POSCAR file.
   /// 
   /// The current naming convention is 'POSCAR.initial'
-  void write_POSCAR_initial(const GrandCanonical& mc, Index cond_index) {
+  void write_POSCAR_initial(const GrandCanonical& mc, Index cond_index, Log &_log) {
     
     GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
     fs::create_directories(dir.trajectory_dir(cond_index));
@@ -651,6 +660,7 @@ namespace CASM {
     
     // write file
     fs::ofstream sout(dir.POSCAR_initial(cond_index));
+    _log << "write: " << dir.POSCAR_initial(cond_index) << "\n";
     VaspIO::PrintPOSCAR p(mc.supercell(), mc.configdof());
     p.sort();
     p.print(sout);
@@ -660,7 +670,7 @@ namespace CASM {
   /// \brief For the final state, write a POSCAR file.
   ///
   /// The current naming convention is 'POSCAR.final'
-  void write_POSCAR_final(const GrandCanonical &mc, Index cond_index) {
+  void write_POSCAR_final(const GrandCanonical &mc, Index cond_index, Log &_log) {
 
     GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
     fs::create_directories(dir.trajectory_dir(cond_index));
@@ -677,6 +687,7 @@ namespace CASM {
 
     // write file
     fs::ofstream sout(dir.POSCAR_final(cond_index));
+    _log << "write: " << dir.POSCAR_final(cond_index) << "\n";
     VaspIO::PrintPOSCAR p(mc.supercell(), mc.configdof());
     p.sort();
     p.print(sout);
@@ -687,7 +698,7 @@ namespace CASM {
   ///
   /// The current naming convention is 'POSCAR.sample'
   /// POSCAR title comment is printed with "Sample: #  Pass: #  Step: #"
-  void write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index) {
+  void write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index, Log &_log) {
 
     GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
     fs::create_directories(dir.trajectory_dir(cond_index));
@@ -768,6 +779,7 @@ namespace CASM {
 
       // write file
       fs::ofstream sout(dir.POSCAR_snapshot(cond_index, i));
+      _log << "write: " << dir.POSCAR_snapshot(cond_index, i) << "\n";
       VaspIO::PrintPOSCAR p(mc.supercell(), trajectory[i]);
       p.set_title(ss.str());
       p.sort();
@@ -885,25 +897,26 @@ namespace CASM {
   }
 
   /// \brief Print single spin flip LTE
-  GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalLTEFormatter() {
+  GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalLTEFormatter(const double& phi_LTE1) {
     auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
       ConstMonteCarloPtr ptr = mc;
-      return static_cast<const GrandCanonical *>(ptr)->lte_grand_canonical_free_energy(std::cout);
+      return phi_LTE1;
     };
     return GenericDatumFormatter<double, ConstMonteCarloPtr>("phi_LTE", "phi_LTE", evaluator);
   }
 
   /// \brief Will create new file or append to existing results file the results of the latest run
-  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc) {
+  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc, const double& phi_LTE1, Log &_log) {
     try {
 
       fs::create_directories(settings.output_directory());
       GrandCanonicalDirectoryStructure dir(settings.output_directory());
-      auto formatter = make_lte_results_formatter(mc);
+      auto formatter = make_lte_results_formatter(mc, phi_LTE1);
 
       // write csv path results
       if(settings.write_csv()) {
         fs::path file = dir.results_csv();
+        _log << "write: " << dir.results_csv() << "\n";
         fs::ofstream sout;
 
         if(!fs::exists(file)) {
@@ -922,6 +935,7 @@ namespace CASM {
       // write json path results
       if(settings.write_json()) {
         fs::path file = dir.results_json();
+        _log << "write: " << dir.results_json() << "\n";
         
         jsonParser results;
         if(fs::exists(file)) {

@@ -129,13 +129,9 @@ namespace CASM {
       return ERR_NO_PROJ;
     }
 
-    std::cout << "\n***************************\n\n";
-
     // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
-    std::cout << "  DONE." << std::endl << std::endl;
-
+    Log log(std::cout);
+    PrimClex primclex(root, log);
 
     const DirectoryStructure &dir = primclex.dir();
     std::string calctype = primclex.settings().calctype();

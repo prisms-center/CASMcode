@@ -19,8 +19,13 @@ else:
 lib_ccasm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
 
 #### Argument types
-lib_ccasm.STDOUT.restype = ctypes.c_void_p
+lib_ccasm.log_new.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_bool]
+lib_ccasm.log_new.restype = ctypes.c_void_p
 
+lib_ccasm.log_delete.argtypes = [ctypes.c_void_p]
+lib_ccasm.log_delete.restype = None
+
+lib_ccasm.STDOUT.restype = ctypes.c_void_p
 
 lib_ccasm.STDERR.restype = ctypes.c_void_p
 
@@ -417,7 +422,11 @@ class Project(object):
         else:
           streamptr = lib_ccasm.ostringstream_new()
         
+        logptr = lib_ccasm.log_new(streamptr, ctypes.c_int(10), ctypes.c_bool(False))
+        
         self._ptr = lib_ccasm.primclex_new(self.path, streamptr)
+        
+        lib_ccasm.log_delete(logptr);
         
         if not self.verbose:
           #qstr = ctypes.create_string_buffer(lib_ccasm.ostringstream_size(ss))

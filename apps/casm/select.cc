@@ -230,9 +230,8 @@ namespace CASM {
     }
 
     // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
-    std::cout << "  DONE." << std::endl << std::endl;
+    Log log(std::cout);
+    PrimClex primclex(root, log);
     ProjectSettings& set = primclex.settings();
 
     // load initial selection into config_select -- this is also the selection that will be printed at end

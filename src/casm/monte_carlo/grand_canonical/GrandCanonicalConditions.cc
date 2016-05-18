@@ -160,7 +160,15 @@ namespace CASM {
 
     return max_division;
   }
-
+  
+  std::ostream& operator<<(std::ostream &sout, const GrandCanonicalConditions& cond) {
+    sout << "T: " << cond.temperature() << "\n";
+    for(int i = 0; i < cond.param_chem_pot().size(); i++) {
+      jsonParser json;
+      sout << "param_chem_pot: " << to_json_array(cond.param_chem_pot(), json) << "\n";
+    }
+    return sout;
+  }
 
 
 }

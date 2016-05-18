@@ -24,7 +24,6 @@ namespace CASM {
   ///      -check
   ///      -accept
   ///      -reject
-  ///      -print_run_start_info
   ///      -write_results
   ///
   class GrandCanonical : public MonteCarlo {
@@ -37,7 +36,7 @@ namespace CASM {
 
 
     /// \brief Constructs a GrandCanonical object and prepares it for running based on MonteSettings
-    GrandCanonical(PrimClex &primclex, const SettingsType &settings, std::ostream &_sout = std::cout);
+    GrandCanonical(PrimClex &primclex, const SettingsType &settings, Log &_log);
 
 
     /// \brief Return number of steps per pass. Equals number of sites with variable occupation.
@@ -51,7 +50,7 @@ namespace CASM {
     void set_conditions(const CondType &new_conditions);
 
     /// \brief Set configdof and clear previously collected data
-    void set_configdof(const ConfigDoF& configdof);
+    void set_configdof(const ConfigDoF& configdof, const std::string& msg = "");
 
     /// \brief Propose a new event, calculate delta properties, and return reference to it
     const EventType &propose();
@@ -66,15 +65,12 @@ namespace CASM {
     void reject(const EventType &event);
 
 
-    /// \brief Print info when a run begins
-    void print_run_start_info() const;
-
     /// \brief Write results to files
     void write_results(Index cond_index) const;
 
 
     /// \brief Calculate the single spin flip low temperature expansion of the grand canonical potential
-    double lte_grand_canonical_free_energy(std::ostream &sout) const;
+    double lte_grand_canonical_free_energy() const;
 
     /// \brief Formation energy, normalized per primitive cell
     const double &formation_energy() const {
@@ -134,7 +130,7 @@ namespace CASM {
       PrimClex &primclex,
       Supercell &scel,
       const GrandCanonicalSettings &settings,
-      std::ostream &_sout);
+      Log &_log);
 
 
     ///Keeps track of what sites can change to what

@@ -73,7 +73,9 @@ namespace CASM {
     
     /// \brief Run in debug mode?
     bool debug() const;
-
+    
+    /// \brief Set debug mode
+    void set_debug(bool _debug);
 
     // --- Initialization ---------------------
     
@@ -86,8 +88,11 @@ namespace CASM {
     /// \brief Returns true if path to ConfigDoF file to use as starting motif has been specified
     bool is_motif_configdof() const;
     
-    /// \brief Path to ConfigDoF file to use as starting motif
+    /// \brief ConfigDoF to use as starting motif
     ConfigDoF motif_configdof() const;
+    
+    /// \brief Path to ConfigDoF file to use as starting motif
+    fs::path motif_configdof_path() const;
 
     /// \brief Supercell matrix defining the simulation cell
     Eigen::Matrix3i simulation_cell_matrix() const;
@@ -97,6 +102,10 @@ namespace CASM {
 
     /// \brief Given a settings jsonParser figure out the drive mode. Expects drive_mode/single,incremental
     virtual const Monte::DRIVE_MODE drive_mode() const;
+    
+    /// \brief If dependent runs, start subsequent calculations with the final state 
+    ///        of the previous calculation. Default true.
+    bool dependent_runs() const;
 
 
     // --- Sampling -------------------

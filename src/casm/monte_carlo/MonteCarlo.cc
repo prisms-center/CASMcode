@@ -74,8 +74,13 @@ namespace CASM {
   ///
   bool MonteCarlo::is_converged() const {
     
+    m_log.check<Log::verbose>("Convergence");
+    m_log << std::boolalpha;
+    
     // if we've already calculated convergence, return result
     if(m_is_converged_uptodate) {
+      m_log << "convergence check is up-to-date" << std::endl;
+      m_log << "is converged: " << m_is_converged << "\n" << std::endl;
       return m_is_converged;
     }
     
@@ -85,13 +90,19 @@ namespace CASM {
     _set_check_convergence_time();
     
     if(!m_sampler.size()) {
-      return m_is_converged = true;
+      m_log << "no samples taken" << std::endl;
+      m_is_converged = false;
+      m_log << "is converged: " << m_is_converged << "\n" << std::endl;
+      return m_is_converged;
     }
     
     // check if required equilibration has occured, and get the number of samples required to equilibrate
     auto equil = is_equilibrated();
     if(!equil.first) {
-      return m_is_converged = false;
+      m_log << "is equilibrated: " << false << std::endl;
+      m_is_converged = false;
+      m_log << "is converged: " << m_is_converged << "\n" << std::endl;
+      return m_is_converged;
     }
     
     // check if all samplers that must converge have converged using data in range [max_equil_samples, end)
@@ -105,7 +116,8 @@ namespace CASM {
                                      return true;
                                    }
                                  });
-    
+    m_log << "is equilibrated: " << true << std::endl;
+    m_log << "is converged: " << m_is_converged << "\n" << std::endl;
     return m_is_converged;
   }
   

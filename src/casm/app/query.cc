@@ -34,7 +34,7 @@ namespace CASM {
     _stream << std::endl;
   }
 
-  int query_command(int argc, char *argv[], PrimClex *_primclex, std::ostream &sout, std::ostream &serr) {
+  int query_command(int argc, char *argv[], PrimClex *_primclex, Log &log, std::ostream &serr) {
 
     std::string selection_str;
     fs::path config_path, out_path;
@@ -65,7 +65,7 @@ namespace CASM {
       /** Start --help option
        */
       if(vm.count("help")) {
-        sout << std::endl << desc << std::endl;
+        log << std::endl << desc << std::endl;
       }
 
       po::notify(vm); // throws on error, so do after help in case of problems
@@ -80,7 +80,7 @@ namespace CASM {
         }
         else {
           ProjectSettings set(root);
-          query_help(set.config_io(), sout, help_opt_vec);
+          query_help(set.config_io(), log, help_opt_vec);
         }
         return 0;
       }
@@ -99,7 +99,7 @@ namespace CASM {
     }
 
     if(!vm.count("alias") && !vm.count("columns")) {
-      sout << std::endl << desc << std::endl;
+      log << std::endl << desc << std::endl;
     }
 
     // set current path to project root
@@ -178,28 +178,25 @@ namespace CASM {
 
     // set output_stream: where the query results are written
     std::unique_ptr<std::ostream> uniq_fout;
-    std::ostream &output_stream = make_ostream_if(vm.count("output"), sout, uniq_fout, out_path, gz_flag);
+    std::ostream &output_stream = make_ostream_if(vm.count("output"), log, uniq_fout, out_path, gz_flag);
     output_stream << FormatFlag(output_stream).print_header(!no_header);
-
-    // set status_stream: where query settings and PrimClex initialization messages are sent
-    std::ostream &status_stream = (out_path.string() == "STDOUT") ? serr : sout;
 
     // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(_primclex, uniq_primclex, root, status_stream);
+    PrimClex &primclex = make_primclex_if_not(_primclex, uniq_primclex, root, log);
 
     // Get configuration selection
     ConstConfigSelection selection(primclex, selection_str);
 
     // Print info
-    status_stream << "Print:" << std::endl;
+    log << "Print:" << std::endl;
     for(int p = 0; p < columns.size(); p++) {
-      status_stream << "   - " << columns[p] << std::endl;
+      log << "   - " << columns[p] << std::endl;
     }
     if(vm.count("output"))
-      status_stream << "to " << fs::absolute(out_path) << std::endl;
-    status_stream << std::endl;
+      log << "to " << fs::absolute(out_path) << std::endl;
+    log << std::endl;
 
     // Construct DataFormatter
     primclex.settings().set_selected(selection);
@@ -249,10 +246,10 @@ namespace CASM {
     }
 
     if(!uniq_fout) {
-      status_stream << "\n   -Output printed to terminal, since no output file specified-\n";
+      log << "\n   -Output printed to terminal, since no output file specified-\n";
     }
 
-    status_stream << "  DONE." << std::endl << std::endl;
+    log << "  DONE." << std::endl << std::endl;
 
     return 0;
   };

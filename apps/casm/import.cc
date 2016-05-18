@@ -141,15 +141,10 @@ namespace CASM {
       return 9;
     }
 
-
-
-    std::cout << "\n***************************" << std::endl << std::endl;
-
     // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
-    std::cout << "  DONE." << std::endl << std::endl;
-
+    Log log(std::cout);
+    PrimClex primclex(root, log);
+    
 
     int map_opt = ConfigMapper::none;
     if(vm.count("rotate")) map_opt |= ConfigMapper::rotate;
