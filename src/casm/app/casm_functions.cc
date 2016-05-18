@@ -1,4 +1,4 @@
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigSelection.hh"

@@ -1,15 +1,15 @@
-#include "query.hh"
+#include "casm/app/query.hh"
 
 #include <string>
 #include <boost/algorithm/string.hpp>
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/CASM_classes.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOSelected.hh"
 
 namespace CASM {
 
-  void query_help(const DataFormatterDictionary<Configuration>& _dict, std::ostream &_stream, std::vector<std::string > help_opt_vec) {
+  void query_help(const DataFormatterDictionary<Configuration> &_dict, std::ostream &_stream, std::vector<std::string > help_opt_vec) {
     _stream << "Prints the properties for a set of configurations for the set of currently selected" << std::endl
             << "configurations or for a set of configurations specifed by a selection file." << std::endl
             << std::endl
@@ -54,9 +54,9 @@ namespace CASM {
     ("gzip,z", po::value(&gz_flag)->zero_tokens(), "Write gzipped output file.")
     ("all,a", "Print results all configurations in input selection, whether or not they are selected.")
     ("no-header,n", po::value(&no_header)->zero_tokens(), "Print without header (CSV only)")
-    ("alias", po::value<std::vector<std::string> >(&new_alias)->multitoken(), 
-      "Create an alias for a query that will persist within this project. "
-      "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
+    ("alias", po::value<std::vector<std::string> >(&new_alias)->multitoken(),
+     "Create an alias for a query that will persist within this project. "
+     "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
 
 
     try {
@@ -116,20 +116,20 @@ namespace CASM {
     }
 
     if(vm.count("alias")) {
-      
+
       ProjectSettings set(root);
-      
+
       // get user input
       std::string new_alias_str;
       for(auto const &substr : new_alias) {
         new_alias_str += substr;
       }
-      
+
       // parse new_alias_str to create formatter
       auto it = std::find(new_alias_str.cbegin(), new_alias_str.cend(), '=');
       std::string alias_name = boost::trim_copy(std::string(new_alias_str.cbegin(), it));
       std::string alias_command = boost::trim_copy(std::string(++it, new_alias_str.cend()));
-      
+
       try {
         set.add_alias(alias_name, alias_command, serr);
         set.commit();
@@ -141,7 +141,7 @@ namespace CASM {
              << e.what() << std::endl;
         return ERR_UNKNOWN;
       }
-      
+
     }
     if(!vm.count("columns")) {
       serr << "ERROR: the option '--columns' is required but missing" << std::endl;
@@ -204,7 +204,7 @@ namespace CASM {
     // Construct DataFormatter
     primclex.settings().set_selected(selection);
     DataFormatter<Configuration> formatter;
-    
+
     try {
 
       std::vector<std::string> all_columns;

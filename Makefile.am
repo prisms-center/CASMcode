@@ -1,1 +1,1 @@
-SUBDIRS = apps/auto
+SUBDIRS = src/casm

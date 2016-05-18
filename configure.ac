@@ -2,10 +2,10 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([FULL-PACKAGE-NAME], [VERSION], [BUG-REPORT-ADDRESS])
-AM_INIT_AUTOMAKE([foreign])
-#AC_CONFIG_SRCDIR([include/casm/CASM_global_definitions.hh])
-#AC_CONFIG_HEADERS([config.h])
+AC_INIT([autocasm], [0.0.0], [casm@casm.edu])
+AC_CONFIG_SRCDIR([include/casm/CASM_global_definitions.hh])
+AC_CONFIG_HEADERS([config.h])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 # Checks for programs.
 AC_PROG_CXX
@@ -17,6 +17,15 @@ AC_PROG_CPP
 AC_CHECK_LIB([gzstream], [main])
 # FIXME: Replace `main' with a function in `-lz':
 AC_CHECK_LIB([z], [main])
+
+#I added this
+LT_INIT
+AX_CXX_COMPILE_STDCXX_11
+INCLUDES= -src
+AX_BOOST_FILESYSTEM
+AX_BOOST_SYSTEM
+AX_BOOST_REGEX
+AX_BOOST_PROGRAM_OPTIONS
 
 # Checks for header files.
 AC_CHECK_HEADERS([float.h limits.h stdlib.h string.h sys/time.h unistd.h])
@@ -40,5 +49,6 @@ AC_FUNC_STRTOD
 AC_CHECK_FUNCS([floor iswprint memmove memset mkdir pow rmdir select sqrt strchr strpbrk strrchr strstr strtol])
 
 AC_CONFIG_FILES([Makefile
-                 apps/auto/Makefile])
+                 apps/auto/Makefile
+                 src/casm/Makefile])
 AC_OUTPUT
