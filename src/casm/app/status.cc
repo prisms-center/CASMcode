@@ -1,9 +1,5 @@
-#include "status.hh"
-
-#include<cstring>
-
 #include "casm/CASM_classes.hh"
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 
 namespace CASM {
 
@@ -361,7 +357,7 @@ Instructions for fitting ECI:                                          \n\n\
     std::cout << "CASM status:\n\n";
     std::cout << "1) Project initialized: ";
 
-    fs::path& root = args.root;
+    const fs::path& root = args.root;
 
     if(root.empty()) {
       std::cout << " FALSE\n\n";

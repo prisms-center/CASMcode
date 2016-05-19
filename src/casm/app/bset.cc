@@ -1,8 +1,5 @@
-#include "bset.hh"
-
 #include <cstring>
-
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/CASM_classes.hh"
 
 namespace CASM {
@@ -58,12 +55,18 @@ namespace CASM {
       return ERR_UNKNOWN;
 
     }
-
+    
+    const fs::path &root = args.root;
+    if(root.empty()) {
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
+      return ERR_NO_PROJ;
+    }
+    
     // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    fs::path &root = args.root;
     
     if(vm.count("update")) {
 

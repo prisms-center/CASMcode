@@ -1,12 +1,7 @@
-#include "update.hh"
-
-#include <cstring>
-
 #include "casm/crystallography/jsonStruc.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/CASM_classes.hh"
-//#include "casm/misc/Time.hh"
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 
 namespace CASM {
   namespace Update_impl {
@@ -71,12 +66,18 @@ namespace CASM {
       return 1;
     }
 
+    const fs::path &root = args.root;
+    if(root.empty()) {
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
+      return ERR_NO_PROJ;
+    }
+    
     // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    fs::path &root = args.root;
-
+    
     ConfigMapper configmapper(primclex, lattice_weight, vol_tol, ConfigMapper::rotate | ConfigMapper::robust | (vm.count("strict") ? ConfigMapper::strict : 0), tol);
     std::cout << "Reading calculation data... " << std::endl << std::endl;
     std::vector<std::string> bad_config_report;

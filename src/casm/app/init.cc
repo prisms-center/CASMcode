@@ -1,10 +1,9 @@
-#include "init.hh"
-
 #include <cstring>
 
 #include <casm/core>
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectBuilder.hh"
+#include "casm/app/casm_functions.hh"
 
 namespace CASM {
 
@@ -66,7 +65,7 @@ namespace CASM {
 
     std::cout << "\n***************************\n" << std::endl;
 
-    fs::path &root = args.root;
+    const fs::path &root = args.root;
 
     DirectoryStructure dir(root);
     Structure prim;

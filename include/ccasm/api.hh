@@ -7,16 +7,9 @@ typedef struct cPrimClex cPrimClex;
 /// For std::ostream*
 typedef struct costream costream;
 
-/// For CASM::Log*
-typedef struct cLog cLog;
 
 extern "C" {
 
-  cLog *casm_log_new(costream *ptr, int verbosity, bool show_clock);
-  
-  void casm_log_delete(cLog *ptr);
-  
-  
   costream *casm_STDOUT();
 
   costream *casm_STDERR();
@@ -36,13 +29,11 @@ extern "C" {
   char *casm_ostringstream_strcpy(costream *ptr, char *c_str);
 
 
-  cPrimClex *casm_primclex_new(char *path, cLog *log);
+  cPrimClex *casm_primclex_new(char *path, costream *log);
 
   void casm_primclex_delete(cPrimClex *ptr);
-
-  void casm_primclex_check(cPrimClex *ptr);
-
   
-  int casm_cmain(char *args, cPrimClex *primclex, cLog *log, cLog *err_log);
+  
+  int casm_capi(char *args, cPrimClex *primclex, costream *log, costream *err_log);
 
 }

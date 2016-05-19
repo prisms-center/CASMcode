@@ -2,6 +2,7 @@
 #define CASM_FUNCTIONS_HH
 
 #include "casm/CASM_global_definitions.hh"
+#include "casm/casm_io/Log.hh"
 
 // Command line input is not valid
 #define ERR_INVALID_ARG 1
@@ -33,12 +34,6 @@ namespace CASM {
 
   class PrimClex;
 
-  template <bool IsConst>
-  class ConfigSelection;
-  typedef ConfigSelection<true> ConstConfigSelection;
-  
-  class Log;
-  
   /// \brief Data structure holding basic CASM command info
   struct CommandArgs {
     
@@ -49,7 +44,7 @@ namespace CASM {
                 Log &_err_log = default_err_log());
     
     int argc;
-    char *argv[];
+    char **argv;
     PrimClex* primclex;
     Log& log;
     Log& err_log;
@@ -61,14 +56,11 @@ namespace CASM {
     
   };
   
-  typedef std::function<int (CommandArgs) Command;
+  typedef std::function<int (const CommandArgs&)> Command;
   typedef std::map<std::string, Command> CommandMap;
   
   /// \brief Return static CommandMap containing all CASM API commands
   CommandMap& command_map();
-  
-  /// \brief Print CASM help info to args.log
-  int help_command(const CommandArgs& args);
   
   /// \brief Executes CASM commands specified by args
   int casm_api(const CommandArgs& args);
@@ -86,6 +78,49 @@ namespace CASM {
     std::unique_ptr<std::ostream> &fout,
     fs::path out_path,
     bool gzip);
+  
+  
+  int help_command(const CommandArgs& args);
+  
+  int bset_command(const CommandArgs& args);
+  
+  int composition_command(const CommandArgs& args);
+  
+  int enum_command(const CommandArgs& args);
+  
+  int files_command(const CommandArgs& args);
+  
+  int format_command(const CommandArgs& args);
+
+  int import_command(const CommandArgs& args);
+  
+  int init_command(const CommandArgs& args);
+  
+  int monte_command(const CommandArgs& args);
+  
+  int perturb_command(const CommandArgs& args);
+  
+  int query_command(const CommandArgs& args);
+  
+  int ref_command(const CommandArgs& args);
+  
+  int run_command(const CommandArgs& args);
+  
+  int select_command(const CommandArgs& args);
+  
+  int settings_command(const CommandArgs& args);
+  
+  int status_command(const CommandArgs& args);
+  
+  int super_command(const CommandArgs& args);
+  
+  int sym_command(const CommandArgs& args);
+  
+  int update_command(const CommandArgs& args);
+  
+  int version_command(const CommandArgs& args);
+  
+  int view_command(const CommandArgs& args);
 
 }
 

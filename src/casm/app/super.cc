@@ -1,8 +1,4 @@
-#include "super.hh"
-
-#include <cstring>
-
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/CASM_classes.hh"
 
 namespace CASM {
@@ -96,7 +92,7 @@ namespace CASM {
        "Coord mode: FRAC=0, or CART=1");
 
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
         if(!vm.count("help")) {
           if(!vm.count("duper")) {
@@ -224,12 +220,18 @@ namespace CASM {
     }
 
 
+    const fs::path &root = args.root;
+    if(root.empty()) {
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
+      return ERR_NO_PROJ;
+    }
+    
     // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    fs::path &root = args.root;
-
+    
     if(vm.count("duper")) {
 
       // collect all the Lattice to make the superdupercell of

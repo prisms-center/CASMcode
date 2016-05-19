@@ -1,8 +1,6 @@
-#include "files.hh"
-
 #include <cstring>
 
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/casm_io/FileEnumerator.hh"
 
@@ -49,7 +47,7 @@ namespace CASM {
     
     
     try {
-      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
       
       if(!vm.count("help")) {
         
@@ -156,19 +154,6 @@ namespace CASM {
       return ERR_UNKNOWN;
     }
     
-    // find project root
-    fs::path &root = args.root;
-    if(!_primclex) {
-      root = find_casmroot(fs::current_path());
-      if(root.empty()) {
-        serr << "Error in 'casm files': No casm project found." << std::endl;
-        return ERR_NO_PROJ;
-      }
-    }
-    else {
-      root = _primclex->get_path();
-    }
-    
     auto check_gz = [ = ](fs::path p) {
       if(p.extension() == ".gz" || p.extension() == ".GZ") {
         return true;
@@ -179,10 +164,18 @@ namespace CASM {
     if(check_gz(out_path)) {
       gz_flag = true;
     }
+    
+    const fs::path &root = args.root;
+    if(root.empty()) {
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
+      return ERR_NO_PROJ;
+    }
+    
 
     // set output_stream: where the file paths are written
     std::unique_ptr<std::ostream> uniq_fout;
-    std::ostream &output_stream = make_ostream_if(vm.count("output"), log, uniq_fout, out_path, gz_flag);
+    std::ostream &output_stream = make_ostream_if(vm.count("output"), args.log, uniq_fout, out_path, gz_flag);
     
     // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'

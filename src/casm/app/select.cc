@@ -1,9 +1,8 @@
-#include "select.hh"
-
-#include <cstring>
-
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/CASM_global_definitions.hh"
+#include "casm/casm_io/DataFormatter.hh"
+#include "casm/clex/Configuration.hh"
+#include "casm/clex/ConfigSelection.hh"
 
 namespace CASM {
 
@@ -168,7 +167,7 @@ namespace CASM {
 
       // Finish --help option
       if(vm.count("help")) {
-        fs::path root = find_casmroot(fs::current_path());
+        const fs::path& root = args.root;
         if(root.empty()) {
           auto dict = make_dictionary<Configuration>();
           select_help(dict, std::cout, help_opt_vec);
@@ -221,11 +220,17 @@ namespace CASM {
       selection.push_back("MASTER");
     }
 
+    const fs::path &root = args.root;
+    if(root.empty()) {
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
+      return ERR_NO_PROJ;
+    }
+    
     // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    fs::path &root = args.root;
     ProjectSettings& set = primclex.settings();
 
     // load initial selection into config_select -- this is also the selection that will be printed at end

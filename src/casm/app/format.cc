@@ -1,5 +1,3 @@
-#include "format.hh"
-
 #include <cstring>
 
 #include "casm/CASM_classes.hh"

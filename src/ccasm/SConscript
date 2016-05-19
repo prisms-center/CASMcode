@@ -4,7 +4,7 @@
 Import('env')
 
 # get source files
-ccasm_lib_src = ['Query.cc']
+ccasm_lib_src = ['api.cc']
 
 ccasm_lib_sobj = env.SharedObject(ccasm_lib_src)
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + ccasm_lib_sobj

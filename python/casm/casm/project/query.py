@@ -75,20 +75,20 @@ def query_via_capi(proj, columns, selection=None, verbatim=True, all=False):
   args = query_args(proj, columns, selection, verbatim, all, api=True)
   
   # construct stringstream objects
-  ss = lib_ccasm.ostringstream_new()
-  ss_err = lib_ccasm.ostringstream_new()
+  ss = lib_ccasm.casm_ostringstream_new()
+  ss_err = lib_ccasm.casm_ostringstream_new()
   
-  res = lib_ccasm.query(args, proj.data(), ss, ss_err)
-  
-  # copy string and delete stringstream
-  qstr = ctypes.create_string_buffer(lib_ccasm.ostringstream_size(ss))
-  lib_ccasm.ostringstream_strcpy(ss, qstr)
-  lib_ccasm.ostringstream_delete(ss)
+  res = lib_ccasm.casm_capi(args, proj.data(), ss, ss_err)
   
   # copy string and delete stringstream
-  qstr_err = ctypes.create_string_buffer(lib_ccasm.ostringstream_size(ss_err))
-  lib_ccasm.ostringstream_strcpy(ss_err, qstr_err)
-  lib_ccasm.ostringstream_delete(ss_err)
+  qstr = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss))
+  lib_ccasm.casm_ostringstream_strcpy(ss, qstr)
+  lib_ccasm.casm_ostringstream_delete(ss)
+  
+  # copy string and delete stringstream
+  qstr_err = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss_err))
+  lib_ccasm.casm_ostringstream_strcpy(ss_err, qstr_err)
+  lib_ccasm.casm_ostringstream_delete(ss_err)
   
   try:
     return pandas.read_csv(StringIO.StringIO(qstr.value[1:]), sep=' *', engine='python')

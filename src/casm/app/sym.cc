@@ -1,9 +1,5 @@
-#include "sym.hh"
-
-#include<cstring>
-
 #include "casm/CASM_classes.hh"
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 
 namespace CASM {
 
@@ -60,7 +56,12 @@ namespace CASM {
 
     COORD_MODE C(coordtype);
 
-    fs::path &root = args.root;
+    const fs::path &root = args.root;
+    if(root.empty()) {
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
+      return ERR_NO_PROJ;
+    }
     
     DirectoryStructure dir(root);
     ProjectSettings set(root);

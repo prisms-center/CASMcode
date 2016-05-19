@@ -1,8 +1,8 @@
-#include "casm_functions.hh"
-
+#include "casm/app/casm_functions.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigSelection.hh"
 #include "casm/external/gzstream/gzstream.h"
+#include "casm/version/version.hh"
 
 namespace CASM {
   
@@ -17,20 +17,11 @@ namespace CASM {
     log(_log),
     err_log(_err_log) {
     
-    // collect 'words' from args
-    words.clear();
-    for(int i = 0; i < argc; i++) {
-      words.push_back(std::string(argv[i]));
-      if(words[i] == "--help" || words[i] == "-h") {
-        return true;
-      }
-    }
-    
     // set project 'root'
     root = find_casmroot(fs::current_path());
     
     // set 'command'
-    command = (words.size() > 1) ? words[1] : "";
+    command = (argc > 1) ? std::string(argv[1]) : "";
     
     // check if 'help' command
     std::vector<std::string> help_commands {
@@ -88,7 +79,7 @@ namespace CASM {
       return std::string(str);
     };
     
-    bool write_LOG_begin(const CommandArgs& args) {
+    void write_LOG_begin(const CommandArgs& args) {
     
       // If not a 'version', or 'help' command, write to LOG
       fs::ofstream log(args.root / "LOG", std::ofstream::out | std::ofstream::app);
@@ -128,7 +119,7 @@ namespace CASM {
       log.close();
     }
     
-    bool write_LOG_end(const CommandArgs& args, int retcode) {
+    void write_LOG_end(const CommandArgs& args, int retcode) {
       fs::ofstream log(args.root / "LOG", std::ofstream::out | std::ofstream::app);
       log << "# return: " << retcode << " runtime(s): " << args.log.time_s() << "\n\n";
       log.close();
@@ -136,33 +127,6 @@ namespace CASM {
   
   }
   
-  /// \brief Print CASM help info to args.log
-  int help_command(const CommandArgs& args) {
-    args.log.custom("casm usage");
-    args.log << "\n\n";
-
-    args.log << "casm [--version] <command> [options] [args]" << std::endl << std::endl;
-    args.log << "available commands:" << std::endl;
-    
-    std::vector<std::string> subcom;
-    for(auto it=command_map().begin(); it!=command_map().end(); ++it) {
-      if(it->first[0] != "-") {
-        subcom.push_back(std::string("  ") + it->first);
-      }
-    }
-    
-    std::sort(subcom.begin(), subcom.end());
-    for(auto it = subcom.begin(); it != subcom.end(); ++it) {
-      args.log << *it << "\n";
-    }
-    args.log << "\n";
-
-    args.log << "For help using a command: 'casm <command> --help'" << std::endl << std::endl;
-    args.log << "For step by step help use: 'casm status -n'" << std::endl << std::endl;
-
-    return 0;
-  };
-
   /// \brief Executes CASM commands specified by args
   int casm_api(const CommandArgs& args) {
     
@@ -180,14 +144,15 @@ namespace CASM {
       
       args.log.restart_clock();
       int retcode = it->second(args);
+      if(args.write_log) {
+        api_impl::write_LOG_end(args, retcode);
+      }
+      return retcode;
     }
     else {
       help_command(args);
       return ERR_INVALID_ARG;
     }
-    
-    api_impl::write_LOG_end(args, retcode);
-    return retcode;
   }
 
   
@@ -240,6 +205,42 @@ namespace CASM {
     }
 
   }
+  
+  /// \brief Print CASM help info to args.log
+  int help_command(const CommandArgs& args) {
+    args.log.custom("casm usage");
+    args.log << "\n";
 
+    args.log << "casm [--version] <command> [options] [args]" << std::endl << std::endl;
+    args.log << "available commands:" << std::endl;
+    
+    std::vector<std::string> subcom;
+    for(auto it=command_map().begin(); it!=command_map().end(); ++it) {
+      std::string s = it->first;
+      // check for --version
+      if(s[0] != '-') {
+        subcom.push_back(std::string("  ") + s);
+      }
+    }
+    
+    std::sort(subcom.begin(), subcom.end());
+    for(auto it = subcom.begin(); it != subcom.end(); ++it) {
+      args.log << *it << "\n";
+    }
+    args.log << "\n";
+
+    args.log << "For help using a command: 'casm <command> --help'" << std::endl << std::endl;
+    args.log << "For step by step help use: 'casm status -n'" << std::endl << std::endl;
+
+    return 0;
+  };
+  
+  int version_command(const CommandArgs& args) {
+    args.log << "casm version: " << version() << std::endl;
+    return 0;
+  }
+  
+  
+  
 
 }

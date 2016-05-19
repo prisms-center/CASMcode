@@ -1,10 +1,11 @@
-#include "enum.hh"
-
 #include <cstring>
 
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
+#include "casm/clex/ConfigIO.hh"
+#include "casm/clex/ConfigEnumAllOccupations.hh"
+#include "casm/clex/ConfigEnumIterator.hh"
 
 namespace CASM {
 
@@ -97,12 +98,18 @@ namespace CASM {
     }
 
     COORD_MODE C(coordtype);
-
+    
+    const fs::path &root = args.root;
+    if(root.empty()) {
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
+      return ERR_NO_PROJ;
+    }
+    
     // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    fs::path &root = args.root;
     const DirectoryStructure &dir = primclex.dir();
     const ProjectSettings &set = primclex.settings();
     

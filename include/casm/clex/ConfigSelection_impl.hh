@@ -2,6 +2,7 @@
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigIterator.hh"
+#include "casm/clex/ConfigIOSelected.hh"
 namespace CASM {
 
 

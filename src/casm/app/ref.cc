@@ -1,8 +1,4 @@
-#include "ref.hh"
-
-#include <cstring>
-
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/CASM_classes.hh"
 #include "casm/casm_io/json_io/clex.hh"
 
@@ -141,7 +137,7 @@ namespace CASM {
 
     std::string species_order_string = "\n\n";
 
-    fs::path &root = args.root;
+    const fs::path &root = args.root;
     if(!root.empty()) {
       std::stringstream ss;
       DirectoryStructure dir(root);
@@ -311,9 +307,11 @@ namespace CASM {
     }
 
     if(root.empty()) {
-      std::cout << "Error in 'casm ref': No casm project found." << std::endl;
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
+    
 
     // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'

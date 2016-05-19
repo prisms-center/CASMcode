@@ -1,8 +1,6 @@
-#include "query.hh"
-
 #include <string>
 #include <boost/algorithm/string.hpp>
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/CASM_classes.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOSelected.hh"
@@ -60,12 +58,12 @@ namespace CASM {
 
 
     try {
-      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
       /** Start --help option
        */
       if(vm.count("help")) {
-        log << std::endl << desc << std::endl;
+        args.log << std::endl << desc << std::endl;
       }
 
       po::notify(vm); // throws on error, so do after help in case of problems
@@ -79,7 +77,7 @@ namespace CASM {
         }
         else {
           ProjectSettings set(args.root);
-          query_help(set.config_io(), log, help_opt_vec);
+          query_help(set.config_io(), args.log, help_opt_vec);
         }
         return 0;
       }
@@ -87,33 +85,28 @@ namespace CASM {
 
     }
     catch(po::error &e) {
-      serr << "ERROR: " << e.what() << std::endl << std::endl;
-      serr << desc << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << desc << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      serr << "Unhandled Exception reached the top of main: "
+      args.err_log << "Unhandled Exception reached the top of main: "
            << e.what() << ", application will now exit" << std::endl;
       return ERR_UNKNOWN;
     }
 
     if(!vm.count("alias") && !vm.count("columns")) {
-      log << std::endl << desc << std::endl;
+      args.log << std::endl << desc << std::endl;
     }
 
     // set current path to project root
-    fs::path& root = args.root;
-    if(!_primclex) {
-      root = find_casmroot(fs::current_path());
-      if(root.empty()) {
-        serr << "Error in 'casm query': No casm project found." << std::endl;
-        return ERR_NO_PROJ;
-      }
+    const fs::path &root = args.root;
+    if(root.empty()) {
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
+      return ERR_NO_PROJ;
     }
-    else {
-      root = _primclex->get_path();
-    }
-
+    
     if(vm.count("alias")) {
       
       ProjectSettings set(root);
@@ -130,12 +123,12 @@ namespace CASM {
       std::string alias_command = boost::trim_copy(std::string(++it, new_alias_str.cend()));
       
       try {
-        set.add_alias(alias_name, alias_command, serr);
+        set.add_alias(alias_name, alias_command, args.err_log);
         set.commit();
         return 0;
       }
       catch(std::runtime_error &e) {
-        serr << "Unable to learn alias\n"
+        args.err_log << "Unable to learn alias\n"
              << "   \"" << alias_name << " = " << alias_command << "\"\n"
              << e.what() << std::endl;
         return ERR_UNKNOWN;
@@ -143,7 +136,7 @@ namespace CASM {
       
     }
     if(!vm.count("columns")) {
-      serr << "ERROR: the option '--columns' is required but missing" << std::endl;
+      args.err_log << "ERROR: the option '--columns' is required but missing" << std::endl;
       return ERR_INVALID_ARG;
     }
 
@@ -177,7 +170,7 @@ namespace CASM {
 
     // set output_stream: where the query results are written
     std::unique_ptr<std::ostream> uniq_fout;
-    std::ostream &output_stream = make_ostream_if(vm.count("output"), log, uniq_fout, out_path, gz_flag);
+    std::ostream &output_stream = make_ostream_if(vm.count("output"), args.log, uniq_fout, out_path, gz_flag);
     output_stream << FormatFlag(output_stream).print_header(!no_header);
 
     // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
@@ -187,15 +180,18 @@ namespace CASM {
 
     // Get configuration selection
     ConstConfigSelection selection(primclex, selection_str);
-
+    
+    // set status_stream: where query settings and PrimClex initialization messages are sent
+    Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
+    
     // Print info
-    log << "Print:" << std::endl;
+    status_log << "Print:" << std::endl;
     for(int p = 0; p < columns.size(); p++) {
-      log << "   - " << columns[p] << std::endl;
+      status_log << "   - " << columns[p] << std::endl;
     }
     if(vm.count("output"))
-      log << "to " << fs::absolute(out_path) << std::endl;
-    log << std::endl;
+      status_log << "to " << fs::absolute(out_path) << std::endl;
+    status_log << std::endl;
 
     // Construct DataFormatter
     primclex.settings().set_selected(selection);
@@ -214,7 +210,7 @@ namespace CASM {
 
     }
     catch(std::exception &e) {
-      serr << "Parsing error: " << e.what() << "\n\n";
+      args.err_log << "Parsing error: " << e.what() << "\n\n";
       return ERR_INVALID_ARG;
     }
 
@@ -240,15 +236,15 @@ namespace CASM {
 
     }
     catch(std::exception &e) {
-      serr << "Initialization error: " << e.what() << "\n\n";
+      args.err_log << "Initialization error: " << e.what() << "\n\n";
       return ERR_UNKNOWN;
     }
 
     if(!uniq_fout) {
-      log << "\n   -Output printed to terminal, since no output file specified-\n";
+      status_log << "\n   -Output printed to terminal, since no output file specified-\n";
     }
 
-    log << "  DONE." << std::endl << std::endl;
+    status_log << "  DONE." << std::endl << std::endl;
 
     return 0;
   };
