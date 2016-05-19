@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "casm/CASM_global_definitions.hh"
+
 
 namespace CASM {
 
@@ -21,7 +23,7 @@ namespace CASM {
     }
     return dir;
   };
-  
+
   /// return relative path to current or parent directory containing ".casm" directory
   ///   if none found, return empty path
   inline fs::path relative_casmroot(const fs::path &cwd) {
@@ -118,7 +120,7 @@ namespace CASM {
     fs::path config_list() const {
       return m_root / m_casm_dir / "config_list.json";
     }
-    
+
     // -- Symmetry --------
 
     /// \brief Return symmetry directory path
@@ -201,12 +203,12 @@ namespace CASM {
     fs::path training_data() const {
       return m_root / m_calc_dir;
     }
-    
+
     /// \brief Return SCEL path
     fs::path SCEL() const {
       return m_root / m_calc_dir / "SCEL";
     }
-    
+
     /// \brief Return supercell directory path (scelname has format SCELV_A_B_C_D_E_F)
     fs::path supercell_dir(std::string scelname) const {
       return m_root / m_calc_dir / scelname;
@@ -289,14 +291,14 @@ namespace CASM {
     fs::path FCLUST(std::string bset) const {
       return bset_dir(bset) / "FCLUST.json";
     }
-    
+
     // -- deprecated ------------------------------------
-    
+
     /// \brief Returns path to eci.out
     fs::path eci_out(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
       return eci_dir(clex, calctype, ref, bset, eci) / "eci.out";
     }
-    
+
     /// \brief Query aliases file
     fs::path query_alias() const {
       return m_root / m_casm_dir / "query_alias.json";

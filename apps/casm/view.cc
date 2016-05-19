@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/CASM_classes.hh"
 
 namespace CASM {

@@ -3,6 +3,8 @@
 
 namespace CASM {
 
+  class PrimClex;
+
   int select_command(int argc, char *argv[], PrimClex *_primclex = nullptr);
 
 }

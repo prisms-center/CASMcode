@@ -3,10 +3,13 @@
 #include <cstring>
 #include <tuple>
 
-#include "casm_functions.hh"
-#include "casm/CASM_classes.hh"
-//#include "casm/clex/ConfigMapping.hh"
+#include "casm/CASM_global_definitions.hh"
+#include "casm/app/casm_functions.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/ConfigMapping.hh"
+#include "casm/casm_io/VaspIO.hh"
 //#include "casm/casm_io/FileSystemInterface.hh"
+#include "casm/crystallography/jsonStruc.hh"
 
 namespace CASM {
   namespace Import_impl {

@@ -4,7 +4,7 @@
 #include<unistd.h>
 
 #include "casm/CASM_classes.hh"
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 
 namespace CASM {
 

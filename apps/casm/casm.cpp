@@ -13,10 +13,11 @@
 #include<time.h>
 
 #include "casm/version/version.hh"
-#include "casm/core"
+//#include "casm/core"
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/external/boost.hh"
+#include "casm/container/Array.hh"
 
 // include new casm tool header files here:
 #include "casm/app/casm_functions.hh"
@@ -249,6 +250,7 @@ int main(int argc, char *argv[]) {
   return retcode;
 }
 
+/*
 //#include "casm_functions.cc"
 
 #include "status.cc"
@@ -268,6 +270,4 @@ int main(int argc, char *argv[]) {
 #include "import.cc"
 #include "monte.cc"
 #include "view.cc"
-
-
-
+*/

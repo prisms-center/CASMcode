@@ -1,12 +1,14 @@
+VERSION=0.0.0
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([autocasm], [0.0.0], [casm@casm.edu])
-AC_CONFIG_SRCDIR([include/casm/CASM_global_definitions.hh])
-AC_CONFIG_HEADERS([config.h])
+AC_INIT([CASM], [$VERSION], [casm@casm.edu])
 #Rules to apply to every Makefile.am
 AM_INIT_AUTOMAKE([foreign subdir-objects])
+
+AC_CONFIG_SRCDIR([include/casm/CASM_global_definitions.hh])
+AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CXX
@@ -24,14 +26,15 @@ AC_CHECK_LIB([z], [gzread])
 
 #I added this
 LT_INIT
+AC_DISABLE_STATIC
 AX_CXX_COMPILE_STDCXX_11
 BOOSTV=1.52
 AX_BOOST_BASE([$BOOSTV],[],[AC_MSG_ERROR(You need Boost $BOOSTV libraries or higher.)])
 AX_BOOST_FILESYSTEM
 AX_BOOST_SYSTEM
 AX_BOOST_REGEX
+AX_BOOST_CHRONO
 AX_BOOST_PROGRAM_OPTIONS
-AC_DISABLE_STATIC
 
 # Checks for header files.
 AC_CHECK_HEADERS([float.h limits.h stdlib.h string.h sys/time.h unistd.h])
@@ -56,5 +59,6 @@ AC_CHECK_FUNCS([floor iswprint memmove memset mkdir pow rmdir select sqrt strchr
 
 AC_CONFIG_FILES([Makefile
                  apps/auto/Makefile
+                 apps/casm/Makefile
                  src/casm/Makefile])
 AC_OUTPUT

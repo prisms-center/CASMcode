@@ -3,7 +3,6 @@
 #include <string>
 #include <boost/algorithm/string.hpp>
 #include "casm/app/casm_functions.hh"
-#include "casm/CASM_classes.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOSelected.hh"
 

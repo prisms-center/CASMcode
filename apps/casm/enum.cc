@@ -2,9 +2,11 @@
 
 #include <cstring>
 
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
+#include "casm/clex/ConfigEnumAllOccupations.hh"
+#include "casm/clex/ConfigEnumIterator.hh"
 
 namespace CASM {
 

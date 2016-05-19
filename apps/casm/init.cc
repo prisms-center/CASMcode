@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include <casm/core>
+#include "casm/app/casm_functions.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectBuilder.hh"
 

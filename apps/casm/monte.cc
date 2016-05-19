@@ -8,7 +8,7 @@
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteDriver.hh"
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 
 namespace CASM {
 
@@ -39,38 +39,38 @@ namespace CASM {
           std::cout << desc << std::endl;
 
           std::cout << "DESCRIPTION\n" <<
-                       "  Perform Monte Carlo calculations.                          \n\n" <<
-          
-                       "  casm monte --settings input_file.json                      \n" <<
-                       "    - Run Monte Carlo calculations given the input file      \n" <<
-                       "      settings.                                              \n" <<
-                       "    - See 'casm format --monte' for a description of the     \n" <<
-                       "      Monte Carlo input file.                                \n\n" <<
-                       
-                       "  casm monte --settings input_file.json --initial-POSCAR 3     \n" <<
-                       "    - Write a POSCAR.initial file containing the initial state of\n" <<
-                       "      the Monte Carlo calculation. The argument is a condition\n" <<
-                       "      index specifying which run is being requested.\n" <<
-                       "    - Written at: output_directory/conditions.3/trajectory/POSCAR.initial\n\n" <<
-                       
-                       "  casm monte --settings input_file.json --final-POSCAR 3     \n" <<
-                       "    - Write a POSCAR.final file containing the final state of\n" <<
-                       "      the Monte Carlo calculation. The argument is a condition\n" <<
-                       "      index specifying which run is being requested.\n" <<
-                       "    - Written at: output_directory/conditions.3/trajectory/POSCAR.final\n\n" <<
-                       
-                       "  casm monte --settings input_file.json --traj-POSCAR 5     \n" <<
-                       "    - Write the Monte Carlo calculation trajectory as a     \n" <<
-                       "      series of POSCAR files containing the state of the    \n" <<
-                       "      Monte Carlo calculation every time a sample was taken.\n" <<
-                       "      The argument is a condition index specifying which run\n" <<
-                       "      is being requested.                                   \n" <<
-                       "    - The trajectory file must exist. This is generated when\n" <<
-                       "      using input option \"data\"/\"storage\"/\"write_trajectory\" = true  \n" <<
-                       "    - Written at: output_directory/conditions.5/trajectory/POSCAR.i,\n" <<
-                       "      where i is the sample index.                          \n\n";
-                       
-                       
+                    "  Perform Monte Carlo calculations.                          \n\n" <<
+
+                    "  casm monte --settings input_file.json                      \n" <<
+                    "    - Run Monte Carlo calculations given the input file      \n" <<
+                    "      settings.                                              \n" <<
+                    "    - See 'casm format --monte' for a description of the     \n" <<
+                    "      Monte Carlo input file.                                \n\n" <<
+
+                    "  casm monte --settings input_file.json --initial-POSCAR 3     \n" <<
+                    "    - Write a POSCAR.initial file containing the initial state of\n" <<
+                    "      the Monte Carlo calculation. The argument is a condition\n" <<
+                    "      index specifying which run is being requested.\n" <<
+                    "    - Written at: output_directory/conditions.3/trajectory/POSCAR.initial\n\n" <<
+
+                    "  casm monte --settings input_file.json --final-POSCAR 3     \n" <<
+                    "    - Write a POSCAR.final file containing the final state of\n" <<
+                    "      the Monte Carlo calculation. The argument is a condition\n" <<
+                    "      index specifying which run is being requested.\n" <<
+                    "    - Written at: output_directory/conditions.3/trajectory/POSCAR.final\n\n" <<
+
+                    "  casm monte --settings input_file.json --traj-POSCAR 5     \n" <<
+                    "    - Write the Monte Carlo calculation trajectory as a     \n" <<
+                    "      series of POSCAR files containing the state of the    \n" <<
+                    "      Monte Carlo calculation every time a sample was taken.\n" <<
+                    "      The argument is a condition index specifying which run\n" <<
+                    "      is being requested.                                   \n" <<
+                    "    - The trajectory file must exist. This is generated when\n" <<
+                    "      using input option \"data\"/\"storage\"/\"write_trajectory\" = true  \n" <<
+                    "    - Written at: output_directory/conditions.5/trajectory/POSCAR.i,\n" <<
+                    "      where i is the sample index.                          \n\n";
+
+
           return 0;
         }
 
@@ -129,16 +129,16 @@ namespace CASM {
       std::cerr << e.what() << std::endl;
       return 1;
     }
-    
+
     if(monte_settings.ensemble() == Monte::ENSEMBLE::GrandCanonical) {
-      
+
       if(vm.count("initial-POSCAR")) {
         try {
           GrandCanonicalSettings gc_settings(settings_path);
           const GrandCanonical gc(primclex, gc_settings);
           write_POSCAR_initial(gc, condition_index);
         }
-        catch(std::exception& e) {
+        catch(std::exception &e) {
           std::cerr << "ERROR printing Grand Canonical Monte Carlo initial snapshot for condition: " << condition_index << "\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
@@ -150,7 +150,7 @@ namespace CASM {
           const GrandCanonical gc(primclex, gc_settings);
           write_POSCAR_final(gc, condition_index);
         }
-        catch(std::exception& e) {
+        catch(std::exception &e) {
           std::cerr << "ERROR printing Grand Canonical Monte Carlo final snapshot for condition: " << condition_index << "\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
@@ -162,7 +162,7 @@ namespace CASM {
           const GrandCanonical gc(primclex, gc_settings);
           write_POSCAR_trajectory(gc, condition_index);
         }
-        catch(std::exception& e) {
+        catch(std::exception &e) {
           std::cerr << "ERROR printing Grand Canonical Monte Carlo path snapshots for condition: " << condition_index << "\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
@@ -170,7 +170,7 @@ namespace CASM {
       }
       else if(monte_settings.method() == Monte::METHOD::LTE1) {
         try {
-          
+
           GrandCanonicalSettings gc_settings(settings_path);
           GrandCanonicalDirectoryStructure dir(gc_settings.output_directory());
           if(gc_settings.write_csv()) {
@@ -239,7 +239,7 @@ namespace CASM {
       }
       else if(monte_settings.method() == Monte::METHOD::Metropolis) {
         try {
-          
+
           //std::cout << "\n-------------------------------\n";
           //monte_settings.print(std::cout);
           //std::cout << "\n-------------------------------\n\n";
@@ -261,7 +261,7 @@ namespace CASM {
       }
       else {
         std::cerr << "ERROR running Grand Canonical Monte Carlo. No valid option given.\n\n";
-        return ERR_INVALID_INPUT_FILE; 
+        return ERR_INVALID_INPUT_FILE;
       }
     }
 

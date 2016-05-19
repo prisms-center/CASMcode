@@ -32,9 +32,11 @@ namespace CASM {
 
   class PrimClex;
 
+  /*
   template <bool IsConst>
   class ConfigSelection;
   typedef ConfigSelection<true> ConstConfigSelection;
+  */
 
 
   /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then

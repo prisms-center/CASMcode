@@ -2,8 +2,14 @@
 
 #include <cstring>
 
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
+#include "casm/crystallography/CoordinateSystems.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/ConfigSelection.hh"
+#include "casm/strain/StrainConverter.hh"
 #include "casm/clex/ConfigEnumStrain.hh"
+#include "casm/clex/ConfigEnumIterator.hh"
+#include "casm/app/ProjectSettings.hh"
 
 namespace CASM {
 
