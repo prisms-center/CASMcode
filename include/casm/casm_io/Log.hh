@@ -72,6 +72,16 @@ namespace CASM {
     }
     
     template<int _required_verbosity = standard>
+    void warning(const std::string& what) {
+      _add<_required_verbosity>("Warning", what);
+    }
+    
+    template<int _required_verbosity = standard>
+    void error(const std::string& what) {
+      _add<_required_verbosity>("Error", what);
+    }
+    
+    template<int _required_verbosity = standard>
     void custom(const std::string& what) {
       static_assert(_required_verbosity >= none && _required_verbosity <= debug, "CASM::Log _required_verbosity must be <= 100");
       m_print = (m_verbosity >= _required_verbosity);
@@ -94,6 +104,8 @@ namespace CASM {
     
     void hide_clock();
     
+    double time_s() const;
+    
     
     void begin_lap();
     
@@ -114,6 +126,10 @@ namespace CASM {
     friend Log& operator<<(Log& log, std::ostream& (*fptr)(std::ostream&));
     
     operator std::ostream&();
+    
+    /// \brief Read verbosity level from a string
+    static std::pair<bool,int> verbosity_level(std::string s);
+    
     
     private:
     
@@ -161,6 +177,11 @@ namespace CASM {
   
   inline Log& default_log() {
     static Log log;
+    return log;
+  }
+  
+  inline Log& default_err_log() {
+    static Log log(std::cerr);
     return log;
   }
   

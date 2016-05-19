@@ -3,7 +3,7 @@
 
 namespace CASM {
 
-  int composition_command(int argc, char *argv[]);
+  int composition_command(const CommandArgs& args);
 
 }
 

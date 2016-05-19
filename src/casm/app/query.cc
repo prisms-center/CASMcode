@@ -34,7 +34,7 @@ namespace CASM {
     _stream << std::endl;
   }
 
-  int query_command(int argc, char *argv[], PrimClex *_primclex, Log &log, std::ostream &serr) {
+  int query_command(const CommandArgs& args) {
 
     std::string selection_str;
     fs::path config_path, out_path;
@@ -73,13 +73,12 @@ namespace CASM {
       /** Finish --help option
        */
       if(vm.count("help")) {
-        fs::path root = find_casmroot(fs::current_path());
-        if(root.empty()) {
+        if(args.root.empty()) {
           auto dict = make_dictionary<Configuration>();
           query_help(dict, std::cout, help_opt_vec);
         }
         else {
-          ProjectSettings set(root);
+          ProjectSettings set(args.root);
           query_help(set.config_io(), log, help_opt_vec);
         }
         return 0;
@@ -103,7 +102,7 @@ namespace CASM {
     }
 
     // set current path to project root
-    fs::path root;
+    fs::path& root = args.root;
     if(!_primclex) {
       root = find_casmroot(fs::current_path());
       if(root.empty()) {
@@ -184,7 +183,7 @@ namespace CASM {
     // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(_primclex, uniq_primclex, root, log);
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
     // Get configuration selection
     ConstConfigSelection selection(primclex, selection_str);

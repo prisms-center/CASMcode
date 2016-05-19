@@ -12,36 +12,37 @@ typedef struct cLog cLog;
 
 extern "C" {
 
-  cLog *log_new(costream *ptr, int verbosity, bool show_clock);
+  cLog *casm_log_new(costream *ptr, int verbosity, bool show_clock);
   
-  void log_delete(cLog *ptr);
+  void casm_log_delete(cLog *ptr);
   
   
-  costream *STDOUT();
+  costream *casm_STDOUT();
 
-  costream *STDERR();
-
-
-  costream *nullstream_new();
-
-  void nullstream_delete(costream *ptr);
+  costream *casm_STDERR();
 
 
-  costream *ostringstream_new();
+  costream *casm_nullstream_new();
 
-  void ostringstream_delete(costream *ptr);
-
-  unsigned long ostringstream_size(costream *ptr);
-
-  char *ostringstream_strcpy(costream *ptr, char *c_str);
+  void casm_nullstream_delete(costream *ptr);
 
 
-  cPrimClex *primclex_new(char *path, cLog *log);
+  costream *casm_ostringstream_new();
 
-  void primclex_delete(cPrimClex *ptr);
+  void casm_ostringstream_delete(costream *ptr);
 
-  void primclex_check(cPrimClex *ptr);
+  unsigned long casm_ostringstream_size(costream *ptr);
 
-  int query(char *args, cPrimClex *primclex, cLog *log, costream *serr);
+  char *casm_ostringstream_strcpy(costream *ptr, char *c_str);
+
+
+  cPrimClex *casm_primclex_new(char *path, cLog *log);
+
+  void casm_primclex_delete(cPrimClex *ptr);
+
+  void casm_primclex_check(cPrimClex *ptr);
+
+  
+  int casm_cmain(char *args, cPrimClex *primclex, cLog *log, cLog *err_log);
 
 }

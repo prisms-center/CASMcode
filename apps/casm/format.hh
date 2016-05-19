@@ -3,7 +3,7 @@
 
 namespace CASM {
 
-  int format_command(int argc, char *argv[]);
+  int format_command(const CommandArgs& args);
 
 }
 

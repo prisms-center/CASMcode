@@ -20,28 +20,29 @@
 
 // include new casm tool header files here:
 #include "casm/app/casm_functions.hh"
-#include "status.hh"
-#include "format.hh"
-#include "init.hh"
-#include "settings.hh"
-#include "sym.hh"
-#include "composition.hh"
-#include "ref.hh"
-#include "update.hh"
-#include "enum.hh"
-#include "super.hh"
-#include "perturb.hh"
-#include "bset.hh"
-#include "select.hh"
+#include "casm/app/status.hh"
+#include "casm/app/format.hh"
+#include "casm/app/init.hh"
+#include "casm/app/settings.hh"
+#include "casm/app/sym.hh"
+#include "casm/app/composition.hh"
+#include "casm/app/ref.hh"
+#include "casm/app/update.hh"
+#include "casm/app/enum.hh"
+#include "casm/app/super.hh"
+#include "casm/app/perturb.hh"
+#include "casm/app/bset.hh"
+#include "casm/app/select.hh"
 #include "casm/app/query.hh"
 #include "casm/app/files.hh"
-#include "run.hh"
-#include "import.hh"
-#include "monte.hh"
-#include "view.hh"
+#include "casm/app/run.hh"
+#include "casm/app/import.hh"
+#include "casm/app/monte.hh"
+#include "casm/app/view.hh"
 
 using namespace CASM;
 
+/*
 int print_casm_help(std::ostream &out) {
   out << "\n*** casm usage ***" << std::endl << std::endl;
 
@@ -87,12 +88,21 @@ std::string date_time() {
   strftime(str, sizeof(str), "%Y-%m-%d %H:%M:%S", std::localtime(&t));
   return std::string(str);
 };
-
+*/
 
 // ///////////////////////////////////////
 // casm main:
 
 int main(int argc, char *argv[]) {
+  
+  // delegate to c-api
+  PrimClex* _primclex = nullptr;
+  
+  return casm_api(argc, argv, _primclex, default_log(), default_err_log());
+
+}
+
+/*int main(int argc, char *argv[]) {
 
   // Collect command line arguments
   Array<std::string> args;
@@ -248,9 +258,11 @@ int main(int argc, char *argv[]) {
 
   return retcode;
 }
+*/
 
 //#include "casm_functions.cc"
 
+/*
 #include "status.cc"
 #include "format.cc"
 #include "settings.cc"
@@ -268,6 +280,6 @@ int main(int argc, char *argv[]) {
 #include "import.cc"
 #include "monte.cc"
 #include "view.cc"
-
+*/
 
 

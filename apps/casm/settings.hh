@@ -5,7 +5,7 @@
 
 namespace CASM {
 
-  int settings_command(int argc, char *argv[]);
+  int settings_command(const CommandArgs& args);
 
 }
 

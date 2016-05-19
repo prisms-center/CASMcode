@@ -131,7 +131,7 @@ namespace CASM {
   // 'ref' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int ref_command(int argc, char *argv[]) {
+  int ref_command(const CommandArgs& args) {
 
     po::variables_map vm;
     int choice;
@@ -141,7 +141,7 @@ namespace CASM {
 
     std::string species_order_string = "\n\n";
 
-    fs::path root = find_casmroot(fs::current_path());
+    fs::path &root = args.root;
     if(!root.empty()) {
       std::stringstream ss;
       DirectoryStructure dir(root);
@@ -181,7 +181,7 @@ namespace CASM {
 
 
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::store(po::parse_command_line(args.argc, args.argv, desc), vm);
 
         bool call_help = false;
 
@@ -315,9 +315,10 @@ namespace CASM {
       return ERR_NO_PROJ;
     }
 
-    // initialize primclex
-    Log log(std::cout);
-    PrimClex primclex(root, log);
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
     
     std::string calctype = primclex.settings().calctype();
     std::string ref = primclex.settings().ref();

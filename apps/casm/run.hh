@@ -3,7 +3,7 @@
 
 namespace CASM {
 
-  int run_command(int argc, char *argv[]);
+  int run_command(const CommandArgs& args);
 
 }
 

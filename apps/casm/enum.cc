@@ -13,7 +13,7 @@ namespace CASM {
   // 'enum' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int enum_command(int argc, char *argv[]) {
+  int enum_command(const CommandArgs& args) {
 
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
@@ -42,7 +42,7 @@ namespace CASM {
     //("coord", po::value<COORD_TYPE>(&coordtype)->default_value(CASM::CART), "Coord mode: FRAC=0, or (default) CART=1");
 
     try {
-      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
       /** --help option
        */
@@ -98,15 +98,11 @@ namespace CASM {
 
     COORD_MODE C(coordtype);
 
-    fs::path root = find_casmroot(fs::current_path());
-    if(root.empty()) {
-      std::cerr << "Error in 'casm enum': No casm project found." << std::endl;
-      return ERR_NO_PROJ;
-    }
-
-    // initialize primclex
-    Log log(std::cout);
-    PrimClex primclex(root, log);
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    fs::path &root = args.root;
     const DirectoryStructure &dir = primclex.dir();
     const ProjectSettings &set = primclex.settings();
     

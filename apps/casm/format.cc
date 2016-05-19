@@ -11,7 +11,7 @@ namespace CASM {
   // 'format' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int format_command(int argc, char *argv[]) {
+  int format_command(const CommandArgs& args) {
 
     po::variables_map vm;
 
@@ -35,7 +35,7 @@ namespace CASM {
       ("monte", "Description and location of the Monte Carlo input file");
 
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::store(po::parse_command_line(args.argc, args.argv, desc), vm);
 
         /** --help option
          */

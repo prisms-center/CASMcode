@@ -3,7 +3,7 @@
 
 namespace CASM {
 
-  int enum_command(int argc, char *argv[]);
+  int enum_command(const CommandArgs& args);
 
 }
 

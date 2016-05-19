@@ -13,12 +13,7 @@ namespace CASM {
   // 'files' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int files_command(
-    int argc,
-    char *argv[],
-    PrimClex *_primclex,
-    Log &log,
-    std::ostream &serr) {
+  int files_command(const CommandArgs& args) {
     
     po::variables_map vm;
     fs::path out_path;
@@ -162,7 +157,7 @@ namespace CASM {
     }
     
     // find project root
-    fs::path root;
+    fs::path &root = args.root;
     if(!_primclex) {
       root = find_casmroot(fs::current_path());
       if(root.empty()) {
@@ -192,7 +187,7 @@ namespace CASM {
     // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(_primclex, uniq_primclex, root, log);
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
     
     std::vector<fs::path> files;
     auto result = std::back_inserter(files);

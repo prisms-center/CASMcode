@@ -303,7 +303,7 @@ Instructions for fitting ECI:                                          \n\n\
     return update_eci_format(root);
   }
 
-  int status_command(int argc, char *argv[]) {
+  int status_command(const CommandArgs& args) {
 
     po::variables_map vm;
 
@@ -319,7 +319,7 @@ Instructions for fitting ECI:                                          \n\n\
       ("update,u", "Update file formats for current version");
 
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
         /** --help option
         */
@@ -361,7 +361,7 @@ Instructions for fitting ECI:                                          \n\n\
     std::cout << "CASM status:\n\n";
     std::cout << "1) Project initialized: ";
 
-    fs::path root = find_casmroot(fs::current_path());
+    fs::path& root = args.root;
 
     if(root.empty()) {
       std::cout << " FALSE\n\n";
@@ -392,9 +392,10 @@ Instructions for fitting ECI:                                          \n\n\
       }
     }
 
-
-    Log log(std::cout);
-    PrimClex primclex(root, log);
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
     
     const DirectoryStructure &dir = primclex.dir();
     const ProjectSettings &settings = primclex.settings();

@@ -34,7 +34,7 @@ namespace CASM {
   ///       - relaxed_structure.vasp gives the relaxed structure in a setting and orientation that matches the
   ///         generated POS file
   ///
-  int import_command(int argc, char *argv[]) {
+  int import_command(const CommandArgs& args) {
 
     double tol(TOL);
     COORD_TYPE coordtype = FRAC;
@@ -62,7 +62,7 @@ namespace CASM {
 
     try {
 
-      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
       /** --help option
        */
@@ -134,17 +134,12 @@ namespace CASM {
     }
 
     COORD_MODE C(coordtype);
-    fs::path pwd = fs::current_path();
-    fs::path root = find_casmroot(pwd);
-    if(root.empty()) {
-      std::cerr << "ERROR in 'casm import': No casm project found." << std::endl;
-      return 9;
-    }
-
-    // initialize primclex
-    Log log(std::cout);
-    PrimClex primclex(root, log);
     
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    fs::path &root = args.root;
 
     int map_opt = ConfigMapper::none;
     if(vm.count("rotate")) map_opt |= ConfigMapper::rotate;

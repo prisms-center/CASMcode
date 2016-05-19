@@ -94,7 +94,7 @@ namespace CASM {
   // 'select' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int select_command(int argc, char *argv[], PrimClex *_primclex) {
+  int select_command(const CommandArgs& args) {
 
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
@@ -130,7 +130,7 @@ namespace CASM {
     std::vector<std::string> allowed_cmd = {"and", "or", "xor", "not", "set-on", "set-off", "set"};
 
     try {
-      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
       Index num_cmd(0);
       for(const std::string &cmd_str : allowed_cmd) {
         if(vm.count(cmd_str)) {
@@ -221,17 +221,11 @@ namespace CASM {
       selection.push_back("MASTER");
     }
 
-    // switch to root directory
-    fs::path orig_path = fs::current_path();
-    fs::path root = find_casmroot(orig_path);
-    if(root.empty()) {
-      std::cerr << "Error: No casm project found." << std::endl;
-      return ERR_NO_PROJ;
-    }
-
-    // initialize primclex
-    Log log(std::cout);
-    PrimClex primclex(root, log);
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    fs::path &root = args.root;
     ProjectSettings& set = primclex.settings();
 
     // load initial selection into config_select -- this is also the selection that will be printed at end

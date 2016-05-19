@@ -50,13 +50,10 @@ namespace CASM {
                  
   }
   
-  int monte_command(int argc, char *argv[]) {
+  int monte_command(const CommandArgs& args) {
 
     fs::path settings_path;
     std::string verbosity_str;
-    std::string other;
-    int verbosity_level;
-    int other_int;
     po::variables_map vm;
     Index condition_index;
 
@@ -73,7 +70,7 @@ namespace CASM {
       ("traj-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
 
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
         
         /** --help option
         */
@@ -86,14 +83,7 @@ namespace CASM {
         // there are any problems
         
         if(vm.count("verbosity")) {
-          if(verbosity_str == "none") { verbosity_level = 0;}
-          else if(verbosity_str == "standard") { verbosity_level = 10;}
-          else if(verbosity_str == "details") { verbosity_level = 20;}
-          else if(verbosity_str == "debug") { verbosity_level = 100; }
-          else {
-            std::cerr << "ERROR: the --verbosity option expects one of 'none', 'standard', 'details', or 'debug'" << std::endl;
-            return ERR_INVALID_ARG;
-          }
+          args.log.set_verbosity(Log::verbosity_level(verbosity_str));
         }
         
       }
@@ -109,17 +99,14 @@ namespace CASM {
       return 1;
 
     }
-
-
-    fs::path root = find_casmroot(fs::current_path());
-    if(root.empty()) {
-      std::cout << "Error in 'casm monte': No casm project found." << std::endl;
-      return 1;
-    }
-
-    // initialize primclex
-    Log log(std::cout, verbosity_level);
-    PrimClex primclex(root, log);
+    
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    Log& log = args.log;
+    fs::path &root = args.root;
+    
     
     const DirectoryStructure &dir = primclex.dir();
     ProjectSettings &set = primclex.settings();
@@ -147,7 +134,7 @@ namespace CASM {
     log << "ensemble: " << monte_settings.ensemble() << "\n";
     log << "method: " << monte_settings.method() << "\n";
     
-    if(verbosity_str == "debug") {
+    if(Log::verbosity_level(verbosity_str) == 100) {
       monte_settings.set_debug(true);
     }
     if(monte_settings.debug()) {
@@ -156,6 +143,24 @@ namespace CASM {
     log << std::endl;
     
     if(monte_settings.ensemble() == Monte::ENSEMBLE::GrandCanonical) {
+      
+      template<typename EnsembleType, typename ActionType>
+      int f(primclex, settings_path, log, condition_index) {
+        ActionType::action;
+        try {
+          settings_type settings(settings_path);
+          EnsembleType mc(primclex, settings, log);
+          
+          log.write(ActionType::write_msg());
+          action(mc, condition_index, log);
+          log << std::endl;
+        }
+        catch(std::exception& e) {
+          std::cerr << ActionType::error_msg() << "\n\n";
+          std::cerr << e.what() << std::endl;
+          return ActionType::error_code();
+        }
+      }
       
       if(vm.count("initial-POSCAR")) {
         try {

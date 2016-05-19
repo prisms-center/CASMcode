@@ -3,7 +3,7 @@
 
 namespace CASM {
 
-  int select_command(int argc, char *argv[], PrimClex *_primclex = nullptr);
+  int select_command(const CommandArgs& args);
 
 }
 

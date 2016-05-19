@@ -21,7 +21,7 @@ namespace CASM {
   // 'update' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int update_command(int argc, char *argv[]) {
+  int update_command(const CommandArgs& args) {
 
     po::variables_map vm;
     int choice;
@@ -41,7 +41,7 @@ namespace CASM {
     ("strict,s", "Attempt to import exact configuration.");
 
     try {
-      po::store(po::parse_command_line(argc, argv, desc), vm);
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm);
 
       /** --help option
        */
@@ -71,16 +71,11 @@ namespace CASM {
       return 1;
     }
 
-    fs::path root = find_casmroot(fs::current_path());
-    if(root.empty()) {
-      std::cerr << "Error in 'casm update': No casm project found." << std::endl;
-      return 1;
-    }
-
-    // initialize primclex
-    Log log(std::cout);
-    PrimClex primclex(root, log);
-    
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    fs::path &root = args.root;
 
     ConfigMapper configmapper(primclex, lattice_weight, vol_tol, ConfigMapper::rotate | ConfigMapper::robust | (vm.count("strict") ? ConfigMapper::strict : 0), tol);
     std::cout << "Reading calculation data... " << std::endl << std::endl;

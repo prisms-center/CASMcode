@@ -7,7 +7,7 @@
 
 namespace CASM {
 
-  int view_command(int argc, char *argv[]) {
+  int view_command(const CommandArgs& args) {
 
     fs::path selection;
     po::variables_map vm;
@@ -38,7 +38,7 @@ namespace CASM {
       p.add("configname", -1);
 
       try {
-        po::store(po::command_line_parser(argc - 1, argv + 1).options(desc).positional(p).run(), vm);
+        po::store(po::command_line_parser(args.argc - 1, args.argv + 1).options(desc).positional(p).run(), vm);
         //po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
 
         /** --help option
@@ -77,14 +77,7 @@ namespace CASM {
 
     }
 
-    fs::path root = find_casmroot(fs::current_path());
-    if(root.empty()) {
-      std::cerr << "Error in 'casm view': No casm project found." << std::endl;
-      return ERR_NO_PROJ;
-    }
-
-    std::cout << "\n***************************\n" << std::endl;
-
+    fs::path &root = args.root;
 
     DirectoryStructure dir(root);
     ProjectSettings set(root);
@@ -96,9 +89,10 @@ namespace CASM {
       return ERR_MISSING_DEPENDS;
     }
 
-    // initialize primclex
-    Log log(std::cout);
-    PrimClex primclex(root, log);
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
     
     ConfigSelection<false> config_select;
     if(!vm.count("config")) {

@@ -1,19 +1,9 @@
-#ifndef QUERY_HH
-#define QUERY_HH
-
-#include <iostream>
-#include "casm/casm_io/Log.hh"
+#ifndef CASM_Query_HH
+#define CASM_Query_HH
 
 namespace CASM {
 
-  class PrimClex;
-  
-  int query_command(
-    int argc,
-    char *argv[],
-    PrimClex *_primclex = nullptr,
-    Log &log = default_log(),
-    std::ostream &serr = std::cerr);
+  int query_command(const CommandArgs& args);
 
 }
 

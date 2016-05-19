@@ -59,7 +59,7 @@ namespace CASM {
   // 'settings' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int settings_command(int argc, char *argv[]) {
+  int settings_command(const CommandArgs& args) {
 
     std::string single_input;
     std::vector<std::string> multi_input;
@@ -88,7 +88,7 @@ namespace CASM {
       ("unset-so-options", "Use the default options for generating shared libraries.");
 
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
         bool call_help = false;
 
@@ -192,16 +192,7 @@ namespace CASM {
 
     }
 
-    // switch to root directory
-    fs::path orig = fs::current_path();
-    fs::path root = find_casmroot(orig);
-    if(root.empty()) {
-      std::cout << "Error: No casm project found." << std::endl;
-      return 1;
-    }
-
-    std::cout << "\n***************************\n" << std::endl;
-
+    fs::path &root = args.root;
     DirectoryStructure dir(root);
     ProjectSettings set(root);
 

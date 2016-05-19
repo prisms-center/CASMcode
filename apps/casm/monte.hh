@@ -3,7 +3,7 @@
 
 namespace CASM {
 
-  int monte_command(int argc, char *argv[]);
+  int monte_command(const CommandArgs& args);
 
 }
 

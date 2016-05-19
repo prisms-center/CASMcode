@@ -12,7 +12,7 @@ namespace CASM {
   // 'perturb' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int perturb_command(int argc, char *argv[]) {
+  int perturb_command(const CommandArgs& args) {
 
     double tol = CASM::TOL;
     bool is_trans = false;
@@ -42,7 +42,7 @@ namespace CASM {
 
 
     try {
-      po::store(po::parse_command_line(argc, argv, desc, po::command_line_style::unix_style /* ^ po::command_line_style::allow_short*/), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
       /** --help option
        */
@@ -81,15 +81,11 @@ namespace CASM {
 
     COORD_MODE C(coordtype);
 
-    fs::path root = find_casmroot(fs::current_path());
-    if(root.empty()) {
-      std::cout << "Error in 'casm perturb': No casm project found." << std::endl;
-      return 1;
-    }
-
-    // initialize primclex
-    Log log(std::cout);
-    PrimClex primclex(root, log);
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    fs::path &root = args.root;
     
     DirectoryStructure dir(root);
     ProjectSettings set(root);

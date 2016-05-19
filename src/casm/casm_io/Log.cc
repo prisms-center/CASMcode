@@ -18,6 +18,12 @@ namespace CASM {
     m_show_clock = false;
   }
   
+  double Log::time_s() const {
+    using namespace boost::chrono;
+    auto curr_time = steady_clock::now();
+    return duration_cast<duration<double> >(curr_time - m_start_time).count();
+  }
+    
   
   void Log::begin_lap() {
     m_lap_start_time = boost::chrono::steady_clock::now();
@@ -50,13 +56,40 @@ namespace CASM {
   Log::operator std::ostream&() {
     return *m_stream;
   }
+  
+  /// \brief Read verbosity level from a string
+  ///
+  /// \returns result, a pair of bool,int
+  ///          result.first == true if successfully read, 
+  ///          and result.second is the verbosity level
+  ///
+  std::pair<bool, int> Log::verbosity_level(std::string s) {
+    
+    auto is_int = [](std::string s) {
+      int val;
+      if(s.empty() || !isdigit(s[0])) {
+        return std::make_pair(false,val);
+      }
+      char* p;
+      val = strtol(s.c_str(), &p, 10);
+      return std::make_pair(*p == 0 && val >= 0 && val <= 100, val);
+    };
+    
+    auto res = is_int(s);
+    if(res.first) { return res;}
+    else if(s == "none") { return std::make_pair(true, 0);}
+    else if(s == "quiet") { return std::make_pair(true, 5);}
+    else if(s == "standard") { return std::make_pair(true, 10);}
+    else if(s == "verbose") { return std::make_pair(true, 20);}
+    else if(s == "debug") { return std::make_pair(true, 100);}
+    else { return std::make_pair(false,0);}
+  
+  };
+  
     
   void Log::_add_time() {
     if(m_show_clock) {
-      using namespace boost::chrono;
-      auto curr_time = steady_clock::now();
-      double s = duration_cast<duration<double> >(curr_time - m_start_time).count();
-      std::cout << "Time: " << s << " (s)";
+      std::cout << "Time: " << time_s() << " (s)";
     }
   }
   

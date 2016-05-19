@@ -12,7 +12,7 @@ namespace CASM {
   // 'init' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int init_command(int argc, char *argv[]) {
+  int init_command(const CommandArgs& args) {
 
     std::string name;
     po::variables_map vm;
@@ -26,7 +26,7 @@ namespace CASM {
       ("force,f", "Force using a non-reduced, non-primitive, or left-handed PRIM");
 
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
         /** --help option
         */
@@ -66,7 +66,7 @@ namespace CASM {
 
     std::cout << "\n***************************\n" << std::endl;
 
-    fs::path root = fs::current_path();
+    fs::path &root = args.root;
 
     DirectoryStructure dir(root);
     Structure prim;

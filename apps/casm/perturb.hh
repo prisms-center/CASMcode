@@ -3,7 +3,7 @@
 
 namespace CASM {
 
-  int perturb_command(int argc, char *argv[]);
+  int perturb_command(const CommandArgs& args);
 
 }
 
