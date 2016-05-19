@@ -50,7 +50,7 @@ namespace CASM {
     void set_conditions(const CondType &new_conditions);
 
     /// \brief Set configdof and clear previously collected data
-    void set_configdof(const ConfigDoF& configdof, const std::string& msg = "");
+    void set_configdof(const ConfigDoF &configdof, const std::string &msg = "");
 
     /// \brief Propose a new event, calculate delta properties, and return reference to it
     const EventType &propose();
@@ -174,7 +174,7 @@ namespace CASM {
     Eigen::VectorXd *m_comp_n;
 
   };
-  
+
 }
 
 #endif

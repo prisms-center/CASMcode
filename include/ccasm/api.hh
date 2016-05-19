@@ -32,8 +32,8 @@ extern "C" {
   cPrimClex *casm_primclex_new(char *path, costream *log);
 
   void casm_primclex_delete(cPrimClex *ptr);
-  
-  
+
+
   int casm_capi(char *args, cPrimClex *primclex, costream *log, costream *err_log);
 
 }

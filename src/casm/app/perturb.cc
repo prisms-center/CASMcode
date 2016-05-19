@@ -10,7 +10,7 @@ namespace CASM {
   // 'perturb' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int perturb_command(const CommandArgs& args) {
+  int perturb_command(const CommandArgs &args) {
 
     double tol = CASM::TOL;
     bool is_trans = false;
@@ -85,12 +85,12 @@ namespace CASM {
       args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
     // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    
+
     DirectoryStructure dir(root);
     ProjectSettings set(root);
 

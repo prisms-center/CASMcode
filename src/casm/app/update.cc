@@ -16,7 +16,7 @@ namespace CASM {
   // 'update' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int update_command(const CommandArgs& args) {
+  int update_command(const CommandArgs &args) {
 
     po::variables_map vm;
     int choice;
@@ -72,12 +72,12 @@ namespace CASM {
       args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
     // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    
+
     ConfigMapper configmapper(primclex, lattice_weight, vol_tol, ConfigMapper::rotate | ConfigMapper::robust | (vm.count("strict") ? ConfigMapper::strict : 0), tol);
     std::cout << "Reading calculation data... " << std::endl << std::endl;
     std::vector<std::string> bad_config_report;

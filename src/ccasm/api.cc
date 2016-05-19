@@ -50,7 +50,7 @@ extern "C" {
 
 
   cPrimClex *casm_primclex_new(char *path, costream *log) {
-    Log _log(*reinterpret_cast<std::ostream*>(log));
+    Log _log(*reinterpret_cast<std::ostream *>(log));
     PrimClex *ptr = new PrimClex(fs::path(path), _log);
     return reinterpret_cast<cPrimClex *>(ptr);
   }
@@ -59,15 +59,15 @@ extern "C" {
     delete reinterpret_cast<PrimClex *>(ptr);
   }
 
-  
+
   int casm_capi(char *args, cPrimClex *primclex, costream *log, costream *err_log) {
     PrimClex *_primclex = reinterpret_cast<PrimClex *>(primclex);
-    Log _log(*reinterpret_cast<std::ostream*>(log));
-    Log _err_log(*reinterpret_cast<std::ostream*>(err_log));
-    
+    Log _log(*reinterpret_cast<std::ostream *>(log));
+    Log _err_log(*reinterpret_cast<std::ostream *>(err_log));
+
     std::string s("casm ");
     s += std::string(args);
-    
+
     // parse args -> argc, argv
     wordexp_t p;
     int res = wordexp(s.c_str(), &p, 0);
@@ -85,10 +85,10 @@ extern "C" {
       }
       return res;
     }
-    
+
     CommandArgs command_args(p.we_wordc, p.we_wordv, _primclex, _log, _err_log);
     res = casm_api(command_args);
-    
+
     wordfree(&p);
 
     return res;

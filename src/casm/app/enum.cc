@@ -14,7 +14,7 @@ namespace CASM {
   // 'enum' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int enum_command(const CommandArgs& args) {
+  int enum_command(const CommandArgs &args) {
 
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
@@ -98,21 +98,21 @@ namespace CASM {
     }
 
     COORD_MODE C(coordtype);
-    
+
     const fs::path &root = args.root;
     if(root.empty()) {
       args.err_log.error("No casm project found");
       args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
     // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
     const DirectoryStructure &dir = primclex.dir();
     const ProjectSettings &set = primclex.settings();
-    
+
     if(vm.count("supercells")) {
       std::cout << "\n***************************\n" << std::endl;
 

@@ -10,7 +10,7 @@ namespace CASM {
   // 'run' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int run_command(const CommandArgs& args) {
+  int run_command(const CommandArgs &args) {
     std::string exec, selection;
     double tol;
     po::variables_map vm;
@@ -59,19 +59,19 @@ namespace CASM {
       return 1;
 
     }
-    
+
     const fs::path &root = args.root;
     if(root.empty()) {
       args.err_log.error("No casm project found");
       args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
     // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    
+
     try {
       if(!vm.count("config") || (selection == "MASTER")) {
         for(auto it = primclex.selected_config_begin(); it != primclex.selected_config_end(); ++it) {

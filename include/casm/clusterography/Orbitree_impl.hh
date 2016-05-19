@@ -1136,7 +1136,7 @@ namespace CASM {
     this->max_num_sites = 0;
     //BP_Vec needs unsigned long int
     Index index;
-    while(!file.eof()) { 
+    while(!file.eof()) {
       s_list.clear();
       std::copy(std::istream_iterator<std::string>(file),
                 std::istream_iterator<std::string>(),
@@ -1162,7 +1162,7 @@ namespace CASM {
           exit(1);
         }
       }
-      else if( s_list.size() != (index = find_index(s_list, "Points:")) ) {
+      else if(s_list.size() != (index = find_index(s_list, "Points:"))) {
         //std::cout << "  read Points" << std::endl;
         Index pts = std::stol(s_list[index + 1]);
         if(pts > this->max_num_sites)
@@ -1176,7 +1176,7 @@ namespace CASM {
         std::copy(std::istream_iterator<std::string>(file),
                   std::istream_iterator<std::string>(),
                   std::back_inserter(s_list));
-        
+
         // Store the number of equivalent clusters expected
         n_equiv.push_back(std::stol(s_list[2]));
 
@@ -2108,7 +2108,7 @@ namespace CASM {
   template<typename ClustType>
   void GenericOrbitree<ClustType>::write_eci_in(std::string filename) const {
     std::ofstream file(filename);
-    
+
     print_eci_in(file);
 
   }

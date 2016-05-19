@@ -326,7 +326,7 @@ namespace CASM {
   DataStream &operator<<(DataStream &_stream, unsigned int i) {
     return (_stream << (long)i);
   }
-  
+
   inline
   DataStream &operator<<(DataStream &_stream, unsigned long i) {
     return (_stream << (long)i);

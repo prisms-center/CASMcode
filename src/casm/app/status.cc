@@ -249,57 +249,60 @@ Instructions for fitting ECI:                                          \n\n\
   composition axes or reference states.\n\n";
 
   }
-  
+
   int update_eci_format(fs::path root) {
-    
+
     DirectoryStructure dir(root);
     ProjectSettings set(root);
-    
+
     // convert eci.out to eci.json (if eci.json does not exist)
     for(auto clex : dir.all_clex()) {
-    for(auto bset : dir.all_bset()) {
-    for(auto calctype : dir.all_calctype()) {
-    for(auto ref : dir.all_ref(calctype)) {
-    for(auto eci : dir.all_eci(clex, calctype, ref, bset)) {
-      
-      auto eci_path = dir.eci(clex, calctype, ref, bset, eci);
-      auto eci_out = dir.eci_out(clex, calctype, ref, bset, eci);
-      fs::path basis_json_path = dir.basis(bset);
-      
-      if(!fs::exists(eci_path) && fs::exists(eci_out) && fs::exists(basis_json_path)) {
-        // create an eci.json from eci.out and basis.json
-        
-        std::cout << "Converting: \n  " << eci_out << "\nto:\n  " << eci_path << std::endl;
-        
-        auto eci = read_eci_out(eci_out);
-        
-        fs::path basis_json_path = dir.basis(bset);
-        // read basis.json
-        jsonParser basis_json = jsonParser::parse(basis_json_path);
-          
-        // set eci
-        for(int i=0; i<eci.index().size(); ++i) {
-          auto index = eci.index()[i];
-          auto value = eci.value()[i];
-          basis_json["cluster_functions"][index]["eci"] = value;
+      for(auto bset : dir.all_bset()) {
+        for(auto calctype : dir.all_calctype()) {
+          for(auto ref : dir.all_ref(calctype)) {
+            for(auto eci : dir.all_eci(clex, calctype, ref, bset)) {
+
+              auto eci_path = dir.eci(clex, calctype, ref, bset, eci);
+              auto eci_out = dir.eci_out(clex, calctype, ref, bset, eci);
+              fs::path basis_json_path = dir.basis(bset);
+
+              if(!fs::exists(eci_path) && fs::exists(eci_out) && fs::exists(basis_json_path)) {
+                // create an eci.json from eci.out and basis.json
+
+                std::cout << "Converting: \n  " << eci_out << "\nto:\n  " << eci_path << std::endl;
+
+                auto eci = read_eci_out(eci_out);
+
+                fs::path basis_json_path = dir.basis(bset);
+                // read basis.json
+                jsonParser basis_json = jsonParser::parse(basis_json_path);
+
+                // set eci
+                for(int i = 0; i < eci.index().size(); ++i) {
+                  auto index = eci.index()[i];
+                  auto value = eci.value()[i];
+                  basis_json["cluster_functions"][index]["eci"] = value;
+                }
+
+                //write eci.json
+                basis_json.write(eci_path);
+                std::cerr << "DONE" << std::endl << std::endl;
+
+              }
+            }
+          }
         }
-        
-        //write eci.json
-        basis_json.write(eci_path);
-        std::cerr << "DONE" << std::endl << std::endl;
-          
       }
     }
-    }}}}
-    
+
     return 0;
   }
-  
+
   int update_format(fs::path root) {
     return update_eci_format(root);
   }
 
-  int status_command(const CommandArgs& args) {
+  int status_command(const CommandArgs &args) {
 
     po::variables_map vm;
 
@@ -344,7 +347,7 @@ Instructions for fitting ECI:                                          \n\n\
       return 1;
 
     }
-    
+
     if(vm.count("update")) {
       return update_format(find_casmroot(fs::current_path()));
     }
@@ -357,7 +360,7 @@ Instructions for fitting ECI:                                          \n\n\
     std::cout << "CASM status:\n\n";
     std::cout << "1) Project initialized: ";
 
-    const fs::path& root = args.root;
+    const fs::path &root = args.root;
 
     if(root.empty()) {
       std::cout << " FALSE\n\n";
@@ -392,7 +395,7 @@ Instructions for fitting ECI:                                          \n\n\
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    
+
     const DirectoryStructure &dir = primclex.dir();
     const ProjectSettings &settings = primclex.settings();
 

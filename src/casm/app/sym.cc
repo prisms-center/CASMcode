@@ -7,7 +7,7 @@ namespace CASM {
   // 'sym' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int sym_command(const CommandArgs& args) {
+  int sym_command(const CommandArgs &args) {
     std::string name;
     COORD_TYPE coordtype;
     po::variables_map vm;
@@ -62,7 +62,7 @@ namespace CASM {
       args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
     DirectoryStructure dir(root);
     ProjectSettings set(root);
     Structure prim(read_prim(dir.prim()));

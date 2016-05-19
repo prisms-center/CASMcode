@@ -11,7 +11,7 @@ namespace CASM {
   // 'init' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int init_command(const CommandArgs& args) {
+  int init_command(const CommandArgs &args) {
 
     std::string name;
     po::variables_map vm;

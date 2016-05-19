@@ -57,7 +57,7 @@ namespace CASM {
   // 'settings' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int settings_command(const CommandArgs& args) {
+  int settings_command(const CommandArgs &args) {
 
     std::string single_input;
     std::vector<std::string> multi_input;
@@ -196,7 +196,7 @@ namespace CASM {
       args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
     DirectoryStructure dir(root);
     ProjectSettings set(root);
 

@@ -127,7 +127,7 @@ namespace CASM {
   // 'ref' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int ref_command(const CommandArgs& args) {
+  int ref_command(const CommandArgs &args) {
 
     po::variables_map vm;
     int choice;
@@ -311,13 +311,13 @@ namespace CASM {
       args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
 
     // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    
+
     std::string calctype = primclex.settings().calctype();
     std::string ref = primclex.settings().ref();
     fs::path chem_ref_path = primclex.dir().chemical_reference(calctype, ref);

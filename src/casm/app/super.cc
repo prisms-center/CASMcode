@@ -8,7 +8,7 @@ namespace CASM {
   // 'super' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int super_command(const CommandArgs& args) {
+  int super_command(const CommandArgs &args) {
 
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
@@ -29,54 +29,54 @@ namespace CASM {
       po::options_description desc("'casm super' usage");
       desc.add_options()
       ("help,h", "Write help documentation")
-      
-      ("transf_mat", 
-        po::value<std::vector<fs::path> >(&tmatfile)->multitoken(), 
-        "1 or more files containing a 3x3 transformation matrix used to create a supercell.")
-      
-      ("get_transf_mat", 
-        "If it exists, find the transformation matrix.")
-      
-      ("structure", 
-        po::value<fs::path>(&structfile), 
-        "File with structure (POSCAR type) to use.")
-      
-      ("configname", 
-        po::value<std::vector<std::string> >(&configname)->multitoken(), 
-        "1 or more names of configuration. For ex. \"SCEL4_2_2_1_0_0_0/4\".")
-      
-      ("scelname", 
-        po::value<std::vector<std::string> >(&scelname)->multitoken(), 
-        "1 or more names of supercell. For ex. \"SCEL4_2_2_1_0_0_0\".")
-      
-      ("unitcell", 
-        po::value<std::string>(&unitscelname), 
-        "Name of supercell to use as unit cell. For ex. \"SCEL2_2_1_1_0_0_0\".")
-        
-      ("config,c", 
-        po::value<std::vector<fs::path> >(&config_path)->multitoken()->zero_tokens(), 
-        "0 or more configuration selection files containing configurations to use. "
-        "If MASTER or no arguments, uses the master config list.")
-        
-      ("duper", 
-        "Construct the superdupercell, the minimum supercell of all input supercells "
-        "and configurations.")
-      
-      ("fixed-orientation", 
-        "When constructing the superdupercell, do not consider other symmetrically "
-        "equivalent orientations.")
-      
+
+      ("transf_mat",
+       po::value<std::vector<fs::path> >(&tmatfile)->multitoken(),
+       "1 or more files containing a 3x3 transformation matrix used to create a supercell.")
+
+      ("get_transf_mat",
+       "If it exists, find the transformation matrix.")
+
+      ("structure",
+       po::value<fs::path>(&structfile),
+       "File with structure (POSCAR type) to use.")
+
+      ("configname",
+       po::value<std::vector<std::string> >(&configname)->multitoken(),
+       "1 or more names of configuration. For ex. \"SCEL4_2_2_1_0_0_0/4\".")
+
+      ("scelname",
+       po::value<std::vector<std::string> >(&scelname)->multitoken(),
+       "1 or more names of supercell. For ex. \"SCEL4_2_2_1_0_0_0\".")
+
+      ("unitcell",
+       po::value<std::string>(&unitscelname),
+       "Name of supercell to use as unit cell. For ex. \"SCEL2_2_1_1_0_0_0\".")
+
+      ("config,c",
+       po::value<std::vector<fs::path> >(&config_path)->multitoken()->zero_tokens(),
+       "0 or more configuration selection files containing configurations to use. "
+       "If MASTER or no arguments, uses the master config list.")
+
+      ("duper",
+       "Construct the superdupercell, the minimum supercell of all input supercells "
+       "and configurations.")
+
+      ("fixed-orientation",
+       "When constructing the superdupercell, do not consider other symmetrically "
+       "equivalent orientations.")
+
       ("min-volume",
-        po::value<Index>(&min_vol),
-        "Ensure that the resulting supercell has volume >= V.")
-      
-      ("fixed-shape", 
-        "Use to prevent --min-volume from changing the shape of the resulting supercell.")
-      
-      ("verbose", 
-        "When used with --duper, show how the input lattices are transformed "
-        "to tile the superdupercell.")
-      
+       po::value<Index>(&min_vol),
+       "Ensure that the resulting supercell has volume >= V.")
+
+      ("fixed-shape",
+       "Use to prevent --min-volume from changing the shape of the resulting supercell.")
+
+      ("verbose",
+       "When used with --duper, show how the input lattices are transformed "
+       "to tile the superdupercell.")
+
       ("add-canonical,a", "Will add the generated super configuration in it's "
        "canonical form in the equivalent niggli supercell.")
 
@@ -226,12 +226,12 @@ namespace CASM {
       args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
     // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    
+
     if(vm.count("duper")) {
 
       // collect all the Lattice to make the superdupercell of
@@ -307,38 +307,38 @@ namespace CASM {
         end = begin;
       }
       Lattice superduper = superdupercell(lat_only.begin(), lat_only.end(), begin, end);
-      
+
       /// enforce a minimum volume
       if(vm.count("min-volume")) {
-        
+
         std::cout << "  Enforcing minimum volume: " << min_vol;
         if(vm.count("fixed-shape")) {
           std::cout << " (with fixed shape)";
         }
         std::cout << "\n\n";
-        
+
         auto prim_lat = primclex.get_prim().lattice();
-        const SymGroup& pg = primclex.get_prim().point_group();
+        const SymGroup &pg = primclex.get_prim().point_group();
         auto T = is_supercell(superduper, prim_lat, TOL).second;
-        
+
         std::cout << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
-        
-        std::cout << "    Initial transformation matrix:\n" << T 
+
+        std::cout << "    Initial transformation matrix:\n" << T
                   << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
-        
+
         auto M = enforce_min_volume(prim_lat, T, pg, min_vol, vm.count("fixed-shape"));
-        
+
         superduper = niggli(make_supercell(superduper, M), pg, TOL);
-        
+
         auto S = is_supercell(superduper, prim_lat, TOL).second;
-        
+
         std::cout << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
-        
-        std::cout << "    Transformation matrix, after enforcing mininum volume:\n" 
+
+        std::cout << "    Transformation matrix, after enforcing mininum volume:\n"
                   << S << "\n    (volume = " << S.cast<double>().determinant() << ")\n\n";
-        
+
       }
-      
+
       Index index = primclex.add_supercell(superduper);
       Supercell &superduper_scel = primclex.get_supercell(index);
 
@@ -409,37 +409,37 @@ namespace CASM {
       file.close();
 
       std::cout << "Read transformation matrix, T: \n" << T << "\n\n";
-      
+
       /// enforce a minimum volume
       if(vm.count("min-volume")) {
-        
+
         std::cout << "  Enforcing minimum volume: " << min_vol;
         if(vm.count("fixed-shape")) {
           std::cout << " (with fixed shape)";
         }
         std::cout << "\n\n";
-        
+
         auto prim_lat = primclex.get_prim().lattice();
-        const SymGroup& pg = primclex.get_prim().point_group();
-        
-        std::cout << "    Initial transformation matrix:\n" << T 
+        const SymGroup &pg = primclex.get_prim().point_group();
+
+        std::cout << "    Initial transformation matrix:\n" << T
                   << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
-        
+
         auto M = enforce_min_volume(
-            primclex.get_prim().lattice(),
-            T,
-            pg,
-            min_vol,
-            vm.count("fixed-shape"));
-        
-        Lattice niggli_lat = niggli(make_supercell(prim_lat, T*M), pg, TOL);
+                   primclex.get_prim().lattice(),
+                   T,
+                   pg,
+                   min_vol,
+                   vm.count("fixed-shape"));
+
+        Lattice niggli_lat = niggli(make_supercell(prim_lat, T * M), pg, TOL);
         auto T = is_supercell(niggli_lat, prim_lat, TOL).second;
-        
-        std::cout << "    Transformation matrix, after enforcing mininum volume:\n" 
+
+        std::cout << "    Transformation matrix, after enforcing mininum volume:\n"
                   << T << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
       }
-      
-      
+
+
       // super lattice
       if(vm.count("scelname")) {
 
@@ -487,7 +487,7 @@ namespace CASM {
 
         BasicStructure<Site> super = unit.create_superstruc(make_supercell(unit.lattice(), T));
         super.title = std::string("Supercell of ") + con.name();
-        
+
         std::cout << "Super structure:";
         std::cout << "\n------\n";
         print(super);

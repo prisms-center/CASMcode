@@ -153,12 +153,12 @@ namespace CASM {
     const std::vector<ConfigDoF> &trajectory() const {
       return m_trajectory;
     }
-    
+
     /// \brief return true if running in debug mode
     bool debug() const {
       return m_debug;
     }
-    
+
 
   protected:
 
@@ -214,7 +214,7 @@ namespace CASM {
     bool m_must_converge;
 
     /// \brief Target for messages
-    Log& m_log;
+    Log &m_log;
 
   private:
 
@@ -247,9 +247,9 @@ namespace CASM {
     bool m_debug;
 
   };
-  
+
   /// \brief Fill supercell with motif, applying a factor group operation if necessary
-  ConfigDoF fill_supercell(Supercell &mc_scel, const Configuration& motif);
+  ConfigDoF fill_supercell(Supercell &mc_scel, const Configuration &motif);
 
   /// \brief Construct with a starting ConfigDoF as specified the given MonteSettings and prepare data samplers
   template<typename MonteTypeSettings>
@@ -262,7 +262,7 @@ namespace CASM {
     m_log(_log) {
 
     try {
-      
+
       settings.samplers(primclex, std::inserter(m_sampler, m_sampler.begin()));
 
       m_must_converge = false;
@@ -279,7 +279,7 @@ namespace CASM {
       throw;
     }
   }
-  
+
 }
 #endif
 

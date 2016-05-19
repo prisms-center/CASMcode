@@ -3,7 +3,7 @@
 
 namespace CASM {
 
-  int view_command(const CommandArgs& args) {
+  int view_command(const CommandArgs &args) {
 
     fs::path selection;
     po::variables_map vm;
@@ -79,7 +79,7 @@ namespace CASM {
       args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
     DirectoryStructure dir(root);
     ProjectSettings set(root);
     if(set.view_command().empty()) {
@@ -94,7 +94,7 @@ namespace CASM {
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    
+
     ConfigSelection<false> config_select;
     if(!vm.count("config")) {
       config_select = ConfigSelection<false>(primclex, "NONE");

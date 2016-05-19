@@ -21,7 +21,7 @@ namespace CASM {
     global_orbitree(_prim.lattice()) {
 
     _init(log);
-    
+
     return;
   }
 
@@ -37,16 +37,16 @@ namespace CASM {
     global_orbitree(prim.lattice()) {
 
     _init(log);
-    
+
   }
 
   /// Initialization routines
   ///  - If !root.empty(), read all saved data to generate all Supercells and Configurations, etc.
   void PrimClex::_init(Log &log) {
-    
+
     log.construct("CASM Project");
     log << "from: " << root << "\n";
-    
+
     std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
 
     m_vacancy_allowed = false;
@@ -120,7 +120,7 @@ namespace CASM {
       log << "read: " << get_config_list_path() << "\n";
       read_config_list();
     }
-    
+
     log << std::endl;
   }
 

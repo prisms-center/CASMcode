@@ -9,7 +9,7 @@ namespace CASM {
   // 'format' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int format_command(const CommandArgs& args) {
+  int format_command(const CommandArgs &args) {
 
     po::variables_map vm;
 
@@ -742,75 +742,75 @@ LCHARG = .FALSE.\n";
       std::cout << "-------\n";
       std::cout <<
                 R"({
-  "chemical_reference" : {
-    "config" : {
-      "SCEL4_2_2_1_1_1_0/0" : [
-        {
-          "A" : 1.000000000000,
-          "energy_per_species" : -1.500000000000
-        },
-        {
-          "B" : 1.000000000000,
-          "energy_per_species" : -2.000100000000
-        },
-        {
-          "C" : 1.000000000000,
-          "energy_per_species" : -8.030000000000
-        }
-      ],
-      "SCEL4_2_2_1_1_1_0/2" : [ -1.520000000000, -2.000100000000, -8.030000000000 ]
-    },
-    "global" : [
-      {
-        "A" : 0.500000000000,
-        "B" : 0.500000000000,
-        "energy_per_species" : -1.500000000000
-      },
-      {
-        "B" : 1.000000000000,
-        "energy_per_species" : -2.000000000000
-      },
-      {
-        "C" : 1.000000000000,
-        "energy_per_species" : -8.000000000000
-      },
-      {
-        "D" : 1.000000000000,
-        "energy_per_species" : -4.000000000000
-      }
-    ],
-    "species_order" : [ "A", "B", "C" ],
-    "supercell" : {
-      "SCEL3_1_3_1_1_0_0" : [
-        {
-          "A" : 1.000000000000,
-          "energy_per_species" : -1.500000000000
-        },
-        {
-          "B" : 1.000000000000,
-          "energy_per_species" : -2.000000000000
-        },
-        {
-          "C" : 1.000000000000,
-          "energy_per_species" : -8.001000000000
-        }
-      ],
-      "SCEL4_2_2_1_1_1_0" : [
-        {
-          "A" : 1.000000000000,
-          "energy_per_species" : -1.500000000000
-        },
-        {
-          "B" : 1.000000000000,
-          "energy_per_species" : -2.000000000000
-        },
-        {
-          "C" : 1.000000000000,
-          "energy_per_species" : -8.030000000000
-        }
-      ]
-    }
-  }
+"chemical_reference" : {
+"config" : {
+"SCEL4_2_2_1_1_1_0 / 0" : [
+{
+"A" : 1.000000000000,
+"energy_per_species" : -1.500000000000
+},
+{
+"B" : 1.000000000000,
+"energy_per_species" : -2.000100000000
+},
+{
+"C" : 1.000000000000,
+"energy_per_species" : -8.030000000000
+}
+],
+"SCEL4_2_2_1_1_1_0 / 2" : [ -1.520000000000, -2.000100000000, -8.030000000000 ]
+},
+"global" : [
+{
+"A" : 0.500000000000,
+"B" : 0.500000000000,
+"energy_per_species" : -1.500000000000
+},
+{
+"B" : 1.000000000000,
+"energy_per_species" : -2.000000000000
+},
+{
+"C" : 1.000000000000,
+"energy_per_species" : -8.000000000000
+},
+{
+"D" : 1.000000000000,
+"energy_per_species" : -4.000000000000
+}
+],
+"species_order" : [ "A", "B", "C" ],
+"supercell" : {
+"SCEL3_1_3_1_1_0_0" : [
+{
+"A" : 1.000000000000,
+"energy_per_species" : -1.500000000000
+},
+{
+"B" : 1.000000000000,
+"energy_per_species" : -2.000000000000
+},
+{
+"C" : 1.000000000000,
+"energy_per_species" : -8.001000000000
+}
+],
+"SCEL4_2_2_1_1_1_0" : [
+{
+"A" : 1.000000000000,
+"energy_per_species" : -1.500000000000
+},
+{
+"B" : 1.000000000000,
+"energy_per_species" : -2.000000000000
+},
+{
+"C" : 1.000000000000,
+"energy_per_species" : -8.030000000000
+}
+]
+}
+}
 })";
       std::cout << "-------\n";
 

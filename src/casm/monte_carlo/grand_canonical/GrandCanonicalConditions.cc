@@ -43,7 +43,7 @@ namespace CASM {
   Eigen::MatrixXd GrandCanonicalConditions::exchange_chem_pot() const {
     return m_exchange_chem_pot;
   }
-  
+
   double GrandCanonicalConditions::exchange_chem_pot(Index index_new, Index index_curr) const {
     return m_exchange_chem_pot(index_new, index_curr);
   }
@@ -72,18 +72,18 @@ namespace CASM {
   void GrandCanonicalConditions::set_param_chem_pot(const Eigen::VectorXd &in_param_chem_pot) {
     m_param_chem_pot = in_param_chem_pot;
     m_chem_pot = m_comp_converter.dparam_dmol().transpose() * m_param_chem_pot;
-    
+
     int Ncomp = m_comp_converter.components().size();
     m_exchange_chem_pot = Eigen::MatrixXd(Ncomp, Ncomp);
-    for(int index_new=0; index_new<Ncomp; ++index_new) {
-      for(int index_curr=0; index_curr<Ncomp; ++index_curr) {
+    for(int index_new = 0; index_new < Ncomp; ++index_new) {
+      for(int index_curr = 0; index_curr < Ncomp; ++index_curr) {
         Eigen::VectorXl dn = Eigen::VectorXl::Zero(Ncomp);
         dn(index_new) += 1;
         dn(index_curr) -= 1;
         m_exchange_chem_pot(index_new, index_curr) = m_param_chem_pot.transpose() * m_comp_converter.dparam_dmol() * dn.cast<double>();
       }
     }
-    
+
     return;
   }
 
@@ -160,8 +160,8 @@ namespace CASM {
 
     return max_division;
   }
-  
-  std::ostream& operator<<(std::ostream &sout, const GrandCanonicalConditions& cond) {
+
+  std::ostream &operator<<(std::ostream &sout, const GrandCanonicalConditions &cond) {
     sout << "T: " << cond.temperature() << "\n";
     for(int i = 0; i < cond.param_chem_pot().size(); i++) {
       jsonParser json;

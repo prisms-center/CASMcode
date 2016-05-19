@@ -12,12 +12,12 @@ namespace CASM {
   template<class T>
   class SiteMod {
   public:
-    
+
     typedef Index size_type;
-    
+
     /// \brief Default constructor
     SiteMod() {}
-    
+
     /// \brief Construct a SiteMod
     ///
     /// \param _site_linear_index Index into the unrolled array of sites in the ConfigDoF of site being modified
@@ -32,15 +32,15 @@ namespace CASM {
     size_type site_index() const {
       return m_site_index;
     }
-    
+
     /// \brief Returns the sublattice index of site being modified
     size_type sublat() const {
       return m_sublat;
     }
 
-    
+
     /// \brief Returns the value the variable on the site being modified will change to
-    const T& to_value() const {
+    const T &to_value() const {
       return m_to_value;
     }
 
@@ -56,7 +56,7 @@ namespace CASM {
       m_to_value = _to_value;
       return;
     }
-    
+
   private:
 
     size_type m_site_index;
@@ -65,7 +65,7 @@ namespace CASM {
   };
 
   /// \brief An OccMod describes the change in occupation variable on a site
-  typedef SiteMod<int> OccMod;  
+  typedef SiteMod<int> OccMod;
 
 }
 

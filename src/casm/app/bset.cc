@@ -9,7 +9,7 @@ namespace CASM {
   // 'clusters' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int bset_command(const CommandArgs& args) {
+  int bset_command(const CommandArgs &args) {
 
     po::variables_map vm;
 
@@ -55,19 +55,19 @@ namespace CASM {
       return ERR_UNKNOWN;
 
     }
-    
+
     const fs::path &root = args.root;
     if(root.empty()) {
       args.err_log.error("No casm project found");
       args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
     // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    
+
     if(vm.count("update")) {
 
       // initialize project info
@@ -205,7 +205,7 @@ namespace CASM {
 
       Log log(std::cout);
       PrimClex primclex(root, log);
-      
+
       primclex.read_global_orbitree(dir.clust(set.bset()));
 
       if(vm.count("orbits")) {

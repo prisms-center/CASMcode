@@ -7,7 +7,7 @@
 
 namespace CASM {
 
-  void query_help(const DataFormatterDictionary<Configuration>& _dict, std::ostream &_stream, std::vector<std::string > help_opt_vec) {
+  void query_help(const DataFormatterDictionary<Configuration> &_dict, std::ostream &_stream, std::vector<std::string > help_opt_vec) {
     _stream << "Prints the properties for a set of configurations for the set of currently selected" << std::endl
             << "configurations or for a set of configurations specifed by a selection file." << std::endl
             << std::endl
@@ -32,7 +32,7 @@ namespace CASM {
     _stream << std::endl;
   }
 
-  int query_command(const CommandArgs& args) {
+  int query_command(const CommandArgs &args) {
 
     std::string selection_str;
     fs::path config_path, out_path;
@@ -52,9 +52,9 @@ namespace CASM {
     ("gzip,z", po::value(&gz_flag)->zero_tokens(), "Write gzipped output file.")
     ("all,a", "Print results all configurations in input selection, whether or not they are selected.")
     ("no-header,n", po::value(&no_header)->zero_tokens(), "Print without header (CSV only)")
-    ("alias", po::value<std::vector<std::string> >(&new_alias)->multitoken(), 
-      "Create an alias for a query that will persist within this project. "
-      "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
+    ("alias", po::value<std::vector<std::string> >(&new_alias)->multitoken(),
+     "Create an alias for a query that will persist within this project. "
+     "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
 
 
     try {
@@ -91,7 +91,7 @@ namespace CASM {
     }
     catch(std::exception &e) {
       args.err_log << "Unhandled Exception reached the top of main: "
-           << e.what() << ", application will now exit" << std::endl;
+                   << e.what() << ", application will now exit" << std::endl;
       return ERR_UNKNOWN;
     }
 
@@ -106,22 +106,22 @@ namespace CASM {
       args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
-    
+
     if(vm.count("alias")) {
-      
+
       ProjectSettings set(root);
-      
+
       // get user input
       std::string new_alias_str;
       for(auto const &substr : new_alias) {
         new_alias_str += substr;
       }
-      
+
       // parse new_alias_str to create formatter
       auto it = std::find(new_alias_str.cbegin(), new_alias_str.cend(), '=');
       std::string alias_name = boost::trim_copy(std::string(new_alias_str.cbegin(), it));
       std::string alias_command = boost::trim_copy(std::string(++it, new_alias_str.cend()));
-      
+
       try {
         set.add_alias(alias_name, alias_command, args.err_log);
         set.commit();
@@ -129,11 +129,11 @@ namespace CASM {
       }
       catch(std::runtime_error &e) {
         args.err_log << "Unable to learn alias\n"
-             << "   \"" << alias_name << " = " << alias_command << "\"\n"
-             << e.what() << std::endl;
+                     << "   \"" << alias_name << " = " << alias_command << "\"\n"
+                     << e.what() << std::endl;
         return ERR_UNKNOWN;
       }
-      
+
     }
     if(!vm.count("columns")) {
       args.err_log << "ERROR: the option '--columns' is required but missing" << std::endl;
@@ -180,10 +180,10 @@ namespace CASM {
 
     // Get configuration selection
     ConstConfigSelection selection(primclex, selection_str);
-    
+
     // set status_stream: where query settings and PrimClex initialization messages are sent
     Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
-    
+
     // Print info
     status_log << "Print:" << std::endl;
     for(int p = 0; p < columns.size(); p++) {
@@ -196,7 +196,7 @@ namespace CASM {
     // Construct DataFormatter
     primclex.settings().set_selected(selection);
     DataFormatter<Configuration> formatter;
-    
+
     try {
 
       std::vector<std::string> all_columns;
