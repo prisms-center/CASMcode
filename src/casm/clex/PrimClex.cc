@@ -536,12 +536,18 @@ namespace CASM {
    * the remaining 3-n columns remain fixed.
    *
    * The new functionality of restricted supercell enumeration can
-   * be easily bypassed by passing dims=3 and T=Eigen::Matrix3i::Identity()
+   * be easily bypassed by passing dims=3 and G=Eigen::Matrix3i::Identity()
+   *
+   * @param[in] volStart Minimum volume supercell, relative to det(G)
+   * @param[in] volEnd Maximum volume supercell, relative to det(G)
+   * @param[in] dims Number of dimensions to enumerate over (1D, 2D or 3D supercells)
+   * @param[in] G Generating matrix. Restricts enumeration to resulting vectors of P*G, where P=primitive.
+   *
    */
 
-  void PrimClex::generate_supercells(int volStart, int volEnd, int dims, const Eigen::Matrix3i &T, bool verbose) {
+  void PrimClex::generate_supercells(int volStart, int volEnd, int dims, const Eigen::Matrix3i &G, bool verbose) {
     Array < Lattice > supercell_lattices;
-    prim.lattice().generate_supercells(supercell_lattices, prim.factor_group(), volStart, volEnd, dims, T);
+    prim.lattice().generate_supercells(supercell_lattices, prim.factor_group(), volStart, volEnd, dims, G);
     for(Index i = 0; i < supercell_lattices.size(); i++) {
       Index list_size = supercell_list.size();
       Index index = add_canonical_supercell(supercell_lattices[i]);

@@ -369,13 +369,15 @@ namespace CASM {
   /// The supercell that is inserted in the 'supercell' container is the niggli cell, rotated to a
   /// standard orientation (see standard_orientation function).
   ///
+  /// See PrimcClex::generate_supercells for information on dims and G.
+  ///
   void Lattice::generate_supercells(Array<Lattice> &supercell,
                                     const SymGroup &effective_pg,
                                     int min_prim_vol,
                                     int max_prim_vol,
                                     int dims,
-                                    const Eigen::Matrix3i &T) const {
-    SupercellEnumerator<Lattice> enumerator(*this, effective_pg, min_prim_vol, max_prim_vol + 1, dims, T);
+                                    const Eigen::Matrix3i &G) const {
+    SupercellEnumerator<Lattice> enumerator(*this, effective_pg, min_prim_vol, max_prim_vol + 1, dims, G);
     supercell.clear();
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
       supercell.push_back(niggli(*it, effective_pg, TOL));

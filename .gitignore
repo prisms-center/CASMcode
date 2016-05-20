@@ -21,6 +21,7 @@
 *~
 *.orig
 [#]*[#]
+*.bkup
 
 # Mac files
 .DS_Store
@@ -31,19 +32,19 @@ stylized.sh
 my_style
 sedme.sh
 .is_stylized.txt
-.color_coded
 
 # Python
 *.pyc
+.color_coded
 
 #vim sessions
-vimrc
 *.vim
 *.local
 .*.swp
 .ycm_extra_conf.py
 .ycm_extra_conf.pyc
 types_c.taghl
+vimrc
 
 #ctags
 tags
@@ -59,4 +60,21 @@ src/general/populator
 
 #binaries
 bin/*
-builds/*
+builds
+
+#autotools self generating
+Makefile
+Makefile.in
+build-aux
+*.log
+*.cache
+*.libs
+*.deps
+*.dirstamp
+*m4
+config.*
+libtool
+stamp-h1
+
+#Other stuff
+*.txt

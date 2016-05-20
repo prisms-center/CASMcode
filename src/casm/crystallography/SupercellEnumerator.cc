@@ -266,23 +266,23 @@ namespace CASM {
     /*
      * This is a generalized way to insert new dimensions into a HNF matrix.
      * If there is a n x n HNF matrix H, it will be expanded to a new non-HNF
-     * m x m matrix E through a m x m transformation matrix T.
+     * m x m matrix T through a m x m generating matrix G.
      *
-     * The first n columns of T will be multiplied with the values of H, while
-     * the last m-n columns of T will remain unaffected. For example, if you
+     * The first n columns of G will be multiplied with the values of H, while
+     * the last m-n columns of G will remain unaffected. For example, if you
      * are counting over a 2x2 H matrix and currently have
      *
      * 2 1
      * 0 3
      *
-     * Then you can specify that you want a 3x3 matrix E so that the values of
-     * H work on your lattice vectors a and c, but not b with a T matrix
+     * Then you can specify that you want a 3x3 matrix T so that the values of
+     * H work on your lattice vectors a and c, but not b with a G matrix
      *
      * 1 0 0
      * 0 0 1
      * 0 1 0
      *
-     * The resulting expanded matrix E is now
+     * The resulting expanded matrix T is now
      *
      * 2 1 0
      * 0 0 1
@@ -296,9 +296,9 @@ namespace CASM {
      * 0 3 0
      * 0 0 1
      *
-     * This way E=T*B
+     * This way T=G*B
      *
-     * You may specify arbitrary combinations of vectors in the columns of T that
+     * You may specify arbitrary combinations of vectors in the columns of G that
      * H will work on.
      *
      * Note that the resulting matrix will probably *NOT* retain it's Hermite normal
@@ -306,13 +306,13 @@ namespace CASM {
      * vectors and the order within the last m-n vectors will not affect your enumerations.
      */
 
-    Eigen::MatrixXi _expand_dims(const Eigen::MatrixXi &H, const Eigen::MatrixXi &T) {
+    Eigen::MatrixXi _expand_dims(const Eigen::MatrixXi &H, const Eigen::MatrixXi &G) {
       assert(H.rows() == H.cols());
-      assert(T.rows() == T.cols());
-      assert(T.rows() >= H.rows());
+      assert(G.rows() == G.cols());
+      assert(G.rows() >= H.rows());
 
       Index n = H.rows();
-      Index m = T.rows();
+      Index m = G.rows();
 
       //First convert H into a block matrix with dimensions m x m, the H block is on the upper left
       Eigen::MatrixXi B(m, m);
@@ -320,7 +320,7 @@ namespace CASM {
       Eigen::MatrixXi Z_block(Eigen::MatrixXi::Zero(n, m - n));
       B << H, Z_block, Z_block.transpose(), I_block;
 
-      return T * B;
+      return G * B;
     }
 
 
@@ -447,15 +447,15 @@ namespace CASM {
                                                     size_type begin_volume,
                                                     size_type end_volume,
                                                     int init_dims,
-                                                    Eigen::Matrix3i init_trans_mat) :
+                                                    Eigen::Matrix3i init_gen_mat) :
     m_unit(unit),
     m_lat(unit),
     m_begin_volume(begin_volume),
     m_end_volume(end_volume),
     m_dims(init_dims),
-    m_trans_mat(init_trans_mat) {
+    m_gen_mat(init_gen_mat) {
 
-    if(m_trans_mat.determinant() < 1) {
+    if(m_gen_mat.determinant() < 1) {
       throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
     }
 
@@ -469,17 +469,17 @@ namespace CASM {
                                                     size_type begin_volume,
                                                     size_type end_volume,
                                                     int init_dims,
-                                                    Eigen::Matrix3i init_trans_mat) :
+                                                    Eigen::Matrix3i init_gen_mat) :
     m_unit(unit),
     m_lat(unit),
     m_point_group(point_grp),
     m_begin_volume(begin_volume),
     m_end_volume(end_volume),
     m_dims(init_dims),
-    m_trans_mat(init_trans_mat)
+    m_gen_mat(init_gen_mat)
 
   {
-    if(m_trans_mat.determinant() < 1) {
+    if(m_gen_mat.determinant() < 1) {
       throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
     }
 
@@ -528,15 +528,19 @@ namespace CASM {
   }
 
 
-  /// \brief Return canonical hermite normal form of the supercell matrix, and op used to find it
+  /// \brief Return canonical hermite normal form of the supercell matrix
   ///
   /// \returns Eigen::Matrix3i of H in canonical form
   ///
-  /// \param T a supercell matrix (Eigen::Matrix3i), such that S = U*T,
+  /// \param T A supercell matrix (Eigen::Matrix3i), such that S = U*T,
   ///          where S is the superlattice and U the unit lattice, as column vector matrices
-  /// \param unitcell the unit BasicStructure<Site>
+  /// \param ref_lattice The lattice the transformation matrix T is meant to be acting on
   ///
-  /// Canonical form is such that T is in hermite normal form (as from casm::hermite_normal_form),
+  /// \param effective_pg Group of symmetry operations to use for determining whether a canonical
+  ///        HNF matrix has been found. This is probably the point group of a structure or configuration
+  //         that has a lattice ref_lat (not to be confused with the point group of ref_lat itself).
+  ///
+  /// Canonical form is such that T is in Hermite normal form (as from CASM::hermite_normal_form),
   ///  and the unrolled coefficients
   /// \code
   /// [a f e]
