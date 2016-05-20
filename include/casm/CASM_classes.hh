@@ -1,4 +1,4 @@
-  #ifndef CASM_CLASSES_HH
+#ifndef CASM_CLASSES_HH
 #define CASM_CLASSES_HH
 
 //#define EIGEN_DEFAULT_DENSE_INDEX_TYPE std::size_t
@@ -127,7 +127,6 @@
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/casm_functions.hh"
-#include "casm/app/query.hh"
 
 // VaspIO
 #include "casm/casm_io/VaspIO.hh"

@@ -27,7 +27,7 @@ namespace CASM {
 
 
   // --- Type ---------------------------
-    
+
   /// \brief Return type of Monte Carlo ensemble
   Monte::ENSEMBLE MonteSettings::ensemble() const {
     try {
@@ -39,7 +39,7 @@ namespace CASM {
       throw e;
     }
   }
-  
+
   /// \brief Return type of Monte Carlo method
   Monte::METHOD MonteSettings::method() const {
     try {
@@ -51,7 +51,7 @@ namespace CASM {
       throw e;
     }
   }
-  
+
   /// \brief Run in debug mode?
   bool MonteSettings::debug() const {
     auto it = find("debug");
@@ -59,6 +59,11 @@ namespace CASM {
       return false;
     }
     return it->get<bool>();
+  }
+
+  /// \brief Set debug mode
+  void MonteSettings::set_debug(bool _debug) {
+    (*this)["debug"] = _debug;
   }
 
 
@@ -73,19 +78,24 @@ namespace CASM {
   std::string MonteSettings::motif_configname() const {
     return _get_setting<std::string>("driver", "motif", "configname");
   }
-  
+
   /// \brief Returns true if path to ConfigDoF file to use as starting motif has been specified
   bool MonteSettings::is_motif_configdof() const {
     return _is_setting("driver", "motif", "configdof");
   }
-  
-  /// \brief Path to ConfigDoF file to use as starting motif
+
+  /// \brief ConfigDoF to use as starting motif
   ConfigDoF MonteSettings::motif_configdof() const {
     fs::path configdof_path = _get_setting<fs::path>("driver", "motif", "configdof");
     return jsonParser(configdof_path).get<ConfigDoF>();
   }
 
-  
+  /// \brief Path to ConfigDoF file to use as starting motif
+  fs::path MonteSettings::motif_configdof_path() const {
+    return _get_setting<fs::path>("driver", "motif", "configdof");
+  }
+
+
   /// \brief Supercell matrix defining the simulation cell
   Eigen::Matrix3i MonteSettings::simulation_cell_matrix() const {
     try {
@@ -135,6 +145,15 @@ namespace CASM {
     }
 
     return dmode;
+  }
+
+  /// \brief If dependent runs, start subsequent calculations with the final state
+  ///        of the previous calculation. Default true.
+  bool MonteSettings::dependent_runs() const {
+    if(!_is_setting("driver", "dependent_runs")) {
+      return true;
+    }
+    return _get_setting<bool>("driver", "dependent_runs");
   }
 
   /// \brief Directory where output should go
@@ -327,7 +346,7 @@ namespace CASM {
       throw e;
     }
   }
-  
+
   /// \brief Returns true if (*this)[level1][level2].contains(level3)
   bool MonteSettings::_is_setting(std::string level1, std::string level2, std::string level3) const {
     try {
@@ -557,7 +576,10 @@ namespace CASM {
   /// \brief Figure out how large data containers should be
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::max_data_length() const {
     try {
-      if(sample_by_pass()) {
+      if(!_is_setting("data", "sample_by")) {
+        return 1024;
+      }
+      else if(sample_by_pass()) {
         if(is_max_pass()) {
           return (max_pass() / sample_period());
         }

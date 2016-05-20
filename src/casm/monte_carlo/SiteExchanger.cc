@@ -4,11 +4,11 @@
 #include "casm/clex/PrimClex.hh"
 
 namespace CASM {
-  
-  
+
+
   // ---- SiteExchanger Definitions ---------------------------------
-  
-  
+
+
   /// \brief Constructor determine possible swaps in the given Supercell
   ///
   ///For Monte Carlo simulations such as Grand Canonical that involve changing the occupants of sites, you need to know:
@@ -38,12 +38,12 @@ namespace CASM {
   ///
   /// Though the order the example of SUPERCELL shows each PRIM is may be off, it is unimportant for this routine. The occupancy array
   /// of the Configurations with parent SUPERCELL will represent sites in the order:
-  /// 
+  ///
   /// OCCUPATION:              |   0   3   6   9   |   1   4   7   10  |   2   5   8   11  |       (!)
-  /// 
+  ///
   /// (!)      The actual occupancy array holds the values of the current occupant. What's shown above is simply meant to show which
   /// sites correspond to each index.
-  /// 
+  ///
   /// Where '|' represents the beginning/end of a primitive basis block (not found in the actual std::vector<int>).
   /// variable_sites is simply a subset of the occupancy array indices, containing only the blocks for sites that
   /// can hold more than one occupant. We don't care about the others because the indices in variable_sites are selected
@@ -51,16 +51,16 @@ namespace CASM {
   /// from primitive sites 0 (A, D) and 2 (A, B, C).
   ///
   /// VARIABLE_SITES:          [   0   1   2   3   8   9   10   11  ]                               (!!)
-  /// 
+  ///
   /// (!!)     Unlike the OCCUPATION example, VARIABLE_SITES shown above would hold these values.
   ///
   ///
   /// We also store the sublattice that each variable_site corresponds to
   ///
   /// SUBLAT:          [   0   0   0   0   2   2   2   2  ]                               (!!)
-  /// 
+  ///
   /// (!!)     Unlike the OCCUPATION example, SUBLAT shown above would hold these values.
-  /// 
+  ///
   /// The result is an array from which we pick a random value, which we use as an index to access a site in the occupancy array
   /// of a Configuration. Whatever site that corresponds to will have more than one allowed occupant. We want to change the current
   /// occupant to something else, but need to know what values that site can go up to. In order to know this we use possible_swap, which
@@ -101,23 +101,23 @@ namespace CASM {
   ///     -SUBLAT_TO_MOL[SUBLAT[6]][1] gives value 1, which corresponds to B in the array of allowed components
   ///
   SiteExchanger::SiteExchanger(const Supercell &scel) {
-    
+
     //The occupants in a Configuration are ordered in blocks of basis sites.
     int scel_volume = scel.volume();
-    
+
     //int scel_basis = scel->basis_size();
     int prim_basis = scel.get_prim().basis.size();
     std::vector<std::string> allowed_components = scel.get_primclex().composition_axes().components();
 
     //Count over sites in prim basis.
     for(Index prim_basis_site = 0; prim_basis_site < prim_basis; prim_basis_site++) {
-      
+
       //If the site we're working allows multiple occupants, we're interested in filling up values for it.
-      const auto& allowed = scel.get_prim().basis[prim_basis_site].allowed_occupants();
+      const auto &allowed = scel.get_prim().basis[prim_basis_site].allowed_occupants();
       std::vector<std::string> site_allowed_occ(allowed.cbegin(), allowed.cend());
-      
+
       if(site_allowed_occ.size() > 1) {
-        
+
         //This is the center array of possible_swap and changes with each prim_basis_site with more than one allowed occupant
         std::vector<std::vector<int> > single_possible_swap;
 
@@ -153,7 +153,7 @@ namespace CASM {
           //Save the index into allowed_components
           single_site_to_mol.push_back(mol_ind);
         }
-        
+
         //possible_swap has blocks of identical double arrays single_possible_swap. They get pushed back the appropriate amount of times here
         m_possible_swap.push_back(single_possible_swap);
 
@@ -161,29 +161,29 @@ namespace CASM {
         m_sublat_to_mol.push_back(single_site_to_mol);
 
         // This loop should happen scel_volume times and takes care of repeating values in m_variable_sites and m_sublat
-        // the appropriate amount of times. Both m_variable_sites and m_sublat have the same length on the outside: one 
+        // the appropriate amount of times. Both m_variable_sites and m_sublat have the same length on the outside: one
         // slot for each site in the Configuration that can hold more than one occupant.
         for(int variable_site = prim_basis_site * scel_volume; variable_site < prim_basis_site * scel_volume + scel_volume; variable_site++) {
-          
-          // variable_sites determined by the counter. Contains indexes of sites in the Configuration that allow 
+
+          // variable_sites determined by the counter. Contains indexes of sites in the Configuration that allow
           // more than one occupant
           m_variable_sites.push_back(variable_site);
-          
+
           // store the sublat index
           m_sublat.push_back(prim_basis_site);
-          
+
         }
       }
 
       //Here we populate m_possible_swap and m_sublat_to_mol for sublattices that only have a single allowed occupant.
       else {
-        
+
         //In this else block, single_site_to_mol can only have a single value in the array
         std::vector<int> single_site_to_mol;
-        
+
         //The one and only allowed occupant at prim_basis_site must be
         std::string only_site_occ = scel.get_prim().basis[prim_basis_site].allowed_occupants()[0];
-        
+
         //And the corresponding index for that occupant in terms of allowed_components is
         int mol_ind = std::find(allowed_components.cbegin(), allowed_components.cend(), only_site_occ) - allowed_components.cbegin();
         if(mol_ind == allowed_components.size()) {
@@ -192,14 +192,14 @@ namespace CASM {
           std::cerr << "Could not find " << only_site_occ << " in the allowed components of the PrimClex prim." << std::endl;
           exit(9000);
         }
-        
+
         // No swaps are possible on this sublattice, so we push back empty std::vector<std::vector<int> >
         std::vector<std::vector<int> > single_possible_swap;
         m_possible_swap.push_back(single_possible_swap);
 
         //Put that single value we found into the array
         single_site_to_mol.push_back(mol_ind);
-        
+
         m_sublat_to_mol.push_back(single_site_to_mol);
 
       }

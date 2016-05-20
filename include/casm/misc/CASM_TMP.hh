@@ -41,7 +41,7 @@ namespace CASM {
     /// - T is considered an iterator if it is incrementable, dereferenceable, and comparable
     template <typename T>
     struct is_iterator < T,
-           void_t < decltype(++std::declval<T &>()),
+    void_t < decltype(++std::declval<T &>()),
            decltype(*std::declval<T &>()),
            decltype(std::declval<T &>() == std::declval<T &>()) > >
        : std::true_type { };

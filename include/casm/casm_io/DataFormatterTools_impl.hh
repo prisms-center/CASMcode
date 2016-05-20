@@ -58,7 +58,7 @@ namespace CASM {
         //std::cout << "About to push_back parsed formatter!!\n";
         //can throw, should be handled by caller
         const BaseDatumFormatter<DataObject> &proto_format = *this->home().lookup(ttag);
-        
+
         m_arg_formatter.push_back(proto_format, subexprs[i]);
 
       }

@@ -16,11 +16,11 @@ namespace CASM {
   //                                **** Constructors ****
   //*******************************************************************************************
   /// Initial construction of a PrimClex, from a primitive Structure
-  PrimClex::PrimClex(const Structure &_prim) :
+  PrimClex::PrimClex(const Structure &_prim, Log &log) :
     prim(_prim),
     global_orbitree(_prim.lattice()) {
 
-    _init(std::cerr);
+    _init(log);
 
     return;
   }
@@ -29,20 +29,23 @@ namespace CASM {
   //*******************************************************************************************
   /// Construct PrimClex from existing CASM project directory
   ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-  PrimClex::PrimClex(const fs::path &_root, std::ostream &sout):
+  PrimClex::PrimClex(const fs::path &_root, Log &log):
     root(_root),
     m_dir(_root),
     m_settings(_root),
     prim(read_prim(m_dir.prim())),
     global_orbitree(prim.lattice()) {
 
-    _init(sout);
+    _init(log);
 
   }
 
   /// Initialization routines
   ///  - If !root.empty(), read all saved data to generate all Supercells and Configurations, etc.
-  void PrimClex::_init(std::ostream &sout) {
+  void PrimClex::_init(Log &log) {
+
+    log.construct("CASM Project");
+    log << "from: " << root << "\n";
 
     std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
 
@@ -77,7 +80,7 @@ namespace CASM {
       from_json(m_name, settings["name"]);
     }
     catch(std::exception &e) {
-      std::cerr << "Error in PrimClex::PrimClex(const fs::path &_root, std::ostream &sout) reading .casmroot" << std::endl;
+      std::cerr << "Error in PrimClex::PrimClex(const fs::path &_root, Log &_log) reading .casmroot" << std::endl;
       std::cerr << e.what() << std::endl;
       exit(1);
     }
@@ -85,7 +88,7 @@ namespace CASM {
     // read param composition
     auto comp_axes = m_dir.composition_axes(m_settings.calctype(), m_settings.ref());
     if(fs::is_regular_file(comp_axes)) {
-      sout << "  Read " << comp_axes << std::endl;
+      log << "read: " << comp_axes << "\n";
 
       CompositionAxes opt(comp_axes);
 
@@ -98,14 +101,14 @@ namespace CASM {
     // read chemical reference
     auto chem_ref_path = m_dir.chemical_reference(m_settings.calctype(), m_settings.ref());
     if(fs::is_regular_file(chem_ref_path)) {
-      sout << "  Read " << chem_ref_path << std::endl;
+      log << "read: " << chem_ref_path << "\n";
       m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim, 1e-14));
     }
 
     // read supercells
     if(fs::is_regular_file(root / "training_data" / "SCEL")) {
 
-      sout << "  Read " << root / "training_data" / "SCEL" << std::endl;
+      log << "read: " << root / "training_data" / "SCEL" << "\n";
       fs::ifstream scel(root / "training_data" / "SCEL");
       read_supercells(scel);
 
@@ -114,11 +117,11 @@ namespace CASM {
     // read config_list
     if(fs::is_regular_file(get_config_list_path())) {
 
-      sout << "  Read " << get_config_list_path() << std::endl;
+      log << "read: " << get_config_list_path() << "\n";
       read_config_list();
     }
 
-
+    log << std::endl;
   }
 
 

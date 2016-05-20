@@ -1,8 +1,4 @@
-#include "ref.hh"
-
-#include <cstring>
-
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/CASM_classes.hh"
 #include "casm/casm_io/json_io/clex.hh"
 
@@ -131,7 +127,7 @@ namespace CASM {
   // 'ref' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int ref_command(int argc, char *argv[]) {
+  int ref_command(const CommandArgs &args) {
 
     po::variables_map vm;
     int choice;
@@ -141,7 +137,7 @@ namespace CASM {
 
     std::string species_order_string = "\n\n";
 
-    fs::path root = find_casmroot(fs::current_path());
+    const fs::path &root = args.root;
     if(!root.empty()) {
       std::stringstream ss;
       DirectoryStructure dir(root);
@@ -181,7 +177,7 @@ namespace CASM {
 
 
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::store(po::parse_command_line(args.argc, args.argv, desc), vm);
 
         bool call_help = false;
 
@@ -311,16 +307,16 @@ namespace CASM {
     }
 
     if(root.empty()) {
-      std::cout << "Error in 'casm ref': No casm project found." << std::endl;
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
 
-    std::cout << "\n***************************\n" << std::endl;
 
-    // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
-    std::cout << "  DONE." << std::endl << std::endl;
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
     std::string calctype = primclex.settings().calctype();
     std::string ref = primclex.settings().ref();

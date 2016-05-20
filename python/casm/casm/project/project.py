@@ -19,41 +19,38 @@ else:
 lib_ccasm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
 
 #### Argument types
-lib_ccasm.STDOUT.restype = ctypes.c_void_p
+
+lib_ccasm.casm_STDOUT.restype = ctypes.c_void_p
+
+lib_ccasm.casm_STDERR.restype = ctypes.c_void_p
 
 
-lib_ccasm.STDERR.restype = ctypes.c_void_p
+lib_ccasm.casm_nullstream_new.restype = ctypes.c_void_p
+
+lib_ccasm.casm_nullstream_delete.argtypes = [ctypes.c_void_p]
+lib_ccasm.casm_nullstream_delete.restype = None
 
 
-lib_ccasm.nullstream_new.restype = ctypes.c_void_p
+lib_ccasm.casm_ostringstream_new.restype = ctypes.c_void_p
 
-lib_ccasm.nullstream_delete.argtypes = [ctypes.c_void_p]
-lib_ccasm.nullstream_delete.restype = None
+lib_ccasm.casm_ostringstream_delete.argtypes = [ctypes.c_void_p]
+lib_ccasm.casm_ostringstream_delete.restype = None
 
+lib_ccasm.casm_ostringstream_size.argtypes = [ctypes.c_void_p]
+lib_ccasm.casm_ostringstream_size.restype = ctypes.c_ulong
 
-lib_ccasm.ostringstream_new.restype = ctypes.c_void_p
-
-lib_ccasm.ostringstream_delete.argtypes = [ctypes.c_void_p]
-lib_ccasm.ostringstream_delete.restype = None
-
-lib_ccasm.ostringstream_size.argtypes = [ctypes.c_void_p]
-lib_ccasm.ostringstream_size.restype = ctypes.c_ulong
-
-lib_ccasm.ostringstream_strcpy.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_char)]
-lib_ccasm.ostringstream_strcpy.restype = ctypes.POINTER(ctypes.c_char)
+lib_ccasm.casm_ostringstream_strcpy.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_char)]
+lib_ccasm.casm_ostringstream_strcpy.restype = ctypes.POINTER(ctypes.c_char)
 
 
-lib_ccasm.primclex_new.argtypes = [ctypes.c_char_p, ctypes.c_void_p]
-lib_ccasm.primclex_new.restype = ctypes.c_void_p
+lib_ccasm.casm_primclex_new.argtypes = [ctypes.c_char_p, ctypes.c_void_p]
+lib_ccasm.casm_primclex_new.restype = ctypes.c_void_p
 
-lib_ccasm.primclex_delete.argtypes = [ctypes.c_void_p]
-lib_ccasm.primclex_delete.restype = None
+lib_ccasm.casm_primclex_delete.argtypes = [ctypes.c_void_p]
+lib_ccasm.casm_primclex_delete.restype = None
 
-lib_ccasm.primclex_check.argtypes = [ctypes.c_void_p]
-lib_ccasm.primclex_check.restype = None
-
-lib_ccasm.query.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
-# default lib_ccasm.query.restype
+lib_ccasm.casm_capi.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+lib_ccasm.casm_capi.restype = ctypes.c_int
 
 
 class ProjectSettings(object):
@@ -413,15 +410,15 @@ class Project(object):
       """
       if self._ptr is None:
         if self.verbose:
-          streamptr = lib_ccasm.STDOUT()
+          streamptr = lib_ccasm.casm_STDOUT()
         else:
-          streamptr = lib_ccasm.ostringstream_new()
+          streamptr = lib_ccasm.casm_ostringstream_new()
         
-        self._ptr = lib_ccasm.primclex_new(self.path, streamptr)
+        self._ptr = lib_ccasm.casm_primclex_new(self.path, streamptr)
         
         if not self.verbose:
-          #qstr = ctypes.create_string_buffer(lib_ccasm.ostringstream_size(ss))
-          lib_ccasm.ostringstream_delete(streamptr)
+          #qstr = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss))
+          lib_ccasm.casm_ostringstream_delete(streamptr)
         
     
     def __unload(self):
@@ -429,7 +426,7 @@ class Project(object):
       Explicitly unload CASM project from memory.
       """
       if self._ptr is not None:
-        lib_ccasm.primclex_delete(self._ptr)
+        lib_ccasm.casm_primclex_delete(self._ptr)
         self._ptr = None
         
     
@@ -438,11 +435,23 @@ class Project(object):
       Returns a 'ctypes.c_void_p' that points to a CASM project. (PrimClex)
       """
       self.__load()
-      #lib_ccasm.primclex_check(self._ptr)
       return self._ptr
     
-        
+    
     def command(self, args):
+      """
+      Execute a command via the c api. 
+      
+      Args:
+        args: A string containing the command to be executed. Ex: "select --set-on -o /abspath/to/my_selection"
+      
+      Returns:
+        (stdout, stderr, returncode): The result of running the command via the command line iterface
+      """
+      return self.command_via_capi(args)
+    
+        
+    def command_via_cli(self, args):
       """
       Execute a command via the command line interface. 
       
@@ -450,11 +459,44 @@ class Project(object):
         args: A string containing the command to be executed. Ex: "select --set-on -o /abspath/to/my_selection"
       
       Returns:
-        (stdout, stderr): The result of running the command via the command line iterface
+        (stdout, stderr, returncode): The result of running the command via the command line iterface
       """
       cwd = os.getcwd()
       os.chdir(self.path)
-      result = subprocess.Popen([self.casm_exe] + args.split(),stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()
+      child = subprocess.Popen([self.casm_exe] + args.split(),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+      result = child.communicate()
       os.chdir(cwd)
-      return result
-
+      return (result[0], result[1], child.returncode)
+    
+    
+    def command_via_capi(self, args):
+      """
+      Execute a command via the c api. 
+      
+      Args:
+        args: A string containing the command to be executed. Ex: "select --set-on -o /abspath/to/my_selection"
+      
+      Returns:
+        (stdout, stderr, returncode): The result of running the command via the command line iterface
+      """
+      cwd = os.getcwd()
+      os.chdir(self.path)
+      
+      # construct stringstream objects to capture stdout, stderr
+      ss = lib_ccasm.casm_ostringstream_new()
+      ss_err = lib_ccasm.casm_ostringstream_new()
+      
+      res = lib_ccasm.casm_capi(args, self.data(), ss, ss_err)
+      
+      # copy string and delete stringstream
+      qstr = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss))
+      lib_ccasm.casm_ostringstream_strcpy(ss, qstr)
+      lib_ccasm.casm_ostringstream_delete(ss)
+      
+      # copy string and delete stringstream
+      qstr_err = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss_err))
+      lib_ccasm.casm_ostringstream_strcpy(ss_err, qstr_err)
+      lib_ccasm.casm_ostringstream_delete(ss_err)
+      
+      return (qstr, qstr_err, res)
+      

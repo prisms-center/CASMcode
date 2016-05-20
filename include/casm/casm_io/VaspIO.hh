@@ -102,7 +102,7 @@ namespace CASM {
           m_atom_names(true),
           m_append_atom_names(true),
           m_sel_dynamics(false),
-          m_ignore{"VA", "Va", "va"} {}
+          m_ignore {"VA", "Va", "va"} {}
 
         /// \brief Construct PrintPOSCAR object
         ///

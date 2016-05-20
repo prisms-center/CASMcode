@@ -644,6 +644,7 @@ namespace CASM {
   //*******************************************************************************
 
   jsonParser &ConfigDoF::to_json(jsonParser &json) const {
+    json = jsonParser::object();
     if(occupation().size())
       json["occupation"] = occupation();
     if(displacement().size())

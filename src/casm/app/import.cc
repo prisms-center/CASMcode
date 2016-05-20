@@ -1,12 +1,9 @@
-#include "import.hh"
-
 #include <cstring>
 #include <tuple>
 
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
+#include "casm/crystallography/jsonStruc.hh"
 #include "casm/CASM_classes.hh"
-//#include "casm/clex/ConfigMapping.hh"
-//#include "casm/casm_io/FileSystemInterface.hh"
 
 namespace CASM {
   namespace Import_impl {
@@ -34,7 +31,7 @@ namespace CASM {
   ///       - relaxed_structure.vasp gives the relaxed structure in a setting and orientation that matches the
   ///         generated POS file
   ///
-  int import_command(int argc, char *argv[]) {
+  int import_command(const CommandArgs &args) {
 
     double tol(TOL);
     COORD_TYPE coordtype = FRAC;
@@ -62,7 +59,7 @@ namespace CASM {
 
     try {
 
-      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
       /** --help option
        */
@@ -134,22 +131,19 @@ namespace CASM {
     }
 
     COORD_MODE C(coordtype);
-    fs::path pwd = fs::current_path();
-    fs::path root = find_casmroot(pwd);
+
+    const fs::path &root = args.root;
     if(root.empty()) {
-      std::cerr << "ERROR in 'casm import': No casm project found." << std::endl;
-      return 9;
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
+      return ERR_NO_PROJ;
     }
 
-
-
-    std::cout << "\n***************************" << std::endl << std::endl;
-
-    // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
-    std::cout << "  DONE." << std::endl << std::endl;
-
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    fs::path pwd = fs::current_path();
 
     int map_opt = ConfigMapper::none;
     if(vm.count("rotate")) map_opt |= ConfigMapper::rotate;

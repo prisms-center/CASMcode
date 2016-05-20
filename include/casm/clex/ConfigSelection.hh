@@ -133,8 +133,8 @@ namespace CASM {
 
     const jsonParser &from_json(const jsonParser &_json);
 
-    jsonParser &to_json(const DataFormatterDictionary<Configuration>& _dict,
-                        jsonParser &_json, 
+    jsonParser &to_json(const DataFormatterDictionary<Configuration> &_dict,
+                        jsonParser &_json,
                         bool only_selected = false) const;
 
     /// \brief check if configuration is selected (returns false if 'configname' cannot be found
@@ -209,7 +209,7 @@ namespace CASM {
       return m_name;
     }
 
-    void print(const DataFormatterDictionary<Configuration>& _dict,
+    void print(const DataFormatterDictionary<Configuration> &_dict,
                std::ostream &_out,
                bool only_selected = false) const;
 

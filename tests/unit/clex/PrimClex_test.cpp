@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE(Basics) {
   BOOST_CHECK_EQUAL(prim.basis.size(), 1);
 
   // Construct from prim
-  PrimClex primclex(prim);
+  PrimClex primclex(prim, null_log());
   BOOST_CHECK_EQUAL(primclex.get_prim().basis.size(), 1);
 
   // Copy construct

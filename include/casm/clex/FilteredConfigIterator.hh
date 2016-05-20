@@ -28,10 +28,10 @@ namespace CASM {
 
     FilteredConfigIterator() {};
 
-    FilteredConfigIterator(const IteratorType &_begin, 
-                           const IteratorType &_end, 
+    FilteredConfigIterator(const IteratorType &_begin,
+                           const IteratorType &_end,
                            const std::string &filter_expr,
-                           const DataFormatterDictionary<Configuration>& _dict): m_it(_begin), m_end(_end) {
+                           const DataFormatterDictionary<Configuration> &_dict): m_it(_begin), m_end(_end) {
       m_filter = _dict.parse(filter_expr);
       ValueDataStream<bool> _stream;
       if(m_it != m_end) {
@@ -41,10 +41,10 @@ namespace CASM {
       }
     }
 
-    FilteredConfigIterator(const IteratorType &_begin, 
-                           const IteratorType &_end, 
+    FilteredConfigIterator(const IteratorType &_begin,
+                           const IteratorType &_end,
                            const std::vector<std::string> &filter_expr,
-                           const DataFormatterDictionary<Configuration>& _dict): m_it(_begin), m_end(_end) {
+                           const DataFormatterDictionary<Configuration> &_dict): m_it(_begin), m_end(_end) {
       m_filter = _dict.parse(filter_expr);
       ValueDataStream<bool> _stream;
       if(m_it != m_end) {
@@ -113,10 +113,10 @@ namespace CASM {
 
   template<typename IteratorType>
   FilteredConfigIterator<IteratorType> filter_begin(
-      const IteratorType &it, 
-      const IteratorType &it_end, 
-      const std::vector<std::string> &filter_expr,
-      const DataFormatterDictionary<Configuration>& _dict) {
+    const IteratorType &it,
+    const IteratorType &it_end,
+    const std::vector<std::string> &filter_expr,
+    const DataFormatterDictionary<Configuration> &_dict) {
     return FilteredConfigIterator<IteratorType>(it, it_end, filter_expr, _dict);
   }
 
