@@ -18421,7 +18421,7 @@ fi
 done
 
 
-ac_config_files="$ac_config_files Makefile apps/auto/Makefile apps/casm/Makefile src/casm/Makefile"
+ac_config_files="$ac_config_files Makefile apps/auto/Makefile apps/casm/Makefile src/ccasm/Makefile src/casm/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -19539,6 +19539,7 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "apps/auto/Makefile") CONFIG_FILES="$CONFIG_FILES apps/auto/Makefile" ;;
     "apps/casm/Makefile") CONFIG_FILES="$CONFIG_FILES apps/casm/Makefile" ;;
+    "src/ccasm/Makefile") CONFIG_FILES="$CONFIG_FILES src/ccasm/Makefile" ;;
     "src/casm/Makefile") CONFIG_FILES="$CONFIG_FILES src/casm/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

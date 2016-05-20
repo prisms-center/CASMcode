@@ -60,5 +60,6 @@ AC_CHECK_FUNCS([floor iswprint memmove memset mkdir pow rmdir select sqrt strchr
 AC_CONFIG_FILES([Makefile
                  apps/auto/Makefile
                  apps/casm/Makefile
+                 src/ccasm/Makefile
                  src/casm/Makefile])
 AC_OUTPUT
