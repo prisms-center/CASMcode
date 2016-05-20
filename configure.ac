@@ -1,13 +1,13 @@
-VERSION=0.0.0
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([CASM], [$VERSION], [casm@casm.edu])
+AC_INIT([CASM], [0.0.0], [casm@casm.edu])
+AC_CONFIG_AUX_DIR([build-aux]) #This is my doing
 #Rules to apply to every Makefile.am
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
-AC_CONFIG_SRCDIR([include/casm/CASM_global_definitions.hh])
+AC_CONFIG_SRCDIR([src/casm/CASM_global_definitions.cc])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
@@ -25,8 +25,8 @@ AC_CHECK_LIB([z], [gzread])
 #AC_CHECK_LIB([z], [gzclose])
 
 #I added this
-LT_INIT
-AC_DISABLE_STATIC
+LT_INIT([shared disable-static])
+#AC_DISABLE_STATIC
 AX_CXX_COMPILE_STDCXX_11
 BOOSTV=1.52
 AX_BOOST_BASE([$BOOSTV],[],[AC_MSG_ERROR(You need Boost $BOOSTV libraries or higher.)])
