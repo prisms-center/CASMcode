@@ -35,6 +35,10 @@ AX_BOOST_SYSTEM
 AX_BOOST_REGEX
 AX_BOOST_CHRONO
 AX_BOOST_PROGRAM_OPTIONS
+AX_BOOST_UNIT_TEST_FRAMEWORK
+
+#Require at least this version
+AM_PATH_PYTHON([2.7])
 
 # Checks for header files.
 AC_CHECK_HEADERS([float.h limits.h stdlib.h string.h sys/time.h unistd.h])
