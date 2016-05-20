@@ -8,7 +8,7 @@ namespace CASM {
   /// \brief Equivalent to std::find(begin, end, value), but with custom comparison
   template<typename Iterator, typename T, typename BinaryCompare>
   Iterator find(Iterator begin, Iterator end, const T &value, BinaryCompare q) {
-    return std::find_if(begin, end, [&value, q](const T & other)->bool{return q(value, other);});
+    return std::find_if(begin, end, [&value, q](const T & other)->bool {return q(value, other);});
   }
 
   /// \brief Equivalent to std::distance(begin, std::find(begin, end, value))

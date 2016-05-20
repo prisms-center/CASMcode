@@ -16,7 +16,7 @@ namespace CASM {
   ChemicalReferenceState::ChemicalReferenceState(
     const Configuration &config,
     std::function<Eigen::VectorXd(Configuration)> n,
-    std::function<double (Configuration)> e) {
+    std::function<double(Configuration)> e) {
 
     auto names = config.get_prim().get_struc_molecule_name();
     auto vec = n(config);

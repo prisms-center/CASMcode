@@ -20,7 +20,7 @@ namespace CASM {
     /// \brief Construct using the results of n(config), and e(config)
     ChemicalReferenceState(const Configuration &config,
                            std::function<Eigen::VectorXd(Configuration)> n,
-                           std::function<double (Configuration)> e);
+                           std::function<double(Configuration)> e);
 
     /// Map of Molecule name : number of each species in reference state
     std::map<std::string, double> species_num;

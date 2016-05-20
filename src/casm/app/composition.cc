@@ -1,10 +1,7 @@
-#include "composition.hh"
-
 #include<cstring>
 
 #include "casm/CASM_classes.hh"
-#include "casm_functions.hh"
-
+#include "casm/app/casm_functions.hh"
 #include "casm/app/AppIO.hh"
 
 namespace CASM {
@@ -45,7 +42,7 @@ namespace CASM {
   // 'composition' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int composition_command(int argc, char *argv[]) {
+  int composition_command(const CommandArgs &args) {
     po::variables_map vm;
     std::string choice;
 
@@ -59,7 +56,7 @@ namespace CASM {
       //("update,u", "Update composition and references based on current 'composition_axes.json' file");
 
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::store(po::parse_command_line(args.argc, args.argv, desc), vm);
 
         bool call_help = false;
 
@@ -123,15 +120,17 @@ namespace CASM {
 
     }
 
-    fs::path root = find_casmroot(fs::current_path());
+    const fs::path &root = args.root;
     if(root.empty()) {
-      std::cout << "Error in 'casm composition': No casm project found." << std::endl;
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
 
-    // initialize primclex
-    Log log(std::cout);
-    PrimClex primclex(root, log);
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
     const DirectoryStructure &dir = primclex.dir();
     std::string calctype = primclex.settings().calctype();

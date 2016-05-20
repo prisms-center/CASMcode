@@ -64,33 +64,33 @@ namespace CASM {
 
 
     // --- Type ---------------------------
-    
+
     /// \brief Return type of Monte Carlo ensemble
     Monte::ENSEMBLE ensemble() const;
-    
+
     /// \brief Return type of Monte Carlo method
     Monte::METHOD method() const;
-    
+
     /// \brief Run in debug mode?
     bool debug() const;
-    
+
     /// \brief Set debug mode
     void set_debug(bool _debug);
 
     // --- Initialization ---------------------
-    
+
     /// \brief Returns true if configname of configuration to use as starting motif has been specified
     bool is_motif_configname() const;
-    
+
     /// \brief Configname of configuration to use as starting motif
     std::string motif_configname() const;
-    
+
     /// \brief Returns true if path to ConfigDoF file to use as starting motif has been specified
     bool is_motif_configdof() const;
-    
+
     /// \brief ConfigDoF to use as starting motif
     ConfigDoF motif_configdof() const;
-    
+
     /// \brief Path to ConfigDoF file to use as starting motif
     fs::path motif_configdof_path() const;
 
@@ -102,8 +102,8 @@ namespace CASM {
 
     /// \brief Given a settings jsonParser figure out the drive mode. Expects drive_mode/single,incremental
     virtual const Monte::DRIVE_MODE drive_mode() const;
-    
-    /// \brief If dependent runs, start subsequent calculations with the final state 
+
+    /// \brief If dependent runs, start subsequent calculations with the final state
     ///        of the previous calculation. Default true.
     bool dependent_runs() const;
 
@@ -140,14 +140,14 @@ namespace CASM {
 
     /// \brief Returns true if (*this)[level1].contains(level2)
     bool _is_setting(std::string level1, std::string level2) const;
-    
+
     /// \brief Returns true if (*this)[level1][level2].contains(level3)
     bool _is_setting(std::string level1, std::string level2, std::string level3) const;
 
     /// \brief Returns (*this)[level1][level2].get<T>();
     template<typename T>
     T _get_setting(std::string level1, std::string level2) const;
-    
+
     /// \brief Returns (*this)[level1][level2][level3].get<T>();
     template<typename T>
     T _get_setting(std::string level1, std::string level2, std::string level3) const;
@@ -301,7 +301,7 @@ namespace CASM {
       throw;
     }
   }
-  
+
   /// \brief Returns (*this)[level1][level2][level3].get<T>();
   template<typename T>
   T MonteSettings::_get_setting(std::string level1, std::string level2, std::string level3) const {
@@ -317,7 +317,7 @@ namespace CASM {
       if(this->contains(level1)) {
         if(this->contains(level2)) {
           std::cerr << "Found Settings[\"" << level1 << "\"][\"" << level2 << "\"], \n"
-                       "but not [\"" << level1 << "\"][\"" << level2 << "\"][\"" << level3 << "\"]" << std::endl;
+                    "but not [\"" << level1 << "\"][\"" << level2 << "\"][\"" << level3 << "\"]" << std::endl;
           std::cerr << "Settings[\"" << level1 << "\"][\"" << level2 << "\"]:\n" << (*this)[level1][level2] << std::endl;
         }
         else {

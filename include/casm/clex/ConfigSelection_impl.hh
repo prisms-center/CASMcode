@@ -2,6 +2,7 @@
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigIterator.hh"
+#include "casm/clex/ConfigIOSelected.hh"
 namespace CASM {
 
 
@@ -128,9 +129,9 @@ namespace CASM {
 
   template <bool IsConst>
   jsonParser &ConfigSelection<IsConst>::to_json(
-      const DataFormatterDictionary<Configuration>& _dict,
-      jsonParser &_json, 
-      bool only_selected) const {
+    const DataFormatterDictionary<Configuration> &_dict,
+    jsonParser &_json,
+    bool only_selected) const {
     _json.put_array();
 
     DataFormatter<Configuration> tformat(ConfigIO::configname(), datum_formatter_alias("selected", ConfigIO::selected_in(*this)));
@@ -151,9 +152,9 @@ namespace CASM {
   //******************************************************************************
   template <bool IsConst>
   void ConfigSelection<IsConst>::print(
-      const DataFormatterDictionary<Configuration>& _dict,
-      std::ostream &_out, 
-      bool only_selected) const {
+    const DataFormatterDictionary<Configuration> &_dict,
+    std::ostream &_out,
+    bool only_selected) const {
     DataFormatter<Configuration> tformat(ConfigIO::configname(), datum_formatter_alias("selected", ConfigIO::selected_in(*this)));
 
     tformat.append(_dict.parse(m_col_headers));

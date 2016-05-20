@@ -1,9 +1,5 @@
-#include "sym.hh"
-
-#include<cstring>
-
 #include "casm/CASM_classes.hh"
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 
 namespace CASM {
 
@@ -11,7 +7,7 @@ namespace CASM {
   // 'sym' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int sym_command(int argc, char *argv[]) {
+  int sym_command(const CommandArgs &args) {
     std::string name;
     COORD_TYPE coordtype;
     po::variables_map vm;
@@ -28,7 +24,7 @@ namespace CASM {
       ("coord", po::value<COORD_TYPE>(&coordtype)->default_value(CASM::CART), "Coord mode: FRAC=0, or CART=1");
 
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
         /** --help option
         */
@@ -60,14 +56,12 @@ namespace CASM {
 
     COORD_MODE C(coordtype);
 
-    fs::path root = find_casmroot(fs::current_path());
+    const fs::path &root = args.root;
     if(root.empty()) {
-      std::cerr << "Error: No casm project found." << std::endl;
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
-
-
-    std::cout << "\n***************************\n" << std::endl;
 
     DirectoryStructure dir(root);
     ProjectSettings set(root);

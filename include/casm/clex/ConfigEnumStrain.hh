@@ -4,6 +4,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/strain/StrainConverter.hh"
 #include "casm/clex/ConfigEnum.hh"
+#include "casm/container/Counter.hh"
 
 namespace CASM {
 

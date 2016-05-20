@@ -1,14 +1,13 @@
-#include "select.hh"
-
-#include <cstring>
-
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/CASM_global_definitions.hh"
+#include "casm/casm_io/DataFormatter.hh"
+#include "casm/clex/Configuration.hh"
+#include "casm/clex/ConfigSelection.hh"
 
 namespace CASM {
 
   template<typename ConfigIterType>
-  void set_selection(const DataFormatterDictionary<Configuration>& dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, bool mk) {
+  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, bool mk) {
     //boost::trim(criteria);
 
     if(criteria.size()) {
@@ -30,7 +29,7 @@ namespace CASM {
   }
 
   template<typename ConfigIterType>
-  void set_selection(const DataFormatterDictionary<Configuration>& dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria) {
+  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria) {
     //boost::trim(criteria);
 
     if(criteria.size()) {
@@ -46,7 +45,7 @@ namespace CASM {
   }
 
   template<bool IsConst>
-  bool write_selection(const DataFormatterDictionary<Configuration>& dict, const ConfigSelection<IsConst> &config_select, bool force, const fs::path &out_path, bool write_json, bool only_selected) {
+  bool write_selection(const DataFormatterDictionary<Configuration> &dict, const ConfigSelection<IsConst> &config_select, bool force, const fs::path &out_path, bool write_json, bool only_selected) {
     if(fs::exists(out_path) && !force) {
       std::cerr << "File " << out_path << " already exists. Use --force to force overwrite." << std::endl;
       return ERR_EXISTING_FILE;
@@ -69,7 +68,7 @@ namespace CASM {
     return 0;
   }
 
-  void select_help(const DataFormatterDictionary<Configuration>& _dict, std::ostream &_stream, std::vector<std::string> help_opt) {
+  void select_help(const DataFormatterDictionary<Configuration> &_dict, std::ostream &_stream, std::vector<std::string> help_opt) {
     _stream << "DESCRIPTION" << std::endl
             << "\n"
             << "    Use '[--set | --set-on | --set-off] [criteria]' for specifying or editing a selection.\n";
@@ -94,7 +93,7 @@ namespace CASM {
   // 'select' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int select_command(int argc, char *argv[], PrimClex *_primclex) {
+  int select_command(const CommandArgs &args) {
 
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
@@ -130,7 +129,7 @@ namespace CASM {
     std::vector<std::string> allowed_cmd = {"and", "or", "xor", "not", "set-on", "set-off", "set"};
 
     try {
-      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
       Index num_cmd(0);
       for(const std::string &cmd_str : allowed_cmd) {
         if(vm.count(cmd_str)) {
@@ -168,7 +167,7 @@ namespace CASM {
 
       // Finish --help option
       if(vm.count("help")) {
-        fs::path root = find_casmroot(fs::current_path());
+        const fs::path &root = args.root;
         if(root.empty()) {
           auto dict = make_dictionary<Configuration>();
           select_help(dict, std::cout, help_opt_vec);
@@ -221,22 +220,22 @@ namespace CASM {
       selection.push_back("MASTER");
     }
 
-    // switch to root directory
-    fs::path orig_path = fs::current_path();
-    fs::path root = find_casmroot(orig_path);
+    const fs::path &root = args.root;
     if(root.empty()) {
-      std::cerr << "Error: No casm project found." << std::endl;
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
 
-    // initialize primclex
-    Log log(std::cout);
-    PrimClex primclex(root, log);
-    ProjectSettings& set = primclex.settings();
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    ProjectSettings &set = primclex.settings();
 
     // load initial selection into config_select -- this is also the selection that will be printed at end
     ConfigSelection<false> config_select(primclex, selection[0]);
-    
+
     set.set_selected(config_select);
 
     if(vm.count("set-on") || vm.count("set-off") || vm.count("set")) {

@@ -334,9 +334,9 @@ namespace CASM {
   void CompositionAxes::read(const jsonParser &json, fs::path _filename) {
 
     try {
-      
+
       *this = CompositionAxes();
-      
+
       filename = _filename;
 
       filename = _filename;
@@ -348,7 +348,7 @@ namespace CASM {
       if(json.contains("custom_axes")) {
         read_composition_axes(std::inserter(custom, custom.begin()), json["custom_axes"]);
       }
-      
+
       std::string key;
       has_current_axes = json.get_if(key, "current_axes");
 
@@ -394,7 +394,7 @@ namespace CASM {
     }
 
   }
-  
+
   /// \brief Set this->curr using key
   void CompositionAxes::select(std::string key) {
     if(standard.find(key) != standard.cend() &&
@@ -432,9 +432,9 @@ namespace CASM {
     }
     curr_key = key;
     has_current_axes = true;
-        
+
   }
-  
+
   // ---------- prim_nlist.json IO -------------------------------------------------------------
 
   void write_prim_nlist(const Array<UnitCellCoord> &prim_nlist, const fs::path &nlistpath) {
