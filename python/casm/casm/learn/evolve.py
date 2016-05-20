@@ -78,6 +78,8 @@ class Constraints(object):
     """ 
     if n_features_min < 1:
       raise ValueError("n_features_min must be >= 1")
+    if n_features_max != "all":
+      n_features_max = int(n_features_max)
     self.n_features_min = n_features_min
     self.n_features_max = n_features_max
     self.fix_on = np.array(fix_on, dtype=int)
