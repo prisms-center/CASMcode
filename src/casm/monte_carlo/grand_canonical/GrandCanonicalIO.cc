@@ -164,10 +164,13 @@ namespace CASM {
 
     DataFormatter<ConstMonteCarloPtr> formatter;
 
+    formatter.push_back(MonteCarloIsEquilibratedFormatter());
     formatter.push_back(MonteCarloNEquilSamplesFormatter());
+    formatter.push_back(MonteCarloIsConvergedFormatter());
     formatter.push_back(MonteCarloNAvgSamplesFormatter());
 
     formatter.push_back(MonteCarloTFormatter<GrandCanonical>());
+
     std::set<std::string> exclude;
     std::string name;
 

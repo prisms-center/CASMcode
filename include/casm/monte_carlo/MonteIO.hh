@@ -30,8 +30,8 @@ namespace CASM {
     fs::path results_json() const {
       return m_output_dir / "results.json";
     }
-    
-    
+
+
     /// \brief "output_dir/conditions.cond_index/"
     fs::path conditions_dir(int cond_index) const {
       return m_output_dir / (std::string("conditions.") + std::to_string(cond_index));
@@ -67,12 +67,12 @@ namespace CASM {
     fs::path trajectory_dir(int cond_index) const {
       return conditions_dir(cond_index) / "trajectory";
     }
-    
+
     /// \brief "output_dir/conditions.cond_index/trajectory/POSCAR.initial"
     fs::path POSCAR_initial(int cond_index) {
       return trajectory_dir(cond_index) / std::string("POSCAR.initial");
     }
-    
+
     /// \brief "output_dir/conditions.cond_index/trajectory/POSCAR.final"
     fs::path POSCAR_final(int cond_index) {
       return trajectory_dir(cond_index) / std::string("POSCAR.final");
@@ -82,28 +82,28 @@ namespace CASM {
     fs::path POSCAR_snapshot(int cond_index, MonteSampler::size_type sample_index) {
       return trajectory_dir(cond_index) / (std::string("POSCAR.") + std::to_string(sample_index));
     }
-    
+
     /// \brief "output_dir/conditions.cond_index/initial_state_firstruneq.json"
     ///
     /// - Initial state before 'first run equilibration'
     fs::path initial_state_firstruneq_json(int cond_index) const {
       return conditions_dir(cond_index) / "initial_state_firstruneq.json";
     }
-    
+
     /// \brief "output_dir/conditions.cond_index/final_state.json"
     ///
     /// - Initial state before 'each run equilibration'
     fs::path initial_state_runeq_json(int cond_index) const {
       return conditions_dir(cond_index) / "initial_state_runeq.json";
     }
-    
+
     /// \brief "output_dir/conditions.cond_index/initial_state.json"
     ///
     /// - Initial state before first pass / step
     fs::path initial_state_json(int cond_index) const {
       return conditions_dir(cond_index) / "initial_state.json";
     }
-    
+
     /// \brief "output_dir/conditions.cond_index/final_state.json"
     fs::path final_state_json(int cond_index) const {
       return conditions_dir(cond_index) / "final_state.json";
@@ -125,22 +125,28 @@ namespace CASM {
 
   /// \brief Print calculated precision of property values: prec(<prop_name>)
   GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloPrecFormatter(std::string prop_name);
-  
+
   /// \brief Functor to help evaluate covariance
   struct CovEvaluator {
-    
+
     CovEvaluator(std::string _prop_name1, std::string _prop_name2):
       prop_name1(_prop_name1), prop_name2(_prop_name2) {}
-    
-    double operator()(const ConstMonteCarloPtr& mc);
-    
+
+    double operator()(const ConstMonteCarloPtr &mc);
+
     std::string prop_name1;
     std::string prop_name2;
-    
+
   };
-  
+
   /// \brief Print covariance: cov(prop_name1, prop_name2)
   GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloCovFormatter(std::string prop_name1, std::string prop_name2);
+
+  /// \brief Print if equilibrated (not counting explicitly requested equilibration)
+  GenericDatumFormatter<bool, ConstMonteCarloPtr> MonteCarloIsEquilibratedFormatter();
+
+  /// \brief Print if converged
+  GenericDatumFormatter<bool, ConstMonteCarloPtr> MonteCarloIsConvergedFormatter();
 
   /// \brief Print Temperature
   template<typename MonteType>
