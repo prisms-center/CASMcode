@@ -1,4 +1,4 @@
-AM_CXXFLAGS = -std=gnu++11 -DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long -DGZSTREAM_NAMESPACE=gz -I$(top_srcdir)/include -I$(top_srcdir)/include/casm/external/gzstream -I$(top_srcdir)/include/casm/external/qhull/libqhullcpp
+AM_CXXFLAGS = -DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long -DGZSTREAM_NAMESPACE=gz -I$(top_srcdir)/include -I$(top_srcdir)/include/casm/external/gzstream -I$(top_srcdir)/include/casm/external/qhull/libqhullcpp
 AM_CPPFLAGS = -I$(top_srcdir)/include/casm/external/qhull/libqhull_r/ -I$(top_srcdir)/include/casm/external/gzstream -lz
 lib_LTLIBRARIES = libcasm.la
 libcasm_la_LDFLAGS= -version-info 0:0:0
