@@ -108,7 +108,7 @@ def version(version_number):
 
 ##### Set version_number
 
-version_number = version('0.2a0')
+version_number = version('0.2a1')
 url = 'https://github.com/prisms-center/CASMcode'
 Export('version_number', 'url')
 
