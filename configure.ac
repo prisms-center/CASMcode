@@ -2,7 +2,11 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([CASM], [0.0.0], [casm@casm.edu])
+AC_INIT([CASM],
+        [m4_esyscmd([./version.sh])],
+        [casm-developers@lists.engr.ucsb.edu],
+        [],
+        [https://github.com/prisms-center/CASMcode])
 AC_CONFIG_AUX_DIR([build-aux]) #This is my doing
 #Rules to apply to every Makefile.am
 AM_INIT_AUTOMAKE([foreign subdir-objects])
@@ -65,5 +69,7 @@ AC_CONFIG_FILES([Makefile
                  apps/auto/Makefile
                  apps/casm/Makefile
                  src/ccasm/Makefile
-                 src/casm/Makefile])
+                 src/casm/Makefile
+                 src/casm/version/version.cc
+                 python/auto/Makefile])
 AC_OUTPUT
