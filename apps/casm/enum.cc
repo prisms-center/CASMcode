@@ -26,9 +26,10 @@ namespace CASM {
     COORD_TYPE coordtype = CASM::CART;
 
     int dims = 3;
-    Eigen::Matrix3i T = Eigen::Matrix3i::Identity();
+    Eigen::Matrix3i G = Eigen::Matrix3i::Identity();    //The matrix that defines the lattice vectors to enumerate over relative to the primitive vectors
+    Eigen::Matrix3i P = Eigen::Matrix3i::Identity();    //Shuffles G around so that the first dims vectors are at the left
     fs::path matrix_path;
-    std::string ezmode;
+    std::string ezmode = "abc";
     po::variables_map vm;
 
 
@@ -43,9 +44,8 @@ namespace CASM {
     ("all,a", "Enumerate configurations for all supercells")
     ("supercells,s", "Enumerate supercells")
     ("configs,c", "Enumerate configurations")
-    ("dimensions,d", po::value<int>(&dims), "Enumerate 1D, 2D or 3D supercells")
-    ("matrix,m", po::value<fs::path>(&matrix_path), "Specify lattice vectors to create supercells over")
-    ("easy-restrict,z", po::value<std::string>(&ezmode), "Restrict enumeration along a, b or c primitive lattice vectors");
+    ("matrix,m", po::value<fs::path>(&matrix_path), "Specify a matrix to apply to the primitive cell before beginning enumeration")
+    ("easy-restrict,z", po::value<std::string>(&ezmode), "Restrict enumeration along a, b or c lattice vectors");
 
     // currently unused...
     //("tol", po::value<double>(&tol)->default_value(CASM::TOL), "Tolerance used for checking symmetry")
@@ -65,7 +65,42 @@ namespace CASM {
         std::cout << "    Enumerate supercells and configurations\n";
         std::cout << "    - expects a PRIM file in the project root directory \n";
         std::cout << "    - if --min is given, then --max must be given \n";
-        std::cout << "    - if --dimensions is given, then --matrix must be given \n";
+        std::cout << std::endl;
+        std::cout << "  --matrix" << std::endl;
+        std::cout << "    - When using --supercells, you may use the this option             " << std::endl;
+        std::cout << "      to specify a transformation matrix to apply to your primitive    " << std::endl;
+        std::cout << "      lattice vectors before you begin your enumeration.               " << std::endl;
+        std::cout << "      For example, if the PRIM used for your project was a primitive   " << std::endl;
+        std::cout << "      FCC structure, you could point this option to a file M.txt with  " << std::endl;
+        std::cout << "          -1  1  1\n           1 -1  1          \n           1  1 -1" << std::endl;
+        std::cout << "      to enumerate only over conventional FCC supercells, since the    " << std::endl;
+        std::cout << "      matrix shown above transforms a primitive FCC to a conventional  " << std::endl;
+        std::cout << "      FCC." << std::endl;
+        std::cout << "    - If this option isn't specified, the lattice vectors to           " << std::endl;
+        std::cout << "      enumerate over will simply be the vectors of your PRIM structure." << std::endl;
+        std::cout << "    - Note that the --max and --min values you specify will be         " << std::endl;
+        std::cout << "      relative to the determinant of your matrix. For the provided     " << std::endl;
+        std::cout << "      example, specifying --max 6 would result in supercells up to size" << std::endl;
+        std::cout << "      24, since det(M)*6=24 (4 primitive lattice sites per conventional" << std::endl;
+        std::cout << "      cell)." << std::endl;
+        std::cout << std::endl;
+        std::cout << "  --easy-restrict" << std::endl;
+        std::cout << "    - When using --supercells, you may use the this option             " << std::endl;
+        std::cout << "      restrict the supercell enumeration to 1, 2 or 3 of the lattice   " << std::endl;
+        std::cout << "      vectors, to get 1,2 or 3-dimensional supercells. By directly     " << std::endl;
+        std::cout << "      specifying combinations of 'a', 'b' and 'c', you determine which " << std::endl;
+        std::cout << "      of the lattice vectors you want to enumerate over.               " << std::endl;
+        std::cout << "      For example, to enumerate 1-dimensional supercells along the 'c' " << std::endl;
+        std::cout << "      direction, simply specify '--easy-restrict c'. If you want       " << std::endl;
+        std::cout << "      2-dimensional supercells along the a and c lattice vectors,      " << std::endl;
+        std::cout << "      specify '--easy-restrict ac'.                                    " << std::endl;
+        std::cout << "    - If this option isn't specified, 3-dimensional supercells will be " << std::endl;
+        std::cout << "      enumerated, equivalent to specifying 'easy-restrict abc'.        " << std::endl;
+        std::cout << "    - This option can be used in conjunction with the --matrix option. " << std::endl;
+        std::cout << "      If this is the case, then the meaning of 'a', 'b' and 'c' changes" << std::endl;
+        std::cout << "      from the lattice vectors of your PRIM, to the  vectors of the    " << std::endl;
+        std::cout << "      lattice resulting from multiplying your PRIM by the specified    " << std::endl;
+        std::cout << "      matrix." << std::endl;
 
 
         return 0;
@@ -77,11 +112,6 @@ namespace CASM {
       if(vm.count("min") && !vm.count("max")) {
         std::cerr << "\n" << desc << "\n" << std::endl;
         std::cerr << "Error in 'casm enum'. If --min is given, --max must also be given." << std::endl;
-        return ERR_INVALID_ARG;
-      }
-      if(vm.count("dimensions") && !vm.count("matrix")) {
-        std::cerr << "\n" << desc << "\n" << std::endl;
-        std::cerr << "Error in 'casm enum'. If --dimensions is given, --matrix must also be given." << std::endl;
         return ERR_INVALID_ARG;
       }
       if(vm.count("easy-restrict")) {
@@ -100,10 +130,6 @@ namespace CASM {
           std::cerr << "When using --easy-restrict, specify the primitive lattice vectors you want to enumerate over with a string." << std::endl;
           std::cerr << "For example, to enumerate over only a and b, pass 'ab'. To enumerate over only c pass 'c'." << std::endl;
 
-          return ERR_INVALID_ARG;
-        }
-        if(vm.count("matrix") || vm.count("dimensions")) {
-          std::cerr << "Option --easy-restrict cannot be used with --dimensions or --matrix" << std::endl;
           return ERR_INVALID_ARG;
         }
       }
@@ -165,15 +191,15 @@ namespace CASM {
           ezmode.push_back('c');
         }
       }
-      T = Eigen::Matrix3i::Zero();
-      T(ezmode[0] - 'a', 0) = 1;
-      T(ezmode[1] - 'a', 1) = 1;
-      T(ezmode[2] - 'a', 2) = 1;
+      P = Eigen::Matrix3i::Zero();
+      P(ezmode[0] - 'a', 0) = 1;
+      P(ezmode[1] - 'a', 1) = 1;
+      P(ezmode[2] - 'a', 2) = 1;
     }
     if(vm.count("matrix")) {
       fs::ifstream matstream(matrix_path);
       for(int i = 0; i < 9; i++) {
-        matstream >> T;
+        matstream >> G;
       }
     }
 
@@ -181,8 +207,22 @@ namespace CASM {
     if(vm.count("supercells")) {
       std::cout << "\n***************************\n" << std::endl;
 
-      std::cout << "Generating supercells from " << min_vol << " to " << max_vol << std::endl << std::endl;
-      primclex.generate_supercells(min_vol, max_vol, dims, T, true);
+      std::cout << "Generating supercells from " << min_vol << " to " << max_vol << std::endl;
+      std::cout << "Lattice vectors ";
+      for(int i = 0; i < dims; i++) {
+        if(i == dims - 1) {
+          std::cout << "and ";
+        }
+        std::cout << ezmode[i] << " ";
+      }
+      std::cout << "will be used. (supercells will be " << dims << "-dimensional)" << std::endl;
+
+      if(vm.count("matrix")) {
+        std::cout << "The transformation matrix" << std::endl << G << std::endl << "will be applied to the primitive cell before enumeration begins" << std::endl;
+      }
+      std::cout << std::endl;
+
+      primclex.generate_supercells(min_vol, max_vol, dims, G * P, true);
       std::cout << "\n  DONE." << std::endl << std::endl;
 
       std::cout << "Write SCEL." << std::endl << std::endl;
