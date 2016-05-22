@@ -37,7 +37,8 @@ namespace CASM {
                const std::string &_default_selection = "MASTER",
                const std::string &_default_composition_type = default_hull_calculator(),
                const Hull::CalculatorOptions &_calculator_map = hull_calculator_options(),
-               double _singular_value_tol = 1e-8);
+               double _singular_value_tol = 1e-8,
+               double _bottom_facet_tol = 1e-8);
 
       /// \brief Calculates the convex hull
       void init(const Configuration &_tmplt) const override;
@@ -64,6 +65,9 @@ namespace CASM {
 
       // tol used to detect zero singular values during principal component analysis preprocessing before hull calculation
       double m_singular_value_tol;
+      
+      // tol used to detect which facets are on the bottom of the convex hull
+      double m_bottom_facet_tol;
 
       // the hull object
       mutable std::shared_ptr<Hull> m_hull;
@@ -279,12 +283,14 @@ namespace CASM {
                                   const std::string &_default_selection,
                                   const std::string &_default_composition_type,
                                   const Hull::CalculatorOptions &_calculator_map,
-                                  double _singular_value_tol) :
+                                  double _singular_value_tol,
+                                  double _bottom_facet_tol) :
       BaseValueFormatter<ValueType, Configuration>(_name, _desc),
       m_selection(_default_selection),
       m_composition_type(_default_composition_type),
       m_calculator_map(_calculator_map),
       m_singular_value_tol(_singular_value_tol),
+      m_bottom_facet_tol(_bottom_facet_tol),
       m_initialized(false) {}
 
     /// \brief Calculates the convex hull
@@ -336,7 +342,8 @@ namespace CASM {
       m_hull = std::make_shared<Hull>(selection,
                                       *m_calculator_map.find(m_composition_type)->second.first,
                                       *m_calculator_map.find(m_composition_type)->second.second,
-                                      m_singular_value_tol);
+                                      m_singular_value_tol,
+                                      m_bottom_facet_tol);
 
     }
 
@@ -355,7 +362,7 @@ namespace CASM {
 
     /// \brief Determine the selection to use to generate the hull
     ///
-    /// Args are: ($selection, $composition)
+    /// Args are: ($selection,$composition,$dim_tol,$bottom_tol)
     ///
     /// Options for $selection are:
     /// - "ALL", use all configurations
@@ -367,8 +374,11 @@ namespace CASM {
     /// - "atom_frac", (default) use atom_frac for the composition and "formation_energy_per_species" for the energy
     /// - "comp", use parametric composition for the composition and "formation_energy" for the energy
     ///
-    /// $tol, default=1e-8
+    /// $dim_tol, default=1e-8
     /// - singular value tolerance used for detecting composition dimensions
+    ///
+    /// $bottom_tol, default=1e-8
+    /// - tolerance used for detecting facets on the convex hull bottom
     ///
     template<typename ValueType>
     bool BaseHull<ValueType>::parse_args(const std::string &args) {
@@ -380,20 +390,21 @@ namespace CASM {
       std::vector<std::string> splt_vec;
       boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
 
-      if(splt_vec.size() > 3) {
+      if(splt_vec.size() > 4) {
         throw std::runtime_error("Attempted to initialize format tag " + this->name()
                                  + " with " + std::to_string(splt_vec.size()) + " arguments ("
-                                 + args + "), but only up to 3 arguments allowed.\n");
+                                 + args + "), but only up to 4 arguments allowed.\n");
         return false;
       }
 
-      while(splt_vec.size() < 3) {
+      while(splt_vec.size() < 4) {
         splt_vec.push_back("");
       }
 
       m_selection = splt_vec[0].empty() ? m_selection : splt_vec[0];
       m_composition_type = splt_vec[1].empty() ? m_composition_type : splt_vec[1];
       m_singular_value_tol = splt_vec[2].empty() ? m_singular_value_tol : std::stod(splt_vec[2]);
+      m_bottom_facet_tol = splt_vec[3].empty() ? m_bottom_facet_tol : std::stod(splt_vec[3]);
       m_initialized = true;
 
       auto it = m_calculator_map.find(m_composition_type);
