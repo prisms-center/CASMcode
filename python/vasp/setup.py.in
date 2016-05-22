@@ -1,0 +1,12 @@
+import sys
+from distutils.core import setup
+import glob
+setup(name='vasp',
+      version='@VERSION@',
+      url='@PACKAGE_URL',
+      description='A wrapper for submitting and collecting VASP jobs developed for CASM',
+      author='CASM developers',
+      author_email='@PACKAGE_BUGREPORT@',
+      license='LGPL2.1',
+      packages=['vasp','vasp.io']
+      )

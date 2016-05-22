@@ -30,7 +30,7 @@ AC_CHECK_LIB([z], [gzread])
 
 #I added this
 LT_INIT([shared disable-static])
-#AC_DISABLE_STATIC
+AC_DISABLE_STATIC
 AX_CXX_COMPILE_STDCXX_11
 BOOSTV=1.52
 AX_BOOST_BASE([$BOOSTV],[],[AC_MSG_ERROR(You need Boost $BOOSTV libraries or higher.)])
@@ -42,7 +42,7 @@ AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_UNIT_TEST_FRAMEWORK
 
 #Require at least this version
-AM_PATH_PYTHON([2.7])
+AM_PATH_PYTHON([2.6])
 
 # Checks for header files.
 AC_CHECK_HEADERS([float.h limits.h stdlib.h string.h sys/time.h unistd.h])
@@ -66,10 +66,11 @@ AC_FUNC_STRTOD
 AC_CHECK_FUNCS([floor iswprint memmove memset mkdir pow rmdir select sqrt strchr strpbrk strrchr strstr strtol])
 
 AC_CONFIG_FILES([Makefile
-                 apps/auto/Makefile
                  apps/casm/Makefile
                  src/ccasm/Makefile
                  src/casm/Makefile
                  src/casm/version/version.cc
-                 python/auto/Makefile])
+                 python/Makefile
+                 python/casm/setup.py
+                 python/vasp/setup.py])
 AC_OUTPUT
