@@ -172,17 +172,20 @@ namespace CASM {
     std::unique_ptr<std::ostream> uniq_fout;
     std::ostream &output_stream = make_ostream_if(vm.count("output"), args.log, uniq_fout, out_path, gz_flag);
     output_stream << FormatFlag(output_stream).print_header(!no_header);
+    
+    // set status_stream: where query settings and PrimClex initialization messages are sent
+    Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
 
     // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    if(out_path.string() == "STDOUT") {
+      args.log.set_verbosity(0);
+    }
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex, status_log);
 
     // Get configuration selection
     ConstConfigSelection selection(primclex, selection_str);
-
-    // set status_stream: where query settings and PrimClex initialization messages are sent
-    Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
 
     // Print info
     status_log << "Print:" << std::endl;
