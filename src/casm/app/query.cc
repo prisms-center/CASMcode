@@ -1,15 +1,13 @@
-#include "query.hh"
-
 #include <string>
 #include <boost/algorithm/string.hpp>
-#include "casm_functions.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/CASM_classes.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOSelected.hh"
 
 namespace CASM {
 
-  void query_help(std::ostream &_stream, std::vector<std::string > help_opt_vec) {
+  void query_help(const DataFormatterDictionary<Configuration> &_dict, std::ostream &_stream, std::vector<std::string > help_opt_vec) {
     _stream << "Prints the properties for a set of configurations for the set of currently selected" << std::endl
             << "configurations or for a set of configurations specifed by a selection file." << std::endl
             << std::endl
@@ -23,18 +21,18 @@ namespace CASM {
 
       if(help_opt[0] == 'o') {
         _stream << "Available operators for use within queries:" << std::endl;
-        ConfigIOParser::print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
+        _dict.print_help(_stream, BaseDatumFormatter<Configuration>::Operator);
       }
       else if(help_opt[0] == 'p') {
         _stream << "Available property tags are currently:" << std::endl;
-        ConfigIOParser::print_help(_stream);
+        _dict.print_help(_stream, BaseDatumFormatter<Configuration>::Property);
       }
       _stream << std::endl;
     }
     _stream << std::endl;
   }
 
-  int query_command(int argc, char *argv[], PrimClex *_primclex, std::ostream &sout, std::ostream &serr) {
+  int query_command(const CommandArgs &args) {
 
     std::string selection_str;
     fs::path config_path, out_path;
@@ -54,16 +52,18 @@ namespace CASM {
     ("gzip,z", po::value(&gz_flag)->zero_tokens(), "Write gzipped output file.")
     ("all,a", "Print results all configurations in input selection, whether or not they are selected.")
     ("no-header,n", po::value(&no_header)->zero_tokens(), "Print without header (CSV only)")
-    ("alias", po::value<std::vector<std::string> >(&new_alias)->multitoken(), "Create an alias for a query that will persist within this project. Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
+    ("alias", po::value<std::vector<std::string> >(&new_alias)->multitoken(),
+     "Create an alias for a query that will persist within this project. "
+     "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
 
 
     try {
-      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
       /** Start --help option
        */
       if(vm.count("help")) {
-        sout << std::endl << desc << std::endl;
+        args.log << std::endl << desc << std::endl;
       }
 
       po::notify(vm); // throws on error, so do after help in case of problems
@@ -71,102 +71,78 @@ namespace CASM {
       /** Finish --help option
        */
       if(vm.count("help")) {
-        fs::path root = find_casmroot(fs::current_path());
-        fs::path alias_file = root / ".casm/query_alias.json";
-        if(fs::exists(alias_file)) {
-          ConfigIOParser::load_aliases(alias_file);
+        if(args.root.empty()) {
+          auto dict = make_dictionary<Configuration>();
+          query_help(dict, std::cout, help_opt_vec);
         }
-        ConfigIOParser::add_custom_formatter(
-          datum_formatter_alias(
-            "selected",
-            ConfigIO::selected_in(),
-            "Returns true if configuration is specified in the input selection"
-          )
-        );
-        query_help(sout, help_opt_vec);
+        else {
+          ProjectSettings set(args.root);
+          query_help(set.config_io(), args.log, help_opt_vec);
+        }
         return 0;
       }
 
 
     }
     catch(po::error &e) {
-      serr << "ERROR: " << e.what() << std::endl << std::endl;
-      serr << desc << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << desc << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      serr << "Unhandled Exception reached the top of main: "
-           << e.what() << ", application will now exit" << std::endl;
+      args.err_log << "Unhandled Exception reached the top of main: "
+                   << e.what() << ", application will now exit" << std::endl;
       return ERR_UNKNOWN;
     }
 
     if(!vm.count("alias") && !vm.count("columns")) {
-      sout << std::endl << desc << std::endl;
+      args.log << std::endl << desc << std::endl;
     }
 
     // set current path to project root
-    fs::path root;
-    if(!_primclex) {
-      root = find_casmroot(fs::current_path());
-      if(root.empty()) {
-        serr << "Error in 'casm query': No casm project found." << std::endl;
-        return ERR_NO_PROJ;
-      }
-    }
-    else {
-      root = _primclex->get_path();
+    const fs::path &root = args.root;
+    if(root.empty()) {
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
+      return ERR_NO_PROJ;
     }
 
-    fs::path alias_file = root / ".casm/query_alias.json";
     if(vm.count("alias")) {
-      jsonParser mjson;
-      if(fs::exists(alias_file)) {
-        mjson.read(alias_file);
-      }
-      else {
-        mjson.put_obj();
-      }
+
+      ProjectSettings set(root);
+
+      // get user input
       std::string new_alias_str;
       for(auto const &substr : new_alias) {
         new_alias_str += substr;
       }
 
+      // parse new_alias_str to create formatter
       auto it = std::find(new_alias_str.cbegin(), new_alias_str.cend(), '=');
       std::string alias_name = boost::trim_copy(std::string(new_alias_str.cbegin(), it));
       std::string alias_command = boost::trim_copy(std::string(++it, new_alias_str.cend()));
+
       try {
-        ConfigIOParser::add_custom_formatter(datum_formatter_alias<Configuration>(alias_name, alias_command));
+        set.add_alias(alias_name, alias_command, args.err_log);
+        set.commit();
+        return 0;
       }
       catch(std::runtime_error &e) {
-        serr << "Unable to learn alias\n"
-             << "   \"" << alias_name << " = " << alias_command << "\"\n"
-             << e.what() << std::endl;
-        return 1;
+        args.err_log << "Unable to learn alias\n"
+                     << "   \"" << alias_name << " = " << alias_command << "\"\n"
+                     << e.what() << std::endl;
+        return ERR_UNKNOWN;
       }
-      if(mjson.contains(alias_name)) {
-        serr << "WARNING: I already know '" << alias_name << "' as:\n"
-             << "             " << mjson[alias_name].get<std::string>() << "\n"
-             << "         I will forget it and learn '" << alias_name << "' as:\n"
-             << "             " << alias_command << std::endl;
-      }
-      mjson[alias_name] = alias_command;
-      mjson.write(alias_file);
-      sout << "  DONE" << std::endl;
-      return 0;
+
     }
     if(!vm.count("columns")) {
-      serr << "ERROR: the option '--columns' is required but missing" << std::endl;
+      args.err_log << "ERROR: the option '--columns' is required but missing" << std::endl;
       return ERR_INVALID_ARG;
     }
 
 
     // -------------------------------------------------------------------------
     // perform query operation
-
-    if(fs::exists(alias_file)) {
-      ConfigIOParser::load_aliases(alias_file);
-    }
-
 
     auto check_gz = [ = ](fs::path p) {
       if(p.extension() == ".gz" || p.extension() == ".GZ") {
@@ -194,38 +170,35 @@ namespace CASM {
 
     // set output_stream: where the query results are written
     std::unique_ptr<std::ostream> uniq_fout;
-    std::ostream &output_stream = make_ostream_if(vm.count("output"), sout, uniq_fout, out_path, gz_flag);
+    std::ostream &output_stream = make_ostream_if(vm.count("output"), args.log, uniq_fout, out_path, gz_flag);
     output_stream << FormatFlag(output_stream).print_header(!no_header);
 
     // set status_stream: where query settings and PrimClex initialization messages are sent
-    std::ostream &status_stream = (out_path.string() == "STDOUT") ? serr : sout;
+    Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
 
     // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(_primclex, uniq_primclex, root, status_stream);
+    if(out_path.string() == "STDOUT") {
+      args.log.set_verbosity(0);
+    }
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex, status_log);
 
     // Get configuration selection
     ConstConfigSelection selection(primclex, selection_str);
 
     // Print info
-    status_stream << "Print:" << std::endl;
+    status_log << "Print:" << std::endl;
     for(int p = 0; p < columns.size(); p++) {
-      status_stream << "   - " << columns[p] << std::endl;
+      status_log << "   - " << columns[p] << std::endl;
     }
     if(vm.count("output"))
-      status_stream << "to " << fs::absolute(out_path) << std::endl;
-    status_stream << std::endl;
+      status_log << "to " << fs::absolute(out_path) << std::endl;
+    status_log << std::endl;
 
     // Construct DataFormatter
+    primclex.settings().set_selected(selection);
     DataFormatter<Configuration> formatter;
-    ConfigIOParser::add_custom_formatter(
-      datum_formatter_alias(
-        "selected",
-        ConfigIO::selected_in(selection),
-        "Returns true if configuration is specified in the input selection"
-      )
-    );
 
     try {
 
@@ -236,11 +209,11 @@ namespace CASM {
       }
       all_columns.insert(all_columns.end(), columns.cbegin(), columns.cend());
 
-      formatter.append(ConfigIOParser::parse(all_columns));
+      formatter.append(primclex.settings().config_io().parse(all_columns));
 
     }
     catch(std::exception &e) {
-      serr << "Parsing error: " << e.what() << "\n\n";
+      args.err_log << "Parsing error: " << e.what() << "\n\n";
       return ERR_INVALID_ARG;
     }
 
@@ -266,15 +239,15 @@ namespace CASM {
 
     }
     catch(std::exception &e) {
-      serr << "Initialization error: " << e.what() << "\n\n";
+      args.err_log << "Initialization error: " << e.what() << "\n\n";
       return ERR_UNKNOWN;
     }
 
     if(!uniq_fout) {
-      status_stream << "\n   -Output printed to terminal, since no output file specified-\n";
+      status_log << "\n   -Output printed to terminal, since no output file specified-\n";
     }
 
-    status_stream << "  DONE." << std::endl << std::endl;
+    status_log << "  DONE." << std::endl << std::endl;
 
     return 0;
   };

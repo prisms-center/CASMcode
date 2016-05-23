@@ -19,12 +19,15 @@ namespace CASM {
     public:
       StrucScore() :
         VectorXdAttribute<Configuration>("struc_score", "Evaluates the mapping of a configuration onto an arbitrary primitive structure, specified by its path. Allowed options are [ 'basis_score' (mean-square site displacement) | 'lattice_score' (lattice deformation metric having units Angstr.^2) | 'total_score' (w*lattice_score+(1.0-w)*basis_score) ].  The struc_score weighting parameter 'w' can be provided as an optional decimal parameter from 0.0 to 1.0 (default 0.5). Ex: struc_score(path/to/PRIM, basis_score, 0.4)"),
-        m_altprimclex(Structure()), m_configmapper(ConfigMapper(ConfigMapper::null_initializer)) {};
+        m_configmapper(ConfigMapper(ConfigMapper::null_initializer)) {};
 
       StrucScore(const StrucScore &RHS) :
         VectorXdAttribute<Configuration>(RHS),
-        m_altprimclex(RHS.m_altprimclex), m_configmapper(RHS.m_configmapper), m_prim_path(RHS.m_prim_path), m_prop_names(RHS.m_prop_names) {
-        m_configmapper.set_primclex(m_altprimclex);
+        m_altprimclex((RHS.m_altprimclex == nullptr) ? nullptr : new PrimClex(*RHS.m_altprimclex)),
+        m_configmapper(RHS.m_configmapper),
+        m_prim_path(RHS.m_prim_path),
+        m_prop_names(RHS.m_prop_names) {
+        m_configmapper.set_primclex(*m_altprimclex);
       }
 
       // --- Required implementations -----------
@@ -53,7 +56,7 @@ namespace CASM {
       bool parse_args(const std::string &args) override;
 
     protected:
-      mutable PrimClex m_altprimclex;
+      mutable std::unique_ptr<PrimClex> m_altprimclex;
       mutable ConfigMapper m_configmapper;
       fs::path m_prim_path;
       std::vector<std::string> m_prop_names;

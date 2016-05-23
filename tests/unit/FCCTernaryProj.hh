@@ -39,35 +39,35 @@ namespace test {
     jsonParser bspecs() const {
 
       std::string str = R"({
-  "basis_functions" : {
-    "site_basis_functions" : "occupation"
-  },
-  "orbit_branch_specs" : {
-    "2" : {"max_length" : 4.01},
-    "3" : {"max_length" : 3.01}
-  },
-  "orbit_specs" : [
-    {
-      "coordinate_mode" : "Direct",
-      "prototype" : [
-        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 1.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 2.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 3.000000000000, 0.000000000000, 0.000000000000 ]
-      ],
-      "include_subclusters" : true  
-    },
-    {
-      "coordinate_mode" : "Direct",
-      "prototype" : [
-        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 0.000000000000, 1.000000000000, 0.000000000000 ],
-        [ 0.000000000000, 0.000000000000, 1.000000000000 ],
-        [ 1.000000000000, 1.000000000000, 1.000000000000 ]
-      ],
-      "include_subclusters" : true
-    }
-  ]
+"basis_functions" : {
+"site_basis_functions" : "occupation"
+},
+"orbit_branch_specs" : {
+"2" : {"max_length" : 4.01},
+"3" : {"max_length" : 3.01}
+},
+"orbit_specs" : [
+{
+"coordinate_mode" : "Direct",
+"prototype" : [
+[ 0.000000000000, 0.000000000000, 0.000000000000 ],
+[ 1.000000000000, 0.000000000000, 0.000000000000 ],
+[ 2.000000000000, 0.000000000000, 0.000000000000 ],
+[ 3.000000000000, 0.000000000000, 0.000000000000 ]
+],
+"include_subclusters" : true  
+},
+{
+"coordinate_mode" : "Direct",
+"prototype" : [
+[ 0.000000000000, 0.000000000000, 0.000000000000 ],
+[ 0.000000000000, 1.000000000000, 0.000000000000 ],
+[ 0.000000000000, 0.000000000000, 1.000000000000 ],
+[ 1.000000000000, 1.000000000000, 1.000000000000 ]
+],
+"include_subclusters" : true
+}
+]
 })";
 
       return jsonParser::parse(str);
@@ -77,35 +77,35 @@ namespace test {
     std::string invalid_bspecs() const {
 
       std::string str = R"({
-  "basis_functions" : {
-    "site_basis_functions" : "occupation"
-  },
-  "orbit_branch_specs" : {
-    "2" : {"max_length" : 4.01},
-    "3" : {"max_length" : 3.01}
-  },
-  "orbit_specs" : [
-    {
-      "coordinate_mode" : "Direct",
-      "prototype" : [
-        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 1.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 2.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 3.000000000000, 0.000000000000, 0.000000000000 ],
-      ],
-      "include_subclusters" : true  
-    },
-    {
-      "coordinate_mode" : "Direct",
-      "prototype" : [
-        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
-        [ 0.000000000000, 1.000000000000, 0.000000000000 ],
-        [ 0.000000000000, 0.000000000000, 1.000000000000 ],
-        [ 1.000000000000, 1.000000000000, 1.000000000000 ]
-      ],
-      "include_subclusters" : true
-    }
-  ]
+"basis_functions" : {
+"site_basis_functions" : "occupation"
+},
+"orbit_branch_specs" : {
+"2" : {"max_length" : 4.01},
+"3" : {"max_length" : 3.01}
+},
+"orbit_specs" : [
+{
+"coordinate_mode" : "Direct",
+"prototype" : [
+[ 0.000000000000, 0.000000000000, 0.000000000000 ],
+[ 1.000000000000, 0.000000000000, 0.000000000000 ],
+[ 2.000000000000, 0.000000000000, 0.000000000000 ],
+[ 3.000000000000, 0.000000000000, 0.000000000000 ],
+],
+"include_subclusters" : true  
+},
+{
+"coordinate_mode" : "Direct",
+"prototype" : [
+[ 0.000000000000, 0.000000000000, 0.000000000000 ],
+[ 0.000000000000, 1.000000000000, 0.000000000000 ],
+[ 0.000000000000, 0.000000000000, 1.000000000000 ],
+[ 1.000000000000, 1.000000000000, 1.000000000000 ]
+],
+"include_subclusters" : true
+}
+]
 })";
 
       return str;
@@ -136,19 +136,19 @@ namespace test {
       file << invalid_bspecs() << "\n";
       file.close();
       m_p.popen(cd_and() + "casm bset -u");
-      BOOST_CHECK_EQUAL_MESSAGE(m_p.exit_code(), 4, m_p.gets());
+      BOOST_CHECK_MESSAGE(m_p.exit_code() == 4, m_p.gets());
 
       // check for success with a valid bspecs
       bspecs().write(dir / "basis_sets" / "bset.default" / "bspecs.json");
 
       m_p.popen(cd_and() + "casm bset -u");
-      BOOST_CHECK_EQUAL_MESSAGE(m_p.exit_code(), 0, m_p.gets());
+      BOOST_CHECK_MESSAGE(m_p.exit_code() == 0, m_p.gets());
 
-      BOOST_CHECK_EQUAL_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*clust\.json)")), true, m_p.gets());
-      BOOST_CHECK_EQUAL_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*)" + title + R"(_Clexulator\.cc)")), true, m_p.gets());
+      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*clust\.json)")) == true, m_p.gets());
+      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*)" + title + R"(_Clexulator\.cc)")) == true, m_p.gets());
 
-      BOOST_CHECK_EQUAL_MESSAGE(true, fs::exists(m_dirs.clust(m_set.bset())), m_p.gets());
-      BOOST_CHECK_EQUAL_MESSAGE(true, fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.bset())), m_p.gets());
+      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clust(m_set.bset())), m_p.gets());
+      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.bset())), m_p.gets());
 
       std::string str;
 
@@ -190,15 +190,17 @@ namespace test {
       {
         m_p.popen(cd_and() + "casm enum --supercells --max 10");
         std::stringstream ss;
-        PrimClex primclex(dir, ss);
-        BOOST_CHECK_EQUAL_MESSAGE(primclex.get_supercell_list().size(), 87, m_p.gets());
+        Log log(ss);
+        PrimClex primclex(dir, log);
+        BOOST_CHECK_MESSAGE(primclex.get_supercell_list().size() == 87, m_p.gets());
       }
 
       {
         m_p.popen(cd_and() + "casm enum --configs --max 6");
         std::stringstream ss;
-        PrimClex primclex(dir, ss);
-        BOOST_CHECK_EQUAL_MESSAGE(std::distance(primclex.config_begin(), primclex.config_end()), 1081, m_p.gets());
+        Log log(ss);
+        PrimClex primclex(dir, log);
+        BOOST_CHECK_MESSAGE(std::distance(primclex.config_begin(), primclex.config_end()) == 1081, m_p.gets());
       }
     }
 

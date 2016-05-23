@@ -46,24 +46,24 @@ namespace test {
     jsonParser bspecs() const {
 
       std::string str = R"({
-  "basis_functions" : {
-    "site_basis_functions" : "occupation"
-  },
-  "orbit_branch_specs" : {
-    "2" : {"max_length" : 9.0},
-    "3" : {"max_length" : 7.0},
-    "4" : {"max_length" : 6.0}
-  },
-  "orbit_specs" : [
-    {
-      "coordinate_mode" : "Integral",
-      "prototype" : [
-        [ 2, 0, 0, 0 ],
-        [ 2, 3, 0, 0 ]
-      ],
-      "include_subclusters" : false  
-    }
-  ]
+"basis_functions" : {
+"site_basis_functions" : "occupation"
+},
+"orbit_branch_specs" : {
+"2" : {"max_length" : 9.0},
+"3" : {"max_length" : 7.0},
+"4" : {"max_length" : 6.0}
+},
+"orbit_specs" : [
+{
+"coordinate_mode" : "Integral",
+"prototype" : [
+[ 2, 0, 0, 0 ],
+[ 2, 3, 0, 0 ]
+],
+"include_subclusters" : false  
+}
+]
 })";
 
       return jsonParser::parse(str);
@@ -87,13 +87,13 @@ namespace test {
       bspecs().write(dir / "basis_sets" / "bset.default" / "bspecs.json");
 
       m_p.popen(cd_and() + "casm bset -u");
-      BOOST_CHECK_EQUAL_MESSAGE(m_p.exit_code(), 0, m_p.gets());
+      BOOST_CHECK_MESSAGE(m_p.exit_code() == 0, m_p.gets());
 
-      BOOST_CHECK_EQUAL_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*clust\.json)")), true, m_p.gets());
-      BOOST_CHECK_EQUAL_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*)" + title + R"(_Clexulator\.cc)")), true, m_p.gets());
+      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*clust\.json)")) == true, m_p.gets());
+      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*)" + title + R"(_Clexulator\.cc)")) == true, m_p.gets());
 
-      BOOST_CHECK_EQUAL_MESSAGE(true, fs::exists(m_dirs.clust(m_set.bset())), m_p.gets());
-      BOOST_CHECK_EQUAL_MESSAGE(true, fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.bset())), m_p.gets());
+      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clust(m_set.bset())), m_p.gets());
+      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.bset())), m_p.gets());
 
       std::string str;
 
@@ -134,16 +134,16 @@ namespace test {
 
       {
         m_p.popen(cd_and() + "casm enum --supercells --max 10");
-        std::stringstream ss;
-        PrimClex primclex(dir, ss);
-        BOOST_CHECK_EQUAL_MESSAGE(primclex.get_supercell_list().size(), 147, m_p.gets());
+        PrimClex primclex(dir, null_log());
+        BOOST_CHECK_MESSAGE(primclex.get_supercell_list().size() == 147, m_p.gets());
       }
 
       {
         m_p.popen(cd_and() + "casm enum --configs --max 6");
         std::stringstream ss;
-        PrimClex primclex(dir, ss);
-        BOOST_CHECK_EQUAL_MESSAGE(std::distance(primclex.config_begin(), primclex.config_end()), 5763, m_p.gets());
+        Log log(ss);
+        PrimClex primclex(dir, null_log());
+        BOOST_CHECK_MESSAGE(std::distance(primclex.config_begin(), primclex.config_end()) == 5763, m_p.gets());
       }
     }
 

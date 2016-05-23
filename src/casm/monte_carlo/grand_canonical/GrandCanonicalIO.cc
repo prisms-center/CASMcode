@@ -12,24 +12,24 @@ namespace CASM {
   ///
   /// - Heat capacity (per unit cell) = cov(potential_energy, potential_energy)*N/(k*T*T)
   GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalHeatCapacityFormatter() {
-    
-    auto evaluator = [=](const ConstMonteCarloPtr& mc) {
+
+    auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
       CovEvaluator cov_evaluator("potential_energy", "potential_energy");
       auto N = mc->supercell().volume();
       ConstMonteCarloPtr ptr = mc;
-      auto T = static_cast<const GrandCanonical*>(ptr)->conditions().temperature();
-      return cov_evaluator(mc)*N/(KB*T*T);
+      auto T = static_cast<const GrandCanonical *>(ptr)->conditions().temperature();
+      return cov_evaluator(mc) * N / (KB * T * T);
     };
-    
-    auto validator = [=](const ConstMonteCarloPtr& mc) {
+
+    auto validator = [ = ](const ConstMonteCarloPtr & mc) {
       return mc->is_equilibrated().first;
     };
-    
+
     std::string header = std::string("heat_capacity");
-    
+
     return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator, validator);
   }
-  
+
   /// \brief Print parametric susceptibility, 'susc_x(a,b)'
   ///
   /// \arg comp_var_i: First parametric composition variable "a", "b", "c", ...
@@ -37,27 +37,27 @@ namespace CASM {
   ///
   /// - Heat capacity (per unit cell) = cov(x_i, x_j)*N/(k*T)
   GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalSuscXFormatter(std::string comp_var_i, std::string comp_var_j) {
-    
+
     std::string name_i = "comp(" + comp_var_i + ")";
     std::string name_j = "comp(" + comp_var_j + ")";
-    
-    auto evaluator = [=](const ConstMonteCarloPtr& mc) {
+
+    auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
       CovEvaluator cov_evaluator(name_i, name_j);
       auto N = mc->supercell().volume();
       ConstMonteCarloPtr ptr = mc;
-      auto T = static_cast<const GrandCanonical*>(ptr)->conditions().temperature();
-      return cov_evaluator(mc)*N/(KB*T);
+      auto T = static_cast<const GrandCanonical *>(ptr)->conditions().temperature();
+      return cov_evaluator(mc) * N / (KB * T);
     };
-    
-    auto validator = [=](const ConstMonteCarloPtr& mc) {
+
+    auto validator = [ = ](const ConstMonteCarloPtr & mc) {
       return mc->is_equilibrated().first;
     };
-    
+
     std::string header = std::string("susc_x(" + comp_var_i + "," + comp_var_j + ")");
-    
+
     return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator, validator);
   }
-  
+
   /// \brief Print parametric susceptibility, 'susc_x(a,b)'
   ///
   /// \arg species_i: First species "A", "B", "C", ...
@@ -65,77 +65,77 @@ namespace CASM {
   ///
   /// - Heat capacity (per unit cell) = cov(x_i, x_j)*N/(k*T)
   GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalSuscNFormatter(std::string species_i, std::string species_j) {
-    
+
     std::string name_i = "comp_n(" + species_i + ")";
     std::string name_j = "comp_n(" + species_j + ")";
-    
-    auto evaluator = [=](const ConstMonteCarloPtr& mc) {
+
+    auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
       CovEvaluator cov_evaluator(name_i, name_j);
       auto N = mc->supercell().volume();
       ConstMonteCarloPtr ptr = mc;
-      auto T = static_cast<const GrandCanonical*>(ptr)->conditions().temperature();
-      return cov_evaluator(mc)*N/(KB*T);
+      auto T = static_cast<const GrandCanonical *>(ptr)->conditions().temperature();
+      return cov_evaluator(mc) * N / (KB * T);
     };
-    
-    auto validator = [=](const ConstMonteCarloPtr& mc) {
+
+    auto validator = [ = ](const ConstMonteCarloPtr & mc) {
       return mc->is_equilibrated().first;
     };
-    
+
     std::string header = std::string("susc_n(" + species_i + "," + species_j + ")");
-    
+
     return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator, validator);
   }
-  
+
   /// \brief Print parametric thermo-chemical susceptibility, 'susc_x(S,a)'
   ///
   /// \arg species_i: First species "A", "B", "C", ...
   ///
   /// - thermo-chemical susceptibility (per unit cell) = cov(potential_energy, x_i)*N/(k*T)
-  GenericDatumFormatter<double, ConstMonteCarloPtr> 
-  GrandCanonicalThermoChemSuscXFormatter(std::string comp_var_i){
-    
+  GenericDatumFormatter<double, ConstMonteCarloPtr>
+  GrandCanonicalThermoChemSuscXFormatter(std::string comp_var_i) {
+
     std::string name_i = "comp(" + comp_var_i + ")";
-    
-    auto evaluator = [=](const ConstMonteCarloPtr& mc) {
+
+    auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
       CovEvaluator cov_evaluator("potential_energy", name_i);
       auto N = mc->supercell().volume();
       ConstMonteCarloPtr ptr = mc;
-      auto T = static_cast<const GrandCanonical*>(ptr)->conditions().temperature();
-      return cov_evaluator(mc)*N/(KB*T);
+      auto T = static_cast<const GrandCanonical *>(ptr)->conditions().temperature();
+      return cov_evaluator(mc) * N / (KB * T);
     };
-    
-    auto validator = [=](const ConstMonteCarloPtr& mc) {
+
+    auto validator = [ = ](const ConstMonteCarloPtr & mc) {
       return mc->is_equilibrated().first;
     };
-    
+
     std::string header = std::string("susc_x(S," + comp_var_i + ")");
-    
+
     return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator, validator);
   }
-  
+
   /// \brief Print thermo-chemical susceptibility, 'susc_n(S,A)'
-  GenericDatumFormatter<double, ConstMonteCarloPtr> 
-  GrandCanonicalThermoChemSuscNFormatter(std::string species_i){
-  
+  GenericDatumFormatter<double, ConstMonteCarloPtr>
+  GrandCanonicalThermoChemSuscNFormatter(std::string species_i) {
+
     std::string name_i = "comp_n(" + species_i + ")";
-    
-    auto evaluator = [=](const ConstMonteCarloPtr& mc) {
+
+    auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
       CovEvaluator cov_evaluator("potential_energy", name_i);
       auto N = mc->supercell().volume();
       ConstMonteCarloPtr ptr = mc;
-      auto T = static_cast<const GrandCanonical*>(ptr)->conditions().temperature();
-      return cov_evaluator(mc)*N/(KB*T);
+      auto T = static_cast<const GrandCanonical *>(ptr)->conditions().temperature();
+      return cov_evaluator(mc) * N / (KB * T);
     };
-    
-    auto validator = [=](const ConstMonteCarloPtr& mc) {
+
+    auto validator = [ = ](const ConstMonteCarloPtr & mc) {
       return mc->is_equilibrated().first;
     };
-    
+
     std::string header = std::string("susc_n(S," + species_i + ")");
-    
+
     return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator, validator);
   }
-  
+
   /// \brief Make a results formatter
   ///
   /// Output data is:
@@ -146,8 +146,8 @@ namespace CASM {
   /// - <potential_energy>, prec(<potential_energy>)
   /// - <formation_energy>, prec(<formation_energy>)
   /// - param_chem_pot(a) ...
-  /// - <comp(a)> prec(<comp(a)>) ... 
-  /// - <comp_n(a)> prec(<comp_n(a)>) ... 
+  /// - <comp(a)> prec(<comp(a)>) ...
+  /// - <comp_n(a)> prec(<comp_n(a)>) ...
   /// - (other properties: correlations, atom_frac, site_frac, etc.)
   /// - heat_capacity
   /// - susc_x(a,a), ...
@@ -160,17 +160,20 @@ namespace CASM {
   /// { "key0":[...], "key1":[...], ... }
   /// \endcode
   ///
-  DataFormatter<ConstMonteCarloPtr> make_results_formatter(const GrandCanonical& mc) {
-  
+  DataFormatter<ConstMonteCarloPtr> make_results_formatter(const GrandCanonical &mc) {
+
     DataFormatter<ConstMonteCarloPtr> formatter;
-    
+
+    formatter.push_back(MonteCarloIsEquilibratedFormatter());
     formatter.push_back(MonteCarloNEquilSamplesFormatter());
+    formatter.push_back(MonteCarloIsConvergedFormatter());
     formatter.push_back(MonteCarloNAvgSamplesFormatter());
-    
+
     formatter.push_back(MonteCarloTFormatter<GrandCanonical>());
+
     std::set<std::string> exclude;
     std::string name;
-    
+
     // always sample Beta, potential_energy, and formation_energy
     {
       formatter.push_back(MonteCarloBetaFormatter<GrandCanonical>());
@@ -178,89 +181,89 @@ namespace CASM {
       formatter.push_back(MonteCarloMeanFormatter(name));
       formatter.push_back(MonteCarloPrecFormatter(name));
       exclude.insert(name);
-      
+
       name = "formation_energy";
       formatter.push_back(MonteCarloMeanFormatter(name));
       formatter.push_back(MonteCarloPrecFormatter(name));
       exclude.insert(name);
     }
-      
-    
-    
+
+
+
     // always sample param_chem_pot, comp
-    for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); ++i) {
+    for(int i = 0; i < mc.primclex().composition_axes().independent_compositions(); ++i) {
       formatter.push_back(MonteCarloParamChemPotFormatter<GrandCanonical>(mc, i));
     }
-    
-    for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); i++) {
-      
+
+    for(int i = 0; i < mc.primclex().composition_axes().independent_compositions(); i++) {
+
       name = std::string("comp(") + mc.primclex().composition_axes().comp_var(i) + ")";
       formatter.push_back(MonteCarloMeanFormatter(name));
       formatter.push_back(MonteCarloPrecFormatter(name));
       exclude.insert(name);
     }
-    
+
     // always sample comp_n
     auto struc_mol_name = mc.primclex().get_prim().get_struc_molecule_name();
-    for(int i=0; i<struc_mol_name.size(); ++i) {
+    for(int i = 0; i < struc_mol_name.size(); ++i) {
       name = std::string("comp_n(") + struc_mol_name[i] + ")";
       formatter.push_back(MonteCarloMeanFormatter(name));
       formatter.push_back(MonteCarloPrecFormatter(name));
       exclude.insert(name);
     }
-    
+
     // include mean/prec of other properties
-    for(auto it=mc.samplers().cbegin(); it != mc.samplers().cend(); ++it) {
+    for(auto it = mc.samplers().cbegin(); it != mc.samplers().cend(); ++it) {
       if(exclude.find(it->first) == exclude.end()) {
         formatter.push_back(MonteCarloMeanFormatter(it->first));
         formatter.push_back(MonteCarloPrecFormatter(it->first));
       }
     }
-    
+
     // include heat_capacity
     formatter.push_back(GrandCanonicalHeatCapacityFormatter());
-    
+
     // include susc_x
-    for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); i++) {
-      for(int j=i; j<mc.primclex().composition_axes().independent_compositions(); j++) {
-    
+    for(int i = 0; i < mc.primclex().composition_axes().independent_compositions(); i++) {
+      for(int j = i; j < mc.primclex().composition_axes().independent_compositions(); j++) {
+
         auto comp_var_i = mc.primclex().composition_axes().comp_var(i);
         auto comp_var_j = mc.primclex().composition_axes().comp_var(j);
         formatter.push_back(GrandCanonicalSuscXFormatter(comp_var_i, comp_var_j));
-    
+
       }
     }
-    
+
     // include thermo-chem susc
-    for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); i++) {
-    
+    for(int i = 0; i < mc.primclex().composition_axes().independent_compositions(); i++) {
+
       auto comp_var_i = mc.primclex().composition_axes().comp_var(i);
       formatter.push_back(GrandCanonicalThermoChemSuscXFormatter(comp_var_i));
-    
+
     }
-    
+
     // include susc_n
-    for(int i=0; i<struc_mol_name.size(); ++i) {
-      for(int j=i; j<struc_mol_name.size(); ++j) {
-    
+    for(int i = 0; i < struc_mol_name.size(); ++i) {
+      for(int j = i; j < struc_mol_name.size(); ++j) {
+
         auto species_i = struc_mol_name[i];
         auto species_j = struc_mol_name[j];
         formatter.push_back(GrandCanonicalSuscNFormatter(species_i, species_j));
-    
+
       }
     }
-    
+
     // include thermo-chem susc
-    for(int i=0; i<struc_mol_name.size(); ++i) {
-      
+    for(int i = 0; i < struc_mol_name.size(); ++i) {
+
       auto species_i = struc_mol_name[i];
       formatter.push_back(GrandCanonicalThermoChemSuscNFormatter(species_i));
-      
+
     }
-    
+
     return formatter;
   }
-  
+
   /// \brief Make a LTE results formatter
   ///
   /// Output data is:
@@ -270,20 +273,20 @@ namespace CASM {
   /// - gs_potential_energy
   /// - gs_formation_energy
   /// - param_chem_pot(a) ...
-  /// - gs_comp(a) ... 
-  /// - gs_comp_n(a) ... 
+  /// - gs_comp(a) ...
+  /// - gs_comp_n(a) ...
   ///
   /// For JSON format is:
   /// \code
   /// { "key0":[...], "key1":[...], ... }
   /// \endcode
   ///
-  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc) {
+  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc, const double &phi_LTE1) {
 
     DataFormatter<ConstMonteCarloPtr> formatter;
 
     formatter.push_back(MonteCarloTFormatter<GrandCanonical>());
-    formatter.push_back(GrandCanonicalLTEFormatter());
+    formatter.push_back(GrandCanonicalLTEFormatter(phi_LTE1));
     std::set<std::string> exclude;
     std::string name;
 
@@ -291,8 +294,8 @@ namespace CASM {
     {
       formatter.push_back(MonteCarloBetaFormatter<GrandCanonical>());
       name = "gs_potential_energy";
-      auto evaluator = [=](const ConstMonteCarloPtr& ptr) {
-        return static_cast<const GrandCanonical*>(ptr)->potential_energy();
+      auto evaluator = [ = ](const ConstMonteCarloPtr & ptr) {
+        return static_cast<const GrandCanonical *>(ptr)->potential_energy();
       };
       formatter.push_back(GenericDatumFormatter<double, ConstMonteCarloPtr>(name, name, evaluator));
       exclude.insert(name);
@@ -300,8 +303,8 @@ namespace CASM {
 
     {
       name = "gs_formation_energy";
-      auto evaluator = [=](const ConstMonteCarloPtr& ptr) {
-        return static_cast<const GrandCanonical*>(ptr)->formation_energy();
+      auto evaluator = [ = ](const ConstMonteCarloPtr & ptr) {
+        return static_cast<const GrandCanonical *>(ptr)->formation_energy();
       };
       formatter.push_back(GenericDatumFormatter<double, ConstMonteCarloPtr>(name, name, evaluator));
       exclude.insert(name);
@@ -313,24 +316,24 @@ namespace CASM {
     for(int i = 0; i < mc.primclex().composition_axes().independent_compositions(); ++i) {
       formatter.push_back(MonteCarloParamChemPotFormatter<GrandCanonical>(mc, i));
     }
-    
-    for(int i=0; i<mc.primclex().composition_axes().independent_compositions(); i++) {
-      
+
+    for(int i = 0; i < mc.primclex().composition_axes().independent_compositions(); i++) {
+
       name = std::string("gs_comp(") + mc.primclex().composition_axes().comp_var(i) + ")";
-      auto evaluator = [=](const ConstMonteCarloPtr& ptr) {
-        const GrandCanonical* _ptr = static_cast<const GrandCanonical*>(ptr);
+      auto evaluator = [ = ](const ConstMonteCarloPtr & ptr) {
+        const GrandCanonical *_ptr = static_cast<const GrandCanonical *>(ptr);
         return _ptr->primclex().composition_axes().param_composition(_ptr->comp_n())[i];
       };
       formatter.push_back(GenericDatumFormatter<double, ConstMonteCarloPtr>(name, name, evaluator));
       exclude.insert(name);
     }
-    
+
     // always sample comp_n
     auto struc_mol_name = mc.primclex().get_prim().get_struc_molecule_name();
-    for(int i=0; i<struc_mol_name.size(); ++i) {
+    for(int i = 0; i < struc_mol_name.size(); ++i) {
       name = std::string("gs_comp_n(") + struc_mol_name[i] + ")";
-      auto evaluator = [=](const ConstMonteCarloPtr& ptr) {
-        return static_cast<const GrandCanonical*>(ptr)->comp_n()[i];
+      auto evaluator = [ = ](const ConstMonteCarloPtr & ptr) {
+        return static_cast<const GrandCanonical *>(ptr)->comp_n()[i];
       };
       formatter.push_back(GenericDatumFormatter<double, ConstMonteCarloPtr>(name, name, evaluator));
       exclude.insert(name);
@@ -417,7 +420,7 @@ namespace CASM {
   }
 
   /// \brief Will create new file or append to existing results file the results of the latest run
-  void write_results(const MonteSettings &settings, const GrandCanonical &mc) {
+  void write_results(const MonteSettings &settings, const GrandCanonical &mc, Log &_log) {
     try {
 
       fs::create_directories(settings.output_directory());
@@ -426,6 +429,7 @@ namespace CASM {
 
       // write csv path results
       if(settings.write_csv()) {
+        _log << "write: " << dir.results_csv() << "\n";
         fs::path file = dir.results_csv();
         fs::ofstream sout;
 
@@ -444,6 +448,7 @@ namespace CASM {
 
       // write json path results
       if(settings.write_json()) {
+        _log << "write: " << dir.results_json() << "\n";
         fs::path file = dir.results_json();
 
         jsonParser results;
@@ -466,12 +471,13 @@ namespace CASM {
   }
 
   /// \brief Write conditions to conditions.cond_index directory
-  void write_conditions_json(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index) {
+  void write_conditions_json(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index, Log &_log) {
     try {
       GrandCanonicalDirectoryStructure dir(settings.output_directory());
       fs::create_directories(dir.conditions_dir(cond_index));
       jsonParser json;
       to_json(mc.conditions(), json);
+      _log << "write: " << dir.conditions_json(cond_index) << "\n";
       json.write(dir.conditions_json(cond_index));
     }
     catch(...) {
@@ -481,7 +487,7 @@ namespace CASM {
   }
 
   /// \brief Will create (and possibly overwrite) new file with all observations from run with conditions.cond_index
-  void write_observations(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index) {
+  void write_observations(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index, Log &_log) {
     try {
       if(!settings.write_observations()) {
         return;
@@ -499,12 +505,14 @@ namespace CASM {
 
       if(settings.write_csv()) {
         gz::ogzstream sout((dir.observations_csv(cond_index).string() + ".gz").c_str());
+        _log << "write: " << fs::path(dir.observations_csv(cond_index).string() + ".gz") << "\n";
         sout << formatter(observations.cbegin(), observations.cend());
         sout.close();
       }
 
       if(settings.write_json()) {
         gz::ogzstream sout((dir.observations_json(cond_index).string() + ".gz").c_str());
+        _log << "write: " << fs::path(dir.observations_json(cond_index).string() + ".gz") << "\n";
         jsonParser json = jsonParser::object();
         formatter(observations.cbegin(), observations.cend()).to_json_arrays(json);
         sout << json;
@@ -535,7 +543,7 @@ namespace CASM {
   /// [["A", "B"],["A" "C"], ... ]
   /// \endcode
   ///
-  void write_trajectory(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index) {
+  void write_trajectory(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index, Log &_log) {
     try {
 
       if(!settings.write_trajectory()) {
@@ -555,6 +563,7 @@ namespace CASM {
 
       if(settings.write_csv()) {
         gz::ogzstream sout((dir.trajectory_csv(cond_index).string() + ".gz").c_str());
+        _log << "write: " << fs::path(dir.trajectory_csv(cond_index).string() + ".gz") << "\n";
         sout << formatter(observations.cbegin(), observations.cend());
         sout.close();
 
@@ -572,6 +581,7 @@ namespace CASM {
         // 1          Ni          -
         // ...
         fs::ofstream keyout(dir.occupation_key_csv());
+        _log << "write: " << dir.occupation_key_csv() << "\n";
         keyout << "site_index";
         for(int i = 0; i < max_allowed; i++) {
           keyout << "\tocc_index_" << i;
@@ -608,6 +618,7 @@ namespace CASM {
           json["DoF"].push_back(*it);
         }
         gz::ogzstream sout((dir.trajectory_json(cond_index).string() + ".gz").c_str());
+        _log << "write: " << fs::path(dir.trajectory_json(cond_index).string() + ".gz") << "\n";
         sout << json;
         sout.close();
 
@@ -620,6 +631,7 @@ namespace CASM {
           key.push_back(prim.basis[i].allowed_occupants());
         }
         key.write(dir.occupation_key_json());
+        _log << "write: " << dir.occupation_key_json() << "\n";
 
       }
 
@@ -632,35 +644,36 @@ namespace CASM {
   }
 
   /// \brief For the initial state, write a POSCAR file.
-  /// 
+  ///
   /// The current naming convention is 'POSCAR.initial'
-  void write_POSCAR_initial(const GrandCanonical& mc, Index cond_index) {
-    
+  void write_POSCAR_initial(const GrandCanonical &mc, Index cond_index, Log &_log) {
+
     GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
     fs::create_directories(dir.trajectory_dir(cond_index));
-    
+
     // read initial_state.json
     ConfigDoF config_dof;
     from_json(config_dof, jsonParser(dir.initial_state_json(cond_index)));
-    
+
     if(!fs::exists(dir.initial_state_json(cond_index))) {
       throw std::runtime_error(
-        std::string("ERROR in 'write_POSCAR_initial(const GrandCanonical &mc, Index cond_index)'\n") + 
-                    "  File not found: " + dir.initial_state_json(cond_index).string());
+        std::string("ERROR in 'write_POSCAR_initial(const GrandCanonical &mc, Index cond_index)'\n") +
+        "  File not found: " + dir.initial_state_json(cond_index).string());
     }
-    
+
     // write file
     fs::ofstream sout(dir.POSCAR_initial(cond_index));
-    VaspIO::PrintPOSCAR p(mc.supercell(), mc.configdof());
+    _log << "write: " << dir.POSCAR_initial(cond_index) << "\n";
+    VaspIO::PrintPOSCAR p(mc.supercell(), config_dof);
     p.sort();
     p.print(sout);
     return;
   }
-  
+
   /// \brief For the final state, write a POSCAR file.
   ///
   /// The current naming convention is 'POSCAR.final'
-  void write_POSCAR_final(const GrandCanonical &mc, Index cond_index) {
+  void write_POSCAR_final(const GrandCanonical &mc, Index cond_index, Log &_log) {
 
     GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
     fs::create_directories(dir.trajectory_dir(cond_index));
@@ -677,7 +690,8 @@ namespace CASM {
 
     // write file
     fs::ofstream sout(dir.POSCAR_final(cond_index));
-    VaspIO::PrintPOSCAR p(mc.supercell(), mc.configdof());
+    _log << "write: " << dir.POSCAR_final(cond_index) << "\n";
+    VaspIO::PrintPOSCAR p(mc.supercell(), config_dof);
     p.sort();
     p.print(sout);
     return;
@@ -687,7 +701,7 @@ namespace CASM {
   ///
   /// The current naming convention is 'POSCAR.sample'
   /// POSCAR title comment is printed with "Sample: #  Pass: #  Step: #"
-  void write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index) {
+  void write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index, Log &_log) {
 
     GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
     fs::create_directories(dir.trajectory_dir(cond_index));
@@ -768,6 +782,7 @@ namespace CASM {
 
       // write file
       fs::ofstream sout(dir.POSCAR_snapshot(cond_index, i));
+      _log << "write: " << dir.POSCAR_snapshot(cond_index, i) << "\n";
       VaspIO::PrintPOSCAR p(mc.supercell(), trajectory[i]);
       p.set_title(ss.str());
       p.sort();
@@ -785,12 +800,12 @@ namespace CASM {
     jsonParser example_settings;
 
     // ---- Initialization settings --------------------
-    
+
     //Monte Carlo cell
     Eigen::Matrix3i tmat = Eigen::Matrix3i::Zero();
-    tmat(0,0) = 10;
-    tmat(1,1) = 10;
-    tmat(2,2) = 10;
+    tmat(0, 0) = 10;
+    tmat(1, 1) = 10;
+    tmat(2, 2) = 10;
     example_settings["supercell"] = tmat;
 
     //Cluster expanstion to use, project clex name
@@ -807,8 +822,8 @@ namespace CASM {
 
     //ECI settings name, project eci name
     example_settings["model"]["eci"] = "default";
-    
-    
+
+
     // ---- Data settings --------------------
 
     example_settings["data"]["sample_by"] = "pass";
@@ -876,34 +891,35 @@ namespace CASM {
 
     example_settings["driver"]["incremental_conditions"]["param_chem_pot"]["a"] = 0.0;
     example_settings["driver"]["incremental_conditions"]["temperature"] = 10.0; // K
-    example_settings["driver"]["incremental_conditions"]["tolerance"] = 0.001; 
-    
+    example_settings["driver"]["incremental_conditions"]["tolerance"] = 0.001;
+
     //Seed configuration
     example_settings["driver"]["motif"]["configname"] = "SCELV_A_B_C_D_E_F/X";
-    
+
     return example_settings;
   }
 
   /// \brief Print single spin flip LTE
-  GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalLTEFormatter() {
+  GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalLTEFormatter(const double &phi_LTE1) {
     auto evaluator = [ = ](const ConstMonteCarloPtr & mc) {
       ConstMonteCarloPtr ptr = mc;
-      return static_cast<const GrandCanonical *>(ptr)->lte_grand_canonical_free_energy(std::cout);
+      return phi_LTE1;
     };
     return GenericDatumFormatter<double, ConstMonteCarloPtr>("phi_LTE", "phi_LTE", evaluator);
   }
 
   /// \brief Will create new file or append to existing results file the results of the latest run
-  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc) {
+  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc, const double &phi_LTE1, Log &_log) {
     try {
 
       fs::create_directories(settings.output_directory());
       GrandCanonicalDirectoryStructure dir(settings.output_directory());
-      auto formatter = make_lte_results_formatter(mc);
+      auto formatter = make_lte_results_formatter(mc, phi_LTE1);
 
       // write csv path results
       if(settings.write_csv()) {
         fs::path file = dir.results_csv();
+        _log << "write: " << dir.results_csv() << "\n";
         fs::ofstream sout;
 
         if(!fs::exists(file)) {
@@ -922,7 +938,8 @@ namespace CASM {
       // write json path results
       if(settings.write_json()) {
         fs::path file = dir.results_json();
-        
+        _log << "write: " << dir.results_json() << "\n";
+
         jsonParser results;
         if(fs::exists(file)) {
           results.read(file);

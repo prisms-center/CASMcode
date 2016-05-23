@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE(DatumFormatters) {
   auto check = [&](const BaseDatumFormatter<Configuration> &formatter) {
     auto prev_size = dict.size();
     dict.insert(formatter);
-    BOOST_CHECK_EQUAL_MESSAGE(prev_size + 1, dict.size(), formatter.name());
+    BOOST_CHECK_MESSAGE(prev_size + 1 == dict.size(), formatter.name());
   };
 
   // String
@@ -192,31 +192,31 @@ BOOST_AUTO_TEST_CASE(AllTest) {
   proj.check_composition();
   proj.check_enum();
 
-  std::stringstream ss;
-  PrimClex primclex(proj.dir, ss);
+  Log log = null_log();
+  PrimClex primclex(proj.dir, log);
 
-  ss << "---- Comp -------------" << std::endl;
+  log << "---- Comp -------------" << std::endl;
   ConfigIO::Comp comp;
   for(auto it = primclex.config_begin(); it != primclex.config_end(); ++it) {
-    ss << "name: " << it->name() << "  comp: " << comp(*it).transpose() << "  print: ";
-    comp.print(*it, ss);
-    ss << std::endl;
+    log << "name: " << it->name() << "  comp: " << comp(*it).transpose() << "  print: ";
+    comp.print(*it, log);
+    log << std::endl;
   }
 
-  ss << "---- BaseValueFormatter Ptr -------------" << std::endl;
+  log << "---- BaseValueFormatter Ptr -------------" << std::endl;
   BaseValueFormatter<Eigen::VectorXd, Configuration> *value_ptr = &comp;
   for(auto it = primclex.config_begin(); it != primclex.config_end(); ++it) {
-    ss << "name: " << it->name() << "  value: " << (*value_ptr)(*it).transpose() << "  print: ";
-    value_ptr->print(*it, ss);
-    ss << std::endl;
+    log << "name: " << it->name() << "  value: " << (*value_ptr)(*it).transpose() << "  print: ";
+    value_ptr->print(*it, log);
+    log << std::endl;
   }
 
-  ss << "---- BaseDatumFormatter Ptr -------------" << std::endl;
+  log << "---- BaseDatumFormatter Ptr -------------" << std::endl;
   BaseDatumFormatter<Configuration> *datum_ptr = &comp;
   for(auto it = primclex.config_begin(); it != primclex.config_end(); ++it) {
-    ss << "name: " << it->name() << "  print: ";
-    datum_ptr->print(*it, ss);
-    ss << std::endl;
+    log << "name: " << it->name() << "  print: ";
+    datum_ptr->print(*it, log);
+    log << std::endl;
   }
 
   //std::cout << ss.str() << std::endl;

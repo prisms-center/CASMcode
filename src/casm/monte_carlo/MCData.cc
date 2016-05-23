@@ -145,7 +145,11 @@ namespace CASM {
     double var_of_mean = (CoVar0 / N) * (1.0 + rho) / (1.0 - rho);
 
     m_calculated_prec = z_alpha * sqrt(var_of_mean);
+  }
 
+  double covariance(const Eigen::VectorXd &X, const Eigen::VectorXd &Y, double mean) {
+    Eigen::VectorXd vmean = Eigen::VectorXd::Ones(X.size()) * mean;
+    return (X - vmean).dot(Y - vmean) / X.size();
   }
 
 
@@ -170,7 +174,7 @@ namespace CASM {
 
       size_type range_size = N - i;
 
-      double cov = observations.segment(0, range_size).dot(observations.segment(i, range_size)) / range_size - obs_mean_sqr;
+      double cov = covariance(observations.segment(0, range_size), observations.segment(i, range_size), m_mean);
 
       if(std::abs(cov / CoVar0) <= 0.5) {
         return std::make_tuple(true, pow(2.0, (-1.0 / i)), CoVar0);

@@ -8,10 +8,21 @@
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/app/DirectoryStructure.hh"
 
+#include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
+
+  class Configuration;
+
+  template <bool IsConst>
+  class ConfigSelection;
+  typedef ConfigSelection<true> ConstConfigSelection;
+
+  namespace ConfigIO {
+    class Selected;
+  }
 
   /// \brief Read/modify settings of an already existing CASM project
   ///
@@ -75,8 +86,28 @@ namespace CASM {
     /// \brief Get current command used by 'casm view'
     std::string view_command() const;
 
-    /// \brief Get current project tol
-    double tol() const;
+    /// \brief Get current project crystallography tolerance
+    double crystallography_tol() const;
+
+    /// \brief Get current project linear algebra tolerance
+    double lin_alg_tol() const;
+
+
+    // ** Configuration properties **
+
+    const DataFormatterDictionary<Configuration> &config_io() const;
+
+    /// \brief Set the selection to be used for the 'selected' column
+    void set_selected(const ConfigIO::Selected &selection);
+
+    /// \brief Set the selection to be used for the 'selected' column
+    void set_selected(const ConstConfigSelection &selection);
+
+    /// \brief Add user-defined query alias
+    void add_alias(const std::string &alias_name, const std::string &alias_command, std::ostream &serr);
+
+    /// \brief Return map containing aliases
+    const std::map<std::string, std::string> &aliases() const;
 
 
     // ** Clexulator names **
@@ -155,8 +186,11 @@ namespace CASM {
     /// \brief Set command used by 'casm view'
     bool set_view_command(std::string opt);
 
-    /// \brief Set shared library options to 'opt'
-    bool set_tol(double _tol);
+    /// \brief Set crystallography tolerance
+    bool set_crystallography_tol(double _tol);
+
+    /// \brief Set linear algebra tolerance
+    bool set_lin_alg_tol(double _tol);
 
 
     /// \brief Save settings to project settings file
@@ -193,8 +227,17 @@ namespace CASM {
     // Command executed by 'casm view'
     std::string m_view_command;
 
-    // Default tolerance
-    double m_tol;
+    // Crystallography tolerance
+    double m_crystallography_tol;
+
+    // Linear algebra tolerance
+    double m_lin_alg_tol;
+
+    // ConfigIO
+    DataFormatterDictionary<Configuration> m_config_io_dict;
+
+    // ConfigIO aliases
+    std::map<std::string, std::string> m_aliases;
 
   };
 

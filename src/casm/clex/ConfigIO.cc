@@ -11,7 +11,6 @@
 #include "casm/clex/ConfigIOSelected.hh"
 
 namespace CASM {
-  //int ConfigIOParser::hack = ConfigIOParser::init(std::function<void(DataFormatterDictionary<Configuration>&) >(ConfigIO::initialize_formatting_dictionary));
 
   namespace ConfigIO_impl {
 
@@ -269,7 +268,7 @@ namespace CASM {
     GenericConfigFormatter<std::string> configname() {
       return GenericConfigFormatter<std::string>("configname",
                                                  "Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#'",
-      [](const Configuration & config)->std::string{
+      [](const Configuration & config)->std::string {
         return config.name();
       });
     }
@@ -277,7 +276,7 @@ namespace CASM {
     GenericConfigFormatter<std::string> scelname() {
       return GenericConfigFormatter<std::string>("scelname",
                                                  "Supercell name, in the form 'SCEL#_#_#_#_#_#_#'",
-      [](const Configuration & config)->std::string{
+      [](const Configuration & config)->std::string {
         return config.get_supercell().get_name();
       });
     }
@@ -302,7 +301,7 @@ namespace CASM {
     GenericConfigFormatter<Index> scel_size() {
       return GenericConfigFormatter<Index>("scel_size",
                                            "Supercell volume, given as the integer number of unit cells",
-      [](const Configuration & config)->Index{
+      [](const Configuration & config)->Index {
         return config.get_supercell().volume();
       });
     }
@@ -310,7 +309,7 @@ namespace CASM {
     GenericConfigFormatter<Index> multiplicity() {
       return GenericConfigFormatter<Index>("multiplicity",
                                            "Symmetric multiplicity of the configuration, excluding translational equivalents.",
-      [](const Configuration & config)->Index{
+      [](const Configuration & config)->Index {
         return config.get_prim().factor_group().size() / config.factor_group(config.get_supercell().permute_begin(), config.get_supercell().permute_end()).size();
       });
     }

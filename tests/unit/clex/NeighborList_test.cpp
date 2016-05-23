@@ -130,8 +130,7 @@ BOOST_AUTO_TEST_CASE(Proj) {
 
   proj.check_init();
 
-  std::stringstream ss;
-  PrimClex primclex(proj.dir, ss);
+  PrimClex primclex(proj.dir, null_log());
   Structure prim = primclex.get_prim();
   const DirectoryStructure &dir = primclex.dir();
   const ProjectSettings &set = primclex.settings();

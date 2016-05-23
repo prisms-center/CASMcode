@@ -38,7 +38,7 @@ namespace CASM {
 
     /// \brief matrix of exchange chemical potential, M(new, curr) = chem_pot(new) - chem_pot(curr)
     Eigen::MatrixXd exchange_chem_pot() const;
-    
+
     /// \brief exchange chemical potential: chem_pot(new) - chem_pot(curr)
     double exchange_chem_pot(Index index_new, Index index_curr) const;
 
@@ -104,7 +104,7 @@ namespace CASM {
 
     ///Vector of the parametric chemical potentials conjugate to the parametric compositions.
     Eigen::VectorXd m_param_chem_pot;
-    
+
     ///Matrix(i,j) of chem_pot(i) - chem_pot(j)
     Eigen::MatrixXd m_exchange_chem_pot;
 
@@ -113,6 +113,8 @@ namespace CASM {
 
 
   };
+
+  std::ostream &operator<<(std::ostream &sout, const GrandCanonicalConditions &cond);
 
 }
 

@@ -149,7 +149,12 @@ class Incar:
                 # add the value of the 'tag' for each atom into the self.tags list
                 for alias in sorted(pos.keys()):
                     if key.lower() in (VASP_TAG_SPECF_LIST + VASP_TAG_SPECI_LIST):
-                        self.tags[key].append(species[alias].tags[key])
+                      # for species-specific tags, use the value specified for the
+                      # species whose pseudopotential is being used for this alias
+                      for name in species.keys():
+                        if species[name].alias == alias and species[name].write_potcar:
+                          self.tags[key].append(species[name].tags[key])
+                          break
                     else:
                         for site in pos[alias]:
                             self.tags[key].append( species[site.occupant].tags[key] )

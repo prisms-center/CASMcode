@@ -3,17 +3,10 @@
 
 import os
 
-Import('env')
+Import('env', 'version_number', 'url')
 
-import subprocess
-process = subprocess.Popen(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-GIT_VERSION, err = process.communicate()
-
-pycasm_setup = 'setup.py'
-
-if GIT_VERSION != '':
-  pycasm_setup = env.Command('setup.py', ['make_setup.py'], 'cd python/casm && python make_setup.py')
-  env.NoClean(pycasm_setup)
+pycasm_setup = env.Command('setup.py', ['make_setup.py'], 'cd python/casm && python make_setup.py ' + version_number + ' ' + url)
+env.NoClean(pycasm_setup)
 
 pycasm_install = env.Command('installed.txt', [pycasm_setup], 'cd python/casm && python setup.py install --prefix=' + env['PREFIX'] + ' --record installed.txt')
 AlwaysBuild(pycasm_install)
@@ -25,8 +18,7 @@ installed_files = []
 if os.path.isfile('installed.txt'):
   installed_files = [line.rstrip('\n') for line in open('installed.txt')]
 
-env.Clean('pycasm_install', installed_files + ['build'])
-
+env.Clean('pycasm_install', installed_files + ['build', 'dist', 'casm.egg-info'])
 
 if 'pycasm_install' in COMMAND_LINE_TARGETS:
   env['IS_INSTALL'] = 1

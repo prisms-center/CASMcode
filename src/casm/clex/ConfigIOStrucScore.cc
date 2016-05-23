@@ -31,7 +31,7 @@ namespace CASM {
                                    + " invalid file path '" + fs::absolute(m_prim_path).string() + "'. File does not exist.\n");
         }
 
-        m_altprimclex = PrimClex(Structure(m_prim_path));
+        m_altprimclex.reset(new PrimClex(Structure(m_prim_path)));
       }
       for(Index i = 1; i < splt_vec.size(); ++i) {
         if(splt_vec[i] != "basis_score" && splt_vec[i] != "lattice_score" && splt_vec[i] != "total_score") {
@@ -53,7 +53,7 @@ namespace CASM {
           ++pushed_args;
         }
       }
-      m_configmapper = ConfigMapper(m_altprimclex, _lattice_weight);
+      m_configmapper = ConfigMapper(*m_altprimclex, _lattice_weight);
       return true;
     }
 

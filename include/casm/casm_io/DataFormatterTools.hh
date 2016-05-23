@@ -21,7 +21,7 @@ namespace CASM {
   */
 
 
-  /// \brief Base class for DataFormatter that operate on the results of other DataFormatters
+  /// \brief DataFormatters that operate on the results of other DataFormatters
   ///
   /// \ingroup DataFormatterOperator
   ///
@@ -31,12 +31,14 @@ namespace CASM {
 
     using BaseDatumFormatter<DataObject>::name;
     using Evaluator = std::function<ValueType(const std::vector<ArgType> &)>;
-    using Parser = std::function<const BaseDatumFormatter<DataObject>&(const std::string &)>;
     //validator probably not necessary?
     //using Validator = std::function<bool(const DataObject &)>;
 
-    DataFormatterOperator(const std::string &_init_name, const std::string &_desc, Evaluator evaluator, Parser parser = DataFormatterParser<DataObject>::lookup) :
-      BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator), m_parser(parser) {}
+    DataFormatterOperator(
+      const std::string &_init_name,
+      const std::string &_desc,
+      Evaluator evaluator) :
+      BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator) {}
 
     std::unique_ptr<DataFormatterOperator> clone() const {
       return std::unique_ptr<DataFormatterOperator>(this->_clone());
@@ -89,7 +91,6 @@ namespace CASM {
     }
 
     Evaluator m_evaluate;
-    Parser m_parser;
     DataFormatter<DataObject> m_arg_formatter;
   };
 
@@ -102,7 +103,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<double, double, DataObject> format_operator_add() {
     return DataFormatterOperator<double, double, DataObject>("add", "Add two or more numbers",
-    [](const std::vector<double> &vec)->double{
+    [](const std::vector<double> &vec)->double {
       return std::accumulate(vec.cbegin(),
       vec.cend(),
       0.0);
@@ -117,7 +118,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<double, double, DataObject> format_operator_sub() {
     return DataFormatterOperator<double, double, DataObject>("sub", "Subtract two numbers",
-    [](const std::vector<double> &vec)->double{
+    [](const std::vector<double> &vec)->double {
       if(vec.size() != 2)
         throw std::runtime_error("Subtraction operator must receive exactly two values!");
       return vec[0] - vec[1];
@@ -132,7 +133,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<double, double, DataObject> format_operator_mult() {
     return DataFormatterOperator<double, double, DataObject>("mult", "Multiply two or more numbers",
-    [](const std::vector<double> &vec)->double{
+    [](const std::vector<double> &vec)->double {
       return std::accumulate(vec.cbegin(),
       vec.cend(),
       1.0,
@@ -150,7 +151,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<double, double, DataObject> format_operator_div() {
     return DataFormatterOperator<double, double, DataObject>("div", "Divide two numbers",
-    [](const std::vector<double> &vec)->double{
+    [](const std::vector<double> &vec)->double {
       if(vec.size() != 2)
         throw std::runtime_error("Division operator must receive exactly two values!");
       return vec[0] / vec[1];
@@ -165,7 +166,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<double, double, DataObject> format_operator_max() {
     return DataFormatterOperator<double, double, DataObject>("max", "Max value of two or more numbers",
-    [](const std::vector<double> &vec)->double{
+    [](const std::vector<double> &vec)->double {
       return (*std::max_element(vec.cbegin(),
       vec.cend()));
     });
@@ -178,7 +179,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<double, double, DataObject> format_operator_min() {
     return DataFormatterOperator<double, double, DataObject>("min", "Min value of two or more numbers",
-    [](const std::vector<double> &vec)->double{
+    [](const std::vector<double> &vec)->double {
       return (*std::min_element(vec.cbegin(),
       vec.cend()));
     });
@@ -191,7 +192,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<long, double, DataObject> format_operator_imax() {
     return DataFormatterOperator<long, double, DataObject>("imax", "Index (from 0) of max value in array of two or more numbers",
-    [](const std::vector<double> &vec)->long{
+    [](const std::vector<double> &vec)->long {
       auto it = std::max_element(vec.cbegin(), vec.cend());
       return std::distance(vec.cbegin(), it);
     });
@@ -204,7 +205,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<long, double, DataObject> format_operator_imin() {
     return DataFormatterOperator<long, double, DataObject>("imin", "Index (from 0) of min value in array of two or more numbers",
-    [](const std::vector<double> &vec)->long{
+    [](const std::vector<double> &vec)->long {
       auto it = std::min_element(vec.cbegin(), vec.cend());
       return std::distance(vec.cbegin(), it);
     });
@@ -217,7 +218,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<double, double, DataObject> format_operator_exp() {
     return DataFormatterOperator<double, double, DataObject>("exp", "Exponential function",
-    [](const std::vector<double> &vec)->double{
+    [](const std::vector<double> &vec)->double {
       if(vec.size() != 1)
         throw std::runtime_error("Exponent operator must receive exactly one value!");
       return exp(vec[0]);
@@ -235,7 +236,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<bool, std::string, DataObject> format_operator_re() {
     return DataFormatterOperator<bool, std::string, DataObject>("re", "Check if string matches regular expression. Ex: re('input_string','regex_pattern')",
-    [](const std::vector<std::string> &vec)->bool{
+    [](const std::vector<std::string> &vec)->bool {
       if(vec.size() != 2)
         throw std::runtime_error("Operator re('input_string','regex_pattern') must receive exactly 2 values!");
       boost::regex e(boost::trim_copy_if(vec[1], boost::is_any_of(" '")));
@@ -252,7 +253,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<bool, std::string, DataObject> format_operator_rs() {
     return DataFormatterOperator<bool, std::string, DataObject>("rs", "Check if string contains regular expression. Ex: rs('input_string','regex_pattern')",
-    [](const std::vector<std::string> &vec)->bool{
+    [](const std::vector<std::string> &vec)->bool {
       if(vec.size() != 2)
         throw std::runtime_error("Operator re('input_string','regex_pattern') must receive exactly 2 values!");
       boost::regex e(boost::trim_copy_if(vec[1], boost::is_any_of(" '")));
@@ -267,7 +268,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<double, double, DataObject> format_operator_sq() {
     return DataFormatterOperator<double, double, DataObject>("sq", "Square of a number",
-    [](const std::vector<double> &vec)->double{
+    [](const std::vector<double> &vec)->double {
       if(vec.size() != 1)
         throw std::runtime_error("Square operator must receive exactly one value!");
       return vec[0] * vec[0];
@@ -282,7 +283,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<double, double, DataObject> format_operator_sqrt() {
     return DataFormatterOperator<double, double, DataObject>("sqrt", "Square root of a number",
-    [](const std::vector<double> &vec)->double{
+    [](const std::vector<double> &vec)->double {
       if(vec.size() != 1)
         throw std::runtime_error("Square-root operator must receive exactly one value!");
       return sqrt(vec[0]);
@@ -297,7 +298,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<double, double, DataObject> format_operator_neg() {
     return DataFormatterOperator<double, double, DataObject>("neg", "Negative of a number",
-    [](const std::vector<double> &vec)->double{
+    [](const std::vector<double> &vec)->double {
       if(vec.size() != 1)
         throw std::runtime_error("Negation operator must receive exactly one value!");
       return -vec[0];
@@ -312,7 +313,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<bool, bool, DataObject> format_operator_and() {
     return DataFormatterOperator<bool, bool, DataObject>("and", "Boolean AND for sequence of boolean values",
-    [](const std::vector<bool> &vec)->bool{
+    [](const std::vector<bool> &vec)->bool {
       return std::accumulate(vec.cbegin(),
       vec.cend(),
       true,
@@ -330,7 +331,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<bool, bool, DataObject> format_operator_or() {
     return DataFormatterOperator<bool, bool, DataObject>("or", "Boolean OR for sequence of boolean values",
-    [](const std::vector<bool> &vec)->bool{
+    [](const std::vector<bool> &vec)->bool {
       return std::accumulate(vec.cbegin(),
       vec.cend(),
       false,
@@ -348,16 +349,17 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<bool, bool, DataObject> format_operator_xor() {
     return DataFormatterOperator<bool, bool, DataObject>("xor", "Boolean XOR for for two boolean values",
-    [](const std::vector<bool> &vec)->bool{
+    [](const std::vector<bool> &vec)->bool {
       if(vec.size() != 2)
         throw std::runtime_error("Boolean XOR operator expects exactly two values!");
-      return (vec[0] && !vec[1]) || (!vec[0] && vec[1]);});
+      return (vec[0] && !vec[1]) || (!vec[0] && vec[1]);
+    });
   }
 
   template<typename DataObject>
   DataFormatterOperator<bool, bool, DataObject> format_operator_not() {
     return DataFormatterOperator<bool, bool, DataObject>("not", "Boolean NOT for a single boolean value",
-    [](const std::vector<bool> &vec)->bool{
+    [](const std::vector<bool> &vec)->bool {
       if(vec.size() != 1)
         throw std::runtime_error("Boolean NOT operator must receive exactly one value!");
       return !vec[0];
@@ -372,7 +374,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<bool, double, DataObject> format_operator_eq() {
     return DataFormatterOperator<bool, double, DataObject>("eq", "Equality comparison for two values",
-    [](const std::vector<double> &vec)->bool{
+    [](const std::vector<double> &vec)->bool {
       if(vec.size() != 2)
         throw std::runtime_error("Greater-than operator must receive exactly two values!");
       return almost_equal(vec[0], vec[1]);
@@ -387,7 +389,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<bool, double, DataObject> format_operator_lt() {
     return DataFormatterOperator<bool, double, DataObject>("lt", "Less-than comparison for two values",
-    [](const std::vector<double> &vec)->bool{
+    [](const std::vector<double> &vec)->bool {
       if(vec.size() != 2)
         throw std::runtime_error("Less-than operator must receive exactly two values!");
       return vec[0] < vec[1];
@@ -402,7 +404,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<bool, double, DataObject> format_operator_le() {
     return DataFormatterOperator<bool, double, DataObject>("le", "Less-than-or-equal comparison for two values",
-    [](const std::vector<double> &vec)->bool{
+    [](const std::vector<double> &vec)->bool {
       if(vec.size() != 2)
         throw std::runtime_error("Less-than-or-equal operator must receive exactly two values!");
       return vec[0] <= vec[1];
@@ -417,7 +419,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<bool, double, DataObject> format_operator_gt() {
     return DataFormatterOperator<bool, double, DataObject>("gt", "Greater-than comparison for two values",
-    [](const std::vector<double> &vec)->bool{
+    [](const std::vector<double> &vec)->bool {
       if(vec.size() != 2)
         throw std::runtime_error("Greater-than operator must receive exactly two values!");
       return vec[0] > vec[1];
@@ -432,7 +434,7 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterOperator<bool, double, DataObject> format_operator_ge() {
     return DataFormatterOperator<bool, double, DataObject>("ge", "Greater-than-or-equal comparison for two values",
-    [](const std::vector<double> &vec)->bool{
+    [](const std::vector<double> &vec)->bool {
       if(vec.size() != 2)
         throw std::runtime_error("Greater-than-or-equal operator must receive exactly two values!");
       return vec[0] >= vec[1];
@@ -486,13 +488,16 @@ namespace CASM {
   public:
     using BaseDatumFormatter<DataObject>::name;
 
-    DatumFormatterAlias(const std::string &_name, const std::string &_command, const std::string &_help = "") :
+    DatumFormatterAlias(const std::string &_name,
+                        const std::string &_command,
+                        const DataFormatterDictionary<DataObject> &_dict,
+                        const std::string &_help = "") :
       BaseDatumFormatter<DataObject> (_name, _help.empty() ? "User-specified alias for '" + _command + "'" : _help) {
 
       split_formatter_expression(_command, m_format_tags, m_subexprs);
       if(m_format_tags.size() != 1)
         throw std::runtime_error("Expression '" + _command + "' is either empty or consists of multiple expressions.\n");
-
+      m_formatter = _dict.lookup(m_format_tags[0])->clone();
     }
 
     DatumFormatterAlias(const std::string &_name, const BaseDatumFormatter<DataObject> &_rhs, const std::string &_help = "") :
@@ -576,7 +581,7 @@ namespace CASM {
     bool parse_args(const std::string &args)  override {
 
       if(!m_formatter) {
-        m_formatter = DataFormatterParser<DataObject>::lookup(m_format_tags[0]).clone();
+        throw std::runtime_error("ERROR: DataFormatterAlias has no formatter");
       }
       //Parse the arguments of of the command now.  Later, we may want to do expression substitution
       // (e.g.,  "comp_plus = add(comp(a),$1)" where $1 specifies an argument)
@@ -604,8 +609,9 @@ namespace CASM {
   DatumFormatterAlias<DataObject> datum_formatter_alias(
     const std::string &_name,
     const std::string &_command,
+    const DataFormatterDictionary<DataObject> &_dict,
     const std::string &_help = "") {
-    return DatumFormatterAlias<DataObject>(_name, _command, _help);
+    return DatumFormatterAlias<DataObject>(_name, _command, _dict, _help);
   }
 
   template<typename DataObject>

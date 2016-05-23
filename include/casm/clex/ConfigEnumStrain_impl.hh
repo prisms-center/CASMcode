@@ -1,4 +1,5 @@
 #include <algorithm>
+#include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/algorithm.hh"
@@ -19,7 +20,7 @@ namespace CASM {
     m_perm_end(_scel.permute_end()),
     m_shape_factor(Eigen::MatrixXd::Identity(m_strain_calc.dim(), m_strain_calc.dim())) {
 
-    auto eigen_compare = [](const Eigen::MatrixXd & a, const Eigen::MatrixXd & b)->bool{
+    auto eigen_compare = [](const Eigen::MatrixXd & a, const Eigen::MatrixXd & b)->bool {
       // required because Eigen::almost_equal takes 3 args (function pointers don't know about default args)
       return Eigen::almost_equal(a, b);
     };
@@ -110,7 +111,7 @@ namespace CASM {
       }
 
       if(contains_if(trans_mat_orbits,
-      [&ttrans, eigen_compare](const std::vector<Eigen::MatrixXd> &_orbit)->bool{
+      [&ttrans, eigen_compare](const std::vector<Eigen::MatrixXd> &_orbit)->bool {
       return contains(_orbit, ttrans, eigen_compare);
       })
         ) continue;

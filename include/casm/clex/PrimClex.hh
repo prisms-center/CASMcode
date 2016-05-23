@@ -4,6 +4,7 @@
 #include "casm/external/boost.hh"
 
 #include "casm/misc/cloneable_ptr.hh"
+#include "casm/casm_io/Log.hh"
 
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/DoFManager.hh"
@@ -90,11 +91,11 @@ namespace CASM {
     // **** Constructors ****
 
     /// Initial construction of a PrimClex, from a primitive Structure
-    PrimClex(const Structure &_prim);
+    PrimClex(const Structure &_prim, Log &log = default_log());
 
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-    PrimClex(const fs::path &_root, std::ostream &sout);
+    PrimClex(const fs::path &_root, Log &log = default_log());
 
 
     // **** Accessors ****
@@ -117,8 +118,12 @@ namespace CASM {
       return m_settings;
     }
 
-    double tol() const {
-      return settings().tol();
+    double crystallography_tol() const {
+      return settings().crystallography_tol();
+    }
+
+    double lin_alg_tol() const {
+      return settings().lin_alg_tol();
     }
 
     /// Return casm project directory path
@@ -351,7 +356,7 @@ namespace CASM {
   private:
 
     /// Initialization routines
-    void _init(std::ostream &sout);
+    void _init(Log &log);
 
     mutable ECIContainer m_global_eci;
     mutable Clexulator m_global_clexulator;
@@ -366,7 +371,8 @@ namespace CASM {
                         SiteOrbitree &tree,
                         const PrimNeighborList &nlist,
                         std::string class_name,
-                        std::ostream &stream);
+                        std::ostream &stream,
+                        double xtal_tol);
 
 }
 #endif

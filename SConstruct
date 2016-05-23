@@ -1,7 +1,7 @@
 # http://www.scons.org/doc/production/HTML/scons-user.html
 # This is: Sconstruct
 
-import os, glob, copy, shutil
+import os, glob, copy, shutil, subprocess
 
 from os.path import join
 
@@ -49,17 +49,69 @@ Help("""
         On Mac OS X, this variable is $DYLD_FALLBACK_LIBRARY_PATH.
         This should be added to your ~/.bash_profile (Linux) or ~/.profile (Mac).
       
+      $CASMBOOST_NO_CXX11_SCOPED_ENUMS:
+        If defined, will compile with -DCASMBOOST_NO_CXX11_SCOPED_ENUMS. Use this
+        if linking to boost libraries compiled without c++11.
+      
       
       Additional options that override environment variables:
       
       Use 'cxx=X' to set the C++ compiler. Default is chosen by scons.
           'opt=X' to set optimization level, '-OX'. Default is 3.
           'debug=X' with X=0 to use '-DNDEBUG', 
-                    or with X=1 to set debug mode compiler options '-O0 -g -save-temps'.
-                    Overrides $DEBUGSTATE.
+             or with X=1 to set debug mode compiler options '-O0 -g -save-temps'.
+             Overrides $DEBUGSTATE.
           'prefix=X' to set installation directory. Default is '/usr/local'. Overrides $CASMPREFIX.
           'boost_path=X' set boost search path. Overrides $CASMBOOST_PATH.
+          'boost_no_cxx11_scoped_enums=1' to use '-DBOOST_NO_CXX11_SCOPED_ENUMS'.
+             Overrides $CASMBOOST_NO_CXX11_SCOPED_ENUMS.
      """)
+
+def version(version_number):
+  
+  # check if git installed
+  try:
+    # pipe output to /dev/null for silence
+    null = open("/dev/null", "w")
+    subprocess.Popen("git", stdout=null, stderr=null)
+    null.close()
+
+  except OSError:
+    return version_number
+
+  # want to get the current git branch name, if in a git repository, else ''
+  process = subprocess.Popen(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  
+  # get the stdout, split if any '/', and use the last bit (the branch name), strip any extra space
+  branch = process.communicate()[0].split('/')[-1].strip()
+
+  if branch == '':
+    return version_number
+
+  # when compiling from a git repo use a developement version number
+  # which contains the branch name, short hash, and tag (if tagged)
+    
+  # get the short hash
+  process = subprocess.Popen('git rev-parse --short HEAD'.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  commit = process.communicate()[0].strip()
+  version_number += '+' + commit
+  
+  # check if tracked files have changes, if so, add '+changes'
+  process = subprocess.Popen('git status --porcelain --untracked-files=no'.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  changes = process.communicate()[0].strip()
+  if changes != '':
+    version_number += ".changes"
+  
+  return version_number
+  
+
+
+##### Set version_number
+
+version_number = version('0.2a1')
+url = 'https://github.com/prisms-center/CASMcode'
+Export('version_number', 'url')
+
 
 ##### Environment setup
 
@@ -107,6 +159,13 @@ cxxflags.append('--std=c++11')
 cxxflags.append('-Wno-deprecated-register')
 cxxflags.append('-Wno-deprecated-declarations')
 cxxflags.append('-DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long')
+
+boost_no_cxx11_scoped_enums = ARGUMENTS.get('boost_no_cxx11_scoped_enums', '0')
+if 'CASMBOOST_NO_CXX11_SCOPED_ENUMS' in os.environ:
+  boost_no_cxx11_scoped_enums = '1'
+if boost_no_cxx11_scoped_enums == '1':
+  cxxflags.append('-DBOOST_NO_CXX11_SCOPED_ENUMS')
+
 # set gzstream namespace to 'gz'
 ccflags.append('-DGZSTREAM_NAMESPACE=gz')
 
@@ -200,7 +259,7 @@ if env['PLATFORM'] == 'darwin':
   linkflags = ['-install_name', '@rpath/libcasm.dylib']
 
 # use boost libraries
-boost_libs = ['boost_system', 'boost_filesystem', 'boost_program_options', 'boost_regex']
+boost_libs = ['boost_system', 'boost_filesystem', 'boost_program_options', 'boost_regex', 'boost_chrono']
 
 # build casm shared library from all shared objects
 casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'), 

@@ -17,6 +17,8 @@ namespace CASM {
 
       fs::path test_root = find_casmroot(m_root);
       if(test_root == m_root) {
+        std::cerr << "Attempting to create a casm project here: " << m_root << std::endl;
+        std::cerr << "Found existing casm project here: " << test_root << std::endl;
         throw std::runtime_error(
           std::string("Error in 'ProjectBuilder::build()'.\n") +
           "  Already in a casm project: " + test_root.string());
@@ -72,8 +74,11 @@ namespace CASM {
       if(!set.set_so_options(m_so_options)) {
         exc("so options");
       }
-      if(!set.set_tol(m_tol)) {
-        exc("tol");
+      if(!set.set_crystallography_tol(m_crystallography_tol)) {
+        exc("crystallography_tol");
+      }
+      if(!set.set_lin_alg_tol(m_lin_alg_tol)) {
+        exc("lin_alg_tol");
       }
 
       set.commit();
@@ -89,11 +94,11 @@ namespace CASM {
       // Calculate symmetry  --------------------
       // get lattice point group and character table
       SymGroup lattice_point_grp;
-      prim.lattice().generate_point_group(lattice_point_grp, m_tol);
+      prim.lattice().generate_point_group(lattice_point_grp, m_crystallography_tol);
       lattice_point_grp.character_table();
 
       // get factor group
-      prim.generate_factor_group(m_tol);
+      prim.generate_factor_group(m_crystallography_tol);
       prim.set_site_internals();
 
       // Write symmetry info files

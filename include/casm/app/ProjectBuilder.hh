@@ -26,17 +26,17 @@ namespace CASM {
       m_root(_root),
       m_name(_name),
       m_clex(_cluster_expansion) {
-      
+
       /// check if m_name is suitable:
       if(!boost::regex_match(m_name, boost::regex(R"([_a-zA-Z]\w*)"))) {
         throw std::runtime_error(
           std::string("Error constructing ProjectBuilder.\n") +
-            "  Invalid Project name: '" + m_name + "'\n"
-            "  Must be a valid C++ identifier: \n"
-            "  - only alphanumeric characters and underscores allowed\n"
-            "  - cannot start with a number");
+          "  Invalid Project name: '" + m_name + "'\n"
+          "  Must be a valid C++ identifier: \n"
+          "  - only alphanumeric characters and underscores allowed\n"
+          "  - cannot start with a number");
       }
-    
+
     }
 
 
@@ -70,8 +70,13 @@ namespace CASM {
       return *this;
     }
 
-    ProjectBuilder &set_tol(double _tol) {
-      m_tol = _tol;
+    ProjectBuilder &set_crystallography_tol(double _tol) {
+      m_crystallography_tol = _tol;
+      return *this;
+    }
+
+    ProjectBuilder &set_lin_alg_tol(double _tol) {
+      m_lin_alg_tol = _tol;
       return *this;
     }
 
@@ -96,7 +101,8 @@ namespace CASM {
     std::string m_eci = "default";
     std::string m_compile_options = RuntimeLibrary::default_compile_options();
     std::string m_so_options = RuntimeLibrary::default_so_options() + " -lboost_system";
-    double m_tol = CASM::TOL;
+    double m_crystallography_tol = CASM::TOL;
+    double m_lin_alg_tol = 1e-10;
 
   };
 

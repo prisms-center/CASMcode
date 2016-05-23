@@ -94,12 +94,15 @@ namespace json_spirit
         
         void set_force_column() { force_column_ = true;}
         void set_force_row() { force_row_ = true;}
+        void set_scientific() { scientific_ = true;}
         void set_remove_trailing_zeros() { remove_trailing_zeros_ = true;}
         void unset_force_column() { force_column_ = false;}
         void unset_force_row() { force_row_ = false;}
+        void unset_scientific() { scientific_ = false;}
         void unset_remove_trailing_zeros() { remove_trailing_zeros_ = false;}
         bool get_force_column() const { return force_column_;}
         bool get_force_row() const { return force_row_;}
+        bool get_scientific() const { return scientific_;}
         bool get_remove_trailing_zeros() const { return remove_trailing_zeros_;}
         
     private:
@@ -113,6 +116,7 @@ namespace json_spirit
         
         bool force_column_;
         bool force_row_;
+        bool scientific_;
         bool remove_trailing_zeros_;
 
         class Variant_converter_visitor : public boost::static_visitor< Variant > 

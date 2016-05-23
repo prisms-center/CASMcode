@@ -3,6 +3,7 @@
 
 #include <limits>
 #include "casm/clex/Configuration.hh"
+#include "casm/casm_io/DataFormatter.hh"
 
 namespace CASM {
 
@@ -95,6 +96,7 @@ namespace CASM {
     /// \brief Reads a configuration selection from file at 'selection_path'
     /// - If selection_path=="MASTER", load master config_list as selection
     /// - If selection_path=="ALL", load all from config_list as selection
+    /// - If selection_path=="NONE", load all from config_list as not selected
     /// - If selection_path=="CALCULATED", load configurations for which 'is_calculated' returns true
     /// - Else, assume path to file:
     ///   - Checks extension to determine file type:
@@ -131,7 +133,9 @@ namespace CASM {
 
     const jsonParser &from_json(const jsonParser &_json);
 
-    jsonParser &to_json(jsonParser &_json, bool only_selected = false) const;
+    jsonParser &to_json(const DataFormatterDictionary<Configuration> &_dict,
+                        jsonParser &_json,
+                        bool only_selected = false) const;
 
     /// \brief check if configuration is selected (returns false if 'configname' cannot be found
     bool selected(const std::string &configname) const {
@@ -205,25 +209,9 @@ namespace CASM {
       return m_name;
     }
 
-    void print(std::ostream &_out, bool only_selected = false) const;
-
-    /// \brief Construct a ConfigSelection with no Configurations selected
-    static ConfigSelection None(PrimClex &primclex) {
-      ConfigSelection selection(primclex);
-      for(auto it = selection.config_begin(); it != selection.config_end(); ++it) {
-        it.set_selected(false);
-      }
-      return selection;
-    }
-
-    /// \brief Construct a ConfigSelection with all Configurations selected
-    static ConfigSelection All(PrimClex &primclex) {
-      ConfigSelection selection(primclex);
-      for(auto it = selection.config_begin(); it != selection.config_end(); ++it) {
-        it.set_selected(true);
-      }
-      return selection;
-    }
+    void print(const DataFormatterDictionary<Configuration> &_dict,
+               std::ostream &_out,
+               bool only_selected = false) const;
 
   private:
     friend class ConfigSelection < !IsConst >;

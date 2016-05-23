@@ -29,6 +29,9 @@ namespace CASM {
   template<typename DataObject>
   class BaseDatumFormatter;
 
+  template<typename DataObject, typename DatumFormatterType>
+  class DataFormatterDictionary;
+
   // Given expression string
   //   "subexpr1 subexpr2(subsub1) subexpr3(subsub2(subsubsub1))"
   // splits expresion so that
@@ -277,6 +280,7 @@ namespace CASM {
 
     enum FormatterType {Property, Operator};
     typedef long difference_type;
+    typedef DataFormatterDictionary<DataObject, BaseDatumFormatter<DataObject> > DictType;
 
 
     BaseDatumFormatter(const std::string &_init_name, const std::string &_desc) :
@@ -298,6 +302,16 @@ namespace CASM {
 
     virtual FormatterType type() const {
       return Property;
+    }
+
+    /// \brief const Access the dictionary containing this formatter, set during DictType::lookup
+    const DictType &home() const {
+      return *m_home;
+    }
+
+    /// \brief Set the dictionary containing this formatter, set during DictType::lookup
+    void set_home(const DictType &home) const {
+      m_home = &home;
     }
 
     /// \brief Make an exact copy of the formatter (including any initialized members)
@@ -393,7 +407,7 @@ namespace CASM {
     std::string m_name;
     std::string m_description;
     mutable IndexContainer  m_index_rules;
-
+    mutable const DictType *m_home;
   };
 
   template<typename T>
@@ -566,7 +580,7 @@ namespace CASM {
     typedef typename UniqueMapType::const_iterator const_iterator;
 
     DataFormatterDictionary() :
-      UniqueMapType([](const value_type & value)->std::string {
+      UniqueMapType([](const value_type &value)->std::string {
       return value.name();
     },
     DictionaryConverter<DataObject, DatumFormatterType>()) {}
@@ -600,7 +614,8 @@ namespace CASM {
 
     using UniqueMapType::insert;
 
-    /// \brief Equivalent to find, but throw error with suggestion if @param _name not found
+    /// \brief Equivalent to find, but set 'home' and throws error with
+    /// suggestion if @param _name not found
     const_iterator lookup(const key_type &_name) const;
 
     /// \brief True if dictionary contains entry for @param _name
@@ -610,27 +625,27 @@ namespace CASM {
 
     void print_help(std::ostream &_stream,
                     typename BaseDatumFormatter<DataObject>::FormatterType ftype,
-                    int width,
-                    int separation) const;
+                    int width = 60,
+                    int separation = 8) const;
 
     /// \brief Use the vector of strings to build a DataFormatter<DataObject>
-    DataFormatter<DataObject> parse(const std::string &input)const;
+    DataFormatter<DataObject> parse(const std::string &input) const;
 
     /// \brief Use a single string to build a DataFormatter<DataObject>
-    DataFormatter<DataObject> parse(const std::vector<std::string> &input)const;
+    DataFormatter<DataObject> parse(const std::vector<std::string> &input) const;
 
   };
 
 
   // ******************************************************************************
 
-  /// \brief Dictionary of all DatumFormatterOperator
-  template<typename DataObject>
-  DataFormatterDictionary<DataObject> make_operator_dictionary();
-
   /// \brief Dictionary of all AttributeFormatter (i.e. BaseValueFormatter<V, DataObject>)
   template<typename DataObject>
   DataFormatterDictionary<DataObject> make_attribute_dictionary();
+
+  /// \brief Dictionary of all DatumFormatterOperator
+  template<typename DataObject>
+  DataFormatterDictionary<DataObject> make_operator_dictionary();
 
   /// \brief Template to can be specialized for constructing dictionaries for particular DataObject
   ///
@@ -638,7 +653,6 @@ namespace CASM {
   template<typename DataObject>
   DataFormatterDictionary<DataObject> make_dictionary() {
     DataFormatterDictionary<DataObject> dict;
-
     dict.insert(
       make_attribute_dictionary<DataObject>(),
       make_operator_dictionary<DataObject>()
@@ -647,57 +661,58 @@ namespace CASM {
     return dict;
   }
 
-  /// \brief A singleton for creating and using a DataFormatterDictionary<DataObject>
-  template<typename DataObject>
-  class DataFormatterParser {
+  /*
+    /// \brief A singleton for creating and using a DataFormatterDictionary<DataObject>
+    template<typename DataObject>
+    class DataFormatterParser {
 
-  public:
+    public:
 
-    static const BaseDatumFormatter<DataObject> &lookup(const std::string &_name) {
-      return *dictionary().lookup(_name);
-    }
+      static const BaseDatumFormatter<DataObject> &lookup(const std::string &_name) {
+        return *dictionary().lookup(_name);
+      }
 
-    static DataFormatter<DataObject> parse(const std::string &input) {
-      return dictionary().parse(input);
-    }
+      static DataFormatter<DataObject> parse(const std::string &input) {
+        return dictionary().parse(input);
+      }
 
-    static DataFormatter<DataObject> parse(const std::vector<std::string> &input) {
-      return dictionary().parse(input);
-    }
+      static DataFormatter<DataObject> parse(const std::vector<std::string> &input) {
+        return dictionary().parse(input);
+      }
 
-    static void add_custom_formatter(const BaseDatumFormatter<DataObject> &new_formatter) {
-      if(dictionary().contains(new_formatter.name()))
-        throw std::runtime_error(std::string("Naming collision: Parsing dictionary already contains entry for '") + new_formatter.name() + "'.\n");
-      dictionary().insert(new_formatter);
-    }
+      static void add_custom_formatter(const BaseDatumFormatter<DataObject> &new_formatter) {
+        if(dictionary().contains(new_formatter.name()))
+          throw std::runtime_error(std::string("Naming collision: Parsing dictionary already contains entry for '") + new_formatter.name() + "'.\n");
+        dictionary().insert(new_formatter);
+      }
 
-    static void load_aliases(const fs::path &alias_path);
+      static void load_aliases(const fs::path &alias_path);
 
-    static void print_help(std::ostream &_stream,
-                           typename BaseDatumFormatter<DataObject>::FormatterType ftype = BaseDatumFormatter<DataObject>::Property,
-                           int width = 60, int separation = 8) {
-      dictionary().print_help(_stream, ftype, width, separation);
-    }
+      static void print_help(std::ostream &_stream,
+                             typename BaseDatumFormatter<DataObject>::FormatterType ftype = BaseDatumFormatter<DataObject>::Property,
+                             int width = 60, int separation = 8) {
+        dictionary().print_help(_stream, ftype, width, separation);
+      }
 
-    static DataFormatterDictionary<DataObject> &dictionary() {
-      // Guaranteed to be destroyed, instantiated on first use.
-      static DataFormatterDictionary<DataObject> m_dict = make_dictionary<DataObject>();
+      static DataFormatterDictionary<DataObject> &dictionary() {
+        // Guaranteed to be destroyed, instantiated on first use.
+        static DataFormatterDictionary<DataObject> m_dict = make_dictionary<DataObject>();
 
-      return m_dict;
-    }
+        return m_dict;
+      }
 
-  private:
+    private:
 
-    /// \brief Constructor
-    DataFormatterParser() {}
+      /// \brief Constructor
+      DataFormatterParser() {}
 
-    /// \brief Prevent creating copies
-    DataFormatterParser(const DataFormatterParser &) = delete;
+      /// \brief Prevent creating copies
+      DataFormatterParser(const DataFormatterParser &) = delete;
 
-    /// \brief Prevent creating copies
-    void operator=(const DataFormatterParser &)  = delete;
-  };
-
+      /// \brief Prevent creating copies
+      void operator=(const DataFormatterParser &)  = delete;
+    };
+  */
 
   // ******************************************************************************
 
