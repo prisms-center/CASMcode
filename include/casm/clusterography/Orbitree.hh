@@ -9,6 +9,7 @@
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 
 namespace CASM {
 

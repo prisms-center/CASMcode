@@ -1,4 +1,5 @@
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/PrimGrid.hh"
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {

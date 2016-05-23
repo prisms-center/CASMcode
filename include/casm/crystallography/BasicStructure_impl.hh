@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/PrimGrid.hh"
@@ -541,7 +542,7 @@ namespace CASM {
   }
 
   //*********************************************************
-
+/*
   template<typename CoordType>
   void BasicStructure<CoordType>::map_superstruc_to_prim(BasicStructure<CoordType> &prim, const SymGroup &point_group) {
 
@@ -602,7 +603,7 @@ namespace CASM {
       }
     }
   }
-
+*/
   //***********************************************************
 
   template<typename CoordType> template<typename CoordType2>
@@ -842,7 +843,7 @@ namespace CASM {
    *  Default shift is zero.
    */
   //***********************************************************
-
+/*
   template<typename CoordType>
   void BasicStructure<CoordType>::add_vacuum_shift(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const {
 
@@ -865,8 +866,9 @@ namespace CASM {
     new_surface_struc.initialize();
     return;
   }
-
+*/
   //***********************************************************
+/*
   template<typename CoordType>
   void BasicStructure<CoordType>::add_vacuum_shift(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness, Coordinate shift) const {
     if(&(shift.home()) != &lattice()) {
@@ -877,8 +879,9 @@ namespace CASM {
     add_vacuum_shift(new_surface_struc, vacuum_thickness, shift.cart(), CART);
     return;
   }
-
+*/
   //***********************************************************
+/*
   template<typename CoordType>
   void BasicStructure<CoordType>::add_vacuum(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness) const {
     Eigen::Vector3d shift(0, 0, 0);
@@ -887,7 +890,7 @@ namespace CASM {
 
     return;
   }
-
+*/
   //************************************************************
   /// Counts sites that allow vacancies
   template<typename CoordType>
@@ -1068,7 +1071,7 @@ namespace CASM {
   }
 
   //***********************************************************
-
+/*
   template<typename CoordType>
   void BasicStructure<CoordType>::print_cif(std::ostream &stream) const {
     const char quote = '\'';
@@ -1127,7 +1130,7 @@ namespace CASM {
 
     // Use stream << indent << etc.
   }
-
+*/
   //***********************************************************
 
   template<typename CoordType>

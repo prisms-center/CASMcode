@@ -7,12 +7,11 @@
 
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/symmetry/SymGroup.hh"
 
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  class MasterSymGroup;
 
   class SiteCluster;
 
