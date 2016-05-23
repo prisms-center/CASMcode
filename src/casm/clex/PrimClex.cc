@@ -102,7 +102,7 @@ namespace CASM {
     auto chem_ref_path = m_dir.chemical_reference(m_settings.calctype(), m_settings.ref());
     if(fs::is_regular_file(chem_ref_path)) {
       log << "read: " << chem_ref_path << "\n";
-      m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim, 1e-14));
+      m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim, lin_alg_tol()));
     }
 
     // read supercells
@@ -263,8 +263,7 @@ namespace CASM {
   //*******************************************************************************************
 
   PrimNeighborList &PrimClex::nlist() const {
-    double tol = TOL;
-
+    
     // lazy neighbor list generation
     if(!m_nlist) {
 
@@ -601,7 +600,7 @@ namespace CASM {
    */
   //*******************************************************************************************
   Index PrimClex::add_supercell(const Lattice &superlat) {
-    return add_canonical_supercell(niggli(superlat, prim.point_group(), tol()));
+    return add_canonical_supercell(niggli(superlat, prim.point_group(), crystallography_tol()));
 
   }
 
@@ -1087,12 +1086,10 @@ namespace CASM {
 
   }
 
-  void set_nlist_ind(const Structure &prim, SiteOrbitree &tree, const PrimNeighborList &nlist) {
+  void set_nlist_ind(const Structure &prim, SiteOrbitree &tree, const PrimNeighborList &nlist, double xtal_tol) {
 
     //For each site we encounter we access the appropriate slot in the neighbor list and append all other sites
     //to it in the form of UnitCellCoords
-
-    double tol = TOL;
 
     Array<Index> clust_nlist_inds;
 
@@ -1113,13 +1110,13 @@ namespace CASM {
           for(Index l = 0; l < tree[i][j][k].size(); l++) {
 
             //tuccl corresponds to a particular site we're looking at
-            UnitCellCoord tuccl(tree[i][j][k][l], prim, tol);
+            UnitCellCoord tuccl(tree[i][j][k][l], prim, xtal_tol);
 
             //neighbor sites
             for(Index b = 0; b < tree[i][j][k].size(); b++) {
 
               //tuccb corresponds to a site that neighbors tuccl
-              UnitCellCoord tuccb(tree[i][j][k][b], prim, tol);
+              UnitCellCoord tuccb(tree[i][j][k][b], prim, xtal_tol);
               UnitCell delta = tuccb.unitcell() - tuccl.unitcell();
 
               auto unitcell_index = find_index(nlist, delta);
@@ -1169,9 +1166,10 @@ namespace CASM {
                         SiteOrbitree &tree,
                         const PrimNeighborList &nlist,
                         std::string class_name,
-                        std::ostream &stream) {
+                        std::ostream &stream,
+                        double xtal_tol) {
 
-    set_nlist_ind(prim, tree, nlist);
+    set_nlist_ind(prim, tree, nlist, xtal_tol);
 
     DoFManager dof_manager;
     Index Nsublat = prim.basis.size();
