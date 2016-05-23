@@ -5,11 +5,49 @@
 
 namespace CASM {
 
+  std::string _help() {
+    std::string s =
+      "Expected JSON object of form:\n"
+      "  {\n"
+      "    \"param_chem_pot\": {\n"
+      "    \"a\" : -1.0,\n"
+      "    ...\n"
+      "  },\n"
+      "  \"temperature\" : 350.0,\n"
+      "  \"tolerance\" : 0.001\n"
+      "}\n";
+    return s;
+  }
+
+  /// \brief Construct EquilibriumMonteSettings by reading a settings JSON file
+  GrandCanonicalSettings::GrandCanonicalSettings(const fs::path &read_path) :
+    EquilibriumMonteSettings(read_path) {
+
+    DirectoryStructure dir(root());
+    CompositionAxes axes(dir.composition_axes(calctype(), ref()));
+
+    if(axes.has_current_axes) {
+      m_comp_converter = axes.curr;
+    }
+    else {
+      throw std::runtime_error("No composition axes selected.");
+    }
+
+  }
+
   // --- GrandCanonicalConditions settings ---------------------
 
   /// \brief Expects initial_conditions
   GrandCanonicalConditions GrandCanonicalSettings::initial_conditions() const {
-    return _conditions("initial_conditions");
+    if(drive_mode() == Monte::DRIVE_MODE::INCREMENTAL) {
+      return _conditions("initial_conditions");
+    }
+    else if(drive_mode() == Monte::DRIVE_MODE::CUSTOM) {
+      return custom_conditions()[0];
+    }
+    else {
+      throw std::runtime_error("ERROR: Invalid drive mode.");
+    }
   }
 
   /// \brief Expects final_conditions
@@ -22,95 +60,80 @@ namespace CASM {
     return _conditions("incremental_conditions");
   }
 
+  /// \brief Expects incremental_conditions
+  std::vector<GrandCanonicalConditions> GrandCanonicalSettings::custom_conditions() const {
+    std::string level1 = "driver";
+    std::string level2 = "custom_conditions";
+    try {
+      std::vector<GrandCanonicalConditions> cond;
+      const jsonParser &json = (*this)[level1][level2];
+      for(auto it = json.begin(); it != json.end(); ++it) {
+        cond.push_back(_conditions(*it));
+      }
+      return cond;
+    }
+    catch(std::runtime_error &e) {
+      std::cerr << "ERROR in GrandCanonicalSettings::custom_conditions" << std::endl;
+      std::cerr << "Tried to construct GrandCanonicalCondtions from [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
+      std::cerr << _help();
+      throw e;
+    }
+  }
+
   // --- Project settings ---------------------
 
   /// \brief Given a settings jsonParser figure out what the project clex settings to use are:
   std::string GrandCanonicalSettings::clex() const {
     std::string level1 = "model";
     std::string level2 = "clex";
-    try {
-      return (*this)[level1][level2].get<std::string>();
-    }
-
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in GrandCanonicalSettings::clex" << std::endl;
-      std::cerr << "No clex settings found" << std::endl;
-      std::cerr << "Expected [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
-      throw e;
-    }
+    std::string help = "string\n"
+                       "  Names the cluster expansion to be used.\n";
+    return _get_setting<std::string>(level1, level2, help);
   }
 
   /// \brief Given a settings jsonParser figure out what the project bset settings to use are:
   std::string GrandCanonicalSettings::bset() const {
     std::string level1 = "model";
     std::string level2 = "bset";
-    try {
-      return (*this)[level1][level2].get<std::string>();
-    }
-
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in GrandCanonicalSettings::bset" << std::endl;
-      std::cerr << "No bset settings found" << std::endl;
-      std::cerr << "Expected [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
-      throw e;
-    }
+    std::string help = "string\n"
+                       "  Names the basis set to be used.\n";
+    return _get_setting<std::string>(level1, level2, help);
   }
 
   /// \brief Given a settings jsonParser figure out what the project calctype settings to use are:
   std::string GrandCanonicalSettings::calctype() const {
     std::string level1 = "model";
     std::string level2 = "calctype";
-    try {
-      return (*this)[level1][level2].get<std::string>();
-    }
-
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in GrandCanonicalSettings::calctype" << std::endl;
-      std::cerr << "No calctype settings found" << std::endl;
-      std::cerr << "Expected [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
-      throw e;
-    }
+    std::string help = "string\n"
+                       "  Names the calctype used.\n";
+    return _get_setting<std::string>(level1, level2, help);
   }
 
   /// \brief Given a settings jsonParser figure out what the project ref settings to use are:
   std::string GrandCanonicalSettings::ref() const {
     std::string level1 = "model";
     std::string level2 = "ref";
-    try {
-      return (*this)[level1][level2].get<std::string>();
-    }
-
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in GrandCanonicalSettings::ref" << std::endl;
-      std::cerr << "No ref settings found" << std::endl;
-      std::cerr << "Expected [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
-      throw e;
-    }
-
+    std::string help = "string\n"
+                       "  Names the reference used.\n";
+    return _get_setting<std::string>(level1, level2, help);
   }
 
   /// \brief Given a settings jsonParser figure out what the project eci settings to use are:
   std::string GrandCanonicalSettings::eci() const {
     std::string level1 = "model";
     std::string level2 = "eci";
-    try {
-      return (*this)[level1][level2].get<std::string>();
-    }
-
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in GrandCanonicalSettings::eci" << std::endl;
-      std::cerr << "No eci settings found" << std::endl;
-      std::cerr << "Expected [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
-      throw e;
-    }
-
+    std::string help = "string\n"
+                       "  Names the ECI to be used\n";
+    return _get_setting<std::string>(level1, level2, help);
   }
 
   // --- Sampler settings ---------------------
 
   /// \brief Return true if all correlations should be sampled
   bool GrandCanonicalSettings::all_correlations() const {
-
+    if(method() == Monte::METHOD::LTE1) { //hack
+      return false;
+    }
     std::string level1 = "data";
     std::string level2 = "measurements";
     try {
@@ -130,33 +153,25 @@ namespace CASM {
 
   }
 
-
   GrandCanonicalConditions GrandCanonicalSettings::_conditions(std::string name) const {
 
     std::string level1 = "driver";
     std::string level2 = name;
     try {
-
-      DirectoryStructure dir(root());
-      CompositionAxes axes(dir.composition_axes(calctype(), ref()));
-      CompositionConverter comp_converter;
-
-      if(axes.has_current_axes) {
-        comp_converter = axes.curr;
-      }
-      else {
-        throw std::runtime_error("No composition axes selected.");
-      }
-
-      GrandCanonicalConditions result;
-      from_json(result, comp_converter, (*this)[level1][level2]);
-      return result;
+      return _conditions((*this)[level1][level2]);
     }
     catch(std::runtime_error &e) {
       std::cerr << "ERROR in GrandCanonicalSettings::" << name << std::endl;
-      std::cerr << "Tried construct GrandCanonicalCondtions from [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
+      std::cerr << "Tried to construct GrandCanonicalCondtions from [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
+      std::cerr << _help();
       throw e;
     }
+  }
+
+  GrandCanonicalConditions GrandCanonicalSettings::_conditions(const jsonParser &json) const {
+    GrandCanonicalConditions result;
+    from_json(result, m_comp_converter, json);
+    return result;
   }
 
 }

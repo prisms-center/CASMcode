@@ -30,26 +30,12 @@ namespace CASM {
 
   /// \brief Return type of Monte Carlo ensemble
   Monte::ENSEMBLE MonteSettings::ensemble() const {
-    try {
-      return Monte::monte_ensemble((*this)["ensemble"].get<std::string>());
-    }
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in Monte::ensemble" << std::endl;
-      std::cerr << "Expected [\"ensemble\"]" << std::endl;
-      throw e;
-    }
+    return _get_setting<Monte::ENSEMBLE>("ensemble", Monte::help<Monte::ENSEMBLE>());
   }
 
   /// \brief Return type of Monte Carlo method
   Monte::METHOD MonteSettings::method() const {
-    try {
-      return Monte::monte_method((*this)["method"].get<std::string>());
-    }
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in Monte::method" << std::endl;
-      std::cerr << "Expected [\"method\"]" << std::endl;
-      throw e;
-    }
+    return _get_setting<Monte::METHOD>("method", Monte::help<Monte::METHOD>());
   }
 
   /// \brief Run in debug mode?
@@ -76,7 +62,9 @@ namespace CASM {
 
   /// \brief Configname of configuration to use as starting motif
   std::string MonteSettings::motif_configname() const {
-    return _get_setting<std::string>("driver", "motif", "configname");
+    std::string help = "string"
+                       "  The name of a configuration, of the form \"SCELV_A_B_C_D_E_F/N\"";
+    return _get_setting<std::string>("driver", "motif", "configname", help);
   }
 
   /// \brief Returns true if path to ConfigDoF file to use as starting motif has been specified
@@ -86,65 +74,33 @@ namespace CASM {
 
   /// \brief ConfigDoF to use as starting motif
   ConfigDoF MonteSettings::motif_configdof() const {
-    fs::path configdof_path = _get_setting<fs::path>("driver", "motif", "configdof");
+    std::string help = "string\n"
+                       "  Path to file containing DoF, such as an \"final_state.json\" file.";
+    fs::path configdof_path = _get_setting<fs::path>("driver", "motif", "configdof", help);
     return jsonParser(configdof_path).get<ConfigDoF>();
   }
 
   /// \brief Path to ConfigDoF file to use as starting motif
   fs::path MonteSettings::motif_configdof_path() const {
-    return _get_setting<fs::path>("driver", "motif", "configdof");
+    std::string help = "";
+    return _get_setting<fs::path>("driver", "motif", "configdof", help);
   }
 
 
   /// \brief Supercell matrix defining the simulation cell
   Eigen::Matrix3i MonteSettings::simulation_cell_matrix() const {
-    try {
-      return (*this)["supercell"].get<Eigen::Matrix3i>();
-    }
-
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in Monte::simulation_cell_matrix" << std::endl;
-      std::cerr << "No matrix given to construct Monte Carlo cell." << std::endl;
-      std::cerr << "Expected [\"supercell\"]" << std::endl;
-      throw e;
-    }
+    std::string help = "3x3 transformation matrix, T, such that S = U*T,\n"
+                       "  where S, is the supercell lattice vectors,\n"
+                       "  and P, is the primitive cell lattice vectors.\n";
+    return _get_setting<Eigen::Matrix3i>("supercell", help);
   }
 
 
   // --- Driver ---------------------
 
-  /// \brief Given a settings jsonParser figure out the drive mode. Expects drive_mode/single,custom,incremental
+  /// \brief Given a settings jsonParser figure out the drive mode. Expects drive_mode/incremental,custom
   const Monte::DRIVE_MODE MonteSettings::drive_mode() const {
-    Monte::DRIVE_MODE dmode;
-
-    std::string dmodestring;
-
-    try {
-      dmodestring = (*this)["driver"]["mode"].get<std::string>();
-    }
-
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in MonteSettings::drive_mode" << std::endl;
-      std::cerr << "No mode for driver found!" << std::endl;
-      std::cerr << "Expected [\"driver\"][\"mode\"]" << std::endl;
-      throw e;
-    }
-
-    if(dmodestring == "single") {
-      dmode = Monte::DRIVE_MODE::SINGLE;
-    }
-
-    else if(dmodestring == "incremental") {
-      dmode = Monte::DRIVE_MODE::INCREMENTAL;
-    }
-
-    else {
-      throw std::runtime_error(
-        std::string("Error in MonteSettings::drive_mode.\n") +
-        "  Found [\"driver\"][\"mode\"] = \"" + dmodestring + "\", but allowed options are 'single' or 'incremental'.");
-    }
-
-    return dmode;
+    return _get_setting<Monte::DRIVE_MODE>("driver", "mode", Monte::help<Monte::DRIVE_MODE>());
   }
 
   /// \brief If dependent runs, start subsequent calculations with the final state
@@ -153,7 +109,11 @@ namespace CASM {
     if(!_is_setting("driver", "dependent_runs")) {
       return true;
     }
-    return _get_setting<bool>("driver", "dependent_runs");
+    std::string help = "bool (default=true)\n"
+                       "  If true, begin the next calculation with the final DoF from the previous \n"
+                       "    calculation.\n"
+                       "  If false, begin each calculation with the DoF specified for the \"motif\".\n";
+    return _get_setting<bool>("driver", "dependent_runs", help);
   }
 
   /// \brief Directory where output should go
@@ -166,8 +126,9 @@ namespace CASM {
 
   /// \brief Requested confidence level. Default 0.95.
   double MonteSettings::confidence() const {
+    std::string help = "number, range (0.0, 1.0), default 0.95)";
     if(_is_setting("data", "confidence")) {
-      return _get_setting<double>("data", "confidence");
+      return _get_setting<double>("data", "confidence", help);
     }
     else {
       return 0.95;
@@ -179,22 +140,12 @@ namespace CASM {
     std::string level1 = "data";
     std::string level2 = "storage";
     std::string level3 = "write_trajectory";
-    try {
-
-      if(!(*this)[level1][level2].contains(level3)) {
-        return false;
-      }
-
-      return (*this)[level1][level2][level3].get<bool>();
+    std::string help = "bool (default=false)";
+    if(!_is_setting(level1, level2, level3)) {
+      return false;
     }
 
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in MonteSettings::write_trajectory" << std::endl;
-      std::cerr << "[\"data\"][\"storage\"] must exist" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"write_trajectory\"] exists, it must be a bool" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"write_trajectory\"] does not exist, default is false (do not write trajectory) " << std::endl;
-      throw e;
-    }
+    return _get_setting<bool>(level1, level2, level3, help);
   }
 
   /// \brief Returns true if POSCARs of snapshots are requsted. Requires write_trajectory.
@@ -202,22 +153,12 @@ namespace CASM {
     std::string level1 = "data";
     std::string level2 = "storage";
     std::string level3 = "write_POSCAR_snapshots";
-    try {
-
-      if(!(*this)[level1][level2].contains(level3)) {
-        return false;
-      }
-
-      return (*this)[level1][level2][level3].get<bool>();
+    std::string help = "bool (default=false)";
+    if(!_is_setting(level1, level2, level3)) {
+      return false;
     }
 
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in MonteSettings::write_POSCAR_snapshots" << std::endl;
-      std::cerr << "[\"data\"][\"storage\"] must exist" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"write_POSCAR_snapshots\"] exists, it must be a bool" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"write_POSCAR_snapshots\"] does not exist, default is false (do not write POSCAR snapshots) " << std::endl;
-      throw e;
-    }
+    return _get_setting<bool>(level1, level2, level3, help);
   }
 
   /// \brief Writes all observations
@@ -225,22 +166,12 @@ namespace CASM {
     std::string level1 = "data";
     std::string level2 = "storage";
     std::string level3 = "write_observations";
-    try {
-
-      if(!(*this)[level1][level2].contains(level3)) {
-        return false;
-      }
-
-      return (*this)[level1][level2][level3].get<bool>();
+    std::string help = "bool (default=false)";
+    if(!_is_setting(level1, level2, level3)) {
+      return false;
     }
 
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in MonteSettings::write_observations" << std::endl;
-      std::cerr << "[\"data\"][\"storage\"] must exist" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"write_observations\"] exists, it must be a bool" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"write_observations\"] does not exist, default is false (do not write observations) " << std::endl;
-      throw e;
-    }
+    return _get_setting<bool>(level1, level2, level3, help);
   }
 
   /// \brief Write csv versions of files? (csv is the default format if no 'output_format' given)
@@ -248,6 +179,7 @@ namespace CASM {
     std::string level1 = "data";
     std::string level2 = "storage";
     std::string level3 = "output_format";
+
     try {
 
       if(!(*this)[level1][level2].contains(level3)) {
@@ -374,62 +306,12 @@ namespace CASM {
 
   /// \brief Sample by pass?
   bool EquilibriumMonteSettings::sample_by_pass() const {
-
-    std::string sample_by;
-    std::string level1 = "data";
-    std::string level2 = "sample_by";
-    try {
-      sample_by = (*this)[level1][level2].get<std::string>();
-    }
-
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in Monte::sample_by_pass" << std::endl;
-      std::cerr << "No 'sample_by' settings found" << std::endl;
-      std::cerr << "Expected [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
-      throw e;
-    }
-
-    if(sample_by == "pass") {
-      return true;
-    }
-    else if(sample_by == "step") {
-      return false;
-    }
-    else {
-      std::cerr << "ERROR in Monte::sample_by_pass" << std::endl;
-      std::cerr << "Unexpected 'sample_py' setting: '" << sample_by << "'. Please use \"pass\" or \"step\"." << std::endl;
-      throw std::runtime_error(std::string("Unexpected 'sample_by' setting: ") + sample_by);
-    }
+    return Monte::SAMPLE_MODE::PASS == _get_setting<Monte::SAMPLE_MODE>("data", "sample_by", Monte::help<Monte::SAMPLE_MODE>());
   }
 
   /// \brief Sample by step?
   bool EquilibriumMonteSettings::sample_by_step() const {
-
-    std::string sample_by;
-    std::string level1 = "data";
-    std::string level2 = "sample_by";
-    try {
-      sample_by = (*this)[level1][level2].get<std::string>();
-    }
-
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in Monte::sample_by_step" << std::endl;
-      std::cerr << "No 'sample_by' settings found" << std::endl;
-      std::cerr << "Expected [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
-      throw e;
-    }
-
-    if(sample_by == "step") {
-      return true;
-    }
-    else if(sample_by == "pass") {
-      return false;
-    }
-    else {
-      std::cerr << "ERROR in Monte::sample_by_pass" << std::endl;
-      std::cerr << "Unexpected 'sample_py' setting: '" << sample_by << "'. Please use \"pass\" or \"step\"." << std::endl;
-      throw std::runtime_error(std::string("Unexpected 'sample_by' setting: ") + sample_by);
-    }
+    return Monte::SAMPLE_MODE::STEP == _get_setting<Monte::SAMPLE_MODE>("data", "sample_by", Monte::help<Monte::SAMPLE_MODE>());
   }
 
   /// \brief Figure out how often to take samples
@@ -438,22 +320,14 @@ namespace CASM {
     size_type value = 1;
     std::string level1 = "data";
     std::string level2 = "sample_period";
-
-    if((*this)[level1].contains(level2)) {
-      try {
-        value = (*this)[level1]["sample_period"].get<size_type>();
-      }
-
-      catch(std::runtime_error &e) {
-        throw std::runtime_error(
-          std::string("Error in MonteSettings::sample_period\n") +
-          "  Expected [" + level1 + "][" + level2 + "]");
-      }
+    std::string help = "int (default=1)\n"
+                       "  In conjunction with \"sample_by\", determines how often to make observations.";
+    if(!_is_setting(level1, level2)) {
+      return 1;
     }
 
-    return value;
+    return _get_setting<size_type>(level1, level2, help);
   }
-
 
   /// \brief Returns true if explicit equilibration passes for the first run have been specified
   bool EquilibriumMonteSettings::is_equilibration_passes_first_run() const {
@@ -462,7 +336,8 @@ namespace CASM {
 
   /// \brief Number of explicit equilibration passes requsted for the first run
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::equilibration_passes_first_run() const {
-    return _get_setting<size_type>("data", "equilibration_passes_first_run");
+    std::string help = "int (optional)";
+    return _get_setting<size_type>("data", "equilibration_passes_first_run", help);
   }
 
   /// \brief Returns true if explicit equilibration passes for each run have been specified
@@ -472,6 +347,7 @@ namespace CASM {
 
   /// \brief Number of explicit equilibration passes requsted for each run
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::equilibration_passes_each_run() const {
+    std::string help = "int (optional)";
     return _get_setting<size_type>("data", "equilibration_passes_each_run");
   }
 
@@ -483,16 +359,19 @@ namespace CASM {
 
   /// \brief Returns the number of passes requested
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::N_pass() const {
+    std::string help = "int (optional)";
     return _get_setting<size_type>("data", "N_pass");
   }
 
   /// \brief Returns true if the number of steps has been specified
   bool EquilibriumMonteSettings::is_N_step() const {
+    std::string help = "int (optional)";
     return _is_setting("data", "N_step");
   }
 
   /// \brief Returns the number of steps requested
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::N_step() const {
+    std::string help = "int (optional)";
     return _get_setting<size_type>("data", "N_step");
   }
 
@@ -503,7 +382,8 @@ namespace CASM {
 
   /// \brief Returns the number of samples requested
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::N_sample() const {
-    return _get_setting<size_type>("data", "N_sample");
+    std::string help = "int (optional)";
+    return _get_setting<size_type>("data", "N_sample", help);
   }
 
 
@@ -514,7 +394,8 @@ namespace CASM {
 
   /// \brief Maximum number of passes, required if sample by pass
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::max_pass() const {
-    return _get_setting<size_type>("data", "max_pass");
+    std::string help = "int (optional)";
+    return _get_setting<size_type>("data", "max_pass", help);
   }
 
   /// \brief Returns true if a minimum number of passes has been specified
@@ -524,7 +405,8 @@ namespace CASM {
 
   /// \brief Minimum number of passes
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::min_pass() const {
-    return _get_setting<size_type>("data", "min_pass");
+    std::string help = "int (optional)";
+    return _get_setting<size_type>("data", "min_pass", help);
   }
 
 
@@ -535,7 +417,8 @@ namespace CASM {
 
   /// \brief Maximum number of steps
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::max_step() const {
-    return _get_setting<size_type>("data", "max_step");
+    std::string help = "int (optional)";
+    return _get_setting<size_type>("data", "max_step", help);
   }
 
   /// \brief Returns true if a minimum number of steps has been specified
@@ -546,7 +429,8 @@ namespace CASM {
 
   /// \brief Minimum number of steps
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::min_step() const {
-    return _get_setting<size_type>("data", "min_step");
+    std::string help = "int (optional)";
+    return _get_setting<size_type>("data", "min_step", help);
   }
 
 
@@ -557,7 +441,8 @@ namespace CASM {
 
   /// \brief Maximum number of steps
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::max_sample() const {
-    return _get_setting<size_type>("data", "max_sample");
+    std::string help = "int (optional)";
+    return _get_setting<size_type>("data", "max_sample", help);
   }
 
   /// \brief Returns true if a minimum number of sample has been specified
@@ -567,7 +452,8 @@ namespace CASM {
 
   /// \brief Minimum number of steps, default 0
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::min_sample() const {
-    return _get_setting<size_type>("data", "min_sample");
+    std::string help = "int (optional)";
+    return _get_setting<size_type>("data", "min_sample", help);
   }
 
 
