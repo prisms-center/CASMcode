@@ -68,10 +68,14 @@ namespace CASM {
 
       ("min-volume",
        po::value<Index>(&min_vol),
-       "Ensure that the resulting supercell has volume >= V.")
+       "Transforms the transformation matrix, T -> T', where T' = T*M, such that "
+       "(T').determininant() >= V. This has the effect that a supercell has a "
+       "particular volume.")
 
       ("fixed-shape",
-       "Use to prevent --min-volume from changing the shape of the resulting supercell.")
+       "Used with --min-volume to enforce that T' = T*m*I, where I is the identity "
+       "matrix, and m is a scalar. This has the effect of preserving the shape "
+       "of the resulting supercell, but increasing the volume.")
 
       ("verbose",
        "When used with --duper, show how the input lattices are transformed "
@@ -413,9 +417,13 @@ namespace CASM {
       /// enforce a minimum volume
       if(vm.count("min-volume")) {
 
-        std::cout << "  Enforcing minimum volume: " << min_vol;
-        if(vm.count("fixed-shape")) {
-          std::cout << " (with fixed shape)";
+        if(!vm.count("fixed-shape")) {
+          std::cout << "  Enforcing minimum volume: \n";
+          std::cout << "    Finding T' = T*M, such that (T').determinant() >= " << min_vol;
+        }
+        else {
+          std::cout << "  Enforcing minimum volume (with fixed shape): \n";
+          std::cout << "    Finding T' = T*m*I, such that (T').determinant() >= " << min_vol;
         }
         std::cout << "\n\n";
 
@@ -433,7 +441,7 @@ namespace CASM {
                    vm.count("fixed-shape"));
 
         Lattice niggli_lat = niggli(make_supercell(prim_lat, T * M), pg, TOL);
-        auto T = is_supercell(niggli_lat, prim_lat, TOL).second;
+        T = is_supercell(niggli_lat, prim_lat, TOL).second;
 
         std::cout << "    Transformation matrix, after enforcing mininum volume:\n"
                   << T << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
