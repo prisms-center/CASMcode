@@ -9,7 +9,7 @@ if [ ! -z "$CHANGES" ]; then
     CHANGES=".changes"
 fi
 
-echo -ne $RELEASE+$GITHASH$CHANGES
+echo -ne $RELEASE.$GITHASH$CHANGES
 #Exchange commented line if release
 #echo -ne $RELEASE
 
