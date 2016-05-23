@@ -133,8 +133,7 @@ namespace CASM {
     int choice;
     std::string scelname, configname, set_str;
     int refid, configid;
-    double lin_alg_tol = 1e-14;
-
+    
     std::string species_order_string = "\n\n";
 
     const fs::path &root = args.root;
@@ -317,6 +316,7 @@ namespace CASM {
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    double lin_alg_tol = primclex.settings().lin_alg_tol();
 
     std::string calctype = primclex.settings().calctype();
     std::string ref = primclex.settings().ref();
