@@ -48,15 +48,37 @@ namespace CASM {
 
   public:
 
-    UnitCellCoord() {};
+    typedef BasicStructure<Site> UnitType;
 
-    UnitCellCoord(Index _sublat, const UnitCell &_unitcell);
+    UnitCellCoord(const &unit) {};
 
-    UnitCellCoord(Index _sublat, Index i, Index j, Index k);
+    UnitCellCoord(const UnitType &unit, Index _sublat, const UnitCell &_unitcell);
 
-    ///Construct from a Coordinate and StrucType with a StrucType::basis
-    template<typename CoordType, typename StrucType>
-    UnitCellCoord(CoordType coord, const StrucType &struc, double tol);
+    UnitCellCoord(const UnitType &unit, Index _sublat, Index i, Index j, Index k);
+
+    UnitCellCoord(const UnitType &unit, const Coordinate &coord, double tol);
+
+
+    UnitCellCoord(const UnitCellCoord &B) = default;
+
+    UnitCellCoord &operator=(const UnitCellCoord &B) = default;
+
+    UnitCellCoord(UnitCellCoord &&B) = default;
+
+    UnitCellCoord &operator=(UnitCellCoord && B) = default;
+
+
+    /// \brief Get unit structure reference
+    const UnitType &unit() const;
+
+    /// \brief Change unit structure, keeping indices constant
+    void set_unit(const UnitType &_unit) const;
+
+    /// \brief Get corresponding coordinate
+    Coordinate coordinate() const;
+
+    /// \brief Get corresponding site
+    Site site() const;
 
     UnitCell &unitcell();
     const UnitCell &unitcell() const;
@@ -77,6 +99,7 @@ namespace CASM {
 
   private:
 
+    const UnitType *m_unit;
     UnitCell m_unitcell;
     Index m_sublat;
 
@@ -122,21 +145,21 @@ namespace CASM {
 
   /* -- UnitCellCoord Definitions ------------------------------------- */
 
-  inline UnitCellCoord::UnitCellCoord(Index _sublat, const UnitCell &_unitcell) :
+  inline UnitCellCoord::UnitCellCoord(const UnitType &unit, Index _sublat, const UnitCell &_unitcell) :
+    m_unit(&unit),
     m_unitcell(_unitcell),
     m_sublat(_sublat) {}
 
-  inline UnitCellCoord::UnitCellCoord(Index _sublat, Index i, Index j, Index k) :
+  inline UnitCellCoord::UnitCellCoord(const UnitType &unit, Index _sublat, Index i, Index j, Index k) :
+    m_unit(&unit),
     m_unitcell(i, j, k),
     m_sublat(_sublat) {}
 
-  ///Construct from a CoordType and StrucType
-  template<typename CoordType, typename StrucType>
-  UnitCellCoord::UnitCellCoord(CoordType coord, const StrucType &struc, double tol) {
+  inline UnitCellCoord::UnitCellCoord(const UnitType &unit, const Coordinate &coord, double tol) {
     for(Index b = 0; b < struc.basis.size(); ++b) {
       auto diff = coord - struc.basis[b];
       if(is_integer(diff.const_frac(), tol)) {
-        *this = UnitCellCoord(b, lround(diff.const_frac()));
+        *this = UnitCellCoord(unit, b, lround(diff.const_frac()));
         return;
       }
     }
@@ -144,6 +167,25 @@ namespace CASM {
     throw std::runtime_error(
       "Error in 'UnitCellCoord(CoordType coord, const StrucType& struc, double tol)'\n"
       "  No matching basis site found.");
+  }
+
+  inline const UnitCellCoord::UnitType &UnitCellCoord::unit() const {
+    return *m_unit;
+  }
+
+  /// \brief Change unit structure, keeping indices constant
+  inline void UnitCellCoord::set_unit(const UnitType &_unit) const {
+    m_unit = &_unit;
+  }
+
+  /// \brief Get corresponding coordinate
+  inline Coordinate UnitCellCoord::coordinate() const {
+    return unit().get_site(*this);
+  }
+
+  /// \brief Get corresponding site
+  inline Site UnitCellCoord::site() const {
+    return unit().get_site(*this);
   }
 
   inline UnitCell &UnitCellCoord::unitcell() {

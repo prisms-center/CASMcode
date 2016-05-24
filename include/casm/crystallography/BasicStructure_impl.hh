@@ -1227,12 +1227,61 @@ namespace CASM {
     return basic.to_json(json);
   }
 
+  //****************************************************
+
   // Assumes constructor CoordType::CoordType(Lattice) exists
   template<typename CoordType>
   void from_json(BasicStructure<CoordType> &basic, const jsonParser &json) {
     basic.from_json(json);
   }
 
+  //****************************************************
+
+  /// \brief Output the neighborhood of UnitCellCoord within max_radius of a unit cell
+  ///
+  /// \param unit The unit cell
+  /// \param max_radius The neighborhood distance cutoff
+  /// \param site_filter A filter function that returns true for CoordType that
+  ///        should be considered for the neighborhood
+  /// \param result Output iterator for container of UnitCellCoord
+  /// \param xtal_tol Crystallography tolerance used to contstruct UnitCellCoord from CoordType
+  ///
+  /// \returns Output iterator after generating the neighborhood
+  ///
+  template<typename CoordType, typename OutputIterator>
+  OutputIterator neighborhood(
+    const BasicStructure<CoordType> &unit,
+    double max_radius,
+    std::function<bool (CoordType)> site_filter,
+    OutputIterator result,
+    double xtal_tol) {
+
+    auto dim = basic.lattice().enclose_sphere(max_radius);
+    EigenCounter<Eigen::Vector3i> grid_count(-dim, dim, Eigen::Vector3i::Constant(1));
+    Coordinate lat_point(lattice);
+    const auto &basis = unit.basis;
+
+    do {
+      lat_point.frac() = grid_count().cast<double>();
+
+      for(auto it = basis.begin(); it != basis.end(); ++it) {
+        if(!site_filter(*it)) {
+          continue;
+        }
+
+        Coordinate test(*it + lat_point);
+        if(std::any_of(basis.begin(),
+                       basis.end(),
+        [&](const Coordinate & coord) {
+        return test.dist(coord) < max_radius;
+        })) {
+          *result++ = UnitCellCoord(basic, test, xtal_tol);
+        }
+      }
+    }
+    while(++grid_count);
+    return result;
+  }
 
 }
 
