@@ -45,7 +45,7 @@ namespace CASM {
     ("supercells,s", "Enumerate supercells")
     ("configs,c", "Enumerate configurations")
     ("matrix,m", po::value<fs::path>(&matrix_path), "Specify a matrix to apply to the primitive cell before beginning enumeration")
-    ("easy-restrict,z", po::value<std::string>(&ezmode), "Restrict enumeration along a, b or c lattice vectors");
+    ("lattice-directions,z", po::value<std::string>(&ezmode), "Restrict enumeration along a, b or c lattice vectors");
 
     // currently unused...
     //("tol", po::value<double>(&tol)->default_value(CASM::TOL), "Tolerance used for checking symmetry")
@@ -84,18 +84,18 @@ namespace CASM {
         std::cout << "      24, since det(M)*6=24 (4 primitive lattice sites per conventional" << std::endl;
         std::cout << "      cell)." << std::endl;
         std::cout << std::endl;
-        std::cout << "  --easy-restrict" << std::endl;
+        std::cout << "  --lattice-directions" << std::endl;
         std::cout << "    - When using --supercells, you may use the this option             " << std::endl;
         std::cout << "      restrict the supercell enumeration to 1, 2 or 3 of the lattice   " << std::endl;
         std::cout << "      vectors, to get 1,2 or 3-dimensional supercells. By directly     " << std::endl;
         std::cout << "      specifying combinations of 'a', 'b' and 'c', you determine which " << std::endl;
         std::cout << "      of the lattice vectors you want to enumerate over.               " << std::endl;
         std::cout << "      For example, to enumerate 1-dimensional supercells along the 'c' " << std::endl;
-        std::cout << "      direction, simply specify '--easy-restrict c'. If you want       " << std::endl;
+        std::cout << "      direction, simply specify '--lattice-directions c'. If you want       " << std::endl;
         std::cout << "      2-dimensional supercells along the a and c lattice vectors,      " << std::endl;
-        std::cout << "      specify '--easy-restrict ac'.                                    " << std::endl;
+        std::cout << "      specify '--lattice-directions ac'.                                    " << std::endl;
         std::cout << "    - If this option isn't specified, 3-dimensional supercells will be " << std::endl;
-        std::cout << "      enumerated, equivalent to specifying 'easy-restrict abc'.        " << std::endl;
+        std::cout << "      enumerated, equivalent to specifying 'lattice-directions abc'.        " << std::endl;
         std::cout << "    - This option can be used in conjunction with the --matrix option. " << std::endl;
         std::cout << "      If this is the case, then the meaning of 'a', 'b' and 'c' changes" << std::endl;
         std::cout << "      from the lattice vectors of your PRIM, to the  vectors of the    " << std::endl;
@@ -114,7 +114,7 @@ namespace CASM {
         std::cerr << "Error in 'casm enum'. If --min is given, --max must also be given." << std::endl;
         return ERR_INVALID_ARG;
       }
-      if(vm.count("easy-restrict")) {
+      if(vm.count("lattice-directions")) {
         bool bad_args = false;
         if(ezmode.size() > 3 || ezmode.size() < 1) {
           bad_args = true;
@@ -127,7 +127,7 @@ namespace CASM {
         }
         if(bad_args) {
           std::cerr << std::endl << desc << std::endl << std::endl;
-          std::cerr << "When using --easy-restrict, specify the primitive lattice vectors you want to enumerate over with a string." << std::endl;
+          std::cerr << "When using --lattice-directions, specify the primitive lattice vectors you want to enumerate over with a string." << std::endl;
           std::cerr << "For example, to enumerate over only a and b, pass 'ab'. To enumerate over only c pass 'c'." << std::endl;
 
           return ERR_INVALID_ARG;
@@ -178,7 +178,7 @@ namespace CASM {
     const ProjectSettings &set = primclex.settings();
     std::cout << "  DONE." << std::endl << std::endl;
 
-    if(vm.count("easy-restrict")) {
+    if(vm.count("lattice-directions")) {
       dims = ezmode.size();
       while(ezmode.size() != 3) {
         if(std::find(ezmode.begin(), ezmode.end(), 'a') == ezmode.end()) {
@@ -230,7 +230,7 @@ namespace CASM {
 
     }
     else if(vm.count("configs")) {
-      if(vm.count("dimensions") || vm.count("matrix") || vm.count("easy-restrict")) {
+      if(vm.count("dimensions") || vm.count("matrix") || vm.count("lattice-directions")) {
         std::cerr << "Option --configs in conjunction with limited supercell enumeration is currently unsupported" << std::endl;
         return ERR_INVALID_ARG;
       }
