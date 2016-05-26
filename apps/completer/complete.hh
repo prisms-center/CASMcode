@@ -8,9 +8,6 @@
 
 namespace Completer {
 
-  ///Remove "--" or "-" from beginning of string if it exists, and return as new string
-  std::string strip_argument(const std::string &raw_input);
-
   /**
    * When the Engine class isn't returning strings corresponding to options
    * or suboptions that bash should complete, then the user is in the
@@ -28,6 +25,9 @@ namespace Completer {
 
   enum class ARG_TYPE {VOID, PATH, COMMAND, SCELNAME, QUERY, OPERATOR};
 
+  ///Remove "--" or "-" from beginning of string if it exists, and return as new string
+  std::string strip_argument(const std::string &raw_input);
+
   //*****************************************************************************************************//
 
   /**
@@ -43,8 +43,11 @@ namespace Completer {
   class Suboption {
   public:
 
-    ///Explicit construction
+    ///Explicit construction. Be sure to include "--" and '-' in the tags
     Suboption(const std::string &init_longname, std::string init_short, ARG_TYPE init_expected_types = ARG_TYPE::VOID);
+
+    ///Copy construct. Carbon copy.
+    Suboption(const Suboption &copy_subopt);
 
     ///Return long name in string format
     std::string long_tag() const;
@@ -64,10 +67,10 @@ namespace Completer {
     const std::string m_long;
 
     ///-s(hort) identifyer (includes leading '-')
-    std::string m_short;
+    const std::string m_short;
 
     ///Type of arguments expected
-    const ARG_TYPE expected_arg;
+    const ARG_TYPE m_expected_arg;
   };
 
 

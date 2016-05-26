@@ -21,7 +21,19 @@ namespace Completer {
   Suboption::Suboption(const std::string &init_longname, std::string init_short, ARG_TYPE init_expected_types):
     m_long(init_longname),
     m_short(init_short),
-    expected_arg(init_expected_types) {
+    m_expected_arg(init_expected_types) {
+    if(m_long.size() < 3 || m_short.size() != 2) {
+      throw std::runtime_error("--long option must be at least 3 characters long and -s(hort) must be exactly 2!");
+    }
+    if(m_long[0] != '-' || m_long[1] != '-' || m_short[0] != '-') {
+      throw std::runtime_error("Suboption --long and -s(hort) tags must include leading '-' characters!");
+    }
+  }
+
+  Suboption::Suboption(const Suboption &copy_subopt):
+    m_long(copy_subopt.m_long),
+    m_short(copy_subopt.m_short),
+    m_expected_arg(copy_subopt.m_expected_arg) {
   }
 
   std::string Suboption::long_tag() const {
@@ -45,7 +57,7 @@ namespace Completer {
   }
 
   ARG_TYPE Suboption::argument_type() const {
-    return expected_arg;
+    return m_expected_arg;
   }
 
   //***************************************************************************************************//
