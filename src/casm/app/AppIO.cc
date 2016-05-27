@@ -1,4 +1,5 @@
 #include "casm/app/AppIO.hh"
+#include "casm/symmetry/SymInfo.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/clusterography/jsonClust.hh"
 
@@ -162,50 +163,21 @@ namespace CASM {
 
   // --------- SymmetryIO Declarations --------------------------------------------------
 
-  void write_symop(const SymOp &op, jsonParser &json, int cclass, int inv) {
-    auto info = op.info();
+  void write_symop(const SymGroup &grp, Index i, jsonParser &j) {
+    j = jsonParser::object();
 
-    json = jsonParser::object();
+    const SymOp &op = grp[i];
 
-    json["matrix"] = op.matrix();
-    json["tau"] = op.tau();
-    json["conjugacy_class"] = cclass;
-    json["inverse"] = inv;
-    json["invariant_point"] = info.location;
+    to_json(op.matrix(), j["matrix"]["CART"]);
+    to_json(grp.lattice().inv_lat_column_mat()*op.matrix()*grp.lattice().lat_column_mat(), j["matrix"]["FRAC"]);
 
-    // enum symmetry_type {identity_op, mirror_op, glide_op, rotation_op, screw_op, inversion_op, rotoinversion_op, invalid_op};
-    if(info.op_type == SymOp::identity_op) {
-      json["type"] = "identity";
-    }
-    else if(info.op_type == SymOp::mirror_op) {
-      json["type"] = "mirror";
-      json["mirror_normal"] = info.axis;
-    }
-    else if(info.op_type == SymOp::glide_op) {
-      json["type"] = "glide";
-      json["mirror_normal"] = info.axis;
-      json["shift"] = info.screw_glide_shift;
-    }
-    else if(info.op_type == SymOp::rotation_op) {
-      json["type"] = "rotation";
-      json["rotation_axis"] = info.axis;
-      json["rotation_angle"] = info.angle;
-    }
-    else if(info.op_type == SymOp::screw_op) {
-      json["type"] = "screw";
-      json["rotation_axis"] = info.axis;
-      json["rotation_angle"] = info.angle;
-      json["shift"] = info.screw_glide_shift;
-    }
-    else if(info.op_type == SymOp::rotoinversion_op) {
-      json["type"] = "rotoinversion";
-      json["rotation_axis"] = info.axis;
-      json["rotation_angle"] = info.angle;
-    }
-    else if(info.op_type == SymOp::invalid_op) {
-      json["type"] = "invalid";
-    }
+    to_json_array(op.tau(), j["tau"]["CART"]);
+    to_json_array(grp.lattice().inv_lat_column_mat()*op.tau(), j["tau"]["FRAC"]);
 
+    to_json(grp.class_of_op(i), j["conjugacy_class"]);
+    to_json(grp.ind_inverse(i), j["inverse"]);
+
+    add_sym_info(grp.info(i), j);
   }
 
   void write_symgroup(const SymGroup &grp, jsonParser &json) {
@@ -213,8 +185,9 @@ namespace CASM {
 
     json["symop"] = jsonParser::array(grp.size());
     for(int i = 0; i < grp.size(); i++) {
-      write_symop(grp[i], json["symop"][i], grp.class_of_op(i), grp.ind_inverse(i));
+      write_symop(grp, i, json["symop"][i]);
     }
+
     json["name"] = grp.get_name();
     json["latex_name"] = grp.get_latex_name();
     json["periodicity"] = grp.periodicity();

@@ -189,6 +189,9 @@ namespace CASM {
     void print(std::ostream &stream, COORD_TYPE mode, char term = 0, int prec = 7, int pad = 5) const;
     void print(std::ostream &stream, char term = 0, int prec = 7, int pad = 5) const;
 
+    /// \brief Print normalized vector
+    void print_axis(std::ostream &stream, COORD_TYPE mode, char term = 0, int prec = 7, int pad = 5) const;
+
     /// \brief distance (in Angstr) of neighbor from *this
     double dist(const Coordinate &neighbor) const;
 
