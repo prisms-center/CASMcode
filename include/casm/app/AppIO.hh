@@ -3,6 +3,7 @@
 
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ChemicalReference.hh"
@@ -14,8 +15,6 @@
 namespace CASM {
 
   // --- These functions are for the casm executable file I/O -----------
-  //
-  //  They should be moved into the app code eventually, but are currently needed here
 
 
   // --------- PrimIO Declarations --------------------------------------------------
@@ -34,7 +33,7 @@ namespace CASM {
 
   // --------- SymmetryIO Declarations --------------------------------------------------
 
-  void write_symop(const SymOp &op, jsonParser &json, int cclass, int inv);
+  void write_symop(const SymGroup &grp, Index i, jsonParser &j);
 
   void write_symgroup(const SymGroup &grp, jsonParser &json);
 
