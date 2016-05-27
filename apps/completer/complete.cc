@@ -30,11 +30,7 @@ namespace Completer {
     }
   }
 
-  Suboption::Suboption(const Suboption &copy_subopt):
-    m_long(copy_subopt.m_long),
-    m_short(copy_subopt.m_short),
-    m_expected_arg(copy_subopt.m_expected_arg) {
-  }
+  //Suboption::Suboption():m_expected_arg(ARG_TYPE::VOID){}
 
   std::string Suboption::long_tag() const {
     return m_long;

@@ -3,10 +3,15 @@
 
 #include <string>
 #include <vector>
+#include <stdexcept>
+#include <boost/program_options.hpp>
 
-#include "casm/CASM_global_definitions.hh"
+namespace po = boost::program_options;
 
 namespace Completer {
+
+  typedef std::string scel_str;
+  typedef std::string query_str;
 
   /**
    * When the Engine class isn't returning strings corresponding to options
@@ -46,8 +51,8 @@ namespace Completer {
     ///Explicit construction. Be sure to include "--" and '-' in the tags
     Suboption(const std::string &init_longname, std::string init_short, ARG_TYPE init_expected_types = ARG_TYPE::VOID);
 
-    ///Copy construct. Carbon copy.
-    Suboption(const Suboption &copy_subopt);
+    ///Default constructor that you probably don't need
+    //Suboption();
 
     ///Return long name in string format
     std::string long_tag() const;
@@ -97,7 +102,7 @@ namespace Completer {
     Option(const std::string &init_tag, const std::vector<Suboption> &init_allowed_subopts);
 
     ///Construct with program options (eventually preferred)
-    //Option(const std::string &init_tag, const CASM::po::option_description &init_premade_descs);
+    Option(const std::string &init_tag, const po::option_description &init_premade_descs);
 
     ///Return the identifying name of *this (e.g. "super", "monte", etc)
     std::string tag() const;
