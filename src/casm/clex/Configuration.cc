@@ -8,6 +8,7 @@
 #include "casm/crystallography/jsonStruc.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/casm_io/VaspIO.hh"
+#include "casm/symmetry/SymBasisPermute.hh"
 
 namespace CASM {
 

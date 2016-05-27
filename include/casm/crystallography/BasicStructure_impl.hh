@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/PrimGrid.hh"
@@ -541,68 +542,68 @@ namespace CASM {
   }
 
   //*********************************************************
+  /*
+    template<typename CoordType>
+    void BasicStructure<CoordType>::map_superstruc_to_prim(BasicStructure<CoordType> &prim, const SymGroup &point_group) {
 
-  template<typename CoordType>
-  void BasicStructure<CoordType>::map_superstruc_to_prim(BasicStructure<CoordType> &prim, const SymGroup &point_group) {
+      int prim_to_scel = -1;
+      CoordType shifted_site(prim.lattice());
 
-    int prim_to_scel = -1;
-    CoordType shifted_site(prim.lattice());
+      //Check that (*this) is actually a supercell of the prim
+      if(!lattice().is_supercell_of(prim.lattice(), point_group)) {
+        std::cout << "*******************************************\n"
+                  << "ERROR in BasicStructure<CoordType>::map_superstruc_to_prim:\n"
+                  << "The structure \n";
+        //print(std::cout);
+        std::cout << jsonParser(*this) << std::endl;
+        std::cout << "is not a supercell of the given prim!\n";
+        //prim.print(std::cout);
+        std::cout << jsonParser(prim) << std::endl;
+        std::cout << "*******************************************\n";
+        exit(1);
+      }
 
-    //Check that (*this) is actually a supercell of the prim
-    if(!lattice().is_supercell_of(prim.lattice(), point_group)) {
-      std::cout << "*******************************************\n"
-                << "ERROR in BasicStructure<CoordType>::map_superstruc_to_prim:\n"
-                << "The structure \n";
-      //print(std::cout);
-      std::cout << jsonParser(*this) << std::endl;
-      std::cout << "is not a supercell of the given prim!\n";
-      //prim.print(std::cout);
-      std::cout << jsonParser(prim) << std::endl;
-      std::cout << "*******************************************\n";
-      exit(1);
-    }
+      //Get prim grid of supercell to get the lattice translations
+      //necessary to stamp the prim in the superstructure
+      PrimGrid prim_grid(prim.lattice(), lattice());
 
-    //Get prim grid of supercell to get the lattice translations
-    //necessary to stamp the prim in the superstructure
-    PrimGrid prim_grid(prim.lattice(), lattice());
+      // Translate each of the prim atoms by prim_grid translation
+      // vectors, and map that translated atom in the supercell.
+      for(Index pg = 0; pg < prim_grid.size(); pg++) {
+        for(Index pb = 0; pb < prim.basis.size(); pb++) {
+          shifted_site = prim.basis[pb];
+          //shifted_site lattice is PRIM, so get prim_grid.coord in PRIM mode
+          shifted_site += prim_grid.coord(pg, PRIM);
+          shifted_site.set_lattice(lattice(), CART);
+          shifted_site.within();
 
-    // Translate each of the prim atoms by prim_grid translation
-    // vectors, and map that translated atom in the supercell.
-    for(Index pg = 0; pg < prim_grid.size(); pg++) {
-      for(Index pb = 0; pb < prim.basis.size(); pb++) {
-        shifted_site = prim.basis[pb];
-        //shifted_site lattice is PRIM, so get prim_grid.coord in PRIM mode
-        shifted_site += prim_grid.coord(pg, PRIM);
-        shifted_site.set_lattice(lattice(), CART);
-        shifted_site.within();
+          // invalidate asym_ind and basis_ind because when we use
+          // BasicStructure<CoordType>::find, we don't want a comparison using the
+          // basis_ind and asym_ind; we want a comparison using the
+          // cartesian and Specie type.
 
-        // invalidate asym_ind and basis_ind because when we use
-        // BasicStructure<CoordType>::find, we don't want a comparison using the
-        // basis_ind and asym_ind; we want a comparison using the
-        // cartesian and Specie type.
+          shifted_site.set_basis_ind(-1);
+          prim_to_scel = find(shifted_site);
 
-        shifted_site.set_basis_ind(-1);
-        prim_to_scel = find(shifted_site);
+          if(prim_to_scel == basis.size()) {
+            std::cout << "*******************************************\n"
+                      << "ERROR in BasicStructure<CoordType>::map_superstruc_to_prim:\n"
+                      << "Cannot associate site \n"
+                      << shifted_site << "\n"
+                      << "with a site in the supercell basis. \n"
+                      << "*******************************************\n";
+            std::cout << "The basis_ind and asym_ind are "
+                      << shifted_site.basis_ind() << "\t "
+                      << shifted_site.asym_ind() << "\n";
+            exit(2);
+          }
 
-        if(prim_to_scel == basis.size()) {
-          std::cout << "*******************************************\n"
-                    << "ERROR in BasicStructure<CoordType>::map_superstruc_to_prim:\n"
-                    << "Cannot associate site \n"
-                    << shifted_site << "\n"
-                    << "with a site in the supercell basis. \n"
-                    << "*******************************************\n";
-          std::cout << "The basis_ind and asym_ind are "
-                    << shifted_site.basis_ind() << "\t "
-                    << shifted_site.asym_ind() << "\n";
-          exit(2);
+          // Set ind_to_prim of the basis site
+          basis[prim_to_scel].ind_to_prim = pb;
         }
-
-        // Set ind_to_prim of the basis site
-        basis[prim_to_scel].ind_to_prim = pb;
       }
     }
-  }
-
+  */
   //***********************************************************
 
   template<typename CoordType> template<typename CoordType2>
@@ -842,52 +843,54 @@ namespace CASM {
    *  Default shift is zero.
    */
   //***********************************************************
+  /*
+    template<typename CoordType>
+    void BasicStructure<CoordType>::add_vacuum_shift(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const {
 
-  template<typename CoordType>
-  void BasicStructure<CoordType>::add_vacuum_shift(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const {
+      Coordinate cshift(shift, lattice(), mode);    //John G 121030
+      if(!almost_zero(cshift.frac(2))) {
+        std::cout << cshift.const_frac() << std::endl;
+        std::cout << "WARNING: You're shifting in the c direction! This will mess with your vacuum and/or structure!!" << std::endl;
+        std::cout << "See BasicStructure<CoordType>::add_vacuum_shift" << std::endl;
+      }
 
-    Coordinate cshift(shift, lattice(), mode);    //John G 121030
-    if(!almost_zero(cshift.frac(2))) {
-      std::cout << cshift.const_frac() << std::endl;
-      std::cout << "WARNING: You're shifting in the c direction! This will mess with your vacuum and/or structure!!" << std::endl;
-      std::cout << "See BasicStructure<CoordType>::add_vacuum_shift" << std::endl;
+      Eigen::Vector3d vacuum_vec;                 //unit vector perpendicular to ab plane
+      vacuum_vec = lattice()[0].cross(lattice()[1]);
+      vacuum_vec.normalize();
+      Lattice new_lattice(lattice()[0],
+                          lattice()[1],
+                          lattice()[2] + vacuum_thickness * vacuum_vec + cshift.cart()); //Add vacuum and shift to c vector
+
+      new_surface_struc = *this;
+      new_surface_struc.set_lattice(new_lattice, CART);
+      new_surface_struc.initialize();
+      return;
     }
-
-    Eigen::Vector3d vacuum_vec;                 //unit vector perpendicular to ab plane
-    vacuum_vec = lattice()[0].cross(lattice()[1]);
-    vacuum_vec.normalize();
-    Lattice new_lattice(lattice()[0],
-                        lattice()[1],
-                        lattice()[2] + vacuum_thickness * vacuum_vec + cshift.cart()); //Add vacuum and shift to c vector
-
-    new_surface_struc = *this;
-    new_surface_struc.set_lattice(new_lattice, CART);
-    new_surface_struc.initialize();
-    return;
-  }
-
+  */
   //***********************************************************
-  template<typename CoordType>
-  void BasicStructure<CoordType>::add_vacuum_shift(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness, Coordinate shift) const {
-    if(&(shift.home()) != &lattice()) {
-      std::cout << "WARNING: The lattice from your shift coordinate does not match the lattice of your structure!" << std::endl;
-      std::cout << "See BasicStructure<CoordType>::add_vacuum_shift" << std::endl << std::endl;
+  /*
+    template<typename CoordType>
+    void BasicStructure<CoordType>::add_vacuum_shift(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness, Coordinate shift) const {
+      if(&(shift.home()) != &lattice()) {
+        std::cout << "WARNING: The lattice from your shift coordinate does not match the lattice of your structure!" << std::endl;
+        std::cout << "See BasicStructure<CoordType>::add_vacuum_shift" << std::endl << std::endl;
+      }
+
+      add_vacuum_shift(new_surface_struc, vacuum_thickness, shift.cart(), CART);
+      return;
     }
-
-    add_vacuum_shift(new_surface_struc, vacuum_thickness, shift.cart(), CART);
-    return;
-  }
-
+  */
   //***********************************************************
-  template<typename CoordType>
-  void BasicStructure<CoordType>::add_vacuum(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness) const {
-    Eigen::Vector3d shift(0, 0, 0);
+  /*
+    template<typename CoordType>
+    void BasicStructure<CoordType>::add_vacuum(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness) const {
+      Eigen::Vector3d shift(0, 0, 0);
 
-    add_vacuum_shift(new_surface_struc, vacuum_thickness, shift, FRAC);
+      add_vacuum_shift(new_surface_struc, vacuum_thickness, shift, FRAC);
 
-    return;
-  }
-
+      return;
+    }
+  */
   //************************************************************
   /// Counts sites that allow vacancies
   template<typename CoordType>
@@ -1068,66 +1071,66 @@ namespace CASM {
   }
 
   //***********************************************************
+  /*
+    template<typename CoordType>
+    void BasicStructure<CoordType>::print_cif(std::ostream &stream) const {
+      const char quote = '\'';
+      const char indent[] = "   ";
 
-  template<typename CoordType>
-  void BasicStructure<CoordType>::print_cif(std::ostream &stream) const {
-    const char quote = '\'';
-    const char indent[] = "   ";
+      //double amag, bmag, cmag;
+      //double alpha, beta, gamma;
 
-    //double amag, bmag, cmag;
-    //double alpha, beta, gamma;
+      // Copying format based on VESTA .cif output.
 
-    // Copying format based on VESTA .cif output.
+      // Heading text.
 
-    // Heading text.
+      stream << '#';
+      for(int i = 0; i < 70; i++) {
+        stream << '=';
+      }
+      stream << "\n\n";
+      stream << "# CRYSTAL DATA\n\n";
+      stream << '#';
+      for(int i = 0; i < 70; i++) {
+        stream << '-';
+      }
+      stream << "\n\n";
+      stream << "data_CASM\n\n\n";
 
-    stream << '#';
-    for(int i = 0; i < 70; i++) {
-      stream << '=';
+      stream.precision(5);
+      stream.width(11);
+      stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
+
+      stream << std::setw(40) << "_pd_phase_name" << quote << title << quote << '\n';
+      stream << std::setw(40) << "_cell_length_a" << lattice().lengths[0] << '\n';
+      stream << std::setw(40) << "_cell_length_b" << lattice().lengths[1] << '\n';
+      stream << std::setw(40) << "_cell_length_c" << lattice().lengths[2] << '\n';
+      stream << std::setw(40) << "_cell_angle_alpha" << lattice().angles[0] << '\n';
+      stream << std::setw(40) << "_cell_angle_beta" << lattice().angles[1] << '\n';
+      stream << std::setw(40) << "_cell_angle_gamma" << lattice().angles[2] << '\n';
+      stream << std::setw(40) << "_symmetry_space_group_name_H-M" << quote << "TBD" << quote << '\n';
+      stream << std::setw(40) << "_symmetry_Int_Tables_number" << "TBD" << "\n\n";
+
+      stream << "loop_\n";
+      stream << "_symmetry_equiv_pos_as_xyz\n";
+
+      // Equivalent atom positions here. Form: 'x, y, z', '-x, -y, -z', 'x+1/2, y+1/2, z', etc.
+      // Use stream << indent << etc.
+
+      stream << '\n';
+      stream << "loop_\n";
+      stream << indent << "_atom_site_label" << '\n';
+      stream << indent << "_atom_site_occupancy" << '\n';
+      stream << indent << "_atom_site_fract_x" << '\n';
+      stream << indent << "_atom_site_fract_y" << '\n';
+      stream << indent << "_atom_site_fract_z" << '\n';
+      stream << indent << "_atom_site_adp_type" << '\n';
+      stream << indent << "_atom_site_B_iso_or_equiv" << '\n';
+      stream << indent << "_atom_site_type_symbol" << '\n';
+
+      // Use stream << indent << etc.
     }
-    stream << "\n\n";
-    stream << "# CRYSTAL DATA\n\n";
-    stream << '#';
-    for(int i = 0; i < 70; i++) {
-      stream << '-';
-    }
-    stream << "\n\n";
-    stream << "data_CASM\n\n\n";
-
-    stream.precision(5);
-    stream.width(11);
-    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
-
-    stream << std::setw(40) << "_pd_phase_name" << quote << title << quote << '\n';
-    stream << std::setw(40) << "_cell_length_a" << lattice().lengths[0] << '\n';
-    stream << std::setw(40) << "_cell_length_b" << lattice().lengths[1] << '\n';
-    stream << std::setw(40) << "_cell_length_c" << lattice().lengths[2] << '\n';
-    stream << std::setw(40) << "_cell_angle_alpha" << lattice().angles[0] << '\n';
-    stream << std::setw(40) << "_cell_angle_beta" << lattice().angles[1] << '\n';
-    stream << std::setw(40) << "_cell_angle_gamma" << lattice().angles[2] << '\n';
-    stream << std::setw(40) << "_symmetry_space_group_name_H-M" << quote << "TBD" << quote << '\n';
-    stream << std::setw(40) << "_symmetry_Int_Tables_number" << "TBD" << "\n\n";
-
-    stream << "loop_\n";
-    stream << "_symmetry_equiv_pos_as_xyz\n";
-
-    // Equivalent atom positions here. Form: 'x, y, z', '-x, -y, -z', 'x+1/2, y+1/2, z', etc.
-    // Use stream << indent << etc.
-
-    stream << '\n';
-    stream << "loop_\n";
-    stream << indent << "_atom_site_label" << '\n';
-    stream << indent << "_atom_site_occupancy" << '\n';
-    stream << indent << "_atom_site_fract_x" << '\n';
-    stream << indent << "_atom_site_fract_y" << '\n';
-    stream << indent << "_atom_site_fract_z" << '\n';
-    stream << indent << "_atom_site_adp_type" << '\n';
-    stream << indent << "_atom_site_B_iso_or_equiv" << '\n';
-    stream << indent << "_atom_site_type_symbol" << '\n';
-
-    // Use stream << indent << etc.
-  }
-
+  */
   //***********************************************************
 
   template<typename CoordType>
