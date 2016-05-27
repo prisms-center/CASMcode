@@ -17,8 +17,8 @@ namespace CASM {
    * final state of the previous condition.
    *
    * The different kinds of drive modes the user can specify are:
-   * SINGLE:        Just equilibrate the initial settings
    * INCREMENTAL:   Given a delta in condition values, increment the conditions by the delta after each point
+   * CUSTOM:        Calculate for a list of condition values
    */
 
   template<typename RunType>
@@ -29,7 +29,7 @@ namespace CASM {
     typedef typename RunType::SettingsType SettingsType;
 
     /// \brief Constructor via MonteSettings
-    MonteDriver(PrimClex &primclex, const SettingsType &settings, Log &_log);
+    MonteDriver(PrimClex &primclex, const SettingsType &settings, Log &_log, Log &_err_log);
 
     /// \brief Run everything requested by the MonteSettings
     void run();
@@ -51,6 +51,12 @@ namespace CASM {
     Index _find_starting_conditions() const;
 
 
+    /// target for log messages
+    Log &m_log;
+
+    /// target for error messages
+    Log &m_err_log;
+
     ///Copy of initial settings given at construction. Will expand to have MonteCarlo states dumped into it.
     SettingsType m_settings;
 
@@ -69,9 +75,6 @@ namespace CASM {
     /// run in debug mode?
     bool m_debug;
 
-    /// target for log messages
-    Log &m_log;
-
   };
 
 
@@ -81,15 +84,15 @@ namespace CASM {
 
 
   template<typename RunType>
-  MonteDriver<RunType>::MonteDriver(PrimClex &primclex, const SettingsType &settings, Log &_log):
+  MonteDriver<RunType>::MonteDriver(PrimClex &primclex, const SettingsType &settings, Log &_log, Log &_err_log):
+    m_log(_log),
+    m_err_log(_err_log),
     m_settings(settings),
     m_dir(m_settings.output_directory()),
     m_drive_mode(m_settings.drive_mode()),
     m_mc(primclex, m_settings, _log),
     m_conditions_list(make_conditions_list(primclex, m_settings)),
-    m_debug(m_settings.debug()),
-    m_log(_log) {
-
+    m_debug(m_settings.debug()) {
   }
 
   /// \brief Run calculations for all conditions, outputting data as you finish each one
@@ -151,7 +154,7 @@ namespace CASM {
     }
 
     // if starting from initial condition
-    if((m_drive_mode == Monte::DRIVE_MODE::SINGLE) || (start_i == 0)) {
+    if(start_i == 0) {
       // perform any requested explicit equilibration passes
       if(m_settings.is_equilibration_passes_first_run()) {
         auto equil_passes = m_settings.equilibration_passes_first_run();
@@ -420,30 +423,28 @@ namespace CASM {
 
     switch(m_drive_mode) {
 
-    case Monte::DRIVE_MODE::SINGLE: {
+    case Monte::DRIVE_MODE::CUSTOM: {
 
-      // read existing conditions, and check if input conditions have already
-      // been calculated. If not, add to list.
-      CondType init_cond(settings.initial_conditions());
-      bool already_calculated = false;
+      // read existing conditions, and check for agreement
+      std::vector<CondType> custom_cond(settings.custom_conditions());
       int i = 0;
       while(fs::exists(m_dir.conditions_json(i))) {
 
         CondType existing;
         jsonParser json(m_dir.conditions_json(i));
         from_json(existing, primclex.composition_axes(), json);
-        conditions_list.push_back(existing);
-        if(existing == init_cond) {
-          already_calculated = true;
+        if(existing != custom_cond[i]) {
+          m_err_log.error("Conditions mismatch");
+          m_err_log << "existing conditions: " << m_dir.conditions_json(i) << "\n";
+          m_err_log << existing << "\n\n";
+          m_err_log << "specified custom conditions " << i << ":\n";
+          m_err_log << custom_cond[i] << "\n" << std::endl;
+          throw std::runtime_error("ERROR: custom_conditions list has changed.");
         }
         ++i;
 
       }
-
-      if(!already_calculated) {
-        conditions_list.push_back(init_cond);
-      }
-      return conditions_list;
+      return custom_cond;
     }
 
     case Monte::DRIVE_MODE::INCREMENTAL: {
@@ -452,34 +453,39 @@ namespace CASM {
       CondType final_cond(settings.final_conditions());
       CondType cond_increment(settings.incremental_conditions());
 
-      conditions_list.push_back(init_cond);
-
       CondType incrementing_cond = init_cond;
-      incrementing_cond += cond_increment;
 
-      int num_increments = (final_cond - init_cond) / cond_increment;
+      int num_increments = 1 + (final_cond - init_cond) / cond_increment;
 
       for(int i = 0; i < num_increments; i++) {
         conditions_list.push_back(incrementing_cond);
         incrementing_cond += cond_increment;
       }
 
-      if(conditions_list.size() == 1) {
-        std::cerr << "WARNING in MonteDriver::initialize" << std::endl;
-        std::cerr << "You specified incremental drive mode, but the specified increment resulted in single drive mode behavior." << std::endl;
-        std::cerr << "Only the initial condition will be calculated! (Is your increment too big or are you incrementing too many things?)" << std::endl;
+      int i = 0;
+      while(fs::exists(m_dir.conditions_json(i)) && i < conditions_list.size()) {
+
+        CondType existing;
+        jsonParser json(m_dir.conditions_json(i));
+        from_json(existing, primclex.composition_axes(), json);
+        if(existing != conditions_list[i]) {
+          m_err_log.error("Conditions mismatch");
+          m_err_log << "existing conditions: " << m_dir.conditions_json(i) << "\n";
+          m_err_log << existing << "\n";
+          m_err_log << "incremental conditions " << i << ":\n";
+          m_err_log << conditions_list[i] << "\n" << std::endl;
+          throw std::runtime_error("ERROR: initial_conditions or incremental_conditions has changed.");
+        }
+        ++i;
+
       }
 
       return conditions_list;
     }
 
     default: {
-      throw std::runtime_error(
-        std::string("ERROR in MonteDriver::initialize\n") +
-        "  An invalid drive mode was given.");
-
+      throw std::runtime_error("ERROR: An invalid drive mode was given.");
     }
-
     }
   }
 

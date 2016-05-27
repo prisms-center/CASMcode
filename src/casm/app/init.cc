@@ -65,7 +65,7 @@ namespace CASM {
 
     std::cout << "\n***************************\n" << std::endl;
 
-    const fs::path &root = args.root;
+    fs::path root = fs::current_path();
 
     DirectoryStructure dir(root);
     Structure prim;

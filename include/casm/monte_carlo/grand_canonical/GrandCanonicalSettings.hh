@@ -15,8 +15,7 @@ namespace CASM {
     GrandCanonicalSettings() {}
 
     /// \brief Construct EquilibriumMonteSettings by reading a settings JSON file
-    GrandCanonicalSettings(const fs::path &read_path) :
-      EquilibriumMonteSettings(read_path) {}
+    GrandCanonicalSettings(const fs::path &read_path);
 
 
     // --- GrandCanonicalConditions settings ---------------------
@@ -29,6 +28,9 @@ namespace CASM {
 
     /// \brief Expects incremental_conditions
     GrandCanonicalConditions incremental_conditions() const;
+
+    /// \brief Expects custom_conditions
+    std::vector<GrandCanonicalConditions> custom_conditions() const;
 
 
     // --- Project settings ---------------------
@@ -62,7 +64,10 @@ namespace CASM {
 
   private:
 
+    CompositionConverter m_comp_converter;
+
     GrandCanonicalConditions _conditions(std::string name) const;
+    GrandCanonicalConditions _conditions(const jsonParser &json) const;
 
     template<typename jsonParserIteratorType>
     std::tuple<bool, double> _get_precision(jsonParserIteratorType it, std::string input_name) const;
@@ -95,6 +100,10 @@ namespace CASM {
   ///
   template<typename SamplerInsertIterator>
   SamplerInsertIterator GrandCanonicalSettings::samplers(const PrimClex &primclex, SamplerInsertIterator result) const {
+
+    if(method() == Monte::METHOD::LTE1) {//hack
+      return result;
+    }
 
     size_type data_maxlength = max_data_length();
     std::string prop_name;

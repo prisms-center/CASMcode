@@ -166,8 +166,22 @@ namespace CASM {
   ///          uniq_primclex, or existing pointed at by args.primclex)
   ///
   PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex) {
+    return make_primclex_if_not(args, uniq_primclex, args.log);
+  }
+  
+  /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
+  ///        return reference to existing or constructed PrimClex
+  ///
+  /// \param args CommandArgs reference
+  /// \param uniq_primclex Reference to null std::unique_ptr<PrimClex> to manage PrimClex, if it is constructed
+  /// \param status_log where to print PrimClex construction messages
+  ///
+  /// \returns reference to PrimClex (either newly constructed managed by
+  ///          uniq_primclex, or existing pointed at by args.primclex)
+  ///
+  PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex, Log& status_log) {
     if(!args.primclex) {
-      uniq_primclex.reset(new PrimClex(args.root, args.log));
+      uniq_primclex.reset(new PrimClex(args.root, status_log));
       return *uniq_primclex;
     }
     return *args.primclex;

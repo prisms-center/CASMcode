@@ -100,7 +100,7 @@ namespace CASM {
 
     // --- Driver ---------------------
 
-    /// \brief Given a settings jsonParser figure out the drive mode. Expects drive_mode/single,incremental
+    /// \brief Given a settings jsonParser figure out the drive mode. Expects drive_mode/incremental,custom
     virtual const Monte::DRIVE_MODE drive_mode() const;
 
     /// \brief If dependent runs, start subsequent calculations with the final state
@@ -146,11 +146,15 @@ namespace CASM {
 
     /// \brief Returns (*this)[level1][level2].get<T>();
     template<typename T>
-    T _get_setting(std::string level1, std::string level2) const;
+    T _get_setting(std::string level1, std::string msg) const;
+
+    /// \brief Returns (*this)[level1][level2].get<T>();
+    template<typename T>
+    T _get_setting(std::string level1, std::string level2, std::string msg) const;
 
     /// \brief Returns (*this)[level1][level2][level3].get<T>();
     template<typename T>
-    T _get_setting(std::string level1, std::string level2, std::string level3) const;
+    T _get_setting(std::string level1, std::string level2, std::string level3, std::string msg) const;
 
 
   private:
@@ -277,10 +281,29 @@ namespace CASM {
 
   };
 
+  /// \brief Returns (*this)[level1][level2].get<T>();
+  template<typename T>
+  T MonteSettings::_get_setting(std::string level1, std::string msg) const {
+    try {
+      return (*this)[level1].get<T>();
+    }
+
+    catch(std::runtime_error &e) {
+      T t;
+      std::cerr << "ERROR in MonteSettings::" << level1 << std::endl;
+      std::cerr << "Expected [\"" << level1 << "\"]" << std::endl;
+      std::cerr << "  Either this was not found, or the type is wrong." << std::endl;
+      if(!msg.empty()) {
+        std::cerr << "[\"" << level1 << "\"]: ";
+        std::cerr << msg << std::endl;
+      }
+      throw;
+    }
+  }
 
   /// \brief Returns (*this)[level1][level2].get<T>();
   template<typename T>
-  T MonteSettings::_get_setting(std::string level1, std::string level2) const {
+  T MonteSettings::_get_setting(std::string level1, std::string level2, std::string msg) const {
     try {
       return (*this)[level1][level2].get<T>();
     }
@@ -298,13 +321,17 @@ namespace CASM {
         std::cerr << "No Settings[\"" << level1 << "\"] found" << std::endl;
         std::cerr << "Settings:\n" << (*this) << std::endl;
       }
+      if(!msg.empty()) {
+        std::cerr << "[\"" << level1 << "\"][\"" << level2 << "\"]: ";
+        std::cerr << msg << std::endl;
+      }
       throw;
     }
   }
 
   /// \brief Returns (*this)[level1][level2][level3].get<T>();
   template<typename T>
-  T MonteSettings::_get_setting(std::string level1, std::string level2, std::string level3) const {
+  T MonteSettings::_get_setting(std::string level1, std::string level2, std::string level3, std::string msg) const {
     try {
       return (*this)[level1][level2][level3].get<T>();
     }
@@ -328,6 +355,10 @@ namespace CASM {
       else {
         std::cerr << "No Settings[\"" << level1 << "\"] found" << std::endl;
         std::cerr << "Settings:\n" << (*this) << std::endl;
+      }
+      if(!msg.empty()) {
+        std::cerr << "[\"" << level1 << "\"][\"" << level2 << "\"][\"" << level3 << "\"]: ";
+        std::cerr << msg << std::endl;
       }
       throw;
     }

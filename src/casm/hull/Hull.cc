@@ -25,7 +25,8 @@ namespace CASM {
   Hull::Hull(const ConstConfigSelection &_selection,
              const CompCalculator &_comp_calculator,
              const EnergyCalculator &_energy_calculator,
-             double _singular_value_tol) :
+             double _singular_value_tol,
+             double _bottom_facet_tol) :
     m_selection(_selection),
     m_comp_calculator(_comp_calculator),
     m_energy_calculator(_energy_calculator) {
@@ -93,7 +94,7 @@ namespace CASM {
         new(&outnorm) Eigen::Map<const Eigen::VectorXd>((*facet_it).hyperplane().begin(), dim);
         b = -outnorm(dim - 1);
 
-        if(b > 0.0) {
+        if(b > _bottom_facet_tol) {
           m_bottom_facets.push_back(std::make_pair(*facet_it, b));
         }
       }

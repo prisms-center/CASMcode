@@ -117,6 +117,7 @@ namespace CASM {
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
     Log &log = args.log;
+    Log &err_log = args.err_log;
 
 
     const DirectoryStructure &dir = primclex.dir();
@@ -136,22 +137,22 @@ namespace CASM {
       log.read("Monte Carlo settings");
       log << "from: " << settings_path << "\n";
       monte_settings = MonteSettings(settings_path);
+      log << "ensemble: " << monte_settings.ensemble() << "\n";
+      log << "method: " << monte_settings.method() << "\n";
+      if(args.log.verbosity() == 100) {
+        monte_settings.set_debug(true);
+      }
+      if(monte_settings.debug()) {
+        log << "debug: " << monte_settings.debug() << "\n";
+      }
+      log << std::endl;
+
     }
     catch(std::exception &e) {
       std::cerr << "ERROR reading Monte Carlo settings.\n\n";
       std::cerr << e.what() << std::endl;
       return 1;
     }
-    log << "ensemble: " << monte_settings.ensemble() << "\n";
-    log << "method: " << monte_settings.method() << "\n";
-
-    if(args.log.verbosity() == 100) {
-      monte_settings.set_debug(true);
-    }
-    if(monte_settings.debug()) {
-      log << "debug: " << monte_settings.debug() << "\n";
-    }
-    log << std::endl;
 
     if(monte_settings.ensemble() == Monte::ENSEMBLE::GrandCanonical) {
 
@@ -259,7 +260,9 @@ namespace CASM {
 
             double phi_LTE1 = gc.lte_grand_canonical_free_energy();
 
+            log.write("Output files");
             write_lte_results(gc_settings, gc, phi_LTE1, log);
+            log << std::endl;
             cond += incr;
 
           }
@@ -279,7 +282,7 @@ namespace CASM {
           //monte_settings.print(std::cout);
           //std::cout << "\n-------------------------------\n\n";
 
-          MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(settings_path), log);
+          MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(settings_path), log, err_log);
           driver.run();
         }
         catch(std::exception &e) {

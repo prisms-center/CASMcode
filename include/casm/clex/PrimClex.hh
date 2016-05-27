@@ -118,8 +118,12 @@ namespace CASM {
       return m_settings;
     }
 
-    double tol() const {
-      return settings().tol();
+    double crystallography_tol() const {
+      return settings().crystallography_tol();
+    }
+    
+    double lin_alg_tol() const {
+      return settings().lin_alg_tol();
     }
 
     /// Return casm project directory path
@@ -367,7 +371,8 @@ namespace CASM {
                         SiteOrbitree &tree,
                         const PrimNeighborList &nlist,
                         std::string class_name,
-                        std::ostream &stream);
+                        std::ostream &stream,
+                        double xtal_tol);
 
 }
 #endif

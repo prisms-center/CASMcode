@@ -118,6 +118,7 @@ namespace CASM {
       std::cerr << "X, prim_space = input_space*X: \n" << X << std::endl;
       std::cerr << "input_space*X: \n" << N.topRows(prim_N_mol)*X << std::endl;
       std::cerr << "relative_error: " << relative_error << std::endl;
+      std::cerr << "tol: " << tol << std::endl;
 
       throw std::runtime_error("Error in ChemicalReference::hyperplane: Input space does not span prim space");
     }
@@ -139,7 +140,8 @@ namespace CASM {
       std::cerr << "_N.transpose():\n" << _N.transpose() << std::endl;
       std::cerr << "Reference state energies, E:\n" << E << std::endl;
       std::cerr << "P:\n" << P.transpose() << std::endl;
-      std::cerr << "rel_err: " << relative_error << std::endl;
+      std::cerr << "relative_err: " << relative_error << std::endl;
+      std::cerr << "tol: " << tol << std::endl;
 
       throw std::runtime_error("Error in ChemicalReference::hyperplane: Could not solve for hyperplane reference");
     }

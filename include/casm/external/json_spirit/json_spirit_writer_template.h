@@ -255,7 +255,10 @@ namespace json_spirit
 
         void output( const Value_type &value, double d )
         {
-            if( remove_trailing_zeros_ || value.get_remove_trailing_zeros() )
+            if( value.get_scientific() ) {
+                os_ << std::scientific << std::setprecision(precision_) << d;
+            }
+            else if( remove_trailing_zeros_ || value.get_remove_trailing_zeros() )
             {
                 std::basic_ostringstream< Char_type > os;
 
