@@ -51,8 +51,8 @@ namespace Completer {
     ///Explicit construction. Be sure to include "--" and '-' in the tags
     Suboption(const std::string &init_longname, std::string init_short, ARG_TYPE init_expected_types = ARG_TYPE::VOID);
 
-    ///Default constructor that you probably don't need
-    //Suboption();
+    ///Construct with boost objects
+    Suboption(const po::option_description &init_boost_option, ARG_TYPE init_expected_types = ARG_TYPE::VOID);
 
     ///Return long name in string format
     std::string long_tag() const;
@@ -76,8 +76,18 @@ namespace Completer {
 
     ///Type of arguments expected
     const ARG_TYPE m_expected_arg;
+
+    ///Make sure values make sense
+    bool _sanity_throw() const;
   };
 
+  namespace Suboption_impl {
+    ///Get the -s(hort) tag from boost, or make it "- " if it doesn't exist
+    std::string pull_short(const po::option_description &single_boost_option);
+
+    ///Get the --long tag from boost
+    std::string pull_long(const po::option_description &single_boost_option);
+  }
 
   //*****************************************************************************************************//
 
@@ -102,7 +112,7 @@ namespace Completer {
     Option(const std::string &init_tag, const std::vector<Suboption> &init_allowed_subopts);
 
     ///Construct with program options (eventually preferred)
-    Option(const std::string &init_tag, const po::option_description &init_premade_descs);
+    Option(const std::string &init_tag, const po::options_description &init_premade_descs);
 
     ///Return the identifying name of *this (e.g. "super", "monte", etc)
     std::string tag() const;
@@ -183,6 +193,33 @@ namespace Completer {
     ///Pointer to the project PrimClex, so the Engine can know the existing SCEL names
     //const *CASM::PrimClex m_pclex;
 
+  };
+
+
+  /**
+   * The completer Engine should not require constant updating when program options change.
+   * This class couples boost program options together with the expected argument type
+   * for each --suboption. When writing a casm command, you can easily integrate bash completion
+   * by constructing an OptionsGenerator instead of po::options_description.
+   * The constructor is such that it looks identical to po::options_description, except it takes
+   * a fourth argument that specifies which type of bash completion should be done.
+   * By keeping the construction of both together, updating bash completion will require
+   * a lot less maintenance.
+   */
+
+  class OptionsGenerator {
+  public:
+
+    ///When writing a casm command, ask for this and use as you want. Forget about the rest of this class.
+    po::options_description &options();
+
+  private:
+
+    ///This is what you deal with when you write a casm command.
+    po::options_description command_options;
+
+    ///Same length as the command_options, so that bash will know what to feed back
+    std::vector<ARG_TYPE> expected_arguments;
   };
 }
 

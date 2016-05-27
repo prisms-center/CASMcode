@@ -69,6 +69,32 @@ void opt_test() {
   return;
 }
 
+void opt_test2() {
+  int min_vol, max_vol;
+  std::vector<std::string> scellname_list, filter_expr;
+
+  po::options_description desc("'casm enum' usage");
+  desc.add_options()
+  ("help,h", "Write help documentation")
+  ("min", po::value<int>(&min_vol), "Min volume")
+  ("max", po::value<int>(&max_vol), "Max volume")
+  ("filter,f", po::value<std::vector<Completer::query_str> >(&filter_expr)->multitoken(), "Filter configuration enumeration so that")
+  ("scellname,n", po::value<std::vector<std::string> >(&scellname_list)->multitoken(), "Enumerate configs for given supercells")
+  ("all,a", "Enumerate configurations for all supercells")
+  ("supercells,s", "Enumerate supercells")
+  ("configs,c", "Enumerate configurations");
+
+  Option opt("testopt", desc);
+
+  std::cout << opt.tag() << std::endl;
+  std::cout << opt.probe_suboptions() << std::endl;
+  std::cout << recast(opt.probe_argument_type("--help")) << std::endl;
+  std::cout << recast(opt.probe_argument_type("-f")) << std::endl;
+  std::cout << opt.matches("testopt") << opt.matches("real") << std::endl;
+
+  return;
+}
+
 void po_test() {
   int min_vol, max_vol;
   std::vector<std::string> scellname_list, filter_expr;
@@ -109,6 +135,10 @@ int main() {
   std::cout << std::endl;
 
   po_test();
+
+  std::cout << std::endl;
+
+  opt_test2();
 
   return 0;
 }

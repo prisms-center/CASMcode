@@ -18,10 +18,39 @@ namespace Completer {
     return stripped;
   }
 
+  namespace Suboption_impl {
+    std::string pull_short(const po::option_description &single_boost_option) {
+      std::string possible_short;
+      possible_short = single_boost_option.canonical_display_name(po::command_line_style::allow_dash_for_short);
+      if(possible_short.size() > 2 || possible_short[0] != '-' || possible_short[1] == '-') {
+        return "- ";
+      }
+      else {
+        return possible_short;
+      }
+    }
+
+    std::string pull_long(const po::option_description &single_boost_option) {
+      return single_boost_option.canonical_display_name(po::command_line_style::allow_long);
+    }
+  }
+
   Suboption::Suboption(const std::string &init_longname, std::string init_short, ARG_TYPE init_expected_types):
     m_long(init_longname),
     m_short(init_short),
     m_expected_arg(init_expected_types) {
+    _sanity_throw();
+  }
+
+
+  Suboption::Suboption(const po::option_description &init_boost_option, ARG_TYPE init_expected_types):
+    m_expected_arg(init_expected_types),
+    m_short(Suboption_impl::pull_short(init_boost_option)),
+    m_long(Suboption_impl::pull_long(init_boost_option)) {
+    _sanity_throw();
+  }
+
+  bool Suboption::_sanity_throw() const {
     if(m_long.size() < 3 || m_short.size() != 2) {
       throw std::runtime_error("--long option must be at least 3 characters long and -s(hort) must be exactly 2!");
     }
@@ -29,8 +58,6 @@ namespace Completer {
       throw std::runtime_error("Suboption --long and -s(hort) tags must include leading '-' characters!");
     }
   }
-
-  //Suboption::Suboption():m_expected_arg(ARG_TYPE::VOID){}
 
   std::string Suboption::long_tag() const {
     return m_long;
@@ -61,6 +88,15 @@ namespace Completer {
   Option::Option(const std::string &init_tag, const std::vector<Suboption> &init_allowed_subopts):
     m_tag(init_tag),
     m_avail_suboptions(init_allowed_subopts) {
+  }
+
+  Option::Option(const std::string &init_tag, const po::options_description &init_premade_descs):
+    m_tag(init_tag) {
+    m_avail_suboptions.reserve(init_premade_descs.options().size());
+
+    for(auto it = init_premade_descs.options().begin(); it != init_premade_descs.options().end(); ++it) {
+      m_avail_suboptions.push_back(Suboption(**it));
+    }
   }
 
   std::string Option::tag() const {
