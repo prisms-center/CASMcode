@@ -299,7 +299,7 @@ namespace CASM {
 
     }
     //Sort point_group by trace/conjugacy class
-    point_group.sort_by_class();
+    point_group.sort();
 
     return;
   }
