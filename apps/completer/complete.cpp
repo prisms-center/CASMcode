@@ -78,13 +78,14 @@ void opt_test2() {
   ("help,h", "Write help documentation")
   ("min", po::value<int>(&min_vol), "Min volume")
   ("max", po::value<int>(&max_vol), "Max volume")
-  ("filter,f", po::value<std::vector<Completer::query_str> >(&filter_expr)->multitoken(), "Filter configuration enumeration so that")
+  ("filter,f", po::value<std::vector<std::string> >(&filter_expr)->multitoken(), "Filter configuration enumeration so that")
   ("scellname,n", po::value<std::vector<std::string> >(&scellname_list)->multitoken(), "Enumerate configs for given supercells")
   ("all,a", "Enumerate configurations for all supercells")
   ("supercells,s", "Enumerate supercells")
   ("configs,c", "Enumerate configurations");
 
   Option opt("testopt", desc);
+
 
   std::cout << opt.tag() << std::endl;
   std::cout << opt.probe_suboptions() << std::endl;
@@ -104,13 +105,16 @@ void po_test() {
   ("help,h", "Write help documentation")
   ("min", po::value<int>(&min_vol), "Min volume")
   ("max", po::value<int>(&max_vol), "Max volume")
-  ("filter,f", po::value<std::vector<Completer::query_str> >(&filter_expr)->multitoken(), "Filter configuration enumeration so that")
+  ("filter,f", po::value<std::vector<std::string> >(&filter_expr)->multitoken(), "Filter configuration enumeration so that")
   ("scellname,n", po::value<std::vector<std::string> >(&scellname_list)->multitoken(), "Enumerate configs for given supercells")
   ("all,a", "Enumerate configurations for all supercells")
   ("supercells,s", "Enumerate supercells")
   ("configs,c", "Enumerate configurations");
 
-  po::option_description testop("filter,x", po::value<int>(&min_vol), "Filter configuration enumeration so that");
+  po::option_description testop("filter,x", po::value<int>(&min_vol)->default_value(5)->value_name("lol"), "Filter configuration enumeration so that");
+
+  std::cout << "FORMAT:" << std::endl;
+  std::cout << testop.format_parameter() << std::endl;
 
   std::cout << testop.canonical_display_name(po::command_line_style::allow_dash_for_short) << std::endl;
   std::cout << testop.canonical_display_name(po::command_line_style::allow_long) << std::endl;
@@ -123,6 +127,68 @@ void po_test() {
   return;
 }
 
+Option generate_option(std::string postfix, char beginshort) {
+  int phony;
+
+  po::options_description desc("phony target " + postfix);
+
+  desc.add_options()
+  ((("aaaa" + postfix + ",") + std::string(1, char(beginshort + 1))).c_str(),
+   po::value<int>(&phony)->value_name(ArgHandler::supercell()),
+   ("aaaa" + postfix + " info").c_str())
+
+  ((("bbbb" + postfix + ",") + std::string(1, char(beginshort + 2))).c_str(),
+   po::value<int>(&phony)->default_value(9)->value_name(ArgHandler::query()),
+   ("bbbb" + postfix + " info").c_str())
+
+  ((("cccc" + postfix + ",") + std::string(1, char(beginshort + 3))).c_str(),
+   po::value<int>(&phony)->value_name(ArgHandler::operation()),
+   ("cccc" + postfix + " info").c_str())
+
+  ((("dddd" + postfix + ",") + std::string(1, char(beginshort + 4))).c_str(),
+   po::value<int>(&phony),
+   ("dddd" + postfix + " info").c_str())
+
+  ((("eeee" + postfix + ",") + std::string(1, char(beginshort + 5))).c_str(),
+   po::value<int>(&phony),
+   ("eeee" + postfix + " info").c_str());
+
+  return Option("fake" + postfix, desc);
+}
+
+void engine_test() {
+  Option gen0 = generate_option("zz", 'a');
+  Option gen1 = generate_option("yy", 'h');
+
+  Engine testengine;
+  testengine.push_back(gen0);
+  testengine.push_back(gen1);
+  testengine.push_back(generate_option("xx", 'l'));
+
+  std::cout << testengine.probe_options() << std::endl;
+  std::cout << testengine.probe_suboptions("fakezz") << std::endl;
+  std::cout << testengine.probe_suboptions("fakeyy") << std::endl;
+  std::cout << testengine.probe_suboptions("fakexx") << std::endl;
+  std::cout << testengine.probe_suboptions("yy") << std::endl;
+  std::cout << recast(testengine.probe_argument_type("fakexx", "--aaaaxx")) << std::endl;
+  std::cout << recast(testengine.probe_argument_type("fakexx", "-n")) << std::endl;
+  std::cout << recast(testengine.probe_argument_type("fakexx", "--ccccxx")) << std::endl;
+  std::cout << recast(testengine.probe_argument_type("fakexx", "--ddddxx")) << std::endl;
+  return;
+}
+
+void argtype_test() {
+  int min_vol;
+  std::string test = "asdf";
+  po::option_description testop
+  ("filter,x",
+   po::value<int>(&min_vol)->default_value(5)->value_name(ArgHandler::path()),
+   "Filter configuration enumeration so that");
+
+  ARG_TYPE determined_type = ArgHandler::determine_type(testop);
+  std::cout << "DETERMINED: " << recast(determined_type) << std::endl;
+  return;
+}
 
 int main() {
 
@@ -139,6 +205,14 @@ int main() {
   std::cout << std::endl;
 
   opt_test2();
+
+  std::cout << std::endl;
+
+  argtype_test();
+
+  std::cout << std::endl;
+
+  engine_test();
 
   return 0;
 }

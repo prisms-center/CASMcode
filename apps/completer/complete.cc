@@ -18,12 +18,79 @@ namespace Completer {
     return stripped;
   }
 
+  //*****************************************************************************************************//
+
+
+  ARG_TYPE ArgHandler::determine_type(const po::option_description &boost_option) {
+    //This string will become something like "<path>", or "arg", or "<path> (=MASTER)"
+    std::string raw_boost_format = boost_option.format_parameter();
+    //Sometimes boost option has default arguments. We don't want to include that
+    std::string argtype_str;
+    std::string::size_type space_pos = raw_boost_format.find(' ');
+
+    //Spaces found, probably printing default value as well. Strip it off.
+    if(space_pos != std::string::npos) {
+      argtype_str = raw_boost_format.substr(0, space_pos);
+    }
+
+    //No spaces found, so format_parameter already returned what we wanted
+    else {
+      argtype_str = raw_boost_format;
+    }
+
+    for(auto it = m_argument_table.begin(); it != m_argument_table.end(); ++it) {
+      if(it->first == argtype_str) {
+        return it->second;
+      }
+    }
+
+    return ARG_TYPE::VOID;
+  }
+
+  std::string ArgHandler::path() {
+    return m_argument_table[0].first;
+  }
+
+  std::string ArgHandler::command() {
+    return m_argument_table[1].first;
+  }
+
+  std::string ArgHandler::supercell() {
+    return m_argument_table[2].first;
+  }
+
+  std::string ArgHandler::query() {
+    return m_argument_table[3].first;
+  }
+
+  std::string ArgHandler::operation() {
+    return m_argument_table[4].first;
+  }
+
+  /**
+   * This construction right here determines what the value_name of the boost options
+   * should be named. It is through these strings that bash completion can
+   * know which types of completions to suggest.
+   */
+
+  const std::vector<std::pair<std::string, ARG_TYPE> > ArgHandler::m_argument_table({
+    std::make_pair("<path>", ARG_TYPE::PATH),
+    std::make_pair("<command>", ARG_TYPE::COMMAND),
+    std::make_pair("<supercell>", ARG_TYPE::SCELNAME),
+    std::make_pair("<query>", ARG_TYPE::QUERY),
+    std::make_pair("<operation>", ARG_TYPE::OPERATOR)
+  });
+
+
+  //*****************************************************************************************************//
+
+
   namespace Suboption_impl {
     std::string pull_short(const po::option_description &single_boost_option) {
       std::string possible_short;
       possible_short = single_boost_option.canonical_display_name(po::command_line_style::allow_dash_for_short);
       if(possible_short.size() > 2 || possible_short[0] != '-' || possible_short[1] == '-') {
-        return "- ";
+        return "-_";
       }
       else {
         return possible_short;
@@ -43,8 +110,8 @@ namespace Completer {
   }
 
 
-  Suboption::Suboption(const po::option_description &init_boost_option, ARG_TYPE init_expected_types):
-    m_expected_arg(init_expected_types),
+  Suboption::Suboption(const po::option_description &init_boost_option):
+    m_expected_arg(ArgHandler::determine_type(init_boost_option)),
     m_short(Suboption_impl::pull_short(init_boost_option)),
     m_long(Suboption_impl::pull_long(init_boost_option)) {
     _sanity_throw();
@@ -192,6 +259,11 @@ namespace Completer {
     }
 
     return ARG_TYPE::VOID;
+  }
+
+  void Engine::push_back(const Option &new_option) {
+    m_avail_options.push_back(new_option);
+    return;
   }
 
 }

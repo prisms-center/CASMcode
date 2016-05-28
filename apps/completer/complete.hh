@@ -4,14 +4,12 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <utility>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
 
 namespace Completer {
-
-  typedef std::string scel_str;
-  typedef std::string query_str;
 
   /**
    * When the Engine class isn't returning strings corresponding to options
@@ -33,6 +31,45 @@ namespace Completer {
   ///Remove "--" or "-" from beginning of string if it exists, and return as new string
   std::string strip_argument(const std::string &raw_input);
 
+  /**
+   * Handle the value type names of po::option_description. This class
+   * determines what the keywords mean, and translates them into the
+   * ARG_TYPE enum as appropriate.
+   *
+   * If you want bash completion for your boost program options, never specify
+   * option_description::value_name manually (e.g. raw string), always request
+   * the string through this class.
+   */
+
+  class ArgHandler {
+  public:
+
+    ///Translate the stored boost value_name into an ARG_TYPE for the completer engine
+    static ARG_TYPE determine_type(const po::option_description &boost_option);
+
+    ///Get value_type string for path completion
+    static std::string path();
+
+    ///Get value_type string for command completion (i.e. stuff in your $PATH)
+    static std::string command();
+
+    ///Get value_type string for supercell completion
+    static std::string supercell();
+
+    ///Get value_type string for query completion
+    static std::string query();
+
+    ///Get value_type string for operation completion
+    static std::string operation();
+
+
+  private:
+
+    ///List of pairs relating the value type name of po::option_description to its corresponding argument type
+    static const std::vector<std::pair<std::string, ARG_TYPE> > m_argument_table;
+
+  };
+
   //*****************************************************************************************************//
 
   /**
@@ -49,10 +86,10 @@ namespace Completer {
   public:
 
     ///Explicit construction. Be sure to include "--" and '-' in the tags
-    Suboption(const std::string &init_longname, std::string init_short, ARG_TYPE init_expected_types = ARG_TYPE::VOID);
+    Suboption(const std::string &init_longname, std::string init_short, ARG_TYPE init_expected_types);
 
     ///Construct with boost objects
-    Suboption(const po::option_description &init_boost_option, ARG_TYPE init_expected_types = ARG_TYPE::VOID);
+    Suboption(const po::option_description &init_boost_option);
 
     ///Return long name in string format
     std::string long_tag() const;
@@ -150,7 +187,10 @@ namespace Completer {
    *  Argument: The argument you pass to the suboption, such as an integer or filename
    *
    * The Engine class contains all the information you need to
-   * pass to a bash completion script.
+   * pass to a bash completion script. However, it is currently limited to some
+   * specific kind of formatting. Boost program option can do a bunch of fancy
+   * things, but we don't seem to be using them much, so the completer is currently
+   * limited to expecting only --long and -s(hort) (single character!) options.
    */
 
   class Engine {
