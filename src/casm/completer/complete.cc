@@ -1,7 +1,7 @@
 #ifndef COMPLETE_CC
 #define COMPLETE_CC
 
-#include "complete.hh"
+#include "casm/completer/complete.hh"
 
 namespace Completer {
   std::string strip_argument(const std::string &raw_input) {

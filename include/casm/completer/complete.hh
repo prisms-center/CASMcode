@@ -6,8 +6,14 @@
 #include <stdexcept>
 #include <utility>
 #include <boost/program_options.hpp>
+#include "casm/CASM_global_definitions.hh"
 
-namespace po = boost::program_options;
+namespace po = CASM::po;
+namespace fs = CASM::fs;
+
+namespace CASM {
+  class PrimClex;
+}
 
 namespace Completer {
 
@@ -245,6 +251,8 @@ namespace Completer {
    * a fourth argument that specifies which type of bash completion should be done.
    * By keeping the construction of both together, updating bash completion will require
    * a lot less maintenance.
+   *
+   * NOTE: Obsolete since the discovery of po::option_description::value_name
    */
 
   class OptionsGenerator {

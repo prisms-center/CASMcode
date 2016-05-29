@@ -4,6 +4,40 @@
 #include "casm/CASM_classes.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOSelected.hh"
+#include "casm/completer/complete.hh"
+
+namespace Completer {
+  ///Generate the option_description for the `query` command. You must pass all the required values to this function, and you must do it by reference.
+  void add_query_options
+  (CASM::po::options_description &desc,
+   std::string &selection_str,
+   CASM::fs::path &out_path,
+   std::vector<std::string> &columns,
+   std::vector<std::string> &help_opt_vec,
+   std::vector<std::string> &new_alias,
+   bool &json_flag,
+   bool &no_header,
+   bool &verbatim_flag,
+   bool &gz_flag) {
+    // Set command line options using boost program_options
+    desc.add_options()
+    ("help,h", CASM::po::value<std::vector<std::string> >(&help_opt_vec)->multitoken()->zero_tokens(), "Print general help. Use '--help properties' for a list of query-able properties or '--help operators' for a list of query operators")
+    ("config,c", CASM::po::value<std::string>(&selection_str)->default_value("MASTER")->value_name(ArgHandler::path()), "config_list files containing configurations for which to collect energies")
+    ("columns,k", CASM::po::value<std::vector<std::string> >(&columns)->multitoken()->zero_tokens()->value_name(ArgHandler::query()), "List of values you want printed as columns")
+    ("json,j", CASM::po::value(&json_flag)->zero_tokens(), "Print in JSON format (CSV otherwise, unless output extension is .json/.JSON)")
+    ("verbatim,v", CASM::po::value(&verbatim_flag)->zero_tokens(), "Print exact properties specified, without prepending 'name' and 'selected' entries")
+    ("output,o", CASM::po::value<CASM::fs::path>(&out_path)->value_name(ArgHandler::path()), "Name for output file. Use STDOUT to print results without extra messages. CSV format unless extension is .json/.JSON, or --json option used.")
+    ("gzip,z", CASM::po::value(&gz_flag)->zero_tokens(), "Write gzipped output file.")
+    ("all,a", "Print results all configurations in input selection, whether or not they are selected.")
+    ("no-header,n", CASM::po::value(&no_header)->zero_tokens(), "Print without header (CSV only)")
+    ("alias", CASM::po::value<std::vector<std::string> >(&new_alias)->multitoken(),
+     "Create an alias for a query that will persist within this project. "
+     "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
+
+    return;
+  }
+
+}
 
 namespace CASM {
 
@@ -35,27 +69,16 @@ namespace CASM {
   int query_command(const CommandArgs &args) {
 
     std::string selection_str;
-    fs::path config_path, out_path;
+    fs::path out_path;
     std::vector<std::string> columns, help_opt_vec, new_alias;
-    po::variables_map vm;
     bool json_flag(false), no_header(false), verbatim_flag(false), gz_flag(false);
 
     po::options_description desc("'casm query' usage");
     // Set command line options using boost program_options
-    desc.add_options()
-    ("help,h", po::value<std::vector<std::string> >(&help_opt_vec)->multitoken()->zero_tokens(), "Print general help. Use '--help properties' for a list of query-able properties or '--help operators' for a list of query operators")
-    ("config,c", po::value<std::string>(&selection_str)->default_value("MASTER"), "config_list files containing configurations for which to collect energies")
-    ("columns,k", po::value<std::vector<std::string> >(&columns)->multitoken()->zero_tokens(), "List of values you want printed as columns")
-    ("json,j", po::value(&json_flag)->zero_tokens(), "Print in JSON format (CSV otherwise, unless output extension is .json/.JSON)")
-    ("verbatim,v", po::value(&verbatim_flag)->zero_tokens(), "Print exact properties specified, without prepending 'name' and 'selected' entries")
-    ("output,o", po::value<fs::path>(&out_path), "Name for output file. Use STDOUT to print results without extra messages. CSV format unless extension is .json/.JSON, or --json option used.")
-    ("gzip,z", po::value(&gz_flag)->zero_tokens(), "Write gzipped output file.")
-    ("all,a", "Print results all configurations in input selection, whether or not they are selected.")
-    ("no-header,n", po::value(&no_header)->zero_tokens(), "Print without header (CSV only)")
-    ("alias", po::value<std::vector<std::string> >(&new_alias)->multitoken(),
-     "Create an alias for a query that will persist within this project. "
-     "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
+    Completer::add_query_options(desc, selection_str, out_path, columns, help_opt_vec, new_alias, json_flag, no_header, verbatim_flag, gz_flag);
 
+    fs::path config_path;
+    po::variables_map vm;
 
     try {
       po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
