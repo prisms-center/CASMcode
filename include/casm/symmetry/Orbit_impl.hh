@@ -5,6 +5,41 @@
 
 namespace CASM {
 
+  namespace {
+
+    /// \brief Returns vector containing sorted indices of SymOp in first row of equivalence_map
+    ///
+    /// This is what the first row of equivalence_map will look like if Element
+    /// 'proto' is the prototype.
+    std::vector<Index> _sorter(
+      const Element &proto,
+      const std::vector<Element> &equiv,
+      const SymGroup &g) {
+      int count = 0;
+      std::vector<Index> sorter(-1, equiv.size());
+      for(const auto &op : g) {
+        Index i = find_index(equiv, prepare(copy_apply(op, proto)), equal));
+        if(sorter[i] == -1) {
+          sorter[i] = op.index();
+          count++;
+          if(count == equiv.size()) {
+            std::sort(sorter.begin(), sorter.end());
+            return sorter;
+          }
+        }
+      }
+      throw std::runtime_error("Error generating equivalence map");
+    }
+
+    struct _EqMapCompare {
+      bool operator()(const std::pair<Element, std::vector<Index> > &A,
+                      const std::pair<Element, std::vector<Index> > &B) {
+        return lexicographical_compare(A.second.begin(), A.second.end(), B.second.begin(), B.second.end());
+      }
+    };
+
+  }
+
   /* -- Orbit Definitions ------------------------------------- */
 
   /// \brief Construct an Orbit from a generating_element Element, using provided Group
@@ -18,60 +53,43 @@ namespace CASM {
                         const SymGroup &generating_group,
                         const SymCompare<Element> &sym_compare) :
     m_sym_compare(sym_compare) {
-    _construct(generating_element, generating_group.begin(), generating_group.end());
-  }
 
-  /// \brief Construct an Orbit from a generating_element Element, using provided symmetry rep
-  ///
-  /// \param generating_element The element used to generate equivalents
-  /// \param begin, end Range of SymOp applied to Element to generate the orbit
-  /// \param sym_compare Binary functor that implements symmetry properties
-  ///
-  /// - iterators must be multi-pass
-  template<typename Element>
-  template<typename SympOpIterator>
-  Orbit<Element>::Orbit(Element generating_element,
-                        SympOpIterator begin,
-                        SympOpIterator end,
-                        const SymCompare<Element> &sym_compare) :
-    m_sym_compare(sym_compare) {
-    _construct(generating_element, begin, end);
-  }
+    const SymGroup &g = generating_group;
 
-  /// \brief Construct an Orbit from a generating_element Element, using provided symmetry rep
-  ///
-  /// \param generating_element The element used to generate equivalents
-  /// \param begin, end Range of SymOp applied to Element to generate the orbit
-  ///
-  /// - iterators must be multi-pass
-  template<typename Element>
-  template<typename SympOpIterator>
-  void Orbit<Element>::_construct(Element generating_element,
-                                  SympOpIterator begin,
-                                  SympOpIterator end) {
-
-    // add all op*generating_element
-    for(auto it = begin; it != end; ++it) {
-      m_element.push_back(m_sym_compare->prepare(copy_apply(*it, generating_element)));
-    }
-
-    // sort
-    std::sort(m_element.begin(), m_element.end(), *m_sym_compare);
-
-    // keep uniques
-    auto last = std::unique(
-                  m_element.begin(),
-                  m_element.end(),
-    [](const Element & A, const Element & B) {
+    auto prepare = [&](const Element & A) {
+      return m_sym_compare->prepare(A);
+    };
+    auto compare = [&](const Element & A, const Element & B) {
+      return m_sym_compare->intra_orbit_compare(A, B);
+    };
+    auto equal = [&](const Element & A, const Element & B) {
       return m_sym_compare->intra_orbit_equal(A, B);
-    });
-    m_element.erase(last, m_element.end());
+    };
 
-    // create equivalence map
-    for(auto it = begin; it != end; ++it) {
-      auto equiv = m_sym_compare->prepare(copy_apply(*it, prototype()));
-      equivalence_map[find_index(m_element, equiv)].push_back(*it);
+    // generate equivalents
+    std::set<Element, decltype(compare)> t_equiv(compare);
+    for(const auto &op : g) {
+      t_equiv.insert(prepare(copy_apply(op, generating_element)));
     }
+
+    // sort element using each element's first equivalence map row to find prototype
+    std::set<std::pair<Element, std::vector<Index> >, _EqMapCompare> _set;
+    for(const auto &e : t_equiv) {
+      _set.insert(std::make_pair(e, _sorter(e, t_equiv, g)));
+    }
+
+    // use _set.begin()->first for prototype, use _set.begin()->second to generate equiv
+    for(auto op_index : _set.begin()->second) {
+      m_element.push_back(prepare(copy_apply(g[op_index], _set.begin()->first)));
+    }
+
+    // generate equivalence map
+    m_equivalence_map.resize(m_element.size());
+    for(const auto &op : g) {
+      Index i = find_index(m_element, prepare(copy_apply(op, m_element[0])), equal));
+      m_equivalence_map[i].push_back(op);
+    }
+
   }
 
   /// \brief Apply symmetry to Orbit

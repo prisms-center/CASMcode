@@ -32,7 +32,7 @@ namespace CASM {
 
     /// \brief Check equivalence of elements in the same orbit
     ///
-    /// \returns \code !compare(A,B) && !compare(B,A) \endcode
+    /// \returns \code !intra_orbit_compare(A,B) && !intra_orbit_compare(B,A) \endcode
     ///
     /// - Assumes elements are 'prepared' before being compared
     bool intra_orbit_equal(const Element &A, const Element &B) const {
@@ -94,58 +94,26 @@ namespace CASM {
   class ScelPeriodicSymCompare<Element> {};
 
 
-  /// \brief Return canonical form
+  /// \brief Return subgroup that leaves an element unchanged
   ///
-  /// \returns The element in canonical form, as determined by compare, and
-  ///        the SymOpIterator used to put it in canonical form
-  ///
-  /// \param obj An Element
-  /// \param compare A SymCompare functor reference use to compare Element and
-  ///        determine the canonical form
-  /// \param begin, end Iterator over range of SymOp
-  ///
-  /// Implementation:
-  /// \code:
-  /// auto it = begin;
-  /// auto result = std::make_pair(compare.prepare(copy_apply(*it, A)), it);
-  /// for(; it!=end; ++it) {
-  ///   auto test = compare.prepare(copy_apply(*it, A));
-  ///   if(compare.intra_orbit_compare(result.first,test)) {
-  ///     result.first = test;
-  ///     result.second = it;
-  ///   }
-  /// }
-  /// return result;
+  /// All SymOp such that:
+  /// \code
+  /// Element e = sym_compare.prepare(generating_element);
+  /// Element test = sym_compare.prepare(copy_apply(op, e));
+  /// sym_compare.equal(e, test) == true
   /// \endcode
-  template<typename SymOpIterator>
-  std::pair<Element, SymOpIterator> canonical_form(const Element &obj, SymOpIterator begin, SymOpIterator end, SymCompare<Element> &compare) {
+  SymGroup invariant_subgroup(const Element &element,
+                              const SymGroup &generating_grp,
+                              const SymCompare &sym_compare) {
+    Element e(sym_compare.prepare(element));
     auto it = begin;
-    auto result = std::make_pair(compare.prepare(copy_apply(*it, obj)), it);
-    for(; it != end; ++it) {
-      auto test = compare.prepare(copy_apply(*it, obj));
-      if(compare.intra_orbit_compare(result.first, test)) {
-        result.first = test;
-        result.second = it;
+    SymGroup result;
+    for(const auto &op : generating_grp) {
+      if(compare.equal(e, compare.prepare(copy_apply(op, e)))) {
+        result.push_back(op);
       }
     }
     return result;
-  }
-
-  /// \brief Return canonical form
-  ///
-  /// \returns The element in canonical form, as determined by compare, and
-  ///          the SymGroup used to put it in canonical form
-  ///
-  /// \param obj An Element
-  /// \param group A SymGroup
-  /// \param compare A SymCompare functor reference use to compare Element and
-  ///        determine the canonical form
-  ///
-  /// Implementation: calls template<typename SymOpIterator>canonical_form(const Element& obj, SymOpIterator begin, SymOpIterator end, SymCompare<Element>& compare)
-  ///
-  template<typename SymOpIterator>
-  std::pair<Element, SymOpIterator> canonical_form(const Element &obj, const SymGroup &g, SymCompare<Element> &compare) {
-    return canonical_form(obj, g.begin(), g.end(), compare);
   }
 
 }
