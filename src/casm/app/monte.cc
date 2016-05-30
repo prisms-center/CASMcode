@@ -9,24 +9,6 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/complete.hh"
 
-namespace Completer {
-  void add_monte_options
-  (CASM::po::options_description &desc,
-   CASM::fs::path &settings_path,
-   std::string &verbosity_str,
-   CASM::Index &condition_index) {
-    desc.add_options()
-    ("help,h", "Print help message")
-    ("settings,s", CASM::po::value<CASM::fs::path>(&settings_path)->required()->value_name(ArgHandler::path()), "The Monte Carlo input file. See 'casm format --monte'.")
-    ("verbosity", CASM::po::value<std::string>(&verbosity_str)->default_value("standard"), "Verbosity of output. Options are 'none', 'quiet', 'standard', 'verbose', 'debug', or an integer 0-100 (0: none, 100: all).")
-    ("initial-POSCAR", CASM::po::value<CASM::Index>(&condition_index), "Given the condition index, print a POSCAR for the initial state of a monte carlo run.")
-    ("final-POSCAR", CASM::po::value<CASM::Index>(&condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
-    ("traj-POSCAR", CASM::po::value<CASM::Index>(&condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
-
-    return;
-  }
-}
-
 namespace CASM {
 
   void print_monte_help(const po::options_description &desc) {
@@ -66,6 +48,25 @@ namespace CASM {
               "      where i is the sample index.                          \n\n";
 
   }
+
+  namespace Completer {
+    void add_monte_options
+    (CASM::po::options_description &desc,
+     CASM::fs::path &settings_path,
+     std::string &verbosity_str,
+     CASM::Index &condition_index) {
+      desc.add_options()
+      ("help,h", "Print help message")
+      ("settings,s", CASM::po::value<CASM::fs::path>(&settings_path)->required()->value_name(ArgHandler::path()), "The Monte Carlo input file. See 'casm format --monte'.")
+      ("verbosity", CASM::po::value<std::string>(&verbosity_str)->default_value("standard"), "Verbosity of output. Options are 'none', 'quiet', 'standard', 'verbose', 'debug', or an integer 0-100 (0: none, 100: all).")
+      ("initial-POSCAR", CASM::po::value<CASM::Index>(&condition_index), "Given the condition index, print a POSCAR for the initial state of a monte carlo run.")
+      ("final-POSCAR", CASM::po::value<CASM::Index>(&condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
+      ("traj-POSCAR", CASM::po::value<CASM::Index>(&condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
+
+      return;
+    }
+  }
+
 
   int monte_command(const CommandArgs &args) {
 
