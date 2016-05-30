@@ -1,0 +1,51 @@
+last_suboption()
+{
+    local last_sub
+    
+    for i in "${COMP_WORDS[@]}"; do
+        if [[ "$i" == "-"* ]]; then
+            last_sub="${i}"
+        fi
+    done
+
+    echo "${last_sub}"
+}
+
+_casm()
+{
+    local first cur prev opts rootopts numargs complete last_sub
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    numargs="${#COMP_WORDS[@]}"
+    last_sub="$(last_suboption)"
+
+    if [[ ${numargs} == 2 ]]; then
+        complete="$(casm-complete)"
+
+    elif [[ ${numargs} == 3 ]]; then
+        complete="$(casm-complete ${COMP_WORDS[1]})"
+
+    elif [[ ${cur} == "-"* ]]; then
+        complete="$(casm-complete ${COMP_WORDS[1]})"
+
+    else
+        complete="$(casm-complete ${COMP_WORDS[1]} ${last_sub})"
+    fi
+
+
+
+    if [[ "$complete" == "BASH_COMP_PATH"* ]]; then
+        _filedir
+
+    elif [[ "$complete" == "BASH_COMP_BIN"* ]]; then
+		COMPREPLY=( $(compgen -W "$(compgen -c)" -- ${cur}) )
+    
+    elif [[ "$complete" != "[empty]"* ]]; then
+        COMPREPLY=( $(compgen -W "${complete}" -- ${cur}) )
+
+    fi
+
+
+}
+complete -F _casm casm

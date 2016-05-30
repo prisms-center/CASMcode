@@ -41,15 +41,15 @@ int main(int argc, char *argv[]) {
 
 
   if(argc == 1) {
-    std::cout << casm_engine.probe_options() << std::endl;
+    std::cout << casm_engine.probe_options();
   }
 
   if(argc == 2) {
-    std::cout << casm_engine.probe_suboptions(argv[1]) << std::endl;;
+    std::cout << casm_engine.probe_suboptions(argv[1]);
   }
 
   if(argc == 3) {
-    std::cout << casm_engine.probe_arguments(argv[1], argv[2]) << std::endl;
+    std::cout << casm_engine.probe_arguments(argv[1], argv[2]);
   }
 
   return 0;
