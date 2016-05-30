@@ -6,6 +6,7 @@
 
 namespace CASM {
   namespace Completer {
+
     void add_query_options
     (CASM::po::options_description &desc,
      std::string &selection_str,
@@ -18,11 +19,23 @@ namespace CASM {
      bool &verbatim_flag,
      bool &gz_flag);
 
+    //*******************************************************//
+
     void add_monte_options
     (CASM::po::options_description &desc,
      CASM::fs::path &settings_path,
      std::string &verbosity_str,
      CASM::Index &condition_index);
+
+    //*******************************************************//
+
+    void add_run_options
+    (po::options_description &desc,
+     std::string exec,
+     std::string selection
+    );
+
+    //*******************************************************//
 
   }
 }
