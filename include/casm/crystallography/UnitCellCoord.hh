@@ -50,7 +50,7 @@ namespace CASM {
 
     typedef BasicStructure<Site> UnitType;
 
-    UnitCellCoord(const &unit) {};
+    UnitCellCoord(const UnitType &unit);
 
     UnitCellCoord(const UnitType &unit, Index _sublat, const UnitCell &_unitcell);
 
@@ -145,6 +145,9 @@ namespace CASM {
 
   /* -- UnitCellCoord Definitions ------------------------------------- */
 
+  inline UnitCellCoord::UnitCellCoord(const UnitType &unit) :
+    m_unit(&unit) {}
+
   inline UnitCellCoord::UnitCellCoord(const UnitType &unit, Index _sublat, const UnitCell &_unitcell) :
     m_unit(&unit),
     m_unitcell(_unitcell),
@@ -155,9 +158,10 @@ namespace CASM {
     m_unitcell(i, j, k),
     m_sublat(_sublat) {}
 
-  inline UnitCellCoord::UnitCellCoord(const UnitType &unit, const Coordinate &coord, double tol) {
-    for(Index b = 0; b < struc.basis.size(); ++b) {
-      auto diff = coord - struc.basis[b];
+  inline UnitCellCoord::UnitCellCoord(const UnitType &unit, const Coordinate &coord, double tol) :
+    m_unit(&unit) {
+    for(Index b = 0; b < unit.basis.size(); ++b) {
+      auto diff = coord - unit.basis[b];
       if(is_integer(diff.const_frac(), tol)) {
         *this = UnitCellCoord(unit, b, lround(diff.const_frac()));
         return;
