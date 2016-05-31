@@ -10,23 +10,12 @@ using namespace CASM;
 
 namespace test {
 
-  inline void check(std::string test,
-                    const jsonParser &expected,
-                    const jsonParser &calculated,
-                    fs::path test_cases_path,
-                    bool quiet) {
-    if(expected.contains(test)) {
-      BOOST_CHECK_EQUAL(expected[test], calculated);
-    }
-    else if(!quiet) {
-      std::cout << "Test case: " << expected["title"] << " has no \"" << test << "\" test data." << std::endl;
-      std::cout << "To use the current CASM results, add the following to the " << expected["title"]
-                << " test case in " << test_cases_path << std::endl;
-      jsonParser j = jsonParser::object();
-      j[test] = calculated;
-      std::cout << j << std::endl;
-    }
-  }
+  /// \brief Check expected JSON vs calculated JSON using BOOST_CHECK_EQUAL
+  void check(std::string test,
+             const jsonParser &expected,
+             const jsonParser &calculated,
+             fs::path test_cases_path,
+             bool quiet);
 
   class Proj {
 
