@@ -36,7 +36,7 @@ namespace test {
            "FCC_ternary",
            "FCC Ternary with A, B, C occupation") {}
 
-    jsonParser bspecs() const {
+    static jsonParser bspecs() {
 
       std::string str = R"({
 "basis_functions" : {
