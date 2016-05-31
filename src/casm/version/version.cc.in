@@ -8,6 +8,6 @@
 using namespace CASM;
 
 const std::string &CASM::version() {
-  static const std::string &ver = "@VERSION@";
+  static const std::string &ver = "@VERSION@GIT_COMMIT_HASH";
   return ver;
 };

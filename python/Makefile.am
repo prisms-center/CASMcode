@@ -1,18 +1,8 @@
+include $(top_srcdir)/common.mk
+
 install:
-	cd $(top_srcdir)/python/casm && $(PYTHON) setup.py install --prefix=$(PYTHON_PREFIX)
-	cd $(top_srcdir)/python/vasp && $(PYTHON) setup.py install --prefix=$(PYTHON_PREFIX)
-
-
-
-
-
-
-
-
-
-
-
-
+	cd $(top_srcdir)/python/casm && $(PYTHON) setup.py install --prefix=$(PYTHON_PREFIX) "$(GIT_HASH)"
+	cd $(top_srcdir)/python/vasp && $(PYTHON) setup.py install --prefix=$(PYTHON_PREFIX) "$(GIT_HASH)"
 
 
 

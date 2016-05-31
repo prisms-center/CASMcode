@@ -1,8 +1,12 @@
 import sys
 from distutils.core import setup
 import glob
+
+git_hash=sys.argv[3]
+sys.argv.pop()
+
 setup(name='vasp',
-      version='@VERSION@',
+      version='@VERSION@'+git_hash,
       url='@PACKAGE_URL',
       description='A wrapper for submitting and collecting VASP jobs developed for CASM',
       author='CASM developers',
