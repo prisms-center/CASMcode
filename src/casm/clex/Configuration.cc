@@ -1258,7 +1258,7 @@ namespace CASM {
   ///
   /// In the future that shouldn't be necessary
   ///
-  Correlation correlations(const Configuration &config, Clexulator &clexulator) {
+  Eigen::VectorXd correlations(const Configuration &config, Clexulator &clexulator) {
     return correlations(config.configdof(), config.get_supercell(), clexulator);
   }
 

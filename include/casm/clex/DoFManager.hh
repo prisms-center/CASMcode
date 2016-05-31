@@ -4,6 +4,7 @@
 #include "casm/container/Array.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/basis_set/BasisSet.hh"
 
 namespace CASM {
 

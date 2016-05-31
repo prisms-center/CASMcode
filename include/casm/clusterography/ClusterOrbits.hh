@@ -130,7 +130,16 @@ namespace CASM {
     OrbitOutputIterator result,
     std::stream &status);
 
-
+  /// \brief Generate Orbit<UnitCellCoordCluster> by specifying max cluster length for each branch
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_orbitree(
+    const UnitCellCoordCluster::PrimType &prim,
+    const SymGroup &generating_grp,
+    const std::vector<double> &max_length,
+    const std::function<bool (Site)> &site_filter,
+    const SymCompare<UnitCellCoordCluster> &sym_compare,
+    OrbitOutputIterator result,
+    std::stream &status);
 
 
 

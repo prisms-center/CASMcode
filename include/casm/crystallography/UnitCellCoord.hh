@@ -4,12 +4,11 @@
 #include <iostream>
 
 #include "casm/external/Eigen/Dense"
-
 #include "casm/CASM_global_definitions.hh"
-
 #include "casm/container/LinearAlgebra.hh"
-
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Site.hh"
 
 namespace CASM {
 
@@ -72,7 +71,7 @@ namespace CASM {
     const UnitType &unit() const;
 
     /// \brief Change unit structure, keeping indices constant
-    void set_unit(const UnitType &_unit) const;
+    void set_unit(const UnitType &_unit);
 
     /// \brief Get corresponding coordinate
     Coordinate coordinate() const;
@@ -178,7 +177,7 @@ namespace CASM {
   }
 
   /// \brief Change unit structure, keeping indices constant
-  inline void UnitCellCoord::set_unit(const UnitType &_unit) const {
+  inline void UnitCellCoord::set_unit(const UnitType &_unit) {
     m_unit = &_unit;
   }
 

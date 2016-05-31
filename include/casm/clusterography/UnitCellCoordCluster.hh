@@ -2,14 +2,11 @@
 #define CASM_UnitCellCoordCluster
 
 #include <vector>
-#include <iterator>
 
-#include <boost/function_output_iterator.hpp>
-
-#include "casm/misc/General.hh"
-#include "casm/crystallography/PrimMotif.hh"
-#include "casm/clusterography/Orbit.hh"
-#include "casm/symmetry/UnitCellCoordSymOp.hh"
+#include "casm/symmetry/Orbit.hh"
+#include "casm/crystallography/PrimGrid.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/clusterography/CoordCluster.hh"
 
 namespace CASM {
 
@@ -24,7 +21,13 @@ namespace CASM {
   ///
   /// \ingroup Clusterography
   ///
-  typedef GenericCluster<UnitCellCoord> UnitCellCoordCluster;
+  typedef CoordCluster<UnitCellCoord> UnitCellCoordCluster;
+
+  /// \brief Vector of Orbit<UnitCellCoordCluster>
+  ///
+  /// \ingroup Clusterography
+  ///
+  typedef std::vector<Orbit<UnitCellCoordCluster> > ClusterOrbits;
 
 
   /* -- BasicUCCCSymCompare Declaration ------------------------------------- */
@@ -66,7 +69,7 @@ namespace CASM {
     /// - Second compare ClusterInvariants(A), ClusterInvariants(B)
     /// - Finally, std::lexicographical_compare of UnitCellCoord in A and B
     bool inter_orbit_compare(const UnitCellCoordCluster &A, const UnitCellCoordCluster &B) const override {
-      cluster_inter_orbit_compare(A, B, tol());
+      return cluster_inter_orbit_compare(A, B, tol());
     }
 
     /// \brief Return tolerance
@@ -74,12 +77,14 @@ namespace CASM {
       return m_tol;
     }
 
-  private:
+  protected:
 
     /// \brief Private virtual apply_sym
     virtual void _apply_sym(const SymOp &op) const override {
       return;
     }
+
+  private:
 
     double m_tol;
 
@@ -127,7 +132,7 @@ namespace CASM {
   private:
 
     /// \brief Private virtual clone
-    virtual LocalSymCompare *_clone() const {
+    virtual LocalSymCompare *_clone() const override {
       return new LocalSymCompare(*this);
     }
 
@@ -178,7 +183,7 @@ namespace CASM {
   private:
 
     /// \brief Private virtual clone
-    virtual PrimPeriodicSymCompare *_clone() const {
+    virtual PrimPeriodicSymCompare *_clone() const override {
       return new PrimPeriodicSymCompare(*this);
     }
 
@@ -230,7 +235,7 @@ namespace CASM {
   private:
 
     /// \brief Private virtual clone
-    virtual ScelPeriodicSymCompare *_clone() const {
+    virtual ScelPeriodicSymCompare *_clone() const override {
       return new ScelPeriodicSymCompare(*this);
     }
 

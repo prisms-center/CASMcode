@@ -44,7 +44,7 @@ namespace CASM {
     /// - Returns 'true' to indicate A < B
     /// - Equivalence is indicated by \code !compare(A,B) && !compare(B,A) \endcode
     /// - Assumes elements are in canonical form
-    bool inter_orbit_compare(const Element &A, const Element &B) const = 0;
+    virtual bool inter_orbit_compare(const Element &A, const Element &B) const = 0;
 
     /// \brief Check equivalence of prototypes in different orbit
     ///
@@ -72,7 +72,7 @@ namespace CASM {
   private:
 
     /// \brief Private virtual apply_sym
-    virtual SymCompare<Element> *_apply_sym(const SymOp &op) const = 0;
+    virtual void _apply_sym(const SymOp &op) const = 0;
 
     /// \brief Private virtual clone
     virtual SymCompare<Element> *_clone() const = 0;
@@ -81,17 +81,17 @@ namespace CASM {
 
   /// \brief Template class to be specialized for comparisons with aperiodic symmetry
   template<typename Element>
-  class LocalSymCompare<Element> {};
+  class LocalSymCompare {};
 
   /// \brief Template class to be specialized for comparisons with periodic symmetry
   /// of the primitive lattice
   template<typename Element>
-  class PrimPeriodicSymCompare<Element> {};
+  class PrimPeriodicSymCompare {};
 
   /// \brief Template class to be specialized for comparisons with periodic symmetry
   /// of the supercell lattice
   template<typename Element>
-  class ScelPeriodicSymCompare<Element> {};
+  class ScelPeriodicSymCompare {};
 
 
   /// \brief Return subgroup that leaves an element unchanged
@@ -102,14 +102,14 @@ namespace CASM {
   /// Element test = sym_compare.prepare(copy_apply(op, e));
   /// sym_compare.equal(e, test) == true
   /// \endcode
+  template<typename Element>
   SymGroup invariant_subgroup(const Element &element,
                               const SymGroup &generating_grp,
-                              const SymCompare &sym_compare) {
+                              const SymCompare<Element> &sym_compare) {
     Element e(sym_compare.prepare(element));
-    auto it = begin;
     SymGroup result;
     for(const auto &op : generating_grp) {
-      if(compare.equal(e, compare.prepare(copy_apply(op, e)))) {
+      if(sym_compare.intra_orbit_equal(e, sym_compare.prepare(copy_apply(op, e)))) {
         result.push_back(op);
       }
     }

@@ -5,6 +5,7 @@
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/clusterography/UnitCellCoordCluster.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ChemicalReference.hh"
 
@@ -122,8 +123,8 @@ namespace CASM {
 
   // ---------- basis.json IO ------------------------------------------------------------------
 
-  /// \brief Write summary of basis functions
-  void write_basis(const SiteOrbitree &tree, const Structure &prim, jsonParser &json, double tol);
+  /// \brief Write summary of cluster expansion basis
+  void write_basis(const ClusterOrbits &cluster_orbits, const ClexBasis &clex_basis, jsonParser &json, double tol);
 }
 
 #endif

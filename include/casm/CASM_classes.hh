@@ -72,16 +72,6 @@
 #include "casm/crystallography/Site.hh"				// contains Molecule, Coordinate, (Lattice*), BasisSet, DoF*
 #include "casm/crystallography/Lattice.hh"			// contains Lattice*, MasterSymGroup, GridPoint<double>; source uses GridPoint<double>
 
-// Clusterography
-#include "casm/clusterography/Cluster.hh"			// template // contains Lattice*, SymGroup, (SymOp), Tensor, TensorBasis; args Structure, Lattice, GridPoint<T>
-#include "casm/clusterography/SiteCluster.hh"		// contains GenericCluster<Site>, BasisSet
-#include "casm/clusterography/Orbit.hh"				// template // contains SymOp, Cluster<T>; args Coordinate, Lattice, Structure
-#include "casm/clusterography/OrbitBranch.hh"		// template // contains GenericOrbit< Cluster<T> >, SiteCluster
-#include "casm/clusterography/Orbitree.hh"			// template // contains GenericOrbitBranch< Cluster<T> >, Lattice; args GridPoint<T>
-#include "casm/clusterography/jsonClust.hh"
-
-#include "casm/clusterography/ClusterFunctions.hh"
-
 // Crystallography - Structure
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/BasicStructure.hh"			// contains Lattice, Specie, Molecule, Site, SiteOrbitBranch, MasterSymGroup, Coordinate
@@ -93,7 +83,6 @@
 
 // Clex                                         // contains things for making configurations and correlations.
 #include "casm/clex/Properties.hh"
-#include "casm/clex/Correlation.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/ConfigEnum.hh"
 #include "casm/clex/ConfigEnumIterator.hh"

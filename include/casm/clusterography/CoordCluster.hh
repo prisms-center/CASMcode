@@ -42,6 +42,12 @@ namespace CASM {
       GenericCluster<CoordType>(_begin, _end),
       m_prim_ptr(&_prim) {}
 
+    /// \brief Default copy constructor
+    CoordCluster(const CoordCluster &other) = default;
+
+    /// \brief Default assignment constructor
+    CoordCluster &operator=(const CoordCluster &other) = default;
+
     /// \brief Default move constructor
     CoordCluster(CoordCluster &&other) = default;
 
@@ -50,18 +56,18 @@ namespace CASM {
 
 
     /// \brief Return a reference to the primitive Structure
-    const Structure &prim() const {
+    const PrimType &prim() const {
       return *m_prim_ptr;
     }
 
     /// \brief Return the coordinate corresponding to element(i)
     Coordinate coordinate(size_type i) const {
-      return prim().get_site(element(i));
+      return prim().get_site(this->element(i));
     }
 
     /// \brief Translate the cluster by a UnitCell translation
     GenericCluster<CoordType> &operator+=(UnitCell trans) {
-      for(auto it = begin(); it != end(); ++it) {
+      for(auto it = this->begin(); it != this->end(); ++it) {
         *it += trans;
       }
       return *this;
@@ -69,7 +75,7 @@ namespace CASM {
 
     /// \brief Translate the UnitCellCoordCluster by a UnitCell translation
     GenericCluster<CoordType> &operator-=(UnitCell trans) {
-      for(auto it = begin(); it != end(); ++it) {
+      for(auto it = this->begin(); it != this->end(); ++it) {
         *it -= trans;
       }
       return *this;

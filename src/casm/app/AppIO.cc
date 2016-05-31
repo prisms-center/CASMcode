@@ -1,7 +1,6 @@
 #include "casm/app/AppIO.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
-#include "casm/clusterography/jsonClust.hh"
 
 namespace CASM {
 
@@ -439,7 +438,7 @@ namespace CASM {
 
   // ---------- basis.json IO ------------------------------------------------------------------
 
-  /// \brief Write summary of basis functions
+  /// \brief Write summary of cluster expansion basis
   ///
   /// Format:
   /// \code
@@ -471,8 +470,11 @@ namespace CASM {
   /// }
   /// \endcode
   ///
-  void write_basis(const SiteOrbitree &tree, const Structure &prim, jsonParser &json, double tol) {
+  void write_basis(const std::vector<ClusterOrbit> &clusters, const ClexBasis &clex_basis, jsonParser &json, double tol) {
 
+    throw std::runtime_error("write_basis needs to be reimplemented");
+
+    /*
     json = jsonParser::object();
 
     //   "site_functions":[
@@ -566,6 +568,7 @@ namespace CASM {
     for(Index i = 0; i < orbitf.size(); ++i) {
       orbitf[i]["linear_function_index"] = i;
     }
+    */
   }
 
 }

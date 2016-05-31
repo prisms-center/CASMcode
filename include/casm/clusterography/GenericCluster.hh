@@ -5,7 +5,7 @@
 
 namespace CASM {
 
-  template <typename ClusterType> ClusterInvariants;
+  template <typename ClusterType> class ClusterInvariants;
 
   /** \defgroup Clusterography
 
@@ -26,9 +26,9 @@ namespace CASM {
   public:
 
     typedef unsigned int size_type;
-    typedef std::vector<Element>::value_type value_type;
-    typedef std::vector<Element>::iterator iterator;
-    typedef std::vector<Element>::const_iterator const_iterator;
+    typedef typename std::vector<Element>::value_type value_type;
+    typedef typename std::vector<Element>::iterator iterator;
+    typedef typename std::vector<Element>::const_iterator const_iterator;
     typedef ClusterInvariants<GenericCluster<Element> > InvariantsType;
 
     /// \brief Construct an empty GenericCluster
@@ -38,7 +38,13 @@ namespace CASM {
     template<typename InputIterator>
     GenericCluster(InputIterator _begin,
                    InputIterator _end) :
-      m_element(_uccoord_begin, _uccoord_end) {}
+      m_element(_begin, _end) {}
+
+    /// \brief Default copy constructor
+    GenericCluster(const GenericCluster &other) = default;
+
+    /// \brief Default assignment constructor
+    GenericCluster &operator=(const GenericCluster &other) = default;
 
     /// \brief Default move constructor
     GenericCluster(GenericCluster &&other) = default;
@@ -47,14 +53,9 @@ namespace CASM {
     GenericCluster &operator=(GenericCluster && other) = default;
 
 
-    /// \brief Return a reference to the primitive Structure
-    const Structure &prim() const {
-      return *m_prim_ptr;
-    }
-
     /// \brief Iterator to first UnitCellCoord in the cluster
     iterator begin() {
-      m_invarients.reset();
+      m_invariants.reset();
       return m_element.begin();
     }
 
@@ -65,7 +66,7 @@ namespace CASM {
 
     /// \brief Iterator to the past-the-last UnitCellCoord in the cluster
     iterator end() {
-      m_invarients.reset();
+      m_invariants.reset();
       return m_element.end();
     }
 
@@ -91,7 +92,7 @@ namespace CASM {
 
     /// \brief Access a UnitCellCoord in the cluster by index
     value_type &operator[](size_type index) {
-      m_invarients.reset();
+      m_invariants.reset();
       return m_element[index];
     }
 
@@ -102,7 +103,7 @@ namespace CASM {
 
     /// \brief Access a UnitCellCoord in the cluster by index
     value_type &element(size_type index) {
-      m_invarients.reset();
+      m_invariants.reset();
       return m_element[index];
     }
 
@@ -113,7 +114,7 @@ namespace CASM {
 
     /// \brief Access vector of elements
     std::vector<Element> &elements() {
-      m_invarients.reset();
+      m_invariants.reset();
       return m_element;
     }
 
@@ -124,12 +125,12 @@ namespace CASM {
 
     const InvariantsType &invariants() const {
       if(!m_invariants) {
-        m_invariants = make_cloneable<InvariantsType>(*this);
+        m_invariants = notstd::make_cloneable<InvariantsType>(*this);
       }
       return *m_invariants;
     }
 
-    GenericCluster<CoordType> &apply_sym(const SymOp &op) {
+    GenericCluster<Element> &apply_sym(const SymOp &op) {
       for(auto it = begin(); it != end(); ++it) {
         apply(op, *it);
       }

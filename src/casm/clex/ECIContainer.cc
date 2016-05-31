@@ -2,8 +2,8 @@
 
 namespace CASM {
 
-  /// \brief Evaluate property given an ECIContainer and Correlation
-  double operator*(const ECIContainer &_eci, const Correlation &_corr) {
+  /// \brief Evaluate property given an ECIContainer and correlations
+  double operator*(const ECIContainer &_eci, const Eigen::VectorXd &_corr) {
     double result(0);
     auto ind_it(_eci.index().cbegin()), ind_end(_eci.index().cend());
     auto eci_it(_eci.value().cbegin());

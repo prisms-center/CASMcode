@@ -92,7 +92,7 @@ namespace CASM {
     /// \brief Return the SymCompare functor reference
     ///
     /// - implements symmetry properties of this orbit
-    const SymCompare &sym_compare() const {
+    const SymCompare<Element> &sym_compare() const {
       return *m_sym_compare;
     }
 

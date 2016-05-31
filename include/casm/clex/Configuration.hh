@@ -9,8 +9,6 @@
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/clex/Properties.hh"
-#include "casm/clex/Correlation.hh"
-#include "casm/clusterography/Orbitree.hh"
 #include "casm/clex/ConfigDoF.hh"
 
 namespace CASM {
@@ -381,7 +379,7 @@ namespace CASM {
   };
 
   /// \brief Returns correlations using 'clexulator'.
-  Correlation correlations(const Configuration &config, Clexulator &clexulator);
+  Eigen::VectorXd correlations(const Configuration &config, Clexulator &clexulator);
 
   /// Returns parametric composition, as calculated using PrimClex::param_comp
   Eigen::VectorXd comp(const Configuration &config);
