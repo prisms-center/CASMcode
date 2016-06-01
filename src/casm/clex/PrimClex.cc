@@ -66,25 +66,6 @@ namespace CASM {
 
     // here add stuff to read directory structure...
 
-    // read .casmroot current settings
-    try {
-      jsonParser settings(root / ".casm" / "project_settings.json");
-      from_json(curr_property, settings["curr_properties"]);
-      from_json(curr_clex, settings["curr_clex"]);
-      from_json(curr_calctype, settings["curr_calctype"]);
-      from_json(curr_ref, settings["curr_ref"]);
-      from_json(curr_bset, settings["curr_bset"]);
-      from_json(curr_eci, settings["curr_eci"]);
-      settings.get_else(compile_options, "compile_options", RuntimeLibrary::default_compile_options());
-      settings.get_else(so_options, "so_options", RuntimeLibrary::default_so_options());
-      from_json(m_name, settings["name"]);
-    }
-    catch(std::exception &e) {
-      std::cerr << "Error in PrimClex::PrimClex(const fs::path &_root, Log &_log) reading .casmroot" << std::endl;
-      std::cerr << e.what() << std::endl;
-      exit(1);
-    }
-
     // read param composition
     auto comp_axes = m_dir.composition_axes(m_settings.calctype(), m_settings.ref());
     if(fs::is_regular_file(comp_axes)) {
@@ -115,107 +96,15 @@ namespace CASM {
     }
 
     // read config_list
-    if(fs::is_regular_file(get_config_list_path())) {
+    if(fs::is_regular_file(dir().config_list())) {
 
-      log << "read: " << get_config_list_path() << "\n";
+      log << "read: " << dir().config_list() << "\n";
       read_config_list();
     }
 
     log << std::endl;
   }
 
-
-  //*******************************************************************************************
-  // **** Accessors ****
-  //*******************************************************************************************
-
-  /// Return project name
-  std::string PrimClex::name() const {
-    return m_name;
-  }
-
-  //*******************************************************************************************
-  // ** Directory path accessors **
-  //*******************************************************************************************
-  /// Return casm project directory path
-  fs::path PrimClex::get_path() const {
-    return root;
-  }
-
-  //*******************************************************************************************
-  /// Return supercell directory path
-  fs::path PrimClex::get_path(const Index &scel_index) const {
-    return root / "training_data" / supercell_list[scel_index].get_name();
-  }
-
-  //*******************************************************************************************
-  /// Return configuration directory path
-  fs::path PrimClex::get_path(const Index &scel_index, const Index &config_index) const {
-    return get_path(scel_index) / supercell_list[scel_index].get_config(config_index).get_id();
-  }
-
-  //*******************************************************************************************
-  /// Return config_list.json file path
-  fs::path PrimClex::get_config_list_path() const {
-    return root / ".casm" / "config_list.json";
-  }
-
-
-  // ** Current settings accessors **
-
-  //*******************************************************************************************
-  /// Return current property settings
-  const std::vector<std::string> &PrimClex::get_curr_property() const {
-    return curr_property;
-  }
-
-  //*******************************************************************************************
-  /// Return current clex settings
-  std::string PrimClex::get_curr_clex() const {
-    return curr_clex;
-  }
-
-  //*******************************************************************************************
-  /// Return current calctype setting
-  std::string PrimClex::get_curr_calctype() const {
-    return curr_calctype;
-  }
-
-  //*******************************************************************************************
-  /// Return current reference setting
-  std::string PrimClex::get_curr_ref() const {
-    return curr_ref;
-  }
-
-  //*******************************************************************************************
-  /// Return cluster settings
-  std::string PrimClex::get_curr_bset() const {
-    return curr_bset;
-  }
-
-  //*******************************************************************************************
-  /// Return current global clexulator name
-  std::string PrimClex::get_curr_clexulator() const {
-    return name() + "_Clexulator";
-  }
-
-  //*******************************************************************************************
-  /// Return current eci settings
-  std::string PrimClex::get_curr_eci() const {
-    return curr_eci;
-  }
-
-  //*******************************************************************************************
-  /// Return compiler options
-  std::string PrimClex::get_compile_options() const {
-    return compile_options;
-  }
-
-  //*******************************************************************************************
-  /// Return shared library options
-  std::string PrimClex::get_so_options() const {
-    return so_options;
-  }
 
   // ** Composition accessors **
 
@@ -250,15 +139,9 @@ namespace CASM {
 
   //*******************************************************************************************
   /// const Access to primitive Structure
-  const Structure &PrimClex::get_prim() const {
+  const Structure &PrimClex::prim() const {
     return prim;
   }
-
-  //*******************************************************************************************
-  /// const Access to global orbitree
-  const SiteOrbitree &PrimClex::get_global_orbitree() const {
-    return global_orbitree;
-  };
 
   //*******************************************************************************************
 
@@ -295,28 +178,28 @@ namespace CASM {
 
   //*******************************************************************************************
   /// const Access entire supercell_list
-  const boost::container::stable_vector<Supercell> &PrimClex::get_supercell_list() const {
+  const boost::container::stable_vector<Supercell> &PrimClex::supercell_list() const {
     return supercell_list;
   };
 
   //*******************************************************************************************
   /// const Access supercell by index
-  const Supercell &PrimClex::get_supercell(Index i) const {
+  const Supercell &PrimClex::supercell(Index i) const {
     return supercell_list[i];
   };
 
   //*******************************************************************************************
   /// Access supercell by index
-  Supercell &PrimClex::get_supercell(Index i) {
+  Supercell &PrimClex::supercell(Index i) {
     return supercell_list[i];
   };
 
   //*******************************************************************************************
   /// const Access supercell by name
-  const Supercell &PrimClex::get_supercell(std::string scellname) const {
+  const Supercell &PrimClex::supercell(std::string scellname) const {
     Index index;
     if(!contains_supercell(scellname, index)) {
-      std::cout << "Error in PrimClex::get_supercell(std::string scellname) const." << std::endl;
+      std::cout << "Error in PrimClex::supercell(std::string scellname) const." << std::endl;
       std::cout << "  supercell '" << scellname << "' not found." << std::endl;
       exit(1);
     }
@@ -325,10 +208,10 @@ namespace CASM {
 
   //*******************************************************************************************
   /// Access supercell by name
-  Supercell &PrimClex::get_supercell(std::string scellname) {
+  Supercell &PrimClex::supercell(std::string scellname) {
     Index index;
     if(!contains_supercell(scellname, index)) {
-      std::cout << "Error in PrimClex::get_supercell(std::string scellname)." << std::endl;
+      std::cout << "Error in PrimClex::supercell(std::string scellname)." << std::endl;
       std::cout << "  supercell '" << scellname << "' not found." << std::endl;
       exit(1);
     }
@@ -359,7 +242,7 @@ namespace CASM {
     }
 
 
-    return get_supercell(splt_vec[0]).get_config(config_ind);
+    return supercell(splt_vec[0]).config(config_ind);
   }
 
   //*******************************************************************************************
@@ -386,13 +269,13 @@ namespace CASM {
       exit(1);
     }
 
-    return get_supercell(splt_vec[0]).get_config(config_ind);
+    return supercell(splt_vec[0]).config(config_ind);
   }
 
   //*******************************************************************************************
   /// Configuration iterator: begin
   PrimClex::config_iterator PrimClex::config_begin() {
-    if(supercell_list.size() == 0 || supercell_list[0].get_config_list().size() > 0)
+    if(supercell_list.size() == 0 || supercell_list[0].config_list().size() > 0)
       return config_iterator(this, 0, 0);
     return ++config_iterator(this, 0, 0);
   }
@@ -406,7 +289,7 @@ namespace CASM {
   //*******************************************************************************************
   /// const Configuration iterator: begin
   PrimClex::config_const_iterator PrimClex::config_begin() const {
-    if(supercell_list.size() == 0 || supercell_list[0].get_config_list().size() > 0)
+    if(supercell_list.size() == 0 || supercell_list[0].config_list().size() > 0)
       return config_const_iterator(this, 0, 0);
     return ++config_const_iterator(this, 0, 0);
   }
@@ -420,7 +303,7 @@ namespace CASM {
   //*******************************************************************************************
   /// const Configuration iterator: begin
   PrimClex::config_const_iterator PrimClex::config_cbegin() const {
-    if(supercell_list.size() == 0 || supercell_list[0].get_config_list().size() > 0)
+    if(supercell_list.size() == 0 || supercell_list[0].config_list().size() > 0)
       return config_const_iterator(this, 0, 0);
     return ++config_const_iterator(this, 0, 0);
   }
@@ -437,7 +320,7 @@ namespace CASM {
     //std::cout << "BEGINNING SELECTED CONFIG ITERATOR\n"
     //          << "supercell_list.size() is " << supercell_list.size() << "\n";
 
-    if(supercell_list.size() == 0 || (supercell_list[0].get_config_list().size() > 0 && supercell_list[0].get_config(0).selected()))
+    if(supercell_list.size() == 0 || (supercell_list[0].config_list().size() > 0 && supercell_list[0].config(0).selected()))
       return config_iterator(this, 0, 0, true);
     return ++config_iterator(this, 0, 0, true);
   }
@@ -451,7 +334,7 @@ namespace CASM {
   //*******************************************************************************************
   /// const Configuration iterator: begin
   PrimClex::config_const_iterator PrimClex::selected_config_cbegin() const {
-    if(supercell_list.size() == 0 || (supercell_list[0].get_config_list().size() > 0 && supercell_list[0].get_config(0).selected()))
+    if(supercell_list.size() == 0 || (supercell_list[0].config_list().size() > 0 && supercell_list[0].config(0).selected()))
       return config_const_iterator(this, 0, 0, true);
     return ++config_const_iterator(this, 0, 0, true);
   }
@@ -472,15 +355,16 @@ namespace CASM {
 
   void PrimClex::write_config_list() {
 
+    fs::path config_list_path = dir().config_list();
     if(supercell_list.size() == 0) {
-      fs::remove(get_config_list_path());
+      fs::remove(config_list_path);
       return;
     }
 
     jsonParser json;
 
-    if(fs::exists(get_config_list_path())) {
-      json.read(get_config_list_path());
+    if(fs::exists(config_list_path)) {
+      json.read(config_list_path);
     }
     else {
       json.put_obj();
@@ -491,7 +375,7 @@ namespace CASM {
     }
 
     SafeOfstream file;
-    file.open(get_config_list_path());
+    file.open(config_list_path);
     json.print(file.ofstream());
     file.close();
 
@@ -508,7 +392,7 @@ namespace CASM {
   void PrimClex::read_global_orbitree(const fs::path &fclust_path) {
 
     // force re-read
-    global_orbitree = SiteOrbitree(get_prim().lattice());
+    global_orbitree = SiteOrbitree(prim().lattice());
 
     global_orbitree.min_num_components = 2;     //What if we want other things?
     global_orbitree.min_length = 0.0001;
@@ -536,10 +420,10 @@ namespace CASM {
       Index list_size = supercell_list.size();
       Index index = add_canonical_supercell(supercell_lattices[i]);
       if(supercell_list.size() != list_size) {
-        std::cout << "  Generated: " << supercell_list[index].get_name() << "\n";
+        std::cout << "  Generated: " << supercell_list[index].name() << "\n";
       }
       else {
-        std::cout << "  Generated: " << supercell_list[index].get_name() << " (already existed)\n";
+        std::cout << "  Generated: " << supercell_list[index].name() << " (already existed)\n";
       }
     }
 
@@ -574,7 +458,7 @@ namespace CASM {
     Supercell scel(this, superlat);
     scel.set_id(supercell_list.size());
     for(Index i = 0; i < supercell_list.size(); i++) {
-      if(supercell_list[i].get_transf_mat() == scel.get_transf_mat())
+      if(supercell_list[i].transf_mat() == scel.transf_mat())
         return i;
     }
 
@@ -610,25 +494,25 @@ namespace CASM {
 
     // also write supercells/supercell_path directories with LAT files
     try {
-      fs::create_directory(get_path() / "training_data");
+      fs::create_directory(dir().training_data());
     }
     catch(const fs::filesystem_error &ex) {
       std::cerr << "Error in PrimClex::print_supercells()." << std::endl;
       std::cerr << ex.what() << std::endl;
     }
 
-    fs::ofstream scelfile(get_path() / "training_data" / "SCEL");
+    fs::ofstream scelfile(dir().SCEL());
 
     print_supercells(scelfile);
 
     for(Index i = 0; i < supercell_list.size(); i++) {
       try {
-        fs::create_directory(supercell_list[i].get_path());
+        fs::create_directory(dir().supercell_dir(supercell_list[i].name()));
 
-        fs::path latpath = supercell_list[i].get_path() / "LAT";
+        fs::path latpath = dir().LAT(supercell_list[i].name());
         if(!fs::exists(latpath)) {
           fs::ofstream latfile(latpath);
-          supercell_list[i].get_real_super_lattice().print(latfile);
+          supercell_list[i].real_super_lattice().print(latfile);
         }
       }
       catch(const fs::filesystem_error &ex) {
@@ -641,9 +525,9 @@ namespace CASM {
   //*******************************************************************************************
   void PrimClex::print_supercells(std::ostream &stream) const {
     for(Index i = 0; i < supercell_list.size(); i++) {
-      stream << "Supercell Name: '" << supercell_list[i].get_name() << "' Number: " << i << " Volume: " << supercell_list[i].get_transf_mat().determinant() << "\n";
+      stream << "Supercell Name: '" << supercell_list[i].name() << "' Number: " << i << " Volume: " << supercell_list[i].transf_mat().determinant() << "\n";
       stream << "Supercell Transformation Matrix: \n";
-      stream << supercell_list[i].get_transf_mat();
+      stream << supercell_list[i].transf_mat();
       stream << "\n";
     }
   }
@@ -688,7 +572,7 @@ namespace CASM {
   //*******************************************************************************************
   void PrimClex::read_config_list() {
 
-    jsonParser json(get_config_list_path());
+    jsonParser json(dir().config_list());
 
     if(!json.contains("supercells")) {
       return;
@@ -717,7 +601,7 @@ namespace CASM {
   //*******************************************************************************************
   bool PrimClex::contains_supercell(std::string scellname, Index &index) const {
     for(Index i = 0; i < supercell_list.size(); i++) {
-      if(supercell_list[i].get_name() == scellname) {
+      if(supercell_list[i].name() == scellname) {
         index = i;
         return true;
       }
@@ -726,257 +610,6 @@ namespace CASM {
     return false;
 
   };
-
-  //*******************************************************************************************
-  Eigen::Matrix3i PrimClex::calc_transf_mat(const Lattice &superlat) const {
-    Eigen::Matrix3d ttrans = prim.lattice().inv_lat_column_mat() * superlat.lat_column_mat();
-    if(!is_integer(ttrans, TOL)) {
-      std::cerr << "Error in PrimClex::calc_transf_mat(const Lattice &superlat)" << std::endl
-                << "  Bad supercell, the transformation matrix is not integer. Exiting!" << std::endl;
-      exit(1);
-    }
-    return iround(ttrans);
-  }
-
-  //*******************************************************************************************
-
-  /// \brief Sets the composition axes
-  ///
-  /// Also:
-  /// - updates all configuration references,
-  /// - writes the updated configuration info
-  /// - does not update composition_axes file
-  void PrimClex::set_composition_axes(const CompositionConverter &_converter) {
-
-    m_comp_converter = _converter;
-    m_has_composition_axes = true;
-
-  }
-
-  //*******************************************************************************************
-  /*
-    /// Delete 'properties.ref_state.X.json' files,
-    /// Then call 'clear_reference_properties'
-    void PrimClex::clear_reference_states() {
-      for(int i = 0; i < composition_axes().independent_compositions() + 1; i++) {
-        fs::remove(dir().ref_state(settings().calctype(), settings().ref(), i));
-      }
-      generate_references();
-    }
-  */
-  //*******************************************************************************************
-  /*
-    /// Sets the root reference state to be the calculated properties of the chosen config
-    /// Does not call 'generate_references' so written files will be out-of-date until you do so!!!
-    void PrimClex::set_reference_state(int refid, const Configuration &config) {
-
-      //std::cout << "begin set_reference_state()" << std::endl;
-
-      std::string reason_invalid;
-      if(!valid_reference_state(refid, config, reason_invalid)) {
-        std::cerr << "Error in PrimClex::set_reference_state." << std::endl
-                  << "  Could not use  SCEL: " << config.get_supercell().get_name() << " ConfigID: " << config.get_id() << "  for reference state: " << refid << std::endl
-                  << "  " << reason_invalid << std::endl;
-        exit(1);
-      }
-
-      jsonParser json;
-
-      json["supercell_name"] = config.get_supercell().get_name();
-      json["configid"] = config.get_id();
-
-      json["param_composition"] = config.get_param_composition();
-      json["ref_state"] = config.calc_properties();
-
-      //std::cout << "Set refid: " << refid << std::endl;
-      //std::cout << "Reference State:\n" << json << "\n" << std::endl;
-
-      json.write(dir().ref_state(settings().calctype(), settings().ref(), refid));
-
-      //std::cout << "finish set_reference_state()" << std::endl;
-    }
-  */
-  //*******************************************************************************************
-  /*
-    /// Check that it is valid to use 'config' as reference state 'refid', returns bool and if false, sets 'reason_invalid'
-    ///   Currently checks:
-    ///     1) that the necessary properties have been calculated,
-    ///     2) that the same Configuration is not being used twice
-    ///   Needs to check that reference states span composition space
-    bool PrimClex::valid_reference_state(int refid, const Configuration &config, std::string &reason_invalid) const {
-
-      // Check that the Configuration has all the curr_property calculated
-      for(Index i = 0; i < get_curr_property().size(); i++) {
-        if(!config.calc_properties().contains(get_curr_property()[i])) {
-          reason_invalid = "You are attempting to use a Configuration for which the property '" + get_curr_property()[i] + "' has not been calculated.";
-          return false;
-        }
-      }
-
-      // Check that a Configuration is not being used for multiple reference states
-      for(int i = 0; i < composition_axes().independent_compositions() + 1; i++) {
-        if(i == refid)
-          continue;
-
-        if(!fs::exists(dir().ref_state(settings().calctype(), settings().ref(), i)))
-          continue;
-
-        jsonParser json(dir().ref_state(settings().calctype(), settings().ref(), i));
-
-        if(json["configid"] == "custom" || json["supercell_name"] == "custom")
-          continue;
-
-        if(json["configid"] == config.get_id() && json["supercell_name"] == config.get_supercell().get_name()) {
-          reason_invalid =  "You are attempting to use the same Configuration for >1 reference state and I can't allow that.";
-          return false;
-        }
-      }
-
-      // Here I should check that references span the necessary composition space, but I'm not yet
-
-      //   First read all reference states that have already been set, then check that this new one is not a linear combination of those
-
-      return true;
-    }
-  */
-  //*******************************************************************************************
-  /*
-    /// find calculated configurations closest to
-    /// [0, 0, 0, ...], [1, 0, 0, ...], [0, 1, 0, ...], [0, 0, 1, ...], ...
-    /// and set them as the root reference states, also calls generate_references
-    /// Clears refrence states and properties whether or not it succeeds
-    void PrimClex::set_reference_state_auto() {
-
-      //std::cout << "begin set_reference_state_auto()" << std::endl;
-
-      /// find calculated configurations closest to
-      /// [0, 0, 0, ...], [1, 0, 0, ...], [0, 1, 0, ...], [0, 0, 1, ...], ...
-
-      // Clear current references
-      clear_reference_states();
-
-      int Naxes = composition_axes().independent_compositions();
-
-      //std::cout << "Naxes: " << Naxes << std::endl;
-
-      Eigen::VectorXd target = Eigen::VectorXd::Zero(Naxes);
-
-      //std::cout << "Ref: " << 0 << "  target: " << target.transpose() << std::endl;
-      set_reference_state(0, closest_calculated_config(target));
-
-      for(int i = 0; i < Naxes; i++) {
-
-        target(i) = 1.0;
-        //std::cout << "Ref: " << i + 1 << "  target: " << target.transpose() << std::endl;
-        set_reference_state(i + 1, closest_calculated_config(target));
-        target(i) = 0.0;
-      }
-
-      //std::cout << "generate references" << std::endl;
-      generate_references();
-
-      //std::cout << "finish set_reference_state_auto()" << std::endl;
-
-    }
-  */
-
-  //*******************************************************************************************
-  /*
-    /// Clear 'reference' and 'delta' properties from all Configurations
-    /// Re-write all Configurations, updating:
-    ///   param_composition.json
-    ///   properties.calc.json
-    ///   properties.ref.json
-    ///   properties.delta.json
-    void PrimClex::generate_references() {
-
-      //std::cout << "begin PrimClex::generate_references()" << std::endl;
-
-      for(config_iterator it = config_begin(); it != config_end(); ++it) {
-        it->generate_reference();
-      }
-
-      write_config_list();
-
-      //std::cout << "finish PrimClex::generate_references()" << std::endl;
-
-    }
-  */
-
-  //*******************************************************************************************
-  /// private:
-
-  //*******************************************************************************************
-  /*
-    /// Return the configuration closest in param_composition to the target_param_comp
-    ///   Tie break returns configuration in smallest supercell (first found at that size)
-    const Configuration &PrimClex::closest_calculated_config(const Eigen::VectorXd &target_param_comp) const {
-
-      //std::cout << "begin closest_calculated_config()" << std::endl;
-
-      /// return reference to Configuration with param_comp closest to target_param_comp
-      ///   tie break goes to first Configuration with fewest atoms
-      ///
-      ///   must be Configurations for which the curr_properties have been calculated
-
-      Eigen::VectorXd param_comp;
-      Eigen::VectorXd closest_comp;
-
-      double curr_dist;
-      double close_dist = -1;
-      Index close_super = -1;
-      Index close_config;
-      Index close_size;
-
-      for(Index i = 0; i < supercell_list.size(); i++) {
-        for(Index j = 0; j < supercell_list[i].get_config_list().size(); j++) {
-
-          const Configuration &config = supercell_list[i].get_config(j);
-
-          // check if the config has been calculated
-          //std::cout << "\n\nScell: " << supercell_list[i].get_name() << "  Config: " << j << "\n" << config.calc_properties() << std::endl;
-
-          if(config.calc_properties().size() == 0)
-            continue;
-
-          curr_dist = (target_param_comp - config.get_param_composition()).norm();
-
-          if(!valid_index(close_super) ||
-             (almost_equal(curr_dist, close_dist, TOL) && config.size() < close_size) ||
-             (curr_dist < close_dist)) {
-            close_super = i;
-            close_config = j;
-            close_dist = curr_dist;
-            close_size = config.size();
-          }
-
-        } // for j
-      } // for i
-
-      if(!valid_index(close_super)) {
-        std::cerr << "Error in PrimClex::closest_calculated_config" << std::endl
-                  << "  Could not find a calculated Configuration." << std::endl;
-        exit(1);
-      }
-
-      //std::cout << "Closest Calculated:  SCEL: " << supercell_list[close_super].get_name() << "  Config: " <<
-      //          close_config << "  ParamComp: " << supercell_list[close_super].get_config(close_config).get_param_composition().transpose() << std::endl;
-
-      //std::cout << "finish closest_calculated_config()" << std::endl;
-
-      return supercell_list[close_super].get_config(close_config);
-    }
-  */
-
-  //*******************************************************************************************
-
-  Eigen::MatrixXd PrimClex::shift_vectors() const {
-    Eigen::MatrixXd tau(prim.basis.size(), 3);
-    for(int i = 0; i < prim.basis.size(); i++) {
-      tau.row(i) = prim.basis[i].const_cart().transpose();
-    }
-    return tau;
-  }
 
   //*******************************************************************************************
   bool PrimClex::has_global_clexulator() const {

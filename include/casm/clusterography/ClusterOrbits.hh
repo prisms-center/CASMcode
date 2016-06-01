@@ -11,6 +11,9 @@ namespace CASM {
       \brief Functions and classes related to clusters
   */
 
+  /// temporary...
+  typedef std::vector<Orbit<UnitCellCoordCluster> > SiteOrbitree;
+
   /* -- OrbitBranchSpecs Declarations ------------------------------------- */
 
   /// \brief Store data used to generate an orbit branch of UnitCellCoordCluster
@@ -130,14 +133,11 @@ namespace CASM {
     OrbitOutputIterator result,
     std::stream &status);
 
-  /// \brief Generate Orbit<UnitCellCoordCluster> by specifying max cluster length for each branch
+  /// \brief Generate Orbit<UnitCellCoordCluster>
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_orbitree(
     const UnitCellCoordCluster::PrimType &prim,
-    const SymGroup &generating_grp,
-    const std::vector<double> &max_length,
-    const std::function<bool (Site)> &site_filter,
-    const SymCompare<UnitCellCoordCluster> &sym_compare,
+    const jsonParser &bspecs,
     OrbitOutputIterator result,
     std::stream &status);
 

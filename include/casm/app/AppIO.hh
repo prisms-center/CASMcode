@@ -124,7 +124,7 @@ namespace CASM {
   // ---------- basis.json IO ------------------------------------------------------------------
 
   /// \brief Write summary of cluster expansion basis
-  void write_basis(const ClusterOrbits &cluster_orbits, const ClexBasis &clex_basis, jsonParser &json, double tol);
+  void write_basis(const SiteOrbitree &tree, const ClexBasis &clex_basis, jsonParser &json, double tol);
 }
 
 #endif

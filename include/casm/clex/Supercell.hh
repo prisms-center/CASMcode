@@ -50,9 +50,9 @@ namespace CASM {
     //the prim cell
     PrimGrid recip_grid;
 
-    // m_perm_symrep_ID is the ID of the SymGroupRep of get_prim().factor_group() that describes how
+    // m_perm_symrep_ID is the ID of the SymGroupRep of prim().factor_group() that describes how
     // operations of m_factor_group permute sites of the Supercell.
-    // NOTE: The permutation representation is for (*this).get_prim().factor_group(), which may contain
+    // NOTE: The permutation representation is for (*this).prim().factor_group(), which may contain
     //       more operations than m_factor_group, so the Permutation SymGroupRep may have 'gaps' at the
     //       operations that aren't in m_factor_group. You should access elements of the SymGroupRep using
     //       the the Supercel::factor_group_permute(int) method, so that you don't encounter the gaps
@@ -60,15 +60,15 @@ namespace CASM {
     mutable SymGroupRepID m_perm_symrep_ID;
 
     // m_factor_group is factor group of the super cell, found by identifying the subgroup of
-    // (*this).get_prim().factor_group() that leaves the supercell lattice vectors unchanged
-    // if (*this).get_prim() is actually primitive, then m_factor_group.size() <= 48
+    // (*this).prim().factor_group() that leaves the supercell lattice vectors unchanged
+    // if (*this).prim() is actually primitive, then m_factor_group.size() <= 48
     // NOTE: This is different from the SymGroup found by doing (*this).superstruc().factor_group()
     //       if Tprim is the translation group formed by the primitive cell lattice vectors, then
     //       m_factor_group is the group formed by the cosets of Tprim in the supercell space group
     //       if Tsuper is the translation group formed by the supercell lattice vectors, then,
-    //       m_occupation(init_config.get_occupation()),
-    //       m_displacement(init_config.get_displacement()),
-    //       m_strain(init_config.get_supercell().strain
+    //       m_occupation(init_config.occupation()),
+    //       m_displacement(init_config.displacement()),
+    //       m_strain(init_config.supercell().strain
     //       (*this).superstruc().factor_group() is the group formed by the cosets of Tsuper in the supercell space group
     mutable SymGroup m_factor_group;
 
@@ -152,8 +152,8 @@ namespace CASM {
 
 
     // **** Coordinates ****
-    Index get_linear_index(const Site &site, double tol = TOL) const;
-    Index get_linear_index(const Coordinate &coord, double tol = TOL) const;
+    Index linear_index(const Site &site, double tol = TOL) const;
+    Index linear_index(const Coordinate &coord, double tol = TOL) const;
     Index find(const UnitCellCoord &bijk) const;
     Coordinate coord(const UnitCellCoord &bijk) const;
     Coordinate coord(Index linear_ind) const;
@@ -181,7 +181,7 @@ namespace CASM {
 
     // **** Accessors ****
 
-    const PrimClex &get_primclex() const {
+    const PrimClex &primclex() const {
       return *primclex;
     }
 
@@ -189,7 +189,7 @@ namespace CASM {
       return m_prim_grid;
     }
 
-    const Structure &get_prim() const;
+    const Structure &prim() const;
 
     ///Return number of primitive cells that fit inside of *this
     Index volume()const {
@@ -197,7 +197,7 @@ namespace CASM {
     };
 
     Index basis_size() const {
-      return get_prim().basis.size();
+      return prim().basis.size();
     }
 
     Index num_sites()const {
@@ -206,7 +206,7 @@ namespace CASM {
 
     UnitCellCoord uccoord(Index i) const {
       UnitCellCoord t_bijk = m_prim_grid.uccoord(i % volume());
-      t_bijk[0] = get_b(i);
+      t_bijk[0] = sublat(i);
       return t_bijk;
     };
     const Eigen::MatrixXcd &fourier_matrix() const {
@@ -221,9 +221,9 @@ namespace CASM {
       return m_k_mesh;
     }
 
-    // the permutation_symrep is the SymGroupRep of get_prim().factor_group() that describes how
+    // the permutation_symrep is the SymGroupRep of prim().factor_group() that describes how
     // operations of m_factor_group permute sites of the Supercell.
-    // NOTE: The permutation representation is for (*this).get_prim().factor_group(), which may contain
+    // NOTE: The permutation representation is for (*this).prim().factor_group(), which may contain
     //       more operations than m_factor_group, so the Permutation SymGroupRep may have 'gaps' at the
     //       operations that aren't in m_factor_group. You should access elements of the SymGroupRep using
     //       SymGroupRep::get_representation(m_factor_group[i]) or SymGroupRep::get_permutation(m_factor_group[i]),
@@ -236,22 +236,22 @@ namespace CASM {
     }
 
     SymGroupRep const &permutation_symrep() const {
-      return get_prim().factor_group().representation(permutation_symrep_ID());
+      return prim().factor_group().representation(permutation_symrep_ID());
     }
 
-    Index get_b(Index i) const {
+    Index sublat(Index i) const {
       return i / volume();
     }
 
-    const Eigen::Matrix3i &get_transf_mat() const {
+    const Eigen::Matrix3i &transf_mat() const {
       return transf_mat;
     };
 
-    const Lattice &get_real_super_lattice() const {
+    const Lattice &real_super_lattice() const {
       return real_super_lattice;
     };
 
-    const Lattice &get_recip_prim_lattice() const {
+    const Lattice &recip_prim_lattice() const {
       return recip_prim_lattice;
     };
 
@@ -259,19 +259,19 @@ namespace CASM {
     const SuperNeighborList &nlist() const;
 
 
-    ConfigList &get_config_list() {
+    ConfigList &config_list() {
       return config_list;
     };
 
-    const ConfigList &get_config_list() const {
+    const ConfigList &config_list() const {
       return config_list;
     };
 
-    const Configuration &get_config(Index i) const {
+    const Configuration &config(Index i) const {
       return config_list[i];
     };
 
-    Configuration &get_config(Index i) {
+    Configuration &config(Index i) {
       return config_list[i];
     }
 
@@ -283,11 +283,11 @@ namespace CASM {
     config_const_iterator config_cbegin() const;
     config_const_iterator config_cend() const;
 
-    Index get_id() const {
+    Index id() const {
       return m_id;
     }
 
-    std::string get_name() const {
+    std::string name() const {
       return name;
     };
 
@@ -310,7 +310,7 @@ namespace CASM {
     permute_const_iterator permute_end() const;
 
     ///Return path to supercell directory
-    fs::path get_path() const;
+    fs::path path() const;
 
     ///Count how many configs are selected in *this
     Index amount_selected() const;

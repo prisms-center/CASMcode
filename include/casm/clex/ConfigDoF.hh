@@ -204,11 +204,8 @@ namespace CASM {
   /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
   Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator);
 
-  /// \brief Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::get_struc_molecule()
-  ReturnArray<int> get_num_each_molecule(const ConfigDoF &configdof, const Supercell &scel);
-
   /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::get_struc_molecule()
-  Eigen::VectorXi get_num_each_molecule_vec(const ConfigDoF &configdof, const Supercell &scel);
+  Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel);
 
   /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel);

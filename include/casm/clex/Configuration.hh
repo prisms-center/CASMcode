@@ -60,7 +60,7 @@ namespace CASM {
     /// Degrees of Freedom
 
     // 'occupation' is a list of the indices describing the occupants in each crystal site.
-    //   get_prim().basis[ get_b(i) ].site_occupant[ occupation[i]] -> Molecule on site i
+    //   prim().basis[ sublat(i) ].site_occupant[ occupation[i]] -> Molecule on site i
     //   This means that for the background structure, 'occupation' is all 0
 
     // Configuration sites are arranged by basis, and then prim:
@@ -177,10 +177,10 @@ namespace CASM {
 
     const Lattice &ideal_lattice()const;
 
-    std::string get_id() const;
+    std::string id() const;
 
 
-    int get_multiplicity()const {
+    int multiplicity()const {
       return multiplicity;
     }
 
@@ -192,26 +192,26 @@ namespace CASM {
 
     const jsonParser &source() const;
 
-    fs::path get_path() const;
+    fs::path path() const;
 
     ///Returns number of sites, NOT the number of primitives that fit in here
     Index size() const;
 
-    const Structure &get_prim() const;
+    const Structure &prim() const;
 
     bool selected() const {
       return m_selected;
     }
 
-    //PrimClex &get_primclex();
-    const PrimClex &get_primclex() const;
+    //PrimClex &primclex();
+    const PrimClex &primclex() const;
 
-    Supercell &get_supercell();
-    const Supercell &get_supercell() const;
+    Supercell &supercell();
+    const Supercell &supercell() const;
 
-    UnitCellCoord get_uccoord(Index site_l) const;
+    UnitCellCoord uccoord(Index site_l) const;
 
-    int get_b(Index site_l) const;
+    int sublat(Index site_l) const;
 
     const ConfigDoF &configdof() const {
       return m_configdof;
@@ -229,7 +229,7 @@ namespace CASM {
       return configdof().occ(site_l);
     }
 
-    const Molecule &get_mol(Index site_l) const;
+    const Molecule &mol(Index site_l) const;
 
 
     bool has_displacement() const {
@@ -252,51 +252,41 @@ namespace CASM {
       return configdof().is_strained();
     }
 
-    //fs::path get_reference_state_dir() const;
-
-    //const Properties &ref_properties() const;
-
     const Properties &calc_properties() const;
-
-    //const DeltaProperties &delta_properties() const;
 
     const Properties &generated_properties() const;
 
-
-    //const Correlation &get_correlations() const;
-
-
     // Returns composition on each sublattice: sublat_comp[ prim basis site / sublattice][ molecule_type]
     //   molucule_type is ordered as in the Prim structure's site_occupant list for that basis site (includes vacancies)
-    ReturnArray< Array < double > > get_sublattice_composition() const;
+    ReturnArray< Array < double > > sublattice_composition() const;
 
     // Returns number of each molecule by sublattice:
     //   sublat_num_each_molecule[ prim basis site / sublattice ][ molecule_type]
     //   molucule_type is ordered as in the Prim structure's site_occupant list for that basis site
-    ReturnArray< Array<int> > get_sublat_num_each_molecule() const;
+    ReturnArray< Array<int> > sublat_num_each_molecule() const;
 
     // Returns composition, not counting vacancies
     //    composition[ molecule_type ]: molecule_type ordered as prim structure's get_struc_molecule(), with [Va]=0.0
-    ReturnArray<double> get_composition() const;
+    ReturnArray<double> composition() const;
 
     // Returns composition, including vacancies
     //    composition[ molecule_type ]: molecule_type ordered as prim structure's get_struc_molecule()
-    ReturnArray<double> get_true_composition() const;
+    ReturnArray<double> true_composition() const;
 
     /// Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::get_struc_molecule()
-    ReturnArray<int> get_num_each_molecule() const;
+    ReturnArray<int> num_each_molecule() const;
 
     /// Returns parametric composition, as calculated using PrimClex::param_comp
-    Eigen::VectorXd get_param_composition() const;
+    Eigen::VectorXd param_composition() const;
 
     /// Returns num_each_component[ component_type] per prim cell,
-    ///   where 'component_type' is ordered as ParamComposition::get_components
-    Eigen::VectorXd get_num_each_component() const;
+    ///   where 'component_type' is ordered as ParamComposition::components
+    Eigen::VectorXd num_each_component() const;
 
     //-----------------------------------
     //Structure Factor
-    Eigen::VectorXd get_struct_fact_intensities() const;
-    Eigen::VectorXd get_struct_fact_intensities(const Eigen::VectorXd &component_intensities) const;
+    Eigen::VectorXd struct_fact_intensities() const;
+    Eigen::VectorXd struct_fact_intensities(const Eigen::VectorXd &component_intensities) const;
 
     void calc_sublat_struct_fact();
     void calc_struct_fact();
@@ -313,7 +303,7 @@ namespace CASM {
     ///   Properties, DeltaProperties and Correlations files
     jsonParser &write(jsonParser &json) const;
 
-    /// Write the POS file to get_pos_path
+    /// Write the POS file to pos_path
     void write_pos() const;
 
     // Va_mode		description
@@ -336,7 +326,7 @@ namespace CASM {
     fs::path calc_properties_path() const;
     fs::path calc_status_path() const;
     /// Path to various files
-    fs::path get_pos_path() const;
+    fs::path pos_path() const;
 
 
   private:

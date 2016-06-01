@@ -752,35 +752,18 @@ namespace CASM {
     return correlations;
   }
 
-  /// \brief Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::get_struc_molecule()
-  ReturnArray<int> get_num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
-
-    // [basis_site][site_occupant_index]
-    auto convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
-
-    // create an array to count the number of each molecule
-    Array<int> num_each_molecule(scel.get_prim().get_struc_molecule().size(), 0);
-
-    // count the number of each molecule
-    for(Index i = 0; i < configdof.size(); i++) {
-      num_each_molecule[ convert[ scel.get_b(i) ][ configdof.occ(i)] ]++;
-    }
-
-    return num_each_molecule;
-  }
-
   /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::get_struc_molecule()
-  Eigen::VectorXi get_num_each_molecule_vec(const ConfigDoF &configdof, const Supercell &scel) {
+  Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
 
     // [basis_site][site_occupant_index]
-    auto convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
+    auto convert = index_converter(scel.prim(), scel.prim().get_struc_molecule());
 
     // create an array to count the number of each molecule
-    Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.get_prim().get_struc_molecule().size());
+    Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.prim().get_struc_molecule().size());
 
     // count the number of each molecule
     for(Index i = 0; i < configdof.size(); i++) {
-      num_each_molecule(convert[ scel.get_b(i) ][ configdof.occ(i)])++;
+      num_each_molecule(convert[ scel.sublat(i) ][ configdof.occ(i)])++;
     }
 
     return num_each_molecule;
@@ -788,7 +771,7 @@ namespace CASM {
 
   /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel) {
-    return get_num_each_molecule_vec(configdof, scel).cast<double>() / scel.volume();
+    return num_each_molecule(configdof, scel).cast<double>() / scel.volume();
   }
 
 

@@ -212,11 +212,20 @@ namespace CASM {
       return m_root / m_calc_dir / scelname;
     }
 
+    /// \brief Return supercell LAT file path (scelname has format SCELV_A_B_C_D_E_F)
+    fs::path LAT(std::string scelname) const {
+      return m_root / m_calc_dir / scelname / "LAT";
+    }
+
     /// \brief Return configuration directory path (configname has format SCELV_A_B_C_D_E_F/I)
     fs::path configuration_dir(std::string configname) const {
       return m_root / m_calc_dir / configname;
     }
 
+    /// \brief Return configuration POS file path (scelname has format SCELV_A_B_C_D_E_F/I)
+    fs::path POS(std::string configname) const {
+      return configuration_dir(configname) / "POS";
+    }
 
     /// \brief Return calculation settings directory path, for global settings
     fs::path calc_settings_dir(std::string calctype) const {

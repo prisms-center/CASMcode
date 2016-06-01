@@ -470,7 +470,7 @@ namespace CASM {
   /// }
   /// \endcode
   ///
-  void write_basis(const std::vector<ClusterOrbit> &clusters, const ClexBasis &clex_basis, jsonParser &json, double tol) {
+  void write_basis(const SiteOrbitree &tree, const ClexBasis &clex_basis, jsonParser &json, double tol) {
 
     throw std::runtime_error("write_basis needs to be reimplemented");
 
