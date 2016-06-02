@@ -13,6 +13,14 @@ namespace CASM {
   class Structure;
   class SymOp;
 
+  template<typename CoordType>
+  class CoordCluster;
+
+  template<typename CoordType>
+  struct traits<CoordCluster<CoordType> > {
+    typedef CoordType Element;
+  };
+
   /// \brief A cluster of Coordinate-like elements
   ///
   /// Beyond what a GenericCluster does, a CoordCluster:
@@ -22,7 +30,7 @@ namespace CASM {
   /// \ingroup Clusterography
   ///
   template<typename CoordType>
-  class CoordCluster : public GenericCluster<CoordType> {
+  class CoordCluster : public GenericCluster<CoordCluster<CoordType> > {
 
   public:
 
@@ -65,8 +73,26 @@ namespace CASM {
       return prim().get_site(this->element(i));
     }
 
+    /// \brief Return the min pair distance
+    double min_length() const {
+      return this->invariants().displacement().front();
+    }
+
+    /// \brief Return the max pair distance
+    double max_length() const {
+      return this->invariants().displacement().back();
+    }
+
+    /// \brief Apply symmetry to each element
+    CoordCluster &apply_sym(const SymOp &op) {
+      for(auto it = this->begin(); it != this->end(); ++it) {
+        apply(op, *it);
+      }
+      return *this;
+    }
+
     /// \brief Translate the cluster by a UnitCell translation
-    GenericCluster<CoordType> &operator+=(UnitCell trans) {
+    CoordCluster &operator+=(UnitCell trans) {
       for(auto it = this->begin(); it != this->end(); ++it) {
         *it += trans;
       }
@@ -74,7 +100,7 @@ namespace CASM {
     }
 
     /// \brief Translate the UnitCellCoordCluster by a UnitCell translation
-    GenericCluster<CoordType> &operator-=(UnitCell trans) {
+    CoordCluster &operator-=(UnitCell trans) {
       for(auto it = this->begin(); it != this->end(); ++it) {
         *it -= trans;
       }

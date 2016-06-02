@@ -1,11 +1,12 @@
-#ifndef CASM_UnitCellCoordCluster
-#define CASM_UnitCellCoordCluster
+#ifndef CASM_IntegralCluster
+#define CASM_IntegralCluster
 
 #include <vector>
 
 #include "casm/symmetry/Orbit.hh"
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/clusterography/ClusterInvariants.hh"
 #include "casm/clusterography/CoordCluster.hh"
 
 namespace CASM {
@@ -15,25 +16,19 @@ namespace CASM {
       \brief Functions and classes related to clusters
   */
 
-  /* -- UnitCellCoordCluster Declaration ------------------------------------- */
+  /* -- IntegralCluster Declaration ------------------------------------- */
 
   /// \brief Cluster of UnitCellCoord
   ///
   /// \ingroup Clusterography
   ///
-  typedef CoordCluster<UnitCellCoord> UnitCellCoordCluster;
-
-  /// \brief Vector of Orbit<UnitCellCoordCluster>
-  ///
-  /// \ingroup Clusterography
-  ///
-  typedef std::vector<Orbit<UnitCellCoordCluster> > ClusterOrbits;
+  typedef CoordCluster<UnitCellCoord> IntegralCluster;
 
 
   /* -- BasicUCCCSymCompare Declaration ------------------------------------- */
 
-  /// \brief Abstract base class for UnitCellCoordCluster comparisons
-  class BasicUCCCSymCompare : public SymCompare<UnitCellCoordCluster> {
+  /// \brief Abstract base class for IntegralCluster comparisons
+  class BasicUCCCSymCompare : public SymCompare<IntegralCluster> {
 
   public:
 
@@ -54,7 +49,7 @@ namespace CASM {
     /// - Assumes elements are 'prepared' before being compared
     /// Implementation:
     /// - std::lexicographical_compare of UnitCellCoord in A and B
-    bool intra_orbit_compare(const UnitCellCoordCluster &A, const UnitCellCoordCluster &B) const override {
+    bool intra_orbit_compare(const IntegralCluster &A, const IntegralCluster &B) const override {
       return cluster_intra_orbit_compare(A, B);
     }
 
@@ -68,7 +63,7 @@ namespace CASM {
     /// - First compare A.size(), B.size()
     /// - Second compare ClusterInvariants(A), ClusterInvariants(B)
     /// - Finally, std::lexicographical_compare of UnitCellCoord in A and B
-    bool inter_orbit_compare(const UnitCellCoordCluster &A, const UnitCellCoordCluster &B) const override {
+    bool inter_orbit_compare(const IntegralCluster &A, const IntegralCluster &B) const override {
       return cluster_inter_orbit_compare(A, B, tol());
     }
 
@@ -91,13 +86,13 @@ namespace CASM {
   };
 
 
-  /* -- LocalSymCompare<UnitCellCoordCluster> Declaration ------------------------------------- */
+  /* -- LocalSymCompare<IntegralCluster> Declaration ------------------------------------- */
 
-  /// \brief Comparisons of UnitCellCoordCluster with aperiodic symmetry
+  /// \brief Comparisons of IntegralCluster with aperiodic symmetry
   ///
-  /// \relates UnitCellCoordCluster
+  /// \relates IntegralCluster
   template<>
-  class LocalSymCompare<UnitCellCoordCluster> : public BasicUCCCSymCompare {
+  class LocalSymCompare<IntegralCluster> : public BasicUCCCSymCompare {
 
   public:
 
@@ -111,7 +106,7 @@ namespace CASM {
     /// \brief Prepare an element for comparison
     ///
     /// - Sorts UnitCellCoord
-    UnitCellCoordCluster prepare(UnitCellCoordCluster obj) const override {
+    IntegralCluster prepare(IntegralCluster obj) const override {
       std::sort(obj.begin(), obj.end());
       return obj;
     }
@@ -141,13 +136,13 @@ namespace CASM {
   };
 
 
-  /* -- PrimPeriodicSymCompare<UnitCellCoordCluster> Declaration ------------------------------------- */
+  /* -- PrimPeriodicSymCompare<IntegralCluster> Declaration ------------------------------------- */
 
-  /// \brief Comparisons of UnitCellCoordCluster with periodic symmetry of the primitive lattice
+  /// \brief Comparisons of IntegralCluster with periodic symmetry of the primitive lattice
   ///
-  /// \relates UnitCellCoordCluster
+  /// \relates IntegralCluster
   template<>
-  class PrimPeriodicSymCompare<UnitCellCoordCluster> : public BasicUCCCSymCompare {
+  class PrimPeriodicSymCompare<IntegralCluster> : public BasicUCCCSymCompare {
 
   public:
 
@@ -161,7 +156,7 @@ namespace CASM {
     /// \brief Prepare an element for comparison
     ///
     /// - Sorts UnitCellCoord and translates so that obj[0] is in the origin unit cell
-    UnitCellCoordCluster prepare(UnitCellCoordCluster obj) const override {
+    IntegralCluster prepare(IntegralCluster obj) const override {
       std::sort(obj.begin(), obj.end());
       return obj - obj[0].unitcell();
     }
@@ -190,13 +185,13 @@ namespace CASM {
   };
 
 
-  /* -- ScelPeriodicSymCompare<UnitCellCoordCluster> Declaration ------------------------------------- */
+  /* -- ScelPeriodicSymCompare<IntegralCluster> Declaration ------------------------------------- */
 
-  /// \brief Comparisons of UnitCellCoordCluster with periodic symmetry of a supercell lattice
+  /// \brief Comparisons of IntegralCluster with periodic symmetry of a supercell lattice
   ///
-  /// \relates UnitCellCoordCluster
+  /// \relates IntegralCluster
   template<>
-  class ScelPeriodicSymCompare<UnitCellCoordCluster> : public BasicUCCCSymCompare {
+  class ScelPeriodicSymCompare<IntegralCluster> : public BasicUCCCSymCompare {
 
   public:
 
@@ -212,7 +207,7 @@ namespace CASM {
     /// \brief Prepare an element for comparison
     ///
     /// - Sorts UnitCellCoord and translates so that obj[0] is within the supercell
-    UnitCellCoordCluster prepare(UnitCellCoordCluster obj) const override {
+    IntegralCluster prepare(IntegralCluster obj) const override {
       std::sort(obj.begin(), obj.end());
       auto trans = obj[0].unitcell() - m_prim_grid.get_within(obj[0]).unitcell();
       return obj - trans;

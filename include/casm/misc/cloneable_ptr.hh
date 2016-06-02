@@ -135,6 +135,11 @@ namespace notstd {
       return &(this->operator*());
     }
 
+    /// \brief Reset contained unique_ptr
+    void reset() {
+      return m_unique.reset();
+    }
+
     /// \brief Access contained unique_ptr
     std::unique_ptr<Type> &unique() {
       return m_unique;

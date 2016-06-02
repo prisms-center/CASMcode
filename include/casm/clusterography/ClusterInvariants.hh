@@ -36,7 +36,7 @@ namespace CASM {
       std::vector<double> disp;
       for(int i = 0; i < m_size; i++) {
         for(int j = i + 1; j < m_size; j++) {
-          m_disp.push_back((cluster.coordinate(i) - cluster.coordinate(j)).norm());
+          m_disp.push_back((cluster.coordinate(i) - cluster.coordinate(j)).const_cart().norm());
         }
       }
       std::sort(m_disp.begin(), m_disp.end());
@@ -52,7 +52,9 @@ namespace CASM {
       return m_disp;
     }
 
-
+    std::unique_ptr<ClusterInvariants<ClusterType> > clone() const {
+      return notstd::make_unique<ClusterInvariants<ClusterType> >(*this);
+    }
 
   private:
 

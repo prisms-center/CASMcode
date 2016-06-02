@@ -1,8 +1,8 @@
 #include "casm/clusterography/ClusterInvariants_impl.hh"
-#include "casm/clusterography/UnitCellCoordCluster.hh"
+#include "casm/clusterography/IntegralCluster.hh"
 
 namespace casm {
 
-  template class ClusterInvariants<UnitCellCoordCluster>;
+  template class ClusterInvariants<IntegralCluster>;
 
 }

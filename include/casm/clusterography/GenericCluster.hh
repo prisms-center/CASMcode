@@ -16,20 +16,22 @@ namespace CASM {
 
   /// \brief A cluster of anything
   ///
-  /// - Needs a valid ClusterInvariants<GenericCluster<Element> > to help comparisons
+  /// - Needs a traits<DerivedCluster>::Element type
+  /// - Needs a valid ClusterInvariants<DerivedCluster> to help comparisons
   ///
   /// \ingroup Clusterography
   ///
-  template<typename Element>
+  template<typename DerivedCluster>
   class GenericCluster {
 
   public:
 
     typedef unsigned int size_type;
+    typedef typename traits<DerivedCluster>::Element Element;
     typedef typename std::vector<Element>::value_type value_type;
     typedef typename std::vector<Element>::iterator iterator;
     typedef typename std::vector<Element>::const_iterator const_iterator;
-    typedef ClusterInvariants<GenericCluster<Element> > InvariantsType;
+    typedef ClusterInvariants<DerivedCluster> InvariantsType;
 
     /// \brief Construct an empty GenericCluster
     GenericCluster() {}
@@ -125,15 +127,14 @@ namespace CASM {
 
     const InvariantsType &invariants() const {
       if(!m_invariants) {
-        m_invariants = notstd::make_cloneable<InvariantsType>(*this);
+        m_invariants = notstd::make_cloneable<InvariantsType>(*static_cast<const DerivedCluster *>(this));
       }
       return *m_invariants;
     }
 
-    GenericCluster<Element> &apply_sym(const SymOp &op) {
-      for(auto it = begin(); it != end(); ++it) {
-        apply(op, *it);
-      }
+    GenericCluster &apply_sym(const SymOp &op) {
+      static_cast<DerivedCluster *>(this)->apply_sym(op);
+      return *this;
     }
 
 
@@ -141,7 +142,7 @@ namespace CASM {
 
     std::vector<Element> m_element;
 
-    notstd::cloneable_ptr<InvariantsType> m_invariants;
+    mutable notstd::cloneable_ptr<InvariantsType> m_invariants;
 
   };
 
@@ -154,18 +155,19 @@ namespace CASM {
   ///
   /// \ingroup Clusterography
   ///
-  template<typename Element, typename Compare = std::less<Element> >
-  bool cluster_intra_orbit_compare(const GenericCluster<Element> &A,
-                                   const GenericCluster<Element> &B,
+  template<typename ClusterType, typename Compare = std::less<typename traits<ClusterType>::Element> >
+  bool cluster_intra_orbit_compare(const ClusterType &A,
+                                   const ClusterType &B,
                                    Compare compare = Compare()) {
-    std::lexicographical_compare(A.begin(), A.end(), B.begin(), B.end(), compare);
+    return std::lexicographical_compare(A.begin(), A.end(), B.begin(), B.end(), compare);
   }
 
   /// \brief Default comparison of orbit prototypes
   ///
   /// \param A, B clusters to check for A < B
   /// \param tol Tolerance for comparison of element-to-element distances
-  /// \param compare Compare concept functor for lexicographical comparison of cluster elements
+  /// \param compare_element Compare concept functor for lexicographical comparison of cluster elements
+  /// \param compare_invariants Compare concept functor for cluster invariants
   ///
   /// Compares:
   /// - cluster size
@@ -180,24 +182,27 @@ namespace CASM {
   /// }
   ///
   /// // next compare invariants
-  /// if( compare(ClusterInvariants<Element>(A), ClusterInvariants<Element>(B), tol) ) {
+  /// if( compare_invariants(ClusterInvariants<Element>(A), ClusterInvariants<Element>(B), tol) ) {
   ///   return true;
   /// }
-  /// if( compare(ClusterInvariants<Element>(B), ClusterInvariants<Element>(A), tol) ) {
+  /// if( compare_invariants(ClusterInvariants<Element>(B), ClusterInvariants<Element>(A), tol) ) {
   ///   return false;
   /// }
   ///
   /// // next lexicographical_compare of UnitCellCoord in A and B
-  /// return std::lexicographical_compare(A.begin(), A.end(), B.begin(), B.end(), compare);
+  /// return std::lexicographical_compare(A.begin(), A.end(), B.begin(), B.end(), compare_element);
   /// \endcode
   ///
   /// \ingroup Clusterography
   ///
-  template<typename Element, typename Compare = std::less<Element> >
-  bool cluster_inter_orbit_compare(const GenericCluster<Element> &A,
-                                   const GenericCluster<Element> &B,
+  template<typename ClusterType,
+           typename CompareElement = std::less<typename traits<ClusterType>::Element>,
+           typename CompareInvariants = FloatCompare>
+  bool cluster_inter_orbit_compare(const ClusterType &A,
+                                   const ClusterType &B,
                                    double tol,
-                                   Compare compare = Compare()) {
+                                   CompareElement compare_element = CompareElement(),
+                                   CompareInvariants compare_invariants = FloatCompare(TOL)) {
 
     // first compare cluster size
     if(A.size() != B.size()) {
@@ -205,15 +210,15 @@ namespace CASM {
     }
 
     // next compare invariants
-    if(compare(A.invariants(), B.invariants(), tol)) {
+    if(compare_invariants(A.invariants(), B.invariants())) {
       return true;
     }
-    if(compare(B.invariants(), A.invariants(), tol)) {
+    if(compare_invariants(B.invariants(), A.invariants())) {
       return false;
     }
 
     // next lexicographical_compare of Element in A and B
-    return std::lexicographical_compare(A.begin(), A.end(), B.begin(), B.end(), compare);
+    return std::lexicographical_compare(A.begin(), A.end(), B.begin(), B.end(), compare_element);
   }
 
 }
