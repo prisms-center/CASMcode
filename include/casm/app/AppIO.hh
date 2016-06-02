@@ -15,8 +15,9 @@
 
 namespace CASM {
 
-  // --- These functions are for the casm executable file I/O -----------
+  // --- These functions are for casm I/O -----------
 
+  class ClexBasis;
 
   // --------- PrimIO Declarations --------------------------------------------------
 
@@ -130,7 +131,7 @@ namespace CASM {
     COORD_TYPE mode;
 
 
-    SitePrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+    SitesPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
       indent_space(_indent_space),
       delim(_delim),
       mode(_mode) {}
@@ -159,7 +160,7 @@ namespace CASM {
 
   struct ProtoSitesPrinter : public SitesPrinter {
 
-    SitesProtoPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+    ProtoSitesPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
       SitesPrinter(_indent_space, _delim, _mode) {}
 
 
@@ -189,7 +190,7 @@ namespace CASM {
 
     const ClexBasis &clex_basis;
 
-    SitesProtoPrinter(const ClexBasis &_clex_basis, int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+    ProtoFuncsPrinter(const ClexBasis &_clex_basis, int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
       SitesPrinter(_indent_space, _delim, _mode),
       clex_basis(_clex_basis) {}
 
@@ -240,11 +241,11 @@ namespace CASM {
         branch = it->prototype().size();
         out << "** Branch " << branch << " ** " << std::endl;
       }
-      out << printer.indent() << << "** " << orbit_index << " of " << Norbits << " Orbits **"
-          << "  Points: " << orbit.prototype().size()
-          << "  Mult: " << orbit.size()
-          << "  MinLength: " << orbit.prototype().min_length()
-          << "  MaxLength: " << orbit.prototype().max_length() << std::endl;
+      out << printer.indent() << "** " << orbit_index << " of " << Norbits << " Orbits **"
+          << "  Points: " << it->prototype().size()
+          << "  Mult: " << it->size()
+          << "  MinLength: " << it->prototype().min_length()
+          << "  MaxLength: " << it->prototype().max_length() << std::endl;
       printer(*it, out, orbit_index, Norbits);
       out << std::endl;
       ++orbit_index;
@@ -252,7 +253,7 @@ namespace CASM {
 
   }
 
-  template<typename ClusterOrbitsIterator>
+  template<typename ClusterOrbitIterator>
   void print_site_basis_funcs(
     ClusterOrbitIterator begin,
     ClusterOrbitIterator end,
@@ -330,7 +331,6 @@ namespace CASM {
 
   // ---------- basis.json IO ------------------------------------------------------------------
 
-  class ClexBasis;
 
   /// \brief Write summary of cluster expansion basis
   template<typename ClusterOrbitsIterator>
