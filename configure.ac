@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.69])
 AC_INIT([CASM],
-        [0.0.0],
+        m4_esyscmd([tr -d '\n' < ./build-aux/casm_version.txt]),
         [casm-developers@lists.engr.ucsb.edu],
         [],
         [https://github.com/prisms-center/CASMcode])
@@ -69,7 +69,6 @@ AC_CONFIG_FILES([Makefile
                  apps/casm/Makefile
                  src/ccasm/Makefile
                  src/casm/Makefile
-                 src/casm/version/version.cc
                  python/Makefile
                  python/casm/setup.py
                  python/vasp/setup.py])
