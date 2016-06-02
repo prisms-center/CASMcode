@@ -179,19 +179,19 @@ namespace CASM {
   //*******************************************************************************************
   /// const Access entire supercell_list
   const boost::container::stable_vector<Supercell> &PrimClex::supercell_list() const {
-    return supercell_list;
+    return m_supercell_list;
   };
 
   //*******************************************************************************************
   /// const Access supercell by index
   const Supercell &PrimClex::supercell(Index i) const {
-    return supercell_list[i];
+    return m_supercell_list[i];
   };
 
   //*******************************************************************************************
   /// Access supercell by index
   Supercell &PrimClex::supercell(Index i) {
-    return supercell_list[i];
+    return m_supercell_list[i];
   };
 
   //*******************************************************************************************
@@ -203,7 +203,7 @@ namespace CASM {
       std::cout << "  supercell '" << scellname << "' not found." << std::endl;
       exit(1);
     }
-    return supercell_list[index];
+    return m_supercell_list[index];
   };
 
   //*******************************************************************************************
@@ -215,7 +215,7 @@ namespace CASM {
       std::cout << "  supercell '" << scellname << "' not found." << std::endl;
       exit(1);
     }
-    return supercell_list[index];
+    return m_supercell_list[index];
   };
 
   //*******************************************************************************************
@@ -275,7 +275,7 @@ namespace CASM {
   //*******************************************************************************************
   /// Configuration iterator: begin
   PrimClex::config_iterator PrimClex::config_begin() {
-    if(supercell_list.size() == 0 || supercell_list[0].config_list().size() > 0)
+    if(m_supercell_list.size() == 0 || m_supercell_list[0].config_list().size() > 0)
       return config_iterator(this, 0, 0);
     return ++config_iterator(this, 0, 0);
   }
@@ -283,13 +283,13 @@ namespace CASM {
   //*******************************************************************************************
   /// Configuration iterator: end
   PrimClex::config_iterator PrimClex::config_end() {
-    return config_iterator(this, supercell_list.size(), 0);
+    return config_iterator(this, m_supercell_list.size(), 0);
   }
 
   //*******************************************************************************************
   /// const Configuration iterator: begin
   PrimClex::config_const_iterator PrimClex::config_begin() const {
-    if(supercell_list.size() == 0 || supercell_list[0].config_list().size() > 0)
+    if(m_supercell_list.size() == 0 || m_supercell_list[0].config_list().size() > 0)
       return config_const_iterator(this, 0, 0);
     return ++config_const_iterator(this, 0, 0);
   }
@@ -297,13 +297,13 @@ namespace CASM {
   //*******************************************************************************************
   /// const Configuration iterator: end
   PrimClex::config_const_iterator PrimClex::config_end() const {
-    return config_const_iterator(this, supercell_list.size(), 0);
+    return config_const_iterator(this, m_supercell_list.size(), 0);
   }
 
   //*******************************************************************************************
   /// const Configuration iterator: begin
   PrimClex::config_const_iterator PrimClex::config_cbegin() const {
-    if(supercell_list.size() == 0 || supercell_list[0].config_list().size() > 0)
+    if(m_supercell_list.size() == 0 || m_supercell_list[0].config_list().size() > 0)
       return config_const_iterator(this, 0, 0);
     return ++config_const_iterator(this, 0, 0);
   }
@@ -311,16 +311,16 @@ namespace CASM {
   //*******************************************************************************************
   /// const Configuration iterator: end
   PrimClex::config_const_iterator PrimClex::config_cend() const {
-    return config_const_iterator(this, supercell_list.size(), 0);
+    return config_const_iterator(this, m_supercell_list.size(), 0);
   }
 
   //*******************************************************************************************
   /// Configuration iterator: begin
   PrimClex::config_iterator PrimClex::selected_config_begin() {
     //std::cout << "BEGINNING SELECTED CONFIG ITERATOR\n"
-    //          << "supercell_list.size() is " << supercell_list.size() << "\n";
+    //          << "m_supercell_list.size() is " << m_supercell_list.size() << "\n";
 
-    if(supercell_list.size() == 0 || (supercell_list[0].config_list().size() > 0 && supercell_list[0].config(0).selected()))
+    if(m_supercell_list.size() == 0 || (m_supercell_list[0].config_list().size() > 0 && m_supercell_list[0].config(0).selected()))
       return config_iterator(this, 0, 0, true);
     return ++config_iterator(this, 0, 0, true);
   }
@@ -328,13 +328,13 @@ namespace CASM {
   //*******************************************************************************************
   /// Configuration iterator: end
   PrimClex::config_iterator PrimClex::selected_config_end() {
-    return config_iterator(this, supercell_list.size(), 0, true);
+    return config_iterator(this, m_supercell_list.size(), 0, true);
   }
 
   //*******************************************************************************************
   /// const Configuration iterator: begin
   PrimClex::config_const_iterator PrimClex::selected_config_cbegin() const {
-    if(supercell_list.size() == 0 || (supercell_list[0].config_list().size() > 0 && supercell_list[0].config(0).selected()))
+    if(m_supercell_list.size() == 0 || (m_supercell_list[0].config_list().size() > 0 && m_supercell_list[0].config(0).selected()))
       return config_const_iterator(this, 0, 0, true);
     return ++config_const_iterator(this, 0, 0, true);
   }
@@ -342,7 +342,7 @@ namespace CASM {
   //*******************************************************************************************
   /// const Configuration iterator: end
   PrimClex::config_const_iterator PrimClex::selected_config_cend() const {
-    return config_const_iterator(this, supercell_list.size(), 0, true);
+    return config_const_iterator(this, m_supercell_list.size(), 0, true);
   }
 
 
@@ -356,7 +356,7 @@ namespace CASM {
   void PrimClex::write_config_list() {
 
     fs::path config_list_path = dir().config_list();
-    if(supercell_list.size() == 0) {
+    if(m_supercell_list.size() == 0) {
       fs::remove(config_list_path);
       return;
     }
@@ -370,8 +370,8 @@ namespace CASM {
       json.put_obj();
     }
 
-    for(Index s = 0; s < supercell_list.size(); s++) {
-      supercell_list[s].write_config_list(json);
+    for(Index s = 0; s < m_supercell_list.size(); s++) {
+      m_supercell_list[s].write_config_list(json);
     }
 
     SafeOfstream file;
@@ -417,13 +417,13 @@ namespace CASM {
     Array < Lattice > supercell_lattices;
     prim.lattice().generate_supercells(supercell_lattices, prim.factor_group(), volEnd, volStart);    //point_group?
     for(Index i = 0; i < supercell_lattices.size(); i++) {
-      Index list_size = supercell_list.size();
+      Index list_size = m_supercell_list.size();
       Index index = add_canonical_supercell(supercell_lattices[i]);
-      if(supercell_list.size() != list_size) {
-        std::cout << "  Generated: " << supercell_list[index].name() << "\n";
+      if(m_supercell_list.size() != list_size) {
+        std::cout << "  Generated: " << m_supercell_list[index].name() << "\n";
       }
       else {
-        std::cout << "  Generated: " << supercell_list[index].name() << " (already existed)\n";
+        std::cout << "  Generated: " << m_supercell_list[index].name() << " (already existed)\n";
       }
     }
 
@@ -434,7 +434,7 @@ namespace CASM {
   //*******************************************************************************************
   /**
    *  add a supercell if it doesn't already exist
-   *    return the index of the supercell in supercell_list
+   *    return the index of the supercell in m_supercell_list
    *
    *    TODO:
    *    Check to see if superlat is linear combination of previously
@@ -456,20 +456,20 @@ namespace CASM {
     // Does this check for equivalent supercells with different transformation matrices? Seems like it should
     // Insert second loop that goes over a symmetry operation list and applies it to the transformation matrix
     Supercell scel(this, superlat);
-    scel.set_id(supercell_list.size());
-    for(Index i = 0; i < supercell_list.size(); i++) {
-      if(supercell_list[i].transf_mat() == scel.transf_mat())
+    scel.set_id(m_supercell_list.size());
+    for(Index i = 0; i < m_supercell_list.size(); i++) {
+      if(m_supercell_list[i].transf_mat() == scel.transf_mat())
         return i;
     }
 
     // if not already existing, add it
-    supercell_list.push_back(scel);
-    return supercell_list.size() - 1;
+    m_supercell_list.push_back(scel);
+    return m_supercell_list.size() - 1;
   }
   //*******************************************************************************************
   /**
    *  add a supercell if it doesn't already exist
-   *  return the index of the supercell in supercell_list
+   *  return the index of the supercell in m_supercell_list
    *
    *  Unlike the initial version above this, this routine
    *  will use an Array of SymOps (probably the point group of the lattice)
@@ -505,14 +505,14 @@ namespace CASM {
 
     print_supercells(scelfile);
 
-    for(Index i = 0; i < supercell_list.size(); i++) {
+    for(Index i = 0; i < m_supercell_list.size(); i++) {
       try {
-        fs::create_directory(dir().supercell_dir(supercell_list[i].name()));
+        fs::create_directory(dir().supercell_dir(m_supercell_list[i].name()));
 
-        fs::path latpath = dir().LAT(supercell_list[i].name());
+        fs::path latpath = dir().LAT(m_supercell_list[i].name());
         if(!fs::exists(latpath)) {
           fs::ofstream latfile(latpath);
-          supercell_list[i].real_super_lattice().print(latfile);
+          m_supercell_list[i].real_super_lattice().print(latfile);
         }
       }
       catch(const fs::filesystem_error &ex) {
@@ -524,10 +524,10 @@ namespace CASM {
 
   //*******************************************************************************************
   void PrimClex::print_supercells(std::ostream &stream) const {
-    for(Index i = 0; i < supercell_list.size(); i++) {
-      stream << "Supercell Name: '" << supercell_list[i].name() << "' Number: " << i << " Volume: " << supercell_list[i].transf_mat().determinant() << "\n";
+    for(Index i = 0; i < m_supercell_list.size(); i++) {
+      stream << "Supercell Name: '" << m_supercell_list[i].name() << "' Number: " << i << " Volume: " << m_supercell_list[i].transf_mat().determinant() << "\n";
       stream << "Supercell Transformation Matrix: \n";
-      stream << supercell_list[i].transf_mat();
+      stream << m_supercell_list[i].transf_mat();
       stream << "\n";
     }
   }
@@ -578,8 +578,8 @@ namespace CASM {
       return;
     }
 
-    for(Index i = 0; i < supercell_list.size(); i++) {
-      supercell_list[i].read_config_list(json);
+    for(Index i = 0; i < m_supercell_list.size(); i++) {
+      m_supercell_list[i].read_config_list(json);
     }
   }
 
@@ -592,21 +592,21 @@ namespace CASM {
 
   int PrimClex::amount_selected() const {
     int amount_selected = 0;
-    for(Index s = 0; s < supercell_list.size(); s++) {
-      amount_selected += supercell_list[s].amount_selected();
+    for(Index s = 0; s < m_supercell_list.size(); s++) {
+      amount_selected += m_supercell_list[s].amount_selected();
     }
     return amount_selected;
   }
 
   //*******************************************************************************************
   bool PrimClex::contains_supercell(std::string scellname, Index &index) const {
-    for(Index i = 0; i < supercell_list.size(); i++) {
-      if(supercell_list[i].name() == scellname) {
+    for(Index i = 0; i < m_supercell_list.size(); i++) {
+      if(m_supercell_list[i].name() == scellname) {
         index = i;
         return true;
       }
     }
-    index = supercell_list.size();
+    index = m_supercell_list.size();
     return false;
 
   };

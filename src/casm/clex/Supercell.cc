@@ -44,7 +44,7 @@ namespace CASM {
 
   Coordinate Supercell::coord(const UnitCellCoord &bijk) const {
     Coordinate tcoord(m_prim_grid.coord(bijk, SCEL));
-    tcoord.cart() += (*primclex).prim().basis[bijk[0]].cart();
+    tcoord.cart() += (*m_primclex).prim().basis[bijk[0]].cart();
     return tcoord;
   };
 
@@ -52,7 +52,7 @@ namespace CASM {
 
   Coordinate Supercell::coord(Index l) const {
     Coordinate tcoord(m_prim_grid.coord(l % volume(), SCEL));
-    tcoord.cart() += (*primclex).prim().basis[sublat(l)].cart();
+    tcoord.cart() += (*m_primclex).prim().basis[sublat(l)].cart();
     return tcoord;
   };
 
@@ -72,7 +72,7 @@ namespace CASM {
   /*****************************************************************/
 
   const Structure &Supercell::prim() const {
-    return primclex->prim();
+    return m_primclex->prim();
   }
 
   /// \brief Returns the SuperNeighborList
@@ -98,20 +98,20 @@ namespace CASM {
 
   // begin and end iterators for iterating over configurations
   Supercell::config_iterator Supercell::config_begin() {
-    return config_iterator(primclex, m_id, 0);
+    return config_iterator(m_primclex, m_id, 0);
   }
 
   Supercell::config_iterator Supercell::config_end() {
-    return ++config_iterator(primclex, m_id, config_list.size() - 1);
+    return ++config_iterator(m_primclex, m_id, m_config_list.size() - 1);
   }
 
   // begin and end const_iterators for iterating over configurations
   Supercell::config_const_iterator Supercell::config_cbegin() const {
-    return config_const_iterator(primclex, m_id, 0);
+    return config_const_iterator(m_primclex, m_id, 0);
   }
 
   Supercell::config_const_iterator Supercell::config_cend() const {
-    return ++config_const_iterator(primclex, m_id, config_list.size() - 1);
+    return ++config_const_iterator(m_primclex, m_id, m_config_list.size() - 1);
   }
 
   /*****************************************************************/
@@ -364,10 +364,10 @@ namespace CASM {
    *     clusters in the 'background_tree'.  'tol' provides a tolerance for mapping
    *     the clusters to Configuration sites.
    *
-   *   Enumerated configurations are added to 'Supercell::config_list' if they
+   *   Enumerated configurations are added to 'Supercell::m_config_list' if they
    *     do not already exist there, using the 'permute_group' to check for equivalents.
    *
-   *   Array< Array< Array<int> > > config_indices contains the mapping of [branch][orbit][decor] to config_list index
+   *   Array< Array< Array<int> > > config_indices contains the mapping of [branch][orbit][decor] to m_config_list index
    *   Array< Array< Array<int> > > config_symop contains the index of the symop which mapped the config to canonical form
    *
    *   jsonsrc is a jsonParser (object type) describing the source of the enumerate configurations
@@ -384,9 +384,9 @@ namespace CASM {
     //std::cout << "begin enumerate_perturb_configurations() ****" << std::endl;
 
     /* primitive pointer no longer exists
-    if((*primclex).prim().lattice.primitive != background_tree.lattice.primitive) {
+    if((*m_primclex).prim().lattice.primitive != background_tree.lattice.primitive) {
       std::cerr << "Error in Supercell::enumerate_perturb_configurations." << std::endl;
-      std::cerr << "  'background_tree' lattice primitive is not primclex->prim lattice primitive" << std::endl;
+      std::cerr << "  'background_tree' lattice primitive is not m_primclex->prim lattice primitive" << std::endl;
       exit(1);
     }
     */
@@ -483,7 +483,7 @@ namespace CASM {
 
   //*******************************************************************************
   /**
-   *   Checks if the Configuration 'config' is contained in Supercell::config_list.
+   *   Checks if the Configuration 'config' is contained in Supercell::m_config_list.
    *     Only checks Configuration::occupation for equivalence.
    *     Does not check for symmetrically equivalent Configurations, so put your
    *     'config' in canonical form first.
@@ -496,30 +496,30 @@ namespace CASM {
 
   //*******************************************************************************
   /**
-   *   Checks if the Configuration 'config' is contained in Supercell::config_list.
+   *   Checks if the Configuration 'config' is contained in Supercell::m_config_list.
    *     Only checks Configuration::configdof for equivalence.
    *     Does not check for symmetrically equivalent Configurations, so put your
    *     'config' in canonical form first.
    *
-   *   If equivalent found, 'index' contains it's index into config_list, else
-   *     'index' = config_list.size().
+   *   If equivalent found, 'index' contains it's index into m_config_list, else
+   *     'index' = m_config_list.size().
    */
   //*******************************************************************************
   bool Supercell::contains_config(const Configuration &config, Index &index) const {
-    for(Index i = 0; i < config_list.size(); i++)
-      if(config.configdof() == config_list[i].configdof()) {
+    for(Index i = 0; i < m_config_list.size(); i++)
+      if(config.configdof() == m_config_list[i].configdof()) {
         index = i;
         return true;
       }
 
-    index = config_list.size();
+    index = m_config_list.size();
     return false;
   };
 
   //*******************************************************************************
   /**
-   *   Converts 'config' to canonical form, then adds to config_list if not already
-   *     present. Location in config_list is stored in 'index'.
+   *   Converts 'config' to canonical form, then adds to m_config_list if not already
+   *     present. Location in m_config_list is stored in 'index'.
    *     Permutation that resulted in canonical form is stored in 'permute_it'.
    *     Return 'true' if new config, 'false' otherwise.
    *
@@ -546,25 +546,25 @@ namespace CASM {
 
   //*******************************************************************************
   /**
-   *   Assumes 'canon_config' is in canonical form, adds to config_list if not already there.
-   *     Location in config_list is stored in 'index'.
+   *   Assumes 'canon_config' is in canonical form, adds to m_config_list if not already there.
+   *     Location in m_config_list is stored in 'index'.
    */
   //*******************************************************************************
   bool Supercell::add_canon_config(const Configuration &canon_config, Index &index) {
 
-    // Add 'canon_config' to 'config_list' if it doesn't already exist
-    //   store it's index into 'config_list' in 'config_list_index'
-    //std::cout << "check if canon_config is in config_list" << std::endl;
+    // Add 'canon_config' to 'm_config_list' if it doesn't already exist
+    //   store it's index into 'm_config_list' in 'm_config_list_index'
+    //std::cout << "check if canon_config is in m_config_list" << std::endl;
     if(!contains_config(canon_config, index)) {
       //std::cout << "new config" << std::endl;
-      config_list.push_back(canon_config);
-      config_list.back().set_id(config_list.size() - 1);
-      config_list.back().set_selected(false);
+      m_config_list.push_back(canon_config);
+      m_config_list.back().set_id(m_config_list.size() - 1);
+      m_config_list.back().set_selected(false);
       return true;
       //std::cout << "    added" << std::endl;
     }
     else {
-      config_list[index].push_back_source(canon_config.source());
+      m_config_list[index].push_back_source(canon_config.source());
     }
     return false;
   }
@@ -574,9 +574,9 @@ namespace CASM {
   void Supercell::read_config_list(const jsonParser &json) {
 
     // Provide an error check
-    if(config_list.size() != 0) {
+    if(m_config_list.size() != 0) {
       std::cerr << "Error in Supercell::read_configuration." << std::endl;
-      std::cerr << "  config_list.size() != 0, only use this once" << std::endl;
+      std::cerr << "  config_list().size() != 0, only use this once" << std::endl;
       exit(1);
     }
 
@@ -595,7 +595,7 @@ namespace CASM {
       ss << configid;
 
       if(json["supercells"][name()].contains(ss.str())) {
-        config_list.push_back(Configuration(json, *this, configid));
+        m_config_list.push_back(Configuration(json, *this, configid));
       }
       else {
         return;
@@ -609,14 +609,14 @@ namespace CASM {
 
   //Copy constructor is needed for proper initialization of m_prim_grid
   Supercell::Supercell(const Supercell &RHS) :
-    primclex(RHS.primclex),
+    m_primclex(RHS.m_primclex),
     real_super_lattice(RHS.real_super_lattice),
     recip_prim_lattice(RHS.recip_prim_lattice),
-    m_prim_grid((*primclex).prim().lattice(), real_super_lattice, (*primclex).prim().basis.size()),
-    recip_grid(recip_prim_lattice, (*primclex).prim().lattice().get_reciprocal()),
+    m_prim_grid((*m_primclex).prim().lattice(), real_super_lattice, (*m_primclex).prim().basis.size()),
+    recip_grid(recip_prim_lattice, (*m_primclex).prim().lattice().get_reciprocal()),
     name(RHS.name),
     m_nlist(RHS.m_nlist),
-    config_list(RHS.config_list),
+    m_config_list(RHS.m_config_list),
     transf_mat(RHS.transf_mat),
     scaling(RHS.scaling),
     m_id(RHS.m_id) {
@@ -625,11 +625,11 @@ namespace CASM {
   //*******************************************************************************
 
   Supercell::Supercell(PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
-    primclex(_prim),
-    real_super_lattice((*primclex).prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
+    m_primclex(_prim),
+    real_super_lattice((*m_primclex).prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
     recip_prim_lattice(real_super_lattice.get_reciprocal()),
-    m_prim_grid((*primclex).prim().lattice(), real_super_lattice, (*primclex).prim().basis.size()),
-    recip_grid(recip_prim_lattice, (*primclex).prim().lattice().get_reciprocal()),
+    m_prim_grid((*m_primclex).prim().lattice(), real_super_lattice, (*m_primclex).prim().basis.size()),
+    recip_grid(recip_prim_lattice, (*m_primclex).prim().lattice().get_reciprocal()),
     transf_mat(transf_mat_init) {
     scaling = 1.0;
     generate_name();
@@ -639,12 +639,12 @@ namespace CASM {
   //*******************************************************************************
 
   Supercell::Supercell(PrimClex *_prim, const Lattice &superlattice) :
-    primclex(_prim),
+    m_primclex(_prim),
     //real_super_lattice((prim()).lattice().lat_column_mat()*transf_mat),
     real_super_lattice(superlattice),
     recip_prim_lattice(real_super_lattice.get_reciprocal()),
-    m_prim_grid((*primclex).prim().lattice(), real_super_lattice, (*primclex).prim().basis.size()),
-    recip_grid(recip_prim_lattice, (*primclex).prim().lattice().get_reciprocal()) {
+    m_prim_grid((*m_primclex).prim().lattice(), real_super_lattice, (*m_primclex).prim().basis.size()),
+    recip_grid(recip_prim_lattice, (*m_primclex).prim().lattice().get_reciprocal()) {
 
     auto res = is_supercell(superlattice, prim().lattice(), prim().settings().lin_alg_tol());
     if(!res.first) {
@@ -668,8 +668,8 @@ namespace CASM {
    */
 
   jsonParser &Supercell::write_config_list(jsonParser &json) {
-    for(Index c = 0; c < config_list.size(); c++) {
-      config_list[c].write(json);
+    for(Index c = 0; c < m_config_list.size(); c++) {
+      m_config_list[c].write(json);
     }
     return json;
   }
@@ -800,8 +800,8 @@ namespace CASM {
 
   Index Supercell::amount_selected() const {
     Index amount_selected = 0;
-    for(Index c = 0; c < config_list.size(); c++) {
-      if(config_list[c].selected()) {
+    for(Index c = 0; c < m_config_list.size(); c++) {
+      if(m_config_list[c].selected()) {
         amount_selected++;
       }
     }
@@ -859,7 +859,7 @@ namespace CASM {
     //std::cout << "begin config()" << std::endl;
     //std::cout << "  mat:\n" << mat << std::endl;
 
-    const Structure &prim = (*primclex).prim();
+    const Structure &prim = (*m_primclex).prim();
 
     // create a 'superstruc' that fills '*this'
     BasicStructure<Site> superstruc = structure_to_config.create_superstruc(real_super_lattice);
@@ -929,7 +929,7 @@ namespace CASM {
   //***********************************************************
   Structure Supercell::superstructure() const {
     // create a 'superstruc' that fills '*this'
-    Structure superstruc = (*primclex).prim().create_superstruc(real_super_lattice);
+    Structure superstruc = (*m_primclex).prim().create_superstruc(real_super_lattice);
 
     Index linear_index;
     // sort basis sites so that they agree with config_index_to_bijk
@@ -955,7 +955,7 @@ namespace CASM {
   /**  Returns a Structure equivalent to the Supercell
    *  - basis sites are ordered to agree with Supercell::config_index_to_bijk
    *  - occupation set to config
-   *  - prim set to (*primclex).prim
+   *  - prim set to (*m_primclex).prim
    */
   //***********************************************************
   Structure Supercell::superstructure(const Configuration &config) const {
@@ -981,12 +981,12 @@ namespace CASM {
    */
 
   Structure Supercell::superstructure(Index config_index) const {
-    if(config_index >= config_list.size()) {
+    if(config_index >= m_config_list.size()) {
       std::cerr << "ERROR in Supercell::superstructure" << std::endl;
-      std::cerr << "Requested superstructure of configuration with index " << config_index << " but there are only " << config_list.size() << " configurations" << std::endl;
+      std::cerr << "Requested superstructure of configuration with index " << config_index << " but there are only " << m_config_list.size() << " configurations" << std::endl;
       exit(185);
     }
-    return superstructure(config_list[config_index]);
+    return superstructure(m_config_list[config_index]);
   }
 
   //***********************************************************
@@ -1031,7 +1031,7 @@ namespace CASM {
   //**********************************************************
   Eigen::MatrixXd Supercell::recip_coordinates() const {
     Eigen::MatrixXd kpoint_coords(volume(), 3);
-    Lattice temp_recip_lattice = (*primclex).prim().lattice().get_reciprocal();
+    Lattice temp_recip_lattice = (*m_primclex).prim().lattice().get_reciprocal();
     for(int i = 0; i < volume(); i++) {
       //      std::cout<<"UCC:"<<recip_grid.uccoord(i);
       Coordinate temp_kpoint = recip_grid.coord(i, PRIM);
@@ -1096,7 +1096,7 @@ namespace CASM {
         }
       }
     }
-    generate_phase_factor((*primclex).shift_vectors(), is_commensurate, override);
+    generate_phase_factor((*m_primclex).shift_vectors(), is_commensurate, override);
     //    std::cout<<"Fourier Matrix:"<<std::endl<<m_fourier_matrix<<std::endl;
   }
 
@@ -1122,7 +1122,7 @@ namespace CASM {
     if(m_fourier_matrix.rows() == 0 || m_fourier_matrix.cols() == 0 || m_phase_factor.rows() == 0 || m_phase_factor.cols() == 0) {
       generate_fourier_matrix();
     }
-    for(Index i = 0; i < config_list.size(); i++) {
+    for(Index i = 0; i < m_config_list.size(); i++) {
       populate_structure_factor(i);
     }
     return;
@@ -1132,7 +1132,7 @@ namespace CASM {
     if(m_fourier_matrix.rows() == 0 || m_fourier_matrix.cols() == 0 || m_phase_factor.rows() == 0 || m_phase_factor.cols() == 0) {
       generate_fourier_matrix();
     }
-    config_list[config_index].calc_struct_fact();
+    m_config_list[config_index].calc_struct_fact();
     return;
   }
 

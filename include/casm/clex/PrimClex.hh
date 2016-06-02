@@ -40,14 +40,14 @@ namespace CASM {
     DirectoryStructure m_dir;
     ProjectSettings m_settings;
 
-    Structure prim;
+    Structure m_prim;
     bool m_vacancy_allowed;
     Index m_vacancy_index;
 
     mutable DoFManager m_dof_manager;
 
     /// Contains all the supercells that were involved in the enumeration.
-    boost::container::stable_vector< Supercell > supercell_list;
+    boost::container::stable_vector< Supercell > m_supercell_list;
 
 
     /// CompositionConverter specifies parameteric composition axes and converts between
@@ -273,7 +273,7 @@ namespace CASM {
     mutable Clexulator m_global_clexulator;
   };
 
-
+  class ClexBasis;
   /// \brief Print clexulator
   void print_clexulator(ClexBasis &clex_basis,
                         const PrimNeighborList &nlist,

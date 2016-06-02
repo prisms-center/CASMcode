@@ -43,18 +43,18 @@ namespace CASM {
     /// Identification
 
     // Configuration id is the index into Supercell::config_list
-    std::string id;
+    std::string m_id;
 
     /// const pointer to the (non-const) Supercell for this Configuration
-    Supercell *supercell;
+    Supercell *m_supercell;
 
     /// a jsonParser object indicating where this Configuration came from
     jsonParser m_source;
-    bool source_updated;
+    bool m_source_updated;
 
 
     // symmetric multiplicity (i.e., size of configuration's factor_group)
-    int multiplicity;
+    int m_multiplicity;
 
 
     /// Degrees of Freedom
@@ -67,7 +67,7 @@ namespace CASM {
     //   occupation: [basis0                |basis1               |basis2          |...] up to prim.basis.size()
     //       basis0: [prim0|prim1|prim2|...] up to supercell.volume()
     //
-    bool dof_updated;
+    bool m_dof_updated;
     ConfigDoF m_configdof;
 
 
@@ -84,9 +84,9 @@ namespace CASM {
      *    generated["sublat_struct_fact"]
      *    generated["struct_fact"]
      */
-    bool prop_updated;
-    Properties calculated;  //Stuff you got directly from your DFT calculations
-    Properties generated;   //Everything else you came up with through casm
+    bool m_prop_updated;
+    Properties m_calculated;  //Stuff you got directly from your DFT calculations
+    Properties m_generated;   //Everything else you came up with through casm
 
 
     bool m_selected;
@@ -115,7 +115,7 @@ namespace CASM {
     //********** MUTATORS  ***********
 
     void set_multiplicity(int m) {
-      multiplicity = m;
+      m_multiplicity = m;
     }
 
     void set_id(Index _id);
@@ -181,7 +181,7 @@ namespace CASM {
 
 
     int multiplicity()const {
-      return multiplicity;
+      return m_multiplicity;
     }
 
     std::string name() const;

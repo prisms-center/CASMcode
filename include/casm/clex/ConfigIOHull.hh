@@ -65,7 +65,7 @@ namespace CASM {
 
       // tol used to detect zero singular values during principal component analysis preprocessing before hull calculation
       double m_singular_value_tol;
-      
+
       // tol used to detect which facets are on the bottom of the convex hull
       double m_bottom_facet_tol;
 
@@ -303,7 +303,7 @@ namespace CASM {
     void BaseHull<ValueType>::init(const Configuration &_tmplt) const {
 
       ConstConfigSelection selection;
-      const PrimClex &primclex = _tmplt.get_primclex();
+      const PrimClex &primclex = _tmplt.primclex();
 
       if(m_selection == "ALL") {
         selection = ConstConfigSelection(primclex);

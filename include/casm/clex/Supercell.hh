@@ -37,18 +37,18 @@ namespace CASM {
 
   private:
     // pointer to Primcell containing all the cluster expansion data
-    PrimClex *primclex;
+    PrimClex *m_primclex;
 
     // lattice of supercell in real space
-    Lattice real_super_lattice;
+    Lattice m_real_super_lattice;
 
     // reciprocal of real_super_lattice (grid of recip scell lattice)
-    Lattice recip_prim_lattice;
+    Lattice m_recip_prim_lattice;
 
     PrimGrid m_prim_grid;
     //Grid in reciprocal space of the supercell that perfectly tiles
     //the prim cell
-    PrimGrid recip_grid;
+    PrimGrid m_recip_grid;
 
     // m_perm_symrep_ID is the ID of the SymGroupRep of prim().factor_group() that describes how
     // operations of m_factor_group permute sites of the Supercell.
@@ -73,7 +73,7 @@ namespace CASM {
     mutable SymGroup m_factor_group;
 
     /// unique name of the supercell based on hermite normal form (see generate_name() )
-    std::string name;
+    std::string m_name;
 
 
     ///************************************************************************************************
@@ -129,11 +129,11 @@ namespace CASM {
 
 
     // Could hold either enumerated configurations or any 'saved' configurations
-    ConfigList config_list;
+    ConfigList m_config_list;
 
-    Eigen::Matrix3i transf_mat;
+    Eigen::Matrix3i m_transf_mat;
 
-    double scaling;
+    double m_scaling;
 
     /// index into PrimClex::supercell_list
     Index m_id;
@@ -182,7 +182,7 @@ namespace CASM {
     // **** Accessors ****
 
     const PrimClex &primclex() const {
-      return *primclex;
+      return *m_primclex;
     }
 
     const PrimGrid &prim_grid() const {
@@ -244,15 +244,15 @@ namespace CASM {
     }
 
     const Eigen::Matrix3i &transf_mat() const {
-      return transf_mat;
+      return m_transf_mat;
     };
 
     const Lattice &real_super_lattice() const {
-      return real_super_lattice;
+      return m_real_super_lattice;
     };
 
     const Lattice &recip_prim_lattice() const {
-      return recip_prim_lattice;
+      return m_recip_prim_lattice;
     };
 
     /// \brief Returns the SuperNeighborList
@@ -260,19 +260,19 @@ namespace CASM {
 
 
     ConfigList &config_list() {
-      return config_list;
+      return m_config_list;
     };
 
     const ConfigList &config_list() const {
-      return config_list;
+      return m_config_list;
     };
 
     const Configuration &config(Index i) const {
-      return config_list[i];
+      return m_config_list[i];
     };
 
     Configuration &config(Index i) {
-      return config_list[i];
+      return m_config_list[i];
     }
 
     // begin and end iterators for iterating over configurations
@@ -288,7 +288,7 @@ namespace CASM {
     }
 
     std::string name() const {
-      return name;
+      return m_name;
     };
 
     // Populates m_factor_group (if necessary) and returns it.
@@ -413,7 +413,7 @@ namespace CASM {
   void Supercell::add_unique_canon_configs(ConfigIterType it_begin, ConfigIterType it_end) {
     // Remember existing configs, to avoid duplicates
     //   Enumerated configurations are added after existing configurations
-    Index N_existing = config_list.size();
+    Index N_existing = m_config_list.size();
     Index N_existing_enumerated = 0;
     //std::cout << "ADDING CONFIGS TO SUPERCELL; N_exiting: " << N_existing << " N_enumerated: " << N_existing_enumerated << "\n";
     //std::cout << "beginning iterator: " << it_begin->occupation() << "\n";
@@ -425,8 +425,8 @@ namespace CASM {
       bool add = true;
       if(N_existing_enumerated != N_existing) {
         for(Index i = 0; i < N_existing; i++) {
-          if(config_list[i].configdof() == it_begin->configdof()) {
-            config_list[i].push_back_source(it_begin->source());
+          if(m_config_list[i].configdof() == it_begin->configdof()) {
+            m_config_list[i].push_back_source(it_begin->source());
             add = false;
             N_existing_enumerated++;
             break;
@@ -434,11 +434,11 @@ namespace CASM {
         }
       }
       if(add) {
-        config_list.push_back(*it_begin);
+        m_config_list.push_back(*it_begin);
         // get source info from enumerator
-        //config_list.back().set_source(it_begin.source());
-        config_list.back().set_id(config_list.size() - 1);
-        config_list.back().set_selected(false);
+        //m_config_list.back().set_source(it_begin.source());
+        m_config_list.back().set_id(m_config_list.size() - 1);
+        m_config_list.back().set_selected(false);
       }
     }
 
