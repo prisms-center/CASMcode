@@ -2,6 +2,7 @@
 #define CASM_GenericCluster
 
 #include <vector>
+#include "casm/misc/CASM_TMP.hh"
 
 namespace CASM {
 
@@ -14,11 +15,11 @@ namespace CASM {
 
   /* -- GenericCluster Declarations ------------------------------------- */
 
-  /// \brief A cluster of anything
+  /// \brief A CRTP base class for a cluster of anything
   ///
-  /// - Needs a traits<DerivedCluster>::Element type
+  /// - Needs a CASM_TMP::traits<DerivedCluster>::Element type
   /// - Needs a valid ClusterInvariants<DerivedCluster> to help comparisons
-  ///
+  /// - Needs DerivedCluster::apply_sym to be implemented
   /// \ingroup Clusterography
   ///
   template<typename DerivedCluster>
@@ -27,7 +28,7 @@ namespace CASM {
   public:
 
     typedef unsigned int size_type;
-    typedef typename traits<DerivedCluster>::Element Element;
+    typedef typename CASM_TMP::traits<DerivedCluster>::Element Element;
     typedef typename std::vector<Element>::value_type value_type;
     typedef typename std::vector<Element>::iterator iterator;
     typedef typename std::vector<Element>::const_iterator const_iterator;
@@ -41,18 +42,6 @@ namespace CASM {
     GenericCluster(InputIterator _begin,
                    InputIterator _end) :
       m_element(_begin, _end) {}
-
-    /// \brief Default copy constructor
-    GenericCluster(const GenericCluster &other) = default;
-
-    /// \brief Default assignment constructor
-    GenericCluster &operator=(const GenericCluster &other) = default;
-
-    /// \brief Default move constructor
-    GenericCluster(GenericCluster &&other) = default;
-
-    /// \brief Default move assignment
-    GenericCluster &operator=(GenericCluster && other) = default;
 
 
     /// \brief Iterator to first UnitCellCoord in the cluster
@@ -127,22 +116,55 @@ namespace CASM {
 
     const InvariantsType &invariants() const {
       if(!m_invariants) {
-        m_invariants = notstd::make_cloneable<InvariantsType>(*static_cast<const DerivedCluster *>(this));
+        m_invariants = notstd::make_cloneable<InvariantsType>(derived());
       }
       return *m_invariants;
     }
 
-    GenericCluster &apply_sym(const SymOp &op) {
-      static_cast<DerivedCluster *>(this)->apply_sym(op);
-      return *this;
+  protected:
+
+    DerivedCluster &derived() {
+      return *static_cast<DerivedCluster *>(this);
     }
 
+    const DerivedCluster &derived() const {
+      return *static_cast<const DerivedCluster *>(this);
+    }
 
   private:
 
     std::vector<Element> m_element;
 
     mutable notstd::cloneable_ptr<InvariantsType> m_invariants;
+
+  };
+
+  /// \brief CRTP-Base cluster class to apply_sym on an element-by-element basis
+  ///
+  /// - Needs a CASM_TMP::traits<DerivedCluster>::Element type
+  /// - Needs a valid ClusterInvariants<DerivedCluster> to help comparisons
+  ///
+  template<typename DerivedCluster>
+  class ElementWiseSymCluster : public GenericCluster<DerivedCluster> {
+
+  public:
+
+    /// \brief Construct an empty ElementWiseSymCluster
+    ElementWiseSymCluster() {}
+
+    /// \brief Construct a GenericCluster with a range of Element
+    template<typename InputIterator>
+    ElementWiseSymCluster(InputIterator _begin,
+                          InputIterator _end) :
+      GenericCluster<DerivedCluster>(_begin, _end) {}
+
+    /// \brief ElementWiseSymCluster applies symmetry element-by-element
+    DerivedCluster &apply_sym(const SymOp &op) {
+      for(auto &e : this->derived()) {
+        e.apply_sym(op);
+      }
+      return this->derived();
+    }
 
   };
 
@@ -155,7 +177,7 @@ namespace CASM {
   ///
   /// \ingroup Clusterography
   ///
-  template<typename ClusterType, typename Compare = std::less<typename traits<ClusterType>::Element> >
+  template<typename ClusterType, typename Compare = std::less<typename CASM_TMP::traits<ClusterType>::Element> >
   bool cluster_intra_orbit_compare(const ClusterType &A,
                                    const ClusterType &B,
                                    Compare compare = Compare()) {
@@ -196,7 +218,7 @@ namespace CASM {
   /// \ingroup Clusterography
   ///
   template<typename ClusterType,
-           typename CompareElement = std::less<typename traits<ClusterType>::Element>,
+           typename CompareElement = std::less<typename CASM_TMP::traits<ClusterType>::Element>,
            typename CompareInvariants = FloatCompare>
   bool cluster_inter_orbit_compare(const ClusterType &A,
                                    const ClusterType &B,

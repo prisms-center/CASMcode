@@ -11,9 +11,6 @@ namespace CASM {
       \brief Functions and classes related to clusters
   */
 
-  /// temporary...
-  typedef std::vector<Orbit<IntegralCluster> > SiteOrbitree;
-
   /* -- OrbitBranchSpecs Declarations ------------------------------------- */
 
   /// \brief Store data used to generate an orbit branch of IntegralCluster
@@ -50,10 +47,10 @@ namespace CASM {
                      SiteIterator _end,
                      const SymGroup &_generating_grp,
                      Filter _filter,
-                     const SymCompare<ClusterType> &_sym_compare) :
+                     const SymCompare<IntegralCluster> &_sym_compare) :
       m_prim_ptr(&_prim),
       m_candidate_sites(_begin, _end),
-      m_generating_grp(_generating_grp),
+      m_generating_grp(&_generating_grp),
       m_filter(_filter),
       m_sym_compare(_sym_compare) {}
 
@@ -105,7 +102,7 @@ namespace CASM {
 
   /// \brief Generate the asymmetric unit, using OrbitBranchSpecs
   template<typename OrbitOutputIterator>
-  OrbitOutputIterator make_asymmetric_unit(const OrbitBrancSpecs &specs, OrbitOutputIterator result);
+  OrbitOutputIterator make_asymmetric_unit(const OrbitBranchSpecs &specs, OrbitOutputIterator result);
 
   /// \brief Use orbits of size n to generate orbits of size n+1
   template<typename ClusterType, typename OrbitInputIterator, typename OrbitOutputIterator>

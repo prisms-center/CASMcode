@@ -16,10 +16,12 @@ namespace CASM {
   template<typename CoordType>
   class CoordCluster;
 
-  template<typename CoordType>
-  struct traits<CoordCluster<CoordType> > {
-    typedef CoordType Element;
-  };
+  namespace CASM_TMP {
+    template<typename CoordType>
+    struct CASM_TMP::traits<CoordCluster<CoordType> > {
+      typedef CoordType Element;
+    };
+  }
 
   /// \brief A cluster of Coordinate-like elements
   ///
@@ -30,7 +32,7 @@ namespace CASM {
   /// \ingroup Clusterography
   ///
   template<typename CoordType>
-  class CoordCluster : public GenericCluster<CoordCluster<CoordType> > {
+  class CoordCluster : public ElementWiseSymCluster<CoordCluster<CoordType> > {
 
   public:
 
@@ -39,7 +41,7 @@ namespace CASM {
 
     /// \brief Construct an empty UnitCellCoordCluster
     explicit CoordCluster(const PrimType &_prim) :
-      GenericCluster<CoordType>(),
+      ElementWiseSymCluster<CoordCluster>(),
       m_prim_ptr(&_prim) {}
 
     /// \brief Construct a CoordCluster with a range of CoordType
@@ -47,7 +49,7 @@ namespace CASM {
     CoordCluster(const PrimType &_prim,
                  InputIterator _begin,
                  InputIterator _end) :
-      GenericCluster<CoordType>(_begin, _end),
+      ElementWiseSymCluster<CoordCluster>(_begin, _end),
       m_prim_ptr(&_prim) {}
 
     /// \brief Default copy constructor

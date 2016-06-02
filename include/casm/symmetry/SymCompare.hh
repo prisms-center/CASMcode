@@ -4,6 +4,7 @@
 #include <utility>
 #include <memory>
 #include "casm/CASM_global_definitions.hh"
+#include "casm/symmetry/SymGroup.hh"
 
 namespace CASM {
 
