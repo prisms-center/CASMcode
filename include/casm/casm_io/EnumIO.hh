@@ -5,18 +5,11 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
+#include "casm/CASM_global_definitions.hh"
+#include "casm/misc/CASM_TMP.hh"
 #include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
-
-  /// \defgroup EnumIO
-  ///
-  /// \brief Helpers for enum class IO
-  ///
-  /// \ingroup CASM_IO
-
-  template <typename T>
-  struct traits {};
 
   /// \brief Print help message describing recognized strings for allowed enum values
   ///
@@ -34,7 +27,7 @@ namespace CASM {
   std::string help() {
     std::stringstream ss;
     ss << "Options are:\n";
-    for(auto it = traits<ENUM>::strval.begin(); it != traits<ENUM>::strval.end(); ++it) {
+    for(auto it = CASM_TMP::traits<ENUM>::strval.begin(); it != CASM_TMP::traits<ENUM>::strval.end(); ++it) {
       ss << "  ";
       for(auto sit = it->second.begin(); sit != it->second.end(); sit++) {
         if(sit != it->second.begin()) {
@@ -65,7 +58,7 @@ namespace CASM {
   template<typename ENUM>
   void invalid_enum_string(std::string val, std::ostream &serr) {
     std::stringstream s;
-    s << "Invalid " << traits<ENUM>::name << ": " << val;
+    s << "Invalid " << CASM_TMP::traits<ENUM>::name << ": " << val;
     serr << s.str() << "\n";
     serr << help<ENUM>();
     throw std::invalid_argument(std::string("ERROR: ") + s.str());
@@ -77,7 +70,7 @@ namespace CASM {
   ///
   template<typename ENUM>
   std::string to_string(ENUM val) {
-    return traits<ENUM>::strval.find(val)->second[0];
+    return CASM_TMP::traits<ENUM>::strval.find(val)->second[0];
   }
 
   /// \brief Return enum class object from string representation
@@ -86,7 +79,7 @@ namespace CASM {
   ///
   template<typename ENUM>
   ENUM from_string(const std::string &val) {
-    for(auto it = traits<ENUM>::strval.begin(); it != traits<ENUM>::strval.end(); ++it) {
+    for(auto it = CASM_TMP::traits<ENUM>::strval.begin(); it != CASM_TMP::traits<ENUM>::strval.end(); ++it) {
       for(auto sit = it->second.begin(); sit != it->second.end(); sit++) {
         if(*sit == val) {
           return it->first;
@@ -95,12 +88,12 @@ namespace CASM {
     }
 
     invalid_enum_string<ENUM>(val, std::cerr);
-    return traits<ENUM>::strval.begin()->first;
+    return CASM_TMP::traits<ENUM>::strval.begin()->first;
   }
 
 #define ENUM_TRAITS(ENUM) \
   template<> \
-  struct traits<ENUM> { \
+  struct CASM_TMP::traits<ENUM> { \
   \
     static const std::string name; \
   \
