@@ -1,6 +1,6 @@
 #include <cstring>
 #include "casm/app/casm_functions.hh"
-#include "casm/CASM_classes.hh"
+#include "casm/clusterography/ClusterOrbits.hh"
 
 namespace CASM {
 

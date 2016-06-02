@@ -2,12 +2,17 @@
 #define CLEXBASIS_HH
 
 #include <string>
+#include <vector>
 #include "casm/basis_set/BasisSet.hh"
 
 class SiteOrbitree;
 
 namespace CASM {
+
   class ClexBasis {
+
+  public:
+
     typedef std::vector<BasisSet> BSetOrbit;
     typedef std::string DoFType;
     typedef std::vector<BSetOrbit>::const_iterator BSetOrbitIterator;
@@ -72,7 +77,7 @@ namespace CASM {
                          Index begin_ind = 0,
                          int space = 18,
                          char delim = 0,
-                         COORD_TYPE mode = COORD_DEFAULT) const;
+                         COORD_TYPE mode = COORD_DEFAULT);
 
   /// returns std::vector of std::string, each of which is
   std::vector<std::string> orbit_function_cpp_strings(ClexBasis const &_basis_set,
@@ -103,3 +108,5 @@ namespace CASM {
                                        std::vector<BasisSet const *> const &site_dof_sets);
   }
 }
+
+#endif

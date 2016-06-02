@@ -1,4 +1,4 @@
-#include "casm/app/AppIO.hh"
+#include "casm/app/AppIO_impl.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 
@@ -439,142 +439,81 @@ namespace CASM {
     }
   */
 
-  // ---------- basis.json IO ------------------------------------------------------------------
+  // ---------- Orbit<IntegralCluster> & ClexBasis IO ------------------------------------------------------------------
 
-  /*
-    /// \brief Write summary of cluster expansion basis
-    ///
-    /// Format:
-    /// \code
-    /// {
-    ///   "site_functions":[
-    ///     {
-    ///       "asym_unit": X,
-    ///       "sublat_indices: [2, 3],
-    ///       "phi_b_0": {"Va":0.0, "O":1.0},
-    ///       "phi_b_1": {"Va":0.0, "O":1.0},
-    ///        ...
-    ///     },
-    ///     ...
-    ///   ],
-    ///   "cluster_functions":[
-    ///     {
-    ///       "eci": X.XXXXX,
-    ///       "prototype_function": "\phi_b_i(s_j)...",
-    ///       "orbit": [branch_index, orbit_index],
-    ///       "linear_orbit_index": I,
-    ///       "mult": X,
-    ///       "prototype": [
-    ///         [b, i, j, k],
-    ///         ...
-    ///       ]
-    ///     },
-    ///     ...
-    ///   ]
-    /// }
-    /// \endcode
-    ///
-    void write_basis(const ClusterOrbitsVector &cluster_orbits, const ClexBasis &clex_basis, jsonParser &json, double tol) {
 
-      throw std::runtime_error("write_basis needs to be reimplemented");
+  SitesPrinter::SitesPrinter(int _indent_space, char _delim, COORD_TYPE _mode) :
+    indent_space(_indent_space),
+    delim(_delim),
+    mode(_mode) {}
 
-      json = jsonParser::object();
+  std::string SitesPrinter::indent() const {
+    return std::string(indent_space, ' ');
+  }
 
-      //   "site_functions":[
-      //     {
-      //       "asym_unit": X,
-      //       "sublat": [2, 3],
-      //       "basis": {
-      //         "phi_b_0": {"Va":0.0, "O":1.0},
-      //         "phi_b_1": {"Va":0.0, "O":1.0}
-      //       }
-      //     },
-      //     ...
-      //   ],
+  void SitesPrinter::coord_mode(std::ostream &out) {
+    out << "COORD_MODE = " << mode << std::endl << std::endl;
+  }
 
-      jsonParser &sitef = json["site_functions"];
-      sitef = jsonParser::array(prim.basis.size(), jsonParser::object());
-      for(Index no = 0; no < tree.asym_unit().size(); no++) {
-        for(Index ne = 0; ne < tree.asym_unit()[no].size(); ne++) {
-
-          const SiteCluster &equiv = tree.asym_unit()[no][ne];
-          const Site &site = equiv[0];
-
-          Index b = site.basis_ind();
-          sitef[b]["sublat"] = b;
-          sitef[b]["asym_unit"] = no;
-
-          if(equiv.clust_basis.size() == 0) {
-            sitef[b]["basis"].put_null();
-          }
-          else {
-            for(Index f = 0; f < equiv.clust_basis.size(); f++) {
-              std::stringstream fname;
-              fname << "\\phi_" << b << '_' << f;
-              for(Index s = 0; s < site.site_occupant().size(); s++) {
-
-                // "\phi_b_f": {"Zr":0.0, ...}
-                sitef[b]["basis"][fname.str()][site.site_occupant()[s].name] =
-                  equiv.clust_basis[f]->eval(
-                    Array<Index>(1, site.site_occupant().ID()),
-                    Array<Index>(1, s)
-                  );
-              }
-            }
-          }
-        }
-      }
-
-      //   "cluster_functions":[
-      //     {
-      //       ("eci": X.XXXXX,) <-- is included after fitting
-      //       "prototype_function": "\phi_b_i(s_j)...",
-      //       "orbit": [branch_index, cluster_orbit_index, bfunc_index],
-      //       "linear_orbit_index": I,
-      //       "mult": X,
-      //       "prototype": {
-      //         "max_length": X.X,
-      //         "min_length": X.X,
-      //         "sites": [
-      //           [b, i, j, k],
-      //           ...
-      //         ]
-      //       }
-      //     },
-      //     ...
-      //   ]
-      // }
-
-      jsonParser &orbitf = json["cluster_functions"];
-      orbitf = jsonParser::array();
-      for(Index i = 0; i < tree.size(); i++) {
-        jsonParser tjson;
-        for(Index j = 0; j < tree.size(i); j++) { //Loops over all i sized Orbits of clusters
-
-          // cluster specific info
-          tjson["orbit"] = std::vector<Index>({i, j, 0});
-          tjson["mult"] = tree.orbit(i, j).size();
-          to_json(jsonHelper(tree.orbit(i, j)[0], prim), tjson["prototype"]);
-
-          // basis function info
-          BasisSet tbasis(tree.orbit(i, j)[0].clust_basis);
-          tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
-
-          for(Index nf = 0; nf < tbasis.size(); ++nf) {
-            tjson["orbit"][2] = nf;
-            tjson["prototype_function"] = tbasis[nf]->tex_formula();
-            orbitf.push_back(tjson);
-          }
-        }
-      }
-
-      for(Index i = 0; i < orbitf.size(); ++i) {
-        orbitf[i]["linear_function_index"] = i;
-      }
-
+  void SitesPrinter::print_sites(const IntegralCluster &clust, std::ostream &out) {
+    for(const auto &coord : clust) {
+      out << indent() << indent() << indent();
+      out.setf(std::ios::showpoint, std::ios_base::fixed);
+      out.precision(5);
+      out.width(9);
+      coord.site().print(out);
+      if(delim)
+        out << delim;
+      out << std::flush;
     }
+  }
 
-    */
+  ProtoSitesPrinter::ProtoSitesPrinter(int _indent_space, char _delim, COORD_TYPE _mode) :
+    SitesPrinter(_indent_space, _delim, _mode) {}
+
+
+  void ProtoSitesPrinter::operator()(const Orbit<IntegralCluster> &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+    out << indent() << indent() << "Prototype" << " of " << orbit.size()
+        << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
+    print_sites(orbit.prototype(), out);
+  }
+
+  FullSitesPrinter::FullSitesPrinter(int _indent_space, char _delim, COORD_TYPE _mode) :
+    SitesPrinter(_indent_space, _delim, _mode) {}
+
+
+  void FullSitesPrinter::operator()(const Orbit<IntegralCluster> &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+    for(Index equiv_index = 0; equiv_index != orbit.size(); ++equiv_index) {
+      out << indent() << indent() << equiv_index << " of " << orbit.size()
+          << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
+      print_sites(orbit.prototype(), out);
+    }
+  }
+
+  ProtoFuncsPrinter::ProtoFuncsPrinter(const ClexBasis &_clex_basis, int _indent_space, char _delim, COORD_TYPE _mode) :
+    SitesPrinter(_indent_space, _delim, _mode),
+    clex_basis(_clex_basis) {}
+
+
+  void ProtoFuncsPrinter::operator()(const Orbit<IntegralCluster> &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+    out << indent() << indent() << "Prototype" << " of " << orbit.size()
+        << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
+    print_sites(orbit.prototype(), out);
+
+    throw std::runtime_error("Error printing basis functions: ProtoFuncsPrinter not implemented");
+    //print_clust_basis(out, nf, 8, '\n');
+    //nf += prototype(i, j).clust_basis.size();
+    //out << "\n\n" << std::flush;
+  }
+
+  // explicit template instantiations
+
+  typedef typename std::vector<Orbit<IntegralCluster> >::iterator _VecIt;
+
+  template void print_clust<_VecIt, ProtoSitesPrinter>(_VecIt begin, _VecIt end, std::ostream &out, ProtoSitesPrinter printer);
+  template void print_site_basis_funcs<_VecIt>(_VecIt begin, _VecIt end, const ClexBasis &clex_basis, std::ostream &out, COORD_TYPE mode);
+  template jsonParser &write_clust<_VecIt>(_VecIt begin, _VecIt end, jsonParser &bspecs, jsonParser &json);
+  template void write_basis<_VecIt>(_VecIt begin, _VecIt end, const ClexBasis &clex_basis, jsonParser &json, double tol);
 
 }
 
