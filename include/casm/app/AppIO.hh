@@ -5,7 +5,7 @@
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/SymGroup.hh"
-#include "casm/clusterography/UnitCellCoordCluster.hh"
+#include "casm/clusterography/IntegralCluster.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ChemicalReference.hh"
 
@@ -121,10 +121,220 @@ namespace CASM {
   }
 
 
+  // ---------- casm bspecs --orbits -----------------------------------------------------------
+
+  struct SitesPrinter {
+
+    int indent_space;
+    char delim;
+    COORD_TYPE mode;
+
+
+    SitePrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      indent_space(_indent_space),
+      delim(_delim),
+      mode(_mode) {}
+
+    std::string indent() const {
+      return std::string(indent_space, ' ');
+    }
+
+    void coord_mode(std::ostream &out) {
+      out << "COORD_MODE = " << mode << std::endl << std::endl;
+    }
+
+    void print_sites(const IntegralCluster &clust, std::ostream &out) {
+      for(const auto &coord : clust) {
+        out << indent() << indent() << indent();
+        out.setf(std::ios::showpoint, std::ios_base::fixed);
+        out.precision(5);
+        out.width(9);
+        coord.site().print(out);
+        if(delim)
+          out << delim;
+        out << std::flush;
+      }
+    }
+  };
+
+  struct ProtoSitesPrinter : public SitesPrinter {
+
+    SitesProtoPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      SitesPrinter(_indent_space, _delim, _mode) {}
+
+
+    void operator()(const Orbit<IntegralCluster> &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+      out << indent() << indent() << "Prototype" << " of " << orbit.size()
+          << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
+      print_sites(orbit.prototype(), out);
+    }
+  };
+
+  struct FullSitesPrinter : public SitesPrinter {
+
+    FullSitesPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      SitesPrinter(_indent_space, _delim, _mode) {}
+
+
+    void operator()(const Orbit<IntegralCluster> &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+      for(Index equiv_index = 0; equiv_index != orbit.size(); ++equiv_index) {
+        out << indent() << indent() << equiv_index << " of " << orbit.size()
+            << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
+        print_sites(orbit.prototype(), out);
+      }
+    }
+  };
+
+  struct ProtoFuncsPrinter : public SitesPrinter {
+
+    const ClexBasis &clex_basis;
+
+    SitesProtoPrinter(const ClexBasis &_clex_basis, int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      SitesPrinter(_indent_space, _delim, _mode),
+      clex_basis(_clex_basis) {}
+
+
+    void operator()(const Orbit<IntegralCluster> &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+      out << indent() << indent() << "Prototype" << " of " << orbit.size()
+          << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
+      print_sites(orbit.prototype(), out);
+
+      throw std::runtime_error("Error printing basis functions: ProtoFuncsPrinter not implemented");
+      //print_clust_basis(out, nf, 8, '\n');
+      //nf += prototype(i, j).clust_basis.size();
+      //out << "\n\n" << std::flush;
+    }
+  };
+
+  /// \brief Print IntegralCluster orbits
+  ///
+  /// \param begin,end Range of Orbit<IntegralCluster>
+  /// \param out output stream
+  /// \param mode Coordinate output mode
+  /// \param printer A functor to control printing for the orbit
+  ///
+  /// Printer is expected to have:
+  /// - \code std::string Printer::indent(); \endcode
+  /// - \code void Printer::coord_mode(std::ostream& out); \endcode
+  /// - \code void Printer::operator()(const Orbit<IntegralCluster>& orbit, std::ostream& out, Index orbit_index, Index Norbits); \endcode
+  ///
+  template<typename ClusterOrbitIterator, typename OrbitPrinter>
+  void print_clust(
+    ClusterOrbitIterator begin,
+    ClusterOrbitIterator end,
+    std::ostream &out,
+    OrbitPrinter printer) {
+
+    printer.coord_mode(out);
+
+    out.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
+    out.precision(5);
+
+    Index branch = -1;
+    Index orbit_index = 0;
+    Index Norbits = std::distance(begin, end);
+    std::string indent = printer.indent();
+
+    for(auto it = begin; it != end; ++it) {
+      if(it->prototype().size() != branch) {
+        branch = it->prototype().size();
+        out << "** Branch " << branch << " ** " << std::endl;
+      }
+      out << printer.indent() << << "** " << orbit_index << " of " << Norbits << " Orbits **"
+          << "  Points: " << orbit.prototype().size()
+          << "  Mult: " << orbit.size()
+          << "  MinLength: " << orbit.prototype().min_length()
+          << "  MaxLength: " << orbit.prototype().max_length() << std::endl;
+      printer(*it, out, orbit_index, Norbits);
+      out << std::endl;
+      ++orbit_index;
+    }
+
+  }
+
+  template<typename ClusterOrbitsIterator>
+  void print_site_basis_funcs(
+    ClusterOrbitIterator begin,
+    ClusterOrbitIterator end,
+    const ClexBasis &clex_basis,
+    std::ostream &out,
+    COORD_TYPE mode) {
+
+    out << "COORD_MODE = " << mode << std::endl << std::endl;
+
+    out.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
+    out.precision(5);
+    Index asym_unit_count = 1;
+
+    auto bset_orb_it = clex_basis.begin();
+    for(auto it = begin; it != end; ++it, ++bset_orb_it) {
+      if(it->prototype().size() != 1) {
+        continue;
+      }
+
+      out << "Asymmetric unit " << asym_unit_count++ << ":\n";
+
+      Index b = equiv[0].sublat();
+      const auto &site_occ = equiv[0].site().site_occupant();
+
+      auto bset_it = bset_orb_it->begin();
+      for(const auto &equiv : *it) {
+        const auto &bset = *bset_it++;
+        out << "  Basis site " << b << ":\n"
+            << "  ";
+        equiv[0].site().print(out);
+        out << "\n";
+        if(bset.size() == 0) {
+          out << "        [No site basis functions]\n\n";
+        }
+        for(Index f = 0; f < bset.size(); ++f) {
+          for(Index s = 0; f < site_occ.size(); ++s) {
+            if(s == 0)
+              out << "    ";
+            out << "    \\phi_" << b << '_' << f << '[' << site_occ[s].name << "] = "
+                << bset[f]->eval(Array<Index>(1, site_occ.ID()), Array<Index>(1, s));
+            if(s + 1 == site_occ.size())
+              out << "\n";
+            else
+              out << ",   ";
+          }
+        }
+      }
+    }
+  }
+
+
+  // ---------- clust.json IO ------------------------------------------------------------------
+
+  template<typename ClusterOrbitsIterator>
+  jsonParser &write_clust(ClusterOrbitIterator begin, ClusterOrbitIterator end, jsonParser &bspecs, jsonParser &json) {
+    json = jsonParser::object();
+    json["orbits"] = jsonParser::array(std::distance(begin, end));
+    auto j_it = json["orbits"].begin();
+    for(auto it = begin; it != end; ++it) {
+      const auto &proto = it->prototype();
+      auto &j = (*j_it++)["prototype"];
+      j["min_length"] = proto.min_length();
+      j["max_length"] = proto.max_length();
+      j["sites"] = jsonParser::array();
+      for(auto coord_it = proto.begin(); coord_it != proto.end(); ++coord_it) {
+        j["sites"].push_back(*coord_it);
+      }
+    }
+    json["bspecs"] = bspecs;
+    write_prim(begin->prototype().prim(), json["prim"], FRAC);
+
+    return json;
+  }
+
+
   // ---------- basis.json IO ------------------------------------------------------------------
 
+  class ClexBasis;
+
   /// \brief Write summary of cluster expansion basis
-  void write_basis(const SiteOrbitree &tree, const ClexBasis &clex_basis, jsonParser &json, double tol);
+  template<typename ClusterOrbitsIterator>
+  void write_basis(ClusterOrbitsIterator begin, ClusterOrbitsIterator end, const ClexBasis &clex_basis, jsonParser &json, double tol);
 }
 
 #endif

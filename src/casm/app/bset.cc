@@ -122,114 +122,102 @@ namespace CASM {
         }
       }
 
-      SiteOrbitree tree(prim.lattice());
+      jsonParser bspecs_json;
+      std::vector<Orbit<IntegralCluster> > orbits;
+      std::unique_ptr<ClexBasis> clex_basis;
 
       try {
-        jsonParser bspecs_json(dir.bspecs(set.bset()));
+        bspecs_json.read(dir.bspecs(set.bset()));
 
-        std::cout << "Generating orbitree: \n";
-        tree = make_orbitree(prim, bspecs_json);
+        args.log.construct("Orbitree");
+        args.log << std::endl;
 
-        if(tree.min_num_components < 2) {
-          std::cerr << "Error generating orbitree: Custom clusters include a site "
-                    << "with only 1 allowed component. This is not currently supported." << std::endl;
-          for(int nb = 0; nb < tree.size(); ++nb) {
-            for(int no = 0; no < tree[nb].size(); ++no) {
-              for(int ns = 0; ns < tree[nb][no].prototype.size(); ++ns) {
-                if(tree[nb][no].prototype[ns].site_occupant().size() < 2) {
-                  std::cerr << "--- Prototype --- " << std::endl;
-                  tree[nb][no].prototype.print(std::cerr, '\n');
-                  break;
-                }
-              }
-            }
-          }
+        make_orbits(prim, bspecs_json, std::back_inserter(orbits), args.log);
+
+        clex_basis.reset(new ClexBasis(prim));
+        clex_basis.generate(orbits.begin(), orbits.end(), bspecs, dof_keys);
+
+        catch(std::exception &e) {
+          args.err_log << e.what() << std::endl;
           return ERR_INVALID_INPUT_FILE;
         }
-        std::cout << "  DONE.\n" << std::endl;
 
-        tree.generate_clust_bases();
+        // -- write clust.json ----------------
+        jsonParser clust_json;
+        write_clust(orbits.begin(), orbits.end(), bspecs_json, clust_json);
+        basis_json.write(dir.clust(set.bset()));
+
+        args.log.write(dir.clust(set.bset()));
+        args.log << std::endl;
+
+
+        // -- write basis.json ----------------
+        jsonParser basis_json;
+        write_basis(orbits.begin(), orbits.end(), *clex_basis, basis_json, set.crystallography_tol());
+        basis_json.write(dir.basis(set.bset()));
+
+        args.log.write(dir.basis(set.bset()));
+        args.log << std::endl;
+
+
+        // -- write global Clexulator
+
+        // get the neighbor list
+        PrimNeighborList nlist(
+          set.nlist_weight_matrix(),
+          set.nlist_sublat_indices().begin(),
+          set.nlist_sublat_indices().end()
+        );
+
+        // expand the nlist to contain 'tree'
+        std::set<UnitCellCoord> nbors;
+        neighborhood(std::inserter(nbors, nbors.begin()), orbits.begin(), orbits.end(), prim, set.crystallography_tol());
+        nlist.expand(nbors.begin(), nbors.end());
+
+        // write source code
+        fs::ofstream outfile;
+        outfile.open(dir.clexulator_src(set.name(), set.bset()));
+        print_clexulator(orbits.begin(), orbits.end(), *clex_basis, nlist, set.global_clexulator(), outfile, set.crystallography_tol());
+        outfile.close();
+
+        args.log.write(dir.clexulator_src(set.name(), set.bset()));
+        args.log << std::endl;
+
       }
-      catch(std::exception &e) {
-        std::cerr << e.what() << std::endl;
-        return ERR_INVALID_INPUT_FILE;
+      else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
+
+        DirectoryStructure dir(root);
+        ProjectSettings set(root);
+
+        if(!fs::exists(dir.clust(set.bset()))) {
+          std::cerr << "ERROR: No 'clust.json' file found. Make sure to update your basis set with 'casm bset -u'.\n";
+          return ERR_MISSING_DEPENDS;
+        }
+
+        PrimClex primclex(root, args.log);
+
+        std::vector<Orbit<IntegralCluster> > orbits;
+        read_orbits(std::back_inserter(orbits), dir.clust(set.bset()));
+
+        if(vm.count("orbits")) {
+          print_clust(orbits.begin(), orbits.end(), args.log, ProtoSitePrinter());
+        }
+        if(vm.count("clusters")) {
+          print_clust(orbits.begin(), orbits.end(), args.log, FullSitePrinter());
+        }
+        if(vm.count("functions")) {
+          ClexBasis clex_basis(primclex.prim());
+          clex_basis.generate(orbits.begin(), orbits.end(), bspecs, dof_keys);
+
+          print_clust(orbits.begin(), orbits.end(), args.log, ProtoFuncsPrinter(clex_basis));
+        }
+      }
+      else {
+        std::cerr << "\n" << desc << "\n";
       }
 
-      // -- write clust.json ----------------
-      jsonParser clust_json;
-      to_json(jsonHelper(tree, prim), clust_json).write(dir.clust(set.bset()));
+      return 0;
+    };
 
-      std::cout << "Wrote: " << dir.clust(set.bset()) << "\n" << std::endl;
-
-
-      // -- write basis.json ----------------
-      jsonParser basis_json;
-      write_basis(tree, prim, basis_json, primclex.crystallography_tol());
-      basis_json.write(dir.basis(set.bset()));
-
-      std::cout << "Wrote: " << dir.basis(set.bset()) << "\n" << std::endl;
-
-
-      // -- write global Clexulator
-
-      // get the neighbor list
-      PrimNeighborList nlist(
-        set.nlist_weight_matrix(),
-        set.nlist_sublat_indices().begin(),
-        set.nlist_sublat_indices().end()
-      );
-
-      // expand the nlist to contain 'tree'
-      std::set<UnitCellCoord> nbors;
-      neighborhood(std::inserter(nbors, nbors.begin()), tree, prim, primclex.crystallography_tol());
-      nlist.expand(nbors.begin(), nbors.end());
-
-      // write source code
-      fs::ofstream outfile;
-      outfile.open(dir.clexulator_src(set.name(), set.bset()));
-      print_clexulator(prim, tree, nlist, set.global_clexulator(), outfile, primclex.crystallography_tol());
-      outfile.close();
-
-      std::cout << "Wrote: " << dir.clexulator_src(set.name(), set.bset()) << "\n" << std::endl;
-
-    }
-    else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
-
-      DirectoryStructure dir(root);
-      ProjectSettings set(root);
-
-      if(!fs::exists(dir.clust(set.bset()))) {
-        std::cerr << "ERROR: No 'clust.json' file found. Make sure to update your basis set with 'casm bset -u'.\n";
-        return ERR_MISSING_DEPENDS;
-      }
-
-      Log log(std::cout);
-      PrimClex primclex(root, log);
-
-      primclex.read_global_orbitree(dir.clust(set.bset()));
-
-      if(vm.count("orbits")) {
-        std::cout << "\n***************************\n" << std::endl;
-        primclex.get_global_orbitree().print_proto_clust(std::cout);
-        std::cout << "\n***************************\n" << std::endl;
-      }
-      if(vm.count("clusters")) {
-        std::cout << "\n***************************\n" << std::endl;
-        primclex.get_global_orbitree().print_full_clust(std::cout);
-        std::cout << "\n***************************\n" << std::endl;
-      }
-      if(vm.count("functions")) {
-        std::cout << "\n***************************\n" << std::endl;
-        primclex.get_global_orbitree().print_proto_clust_funcs(std::cout);
-        std::cout << "\n***************************\n" << std::endl;
-      }
-    }
-    else {
-      std::cerr << "\n" << desc << "\n";
-    }
-
-    return 0;
-  };
-
-}
+  }
 

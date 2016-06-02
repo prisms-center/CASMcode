@@ -408,168 +408,173 @@ namespace CASM {
   }
 
   // ---------- prim_nlist.json IO -------------------------------------------------------------
+  /*
+    void write_prim_nlist(const Array<UnitCellCoord> &prim_nlist, const fs::path &nlistpath) {
 
-  void write_prim_nlist(const Array<UnitCellCoord> &prim_nlist, const fs::path &nlistpath) {
+      SafeOfstream outfile;
+      outfile.open(nlistpath);
+      jsonParser nlist_json;
+      nlist_json = prim_nlist;
+      nlist_json.print(outfile.ofstream());
+      outfile.close();
 
-    SafeOfstream outfile;
-    outfile.open(nlistpath);
-    jsonParser nlist_json;
-    nlist_json = prim_nlist;
-    nlist_json.print(outfile.ofstream());
-    outfile.close();
-
-    return;
-  }
-
-  Array<UnitCellCoord> read_prim_nlist(const fs::path &nlistpath) {
-
-    try {
-      Array<UnitCellCoord> prim_nlist;
-      jsonParser read_json(nlistpath);
-      from_json(prim_nlist, read_json);
-      return prim_nlist;
+      return;
     }
-    catch(...) {
-      std::cerr << "Error reading: " << nlistpath;
-      throw;
-    }
-  }
 
+    Array<UnitCellCoord> read_prim_nlist(const fs::path &nlistpath, const BasicStructure<Site>& prim) {
+
+      try {
+        jsonParser json(nlistpath);
+        Array<UnitCellCoord> prim_nlist(json.size(), UnitCellCoord(prim));
+        auto nlist_it = prim_nlist.begin();
+        for(auto it=json.begin(); it!=json.end(); ++it) {
+          from_json(*nlist_it++, *it);
+        }
+        return prim_nlist;
+      }
+      catch(...) {
+        std::cerr << "Error reading: " << nlistpath;
+        throw;
+      }
+    }
+  */
 
   // ---------- basis.json IO ------------------------------------------------------------------
 
-  /// \brief Write summary of cluster expansion basis
-  ///
-  /// Format:
-  /// \code
-  /// {
-  ///   "site_functions":[
-  ///     {
-  ///       "asym_unit": X,
-  ///       "sublat_indices: [2, 3],
-  ///       "phi_b_0": {"Va":0.0, "O":1.0},
-  ///       "phi_b_1": {"Va":0.0, "O":1.0},
-  ///        ...
-  ///     },
-  ///     ...
-  ///   ],
-  ///   "cluster_functions":[
-  ///     {
-  ///       "eci": X.XXXXX,
-  ///       "prototype_function": "\phi_b_i(s_j)...",
-  ///       "orbit": [branch_index, orbit_index],
-  ///       "linear_orbit_index": I,
-  ///       "mult": X,
-  ///       "prototype": [
-  ///         [b, i, j, k],
-  ///         ...
-  ///       ]
-  ///     },
-  ///     ...
-  ///   ]
-  /// }
-  /// \endcode
-  ///
-  void write_basis(const SiteOrbitree &tree, const ClexBasis &clex_basis, jsonParser &json, double tol) {
+  /*
+    /// \brief Write summary of cluster expansion basis
+    ///
+    /// Format:
+    /// \code
+    /// {
+    ///   "site_functions":[
+    ///     {
+    ///       "asym_unit": X,
+    ///       "sublat_indices: [2, 3],
+    ///       "phi_b_0": {"Va":0.0, "O":1.0},
+    ///       "phi_b_1": {"Va":0.0, "O":1.0},
+    ///        ...
+    ///     },
+    ///     ...
+    ///   ],
+    ///   "cluster_functions":[
+    ///     {
+    ///       "eci": X.XXXXX,
+    ///       "prototype_function": "\phi_b_i(s_j)...",
+    ///       "orbit": [branch_index, orbit_index],
+    ///       "linear_orbit_index": I,
+    ///       "mult": X,
+    ///       "prototype": [
+    ///         [b, i, j, k],
+    ///         ...
+    ///       ]
+    ///     },
+    ///     ...
+    ///   ]
+    /// }
+    /// \endcode
+    ///
+    void write_basis(const ClusterOrbitsVector &cluster_orbits, const ClexBasis &clex_basis, jsonParser &json, double tol) {
 
-    throw std::runtime_error("write_basis needs to be reimplemented");
+      throw std::runtime_error("write_basis needs to be reimplemented");
 
-    /*
-    json = jsonParser::object();
+      json = jsonParser::object();
 
-    //   "site_functions":[
-    //     {
-    //       "asym_unit": X,
-    //       "sublat": [2, 3],
-    //       "basis": {
-    //         "phi_b_0": {"Va":0.0, "O":1.0},
-    //         "phi_b_1": {"Va":0.0, "O":1.0}
-    //       }
-    //     },
-    //     ...
-    //   ],
+      //   "site_functions":[
+      //     {
+      //       "asym_unit": X,
+      //       "sublat": [2, 3],
+      //       "basis": {
+      //         "phi_b_0": {"Va":0.0, "O":1.0},
+      //         "phi_b_1": {"Va":0.0, "O":1.0}
+      //       }
+      //     },
+      //     ...
+      //   ],
 
-    jsonParser &sitef = json["site_functions"];
-    sitef = jsonParser::array(prim.basis.size(), jsonParser::object());
-    for(Index no = 0; no < tree.asym_unit().size(); no++) {
-      for(Index ne = 0; ne < tree.asym_unit()[no].size(); ne++) {
+      jsonParser &sitef = json["site_functions"];
+      sitef = jsonParser::array(prim.basis.size(), jsonParser::object());
+      for(Index no = 0; no < tree.asym_unit().size(); no++) {
+        for(Index ne = 0; ne < tree.asym_unit()[no].size(); ne++) {
 
-        const SiteCluster &equiv = tree.asym_unit()[no][ne];
-        const Site &site = equiv[0];
+          const SiteCluster &equiv = tree.asym_unit()[no][ne];
+          const Site &site = equiv[0];
 
-        Index b = site.basis_ind();
-        sitef[b]["sublat"] = b;
-        sitef[b]["asym_unit"] = no;
+          Index b = site.basis_ind();
+          sitef[b]["sublat"] = b;
+          sitef[b]["asym_unit"] = no;
 
-        if(equiv.clust_basis.size() == 0) {
-          sitef[b]["basis"].put_null();
-        }
-        else {
-          for(Index f = 0; f < equiv.clust_basis.size(); f++) {
-            std::stringstream fname;
-            fname << "\\phi_" << b << '_' << f;
-            for(Index s = 0; s < site.site_occupant().size(); s++) {
+          if(equiv.clust_basis.size() == 0) {
+            sitef[b]["basis"].put_null();
+          }
+          else {
+            for(Index f = 0; f < equiv.clust_basis.size(); f++) {
+              std::stringstream fname;
+              fname << "\\phi_" << b << '_' << f;
+              for(Index s = 0; s < site.site_occupant().size(); s++) {
 
-              // "\phi_b_f": {"Zr":0.0, ...}
-              sitef[b]["basis"][fname.str()][site.site_occupant()[s].name] =
-                equiv.clust_basis[f]->eval(
-                  Array<Index>(1, site.site_occupant().ID()),
-                  Array<Index>(1, s)
-                );
+                // "\phi_b_f": {"Zr":0.0, ...}
+                sitef[b]["basis"][fname.str()][site.site_occupant()[s].name] =
+                  equiv.clust_basis[f]->eval(
+                    Array<Index>(1, site.site_occupant().ID()),
+                    Array<Index>(1, s)
+                  );
+              }
             }
           }
         }
       }
-    }
 
-    //   "cluster_functions":[
-    //     {
-    //       ("eci": X.XXXXX,) <-- is included after fitting
-    //       "prototype_function": "\phi_b_i(s_j)...",
-    //       "orbit": [branch_index, cluster_orbit_index, bfunc_index],
-    //       "linear_orbit_index": I,
-    //       "mult": X,
-    //       "prototype": {
-    //         "max_length": X.X,
-    //         "min_length": X.X,
-    //         "sites": [
-    //           [b, i, j, k],
-    //           ...
-    //         ]
-    //       }
-    //     },
-    //     ...
-    //   ]
-    // }
+      //   "cluster_functions":[
+      //     {
+      //       ("eci": X.XXXXX,) <-- is included after fitting
+      //       "prototype_function": "\phi_b_i(s_j)...",
+      //       "orbit": [branch_index, cluster_orbit_index, bfunc_index],
+      //       "linear_orbit_index": I,
+      //       "mult": X,
+      //       "prototype": {
+      //         "max_length": X.X,
+      //         "min_length": X.X,
+      //         "sites": [
+      //           [b, i, j, k],
+      //           ...
+      //         ]
+      //       }
+      //     },
+      //     ...
+      //   ]
+      // }
 
-    jsonParser &orbitf = json["cluster_functions"];
-    orbitf = jsonParser::array();
-    for(Index i = 0; i < tree.size(); i++) {
-      jsonParser tjson;
-      for(Index j = 0; j < tree.size(i); j++) { //Loops over all i sized Orbits of clusters
+      jsonParser &orbitf = json["cluster_functions"];
+      orbitf = jsonParser::array();
+      for(Index i = 0; i < tree.size(); i++) {
+        jsonParser tjson;
+        for(Index j = 0; j < tree.size(i); j++) { //Loops over all i sized Orbits of clusters
 
-        // cluster specific info
-        tjson["orbit"] = std::vector<Index>({i, j, 0});
-        tjson["mult"] = tree.orbit(i, j).size();
-        to_json(jsonHelper(tree.orbit(i, j)[0], prim), tjson["prototype"]);
+          // cluster specific info
+          tjson["orbit"] = std::vector<Index>({i, j, 0});
+          tjson["mult"] = tree.orbit(i, j).size();
+          to_json(jsonHelper(tree.orbit(i, j)[0], prim), tjson["prototype"]);
 
-        // basis function info
-        BasisSet tbasis(tree.orbit(i, j)[0].clust_basis);
-        tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
+          // basis function info
+          BasisSet tbasis(tree.orbit(i, j)[0].clust_basis);
+          tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
 
-        for(Index nf = 0; nf < tbasis.size(); ++nf) {
-          tjson["orbit"][2] = nf;
-          tjson["prototype_function"] = tbasis[nf]->tex_formula();
-          orbitf.push_back(tjson);
+          for(Index nf = 0; nf < tbasis.size(); ++nf) {
+            tjson["orbit"][2] = nf;
+            tjson["prototype_function"] = tbasis[nf]->tex_formula();
+            orbitf.push_back(tjson);
+          }
         }
       }
+
+      for(Index i = 0; i < orbitf.size(); ++i) {
+        orbitf[i]["linear_function_index"] = i;
+      }
+
     }
 
-    for(Index i = 0; i < orbitf.size(); ++i) {
-      orbitf[i]["linear_function_index"] = i;
-    }
     */
-  }
 
 }
 
