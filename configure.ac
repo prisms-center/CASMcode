@@ -23,14 +23,21 @@ AC_PROG_CPP
 ## FIXME: Replace `main' with a function in `-lgzstream':
 #AC_CHECK_LIB([gzstream], [main])
 ## FIXME: Replace `main' with a function in `-lz':
-AC_CHECK_LIB([z], [gzread])
+AC_CHECK_LIB([z], [gzread], [], [AC_MSG_ERROR(gzread from z library not found!)])
+AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR(dlopen from dl library not found!)])
 #AC_CHECK_LIB([z], [gzwrite])
 #AC_CHECK_LIB([z], [gzopen])
 #AC_CHECK_LIB([z], [gzclose])
 
 #I added this
 LT_INIT([shared disable-static])
+LT_LIB_DLLOAD
 AC_DISABLE_STATIC
+if test "$enable_static" != "no"; then
+    echo "Sorry Dave, I can't let you do that. Static libraries are currently disabled.";
+    exit 1;
+fi; 
+
 AX_CXX_COMPILE_STDCXX_11
 BOOSTV=1.52
 AX_BOOST_BASE([$BOOSTV],[],[AC_MSG_ERROR(You need Boost $BOOSTV libraries or higher.)])
@@ -69,6 +76,7 @@ AC_CONFIG_FILES([Makefile
                  apps/casm/Makefile
                  src/ccasm/Makefile
                  src/casm/Makefile
+                 tests/unit/Makefile
                  python/Makefile
                  python/casm/setup.py
                  python/vasp/setup.py])
