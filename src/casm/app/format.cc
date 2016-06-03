@@ -1,7 +1,7 @@
 #include <cstring>
 
-#include "casm/app/casm_functions.hh"
 #include "casm/CASM_global_definitions.hh"
+#include "casm/app/casm_functions.hh"
 
 namespace CASM {
 
