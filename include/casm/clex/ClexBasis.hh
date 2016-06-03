@@ -21,9 +21,12 @@ namespace CASM {
     /// \brief Total number of basis functions
     Index n_funcions() const;
 
-    /// \brief Const access of clust basis of orbit @no and equivalent cluster @ne
-    BasisSet const &clust_basis(Index no,
-                                Index ne) const;
+    /// \brief Const access of clust basis of orbit @param orbit_ind and equivalent cluster @param equiv_ind
+    BasisSet const &clust_basis(Index orbit_ind,
+                                Index equiv_ind) const;
+
+    /// \brief Const access of BSetOrbit of orbit @param orbit_ind
+    BSetOrbit const &orbit_basis(Index orbit_ind) const;
 
     /// \brief Const iterator to first BasisSet orbit
     BSetOrbitIterator begin() const {
@@ -68,24 +71,30 @@ namespace CASM {
   /// Print cluster with basis_index and nlist_index (from 0 to size()-1), followed by cluster basis functions
   /// Functions are labeled \Phi_{i}, starting from i = @param begin_ind
   void print_clust_basis(ClexBasis const &_basis_set,
-                         std::ostream &stream,
+                         PrimNeighborList const &_nlist,
+                         std::ostream &_stream,
                          Index begin_ind = 0,
                          int space = 18,
                          char delim = 0,
                          COORD_TYPE mode = COORD_DEFAULT) const;
 
   /// returns std::vector of std::string, each of which is
-  std::vector<std::string> orbit_function_cpp_strings(ClexBasis const &_basis_set,
+  std::vector<std::string> orbit_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
+                                                      Orbit<IntegralCluster> const &_clust_orbit,
+                                                      PrimNeighborList const &_nlist,
                                                       std::vector<FunctionVisitor *> const &labelers);
 
   /// nlist_index is the index into the nlist for the site the flower centers on
-  std::vector<std::string> flower_function_cpp_strings(ClexBasis const &_basis_set,
+  std::vector<std::string> flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
+                                                       Orbit<IntegralCluster> const &_clust_orbit,
+                                                       PrimNeighborList const &_nlist,
                                                        std::vector<FunctionVisitor *> const &labelers,
                                                        Index nlist_index);
 
   /// b_index is the basis site index, f_index is the index of the configurational site basis function in Site::occupant_basis
   /// nlist_index is the index into the nlist for the site the flower centers on
-  std::vector<std::string> delta_occfunc_flower_function_cpp_strings(ClexBasis const &_basis_set,
+  std::vector<std::string> delta_occfunc_flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
+                                                                     PrimNeighborList const &_nlist,
                                                                      BasisSet site_basis,
                                                                      const std::vector<FunctionVisitor *> &labelers,
                                                                      Index nlist_index,

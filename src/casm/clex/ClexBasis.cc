@@ -1,6 +1,6 @@
 namespace CASM {
 
-  void ClexBasis::generate(SiteOrbitree const &_orbitree,
+  void ClexBasis::generate(std::vector<Orbit<IntegralCluster> > const &_orbits,
                            std::vector<DoFType> const &_dof_keys,
                            Index _max_poly_order /*= -1*/) {
     std::vector<DoFType> global_keys;
@@ -17,15 +17,13 @@ namespace CASM {
         throw std::runtime_error(std::string("Attempting to build Clex basis set, but missing degree of freedom \"") + key + "\n");
       }
     }
-    m_bset_tree.resize(_orbitree.num_orbits());
-    Index l = 0;
-    for(Index i = 0; i < _orbitree.size(); i++) {
-      for(Index j = 0; j < _orbitree.size(i); j++) {
-        m_bset_tree[l].reserve(_orbitree.size(i, j));
-        m_bset_tree[l].push_back(generate_clust_basis(prototype(i, j), local_keys, global_keys));
-        for(Index k = 1; k < _orbitree.size(i, j); k++) {
-          m_bset_tree[l].push_back(_orbitree.orbit(i, j).equivalence_map[k][0]*m_bset_tree[l][0]);
-        }
+    m_bset_tree.resize(_orbits.size());
+
+    for(Index i = 0; i < _orbits.size(); i++) {
+      m_bset_tree[i].reserve(_orbits[i].size());
+      m_bset_tree[i].push_back(generate_clust_basis(_orbits[i].prototype(), local_keys, global_keys));
+      for(Index j = 1; j < _orbits[i].size(); j++) {
+        m_bset_tree[i].push_back((*(_orbits[i].equivalence_map(j).first))*m_bset_tree[i][0]);
       }
     }
   }
@@ -61,15 +59,15 @@ namespace CASM {
   //                   {e1,e2,e3,e4,e5,e6},
   //                   {comp_a,comp_b}]
   //
-  BasisSet ClexBasis::_construct_clust_basis(SiteCluster const &prototype,
+  BasisSet ClexBasis::_construct_clust_basis(IntegralCluster const &prototype,
                                              std::vector<DoFType> const &local_keys,
                                              std::vector<DoFType> const &global_keys,
                                              Index max_poly_order) const {
-    //std::cout<<"In SiteCluster::generate_clust_basis, the size of this cluster is:"<<size()<<std::endl;
+    //std::cout<<"In IntegralCluster::generate_clust_basis, the size of this cluster is:"<<size()<<std::endl;
     //std::cout<<"valid_index evaluates to:"<<valid_index(max_poly_order)<<std::endl;
 
     if(!valid_index(max_poly_order))
-      max_poly_order = size();
+      max_poly_order = prototype.size();
     //std::cout<<"Max_poly_order "<<max_poly_order<<std::endl;
 
     std::vector<BasisSet const *> arg_subsets;
@@ -90,9 +88,9 @@ namespace CASM {
       std::vector<BasisSet const *> site_args(size(), nullptr);
       //Loop over sites
       for(Index i = 0; i < prototype.size(); i++) {
-        if(arg_vec[prototype[i].basis_ind()].size()) {
-          tlocal.push_back(arg_vec[prototype[i].basis_ind()]);
-          tlocal.back().set_dof_IDs(std::vector<Index>(1, prototype[i].nlist_ind()));
+        if(arg_vec[prototype[i].sublat()].size()) {
+          tlocal.push_back(arg_vec[prototype[i].sublat()]);
+          tlocal.back().set_dof_IDs(std::vector<Index>(1, i));
           site_args[i] = &tlocal.back();
         }
       }
@@ -106,70 +104,75 @@ namespace CASM {
 
   //********************************************************************
 
-  void print_clust_basis(ClexBasis const &_basis_set,
-                         std::ostream &stream,
-                         SiteCluster const &clust,
-                         Index orbit_ind,
-                         Index begin_ind,
-                         int space,
-                         char delim,
-                         COORD_TYPE mode) const {
+  Index print_clust_basis(std::ostream &stream,
+                          ClexBasis const &_basis_set,
+                          IntegralCluster const &_prototype,
+                          Index orbit_ind,
+                          Index func_ind,
+                          int space,
+                          char delim,
+                          COORD_TYPE mode) const {
     if(mode == COORD_DEFAULT)
       mode = COORD_MODE::CHECK();
     COORD_MODE C(mode);
-    for(Index np = 0; np < clust.size(); np++) {
+    for(Index np = 0; np < _prototype.size(); np++) {
 
       stream << std::string(space, ' ');
 
       stream.setf(std::ios::showpoint, std::ios_base::fixed);
       stream.precision(5);
       stream.width(9);
-      clust[np].print(stream);
-      stream << "  basis_index: " << clust[np].basis_ind() << "  clust_index: " << clust[np].nlist_ind() << " ";
+      _prototype.coordinate(np).print(stream);
+      stream << "  basis_index: " << _prototype[np].sublat() << "  clust_index: " << np << " ";
       if(delim)
         stream << delim;
     }
     stream << "\n"
            << "            Basis Functions:\n";
-    BasisSet tbasis(m_bset_tree[orbit_ind]);
+    BasisSet tbasis(_basis_set.clust_basis(orbit_ind, 0));
     tbasis.set_dof_IDs(sequence<Index>(0, clust.size() - 1));
     tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
-    for(Index i = 0; i < tbasis.size(); i++) {
-      stream << "              \\Phi_" << begin_ind + i << " = " << tbasis[i]->tex_formula() << std::endl;
+    Index i;
+    for(i = 0; i < tbasis.size(); i++) {
+      stream << "              \\Phi_" << func_ind + i << " = " << tbasis[i]->tex_formula() << std::endl;
     }
+    return tbasis.size();
   }
 
   //********************************************************************
 
   // Divide by multiplicity. Same result as evaluating correlations via orbitree.
-  std::vector<std::string> orbit_function_cpp_strings(ClexBasis const &_clex_basis,
-                                                      SiteOrbit const &_orbit,
+  std::vector<std::string> orbit_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
+                                                      Orbit<IntegralCluster> const &_clust_orbit,
+                                                      PrimNeighborList const &_nlist,
                                                       std::vector<FunctionVisitor *> const &labelers) {
-    std::string suffix("");
-    std::vector<BasisSet> const &bset_orbit(m_bset_tree[_orbit.index()]);
-    std::vector<std::string> formulae(bset_orbit[0].size(), std::string());
-    if(_orbit.size() > 1) {
-      formulae.resize(bset_orbit[0].size(), std::string("("));
-      suffix = ")/" + std::to_string(_orbit.size()) + ".0";
+    std::string prefix, suffix;
+    std::vector<std::string> formulae(_bset_orbit[0].size(), std::string());
+    if(_clust_orbit.size() > 1) {
+      prefix = "(";
+      suffix = ")/" + std::to_string(_clust_orbit.size()) + ".";
     }
 
-    for(Index ne = 0; ne < bset_orbit.size(); ne++) {
+    for(Index ne = 0; ne < _bset_orbit.size(); ne++) {
+      _bset_orbit[ne].set_dof_IDs(_nlist.indices(_clust_orbit[ne].elements()));
       for(Index nl = 0; nl < labelers.size(); nl++)
-        bset_orbit[ne].accept(*labelers[nl]);
+        _bset_orbit[ne].accept(*labelers[nl]);
     }
 
-    for(Index nf = 0; nf < bset_orbit[0].size(); nf++) {
-      for(Index ne = 0; ne < bset_orbit.size(); ne++) {
-        if(!bset_orbit[ne][nf] || (bset_orbit[ne][nf]->formula()) == "0")
+    for(Index nf = 0; nf < _bset_orbit[0].size(); nf++) {
+      for(Index ne = 0; ne < _bset_orbit.size(); ne++) {
+        if(!_bset_orbit[ne][nf] || (_bset_orbit[ne][nf]->is_zero()))
           continue;
-        if(formulae[nf].size() > 1)
+
+        if(formulae[nf].empty())
+          formulae[nf] += prefix;
+        else if((_bset_orbit[ne][nf]->formula())[0] != '-' && (_bset_orbit[ne][nf]->formula())[0] != '+')
           formulae[nf] += " + ";
-        formulae[nf] += "(" + bset_orbit[ne][nf]->formula() + ")";
+
+        formulae[nf] += _bset_orbit[ne][nf]->formula();
       }
 
-      if(formulae[nf].size() <= 1)
-        formulae[nf].clear();
-      else
+      if(!formulae[nf].empty())
         formulae[nf] += suffix;
     }
     return formulae;
@@ -178,59 +181,69 @@ namespace CASM {
   //********************************************************************
 
   /// nlist_index is the index of the basis site in the neighbor list
-  std::vector<std::string>  flower_function_cpp_strings(ClexBasis const &_clex_basis,
-                                                        SiteOrbit const &_orbit,
-                                                        const std::vector<FunctionVisitor *> &labelers,
-                                                        Index nlist_index) {
+  std::vector<std::string>  flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
+                                                        Orbit<IntegralCluster> const &_clust_orbit,
+                                                        PrimNeighborList const &_nlist,
+                                                        std::vector<FunctionVisitor *> const &labelers,
+                                                        Index sublat_index) {
 
-    std::vector<BasisSet> const &bset_orbit(m_bset_tree[_orbit.index()]);
-    std::vector<std::string> formulae(bset_orbit[0].size(), std::string());
-    std::string suffix;
-    Index ib;
+
+    std::vector<std::string> formulae(_bset_orbit[0].size(), std::string());
+    std::string prefix, suffix;
 
     //normalize by multiplicity (by convention)
-    if(_orbit.size()*_orbit.prototype.size() > 1) {
-      formulae.resize(bset_orbit[0].size(), std::string("("));
-      suffix = ")/" + std::to_string(_orbit.size()) + ".";
+    if(_clust_orbit.size() > 1) {
+      prefix = "(";
+      suffix = ")/" + std::to_string(_clust_orbit.size()) + ".";
     }
 
-    for(Index ne = 0; ne < _orbit.size(); ne++) {
-      //std::cout << "# of translists: " << _orbit[ne].trans_nlists().size() << "\n";
-      for(Index nt = 0; nt < _orbit[ne].trans_nlists().size(); nt++) {
-        ib = _orbit[ne].trans_nlist(nt).find(nlist_index);
+    // loop over equivalent clusters
+    for(Index ne = 0; ne < _clust_orbit.size(); ne++) {
 
-        //std::cout << "ib is " << ib << " of " << _orbit[ne].size() << "\n";
-        if(ib == _orbit[ne].size())
+      // for each site in the cluster that belongs to the target sublattice,
+      // translate the cluster so that that site is within the (0,0,0) cell
+      // Use std::set to ensure that each translation is only attempted once
+      std::set<UnitCell> attempted_trans;
+
+      // loop over cluster sites
+      auto it(_clust_orbit[ne].cbegin()), end_it(_clust_orbit[ne].cbegin());
+      for(; it != end_it; ++it) {
+
+        // Continue if the cluster site doesn't belong to the target sublattice, or if we have allready attempted the translation
+        if(sublat_index != it -> sublat() || !(attempted_trans.insert(it->unitcell()).second))
           continue;
 
-        bset_orbit[ne].set_dof_IDs(_orbit[ne].trans_nlist(nt));
+        _bset_orbit[ne].set_dof_IDs(_nlist.indices((_clust_orbit[ne] - it->unitcell()).elements()));
 
         for(Index nl = 0; nl < labelers.size(); nl++)
-          bset_orbit[ne].accept(*labelers[nl]);
+          _bset_orbit[ne].accept(*labelers[nl]);
 
-        for(Index nf = 0; nf < bset_orbit[ne].size(); nf++) {
-          if(!bset_orbit[ne][nf] || (bset_orbit[ne][nf]->formula()) == "0")
+        for(Index nf = 0; nf < _bset_orbit[ne].size(); nf++) {
+          if(!_bset_orbit[ne][nf] || (_bset_orbit[ne][nf]->is_zero()))
             continue;
 
-          if(formulae[nf].size() > 1)
+          if(formulae[nf].empty())
+            formulae[nf] += prefix;
+          else if((_bset_orbit[ne][nf]->formula())[0] != '-' && (_bset_orbit[ne][nf]->formula())[0] != '+')
             formulae[nf] += " + ";
-          formulae[nf] += "(" + bset_orbit[ne][nf]->formula() + ")";
+
+          formulae[nf] += _bset_orbit[ne][nf]->formula();
+
         }
       }
     }
 
-    // Make sure that formulae that evaluate to zero have an empty string.
-    for(Index nf = 0; nf < bset_orbit[0].size(); nf++) {
-      if(formulae[nf].size() <= 1)
-        formulae[nf].clear();
-      else
+    // append suffix to all formulae
+    for(Index nf = 0; nf < formulae.size(); nf++) {
+      if(!formulae[nf].empty())
         formulae[nf] += suffix;
     }
+
     return formulae;
   }
 
   //********************************************************************
-
+  //TODO:
   /// b_index is the basis site index, f_index is the index of the configurational site basis function in Site::occupant_basis
   /// nlist_index is the index of the basis site in the neighbor list
   std::vector<std::string>  delta_occfunc_flower_function_cpp_strings(ClexBasis const &_clex_basis,
@@ -292,7 +305,7 @@ namespace CASM {
 
   void print_proto_clust_funcs(ClexBasis const &_clex_basis,
                                std::ostream &out,
-                               SiteOrbitree const &_tree) const {
+                               std::vector<Orbit<IntegralCluster> > const &_tree) const {
     //Prints out all prototype clusters (CLUST file)
 
     if(_tree.index.size() != _tree.size())
@@ -305,7 +318,7 @@ namespace CASM {
     for(Index no = 0; no < _tree.asym_unit().size(); no++) {
       out << "Asymmetric unit " << no + 1 << ":\n";
       for(Index ne = 0; ne < _tree.asym_unit()[no].size(); ne++) {
-        Index b = _tree.asym_unit()[no][ne][0].basis_ind();
+        Index b = _tree.asym_unit()[no][ne][0].sublat();
         out << "  Basis site " << b << ":\n"
             << "  ";
         _tree.asym_unit()[no][ne][0].print(out);
@@ -352,7 +365,7 @@ namespace CASM {
   /*
   void print_eci_in(ClexBasis const &_clex_basis,
                     std::ostream &out,
-                    SiteOrbitree const &_tree) const {
+                    std::vector<Orbit<IntegralCluster> > const &_tree) const {
     if(_tree.index.size() != _tree.size())
       get_index();
     if(_tree.subcluster.size() != _tree.size())
@@ -411,12 +424,12 @@ namespace CASM {
                                     1.0 / double(_asym_unit().prototype(i)[0].site_occupant().size()));
           m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(),
                                                                                         tprob,
-                                                                                        _asym_unit().prototype(i)[0].basis_ind(),
+                                                                                        _asym_unit().prototype(i)[0].sublat(),
                                                                                         asym_unit().prototype(i).clust_group());
           for(Index ne = 0; ne < _asym_unit()[i].size(); ne++)
             m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(),
                                                                                     tprob,
-                                                                                    _asym_unit()[i][ne][0].basis_ind(),
+                                                                                    _asym_unit()[i][ne][0].sublat(),
                                                                                     asym_unit().prototype(i).clust_group());
         }
         break;
@@ -429,12 +442,12 @@ namespace CASM {
             tprob[0] = 1.0;
             m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(),
                                                                                           tprob,
-                                                                                          _asym_unit().prototype(i)[0].basis_ind(),
+                                                                                          _asym_unit().prototype(i)[0].sublat(),
                                                                                           asym_unit().prototype(i).clust_group());
             for(Index ne = 0; ne < _asym_unit()[i].size(); ne++)
               m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(),
                                                                                       tprob,
-                                                                                      _asym_unit()[i][ne][0].basis_ind(),
+                                                                                      _asym_unit()[i][ne][0].sublat(),
                                                                                       asym_unit().prototype(i).clust_group());
           }
         }
@@ -513,7 +526,7 @@ namespace CASM {
                                   0.0);
         if(tprob.size() == 0)
           continue;
-        Index b_ind = _asym_unit().prototype(i)[0].basis_ind();
+        Index b_ind = _asym_unit().prototype(i)[0].sublat();
         double tsum(0);
         for(Index ns = 0; ns < _asym_unit().prototype(i)[0].site_occupant().size(); ns++) {
           if(prob_vec[b_ind].find(_asym_unit().prototype(i)[0].site_occupant()[ns].name) == prob_vec[b_ind].end())
@@ -526,12 +539,12 @@ namespace CASM {
           tprob[j] /= tsum;
         m_asym_unit.prototype(i).clust_basis.construct_orthonormal_discrete_functions(_asym_unit().prototype(i)[0].site_occupant(),
                                                                                       tprob,
-                                                                                      _asym_unit().prototype(i)[0].basis_ind(),
+                                                                                      _asym_unit().prototype(i)[0].sublat(),
                                                                                       asym_unit().prototype(i).clust_group());
         for(Index ne = 0; ne < _asym_unit()[i].size(); ne++)
           m_asym_unit[i][ne].clust_basis.construct_orthonormal_discrete_functions(_asym_unit()[i][ne][0].site_occupant(),
                                                                                   tprob,
-                                                                                  _asym_unit()[i][ne][0].basis_ind(),
+                                                                                  _asym_unit()[i][ne][0].sublat(),
                                                                                   asym_unit().prototype(i).clust_group());
       }
 
@@ -541,7 +554,7 @@ namespace CASM {
 
   namespace ClexBasis_impl {
 
-    BasisSet construct_clust_dof_basis(SiteCluster const &_clust, std::vector<BasisSet const *> const &site_dof_sets) {
+    BasisSet construct_clust_dof_basis(IntegralCluster const &_clust, std::vector<BasisSet const *> const &site_dof_sets) {
       BasisSet result;
       result.set_dof_IDs(_clust.nlist_inds());
       std::vector<SymGroupRep const *> subspace_reps;
