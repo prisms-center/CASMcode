@@ -1,5 +1,11 @@
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/CoordinateSystems.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/ConfigMapping.hh"
+#include "casm/clex/ConfigSelection.hh"
+#include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/casm_io/VaspIO.hh"
 #include "casm/app/casm_functions.hh"
-#include "casm/CASM_classes.hh"
 
 namespace CASM {
 
