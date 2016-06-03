@@ -443,7 +443,7 @@ namespace CASM {
     //
     // n = origin + m_to_n*x
     // x = m_to_x*(n - origin)
-    
+
     // end_members.col(i) corresponds to x such that x[i] = 1, x[j!=i] = 0,
     //  -> end_members.col(i) = origin + m_to_n.col(i)
 
@@ -459,15 +459,15 @@ namespace CASM {
     // x = m_to_x*(n - origin)
     //   -> x = m_to_x*(origin + m_to_n*x - origin)
     //   -> x = m_to_x*m_to_n*x
-    
+
     // m_to_x is left pseudoinverse of m_to_n, which must have full column rank,
     // because it describes the composition space:
     //
     // I = A+ * A, (A+ is the left pseudoinverse)
     // if A has full column rank, (A.t * A) is invertible, so
     //   A+ = (A.t * A).inv * A.t
-    m_to_x = (m_to_n.transpose()*m_to_n).inverse() * m_to_n.transpose();
-    
+    m_to_x = (m_to_n.transpose() * m_to_n).inverse() * m_to_n.transpose();
+
   }
 
   /// \brief Return formula for 'n'

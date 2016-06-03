@@ -61,10 +61,10 @@ namespace CASM {
     Structure prim(read_prim(m_dir.prim()));
     m_nlist_weight_matrix = _default_nlist_weight_matrix(prim, TOL);
     m_nlist_sublat_indices = _default_nlist_sublat_indices(prim);
-    
+
     // load ConfigIO
     m_config_io_dict = make_dictionary<Configuration>();
-    
+
     // default 'selected' uses MASTER
     set_selected(ConfigIO::Selected());
   }
@@ -103,7 +103,11 @@ namespace CASM {
 
         settings.get_if(m_view_command, "view_command");
         from_json(m_name, settings["name"]);
-        from_json(m_tol, settings["tol"]);
+
+        settings.get_else(m_crystallography_tol, "tol", TOL);
+        settings.get_if(m_crystallography_tol, "crystallography_tol");
+
+        settings.get_else(m_lin_alg_tol, "lin_alg_tol", 1e-10);
 
         // read nlist settings, or generate defaults
         Structure prim;
@@ -118,7 +122,7 @@ namespace CASM {
           from_json(m_nlist_weight_matrix, settings["nlist_weight_matrix"]);
         }
         else {
-          m_nlist_weight_matrix = _default_nlist_weight_matrix(prim, tol());
+          m_nlist_weight_matrix = _default_nlist_weight_matrix(prim, crystallography_tol());
         }
 
         if(settings.contains("nlist_sublat_indices")) {
@@ -130,31 +134,31 @@ namespace CASM {
 
         // load ConfigIO
         m_config_io_dict = make_dictionary<Configuration>();
-        
+
         // default 'selected' uses MASTER
         set_selected(ConfigIO::Selected());
-        
+
         // migrate existing query_alias from deprecated 'query_alias.json'
-        jsonParser& alias_json = settings["query_alias"];
+        jsonParser &alias_json = settings["query_alias"];
         if(fs::exists(m_dir.query_alias())) {
           jsonParser depr(m_dir.query_alias());
-          for(auto it=depr.begin(); it!=depr.end(); ++it) {
+          for(auto it = depr.begin(); it != depr.end(); ++it) {
             if(!alias_json.contains(it.name())) {
               alias_json[it.name()] = it->get<std::string>();
               and_commit = true;
             }
           }
         }
-        
+
         // add aliases to dictionary
-        for(auto it=alias_json.begin(); it!=alias_json.end(); ++it) {
+        for(auto it = alias_json.begin(); it != alias_json.end(); ++it) {
           add_alias(it.name(), it->get<std::string>(), std::cerr);
         }
-        
+
         if(and_commit) {
           commit();
         }
-        
+
       }
       catch(std::exception &e) {
         std::cerr << "Error in ProjectSettings::ProjectSettings(const fs::path root).\n" <<
@@ -231,20 +235,24 @@ namespace CASM {
     return m_view_command;
   }
 
-  /// \brief Get current project tol
-  double ProjectSettings::tol() const {
-    return m_tol;
+  /// \brief Get current project crystallography tolerance
+  double ProjectSettings::crystallography_tol() const {
+    return m_crystallography_tol;
   }
-  
-  
+
+  /// \brief Get current project linear algebra tolerance
+  double ProjectSettings::lin_alg_tol() const {
+    return m_lin_alg_tol;
+  }
+
   // ** Configuration properties **
-  
-  const DataFormatterDictionary<Configuration>& ProjectSettings::config_io() const {
+
+  const DataFormatterDictionary<Configuration> &ProjectSettings::config_io() const {
     return m_config_io_dict;
   }
-  
+
   /// \brief Set the selection to be used for the 'selected' column
-  void ProjectSettings::set_selected(const ConfigIO::Selected& selection) {
+  void ProjectSettings::set_selected(const ConfigIO::Selected &selection) {
     m_config_io_dict.insert(
       datum_formatter_alias(
         "selected",
@@ -253,9 +261,9 @@ namespace CASM {
       )
     );
   }
-    
+
   /// \brief Set the selection to be used for the 'selected' column
-  void ProjectSettings::set_selected(const ConstConfigSelection& selection) {
+  void ProjectSettings::set_selected(const ConstConfigSelection &selection) {
     // the 'selected' column depends on the context
     m_config_io_dict.insert(
       datum_formatter_alias(
@@ -265,15 +273,15 @@ namespace CASM {
       )
     );
   }
-  
+
   /// \brief Add user-defined query alias
-  void ProjectSettings::add_alias(const std::string& alias_name, 
-                                  const std::string& alias_command, 
+  void ProjectSettings::add_alias(const std::string &alias_name,
+                                  const std::string &alias_command,
                                   std::ostream &serr) {
-    
+
     auto new_formatter =  datum_formatter_alias<Configuration>(alias_name, alias_command, m_config_io_dict);
     auto key = m_config_io_dict.key(new_formatter);
-    
+
     // if not in dictionary (includes operator dictionary), add
     if(m_config_io_dict.find(key) == m_config_io_dict.end()) {
       m_config_io_dict.insert(new_formatter);
@@ -292,17 +300,17 @@ namespace CASM {
       ss << "Error: Attempted to over-write standard CASM query name with user alias.\n";
       throw std::runtime_error(ss.str());
     }
-    
+
     // save alias
     m_aliases[alias_name] = alias_command;
-    
+
   }
-  
+
   /// \brief Return map containing aliases
   ///
   /// - key: alias name
   /// - value: alias command
-  const std::map<std::string, std::string>& ProjectSettings::aliases() const {
+  const std::map<std::string, std::string> &ProjectSettings::aliases() const {
     return m_aliases;
   }
 
@@ -451,12 +459,17 @@ namespace CASM {
     return true;
   }
 
-  /// \brief Set shared library options to 'opt'
-  bool ProjectSettings::set_tol(double _tol) {
-    m_tol = _tol;
+  /// \brief Set crystallography tolerance
+  bool ProjectSettings::set_crystallography_tol(double _tol) {
+    m_crystallography_tol = _tol;
     return true;
   }
 
+  /// \brief Set linear algebra tolerance
+  bool ProjectSettings::set_lin_alg_tol(double _tol) {
+    m_lin_alg_tol = _tol;
+    return true;
+  }
 
   /// \brief Save settings to file
   void ProjectSettings::commit() const {
@@ -468,7 +481,7 @@ namespace CASM {
       jsonParser json;
       to_json(*this, json);
 
-      json.print(file.ofstream());
+      json.print(file.ofstream(), 2, 18);
       file.close();
     }
     catch(...) {
@@ -510,7 +523,10 @@ namespace CASM {
       json["so_options"] = set.so_options();
     }
     json["view_command"] = set.view_command();
-    json["tol"] = set.tol();
+    json["crystallography_tol"] = set.crystallography_tol();
+    json["crystallography_tol"].set_scientific();
+    json["lin_alg_tol"] = set.lin_alg_tol();
+    json["lin_alg_tol"].set_scientific();
     json["query_alias"] = set.aliases();
 
     return json;

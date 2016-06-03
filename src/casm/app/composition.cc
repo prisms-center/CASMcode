@@ -1,11 +1,7 @@
-#include "composition.hh"
-
 #include<cstring>
 
+#include "casm/CASM_classes.hh"
 #include "casm/app/casm_functions.hh"
-#include "casm/app/DirectoryStructure.hh"
-#include "casm/clex/PrimClex.hh"
-
 #include "casm/app/AppIO.hh"
 
 namespace CASM {
@@ -46,7 +42,7 @@ namespace CASM {
   // 'composition' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int composition_command(int argc, char *argv[]) {
+  int composition_command(const CommandArgs &args) {
     po::variables_map vm;
     std::string choice;
 
@@ -60,7 +56,7 @@ namespace CASM {
       //("update,u", "Update composition and references based on current 'composition_axes.json' file");
 
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::store(po::parse_command_line(args.argc, args.argv, desc), vm);
 
         bool call_help = false;
 
@@ -124,19 +120,17 @@ namespace CASM {
 
     }
 
-    fs::path root = find_casmroot(fs::current_path());
+    const fs::path &root = args.root;
     if(root.empty()) {
-      std::cout << "Error in 'casm composition': No casm project found." << std::endl;
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
 
-    std::cout << "\n***************************\n\n";
-
-    // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
-    std::cout << "  DONE." << std::endl << std::endl;
-
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
     const DirectoryStructure &dir = primclex.dir();
     std::string calctype = primclex.settings().calctype();
@@ -167,43 +161,6 @@ namespace CASM {
 
       return 0;
     }
-    /*    else if(vm.count("update")) {
-
-          if(opt.err_code) {
-
-            std::cout << "\n***************************\n\n";
-
-            std::cout << opt.err_message << "\n\n";
-
-            std::cout << "Not Updating... Please fix your compostion axes. \n";
-
-            return ERR_INVALID_INPUT_FILE;
-
-          }
-          else if(!opt.has_current_axes) {
-
-            std::cout << "\n***************************\n\n";
-
-            std::cout << "No composition axes selected.\n\n";
-
-            std::cout << "Please use 'casm composition --select' to choose your composition axes.\n\n";
-
-            return ERR_MISSING_DEPENDS;
-          }
-          else {
-
-            std::cout << "\n***************************\n\n";
-
-            std::cout << "Updating composition and references...\n\n";
-
-            primclex.set_composition_axes(opt.curr);
-
-            std::cout << "  DONE" << std::endl;
-
-            return 0;
-          }
-        }
-    */
     else {
 
       if(vm.count("calc")) {

@@ -190,14 +190,16 @@ namespace test {
       {
         m_p.popen(cd_and() + "casm enum --supercells --max 10");
         std::stringstream ss;
-        PrimClex primclex(dir, ss);
+        Log log(ss);
+        PrimClex primclex(dir, log);
         BOOST_CHECK_MESSAGE(primclex.get_supercell_list().size() == 87, m_p.gets());
       }
 
       {
         m_p.popen(cd_and() + "casm enum --configs --max 6");
         std::stringstream ss;
-        PrimClex primclex(dir, ss);
+        Log log(ss);
+        PrimClex primclex(dir, log);
         BOOST_CHECK_MESSAGE(std::distance(primclex.config_begin(), primclex.config_end()) == 1081, m_p.gets());
       }
     }

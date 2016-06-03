@@ -31,31 +31,31 @@ namespace CASM {
 
   template<typename T>
   class DataFormatter;
-  
+
   /// \brief Print heat capacity, 'heat_capacity'
   GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalHeatCapacityFormatter();
-  
+
   /// \brief Print parametric susceptibility, 'susc_x(a,b)'
-  GenericDatumFormatter<double, ConstMonteCarloPtr> 
+  GenericDatumFormatter<double, ConstMonteCarloPtr>
   GrandCanonicalSuscXFormatter(std::string comp_var_i, std::string comp_var_j);
-  
+
   /// \brief Print susceptibility, 'susc_n(A,B)'
-  GenericDatumFormatter<double, ConstMonteCarloPtr> 
+  GenericDatumFormatter<double, ConstMonteCarloPtr>
   GrandCanonicalSuscNFormatter(std::string species_i, std::string species_j);
-  
+
   /// \brief Print parametric thermo-chemical susceptibility, 'susc_x(S,a)'
-  GenericDatumFormatter<double, ConstMonteCarloPtr> 
+  GenericDatumFormatter<double, ConstMonteCarloPtr>
   GrandCanonicalThermoChemSuscXFormatter(std::string comp_var_i);
-  
+
   /// \brief Print thermo-chemical susceptibility, 'susc_n(S,A)'
-  GenericDatumFormatter<double, ConstMonteCarloPtr> 
+  GenericDatumFormatter<double, ConstMonteCarloPtr>
   GrandCanonicalThermoChemSuscNFormatter(std::string species_i);
-  
+
   /// \brief Make a LTE results formatter
   DataFormatter<ConstMonteCarloPtr> make_results_formatter(const GrandCanonical &mc);
 
   /// \brief Make a results formatter
-  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc);
+  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc, const double &phi_LTE1);
 
   /// \brief Make a observation formatter
   DataFormatter<std::pair<ConstMonteCarloPtr, Index> > make_observation_formatter(const GrandCanonical &mc);
@@ -72,34 +72,34 @@ namespace CASM {
 
 
   /// \brief Will create new file or append to existing file results of the latest run
-  void write_results(const MonteSettings &settings, const GrandCanonical &mc);
+  void write_results(const MonteSettings &settings, const GrandCanonical &mc, Log &_log);
 
   /// \brief Write conditions to conditions.cond_index directory
-  void write_conditions_json(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index);
+  void write_conditions_json(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index, Log &_log);
 
   /// \brief Will create (and possibly overwrite) new file with all observations from run with conditions.cond_index
-  void write_observations(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index);
+  void write_observations(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index, Log &_log);
 
   /// \brief Will create (and possibly overwrite) new file with all observations from run with conditions.cond_index
-  void write_trajectory(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index);
-  
+  void write_trajectory(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index, Log &_log);
+
   /// \brief For the initial state, write a POSCAR file.
-  void write_POSCAR_initial(const GrandCanonical& mc, Index cond_index);
-  
+  void write_POSCAR_initial(const GrandCanonical &mc, Index cond_index, Log &_log);
+
   /// \brief For the final state, write a POSCAR file.
-  void write_POSCAR_final(const GrandCanonical &mc, Index cond_index);
+  void write_POSCAR_final(const GrandCanonical &mc, Index cond_index, Log &_log);
 
   /// \brief For every snapshot taken, write a POSCAR file.
-  void write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index);
+  void write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index, Log &_log);
 
   /// \brief Create a jsonParser object that can be used as a template.
   jsonParser example_grand_canonical_settings();
 
   /// \brief Print single spin flip LTE
-  GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalLTEFormatter();
+  GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalLTEFormatter(const double &phi_LTE1);
 
   /// \brief Will create new file or append to existing results file the results of the latest run
-  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc);
+  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc, const double &phi_LTE1, Log &_log);
 
 }
 

@@ -1,10 +1,9 @@
-#include "enum.hh"
-
 #include <cstring>
 
 #include "casm/app/casm_functions.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
+#include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ConfigEnumIterator.hh"
 
@@ -15,7 +14,7 @@ namespace CASM {
   // 'enum' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int enum_command(int argc, char *argv[]) {
+  int enum_command(const CommandArgs &args) {
 
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
@@ -44,7 +43,7 @@ namespace CASM {
     //("coord", po::value<COORD_TYPE>(&coordtype)->default_value(CASM::CART), "Coord mode: FRAC=0, or (default) CART=1");
 
     try {
-      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
       /** --help option
        */
@@ -100,20 +99,19 @@ namespace CASM {
 
     COORD_MODE C(coordtype);
 
-    fs::path root = find_casmroot(fs::current_path());
+    const fs::path &root = args.root;
     if(root.empty()) {
-      std::cerr << "Error in 'casm enum': No casm project found." << std::endl;
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
 
-    std::cout << "\n***************************\n" << std::endl;
-
-    // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
     const DirectoryStructure &dir = primclex.dir();
     const ProjectSettings &set = primclex.settings();
-    std::cout << "  DONE." << std::endl << std::endl;
 
     if(vm.count("supercells")) {
       std::cout << "\n***************************\n" << std::endl;

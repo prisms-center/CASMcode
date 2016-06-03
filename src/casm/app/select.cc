@@ -1,12 +1,8 @@
-#include "select.hh"
-
-#include <cstring>
-
 #include "casm/app/casm_functions.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/CASM_global_definitions.hh"
+#include "casm/casm_io/DataFormatter.hh"
+#include "casm/clex/Configuration.hh"
 #include "casm/clex/ConfigSelection.hh"
-//#include "casm/casm_io/DataFormatter.hh"
-//#include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
 
@@ -97,7 +93,7 @@ namespace CASM {
   // 'select' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int select_command(int argc, char *argv[], PrimClex *_primclex) {
+  int select_command(const CommandArgs &args) {
 
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
@@ -133,7 +129,7 @@ namespace CASM {
     std::vector<std::string> allowed_cmd = {"and", "or", "xor", "not", "set-on", "set-off", "set"};
 
     try {
-      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
       Index num_cmd(0);
       for(const std::string &cmd_str : allowed_cmd) {
         if(vm.count(cmd_str)) {
@@ -171,7 +167,7 @@ namespace CASM {
 
       // Finish --help option
       if(vm.count("help")) {
-        fs::path root = find_casmroot(fs::current_path());
+        const fs::path &root = args.root;
         if(root.empty()) {
           auto dict = make_dictionary<Configuration>();
           select_help(dict, std::cout, help_opt_vec);
@@ -224,18 +220,17 @@ namespace CASM {
       selection.push_back("MASTER");
     }
 
-    // switch to root directory
-    fs::path orig_path = fs::current_path();
-    fs::path root = find_casmroot(orig_path);
+    const fs::path &root = args.root;
     if(root.empty()) {
-      std::cerr << "Error: No casm project found." << std::endl;
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
 
-    // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
-    std::cout << "  DONE." << std::endl << std::endl;
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
     ProjectSettings &set = primclex.settings();
 
     // load initial selection into config_select -- this is also the selection that will be printed at end

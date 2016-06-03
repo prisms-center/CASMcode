@@ -1,8 +1,8 @@
 #include "casm/external/boost.hh"
+#include "casm/clex/ConfigIO.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigIterator.hh"
-#include "casm/casm_io/DataFormatter.hh"
 #include "casm/clex/ConfigIOSelected.hh"
-
 namespace CASM {
 
 

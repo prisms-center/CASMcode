@@ -1,5 +1,3 @@
-#include "run.hh"
-
 #include<cstring>
 #include<unistd.h>
 
@@ -12,7 +10,7 @@ namespace CASM {
   // 'run' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int run_command(int argc, char *argv[]) {
+  int run_command(const CommandArgs &args) {
     std::string exec, selection;
     double tol;
     po::variables_map vm;
@@ -26,7 +24,7 @@ namespace CASM {
     ("config,c", po::value<std::string>(&selection)->default_value("MASTER"), "Config selection");
 
     try {
-      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
       /** --help option
        */
@@ -62,19 +60,17 @@ namespace CASM {
 
     }
 
-    fs::path root = find_casmroot(fs::current_path());
+    const fs::path &root = args.root;
     if(root.empty()) {
-      std::cout << "Error in 'casm perturb': No casm project found." << std::endl;
-      return 1;
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
+      return ERR_NO_PROJ;
     }
 
-    std::cout << "\n***************************\n" << std::endl;
-
-    // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
-    std::cout << "  DONE." << std::endl << std::endl;
-
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
     try {
       if(!vm.count("config") || (selection == "MASTER")) {

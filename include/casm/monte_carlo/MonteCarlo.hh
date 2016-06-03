@@ -4,6 +4,7 @@
 #include <vector>
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/external/MersenneTwister/MersenneTwister.h"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/ConfigDoF.hh"
@@ -153,21 +154,21 @@ namespace CASM {
       return m_trajectory;
     }
 
+    /// \brief return true if running in debug mode
+    bool debug() const {
+      return m_debug;
+    }
+
 
   protected:
 
     /// \brief Construct with a starting ConfigDoF as specified the given MonteSettings and prepare data samplers
     template<typename MonteTypeSettings>
-    MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings, std::ostream &_sout = std::cout);
+    MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings, Log &_log);
 
     /// \brief const Access the Supercell that *this is based on
     Supercell &supercell() {
       return m_scel;
-    }
-
-    /// \brief return true if running in debug mode
-    bool debug() const {
-      return m_debug;
     }
 
     /// \brief a map of keyname to property value
@@ -213,7 +214,7 @@ namespace CASM {
     bool m_must_converge;
 
     /// \brief Target for messages
-    std::ostream &sout;
+    Log &m_log;
 
   private:
 
@@ -246,19 +247,19 @@ namespace CASM {
     bool m_debug;
 
   };
-  
+
   /// \brief Fill supercell with motif, applying a factor group operation if necessary
-  ConfigDoF fill_supercell(Supercell &mc_scel, const Configuration& motif);
+  ConfigDoF fill_supercell(Supercell &mc_scel, const Configuration &motif);
 
   /// \brief Construct with a starting ConfigDoF as specified the given MonteSettings and prepare data samplers
   template<typename MonteTypeSettings>
-  MonteCarlo::MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings, std::ostream &_sout) :
+  MonteCarlo::MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings, Log &_log) :
     m_settings(settings),
     m_primclex(primclex),
     m_scel(&primclex, settings.simulation_cell_matrix()),
     m_write_trajectory(settings.write_trajectory()),
     m_debug(m_settings.debug()),
-    sout(_sout) {
+    m_log(_log) {
 
     try {
 
@@ -278,7 +279,7 @@ namespace CASM {
       throw;
     }
   }
-  
+
 }
 #endif
 

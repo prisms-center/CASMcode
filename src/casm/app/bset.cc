@@ -1,19 +1,6 @@
-#include "bset.hh"
-
 #include <cstring>
-
 #include "casm/app/casm_functions.hh"
-//#include "casm/CASM_classes.hh"
-#include "casm/app/DirectoryStructure.hh"
-#include "casm/app/ProjectSettings.hh"
-#include "casm/app/AppIO.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/clusterography/Orbitree.hh"
-#include "casm/clex/NeighborList.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/clusterography/jsonClust.hh"
-
+#include "casm/CASM_classes.hh"
 
 namespace CASM {
 
@@ -22,7 +9,7 @@ namespace CASM {
   // 'clusters' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int bset_command(int argc, char *argv[]) {
+  int bset_command(const CommandArgs &args) {
 
     po::variables_map vm;
 
@@ -37,7 +24,7 @@ namespace CASM {
     ("force,f", "Force overwrite");
 
     try {
-      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
       bool call_help = false;
 
       /** --help option
@@ -69,12 +56,17 @@ namespace CASM {
 
     }
 
-
-    fs::path root = find_casmroot(fs::current_path());
+    const fs::path &root = args.root;
     if(root.empty()) {
-      std::cout << "Error in 'casm bset': No casm project found." << std::endl;
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
+
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
     if(vm.count("update")) {
 
@@ -172,7 +164,7 @@ namespace CASM {
 
       // -- write basis.json ----------------
       jsonParser basis_json;
-      write_basis(tree, prim, basis_json, TOL);
+      write_basis(tree, prim, basis_json, primclex.crystallography_tol());
       basis_json.write(dir.basis(set.bset()));
 
       std::cout << "Wrote: " << dir.basis(set.bset()) << "\n" << std::endl;
@@ -189,13 +181,13 @@ namespace CASM {
 
       // expand the nlist to contain 'tree'
       std::set<UnitCellCoord> nbors;
-      neighborhood(std::inserter(nbors, nbors.begin()), tree, prim, TOL);
+      neighborhood(std::inserter(nbors, nbors.begin()), tree, prim, primclex.crystallography_tol());
       nlist.expand(nbors.begin(), nbors.end());
 
       // write source code
       fs::ofstream outfile;
       outfile.open(dir.clexulator_src(set.name(), set.bset()));
-      print_clexulator(prim, tree, nlist, set.global_clexulator(), outfile);
+      print_clexulator(prim, tree, nlist, set.global_clexulator(), outfile, primclex.crystallography_tol());
       outfile.close();
 
       std::cout << "Wrote: " << dir.clexulator_src(set.name(), set.bset()) << "\n" << std::endl;
@@ -211,9 +203,8 @@ namespace CASM {
         return ERR_MISSING_DEPENDS;
       }
 
-      std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-      PrimClex primclex(root, std::cout);
-      std::cout << "  DONE." << std::endl << std::endl;
+      Log log(std::cout);
+      PrimClex primclex(root, log);
 
       primclex.read_global_orbitree(dir.clust(set.bset()));
 

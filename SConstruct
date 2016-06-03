@@ -108,7 +108,7 @@ def version(version_number):
 
 ##### Set version_number
 
-version_number = version('0.2a0')
+version_number = version('0.2a1')
 url = 'https://github.com/prisms-center/CASMcode'
 Export('version_number', 'url')
 
@@ -259,7 +259,7 @@ if env['PLATFORM'] == 'darwin':
   linkflags = ['-install_name', '@rpath/libcasm.dylib']
 
 # use boost libraries
-boost_libs = ['boost_system', 'boost_filesystem', 'boost_program_options', 'boost_regex']
+boost_libs = ['boost_system', 'boost_filesystem', 'boost_program_options', 'boost_regex', 'boost_chrono']
 
 # build casm shared library from all shared objects
 casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'), 

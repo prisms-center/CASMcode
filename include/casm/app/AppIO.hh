@@ -41,9 +41,9 @@ namespace CASM {
 
   // --------- ChemicalReference IO Declarations --------------------------------------------------
 
-  ChemicalReference read_chemical_reference(fs::path filename, const Structure &prim, double tol = 1e-14);
+  ChemicalReference read_chemical_reference(fs::path filename, const Structure &prim, double tol);
 
-  ChemicalReference read_chemical_reference(const jsonParser &json, const Structure &prim, double tol = 1e-14);
+  ChemicalReference read_chemical_reference(const jsonParser &json, const Structure &prim, double tol);
 
   void write_chemical_reference(const ChemicalReference &chem_ref, fs::path filename);
 

@@ -1,7 +1,6 @@
-#include "format.hh"
-
 #include <cstring>
 
+#include "casm/app/casm_functions.hh"
 #include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
@@ -11,7 +10,7 @@ namespace CASM {
   // 'format' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int format_command(int argc, char *argv[]) {
+  int format_command(const CommandArgs &args) {
 
     po::variables_map vm;
 
@@ -35,7 +34,7 @@ namespace CASM {
       ("monte", "Description and location of the Monte Carlo input file");
 
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::store(po::parse_command_line(args.argc, args.argv, desc), vm);
 
         /** --help option
          */
@@ -744,75 +743,75 @@ LCHARG = .FALSE.\n";
       std::cout << "-------\n";
       std::cout <<
                 R"({
-  "chemical_reference" : {
-    "config" : {
-      "SCEL4_2_2_1_1_1_0/0" : [
-        {
-          "A" : 1.000000000000,
-          "energy_per_species" : -1.500000000000
-        },
-        {
-          "B" : 1.000000000000,
-          "energy_per_species" : -2.000100000000
-        },
-        {
-          "C" : 1.000000000000,
-          "energy_per_species" : -8.030000000000
-        }
-      ],
-      "SCEL4_2_2_1_1_1_0/2" : [ -1.520000000000, -2.000100000000, -8.030000000000 ]
-    },
-    "global" : [
-      {
-        "A" : 0.500000000000,
-        "B" : 0.500000000000,
-        "energy_per_species" : -1.500000000000
-      },
-      {
-        "B" : 1.000000000000,
-        "energy_per_species" : -2.000000000000
-      },
-      {
-        "C" : 1.000000000000,
-        "energy_per_species" : -8.000000000000
-      },
-      {
-        "D" : 1.000000000000,
-        "energy_per_species" : -4.000000000000
-      }
-    ],
-    "species_order" : [ "A", "B", "C" ],
-    "supercell" : {
-      "SCEL3_1_3_1_1_0_0" : [
-        {
-          "A" : 1.000000000000,
-          "energy_per_species" : -1.500000000000
-        },
-        {
-          "B" : 1.000000000000,
-          "energy_per_species" : -2.000000000000
-        },
-        {
-          "C" : 1.000000000000,
-          "energy_per_species" : -8.001000000000
-        }
-      ],
-      "SCEL4_2_2_1_1_1_0" : [
-        {
-          "A" : 1.000000000000,
-          "energy_per_species" : -1.500000000000
-        },
-        {
-          "B" : 1.000000000000,
-          "energy_per_species" : -2.000000000000
-        },
-        {
-          "C" : 1.000000000000,
-          "energy_per_species" : -8.030000000000
-        }
-      ]
-    }
-  }
+"chemical_reference" : {
+"config" : {
+"SCEL4_2_2_1_1_1_0 / 0" : [
+{
+"A" : 1.000000000000,
+"energy_per_species" : -1.500000000000
+},
+{
+"B" : 1.000000000000,
+"energy_per_species" : -2.000100000000
+},
+{
+"C" : 1.000000000000,
+"energy_per_species" : -8.030000000000
+}
+],
+"SCEL4_2_2_1_1_1_0 / 2" : [ -1.520000000000, -2.000100000000, -8.030000000000 ]
+},
+"global" : [
+{
+"A" : 0.500000000000,
+"B" : 0.500000000000,
+"energy_per_species" : -1.500000000000
+},
+{
+"B" : 1.000000000000,
+"energy_per_species" : -2.000000000000
+},
+{
+"C" : 1.000000000000,
+"energy_per_species" : -8.000000000000
+},
+{
+"D" : 1.000000000000,
+"energy_per_species" : -4.000000000000
+}
+],
+"species_order" : [ "A", "B", "C" ],
+"supercell" : {
+"SCEL3_1_3_1_1_0_0" : [
+{
+"A" : 1.000000000000,
+"energy_per_species" : -1.500000000000
+},
+{
+"B" : 1.000000000000,
+"energy_per_species" : -2.000000000000
+},
+{
+"C" : 1.000000000000,
+"energy_per_species" : -8.001000000000
+}
+],
+"SCEL4_2_2_1_1_1_0" : [
+{
+"A" : 1.000000000000,
+"energy_per_species" : -1.500000000000
+},
+{
+"B" : 1.000000000000,
+"energy_per_species" : -2.000000000000
+},
+{
+"C" : 1.000000000000,
+"energy_per_species" : -8.030000000000
+}
+]
+}
+}
 })";
       std::cout << "-------\n";
 
@@ -979,59 +978,55 @@ Direct\n\
       std::cout << "DESCRIPTION:\n";
       std::cout << "  The Monte Carlo input file does not need to be in any particular \n" <<
                 "  location, as long as it is somewhere inside the CASM project     \n" <<
-                "  directory. The input file contains a JSON object with a \"type\" \n" <<
-                "  specifying the type of Monte Carlo calculation to be performed   \n" <<
-                "  and three main subcategories: \"initialization\", \"data\", and  \n" <<
-                "  \"driver\".                                                      \n\n" <<
-
-                "  Restarts: Monte Carlo calculations that are run in \"incremental\"\n" <<
-                "   drive mode and are stopped before the entire path has been      \n" <<
-                "   calculated can be restarted as long as the input settings do not\n" <<
-                "   change. Upon restart, the settings file is checked for changes, \n" <<
-                "   and the results summary file is checked for the last finished   \n" <<
-                "   conditions. Then the path is resumed from the next set of       \n" <<
-                "   conditions.                                                     \n\n" <<
+                "  directory or subdirectories. The input file contains a JSON      \n" <<
+                "  object with \"ensemble\", \"method\", \"model\", \"supercell\",  \n" <<
+                "  \"data\", and \"driver\" attributes, as described below. An      \n" <<
+                "  optional attribute \"debug\" may also be included to print       \n" <<
+                "  information that may be useful for debugging an input file.      \n\n" <<
 
                 "Input file parameters:                                             \n\n" <<
 
-                "\"type\" (string):                                                 \n\n" <<
+                "\"ensemble\" (string):                                             \n\n" <<
 
-                "  \"grand_canonical\": Currently the only option.                  \n" <<
-                "    Semi-grand canonical Monte Carlo calculation in which the total\n" <<
-                "    number of sites is fixed, but the occupants on each site may   \n" <<
-                "    vary. One occupant change at a time is attempted.              \n\n\n" <<
+                "  Possible options for \"ensemble\" are:                           \n" <<
+                "    \"GrandCanonical\" or \"grand_canonical\": Currently the only  \n" <<
+                "    option. Semi-grand canonical Monte Carlo calculation in which  \n" <<
+                "    the total number of sites is fixed, but the occupants on each  \n" <<
+                "    site may vary. One occupant change at a time is attempted.     \n\n\n" <<
 
 
-                "\"initialization\": (JSON object) Supercell and parameterization   \n"
-                "    initialization options.                                        \n\n" <<
+                "\"method\" (string):                                               \n\n" <<
+
+                "  Possible options for \"method\" are:                             \n" <<
+                "    \"Metropolis\" or \"metropolis\": Run Monte Carlo calculations \n" <<
+                "    using the Metropolis algorithm.                                \n\n" <<
+                "    \"LTE1\" or \"lte1\": Single spin flip low temperature         \n" <<
+                "    expansion calculations.                                        \n\n\n" <<
+
+
+                "\"model\": (JSON object)                                           \n\n" <<
 
                 "  /\"clex\", /\"bset\", /\"calctype\", /\"ref\", /\"eci\": (string)\n" <<
                 "    The CASM project settings that should be used for the monte    \n" <<
-                "    carlo calculation.                                             \n\n" <<
-
-                "  /\"matrix\": (3x3 JSON arrays of integers) The supercell        \n" <<
-                "    transformation matrix.                                         \n\n" <<
-
-                "  /\"motif\": (JSON object) Specifies the initial occupation of   \n" <<
-                "      the supercell.                                               \n\n" <<
-
-                "    /\"configname\": (string) The configuration that is tiled to  \n" <<
-                "      fill the supercell (ex. \"SCEL3_3_1_1_0_2_2/0\").            \n" <<
-                "      An error is thrown if the \"matrix\" given is not a supercell\n" <<
-                "      of the specified configuration.                              \n\n\n" <<
+                "    carlo calculation.                                             \n\n\n" <<
 
 
-                "\"data\": (JSON object) Data collection options                    \n\n" <<
+                "\"supercell\": (3x3 JSON arrays of integers)                      \n" <<
+                "    The supercell transformation matrix.                           \n\n" <<
 
-                "  /\"sample_by\": (string) Specify unit for the period between    \n" <<
-                "    samples.  May be either \"step\" (sample after every \"sample_period\"\n" <<
-                "    proposed Monte Carlo events), or \"pass\" (sample after the    \n" <<
-                "    \"sample_period\" number of passes), where 1 pass is a number of\n" <<
-                "    steps equal to the number of sites in the supercell that have  \n" <<
-                "    variable occupation).                                          \n\n" <<
 
-                "  /\"sample_period\": (integer) Specify how many steps or passes  \n" <<
-                "    to wait between data samples.                                  \n\n" <<
+                "\"data\": (JSON object)                                            \n\n" <<
+
+                "  /\"sample_by\": (string)                                         \n" <<
+                "    Specify unit for the period between samples.  May be either    \n" <<
+                "    \"step\" (sample after every \"sample_period\" proposed Monte  \n" <<
+                "    Carlo events), or \"pass\" (sample after the \"sample_period\" \n" <<
+                "    number of passes), where 1 pass is a number of steps equal to  \n" <<
+                "    the number of sites in the supercell that have variable        \n" <<
+                "    occupation).                                                   \n\n" <<
+
+                "  /\"sample_period\": (integer)                                    \n" <<
+                "    Specify how many steps or passes to wait between data samples. \n\n" <<
 
                 "  /\"measurements\": (JSON array containing JSON objects)         \n" <<
                 "    Specifies which properties to sample. Each JSON object should  \n" <<
@@ -1056,96 +1051,156 @@ Direct\n\
                 "        which have non-zero eci values.                            \n" <<
                 "      \"all_correlations\": correlations (per unit cell)           \n\n" <<
 
-                "  /\"confidence\": (number, range (0.0, 1.0), default 0.95) The   \n" <<
-                "    confidence level used for calculating the precision in the     \n" <<
+                "  /\"confidence\": (number, range (0.0, 1.0), default 0.95)        \n" <<
+                "    The confidence level used for calculating the precision in the \n" <<
                 "    average value of sampled quantities.                           \n\n" <<
 
-                "  /\"min_pass\", /\"min_step\", /\"min_sample\": (integer) If in\n" <<
-                "    automatic convergence mode, prevents the calculation from a    \n" <<
-                "    minimum number of passes, steps, or samples have occurred.     \n\n" <<
+                "  /\"min_pass\", /\"min_step\", /\"min_sample\": (integer)         \n" <<
+                "    If in automatic convergence mode, prevents the calculation from\n" <<
+                "    a minimum number of passes, steps, or samples have occurred.   \n\n" <<
 
-                "  /\"max_pass\", /\"max_step\", /\"max_sample\": (integer) If in\n" <<
-                "    automatic convergence mode, stops the calculation if the       \n" <<
+                "  /\"max_pass\", /\"max_step\", /\"max_sample\": (integer)         \n" <<
+                "    If in automatic convergence mode, stops the calculation if the \n" <<
                 "    specified number of passes, steps, or samples have occurred.   \n\n" <<
 
-                "  /\"N_pass\", /\"N_step\", /\"N_sample\": (integer) When not in\n" <<
-                "    automatic convergence mode (no precision has been specified for\n" <<
-                "    any quantities being sampled), stops the calculation when the  \n" <<
-                "    specified number of passes, steps, or samples have occurred.   \n\n" <<
+                "  /\"N_pass\", /\"N_step\", /\"N_sample\": (integer)               \n" <<
+                "    When not in automatic convergence mode (no precision has been  \n" <<
+                "    specified for any quantities being sampled), stops the         \n" <<
+                "    calculation when the specified number of passes, steps, or     \n" <<
+                "    samples have occurred.                                         \n\n" <<
 
-                "  /\"equilibration_passes_first_run\": (integer) If included, the \n" <<
-                "    requested number of passes will be performed at the initial    \n" <<
-                "    conditions as a preliminary step before the actual run begins. \n" <<
-                "    This may be useful when not running in automatic convergence   \n" <<
-                "    mode.                                                          \n\n" <<
+                "  /\"equilibration_passes_first_run\": (integer)                   \n" <<
+                "    If included, the requested number of passes will be performed  \n" <<
+                "    at the initial conditions as a preliminary step before the     \n" <<
+                "    actual run begins. This may be useful when not running in      \n" <<
+                "    automatic convergence mode.                                    \n\n" <<
 
-                "  /\"equilibration_passes_each_run\": (integer) If included, the \n" <<
-                "    requested number of passes will be performed at each condition \n" <<
-                "    as a preliminary step before the actual run begins. This may be\n" <<
-                "    useful when not running in automatic convergence mode.         \n\n" <<
+                "  /\"equilibration_passes_each_run\": (integer)                    \n" <<
+                "    If included, the requested number of passes will be performed  \n" <<
+                "    at each condition as a preliminary step before the actual run  \n" <<
+                "    begins. This may be useful when not running in automatic       \n" <<
+                "    convergence mode.                                              \n\n" <<
 
-                "  /\"storage\": (JSON object) Options for writing results.        \n\n" <<
+                "  /\"storage\": (JSON object) Options for writing results.         \n\n" <<
 
-                "    /\"output_format\": (string or JSON array of string) Specifies\n" <<
-                "      the type or types of output files. Current options are \"csv\"\n" <<
-                "      or \"json\". Type names with either all lower case or all    \n" <<
-                "      upper case are accepted.                                     \n\n" <<
+                "    /\"output_format\": (string or JSON array of string)           \n" <<
+                "      Specifies the type or types of output files. Current options \n" <<
+                "      are \"csv\" or \"json\". Type names with either all lower    \n" <<
+                "      case or all   upper case are accepted.                       \n\n" <<
 
-                "    /\"write_observations\": (boolean, default false) If true,    \n" <<
-                "      all individual observations of the quantities requested to be\n" <<
-                "      sampled will be written to compressed files:                 \n" <<
+                "    /\"write_observations\": (boolean, default false)              \n" <<
+                "      If true, all individual observations of the quantities       \n" <<
+                "      requested to be sampled will be written to compressed files: \n" <<
                 "        \"output_directory\"/conditions.i/observations.ext.gz      \n" <<
                 "      where 'i' is the condition index and 'ext' is the output     \n" <<
                 "      format.                                                      \n\n" <<
 
-                "    /\"write_trajectory\": (boolean, default false) If true,      \n" <<
-                "      the value of all degrees of freedom at the time of each      \n" <<
-                "      sample will be written to compressed files:                  \n" <<
+                "    /\"write_trajectory\": (boolean, default false)                \n" <<
+                "      If true, the value of all degrees of freedom at the time of  \n" <<
+                "      each sample will be written to compressed files:             \n" <<
                 "        \"output_directory\"/conditions.i/trajectory.ext.gz        \n" <<
                 "      where 'i' is the condition index and 'ext' is the output     \n" <<
                 "      format.                                                      \n\n\n" <<
 
 
-                "\"driver\": (JSON object) Contains options controlling the         \n" <<
-                "    conditions at which calculations are performed.                \n\n" <<
+                "\"driver\": (JSON object)                                          \n\n" <<
 
-                "  /\"mode\": (string) Specify the drive mode.                     \n\n" <<
+                "  /\"motif\": (JSON object)                                        \n" <<
+                "      Specifies the initial occupation of the supercell.           \n" <<
+
+                "    /\"configname\": (string, optional)                            \n" <<
+                "      A configuration name or \"auto\".                            \n\n" <<
+
+                "      Specifies the configuration that is tiled to fill the        \n" <<
+                "      supercell. If necessary, symmetry operations may be applied  \n" <<
+                "      An error is thrown if the specified configuration can not be \n" <<
+                "      used to fill the \"supercell\".     \n\n" <<
+
+                "      Possible options for \"configname\" are:                     \n" <<
+                "        A configuration name (ex. \"SCEL3_3_1_1_0_2_2/0\")         \n" <<
+                "        \"auto\": If the value \"auto\" is used, the enumerated    \n" <<
+                "        configurations will be searched for the configuration with \n" <<
+                "        the lowest potential energy to use as the motif.           \n\n" <<
+
+                "    /\"configdof\": (string, optional)                             \n" <<
+                "      Specifies the path to a configdof JSON file, such as         \n" <<
+                "      \"initial_state.json\" or \"final_state.json\", containing   \n" <<
+                "      the degrees of freedom to initialize the supercell with      \n\n" <<
+
+                "  /\"mode\": (string)                                              \n" <<
+                "    Specify the drive mode.                                        \n\n" <<
 
                 "    Possible options for \"mode\" are:                             \n" <<
-                "      \"single\": perform one calculation at the initial conditions\n" <<
-                "      if a calculation at those conditions has not already been run\n" <<
-                "      \"incremental\": perform several calculations, starting at the\n" <<
-                "        initial conditions and incrementing by the incremental     \n" <<
-                "        conditions up to (and including) the final conditions.     \n\n" <<
+                "      \"incremental\": perform one or more calculations, starting  \n" <<
+                "        at the initial conditions and incrementing by the          \n" <<
+                "        incremental conditions up to (and including) the final     \n" <<
+                "        conditions.                                                \n\n" <<
+                "      \"custom\": perform one or more calculations, as specified by\n" <<
+                "        the \"custom_conditions\".                                 \n\n" <<
+
+                "  /\"dependent_runs\": (boolean, default true)                     \n\n" <<
+
+                "    If true, begin the next calculation with the final DoF from the\n" <<
+                "    previous calculation. If false, begin each calculation with the\n" <<
+                "    DoF specified for the \"motif\".\n\n" <<
+
 
                 "  /\"initial_conditions\",\n" <<
                 "  /\"incremental_conditions\", \n" <<
-                "  /\"final_conditions\": \n" <<
-                "    (JSON object) Specifies the applied conditions for the         \n" <<
-                "    calculation. For \"incremental_conditions\", specifies the     \n" <<
-                "    change in conditions between individual calculations. Each JSON\n" <<
-                "    object should include:                                         \n\n" <<
+                "  /\"final_conditions\": (JSON object, optional)                    \n" <<
+                "    Specifies the applied conditions for the calculation. For       \n" <<
+                "    \"incremental_conditions\", specifies the change in conditions  \n" <<
+                "    between individual calculations. Each JSON object should        \n" <<
+                "    include:                                                        \n\n" <<
 
-                "    /\"temperature\": (number) The temperature in K.              \n\n" <<
+                "    /\"temperature\": (number)                                      \n" <<
+                "      The temperature in K.                                         \n\n" <<
 
-                "    /\"mu\" (JSON object): The chemical potential(s)              \n\n" <<
+                "    /\"param_chem_pot\" (JSON object)                               \n" <<
+                "      The parametric chemical potential(s)                          \n\n" <<
 
-                "      /\"a\", /\"b\", ...: (number) Each chemical potential. For \n" <<
-                "      example, \"a\" specifies dG/dcomp(a) and \"b\" specifies     \n" <<
-                "      dG/dcomp(b). The number of chemical potentials provided must \n" <<
-                "      match the number of independent compositions.                \n\n" <<
+                "      /\"a\", /\"b\", ...: (number)                                 \n" <<
+                "      The parametric chemical potentials conjugate to the parametric\n" <<
+                "      compositions. The number of parametric chemical potentials    \n" <<
+                "      provided must match the number of independent compositions.   \n\n" <<
 
-                "    /\"tolerance\": (number) For \"incremental\" drive mode,      \n" <<
-                "      specifies a numerical tolerance for comparing conditions.    \n\n\n";
+                "    /\"tolerance\": (number)                                        \n" <<
+                "      Specifies a numerical tolerance for comparing conditions.     \n\n" <<
 
-      std::cout << "EXAMPLE: Settings for an incremental calculation with increasing temperature in manual convergence mode.\n";
+                "  /\"custom_conditions\":\n" <<
+                "    (JSON array of JSON objects) An array specifying a custom     \n" <<
+                "    path of conditions.                                           \n\n" <<
+
+                "  Restarts: Metropolis Monte Carlo calculations that are stopped   \n" <<
+                "  before the entire path has been calculated can be restarted as   \n" <<
+                "  long as the conditions of the existing calculations agree with   \n" <<
+                "  the conditions specified in the input settings. This means that  \n" <<
+                "  the \"final_conditions\" might be changed to increase the length \n" <<
+                "  of a path, or additional \"custom_conditions\" might be added,   \n" <<
+                "  but the \"incremental_conditions\" may not be changed. Upon      \n" <<
+                "  restart, the results summary file is checked for the last        \n" <<
+                "  finished conditions. Then the path is resumed from the next set  \n" <<
+                "  of conditions. It is the responsibility of the user to ensure    \n" <<
+                "  that other important settings, such as the \"model\" are not     \n" <<
+                "  changed inappropriately.                                         \n\n\n" <<
+
+
+                "\"debug\" (bool, default false):                                   \n\n" <<
+
+                "  If true, will print as much information as possible to assist in \n" <<
+                "  debugging input file settings.                                   \n\n\n";
+
+
+      std::cout << "EXAMPLE: Settings for an incremental Metropolis calculation     \n" <<
+                "with increasing temperature in automatic convergence mode.\n";
       std::cout << "-------\n";
-      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like this one) are ignored.\",\n  \"type\" : \"grand_canonical\",\n  \"initialization\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\",\n    \"matrix\" : [\n      [9, 0, 0],\n      [0, 9, 0],\n      [0, 0, 9]\n    ],\n    \"motif\" : {\n      \"configname\" : \"SCEL3_3_1_1_0_2_2/0\"\n    }\n  },\n  \"data\" : {\n    \"sample_by\" : \"pass\",\n    \"sample_period\" : 10,\n    \"equilibration_passes_each_run\" : 1000,\n    \"N_pass\" : 10000,\n    \"measurements\" : [ \n      { \n        \"quantity\" : \"formation_energy\"\n      },\n      { \n        \"quantity\" : \"potential_energy\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp_n\"\n      },\n      { \n        \"quantity\" : \"all_correlations\"\n      }\n    ],\n    \"storage\" : {\n      \"output_format\" : \"json\"\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\",\n    \"initial_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 200.0,\n      \"tolerance\" : 0.001\n    },\n    \"final_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 800.0,\n      \"tolerance\" : 0.001\n    },\n    \"incremental_conditions\" : {\n      \"mu\" : {\n        \"a\" : 0.00\n      },\n      \"temperature\" : 10.0,\n      \"tolerance\" : 0.001\n    }\n  }\n}\n";
+      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like the ones prepended with '_' are ignored.\",\n  \"debug\" : false,\n  \"ensemble\" : \"grand_canonical\",\n  \"method\" : \"metropolis\",\n  \"model\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\"\n  },\n  \"supercell\" : [\n    [10, 0, 0],\n    [0, 10, 0],\n    [0, 0, 10]\n  ],\n  \"data\" : {\n    \"sample_by\" : \"pass\",\n    \"sample_period\" : 1,\n    \"_N_sample\" : 1000, \n    \"_N_pass\" : 1000,\n    \"_N_step\" : 1000,\n    \"_max_pass\" : 10000,\n    \"min_pass\" : 1000,\n    \"_max_step\" : 10000,\n    \"_max_sample\" : 500,\n    \"_min_sample\" : 100,\n    \"confidence\" : 0.95,\n    \"measurements\" : [ \n      { \n        \"quantity\" : \"formation_energy\"\n      },\n      { \n        \"quantity\" : \"potential_energy\"\n      },\n      { \n        \"quantity\" : \"atom_frac\"\n      },\n      { \n        \"quantity\" : \"site_frac\"\n      },\n      { \n        \"quantity\" : \"comp\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp_n\"\n      }\n    ],\n    \"storage\" : {\n      \"write_observations\" : false,\n      \"write_trajectory\" : false,\n      \"output_format\" : [\"csv\", \"json\"]\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\", \n    \"motif\" : {\n      \"configname\" : \"auto\",\n      \"_configname\" : \"SCEL3_3_1_1_0_2_2/0\",\n      \"_configdof\" : \"path/to/final_state.json\"\n    },\n    \"initial_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 100.0,\n      \"tolerance\" : 0.001\n    },\n    \"final_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 1000.0,\n      \"tolerance\" : 0.001\n    },\n    \"incremental_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : 0.0\n      },\n      \"temperature\" : 10.0,\n      \"tolerance\" : 0.001\n    }\n  }\n}\n";
       std::cout << "-------\n\n";
 
-      std::cout << "EXAMPLE: Settings for an incremental calculation with increasing mu in automatic convergence mode.\n";
+      std::cout << "EXAMPLE: Settings for an custom drive mode LTE1 calculation with\n" <<
+                "increasing temperature.\n";
       std::cout << "-------\n";
-      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like this one) are ignored.\",\n  \"type\" : \"grand_canonical\",\n  \"initialization\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\",\n    \"matrix\" : [\n      [9, 0, 0],\n      [0, 9, 0],\n      [0, 0, 9]\n    ],\n    \"motif\" : {\n      \"configname\" : \"SCEL3_3_1_1_0_2_2/0\"\n    }\n  },\n  \"data\" : {\n    \"sample_by\" : \"pass\",\n    \"sample_period\" : 1,\n    \"max_pass\" : 1000000,\n    \"measurements\" : [ \n      { \n        \"quantity\" : \"formation_energy\"\n      },\n      { \n        \"quantity\" : \"potential_energy\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"atom_frac\"\n      },\n      { \n        \"quantity\" : \"site_frac\"\n      },\n      { \n        \"quantity\" : \"comp\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp_n\"\n      },\n      { \n        \"quantity\" : \"non_zero_eci_correlations\"\n      }\n    ],\n    \"storage\" : {\n      \"write_observations\" : true,\n      \"write_trajectory\" : true,\n      \"output_format\" : \"csv\"\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\",\n    \"initial_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 800.0,\n      \"tolerance\" : 0.001\n    },\n    \"final_conditions\" : {\n      \"mu\" : {\n        \"a\" : -1.00\n      },\n      \"temperature\" : 800.0,\n      \"tolerance\" : 0.001\n    },\n    \"incremental_conditions\" : {\n      \"mu\" : {\n        \"a\" : 0.01\n      },\n      \"temperature\" : 0.0,\n      \"tolerance\" : 0.001\n    }\n  }\n}\n";
+      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like the ones prepended with '_' are ignored.\",\n  \"debug\" : false,\n  \"ensemble\" : \"grand_canonical\",\n  \"method\" : \"lte1\",\n  \"model\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\"\n  },\n  \"supercell\" : [\n    [9, 0, 0],\n    [0, 9, 0],\n    [0, 0, 9]\n  ],\n  \"data\" : {\n    \"storage\" : {\n      \"write_observations\" : false,\n      \"write_trajectory\" : false,\n      \"output_format\" : [\"csv\", \"json\"]\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\", \n    \"motif\" : {\n      \"configname\" : \"auto\",\n      \"_configname\" : \"SCEL3_3_1_1_0_2_2/0\",\n      \"_configdof\" : \"path/to/final_state.json\"\n    },\n    \"custom_conditions\" : [\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 100.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 200.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 400.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 800.0,\n        \"tolerance\" : 0.001\n      }\n    ]\n  }\n}\n";
       std::cout << "-------\n";
 
     }

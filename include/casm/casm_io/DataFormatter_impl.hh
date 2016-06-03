@@ -208,22 +208,22 @@ namespace CASM {
   //******************************************************************************
 
 
-  /// \brief Equivalent to find, but set 'home' and throws error with 
+  /// \brief Equivalent to find, but set 'home' and throws error with
   /// suggestion if @param _name not found
   template<typename DataObject, typename DatumFormatterType>
   typename DataFormatterDictionary<DataObject, DatumFormatterType>::const_iterator
   DataFormatterDictionary<DataObject, DatumFormatterType>::lookup(
     const key_type &_name) const {
-    
+
     typedef DataFormatterDictionary<DataObject, DatumFormatterType> dict_type;
-    
+
     auto res = this->find(_name);
     if(res != this->end()) {
       res->set_home(*this);
       return res;
     }
     else {
-      
+
       // If no match, try to use demerescau-levenshtein distance to make a helpful suggestion
       int min_dist(-1);
       auto it = this->begin();
@@ -235,7 +235,7 @@ namespace CASM {
           res = it;
         }
       }
-      
+
       throw std::runtime_error("CRITICAL ERROR: Invalid format flag \"" + _name + "\" specified.\n"
                                + "                Did you mean \"" + res->name() + "\"?\n");
 
@@ -323,19 +323,19 @@ namespace CASM {
   }
 
   //****************************************************************************************
-/*
-  template<typename DataObject>
-  void DataFormatterParser<DataObject>::load_aliases(const fs::path &alias_path) {
-    if(!fs::exists(alias_path)) {
-      return;
-    }
-    jsonParser mjson(alias_path);
+  /*
+    template<typename DataObject>
+    void DataFormatterParser<DataObject>::load_aliases(const fs::path &alias_path) {
+      if(!fs::exists(alias_path)) {
+        return;
+      }
+      jsonParser mjson(alias_path);
 
-    auto it(mjson.cbegin()), it_end(mjson.cend());
-    for(; it != it_end; ++it) {
-      add_custom_formatter(datum_formatter_alias<DataObject>(it.name(), it->get<std::string>()));
+      auto it(mjson.cbegin()), it_end(mjson.cend());
+      for(; it != it_end; ++it) {
+        add_custom_formatter(datum_formatter_alias<DataObject>(it.name(), it->get<std::string>()));
+      }
     }
-  }
-  */
+    */
 
 }

@@ -16,11 +16,11 @@ namespace CASM {
   //                                **** Constructors ****
   //*******************************************************************************************
   /// Initial construction of a PrimClex, from a primitive Structure
-  PrimClex::PrimClex(const Structure &_prim) :
+  PrimClex::PrimClex(const Structure &_prim, Log &log) :
     prim(_prim),
     global_orbitree(_prim.lattice()) {
 
-    _init(std::cerr);
+    _init(log);
 
     return;
   }
@@ -29,20 +29,23 @@ namespace CASM {
   //*******************************************************************************************
   /// Construct PrimClex from existing CASM project directory
   ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-  PrimClex::PrimClex(const fs::path &_root, std::ostream &sout):
+  PrimClex::PrimClex(const fs::path &_root, Log &log):
     root(_root),
     m_dir(_root),
     m_settings(_root),
     prim(read_prim(m_dir.prim())),
     global_orbitree(prim.lattice()) {
 
-    _init(sout);
+    _init(log);
 
   }
 
   /// Initialization routines
   ///  - If !root.empty(), read all saved data to generate all Supercells and Configurations, etc.
-  void PrimClex::_init(std::ostream &sout) {
+  void PrimClex::_init(Log &log) {
+
+    log.construct("CASM Project");
+    log << "from: " << root << "\n";
 
     std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
 
@@ -77,7 +80,7 @@ namespace CASM {
       from_json(m_name, settings["name"]);
     }
     catch(std::exception &e) {
-      std::cerr << "Error in PrimClex::PrimClex(const fs::path &_root, std::ostream &sout) reading .casmroot" << std::endl;
+      std::cerr << "Error in PrimClex::PrimClex(const fs::path &_root, Log &_log) reading .casmroot" << std::endl;
       std::cerr << e.what() << std::endl;
       exit(1);
     }
@@ -85,7 +88,7 @@ namespace CASM {
     // read param composition
     auto comp_axes = m_dir.composition_axes(m_settings.calctype(), m_settings.ref());
     if(fs::is_regular_file(comp_axes)) {
-      sout << "  Read " << comp_axes << std::endl;
+      log << "read: " << comp_axes << "\n";
 
       CompositionAxes opt(comp_axes);
 
@@ -98,14 +101,14 @@ namespace CASM {
     // read chemical reference
     auto chem_ref_path = m_dir.chemical_reference(m_settings.calctype(), m_settings.ref());
     if(fs::is_regular_file(chem_ref_path)) {
-      sout << "  Read " << chem_ref_path << std::endl;
-      m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim, 1e-14));
+      log << "read: " << chem_ref_path << "\n";
+      m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim, lin_alg_tol()));
     }
 
     // read supercells
     if(fs::is_regular_file(root / "training_data" / "SCEL")) {
 
-      sout << "  Read " << root / "training_data" / "SCEL" << std::endl;
+      log << "read: " << root / "training_data" / "SCEL" << "\n";
       fs::ifstream scel(root / "training_data" / "SCEL");
       read_supercells(scel);
 
@@ -114,11 +117,11 @@ namespace CASM {
     // read config_list
     if(fs::is_regular_file(get_config_list_path())) {
 
-      sout << "  Read " << get_config_list_path() << std::endl;
+      log << "read: " << get_config_list_path() << "\n";
       read_config_list();
     }
 
-
+    log << std::endl;
   }
 
 
@@ -260,7 +263,6 @@ namespace CASM {
   //*******************************************************************************************
 
   PrimNeighborList &PrimClex::nlist() const {
-    double tol = TOL;
 
     // lazy neighbor list generation
     if(!m_nlist) {
@@ -598,7 +600,7 @@ namespace CASM {
    */
   //*******************************************************************************************
   Index PrimClex::add_supercell(const Lattice &superlat) {
-    return add_canonical_supercell(niggli(superlat, prim.point_group(), tol()));
+    return add_canonical_supercell(niggli(superlat, prim.point_group(), crystallography_tol()));
 
   }
 
@@ -1084,12 +1086,10 @@ namespace CASM {
 
   }
 
-  void set_nlist_ind(const Structure &prim, SiteOrbitree &tree, const PrimNeighborList &nlist) {
+  void set_nlist_ind(const Structure &prim, SiteOrbitree &tree, const PrimNeighborList &nlist, double xtal_tol) {
 
     //For each site we encounter we access the appropriate slot in the neighbor list and append all other sites
     //to it in the form of UnitCellCoords
-
-    double tol = TOL;
 
     Array<Index> clust_nlist_inds;
 
@@ -1110,13 +1110,13 @@ namespace CASM {
           for(Index l = 0; l < tree[i][j][k].size(); l++) {
 
             //tuccl corresponds to a particular site we're looking at
-            UnitCellCoord tuccl(tree[i][j][k][l], prim, tol);
+            UnitCellCoord tuccl(tree[i][j][k][l], prim, xtal_tol);
 
             //neighbor sites
             for(Index b = 0; b < tree[i][j][k].size(); b++) {
 
               //tuccb corresponds to a site that neighbors tuccl
-              UnitCellCoord tuccb(tree[i][j][k][b], prim, tol);
+              UnitCellCoord tuccb(tree[i][j][k][b], prim, xtal_tol);
               UnitCell delta = tuccb.unitcell() - tuccl.unitcell();
 
               auto unitcell_index = find_index(nlist, delta);
@@ -1166,9 +1166,10 @@ namespace CASM {
                         SiteOrbitree &tree,
                         const PrimNeighborList &nlist,
                         std::string class_name,
-                        std::ostream &stream) {
+                        std::ostream &stream,
+                        double xtal_tol) {
 
-    set_nlist_ind(prim, tree, nlist);
+    set_nlist_ind(prim, tree, nlist, xtal_tol);
 
     DoFManager dof_manager;
     Index Nsublat = prim.basis.size();

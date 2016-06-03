@@ -1,5 +1,3 @@
-#include "casm/app/files.hh"
-
 #include <cstring>
 
 #include "casm/app/casm_functions.hh"
@@ -13,12 +11,7 @@ namespace CASM {
   // 'files' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int files_command(
-    int argc,
-    char *argv[],
-    PrimClex *_primclex,
-    std::ostream &sout,
-    std::ostream &serr) {
+  int files_command(const CommandArgs &args) {
 
     po::variables_map vm;
     fs::path out_path;
@@ -54,7 +47,7 @@ namespace CASM {
 
 
     try {
-      po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
       if(!vm.count("help")) {
 
@@ -161,19 +154,6 @@ namespace CASM {
       return ERR_UNKNOWN;
     }
 
-    // find project root
-    fs::path root;
-    if(!_primclex) {
-      root = find_casmroot(fs::current_path());
-      if(root.empty()) {
-        serr << "Error in 'casm files': No casm project found." << std::endl;
-        return ERR_NO_PROJ;
-      }
-    }
-    else {
-      root = _primclex->get_path();
-    }
-
     auto check_gz = [ = ](fs::path p) {
       if(p.extension() == ".gz" || p.extension() == ".GZ") {
         return true;
@@ -185,17 +165,25 @@ namespace CASM {
       gz_flag = true;
     }
 
+    const fs::path &root = args.root;
+    if(root.empty()) {
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
+      return ERR_NO_PROJ;
+    }
+
+
     // set output_stream: where the file paths are written
     std::unique_ptr<std::ostream> uniq_fout;
-    std::ostream &output_stream = make_ostream_if(vm.count("output"), sout, uniq_fout, out_path, gz_flag);
+    std::ostream &output_stream = make_ostream_if(vm.count("output"), args.log, uniq_fout, out_path, gz_flag);
 
     // set status_stream: where query settings and PrimClex initialization messages are sent
-    std::ostream &status_stream = (out_path.string() == "STDOUT") ? serr : sout;
+    Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
 
     // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(_primclex, uniq_primclex, root, status_stream);
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex, status_log);
 
     std::vector<fs::path> files;
     auto result = std::back_inserter(files);

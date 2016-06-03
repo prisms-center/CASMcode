@@ -1,7 +1,3 @@
-#include "super.hh"
-
-#include <cstring>
-
 #include "casm/app/casm_functions.hh"
 #include "casm/CASM_classes.hh"
 
@@ -12,7 +8,7 @@ namespace CASM {
   // 'super' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int super_command(int argc, char *argv[]) {
+  int super_command(const CommandArgs &args) {
 
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
@@ -72,10 +68,14 @@ namespace CASM {
 
       ("min-volume",
        po::value<Index>(&min_vol),
-       "Ensure that the resulting supercell has volume >= V.")
+       "Transforms the transformation matrix, T -> T', where T' = T*M, such that "
+       "(T').determininant() >= V. This has the effect that a supercell has a "
+       "particular volume.")
 
       ("fixed-shape",
-       "Use to prevent --min-volume from changing the shape of the resulting supercell.")
+       "Used with --min-volume to enforce that T' = T*m*I, where I is the identity "
+       "matrix, and m is a scalar. This has the effect of preserving the shape "
+       "of the resulting supercell, but increasing the volume.")
 
       ("verbose",
        "When used with --duper, show how the input lattices are transformed "
@@ -96,7 +96,7 @@ namespace CASM {
        "Coord mode: FRAC=0, or CART=1");
 
       try {
-        po::store(po::parse_command_line(argc, argv, desc), vm); // can throw
+        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
         if(!vm.count("help")) {
           if(!vm.count("duper")) {
@@ -224,21 +224,17 @@ namespace CASM {
     }
 
 
-    fs::path orig = fs::current_path();
-    fs::path root = find_casmroot(fs::current_path());
+    const fs::path &root = args.root;
     if(root.empty()) {
-      std::cout << "Error: No casm project found." << std::endl;
-      return 1;
+      args.err_log.error("No casm project found");
+      args.err_log << std::endl;
+      return ERR_NO_PROJ;
     }
 
-
-    std::cout << "\n***************************\n" << std::endl;
-
-    // initialize primclex
-    std::cout << "Initialize primclex: " << root << std::endl << std::endl;
-    PrimClex primclex(root, std::cout);
-    std::cout << "  DONE." << std::endl << std::endl;
-
+    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+    // Then whichever exists, store reference in 'primclex'
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
     if(vm.count("duper")) {
 
@@ -421,9 +417,13 @@ namespace CASM {
       /// enforce a minimum volume
       if(vm.count("min-volume")) {
 
-        std::cout << "  Enforcing minimum volume: " << min_vol;
-        if(vm.count("fixed-shape")) {
-          std::cout << " (with fixed shape)";
+        if(!vm.count("fixed-shape")) {
+          std::cout << "  Enforcing minimum volume: \n";
+          std::cout << "    Finding T' = T*M, such that (T').determinant() >= " << min_vol;
+        }
+        else {
+          std::cout << "  Enforcing minimum volume (with fixed shape): \n";
+          std::cout << "    Finding T' = T*m*I, such that (T').determinant() >= " << min_vol;
         }
         std::cout << "\n\n";
 
@@ -441,7 +441,7 @@ namespace CASM {
                    vm.count("fixed-shape"));
 
         Lattice niggli_lat = niggli(make_supercell(prim_lat, T * M), pg, TOL);
-        auto T = is_supercell(niggli_lat, prim_lat, TOL).second;
+        T = is_supercell(niggli_lat, prim_lat, TOL).second;
 
         std::cout << "    Transformation matrix, after enforcing mininum volume:\n"
                   << T << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
