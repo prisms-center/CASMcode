@@ -1,5 +1,5 @@
-#ifndef CASM_unit_Common
-#define CASM_unit_Common
+#ifndef CASM_UNIT_PROJ
+#define CASM_UNIT_PROJ
 
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
