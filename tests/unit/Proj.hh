@@ -4,7 +4,12 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
-#include "casm/core"
+#include "casm/CASM_global_definitions.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Site.hh"
+#include "casm/system/Popen.hh"
 
 using namespace CASM;
 
@@ -87,9 +92,6 @@ namespace test {
   void check_symgroup(const jsonParser &json, int N_op, int N_class);
 
 }
-
-#include "FCCTernaryProj.hh"
-#include "ZrOProj.hh"
 
 namespace test {
 

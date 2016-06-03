@@ -7,6 +7,10 @@
 /// What is being used to test it:
 
 #include "casm/app/ProjectBuilder.hh"
+#include "casm/clex/ConfigIOStrain.hh"
+#include "casm/clex/ConfigIOHull.hh"
+#include "casm/clex/ConfigIONovelty.hh"
+#include "casm/clex/ConfigIOStrucScore.hh"
 #include "Common.hh"
 
 using namespace CASM;
