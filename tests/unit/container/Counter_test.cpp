@@ -2,7 +2,7 @@
 #include <boost/test/unit_test.hpp>
 
 /// Dependencies
-#include "casm/CASM_classes.hh"
+#include "casm/container/Array.hh"
 
 /// What is being tested:
 #include "casm/container/Counter.hh"
