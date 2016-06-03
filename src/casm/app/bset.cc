@@ -1,6 +1,13 @@
 #include <cstring>
 #include "casm/app/casm_functions.hh"
-#include "casm/CASM_classes.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/clusterography/Orbitree.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clusterography/jsonClust.hh"
+
 
 namespace CASM {
 
