@@ -143,24 +143,17 @@ namespace CASM {
   //**********************************************************************************************
   Index PrimGrid::find(const Coordinate &_coord) const {
 
-    UnitCellCoord bijk(-1, ((((m_lat[PRIM]->inv_lat_column_mat())*_coord.cart()).array() + TOL).unaryExpr(std::ptr_fun(floor))).matrix().cast<long>());
+    auto frac(((m_lat[PRIM]->inv_lat_column_mat())*_coord.cart()).array() + TOL);
+    UnitCell ijk(frac.unaryExpr(std::ptr_fun(floor))).matrix().cast<long>());
 
-    return find(bijk);
+    return find(ijk);
   }
 
   //**********************************************************************************************
 
   Index PrimGrid::find(const UnitCell &_unitcell) const {
-    return find(UnitCellCoord(-1, _unitcell));
-  }
-
-  //**********************************************************************************************
-
-  Index PrimGrid::find(const UnitCellCoord &bijk) const {
-
-    UnitCellCoord bmnp = to_canonical(get_within(bijk));
-
-    return bmnp[1] + bmnp[2] * m_stride[0] + bmnp[3] * m_stride[1];
+    UnitCell mnp = to_canonical(get_within(_unitcell));
+    return mnp[0] + mnp[1] * m_stride[0] + mnp[2] * m_stride[1];
   }
 
   //**********************************************************************************************
@@ -171,45 +164,54 @@ namespace CASM {
 
   //**********************************************************************************************
 
-  /// The m_plane_mat works because of the following:
-  ///
-  ///     prim_frac_coord = m_trans_mat * scel_frac_coord
-  ///
-  /// m_trans_mat is integer, and (if scel_frac_coord is a lattice translation) then
-  /// prim_frac_coord is also integer.
-  ///
-  /// transf_mat.inverse() does the inverse mapping, but it is NOT integer.  However,
-  ///
-  ///      m_plane_mat = transf_mat.determinant()*transf_mat.inverse()
-  ///
-  /// is integer. This is because it is simply the adjugate matrix
-  /// (i.e., the transpose of the cofactor matrix, which can be obtained
-  ///  without using division).
-  ///
-  /// This means that
-  ///
-  ///       m_plane_mat*prim_frac_coord = m_N_vol*scel_frac_coord
-  ///
-  /// again, for a lattice translation, the left hand side is integer, so the
-  /// right hand side must be also.  Moreover, the elements of the RHS should
-  /// be on the interval [0,m_N_vol-1] if it is within the supercell.
+  /*
+    /// The m_plane_mat works because of the following:
+    ///
+    ///     prim_frac_coord = m_trans_mat * scel_frac_coord
+    ///
+    /// m_trans_mat is integer, and (if scel_frac_coord is a lattice translation) then
+    /// prim_frac_coord is also integer.
+    ///
+    /// transf_mat.inverse() does the inverse mapping, but it is NOT integer.  However,
+    ///
+    ///      m_plane_mat = transf_mat.determinant()*transf_mat.inverse()
+    ///
+    /// is integer. This is because it is simply the adjugate matrix
+    /// (i.e., the transpose of the cofactor matrix, which can be obtained
+    ///  without using division).
+    ///
+    /// This means that
+    ///
+    ///       m_plane_mat*prim_frac_coord = m_N_vol*scel_frac_coord
+    ///
+    /// again, for a lattice translation, the left hand side is integer, so the
+    /// right hand side must be also.  Moreover, the elements of the RHS should
+    /// be on the interval [0,m_N_vol-1] if it is within the supercell.
+  */
 
-  UnitCellCoord PrimGrid::get_within(const UnitCellCoord &bijk)const {
+  /// map a UnitCell inside the supercell
+  UnitCell PrimGrid::get_within(const UnitCell &ijk)const {
 
-    vector_type vec2 = m_plane_mat * bijk.unitcell();
+    vector_type vec2 = m_plane_mat * ijk;
 
     vec2[0] = ((vec2[0] % m_N_vol) + m_N_vol) % m_N_vol;
     vec2[1] = ((vec2[1] % m_N_vol) + m_N_vol) % m_N_vol;
     vec2[2] = ((vec2[2] % m_N_vol) + m_N_vol) % m_N_vol;
 
-    return UnitCellCoord(bijk[0], (m_trans_mat * vec2) / m_N_vol);
+    return (m_trans_mat * vec2) / m_N_vol;
+  }
+
+  /// map a UnitCellCoord inside the supercell
+  UnitCellCoord PrimGrid::get_within(const UnitCellCoord &bijk)const {
+
+    return UnitCellCoord(bijk.unit(), bijk.sublat(), get_within(bijk.unitcell()));
   }
 
   //**********************************************************************************************
 
-  Coordinate PrimGrid::coord(const UnitCellCoord &bijk, CELL_TYPE lat_mode)const {
+  Coordinate PrimGrid::coord(const UnitCell &ijk, CELL_TYPE lat_mode)const {
 
-    Coordinate tcoord(bijk.unitcell().cast<double>(), *(m_lat[PRIM]), FRAC);
+    Coordinate tcoord(ijk.cast<double>(), *(m_lat[PRIM]), FRAC);
 
     tcoord.set_lattice(*(m_lat[lat_mode]), CART);
     return tcoord;
@@ -218,25 +220,18 @@ namespace CASM {
   //**********************************************************************************************
 
   Coordinate PrimGrid::coord(Index l, CELL_TYPE lat_mode)const {
-    return coord(uccoord(l), lat_mode);
+    return coord(unitcell(l), lat_mode);
   }
 
   //**********************************************************************************************
 
   UnitCell PrimGrid::unitcell(Index i) const {
-    return uccoord(i).unitcell();
-  }
-
-  //**********************************************************************************************
-
-  UnitCellCoord PrimGrid::uccoord(Index i)const {
     assert(i >= 0 && i < m_N_vol && "PrimGrid::uccoord(Index i) -> index 'i' out of range!");
 
-    UnitCellCoord bmnp(-1,
-                       (i % m_stride[1]) % m_stride[0],
-                       (i % m_stride[1]) / m_stride[0],
-                       i / m_stride[1]);
-    return from_canonical(bmnp);
+    UnitCell mnp((i % m_stride[1]) % m_stride[0],
+                 (i % m_stride[1]) / m_stride[0],
+                 i / m_stride[1]);
+    return from_canonical(mnp);
   }
 
   //**********************************************************************************************
@@ -245,7 +240,7 @@ namespace CASM {
 
     SymGroupRepID perm_rep_ID = group.add_empty_representation();
     PrimGrid::matrix_type mat_mnp;
-    UnitCellCoord mnp_shift;
+    UnitCell mnp_shift;
     Index old_l, new_l;
     for(Index ng = 0; ng < group.size(); ng++) {
       SymBasisPermute const *rep = group[ng].get_basis_permute_rep(basis_permute_ID);
@@ -266,12 +261,12 @@ namespace CASM {
       //begin loop over sites
       for(Index nb = 0; nb < b_permute.size(); nb++) {
         //std::cerr << b_permute.at(nb) << '\n';
-        mnp_shift = to_canonical(b_permute.at(nb));
+        mnp_shift = to_canonical(b_permute.at(nb).unitcell());
 
         vector_type old_mnp, new_mnp;
         EigenCounter<vector_type> mnp_count(vector_type::Zero(), m_S - vector_type::Ones(), vector_type::Ones());
         for(; mnp_count.valid(); ++mnp_count) {
-          new_mnp = mat_mnp * mnp_count() + mnp_shift.unitcell();
+          new_mnp = mat_mnp * mnp_count() + mnp_shift;
 
           //map within bounds
           for(int i = 0; i < 3; i++) {
@@ -279,7 +274,7 @@ namespace CASM {
           }
 
           old_l = mnp_count[0] + mnp_count[1] * m_stride[0] + mnp_count[2] * m_stride[1] + nb * size();
-          new_l = new_mnp[0] + new_mnp[1] * m_stride[0] + new_mnp[2] * m_stride[1] + mnp_shift[0] * size();
+          new_l = new_mnp[0] + new_mnp[1] * m_stride[0] + new_mnp[2] * m_stride[1] + b_permute.at(nb).sublat() * size();
           assert(old_l < b_permute.size()*size() && new_l < b_permute.size()*size());
           // We have found uccoord(new_l) = symop*uccoord(old_l) -- this describes how indexing of the uccoordinates change
           // However, the indexing of the uccoords remains fixed, and we want to describe the permutation of something *at* the sites,
@@ -306,28 +301,28 @@ namespace CASM {
     Array<Permutation > perms;
     perms.reserve(size());
     Array<Index> ipermute(NB * size(), 0);
-    UnitCellCoord shift_bmnp, bmnp;
+    UnitCell shift_mnp, mnp;
     //std::cerr << "In PrimGrid::make_translation_permutations:\n";
     Index new_l;
     for(Index shift_l = 0; shift_l < size(); shift_l++) {
-      //shift_bmnp describes translation by uccoord(shift_l)
-      shift_bmnp[1] = (shift_l % m_stride[1]) % m_stride[0];
-      shift_bmnp[2] = (shift_l % m_stride[1]) / m_stride[0];
-      shift_bmnp[3] =   shift_l / m_stride[1];
-      //std::cerr << "shift_bmnp " << shift_l << " is " << shift_bmnp;
+      //shift_mnp describes translation by uccoord(shift_l)
+      shift_mnp[0] = (shift_l % m_stride[1]) % m_stride[0];
+      shift_mnp[1] = (shift_l % m_stride[1]) / m_stride[0];
+      shift_mnp[2] =   shift_l / m_stride[1];
+      //std::cerr << "shift_mnp " << shift_l << " is " << shift_mnp;
       for(Index old_l = 0; old_l < size(); old_l++) {
-        bmnp[1] = (old_l % m_stride[1]) % m_stride[0];
-        bmnp[2] = (old_l % m_stride[1]) / m_stride[0];
-        bmnp[3] = old_l / m_stride[1];
-        //std::cerr << "old_bmnp " << old_l << " is " << bmnp;
+        mnp[0] = (old_l % m_stride[1]) % m_stride[0];
+        mnp[1] = (old_l % m_stride[1]) / m_stride[0];
+        mnp[2] = old_l / m_stride[1];
+        //std::cerr << "old_mnp " << old_l << " is " << mnp;
 
-        bmnp[1] = (bmnp[1] + shift_bmnp[1]) % m_S[0];
-        bmnp[2] = (bmnp[2] + shift_bmnp[2]) % m_S[1];
-        bmnp[3] = (bmnp[3] + shift_bmnp[3]) % m_S[2];
+        mnp[0] = (mnp[0] + shift_mnp[0]) % m_S[0];
+        mnp[1] = (mnp[1] + shift_mnp[1]) % m_S[1];
+        mnp[2] = (mnp[2] + shift_mnp[2]) % m_S[2];
 
-        //std::cerr << "new_bmnp " << bmnp[1] + bmnp[2] * m_stride[0] + bmnp[3] * m_stride[1] << " is " << bmnp;
+        //std::cerr << "new_mnp " << mnp[1] + mnp[2] * m_stride[0] + mnp[3] * m_stride[1] << " is " << mnp;
         for(Index nb = 0; nb < NB; nb++) {
-          new_l = bmnp[1] + bmnp[2] * m_stride[0] + bmnp[3] * m_stride[1];
+          new_l = mnp[0] + mnp[1] * m_stride[0] + mnp[2] * m_stride[1];
 
           // See comments in PrimGrid::make_permutation_representation() above
           ipermute[new_l + nb * size()] = old_l + nb * size();
@@ -340,32 +335,33 @@ namespace CASM {
   // private functions:
 
   //**********************************************************************************************
-  /// Convert UnitCellCoord (bijk) to canonical UnitCellCoord (bmnp)
+  /// Convert UnitCell (ijk) to canonical UnitCell (mnp)
   /// mnp = m_invU * ijk
-  UnitCellCoord PrimGrid::to_canonical(const UnitCellCoord &bijk) const {
-    UnitCellCoord bmnp(bijk[0], 0, 0, 0);
+  UnitCell PrimGrid::to_canonical(const UnitCell &ijk) const {
+    UnitCell mnp(0, 0, 0);
     for(int i = 0; i < 3; i++) {
       for(int j = 0; j < 3; j++) {
-        bmnp[i + 1] += m_invU(i, j) * bijk[j + 1];
+        mnp[i] += m_invU(i, j) * bijk[j];
       }
       //Map within bounds
-      bmnp[i + 1] = ((bmnp[i + 1] % m_S[i]) + m_S[i]) % m_S[i];
+      mnp[i] = ((mnp[i] % m_S[i]) + m_S[i]) % m_S[i];
     }
 
-    return bmnp;
+    return mnp;
   }
 
   //**********************************************************************************************
-  /// Convert canonical UnitCellCoord (bmnp) to UnitCellCoord (bijk)
+
+  /// Convert canonical UnitCell (mnp) to UnitCell (ijk)
   /// U*mnp = ijk
-  UnitCellCoord PrimGrid::from_canonical(const UnitCellCoord &bmnp) const {
-    UnitCellCoord bijk(bmnp[0], 0, 0, 0);
+  UnitCell PrimGrid::from_canonical(const UnitCell &mnp) const {
+    UnitCell ijk(0, 0, 0);
     for(int i = 0; i < 3; i++) {
       for(int j = 0; j < 3; j++) {
-        bijk[i + 1] += m_U(i, j) * bmnp[j + 1];
+        ijk[i] += m_U(i, j) * mnp[j];
       }
     }
-    return get_within(bijk);
+    return get_within(ijk);
   };
 
   //==============================================================================================

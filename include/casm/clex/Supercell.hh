@@ -205,9 +205,7 @@ namespace CASM {
     };
 
     UnitCellCoord uccoord(Index i) const {
-      UnitCellCoord t_bijk = m_prim_grid.uccoord(i % volume());
-      t_bijk[0] = sublat(i);
-      return t_bijk;
+      return UnitCellCoord(prim(), sublat(i), m_prim_grid.unitcell(i % volume()));
     };
     const Eigen::MatrixXcd &fourier_matrix() const {
       return m_fourier_matrix;
