@@ -1,8 +1,6 @@
-include $(top_srcdir)/common.mk
-
 install:
-	cd $(top_srcdir)/python/casm && $(PYTHON) setup.py install --prefix=$(PYTHON_PREFIX) "$(TXT_VERSION)"
-	cd $(top_srcdir)/python/vasp && $(PYTHON) setup.py install --prefix=$(PYTHON_PREFIX) "$(TXT_VERSION)"
+	cd $(top_srcdir)/python/casm && $(PYTHON) $(abs_builddir)/casm/setup.py install --prefix=$(PYTHON_PREFIX)
+	cd $(top_srcdir)/python/vasp && $(PYTHON) $(abs_builddir)/vasp/setup.py install --prefix=$(PYTHON_PREFIX)
 
 
 

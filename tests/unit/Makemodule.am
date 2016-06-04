@@ -1,6 +1,6 @@
 check_PROGRAMS += casm_units
 
-casm_units_CXXFLAGS=$(CXXFLAGS) -I$(srcdir)/tests/unit/
+casm_units_CXXFLAGS=$(AM_CXXFLAGS) -I$(srcdir)/tests/unit/
 
 casm_units_SOURCES = ./tests/unit/clex/test_Clexulator.cc\
 					 ./tests/unit/Common.cpp\

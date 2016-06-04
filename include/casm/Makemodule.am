@@ -1,231 +1,231 @@
 #fooincludedir=		directory to place in your --prefix include
 #fooinclude_HEADERS	what files to put in the directory you just specified
-#always give the full path
+#always give the full path, don't use things like $(srcdir)
 
 
 casmincludedir=$(includedir)/casm
 casminclude_HEADERS= include/casm/CASM_global_definitions.hh 
 
 clexincludedir=$(includedir)/casm/clex
-clexinclude_HEADERS=$(top_builddir)/include/casm/clex/ChemicalReference.hh\
-					$(top_builddir)/include/casm/clex/Clexulator_Draft.hh\
-					$(top_builddir)/include/casm/clex/clexulator_example.cc.hide\
-					$(top_builddir)/include/casm/clex/Clexulator.hh\
-					$(top_builddir)/include/casm/clex/CompositionConverter.hh\
-					$(top_builddir)/include/casm/clex/ConfigDoF.hh\
-					$(top_builddir)/include/casm/clex/ConfigEnumAllOccupations.hh\
-					$(top_builddir)/include/casm/clex/ConfigEnumAllOccupations_impl.hh\
-					$(top_builddir)/include/casm/clex/ConfigEnum.hh\
-					$(top_builddir)/include/casm/clex/ConfigEnumInterpolation.hh\
-					$(top_builddir)/include/casm/clex/ConfigEnumInterpolation_impl.hh\
-					$(top_builddir)/include/casm/clex/ConfigEnumIterator.hh\
-					$(top_builddir)/include/casm/clex/ConfigEnumStrain.hh\
-					$(top_builddir)/include/casm/clex/ConfigEnumStrain_impl.hh\
-					$(top_builddir)/include/casm/clex/ConfigIO.hh\
-					$(top_builddir)/include/casm/clex/ConfigIOHull.hh\
-					$(top_builddir)/include/casm/clex/ConfigIONovelty.hh\
-					$(top_builddir)/include/casm/clex/ConfigIOSelected.hh\
-					$(top_builddir)/include/casm/clex/ConfigIOStrain.hh\
-					$(top_builddir)/include/casm/clex/ConfigIOStrucScore.hh\
-					$(top_builddir)/include/casm/clex/ConfigIterator.hh\
-					$(top_builddir)/include/casm/clex/ConfigMapping.hh\
-					$(top_builddir)/include/casm/clex/ConfigSelection.hh\
-					$(top_builddir)/include/casm/clex/ConfigSelection_impl.hh\
-					$(top_builddir)/include/casm/clex/Configuration.hh\
-					$(top_builddir)/include/casm/clex/Correlation.hh\
-					$(top_builddir)/include/casm/clex/DoFManager.hh\
-					$(top_builddir)/include/casm/clex/ECIContainer.hh\
-					$(top_builddir)/include/casm/clex/FilteredConfigIterator.hh\
-					$(top_builddir)/include/casm/clex/NeighborList.hh\
-					$(top_builddir)/include/casm/clex/Norm.hh\
-					$(top_builddir)/include/casm/clex/ParamComposition.hh\
-					$(top_builddir)/include/casm/clex/PrimClex.hh\
-					$(top_builddir)/include/casm/clex/Properties.hh\
-					$(top_builddir)/include/casm/clex/Reference.hh\
-					$(top_builddir)/include/casm/clex/Supercell.hh
+clexinclude_HEADERS=./include/casm/clex/ChemicalReference.hh\
+					./include/casm/clex/Clexulator_Draft.hh\
+					./include/casm/clex/clexulator_example.cc.hide\
+					./include/casm/clex/Clexulator.hh\
+					./include/casm/clex/CompositionConverter.hh\
+					./include/casm/clex/ConfigDoF.hh\
+					./include/casm/clex/ConfigEnumAllOccupations.hh\
+					./include/casm/clex/ConfigEnumAllOccupations_impl.hh\
+					./include/casm/clex/ConfigEnum.hh\
+					./include/casm/clex/ConfigEnumInterpolation.hh\
+					./include/casm/clex/ConfigEnumInterpolation_impl.hh\
+					./include/casm/clex/ConfigEnumIterator.hh\
+					./include/casm/clex/ConfigEnumStrain.hh\
+					./include/casm/clex/ConfigEnumStrain_impl.hh\
+					./include/casm/clex/ConfigIO.hh\
+					./include/casm/clex/ConfigIOHull.hh\
+					./include/casm/clex/ConfigIONovelty.hh\
+					./include/casm/clex/ConfigIOSelected.hh\
+					./include/casm/clex/ConfigIOStrain.hh\
+					./include/casm/clex/ConfigIOStrucScore.hh\
+					./include/casm/clex/ConfigIterator.hh\
+					./include/casm/clex/ConfigMapping.hh\
+					./include/casm/clex/ConfigSelection.hh\
+					./include/casm/clex/ConfigSelection_impl.hh\
+					./include/casm/clex/Configuration.hh\
+					./include/casm/clex/Correlation.hh\
+					./include/casm/clex/DoFManager.hh\
+					./include/casm/clex/ECIContainer.hh\
+					./include/casm/clex/FilteredConfigIterator.hh\
+					./include/casm/clex/NeighborList.hh\
+					./include/casm/clex/Norm.hh\
+					./include/casm/clex/ParamComposition.hh\
+					./include/casm/clex/PrimClex.hh\
+					./include/casm/clex/Properties.hh\
+					./include/casm/clex/Reference.hh\
+					./include/casm/clex/Supercell.hh
 
 
 basissetincludedir=$(includedir)/casm/basisi_set
-basissetinclude_HEADERS=$(top_builddir)/include/casm/basis_set/BasisFunction.hh\
-						$(top_builddir)/include/casm/basis_set/BasisSet.hh\
-						$(top_builddir)/include/casm/basis_set/chebychev.m\
-						$(top_builddir)/include/casm/basis_set/DoF.hh\
-						$(top_builddir)/include/casm/basis_set/FunctionVisitor.hh\
-						$(top_builddir)/include/casm/basis_set/OccupantFunction.hh\
-						$(top_builddir)/include/casm/basis_set/PolynomialFunction.hh\
-						$(top_builddir)/include/casm/basis_set/Variable.hh
+basissetinclude_HEADERS=./include/casm/basis_set/BasisFunction.hh\
+						./include/casm/basis_set/BasisSet.hh\
+						./include/casm/basis_set/chebychev.m\
+						./include/casm/basis_set/DoF.hh\
+						./include/casm/basis_set/FunctionVisitor.hh\
+						./include/casm/basis_set/OccupantFunction.hh\
+						./include/casm/basis_set/PolynomialFunction.hh\
+						./include/casm/basis_set/Variable.hh
 
 
 casmioincludedir=$(includedir)/casm/casm_io
-casmioinclude_HEADERS=$(top_builddir)/include/casm/casm_io/Args.hh\
-					  $(top_builddir)/include/casm/casm_io/DataFormatter.hh\
-					  $(top_builddir)/include/casm/casm_io/DataFormatter_impl.hh\
-					  $(top_builddir)/include/casm/casm_io/DataFormatterTools.hh\
-					  $(top_builddir)/include/casm/casm_io/DataFormatterTools_impl.hh\
-					  $(top_builddir)/include/casm/casm_io/DataStream.hh\
-					  $(top_builddir)/include/casm/casm_io/EigenDataStream.hh\
-					  $(top_builddir)/include/casm/casm_io/FileEnumerator.hh\
-					  $(top_builddir)/include/casm/casm_io/FormatFlag.hh\
-					  $(top_builddir)/include/casm/casm_io/json_io/clex.hh\
-					  $(top_builddir)/include/casm/casm_io/json_io/container.hh\
-					  $(top_builddir)/include/casm/casm_io/json_io/global.hh\
-					  $(top_builddir)/include/casm/casm_io/jsonParser.hh\
-					  $(top_builddir)/include/casm/casm_io/Log.hh\
-					  $(top_builddir)/include/casm/casm_io/SafeOfstream.hh\
-					  $(top_builddir)/include/casm/casm_io/VaspIO.hh
+casmioinclude_HEADERS=./include/casm/casm_io/Args.hh\
+					  ./include/casm/casm_io/DataFormatter.hh\
+					  ./include/casm/casm_io/DataFormatter_impl.hh\
+					  ./include/casm/casm_io/DataFormatterTools.hh\
+					  ./include/casm/casm_io/DataFormatterTools_impl.hh\
+					  ./include/casm/casm_io/DataStream.hh\
+					  ./include/casm/casm_io/EigenDataStream.hh\
+					  ./include/casm/casm_io/FileEnumerator.hh\
+					  ./include/casm/casm_io/FormatFlag.hh\
+					  ./include/casm/casm_io/json_io/clex.hh\
+					  ./include/casm/casm_io/json_io/container.hh\
+					  ./include/casm/casm_io/json_io/global.hh\
+					  ./include/casm/casm_io/jsonParser.hh\
+					  ./include/casm/casm_io/Log.hh\
+					  ./include/casm/casm_io/SafeOfstream.hh\
+					  ./include/casm/casm_io/VaspIO.hh
 
 
 clusterographyincludedir=$(includedir)/casm/clusterography
-clusterographyinclude_HEADERS=$(top_builddir)/include/casm/clusterography/ClusterFunctions.hh\
-							  $(top_builddir)/include/casm/clusterography/Cluster.hh\
-							  $(top_builddir)/include/casm/clusterography/Cluster_impl.hh\
-							  $(top_builddir)/include/casm/clusterography/jsonClust.hh\
-							  $(top_builddir)/include/casm/clusterography/OrbitBranch.hh\
-							  $(top_builddir)/include/casm/clusterography/OrbitBranch_impl.hh\
-							  $(top_builddir)/include/casm/clusterography/Orbit.hh\
-							  $(top_builddir)/include/casm/clusterography/Orbit_impl.hh\
-							  $(top_builddir)/include/casm/clusterography/Orbitree.hh\
-							  $(top_builddir)/include/casm/clusterography/Orbitree_impl.hh\
-							  $(top_builddir)/include/casm/clusterography/SiteCluster.hh
+clusterographyinclude_HEADERS=./include/casm/clusterography/ClusterFunctions.hh\
+							  ./include/casm/clusterography/Cluster.hh\
+							  ./include/casm/clusterography/Cluster_impl.hh\
+							  ./include/casm/clusterography/jsonClust.hh\
+							  ./include/casm/clusterography/OrbitBranch.hh\
+							  ./include/casm/clusterography/OrbitBranch_impl.hh\
+							  ./include/casm/clusterography/Orbit.hh\
+							  ./include/casm/clusterography/Orbit_impl.hh\
+							  ./include/casm/clusterography/Orbitree.hh\
+							  ./include/casm/clusterography/Orbitree_impl.hh\
+							  ./include/casm/clusterography/SiteCluster.hh
 
 
 containerincludedir=$(includedir)/casm/container
-containerinclude_HEADERS=$(top_builddir)/include/casm/container/Array.hh\
-						 $(top_builddir)/include/casm/container/BaseCounter.hh\
-						 $(top_builddir)/include/casm/container/ContainerTraits.hh\
-						 $(top_builddir)/include/casm/container/Counter.hh\
-						 $(top_builddir)/include/casm/container/IsoCounter.hh\
-						 $(top_builddir)/include/casm/container/LinearAlgebra.hh\
-						 $(top_builddir)/include/casm/container/MultiCounter.hh\
-						 $(top_builddir)/include/casm/container/multivector.hh\
-						 $(top_builddir)/include/casm/container/Permutation.hh\
-						 $(top_builddir)/include/casm/container/PolyTrie.hh\
-						 $(top_builddir)/include/casm/container/Template_Algorithms.hh\
-						 $(top_builddir)/include/casm/container/Tensor.hh
+containerinclude_HEADERS=./include/casm/container/Array.hh\
+						 ./include/casm/container/BaseCounter.hh\
+						 ./include/casm/container/ContainerTraits.hh\
+						 ./include/casm/container/Counter.hh\
+						 ./include/casm/container/IsoCounter.hh\
+						 ./include/casm/container/LinearAlgebra.hh\
+						 ./include/casm/container/MultiCounter.hh\
+						 ./include/casm/container/multivector.hh\
+						 ./include/casm/container/Permutation.hh\
+						 ./include/casm/container/PolyTrie.hh\
+						 ./include/casm/container/Template_Algorithms.hh\
+						 ./include/casm/container/Tensor.hh
 
 
 crystallographyincludedir=$(includedir)/casm/crystallography
-crystallographyinclude_HEADERS=$(top_builddir)/include/casm/crystallography/BasicStructure.hh\
-							   $(top_builddir)/include/casm/crystallography/BasicStructure_impl.hh\
-							   $(top_builddir)/include/casm/crystallography/Coordinate.hh\
-							   $(top_builddir)/include/casm/crystallography/CoordinateSystems.hh\
-							   $(top_builddir)/include/casm/crystallography/jsonStruc.hh\
-							   $(top_builddir)/include/casm/crystallography/Lattice.hh\
-							   $(top_builddir)/include/casm/crystallography/LatticeMap.hh\
-							   $(top_builddir)/include/casm/crystallography/Molecule.hh\
-							   $(top_builddir)/include/casm/crystallography/PrimGrid.hh\
-							   $(top_builddir)/include/casm/crystallography/Site.hh\
-							   $(top_builddir)/include/casm/crystallography/Structure.hh\
-							   $(top_builddir)/include/casm/crystallography/SupercellEnumerator.hh\
-							   $(top_builddir)/include/casm/crystallography/UnitCellCoord.hh
+crystallographyinclude_HEADERS=./include/casm/crystallography/BasicStructure.hh\
+							   ./include/casm/crystallography/BasicStructure_impl.hh\
+							   ./include/casm/crystallography/Coordinate.hh\
+							   ./include/casm/crystallography/CoordinateSystems.hh\
+							   ./include/casm/crystallography/jsonStruc.hh\
+							   ./include/casm/crystallography/Lattice.hh\
+							   ./include/casm/crystallography/LatticeMap.hh\
+							   ./include/casm/crystallography/Molecule.hh\
+							   ./include/casm/crystallography/PrimGrid.hh\
+							   ./include/casm/crystallography/Site.hh\
+							   ./include/casm/crystallography/Structure.hh\
+							   ./include/casm/crystallography/SupercellEnumerator.hh\
+							   ./include/casm/crystallography/UnitCellCoord.hh
 
 
 hullincludedir=$(includedir)/casm/hull
-hullinclude_HEADERS=$(top_builddir)/include/casm/hull/Hull.hh
+hullinclude_HEADERS=./include/casm/hull/Hull.hh
 
 miscincludedir=$(includedir)/casm/misc
-miscinclude_HEADERS=$(top_builddir)/include/casm/misc/algorithm.hh\
-					$(top_builddir)/include/casm/misc/CASM_math.hh\
-					$(top_builddir)/include/casm/misc/CASM_TMP.hh\
-					$(top_builddir)/include/casm/misc/cloneable_ptr.hh\
-					$(top_builddir)/include/casm/misc/HierarchyID.hh\
-					$(top_builddir)/include/casm/misc/PCA.hh\
-					$(top_builddir)/include/casm/misc/unique_cloneable_map.hh\
-					$(top_builddir)/include/casm/misc/unique_map.hh
+miscinclude_HEADERS=./include/casm/misc/algorithm.hh\
+					./include/casm/misc/CASM_math.hh\
+					./include/casm/misc/CASM_TMP.hh\
+					./include/casm/misc/cloneable_ptr.hh\
+					./include/casm/misc/HierarchyID.hh\
+					./include/casm/misc/PCA.hh\
+					./include/casm/misc/unique_cloneable_map.hh\
+					./include/casm/misc/unique_map.hh
 
 
 montecarloincludedir=$(includedir)/casm/monte_carlo
-montecarloinclude_HEADERS=$(top_builddir)/include/casm/monte_carlo/SiteExchanger.hh\
-						  $(top_builddir)/include/casm/monte_carlo/DoFMod.hh\
-						  $(top_builddir)/include/casm/monte_carlo/.MonteIO.hh.swp\
-						  $(top_builddir)/include/casm/monte_carlo/MonteSampler.hh\
-						  $(top_builddir)/include/casm/monte_carlo/MonteCounter.hh\
-						  $(top_builddir)/include/casm/monte_carlo/MonteDriver.hh.orig\
-						  $(top_builddir)/include/casm/monte_carlo/MonteIO.hh\
-						  $(top_builddir)/include/casm/monte_carlo/MonteSettings.hh\
-						  $(top_builddir)/include/casm/monte_carlo/MonteDefinitions.hh\
-						  $(top_builddir)/include/casm/monte_carlo/MonteHelpers.hh.orig\
-						  $(top_builddir)/include/casm/monte_carlo/MonteDriver.hh\
-						  $(top_builddir)/include/casm/monte_carlo/grand_canonical/GrandCanonicalEvent.hh\
-						  $(top_builddir)/include/casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh\
-						  $(top_builddir)/include/casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh\
-						  $(top_builddir)/include/casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh\
-						  $(top_builddir)/include/casm/monte_carlo/grand_canonical/GrandCanonical.hh\
-						  $(top_builddir)/include/casm/monte_carlo/MonteCarlo.hh\
-						  $(top_builddir)/include/casm/monte_carlo/MCData.hh
+montecarloinclude_HEADERS=./include/casm/monte_carlo/SiteExchanger.hh\
+						  ./include/casm/monte_carlo/DoFMod.hh\
+						  ./include/casm/monte_carlo/.MonteIO.hh.swp\
+						  ./include/casm/monte_carlo/MonteSampler.hh\
+						  ./include/casm/monte_carlo/MonteCounter.hh\
+						  ./include/casm/monte_carlo/MonteDriver.hh.orig\
+						  ./include/casm/monte_carlo/MonteIO.hh\
+						  ./include/casm/monte_carlo/MonteSettings.hh\
+						  ./include/casm/monte_carlo/MonteDefinitions.hh\
+						  ./include/casm/monte_carlo/MonteHelpers.hh.orig\
+						  ./include/casm/monte_carlo/MonteDriver.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalEvent.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonical.hh\
+						  ./include/casm/monte_carlo/MonteCarlo.hh\
+						  ./include/casm/monte_carlo/MCData.hh
 
 
 strainincludedir=$(includedir)/casm/strain
-straininclude_HEADERS=$(top_builddir)/include/casm/strain/StrainConverter.hh
+straininclude_HEADERS=./include/casm/strain/StrainConverter.hh
 
 symmetryincludedir=$(includedir)/casm/symmetry
-symmetryinclude_HEADERS=$(top_builddir)/include/casm/symmetry/SymOp.hh\
-						$(top_builddir)/include/casm/symmetry/SymGroupRepID.hh\
-						$(top_builddir)/include/casm/symmetry/SymBasisPermute.hh\
-						$(top_builddir)/include/casm/symmetry/SymMatrixXd.hh\
-						$(top_builddir)/include/casm/symmetry/SymPermutation.hh\
-						$(top_builddir)/include/casm/symmetry/PermuteIterator.hh\
-						$(top_builddir)/include/casm/symmetry/SymGroup.hh\
-						$(top_builddir)/include/casm/symmetry/SymGroupRep.hh\
-						$(top_builddir)/include/casm/symmetry/SymOpRepresentation.hh
+symmetryinclude_HEADERS=./include/casm/symmetry/SymOp.hh\
+						./include/casm/symmetry/SymGroupRepID.hh\
+						./include/casm/symmetry/SymBasisPermute.hh\
+						./include/casm/symmetry/SymMatrixXd.hh\
+						./include/casm/symmetry/SymPermutation.hh\
+						./include/casm/symmetry/PermuteIterator.hh\
+						./include/casm/symmetry/SymGroup.hh\
+						./include/casm/symmetry/SymGroupRep.hh\
+						./include/casm/symmetry/SymOpRepresentation.hh
 
 
 systemincludedir=$(includedir)/casm/system
-systeminclude_HEADERS=$(top_builddir)/include/casm/system/RuntimeLibrary.hh\
-					  $(top_builddir)/include/casm/system/Popen.hh
+systeminclude_HEADERS=./include/casm/system/RuntimeLibrary.hh\
+					  ./include/casm/system/Popen.hh
 
 
 versionincludedir=$(includedir)/casm/version
-versioninclude_HEADERS=$(top_builddir)/include/casm/version/version.hh
+versioninclude_HEADERS=./include/casm/version/version.hh
 
 appincludedir=$(includedir)/casm/app
-appinclude_HEADERS=$(top_builddir)/include/casm/app/AppIO.hh\
-				   $(top_builddir)/include/casm/app/casm_functions.hh\
-				   $(top_builddir)/include/casm/app/DirectoryStructure.hh\
-				   $(top_builddir)/include/casm/app/ProjectBuilder.hh\
-				   $(top_builddir)/include/casm/app/ProjectSettings.hh
+appinclude_HEADERS=./include/casm/app/AppIO.hh\
+				   ./include/casm/app/casm_functions.hh\
+				   ./include/casm/app/DirectoryStructure.hh\
+				   ./include/casm/app/ProjectBuilder.hh\
+				   ./include/casm/app/ProjectSettings.hh
 
 externalincludedir=$(includedir)/casm/external
-externalinclude_HEADERS=$(top_builddir)/include/casm/external/gzstream/gzstream.h\
-						$(top_builddir)/include/casm/external/json_spirit/json_spirit_error_position.h\
-						$(top_builddir)/include/casm/external/json_spirit/json_spirit.h\
-						$(top_builddir)/include/casm/external/json_spirit/json_spirit_reader_template.h\
-						$(top_builddir)/include/casm/external/json_spirit/json_spirit_value.h\
-						$(top_builddir)/include/casm/external/json_spirit/json_spirit_writer_options.h\
-						$(top_builddir)/include/casm/external/json_spirit/json_spirit_writer_template.h\
-						$(top_builddir)/include/casm/external/MersenneTwister/MersenneTwister.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/Coordinates.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/functionObjects.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/PointCoordinates.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullError.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullFacet.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullFacetList.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullFacetSet.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/Qhull.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullHyperplane.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullIterator.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullLinkedList.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullPoint.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullPointSet.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullPoints.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullQh.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullRidge.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullSet.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullSets.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullStat.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullVertex.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/QhullVertexSet.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/RboxPoints.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/RoadError.h\
-						$(top_builddir)/include/casm/external/qhull/libqhullcpp/RoadLogEvent.h\
-						$(top_builddir)/include/casm/external/qhull/libqhull_r/geom_r.h\
-						$(top_builddir)/include/casm/external/qhull/libqhull_r/io_r.h\
-						$(top_builddir)/include/casm/external/qhull/libqhull_r/libqhull_r.h\
-						$(top_builddir)/include/casm/external/qhull/libqhull_r/mem_r.h\
-						$(top_builddir)/include/casm/external/qhull/libqhull_r/merge_r.h\
-						$(top_builddir)/include/casm/external/qhull/libqhull_r/poly_r.h\
-						$(top_builddir)/include/casm/external/qhull/libqhull_r/qhull_ra.h\
-						$(top_builddir)/include/casm/external/qhull/libqhull_r/qset_r.h\
-						$(top_builddir)/include/casm/external/qhull/libqhull_r/random_r.h\
-						$(top_builddir)/include/casm/external/qhull/libqhull_r/stat_r.h\
-						$(top_builddir)/include/casm/external/qhull/libqhull_r/user_r.h
+externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
+						./include/casm/external/json_spirit/json_spirit_error_position.h\
+						./include/casm/external/json_spirit/json_spirit.h\
+						./include/casm/external/json_spirit/json_spirit_reader_template.h\
+						./include/casm/external/json_spirit/json_spirit_value.h\
+						./include/casm/external/json_spirit/json_spirit_writer_options.h\
+						./include/casm/external/json_spirit/json_spirit_writer_template.h\
+						./include/casm/external/MersenneTwister/MersenneTwister.h\
+						./include/casm/external/qhull/libqhullcpp/Coordinates.h\
+						./include/casm/external/qhull/libqhullcpp/functionObjects.h\
+						./include/casm/external/qhull/libqhullcpp/PointCoordinates.h\
+						./include/casm/external/qhull/libqhullcpp/QhullError.h\
+						./include/casm/external/qhull/libqhullcpp/QhullFacet.h\
+						./include/casm/external/qhull/libqhullcpp/QhullFacetList.h\
+						./include/casm/external/qhull/libqhullcpp/QhullFacetSet.h\
+						./include/casm/external/qhull/libqhullcpp/Qhull.h\
+						./include/casm/external/qhull/libqhullcpp/QhullHyperplane.h\
+						./include/casm/external/qhull/libqhullcpp/QhullIterator.h\
+						./include/casm/external/qhull/libqhullcpp/QhullLinkedList.h\
+						./include/casm/external/qhull/libqhullcpp/QhullPoint.h\
+						./include/casm/external/qhull/libqhullcpp/QhullPointSet.h\
+						./include/casm/external/qhull/libqhullcpp/QhullPoints.h\
+						./include/casm/external/qhull/libqhullcpp/QhullQh.h\
+						./include/casm/external/qhull/libqhullcpp/QhullRidge.h\
+						./include/casm/external/qhull/libqhullcpp/QhullSet.h\
+						./include/casm/external/qhull/libqhullcpp/QhullSets.h\
+						./include/casm/external/qhull/libqhullcpp/QhullStat.h\
+						./include/casm/external/qhull/libqhullcpp/QhullVertex.h\
+						./include/casm/external/qhull/libqhullcpp/QhullVertexSet.h\
+						./include/casm/external/qhull/libqhullcpp/RboxPoints.h\
+						./include/casm/external/qhull/libqhullcpp/RoadError.h\
+						./include/casm/external/qhull/libqhullcpp/RoadLogEvent.h\
+						./include/casm/external/qhull/libqhull_r/geom_r.h\
+						./include/casm/external/qhull/libqhull_r/io_r.h\
+						./include/casm/external/qhull/libqhull_r/libqhull_r.h\
+						./include/casm/external/qhull/libqhull_r/mem_r.h\
+						./include/casm/external/qhull/libqhull_r/merge_r.h\
+						./include/casm/external/qhull/libqhull_r/poly_r.h\
+						./include/casm/external/qhull/libqhull_r/qhull_ra.h\
+						./include/casm/external/qhull/libqhull_r/qset_r.h\
+						./include/casm/external/qhull/libqhull_r/random_r.h\
+						./include/casm/external/qhull/libqhull_r/stat_r.h\
+						./include/casm/external/qhull/libqhull_r/user_r.h

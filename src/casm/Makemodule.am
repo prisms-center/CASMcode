@@ -137,5 +137,5 @@ libcasm_la_SOURCES = ./src/casm/CASM_global_definitions.cc\
 libcasm_la_LDFLAGS=-avoid-version
 
 #Always make the version to stay updated
-./src/casm/version/version.o: .FORCE
+./src/casm/version/autoversion.o: .FORCE
 

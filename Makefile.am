@@ -13,7 +13,7 @@ man1_MANS=
 
 #===========================================================#
 #Define flags for everything ever
-include $(srcdir)/common.mk
+TXT_VERSION:=$(shell cat $(top_srcdir)/build-aux/casm_version.txt)
 
 AM_CXXFLAGS = -DTXT_VERSION='"$(TXT_VERSION)"'\
 			  -DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long\
@@ -27,6 +27,9 @@ AM_CPPFLAGS = -I$(srcdir)/include/casm/external/qhull/libqhull_r/\
 
 #AM_CXXFLAGS+=$(BOOST_CXXFLAGS)? AM_LDFLAGS+=$(BOOST_LDFLAGS)?
 
+#===========================================================#
+#Always have included modules use paths relative to this
+#parent Makefile.am. Avoid variable expansion in *_SOURCES
 #===========================================================#
 #Create shared casm libraries
 include $(srcdir)/src/casm/Makemodule.am
@@ -43,20 +46,33 @@ include $(srcdir)/apps/casm/Makemodule.am
 
 #===========================================================#
 #Take care of tests
-#include $(srcdir)/tests/unit/Makemodule.am
+include $(srcdir)/tests/unit/Makemodule.am
 
-#===========================================================#
+#=====================DELETE=================================#
+#lib_LTLIBRARIES+=libdumb.la
+#libdumb_la_SOURCES=./src/casm/CASM_global_definitions.cc
+#libdumb_la_LDFLAGS=-avoid-version
+#============================================================#
 #Misc targets
 .FORCE:
 
-#===========================================================#
-#Recurse into these places
-#SUBDIRS=$(srcdir)/python
+test:
+	echo $(srcdir)
+	echo $(top_srcdir)
+
+#============================================================#
+#Recurse into these places (must be direct children, don't be fancy)
+#SUBDIRS= python
 
 #Files that arent sources for executalbes or headers that get installed, but are needed in the distribution.
 EXTRA_DIST=./build-aux/casm_version.txt\
 		   ./man/casm.1\
-		   ./python/Makefile.in\
-		   ./python/Makefile.am\
-		   ./tests/unit/Common.hh
+		   ./python\
+		   ./tests/unit/Proj.hh\
+		   ./tests/unit/Common.hh\
+		   ./tests/unit/FCCTernaryProj.hh\
+		   ./tests/unit/ZrOProj.hh
+
+#Extra files that should be cleaned up upon `distclean`
+DISTCLEANFILES=./python/Makefile
 
