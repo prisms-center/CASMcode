@@ -17,22 +17,23 @@ namespace CASM {
 
   /// \brief A CRTP base class for a cluster of anything
   ///
-  /// - Needs a CASM_TMP::traits<DerivedCluster>::Element type
-  /// - Needs a valid ClusterInvariants<DerivedCluster> to help comparisons
-  /// - Needs DerivedCluster::apply_sym to be implemented
+  /// - Needs a CASM_TMP::traits<Derived>::Element type
+  /// - Needs a CASM_TMP::traits<Derived>::InvariantsType type
+  /// - Needs Derived::apply_sym_impl to be implemented
+  ///
   /// \ingroup Clusterography
   ///
-  template<typename DerivedCluster>
+  template<typename Derived>
   class GenericCluster {
 
   public:
 
     typedef unsigned int size_type;
-    typedef typename CASM_TMP::traits<DerivedCluster>::Element Element;
+    typedef typename CASM_TMP::traits<Derived>::Element Element;
+    typedef typename CASM_TMP::traits<Derived>::InvariantsType InvariantsType;
     typedef typename std::vector<Element>::value_type value_type;
     typedef typename std::vector<Element>::iterator iterator;
     typedef typename std::vector<Element>::const_iterator const_iterator;
-    typedef ClusterInvariants<DerivedCluster> InvariantsType;
 
     /// \brief Construct an empty GenericCluster
     GenericCluster() {}
@@ -123,12 +124,12 @@ namespace CASM {
 
   protected:
 
-    DerivedCluster &derived() {
-      return *static_cast<DerivedCluster *>(this);
+    Derived &derived() {
+      return *static_cast<Derived *>(this);
     }
 
-    const DerivedCluster &derived() const {
-      return *static_cast<const DerivedCluster *>(this);
+    const Derived &derived() const {
+      return *static_cast<const Derived *>(this);
     }
 
   private:
@@ -141,11 +142,13 @@ namespace CASM {
 
   /// \brief CRTP-Base cluster class to apply_sym on an element-by-element basis
   ///
-  /// - Needs a CASM_TMP::traits<DerivedCluster>::Element type
-  /// - Needs a valid ClusterInvariants<DerivedCluster> to help comparisons
+  /// - Needs a CASM_TMP::traits<Derived>::Element type
+  /// - Needs a CASM_TMP::traits<Derived>::InvariantsType type
   ///
-  template<typename DerivedCluster>
-  class ElementWiseSymCluster : public GenericCluster<DerivedCluster> {
+  /// \ingroup Clusterography
+  ///
+  template<typename Derived>
+  class ElementWiseSymCluster : public GenericCluster<Derived> {
 
   public:
 
@@ -156,10 +159,12 @@ namespace CASM {
     template<typename InputIterator>
     ElementWiseSymCluster(InputIterator _begin,
                           InputIterator _end) :
-      GenericCluster<DerivedCluster>(_begin, _end) {}
+      GenericCluster<Derived>(_begin, _end) {}
+
+  private:
 
     /// \brief ElementWiseSymCluster applies symmetry element-by-element
-    DerivedCluster &apply_sym(const SymOp &op) {
+    Derived &apply_sym_impl(const SymOp &op) {
       for(auto &e : this->derived()) {
         e.apply_sym(op);
       }
@@ -168,80 +173,125 @@ namespace CASM {
 
   };
 
-  /// \brief Default intra orbit comparison of clusters
+
+  /* -- ClusterSymCompare Declaration ------------------------------------- */
+
+  template<typename Derived> class ClusterSymCompare;
+
+  namespace CASM_TMP {
+
+    /// \brief Traits class for any ClusterSymCompare derived class
+    ///
+    /// \ingroup IntegralCluster
+    ///
+    template<typename Derived>
+    struct traits<ClusterSymCompare<Derived> > {
+      typedef typename traits<Derived>::MostDerived MostDerived;
+      typedef typename traits<Derived>::Element Element;
+      typedef typename traits<Derived>::InvariantsType InvariantsType;
+    };
+  }
+
+  /// \brief CRTP Base class for Cluster comparisons
   ///
   /// Implements:
-  /// \code
-  /// std::lexicographical_compare(A.begin(), A.end(), B.begin(), B.end(), compare);
-  /// \endcode
+  /// - 'invariants_compare_impl' using 'compare'
+  /// - 'inter_orbit_compare_impl' using 'cluster_inter_orbit_compare'
+  /// - 'apply_sym_impl' (does nothing)
+  ///
+  /// Does not implement:
+  /// - 'prepare_impl'
+  /// - 'intra_orbit_compare_impl'
+  ///
+  /// The ClusterSymCompare hierarchy:
+  /// - SymCompare
+  ///   - ClusterSymCompare
+  ///     - IntegralClusterSymCompare (implements 'intra_orbit_compare_impl')
+  ///       - LocalSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///
   /// \ingroup Clusterography
   ///
-  template<typename ClusterType, typename Compare = std::less<typename CASM_TMP::traits<ClusterType>::Element> >
-  bool cluster_intra_orbit_compare(const ClusterType &A,
-                                   const ClusterType &B,
-                                   Compare compare = Compare()) {
-    return std::lexicographical_compare(A.begin(), A.end(), B.begin(), B.end(), compare);
-  }
+  template<typename Derived>
+  class ClusterSymCompare : public SymCompare<ClusterSymCompare<Derived> > {
 
-  /// \brief Default comparison of orbit prototypes
-  ///
-  /// \param A, B clusters to check for A < B
-  /// \param tol Tolerance for comparison of element-to-element distances
-  /// \param compare_element Compare concept functor for lexicographical comparison of cluster elements
-  /// \param compare_invariants Compare concept functor for cluster invariants
-  ///
-  /// Compares:
-  /// - cluster size
-  /// - element-to-element distances (max to min)
-  /// - lexicographical_compare of elements, via compare
-  ///
-  /// Implements:
-  /// \code
-  /// // first compare cluster size
-  /// if(A.size() != B.size()) {
-  ///   return A.size() < B.size();
-  /// }
-  ///
-  /// // next compare invariants
-  /// if( compare_invariants(ClusterInvariants<Element>(A), ClusterInvariants<Element>(B), tol) ) {
-  ///   return true;
-  /// }
-  /// if( compare_invariants(ClusterInvariants<Element>(B), ClusterInvariants<Element>(A), tol) ) {
-  ///   return false;
-  /// }
-  ///
-  /// // next lexicographical_compare of UnitCellCoord in A and B
-  /// return std::lexicographical_compare(A.begin(), A.end(), B.begin(), B.end(), compare_element);
-  /// \endcode
-  ///
-  /// \ingroup Clusterography
-  ///
-  template<typename ClusterType,
-           typename CompareElement = std::less<typename CASM_TMP::traits<ClusterType>::Element>,
-           typename CompareInvariants = FloatCompare>
-  bool cluster_inter_orbit_compare(const ClusterType &A,
-                                   const ClusterType &B,
-                                   double tol,
-                                   CompareElement compare_element = CompareElement(),
-                                   CompareInvariants compare_invariants = FloatCompare(TOL)) {
+  public:
 
-    // first compare cluster size
-    if(A.size() != B.size()) {
-      return A.size() < B.size();
+    /// Element refers to Cluster, not element of Cluster
+    typedef typename CASM_TMP::traits<Derived>::MostDerived MostDerived;
+    typedef typename CASM_TMP::traits<Derived>::Element Element;
+    typedef Element ClusterType;
+    typedef typename CASM_TMP::traits<Derived>::InvariantsType InvariantsType;
+
+    /// \brief Return tolerance
+    double tol() const {
+      return m_tol;
     }
 
-    // next compare invariants
-    if(compare_invariants(A.invariants(), B.invariants())) {
-      return true;
-    }
-    if(compare_invariants(B.invariants(), A.invariants())) {
-      return false;
+  protected:
+
+    friend class SymCompare<ClusterSymCompare<Derived> >;
+
+    /// \brief Constructor
+    ///
+    /// \param tol Tolerance for inter_orbit_compare of site-to-site distances
+    ///
+    ClusterSymCompare(double tol):
+      SymCompare<ClusterSymCompare<Derived> >(),
+      m_tol(tol) {
+
     }
 
-    // next lexicographical_compare of Element in A and B
-    return std::lexicographical_compare(A.begin(), A.end(), B.begin(), B.end(), compare_element);
-  }
+    // intra_orbit_compare_impl : implement in Derived
+
+    /// \brief Orders 'prepared' elements in the same orbit
+    ///
+    /// - Returns 'true' to indicate A < B
+    /// - Equivalence is indicated by \code !compare(A,B) && !compare(B,A) \endcode
+    /// - Assumes elements are 'prepared' before being compared
+    /// Implementation:
+    /// - First compares by number of sites in cluster
+    /// - Then compare all displacements, from longest to shortest
+    bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const {
+      return compare(A, B, tol());
+    }
+
+    /// \brief Orders orbit prototypes, breaking invariants_compare ties
+    ///
+    /// - Returns 'true' to indicate A < B
+    /// - Equivalence is indicated by \code !compare(A,B) && !compare(B,A) \endcode
+    /// - Assumes elements are in canonical form
+    ///
+    /// Implementation:
+    /// - First, check invariants_compare
+    /// - Break ties with, std::lexicographical_compare of elements in A and B
+    bool inter_orbit_compare_impl(const ClusterType &A, const ClusterType &B) const {
+
+      // first compare invariants
+      if(this->invariants_compare(A.invariants(), B.invariants())) {
+        return true;
+      }
+      if(this->invariants_compare(B.invariants(), A.invariants())) {
+        return false;
+      }
+
+      // next lexicographical_compare of Element in A and B
+      return this->intra_orbit_compare(A, B);
+    }
+
+    /// \brief Apply symmetry to this
+    ///
+    /// - Affects no change
+    void apply_sym_impl(const SymOp &op) {
+      return;
+    }
+
+  private:
+
+    double m_tol;
+
+  };
 
 }
 

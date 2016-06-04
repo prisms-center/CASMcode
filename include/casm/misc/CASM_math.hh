@@ -14,6 +14,56 @@
 
 namespace CASM {
 
+  /// \brief Implements other comparisons in terms of Derived::operator<(const Derived& B)
+  /// is implemented
+  ///
+  /// Implements:
+  /// - '>', '<=', '>=', '==', '!='
+  /// - '==' and '!=' can be specialized in Derived by implementing private methods
+  ///   '_eq' and '_ne'
+  template<typename Derived>
+  struct Comparisons {
+
+    bool operator>(const Derived &B) const {
+      return B < derived();
+    };
+
+    bool operator<=(const Derived &B) const {
+      return !(B < derived());
+    };
+
+    bool operator>=(const Derived &B) const {
+      return !(derived() < B);
+    };
+
+    bool operator==(const Derived &B) const {
+      return derived()._eq(B);
+    };
+
+    bool operator!=(const Derived &B) const {
+      return derived()._ne(B);
+    };
+
+
+  protected:
+
+    const Derived &derived() const {
+      return *static_cast<Derived *>(this);
+    }
+
+
+  private:
+
+    bool _eq(const Derived &B) const {
+      return (!(derived() < B) && !(B < derived()));
+    };
+
+    bool _ne(const Derived &B) const {
+      return !derived()._eq(B);
+    };
+
+  };
+
   // *******************************************************************************************
 
   //round function -- rounds to nearest whole number; half-integers are rounded away from zero

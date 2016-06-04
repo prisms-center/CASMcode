@@ -16,10 +16,27 @@ namespace CASM {
   template<typename CoordType>
   class CoordCluster;
 
+  /** \defgroup Clusterography
+
+      \brief Functions and classes related to clusters
+  */
+
+  /** \defgroup CoordCluster
+
+      \brief Functions and classes related to CoordCluster
+      \ingroup Clusterography
+  */
+
   namespace CASM_TMP {
+
+    /// \brief Traits class for CoordCluster<CoordType>
+    ///
+    /// \ingroup CoordCluster
+    ///
     template<typename CoordType>
-    struct CASM_TMP::traits<CoordCluster<CoordType> > {
+    struct traits<CoordCluster<CoordType> > {
       typedef CoordType Element;
+      typedef ClusterInvariants<CoordCluster<CoordType> > InvariantsType;
     };
   }
 
@@ -29,7 +46,7 @@ namespace CASM {
   /// - has a ptr to a primitive Structure
   /// - may be translated by UnitCell
   ///
-  /// \ingroup Clusterography
+  /// \ingroup CoordCluster
   ///
   template<typename CoordType>
   class CoordCluster : public ElementWiseSymCluster<CoordCluster<CoordType> > {
@@ -85,14 +102,6 @@ namespace CASM {
       return this->invariants().displacement().back();
     }
 
-    /// \brief Apply symmetry to each element
-    CoordCluster &apply_sym(const SymOp &op) {
-      for(auto it = this->begin(); it != this->end(); ++it) {
-        apply(op, *it);
-      }
-      return *this;
-    }
-
     /// \brief Translate the cluster by a UnitCell translation
     CoordCluster &operator+=(UnitCell trans) {
       for(auto it = this->begin(); it != this->end(); ++it) {
@@ -117,12 +126,15 @@ namespace CASM {
   };
 
   /// \brief Translate a cluster
+  ///
+  /// \ingroup CoordCluster
+  ///
   template<typename CoordType>
   CoordCluster<CoordType> operator+(CoordCluster<CoordType> cluster, UnitCell trans);
 
   /// \brief Translate a cluster
   ///
-  /// \relates GenericCluster
+  /// \ingroup CoordCluster
   ///
   template<typename CoordType>
   CoordCluster<CoordType> operator-(CoordCluster<CoordType> cluster, UnitCell trans);
@@ -133,7 +145,7 @@ namespace CASM {
 
   /// \brief Translate a cluster
   ///
-  /// \relates GenericCluster
+  /// \ingroup CoordCluster
   ///
   template<typename CoordType>
   CoordCluster<CoordType> operator+(CoordCluster<CoordType> cluster, UnitCell trans) {
@@ -142,7 +154,7 @@ namespace CASM {
 
   /// \brief Translate a cluster
   ///
-  /// \relates GenericCluster
+  /// \ingroup CoordCluster
   ///
   template<typename CoordType>
   CoordCluster<CoordType> operator-(CoordCluster<CoordType> cluster, UnitCell trans) {

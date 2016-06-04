@@ -51,7 +51,10 @@ namespace CASM {
     }
 
     /// \brief generate clust_basis for all equivalent clusters in @param _orbitree
-    void generate(SiteOrbitree const &_orbitree,
+    template<typename ClusterOrbitIterator>
+    void generate(ClusterOrbitIterator begin,
+                  ClusterOrbitIterator end,
+                  const jsonParser &bspecs,
                   std::vector<DoFType> const &dof_keys,
                   Index max_poly_order = -1);
 

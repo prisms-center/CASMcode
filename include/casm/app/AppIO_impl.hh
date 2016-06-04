@@ -2,7 +2,20 @@
 #define CASM_AppIO_impl
 
 #include "casm/app/AppIO.hh"
+
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Site.hh"
+//#include "casm/symmetry/SymInfo.hh"
+//#include "casm/symmetry/SymGroup.hh"
+#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/clex/CompositionConverter.hh"
+#include "casm/clex/ChemicalReference.hh"
 #include "casm/clex/ClexBasis.hh"
+
+#include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/clex.hh"
+#include "casm/casm_io/SafeOfstream.hh"
+
 
 namespace CASM {
 
@@ -36,7 +49,7 @@ namespace CASM {
 
   /// \brief Print IntegralCluster orbits
   ///
-  /// \param begin,end Range of Orbit<IntegralCluster>
+  /// \param begin,end Range of Orbit<IntegralCluster, SymCompareType>
   /// \param out output stream
   /// \param mode Coordinate output mode
   /// \param printer A functor to control printing for the orbit
@@ -44,7 +57,7 @@ namespace CASM {
   /// Printer is expected to have:
   /// - \code std::string Printer::indent(); \endcode
   /// - \code void Printer::coord_mode(std::ostream& out); \endcode
-  /// - \code void Printer::operator()(const Orbit<IntegralCluster>& orbit, std::ostream& out, Index orbit_index, Index Norbits); \endcode
+  /// - \code void Printer::operator()(const Orbit<IntegralCluster, SymCompareType>& orbit, std::ostream& out, Index orbit_index, Index Norbits); \endcode
   ///
   template<typename ClusterOrbitIterator, typename OrbitPrinter>
   void print_clust(
@@ -82,7 +95,7 @@ namespace CASM {
 
   /// \brief Print site basis functions, as for 'casm bset --functions'
   ///
-  /// \param begin,end Range of Orbit<IntegralCluster>
+  /// \param begin,end Range of Orbit<IntegralCluster, SymCompareType>
   /// \param clex_basis A ClexBasis object generated from the provided orbits
   /// \param out output stream
   /// \param mode Coordinate output mode
@@ -143,7 +156,37 @@ namespace CASM {
 
   // ---------- clust.json IO ------------------------------------------------------------------
 
-  /// \brief Print clust.json file
+  /// \brief Read JSON containing Orbit<IntegralCluster, SymCompareType> prototypes
+  ///
+  /// - Uses 'prim', 'generating_grp', and 'sym_compare' to generate orbits from
+  ///   prototypes read from the JSON
+  /// - Ignores "prim" and "bspecs" info in the JSON
+  ///
+  template<typename ClusterOutputIterator, typename SymCompareType>
+  ClusterOutputIterator read_clust(
+    ClusterOutputIterator result,
+    jsonParser &json,
+    const BasicStructure<Site> &prim,
+    const SymGroup &generating_grp,
+    const SymCompareType &sym_compare) {
+
+    for(auto it = json["orbits"].begin(); it != json["orbits"].end(); ++it) {
+
+      // read prototype
+      auto &j = (*it)["prototype"]["sites"];
+      std::vector<UnitCellCoord> coord(j.size(), UnitCellCoord(prim));
+      auto coord_it = coord.begin();
+      for(auto j_it = j.begin(); it != j.end(); ++j_it) {
+        from_json(*coord_it++, *j_it);
+      }
+
+      IntegralCluster proto(prim, coord.begin(), coord.end());
+      *result++ = Orbit<IntegralCluster, SymCompareType>(proto, generating_grp, sym_compare);
+    }
+    return result;
+  }
+
+  /// \brief Write JSON containing Orbit<IntegralCluster, SymCompareType> prototypes
   ///
   /// Format:
   /// \code
@@ -173,10 +216,7 @@ namespace CASM {
       auto &j = (*j_it++)["prototype"];
       j["min_length"] = proto.min_length();
       j["max_length"] = proto.max_length();
-      j["sites"] = jsonParser::array();
-      for(auto coord_it = proto.begin(); coord_it != proto.end(); ++coord_it) {
-        j["sites"].push_back(*coord_it);
-      }
+      j["sites"].put_array(proto.begin(), proto.end());
     }
     json["bspecs"] = bspecs;
     write_prim(begin->prototype().prim(), json["prim"], FRAC);

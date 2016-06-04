@@ -1,23 +1,26 @@
 #ifndef CASM_AppIO
 #define CASM_AppIO
 
-#include "casm/crystallography/BasicStructure.hh"
-#include "casm/crystallography/Coordinate.hh"
-#include "casm/symmetry/SymInfo.hh"
-#include "casm/symmetry/SymGroup.hh"
-#include "casm/clusterography/IntegralCluster.hh"
-#include "casm/clex/CompositionConverter.hh"
-#include "casm/clex/ChemicalReference.hh"
+#include <string>
+#include <map>
 
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/json_io/clex.hh"
-#include "casm/casm_io/SafeOfstream.hh"
+#include "casm/CASM_global_definitions.hh"
+#include "casm/clex/CompositionConverter.hh"
 
 namespace CASM {
 
   // --- These functions are for casm I/O -----------
 
+  template<typename CoordType> class BasicStructure;
+  class Site;
+  class jsonParser;
   class ClexBasis;
+  class ChemicalReference;
+  template<typename CoordType> class CoordCluster;
+  class UnitCellCoord;
+  typedef CoordCluster<UnitCellCoord> IntegralCluster;
+  template<typename Element, typename SymCompareType> class Orbit;
+
 
   // --------- PrimIO Declarations --------------------------------------------------
 
@@ -116,31 +119,62 @@ namespace CASM {
     void print_sites(const IntegralCluster &clust, std::ostream &out);
   };
 
-  /// \brief Print Orbit<IntegralCluster>, including only prototypes
+  /// \brief Print Orbit<IntegralCluster, SymCompareType>, including only prototypes
   struct ProtoSitesPrinter : public SitesPrinter {
 
-    ProtoSitesPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC);
+    ProtoSitesPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      SitesPrinter(_indent_space, _delim, _mode) {}
 
-    void operator()(const Orbit<IntegralCluster> &orbit, std::ostream &out, Index orbit_index, Index Norbits);
+
+    template<typename OrbitType>
+    void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+      out << indent() << indent() << "Prototype" << " of " << orbit.size()
+          << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
+      print_sites(orbit.prototype(), out);
+    }
   };
 
-  /// \brief Print Orbit<IntegralCluster>, including all equivalents
+  /// \brief Print Orbit<IntegralCluster, SymCompareType>, including all equivalents
   struct FullSitesPrinter : public SitesPrinter {
 
-    FullSitesPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC);
+    FullSitesPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      SitesPrinter(_indent_space, _delim, _mode) {}
 
-    void operator()(const Orbit<IntegralCluster> &orbit, std::ostream &out, Index orbit_index, Index Norbits);
+
+    template<typename OrbitType>
+    void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+      for(Index equiv_index = 0; equiv_index != orbit.size(); ++equiv_index) {
+        out << indent() << indent() << equiv_index << " of " << orbit.size()
+            << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
+        print_sites(orbit.prototype(), out);
+      }
+    }
   };
 
-  /// \brief Print Orbit<IntegralCluster> & ClexBasis, including prototypes and prototype basis functions
+  /// \brief Print Orbit<IntegralCluster, SymCompareType> & ClexBasis, including prototypes and prototype basis functions
   struct ProtoFuncsPrinter : public SitesPrinter {
 
     const ClexBasis &clex_basis;
 
-    ProtoFuncsPrinter(const ClexBasis &_clex_basis, int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC);
+    ProtoFuncsPrinter(const ClexBasis &_clex_basis, int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      SitesPrinter(_indent_space, _delim, _mode),
+      clex_basis(_clex_basis) {}
 
-    void operator()(const Orbit<IntegralCluster> &orbit, std::ostream &out, Index orbit_index, Index Norbits);
+    template<typename OrbitType>
+    void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+      out << indent() << indent() << "Prototype" << " of " << orbit.size()
+          << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
+      print_sites(orbit.prototype(), out);
+
+      throw std::runtime_error("Error printing basis functions: ProtoFuncsPrinter not implemented");
+      //print_clust_basis(out, nf, 8, '\n');
+      //nf += prototype(i, j).clust_basis.size();
+      //out << "\n\n" << std::flush;
+    }
+
   };
+
+
 
   /// \brief Print IntegralCluster orbits
   template<typename ClusterOrbitIterator, typename OrbitPrinter>
@@ -162,7 +196,16 @@ namespace CASM {
 
   // ---------- clust.json IO ------------------------------------------------------------------
 
-  /// \brief Print clust.json file
+  /// \brief Read JSON containing Orbit<IntegralCluster, SymCompareType> prototypes
+  template<typename ClusterOutputIterator, typename SymCompareType>
+  ClusterOutputIterator read_clust(
+    ClusterOutputIterator result,
+    jsonParser &json,
+    const BasicStructure<Site> &prim,
+    const SymGroup &generating_grp,
+    const SymCompareType &sym_compare);
+
+  /// \brief Write JSON containing Orbit<IntegralCluster, SymCompareType> prototypes
   template<typename ClusterOrbitIterator>
   jsonParser &write_clust(
     ClusterOrbitIterator begin,

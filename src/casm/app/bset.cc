@@ -1,6 +1,9 @@
 #include <cstring>
 #include "casm/app/casm_functions.hh"
+#include "casm/app/AppIO.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/ClexBasis.hh"
 
 namespace CASM {
 
@@ -68,6 +71,9 @@ namespace CASM {
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
+    // not sure how this will work yet...
+    std::vector<std::string> dof_keys = {"occupation"};
+
     if(vm.count("update")) {
 
       // initialize project info
@@ -132,36 +138,47 @@ namespace CASM {
         args.log.construct("Orbitree");
         args.log << std::endl;
 
-        make_orbits(prim, bspecs_json, std::back_inserter(orbits), args.log);
+        make_orbits(prim,
+                    prim.factor_group(),
+                    bspecs_json,
+                    alloy_sites_filter,
+                    PrimPeriodicIntegralClusterSymCompare(set.crystallography_tol()),
+                    std::back_inserter(orbits),
+                    args.log);
 
         clex_basis.reset(new ClexBasis(prim));
-        clex_basis.generate(orbits.begin(), orbits.end(), bspecs, dof_keys);
+        clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json, dof_keys);
 
-        catch(std::exception &e) {
-          args.err_log << e.what() << std::endl;
-          return ERR_INVALID_INPUT_FILE;
-        }
+      }
+      catch(std::exception &e) {
+        args.err_log << e.what() << std::endl;
+        return ERR_INVALID_INPUT_FILE;
+      }
 
-        // -- write clust.json ----------------
+      // -- write clust.json ----------------
+      {
         jsonParser clust_json;
         write_clust(orbits.begin(), orbits.end(), bspecs_json, clust_json);
-        basis_json.write(dir.clust(set.bset()));
+        clust_json.write(dir.clust(set.bset()));
 
-        args.log.write(dir.clust(set.bset()));
+        args.log.write(dir.clust(set.bset()).string());
         args.log << std::endl;
+      }
 
 
-        // -- write basis.json ----------------
+      // -- write basis.json ----------------
+      {
         jsonParser basis_json;
         write_basis(orbits.begin(), orbits.end(), *clex_basis, basis_json, set.crystallography_tol());
         basis_json.write(dir.basis(set.bset()));
 
-        args.log.write(dir.basis(set.bset()));
+        args.log.write(dir.basis(set.bset()).string());
         args.log << std::endl;
+      }
 
 
-        // -- write global Clexulator
-
+      // -- write global Clexulator
+      {
         // get the neighbor list
         PrimNeighborList nlist(
           set.nlist_weight_matrix(),
@@ -169,55 +186,66 @@ namespace CASM {
           set.nlist_sublat_indices().end()
         );
 
-        // expand the nlist to contain 'tree'
+        // expand the nlist to contain sites in all orbits
         std::set<UnitCellCoord> nbors;
-        neighborhood(std::inserter(nbors, nbors.begin()), orbits.begin(), orbits.end(), prim, set.crystallography_tol());
+        prim_periodic_neighborhood(orbits.begin(), orbits.end(), std::inserter(nbors, nbors.begin()));
         nlist.expand(nbors.begin(), nbors.end());
 
         // write source code
         fs::ofstream outfile;
         outfile.open(dir.clexulator_src(set.name(), set.bset()));
-        print_clexulator(orbits.begin(), orbits.end(), *clex_basis, nlist, set.global_clexulator(), outfile, set.crystallography_tol());
+        print_clexulator(*clex_basis, nlist, set.global_clexulator(), outfile, set.crystallography_tol());
         outfile.close();
 
-        args.log.write(dir.clexulator_src(set.name(), set.bset()));
+        args.log.write(dir.clexulator_src(set.name(), set.bset()).string());
         args.log << std::endl;
-
-      }
-      else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
-
-        DirectoryStructure dir(root);
-        ProjectSettings set(root);
-
-        if(!fs::exists(dir.clust(set.bset()))) {
-          std::cerr << "ERROR: No 'clust.json' file found. Make sure to update your basis set with 'casm bset -u'.\n";
-          return ERR_MISSING_DEPENDS;
-        }
-
-        PrimClex primclex(root, args.log);
-
-        std::vector<Orbit<IntegralCluster> > orbits;
-        read_orbits(std::back_inserter(orbits), dir.clust(set.bset()));
-
-        if(vm.count("orbits")) {
-          print_clust(orbits.begin(), orbits.end(), args.log, ProtoSitePrinter());
-        }
-        if(vm.count("clusters")) {
-          print_clust(orbits.begin(), orbits.end(), args.log, FullSitePrinter());
-        }
-        if(vm.count("functions")) {
-          ClexBasis clex_basis(primclex.prim());
-          clex_basis.generate(orbits.begin(), orbits.end(), bspecs, dof_keys);
-
-          print_clust(orbits.begin(), orbits.end(), args.log, ProtoFuncsPrinter(clex_basis));
-        }
-      }
-      else {
-        std::cerr << "\n" << desc << "\n";
       }
 
-      return 0;
-    };
+    }
+    else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
 
-  }
+      DirectoryStructure dir(root);
+      ProjectSettings set(root);
+
+      if(!fs::exists(dir.clust(set.bset()))) {
+        std::cerr << "ERROR: No 'clust.json' file found. Make sure to update your basis set with 'casm bset -u'.\n";
+        return ERR_MISSING_DEPENDS;
+      }
+
+      PrimClex primclex(root, args.log);
+      jsonParser clust_json(dir.clust(set.bset()));
+
+      std::vector<Orbit<IntegralCluster> > orbits;
+      read_clust(
+        std::back_inserter(orbits),
+        clust_json,
+        primclex.prim(),
+        primclex.prim().factor_group(),
+        PrimPeriodicIntegralClusterSymCompare(set.crystallography_tol())
+      );
+
+      if(vm.count("orbits")) {
+        print_clust(orbits.begin(), orbits.end(), args.log, ProtoSitesPrinter());
+      }
+      if(vm.count("clusters")) {
+        print_clust(orbits.begin(), orbits.end(), args.log, FullSitesPrinter());
+      }
+      if(vm.count("functions")) {
+        jsonParser bspecs_json;
+        bspecs_json.read(dir.bspecs(set.bset()));
+
+        ClexBasis clex_basis(primclex.prim());
+        clex_basis.generate(orbits.begin(), orbits.end(), bspecs_json, dof_keys);
+
+        print_clust(orbits.begin(), orbits.end(), args.log, ProtoFuncsPrinter(clex_basis));
+      }
+    }
+    else {
+      std::cerr << "\n" << desc << "\n";
+    }
+
+    return 0;
+  };
+
+}
 

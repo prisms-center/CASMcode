@@ -43,7 +43,7 @@ namespace CASM {
   ///
   /// - Represent a crystal site using UnitCell indices and sublattice index
   ///
-  class UnitCellCoord {
+  class UnitCellCoord : public Comparisons<UnitCellCoord> {
 
   public:
 
@@ -95,8 +95,11 @@ namespace CASM {
 
     UnitCellCoord &operator-=(UnitCell frac);
 
+    bool operator<(const UnitCellCoord &B) const;
 
   private:
+
+    bool _eq(const UnitCellCoord &B) const;
 
     const UnitType *m_unit;
     UnitCell m_unitcell;
@@ -116,24 +119,6 @@ namespace CASM {
 
   /// \brief Subtract UnitCell from UnitCellCoord
   inline UnitCellCoord operator-(UnitCellCoord site, UnitCell frac);
-
-  /// \brief Compare UnitCellCoord
-  inline bool operator<(const UnitCellCoord &A, const UnitCellCoord &B);
-
-  /// \brief Compare UnitCellCoord
-  inline bool operator>(const UnitCellCoord &A, const UnitCellCoord &B);
-
-  /// \brief Compare UnitCellCoord
-  inline bool operator<=(const UnitCellCoord &A, const UnitCellCoord &B);
-
-  /// \brief Compare UnitCellCoord
-  inline bool operator>=(const UnitCellCoord &A, const UnitCellCoord &B);
-
-  /// \brief Compare UnitCellCoord
-  inline bool operator==(const UnitCellCoord &A, const UnitCellCoord &B);
-
-  /// \brief Compare UnitCellCoord
-  inline bool operator!=(const UnitCellCoord &A, const UnitCellCoord &B);
 
   /// \brief Print to json as [b, i, j, k]
   jsonParser &to_json(const UnitCellCoord &ucc_val, jsonParser &fill_json);
@@ -239,23 +224,9 @@ namespace CASM {
     return *this;
   }
 
-  /// \brief Add UnitCell to UnitCellCoord
-  inline UnitCellCoord operator+(UnitCell frac, UnitCellCoord site) {
-    return site += frac;
-  }
-
-  /// \brief Add UnitCell to UnitCellCoord
-  inline UnitCellCoord operator+(UnitCellCoord site, UnitCell frac) {
-    return site += frac;
-  }
-
-  /// \brief Subtract UnitCell from UnitCellCoord
-  inline UnitCellCoord operator-(UnitCellCoord site, UnitCell frac) {
-    return site -= frac;
-  }
-
   /// \brief Compare UnitCellCoord
-  inline bool operator<(const UnitCellCoord &A, const UnitCellCoord &B) {
+  inline bool UnitCellCoord::operator<(const UnitCellCoord &B) const {
+    const auto &A = *this;
     for(Index i = 0; i < 3; i++) {
       if(A.unitcell()(i) < B.unitcell()(i)) {
         return true;
@@ -271,31 +242,27 @@ namespace CASM {
     return false;
   }
 
-  /// \brief Compare UnitCellCoord
-  inline bool operator>(const UnitCellCoord &A, const UnitCellCoord &B) {
-    return B < A;
-  }
-
-  /// \brief Compare UnitCellCoord
-  inline bool operator<=(const UnitCellCoord &A, const UnitCellCoord &B) {
-    return !(A > B);
-  }
-
-  /// \brief Compare UnitCellCoord
-  inline bool operator>=(const UnitCellCoord &A, const UnitCellCoord &B) {
-    return !(A < B);
-  }
-
-  inline bool operator==(const UnitCellCoord &A, const UnitCellCoord &B) {
+  inline bool UnitCellCoord::_eq(const UnitCellCoord &B) const {
+    const auto &A = *this;
     return A.unitcell()(0) == B.unitcell()(0) &&
            A.unitcell()(1) == B.unitcell()(1) &&
            A.unitcell()(2) == B.unitcell()(2) &&
            A.sublat() == B.sublat();
   }
 
-  /// \brief Compare UnitCellCoord
-  inline bool operator!=(const UnitCellCoord &A, const UnitCellCoord &B) {
-    return !(A == B);
+  /// \brief Add UnitCell to UnitCellCoord
+  inline UnitCellCoord operator+(UnitCell frac, UnitCellCoord site) {
+    return site += frac;
+  }
+
+  /// \brief Add UnitCell to UnitCellCoord
+  inline UnitCellCoord operator+(UnitCellCoord site, UnitCell frac) {
+    return site += frac;
+  }
+
+  /// \brief Subtract UnitCell from UnitCellCoord
+  inline UnitCellCoord operator-(UnitCellCoord site, UnitCell frac) {
+    return site -= frac;
   }
 
 

@@ -16,31 +16,65 @@ namespace CASM {
       \brief Functions and classes related to clusters
   */
 
+  /** \defgroup IntegralCluster
+
+      \brief Functions and classes related to IntegralCluster
+      \ingroup Clusterography
+      \ingroup CoordCluster
+  */
+
   /* -- IntegralCluster Declaration ------------------------------------- */
 
   /// \brief Cluster of UnitCellCoord
   ///
-  /// \ingroup Clusterography
+  /// \ingroup IntegralCluster
   ///
   typedef CoordCluster<UnitCellCoord> IntegralCluster;
 
 
-  /* -- BasicUCCCSymCompare Declaration ------------------------------------- */
+  /* -- IntegralClusterSymCompare Declaration ------------------------------------- */
 
-  /// \brief Abstract base class for IntegralCluster comparisons
-  class BasicUCCCSymCompare : public SymCompare<IntegralCluster> {
+  template<typename Derived> class IntegralClusterSymCompare;
 
-  public:
+  namespace CASM_TMP {
 
-    /// \brief Constructor
+    /// \brief Traits class for any IntegralClusterSymCompare derived class
     ///
-    /// \param tol Tolerance for inter_orbit_compare of site-to-site distances
+    /// \ingroup IntegralCluster
     ///
-    BasicUCCCSymCompare(double tol):
-      SymCompare(),
-      m_tol(tol) {
+    template<typename Derived>
+    struct traits<IntegralClusterSymCompare<Derived> > {
+      typedef Derived MostDerived;
+      typedef IntegralCluster Element;
+      typedef ClusterInvariants<IntegralCluster> InvariantsType;
+    };
+  }
 
-    }
+  /// \brief CRTP Base class for IntegralClusterSymCompare
+  ///
+  /// Implements:
+  /// - 'intra_orbit_compare_impl', via lexicographical_compare of UnitCellCoord
+  ///
+  /// Does not implement:
+  /// - 'prepare_impl'
+  ///
+  /// The ClusterSymCompare hierarchy:
+  /// - SymCompare
+  ///   - ClusterSymCompare
+  ///     - IntegralClusterSymCompare (implements 'intra_orbit_compare_impl')
+  ///       - LocalSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename Derived>
+  class IntegralClusterSymCompare : public ClusterSymCompare<IntegralClusterSymCompare<Derived> > {
+
+  protected:
+
+    IntegralClusterSymCompare(double tol) :
+      ClusterSymCompare<IntegralClusterSymCompare<Derived> >(tol) {}
 
     /// \brief Orders 'prepared' elements in the same orbit
     ///
@@ -48,195 +82,248 @@ namespace CASM {
     /// - Equivalence is indicated by \code !compare(A,B) && !compare(B,A) \endcode
     /// - Assumes elements are 'prepared' before being compared
     /// Implementation:
-    /// - std::lexicographical_compare of UnitCellCoord in A and B
-    bool intra_orbit_compare(const IntegralCluster &A, const IntegralCluster &B) const override {
-      return cluster_intra_orbit_compare(A, B);
+    /// - lexicographical_compare of element in A and B
+    bool intra_orbit_compare_impl(const IntegralCluster &A, const IntegralCluster &B) const {
+      return lexicographical_compare(A.begin(), A.end(), B.begin(), B.end());
     }
-
-    /// \brief Orders orbit prototypes in canonical form
-    ///
-    /// - Returns 'true' to indicate A < B
-    /// - Equivalence is indicated by \code !compare(A,B) && !compare(B,A) \endcode
-    /// - Assumes elements are in canonical form
-    ///
-    /// Implementation:
-    /// - First compare A.size(), B.size()
-    /// - Second compare ClusterInvariants(A), ClusterInvariants(B)
-    /// - Finally, std::lexicographical_compare of UnitCellCoord in A and B
-    bool inter_orbit_compare(const IntegralCluster &A, const IntegralCluster &B) const override {
-      return cluster_inter_orbit_compare(A, B, tol());
-    }
-
-    /// \brief Return tolerance
-    double tol() const {
-      return m_tol;
-    }
-
-  protected:
-
-    /// \brief Private virtual apply_sym
-    virtual void _apply_sym(const SymOp &op) const override {
-      return;
-    }
-
-  private:
-
-    double m_tol;
-
   };
-
 
   /* -- LocalSymCompare<IntegralCluster> Declaration ------------------------------------- */
 
   /// \brief Comparisons of IntegralCluster with aperiodic symmetry
   ///
-  /// \relates IntegralCluster
+  /// The ClusterSymCompare hierarchy:
+  /// - SymCompare
+  ///   - ClusterSymCompare
+  ///     - IntegralClusterSymCompare (implements 'intra_orbit_compare_impl')
+  ///       - LocalSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///
+  /// \ingroup IntegralCluster
+  ///
   template<>
-  class LocalSymCompare<IntegralCluster> : public BasicUCCCSymCompare {
+  class LocalSymCompare<IntegralCluster> : public IntegralClusterSymCompare<LocalSymCompare<IntegralCluster> > {
 
   public:
 
     /// \brief Constructor
     ///
-    /// \param tol Tolerance for inter_orbit_compare of site-to-site distances
+    /// \param tol Tolerance for invariants_compare of site-to-site distances
     ///
     LocalSymCompare(double tol):
-      BasicUCCCSymCompare(tol) {}
+      IntegralClusterSymCompare<LocalSymCompare<IntegralCluster> >(tol) {}
+
+  protected:
+
+    friend class SymCompare<ClusterSymCompare<IntegralClusterSymCompare<LocalSymCompare<IntegralCluster> > > >;
 
     /// \brief Prepare an element for comparison
     ///
     /// - Sorts UnitCellCoord
-    IntegralCluster prepare(IntegralCluster obj) const override {
+    IntegralCluster prepare_impl(IntegralCluster obj) const {
       std::sort(obj.begin(), obj.end());
       return obj;
     }
 
-    /// \brief Apply symmetry to this
-    ///
-    /// - Affects no change
-    LocalSymCompare &apply_sym(const SymOp &op) {
-      this->_apply_sym(op);
-      return *this;
-    }
-
-    /// \brief Public non-virtual clone
-    std::unique_ptr<LocalSymCompare> clone() const {
-      return std::unique_ptr<LocalSymCompare>(this->_clone());
-    }
-
-  private:
-
-    /// \brief Private virtual clone
-    virtual LocalSymCompare *_clone() const override {
-      return new LocalSymCompare(*this);
-    }
-
-    double m_tol;
-
   };
+
+  typedef LocalSymCompare<IntegralCluster> LocalIntegralClusterSymCompare;
+
 
 
   /* -- PrimPeriodicSymCompare<IntegralCluster> Declaration ------------------------------------- */
 
+
   /// \brief Comparisons of IntegralCluster with periodic symmetry of the primitive lattice
   ///
-  /// \relates IntegralCluster
+  /// The ClusterSymCompare hierarchy:
+  /// - SymCompare
+  ///   - ClusterSymCompare
+  ///     - IntegralClusterSymCompare (implements 'intra_orbit_compare_impl')
+  ///       - LocalSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///
+  /// \ingroup IntegralCluster
+  ///
   template<>
-  class PrimPeriodicSymCompare<IntegralCluster> : public BasicUCCCSymCompare {
+  class PrimPeriodicSymCompare<IntegralCluster> : public IntegralClusterSymCompare<PrimPeriodicSymCompare<IntegralCluster> > {
 
   public:
 
     /// \brief Constructor
     ///
-    /// \param tol Tolerance for inter_orbit_compare of site-to-site distances
+    /// \param tol Tolerance for invariants_compare of site-to-site distances
     ///
     PrimPeriodicSymCompare(double tol):
-      BasicUCCCSymCompare(tol) {}
+      IntegralClusterSymCompare<PrimPeriodicSymCompare<IntegralCluster> >(tol) {}
+
+  protected:
+
+    friend class SymCompare<ClusterSymCompare<IntegralClusterSymCompare<PrimPeriodicSymCompare<IntegralCluster> > > >;
 
     /// \brief Prepare an element for comparison
     ///
     /// - Sorts UnitCellCoord and translates so that obj[0] is in the origin unit cell
-    IntegralCluster prepare(IntegralCluster obj) const override {
+    IntegralCluster prepare_impl(IntegralCluster obj) const {
       std::sort(obj.begin(), obj.end());
       return obj - obj[0].unitcell();
     }
 
-    /// \brief Apply symmetry to this
-    ///
-    /// - Affects no change
-    PrimPeriodicSymCompare &apply_sym(const SymOp &op) {
-      this->_apply_sym(op);
-      return *this;
-    }
-
-    /// \brief Public non-virtual clone
-    std::unique_ptr<PrimPeriodicSymCompare> clone() const {
-      return std::unique_ptr<PrimPeriodicSymCompare>(this->_clone());
-    }
-
-
-  private:
-
-    /// \brief Private virtual clone
-    virtual PrimPeriodicSymCompare *_clone() const override {
-      return new PrimPeriodicSymCompare(*this);
-    }
-
   };
+
+  typedef PrimPeriodicSymCompare<IntegralCluster> PrimPeriodicIntegralClusterSymCompare;
 
 
   /* -- ScelPeriodicSymCompare<IntegralCluster> Declaration ------------------------------------- */
 
+
   /// \brief Comparisons of IntegralCluster with periodic symmetry of a supercell lattice
   ///
-  /// \relates IntegralCluster
+  /// The ClusterSymCompare hierarchy:
+  /// - SymCompare
+  ///   - ClusterSymCompare
+  ///     - IntegralClusterSymCompare (implements 'intra_orbit_compare_impl')
+  ///       - LocalSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
+  ///
+  /// \ingroup IntegralCluster
+  ///
   template<>
-  class ScelPeriodicSymCompare<IntegralCluster> : public BasicUCCCSymCompare {
+  class ScelPeriodicSymCompare<IntegralCluster> : public IntegralClusterSymCompare<ScelPeriodicSymCompare<IntegralCluster> > {
 
   public:
 
     /// \brief Constructor
     ///
     /// \param prim_grid A prim_grid reference
-    /// \param tol Tolerance for inter_orbit_compare of site-to-site distances
+    /// \param tol Tolerance for invariants_compare of site-to-site distances
     ///
     ScelPeriodicSymCompare(const PrimGrid &prim_grid, double tol):
-      BasicUCCCSymCompare(tol),
+      IntegralClusterSymCompare<ScelPeriodicSymCompare<IntegralCluster> >(tol),
       m_prim_grid(prim_grid) {}
+
+  protected:
+
+    friend class SymCompare<ClusterSymCompare<IntegralClusterSymCompare<ScelPeriodicSymCompare<IntegralCluster> > > >;
 
     /// \brief Prepare an element for comparison
     ///
     /// - Sorts UnitCellCoord and translates so that obj[0] is within the supercell
-    IntegralCluster prepare(IntegralCluster obj) const override {
+    IntegralCluster prepare_impl(IntegralCluster obj) const {
       std::sort(obj.begin(), obj.end());
       auto trans = obj[0].unitcell() - m_prim_grid.get_within(obj[0]).unitcell();
       return obj - trans;
     }
 
-    /// \brief Apply symmetry to this
-    ///
-    /// - Affects no change
-    ScelPeriodicSymCompare &apply_sym(const SymOp &op) {
-      this->_apply_sym(op);
-      return *this;
-    }
-
-    /// \brief Public non-virtual clone
-    std::unique_ptr<ScelPeriodicSymCompare> clone() const {
-      return std::unique_ptr<ScelPeriodicSymCompare>(this->_clone());
-    }
-
-
-  private:
-
-    /// \brief Private virtual clone
-    virtual ScelPeriodicSymCompare *_clone() const override {
-      return new ScelPeriodicSymCompare(*this);
-    }
-
     const PrimGrid &m_prim_grid;
 
   };
+
+  typedef ScelPeriodicSymCompare<IntegralCluster> ScelPeriodicIntegralClusterSymCompare;
+
+
+  /// \brief Iterate over all sites in an orbit and insert a UnitCellCoord
+  ///
+  /// \param orbit an Orbit<IntegralCluster>
+  /// \param result an OutputIterator for UnitCellCoord
+  ///
+  /// \result the resulting OutputIterator
+  ///
+  /// This simply outputs all UnitCellCoord in all equivalent clusters
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename OutputIterator>
+  OutputIterator local_orbit_neighborhood(
+    const Orbit<IntegralCluster> &orbit,
+    OutputIterator result) {
+
+    for(const auto &equiv : orbit) {
+      for(const auto &site : equiv) {
+        *result++ = site;
+      }
+    }
+    return result;
+  }
+
+  /// \brief Iterate over all sites in all orbits and insert a UnitCellCoord
+  ///
+  /// \param begin,end Range of Orbit<IntegralCluster>
+  /// \param result an OutputIterator for UnitCellCoord
+  ///
+  /// This simply outputs all UnitCellCoord in all equivalent clusters of each orbit
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename ClusterOrbitIterator, typename OutputIterator>
+  OutputIterator local_neighborhood(ClusterOrbitIterator begin, ClusterOrbitIterator end, OutputIterator result) {
+    // create a neighborhood of all UnitCellCoord that an Orbitree touches
+    for(auto it = begin; it != end; ++it) {
+      result = local_orbit_neighborhood(*it, result);
+    }
+    return result;
+  }
+
+  /// \brief Iterate over all sites in an orbit and insert a UnitCellCoord
+  ///
+  /// \param orbit an Orbit<IntegralCluster>
+  /// \param result an OutputIterator for UnitCellCoord
+  ///
+  /// \result the resulting OutputIterator
+  ///
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It uses all clusters that touch origin
+  /// unitcell, including translationally equivalent clusters.
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename OutputIterator>
+  OutputIterator prim_periodic_orbit_neighborhood(
+    const Orbit<IntegralCluster> &orbit,
+    OutputIterator result) {
+
+    for(const auto &equiv : orbit) {
+
+      // UnitCellCoord for all sites in cluster
+      std::vector<UnitCellCoord> coord(equiv.begin(), equiv.end());
+
+      // UnitCellCoord for 'flowertree': all clusters that touch origin unitcell
+      //  (includes translationally equivalent clusters)
+      for(int ns_i = 0; ns_i < coord.size(); ++ns_i) {
+        for(int ns_j = 0; ns_j < coord.size(); ++ns_j) {
+          *result++ = UnitCellCoord(coord[ns_j].unit(), coord[ns_j].sublat(), coord[ns_j].unitcell() - coord[ns_i].unitcell());
+        }
+      }
+    }
+    return result;
+  }
+
+  /// \brief Iterate over all sites in all orbits and insert a UnitCellCoord
+  ///
+  /// \param begin,end Range of Orbit<IntegralCluster>
+  /// \param result an OutputIterator for UnitCellCoord
+  ///
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It uses all clusters that touch origin
+  /// unitcell, including translationally equivalent clusters.
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename ClusterOrbitIterator, typename OutputIterator>
+  OutputIterator prim_periodic_neighborhood(ClusterOrbitIterator begin, ClusterOrbitIterator end, OutputIterator result) {
+    // create a neighborhood of all UnitCellCoord that an Orbitree touches
+    for(auto it = begin; it != end; ++it) {
+      result = prim_periodic_orbit_neighborhood(*it, result);
+    }
+    return result;
+  }
+
+  typedef Orbit<IntegralCluster, LocalSymCompare<IntegralCluster> > LocalIntegralClusterOrbit;
+  typedef Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > PrimPeriodicIntegralClusterOrbit;
+  typedef Orbit<IntegralCluster, ScelPeriodicSymCompare<IntegralCluster> > ScelPeriodicIntegralClusterOrbit;
 
 }
 

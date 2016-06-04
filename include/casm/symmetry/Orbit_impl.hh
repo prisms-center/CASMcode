@@ -48,10 +48,10 @@ namespace CASM {
   /// \param generating_group The group used for generating the orbit
   /// \param sym_compare Binary functor that implements symmetry properties
   ///
-  template<typename Element>
-  Orbit<Element>::Orbit(Element generating_element,
-                        const SymGroup &generating_group,
-                        const SymCompare<Element> &sym_compare) :
+  template<typename _Element, typename _SymCompareType>
+  Orbit<_Element, _SymCompareType>::Orbit(Element generating_element,
+                                          const SymGroup &generating_group,
+                                          const SymCompare<Element> &sym_compare) :
     m_sym_compare(sym_compare) {
 
     const SymGroup &g = generating_group;
@@ -93,8 +93,8 @@ namespace CASM {
   }
 
   /// \brief Apply symmetry to Orbit
-  template<typename Element>
-  Orbit<Element> &Orbit<Element>::apply_sym(const SymOp &op) {
+  template<typename _Element, typename _SymCompareType>
+  Orbit &Orbit<_Element, _SymCompareType>::apply_sym(const SymOp &op) {
 
     // transform elements
     for(auto it = m_element.begin(); it != m_element.end(); ++it) {
@@ -112,6 +112,43 @@ namespace CASM {
     m_sym_compare->apply_sym(op);
 
     return *this;
+  }
+
+
+  /// \brief Find orbit containing an element in a range of Orbit<ClusterType>
+  ///
+  /// \param begin,end Range of Orbit
+  /// \param e Element to find
+  ///
+  /// \returns Iterator to Orbit containing e, or end if not found
+  ///
+  /// - Expects `typename std::iterator_traits<OrbitIterator>::value_type` to
+  ///   be the Orbit<Element, SymCompareType> type
+  /// - Expects `e` to be `prepared` via `SymCompareType::prepare`
+  /// - Assume range of orbit is sorted according to `SymCompareType::invariants_compare`
+  /// - Uses `SymCompareType::intra_orbit_compare` (via `Orbit::contains`) to check for
+  ///   element in orbit
+  template<typename OrbitIterator, typename Element>
+  OrbitIterator find_orbit(OrbitIterator begin, OrbitIterator end, Element e) {
+
+    typedef typename std::iterator_traits<OrbitIterator>::value_type orbit_type;
+    const auto &sym_compare = begin->sym_compare();
+
+    // first find range of possible orbit by checking invariants
+    auto compare = [&](const Element & A, const Element & B) {
+      return sym_compare.invariants_compare(A, B);
+    };
+    auto _range = std::equal_range(begin, end, e, compare);
+
+    // find if any of the orbits in range [_range.first, _range.second) contain equivalent
+    auto contains = [&](const orbit_type & orbit) {
+      return orbit.contains(e);
+    };
+    auto res = std::find_if(_range.first, _range.second, contains);
+    if(res == _range.second) {
+      return end;
+    }
+    return res;
   }
 
 

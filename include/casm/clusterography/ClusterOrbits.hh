@@ -6,28 +6,43 @@
 
 namespace CASM {
 
-  /** \defgroup Clusterography
+  /** \defgroup IntegralCluster
 
-      \brief Functions and classes related to clusters
+      \brief Functions and classes related to IntegralCluster
+      \ingroup Clusterography
+      \ingroup CoordCluster
   */
 
   /* -- OrbitBranchSpecs Declarations ------------------------------------- */
 
+  /// \brief Generate clusters using all Site
+  bool all_sites_filter(const Site &site) {
+    return true;
+  }
+
+  /// \brief Generate clusters using Site with site_occupant.size() > 1
+  bool alloy_sites_filter(const Site &site) {
+    return site.site_occupant().size() > 1;
+  }
+
   /// \brief Store data used to generate an orbit branch of IntegralCluster
   ///
+  /// \ingroup IntegralCluster
   ///
-  /// \ingroup Clusterography
-  ///
+  template<typename _OrbitType>
   class OrbitBranchSpecs {
 
   public:
 
     typedef std::vector<Site> Container;
     typedef Container::const_iterator const_iterator;
+    typedef _OrbitType OrbitType;
+    typedef typename OrbitType::Element ClusterType;
+    typedef typename OrbitType::SymCompareType SymCompareType;
     typedef IntegralCluster::PrimType PrimType;
 
-    /// \brief Filter returns true for allowed IntegralCluster, false for unallowed
-    typedef std::function<bool (IntegralCluster)> Filter;
+    /// \brief Filter returns true for allowed ClusterType, false for unallowed
+    typedef std::function<bool (ClusterType)> Filter;
 
     /// \brief Constructor
     ///
@@ -35,7 +50,7 @@ namespace CASM {
     /// \param _begin,_end Iterators over candidate sites that should be considered
     ///                    when determining prototype clusters
     /// \param _generating_grp Group used by the Orbit constructor
-    /// \param _filter Function or functor implementing 'bool filter(IntegralCluster)', which
+    /// \param _filter Function or functor implementing 'bool filter(ClusterType)', which
     ///                returns false for clusters that should not be used to
     ///                construct an Orbit (i.e. pair distance too large)
     /// \param _sym_compare Functor implementing cluster comparison to facilitate
@@ -47,7 +62,7 @@ namespace CASM {
                      SiteIterator _end,
                      const SymGroup &_generating_grp,
                      Filter _filter,
-                     const SymCompare<IntegralCluster> &_sym_compare) :
+                     const SymCompareType &_sym_compare) :
       m_prim_ptr(&_prim),
       m_candidate_sites(_begin, _end),
       m_generating_grp(&_generating_grp),
@@ -70,8 +85,8 @@ namespace CASM {
       return m_filter;
     }
 
-    const SymCompare<IntegralCluster> &sym_compare() const {
-      return *m_sym_compare;
+    const SymCompareType &sym_compare() const {
+      return m_sym_compare;
     }
 
 
@@ -85,7 +100,7 @@ namespace CASM {
 
     Filter m_filter;
 
-    notstd::cloneable_ptr<SymCompare<IntegralCluster> > m_sym_compare;
+    SymCompareType m_sym_compare;
 
   };
 
@@ -93,23 +108,23 @@ namespace CASM {
   /* -- Cluster Orbit generating function declarations ------------------------------------- */
 
   /// \brief Generate the asymmetric unit, including all sites
-  template<typename OrbitOutputIterator, typename SymOpIterator>
+  template<typename OrbitOutputIterator, typename SymCompareType>
   OrbitOutputIterator make_asymmetric_unit(
     const IntegralCluster::PrimType &prim,
     const SymGroup &generating_grp,
-    const SymCompare<IntegralCluster> &sym_compare,
+    const SymCompareType &sym_compare,
     OrbitOutputIterator result);
 
   /// \brief Generate the asymmetric unit, using OrbitBranchSpecs
-  template<typename OrbitOutputIterator>
-  OrbitOutputIterator make_asymmetric_unit(const OrbitBranchSpecs &specs, OrbitOutputIterator result);
+  template<typename OrbitType, typename OrbitOutputIterator>
+  OrbitOutputIterator make_asymmetric_unit(const OrbitBranchSpecs<OrbitType> &specs, OrbitOutputIterator result);
 
   /// \brief Use orbits of size n to generate orbits of size n+1
-  template<typename ClusterType, typename OrbitInputIterator, typename OrbitOutputIterator>
+  template<typename OrbitType, typename OrbitInputIterator, typename OrbitOutputIterator>
   OrbitOutputIterator make_next_orbitbranch(
     OrbitInputIterator begin,
     OrbitInputIterator end,
-    const OrbitBranchSpecs &specs,
+    const OrbitBranchSpecs<OrbitType> &specs,
     OrbitOutputIterator result,
     std::ostream &status);
 
@@ -122,24 +137,26 @@ namespace CASM {
     std::ostream &status);
 
   /// \brief Generate Orbit<IntegralCluster> by specifying max cluster length for each branch
-  template<typename OrbitOutputIterator>
+  template<typename OrbitOutputIterator, typename SymCompareType>
   OrbitOutputIterator make_orbits(
     const IntegralCluster::PrimType &prim,
     const SymGroup &generating_grp,
     const std::vector<double> &max_length,
     const std::function<bool (Site)> &site_filter,
-    const SymCompare<IntegralCluster> &sym_compare,
+    const SymCompareType &sym_compare,
     OrbitOutputIterator result,
     std::ostream &status);
 
   /// \brief Generate Orbit<IntegralCluster> from bspecs.json-type JSON input file
-  template<typename OrbitOutputIterator>
+  template<typename OrbitOutputIterator, typename SymCompareType>
   OrbitOutputIterator make_orbits(
     const IntegralCluster::PrimType &prim,
+    const SymGroup &generating_grp,
     const jsonParser &bspecs,
+    const std::function<bool (Site)> &site_filter,
+    const SymCompareType &sym_compare,
     OrbitOutputIterator result,
     std::ostream &status);
-
 
 
   /* -- Orbit access/usage function declarations ------------------------------------- */

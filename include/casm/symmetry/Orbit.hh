@@ -13,18 +13,23 @@ namespace CASM {
   /// \brief An Orbit of Element
   ///
   /// Provides prototype Element, orbit of equivalent elements, and equivalence
-  /// describing how the symmetry operations that map the prototype onto the
+  /// map giving symmetry operations that map the prototype onto the
   /// equivalents.
+  ///
+  /// Element and orbit comparison is done via a SymCompareType functor, which
+  /// includes any necessary tolerance for floating point comparison. See `SymCompare`
+  /// for how to implement the necessary methods.
   ///
   /// \ingroup Clusterography
   ///
-  template<typename Element>
-  class Orbit {
+  template<typename _Element, typename _SymCompareType = PrimPeriodicSymCompare<_Element> >
+  class Orbit : public Comparisons<Orbit<_Element, _SymCompareType> > {
 
   public:
 
     typedef unsigned int size_type;
-    typedef typename std::vector<Element>::value_type value_type;
+    typedef _Element Element;
+    typedef _SymCompareType SymCompareType;
     typedef typename std::vector<Element>::const_iterator const_iterator;
 
     Orbit() {}
@@ -32,14 +37,14 @@ namespace CASM {
     /// \brief Construct an Orbit from a generating_element Element, using provided symmetry group
     Orbit(Element generating_element,
           const SymGroup &generating_group,
-          const SymCompare<Element> &sym_compare);
+          const SymCompareType &sym_compare);
 
     /// \brief Construct an Orbit from a generating_element Element, using provided symmetry op
     template<typename SympOpIterator>
     Orbit(Element generating_element,
           SympOpIterator begin,
           SympOpIterator end,
-          const SymCompare<Element> &sym_compare);
+          const SymCompareType &sym_compare);
 
     const_iterator begin() const {
       return m_element.cbegin();
@@ -89,15 +94,38 @@ namespace CASM {
       return std::make_pair(m_equivalence_map.begin(), m_equivalence_map.end());
     }
 
+    /// \brief Find element in Orbit
+    ///
+    /// - Assumes 'e' is 'prepared', uses SymCompare<Element>::intra_orbit_equal
+    ///   to check equivalence
+    const_iterator find(const Element &e) {
+      return std::find_if(begin(), end(), [&](const Element & B) {
+        return m_sym_compare->intra_orbit_equal(e, B);
+      });
+    }
+
+    /// \brief Check if element is in Orbit
+    ///
+    /// - Assumes 'e' is 'prepared', uses SymCompare<Element>::intra_orbit_equal
+    ///   to check equivalence
+    bool contains(const Element &e) {
+      return this->find(e) != end();
+    }
+
     /// \brief Return the SymCompare functor reference
     ///
     /// - implements symmetry properties of this orbit
-    const SymCompare<Element> &sym_compare() const {
-      return *m_sym_compare;
+    const SymCompareType &sym_compare() const {
+      return m_sym_compare;
     }
 
     /// \brief Apply symmetry to Orbit
     Orbit &apply_sym(const SymOp &op);
+
+    /// \brief Compare orbits, using SymCompareType::inter_orbit_compare
+    bool operator<(const Orbit &B) const {
+      return m_sym_compare.inter_orbit_compare(prototype(), B.prototype());
+    }
 
   private:
 
@@ -115,9 +143,14 @@ namespace CASM {
 
     /// \brief Functor used to check compare Element, including symmetry rules,
     /// and make canonical forms
-    notstd::cloneable_ptr<SymCompare<Element> > m_sym_compare;
+    SymCompareType m_sym_compare;
 
   };
+
+
+  /// \brief Find orbit containing an element in a range of Orbit
+  template<typename OrbitIterator, typename Element>
+  OrbitIterator find_orbit(OrbitIterator begin, OrbitIterator end, Element e);
 }
 
 #endif

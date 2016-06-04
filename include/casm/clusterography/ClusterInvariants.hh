@@ -52,11 +52,15 @@ namespace CASM {
       return m_disp;
     }
 
-    std::unique_ptr<ClusterInvariants<ClusterType> > clone() const {
-      return notstd::make_unique<ClusterInvariants<ClusterType> >(*this);
+    std::unique_ptr<ClusterInvariants> clone() const {
+      return std::unique_ptr<ClusterInvariants>(this->_clone());
     }
 
   private:
+
+    ClusterInvariants *_clone() const {
+      return new ClusterInvariants(*this);
+    }
 
     /// \brief Number of UnitCellCoords in cluster
     int m_size;
