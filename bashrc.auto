@@ -1,3 +1,0 @@
-export PATH=$CASMDEV/builds/auto/bin:$PATH
-export PATH=$CASMDEV/builds/auto/share/man/:$PATH
-alias ac="vim $CASMDEV/configure.ac"
