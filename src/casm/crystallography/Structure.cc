@@ -5,11 +5,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "casm/clusterography/SiteCluster.hh"
-#include "casm/clusterography/Orbitree.hh"
-#include "casm/clusterography/jsonClust.hh"
 #include "casm/misc/algorithm.hh"
-
+#include "casm/crystallography/PrimGrid.hh"
 
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -344,42 +341,42 @@ namespace CASM {
    * operation and the eigenvector will be printed.  If it equals anything else,
    * then the symmetry operation matrix will be printed out.
    */
+  /*
+    void Structure::print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag = 1) {
+      GenericOrbitBranch<SiteCluster> asym_unit(lattice());
+      asym_unit.generate_asymmetric_unit(basis, factor_group());
 
-  void Structure::print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag = 1) {
-    GenericOrbitBranch<SiteCluster> asym_unit(lattice());
-    asym_unit.generate_asymmetric_unit(basis, factor_group());
+      stream <<  " Printing symmetry operations that leave each site unchanged:\n \n";
+      for(Index i = 0; i < asym_unit.size(); i++) {
+        for(Index j = 0; j < asym_unit[i].size(); j++) {
+          stream << "Site: ";
+          asym_unit.at(i).at(j).at(0).print(stream); //Print the site (not cluster) for the asymmetric unit
+          stream << " Total Symmetry Operations: " << asym_unit[i][j].clust_group().size() << "\n";
 
-    stream <<  " Printing symmetry operations that leave each site unchanged:\n \n";
-    for(Index i = 0; i < asym_unit.size(); i++) {
-      for(Index j = 0; j < asym_unit[i].size(); j++) {
-        stream << "Site: ";
-        asym_unit.at(i).at(j).at(0).print(stream); //Print the site (not cluster) for the asymmetric unit
-        stream << " Total Symmetry Operations: " << asym_unit[i][j].clust_group().size() << "\n";
+          for(Index nc = 0; nc < asym_unit[i][j].clust_group().size(); nc++) {
+            //print_short is a new fxn I added in SymOp to not print out the whole symmetry matrix
+            if(shorttag == 0) {
+              stream <<  std::setw(4)  << nc + 1 << ": ";
+              //asym_unit[i][j].clust_group()[nc].print_short(stream); // I turned this off because the "print_short" function does not appear to exist...
+            }
 
-        for(Index nc = 0; nc < asym_unit[i][j].clust_group().size(); nc++) {
-          //print_short is a new fxn I added in SymOp to not print out the whole symmetry matrix
-          if(shorttag == 0) {
-            stream <<  std::setw(4)  << nc + 1 << ": ";
-            //asym_unit[i][j].clust_group()[nc].print_short(stream); // I turned this off because the "print_short" function does not appear to exist...
+
+            else {
+              stream.flags(std::ios::left);
+              stream << "\n" <<  std::setw(3)  << nc + 1 << ": ";
+              stream.unsetf(std::ios::left);
+              if(mode == CART)
+                asym_unit[i][j].clust_group()[nc].print(stream, Eigen::Matrix3d::Identity());
+              else
+                asym_unit[i][j].clust_group()[nc].print(stream, lattice().inv_lat_column_mat());
+            }
           }
-
-
-          else {
-            stream.flags(std::ios::left);
-            stream << "\n" <<  std::setw(3)  << nc + 1 << ": ";
-            stream.unsetf(std::ios::left);
-            if(mode == CART)
-              asym_unit[i][j].clust_group()[nc].print(stream, Eigen::Matrix3d::Identity());
-            else
-              asym_unit[i][j].clust_group()[nc].print(stream, lattice().inv_lat_column_mat());
-          }
+          stream << "\n  ---------------------------------------------------------------------   \n\n";
         }
-        stream << "\n  ---------------------------------------------------------------------   \n\n";
       }
+      return;
     }
-    return;
-  }
-
+  */
   //***********************************************************
 
   void Structure::reset() {
@@ -407,85 +404,87 @@ namespace CASM {
    * entire flowertree has the same pivot.
    */
   //***********************************************************
-  void Structure::generate_flowertrees(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees) {
-    if(out_trees.size() != 0) {
-      std::cerr << "WARNING in Structure::generate_flowertrees_safe" << std::endl;
-      std::cerr << "The provided array of SiteOrbitree wasn't empty! Hope nothing important was there..." << std::endl;
-      out_trees.clear();
-    }
 
-
-    //Theres a flowertree for each basis site b
-    for(Index b = 0; b < basis.size(); b++) {
-      SiteOrbitree ttree(lattice());    //Weird behavior without this
-      ttree.reserve(in_tree.size());
-      out_trees.push_back(ttree);
-      //We want clusters of every size in the tree, except the 0th term (...right guys?)
-      for(Index s = 1; s < in_tree.size(); s++) {
-        //Make each site basis into a cluster so we can use extract_orbits_including
-        SiteCluster tsiteclust(lattice());
-        tsiteclust.within();
-        tsiteclust.push_back(basis[b]);
-        //Make a branch where all the clusters of a given size s go
-        SiteOrbitBranch tbranch(lattice());
-        //Push back flower onto tree
-        out_trees[b].push_back(tbranch);
-        //Get one flower for a given basis site
-        in_tree[s].extract_orbits_including(tsiteclust, out_trees[b].back());   //couldn't get it to work withough directly passing tree.back() (i.e. can't make branch then push_back)
+  /*  void Structure::generate_flowertrees(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees) {
+      if(out_trees.size() != 0) {
+        std::cerr << "WARNING in Structure::generate_flowertrees_safe" << std::endl;
+        std::cerr << "The provided array of SiteOrbitree wasn't empty! Hope nothing important was there..." << std::endl;
+        out_trees.clear();
       }
-      out_trees[b].get_index();
-      out_trees[b].collect_basis_info(*this);
+
+
+      //Theres a flowertree for each basis site b
+      for(Index b = 0; b < basis.size(); b++) {
+        SiteOrbitree ttree(lattice());    //Weird behavior without this
+        ttree.reserve(in_tree.size());
+        out_trees.push_back(ttree);
+        //We want clusters of every size in the tree, except the 0th term (...right guys?)
+        for(Index s = 1; s < in_tree.size(); s++) {
+          //Make each site basis into a cluster so we can use extract_orbits_including
+          SiteCluster tsiteclust(lattice());
+          tsiteclust.within();
+          tsiteclust.push_back(basis[b]);
+          //Make a branch where all the clusters of a given size s go
+          SiteOrbitBranch tbranch(lattice());
+          //Push back flower onto tree
+          out_trees[b].push_back(tbranch);
+          //Get one flower for a given basis site
+          in_tree[s].extract_orbits_including(tsiteclust, out_trees[b].back());   //couldn't get it to work withough directly passing tree.back() (i.e. can't make branch then push_back)
+        }
+        out_trees[b].get_index();
+        out_trees[b].collect_basis_info(*this);
+      }
+
+      return;
     }
-
-    return;
-  }
-
+  */
   //***********************************************************
   // Fills an orbitree such that each OrbitBranch corresponds to a basis site and contains all orbits
   // that include that basis site
-  void Structure::generate_basis_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites) {
-    Index na, np, nb, ne;
+  /*
+    void Structure::generate_basis_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites) {
+      Index na, np, nb, ne;
 
-    out_tree.clear(); //Added by Ivy 11/07/12
+      out_tree.clear(); //Added by Ivy 11/07/12
 
-    //make room in out_tree for flowers
-    //out_tree.reserve(basis.size());
+      //make room in out_tree for flowers
+      //out_tree.reserve(basis.size());
 
-    out_tree.lattice = in_tree.lattice;
-    //out_tree.set_lattice(in_tree.lattice,FRAC);   //better?
+      out_tree.lattice = in_tree.lattice;
+      //out_tree.set_lattice(in_tree.lattice,FRAC);   //better?
 
-    //get asymmetric unit
-    GenericOrbitBranch<SiteCluster> asym_unit(lattice());
-    asym_unit.generate_asymmetric_unit(basis, factor_group());
+      //get asymmetric unit
+      GenericOrbitBranch<SiteCluster> asym_unit(lattice());
+      asym_unit.generate_asymmetric_unit(basis, factor_group());
 
 
-    for(na = 0; na < asym_unit.size(); na++) {
-      asym_unit.prototype(na).clust_group().character_table();
-      //std::cout << "Working on asym_unit element " << na + 1 << '\n';
-      nb = out_tree.size();
+      for(na = 0; na < asym_unit.size(); na++) {
+        asym_unit.prototype(na).clust_group().character_table();
+        //std::cout << "Working on asym_unit element " << na + 1 << '\n';
+        nb = out_tree.size();
 
-      //Add new branch with asym_unit.prototype(na) as pivot
-      out_tree.push_back(SiteOrbitBranch(asym_unit.prototype(na)));
+        //Add new branch with asym_unit.prototype(na) as pivot
+        out_tree.push_back(SiteOrbitBranch(asym_unit.prototype(na)));
 
-      for(np = 0; np < in_tree.size(); np++) {
-        if(num_sites != in_tree[np].num_sites()) {
-          continue;
+        for(np = 0; np < in_tree.size(); np++) {
+          if(num_sites != in_tree[np].num_sites()) {
+            continue;
+          }
+          //std::cout << "Starting to extract petals from OrbitBranch " << np << '\n';
+          in_tree[np].extract_orbits_including(asym_unit.prototype(na), out_tree.back());
         }
-        //std::cout << "Starting to extract petals from OrbitBranch " << np << '\n';
-        in_tree[np].extract_orbits_including(asym_unit.prototype(na), out_tree.back());
-      }
 
 
-      for(ne = 1; ne < asym_unit[na].equivalence_map.size(); ne++) {
-        out_tree.push_back(out_tree[nb]);
-        out_tree.back().apply_sym(asym_unit[na].equivalence_map[ne][0]);
+        for(ne = 1; ne < asym_unit[na].equivalence_map.size(); ne++) {
+          out_tree.push_back(out_tree[nb]);
+          out_tree.back().apply_sym(asym_unit[na].equivalence_map[ne][0]);
+        }
       }
+      //out_tree.get_index(); //Should not get_index because we want to keep the in_tree indices Ivy 01/15/14
+      out_tree.collect_basis_info(*this);
+      return;
     }
-    //out_tree.get_index(); //Should not get_index because we want to keep the in_tree indices Ivy 01/15/14
-    out_tree.collect_basis_info(*this);
-    return;
-  }
-
+  */
   //***********************************************************
   /**
    * Fills out_tree with OrbitBranches with pivots corresponding
@@ -498,45 +497,46 @@ namespace CASM {
    */
   //***********************************************************
   // Added by Ivy 10/17/12
-  void Structure::generate_asym_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites) {
-    Index na, np;//, nb;
+  /*
+    void Structure::generate_asym_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites) {
+      Index na, np;//, nb;
 
-    out_tree.clear();
+      out_tree.clear();
 
-    //get asymmetric unit
-    GenericOrbitBranch<SiteCluster> asym_unit(lattice());
-    asym_unit.generate_asymmetric_unit(basis, factor_group());
+      //get asymmetric unit
+      GenericOrbitBranch<SiteCluster> asym_unit(lattice());
+      asym_unit.generate_asymmetric_unit(basis, factor_group());
 
-    //make room in out_tree for flowers
-    out_tree.reserve(asym_unit.size());
+      //make room in out_tree for flowers
+      out_tree.reserve(asym_unit.size());
 
-    out_tree.lattice = in_tree.lattice;
+      out_tree.lattice = in_tree.lattice;
 
 
-    for(na = 0; na < asym_unit.size(); na++) {
+      for(na = 0; na < asym_unit.size(); na++) {
 
-      //nb = out_tree.size();
+        //nb = out_tree.size();
 
-      //Add new branch with asym_unit.prototype(na) as pivot
-      out_tree.push_back(SiteOrbitBranch(asym_unit.prototype(na)));
+        //Add new branch with asym_unit.prototype(na) as pivot
+        out_tree.push_back(SiteOrbitBranch(asym_unit.prototype(na)));
 
-      for(np = 0; np < in_tree.size(); np++) {
-        if(num_sites != in_tree[np].num_sites()) {
-          continue;
+        for(np = 0; np < in_tree.size(); np++) {
+          if(num_sites != in_tree[np].num_sites()) {
+            continue;
+          }
+
+          //prototype of na orbit
+          in_tree[np].extract_orbits_including(asym_unit.prototype(na), out_tree.back());
         }
 
-        //prototype of na orbit
-        in_tree[np].extract_orbits_including(asym_unit.prototype(na), out_tree.back());
       }
+      //out_tree.get_index(); //Should not get_index because we want to keep the in_tree indices Ivy 01/15/14
+      out_tree.collect_basis_info(*this);
+      return;
+
 
     }
-    //out_tree.get_index(); //Should not get_index because we want to keep the in_tree indices Ivy 01/15/14
-    out_tree.collect_basis_info(*this);
-    return;
-
-
-  }
-
+  */
   //John G 230913
 
   //***********************************************************
@@ -559,46 +559,48 @@ namespace CASM {
    * each of which has clusters from size 1 to n.
    */
   //***********************************************************
-  void Structure::generate_flowertrees_safe(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees) {  //can we make it const? It would require generate_basis_bouquet to also be const
-    if(out_trees.size() != 0) {
-      std::cerr << "WARNING in Structure::generate_flowertrees_safe" << std::endl;
-      std::cerr << "The provided array of SiteOrbitree wasn't empty! Hope nothing important was there..." << std::endl;
-      out_trees.clear();
-    }
 
-    //Determine what the largest cluster in the given orbitree is, accounting for the fact that there's a 0 point cluster
-    Index max_clust_size = in_tree.size() - 1;
-    //Plant all the bouquets, one for each cluster size and store them in
-    Array<SiteOrbitree> bouquets;
-
-    for(Index i = 1; i < (max_clust_size + 1); i++) {
-      SiteOrbitree tbouquet(lattice());
-      generate_basis_bouquet(in_tree, tbouquet, i);
-      bouquets.push_back(tbouquet);
-    }
-
-    //Pluck a branch off each bouquet for a given basis site and stuff it into a SiteOribitree (this is a flowertree)
-    //SiteOrbitree tbouquet=in_tree;   //This is so I don't have to worry about initializing things I'm scared of
-    SiteOrbitree tbouquet(lattice());
-
-    //How many flowertrees do we need? As many as there are basis sites, i.e. bouquet[i].size();
-    for(Index i = 0; i < basis.size(); i++) {
-      tbouquet.clear();
-      //How many trees, i.e. cluster sizes
-      for(Index j = 0; j < bouquets.size(); j++) {
-        //Not pushing back empty cluster!!
-        tbouquet.push_back(bouquets[j][i]);
+  /*
+    void Structure::generate_flowertrees_safe(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees) {  //can we make it const? It would require generate_basis_bouquet to also be const
+      if(out_trees.size() != 0) {
+        std::cerr << "WARNING in Structure::generate_flowertrees_safe" << std::endl;
+        std::cerr << "The provided array of SiteOrbitree wasn't empty! Hope nothing important was there..." << std::endl;
+        out_trees.clear();
       }
-      tbouquet.get_index();
-      tbouquet.collect_basis_info(*this);
-      out_trees.push_back(tbouquet);
+
+      //Determine what the largest cluster in the given orbitree is, accounting for the fact that there's a 0 point cluster
+      Index max_clust_size = in_tree.size() - 1;
+      //Plant all the bouquets, one for each cluster size and store them in
+      Array<SiteOrbitree> bouquets;
+
+      for(Index i = 1; i < (max_clust_size + 1); i++) {
+        SiteOrbitree tbouquet(lattice());
+        generate_basis_bouquet(in_tree, tbouquet, i);
+        bouquets.push_back(tbouquet);
+      }
+
+      //Pluck a branch off each bouquet for a given basis site and stuff it into a SiteOribitree (this is a flowertree)
+      //SiteOrbitree tbouquet=in_tree;   //This is so I don't have to worry about initializing things I'm scared of
+      SiteOrbitree tbouquet(lattice());
+
+      //How many flowertrees do we need? As many as there are basis sites, i.e. bouquet[i].size();
+      for(Index i = 0; i < basis.size(); i++) {
+        tbouquet.clear();
+        //How many trees, i.e. cluster sizes
+        for(Index j = 0; j < bouquets.size(); j++) {
+          //Not pushing back empty cluster!!
+          tbouquet.push_back(bouquets[j][i]);
+        }
+        tbouquet.get_index();
+        tbouquet.collect_basis_info(*this);
+        out_trees.push_back(tbouquet);
+      }
+
+      return;
     }
 
-    return;
-  }
-
-  //\John G 230913
-
+    //\John G 230913
+  */
 
   //*********************************************************
 
@@ -884,56 +886,56 @@ namespace CASM {
    * the cluster.
    */
   //***********************************************************
+  /*
+    Structure Structure::stamp_with(SiteCluster stamp, bool lat_override, bool im_override) const {
+      //The following check may not work properly
+      if(!lat_override && !lattice().is_supercell_of((stamp.home()), point_group())) {
+        std::cerr << "ERROR in Structure::stamp_with (are you using Structure::bedazzle?)" << std::endl;
+        std::cerr << "The lattice of your cluster is not related to the lattice of the structure you want to stamp!" << std::endl;
+        exit(60);
+      }
 
-  Structure Structure::stamp_with(SiteCluster stamp, bool lat_override, bool im_override) const {
-    //The following check may not work properly
-    if(!lat_override && !lattice().is_supercell_of((stamp.home()), point_group())) {
-      std::cerr << "ERROR in Structure::stamp_with (are you using Structure::bedazzle?)" << std::endl;
-      std::cerr << "The lattice of your cluster is not related to the lattice of the structure you want to stamp!" << std::endl;
-      exit(60);
-    }
+      //Some sort of check should happen here to make sure your superstructure
+      //is large enough to accomodate the stamp. Otherwise shit will get messed up
+      //I think image_check is the way to go, but I'm not sure I'm using it correctly
+      //I'm using the default value for nV (1) in image_check. This will allow the cluster
+      //to touch the faces of the voronoi cell.
 
-    //Some sort of check should happen here to make sure your superstructure
-    //is large enough to accomodate the stamp. Otherwise shit will get messed up
-    //I think image_check is the way to go, but I'm not sure I'm using it correctly
-    //I'm using the default value for nV (1) in image_check. This will allow the cluster
-    //to touch the faces of the voronoi cell.
+      if(!im_override && stamp.size() > 1 && stamp.image_check(lattice(), 1)) {    //Skip point clusters?
+        std::cerr << "ERROR in Structure::stamp_with" << std::endl;
+        std::cerr << "Your superstructure isn't big enough to fit your cluster!" << std::endl;
+        std::cerr << "Culprit:" << std::endl;
+        stamp.print(std::cerr);
+        exit(62);
+      }
 
-    if(!im_override && stamp.size() > 1 && stamp.image_check(lattice(), 1)) {    //Skip point clusters?
-      std::cerr << "ERROR in Structure::stamp_with" << std::endl;
-      std::cerr << "Your superstructure isn't big enough to fit your cluster!" << std::endl;
-      std::cerr << "Culprit:" << std::endl;
-      stamp.print(std::cerr);
-      exit(62);
-    }
+      stamp.set_lattice(lattice(), CART);
+      stamp.within();
 
-    stamp.set_lattice(lattice(), CART);
-    stamp.within();
-
-    Structure stampedstruc = *this;
-    Index sanity_count = 0;
-    for(Index i = 0; i < stamp.size(); i++) {
-      for(Index j = 0; j < basis.size(); j++) {
-        if(Coordinate(stamp[i]) == Coordinate(basis[j])) {
-          sanity_count++;
-          stampedstruc.basis[j] = stamp[i];
+      Structure stampedstruc = *this;
+      Index sanity_count = 0;
+      for(Index i = 0; i < stamp.size(); i++) {
+        for(Index j = 0; j < basis.size(); j++) {
+          if(Coordinate(stamp[i]) == Coordinate(basis[j])) {
+            sanity_count++;
+            stampedstruc.basis[j] = stamp[i];
+          }
         }
       }
+
+      if(sanity_count != stamp.size()) {  //Allow if override?
+        std::cerr << "ERROR in Structure::stamp_with (are you using Structure::bedazzle?)" << std::endl;
+        std::cerr << stamp.size() - sanity_count << " sites in the cluster (size " << stamp.size() << " did not map onto your structure.\
+                  If you got this far your lattices passed the test, but it seems your bases are unrelated. My guesses:" << std::endl;
+        std::cerr << "You're trying to map a relaxed site onto an ideal one." << std::endl;
+        std::cerr << "You have a vacancy in the structure you're stamping that's not in the basis." << std::endl;
+        exit(61);
+      }
+
+      stampedstruc.reset();
+      return stampedstruc;
     }
-
-    if(sanity_count != stamp.size()) {  //Allow if override?
-      std::cerr << "ERROR in Structure::stamp_with (are you using Structure::bedazzle?)" << std::endl;
-      std::cerr << stamp.size() - sanity_count << " sites in the cluster (size " << stamp.size() << " did not map onto your structure.\
-                If you got this far your lattices passed the test, but it seems your bases are unrelated. My guesses:" << std::endl;
-      std::cerr << "You're trying to map a relaxed site onto an ideal one." << std::endl;
-      std::cerr << "You have a vacancy in the structure you're stamping that's not in the basis." << std::endl;
-      exit(61);
-    }
-
-    stampedstruc.reset();
-    return stampedstruc;
-  }
-
+  */
   //***********************************************************
   /**
    * Same as stamp_with, but takes an array of clusters and returns
@@ -941,16 +943,16 @@ namespace CASM {
    * Perhaps this should actually take an OrbitBranch?
    */
   //***********************************************************
+  /*
+    Array<Structure> Structure::bedazzle(Array<SiteCluster> stamps, bool lat_override, bool im_override) const {
+      Array<Structure> all_decorations;
+      for(Index i = 0; i < stamps.size(); i++) {
+        all_decorations.push_back(stamp_with(stamps[i], lat_override, im_override));
+      }
 
-  Array<Structure> Structure::bedazzle(Array<SiteCluster> stamps, bool lat_override, bool im_override) const {
-    Array<Structure> all_decorations;
-    for(Index i = 0; i < stamps.size(); i++) {
-      all_decorations.push_back(stamp_with(stamps[i], lat_override, im_override));
+      return all_decorations;
     }
-
-    return all_decorations;
-  }
-
+  */
   //***********************************************************
   /**
    * Goes to a specified site of the basis and makes a flower tree

@@ -407,19 +407,19 @@ Instructions for fitting ECI:                                          \n\n\
 
 
     std::cout << "TRUE\n";
-    std::cout << "- Project name: " << primclex.name() << std::endl;
-    std::cout << "- Project location: " << primclex.get_path().string() << std::endl;
+    std::cout << "- Project name: " << primclex.settings().name() << std::endl;
+    std::cout << "- Project location: " << primclex.dir().root_dir().string() << std::endl;
 
     // it'd be nice to just read this...
     SymGroup prim_pg;
-    primclex.get_prim().lattice().generate_point_group(prim_pg);
+    primclex.prim().lattice().generate_point_group(prim_pg);
     prim_pg.character_table();
     std::cout << "- Lattice point group size: " << prim_pg.size() << std::endl;
     std::cout << "- Lattice point group is " << prim_pg.get_name() << std::endl;
-    std::cout << "- Factor group size: " << primclex.get_prim().factor_group().size() << std::endl;
-    std::cout << "- Crystal point group is: " << primclex.get_prim().point_group().get_name() << std::endl;
+    std::cout << "- Factor group size: " << primclex.prim().factor_group().size() << std::endl;
+    std::cout << "- Crystal point group is: " << primclex.prim().point_group().get_name() << std::endl;
     if(!vm.count("warning")) {
-      if(primclex.get_prim().factor_group().size() > prim_pg.size()) {
+      if(primclex.prim().factor_group().size() > prim_pg.size()) {
         std::cout << "*** Warning: Finding a factor group that is larger than the lattice \n"
                   << "             point group implies that your structure is not primitive." << std::endl;
       }
@@ -486,15 +486,15 @@ Instructions for fitting ECI:                                          \n\n\
     int tot_calc = 0;
     int tot_sel = 0;
 
-    for(int i = 0; i < primclex.get_supercell_list().size(); i++) {
-      int gen = primclex.get_supercell(i).get_config_list().size();
+    for(int i = 0; i < primclex.supercell_list().size(); i++) {
+      int gen = primclex.supercell(i).config_list().size();
       int calc = 0, sel = 0;
-      const Supercell &scel = primclex.get_supercell(i);
-      for(int j = 0; j < scel.get_config_list().size(); j++) {
-        if(scel.get_config(j).selected()) {
+      const Supercell &scel = primclex.supercell(i);
+      for(int j = 0; j < scel.config_list().size(); j++) {
+        if(scel.config(j).selected()) {
           sel++;
         }
-        if(scel.get_config(j).calc_properties().contains("relaxed_energy")) {
+        if(scel.config(j).calc_properties().contains("relaxed_energy")) {
           calc++;
         }
       }
@@ -503,11 +503,11 @@ Instructions for fitting ECI:                                          \n\n\
       tot_sel += sel;
     }
 
-    std::cout << "- Number of supercells generated: " << primclex.get_supercell_list().size() << "\n";
+    std::cout << "- Number of supercells generated: " << primclex.supercell_list().size() << "\n";
     std::cout << "- Number of configurations generated: " << tot_gen << "\n";
     std::cout << "- Number of configurations currently selected: " << tot_sel << "\n";
 
-    if(primclex.get_supercell_list().size() == 0) {
+    if(primclex.supercell_list().size() == 0) {
 
       if(vm.count("next")) {
         std::cout << "\n#################################\n\n";
@@ -542,34 +542,34 @@ Instructions for fitting ECI:                                          \n\n\
     /// 4) Calculate configuration properties
 
     std::cout << "4) Calculate configuration properties\n";
-    std::cout << "- Current calctype: " << primclex.get_curr_calctype() << "\n";
-    std::cout << "- Current cluster expansion: " << primclex.get_curr_clex() << "\n";
+    std::cout << "- Current calctype: " << primclex.settings().calctype() << "\n";
+    std::cout << "- Current cluster expansion: " << primclex.settings().clex() << "\n";
     std::cout << "- Number of configurations calculated: " << tot_calc << " / " << tot_gen << " generated (Update with 'casm update')\n\n";
 
     if(vm.count("details")) {
       //std::cout << std::setw(6) << " " << " " << std::setw(30) << " " << "     " << "#CONFIGS" << std::endl;
       std::cout << std::setw(6) << "INDEX" << " " << std::setw(30) << "SUPERCELL" << "     " << "#CONFIGS G / C / S" << std::endl;
       std::cout << "---------------------------------------------------------------------------" << std::endl;
-      for(int i = 0; i < primclex.get_supercell_list().size(); i++) {
+      for(int i = 0; i < primclex.supercell_list().size(); i++) {
         int tot_gen = 0;
         int tot_calc = 0;
         int tot_sel = 0;
 
-        int gen = primclex.get_supercell(i).get_config_list().size();
+        int gen = primclex.supercell(i).config_list().size();
         int calc = 0, sel = 0;
-        const Supercell &scel = primclex.get_supercell(i);
-        for(int j = 0; j < scel.get_config_list().size(); j++) {
-          if(scel.get_config(j).selected()) {
+        const Supercell &scel = primclex.supercell(i);
+        for(int j = 0; j < scel.config_list().size(); j++) {
+          if(scel.config(j).selected()) {
             sel++;
           }
-          if(scel.get_config(j).calc_properties().contains("relaxed_energy")) {
+          if(scel.config(j).calc_properties().contains("relaxed_energy")) {
             calc++;
           }
         }
         tot_gen += gen;
         tot_calc += calc;
         tot_sel += sel;
-        std::cout << std::setw(6) << i << " " << std::setw(30) << primclex.get_supercell(i).get_name() << "     " << gen << " / " << calc << " / " << sel << std::endl;
+        std::cout << std::setw(6) << i << " " << std::setw(30) << primclex.supercell(i).name() << "     " << gen << " / " << calc << " / " << sel << std::endl;
       }
       std::cout << "---------------------------------------------------------------------------" << std::endl;
       std::cout << std::setw(6) << " " << " " << std::setw(30) << "TOTAL" << "     " << tot_gen << " / " << tot_calc << " / " << tot_sel << std::endl;

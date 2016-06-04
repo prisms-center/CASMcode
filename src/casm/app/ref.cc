@@ -11,7 +11,7 @@ namespace CASM {
       jsonParser json = jsonParser::object();
       json["chemical_reference"]["global"] = json_ref;
 
-      ChemicalReference chem_ref = read_chemical_reference(json, primclex.get_prim(), lin_alg_tol);
+      ChemicalReference chem_ref = read_chemical_reference(json, primclex.prim(), lin_alg_tol);
 
       std::cout << "Initializing the chemical reference to: \n\n";
       ChemicalReferencePrinter p(std::cout, chem_ref);
@@ -23,9 +23,9 @@ namespace CASM {
     int update_global(fs::path chem_ref_path, const PrimClex &primclex, const jsonParser &json_ref, double lin_alg_tol) {
 
       ChemicalReference chem_ref =
-        read_chemical_reference(chem_ref_path, primclex.get_prim(), lin_alg_tol);
+        read_chemical_reference(chem_ref_path, primclex.prim(), lin_alg_tol);
 
-      auto input = one_chemical_reference_from_json(primclex.get_prim(), json_ref);
+      auto input = one_chemical_reference_from_json(primclex.prim(), json_ref);
 
       if(input.second.empty()) {
         chem_ref.set_global(input.first);
@@ -54,7 +54,7 @@ namespace CASM {
         return ERR_MISSING_INPUT_FILE;
       }
 
-      ChemicalReference chem_ref = read_chemical_reference(chem_ref_path, primclex.get_prim(), lin_alg_tol);
+      ChemicalReference chem_ref = read_chemical_reference(chem_ref_path, primclex.prim(), lin_alg_tol);
 
       try {
         const Configuration &config = primclex.configuration(configname);
@@ -65,7 +65,7 @@ namespace CASM {
         return ERR_INVALID_ARG;
       }
 
-      auto input = one_chemical_reference_from_json(primclex.get_prim(), json_ref);
+      auto input = one_chemical_reference_from_json(primclex.prim(), json_ref);
       if(input.second.empty()) {
         chem_ref.set_config(configname, input.first);
       }
@@ -94,10 +94,10 @@ namespace CASM {
         return ERR_MISSING_INPUT_FILE;
       }
 
-      ChemicalReference chem_ref = read_chemical_reference(chem_ref_path, primclex.get_prim(), lin_alg_tol);
+      ChemicalReference chem_ref = read_chemical_reference(chem_ref_path, primclex.prim(), lin_alg_tol);
 
       try {
-        const Supercell &scel = primclex.get_supercell(scelname);
+        const Supercell &scel = primclex.supercell(scelname);
       }
       catch(...) {
         std::cerr << "Error using 'casm ref --set --scelname': \n"
@@ -105,7 +105,7 @@ namespace CASM {
         return ERR_INVALID_ARG;
       }
 
-      auto input = one_chemical_reference_from_json(primclex.get_prim(), json_ref);
+      auto input = one_chemical_reference_from_json(primclex.prim(), json_ref);
       if(input.second.empty()) {
         chem_ref.set_supercell(scelname, input.first);
       }

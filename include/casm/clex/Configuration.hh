@@ -17,7 +17,8 @@ namespace CASM {
   class Supercell;
   class UnitCellCoord;
   class Clexulator;
-
+  class Structure;
+  class Molecule;
 
   /// \defgroup Configuration
   ///

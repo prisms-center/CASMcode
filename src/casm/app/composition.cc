@@ -175,7 +175,7 @@ namespace CASM {
 
         opt.standard.clear();
         std::vector<CompositionConverter> v;
-        standard_composition_axes(primclex.get_prim(), std::back_inserter(v));
+        standard_composition_axes(primclex.prim(), std::back_inserter(v));
         for(int i = 0; i < v.size(); i++) {
           opt.standard[std::to_string(i)] = v[i];
         }

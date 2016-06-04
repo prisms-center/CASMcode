@@ -81,7 +81,7 @@ namespace CASM {
 
           Popen process;
 
-          process.popen(exec + " " + it->get_path().string());
+          process.popen(exec + " " + it->path().string());
 
           process.print(std::cout);
         }
@@ -95,7 +95,7 @@ namespace CASM {
 
           Popen process;
 
-          process.popen(exec + " " + it->get_path().string());
+          process.popen(exec + " " + it->path().string());
 
           process.print(std::cout);
         }

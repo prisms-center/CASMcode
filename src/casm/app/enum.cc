@@ -131,15 +131,15 @@ namespace CASM {
       //Build the supercell selection based on user input
       if(vm.count("all")) {
         std::cout << "Enumerate all configurations" << std::endl << std::endl;
-        for(int j = 0; j < primclex.get_supercell_list().size(); j++)
-          scel_selection.push_back(&(primclex.get_supercell(j)));
+        for(int j = 0; j < primclex.supercell_list().size(); j++)
+          scel_selection.push_back(&(primclex.supercell(j)));
       }
       else {
         if(vm.count("max")) {
           std::cout << "Enumerate configurations from volume " << min_vol << " to " << max_vol << std::endl << std::endl;
-          for(int j = 0; j < primclex.get_supercell_list().size(); j++) {
-            if(primclex.get_supercell(j).volume() >= min_vol && primclex.get_supercell(j).volume() <= max_vol)
-              scel_selection.push_back(&(primclex.get_supercell(j)));
+          for(int j = 0; j < primclex.supercell_list().size(); j++) {
+            if(primclex.supercell(j).volume() >= min_vol && primclex.supercell(j).volume() <= max_vol)
+              scel_selection.push_back(&(primclex.supercell(j)));
           }
         }
         if(vm.count("scellname")) {
@@ -150,7 +150,7 @@ namespace CASM {
               std::cout << "Error in 'casm enum'. Did not find supercell: " << scellname_list[i] << std::endl;
               return 1;
             }
-            scel_selection.push_back(&(primclex.get_supercell(j)));
+            scel_selection.push_back(&(primclex.supercell(j)));
           }
         }
       }
@@ -163,10 +163,10 @@ namespace CASM {
 
       //We have the selection. Now do enumeration
       for(auto it = scel_selection.begin(); it != scel_selection.end(); ++it) {
-        std::cout << "  Enumerate configurations for " << (**it).get_name() << " ...  " << std::flush;
+        std::cout << "  Enumerate configurations for " << (**it).name() << " ...  " << std::flush;
 
         ConfigEnumAllOccupations<Configuration> enumerator(**it);
-        Index num_before = (**it).get_config_list().size();
+        Index num_before = (**it).config_list().size();
         if(vm.count("filter")) {
           try {
             (**it).add_unique_canon_configs(filter_begin(enumerator.begin(), enumerator.end(), filter_expr, set.config_io()), filter_end(enumerator.end()));
@@ -179,7 +179,7 @@ namespace CASM {
         else
           (**it).add_unique_canon_configs(enumerator.begin(), enumerator.end());
 
-        std::cout << ((**it).get_config_list().size() - num_before) << " configs." << std::endl;
+        std::cout << ((**it).config_list().size() - num_before) << " configs." << std::endl;
       }
       std::cout << "  DONE." << std::endl << std::endl;
 

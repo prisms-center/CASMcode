@@ -659,7 +659,7 @@ namespace CASM {
       exit(1);
     }
 
-    return UnitCellCoord(b, lround(tsite.const_frac() - basis[b].const_frac()));
+    return UnitCellCoord(*this, b, lround(tsite.const_frac() - basis[b].const_frac()));
   };
 
 
@@ -1259,9 +1259,9 @@ namespace CASM {
     OutputIterator result,
     double xtal_tol) {
 
-    auto dim = basic.lattice().enclose_sphere(max_radius);
+    auto dim = unit.lattice().enclose_sphere(max_radius);
     EigenCounter<Eigen::Vector3i> grid_count(-dim, dim, Eigen::Vector3i::Constant(1));
-    Coordinate lat_point(lattice);
+    Coordinate lat_point(unit.lattice());
     const auto &basis = unit.basis;
 
     do {
@@ -1278,7 +1278,7 @@ namespace CASM {
         [&](const Coordinate & coord) {
         return test.dist(coord) < max_radius;
         })) {
-          *result++ = UnitCellCoord(basic, test, xtal_tol);
+          *result++ = UnitCellCoord(unit, test, xtal_tol);
         }
       }
     }

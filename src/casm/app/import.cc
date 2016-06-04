@@ -175,7 +175,7 @@ namespace CASM {
       if(vm.count("data") && pos_path.extension() != ".json" && pos_path.extension() != ".JSON") {
         fs::path dft_path = pos_path;
         dft_path.remove_filename();
-        (dft_path /= ("calctype." + primclex.get_curr_calctype())) /= "properties.calc.json";
+        (dft_path /= ("calctype." + primclex.settings().calctype())) /= "properties.calc.json";
         if(!fs::exists(dft_path)) {
           dft_path = pos_path;
           dft_path.remove_filename();
@@ -257,7 +257,7 @@ namespace CASM {
         Configuration &imported_config = *(it->first);
         std::vector<Import_impl::Data> &data_vec(it->second);
 
-        fs::path import_path = fs::absolute(imported_config.get_path(), pwd);
+        fs::path import_path = fs::absolute(imported_config.path(), pwd);
         bool preexisting(false);
         if(fs::exists(imported_config.calc_properties_path()))
           preexisting = true;
@@ -357,13 +357,13 @@ namespace CASM {
           continue;
         }
 
-        fs::path import_target = import_path / ("calctype." + primclex.get_curr_calctype());
+        fs::path import_target = import_path / ("calctype." + primclex.settings().calctype());
         if(!fs::exists(import_target))
           fs::create_directories(import_target);
 
         fs::copy_file(pos_path, imported_config.calc_properties_path());
 
-        if(!fs::exists(imported_config.get_pos_path()))
+        if(!fs::exists(imported_config.pos_path()))
           imported_config.write_pos();
 
         {

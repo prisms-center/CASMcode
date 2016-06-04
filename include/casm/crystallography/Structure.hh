@@ -15,10 +15,10 @@ namespace CASM {
 
   class SiteCluster;
 
-  template<typename ClustType>
-  class GenericOrbitree;
+  //  template<typename ClustType>
+  //  class GenericOrbitree;
 
-  typedef GenericOrbitree<SiteCluster> SiteOrbitree;
+  //  typedef GenericOrbitree<SiteCluster> SiteOrbitree;
 
   ///\brief Structure specifies the lattice and atomic basis of a crystal
   class Structure : public BasicStructure<Site> {
@@ -142,18 +142,18 @@ namespace CASM {
     /// create an orbit of all equivalent clusters that also contain the basis site
     /// and store each of these orbits in out_tree
     /// num_sites specifies what size of clusters are desired (e.g., pairs, triplets, etc)
-    void generate_basis_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites);
+    //    void generate_basis_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites);
 
     /// For each asymmetric unit site, find each cluster in 'in_tree' that contain that basis site,
     /// create an orbit of all equivalent clusters that also contain the basis site
     /// and store each of these orbits in out_tree
     /// num_sites specifies what size of clusters are desired (e.g., pairs, triplets, etc)
-    void generate_asym_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites);
+    //    void generate_asym_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites);
 
     //John G 230913
     /// Gets clusters of every size radiating from one site and saves them to a flowertree. A garland for each site is constructed.
-    void generate_flowertrees_safe(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees);
-    void generate_flowertrees(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees);
+    //    void generate_flowertrees_safe(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees);
+    //    void generate_flowertrees(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees);
     //\John G 230913
 
 
@@ -171,8 +171,8 @@ namespace CASM {
     //\John G 121212
 
     //John G 050513
-    Structure stamp_with(SiteCluster stamp, bool lat_override = 0, bool im_override = 0) const;
-    Array<Structure> bedazzle(Array<SiteCluster> stamps, bool lat_override = 0, bool im_override = 0) const;
+    //    Structure stamp_with(SiteCluster stamp, bool lat_override = 0, bool im_override = 0) const;
+    //    Array<Structure> bedazzle(Array<SiteCluster> stamps, bool lat_override = 0, bool im_override = 0) const;
     Array<Array<Array<double> > > get_NN_table(const double &maxr, SiteOrbitree &bouquet);
     Array<Array<Array<double> > > get_NN_table(const double &maxr);
     //\John G 050513

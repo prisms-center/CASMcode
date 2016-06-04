@@ -30,11 +30,11 @@ namespace CASM {
     std::vector<double> absmags;
     std::transform(magnitudes.cbegin(), magnitudes.cend(), std::back_inserter(absmags), std::abs<double>);
 
-    m_strain_calc.set_symmetrized_sop(_scel.get_primclex().get_prim().point_group());
+    m_strain_calc.set_symmetrized_sop(_scel.primclex().prim().point_group());
 
     //Eigen::MatrixXd axes=m_strain_calc.sop_transf_mat();
     std::vector<Index> mult;
-    std::vector<Eigen::MatrixXd> wedges = m_strain_calc.irreducible_wedges(_scel.get_primclex().get_prim().point_group(), mult);
+    std::vector<Eigen::MatrixXd> wedges = m_strain_calc.irreducible_wedges(_scel.primclex().prim().point_group(), mult);
     Eigen::VectorXd init(sdim), final(sdim), inc(sdim);
     Index num_sub = wedges.size();
 
@@ -76,7 +76,7 @@ namespace CASM {
     }
 
     //Handle for strain symrep
-    SymGroupRep::RemoteHandle trep(_scel.get_prim().factor_group(), m_strain_calc.symrep_ID());
+    SymGroupRep::RemoteHandle trep(_scel.prim().factor_group(), m_strain_calc.symrep_ID());
     //wedge_orbits[w] is orbit of wedges[w]
     multivector<Eigen::MatrixXd>::X<2> wedge_orbits(wedges.size());
     //max_equiv[w] is wedge_orbits[w].size()-1

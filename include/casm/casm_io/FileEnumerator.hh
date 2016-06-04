@@ -50,7 +50,7 @@ namespace CASM {
 
   private:
 
-    /// make paths relative to m_primclex.get_path() if m_relative
+    /// make paths relative to m_primclex.dir().root_dir() if m_relative
     fs::path _if_relative(fs::path path);
 
     /// output path if it exists
@@ -103,7 +103,7 @@ namespace CASM {
   /// make paths relative to CASM project root directory
   inline fs::path FileEnumerator::_if_relative(fs::path path) {
     if(m_relative) {
-      auto a = m_primclex.get_path().string().size() + 1;
+      auto a = m_primclex.dir().root_dir().string().size() + 1;
       auto b = path.string().size();
       return fs::path(path.string().substr(a, b));
     }
@@ -252,15 +252,15 @@ namespace CASM {
         continue;
       }
 
-      auto scel_begin = m_primclex.get_supercell_list().begin();
-      auto scel_end = m_primclex.get_supercell_list().end();
+      auto scel_begin = m_primclex.supercell_list().begin();
+      auto scel_end = m_primclex.supercell_list().end();
 
       // calculation settings: global
       result = _all_that_exist(result, m_dir.calc_settings_dir(calctype));
 
       // supercell level
       for(auto scel_it = scel_begin; scel_it != scel_end; ++scel_it) {
-        result = _all_that_exist(result, m_dir.supercell_calc_settings_dir(scel_it->get_name(), calctype));
+        result = _all_that_exist(result, m_dir.supercell_calc_settings_dir(scel_it->name(), calctype));
       }
 
       auto begin = m_primclex.config_begin();
