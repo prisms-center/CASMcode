@@ -3,55 +3,142 @@ include $(top_srcdir)/common.mk
 AM_CXXFLAGS = -DTXT_VERSION='"$(TXT_VERSION)"' -DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long -DGZSTREAM_NAMESPACE=gz -I$(top_srcdir)/include -I$(top_srcdir)/include/casm/external/gzstream -I$(top_srcdir)/include/casm/external/qhull/libqhullcpp
 AM_CPPFLAGS = -I$(top_srcdir)/include/casm/external/qhull/libqhull_r/ -I$(top_srcdir)/include/casm/external/gzstream
 lib_LTLIBRARIES = libcasm.la
-libcasm_la_SOURCES = ./strain/StrainConverter.cc ./basis_set/Variable.cc ./basis_set/DoF.cc ./basis_set/BasisSet.cc ./basis_set/BasisFunction.cc ./basis_set/OccupantFunction.cc ./basis_set/PolynomialFunction.cc ./basis_set/FunctionVisitor.cc ./app/AppIO.cc ./app/bset.cc ./app/casm_functions.cc ./app/composition.cc ./app/enum.cc ./app/files.cc ./app/format.cc ./app/import.cc ./app/init.cc ./app/monte.cc ./app/perturb.cc ./app/ProjectBuilder.cc ./app/ProjectSettings.cc ./app/query.cc ./app/ref.cc ./app/run.cc ./app/select.cc ./app/settings.cc ./app/status.cc ./app/super.cc ./app/sym.cc ./app/update.cc ./app/view.cc ./CASM_global_definitions.cc ./misc/CASM_math.cc ./symmetry/PermuteIterator.cc ./symmetry/SymOp.cc ./symmetry/SymPermutation.cc ./symmetry/SymOpRepresentation.cc ./symmetry/SymGroupRep.cc ./symmetry/SymMatrixXd.cc ./symmetry/SymGroup.cc ./clusterography/ClusterFunctions.cc ./clusterography/jsonClust.cc ./clusterography/SiteCluster.cc ./system/Popen.cc ./system/RuntimeLibrary.cc ./casm_io/Log.cc ./casm_io/DataStream.cc ./casm_io/jsonParser.cc ./casm_io/Args.cc ./casm_io/json_io/global.cc ./casm_io/json_io/clex.cc ./casm_io/DataFormatter.cc ./casm_io/FormatFlag.cc ./container/Permutation.cc ./container/LinearAlgebra.cc ./clex/Configuration.cc ./clex/ECIContainer.cc ./clex/ConfigIOStrucScore.cc ./clex/ConfigIONovelty.cc ./clex/ConfigIterator.cc ./clex/Supercell.cc ./clex/Properties.cc ./clex/ConfigIOStrain.cc ./clex/DoFManager.cc ./clex/Reference.cc ./clex/ConfigIOSelected.cc ./clex/CompositionConverter.cc ./clex/NeighborList.cc ./clex/ConfigDoF.cc ./clex/PrimClex.cc ./clex/ConfigIOHull.cc ./clex/ChemicalReference.cc ./clex/ConfigIO.cc ./clex/ParamComposition.cc ./clex/ConfigMapping.cc ./version/version.cc ./hull/Hull.cc ./crystallography/Coordinate.cc ./crystallography/Structure.cc ./crystallography/PrimGrid.cc ./crystallography/Site.cc ./crystallography/Molecule.cc ./crystallography/Lattice.cc ./crystallography/LatticeMap.cc ./crystallography/SupercellEnumerator.cc ./crystallography/CoordinateSystems.cc ./monte_carlo/MonteDefinitions.cc ./monte_carlo/MonteSettings.cc ./monte_carlo/MonteCounter.cc ./monte_carlo/MCData.cc ./monte_carlo/MonteSampler.cc ./monte_carlo/grand_canonical/GrandCanonical.cc ./monte_carlo/grand_canonical/GrandCanonicalConditions.cc ./monte_carlo/grand_canonical/GrandCanonicalSettings.cc ./monte_carlo/grand_canonical/GrandCanonicalIO.cc ./monte_carlo/MonteCarlo.cc ./monte_carlo/MonteIO.cc ./monte_carlo/SiteExchanger.cc ./external/gzstream/gzstream.C ./external/qhull/libqhull_r/geom2_r.c ./external/qhull/libqhull_r/geom_r.c ./external/qhull/libqhull_r/poly_r.c ./external/qhull/libqhull_r/random_r.c ./external/qhull/libqhull_r/user_r.c ./external/qhull/libqhull_r/rboxlib_r.c ./external/qhull/libqhull_r/poly2_r.c ./external/qhull/libqhull_r/libqhull_r.c ./external/qhull/libqhull_r/merge_r.c ./external/qhull/libqhull_r/mem_r.c ./external/qhull/libqhull_r/stat_r.c ./external/qhull/libqhull_r/qset_r.c ./external/qhull/libqhull_r/usermem_r.c ./external/qhull/libqhull_r/io_r.c ./external/qhull/libqhull_r/global_r.c ./external/qhull/libqhullcpp/QhullRidge.cpp ./external/qhull/libqhullcpp/Coordinates.cpp ./external/qhull/libqhullcpp/QhullFacetList.cpp ./external/qhull/libqhullcpp/PointCoordinates.cpp ./external/qhull/libqhullcpp/QhullStat.cpp ./external/qhull/libqhullcpp/Qhull.cpp ./external/qhull/libqhullcpp/QhullPoints.cpp ./external/qhull/libqhullcpp/RoadError.cpp ./external/qhull/libqhullcpp/RoadLogEvent.cpp ./external/qhull/libqhullcpp/QhullPoint.cpp ./external/qhull/libqhullcpp/QhullQh.cpp ./external/qhull/libqhullcpp/QhullSet.cpp ./external/qhull/libqhullcpp/QhullVertexSet.cpp ./external/qhull/libqhullcpp/QhullPointSet.cpp ./external/qhull/libqhullcpp/QhullFacetSet.cpp ./external/qhull/libqhullcpp/QhullHyperplane.cpp ./external/qhull/libqhullcpp/RboxPoints.cpp ./external/qhull/libqhullcpp/QhullVertex.cpp ./external/qhull/libqhullcpp/QhullFacet.cpp
-
-
+libcasm_la_SOURCES = ./CASM_global_definitions.cc\
+					 ./app/AppIO.cc\
+					 ./app/bset.cc\
+					 ./app/casm_functions.cc\
+					 ./app/composition.cc\
+					 ./app/enum.cc\
+					 ./app/files.cc\
+					 ./app/format.cc\
+					 ./app/import.cc\
+					 ./app/init.cc\
+					 ./app/monte.cc\
+					 ./app/perturb.cc\
+					 ./app/ProjectBuilder.cc\
+					 ./app/ProjectSettings.cc\
+					 ./app/query.cc\
+					 ./app/ref.cc\
+					 ./app/run.cc\
+					 ./app/select.cc\
+					 ./app/settings.cc\
+					 ./app/status.cc\
+					 ./app/super.cc\
+					 ./app/sym.cc\
+					 ./app/update.cc\
+					 ./app/view.cc\
+					 ./basis_set/BasisFunction.cc\
+					 ./basis_set/BasisSet.cc\
+					 ./basis_set/DoF.cc\
+					 ./basis_set/FunctionVisitor.cc\
+					 ./basis_set/OccupantFunction.cc\
+					 ./basis_set/PolynomialFunction.cc\
+					 ./basis_set/Variable.cc\
+					 ./casm_io/Args.cc\
+					 ./casm_io/DataFormatter.cc\
+					 ./casm_io/DataStream.cc\
+					 ./casm_io/FormatFlag.cc\
+					 ./casm_io/json_io/clex.cc\
+					 ./casm_io/json_io/global.cc\
+					 ./casm_io/jsonParser.cc\
+					 ./casm_io/Log.cc\
+					 ./clex/ChemicalReference.cc\
+					 ./clex/CompositionConverter.cc\
+					 ./clex/ConfigDoF.cc\
+					 ./clex/ConfigIO.cc\
+					 ./clex/ConfigIOHull.cc\
+					 ./clex/ConfigIONovelty.cc\
+					 ./clex/ConfigIOSelected.cc\
+					 ./clex/ConfigIOStrain.cc\
+					 ./clex/ConfigIOStrucScore.cc\
+					 ./clex/ConfigIterator.cc\
+					 ./clex/ConfigMapping.cc\
+					 ./clex/Configuration.cc\
+					 ./clex/DoFManager.cc\
+					 ./clex/ECIContainer.cc\
+					 ./clex/NeighborList.cc\
+					 ./clex/ParamComposition.cc\
+					 ./clex/PrimClex.cc\
+					 ./clex/Properties.cc\
+					 ./clex/Reference.cc\
+					 ./clex/Supercell.cc\
+					 ./clusterography/ClusterFunctions.cc\
+					 ./clusterography/jsonClust.cc\
+					 ./clusterography/SiteCluster.cc\
+					 ./container/LinearAlgebra.cc\
+					 ./container/Permutation.cc\
+					 ./crystallography/Coordinate.cc\
+					 ./crystallography/CoordinateSystems.cc\
+					 ./crystallography/Lattice.cc\
+					 ./crystallography/LatticeMap.cc\
+					 ./crystallography/Molecule.cc\
+					 ./crystallography/PrimGrid.cc\
+					 ./crystallography/Site.cc\
+					 ./crystallography/Structure.cc\
+					 ./crystallography/SupercellEnumerator.cc\
+					 ./external/gzstream/gzstream.C\
+					 ./external/qhull/libqhullcpp/Coordinates.cpp\
+					 ./external/qhull/libqhullcpp/PointCoordinates.cpp\
+					 ./external/qhull/libqhullcpp/Qhull.cpp\
+					 ./external/qhull/libqhullcpp/QhullFacet.cpp\
+					 ./external/qhull/libqhullcpp/QhullFacetList.cpp\
+					 ./external/qhull/libqhullcpp/QhullFacetSet.cpp\
+					 ./external/qhull/libqhullcpp/QhullHyperplane.cpp\
+					 ./external/qhull/libqhullcpp/QhullPoint.cpp\
+					 ./external/qhull/libqhullcpp/QhullPoints.cpp\
+					 ./external/qhull/libqhullcpp/QhullPointSet.cpp\
+					 ./external/qhull/libqhullcpp/QhullQh.cpp\
+					 ./external/qhull/libqhullcpp/QhullRidge.cpp\
+					 ./external/qhull/libqhullcpp/QhullSet.cpp\
+					 ./external/qhull/libqhullcpp/QhullStat.cpp\
+					 ./external/qhull/libqhullcpp/QhullVertex.cpp\
+					 ./external/qhull/libqhullcpp/QhullVertexSet.cpp\
+					 ./external/qhull/libqhullcpp/RboxPoints.cpp\
+					 ./external/qhull/libqhullcpp/RoadError.cpp\
+					 ./external/qhull/libqhullcpp/RoadLogEvent.cpp\
+					 ./external/qhull/libqhull_r/geom2_r.c\
+					 ./external/qhull/libqhull_r/geom_r.c\
+					 ./external/qhull/libqhull_r/global_r.c\
+					 ./external/qhull/libqhull_r/io_r.c\
+					 ./external/qhull/libqhull_r/libqhull_r.c\
+					 ./external/qhull/libqhull_r/mem_r.c\
+					 ./external/qhull/libqhull_r/merge_r.c\
+					 ./external/qhull/libqhull_r/poly2_r.c\
+					 ./external/qhull/libqhull_r/poly_r.c\
+					 ./external/qhull/libqhull_r/qset_r.c\
+					 ./external/qhull/libqhull_r/random_r.c\
+					 ./external/qhull/libqhull_r/rboxlib_r.c\
+					 ./external/qhull/libqhull_r/stat_r.c\
+					 ./external/qhull/libqhull_r/usermem_r.c\
+					 ./external/qhull/libqhull_r/user_r.c\
+					 ./hull/Hull.cc\
+					 ./misc/CASM_math.cc\
+					 ./monte_carlo/grand_canonical/GrandCanonical.cc\
+					 ./monte_carlo/grand_canonical/GrandCanonicalConditions.cc\
+					 ./monte_carlo/grand_canonical/GrandCanonicalIO.cc\
+					 ./monte_carlo/grand_canonical/GrandCanonicalSettings.cc\
+					 ./monte_carlo/MCData.cc\
+					 ./monte_carlo/MonteCarlo.cc\
+					 ./monte_carlo/MonteCounter.cc\
+					 ./monte_carlo/MonteDefinitions.cc\
+					 ./monte_carlo/MonteIO.cc\
+					 ./monte_carlo/MonteSampler.cc\
+					 ./monte_carlo/MonteSettings.cc\
+					 ./monte_carlo/SiteExchanger.cc\
+					 ./strain/StrainConverter.cc\
+					 ./symmetry/PermuteIterator.cc\
+					 ./symmetry/SymGroup.cc\
+					 ./symmetry/SymGroupRep.cc\
+					 ./symmetry/SymMatrixXd.cc\
+					 ./symmetry/SymOp.cc\
+					 ./symmetry/SymOpRepresentation.cc\
+					 ./symmetry/SymPermutation.cc\
+					 ./system/Popen.cc\
+					 ./system/RuntimeLibrary.cc\
+					 ./version/version.cc
 
 #Skip versioning for now
 libcasm_la_LDFLAGS=-avoid-version
 
 #Always make the version to stay updated
 .PHONY: version/version.cc
-
-
-casmincludedir=$(includedir)/casm
-casminclude_HEADERS= $(top_srcdir)/include/casm/CASM_global_definitions.hh 
-
-clexincludedir=$(includedir)/casm/clex
-clexinclude_HEADERS=$(top_srcdir)/include/casm/clex/ConfigIOSelected.hh $(top_srcdir)/include/casm/clex/ConfigEnumIterator.hh $(top_srcdir)/include/casm/clex/ConfigEnumStrain_impl.hh $(top_srcdir)/include/casm/clex/Supercell.hh $(top_srcdir)/include/casm/clex/ChemicalReference.hh $(top_srcdir)/include/casm/clex/ConfigIOStrain.hh $(top_srcdir)/include/casm/clex/ConfigEnumInterpolation_impl.hh $(top_srcdir)/include/casm/clex/ConfigEnumAllOccupations.hh $(top_srcdir)/include/casm/clex/ConfigIOHull.hh $(top_srcdir)/include/casm/clex/ConfigIONovelty.hh $(top_srcdir)/include/casm/clex/ConfigEnumAllOccupations_impl.hh $(top_srcdir)/include/casm/clex/Properties.hh $(top_srcdir)/include/casm/clex/Clexulator_Draft.hh $(top_srcdir)/include/casm/clex/DoFManager.hh $(top_srcdir)/include/casm/clex/PrimClex.hh $(top_srcdir)/include/casm/clex/FilteredConfigIterator.hh $(top_srcdir)/include/casm/clex/NeighborList.hh $(top_srcdir)/include/casm/clex/ConfigEnum.hh $(top_srcdir)/include/casm/clex/ConfigSelection.hh $(top_srcdir)/include/casm/clex/CompositionConverter.hh $(top_srcdir)/include/casm/clex/ConfigEnumInterpolation.hh $(top_srcdir)/include/casm/clex/Correlation.hh $(top_srcdir)/include/casm/clex/clexulator_example.cc.hide $(top_srcdir)/include/casm/clex/Norm.hh $(top_srcdir)/include/casm/clex/ConfigIterator.hh $(top_srcdir)/include/casm/clex/ParamComposition.hh $(top_srcdir)/include/casm/clex/ConfigIOStrucScore.hh $(top_srcdir)/include/casm/clex/ConfigSelection_impl.hh $(top_srcdir)/include/casm/clex/Reference.hh $(top_srcdir)/include/casm/clex/ConfigMapping.hh $(top_srcdir)/include/casm/clex/ConfigDoF.hh $(top_srcdir)/include/casm/clex/ConfigIO.hh $(top_srcdir)/include/casm/clex/ECIContainer.hh $(top_srcdir)/include/casm/clex/Clexulator.hh $(top_srcdir)/include/casm/clex/Configuration.hh $(top_srcdir)/include/casm/clex/ConfigEnumStrain.hh 
-
-basissetincludedir=$(includedir)/casm/basisi_set
-basissetinclude_HEADERS=$(top_srcdir)/include/casm/basis_set/DoF.hh $(top_srcdir)/include/casm/basis_set/PolynomialFunction.hh $(top_srcdir)/include/casm/basis_set/BasisFunction.hh $(top_srcdir)/include/casm/basis_set/chebychev.m $(top_srcdir)/include/casm/basis_set/FunctionVisitor.hh $(top_srcdir)/include/casm/basis_set/BasisSet.hh $(top_srcdir)/include/casm/basis_set/Variable.hh $(top_srcdir)/include/casm/basis_set/OccupantFunction.hh 
-
-casmioincludedir=$(includedir)/casm/casm_io
-casmioinclude_HEADERS=$(top_srcdir)/include/casm/casm_io/Log.hh $(top_srcdir)/include/casm/casm_io/FileEnumerator.hh $(top_srcdir)/include/casm/casm_io/Args.hh $(top_srcdir)/include/casm/casm_io/DataStream.hh $(top_srcdir)/include/casm/casm_io/jsonParser.hh $(top_srcdir)/include/casm/casm_io/DataFormatter_impl.hh $(top_srcdir)/include/casm/casm_io/SafeOfstream.hh $(top_srcdir)/include/casm/casm_io/DataFormatter.hh $(top_srcdir)/include/casm/casm_io/EigenDataStream.hh $(top_srcdir)/include/casm/casm_io/DataFormatterTools_impl.hh $(top_srcdir)/include/casm/casm_io/VaspIO.hh $(top_srcdir)/include/casm/casm_io/json_io/global.hh $(top_srcdir)/include/casm/casm_io/json_io/container.hh $(top_srcdir)/include/casm/casm_io/json_io/clex.hh $(top_srcdir)/include/casm/casm_io/DataFormatterTools.hh $(top_srcdir)/include/casm/casm_io/FormatFlag.hh 
-
-clusterographyincludedir=$(includedir)/casm/clusterography
-clusterographyinclude_HEADERS=$(top_srcdir)/include/casm/clusterography/Orbitree.hh $(top_srcdir)/include/casm/clusterography/ClusterFunctions.hh $(top_srcdir)/include/casm/clusterography/SiteCluster.hh $(top_srcdir)/include/casm/clusterography/Orbit_impl.hh $(top_srcdir)/include/casm/clusterography/jsonClust.hh $(top_srcdir)/include/casm/clusterography/Orbitree_impl.hh $(top_srcdir)/include/casm/clusterography/OrbitBranch_impl.hh $(top_srcdir)/include/casm/clusterography/Cluster_impl.hh $(top_srcdir)/include/casm/clusterography/OrbitBranch.hh $(top_srcdir)/include/casm/clusterography/Cluster.hh $(top_srcdir)/include/casm/clusterography/Orbit.hh 
-
-containerincludedir=$(includedir)/casm/container
-containerinclude_HEADERS=$(top_srcdir)/include/casm/container/Counter.hh $(top_srcdir)/include/casm/container/MultiCounter.hh $(top_srcdir)/include/casm/container/PolyTrie.hh $(top_srcdir)/include/casm/container/Permutation.hh $(top_srcdir)/include/casm/container/LinearAlgebra.hh $(top_srcdir)/include/casm/container/ContainerTraits.hh $(top_srcdir)/include/casm/container/multivector.hh $(top_srcdir)/include/casm/container/BaseCounter.hh $(top_srcdir)/include/casm/container/IsoCounter.hh $(top_srcdir)/include/casm/container/Array.hh $(top_srcdir)/include/casm/container/Tensor.hh $(top_srcdir)/include/casm/container/Template_Algorithms.hh 
-
-crystallographyincludedir=$(includedir)/casm/crystallography
-crystallographyinclude_HEADERS=$(top_srcdir)/include/casm/crystallography/Structure.hh $(top_srcdir)/include/casm/crystallography/LatticeMap.hh $(top_srcdir)/include/casm/crystallography/CoordinateSystems.hh $(top_srcdir)/include/casm/crystallography/PrimGrid.hh $(top_srcdir)/include/casm/crystallography/SupercellEnumerator.hh $(top_srcdir)/include/casm/crystallography/Lattice.hh $(top_srcdir)/include/casm/crystallography/BasicStructure_impl.hh $(top_srcdir)/include/casm/crystallography/Molecule.hh $(top_srcdir)/include/casm/crystallography/BasicStructure.hh $(top_srcdir)/include/casm/crystallography/Site.hh $(top_srcdir)/include/casm/crystallography/Coordinate.hh $(top_srcdir)/include/casm/crystallography/jsonStruc.hh $(top_srcdir)/include/casm/crystallography/UnitCellCoord.hh 
-
-hullincludedir=$(includedir)/casm/hull
-hullinclude_HEADERS=$(top_srcdir)/include/casm/hull/Hull.hh
-
-miscincludedir=$(includedir)/casm/misc
-miscinclude_HEADERS=$(top_srcdir)/include/casm/misc/unique_map.hh $(top_srcdir)/include/casm/misc/HierarchyID.hh $(top_srcdir)/include/casm/misc/CASM_TMP.hh $(top_srcdir)/include/casm/misc/PCA.hh $(top_srcdir)/include/casm/misc/algorithm.hh $(top_srcdir)/include/casm/misc/cloneable_ptr.hh $(top_srcdir)/include/casm/misc/CASM_math.hh $(top_srcdir)/include/casm/misc/unique_cloneable_map.hh 
-
-montecarloincludedir=$(includedir)/casm/monte_carlo
-montecarloinclude_HEADERS=$(top_srcdir)/include/casm/monte_carlo/SiteExchanger.hh $(top_srcdir)/include/casm/monte_carlo/DoFMod.hh $(top_srcdir)/include/casm/monte_carlo/.MonteIO.hh.swp $(top_srcdir)/include/casm/monte_carlo/MonteSampler.hh $(top_srcdir)/include/casm/monte_carlo/MonteCounter.hh $(top_srcdir)/include/casm/monte_carlo/MonteDriver.hh.orig $(top_srcdir)/include/casm/monte_carlo/MonteIO.hh $(top_srcdir)/include/casm/monte_carlo/MonteSettings.hh $(top_srcdir)/include/casm/monte_carlo/MonteDefinitions.hh $(top_srcdir)/include/casm/monte_carlo/MonteHelpers.hh.orig $(top_srcdir)/include/casm/monte_carlo/MonteDriver.hh $(top_srcdir)/include/casm/monte_carlo/grand_canonical/GrandCanonicalEvent.hh $(top_srcdir)/include/casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh $(top_srcdir)/include/casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh $(top_srcdir)/include/casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh $(top_srcdir)/include/casm/monte_carlo/grand_canonical/GrandCanonical.hh $(top_srcdir)/include/casm/monte_carlo/MonteCarlo.hh $(top_srcdir)/include/casm/monte_carlo/MCData.hh 
-
-strainincludedir=$(includedir)/casm/strain
-straininclude_HEADERS=$(top_srcdir)/include/casm/strain/StrainConverter.hh
-
-symmetryincludedir=$(includedir)/casm/symmetry
-symmetryinclude_HEADERS=$(top_srcdir)/include/casm/symmetry/SymOp.hh $(top_srcdir)/include/casm/symmetry/SymGroupRepID.hh $(top_srcdir)/include/casm/symmetry/SymBasisPermute.hh $(top_srcdir)/include/casm/symmetry/SymMatrixXd.hh $(top_srcdir)/include/casm/symmetry/SymPermutation.hh $(top_srcdir)/include/casm/symmetry/PermuteIterator.hh $(top_srcdir)/include/casm/symmetry/SymGroup.hh $(top_srcdir)/include/casm/symmetry/SymGroupRep.hh $(top_srcdir)/include/casm/symmetry/SymOpRepresentation.hh 
-
-systemincludedir=$(includedir)/casm/system
-systeminclude_HEADERS=$(top_srcdir)/include/casm/system/RuntimeLibrary.hh $(top_srcdir)/include/casm/system/Popen.hh 
-
-versionincludedir=$(includedir)/casm/version
-versioninclude_HEADERS=$(top_srcdir)/include/casm/version/version.hh $(top_srcdir)/include/casm/version/.gitignore 

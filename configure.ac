@@ -76,6 +76,8 @@ AC_CONFIG_FILES([Makefile
                  apps/casm/Makefile
                  src/ccasm/Makefile
                  src/casm/Makefile
+                 include/casm/Makefile
+                 include/ccasm/Makefile
                  tests/unit/Makefile
                  python/Makefile
                  python/casm/setup.py
