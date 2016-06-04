@@ -43,11 +43,15 @@ include $(srcdir)/apps/casm/Makemodule.am
 
 #===========================================================#
 #Take care of tests
-include $(srcdir)/tests/unit/Makemodule.am
+#include $(srcdir)/tests/unit/Makemodule.am
 
 #===========================================================#
 #Misc targets
 .FORCE:
+
+#===========================================================#
+#Recurse into these places
+#SUBDIRS=$(srcdir)/python
 
 #Files that arent sources for executalbes or headers that get installed, but are needed in the distribution.
 EXTRA_DIST=./build-aux/casm_version.txt\
