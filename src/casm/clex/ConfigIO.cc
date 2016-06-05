@@ -23,7 +23,7 @@ namespace CASM {
 
     /// \brief Adds index rules corresponding to the parsed args
     void MolDependent::init(const Configuration &_tmplt) const {
-      auto struc_molecule = _tmplt.get_primclex().get_prim().get_struc_molecule();
+      auto struc_molecule = _tmplt.primclex().prim().get_struc_molecule();
 
       if(m_mol_names.size() == 0) {
         for(Index i = 0; i < struc_molecule.size(); i++) {
@@ -77,7 +77,7 @@ namespace CASM {
 
     /// \brief Returns true if the PrimClex has composition axes
     bool Comp::validate(const Configuration &config) const {
-      return config.get_primclex().has_composition_axes();
+      return config.primclex().has_composition_axes();
     }
 
     /// \brief Expects arguments of the form 'comp(a)', 'comp(b)', etc.
@@ -165,7 +165,7 @@ namespace CASM {
     /// \brief If not yet initialized, use the global clexulator from the PrimClex
     void Corr::init(const Configuration &_tmplt) const {
       if(!m_clexulator.initialized()) {
-        m_clexulator = _tmplt.get_primclex().global_clexulator();
+        m_clexulator = _tmplt.primclex().global_clexulator();
       }
 
       VectorXdAttribute<Configuration>::init(_tmplt);
@@ -205,8 +205,8 @@ namespace CASM {
     /// \brief If not yet initialized, use the global clexulator and eci from the PrimClex
     void Clex::init(const Configuration &_tmplt) const {
       if(!m_clexulator.initialized()) {
-        m_clexulator = _tmplt.get_primclex().global_clexulator();
-        m_eci = _tmplt.get_primclex().global_eci("formation_energy");
+        m_clexulator = _tmplt.primclex().global_clexulator();
+        m_eci = _tmplt.primclex().global_eci("formation_energy");
       }
     }
 
@@ -277,7 +277,7 @@ namespace CASM {
       return GenericConfigFormatter<std::string>("scelname",
                                                  "Supercell name, in the form 'SCEL#_#_#_#_#_#_#'",
       [](const Configuration & config)->std::string {
-        return config.get_supercell().get_name();
+        return config.supercell().name();
       });
     }
 
@@ -302,7 +302,7 @@ namespace CASM {
       return GenericConfigFormatter<Index>("scel_size",
                                            "Supercell volume, given as the integer number of unit cells",
       [](const Configuration & config)->Index {
-        return config.get_supercell().volume();
+        return config.supercell().volume();
       });
     }
 
@@ -310,7 +310,7 @@ namespace CASM {
       return GenericConfigFormatter<Index>("multiplicity",
                                            "Symmetric multiplicity of the configuration, excluding translational equivalents.",
       [](const Configuration & config)->Index {
-        return config.get_prim().factor_group().size() / config.factor_group(config.get_supercell().permute_begin(), config.get_supercell().permute_end()).size();
+        return config.prim().factor_group().size() / config.factor_group(config.supercell().permute_begin(), config.supercell().permute_end()).size();
       });
     }
 
