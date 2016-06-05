@@ -7,10 +7,12 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/casm_io/jsonParser.hh"
-#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Site.hh"
 
 namespace CASM {
+
+  class SymOp;
 
   /// \brief Unit Cell Indices
   ///
@@ -47,7 +49,8 @@ namespace CASM {
 
   public:
 
-    typedef BasicStructure<Site> UnitType;
+    /// \brief SymBasisPermute rep should be obtainable from UnitType
+    typedef Structure UnitType;
 
     UnitCellCoord(const UnitType &unit);
 
@@ -96,6 +99,12 @@ namespace CASM {
     UnitCellCoord &operator-=(UnitCell frac);
 
     bool operator<(const UnitCellCoord &B) const;
+
+    UnitCellCoord &apply_sym(const SymOp &op);
+
+    UnitCellCoord copy_apply(const SymOp &op) const;
+
+    operator Coordinate() const;
 
   private:
 
@@ -168,12 +177,7 @@ namespace CASM {
 
   /// \brief Get corresponding coordinate
   inline Coordinate UnitCellCoord::coordinate() const {
-    return unit().get_site(*this);
-  }
-
-  /// \brief Get corresponding site
-  inline Site UnitCellCoord::site() const {
-    return unit().get_site(*this);
+    return site();
   }
 
   inline UnitCell &UnitCellCoord::unitcell() {
@@ -240,6 +244,10 @@ namespace CASM {
     }
 
     return false;
+  }
+
+  inline UnitCellCoord::operator Coordinate() const {
+    return coordinate();
   }
 
   inline bool UnitCellCoord::_eq(const UnitCellCoord &B) const {

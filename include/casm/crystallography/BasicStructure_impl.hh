@@ -263,47 +263,6 @@ namespace CASM {
   }
 
   //***********************************************************
-
-  //This function gets the permutation representation of the
-  // factor group operations of the structure. It first applies
-  // the factor group operation to the structure, and then tries
-  // to map the new position of the basis atom to the various positions
-  // before symmetry was applied. It only checks the positions after
-  // it brings the basis within the crystal.
-
-  template<typename CoordType>
-  SymGroupRepID BasicStructure<CoordType>::generate_basis_permutation_representation(const MasterSymGroup &factor_group, bool verbose) const {
-
-    if(factor_group.size() <= 0 || !basis.size()) {
-      std::cerr << "ERROR in BasicStructure::generate_basis_permutation_representation" << std::endl;
-      std::cerr << "You have NOT generated the factor group, or something is very wrong with your structure. I'm quitting!" << std::endl;;
-      exit(1);
-    }
-
-    SymGroupRep basis_permute_group(factor_group);
-    SymGroupRepID rep_id;
-
-    std::string clr(100, ' ');
-
-    for(Index ng = 0; ng < factor_group.size(); ng++) {
-      if(verbose) {
-        if(ng % 100 == 0)
-          std::cout << '\r' << clr.c_str() << '\r' << "Find permute rep for symOp " << ng << "/" << factor_group.size() << std::flush;
-      }
-
-      basis_permute_group.set_rep(ng, SymBasisPermute(factor_group[ng], *this, TOL));
-    }
-    // Adds the representation into the master sym group of this structure and returns the rep id
-    rep_id = factor_group.add_representation(basis_permute_group);
-
-    //std::cerr << "Added basis permutation rep id " << rep_id << '\n';
-
-    if(verbose) std::cout << '\r' << clr.c_str() << '\r' << std::flush;
-    return rep_id;
-  }
-
-
-  //***********************************************************
   /**
    * It is NOT wise to use this function unless you have already
    * initialized a superstructure with lattice vectors.
@@ -541,69 +500,6 @@ namespace CASM {
 
   }
 
-  //*********************************************************
-  /*
-    template<typename CoordType>
-    void BasicStructure<CoordType>::map_superstruc_to_prim(BasicStructure<CoordType> &prim, const SymGroup &point_group) {
-
-      int prim_to_scel = -1;
-      CoordType shifted_site(prim.lattice());
-
-      //Check that (*this) is actually a supercell of the prim
-      if(!lattice().is_supercell_of(prim.lattice(), point_group)) {
-        std::cout << "*******************************************\n"
-                  << "ERROR in BasicStructure<CoordType>::map_superstruc_to_prim:\n"
-                  << "The structure \n";
-        //print(std::cout);
-        std::cout << jsonParser(*this) << std::endl;
-        std::cout << "is not a supercell of the given prim!\n";
-        //prim.print(std::cout);
-        std::cout << jsonParser(prim) << std::endl;
-        std::cout << "*******************************************\n";
-        exit(1);
-      }
-
-      //Get prim grid of supercell to get the lattice translations
-      //necessary to stamp the prim in the superstructure
-      PrimGrid prim_grid(prim.lattice(), lattice());
-
-      // Translate each of the prim atoms by prim_grid translation
-      // vectors, and map that translated atom in the supercell.
-      for(Index pg = 0; pg < prim_grid.size(); pg++) {
-        for(Index pb = 0; pb < prim.basis.size(); pb++) {
-          shifted_site = prim.basis[pb];
-          //shifted_site lattice is PRIM, so get prim_grid.coord in PRIM mode
-          shifted_site += prim_grid.coord(pg, PRIM);
-          shifted_site.set_lattice(lattice(), CART);
-          shifted_site.within();
-
-          // invalidate asym_ind and basis_ind because when we use
-          // BasicStructure<CoordType>::find, we don't want a comparison using the
-          // basis_ind and asym_ind; we want a comparison using the
-          // cartesian and Specie type.
-
-          shifted_site.set_basis_ind(-1);
-          prim_to_scel = find(shifted_site);
-
-          if(prim_to_scel == basis.size()) {
-            std::cout << "*******************************************\n"
-                      << "ERROR in BasicStructure<CoordType>::map_superstruc_to_prim:\n"
-                      << "Cannot associate site \n"
-                      << shifted_site << "\n"
-                      << "with a site in the supercell basis. \n"
-                      << "*******************************************\n";
-            std::cout << "The basis_ind and asym_ind are "
-                      << shifted_site.basis_ind() << "\t "
-                      << shifted_site.asym_ind() << "\n";
-            exit(2);
-          }
-
-          // Set ind_to_prim of the basis site
-          basis[prim_to_scel].ind_to_prim = pb;
-        }
-      }
-    }
-  */
   //***********************************************************
 
   template<typename CoordType> template<typename CoordType2>
@@ -626,55 +522,6 @@ namespace CASM {
       }
     }
     return basis.size();
-  }
-
-  //John G 070713
-  //***********************************************************
-  /**
-   * Using the lattice of (*this), this function will return
-   * a UnitCellCoord that corresponds to a site passed to it
-   * within a given tolerance. This function is useful for making
-   * a nearest neighbor table from sites that land outside of the
-   * primitive cell.
-   */
-  //***********************************************************
-
-  template<typename CoordType> template<typename CoordType2>
-  UnitCellCoord BasicStructure<CoordType>::get_unit_cell_coord(const CoordType2 &bsite, double tol) const {
-
-    CoordType2 tsite = bsite;
-
-    tsite.set_lattice(lattice(), CART);
-    int x, y, z;
-
-    Index b;
-
-    b = find(tsite, tol);
-
-    if(b == basis.size()) {
-      std::cerr << "ERROR in BasicStructure::get_unit_cell_coord" << std::endl
-                << "Could not find a matching basis site." << std::endl
-                << "  Looking for: FRAC: " << tsite.const_frac() << "\n"
-                << "               CART: " << tsite.const_cart() << "\n";
-      exit(1);
-    }
-
-    return UnitCellCoord(*this, b, lround(tsite.const_frac() - basis[b].const_frac()));
-  };
-
-
-  //*******************************************************************************************
-
-  template<typename CoordType>
-  CoordType BasicStructure<CoordType>::get_site(const UnitCellCoord &ucc) const {
-    if(ucc[0] < 0 || ucc[0] >= basis.size()) {
-      std::cerr << "CRITICAL ERROR: In BasicStructure<CoordType>::get_site(), UnitCellCoord " << ucc << " is out of bounds!\n"
-                << "                Cannot index basis, which contains " << basis.size() << " objects.\n";
-      assert(0);
-      exit(1);
-    }
-    Coordinate trans(Eigen::Vector3d(ucc[1], ucc[2], ucc[3]), lattice(), FRAC);
-    return basis[ucc[0]] + trans;
   }
 
   //***********************************************************
@@ -705,67 +552,7 @@ namespace CASM {
   }
 
 
-  //\John G 121212
-  //***********************************************************
-  /**
-   * Goes to a specified site of the basis and makes a flower tree
-   * of pairs. It then stores the length and multiplicity of
-   * the pairs in a double array, giving you a strict
-   * nearest neighbor table. This version also fills up a SiteOrbitree
-   * in case you want to keep it.
-   * Blatantly copied from Anna's routine in old new CASM
-   */
-  //***********************************************************
-  /*
-    template<typename CoordType>
-    Array<Array<Array<double> > > BasicStructure<CoordType>::get_NN_table(const double &maxr, GenericOrbitree<GenericCluster<CoordType> > &bouquet) {
-      if(!bouquet.size()) {
-        std::cerr << "WARNING in BasicStructure<CoordType>::get_NN_table" << std::endl;
-        std::cerr << "The provided GenericOrbitree<Cluster<CoordType> > is about to be rewritten!" << std::endl;
-      }
 
-      Array<Array<Array<double> > > NN;
-      GenericOrbitree<GenericCluster<CoordType> > normtree(lattice());
-      GenericOrbitree<GenericCluster<CoordType> > tbouquet(lattice());
-      bouquet = tbouquet;
-      normtree.min_num_components = 1;
-      normtree.max_num_sites = 2;
-      normtree.max_length.push_back(0.0);
-      normtree.max_length.push_back(0.0);
-      normtree.max_length.push_back(maxr);
-
-      normtree.generate_orbitree(*this);
-      normtree.print_full_clust(std::cout);
-      generate_basis_bouquet(normtree, bouquet, 2);
-
-      Array<Array<double> > oneNN;
-      oneNN.resize(2);
-      for(Index i = 0; i < bouquet.size(); i++) {
-        NN.push_back(oneNN);
-        for(Index j = 0; j < bouquet[i].size(); j++) {
-          NN[i][0].push_back(bouquet[i][j].size());
-          NN[i][1].push_back(bouquet[i][j].max_length());
-        }
-      }
-      return NN;
-    }
-  */
-  //***********************************************************
-  /**
-   * Goes to a specified site of the basis and makes a flower tree
-   * of pairs. It then stores the length and multiplicity of
-   * the pairs in a double array, giving you a strict
-   * nearest neighbor table. The bouquet used for this
-   * falls into the void.
-   */
-  //***********************************************************
-  /*
-    template<typename CoordType>
-    Array<Array<Array<double> > > BasicStructure<CoordType>::get_NN_table(const double &maxr) {
-      GenericOrbitree<GenericCluster<CoordType> > bouquet(lattice());
-      return get_NN_table(maxr, bouquet);
-    }
-  */
 
   //***********************************************************
   /**
@@ -833,64 +620,7 @@ namespace CASM {
     return;
   }
 
-  //***********************************************************
-  /**
-   *  Call this on a structure to get new_surface_struc: the structure with a
-   *  layer of vacuum added parallel to the ab plane.
-   *  vacuum_thickness: thickness of vacuum layer (Angstroms)
-   *  shift:  shift vector from layer to layer, assumes FRAC unless specified.
-   *  The shift vector should only have values relative to a and b vectors (eg x, y, 0).
-   *  Default shift is zero.
-   */
-  //***********************************************************
-  /*
-    template<typename CoordType>
-    void BasicStructure<CoordType>::add_vacuum_shift(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const {
 
-      Coordinate cshift(shift, lattice(), mode);    //John G 121030
-      if(!almost_zero(cshift.frac(2))) {
-        std::cout << cshift.const_frac() << std::endl;
-        std::cout << "WARNING: You're shifting in the c direction! This will mess with your vacuum and/or structure!!" << std::endl;
-        std::cout << "See BasicStructure<CoordType>::add_vacuum_shift" << std::endl;
-      }
-
-      Eigen::Vector3d vacuum_vec;                 //unit vector perpendicular to ab plane
-      vacuum_vec = lattice()[0].cross(lattice()[1]);
-      vacuum_vec.normalize();
-      Lattice new_lattice(lattice()[0],
-                          lattice()[1],
-                          lattice()[2] + vacuum_thickness * vacuum_vec + cshift.cart()); //Add vacuum and shift to c vector
-
-      new_surface_struc = *this;
-      new_surface_struc.set_lattice(new_lattice, CART);
-      new_surface_struc.initialize();
-      return;
-    }
-  */
-  //***********************************************************
-  /*
-    template<typename CoordType>
-    void BasicStructure<CoordType>::add_vacuum_shift(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness, Coordinate shift) const {
-      if(&(shift.home()) != &lattice()) {
-        std::cout << "WARNING: The lattice from your shift coordinate does not match the lattice of your structure!" << std::endl;
-        std::cout << "See BasicStructure<CoordType>::add_vacuum_shift" << std::endl << std::endl;
-      }
-
-      add_vacuum_shift(new_surface_struc, vacuum_thickness, shift.cart(), CART);
-      return;
-    }
-  */
-  //***********************************************************
-  /*
-    template<typename CoordType>
-    void BasicStructure<CoordType>::add_vacuum(BasicStructure<CoordType> &new_surface_struc, double vacuum_thickness) const {
-      Eigen::Vector3d shift(0, 0, 0);
-
-      add_vacuum_shift(new_surface_struc, vacuum_thickness, shift, FRAC);
-
-      return;
-    }
-  */
   //************************************************************
   /// Counts sites that allow vacancies
   template<typename CoordType>
