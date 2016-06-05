@@ -8,7 +8,7 @@ AC_INIT([CASM],
         [],
         [https://github.com/prisms-center/CASMcode])
 AC_CONFIG_AUX_DIR([build-aux]) #This is my doing
-AC_CONFIG_MACRO_DIRS([build-aux/m4])
+AC_CONFIG_MACRO_DIR([build-aux/m4])
 #Rules to apply to every Makefile.am
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
