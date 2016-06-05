@@ -8,11 +8,12 @@ AC_INIT([CASM],
         [],
         [https://github.com/prisms-center/CASMcode])
 AC_CONFIG_AUX_DIR([build-aux]) #This is my doing
+AC_CONFIG_MACRO_DIRS([build-aux/m4])
 #Rules to apply to every Makefile.am
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 AC_CONFIG_SRCDIR([src/casm/CASM_global_definitions.cc])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([build-aux/config.h])
 
 # Checks for programs.
 AC_PROG_CXX
@@ -49,7 +50,7 @@ AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_UNIT_TEST_FRAMEWORK
 
 #Require at least this version
-AM_PATH_PYTHON([2.6])
+#AM_PATH_PYTHON([2.6])
 
 # Checks for header files.
 AC_CHECK_HEADERS([float.h limits.h stdlib.h string.h sys/time.h unistd.h])
