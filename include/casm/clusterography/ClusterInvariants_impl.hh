@@ -2,6 +2,7 @@
 #define CASM_ClusterInvariants_impl
 
 #include "casm/clusterography/ClusterInvariants.hh"
+#include "casm/misc/CASM_math.hh"
 
 namespace CASM {
 

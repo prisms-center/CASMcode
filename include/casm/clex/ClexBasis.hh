@@ -3,11 +3,15 @@
 
 #include <string>
 #include <vector>
+#include "casm/container/multivector.hh"
 #include "casm/basis_set/BasisSet.hh"
 
-class SiteOrbitree;
-
 namespace CASM {
+
+  class Structure;
+  template <typename ClusterType> class CoordCluster;
+  class UnitCellCoord;
+  typedef CoordCluster<UnitCellCoord> IntegralCluster;
 
   class ClexBasis {
 
@@ -101,13 +105,46 @@ namespace CASM {
                                                                      Index f_index);
 
 
+  template<typename ClusterOrbitIterator>
+  void ClexBasis::generate(ClusterOrbitIterator begin,
+                           ClusterOrbitIterator end,
+                           const jsonParser &bspecs,
+                           std::vector<DoFType> const &dof_keys,
+                           Index _max_poly_order /*= -1*/) {
+    /*
+    std::vector<DoFType> global_keys;
+    std::vector<DoFType> local_keys;
+    //separate local_args from global_args
+    for(DoFType const &key : dof_keys) {
+      if(m_global_bases.find(key) != m_global_bases.end()) {
+        global_args.push_back(key);
+      }
+      else if(m_local_bases.find(key) != m_local_bases.end()) {
+        local_keys.push_back
+      }
+      else {
+        throw std::runtime_error(std::string("Attempting to build Clex basis set, but missing degree of freedom \"") + key + "\n");
+      }
+    }
+    m_bset_tree.resize(std::distance(begin,end));
+    Index l = 0;
+    for(auto it=begin; it!=end; ++it) {
+      m_bset_tree[l].reserve(it->size());
+      m_bset_tree[l].push_back(generate_clust_basis(it->prototype(), local_keys, global_keys));
+      for(Index k = 1; k < it->size(); k++) {
+        m_bset_tree[l].push_back(_orbitree.orbit(i, j).equivalence_map[k][0]*m_bset_tree[l][0]);
+      }
+    }
+    */
+  }
+
   namespace ClexBasis_impl {
     void generate_clust_basis(multivector<BasisSet const *>::X<2> const &local_args,
                               std::vector<BasisSet const *> const &global_args,
                               Index max_poly_order = -1);
 
 
-    BasisSet construct_clust_dof_basis(SiteCluster const &_clust,
+    BasisSet construct_clust_dof_basis(IntegralCluster const &_clust,
                                        std::vector<BasisSet const *> const &site_dof_sets);
   }
 }

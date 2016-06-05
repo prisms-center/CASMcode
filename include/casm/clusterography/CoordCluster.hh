@@ -45,6 +45,7 @@ namespace CASM {
   /// Beyond what a GenericCluster does, a CoordCluster:
   /// - has a ptr to a primitive Structure
   /// - may be translated by UnitCell
+  /// - expects static_cast<Coordinate>(CoordType) to be valid
   ///
   /// \ingroup CoordCluster
   ///
@@ -89,7 +90,7 @@ namespace CASM {
 
     /// \brief Return the coordinate corresponding to element(i)
     Coordinate coordinate(size_type i) const {
-      return prim().get_site(this->element(i));
+      return static_cast<Coordinate>(this->element(i));
     }
 
     /// \brief Return the min pair distance

@@ -471,30 +471,10 @@ namespace CASM {
 
   // explicit template instantiations
 
-  /*
-    #define ORBIT_VECTOR_INST(ORBIT) \
-    template void print_clust<_VEC_IT(ORBIT), ProtoSitesPrinter>(_VEC_IT(ORBIT) begin, _VEC_IT(ORBIT) end, std::ostream &out, ProtoSitesPrinter printer); \
-    template void print_site_basis_funcs<_VEC_IT(ORBIT)>(_VEC_IT(ORBIT) begin, _VEC_IT(ORBIT) end, const ClexBasis &clex_basis, std::ostream &out, COORD_TYPE mode); \
-    template _VEC_INSERTER(ORBIT) read_clust<_VEC_INSERTER(ORBIT), typename ORBIT::SymCompareType>(_VEC_INSERTER(ORBIT) result, jsonParser &json, const BasicStructure<Site> &prim, const SymGroup& generating_grp, const typename ORBIT::SymCompareType &sym_compare); \
-    template jsonParser &write_clust<_VEC_IT(ORBIT)>(_VEC_IT(ORBIT) begin, _VEC_IT(ORBIT) end, jsonParser &bspecs, jsonParser &json); \
-    template void write_basis<_VEC_IT(ORBIT)>(_VEC_IT(ORBIT) begin, _VEC_IT(ORBIT) end, const ClexBasis &clex_basis, jsonParser &json, double tol); \
-    \
-  */
-
-  /*
-    #define ORBIT_SET_INST(ORBIT) \
-    template void print_clust<_SET_IT(ORBIT), ProtoSitesPrinter>(_SET_IT(ORBIT) begin, _SET_IT(ORBIT) end, std::ostream &out, ProtoSitesPrinter printer); \
-    template void print_site_basis_funcs<_SET_IT(ORBIT)>(_SET_IT(ORBIT) begin, _SET_IT(ORBIT) end, const ClexBasis &clex_basis, std::ostream &out, COORD_TYPE mode); \
-    template _SET_INSERTER(ORBIT) read_clust<_SET_INSERTER(ORBIT), typename ORBIT::SymCompareType>(_SET_INSERTER(ORBIT) result, jsonParser &json, const BasicStructure<Site> &prim, const SymGroup& generating_grp, const typename ORBIT::SymCompareType &sym_compare); \
-    template jsonParser &write_clust<_SET_IT(ORBIT)>(_SET_IT(ORBIT) begin, _SET_IT(ORBIT) end, jsonParser &bspecs, jsonParser &json); \
-    template void write_basis<_SET_IT(ORBIT)>(_SET_IT(ORBIT) begin, _SET_IT(ORBIT) end, const ClexBasis &clex_basis, jsonParser &json, double tol); \
-    \
-  */
-
 #define ORBIT_CONTAINER_INST(ITERATOR,INSERTER,ORBIT) \
   template void print_clust<ITERATOR, ProtoSitesPrinter>(ITERATOR begin, ITERATOR end, std::ostream &out, ProtoSitesPrinter printer); \
   template void print_site_basis_funcs<ITERATOR>(ITERATOR begin, ITERATOR end, const ClexBasis &clex_basis, std::ostream &out, COORD_TYPE mode); \
-  template INSERTER read_clust<INSERTER, typename ORBIT::SymCompareType>(INSERTER result, jsonParser &json, const BasicStructure<Site> &prim, const SymGroup& generating_grp, const typename ORBIT::SymCompareType &sym_compare); \
+  template INSERTER read_clust<INSERTER, typename ORBIT::SymCompareType>(INSERTER result, jsonParser &json, const Structure &prim, const SymGroup& generating_grp, const typename ORBIT::SymCompareType &sym_compare); \
   template jsonParser &write_clust<ITERATOR>(ITERATOR begin, ITERATOR end, jsonParser &bspecs, jsonParser &json); \
   template void write_basis<ITERATOR>(ITERATOR begin, ITERATOR end, const ClexBasis &clex_basis, jsonParser &json, double tol); \
  

@@ -143,8 +143,8 @@ namespace CASM {
   //**********************************************************************************************
   Index PrimGrid::find(const Coordinate &_coord) const {
 
-    auto frac(((m_lat[PRIM]->inv_lat_column_mat())*_coord.cart()).array() + TOL);
-    UnitCell ijk(frac.unaryExpr(std::ptr_fun(floor))).matrix().cast<long>());
+    auto frac((m_lat[PRIM]->inv_lat_column_mat()*_coord.cart()).array() + TOL);
+    UnitCell ijk(frac.unaryExpr(std::ptr_fun(floor)).matrix().cast<long>());
 
     return find(ijk);
   }
@@ -341,7 +341,7 @@ namespace CASM {
     UnitCell mnp(0, 0, 0);
     for(int i = 0; i < 3; i++) {
       for(int j = 0; j < 3; j++) {
-        mnp[i] += m_invU(i, j) * bijk[j];
+        mnp[i] += m_invU(i, j) * ijk[j];
       }
       //Map within bounds
       mnp[i] = ((mnp[i] % m_S[i]) + m_S[i]) % m_S[i];

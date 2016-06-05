@@ -3,9 +3,9 @@
 
 namespace CASM {
 
-  const std::string traits<symmetry_type>::name = "symmetry_type";
+  const std::string CASM_TMP::traits<symmetry_type>::name = "symmetry_type";
 
-  const std::multimap<symmetry_type, std::vector<std::string> > traits<symmetry_type>::strval = {
+  const std::multimap<symmetry_type, std::vector<std::string> > CASM_TMP::traits<symmetry_type>::strval = {
     {symmetry_type::identity_op, {"identity"} },
     {symmetry_type::mirror_op, {"mirror"} },
     {symmetry_type::glide_op, {"glide"} },

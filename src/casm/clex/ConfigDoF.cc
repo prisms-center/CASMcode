@@ -1,7 +1,6 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/symmetry/PermuteIterator.hh"
-#include "casm/clex/Correlation.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"

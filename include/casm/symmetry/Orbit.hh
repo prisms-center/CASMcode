@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "casm/misc/cloneable_ptr.hh"
+#include "casm/misc/CASM_math.hh"
 #include "casm/symmetry/SymCompare.hh"
 
 namespace CASM {
