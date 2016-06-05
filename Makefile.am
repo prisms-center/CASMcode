@@ -59,6 +59,10 @@ include $(srcdir)/tests/unit/Makemodule.am
 test:
 	echo $(srcdir)
 	echo $(top_srcdir)
+	echo $(AM_LDFLAGS)
+	echo $(AM_CXXFLAGS)
+	echo $(AM_CPPFLAGS)
+	echo $(casm_LDFLAGS)
 
 #============================================================#
 #Recurse into these places (must be direct children, don't be fancy)

@@ -554,4 +554,5 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/Core\
 						./include/casm/external/Eigen/Jacobi\
 						./include/casm/external/Eigen/SPQRSupport\
-						./include/casm/external/Eigen/Array
+						./include/casm/external/Eigen/Array\
+						./include/casm/external/boost.hh
