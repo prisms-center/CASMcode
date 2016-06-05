@@ -2,7 +2,7 @@
 #To understand why it's structured this way see
 #http://karelzak.blogspot.co.uk/2013/02/non-recursive-automake.html
 
-#ACLOCAL_AMFLAGS = -I m4
+ACLOCAL_AMFLAGS = -I build-aux/m4
 
 #===========================================================#
 #Start out empty, let the Makemodule.am files fill these in
@@ -64,6 +64,7 @@ test:
 #Recurse into these places (must be direct children, don't be fancy)
 #SUBDIRS= python
 
+#============================================================#
 #Files that arent sources for executalbes or headers that get installed, but are needed in the distribution.
 EXTRA_DIST=./build-aux/casm_version.txt\
 		   ./man/casm.1\

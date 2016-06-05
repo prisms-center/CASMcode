@@ -1,10 +1,14 @@
 bin_PROGRAMS += casm
+man1_MANS += man/casm.1
+
 casm_SOURCES = ./apps/casm/casm.cpp
+casm_LDFLAGS = $(AM_LDFLAGS)\
+			   $(BOOST_LDFLAGS)
+casm_CXXFLAGS= $(AM_CXXFLAGS)\
+			   $(BOOST_CXXFLAGS)
 casm_LDADD=libcasm.la\
            $(BOOST_SYSTEM_LIB)\
            $(BOOST_FILESYSTEM_LIB)\
            $(BOOST_PROGRAM_OPTIONS_LIB)\
            $(BOOST_REGEX_LIB)\
            $(BOOST_CHRONO_LIB)
-
-man1_MANS += man/casm.1
