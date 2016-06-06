@@ -48,11 +48,8 @@ namespace CASM {
   protected:
 
     const Derived &derived() const {
-      return *static_cast<Derived *>(this);
+      return *static_cast<const Derived *>(this);
     }
-
-
-  private:
 
     bool _eq(const Derived &B) const {
       return (!(derived() < B) && !(B < derived()));

@@ -141,6 +141,7 @@ namespace CASM {
         make_orbits(prim,
                     prim.factor_group(),
                     bspecs_json,
+                    set.crystallography_tol(),
                     alloy_sites_filter,
                     PrimPeriodicIntegralClusterSymCompare(set.crystallography_tol()),
                     std::back_inserter(orbits),

@@ -108,6 +108,9 @@ namespace CASM {
 
   private:
 
+    /// make _eq accessible
+    friend class Comparisons<UnitCellCoord>;
+
     bool _eq(const UnitCellCoord &B) const;
 
     const UnitType *m_unit;

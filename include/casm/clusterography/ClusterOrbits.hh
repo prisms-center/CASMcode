@@ -34,7 +34,7 @@ namespace CASM {
 
   public:
 
-    typedef std::vector<Site> Container;
+    typedef std::vector<UnitCellCoord> Container;
     typedef Container::const_iterator const_iterator;
     typedef _OrbitType OrbitType;
     typedef typename OrbitType::Element ClusterType;
@@ -117,7 +117,10 @@ namespace CASM {
 
   /// \brief Generate the asymmetric unit, using OrbitBranchSpecs
   template<typename OrbitType, typename OrbitOutputIterator>
-  OrbitOutputIterator make_asymmetric_unit(const OrbitBranchSpecs<OrbitType> &specs, OrbitOutputIterator result);
+  OrbitOutputIterator make_asymmetric_unit(
+    const OrbitBranchSpecs<OrbitType> &specs,
+    OrbitOutputIterator result,
+    std::ostream &status);
 
   /// \brief Use orbits of size n to generate orbits of size n+1
   template<typename OrbitType, typename OrbitInputIterator, typename OrbitOutputIterator>
@@ -142,6 +145,7 @@ namespace CASM {
     const IntegralCluster::PrimType &prim,
     const SymGroup &generating_grp,
     const std::vector<double> &max_length,
+    double crystallography_tol,
     const std::function<bool (Site)> &site_filter,
     const SymCompareType &sym_compare,
     OrbitOutputIterator result,
@@ -153,6 +157,7 @@ namespace CASM {
     const IntegralCluster::PrimType &prim,
     const SymGroup &generating_grp,
     const jsonParser &bspecs,
+    double crystallography_tol,
     const std::function<bool (Site)> &site_filter,
     const SymCompareType &sym_compare,
     OrbitOutputIterator result,
@@ -165,7 +170,7 @@ namespace CASM {
   template<typename OrbitIterator>
   std::pair<OrbitIterator, OrbitIterator> orbit_branch(OrbitIterator begin,
                                                        OrbitIterator end,
-                                                       unsigned int size);
+                                                       Index size);
 
 }
 

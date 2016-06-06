@@ -179,14 +179,6 @@ namespace CASM {
   template<typename CoordType>
   void from_json(BasicStructure<CoordType> &basic, const jsonParser &json);
 
-  /// \brief Output the neighborhood of UnitCellCoord within max_radius of a unit cell
-  template<typename CoordType, typename OutputIterator>
-  OutputIterator neighborhood(
-    const BasicStructure<CoordType> &unit,
-    double max_radius,
-    std::function<bool (CoordType)> site_filter,
-    OutputIterator result,
-    double xtal_tol);
 };
 
 #endif

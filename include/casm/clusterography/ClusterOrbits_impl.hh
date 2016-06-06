@@ -2,6 +2,7 @@
 #define CASM_ClusterOrbits_impl
 
 #include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/misc/algorithm.hh"
 
 namespace CASM {
 
@@ -24,6 +25,9 @@ namespace CASM {
     const SymCompareType &sym_compare,
     OrbitOutputIterator result) {
 
+    typedef typename OrbitOutputIterator::container_type container_type;
+    typedef typename container_type::value_type orbit_type;
+
     std::vector<bool> assigned(prim.basis.size(), false);
 
     // for all sites in the basis
@@ -34,10 +38,10 @@ namespace CASM {
       // create a prototype cluster
       IntegralCluster cluster(prim);
 
-      cluster.sites().push_back(UnitCellCoord(prim, UnitCell(0, 0, 0), i));
+      cluster.elements().push_back(UnitCellCoord(prim, i, UnitCell(0, 0, 0)));
 
       // generate an orbit
-      OrbitType orbit(cluster, generating_grp, sym_compare);
+      orbit_type orbit(cluster, generating_grp, sym_compare);
 
       // note sites that have been added to the orbit
       for(int j = 0; j < orbit.size(); j++) {
@@ -49,8 +53,6 @@ namespace CASM {
     }
 
     return result;
-    `
-
   }
 
   /// \brief Generate the asymmetric unit, using OrbitBranchSpecs
@@ -61,17 +63,20 @@ namespace CASM {
   /// \relates IntegralCluster
   ///
   template<typename OrbitType, typename OrbitOutputIterator>
-  OrbitOutputIterator make_asymmetric_unit(const OrbitBrancSpecs<OrbitType> &specs, OrbitOutputIterator result) {
+  OrbitOutputIterator make_asymmetric_unit(
+    const OrbitBranchSpecs<OrbitType> &specs,
+    OrbitOutputIterator result,
+    std::ostream &status) {
 
     IntegralCluster empty(specs.prim());
     const SymGroup &g = specs.generating_group();
 
     // generate the null cluster orbit
-    null_cluster_orbit = OrbitType(empty, g.begin(), g.end(), specs.sym_compare());
+    OrbitType null_cluster_orbit(empty, g.begin(), g.end(), specs.sym_compare());
 
     // Use it to generate the first orbit branch
     std::vector<OrbitType> orbits(1, null_cluster_orbit);
-    return next_orbitbranch(orbits.cbegin(), orbits.cend(), specs, result);
+    return make_next_orbitbranch(orbits.cbegin(), orbits.cend(), specs, result, status);
   }
 
   /// \brief Use orbits of size n to generate orbits of size n+1
@@ -152,9 +157,7 @@ namespace CASM {
     }
 
     // output Orbits
-    for(const auto &val : orbits) {
-      result = std::move(val.second.begin(), val.second.end(), result);
-    }
+    result = std::move(orbits.begin(), orbits.end(), result);
 
     // print status messages
     status << clean << '\r';
@@ -180,11 +183,12 @@ namespace CASM {
     OrbitOutputIterator result,
     std::ostream &status) {
 
-    typedef typename std::iterator_traits<OrbitBranchSpecsIterator>::value_type::OrbitType OrbitType;
+    typedef typename OrbitOutputIterator::container_type container_type;
+    typedef typename container_type::value_type orbit_type;
 
     // Temporarily store Orbits because we need to use ranges of them to
     //   construct successive orbit branches
-    std::vector<OrbitType> _orbits;
+    std::vector<orbit_type> _orbits;
 
     // -- construct null cluster orbit
 
@@ -193,7 +197,7 @@ namespace CASM {
 
     // generate the null cluster orbit
     IntegralCluster empty(specs_it->prim());
-    null_cluster_orbit = OrbitType(empty, specs_it->generating_group(), specs_it->sym_compare());
+    orbit_type null_cluster_orbit(empty, specs_it->generating_group(), specs_it->sym_compare());
 
 
     // -- construct asymmetric unit
@@ -205,7 +209,7 @@ namespace CASM {
     ++specs_it;
 
     // generate asymmetic unit, store iterators to begin and end of size=1 orbits
-    asymmetric_unit(*specs_it, std::back_inserter(_orbits));
+    make_asymmetric_unit(*specs_it, std::back_inserter(_orbits), status);
 
 
     // -- construct additional branches
@@ -223,7 +227,7 @@ namespace CASM {
              << std::distance(begin, specs_it) << "\r" << std::flush;
 
       // generate an orbitbranch from the orbits in range [a, next_a), where next_a is the current end
-      next_orbitbranch(_orbits.cbegin() + a, _orbits.cend(), *specs_it, std::back_inserter(_orbits));
+      make_next_orbitbranch(_orbits.cbegin() + a, _orbits.cend(), *specs_it, std::back_inserter(_orbits), status);
 
       // update the range of orbits for the next orbit branch
       a = b;
@@ -259,6 +263,7 @@ namespace CASM {
     const IntegralCluster::PrimType &prim,
     const SymGroup &generating_grp,
     const std::vector<double> &max_length,
+    double crystallography_tol,
     const std::function<bool (Site)> &site_filter,
     const SymCompareType &sym_compare,
     OrbitOutputIterator result,
@@ -276,7 +281,7 @@ namespace CASM {
     // add specs for null cluster orbit
     specs.emplace_back(prim,
                        candidate_sites.begin(),
-                       candidate_sites.end()
+                       candidate_sites.end(),
                        generating_grp,
     [](const cluster_type & test) {
       return true;
@@ -290,7 +295,7 @@ namespace CASM {
     }
     specs.emplace_back(prim,
                        candidate_sites.begin(),
-                       candidate_sites.end()
+                       candidate_sites.end(),
                        generating_grp,
     [](const cluster_type & test) {
       return true;
@@ -298,24 +303,24 @@ namespace CASM {
     sym_compare);
 
     // add specs for additional orbit branches
-    for(auto it = max_length.begin(), it != max_length.end(); ++it) {
+    for(auto it = max_length.begin(); it != max_length.end(); ++it) {
 
       // construct the neighborhood of sites to consider for the orbit
       candidate_sites.clear();
-      neighborhood(prim, *it, site_filter, std::back_inserter(candidate_sites), xtal_tol);
+      neighborhood(prim, *it, site_filter, std::back_inserter(candidate_sites), crystallography_tol);
 
       specs.emplace_back(prim,
                          candidate_sites.begin(),
-                         candidate_sites.end()
+                         candidate_sites.end(),
                          generating_grp,
-      [](const cluster_type & test) {
+      [ = ](const cluster_type & test) {
         return test.invariants().displacement().back() < *it;
       },
       sym_compare);
     }
 
     // now generate orbits
-    return orbits(specs.begin(), specs.end(), result, status);
+    return make_orbits(specs.begin(), specs.end(), result, status);
   }
 
   /// \brief Generate Orbit from bspecs.json-type JSON input file
@@ -337,6 +342,7 @@ namespace CASM {
     const IntegralCluster::PrimType &prim,
     const SymGroup &generating_grp,
     const jsonParser &bspecs,
+    double crystallography_tol,
     const std::function<bool (Site)> &site_filter,
     const SymCompareType &sym_compare,
     OrbitOutputIterator result,
@@ -354,18 +360,33 @@ namespace CASM {
       max_length[branch] = length;
     };
 
-    const auto &j = json["orbit_branch_specs"];
+    const auto &j = bspecs["orbit_branch_specs"];
     for(auto it = j.begin(); it != j.end(); ++it) {
       update_max_length(std::stoi(it.name()), it->find("max_length")->get<double>());
     }
 
-    // generate clusters
+    // generate orbits
     std::vector<orbit_type> orbits;
-    make_orbits(prim, generating_grp, max_length, site_filter, sym_compare, std::back_inserter(orbits), status);
+    make_orbits(
+      prim,
+      generating_grp,
+      max_length,
+      crystallography_tol,
+      site_filter,
+      sym_compare,
+      std::back_inserter(orbits),
+      status
+    );
 
     // read custom orbit specs
     // generate custom clusters
     // make_custom_orbits(...)
+    if(bspecs.contains("orbit_specs")) {
+      throw std::runtime_error("Error: the orbit_specs generation is being re-implemented");
+    }
+
+    // output orbits
+    return std::move(orbits.begin(), orbits.end(), result);
   }
 
   /*
@@ -427,7 +448,7 @@ namespace CASM {
   template<typename OrbitIterator>
   std::pair<OrbitIterator, OrbitIterator> orbit_branch(OrbitIterator begin,
                                                        OrbitIterator end,
-                                                       unsigned int size) {
+                                                       Index size) {
 
     auto branch_begin = std::find_if(begin,
                                      end,

@@ -55,7 +55,7 @@ namespace CASM {
   public:
 
     typedef unsigned int size_type;
-    typedef BasicStructure<Site> PrimType;
+    typedef Structure PrimType;
 
     /// \brief Construct an empty UnitCellCoordCluster
     explicit CoordCluster(const PrimType &_prim) :
@@ -119,48 +119,22 @@ namespace CASM {
       return *this;
     }
 
+    CoordCluster operator+(const UnitCell &trans) const {
+      CoordCluster res(*this);
+      return res += trans;
+    }
+
+    CoordCluster operator-(const UnitCell &trans) const {
+      CoordCluster res(*this);
+      return res -= trans;
+    }
+
 
   private:
 
     const PrimType *m_prim_ptr;
 
   };
-
-  /// \brief Translate a cluster
-  ///
-  /// \ingroup CoordCluster
-  ///
-  template<typename CoordType>
-  CoordCluster<CoordType> operator+(CoordCluster<CoordType> cluster, UnitCell trans);
-
-  /// \brief Translate a cluster
-  ///
-  /// \ingroup CoordCluster
-  ///
-  template<typename CoordType>
-  CoordCluster<CoordType> operator-(CoordCluster<CoordType> cluster, UnitCell trans);
-
-
-
-  /* -- GenericCluster Definitions ------------------------------------- */
-
-  /// \brief Translate a cluster
-  ///
-  /// \ingroup CoordCluster
-  ///
-  template<typename CoordType>
-  CoordCluster<CoordType> operator+(CoordCluster<CoordType> cluster, UnitCell trans) {
-    return cluster += trans;
-  }
-
-  /// \brief Translate a cluster
-  ///
-  /// \ingroup CoordCluster
-  ///
-  template<typename CoordType>
-  CoordCluster<CoordType> operator-(CoordCluster<CoordType> cluster, UnitCell trans) {
-    return cluster -= trans;
-  }
 
 }
 
