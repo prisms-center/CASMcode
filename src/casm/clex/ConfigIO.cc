@@ -11,7 +11,7 @@
 #include "casm/clex/ConfigIOSelected.hh"
 
 namespace CASM {
-  
+
   namespace ConfigIO_impl {
 
     /// \brief Expects arguments of the form 'name' or 'name(Au)', 'name(Pt)', etc.

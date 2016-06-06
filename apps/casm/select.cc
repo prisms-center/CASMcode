@@ -8,7 +8,7 @@
 namespace CASM {
 
   template<typename ConfigIterType>
-  void set_selection(const DataFormatterDictionary<Configuration>& dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, bool mk) {
+  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, bool mk) {
     //boost::trim(criteria);
 
     if(criteria.size()) {
@@ -30,7 +30,7 @@ namespace CASM {
   }
 
   template<typename ConfigIterType>
-  void set_selection(const DataFormatterDictionary<Configuration>& dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria) {
+  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria) {
     //boost::trim(criteria);
 
     if(criteria.size()) {
@@ -46,7 +46,7 @@ namespace CASM {
   }
 
   template<bool IsConst>
-  bool write_selection(const DataFormatterDictionary<Configuration>& dict, const ConfigSelection<IsConst> &config_select, bool force, const fs::path &out_path, bool write_json, bool only_selected) {
+  bool write_selection(const DataFormatterDictionary<Configuration> &dict, const ConfigSelection<IsConst> &config_select, bool force, const fs::path &out_path, bool write_json, bool only_selected) {
     if(fs::exists(out_path) && !force) {
       std::cerr << "File " << out_path << " already exists. Use --force to force overwrite." << std::endl;
       return ERR_EXISTING_FILE;
@@ -69,7 +69,7 @@ namespace CASM {
     return 0;
   }
 
-  void select_help(const DataFormatterDictionary<Configuration>& _dict, std::ostream &_stream, std::vector<std::string> help_opt) {
+  void select_help(const DataFormatterDictionary<Configuration> &_dict, std::ostream &_stream, std::vector<std::string> help_opt) {
     _stream << "DESCRIPTION" << std::endl
             << "\n"
             << "    Use '[--set | --set-on | --set-off] [criteria]' for specifying or editing a selection.\n";
@@ -233,11 +233,11 @@ namespace CASM {
     std::cout << "Initialize primclex: " << root << std::endl << std::endl;
     PrimClex primclex(root, std::cout);
     std::cout << "  DONE." << std::endl << std::endl;
-    ProjectSettings& set = primclex.settings();
+    ProjectSettings &set = primclex.settings();
 
     // load initial selection into config_select -- this is also the selection that will be printed at end
     ConfigSelection<false> config_select(primclex, selection[0]);
-    
+
     set.set_selected(config_select);
 
     if(vm.count("set-on") || vm.count("set-off") || vm.count("set")) {

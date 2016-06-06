@@ -787,6 +787,7 @@ namespace CASM {
     Eigen::Matrix3i H = hermite_normal_form(transf_mat).first;
     name = "SCEL";
     std::stringstream tname;
+    //Consider using a for loop with HermiteCounter_impl::_canonical_unroll here
     tname << H(0, 0)*H(1, 1)*H(2, 2) << "_" << H(0, 0) << "_" << H(1, 1) << "_" << H(2, 2) << "_" << H(1, 2) << "_" << H(0, 2) << "_" << H(0, 1);
     name.append(tname.str());
   }

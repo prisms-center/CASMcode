@@ -13,13 +13,13 @@
 #include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
-  
+
   class Configuration;
-  
+
   template <bool IsConst>
   class ConfigSelection;
   typedef ConfigSelection<true> ConstConfigSelection;
-  
+
   namespace ConfigIO {
     class Selected;
   }
@@ -88,23 +88,23 @@ namespace CASM {
 
     /// \brief Get current project tol
     double tol() const;
-    
-    
+
+
     // ** Configuration properties **
-    
-    const DataFormatterDictionary<Configuration>& config_io() const;
-    
+
+    const DataFormatterDictionary<Configuration> &config_io() const;
+
     /// \brief Set the selection to be used for the 'selected' column
-    void set_selected(const ConfigIO::Selected& selection);
-    
+    void set_selected(const ConfigIO::Selected &selection);
+
     /// \brief Set the selection to be used for the 'selected' column
-    void set_selected(const ConstConfigSelection& selection);
-    
+    void set_selected(const ConstConfigSelection &selection);
+
     /// \brief Add user-defined query alias
-    void add_alias(const std::string& alias_name, const std::string& alias_command, std::ostream &serr);
-    
+    void add_alias(const std::string &alias_name, const std::string &alias_command, std::ostream &serr);
+
     /// \brief Return map containing aliases
-    const std::map<std::string, std::string>& aliases() const;
+    const std::map<std::string, std::string> &aliases() const;
 
 
     // ** Clexulator names **
@@ -223,10 +223,10 @@ namespace CASM {
 
     // Default tolerance
     double m_tol;
-    
+
     // ConfigIO
     DataFormatterDictionary<Configuration> m_config_io_dict;
-    
+
     // ConfigIO aliases
     std::map<std::string, std::string> m_aliases;
 

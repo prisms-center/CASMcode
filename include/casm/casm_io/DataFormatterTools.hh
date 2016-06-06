@@ -19,8 +19,8 @@ namespace CASM {
 
       \ingroup DataFormatter
   */
-  
-  
+
+
   /// \brief DataFormatters that operate on the results of other DataFormatters
   ///
   /// \ingroup DataFormatterOperator
@@ -35,15 +35,15 @@ namespace CASM {
     //using Validator = std::function<bool(const DataObject &)>;
 
     DataFormatterOperator(
-        const std::string &_init_name, 
-        const std::string &_desc, 
-        Evaluator evaluator) :
+      const std::string &_init_name,
+      const std::string &_desc,
+      Evaluator evaluator) :
       BaseDatumFormatter<DataObject>(_init_name, _desc), m_evaluate(evaluator) {}
 
     std::unique_ptr<DataFormatterOperator> clone() const {
       return std::unique_ptr<DataFormatterOperator>(this->_clone());
     }
-    
+
     typename BaseDatumFormatter<DataObject>::FormatterType type() const override {
       return BaseDatumFormatter<DataObject>::Operator;
     }
@@ -487,9 +487,9 @@ namespace CASM {
   public:
     using BaseDatumFormatter<DataObject>::name;
 
-    DatumFormatterAlias(const std::string &_name, 
-                        const std::string &_command, 
-                        const DataFormatterDictionary<DataObject>& _dict, 
+    DatumFormatterAlias(const std::string &_name,
+                        const std::string &_command,
+                        const DataFormatterDictionary<DataObject> &_dict,
                         const std::string &_help = "") :
       BaseDatumFormatter<DataObject> (_name, _help.empty() ? "User-specified alias for '" + _command + "'" : _help) {
 
@@ -608,7 +608,7 @@ namespace CASM {
   DatumFormatterAlias<DataObject> datum_formatter_alias(
     const std::string &_name,
     const std::string &_command,
-    const DataFormatterDictionary<DataObject>& _dict, 
+    const DataFormatterDictionary<DataObject> &_dict,
     const std::string &_help = "") {
     return DatumFormatterAlias<DataObject>(_name, _command, _dict, _help);
   }
