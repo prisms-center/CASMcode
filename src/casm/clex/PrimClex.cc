@@ -16,8 +16,7 @@ namespace CASM {
   //*******************************************************************************************
   /// Initial construction of a PrimClex, from a primitive Structure
   PrimClex::PrimClex(const Structure &_prim, Log &log) :
-    prim(_prim),
-    global_orbitree(_prim.lattice()) {
+    m_prim(_prim) {
 
     _init(log);
 
@@ -29,11 +28,12 @@ namespace CASM {
   /// Construct PrimClex from existing CASM project directory
   ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
   PrimClex::PrimClex(const fs::path &_root, Log &log):
-    root(_root),
     m_dir(_root),
     m_settings(_root),
-    prim(read_prim(m_dir.prim())),
-    global_orbitree(prim.lattice()) {
+    m_prim(read_prim(m_dir.prim())) {
+
+    log.construct("CASM Project");
+    log << "from: " << dir().root_dir() << "\n";
 
     _init(log);
 
@@ -43,10 +43,7 @@ namespace CASM {
   ///  - If !root.empty(), read all saved data to generate all Supercells and Configurations, etc.
   void PrimClex::_init(Log &log) {
 
-    log.construct("CASM Project");
-    log << "from: " << root << "\n";
-
-    std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
+    std::vector<std::string> struc_mol_name = prim().get_struc_molecule_name();
 
     m_vacancy_allowed = false;
     for(int i = 0; i < struc_mol_name.size(); ++i) {
@@ -56,7 +53,7 @@ namespace CASM {
       }
     }
 
-    if(root.empty()) {
+    if(dir().root_dir().empty()) {
       return;
     }
 
@@ -82,14 +79,14 @@ namespace CASM {
     auto chem_ref_path = m_dir.chemical_reference(m_settings.calctype(), m_settings.ref());
     if(fs::is_regular_file(chem_ref_path)) {
       log << "read: " << chem_ref_path << "\n";
-      m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim, lin_alg_tol()));
+      m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim, settings().lin_alg_tol()));
     }
 
     // read supercells
-    if(fs::is_regular_file(root / "training_data" / "SCEL")) {
+    if(fs::is_regular_file(dir().SCEL())) {
 
-      log << "read: " << root / "training_data" / "SCEL" << "\n";
-      fs::ifstream scel(root / "training_data" / "SCEL");
+      log << "read: " << dir().SCEL() << "\n";
+      fs::ifstream scel(dir().SCEL());
       read_supercells(scel);
 
     }
@@ -139,7 +136,7 @@ namespace CASM {
   //*******************************************************************************************
   /// const Access to primitive Structure
   const Structure &PrimClex::prim() const {
-    return prim;
+    return m_prim;
   }
 
   //*******************************************************************************************
@@ -387,21 +384,6 @@ namespace CASM {
 
   // **** Unorganized mess of functions ... ****
 
-  //*******************************************************************************************
-  void PrimClex::read_global_orbitree(const fs::path &fclust_path) {
-
-    // force re-read
-    global_orbitree = SiteOrbitree(prim().lattice());
-
-    global_orbitree.min_num_components = 2;     //What if we want other things?
-    global_orbitree.min_length = 0.0001;
-    from_json(jsonHelper(global_orbitree, prim), jsonParser(fclust_path));
-    global_orbitree.generate_clust_bases();
-
-    // reset nlist
-    m_nlist.unique().reset();
-
-  }
 
   /**
    * Generates all unique supercells between volStart and
