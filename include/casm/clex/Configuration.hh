@@ -107,10 +107,6 @@ namespace CASM {
     Configuration(const jsonParser &json, Supercell &_supercell, Index _id);
 
 
-    /// Construct a Configuration with occupation specified by string 'con_name'
-    //Configuration(Supercell &_supercell, std::string con_name, bool select, const jsonParser &source = jsonParser());
-
-
     //********** DESTRUCTORS *********
 
     //********** MUTATORS  ***********
@@ -170,8 +166,6 @@ namespace CASM {
     void set_selected(bool _selected) {
       m_selected = _selected;
     }
-
-    void set_reference(const Properties &ref);
 
 
     //********** ACCESSORS ***********
@@ -259,23 +253,23 @@ namespace CASM {
 
     // Returns composition on each sublattice: sublat_comp[ prim basis site / sublattice][ molecule_type]
     //   molucule_type is ordered as in the Prim structure's site_occupant list for that basis site (includes vacancies)
-    ReturnArray< Array < double > > sublattice_composition() const;
+    std::vector<Eigen::VectorXd> sublattice_composition() const;
 
     // Returns number of each molecule by sublattice:
     //   sublat_num_each_molecule[ prim basis site / sublattice ][ molecule_type]
     //   molucule_type is ordered as in the Prim structure's site_occupant list for that basis site
-    ReturnArray< Array<int> > sublat_num_each_molecule() const;
+    std::vector<Eigen::VectorXi> sublat_num_each_molecule() const;
 
     // Returns composition, not counting vacancies
     //    composition[ molecule_type ]: molecule_type ordered as prim structure's get_struc_molecule(), with [Va]=0.0
-    ReturnArray<double> composition() const;
+    Eigen::VectorXd composition() const;
 
     // Returns composition, including vacancies
     //    composition[ molecule_type ]: molecule_type ordered as prim structure's get_struc_molecule()
-    ReturnArray<double> true_composition() const;
+    Eigen::VectorXd true_composition() const;
 
     /// Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::get_struc_molecule()
-    ReturnArray<int> num_each_molecule() const;
+    Eigen::VectorXi num_each_molecule() const;
 
     /// Returns parametric composition, as calculated using PrimClex::param_comp
     Eigen::VectorXd param_composition() const;
@@ -284,18 +278,6 @@ namespace CASM {
     ///   where 'component_type' is ordered as ParamComposition::components
     Eigen::VectorXd num_each_component() const;
 
-    //-----------------------------------
-    //Structure Factor
-    Eigen::VectorXd struct_fact_intensities() const;
-    Eigen::VectorXd struct_fact_intensities(const Eigen::VectorXd &component_intensities) const;
-
-    void calc_sublat_struct_fact();
-    void calc_struct_fact();
-    void calc_sublat_struct_fact(const Eigen::VectorXd &intensities);
-    void calc_struct_fact(const Eigen::VectorXd &intensities);
-
-    Eigen::MatrixXcd sublat_struct_fact();
-    Eigen::MatrixXd struct_fact();
 
     //********* IO ************
 

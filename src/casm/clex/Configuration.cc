@@ -14,64 +14,34 @@ namespace CASM {
 
   /// Construct a default Configuration
   Configuration::Configuration(Supercell &_supercell, const jsonParser &src, const ConfigDoF &_configdof)
-    : id("none"), supercell(&_supercell), source_updated(true), multiplicity(-1), dof_updated(true),
-      m_configdof(_configdof), prop_updated(true), m_selected(false) {
+    : m_id("none"), m_supercell(&_supercell), m_source_updated(true), m_multiplicity(-1), m_dof_updated(true),
+      m_configdof(_configdof), m_prop_updated(true), m_selected(false) {
     set_source(src);
   }
 
   //*********************************************************************************
   /// Construct by reading from main data file (json)
   Configuration::Configuration(const jsonParser &json, Supercell &_supercell, Index _id)
-    : supercell(&_supercell), source_updated(false), multiplicity(-1), dof_updated(false),
-      m_configdof(_supercell.num_sites()), prop_updated(false) {
+    : m_supercell(&_supercell), m_source_updated(false), m_multiplicity(-1), m_dof_updated(false),
+      m_configdof(_supercell.num_sites()), m_prop_updated(false) {
 
     std::stringstream ss;
     ss << _id;
-    id = ss.str();
+    m_id = ss.str();
 
     read(json);
   }
 
-  //*********************************************************************************
-  /*
-  /// Construct a Configuration with occupation specified by string 'con_name'
-  Configuration::Configuration(Supercell &_supercell, std::string con_name, bool select, const jsonParser &src)
-    : id("none"), supercell(&_supercell), source_updated(true), multiplicity(-1), dof_updated(true),
-      m_configdof(_supercell.num_sites()), prop_updated(true), m_selected(select) {
 
-    set_source(src);
-
-    // just use bitstring, limit max occupation to 9
-    if(con_name.size() != _supercell.num_sites()) {
-      std::cout << "Error in Configuration::Configuration(const Supercell&, std::string, bool)." << std::endl;
-      std::cout << "  Configuration size _supercell.num_sites(): " << _supercell.num_sites() << "  does not match con_name: '" << con_name << "'." << std::endl;
-      exit(1);
-    }
-
-    m_configdof.set_occupation(Array<int>(size()));
-
-    for(Index i = 0; i < size(); i++) {
-      _occ(i) = con_name[i] - '0';
-
-      if(occ(i) < 0 || occ(i) > 9) {
-        std::cout << "Error in Configuration::Configuration(const Supercell&, std::string, bool)." << std::endl;
-        std::cout << "  Occupant not allowed: '" << con_name[i] << "'." << std::endl;
-        exit(1);
-      }
-    }
-
-    return;
-  }
-  */
   //********** MUTATORS  ***********
 
   void Configuration::set_id(Index _id) {
     std::stringstream ss;
     ss << _id;
-    id = ss.str();
+    m_id = ss.str();
 
-    dof_updated = true;
-    prop_updated = true;
+    m_dof_updated = true;
+    m_prop_updated = true;
   }
 
   //*********************************************************************************
@@ -86,7 +56,7 @@ namespace CASM {
     else {
       m_source = source;
     }
-    source_updated = true;
+    m_source_updated = true;
   }
 
   //*********************************************************************************
@@ -106,7 +76,7 @@ namespace CASM {
       // else, add the new source
       m_source.push_back(source);
 
-      source_updated = true;
+      m_source_updated = true;
     }
     else {
 
@@ -127,7 +97,7 @@ namespace CASM {
           // else, add the new source
           m_source.push_back(source[s]);
 
-          source_updated = true;
+          m_source_updated = true;
         }
       }
     }
@@ -135,7 +105,7 @@ namespace CASM {
 
   //*********************************************************************************
   void Configuration::set_occupation(const Array<int> &new_occupation) {
-    dof_updated = true;
+    m_dof_updated = true;
     m_configdof.set_occupation(new_occupation);
     return;
   }
@@ -148,21 +118,21 @@ namespace CASM {
     //    exit(1);
     //}
     //std::cout << "Configuration::set_occ(). i: " << i << " occupation.size(): "<< occupation.size() << "  val: " << val << std::endl;
-    dof_updated = true;
+    m_dof_updated = true;
     m_configdof.occ(site_l) = val;
   }
 
   //*********************************************************************************
 
   void Configuration::set_displacement(const displacement_matrix_t &new_displacement) {
-    dof_updated = true;
+    m_dof_updated = true;
     m_configdof.set_displacement(new_displacement);
   }
 
   //*********************************************************************************
 
   void Configuration::set_deformation(const Eigen::Matrix3d &new_deformation) {
-    dof_updated = true;
+    m_dof_updated = true;
     m_configdof.set_deformation(new_deformation);
   }
 
@@ -175,17 +145,9 @@ namespace CASM {
   }
 
   //*********************************************************************************
-  /*
-    void Configuration::set_reference(const Properties &ref) {
-      prop_updated = true;
-      reference = ref;
-      delta = calculated - reference;
-    }
-  */
-  //*********************************************************************************
   void Configuration::set_calc_properties(const jsonParser &calc) {
-    prop_updated = true;
-    calculated = calc;
+    m_prop_updated = true;
+    m_calculated = calc;
     //delta = calculated - reference;
   }
 
@@ -243,7 +205,7 @@ namespace CASM {
   //*********************************************************************************
 
   std::string Configuration::id() const {
-    return id;
+    return m_id;
   }
 
   //*********************************************************************************
@@ -304,12 +266,12 @@ namespace CASM {
 
   //*********************************************************************************
   Supercell &Configuration::supercell() {
-    return *supercell;
+    return *m_supercell;
   }
 
   //*********************************************************************************
   const Supercell &Configuration::supercell() const {
-    return *supercell;
+    return *m_supercell;
   }
 
   //*********************************************************************************
@@ -329,28 +291,28 @@ namespace CASM {
 
   //*********************************************************************************
   const Properties &Configuration::calc_properties() const {
-    return calculated;
+    return m_calculated;
   }
 
   //*********************************************************************************
 
   const Properties &Configuration::generated_properties() const {
-    return generated;
+    return m_generated;
   }
 
   //*********************************************************************************
 
   /// Returns composition on each sublattice: sublat_comp[ prim basis site / sublattice][ molecule_type]
   ///   molucule_type is ordered as in the Prim structure's site_occupant list for that basis site (includes vacancies)
-  ReturnArray< Array < double > > Configuration::sublattice_composition() const {
+  std::vector<Eigen::VectorXd> Configuration::sublattice_composition() const {
 
     // get the number of each molecule
     auto _sublat_num_each_molecule = sublat_num_each_molecule();
-    Array< Array < double > > sublattice_composition(_sublat_num_each_molecule.size());
+    std::vector<Eigen::VectorXd> sublattice_composition(_sublat_num_each_molecule.size());
 
     // divide by number of sites per sublattice ( supercell volume )
     for(Index i = 0; i < _sublat_num_each_molecule.size(); i++) {
-      sublattice_composition[i].resize(_sublat_num_each_molecule[i].size());
+      sublattice_composition[i] = Eigen::VectorXd::Zero(_sublat_num_each_molecule[i].size());
       for(Index j = 0; j < _sublat_num_each_molecule[i].size(); j++) {
         sublattice_composition[i][j] = (1.0 * _sublat_num_each_molecule[i][j]) / supercell().volume();
       }
@@ -363,7 +325,7 @@ namespace CASM {
   /// Returns number of each molecule by sublattice:
   ///   sublat_num_each_molecule[ prim basis site / sublattice ][ molecule_type]
   ///   molucule_type is ordered as in the Prim structure's site_occupant list for that basis site
-  ReturnArray< Array<int> > Configuration::sublat_num_each_molecule() const {
+  std::vector<Eigen::VectorXi> Configuration::sublat_num_each_molecule() const {
 
     Index i;
 
@@ -371,9 +333,9 @@ namespace CASM {
     auto convert = index_converter(prim(), prim().get_struc_molecule());
 
     // create an array to count the number of each molecule
-    Array< Array<int> > sublat_num_each_molecule;
+    std::vector<Eigen::VectorXi> sublat_num_each_molecule;
     for(i = 0; i < prim().basis.size(); i++) {
-      sublat_num_each_molecule.push_back(Array<int>(prim().basis[i].site_occupant().size(), 0));
+      sublat_num_each_molecule.push_back(Eigen::VectorXi::Zero(prim().basis[i].site_occupant().size()));
     }
 
     // count the number of each molecule by sublattice
@@ -387,10 +349,10 @@ namespace CASM {
   //*********************************************************************************
   /// Returns composition, not counting vacancies
   ///    composition[ molecule_type ]: molecule_type ordered as prim structure's get_struc_molecule(), with [Va]=0.0
-  ReturnArray<double> Configuration::composition() const {
+  Eigen::VectorXd Configuration::composition() const {
 
     // get the number of each molecule type
-    Array<int> _num_each_molecule = num_each_molecule();
+    Eigen::VectorXi _num_each_molecule = num_each_molecule();
 
     /// get the total number of non-vacancy atoms
     int num_atoms = 0;
@@ -408,32 +370,20 @@ namespace CASM {
     }
 
     // calculate the comp (not including vacancies) from the number of each molecule
-    Array<double> comp;
-    for(i = 0; i < _num_each_molecule.size(); i++)
-      comp.push_back((1.0 * _num_each_molecule[i]) / double(num_atoms));
-
-    return comp;
+    return _num_each_molecule.cast<double>() / double(num_atoms);
 
   }
 
   //*********************************************************************************
   /// Returns composition, including vacancies
   ///    composition[ molecule_type ]: molecule_type ordered as prim structure's get_struc_molecule()
-  ReturnArray<double> Configuration::true_composition() const {
-
-    Array<int> _num_each_molecule = num_each_molecule();
-
-    // calculate the true_comp (including vacancies) from the number of each molecule
-    Array<double> comp;
-    for(Index i = 0; i < _num_each_molecule.size(); i++)
-      comp.push_back((1.0 * _num_each_molecule[i]) / size());
-
-    return comp;
+  Eigen::VectorXd Configuration::true_composition() const {
+    return num_each_molecule().cast<double>() / size();
   }
 
   //*********************************************************************************
   /// Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::get_struc_molecule()
-  ReturnArray<int> Configuration::num_each_molecule() const {
+  Eigen::VectorXi Configuration::num_each_molecule() const {
     return CASM::num_each_molecule(m_configdof, supercell());
   }
 
@@ -527,15 +477,15 @@ namespace CASM {
       //write_pos(json_config);
     }
 
-    if(source_updated) {
+    if(m_source_updated) {
       write_source(json_config);
     }
 
-    if(!json_ref.contains("param_composition") || prop_updated) {
+    if(!json_ref.contains("param_composition") || m_prop_updated) {
       //write_param_composition(json_ref);
     }
 
-    if(prop_updated) {
+    if(m_prop_updated) {
       write_properties(json_prop);
     }
 
@@ -576,7 +526,7 @@ namespace CASM {
 
     stream.width(10);
     stream.flags(std::ios::left);
-    stream << id << " ";
+    stream << id() << " ";
 
     stream.width(10);
     stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
@@ -603,8 +553,8 @@ namespace CASM {
   //*********************************************************************************
   void Configuration::print_composition(std::ostream &stream) const {
 
-    Array<double> comp = composition();
-    auto mol_list = prim().struc_molecule();
+    Eigen::VectorXd comp = composition();
+    auto mol_list = prim().get_struc_molecule();
 
     for(Index i = 0; i < mol_list.size(); i++) {
       if(mol_list[i].is_vacancy()) {
@@ -621,7 +571,7 @@ namespace CASM {
   //*********************************************************************************
   void Configuration::print_true_composition(std::ostream &stream) const {
 
-    Array<double> true_comp = true_composition();
+    Eigen::VectorXd true_comp = true_composition();
 
     for(Index i = 0; i < true_comp.size(); i++) {
       stream.precision(6);
@@ -635,7 +585,7 @@ namespace CASM {
   //*********************************************************************************
   void Configuration::print_sublattice_composition(std::ostream &stream) const {
 
-    Array< Array<double> > sublattice_comp = sublattice_composition();
+    std::vector<Eigen::VectorXd> sublattice_comp = sublattice_composition();
 
     for(Index i = 0; i < sublattice_comp.size(); i++) {
       for(Index j = 0; j < sublattice_comp[i].size(); j++) {
@@ -718,7 +668,7 @@ namespace CASM {
 
     /// json["dof"]: contains degree of freedom information
     if(!json.contains("dof")) {
-      id = "none";
+      m_id = "none";
       set_selected(false);
       return;
     }
@@ -752,11 +702,11 @@ namespace CASM {
         }
     */
     if(json.contains("calc")) {
-      from_json(calculated, json["calc"]);
+      from_json(m_calculated, json["calc"]);
     }
 
     if(json.contains("gen")) {
-      from_json(generated, json["gen"]);
+      from_json(m_generated, json["gen"]);
     }
 
     //    delta = calculated - reference;
@@ -864,7 +814,7 @@ namespace CASM {
     }
 
     json["param_comp_formula"] = primclex().composition_axes().mol_formula();
-    json["param_composition"] = get_param_composition();
+    json["param_composition"] = param_composition();
 
     return json;
 
@@ -886,11 +836,11 @@ namespace CASM {
       //return json;
     }
 
-    if(calculated.size() == 0) {
+    if(m_calculated.size() == 0) {
       json.erase("calc");
     }
     else {
-      json["calc"] = calculated;
+      json["calc"] = m_calculated;
     }
     /*
         if(reference.size() == 0) {
@@ -907,113 +857,15 @@ namespace CASM {
           json["delta"] = delta;
         }
     */
-    if(generated.size() == 0) {
+    if(m_generated.size() == 0) {
       json.erase("gen");
     }
     else {
-      json["gen"] = generated;
+      json["gen"] = m_generated;
     }
 
     return json;
 
-  }
-
-  //--------------------------------------------------------------------------------------------------
-  //Structure Factor
-  Eigen::VectorXd Configuration::get_struct_fact_intensities() const {
-    Eigen::VectorXd automatic_intensities(prim().get_struc_molecule().size());
-    for(int i = 0; i < prim().get_struc_molecule().size(); i++)
-      automatic_intensities(i) = i;
-    return get_struct_fact_intensities(automatic_intensities);
-  }
-
-  Eigen::VectorXd Configuration::get_struct_fact_intensities(const Eigen::VectorXd &component_intensities) const {
-    auto convert = get_index_converter(prim(), prim().get_struc_molecule());
-    Eigen::VectorXd intensities(size());
-    for(int i = 0; i < size(); i++) {
-      intensities(i) = component_intensities(convert[sublat(i)][occ(i)]);
-    }
-    return intensities;
-  }
-
-  ///  Calculates the sublattice structure factors as:
-  ///       intensities.segment<volume()>(i*volume()) * fourier_matrix = Q.column(i)
-  ///       Q is arranged as: [Q1(k1) Q2(k1) ... Qn(k1)]
-  ///                         [Q1(k2) Q2(k2) ... Qn(k2)]
-  ///                         ...
-  ///                         [Q1(kn) Q2(kn) ... Qn(kn)]
-  ///  Q is called sublat_sf in the code
-  void Configuration::calc_sublat_struct_fact(const Eigen::VectorXd &intensities) {
-    //std::cout<<"Intensities"<<std::endl<<intensities<<std::endl;
-    Eigen::MatrixXcd sublat_sf(supercell->basis_size(), supercell->fourier_matrix().cols());
-    if(supercell->fourier_matrix().rows() == 0 || supercell->fourier_matrix().cols() == 0) {
-      std::cerr << "ERROR in Configuration::calc_sublat_struct_fact. Did you "
-                << "forget to initialize a fourier matrix in Supercell?"
-                << " Quitting" << std::endl;
-      exit(666);
-    }
-    //int num_kpoints = supercell->fourier_matrix().cols();
-    int supercell_volume = supercell->volume();
-    for(int i = 0; i < supercell->basis_size(); i++) {
-      Eigen::VectorXd int_segment = intensities.segment(i * supercell_volume, supercell_volume);
-      // std::cout<<"Intensity segment:"<<int_segment.transpose()<<std::endl;
-      // std::cout<<"Fourier:"<<std::endl<<supercell->fourier_matrix()<<std::endl;
-      sublat_sf.row(i) = int_segment.transpose() * supercell->fourier_matrix();
-    }
-    sublat_sf = sublat_sf / double(supercell->volume());
-    // std::cout<<"Sublattice struct factor:"<<std::endl;
-    // std::cout<<sublat_sf.transpose()<<std::endl;
-    generated["sublat_struct_fact"] =  sublat_sf.transpose();
-    prop_updated = true;
-  }
-
-  /// Structure factors are then calculated as S:
-  /// S = (Q * m_phase_factor).diagonal().absolute_value()
-  /// S is arranged as: [S(k1) S(k2) ... S(kn)]
-  /// In the code: Q is called sublat_sf
-  /// However, it would be useful to have a matrix that contained the coordinates of the k-points
-  /// along with the intensities at those points. The matrix that is stored in generated is thus
-  /// formatted as:
-  ///   [k_x  k_y  k_z  S(k)]
-  void Configuration::calc_struct_fact(const Eigen::VectorXd &intensities) {
-    if(supercell->phase_factor().rows() == 0 || supercell->phase_factor().cols() == 0) {
-      std::cerr << "ERROR in Configuration::calc_struct_fact. Did you "
-                << "forget to initialize a phase-factor matrix in Supercell?"
-                << " Quitting" << std::endl;
-      exit(666);
-    }
-    calc_sublat_struct_fact(intensities);
-    Eigen::MatrixXcd sublat_sf = generated["sublat_struct_fact"].get<Eigen::MatrixXcd>();
-    //    std::cout<<"Multiplication matrix:"<<std::endl<<sublat_sf*supercell->phase_factor()<<std::endl;
-    Eigen::VectorXcd raw_amplitudes = (sublat_sf * supercell->phase_factor()).diagonal();
-    // std::cout.precision(4);
-    // std::cout<<std::fixed;
-    // std::cout<<"Raw amplitudes:"<<std::endl<<raw_amplitudes.transpose()<<std::endl;
-    Eigen::MatrixXd sf_coords(raw_amplitudes.size(), 4);
-    sf_coords.leftCols(3) = supercell->k_mesh();
-    sf_coords.col(3) = raw_amplitudes.cwiseAbs().transpose() / double(supercell->basis_size());
-    generated["struct_fact"] = sf_coords;
-    prop_updated = true;
-  }
-
-  void Configuration::calc_struct_fact() {
-    calc_struct_fact(get_struct_fact_intensities());
-  }
-
-  void Configuration::calc_sublat_struct_fact() {
-    calc_sublat_struct_fact(get_struct_fact_intensities());
-  }
-
-  Eigen::MatrixXd Configuration::struct_fact() {
-    if(!generated.contains("struct_fact"))
-      calc_struct_fact();
-    return generated["struct_fact"].get<Eigen::MatrixXd>();
-  }
-
-  Eigen::MatrixXcd Configuration::sublat_struct_fact() {
-    if(!generated.contains("sublat_struct_fact"))
-      calc_sublat_struct_fact();
-    return generated["sublat_struct_fact"].get<Eigen::MatrixXcd>();
   }
 
   /// \brief Returns correlations using 'clexulator'.
@@ -1032,12 +884,12 @@ namespace CASM {
 
   /// Returns parametric composition, as calculated using PrimClex::param_comp
   Eigen::VectorXd comp(const Configuration &config) {
-    return config.get_param_composition();
+    return config.param_composition();
   }
 
   /// \brief Returns the composition, as number of each species per unit cell
   Eigen::VectorXd comp_n(const Configuration &config) {
-    return config.get_num_each_component();
+    return config.num_each_component();
   }
 
   /// \brief Returns the vacancy composition, as number per unit cell
@@ -1118,8 +970,8 @@ namespace CASM {
 
   /// \brief Return true if all current properties have been been calculated for the configuration
   bool is_calculated(const Configuration &config) {
-    return std::all_of(config.primclex().get_curr_property().begin(),
-                       config.primclex().get_curr_property().end(),
+    return std::all_of(config.primclex().settings().properties().begin(),
+                       config.primclex().settings().properties().end(),
     [&](const std::string & key) {
       return config.calc_properties().contains(key);
     });
@@ -1210,20 +1062,18 @@ namespace CASM {
     for(Index s = 0 ; s < motif.size() ; s++) {
 
       // apply symmetry to re-orient and find unit cell coord
-      UnitCellCoord oriented_uccoord = copy_apply(f.op, motif.uccoord(s), prim);
+      UnitCellCoord oriented_uccoord = motif.uccoord(s).copy_apply(f.op);
 
       // for each unit cell of the oriented motif in the supercell, copy the occupation
       for(Index i = 0 ; i < prim_grid.size() ; i++) {
 
-
-
-        //tscel_occ[f.scel.find(prim_grid.uccoord(i)) = motif.occ(s);
-
         Index prim_motif_tile_ind = f.scel.prim_grid().find(prim_grid.coord(i, PRIM));
 
-        UnitCellCoord mc_uccoord =  f.scel.prim_grid().uccoord(prim_motif_tile_ind) + oriented_uccoord.unitcell();
-        // b-index when doing UnitCellCoord addition is ambiguous; explicitly set it
-        mc_uccoord.sublat() = oriented_uccoord.sublat();
+        UnitCellCoord mc_uccoord(
+          prim,
+          oriented_uccoord.sublat(),
+          f.scel.prim_grid().unitcell(prim_motif_tile_ind) + oriented_uccoord.unitcell()
+        );
 
         Index occ_ind = f.scel.find(mc_uccoord);
 
