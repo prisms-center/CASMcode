@@ -438,19 +438,19 @@ namespace CASM {
     // Initially set occupation to -1 (for unknown) on every site
     config.set_occupation(Array<int>(num_sites(), -1));
 
-    Index linear_index, b;
+    Index _linear_index, b;
     int val;
 
     // For each site in superstruc, set occ index
     for(Index i = 0; i < superstruc.basis.size(); i++) {
       //std::cout << "i: " << i << "  basis: " << superstruc.basis[i] << std::endl;
-      linear_index = linear_index(Coordinate(superstruc.basis[i]), tol);
-      b = sublat(linear_index);
+      _linear_index = linear_index(Coordinate(superstruc.basis[i]), tol);
+      b = sublat(_linear_index);
 
       // check that we're not over-writing something already set
-      if(config.occ(linear_index) != -1) {
+      if(config.occ(_linear_index) != -1) {
         std::cerr << "Error in Supercell::config." << std::endl;
-        std::cerr << "  Adding a second atom on site: linear index: " << linear_index << " bijk: " << uccoord(linear_index) << std::endl;
+        std::cerr << "  Adding a second atom on site: linear index: " << _linear_index << " bijk: " << uccoord(_linear_index) << std::endl;
         exit(1);
       }
 
@@ -460,7 +460,7 @@ namespace CASM {
         std::cerr << "  The molecule: " << superstruc.basis[i].occ_name() << " is not allowed on basis site " << b << " of the Supercell prim." << std::endl;
         exit(1);
       }
-      config.set_occ(linear_index, val);
+      config.set_occ(_linear_index, val);
     }
 
     // Check that vacant sites are allowed
@@ -491,16 +491,14 @@ namespace CASM {
   //***********************************************************
   Structure Supercell::superstructure() const {
     // create a 'superstruc' that fills '*this'
-    Structure superstruc = (*m_primclex).prim().create_superstruc(real_super_lattice);
+    Structure superstruc = (*m_primclex).prim().create_superstruc(m_real_super_lattice);
 
-    Index linear_index;
     // sort basis sites so that they agree with config_index_to_bijk
     //   This sorting may not be necessary,
     //   but it depends on how we construct the config_index_to_bijk,
     //   so I'll leave it in for now just to be safe
     for(Index i = 0; i < superstruc.basis.size(); i++) {
-      linear_index = linear_index(superstruc.basis[i]);
-      superstruc.basis.swap_elem(i, linear_index);
+      superstruc.basis.swap_elem(i, linear_index(superstruc.basis[i]));
     }
 
     //superstruc.reset();

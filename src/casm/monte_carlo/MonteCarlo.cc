@@ -133,20 +133,20 @@ namespace CASM {
   /// \brief Fill supercell with motif, applying a factor group operation if necessary
   ConfigDoF fill_supercell(Supercell &mc_scel, const Configuration &motif) {
 
-    const Lattice &motif_lat = motif.get_supercell().get_real_super_lattice();
-    const Lattice &scel_lat = mc_scel.get_real_super_lattice();
-    auto begin = mc_scel.get_primclex().get_prim().factor_group().begin();
-    auto end = mc_scel.get_primclex().get_prim().factor_group().end();
+    const Lattice &motif_lat = motif.supercell().real_super_lattice();
+    const Lattice &scel_lat = mc_scel.real_super_lattice();
+    auto begin = mc_scel.primclex().prim().factor_group().begin();
+    auto end = mc_scel.primclex().prim().factor_group().end();
 
     auto res = is_supercell(scel_lat, motif_lat, begin, end, TOL);
     if(res.first == end) {
 
       std::cerr << "Requested supercell transformation matrix: \n"
-                << mc_scel.get_transf_mat() << "\n";
+                << mc_scel.transf_mat() << "\n";
       std::cerr << "Requested motif Configuration: " <<
                 motif.name() << "\n";
       std::cerr << "Configuration transformation matrix: \n"
-                << motif.get_supercell().get_transf_mat() << "\n";
+                << motif.supercell().transf_mat() << "\n";
 
       throw std::runtime_error(
         "Error in 'fill_supercell(const Supercell &mc_scel, const Configuration& motif)'\n"
