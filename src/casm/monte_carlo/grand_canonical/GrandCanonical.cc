@@ -29,13 +29,13 @@ namespace CASM {
     m_event(primclex.composition_axes().components().size(), m_clexulator.corr_size()) {
 
     m_log.construct("Grand Canonical Monte Carlo");
-    m_log << "project: " << this->primclex().get_path() << "\n";
+    m_log << "project: " << this->primclex().dir().root_dir() << "\n";
     m_log << "clex: " << settings.clex() << "\n";
     m_log << "calctype: " << settings.calctype() << "\n";
     m_log << "ref: " << settings.ref() << "\n";
     m_log << "bset: " << settings.bset() << "\n";
     m_log << "eci: " << settings.eci() << "\n";
-    m_log << "supercell: \n" << supercell().get_transf_mat() << "\n" << std::endl;
+    m_log << "supercell: \n" << supercell().transf_mat() << "\n" << std::endl;
 
     // set the SuperNeighborList...
     set_nlist();
@@ -122,7 +122,7 @@ namespace CASM {
     _update_deltas(m_event, mutating_site, sublat, current_occupant, new_occupant);
 
     if(debug()) {
-      const auto &site_occ = primclex().get_prim().basis[sublat].site_occupant();
+      const auto &site_occ = primclex().prim().basis[sublat].site_occupant();
       m_log.custom("Propose event");
 
       m_log  << "  Mutating site (linear index): " << mutating_site << "\n"
@@ -430,7 +430,7 @@ namespace CASM {
   void GrandCanonical::_update_properties() {
 
     // initialize properties and store pointers to the data strucures
-    m_vector_property["corr"] = correlations_vec(m_configdof, supercell(), m_clexulator);
+    m_vector_property["corr"] = correlations(m_configdof, supercell(), m_clexulator);
     m_corr = &m_vector_property["corr"];
 
     m_vector_property["comp_n"] = CASM::comp_n(m_configdof, supercell());

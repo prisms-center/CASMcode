@@ -1,7 +1,6 @@
 #ifndef CASM_ECICONTAINER_HH
 #define CASM_ECICONTAINER_HH
 
-#include "casm/clex/Correlation.hh"
 #include "casm/clex/Clexulator.hh"
 
 namespace CASM {
@@ -58,8 +57,8 @@ namespace CASM {
 
   };
 
-  /// \brief Evaluate property given an ECIContainer and Correlation
-  double operator*(const ECIContainer &_eci, const Correlation &_corr);
+  /// \brief Evaluate property given an ECIContainer and correlations
+  double operator*(const ECIContainer &_eci, const Eigen::VectorXd &_corr);
 
   /// \brief Evaluate property given an ECIContainer and pointer to beginning of range of correlation
   double operator*(const ECIContainer &_eci, double const *_corr_begin);

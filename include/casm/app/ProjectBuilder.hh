@@ -74,7 +74,7 @@ namespace CASM {
       m_crystallography_tol = _tol;
       return *this;
     }
-    
+
     ProjectBuilder &set_lin_alg_tol(double _tol) {
       m_lin_alg_tol = _tol;
       return *this;

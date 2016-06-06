@@ -1,6 +1,6 @@
-#include "casm/app/AppIO.hh"
+#include "casm/app/AppIO_impl.hh"
+#include "casm/symmetry/SymInfo.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
-#include "casm/clusterography/jsonClust.hh"
 
 namespace CASM {
 
@@ -162,50 +162,21 @@ namespace CASM {
 
   // --------- SymmetryIO Declarations --------------------------------------------------
 
-  void write_symop(const SymOp &op, jsonParser &json, int cclass, int inv) {
-    auto info = op.info();
+  void write_symop(const SymGroup &grp, Index i, jsonParser &j) {
+    j = jsonParser::object();
 
-    json = jsonParser::object();
+    const SymOp &op = grp[i];
 
-    json["matrix"] = op.matrix();
-    json["tau"] = op.tau();
-    json["conjugacy_class"] = cclass;
-    json["inverse"] = inv;
-    json["invariant_point"] = info.location;
+    to_json(op.matrix(), j["matrix"]["CART"]);
+    to_json(grp.lattice().inv_lat_column_mat()*op.matrix()*grp.lattice().lat_column_mat(), j["matrix"]["FRAC"]);
 
-    // enum symmetry_type {identity_op, mirror_op, glide_op, rotation_op, screw_op, inversion_op, rotoinversion_op, invalid_op};
-    if(info.op_type == SymOp::identity_op) {
-      json["type"] = "identity";
-    }
-    else if(info.op_type == SymOp::mirror_op) {
-      json["type"] = "mirror";
-      json["mirror_normal"] = info.axis;
-    }
-    else if(info.op_type == SymOp::glide_op) {
-      json["type"] = "glide";
-      json["mirror_normal"] = info.axis;
-      json["shift"] = info.screw_glide_shift;
-    }
-    else if(info.op_type == SymOp::rotation_op) {
-      json["type"] = "rotation";
-      json["rotation_axis"] = info.axis;
-      json["rotation_angle"] = info.angle;
-    }
-    else if(info.op_type == SymOp::screw_op) {
-      json["type"] = "screw";
-      json["rotation_axis"] = info.axis;
-      json["rotation_angle"] = info.angle;
-      json["shift"] = info.screw_glide_shift;
-    }
-    else if(info.op_type == SymOp::rotoinversion_op) {
-      json["type"] = "rotoinversion";
-      json["rotation_axis"] = info.axis;
-      json["rotation_angle"] = info.angle;
-    }
-    else if(info.op_type == SymOp::invalid_op) {
-      json["type"] = "invalid";
-    }
+    to_json_array(op.tau(), j["tau"]["CART"]);
+    to_json_array(grp.lattice().inv_lat_column_mat()*op.tau(), j["tau"]["FRAC"]);
 
+    to_json(grp.class_of_op(i), j["conjugacy_class"]);
+    to_json(grp.ind_inverse(i), j["inverse"]);
+
+    add_sym_info(grp.info(i), j);
   }
 
   void write_symgroup(const SymGroup &grp, jsonParser &json) {
@@ -213,8 +184,9 @@ namespace CASM {
 
     json["symop"] = jsonParser::array(grp.size());
     for(int i = 0; i < grp.size(); i++) {
-      write_symop(grp[i], json["symop"][i], grp.class_of_op(i), grp.ind_inverse(i));
+      write_symop(grp, i, json["symop"][i]);
     }
+
     json["name"] = grp.get_name();
     json["latex_name"] = grp.get_latex_name();
     json["periodicity"] = grp.periodicity();
@@ -436,164 +408,92 @@ namespace CASM {
   }
 
   // ---------- prim_nlist.json IO -------------------------------------------------------------
+  /*
+    void write_prim_nlist(const Array<UnitCellCoord> &prim_nlist, const fs::path &nlistpath) {
 
-  void write_prim_nlist(const Array<UnitCellCoord> &prim_nlist, const fs::path &nlistpath) {
+      SafeOfstream outfile;
+      outfile.open(nlistpath);
+      jsonParser nlist_json;
+      nlist_json = prim_nlist;
+      nlist_json.print(outfile.ofstream());
+      outfile.close();
 
-    SafeOfstream outfile;
-    outfile.open(nlistpath);
-    jsonParser nlist_json;
-    nlist_json = prim_nlist;
-    nlist_json.print(outfile.ofstream());
-    outfile.close();
-
-    return;
-  }
-
-  Array<UnitCellCoord> read_prim_nlist(const fs::path &nlistpath) {
-
-    try {
-      Array<UnitCellCoord> prim_nlist;
-      jsonParser read_json(nlistpath);
-      from_json(prim_nlist, read_json);
-      return prim_nlist;
+      return;
     }
-    catch(...) {
-      std::cerr << "Error reading: " << nlistpath;
-      throw;
-    }
-  }
 
+    Array<UnitCellCoord> read_prim_nlist(const fs::path &nlistpath, const BasicStructure<Site>& prim) {
 
-  // ---------- basis.json IO ------------------------------------------------------------------
-
-  /// \brief Write summary of basis functions
-  ///
-  /// Format:
-  /// \code
-  /// {
-  ///   "site_functions":[
-  ///     {
-  ///       "asym_unit": X,
-  ///       "sublat_indices: [2, 3],
-  ///       "phi_b_0": {"Va":0.0, "O":1.0},
-  ///       "phi_b_1": {"Va":0.0, "O":1.0},
-  ///        ...
-  ///     },
-  ///     ...
-  ///   ],
-  ///   "cluster_functions":[
-  ///     {
-  ///       "eci": X.XXXXX,
-  ///       "prototype_function": "\phi_b_i(s_j)...",
-  ///       "orbit": [branch_index, orbit_index],
-  ///       "linear_orbit_index": I,
-  ///       "mult": X,
-  ///       "prototype": [
-  ///         [b, i, j, k],
-  ///         ...
-  ///       ]
-  ///     },
-  ///     ...
-  ///   ]
-  /// }
-  /// \endcode
-  ///
-  void write_basis(const SiteOrbitree &tree, const Structure &prim, jsonParser &json, double tol) {
-
-    json = jsonParser::object();
-
-    //   "site_functions":[
-    //     {
-    //       "asym_unit": X,
-    //       "sublat": [2, 3],
-    //       "basis": {
-    //         "phi_b_0": {"Va":0.0, "O":1.0},
-    //         "phi_b_1": {"Va":0.0, "O":1.0}
-    //       }
-    //     },
-    //     ...
-    //   ],
-
-    jsonParser &sitef = json["site_functions"];
-    sitef = jsonParser::array(prim.basis.size(), jsonParser::object());
-    for(Index no = 0; no < tree.asym_unit().size(); no++) {
-      for(Index ne = 0; ne < tree.asym_unit()[no].size(); ne++) {
-
-        const SiteCluster &equiv = tree.asym_unit()[no][ne];
-        const Site &site = equiv[0];
-
-        Index b = site.basis_ind();
-        sitef[b]["sublat"] = b;
-        sitef[b]["asym_unit"] = no;
-
-        if(equiv.clust_basis.size() == 0) {
-          sitef[b]["basis"].put_null();
+      try {
+        jsonParser json(nlistpath);
+        Array<UnitCellCoord> prim_nlist(json.size(), UnitCellCoord(prim));
+        auto nlist_it = prim_nlist.begin();
+        for(auto it=json.begin(); it!=json.end(); ++it) {
+          from_json(*nlist_it++, *it);
         }
-        else {
-          for(Index f = 0; f < equiv.clust_basis.size(); f++) {
-            std::stringstream fname;
-            fname << "\\phi_" << b << '_' << f;
-            for(Index s = 0; s < site.site_occupant().size(); s++) {
-
-              // "\phi_b_f": {"Zr":0.0, ...}
-              sitef[b]["basis"][fname.str()][site.site_occupant()[s].name] =
-                equiv.clust_basis[f]->eval(
-                  Array<Index>(1, site.site_occupant().ID()),
-                  Array<Index>(1, s)
-                );
-            }
-          }
-        }
+        return prim_nlist;
+      }
+      catch(...) {
+        std::cerr << "Error reading: " << nlistpath;
+        throw;
       }
     }
+  */
 
-    //   "cluster_functions":[
-    //     {
-    //       ("eci": X.XXXXX,) <-- is included after fitting
-    //       "prototype_function": "\phi_b_i(s_j)...",
-    //       "orbit": [branch_index, cluster_orbit_index, bfunc_index],
-    //       "linear_orbit_index": I,
-    //       "mult": X,
-    //       "prototype": {
-    //         "max_length": X.X,
-    //         "min_length": X.X,
-    //         "sites": [
-    //           [b, i, j, k],
-    //           ...
-    //         ]
-    //       }
-    //     },
-    //     ...
-    //   ]
-    // }
+  // ---------- Orbit<IntegralCluster> & ClexBasis IO ------------------------------------------------------------------
 
-    jsonParser &orbitf = json["cluster_functions"];
-    orbitf = jsonParser::array();
-    for(Index i = 0; i < tree.size(); i++) {
-      jsonParser tjson;
-      for(Index j = 0; j < tree.size(i); j++) { //Loops over all i sized Orbits of clusters
 
-        // cluster specific info
-        tjson["orbit"] = std::vector<Index>({i, j, 0});
-        tjson["mult"] = tree.orbit(i, j).size();
-        to_json(jsonHelper(tree.orbit(i, j)[0], prim), tjson["prototype"]);
+  SitesPrinter::SitesPrinter(int _indent_space, char _delim, COORD_TYPE _mode) :
+    indent_space(_indent_space),
+    delim(_delim),
+    mode(_mode) {}
 
-        // basis function info
-        BasisSet tbasis(tree.orbit(i, j)[0].clust_basis);
-        tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
+  std::string SitesPrinter::indent() const {
+    return std::string(indent_space, ' ');
+  }
 
-        for(Index nf = 0; nf < tbasis.size(); ++nf) {
-          tjson["orbit"][2] = nf;
-          tjson["prototype_function"] = tbasis[nf]->tex_formula();
-          orbitf.push_back(tjson);
-        }
-      }
-    }
+  void SitesPrinter::coord_mode(std::ostream &out) {
+    out << "COORD_MODE = " << mode << std::endl << std::endl;
+  }
 
-    for(Index i = 0; i < orbitf.size(); ++i) {
-      orbitf[i]["linear_function_index"] = i;
+  void SitesPrinter::print_sites(const IntegralCluster &clust, std::ostream &out) {
+    for(const auto &coord : clust) {
+      out << indent() << indent() << indent();
+      out.setf(std::ios::showpoint, std::ios_base::fixed);
+      out.precision(5);
+      out.width(9);
+      coord.site().print(out);
+      if(delim)
+        out << delim;
+      out << std::flush;
     }
   }
+
+
+  // explicit template instantiations
+
+#define ORBIT_CONTAINER_INST(ITERATOR,INSERTER,ORBIT) \
+  template void print_clust<ITERATOR, ProtoSitesPrinter>(ITERATOR begin, ITERATOR end, std::ostream &out, ProtoSitesPrinter printer); \
+  template void print_site_basis_funcs<ITERATOR>(ITERATOR begin, ITERATOR end, const ClexBasis &clex_basis, std::ostream &out, COORD_TYPE mode); \
+  template INSERTER read_clust<INSERTER, typename ORBIT::SymCompareType>(INSERTER result, jsonParser &json, const Structure &prim, const SymGroup& generating_grp, const typename ORBIT::SymCompareType &sym_compare); \
+  template jsonParser &write_clust<ITERATOR>(ITERATOR begin, ITERATOR end, jsonParser &bspecs, jsonParser &json); \
+  template void write_basis<ITERATOR>(ITERATOR begin, ITERATOR end, const ClexBasis &clex_basis, jsonParser &json, double tol); \
+
+#define _VECTOR_IT(ORBIT) std::vector<ORBIT>::iterator
+#define _VECTOR_INSERTER(ORBIT) std::back_insert_iterator<std::vector<ORBIT> >
+
+#define _SET_IT(ORBIT) std::set<ORBIT>::iterator
+#define _SET_INSERTER(ORBIT) std::insert_iterator<std::set<ORBIT> >
+
+#define ORBIT_VECTOR_INST(ORBIT) ORBIT_CONTAINER_INST(_VECTOR_IT(ORBIT),_VECTOR_INSERTER(ORBIT), ORBIT)
+#define ORBIT_SET_INST(ORBIT) ORBIT_CONTAINER_INST(_SET_IT(ORBIT),_SET_INSERTER(ORBIT), ORBIT)
+
+  ORBIT_VECTOR_INST(LocalIntegralClusterOrbit)
+  ORBIT_VECTOR_INST(PrimPeriodicIntegralClusterOrbit)
+  ORBIT_VECTOR_INST(ScelPeriodicIntegralClusterOrbit)
+
+  ORBIT_SET_INST(LocalIntegralClusterOrbit)
+  ORBIT_SET_INST(PrimPeriodicIntegralClusterOrbit)
+  ORBIT_SET_INST(ScelPeriodicIntegralClusterOrbit)
 
 }
 

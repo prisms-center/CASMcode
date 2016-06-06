@@ -12,6 +12,10 @@ namespace CASM {
 
   int perturb_command(const CommandArgs &args) {
 
+    throw std::runtime_error("Error: 'casm perturb' is being re-implemented");
+
+    /*
+
     double tol = CASM::TOL;
     bool is_trans = false;
     fs::path cspecs_path, abs_cspecs_path;
@@ -42,8 +46,7 @@ namespace CASM {
     try {
       po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
-      /** --help option
-       */
+      // --help option
       if(vm.count("help")) {
         std::cout << "\n";
         std::cout << desc << std::endl;
@@ -96,11 +99,11 @@ namespace CASM {
 
     if(vm.count("strain")) {
       StrainConverter sconvert(strain_mode);
-      sconvert.set_symmetrized_sop(primclex.get_prim().point_group());
+      sconvert.set_symmetrized_sop(primclex.prim().point_group());
 
       Eigen::MatrixXd axes = sconvert.sop_transf_mat();
       std::vector<Index> mult;
-      std::vector<Eigen::MatrixXd> wedges = sconvert.irreducible_wedges(primclex.get_prim().point_group(), mult);
+      std::vector<Eigen::MatrixXd> wedges = sconvert.irreducible_wedges(primclex.prim().point_group(), mult);
 
       Index num_sub = wedges.size();
 
@@ -118,7 +121,7 @@ namespace CASM {
       BasisSet poly;
       for(Index i = 0; i <= poly_order; i++) {
         BasisSet tmono;
-        tmono.construct_invariant_polynomials(Array<BasisSet const *>(1, &strain_vars), primclex.get_prim().point_group(), i);
+        tmono.construct_invariant_polynomials(Array<BasisSet const *>(1, &strain_vars), primclex.prim().point_group(), i);
         poly.append(tmono);
       }
 
@@ -162,10 +165,10 @@ namespace CASM {
       bool verbose = false;
       bool print = true;
       for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
-        Index num_before = (it->get_supercell()).get_config_list().size();
-        ConfigEnumStrain<Configuration> enumerator(it->get_supercell(), *it, subgrids, mags, strain_mode);
-        (it->get_supercell()).add_unique_canon_configs(enumerator.begin(), enumerator.end());
-        std::cout << "Enumerated " << (it->get_supercell()).get_config_list().size() - num_before << " deformations.\n";
+        Index num_before = (it->supercell()).config_list().size();
+        ConfigEnumStrain<Configuration> enumerator(it->supercell(), *it, subgrids, mags, strain_mode);
+        (it->supercell()).add_unique_canon_configs(enumerator.begin(), enumerator.end());
+        std::cout << "Enumerated " << (it->supercell()).config_list().size() - num_before << " deformations.\n";
       }
     }
     else if(vm.count("occ")) {
@@ -189,8 +192,8 @@ namespace CASM {
       bool verbose = false;
       bool print = true;
       for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
-        std::cout << "  " << it->get_supercell().get_name() << "/" << it->get_id() << std::endl;
-        it->get_supercell().enumerate_perturb_configurations(*it, abs_cspecs_path, tol, verbose, print);
+        std::cout << "  " << it->supercell().name() << "/" << it->id() << std::endl;
+        it->supercell().enumerate_perturb_configurations(*it, abs_cspecs_path, tol, verbose, print);
       }
     }
     else {
@@ -219,7 +222,7 @@ namespace CASM {
     std::cout << std::endl;
 
     return 0;
+    */
   };
-
 }
 

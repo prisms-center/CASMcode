@@ -1,7 +1,6 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/symmetry/PermuteIterator.hh"
-#include "casm/clex/Correlation.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
@@ -717,49 +716,7 @@ namespace CASM {
   }
 
   /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
-  Correlation correlations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator) {
-
-    //Size of the supercell will be used for normalizing correlations to a per primitive cell value
-    int scel_vol = scel.volume();
-
-    Correlation correlations = Correlation::Zero(clexulator.corr_size());
-
-    //Inform Clexulator of the bitstring
-
-    //TODO: This will probably get more complicated with displacements and stuff
-    clexulator.set_config_occ(configdof.occupation().begin());
-    //mc_clexor.set_config_disp(mc_confdof.m_displacements.begin());   //or whatever
-    //mc_clexor.set_config_strain(mc_confdof.m_strain.begin());   //or whatever
-
-    //Holds contribution to global correlations from a particular neighborhood
-    std::vector<double> tcorr(clexulator.corr_size(), 0.0);
-    //std::vector<double> corr(clexulator.corr_size(), 0.0);
-
-    for(int v = 0; v < scel_vol; v++) {
-
-      //Point the Clexulator to the right neighborhood
-      clexulator.set_nlist(scel.nlist().sites(v).data());
-
-      //Fill up contributions
-      clexulator.calc_global_corr_contribution(&tcorr[0]);
-
-      //Add contributions to total correlations
-      for(int i = 0; i < tcorr.size(); i++) {
-        correlations[i] += tcorr[i];
-      }
-
-    }
-
-    // normalize by supercell volume
-    for(int i = 0; i < clexulator.corr_size(); i++) {
-      correlations[i] /= (double) scel_vol;
-    }
-
-    return correlations;
-  }
-
-  /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
-  Eigen::VectorXd correlations_vec(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator) {
+  Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator) {
 
     //Size of the supercell will be used for normalizing correlations to a per primitive cell value
     int scel_vol = scel.volume();
@@ -794,35 +751,18 @@ namespace CASM {
     return correlations;
   }
 
-  /// \brief Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::get_struc_molecule()
-  ReturnArray<int> get_num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
-
-    // [basis_site][site_occupant_index]
-    auto convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
-
-    // create an array to count the number of each molecule
-    Array<int> num_each_molecule(scel.get_prim().get_struc_molecule().size(), 0);
-
-    // count the number of each molecule
-    for(Index i = 0; i < configdof.size(); i++) {
-      num_each_molecule[ convert[ scel.get_b(i) ][ configdof.occ(i)] ]++;
-    }
-
-    return num_each_molecule;
-  }
-
   /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::get_struc_molecule()
-  Eigen::VectorXi get_num_each_molecule_vec(const ConfigDoF &configdof, const Supercell &scel) {
+  Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
 
     // [basis_site][site_occupant_index]
-    auto convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
+    auto convert = index_converter(scel.prim(), scel.prim().get_struc_molecule());
 
     // create an array to count the number of each molecule
-    Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.get_prim().get_struc_molecule().size());
+    Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.prim().get_struc_molecule().size());
 
     // count the number of each molecule
     for(Index i = 0; i < configdof.size(); i++) {
-      num_each_molecule(convert[ scel.get_b(i) ][ configdof.occ(i)])++;
+      num_each_molecule(convert[ scel.sublat(i) ][ configdof.occ(i)])++;
     }
 
     return num_each_molecule;
@@ -830,7 +770,7 @@ namespace CASM {
 
   /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel) {
-    return get_num_each_molecule_vec(configdof, scel).cast<double>() / scel.volume();
+    return num_each_molecule(configdof, scel).cast<double>() / scel.volume();
   }
 
 

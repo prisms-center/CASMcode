@@ -30,12 +30,12 @@ namespace CASM {
 
   /// \brief Return type of Monte Carlo ensemble
   Monte::ENSEMBLE MonteSettings::ensemble() const {
-    return _get_setting<Monte::ENSEMBLE>("ensemble", Monte::help<Monte::ENSEMBLE>());
+    return _get_setting<Monte::ENSEMBLE>("ensemble", help<Monte::ENSEMBLE>());
   }
 
   /// \brief Return type of Monte Carlo method
   Monte::METHOD MonteSettings::method() const {
-    return _get_setting<Monte::METHOD>("method", Monte::help<Monte::METHOD>());
+    return _get_setting<Monte::METHOD>("method", help<Monte::METHOD>());
   }
 
   /// \brief Run in debug mode?
@@ -100,7 +100,7 @@ namespace CASM {
 
   /// \brief Given a settings jsonParser figure out the drive mode. Expects drive_mode/incremental,custom
   const Monte::DRIVE_MODE MonteSettings::drive_mode() const {
-    return _get_setting<Monte::DRIVE_MODE>("driver", "mode", Monte::help<Monte::DRIVE_MODE>());
+    return _get_setting<Monte::DRIVE_MODE>("driver", "mode", help<Monte::DRIVE_MODE>());
   }
 
   /// \brief If dependent runs, start subsequent calculations with the final state
@@ -306,12 +306,12 @@ namespace CASM {
 
   /// \brief Sample by pass?
   bool EquilibriumMonteSettings::sample_by_pass() const {
-    return Monte::SAMPLE_MODE::PASS == _get_setting<Monte::SAMPLE_MODE>("data", "sample_by", Monte::help<Monte::SAMPLE_MODE>());
+    return Monte::SAMPLE_MODE::PASS == _get_setting<Monte::SAMPLE_MODE>("data", "sample_by", help<Monte::SAMPLE_MODE>());
   }
 
   /// \brief Sample by step?
   bool EquilibriumMonteSettings::sample_by_step() const {
-    return Monte::SAMPLE_MODE::STEP == _get_setting<Monte::SAMPLE_MODE>("data", "sample_by", Monte::help<Monte::SAMPLE_MODE>());
+    return Monte::SAMPLE_MODE::STEP == _get_setting<Monte::SAMPLE_MODE>("data", "sample_by", help<Monte::SAMPLE_MODE>());
   }
 
   /// \brief Figure out how often to take samples

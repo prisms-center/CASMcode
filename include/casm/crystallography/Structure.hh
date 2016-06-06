@@ -7,19 +7,18 @@
 
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/symmetry/SymGroup.hh"
 
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  class MasterSymGroup;
-
   class SiteCluster;
 
-  template<typename ClustType>
-  class GenericOrbitree;
+  //  template<typename ClustType>
+  //  class GenericOrbitree;
 
-  typedef GenericOrbitree<SiteCluster> SiteOrbitree;
+  //  typedef GenericOrbitree<SiteCluster> SiteOrbitree;
 
   ///\brief Structure specifies the lattice and atomic basis of a crystal
   class Structure : public BasicStructure<Site> {
@@ -117,14 +116,6 @@ namespace CASM {
     void symmetrize(const double &tolerace);
 
 
-    /// Returns true if the structure describes a crystal primitive cell
-    /// i.e., no translation smaller than a lattice vector can map the structure onto itself
-    //bool is_primitive(double prim_tol = TOL) const;          //Donghee do this
-
-    /// Returns true if the structure describes a crystal primitive cell
-    /// and finds the primitive cell and stores it in 'new_prim'
-    //bool is_primitive(Structure &new_prim, double prim_tol = TOL) const;   //Donghee do this
-
     /// fill an empty structure with the basis of its corresponding primitive cell - performs optimized factor_group expansion
     void fill_supercell(const Structure &prim, double map_tol = TOL); //Ivy
 
@@ -137,52 +128,10 @@ namespace CASM {
     /// Setting the current occupants of the structure to those specified by an array of integers
     void set_occs(Array <int> occ_index);
 
-    //    - Cluster related routines
-
-    /// For each basis site, find each cluster in 'in_tree' that contain that basis site,
-    /// create an orbit of all equivalent clusters that also contain the basis site
-    /// and store each of these orbits in out_tree
-    /// num_sites specifies what size of clusters are desired (e.g., pairs, triplets, etc)
-    void generate_basis_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites);
-
-    /// For each asymmetric unit site, find each cluster in 'in_tree' that contain that basis site,
-    /// create an orbit of all equivalent clusters that also contain the basis site
-    /// and store each of these orbits in out_tree
-    /// num_sites specifies what size of clusters are desired (e.g., pairs, triplets, etc)
-    void generate_asym_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites);
-
-    //John G 230913
-    /// Gets clusters of every size radiating from one site and saves them to a flowertree. A garland for each site is constructed.
-    void generate_flowertrees_safe(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees);
-    void generate_flowertrees(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees);
-    //\John G 230913
-
-
-    //John G 051112
-    Structure stack_on(const Structure &understruc, bool override = 0) const;
-    //\John G 051112
-
-    //John G 121212
-    /// Return reflection of structure
-    Structure get_reflection() const;
-    /// If atoms are too close together, average their distance and make them one
-    void clump_atoms(double maxdist); //Only for same atom types
     /// Rearrange basis by grouping atoms by type
     void sort_basis();
     //\John G 121212
 
-    //John G 050513
-    Structure stamp_with(SiteCluster stamp, bool lat_override = 0, bool im_override = 0) const;
-    Array<Structure> bedazzle(Array<SiteCluster> stamps, bool lat_override = 0, bool im_override = 0) const;
-    Array<Array<Array<double> > > get_NN_table(const double &maxr, SiteOrbitree &bouquet);
-    Array<Array<Array<double> > > get_NN_table(const double &maxr);
-    //\John G 050513
-
-    ///Add vacuum and shift c vector. The vacuum is always added parallel to c, and the shift vector should also be parallel to the ab plane (x,y,0)
-    void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const;
-    void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Coordinate shift) const;  //Because Anton thought a coordinate would be better
-    ///Adds vacuum layer on top of ab plane
-    void add_vacuum(Structure &new_surface_struc, double vacuum_thickness) const;
     ///Translates all atoms in cell
     Structure &operator+=(const Coordinate &shift);
     Structure &operator-=(const Coordinate &shift);
@@ -225,11 +174,11 @@ namespace CASM {
 
   /// Returns 'converter' which converts site_occupant indices to 'mol_list' indices:
   ///   mol_list_index = converter[basis_site][site_occupant_index]
-  std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<Molecule> mol_list);
+  std::vector< std::vector<Index> > index_converter(const Structure &struc, std::vector<Molecule> mol_list);
 
   /// Returns 'converter' which converts site_occupant indices to 'mol_name_list' indices:
   ///   mol_name_list_index = converter[basis_site][site_occupant_index]
-  std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<std::string> mol_name_list);
+  std::vector< std::vector<Index> > index_converter(const Structure &struc, std::vector<std::string> mol_name_list);
 
 };
 

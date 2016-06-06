@@ -25,7 +25,7 @@ namespace CASM {
       return c_it->second;
     }
 
-    auto s_it = m_supercell_ref.find(config.get_supercell().get_name());
+    auto s_it = m_supercell_ref.find(config.supercell().name());
     if(s_it != m_supercell_ref.end()) {
       return s_it->second;
     }

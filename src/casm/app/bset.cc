@@ -1,6 +1,9 @@
 #include <cstring>
 #include "casm/app/casm_functions.hh"
-#include "casm/CASM_classes.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/ClexBasis.hh"
 
 namespace CASM {
 
@@ -68,6 +71,9 @@ namespace CASM {
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
+    // not sure how this will work yet...
+    std::vector<std::string> dof_keys = {"occupation"};
+
     if(vm.count("update")) {
 
       // initialize project info
@@ -122,75 +128,79 @@ namespace CASM {
         }
       }
 
-      SiteOrbitree tree(prim.lattice());
+      jsonParser bspecs_json;
+      std::vector<Orbit<IntegralCluster> > orbits;
+      std::unique_ptr<ClexBasis> clex_basis;
 
       try {
-        jsonParser bspecs_json(dir.bspecs(set.bset()));
+        bspecs_json.read(dir.bspecs(set.bset()));
 
-        std::cout << "Generating orbitree: \n";
-        tree = make_orbitree(prim, bspecs_json);
+        args.log.construct("Orbitree");
+        args.log << std::endl;
 
-        if(tree.min_num_components < 2) {
-          std::cerr << "Error generating orbitree: Custom clusters include a site "
-                    << "with only 1 allowed component. This is not currently supported." << std::endl;
-          for(int nb = 0; nb < tree.size(); ++nb) {
-            for(int no = 0; no < tree[nb].size(); ++no) {
-              for(int ns = 0; ns < tree[nb][no].prototype.size(); ++ns) {
-                if(tree[nb][no].prototype[ns].site_occupant().size() < 2) {
-                  std::cerr << "--- Prototype --- " << std::endl;
-                  tree[nb][no].prototype.print(std::cerr, '\n');
-                  break;
-                }
-              }
-            }
-          }
-          return ERR_INVALID_INPUT_FILE;
-        }
-        std::cout << "  DONE.\n" << std::endl;
+        make_orbits(prim,
+                    prim.factor_group(),
+                    bspecs_json,
+                    alloy_sites_filter,
+                    PrimPeriodicIntegralClusterSymCompare(set.crystallography_tol()),
+                    std::back_inserter(orbits),
+                    args.log);
 
-        tree.generate_clust_bases();
+        clex_basis.reset(new ClexBasis(prim));
+        clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json, dof_keys);
+
       }
       catch(std::exception &e) {
-        std::cerr << e.what() << std::endl;
+        args.err_log << e.what() << std::endl;
         return ERR_INVALID_INPUT_FILE;
       }
 
       // -- write clust.json ----------------
-      jsonParser clust_json;
-      to_json(jsonHelper(tree, prim), clust_json).write(dir.clust(set.bset()));
+      {
+        jsonParser clust_json;
+        write_clust(orbits.begin(), orbits.end(), bspecs_json, clust_json);
+        clust_json.write(dir.clust(set.bset()));
 
-      std::cout << "Wrote: " << dir.clust(set.bset()) << "\n" << std::endl;
+        args.log.write(dir.clust(set.bset()).string());
+        args.log << std::endl;
+      }
 
 
       // -- write basis.json ----------------
-      jsonParser basis_json;
-      write_basis(tree, prim, basis_json, primclex.crystallography_tol());
-      basis_json.write(dir.basis(set.bset()));
+      {
+        jsonParser basis_json;
+        write_basis(orbits.begin(), orbits.end(), *clex_basis, basis_json, set.crystallography_tol());
+        basis_json.write(dir.basis(set.bset()));
 
-      std::cout << "Wrote: " << dir.basis(set.bset()) << "\n" << std::endl;
+        args.log.write(dir.basis(set.bset()).string());
+        args.log << std::endl;
+      }
 
 
       // -- write global Clexulator
+      {
+        // get the neighbor list
+        PrimNeighborList nlist(
+          set.nlist_weight_matrix(),
+          set.nlist_sublat_indices().begin(),
+          set.nlist_sublat_indices().end()
+        );
 
-      // get the neighbor list
-      PrimNeighborList nlist(
-        set.nlist_weight_matrix(),
-        set.nlist_sublat_indices().begin(),
-        set.nlist_sublat_indices().end()
-      );
+        // expand the nlist to contain sites in all orbits
+        std::set<UnitCellCoord> nbors;
+        prim_periodic_neighborhood(orbits.begin(), orbits.end(), std::inserter(nbors, nbors.begin()));
+        nlist.expand(nbors.begin(), nbors.end());
 
-      // expand the nlist to contain 'tree'
-      std::set<UnitCellCoord> nbors;
-      neighborhood(std::inserter(nbors, nbors.begin()), tree, prim, primclex.crystallography_tol());
-      nlist.expand(nbors.begin(), nbors.end());
+        // write source code
+        fs::ofstream outfile;
+        outfile.open(dir.clexulator_src(set.name(), set.bset()));
+        throw std::runtime_error("Error: print_clexulator is being re-implemented");
+        //print_clexulator(*clex_basis, nlist, set.global_clexulator(), outfile, set.crystallography_tol());
+        outfile.close();
 
-      // write source code
-      fs::ofstream outfile;
-      outfile.open(dir.clexulator_src(set.name(), set.bset()));
-      print_clexulator(prim, tree, nlist, set.global_clexulator(), outfile, primclex.crystallography_tol());
-      outfile.close();
-
-      std::cout << "Wrote: " << dir.clexulator_src(set.name(), set.bset()) << "\n" << std::endl;
+        args.log.write(dir.clexulator_src(set.name(), set.bset()).string());
+        args.log << std::endl;
+      }
 
     }
     else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
@@ -203,25 +213,32 @@ namespace CASM {
         return ERR_MISSING_DEPENDS;
       }
 
-      Log log(std::cout);
-      PrimClex primclex(root, log);
+      PrimClex primclex(root, args.log);
+      jsonParser clust_json(dir.clust(set.bset()));
 
-      primclex.read_global_orbitree(dir.clust(set.bset()));
+      std::vector<Orbit<IntegralCluster> > orbits;
+      read_clust(
+        std::back_inserter(orbits),
+        clust_json,
+        primclex.prim(),
+        primclex.prim().factor_group(),
+        PrimPeriodicIntegralClusterSymCompare(set.crystallography_tol())
+      );
 
       if(vm.count("orbits")) {
-        std::cout << "\n***************************\n" << std::endl;
-        primclex.get_global_orbitree().print_proto_clust(std::cout);
-        std::cout << "\n***************************\n" << std::endl;
+        print_clust(orbits.begin(), orbits.end(), args.log, ProtoSitesPrinter());
       }
       if(vm.count("clusters")) {
-        std::cout << "\n***************************\n" << std::endl;
-        primclex.get_global_orbitree().print_full_clust(std::cout);
-        std::cout << "\n***************************\n" << std::endl;
+        print_clust(orbits.begin(), orbits.end(), args.log, FullSitesPrinter());
       }
       if(vm.count("functions")) {
-        std::cout << "\n***************************\n" << std::endl;
-        primclex.get_global_orbitree().print_proto_clust_funcs(std::cout);
-        std::cout << "\n***************************\n" << std::endl;
+        jsonParser bspecs_json;
+        bspecs_json.read(dir.bspecs(set.bset()));
+
+        ClexBasis clex_basis(primclex.prim());
+        clex_basis.generate(orbits.begin(), orbits.end(), bspecs_json, dof_keys);
+
+        print_clust(orbits.begin(), orbits.end(), args.log, ProtoFuncsPrinter(clex_basis));
       }
     }
     else {

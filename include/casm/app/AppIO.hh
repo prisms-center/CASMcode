@@ -1,21 +1,25 @@
 #ifndef CASM_AppIO
 #define CASM_AppIO
 
-#include "casm/crystallography/BasicStructure.hh"
-#include "casm/crystallography/Coordinate.hh"
-#include "casm/symmetry/SymGroup.hh"
-#include "casm/clex/CompositionConverter.hh"
-#include "casm/clex/ChemicalReference.hh"
+#include <string>
+#include <map>
 
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/json_io/clex.hh"
-#include "casm/casm_io/SafeOfstream.hh"
+#include "casm/CASM_global_definitions.hh"
+#include "casm/clex/CompositionConverter.hh"
 
 namespace CASM {
 
-  // --- These functions are for the casm executable file I/O -----------
-  //
-  //  They should be moved into the app code eventually, but are currently needed here
+  // --- These functions are for casm I/O -----------
+
+  template<typename CoordType> class BasicStructure;
+  class Site;
+  class jsonParser;
+  class ClexBasis;
+  class ChemicalReference;
+  template<typename CoordType> class CoordCluster;
+  class UnitCellCoord;
+  typedef CoordCluster<UnitCellCoord> IntegralCluster;
+  template<typename Element, typename SymCompareType> class Orbit;
 
 
   // --------- PrimIO Declarations --------------------------------------------------
@@ -34,7 +38,7 @@ namespace CASM {
 
   // --------- SymmetryIO Declarations --------------------------------------------------
 
-  void write_symop(const SymOp &op, jsonParser &json, int cclass, int inv);
+  void write_symop(const SymGroup &grp, Index i, jsonParser &j);
 
   void write_symgroup(const SymGroup &grp, jsonParser &json);
 
@@ -97,34 +101,130 @@ namespace CASM {
   OutputIterator read_composition_axes(OutputIterator result, const jsonParser &json);
 
 
-  // --------- CompositionAxes Definitions --------------------------------------------------
+  // ---------- casm bset --orbits, --clusters, --functions --------------------------------------
 
-  /// \brief Read standard axes from JSON, and output to std::map<std::string, CompositionConverter>
-  ///
-  /// - json Format: {"standard_axes": {"key0" : {CompositionConverter}, ... more axes ...},
-  ///                 "custom_axes":   {"key0" : {CompositionConverter}, ... more axes ...},
-  ///                 "current_axes": "key"}
-  ///   - "axes_type" is either "standard_axes" or "custom_axes"
-  ///   - "key" is a string indicating which composition axes in the "standard_axes" or "custom_axes" JSON object
-  ///
-  /// - This read json["standard_axes"] or json["custom_axes"]
-  ///
-  template<typename OutputIterator>
-  OutputIterator read_composition_axes(OutputIterator result, const jsonParser &json) {
+  struct SitesPrinter {
 
-    CompositionConverter conv;
-    for(auto it = json.cbegin(); it != json.cend(); ++it) {
-      from_json(conv, *it);
-      *result++ = std::make_pair(it.name(), conv);
+    int indent_space;
+    char delim;
+    COORD_TYPE mode;
+
+
+    SitesPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC);
+
+    std::string indent() const;
+
+    void coord_mode(std::ostream &out);
+
+    void print_sites(const IntegralCluster &clust, std::ostream &out);
+  };
+
+  /// \brief Print Orbit<IntegralCluster, SymCompareType>, including only prototypes
+  struct ProtoSitesPrinter : public SitesPrinter {
+
+    ProtoSitesPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      SitesPrinter(_indent_space, _delim, _mode) {}
+
+
+    template<typename OrbitType>
+    void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+      out << indent() << indent() << "Prototype" << " of " << orbit.size()
+          << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
+      print_sites(orbit.prototype(), out);
     }
-    return result;
-  }
+  };
+
+  /// \brief Print Orbit<IntegralCluster, SymCompareType>, including all equivalents
+  struct FullSitesPrinter : public SitesPrinter {
+
+    FullSitesPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      SitesPrinter(_indent_space, _delim, _mode) {}
+
+
+    template<typename OrbitType>
+    void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+      for(Index equiv_index = 0; equiv_index != orbit.size(); ++equiv_index) {
+        out << indent() << indent() << equiv_index << " of " << orbit.size()
+            << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
+        print_sites(orbit.prototype(), out);
+      }
+    }
+  };
+
+  /// \brief Print Orbit<IntegralCluster, SymCompareType> & ClexBasis, including prototypes and prototype basis functions
+  struct ProtoFuncsPrinter : public SitesPrinter {
+
+    const ClexBasis &clex_basis;
+
+    ProtoFuncsPrinter(const ClexBasis &_clex_basis, int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      SitesPrinter(_indent_space, _delim, _mode),
+      clex_basis(_clex_basis) {}
+
+    template<typename OrbitType>
+    void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
+      out << indent() << indent() << "Prototype" << " of " << orbit.size()
+          << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
+      print_sites(orbit.prototype(), out);
+
+      throw std::runtime_error("Error printing basis functions: ProtoFuncsPrinter not implemented");
+      //print_clust_basis(out, nf, 8, '\n');
+      //nf += prototype(i, j).clust_basis.size();
+      //out << "\n\n" << std::flush;
+    }
+
+  };
+
+
+
+  /// \brief Print IntegralCluster orbits
+  template<typename ClusterOrbitIterator, typename OrbitPrinter>
+  void print_clust(
+    ClusterOrbitIterator begin,
+    ClusterOrbitIterator end,
+    std::ostream &out,
+    OrbitPrinter printer);
+
+  /// \brief Print site basis functions, as for 'casm bset --functions'
+  template<typename ClusterOrbitIterator>
+  void print_site_basis_funcs(
+    ClusterOrbitIterator begin,
+    ClusterOrbitIterator end,
+    const ClexBasis &clex_basis,
+    std::ostream &out,
+    COORD_TYPE mode);
+
+
+  // ---------- clust.json IO ------------------------------------------------------------------
+
+  /// \brief Read JSON containing Orbit<IntegralCluster, SymCompareType> prototypes
+  template<typename ClusterOutputIterator, typename SymCompareType>
+  ClusterOutputIterator read_clust(
+    ClusterOutputIterator result,
+    jsonParser &json,
+    const Structure &prim,
+    const SymGroup &generating_grp,
+    const SymCompareType &sym_compare);
+
+  /// \brief Write JSON containing Orbit<IntegralCluster, SymCompareType> prototypes
+  template<typename ClusterOrbitIterator>
+  jsonParser &write_clust(
+    ClusterOrbitIterator begin,
+    ClusterOrbitIterator end,
+    jsonParser &bspecs,
+    jsonParser &json);
 
 
   // ---------- basis.json IO ------------------------------------------------------------------
 
-  /// \brief Write summary of basis functions
-  void write_basis(const SiteOrbitree &tree, const Structure &prim, jsonParser &json, double tol);
+
+  /// \brief Write summary of cluster expansion basis
+  template<typename ClusterOrbitIterator>
+  void write_basis(
+    ClusterOrbitIterator begin,
+    ClusterOrbitIterator end,
+    const ClexBasis &clex_basis,
+    jsonParser &json,
+    double tol);
 }
 
 #endif

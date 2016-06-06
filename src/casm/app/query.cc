@@ -172,7 +172,7 @@ namespace CASM {
     std::unique_ptr<std::ostream> uniq_fout;
     std::ostream &output_stream = make_ostream_if(vm.count("output"), args.log, uniq_fout, out_path, gz_flag);
     output_stream << FormatFlag(output_stream).print_header(!no_header);
-    
+
     // set status_stream: where query settings and PrimClex initialization messages are sent
     Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
 

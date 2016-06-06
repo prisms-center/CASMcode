@@ -107,7 +107,7 @@ namespace CASM {
   /// Specialize for Configuration, const Configuration, Transition, const Transition
   template <typename ConfigType, typename PrimClexType>
   ConfigType &ConfigIterator<ConfigType, PrimClexType>::operator*() const {
-    return m_primclex->get_supercell(m_scel_index).get_config(m_config_index);
+    return m_primclex->supercell(m_scel_index).config(m_config_index);
   }
   //template<> Configuration &ConfigIterator<Configuration, PrimClex>::operator*();
   //template<> const Configuration &ConfigIterator<const Configuration, const PrimClex>::operator*();
@@ -138,7 +138,7 @@ namespace CASM {
   template <typename ConfigType, typename PrimClexType>
   void ConfigIterator<ConfigType, PrimClexType>::_next_config() {
     m_config_index++;
-    while(m_scel_index < m_primclex->get_supercell_list().size() && m_config_index >= config_list_size()) {
+    while(m_scel_index < m_primclex->supercell_list().size() && m_config_index >= config_list_size()) {
       m_scel_index++;
       m_config_index = 0;
     }
@@ -148,17 +148,17 @@ namespace CASM {
   template <typename ConfigType, typename PrimClexType>
   ConfigIterator<ConfigType, PrimClexType> &ConfigIterator<ConfigType, PrimClexType>::operator++() {
     //std::cout << "m_scel_index = " << m_scel_index << "; m_config_index = " << m_config_index << ";";
-    //if(m_scel_index <  m_primclex->get_supercell_list().size() && m_config_index < config_list_size())
-    //  std::cout << " selected = " << m_primclex->get_supercell(m_scel_index).get_config(m_config_index).selected();
+    //if(m_scel_index <  m_primclex->supercell_list().size() && m_config_index < config_list_size())
+    //  std::cout << " selected = " << m_primclex->supercell(m_scel_index).config(m_config_index).selected();
     //std::cout << "\n -increment-\n";
     _next_config();
     // don't increment past the end
-    while(m_scel_index <  m_primclex->get_supercell_list().size() && (m_selected && !(m_primclex->get_supercell(m_scel_index).get_config(m_config_index).selected()))) {
+    while(m_scel_index <  m_primclex->supercell_list().size() && (m_selected && !(m_primclex->supercell(m_scel_index).config(m_config_index).selected()))) {
       _next_config();
     }
     //std::cout << "m_scel_index = " << m_scel_index << "; m_config_index = " << m_config_index << ";";
-    //if(m_scel_index <  m_primclex->get_supercell_list().size() && m_config_index < config_list_size())
-    //  std::cout << " selected = " << m_primclex->get_supercell(m_scel_index).get_config(m_config_index).selected();
+    //if(m_scel_index <  m_primclex->supercell_list().size() && m_config_index < config_list_size())
+    //  std::cout << " selected = " << m_primclex->supercell(m_scel_index).config(m_config_index).selected();
     //std::cout << "\n\n";
     return *this;
   }

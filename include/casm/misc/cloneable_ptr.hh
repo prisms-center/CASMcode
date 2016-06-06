@@ -101,7 +101,7 @@ namespace notstd {
 
     /// \brief Assignment via move
     template<typename U>
-    cloneable_ptr &operator=(cloneable_ptr<U> && other) {
+    cloneable_ptr &operator=(cloneable_ptr<U> &&other) {
       unique() = std::move(other.unique());
       return *this;
     }
@@ -121,7 +121,7 @@ namespace notstd {
 
     /// \brief Assignment via move
     template<typename U>
-    cloneable_ptr &operator=(std::unique_ptr<U> && other) {
+    cloneable_ptr &operator=(std::unique_ptr<U> &&other) {
       unique() = std::move(other);
       return *this;
     }
@@ -133,6 +133,11 @@ namespace notstd {
 
     pointer operator->() const {
       return &(this->operator*());
+    }
+
+    /// \brief Reset contained unique_ptr
+    void reset() {
+      return m_unique.reset();
     }
 
     /// \brief Access contained unique_ptr

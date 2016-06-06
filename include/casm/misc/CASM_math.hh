@@ -14,6 +14,56 @@
 
 namespace CASM {
 
+  /// \brief Implements other comparisons in terms of Derived::operator<(const Derived& B)
+  /// is implemented
+  ///
+  /// Implements:
+  /// - '>', '<=', '>=', '==', '!='
+  /// - '==' and '!=' can be specialized in Derived by implementing private methods
+  ///   '_eq' and '_ne'
+  template<typename Derived>
+  struct Comparisons {
+
+    bool operator>(const Derived &B) const {
+      return B < derived();
+    };
+
+    bool operator<=(const Derived &B) const {
+      return !(B < derived());
+    };
+
+    bool operator>=(const Derived &B) const {
+      return !(derived() < B);
+    };
+
+    bool operator==(const Derived &B) const {
+      return derived()._eq(B);
+    };
+
+    bool operator!=(const Derived &B) const {
+      return derived()._ne(B);
+    };
+
+
+  protected:
+
+    const Derived &derived() const {
+      return *static_cast<Derived *>(this);
+    }
+
+
+  private:
+
+    bool _eq(const Derived &B) const {
+      return (!(derived() < B) && !(B < derived()));
+    };
+
+    bool _ne(const Derived &B) const {
+      return !derived()._eq(B);
+    };
+
+  };
+
   // *******************************************************************************************
 
   //round function -- rounds to nearest whole number; half-integers are rounded away from zero
@@ -74,6 +124,48 @@ namespace CASM {
   template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type * = nullptr>
   bool almost_equal(const T &val1, const T &val2, double tol = TOL) {
     return val1 == val2;
+  }
+
+  // *******************************************************************************************
+
+  /// \brief Floating point comparison with tol
+  ///
+  /// Implements:
+  /// \code
+  /// if(!almost_equal(A,B,tol)) { return A < B; }
+  /// return false;
+  /// \endcode
+  template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type * = nullptr>
+  bool compare(const T &A, const T &B, double tol) {
+    if(!almost_equal(A, B, tol)) {
+      return A < B;
+    }
+    return false;
+  }
+
+  struct FloatCompare {
+
+    double tol;
+
+    FloatCompare(double _tol) : tol(_tol) {}
+
+    template<typename T>
+    bool operator()(const T &A, const T &B) {
+      return compare(A, B, tol);
+    }
+  };
+
+
+  /// \brief Floating point lexicographical comparison with tol
+  template<class InputIt1, class InputIt2>
+  bool float_lexicographical_compare(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2, double tol) {
+    FloatCompare compare(tol);
+    return std::lexicographical_compare(first1, last1, first2, last2, compare);
+  }
+
+  /// \brief Floating point lexicographical comparison with tol
+  inline bool float_lexicographical_compare(const Eigen::VectorXd &A, const Eigen::VectorXd &B, double tol) {
+    return float_lexicographical_compare(A.data(), A.data() + A.size(), B.data(), B.data() + B.size(), tol);
   }
 
   // *******************************************************************************************

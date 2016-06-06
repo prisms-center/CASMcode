@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(AllTest) {
   proj.check_init();
   proj.check_composition();
   proj.check_enum();
-  
+
   Log log = null_log();
   PrimClex primclex(proj.dir, log);
 

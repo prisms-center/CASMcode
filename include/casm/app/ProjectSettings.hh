@@ -88,7 +88,7 @@ namespace CASM {
 
     /// \brief Get current project crystallography tolerance
     double crystallography_tol() const;
-    
+
     /// \brief Get current project linear algebra tolerance
     double lin_alg_tol() const;
 
@@ -188,7 +188,7 @@ namespace CASM {
 
     /// \brief Set crystallography tolerance
     bool set_crystallography_tol(double _tol);
-    
+
     /// \brief Set linear algebra tolerance
     bool set_lin_alg_tol(double _tol);
 
@@ -229,7 +229,7 @@ namespace CASM {
 
     // Crystallography tolerance
     double m_crystallography_tol;
-    
+
     // Linear algebra tolerance
     double m_lin_alg_tol;
 

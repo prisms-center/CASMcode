@@ -5,11 +5,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "casm/clusterography/SiteCluster.hh"
-#include "casm/clusterography/Orbitree.hh"
-#include "casm/clusterography/jsonClust.hh"
 #include "casm/misc/algorithm.hh"
-
+#include "casm/crystallography/PrimGrid.hh"
+#include "casm/symmetry/SymGroupRep.hh"
+#include "casm/symmetry/SymBasisPermute.hh"
 
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -344,42 +343,42 @@ namespace CASM {
    * operation and the eigenvector will be printed.  If it equals anything else,
    * then the symmetry operation matrix will be printed out.
    */
+  /*
+    void Structure::print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag = 1) {
+      GenericOrbitBranch<SiteCluster> asym_unit(lattice());
+      asym_unit.generate_asymmetric_unit(basis, factor_group());
 
-  void Structure::print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag = 1) {
-    GenericOrbitBranch<SiteCluster> asym_unit(lattice());
-    asym_unit.generate_asymmetric_unit(basis, factor_group());
+      stream <<  " Printing symmetry operations that leave each site unchanged:\n \n";
+      for(Index i = 0; i < asym_unit.size(); i++) {
+        for(Index j = 0; j < asym_unit[i].size(); j++) {
+          stream << "Site: ";
+          asym_unit.at(i).at(j).at(0).print(stream); //Print the site (not cluster) for the asymmetric unit
+          stream << " Total Symmetry Operations: " << asym_unit[i][j].clust_group().size() << "\n";
 
-    stream <<  " Printing symmetry operations that leave each site unchanged:\n \n";
-    for(Index i = 0; i < asym_unit.size(); i++) {
-      for(Index j = 0; j < asym_unit[i].size(); j++) {
-        stream << "Site: ";
-        asym_unit.at(i).at(j).at(0).print(stream); //Print the site (not cluster) for the asymmetric unit
-        stream << " Total Symmetry Operations: " << asym_unit[i][j].clust_group().size() << "\n";
+          for(Index nc = 0; nc < asym_unit[i][j].clust_group().size(); nc++) {
+            //print_short is a new fxn I added in SymOp to not print out the whole symmetry matrix
+            if(shorttag == 0) {
+              stream <<  std::setw(4)  << nc + 1 << ": ";
+              //asym_unit[i][j].clust_group()[nc].print_short(stream); // I turned this off because the "print_short" function does not appear to exist...
+            }
 
-        for(Index nc = 0; nc < asym_unit[i][j].clust_group().size(); nc++) {
-          //print_short is a new fxn I added in SymOp to not print out the whole symmetry matrix
-          if(shorttag == 0) {
-            stream <<  std::setw(4)  << nc + 1 << ": ";
-            //asym_unit[i][j].clust_group()[nc].print_short(stream); // I turned this off because the "print_short" function does not appear to exist...
+
+            else {
+              stream.flags(std::ios::left);
+              stream << "\n" <<  std::setw(3)  << nc + 1 << ": ";
+              stream.unsetf(std::ios::left);
+              if(mode == CART)
+                asym_unit[i][j].clust_group()[nc].print(stream, Eigen::Matrix3d::Identity());
+              else
+                asym_unit[i][j].clust_group()[nc].print(stream, lattice().inv_lat_column_mat());
+            }
           }
-
-
-          else {
-            stream.flags(std::ios::left);
-            stream << "\n" <<  std::setw(3)  << nc + 1 << ": ";
-            stream.unsetf(std::ios::left);
-            if(mode == CART)
-              asym_unit[i][j].clust_group()[nc].print(stream, Eigen::Matrix3d::Identity());
-            else
-              asym_unit[i][j].clust_group()[nc].print(stream, lattice().inv_lat_column_mat());
-          }
+          stream << "\n  ---------------------------------------------------------------------   \n\n";
         }
-        stream << "\n  ---------------------------------------------------------------------   \n\n";
       }
+      return;
     }
-    return;
-  }
-
+  */
   //***********************************************************
 
   void Structure::reset() {
@@ -399,206 +398,6 @@ namespace CASM {
     //std::cout << "finish reset()" << std::endl;
     return;
   }
-
-  //***********************************************************
-  /**
-   * A flowertree has clusters of every size organized like the
-   * branches of a regular orbitree, but every cluster in the
-   * entire flowertree has the same pivot.
-   */
-  //***********************************************************
-  void Structure::generate_flowertrees(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees) {
-    if(out_trees.size() != 0) {
-      std::cerr << "WARNING in Structure::generate_flowertrees_safe" << std::endl;
-      std::cerr << "The provided array of SiteOrbitree wasn't empty! Hope nothing important was there..." << std::endl;
-      out_trees.clear();
-    }
-
-
-    //Theres a flowertree for each basis site b
-    for(Index b = 0; b < basis.size(); b++) {
-      SiteOrbitree ttree(lattice());    //Weird behavior without this
-      ttree.reserve(in_tree.size());
-      out_trees.push_back(ttree);
-      //We want clusters of every size in the tree, except the 0th term (...right guys?)
-      for(Index s = 1; s < in_tree.size(); s++) {
-        //Make each site basis into a cluster so we can use extract_orbits_including
-        SiteCluster tsiteclust(lattice());
-        tsiteclust.within();
-        tsiteclust.push_back(basis[b]);
-        //Make a branch where all the clusters of a given size s go
-        SiteOrbitBranch tbranch(lattice());
-        //Push back flower onto tree
-        out_trees[b].push_back(tbranch);
-        //Get one flower for a given basis site
-        in_tree[s].extract_orbits_including(tsiteclust, out_trees[b].back());   //couldn't get it to work withough directly passing tree.back() (i.e. can't make branch then push_back)
-      }
-      out_trees[b].get_index();
-      out_trees[b].collect_basis_info(*this);
-    }
-
-    return;
-  }
-
-  //***********************************************************
-  // Fills an orbitree such that each OrbitBranch corresponds to a basis site and contains all orbits
-  // that include that basis site
-  void Structure::generate_basis_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites) {
-    Index na, np, nb, ne;
-
-    out_tree.clear(); //Added by Ivy 11/07/12
-
-    //make room in out_tree for flowers
-    //out_tree.reserve(basis.size());
-
-    out_tree.lattice = in_tree.lattice;
-    //out_tree.set_lattice(in_tree.lattice,FRAC);   //better?
-
-    //get asymmetric unit
-    GenericOrbitBranch<SiteCluster> asym_unit(lattice());
-    asym_unit.generate_asymmetric_unit(basis, factor_group());
-
-
-    for(na = 0; na < asym_unit.size(); na++) {
-      asym_unit.prototype(na).clust_group().character_table();
-      //std::cout << "Working on asym_unit element " << na + 1 << '\n';
-      nb = out_tree.size();
-
-      //Add new branch with asym_unit.prototype(na) as pivot
-      out_tree.push_back(SiteOrbitBranch(asym_unit.prototype(na)));
-
-      for(np = 0; np < in_tree.size(); np++) {
-        if(num_sites != in_tree[np].num_sites()) {
-          continue;
-        }
-        //std::cout << "Starting to extract petals from OrbitBranch " << np << '\n';
-        in_tree[np].extract_orbits_including(asym_unit.prototype(na), out_tree.back());
-      }
-
-
-      for(ne = 1; ne < asym_unit[na].equivalence_map.size(); ne++) {
-        out_tree.push_back(out_tree[nb]);
-        out_tree.back().apply_sym(asym_unit[na].equivalence_map[ne][0]);
-      }
-    }
-    //out_tree.get_index(); //Should not get_index because we want to keep the in_tree indices Ivy 01/15/14
-    out_tree.collect_basis_info(*this);
-    return;
-  }
-
-  //***********************************************************
-  /**
-   * Fills out_tree with OrbitBranches with pivots corresponding
-   * to the different asym_unit sites.  The orbits of each branch
-   * are "petals" radiating from that branch's pivot.
-   *
-   * @param in_tree General tree that holds clusters of all sizes
-   * @param out_tree Holds all flowers (orbits) radiating from asym_unit sites
-   * @param num_sites Size of clusters filling up out_tree
-   */
-  //***********************************************************
-  // Added by Ivy 10/17/12
-  void Structure::generate_asym_bouquet(const SiteOrbitree &in_tree, SiteOrbitree &out_tree, Index num_sites) {
-    Index na, np;//, nb;
-
-    out_tree.clear();
-
-    //get asymmetric unit
-    GenericOrbitBranch<SiteCluster> asym_unit(lattice());
-    asym_unit.generate_asymmetric_unit(basis, factor_group());
-
-    //make room in out_tree for flowers
-    out_tree.reserve(asym_unit.size());
-
-    out_tree.lattice = in_tree.lattice;
-
-
-    for(na = 0; na < asym_unit.size(); na++) {
-
-      //nb = out_tree.size();
-
-      //Add new branch with asym_unit.prototype(na) as pivot
-      out_tree.push_back(SiteOrbitBranch(asym_unit.prototype(na)));
-
-      for(np = 0; np < in_tree.size(); np++) {
-        if(num_sites != in_tree[np].num_sites()) {
-          continue;
-        }
-
-        //prototype of na orbit
-        in_tree[np].extract_orbits_including(asym_unit.prototype(na), out_tree.back());
-      }
-
-    }
-    //out_tree.get_index(); //Should not get_index because we want to keep the in_tree indices Ivy 01/15/14
-    out_tree.collect_basis_info(*this);
-    return;
-
-
-  }
-
-  //John G 230913
-
-  //***********************************************************
-  /**
-   * A flowertree is NOT a bouquet.
-   * Bouquets are constructed from an orbitree (generate_basis_bouquet)
-   * by taking every cluster of a given size and storing them
-   * in branches, where each branch contains clusters with a
-   * common pivot.
-   * A flowertree has clusters of every size organized like the
-   * branches of a regular orbitree, but every cluster in the
-   * entire flowertree has the same pivot.
-   *
-   * Begin by making n bouquets, where n is the size of the
-   * larges cluster in the provided orbitree. Then shuffle
-   * all the bouquets together and sort them by basis site.
-   * The result is an array of "flowertrees", which have been
-   * made by picking out flowers of every bouquet that have
-   * the same pivot. You end up with one flowertree per basis site
-   * each of which has clusters from size 1 to n.
-   */
-  //***********************************************************
-  void Structure::generate_flowertrees_safe(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees) {  //can we make it const? It would require generate_basis_bouquet to also be const
-    if(out_trees.size() != 0) {
-      std::cerr << "WARNING in Structure::generate_flowertrees_safe" << std::endl;
-      std::cerr << "The provided array of SiteOrbitree wasn't empty! Hope nothing important was there..." << std::endl;
-      out_trees.clear();
-    }
-
-    //Determine what the largest cluster in the given orbitree is, accounting for the fact that there's a 0 point cluster
-    Index max_clust_size = in_tree.size() - 1;
-    //Plant all the bouquets, one for each cluster size and store them in
-    Array<SiteOrbitree> bouquets;
-
-    for(Index i = 1; i < (max_clust_size + 1); i++) {
-      SiteOrbitree tbouquet(lattice());
-      generate_basis_bouquet(in_tree, tbouquet, i);
-      bouquets.push_back(tbouquet);
-    }
-
-    //Pluck a branch off each bouquet for a given basis site and stuff it into a SiteOribitree (this is a flowertree)
-    //SiteOrbitree tbouquet=in_tree;   //This is so I don't have to worry about initializing things I'm scared of
-    SiteOrbitree tbouquet(lattice());
-
-    //How many flowertrees do we need? As many as there are basis sites, i.e. bouquet[i].size();
-    for(Index i = 0; i < basis.size(); i++) {
-      tbouquet.clear();
-      //How many trees, i.e. cluster sizes
-      for(Index j = 0; j < bouquets.size(); j++) {
-        //Not pushing back empty cluster!!
-        tbouquet.push_back(bouquets[j][i]);
-      }
-      tbouquet.get_index();
-      tbouquet.collect_basis_info(*this);
-      out_trees.push_back(tbouquet);
-    }
-
-    return;
-  }
-
-  //\John G 230913
-
 
   //*********************************************************
 
@@ -676,174 +475,6 @@ namespace CASM {
       reset();
   }
 
-
-  //***********************************************************
-  /**
-   * Returns a heterostructre. The structure this function is
-   * called onto will be stretched to match a and b of the
-   * structure is it passed (understruc). The returned strucure
-   * will contain the basis of both structures, stacked on top
-   * of each other in the c direction.
-   *
-   * This function only matches the ab planes.
-   */
-  //***********************************************************
-
-  Structure Structure::stack_on(const Structure &understruc, bool override) const {
-    Structure overstruc(*this);
-
-    //Before doing anything check to see that lattices are aligned correctly (paralled ab planes)
-    if(!override) {
-      double axbangle = angle(understruc.lattice()[0].cross(understruc.lattice()[1]), overstruc.lattice()[0].cross(overstruc.lattice()[1]));
-
-      if(!almost_zero(axbangle)) {
-        std::cerr << "ERROR in Structure::stack_on" << std::endl;
-        std::cerr << "Lattice mismatch! Your structures are oriented differently in space. ab planes of structures must be parallel before stacking.\
-                    Redefine your structure or use Structure::align_with to fix issue." << std::endl;
-        std::cerr << "Your vectors were:\n" << understruc.lattice()[0].cross(understruc.lattice()[1]) << "\n" << overstruc.lattice()[0].cross(overstruc.lattice()[1]) << std::endl;
-        exit(13);
-      }
-
-      //Also check if c axes are on the same side of abplane
-      //else if
-      //{
-      //}
-    }
-
-    else {
-      std::cerr << "WARNING in Structure::stack_on" << std::endl;
-      std::cerr << "You've chosen to ignore if ab planes of your structures are not parallel and/or c axes point the right way.\
-                This will almost surely result in a malformed structure. Do not take the output for granted." << std::endl;
-    }
-
-
-    //First stretch a and b of overstruc to match a and b of understruc
-    Lattice newoverstruclat(understruc.lattice()[0],
-                            understruc.lattice()[1],
-                            overstruc.lattice()[2]);
-
-    overstruc.set_lattice(newoverstruclat, FRAC);
-
-
-    //Create a lattice big enough to fit both structures
-    Lattice heterolat(understruc.lattice()[0], //=overstruc.lattice()[0]
-                      understruc.lattice()[1], //=overstruc.lattice()[1]
-                      understruc.lattice()[2] + overstruc.lattice()[2]);
-
-
-    //Copy understruc and set its lattice to heterolat, keeping its cartesian coordinates.
-    //This leaves the basis intact but adds extra space where the overstruc basis can be placed.
-    Structure heterostruc(understruc);
-
-    heterostruc.set_lattice(heterolat, CART);
-
-    //Fill up empty space in heterostruc with overstruc
-    for(Index i = 0; i < overstruc.basis.size(); i++) {
-      Site tsite(overstruc.basis[i]);
-      tsite.cart() = tsite.const_cart() + understruc.lattice()[2];
-      tsite.set_lattice(heterostruc.lattice(), CART);
-      heterostruc.basis.push_back(tsite);
-
-    }
-
-    for(Index i = 0; i < heterostruc.basis.size(); i++) {
-      heterostruc.basis[i].within();
-    }
-
-    heterostruc.update();
-
-    return heterostruc;
-  }
-  //\John G 051112
-
-  //John G 121212
-  //***********************************************************
-  /**
-   * Makes reflection of structure and returns new reflected strucutre. Meant
-   * for primitive structures, but can be forced on superstructures. If forced
-   * on non primitive structure then the reflected structure will think it's
-   * primitive. To avoid this issue reflect  primitive structure and then
-   * make a reflected superlattice to fill it with.
-   */
-  //***********************************************************
-  Structure Structure::get_reflection() const {
-
-    Structure reflectstruc(*this);
-    Eigen::Vector3d zreflect;
-    zreflect << 1, 1, -1;
-
-    // resets the lattice and reflects cartesian coordinates of the basis atoms
-    reflectstruc.set_lattice(Lattice(zreflect.asDiagonal() * lattice().lat_column_mat()), FRAC);
-
-    reflectstruc.update();
-
-    return reflectstruc;
-  }
-
-  //***********************************************************
-  /**
-   * Given a minimum distance, find pair clusters within this length
-   * and average out the distance between the two atoms and put
-   * one atom there, eliminating the other two. Meant to be used
-   * for grain boundaries.
-   *
-   * This function is meant for averaging atoms of the same type!
-   */
-  //***********************************************************
-  void Structure::clump_atoms(double mindist) {
-
-    // Warning, I don't think we want to do this here, but I'm leaving it in for now - JCT 03/07/14
-    update();
-
-    //Define Orbitree just for pairs
-    SiteOrbitree siamese(lattice());
-    siamese.max_num_sites = 2;
-    siamese.max_length.push_back(0);
-    siamese.max_length.push_back(0);
-    siamese.max_length.push_back(mindist);
-    siamese.min_length = 0.0;
-    siamese.min_num_components = 1;
-    siamese.generate_orbitree(*this);
-
-    //Set one atom of the cluster pairs to be at the average distance and flag
-    //the other one for removal later
-    for(Index i = 0; i < siamese[2].size(); i++) {
-      for(Index j = 0; j < siamese[2][i].size(); j++) {
-        Site avgsite(siamese[2][i][j][1]);
-        avgsite.cart() = (siamese[2][i][j][0].const_cart() + siamese[2][i][j][1].const_cart()) * 0.5;
-        avgsite.set_lattice(lattice(), CART); //It's dumb that I need to do this
-        avgsite.within();
-
-        std::cout << "###############" << std::endl;
-        std::cout << siamese[2][i][j][0].basis_ind() << "    " << siamese[2][i][j][0] << std::endl;
-        std::cout << siamese[2][i][j][1].basis_ind() << "    " << siamese[2][i][j][1] << std::endl;
-        std::cout << "-------" << std::endl;
-        std::cout << basis[siamese[2][i][j][0].basis_ind()].basis_ind() << "    " << basis[siamese[2][i][j][0].basis_ind()] << std::endl;
-        std::cout << basis[siamese[2][i][j][1].basis_ind()].basis_ind() << "    " << basis[siamese[2][i][j][1].basis_ind()] << std::endl;
-        std::cout << "###############" << std::endl;
-
-
-        basis[siamese[2][i][j][0].basis_ind()].set_basis_ind(-99);
-        basis[siamese[2][i][j][1].basis_ind()].set_basis_ind(-99);
-        basis.push_back(avgsite);
-      }
-    }
-
-    std::cout << "BASIS IND:" << std::endl;
-    //Remove unwanted atoms.
-    int bsize = basis.size();
-    for(int i = bsize - 1; i >= 0; i--) {
-      std::cout << basis[i].basis_ind() << "   " << basis[i] << std::endl;
-      if(basis[i].basis_ind() == Index(-99)) {
-        basis.remove(i);
-      }
-    }
-
-    update();
-
-    return;
-  }
-
   //***********************************************************
   /**
    * Loop through basis and rearrange atoms by type. Uses bubble
@@ -867,147 +498,6 @@ namespace CASM {
     }
 
     return;
-  }
-
-
-
-  //John G 050513
-
-  //***********************************************************
-  /**
-   * Decorate your structure easily! Given a cluster, this
-   * routine will copy your structure and replace sites of the
-   * copy with sites from the cluster. Bedazzle!
-   * The lattice of your structure and cluster must be related
-   * by an integer matrix (supercell). Be mindful with the size
-   * of your stamped structure, it has to be big enough to fit
-   * the cluster.
-   */
-  //***********************************************************
-
-  Structure Structure::stamp_with(SiteCluster stamp, bool lat_override, bool im_override) const {
-    //The following check may not work properly
-    if(!lat_override && !lattice().is_supercell_of((stamp.home()), point_group())) {
-      std::cerr << "ERROR in Structure::stamp_with (are you using Structure::bedazzle?)" << std::endl;
-      std::cerr << "The lattice of your cluster is not related to the lattice of the structure you want to stamp!" << std::endl;
-      exit(60);
-    }
-
-    //Some sort of check should happen here to make sure your superstructure
-    //is large enough to accomodate the stamp. Otherwise shit will get messed up
-    //I think image_check is the way to go, but I'm not sure I'm using it correctly
-    //I'm using the default value for nV (1) in image_check. This will allow the cluster
-    //to touch the faces of the voronoi cell.
-
-    if(!im_override && stamp.size() > 1 && stamp.image_check(lattice(), 1)) {    //Skip point clusters?
-      std::cerr << "ERROR in Structure::stamp_with" << std::endl;
-      std::cerr << "Your superstructure isn't big enough to fit your cluster!" << std::endl;
-      std::cerr << "Culprit:" << std::endl;
-      stamp.print(std::cerr);
-      exit(62);
-    }
-
-    stamp.set_lattice(lattice(), CART);
-    stamp.within();
-
-    Structure stampedstruc = *this;
-    Index sanity_count = 0;
-    for(Index i = 0; i < stamp.size(); i++) {
-      for(Index j = 0; j < basis.size(); j++) {
-        if(Coordinate(stamp[i]) == Coordinate(basis[j])) {
-          sanity_count++;
-          stampedstruc.basis[j] = stamp[i];
-        }
-      }
-    }
-
-    if(sanity_count != stamp.size()) {  //Allow if override?
-      std::cerr << "ERROR in Structure::stamp_with (are you using Structure::bedazzle?)" << std::endl;
-      std::cerr << stamp.size() - sanity_count << " sites in the cluster (size " << stamp.size() << " did not map onto your structure.\
-                If you got this far your lattices passed the test, but it seems your bases are unrelated. My guesses:" << std::endl;
-      std::cerr << "You're trying to map a relaxed site onto an ideal one." << std::endl;
-      std::cerr << "You have a vacancy in the structure you're stamping that's not in the basis." << std::endl;
-      exit(61);
-    }
-
-    stampedstruc.reset();
-    return stampedstruc;
-  }
-
-  //***********************************************************
-  /**
-   * Same as stamp_with, but takes an array of clusters and returns
-   * and array of structures. Basically saves you a for loop.
-   * Perhaps this should actually take an OrbitBranch?
-   */
-  //***********************************************************
-
-  Array<Structure> Structure::bedazzle(Array<SiteCluster> stamps, bool lat_override, bool im_override) const {
-    Array<Structure> all_decorations;
-    for(Index i = 0; i < stamps.size(); i++) {
-      all_decorations.push_back(stamp_with(stamps[i], lat_override, im_override));
-    }
-
-    return all_decorations;
-  }
-
-  //***********************************************************
-  /**
-   * Goes to a specified site of the basis and makes a flower tree
-   * of pairs. It then stores the length and multiplicity of
-   * the pairs in a double array, giving you a strict
-   * nearest neighbor table. This version also fills up a SiteOrbitree
-   * in case you want to keep it.
-   * Blatantly copied from Anna's routine in old new CASM
-   */
-  //***********************************************************
-
-  Array<Array<Array<double> > > Structure::get_NN_table(const double &maxr, SiteOrbitree &bouquet) {
-    if(!bouquet.size()) {
-      std::cerr << "WARNING in Structure::get_NN_table" << std::endl;
-      std::cerr << "The provided SiteOrbitree is about to be rewritten!" << std::endl;
-    }
-
-    Array<Array<Array<double> > > NN;
-    SiteOrbitree normtree(lattice());
-    SiteOrbitree tbouquet(lattice());
-    bouquet = tbouquet;
-    normtree.min_num_components = 1;
-    normtree.max_num_sites = 2;
-    normtree.max_length.push_back(0.0);
-    normtree.max_length.push_back(0.0);
-    normtree.max_length.push_back(maxr);
-
-    normtree.generate_orbitree(*this);
-    normtree.print_full_clust(std::cout);
-    generate_basis_bouquet(normtree, bouquet, 2);
-
-    Array<Array<double> > oneNN;
-    oneNN.resize(2);
-    for(Index i = 0; i < bouquet.size(); i++) {
-      NN.push_back(oneNN);
-      for(Index j = 0; j < bouquet[i].size(); j++) {
-        NN[i][0].push_back(bouquet[i][j].size());
-        NN[i][1].push_back(bouquet[i][j].max_length());
-      }
-    }
-
-    return NN;
-  }
-
-  //***********************************************************
-  /**
-   * Goes to a specified site of the basis and makes a flower tree
-   * of pairs. It then stores the length and multiplicity of
-   * the pairs in a double array, giving you a strict
-   * nearest neighbor table. The bouquet used for this
-   * falls into the void.
-   */
-  //***********************************************************
-
-  Array<Array<Array<double> > > Structure::get_NN_table(const double &maxr) {
-    SiteOrbitree bouquet(lattice());
-    return get_NN_table(maxr, bouquet);
   }
 
   //***********************************************************
@@ -1072,56 +562,6 @@ namespace CASM {
     return;
   }
 
-  //\John G 050513
-
-  //***********************************************************
-  /**
-   *  Call this on a structure to get new_surface_struc: the structure with a
-   *  layer of vacuum added parallel to the ab plane.
-   *  vacuum_thickness: thickness of vacuum layer (Angstroms)
-   *  shift:  shift vector from layer to layer, assumes FRAC unless specified.
-   *  The shift vector should only have values relative to a and b vectors (eg x, y, 0).
-   *  Default shift is zero.
-   */
-  //***********************************************************
-
-  void Structure::add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const {
-
-    Coordinate cshift(shift, lattice(), mode);    //John G 121030
-    if(!almost_zero(cshift.frac(2))) {
-      std::cerr << cshift.const_frac() << std::endl;
-      std::cerr << "WARNING: You're shifting in the c direction! This will mess with your vacuum and/or structure!!" << std::endl;
-      std::cerr << "See Structure::add_vacuum_shift" << std::endl;
-    }
-
-    Eigen::Vector3d vacuum_vec;                 //unit vector perpendicular to ab plane
-    vacuum_vec = lattice()[0].cross(lattice()[1]);
-    vacuum_vec.normalize();
-    Lattice new_lattice(lattice()[0],
-                        lattice()[1],
-                        lattice()[2] + vacuum_thickness * vacuum_vec + cshift.const_cart()); //Add vacuum and shift to c vector
-
-    new_surface_struc = *this;
-    new_surface_struc.set_lattice(new_lattice, CART);
-    return;
-  }
-
-  //***********************************************************
-  void Structure::add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Coordinate shift) const {
-
-    add_vacuum_shift(new_surface_struc, vacuum_thickness, shift.cart(), CART);
-    return;
-  }
-
-  //***********************************************************
-  void Structure::add_vacuum(Structure &new_surface_struc, double vacuum_thickness) const {
-    Eigen::Vector3d shift(0, 0, 0);
-
-    add_vacuum_shift(new_surface_struc, vacuum_thickness, shift, FRAC);
-
-    return;
-  }
-
   // Added by Donghee
 
   //***********************************************************
@@ -1170,17 +610,39 @@ namespace CASM {
 
   //***********************************************************
 
-  //This function gets the basis_permutation representation of the
+  //This function gets the permutation representation of the
   // factor group operations of the structure. It first applies
   // the factor group operation to the structure, and then tries
   // to map the new position of the basis atom to the various positions
   // before symmetry was applied. It only checks the positions after
   // it brings the basis within the crystal.
 
-  // ROUTINE STILL NEEDS TO BE TESTED!
-
   SymGroupRepID Structure::generate_basis_permutation_representation(bool verbose) const {
-    basis_perm_rep_ID = BasicStructure<Site>::generate_basis_permutation_representation(factor_group(), verbose);
+
+    if(factor_group().size() <= 0 || !basis.size()) {
+      std::cerr << "ERROR in BasicStructure::generate_basis_permutation_representation" << std::endl;
+      std::cerr << "You have NOT generated the factor group, or something is very wrong with your structure. I'm quitting!" << std::endl;;
+      exit(1);
+    }
+
+    SymGroupRep basis_permute_group(m_factor_group);
+
+    std::string clr(100, ' ');
+
+    for(Index ng = 0; ng < m_factor_group.size(); ng++) {
+      if(verbose) {
+        if(ng % 100 == 0)
+          std::cout << '\r' << clr.c_str() << '\r' << "Find permute rep for symOp " << ng << "/" << m_factor_group.size() << std::flush;
+      }
+
+      basis_permute_group.set_rep(ng, SymBasisPermute(m_factor_group[ng], *this, TOL));
+    }
+    // Adds the representation into the master sym group of this structure and returns the rep id
+    basis_perm_rep_ID = m_factor_group.add_representation(basis_permute_group);
+
+    //std::cerr << "Added basis permutation rep id " << rep_id << '\n';
+
+    if(verbose) std::cout << '\r' << clr.c_str() << '\r' << std::flush;
     return basis_perm_rep_ID;
   }
 
@@ -1294,7 +756,7 @@ namespace CASM {
 
   /// Returns 'converter' which converts Site::site_occupant indices to 'mol_list' indices:
   ///   mol_list_index = converter[basis_site][site_occupant_index]
-  std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<Molecule> mol_list) {
+  std::vector< std::vector<Index> > index_converter(const Structure &struc, std::vector<Molecule> mol_list) {
 
     std::vector< std::vector<Index> > converter(struc.basis.size());
 
@@ -1312,7 +774,7 @@ namespace CASM {
 
   /// Returns 'converter' which converts Site::site_occupant indices to 'mol_name_list' indices:
   ///   mol_name_list_index = converter[basis_site][site_occupant_index]
-  std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<std::string> mol_name_list) {
+  std::vector< std::vector<Index> > index_converter(const Structure &struc, std::vector<std::string> mol_name_list) {
 
     std::vector< std::vector<Index> > converter(struc.basis.size());
 

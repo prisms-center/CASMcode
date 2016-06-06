@@ -81,7 +81,7 @@ namespace CASM {
     ConfigMapper configmapper(primclex, lattice_weight, vol_tol, ConfigMapper::rotate | ConfigMapper::robust | (vm.count("strict") ? ConfigMapper::strict : 0), tol);
     std::cout << "Reading calculation data... " << std::endl << std::endl;
     std::vector<std::string> bad_config_report;
-    std::vector<std::string> prop_names = primclex.get_curr_property();
+    std::vector<std::string> prop_names = primclex.settings().properties();
     PrimClex::config_iterator it = primclex.config_begin();
     Index num_updated(0);
 
@@ -272,7 +272,7 @@ namespace CASM {
           relax_log << "  Because no calculation data exists for configuration " << imported_config.name() << ",\n"
                     << "  it will acquire the data from " << filepath << "\n";
 
-          if(!fs::exists(imported_config.get_pos_path()))
+          if(!fs::exists(imported_config.pos_path()))
             primclex.configuration(imported_config.name()).write_pos();
 
           fs::path import_target = imported_config.calc_properties_path();

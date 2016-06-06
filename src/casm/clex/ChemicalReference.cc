@@ -18,7 +18,7 @@ namespace CASM {
     std::function<Eigen::VectorXd(Configuration)> n,
     std::function<double(Configuration)> e) {
 
-    auto names = config.get_prim().get_struc_molecule_name();
+    auto names = config.prim().get_struc_molecule_name();
     auto vec = n(config);
 
     if(vec.size() != names.size()) {
@@ -228,7 +228,7 @@ namespace CASM {
                               ConfigIO::relaxed_energy_per_species());
     }
 
-    return ChemicalReference(primclex.get_prim(), ref_states.begin(), ref_states.end(), lin_alg_tol);
+    return ChemicalReference(primclex.prim(), ref_states.begin(), ref_states.end(), lin_alg_tol);
   }
 
 }

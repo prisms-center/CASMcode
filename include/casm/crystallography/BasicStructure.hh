@@ -70,8 +70,8 @@ namespace CASM {
 
     /// Return the UnitCellCoord corresponding to test_site (i.e., finds the basis index and
     /// the lattice translation)
-    template<typename CoordType2>
-    UnitCellCoord get_unit_cell_coord(const CoordType2 &test_site, double tol = TOL)const;
+    //   template<typename CoordType2>
+    //   UnitCellCoord get_unit_cell_coord(const CoordType2 &test_site, double tol = TOL)const;
 
     // ****Mutators****
 
@@ -99,7 +99,7 @@ namespace CASM {
     /// Translate all basis sites so that they are inside the unit cell
     void within();
 
-    CoordType get_site(const UnitCellCoord &ucc) const;
+    //CoordType get_site(const UnitCellCoord &ucc) const;
 
     ///change the lattice and update site coordinates.  Argument 'mode' specifies which mode is preserved
     /// e.g.: struc.set_lattice(new_lat, CART) calculates all Cartesian coordinates,
@@ -119,8 +119,6 @@ namespace CASM {
     void fg_converge(double small_tol, double large_tol, double increment);
     void fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
 
-    SymGroupRepID generate_basis_permutation_representation(const MasterSymGroup &factor_group, bool verbose)const;
-
     void symmetrize(const SymGroup &relaxed_factors);
     void symmetrize(const double &tolerance);
 
@@ -139,26 +137,6 @@ namespace CASM {
     ///  Shortcut routine to create a supercell structure and fill it with sites
     BasicStructure create_superstruc(const Lattice &scel_lat, double map_tol = TOL) const;
 
-    //John G 230913
-    /// Gets clusters of every size radiating from one site and saves them to a flowertree. A garland for each site is constructed.
-    void generate_flowertrees_safe(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees);
-    void generate_flowertrees(const SiteOrbitree &in_tree, Array<SiteOrbitree> &out_trees);
-    //\John G 230913
-
-    /// Figures out which prim basis each superstructure basis corresponds to
-    void map_superstruc_to_prim(BasicStructure &prim, const SymGroup &point_group);
-
-    /// If atoms are too close together, average their distance and make them one
-    void merge_sites(double maxdist); //Only for same atom types
-
-    //Array<Array<Array<double> > > get_NN_table(const double &maxr, GenericOrbitree<GenericCluster<CoordType> > &bouquet);
-    //Array<Array<Array<double> > > get_NN_table(const double &maxr);
-
-    ///Add vacuum and shift c vector. The vacuum is always added parallel to c, and the shift vector should also be parallel to the ab plane (x,y,0)
-    void add_vacuum_shift(BasicStructure &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const;
-    void add_vacuum_shift(BasicStructure &new_surface_struc, double vacuum_thickness, Coordinate shift) const;  //Because Anton thought a coordinate would be better
-    ///Adds vacuum layer on top of ab plane
-    void add_vacuum(BasicStructure &new_surface_struc, double vacuum_thickness) const;
     ///Translates all atoms in cell
     BasicStructure &operator+=(const Coordinate &shift);
     BasicStructure &operator-=(const Coordinate &shift);
@@ -166,18 +144,13 @@ namespace CASM {
     /// Counts sites that allow vacancies
     Index max_possible_vacancies()const;
 
-    ///Return a reference to the lattice
-    const Lattice &get_lattice() const {
-      return lattice;
-    };
-
     /// Print intpolated images in seperate directries
     //CASM canonical input/output
     virtual void read(std::istream &stream);  //John do this
 
     /// Output other formats
     void print_xyz(std::ostream &stream) const;
-    void print_cif(std::ostream &stream) const;
+    //void print_cif(std::ostream &stream) const;
 
     jsonParser &to_json(jsonParser &json) const;
 
@@ -206,9 +179,14 @@ namespace CASM {
   template<typename CoordType>
   void from_json(BasicStructure<CoordType> &basic, const jsonParser &json);
 
-
+  /// \brief Output the neighborhood of UnitCellCoord within max_radius of a unit cell
+  template<typename CoordType, typename OutputIterator>
+  OutputIterator neighborhood(
+    const BasicStructure<CoordType> &unit,
+    double max_radius,
+    std::function<bool (CoordType)> site_filter,
+    OutputIterator result,
+    double xtal_tol);
 };
-
-#include "casm/crystallography/BasicStructure_impl.hh"
 
 #endif

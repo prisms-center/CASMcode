@@ -42,19 +42,6 @@ namespace CASM {
     template<typename StrucType>
     SymBasisPermute(const SymOp &op, const StrucType &struc, double tol);
 
-    /// \brief Apply to a UnitCellCoord, in place
-    UnitCellCoord &apply(UnitCellCoord &value) const {
-      value.unitcell() = m_point_mat * value.unitcell() +
-                         m_ucc_permute[value.sublat()].unitcell();
-      value.sublat() = m_ucc_permute[value.sublat()].sublat();
-      return value;
-    }
-
-    /// \brief Copy UnitCellCoord and apply
-    UnitCellCoord copy_apply(UnitCellCoord value) const {
-      return apply(value);
-    }
-
     /// Return pointer to a copy of this SymBasisPermute
     SymOpRepresentation *copy() const override {
       return new SymBasisPermute(*this);
@@ -97,15 +84,6 @@ namespace CASM {
 
   };
 
-  /// \brief Apply symmetry to a UnitCellCoord
-  template<typename BasisPermutable>
-  UnitCellCoord &apply(const SymOp &op, UnitCellCoord &value, const BasisPermutable &obj);
-
-  /// \brief Apply symmetry to a UnitCellCoord
-  inline UnitCellCoord &apply(const SymBasisPermute &op, UnitCellCoord &value) {
-    return op.apply(value);
-  }
-
 
   // ---- SymBasisPermute Definitions --------------------
 
@@ -123,23 +101,8 @@ namespace CASM {
 
     // Determine how basis sites transform from the origin unit cell
     for(int b = 0; b < struc.basis.size(); b++) {
-      m_ucc_permute.push_back(UnitCellCoord(CASM::copy_apply(op, struc.basis[b]), struc, tol));
+      m_ucc_permute.push_back(UnitCellCoord(struc, CASM::copy_apply(op, struc.basis[b]), tol));
     }
-  }
-
-
-  /// \brief Apply symmetry to a UnitCellCoord
-  ///
-  /// \param op The symmetry operation to apply
-  /// \param value The UnitCellCoord being transformed
-  /// \param obj The object that the UnitCellCoord coordinates refer to, typically a primitive Structure
-  ///
-  /// - Requires BasisPermutable::basis_permutation_symrep_ID() to obtain the
-  ///   SymBasisPermute representation
-  template<typename BasisPermutable>
-  UnitCellCoord &apply(const SymOp &op, UnitCellCoord &value, const BasisPermutable &obj) {
-
-    return op.get_basis_permute_rep(obj.basis_permutation_symrep_ID())->apply(value);
   }
 
 }

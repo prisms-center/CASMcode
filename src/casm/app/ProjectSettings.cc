@@ -103,10 +103,10 @@ namespace CASM {
 
         settings.get_if(m_view_command, "view_command");
         from_json(m_name, settings["name"]);
-        
+
         settings.get_else(m_crystallography_tol, "tol", TOL);
         settings.get_if(m_crystallography_tol, "crystallography_tol");
-        
+
         settings.get_else(m_lin_alg_tol, "lin_alg_tol", 1e-10);
 
         // read nlist settings, or generate defaults
@@ -239,7 +239,7 @@ namespace CASM {
   double ProjectSettings::crystallography_tol() const {
     return m_crystallography_tol;
   }
-  
+
   /// \brief Get current project linear algebra tolerance
   double ProjectSettings::lin_alg_tol() const {
     return m_lin_alg_tol;
@@ -464,7 +464,7 @@ namespace CASM {
     m_crystallography_tol = _tol;
     return true;
   }
-  
+
   /// \brief Set linear algebra tolerance
   bool ProjectSettings::set_lin_alg_tol(double _tol) {
     m_lin_alg_tol = _tol;
