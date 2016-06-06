@@ -18,32 +18,12 @@ namespace CASM {
     Function::operation_table[sclass_ID()][sclass_ID()] = new VarVarOperation();
 
   }
-  /*
-  template< class Base >
-  template< class Derived >
-  int HierarchyID<Derived>::new_class_ID(const DerivedID<Derived, Base> &_ID){
-    static int Nclass=0;
-    Base::extend_hierarchy();
-    Derived::fill_dispatch_table();
-    return Nclass++;
-  }
-  */
-
 
   //*******************************************************************************************
 
-  Variable::Variable(const Variable &old_var) :
-    m_var_compon(old_var.var_compon()),
-    m_sym_rep_ID(old_var.sym_rep_ID()),
-    m_coeffs(old_var.coeffs()) {
-
-  }
-  //*******************************************************************************************
-
-  Variable::Variable(const Array<ContinuousDoF> &_var_compon, int var_ind, SymGroupRepID _sym_rep_ID) :
-    m_var_compon(_var_compon),
-    m_sym_rep_ID(_sym_rep_ID),
-    m_coeffs(_var_compon.size()) {
+  Variable::Variable(const DoFSet &_dof_set, int var_ind) :
+    m_dof_set(_dof_set),
+    m_coeffs(_dof_set.size()) {
 
     m_coeffs.setZero();
     m_coeffs[var_ind] = 1.0;
@@ -51,9 +31,8 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  Variable::Variable(const Array<ContinuousDoF> &_var_compon, const Eigen::VectorXd &_coeffs, SymGroupRepID _sym_rep_ID) :
-    m_var_compon(_var_compon),
-    m_sym_rep_ID(_sym_rep_ID),
+  Variable::Variable(const DoFSet &_dof_set, const Eigen::VectorXd &_coeffs) :
+    m_dof_set(_dof_set),
     m_coeffs(_coeffs) {
 
   }
@@ -90,7 +69,7 @@ namespace CASM {
   Index Variable::num_terms() const {
     Index np(0);
 
-    for(Index i = 0; i < m_var_compon.size(); i++) {
+    for(Index i = 0; i < dof_set().size(); i++) {
       if(!almost_zero(m_coeffs[i])) {
         np++;
       }
@@ -103,7 +82,7 @@ namespace CASM {
   //*******************************************************************************************
 
   double Variable::leading_coefficient() const {
-    for(Index i = 0; i < m_var_compon.size(); i++) {
+    for(Index i = 0; i < dof_set().size(); i++) {
       if(!almost_zero(m_coeffs[i])) {
         return m_coeffs[i];
       }
@@ -114,7 +93,7 @@ namespace CASM {
   //*******************************************************************************************
 
   double Variable::leading_coefficient(Index &index) const {
-    for(index = 0; index < m_var_compon.size(); index++) {
+    for(index = 0; index < dof_set().size(); index++) {
       if(!almost_zero(m_coeffs[index])) {
         return m_coeffs[index];
       }
@@ -138,7 +117,7 @@ namespace CASM {
 
     std::stringstream tformula, ttex;
     Array<int> var_ind;
-    for(Index i = 0; i < m_var_compon.size(); i++) {
+    for(Index i = 0; i < dof_set().size(); i++) {
       if(!almost_zero(m_coeffs[i])) {
         var_ind.push_back(i);
       }
@@ -185,8 +164,8 @@ namespace CASM {
         ttex << irrational_to_tex_string(m_coeffs[var_ind[i]] / var_scale, 10 * m_coeffs.size() * m_coeffs.size()) << ' ';
       }
 
-      tformula << m_var_compon[var_ind[i]].type_name() << '[' << m_var_compon[var_ind[i]].ID() << ']';
-      ttex << m_var_compon[var_ind[i]].type_name() << '_' << m_var_compon[var_ind[i]].ID();
+      tformula << dof_set()[var_ind[i]].var_name() << '[' << dof_set()[var_ind[i]].ID() << ']';
+      ttex << dof_set()[var_ind[i]].var_name() << '_' << dof_set()[var_ind[i]].ID();
     }
     if(var_ind.size() > 1) {
       tformula << ")";
@@ -202,12 +181,12 @@ namespace CASM {
     m_formula.clear();
     refresh_ID();
     Eigen::MatrixXd const *tmat;
-    tmat = op.get_matrix_rep(m_sym_rep_ID);
+    tmat = op.get_matrix_rep(sym_rep_ID());
     if(tmat) {
       m_coeffs = (*tmat) * m_coeffs;
     }
     else {
-      std::cerr << "WARNING: Attempting to reference invalid symmetry matrix (From rep_ID " << m_sym_rep_ID << ") in Variable::apply_sym!  Continuing...\n";
+      std::cerr << "WARNING: Attempting to reference invalid symmetry matrix (From rep_ID " << sym_rep_ID() << ") in Variable::apply_sym!  Continuing...\n";
     }
     return this;
   }
@@ -215,14 +194,14 @@ namespace CASM {
   //*******************************************************************************************
   int Variable::register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles) {
     int t_tot(0);
-    for(Index i = 0; i < m_var_compon.size(); i++) {
-      if(m_var_compon[i].type_name() == dof_name) {
-        if(!valid_index(m_var_compon[i].ID()) || m_var_compon[i].ID() >= remote_handles.size()) {
-          std::cerr << "CRITICAL ERROR: In Variable::register_remotes(), m_var_compon[" << i << "].ID() = " << m_var_compon[i].ID() << " is out of bounds.\n"
+    for(Index i = 0; i < dof_set().size(); i++) {
+      if(dof_set()[i].var_name() == dof_name) {
+        if(!valid_index(dof_set()[i].ID()) || dof_set()[i].ID() >= remote_handles.size()) {
+          std::cerr << "CRITICAL ERROR: In Variable::register_remotes(), dof_set()[" << i << "].ID() = " << dof_set()[i].ID() << " is out of bounds.\n"
                     << "                Exiting...\n";
           exit(1);
         }
-        m_var_compon[i].register_remote(remote_handles[m_var_compon[i].ID()]);
+        dof_set()[i].register_remote(remote_handles[dof_set()[i].ID()]);
         t_tot++;
       }
     }
@@ -236,12 +215,12 @@ namespace CASM {
     Index ID_ind;
     bool is_updated(false);
 
-    for(Index i = 0; i < m_var_compon.size(); i++) {
-      // IMPORTANT: Do before_IDs.find(), NOT m_var_compon.find() (if such a thing existed)
-      ID_ind = before_IDs.find(m_var_compon[i].ID());
+    for(Index i = 0; i < dof_set().size(); i++) {
+      // IMPORTANT: Do before_IDs.find(), NOT dof_set().find() (if such a thing existed)
+      ID_ind = before_IDs.find(dof_set()[i].ID());
       // Only set ID if DoF doesn't have an ID lock
-      if(ID_ind < after_IDs.size() && !m_var_compon[i].is_locked()) {
-        m_var_compon[i].set_ID(after_IDs[ID_ind]);
+      if(ID_ind < after_IDs.size() && !dof_set()[i].is_locked()) {
+        dof_set()[i].set_ID(after_IDs[ID_ind]);
         // The new ID only changes the formula if the corresponding coeff is nonzero
         if(!almost_zero(m_coeffs[i]))
           is_updated = true;
@@ -258,11 +237,11 @@ namespace CASM {
 
   bool Variable::compare(const Variable *RHS)const {
 
-    if(m_var_compon.size() != RHS->m_var_compon.size())
+    if(dof_set().size() != RHS->dof_set().size())
       return false;
 
-    for(Index i = 0; i < m_var_compon.size(); i++) {
-      if(!m_var_compon[i].compare((RHS->m_var_compon)[i], false))
+    for(Index i = 0; i < dof_set().size(); i++) {
+      if(!dof_set()[i].compare((RHS->dof_set())[i], false))
         return false;
     }
 
@@ -283,8 +262,8 @@ namespace CASM {
 
   double Variable::remote_eval() const {
     double t_eval(0.0);
-    for(Index i = 0; i < m_var_compon.size(); i++)
-      t_eval += m_coeffs[i] * m_var_compon[i].remote_value();
+    for(Index i = 0; i < dof_set().size(); i++)
+      t_eval += m_coeffs[i] * dof_set()[i].remote_value();
 
     return t_eval;
   }
@@ -292,9 +271,9 @@ namespace CASM {
   //*******************************************************************************************
 
   double Variable::remote_deval(const DoF::RemoteHandle &dvar) const {
-    for(Index i = 0; i < m_var_compon.size(); i++) {
-      if(dvar.d_ptr() && dvar.d_ptr() == m_var_compon[i].remote_ptr()) {
-        //std::cout << "derivative hit: " << m_coeffs[i] << '*' <<  m_var_compon[i].type_name() << '[' << m_var_compon[i].ID() << "]\n";
+    for(Index i = 0; i < dof_set().size(); i++) {
+      if(dvar.d_ptr() && dvar.d_ptr() == dof_set()[i].remote_ptr()) {
+        //std::cout << "derivative hit: " << m_coeffs[i] << '*' <<  dof_set()[i].var_name() << '[' << dof_set()[i].ID() << "]\n";
         return m_coeffs[i];
       }
     }
@@ -343,15 +322,15 @@ namespace CASM {
     Variable const *VLHS(static_cast<Variable const *>(LHS));
     Variable const *VRHS(static_cast<Variable const *>(RHS));
     BasisSet LSet, RSet;
-    LSet.set_variable_basis(VLHS->var_compon(), VLHS->sym_rep_ID());
+    LSet.set_variable_basis(VLHS->dof_set(), VLHS->sym_rep_ID());
     std::vector<std::shared_ptr<BasisSet> > args;
 
     Index full_dim(LSet.size());
     Index LOffset(0);
     args.push_back(LSet.shared_copy());
 
-    if((VLHS->var_compon()) != (VRHS->var_compon())) {
-      RSet.set_variable_basis(VRHS->var_compon(), VRHS->sym_rep_ID());
+    if((VLHS->dof_set()) != (VRHS->dof_set())) {
+      RSet.set_variable_basis(VRHS->dof_set(), VRHS->sym_rep_ID());
       args.push_back(RSet.shared_copy());
       LOffset = LSet.size();
       full_dim += RSet.size();

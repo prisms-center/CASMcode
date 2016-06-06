@@ -7,7 +7,30 @@
 class SiteOrbitree;
 
 namespace CASM {
+  class BasisBuilder {
+  public:
+    virtual ~BasisBuilder() {}
+
+    virtual void prepare(Structure const &_prim) {
+
+    }
+
+    virtual std::vector<ClexBasis::DoFType> filter_dof_types(std::vector<ClexBasis::DoFType> const &_dof_types) {
+      return _dof_types;
+    }
+
+    virtual void pre_generate
+
+    std::unique_ptr<BasisBuilder> clone()const {
+      return std::unique_ptr<BasisBuilder>(_clone());
+    }
+  private:
+    virtual BasisBuilder *_clone()const = 0;
+
+  };
+
   class ClexBasis {
+  public:
     typedef std::vector<BasisSet> BSetOrbit;
     typedef std::string DoFType;
     typedef std::vector<BSetOrbit>::const_iterator BSetOrbitIterator;
@@ -57,6 +80,8 @@ namespace CASM {
     /// \brief Performs heavy lifting for populating site bases in m_site_bases
     void _populate_site_bases(Structure const &_prim);
 
+    notstd::cloneable_ptr<BasisBuilder> m_builder;
+
     /// \brief Collection of all cluster BasisSets, one per cluster orbit
     std::vector<BSetOrbit> m_bset_tree;
 
@@ -89,11 +114,12 @@ namespace CASM {
                                                        Orbit<IntegralCluster> const &_clust_orbit,
                                                        PrimNeighborList const &_nlist,
                                                        std::vector<FunctionVisitor *> const &labelers,
-                                                       Index nlist_index);
+                                                       Index sublat_index);
 
   /// b_index is the basis site index, f_index is the index of the configurational site basis function in Site::occupant_basis
   /// nlist_index is the index into the nlist for the site the flower centers on
   std::vector<std::string> delta_occfunc_flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
+                                                                     Orbit<IntegralCluster> const &_clust_orbit,
                                                                      PrimNeighborList const &_nlist,
                                                                      BasisSet site_basis,
                                                                      const std::vector<FunctionVisitor *> &labelers,

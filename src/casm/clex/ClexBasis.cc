@@ -21,7 +21,7 @@ namespace CASM {
 
     for(Index i = 0; i < _orbits.size(); i++) {
       m_bset_tree[i].reserve(_orbits[i].size());
-      m_bset_tree[i].push_back(generate_clust_basis(_orbits[i].prototype(), local_keys, global_keys));
+      m_bset_tree[i].push_back(_construct_prototype_basis(_orbits[i], local_keys, global_keys /*, polynomial_order?*/));
       for(Index j = 1; j < _orbits[i].size(); j++) {
         m_bset_tree[i].push_back((*(_orbits[i].equivalence_map(j).first))*m_bset_tree[i][0]);
       }
@@ -59,15 +59,17 @@ namespace CASM {
   //                   {e1,e2,e3,e4,e5,e6},
   //                   {comp_a,comp_b}]
   //
-  BasisSet ClexBasis::_construct_clust_basis(IntegralCluster const &prototype,
-                                             std::vector<DoFType> const &local_keys,
-                                             std::vector<DoFType> const &global_keys,
-                                             Index max_poly_order) const {
+  BasisSet ClexBasis::_construct_prototype_basis(Orbit<IntegralCluster> const &_orbit,
+                                                 std::vector<DoFType> const &local_keys,
+                                                 std::vector<DoFType> const &global_keys,
+                                                 Index max_poly_order) const {
     //std::cout<<"In IntegralCluster::generate_clust_basis, the size of this cluster is:"<<size()<<std::endl;
     //std::cout<<"valid_index evaluates to:"<<valid_index(max_poly_order)<<std::endl;
 
+    // Default polynomial order is cluster size
     if(!valid_index(max_poly_order))
-      max_poly_order = prototype.size();
+      max_poly_order = orbit.prototype().size();
+
     //std::cout<<"Max_poly_order "<<max_poly_order<<std::endl;
 
     std::vector<BasisSet const *> arg_subsets;
@@ -75,6 +77,7 @@ namespace CASM {
       arg_subsets.push_back(&(m_global_bases[key]));
     }
 
+    // copy local site bases to
     std::vector<BasisSet> all_local;
     all_local.reserve(local_keys.size());
 
@@ -84,22 +87,22 @@ namespace CASM {
       // i.e., make copies in 'tlocal' and reset the DoF_IDs to {0,1,2,etc...}
       std::vector<BasisSet> const &arg_vec(m_local_bases[key]);
       std::vector<BasisSet> tlocal;
-      tlocal.reserve(prototype.size());
+      tlocal.reserve(orbit.prototype().size());
       std::vector<BasisSet const *> site_args(size(), nullptr);
       //Loop over sites
-      for(Index i = 0; i < prototype.size(); i++) {
-        if(arg_vec[prototype[i].sublat()].size()) {
-          tlocal.push_back(arg_vec[prototype[i].sublat()]);
+      for(Index i = 0; i < orbit.prototype().size(); i++) {
+        if(arg_vec[orbit.prototype()[i].sublat()].size()) {
+          tlocal.push_back(arg_vec[orbit.prototype()[i].sublat()]);
           tlocal.back().set_dof_IDs(std::vector<Index>(1, i));
           site_args[i] = &tlocal.back();
         }
       }
-      all_local.push_back(ClexBasis_impl::construct_clust_dof_basis(prototype, site_args));
+      all_local.push_back(ClexBasis_impl::construct_clust_dof_basis(_orbit.prototype(), site_args));
       if(all_local.back().size())
         arg_subsets.push_back(&(all_local.back()));
     }
 
-    return m_generating_function(prototype, arg_subsets, max_poly_order, 1);
+    return m_basis_builder(_orbit, arg_subsets, max_poly_order, 1);
   }
 
   //********************************************************************
@@ -212,8 +215,11 @@ namespace CASM {
         // Continue if the cluster site doesn't belong to the target sublattice, or if we have allready attempted the translation
         if(sublat_index != it -> sublat() || !(attempted_trans.insert(it->unitcell()).second))
           continue;
+        IntegralCluster trans_clust = _clust_orbit[ne] - it->unitcell();
+        if(!_clust_orbit.sym_compare().intra_orbit_equal(_clust_orbit[ne], trans_clust))
+          continue;
 
-        _bset_orbit[ne].set_dof_IDs(_nlist.indices((_clust_orbit[ne] - it->unitcell()).elements()));
+        _bset_orbit[ne].set_dof_IDs(_nlist.indices(trans_clust.elements()));
 
         for(Index nl = 0; nl < labelers.size(); nl++)
           _bset_orbit[ne].accept(*labelers[nl]);
@@ -243,62 +249,76 @@ namespace CASM {
   }
 
   //********************************************************************
-  //TODO:
   /// b_index is the basis site index, f_index is the index of the configurational site basis function in Site::occupant_basis
   /// nlist_index is the index of the basis site in the neighbor list
-  std::vector<std::string>  delta_occfunc_flower_function_cpp_strings(ClexBasis const &_clex_basis,
-                                                                      BasisSet site_basis, // passed by value because we use it as a temporary
-                                                                      const std::vector<FunctionVisitor *> &labelers,
-                                                                      Index nlist_index,
-                                                                      Index b_index,
-                                                                      Index f_index) {
+  std::vector< std::pair< UnitCell, std::vector< std::string > > >
+  delta_occfunc_flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
+                                            Orbit<IntegralCluster> const &_clust_orbit,
+                                            PrimNeighborList const &_nlist,
+                                            BasisSet site_basis,
+                                            const std::vector<FunctionVisitor *> &labelers,
+                                            Index sublat_index,
+                                            Index f_index) {
 
-    std::vector<BasisSet> const &bset_orbit(m_bset_tree[_orbit.index()]);
-    std::vector<std::string> formulae(bset_orbit[0].size(), std::string());
-    std::string suffix;
-    Index ib;
+    std::vector<std::string> formulae(_bset_orbit[0].size(), std::string());
+    std::string prefix, suffix;
     //normalize by multiplicity (by convention)
-    if(size()*_orbit.prototype.size() > 1) {
-      formulae.resize(bset_orbit[0].size(), std::string("("));
-      suffix = ")/" + std::to_string(size()) + ".";
+    if(_clust_orbit.size() > 1) {
+      prefix = "(";
+      suffix = ")/" + std::to_string(_clust_orbit.size()) + ".";
     }
 
-    for(Index ne = 0; ne < _orbit.size(); ne++) {
-      //std::cout << " **** for ne = " << ne << ":\n";
-      for(Index nt = 0; nt < _orbit[ne].trans_nlists().size(); nt++) {
-        ib = _orbit[ne].trans_nlist(nt).find(nlist_index);
-        if(ib == _orbit[ne].size())
+    // loop over equivalent clusters
+    for(Index ne = 0; ne < _clust_orbit.size(); ne++) {
+
+      // for each site in the cluster that belongs to the target sublattice,
+      // translate the cluster so that that site is within the (0,0,0) cell
+      // Use std::set to ensure that each translation is only attempted once
+      std::set<UnitCell> attempted_trans;
+
+      // loop over cluster sites
+      auto it(_clust_orbit[ne].cbegin()), end_it(_clust_orbit[ne].cbegin());
+      for(; it != end_it; ++it) {
+        // HERE
+        // Continue if the cluster site doesn't belong to the target sublattice, or if we have allready attempted the translation
+        if(sublat_index != it -> sublat() || !(attempted_trans.insert(it->unitcell()).second))
           continue;
-        //std::cout << " **** for translist: " << _orbit[ne].trans_nlist(nt) << ":\n";
-        _orbit[ne].set_nlist_inds(_orbit[ne].trans_nlist(nt));
 
-        site_basis.set_dof_IDs(std::vector<Index>(1, _orbit[ne][ib].nlist_ind()));
+        IntegralCluster trans_clust = _clust_orbit[ne] - it->unitcell();
+        if(!_clust_orbit.sym_compare().intra_orbit_equal(_clust_orbit[ne], trans_clust))
+          continue;
 
-        BasisSet quotient_basis = bset_orbit[ne].poly_quotient_set(site_basis[f_index]);
+        _bset_orbit[ne].set_dof_IDs(_nlist.indices(trans_clust.elements()));
+
+        site_basis.set_dof_IDs(std::vector<Index>(1, _nlist.index(_clust_orbit[ne][ib])));
+
+        BasisSet quotient_basis = _bset_orbit[ne].poly_quotient_set(site_basis[f_index]);
         for(Index nl = 0; nl < labelers.size(); nl++)
           quotient_basis.accept(*labelers[nl]);
 
         for(Index nf = 0; nf < quotient_basis.size(); nf++) {
 
-          if((quotient_basis[nf]->formula()) == "0")
+          if(quotient_basis[nf]->is_zero())
             continue;
 
-          if(formulae[nf].size() > 1)
+          if(formulae[nf].empty())
+            formulae[nf] += prefix;
+          else if((quotient_basis[nf]->formula())[0] != '-' && (quotient_basis[nf]->formula())[0] != '+')
             formulae[nf] += " + ";
-          formulae[nf] += "(" + quotient_basis[nf]->formula() + ")";
+
+          formulae[nf] += quotient_basis[nf]->formula();
         }
       }
     }
 
-    // Make sure that formulae that evaluate to zero have an empty sting.
-    for(Index nf = 0; nf < bset_orbit[0].size(); nf++) {
-      if(formulae[nf].size() <= 1)
-        formulae[nf].clear();
-      else
+    // append suffix to all formulae
+    for(Index nf = 0; nf < formulae.size(); nf++) {
+      if(!formulae[nf].empty())
         formulae[nf] += suffix;
     }
 
     return formulae;
+
   }
 
   //***********************************************

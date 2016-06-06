@@ -132,7 +132,7 @@ namespace CASM {
     void remote_deval_to(IteratorType result_begin, IteratorType result_end, const DoF::RemoteHandle &dvar)const;
 
     /// Define the basis set to contain only variables (e.g., x,y,z)
-    void set_variable_basis(const Array<ContinuousDoF> &tvar_compon, SymGroupRepID _sym_rep_ID);
+    void set_variable_basis(const DoFSet &_dof_set);
 
     void set_dof_IDs(const Array<Index> &new_IDs);
 

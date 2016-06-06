@@ -29,13 +29,10 @@ namespace CASM {
     //  mutable std::string m_formula, m_tex_formula;
     //  ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    // m_var_compon defines coordinate system of variables
-    Array<ContinuousDoF> m_var_compon;
+    // m_dof_set defines coordinate system of variables
+    DoFSet m_dof_set;
 
-    //Symmetry representation for variable space (e.g., {x,y,z})
-    SymGroupRepID m_sym_rep_ID;
-
-    //coeffs defines linear combination (i.e., vector) of m_var_compon
+    //coeffs defines linear combination (i.e., vector) of m_dof_set
     Eigen::VectorXd m_coeffs;
 
     //Default construction not allowed
@@ -43,12 +40,12 @@ namespace CASM {
 
     // Copy construction is private.
     // Copy construction should only occur in Variable::copy()
-    Variable(const Variable &old_var);
+    Variable(const Variable &old_var) = default;
 
   public:
 
-    Variable(const Array<ContinuousDoF> &tvar, int var_ind, SymGroupRepID rep_ID);
-    Variable(const Array<ContinuousDoF> &tvar, const Eigen::VectorXd &init_coeffs, SymGroupRepID rep_ID);
+    Variable(const DoFSet &tvar, int var_ind);
+    Variable(const DoFSet &tvar, const Eigen::VectorXd &init_coeffs);
 
     static void fill_dispatch_table();
 
@@ -68,11 +65,12 @@ namespace CASM {
     double leading_coefficient(Index &index) const;
     double get_coefficient(Index i) const;
 
-    const Array<ContinuousDoF> &var_compon() const {
-      return m_var_compon;
+    const DoFSet &dof_set() const {
+      return m_dof_set;
     }
+
     SymGroupRepID sym_rep_ID() const {
-      return m_sym_rep_ID;
+      return dof_set.sym_rep_ID();
     }
 
     const Eigen::VectorXd &coeffs() const {

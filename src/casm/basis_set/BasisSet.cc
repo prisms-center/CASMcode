@@ -286,17 +286,17 @@ namespace CASM {
 
   }
   //*******************************************************************************************
-  void BasisSet::set_variable_basis(const Array<ContinuousDoF> &tvar_compon, SymGroupRepID _var_sym_rep_ID) {
+  void BasisSet::set_variable_basis(const DoFSet _dof_set) {
     m_argument.clear();
-    m_basis_symrep_ID = _var_sym_rep_ID;
+    m_basis_symrep_ID = _dof_set.sym_rep_ID();
     Array<Index> tdof_IDs;
-    for(Index i = 0; i < tvar_compon.size(); i++) {
-      if(!tvar_compon[i].is_locked() && !tdof_IDs.contains(tvar_compon[i].ID()))
-        tdof_IDs.push_back(tvar_compon[i].ID());
+    for(Index i = 0; i < _dof_set.size(); i++) {
+      if(!_dof_set[i].is_locked() && !tdof_IDs.contains(_dof_set[i].ID()))
+        tdof_IDs.push_back(_dof_set[i].ID());
     }
     set_dof_IDs(tdof_IDs);
-    for(Index i = 0; i < tvar_compon.size(); i++) {
-      push_back(new Variable(tvar_compon, i, _var_sym_rep_ID));
+    for(Index i = 0; i < _dof_set.size(); i++) {
+      push_back(new Variable(tvar_compon, i));
     }
     _refresh_ID();
   }
