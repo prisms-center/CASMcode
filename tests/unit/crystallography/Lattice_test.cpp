@@ -53,6 +53,7 @@ void lattice_read_test() {
 }
 
 void lattice_superduper_test() {
+  //This point group will remain empty so that it checks more cases
   SymGroup pg;
   Lattice lat(Lattice::fcc());
 

@@ -263,7 +263,7 @@ namespace CASM {
   //*******************************************************************************************
 
   PrimNeighborList &PrimClex::nlist() const {
-    
+
     // lazy neighbor list generation
     if(!m_nlist) {
 
@@ -520,31 +520,47 @@ namespace CASM {
 
   }
 
-  //*******************************************************************************************
-  /**  GENERATE_SUPERCELLS
-   *   Generates all unique supercells between volStart and
-   *   volEnd of PRIM volumes. Call this routine before you
-   *   enumerate configurations.
+  /**
+   * Generates all unique supercells between volStart and
+   * volEnd of PRIM volumes. Call this routine before you
+   * enumerate configurations.
    *
-   *  ARN 100213
+   * The provided transformation matrix can be used to enumerate
+   * over lattice vectors that are not the ones belonging to the
+   * primitive lattice (e.g. enumerate supercells of another supercell,
+   * or enumerate over a particular lattice plane)
+   *
+   * The number of dimensions (must be equal to 1, 2 or 3) specify
+   * which directions the supercells should be enumerated in, resulting
+   * in 1D, 2D or 3D supercells. The enumeration is relative to the provided
+   * transformation matrix. For dimension n, the first n columns of the
+   * transformation matrix are used to construct supercells, while
+   * the remaining 3-n columns remain fixed.
+   *
+   * The new functionality of restricted supercell enumeration can
+   * be easily bypassed by passing dims=3 and G=Eigen::Matrix3i::Identity()
+   *
+   * @param[in] volStart Minimum volume supercell, relative to det(G)
+   * @param[in] volEnd Maximum volume supercell, relative to det(G)
+   * @param[in] dims Number of dimensions to enumerate over (1D, 2D or 3D supercells)
+   * @param[in] G Generating matrix. Restricts enumeration to resulting vectors of P*G, where P=primitive.
+   *
    */
-  //*******************************************************************************************
-  void PrimClex::generate_supercells(int volStart, int volEnd, bool verbose) {
+
+  void PrimClex::generate_supercells(int volStart, int volEnd, int dims, const Eigen::Matrix3i &G, bool verbose) {
     Array < Lattice > supercell_lattices;
-    prim.lattice().generate_supercells(supercell_lattices, prim.factor_group(), volEnd, volStart);    //point_group?
+    prim.lattice().generate_supercells(supercell_lattices, prim.factor_group(), volStart, volEnd, dims, G);
     for(Index i = 0; i < supercell_lattices.size(); i++) {
       Index list_size = supercell_list.size();
       Index index = add_canonical_supercell(supercell_lattices[i]);
-      if(supercell_list.size() != list_size) {
+      if(supercell_list.size() != list_size && verbose) {
         std::cout << "  Generated: " << supercell_list[index].get_name() << "\n";
       }
       else {
         std::cout << "  Generated: " << supercell_list[index].get_name() << " (already existed)\n";
       }
     }
-
-    //std::cout << supercell_lattices.size() << " supercells were generated\n";
-
+    return;
   }
 
   //*******************************************************************************************

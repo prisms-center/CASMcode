@@ -98,7 +98,7 @@ namespace CASM {
     /// Superlattices are enumerated with volumes \param min_prim_vol <= volume <= \param max_prim_vol
     /// \param effective_pg is a group that should either be equivalent to the full point group of this lattice
     /// or be a subgroup of that full point group
-    void generate_supercells(Array<Lattice> &supercell, const SymGroup &effective_pg, int max_prim_vol, int min_prim_vol = 1) const;
+    void generate_supercells(Array<Lattice> &supercell, const SymGroup &effective_pg, int min_prim_vol, int max_prim_vol, int dims, const Eigen::Matrix3i &T) const;
 
     /// \brief make a supercell of this lattice.
     /// Equivalent to Lattice(lat_column_mat()*trans_mat)
