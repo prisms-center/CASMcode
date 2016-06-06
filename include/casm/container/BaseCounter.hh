@@ -31,6 +31,7 @@ namespace CASM {
       ++m_ind;
       return *this;
     }
+
     CounterValueIterator operator++(int) {
       CounterValueIterator t_it(*this);
       ++(*this);
