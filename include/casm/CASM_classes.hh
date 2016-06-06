@@ -91,7 +91,6 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/ParamComposition.hh"
 #include "casm/clex/CompositionConverter.hh"
-#include "casm/clex/DoFManager.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigIterator.hh"

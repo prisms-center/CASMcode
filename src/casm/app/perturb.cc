@@ -12,6 +12,10 @@ namespace CASM {
 
   int perturb_command(const CommandArgs &args) {
 
+    throw std::runtime_error("Error: 'casm perturb' is being re-implemented");
+
+    /*
+
     double tol = CASM::TOL;
     bool is_trans = false;
     fs::path cspecs_path, abs_cspecs_path;
@@ -42,8 +46,7 @@ namespace CASM {
     try {
       po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
-      /** --help option
-       */
+      // --help option
       if(vm.count("help")) {
         std::cout << "\n";
         std::cout << desc << std::endl;
@@ -219,7 +222,7 @@ namespace CASM {
     std::cout << std::endl;
 
     return 0;
+    */
   };
-
 }
 

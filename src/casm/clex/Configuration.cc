@@ -1075,7 +1075,7 @@ namespace CASM {
           f.scel.prim_grid().unitcell(prim_motif_tile_ind) + oriented_uccoord.unitcell()
         );
 
-        Index occ_ind = f.scel.find(mc_uccoord);
+        Index occ_ind = f.scel.linear_index(mc_uccoord);
 
         tscel_occ[occ_ind] = motif.occ(s);
       }

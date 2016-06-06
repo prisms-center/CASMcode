@@ -194,7 +194,8 @@ namespace CASM {
         // write source code
         fs::ofstream outfile;
         outfile.open(dir.clexulator_src(set.name(), set.bset()));
-        print_clexulator(*clex_basis, nlist, set.global_clexulator(), outfile, set.crystallography_tol());
+        throw std::runtime_error("Error: print_clexulator is being re-implemented");
+        //print_clexulator(*clex_basis, nlist, set.global_clexulator(), outfile, set.crystallography_tol());
         outfile.close();
 
         args.log.write(dir.clexulator_src(set.name(), set.bset()).string());

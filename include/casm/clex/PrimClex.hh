@@ -7,7 +7,6 @@
 #include "casm/casm_io/Log.hh"
 
 #include "casm/crystallography/Structure.hh"
-#include "casm/clex/DoFManager.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Clexulator.hh"
@@ -43,8 +42,6 @@ namespace CASM {
     Structure m_prim;
     bool m_vacancy_allowed;
     Index m_vacancy_index;
-
-    mutable DoFManager m_dof_manager;
 
     /// Contains all the supercells that were involved in the enumeration.
     boost::container::stable_vector< Supercell > m_supercell_list;
@@ -221,49 +218,12 @@ namespace CASM {
     Index add_canonical_supercell(const Lattice &superlat);
 
 
-    /// Set internal values of each DoFEnvironment
-    void set_global_dof_state(const Configuration &curr_config)const {
-      m_dof_manager.set_global_dof_state(curr_config);
-    };
-
-    void set_local_dof_state(const Configuration &curr_config, Index l)const {
-      m_dof_manager.set_local_dof_state(curr_config, l);
-    };
-
-    /// Delete 'properties.ref_state.X.json' files,
-    /// Then call 'clear_reference_properties'
-    //void clear_reference_states();
-
-    /// Sets the root reference state to be the calculated properties of the chosen config
-    /// Calls 'clear_reference_properties'
-    //void set_reference_state(int refid, const Configuration &config);
-
-    /// Check that it is valid to use 'config' as reference state 'refid', returns bool and if false, sets 'reason_invalid'
-    ///   Currently checks:
-    ///     1) that the necessary properties have been calculated,
-    ///     2) that the same Configuration is not being used twice
-    ///   Needs to check that reference states span composition space
-    //bool valid_reference_state(int refid, const Configuration &config, std::string &reason_invalid) const;
-
-    /// find calculated configurations closest to
-    /// [0, 0, 0, ...], [1, 0, 0, ...], [0, 1, 0, ...], [0, 0, 1, ...], ...
-    /// and set them as the root reference states, also calls regenerate_references
-    /// Clears reference states and properties whether or not it succeeds
-    //void set_reference_state_auto();
-
-    /// Clear 'reference' and 'delta' properties from all Configurations
-    /// Re-write all Configurations, updating:
-    ///   param_composition.json
-    ///   properties.calc.json
-    ///   properties.ref.json
-    ///   properties.delta.json
-    //void generate_references();
-
     bool has_global_clexulator() const;
     Clexulator global_clexulator() const;
 
     bool has_global_eci(std::string clex_name) const;
     const ECIContainer &global_eci(std::string clex_name) const;
+
   private:
 
     /// Initialization routines
@@ -273,13 +233,6 @@ namespace CASM {
     mutable Clexulator m_global_clexulator;
   };
 
-  class ClexBasis;
-  /// \brief Print clexulator
-  void print_clexulator(ClexBasis &clex_basis,
-                        const PrimNeighborList &nlist,
-                        std::string class_name,
-                        std::ostream &stream,
-                        double xtal_tol);
 
 }
 #endif
