@@ -1,0 +1,137 @@
+[
+  {
+    "documentation" : [
+      "Add more test cases following this example.                            ",
+      "                                                                       ",
+      "For each test case include the following input:                        ",
+      "                                                                       ",
+      "  'title': string                                                      ",
+      "     test case title                                                   ",
+      "                                                                       ",
+      "  'prim': JSON object                                                  ",
+      "    'prim.json' like JSON object describing primitive structure        ",
+      "                                                                       ",
+      "  'bspecs': JSON object                                                ",
+      "     'bspecs.json' like JSON object giving basis specifications for    ",
+      "     generating clusters and cluster functions                         ",
+      "                                                                       ",
+      "  'quiet': boolean (optional, default=false)                           ",
+      "     If true, do not print calculated results for tests that don't     ",
+      "     include output data. Otherwise, the expected results will be      ",
+      "     printed out so that they can be copied into this file.            ",
+      "                                                                       ",
+      "For each test case, optionally include the following output:           ",
+      "                                                                       ",
+      "  'Nclusters': 2d JSON array [branch, orbit] of integer                ",
+      "     The number of equivalent clusters in each orbit. Order of orbits  ",
+      "     matters.                                                          ",
+      "                                                                       ",
+      "  ...more tests as needed...                                           ",
+      "                                                                       "
+    ],
+    "title": "ZrO",
+    "prim": {
+      "basis" : [
+        {
+          "coordinate" : [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+          "occupant_dof" : [ "Zr" ]
+        },
+        {
+          "coordinate" : [ 0.666666666667, 0.333333333333, 0.500000000000 ],
+          "occupant_dof" : [ "Zr" ]
+        },
+        {
+          "coordinate" : [ 0.333333333333, 0.666666666667, 0.250000000000 ],
+          "occupant_dof" : [ "Va", "O" ]
+        },
+        {
+          "coordinate" : [ 0.333333333333, 0.666666666667, 0.750000000000 ],
+          "occupant_dof" : [ "Va", "O" ]
+        }
+      ],
+      "coordinate_mode" : "Fractional",
+      "description" : "hcp Zr with oct (O) ",
+      "lattice_vectors" : [
+        [ 3.233986860000, 0.000000000000, 0.000000000000 ],
+        [ -1.616993430000, 2.800714770000, 0.000000000000 ],
+        [ -0.000000000000, 0.000000000000, 5.168678340000 ]
+      ],
+      "title" : "ZrO"
+    },
+    "bspecs": {
+      "basis_functions" : {
+        "site_basis_functions" : "occupation"
+      },
+      "orbit_branch_specs" : {
+        "2" : {"max_length" : 8.0},
+        "3" : {"max_length" : 7.0},
+        "4" : {"max_length" : 5.0}
+      }
+    },
+    "quiet" : false,
+    "Nclusters": [
+      [ 1 ],
+      [ 2 ],
+      [ 2, 6, 12, 2, 6, 12, 12, 6, 12, 6, 6, 2 ],
+      [ 4, 24, 12, 12, 2, 12, 12, 24, 4, 24, 12, 24, 12, 24, 24, 12, 12, 24, 24, 24, 24, 12, 24, 6, 24, 12, 24, 24, 12, 4, 24, 24, 24, 24, 24, 24, 24, 12, 24, 24, 12, 12 ],
+      [ 12, 12, 12, 12, 6 ]
+    ]
+  },
+  {
+    "title" : "FCC_ternary",
+    "prim" : {
+      "basis" : [
+        {
+          "coordinate" : [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+          "occupant_dof" : [ "A", "B", "C" ]
+        }
+      ],
+      "coordinate_mode" : "Fractional",
+      "lattice_vectors" : [
+        [ 2.000000000000, 2.000000000000, 0.000000000000 ],
+        [ 0.000000000000e+00, 2.000000000000e+00, 2.000000000000 ],
+        [ 2.000000000000, 0.000000000000e+00, 2.000000000000 ]
+      ],
+      "title" : "FCC_ternary"
+    },
+    "bspecs" : {
+      "basis_functions" : {
+        "site_basis_functions" : "occupation"
+      },
+      "orbit_branch_specs" : {
+        "2" : {
+          "max_length" : 4.010000000000
+        }
+      },
+      "orbit_specs" : [
+        {
+          "coordinate_mode" : "Direct",
+          "include_subclusters" : true,
+          "prototype" : [
+            [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+            [ 1.000000000000, 0.000000000000, 0.000000000000 ],
+            [ 2.000000000000, 0.000000000000, 0.000000000000 ],
+            [ 3.000000000000, 0.000000000000, 0.000000000000 ]
+          ]
+        },
+        {
+          "coordinate_mode" : "Direct",
+          "include_subclusters" : true,
+          "prototype" : [
+            [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+            [ 0.000000000000, 1.000000000000, 0.000000000000 ],
+            [ 0.000000000000, 0.000000000000, 1.000000000000 ],
+            [ 1.000000000000, 1.000000000000, 1.000000000000 ]
+          ]
+        }
+      ]
+    },
+    "Nclusters" : [
+      [ 1 ],
+      [ 1 ],
+      [ 6, 3, 12, 6, 4, 6 ],
+      [ 8, 24, 6, 24, 12 ],
+      [ 24, 6 ]
+    ]
+  }
+]
