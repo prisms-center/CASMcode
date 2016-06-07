@@ -5,6 +5,7 @@
 
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/container/multivector.hh"
 #include "casm/symmetry/SymCompare.hh"
 
 namespace CASM {
@@ -23,7 +24,7 @@ namespace CASM {
   ///
   /// \ingroup Clusterography
   ///
-  template<typename _Element, typename _SymCompareType = PrimPeriodicSymCompare<_Element> >
+  template<typename _Element, typename _SymCompareType>
   class Orbit : public Comparisons<Orbit<_Element, _SymCompareType> > {
 
   public:
@@ -32,20 +33,13 @@ namespace CASM {
     typedef _Element Element;
     typedef _SymCompareType SymCompareType;
     typedef typename std::vector<Element>::const_iterator const_iterator;
-
-    Orbit() {}
+    typedef typename std::vector<SymOp>::const_iterator const_symop_iterator;
 
     /// \brief Construct an Orbit from a generating_element Element, using provided symmetry group
     Orbit(Element generating_element,
           const SymGroup &generating_group,
           const SymCompareType &sym_compare);
 
-    /// \brief Construct an Orbit from a generating_element Element, using provided symmetry op
-    template<typename SympOpIterator>
-    Orbit(Element generating_element,
-          SympOpIterator begin,
-          SympOpIterator end,
-          const SymCompareType &sym_compare);
 
     const_iterator begin() const {
       return m_element.cbegin();
@@ -87,21 +81,29 @@ namespace CASM {
       return m_element;
     }
 
+    /// \brief Return the equivalence map
+    ///
+    /// \returns element(i) compares equivalent to prototype().copy_apply(equivalence_map[i][j]) for all j
+    ///
+    const multivector<SymOp>::X<2> &equivalence_map() const {
+      return m_equivalence_map;
+    }
+
     /// \brief Return the equivalence map for element[index]
     ///
     /// \returns a pair of const_iterators, begin and end, over SymOp such that
-    /// element(index) compares equivalent to op*prototype()
-    std::pair<const_iterator, const_iterator> equivalence_map(size_type index) const {
-      return std::make_pair(m_equivalence_map.begin(), m_equivalence_map.end());
+    /// element(index) compares equivalent to prototype().copy_apply(op)
+    std::pair<const_symop_iterator, const_symop_iterator> equivalence_map(size_type index) const {
+      return std::make_pair(m_equivalence_map[index].begin(), m_equivalence_map[index].end());
     }
 
     /// \brief Find element in Orbit
     ///
     /// - Assumes 'e' is 'prepared', uses SymCompare<Element>::intra_orbit_equal
     ///   to check equivalence
-    const_iterator find(const Element &e) {
+    const_iterator find(const Element &e) const {
       return std::find_if(begin(), end(), [&](const Element & B) {
-        return m_sym_compare->intra_orbit_equal(e, B);
+        return m_sym_compare.intra_orbit_equal(e, B);
       });
     }
 
@@ -109,7 +111,7 @@ namespace CASM {
     ///
     /// - Assumes 'e' is 'prepared', uses SymCompare<Element>::intra_orbit_equal
     ///   to check equivalence
-    bool contains(const Element &e) {
+    bool contains(const Element &e) const {
       return this->find(e) != end();
     }
 
@@ -139,8 +141,8 @@ namespace CASM {
     /// \brief All symmetrically equivalent elements (excluding translations)
     std::vector<Element> m_element;
 
-    /// \brief element(i) is equivalent to m_equivalence_map(i, j)*prototype() for all j
-    std::vector<std::vector<SymOp> > m_equivalence_map;
+    /// \brief element(i) compares equivalent to prototype().copy_apply(m_equivalence_map[i][j]) for all j
+    multivector<SymOp>::X<2> m_equivalence_map;
 
     /// \brief Functor used to check compare Element, including symmetry rules,
     /// and make canonical forms

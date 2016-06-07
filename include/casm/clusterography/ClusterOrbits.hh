@@ -1,10 +1,19 @@
 #ifndef CASM_ClusterOrbits
 #define CASM_ClusterOrbits
 
-#include "casm/symmetry/Orbit.hh"
-#include "casm/clusterography/IntegralCluster.hh"
+#include <vector>
+#include <functional>
+#include <utility>
+#include <iostream>
+
+#include "casm/crystallography/UnitCellCoord.hh"
 
 namespace CASM {
+
+  /*class SymGroup;
+  class Index;
+  class Structure;
+  class Site;*/
 
   /** \defgroup IntegralCluster
 
@@ -16,14 +25,11 @@ namespace CASM {
   /* -- OrbitBranchSpecs Declarations ------------------------------------- */
 
   /// \brief Generate clusters using all Site
-  bool all_sites_filter(const Site &site) {
-    return true;
-  }
+  bool all_sites_filter(const Site &site);
 
   /// \brief Generate clusters using Site with site_occupant.size() > 1
-  bool alloy_sites_filter(const Site &site) {
-    return site.site_occupant().size() > 1;
-  }
+  bool alloy_sites_filter(const Site &site);
+
 
   /// \brief Store data used to generate an orbit branch of IntegralCluster
   ///
@@ -34,12 +40,12 @@ namespace CASM {
 
   public:
 
-    typedef std::vector<Site> Container;
+    typedef std::vector<UnitCellCoord> Container;
     typedef Container::const_iterator const_iterator;
     typedef _OrbitType OrbitType;
     typedef typename OrbitType::Element ClusterType;
     typedef typename OrbitType::SymCompareType SymCompareType;
-    typedef IntegralCluster::PrimType PrimType;
+    typedef Structure PrimType;
 
     /// \brief Filter returns true for allowed ClusterType, false for unallowed
     typedef std::function<bool (ClusterType)> Filter;
@@ -104,20 +110,32 @@ namespace CASM {
 
   };
 
+  /// \brief Output the neighborhood of UnitCellCoord within max_radius of a unit cell
+  template<typename CoordType, typename OutputIterator>
+  OutputIterator neighborhood(
+    const Structure &unit,
+    double max_radius,
+    std::function<bool (CoordType)> site_filter,
+    OutputIterator result,
+    double xtal_tol);
+
 
   /* -- Cluster Orbit generating function declarations ------------------------------------- */
 
   /// \brief Generate the asymmetric unit, including all sites
   template<typename OrbitOutputIterator, typename SymCompareType>
   OrbitOutputIterator make_asymmetric_unit(
-    const IntegralCluster::PrimType &prim,
+    const Structure &prim,
     const SymGroup &generating_grp,
     const SymCompareType &sym_compare,
     OrbitOutputIterator result);
 
   /// \brief Generate the asymmetric unit, using OrbitBranchSpecs
   template<typename OrbitType, typename OrbitOutputIterator>
-  OrbitOutputIterator make_asymmetric_unit(const OrbitBranchSpecs<OrbitType> &specs, OrbitOutputIterator result);
+  OrbitOutputIterator make_asymmetric_unit(
+    const OrbitBranchSpecs<OrbitType> &specs,
+    OrbitOutputIterator result,
+    std::ostream &status);
 
   /// \brief Use orbits of size n to generate orbits of size n+1
   template<typename OrbitType, typename OrbitInputIterator, typename OrbitOutputIterator>
@@ -139,9 +157,10 @@ namespace CASM {
   /// \brief Generate Orbit<IntegralCluster> by specifying max cluster length for each branch
   template<typename OrbitOutputIterator, typename SymCompareType>
   OrbitOutputIterator make_orbits(
-    const IntegralCluster::PrimType &prim,
+    const Structure &prim,
     const SymGroup &generating_grp,
     const std::vector<double> &max_length,
+    double crystallography_tol,
     const std::function<bool (Site)> &site_filter,
     const SymCompareType &sym_compare,
     OrbitOutputIterator result,
@@ -150,9 +169,10 @@ namespace CASM {
   /// \brief Generate Orbit<IntegralCluster> from bspecs.json-type JSON input file
   template<typename OrbitOutputIterator, typename SymCompareType>
   OrbitOutputIterator make_orbits(
-    const IntegralCluster::PrimType &prim,
+    const Structure &prim,
     const SymGroup &generating_grp,
     const jsonParser &bspecs,
+    double crystallography_tol,
     const std::function<bool (Site)> &site_filter,
     const SymCompareType &sym_compare,
     OrbitOutputIterator result,
@@ -165,7 +185,7 @@ namespace CASM {
   template<typename OrbitIterator>
   std::pair<OrbitIterator, OrbitIterator> orbit_branch(OrbitIterator begin,
                                                        OrbitIterator end,
-                                                       unsigned int size);
+                                                       Index size);
 
 }
 

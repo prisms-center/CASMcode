@@ -192,7 +192,7 @@ namespace test {
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);
-        BOOST_CHECK_MESSAGE(primclex.get_supercell_list().size() == 87, m_p.gets());
+        BOOST_CHECK_MESSAGE(primclex.supercell_list().size() == 87, m_p.gets());
       }
 
       {

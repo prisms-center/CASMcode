@@ -471,12 +471,17 @@ namespace CASM {
 
   // explicit template instantiations
 
+#define PRINT_CLUST_INST(ITERATOR,INSERTER,PRINTER) \
+  template void print_clust<ITERATOR,PRINTER>(ITERATOR begin, ITERATOR end, std::ostream &out, PRINTER printer); \
+  template jsonParser &write_clust<ITERATOR>(ITERATOR begin, ITERATOR end, jsonParser &json, PRINTER printer); \
+  template jsonParser &write_clust<ITERATOR>(ITERATOR begin, ITERATOR end, jsonParser &json, PRINTER printer, const jsonParser &bspecs);
+
 #define ORBIT_CONTAINER_INST(ITERATOR,INSERTER,ORBIT) \
-  template void print_clust<ITERATOR, ProtoSitesPrinter>(ITERATOR begin, ITERATOR end, std::ostream &out, ProtoSitesPrinter printer); \
+  PRINT_CLUST_INST(ITERATOR,INSERTER,ProtoSitesPrinter) \
+  PRINT_CLUST_INST(ITERATOR,INSERTER,FullSitesPrinter) \
+  PRINT_CLUST_INST(ITERATOR,INSERTER,ProtoFuncsPrinter) \
   template void print_site_basis_funcs<ITERATOR>(ITERATOR begin, ITERATOR end, const ClexBasis &clex_basis, std::ostream &out, COORD_TYPE mode); \
-  template INSERTER read_clust<INSERTER, typename ORBIT::SymCompareType>(INSERTER result, jsonParser &json, const Structure &prim, const SymGroup& generating_grp, const typename ORBIT::SymCompareType &sym_compare); \
-  template jsonParser &write_clust<ITERATOR>(ITERATOR begin, ITERATOR end, jsonParser &bspecs, jsonParser &json); \
-  template void write_basis<ITERATOR>(ITERATOR begin, ITERATOR end, const ClexBasis &clex_basis, jsonParser &json, double tol); \
+  template INSERTER read_clust<INSERTER, typename ORBIT::SymCompareType>(INSERTER result, jsonParser &json, const Structure &prim, const SymGroup& generating_grp, const typename ORBIT::SymCompareType &sym_compare);
 
 #define _VECTOR_IT(ORBIT) std::vector<ORBIT>::iterator
 #define _VECTOR_INSERTER(ORBIT) std::back_insert_iterator<std::vector<ORBIT> >

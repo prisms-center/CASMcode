@@ -108,6 +108,9 @@ namespace CASM {
 
   private:
 
+    /// make _eq accessible
+    friend class Comparisons<UnitCellCoord>;
+
     bool _eq(const UnitCellCoord &B) const;
 
     const UnitType *m_unit;
@@ -285,7 +288,18 @@ namespace CASM {
     return fill_json;
   }
 
-  /// \brief Read from json [b, i, j, k]
+  template<>
+  struct jsonConstructor<UnitCellCoord> {
+
+    /// \brief Read from json [b, i, j, k], using 'unit' for UnitCellCoord::unit()
+    static UnitCellCoord from_json(const jsonParser &json, const Structure &unit) {
+      UnitCellCoord coord(unit);
+      CASM::from_json(coord, json);
+      return coord;
+    }
+  };
+
+  /// \brief Read from json [b, i, j, k], assuming fill_value.unit() is already set
   inline void from_json(UnitCellCoord &fill_value, const jsonParser &read_json) {
 
     fill_value.sublat() = read_json[0].get<Index>();

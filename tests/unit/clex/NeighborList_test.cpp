@@ -6,7 +6,8 @@
 
 /// What is being used to test it:
 
-#include "casm/CASM_classes.hh"
+#include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clusterography/IntegralCluster.hh"
 #include "Common.hh"
 
 using namespace CASM;
@@ -36,7 +37,7 @@ BOOST_AUTO_TEST_CASE(PrimNeighborListBasics) {
 
   // expand
   std::set<UnitCellCoord> nbors;
-  nbors.insert(UnitCellCoord(0, UnitCell(3, 0, 0)));
+  nbors.insert(UnitCellCoord(prim, 0, UnitCell(3, 0, 0)));
   nlist.expand(nbors.begin(), nbors.end());
 
   // size
@@ -70,7 +71,7 @@ BOOST_AUTO_TEST_CASE(SuperNeighborListBasics) {
 
   // expand
   std::set<UnitCellCoord> nbors;
-  nbors.insert(UnitCellCoord(0, UnitCell(3, 0, 0)));
+  nbors.insert(UnitCellCoord(prim, 0, UnitCell(3, 0, 0)));
   nlist.expand(nbors.begin(), nbors.end());
 
   // size
@@ -131,7 +132,7 @@ BOOST_AUTO_TEST_CASE(Proj) {
   proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
-  Structure prim = primclex.get_prim();
+  Structure prim = primclex.prim();
   const DirectoryStructure &dir = primclex.dir();
   const ProjectSettings &set = primclex.settings();
 
@@ -143,13 +144,21 @@ BOOST_AUTO_TEST_CASE(Proj) {
   );
 
   // generate orbitree
-  SiteOrbitree tree(prim.lattice());
   jsonParser bspecs_json(proj.bspecs());
-  tree = make_orbitree(prim, bspecs_json);
+  std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+  double crystallography_tol = TOL;
+  make_orbits(prim,
+              prim.factor_group(),
+              bspecs_json,
+              crystallography_tol,
+              alloy_sites_filter,
+              PrimPeriodicIntegralClusterSymCompare(crystallography_tol),
+              std::back_inserter(orbits),
+              std::cout);
 
   // expand the nlist to contain 'tree'
   std::set<UnitCellCoord> nbors;
-  neighborhood(std::inserter(nbors, nbors.begin()), tree, prim, TOL);
+  prim_periodic_neighborhood(orbits.begin(), orbits.end(), std::inserter(nbors, nbors.begin()));
 
   //std::cout << "expand nlist" << std::endl;
   nlist.expand(nbors.begin(), nbors.end());
@@ -157,7 +166,7 @@ BOOST_AUTO_TEST_CASE(Proj) {
 
   //std::cout << "expand nlist again" << std::endl;
   nbors.clear();
-  nbors.insert(UnitCellCoord(0, UnitCell(4, 0, 0)));
+  nbors.insert(UnitCellCoord(prim, 0, UnitCell(4, 0, 0)));
   nlist.expand(nbors.begin(), nbors.end());
   BOOST_CHECK_EQUAL(nlist.size(), 381);
 

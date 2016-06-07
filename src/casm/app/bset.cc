@@ -2,6 +2,7 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clusterography/IntegralCluster.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ClexBasis.hh"
 
@@ -129,7 +130,7 @@ namespace CASM {
       }
 
       jsonParser bspecs_json;
-      std::vector<Orbit<IntegralCluster> > orbits;
+      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
       std::unique_ptr<ClexBasis> clex_basis;
 
       try {
@@ -141,6 +142,7 @@ namespace CASM {
         make_orbits(prim,
                     prim.factor_group(),
                     bspecs_json,
+                    set.crystallography_tol(),
                     alloy_sites_filter,
                     PrimPeriodicIntegralClusterSymCompare(set.crystallography_tol()),
                     std::back_inserter(orbits),
@@ -158,7 +160,7 @@ namespace CASM {
       // -- write clust.json ----------------
       {
         jsonParser clust_json;
-        write_clust(orbits.begin(), orbits.end(), bspecs_json, clust_json);
+        write_clust(orbits.begin(), orbits.end(), clust_json, ProtoSitesPrinter(), bspecs_json);
         clust_json.write(dir.clust(set.bset()));
 
         args.log.write(dir.clust(set.bset()).string());
@@ -169,7 +171,7 @@ namespace CASM {
       // -- write basis.json ----------------
       {
         jsonParser basis_json;
-        write_basis(orbits.begin(), orbits.end(), *clex_basis, basis_json, set.crystallography_tol());
+        write_clust(orbits.begin(), orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json);
         basis_json.write(dir.basis(set.bset()));
 
         args.log.write(dir.basis(set.bset()).string());
@@ -216,7 +218,7 @@ namespace CASM {
       PrimClex primclex(root, args.log);
       jsonParser clust_json(dir.clust(set.bset()));
 
-      std::vector<Orbit<IntegralCluster> > orbits;
+      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
       read_clust(
         std::back_inserter(orbits),
         clust_json,

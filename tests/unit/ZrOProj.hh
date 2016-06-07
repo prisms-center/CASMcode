@@ -135,7 +135,7 @@ namespace test {
       {
         m_p.popen(cd_and() + "casm enum --supercells --max 10");
         PrimClex primclex(dir, null_log());
-        BOOST_CHECK_MESSAGE(primclex.get_supercell_list().size() == 147, m_p.gets());
+        BOOST_CHECK_MESSAGE(primclex.supercell_list().size() == 147, m_p.gets());
       }
 
       {

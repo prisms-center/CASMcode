@@ -29,21 +29,12 @@ namespace CASM {
   public:
 
     typedef unsigned int size_type;
+    typedef typename CASM_TMP::traits<Derived>::MostDerived MostDerived;
     typedef typename CASM_TMP::traits<Derived>::Element Element;
     typedef typename CASM_TMP::traits<Derived>::InvariantsType InvariantsType;
     typedef typename std::vector<Element>::value_type value_type;
     typedef typename std::vector<Element>::iterator iterator;
     typedef typename std::vector<Element>::const_iterator const_iterator;
-
-    /// \brief Construct an empty GenericCluster
-    GenericCluster() {}
-
-    /// \brief Construct a GenericCluster with a range of Element
-    template<typename InputIterator>
-    GenericCluster(InputIterator _begin,
-                   InputIterator _end) :
-      m_element(_begin, _end) {}
-
 
     /// \brief Iterator to first UnitCellCoord in the cluster
     iterator begin() {
@@ -124,12 +115,22 @@ namespace CASM {
 
   protected:
 
-    Derived &derived() {
-      return *static_cast<Derived *>(this);
+    /// \brief Construct an empty GenericCluster
+    GenericCluster() {}
+
+    /// \brief Construct a GenericCluster with a range of Element
+    template<typename InputIterator>
+    GenericCluster(InputIterator _begin,
+                   InputIterator _end) :
+      m_element(_begin, _end) {}
+
+
+    MostDerived &derived() {
+      return *static_cast<MostDerived *>(this);
     }
 
-    const Derived &derived() const {
-      return *static_cast<const Derived *>(this);
+    const MostDerived &derived() const {
+      return *static_cast<const MostDerived *>(this);
     }
 
   private:
@@ -140,6 +141,22 @@ namespace CASM {
 
   };
 
+  template<typename Derived> class ElementWiseSymCluster;
+
+  namespace CASM_TMP {
+
+    /// \brief Traits class for any ClusterSymCompare derived class
+    ///
+    /// \ingroup IntegralCluster
+    ///
+    template<typename Derived>
+    struct traits<ElementWiseSymCluster<Derived> > {
+      typedef typename traits<Derived>::MostDerived MostDerived;
+      typedef typename traits<Derived>::Element Element;
+      typedef typename traits<Derived>::InvariantsType InvariantsType;
+    };
+  }
+
   /// \brief CRTP-Base cluster class to apply_sym on an element-by-element basis
   ///
   /// - Needs a CASM_TMP::traits<Derived>::Element type
@@ -148,23 +165,33 @@ namespace CASM {
   /// \ingroup Clusterography
   ///
   template<typename Derived>
-  class ElementWiseSymCluster : public GenericCluster<Derived> {
+  class ElementWiseSymCluster : public GenericCluster<ElementWiseSymCluster<Derived> > {
 
   public:
 
+    typedef typename CASM_TMP::traits<Derived>::MostDerived MostDerived;
+
+    /// \brief ElementWiseSymCluster applies symmetry element-by-element
+    MostDerived &apply_sym(const SymOp &op) {
+      this->derived().apply_sym_impl(op);
+      return this->derived();
+    }
+
+  protected:
+
     /// \brief Construct an empty ElementWiseSymCluster
-    ElementWiseSymCluster() {}
+    ElementWiseSymCluster() :
+      GenericCluster<ElementWiseSymCluster<Derived> >() {}
 
     /// \brief Construct a GenericCluster with a range of Element
     template<typename InputIterator>
     ElementWiseSymCluster(InputIterator _begin,
                           InputIterator _end) :
-      GenericCluster<Derived>(_begin, _end) {}
+      GenericCluster<ElementWiseSymCluster<Derived> >(_begin, _end) {}
 
-  private:
 
     /// \brief ElementWiseSymCluster applies symmetry element-by-element
-    Derived &apply_sym_impl(const SymOp &op) {
+    MostDerived &apply_sym_impl(const SymOp &op) {
       for(auto &e : this->derived()) {
         e.apply_sym(op);
       }

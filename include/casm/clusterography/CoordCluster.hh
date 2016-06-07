@@ -35,6 +35,7 @@ namespace CASM {
     ///
     template<typename CoordType>
     struct traits<CoordCluster<CoordType> > {
+      typedef CoordCluster<CoordType> MostDerived;
       typedef CoordType Element;
       typedef ClusterInvariants<CoordCluster<CoordType> > InvariantsType;
     };
@@ -55,7 +56,7 @@ namespace CASM {
   public:
 
     typedef unsigned int size_type;
-    typedef BasicStructure<Site> PrimType;
+    typedef Structure PrimType;
 
     /// \brief Construct an empty UnitCellCoordCluster
     explicit CoordCluster(const PrimType &_prim) :
@@ -93,13 +94,19 @@ namespace CASM {
       return static_cast<Coordinate>(this->element(i));
     }
 
-    /// \brief Return the min pair distance
+    /// \brief Return the min pair distance, or 0.0 if size() <= 1
     double min_length() const {
+      if(this->size() <= 1) {
+        return 0.0;
+      }
       return this->invariants().displacement().front();
     }
 
-    /// \brief Return the max pair distance
+    /// \brief Return the max pair distance, or 0.0 if size() <= 1
     double max_length() const {
+      if(this->size() <= 1) {
+        return 0.0;
+      }
       return this->invariants().displacement().back();
     }
 
@@ -119,48 +126,22 @@ namespace CASM {
       return *this;
     }
 
+    CoordCluster operator+(const UnitCell &trans) const {
+      CoordCluster res(*this);
+      return res += trans;
+    }
+
+    CoordCluster operator-(const UnitCell &trans) const {
+      CoordCluster res(*this);
+      return res -= trans;
+    }
+
 
   private:
 
     const PrimType *m_prim_ptr;
 
   };
-
-  /// \brief Translate a cluster
-  ///
-  /// \ingroup CoordCluster
-  ///
-  template<typename CoordType>
-  CoordCluster<CoordType> operator+(CoordCluster<CoordType> cluster, UnitCell trans);
-
-  /// \brief Translate a cluster
-  ///
-  /// \ingroup CoordCluster
-  ///
-  template<typename CoordType>
-  CoordCluster<CoordType> operator-(CoordCluster<CoordType> cluster, UnitCell trans);
-
-
-
-  /* -- GenericCluster Definitions ------------------------------------- */
-
-  /// \brief Translate a cluster
-  ///
-  /// \ingroup CoordCluster
-  ///
-  template<typename CoordType>
-  CoordCluster<CoordType> operator+(CoordCluster<CoordType> cluster, UnitCell trans) {
-    return cluster += trans;
-  }
-
-  /// \brief Translate a cluster
-  ///
-  /// \ingroup CoordCluster
-  ///
-  template<typename CoordType>
-  CoordCluster<CoordType> operator-(CoordCluster<CoordType> cluster, UnitCell trans) {
-    return cluster -= trans;
-  }
 
 }
 
