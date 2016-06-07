@@ -5,7 +5,9 @@
 #include<boost/algorithm/string.hpp>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/misc/unique_cloneable_map.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
+
 
 namespace CASM {
   class Molecule;
@@ -13,8 +15,94 @@ namespace CASM {
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
   namespace DoF_impl {
+    enum DOF_DOMAIN {DISCRETE, CONTINUOUS};
+    enum DOF_MODE {LOCAL, GLOBAL};
+
+    /// \brief Base class for defining a collection of traits shared by a specific DoF type
+    /// The BasicTraits class maintains only the traits that do not depend on other CASM classes
+
+    /// In future, may include function pointers (wrapped in std::function<>) for controlling certain parts
+    /// of program execution
+    class BasicTraits {
+    public:
+      BasicTraits(std::string const &_type_name,
+                  DOF_DOMAIN _domain,
+                  DOF_MODE _mode) :
+        m_type_name(_type_name),
+        m_domain(_domain),
+        m_mode(_mode) {
+
+      }
+
+      /// \brief Allow destruction through base pointer
+      virtual ~BasicTraits() {}
+
+      /// \brief const access of type_name
+      std::string const &type_name() const {
+        return m_type_name;
+      }
+
+      /// \brief returns true if DoF is global
+      bool global()const {
+        return m_mode == GLOBAL;
+      }
+
+      /// \brief returns true if DoF is discrete
+      bool discrete() const {
+        return m_domain == DISCRETE;
+      }
+
+      /// \brief equality comparison of type_name
+      bool operator==(std::string const &other_name) const {
+        return type_name() == other_name;
+      }
+
+      /// \brief lexicographic comparison of type_name
+      bool operator<(std::string const &other_name) const {
+        return type_name() < other_name;
+      }
+
+      /// \brief comparison of type_name, domain (discrete/continuous) and mode (local/global)
+      bool identical(BasicTraits const &other) const {
+        return type_name() == other.type_name()
+               && m_domain == other.m_domain
+               && m_mode == other.m_mode;
+      }
+
+      /// \brief allow implicit conversion to std::string (type_name)
+      operator std::string const &() const {
+        return type_name();
+      }
+
+      /// \brief returns true if time-reversal changes the DoF value
+      virtual bool time_reversal_active() const {
+        return false;
+      }
+
+      /// \brief returns true if DoF tracks a BasicTraits (specified by @param attr_name)
+      virtual bool obscures_molecule_attribute(std::string const &attr_name) const {
+        return false;
+      }
+
+      /// \brief returns true if DoF tracks the orientation of the occupying molecule (not typical)
+      virtual bool obscures_occupant_orientation() const {
+        return false;
+      }
+
+      /// \brief returns true if DoF tracks the chirality of the occupying molecule (not typical)
+      virtual bool obscures_occupant_chirality() const {
+        return false;
+      }
+    protected:
+      virtual BasicTraits *_clone() const = 0;
+
+      std::string m_type_name;
+      DOF_DOMAIN m_domain;
+      DOF_MODE m_mode;
+    };
+
+
     /// \brief A class to manage dynamic evaluation of BasisFunctions
 
     /// A RemoteHandle can be initialized with either a double or integer reference and then passed to a
@@ -71,46 +159,25 @@ namespace CASM {
   /// Optionally, the ID can be 'locked' which prevents it from being changed
   class DoF {
   public:
-    using DoF_impl::Traits;
-    using DoF_impl::RemoteHandle;
+    using BasicTraits = DoF_impl::BasicTraits;
+    using RemoteHandle = DoF_impl::RemoteHandle;
 
     /// DoFs are initialized using a TypeFunc
     /// e.g., DerivedDoF my_dof(DoFType::occupation);
-    typedef std::function<Traits()> TypeFunc;
+    typedef std::function<notstd::cloneable_ptr<BasicTraits>()> TypeFunc;
 
-    static Traits const &traits(std::string const &_type_name) {
-      auto it = _traits_map().find(_type_name);
-      if(it == _traits_map().end()) {
-        throw std::runtime_error("Could not find DoF Traits for DoF type" + _type_name);
-      }
-      return it->second;
-    }
+    static BasicTraits const &traits(std::string const &_type_name);
 
-    /*
     DoF() :
       m_type_name("EMPTY"),
       m_var_name("EMPTY"),
       m_dof_ID(-1),
       m_ID_lock(false) {}
-    */
 
-    DoF(DoFType::TypeFunc _type_func,
+
+    DoF(TypeFunc _type_func,
         std::string const &_var_name,
-        Index _ID) :
-      m_type_name(_type_func().name()),
-      m_var_name(_var_name),
-      m_dof_ID(_ID),
-      m_ID_lock(false) {
-      auto it = _traits_map().find(type_name());
-      if(it == _traits_map().end()) {
-        _traits_map()[type_name()] = _type_func();
-      }
-      else {
-        if(!_type_func().is_identical(it->second)) {
-          throw std::runtime_error("Attempting to initialize multiple DoFs of type " + type_name() + " but having different traits!\n");
-        }
-      }
-    }
+        Index _ID);
 
     /// \brief allow destruction through base pointer
     /// (even though DoF shouldn't be used polymorphically)
@@ -156,7 +223,7 @@ namespace CASM {
     }
 
   private:
-    typedef std::map<std::string, Traits> TraitsMap;
+    typedef notstd::unique_cloneable_map<std::string, BasicTraits> TraitsMap;
     static TraitsMap &_traits_map();
 
     std::string m_type_name;
@@ -177,11 +244,12 @@ namespace CASM {
   public:
     DiscreteDoF(): DoF(), m_current_state(0), m_remote_state(nullptr), m_sym_rep_ID(SymGroupRepID::identity(0)) {}
 
-    DiscreteDoF(DoFType::TypeFunc _type_func,
+    DiscreteDoF(TypeFunc _type_func,
                 std::string const &_var_name,
+                Index _dof_ID = -1,
                 int _current_state = 0,
                 SymGroupRepID _id = SymGroupRepID::identity(0)):
-      DoF(_type_func, _var_name),
+      DoF(_type_func, _var_name, _dof_ID),
       m_current_state(_current_state),
       m_remote_state(nullptr),
       m_sym_rep_ID(_id) {
@@ -276,27 +344,30 @@ namespace CASM {
   template< typename T>
   class OccupantDoF : public DiscreteDoF {
   public:
-    OccupantDoF() : DiscreteDoF(DoFType::occupation,
-                                  "s") { }
-    OccupantDoF(std::string const &_var_name,
+    OccupantDoF(TypeFunc _func) : DiscreteDoF(_func,
+                                                "s") { }
+    OccupantDoF(TypeFunc _func,
+                std::string const &_var_name,
                 std::vector<T> const &_domain,
                 int _current_state = 0) :
-      DiscreteDoF(DoFType::occupation,
+      DiscreteDoF(_func,
                   _var_name,
                   _current_state,
                   SymGroupRepID::identity(_domain.size())),
       m_domain(_domain) { }
 
-    OccupantDoF(std::vector<T> const &_domain, int _current_state = 0) :
-      DiscreteDoF(DoFType::occupation,
+    OccupantDoF(TypeFunc _func,
+                std::vector<T> const &_domain, int _current_state = 0) :
+      DiscreteDoF(_func,
                   "s",
                   _current_state,
                   SymGroupRepID::identity(_domain.size())),
       m_domain(_domain) { }
 
-    OccupantDoF(std::initializer_list<T> _domain,
+    OccupantDoF(TypeFunc _func,
+                std::initializer_list<T> _domain,
                 int _current_state = 0) :
-      DiscreteDoF(DoFType::occupation,
+      DiscreteDoF(_func,
                   "s",
                   _current_state,
                   SymGroupRepID::identity(_domain.size())),
@@ -313,10 +384,10 @@ namespace CASM {
 
     /// \brief Set occupant by index
     void set_value(int occ_index) {
-      if(Index(new_state) >= m_domain.size()) {
-        throw std::runtime_error("In OccupantDoF::set_value(): Bad Assignment, new_state>=size.\n");
+      if(Index(occ_index) >= m_domain.size()) {
+        throw std::runtime_error("In OccupantDoF::set_value(): Bad Assignment, occ_index>=size.\n");
       }
-      m_current_state = new_state;
+      m_current_state = occ_index;
       return;
     }
 
@@ -428,19 +499,7 @@ namespace CASM {
     ContinuousDoF() : min_val(NAN), max_val(NAN), current_val(NAN),
       current_min(NAN), current_max(NAN), m_remote_ptr(nullptr) {}
 
-    ContinuousDoF(DoFType::TypeFunc _type_func,
-                  std::string const &_var_name,
-                  double _min,
-                  double _max) :
-      DoF(_type_func, _var_name),
-      min_val(_min),
-      max_val(_max),
-      current_val(NAN),
-      current_min(min_val),
-      current_max(max_val),
-      m_remote_ptr(nullptr) {}
-
-    ContinuousDoF(DoFType::TypeFunc _type_func,
+    ContinuousDoF(TypeFunc _type_func,
                   std::string const &_var_name,
                   Index _ID,
                   double _min,
@@ -518,12 +577,12 @@ namespace CASM {
 
   class DoFSet {
   public:
-    using DoF_impl::Traits;
+    using BasicTraits = DoF_impl::BasicTraits;
 
-    typedef std::function<Traits()> TypeFunc;
+    typedef std::function<notstd::cloneable_ptr<BasicTraits>()> TypeFunc;
 
     DoFSet(TypeFunc const &_type) :
-      m_type_name(_type.type_name()) {}
+      m_type_name(_type()->type_name()) {}
 
     bool is_excluded_occ(std::string const &_occ_name) const {
       return m_excluded_occs.count(_occ_name);

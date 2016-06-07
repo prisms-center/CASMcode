@@ -6,8 +6,34 @@
 namespace CASM {
 
   DoF::TraitsMap const &DoF::_traits_map() {
-    static TraitsMap _static_traits_map;
+    static TraitsMap _static_traits_map([](const value_type & value)->std::string {
+      return value.name();
+    })
     return _static_traits_map;
+  }
+
+  //********************************************************************
+
+  DoF::BasicTraits const &DoF::traits(std::string const &_type_name) {
+    auto it = _traits_map().find(_type_name);
+    if(it == _traits_map().end()) {
+      throw std::runtime_error("Could not find DoF Traits for DoF type" + _type_name);
+    }
+    return *it;
+  }
+
+  //********************************************************************
+
+  DoF::DoF(DoF::TypeFunc _type_func,
+           std::string const &_var_name,
+           Index _ID) :
+    m_type_name(_type_func()->name()),
+    m_var_name(_var_name),
+    m_dof_ID(_ID),
+    m_ID_lock(false) {
+
+    _traits_map()[type_name()] = *_type_func();
+
   }
 
   //********************************************************************

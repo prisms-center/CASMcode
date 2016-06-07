@@ -7,27 +7,7 @@
 class SiteOrbitree;
 
 namespace CASM {
-  class BasisBuilder {
-  public:
-    virtual ~BasisBuilder() {}
-
-    virtual void prepare(Structure const &_prim) {
-
-    }
-
-    virtual std::vector<ClexBasis::DoFType> filter_dof_types(std::vector<ClexBasis::DoFType> const &_dof_types) {
-      return _dof_types;
-    }
-
-    virtual void pre_generate
-
-    std::unique_ptr<BasisBuilder> clone()const {
-      return std::unique_ptr<BasisBuilder>(_clone());
-    }
-  private:
-    virtual BasisBuilder *_clone()const = 0;
-
-  };
+  class BasisBuilder;
 
   class ClexBasis {
   public:
@@ -72,7 +52,8 @@ namespace CASM {
     }
 
     /// \brief generate clust_basis for all equivalent clusters in @param _orbitree
-    void generate(SiteOrbitree const &_orbitree,
+    void generate(std::vector<Orbit<IntegralCluster> >::const_iterator _begin,
+                  std::vector<Orbit<IntegralCluster> >::const_iterator _end,
                   std::vector<DoFType> const &dof_keys,
                   Index max_poly_order = -1);
 
@@ -93,6 +74,30 @@ namespace CASM {
   };
 
 
+  class BasisBuilder {
+  public:
+    virtual ~BasisBuilder() {}
+
+    virtual void prepare(Structure const &_prim) {
+
+    }
+
+    virtual std::vector<ClexBasis::DoFType> filter_dof_types(std::vector<ClexBasis::DoFType> const &_dof_types) {
+      return _dof_types;
+    }
+
+    virtual void pre_generate() {
+
+    }
+
+    std::unique_ptr<BasisBuilder> clone()const {
+      return std::unique_ptr<BasisBuilder>(_clone());
+    }
+  private:
+    virtual BasisBuilder *_clone()const = 0;
+
+  };
+
   /// Print cluster with basis_index and nlist_index (from 0 to size()-1), followed by cluster basis functions
   /// Functions are labeled \Phi_{i}, starting from i = @param begin_ind
   void print_clust_basis(ClexBasis const &_basis_set,
@@ -101,7 +106,7 @@ namespace CASM {
                          Index begin_ind = 0,
                          int space = 18,
                          char delim = 0,
-                         COORD_TYPE mode = COORD_DEFAULT) const;
+                         COORD_TYPE mode = COORD_DEFAULT);
 
   /// returns std::vector of std::string, each of which is
   std::vector<std::string> orbit_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
@@ -138,3 +143,4 @@ namespace CASM {
                                        std::vector<BasisSet const *> const &site_dof_sets);
   }
 }
+#endif

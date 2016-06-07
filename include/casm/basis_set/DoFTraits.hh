@@ -5,74 +5,21 @@ namespace CASM {
   class MasterSymGroup;
 
   namespace DoF_impl {
-    enum DOF_DOMAIN {DISCRETE, CONTINUOUS};
-    enum DOF_MODE {LOCAL, GLOBAL};
-
     /// \brief Collection of all the traits specific to a DoF type
 
-    /// In future, may include function pointers (wrapped in std::function<>) for controlling certain parts
-    /// of program execution
-    class BasicTraits {
+    class Traits : public BasicTraits {
     public:
-      BasicTraits(std::string const &_type_name,
-                  DOF_DOMAIN _domain,
-                  DOF_MODE _mode) :
-        m_type_name(_type_name),
-        m_domain(_domain),
-        m_mode(_mode) {
+      Traits(std::string const &_type_name,
+             DOF_DOMAIN _domain,
+             DOF_MODE _mode) :
+        BasicTraits(m_type_name(_type_name),
+                    m_domain(_domain),
+                    m_mode(_mode)) {
+
       }
 
       /// \brief Allow destruction through base pointer
-      virtual ~BasicTraits() {}
-
-      /// \brief const access of type_name
-      std::string const &type_name() const {
-        return m_type_name;
-      }
-
-      /// \brief returns true if DoF is global
-      bool global()const {
-        return m_mode == GLOBAL;
-      }
-
-      /// \brief returns true if DoF is discrete
-      bool discrete() const {
-        return m_domain == DISCRETE;
-      }
-
-      /// \brief equality comparison of type_name
-      bool operator==(std::string const &other_name) const {
-        return type_name() == other_name;
-      }
-
-      /// \brief lexicographic comparison of type_name
-      bool operator<(std::string const &other_name) const {
-        return type_name() < other_name;
-      }
-
-      /// \brief comparison of type_name, domain (discrete/continuous) and mode (local/global)
-      bool identical(BasicTraits const &other) const {
-        return type_name() == other.type_name()
-               && m_domain == other.m_domain
-               && m_mode == other.m_mode;
-      }
-
-      /// \brief allow implicit conversion to std::string (type_name)
-      operator std::string const &() const {
-        return type_name();
-      }
-
-      /// \brief returns true if time-reversal changes the DoF value
-      virtual bool time_reversal_active() const = 0;
-
-      /// \brief returns true if DoF tracks a BasicTraits (specified by @param attr_name)
-      virtual bool obscures_molecule_attribute(std::string const &attr_name) const = 0;
-
-      /// \brief returns true if DoF tracks the orientation of the occupying molecule (not typical)
-      virtual bool obscures_occupant_orientation() const = 0;
-
-      /// \brief returns true if DoF tracks the chirality of the occupying molecule (not typical)
-      virtual bool obscures_occupant_chirality() const = 0;
+      virtual ~Traits() {}
 
       /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
       virtual BasisSet construct_site_basis(Site const &_site) const = 0;
@@ -86,17 +33,53 @@ namespace CASM {
       /// \brief Generate a symmetry representation for this DoF
       virtual SymGroupRepID generate_symrep(MasterSymGroup const &_group) const = 0;
 
-      /// \brief non-virtual method to obtain copy through BasicTraits pointer
-      std::unique_ptr<BasicTraits> clone() const {
-        return _clone();
+      /// \brief non-virtual method to obtain copy through Traits pointer
+      std::unique_ptr<Traits> clone() const {
+        return static_cast<Traits *>(_clone());
       }
-    private:
-      virtual BasicTraits *_clone() const = 0;
-
-      std::string m_type_name;
-      DOF_DOMAIN m_domain;
-      DOF_MODE m_mode;
     };
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    class OccupationDoFTraits : public Traits {
+    public:
+      OccupationDoFTraits():
+        Traits("occupation",
+               DISCRETE,
+               LOCAL) {
+      }
+
+      /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
+      BasisSet construct_site_basis(Site const &_site) const override {
+        throw std::runtime_error("OccupationDoFTraits::construct_site_basis not implemented!");
+      }
+
+      /// \brief Populate @param _in from JSON
+      void from_json(std::vector<ContinuousDoF> &_in, jsonParser const &_json) const override {
+        throw std::runtime_error("OccupationDoFTraits::from_json not implemented!");
+      }
+
+      /// \brief Output @param _in to JSON
+      void to_json(std::vector<ContinuousDoF> const &_out, jsonParser &_json) const override {
+        throw std::runtime_error("OccupationDoFTraits::to_json not implemented!");
+      }
+
+      /// \brief Generate a symmetry representation for this DoF
+      SymGroupRepID generate_symrep(MasterSymGroup const &_group) const override {
+        throw std::runtime_error("OccupationDoFTraits::generate_symrep not implemented!");
+      }
+
+    protected:
+      BasicTraits *_clone() const override {
+        return OccupationDoFTraits(*this);
+      }
+    };
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    namespace DoFType {
+      DoF_impl::OccupationDoFTraits occupation() {
+        return DoF_impl::OccupationDoFTraits();
+      }
+    }
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

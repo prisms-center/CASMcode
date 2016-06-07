@@ -26,9 +26,9 @@ namespace CASM {
     public Function, public DerivedID<OccupantFunction, Function> {
   public:
     OccupantFunction(const DiscreteDoF &init_var, const Eigen::VectorXd &init_eval, int _occ_func_ind, int _basis_ind, SymGroupRepID _sym_rep_ID):
-      m_var(init_var.copy()), m_eval_table(init_eval), m_sym_rep_ID(_sym_rep_ID), m_occ_func_ind(_occ_func_ind), m_basis_ind(_basis_ind) { }
+      m_var(init_var.clone()), m_eval_table(init_eval), m_sym_rep_ID(_sym_rep_ID), m_occ_func_ind(_occ_func_ind), m_basis_ind(_basis_ind) { }
 
-    OccupantFunction(const OccupantFunction &RHS) : Function(RHS), m_var(RHS.m_var->copy()), m_eval_table(RHS.m_eval_table),
+    OccupantFunction(const OccupantFunction &RHS) : Function(RHS), m_var(RHS.m_var->clone()), m_eval_table(RHS.m_eval_table),
       m_sym_rep_ID(RHS.m_sym_rep_ID), m_occ_func_ind(RHS.occ_func_ind()), m_basis_ind(RHS.basis_ind()) {}
 
     ~OccupantFunction() {

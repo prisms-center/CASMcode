@@ -1,6 +1,8 @@
 namespace CASM {
 
-  void ClexBasis::generate(std::vector<Orbit<IntegralCluster> > const &_orbits,
+  void ClexBasis::generate(std::vector<Orbit<IntegralCluster> >::const_iterator _orbit_begin,
+                           std::vector<Orbit<IntegralCluster> >::const_iterator _orbit_end,
+                           std::vector<DoFType> const &dof_keys,
                            std::vector<DoFType> const &_dof_keys,
                            Index _max_poly_order /*= -1*/) {
     std::vector<DoFType> global_keys;
@@ -17,13 +19,16 @@ namespace CASM {
         throw std::runtime_error(std::string("Attempting to build Clex basis set, but missing degree of freedom \"") + key + "\n");
       }
     }
-    m_bset_tree.resize(_orbits.size());
+    m_bset_tree.resize(std::distance(_orbit_begin, _orbit_end));
 
-    for(Index i = 0; i < _orbits.size(); i++) {
-      m_bset_tree[i].reserve(_orbits[i].size());
-      m_bset_tree[i].push_back(_construct_prototype_basis(_orbits[i], local_keys, global_keys /*, polynomial_order?*/));
-      for(Index j = 1; j < _orbits[i].size(); j++) {
-        m_bset_tree[i].push_back((*(_orbits[i].equivalence_map(j).first))*m_bset_tree[i][0]);
+    auto bset_it = m_bset_tree.begin();
+    for(; _orbit_begin != _orbit_end; ++orbit_begin, ++bset_it) {
+      bset_it->reserve(_orbit_begin->size());
+      bset_it->push_back(_construct_prototype_basis(*_orbit_begin,
+                                                    local_keys,
+                                                    global_keys /*, polynomial_order?*/));
+      for(Index j = 1; j < _orbit_begin->size(); j++) {
+        bset_it->push_back((*(_orbit_begin->equivalence_map(j).first))*m_bset_tree[i][0]);
       }
     }
   }
