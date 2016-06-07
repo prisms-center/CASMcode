@@ -167,11 +167,11 @@ namespace CASM {
   /// \ingroup IntegralCluster
   ///
   template<typename OrbitType, typename OrbitInputIterator, typename OrbitOutputIterator>
-  OrbitOutputIterator make_next_orbitbranch(OrbitInputIterator begin,
-                                            OrbitInputIterator end,
-                                            const OrbitBranchSpecs<OrbitType> &specs,
-                                            OrbitOutputIterator result,
-                                            std::ostream &status) {
+  OrbitOutputIterator make_next_orbitbranch_impl0(OrbitInputIterator begin,
+                                                  OrbitInputIterator end,
+                                                  const OrbitBranchSpecs<OrbitType> &specs,
+                                                  OrbitOutputIterator result,
+                                                  std::ostream &status) {
 
     typedef IntegralCluster cluster_type;
     typedef cluster_type::InvariantsType invariants_type;
@@ -241,6 +241,136 @@ namespace CASM {
     status << clean << '\r';
 
     return result;
+  }
+
+  /// \brief Use orbits of size n to generate orbits of size n+1
+  ///
+  /// \param begin,end A range of input orbits of size n
+  /// \param specs OrbitBranchSpecs for orbits of size n+1
+  /// \param result An output iterator for orbits of IntegralCluster
+  /// \param stutus Stream for status messages
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename OrbitType, typename OrbitInputIterator, typename OrbitOutputIterator>
+  OrbitOutputIterator make_next_orbitbranch_impl1(OrbitInputIterator begin,
+                                                  OrbitInputIterator end,
+                                                  const OrbitBranchSpecs<OrbitType> &specs,
+                                                  OrbitOutputIterator result,
+                                                  std::ostream &status) {
+
+    typedef IntegralCluster cluster_type;
+    typedef OrbitType orbit_type;
+    typedef cluster_type::InvariantsType invariants_type;
+
+    const auto &sym_compare = specs.sym_compare();
+    const auto &filter = specs.filter();
+    const auto &g = specs.generating_group();
+
+    auto compare = [&](const cluster_type & A, const cluster_type & B) {
+      if(A.size() != B.size()) {
+        return A.size() < B.size();
+      }
+      return sym_compare.intra_orbit_compare(A, B);
+    };
+
+    auto canonical_equiv = [&](const cluster_type & clust) {
+      cluster_type result = sym_compare.prepare(clust);
+      for(const auto &op : g) {
+        auto test = sym_compare.prepare(copy_apply(op, clust));
+        if(sym_compare.intra_orbit_compare(result, test)) {
+          result = test;
+        }
+      }
+      return result;
+    };
+
+    // store generating elements as we find them
+    std::set<IntegralCluster, decltype(compare)> generators(compare);
+
+    // print status messages
+    std::string clean(100, ' ');
+
+    // contains a pair of iterators over candidate UnitCellCoord
+    auto candidate_sites = specs.candidate_sites();
+
+    // for each orbit of size n
+    for(auto orbit_it = begin; orbit_it != end; ++orbit_it) {
+
+      // print status messages
+      status << clean << '\r'
+             << "  Calculating orbit branch " << orbit_it->prototype().size() + 1
+             << ":  Expanding orbit " << std::distance(begin, orbit_it)
+             << " / " << std::distance(begin, end)
+             << "  of branch " << orbit_it->prototype().size()
+             << ".  New orbits: " << generators.size() << "\r" << std::flush;
+
+      // by looping over each site in the grid,
+      for(auto site_it = candidate_sites.first; site_it != candidate_sites.second; ++site_it) {
+
+        // don't duplicate sites in cluster
+        if(contains(orbit_it->prototype(), *site_it)) {
+          continue;
+        }
+
+        // create a test cluster from prototype
+        cluster_type test(orbit_it->prototype());
+
+        // add the new site
+        test.elements().push_back(*site_it);
+
+        // 'prepare' the test cluster for comparison
+        test = sym_compare.prepare(test);
+
+        // put into a 'canonical' equivalent form
+        test = canonical_equiv(test);
+
+        // filter clusters
+        if(!filter(test)) {
+          continue;
+        }
+
+        // try inserting test (only uniques will be kept)
+        generators.insert(test);
+      }
+    }
+
+    // generate sorted orbits
+    std::set<orbit_type> orbits;
+    for(const auto &e : generators) {
+      orbits.insert(orbit_type(e, g, sym_compare));
+    }
+
+    // output Orbits
+    result = std::move(orbits.begin(), orbits.end(), result);
+
+    // print status messages
+    status << clean << '\r';
+
+    return result;
+  }
+
+  /// \brief Use orbits of size n to generate orbits of size n+1
+  ///
+  /// \param begin,end A range of input orbits of size n
+  /// \param specs OrbitBranchSpecs for orbits of size n+1
+  /// \param result An output iterator for orbits of IntegralCluster
+  /// \param stutus Stream for status messages
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename OrbitType, typename OrbitInputIterator, typename OrbitOutputIterator>
+  OrbitOutputIterator make_next_orbitbranch(OrbitInputIterator begin,
+                                            OrbitInputIterator end,
+                                            const OrbitBranchSpecs<OrbitType> &specs,
+                                            OrbitOutputIterator result,
+                                            std::ostream &status) {
+    return make_next_orbitbranch_impl1(
+             begin,
+             end,
+             specs,
+             result,
+             status);
   }
 
   /// \brief Generate Orbit using OrbitBranchSpecs
