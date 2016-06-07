@@ -224,52 +224,10 @@ namespace CASM {
 
   typedef ScelPeriodicSymCompare<IntegralCluster> ScelPeriodicIntegralClusterSymCompare;
 
+  typedef Orbit<IntegralCluster, LocalSymCompare<IntegralCluster> > LocalIntegralClusterOrbit;
+  typedef Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > PrimPeriodicIntegralClusterOrbit;
+  typedef Orbit<IntegralCluster, ScelPeriodicSymCompare<IntegralCluster> > ScelPeriodicIntegralClusterOrbit;
 
-  /// \brief Output the neighborhood of UnitCellCoord within max_radius of a unit cell
-  ///
-  /// \param unit The unit cell Structure
-  /// \param max_radius The neighborhood distance cutoff
-  /// \param site_filter A filter function that returns true for CoordType that
-  ///        should be considered for the neighborhood
-  /// \param result Output iterator for container of UnitCellCoord
-  /// \param xtal_tol Crystallography tolerance used to contstruct UnitCellCoord from CoordType
-  ///
-  /// \returns Output iterator after generating the neighborhood
-  ///
-  template<typename CoordType, typename OutputIterator>
-  OutputIterator neighborhood(
-    const Structure &unit,
-    double max_radius,
-    std::function<bool (CoordType)> site_filter,
-    OutputIterator result,
-    double xtal_tol) {
-
-    auto dim = unit.lattice().enclose_sphere(max_radius);
-    EigenCounter<Eigen::Vector3i> grid_count(-dim, dim, Eigen::Vector3i::Constant(1));
-    Coordinate lat_point(unit.lattice());
-    const auto &basis = unit.basis;
-
-    do {
-      lat_point.frac() = grid_count().cast<double>();
-
-      for(auto it = basis.begin(); it != basis.end(); ++it) {
-        if(!site_filter(*it)) {
-          continue;
-        }
-
-        Coordinate test(*it + lat_point);
-        if(std::any_of(basis.begin(),
-                       basis.end(),
-        [&](const Coordinate & coord) {
-        return test.dist(coord) < max_radius;
-        })) {
-          *result++ = UnitCellCoord(unit, test, xtal_tol);
-        }
-      }
-    }
-    while(++grid_count);
-    return result;
-  }
 
   /// \brief Iterate over all sites in an orbit and insert a UnitCellCoord
   ///
@@ -284,7 +242,7 @@ namespace CASM {
   ///
   template<typename OutputIterator>
   OutputIterator local_orbit_neighborhood(
-    const Orbit<IntegralCluster> &orbit,
+    const LocalIntegralClusterOrbit &orbit,
     OutputIterator result) {
 
     for(const auto &equiv : orbit) {
@@ -328,7 +286,7 @@ namespace CASM {
   ///
   template<typename OutputIterator>
   OutputIterator prim_periodic_orbit_neighborhood(
-    const Orbit<IntegralCluster> &orbit,
+    const PrimPeriodicIntegralClusterOrbit &orbit,
     OutputIterator result) {
 
     for(const auto &equiv : orbit) {
@@ -366,10 +324,6 @@ namespace CASM {
     }
     return result;
   }
-
-  typedef Orbit<IntegralCluster, LocalSymCompare<IntegralCluster> > LocalIntegralClusterOrbit;
-  typedef Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > PrimPeriodicIntegralClusterOrbit;
-  typedef Orbit<IntegralCluster, ScelPeriodicSymCompare<IntegralCluster> > ScelPeriodicIntegralClusterOrbit;
 
 }
 

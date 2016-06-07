@@ -2,12 +2,60 @@
 #define CASM_ClusterOrbits_impl
 
 #include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clusterography/IntegralCluster.hh"
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {
 
   /* -- Cluster Orbit generating function definitions ------------------------------------- */
 
+  /// \brief Output the neighborhood of UnitCellCoord within max_radius of a unit cell
+  ///
+  /// \param unit The unit cell Structure
+  /// \param max_radius The neighborhood distance cutoff
+  /// \param site_filter A filter function that returns true for CoordType that
+  ///        should be considered for the neighborhood
+  /// \param result Output iterator for container of UnitCellCoord
+  /// \param xtal_tol Crystallography tolerance used to contstruct UnitCellCoord from CoordType
+  ///
+  /// \returns Output iterator after generating the neighborhood
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename CoordType, typename OutputIterator>
+  OutputIterator neighborhood(
+    const Structure &unit,
+    double max_radius,
+    std::function<bool (CoordType)> site_filter,
+    OutputIterator result,
+    double xtal_tol) {
+
+    auto dim = unit.lattice().enclose_sphere(max_radius);
+    EigenCounter<Eigen::Vector3i> grid_count(-dim, dim, Eigen::Vector3i::Constant(1));
+    Coordinate lat_point(unit.lattice());
+    const auto &basis = unit.basis;
+
+    do {
+      lat_point.frac() = grid_count().cast<double>();
+
+      for(auto it = basis.begin(); it != basis.end(); ++it) {
+        if(!site_filter(*it)) {
+          continue;
+        }
+
+        Coordinate test(*it + lat_point);
+        if(std::any_of(basis.begin(),
+                       basis.end(),
+        [&](const Coordinate & coord) {
+        return test.dist(coord) < max_radius;
+        })) {
+          *result++ = UnitCellCoord(unit, test, xtal_tol);
+        }
+      }
+    }
+    while(++grid_count);
+    return result;
+  }
 
   /// \brief Generate the asymmetric unit, including all sites
   ///
@@ -72,7 +120,7 @@ namespace CASM {
     const SymGroup &g = specs.generating_group();
 
     // generate the null cluster orbit
-    OrbitType null_cluster_orbit(empty, g.begin(), g.end(), specs.sym_compare());
+    OrbitType null_cluster_orbit(empty, g, specs.sym_compare());
 
     // Use it to generate the first orbit branch
     std::vector<OrbitType> orbits(1, null_cluster_orbit);

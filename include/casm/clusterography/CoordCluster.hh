@@ -35,6 +35,7 @@ namespace CASM {
     ///
     template<typename CoordType>
     struct traits<CoordCluster<CoordType> > {
+      typedef CoordCluster<CoordType> MostDerived;
       typedef CoordType Element;
       typedef ClusterInvariants<CoordCluster<CoordType> > InvariantsType;
     };

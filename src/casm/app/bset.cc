@@ -2,6 +2,7 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clusterography/IntegralCluster.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ClexBasis.hh"
 
@@ -129,7 +130,7 @@ namespace CASM {
       }
 
       jsonParser bspecs_json;
-      std::vector<Orbit<IntegralCluster> > orbits;
+      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
       std::unique_ptr<ClexBasis> clex_basis;
 
       try {
@@ -217,7 +218,7 @@ namespace CASM {
       PrimClex primclex(root, args.log);
       jsonParser clust_json(dir.clust(set.bset()));
 
-      std::vector<Orbit<IntegralCluster> > orbits;
+      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
       read_clust(
         std::back_inserter(orbits),
         clust_json,

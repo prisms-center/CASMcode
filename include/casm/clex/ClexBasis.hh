@@ -22,7 +22,7 @@ namespace CASM {
     typedef std::vector<BSetOrbit>::const_iterator BSetOrbitIterator;
 
     /// \brief Initialize from Structure, in order to get Site DoF and global DoF info
-    ClexBasis(Structure const &_prim);
+    ClexBasis(Structure const &_prim) {}
 
     /// \brief Total number of BasisSet orbits
     Index n_orbits() const;

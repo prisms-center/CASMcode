@@ -1,8 +1,42 @@
 #include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/ClusterInvariants_impl.hh"
+#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/symmetry/Orbit_impl.hh"
 
 namespace CASM {
 
-#define  CLUSTER_ORBITS_INST(ITERATOR,INSERTER,ORBIT,SPECSITERTOR) \
+  /// \brief Generate clusters using all Site
+  bool all_sites_filter(const Site &site) {
+    return true;
+  }
+
+  /// \brief Generate clusters using Site with site_occupant.size() > 1
+  bool alloy_sites_filter(const Site &site) {
+    return site.site_occupant().size() > 1;
+  }
+
+  // --- ClusterInvariants instantiations ----------------------------------------
+
+  // Here we are using ELEMENT as in Orbit<ELEMENT,SYMCOMPARETYPE>
+
+#define _ELEMENT(ORBIT) typename ORBIT::Element
+
+#define CLUSTER_INVARIANTS_INST(ELEMENT) \
+  template class ClusterInvariants<ELEMENT>; \
+  template bool almost_equal<ELEMENT>(const ClusterInvariants<ELEMENT> &A, const ClusterInvariants<ELEMENT> &B, double tol); \
+  template bool compare<ELEMENT>(const ClusterInvariants<ELEMENT> &A, const ClusterInvariants<ELEMENT> &B, double tol); \
+  template std::ostream &operator<< <ELEMENT>(std::ostream &sout, const ClusterInvariants<ELEMENT> &invariants); \
+ 
+  CLUSTER_INVARIANTS_INST(IntegralCluster)
+
+
+  // --- Orbit<ClusterType, SymCompareType> instantiations -----------------------
+
+#define  CLUSTER_ORBITS_INST(ITERATOR,INSERTER,ORBIT,ELEMENT,SPECSITERTOR) \
+  \
+  template class ORBIT; \
+  template ITERATOR find_orbit<ITERATOR,ELEMENT>(ITERATOR begin, ITERATOR end, ELEMENT e); \
+  \
   template INSERTER make_asymmetric_unit<INSERTER,typename ORBIT::SymCompareType>( \
     const IntegralCluster::PrimType &prim, \
     const SymGroup &generating_grp, \
@@ -61,9 +95,26 @@ namespace CASM {
 #define _SET_IT(ORBIT) std::set<ORBIT>::iterator
 #define _SET_INSERTER(ORBIT) std::insert_iterator<std::set<ORBIT> >
 
-#define CLUSTER_ORBITS_VECTOR_INST(ORBIT) CLUSTER_ORBITS_INST(_VECTOR_IT(ORBIT),_VECTOR_INSERTER(ORBIT),ORBIT,_SPECS_IT(ORBIT))
-#define CLUSTER_ORBITS_SET_INST(ORBIT) CLUSTER_ORBITS_INST(_SET_IT(ORBIT),_SET_INSERTER(ORBIT),ORBIT,_SPECS_IT(ORBIT))
+#define _ORBIT(ELEMENT,SYMCOMPARE) Orbit<ELEMENT,SYMCOMPARE>
 
-  CLUSTER_ORBITS_VECTOR_INST(PrimPeriodicIntegralClusterOrbit)
+#define CLUSTER_ORBITS_VECTOR_INST(ELEMENT,SYMCOMPARE) \
+  CLUSTER_ORBITS_INST( \
+    _VECTOR_IT(_ORBIT(ELEMENT,SYMCOMPARE)), \
+    _VECTOR_INSERTER(_ORBIT(ELEMENT,SYMCOMPARE)), \
+    _ORBIT(ELEMENT,SYMCOMPARE), \
+    _ELEMENT(_ORBIT(ELEMENT,SYMCOMPARE)), \
+    _SPECS_IT(_ORBIT(ELEMENT,SYMCOMPARE)))
+
+#define CLUSTER_ORBITS_SET_INST(ELEMENT,SYMCOMPARE) \
+  CLUSTER_ORBITS_INST( \
+    _SET_IT(_ORBIT(ELEMENT,SYMCOMPARE)), \
+    _SET_INSERTER(_ORBIT(ELEMENT,SYMCOMPARE)), \
+    _ORBIT(ELEMENT,SYMCOMPARE), \
+    _ELEMENT(_ORBIT(ELEMENT,SYMCOMPARE)), \
+    _SPECS_IT(_ORBIT(ELEMENT,SYMCOMPARE)))
+
+  CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, LocalSymCompare<IntegralCluster>)
+  CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, PrimPeriodicSymCompare<IntegralCluster>)
+  CLUSTER_ORBITS_VECTOR_INST(IntegralCluster, ScelPeriodicSymCompare<IntegralCluster>)
 
 }

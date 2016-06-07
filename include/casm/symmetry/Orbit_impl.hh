@@ -7,18 +7,24 @@ namespace CASM {
 
   namespace {
 
-    /// \brief Returns vector containing sorted indices of SymOp in first row of equivalence_map
+    /// \brief Returns vector containing sorted indices of SymOp in first column of equivalence_map
     ///
-    /// This is what the first row of equivalence_map will look like if Element
+    /// This is what the first column of equivalence_map will look like if Element
     /// 'proto' is the prototype.
+    template<typename Element, typename SymCompareType, typename EquivContainer>
     std::vector<Index> _sorter(
       const Element &proto,
-      const std::vector<Element> &equiv,
-      const SymGroup &g) {
+      const EquivContainer &equiv,
+      const SymGroup &g,
+      const SymCompareType &sym_compare) {
+
+      auto equal = [&](const Element & A, const Element & B) {
+        return sym_compare.intra_orbit_equal(A, B);
+      };
       int count = 0;
       std::vector<Index> sorter(-1, equiv.size());
       for(const auto &op : g) {
-        Index i = find_index(equiv, prepare(copy_apply(op, proto)), equal));
+        Index i = find_index(equiv, sym_compare.prepare(copy_apply(op, proto)), equal);
         if(sorter[i] == -1) {
           sorter[i] = op.index();
           count++;
@@ -31,6 +37,7 @@ namespace CASM {
       throw std::runtime_error("Error generating equivalence map");
     }
 
+    template<typename Element>
     struct _EqMapCompare {
       bool operator()(const std::pair<Element, std::vector<Index> > &A,
                       const std::pair<Element, std::vector<Index> > &B) {
@@ -51,19 +58,19 @@ namespace CASM {
   template<typename _Element, typename _SymCompareType>
   Orbit<_Element, _SymCompareType>::Orbit(Element generating_element,
                                           const SymGroup &generating_group,
-                                          const SymCompare<Element> &sym_compare) :
+                                          const _SymCompareType &sym_compare) :
     m_sym_compare(sym_compare) {
 
     const SymGroup &g = generating_group;
 
     auto prepare = [&](const Element & A) {
-      return m_sym_compare->prepare(A);
+      return m_sym_compare.prepare(A);
     };
     auto compare = [&](const Element & A, const Element & B) {
-      return m_sym_compare->intra_orbit_compare(A, B);
+      return m_sym_compare.intra_orbit_compare(A, B);
     };
     auto equal = [&](const Element & A, const Element & B) {
-      return m_sym_compare->intra_orbit_equal(A, B);
+      return m_sym_compare.intra_orbit_equal(A, B);
     };
 
     // generate equivalents
@@ -72,10 +79,10 @@ namespace CASM {
       t_equiv.insert(prepare(copy_apply(op, generating_element)));
     }
 
-    // sort element using each element's first equivalence map row to find prototype
-    std::set<std::pair<Element, std::vector<Index> >, _EqMapCompare> _set;
+    // sort element using each element's first equivalence map column to find prototype
+    std::set<std::pair<Element, std::vector<Index> >, _EqMapCompare<Element> > _set;
     for(const auto &e : t_equiv) {
-      _set.insert(std::make_pair(e, _sorter(e, t_equiv, g)));
+      _set.insert(std::make_pair(e, _sorter(e, t_equiv, g, m_sym_compare)));
     }
 
     // use _set.begin()->first for prototype, use _set.begin()->second to generate equiv
@@ -86,7 +93,7 @@ namespace CASM {
     // generate equivalence map
     m_equivalence_map.resize(m_element.size());
     for(const auto &op : g) {
-      Index i = find_index(m_element, prepare(copy_apply(op, m_element[0])), equal));
+      Index i = find_index(m_element, prepare(copy_apply(op, m_element[0])), equal);
       m_equivalence_map[i].push_back(op);
     }
 
@@ -94,7 +101,7 @@ namespace CASM {
 
   /// \brief Apply symmetry to Orbit
   template<typename _Element, typename _SymCompareType>
-  Orbit &Orbit<_Element, _SymCompareType>::apply_sym(const SymOp &op) {
+  Orbit<_Element, _SymCompareType> &Orbit<_Element, _SymCompareType>::apply_sym(const SymOp &op) {
 
     // transform elements
     for(auto it = m_element.begin(); it != m_element.end(); ++it) {
@@ -109,7 +116,7 @@ namespace CASM {
     }
 
     // transform sym_compare functor
-    m_sym_compare->apply_sym(op);
+    m_sym_compare.apply_sym(op);
 
     return *this;
   }
@@ -134,18 +141,28 @@ namespace CASM {
     typedef typename std::iterator_traits<OrbitIterator>::value_type orbit_type;
     const auto &sym_compare = begin->sym_compare();
 
+    struct GetPrototype {
+      const Element &operator()(const orbit_type &orbit) const {
+        return orbit.prototype();
+      }
+    };
+
+    auto transform_it = [](OrbitIterator it) {
+      return boost::make_transform_iterator(it, GetPrototype());
+    };
+
     // first find range of possible orbit by checking invariants
     auto compare = [&](const Element & A, const Element & B) {
-      return sym_compare.invariants_compare(A, B);
+      return sym_compare.invariants_compare(A.invariants(), B.invariants());
     };
-    auto _range = std::equal_range(begin, end, e, compare);
+    auto _range = std::equal_range(transform_it(begin), transform_it(end), e, compare);
 
     // find if any of the orbits in range [_range.first, _range.second) contain equivalent
     auto contains = [&](const orbit_type & orbit) {
       return orbit.contains(e);
     };
-    auto res = std::find_if(_range.first, _range.second, contains);
-    if(res == _range.second) {
+    auto res = std::find_if(_range.first.base(), _range.second.base(), contains);
+    if(res == _range.second.base()) {
       return end;
     }
     return res;
