@@ -107,12 +107,31 @@ namespace CASM {
     return json.put_array(vec.begin(), vec.end());
   }
 
-  /// Read map from JSON
+  /// Read std::vector<T> from JSON
   ///
   /// Clears any previous contents
   template<typename T>
   void from_json(std::vector<T> &vec, const jsonParser &json) {
     vec.resize(json.size());
+    int i = 0;
+    for(auto it = json.begin(); it != json.end(); ++it, ++i) {
+      from_json(vec[i], *it);
+    }
+  }
+
+  /// Read std::vector<T> from JSON
+  ///
+  /// Clears any previous contents
+  /// \code
+  /// vec.resize(json.size(), initial);
+  /// int i = 0;
+  /// for(auto it = json.begin(); it != json.end(); ++it, ++i) {
+  ///   from_json(vec[i], *it);
+  /// }
+  /// \endcode
+  template<typename T>
+  void from_json(std::vector<T> &vec, const jsonParser &json, const T &initial) {
+    vec.resize(json.size(), initial);
     int i = 0;
     for(auto it = json.begin(); it != json.end(); ++it, ++i) {
       from_json(vec[i], *it);

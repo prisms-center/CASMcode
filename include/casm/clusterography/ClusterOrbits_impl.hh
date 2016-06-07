@@ -7,6 +7,36 @@
 
 namespace CASM {
 
+  namespace {
+
+    /// Read max_length vector from 'bspecs' JSON
+    ///
+    /// \returns std::vector<double> giving 'max_length' for clusters in branch 2+ (pairs, triplets, etc.)
+    ///
+    /// probably should get organized somewhere...
+    std::vector<double> max_length_from_bspecs(const jsonParser &bspecs) {
+
+      std::vector<double> max_length;
+
+      auto update_max_length = [&](int branch, double length) {
+        while(branch - 1 > max_length.size()) {
+          max_length.push_back(0.0);
+        }
+        max_length[branch - 2] = length;
+      };
+
+      if(bspecs.contains("orbit_branch_specs")) {
+        const auto &j = bspecs["orbit_branch_specs"];
+        for(auto it = j.begin(); it != j.end(); ++it) {
+          update_max_length(std::stoi(it.name()), it->find("max_length")->get<double>());
+        }
+      }
+
+      return max_length;
+    }
+
+  }
+
   /* -- Cluster Orbit generating function definitions ------------------------------------- */
 
   /// \brief Output the neighborhood of UnitCellCoord within max_radius of a unit cell
@@ -142,7 +172,6 @@ namespace CASM {
                                             const OrbitBranchSpecs<OrbitType> &specs,
                                             OrbitOutputIterator result,
                                             std::ostream &status) {
-    //std::cout << "begin next_orbitbranch" << std::endl;
 
     typedef IntegralCluster cluster_type;
     typedef cluster_type::InvariantsType invariants_type;
@@ -201,6 +230,7 @@ namespace CASM {
 
         // if not yet found, use test to generate a new Orbit
         orbits.insert(OrbitType(test, g, sym_compare));
+
       }
     }
 
@@ -210,7 +240,6 @@ namespace CASM {
     // print status messages
     status << clean << '\r';
 
-    //std::cout << "finish next_orbitbranch" << std::endl;
     return result;
   }
 
@@ -326,7 +355,7 @@ namespace CASM {
     // collect the environment of sites here
     std::vector<UnitCellCoord> candidate_sites;
 
-    // add specs for null cluster orbit
+    // --- add specs for null cluster orbit ------------------
     specs.emplace_back(prim,
                        candidate_sites.begin(),
                        candidate_sites.end(),
@@ -337,7 +366,7 @@ namespace CASM {
     sym_compare);
 
 
-    // add specs for asymmetric unit orbit
+    // --- add specs for asymmetric unit orbit ------------------
     for(int i = 0; i < prim.basis.size(); ++i) {
       candidate_sites.emplace_back(prim, i, 0, 0, 0);
     }
@@ -350,7 +379,8 @@ namespace CASM {
     },
     sym_compare);
 
-    // add specs for additional orbit branches
+
+    // --- add specs for additional orbit branches ------------------
     for(auto it = max_length.begin(); it != max_length.end(); ++it) {
 
       // construct the neighborhood of sites to consider for the orbit
@@ -398,27 +428,12 @@ namespace CASM {
 
     typedef Orbit<IntegralCluster, SymCompareType> orbit_type;
 
-    // get 'max_length' vector from bspecs
-    std::vector<double> max_length;
-
-    auto update_max_length = [&](int branch, double length) {
-      while(branch > max_length.size() - 1) {
-        max_length.push_back(0.0);
-      }
-      max_length[branch] = length;
-    };
-
-    const auto &j = bspecs["orbit_branch_specs"];
-    for(auto it = j.begin(); it != j.end(); ++it) {
-      update_max_length(std::stoi(it.name()), it->find("max_length")->get<double>());
-    }
-
     // generate orbits
     std::vector<orbit_type> orbits;
     make_orbits(
       prim,
       generating_grp,
-      max_length,
+      max_length_from_bspecs(bspecs),
       crystallography_tol,
       site_filter,
       sym_compare,

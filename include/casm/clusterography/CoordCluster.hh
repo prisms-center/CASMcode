@@ -94,13 +94,19 @@ namespace CASM {
       return static_cast<Coordinate>(this->element(i));
     }
 
-    /// \brief Return the min pair distance
+    /// \brief Return the min pair distance, or 0.0 if size() <= 1
     double min_length() const {
+      if(this->size() <= 1) {
+        return 0.0;
+      }
       return this->invariants().displacement().front();
     }
 
-    /// \brief Return the max pair distance
+    /// \brief Return the max pair distance, or 0.0 if size() <= 1
     double max_length() const {
+      if(this->size() <= 1) {
+        return 0.0;
+      }
       return this->invariants().displacement().back();
     }
 

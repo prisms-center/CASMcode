@@ -13,6 +13,31 @@
 using namespace CASM;
 using namespace test;
 
+template<typename OrbitType>
+jsonParser expected_first_prim_periodic_orbit(const OrbitType &orbit) {
+  jsonParser json = jsonParser::object();
+  json["equiv"] = jsonParser::array();
+  for(const auto &equiv : orbit) {
+    json["equiv"].push_back(equiv[0]);
+  }
+  return json;
+}
+
+template<typename OrbitIterator>
+jsonParser expected_asym_unit(OrbitIterator begin, OrbitIterator end) {
+  jsonParser json = jsonParser::object();
+  json["orbits"] = jsonParser::array(std::distance(begin, end), jsonParser::object());
+  auto j_it = json["orbits"].begin();
+  for(auto it = begin; it != end; ++it) {
+    const auto &proto = it->prototype();
+    auto &j = (*j_it++)["prototype"];
+    j["min_length"] = proto.min_length();
+    j["max_length"] = proto.max_length();
+    j["sites"].put_array(proto.begin(), proto.end());
+  }
+  return json;
+}
+
 template<typename OrbitIterator>
 jsonParser expected_Nclusters(OrbitIterator begin, OrbitIterator end) {
   jsonParser nclust = jsonParser::array();
@@ -46,20 +71,52 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
 
     // generate prim
     Structure prim(read_prim(j["prim"]));
+    double crystallography_tol = TOL;
+
+    // generate a one site orbit, prim periodic
+    {
+      IntegralCluster clust(prim);
+      BOOST_CHECK_MESSAGE(true, "IntegralCluster constructed");
+      clust.elements().push_back(UnitCellCoord(prim, 0, UnitCell(0, 0, 0)));
+      BOOST_CHECK_MESSAGE(clust.size() == 1, "site added");
+      PrimPeriodicIntegralClusterOrbit orbit(
+        clust,
+        prim.factor_group(),
+        PrimPeriodicIntegralClusterSymCompare(crystallography_tol));
+      BOOST_CHECK_MESSAGE(orbit.prototype().size() == 1, "orbit generated");
+
+      check("first_prim_periodic_orbit", j, expected_first_prim_periodic_orbit(orbit), test_cases_path, quiet);
+    }
+
+    // generate asym unit
+    {
+      std::vector<PrimPeriodicIntegralClusterOrbit> asym_unit;
+      make_asymmetric_unit(
+        prim,
+        prim.factor_group(),
+        PrimPeriodicIntegralClusterSymCompare(crystallography_tol),
+        std::back_inserter(asym_unit));
+
+      // run checks:
+      check("asym_unit", j, expected_asym_unit(asym_unit.begin(), asym_unit.end()), test_cases_path, quiet);
+    }
 
     // generate cluster orbits
-    std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-    make_orbits(prim,
-                prim.factor_group(),
-                j["bspecs"],
-                TOL,
-                alloy_sites_filter,
-                PrimPeriodicIntegralClusterSymCompare(TOL),
-                std::back_inserter(orbits),
-                std::cout);
+    {
+      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+      make_orbits(prim,
+                  prim.factor_group(),
+                  j["bspecs"],
+                  crystallography_tol,
+                  alloy_sites_filter,
+                  PrimPeriodicIntegralClusterSymCompare(crystallography_tol),
+                  std::back_inserter(orbits),
+                  std::cout);
 
-    // run checks:
-    check("Nclusters", j, expected_Nclusters(orbits.begin(), orbits.end()), test_cases_path, quiet);
+      // run checks:
+      check("Nclusters", j, expected_Nclusters(orbits.begin(), orbits.end()), test_cases_path, quiet);
+    }
+
     // ... add more here ...
 
   }

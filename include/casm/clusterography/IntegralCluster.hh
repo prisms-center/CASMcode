@@ -31,6 +31,48 @@ namespace CASM {
   ///
   typedef CoordCluster<UnitCellCoord> IntegralCluster;
 
+  /// \brief Write IntegralCluster to JSON object
+  ///
+  /// Format:
+  /// \code
+  /// {
+  ///   "min_length" : number,
+  ///   "max_length" : number,
+  ///   "sites" : [
+  ///     [b, i, j, k],
+  ///     ...
+  ///   ]
+  /// }
+  /// \endcode
+  inline jsonParser &to_json(const IntegralCluster &clust, jsonParser &json) {
+    json.put_obj();
+    json["min_length"] = clust.min_length();
+    json["max_length"] = clust.max_length();
+    json["sites"].put_array(clust.begin(), clust.end());
+    return json;
+  }
+
+  /// \brief Read from JSON
+  inline void from_json(IntegralCluster &clust, const jsonParser &json) {
+    UnitCellCoord coord(clust.prim());
+    for(auto it = json.begin(); it != json.end(); ++it) {
+      from_json(clust.elements(), json["sites"], coord);
+    }
+    return;
+  }
+
+  template<>
+  struct jsonConstructor<IntegralCluster> {
+
+    /// \brief Construct from JSON
+    static IntegralCluster from_json(const jsonParser &json, const Structure &prim) {
+      IntegralCluster clust(prim);
+      CASM::from_json(clust, json);
+      return clust;
+    }
+  };
+
+
 
   /* -- IntegralClusterSymCompare Declaration ------------------------------------- */
 
@@ -167,6 +209,9 @@ namespace CASM {
     ///
     /// - Sorts UnitCellCoord and translates so that obj[0] is in the origin unit cell
     IntegralCluster prepare_impl(IntegralCluster obj) const {
+      if(!obj.size()) {
+        return obj;
+      }
       std::sort(obj.begin(), obj.end());
       return obj - obj[0].unitcell();
     }
@@ -213,6 +258,9 @@ namespace CASM {
     ///
     /// - Sorts UnitCellCoord and translates so that obj[0] is within the supercell
     IntegralCluster prepare_impl(IntegralCluster obj) const {
+      if(!obj.size()) {
+        return obj;
+      }
       std::sort(obj.begin(), obj.end());
       auto trans = obj[0].unitcell() - m_prim_grid.get_within(obj[0]).unitcell();
       return obj - trans;

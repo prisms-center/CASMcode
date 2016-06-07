@@ -21,8 +21,10 @@ namespace CASM {
       auto equal = [&](const Element & A, const Element & B) {
         return sym_compare.intra_orbit_equal(A, B);
       };
+
       int count = 0;
-      std::vector<Index> sorter(-1, equiv.size());
+      std::vector<Index> sorter(equiv.size(), -1);
+
       for(const auto &op : g) {
         Index i = find_index(equiv, sym_compare.prepare(copy_apply(op, proto)), equal);
         if(sorter[i] == -1) {
@@ -96,7 +98,6 @@ namespace CASM {
       Index i = find_index(m_element, prepare(copy_apply(op, m_element[0])), equal);
       m_equivalence_map[i].push_back(op);
     }
-
   }
 
   /// \brief Apply symmetry to Orbit
