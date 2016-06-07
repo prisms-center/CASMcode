@@ -2,7 +2,8 @@
 #include <boost/test/unit_test.hpp>
 
 /// What is being tested:
-#include "casm/clusterography/Orbitree.hh"
+#include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clusterography/IntegralCluster.hh"
 
 /// What is being used to test it:
 #include "casm/crystallography/Structure.hh"
@@ -12,14 +13,12 @@
 using namespace CASM;
 using namespace test;
 
-jsonParser expected_Nclusters(const SiteOrbitree &tree) {
+template<typename OrbitIterator>
+jsonParser expected_Nclusters(OrbitIterator begin, OrbitIterator end) {
   jsonParser nclust = jsonParser::array();
   // check Nclusters for each orbit
-  for(int branch = 0; branch < tree.size(); ++branch) {
-    nclust.push_back(jsonParser::array());
-    for(int orbit = 0; orbit < tree[branch].size(); ++orbit) {
-      nclust[branch].push_back(tree[branch][orbit].size());
-    }
+  for(auto it = begin; it != end; ++it) {
+    nclust.push_back(it->size());
   }
   return nclust;
 }
@@ -49,14 +48,18 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
     Structure prim(read_prim(j["prim"]));
 
     // generate cluster orbits
-    SiteOrbitree tree(prim.lattice());
-    tree = make_orbitree(prim, j["bspecs"]);
-
-    jsonParser clust_json;
-    to_json(jsonHelper(tree, prim), clust_json);
+    std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+    make_orbits(prim,
+                prim.factor_group(),
+                j["bspecs"],
+                TOL,
+                alloy_sites_filter,
+                PrimPeriodicIntegralClusterSymCompare(TOL),
+                std::back_inserter(orbits),
+                std::cout);
 
     // run checks:
-    check("Nclusters", j, expected_Nclusters(tree), test_cases_path, quiet);
+    check("Nclusters", j, expected_Nclusters(orbits.begin(), orbits.end()), test_cases_path, quiet);
     // ... add more here ...
 
   }

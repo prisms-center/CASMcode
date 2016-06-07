@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(PrimNeighborListBasics) {
 
   // expand
   std::set<UnitCellCoord> nbors;
-  nbors.insert(UnitCellCoord(0, UnitCell(3, 0, 0)));
+  nbors.insert(UnitCellCoord(prim, 0, UnitCell(3, 0, 0)));
   nlist.expand(nbors.begin(), nbors.end());
 
   // size
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(SuperNeighborListBasics) {
 
   // expand
   std::set<UnitCellCoord> nbors;
-  nbors.insert(UnitCellCoord(0, UnitCell(3, 0, 0)));
+  nbors.insert(UnitCellCoord(prim, 0, UnitCell(3, 0, 0)));
   nlist.expand(nbors.begin(), nbors.end());
 
   // size
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(Proj) {
   proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
-  Structure prim = primclex.get_prim();
+  Structure prim = primclex.prim();
   const DirectoryStructure &dir = primclex.dir();
   const ProjectSettings &set = primclex.settings();
 
