@@ -126,13 +126,9 @@ namespace CASM {
     virtual double cache_eval() const = 0;
     virtual double cache_deval(const DoF::RemoteHandle &dvar) const = 0;
 
-    //virtual double eval(int var_state) const;
-    virtual double eval(const Array<Index> &dof_IDs, const Array<Index> &var_states) const;
-    virtual double eval(const Array<Index> &dof_IDs, const Array<double> &arg_states) const;
-
     virtual int register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles);
 
-    bool update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs);
+    bool update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs);
 
 
     virtual Function *apply_sym_coeffs(const SymOp &op, int dependency_layer = 1) {
@@ -254,7 +250,7 @@ namespace CASM {
 
     virtual bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL) = 0;
 
-    virtual bool _update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs) {
+    virtual bool _update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
       // default action: do nothing, report that function does not change (via 'return false');
       return false;
     }

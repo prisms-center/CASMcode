@@ -97,8 +97,6 @@ namespace CASM {
       return remote_deval(dvar);
     }
 
-    double eval(const Array<Index> &dof_IDs, const Array<Index> &var_states) const;
-
     jsonParser &to_json(jsonParser &json) const;
     void from_json(const jsonParser &json);
   protected:
@@ -106,7 +104,7 @@ namespace CASM {
 
     bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL);
 
-    bool _update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs);
+    bool _update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) override;
 
   private:
     //**Inherited from Function:**

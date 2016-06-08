@@ -33,6 +33,8 @@ namespace CASM {
       /// \brief Generate a symmetry representation for this DoF
       virtual SymGroupRepID generate_symrep(MasterSymGroup const &_group) const = 0;
 
+      virtual std::string site_basis_description(BasisSet site_bset, Site site) const = 0;
+
       /// \brief non-virtual method to obtain copy through Traits pointer
       std::unique_ptr<Traits> clone() const {
         return static_cast<Traits *>(_clone());
@@ -66,6 +68,23 @@ namespace CASM {
       /// \brief Generate a symmetry representation for this DoF
       SymGroupRepID generate_symrep(MasterSymGroup const &_group) const override {
         throw std::runtime_error("OccupationDoFTraits::generate_symrep not implemented!");
+      }
+
+      std::string site_basis_description(BasisSet site_bset, Site site) const override {
+        if(site_bset.size() == 0)
+          out << "        [No site basis functions]\n\n";
+        for(Index f = 0; f < site_bset.size(); f++) {
+          for(Index s = 0; s < site.site_occupant().size(); s++) {
+            if(s == 0)
+              out << "    ";
+            out << "    \\phi_" << site.basis_ind() << '_' << f << '[' << site.site_occupant()[s].name << "] = "
+                << site_bset[f]->eval(std::vector<Index>(1, site.site_occupant().ID()), std::vector<Index>(1, s));
+            if(s + 1 == site.site_occupant().size())
+              out << "\n";
+            else
+              out << ",   ";
+          }
+        }
       }
 
     protected:

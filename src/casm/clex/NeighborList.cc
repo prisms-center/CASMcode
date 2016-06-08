@@ -103,6 +103,20 @@ namespace CASM {
     return m_sublat_indices;
   }
 
+  /// \brief Get neighborlist index of UnitCellCoord @param _ucc, expanding neighborhood if necessary
+  PrimNeighborList::size_type PrimNeighborList::neighbor_index(UnitCellCoord const &_ucc) {
+    expand(_ucc);
+    return _neighbor_index(_ucc);
+  }
+
+  /// \brief Get neighborlist index of UnitCellCoord @param _ucc, without expanding neighborhood
+  PrimNeighborList::size_type PrimNeighborList::_neighbor_index(UnitCellCoord const &_ucc) const {
+    size_type uc_ind(find_index(m_neighborhood, _ucc.unitcell()));
+    size_type sublat_dist(find_index(sublat_indices(), _ucc.sublat()));
+
+    return uc_ind * sublat_indices().size() + sublat_dist;
+  }
+
   /// \brief Calculate A.transpose()*M*A
   PrimNeighborList::Scalar PrimNeighborList::_dist(const UnitCell &A) const {
     return A.transpose() * m_W * A;

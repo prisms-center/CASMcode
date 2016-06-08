@@ -52,12 +52,19 @@ namespace CASM {
     }
 
     /// \brief generate clust_basis for all equivalent clusters in @param _orbitree
-    void generate(std::vector<Orbit<IntegralCluster> >::const_iterator _begin,
-                  std::vector<Orbit<IntegralCluster> >::const_iterator _end,
+    template<typename OrbitIterType>
+    void generate(OrbitIterType _begin,
+                  OrbitIterType _end,
                   std::vector<DoFType> const &dof_keys,
                   Index max_poly_order = -1);
 
   private:
+    template<typename OrbitType>
+    BasisSet _construct_prototype_basis(OrbitType const &_orbit,
+                                        std::vector<DoFType> const &local_keys,
+                                        std::vector<DoFType> const &global_keys,
+                                        Index max_poly_order) const;
+
     /// \brief Performs heavy lifting for populating site bases in m_site_bases
     void _populate_site_bases(Structure const &_prim);
 
@@ -101,7 +108,7 @@ namespace CASM {
   /// Print cluster with basis_index and nlist_index (from 0 to size()-1), followed by cluster basis functions
   /// Functions are labeled \Phi_{i}, starting from i = @param begin_ind
   void print_clust_basis(ClexBasis const &_basis_set,
-                         PrimNeighborList const &_nlist,
+                         PrimNeighborList &_nlist,
                          std::ostream &_stream,
                          Index begin_ind = 0,
                          int space = 18,
@@ -109,28 +116,31 @@ namespace CASM {
                          COORD_TYPE mode = COORD_DEFAULT);
 
   /// returns std::vector of std::string, each of which is
+  template<typename OrbitType>
   std::vector<std::string> orbit_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
-                                                      Orbit<IntegralCluster> const &_clust_orbit,
-                                                      PrimNeighborList const &_nlist,
+                                                      OrbitType const &_clust_orbit,
+                                                      PrimNeighborList &_nlist,
                                                       std::vector<FunctionVisitor *> const &labelers);
 
   /// nlist_index is the index into the nlist for the site the flower centers on
+  template<typename OrbitType>
   std::vector<std::string> flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
-                                                       Orbit<IntegralCluster> const &_clust_orbit,
-                                                       PrimNeighborList const &_nlist,
+                                                       OrbitType const &_clust_orbit,
+                                                       PrimNeighborList &_nlist,
                                                        std::vector<FunctionVisitor *> const &labelers,
                                                        Index sublat_index);
 
   /// b_index is the basis site index, f_index is the index of the configurational site basis function in Site::occupant_basis
   /// nlist_index is the index into the nlist for the site the flower centers on
-  std::vector<std::string> delta_occfunc_flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
-                                                                     Orbit<IntegralCluster> const &_clust_orbit,
-                                                                     PrimNeighborList const &_nlist,
-                                                                     BasisSet site_basis,
-                                                                     const std::vector<FunctionVisitor *> &labelers,
-                                                                     Index nlist_index,
-                                                                     Index b_index,
-                                                                     Index f_index);
+  template<typename OrbitType>
+  std::map< UnitCell, std::vector< std::string > > delta_occfunc_flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
+      OrbitType const &_clust_orbit,
+      PrimNeighborList &_nlist,
+      BasisSet site_basis,
+      const std::vector<FunctionVisitor *> &labelers,
+      Index nlist_index,
+      Index b_index,
+      Index f_index);
 
 
   namespace ClexBasis_impl {
@@ -143,4 +153,5 @@ namespace CASM {
                                        std::vector<BasisSet const *> const &site_dof_sets);
   }
 }
+#include "casm/clex/ClexBasis_impl.hh"
 #endif

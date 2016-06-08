@@ -289,9 +289,9 @@ namespace CASM {
   void BasisSet::set_variable_basis(const DoFSet _dof_set) {
     m_argument.clear();
     m_basis_symrep_ID = _dof_set.sym_rep_ID();
-    Array<Index> tdof_IDs;
+    std::vector<Index> tdof_IDs;
     for(Index i = 0; i < _dof_set.size(); i++) {
-      if(!_dof_set[i].is_locked() && !tdof_IDs.contains(_dof_set[i].ID()))
+      if(!_dof_set[i].is_locked() && !contains(tdof_IDs, _dof_set[i].ID()))
         tdof_IDs.push_back(_dof_set[i].ID());
     }
     set_dof_IDs(tdof_IDs);
@@ -301,12 +301,12 @@ namespace CASM {
     _refresh_ID();
   }
   //*******************************************************************************************
-  void BasisSet::set_dof_IDs(const Array<Index> &new_IDs) {
+  void BasisSet::set_dof_IDs(const std::vector<Index> &new_IDs) {
     _update_dof_IDs(m_dof_IDs, new_IDs);
   }
   //*******************************************************************************************
   // Pass before_IDs by value to avoid aliasing issues when called from BasisSet::set_dof_IDs()
-  void BasisSet::_update_dof_IDs(const Array<Index> before_IDs, const Array<Index> &after_IDs) {
+  void BasisSet::_update_dof_IDs(const std::vector<Index> before_IDs, const std::vector<Index> &after_IDs) {
     //std::cout << "BasisSet " << this << " --> m_dof_IDs is " << m_dof_IDs << "; before_IDs: " << before_IDs << "; after_ID: " << after_IDs << "\n" << std::endl;
     if(before_IDs.size() != after_IDs.size() && size() > 0) {
       std::cerr << "CRITICAL ERROR: In BasisSet::update_dof_IDs(), new IDs are incompatible with current IDs.\n"
@@ -323,7 +323,7 @@ namespace CASM {
     else {
       Index m;
       for(Index i = 0; i < m_dof_IDs.size(); i++) {
-        m = before_IDs.find(m_dof_IDs[i]);
+        m = find_index(before_IDs, m_dof_IDs[i]);
         if(m == before_IDs.size()) {
           std::cerr << "CRITICAL ERROR: In BasisSet::update_dof_IDs(), new IDs are incompatible with current IDs.\n"
                     << "                Exiting...\n";
@@ -454,7 +454,7 @@ namespace CASM {
       Index offset = 0;
       for(Index j = 0; j < tsubs.size(); j++) {
         //std::cout << "dof_IDs of tsub " << j << " are " << tsubs[j]->dof_IDs() << "\n";
-        Index ID_ind = (tsubs[j]->dof_IDs()).find(dof_IDs()[i]);
+        Index ID_ind = find_index(tsubs[j]->dof_IDs(), dof_IDs()[i]);
         if(ID_ind == (tsubs[j]->dof_IDs()).size())
           continue;
         const SubBasis &sub_basis(tsubs[j]->dof_sub_basis(ID_ind));
@@ -552,7 +552,7 @@ namespace CASM {
     }
 
     if(!allowed_occs.is_locked()) {
-      set_dof_IDs(Array<Index>(1, allowed_occs.ID()));
+      set_dof_IDs(std::vector<Index>(1, allowed_occs.ID()));
       m_dof_subbases[0] = Array<Index>::sequence(0, N - 2);
     }
     //std::cout << "INSIDE construct_orthonormal_discrete_functions and gram_mat is \n";

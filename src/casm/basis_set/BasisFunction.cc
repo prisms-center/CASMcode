@@ -207,7 +207,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  bool Function::update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs) {
+  bool Function::update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
     //JCT shared_basis
     /*bool is_updated(false);
     for(Index i = 0; i < m_argument.size(); i++) {
@@ -240,36 +240,6 @@ namespace CASM {
     }
 
     return m_tex_formula;
-  }
-
-  //*******************************************************************************************
-  /*
-  double Function::eval(int var_state) const {
-
-    std::cerr << "WARNING: You are trying to evaluate a function using integer argument,\n"
-              << "         but that option is not available for the function:\n"
-              << "         " << (this->formula()) << "\n";
-    return NAN;
-  }
-  */
-  //*******************************************************************************************
-
-  double Function::eval(const Array<Index> &dof_IDs, const Array<double> &arg_state) const {
-
-    std::cerr << "WARNING: You are trying to evaluate a function using an Array<double> as argument,"
-              << "         but that option is not available for the function:\n"
-              << "         " << (this->formula()) << "\n";
-    return NAN;
-  }
-
-  //*******************************************************************************************
-
-  double Function::eval(const Array<Index> &dof_IDs, const Array<Index> &var_state) const {
-
-    std::cerr << "WARNING: You are trying to evaluate a function using an Array<int> as argument,\n"
-              << "         but that option is not available for the function:\n"
-              << "         " << (this->formula()) << "\n";
-    return NAN;
   }
 
   //*******************************************************************************************

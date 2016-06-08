@@ -301,21 +301,6 @@ namespace CASM {
 
   //*******************************************************************************************
 
-
-  double OccupantFunction::eval(const Array<Index> &dof_IDs, const Array<Index> &var_states) const {
-    Index which_state = dof_IDs.find(dof().ID());
-    if(which_state < var_states.size())
-      return m_eval_table[var_states[which_state]];
-    //else
-    std::cerr << "CRITICAL ERROR:  In OccupantFunction::eval(), DoF ID of this OccupantFunction (" << dof().ID() << ") is not among specified IDs: " << dof_IDs << "\n"
-              << "                 Exiting...\n";
-    assert(0);
-    exit(1);
-  }
-
-  //*******************************************************************************************
-
-
   bool OccOccOperation::compare(const Function *LHS, const Function *RHS) const {
     return static_cast<OccupantFunction const *>(LHS)->compare(static_cast<OccupantFunction const *>(RHS));
 

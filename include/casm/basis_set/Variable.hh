@@ -115,7 +115,7 @@ namespace CASM {
     Function *_apply_sym(const SymOp &op);
     bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL);
 
-    bool _update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs);
+    bool _update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs);
 
   };
 

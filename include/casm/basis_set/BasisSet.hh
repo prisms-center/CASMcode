@@ -134,9 +134,9 @@ namespace CASM {
     /// Define the basis set to contain only variables (e.g., x,y,z)
     void set_variable_basis(const DoFSet &_dof_set);
 
-    void set_dof_IDs(const Array<Index> &new_IDs);
+    void set_dof_IDs(const std::vector<Index> &new_IDs);
 
-    const Array<Index> &dof_IDs() const {
+    const std::vector<Index> &dof_IDs() const {
       return m_dof_IDs;
     }
 
@@ -227,7 +227,7 @@ namespace CASM {
     // {x, y, x*u, x*v, x*w, y*u, y*v,y*w, x*u*u, x*u*v, x*u*w, ..., y*w*w}
     Index m_min_poly_order, m_max_poly_order;
 
-    Array<Index> m_dof_IDs;
+    std::vector<Index> m_dof_IDs;
     Array<SubBasis> m_dof_subbases;
     Array<PolyConstraint> m_min_poly_constraints, m_max_poly_constraints;
 
@@ -267,7 +267,7 @@ namespace CASM {
       m_argument = new_args;
     }
 
-    void _update_dof_IDs(const Array<Index> before_IDs, const Array<Index> &after_IDs);
+    void _update_dof_IDs(const std::vector<Index> before_IDs, const std::vector<Index> &after_IDs);
 
     //non-const access to constraints
     Array<PolyConstraint> &_min_poly_constraints() {
