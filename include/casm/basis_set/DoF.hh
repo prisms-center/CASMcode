@@ -5,6 +5,7 @@
 #include<boost/algorithm/string.hpp>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/misc/algorithm.hh"
 #include "casm/misc/unique_cloneable_map.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
 
@@ -32,7 +33,6 @@ namespace CASM {
         m_type_name(_type_name),
         m_domain(_domain),
         m_mode(_mode) {
-
       }
 
       /// \brief Allow destruction through base pointer
@@ -94,6 +94,11 @@ namespace CASM {
       virtual bool obscures_occupant_chirality() const {
         return false;
       }
+
+      std::unique_ptr<BasicTraits> clone() const {
+        return std::unique_ptr<BasicTraits>(_clone());
+      }
+
     protected:
       virtual BasicTraits *_clone() const = 0;
 
@@ -112,16 +117,50 @@ namespace CASM {
     class RemoteHandle {
     public:
       // \brief Initialize pointer to double
-      explicit RemoteHandle(double const &d) : m_d_ptr(&d), m_i_ptr(nullptr) {}
+      RemoteHandle(std::string const &_type_name,
+                   std::string const &_var_name,
+                   Index _dof_ID) :
+        m_type_name(_type_name),
+        m_var_name(_var_name),
+        m_dof_ID(_dof_ID) {
+
+      }
+
+      // \brief Initialize pointer to double
+      RemoteHandle &operator=(double const &d) {
+        m_d_ptr = &d;
+        m_i_ptr = nullptr;
+        return *this;
+      }
 
       // \brief Initialize pointer to int
-      explicit RemoteHandle(int const &i) : m_d_ptr(nullptr), m_i_ptr(&i) {}
+      RemoteHandle &operator=(int const &i) {
+        m_d_ptr = nullptr;
+        m_i_ptr = &i;
+        return *this;
+      }
 
       // \brief prevent construction by non-addressable integer
-      RemoteHandle(int &&i) = delete;
+      RemoteHandle &operator=(double &&d) = delete;
 
       // \brief prevent construction by non-addressable double
-      RemoteHandle(double &&d) = delete;
+      RemoteHandle &operator=(int &&i) = delete;
+
+      // \brief Less-than comparison to allow use of STL algorithms
+      bool operator<(RemoteHandle const &_rhs)const {
+        return m_dof_ID < _rhs.m_dof_ID
+               || (m_dof_ID == _rhs.m_dof_ID
+                   && (m_type_name < _rhs.m_type_name
+                       || (m_type_name == _rhs.m_type_name
+                           && m_var_name < _rhs.m_var_name)));
+      }
+
+      // \brief Equality comparison, irrespective of internal pointers (compares name and ID only)
+      bool operator==(RemoteHandle const &_rhs)const {
+        return m_dof_ID == _rhs.m_dof_ID
+               && m_type_name == _rhs.m_type_name
+               && m_var_name == _rhs.m_var_name;
+      }
 
       // \brief const access of integer pointer
       const int *i_ptr() const {
@@ -134,11 +173,12 @@ namespace CASM {
       }
 
     private:
-      double const *const m_d_ptr;
-      int const *const m_i_ptr;
-      // In future, may need following:
-      // std::string m_type_name;
-      // Index m_dof_ID;
+      double const *m_d_ptr;
+      int const *m_i_ptr;
+
+      std::string m_type_name;
+      std::string m_var_name;
+      Index m_dof_ID;
     };
   }
 
@@ -199,6 +239,11 @@ namespace CASM {
       return m_dof_ID;
     }
 
+    /// \brief Create a RemoteHandle that refers to this DoF
+    RemoteHandle handle()const {
+      return RemoteHandle(type_name(), var_name(), ID());
+    }
+
     /// \brief true if ID is locked
     bool is_locked() const {
       return m_ID_lock;
@@ -222,6 +267,14 @@ namespace CASM {
       m_ID_lock = false;
     }
 
+  protected:
+    void _set_type_name(std::string _type_name) {
+      std::swap(m_type_name, _type_name);
+    }
+
+    void _set_var_name(std::string _var_name) {
+      std::swap(m_var_name, _var_name);
+    }
   private:
     typedef notstd::unique_cloneable_map<std::string, BasicTraits> TraitsMap;
     static TraitsMap &_traits_map();
@@ -242,7 +295,11 @@ namespace CASM {
 
   class DiscreteDoF : public DoF {
   public:
-    DiscreteDoF(): DoF(), m_current_state(0), m_remote_state(nullptr), m_sym_rep_ID(SymGroupRepID::identity(0)) {}
+    DiscreteDoF():
+      DoF(),
+      m_current_state(0),
+      m_remote_state(nullptr),
+      m_sym_rep_ID(SymGroupRepID::identity(0)) {}
 
     DiscreteDoF(TypeFunc _type_func,
                 std::string const &_var_name,
@@ -289,7 +346,7 @@ namespace CASM {
       return m_remote_state;
     }
 
-    void register_remote(RemoteHandle const &handle) {
+    void register_remote(RemoteHandle const &handle) const {
       assert(handle.i_ptr() && "In DiscreteDoF::register_remote(), attempting to register to nullptr!");
       m_remote_state = handle.i_ptr();
     }
@@ -325,15 +382,12 @@ namespace CASM {
       out << value();
     }
 
-    virtual
-    jsonParser &to_json(jsonParser &json) const = 0;
-
   protected:
     /// index into domain of the current state, -1 if unspecified
     int m_current_state;
 
     /// Allows DoF to point to a remote value for faster/easier evaluation
-    const int *m_remote_state;
+    mutable int const *m_remote_state;
 
     /// ID for the permutation representation for occupants
     mutable SymGroupRepID m_sym_rep_ID;
@@ -346,12 +400,14 @@ namespace CASM {
   public:
     OccupantDoF(TypeFunc _func) : DiscreteDoF(_func,
                                                 "s") { }
+
     OccupantDoF(TypeFunc _func,
                 std::string const &_var_name,
                 std::vector<T> const &_domain,
                 int _current_state = 0) :
       DiscreteDoF(_func,
                   _var_name,
+                  -1,
                   _current_state,
                   SymGroupRepID::identity(_domain.size())),
       m_domain(_domain) { }
@@ -360,6 +416,7 @@ namespace CASM {
                 std::vector<T> const &_domain, int _current_state = 0) :
       DiscreteDoF(_func,
                   "s",
+                  -1,
                   _current_state,
                   SymGroupRepID::identity(_domain.size())),
       m_domain(_domain) { }
@@ -369,6 +426,7 @@ namespace CASM {
                 int _current_state = 0) :
       DiscreteDoF(_func,
                   "s",
+                  -1,
                   _current_state,
                   SymGroupRepID::identity(_domain.size())),
       m_domain(_domain.begin(),
@@ -453,20 +511,21 @@ namespace CASM {
     void print(std::ostream &out) const {
       for(Index i = 0; i < size(); i++) {
         if(i == 0)
-          out << m_domain[i].name();
+          out << m_domain[i].name;
         else
-          out << ' ' << m_domain[i].name();
+          out << ' ' << m_domain[i].name;
       }
     }
 
     void print_occ(std::ostream &out) const {
       if(valid_index(m_current_state))
-        out << occ().name();
+        out << occ().name;
       else
         out << '?';
     }
 
-    jsonParser &to_json(jsonParser &json) const override;
+    template<typename...Args>
+    void from_json(jsonParser const &json, Args... args);
 
   private:
     /**** Inherited from DiscreteDoF ****
@@ -481,16 +540,11 @@ namespace CASM {
     std::vector<T> m_domain;
   };
 
+  template<typename OccType, typename...Args>
+  void from_json(OccupantDoF<OccType> &dof, const jsonParser &json, Args... args);
 
-  // int version
-  jsonParser &to_json(OccupantDoF<int> const &dof, jsonParser &json);
-
-  void from_json(OccupantDoF<int> &dof, jsonParser const &json);
-
-  // molecule version
-  jsonParser &to_json(OccupantDoF<Molecule> const &dof, jsonParser &json, Eigen::Matrix3d const &c2f_mat = Eigen::Matrix3d::Identity());
-
-  void from_json(OccupantDoF<Molecule> &dof, jsonParser const &json, Eigen::Matrix3d const &f2c_mat = Eigen::Matrix3d::Identity());
+  template<typename OccType, typename...Args>
+  jsonParser &to_json(OccupantDoF<int> const &dof, jsonParser &json, Args... args);
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -541,7 +595,7 @@ namespace CASM {
       return m_remote_ptr;
     }
 
-    void register_remote(RemoteHandle const &handle) {
+    void register_remote(RemoteHandle const &handle) const {
       assert(handle.d_ptr() && "In ContinuousDoF::register_remote(), attempting to register to nullptr!");
       m_remote_ptr = handle.d_ptr();
     }
@@ -566,7 +620,7 @@ namespace CASM {
     double current_min, current_max;
 
     /// Allows DoF to point to a remote value for faster/easier evaluation
-    double const *m_remote_ptr;
+    mutable double const *m_remote_ptr;
   };
 
   void from_json(ContinuousDoF &dof, jsonParser const &json);
@@ -584,6 +638,14 @@ namespace CASM {
     DoFSet(TypeFunc const &_type) :
       m_type_name(_type()->type_name()) {}
 
+    Index size() const {
+      return m_components.size();
+    }
+
+    ContinuousDoF const &operator[](Index i) const {
+      return m_components[i];
+    }
+
     bool is_excluded_occ(std::string const &_occ_name) const {
       return m_excluded_occs.count(_occ_name);
     }
@@ -597,6 +659,10 @@ namespace CASM {
       return m_coordinate_space;
     }
 
+    SymGroupRepID const &sym_rep_ID() const {
+      return m_sym_rep_ID;
+    }
+
     /// \brief Return values of DoFs as a vector
     Eigen::VectorXd values() const;
 
@@ -604,6 +670,8 @@ namespace CASM {
     Eigen::VectorXd conventional_values() const {
       return coordinate_space() * values();
     }
+
+    bool update_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs);
 
     void from_json(jsonParser const &json);
 
@@ -617,5 +685,41 @@ namespace CASM {
     std::set<std::string> m_excluded_occs;
     Eigen::MatrixXd m_coordinate_space;
   };
+
+  //********************************************************************
+  template<typename OccType> template<typename...Args>
+  void OccupantDoF<OccType>::from_json(const jsonParser &json, Args... args) {
+    _set_type_name(json["type_name"].get<std::string>());
+    _set_var_name(json["var_name"].get<std::string>());
+    set_ID(json["ID"].get<Index>());
+    m_domain.clear();
+
+    CASM::from_json(m_domain, json["domain"], std::forward(args)...);
+
+    json.get_else(m_current_state, "value", int(-1));
+
+  }
+
+  //********************************************************************
+  template<typename OccType, typename...Args>
+  void from_json(OccupantDoF<OccType> &_dof, const jsonParser &json, Args... args) {
+    _dof.from_json(json, std::forward(args)...);
+  }
+  //********************************************************************
+  // molecule version
+  template<typename OccType, typename...Args>
+  jsonParser &to_json(OccupantDoF<OccType> const &_dof, jsonParser &json, Args... args) {
+    json.put_obj();
+    json["type_name"] = _dof.type_name();
+    json["var_name"] = _dof.var_name();
+    json["ID"] = _dof.ID();
+
+    to_json(_dof.domain(), json["domain"], std::forward(args)...);
+    json["value"] = _dof.value();
+
+    return json;
+  }
+
+
 }
 #endif

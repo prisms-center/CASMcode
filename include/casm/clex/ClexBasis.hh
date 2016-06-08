@@ -29,7 +29,7 @@ namespace CASM {
                                 Index equiv_ind) const;
 
     /// \brief Const access of BSetOrbit of orbit @param orbit_ind
-    BSetOrbit const &orbit_basis(Index orbit_ind) const;
+    BSetOrbit const &bset_orbit(Index orbit_ind) const;
 
     /// \brief Const iterator to first BasisSet orbit
     BSetOrbitIterator begin() const {
@@ -51,11 +51,21 @@ namespace CASM {
       return m_bset_tree.cbegin();
     }
 
+    /// \brief Const access to dictionary of all site BasisSets
+    std::map<DoFType, std::vector<BasisSet> > const &site_bases()const {
+      return m_site_bases;
+    }
+
+    /// \brief Const access to dictionary of all global BasisSets
+    std::map<DoFType, BasisSet> const &global_bases()const {
+      return m_global_bases;
+    }
+
     /// \brief generate clust_basis for all equivalent clusters in @param _orbitree
     template<typename OrbitIterType>
     void generate(OrbitIterType _begin,
                   OrbitIterType _end,
-                  std::vector<DoFType> const &dof_keys,
+                  jsonParser const &_bspecs,
                   Index max_poly_order = -1);
 
   private:
@@ -68,7 +78,7 @@ namespace CASM {
     /// \brief Performs heavy lifting for populating site bases in m_site_bases
     void _populate_site_bases(Structure const &_prim);
 
-    notstd::cloneable_ptr<BasisBuilder> m_builder;
+    notstd::cloneable_ptr<BasisBuilder> m_basis_builder;
 
     /// \brief Collection of all cluster BasisSets, one per cluster orbit
     std::vector<BSetOrbit> m_bset_tree;
@@ -97,9 +107,15 @@ namespace CASM {
 
     }
 
+    virtual BasisSet build(IntegralCluster const &_prototype,
+                           std::vector<BasisSet const *> const &_arg_bases,
+                           Index max_poly_order,
+                           Index min_poly_order) = 0;
+
     std::unique_ptr<BasisBuilder> clone()const {
       return std::unique_ptr<BasisBuilder>(_clone());
     }
+
   private:
     virtual BasisBuilder *_clone()const = 0;
 
@@ -107,13 +123,12 @@ namespace CASM {
 
   /// Print cluster with basis_index and nlist_index (from 0 to size()-1), followed by cluster basis functions
   /// Functions are labeled \Phi_{i}, starting from i = @param begin_ind
-  void print_clust_basis(ClexBasis const &_basis_set,
-                         PrimNeighborList &_nlist,
-                         std::ostream &_stream,
-                         Index begin_ind = 0,
+  void print_clust_basis(std::ostream &stream,
+                         BasisSet _clust_basis,
+                         IntegralCluster const &_prototype,
+                         Index func_ind = 0,
                          int space = 18,
-                         char delim = 0,
-                         COORD_TYPE mode = COORD_DEFAULT);
+                         char delim = '\n');
 
   /// returns std::vector of std::string, each of which is
   template<typename OrbitType>
@@ -144,12 +159,8 @@ namespace CASM {
 
 
   namespace ClexBasis_impl {
-    void generate_clust_basis(multivector<BasisSet const *>::X<2> const &local_args,
-                              std::vector<BasisSet const *> const &global_args,
-                              Index max_poly_order = -1);
 
-
-    BasisSet construct_clust_dof_basis(SiteCluster const &_clust,
+    BasisSet construct_clust_dof_basis(IntegralCluster const &_clust,
                                        std::vector<BasisSet const *> const &site_dof_sets);
   }
 }

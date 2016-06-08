@@ -89,7 +89,7 @@ namespace CASM {
     std::stringstream tformula, ttex;
     Array<int> var_ind;
 
-    for(Index i = 0; i < host.var_compon().size(); i++) {
+    for(Index i = 0; i < host.dof_set().size(); i++) {
       if(!almost_zero(host.coeffs()[i])) {
         var_ind.push_back(i);
       }
@@ -116,7 +116,7 @@ namespace CASM {
 
     double coeff;
     for(Index i = 0; i < var_ind.size(); i++) {
-      const ContinuousDoF &var_compon(host.var_compon()[var_ind[i]]);
+      const ContinuousDoF &dof_set(host.dof_set()[var_ind[i]]);
       coeff = host.coeffs()[var_ind[i]];
 
       if(i > 0 && coeff > 0) {
@@ -142,25 +142,25 @@ namespace CASM {
 
       for(Index j = 0; j < m_sub_strings.size(); j++) {
         if(m_sub_strings[j] == "%n") {
-          if(valid_index(var_compon.ID())) {
-            ttex << var_compon.ID();
-            tformula << var_compon.ID();
+          if(valid_index(dof_set.ID())) {
+            ttex << dof_set.ID();
+            tformula << dof_set.ID();
           }
           else {
-            //std::cout << "type_name is " << var_compon.type_name() << ", ID is " << var_compon.ID() << "\n";
+            //std::cout << "type_name is " << dof_set.type_name() << ", ID is " << dof_set.ID() << "\n";
             ttex << '?';
             tformula << '?';
           }
         }
         else if(m_sub_strings[j] == "%p") {
-          std::string prefix = var_compon.type_name_prefix();
+          std::string prefix = dof_set.type_name();
           if(prefix.empty())
             prefix = "?";
           ttex << prefix;
           tformula << prefix;
         }
         else if(m_sub_strings[j] == "%s") {
-          std::string suffix = var_compon.type_name_suffix();
+          std::string suffix = dof_set.var_name();
           if(suffix.empty())
             suffix = "?";
           ttex << suffix;

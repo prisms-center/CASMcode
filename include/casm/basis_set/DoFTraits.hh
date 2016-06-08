@@ -1,5 +1,11 @@
 #ifndef DOFTRAITS_HH
 #define DOFTRAITS_HH
+
+#include "casm/basis_set/DoF.hh"
+
+// remove this once implementation of derived classes gets moved out of this file
+#include "casm/basis_set/BasisSet.hh"
+
 namespace CASM {
   class jsonParser;
   class MasterSymGroup;
@@ -12,9 +18,9 @@ namespace CASM {
       Traits(std::string const &_type_name,
              DOF_DOMAIN _domain,
              DOF_MODE _mode) :
-        BasicTraits(m_type_name(_type_name),
-                    m_domain(_domain),
-                    m_mode(_mode)) {
+        BasicTraits(_type_name,
+                    _domain,
+                    _mode) {
 
       }
 
@@ -37,7 +43,7 @@ namespace CASM {
 
       /// \brief non-virtual method to obtain copy through Traits pointer
       std::unique_ptr<Traits> clone() const {
-        return static_cast<Traits *>(_clone());
+        return std::unique_ptr<Traits>(static_cast<Traits *>(_clone()));
       }
     };
 
@@ -71,34 +77,34 @@ namespace CASM {
       }
 
       std::string site_basis_description(BasisSet site_bset, Site site) const override {
+        std::stringstream ss;
         if(site_bset.size() == 0)
-          out << "        [No site basis functions]\n\n";
+          ss << "        [No site basis functions]\n\n";
+        std::vector<DoF::RemoteHandle> handles(1, site.site_occupant().handle());
+        int s;
+        handles[0] = s;
+        site_bset.register_remotes(handles);
         for(Index f = 0; f < site_bset.size(); f++) {
-          for(Index s = 0; s < site.site_occupant().size(); s++) {
+          for(s = 0; s < site.site_occupant().size(); s++) {
             if(s == 0)
-              out << "    ";
-            out << "    \\phi_" << site.basis_ind() << '_' << f << '[' << site.site_occupant()[s].name << "] = "
-                << site_bset[f]->eval(std::vector<Index>(1, site.site_occupant().ID()), std::vector<Index>(1, s));
+              ss << "    ";
+            ss << "    \\phi_" << site.basis_ind() << '_' << f << '[' << site.site_occupant()[s].name << "] = "
+               << site_bset[f]->remote_eval();
             if(s + 1 == site.site_occupant().size())
-              out << "\n";
+              ss << "\n";
             else
-              out << ",   ";
+              ss << ",   ";
           }
         }
+        return ss.str();
       }
 
     protected:
       BasicTraits *_clone() const override {
-        return OccupationDoFTraits(*this);
+        return new OccupationDoFTraits(*this);
       }
     };
 
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    namespace DoFType {
-      DoF_impl::OccupationDoFTraits occupation() {
-        return DoF_impl::OccupationDoFTraits();
-      }
-    }
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -106,7 +112,7 @@ namespace CASM {
     struct DictionaryConverter {
       // performs a static_cast of value.clone().unique().release()
       notstd::cloneable_ptr<BasicTraits> operator()(const BasicTraits &_traits) {
-        return notstd::cloneable_ptr<BasicTraits>(static_cast<BasicTraits *>(_traits.clone().release()));
+        return notstd::cloneable_ptr<BasicTraits>(_traits.clone().release());
       }
     };
 
@@ -126,7 +132,7 @@ namespace CASM {
 
       TraitsDictionary() :
         UniqueMapType([](const value_type & value)->std::string {
-        return value.name();
+        return value.type_name();
       },
       DictionaryConverter()) {}
 
@@ -145,6 +151,18 @@ namespace CASM {
 
     /// This will eventually be managed by ProjectSettings
     TraitsDictionary const &traits_dict();
+  }
+
+  DoF_impl::Traits const &dof_traits(std::string const &dof_key) {
+    return static_cast<DoF_impl::Traits const &>(DoF::traits(dof_key));
+  }
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  namespace DoFType {
+    notstd::cloneable_ptr<typename DoF_impl::BasicTraits> occupation() {
+      return DoF_impl::OccupationDoFTraits().clone();
+    }
   }
 
 }

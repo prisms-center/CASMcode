@@ -4,24 +4,36 @@
 
 #include "casm/casm_io/json_io/container.hh"
 
+#include "casm/basis_set/DoFTraits.hh"
+
 namespace CASM {
 
 
   Site::Site(const Lattice &init_home) :
-    Coordinate(init_home), m_nlist_ind(-1), m_type_ID(-1), m_site_occupant(Array<Molecule>()) {
+    Coordinate(init_home),
+    m_nlist_ind(-1),
+    m_type_ID(-1),
+    m_site_occupant(DoFType::occupation,
+                    "s", // variable name
+                    std::vector<Molecule>()) {
     //site_occupant.set_value(0);
   }
 
   //****************************************************
 
   Site::Site(const Coordinate &init_pos, const std::string &occ_name) :
-    Coordinate(init_pos), m_nlist_ind(-1), m_type_ID(-1), m_site_occupant(Array<Molecule>()) {
+    Coordinate(init_pos),
+    m_nlist_ind(-1),
+    m_type_ID(-1),
+    m_site_occupant(DoFType::occupation,
+                    "s", // variable name
+                    std::vector<Molecule>()) {
 
     Molecule tMol(home());
     tMol.name = occ_name;
     tMol.push_back(AtomPosition(0, 0, 0, occ_name, home(), CART));
 
-    Array<Molecule> tocc;
+    std::vector<Molecule> tocc;
     tocc.push_back(tMol);
     m_site_occupant.set_domain(tocc);
     m_site_occupant.set_value(0);
@@ -31,8 +43,13 @@ namespace CASM {
 
   /// \brief Construct site with initial position and the allowed Molecule
   Site::Site(const Coordinate &init_pos, std::initializer_list<Molecule> site_occ) :
-    Coordinate(init_pos), m_nlist_ind(-1), m_type_ID(-1) {
-    set_site_occupant(MoleculeOccupant(site_occ));
+    Coordinate(init_pos),
+    m_nlist_ind(-1),
+    m_type_ID(-1),
+    m_site_occupant(DoFType::occupation,
+                    "s", // variable name
+                    site_occ) {
+
   }
 
 
@@ -40,7 +57,7 @@ namespace CASM {
 
   bool Site::is_vacant()const {
     return site_occupant().is_specified()
-           && site_occupant().get_occ().is_vacancy();
+           && site_occupant().occ().is_vacancy();
   }
 
   //****************************************************
@@ -55,13 +72,13 @@ namespace CASM {
     if(!site_occupant().is_specified())
       return "?";
     else
-      return site_occupant().get_occ().name;
+      return site_occupant().occ().name;
   }
 
   //****************************************************
 
   const Molecule &Site::occ() const {
-    return site_occupant().get_occ();
+    return site_occupant().occ();
   };
 
   //****************************************************
@@ -253,7 +270,7 @@ namespace CASM {
       }
     }
 
-    Array<Molecule> tocc;
+    std::vector<Molecule> tocc;
 
     ch = stream.peek();
     //    while(ch != '\n' && !stream.eof()) {
@@ -344,7 +361,7 @@ namespace CASM {
       }
     }
 
-    Array<Molecule> tocc;
+    std::vector<Molecule> tocc;
 
     tMol.clear();
     tMol.name = elem;
@@ -371,7 +388,7 @@ namespace CASM {
   //****************************************************
 
   void Site::print(std::ostream &stream) const {
-    //site_occupant().get_occ().print(stream, *this, SD_is_on);
+    //site_occupant().occ().print(stream, *this, SD_is_on);
     Coordinate::print(stream);
     stream << " ";
     site_occupant().print(stream);
@@ -386,7 +403,7 @@ namespace CASM {
   //****************************************************
 
   void Site::print_occ(std::ostream &stream) const {
-    //site_occupant().get_occ().print(stream, *this, SD_is_on);
+    //site_occupant().occ().print(stream, *this, SD_is_on);
     Site::print(stream);
     stream << " :: ";
     site_occupant().print_occ(stream);
@@ -402,7 +419,7 @@ namespace CASM {
   //****************************************************
 
   void Site::print_mol(std::ostream &stream, int spaces, char delim, bool SD_is_on) const {
-    site_occupant().get_occ().print(stream, *this, spaces, delim, SD_is_on);
+    site_occupant().occ().print(stream, *this, spaces, delim, SD_is_on);
     return;
   }
 
@@ -458,7 +475,7 @@ namespace CASM {
       //std::cout<<"Reading in the Coordinate"<<std::endl;
       CASM::from_json(coord, json["coordinate"]);
 
-      Array<Molecule> temp_mol_array(1, Molecule(home()));
+      std::vector<Molecule> temp_mol_array(1, Molecule(home()));
       m_site_occupant.set_domain(temp_mol_array);
       //std::cout<<"Reading in site_occupant"<<std::endl;
       // MoleculeOccupant site_occupant;

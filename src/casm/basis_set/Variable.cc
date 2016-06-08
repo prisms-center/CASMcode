@@ -192,16 +192,16 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  int Variable::register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles) {
+  int Variable::register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles) {
     int t_tot(0);
     for(Index i = 0; i < dof_set().size(); i++) {
-      if(dof_set()[i].var_name() == dof_name) {
-        if(!valid_index(dof_set()[i].ID()) || dof_set()[i].ID() >= remote_handles.size()) {
-          std::cerr << "CRITICAL ERROR: In Variable::register_remotes(), dof_set()[" << i << "].ID() = " << dof_set()[i].ID() << " is out of bounds.\n"
-                    << "                Exiting...\n";
-          exit(1);
+      std::vector<DoF::RemoteHandle>::const_iterator it = find(remote_handles, dof_set()[i].handle());
+      if(it != remote_handles.end()) {
+        if(!valid_index(dof_set()[i].ID())) {
+          throw std::runtime_error("In Variable::register_remotes(), attempting to register dof with ID = "
+                                   + std::to_string(dof_set()[i].ID()) << ", which is out of bounds.\n");
         }
-        dof_set()[i].register_remote(remote_handles[dof_set()[i].ID()]);
+        dof_set()[i].register_remote(*it);
         t_tot++;
       }
     }
@@ -210,22 +210,10 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  bool Variable::_update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs) {
+  bool Variable::_update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
 
-    Index ID_ind;
-    bool is_updated(false);
+    bool is_updated = dof_set().update_IDs(before_IDs, after_IDs);
 
-    for(Index i = 0; i < dof_set().size(); i++) {
-      // IMPORTANT: Do before_IDs.find(), NOT dof_set().find() (if such a thing existed)
-      ID_ind = before_IDs.find(dof_set()[i].ID());
-      // Only set ID if DoF doesn't have an ID lock
-      if(ID_ind < after_IDs.size() && !dof_set()[i].is_locked()) {
-        dof_set()[i].set_ID(after_IDs[ID_ind]);
-        // The new ID only changes the formula if the corresponding coeff is nonzero
-        if(!almost_zero(m_coeffs[i]))
-          is_updated = true;
-      }
-    }
     if(is_updated) {
       m_formula.clear();
       m_tex_formula.clear();

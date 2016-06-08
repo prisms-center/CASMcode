@@ -4,16 +4,11 @@ namespace CASM {
   //********************************************************************
 
   Index print_clust_basis(std::ostream &stream,
-                          ClexBasis const &_basis_set,
+                          BasisSet _clust_basis,
                           IntegralCluster const &_prototype,
-                          Index orbit_ind,
                           Index func_ind,
                           int space,
-                          char delim,
-                          COORD_TYPE mode) const {
-    if(mode == COORD_DEFAULT)
-      mode = COORD_MODE::CHECK();
-    COORD_MODE C(mode);
+                          char delim) const {
     for(Index np = 0; np < _prototype.size(); np++) {
 
       stream << std::string(space, ' ');
@@ -28,14 +23,14 @@ namespace CASM {
     }
     stream << "\n"
            << "            Basis Functions:\n";
-    BasisSet tbasis(_basis_set.clust_basis(orbit_ind, 0));
-    tbasis.set_dof_IDs(sequence<Index>(0, clust.size() - 1));
-    tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
+
+    _clust_basis.set_dof_IDs(sequence<Index>(0, clust.size() - 1));
+    _clust_basis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
     Index i;
-    for(i = 0; i < tbasis.size(); i++) {
-      stream << "              \\Phi_" << func_ind + i << " = " << tbasis[i]->tex_formula() << std::endl;
+    for(i = 0; i < _clust_basis.size(); i++) {
+      stream << "              \\Phi_" << func_ind + i << " = " << _clust_basis[i]->tex_formula() << std::endl;
     }
-    return tbasis.size();
+    return _clust_basis.size();
   }
 
 

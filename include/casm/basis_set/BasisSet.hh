@@ -150,7 +150,7 @@ namespace CASM {
 
     std::vector<std::set<Index> > independent_sub_bases() const;
 
-    int register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles);
+    int register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles);
 
     void append(const BasisSet &RHS);
 

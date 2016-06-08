@@ -78,7 +78,7 @@ namespace CASM {
     void scale(double scale_factor);
     void make_formula() const;
 
-    int register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles);
+    int register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles);
 
     bool compare(const OccupantFunction *RHS) const;
 

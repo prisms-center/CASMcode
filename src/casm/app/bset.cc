@@ -72,9 +72,6 @@ namespace CASM {
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
-    // not sure how this will work yet...
-    std::vector<std::string> dof_keys = {"occupation"};
-
     if(vm.count("update")) {
 
       // initialize project info
@@ -149,7 +146,7 @@ namespace CASM {
                     args.log);
 
         clex_basis.reset(new ClexBasis(prim));
-        clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json, dof_keys);
+        clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json);
 
       }
       catch(std::exception &e) {
@@ -238,7 +235,7 @@ namespace CASM {
         bspecs_json.read(dir.bspecs(set.bset()));
 
         ClexBasis clex_basis(primclex.prim());
-        clex_basis.generate(orbits.begin(), orbits.end(), bspecs_json, dof_keys);
+        clex_basis.generate(orbits.begin(), orbits.end(), bspecs_json);
 
         print_clust(orbits.begin(), orbits.end(), args.log, ProtoFuncsPrinter(clex_basis));
       }

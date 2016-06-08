@@ -12,6 +12,7 @@ namespace CASM {
   class Site : public Coordinate {
   public:
     explicit Site(const Lattice &init_home);
+
     Site(const Coordinate &init_pos, const std::string &occ_name);
 
     /// \brief Construct site with initial position and the allowed Molecule
@@ -53,8 +54,8 @@ namespace CASM {
 
     void set_lattice(const Lattice &new_lat, COORD_TYPE mode);//John G
 
-    void set_site_occupant(const MoleculeOccupant &new_dof) {
-      m_site_occupant = new_dof;
+    void set_allowed_species(std::vector<Molecule> const &_occ_domain) {
+      m_site_occupant.set_domain(_occ_domain);
       m_type_ID = -1;
     }
 

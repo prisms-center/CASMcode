@@ -70,7 +70,7 @@ namespace CASM {
     }
 
     SymGroupRepID sym_rep_ID() const {
-      return dof_set.sym_rep_ID();
+      return dof_set().sym_rep_ID();
     }
 
     const Eigen::VectorXd &coeffs() const {
@@ -80,7 +80,7 @@ namespace CASM {
     void make_formula()const;
     void make_formula(double prefactor)const;
 
-    int register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles);
+    int register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles);
 
     bool compare(const Variable *RHS) const;
 

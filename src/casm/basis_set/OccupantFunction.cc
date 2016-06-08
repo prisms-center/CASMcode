@@ -128,19 +128,18 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  int OccupantFunction::register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles) {
-
-    if(dof().type_name() == dof_name) {
-      if(!valid_index(dof().ID()) || dof().ID() >= remote_handles.size()) {
-        std::cerr << "CRITICAL ERROR: In OccupantFunction::register_remotes(), dof().ID() = " << dof().ID() << " is out of bounds.\n"
-                  << "                Exiting...\n";
-        exit(1);
+  int OccupantFunction::register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles) {
+    std::vector<DoF::RemoteHandle>::const_iterator it = find(remote_handles.begin(),
+                                                             remote_handles.end(),
+                                                             m_var->handle());
+    if(it != remote_handles.end()) {
+      if(!valid_index(m_var->ID())) {
+        throw std::runtime_error("In Variable::register_remotes(), attempting to register dof with ID = "
+                                 + std::to_string(m_var->ID()) << ", which is out of bounds.\n");
       }
-      //std::cout << "Setting remote at Occ DoF " << dof().ID() << " of " << discrete_remotes.size() << "\n";
-      m_var->register_remote(remote_handles[dof().ID()]);
+      m_var->register_remote(*it);
       return 1;
     }
-
     return 0;
   }
 

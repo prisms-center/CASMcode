@@ -5,10 +5,10 @@
 
 namespace CASM {
 
-  DoF::TraitsMap const &DoF::_traits_map() {
-    static TraitsMap _static_traits_map([](const value_type & value)->std::string {
-      return value.name();
-    })
+  DoF::TraitsMap &DoF::_traits_map() {
+    static TraitsMap _static_traits_map([](const TraitsMap::value_type & value)->std::string {
+      return value.type_name();
+    });
     return _static_traits_map;
   }
 
@@ -27,78 +27,12 @@ namespace CASM {
   DoF::DoF(DoF::TypeFunc _type_func,
            std::string const &_var_name,
            Index _ID) :
-    m_type_name(_type_func()->name()),
+    m_type_name(_type_func()->type_name()),
     m_var_name(_var_name),
     m_dof_ID(_ID),
     m_ID_lock(false) {
 
     _traits_map()[type_name()] = *_type_func();
-
-  }
-
-  //********************************************************************
-  // ** OccupantDoF **
-  /// overload for each template type to be used
-  //
-  //********************************************************************
-  // int version
-  template<> jsonParser &OccupantDoF<int>::to_json(jsonParser &json) const {
-    json.put_obj();
-    json["DoF_type"] = "OccupantDoF";
-    json["DoF_template_type"] = "int";
-    json["type_name"] = m_type_name;
-    json["domain"] = m_domain;
-    json["current_state"] = m_current_state;
-    return json;
-  }
-
-  //********************************************************************
-
-  jsonParser &to_json(const OccupantDoF<int> &dof, jsonParser &json) {
-    return dof.to_json(json);
-  }
-
-  //********************************************************************
-
-  void from_json(OccupantDoF<int> &dof, const jsonParser &json) {
-    std::string name = json["type_name"].get<std::string>();
-    std::vector<int> domain = json["domain"].get<std::vector<int> >();
-    int current_state = json["current_state"].get<int>();
-
-    dof = OccupantDoF<int>(name, domain, current_state);
-  }
-
-  //********************************************************************
-  // molecule version
-  template<> jsonParser &OccupantDoF<Molecule>::to_json(jsonParser &json) const {
-    json.put_obj();
-    json["DoF_type"] = "OccupantDoF";
-    json["DoF_template_type"] = "Molecule";
-    json["type_name"] = m_type_name;
-
-    json["domain"] = m_domain;
-    json["current_state"] = m_current_state;
-
-    return json;
-  }
-
-  //********************************************************************
-
-  jsonParser &to_json(const OccupantDoF<Molecule> &dof, jsonParser &json) {
-    return dof.to_json(json);
-  }
-
-  //********************************************************************
-
-  void from_json(OccupantDoF<Molecule> &dof, const jsonParser &json, Eigen::Matrix3d const &f2c_mat) {
-    std::string name = json["type_name"].get<std::string>();
-
-    int current_state = json["current_state"].get<int>();
-
-    std::vector<Molecule> domain;
-    from_json(domain, json["domain"], f2c_mat);
-
-    dof = OccupantDoF<Molecule>(name, domain, current_state);
 
   }
 
@@ -113,6 +47,25 @@ namespace CASM {
 
   void from_json(ContinuousDoF &dof, const jsonParser &json) {
     dof = ContinuousDoF(json["type_name"].get<std::string>(), json["min"].get<double>(), json["max"].get<double>());
+  }
+
+  //********************************************************************
+  bool DoFSet::update_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
+
+    Index ID_ind;
+    bool is_updated(false);
+    for(Index i = 0; i < m_components().size(); i++) {
+      // IMPORTANT: Do before_IDs.find(), NOT m_components().find() (if such a thing existed)
+      ID_ind = find_index(before_IDs, m_components[i].ID());
+      // Only set ID if DoF doesn't have an ID lock
+      if(ID_ind < after_IDs.size() && !m_components[i].is_locked()) {
+        m_components[i].set_ID(after_IDs[ID_ind]);
+        // The new ID only changes the formula if the corresponding coeff is nonzero
+        //if(!almost_zero(m_coeffs[i]))
+        is_updated = true;
+      }
+    }
+    return is_updated;
   }
 
   //********************************************************************

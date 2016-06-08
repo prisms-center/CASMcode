@@ -196,7 +196,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  int Function::register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles) {
+  int Function::register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles) {
     int t_tot(0);
     // From now on, this will be handled at BasisSet level
     //for(Index i = 0; i < m_argument.size(); i++) {

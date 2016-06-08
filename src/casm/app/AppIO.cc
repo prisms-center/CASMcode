@@ -79,14 +79,14 @@ namespace CASM {
         from_json(occ_name, json["basis"][i]["occupant_dof"]);
 
         // fill site.site_occupant
-        Array<Molecule> tocc;
+        std::vector<Molecule> tocc;
         for(int i = 0; i < occ_name.size(); i++) {
           Molecule tMol(prim.lattice());
           tMol.name = occ_name[i];
           tMol.push_back(AtomPosition(0, 0, 0, occ_name[i], prim.lattice(), CART));
           tocc.push_back(tMol);
         }
-        site.set_site_occupant(MoleculeOccupant(tocc));
+        site.set_allowed_species(tocc);
         site.set_occ_value(0);
 
         // add site to prim
@@ -480,7 +480,6 @@ namespace CASM {
   PRINT_CLUST_INST(ITERATOR,INSERTER,ProtoSitesPrinter) \
   PRINT_CLUST_INST(ITERATOR,INSERTER,FullSitesPrinter) \
   PRINT_CLUST_INST(ITERATOR,INSERTER,ProtoFuncsPrinter) \
-  template void print_site_basis_funcs<ITERATOR>(ITERATOR begin, ITERATOR end, const ClexBasis &clex_basis, std::ostream &out, COORD_TYPE mode); \
   template INSERTER read_clust<INSERTER, typename ORBIT::SymCompareType>(INSERTER result, jsonParser &json, const Structure &prim, const SymGroup& generating_grp, const typename ORBIT::SymCompareType &sym_compare);
 
 #define _VECTOR_IT(ORBIT) std::vector<ORBIT>::iterator

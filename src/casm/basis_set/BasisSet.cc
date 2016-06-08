@@ -112,7 +112,7 @@ namespace CASM {
   void BasisSet::append(const BasisSet &RHS) {
     //Before appending functions, copy over  DoF IDs and subbasis info
     for(Index i = 0; i < RHS.m_dof_IDs.size(); i++) {
-      Index ID_ind = m_dof_IDs.find(RHS.m_dof_IDs[i]);
+      Index ID_ind = find_index(m_dof_IDs, RHS.m_dof_IDs[i]);
       if(ID_ind == m_dof_IDs.size()) {
         assert(0 && "In BasisSet::append(), it is unsafe to append a BasisSet whose dependencies differ from (this).");
         m_dof_IDs.push_back(RHS.m_dof_IDs[i]);
@@ -286,17 +286,17 @@ namespace CASM {
 
   }
   //*******************************************************************************************
-  void BasisSet::set_variable_basis(const DoFSet _dof_set) {
+  void BasisSet::set_variable_basis(DoFSet const &_dof_set) {
     m_argument.clear();
     m_basis_symrep_ID = _dof_set.sym_rep_ID();
     std::vector<Index> tdof_IDs;
     for(Index i = 0; i < _dof_set.size(); i++) {
-      if(!_dof_set[i].is_locked() && !contains(tdof_IDs, _dof_set[i].ID()))
+      if(!_dof_set[i].is_locked() && !CASM::contains(tdof_IDs, _dof_set[i].ID()))
         tdof_IDs.push_back(_dof_set[i].ID());
     }
     set_dof_IDs(tdof_IDs);
     for(Index i = 0; i < _dof_set.size(); i++) {
-      push_back(new Variable(tvar_compon, i));
+      push_back(new Variable(_dof_set, i));
     }
     _refresh_ID();
   }
@@ -382,13 +382,13 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  int BasisSet::register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles) {
+  int BasisSet::register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles) {
     int sum(0);
     for(Index i = 0; i < size(); i++)
-      sum += at(i)->register_remotes(dof_name, remote_handles);
+      sum += at(i)->register_remotes(remote_handles);
 
     for(Index i = 0; i < m_argument.size(); i++)
-      sum += m_argument[i]->register_remotes(dof_name, remote_handles);
+      sum += m_argument[i]->register_remotes(remote_handles);
 
     return sum;
   }

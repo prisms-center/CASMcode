@@ -126,7 +126,7 @@ namespace CASM {
     virtual double cache_eval() const = 0;
     virtual double cache_deval(const DoF::RemoteHandle &dvar) const = 0;
 
-    virtual int register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles);
+    virtual int register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles);
 
     bool update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs);
 
