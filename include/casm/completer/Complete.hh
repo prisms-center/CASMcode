@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <utility>
 #include <boost/program_options.hpp>
+#include "casm/completer/Handlers.hh"
 #include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
@@ -16,79 +17,6 @@ namespace CASM {
 
     ///Remove "--" or "-" from beginning of string if it exists, and return as new string
     std::string strip_argument(const std::string &raw_input);
-
-    /**
-     * Handle the value type names of po::option_description. This class
-     * determines what the keywords mean, and translates them into the
-     * ARG_TYPE enum as appropriate.
-     *
-     * If you want bash completion for your boost program options, never specify
-     * option_description::value_name manually (e.g. raw string), always request
-     * the string through this class.
-     *
-     * When the Engine class isn't returning strings corresponding to options
-     * or suboptions that bash should complete, then the user is in the
-     * process of writing out an argument. By printing out keywords, the
-     * bash completer script can know what kind of arguments are needed for the
-     * casm command:
-     *
-     * VOID:        Don't complete anything
-     * PATH:        Suggest path completions to a file or directory
-     * COMMAND:     Suggest executables within the environment PATH
-     * SCELNAME:    Run through the PrimClex and suggest the enumerated supercell names
-     * QUERY:       Suggest the available query options
-     * OPERATORS:   Suggest the available operators casm knows how to use (TODO: This one might be tricky to implement)
-     */
-
-    class ArgHandler {
-    public:
-
-      enum ARG_TYPE {VOID, PATH, COMMAND, SCELNAME, QUERY, OPERATOR};
-
-      ///Translate the stored boost value_name into an ARG_TYPE for the completer engine
-      static ARG_TYPE determine_type(const po::option_description &boost_option);
-
-      ///Get value_type string for path completion
-      static std::string path();
-
-      ///Get value_type string for command completion (i.e. stuff in your $PATH)
-      static std::string command();
-
-      ///Get value_type string for supercell completion
-      static std::string supercell();
-
-      ///Get value_type string for query completion
-      static std::string query();
-
-      ///Get value_type string for operation completion
-      static std::string operation();
-
-
-      ///Fill the output strings with bash completion appropriate values for VOID (i.e. do nothing)
-      static void void_to_bash(std::vector<std::string> &arguments);
-
-      ///Fill the output strings with bash completion appropriate values for PATH
-      static void path_to_bash(std::vector<std::string> &arguments);
-
-      ///Fill the output strings with bash completion appropriate values for COMMAND
-      static void command_to_bash(std::vector<std::string> &arguments);
-
-      ///Fill the output strings with bash completion appropriate values for SCELNAME
-      //static void scelname_to_bash(std::vector<std::string> &arguments);
-
-      ///Fill the output strings with bash completion appropriate values for QUERY
-      static void query_to_bash(std::vector<std::string> &arguments);
-
-      ///Fill the output strings with bash completion appropriate values for OPERATOR
-      static void operator_to_bash(std::vector<std::string> &arguments);
-
-
-    private:
-
-      ///List of pairs relating the value type name of po::option_description to its corresponding argument type
-      static const std::vector<std::pair<std::string, ARG_TYPE> > m_argument_table;
-
-    };
 
     //*****************************************************************************************************//
 

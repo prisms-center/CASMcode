@@ -7,7 +7,7 @@
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteDriver.hh"
 #include "casm/app/casm_functions.hh"
-#include "casm/completer/complete.hh"
+#include "casm/completer/handlers.hh"
 
 namespace CASM {
 
@@ -50,67 +50,71 @@ namespace CASM {
   }
 
   namespace Completer {
-    void add_monte_options
-    (po::options_description &desc,
-     fs::path &settings_path,
-     std::string &verbosity_str,
-     Index &condition_index) {
-      desc.add_options()
-      ("help,h", "Print help message")
-      ("settings,s", po::value<fs::path>(&settings_path)->required()->value_name(ArgHandler::path()), "The Monte Carlo input file. See 'casm format --monte'.")
-      ("verbosity", po::value<std::string>(&verbosity_str)->default_value("standard"), "Verbosity of output. Options are 'none', 'quiet', 'standard', 'verbose', 'debug', or an integer 0-100 (0: none, 100: all).")
-      ("initial-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print a POSCAR for the initial state of a monte carlo run.")
-      ("final-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
-      ("traj-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
+    void MonteOption::initialize() {
+      add_help_suboption();
+      add_verbosity_suboption(m_verbosity_str);
 
+      m_desc.add_options()
+      ("settings,s", po::value<fs::path>(&m_settings_path)->required()->value_name(ArgHandler::path()), "The Monte Carlo input file. See 'casm format --monte'.")
+      ("initial-POSCAR", po::value<Index>(&m_condition_index), "Given the condition index, print a POSCAR for the initial state of a monte carlo run.")
+      ("final-POSCAR", po::value<Index>(&m_condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
+      ("traj-POSCAR", po::value<Index>(&m_condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
       return;
     }
+
+    fs::path MonteOption::settings_path() const {
+      return m_settings_path;
+    };
+
+    const std::string &MonteOption::verbosity_str() const {
+      return m_verbosity_str;
+    };
+
+    Index MonteOption::condition_index() const {
+      return m_condition_index;
+    };
+
   }
 
 
   int monte_command(const CommandArgs &args) {
 
-    fs::path settings_path;
-    std::string verbosity_str;
+    //fs::path settings_path;
+    //std::string verbosity_str;
     po::variables_map vm;
-    Index condition_index;
+    //Index condition_index;
+
+    Completer::MonteOption monte("monte");
 
     try {
+      po::store(po::parse_command_line(args.argc, args.argv, monte.desc()), vm); // can throw
 
-      // Set command line options using boost program_options
-      po::options_description desc("'casm monte' usage");
-      Completer::add_monte_options(desc, settings_path, verbosity_str, condition_index);
-
-      try {
-        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
-
-        /** --help option
-        */
-        if(vm.count("help")) {
-          print_monte_help(desc);
-          return 0;
-        }
-
-        po::notify(vm); // throws on error, so do after help in case
-        // there are any problems
-
-        if(vm.count("verbosity")) {
-          auto res = Log::verbosity_level(verbosity_str);
-          if(!res.first) {
-            args.err_log.error("--verbosity");
-            args.err_log << "Expected: 'none', 'quiet', 'standard', 'verbose', "
-                         "'debug', or an integer 0-100 (0: none, 100: all)" << "\n" << std::endl;
-            return ERR_INVALID_ARG;
-          }
-          args.log.set_verbosity(res.second);
-        }
-
+      /** --help option
+      */
+      if(vm.count("help")) {
+        print_monte_help(monte.desc());
+        return 0;
       }
-      catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
-        return 1;
+
+      po::notify(vm); // throws on error, so do after help in case
+      // there are any problems
+
+      if(vm.count("verbosity")) {
+        auto res = Log::verbosity_level(monte.verbosity_str());
+        if(!res.first) {
+          args.err_log.error("--verbosity");
+          args.err_log << "Expected: 'none', 'quiet', 'standard', 'verbose', "
+                       "'debug', or an integer 0-100 (0: none, 100: all)" << "\n" << std::endl;
+          return ERR_INVALID_ARG;
+        }
+        args.log.set_verbosity(res.second);
       }
+
+    }
+    catch(po::error &e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      std::cerr << monte.desc() << std::endl;
+      return 1;
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "
@@ -137,7 +141,7 @@ namespace CASM {
     ProjectSettings &set = primclex.settings();
 
     //Get path to settings json file
-    settings_path = fs::absolute(settings_path);
+    monte.settings_path() = fs::absolute(monte.settings_path());
 
     //std::cout << "Example settings so far..." << std::endl;
     //jsonParser example_settings = Monte::example_testing_json_settings(primclex);
@@ -148,8 +152,8 @@ namespace CASM {
 
     try {
       log.read("Monte Carlo settings");
-      log << "from: " << settings_path << "\n";
-      monte_settings = MonteSettings(settings_path);
+      log << "from: " << monte.settings_path() << "\n";
+      monte_settings = MonteSettings(monte.settings_path());
     }
     catch(std::exception &e) {
       std::cerr << "ERROR reading Monte Carlo settings.\n\n";
@@ -171,45 +175,45 @@ namespace CASM {
 
       if(vm.count("initial-POSCAR")) {
         try {
-          GrandCanonicalSettings gc_settings(settings_path);
+          GrandCanonicalSettings gc_settings(monte.settings_path());
           const GrandCanonical gc(primclex, gc_settings, log);
 
           log.write("Initial POSCAR");
-          write_POSCAR_initial(gc, condition_index, log);
+          write_POSCAR_initial(gc, monte.condition_index(), log);
           log << std::endl;
         }
         catch(std::exception &e) {
-          std::cerr << "ERROR printing Grand Canonical Monte Carlo initial snapshot for condition: " << condition_index << "\n\n";
+          std::cerr << "ERROR printing Grand Canonical Monte Carlo initial snapshot for condition: " << monte.condition_index() << "\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
         }
       }
       else if(vm.count("final-POSCAR")) {
         try {
-          GrandCanonicalSettings gc_settings(settings_path);
+          GrandCanonicalSettings gc_settings(monte.settings_path());
           const GrandCanonical gc(primclex, gc_settings, log);
 
           log.write("Final POSCAR");
-          write_POSCAR_final(gc, condition_index, log);
+          write_POSCAR_final(gc, monte.condition_index(), log);
           log << std::endl;
         }
         catch(std::exception &e) {
-          std::cerr << "ERROR printing Grand Canonical Monte Carlo final snapshot for condition: " << condition_index << "\n\n";
+          std::cerr << "ERROR printing Grand Canonical Monte Carlo final snapshot for condition: " << monte.condition_index() << "\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
         }
       }
       else if(vm.count("traj-POSCAR")) {
         try {
-          GrandCanonicalSettings gc_settings(settings_path);
+          GrandCanonicalSettings gc_settings(monte.settings_path());
           const GrandCanonical gc(primclex, gc_settings, log);
 
           log.write("Trajectory POSCARs");
-          write_POSCAR_trajectory(gc, condition_index, log);
+          write_POSCAR_trajectory(gc, monte.condition_index(), log);
           log << std::endl;
         }
         catch(std::exception &e) {
-          std::cerr << "ERROR printing Grand Canonical Monte Carlo path snapshots for condition: " << condition_index << "\n\n";
+          std::cerr << "ERROR printing Grand Canonical Monte Carlo path snapshots for condition: " << monte.condition_index() << "\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
         }
@@ -218,7 +222,7 @@ namespace CASM {
 
         try {
 
-          GrandCanonicalSettings gc_settings(settings_path);
+          GrandCanonicalSettings gc_settings(monte.settings_path());
           GrandCanonicalDirectoryStructure dir(gc_settings.output_directory());
           if(gc_settings.write_csv()) {
             if(fs::exists(dir.results_csv())) {
@@ -293,7 +297,7 @@ namespace CASM {
           //monte_settings.print(std::cout);
           //std::cout << "\n-------------------------------\n\n";
 
-          MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(settings_path), log);
+          MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(monte.settings_path()), log);
           driver.run();
         }
         catch(std::exception &e) {

@@ -1,0 +1,162 @@
+#ifndef HANDLERS_HH
+#define HANDLERS_HH
+
+#include <string>
+#include <vector>
+#include <boost/program_options.hpp>
+#include "casm/CASM_global_definitions.hh"
+
+namespace CASM {
+  namespace Completer {
+    /**
+     * Handle the value type names of po::option_description. This class
+     * determines what the keywords mean, and translates them into the
+     * ARG_TYPE enum as appropriate.
+     *
+     * If you want bash completion for your boost program options, never specify
+     * option_description::value_name manually (e.g. raw string), always request
+     * the string through this class.
+     *
+     * When the Engine class isn't returning strings corresponding to options
+     * or suboptions that bash should complete, then the user is in the
+     * process of writing out an argument. By printing out keywords, the
+     * bash completer script can know what kind of arguments are needed for the
+     * casm command:
+     *
+     * VOID:        Don't complete anything
+     * PATH:        Suggest path completions to a file or directory
+     * COMMAND:     Suggest executables within the environment PATH
+     * SCELNAME:    Run through the PrimClex and suggest the enumerated supercell names
+     * QUERY:       Suggest the available query options
+     * OPERATORS:   Suggest the available operators casm knows how to use (TODO: This one might be tricky to implement)
+     */
+
+    class ArgHandler {
+    public:
+
+      enum ARG_TYPE {VOID, PATH, COMMAND, SCELNAME, QUERY, OPERATOR};
+
+      ///Translate the stored boost value_name into an ARG_TYPE for the completer engine
+      static ARG_TYPE determine_type(const po::option_description &boost_option);
+
+      ///Get value_type string for path completion
+      static std::string path();
+
+      ///Get value_type string for command completion (i.e. stuff in your $PATH)
+      static std::string command();
+
+      ///Get value_type string for supercell completion
+      static std::string supercell();
+
+      ///Get value_type string for query completion
+      static std::string query();
+
+      ///Get value_type string for operation completion
+      static std::string operation();
+
+
+      ///Fill the output strings with bash completion appropriate values for VOID (i.e. do nothing)
+      static void void_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for PATH
+      static void path_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for COMMAND
+      static void command_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for SCELNAME
+      //static void scelname_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for QUERY
+      static void query_to_bash(std::vector<std::string> &arguments);
+
+      ///Fill the output strings with bash completion appropriate values for OPERATOR
+      static void operator_to_bash(std::vector<std::string> &arguments);
+
+
+    private:
+
+      ///List of pairs relating the value type name of po::option_description to its corresponding argument type
+      static const std::vector<std::pair<std::string, ARG_TYPE> > m_argument_table;
+
+    };
+
+    /**
+     * This is the base class to be used for every casm option. The purpose of this is to
+     * provide a way to generate standard suboptions, such as requesting a supercell name,
+     * specifying a coordinate mode, or asking for an output file.
+     * Derived classes will hold all the required variables for po::options_description construction
+     * that get passed by referenced and parsed from command line input.
+     */
+
+    class OptionHandlerBase {
+    public:
+
+      ///Define the name of the command during construction
+      OptionHandlerBase(std::string option_tag);
+
+      ///Get the program options, filled with the initialized values
+      const po::options_description &desc();
+
+      ///The desired name for the casm option (Perhaps this should get tied with CommandArg?)
+      const std::string &tag() const;
+
+    protected:
+
+      ///name of the casm command
+      std::string m_tag;
+
+      ///Boost program options. All the derived classes have them, but will fill them up themselves
+      po::options_description m_desc;
+
+      ///Fill in the options descriptions accordingly
+      virtual void initialize() = 0;
+
+      ///Add --config suboption (defaults to MASTER)
+      void add_config_suboption(std::string &selection_str);
+
+      ///Add a plain --help suboption
+      void add_help_suboption();
+
+      ///Add a smart --help suboption that takes "properties" or "operators"
+      void add_general_help_suboption();
+
+      ///Add a --verbosity suboption. Default "standard" of "none", "quiet", "standard", "verbose", "debug" or an int 0-100
+      void add_verbosity_suboption(std::string &verbosity_str);
+
+      //Add more general suboption adding routines here//
+    };
+
+    /**
+     * Options set for `casm monte`. Get your Monte Carlo completion here.
+     */
+
+    class MonteOption : public OptionHandlerBase {
+      using OptionHandlerBase::OptionHandlerBase;
+
+    public:
+
+      fs::path settings_path() const;
+
+      const std::string &verbosity_str() const;
+
+      Index condition_index() const;
+
+    private:
+
+      void initialize() override;
+
+      fs::path m_settings_path;
+
+      std::string m_verbosity_str;
+
+      Index m_condition_index;
+    };
+
+    //*****************************************************************************************************//
+
+  }
+}
+
+
+#endif

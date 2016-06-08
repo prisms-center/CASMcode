@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iterator>
 #include "casm/completer/complete.hh"
+#include "casm/completer/handlers.hh"
 #include "completer_functions.hh"
 
 using namespace CASM;
@@ -26,9 +27,8 @@ namespace CASM {
 
       //*******************************************************//
 
-      po::options_description dumbmonte("dumb monte");
-      Completer::add_monte_options(dumbmonte, dumb_pth, dumb_str, dumb_idx);
-      Completer::Option monte_opts("monte", dumbmonte);
+      MonteOption dumbmonte("monte");
+      Completer::Option monte_opts("monte", dumbmonte.desc());
       casm_engine.push_back(monte_opts);
 
       //*******************************************************//
