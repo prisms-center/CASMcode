@@ -250,7 +250,6 @@ namespace CASM {
       m_avail_options.push_back(new_option);
       return;
     }
-
   }
 }
 

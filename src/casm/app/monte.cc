@@ -50,6 +50,9 @@ namespace CASM {
   }
 
   namespace Completer {
+
+    MonteOption::MonteOption(): OptionHandlerBase("monte") {};
+
     void MonteOption::initialize() {
       add_help_suboption();
       add_verbosity_suboption();
@@ -76,15 +79,15 @@ namespace CASM {
     po::variables_map vm;
     //Index condition_index;
 
-    Completer::MonteOption monte("monte");
+    Completer::MonteOption monte_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, monte.desc()), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, monte_opt.desc()), vm); // can throw
 
       /** --help option
       */
       if(vm.count("help")) {
-        print_monte_help(monte.desc());
+        print_monte_help(monte_opt.desc());
         return 0;
       }
 
@@ -92,7 +95,7 @@ namespace CASM {
       // there are any problems
 
       if(vm.count("verbosity")) {
-        auto res = Log::verbosity_level(monte.verbosity_str());
+        auto res = Log::verbosity_level(monte_opt.verbosity_str());
         if(!res.first) {
           args.err_log.error("--verbosity");
           args.err_log << "Expected: 'none', 'quiet', 'standard', 'verbose', "
@@ -105,7 +108,7 @@ namespace CASM {
     }
     catch(po::error &e) {
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      std::cerr << monte.desc() << std::endl;
+      std::cerr << monte_opt.desc() << std::endl;
       return 1;
     }
     catch(std::exception &e) {
@@ -134,7 +137,7 @@ namespace CASM {
 
     //Get path to settings json file
     //monte.settings_path() = fs::absolute(monte.settings_path());
-    fs::path abs_settings_path = fs::absolute(monte.settings_path());
+    fs::path abs_settings_path = fs::absolute(monte_opt.settings_path());
 
     //std::cout << "Example settings so far..." << std::endl;
     //jsonParser example_settings = Monte::example_testing_json_settings(primclex);
@@ -172,11 +175,11 @@ namespace CASM {
           const GrandCanonical gc(primclex, gc_settings, log);
 
           log.write("Initial POSCAR");
-          write_POSCAR_initial(gc, monte.condition_index(), log);
+          write_POSCAR_initial(gc, monte_opt.condition_index(), log);
           log << std::endl;
         }
         catch(std::exception &e) {
-          std::cerr << "ERROR printing Grand Canonical Monte Carlo initial snapshot for condition: " << monte.condition_index() << "\n\n";
+          std::cerr << "ERROR printing Grand Canonical Monte Carlo initial snapshot for condition: " << monte_opt.condition_index() << "\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
         }
@@ -187,11 +190,11 @@ namespace CASM {
           const GrandCanonical gc(primclex, gc_settings, log);
 
           log.write("Final POSCAR");
-          write_POSCAR_final(gc, monte.condition_index(), log);
+          write_POSCAR_final(gc, monte_opt.condition_index(), log);
           log << std::endl;
         }
         catch(std::exception &e) {
-          std::cerr << "ERROR printing Grand Canonical Monte Carlo final snapshot for condition: " << monte.condition_index() << "\n\n";
+          std::cerr << "ERROR printing Grand Canonical Monte Carlo final snapshot for condition: " << monte_opt.condition_index() << "\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
         }
@@ -202,11 +205,11 @@ namespace CASM {
           const GrandCanonical gc(primclex, gc_settings, log);
 
           log.write("Trajectory POSCARs");
-          write_POSCAR_trajectory(gc, monte.condition_index(), log);
+          write_POSCAR_trajectory(gc, monte_opt.condition_index(), log);
           log << std::endl;
         }
         catch(std::exception &e) {
-          std::cerr << "ERROR printing Grand Canonical Monte Carlo path snapshots for condition: " << monte.condition_index() << "\n\n";
+          std::cerr << "ERROR printing Grand Canonical Monte Carlo path snapshots for condition: " << monte_opt.condition_index() << "\n\n";
           std::cerr << e.what() << std::endl;
           return 1;
         }

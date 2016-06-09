@@ -8,6 +8,9 @@
 namespace CASM {
 
   namespace Completer {
+
+    RunOption::RunOption(): OptionHandlerBase("run") {}
+
     void RunOption::initialize() {
       add_help_suboption();
       add_config_suboption();
@@ -33,7 +36,7 @@ namespace CASM {
     po::variables_map vm;
 
     /// Set command line options using boost program_options
-    Completer::RunOption run_opt("run");
+    Completer::RunOption run_opt;
 
     try {
       po::store(po::parse_command_line(args.argc, args.argv, run_opt.desc()), vm); // can throw

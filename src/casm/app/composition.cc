@@ -40,6 +40,9 @@ namespace CASM {
   }
 
   namespace Completer {
+
+    CompositionOption::CompositionOption(): OptionHandlerBase("composition") {};
+
     void CompositionOption::initialize() {
       add_help_suboption();
       m_desc.add_options()
@@ -64,7 +67,7 @@ namespace CASM {
   int composition_command(const CommandArgs &args) {
     po::variables_map vm;
 
-    Completer::CompositionOption comp_opt("composition");
+    Completer::CompositionOption comp_opt;
     //("update,u", "Update composition and references based on current 'composition_axes.json' file");
 
     try {

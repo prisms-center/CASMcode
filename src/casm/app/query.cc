@@ -36,6 +36,8 @@ namespace CASM {
 
   namespace Completer {
 
+    QueryOption::QueryOption(): OptionHandlerBase("query") {};
+
     void QueryOption::initialize() {
       add_general_help_suboption();
       add_config_suboption();
@@ -84,7 +86,7 @@ namespace CASM {
     //std::vector<std::string> columns, help_opt_vec, new_alias;
 
     // Set command line options using boost program_options
-    Completer::QueryOption query_opt("query");
+    Completer::QueryOption query_opt;
 
     //You'll need to alter the values given in query, so make a copy of them after parsing
     bool json_flag, no_header_flag, verbatim_flag, gz_flag;

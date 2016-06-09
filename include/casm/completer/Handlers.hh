@@ -93,7 +93,7 @@ namespace CASM {
     public:
 
       ///Define the name of the command during construction
-      OptionHandlerBase(std::string option_tag);
+      OptionHandlerBase(const std::string &init_option_tag);
 
       ///Get the program options, filled with the initialized values
       const po::options_description &desc();
@@ -198,9 +198,10 @@ namespace CASM {
 
     public:
 
-      using OptionHandlerBase::OptionHandlerBase;
       using OptionHandlerBase::verbosity_str;
       using OptionHandlerBase::settings_path;
+
+      MonteOption();
 
       Index condition_index() const;
 
@@ -221,8 +222,9 @@ namespace CASM {
 
     public:
 
-      using OptionHandlerBase::OptionHandlerBase;
       using OptionHandlerBase::selection_str;
+
+      RunOption();
 
       const std::string &exec_str() const;
 
@@ -243,11 +245,12 @@ namespace CASM {
 
     public:
 
-      using OptionHandlerBase::OptionHandlerBase;
       using OptionHandlerBase::selection_str;
       using OptionHandlerBase::output_path;
       using OptionHandlerBase::gzip_flag;
       using OptionHandlerBase::help_opt_vec;
+
+      QueryOption();
 
       const std::vector<std::string> &columns_vec() const;
 
@@ -285,7 +288,7 @@ namespace CASM {
 
     public:
 
-      using OptionHandlerBase::OptionHandlerBase;
+      BsetOption();
 
     private:
 
@@ -303,7 +306,7 @@ namespace CASM {
 
     public:
 
-      using OptionHandlerBase::OptionHandlerBase;
+      CompositionOption();
 
       const std::string &axis_choice_str() const;
 

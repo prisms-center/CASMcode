@@ -89,17 +89,13 @@ namespace CASM {
      * of Suboptions that it can take.
      */
 
-
     class Option {
       typedef std::size_t size_type;
       typedef ArgHandler::ARG_TYPE ARG_TYPE;
 
     public:
 
-      ///Construct manually passing all values needed
-      Option(const std::string &init_tag, const std::vector<Suboption> &init_allowed_subopts);
-
-      ///Construct with program options (eventually preferred)
+      ///Construct with program options
       Option(const std::string &init_tag, const po::options_description &init_premade_descs);
 
       ///Return the identifying name of *this (e.g. "super", "monte", etc)
@@ -118,6 +114,9 @@ namespace CASM {
       bool matches(const std::string &test_tag) const;
 
     private:
+
+      ///Construct manually passing all values needed
+      Option(const std::string &init_tag, const std::vector<Suboption> &init_allowed_subopts);
 
       ///Name that identifies this casm option (e.g. "monte", "init", etc)
       std::string m_tag;  //Make this const once the default constructors of Engine are gone?

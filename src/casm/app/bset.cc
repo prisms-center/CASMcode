@@ -6,6 +6,9 @@
 namespace CASM {
 
   namespace Completer {
+
+    BsetOption::BsetOption(): OptionHandlerBase("bset") {}
+
     void BsetOption::initialize() {
       add_help_suboption();
 
@@ -28,7 +31,7 @@ namespace CASM {
     po::variables_map vm;
 
     /// Set command line options using boost program_options
-    Completer::BsetOption bset_opt("bset");
+    Completer::BsetOption bset_opt;
 
     try {
       po::store(po::parse_command_line(args.argc, args.argv, bset_opt.desc()), vm); // can throw
