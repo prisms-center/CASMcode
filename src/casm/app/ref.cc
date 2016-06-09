@@ -1,6 +1,7 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/CASM_classes.hh"
 #include "casm/casm_io/json_io/clex.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
 
@@ -123,6 +124,32 @@ namespace CASM {
 
   }
 
+  namespace Completer {
+    RefOption::RefOption(): OptionHandlerBase("ref") {}
+
+    const std::string &RefOption::set_str() const {
+      return m_set_str;
+    }
+
+    void RefOption::initialize() {
+      add_help_suboption();
+      add_configname_suboption();
+      add_scelname_suboption();
+
+      m_desc.add_options()
+      //("composition-space", "Display information on current composition space")
+      ("display,d", "Display current reference states")
+      ("set-auto", "Automatically set project level reference states using DFT results")
+      ("set", po::value<std::string>(&m_set_str),
+       "Set reference states using user specified compositions and energies "
+       "(Default: set project-wide references). \n"
+       "See examples below for the form of expected input.")
+      ("erase", "Erase reference states (Default: clear project-wide references).");
+
+      return;
+    }
+  }
+
   // ///////////////////////////////////////
   // 'ref' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
@@ -130,9 +157,7 @@ namespace CASM {
   int ref_command(const CommandArgs &args) {
 
     po::variables_map vm;
-    int choice;
     std::string scelname, configname, set_str;
-    int refid, configid;
     double lin_alg_tol = 1e-14;
 
     std::string species_order_string = "\n\n";
@@ -158,146 +183,132 @@ namespace CASM {
     }
 
 
+    Completer::RefOption ref_opt;
+
     try {
-      po::options_description desc("'casm ref' usage");
-      desc.add_options()
-      ("help,h", "Write help documentation")
-      //("composition-space", "Display information on current composition space")
-      ("display,d", "Display current reference states")
-      ("set-auto", "Automatically set project level reference states using DFT results")
-      ("set", po::value<std::string>(&set_str),
-       "Set reference states using user specified compositions and energies "
-       "(Default: set project-wide references). \n"
-       "See examples below for the form of expected input.")
-      ("erase", "Erase reference states (Default: clear project-wide references).")
-      ("scelname", po::value<std::string>(&scelname),
-       "Use references given via --set for a particular supercell only")
-      ("configname", po::value<std::string>(&configname),
-       "Use references given via --set for a particular configuration only");
+      po::store(po::parse_command_line(args.argc, args.argv, ref_opt.desc()), vm);
+      scelname = ref_opt.supercell_str();
+      configname = ref_opt.config_str();
+      set_str = ref_opt.set_str();
 
+      bool call_help = false;
 
-      try {
-        po::store(po::parse_command_line(args.argc, args.argv, desc), vm);
+      //quit out if there are no arguments
+      if(!vm.count("help")) {
+        if(vm.count("set") + vm.count("display") + vm.count("erase") + vm.count("set-auto") != 1) {
+          std::cout << "Error in 'casm ref'. Please select one of --display, \n";
+          std::cout << "--set, --set-auto, or --erase to use this option." << std::endl;
 
-        bool call_help = false;
+          call_help = true;
+        }
 
-        //quit out if there are no arguments
-        if(!vm.count("help")) {
-          if(vm.count("set") + vm.count("display") + vm.count("erase") + vm.count("set-auto") != 1) {
-            std::cout << "Error in 'casm ref'. Please select one of --display, \n";
-            std::cout << "--set, --set-auto, or --erase to use this option." << std::endl;
+        if(vm.count("set")) {
+          if(vm.count("scelname") + vm.count("configname") > 1) {
+            std::cerr << "Error in 'casm ref --set'. Please select only one of --scelname, --configname \n";
 
             call_help = true;
           }
-
-          if(vm.count("set")) {
-            if(vm.count("scelname") + vm.count("configname") > 1) {
-              std::cerr << "Error in 'casm ref --set'. Please select only one of --scelname, --configname \n";
-
-              call_help = true;
-            }
-          }
-
-          if(vm.count("erase")) {
-            if(vm.count("scelname") + vm.count("configname") > 1) {
-              std::cerr << "Error in 'casm ref --erase'. Please select only one of --scelname, --configname \n";
-
-              call_help = true;
-            }
-          }
         }
 
-        /** --help option
-         */
-        if(vm.count("help") || call_help) {
-          std::cout << std::endl;
-          std::cout << desc << std::endl;
+        if(vm.count("erase")) {
+          if(vm.count("scelname") + vm.count("configname") > 1) {
+            std::cerr << "Error in 'casm ref --erase'. Please select only one of --scelname, --configname \n";
 
-          std::cout << "DESCRIPTION" << std::endl;
-          std::cout << "    The chemical reference determines the value of the formation energy  \n"
-                    "    and chemical potentials calculated by CASM.                          \n\n"
-
-                    "    Chemical references states are set by specifying a hyperplane in     \n"
-                    "    energy/atom - composition (as atom_frac) space. This may be done by  \n"
-                    "    specifying the hyperplane explicitly, or by specifying several       \n"
-                    "    reference states with energy/atom and composition (as atom_frac) for \n"
-                    "    enough states to span the composition space of the allowed occupants \n"
-                    "    specified in the prim. For consistency with other CASM projects,     \n"
-                    "    additional reference states extending to other compositional         \n"
-                    "    dimensions may be included also. The pure Va reference is always 0.  \n\n";
-
-          std::cout << "    The input to '--set' can be one of three forms:                      \n\n"
-
-                    "    1) Input the energy_per_species for pure states:                     \n" <<
-                    R"(       '{"A": X, "B": X, "C": X}')" << "\n\n" <<
-
-                    "    2) Input reference state composition and energy_per_species:         \n" <<
-                    R"(       '[)" << "\n" <<
-                    R"(          {"A": 3.4, "C": 2.0, "energy_per_species": 2.0},)" << "\n" <<
-                    R"(          {"B": 2.0, "energy_per_species": 4.0}, )" << "\n" <<
-                    R"(          {"C": 1.0, "energy_per_species": 3.0}  )" << "\n" <<
-                    R"(        ]')" << "\n\n" <<
-
-                    "    3) Input an array of energy_per_species, for each species in prim,   \n"
-                    "       including 0.0 for vacancy:                                        \n"
-                    "        '[X, X, X]'                                                      \n"
-                    << species_order_string;
-
-          std::cout << "    When using '--set' it is also possible to specialize the chemical    \n"
-                    "    reference at the supercell or configuration level by adding the      \n"
-                    "    --scelname or --configname option.                                   \n\n";
-
-
-
-          std::cout << "    Examples:\n";
-          //std::cout << "      casm ref --composition-space \n";
-          //std::cout << "      - Print composition space column matrix of the primitive\n";
-          //std::cout << "      - Print null space column matrix\n";
-          //std::cout << "\n";
-          std::cout << "      casm ref --display \n";
-          std::cout << "      - Print chemical reference\n";
-          std::cout << "\n";
-          std::cout << "      casm ref --set-auto\n";
-          std::cout << "      - set all reference states using DFT results for configurations with\n";
-          std::cout << "        extreme compositions.\n";
-          std::cout << "      - set reference for compositions outside range of this project to 0.0\n";
-          std::cout << "\n";
-          std::cout << "      casm ref --set \n"
-                    "        '[{\"Zr\":1, \"energy_per_species\":-8.546979385}, \n"
-                    "          {\"Zr\":1, \"O\":1, \"energy_per_species\":-9.090697345}]'\n"
-                    "      - set Zr and ZrO, with given energy per species, as reference states\n\n";
-
-          std::cout << "      casm ref --scelname SCEL3_3_1_1_0_2_2 --set \n"
-                    "        '[{\"Zr\":1, \"energy_per_species\":-8.546979385}, \n"
-                    "          {\"Zr\":1, \"O\":1, \"energy_per_species\":-9.090697345}]'\n"
-                    "      - set reference states as specified for configurations in supercell SCEL3_3_1_1_0_2_2\n\n";
-
-          std::cout << "      casm ref --configname SCEL3_3_1_1_0_2_2/2 --set \n"
-                    "        '[{\"Zr\":1, \"energy_per_species\":-8.546979385}, \n"
-                    "          {\"Zr\":1, \"O\":1, \"energy_per_species\":-9.090697345}]'\n"
-                    "      - set reference states as specified for configuration SCEL3_3_1_1_0_2_2/2\n\n";
-
-          std::cout << "      casm ref --scelname SCEL3_3_1_1_0_2_2 --erase \n"
-                    "      - erase specialized reference states for configurations in supercell SCEL3_3_1_1_0_2_2\n\n";
-
-          std::cout << "      casm ref --configname SCEL3_3_1_1_0_2_2/2 --erase \n"
-                    "      - erase specialized reference states for configuration SCEL3_3_1_1_0_2_2/2\n\n";
-
-
-          if(call_help)
-            return ERR_INVALID_ARG;
-
-          return 0;
+            call_help = true;
+          }
         }
-
-        po::notify(vm);
-
       }
-      catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
-        return ERR_INVALID_ARG;
+
+      /** --help option
+       */
+      if(vm.count("help") || call_help) {
+        std::cout << std::endl;
+        std::cout << ref_opt.desc() << std::endl;
+
+        std::cout << "DESCRIPTION" << std::endl;
+        std::cout << "    The chemical reference determines the value of the formation energy  \n"
+                  "    and chemical potentials calculated by CASM.                          \n\n"
+
+                  "    Chemical references states are set by specifying a hyperplane in     \n"
+                  "    energy/atom - composition (as atom_frac) space. This may be done by  \n"
+                  "    specifying the hyperplane explicitly, or by specifying several       \n"
+                  "    reference states with energy/atom and composition (as atom_frac) for \n"
+                  "    enough states to span the composition space of the allowed occupants \n"
+                  "    specified in the prim. For consistency with other CASM projects,     \n"
+                  "    additional reference states extending to other compositional         \n"
+                  "    dimensions may be included also. The pure Va reference is always 0.  \n\n";
+
+        std::cout << "    The input to '--set' can be one of three forms:                      \n\n"
+
+                  "    1) Input the energy_per_species for pure states:                     \n" <<
+                  R"(       '{"A": X, "B": X, "C": X}')" << "\n\n" <<
+
+                  "    2) Input reference state composition and energy_per_species:         \n" <<
+                  R"(       '[)" << "\n" <<
+                  R"(          {"A": 3.4, "C": 2.0, "energy_per_species": 2.0},)" << "\n" <<
+                  R"(          {"B": 2.0, "energy_per_species": 4.0}, )" << "\n" <<
+                  R"(          {"C": 1.0, "energy_per_species": 3.0}  )" << "\n" <<
+                  R"(        ]')" << "\n\n" <<
+
+                  "    3) Input an array of energy_per_species, for each species in prim,   \n"
+                  "       including 0.0 for vacancy:                                        \n"
+                  "        '[X, X, X]'                                                      \n"
+                  << species_order_string;
+
+        std::cout << "    When using '--set' it is also possible to specialize the chemical    \n"
+                  "    reference at the supercell or configuration level by adding the      \n"
+                  "    --scelname or --configname option.                                   \n\n";
+
+
+
+        std::cout << "    Examples:\n";
+        //std::cout << "      casm ref --composition-space \n";
+        //std::cout << "      - Print composition space column matrix of the primitive\n";
+        //std::cout << "      - Print null space column matrix\n";
+        //std::cout << "\n";
+        std::cout << "      casm ref --display \n";
+        std::cout << "      - Print chemical reference\n";
+        std::cout << "\n";
+        std::cout << "      casm ref --set-auto\n";
+        std::cout << "      - set all reference states using DFT results for configurations with\n";
+        std::cout << "        extreme compositions.\n";
+        std::cout << "      - set reference for compositions outside range of this project to 0.0\n";
+        std::cout << "\n";
+        std::cout << "      casm ref --set \n"
+                  "        '[{\"Zr\":1, \"energy_per_species\":-8.546979385}, \n"
+                  "          {\"Zr\":1, \"O\":1, \"energy_per_species\":-9.090697345}]'\n"
+                  "      - set Zr and ZrO, with given energy per species, as reference states\n\n";
+
+        std::cout << "      casm ref --scelname SCEL3_3_1_1_0_2_2 --set \n"
+                  "        '[{\"Zr\":1, \"energy_per_species\":-8.546979385}, \n"
+                  "          {\"Zr\":1, \"O\":1, \"energy_per_species\":-9.090697345}]'\n"
+                  "      - set reference states as specified for configurations in supercell SCEL3_3_1_1_0_2_2\n\n";
+
+        std::cout << "      casm ref --configname SCEL3_3_1_1_0_2_2/2 --set \n"
+                  "        '[{\"Zr\":1, \"energy_per_species\":-8.546979385}, \n"
+                  "          {\"Zr\":1, \"O\":1, \"energy_per_species\":-9.090697345}]'\n"
+                  "      - set reference states as specified for configuration SCEL3_3_1_1_0_2_2/2\n\n";
+
+        std::cout << "      casm ref --scelname SCEL3_3_1_1_0_2_2 --erase \n"
+                  "      - erase specialized reference states for configurations in supercell SCEL3_3_1_1_0_2_2\n\n";
+
+        std::cout << "      casm ref --configname SCEL3_3_1_1_0_2_2/2 --erase \n"
+                  "      - erase specialized reference states for configuration SCEL3_3_1_1_0_2_2/2\n\n";
+
+
+        if(call_help)
+          return ERR_INVALID_ARG;
+
+        return 0;
       }
+
+      po::notify(vm);
+
+    }
+    catch(po::error &e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      std::cerr << ref_opt.desc() << std::endl;
+      return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "

@@ -56,6 +56,14 @@ namespace CASM {
       return m_argument_table[4].first;
     }
 
+    std::string ArgHandler::configname() {
+      return m_argument_table[5].first;
+    }
+
+    std::string ArgHandler::coordmode() {
+      return m_argument_table[6].first;
+    }
+
 
     void ArgHandler::void_to_bash(std::vector<std::string> &arguments) {
       return;
@@ -71,7 +79,9 @@ namespace CASM {
       return;
     }
 
-    //void scelname_to_bash(std::vector<std::string> &arguments)
+    void scelname_to_bash(std::vector<std::string> &arguments) {
+      return;
+    }
 
     void ArgHandler::query_to_bash(std::vector<std::string> &arguments) {
       DataFormatterDictionary<Configuration> dict = make_dictionary<Configuration>();
@@ -102,12 +112,14 @@ namespace CASM {
      * know which types of completions to suggest.
      */
 
-    const std::vector<std::pair<std::string, ARG_TYPE> > ArgHandler::m_argument_table({
+    const std::vector<std::pair<std::string, ARG_TYPE> > ArgHandler::m_argument_table( {
       std::make_pair("<path>", ARG_TYPE::PATH),
       std::make_pair("<command>", ARG_TYPE::COMMAND),
       std::make_pair("<supercell>", ARG_TYPE::SCELNAME),
       std::make_pair("<query>", ARG_TYPE::QUERY),
-      std::make_pair("<operation>", ARG_TYPE::OPERATOR)
+      std::make_pair("<operation>", ARG_TYPE::OPERATOR),
+      std::make_pair("<configuration>", ARG_TYPE::CONFIGNAME),
+      std::make_pair("<coord mode>", ARG_TYPE::COORDMODE)
     });
 
 
@@ -161,7 +173,23 @@ namespace CASM {
       return m_help_opt_vec;
     }
 
-    void OptionHandlerBase::add_config_suboption() {
+    const std::string &OptionHandlerBase::config_str() const {
+      return m_config_str;
+    }
+
+    const std::vector<std::string> &OptionHandlerBase::config_vec() const {
+      return m_config_vec;
+    }
+
+    const std::string &OptionHandlerBase::supercell_str() const {
+      return m_supercell_str;
+    }
+
+    const std::vector<std::string> &OptionHandlerBase::supercell_vec() const {
+      return m_supercell_vec;
+    }
+
+    void OptionHandlerBase::add_configlist_suboption() {
       m_desc.add_options()
       ("config,c", po::value<std::string>(&m_selection_str)->default_value("MASTER")->value_name(ArgHandler::path()), "config_list files containing configurations for which to collect energies");
       return;
@@ -205,6 +233,50 @@ namespace CASM {
       ("gzip,z", po::value(&m_gzip_flag)->zero_tokens(), "Write gzipped output file.");
       return;
     }
+
+    void OptionHandlerBase::add_scelname_suboption() {
+      std::string help_str;
+      help_str = "Single supercell to use --" + m_tag + " with.";
+      m_desc.add_options()
+      ("scelname", po::value<std::string>(&m_supercell_str)->value_name(ArgHandler::supercell()), help_str.c_str());
+      return;
+    }
+
+    /*
+    void OptionHandlerBase::add_scelnames_suboption()
+    {
+        std::string help_str;
+        help_str="One or more supercells to use --"+m_tag+" with.";
+        m_desc.add_options()
+        ("scelnames", po::value(&m_supercell_str)->zero_tokens(), help_str.c_str());
+        return;
+    }
+    */
+
+    void OptionHandlerBase::add_configname_suboption() {
+      std::string help_str;
+
+      help_str = "Single configuration to use --" + m_tag + " with.";
+
+      m_desc.add_options()
+      ("configname", po::value<std::string>(&m_config_str)->value_name(ArgHandler::configname()), help_str.c_str());
+
+      return;
+    }
+
+    /*
+    void OptionHandlerBase::add_confignames_suboption()
+    {
+        std::string help_str;
+
+        help_str="One or more configurations to use --"+m_tag+" with.";
+
+        m_desc.add_options()
+            ("confignames", po::value<std::vector<std::string> >(&m_config_vec),help_str.c_str());
+
+        return;
+    }
+    */
 
     //*****************************************************************************************************//
 

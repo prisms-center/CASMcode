@@ -217,6 +217,14 @@ namespace CASM {
         ArgHandler::operator_to_bash(arguments);
         break;
 
+      case ARG_TYPE::CONFIGNAME:
+        //ArgHandler::configname_to_bash();
+        break;
+
+      case ARG_TYPE::COORDMODE:
+        //ArgHandler::coord_mode_to_bash();
+        break;
+
       default:
         break;
       }

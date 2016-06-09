@@ -40,7 +40,7 @@ namespace CASM {
 
     void QueryOption::initialize() {
       add_general_help_suboption();
-      add_config_suboption();
+      add_configlist_suboption();
       add_output_suboption();
       add_gzip_suboption();
 

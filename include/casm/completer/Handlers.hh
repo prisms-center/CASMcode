@@ -34,7 +34,7 @@ namespace CASM {
     class ArgHandler {
     public:
 
-      enum ARG_TYPE {VOID, PATH, COMMAND, SCELNAME, QUERY, OPERATOR};
+      enum ARG_TYPE {VOID, PATH, COMMAND, SCELNAME, QUERY, OPERATOR, CONFIGNAME, COORDMODE};
 
       ///Translate the stored boost value_name into an ARG_TYPE for the completer engine
       static ARG_TYPE determine_type(const po::option_description &boost_option);
@@ -54,6 +54,12 @@ namespace CASM {
       ///Get value_type string for operation completion
       static std::string operation();
 
+      ///Get value_type string for configuration completion
+      static std::string configname();
+
+      ///Get value_type string for coordinate mode completion
+      static std::string coordmode();
+
 
       ///Fill the output strings with bash completion appropriate values for VOID (i.e. do nothing)
       static void void_to_bash(std::vector<std::string> &arguments);
@@ -64,8 +70,8 @@ namespace CASM {
       ///Fill the output strings with bash completion appropriate values for COMMAND
       static void command_to_bash(std::vector<std::string> &arguments);
 
-      ///Fill the output strings with bash completion appropriate values for SCELNAME
-      //static void scelname_to_bash(std::vector<std::string> &arguments);
+      ///Fill the output strings with bash completion appropriate values for SCELNAME   TODO: This routine is currently unimplemented
+      static void scelname_to_bash(std::vector<std::string> &arguments);
 
       ///Fill the output strings with bash completion appropriate values for QUERY
       static void query_to_bash(std::vector<std::string> &arguments);
@@ -116,7 +122,7 @@ namespace CASM {
       //-------------------------------------------------------------------------------------//
 
       ///Add --config suboption (defaults to MASTER)
-      void add_config_suboption();
+      void add_configlist_suboption();
 
       ///The selection string to go with add_config_suboption
       std::string m_selection_str;
@@ -183,6 +189,50 @@ namespace CASM {
 
       ///Returns the value assigned for add_gzip_suboption()
       bool gzip_flag() const;
+
+      //-------------------------------------------------------------------------------------//
+
+      ///Add a --scelname suboption.
+      void add_scelname_suboption();
+
+      ///The string of the supercell name of add_scelname_suboption()
+      std::string m_supercell_str;
+
+      ///Returns the name of the supercell for add_scelname_suboption()
+      const std::string &supercell_str() const;
+
+      //----------------------------//
+
+      ///Add a --scelnames suboption.
+      void add_scelnames_suboption();
+
+      ///The list of supercell names of add_scelnames_suboption()
+      std::vector<std::string> m_supercell_vec;
+
+      ///Returns the list of the supercells for add_scelnames_suboption()
+      const std::vector<std::string> &supercell_vec() const;
+
+      //-------------------------------------------------------------------------------------//
+
+      ///Add a --configname suboption.
+      void add_configname_suboption();
+
+      ///The name of a single configname to go with add_configname_suboption()
+      std::string m_config_str;
+
+      ///Returns the name of the supercell for add_configname_suboption(), for when multiple=false
+      const std::string &config_str() const;
+
+      //----------------------------//
+
+      ///Add a --confignames suboption.
+      void add_confignames_suboption();
+
+      ///The list of the supercell names of add_configname_suboption()
+      std::vector<std::string> m_config_vec;
+
+      ///Returns the names of the supercells for add_configname_suboption(), for when multiple=false
+      const std::vector<std::string> &config_vec() const;
 
       //-------------------------------------------------------------------------------------//
 
@@ -315,6 +365,31 @@ namespace CASM {
       void initialize() override;
 
       std::string m_axis_choice_str;
+
+    };
+
+    //*****************************************************************************************************//
+
+    /**
+     * Options set for `casm ref`. Get your reference set here.
+     */
+
+    class RefOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::supercell_str;
+      using OptionHandlerBase::config_str;
+
+      RefOption();
+
+      const std::string &set_str() const;
+
+    private:
+
+      void initialize() override;
+
+      std::string m_set_str;
 
     };
 

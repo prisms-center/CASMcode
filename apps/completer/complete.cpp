@@ -26,6 +26,9 @@ namespace CASM {
       CompositionOption dumbcomposition;
       casm_engine.push_back(Option(dumbcomposition.tag(), dumbcomposition.desc()));
 
+      RefOption dumbref;
+      casm_engine.push_back(Option(dumbref.tag(), dumbref.desc()));
+
       return casm_engine;
     }
   }

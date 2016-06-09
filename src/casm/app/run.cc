@@ -13,7 +13,7 @@ namespace CASM {
 
     void RunOption::initialize() {
       add_help_suboption();
-      add_config_suboption();
+      add_configlist_suboption();
 
       m_desc.add_options()
       ("write-pos", "Write POS file for each selected configuration before executing the command")
