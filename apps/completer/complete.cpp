@@ -44,6 +44,12 @@ namespace CASM {
 
       //*******************************************************//
 
+      CompositionOption dumbcomposition("composition");
+      Completer::Option composition_opts("composition", dumbcomposition.desc());
+      casm_engine.push_back(composition_opts);
+
+      //*******************************************************//
+
       return casm_engine;
     }
   }

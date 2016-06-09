@@ -295,6 +295,28 @@ namespace CASM {
 
     //*****************************************************************************************************//
 
+    /**
+     * Options set for `casm bset`. Get your clusters here.
+     */
+
+    class CompositionOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::OptionHandlerBase;
+
+      const std::string &axis_choice_str() const;
+
+    private:
+
+      void initialize() override;
+
+      std::string m_axis_choice_str;
+
+    };
+
+    //*****************************************************************************************************//
+
   }
 }
 
