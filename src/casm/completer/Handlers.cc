@@ -114,6 +114,7 @@ namespace CASM {
     //*****************************************************************************************************//
 
     OptionHandlerBase::OptionHandlerBase(std::string init_tag):
+      m_gzip_flag(false),
       m_tag(init_tag),
       m_desc(std::string("'casm ") + init_tag + std::string("' usage")) {
     }
@@ -148,6 +149,18 @@ namespace CASM {
       return m_settings_path;
     }
 
+    const fs::path OptionHandlerBase::output_path() const {
+      return m_output_path;
+    }
+
+    bool OptionHandlerBase::gzip_flag() const {
+      return m_gzip_flag;
+    }
+
+    const std::vector<std::string> &OptionHandlerBase::help_opt_vec() const {
+      return m_help_opt_vec;
+    }
+
     void OptionHandlerBase::add_config_suboption() {
       m_desc.add_options()
       ("config,c", po::value<std::string>(&m_selection_str)->default_value("MASTER")->value_name(ArgHandler::path()), "config_list files containing configurations for which to collect energies");
@@ -162,7 +175,7 @@ namespace CASM {
 
     void OptionHandlerBase::add_general_help_suboption() {
       m_desc.add_options()
-      ("help,h", "Print help message");
+      ("help,h", po::value<std::vector<std::string> >(&m_help_opt_vec)->multitoken()->zero_tokens(), "Print general help. Use '--help properties' for a list of query-able properties or '--help operators' for a list of query operators");
       return;
     }
 
@@ -174,12 +187,25 @@ namespace CASM {
     }
 
     void OptionHandlerBase::add_settings_suboption() {
-      std::string help_str = "Settings input file specifying which parameters should be used. See 'casm format --'" + m_tag + "'.";
+      std::string help_str = "Settings input file specifying which parameters should be used. See 'casm format --" + m_tag + "'.";
 
       m_desc.add_options()
       ("settings,s", po::value<fs::path>(&m_settings_path)->required()->value_name(ArgHandler::path()), help_str.c_str());
       return;
     }
+
+    void OptionHandlerBase::add_output_suboption() {
+      m_desc.add_options()
+      ("output,o", po::value<fs::path>(&m_output_path)->value_name(ArgHandler::path()), "Name for output file. Use STDOUT to print results without extra messages.");
+      return;
+    }
+
+    void OptionHandlerBase::add_gzip_suboption() {
+      m_desc.add_options()
+      ("gzip,z", po::value(&m_gzip_flag)->zero_tokens(), "Write gzipped output file.");
+      return;
+    }
+
     //*****************************************************************************************************//
 
   }

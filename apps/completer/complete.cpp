@@ -20,9 +20,8 @@ namespace CASM {
 
       //*******************************************************//
 
-      po::options_description dumbquery("dumb query");
-      Completer::add_query_options(dumbquery, dumb_str, dumb_pth, dumb_str_vec, dumb_str_vec, dumb_str_vec, dumb_bool, dumb_bool, dumb_bool, dumb_bool);
-      Completer::Option query_opts("query", dumbquery);
+      QueryOption dumbquery("query");
+      Completer::Option query_opts("query", dumbquery.desc());
       casm_engine.push_back(query_opts);
 
       //*******************************************************//

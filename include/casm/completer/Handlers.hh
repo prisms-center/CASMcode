@@ -113,7 +113,7 @@ namespace CASM {
       ///Fill in the options descriptions accordingly
       virtual void initialize() = 0;
 
-      //----------------------------------------------------------
+      //-------------------------------------------------------------------------------------//
 
       ///Add --config suboption (defaults to MASTER)
       void add_config_suboption();
@@ -124,17 +124,23 @@ namespace CASM {
       ///Returns the string corresponding to add_config_suboption()
       const std::string &selection_str() const;
 
-      //----------------------------------------------------------
+      //-------------------------------------------------------------------------------------//
 
       ///Add a plain --help suboption
       void add_help_suboption();
 
-      //----------------------------------------------------------
+      //-------------------------------------------------------------------------------------//
 
       ///Add a smart --help suboption that takes "properties" or "operators"
       void add_general_help_suboption();
 
-      //----------------------------------------------------------
+      ///The list of strings to go with add_general_help_suboption()
+      std::vector<std::string> m_help_opt_vec;
+
+      ///Returns the list of strings corresponding to add_general_help_suboption()
+      const std::vector<std::string> &help_opt_vec() const;
+
+      //-------------------------------------------------------------------------------------//
 
       ///Add a --verbosity suboption. Default "standard" of "none", "quiet", "standard", "verbose", "debug" or an int 0-100
       void add_verbosity_suboption();
@@ -145,7 +151,7 @@ namespace CASM {
       ///Returns the string corresponding to add_verbosity_suboption()
       const std::string &verbosity_str() const;
 
-      //----------------------------------------------------------
+      //-------------------------------------------------------------------------------------//
 
       ///Add a --settings suboption. Expects a corresponding `casm format` to go with it.
       void add_settings_suboption();
@@ -156,7 +162,29 @@ namespace CASM {
       ///Returns the path corresponding to add_settings_suboption
       const fs::path settings_path() const;
 
-      //----------------------------------------------------------
+      //-------------------------------------------------------------------------------------//
+
+      ///Add a --output suboption. Expects to allow "STDOUT" to print to screen.
+      void add_output_suboption();
+
+      ///The path that goes with add_output_suboption
+      fs::path m_output_path;
+
+      ///Returns the path corresponding to add_output_suboption()
+      const fs::path output_path() const;
+
+      //-------------------------------------------------------------------------------------//
+
+      ///Add a --gzip suboption. The value will default to false unless overridden by the derived class.
+      void add_gzip_suboption();
+
+      ///The bool that goes with add_gzip_suboption
+      bool m_gzip_flag;
+
+      ///Returns the value assigned for add_gzip_suboption()
+      bool gzip_flag() const;
+
+      //-------------------------------------------------------------------------------------//
 
       //Add more general suboption adding routines here//
     };
@@ -203,6 +231,48 @@ namespace CASM {
       void initialize() override;
 
       std::string m_exec_str;
+    };
+
+    //*****************************************************************************************************//
+
+    /**
+     * Options set for `casm query`. Get casm to query your things here.
+     */
+
+    class QueryOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::OptionHandlerBase;
+      using OptionHandlerBase::selection_str;
+      using OptionHandlerBase::output_path;
+      using OptionHandlerBase::gzip_flag;
+      using OptionHandlerBase::help_opt_vec;
+
+      const std::vector<std::string> &columns_vec() const;
+
+      const std::vector<std::string> &new_alias_vec() const;
+
+      bool json_flag() const;
+
+      bool verbatim_flag() const;
+
+      bool no_header_flag() const;
+
+    private:
+
+      void initialize() override;
+
+      std::vector<std::string> m_columns_vec;
+
+      std::vector<std::string> m_new_alias_vec;
+
+      bool m_json_flag;
+
+      bool m_verbatim_flag;
+
+      bool m_no_header_flag;
+
     };
 
     //*****************************************************************************************************//
