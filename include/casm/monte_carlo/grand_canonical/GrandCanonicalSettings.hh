@@ -469,7 +469,7 @@ namespace CASM {
 
     MonteSampler *ptr;
 
-    ECIContainer _eci = read_eci(primclex.dir().eci(clex(), bset(), calctype(), ref(), eci()));
+    ECIContainer _eci = read_eci(primclex.dir().eci(clex(), calctype(), ref(), bset(), eci()));
 
     for(size_type ii = 0; ii < _eci.index().size(); ii++) {
 
