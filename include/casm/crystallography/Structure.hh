@@ -67,7 +67,8 @@ namespace CASM {
     SymGroupRep const *basis_permutation_symrep()const;
     SymGroupRepID basis_permutation_symrep_ID()const;
 
-    std::vector<Specie> get_struc_specie() const;
+    // AtomSpecie will eventually change to ChemicalSpecie for composition purposes
+    std::vector<AtomSpecie> get_struc_specie() const;
     std::vector<Molecule> get_struc_molecule() const;
     std::vector<std::string> get_struc_molecule_name() const;
     Eigen::VectorXi get_num_each_specie() const;

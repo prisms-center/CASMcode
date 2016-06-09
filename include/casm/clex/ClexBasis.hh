@@ -4,15 +4,27 @@
 #include <string>
 #include "casm/basis_set/BasisSet.hh"
 
-class SiteOrbitree;
 
 namespace CASM {
+  class Structure;
+  class UnitCell;
+
+
+  class PrimNeighborList;
+
   class BasisBuilder;
+
+  // This is a hack to forward-declare IntegralCluster.  Forward declarations
+  // of typedefs should probably get their own *.hh files, without any dependencies
+  template<typename CoordType>
+  class CoordCluster;
+  class UnitCellCoord;
+  typedef CoordCluster<UnitCellCoord> IntegralCluster;
 
   class ClexBasis {
   public:
     typedef std::vector<BasisSet> BSetOrbit;
-    typedef std::string DoFType;
+    typedef std::string DoFKey;
     typedef std::vector<BSetOrbit>::const_iterator BSetOrbitIterator;
 
     /// \brief Initialize from Structure, in order to get Site DoF and global DoF info
@@ -51,13 +63,17 @@ namespace CASM {
       return m_bset_tree.cbegin();
     }
 
+    jsonParser const &bspecs() const {
+      return m_bspecs;
+    }
+
     /// \brief Const access to dictionary of all site BasisSets
-    std::map<DoFType, std::vector<BasisSet> > const &site_bases()const {
+    std::map<DoFKey, std::vector<BasisSet> > const &site_bases()const {
       return m_site_bases;
     }
 
     /// \brief Const access to dictionary of all global BasisSets
-    std::map<DoFType, BasisSet> const &global_bases()const {
+    std::map<DoFKey, BasisSet> const &global_bases()const {
       return m_global_bases;
     }
 
@@ -71,8 +87,8 @@ namespace CASM {
   private:
     template<typename OrbitType>
     BasisSet _construct_prototype_basis(OrbitType const &_orbit,
-                                        std::vector<DoFType> const &local_keys,
-                                        std::vector<DoFType> const &global_keys,
+                                        std::vector<DoFKey> const &local_keys,
+                                        std::vector<DoFKey> const &global_keys,
                                         Index max_poly_order) const;
 
     /// \brief Performs heavy lifting for populating site bases in m_site_bases
@@ -84,10 +100,12 @@ namespace CASM {
     std::vector<BSetOrbit> m_bset_tree;
 
     /// \brief Dictionary of all site BasisSets, initialized on construction
-    std::map<DoFType, std::vector<BasisSet> > m_site_bases;
+    std::map<DoFKey, std::vector<BasisSet> > m_site_bases;
 
     /// \brief Dictionary of all global BasisSets, initialized
-    std::map<DoFType, BasisSet> m_global_bases;
+    std::map<DoFKey, BasisSet> m_global_bases;
+
+    jsonParser m_bspecs;
   };
 
 
@@ -99,7 +117,7 @@ namespace CASM {
 
     }
 
-    virtual std::vector<ClexBasis::DoFType> filter_dof_types(std::vector<ClexBasis::DoFType> const &_dof_types) {
+    virtual std::vector<ClexBasis::DoFKey> filter_dof_types(std::vector<ClexBasis::DoFKey> const &_dof_types) {
       return _dof_types;
     }
 
@@ -123,12 +141,13 @@ namespace CASM {
 
   /// Print cluster with basis_index and nlist_index (from 0 to size()-1), followed by cluster basis functions
   /// Functions are labeled \Phi_{i}, starting from i = @param begin_ind
-  void print_clust_basis(std::ostream &stream,
-                         BasisSet _clust_basis,
-                         IntegralCluster const &_prototype,
-                         Index func_ind = 0,
-                         int space = 18,
-                         char delim = '\n');
+  /// Returns the number of functions that were printed
+  Index print_clust_basis(std::ostream &stream,
+                          BasisSet _clust_basis,
+                          IntegralCluster const &_prototype,
+                          Index func_ind = 0,
+                          int space = 18,
+                          char delim = '\n');
 
   /// returns std::vector of std::string, each of which is
   template<typename OrbitType>
@@ -159,6 +178,7 @@ namespace CASM {
 
 
   namespace ClexBasis_impl {
+    std::vector<ClexBasis::DoFKey> extract_dof_types(Structure const &_prim);
 
     BasisSet construct_clust_dof_basis(IntegralCluster const &_clust,
                                        std::vector<BasisSet const *> const &site_dof_sets);

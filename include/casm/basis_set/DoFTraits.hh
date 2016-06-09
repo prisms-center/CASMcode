@@ -3,12 +3,39 @@
 
 #include "casm/basis_set/DoF.hh"
 
-// remove this once implementation of derived classes gets moved out of this file
+// remove these once implementation of derived classes gets moved out of this file
+#include "casm/crystallography/Site.hh"
 #include "casm/basis_set/BasisSet.hh"
 
 namespace CASM {
   class jsonParser;
   class MasterSymGroup;
+  class Structure;
+
+  namespace DoF_impl {
+    class Traits;
+  }
+
+  namespace DoFType {
+    DoF_impl::Traits const &traits(std::string const &dof_key);
+
+    DoF_impl::BasicTraits const &basic_traits(std::string const &dof_key);
+
+    notstd::cloneable_ptr<typename DoF_impl::BasicTraits> occupation();
+  }
+
+  // This is a hack to forward-declare IntegralCluster.  Forward declarations
+  // of typedefs should probably get their own *.hh files, without any dependencies
+  template<typename CoordType>
+  class CoordCluster;
+  class UnitCellCoord;
+  typedef CoordCluster<UnitCellCoord> IntegralCluster;
+
+  template <typename ClustType, typename SymCompareType>
+  class Orbit;
+
+  template <typename ClustType>
+  class PrimPeriodicSymCompare;
 
   namespace DoF_impl {
     /// \brief Collection of all the traits specific to a DoF type
@@ -28,7 +55,9 @@ namespace CASM {
       virtual ~Traits() {}
 
       /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
-      virtual BasisSet construct_site_basis(Site const &_site) const = 0;
+      virtual std::vector<BasisSet> construct_site_bases(Structure const &_prim,
+                                                         std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
+                                                         jsonParser const &_bspecs) const = 0;
 
       /// \brief Populate @param _in from JSON
       virtual void from_json(std::vector<ContinuousDoF> &_in, jsonParser const &_json) const = 0;
@@ -54,11 +83,6 @@ namespace CASM {
         Traits("occupation",
                DISCRETE,
                LOCAL) {
-      }
-
-      /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
-      BasisSet construct_site_basis(Site const &_site) const override {
-        throw std::runtime_error("OccupationDoFTraits::construct_site_basis not implemented!");
       }
 
       /// \brief Populate @param _in from JSON
@@ -88,7 +112,7 @@ namespace CASM {
           for(s = 0; s < site.site_occupant().size(); s++) {
             if(s == 0)
               ss << "    ";
-            ss << "    \\phi_" << site.basis_ind() << '_' << f << '[' << site.site_occupant()[s].name << "] = "
+            ss << "    \\phi_" << site.basis_ind() << '_' << f << '[' << site.site_occupant()[s].name() << "] = "
                << site_bset[f]->remote_eval();
             if(s + 1 == site.site_occupant().size())
               ss << "\n";
@@ -99,6 +123,10 @@ namespace CASM {
         return ss.str();
       }
 
+      /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
+      std::vector<BasisSet> construct_site_bases(Structure const &_prim,
+                                                 std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
+                                                 jsonParser const &_bspecs) const override;
     protected:
       BasicTraits *_clone() const override {
         return new OccupationDoFTraits(*this);
@@ -153,13 +181,17 @@ namespace CASM {
     TraitsDictionary const &traits_dict();
   }
 
-  DoF_impl::Traits const &dof_traits(std::string const &dof_key) {
-    return static_cast<DoF_impl::Traits const &>(DoF::traits(dof_key));
-  }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   namespace DoFType {
+    DoF_impl::Traits const &traits(std::string const &dof_key) {
+      return static_cast<DoF_impl::Traits const &>(DoF::traits(dof_key));
+    }
+
+    DoF_impl::BasicTraits const &basic_traits(std::string const &dof_key) {
+      return DoF::traits(dof_key);
+    }
     notstd::cloneable_ptr<typename DoF_impl::BasicTraits> occupation() {
       return DoF_impl::OccupationDoFTraits().clone();
     }

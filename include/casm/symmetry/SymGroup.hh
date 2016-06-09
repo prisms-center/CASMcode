@@ -33,11 +33,21 @@ namespace CASM {
       m_lat_ptr(nullptr),
       m_group_periodicity(init_type),
       m_max_error(-1) {
-      name.clear();
-      latex_name.clear();
+
     }
 
     SymGroup(const Array<SymOp> &from_array, PERIODICITY_TYPE init_type = PERIODIC);
+
+    template<typename IterType>
+    SymGroup(IterType begin,
+             IterType end,
+             PERIODICITY_TYPE init_type = PERIODIC) :
+      Array<SymOp>(begin, end),
+      m_lat_ptr(nullptr),
+      m_group_periodicity(init_type),
+      m_max_error(-1) {
+
+    }
 
     virtual void push_back(const SymOp &new_op);
     virtual void clear();

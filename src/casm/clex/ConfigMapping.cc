@@ -859,7 +859,7 @@ namespace CASM {
 
           // Check if relaxed atom j is allowed on site i
           // If so, populate cost_matrix normally
-          if(config.mol(i).name == rstruc.basis[j].occ_name()) {
+          if(config.mol(i).name() == rstruc.basis[j].occ_name()) {
             cost_matrix(i, j) = scel.coord(i).min_dist2(current_relaxed_coord, metric);
           }
           // If not, set cost_matrix (i,j) = inf
@@ -880,7 +880,7 @@ namespace CASM {
         for(Index i = 0; i < scel.num_sites(); i++) {
 
           // Check if vacancies are allowed at each position in the supercell
-          if(config.mol(i).name == "Va") {
+          if(config.mol(i).name() == "Va") {
             cost_matrix(i, j) = 0;
           }
           else {
@@ -1180,7 +1180,7 @@ namespace CASM {
         //BasicStructure<Site> shift_struc(rstruc);
 
 
-        if(n > 0 && config.mol(n - 1).name != rstruc.basis[0].occ_name())
+        if(n > 0 && config.mol(n - 1).name() != rstruc.basis[0].occ_name())
           continue;
 
         Coordinate ref_coord(rstruc.basis[0]);

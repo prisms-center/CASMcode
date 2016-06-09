@@ -72,11 +72,11 @@ namespace CASM {
                                           double tol);
 
     /// \brief Get neighborlist index of UnitCellCoord @param _ucc, expanding neighborhood if necessary
-    size_type neighbor_index(UnitCellCoord const &_ucc);
+    Scalar neighbor_index(UnitCellCoord const &_ucc);
 
     /// \brief Get neighborlist indices of a collection of UnitCells, stored in @param _uc_container
     template<typename UnitCellCoordIterator>
-    std::vector<size_type> neighbor_indices(UnitCellCoordIterator _begin, UnitCellCoordIterator _end);
+    std::vector<Scalar> neighbor_indices(UnitCellCoordIterator _begin, UnitCellCoordIterator _end);
 
     /// \brief Clone
     std::unique_ptr<PrimNeighborList> clone() const;
@@ -247,14 +247,14 @@ namespace CASM {
 
   /// \brief Get neighborlist indices of a of UnitCells, passed by begin and end iterator
   template<typename UnitCellCoordIterator>
-  std::vector<PrimNeighborList::size_type> PrimNeighborList::neighbor_indices(UnitCellCoordIterator _begin,
-                                                                              UnitCellCoordIterator _end) {
+  std::vector<PrimNeighborList::Scalar> PrimNeighborList::neighbor_indices(UnitCellCoordIterator _begin,
+                                                                           UnitCellCoordIterator _end) {
     expand(_begin, _end);
-    std::vector<size_type> result;
+    std::vector<Scalar> result;
     std::transform(_begin,
                    _end,
                    std::back_inserter(result),
-    [this](UnitCellCoord const & A)->size_type{
+    [this](UnitCellCoord const & A)->Scalar{
       return this->_neighbor_index(A);
     });
     return result;

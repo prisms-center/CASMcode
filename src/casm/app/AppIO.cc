@@ -80,12 +80,12 @@ namespace CASM {
 
         // fill site.site_occupant
         std::vector<Molecule> tocc;
-        for(int i = 0; i < occ_name.size(); i++) {
-          Molecule tMol(prim.lattice());
-          tMol.name = occ_name[i];
-          tMol.push_back(AtomPosition(0, 0, 0, occ_name[i], prim.lattice(), CART));
-          tocc.push_back(tMol);
-        }
+        tocc.reserve(occ_name.size());
+        std::transform(occ_name.begin(),
+                       occ_name.end(),
+                       std::back_inserter(tocc),
+                       static_cast<Molecule(*)(std::string const &)>(Molecule::make_atom));
+
         site.set_allowed_species(tocc);
         site.set_occ_value(0);
 
@@ -153,7 +153,7 @@ namespace CASM {
       json["basis"][i]["occupant_dof"] = jsonParser::array(prim.basis[i].site_occupant().size());
 
       for(int j = 0; j < prim.basis[i].site_occupant().size(); j++) {
-        json["basis"][i]["occupant_dof"][j] = prim.basis[i].site_occupant()[j].name;
+        json["basis"][i]["occupant_dof"][j] = prim.basis[i].site_occupant()[j].name();
       }
 
     }

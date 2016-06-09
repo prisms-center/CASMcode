@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "casm/crystallography/Molecule.hh"
+#include "casm/basis_set/DoF.hh"
 
 namespace CASM {
 
@@ -51,8 +52,6 @@ namespace CASM {
     //checks to see if species with name 'name' is allowed at site.
     bool contains(const std::string &name) const;
     bool contains(const std::string &name, int &index) const;
-
-    void set_lattice(const Lattice &new_lat, COORD_TYPE mode);//John G
 
     void set_allowed_species(std::vector<Molecule> const &_occ_domain) {
       m_site_occupant.set_domain(_occ_domain);

@@ -32,7 +32,7 @@ namespace CASM {
 
     auto struc_molecule = prim_struc->get_struc_molecule();
     for(auto it = struc_molecule.begin(); it != struc_molecule.end(); ++it) {
-      components.push_back(it->name);
+      components.push_back(it->name());
     }
 
     return;

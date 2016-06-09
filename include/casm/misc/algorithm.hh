@@ -5,6 +5,8 @@
 
 namespace CASM {
 
+  using std::find;
+
   /// \brief Equivalent to std::find(begin, end, value), but with custom comparison
   template<typename Iterator, typename T, typename BinaryCompare>
   Iterator find(Iterator begin, Iterator end, const T &value, BinaryCompare q) {
@@ -23,19 +25,6 @@ namespace CASM {
     return std::distance(begin, find(begin, end, value, q));
   }
 
-  /// \brief Equivalent to std::distance(begin, std::find_if(begin, end, p))
-  template<typename Iterator, typename UnaryPredicate>
-  Index find_index_if(Iterator begin, Iterator end, UnaryPredicate p) {
-    return std::distance(begin, std::find_if(begin, end, p));
-  }
-
-  /// \brief Equivalent to std::distance(begin, std::find_if_not(begin, end, q))
-  template<typename Iterator, typename UnaryPredicate>
-  Index find_index_if_not(Iterator begin, Iterator end, UnaryPredicate q) {
-    std::distance(begin, std::find_if_not(begin, end, q));
-  }
-
-
   /// \brief Equivalent to std::distance(container.begin(), find(container.begin(), container.end(), value,q))
   template<typename Container, typename T, typename BinaryCompare>
   Index find_index(const Container &container, const T &value, BinaryCompare q) {
@@ -48,11 +37,24 @@ namespace CASM {
     return std::distance(container.begin(), std::find(container.begin(), container.end(), value));
   }
 
+  /// \brief Equivalent to std::distance(begin, std::find_if(begin, end, p))
+  template<typename Iterator, typename UnaryPredicate>
+  Index find_index_if(Iterator begin, Iterator end, UnaryPredicate p) {
+    return std::distance(begin, std::find_if(begin, end, p));
+  }
+
   /// \brief Equivalent to std::distance(container.begin(), std::find_if(container.begin(), container.end(), p))
   template<typename Container, typename UnaryPredicate>
   Index find_index_if(const Container &container, UnaryPredicate p) {
     return std::distance(container.begin(), std::find_if(container.begin(), container.end(), p));
   }
+
+  /// \brief Equivalent to std::distance(begin, std::find_if_not(begin, end, q))
+  template<typename Iterator, typename UnaryPredicate>
+  Index find_index_if_not(Iterator begin, Iterator end, UnaryPredicate q) {
+    std::distance(begin, std::find_if_not(begin, end, q));
+  }
+
 
   /// \brief Equivalent to std::distance(container.begin(), std::find_if_not(container.begin(), container.end(), p))
   template<typename Container, typename UnaryPredicate>

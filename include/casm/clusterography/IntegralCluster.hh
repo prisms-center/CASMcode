@@ -54,10 +54,7 @@ namespace CASM {
 
   /// \brief Read from JSON
   inline void from_json(IntegralCluster &clust, const jsonParser &json) {
-    UnitCellCoord coord(clust.prim());
-    for(auto it = json.begin(); it != json.end(); ++it) {
-      from_json(clust.elements(), json["sites"], coord);
-    }
+    from_json(clust.elements(), json["sites"], clust.prim());
     return;
   }
 

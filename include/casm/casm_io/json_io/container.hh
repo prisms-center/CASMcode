@@ -102,20 +102,20 @@ namespace CASM {
   // --- std::vector<T> --------------
 
   /// Converts to a JSON array
-  template<typename T>
-  jsonParser &to_json(const std::vector<T> &vec, jsonParser &json) {
-    return json.put_array(vec.begin(), vec.end());
+  template<typename T, typename... Args>
+  jsonParser &to_json(const std::vector<T> &vec, jsonParser &json, Args &&... args) {
+    return json.put_array(vec.begin(), vec.end(), std::forward<Args>(args)...);
   }
 
   /// Read std::vector<T> from JSON
   ///
   /// Clears any previous contents
-  template<typename T>
-  void from_json(std::vector<T> &vec, const jsonParser &json) {
-    vec.resize(json.size());
+  template<typename T, typename... Args>
+  void from_json(std::vector<T> &vec, const jsonParser &json, Args &&... args) {
+    vec.reserve(json.size());
     int i = 0;
     for(auto it = json.begin(); it != json.end(); ++it, ++i) {
-      from_json(vec[i], *it);
+      vec.push_back(jsonConstructor<T>::from_json(*it, std::forward<Args>(args)...));
     }
   }
 
@@ -175,7 +175,7 @@ namespace CASM {
   ///
   /// Clears any previous contents, constructs via jsonConstructor<T>
   template<typename T, typename Compare, typename...Args>
-  void from_json(std::set<T, Compare> &set, const jsonParser &json, Args...args) {
+  void from_json(std::set<T, Compare> &set, const jsonParser &json, Args &&...args) {
     set.clear();
     for(auto it = json.begin(); it != json.end(); ++it) {
       set.insert(jsonConstructor<T>::from_json(*it, args...));

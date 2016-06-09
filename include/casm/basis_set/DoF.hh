@@ -14,6 +14,12 @@ namespace CASM {
   class Molecule;
   class jsonParser;
 
+  template<typename OccType>
+  class OccupantDoF;
+  using MoleculeOccupant = OccupantDoF<Molecule>;
+
+  class ContinuousDoF;
+  class DoFSet;
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   namespace DoF_impl {
@@ -95,6 +101,22 @@ namespace CASM {
         return false;
       }
 
+      /// \brief implements json parsing of a specialized DoF.
+      // In future, we may need to add another inheritance layer to handle DiscreteDoF types
+      virtual void from_json(ContinuousDoF &_dof, jsonParser const &json) const;
+
+
+      /// \brief implements json parsing of a specialized DoF.
+      // In future, we may need to add another inheritance layer to handle DiscreteDoF types
+      virtual void to_json(ContinuousDoF const &_dof, jsonParser &json) const;
+
+      /// \brief implements json parsing of a specialized DoFSet.
+      virtual void from_json(DoFSet &_dof, jsonParser const &json) const;
+
+
+      /// \brief implements json parsing of a specialized DoFSet.
+      virtual void to_json(DoFSet const &_dof, jsonParser &json) const;
+
       std::unique_ptr<BasicTraits> clone() const {
         return std::unique_ptr<BasicTraits>(_clone());
       }
@@ -106,6 +128,14 @@ namespace CASM {
       DOF_DOMAIN m_domain;
       DOF_MODE m_mode;
     };
+
+
+    //struct TraitsConverter {
+    inline
+    notstd::cloneable_ptr<BasicTraits> traits2cloneable_ptr(const BasicTraits &value) {
+      return notstd::cloneable_ptr<BasicTraits>(value.clone().release());
+    }
+    //};
 
 
     /// \brief A class to manage dynamic evaluation of BasisFunctions
@@ -214,8 +244,7 @@ namespace CASM {
       m_dof_ID(-1),
       m_ID_lock(false) {}
 
-
-    DoF(TypeFunc _type_func,
+    DoF(BasicTraits const &traits,
         std::string const &_var_name,
         Index _ID);
 
@@ -301,12 +330,13 @@ namespace CASM {
       m_remote_state(nullptr),
       m_sym_rep_ID(SymGroupRepID::identity(0)) {}
 
-    DiscreteDoF(TypeFunc _type_func,
+
+    DiscreteDoF(BasicTraits const &_traits,
                 std::string const &_var_name,
                 Index _dof_ID = -1,
                 int _current_state = 0,
-                SymGroupRepID _id = SymGroupRepID::identity(0)):
-      DoF(_type_func, _var_name, _dof_ID),
+                SymGroupRepID _id = SymGroupRepID::identity(0)) :
+      DoF(_traits, _var_name, _dof_ID),
       m_current_state(_current_state),
       m_remote_state(nullptr),
       m_sym_rep_ID(_id) {
@@ -398,14 +428,17 @@ namespace CASM {
   template< typename T>
   class OccupantDoF : public DiscreteDoF {
   public:
-    OccupantDoF(TypeFunc _func) : DiscreteDoF(_func,
-                                                "s") { }
+    OccupantDoF(BasicTraits const &_traits) :
+      DiscreteDoF(_traits, "s") { }
 
-    OccupantDoF(TypeFunc _func,
+    OccupantDoF(TypeFunc _func) :
+      OccupantDoF(_func, "s") {}
+
+    OccupantDoF(BasicTraits const &_traits,
                 std::string const &_var_name,
                 std::vector<T> const &_domain,
                 int _current_state = 0) :
-      DiscreteDoF(_func,
+      DiscreteDoF(_traits,
                   _var_name,
                   -1,
                   _current_state,
@@ -413,8 +446,18 @@ namespace CASM {
       m_domain(_domain) { }
 
     OccupantDoF(TypeFunc _func,
-                std::vector<T> const &_domain, int _current_state = 0) :
-      DiscreteDoF(_func,
+                std::string const &_var_name,
+                std::vector<T> const &_domain,
+                int _current_state = 0) :
+      OccupantDoF(*_func(),
+                  _var_name,
+                  _domain,
+                  _current_state) {}
+
+    OccupantDoF(BasicTraits const &_traits,
+                std::vector<T> const &_domain,
+                int _current_state = 0) :
+      DiscreteDoF(_traits,
                   "s",
                   -1,
                   _current_state,
@@ -422,16 +465,24 @@ namespace CASM {
       m_domain(_domain) { }
 
     OccupantDoF(TypeFunc _func,
+                std::vector<T> const &_domain,
+                int _current_state = 0) :
+      OccupantDoF(*_func(),
+                  _domain,
+                  _current_state) {}
+
+    /*
+    OccupantDoF(TypeFunc _func,
                 std::initializer_list<T> _domain,
                 int _current_state = 0) :
-      DiscreteDoF(_func,
+      DiscreteDoF(*_func(),
                   "s",
                   -1,
                   _current_state,
                   SymGroupRepID::identity(_domain.size())),
       m_domain(_domain.begin(),
                _domain.end()) {    }
-
+    */
     const T &occ() const {
       return m_domain[m_current_state];
     }
@@ -471,7 +522,7 @@ namespace CASM {
         return false;
 
       for(Index i = 0; i < size(); i++) {
-        if((*this)[i] != RHS[i])
+        if(!((*this)[i] == RHS[i]))
           return false;
       }
 
@@ -511,21 +562,21 @@ namespace CASM {
     void print(std::ostream &out) const {
       for(Index i = 0; i < size(); i++) {
         if(i == 0)
-          out << m_domain[i].name;
+          out << m_domain[i].name();
         else
-          out << ' ' << m_domain[i].name;
+          out << ' ' << m_domain[i].name();
       }
     }
 
     void print_occ(std::ostream &out) const {
       if(valid_index(m_current_state))
-        out << occ().name;
+        out << occ().name();
       else
         out << '?';
     }
 
     template<typename...Args>
-    void from_json(jsonParser const &json, Args... args);
+    void from_json(jsonParser const &json, Args &&... args);
 
   private:
     /**** Inherited from DiscreteDoF ****
@@ -536,29 +587,26 @@ namespace CASM {
     //  const int *m_remote_state;
     **/
 
-    /// Allowed values, assume class T has method 'T.name()'
+    /// Allowed values, assume class T has method 'T.name()()'
     std::vector<T> m_domain;
   };
 
   template<typename OccType, typename...Args>
-  void from_json(OccupantDoF<OccType> &dof, const jsonParser &json, Args... args);
+  void from_json(OccupantDoF<OccType> &dof, const jsonParser &json, Args &&... args);
 
   template<typename OccType, typename...Args>
-  jsonParser &to_json(OccupantDoF<int> const &dof, jsonParser &json, Args... args);
+  jsonParser &to_json(OccupantDoF<int> const &dof, jsonParser &json, Args &&... args);
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   class ContinuousDoF : public DoF {
   public:
-    ContinuousDoF() : min_val(NAN), max_val(NAN), current_val(NAN),
-      current_min(NAN), current_max(NAN), m_remote_ptr(nullptr) {}
-
-    ContinuousDoF(TypeFunc _type_func,
+    ContinuousDoF(BasicTraits const &_traits,
                   std::string const &_var_name,
                   Index _ID,
                   double _min,
                   double _max) :
-      DoF(_type_func, _var_name, _ID),
+      DoF(_traits, _var_name, _ID),
       min_val(_min),
       max_val(_max),
       current_val(NAN),
@@ -566,11 +614,21 @@ namespace CASM {
       current_max(max_val),
       m_remote_ptr(nullptr) {}
 
+    ContinuousDoF(BasicTraits const &_traits)
+      : ContinuousDoF(_traits, "", -1, NAN, NAN) {}
+
+    ContinuousDoF(TypeFunc _func,
+                  std::string const &_var_name,
+                  Index _ID,
+                  double _min,
+                  double _max) :
+      ContinuousDoF(*_func(), _var_name, _ID, _min, _max) {}
+
     double value() const {
       return current_val;
     }
 
-    bool compare(ContinuousDoF const &RHS, bool compare_value) const {
+    bool compare(ContinuousDoF const &RHS, bool compare_value = false) const {
       if(compare_value && !almost_equal(value(), RHS.value()))
         return false;
 
@@ -623,9 +681,22 @@ namespace CASM {
     mutable double const *m_remote_ptr;
   };
 
+  inline
+  bool compare_no_value(ContinuousDoF const &A, ContinuousDoF const &B) {
+    return A.compare(B);
+  }
+
   void from_json(ContinuousDoF &dof, jsonParser const &json);
 
   jsonParser &to_json(ContinuousDoF const &dof, jsonParser &json);
+
+  template<>
+  struct jsonConstructor<ContinuousDoF> {
+
+    /// \brief Allows ContinuousDoF to be constructed properly from json input
+    static ContinuousDoF from_json(const jsonParser &json, DoF::BasicTraits const &_traits);
+  };
+
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -633,7 +704,11 @@ namespace CASM {
   public:
     using BasicTraits = DoF_impl::BasicTraits;
 
-    typedef std::function<notstd::cloneable_ptr<BasicTraits>()> TypeFunc;
+    using TypeFunc =  std::function<notstd::cloneable_ptr<BasicTraits>()>;
+
+    using Container = std::vector<ContinuousDoF>;
+
+    using const_iterator = std::vector<ContinuousDoF>::const_iterator;
 
     DoFSet(TypeFunc const &_type) :
       m_type_name(_type()->type_name()) {}
@@ -642,8 +717,28 @@ namespace CASM {
       return m_components.size();
     }
 
+    std::string const &type_name() const {
+      return m_type_name;
+    }
+
     ContinuousDoF const &operator[](Index i) const {
       return m_components[i];
+    }
+
+    const_iterator begin() const {
+      return m_components.cbegin();
+    }
+
+    const_iterator end() const {
+      return m_components.cend();
+    }
+
+    const_iterator cbegin() const {
+      return m_components.cbegin();
+    }
+
+    const_iterator cend() const {
+      return m_components.cend();
     }
 
     bool is_excluded_occ(std::string const &_occ_name) const {
@@ -671,11 +766,13 @@ namespace CASM {
       return coordinate_space() * values();
     }
 
+    bool identical(DoFSet const &rhs) const;
+
     bool update_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs);
 
     void from_json(jsonParser const &json);
 
-    jsonParser &to_json(jsonParser &json);
+    jsonParser &to_json(jsonParser &json) const;
 
 
   private:
@@ -688,38 +785,51 @@ namespace CASM {
 
   //********************************************************************
   template<typename OccType> template<typename...Args>
-  void OccupantDoF<OccType>::from_json(const jsonParser &json, Args... args) {
+  void OccupantDoF<OccType>::from_json(const jsonParser &json, Args &&... args) {
     _set_type_name(json["type_name"].get<std::string>());
     _set_var_name(json["var_name"].get<std::string>());
     set_ID(json["ID"].get<Index>());
     m_domain.clear();
 
-    CASM::from_json(m_domain, json["domain"], std::forward(args)...);
+    CASM::from_json(m_domain, json["domain"], std::forward<Args>(args)...);
 
     json.get_else(m_current_state, "value", int(-1));
 
   }
 
   //********************************************************************
-  template<typename OccType, typename...Args>
-  void from_json(OccupantDoF<OccType> &_dof, const jsonParser &json, Args... args) {
-    _dof.from_json(json, std::forward(args)...);
+
+  bool operator==(DoFSet const &A, DoFSet const &B) {
+    return A.identical(B);
   }
+
+  //********************************************************************
+
+  bool operator!=(DoFSet const &A, DoFSet const &B) {
+    return !A.identical(B);
+  }
+
+  //********************************************************************
+
+  template<typename OccType, typename...Args>
+  void from_json(OccupantDoF<OccType> &_dof, const jsonParser &json, Args &&... args) {
+    _dof.from_json(json, std::forward<Args>(args)...);
+  }
+
   //********************************************************************
   // molecule version
   template<typename OccType, typename...Args>
-  jsonParser &to_json(OccupantDoF<OccType> const &_dof, jsonParser &json, Args... args) {
+  jsonParser &to_json(OccupantDoF<OccType> const &_dof, jsonParser &json, Args &&... args) {
     json.put_obj();
     json["type_name"] = _dof.type_name();
     json["var_name"] = _dof.var_name();
     json["ID"] = _dof.ID();
 
-    to_json(_dof.domain(), json["domain"], std::forward(args)...);
+    to_json(_dof.domain(), json["domain"], std::forward<Args>(args)...);
     json["value"] = _dof.value();
 
     return json;
   }
-
 
 }
 #endif

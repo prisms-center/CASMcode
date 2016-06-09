@@ -387,8 +387,8 @@ namespace CASM {
     size_type vacancy_index = primclex.composition_axes().components().size();
     for(size_type i = 0; i < primclex.composition_axes().components().size(); i++) {
 
-      // sample for non-vacancy components
-      if(Specie(primclex.composition_axes().components()[i]).is_vacancy()) {
+      // sample for vacancy components
+      if(is_vacancy(primclex.composition_axes().components()[i])) {
         vacancy_index = i;
         break;
       }
@@ -398,7 +398,7 @@ namespace CASM {
     for(size_type i = 0; i < primclex.composition_axes().components().size(); i++) {
 
       // sample for non-vacancy components
-      if(!Specie(primclex.composition_axes().components()[i]).is_vacancy()) {
+      if(!is_vacancy(primclex.composition_axes().components()[i])) {
 
         print_name = std::string("atom_frac(") + primclex.composition_axes().components()[i] + ")";
 

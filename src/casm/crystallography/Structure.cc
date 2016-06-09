@@ -119,10 +119,10 @@ namespace CASM {
   //************************************************************
 
   /// Returns an Array of each *possible* Specie in this Structure
-  std::vector<Specie> Structure::get_struc_specie() const {
+  std::vector<AtomSpecie> Structure::get_struc_specie() const {
 
     std::vector<Molecule> struc_molecule = get_struc_molecule();
-    std::vector<Specie> struc_specie;
+    std::vector<AtomSpecie> struc_specie;
 
     Index i, j;
 
@@ -130,8 +130,8 @@ namespace CASM {
     for(i = 0; i < struc_molecule.size(); i++) {
       // For each atomposition in the molecule
       for(j = 0; j < struc_molecule[i].size(); j++) {
-        if(!contains(struc_specie, struc_molecule[i][j].specie)) {
-          struc_specie.push_back(struc_molecule[i][j].specie);
+        if(!contains(struc_specie, struc_molecule[i].atom(j).specie())) {
+          struc_specie.push_back(struc_molecule[i].atom(j).specie());
         }
       }
     }
@@ -170,7 +170,7 @@ namespace CASM {
     // store Molecule names in vector
     std::vector<std::string> struc_mol_name;
     for(int i = 0; i < struc_mol.size(); i++) {
-      struc_mol_name.push_back(struc_mol[i].name);
+      struc_mol_name.push_back(struc_mol[i].name());
     }
 
     return struc_mol_name;
@@ -182,7 +182,7 @@ namespace CASM {
   ///   The Specie types are ordered according to get_struc_specie()
   Eigen::VectorXi Structure::get_num_each_specie() const {
 
-    std::vector<Specie> struc_specie = get_struc_specie();
+    std::vector<AtomSpecie> struc_specie = get_struc_specie();
     Eigen::VectorXi num_each_specie = Eigen::VectorXi::Zero(struc_specie.size());
 
     Index i, j;
@@ -191,7 +191,7 @@ namespace CASM {
       // For each atomposition in the molecule on the site
       for(j = 0; j < basis[i].occ().size(); j++) {
         // Count the present specie
-        num_each_specie(find_index(struc_specie, basis[i].occ()[j].specie))++;
+        num_each_specie(find_index(struc_specie, basis[i].occ().atom(j).specie()))++;
       }
     }
 
@@ -782,7 +782,7 @@ namespace CASM {
       converter[i].resize(struc.basis[i].site_occupant().size());
 
       for(Index j = 0; j < struc.basis[i].site_occupant().size(); j++) {
-        converter[i][j] = find_index(mol_name_list, struc.basis[i].site_occupant()[j].name);
+        converter[i][j] = find_index(mol_name_list, struc.basis[i].site_occupant()[j].name());
       }
     }
 

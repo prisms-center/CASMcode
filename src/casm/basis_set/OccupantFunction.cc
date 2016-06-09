@@ -134,8 +134,8 @@ namespace CASM {
                                                              m_var->handle());
     if(it != remote_handles.end()) {
       if(!valid_index(m_var->ID())) {
-        throw std::runtime_error("In Variable::register_remotes(), attempting to register dof with ID = "
-                                 + std::to_string(m_var->ID()) << ", which is out of bounds.\n");
+        throw std::runtime_error(std::string("In Variable::register_remotes(), attempting to register dof with ID = ")
+                                 + std::to_string(m_var->ID()) + ", which is out of bounds.\n");
       }
       m_var->register_remote(*it);
       return 1;
@@ -146,10 +146,10 @@ namespace CASM {
   //*******************************************************************************************
 
 
-  bool OccupantFunction::_update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs) {
+  bool OccupantFunction::_update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
     if(dof().is_locked()) return false;
 
-    Index ID_ind = before_IDs.find(dof().ID());
+    Index ID_ind = find_index(before_IDs, dof().ID());
 
     if(ID_ind < after_IDs.size()) {
       m_var->set_ID(after_IDs[ID_ind]);

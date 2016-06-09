@@ -8,13 +8,6 @@
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/BasisFunction.hh"
 
-//#include "../container/SparseTensor.cc"
-//#include "../container/Tensor.cc"
-//#include "../basis_set/DoF.cc"
-//#include "../symmetry/SymOp.hh"
-//#include "../symmetry/SymGroup.hh"
-//#include "../misc/HierarchyID.cc"
-
 namespace CASM {
 
   class FunctionVisitor;
@@ -169,7 +162,7 @@ namespace CASM {
                                                   const SymGroup &symgroup);
 
     void construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
-                                                  const Array<double> &occ_probs,
+                                                  const std::vector<double> &occ_probs,
                                                   Index basis_ind,
                                                   const SymGroup &symgroup);
 

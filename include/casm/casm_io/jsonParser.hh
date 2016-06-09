@@ -214,22 +214,22 @@ namespace CASM {
 
     /// Get data from json, using one of several alternatives
     template<typename T, typename...Args>
-    T get(Args... args) const;
+    T get(Args &&... args) const;
 
     /// Get data from json, for any type T for which 'void from_json( T &value, const jsonParser &json, Args... args)' is defined
     ///   Call using: T t; json.get(t);
     template<typename T, typename...Args>
-    void get(T &t, Args... args) const;
+    void get(T &t, Args &&... args) const;
 
     /// Get data from json, if 'this' contains 'key'
     ///   Returns true if 'key' found, else false
     template<typename T, typename...Args>
-    bool get_if(T &t, const std::string &key, Args... args) const;
+    bool get_if(T &t, const std::string &key, Args &&... args) const;
 
     /// Get data from json, if 'this' contains 'key', else set to 'default_value'
     ///   Returns true if 'key' found, else false
     template<typename T, typename...Args>
-    bool get_else(T &t, const std::string &key, const T &default_value, Args... args) const;
+    bool get_else(T &t, const std::string &key, const T &default_value, Args &&... args) const;
 
 
     // ---- Data addition Methods (Overwrites any existing data with same 'name') ---
@@ -239,8 +239,8 @@ namespace CASM {
     jsonParser &operator=(const T &value);
 
     /// Puts new valued element at end of array of any type T for which 'jsonParser& to_json( const T &value, jsonParser &json)' is defined
-    template<typename T>
-    jsonParser &push_back(const T &value);
+    template<typename T, typename... Args>
+    jsonParser &push_back(const T &value, Args &&... args);
 
     /// Puts data of any type T for which 'jsonParser& to_json( const T &value, jsonParser &json)' is defined (same as 'operator=')
     template<typename T>
@@ -270,10 +270,10 @@ namespace CASM {
     jsonParser &put_array(size_type N, const T &t);
 
     /// Puts new JSON array, from iterators
-    template<typename Iterator>
-    jsonParser &put_array(Iterator begin,
-                          Iterator end,
-                          typename CASM_TMP::enable_if_iterator<Iterator>::type * = nullptr);
+    template<typename Iterator, typename...Args, typename CASM_TMP::enable_if_iterator<Iterator>::type * = nullptr>
+    jsonParser & put_array(Iterator begin,
+                           Iterator end,
+                           Args && ... args);
 
     /// Puts 'null' JSON value
     jsonParser &put_null() {
@@ -451,7 +451,7 @@ namespace CASM {
 
   /// \brief Helper struct for constructing objects that need additional data
   ///
-  /// \code jsonParser::get<T>(Args...args) \endcode is equivalent to:
+  /// \code jsonParser::get<T>(Args&&...args) \endcode is equivalent to:
   /// - \code jsonConstructor<T>::from_json(*this, args...) \endcode
   ///
   /// This struct can be specialized to create new jsonConstructor<T>::from_json
@@ -663,11 +663,11 @@ namespace CASM {
   };
 
   /// Puts new valued element at end of array of any type T for which 'jsonParser& to_json( const T &value, jsonParser &json)' is defined
-  template<typename T>
-  jsonParser &jsonParser::push_back(const T &value) {
+  template<typename T, typename... Args>
+  jsonParser &jsonParser::push_back(const T &value, Args &&... args) {
     try {
       jsonParser json;
-      get_array().push_back(to_json(value, json));
+      get_array().push_back(to_json(value, json, std::forward<Args>(args)...));
       return *this;
     }
     catch(...) {
@@ -683,7 +683,7 @@ namespace CASM {
   /// - \code
   ///   template<typename T>
   ///   template<typename...Args>
-  ///   T jsonConstructor<T>::from_json(const jsonParser& json, Args...args);
+  ///   T jsonConstructor<T>::from_json(const jsonParser& json, Args&&...args);
   ///   \endcode
   /// - \code
   ///   template<typename T>
@@ -697,18 +697,18 @@ namespace CASM {
   ///   \endcode
   ///
   template<typename T, typename...Args>
-  T jsonParser::get(Args... args) const {
+  T jsonParser::get(Args &&... args) const {
     return jsonConstructor<T>::from_json(*this, args...);
   }
 
   template<typename T, typename...Args>
-  void jsonParser::get(T &t, Args... args) const {
+  void jsonParser::get(T &t, Args &&... args) const {
     from_json(t, *this, args...);
   }
 
 
   template<typename T, typename...Args>
-  bool jsonParser::get_if(T &t, const std::string &key, Args... args) const {
+  bool jsonParser::get_if(T &t, const std::string &key, Args &&... args) const {
     if(find(key) != cend()) {
       from_json(t, (*this)[key], args...);
       return true;
@@ -717,7 +717,7 @@ namespace CASM {
   }
 
   template<typename T, typename...Args>
-  bool jsonParser::get_else(T &t, const std::string &key, const T &default_value, Args... args) const {
+  bool jsonParser::get_else(T &t, const std::string &key, const T &default_value, Args &&... args) const {
     if(find(key) != cend()) {
       from_json(t, (*this)[key], args...);
       return true;
@@ -755,15 +755,13 @@ namespace CASM {
   }
 
   /// Puts new JSON array, from iterators
-  template<typename Iterator>
-  jsonParser &jsonParser::put_array(
-    Iterator begin,
-    Iterator end,
-    typename CASM_TMP::enable_if_iterator<Iterator>::type *) {
-
+  template<typename Iterator, typename...Args, typename CASM_TMP::enable_if_iterator<Iterator>::type *>
+  jsonParser &jsonParser::put_array(Iterator begin,
+                                    Iterator end,
+                                    Args &&... args) {
     *this = array();
     for(auto it = begin; it != end; ++it) {
-      push_back(*it);
+      push_back(*it, std::forward<Args>(args)...);
     }
     return *this;
   }

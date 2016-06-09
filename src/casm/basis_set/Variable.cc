@@ -195,11 +195,13 @@ namespace CASM {
   int Variable::register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles) {
     int t_tot(0);
     for(Index i = 0; i < dof_set().size(); i++) {
-      std::vector<DoF::RemoteHandle>::const_iterator it = find(remote_handles, dof_set()[i].handle());
+      std::vector<DoF::RemoteHandle>::const_iterator it = find(remote_handles.begin(),
+                                                               remote_handles.end(),
+                                                               dof_set()[i].handle());
       if(it != remote_handles.end()) {
         if(!valid_index(dof_set()[i].ID())) {
           throw std::runtime_error("In Variable::register_remotes(), attempting to register dof with ID = "
-                                   + std::to_string(dof_set()[i].ID()) << ", which is out of bounds.\n");
+                                   + std::to_string(dof_set()[i].ID()) + ", which is out of bounds.\n");
         }
         dof_set()[i].register_remote(*it);
         t_tot++;
@@ -212,7 +214,7 @@ namespace CASM {
 
   bool Variable::_update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
 
-    bool is_updated = dof_set().update_IDs(before_IDs, after_IDs);
+    bool is_updated = m_dof_set.update_IDs(before_IDs, after_IDs);
 
     if(is_updated) {
       m_formula.clear();
@@ -310,7 +312,7 @@ namespace CASM {
     Variable const *VLHS(static_cast<Variable const *>(LHS));
     Variable const *VRHS(static_cast<Variable const *>(RHS));
     BasisSet LSet, RSet;
-    LSet.set_variable_basis(VLHS->dof_set(), VLHS->sym_rep_ID());
+    LSet.set_variable_basis(VLHS->dof_set());
     std::vector<std::shared_ptr<BasisSet> > args;
 
     Index full_dim(LSet.size());
@@ -318,7 +320,7 @@ namespace CASM {
     args.push_back(LSet.shared_copy());
 
     if((VLHS->dof_set()) != (VRHS->dof_set())) {
-      RSet.set_variable_basis(VRHS->dof_set(), VRHS->sym_rep_ID());
+      RSet.set_variable_basis(VRHS->dof_set());
       args.push_back(RSet.shared_copy());
       LOffset = LSet.size();
       full_dim += RSet.size();

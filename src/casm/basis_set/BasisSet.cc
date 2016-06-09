@@ -685,7 +685,7 @@ namespace CASM {
   // only one probability is non-zero.
 
   void BasisSet::construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
-                                                          const Array<double> &occ_probs,
+                                                          const std::vector<double> &occ_probs,
                                                           Index basis_ind,
                                                           const SymGroup &symgroup) {
 
@@ -696,11 +696,13 @@ namespace CASM {
       exit(1);
     }
 
-    if(!almost_equal(1.0, occ_probs.sum())) {
-      std::cerr << "CRITICAL ERROR: In BasiSet::construct_orthonormal_discrete_functions(), occ_probs must sum to 1 (they specify a probability distributation).\n"
-                << "                occ_probs is: " << occ_probs << "\nExiting...\n";
-      assert(0);
-      exit(1);
+    double prob_sum(0.);
+    for(double dub : occ_probs)
+      prob_sum += dub;
+
+    if(!almost_equal(1.0, prob_sum)) {
+      throw std::runtime_error("In BasiSet::construct_orthonormal_discrete_functions(), occ_probs must sum to 1 (they specify a probability distributation).\n");
+      //<< "                occ_probs is: " << occ_probs << "\nExiting...\n";
     }
 
     // Build a matrix with N-1 non-zero eigenvalues equal to 1/N.
