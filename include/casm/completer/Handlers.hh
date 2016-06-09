@@ -277,6 +277,24 @@ namespace CASM {
 
     //*****************************************************************************************************//
 
+    /**
+     * Options set for `casm bset`. Get your clusters here.
+     */
+
+    class BsetOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::OptionHandlerBase;
+
+    private:
+
+      void initialize() override;
+
+    };
+
+    //*****************************************************************************************************//
+
   }
 }
 

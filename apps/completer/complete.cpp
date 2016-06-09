@@ -38,6 +38,12 @@ namespace CASM {
 
       //*******************************************************//
 
+      BsetOption dumbbset("bset");
+      Completer::Option bset_opts("bset", dumbbset.desc());
+      casm_engine.push_back(bset_opts);
+
+      //*******************************************************//
+
       return casm_engine;
     }
   }
