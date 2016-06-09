@@ -102,7 +102,7 @@ namespace CASM {
      * know which types of completions to suggest.
      */
 
-    const std::vector<std::pair<std::string, ARG_TYPE> > ArgHandler::m_argument_table({
+    const std::vector<std::pair<std::string, ARG_TYPE> > ArgHandler::m_argument_table( {
       std::make_pair("<path>", ARG_TYPE::PATH),
       std::make_pair("<command>", ARG_TYPE::COMMAND),
       std::make_pair("<supercell>", ARG_TYPE::SCELNAME),
@@ -136,9 +136,21 @@ namespace CASM {
       return m_desc;
     }
 
-    void OptionHandlerBase::add_config_suboption(std::string &selection_str) {
+    const std::string &OptionHandlerBase::selection_str() const {
+      return m_selection_str;
+    }
+
+    const std::string &OptionHandlerBase::verbosity_str() const {
+      return m_verbosity_str;
+    }
+
+    const fs::path OptionHandlerBase::settings_path() const {
+      return m_settings_path;
+    }
+
+    void OptionHandlerBase::add_config_suboption() {
       m_desc.add_options()
-      ("config,c", po::value<std::string>(&selection_str)->default_value("MASTER")->value_name(ArgHandler::path()), "config_list files containing configurations for which to collect energies");
+      ("config,c", po::value<std::string>(&m_selection_str)->default_value("MASTER")->value_name(ArgHandler::path()), "config_list files containing configurations for which to collect energies");
       return;
     }
 
@@ -154,12 +166,20 @@ namespace CASM {
       return;
     }
 
-    void OptionHandlerBase::add_verbosity_suboption(std::string &verbosity_str) {
+    void OptionHandlerBase::add_verbosity_suboption() {
+      //TODO: add ArgHandler for this
       m_desc.add_options()
-      ("verbosity", po::value<std::string>(&verbosity_str)->default_value("standard"), "Verbosity of output. Options are 'none', 'quiet', 'standard', 'verbose', 'debug', or an integer 0-100 (0: none, 100: all).");
+      ("verbosity", po::value<std::string>(&m_verbosity_str)->default_value("standard"), "Verbosity of output. Options are 'none', 'quiet', 'standard', 'verbose', 'debug', or an integer 0-100 (0: none, 100: all).");
       return;
     }
 
+    void OptionHandlerBase::add_settings_suboption() {
+      std::string help_str = "Settings input file specifying which parameters should be used. See 'casm format --'" + m_tag + "'.";
+
+      m_desc.add_options()
+      ("settings,s", po::value<fs::path>(&m_settings_path)->required()->value_name(ArgHandler::path()), help_str.c_str());
+      return;
+    }
     //*****************************************************************************************************//
 
   }

@@ -3,44 +3,46 @@
 
 #include "casm/CASM_classes.hh"
 #include "casm/app/casm_functions.hh"
-#include "casm/completer/complete.hh"
+#include "casm/completer/Complete.hh"
 
 namespace CASM {
 
   namespace Completer {
-    void add_run_options
-    (po::options_description &desc,
-     std::string exec,
-     std::string selection
-    ) {
-      desc.add_options()
-      ("help,h", "Write help documentation")
+    void RunOption::initialize() {
+      add_help_suboption();
+      add_config_suboption();
+
+      m_desc.add_options()
       ("write-pos", "Write POS file for each selected configuration before executing the command")
-      ("exec,e", po::value<std::string>(&exec)->required()->value_name(ArgHandler::command()), "Command to execute")
-      ("config,c", po::value<std::string>(&selection)->default_value("MASTER")->value_name(ArgHandler::path()), "Config selection");
+      ("exec,e", po::value<std::string>(&m_exec_str)->required()->value_name(ArgHandler::command()), "Command to execute");
+      return;
     }
+
+    const std::string &RunOption::exec_str() const {
+      return m_exec_str;
+    };
+
   }
+
   // ///////////////////////////////////////
   // 'run' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
   int run_command(const CommandArgs &args) {
     std::string exec, selection;
-    double tol;
     po::variables_map vm;
 
     /// Set command line options using boost program_options
-    po::options_description desc("'casm run' usage");
-    Completer::add_run_options(desc, exec, selection);
+    Completer::RunOption run_opt("run");
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, run_opt.desc()), vm); // can throw
 
       /** --help option
        */
       if(vm.count("help")) {
         std::cout << "\n";
-        std::cout << desc << std::endl;
+        std::cout << run_opt.desc() << std::endl;
 
         std::cout << "DESCRIPTION\n"
                   << "    Executes the requested command for each selected configuration,\n"
@@ -61,7 +63,7 @@ namespace CASM {
     }
     catch(po::error &e) {
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      std::cerr << desc << std::endl;
+      std::cerr << run_opt.desc() << std::endl;
       return 1;
     }
     catch(std::exception &e) {
@@ -91,7 +93,7 @@ namespace CASM {
 
           Popen process;
 
-          process.popen(exec + " " + it->get_path().string());
+          process.popen(run_opt.exec_str() + " " + it->get_path().string());
 
           process.print(std::cout);
         }
@@ -105,7 +107,7 @@ namespace CASM {
 
           Popen process;
 
-          process.popen(exec + " " + it->get_path().string());
+          process.popen(run_opt.exec_str() + " " + it->get_path().string());
 
           process.print(std::cout);
         }

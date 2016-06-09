@@ -101,6 +101,7 @@ namespace CASM {
       ///The desired name for the casm option (Perhaps this should get tied with CommandArg?)
       const std::string &tag() const;
 
+
     protected:
 
       ///name of the casm command
@@ -112,17 +113,50 @@ namespace CASM {
       ///Fill in the options descriptions accordingly
       virtual void initialize() = 0;
 
+      //----------------------------------------------------------
+
       ///Add --config suboption (defaults to MASTER)
-      void add_config_suboption(std::string &selection_str);
+      void add_config_suboption();
+
+      ///The selection string to go with add_config_suboption
+      std::string m_selection_str;
+
+      ///Returns the string corresponding to add_config_suboption()
+      const std::string &selection_str() const;
+
+      //----------------------------------------------------------
 
       ///Add a plain --help suboption
       void add_help_suboption();
 
+      //----------------------------------------------------------
+
       ///Add a smart --help suboption that takes "properties" or "operators"
       void add_general_help_suboption();
 
+      //----------------------------------------------------------
+
       ///Add a --verbosity suboption. Default "standard" of "none", "quiet", "standard", "verbose", "debug" or an int 0-100
-      void add_verbosity_suboption(std::string &verbosity_str);
+      void add_verbosity_suboption();
+
+      ///The verbosity string to go with add_config_suboption
+      std::string m_verbosity_str;
+
+      ///Returns the string corresponding to add_verbosity_suboption()
+      const std::string &verbosity_str() const;
+
+      //----------------------------------------------------------
+
+      ///Add a --settings suboption. Expects a corresponding `casm format` to go with it.
+      void add_settings_suboption();
+
+      ///The settings path to go with add_settings_suboption()
+      fs::path m_settings_path;
+
+      ///Returns the path corresponding to add_settings_suboption
+      const fs::path settings_path() const;
+
+      //----------------------------------------------------------
 
       //Add more general suboption adding routines here//
     };
@@ -132,13 +166,13 @@ namespace CASM {
      */
 
     class MonteOption : public OptionHandlerBase {
-      using OptionHandlerBase::OptionHandlerBase;
+
 
     public:
 
-      fs::path settings_path() const;
-
-      const std::string &verbosity_str() const;
+      using OptionHandlerBase::OptionHandlerBase;
+      using OptionHandlerBase::verbosity_str;
+      using OptionHandlerBase::settings_path;
 
       Index condition_index() const;
 
@@ -146,11 +180,29 @@ namespace CASM {
 
       void initialize() override;
 
-      fs::path m_settings_path;
-
-      std::string m_verbosity_str;
-
       Index m_condition_index;
+    };
+
+    //*****************************************************************************************************//
+
+    /**
+     * Options set for `casm run`. Get casm to run your executables here.
+     */
+
+    class RunOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::OptionHandlerBase;
+      using OptionHandlerBase::selection_str;
+
+      const std::string &exec_str() const;
+
+    private:
+
+      void initialize() override;
+
+      std::string m_exec_str;
     };
 
     //*****************************************************************************************************//

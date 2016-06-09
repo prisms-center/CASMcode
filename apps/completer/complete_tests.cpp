@@ -1,6 +1,6 @@
 #include <iostream>
 #include <iterator>
-#include "casm/completer/complete.hh"
+#include "casm/completer/Complete.hh"
 #include "completer_functions.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/clex/Configuration.hh"

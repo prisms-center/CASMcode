@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iterator>
-#include "casm/completer/complete.hh"
-#include "casm/completer/handlers.hh"
+#include "casm/completer/Complete.hh"
+#include "casm/completer/Handlers.hh"
 #include "completer_functions.hh"
 
 using namespace CASM;
@@ -33,9 +33,8 @@ namespace CASM {
 
       //*******************************************************//
 
-      po::options_description dumbrun("dumb run");
-      Completer::add_run_options(dumbrun, dumb_str, dumb_str);
-      Completer::Option run_opts("run", dumbrun);
+      RunOption dumbrun("run");
+      Completer::Option run_opts("run", dumbrun.desc());
       casm_engine.push_back(run_opts);
 
       //*******************************************************//

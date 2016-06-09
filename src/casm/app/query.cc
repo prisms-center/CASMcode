@@ -4,7 +4,7 @@
 #include "casm/CASM_classes.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOSelected.hh"
-#include "casm/completer/complete.hh"
+#include "casm/completer/Complete.hh"
 
 
 namespace CASM {

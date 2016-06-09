@@ -21,13 +21,5 @@ namespace CASM {
 
     //*******************************************************//
 
-    void add_run_options
-    (po::options_description &desc,
-     std::string exec,
-     std::string selection
-    );
-
-    //*******************************************************//
-
   }
 }

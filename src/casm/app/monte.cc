@@ -7,7 +7,7 @@
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteDriver.hh"
 #include "casm/app/casm_functions.hh"
-#include "casm/completer/handlers.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
 
@@ -52,23 +52,15 @@ namespace CASM {
   namespace Completer {
     void MonteOption::initialize() {
       add_help_suboption();
-      add_verbosity_suboption(m_verbosity_str);
+      add_verbosity_suboption();
+      add_settings_suboption();
 
       m_desc.add_options()
-      ("settings,s", po::value<fs::path>(&m_settings_path)->required()->value_name(ArgHandler::path()), "The Monte Carlo input file. See 'casm format --monte'.")
       ("initial-POSCAR", po::value<Index>(&m_condition_index), "Given the condition index, print a POSCAR for the initial state of a monte carlo run.")
       ("final-POSCAR", po::value<Index>(&m_condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
       ("traj-POSCAR", po::value<Index>(&m_condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
       return;
     }
-
-    fs::path MonteOption::settings_path() const {
-      return m_settings_path;
-    };
-
-    const std::string &MonteOption::verbosity_str() const {
-      return m_verbosity_str;
-    };
 
     Index MonteOption::condition_index() const {
       return m_condition_index;
@@ -141,7 +133,8 @@ namespace CASM {
     ProjectSettings &set = primclex.settings();
 
     //Get path to settings json file
-    monte.settings_path() = fs::absolute(monte.settings_path());
+    //monte.settings_path() = fs::absolute(monte.settings_path());
+    fs::path abs_settings_path = fs::absolute(monte.settings_path());
 
     //std::cout << "Example settings so far..." << std::endl;
     //jsonParser example_settings = Monte::example_testing_json_settings(primclex);
@@ -152,8 +145,8 @@ namespace CASM {
 
     try {
       log.read("Monte Carlo settings");
-      log << "from: " << monte.settings_path() << "\n";
-      monte_settings = MonteSettings(monte.settings_path());
+      log << "from: " << abs_settings_path << "\n";
+      monte_settings = MonteSettings(abs_settings_path);
     }
     catch(std::exception &e) {
       std::cerr << "ERROR reading Monte Carlo settings.\n\n";
@@ -175,7 +168,7 @@ namespace CASM {
 
       if(vm.count("initial-POSCAR")) {
         try {
-          GrandCanonicalSettings gc_settings(monte.settings_path());
+          GrandCanonicalSettings gc_settings(abs_settings_path);
           const GrandCanonical gc(primclex, gc_settings, log);
 
           log.write("Initial POSCAR");
@@ -190,7 +183,7 @@ namespace CASM {
       }
       else if(vm.count("final-POSCAR")) {
         try {
-          GrandCanonicalSettings gc_settings(monte.settings_path());
+          GrandCanonicalSettings gc_settings(abs_settings_path);
           const GrandCanonical gc(primclex, gc_settings, log);
 
           log.write("Final POSCAR");
@@ -205,7 +198,7 @@ namespace CASM {
       }
       else if(vm.count("traj-POSCAR")) {
         try {
-          GrandCanonicalSettings gc_settings(monte.settings_path());
+          GrandCanonicalSettings gc_settings(abs_settings_path);
           const GrandCanonical gc(primclex, gc_settings, log);
 
           log.write("Trajectory POSCARs");
@@ -222,7 +215,7 @@ namespace CASM {
 
         try {
 
-          GrandCanonicalSettings gc_settings(monte.settings_path());
+          GrandCanonicalSettings gc_settings(abs_settings_path);
           GrandCanonicalDirectoryStructure dir(gc_settings.output_directory());
           if(gc_settings.write_csv()) {
             if(fs::exists(dir.results_csv())) {
@@ -297,7 +290,7 @@ namespace CASM {
           //monte_settings.print(std::cout);
           //std::cout << "\n-------------------------------\n\n";
 
-          MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(monte.settings_path()), log);
+          MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(abs_settings_path), log);
           driver.run();
         }
         catch(std::exception &e) {
