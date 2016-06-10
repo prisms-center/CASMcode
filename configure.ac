@@ -9,8 +9,9 @@ AC_INIT([CASM],
         [https://github.com/prisms-center/CASMcode])
 AC_CONFIG_AUX_DIR([build-aux]) #This is my doing
 AC_CONFIG_MACRO_DIR([build-aux/m4])
-#Rules to apply to every Makefile.am
-AM_INIT_AUTOMAKE([foreign subdir-objects])
+#Rules to apply to every Makefile.am. Using tar-ustar due to loooooong file names (I'm looking at you Eigen)
+AM_INIT_AUTOMAKE([foreign subdir-objects 1.9 tar-ustar])
+
 
 AC_CONFIG_SRCDIR([src/casm/CASM_global_definitions.cc])
 AC_CONFIG_HEADERS([config.h])

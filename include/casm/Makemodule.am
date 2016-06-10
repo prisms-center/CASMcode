@@ -234,7 +234,6 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/UmfPackSupport\
 						./include/casm/external/Eigen/StdList\
 						./include/casm/external/Eigen/LeastSquares\
-						./include/casm/external/Eigen/CMakeLists.txt\
 						./include/casm/external/Eigen/SparseLU\
 						./include/casm/external/Eigen/Householder\
 						./include/casm/external/Eigen/Cholesky\
@@ -248,19 +247,14 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/Eigenvalues\
 						./include/casm/external/Eigen/src/LU/FullPivLU.h\
 						./include/casm/external/Eigen/src/LU/Inverse.h\
-						./include/casm/external/Eigen/src/LU/CMakeLists.txt\
 						./include/casm/external/Eigen/src/LU/PartialPivLU_MKL.h\
 						./include/casm/external/Eigen/src/LU/Determinant.h\
-						./include/casm/external/Eigen/src/LU/arch/CMakeLists.txt\
 						./include/casm/external/Eigen/src/LU/arch/Inverse_SSE.h\
 						./include/casm/external/Eigen/src/LU/PartialPivLU.h\
-						./include/casm/external/Eigen/src/UmfPackSupport/CMakeLists.txt\
 						./include/casm/external/Eigen/src/UmfPackSupport/UmfPackSupport.h\
-						./include/casm/external/Eigen/src/CMakeLists.txt\
 						./include/casm/external/Eigen/src/SparseLU/SparseLU_pivotL.h\
 						./include/casm/external/Eigen/src/SparseLU/SparseLU_heap_relax_snode.h\
 						./include/casm/external/Eigen/src/SparseLU/SparseLU_relax_snode.h\
-						./include/casm/external/Eigen/src/SparseLU/CMakeLists.txt\
 						./include/casm/external/Eigen/src/SparseLU/SparseLUImpl.h\
 						./include/casm/external/Eigen/src/SparseLU/SparseLU_kernel_bmod.h\
 						./include/casm/external/Eigen/src/SparseLU/SparseLU_gemm_kernel.h\
@@ -275,27 +269,22 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/src/SparseLU/SparseLU_SupernodalMatrix.h\
 						./include/casm/external/Eigen/src/SparseLU/SparseLU_Structs.h\
 						./include/casm/external/Eigen/src/SparseLU/SparseLU_copy_to_ucol.h\
-						./include/casm/external/Eigen/src/Householder/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Householder/HouseholderSequence.h\
 						./include/casm/external/Eigen/src/Householder/BlockHouseholder.h\
 						./include/casm/external/Eigen/src/Householder/Householder.h\
 						./include/casm/external/Eigen/src/Cholesky/LLT.h\
-						./include/casm/external/Eigen/src/Cholesky/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Cholesky/LDLT.h\
 						./include/casm/external/Eigen/src/Cholesky/LLT_MKL.h\
-						./include/casm/external/Eigen/src/misc/CMakeLists.txt\
 						./include/casm/external/Eigen/src/misc/SparseSolve.h\
 						./include/casm/external/Eigen/src/misc/Image.h\
 						./include/casm/external/Eigen/src/misc/Solve.h\
 						./include/casm/external/Eigen/src/misc/Kernel.h\
 						./include/casm/external/Eigen/src/misc/blas.h\
 						./include/casm/external/Eigen/src/SparseCholesky/SimplicialCholesky.h\
-						./include/casm/external/Eigen/src/SparseCholesky/CMakeLists.txt\
 						./include/casm/external/Eigen/src/SparseCholesky/SimplicialCholesky_impl.h\
 						./include/casm/external/Eigen/src/Geometry/OrthoMethods.h\
 						./include/casm/external/Eigen/src/Geometry/Umeyama.h\
 						./include/casm/external/Eigen/src/Geometry/Homogeneous.h\
-						./include/casm/external/Eigen/src/Geometry/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Geometry/EulerAngles.h\
 						./include/casm/external/Eigen/src/Geometry/AngleAxis.h\
 						./include/casm/external/Eigen/src/Geometry/Hyperplane.h\
@@ -303,20 +292,17 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/src/Geometry/Translation.h\
 						./include/casm/external/Eigen/src/Geometry/Transform.h\
 						./include/casm/external/Eigen/src/Geometry/arch/Geometry_SSE.h\
-						./include/casm/external/Eigen/src/Geometry/arch/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Geometry/Scaling.h\
 						./include/casm/external/Eigen/src/Geometry/Quaternion.h\
 						./include/casm/external/Eigen/src/Geometry/RotationBase.h\
 						./include/casm/external/Eigen/src/Geometry/AlignedBox.h\
 						./include/casm/external/Eigen/src/Geometry/ParametrizedLine.h\
 						./include/casm/external/Eigen/src/QR/ColPivHouseholderQR_MKL.h\
-						./include/casm/external/Eigen/src/QR/CMakeLists.txt\
 						./include/casm/external/Eigen/src/QR/HouseholderQR_MKL.h\
 						./include/casm/external/Eigen/src/QR/FullPivHouseholderQR.h\
 						./include/casm/external/Eigen/src/QR/ColPivHouseholderQR.h\
 						./include/casm/external/Eigen/src/QR/HouseholderQR.h\
 						./include/casm/external/Eigen/src/CholmodSupport/CholmodSupport.h\
-						./include/casm/external/Eigen/src/CholmodSupport/CMakeLists.txt\
 						./include/casm/external/Eigen/src/SparseCore/SparseMatrixBase.h\
 						./include/casm/external/Eigen/src/SparseCore/SparseVector.h\
 						./include/casm/external/Eigen/src/SparseCore/SparseBlock.h\
@@ -324,7 +310,6 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/src/SparseCore/ConservativeSparseSparseProduct.h\
 						./include/casm/external/Eigen/src/SparseCore/SparseUtil.h\
 						./include/casm/external/Eigen/src/SparseCore/SparseSparseProductWithPruning.h\
-						./include/casm/external/Eigen/src/SparseCore/CMakeLists.txt\
 						./include/casm/external/Eigen/src/SparseCore/SparseTriangularView.h\
 						./include/casm/external/Eigen/src/SparseCore/SparseView.h\
 						./include/casm/external/Eigen/src/SparseCore/SparseFuzzy.h\
@@ -348,7 +333,6 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/src/Eigenvalues/SelfAdjointEigenSolver.h\
 						./include/casm/external/Eigen/src/Eigenvalues/GeneralizedSelfAdjointEigenSolver.h\
 						./include/casm/external/Eigen/src/Eigenvalues/SelfAdjointEigenSolver_MKL.h\
-						./include/casm/external/Eigen/src/Eigenvalues/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Eigenvalues/RealSchur.h\
 						./include/casm/external/Eigen/src/Eigenvalues/EigenSolver.h\
 						./include/casm/external/Eigen/src/Eigenvalues/Tridiagonalization.h\
@@ -359,23 +343,17 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/src/Eigenvalues/RealQZ.h\
 						./include/casm/external/Eigen/src/Eigenvalues/ComplexSchur.h\
 						./include/casm/external/Eigen/src/MetisSupport/MetisSupport.h\
-						./include/casm/external/Eigen/src/MetisSupport/CMakeLists.txt\
 						./include/casm/external/Eigen/src/unsupported/KroneckerTensorProduct.h\
 						./include/casm/external/Eigen/src/PaStiXSupport/PaStiXSupport.h\
-						./include/casm/external/Eigen/src/PaStiXSupport/CMakeLists.txt\
-						./include/casm/external/Eigen/src/SparseQR/CMakeLists.txt\
 						./include/casm/external/Eigen/src/SparseQR/SparseQR.h\
-						./include/casm/external/Eigen/src/SVD/CMakeLists.txt\
 						./include/casm/external/Eigen/src/SVD/UpperBidiagonalization.h\
 						./include/casm/external/Eigen/src/SVD/JacobiSVD_MKL.h\
 						./include/casm/external/Eigen/src/SVD/JacobiSVD.h\
 						./include/casm/external/Eigen/src/StlSupport/details.h\
 						./include/casm/external/Eigen/src/StlSupport/StdVector.h\
-						./include/casm/external/Eigen/src/StlSupport/CMakeLists.txt\
 						./include/casm/external/Eigen/src/StlSupport/StdDeque.h\
 						./include/casm/external/Eigen/src/StlSupport/StdList.h\
 						./include/casm/external/Eigen/src/plugins/ArrayCwiseBinaryOps.h\
-						./include/casm/external/Eigen/src/plugins/CMakeLists.txt\
 						./include/casm/external/Eigen/src/plugins/ArrayCwiseUnaryOps.h\
 						./include/casm/external/Eigen/src/plugins/CommonCwiseUnaryOps.h\
 						./include/casm/external/Eigen/src/plugins/MatrixCwiseUnaryOps.h\
@@ -383,27 +361,21 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/src/plugins/CommonCwiseBinaryOps.h\
 						./include/casm/external/Eigen/src/plugins/MatrixCwiseBinaryOps.h\
 						./include/casm/external/Eigen/src/IterativeLinearSolvers/ConjugateGradient.h\
-						./include/casm/external/Eigen/src/IterativeLinearSolvers/CMakeLists.txt\
 						./include/casm/external/Eigen/src/IterativeLinearSolvers/BiCGSTAB.h\
 						./include/casm/external/Eigen/src/IterativeLinearSolvers/BasicPreconditioners.h\
 						./include/casm/external/Eigen/src/IterativeLinearSolvers/IterativeSolverBase.h\
 						./include/casm/external/Eigen/src/IterativeLinearSolvers/IncompleteLUT.h\
-						./include/casm/external/Eigen/src/OrderingMethods/CMakeLists.txt\
 						./include/casm/external/Eigen/src/OrderingMethods/Eigen_Colamd.h\
 						./include/casm/external/Eigen/src/OrderingMethods/Ordering.h\
 						./include/casm/external/Eigen/src/OrderingMethods/Amd.h\
-						./include/casm/external/Eigen/src/PardisoSupport/CMakeLists.txt\
 						./include/casm/external/Eigen/src/PardisoSupport/PardisoSupport.h\
-						./include/casm/external/Eigen/src/SuperLUSupport/CMakeLists.txt\
 						./include/casm/external/Eigen/src/SuperLUSupport/SuperLUSupport.h\
 						./include/casm/external/Eigen/src/Eigen2Support/Lazy.h\
 						./include/casm/external/Eigen/src/Eigen2Support/Minor.h\
 						./include/casm/external/Eigen/src/Eigen2Support/LU.h\
 						./include/casm/external/Eigen/src/Eigen2Support/LeastSquares.h\
-						./include/casm/external/Eigen/src/Eigen2Support/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Eigen2Support/VectorBlock.h\
 						./include/casm/external/Eigen/src/Eigen2Support/Meta.h\
-						./include/casm/external/Eigen/src/Eigen2Support/Geometry/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Eigen2Support/Geometry/AngleAxis.h\
 						./include/casm/external/Eigen/src/Eigen2Support/Geometry/Hyperplane.h\
 						./include/casm/external/Eigen/src/Eigen2Support/Geometry/Rotation2D.h\
@@ -445,7 +417,6 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/src/Core/GenericPacketMath.h\
 						./include/casm/external/Eigen/src/Core/Swap.h\
 						./include/casm/external/Eigen/src/Core/Transpose.h\
-						./include/casm/external/Eigen/src/Core/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Core/CwiseBinaryOp.h\
 						./include/casm/external/Eigen/src/Core/DenseCoeffsBase.h\
 						./include/casm/external/Eigen/src/Core/VectorBlock.h\
@@ -463,18 +434,13 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/src/Core/CwiseUnaryView.h\
 						./include/casm/external/Eigen/src/Core/DenseBase.h\
 						./include/casm/external/Eigen/src/Core/MathFunctions.h\
-						./include/casm/external/Eigen/src/Core/arch/CMakeLists.txt\
-						./include/casm/external/Eigen/src/Core/arch/AltiVec/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Core/arch/AltiVec/PacketMath.h\
 						./include/casm/external/Eigen/src/Core/arch/AltiVec/Complex.h\
-						./include/casm/external/Eigen/src/Core/arch/NEON/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Core/arch/NEON/PacketMath.h\
 						./include/casm/external/Eigen/src/Core/arch/NEON/Complex.h\
-						./include/casm/external/Eigen/src/Core/arch/SSE/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Core/arch/SSE/MathFunctions.h\
 						./include/casm/external/Eigen/src/Core/arch/SSE/PacketMath.h\
 						./include/casm/external/Eigen/src/Core/arch/SSE/Complex.h\
-						./include/casm/external/Eigen/src/Core/arch/Default/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Core/arch/Default/Settings.h\
 						./include/casm/external/Eigen/src/Core/CommaInitializer.h\
 						./include/casm/external/Eigen/src/Core/EigenBase.h\
@@ -485,7 +451,6 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/src/Core/Ref.h\
 						./include/casm/external/Eigen/src/Core/products/SelfadjointMatrixMatrix_MKL.h\
 						./include/casm/external/Eigen/src/Core/products/TriangularSolverMatrix_MKL.h\
-						./include/casm/external/Eigen/src/Core/products/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Core/products/TriangularMatrixMatrix_MKL.h\
 						./include/casm/external/Eigen/src/Core/products/GeneralMatrixVector.h\
 						./include/casm/external/Eigen/src/Core/products/GeneralBlockPanelKernel.h\
@@ -522,7 +487,6 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/src/Core/util/ReenableStupidWarnings.h\
 						./include/casm/external/Eigen/src/Core/util/StaticAssert.h\
 						./include/casm/external/Eigen/src/Core/util/ForwardDeclarations.h\
-						./include/casm/external/Eigen/src/Core/util/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Core/util/Meta.h\
 						./include/casm/external/Eigen/src/Core/util/Macros.h\
 						./include/casm/external/Eigen/src/Core/util/NonMPL2.h\
@@ -534,9 +498,7 @@ externalinclude_HEADERS=./include/casm/external/gzstream/gzstream.h\
 						./include/casm/external/Eigen/src/Core/util/Constants.h\
 						./include/casm/external/Eigen/src/Core/Diagonal.h\
 						./include/casm/external/Eigen/src/Core/Fuzzy.h\
-						./include/casm/external/Eigen/src/Jacobi/CMakeLists.txt\
 						./include/casm/external/Eigen/src/Jacobi/Jacobi.h\
-						./include/casm/external/Eigen/src/SPQRSupport/CMakeLists.txt\
 						./include/casm/external/Eigen/src/SPQRSupport/SuiteSparseQRSupport.h\
 						./include/casm/external/Eigen/QtAlignedMalloc\
 						./include/casm/external/Eigen/MetisSupport\
