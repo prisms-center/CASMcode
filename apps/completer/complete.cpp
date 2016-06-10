@@ -41,6 +41,9 @@ namespace CASM {
       InitOption dumbinit;
       casm_engine.push_back(Option(dumbinit.tag(), dumbinit.desc()));
 
+      PerturbOption dumbperturb;
+      casm_engine.push_back(Option(dumbperturb.tag(), dumbperturb.desc()));
+
       return casm_engine;
     }
   }

@@ -149,8 +149,8 @@ namespace CASM {
       return m_desc;
     }
 
-    const std::string &OptionHandlerBase::selection_str() const {
-      return m_selection_str;
+    const fs::path &OptionHandlerBase::selection_path() const {
+      return m_selection_path;
     }
 
     const std::string &OptionHandlerBase::verbosity_str() const {
@@ -191,7 +191,7 @@ namespace CASM {
 
     void OptionHandlerBase::add_configlist_suboption() {
       m_desc.add_options()
-      ("config,c", po::value<std::string>(&m_selection_str)->default_value("MASTER")->value_name(ArgHandler::path()), "config_list files containing configurations for which to collect energies");
+      ("config,c", po::value<fs::path>(&m_selection_path)->default_value("MASTER")->value_name(ArgHandler::path()), "Only consider the selected configurations of the given selection file. If not specified, or 'MASTER' is given, the master list of your project will be used.");
       return;
     }
 

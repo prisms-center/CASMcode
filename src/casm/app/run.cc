@@ -32,7 +32,8 @@ namespace CASM {
   //    (add an 'if-else' statement in casm.cpp to call this)
 
   int run_command(const CommandArgs &args) {
-    std::string exec, selection;
+    std::string exec;
+    fs::path selection;
     po::variables_map vm;
 
     /// Set command line options using boost program_options
@@ -40,6 +41,7 @@ namespace CASM {
 
     try {
       po::store(po::parse_command_line(args.argc, args.argv, run_opt.desc()), vm); // can throw
+      selection = run_opt.selection_path();
 
       /** --help option
        */
@@ -101,7 +103,7 @@ namespace CASM {
           process.print(std::cout);
         }
       }
-      else if(vm.count("config") && fs::exists(fs::path(selection))) {
+      else if(vm.count("config") && fs::exists(selection)) {
         ConfigSelection<true> config_select(primclex, selection);
         for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
           if(vm.count("write-pos")) {

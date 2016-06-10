@@ -125,10 +125,10 @@ namespace CASM {
       void add_configlist_suboption();
 
       ///The selection string to go with add_config_suboption
-      std::string m_selection_str;
+      fs::path m_selection_path;
 
       ///Returns the string corresponding to add_config_suboption()
-      const std::string &selection_str() const;
+      const fs::path &selection_path() const;
 
       //-------------------------------------------------------------------------------------//
 
@@ -272,7 +272,7 @@ namespace CASM {
 
     public:
 
-      using OptionHandlerBase::selection_str;
+      using OptionHandlerBase::selection_path;
 
       RunOption();
 
@@ -295,7 +295,7 @@ namespace CASM {
 
     public:
 
-      using OptionHandlerBase::selection_str;
+      using OptionHandlerBase::selection_path;
       using OptionHandlerBase::output_path;
       using OptionHandlerBase::gzip_flag;
       using OptionHandlerBase::help_opt_vec;
@@ -490,6 +490,29 @@ namespace CASM {
     private:
 
       void initialize() override;
+
+    };
+
+    //*****************************************************************************************************//
+    /**
+     * Options set for `casm perturb`. Get your defects here.
+     */
+
+    class PerturbOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::selection_path;
+
+      PerturbOption();
+
+      const fs::path &cspecs_path() const;
+
+    private:
+
+      void initialize() override;
+
+      fs::path m_cspecs_path;
 
     };
 

@@ -222,7 +222,7 @@ namespace CASM {
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
     // Get configuration selection
-    ConstConfigSelection selection(primclex, query_opt.selection_str());
+    ConstConfigSelection selection(primclex, query_opt.selection_path());
 
     // set status_stream: where query settings and PrimClex initialization messages are sent
     Log &status_log = (query_opt.output_path().string() == "STDOUT") ? args.err_log : args.log;
