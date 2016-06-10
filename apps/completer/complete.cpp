@@ -50,6 +50,9 @@ namespace CASM {
       SettingsOption dumbsettings;
       casm_engine.push_back(Option(dumbsettings.tag(), dumbsettings.desc()));
 
+      StatusOption dumbstatus;
+      casm_engine.push_back(Option(dumbstatus.tag(), dumbstatus.desc()));
+
       return casm_engine;
     }
   }

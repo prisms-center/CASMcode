@@ -584,6 +584,24 @@ namespace CASM {
 
     //*****************************************************************************************************//
 
+    /**
+     * Options set for `casm status`. Find out about your progress here.
+     */
+
+    class StatusOption : public OptionHandlerBase {
+
+    public:
+
+      StatusOption();
+
+    private:
+
+      void initialize() override;
+
+    };
+
+    //*****************************************************************************************************//
+
   }
 }
 
