@@ -32,6 +32,9 @@ namespace CASM {
       FilesOption dumbfiles;
       casm_engine.push_back(Option(dumbfiles.tag(), dumbfiles.desc()));
 
+      FormatOption dumbformat;
+      casm_engine.push_back(Option(dumbformat.tag(), dumbformat.desc()));
+
       return casm_engine;
     }
   }

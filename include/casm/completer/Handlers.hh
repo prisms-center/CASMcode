@@ -396,7 +396,7 @@ namespace CASM {
     //*****************************************************************************************************//
 
     /**
-     * Options set for `casm ref`. Get your reference set here.
+     * Options set for `casm files`. Get your casm project packed up here.
      */
 
     class FilesOption : public OptionHandlerBase {
@@ -419,6 +419,23 @@ namespace CASM {
       std::vector<std::string> m_calc_vec;
 
       std::string m_settings_str;
+
+    };
+
+    //*****************************************************************************************************//
+    /**
+     * Options set for `casm format`. Get your input files here.
+     */
+
+    class FormatOption : public OptionHandlerBase {
+
+    public:
+
+      FormatOption();
+
+    private:
+
+      void initialize() override;
 
     };
 
