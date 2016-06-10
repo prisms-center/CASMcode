@@ -199,18 +199,21 @@ namespace CASM {
     return A.identical(B, TOL);
   }
 
+  /// \brief A vacancy is any Specie/Molecule with (name == "VA" || name == "va" || name == "Va")
+  inline bool is_vacancy(const std::string &name) {
+    return (name == "VA" || name == "va" || name == "Va");
+  }
+
   /// \brief Return true if Molecule name matches 'name', including Va checks
-  bool is_molecule_name(const Molecule &mol, std::string name);
+  inline
+  bool is_molecule_name(const Molecule &mol, std::string name) {
+    return mol.name() == name || (mol.is_vacancy() && is_vacancy(name));
+  }
 
   jsonParser &to_json(const Molecule &mol, jsonParser &json, Eigen::Matrix3d const &c2f_mat);
 
   // Lattice must be set already
   void from_json(Molecule &mol, const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
-
-  /// \brief A vacancy is any Specie/Molecule with (name == "VA" || name == "va" || name == "Va")
-  inline bool is_vacancy(const std::string &name) {
-    return (name == "VA" || name == "va" || name == "Va");
-  }
 
   template<>
   struct jsonConstructor<Molecule> {

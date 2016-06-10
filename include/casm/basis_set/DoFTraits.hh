@@ -185,13 +185,17 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   namespace DoFType {
+    inline
     DoF_impl::Traits const &traits(std::string const &dof_key) {
       return static_cast<DoF_impl::Traits const &>(DoF::traits(dof_key));
     }
 
+    inline
     DoF_impl::BasicTraits const &basic_traits(std::string const &dof_key) {
       return DoF::traits(dof_key);
     }
+
+    inline
     notstd::cloneable_ptr<typename DoF_impl::BasicTraits> occupation() {
       return DoF_impl::OccupationDoFTraits().clone();
     }

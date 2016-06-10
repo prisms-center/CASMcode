@@ -11,6 +11,7 @@ namespace CASM {
   class MoleculeAttribute;
 
   namespace MoleculeAttribute_impl {
+    class TraitsDictionary;
     class BasicTraits {
     public:
       /// \brief allow destruction through base pointer
@@ -81,8 +82,6 @@ namespace CASM {
       //void print_help(std::ostream &_stream) const;
     };
 
-    /// This will eventually be managed by ProjectSettings
-    TraitsDictionary const &traits_dict();
   }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -90,6 +89,9 @@ namespace CASM {
   class MoleculeAttribute {
   public:
     using BasicTraits = MoleculeAttribute_impl::BasicTraits;
+    using KeyType = std::string;
+
+    BasicTraits const &traits(KeyType const &key);
 
     MoleculeAttribute(std::string const &_name) :
       m_name(_name) {
@@ -129,6 +131,9 @@ namespace CASM {
     }
 
   private:
+    /// This will eventually be managed by ProjectSettings
+    static MoleculeAttribute_impl::TraitsDictionary &_traits_dict();
+
     BasicTraits &_traits() const {
       if(!m_traits_ptr)
         _load_traits();
@@ -145,6 +150,7 @@ namespace CASM {
     mutable notstd::cloneable_ptr<BasicTraits> m_traits_ptr;
   };
 
+  inline
   jsonParser &to_json(MoleculeAttribute const &_attr, jsonParser &json) {
     return _attr.to_json(json);
   }

@@ -799,12 +799,14 @@ namespace CASM {
 
   //********************************************************************
 
+  inline
   bool operator==(DoFSet const &A, DoFSet const &B) {
     return A.identical(B);
   }
 
   //********************************************************************
 
+  inline
   bool operator!=(DoFSet const &A, DoFSet const &B) {
     return !A.identical(B);
   }

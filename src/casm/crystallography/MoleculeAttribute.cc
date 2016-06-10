@@ -34,6 +34,14 @@ namespace CASM {
 
   //*******************************************************************
 
+  MoleculeAttribute_impl::TraitsDictionary &MoleculeAttribute::_traits_dict() {
+    static MoleculeAttribute_impl::TraitsDictionary _static_dict;
+
+    return _static_dict;
+  }
+
+  //*******************************************************************
+
   MoleculeAttribute &MoleculeAttribute::apply_sym(SymOp const &_op) {
     if(m_rep_ID.empty())
       _generate_symrep(_op.master_group());
@@ -50,6 +58,6 @@ namespace CASM {
   //*******************************************************************
 
   void MoleculeAttribute::_load_traits() const {
-    m_traits_ptr = MoleculeAttribute_impl::traits_dict().lookup(name());
+    m_traits_ptr = _traits_dict().lookup(name());
   }
 }
