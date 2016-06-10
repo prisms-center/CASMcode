@@ -423,6 +423,7 @@ namespace CASM {
     };
 
     //*****************************************************************************************************//
+
     /**
      * Options set for `casm format`. Get your input files here.
      */
@@ -436,6 +437,41 @@ namespace CASM {
     private:
 
       void initialize() override;
+
+    };
+
+    //*****************************************************************************************************//
+
+    /**
+     * Options set for `casm format`. Get your input files here.
+     */
+
+    class ImportOption : public OptionHandlerBase {
+
+    public:
+
+      ImportOption();
+
+      double vol_tolerance() const;
+
+      double lattice_weight() const;
+
+      const std::vector<fs::path> &pos_vec() const;
+
+      const fs::path &batch_path() const;
+
+
+    private:
+
+      void initialize() override;
+
+      double m_vol_tolerance;
+
+      double m_lattice_weight;
+
+      std::vector<fs::path> m_pos_vec;
+
+      fs::path m_batch_path;
 
     };
 
