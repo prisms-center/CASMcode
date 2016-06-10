@@ -1,6 +1,8 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/CASM_classes.hh"
 
+#include "casm/completer/Handlers.hh"
+
 namespace CASM {
 
   void list_settings(const fs::path &root) {
@@ -53,6 +55,40 @@ namespace CASM {
 
   }
 
+  namespace Completer {
+    SettingsOption::SettingsOption(): OptionHandlerBase("settings") {}
+
+    const std::string &SettingsOption::input_str() const {
+      return m_input_str;
+    }
+
+    const std::vector<std::string> &SettingsOption::input_vec() const {
+      return m_input_vec;
+    }
+
+    void SettingsOption::initialize() {
+      add_help_suboption();
+
+      m_desc.add_options()
+      ("list,l", "List project settings")
+      ("new-bset", po::value<std::string>(&m_input_str), "Create a new basis set")
+      ("new-calctype", po::value<std::vector<std::string> >(&m_input_vec)->multitoken(), "Create a new calculation type")
+      ("new-ref", po::value<std::string>(&m_input_str), "Create a new calculation reference")
+      ("new-eci", po::value<std::string>(&m_input_str), "Create a new set of effective clust interactions (ECI)")
+      ("set-bset", po::value<std::string>(&m_input_str), "Set the current basis set")
+      ("set-calctype", po::value<std::vector<std::string> >(&m_input_vec)->multitoken(), "Set the current calculation type")
+      ("set-ref", po::value<std::vector<std::string> >(&m_input_vec)->multitoken(), "Set the current calculation reference")
+      ("set-eci", po::value<std::string>(&m_input_str), "Set the current effective clust interactions (ECI)")
+      ("set-view-command", po::value<std::string>(&m_input_str), "Set the command used by 'casm view'.")
+      ("set-compile-options", po::value<std::string>(&m_input_str), "Set the compiler options.")
+      ("unset-compile-options", "Use the default compiler options.")
+      ("set-so-options", po::value<std::string>(&m_input_str), "Set the options for generating shared libraries.")
+      ("unset-so-options", "Use the default options for generating shared libraries.");
+      return;
+    }
+
+  }
+
   // ///////////////////////////////////////
   // 'settings' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
@@ -64,124 +100,109 @@ namespace CASM {
     COORD_TYPE coordtype;
     po::variables_map vm;
 
+
+    /// Set command line options using boost program_options
+    Completer::SettingsOption settings_opt;
+
     try {
+      po::store(po::parse_command_line(args.argc, args.argv, settings_opt.desc()), vm); // can throw
+      single_input = settings_opt.input_str();
+      multi_input = settings_opt.input_vec();
 
-      /// Set command line options using boost program_options
-      po::options_description desc("'casm settings' usage");
-      desc.add_options()
-      ("help,h", "Write help documentation")
-      ("list,l", "List project settings")
-      ("new-bset", po::value<std::string>(&single_input), "Create a new basis set")
-      ("new-calctype", po::value<std::vector<std::string> >(&multi_input)->multitoken(), "Create a new calculation type")
-      ("new-ref", po::value<std::string>(&single_input), "Create a new calculation reference")
-      ("new-eci", po::value<std::string>(&single_input), "Create a new set of effective clust interactions (ECI)")
-      ("set-bset", po::value<std::string>(&single_input), "Set the current basis set")
-      ("set-calctype", po::value<std::vector<std::string> >(&multi_input)->multitoken(), "Set the current calculation type")
-      ("set-ref", po::value<std::vector<std::string> >(&multi_input)->multitoken(), "Set the current calculation reference")
-      ("set-eci", po::value<std::string>(&single_input), "Set the current effective clust interactions (ECI)")
-      ("set-view-command", po::value<std::string>(&single_input), "Set the command used by 'casm view'.")
-      ("set-compile-options", po::value<std::string>(&single_input), "Set the compiler options.")
-      ("unset-compile-options", "Use the default compiler options.")
-      ("set-so-options", po::value<std::string>(&single_input), "Set the options for generating shared libraries.")
-      ("unset-so-options", "Use the default options for generating shared libraries.");
+      bool call_help = false;
 
-      try {
-        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
-
-        bool call_help = false;
-
-        std::vector<std::string> all_opt = {"list", "new-bset", "new-calctype", "new-ref", "new-eci",
-                                            "set-bset", "set-calctype", "set-ref", "set-eci",
-                                            "set-compile-options", "set-so-options", "set-view-command",
-                                            "unset-compile-options", "unset-so-options",
-                                           };
-        int option_count = 0;
-        for(int i = 0; i < all_opt.size(); i++) {
-          option_count += vm.count(all_opt[i]);
-        }
-
-        // must call one and only one option at a time:
-        if(option_count == 0) {
-          std::cout << "Error in 'casm settings'. No option selected." << std::endl;
-          call_help = true;
-        }
-        else if(option_count > 1) {
-          std::cout << "Error in 'casm settings'. Use one option at a time." << std::endl;
-          call_help = true;
-        }
-
-        // --help option
-        if(vm.count("help") || call_help) {
-          std::cout << "\n";
-          std::cout << desc << std::endl;
-
-          std::cout << "DESCRIPTION" << std::endl;
-          std::cout << "\n";
-          std::cout << "    Often it is useful to try multiple different basis sets, \n" <<
-                    "    calculation settings, references, or ECI fits in a single\n" <<
-                    "    project. The 'casm settings' option helps to organize    \n" <<
-                    "    these within a project and quickly switch between        \n" <<
-                    "    different settings.                                      \n";
-          std::cout << "\n";
-          std::cout << "    Examples:\n";
-          std::cout << "                                                             \n" <<
-                    "      casm settings --list                                   \n" <<
-                    "      - List all settings, with '*' for current settings     \n\n" <<
-
-                    "      casm settings --new-bset 'my_new_bset'                 \n" <<
-                    "      casm settings --new-calctype 'my_new_calctype' ['my_new_ref']\n" <<
-                    "      casm settings --new-ref 'my_new_ref'                   \n" <<
-                    "      casm settings --new-eci 'my_new_eci'                   \n" <<
-                    "      - Creates new settings directories with appropriate    \n" <<
-                    "        names                                                \n" <<
-                    "      - For --new-calctype, a new reference may optionally be\n" <<
-                    "        speficied. If it is not, a new 'default' reference is\n" <<
-                    "        created.                                     \n" <<
-                    "      - For --new-ref, a new reference is created for the    \n" <<
-                    "        current calctype                                     \n" <<
-                    "      - For --new-eci, a new eci directory is created for the\n" <<
-                    "         current clex, calctype and ref.                     \n\n" <<
-
-                    "      casm settings --set-bset 'other_bset'                  \n" <<
-                    "      casm settings --set-calctype 'other_calctype' ['other_ref'] \n" <<
-                    "      casm settings --set-ref ['other_calctype'] 'other_ref' \n" <<
-                    "      casm settings --set-eci 'other_eci'                    \n" <<
-                    "      - Switch the current settings                          \n" <<
-                    "      - For --set-calctype 'other_ref' is optional, if not   \n" <<
-                    "        given, 'ref_default' is used, or if that doesn't     \n" <<
-                    "        exist the first one found is used.                   \n" <<
-                    "      - For --set-ref, 'other_calctype' is optional if among \n" <<
-                    "        all calctype there is no other reference called      \n" <<
-                    "        'other_ref'. Otherwise it is required.               \n" <<
-                    "      - For --set-ref, 'other_calctype' is optional if among \n" <<
-                    "        all calctype there is no other reference called      \n" <<
-                    "        'other_ref'. Otherwise it is required.               \n\n" <<
-
-                    "      casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'\n" <<
-                    "      - Sets the command used by 'casm view' to open         \n" <<
-                    "        visualization software.                              \n" <<
-                    "      - Will be executed with '/path/to/POSCAR' as an        \n" <<
-                    "        argument, the location of a POSCAR for a configuration\n" <<
-                    "        selected for visualization.                          \n" <<
-                    "\n";
-
-          if(call_help)
-            return 1;
-
-          return 0;
-        }
-
-        po::notify(vm); // throws on error, so do after help in case
-        // there are any problems
-
-
-
+      std::vector<std::string> all_opt = {"list", "new-bset", "new-calctype", "new-ref", "new-eci",
+                                          "set-bset", "set-calctype", "set-ref", "set-eci",
+                                          "set-compile-options", "set-so-options", "set-view-command",
+                                          "unset-compile-options", "unset-so-options",
+                                         };
+      int option_count = 0;
+      for(int i = 0; i < all_opt.size(); i++) {
+        option_count += vm.count(all_opt[i]);
       }
-      catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
-        return 1;
+
+      // must call one and only one option at a time:
+      if(option_count == 0) {
+        std::cout << "Error in 'casm settings'. No option selected." << std::endl;
+        call_help = true;
       }
+      else if(option_count > 1) {
+        std::cout << "Error in 'casm settings'. Use one option at a time." << std::endl;
+        call_help = true;
+      }
+
+      // --help option
+      if(vm.count("help") || call_help) {
+        std::cout << "\n";
+        std::cout << settings_opt.desc() << std::endl;
+
+        std::cout << "DESCRIPTION" << std::endl;
+        std::cout << "\n";
+        std::cout << "    Often it is useful to try multiple different basis sets, \n" <<
+                  "    calculation settings, references, or ECI fits in a single\n" <<
+                  "    project. The 'casm settings' option helps to organize    \n" <<
+                  "    these within a project and quickly switch between        \n" <<
+                  "    different settings.                                      \n";
+        std::cout << "\n";
+        std::cout << "    Examples:\n";
+        std::cout << "                                                             \n" <<
+                  "      casm settings --list                                   \n" <<
+                  "      - List all settings, with '*' for current settings     \n\n" <<
+
+                  "      casm settings --new-bset 'my_new_bset'                 \n" <<
+                  "      casm settings --new-calctype 'my_new_calctype' ['my_new_ref']\n" <<
+                  "      casm settings --new-ref 'my_new_ref'                   \n" <<
+                  "      casm settings --new-eci 'my_new_eci'                   \n" <<
+                  "      - Creates new settings directories with appropriate    \n" <<
+                  "        names                                                \n" <<
+                  "      - For --new-calctype, a new reference may optionally be\n" <<
+                  "        speficied. If it is not, a new 'default' reference is\n" <<
+                  "        created.                                     \n" <<
+                  "      - For --new-ref, a new reference is created for the    \n" <<
+                  "        current calctype                                     \n" <<
+                  "      - For --new-eci, a new eci directory is created for the\n" <<
+                  "         current clex, calctype and ref.                     \n\n" <<
+
+                  "      casm settings --set-bset 'other_bset'                  \n" <<
+                  "      casm settings --set-calctype 'other_calctype' ['other_ref'] \n" <<
+                  "      casm settings --set-ref ['other_calctype'] 'other_ref' \n" <<
+                  "      casm settings --set-eci 'other_eci'                    \n" <<
+                  "      - Switch the current settings                          \n" <<
+                  "      - For --set-calctype 'other_ref' is optional, if not   \n" <<
+                  "        given, 'ref_default' is used, or if that doesn't     \n" <<
+                  "        exist the first one found is used.                   \n" <<
+                  "      - For --set-ref, 'other_calctype' is optional if among \n" <<
+                  "        all calctype there is no other reference called      \n" <<
+                  "        'other_ref'. Otherwise it is required.               \n" <<
+                  "      - For --set-ref, 'other_calctype' is optional if among \n" <<
+                  "        all calctype there is no other reference called      \n" <<
+                  "        'other_ref'. Otherwise it is required.               \n\n" <<
+
+                  "      casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'\n" <<
+                  "      - Sets the command used by 'casm view' to open         \n" <<
+                  "        visualization software.                              \n" <<
+                  "      - Will be executed with '/path/to/POSCAR' as an        \n" <<
+                  "        argument, the location of a POSCAR for a configuration\n" <<
+                  "        selected for visualization.                          \n" <<
+                  "\n";
+
+        if(call_help) {
+          return 1;
+        }
+
+        return 0;
+      }
+
+      po::notify(vm); // throws on error, so do after help in case
+      // there are any problems
+
+
+
+    }
+    catch(po::error &e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      std::cerr << settings_opt.desc() << std::endl;
+      return 1;
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "

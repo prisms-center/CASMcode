@@ -47,6 +47,9 @@ namespace CASM {
       SelectOption dumbselect;
       casm_engine.push_back(Option(dumbselect.tag(), dumbselect.desc()));
 
+      SettingsOption dumbsettings;
+      casm_engine.push_back(Option(dumbsettings.tag(), dumbsettings.desc()));
+
       return casm_engine;
     }
   }

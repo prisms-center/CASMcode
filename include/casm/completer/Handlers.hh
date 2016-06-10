@@ -557,6 +557,33 @@ namespace CASM {
 
     //*****************************************************************************************************//
 
+    /**
+     * Options set for `casm settings`. Get your casm project configured here.
+     */
+
+    class SettingsOption : public OptionHandlerBase {
+
+    public:
+
+      SettingsOption();
+
+      const std::string &input_str() const;
+
+      const std::vector<std::string> &input_vec() const;
+
+    private:
+
+      void initialize() override;
+
+      std::string m_input_str;
+
+      std::vector<std::string> m_input_vec;
+
+
+    };
+
+    //*****************************************************************************************************//
+
   }
 }
 
