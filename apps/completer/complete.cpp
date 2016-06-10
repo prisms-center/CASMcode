@@ -29,6 +29,9 @@ namespace CASM {
       RefOption dumbref;
       casm_engine.push_back(Option(dumbref.tag(), dumbref.desc()));
 
+      FilesOption dumbfiles;
+      casm_engine.push_back(Option(dumbfiles.tag(), dumbfiles.desc()));
+
       return casm_engine;
     }
   }

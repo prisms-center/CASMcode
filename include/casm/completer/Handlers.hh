@@ -395,6 +395,35 @@ namespace CASM {
 
     //*****************************************************************************************************//
 
+    /**
+     * Options set for `casm ref`. Get your reference set here.
+     */
+
+    class FilesOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::output_path;
+      using OptionHandlerBase::gzip_flag;
+
+      FilesOption();
+
+      const std::vector<std::string> &calc_vec() const;
+
+      const std::string &settings_str() const;
+
+    private:
+
+      void initialize() override;
+
+      std::vector<std::string> m_calc_vec;
+
+      std::string m_settings_str;
+
+    };
+
+    //*****************************************************************************************************//
+
   }
 }
 
