@@ -44,6 +44,9 @@ namespace CASM {
       PerturbOption dumbperturb;
       casm_engine.push_back(Option(dumbperturb.tag(), dumbperturb.desc()));
 
+      SelectOption dumbselect;
+      casm_engine.push_back(Option(dumbselect.tag(), dumbselect.desc()));
+
       return casm_engine;
     }
   }

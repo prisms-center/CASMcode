@@ -130,6 +130,17 @@ namespace CASM {
       ///Returns the string corresponding to add_config_suboption()
       const fs::path &selection_path() const;
 
+      //----------------------------//
+
+      ///Add --configs suboption (defaults to MASTER)
+      void add_configlists_suboption();
+
+      ///The selection string to go with add_config_suboption
+      std::vector<fs::path> m_selection_paths;
+
+      ///Returns the string corresponding to add_config_suboption()
+      const std::vector<fs::path> &selection_paths() const;
+
       //-------------------------------------------------------------------------------------//
 
       ///Add a plain --help suboption
@@ -207,10 +218,10 @@ namespace CASM {
       void add_scelnames_suboption();
 
       ///The list of supercell names of add_scelnames_suboption()
-      std::vector<std::string> m_supercell_vec;
+      std::vector<std::string> m_supercell_strs;
 
       ///Returns the list of the supercells for add_scelnames_suboption()
-      const std::vector<std::string> &supercell_vec() const;
+      const std::vector<std::string> &supercell_strs() const;
 
       //-------------------------------------------------------------------------------------//
 
@@ -229,10 +240,10 @@ namespace CASM {
       void add_confignames_suboption();
 
       ///The list of the supercell names of add_configname_suboption()
-      std::vector<std::string> m_config_vec;
+      std::vector<std::string> m_config_strs;
 
       ///Returns the names of the supercells for add_configname_suboption(), for when multiple=false
-      const std::vector<std::string> &config_vec() const;
+      const std::vector<std::string> &config_strs() const;
 
       //-------------------------------------------------------------------------------------//
 
@@ -494,6 +505,7 @@ namespace CASM {
     };
 
     //*****************************************************************************************************//
+
     /**
      * Options set for `casm perturb`. Get your defects here.
      */
@@ -513,6 +525,33 @@ namespace CASM {
       void initialize() override;
 
       fs::path m_cspecs_path;
+
+    };
+
+    //*****************************************************************************************************//
+
+    /**
+     * Options set for `casm perturb`. Get your defects here.
+     */
+
+    class SelectOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::help_opt_vec;
+      using OptionHandlerBase::selection_paths;
+      using OptionHandlerBase::output_path;
+
+      SelectOption();
+
+      const std::vector<std::string> &criteria_vec() const;
+
+    private:
+
+      void initialize() override;
+
+      std::vector<std::string> m_criteria_vec;
+
 
     };
 

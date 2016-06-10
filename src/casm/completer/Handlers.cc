@@ -153,6 +153,10 @@ namespace CASM {
       return m_selection_path;
     }
 
+    const std::vector<fs::path> &OptionHandlerBase::selection_paths() const {
+      return m_selection_paths;
+    }
+
     const std::string &OptionHandlerBase::verbosity_str() const {
       return m_verbosity_str;
     }
@@ -177,21 +181,27 @@ namespace CASM {
       return m_config_str;
     }
 
-    const std::vector<std::string> &OptionHandlerBase::config_vec() const {
-      return m_config_vec;
+    const std::vector<std::string> &OptionHandlerBase::config_strs() const {
+      return m_config_strs;
     }
 
     const std::string &OptionHandlerBase::supercell_str() const {
       return m_supercell_str;
     }
 
-    const std::vector<std::string> &OptionHandlerBase::supercell_vec() const {
-      return m_supercell_vec;
+    const std::vector<std::string> &OptionHandlerBase::supercell_strs() const {
+      return m_supercell_strs;
     }
 
     void OptionHandlerBase::add_configlist_suboption() {
       m_desc.add_options()
       ("config,c", po::value<fs::path>(&m_selection_path)->default_value("MASTER")->value_name(ArgHandler::path()), "Only consider the selected configurations of the given selection file. If not specified, or 'MASTER' is given, the master list of your project will be used.");
+      return;
+    }
+
+    void OptionHandlerBase::add_configlists_suboption() {
+      m_desc.add_options()
+      ("configs,c", po::value<std::vector<fs::path> >(&m_selection_paths)->default_value(std::vector<fs::path> {"MASTER"})->value_name(ArgHandler::path()), "Only consider the selected configurations of the given selection files. If not specified, or 'MASTER' is given, the master list of your project will be used.");
       return;
     }
 
