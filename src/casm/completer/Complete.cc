@@ -221,7 +221,7 @@ namespace CASM {
         //ArgHandler::configname_to_bash();
         break;
 
-      case ARG_TYPE::COORDMODE:
+      case ARG_TYPE::COORDTYPE:
         //ArgHandler::coord_mode_to_bash();
         break;
 

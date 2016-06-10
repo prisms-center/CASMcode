@@ -34,7 +34,7 @@ namespace CASM {
     class ArgHandler {
     public:
 
-      enum ARG_TYPE {VOID, PATH, COMMAND, SCELNAME, QUERY, OPERATOR, CONFIGNAME, COORDMODE};
+      enum ARG_TYPE {VOID, PATH, COMMAND, SCELNAME, QUERY, OPERATOR, CONFIGNAME, COORDTYPE};
 
       ///Translate the stored boost value_name into an ARG_TYPE for the completer engine
       static ARG_TYPE determine_type(const po::option_description &boost_option);
@@ -58,7 +58,7 @@ namespace CASM {
       static std::string configname();
 
       ///Get value_type string for coordinate mode completion
-      static std::string coordmode();
+      static std::string coordtype();
 
 
       ///Fill the output strings with bash completion appropriate values for VOID (i.e. do nothing)
@@ -244,6 +244,20 @@ namespace CASM {
 
       ///Returns the names of the supercells for add_configname_suboption(), for when multiple=false
       const std::vector<std::string> &config_strs() const;
+
+      //-------------------------------------------------------------------------------------//
+
+      ///Add a --coord suboption to specify FRAC or CART
+      void add_coordtype_suboption();
+
+      ///The enum value in the form of a string for add_coordtype_suboption(). Only the first letter matters, but knock yourself out.
+      std::string m_coordtype_str;
+
+      ///Return the coordinate type in the form of a string
+      const std::string &coordtype_str() const;
+
+      ///Return the coordinate type recasted as the CASM defined enum
+      COORD_TYPE coordtype_enum() const;
 
       //-------------------------------------------------------------------------------------//
 
@@ -597,6 +611,49 @@ namespace CASM {
     private:
 
       void initialize() override;
+
+    };
+
+    /**
+     * Options set for `casm super`. Get your superstructures here.
+     */
+
+    class SuperOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::coordtype_enum;
+      using OptionHandlerBase::supercell_strs;
+      using OptionHandlerBase::config_strs;
+      using OptionHandlerBase::selection_paths;
+
+      SuperOption();
+
+      const std::vector<fs::path> &transf_mat_paths() const;
+
+      const fs::path &struct_path() const;
+
+      const std::string &unit_scel_str() const;
+
+      Index min_vol() const;
+
+      double tolerance() const;
+
+    private:
+
+      void initialize() override;
+
+      std::vector<fs::path> m_transf_mat_paths;
+
+      fs::path m_struct_path;
+
+      std::string m_unit_scel_str;
+
+      Index m_min_vol;
+
+      double m_tolerance;
+
+
 
     };
 

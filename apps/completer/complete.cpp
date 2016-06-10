@@ -53,6 +53,9 @@ namespace CASM {
       StatusOption dumbstatus;
       casm_engine.push_back(Option(dumbstatus.tag(), dumbstatus.desc()));
 
+      SuperOption dumbsuper;
+      casm_engine.push_back(Option(dumbsuper.tag(), dumbsuper.desc()));
+
       return casm_engine;
     }
   }

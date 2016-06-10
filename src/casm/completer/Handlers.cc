@@ -60,7 +60,7 @@ namespace CASM {
       return m_argument_table[5].first;
     }
 
-    std::string ArgHandler::coordmode() {
+    std::string ArgHandler::coordtype() {
       return m_argument_table[6].first;
     }
 
@@ -119,7 +119,7 @@ namespace CASM {
       std::make_pair("<query>", ARG_TYPE::QUERY),
       std::make_pair("<operation>", ARG_TYPE::OPERATOR),
       std::make_pair("<configuration>", ARG_TYPE::CONFIGNAME),
-      std::make_pair("<coord mode>", ARG_TYPE::COORDMODE)
+      std::make_pair("<type>", ARG_TYPE::COORDTYPE)
     });
 
 
@@ -193,6 +193,28 @@ namespace CASM {
       return m_supercell_strs;
     }
 
+    const std::string &OptionHandlerBase::coordtype_str() const {
+      return m_coordtype_str;
+    }
+
+    COORD_TYPE OptionHandlerBase::coordtype_enum() const {
+      COORD_TYPE selected_mode;
+
+      if(m_coordtype_str[0] == 'F' || m_coordtype_str[0] == 'f') {
+        selected_mode = COORD_TYPE::FRAC;
+      }
+
+      else if(m_coordtype_str[0] == 'C' || m_coordtype_str[0] == 'c') {
+        selected_mode = COORD_TYPE::CART;
+      }
+
+      else {
+        selected_mode = COORD_TYPE::COORD_DEFAULT;
+      }
+
+      return selected_mode;
+    }
+
     void OptionHandlerBase::add_configlist_suboption() {
       m_desc.add_options()
       ("config,c", po::value<fs::path>(&m_selection_path)->default_value("MASTER")->value_name(ArgHandler::path()), "Only consider the selected configurations of the given selection file. If not specified, or 'MASTER' is given, the master list of your project will be used.");
@@ -246,27 +268,24 @@ namespace CASM {
 
     void OptionHandlerBase::add_scelname_suboption() {
       std::string help_str;
-      help_str = "Single supercell to use --" + m_tag + " with.";
+      help_str = "Single supercell name to use casm " + m_tag + " with, such as 'SCEL4_2_2_1_0_0_0'";
       m_desc.add_options()
       ("scelname", po::value<std::string>(&m_supercell_str)->value_name(ArgHandler::supercell()), help_str.c_str());
       return;
     }
 
-    /*
-    void OptionHandlerBase::add_scelnames_suboption()
-    {
-        std::string help_str;
-        help_str="One or more supercells to use --"+m_tag+" with.";
-        m_desc.add_options()
-        ("scelnames", po::value(&m_supercell_str)->zero_tokens(), help_str.c_str());
-        return;
+    void OptionHandlerBase::add_scelnames_suboption() {
+      std::string help_str;
+      help_str = "One or more supercells to use casm" + m_tag + " with, such as 'SCEL4_2_2_1_0_0_0'";
+      m_desc.add_options()
+      ("scelnames", po::value<std::vector<std::string> >(&m_supercell_strs)->multitoken()->value_name(ArgHandler::supercell()), help_str.c_str());
+      return;
     }
-    */
 
     void OptionHandlerBase::add_configname_suboption() {
       std::string help_str;
 
-      help_str = "Single configuration to use --" + m_tag + " with.";
+      help_str = "Single configuration to use casm" + m_tag + " with, such as 'SCEL4_2_2_1_0_0_0/3'";
 
       m_desc.add_options()
       ("configname", po::value<std::string>(&m_config_str)->value_name(ArgHandler::configname()), help_str.c_str());
@@ -274,19 +293,23 @@ namespace CASM {
       return;
     }
 
-    /*
-    void OptionHandlerBase::add_confignames_suboption()
-    {
-        std::string help_str;
+    void OptionHandlerBase::add_confignames_suboption() {
+      std::string help_str;
 
-        help_str="One or more configurations to use --"+m_tag+" with.";
+      help_str = "One or more configurations to use casm" + m_tag + " with, such as 'SCEL4_2_2_1_0_0_0/3'";
 
-        m_desc.add_options()
-            ("confignames", po::value<std::vector<std::string> >(&m_config_vec),help_str.c_str());
+      m_desc.add_options()
+      ("confignames", po::value<std::vector<std::string> >(&m_config_strs)->multitoken()->value_name(ArgHandler::configname()), help_str.c_str());
 
-        return;
+      return;
     }
-    */
+
+
+    void OptionHandlerBase::add_coordtype_suboption() {
+      m_desc.add_options()
+      ("coord", po::value<std::string>(&m_coordtype_str)->default_value("frac")->value_name(ArgHandler::coordtype()), "Type of coordinate system to use. Use 'frac' for fractional (default) or 'cart' for Cartesian.");
+      return;
+    }
 
     //*****************************************************************************************************//
 

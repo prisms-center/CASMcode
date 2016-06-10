@@ -1,62 +1,55 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/CASM_classes.hh"
 
+#include "casm/completer/Handlers.hh"
+
 namespace CASM {
 
+  namespace Completer {
+    SuperOption::SuperOption(): OptionHandlerBase("super") {}
 
-  // ///////////////////////////////////////
-  // 'super' function for casm
-  //    (add an 'if-else' statement in casm.cpp to call this)
+    const std::vector<fs::path> &SuperOption::transf_mat_paths() const {
+      return m_transf_mat_paths;
+    }
 
-  int super_command(const CommandArgs &args) {
+    const fs::path &SuperOption::struct_path() const {
+      return m_struct_path;
+    }
 
-    //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
-    //- enumerate supercells and configs and hop local configurations
+    const std::string &SuperOption::unit_scel_str() const {
+      return m_unit_scel_str;
+    }
 
-    std::vector<std::string> scelname, configname;
-    std::string unitscelname;
-    fs::path structfile;
-    std::vector<fs::path> tmatfile, abs_tmatfile, config_path;
-    fs::path abs_structfile;
-    Index min_vol;
-    double tol;
-    COORD_TYPE coordtype;
-    po::variables_map vm;
+    Index SuperOption::min_vol() const {
+      return m_min_vol;
+    }
 
-    try {
+    double SuperOption::tolerance() const {
+      return m_tolerance;
+    }
 
-      /// Set command line options using boost program_options
-      po::options_description desc("'casm super' usage");
-      desc.add_options()
-      ("help,h", "Write help documentation")
+    void SuperOption::initialize() {
+      add_help_suboption();
+      add_confignames_suboption();
+      add_scelnames_suboption();
+      add_configlists_suboption();
+      add_coordtype_suboption();
 
-      ("transf_mat",
-       po::value<std::vector<fs::path> >(&tmatfile)->multitoken(),
+      m_desc.add_options()
+      ("transf-mat",
+       po::value<std::vector<fs::path> >(&m_transf_mat_paths)->multitoken()->value_name(ArgHandler::path()),
        "1 or more files containing a 3x3 transformation matrix used to create a supercell.")
 
       ("get_transf_mat",
        "If it exists, find the transformation matrix.")
 
       ("structure",
-       po::value<fs::path>(&structfile),
+       po::value<fs::path>(&m_struct_path)->value_name(ArgHandler::path()),
        "File with structure (POSCAR type) to use.")
 
-      ("configname",
-       po::value<std::vector<std::string> >(&configname)->multitoken(),
-       "1 or more names of configuration. For ex. \"SCEL4_2_2_1_0_0_0/4\".")
-
-      ("scelname",
-       po::value<std::vector<std::string> >(&scelname)->multitoken(),
-       "1 or more names of supercell. For ex. \"SCEL4_2_2_1_0_0_0\".")
-
       ("unitcell",
-       po::value<std::string>(&unitscelname),
-       "Name of supercell to use as unit cell. For ex. \"SCEL2_2_1_1_0_0_0\".")
-
-      ("config,c",
-       po::value<std::vector<fs::path> >(&config_path)->multitoken()->zero_tokens(),
-       "0 or more configuration selection files containing configurations to use. "
-       "If MASTER or no arguments, uses the master config list.")
+       po::value<std::string>(&m_unit_scel_str)->value_name(ArgHandler::supercell()),
+       "Name of supercell to use as unit cell. For ex. 'SCEL2_2_1_1_0_0_0'.")
 
       ("duper",
        "Construct the superdupercell, the minimum supercell of all input supercells "
@@ -67,7 +60,7 @@ namespace CASM {
        "equivalent orientations.")
 
       ("min-volume",
-       po::value<Index>(&min_vol),
+       po::value<Index>(&m_min_vol),
        "Ensure that the resulting supercell has volume >= V.")
 
       ("fixed-shape",
@@ -84,81 +77,112 @@ namespace CASM {
        "Print using VASP5 style (include atom name line)")
 
       ("tol",
-       po::value<double>(&tol)->default_value(CASM::TOL),
-       "Tolerance used for checking symmetry")
+       po::value<double>(&m_tolerance)->default_value(CASM::TOL),
+       "Tolerance used for checking symmetry");
 
-      ("coord",
-       po::value<COORD_TYPE>(&coordtype)->default_value(CASM::FRAC),
-       "Coord mode: FRAC=0, or CART=1");
+      return;
+    }
+  }
 
-      try {
-        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
 
-        if(!vm.count("help")) {
-          if(!vm.count("duper")) {
-            if(vm.count("transf_mat") + vm.count("get_transf_mat") != 1) {
-              std::cerr << "Error in 'casm super'. Only one of --transf_mat or --get_transf_mat may be chosen." << std::endl;
-              return ERR_INVALID_ARG;
-            }
-            if(configname.size() > 1 || scelname.size() > 1 || tmatfile.size() > 1) {
-              std::cerr << "ERROR: more than one --configname, --scelname, or --transf_mat argument "
-                        "is only allowed for option --duper" << std::endl;
-              return ERR_INVALID_ARG;
-            }
-            if(config_path.size() > 0) {
-              std::cerr << "ERROR: the --config option is only allowed with option --duper" << std::endl;
-              return ERR_INVALID_ARG;
-            }
+  // ///////////////////////////////////////
+  // 'super' function for casm
+  //    (add an 'if-else' statement in casm.cpp to call this)
+
+  int super_command(const CommandArgs &args) {
+
+    //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
+    //- enumerate supercells and configs and hop local configurations
+
+    std::vector<std::string> scelname, configname;  //These variable names are bad and you should feel bad
+    std::string unitscelname;
+    fs::path structfile;
+    std::vector<fs::path> tmatfile, abs_tmatfile, config_path;
+    fs::path abs_structfile;
+    Index min_vol;
+    double tol;
+    COORD_TYPE coordtype;
+    po::variables_map vm;
+
+
+    /// Set command line options using boost program_options
+    Completer::SuperOption super_opt;
+    try {
+      po::store(po::parse_command_line(args.argc, args.argv, super_opt.desc()), vm); // can throw
+      scelname = super_opt.supercell_strs();
+      configname = super_opt.config_strs();
+      unitscelname = super_opt.unit_scel_str();
+      structfile = super_opt.struct_path();
+      tmatfile = super_opt.transf_mat_paths();
+      config_path = super_opt.selection_paths();
+      min_vol = super_opt.min_vol();
+      tol = super_opt.tolerance();
+      coordtype = super_opt.coordtype_enum();
+
+      if(!vm.count("help")) {
+        if(!vm.count("duper")) {
+          if(vm.count("transf_mat") + vm.count("get_transf_mat") != 1) {
+            std::cerr << "Error in 'casm super'. Only one of --transf_mat or --get_transf_mat may be chosen." << std::endl;
+            return ERR_INVALID_ARG;
+          }
+          if(configname.size() > 1 || scelname.size() > 1 || tmatfile.size() > 1) {
+            std::cerr << "ERROR: more than one --configname, --scelname, or --transf_mat argument "
+                      "is only allowed for option --duper" << std::endl;
+            return ERR_INVALID_ARG;
+          }
+          if(config_path.size() > 0) {
+            std::cerr << "ERROR: the --config option is only allowed with option --duper" << std::endl;
+            return ERR_INVALID_ARG;
           }
         }
-
-        /** --help option
-        */
-        if(vm.count("help")) {
-          std::cout << "\n";
-          std::cout << desc << std::endl;
-
-          std::cout << "DESCRIPTION" << std::endl;
-          std::cout << "                                                                      \n" <<
-                    "  casm super --transf_mat T                                           \n" <<
-                    "  - Print super lattice of the PRIM lattice                           \n" <<
-                    "                                                                      \n" <<
-                    "  casm super --structure POSCAR --transf_mat T                        \n" <<
-                    "  - Print superstructure of a POSCAR                                  \n" <<
-                    "                                                                      \n" <<
-                    "  casm super --configname configname --transf_mat T                   \n" <<
-                    "  - Print superstructure of a configuration                           \n" <<
-                    "                                                                      \n" <<
-                    "  casm super --structure POSCAR --unitcell scelname --get_transf_mat  \n" <<
-                    "  - Check if POSCAR lattice is a supercell of unit cell lattice and   \n" <<
-                    "    if so print the transformation matrix                             \n" <<
-                    "  - Uses primitive cell for unitcell if none given                    \n" <<
-                    "                                                                      \n" <<
-                    "  casm super --scelname scelname --unitcell scelname --get_transf_mat\n" <<
-                    "  - Check if configuration lattice is a supercell of unit cell lattice.\n" <<
-                    "    and print the transformation matrix                               \n" <<
-                    "  - Uses primitive cell for unitcell if none given                    \n\n" <<
-
-                    "  casm super --duper --scelname scel1 [scel2 ...] --configname con1 [con2 ...]\n"
-                    "    --config [mylist ...] --transf_mat M1 [M2 ...]                    \n" <<
-                    "  - Makes the superdupercell of the lattices of all inputs            \n" <<
-                    "  - Using '--config' with no arguments is equivalent to '--config MASTER',\n" <<
-                    "    which uses the master config list                                 \n" <<
-                    "  - Default applies prim point group ops to try to find minimum volume\n" <<
-                    "    superdupercell, disable with '--fixed-orientation'                \n\n";
-
-          return 0;
-        }
-
-        po::notify(vm); // throws on error, so do after help in case
-        // there are any problems
-
       }
-      catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
-        return 1;
+
+      /** --help option
+      */
+      if(vm.count("help")) {
+        std::cout << "\n";
+        std::cout << super_opt.desc() << std::endl;
+
+        std::cout << "DESCRIPTION" << std::endl;
+        std::cout << "                                                                      \n" <<
+                  "  casm super --transf_mat T                                           \n" <<
+                  "  - Print super lattice of the PRIM lattice                           \n" <<
+                  "                                                                      \n" <<
+                  "  casm super --structure POSCAR --transf_mat T                        \n" <<
+                  "  - Print superstructure of a POSCAR                                  \n" <<
+                  "                                                                      \n" <<
+                  "  casm super --configname configname --transf_mat T                   \n" <<
+                  "  - Print superstructure of a configuration                           \n" <<
+                  "                                                                      \n" <<
+                  "  casm super --structure POSCAR --unitcell scelname --get_transf_mat  \n" <<
+                  "  - Check if POSCAR lattice is a supercell of unit cell lattice and   \n" <<
+                  "    if so print the transformation matrix                             \n" <<
+                  "  - Uses primitive cell for unitcell if none given                    \n" <<
+                  "                                                                      \n" <<
+                  "  casm super --scelname scelname --unitcell scelname --get_transf_mat\n" <<
+                  "  - Check if configuration lattice is a supercell of unit cell lattice.\n" <<
+                  "    and print the transformation matrix                               \n" <<
+                  "  - Uses primitive cell for unitcell if none given                    \n\n" <<
+
+                  "  casm super --duper --scelname scel1 [scel2 ...] --configname con1 [con2 ...]\n"
+                  "    --config [mylist ...] --transf_mat M1 [M2 ...]                    \n" <<
+                  "  - Makes the superdupercell of the lattices of all inputs            \n" <<
+                  "  - Using '--config' with no arguments is equivalent to '--config MASTER',\n" <<
+                  "    which uses the master config list                                 \n" <<
+                  "  - Default applies prim point group ops to try to find minimum volume\n" <<
+                  "    superdupercell, disable with '--fixed-orientation'                \n\n";
+
+        return 0;
       }
+
+      po::notify(vm); // throws on error, so do after help in case
+      // there are any problems
+
+    }
+    catch(po::error &e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      std::cerr << super_opt.desc() << std::endl;
+      return 1;
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "
