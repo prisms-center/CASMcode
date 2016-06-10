@@ -443,7 +443,7 @@ namespace CASM {
     //*****************************************************************************************************//
 
     /**
-     * Options set for `casm format`. Get your input files here.
+     * Options set for `casm import`. Add new structures to your project here.
      */
 
     class ImportOption : public OptionHandlerBase {
@@ -472,6 +472,24 @@ namespace CASM {
       std::vector<fs::path> m_pos_vec;
 
       fs::path m_batch_path;
+
+    };
+
+    //*****************************************************************************************************//
+
+    /**
+     * Options set for `casm format`. Get your input files here.
+     */
+
+    class InitOption : public OptionHandlerBase {
+
+    public:
+
+      InitOption();
+
+    private:
+
+      void initialize() override;
 
     };
 

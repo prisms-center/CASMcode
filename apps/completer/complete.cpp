@@ -38,6 +38,9 @@ namespace CASM {
       ImportOption dumbimport;
       casm_engine.push_back(Option(dumbimport.tag(), dumbimport.desc()));
 
+      InitOption dumbinit;
+      casm_engine.push_back(Option(dumbinit.tag(), dumbinit.desc()));
+
       return casm_engine;
     }
   }
