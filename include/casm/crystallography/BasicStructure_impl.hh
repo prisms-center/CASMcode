@@ -174,7 +174,7 @@ namespace CASM {
       }
     } //End loop over point_group operations
     factor_group.enforce_group(map_tol);
-    factor_group.sort_by_class();
+    factor_group.sort();
     factor_group.max_error();
 
     //std::cout << "finish generate_factor_group_slow() " << this << std::endl;

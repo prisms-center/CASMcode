@@ -1,3 +1,6 @@
+#ifndef CASM_FileEnumerator
+#define CASM_FileEnumerator
+
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigIterator.hh"
 
@@ -327,3 +330,5 @@ namespace CASM {
   }
 
 }
+
+#endif

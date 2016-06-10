@@ -129,6 +129,7 @@ libcasm_la_SOURCES = ./src/casm/CASM_global_definitions.cc\
 					 ./src/casm/symmetry/SymOp.cc\
 					 ./src/casm/symmetry/SymOpRepresentation.cc\
 					 ./src/casm/symmetry/SymPermutation.cc\
+					 ./src/casm/symmetry/SymInfo.cc\
 					 ./src/casm/system/Popen.cc\
 					 ./src/casm/system/RuntimeLibrary.cc\
 					 ./src/casm/version/autoversion.cc

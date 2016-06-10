@@ -8,6 +8,7 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
+#include "casm/symmetry/SymInfo.hh"
 
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/casm_io/json_io/global.hh"
@@ -391,14 +392,7 @@ namespace CASM {
   //*******************************************************************************************
 
   void MasterSymGroup::sort() {
-    // Assume that sorting a mastersymgroup always means sorting by class
-    sort_by_class();
-  }
-
-  //*******************************************************************************************
-
-  void MasterSymGroup::sort_by_class() {
-    SymGroup::sort_by_class();
+    SymGroup::sort();
     m_point_group.clear();
     bool broken_check(false);
     Array<Index> perm_array(size(), 0);
@@ -516,14 +510,14 @@ namespace CASM {
     Array<SymOp> E, TF, THF, FF, SF;
     Array<SymOp> I, ITF, ITHF, IFF, ISF;
     for(Index i = 0; i < size(); i++) {
-      auto info = at(i).info();
-      if(info.op_type == SymOp::identity_op) {
+      SymInfo info(at(i), lattice());
+      if(info.op_type == symmetry_type::identity_op) {
         E.push_back(at(i));
       }
-      if(info.op_type == SymOp::inversion_op) {
+      if(info.op_type == symmetry_type::inversion_op) {
         I.push_back(at(i));
       }
-      if(info.op_type == SymOp::rotation_op) {
+      if(info.op_type == symmetry_type::rotation_op) {
         if(std::abs(180 - info.angle) < TOL) {
           TF.push_back(at(i));
         }
@@ -538,8 +532,8 @@ namespace CASM {
         }
         else continue;
       }
-      if(info.op_type == SymOp::rotoinversion_op || info.op_type == SymOp::mirror_op) {
-        if(info.op_type == SymOp::mirror_op) {
+      if(info.op_type == symmetry_type::rotoinversion_op || info.op_type == symmetry_type::mirror_op) {
+        if(info.op_type == symmetry_type::mirror_op) {
           ITF.push_back(at(i));
         }
         else if(std::abs(120 - info.angle) < TOL) {
@@ -930,6 +924,11 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+  SymInfo SymGroup::info(Index i) const {
+    return SymInfo(at(i), lattice());
+  }
+
+  //*******************************************************************************************
 
   double SymGroup::max_error() {
 
@@ -938,7 +937,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  const Lattice &SymGroup::_lattice() const {
+  const Lattice &SymGroup::lattice() const {
     assert(m_lat_ptr && "Attempting to access Lattice of a SymGroup, but it has not been initialized!");
     return *m_lat_ptr;
   }
@@ -1329,13 +1328,13 @@ namespace CASM {
     class_names[0] = "E";
     to_name--;
 
-    std::vector<SymOp::SymInfo> info;
+    std::vector<SymInfo> info;
     for(Index i = 0; i < size(); i++)
-      info.push_back(at(i).info());
+      info.push_back(SymInfo(at(i), lattice()));
 
     //If the SymGroup includes an inversion operation, name it "i"
     //We can just use back() here because inversion is always last
-    if(info.back().op_type == SymOp::inversion_op) {
+    if(info.back().op_type == symmetry_type::inversion_op) {
       class_names[class_names.size() - 1] = "i";
       to_name--;
     }
@@ -1360,12 +1359,12 @@ namespace CASM {
     mult.clear();
 
     for(Index i = 0; i < size(); i++) {
-      if((info[i].op_type == SymOp::rotation_op) || (info[i].op_type == SymOp::screw_op)) {
-        if(highsym_axes.contains(info[i].axis)) { //Otherwise, check if the axis has been found;
-          mult[highsym_axes.find(info[i].axis)]++;
+      if((info[i].op_type == symmetry_type::rotation_op) || (info[i].op_type == symmetry_type::screw_op)) {
+        if(highsym_axes.contains(info[i].axis.cart())) { //Otherwise, check if the axis has been found;
+          mult[highsym_axes.find(info[i].axis.cart())]++;
         }
         else {
-          highsym_axes.push_back(info[i].axis);
+          highsym_axes.push_back(info[i].axis.cart());
           mult.push_back(1);
         }
       }
@@ -1377,7 +1376,7 @@ namespace CASM {
     for(Index i = 0; i < size(); i++) {
       if((info[i].angle < hangle) && (info[i].angle > TOL)) {
         hangle = info[i].angle;
-        hs_axis = info[i].axis;
+        hs_axis = info[i].axis.cart();
       }
     }
 
@@ -1421,8 +1420,8 @@ namespace CASM {
       if(!class_names[ind].size()) { //Check to see if this has already been named
         bool normal = false;
         for(Index j = 0; j < highsym_axes.size() && !normal; j++) {
-          dprod = highsym_axes[j].dot(info[i].axis);
-          xprodvec = highsym_axes[j].cross(info[i].axis);
+          dprod = highsym_axes[j].dot(info[i].axis.const_cart());
+          xprodvec = highsym_axes[j].cross(info[i].axis.const_cart());
           if(almost_zero(xprodvec.norm())) {
             normal = true;
           }
@@ -1430,7 +1429,7 @@ namespace CASM {
 
         if(almost_zero(xprodvec.norm())) { //Check if the cross product with principal axis is zero
           if((info[i].angle < 200) && (info[i].angle > 1)) { //Only bother with angles that 360 is divisible by
-            if((info[i].op_type == SymOp::rotation_op) || (info[i].op_type == SymOp::screw_op)) {
+            if((info[i].op_type == symmetry_type::rotation_op) || (info[i].op_type == symmetry_type::screw_op)) {
               angle = info[i].angle;
               symtype = "C";
               s << conjugacy_classes[ind].size() << symtype << int(360 / angle);
@@ -1438,7 +1437,7 @@ namespace CASM {
               to_name--;
               //std::cout << "  rotation\t==> " << s.str() << std::endl;
             }
-            else if(info[i].op_type == SymOp::rotoinversion_op) {
+            else if(info[i].op_type == symmetry_type::rotoinversion_op) {
               angle = info[i].angle;
               symtype = "S";
               s << conjugacy_classes[ind].size() << symtype << int(360 / angle);
@@ -1447,7 +1446,7 @@ namespace CASM {
               //std::cout << "  rotoinversion\t==> " << s.str() << std::endl;
             }
           }
-          else if((info[i].op_type == SymOp::mirror_op) || (info[i].op_type == SymOp::glide_op)) {
+          else if((info[i].op_type == symmetry_type::mirror_op) || (info[i].op_type == symmetry_type::glide_op)) {
             symtype = "h";
             s << conjugacy_classes[ind].size() << symtype;
             class_names[ind] = s.str();
@@ -1457,7 +1456,7 @@ namespace CASM {
         }
         else {
           if((info[i].angle < 200) && (info[i].angle > 1)) {
-            if((info[i].op_type == SymOp::rotation_op) || (info[i].op_type == SymOp::screw_op)) {
+            if((info[i].op_type == symmetry_type::rotation_op) || (info[i].op_type == symmetry_type::screw_op)) {
               angle = info[i].angle;
               symtype = "C";
               s << conjugacy_classes[ind].size() << symtype << int(360 / angle) << cprime;
@@ -1466,7 +1465,7 @@ namespace CASM {
               //std::cout << "  rotation\t==> " << s.str() << std::endl;
               cprime = "''";
             }
-            else if(info[i].op_type == SymOp::rotoinversion_op) {
+            else if(info[i].op_type == symmetry_type::rotoinversion_op) {
               angle = info[i].angle;
               symtype = "S";
               s << conjugacy_classes[ind].size() << symtype << int(360 / angle) << sprime;
@@ -1476,7 +1475,7 @@ namespace CASM {
               sprime = "''";
             }
           }
-          else if((info[i].op_type == SymOp::mirror_op) || (info[i].op_type == SymOp::glide_op)) {
+          else if((info[i].op_type == symmetry_type::mirror_op) || (info[i].op_type == symmetry_type::glide_op)) {
             if(almost_zero(dprod)) {
               symtype = "v";
               s << conjugacy_classes[ind].size() << symtype  << vprime;
@@ -1507,25 +1506,25 @@ namespace CASM {
 
     if(name == "D2h") {
       for(Index i = 0; i < conjugacy_classes.size(); i++) {
-        if(info[conjugacy_classes[i][0]].op_type == SymOp::rotation_op) {
-          if(almost_zero(info[conjugacy_classes[i][0]].axis - Eigen::Vector3d::UnitX())) {
+        if(info[conjugacy_classes[i][0]].op_type == symmetry_type::rotation_op) {
+          if(almost_zero(info[conjugacy_classes[i][0]].axis.const_cart() - Eigen::Vector3d::UnitX())) {
             class_names[i].append("(x)");
           }
-          else if(almost_zero(info[conjugacy_classes[i][0]].axis -  Eigen::Vector3d::UnitY())) {
+          else if(almost_zero(info[conjugacy_classes[i][0]].axis.const_cart() -  Eigen::Vector3d::UnitY())) {
             class_names[i].append("(y)");
           }
-          else if(almost_zero(info[conjugacy_classes[i][0]].axis -  Eigen::Vector3d::UnitY())) {
+          else if(almost_zero(info[conjugacy_classes[i][0]].axis.const_cart() -  Eigen::Vector3d::UnitY())) {
             class_names[i].append("(z)");
           }
         }
-        else if(info[conjugacy_classes[i][0]].op_type == SymOp::mirror_op) {
-          if(almost_zero(info[conjugacy_classes[i][0]].axis -  Eigen::Vector3d::UnitX())) {
+        else if(info[conjugacy_classes[i][0]].op_type == symmetry_type::mirror_op) {
+          if(almost_zero(info[conjugacy_classes[i][0]].axis.const_cart() -  Eigen::Vector3d::UnitX())) {
             class_names[i].append("(yz)");
           }
-          else if(almost_zero(info[conjugacy_classes[i][0]].axis -  Eigen::Vector3d::UnitY())) {
+          else if(almost_zero(info[conjugacy_classes[i][0]].axis.const_cart() -  Eigen::Vector3d::UnitY())) {
             class_names[i].append("(xz)");
           }
-          else if(almost_zero(info[conjugacy_classes[i][0]].axis -  Eigen::Vector3d::UnitZ())) {
+          else if(almost_zero(info[conjugacy_classes[i][0]].axis.const_cart() -  Eigen::Vector3d::UnitZ())) {
             class_names[i].append("(xy)");
           }
         }
@@ -1897,9 +1896,9 @@ namespace CASM {
     SymGroup subgroup;
     subgroup.m_lat_ptr = m_lat_ptr;
 
-    std::vector<SymOp::SymInfo> info;
+    std::vector<SymInfo> info;
     for(Index i = 0; i < size(); i++)
-      info.push_back(at(i).info());
+      info.push_back(SymInfo(at(i), lattice()));
 
     if(!size() || get_multi_table().size() != size() || !valid_index(get_multi_table()[0][0])) {
       std::cerr << "WARNING: This is not a group!!!\n";
@@ -2083,10 +2082,10 @@ namespace CASM {
       bool mir = false;
 
       for(Index i = 0; i < size(); i++) {
-        if(info[i].op_type == SymOp::inversion_op) {
+        if(info[i].op_type == symmetry_type::inversion_op) {
           inv = true;
         }
-        else if(info[i].op_type == SymOp::mirror_op || info[i].op_type == SymOp::glide_op) {
+        else if(info[i].op_type == symmetry_type::mirror_op || info[i].op_type == symmetry_type::glide_op) {
           mir = true;
         }
       }
@@ -2163,10 +2162,10 @@ namespace CASM {
       //We need to find sigma_h in our group so we can use it to hit stuff
 
       for(Index i = 0; i < size(); i++) {
-        if(info[i].op_type == SymOp::inversion_op) {
+        if(info[i].op_type == symmetry_type::inversion_op) {
           inversion = true;
         }
-        else if((info[i].op_type == SymOp::mirror_op) || (info[i].op_type == SymOp::glide_op)) {
+        else if((info[i].op_type == symmetry_type::mirror_op) || (info[i].op_type == symmetry_type::glide_op)) {
           //if(conjugacy_classes[conjugacy_corr_table[0][i]].size() == 1) {
           if(conjugacy_classes[index2conjugacy_class[i]].size() == 1) {
             sigma_h_ind = i;
@@ -2279,7 +2278,7 @@ namespace CASM {
       else if(nc == 4) {
         bool inv = false;
         for(Index g = 0; g < size() && !inv; g++) {
-          if(info[g].op_type == SymOp::rotoinversion_op) {
+          if(info[g].op_type == symmetry_type::rotoinversion_op) {
             inv = true;
           }
         }
@@ -2487,7 +2486,7 @@ namespace CASM {
         int mircount = 0;
 
         for(Index i = 0; i < size(); i++) {
-          if(info[i].op_type == SymOp::mirror_op || info[i].op_type == SymOp::glide_op) {
+          if(info[i].op_type == symmetry_type::mirror_op || info[i].op_type == symmetry_type::glide_op) {
             mir = true;
             mircount++;
           }
@@ -2604,7 +2603,7 @@ namespace CASM {
 
         bool mir = false;
         for(Index i = 0; i < size(); i++) {
-          if(info[i].op_type == SymOp::mirror_op || info[i].op_type == SymOp::glide_op) {
+          if(info[i].op_type == symmetry_type::mirror_op || info[i].op_type == symmetry_type::glide_op) {
             mir = true;
           }
         }
@@ -2657,7 +2656,7 @@ namespace CASM {
       bool sigma_d = false;
 
       for(Index i = 0; i < size(); i++) {
-        if((info[i].op_type == SymOp::mirror_op) || (info[i].op_type == SymOp::glide_op)) {
+        if((info[i].op_type == symmetry_type::mirror_op) || (info[i].op_type == symmetry_type::glide_op)) {
           sigma_d = true;
         }
       }
@@ -3019,6 +3018,7 @@ namespace CASM {
         }
         //std::cout << "\n";
       }
+      std::sort(conjugacy_classes.back().begin(), conjugacy_classes.back().end());
     }
 
     index2conjugacy_class.resize(size(), 0);
@@ -3310,7 +3310,7 @@ namespace CASM {
 
   Index SymGroup::find_periodic(const SymOp &test_op, double tol) const {
     for(Index i = 0; i < size(); i++) {
-      if(compare_periodic(at(i), test_op, _lattice(), periodicity(), tol)) {
+      if(compare_periodic(at(i), test_op, lattice(), periodicity(), tol)) {
         return i;
       }
     }
@@ -3365,7 +3365,7 @@ namespace CASM {
           SymOp tOp(A_op * B_op);
 
           if(!contains_periodic(tOp, tol)) {
-            push_back(within_cell(tOp, _lattice(), periodicity()));
+            push_back(within_cell(tOp, lattice(), periodicity()));
             new_ops = true;
             //	  std::cout << "Pushing back a SymOp due to multiplication fail.\n";
           }
@@ -3373,7 +3373,7 @@ namespace CASM {
 
         SymOp tOp(A_op.inverse());
         if(!contains_periodic(tOp, tol)) {
-          push_back(within_cell(tOp, _lattice(), periodicity()));
+          push_back(within_cell(tOp, lattice(), periodicity()));
           new_ops = true;
           //std::cout << "Pushing back a SymOp due to inverse fail.\n";
         }
@@ -3422,9 +3422,9 @@ namespace CASM {
     out << size() << " # " << COORD_MODE::NAME(mode) << " representation of group containing " << size() << " elements:\n\n";
     Eigen::Matrix3d c2f_mat(Eigen::Matrix3d::Identity());
     if(mode == FRAC)
-      c2f_mat = _lattice().inv_lat_column_mat();
+      c2f_mat = lattice().inv_lat_column_mat();
     for(Index i = 0; i < size(); i++) {
-      out << i << "  ";
+      out << i << "  " << description(at(i), lattice(), mode) << "\n";
       at(i).print(out, c2f_mat);
       out << std::endl;
     }
@@ -3441,14 +3441,14 @@ namespace CASM {
     Coordinate trans(Eigen::Vector3d::Zero(), _cell, FRAC);
     space_group_cell.clear();
 
-    std::vector<SymOp::SymInfo> sg_info;
+    std::vector<SymInfo> sg_info;
     for(Index i = 0; i < size(); i++) {
       EigenCounter<Eigen::Vector3i> lat_comb(-max_trans, max_trans, Eigen::Vector3i::Ones());
       do {
         trans.frac() = lat_comb().cast<double>();
         SymOp new_sym(SymOp::translation(trans.cart())*at(i));
-        auto info = new_sym.info();
-        trans.cart() = info.location;
+        SymInfo info(new_sym, lattice());
+        trans = info.location;
         if(!trans.is_within()) {
           continue;
         }
@@ -3457,7 +3457,7 @@ namespace CASM {
         bool new_location = true;
         for(Index j = 0; j < space_group_cell.size(); j++) {
 
-          if(almost_equal(new_sym.matrix(), space_group_cell[j].matrix()) && almost_equal(info.location, sg_info[j].location)) {
+          if(almost_equal(new_sym.matrix(), space_group_cell[j].matrix()) && almost_equal(info.location.const_cart(), sg_info[j].location.const_cart())) {
             new_location = false;
             break;
 
@@ -3511,8 +3511,9 @@ namespace CASM {
 
     bool new_op = true;
     stream << "Locations for symmetry operations\n";
-    SymOp::SymInfo info = at(0).info(), next_info;
-    Eigen::Matrix3d c2f_mat = _lattice().inv_lat_column_mat();
+    SymInfo info(at(0), lattice());
+    SymInfo next_info(info);
+    Eigen::Matrix3d c2f_mat = lattice().inv_lat_column_mat();
     for(Index i = 0; i < size(); i++) {
       if(new_op) {
         at(i).print(stream, c2f_mat);
@@ -3524,14 +3525,14 @@ namespace CASM {
         stream << "Location:" << std::endl;
         stream << "FRAC\t\t\t\t\tCART" << std::endl;
       }
-      stream << c2f_mat *info.location;
+      stream << info.location.const_frac();
       stream << "\t\t\t";
-      stream << info.location;
+      stream << info.location.const_cart();
       stream << std::endl;
 
       if(i + 1 < size()) {
-        next_info = at(i + 1).info();
-        if(info.op_type == next_info.op_type && almost_equal(info.axis, next_info.axis)) {
+        next_info = SymInfo(at(i + 1), lattice());
+        if(info.op_type == next_info.op_type && almost_equal(info.axis.const_cart(), next_info.axis.const_cart())) {
           //Is this enough to know if it's a new symmetry or not?
           new_op = false;
         }
@@ -3547,83 +3548,115 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  //Sorts SymOp array by trace, with largest trace first.
-  //Identity will be first, inversion is last, if it is in the group.
-  //Rotations are sorted by angle magnitude, where angle is between -Pi and +Pi
-  //Mirror operations appear together
+  /// \brief Sort SymOp in the SymGroup
+  ///
+  /// - If multiplication table can be generated:
+  ///   - Generate conjugacy classes
+  ///   - Sort SymOp in each conjugacy class
+  ///   - Sort each conjugacy class by the first SymOp in the class
+  /// - Else:
+  ///   - Sort all SymOp
+  ///
+  /// SymOp are sorted by lexicographical comparison of: (-det, -trace, angle, axis, tau)
+  /// - angle is positive
+  /// - axis[0] is positive
+  ///
   void SymGroup::sort() {
-    if(!size())
-      return;
-    SymOp t_op(at(0));
-    for(Index i = 0; i < size(); i++) {
-      for(Index j = i + 1; j < size(); j++) {
 
-        // added by Donghee - always non-translation symmetry showed up first;
-        if(almost_zero(at(j).tau())) {
-          t_op = at(j);
-          at(j) = at(i);
-          at(i) = t_op;
-        }
-        if((at(j).matrix().determinant() - at(i).matrix().determinant()) > TOL) {
-          t_op = at(j);
-          at(j) = at(i);
-          at(i) = t_op;
-          continue;
-        }
+    // floating point comparison tolerance
+    double tol = TOL;
 
-        if(std::abs(at(j).matrix().determinant() - at(i).matrix().determinant()) < TOL
-           && (at(j).matrix().trace() - at(i).matrix().trace()) > TOL) {
-          t_op = at(j);
-          at(j) = at(i);
-          at(i) = t_op;
-        }
+    COORD_TYPE print_mode = CART;
+
+    // compare on vector of '-det', '-trace', 'angle', 'axis', 'tau'
+    typedef Eigen::Matrix<double, 9, 1> key_type;
+    auto make_key = [](const SymOp & op, const Lattice & lat) {
+
+      key_type vec;
+      int offset = 0;
+
+      SymInfo info(op, lat);
+
+      vec[offset] = -op.matrix().determinant();
+      offset++;
+
+      vec[offset] = -op.matrix().trace();
+      offset++;
+
+      vec[offset] = info.angle;
+      offset++;
+
+      vec.segment<3>(offset) = info.axis.const_frac();
+      offset += 3;
+
+      vec.segment<3>(offset) =  Coordinate(op.tau(), lat, CART).const_frac();
+      offset += 3;
+
+      return vec;
+    };
+
+    // define symop compare function
+    auto op_compare = [tol](const key_type & A, const key_type & B) {
+      return float_lexicographical_compare(A, B, tol);
+    };
+
+    typedef std::map<key_type, SymOp, std::reference_wrapper<decltype(op_compare)> > map_type;
+
+    // sort conjugacy class using the first symop in the sorted class
+    auto cclass_compare = [tol](const map_type & A, const map_type & B) {
+      return float_lexicographical_compare(A.begin()->first, B.begin()->first, tol);
+    };
+
+    // sort elements in each conjugracy class (or just put all elements in the first map)
+    std::vector<map_type> sorter;
+
+    // first put identity in position 0
+    for(int i = 0; i < size(); ++i) {
+      if(at(i).is_identity()) {
+        std::swap(at(0), at(i));
+        break;
       }
     }
+
+    // if sorting by congujacy classes
+    if(get_multi_table().size() == size()) {
+
+      // get conjugacy classes
+      get_conjugacy_classes().size();
+
+      // insert elements into each conjugacy class to sort the class
+      for(int i = 0; i < conjugacy_classes.size(); ++i) {
+        sorter.push_back(map_type(op_compare));
+        auto &cclass = sorter.back();
+
+        for(int j = 0; j < conjugacy_classes[i].size(); ++j) {
+          const SymOp &op = at(conjugacy_classes[i][j]);
+          cclass.insert(std::make_pair(make_key(op, lattice()), op));
+        }
+      }
+
+      // sort conjugacy class using the first symop in the sorted class
+      std::sort(sorter.begin(), sorter.end(), cclass_compare);
+
+    }
+    else {
+      // else just sort element
+      sorter.push_back(map_type(op_compare));
+      for(auto it = begin(); it != end(); ++it) {
+        sorter.back().insert(std::make_pair(make_key(*it, lattice()), *it));
+      }
+    }
+
+    // copy symop back into group
+    int j = 0;
+    for(int i = 0; i < sorter.size(); ++i) {
+      for(auto it = sorter[i].begin(); it != sorter[i].end(); ++it) {
+        at(j) = it->second;
+        ++j;
+      }
+    }
+
     clear_tables();
-    return;
-  }
-
-  //*******************************************************************************************
-
-  void SymGroup::sort_by_class() {
-    if(!size()) {
-      return;
-    }
-
-    SymGroup::sort();
-
-    if(get_multi_table().size() != size()) {
-      return;
-    }
-
-    _generate_conjugacy_classes();
-
-    SymOp t_op(at(0));
-    Array<int> tarray;
-    int tind;
-
-    for(Index i = 0; i < conjugacy_classes.size(); i++) {
-      for(Index j = 0; j < conjugacy_classes[i].size(); j++) {
-        tarray.push_back(conjugacy_classes[i][j]);
-      }
-    }
-
-    for(Index i = 0; i < tarray.size(); i++) {
-      for(Index j = i + 1; j < tarray.size(); j++) {
-        if(tarray[j] < tarray[i]) {
-          t_op = at(j);
-          at(j) = at(i);
-          at(i) = t_op;
-          tind = tarray[j];
-          tarray[j] = tarray[i];
-          tarray[i] = tind;
-        }
-      }
-    }
-
-    clear_tables();
-
-    return;
   }
 
   //*******************************************************************************************
@@ -3698,6 +3731,12 @@ namespace CASM {
     json.put_obj();
 
     json["symop"].put<Array<SymOp> >(*this);
+
+    for(int i = 0; i < json["symop"].size(); ++i) {
+      SymInfo info(at(i), lattice());
+      auto &j = json["symop"][i];
+      add_sym_info(info, j);
+    }
 
     // PERIODICITY_TYPE group_periodicity;
     json["group_periodicity"] = periodicity();
