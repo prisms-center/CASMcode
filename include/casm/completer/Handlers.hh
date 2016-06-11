@@ -672,6 +672,32 @@ namespace CASM {
 
     };
 
+    /**
+     * Options set for `casm update`. Get your project up to date here.
+     */
+
+    class UpdateOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::coordtype_enum;
+
+      UpdateOption();
+
+      double vol_tolerance() const;
+
+      double lattice_weight() const;
+
+    private:
+
+      void initialize() override;
+
+      double m_vol_tolerance;
+
+      double m_lattice_weight;  //TODO: Push to base? Other commands use this
+
+    };
+
     //*****************************************************************************************************//
 
   }

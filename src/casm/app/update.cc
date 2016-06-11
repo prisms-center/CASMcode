@@ -3,6 +3,8 @@
 #include "casm/CASM_classes.hh"
 #include "casm/app/casm_functions.hh"
 
+#include "casm/completer/Handlers.hh"
+
 namespace CASM {
   namespace Update_impl {
     // record some pieces of data from each import.  These are used to resolve conflicts at the end
@@ -11,6 +13,31 @@ namespace CASM {
     using Data = std::tuple<jsonParser, bool, bool>;
   }
 
+  namespace Completer {
+    UpdateOption::UpdateOption(): OptionHandlerBase("update") {}
+
+    double UpdateOption::lattice_weight() const {
+      return m_lattice_weight;
+    }
+
+    double UpdateOption::vol_tolerance() const {
+      return m_vol_tolerance;
+    }
+
+    void UpdateOption::initialize() {
+      add_help_suboption();
+
+      m_desc.add_options()
+      ("cost-weight,w", po::value<double>(&m_lattice_weight)->default_value(0.5),
+       "Adjusts cost function for mapping optimization (cost=w*lattice_deformation+(1-w)*basis_deformation)")
+      ("max-vol-change", po::value<double>(&m_vol_tolerance)->default_value(0.25),
+       "Adjusts range of SCEL volumes searched while mapping imported structure onto ideal crystal (only necessary if the presence of vacancies makes the volume ambiguous). Default is +/- 25% of relaxed_vol/prim_vol. Smaller values yield faster import, larger values may yield more accurate mapping.")
+      ("force,f", "Force all configurations to update (otherwise, use timestamps to determine which configurations to update)")
+      ("strict,s", "Attempt to import exact configuration.");
+
+      return;
+    }
+  }
 
   // ///////////////////////////////////////
   // 'update' function for casm
@@ -19,30 +46,23 @@ namespace CASM {
   int update_command(const CommandArgs &args) {
 
     po::variables_map vm;
-    int choice;
-    std::string scellname;
-    int refid, configid;
     double tol(TOL);
-    double vol_tol(0.25);
-    double lattice_weight(0.5);
-    po::options_description desc("'casm update' usage");
-    desc.add_options()
-    ("help,h", "Write help documentation")
-    ("cost-weight,w", po::value<double>(&lattice_weight)->default_value(0.5),
-     "Adjusts cost function for mapping optimization (cost=w*lattice_deformation+(1-w)*basis_deformation)")
-    ("max-vol-change", po::value<double>(&vol_tol)->default_value(0.25),
-     "Adjusts range of SCEL volumes searched while mapping imported structure onto ideal crystal (only necessary if the presence of vacancies makes the volume ambiguous). Default is +/- 25% of relaxed_vol/prim_vol. Smaller values yield faster import, larger values may yield more accurate mapping.")
-    ("force,f", "Force all configurations to update (otherwise, use timestamps to determine which configurations to update)")
-    ("strict,s", "Attempt to import exact configuration.");
+    double vol_tol;
+    double lattice_weight;
+
+    Completer::UpdateOption update_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, desc), vm);
+      po::store(po::parse_command_line(args.argc, args.argv, update_opt.desc()), vm);
+      vol_tol = update_opt.vol_tolerance();
+      lattice_weight = update_opt.lattice_weight();
+
 
       /** --help option
        */
       if(vm.count("help")) {
         std::cout << std::endl;
-        std::cout << desc << std::endl;
+        std::cout << update_opt.desc() << std::endl;
         std::cout << "DESCRIPTION" << std::endl;
         std::cout << "    Updates all values and files after manual changes or configuration \n";
         std::cout << "    calculations.\n";
@@ -55,13 +75,13 @@ namespace CASM {
 
     }
     catch(po::error &e) {
-      std::cerr << desc << std::endl;
+      std::cerr << update_opt.desc() << std::endl;
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
       return 1;
     }
 
     catch(std::exception &e) {
-      std::cerr << desc << std::endl;
+      std::cerr << update_opt.desc() << std::endl;
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
       return 1;
     }

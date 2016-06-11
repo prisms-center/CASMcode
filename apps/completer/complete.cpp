@@ -59,6 +59,9 @@ namespace CASM {
       SymOption dumbsym;
       casm_engine.push_back(Option(dumbsym.tag(), dumbsym.desc()));
 
+      UpdateOption dumbupdate;
+      casm_engine.push_back(Option(dumbupdate.tag(), dumbupdate.desc()));
+
       return casm_engine;
     }
   }
