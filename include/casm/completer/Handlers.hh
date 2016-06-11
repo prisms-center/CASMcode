@@ -652,8 +652,23 @@ namespace CASM {
       Index m_min_vol;
 
       double m_tolerance;
+    };
 
+    /**
+     * Options set for `casm sym`. Get your point groups here.
+     */
 
+    class SymOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::coordtype_enum;
+
+      SymOption();
+
+    private:
+
+      void initialize() override;
 
     };
 
