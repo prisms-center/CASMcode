@@ -69,7 +69,7 @@ namespace CASM {
 
     std::cout << "Generating lattice point group. " << std::endl << std::endl;
     SymGroup prim_pg;
-    prim.lattice().generate_point_group(prim_pg, set.tol());
+    prim.lattice().generate_point_group(prim_pg, set.crystallography_tol());
     prim_pg.character_table();
 
 
@@ -78,7 +78,7 @@ namespace CASM {
 
     std::cout << "Generating factor group. " << std::endl << std::endl;
 
-    prim.generate_factor_group(set.tol());
+    prim.generate_factor_group(set.crystallography_tol());
     prim.set_site_internals();
 
     std::cout << "  Factor group size: " << prim.factor_group().size() << std::endl;

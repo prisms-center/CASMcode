@@ -71,6 +71,10 @@ namespace CASM {
   ///        return reference to existing or constructed PrimClex
   PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex);
 
+  /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
+  ///        return reference to existing or constructed PrimClex
+  PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex, Log &status_log);
+
   /// \brief Return a reference to proper std::ostream
   std::ostream &make_ostream_if(
     bool output,

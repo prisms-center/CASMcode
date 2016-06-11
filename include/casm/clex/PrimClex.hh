@@ -118,8 +118,12 @@ namespace CASM {
       return m_settings;
     }
 
-    double tol() const {
-      return settings().tol();
+    double crystallography_tol() const {
+      return settings().crystallography_tol();
+    }
+
+    double lin_alg_tol() const {
+      return settings().lin_alg_tol();
     }
 
     /// Return casm project directory path
@@ -275,8 +279,8 @@ namespace CASM {
     //Read the global Orbitree from a clust.json file
     void read_global_orbitree(const fs::path &fclust);
 
-    //Generate supercells of a certain volume and store them in the array of supercells
-    void generate_supercells(int volStart, int volEnd, bool verbose);
+    /// \brief Generate supercells of a certain volume and shape and store them in the array of supercells
+    void generate_supercells(int volStart, int volEnd, int dims, const Eigen::Matrix3i &G, bool verbose);
 
     //Enumerate configurations for all the supercells that are stored in 'supercell_list'
     void print_enum_info(std::ostream &stream);
@@ -367,7 +371,8 @@ namespace CASM {
                         SiteOrbitree &tree,
                         const PrimNeighborList &nlist,
                         std::string class_name,
-                        std::ostream &stream);
+                        std::ostream &stream,
+                        double xtal_tol);
 
 }
 #endif

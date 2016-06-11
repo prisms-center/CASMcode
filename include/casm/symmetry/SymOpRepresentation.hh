@@ -18,17 +18,6 @@ namespace CASM {
   ///\brief SymOpRepresentation is the base class for anything describes a symmetry operation
   class SymOpRepresentation {
   public:
-    enum symmetry_type {identity_op,
-                        mirror_op,
-                        glide_op,
-                        rotation_op,
-                        screw_op,
-                        inversion_op,
-                        rotoinversion_op,
-                        invalid_op
-                       };
-
-  public:
     SymOpRepresentation() : m_master_group(nullptr), m_op_index(-1) {}
 
     SymOpRepresentation(const MasterSymGroup &_master_group, SymGroupRepID _rep_ID, Index _op_index) :
@@ -133,9 +122,6 @@ namespace CASM {
   jsonParser &to_json(const SymOpRepresentation *rep, jsonParser &json);
   /// This allocates a new object to 'rep'.
   void from_json(SymOpRepresentation *rep, const jsonParser &json);
-
-  jsonParser &to_json(const SymOpRepresentation::symmetry_type &stype, jsonParser &json);
-  void from_json(SymOpRepresentation::symmetry_type &stype, const jsonParser &json);
 
 }
 #endif

@@ -158,7 +158,6 @@ namespace CASM {
 
     po::variables_map vm;
     std::string scelname, configname, set_str;
-    double lin_alg_tol = 1e-14;
 
     std::string species_order_string = "\n\n";
 
@@ -328,6 +327,7 @@ namespace CASM {
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    double lin_alg_tol = primclex.settings().lin_alg_tol();
 
     std::string calctype = primclex.settings().calctype();
     std::string ref = primclex.settings().ref();

@@ -174,7 +174,7 @@ namespace CASM {
 
       // -- write basis.json ----------------
       jsonParser basis_json;
-      write_basis(tree, prim, basis_json, TOL);
+      write_basis(tree, prim, basis_json, primclex.crystallography_tol());
       basis_json.write(dir.basis(set.bset()));
 
       std::cout << "Wrote: " << dir.basis(set.bset()) << "\n" << std::endl;
@@ -191,13 +191,13 @@ namespace CASM {
 
       // expand the nlist to contain 'tree'
       std::set<UnitCellCoord> nbors;
-      neighborhood(std::inserter(nbors, nbors.begin()), tree, prim, TOL);
+      neighborhood(std::inserter(nbors, nbors.begin()), tree, prim, primclex.crystallography_tol());
       nlist.expand(nbors.begin(), nbors.end());
 
       // write source code
       fs::ofstream outfile;
       outfile.open(dir.clexulator_src(set.name(), set.bset()));
-      print_clexulator(prim, tree, nlist, set.global_clexulator(), outfile);
+      print_clexulator(prim, tree, nlist, set.global_clexulator(), outfile, primclex.crystallography_tol());
       outfile.close();
 
       std::cout << "Wrote: " << dir.clexulator_src(set.name(), set.bset()) << "\n" << std::endl;

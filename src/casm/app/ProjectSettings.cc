@@ -103,7 +103,11 @@ namespace CASM {
 
         settings.get_if(m_view_command, "view_command");
         from_json(m_name, settings["name"]);
-        from_json(m_tol, settings["tol"]);
+
+        settings.get_else(m_crystallography_tol, "tol", TOL);
+        settings.get_if(m_crystallography_tol, "crystallography_tol");
+
+        settings.get_else(m_lin_alg_tol, "lin_alg_tol", 1e-10);
 
         // read nlist settings, or generate defaults
         Structure prim;
@@ -118,7 +122,7 @@ namespace CASM {
           from_json(m_nlist_weight_matrix, settings["nlist_weight_matrix"]);
         }
         else {
-          m_nlist_weight_matrix = _default_nlist_weight_matrix(prim, tol());
+          m_nlist_weight_matrix = _default_nlist_weight_matrix(prim, crystallography_tol());
         }
 
         if(settings.contains("nlist_sublat_indices")) {
@@ -231,11 +235,15 @@ namespace CASM {
     return m_view_command;
   }
 
-  /// \brief Get current project tol
-  double ProjectSettings::tol() const {
-    return m_tol;
+  /// \brief Get current project crystallography tolerance
+  double ProjectSettings::crystallography_tol() const {
+    return m_crystallography_tol;
   }
 
+  /// \brief Get current project linear algebra tolerance
+  double ProjectSettings::lin_alg_tol() const {
+    return m_lin_alg_tol;
+  }
 
   // ** Configuration properties **
 
@@ -451,12 +459,17 @@ namespace CASM {
     return true;
   }
 
-  /// \brief Set shared library options to 'opt'
-  bool ProjectSettings::set_tol(double _tol) {
-    m_tol = _tol;
+  /// \brief Set crystallography tolerance
+  bool ProjectSettings::set_crystallography_tol(double _tol) {
+    m_crystallography_tol = _tol;
     return true;
   }
 
+  /// \brief Set linear algebra tolerance
+  bool ProjectSettings::set_lin_alg_tol(double _tol) {
+    m_lin_alg_tol = _tol;
+    return true;
+  }
 
   /// \brief Save settings to file
   void ProjectSettings::commit() const {
@@ -468,7 +481,7 @@ namespace CASM {
       jsonParser json;
       to_json(*this, json);
 
-      json.print(file.ofstream());
+      json.print(file.ofstream(), 2, 18);
       file.close();
     }
     catch(...) {
@@ -510,7 +523,10 @@ namespace CASM {
       json["so_options"] = set.so_options();
     }
     json["view_command"] = set.view_command();
-    json["tol"] = set.tol();
+    json["crystallography_tol"] = set.crystallography_tol();
+    json["crystallography_tol"].set_scientific();
+    json["lin_alg_tol"] = set.lin_alg_tol();
+    json["lin_alg_tol"].set_scientific();
     json["query_alias"] = set.aliases();
 
     return json;

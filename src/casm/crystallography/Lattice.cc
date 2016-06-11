@@ -80,11 +80,13 @@ namespace CASM {
   double Lattice::angle(Index i) const {
     double t_a = m_lat_mat.col((i + 1) % 3).dot(m_lat_mat.col((i + 2) % 3)) / (length((i + 1) % 3) * length((i + 2) % 3));
     //Make sure that cos(angle) is between 0 and 1
-    if((t_a - 1.0) > 0.0)
+    if((t_a - 1.0) > 0.0) {
       t_a = 1.0;
+    }
 
-    if((t_a + 1.0) < 0.0)
+    if((t_a + 1.0) < 0.0) {
       t_a = -1.0;
+    }
 
     return (180.0 / M_PI) * acos(t_a);
   }
@@ -208,8 +210,9 @@ namespace CASM {
       tfrac_op = lat_column_mat().inverse() * super_group[ng].matrix() * lat_column_mat();
 
       //Use a soft tolerance of 1% to see if further screening should be performed
-      if(!almost_equal(1.0, std::abs(tfrac_op.determinant()), 0.01) || !is_integer(tfrac_op, 0.01))
+      if(!almost_equal(1.0, std::abs(tfrac_op.determinant()), 0.01) || !is_integer(tfrac_op, 0.01)) {
         continue;
+      }
 
       //make tfrac_op integer.
       for(int i = 0; i < 3; i++) {
@@ -233,8 +236,9 @@ namespace CASM {
       tMat = tMat * tMat.transpose();
 
       // The diagonal elements of tMat describe the square of the distance by which the transformed vectors 'miss' the original vectors
-      if(tMat(0, 0) < pg_tol * pg_tol && tMat(1, 1) < pg_tol * pg_tol && tMat(2, 2) < pg_tol * pg_tol)
+      if(tMat(0, 0) < pg_tol * pg_tol && tMat(1, 1) < pg_tol * pg_tol && tMat(2, 2) < pg_tol * pg_tol) {
         sub_group.push_back(super_group[ng]);
+      }
 
     }
 
@@ -264,7 +268,9 @@ namespace CASM {
     do {
 
       //continue if determinant is not 1, because it doesn't preserve volume
-      if(std::abs(pg_count().determinant()) != 1) continue;
+      if(std::abs(pg_count().determinant()) != 1) {
+        continue;
+      }
 
       tOp_cart = tlat_reduced.lat_column_mat() * pg_count().cast<double>() * tlat_reduced.inv_lat_column_mat();
 
@@ -299,7 +305,7 @@ namespace CASM {
 
     }
     //Sort point_group by trace/conjugacy class
-    point_group.sort_by_class();
+    point_group.sort();
 
     return;
   }
@@ -363,11 +369,15 @@ namespace CASM {
   /// The supercell that is inserted in the 'supercell' container is the niggli cell, rotated to a
   /// standard orientation (see standard_orientation function).
   ///
+  /// See PrimcClex::generate_supercells for information on dims and G.
+  ///
   void Lattice::generate_supercells(Array<Lattice> &supercell,
                                     const SymGroup &effective_pg,
+                                    int min_prim_vol,
                                     int max_prim_vol,
-                                    int min_prim_vol) const {
-    SupercellEnumerator<Lattice> enumerator(*this, effective_pg, min_prim_vol, max_prim_vol + 1);
+                                    int dims,
+                                    const Eigen::Matrix3i &G) const {
+    SupercellEnumerator<Lattice> enumerator(*this, effective_pg, min_prim_vol, max_prim_vol + 1, dims, G);
     supercell.clear();
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
       supercell.push_back(niggli(*it, effective_pg, TOL));
@@ -517,10 +527,12 @@ namespace CASM {
 
     for(Index nv = 0; nv < voronoi_table.size(); nv++) {
       tproj = pos.dot(voronoi_table[nv]);
-      if(almost_equal(tproj, 1.0))
+      if(almost_equal(tproj, 1.0)) {
         tnum++;
-      else if(tproj > 1.0)
+      }
+      else if(tproj > 1.0) {
         return -1;
+      }
     }
 
 
@@ -553,8 +565,9 @@ namespace CASM {
       //any two of the vectors forming that combination are obtuse
       for(i = 0; i < 3; i++) {
         if((combo_count[(i + 1) % 3] && combo_count[(i + 2) % 3])
-           && std::abs(90.0 * abs(combo_count[(i + 1) % 3] - combo_count[(i + 2) % 3]) - angle(i)) + TOL < 90)
+           && std::abs(90.0 * abs(combo_count[(i + 1) % 3] - combo_count[(i + 2) % 3]) - angle(i)) + TOL < 90) {
           break;
+        }
       }
 
       if(i == 3) {
@@ -991,8 +1004,9 @@ namespace CASM {
 
     Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tMat);
     tMat = Eigen::Matrix3d::Zero();
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < 3; i++) {
       tMat(i, i) = tSVD.singularValues()[i];
+    }
 
     tMat2 = tSVD.matrixU() * tMat * tSVD.matrixV().transpose();
 
@@ -1033,10 +1047,12 @@ namespace CASM {
   //***********************************************************
 
   bool Lattice::is_right_handed() const {
-    if(vol() < 0)
+    if(vol() < 0) {
       return false;
-    else
+    }
+    else {
       return true;
+    }
   }
 
   //********************************************************************
@@ -1416,23 +1432,26 @@ namespace CASM {
     for(int i = 0; i < point_grp.size(); i++) {
 
       tmp = point_grp[i].matrix() * start;
-      if(tmp.determinant() < 0.0)
+      if(tmp.determinant() < 0.0) {
         continue;
+      }
 
       bool better = false;
 
       bool tmp_sym1 = (almost_equal(tmp, tmp.transpose(), tol));
       if(is_sym1) {
-        if(!tmp_sym1)
+        if(!tmp_sym1) {
           continue;
+        }
 
         ptmp = tmp;
         ptmp.col(0).swap(ptmp.col(2));
         ptmp.row(0).swap(ptmp.row(2));
         bool tmp_sym2 = almost_equal(ptmp, tmp, tol);
         if(is_sym2) {
-          if(!tmp_sym2)
+          if(!tmp_sym2) {
             continue;
+          }
         }
         else if(tmp_sym2) {
           is_sym1 = tmp_sym1;

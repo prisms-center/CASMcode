@@ -123,6 +123,9 @@ namespace CASM {
     /// Force array printing as row
     using json_spirit::mValue::set_force_row;
 
+    /// Force printing double using scientific notation
+    using json_spirit::mValue::set_scientific;
+
     /// Remove trailing zeros for real (double) values
     using json_spirit::mValue::set_remove_trailing_zeros;
 
@@ -131,6 +134,9 @@ namespace CASM {
 
     /// Do not force array printing as row
     using json_spirit::mValue::unset_force_row;
+
+    /// Do not force printing double using scientific notation
+    using json_spirit::mValue::unset_scientific;
 
     /// Do not remove trailing zeros for real (double) values
     using json_spirit::mValue::unset_remove_trailing_zeros;

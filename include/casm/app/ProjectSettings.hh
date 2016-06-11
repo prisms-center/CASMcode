@@ -86,8 +86,11 @@ namespace CASM {
     /// \brief Get current command used by 'casm view'
     std::string view_command() const;
 
-    /// \brief Get current project tol
-    double tol() const;
+    /// \brief Get current project crystallography tolerance
+    double crystallography_tol() const;
+
+    /// \brief Get current project linear algebra tolerance
+    double lin_alg_tol() const;
 
 
     // ** Configuration properties **
@@ -183,8 +186,11 @@ namespace CASM {
     /// \brief Set command used by 'casm view'
     bool set_view_command(std::string opt);
 
-    /// \brief Set shared library options to 'opt'
-    bool set_tol(double _tol);
+    /// \brief Set crystallography tolerance
+    bool set_crystallography_tol(double _tol);
+
+    /// \brief Set linear algebra tolerance
+    bool set_lin_alg_tol(double _tol);
 
 
     /// \brief Save settings to project settings file
@@ -221,8 +227,11 @@ namespace CASM {
     // Command executed by 'casm view'
     std::string m_view_command;
 
-    // Default tolerance
-    double m_tol;
+    // Crystallography tolerance
+    double m_crystallography_tol;
+
+    // Linear algebra tolerance
+    double m_lin_alg_tol;
 
     // ConfigIO
     DataFormatterDictionary<Configuration> m_config_io_dict;
