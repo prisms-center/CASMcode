@@ -62,6 +62,9 @@ namespace CASM {
       UpdateOption dumbupdate;
       casm_engine.push_back(Option(dumbupdate.tag(), dumbupdate.desc()));
 
+      ViewOption dumbview;
+      casm_engine.push_back(Option(dumbview.tag(), dumbview.desc()));
+
       return casm_engine;
     }
   }

@@ -698,6 +698,25 @@ namespace CASM {
 
     };
 
+    /**
+     * Options set for `casm view`. See what your casm landscape looks like here.
+     */
+
+    class ViewOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::config_strs;
+      using OptionHandlerBase::selection_path;
+
+      ViewOption();
+
+    private:
+
+      void initialize() override;
+
+    };
+
     //*****************************************************************************************************//
 
   }
