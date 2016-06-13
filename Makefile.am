@@ -37,7 +37,8 @@ include $(srcdir)/src/ccasm/Makemodule.am
 
 #===========================================================#
 #Take care of all the include headers
-include $(srcdir)/include/casm/Makemodule.am
+#include $(srcdir)/include/casm/Makemodule.am
+include $(srcdir)/include/casm/external/Makemodule.am
 include $(srcdir)/include/ccasm/Makemodule.am
 
 #===========================================================#
@@ -70,13 +71,13 @@ test:
 
 #============================================================#
 #Files that arent sources for executalbes or headers that get installed, but are needed in the distribution.
+#Even though the include/casm/external is distributed through headers, the licensing and other files should
+#also be included.
 EXTRA_DIST=./build-aux/casm_version.txt\
 		   ./man/casm.1\
 		   ./python\
-		   ./tests/unit/Proj.hh\
-		   ./tests/unit/Common.hh\
-		   ./tests/unit/FCCTernaryProj.hh\
-		   ./tests/unit/ZrOProj.hh
+		   ./tests\
+		   ./include/casm/external
 
 #Extra files that should be cleaned up upon `distclean`
 DISTCLEANFILES=./python/Makefile

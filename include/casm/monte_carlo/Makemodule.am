@@ -1,0 +1,23 @@
+#fooincludedir=		directory to place in your --prefix include
+#fooinclude_HEADERS	what files to put in the directory you just specified
+#always give the full path, don't use things like $(srcdir)
+
+montecarloincludedir=$(includedir)/casm/monte_carlo
+montecarloinclude_HEADERS=./include/casm/monte_carlo/SiteExchanger.hh\
+						  ./include/casm/monte_carlo/DoFMod.hh\
+						  ./include/casm/monte_carlo/.MonteIO.hh.swp\
+						  ./include/casm/monte_carlo/MonteSampler.hh\
+						  ./include/casm/monte_carlo/MonteCounter.hh\
+						  ./include/casm/monte_carlo/MonteDriver.hh.orig\
+						  ./include/casm/monte_carlo/MonteIO.hh\
+						  ./include/casm/monte_carlo/MonteSettings.hh\
+						  ./include/casm/monte_carlo/MonteDefinitions.hh\
+						  ./include/casm/monte_carlo/MonteHelpers.hh.orig\
+						  ./include/casm/monte_carlo/MonteDriver.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalEvent.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh\
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonical.hh\
+						  ./include/casm/monte_carlo/MonteCarlo.hh\
+						  ./include/casm/monte_carlo/MCData.hh

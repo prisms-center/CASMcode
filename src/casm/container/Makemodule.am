@@ -1,0 +1,2 @@
+libcasm_la_SOURCES += ./src/casm/container/LinearAlgebra.cc\
+                      ./src/casm/container/Permutation.cc
