@@ -6,7 +6,6 @@
 
 /// What is being used to test it:
 
-#include "casm/CASM_classes.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "Common.hh"
 #include "FCCTernaryProj.hh"

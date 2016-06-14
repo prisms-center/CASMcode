@@ -1,6 +1,7 @@
 #include "casm/app/casm_functions.hh"
-#include "casm/CASM_classes.hh"
 #include "casm/casm_io/json_io/clex.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/app/AppIO.hh"
 
 namespace CASM {
 
@@ -133,7 +134,7 @@ namespace CASM {
     int choice;
     std::string scelname, configname, set_str;
     int refid, configid;
-    
+
     std::string species_order_string = "\n\n";
 
     const fs::path &root = args.root;

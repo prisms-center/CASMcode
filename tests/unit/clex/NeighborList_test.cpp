@@ -6,7 +6,6 @@
 
 /// What is being used to test it:
 
-#include "casm/CASM_classes.hh"
 #include "Common.hh"
 
 using namespace CASM;

@@ -7,7 +7,6 @@
 /// What is being used to test it:
 #include <boost/filesystem.hpp>
 
-#include "casm/CASM_classes.hh"
 #include "Common.hh"
 
 using namespace CASM;

@@ -107,7 +107,7 @@ namespace CASM {
     static const std::multimap<ENUM, std::vector<std::string> > strval; \
   \
   }; \
- 
+
 #define ENUM_IO(ENUM) \
   inline std::ostream &operator<<(std::ostream &sout, const ENUM& val) { \
     sout << to_string<ENUM>(val); \
@@ -128,7 +128,7 @@ namespace CASM {
   inline void from_json(ENUM& val, const jsonParser& json) { \
     val = from_string<ENUM>(json.get<std::string>()); \
   } \
- 
+
 
 }
 
