@@ -1,5 +1,6 @@
 #include "casm/app/casm_functions.hh"
-#include "casm/CASM_classes.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/DirectoryStructure.hh"
 
 #include "casm/completer/Handlers.hh"
 

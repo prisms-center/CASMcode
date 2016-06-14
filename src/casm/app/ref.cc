@@ -1,6 +1,7 @@
 #include "casm/app/casm_functions.hh"
-#include "casm/CASM_classes.hh"
 #include "casm/casm_io/json_io/clex.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/app/AppIO.hh"
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {
@@ -158,7 +159,6 @@ namespace CASM {
 
     po::variables_map vm;
     std::string scelname, configname, set_str;
-
     std::string species_order_string = "\n\n";
 
     const fs::path &root = args.root;

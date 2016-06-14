@@ -1,6 +1,6 @@
 #include <cstring>
 
-#include <casm/core>
+#include "casm/CASM_global_definitions.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/casm_functions.hh"

@@ -1005,7 +1005,7 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  Clexulator PrimClex::global_clexulator() const {
+  Clexulator PrimClex::global_clexulator(Log &status_log) const {
     if(!m_global_clexulator.initialized()) {
 
       if(!fs::exists(dir().clexulator_src(settings().name(), settings().bset()))) {
@@ -1016,6 +1016,7 @@ namespace CASM {
       m_global_clexulator = Clexulator(settings().global_clexulator(),
                                        dir().clexulator_dir(settings().bset()),
                                        nlist(),
+                                       status_log,
                                        settings().compile_options(),
                                        settings().so_options());
     }
@@ -1491,6 +1492,7 @@ namespace CASM {
     std::set<UnitCellCoord> nbors;
     neighborhood(std::inserter(nbors, nbors.begin()), tree, prim, TOL);
 
+    /*
     for(auto it = nbors.begin(); it != nbors.end(); ++it) {
       interface_imp_stream << indent << "  m_neighborhood.insert(UnitCellCoord("
                            << it->sublat() << ", "
@@ -1498,6 +1500,23 @@ namespace CASM {
                            << it->unitcell(1) << ", "
                            << it->unitcell(2) << "));\n";
     }
+    */
+
+    interface_imp_stream << indent << "  m_neighborhood = std::set<UnitCellCoord> {\n";
+    auto it = nbors.begin();
+    while(it != nbors.end()) {
+      interface_imp_stream << indent << "    {UnitCellCoord("
+                           << it->sublat() << ", "
+                           << it->unitcell(0) << ", "
+                           << it->unitcell(1) << ", "
+                           << it->unitcell(2) << ")}";
+      ++it;
+      if(it != nbors.end()) {
+        interface_imp_stream << ",";
+      }
+      interface_imp_stream << "\n";
+    }
+    interface_imp_stream << indent << "  };\n";
     interface_imp_stream << "\n\n";
 
     interface_imp_stream << indent <<  "  m_orbit_neighborhood.resize(corr_size());\n";
@@ -1508,6 +1527,7 @@ namespace CASM {
         orbit_neighborhood(std::inserter(orbit_nbors, orbit_nbors.begin()), tree, prim, nb, no, TOL);
 
         Index proto_index = lno;
+        /*
         for(auto it = orbit_nbors.begin(); it != orbit_nbors.end(); ++it) {
           interface_imp_stream << indent << "  m_orbit_neighborhood[" << lno << "].insert(UnitCellCoord("
                                << it->sublat() << ", "
@@ -1515,6 +1535,22 @@ namespace CASM {
                                << it->unitcell(1) << ", "
                                << it->unitcell(2) << "));\n";
         }
+        */
+        interface_imp_stream << indent << "  m_orbit_neighborhood[" << lno << "] = std::set<UnitCellCoord> {\n";
+        auto it = orbit_nbors.begin();
+        while(it != orbit_nbors.end()) {
+          interface_imp_stream << indent << "    {UnitCellCoord("
+                               << it->sublat() << ", "
+                               << it->unitcell(0) << ", "
+                               << it->unitcell(1) << ", "
+                               << it->unitcell(2) << ")}";
+          ++it;
+          if(it != orbit_nbors.end()) {
+            interface_imp_stream << ",";
+          }
+          interface_imp_stream << "\n";
+        }
+        interface_imp_stream << indent << "  };\n";
         ++lno;
         for(Index nf = 1; nf < tree.prototype(nb, no).clust_basis.size(); ++nf) {
           interface_imp_stream << indent << "  m_orbit_neighborhood[" << lno << "] = m_orbit_neighborhood[" << proto_index << "];\n";

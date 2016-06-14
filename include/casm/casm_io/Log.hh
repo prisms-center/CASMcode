@@ -37,6 +37,11 @@ namespace CASM {
     }
 
     template<int _required_verbosity = standard>
+    void generate(const std::string &what) {
+      _add<_required_verbosity>("Generate", what);
+    }
+
+    template<int _required_verbosity = standard>
     void set(const std::string &what) {
       _add<_required_verbosity>("Set", what);
     }
@@ -79,6 +84,11 @@ namespace CASM {
     template<int _required_verbosity = standard>
     void error(const std::string &what) {
       _add<_required_verbosity>("Error", what);
+    }
+
+    template<int _required_verbosity = standard>
+    void compiling(const std::string &what) {
+      _add<_required_verbosity>("Compiling", what);
     }
 
     template<int _required_verbosity = standard>

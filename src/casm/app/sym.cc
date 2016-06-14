@@ -1,4 +1,8 @@
-#include "casm/CASM_classes.hh"
+#include "casm/crystallography/CoordinateSystems.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/AppIO.hh"
 #include "casm/app/casm_functions.hh"
 
 #include "casm/completer/Handlers.hh"
