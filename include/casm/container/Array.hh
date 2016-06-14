@@ -79,10 +79,10 @@ namespace CASM {
 
     //*******************************************************************************************
 
-    template<typename Iterator>
+    template<typename Iterator,
+             typename = CASM_TMP::enable_if_iterator<Iterator> >
     Array(Iterator begin,
-          Iterator end,
-          typename CASM_TMP::enable_if_iterator<Iterator>::type * = nullptr) :
+          Iterator end) :
       N(0), NMax(0), Vals(nullptr) {
 
       reserve(std::distance(begin, end));

@@ -158,11 +158,11 @@ namespace CASM {
 
   /// nlist_index is the index into the nlist for the site the flower centers on
   template<typename OrbitType>
-  std::vector<std::string> flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
-                                                       OrbitType const &_clust_orbit,
-                                                       PrimNeighborList &_nlist,
-                                                       std::vector<FunctionVisitor *> const &labelers,
-                                                       Index sublat_index);
+  std::map< UnitCell, std::vector< std::string > > flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
+                                                                               OrbitType const &_clust_orbit,
+                                                                               PrimNeighborList &_nlist,
+                                                                               std::vector<FunctionVisitor *> const &labelers,
+                                                                               Index sublat_index);
 
   /// b_index is the basis site index, f_index is the index of the configurational site basis function in Site::occupant_basis
   /// nlist_index is the index into the nlist for the site the flower centers on
@@ -176,6 +176,10 @@ namespace CASM {
       Index b_index,
       Index f_index);
 
+  template<UCCIterType, typename IntegralClusterSymCompareType>
+  std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_ucc(UCCIterType begin,
+                                                               UCCIterType end,
+                                                               IntegralClusterSymCompareType const &sym_compare);
 
   namespace ClexBasis_impl {
     std::vector<ClexBasis::DoFKey> extract_dof_types(Structure const &_prim);
@@ -183,6 +187,11 @@ namespace CASM {
     BasisSet construct_clust_dof_basis(IntegralCluster const &_clust,
                                        std::vector<BasisSet const *> const &site_dof_sets);
   }
+
+  template<UCCIterType, typename IntegralClusterSymCompareType>
+  std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_ucc(UCCIterType begin,
+                                                               UCCIterType end,
+                                                               IntegralClusterSymCompareType const &sym_compare);
 }
 #include "casm/clex/ClexBasis_impl.hh"
 #endif

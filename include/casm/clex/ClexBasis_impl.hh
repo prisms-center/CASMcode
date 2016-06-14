@@ -175,15 +175,29 @@ namespace CASM {
 
   /// nlist_index is the index of the basis site in the neighbor list
   template<typename OrbitType>
-  std::vector<std::string>  flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
-                                                        OrbitType const &_clust_orbit,
-                                                        PrimNeighborList &_nlist,
-                                                        std::vector<FunctionVisitor *> const &labelers,
-                                                        Index sublat_index) {
+  std::map< UnitCell, std::vector< std::string > > flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
+                                                                               OrbitType const &_clust_orbit,
+                                                                               PrimNeighborList &_nlist,
+                                                                               std::vector<FunctionVisitor *> const &labelers,
+                                                                               Index sublat_index) {
 
 
-    std::vector<std::string> formulae(_bset_orbit[0].size(), std::string());
+    typedef std::vector<std::string> Formulae;
+    typedef std::map<UnitCell, std::vector<std::string> > TransFormulae;
+    TransFormulae result;
+
     std::string prefix, suffix;
+    std::set<UnitCellCoord> trans_set;
+    for(IntegralCluster const &equiv : _clust_orbit) {
+      for(UnitCellCoord const &site : equiv.elements()) {
+        if(site.sublat() == sublat_index)
+          trans_set.insert(site);
+      }
+    }
+
+    std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_trans = ClexBasis_impl::unique_ucc(trans_set.begin(),
+                                                                     trans_set.end(),
+                                                                     _clust_orbit.sym_compare());
 
     //normalize by multiplicity (by convention)
     if(_clust_orbit.size() > 1) {
@@ -191,54 +205,60 @@ namespace CASM {
       suffix = ")/" + std::to_string(_clust_orbit.size()) + ".";
     }
 
-    // loop over equivalent clusters
-    for(Index ne = 0; ne < _clust_orbit.size(); ne++) {
 
-      // for each site in the cluster that belongs to the target sublattice,
-      // translate the cluster so that that site is within the (0,0,0) cell
-      // Use std::set to ensure that each translation is only attempted once
-      std::set<UnitCell> attempted_trans;
+    for(UnitCellCoord const &trans_orbit : unique_trans) {
+      Formulae &formulae(*(result.emplace(std::make_pair(trans_orbit.first, Formulae(_bset_orbit[0].size()))).first));
 
-      // loop over cluster sites
-      auto it(_clust_orbit[ne].cbegin()), end_it(_clust_orbit[ne].cbegin());
-      for(; it != end_it; ++it) {
+      // loop over equivalent clusters
+      for(Index ne = 0; ne < _clust_orbit.size(); ne++) {
 
-        // Continue if the cluster site doesn't belong to the target sublattice, or if we have allready attempted the translation
-        if(sublat_index != it -> sublat() || !(attempted_trans.insert(it->unitcell()).second))
-          continue;
-        IntegralCluster trans_clust = _clust_orbit[ne] - it->unitcell();
-        if(!_clust_orbit.sym_compare().intra_orbit_equal(_clust_orbit[ne], trans_clust))
-          continue;
-        std::vector<PrimNeighborList::Scalar> nbor_IDs =
-          _nlist.neighbor_indices(_clust_orbit[ne].elements().begin(),
-                                  _clust_orbit[ne].elements().end());
-        _bset_orbit[ne].set_dof_IDs(std::vector<Index>(nbor_IDs.begin(), nbor_IDs.end()));
+        // loop over cluster sites
+        auto it(_clust_orbit[ne].cbegin()), end_it(_clust_orbit[ne].cbegin());
+        for(; it != end_it; ++it) {
 
-        for(Index nl = 0; nl < labelers.size(); nl++)
-          _bset_orbit[ne].accept(*labelers[nl]);
-
-        for(Index nf = 0; nf < _bset_orbit[ne].size(); nf++) {
-          if(!_bset_orbit[ne][nf] || (_bset_orbit[ne][nf]->is_zero()))
+          // Continue if the cluster site doesn't belong to the target sublattice, or if we are working on a different translation
+          if(sublat_index != it -> sublat() || trans_orbit.second.find(*it) == trans_orbit.second.end())
             continue;
 
-          if(formulae[nf].empty())
-            formulae[nf] += prefix;
-          else if((_bset_orbit[ne][nf]->formula())[0] != '-' && (_bset_orbit[ne][nf]->formula())[0] != '+')
-            formulae[nf] += " + ";
+          IntegralCluster trans_clust = _clust_orbit[ne] - it->unitcell();
 
-          formulae[nf] += _bset_orbit[ne][nf]->formula();
+          std::vector<PrimNeighborList::Scalar> nbor_IDs =
+            _nlist.neighbor_indices(trans_clust.elements().begin(),
+                                    trans_clust.elements().end());
+          _bset_orbit[ne].set_dof_IDs(std::vector<Index>(nbor_IDs.begin(), nbor_IDs.end()));
 
+          for(Index nl = 0; nl < labelers.size(); nl++)
+            _bset_orbit[ne].accept(*labelers[nl]);
+
+          for(Index nf = 0; nf < _bset_orbit[ne].size(); nf++) {
+            if(!_bset_orbit[ne][nf] || (_bset_orbit[ne][nf]->is_zero()))
+              continue;
+
+            if(formulae[nf].empty())
+              formulae[nf] += prefix;
+            else if((_bset_orbit[ne][nf]->formula())[0] != '-' && (_bset_orbit[ne][nf]->formula())[0] != '+')
+              formulae[nf] += " + ";
+
+            formulae[nf] += _bset_orbit[ne][nf]->formula();
+
+          }
         }
       }
     }
 
     // append suffix to all formulae
-    for(Index nf = 0; nf < formulae.size(); nf++) {
-      if(!formulae[nf].empty())
-        formulae[nf] += suffix;
+    TransFormulae::iterator trans_it = result.begin(),
+                            trans_end = result.end();
+    for(; trans_it != trans_end; ++trans_it) {
+      Formulae &formulae(trans_it->second);
+      for(Index nf = 0; nf < formulae.size(); nf++) {
+        if(!formulae[nf].empty())
+          formulae[nf] += suffix;
+      }
     }
 
-    return formulae;
+    return result;
+
   }
 
   //********************************************************************
@@ -331,6 +351,54 @@ namespace CASM {
 
   }
 
+  //***********************************************
+
+  template<UCCIterType, typename IntegralClusterSymCompareType>
+  std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_ucc(UCCIterType begin,
+                                                               UCCIterType end,
+                                                               IntegralClusterSymCompareType const &sym_compare) {
+    std::map<UnitCellCoord, std::set<UnitCellCoord> > tresult;
+
+    typedef IntegralCluster cluster_type;
+    typedef Orbit<cluster_type, IntegralClusterSymCompareType> orbit_type;
+
+    if(begin == end)
+      return tresult;
+    // store orbits as we find them
+    std::set<orbit_type> orbits;
+
+    SymGroup identity_group(begin->prim().factor_group.begin(), begin->prim().factor_group.begin()++);
+    orbit_type empty_orbit(cluster_type(begin->prim()), identity_group, sym_compare);
+
+    // by looping over each site in the grid,
+    for(; begin != end; ++begin) {
+
+      // create a test cluster from prototype
+      cluster_type test(empty_orbit.prototype());
+
+      // add the new site
+      test.elements().push_back(*begin);
+
+
+      // try to find test cluster in already found orbits
+      auto it = find_orbit(orbits.begin(), orbits.end(), test);
+      if(it != orbits.end()) {
+        tresult[it->prototype().element[0]].insert(*begin);
+        continue;
+      }
+
+      tresult[test.element[0]].insert(*begin);
+
+      // if not yet found, use test to generate a new Orbit
+      orbits.insert(orbit_type(test, identity_group, sym_compare));
+    }
+
+    std::map<UnitCellCoord, std::set<UnitCellCoord> > result;
+    for(auto &_set_pair : tresult)
+      result.emplace(std::make_pair(*_set_pair.second.begin(), std::move(set_pair.second)));
+    return result;
+
+  }
   //***********************************************
   template<typename OrbitType>
   void print_proto_clust_funcs(ClexBasis const &_clex_basis,
