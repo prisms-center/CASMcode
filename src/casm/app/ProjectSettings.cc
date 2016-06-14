@@ -103,10 +103,10 @@ namespace CASM {
 
         settings.get_if(m_view_command, "view_command");
         from_json(m_name, settings["name"]);
-        
+
         settings.get_else(m_crystallography_tol, "tol", TOL);
         settings.get_if(m_crystallography_tol, "crystallography_tol");
-        
+
         settings.get_else(m_lin_alg_tol, "lin_alg_tol", 1e-10);
 
         // read nlist settings, or generate defaults
@@ -239,7 +239,7 @@ namespace CASM {
   double ProjectSettings::crystallography_tol() const {
     return m_crystallography_tol;
   }
-  
+
   /// \brief Get current project linear algebra tolerance
   double ProjectSettings::lin_alg_tol() const {
     return m_lin_alg_tol;
@@ -253,6 +253,9 @@ namespace CASM {
 
   /// \brief Set the selection to be used for the 'selected' column
   void ProjectSettings::set_selected(const ConfigIO::Selected &selection) {
+    if(m_config_io_dict.find("selected") != m_config_io_dict.end()) {
+      m_config_io_dict.erase("selected");
+    }
     m_config_io_dict.insert(
       datum_formatter_alias(
         "selected",
@@ -264,14 +267,7 @@ namespace CASM {
 
   /// \brief Set the selection to be used for the 'selected' column
   void ProjectSettings::set_selected(const ConstConfigSelection &selection) {
-    // the 'selected' column depends on the context
-    m_config_io_dict.insert(
-      datum_formatter_alias(
-        "selected",
-        ConfigIO::selected_in(selection),
-        "Returns true if configuration is specified in the input selection"
-      )
-    );
+    set_selected(ConfigIO::selected_in(selection));
   }
 
   /// \brief Add user-defined query alias
@@ -464,7 +460,7 @@ namespace CASM {
     m_crystallography_tol = _tol;
     return true;
   }
-  
+
   /// \brief Set linear algebra tolerance
   bool ProjectSettings::set_lin_alg_tol(double _tol) {
     m_lin_alg_tol = _tol;
