@@ -253,6 +253,9 @@ namespace CASM {
 
   /// \brief Set the selection to be used for the 'selected' column
   void ProjectSettings::set_selected(const ConfigIO::Selected &selection) {
+    if(m_config_io_dict.find("selected") != m_config_io_dict.end()) {
+      m_config_io_dict.erase("selected");
+    }
     m_config_io_dict.insert(
       datum_formatter_alias(
         "selected",
@@ -264,14 +267,7 @@ namespace CASM {
 
   /// \brief Set the selection to be used for the 'selected' column
   void ProjectSettings::set_selected(const ConstConfigSelection &selection) {
-    // the 'selected' column depends on the context
-    m_config_io_dict.insert(
-      datum_formatter_alias(
-        "selected",
-        ConfigIO::selected_in(selection),
-        "Returns true if configuration is specified in the input selection"
-      )
-    );
+    set_selected(ConfigIO::selected_in(selection));
   }
 
   /// \brief Add user-defined query alias

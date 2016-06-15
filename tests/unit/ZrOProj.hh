@@ -1,6 +1,11 @@
 #ifndef CASMtest_ZrOProj
 #define CASMtest_ZrOProj
 
+#include "Proj.hh"
+#include "casm/casm_io/Log.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/ConfigIterator.hh"
+
 using namespace CASM;
 
 namespace test {

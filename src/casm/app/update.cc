@@ -1,6 +1,8 @@
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/Configuration.hh"
+#include "casm/clex/ConfigIterator.hh"
 #include "casm/crystallography/jsonStruc.hh"
 #include "casm/clex/ConfigMapping.hh"
-#include "casm/CASM_classes.hh"
 #include "casm/app/casm_functions.hh"
 
 namespace CASM {

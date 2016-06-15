@@ -3570,12 +3570,12 @@ namespace CASM {
 
     // compare on vector of '-det', '-trace', 'angle', 'axis', 'tau'
     typedef Eigen::Matrix<double, 9, 1> key_type;
-    auto make_key = [&](const SymOp & op) {
+    auto make_key = [](const SymOp & op, const Lattice & lat) {
 
       key_type vec;
       int offset = 0;
 
-      SymInfo info(op, lattice());
+      SymInfo info(op, lat);
 
       vec[offset] = -op.matrix().determinant();
       offset++;
@@ -3589,7 +3589,7 @@ namespace CASM {
       vec.segment<3>(offset) = info.axis.const_frac();
       offset += 3;
 
-      vec.segment<3>(offset) =  Coordinate(op.tau(), this->lattice(), CART).const_frac();
+      vec.segment<3>(offset) =  Coordinate(op.tau(), lat, CART).const_frac();
       offset += 3;
 
       return vec;
@@ -3600,7 +3600,12 @@ namespace CASM {
       return float_lexicographical_compare(A, B, tol);
     };
 
-    typedef std::map<key_type, SymOp, decltype(op_compare)> map_type;
+    typedef std::map<key_type, SymOp, std::reference_wrapper<decltype(op_compare)> > map_type;
+
+    // sort conjugacy class using the first symop in the sorted class
+    auto cclass_compare = [tol](const map_type & A, const map_type & B) {
+      return float_lexicographical_compare(A.begin()->first, B.begin()->first, tol);
+    };
 
     // sort elements in each conjugracy class (or just put all elements in the first map)
     std::vector<map_type> sorter;
@@ -3626,15 +3631,11 @@ namespace CASM {
 
         for(int j = 0; j < conjugacy_classes[i].size(); ++j) {
           const SymOp &op = at(conjugacy_classes[i][j]);
-          cclass.insert(std::make_pair(make_key(op), op));
+          cclass.insert(std::make_pair(make_key(op, lattice()), op));
         }
       }
 
       // sort conjugacy class using the first symop in the sorted class
-      auto cclass_compare = [&](const map_type & A, const map_type & B) {
-        return op_compare(A.begin()->first, B.begin()->first);
-      };
-
       std::sort(sorter.begin(), sorter.end(), cclass_compare);
 
     }
@@ -3642,7 +3643,7 @@ namespace CASM {
       // else just sort element
       sorter.push_back(map_type(op_compare));
       for(auto it = begin(); it != end(); ++it) {
-        sorter.back().insert(std::make_pair(make_key(*it), *it));
+        sorter.back().insert(std::make_pair(make_key(*it, lattice()), *it));
       }
     }
 

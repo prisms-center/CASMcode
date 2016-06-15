@@ -3,7 +3,9 @@
 
 #include "casm/app/casm_functions.hh"
 #include "casm/crystallography/jsonStruc.hh"
-#include "casm/CASM_classes.hh"
+#include "casm/clex/ConfigMapping.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/casm_io/VaspIO.hh"
 
 namespace CASM {
   namespace Import_impl {

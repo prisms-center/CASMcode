@@ -1,8 +1,10 @@
 #include<cstring>
 #include<unistd.h>
 
-#include "casm/CASM_classes.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/ConfigIterator.hh"
+#include "casm/clex/ConfigSelection.hh"
 
 namespace CASM {
 

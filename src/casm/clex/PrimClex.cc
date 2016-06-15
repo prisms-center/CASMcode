@@ -619,7 +619,7 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  Clexulator PrimClex::global_clexulator() const {
+  Clexulator PrimClex::global_clexulator(Log &status_log) const {
     if(!m_global_clexulator.initialized()) {
 
       if(!fs::exists(dir().clexulator_src(settings().name(), settings().bset()))) {
@@ -630,6 +630,7 @@ namespace CASM {
       m_global_clexulator = Clexulator(settings().global_clexulator(),
                                        dir().clexulator_dir(settings().bset()),
                                        nlist(),
+                                       status_log,
                                        settings().compile_options(),
                                        settings().so_options());
     }
