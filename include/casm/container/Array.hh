@@ -80,7 +80,7 @@ namespace CASM {
     //*******************************************************************************************
 
     template<typename Iterator,
-             typename = CASM_TMP::enable_if_iterator<Iterator> >
+             typename = CASM_TMP::enable_if_iterator_of<Iterator, T> >
     Array(Iterator begin,
           Iterator end) :
       N(0), NMax(0), Vals(nullptr) {

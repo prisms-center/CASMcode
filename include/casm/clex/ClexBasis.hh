@@ -156,42 +156,40 @@ namespace CASM {
                                                       PrimNeighborList &_nlist,
                                                       std::vector<FunctionVisitor *> const &labelers);
 
-  /// nlist_index is the index into the nlist for the site the flower centers on
+  /// \brief Print the flower function formulae for orbit @param _clust_orbit specified by BasisSet @param _bset_orbit
+  /// The pivot of the flower is specified by @param _sublat_index
+
+  /// The flower function of site @param _sublat_index and orbit @param _clust_orbit is obtained by summing the contributions of all
+  /// cluster functions from @param _bset_orbit that 'touch' the site (b,i,j,k)=(sublat_index,0,0,0), including functions that are
+  /// found by translations of equivalent clusters in @param _clust_orbit.
+  /// Depending on the orbit periodicity (i.e., Orbit::sym_compare()), not all translations of the cluster that touch (sublat_index,0,0,0)
+  /// are translationally equivalent. Thus, the result is the std::map that associates UnitCell (i.e, translation) to a set of formulae,
+  /// (i.e., std::vector<std::string>), with one formula per function in _clust_orbit[i] (some or all formulae may evaluate to zero, if
+  /// if @param _clust_orbit doesn't include site of type @param _sublat_index.
+
+  /// @param _bset_transfrom is a function/functor that applies a transformation to each _bset_orbit[i].
+  /// @param _nlist is the PrimNeighborList, used to index sites in the neighborhood
+  /// @param _labelers is a set of FunctionVisitors that can be used to control formatting of the formulae
   template<typename OrbitType>
   std::map< UnitCell, std::vector< std::string > > flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
+                                                                               std::function<BasisSet(BasisSet const &)> _bset_transform,
                                                                                OrbitType const &_clust_orbit,
                                                                                PrimNeighborList &_nlist,
                                                                                std::vector<FunctionVisitor *> const &labelers,
                                                                                Index sublat_index);
 
-  /// b_index is the basis site index, f_index is the index of the configurational site basis function in Site::occupant_basis
-  /// nlist_index is the index into the nlist for the site the flower centers on
-  template<typename OrbitType>
-  std::map< UnitCell, std::vector< std::string > > delta_occfunc_flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
-      OrbitType const &_clust_orbit,
-      PrimNeighborList &_nlist,
-      BasisSet site_basis,
-      const std::vector<FunctionVisitor *> &labelers,
-      Index nlist_index,
-      Index b_index,
-      Index f_index);
-
-  template<UCCIterType, typename IntegralClusterSymCompareType>
-  std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_ucc(UCCIterType begin,
-                                                               UCCIterType end,
-                                                               IntegralClusterSymCompareType const &sym_compare);
 
   namespace ClexBasis_impl {
     std::vector<ClexBasis::DoFKey> extract_dof_types(Structure const &_prim);
 
     BasisSet construct_clust_dof_basis(IntegralCluster const &_clust,
                                        std::vector<BasisSet const *> const &site_dof_sets);
-  }
 
-  template<UCCIterType, typename IntegralClusterSymCompareType>
-  std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_ucc(UCCIterType begin,
-                                                               UCCIterType end,
-                                                               IntegralClusterSymCompareType const &sym_compare);
+    template<typename UCCIterType, typename IntegralClusterSymCompareType>
+    std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_ucc(UCCIterType begin,
+                                                                 UCCIterType end,
+                                                                 IntegralClusterSymCompareType const &sym_compare);
+  }
 }
 #include "casm/clex/ClexBasis_impl.hh"
 #endif
