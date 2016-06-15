@@ -161,8 +161,16 @@ namespace CASM {
       return iterator(m_config.begin(), m_config.begin(), m_config.end(), m_primclex);
     }
 
+    const_iterator config_begin() const {
+      return const_iterator(m_config.cbegin(), m_config.cbegin(), m_config.cend(), m_primclex);
+    }
+
     iterator config_end() {
       return iterator(m_config.end(), m_config.begin(), m_config.end(), m_primclex);
+    }
+
+    const_iterator config_end() const {
+      return const_iterator(m_config.cend(), m_config.cbegin(), m_config.cend(), m_primclex);
     }
 
     const_iterator config_cbegin() const {
@@ -177,8 +185,16 @@ namespace CASM {
       return iterator(m_config.begin(), m_config.begin(), m_config.end(), m_primclex, true);
     }
 
+    const_iterator selected_config_begin() const {
+      return const_iterator(m_config.cbegin(), m_config.cbegin(), m_config.cend(), m_primclex, true);
+    }
+
     iterator selected_config_end() {
       return iterator(m_config.end(), m_config.begin(), m_config.end(), m_primclex, true);
+    }
+
+    const_iterator selected_config_end() const {
+      return const_iterator(m_config.cend(), m_config.cbegin(), m_config.cend(), m_primclex, true);
     }
 
     const_iterator selected_config_cbegin() const {

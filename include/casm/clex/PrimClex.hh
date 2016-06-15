@@ -349,7 +349,7 @@ namespace CASM {
     //void generate_references();
 
     bool has_global_clexulator() const;
-    Clexulator global_clexulator() const;
+    Clexulator global_clexulator(Log &status_log = null_log()) const;
 
     bool has_global_eci(std::string clex_name) const;
     const ECIContainer &global_eci(std::string clex_name) const;

@@ -7,6 +7,8 @@
 /// What is being used to test it:
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/clusterography/jsonClust.hh"
 #include "Common.hh"
 
 using namespace CASM;

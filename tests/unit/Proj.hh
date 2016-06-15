@@ -15,6 +15,14 @@ using namespace CASM;
 
 namespace test {
 
+
+  /// \brief Check expected JSON vs calculated JSON using BOOST_CHECK_EQUAL
+  void check(std::string test,
+             const jsonParser &expected,
+             const jsonParser &calculated,
+             fs::path test_cases_path,
+             bool quiet);
+
   class Proj {
 
   public:
