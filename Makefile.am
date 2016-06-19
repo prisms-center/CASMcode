@@ -23,7 +23,10 @@ AM_CXXFLAGS = -DTXT_VERSION='"$(TXT_VERSION)"'\
 			  -I$(srcdir)/include/casm/external/qhull/libqhullcpp
 
 AM_CPPFLAGS = -I$(srcdir)/include/casm/external/qhull/libqhull_r/\
-			  -I$(srcdir)/include/casm/external/gzstream
+			  -I$(srcdir)/include/casm/external/gzstream\
+			  $(BOOST_CPPFLAGS)
+
+AM_LDFLAGS = $(BOOST_LDFLAGS)
 
 #AM_CXXFLAGS+=$(BOOST_CXXFLAGS)? AM_LDFLAGS+=$(BOOST_LDFLAGS)?
 
@@ -37,8 +40,7 @@ include $(srcdir)/src/ccasm/Makemodule.am
 
 #===========================================================#
 #Take care of all the include headers
-#include $(srcdir)/include/casm/Makemodule.am
-include $(srcdir)/include/casm/external/Makemodule.am
+include $(srcdir)/include/casm/Makemodule.am
 include $(srcdir)/include/ccasm/Makemodule.am
 
 #===========================================================#
