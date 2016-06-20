@@ -7,5 +7,5 @@ symmetryinclude_HEADERS=./include/casm/symmetry/SymOp.hh\
 						./include/casm/symmetry/PermuteIterator.hh\
 						./include/casm/symmetry/SymGroup.hh\
 						./include/casm/symmetry/SymGroupRep.hh\
-						./include/casm/symmetry/SymOpRepresentation.hh
+						./include/casm/symmetry/SymOpRepresentation.hh\
 						./include/casm/symmetry/SymInfo.hh
