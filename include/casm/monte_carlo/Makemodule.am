@@ -11,10 +11,12 @@ montecarloinclude_HEADERS=./include/casm/monte_carlo/SiteExchanger.hh\
 						  ./include/casm/monte_carlo/MonteSettings.hh\
 						  ./include/casm/monte_carlo/MonteDefinitions.hh\
 						  ./include/casm/monte_carlo/MonteDriver.hh\
-						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalEvent.hh\
+						  ./include/casm/monte_carlo/MonteCarlo.hh\
+						  ./include/casm/monte_carlo/MCData.hh
+
+montecarlogrand_canonicalincludedir=$(montecarloincludedir)/grand_canonical
+montecarlogrand_canonicalinclude_HEADERS=./include/casm/monte_carlo/grand_canonical/GrandCanonicalEvent.hh\
 						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh\
 						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh\
 						  ./include/casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh\
-						  ./include/casm/monte_carlo/grand_canonical/GrandCanonical.hh\
-						  ./include/casm/monte_carlo/MonteCarlo.hh\
-						  ./include/casm/monte_carlo/MCData.hh
+						  ./include/casm/monte_carlo/grand_canonical/GrandCanonical.hh
