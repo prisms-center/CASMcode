@@ -802,6 +802,7 @@ class EvolutionaryFeatureSelection(BaseEstimator, SelectorMixin):
     
     
     ## read or construct initial population
+    self.toolbox.decorate("population", enforce_constraints(self.constraints))
     self.pop = initialize_population(self.evolve_params.n_population, self.toolbox, 
       filename=self.evolve_params.pop_begin_filename, verbose=self.verbose)
     self.pop_begin = copy.deepcopy(self.pop)
