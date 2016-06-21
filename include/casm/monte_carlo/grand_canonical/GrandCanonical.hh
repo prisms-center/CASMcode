@@ -151,12 +151,8 @@ namespace CASM {
     /// Event to propose, check, accept/reject:
     EventType m_event;
 
-    /// \brief Change in comp_n due of atom being removed. Equal to -1.0/supercell().volume()
-    double m_minus_one_comp_n;
-
-    /// \brief Change in comp_n due of atom being added. Equal to 1.0/supercell().volume()
-    double m_plus_one_comp_n;
-
+    /// \brief If the supercell is large enough, calculate delta correlations directly
+    bool m_use_deltas;
 
 
     // ---- Pointers to properties for faster access

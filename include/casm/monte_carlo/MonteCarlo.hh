@@ -198,7 +198,10 @@ namespace CASM {
     const SuperNeighborList *m_nlist;
 
     /// \brief Stores all degrees of freedom of the current microstate
-    ConfigDoF m_configdof;
+    ///
+    /// 'mutable' is used for case where the DoF are modified to calculate
+    /// event property values and then reverted within a const function
+    mutable ConfigDoF m_configdof;
 
     /// \brief Random number generator
     MTRand m_twister;

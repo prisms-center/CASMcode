@@ -40,15 +40,9 @@ namespace CASM {
     // set the SuperNeighborList...
     set_nlist();
 
-    // Make sure the simulation is big enough to accommodate the clusters
-    // you're using so that the delta formation energy is calculated accurately
-    if(nlist().overlaps()) {
-      throw std::runtime_error(
-        std::string("ERROR in 'GrandCanonical(PrimClex &primclex, const MonteSettings &settings)'\n") +
-        "  The simulation cell is too small to fit all the clusters without periodic overlap.\n" +
-        "  This would result in incorrect calculations of dformation_energy.\n" +
-        "  You need a smaller orbitree or a larger simulation cell.");
-    }
+    // If the simulation is big enough, use delta cluster functions;
+    // else, calculate all cluster functions
+    m_use_deltas = !nlist().overlaps();
 
     reset(_initial_configdof(primclex, m_scel, settings, m_log));
 
@@ -396,24 +390,40 @@ namespace CASM {
     // Point the Clexulator to the right neighborhood
     m_clexulator.set_nlist(nlist().sites(nlist().unitcell_index(mutating_site)).data());
 
-    // Calculate the change in correlations due to this event
-    if(m_all_correlations) {
-      m_clexulator.calc_delta_point_corr(sublat,
-                                         current_occupant,
-                                         new_occupant,
-                                         event.dCorr().data());
+    if(m_use_deltas) {
+
+      // Calculate the change in correlations due to this event
+      if(m_all_correlations) {
+        m_clexulator.calc_delta_point_corr(sublat,
+                                           current_occupant,
+                                           new_occupant,
+                                           event.dCorr().data());
+      }
+      else {
+        auto begin = m_formation_energy_eci.index().data();
+        auto end = begin + m_formation_energy_eci.index().size();
+        m_clexulator.calc_restricted_delta_point_corr(sublat,
+                                                      current_occupant,
+                                                      new_occupant,
+                                                      event.dCorr().data(),
+                                                      begin,
+                                                      end);
+      }
     }
     else {
-      auto begin = m_formation_energy_eci.index().data();
-      auto end = begin + m_formation_energy_eci.index().size();
-      m_clexulator.calc_restricted_delta_point_corr(sublat,
-                                                    current_occupant,
-                                                    new_occupant,
-                                                    event.dCorr().data(),
-                                                    begin,
-                                                    end);
+
+      int &occ = m_configdof.occ(event.occupational_change().site_index());
+      int from_value = occ;
+
+      // Apply changes to configuration (just a single occupant change)
+      occ = event.occupational_change().to_value();
+
+      // Calculate the change in correlations due to this event
+      event.dCorr() = (correlations_vec(m_configdof, supercell(), m_clexulator) - corr()) * supercell().volume();
+
+      // Unapply changes
+      occ = from_value;
     }
-    event.dCorr();
 
     // ---- set dformation_energy --------------
 
@@ -488,7 +498,7 @@ namespace CASM {
 
             << "components: " << jsonParser(primclex().composition_axes().components()) << "\n"
             << "M:\n" << M << "\n"
-            << "origin:\n" << origin.transpose() << "\n"
+            << "origin: " << origin.transpose() << "\n"
             << "comp_n: " << comp_n().transpose() << "\n"
             << "comp_x: " << comp_x.transpose() << "\n"
             << "param_chem_pot: " << param_chem_pot.transpose() << "\n"
