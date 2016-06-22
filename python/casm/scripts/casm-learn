@@ -66,8 +66,7 @@ if __name__ == "__main__":
       # print Hall of Fame summary
       if args.verbose:
         print "Loading Hall of Fame:", halloffame_filename
-      with open(halloffame_filename, 'rb') as f:
-        existing_hall = pickle.load(f)
+      existing_hall = casm.learn.open_halloffame(halloffame_filename, args.verbose)
       
       if args.hall:
         casm.learn.print_halloffame(existing_hall, format=args.format)
@@ -78,10 +77,7 @@ if __name__ == "__main__":
       
       halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
       # print Hall of Fame summary
-      if args.verbose:
-        print "Loading Hall of Fame:", halloffame_filename
-      with open(halloffame_filename, 'rb') as f:
-        existing_hall = pickle.load(f)
+      existing_hall = casm.learn.open_halloffame(halloffame_filename, args.verbose)
       
       if "data" not in input:
         input["data"] = dict()
@@ -89,7 +85,10 @@ if __name__ == "__main__":
         input["data"]["kwargs"] = dict()
       proj = Project(input["data"]["kwargs"].get("project_path", None))
       
-      write_eci(proj, existing_hall[args.select[0]].eci, verbose=args.verbose)
+      index = args.select[0]
+      indiv = existing_hall[index]
+      
+      write_eci(proj, indiv.eci, casm.learn.to_json(index, indiv), verbose=args.verbose)
       
     else:
       # run fitting
@@ -102,19 +101,13 @@ if __name__ == "__main__":
         print "# Hall of Fame size:", halloffame_size, "\n"
       
       if os.path.exists(halloffame_filename):
-        existing_hall = pickle.load(open(halloffame_filename, 'rb'))
-        if args.verbose:
-          print "Loading Hall of Fame:", halloffame_filename
+        existing_hall = casm.learn.open_halloffame(halloffame_filename, args.verbose)
         hall.update(existing_hall)
     
       casm.learn.fit_and_select(input, verbose=args.verbose, hall=hall)
       
       # pickle hall of fame
-      if args.verbose:
-        print "\nPickling Hall of Fame to:", halloffame_filename
-      f = open(halloffame_filename, 'wb')
-      pickle.dump(hall, f)
-      f.close()
+      casm.learn.save_halloffame(hall, halloffame_filename, args.verbose)
       
   else:
     
