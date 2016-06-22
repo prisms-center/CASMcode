@@ -544,8 +544,22 @@ def print_input_help():
   #     See: http://scikit-learn.org/stable/modules/feature_selection.html
   #
   #   Options from casm.feature_selection: 
-  #     Evolutionary algorithms, from casm.learn.feature_selection, are implemented
-  #     using deap: http://deap.readthedocs.org/en/master/index.html
+  #
+  #   "DirectSelection": Allows directly specifying which basis functions should
+  #     be included.
+  #
+  #     Options for "kwargs" (choose one):
+  #
+  #       "bitstring": str, optional
+  #          String consisting of '0' and '1', with '1' corresponding to selected 
+  #          basis functions. May be shorter than the total number of possible
+  #          basis functions, in which case '0' are effectively padded to the end.
+  #       
+  #       "indices": List[int], optional
+  #          List of indices of basis functions to be selected.
+  #
+  #   Evolutionary algorithms, from casm.learn.feature_selection, are implemented
+  #   using deap: http://deap.readthedocs.org/en/master/index.html
   #   
   #   "GeneticAlgorithm": Implements deap.algorithms.eaSimple, using selTournament,
   #     for selection, cxUniform for mating, and mutFlipBit for mutation. The
