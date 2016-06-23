@@ -7,6 +7,36 @@
 
 using namespace CASM;
 
+namespace Eigen {
+  /**
+   * Checks to see whether the given matrix is symmetric
+   * by checking if its transpose is equal to itself.
+   * Only works for square matrices.
+   * (Reflected along 0,0 to n,n)
+   */
+
+  template <typename Derived>
+  inline
+  bool is_symmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
+    return CASM::almost_zero(test_mat - test_mat.transpose(), test_tol);
+  }
+
+  /**
+   * Checks to see if the given matrix is persymmetric, i.e.
+   * whether it's symmetric along the cross diagonal.
+   * Only works for square matrices.
+   * (Reflected along 0,n to n,0)
+   */
+
+  template <typename Derived>
+  inline
+  bool is_persymmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
+    //Reverse order of columns and rows
+    auto rev_mat = test_mat.colwise().reverse().eval().rowwise().reverse().eval();
+    return CASM::almost_zero(test_mat - rev_mat.transpose(), test_tol);
+  }
+}
+
 namespace testing {
 
   std::vector<Eigen::Matrix3i> unimodular_matrices(bool positive, bool negative) {
@@ -330,6 +360,29 @@ namespace testing {
     return;
   }
 
+  void symmetric_testing() {
+    Eigen::MatrixXd symmat(5, 5), persymmat(4, 4), nonsymmat;
+
+    symmat << 1, 2, 3, 4, 5,
+           2, 6, 7, 8, 9,
+           3, 7, 10, 11, 12,
+           4, 8, 11, 13, 14,
+           5, 9, 12, 14, 15;
+
+    std::cout << "symmetric matrix is symmetric? " << is_symmetric(symmat) << std::endl;
+    std::cout << "symmetric matrix is symmetric? " << is_persymmetric(symmat) << std::endl;
+
+    persymmat << 4, 3, 2, 1,
+              7, 6, 5, 2,
+              9, 8, 6, 3,
+              10, 9, 7, 4;
+
+    std::cout << "persymmetric matrix is symmetric? " << is_symmetric(persymmat) << std::endl;
+    std::cout << "persymmetric matrix is symmetric? " << is_persymmetric(persymmat) << std::endl;
+
+    return;
+  }
+
 }
 
 int main() {
@@ -375,6 +428,7 @@ int main() {
 
   //testing::niggli(testlat);
   testing::niggli_rep_test(Lattice::fcc());
+  testing::symmetric_testing();
 
   return 0;
 }

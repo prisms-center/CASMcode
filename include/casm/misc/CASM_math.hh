@@ -477,11 +477,6 @@ namespace Eigen {
     return CASM::almost_zero(val1 - val2, tol);
   }
 
-  template <typename Derived1, typename Derived2>
-  inline
-  bool is_symmetric(const Eigen::MatrixBase<Derived1> &test_mat, double test_tol = CASM::TOL) {
-    return CASM::almost_equal(test_mat, test_mat.transpose(), test_tol);
-  }
 }
 
 #endif
