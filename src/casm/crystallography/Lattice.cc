@@ -1419,6 +1419,7 @@ namespace CASM {
   /// \brief Rotate the Lattice to a standard orientation using point group operations
   Lattice standard_orientation(const Lattice &lat, const SymGroup &point_grp, double tol) {
 
+    //These variable names are bad and you should feel bad.
     Eigen::Matrix3d start = lat.lat_column_mat();
     Eigen::Matrix3d best = start;
     bool is_sym1 = almost_equal(best, best.transpose(), tol);
