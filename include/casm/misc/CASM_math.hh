@@ -78,7 +78,7 @@ namespace CASM {
 
   // *******************************************************************************************
 
-  /// \brief Floating point comparison with tol
+  /// \brief Floating point comparison with tol, return A < B
   ///
   /// Implements:
   /// \code
