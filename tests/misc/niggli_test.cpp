@@ -314,6 +314,7 @@ namespace testing {
 
   Lattice niggli(const Lattice &in_lat, double compare_tol) {
     const Lattice reduced_in = in_lat.get_reduced_cell();
+
     //const Lattice reduced_in = niggli_impl::_niggli(in_lat, compare_tol);
     Eigen::Matrix3d best_lat_mat = reduced_in.lat_column_mat();
 
@@ -321,14 +322,7 @@ namespace testing {
     std::vector<Eigen::Matrix3i> canditate_trans_mats = positive_unimodular_matrices();
 
     for(auto it = canditate_trans_mats.begin(); it != canditate_trans_mats.end(); ++it) {
-      Eigen::Matrix3d cart_transform = reduced_in.lat_column_mat() * it->cast<double>() * reduced_in.inv_lat_column_mat();
-
-      auto tmat = cart_transform.transpose() * reduced_in.lat_column_mat() * it->cast<double>();
-      if(!almost_equal(tmat, reduced_in.lat_column_mat())) {
-        continue;
-      }
-
-      Eigen::Matrix3d candidate_lat_mat = cart_transform * reduced_in.lat_column_mat();
+      Eigen::Matrix3d candidate_lat_mat = reduced_in.lat_column_mat() * it->cast<double>();
 
       if(is_niggli(candidate_lat_mat, compare_tol) && standard_orientation_compare(best_lat_mat, candidate_lat_mat, compare_tol)) {
         std::cout << "Found something better" << std::endl;
