@@ -1499,17 +1499,17 @@ namespace CASM {
     bool high_score_is_symmetric = Eigen::is_symmetric(high_score_lat_mat, compare_tol);
     bool high_score_is_bisymmetric = Eigen::is_bisymmetric(high_score_lat_mat, compare_tol);
 
-    //The high_score is less symmetric than our current low_score. Skip it.
+    //The high_score is less symmetric than the low score, therefore high<low
     if((low_score_is_bisymmetric && !high_score_is_bisymmetric) || (low_score_is_symmetric && !high_score_is_symmetric)) {
       return false;
     }
 
-    //The high_score is more symmetric than our current low_score. Immediately accept, regardless of spatial orientation.
+    //The high_score is more symmetric than the low_score, therefore high>low automatically (symmetry trumps spatial orientation)
     if((!low_score_is_bisymmetric && high_score_is_bisymmetric) || (!low_score_is_symmetric && high_score_is_symmetric)) {
       return true;
     }
 
-    //If you made it here then the high_score and the current low_score have the same symmetry level, so we check for the low_score spatial orientation
+    //If you made it here then the high_score and the low_score have the same symmetry level, so we check for the spatial orientation
     return standard_orientation_spatial_compare(low_score_lat_mat, high_score_lat_mat, compare_tol);
   }
 
@@ -1527,15 +1527,12 @@ namespace CASM {
     Eigen::Matrix3d in_lat_mat = in_lat.lat_column_mat();
     Eigen::Matrix3d best_lat_mat = in_lat_mat;
 
-    bool best_is_symmetric = Eigen::is_symmetric(best_lat_mat, compare_tol);
-    bool best_is_bisymmetric = Eigen::is_bisymmetric(best_lat_mat, compare_tol);
-
     for(int i = 0; i < point_grp.size(); i++) {
 
       Eigen::Matrix3d candidate_lat_mat;
       candidate_lat_mat = point_grp[i].matrix() * in_lat_mat;
 
-      //Skip any operation that changes the handedness of the lattice (?)
+      //Skip any operation that changes the handedness of the lattice
       if(candidate_lat_mat.determinant() < 0.0) {
         continue;
       }
@@ -1543,7 +1540,6 @@ namespace CASM {
       if(standard_orientation_compare(best_lat_mat, candidate_lat_mat, compare_tol)) {
         best_lat_mat = candidate_lat_mat;
       }
-
     }
 
     return Lattice(best_lat_mat);

@@ -296,8 +296,12 @@ namespace testing {
     return totally_niggli;
   }
 
+  bool is_niggli(const Lattice &test_lat) {
+    NiggliRep niggtest(test_lat, CASM::TOL);
+    return niggtest.is_niggli();
+  }
 
-  Lattice niggli(const Lattice &in_lat) {
+  Lattice niggli(const Lattice &in_lat, double compare_tol) {
     const Lattice reduced_in = in_lat.get_reduced_cell();
 
     Lattice best_lat = reduced_in;
@@ -306,10 +310,60 @@ namespace testing {
 
     for(auto it = canditate_trans_mats.begin(); it != canditate_trans_mats.end(); ++it) {
       Lattice candidate_lat(reduced_in.lat_column_mat() * (it->cast<double>()));
-      candidate_lat.print(std::cout);
+
+      Eigen::Matrix3d best_lat_mat = best_lat.lat_column_mat();
+      Eigen::Matrix3d candidate_lat_mat = candidate_lat.lat_column_mat();
+
+      if(standard_orientation_compare(best_lat_mat, candidate_lat_mat, compare_tol) && is_niggli(candidate_lat)) {
+        best_lat = candidate_lat;
+      }
     }
 
     return best_lat;
+  }
+
+  void single_dimension_test() {
+    Lattice testlat = Lattice::fcc();
+    SymGroup pg;
+    testlat.generate_point_group(pg);
+
+    int dims = 1;
+    int minvol = 1;
+    int maxvol = 10;
+
+    SupercellEnumerator<Lattice> latenumerator(testlat, pg, minvol, maxvol + 1, dims);
+    std::vector<Lattice> enumerated_lat(latenumerator.begin(), latenumerator.end());
+
+    std::cout << "Enumerated from " << minvol << " to " << maxvol << " and got " << enumerated_lat.size() << " lattices" << std::endl;
+
+
+    int l = 1;
+    for(auto it = enumerated_lat.begin(); it != enumerated_lat.end(); ++it) {
+      Eigen::Matrix3i comp_transmat;
+      comp_transmat << (l), 0, 0,
+                    0, 1, 0,
+                    0, 0, 1;
+
+      Lattice comparelat = make_supercell(testlat, comp_transmat);
+
+      Lattice nigglicompare = niggli(comparelat, TOL);
+      Lattice nigglitest = niggli(*it, TOL);
+
+      std::cout << "DEBUGGING: is_niggli(nigglicompare) is " << is_niggli(nigglicompare) << std::endl;
+      std::cout << "DEBUGGING: is_niggli(nigglitest) is " << is_niggli(nigglitest) << std::endl;
+
+
+
+      if(nigglicompare == nigglitest) {
+        std::cout << "Lattice on iteration " << l << " matched." << std::endl;
+      }
+      else {
+        std::cout << "Lattice on iteration " << l << " did NOT match." << std::endl;
+      }
+
+      l++;
+    }
+    return;
   }
 
   void niggli_rep_test(const Lattice &in_lat) {
@@ -343,7 +397,7 @@ namespace testing {
            5, 9, 12, 14, 15;
 
     std::cout << "symmetric matrix is symmetric? " << is_symmetric(symmat) << std::endl;
-    std::cout << "symmetric matrix is symmetric? " << is_persymmetric(symmat) << std::endl;
+    std::cout << "symmetric matrix is persymmetric? " << is_persymmetric(symmat) << std::endl;
 
     persymmat << 4, 3, 2, 1,
               7, 6, 5, 2,
@@ -351,7 +405,7 @@ namespace testing {
               10, 9, 7, 4;
 
     std::cout << "persymmetric matrix is symmetric? " << is_symmetric(persymmat) << std::endl;
-    std::cout << "persymmetric matrix is symmetric? " << is_persymmetric(persymmat) << std::endl;
+    std::cout << "persymmetric matrix is persymmetric? " << is_persymmetric(persymmat) << std::endl;
 
     return;
   }
@@ -359,48 +413,10 @@ namespace testing {
 }
 
 int main() {
-  Lattice testlat = Lattice::fcc();
-  SymGroup pg;
-  testlat.generate_point_group(pg);
-
-  int dims = 1;
-  int minvol = 1;
-  int maxvol = 10;
-
-  SupercellEnumerator<Lattice> latenumerator(testlat, pg, minvol, maxvol + 1, dims);
-  std::vector<Lattice> enumerated_lat(latenumerator.begin(), latenumerator.end());
-
-  std::cout << "Enumerated from " << minvol << " to " << maxvol << " and got " << enumerated_lat.size() << " lattices" << std::endl;
-
-
-  int l = 1;
-  for(auto it = enumerated_lat.begin(); it != enumerated_lat.end(); ++it) {
-    Eigen::Matrix3i comp_transmat;
-    comp_transmat << (l), 0, 0,
-                  0, 1, 0,
-                  0, 0, 1;
-
-    Lattice comparelat = make_supercell(testlat, comp_transmat);
-
-    Lattice nigglicompare = niggli(comparelat, pg, TOL);
-    Lattice nigglitest = niggli(*it, pg, TOL);
-
-    if(nigglicompare == nigglitest) {
-      std::cout << "Lattice on iteration " << l << " matched." << std::endl;
-    }
-    else {
-      std::cout << "Lattice on iteration " << l << " did NOT match." << std::endl;
-    }
-
-    testing::NiggliRep comparenig(comparelat, CASM::TOL);
-    testing::NiggliRep nigglicomparenig(nigglicompare, CASM::TOL);
-    testing::NiggliRep nigglitestnig(nigglitest, CASM::TOL);
-
-    l++;
-  }
 
   //testing::niggli(testlat);
-  testing::niggli_rep_test(Lattice::fcc());
+  testing::single_dimension_test();
+  //testing::niggli_rep_test(Lattice::fcc());
   testing::symmetric_testing();
 
   return 0;

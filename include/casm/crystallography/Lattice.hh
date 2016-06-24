@@ -223,6 +223,12 @@ namespace CASM {
   /// \brief Returns an equivalent Lattice in Niggli form with a standard orientation
   Lattice niggli(const Lattice &lat, const SymGroup &point_grp, double tol);
 
+  /// \brief Compare the spatial orientation (ignoring matrix symmetry) and determine which one is oriented more standard. True if high is more standard.
+  bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_lat_mat, Eigen::Matrix3d &high_score_lat_mat, double compare_tol);
+
+  /// \brief Determine whether high_score has a more standard format than low_score
+  bool standard_orientation_compare(const Eigen::Matrix3d &low_score_lat_mat, Eigen::Matrix3d &high_score_lat_mat, double compare_tol);
+
   /// \brief Rotate the Lattice to a standard orientation using allowed point group operations
   Lattice standard_orientation(const Lattice &lat, const SymGroup &point_grp, double tol);
 
