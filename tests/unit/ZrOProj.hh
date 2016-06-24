@@ -51,24 +51,24 @@ namespace test {
     jsonParser bspecs() const {
 
       std::string str = R"({
-  "basis_functions" : {
-    "site_basis_functions" : "occupation"
-  },
-  "orbit_branch_specs" : {
-    "2" : {"max_length" : 9.0},
-    "3" : {"max_length" : 7.0},
-    "4" : {"max_length" : 6.0}
-  },
-  "orbit_specs" : [
-    {
-      "coordinate_mode" : "Integral",
-      "prototype" : [
-        [ 2, 0, 0, 0 ],
-        [ 2, 3, 0, 0 ]
-      ],
-      "include_subclusters" : false  
-    }
-  ]
+"basis_functions" : {
+"site_basis_functions" : "occupation"
+},
+"orbit_branch_specs" : {
+"2" : {"max_length" : 9.0},
+"3" : {"max_length" : 7.0},
+"4" : {"max_length" : 6.0}
+},
+"orbit_specs" : [
+{
+"coordinate_mode" : "Integral",
+"prototype" : [
+[ 2, 0, 0, 0 ],
+[ 2, 3, 0, 0 ]
+],
+"include_subclusters" : false  
+}
+]
 })";
 
       return jsonParser::parse(str);
@@ -94,8 +94,9 @@ namespace test {
       m_p.popen(cd_and() + "casm bset -u");
       BOOST_CHECK_MESSAGE(m_p.exit_code() == 0, m_p.gets());
 
-      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*clust\.json)")) == true, m_p.gets());
-      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*)" + title + R"(_Clexulator\.cc)")) == true, m_p.gets());
+      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*clust\.json)")) == true, m_p.gets());
+      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*basis\.json)")) == true, m_p.gets());
+      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*)" + title + R"(_Clexulator\.cc)")) == true, m_p.gets());
 
       BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clust(m_set.bset())), m_p.gets());
       BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.bset())), m_p.gets());
