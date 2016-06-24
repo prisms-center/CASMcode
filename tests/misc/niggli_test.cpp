@@ -312,25 +312,72 @@ namespace testing {
     return is_niggli(test_lat.lat_column_mat(), compare_tol);
   }
 
+  /**
+   * Converts a given Lattice into a new Lattice that satisfies
+   * the Niggli criteria. Because there are several representations
+   * of the Lattice that satisfy these conditions, the one with
+   * the most standard orientation will be returned.
+   */
+
   Lattice niggli(const Lattice &in_lat, double compare_tol) {
     const Lattice reduced_in = in_lat.get_reduced_cell();
 
     //const Lattice reduced_in = niggli_impl::_niggli(in_lat, compare_tol);
     Eigen::Matrix3d best_lat_mat = reduced_in.lat_column_mat();
 
-    //Like the point group, but brute forcing for every possible transformation matrix ever
+    //Like the point group, but brute forcing for every possible transformation matrix ever with determinant 1 and elements -1, 0 or 1
     std::vector<Eigen::Matrix3i> canditate_trans_mats = positive_unimodular_matrices();
 
     for(auto it = canditate_trans_mats.begin(); it != canditate_trans_mats.end(); ++it) {
       Eigen::Matrix3d candidate_lat_mat = reduced_in.lat_column_mat() * it->cast<double>();
 
       if(is_niggli(candidate_lat_mat, compare_tol) && standard_orientation_compare(best_lat_mat, candidate_lat_mat, compare_tol)) {
-        std::cout << "Found something better" << std::endl;
         best_lat_mat = candidate_lat_mat;
       }
     }
 
     return Lattice(best_lat_mat);
+  }
+
+  /**
+   * Return a canonical Lattice by first converting the
+   * given Lattice into the standard Niggli form,
+   * followed by applying the point group of the Lattice
+   * so that the one oriented in the most standard manner
+   * is selected.
+   */
+
+  Lattice canonical_equivalent_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol) {
+    //Ensure you at least get *something* back that's niggli
+    Lattice most_canonical = niggli(in_lat, compare_tol);
+    Eigen::Matrix3d most_canonical_lat_mat = most_canonical.lat_column_mat();
+
+    for(auto it = point_grp.begin(); it != point_grp.end(); ++it) {
+      Eigen::Matrix3d transformed_lat_mat = it->matrix() * in_lat.lat_column_mat();
+      Lattice transformed_lat = Lattice(transformed_lat_mat);
+
+      Eigen::Matrix3d candidate_lat_mat = niggli(transformed_lat, compare_tol).lat_column_mat();
+
+      if(is_niggli(candidate_lat_mat, compare_tol) && standard_orientation_compare(most_canonical_lat_mat, candidate_lat_mat, compare_tol)) {
+        std::cout << "More canonical in here" << std::endl;
+        most_canonical_lat_mat = candidate_lat_mat;
+      }
+    }
+
+    return Lattice(most_canonical_lat_mat);
+  }
+
+
+  /**
+   * Calls ::canonical_equivalent_lattice, but uses
+   * the point group of the given Lattice to find the
+   * canonical form.
+   */
+
+  Lattice canonical_lattice(const Lattice &in_lat, double compare_tol) {
+    SymGroup in_lat_point_group;
+    in_lat.generate_point_group(in_lat_point_group, compare_tol);
+    return canonical_equivalent_lattice(in_lat, in_lat_point_group, compare_tol);
   }
 
   void single_dimension_test() {
@@ -357,11 +404,15 @@ namespace testing {
 
       Lattice comparelat = make_supercell(testlat, comp_transmat);
 
-      Lattice nigglicompare = niggli(comparelat, TOL);
-      Lattice nigglitest = niggli(*it, TOL);
+      //Lattice nigglicompare = niggli(comparelat, TOL);
+      //Lattice nigglitest = niggli(*it, TOL);
 
       //Lattice nigglicompare = niggli(comparelat, pg, TOL);
       //Lattice nigglitest = niggli(*it, pg, TOL);
+
+
+      Lattice nigglicompare = canonical_lattice(comparelat, TOL);
+      Lattice nigglitest = canonical_lattice(*it, TOL);
 
 
       if(nigglicompare == nigglitest)
@@ -371,7 +422,6 @@ namespace testing {
       }
       else {
         std::cout << "Lattice on iteration " << l << " did NOT match." << std::endl;
-        std::cout << nigglitest.lat_column_mat()*nigglicompare.inv_lat_column_mat() << std::endl << std::endl;
       }
 
       l++;
