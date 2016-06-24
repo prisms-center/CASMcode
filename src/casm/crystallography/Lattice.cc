@@ -1421,61 +1421,96 @@ namespace CASM {
    * Given two lattice column matrices, determine which one of them is oriented
    * in a more standard manner in space relative to the Cartesian coordinates.
    *
-   * The routine returns "low_score_mat<high_score_mat", which is true if high_score_mat
+   * The routine returns "low_score_lat_mat<high_score_lat_mat", which is true if high_score_lat_mat
    * has a more standard spatial orientation.
    */
 
-  bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_mat, Eigen::Matrix3d &high_score_mat, double compare_tol) {
+  bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_lat_mat, Eigen::Matrix3d &high_score_lat_mat, double compare_tol) {
     //I have no idea who wrote this or why we decided this was the way to go.
     //This is simply a cut and paste from the old Lattice::standard_orientation.
-    if(almost_equal(low_score_mat(0, 0), high_score_mat(0, 0), compare_tol)) {
-      if(almost_equal(low_score_mat(1, 0), high_score_mat(1, 0), compare_tol)) {
-        if(almost_equal(low_score_mat(2, 0), high_score_mat(2, 0), compare_tol)) {
-          if(almost_equal(low_score_mat(1, 1), high_score_mat(1, 1), compare_tol)) {
-            if(almost_equal(low_score_mat(0, 1), high_score_mat(0, 1), compare_tol)) {
-              if(almost_equal(low_score_mat(2, 1), high_score_mat(2, 1), compare_tol)) {
-                if(almost_equal(low_score_mat(2, 2), high_score_mat(2, 2), compare_tol)) {
-                  if(almost_equal(low_score_mat(0, 2), high_score_mat(0, 2), compare_tol)) {
-                    if(almost_equal(low_score_mat(1, 2), high_score_mat(1, 2), compare_tol)) {
+    if(almost_equal(low_score_lat_mat(0, 0), high_score_lat_mat(0, 0), compare_tol)) {
+      if(almost_equal(low_score_lat_mat(1, 0), high_score_lat_mat(1, 0), compare_tol)) {
+        if(almost_equal(low_score_lat_mat(2, 0), high_score_lat_mat(2, 0), compare_tol)) {
+          if(almost_equal(low_score_lat_mat(1, 1), high_score_lat_mat(1, 1), compare_tol)) {
+            if(almost_equal(low_score_lat_mat(0, 1), high_score_lat_mat(0, 1), compare_tol)) {
+              if(almost_equal(low_score_lat_mat(2, 1), high_score_lat_mat(2, 1), compare_tol)) {
+                if(almost_equal(low_score_lat_mat(2, 2), high_score_lat_mat(2, 2), compare_tol)) {
+                  if(almost_equal(low_score_lat_mat(0, 2), high_score_lat_mat(0, 2), compare_tol)) {
+                    if(almost_equal(low_score_lat_mat(1, 2), high_score_lat_mat(1, 2), compare_tol)) {
                       return false;
                     }
-                    else if(high_score_mat(1, 2) > low_score_mat(1, 2)) {
+                    else if(high_score_lat_mat(1, 2) > low_score_lat_mat(1, 2)) {
                       return  true;
                     }
                   }
-                  else if(high_score_mat(0, 2) > low_score_mat(0, 2)) {
+                  else if(high_score_lat_mat(0, 2) > low_score_lat_mat(0, 2)) {
                     return  true;
                   }
                 }
-                else if(high_score_mat(2, 2) > low_score_mat(2, 2)) {
+                else if(high_score_lat_mat(2, 2) > low_score_lat_mat(2, 2)) {
                   return  true;
                 }
               }
-              else if(high_score_mat(2, 1) > low_score_mat(2, 1)) {
+              else if(high_score_lat_mat(2, 1) > low_score_lat_mat(2, 1)) {
                 return  true;
               }
             }
-            else if(high_score_mat(0, 1) > low_score_mat(0, 1)) {
+            else if(high_score_lat_mat(0, 1) > low_score_lat_mat(0, 1)) {
               return  true;
             }
           }
-          else if(high_score_mat(1, 1) > low_score_mat(1, 1)) {
+          else if(high_score_lat_mat(1, 1) > low_score_lat_mat(1, 1)) {
             return  true;
           }
         }
-        else if(high_score_mat(2, 0) > low_score_mat(2, 0)) {
+        else if(high_score_lat_mat(2, 0) > low_score_lat_mat(2, 0)) {
           return  true;
         }
       }
-      else if(high_score_mat(1, 0) > low_score_mat(1, 0)) {
+      else if(high_score_lat_mat(1, 0) > low_score_lat_mat(1, 0)) {
         return  true;
       }
     }
-    else if(high_score_mat(0, 0) > low_score_mat(0, 0)) {
+    else if(high_score_lat_mat(0, 0) > low_score_lat_mat(0, 0)) {
       return  true;
     }
 
     return false;
+  }
+
+  /**
+   * Compares two lattice column matrices to each other and determines which
+   * one has a more standard orientation based on whether said matrices are
+   * (bi)symmetric and how aligned the vectors are along the Cartesian directions.
+   *
+   * A bisymmetric matrix will always have better standard orientation than one that
+   * is simply symmetric. In turn, a symmetric matrix will always have a better standard
+   * orientation than on that is not. The criteria with lowest impact is the orientation
+   * of the lattice vectors in space, as defined in ::standard_orientation_spatial_compare
+   *
+   * The routine returns "low_score_mat<high_score_mat", which is true if high_score_mat
+   * has a more standard orientation.
+   */
+
+  bool standard_orientation_compare(const Eigen::Matrix3d &low_score_lat_mat, Eigen::Matrix3d &high_score_lat_mat, double compare_tol) {
+    bool low_score_is_symmetric = Eigen::is_symmetric(low_score_lat_mat, compare_tol);
+    bool low_score_is_bisymmetric = Eigen::is_bisymmetric(low_score_lat_mat, compare_tol);
+
+    bool high_score_is_symmetric = Eigen::is_symmetric(high_score_lat_mat, compare_tol);
+    bool high_score_is_bisymmetric = Eigen::is_bisymmetric(high_score_lat_mat, compare_tol);
+
+    //The high_score is less symmetric than our current low_score. Skip it.
+    if((low_score_is_bisymmetric && !high_score_is_bisymmetric) || (low_score_is_symmetric && !high_score_is_symmetric)) {
+      return false;
+    }
+
+    //The high_score is more symmetric than our current low_score. Immediately accept, regardless of spatial orientation.
+    if((!low_score_is_bisymmetric && high_score_is_bisymmetric) || (!low_score_is_symmetric && high_score_is_symmetric)) {
+      return true;
+    }
+
+    //If you made it here then the high_score and the current low_score have the same symmetry level, so we check for the low_score spatial orientation
+    return standard_orientation_spatial_compare(low_score_lat_mat, high_score_lat_mat, compare_tol);
   }
 
   /**
@@ -1484,7 +1519,7 @@ namespace CASM {
    *
    * The unit cell vectors of the lattice are chosen so that they are as aligned as possible
    * with the Cartesian coordinate system, but preference is always given to lattices
-   * whose matrices are symmetric or persymmetric.
+   * whose matrices are bisymmetric or symmetric.
    */
 
   Lattice standard_orientation(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol) {
@@ -1505,31 +1540,7 @@ namespace CASM {
         continue;
       }
 
-      bool candidate_is_symmetric = Eigen::is_symmetric(candidate_lat_mat, compare_tol);
-      bool candidate_is_bisymmetric = Eigen::is_bisymmetric(candidate_lat_mat, compare_tol);
-
-      //In order of preference:
-      //bi-symmetric
-      //symmetric
-      //non-symmetric
-
-      //The candidate is less symmetric than our current best. Skip it.
-      if((best_is_bisymmetric && !candidate_is_bisymmetric) || (best_is_symmetric && !candidate_is_symmetric)) {
-        continue;
-      }
-
-      //The candidate is more symmetric than our current best. Immediately accept, regardless of spatial orientation.
-      if((!best_is_bisymmetric && candidate_is_bisymmetric) || (!best_is_symmetric && candidate_is_symmetric)) {
-        best_is_symmetric = candidate_is_symmetric;
-        best_is_bisymmetric = candidate_is_bisymmetric;
-        best_lat_mat = candidate_lat_mat;
-        continue;
-      }
-
-      //If you made it here then the candidate and the current best have the same symmetry level, so we check for the best spatial orientation
-      if(standard_orientation_spatial_compare(best_lat_mat, candidate_lat_mat, compare_tol)) {
-        best_is_symmetric = candidate_is_symmetric;
-        best_is_bisymmetric = candidate_is_bisymmetric;
+      if(standard_orientation_compare(best_lat_mat, candidate_lat_mat, compare_tol)) {
         best_lat_mat = candidate_lat_mat;
       }
 
