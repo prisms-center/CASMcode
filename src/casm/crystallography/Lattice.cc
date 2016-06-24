@@ -1180,7 +1180,7 @@ namespace CASM {
     /// R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams, Acta Cryst. (2004). A60, 1.
     /// <a href="http://dx.doi.org/10.1107/S010876730302186X"> [doi:10.1107/S010876730302186X]</a>
     ///
-    Lattice _niggli(const Lattice &lat, double tol) {
+    Eigen::Matrix3d _niggli_mat(Eigen::Matrix3d reduced, double tol) {
 
       //std::cout << "begin _niggli(const Lattice &lat, double tol)" << std::endl;
 
@@ -1192,7 +1192,7 @@ namespace CASM {
       //
       //    S(0,0) = a*a, S(0,1) = a*b, etc.
       //
-      Eigen::Matrix3d reduced = lat.lat_column_mat();
+      //Eigen::Matrix3d reduced = lat.lat_column_mat();
       Eigen::Matrix3d S = reduced.transpose() * reduced;
 
       while(true) {
@@ -1387,7 +1387,11 @@ namespace CASM {
 
       } // end while
 
-      return Lattice(reduced);
+      return reduced;
+    }
+
+    Lattice _niggli(const Lattice &lat, double compare_tol) {
+      return Lattice(_niggli_mat(lat.lat_column_mat(), compare_tol));
     }
 
 
@@ -1425,7 +1429,7 @@ namespace CASM {
    * has a more standard spatial orientation.
    */
 
-  bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_lat_mat, Eigen::Matrix3d &high_score_lat_mat, double compare_tol) {
+  bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_lat_mat, const Eigen::Matrix3d &high_score_lat_mat, double compare_tol) {
     //I have no idea who wrote this or why we decided this was the way to go.
     //This is simply a cut and paste from the old Lattice::standard_orientation.
     if(almost_equal(low_score_lat_mat(0, 0), high_score_lat_mat(0, 0), compare_tol)) {
@@ -1492,7 +1496,7 @@ namespace CASM {
    * has a more standard orientation.
    */
 
-  bool standard_orientation_compare(const Eigen::Matrix3d &low_score_lat_mat, Eigen::Matrix3d &high_score_lat_mat, double compare_tol) {
+  bool standard_orientation_compare(const Eigen::Matrix3d &low_score_lat_mat, const Eigen::Matrix3d &high_score_lat_mat, double compare_tol) {
     bool low_score_is_symmetric = Eigen::is_symmetric(low_score_lat_mat, compare_tol);
     bool low_score_is_bisymmetric = Eigen::is_bisymmetric(low_score_lat_mat, compare_tol);
 
@@ -1524,13 +1528,11 @@ namespace CASM {
 
   Lattice standard_orientation(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol) {
 
-    Eigen::Matrix3d in_lat_mat = in_lat.lat_column_mat();
-    Eigen::Matrix3d best_lat_mat = in_lat_mat;
+    Eigen::Matrix3d best_lat_mat = in_lat.lat_column_mat();
 
     for(int i = 0; i < point_grp.size(); i++) {
 
-      Eigen::Matrix3d candidate_lat_mat;
-      candidate_lat_mat = point_grp[i].matrix() * in_lat_mat;
+      const Eigen::Matrix3d candidate_lat_mat  = point_grp[i].matrix() * in_lat.lat_column_mat();
 
       //Skip any operation that changes the handedness of the lattice
       if(candidate_lat_mat.determinant() < 0.0) {

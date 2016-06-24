@@ -80,6 +80,8 @@ namespace testing {
 
     NiggliRep(const Lattice &init_lat, double m_tolerance);
 
+    NiggliRep(const Eigen::Matrix3d &init_lat_col_mat, double m_tolerance);
+
     ///Square of lattice length a
     double A() const;
 
@@ -134,9 +136,13 @@ namespace testing {
     const double m_tolerance;
   };
 
-  NiggliRep::NiggliRep(const Lattice &init_lat, double init_tol):
-    m_self_dotted_lat(init_lat.lat_column_mat().transpose() * init_lat.lat_column_mat()),
+  NiggliRep::NiggliRep(const Eigen::Matrix3d &init_lat_col_mat, double init_tol):
+    m_self_dotted_lat(init_lat_col_mat.transpose() * init_lat_col_mat),
     m_tolerance(init_tol) {
+  }
+
+  NiggliRep::NiggliRep(const Lattice &init_lat, double init_tol):
+    NiggliRep(init_lat.lat_column_mat(), init_tol) {
   }
 
   double NiggliRep::A() const {
@@ -296,30 +302,32 @@ namespace testing {
     return totally_niggli;
   }
 
-  bool is_niggli(const Lattice &test_lat) {
-    NiggliRep niggtest(test_lat, CASM::TOL);
+  bool is_niggli(const Eigen::Matrix3d &test_lat_mat, double compare_tol) {
+    NiggliRep niggtest(test_lat_mat, CASM::TOL);
     return niggtest.is_niggli();
+  }
+
+  bool is_niggli(const Lattice &test_lat, double compare_tol) {
+    return is_niggli(test_lat.lat_column_mat(), compare_tol);
   }
 
   Lattice niggli(const Lattice &in_lat, double compare_tol) {
     const Lattice reduced_in = in_lat.get_reduced_cell();
+    //const Lattice reduced_in = niggli_impl::_niggli(in_lat, compare_tol);
+    Eigen::Matrix3d best_lat_mat = in_lat.lat_column_mat();
 
-    Lattice best_lat = reduced_in;
-
+    //Like the point group, but brute forcing for every possible transformation matrix ever
     std::vector<Eigen::Matrix3i> canditate_trans_mats = positive_unimodular_matrices();
 
     for(auto it = canditate_trans_mats.begin(); it != canditate_trans_mats.end(); ++it) {
-      Lattice candidate_lat(reduced_in.lat_column_mat() * (it->cast<double>()));
+      Eigen::Matrix3d candidate_lat_mat = it->cast<double>() * reduced_in.lat_column_mat();
 
-      Eigen::Matrix3d best_lat_mat = best_lat.lat_column_mat();
-      Eigen::Matrix3d candidate_lat_mat = candidate_lat.lat_column_mat();
-
-      if(standard_orientation_compare(best_lat_mat, candidate_lat_mat, compare_tol) && is_niggli(candidate_lat)) {
-        best_lat = candidate_lat;
+      if(is_niggli(candidate_lat_mat, compare_tol) && standard_orientation_compare(best_lat_mat, candidate_lat_mat, compare_tol)) {
+        best_lat_mat = candidate_lat_mat;
       }
     }
 
-    return best_lat;
+    return Lattice(best_lat_mat);
   }
 
   void single_dimension_test() {
@@ -349,9 +357,8 @@ namespace testing {
       Lattice nigglicompare = niggli(comparelat, TOL);
       Lattice nigglitest = niggli(*it, TOL);
 
-      std::cout << "DEBUGGING: is_niggli(nigglicompare) is " << is_niggli(nigglicompare) << std::endl;
-      std::cout << "DEBUGGING: is_niggli(nigglitest) is " << is_niggli(nigglitest) << std::endl;
-
+      //Lattice nigglicompare = niggli(comparelat, pg, TOL);
+      //Lattice nigglitest = niggli(*it, pg, TOL);
 
 
       if(nigglicompare == nigglitest) {
