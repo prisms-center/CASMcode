@@ -78,15 +78,15 @@ namespace CASM {
 
     /// \brief const Access current microstate
     const ConfigDoF &configdof() const {
-      return m_configdof;
+      return m_config.configdof();
     }
 
 
     // ---- Accessors -----------------------------
 
     /// \brief Set current microstate and clear samplers
-    void reset(const ConfigDoF &_configdof) {
-      m_configdof = _configdof;
+    void reset(const ConfigDoF &dof) {
+      _configdof() = dof;
       clear_samples();
     }
 
@@ -171,6 +171,11 @@ namespace CASM {
       return m_scel;
     }
 
+    /// \brief Access current microstate
+    ConfigDoF &_configdof() {
+      return m_config.configdof();
+    }
+
     /// \brief a map of keyname to property value
     ///
     /// - example: m_scalar_property["formation_energy"]
@@ -201,7 +206,7 @@ namespace CASM {
     ///
     /// 'mutable' is used for case where the DoF are modified to calculate
     /// event property values and then reverted within a const function
-    mutable ConfigDoF m_configdof;
+    mutable Configuration m_config;
 
     /// \brief Random number generator
     MTRand m_twister;
@@ -260,6 +265,7 @@ namespace CASM {
     m_settings(settings),
     m_primclex(primclex),
     m_scel(&primclex, settings.simulation_cell_matrix()),
+    m_config(m_scel),
     m_write_trajectory(settings.write_trajectory()),
     m_debug(m_settings.debug()),
     m_log(_log) {

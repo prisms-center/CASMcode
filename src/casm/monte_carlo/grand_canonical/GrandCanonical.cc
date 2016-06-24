@@ -215,7 +215,7 @@ namespace CASM {
     }
 
     // First apply changes to configuration (just a single occupant change)
-    m_configdof.occ(event.occupational_change().site_index()) = event.occupational_change().to_value();
+    _configdof().occ(event.occupational_change().site_index()) = event.occupational_change().to_value();
 
     // Next update all properties that changed from the event
     _formation_energy() += event.dEf() / supercell().volume();
@@ -265,7 +265,7 @@ namespace CASM {
   double GrandCanonical::lte_grand_canonical_free_energy() const {
 
     const SiteExchanger &site_exch = m_site_swaps;
-    const ConfigDoF &config_dof = m_configdof;
+    const ConfigDoF &config_dof = configdof();
     GrandCanonicalEvent event = m_event;
 
     double tol = 1e-12;
@@ -412,14 +412,14 @@ namespace CASM {
     }
     else {
 
-      int &occ = m_configdof.occ(event.occupational_change().site_index());
+      int &occ = m_config.configdof().occ(event.occupational_change().site_index());
       int from_value = occ;
 
       // Apply changes to configuration (just a single occupant change)
       occ = event.occupational_change().to_value();
 
       // Calculate the change in correlations due to this event
-      event.dCorr() = (correlations_vec(m_configdof, supercell(), m_clexulator) - corr()) * supercell().volume();
+      event.dCorr() = (correlations_vec(m_config.configdof(), supercell(), m_clexulator) - corr()) * supercell().volume();
 
       // Unapply changes
       occ = from_value;
@@ -440,10 +440,10 @@ namespace CASM {
   void GrandCanonical::_update_properties() {
 
     // initialize properties and store pointers to the data strucures
-    m_vector_property["corr"] = correlations_vec(m_configdof, supercell(), m_clexulator);
+    m_vector_property["corr"] = correlations_vec(_configdof(), supercell(), m_clexulator);
     m_corr = &m_vector_property["corr"];
 
-    m_vector_property["comp_n"] = CASM::comp_n(m_configdof, supercell());
+    m_vector_property["comp_n"] = CASM::comp_n(_configdof(), supercell());
     m_comp_n = &m_vector_property["comp_n"];
 
     m_scalar_property["formation_energy"] = m_formation_energy_eci * corr().data();
