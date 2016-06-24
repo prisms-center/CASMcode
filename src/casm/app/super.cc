@@ -6,6 +6,7 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/crystallography/Niggli.hh"
 
 namespace CASM {
 

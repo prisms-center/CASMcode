@@ -10,6 +10,7 @@
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/app/AppIO.hh"
+#include "casm/crystallography/Niggli.hh"
 
 namespace CASM {
   //*******************************************************************************************

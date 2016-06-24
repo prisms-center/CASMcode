@@ -4,6 +4,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/crystallography/Niggli.hh"
 
 namespace CASM {
 
