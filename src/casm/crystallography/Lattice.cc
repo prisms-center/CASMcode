@@ -1390,6 +1390,7 @@ namespace CASM {
       return Lattice(reduced);
     }
 
+
   }
 
   /// \brief Returns an equivalent \ref Lattice in Niggli form
@@ -1416,115 +1417,125 @@ namespace CASM {
     return standard_orientation(reduced, point_grp, tol);
   }
 
-  /// \brief Rotate the Lattice to a standard orientation using point group operations
-  Lattice standard_orientation(const Lattice &lat, const SymGroup &point_grp, double tol) {
+  /**
+   * Given two lattice column matrices, determine which one of them is oriented
+   * in a more standard manner in space relative to the Cartesian coordinates.
+   *
+   * The routine returns "low_score_mat<high_score_mat", which is true if high_score_mat
+   * has a more standard spatial orientation.
+   */
 
-    //These variable names are bad and you should feel bad.
-    Eigen::Matrix3d start = lat.lat_column_mat();
-    Eigen::Matrix3d best = start;
-    bool is_sym1 = almost_equal(best, best.transpose(), tol);
-    Eigen::Matrix3d tmp;
-    Eigen::Matrix3d ptmp = best;
-    ptmp.col(0).swap(ptmp.col(2));
-    ptmp.row(0).swap(ptmp.row(2));
-    bool is_sym2 = almost_equal(ptmp, best, tol);
-    // rotate cell so that the lattice vectors are mostly aligned
-    //    with Cartesian coordinate axes... and the lattice matrix is symmetric (if possible)
+  bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_mat, Eigen::Matrix3d &high_score_mat, double compare_tol) {
+    //I have no idea who wrote this or why we decided this was the way to go.
+    //This is simply a cut and paste from the old Lattice::standard_orientation.
+    if(almost_equal(low_score_mat(0, 0), high_score_mat(0, 0), compare_tol)) {
+      if(almost_equal(low_score_mat(1, 0), high_score_mat(1, 0), compare_tol)) {
+        if(almost_equal(low_score_mat(2, 0), high_score_mat(2, 0), compare_tol)) {
+          if(almost_equal(low_score_mat(1, 1), high_score_mat(1, 1), compare_tol)) {
+            if(almost_equal(low_score_mat(0, 1), high_score_mat(0, 1), compare_tol)) {
+              if(almost_equal(low_score_mat(2, 1), high_score_mat(2, 1), compare_tol)) {
+                if(almost_equal(low_score_mat(2, 2), high_score_mat(2, 2), compare_tol)) {
+                  if(almost_equal(low_score_mat(0, 2), high_score_mat(0, 2), compare_tol)) {
+                    if(almost_equal(low_score_mat(1, 2), high_score_mat(1, 2), compare_tol)) {
+                      return false;
+                    }
+                    else if(high_score_mat(1, 2) > low_score_mat(1, 2)) {
+                      return  true;
+                    }
+                  }
+                  else if(high_score_mat(0, 2) > low_score_mat(0, 2)) {
+                    return  true;
+                  }
+                }
+                else if(high_score_mat(2, 2) > low_score_mat(2, 2)) {
+                  return  true;
+                }
+              }
+              else if(high_score_mat(2, 1) > low_score_mat(2, 1)) {
+                return  true;
+              }
+            }
+            else if(high_score_mat(0, 1) > low_score_mat(0, 1)) {
+              return  true;
+            }
+          }
+          else if(high_score_mat(1, 1) > low_score_mat(1, 1)) {
+            return  true;
+          }
+        }
+        else if(high_score_mat(2, 0) > low_score_mat(2, 0)) {
+          return  true;
+        }
+      }
+      else if(high_score_mat(1, 0) > low_score_mat(1, 0)) {
+        return  true;
+      }
+    }
+    else if(high_score_mat(0, 0) > low_score_mat(0, 0)) {
+      return  true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Rotates the Lattice to a standard orientation using point group operations to
+   * reorient the unit cell.
+   *
+   * The unit cell vectors of the lattice are chosen so that they are as aligned as possible
+   * with the Cartesian coordinate system, but preference is always given to lattices
+   * whose matrices are symmetric or persymmetric.
+   */
+
+  Lattice standard_orientation(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol) {
+
+    Eigen::Matrix3d in_lat_mat = in_lat.lat_column_mat();
+    Eigen::Matrix3d best_lat_mat = in_lat_mat;
+
+    bool best_is_symmetric = Eigen::is_symmetric(best_lat_mat, compare_tol);
+    bool best_is_bisymmetric = Eigen::is_bisymmetric(best_lat_mat, compare_tol);
+
     for(int i = 0; i < point_grp.size(); i++) {
 
-      tmp = point_grp[i].matrix() * start;
-      if(tmp.determinant() < 0.0) {
+      Eigen::Matrix3d candidate_lat_mat;
+      candidate_lat_mat = point_grp[i].matrix() * in_lat_mat;
+
+      //Skip any operation that changes the handedness of the lattice (?)
+      if(candidate_lat_mat.determinant() < 0.0) {
         continue;
       }
 
-      bool better = false;
+      bool candidate_is_symmetric = Eigen::is_symmetric(candidate_lat_mat, compare_tol);
+      bool candidate_is_bisymmetric = Eigen::is_bisymmetric(candidate_lat_mat, compare_tol);
 
-      bool tmp_sym1 = (almost_equal(tmp, tmp.transpose(), tol));
-      if(is_sym1) {
-        if(!tmp_sym1) {
-          continue;
-        }
+      //In order of preference:
+      //bi-symmetric
+      //symmetric
+      //non-symmetric
 
-        ptmp = tmp;
-        ptmp.col(0).swap(ptmp.col(2));
-        ptmp.row(0).swap(ptmp.row(2));
-        bool tmp_sym2 = almost_equal(ptmp, tmp, tol);
-        if(is_sym2) {
-          if(!tmp_sym2) {
-            continue;
-          }
-        }
-        else if(tmp_sym2) {
-          is_sym1 = tmp_sym1;
-          is_sym2 = tmp_sym2;
-          best = tmp;
-          continue;
-        }
-      }
-      else if(tmp_sym1) {
-        ptmp = tmp;
-        ptmp.col(0).swap(ptmp.col(2));
-        ptmp.row(0).swap(ptmp.row(2));
-        is_sym2 = almost_equal(ptmp, tmp, tol);
-        is_sym1 = tmp_sym1;
-        best = tmp;
+      //The candidate is less symmetric than our current best. Skip it.
+      if((best_is_bisymmetric && !candidate_is_bisymmetric) || (best_is_symmetric && !candidate_is_symmetric)) {
         continue;
       }
 
-      if(almost_equal(best(0, 0), tmp(0, 0), tol)) {
-        if(almost_equal(best(1, 0), tmp(1, 0), tol)) {
-          if(almost_equal(best(2, 0), tmp(2, 0), tol)) {
-            if(almost_equal(best(1, 1), tmp(1, 1), tol)) {
-              if(almost_equal(best(0, 1), tmp(0, 1), tol)) {
-                if(almost_equal(best(2, 1), tmp(2, 1), tol)) {
-                  if(almost_equal(best(2, 2), tmp(2, 2), tol)) {
-                    if(almost_equal(best(0, 2), tmp(0, 2), tol)) {
-                      if(almost_equal(best(1, 2), tmp(1, 2), tol)) {
-                        better = false;
-                      }
-                      else if(tmp(1, 2) > best(1, 2)) {
-                        better = true;
-                      }
-                    }
-                    else if(tmp(0, 2) > best(0, 2)) {
-                      better = true;
-                    }
-                  }
-                  else if(tmp(2, 2) > best(2, 2)) {
-                    better = true;
-                  }
-                }
-                else if(tmp(2, 1) > best(2, 1)) {
-                  better = true;
-                }
-              }
-              else if(tmp(0, 1) > best(0, 1)) {
-                better = true;
-              }
-            }
-            else if(tmp(1, 1) > best(1, 1)) {
-              better = true;
-            }
-          }
-          else if(tmp(2, 0) > best(2, 0)) {
-            better = true;
-          }
-        }
-        else if(tmp(1, 0) > best(1, 0)) {
-          better = true;
-        }
-      }
-      else if(tmp(0, 0) > best(0, 0)) {
-        better = true;
+      //The candidate is more symmetric than our current best. Immediately accept, regardless of spatial orientation.
+      if((!best_is_bisymmetric && candidate_is_bisymmetric) || (!best_is_symmetric && candidate_is_symmetric)) {
+        best_is_symmetric = candidate_is_symmetric;
+        best_is_bisymmetric = candidate_is_bisymmetric;
+        best_lat_mat = candidate_lat_mat;
+        continue;
       }
 
-      if(better) {
-        best = tmp;
+      //If you made it here then the candidate and the current best have the same symmetry level, so we check for the best spatial orientation
+      if(standard_orientation_spatial_compare(best_lat_mat, candidate_lat_mat, compare_tol)) {
+        best_is_symmetric = candidate_is_symmetric;
+        best_is_bisymmetric = candidate_is_bisymmetric;
+        best_lat_mat = candidate_lat_mat;
       }
 
     }
 
-    return Lattice(best);
+    return Lattice(best_lat_mat);
   }
 
 
