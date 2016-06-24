@@ -4,6 +4,7 @@
 #include "casm/container/Counter.hh"
 #include "casm/external/Eigen/Dense"
 #include "casm/misc/CASM_math.hh"
+#include "casm/symmetry/SymOp.hh"
 
 using namespace CASM;
 
@@ -314,15 +315,23 @@ namespace testing {
   Lattice niggli(const Lattice &in_lat, double compare_tol) {
     const Lattice reduced_in = in_lat.get_reduced_cell();
     //const Lattice reduced_in = niggli_impl::_niggli(in_lat, compare_tol);
-    Eigen::Matrix3d best_lat_mat = in_lat.lat_column_mat();
+    Eigen::Matrix3d best_lat_mat = reduced_in.lat_column_mat();
 
     //Like the point group, but brute forcing for every possible transformation matrix ever
     std::vector<Eigen::Matrix3i> canditate_trans_mats = positive_unimodular_matrices();
 
     for(auto it = canditate_trans_mats.begin(); it != canditate_trans_mats.end(); ++it) {
-      Eigen::Matrix3d candidate_lat_mat = it->cast<double>() * reduced_in.lat_column_mat();
+      Eigen::Matrix3d cart_transform = reduced_in.lat_column_mat() * it->cast<double>() * reduced_in.inv_lat_column_mat();
+
+      auto tmat = cart_transform.transpose() * reduced_in.lat_column_mat() * it->cast<double>();
+      if(!almost_equal(tmat, reduced_in.lat_column_mat())) {
+        continue;
+      }
+
+      Eigen::Matrix3d candidate_lat_mat = cart_transform * reduced_in.lat_column_mat();
 
       if(is_niggli(candidate_lat_mat, compare_tol) && standard_orientation_compare(best_lat_mat, candidate_lat_mat, compare_tol)) {
+        std::cout << "Found something better" << std::endl;
         best_lat_mat = candidate_lat_mat;
       }
     }
@@ -361,11 +370,14 @@ namespace testing {
       //Lattice nigglitest = niggli(*it, pg, TOL);
 
 
-      if(nigglicompare == nigglitest) {
+      if(nigglicompare == nigglitest)
+        //if(nigglicompare.is_equivalent(nigglitest, CASM::TOL))
+      {
         std::cout << "Lattice on iteration " << l << " matched." << std::endl;
       }
       else {
         std::cout << "Lattice on iteration " << l << " did NOT match." << std::endl;
+        std::cout << nigglitest.lat_column_mat()*nigglicompare.inv_lat_column_mat() << std::endl << std::endl;
       }
 
       l++;
