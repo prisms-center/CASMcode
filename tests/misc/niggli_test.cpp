@@ -368,18 +368,6 @@ namespace testing {
   }
 
 
-  /**
-   * Calls ::canonical_equivalent_lattice, but uses
-   * the point group of the given Lattice to find the
-   * canonical form.
-   */
-
-  Lattice canonical_lattice(const Lattice &in_lat, double compare_tol) {
-    SymGroup in_lat_point_group;
-    in_lat.generate_point_group(in_lat_point_group, compare_tol);
-    return canonical_equivalent_lattice(in_lat, in_lat_point_group, compare_tol);
-  }
-
   void single_dimension_test() {
     Lattice testlat = Lattice::fcc();
     SymGroup pg;
@@ -411,8 +399,8 @@ namespace testing {
       //Lattice nigglitest = niggli(*it, pg, TOL);
 
 
-      Lattice nigglicompare = canonical_lattice(comparelat, TOL);
-      Lattice nigglitest = canonical_lattice(*it, TOL);
+      Lattice nigglicompare = canonical_equivalent_lattice(comparelat, pg, TOL);
+      Lattice nigglitest = canonical_equivalent_lattice(*it, pg, TOL);
 
 
       if(nigglicompare == nigglitest)
