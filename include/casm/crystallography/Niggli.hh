@@ -30,7 +30,11 @@ namespace CASM {
    * eta=2*ac
    * zeta=2*ab
    *
+   * \see
+   * I. Krivy and B. Gruber, Acta Cryst. (1976). A32, 297.
    * <a href="http://dx.doi.org/10.1107/S0567739476000636">[doi:10.1107/S0567739476000636]</a>
+   * R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams, Acta Cryst. (2004). A60, 1.
+   * <a href="http://dx.doi.org/10.1107/S010876730302186X"> [doi:10.1107/S010876730302186X]</a>
    */
 
   class NiggliRep {
@@ -107,14 +111,16 @@ namespace CASM {
   ///Check whether the given lattice is primitive (does not check for orientation)
   bool is_niggli(const Lattice &test_lat, double compare_tol);
 
-  /// \brief Returns an equivalent Lattice in Niggli form with a standard orientation
-  Lattice niggli(const Lattice &lat, const SymGroup &point_grp, double tol);
-
   /// \brief Compare the spatial orientation (ignoring matrix symmetry) and determine which one is oriented more standard. True if high is more standard.
   bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_lat_mat, Eigen::Matrix3d &high_score_lat_mat, double compare_tol);
 
   /// \brief Determine whether high_score has a more standard format than low_score
   bool standard_orientation_compare(const Eigen::Matrix3d &low_score_lat_mat, const Eigen::Matrix3d &high_score_lat_mat, double compare_tol);
+
+  //************************************************************************************//
+
+  /// \brief Returns an equivalent Lattice in Niggli form with a standard orientation
+  Lattice niggli(const Lattice &lat, const SymGroup &point_grp, double tol);
 
   /// \brief Rotate the Lattice to a standard orientation using allowed point group operations
   Lattice standard_orientation(const Lattice &lat, const SymGroup &point_grp, double tol);

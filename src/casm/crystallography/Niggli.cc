@@ -225,7 +225,6 @@ namespace CASM {
       Eigen::Matrix3d candidate_lat_mat = niggli(transformed_lat, compare_tol).lat_column_mat();
 
       if(is_niggli(candidate_lat_mat, compare_tol) && standard_orientation_compare(most_canonical_lat_mat, candidate_lat_mat, compare_tol)) {
-        std::cout << "More canonical in here" << std::endl;
         most_canonical_lat_mat = candidate_lat_mat;
       }
     }
