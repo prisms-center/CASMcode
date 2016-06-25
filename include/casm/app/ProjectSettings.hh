@@ -9,6 +9,7 @@
 #include "casm/app/DirectoryStructure.hh"
 
 #include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/container.hh"
 
@@ -77,6 +78,21 @@ namespace CASM {
     /// \brief Get set of sublattice indices to include in neighbor lists
     const std::set<int> &nlist_sublat_indices() const;
 
+    /// \brief Get c++ compiler
+    std::pair<std::string, std::string> cxx() const;
+
+    /// \brief Get c++ compiler options
+    std::pair<std::string, std::string> cxxflags() const;
+
+    /// \brief Get shared object options
+    std::pair<std::string, std::string> soflags() const;
+
+    /// \brief Get casm prefix
+    std::pair<fs::path, std::string> casm_prefix() const;
+
+    /// \brief Get boost prefix
+    std::pair<fs::path, std::string> boost_prefix() const;
+
     /// \brief Get current compilation options string
     std::string compile_options() const;
 
@@ -88,7 +104,7 @@ namespace CASM {
 
     /// \brief Get current project crystallography tolerance
     double crystallography_tol() const;
-    
+
     /// \brief Get current project linear algebra tolerance
     double lin_alg_tol() const;
 
@@ -177,18 +193,29 @@ namespace CASM {
     template<typename SublatIterator>
     bool set_nlist_sublat_indices(SublatIterator begin, SublatIterator end);
 
-    /// \brief Set compile options to 'opt'
-    bool set_compile_options(std::string opt);
 
-    /// \brief Set shared library options to 'opt'
-    bool set_so_options(std::string opt);
+    /// \brief Set c++ compiler (empty string to use default)
+    bool set_cxx(std::string opt);
+
+    /// \brief Set c++ compiler options (empty string to use default)
+    bool set_cxxflags(std::string opt);
+
+    /// \brief Set shared object options (empty string to use default)
+    bool set_soflags(std::string opt);
+
+    /// \brief Set casm prefix (empty string to use default)
+    bool set_casm_prefix(fs::path prefix);
+
+    /// \brief Set boost prefix (empty string to use default)
+    bool set_boost_prefix(fs::path prefix);
+
 
     /// \brief Set command used by 'casm view'
     bool set_view_command(std::string opt);
 
     /// \brief Set crystallography tolerance
     bool set_crystallography_tol(double _tol);
-    
+
     /// \brief Set linear algebra tolerance
     bool set_lin_alg_tol(double _tol);
 
@@ -196,11 +223,28 @@ namespace CASM {
     /// \brief Save settings to project settings file
     void commit() const;
 
+    /// \brief Output as JSON
+    jsonParser &to_json(jsonParser &json) const;
+
+    /// \brief Print summary of ProjectSettings, as for 'casm settings -l'
+    void print_summary(Log &log) const;
+
+    /// \brief (deprecated) Set compile options to 'opt' (empty string to use default)
+    bool set_compile_options(std::string opt);
+
+    /// \brief (deprecated) Set shared library options to 'opt' (empty string to use default)
+    bool set_so_options(std::string opt);
+
+
 
   private:
 
     /// \brief Changing the neighbor list properties requires updating Clexulator source code
     void _reset_clexulators();
+
+    /// \brief initialize default compiler options
+    void _load_default_options();
+
 
     DirectoryStructure m_dir;
 
@@ -221,15 +265,23 @@ namespace CASM {
     std::vector<std::string> m_properties;
 
     // Runtime library compilation settings: compilation options
-    std::string m_compile_options;
-    std::string m_so_options;
+    std::pair<std::string, std::string> m_cxx;
+    std::pair<std::string, std::string> m_cxxflags;
+    std::pair<std::string, std::string> m_soflags;
+    std::pair<fs::path, std::string> m_casm_prefix;
+    std::pair<fs::path, std::string> m_boost_prefix;
+
+    // deprecated reading exactly from settings file
+    std::string m_depr_compile_options;
+    // deprecated reading exactly from settings file
+    std::string m_depr_so_options;
 
     // Command executed by 'casm view'
     std::string m_view_command;
 
     // Crystallography tolerance
     double m_crystallography_tol;
-    
+
     // Linear algebra tolerance
     double m_lin_alg_tol;
 

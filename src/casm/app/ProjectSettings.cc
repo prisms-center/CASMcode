@@ -41,9 +41,6 @@ namespace CASM {
     m_dir(root),
     m_name(name) {
 
-    m_compile_options = RuntimeLibrary::default_compile_options();
-    m_so_options = RuntimeLibrary::default_so_options();
-
     if(fs::exists(m_dir.casm_dir())) {
       throw std::runtime_error(
         std::string("Error in 'ProjectSettings(fs::path root, std::string name)'.\n") +
@@ -78,9 +75,6 @@ namespace CASM {
 
     if(fs::exists(m_dir.casm_dir())) {
 
-      m_compile_options = RuntimeLibrary::default_compile_options();
-      m_so_options = RuntimeLibrary::default_so_options();
-
       try {
 
         // read .casmroot current settings
@@ -94,17 +88,33 @@ namespace CASM {
         from_json(m_clex, settings["curr_clex"]);
         from_json(m_eci, settings["curr_eci"]);
 
-        if(settings.contains("compile_options")) {
-          settings["compile_options"].get(m_compile_options);
-        }
-        if(settings.contains("so_options")) {
-          settings["so_options"].get(m_so_options);
-        }
+        auto _read_if = [&](std::pair<std::string, std::string> &opt, std::string name) {
+          if(settings.get_if(opt.first, name)) {
+            opt.second = "project_settings";
+          }
+        };
 
+        auto _read_path_if = [&](std::pair<fs::path, std::string> &opt, std::string name) {
+          if(settings.get_if(opt.first, name)) {
+            opt.second = "project_settings";
+          }
+        };
+
+        _read_if(m_cxx, "cxx");
+        _read_if(m_cxxflags, "cxxflags");
+        _read_if(m_soflags, "soflags");
+        _read_path_if(m_casm_prefix, "casm_prefix");
+        _read_path_if(m_boost_prefix, "boost_prefix");
+        settings.get_if(m_depr_compile_options, "compile_options");
+        settings.get_if(m_depr_so_options, "so_options");
+
+
+        // other options
         settings.get_if(m_view_command, "view_command");
         from_json(m_name, settings["name"]);
 
-        settings.get_else(m_crystallography_tol, "tol", TOL);
+        // precision options
+        settings.get_else(m_crystallography_tol, "tol", TOL); // deprecated 'tol'
         settings.get_if(m_crystallography_tol, "crystallography_tol");
 
         settings.get_else(m_lin_alg_tol, "lin_alg_tol", 1e-10);
@@ -220,14 +230,54 @@ namespace CASM {
     return m_nlist_sublat_indices;
   }
 
+  /// \brief Get c++ compiler
+  std::pair<std::string, std::string> ProjectSettings::cxx() const {
+    return m_cxx.first.empty() ? RuntimeLibrary::default_cxx() : m_cxx;
+  }
+
+  /// \brief Get c++ compiler options
+  std::pair<std::string, std::string> ProjectSettings::cxxflags() const {
+    return m_cxxflags.first.empty() ? RuntimeLibrary::default_cxxflags() : m_cxxflags;
+  }
+
+  /// \brief Get shared object options
+  std::pair<std::string, std::string> ProjectSettings::soflags() const {
+    return m_soflags.first.empty() ? RuntimeLibrary::default_soflags() : m_soflags;
+  }
+
+  /// \brief Get casm prefix
+  std::pair<fs::path, std::string> ProjectSettings::casm_prefix() const {
+    return m_casm_prefix.first.empty() ? RuntimeLibrary::default_casm_prefix() : m_casm_prefix;
+  }
+
+  /// \brief Get boost prefix
+  std::pair<fs::path, std::string> ProjectSettings::boost_prefix() const {
+    return m_boost_prefix.first.empty() ? RuntimeLibrary::default_boost_prefix() : m_boost_prefix;
+  }
+
   /// \brief Get current compilation options string
   std::string ProjectSettings::compile_options() const {
-    return m_compile_options;
+    if(!m_depr_compile_options.empty()) {
+      return m_depr_compile_options;
+    }
+    else {
+      // else construct from pieces
+      return cxx().first + " " + cxxflags().first + " " +
+             include_path(casm_prefix().first) + " " +
+             include_path(boost_prefix().first);
+    }
   }
 
   /// \brief Get current shared library options string
   std::string ProjectSettings::so_options() const {
-    return m_so_options;
+    // default to read deprecated 'so_options'
+    if(!m_depr_so_options.empty()) {
+      return m_depr_so_options;
+    }
+    else {
+      // else construct from pieces
+      return cxx().first + " " + soflags().first + " " + link_path(boost_prefix().first);
+    }
   }
 
   /// \brief Get current command used by 'casm view'
@@ -437,17 +487,50 @@ namespace CASM {
     return true;
   }
 
-  /// \brief Set compile options to 'opt'
-  bool ProjectSettings::set_compile_options(std::string opt) {
-    m_compile_options = opt;
+
+  /// \brief Set c++ compiler (empty string to use default)
+  bool ProjectSettings::set_cxx(std::string opt) {
+    m_cxx = std::make_pair(opt, "project_settings");
     return true;
   }
 
-  /// \brief Set shared library options to 'opt'
-  bool ProjectSettings::set_so_options(std::string opt) {
-    m_so_options = opt;
+  /// \brief Set c++ compiler options (empty string to use default)
+  bool ProjectSettings::set_cxxflags(std::string opt)  {
+    m_cxxflags = std::make_pair(opt, "project_settings");
     return true;
   }
+
+  /// \brief Set shared object options (empty string to use default)
+  bool ProjectSettings::set_soflags(std::string opt)  {
+    m_soflags = std::make_pair(opt, "project_settings");
+    return true;
+  }
+
+  /// \brief Set casm prefix (empty string to use default)
+  bool ProjectSettings::set_casm_prefix(fs::path prefix)  {
+    m_casm_prefix = std::make_pair(prefix, "project_settings");
+    return true;
+  }
+
+  /// \brief Set boost prefix (empty string to use default)
+  bool ProjectSettings::set_boost_prefix(fs::path prefix)  {
+    m_boost_prefix = std::make_pair(prefix, "project_settings");
+    return true;
+  }
+
+
+  /// \brief (deprecated) Set compile options to 'opt' (empty string to use default)
+  bool ProjectSettings::set_compile_options(std::string opt) {
+    m_depr_compile_options = opt;
+    return true;
+  }
+
+  /// \brief (deprecated) Set shared library options to 'opt' (empty string to use default)
+  bool ProjectSettings::set_so_options(std::string opt) {
+    m_depr_so_options = opt;
+    return true;
+  }
+
 
   /// \brief Set command used by 'casm view'
   bool ProjectSettings::set_view_command(std::string opt) {
@@ -473,11 +556,8 @@ namespace CASM {
     try {
       SafeOfstream file;
       file.open(m_dir.project_settings());
-
       jsonParser json;
-      to_json(*this, json);
-
-      json.print(file.ofstream(), 2, 18);
+      to_json(json).print(file.ofstream(), 2, 18);
       file.close();
     }
     catch(...) {
@@ -499,33 +579,126 @@ namespace CASM {
     }
   }
 
-  jsonParser &to_json(const ProjectSettings &set, jsonParser &json) {
+  void ProjectSettings::_load_default_options() {
+    m_cxx = RuntimeLibrary::default_cxx();
+    m_cxxflags = RuntimeLibrary::default_cxxflags();
+    m_casm_prefix = RuntimeLibrary::default_casm_prefix();
+    m_boost_prefix = RuntimeLibrary::default_boost_prefix();
+    m_soflags = RuntimeLibrary::default_soflags();
+  }
+
+  jsonParser &ProjectSettings::to_json(jsonParser &json) const {
 
     json = jsonParser::object();
 
-    json["name"] = set.name();
-    json["curr_properties"] = set.properties();
-    json["curr_clex"] = set.clex();
-    json["curr_calctype"] = set.calctype();
-    json["curr_ref"] = set.ref();
-    json["curr_bset"] = set.bset();
-    json["curr_eci"] = set.eci();
-    json["nlist_weight_matrix"] = set.nlist_weight_matrix();
-    json["nlist_sublat_indices"] = set.nlist_sublat_indices();
-    if(set.compile_options() != RuntimeLibrary::default_compile_options()) {
-      json["compile_options"] = set.compile_options();
-    }
-    if(set.so_options() != RuntimeLibrary::default_so_options()) {
-      json["so_options"] = set.so_options();
-    }
-    json["view_command"] = set.view_command();
-    json["crystallography_tol"] = set.crystallography_tol();
+    json["name"] = name();
+    json["curr_properties"] = properties();
+    json["curr_clex"] = clex();
+    json["curr_calctype"] = calctype();
+    json["curr_ref"] = ref();
+    json["curr_bset"] = bset();
+    json["curr_eci"] = eci();
+    json["nlist_weight_matrix"] = nlist_weight_matrix();
+    json["nlist_sublat_indices"] = nlist_sublat_indices();
+
+
+    auto _write_if = [&](std::string name, std::string val) {
+      if(!val.empty()) {
+        json[name] = val;
+      };
+    };
+
+    _write_if("cxx", m_cxx.first);
+    _write_if("cxxflags", m_cxxflags.first);
+    _write_if("soflags", m_soflags.first);
+    _write_if("casm_prefix", m_casm_prefix.first.string());
+    _write_if("boost_prefix", m_boost_prefix.first.string());
+    _write_if("compile_options", m_depr_compile_options);
+    _write_if("so_options", m_depr_so_options);
+
+    json["view_command"] = view_command();
+    json["crystallography_tol"] = crystallography_tol();
     json["crystallography_tol"].set_scientific();
-    json["lin_alg_tol"] = set.lin_alg_tol();
+    json["lin_alg_tol"] = lin_alg_tol();
     json["lin_alg_tol"].set_scientific();
-    json["query_alias"] = set.aliases();
+    json["query_alias"] = aliases();
 
     return json;
+  }
+
+  namespace {
+    std::string _wdefaultval(std::string name, std::pair<std::string, std::string> val) {
+      return name + ": '" + val.first + "' (" + val.second + ")\n";
+    }
+
+    std::string _wdefaultval(std::string name, std::pair<fs::path, std::string> val) {
+      return _wdefaultval(name, std::make_pair(val.first.string(), val.second));
+    }
+  }
+
+  /// \brief Print summary of ProjectSettings, as for 'casm settings -l'
+  void ProjectSettings::print_summary(Log &log) const {
+
+    std::vector<std::string> all = m_dir.all_bset();
+    log.custom<Log::standard>("Basis sets");
+    for(int i = 0; i < all.size(); i++) {
+      log << all[i];
+      if(bset() == all[i]) {
+        log << "*";
+      }
+      log << "\n";
+    }
+    log << std::endl;
+
+    all = m_dir.all_calctype();
+    log.custom<Log::standard>("Training Data & References");
+    for(int i = 0; i < all.size(); i++) {
+      std::vector<std::string> all_ref = m_dir.all_ref(all[i]);
+      for(int j = 0; j < all_ref.size(); j++) {
+        log << all[i] << " / " << all_ref[j];
+        if(calctype() == all[i] && ref() == all_ref[j]) {
+          log << "*";
+        }
+        log << "\n";
+      }
+      log << "\n";
+    }
+
+    all = m_dir.all_eci(clex(), calctype(), ref(), bset());
+    log.custom<Log::standard>("ECI for current settings");
+    for(int i = 0; i < all.size(); i++) {
+      log << all[i];
+      if(eci() == all[i]) {
+        log << "*";
+      }
+      log << "\n";
+    }
+    log << std::endl;
+
+    log.custom<Log::standard>("Compiler settings");
+    log << _wdefaultval("cxx", cxx())
+        << _wdefaultval("cxxflags", cxxflags())
+        << _wdefaultval("soflags", soflags())
+        << _wdefaultval("casm_prefix", casm_prefix())
+        << _wdefaultval("boost_prefix", boost_prefix()) << std::endl;
+
+    if(!m_depr_compile_options.empty()) {
+      log << "** using 'compile_options' from .casm/project_settings.json **\n";
+    }
+    log << "compile command: '" << compile_options() << "'\n\n";
+
+    if(!m_depr_so_options.empty()) {
+      log << "** using 'so_options' from .casm/project_settings.json **\n";
+    }
+    log << "so command: '" << so_options() << "'\n\n";
+
+    log.custom<Log::standard>("'casm view'");
+    log << "command: '" << view_command() << "'\n\n";
+
+  }
+
+  jsonParser &to_json(const ProjectSettings &set, jsonParser &json) {
+    return set.to_json(json);
   }
 
 }

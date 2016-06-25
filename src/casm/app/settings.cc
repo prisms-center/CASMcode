@@ -4,54 +4,14 @@
 
 namespace CASM {
 
-  void list_settings(const fs::path &root) {
-
-    DirectoryStructure dir(root);
-    ProjectSettings set(root);
-
-    std::vector<std::string> all = dir.all_bset();
-    std::cout << "Basis sets:\n";
-    for(int i = 0; i < all.size(); i++) {
-      std::cout << "  " << all[i];
-      if(set.bset() == all[i]) {
-        std::cout << "*";
-      }
-      std::cout << "\n";
-    }
-    std::cout << "\n";
-
-    all = dir.all_calctype();
-    std::cout << "Training Data & References:\n";
-    for(int i = 0; i < all.size(); i++) {
-      std::vector<std::string> all_ref = dir.all_ref(all[i]);
-      for(int j = 0; j < all_ref.size(); j++) {
-        std::cout << "  " << all[i] << " / " << all_ref[j];
-        if(set.calctype() == all[i] && set.ref() == all_ref[j]) {
-          std::cout << "*";
-        }
-        std::cout << "\n";
-      }
-      std::cout << "\n";
+  namespace {
+    std::string _wdefaultval(std::string name, std::pair<std::string, std::string> val) {
+      return name + ": '" + val.first + "' (" + val.second + ")\n";
     }
 
-    all = dir.all_eci(set.clex(), set.calctype(), set.ref(), set.bset());
-    std::cout << "ECI for current settings:\n";
-    for(int i = 0; i < all.size(); i++) {
-      std::cout << "  " << all[i];
-      if(set.eci() == all[i]) {
-        std::cout << "*";
-      }
-      std::cout << "\n";
+    std::string _wdefaultval(std::string name, std::pair<fs::path, std::string> val) {
+      return _wdefaultval(name, std::make_pair(val.first.string(), val.second));
     }
-    std::cout << "\n";
-
-    std::cout << "Compiler settings: '" << set.compile_options() << "'\n\n";
-
-    std::cout << "SO settings: '" << set.so_options() << "'\n\n";
-
-    std::cout << "'casm view' command: '" << set.view_command() << "'\n\n";
-
-
   }
 
   // ///////////////////////////////////////
@@ -81,10 +41,11 @@ namespace CASM {
       ("set-ref", po::value<std::vector<std::string> >(&multi_input)->multitoken(), "Set the current calculation reference")
       ("set-eci", po::value<std::string>(&single_input), "Set the current effective clust interactions (ECI)")
       ("set-view-command", po::value<std::string>(&single_input), "Set the command used by 'casm view'.")
-      ("set-compile-options", po::value<std::string>(&single_input), "Set the compiler options.")
-      ("unset-compile-options", "Use the default compiler options.")
-      ("set-so-options", po::value<std::string>(&single_input), "Set the options for generating shared libraries.")
-      ("unset-so-options", "Use the default options for generating shared libraries.");
+      ("set-cxx", po::value<std::string>(&single_input), "Set the c++ compiler. Use '' to revert to default.")
+      ("set-cxxflags", po::value<std::string>(&single_input), "Set the c++ compiler options. Use '' to revert to default.")
+      ("set-soflags", po::value<std::string>(&single_input), "Set the shared library compilation options. Use '' to revert to default.")
+      ("set-casm-prefix", po::value<std::string>(&single_input), "Set the casm prefix. Use '' to revert to default.")
+      ("set-boost-prefix", po::value<std::string>(&single_input), "Set the boost prefix. Use '' to revert to default.");
 
       try {
         po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
@@ -93,8 +54,8 @@ namespace CASM {
 
         std::vector<std::string> all_opt = {"list", "new-bset", "new-calctype", "new-ref", "new-eci",
                                             "set-bset", "set-calctype", "set-ref", "set-eci",
-                                            "set-compile-options", "set-so-options", "set-view-command",
-                                            "unset-compile-options", "unset-so-options",
+                                            "set-cxx", "set-cxxflags", "set-soflags", "set-casm-prefix",
+                                            "set-boost-prefix", "set-view-command"
                                            };
         int option_count = 0;
         for(int i = 0; i < all_opt.size(); i++) {
@@ -204,7 +165,7 @@ namespace CASM {
 
     // disply all settings
     if(vm.count("list")) {
-      list_settings(root);
+      set.print_summary(args.log);
       return 0;
     }
 
@@ -473,47 +434,65 @@ namespace CASM {
       }
     }
 
-    // set compile options
-    else if(vm.count("set-compile-options")) {
-      set.set_compile_options(single_input);
+    // set cxx
+    else if(vm.count("set-cxx")) {
+      set.set_cxx(single_input);
       set.commit();
 
-      std::cout << "Set compile options to: '" << set.compile_options() << "'\n\n";
+      std::cout << "Set " << _wdefaultval("cxx", set.cxx());
+      std::cout << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      std::cout << "Shard object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
 
-    // set compile options
-    else if(vm.count("unset-compile-options")) {
-      set.set_compile_options(RuntimeLibrary::default_compile_options());
+    // set cxxflags
+    else if(vm.count("set-cxxflags")) {
+      set.set_cxxflags(single_input);
       set.commit();
 
-      std::cout << "Set compile options to: '" << set.compile_options() << "'\n\n";
+      std::cout << "Set " << _wdefaultval("cxxflags", set.cxxflags());
+      std::cout << "Compile command is now: '" << set.compile_options() << "'\n\n";
 
       return 0;
     }
 
-    // set compile options
-    else if(vm.count("set-so-options")) {
-      set.set_so_options(single_input);
+    // set soflags
+    else if(vm.count("set-soflags")) {
+      set.set_soflags(single_input);
       set.commit();
 
-      std::cout << "Set so options to: '" << set.so_options() << "'\n\n";
+      std::cout << "Set " << _wdefaultval("soflags", set.soflags());
+      std::cout << "Shard object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
 
-    // set compile options
-    else if(vm.count("unset-so-options")) {
-      set.set_so_options(RuntimeLibrary::default_so_options());
+    // set casm prefix
+    else if(vm.count("set-casm-prefix")) {
+      set.set_casm_prefix(single_input);
       set.commit();
 
-      std::cout << "Set so options to: '" << set.so_options() << "'\n\n";
+      std::cout << "Set " << _wdefaultval("casm_prefix", set.casm_prefix());
+      std::cout << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      std::cout << "Shard object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
 
-    // set compile options
+    // set boost prefix
+    else if(vm.count("set-boost-prefix")) {
+      set.set_casm_prefix(single_input);
+      set.commit();
+
+      std::cout << "Set " << _wdefaultval("boost_prefix", set.boost_prefix());
+      std::cout << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      std::cout << "Shard object compile command is now: '" << set.so_options() << "'\n\n";
+
+      return 0;
+    }
+
+    // set 'casm view' command
     else if(vm.count("set-view-command")) {
       set.set_view_command(single_input);
       set.commit();

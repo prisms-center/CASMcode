@@ -75,8 +75,6 @@ namespace CASM {
       from_json(curr_ref, settings["curr_ref"]);
       from_json(curr_bset, settings["curr_bset"]);
       from_json(curr_eci, settings["curr_eci"]);
-      settings.get_else(compile_options, "compile_options", RuntimeLibrary::default_compile_options());
-      settings.get_else(so_options, "so_options", RuntimeLibrary::default_so_options());
       from_json(m_name, settings["name"]);
     }
     catch(std::exception &e) {
@@ -203,18 +201,6 @@ namespace CASM {
   /// Return current eci settings
   std::string PrimClex::get_curr_eci() const {
     return curr_eci;
-  }
-
-  //*******************************************************************************************
-  /// Return compiler options
-  std::string PrimClex::get_compile_options() const {
-    return compile_options;
-  }
-
-  //*******************************************************************************************
-  /// Return shared library options
-  std::string PrimClex::get_so_options() const {
-    return so_options;
   }
 
   // ** Composition accessors **

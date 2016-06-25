@@ -68,12 +68,6 @@ namespace CASM {
       if(!set.set_eci(m_clex, m_calctype, m_ref, m_bset, m_eci)) {
         exc("eci");
       }
-      if(!set.set_compile_options(m_compile_options)) {
-        exc("compile options");
-      }
-      if(!set.set_so_options(m_so_options)) {
-        exc("so options");
-      }
       if(!set.set_crystallography_tol(m_crystallography_tol)) {
         exc("crystallography_tol");
       }

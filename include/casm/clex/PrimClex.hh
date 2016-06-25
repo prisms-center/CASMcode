@@ -59,9 +59,6 @@ namespace CASM {
     std::string curr_bset;
     std::string curr_eci;
 
-    // Runtime library compilation settings: compilation options
-    std::string compile_options;
-    std::string so_options;
 
     SiteOrbitree global_orbitree;
 
@@ -161,11 +158,6 @@ namespace CASM {
     /// Return current eci settings
     std::string get_curr_eci() const;
 
-    /// Return compiler options
-    std::string get_compile_options() const;
-
-    /// Return shared library options
-    std::string get_so_options() const;
 
     // ** Composition accessors **
 

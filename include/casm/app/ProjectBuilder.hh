@@ -60,21 +60,11 @@ namespace CASM {
       return *this;
     }
 
-    ProjectBuilder &set_compile_options(std::string _compile_options) {
-      m_compile_options = _compile_options;
-      return *this;
-    }
-
-    ProjectBuilder &set_so_options(std::string _so_options) {
-      m_so_options = _so_options;
-      return *this;
-    }
-
     ProjectBuilder &set_crystallography_tol(double _tol) {
       m_crystallography_tol = _tol;
       return *this;
     }
-    
+
     ProjectBuilder &set_lin_alg_tol(double _tol) {
       m_lin_alg_tol = _tol;
       return *this;
@@ -99,8 +89,6 @@ namespace CASM {
     std::string m_calctype = "default";
     std::string m_ref = "default";
     std::string m_eci = "default";
-    std::string m_compile_options = RuntimeLibrary::default_compile_options();
-    std::string m_so_options = RuntimeLibrary::default_so_options() + " -lboost_system";
     double m_crystallography_tol = CASM::TOL;
     double m_lin_alg_tol = 1e-10;
 

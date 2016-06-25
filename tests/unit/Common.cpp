@@ -86,6 +86,8 @@ namespace test {
     test::make_project(*this);
 
     m_set = ProjectSettings(dir);
+    m_set.set_casm_prefix(fs::current_path());
+    m_set.commit();
 
     BOOST_CHECK_EQUAL(true, fs::exists(dir));
 
