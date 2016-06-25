@@ -177,8 +177,8 @@ namespace CASM {
         std::cout << "Created and switched to new bset '" << single_input << "'.\n\n";
 
         // and create matching eci
-        if(set.new_eci_dir(set.clex(), set.calctype(), set.ref(), set.bset(), "default")) {
-          set.set_eci(set.clex(), set.calctype(), set.ref(), set.bset(), "default");
+        if(set.new_eci_dir(set.clex_name(), set.calctype(), set.ref(), set.bset(), "default")) {
+          set.set_eci(set.clex_name(), set.calctype(), set.ref(), set.bset(), "default");
           set.commit();
           std::cout << "Created and switched to new eci '" << "default" << "'.\n\n";
           return 0;
@@ -211,8 +211,8 @@ namespace CASM {
             std::cout << "Created and switched to new ref '" << multi_input[1] << "'.\n\n";
 
             // and create matching eci
-            if(set.new_eci_dir(set.clex(), set.calctype(), set.ref(), set.bset(), "default")) {
-              set.set_eci(set.clex(), set.calctype(), set.ref(), set.bset(), "default");
+            if(set.new_eci_dir(set.clex_name(), set.calctype(), set.ref(), set.bset(), "default")) {
+              set.set_eci(set.clex_name(), set.calctype(), set.ref(), set.bset(), "default");
               set.commit();
               std::cout << "Created and switched to new eci '" << "default" << "'.\n\n";
               return 0;
@@ -235,8 +235,8 @@ namespace CASM {
             std::cout << "Created and switched to new ref '" << "default" << "'.\n\n";
 
             // and create matching eci
-            if(set.new_eci_dir(set.clex(), set.calctype(), set.ref(), set.bset(), "default")) {
-              set.set_eci(set.clex(), set.calctype(), set.ref(), set.bset(), "default");
+            if(set.new_eci_dir(set.clex_name(), set.calctype(), set.ref(), set.bset(), "default")) {
+              set.set_eci(set.clex_name(), set.calctype(), set.ref(), set.bset(), "default");
               set.commit();
               std::cout << "Created and switched to new eci '" << "default" << "'.\n\n";
               return 0;
@@ -268,8 +268,8 @@ namespace CASM {
         std::cout << "Created and switched to new ref '" << single_input << "'.\n\n";
 
         // and create matching eci
-        if(set.new_eci_dir(set.clex(), set.calctype(), set.ref(), set.bset(), "default")) {
-          set.set_eci(set.clex(), set.calctype(), set.ref(), set.bset(), "default");
+        if(set.new_eci_dir(set.clex_name(), set.calctype(), set.ref(), set.bset(), "default")) {
+          set.set_eci(set.clex_name(), set.calctype(), set.ref(), set.bset(), "default");
           set.commit();
           std::cout << "Created and switched to new eci '" << "default" << "'.\n\n";
           return 0;
@@ -287,8 +287,8 @@ namespace CASM {
 
     // create new eci directory
     else if(vm.count("new-eci")) {
-      if(set.new_eci_dir(set.clex(), set.calctype(), set.ref(), set.bset(), single_input)) {
-        set.set_eci(set.clex(), set.calctype(), set.ref(), set.bset(), single_input);
+      if(set.new_eci_dir(set.clex_name(), set.calctype(), set.ref(), set.bset(), single_input)) {
+        set.set_eci(set.clex_name(), set.calctype(), set.ref(), set.bset(), single_input);
         set.commit();
         std::cout << "Created and switched to new eci '" << single_input << "'.\n\n";
         return 0;
@@ -423,7 +423,7 @@ namespace CASM {
 
     // set eci
     else if(vm.count("set-eci")) {
-      if(set.set_eci(set.clex(), set.calctype(), set.ref(), set.bset(), single_input)) {
+      if(set.set_eci(set.clex_name(), set.calctype(), set.ref(), set.bset(), single_input)) {
         set.commit();
         std::cout << "Switched to eci '" << single_input << "'.\n\n";
         return 0;

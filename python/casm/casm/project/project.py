@@ -92,7 +92,7 @@ class ProjectSettings(object):
     def eci(self):
         return self.data["curr_eci"]
     
-    def clex(self):
+    def clex_name(self):
         return self.data["curr_clex"]
     
     def ref(self):
@@ -116,8 +116,8 @@ class ProjectSettings(object):
     def set_eci(self, eci):
         self.data["curr_eci"] = eci
     
-    def set_clex(self, clex):
-        self.data["curr_clex"] = clex
+    def set_clex_name(self, clex_name):
+        self.data["curr_clex"] = clex_name
     
     def set_ref(self, ref):
         self.data["curr_ref"] = ref
@@ -172,13 +172,13 @@ class DirectoryStructure(object):
       """Check filesystem directory structure and return list of all ref names for a given calctype"""
       return __all_settings("ref", calc_settings_dir(calctype))
 
-    def all_clex(self):
+    def all_clex_name(self):
       """Check filesystem directory structure and return list of all cluster expansion names"""
       return __all_settings("clex", os.path.join(self.path, self.__clex_dir))
 
-    def all_eci(self, clex, calctype, ref, bset):
+    def all_eci(self, clex_name, calctype, ref, bset):
       """Check filesystem directory structure and return list of all eci names"""
-      return __all_settings("eci", os.path.join(self.path, self.__clex_dir, __clex(clex), __calctype(calctype), __ref(ref), __bset(bset)))
+      return __all_settings("eci", os.path.join(self.path, self.__clex_dir, __clex_name(clex_name), __calctype(calctype), __ref(ref), __bset(bset)))
 
 
     # ** File and Directory paths **
@@ -310,9 +310,9 @@ class DirectoryStructure(object):
 
     # -- Cluster expansions --------
 
-    def clex_dir(self, clex):
+    def clex_dir(self, clex_name):
       """Returns path to eci directory"""
-      return os.path.join(self.path, self.__clex_dir, self.__clex(clex))
+      return os.path.join(self.path, self.__clex_dir, self.__clex_name(clex_name))
 
     def eci_dir(self, clex, calctype, ref, bset, eci):
       """Returns path to eci directory"""
@@ -334,8 +334,8 @@ class DirectoryStructure(object):
     def __ref(self, ref):
       return "ref." + ref
 
-    def __clex(self, clex):
-      return "clex." + clex
+    def __clex_name(self, clex_name):
+      return "clex." + clex_name
 
     def __eci(self, eci):
       return "eci." + eci

@@ -259,7 +259,7 @@ Instructions for fitting ECI:                                          \n\n\
     ProjectSettings set(root);
 
     // convert eci.out to eci.json (if eci.json does not exist)
-    for(auto clex : dir.all_clex()) {
+    for(auto clex : dir.all_clex_name()) {
       for(auto bset : dir.all_bset()) {
         for(auto calctype : dir.all_calctype()) {
           for(auto ref : dir.all_ref(calctype)) {
@@ -405,7 +405,7 @@ Instructions for fitting ECI:                                          \n\n\
     std::string calctype = settings.calctype();
     std::string ref = settings.ref();
     std::string bset = settings.bset();
-    std::string clex = settings.clex();
+    std::string clex = settings.clex_name();
     std::string eci = settings.eci();
 
 

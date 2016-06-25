@@ -41,7 +41,7 @@ namespace CASM {
       set.new_bset_dir(m_bset);
       set.new_calc_settings_dir(m_calctype);
       set.new_ref_dir(m_calctype, m_ref);
-      set.new_eci_dir(m_clex, m_calctype, m_ref, m_bset, m_eci);
+      set.new_eci_dir(m_clex_name, m_calctype, m_ref, m_bset, m_eci);
 
       // set project settings
 
@@ -62,10 +62,10 @@ namespace CASM {
       if(!set.set_ref(m_calctype, m_ref)) {
         exc("ref");
       }
-      if(!set.set_clex(m_clex)) {
-        exc("clex");
+      if(!set.set_clex_name(m_clex_name)) {
+        exc("clex_name");
       }
-      if(!set.set_eci(m_clex, m_calctype, m_ref, m_bset, m_eci)) {
+      if(!set.set_eci(m_clex_name, m_calctype, m_ref, m_bset, m_eci)) {
         exc("eci");
       }
       if(!set.set_crystallography_tol(m_crystallography_tol)) {

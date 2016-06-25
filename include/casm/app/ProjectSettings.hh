@@ -25,6 +25,30 @@ namespace CASM {
     class Selected;
   }
 
+  /// \brief Data structure used to as key for storing cluster expansion data
+  struct ClexKey {
+
+    ClexKey() {}
+
+    ClexKey(std::string _name,
+            std::string _calctype,
+            std::string _ref,
+            std::string _bset,
+            std::string _eci) :
+      name(_name), calctype(_calctype), ref(_ref), bset(_bset), eci(_eci) {}
+
+    std::string name;
+    std::string calctype;
+    std::string ref;
+    std::string bset;
+    std::string eci;
+
+  };
+
+  bool bset_compare(const ClexKey &A, const ClexKey &B);
+  bool eci_compare(const ClexKey &A, const ClexKey &B);
+
+
   /// \brief Read/modify settings of an already existing CASM project
   ///
   /// - Use ProjectBuilder to create a new CASM project
@@ -67,10 +91,14 @@ namespace CASM {
     std::string ref() const;
 
     /// \brief Get current cluster expansion name
-    std::string clex() const;
+    std::string clex_name() const;
 
     /// \brief Get current eci name
     std::string eci() const;
+
+    /// \brief Get current clex key
+    ClexKey clex_key() const;
+
 
     /// \brief Get neighbor list weight matrix
     Eigen::Matrix3l nlist_weight_matrix() const;
@@ -178,11 +206,15 @@ namespace CASM {
     /// \brief Set current calculation reference to 'ref', if 'ref' exists
     bool set_ref(std::string calctype, std::string ref);
 
-    /// \brief Set current cluster expansion to 'clex', if 'clex' exists
-    bool set_clex(std::string clex);
+    /// \brief Set current cluster expansion name to 'name', if 'name' exists
+    bool set_clex_name(std::string name);
 
     /// \brief Set current eci to 'eci', if 'eci' exists
     bool set_eci(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci);
+
+    /// \brief Set clex settings via clex key
+    bool set_clex_key(const ClexKey &key);
+
 
     /// \brief Set neighbor list weight matrix (will delete existing Clexulator
     /// source and compiled code)
@@ -251,11 +283,7 @@ namespace CASM {
     std::string m_name;
 
     // CASM project current settings: used to determine where to write things
-    std::string m_bset;
-    std::string m_calctype;
-    std::string m_ref;
-    std::string m_clex;
-    std::string m_eci;
+    ClexKey m_clex_key;
 
     // neighbor list settings
     Eigen::Matrix3l m_nlist_weight_matrix;

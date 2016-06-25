@@ -71,7 +71,7 @@ namespace CASM {
 
     std::vector<std::string> m_all_bset;
     std::vector<std::string> m_all_calctype;
-    std::vector<std::string> m_all_clex;
+    std::vector<std::string> m_all_clex_name;
 
   };
 
@@ -97,7 +97,7 @@ namespace CASM {
     m_relative(_relative),
     m_all_bset(m_dir.all_bset()),
     m_all_calctype(m_dir.all_calctype()),
-    m_all_clex(m_dir.all_clex()) {}
+    m_all_clex_name(m_dir.all_clex_name()) {}
 
 
   /// make paths relative to CASM project root directory
@@ -217,12 +217,12 @@ namespace CASM {
 
     // eci
     if(!m_all_settings) {
-      result = _if_exists(result, m_dir.eci(m_set.clex(), m_set.calctype(), m_set.ref(), m_set.bset(), m_set.eci()));
-      result = _if_exists(result, m_dir.eci_out(m_set.clex(), m_set.calctype(), m_set.ref(), m_set.bset(), m_set.eci()));
+      result = _if_exists(result, m_dir.eci(m_set.clex_name(), m_set.calctype(), m_set.ref(), m_set.bset(), m_set.eci()));
+      result = _if_exists(result, m_dir.eci_out(m_set.clex_name(), m_set.calctype(), m_set.ref(), m_set.bset(), m_set.eci()));
     }
     else {
 
-      for(auto clex : m_all_clex) {
+      for(auto clex : m_all_clex_name) {
         for(auto calctype : m_all_calctype) {
           auto all_ref = m_dir.all_ref(calctype);
           for(auto ref : all_ref) {

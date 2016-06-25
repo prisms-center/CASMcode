@@ -66,13 +66,13 @@ namespace CASM {
     }
 
     /// \brief Check filesystem directory structure and return list of all cluster expansion names
-    std::vector<std::string> all_clex() const {
+    std::vector<std::string> all_clex_name() const {
       return _all_settings("clex", m_root / m_clex_dir);
     }
 
     /// \brief Check filesystem directory structure and return list of all eci names
-    std::vector<std::string> all_eci(std::string clex, std::string calctype, std::string ref, std::string bset) const {
-      return _all_settings("eci", m_root / m_clex_dir / _clex(clex) / _calctype(calctype) / _ref(ref) / _bset(bset));
+    std::vector<std::string> all_eci(std::string clex_name, std::string calctype, std::string ref, std::string bset) const {
+      return _all_settings("eci", m_root / m_clex_dir / _clex_name(clex_name) / _calctype(calctype) / _ref(ref) / _bset(bset));
     }
 
 
@@ -263,8 +263,8 @@ namespace CASM {
     // -- Cluster expansions --------
 
     /// \brief Returns path to eci directory
-    fs::path clex_dir(std::string clex) const {
-      return m_root / m_clex_dir / _clex(clex);
+    fs::path clex_dir(std::string clex_name) const {
+      return m_root / m_clex_dir / _clex_name(clex_name);
     }
 
     /// \brief Returns path to eci directory
@@ -317,8 +317,8 @@ namespace CASM {
       return std::string("ref.") + ref;
     }
 
-    std::string _clex(std::string clex) const {
-      return std::string("clex.") + clex;
+    std::string _clex_name(std::string clex_name) const {
+      return std::string("clex.") + clex_name;
     }
 
     std::string _eci(std::string eci) const {

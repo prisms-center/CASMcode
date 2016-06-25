@@ -25,7 +25,7 @@ namespace CASM {
     ProjectBuilder(fs::path _root, std::string _name, std::string _cluster_expansion) :
       m_root(_root),
       m_name(_name),
-      m_clex(_cluster_expansion) {
+      m_clex_name(_cluster_expansion) {
 
       /// check if m_name is suitable:
       if(!boost::regex_match(m_name, boost::regex(R"([_a-zA-Z]\w*)"))) {
@@ -80,7 +80,7 @@ namespace CASM {
 
     fs::path m_root;
     std::string m_name;
-    std::string m_clex;
+    std::string m_clex_name;
 
     // allow default initialization:
 
