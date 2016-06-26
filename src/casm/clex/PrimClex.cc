@@ -617,7 +617,7 @@ namespace CASM {
    */
   //*******************************************************************************************
   Index PrimClex::add_supercell(const Lattice &superlat) {
-    return add_canonical_supercell(niggli(superlat, prim.point_group(), crystallography_tol()));
+    return add_canonical_supercell(canonical_equivalent_lattice(superlat, prim.point_group(), crystallography_tol()));
 
   }
 

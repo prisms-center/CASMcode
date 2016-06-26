@@ -35,14 +35,16 @@ namespace CASM {
    * <a href="http://dx.doi.org/10.1107/S0567739476000636">[doi:10.1107/S0567739476000636]</a>
    * R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams, Acta Cryst. (2004). A60, 1.
    * <a href="http://dx.doi.org/10.1107/S010876730302186X"> [doi:10.1107/S010876730302186X]</a>
+   *
+   * <a href="https://www.phenix-online.org/papers/sh5006_reprint.pdf"> </a>
    */
 
   class NiggliRep {
   public:
 
-    NiggliRep(const Lattice &init_lat, double m_tolerance);
+    NiggliRep(const Lattice &init_lat);
 
-    NiggliRep(const Eigen::Matrix3d &init_lat_col_mat, double m_tolerance);
+    NiggliRep(const Eigen::Matrix3d &init_lat_col_mat);
 
     ///Square of lattice length a
     double A() const;
@@ -62,50 +64,59 @@ namespace CASM {
     ///2ab*cos(gamma)
     double zeta() const;
 
-    ///A>B OR (A==B, |ksi| > |eta|)
-    bool meets_criteria_1() const;
+    const Eigen::Matrix3d &metrical_matrix() const;
 
-    ///B>C OR (B==C, |eta| > |zeta|)
-    bool meets_criteria_2() const;
+    ///A<=B OR (A==B, |ksi| <= |eta|)
+    bool meets_criteria_1(double compare_tol) const;
 
-    ///ksi*eta*ksi>0
-    bool meets_criteria_3() const;
+    ///B<=C OR (B==C, |eta| <= |zeta|)
+    bool meets_criteria_2(double compare_tol) const;
 
-    ///ksi*eta*zeta<=0
-    bool meets_criteria_4() const;
+    ///For type I: ksi>0 && eta>0 && zeta>0 (all angles < 90)
+    bool meets_criteria_3(double compare_tol) const;
 
-    ///|ksi|>B OR (ksi==B, 2*eta<zeta) OR (ksi==-B, zeta<0)
-    bool meets_criteria_5() const;
+    ///For type II: ksi<=0 && eta<=0 && zeta<=0 (all angles >= 90)
+    bool meets_criteria_4(double compare_tol) const;
 
-    ///|eta|>A OR (eta==A, 2*ksi<zeta) OR (eta==-A, zeta<0)
-    bool meets_criteria_6() const;
+    ///|ksi|<=B OR (ksi==B, zeta<=2*eta) OR (ksi==-B, zeta==0)
+    bool meets_criteria_5(double compare_tol) const;
 
-    ///|zeta|>A OR (zeta==A, 2*ksi<eta) OR (zeta==-A, eta<0)
-    bool meets_criteria_7() const;
+    ///|eta|<=A OR (eta==A, zeta<=2*ksi) OR (eta==-A, zeta==0)
+    bool meets_criteria_6(double compare_tol) const;
+
+    ///|zeta|<=A OR (zeta==A, eta<=2*ksi) OR (zeta==-A, eta==0)
+    bool meets_criteria_7(double compare_tol) const;
 
     ///ksi+eta+zeta+A+B<0 OR (ksi+eta+zeta+A+B==0, 2*A+2*eta+zeta>0)
-    bool meets_criteria_8() const;
+    ///C<=A+B+C+ksi+eta+zeta OR (C==A+B+C+ksi+eta+zeta, 2*A+2*eta+zeta<=0)
+    bool meets_criteria_8(double compare_tol) const;
 
-    ///True if all criteria return false, excluding criteria 3 and 4, which don't imply a non-Niggli form
-    bool is_niggli() const;
+    ///True if all conditions are true, and either 4 OR 3 is false
+    bool is_niggli(double compare_tol) const;
+
+    ///True if all conditions except 4 are true
+    bool is_niggli_type1(double compare_tol) const;
+
+    ///True if all conditions except 3 are true
+    bool is_niggli_type2(double compare_tol) const;
+
+    void debug_criteria(double compare_tol) const;
 
   private:
 
     ///Transpose of initialization lattice dotted with itself
-    const Eigen::Matrix3d m_self_dotted_lat;
+    const Eigen::Matrix3d m_metrical_matrix;
 
-    ///Tolerance value to be used for double comparisons
-    const double m_tolerance;
   };
 
 
   ///Find the niggli, most standard oriented version of the given orbit (defined by the given SymGroup) of lattices
   Lattice canonical_equivalent_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol);
 
-  ///Convert the given lattice into it's niggli reduced form, with the most standard orientation possilbe
+  ///Convert the given lattice into it's niggli TYPE ?? reduced form, with the most standard orientation possilbe
   Lattice niggli(const Lattice &in_lat, double compare_tol);
 
-  ///Check whether the given lattice (represented as a matrix) is in niggli reduced form (does not check for orientation)
+  ///Check whether the given lattice (represented as a matrix) is in niggli TYPE ?? reduced form (does not check for orientation)
   bool is_niggli(const Eigen::Matrix3d &test_lat_mat, double compare_tol);
 
   ///Check whether the given lattice is primitive (does not check for orientation)
@@ -117,22 +128,22 @@ namespace CASM {
   /// \brief Determine whether high_score has a more standard format than low_score
   bool standard_orientation_compare(const Eigen::Matrix3d &low_score_lat_mat, const Eigen::Matrix3d &high_score_lat_mat, double compare_tol);
 
-  //************************************************************************************//
+  //************************************************OLD CRAP GOES HERE************************************************************************//
 
-  /// \brief Returns an equivalent Lattice in Niggli form with a standard orientation
-  Lattice niggli(const Lattice &lat, const SymGroup &point_grp, double tol);
-
-  /// \brief Rotate the Lattice to a standard orientation using allowed point group operations
-  Lattice standard_orientation(const Lattice &lat, const SymGroup &point_grp, double tol);
-
-  namespace niggli_impl {
-
-    /// \brief Returns an equivalent Lattice in Niggli form, but without setting standard orientation
-    Lattice _niggli(const Lattice &lat, double compare_tol);
-
-    /// \brief Same as ::_niggli but with Matrix3d type instead of Lattice
-    Eigen::Matrix3d _niggli_mat(Eigen::Matrix3d lat_col_mat, double compare_tol);
-  }
+  //  /// \brief Returns an equivalent Lattice in Niggli form with a standard orientation
+  //  Lattice niggli(const Lattice &lat, const SymGroup &point_grp, double tol);
+  //
+  //  /// \brief Rotate the Lattice to a standard orientation using allowed point group operations
+  //  Lattice standard_orientation(const Lattice &lat, const SymGroup &point_grp, double tol);
+  //
+  //  namespace niggli_impl {
+  //
+  //    /// \brief Returns an equivalent Lattice in Niggli form, but without setting standard orientation
+  //    Lattice _niggli(const Lattice &lat, double compare_tol);
+  //
+  //    /// \brief Same as ::_niggli but with Matrix3d type instead of Lattice
+  //    Eigen::Matrix3d _niggli_mat(Eigen::Matrix3d lat_col_mat, double compare_tol);
+  //  }
 
 }
 

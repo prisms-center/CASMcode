@@ -11,6 +11,7 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/external/Eigen/Dense"
+#include "casm/crystallography/Niggli.hh"
 
 using namespace CASM;
 boost::filesystem::path testdir("tests/unit/crystallography");
@@ -517,7 +518,6 @@ void trans_enum_test() {
   return;
 }
 
-/*
 void restricted_test()
 {
     Lattice testlat=Lattice::fcc();
@@ -540,8 +540,8 @@ void restricted_test()
 
         Lattice comparelat=make_supercell(testlat,comp_transmat);
 
-        Lattice nigglicompare=niggli(comparelat,pg,TOL);
-        Lattice nigglitest=niggli(*it,pg,TOL);
+        Lattice nigglicompare=canonical_equivalent_lattice(comparelat,pg,TOL);
+        Lattice nigglitest=canonical_equivalent_lattice(*it,pg,TOL);
 
         BOOST_CHECK(nigglicompare==nigglitest);
         l++;
@@ -549,9 +549,8 @@ void restricted_test()
 
     return;
 }
-*/
 
-void restricted_test() {
+void restricted_test2() {
   std::vector<Lattice> all_test_lats;
   all_test_lats.push_back(Lattice::fcc());
   all_test_lats.push_back(Lattice::bcc());
@@ -605,6 +604,11 @@ BOOST_AUTO_TEST_CASE(HermiteCounting) {
 //Tests in here were created by first getting results from
 //before HermiteCounter existed and then making sure the results
 //didn't change after it was introduced
+
+//Unfortunately, the old niggli routines weren't working as
+//they should have been, so these hard coded examples to check
+//had to be regenerated...
+
 BOOST_AUTO_TEST_CASE(EnumeratorConsistency) {
 
   it_matrix_test(boost::filesystem::path(testdir / "POS1_1_6_mats.json"));
@@ -622,6 +626,7 @@ BOOST_AUTO_TEST_CASE(EnumeratorConsistency) {
 BOOST_AUTO_TEST_CASE(RestrictedEnumeration) {
   trans_enum_test();
   restricted_test();
+  restricted_test2();
   //restricted_trans_enum_test();
 }
 

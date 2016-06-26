@@ -68,7 +68,7 @@ namespace CASM {
       //std::cout << "min_vol is " << min_vol << "max_vol is " << max_vol << "\n";
       for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
         //std::cout << "Enumeration step " << l++ << " best cost is " << best_cost << "\n";
-        Lattice tlat = niggli(*it, sym_group, _tol);
+        Lattice tlat = canonical_equivalent_lattice(*it, sym_group, _tol);
 
         //Supercell matches size, now check to see see if lattices are related to each other
         LatticeMap strainmap(tlat, relaxed_lat, 1, _tol, 1);
@@ -433,7 +433,7 @@ namespace CASM {
     BasicStructure<Site> tstruc(struc);
 
     // We know struc.lattice() is a supercell of the prim, now we have to reorient 'struc' to match canonical lattice vectors
-    mapped_lat = niggli(Lattice(primclex().get_prim().lattice().lat_column_mat() * trans_mat), primclex().get_prim().point_group(), m_tol);
+    mapped_lat = canonical_equivalent_lattice(Lattice(primclex().get_prim().lattice().lat_column_mat() * trans_mat), primclex().get_prim().point_group(), m_tol);
     Supercell scel(&primclex(), mapped_lat);
 
     // note: trans_mat gets recycled here
@@ -747,7 +747,7 @@ namespace CASM {
     //std::cout << "min_vol is " << min_vol << "max_vol is " << max_vol << "\n";
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
       //std::cout << "Enumeration step " << l++ << " best cost is " << best_cost << "\n";
-      lat_vec.push_back(niggli(*it, primclex().get_prim().point_group(), m_tol));
+      lat_vec.push_back(canonical_equivalent_lattice(*it, primclex().get_prim().point_group(), m_tol));
     }
 
     return m_superlat_map[prim_vol] = std::move(lat_vec);

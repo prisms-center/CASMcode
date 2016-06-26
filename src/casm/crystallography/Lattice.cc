@@ -381,7 +381,7 @@ namespace CASM {
     SupercellEnumerator<Lattice> enumerator(*this, effective_pg, min_prim_vol, max_prim_vol + 1, dims, G);
     supercell.clear();
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
-      supercell.push_back(niggli(*it, effective_pg, TOL));
+      supercell.push_back(canonical_equivalent_lattice(*it, effective_pg, TOL));
     }
     return;
   }

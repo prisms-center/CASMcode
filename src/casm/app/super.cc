@@ -339,7 +339,7 @@ namespace CASM {
 
         auto M = enforce_min_volume(prim_lat, T, pg, min_vol, vm.count("fixed-shape"));
 
-        superduper = niggli(make_supercell(superduper, M), pg, TOL);
+        superduper = canonical_equivalent_lattice(make_supercell(superduper, M), pg, TOL);
 
         auto S = is_supercell(superduper, prim_lat, TOL).second;
 
@@ -447,7 +447,7 @@ namespace CASM {
                    min_vol,
                    vm.count("fixed-shape"));
 
-        Lattice niggli_lat = niggli(make_supercell(prim_lat, T * M), pg, TOL);
+        Lattice niggli_lat = canonical_equivalent_lattice(make_supercell(prim_lat, T * M), pg, TOL);
         T = is_supercell(niggli_lat, prim_lat, TOL).second;
 
         std::cout << "    Transformation matrix, after enforcing mininum volume:\n"
@@ -562,7 +562,7 @@ namespace CASM {
         Eigen::Matrix3i H_canon;
         Eigen::Matrix3d op_canon;
 
-        Eigen::Matrix3d S_niggli = niggli(Lattice(S), pg, tol).lat_column_mat();
+        Eigen::Matrix3d S_niggli = canonical_equivalent_lattice(Lattice(S), pg, tol).lat_column_mat();
         Eigen::Matrix3i T_niggli = iround(U.inverse() * S_niggli);
         Eigen::Matrix3i H_niggli = hermite_normal_form(T_niggli).first;
 
