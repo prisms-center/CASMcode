@@ -592,36 +592,6 @@ void trans_enum_test() {
 }
 
 void restricted_test() {
-  Lattice testlat = Lattice::fcc();
-  SymGroup pg;
-  testlat.generate_point_group(pg);
-  int dims = 1;
-
-  SupercellEnumerator<Lattice> enumerator(testlat, pg, 1, 5 + 1, dims);
-  std::vector<Lattice> enumerated_lat(enumerator.begin(), enumerator.end());
-
-  BOOST_CHECK_EQUAL(enumerated_lat.size(), 5);
-
-  int l = 1;
-  for(auto it = enumerated_lat.begin(); it != enumerated_lat.end(); ++it) {
-    Eigen::Matrix3i comp_transmat;
-    comp_transmat << (l), 0, 0,
-                  0, 1, 0,
-                  0, 0, 1;
-
-    Lattice comparelat = make_supercell(testlat, comp_transmat);
-
-    Lattice nigglicompare = canonical_equivalent_lattice(comparelat, pg, TOL);
-    Lattice nigglitest = canonical_equivalent_lattice(*it, pg, TOL);
-
-    BOOST_CHECK(nigglicompare == nigglitest);
-    l++;
-  }
-
-  return;
-}
-
-void restricted_test2() {
   std::vector<Lattice> all_test_lats;
   all_test_lats.push_back(Lattice::fcc());
   all_test_lats.push_back(Lattice::bcc());
@@ -717,7 +687,6 @@ results were incorrect, and these are an improvement. If you are sure you want t
 BOOST_AUTO_TEST_CASE(RestrictedEnumeration) {
   trans_enum_test();
   restricted_test();
-  restricted_test2();
   //restricted_trans_enum_test();
 }
 

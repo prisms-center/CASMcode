@@ -46,8 +46,6 @@ namespace CASM {
     SupercellEnumerator<Lattice> latenumerator(testlat, pg, minvol, maxvol + 1, dims);
     std::vector<Lattice> enumerated_lat(latenumerator.begin(), latenumerator.end());
 
-    std::cout << "Enumerated from " << minvol << " to " << maxvol << " and got " << enumerated_lat.size() << " lattices" << std::endl;
-
 
     int l = 1;
     for(auto it = enumerated_lat.begin(); it != enumerated_lat.end(); ++it) {
