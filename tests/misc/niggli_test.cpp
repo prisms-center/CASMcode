@@ -8,6 +8,8 @@
 #include "casm/misc/CASM_math.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/casm_io/VaspIO.hh"
+#include "casm/clex/Supercell.hh"
+
 
 using namespace CASM;
 
@@ -94,8 +96,23 @@ namespace testing {
     std::ifstream path_stream(namelist.c_str());
 
     std::string path_str;
+    std::string prim_path_str;
+
+    std::getline(path_stream, prim_path_str);
+
+    SymGroup old_primitive_point;
+    Structure old_primitive_struc(prim_path_str);
+    old_primitive_struc.lattice().generate_point_group(old_primitive_point);
+
+    SymGroup new_primitive_point;
+    Structure new_primitive_struc(prim_path_str);
+    new_primitive_struc.lattice().generate_point_group(new_primitive_point);
+
+    path_stream.close();
+    path_stream.open(namelist.c_str());
 
     while(std::getline(path_stream, path_str)) {
+
       Structure old_struc(path_str);
       NiggliRep old_rep(old_struc.lattice());
 
@@ -103,12 +120,40 @@ namespace testing {
         std::cout << path_str << " was never Niggli to begin with!!" << std::endl;
       }
 
-      Lattice old_nigglied = old_struc.lattice();
-      Lattice new_nigglied = niggli(old_nigglied, CASM::TOL);
+      Lattice old_canonical_lat = old_struc.lattice();
+      Lattice new_canonical_lat = canonical_equivalent_lattice(old_canonical_lat, new_primitive_point, CASM::TOL);
 
-      if(!(new_nigglied == old_nigglied)) {
-        std::cout << path_str << " is different now..." << std::endl;
+      Eigen::Matrix3d old_trans_mat, new_trans_mat;
+
+      assert(old_canonical_lat.is_supercell_of(old_primitive_struc.lattice(), old_trans_mat));
+      assert(new_canonical_lat.is_supercell_of(new_primitive_struc.lattice(), new_trans_mat));
+
+      std::string old_name_str, new_name_str;
+      old_name_str = generate_name(old_trans_mat.cast<int>());
+      new_name_str = generate_name(new_trans_mat.cast<int>());
+
+      if(old_name_str != new_name_str) {
+        std::cout << "Name has changed: " << old_name_str << " -> " << new_name_str << std::endl;
       }
+
+      if(!(new_canonical_lat == old_canonical_lat)) {
+        std::cout << path_str << " is different now..." << std::endl;
+
+        Eigen::Matrix3d old_to_new_trans = Eigen::Matrix3d::Zero();
+        bool transformable;
+
+        transformable = new_canonical_lat.is_supercell_of(old_canonical_lat, new_primitive_point, old_to_new_trans);
+
+        if(transformable) {
+          std::cout << "Can go from old to new with:" << std::endl;
+          std::cout << old_to_new_trans.cast<int>() << std::endl << std::endl;
+        }
+
+        else {
+          std::cout << "Could not transform" << std::endl;
+        }
+      }
+
 
     }
     return;
