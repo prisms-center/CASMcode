@@ -100,8 +100,16 @@ namespace testing {
       NiggliRep old_rep(old_struc.lattice());
 
       if(!old_rep.is_niggli_type2(CASM::TOL) && !old_rep.is_niggli_type1(CASM::TOL)) {
-        std::cout << path_str << " was NOT niggli 1 OR 2!!!" << std::endl;
+        std::cout << path_str << " was never Niggli to begin with!!" << std::endl;
       }
+
+      Lattice old_nigglied = old_struc.lattice();
+      Lattice new_nigglied = niggli(old_nigglied, CASM::TOL);
+
+      if(!(new_nigglied == old_nigglied)) {
+        std::cout << path_str << " is different now..." << std::endl;
+      }
+
     }
     return;
   }
@@ -113,7 +121,7 @@ int main() {
   //testing::niggli(testlat);
   //testing::niggli_rep_test(Lattice::fcc());
   testing::obvious_check();
-  //testing::old_enumerations_test("enumerated.txt");
+  testing::old_enumerations_test("enumerated.txt");
 
   return 0;
 }
