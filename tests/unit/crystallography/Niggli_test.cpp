@@ -10,6 +10,8 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 
 namespace CASM {
+
+  //Test for checking whether matrices are symmetric or persymmetric
   void symmetric_testing() {
     Eigen::MatrixXd symmat(5, 5), persymmat(4, 4), nonsymmat;
 
