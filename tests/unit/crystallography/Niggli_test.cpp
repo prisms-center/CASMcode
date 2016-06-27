@@ -11,6 +11,53 @@
 
 namespace CASM {
 
+  void confirm_lattice(const Lattice &known_niggli_form, const Eigen::Matrix3i &skewed_unimodular) {
+    assert(skewed_unimodular.determinant() == 1);
+    assert(is_niggli(known_niggli_form, CASM::TOL));
+
+    //Lattice non_niggli(known_niggli_form.lat_column_mat()*skewed_unimodular.cast<double>());
+    Lattice non_niggli(known_niggli_form.lat_column_mat()*skewed_unimodular.cast<double>());
+
+    BOOST_CHECK(!is_niggli(non_niggli, CASM::TOL));
+
+    Lattice reniggli = niggli(non_niggli, CASM::TOL);
+
+    BOOST_CHECK(known_niggli_form == reniggli);
+
+    BOOST_CHECK(niggli(niggli(non_niggli, CASM::TOL), CASM::TOL) == niggli(non_niggli, CASM::TOL));
+
+    return;
+  }
+
+
+  void confirm_fcc_lattice(const Eigen::Matrix3i &skewed_unimodular) {
+    BOOST_TEST_MESSAGE("Checking fcc lattice");
+    CASM::confirm_lattice(CASM::Lattice::fcc(), skewed_unimodular);
+    CASM::confirm_lattice(CASM::Lattice::fcc(), skewed_unimodular.transpose());
+    return;
+  }
+
+  void confirm_bcc_lattice(const Eigen::Matrix3i &skewed_unimodular) {
+    BOOST_TEST_MESSAGE("Checking bcc lattice");
+    CASM::confirm_lattice(CASM::Lattice::bcc(), skewed_unimodular);
+    CASM::confirm_lattice(CASM::Lattice::bcc(), skewed_unimodular.transpose());
+    return;
+  }
+
+  void confirm_hexagonal_lattice(const Eigen::Matrix3i &skewed_unimodular) {
+    BOOST_TEST_MESSAGE("Checking hexagonal lattice");
+    CASM::confirm_lattice(CASM::Lattice::hexagonal(), skewed_unimodular);
+    CASM::confirm_lattice(CASM::Lattice::hexagonal(), skewed_unimodular.transpose());
+    return;
+  }
+
+  void confirm_cubic_lattice(const Eigen::Matrix3i &skewed_unimodular) {
+    BOOST_TEST_MESSAGE("Checking cubic lattice");
+    CASM::confirm_lattice(CASM::Lattice::cubic(), skewed_unimodular);
+    CASM::confirm_lattice(CASM::Lattice::cubic(), skewed_unimodular.transpose());
+    return;
+  }
+
   //Test for checking whether matrices are symmetric or persymmetric
   void symmetric_testing() {
     Eigen::MatrixXd symmat(5, 5), persymmat(4, 4), nonsymmat;
@@ -70,6 +117,18 @@ BOOST_AUTO_TEST_SUITE(NiggliTest)
 
 BOOST_AUTO_TEST_CASE(SymmetricTest) {
   CASM::symmetric_testing();
+}
+
+BOOST_AUTO_TEST_CASE(EeasyTests) {
+  Eigen::Matrix3i skewed_unimodular;
+  skewed_unimodular << 1, 2, 3,
+                    0, 1, 4,
+                    0, 0, 1;
+
+  CASM::confirm_fcc_lattice(skewed_unimodular);
+  CASM::confirm_bcc_lattice(skewed_unimodular);
+  CASM::confirm_cubic_lattice(skewed_unimodular);
+  CASM::confirm_hexagonal_lattice(skewed_unimodular.transpose());
 }
 
 BOOST_AUTO_TEST_CASE(EvilNiggliTest) {
