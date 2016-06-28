@@ -122,6 +122,9 @@ namespace CASM {
   ///Check whether the given lattice is primitive (does not check for orientation)
   bool is_niggli(const Lattice &test_lat, double compare_tol);
 
+  /// \brief Generate a vector whose lexicographical value determines how well it's oriented in space
+  Eigen::VectorXd spatial_unroll(const Eigen::Matrix3d &lat_mat, double compare_tol);
+
   /// \brief Compare the spatial orientation (ignoring matrix symmetry) and determine which one is oriented more standard. True if high is more standard.
   bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_lat_mat, Eigen::Matrix3d &high_score_lat_mat, double compare_tol);
 

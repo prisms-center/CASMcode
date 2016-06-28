@@ -292,6 +292,63 @@ namespace CASM {
   }
 
   /**
+   * Generates a vector of values from a Lattice column matrix, whose
+   * lexicographical value determines how standard it's orientation is.
+   *
+   * First entry is the number of non-negative entries in the matrix.
+   * Next entries are the diagonal values.
+   * Next entries are the negative of the absolute value of the off diagonal entries.
+   * Finally, the signs of the off diagonal entries.
+   *
+   * Maximizing the lexicographical value will favor matrices that
+   * are diagonal if possible, followed by a preference for upper triangular matrices.
+   * Off diagonal entries are minimized.
+   */
+
+  Eigen::VectorXd spatial_unroll(const Eigen::Matrix3d &lat_mat, double compare_tol) {
+    //We want to give a preference to lattices with more positive values than negative ones
+    //Count how many non-negative entries there are
+    int non_negatives = 0;
+    for(int i = 0; i < 3; i++) {
+      for(int j = 0; j < 3; j++) {
+        if(sgn(lat_mat(i, j)) != -1) {
+          non_negatives++;
+        }
+      }
+    }
+
+
+    Eigen::VectorXd lat_spatial_descriptor(16);
+
+    lat_spatial_descriptor <<
+                           //Favor positive values
+                           non_negatives,
+
+                           //Favor large diagonal values
+                           lat_mat(0, 0),
+                           lat_mat(1, 1),
+                           lat_mat(2, 2),
+
+                           //Favor small off diagonal values
+                           -std::abs(lat_mat(2, 1)),
+                           -std::abs(lat_mat(2, 0)),
+                           -std::abs(lat_mat(1, 0)),
+                           -std::abs(lat_mat(1, 2)),
+                           -std::abs(lat_mat(0, 2)),
+                           -std::abs(lat_mat(0, 1)),
+
+                           //Favor upper triangular
+                           sgn(lat_mat(2, 1)),
+                           sgn(lat_mat(2, 0)),
+                           sgn(lat_mat(1, 0)),
+                           sgn(lat_mat(1, 2)),
+                           sgn(lat_mat(0, 2)),
+                           sgn(lat_mat(0, 1));
+
+    return lat_spatial_descriptor;
+  }
+
+  /**
    * Given two lattice column matrices, determine which one of them is oriented
    * in a more standard manner in space relative to the Cartesian coordinates.
    *
@@ -300,49 +357,10 @@ namespace CASM {
    */
 
   bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_lat_mat, const Eigen::Matrix3d &high_score_lat_mat, double compare_tol) {
-
-    auto spatial_unroll = [compare_tol](const Eigen::Matrix3d & lat_mat)->Eigen::VectorXd {
-      Eigen::VectorXd lat_spatial_descriptor(15);
-
-      /*
-      lat_spatial_descriptor<<(lat_mat(0,0)),
-      (lat_mat(1,1)),
-      (lat_mat(2,2)),
-      (-std::abs(lat_mat(2,1))),
-      (-std::abs(lat_mat(2,0))),
-      (-std::abs(lat_mat(1,0))),
-      (-std::abs(lat_mat(1,2))),
-      (-std::abs(lat_mat(0,2))),
-      (-std::abs(lat_mat(0,1))),
-      (sgn(lat_mat(2,1))),
-      (sgn(lat_mat(2,0))),
-      (sgn(lat_mat(1,0))),
-      (sgn(lat_mat(1,2))),
-      (sgn(lat_mat(0,2))),
-      (sgn(lat_mat(0,1)));
-      */
-
-      lat_spatial_descriptor << lat_mat(0, 0),
-      lat_mat(1, 0),
-      lat_mat(2, 0),
-      lat_mat(1, 1),
-      lat_mat(0, 1),
-      lat_mat(2, 1),
-      lat_mat(2, 2),
-      lat_mat(0, 2),
-      lat_mat(1, 2);
-
-      return lat_spatial_descriptor;
-    };
-
-    Eigen::VectorXd low_score_lat_unroll = spatial_unroll(low_score_lat_mat);
-    Eigen::VectorXd high_score_lat_unroll = spatial_unroll(high_score_lat_mat);
-
-    //std::cout<<low_score_lat_mat<<std::endl;
-    //std::cout<<low_score_lat_unroll<<std::endl<<std::endl;
+    Eigen::VectorXd low_score_lat_unroll = spatial_unroll(low_score_lat_mat, compare_tol);
+    Eigen::VectorXd high_score_lat_unroll = spatial_unroll(high_score_lat_mat, compare_tol);
 
     return float_lexicographical_compare(low_score_lat_unroll, high_score_lat_unroll, compare_tol);
-
   }
 
   /**

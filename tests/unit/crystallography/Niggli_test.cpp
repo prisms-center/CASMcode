@@ -15,7 +15,6 @@ namespace CASM {
     assert(skewed_unimodular.determinant() == 1);
     assert(is_niggli(known_niggli_form, CASM::TOL));
 
-    //Lattice non_niggli(known_niggli_form.lat_column_mat()*skewed_unimodular.cast<double>());
     Lattice non_niggli(known_niggli_form.lat_column_mat()*skewed_unimodular.cast<double>());
 
     BOOST_CHECK(!is_niggli(non_niggli, CASM::TOL));
@@ -25,6 +24,10 @@ namespace CASM {
     BOOST_CHECK(known_niggli_form == reniggli);
 
     BOOST_CHECK(niggli(niggli(non_niggli, CASM::TOL), CASM::TOL) == niggli(non_niggli, CASM::TOL));
+
+    //known_niggli_form.print(std::cout);
+    //reniggli.print(std::cout);
+    //std::cout<<spatial_unroll(known_niggli_form.lat_column_mat(), CASM::TOL)<<"    vs    "<<spatial_unroll(reniggli.lat_column_mat(), CASM::TOL)<<std::endl;
 
     return;
   }
@@ -128,7 +131,7 @@ BOOST_AUTO_TEST_CASE(EeasyTests) {
   CASM::confirm_fcc_lattice(skewed_unimodular);
   CASM::confirm_bcc_lattice(skewed_unimodular);
   CASM::confirm_cubic_lattice(skewed_unimodular);
-  CASM::confirm_hexagonal_lattice(skewed_unimodular.transpose());
+  CASM::confirm_hexagonal_lattice(skewed_unimodular);
 }
 
 BOOST_AUTO_TEST_CASE(EvilNiggliTest) {

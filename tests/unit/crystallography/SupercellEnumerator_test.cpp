@@ -671,11 +671,11 @@ BOOST_AUTO_TEST_CASE(EnumeratorConsistency) {
   current_test_results.write(current_test_path);
 
   //Find out where things fail
-  //boost::filesystem::path failure_point=find_diff(current_test_results, old_test_results);
-  //BOOST_TEST_MESSAGE("Comparison failed at "+failure_point.string());
-
   //Comparison will fail if you don't compare from pre-written files.
-  //BOOST_CHECK_EQUAL(jsonParser(current_test_path), jsonParser(old_test_path));
+  boost::filesystem::path failure_point = find_diff(jsonParser(current_test_path), jsonParser(old_test_path));
+  //BOOST_TEST_MESSAGE("This failure point should be an empty string: '"+failure_point.string()+"'");
+
+  BOOST_CHECK_EQUAL(failure_point, ""); //This way it'll print something helpful if it fails
 
   current_test_results["WARNING"] = "This has been added as an inconvenience to anyone who is thinking of replacing the \
 current test_results.json file. Do not replace anything unless you're certain the old \

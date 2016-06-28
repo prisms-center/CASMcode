@@ -57,8 +57,8 @@ namespace CASM {
   Lattice Lattice::hexagonal() {
     Eigen::Matrix3d latmat;
     latmat <<
-           1, 1.0 / sqrt(3.0), 0,
-           -1, 1.0 / sqrt(3.0),  0,
+           1, -1.0 / sqrt(3.0), 0,
+           0, 2.0 / sqrt(3.0),  0,
            0, 0, sqrt(3.0);
 
     return Lattice(latmat.transpose());
