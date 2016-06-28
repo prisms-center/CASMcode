@@ -1,6 +1,7 @@
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/misc/CASM_math.hh"
 
 namespace CASM {
   NiggliRep::NiggliRep(const Eigen::Matrix3d &init_lat_col_mat):
@@ -299,56 +300,49 @@ namespace CASM {
    */
 
   bool standard_orientation_spatial_compare(const Eigen::Matrix3d &low_score_lat_mat, const Eigen::Matrix3d &high_score_lat_mat, double compare_tol) {
-    //I have no idea who wrote this or why we decided this was the way to go.
-    //This is simply a cut and paste from the old Lattice::standard_orientation.
-    if(almost_equal(low_score_lat_mat(0, 0), high_score_lat_mat(0, 0), compare_tol)) {
-      if(almost_equal(low_score_lat_mat(1, 0), high_score_lat_mat(1, 0), compare_tol)) {
-        if(almost_equal(low_score_lat_mat(2, 0), high_score_lat_mat(2, 0), compare_tol)) {
-          if(almost_equal(low_score_lat_mat(1, 1), high_score_lat_mat(1, 1), compare_tol)) {
-            if(almost_equal(low_score_lat_mat(0, 1), high_score_lat_mat(0, 1), compare_tol)) {
-              if(almost_equal(low_score_lat_mat(2, 1), high_score_lat_mat(2, 1), compare_tol)) {
-                if(almost_equal(low_score_lat_mat(2, 2), high_score_lat_mat(2, 2), compare_tol)) {
-                  if(almost_equal(low_score_lat_mat(0, 2), high_score_lat_mat(0, 2), compare_tol)) {
-                    if(almost_equal(low_score_lat_mat(1, 2), high_score_lat_mat(1, 2), compare_tol)) {
-                      return false;
-                    }
-                    else if(high_score_lat_mat(1, 2) > low_score_lat_mat(1, 2)) {
-                      return  true;
-                    }
-                  }
-                  else if(high_score_lat_mat(0, 2) > low_score_lat_mat(0, 2)) {
-                    return  true;
-                  }
-                }
-                else if(high_score_lat_mat(2, 2) > low_score_lat_mat(2, 2)) {
-                  return  true;
-                }
-              }
-              else if(high_score_lat_mat(2, 1) > low_score_lat_mat(2, 1)) {
-                return  true;
-              }
-            }
-            else if(high_score_lat_mat(0, 1) > low_score_lat_mat(0, 1)) {
-              return  true;
-            }
-          }
-          else if(high_score_lat_mat(1, 1) > low_score_lat_mat(1, 1)) {
-            return  true;
-          }
-        }
-        else if(high_score_lat_mat(2, 0) > low_score_lat_mat(2, 0)) {
-          return  true;
-        }
-      }
-      else if(high_score_lat_mat(1, 0) > low_score_lat_mat(1, 0)) {
-        return  true;
-      }
-    }
-    else if(high_score_lat_mat(0, 0) > low_score_lat_mat(0, 0)) {
-      return  true;
-    }
 
-    return false;
+    auto spatial_unroll = [compare_tol](const Eigen::Matrix3d & lat_mat)->Eigen::VectorXd {
+      Eigen::VectorXd lat_spatial_descriptor(15);
+
+      /*
+      lat_spatial_descriptor<<(lat_mat(0,0)),
+      (lat_mat(1,1)),
+      (lat_mat(2,2)),
+      (-std::abs(lat_mat(2,1))),
+      (-std::abs(lat_mat(2,0))),
+      (-std::abs(lat_mat(1,0))),
+      (-std::abs(lat_mat(1,2))),
+      (-std::abs(lat_mat(0,2))),
+      (-std::abs(lat_mat(0,1))),
+      (sgn(lat_mat(2,1))),
+      (sgn(lat_mat(2,0))),
+      (sgn(lat_mat(1,0))),
+      (sgn(lat_mat(1,2))),
+      (sgn(lat_mat(0,2))),
+      (sgn(lat_mat(0,1)));
+      */
+
+      lat_spatial_descriptor << lat_mat(0, 0),
+      lat_mat(1, 0),
+      lat_mat(2, 0),
+      lat_mat(1, 1),
+      lat_mat(0, 1),
+      lat_mat(2, 1),
+      lat_mat(2, 2),
+      lat_mat(0, 2),
+      lat_mat(1, 2);
+
+      return lat_spatial_descriptor;
+    };
+
+    Eigen::VectorXd low_score_lat_unroll = spatial_unroll(low_score_lat_mat);
+    Eigen::VectorXd high_score_lat_unroll = spatial_unroll(high_score_lat_mat);
+
+    //std::cout<<low_score_lat_mat<<std::endl;
+    //std::cout<<low_score_lat_unroll<<std::endl<<std::endl;
+
+    return float_lexicographical_compare(low_score_lat_unroll, high_score_lat_unroll, compare_tol);
+
   }
 
   /**

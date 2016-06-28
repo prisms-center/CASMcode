@@ -411,8 +411,8 @@ namespace CASM {
      * 0 3 4
      * 0 0 1
      *
-     * Then this function will return 1 because 231411>132133
-     * If both are equal then 0 is returned.
+     * Then this function will return true because 231411>132133 (i.e. M0<M1)
+     * If both are equal then false is returned.
      *
      * This routine expects your matrices to already be in canonical form.
      */
@@ -425,15 +425,16 @@ namespace CASM {
 
       for(Index i = 0; i < unrolled_H0.size(); i++) {
         if(unrolled_H0(i) > unrolled_H1(i)) {
-          return 0;
+          return false;
         }
 
         else if(unrolled_H0(i) < unrolled_H1(i)) {
-          return 1;
+          return true;
         }
       }
 
-      return 0;
+      //Both are equal if you get this far
+      return false;
     }
   }
 
