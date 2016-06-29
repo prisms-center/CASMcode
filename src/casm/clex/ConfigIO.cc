@@ -162,10 +162,11 @@ namespace CASM {
       return correlations(config, m_clexulator);
     }
 
-    /// \brief If not yet initialized, use the global clexulator from the PrimClex
+    /// \brief If not yet initialized, use the default clexulator from the PrimClex
     void Corr::init(const Configuration &_tmplt) const {
       if(!m_clexulator.initialized()) {
-        m_clexulator = _tmplt.get_primclex().global_clexulator();
+        const PrimClex &primclex = _tmplt.get_primclex();
+        m_clexulator = primclex.clexulator(primclex.settings().clex_key());
       }
 
       VectorXdAttribute<Configuration>::init(_tmplt);
@@ -202,11 +203,13 @@ namespace CASM {
       return std::unique_ptr<Clex>(this->_clone());
     }
 
-    /// \brief If not yet initialized, use the global clexulator and eci from the PrimClex
+    /// \brief If not yet initialized, use the default cluster expansion from the PrimClex
     void Clex::init(const Configuration &_tmplt) const {
       if(!m_clexulator.initialized()) {
-        m_clexulator = _tmplt.get_primclex().global_clexulator();
-        m_eci = _tmplt.get_primclex().global_eci("formation_energy");
+        const PrimClex &primclex = _tmplt.get_primclex();
+        ClexKey key = primclex.settings().clex_key();
+        m_clexulator = primclex.clexulator(key);
+        m_eci = primclex.eci(key);
       }
     }
 

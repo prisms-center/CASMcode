@@ -40,26 +40,6 @@ namespace CASM {
     }
 
 
-    ProjectBuilder &set_bset(std::string _bset) {
-      m_bset = _bset;
-      return *this;
-    }
-
-    ProjectBuilder &set_calctype(std::string _calctype) {
-      m_calctype = _calctype;
-      return *this;
-    }
-
-    ProjectBuilder &set_ref(std::string _ref) {
-      m_ref = _ref;
-      return *this;
-    }
-
-    ProjectBuilder &set_eci(std::string _eci) {
-      m_eci = _eci;
-      return *this;
-    }
-
     ProjectBuilder &set_crystallography_tol(double _tol) {
       m_crystallography_tol = _tol;
       return *this;
@@ -85,10 +65,6 @@ namespace CASM {
     // allow default initialization:
 
     std::vector<std::string> m_properties {"relaxed_energy"};
-    std::string m_bset = "default";
-    std::string m_calctype = "default";
-    std::string m_ref = "default";
-    std::string m_eci = "default";
     double m_crystallography_tol = CASM::TOL;
     double m_lin_alg_tol = 1e-10;
 

@@ -1248,15 +1248,6 @@ namespace CASM {
   }
 
   /// \brief Returns correlations using 'clexulator'.
-  ///
-  /// This still assumes that the PrimClex and Supercell are set up for this, so make sure you've called:
-  /// - primclex.populate_basis_tables(basis_type);
-  /// - primclex.populate_cluster_basis_function_tables();
-  /// - primclex.generate_full_nlist();
-  /// - primclex.populate_clex_supercell_nlists();
-  ///
-  /// In the future that shouldn't be necessary
-  ///
   Correlation correlations(const Configuration &config, Clexulator &clexulator) {
     return correlations(config.configdof(), config.get_supercell(), clexulator);
   }
@@ -1338,8 +1329,8 @@ namespace CASM {
 
   /// \brief Returns the formation energy, normalized per unit cell
   double clex_formation_energy(const Configuration &config) {
-    Clexulator clexulator = config.get_primclex().global_clexulator();
-    return config.get_primclex().global_eci("formation_energy") * correlations(config, clexulator);
+    Clexulator clexulator = config.get_primclex().clexulator("formation_energy");
+    return config.get_primclex().eci("formation_energy") * correlations(config, clexulator);
   }
 
   /// \brief Returns the formation energy, normalized per unit cell

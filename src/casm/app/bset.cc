@@ -191,12 +191,12 @@ namespace CASM {
       // write source code
       fs::ofstream outfile;
       outfile.open(dir.clexulator_src(set.name(), set.bset()));
-      print_clexulator(prim, tree, nlist, set.global_clexulator(), outfile, primclex.crystallography_tol());
+      print_clexulator(prim, tree, nlist, set.clexulator(), outfile, primclex.crystallography_tol());
       outfile.close();
       args.log << "write: " << dir.clexulator_src(set.name(), set.bset()) << "\n" << std::endl;
 
       // compile clexulator
-      primclex.global_clexulator(args.log);
+      primclex.clexulator(set.clex_key(), args.log);
     }
     else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
 
@@ -206,21 +206,21 @@ namespace CASM {
         return ERR_MISSING_DEPENDS;
       }
 
-      primclex.read_global_orbitree(dir.clust(set.bset()));
+      primclex.orbitree(set.clex_key());
 
       if(vm.count("orbits")) {
         args.log.custom("Prototype clusters");
-        primclex.get_global_orbitree().print_proto_clust(args.log);
+        primclex.orbitree(set.clex_key()).print_proto_clust(args.log);
         args.log << std::endl;
       }
       if(vm.count("clusters")) {
         args.log.custom("All clusters");
-        primclex.get_global_orbitree().print_full_clust(args.log);
+        primclex.orbitree(set.clex_key()).print_full_clust(args.log);
         args.log << std::endl;
       }
       if(vm.count("functions")) {
         args.log.custom("Basis functions");
-        primclex.get_global_orbitree().print_proto_clust_funcs(args.log);
+        primclex.orbitree(set.clex_key()).print_proto_clust_funcs(args.log);
         args.log << std::endl;
       }
     }

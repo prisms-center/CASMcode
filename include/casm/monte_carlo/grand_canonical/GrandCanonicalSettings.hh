@@ -35,21 +35,8 @@ namespace CASM {
 
     // --- Project settings ---------------------
 
-    /// \brief Given a settings jsonParser figure out what the project clex settings to use are:
-    std::string clex() const;
-
-    /// \brief Given a settings jsonParser figure out what the project bset settings to use are:
-    std::string bset() const;
-
-    /// \brief Given a settings jsonParser figure out what the project calctype settings to use are:
-    std::string calctype() const;
-
-    /// \brief Given a settings jsonParser figure out what the project ref settings to use are:
-    std::string ref() const;
-
-    /// \brief Given a settings jsonParser figure out what the project eci settings to use are:
-    std::string eci() const;
-
+    /// \brief Get formation energy cluster expansion
+    ClexDescription formation_energy() const;
 
 
     // --- Sampler settings ---------------------
@@ -433,7 +420,7 @@ namespace CASM {
     double prec;
     MonteSampler *ptr;
 
-    for(size_type i = 0; i < primclex.global_clexulator().corr_size(); i++) {
+    for(size_type i = 0; i < primclex.clexulator(clex_key()).corr_size(); i++) {
 
       prop_name = "corr";
       print_name = std::string("corr(") + std::to_string(i) + ")";

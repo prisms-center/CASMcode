@@ -38,10 +38,10 @@ namespace CASM {
       // create basic directories
       set.new_casm_dir();
       set.new_symmetry_dir();
-      set.new_bset_dir(m_bset);
-      set.new_calc_settings_dir(m_calctype);
-      set.new_ref_dir(m_calctype, m_ref);
-      set.new_eci_dir(m_clex_name, m_calctype, m_ref, m_bset, m_eci);
+      set.new_bset_dir("default");
+      set.new_calc_settings_dir("default");
+      set.new_ref_dir("default", "default");
+      set.new_eci_dir(m_clex_name, "default", "default", "default", "default");
 
       // set project settings
 
@@ -53,21 +53,9 @@ namespace CASM {
 
       set.properties() = m_properties;
 
-      if(!set.set_bset(m_bset)) {
-        exc("basis_set");
-      }
-      if(!set.set_calctype(m_calctype)) {
-        exc("calctype");
-      }
-      if(!set.set_ref(m_calctype, m_ref)) {
-        exc("ref");
-      }
-      if(!set.set_clex_name(m_clex_name)) {
-        exc("clex_name");
-      }
-      if(!set.set_eci(m_clex_name, m_calctype, m_ref, m_bset, m_eci)) {
-        exc("eci");
-      }
+      ClexDescription desc("formation_energy", "formation_energy", "default", "default", "default", "default");
+      set.cluster_expansions()[desc.name] = desc;
+
       if(!set.set_crystallography_tol(m_crystallography_tol)) {
         exc("crystallography_tol");
       }

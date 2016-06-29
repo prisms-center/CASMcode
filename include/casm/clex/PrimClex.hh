@@ -181,9 +181,6 @@ namespace CASM {
     /// const Access to primitive Structure
     const Structure &get_prim() const;
 
-    /// const Access to global orbitree
-    const SiteOrbitree &get_global_orbitree() const;
-
     ///Access to the primitive neighbor list
     PrimNeighborList &nlist() const;
 
@@ -268,9 +265,6 @@ namespace CASM {
     //John G 011013
     /// Use the given CSPECS
 
-    //Read the global Orbitree from a clust.json file
-    void read_global_orbitree(const fs::path &fclust);
-
     /// \brief Generate supercells of a certain volume and shape and store them in the array of supercells
     void generate_supercells(int volStart, int volEnd, int dims, const Eigen::Matrix3i &G, bool verbose);
 
@@ -340,18 +334,24 @@ namespace CASM {
     ///   properties.delta.json
     //void generate_references();
 
-    bool has_global_clexulator() const;
-    Clexulator global_clexulator(Log &status_log = null_log()) const;
+    bool has_orbitree(const ClexDescription &key) const;
+    const SiteOrbitree &orbitree(const ClexDescription &key) const;
 
-    bool has_global_eci(std::string clex_name) const;
-    const ECIContainer &global_eci(std::string clex_name) const;
+    bool has_clexulator(const ClexDescription &key) const;
+    Clexulator clexulator(const ClexDescription &key, Log &status_log = null_log()) const;
+
+    bool has_eci(const ClexDescription &key) const;
+    const ECIContainer &eci(const ClexDescription &key) const;
+
   private:
 
     /// Initialization routines
     void _init(Log &log);
 
-    mutable ECIContainer m_global_eci;
-    mutable Clexulator m_global_clexulator;
+    mutable std::map<ClexDescription, SiteOrbitree> m_orbitree;
+    mutable std::map<ClexDescription, Clexulator> m_clexulator;
+    mutable std::map<ClexDescription, ECIContainer> m_eci;
+
   };
 
 

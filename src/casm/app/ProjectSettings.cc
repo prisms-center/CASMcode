@@ -32,16 +32,6 @@ namespace CASM {
     return sublat_indices;
   }
 
-  bool bset_compare(const ClexKey &A, const ClexKey &B) {
-    return A.bset < B.bset;
-  }
-
-  bool eci_compare(const ClexKey &A, const ClexKey &B) {
-    return std::make_tuple(A.name, A.calctype, A.ref, A.bset, A.eci) <
-           std::make_tuple(B.name, B.calctype, B.ref, B.bset, B.eci);
-  }
-
-
   /// \brief Construct CASM project settings for a new project
   ///
   /// \param root Path to new CASM project directory
@@ -92,11 +82,14 @@ namespace CASM {
         jsonParser settings(file);
 
         from_json(m_properties, settings["curr_properties"]);
-        from_json(m_clex_key.bset, settings["curr_bset"]);
-        from_json(m_clex_key.calctype, settings["curr_calctype"]);
-        from_json(m_clex_key.ref, settings["curr_ref"]);
-        from_json(m_clex_key.name, settings["curr_clex"]);
-        from_json(m_clex_key.eci, settings["curr_eci"]);
+
+        if(settings.contains("cluster_expansions")) {
+          from_json(m_clex, settings["cluster_expansions"]);
+        }
+        else {
+          ClexDescription desc("formation_energy", "formation_energy", "default", "default", "default", "default");
+          m_clex[desc.name] = desc;
+        }
 
         auto _read_if = [&](std::pair<std::string, std::string> &opt, std::string name) {
           if(settings.get_if(opt.first, name)) {
@@ -200,39 +193,12 @@ namespace CASM {
     return m_name;
   }
 
-  /// \brief Get current properties
-  const std::vector<std::string> &ProjectSettings::properties() const {
-    return m_properties;
+  std::map<std::string, ClexDescription> &ProjectSettings::cluster_expansions() {
+    return m_clex;
   }
 
-  /// \brief Get current basis set name
-  std::string ProjectSettings::bset() const {
-    return m_clex_key.bset;
-  }
-
-  /// \brief Get current calctype name
-  std::string ProjectSettings::calctype() const {
-    return m_clex_key.calctype;
-  }
-
-  /// \brief Get current ref name
-  std::string ProjectSettings::ref() const {
-    return m_clex_key.ref;
-  }
-
-  /// \brief Get current cluster expansion name
-  std::string ProjectSettings::clex_name() const {
-    return m_clex_key.name;
-  }
-
-  /// \brief Get current eci name
-  std::string ProjectSettings::eci() const {
-    return m_clex_key.eci;
-  }
-
-  /// \brief Get current clex key
-  ClexKey ProjectSettings::clex_key() const {
-    return m_clex_key;
+  const std::map<std::string, ClexDescription> &ProjectSettings::cluster_expansions() const {
+    return m_clex;
   }
 
 
@@ -379,7 +345,7 @@ namespace CASM {
 
   // ** Clexulator names **
 
-  std::string ProjectSettings::global_clexulator() const {
+  std::string ProjectSettings::clexulator() const {
     return name() + "_Clexulator";
   }
 
@@ -435,77 +401,6 @@ namespace CASM {
 
 
   // ** Change current settings **
-
-  /// \brief Access current properties
-  std::vector<std::string> &ProjectSettings::properties() {
-    return m_properties;
-  }
-
-  /// \brief Set current basis set to 'bset', if 'bset' exists
-  bool ProjectSettings::set_bset(std::string bset) {
-    auto all = m_dir.all_bset();
-    if(std::find(all.begin(), all.end(), bset) != all.end()) {
-      m_clex_key.bset = bset;
-      return true;
-    }
-    return false;
-  }
-
-  /// \brief Set current calctype to 'calctype', if 'calctype' exists
-  bool ProjectSettings::set_calctype(std::string calctype) {
-    auto all = m_dir.all_calctype();
-    if(std::find(all.begin(), all.end(), calctype) != all.end()) {
-      m_clex_key.calctype = calctype;
-      return true;
-    }
-    return false;
-  }
-
-  /// \brief Set current calculation reference to 'ref', if 'ref' exists
-  bool ProjectSettings::set_ref(std::string calctype, std::string ref) {
-    auto all = m_dir.all_ref(calctype);
-    if(std::find(all.begin(), all.end(), ref) != all.end()) {
-      m_clex_key.ref = ref;
-      return true;
-    }
-    return false;
-  }
-
-  /// \brief Set current cluster expansion name to 'name', if 'name' exists
-  bool ProjectSettings::set_clex_name(std::string name) {
-    auto all = m_dir.all_clex_name();
-    if(std::find(all.begin(), all.end(), name) != all.end()) {
-      m_clex_key.name = name;
-      return true;
-    }
-    return false;
-  }
-
-  /// \brief Set current eci to 'eci', if 'eci' exists
-  bool ProjectSettings::set_eci(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) {
-    auto all = m_dir.all_eci(clex, calctype, ref, bset);
-    if(std::find(all.begin(), all.end(), eci) != all.end()) {
-      m_clex_key.eci = eci;
-      return true;
-    }
-    return false;
-  }
-
-  /// \brief Set clex settings via clex key
-  ///
-  /// Sets clex, calctype, ref, bset, eci in turn, aborting if any fail
-  bool ProjectSettings::set_clex_key(const ClexKey &key) {
-    ClexKey tmp = m_clex_key;
-    bool success = set_clex_name(key.name) &&
-                   set_calctype(key.calctype) &&
-                   set_ref(key.calctype, key.ref) &&
-                   set_bset(key.bset) &&
-                   set_eci(key.name, key.calctype, key.ref, key.bset, key.eci);
-    if(!success) {
-      m_clex_key = tmp;
-    }
-    return success;
-  }
 
   /// \brief Set neighbor list weight matrix (will delete existing Clexulator
   /// source and compiled code)
@@ -624,12 +519,7 @@ namespace CASM {
     json = jsonParser::object();
 
     json["name"] = name();
-    json["curr_properties"] = properties();
-    json["curr_clex"] = clex_name();
-    json["curr_calctype"] = calctype();
-    json["curr_ref"] = ref();
-    json["curr_bset"] = bset();
-    json["curr_eci"] = eci();
+    json["cluster_expansions"] = cluster_expansions();
     json["nlist_weight_matrix"] = nlist_weight_matrix();
     json["nlist_sublat_indices"] = nlist_sublat_indices();
 
