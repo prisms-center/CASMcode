@@ -58,11 +58,6 @@ namespace CASM {
     try {
       po::store(po::parse_command_line(args.argc, args.argv, files_opt.desc()), vm); // can throw
 
-      out_path = files_opt.output_path();
-      settings = files_opt.settings_str();
-      calc = files_opt.calc_vec();
-      gz_flag = files_opt.gzip_flag();
-
       if(!vm.count("help")) {
 
         std::vector<std::string> allowed;
@@ -152,9 +147,13 @@ namespace CASM {
       }
 
 
-
       po::notify(vm); // throws on error, so do after help in case
       // there are any problems
+
+      out_path = files_opt.output_path();
+      settings = files_opt.settings_str();
+      calc = files_opt.calc_vec();
+      gz_flag = files_opt.gzip_flag();
 
     }
     catch(po::error &e) {

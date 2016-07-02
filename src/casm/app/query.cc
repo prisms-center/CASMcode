@@ -91,6 +91,15 @@ namespace CASM {
 
     try {
       po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
+
+      /** Start --help option
+       */
+      if(vm.count("help")) {
+        args.log << std::endl << desc << std::endl;
+      }
+
+      po::notify(vm); // throws on error, so do after help in case of problems
+
       selection_str = query_opt.selection_path().string();
       out_path = query_opt.output_path();
       columns = query_opt.columns_vec();
@@ -100,14 +109,6 @@ namespace CASM {
       no_header = query_opt.no_header_flag();
       verbatim_flag = query_opt.verbatim_flag();
       gz_flag = query_opt.gzip_flag();
-
-      /** Start --help option
-       */
-      if(vm.count("help")) {
-        args.log << std::endl << desc << std::endl;
-      }
-
-      po::notify(vm); // throws on error, so do after help in case of problems
 
       /** Finish --help option
        */

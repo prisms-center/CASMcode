@@ -614,6 +614,8 @@ namespace CASM {
 
     };
 
+    //*****************************************************************************************************//
+
     /**
      * Options set for `casm super`. Get your superstructures here.
      */
@@ -654,6 +656,8 @@ namespace CASM {
       double m_tolerance;
     };
 
+    //*****************************************************************************************************//
+
     /**
      * Options set for `casm sym`. Get your point groups here.
      */
@@ -671,6 +675,8 @@ namespace CASM {
       void initialize() override;
 
     };
+
+    //*****************************************************************************************************//
 
     /**
      * Options set for `casm update`. Get your project up to date here.
@@ -698,6 +704,8 @@ namespace CASM {
 
     };
 
+    //*****************************************************************************************************//
+
     /**
      * Options set for `casm view`. See what your casm landscape looks like here.
      */
@@ -714,6 +722,47 @@ namespace CASM {
     private:
 
       void initialize() override;
+
+    };
+
+    //*****************************************************************************************************//
+
+    /**
+     * Options set for `casm enum`. Enumerate configurations and supercells here.
+     */
+
+    class EnumOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::supercell_strs;
+
+      EnumOption();
+
+      int min_vol() const;
+
+      int max_vol() const;
+
+      const std::vector<std::string> &filter_strs() const;
+
+      const fs::path &matrix_path() const;
+
+      const std::string &lattice_directions() const;
+
+
+    private:
+
+      void initialize() override;
+
+      int m_min_vol;
+
+      int m_max_vol;
+
+      std::vector<std::string> m_filter_strs;   //This could be merged together with casm query --columns
+
+      fs::path m_matrix_path;   //This could be merged together with casm super --transf-mat
+
+      std::string m_lattice_directions_str;
 
     };
 

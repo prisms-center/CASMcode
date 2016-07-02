@@ -107,8 +107,6 @@ namespace CASM {
 
     try {
       po::store(po::parse_command_line(args.argc, args.argv, settings_opt.desc()), vm); // can throw
-      single_input = settings_opt.input_str();
-      multi_input = settings_opt.input_vec();
 
       bool call_help = false;
 
@@ -197,8 +195,8 @@ namespace CASM {
       po::notify(vm); // throws on error, so do after help in case
       // there are any problems
 
-
-
+      single_input = settings_opt.input_str();
+      multi_input = settings_opt.input_vec();
     }
     catch(po::error &e) {
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;

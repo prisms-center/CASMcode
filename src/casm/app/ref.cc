@@ -186,9 +186,6 @@ namespace CASM {
 
     try {
       po::store(po::parse_command_line(args.argc, args.argv, ref_opt.desc()), vm);
-      scelname = ref_opt.supercell_str();
-      configname = ref_opt.config_str();
-      set_str = ref_opt.set_str();
 
       bool call_help = false;
 
@@ -303,6 +300,9 @@ namespace CASM {
 
       po::notify(vm);
 
+      scelname = ref_opt.supercell_str();
+      configname = ref_opt.config_str();
+      set_str = ref_opt.set_str();
     }
     catch(po::error &e) {
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;

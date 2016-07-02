@@ -19,8 +19,6 @@ namespace CASM {
 
       return;
     }
-
-
   }
 
   int view_command(const CommandArgs &args) {
@@ -65,6 +63,8 @@ namespace CASM {
       po::notify(vm); // throws on error, so do after help in case
       // there are any problems
 
+      selection = view_opt.selection_path().string();
+      configname = view_opt.config_strs();
     }
     catch(po::error &e) {
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;

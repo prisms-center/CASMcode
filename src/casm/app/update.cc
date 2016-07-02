@@ -56,8 +56,6 @@ namespace CASM {
 
     try {
       po::store(po::parse_command_line(args.argc, args.argv, update_opt.desc()), vm);
-      vol_tol = update_opt.vol_tolerance();
-      lattice_weight = update_opt.lattice_weight();
 
 
       /** --help option
@@ -75,6 +73,8 @@ namespace CASM {
 
       po::notify(vm);
 
+      vol_tol = update_opt.vol_tolerance();
+      lattice_weight = update_opt.lattice_weight();
     }
     catch(po::error &e) {
       std::cerr << update_opt.desc() << std::endl;

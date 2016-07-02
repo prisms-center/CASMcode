@@ -119,15 +119,6 @@ namespace CASM {
 
     try {
       po::store(po::parse_command_line(args.argc, args.argv, super_opt.desc()), vm); // can throw
-      scelname = super_opt.supercell_strs();
-      configname = super_opt.config_strs();
-      unitscelname = super_opt.unit_scel_str();
-      structfile = super_opt.struct_path();
-      tmatfile = super_opt.transf_mat_paths();
-      config_path = super_opt.selection_paths();
-      min_vol = super_opt.min_vol();
-      tol = super_opt.tolerance();
-      coordtype = super_opt.coordtype_enum();
 
       if(!vm.count("help")) {
         if(!vm.count("duper")) {
@@ -188,6 +179,15 @@ namespace CASM {
       po::notify(vm); // throws on error, so do after help in case
       // there are any problems
 
+      scelname = super_opt.supercell_strs();
+      configname = super_opt.config_strs();
+      unitscelname = super_opt.unit_scel_str();
+      structfile = super_opt.struct_path();
+      tmatfile = super_opt.transf_mat_paths();
+      config_path = super_opt.selection_paths();
+      min_vol = super_opt.min_vol();
+      tol = super_opt.tolerance();
+      coordtype = super_opt.coordtype_enum();
     }
     catch(po::error &e) {
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;

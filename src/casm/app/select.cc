@@ -168,10 +168,6 @@ namespace CASM {
 
     try {
       po::store(po::parse_command_line(args.argc, args.argv, select_opt.desc()), vm); // can throw
-      criteria_vec = select_opt.criteria_vec();
-      help_opt_vec = select_opt.help_opt_vec();
-      selection = select_opt.selection_paths();
-      out_path = select_opt.output_path();
 
       Index num_cmd(0);
       for(const std::string &cmd_str : allowed_cmd) {
@@ -206,6 +202,11 @@ namespace CASM {
       }
 
       po::notify(vm); // throws on error, so do after help in case of problems
+
+      criteria_vec = select_opt.criteria_vec();
+      help_opt_vec = select_opt.help_opt_vec();
+      selection = select_opt.selection_paths();
+      out_path = select_opt.output_path();
 
       // Finish --help option
       if(vm.count("help")) {

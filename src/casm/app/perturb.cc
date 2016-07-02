@@ -51,8 +51,6 @@ namespace CASM {
 
     try {
       po::store(po::parse_command_line(args.argc, args.argv, perturb_opt.desc()), vm); // can throw
-      cspecs_path = perturb_opt.cspecs_path();
-      selection = perturb_opt.selection_path();
 
       /** --help option
        */
@@ -76,6 +74,8 @@ namespace CASM {
       po::notify(vm); // throws on error, so do after help in case
       // there are any problems
 
+      cspecs_path = perturb_opt.cspecs_path();
+      selection = perturb_opt.selection_path();
     }
     catch(po::error &e) {
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;

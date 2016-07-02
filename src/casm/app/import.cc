@@ -51,6 +51,7 @@ namespace CASM {
       ("ideal,i", "Assume imported structures are unstrained (ideal) for faster importing. Can be slower if used on deformed structures, in which case more robust methods will be used")
       //("strict,s", "Request that symmetrically equivalent configurations be treated as distinct.")
       ("data,d", "Attempt to extract calculation data from the enclosing directory of the structure files, if it is available");
+
       return;
     }
 
@@ -91,10 +92,6 @@ namespace CASM {
     try {
 
       po::store(po::parse_command_line(args.argc, args.argv, import_opt.desc()), vm); // can throw
-      vol_tol = import_opt.vol_tolerance();
-      lattice_weight = import_opt.lattice_weight();
-      pos_paths = import_opt.pos_vec();
-      batch_path = import_opt.batch_path();
 
       /** --help option
        */
@@ -110,6 +107,11 @@ namespace CASM {
 
       po::notify(vm); // throws on error, so do after help in case
       // there are any problems
+
+      vol_tol = import_opt.vol_tolerance();
+      lattice_weight = import_opt.lattice_weight();
+      pos_paths = import_opt.pos_vec();
+      batch_path = import_opt.batch_path();
 
     }
     catch(po::error &e) {

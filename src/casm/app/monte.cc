@@ -83,9 +83,6 @@ namespace CASM {
 
     try {
       po::store(po::parse_command_line(args.argc, args.argv, monte_opt.desc()), vm); // can throw
-      settings_path = monte_opt.settings_path();
-      verbosity_str = monte_opt.verbosity_str();
-      condition_index = monte_opt.condition_index();
 
       /** --help option
       */
@@ -96,6 +93,10 @@ namespace CASM {
 
       po::notify(vm); // throws on error, so do after help in case
       // there are any problems
+
+      settings_path = monte_opt.settings_path();
+      verbosity_str = monte_opt.verbosity_str();
+      condition_index = monte_opt.condition_index();
 
       if(vm.count("verbosity")) {
         auto res = Log::verbosity_level(verbosity_str);

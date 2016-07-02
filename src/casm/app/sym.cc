@@ -38,7 +38,6 @@ namespace CASM {
     Completer::SymOption sym_opt;
     try {
       po::store(po::parse_command_line(args.argc, args.argv, sym_opt.desc()), vm); // can throw
-      coordtype = sym_opt.coordtype_enum();
 
       /** --help option
       */
@@ -54,6 +53,8 @@ namespace CASM {
 
       po::notify(vm); // throws on error, so do after help in case
       // there are any problems
+
+      coordtype = sym_opt.coordtype_enum();
     }
     catch(po::error &e) {
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
