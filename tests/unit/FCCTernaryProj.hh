@@ -158,8 +158,8 @@ namespace test {
       BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*basis\.json)")) == true, m_p.gets());
       BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*)" + title + R"(_Clexulator\.cc)")) == true, m_p.gets());
 
-      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clust(m_set.bset())), m_p.gets());
-      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.bset())), m_p.gets());
+      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clust(m_set.default_clex().bset)), m_p.gets());
+      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.default_clex().bset)), m_p.gets());
 
       std::string str;
 

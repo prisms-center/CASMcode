@@ -64,25 +64,8 @@ namespace CASM {
 
     // here add stuff to read directory structure...
 
-    // read .casmroot current settings
-    try {
-      jsonParser settings(root / ".casm" / "project_settings.json");
-      from_json(curr_property, settings["curr_properties"]);
-      from_json(curr_clex, settings["curr_clex"]);
-      from_json(curr_calctype, settings["curr_calctype"]);
-      from_json(curr_ref, settings["curr_ref"]);
-      from_json(curr_bset, settings["curr_bset"]);
-      from_json(curr_eci, settings["curr_eci"]);
-      from_json(m_name, settings["name"]);
-    }
-    catch(std::exception &e) {
-      std::cerr << "Error in PrimClex::PrimClex(const fs::path &_root, Log &_log) reading .casmroot" << std::endl;
-      std::cerr << e.what() << std::endl;
-      exit(1);
-    }
-
     // read param composition
-    auto comp_axes = m_dir.composition_axes(m_settings.calctype(), m_settings.ref());
+    auto comp_axes = m_dir.composition_axes();
     if(fs::is_regular_file(comp_axes)) {
       log << "read: " << comp_axes << "\n";
 
@@ -95,7 +78,7 @@ namespace CASM {
     }
 
     // read chemical reference
-    auto chem_ref_path = m_dir.chemical_reference(m_settings.calctype(), m_settings.ref());
+    auto chem_ref_path = m_dir.chemical_reference(m_settings.default_clex().calctype, m_settings.default_clex().ref);
     if(fs::is_regular_file(chem_ref_path)) {
       log << "read: " << chem_ref_path << "\n";
       m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim, lin_alg_tol()));
@@ -127,7 +110,7 @@ namespace CASM {
 
   /// Return project name
   std::string PrimClex::name() const {
-    return m_name;
+    return settings().name();
   }
 
   //*******************************************************************************************
@@ -158,48 +141,6 @@ namespace CASM {
 
 
   // ** Current settings accessors **
-
-  //*******************************************************************************************
-  /// Return current property settings
-  const std::vector<std::string> &PrimClex::get_curr_property() const {
-    return curr_property;
-  }
-
-  //*******************************************************************************************
-  /// Return current clex settings
-  std::string PrimClex::get_curr_clex() const {
-    return curr_clex;
-  }
-
-  //*******************************************************************************************
-  /// Return current calctype setting
-  std::string PrimClex::get_curr_calctype() const {
-    return curr_calctype;
-  }
-
-  //*******************************************************************************************
-  /// Return current reference setting
-  std::string PrimClex::get_curr_ref() const {
-    return curr_ref;
-  }
-
-  //*******************************************************************************************
-  /// Return cluster settings
-  std::string PrimClex::get_curr_bset() const {
-    return curr_bset;
-  }
-
-  //*******************************************************************************************
-  /// Return current global clexulator name
-  std::string PrimClex::get_curr_clexulator() const {
-    return name() + "_Clexulator";
-  }
-
-  //*******************************************************************************************
-  /// Return current eci settings
-  std::string PrimClex::get_curr_eci() const {
-    return curr_eci;
-  }
 
   // ** Composition accessors **
 
@@ -958,7 +899,7 @@ namespace CASM {
 
   //*******************************************************************************************
   /// const Access to global orbitree
-  const SiteOrbitree &PrimClex::has_orbitree(const ClexDescription &key) const {
+  bool PrimClex::has_orbitree(const ClexDescription &key) const {
     auto it = m_orbitree.find(key);
     if(it == m_orbitree.end()) {
       if(!fs::exists(dir().clust(key.bset))) {
@@ -971,12 +912,12 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  void PrimClex::orbitree(const ClexDescription &key) {
+  const SiteOrbitree &PrimClex::orbitree(const ClexDescription &key) const {
 
     auto it = m_orbitree.find(key);
     if(it == m_orbitree.end()) {
-      it = m_orbitree.insert(SiteOrbitree(get_prim().lattice())).first;
-      SiteOrbitree &tree = it.second;
+      it = m_orbitree.insert(std::make_pair(key, SiteOrbitree(get_prim().lattice()))).first;
+      SiteOrbitree &tree = it->second;
 
       // these could be specified via settings
       tree.min_num_components = 2;
@@ -1016,14 +957,14 @@ namespace CASM {
       }
 
       it = m_clexulator.insert(
-             std::make_pair(key, Clexulator("Clexulator",
+             std::make_pair(key, Clexulator(settings().name() + "_Clexulator",
                                             dir().clexulator_dir(key.bset),
                                             nlist(),
                                             status_log,
                                             settings().compile_options(),
                                             settings().so_options()))).first;
     }
-    return *it;
+    return it->second;
   }
 
   //*******************************************************************************************
@@ -1032,7 +973,7 @@ namespace CASM {
 
     auto it = m_eci.find(key);
     if(it == m_eci.end()) {
-      return fs::exists(dir().eci(key.name, key.calctype, key.ref, key.bset, key.eci));
+      return fs::exists(dir().eci(key.property, key.calctype, key.ref, key.bset, key.eci));
     }
     return true;
   }
@@ -1043,7 +984,7 @@ namespace CASM {
 
     auto it = m_eci.find(key);
     if(it == m_eci.end()) {
-      fs::path eci_path = dir().eci(key.name, key.calctype, key.ref, key.bset, key.eci);
+      fs::path eci_path = dir().eci(key.property, key.calctype, key.ref, key.bset, key.eci);
       if(!fs::exists(eci_path)) {
         throw std::runtime_error(
           std::string("Error loading ECI. eci.json does not exist.\n")
@@ -1052,7 +993,7 @@ namespace CASM {
 
       it = m_eci.insert(std::make_pair(key, read_eci(eci_path))).first;
     }
-    return *it;
+    return it->second;
   }
 
   //*******************************************************************************************

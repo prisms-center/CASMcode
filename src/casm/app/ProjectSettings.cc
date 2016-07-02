@@ -32,6 +32,39 @@ namespace CASM {
     return sublat_indices;
   }
 
+  /// \brief Compare using name strings: A.name < B.name
+  bool operator<(const ClexDescription &A, const ClexDescription &B) {
+    return A.name < B.name;
+  }
+
+  jsonParser &to_json(const ClexDescription &desc, jsonParser &json) {
+    json.put_obj();
+    json["name"] = desc.name;
+    json["property"] = desc.property;
+    json["calctype"] = desc.calctype;
+    json["ref"] = desc.ref;
+    json["bset"] = desc.bset;
+    json["eci"] = desc.eci;
+    return json;
+  }
+
+  void from_json(ClexDescription &desc, const jsonParser &json) {
+    from_json(desc.name, json["name"]);
+    from_json(desc.property, json["property"]);
+    from_json(desc.calctype, json["calctype"]);
+    from_json(desc.ref, json["ref"]);
+    from_json(desc.bset, json["bset"]);
+    from_json(desc.eci, json["eci"]);
+  }
+
+  bool clex_exists(const DirectoryStructure &dir, const ClexDescription &desc) {
+    return contains(dir.all_calctype(), desc.calctype) &&
+           contains(dir.all_ref(desc.calctype), desc.ref) &&
+           contains(dir.all_bset(), desc.bset) &&
+           contains(dir.all_eci(desc.property, desc.calctype, desc.ref, desc.bset), desc.calctype);
+  }
+
+
   /// \brief Construct CASM project settings for a new project
   ///
   /// \param root Path to new CASM project directory
@@ -83,12 +116,23 @@ namespace CASM {
 
         from_json(m_properties, settings["curr_properties"]);
 
-        if(settings.contains("cluster_expansions")) {
+        if(settings.contains("cluster_expansions") && settings["cluster_expansions"].size()) {
           from_json(m_clex, settings["cluster_expansions"]);
+
+          // if no 'default_clex', use 'formation_energy' if that exists, else use first in clex list
+          if(!settings.get_if(m_default_clex, "default_clex")) {
+            if(m_clex.find("formation_energy") != m_clex.end()) {
+              m_default_clex = "formation_energy";
+            }
+            else {
+              m_default_clex = m_clex.begin()->first;
+            }
+          }
         }
         else {
           ClexDescription desc("formation_energy", "formation_energy", "default", "default", "default", "default");
           m_clex[desc.name] = desc;
+          m_default_clex = desc.name;
         }
 
         auto _read_if = [&](std::pair<std::string, std::string> &opt, std::string name) {
@@ -193,12 +237,53 @@ namespace CASM {
     return m_name;
   }
 
-  std::map<std::string, ClexDescription> &ProjectSettings::cluster_expansions() {
-    return m_clex;
+  /// \brief Access current properties
+  std::vector<std::string> &ProjectSettings::properties() {
+    return m_properties;
   }
+
 
   const std::map<std::string, ClexDescription> &ProjectSettings::cluster_expansions() const {
     return m_clex;
+  }
+
+  bool ProjectSettings::has_clex(std::string name) const {
+    return m_clex.find(name) != m_clex.end();
+  }
+
+  const ClexDescription &ProjectSettings::clex(std::string name) const {
+    return m_clex.find(name)->second;
+  }
+
+  bool ProjectSettings::new_clex(const ClexDescription &desc) {
+    if(m_clex.find(desc.name) != m_clex.end()) {
+      return false;
+    }
+    m_clex[desc.name] = desc;
+    return true;
+  }
+
+  bool ProjectSettings::erase_clex(const ClexDescription &desc) {
+    return m_clex.erase(desc.name);
+  }
+
+  const ClexDescription &ProjectSettings::default_clex() const {
+    return m_clex.find(m_default_clex)->second;
+  }
+
+  bool ProjectSettings::set_default_clex(const std::string &clex_name) {
+    if(m_clex.find(clex_name) != m_clex.end()) {
+      m_default_clex = clex_name;
+      return true;
+    }
+    return false;
+  }
+
+  /// \brief Will overwrite existing ClexDescription with same name
+  bool ProjectSettings::set_default_clex(const ClexDescription &desc) {
+    m_clex[desc.name] = desc;
+    m_default_clex = desc.name;
+    return true;
   }
 
 
@@ -402,6 +487,12 @@ namespace CASM {
 
   // ** Change current settings **
 
+  /// \brief const Access current properties
+  const std::vector<std::string> &ProjectSettings::properties() const {
+    return m_properties;
+  }
+
+
   /// \brief Set neighbor list weight matrix (will delete existing Clexulator
   /// source and compiled code)
   bool ProjectSettings::set_nlist_weight_matrix(Eigen::Matrix3l M) {
@@ -520,6 +611,7 @@ namespace CASM {
 
     json["name"] = name();
     json["cluster_expansions"] = cluster_expansions();
+    json["default_clex"] = m_default_clex;
     json["nlist_weight_matrix"] = nlist_weight_matrix();
     json["nlist_sublat_indices"] = nlist_sublat_indices();
 
@@ -561,11 +653,30 @@ namespace CASM {
   /// \brief Print summary of ProjectSettings, as for 'casm settings -l'
   void ProjectSettings::print_summary(Log &log) const {
 
+    log.custom<Log::standard>("Cluster expansions");
+    for(auto it = m_clex.begin(); it != m_clex.end(); ++it) {
+      const ClexDescription &desc = it->second;
+      log << desc.name;
+      if(desc.name == m_default_clex) {
+        log << "*";
+      }
+      log << ": \n";
+      log << std::setw(16) << "property: " << desc.property << "\n";
+      log << std::setw(16) << "calctype: " << desc.calctype << "\n";
+      log << std::setw(16) << "ref: " << desc.ref << "\n";
+      log << std::setw(16) << "bset: " << desc.bset << "\n";
+      log << std::setw(16) << "eci: " << desc.eci << "\n";
+      log << "\n";
+    }
+    log << std::endl;
+
+    const ClexDescription &default_desc = default_clex();
+
     std::vector<std::string> all = m_dir.all_bset();
     log.custom<Log::standard>("Basis sets");
     for(int i = 0; i < all.size(); i++) {
       log << all[i];
-      if(bset() == all[i]) {
+      if(all[i] == default_desc.bset) {
         log << "*";
       }
       log << "\n";
@@ -578,24 +689,27 @@ namespace CASM {
       std::vector<std::string> all_ref = m_dir.all_ref(all[i]);
       for(int j = 0; j < all_ref.size(); j++) {
         log << all[i] << " / " << all_ref[j];
-        if(calctype() == all[i] && ref() == all_ref[j]) {
+        if(all[i] == default_desc.calctype && all_ref[j] == default_desc.ref) {
           log << "*";
         }
         log << "\n";
       }
-      log << "\n";
+      log << std::endl;
     }
 
-    all = m_dir.all_eci(clex_name(), calctype(), ref(), bset());
-    log.custom<Log::standard>("ECI for current settings");
+    all = m_dir.all_eci(default_desc.property, default_desc.calctype, default_desc.ref, default_desc.bset);
+    log.custom<Log::standard>("ECI for current cluster expansion settings group");
     for(int i = 0; i < all.size(); i++) {
       log << all[i];
-      if(eci() == all[i]) {
+      if(all[i] == default_desc.eci) {
         log << "*";
       }
       log << "\n";
     }
     log << std::endl;
+
+    log << "*: indicates the default settings used by CASM whenever particular \n"
+        "settings are not explicitly specified (i.e. 'casm query -k corr')\n\n";
 
     log.custom<Log::standard>("Compiler settings");
     log << _wdefaultval("cxx", cxx())
@@ -605,12 +719,18 @@ namespace CASM {
         << _wdefaultval("boost_prefix", boost_prefix()) << std::endl;
 
     if(!m_depr_compile_options.empty()) {
-      log << "** using 'compile_options' from .casm/project_settings.json **\n";
+      log << "Note: using deprecated 'compile_options' value from .casm/project_settings.json \n"
+          "explicitly instead of individual compiler settings (cxx, cxxflags, casm_prefix, boost_prefix).\n"
+          "Delete 'compile_options' from .casm/project_settings.json manually \n"
+          "to use begin using the individually set settings.\n";
     }
     log << "compile command: '" << compile_options() << "'\n\n";
 
     if(!m_depr_so_options.empty()) {
-      log << "** using 'so_options' from .casm/project_settings.json **\n";
+      log << "Note: using deprecated 'so_options' value from .casm/project_settings.json \n"
+          "explicitly instead of individual compiler settings (cxx, soflags, casm_prefix, boost_prefix).\n"
+          "Delete 'so_options' from .casm/project_settings.json manually \n"
+          "to use begin using the individually set settings.\n";
     }
     log << "so command: '" << so_options() << "'\n\n";
 

@@ -154,8 +154,15 @@ namespace CASM {
     const std::string Corr::Name = "corr";
 
     const std::string Corr::Desc =
-      "Average correlation values, normalized per primitive cell; "
-      "accepts range as argument, for example corr(ind1:ind2)";
+      "Correlation values (evaluated basis functions, normalized per primitive cell).\n"
+      " If no arguements, prints all correlations, using the basis set for the \n"
+      "   default cluster expansion as listed by 'casm settings -l'."
+      " If one argument, accepts either:\n"
+      "   1) a cluster expansion name, for example 'corr(formation_energy)', and "
+      "   evaluates all basis functions; \n"
+      "   or 2) a range of indices of basis functions to evaluate, for example 'corr(ind1:ind2)'.\n"
+      " If two arguments, accepts cluster expansion name and a range of basis "
+      "  functions to evaluate, for example 'corr(formation_energy,ind1:ind2)'.\n";
 
     /// \brief Returns the atom fraction
     Eigen::VectorXd Corr::evaluate(const Configuration &config) const {
@@ -166,11 +173,42 @@ namespace CASM {
     void Corr::init(const Configuration &_tmplt) const {
       if(!m_clexulator.initialized()) {
         const PrimClex &primclex = _tmplt.get_primclex();
-        m_clexulator = primclex.clexulator(primclex.settings().clex_key());
+        ClexDescription desc = m_clex_name.empty() ?
+                               primclex.settings().default_clex() : primclex.settings().clex(m_clex_name);
+        m_clexulator = primclex.clexulator(desc);
       }
 
       VectorXdAttribute<Configuration>::init(_tmplt);
 
+    }
+
+    /// \brief Expects 'corr', 'corr(clex_name)', 'corr(index_expression)', or
+    /// 'corr(clex_name,index_expression)'
+    bool Corr::parse_args(const std::string &args) {
+      std::vector<std::string> splt_vec;
+      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+
+      if(!splt_vec.size()) {
+        return true;
+      }
+      else if(splt_vec.size() == 1) {
+        if(splt_vec[0].find(':') != std::string::npos) {
+          _parse_index_expression(splt_vec[0]);
+        }
+        else {
+          m_clex_name = splt_vec[0];
+        }
+      }
+      else if(splt_vec.size() == 2) {
+        m_clex_name = splt_vec[0];
+        _parse_index_expression(splt_vec[1]);
+      }
+      else {
+        std::stringstream ss;
+        ss << "Too many arguments for 'clex'.  Received: " << args << "\n";
+        throw std::runtime_error(ss.str());
+      }
+      return true;
     }
 
     // --- Clex implementations -----------
@@ -178,8 +216,10 @@ namespace CASM {
     const std::string Clex::Name = "clex";
 
     const std::string Clex::Desc =
-      "Predicted property value, currently supports 'clex(formation_energy)' and "
-      "'clex(formation_energy_per_species)'. Default is 'clex(formation_energy)'.";
+      "Predicted property value."
+      " Accepts arguments ($clex_name,$norm)."
+      " ($clex_name is a cluster expansion name as listed by 'casm settings -l', default=the default clex)"
+      " ($norm is the normalization, either 'per_species', or 'per_unitcell' <--default)";
 
     Clex::Clex() :
       ScalarAttribute<Configuration>(Name, Desc) {
@@ -207,34 +247,52 @@ namespace CASM {
     void Clex::init(const Configuration &_tmplt) const {
       if(!m_clexulator.initialized()) {
         const PrimClex &primclex = _tmplt.get_primclex();
-        ClexKey key = primclex.settings().clex_key();
-        m_clexulator = primclex.clexulator(key);
-        m_eci = primclex.eci(key);
+        ClexDescription desc = m_clex_name.empty() ?
+                               primclex.settings().default_clex() : primclex.settings().clex(m_clex_name);
+        m_clexulator = primclex.clexulator(desc);
+        m_eci = primclex.eci(desc);
+        if(m_eci.index().back() >= m_clexulator.corr_size()) {
+          Log &err_log = default_err_log();
+          err_log.error<Log::standard>("bset and eci mismatch");
+          err_log << "basis set size: " << m_clexulator.corr_size() << std::endl;
+          err_log << "max eci index: " << m_eci.index().back() << std::endl;
+          throw std::runtime_error("Error: bset and eci mismatch");
+        }
       }
     }
 
     /// \brief Expects 'clex', 'clex(formation_energy)', or 'clex(formation_energy_per_species)'
     bool Clex::parse_args(const std::string &args) {
-      m_clex_name = args;
-      if(args == "") {
-        m_norm = notstd::make_cloneable<Norm<Configuration> >();
-        return true;
+      std::vector<std::string> splt_vec;
+      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+
+      m_clex_name = "";
+      if(splt_vec.size()) {
+        m_clex_name = splt_vec[0];
       }
-      if(args == "formation_energy") {
-        m_norm = notstd::make_cloneable<Norm<Configuration> >();
-        return true;
+
+      m_norm = notstd::make_cloneable<Norm<Configuration> >();
+      if(splt_vec.size() == 2) {
+        if(splt_vec[1] == "per_unitcell") {
+          m_norm = notstd::make_cloneable<Norm<Configuration> >();
+        }
+        else if(splt_vec[1] == "per_species") {
+          m_norm = notstd::make_cloneable<NormPerSpecies>();
+        }
+        else {
+          std::stringstream ss;
+          ss << "Error parsing second argument for 'clex'.  Received: " << args << "\n";
+          throw std::runtime_error(ss.str());
+        }
       }
-      if(args == "formation_energy_per_species") {
-        m_norm = notstd::make_cloneable<NormPerSpecies>();
-        return true;
-      }
-      else {
+
+      if(splt_vec.size() > 2) {
         std::stringstream ss;
-        ss << "Error parsing arguments for 'clex'.\n"
-           "  Received: " << args << "\n"
-           "  Allowed options are: 'formation_energy' (Default), or 'formation_energy_per_species'";
+        ss << "Too many arguments for 'clex'.  Received: " << args << "\n";
         throw std::runtime_error(ss.str());
       }
+
+      return true;
     }
 
     /// \brief Returns the normalization

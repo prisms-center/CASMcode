@@ -259,14 +259,14 @@ Instructions for fitting ECI:                                          \n\n\
     ProjectSettings set(root);
 
     // convert eci.out to eci.json (if eci.json does not exist)
-    for(auto clex : dir.all_clex_name()) {
+    for(auto property : dir.all_property()) {
       for(auto bset : dir.all_bset()) {
         for(auto calctype : dir.all_calctype()) {
           for(auto ref : dir.all_ref(calctype)) {
-            for(auto eci : dir.all_eci(clex, calctype, ref, bset)) {
+            for(auto eci : dir.all_eci(property, calctype, ref, bset)) {
 
-              auto eci_path = dir.eci(clex, calctype, ref, bset, eci);
-              auto eci_out = dir.eci_out(clex, calctype, ref, bset, eci);
+              auto eci_path = dir.eci(property, calctype, ref, bset, eci);
+              auto eci_out = dir.eci_out(property, calctype, ref, bset, eci);
               fs::path basis_json_path = dir.basis(bset);
 
               if(!fs::exists(eci_path) && fs::exists(eci_out) && fs::exists(basis_json_path)) {
@@ -401,12 +401,13 @@ Instructions for fitting ECI:                                          \n\n\
 
     const DirectoryStructure &dir = primclex.dir();
     const ProjectSettings &settings = primclex.settings();
+    const ClexDescription &desc = settings.default_clex();
 
-    std::string calctype = settings.calctype();
-    std::string ref = settings.ref();
-    std::string bset = settings.bset();
-    std::string clex = settings.clex_name();
-    std::string eci = settings.eci();
+    std::string property = desc.property;
+    std::string calctype = desc.calctype;
+    std::string ref = desc.ref;
+    std::string bset = desc.bset;
+    std::string eci = desc.eci;
 
 
     std::cout << "TRUE\n";
@@ -436,7 +437,7 @@ Instructions for fitting ECI:                                          \n\n\
 
     std::cout << "- Standard composition axes calculated: ";
 
-    if(!fs::is_regular_file(primclex.dir().composition_axes(calctype, ref))) {
+    if(!fs::is_regular_file(primclex.dir().composition_axes())) {
       std::cout << "FALSE\n\n";
 
       if(vm.count("next")) {
@@ -545,8 +546,8 @@ Instructions for fitting ECI:                                          \n\n\
     /// 4) Calculate configuration properties
 
     std::cout << "4) Calculate configuration properties\n";
-    std::cout << "- Current calctype: " << primclex.get_curr_calctype() << "\n";
-    std::cout << "- Current cluster expansion: " << primclex.get_curr_clex() << "\n";
+    std::cout << "- Current calctype: " << calctype << "\n";
+    std::cout << "- Current cluster expansion: " << desc.name << "\n";
     std::cout << "- Number of configurations calculated: " << tot_calc << " / " << tot_gen << " generated (Update with 'casm update')\n\n";
 
     if(vm.count("details")) {
@@ -659,7 +660,7 @@ Instructions for fitting ECI:                                          \n\n\
 
     std::cout << "7) Fit effective cluster interactions (ECI): ";
 
-    if(!fs::exists(dir.eci(clex, calctype, ref, bset, eci))) {
+    if(!fs::exists(dir.eci(property, calctype, ref, bset, eci))) {
       std::cout << "FALSE\n\n";
 
       if(vm.count("next")) {

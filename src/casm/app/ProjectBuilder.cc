@@ -41,7 +41,7 @@ namespace CASM {
       set.new_bset_dir("default");
       set.new_calc_settings_dir("default");
       set.new_ref_dir("default", "default");
-      set.new_eci_dir(m_clex_name, "default", "default", "default", "default");
+      set.new_eci_dir(m_property, "default", "default", "default", "default");
 
       // set project settings
 
@@ -54,7 +54,8 @@ namespace CASM {
       set.properties() = m_properties;
 
       ClexDescription desc("formation_energy", "formation_energy", "default", "default", "default", "default");
-      set.cluster_expansions()[desc.name] = desc;
+      set.new_clex(desc);
+      set.set_default_clex(desc.name);
 
       if(!set.set_crystallography_tol(m_crystallography_tol)) {
         exc("crystallography_tol");
@@ -126,7 +127,7 @@ namespace CASM {
         opt.standard[std::to_string(i)] = v[i];
       }
 
-      opt.write(dir.composition_axes(set.calctype(), set.ref()));
+      opt.write(dir.composition_axes());
 
     }
     catch(...) {

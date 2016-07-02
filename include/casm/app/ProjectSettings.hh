@@ -13,8 +13,6 @@
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/container.hh"
 
-#include "casm/clex/Clex.hh"
-
 namespace CASM {
 
   class Configuration;
@@ -26,6 +24,34 @@ namespace CASM {
   namespace ConfigIO {
     class Selected;
   }
+
+  struct ClexDescription {
+    ClexDescription() {}
+
+    ClexDescription(std::string _name,
+                    std::string _property,
+                    std::string _calctype,
+                    std::string _ref,
+                    std::string _bset,
+                    std::string _eci) :
+      name(_name), property(_property), calctype(_calctype), ref(_ref), bset(_bset), eci(_eci) {}
+
+    std::string name;
+    std::string property;
+    std::string calctype;
+    std::string ref;
+    std::string bset;
+    std::string eci;
+  };
+
+  /// \brief Compare using name strings: A.name < B.name
+  bool operator<(const ClexDescription &A, const ClexDescription &B);
+
+  jsonParser &to_json(const ClexDescription &desc, jsonParser &json);
+
+  void from_json(ClexDescription &desc, const jsonParser &json);
+
+  bool clex_exists(const DirectoryStructure &dir, const ClexDescription &desc);
 
 
   /// \brief Read/modify settings of an already existing CASM project
@@ -61,9 +87,21 @@ namespace CASM {
     const std::vector<std::string> &properties() const;
 
 
-    std::map<std::string, ClexDescription> &cluster_expansions();
-
     const std::map<std::string, ClexDescription> &cluster_expansions() const;
+
+    bool has_clex(std::string name) const;
+
+    const ClexDescription &clex(std::string name) const;
+
+    const ClexDescription &default_clex() const;
+
+    bool new_clex(const ClexDescription &desc);
+
+    bool erase_clex(const ClexDescription &desc);
+
+    bool set_default_clex(const std::string &clex_name);
+
+    bool set_default_clex(const ClexDescription &desc);
 
 
     /// \brief Get neighbor list weight matrix
@@ -234,6 +272,9 @@ namespace CASM {
 
     // name : ClexDescription map
     std::map<std::string, ClexDescription> m_clex;
+
+    // name of default cluster expansion
+    std::string m_default_clex;
 
     // neighbor list settings
     Eigen::Matrix3l m_nlist_weight_matrix;

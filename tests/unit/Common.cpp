@@ -101,7 +101,7 @@ namespace test {
     BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.lattice_point_group()));
 
     // composition axes
-    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.composition_axes(m_set.calctype(), m_set.ref())));
+    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.composition_axes()));
   }
 
   /// \brief Check that 'casm sym' runs without error

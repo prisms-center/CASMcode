@@ -239,10 +239,9 @@ namespace CASM {
     typedef AtomFrac SpeciesFrac;
 
 
-    /// \brief Returns average correlation values, normalized per primitive cell
+    /// \brief Returns correlation values
     ///
-    /// Average correlation values, normalized per primitive cell; accepts range
-    /// as argument. Ex: corr, corr(ind1:ind2)"
+    /// Evaluated basis function values, normalized per primitive cell;
     ///
     /// \ingroup ConfigIO
     ///
@@ -255,7 +254,7 @@ namespace CASM {
       static const std::string Desc;
 
 
-      Corr() : VectorXdAttribute<Configuration>(Name, Desc) {}
+      Corr() : VectorXdAttribute<Configuration>(Name, Desc), m_clex_name("") {}
 
       Corr(const Clexulator &clexulator) :
         VectorXdAttribute<Configuration>(Name, Desc),
@@ -278,6 +277,11 @@ namespace CASM {
       /// \brief If not yet initialized, use the global clexulator from the PrimClex
       void init(const Configuration &_tmplt) const override;
 
+      /// \brief Expects 'corr', 'corr(clex_name)', 'corr(index_expression)', or
+      /// 'corr(clex_name,index_expression)'
+      bool parse_args(const std::string &args) override;
+
+
     private:
 
       /// \brief Clone using copy constructor
@@ -286,6 +290,7 @@ namespace CASM {
       }
 
       mutable Clexulator m_clexulator;
+      mutable std::string m_clex_name;
 
     };
 

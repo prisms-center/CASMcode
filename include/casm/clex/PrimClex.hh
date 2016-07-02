@@ -42,25 +42,11 @@ namespace CASM {
     DirectoryStructure m_dir;
     ProjectSettings m_settings;
 
-    std::string m_name;
-
     Structure prim;
     bool m_vacancy_allowed;
     Index m_vacancy_index;
 
     mutable DoFManager m_dof_manager;
-
-
-    // CASM project current settings: used to determine where to write things
-    std::vector<std::string> curr_property;
-    std::string curr_clex;
-    std::string curr_calctype;
-    std::string curr_ref;
-    std::string curr_bset;
-    std::string curr_eci;
-
-
-    SiteOrbitree global_orbitree;
 
     /// Contains all the supercells that were involved in the enumeration.
     boost::container::stable_vector< Supercell > supercell_list;
@@ -134,29 +120,6 @@ namespace CASM {
 
     /// Return config_list.json file path
     fs::path get_config_list_path() const;
-
-    // ** Current settings accessors **
-
-    /// Return current property settings
-    const std::vector<std::string> &get_curr_property() const;
-
-    /// Return current clex settings
-    std::string get_curr_clex() const;
-
-    /// Return current calctype setting
-    std::string get_curr_calctype() const;
-
-    /// Return current reference setting
-    std::string get_curr_ref() const;
-
-    /// Return basis set settings
-    std::string get_curr_bset() const;
-
-    /// Return current global clexulator name
-    std::string get_curr_clexulator() const;
-
-    /// Return current eci settings
-    std::string get_curr_eci() const;
 
 
     // ** Composition accessors **

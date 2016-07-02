@@ -20,12 +20,12 @@ namespace CASM {
     ///
     /// \param _root The directory where a new CASM project should be created.
     /// \param _name The name of the CASM project. Should be a short name suitable for prepending to files.
-    /// \param _cluster_expansion The name of the default cluster expansion, i.e. "formation_energy"
+    /// \param _property The name of the default cluster expansion property, i.e. "formation_energy"
     ///
-    ProjectBuilder(fs::path _root, std::string _name, std::string _cluster_expansion) :
+    ProjectBuilder(fs::path _root, std::string _name, std::string _property) :
       m_root(_root),
       m_name(_name),
-      m_clex_name(_cluster_expansion) {
+      m_property(_property) {
 
       /// check if m_name is suitable:
       if(!boost::regex_match(m_name, boost::regex(R"([_a-zA-Z]\w*)"))) {
@@ -60,7 +60,7 @@ namespace CASM {
 
     fs::path m_root;
     std::string m_name;
-    std::string m_clex_name;
+    std::string m_property;
 
     // allow default initialization:
 
