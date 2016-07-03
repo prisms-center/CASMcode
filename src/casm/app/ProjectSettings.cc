@@ -264,6 +264,19 @@ namespace CASM {
   }
 
   bool ProjectSettings::erase_clex(const ClexDescription &desc) {
+    if(cluster_expansions().size() == 1) {
+      return false;
+    }
+
+    if(m_default_clex == desc.name) {
+      for(auto it = m_clex.begin(); it != m_clex.end(); ++it) {
+        if(it->first != desc.name) {
+          m_default_clex = it->first;
+          break;
+        }
+      }
+    }
+
     return m_clex.erase(desc.name);
   }
 
@@ -709,7 +722,8 @@ namespace CASM {
     log << std::endl;
 
     log << "*: indicates the default settings used by CASM whenever particular \n"
-        "settings are not explicitly specified (i.e. 'casm query -k corr')\n\n";
+        "settings are not explicitly specified (i.e. the basis set to evaluate \n"
+        "for 'casm query -k corr')\n\n";
 
     log.custom<Log::standard>("Compiler settings");
     log << _wdefaultval("cxx", cxx())

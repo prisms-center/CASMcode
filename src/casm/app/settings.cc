@@ -35,13 +35,15 @@ namespace CASM {
       desc.add_options()
       ("help,h", "Write help documentation")
       ("list,l", "List project settings")
-      ("new-clex", po::value<std::string>(&single_input), "Create a new cluster expansion")
+      ("new-property", po::value<std::string>(&single_input), "Create cluster expansions for a new property")
       ("new-bset", po::value<std::string>(&single_input), "Create a new basis set")
       ("new-calctype", po::value<std::vector<std::string> >(&multi_input)->multitoken(), "Create a new calculation type")
       ("new-ref", po::value<std::string>(&single_input), "Create a new calculation reference")
       ("new-eci", po::value<std::string>(&single_input), "Create a new set of effective cluster interactions (ECI)")
       ("set-formation-energy", po::value<std::string>(&single_input), "Specify the cluster expansion to use for formation energy")
+      ("new-clex", po::value<std::string>(&single_input), "Create a new cluster expansion")
       ("set-default-clex", po::value<std::string>(&single_input), "Set the cluster expansion that CASM uses or acts on by default")
+      ("erase-clex", po::value<std::string>(&single_input), "Erase the specified cluster expansion. Does not erase underlying bset, eci, etc.")
       ("clex", po::value<std::string>(), "The cluster expansion for which to set property, bset, calctype, ref, or eci")
       ("set-property", po::value<std::string>(&single_input), "Set the current basis set")
       ("set-bset", po::value<std::string>(&single_input), "Set the basis set")
@@ -61,8 +63,8 @@ namespace CASM {
         bool call_help = false;
 
         std::vector<std::string> all_opt = {"list",
-                                            "new-clex", "new-bset", "new-calctype", "new-ref", "new-eci",
-                                            "set-formation-energy",
+                                            "new-property", "new-bset", "new-calctype", "new-ref", "new-eci",
+                                            "new-clex", "set-formation-energy", "erase-clex",
                                             "set-default-clex", "set-property", "set-bset", "set-calctype", "set-ref", "set-eci",
                                             "set-cxx", "set-cxxflags", "set-soflags", "set-casm-prefix", "set-boost-prefix",
                                             "set-view-command"
@@ -100,25 +102,50 @@ namespace CASM {
                     "      casm settings --list                                   \n" <<
                     "      - List all settings, with '*' for current settings     \n\n" <<
 
+                    "      casm settings --new-clex 'my_newclex'                  \n" <<
+                    "      casm settings --set-default-clex 'other_clex'          \n" <<
+                    "      - Creates a new group of settings for a cluster        \n" <<
+                    "        expansion                                            \n" <<
+                    "      - Includes property, calctype, ref, bset, and eci      \n" <<
+                    "      - Can be used in Monte Carlo input files, and as       \n" <<
+                    "        arguments to 'casm select' and 'casm query'          \n" <<
+                    "        properties such as 'clex' and 'corr' to specify which\n" <<
+                    "        basis functions and eci to use.                      \n\n" <<
+
+                    "      casm settings --set-formation-energy 'other_clex'      \n" <<
+                    "      - The cluster expansion 'other_clex' is copied to one  \n" <<
+                    "        named 'formation_energy' which is used as the default\n" <<
+                    "        for grand canoncial Monte Carlo calculations and     \n" <<
+                    "        cluster expansion convex hull calculations.          \n\n" <<
+
+                    "      casm settings --new-property 'my_new_property'         \n" <<
                     "      casm settings --new-bset 'my_new_bset'                 \n" <<
                     "      casm settings --new-calctype 'my_new_calctype' ['my_new_ref']\n" <<
                     "      casm settings --new-ref 'my_new_ref'                   \n" <<
                     "      casm settings --new-eci 'my_new_eci'                   \n" <<
                     "      - Creates new settings directories with appropriate    \n" <<
                     "        names                                                \n" <<
+                    "      - For --new-property, a new 'default' eci is created.  \n" <<
                     "      - For --new-calctype, a new reference may optionally be\n" <<
                     "        speficied. If it is not, a new 'default' reference is\n" <<
-                    "        created.                                     \n" <<
+                    "        created.                                             \n" <<
                     "      - For --new-ref, a new reference is created for the    \n" <<
                     "        current calctype                                     \n" <<
                     "      - For --new-eci, a new eci directory is created for the\n" <<
                     "         current clex, calctype and ref.                     \n\n" <<
 
+
+                    "      casm settings --set-property 'other_property'          \n" <<
                     "      casm settings --set-bset 'other_bset'                  \n" <<
                     "      casm settings --set-calctype 'other_calctype' ['other_ref'] \n" <<
                     "      casm settings --set-ref ['other_calctype'] 'other_ref' \n" <<
                     "      casm settings --set-eci 'other_eci'                    \n" <<
                     "      - Switch the current settings                          \n" <<
+                    "      - For --set-property, standard options are:            \n" <<
+                    "        - 'formation_energy' (the only standard option for now)\n" <<
+                    "        - 'formation_energy' (the only standard option for now)\n" <<
+                    "        given, 'ref_default' is used, or if that doesn't     \n" <<
+                    "        exist the first one found is used.                   \n" <<
                     "      - For --set-calctype 'other_ref' is optional, if not   \n" <<
                     "        given, 'ref_default' is used, or if that doesn't     \n" <<
                     "        exist the first one found is used.                   \n" <<
@@ -187,6 +214,47 @@ namespace CASM {
     if(vm.count("list")) {
       set.print_summary(args.log);
       return 0;
+    }
+
+    // create new cluster_expansions/clex.property directory and sub-directories
+    else if(vm.count("new-property")) {
+      if(set.new_clex_dir(single_input)) {
+        std::cout << "Created new property '" << single_input << "'.\n\n";
+        clex_desc.property = single_input;
+
+        // and create matching eci
+        if(set.new_eci_dir(clex_desc.property, clex_desc.calctype, clex_desc.ref, clex_desc.bset, "default")) {
+          clex_desc.eci = "default";
+          std::cout << "Created new eci 'default'.\n\n";
+        }
+        else {
+          std::cout << "Could not create new eci 'default'.\n\n";
+          return 1;
+        }
+      }
+      else {
+        std::cout << "Could not create new property '" << single_input << "'.\n\n";
+        return 1;
+      }
+
+      clex_desc.name = single_input;
+      if(set.new_clex(clex_desc)) {
+        std::cout << "Created new cluster expansion named '" << single_input << "'\n\n";
+      }
+      else {
+        std::cout << "Could not create new cluster expansion named '" << single_input << "'.\n\n";
+        return 1;
+      }
+
+      if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
+        set.commit();
+        std::cout << "Set '" << clex_desc.name << "' as default cluster expansion.\n\n";
+        return 0;
+      }
+      else {
+        std::cout << "Could not set '" << clex_desc.name << "' as default cluster expansion.\n\n";
+        return 1;
+      }
     }
 
     // create new bset, and default eci for current calctype and ref
@@ -361,6 +429,31 @@ namespace CASM {
       }
       else {
         std::cout << "Could not set '" << clex_desc.name << "' as default cluster expansion.\n\n";
+        return 1;
+      }
+    }
+
+    // erase cluster expansion settings group
+    else if(vm.count("erase-clex")) {
+      if(set.default_clex().name == single_input) {
+        std::cout << "Coult not erase the cluster expansion named '" << single_input << "' "
+                  << "because it is the default cluster expansion.\n\n";
+        return 1;
+      }
+
+      if(set.cluster_expansions().size() == 1) {
+        std::cout << "Could not erase the cluster expansion named '" << single_input << "' "
+                  << "because it is the only cluster expansion.\n\n";
+        return 1;
+      }
+
+      if(set.erase_clex(set.clex(single_input))) {
+        set.commit();
+        std::cout << "Erased cluster expansion named '" << single_input << "'\n\n";
+        return 0;
+      }
+      else {
+        std::cout << "Could not erase cluster expansion named '" << single_input << "'.\n\n";
         return 1;
       }
     }
