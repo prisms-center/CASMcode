@@ -373,5 +373,9 @@ namespace CASM {
     return;
   }
 
+  std::vector<Eigen::Matrix3i> _unimodular_matrices(bool positive, bool negative);
+  const std::vector<Eigen::Matrix3i> &positive_unimodular_matrices();
+  const std::vector<Eigen::Matrix3i> &negative_unimodular_matrices();
+  const std::vector<Eigen::Matrix3i> &unimodular_matrices();
 }
 #endif

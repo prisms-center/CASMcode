@@ -1,7 +1,7 @@
 import casm
 import json
 
-def write_eci(proj, eci, clex=None, verbose=False):
+def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
     """
     Write eci.json
     
@@ -14,6 +14,10 @@ def write_eci(proj, eci, clex=None, verbose=False):
       eci: an iterable of tuple of (index, values)
         index: linear index of basis function
         value: ECI value
+
+      fit_details: Dict
+        Description of the fitting method used to generate the ECI,
+        usually as output by casm.learn.to_json
       
       clex: ClexDescription instance, optional, default=proj.settings.clex_default
         Specifies where to write the ECI
@@ -27,6 +31,9 @@ def write_eci(proj, eci, clex=None, verbose=False):
     filename = dir.basis(clex)
     with open(filename,'r') as f:
       j = json.load(f)
+    
+    # edit to add fitting settings
+    j["fit"] = fit_details
     
     # edit to add eci
     for index, value in eci:

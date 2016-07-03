@@ -4,6 +4,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/crystallography/Niggli.hh"
 
 namespace CASM {
 
@@ -140,7 +141,7 @@ namespace CASM {
                   << "       primitive structure to file 'prim.true.json'.\n\n";
 
         Structure tmp(true_prim);
-        Lattice lat_niggli = niggli(true_prim.lattice(), tmp.point_group(), TOL);
+        Lattice lat_niggli = canonical_equivalent_lattice(true_prim.lattice(), tmp.point_group(), TOL);
         tmp.set_lattice(lat_niggli, CART);
 
         fs::ofstream primfile(root / "prim.true.json");
@@ -161,7 +162,7 @@ namespace CASM {
     }
 
     /// Check that the PRIM is in reduced form:
-    Lattice niggli_lat = niggli(prim.lattice(), prim.point_group(), TOL);
+    Lattice niggli_lat = canonical_equivalent_lattice(prim.lattice(), prim.point_group(), TOL);
 
     bool is_standard_niggli = almost_equal(niggli_lat.lat_column_mat(), prim.lattice().lat_column_mat());
 
@@ -174,7 +175,7 @@ namespace CASM {
         }
 
         Structure tmp(true_prim);
-        Lattice lat_niggli = niggli(true_prim.lattice(), tmp.point_group(), TOL);
+        Lattice lat_niggli = canonical_equivalent_lattice(true_prim.lattice(), tmp.point_group(), TOL);
         tmp.set_lattice(lat_niggli, CART);
 
         fs::ofstream primfile(root / "prim.niggli.json");

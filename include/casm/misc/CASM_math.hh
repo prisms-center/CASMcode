@@ -78,7 +78,7 @@ namespace CASM {
 
   // *******************************************************************************************
 
-  /// \brief Floating point comparison with tol
+  /// \brief Floating point comparison with tol, return A < B
   ///
   /// Implements:
   /// \code
@@ -475,6 +475,47 @@ namespace Eigen {
   inline
   bool almost_equal(const Eigen::MatrixBase<Derived1> &val1, const Eigen::MatrixBase<Derived2> &val2, double tol = CASM::TOL) {
     return CASM::almost_zero(val1 - val2, tol);
+  }
+
+  /**
+   * Checks to see whether the given matrix is symmetric
+   * by checking if its transpose is equal to itself.
+   * Only works for square matrices n x n.
+   * (Reflected along 0,0 to n,n)
+   */
+
+  template <typename Derived>
+  inline
+  bool is_symmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
+    return CASM::almost_zero(test_mat - test_mat.transpose(), test_tol);
+  }
+
+  /**
+   * Checks to see if the given matrix is persymmetric, i.e.
+   * whether it's symmetric along the cross diagonal.
+   * Only works for square matrices n x n.
+   * (Reflected along 0,n to n,0)
+   */
+
+  template <typename Derived>
+  inline
+  bool is_persymmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
+    //Reverse order of columns and rows
+    auto rev_mat = test_mat.colwise().reverse().eval().rowwise().reverse().eval();
+    return CASM::almost_zero(test_mat - rev_mat.transpose(), test_tol);
+  }
+
+  /**
+   * Checks to see if the given matrix is bisymmetric, i.e.
+   * whether it's symmetric along both diagonals.
+   * Only works for square matrices n x n.
+   * (Reflected along 0,n to n,0 AND 0,0 to n,n)
+   */
+
+  template <typename Derived>
+  inline
+  bool is_bisymmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
+    return (is_symmetric(test_mat, test_tol) && is_persymmetric(test_mat, test_tol));
   }
 }
 
