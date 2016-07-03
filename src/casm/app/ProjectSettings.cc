@@ -624,6 +624,7 @@ namespace CASM {
 
     json["name"] = name();
     json["cluster_expansions"] = cluster_expansions();
+    json["curr_properties"] = properties();
     json["default_clex"] = m_default_clex;
     json["nlist_weight_matrix"] = nlist_weight_matrix();
     json["nlist_sublat_indices"] = nlist_sublat_indices();

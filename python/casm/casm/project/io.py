@@ -1,25 +1,30 @@
 import casm
 import json
 
-def write_eci(proj, eci, proj_settings=None, verbose=False):
+def write_eci(proj, eci, clex=None, verbose=False):
     """
     Write eci.json
     
-    Args:
-      proj: a casm.Project object
+    Arguments
+    ---------
+    
+      proj: casm.Project instance
+        The CASM project
+      
       eci: an iterable of tuple of (index, values)
         index: linear index of basis function
         value: ECI value
-      proj_settings: a casm.ProjectSettings object with settings used write eci.json file.
-        Default=None uses proj.settings.
+      
+      clex: ClexDescription instance, optional, default=proj.settings.clex_default
+        Specifies where to write the ECI
     
     """
     dir = proj.dir
-    if proj_settings == None:
-      proj_settings = proj.settings
+    if clex is None:
+      clex = proj.settings.default_clex
     
     # read basis.json
-    filename = dir.basis(proj_settings.bset())
+    filename = dir.basis(clex)
     with open(filename,'r') as f:
       j = json.load(f)
     
@@ -40,11 +45,7 @@ def write_eci(proj, eci, proj_settings=None, verbose=False):
         sites[i] = casm.NoIndent(sites[i])
     
     # write eci.json
-    filename = dir.eci(proj_settings.clex(), 
-                       proj_settings.calctype(), 
-                       proj_settings.ref(), 
-                       proj_settings.bset(), 
-                       proj_settings.eci())
+    filename = dir.eci(clex)
     
     if verbose:
       print "Writing:", filename

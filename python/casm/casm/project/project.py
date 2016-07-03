@@ -1,21 +1,22 @@
 import casm
 import os, subprocess, json
+from os.path import join
 import ctypes, glob
 
 if 'LIBCASM' in os.environ:
   libname = os.environ['LIBCASM']
 elif 'CASMPREFIX' in os.environ:
-  libname = glob.glob(os.path.join(os.environ['CASMPREFIX'], 'lib', 'libcasm.*'))[0]
+  libname = glob.glob(join(os.environ['CASMPREFIX'], 'lib', 'libcasm.*'))[0]
 else:
-  libname = glob.glob(os.path.join('/usr', 'local', 'lib', 'libcasm.*'))[0]
+  libname = glob.glob(join('/usr', 'local', 'lib', 'libcasm.*'))[0]
 lib_casm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
 
 if 'LIBCCASM' in os.environ:
   libname = os.environ['LIBCCASM']
 elif 'CASMPREFIX' in os.environ:
-  libname = glob.glob(os.path.join(os.environ['CASMPREFIX'], 'lib', 'libccasm.*'))[0]
+  libname = glob.glob(join(os.environ['CASMPREFIX'], 'lib', 'libccasm.*'))[0]
 else:
-  libname = glob.glob(os.path.join('/usr', 'local', 'lib', 'libccasm.*'))[0]
+  libname = glob.glob(join('/usr', 'local', 'lib', 'libccasm.*'))[0]
 lib_ccasm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
 
 #### Argument types
@@ -53,6 +54,41 @@ lib_ccasm.casm_capi.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_
 lib_ccasm.casm_capi.restype = ctypes.c_int
 
 
+class ClexDescription(object):
+    """
+    Settings for a cluster expansion
+    
+    Attributes
+    ----------
+      
+      name: str
+        Cluster expansion name
+      
+      property: str
+        Name of the property being cluster expanded
+      
+      calctype: str
+        Calctype name
+      
+      ref: str
+        Reference state name
+      
+      bset: str
+        Basis set
+      
+      eci: str
+        ECI set name
+      
+    """
+    def __init__(self, name, property, calctype, ref, bset, eci):
+      self.name = name
+      self.property = property
+      self.calctype = calctype
+      self.ref = ref
+      self.bset = bset
+      self.eci = eci
+      
+
 class ProjectSettings(object):
     """
     Settings for a CASM project
@@ -80,57 +116,23 @@ class ProjectSettings(object):
         dir = DirectoryStructure(self.path)
         self.data = json.load(open(dir.project_settings()))
         
+        d = self.data["cluster_expansions"][self.data["default_clex"]]
+        self._default_clex = ClexDescription(d["name"], d["property"], d["calctype"], d["ref"], d["bset"], d["eci"])
+        
+        self._clex = [
+          ClexDescription(d["name"], d["property"], d["calctype"], d["ref"], d["bset"], d["eci"]) 
+          for d[1] in self.data["cluster_expansions"].iteritems() 
+        ]
     
     # -- Accessors --
     
-    def bset(self):
-        return self.data["curr_bset"]
+    @property
+    def cluster_expansions(self):
+        return self._clex
     
-    def calctype(self):
-        return self.data["curr_calctype"]
-    
-    def eci(self):
-        return self.data["curr_eci"]
-    
-    def clex_name(self):
-        return self.data["curr_clex"]
-    
-    def ref(self):
-        return self.data["curr_ref"]
-    
-    def properties(self):
-        return self.data["curr_properties"]
-    
-    def name(self):
-        return self.data["name"]
-    
-    
-    # -- Mutators --
-    
-    def set_bset(self, bset):
-        self.data["curr_bset"] = bset
-    
-    def set_calctype(self, calctype):
-        self.data["curr_calctype"] = calctype
-    
-    def set_eci(self, eci):
-        self.data["curr_eci"] = eci
-    
-    def set_clex_name(self, clex_name):
-        self.data["curr_clex"] = clex_name
-    
-    def set_ref(self, ref):
-        self.data["curr_ref"] = ref
-    
-    def set_properties(self, properties):
-        self.data["curr_properties"] = list(properties)
-    
-    
-    def commit(self):
-        dir = DirectoryStructure(self.path)
-        f = open(dir.project_settings(),'w')
-        json.dump(self.data, f)
-        f.close()
+    @property
+    def default_clex(self):
+        return self._default_clex
     
 
 class DirectoryStructure(object):
@@ -162,11 +164,11 @@ class DirectoryStructure(object):
 
     def all_bset(self):
       """Check filesystem directory structure and return list of all basis set names"""
-      return __all_settings("bset", os.path.join(self.path, self.__bset_dir))
+      return __all_settings("bset", join(self.path, self.__bset_dir))
 
     def all_calctype(self):
       """Check filesystem directory structure and return list of all calctype names"""
-      return __all_settings("calctype", os.path.join(self.path, self.__calc_dir, self.__set_dir))
+      return __all_settings("calctype", join(self.path, self.__calc_dir, self.__set_dir))
     
     def all_ref(self, calctype):
       """Check filesystem directory structure and return list of all ref names for a given calctype"""
@@ -174,11 +176,11 @@ class DirectoryStructure(object):
 
     def all_clex_name(self):
       """Check filesystem directory structure and return list of all cluster expansion names"""
-      return __all_settings("clex", os.path.join(self.path, self.__clex_dir))
+      return __all_settings("clex", join(self.path, self.__clex_dir))
 
-    def all_eci(self, clex_name, calctype, ref, bset):
+    def all_eci(self, property, calctype, ref, bset):
       """Check filesystem directory structure and return list of all eci names"""
-      return __all_settings("eci", os.path.join(self.path, self.__clex_dir, __clex_name(clex_name), __calctype(calctype), __ref(ref), __bset(bset)))
+      return __all_settings("eci", join(self.path, self.__clex_dir, __clex_name(property), __calctype(calctype), __ref(ref), __bset(bset)))
 
 
     # ** File and Directory paths **
@@ -192,135 +194,159 @@ class DirectoryStructure(object):
 
     def prim(self):
       """Return prim.json path"""
-      return os.path.join(self.path, "prim.json")
+      return join(self.path, "prim.json")
 
     # -- Hidden .casm directory --------
 
     def casm_dir(self):
       """Return hidden .casm dir path"""
-      return os.path.join(self.path, self.__casm_dir)
+      return join(self.path, self.__casm_dir)
 
     def project_settings(self):
       """Return project_settings.json path"""
-      return os.path.join(self.casm_dir(), "project_settings.json")
+      return join(self.casm_dir(), "project_settings.json")
 
     def scel_list(self, scelname):
       """Return master scel_list.json path"""
-      return os.path.join(self.casm_dir(), "scel_list.json")
+      return join(self.casm_dir(), "scel_list.json")
 
     def config_list(self):
       """Return master config_list.json file path"""
-      return os.path.join(self.casm_dir(), "config_list.json")
+      return join(self.casm_dir(), "config_list.json")
 
 
     # -- Symmetry --------
 
     def symmetry_dir(self):
       """Return symmetry directory path"""
-      return os.path.join(self.path, self.sym_dir)
+      return join(self.path, self.sym_dir)
 
     def lattice_point_group(self):
       """Return lattice_point_group.json path"""
-      return os.path.join(self.symmetry_dir(), "lattice_point_group.json")
+      return join(self.symmetry_dir(), "lattice_point_group.json")
 
     def factor_group(self):
       """Return factor_group.json path"""
-      return os.path.join(self.symmetry_dir(), "factor_group.json")
+      return join(self.symmetry_dir(), "factor_group.json")
 
     def crystal_point_group(self):
       """Return crystal_point_group.json path"""
-      return os.path.join(self.symmetry_dir(), "crystal_point_group.json")
+      return join(self.symmetry_dir(), "crystal_point_group.json")
 
 
     # -- Basis sets --------
 
-    def bset_dir(self, bset):
+    def bset_dir(self, clex):
       """Return path to directory contain basis set info"""
-      return os.path.join(self.path, self.__bset_dir, self.__bset(bset))
+      return join(self.path, self.__bset_dir, self.__bset(clex.bset))
 
-    def bspecs(self, bset):
+    def bspecs(self, clex):
       """Return basis function specs (bspecs.json) file path"""
-      return os.path.join(self.bset_dir(bset), "bspecs.json")
+      return join(self.bset_dir(clex), "bspecs.json")
 
-    def clust(self, bset):
+    def clust(self, clex):
       """Returns path to the clust.json file"""
-      return os.path.join(self.bset_dir(bset), "clust.json")
+      return join(self.bset_dir(clex), "clust.json")
     
-    def basis(self, bset):
+    def basis(self, clex):
       """Returns path to the basis.json file"""
-      return os.path.join(self.bset_dir(bset), "basis.json")
+      return join(self.bset_dir(clex), "basis.json")
 
-    def clexulator_dir(self, bset):
+    def clexulator_dir(self, clex):
       """Returns path to directory containing global clexulator"""
-      return os.path.join(self.bset_dir(bset))
+      return join(self.bset_dir(clex))
 
-    def clexulator_src(self, project, bset):
+    def clexulator_src(self, project, clex):
       """Returns path to global clexulator source file"""
-      return os.path.join(self.bset_dir(bset), (project + "_Clexulator.cc"))
+      return join(self.bset_dir(clex), (project + "_Clexulator.cc"))
 
-    def clexulator_o(self, project, bset):
+    def clexulator_o(self, project, clex):
       """Returns path to global clexulator.o file"""
-      return os.path.join(self.bset_dir(bset), (project + "_Clexulator.o"))
+      return join(self.bset_dir(clex), (project + "_Clexulator.o"))
     
-    def clexulator_so(self, project, bset):
+    def clexulator_so(self, project, clex):
       """Returns path to global clexulator so file"""
-      return os.path.join(self.bset_dir(bset), (project + "_Clexulator.so"))
+      return join(self.bset_dir(clex), (project + "_Clexulator.so"))
 
 
     # -- Calculations and reference --------
 
     def supercell_dir(self, scelname):
       """Return supercell directory path (scelname has format SCELV_A_B_C_D_E_F)"""
-      return os.path.join(self.path, self.__calc_dir, scelname)
+      return join(self.path, self.__calc_dir, scelname)
 
     def configuration_dir(self, configname):
       """Return configuration directory path (configname has format SCELV_A_B_C_D_E_F/I)"""
-      return os.path.join(self.path, self.__calc_dir, configname)
+      return join(self.path, self.__calc_dir, configname)
 
 
-    def calc_settings_dir(self, calctype):
+    def calc_settings_dir(self, clex):
       """Return calculation settings directory path, for global settings"""
-      return os.path.join(self.path, self.__calc_dir, self.__set_dir, self.__calctype(calctype))
+      return join(self.path, self.__calc_dir, self.__set_dir, self.__calctype(clex.calctype))
 
-    def supercell_calc_settings_dir(self, scelname, calctype):
+    def supercell_calc_settings_dir(self, scelname, clex):
       """Return calculation settings directory path, for supercell specific settings"""
-      return os.path.join(self.supercell_dir(scelname), self.__set_dir, self.__calctype(calctype))
+      return join(self.supercell_dir(scelname), self.__set_dir, self.__calctype(clex.calctype))
 
-    def configuration_calc_settings_dir(self, configname, calctype):
+    def configuration_calc_settings_dir(self, configname, clex):
       """Return calculation settings directory path, for configuration specific settings"""
-      return os.path.join(self.configuration_dir(configname), self.__set_dir, self.__calctype(calctype))
+      return join(self.configuration_dir(configname), self.__set_dir, self.__calctype(clex.calctype))
 
-    def calculated_properties(self, configname, calctype):
+    def calculated_properties(self, configname, clex):
       """Return calculated properties file path"""
-      return os.path.join(self.configuration_dir(configname), self.__calctype(calctype), "properties.calc.json")
+      return join(self.configuration_dir(configname), self.__calctype(clex.calctype), "properties.calc.json")
 
 
-    def ref_dir(self, calctype, ref):
+    def ref_dir(self, clex):
       """Return calculation reference settings directory path, for global settings"""
-      return os.path.join(self.calc_settings_dir(calctype), self.__ref(ref))
+      return join(self.calc_settings_dir(clex.calctype), self.__ref(clex.ref))
 
-    def composition_axes(self, calctype, ref):
+    def composition_axes(self):
       """Return composition axes file path"""
-      return os.path.join(self.ref_dir(calctype, ref), "composition_axes.json")
+      return join(self.casm_dir(), "composition_axes.json")
     
-    def chemical_reference(self, calctype, ref):
+    def chemical_reference(self, clex):
       """Return chemical reference file path"""
-      return os.path.join(self.ref_dir(calctype, ref), "chemical_reference.json")
+      return join(self.ref_dir(clex), "chemical_reference.json")
     
 
     # -- Cluster expansions --------
 
-    def clex_dir(self, clex_name):
+    def property_dir(self, clex):
       """Returns path to eci directory"""
-      return os.path.join(self.path, self.__clex_dir, self.__clex_name(clex_name))
+      return join(self.path, self.__clex_dir, self.__clex_name(clex.property))
 
-    def eci_dir(self, clex, calctype, ref, bset, eci):
-      """Returns path to eci directory"""
-      return os.path.join(self.clex_dir(clex), self.__calctype(calctype), self.__ref(ref), self.__bset(bset), self.__eci(eci))
+    def eci_dir(self, clex):
+      """
+      Returns path to eci directory
+      
+      Arguments
+      ---------
+        clex: a casm.project.ClexDescription instance
+          Specifies the cluster expansion to get the eci directory for
+        
+      Returns
+      -------
+        p: str
+          Path to the eci directory
+      """
+      return join(self.property_dir(clex), self.__calctype(clex.calctype), self.__ref(clex.ref), self.__bset(clex.bset), self.__eci(clex.eci))
 
-    def eci(self, clex, calctype, ref, bset, eci):
-      """Returns path to eci.json"""
-      return os.path.join(self.eci_dir(clex, calctype, ref, bset, eci), "eci.json")
+    def eci(self, clex):
+      """
+      Returns path to eci.json
+      
+      Arguments
+      ---------
+        clex: a casm.project.ClexDescription instance
+          Specifies the cluster expansion to get the eci.json for
+        
+      Returns
+      -------
+        p: str
+          Path to the eci directory
+      """
+      return join(self.eci_dir(clex), "eci.json")
 
 
     # private:

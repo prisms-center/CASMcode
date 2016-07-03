@@ -1130,7 +1130,8 @@ namespace CASM {
   }
 
   bool has_reference_energy(const Configuration &_config) {
-    return _config.get_primclex().has_chemical_reference();
+    return _config.get_primclex().has_composition_axes() &&
+           _config.get_primclex().has_chemical_reference();
   }
 
   bool has_formation_energy(const Configuration &_config) {
