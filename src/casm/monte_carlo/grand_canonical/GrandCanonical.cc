@@ -518,8 +518,6 @@ namespace CASM {
           return A < B - tol;
         };
 
-        ConfigIO::Clex clex(_clexulator(), _eci());
-
         GrandCanonicalConditions cond = settings.initial_conditions();
 
         _log << "using conditions: \n";
@@ -527,7 +525,7 @@ namespace CASM {
 
         std::multimap<double, const Configuration *, decltype(compare)> configmap(compare);
         for(auto it = primclex().config_begin(); it != primclex().config_end(); ++it) {
-          configmap.insert(std::make_pair(clex(*it) - cond.param_chem_pot().dot(CASM::comp(*it)), &(*it)));
+          configmap.insert(std::make_pair(_eci() * correlations(*it, _clexulator()) - cond.param_chem_pot().dot(CASM::comp(*it)), &(*it)));
         }
 
         const Configuration &min_config = *(configmap.begin()->second);

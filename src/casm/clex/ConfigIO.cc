@@ -226,11 +226,11 @@ namespace CASM {
       parse_args("");
     }
 
-    Clex::Clex(const Clexulator &clexulator, const ECIContainer &eci, const std::string args) :
+    Clex::Clex(const Clexulator &clexulator, const ECIContainer &eci, const Norm<Configuration> &norm) :
       ScalarAttribute<Configuration>(Name, Desc),
       m_clexulator(clexulator),
-      m_eci(eci) {
-      parse_args(args);
+      m_eci(eci),
+      m_norm(norm) {
     }
 
     /// \brief Returns the atom fraction
@@ -261,7 +261,7 @@ namespace CASM {
       }
     }
 
-    /// \brief Expects 'clex', 'clex(formation_energy)', or 'clex(formation_energy_per_species)'
+    /// \brief Expects 'clex', 'clex(formation_energy)', or 'clex(formation_energy,per_species)'
     bool Clex::parse_args(const std::string &args) {
       std::vector<std::string> splt_vec;
       boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);

@@ -191,7 +191,7 @@ namespace CASM {
     const jsonParser &ref = (*this)[level1][level2][level3];
 
     if(ref.is_array()) {
-      std::vector<std::string> formats = _get_setting<std::vector<std::string> >(level1, level2, level3);
+      std::vector<std::string> formats = _get_setting<std::vector<std::string> >(level1, level2, level3, help);
       for(auto it = formats.begin(); it != formats.end(); ++it) {
         if(*it == "csv" || *it == "CSV") {
           return true;
@@ -200,7 +200,7 @@ namespace CASM {
       return false;
     }
     else {
-      std::string input = _get_setting<std::string>(level1, level2, level3);
+      std::string input = _get_setting<std::string>(level1, level2, level3, help);
       if(input == "csv" || input == "CSV") {
         return true;
       }

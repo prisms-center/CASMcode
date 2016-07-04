@@ -15,7 +15,7 @@ namespace CASM {
 
   const SiteOrbitree &Clex::orbitree() const {
 
-    if(!m_orbitree) {
+    if(m_orbitree == nullptr) {
       m_orbitree = &primclex().orbitree(m_desc);
     }
     return *m_orbitree;
@@ -31,7 +31,7 @@ namespace CASM {
 
   const ECIContainer &Clex::eci() const {
 
-    if(!m_eci) {
+    if(m_eci == nullptr) {
       m_eci = &primclex().eci(m_desc);
     }
     return *m_eci;

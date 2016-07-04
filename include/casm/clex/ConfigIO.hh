@@ -312,7 +312,7 @@ namespace CASM {
       Clex();
 
       /// \brief Construct with Clexulator, ECI, and either 'formation_energy' or 'formation_energy_per_species'
-      Clex(const Clexulator &clexulator, const ECIContainer &eci, const std::string args = "formation_energy");
+      Clex(const Clexulator &clexulator, const ECIContainer &eci, const Norm<Configuration> &norm);
 
 
       // --- Required implementations -----------

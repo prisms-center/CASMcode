@@ -24,7 +24,7 @@ namespace CASM {
     Clex(const PrimClex &_primclex) : m_primclex(&_primclex) {}
 
     Clex(const PrimClex &_primclex, const ClexDescription &_desc) :
-      m_primclex(&_primclex), m_desc(_desc) {}
+      m_primclex(&_primclex), m_desc(_desc), m_orbitree(nullptr), m_eci(nullptr) {}
 
 
     const PrimClex &primclex() const;
