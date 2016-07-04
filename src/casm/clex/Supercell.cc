@@ -772,24 +772,8 @@ namespace CASM {
   //***********************************************************
 
   void Supercell::generate_name() {
-    //calc_hnf();
-    /*
-    Matrix3<int> tmat = transf_mat.transpose();
-    Matrix3 < int > hnf;
-    tmat.hermite_normal_form(hnf);
-    hnf = hnf.transpose();
-    name = "SCEL";
-    std::stringstream tname;
-    tname << hnf(0, 0)*hnf(1, 1)*hnf(2, 2) << "_" << hnf(0, 0) << "_" << hnf(1, 1) << "_" << hnf(2, 2) << "_" << hnf(0, 1) << "_" << hnf(0, 2) << "_" << hnf(1, 2);
-    name.append(tname.str());
-    */
-
-    Eigen::Matrix3i H = hermite_normal_form(transf_mat).first;
-    name = "SCEL";
-    std::stringstream tname;
-    //Consider using a for loop with HermiteCounter_impl::_canonical_unroll here
-    tname << H(0, 0)*H(1, 1)*H(2, 2) << "_" << H(0, 0) << "_" << H(1, 1) << "_" << H(2, 2) << "_" << H(1, 2) << "_" << H(0, 2) << "_" << H(0, 1);
-    name.append(tname.str());
+    name = CASM::generate_name(transf_mat);
+    return;
   }
 
   //***********************************************************
@@ -1141,6 +1125,18 @@ namespace CASM {
     return;
   }
 
+  std::string generate_name(const Eigen::Matrix3i &transf_mat) {
+    std::string name_str;
+
+    Eigen::Matrix3i H = hermite_normal_form(transf_mat).first;
+    name_str = "SCEL";
+    std::stringstream tname;
+    //Consider using a for loop with HermiteCounter_impl::_canonical_unroll here
+    tname << H(0, 0)*H(1, 1)*H(2, 2) << "_" << H(0, 0) << "_" << H(1, 1) << "_" << H(2, 2) << "_" << H(1, 2) << "_" << H(0, 2) << "_" << H(0, 1);
+    name_str.append(tname.str());
+
+    return name_str;
+  }
 
 }
 
