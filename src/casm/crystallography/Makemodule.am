@@ -3,6 +3,7 @@ libcasm_la_SOURCES += ./src/casm/crystallography/Coordinate.cc\
                       ./src/casm/crystallography/Lattice.cc\
                       ./src/casm/crystallography/LatticeMap.cc\
                       ./src/casm/crystallography/Molecule.cc\
+                      ./src/casm/crystallography/Niggli.cc\
                       ./src/casm/crystallography/PrimGrid.cc\
                       ./src/casm/crystallography/Site.cc\
                       ./src/casm/crystallography/Structure.cc\
