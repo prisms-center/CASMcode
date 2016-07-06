@@ -65,6 +65,9 @@ namespace CASM {
       ViewOption dumbview;
       casm_engine.push_back(Option(dumbview.tag(), dumbview.desc()));
 
+      EnumOption dumbenum;
+      casm_engine.push_back(Option(dumbenum.tag(), dumbenum.desc()));
+
       return casm_engine;
     }
   }

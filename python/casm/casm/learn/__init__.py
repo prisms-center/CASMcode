@@ -16,6 +16,7 @@ creator.create("Individual", list, fitness=creator.FitnessMin, input=None)
 from fit import example_input_Lasso, example_input_LassoCV, example_input_RFE, \
  example_input_GeneticAlgorithm, example_input_IndividualBestFirst, \
  example_input_PopulationBestFirst, print_input_help, FittingData, \
- fit_and_select, print_individual, print_population, print_halloffame, print_eci
+ fit_and_select, print_individual, print_population, print_halloffame, print_eci, \
+ to_json, open_halloffame, save_halloffame
 
 __all__ = dir()

@@ -214,18 +214,6 @@ namespace CASM {
      Lattice operator*(const Eigen::Matrix3d &LHS, const Lattice &RHS);
   */
 
-  namespace niggli_impl {
-
-    /// \brief Returns an equivalent Lattice in Niggli form, but without setting standard orientation
-    Lattice _niggli(const Lattice &lat, double tol);
-  }
-
-  /// \brief Returns an equivalent Lattice in Niggli form with a standard orientation
-  Lattice niggli(const Lattice &lat, const SymGroup &point_grp, double tol);
-
-  /// \brief Rotate the Lattice to a standard orientation using allowed point group operations
-  Lattice standard_orientation(const Lattice &lat, const SymGroup &point_grp, double tol);
-
   /// \brief Returns the volume of a Lattice
   double volume(const Lattice &lat);
 
