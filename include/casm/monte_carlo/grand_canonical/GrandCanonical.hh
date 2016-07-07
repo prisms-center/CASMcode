@@ -1,6 +1,7 @@
 #ifndef CASM_GrandCanonical_HH
 #define CASM_GrandCanonical_HH
 
+#include "casm/clex/Clex.hh"
 #include "casm/monte_carlo/MonteDefinitions.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/SiteExchanger.hh"
@@ -115,6 +116,14 @@ namespace CASM {
       return *m_comp_n;
     }
 
+    Clexulator &_clexulator() const {
+      return m_formation_energy_clex.clexulator();
+    }
+
+    const ECIContainer &_eci() const {
+      return m_formation_energy_clex.eci();
+    }
+
     /// \brief Calculate delta properties for an event and update the event with those properties
     void _update_deltas(GrandCanonicalEvent &event,
                         Index mutating_site,
@@ -126,11 +135,7 @@ namespace CASM {
     void _update_properties();
 
     /// \brief Select initial configdof
-    static ConfigDoF _initial_configdof(
-      PrimClex &primclex,
-      Supercell &scel,
-      const GrandCanonicalSettings &settings,
-      Log &_log);
+    ConfigDoF _initial_configdof(const GrandCanonicalSettings &settings, Log &_log);
 
 
     ///Keeps track of what sites can change to what
@@ -139,11 +144,8 @@ namespace CASM {
     /// Conditions (T, mu). Initially determined by m_settings, but can be changed halfway through the run
     GrandCanonicalConditions m_condition;
 
-    ///Clexulator that is used to calculate the energy from the current simulation state. ConfigIterator breaks const-ness!!!
-    mutable Clexulator m_clexulator;
-
-    /// This is the typical eci set that you use to get the energy
-    ECIContainer m_formation_energy_eci;
+    /// Holds Clexulator and ECI references
+    Clex m_formation_energy_clex;
 
     /// If true, calculate all correlations; if false, calculate correlations with non-zero eci
     bool m_all_correlations;

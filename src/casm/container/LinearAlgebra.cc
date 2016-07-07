@@ -1,4 +1,5 @@
 #include "casm/container/LinearAlgebra.hh"
+#include "casm/container/Counter.hh"
 
 #include "casm/external/boost.hh"
 
@@ -178,5 +179,44 @@ namespace CASM {
     return Mp;
   }
 
+  std::vector<Eigen::Matrix3i> _unimodular_matrices(bool positive, bool negative) {
+    std::vector<Eigen::Matrix3i> uni_det_mats;
+    int totalmats = 3480;
+
+    if(positive && negative) {
+      totalmats = totalmats * 2;
+    }
+
+    uni_det_mats.reserve(totalmats);
+
+    EigenCounter<Eigen::Matrix3i> transmat_count(Eigen::Matrix3i::Constant(-1), Eigen::Matrix3i::Constant(1), Eigen::Matrix3i::Constant(1));
+
+    for(; transmat_count.valid(); ++transmat_count) {
+      if(positive && transmat_count.current().determinant() == 1) {
+        uni_det_mats.push_back(transmat_count.current());
+      }
+
+      if(negative && transmat_count.current().determinant() == -1) {
+        uni_det_mats.push_back(transmat_count.current());
+      }
+    }
+
+    return uni_det_mats;
+  }
+
+  const std::vector<Eigen::Matrix3i> &positive_unimodular_matrices() {
+    static std::vector<Eigen::Matrix3i> static_positive(_unimodular_matrices(true, false));
+    return static_positive;
+  }
+
+  const std::vector<Eigen::Matrix3i> &negative_unimodular_matrices() {
+    static std::vector<Eigen::Matrix3i> static_negative(_unimodular_matrices(true, false));
+    return static_negative;
+  }
+
+  const std::vector<Eigen::Matrix3i> &unimodular_matrices() {
+    static std::vector<Eigen::Matrix3i> static_all(_unimodular_matrices(true, false));
+    return static_all;
+  }
 }
 

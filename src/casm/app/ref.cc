@@ -173,7 +173,8 @@ namespace CASM {
       ("scelname", po::value<std::string>(&scelname),
        "Use references given via --set for a particular supercell only")
       ("configname", po::value<std::string>(&configname),
-       "Use references given via --set for a particular configuration only");
+       "Use references given via --set for a particular configuration only")
+      ("clex", po::value<std::string>(), "Name of the cluster expansion using the reference");
 
 
       try {
@@ -317,10 +318,25 @@ namespace CASM {
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    const ProjectSettings &set = primclex.settings();
     double lin_alg_tol = primclex.settings().lin_alg_tol();
 
-    std::string calctype = primclex.settings().calctype();
-    std::string ref = primclex.settings().ref();
+    ClexDescription clex_desc;
+    if(!vm.count("clex")) {
+      clex_desc = set.default_clex();
+    }
+    else {
+      auto it = set.cluster_expansions().find(vm["clex"].as<std::string>());
+      if(it == set.cluster_expansions().end()) {
+        args.err_log.error("Invalid --clex value");
+        args.err_log << vm["clex"].as<std::string>() << " not found.";
+        return ERR_INVALID_ARG;
+      }
+      clex_desc = it->second;
+    }
+
+    std::string calctype = clex_desc.calctype;
+    std::string ref = clex_desc.ref;
     fs::path chem_ref_path = primclex.dir().chemical_reference(calctype, ref);
 
     if(vm.count("display")) {

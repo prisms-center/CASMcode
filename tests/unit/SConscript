@@ -36,7 +36,7 @@ if 'unit' in COMMAND_LINE_TARGETS:
 
 Structure_out = glob.glob('crystallography/*_out') + ['crystallography/POS1_prim.json']
 Clexulator_out = ['clex/test_Clexulator.o', 'clex/test_Clexulator.so']
-App_out = ['App/FCC_ternary']
+App_out = ['App/FCC_ternary', 'App/ZrO']
 
 Clean(unit_test,  Structure_out + Clexulator_out + App_out)
 

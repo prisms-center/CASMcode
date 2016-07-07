@@ -7,7 +7,7 @@ namespace CASM {
 
   std::string _help() {
     std::string s =
-      "Expected JSON object of form:\n"
+      "For GrandCanonicalConditions, expect a JSON object of form:\n"
       "  {\n"
       "    \"param_chem_pot\": {\n"
       "    \"a\" : -1.0,\n"
@@ -24,7 +24,7 @@ namespace CASM {
     EquilibriumMonteSettings(read_path) {
 
     DirectoryStructure dir(root());
-    CompositionAxes axes(dir.composition_axes(calctype(), ref()));
+    CompositionAxes axes(dir.composition_axes());
 
     if(axes.has_current_axes) {
       m_comp_converter = axes.curr;
@@ -64,6 +64,7 @@ namespace CASM {
   std::vector<GrandCanonicalConditions> GrandCanonicalSettings::custom_conditions() const {
     std::string level1 = "driver";
     std::string level2 = "custom_conditions";
+
     try {
       std::vector<GrandCanonicalConditions> cond;
       const jsonParser &json = (*this)[level1][level2];
@@ -73,58 +74,60 @@ namespace CASM {
       return cond;
     }
     catch(std::runtime_error &e) {
-      std::cerr << "ERROR in GrandCanonicalSettings::custom_conditions" << std::endl;
-      std::cerr << "Tried to construct GrandCanonicalCondtions from [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
-      std::cerr << _help();
+      Log &err_log = default_err_log();
+      err_log.error<Log::standard>("Reading Monte Carlo settings");
+      err_log << "Tried to read an array of GrandCanonicalConditions from [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
+      err_log << _help() << std::endl;
       throw e;
     }
   }
 
   // --- Project settings ---------------------
 
-  /// \brief Given a settings jsonParser figure out what the project clex settings to use are:
-  std::string GrandCanonicalSettings::clex() const {
+  /// \brief Get formation energy cluster expansion
+  ClexDescription GrandCanonicalSettings::formation_energy(const PrimClex &primclex) const {
+    const ProjectSettings &set = primclex.settings();
     std::string level1 = "model";
-    std::string level2 = "clex";
-    std::string help = "string\n"
-                       "  Names the cluster expansion to be used.\n";
-    return _get_setting<std::string>(level1, level2, help);
-  }
+    // deprecated
+    if(_is_setting(level1, "clex")) {
 
-  /// \brief Given a settings jsonParser figure out what the project bset settings to use are:
-  std::string GrandCanonicalSettings::bset() const {
-    std::string level1 = "model";
-    std::string level2 = "bset";
-    std::string help = "string\n"
-                       "  Names the basis set to be used.\n";
-    return _get_setting<std::string>(level1, level2, help);
-  }
+      // expect "clex" is "formation_energy"
 
-  /// \brief Given a settings jsonParser figure out what the project calctype settings to use are:
-  std::string GrandCanonicalSettings::calctype() const {
-    std::string level1 = "model";
-    std::string level2 = "calctype";
-    std::string help = "string\n"
-                       "  Names the calctype used.\n";
-    return _get_setting<std::string>(level1, level2, help);
-  }
+      std::vector<std::string> var {"clex", "calctype", "ref", "bset", "eci"};
+      std::vector<std::string> help {
+        "string\n  Names the cluster expansion to be used.\n",
+        "string\n  Names the calctype to be used.\n",
+        "string\n  Names the reference to be used.\n",
+        "string\n  Names the basis set to be used.\n",
+        "string\n  Names the ECI to be used.\n"
+      };
 
-  /// \brief Given a settings jsonParser figure out what the project ref settings to use are:
-  std::string GrandCanonicalSettings::ref() const {
-    std::string level1 = "model";
-    std::string level2 = "ref";
-    std::string help = "string\n"
-                       "  Names the reference used.\n";
-    return _get_setting<std::string>(level1, level2, help);
-  }
+      return ClexDescription(
+               _get_setting<std::string>(level1, var[0], help[0]),
+               _get_setting<std::string>(level1, var[0], help[0]),
+               _get_setting<std::string>(level1, var[1], help[1]),
+               _get_setting<std::string>(level1, var[2], help[2]),
+               _get_setting<std::string>(level1, var[3], help[3]),
+               _get_setting<std::string>(level1, var[4], help[4]));
+    }
 
-  /// \brief Given a settings jsonParser figure out what the project eci settings to use are:
-  std::string GrandCanonicalSettings::eci() const {
-    std::string level1 = "model";
-    std::string level2 = "eci";
-    std::string help = "string\n"
-                       "  Names the ECI to be used\n";
-    return _get_setting<std::string>(level1, level2, help);
+    std::string help = "(string, default='formation_energy')\n"
+                       "  Names the formation_energy cluster expansion to be used.\n";
+
+    std::string formation_energy = "formation_energy";
+    if(_is_setting(level1, "formation_energy")) {
+      formation_energy = _get_setting<std::string>(level1, "formation_energy", help);
+    }
+
+    if(!set.has_clex(formation_energy)) {
+      Log &err_log = default_err_log();
+      err_log.error<Log::standard>("Reading Monte Carlo settings");
+      err_log << "Error reading [\"model\"][\"formation_energy\"]\n";
+      err_log << "[\"model\"][\"formation_energy\"]: (string, optional, default='formation_energy')\n";
+      err_log << "  Names the cluster expansion to be used for calculating formation_energy.\n";
+      err_log << "No cluster expansion named: '" << formation_energy << "' exists.\n";
+    }
+    return set.clex(formation_energy);
   }
 
   // --- Sampler settings ---------------------
@@ -146,8 +149,11 @@ namespace CASM {
       return false;
     }
     catch(std::runtime_error &e) {
-      std::cerr << "ERROR in GrandCanonicalSettings::all_correlations" << std::endl;
-      std::cerr << "Expected [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
+      Log &err_log = default_err_log();
+      err_log.error<Log::standard>("Reading Monte Carlo settings");
+      err_log << "Error checking if 'all_correlations' should be sampled.\n";
+      err_log << "Error reading settings at [\"" << level1 << "\"][\"" << level2 << "\"]\n";
+      err_log << "See 'casm format --monte' for help.\n" << std::endl;
       throw e;
     }
 
@@ -161,9 +167,11 @@ namespace CASM {
       return _conditions((*this)[level1][level2]);
     }
     catch(std::runtime_error &e) {
-      std::cerr << "ERROR in GrandCanonicalSettings::" << name << std::endl;
-      std::cerr << "Tried to construct GrandCanonicalCondtions from [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
-      std::cerr << _help();
+      Log &err_log = default_err_log();
+      err_log.error<Log::standard>("Reading Monte Carlo settings");
+      err_log << "Error reading: " << name << std::endl;
+      err_log << "Tried to construct GrandCanonicalCondtions from [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
+      err_log << _help() << std::endl;
       throw e;
     }
   }

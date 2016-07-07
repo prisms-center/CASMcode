@@ -144,7 +144,7 @@ namespace CASM {
     /// \brief Returns true if (*this)[level1][level2].contains(level3)
     bool _is_setting(std::string level1, std::string level2, std::string level3) const;
 
-    /// \brief Returns (*this)[level1][level2].get<T>();
+    /// \brief Returns (*this)[level1].get<T>();
     template<typename T>
     T _get_setting(std::string level1, std::string msg) const;
 
@@ -156,6 +156,9 @@ namespace CASM {
     template<typename T>
     T _get_setting(std::string level1, std::string level2, std::string level3, std::string msg) const;
 
+    jsonParser _json() const {
+      return *this;
+    }
 
   private:
 
@@ -290,12 +293,17 @@ namespace CASM {
 
     catch(std::runtime_error &e) {
       T t;
-      std::cerr << "ERROR in MonteSettings::" << level1 << std::endl;
-      std::cerr << "Expected [\"" << level1 << "\"]" << std::endl;
-      std::cerr << "  Either this was not found, or the type is wrong." << std::endl;
+      Log &err_log = default_err_log();
+      std::stringstream ss;
+      ss << "Monte Carlo setting " << "[\"" << level1 << "\"]";
+
+      err_log.error<Log::standard>(ss.str());
+
+      err_log << "Expected " << ss.str() << std::endl;
+      err_log << "  Either this was not found, or the type is wrong." << std::endl;
       if(!msg.empty()) {
-        std::cerr << "[\"" << level1 << "\"]: ";
-        std::cerr << msg << std::endl;
+        err_log << "[\"" << level1 << "\"]: ";
+        err_log << msg << std::endl;
       }
       throw;
     }
@@ -310,20 +318,26 @@ namespace CASM {
 
     catch(std::runtime_error &e) {
       T t;
-      std::cerr << "ERROR in MonteSettings::" << level2 << std::endl;
-      std::cerr << "Expected [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
-      std::cerr << "  Either this was not found, or the type is wrong." << std::endl;
+      Log &err_log = default_err_log();
+      std::stringstream ss;
+      ss << "Monte Carlo setting [\"" << level1 << "\"][\"" << level2 << "\"]";
+
+      err_log.error<Log::standard>(ss.str());
+
+      err_log << "ERROR in MonteSettings::" << level2 << std::endl;
+      err_log << "Expected " << ss.str() << std::endl;
+      err_log << "  Either this was not found, or the type is wrong." << std::endl;
       if(this->contains(level1)) {
-        std::cerr << "Found Settings[\"" << level1 << "\"], but not [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
-        std::cerr << "Settings[\"" << level1 << "\"]:\n" << (*this)[level1] << std::endl;
+        err_log << "Found Settings[\"" << level1 << "\"], but not [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
+        err_log << "Settings[\"" << level1 << "\"]:\n" << (*this)[level1] << std::endl;
       }
       else {
-        std::cerr << "No Settings[\"" << level1 << "\"] found" << std::endl;
-        std::cerr << "Settings:\n" << (*this) << std::endl;
+        err_log << "No Settings[\"" << level1 << "\"] found" << std::endl;
+        err_log << "Settings:\n" << static_cast<const jsonParser &>(*this) << std::endl;
       }
       if(!msg.empty()) {
-        std::cerr << "[\"" << level1 << "\"][\"" << level2 << "\"]: ";
-        std::cerr << msg << std::endl;
+        err_log << "[\"" << level1 << "\"][\"" << level2 << "\"]: ";
+        err_log << msg << std::endl;
       }
       throw;
     }
@@ -338,27 +352,32 @@ namespace CASM {
 
     catch(std::runtime_error &e) {
       T t;
-      std::cerr << "ERROR in MonteSettings::" << level2 << std::endl;
-      std::cerr << "Expected [\"" << level1 << "\"][\"" << level2 << "\"][\"" << level3 << "\"]" << std::endl;
-      std::cerr << "  Either this was not found, or the type is wrong." << std::endl;
+      Log &err_log = default_err_log();
+      std::stringstream ss;
+      ss << "Monte Carlo setting [\"" << level1 << "\"][\"" << level2 << "\"][\"" << level3 << "\"]";
+
+      err_log.error<Log::standard>(ss.str());
+
+      err_log << "Expected " << ss.str() << std::endl;
+      err_log << "  Either this was not found, or the type is wrong." << std::endl;
       if(this->contains(level1)) {
         if(this->contains(level2)) {
-          std::cerr << "Found Settings[\"" << level1 << "\"][\"" << level2 << "\"], \n"
-                    "but not [\"" << level1 << "\"][\"" << level2 << "\"][\"" << level3 << "\"]" << std::endl;
-          std::cerr << "Settings[\"" << level1 << "\"][\"" << level2 << "\"]:\n" << (*this)[level1][level2] << std::endl;
+          err_log << "Found Settings[\"" << level1 << "\"][\"" << level2 << "\"], \n"
+                  "but not [\"" << level1 << "\"][\"" << level2 << "\"][\"" << level3 << "\"]" << std::endl;
+          err_log << "Settings[\"" << level1 << "\"][\"" << level2 << "\"]:\n" << (*this)[level1][level2] << std::endl;
         }
         else {
-          std::cerr << "No Settings[\"" << level1 << "\"][\"" << level2 << "\"] found" << std::endl;
-          std::cerr << "Settings:\n" << (*this)[level1] << std::endl;
+          err_log << "No Settings[\"" << level1 << "\"][\"" << level2 << "\"] found" << std::endl;
+          err_log << "Settings:\n" << (*this)[level1] << std::endl;
         }
       }
       else {
-        std::cerr << "No Settings[\"" << level1 << "\"] found" << std::endl;
-        std::cerr << "Settings:\n" << (*this) << std::endl;
+        err_log << "No Settings[\"" << level1 << "\"] found" << std::endl;
+        err_log << "Settings:\n" << static_cast<const jsonParser &>(*this) << std::endl;
       }
       if(!msg.empty()) {
-        std::cerr << "[\"" << level1 << "\"][\"" << level2 << "\"][\"" << level3 << "\"]: ";
-        std::cerr << msg << std::endl;
+        err_log << "[\"" << level1 << "\"][\"" << level2 << "\"][\"" << level3 << "\"]: ";
+        err_log << msg << std::endl;
       }
       throw;
     }

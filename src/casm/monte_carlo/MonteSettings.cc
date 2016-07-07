@@ -153,7 +153,7 @@ namespace CASM {
     std::string level1 = "data";
     std::string level2 = "storage";
     std::string level3 = "write_POSCAR_snapshots";
-    std::string help = "bool (default=false)";
+    std::string help = "(bool, default=false)";
     if(!_is_setting(level1, level2, level3)) {
       return false;
     }
@@ -166,7 +166,7 @@ namespace CASM {
     std::string level1 = "data";
     std::string level2 = "storage";
     std::string level3 = "write_observations";
-    std::string help = "bool (default=false)";
+    std::string help = "(bool, default=false)";
     if(!_is_setting(level1, level2, level3)) {
       return false;
     }
@@ -179,44 +179,32 @@ namespace CASM {
     std::string level1 = "data";
     std::string level2 = "storage";
     std::string level3 = "output_format";
+    std::string help = "(string or JSON array of string, optional, default='csv')\n"
+                       "  Accepts: 'csv' or 'CSV' to write .csv files\n"
+                       "           'json' or 'JSON' to write .json files\n"
+                       "  Use an array to write in multiple formats.\n";
 
-    try {
-
-      if(!(*this)[level1][level2].contains(level3)) {
-        return true;
-      }
-
-      const jsonParser &ref = (*this)[level1][level2][level3];
-
-      if(ref.is_string()) {
-        std::string input = ref.get<std::string>();
-        if(input == "csv" || input == "CSV") {
-          return true;
-        }
-        return false;
-      }
-      else if(ref.is_array()) {
-        for(auto it = ref.cbegin(); it != ref.cend(); ++it) {
-          std::string input = it->get<std::string>();
-          if(input == "csv" || input == "CSV") {
-            return true;
-          }
-        }
-        return false;
-      }
-
-      throw std::runtime_error(
-        std::string("ERROR in 'MonteSettings::write_csv()'\n") +
-        "  Expected [\"data\"][\"storage\"][\"output_format\"] to contain a string or array of strings.");
+    if(!_is_setting(level1, level2, level3)) {
+      return true;
     }
 
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in MonteSettings::write_csv" << std::endl;
-      std::cerr << "[\"data\"][\"storage\"] must exist" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"output_format\"] exists, it may be a string or an array of strings" << std::endl;
-      std::cerr << "  if any of those strings is \"csv\" or \"CSV\", return true (do write .csv files)" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"output_format\"] does not exist, default is true (do write .csv files)" << std::endl;
-      throw e;
+    const jsonParser &ref = (*this)[level1][level2][level3];
+
+    if(ref.is_array()) {
+      std::vector<std::string> formats = _get_setting<std::vector<std::string> >(level1, level2, level3, help);
+      for(auto it = formats.begin(); it != formats.end(); ++it) {
+        if(*it == "csv" || *it == "CSV") {
+          return true;
+        }
+      }
+      return false;
+    }
+    else {
+      std::string input = _get_setting<std::string>(level1, level2, level3, help);
+      if(input == "csv" || input == "CSV") {
+        return true;
+      }
+      return false;
     }
   }
 
@@ -225,43 +213,32 @@ namespace CASM {
     std::string level1 = "data";
     std::string level2 = "storage";
     std::string level3 = "output_format";
-    try {
+    std::string help = "(string or JSON array of string, optional, default='csv')\n"
+                       "  Accepts: 'csv' or 'CSV' to write .csv files\n"
+                       "           'json' or 'JSON' to write .json files\n"
+                       "  Use an array to write in multiple formats.\n";
 
-      if(!(*this)[level1][level2].contains(level3)) {
-        return false;
-      }
-
-      const jsonParser &ref = (*this)[level1][level2][level3];
-
-      if(ref.is_string()) {
-        std::string input = ref.get<std::string>();
-        if(input == "json" || input == "JSON") {
-          return true;
-        }
-        return false;
-      }
-      else if(ref.is_array()) {
-        for(auto it = ref.cbegin(); it != ref.cend(); ++it) {
-          std::string input = it->get<std::string>();
-          if(input == "json" || input == "JSON") {
-            return true;
-          }
-        }
-        return false;
-      }
-
-      throw std::runtime_error(
-        std::string("ERROR in 'MonteSettings::write_json()'\n") +
-        "  Expected [\"data\"][\"storage\"][\"output_format\"] to contain a string or array of strings.");
+    if(!_is_setting(level1, level2, level3)) {
+      return false;
     }
 
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in MonteSettings::write_json" << std::endl;
-      std::cerr << "[\"data\"][\"storage\"] must exist" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"output_format\"] exists, it may be a string or an array of strings" << std::endl;
-      std::cerr << "  if any of those strings is \"json\" or \"JSON\", return true (do write .json files)" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"output_format\"] does not exist, default is false (do not write .json files)" << std::endl;
-      throw e;
+    const jsonParser &ref = (*this)[level1][level2][level3];
+
+    if(ref.is_array()) {
+      std::vector<std::string> formats = _get_setting<std::vector<std::string> >(level1, level2, level3, help);
+      for(auto it = formats.begin(); it != formats.end(); ++it) {
+        if(*it == "json" || *it == "JSON") {
+          return true;
+        }
+      }
+      return false;
+    }
+    else {
+      std::string input = _get_setting<std::string>(level1, level2, level3, help);
+      if(input == "json" || input == "JSON") {
+        return true;
+      }
+      return false;
     }
   }
 
@@ -273,8 +250,9 @@ namespace CASM {
     }
 
     catch(std::runtime_error &e) {
-      std::cerr << "ERROR in MonteSettings::is_" << level2 << std::endl;
-      std::cerr << "No [\"" << level1 << "\"] setting found" << std::endl;
+      Log &err_log = default_err_log();
+      err_log.error<Log::standard>("Reading Monte Carlo settings");
+      err_log << "No [\"" << level1 << "\"] setting found.\n" << std::endl;
       throw e;
     }
   }
@@ -286,12 +264,13 @@ namespace CASM {
     }
 
     catch(std::runtime_error &e) {
-      std::cerr << "ERROR in MonteSettings::is_" << level2 << "_" << level3 << std::endl;
+      Log &err_log = default_err_log();
+      err_log.error<Log::standard>("Reading Monte Carlo settings");
       if(this->contains(level1)) {
-        std::cerr << "No [\"" << level1 << "\"][\"" << level2 << "\"] setting found" << std::endl;
+        err_log << "No [\"" << level1 << "\"][\"" << level2 << "\"] setting found" << std::endl;
       }
       else {
-        std::cerr << "No [\"" << level1 << "\"] setting found" << std::endl;
+        err_log << "No [\"" << level1 << "\"] setting found" << std::endl;
       }
       throw;
     }
@@ -320,7 +299,7 @@ namespace CASM {
     size_type value = 1;
     std::string level1 = "data";
     std::string level2 = "sample_period";
-    std::string help = "int (default=1)\n"
+    std::string help = "(int, default=1)\n"
                        "  In conjunction with \"sample_by\", determines how often to make observations.";
     if(!_is_setting(level1, level2)) {
       return 1;
@@ -461,46 +440,43 @@ namespace CASM {
 
   /// \brief Figure out how large data containers should be
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::max_data_length() const {
-    try {
-      if(!_is_setting("data", "sample_by")) {
-        return 1024;
+    if(!_is_setting("data", "sample_by")) {
+      return 1024;
+    }
+    else if(sample_by_pass()) {
+      if(is_max_pass()) {
+        return (max_pass() / sample_period());
       }
-      else if(sample_by_pass()) {
-        if(is_max_pass()) {
-          return (max_pass() / sample_period());
-        }
-        else if(is_N_pass()) {
-          return (N_pass() / sample_period());
-        }
-        else if(is_N_sample()) {
-          return N_sample();
-        }
-        else {
-          return 1024;
-        }
+      else if(is_N_pass()) {
+        return (N_pass() / sample_period());
       }
-      else if(sample_by_step()) {
-        if(is_max_step()) {
-          return (max_step() / sample_period());
-        }
-        else if(is_N_step()) {
-          return (N_step() / sample_period());
-        }
-        else if(is_N_sample()) {
-          return N_sample();
-        }
-        else {
-          return 1024;
-        }
+      else if(is_N_sample()) {
+        return N_sample();
       }
       else {
-        throw std::runtime_error(std::string("Error in MonteSettings::max_data_length()"));
+        return 1024;
       }
     }
-    catch(...) {
-      std::cerr << "ERROR: Could not get max data length." << std::endl;
-      std::cerr << "Please check 'sample_by', 'max_pass' or 'max_step', and 'sample_period' in your input file" << std::endl;
-      throw;
+    else if(sample_by_step()) {
+      if(is_max_step()) {
+        return (max_step() / sample_period());
+      }
+      else if(is_N_step()) {
+        return (N_step() / sample_period());
+      }
+      else if(is_N_sample()) {
+        return N_sample();
+      }
+      else {
+        return 1024;
+      }
+    }
+    else {
+      Log &err_log = default_err_log();
+      err_log.error<Log::standard>("Reading Monte Carlo settings");
+      err_log << "Could not determine max data length.\n";
+      err_log << "Please check 'sample_by', 'max_pass' or 'max_step', and 'sample_period' in your input file.\n" << std::endl;
+      throw std::runtime_error(std::string("Error determining max_data_length"));
     }
 
   }
