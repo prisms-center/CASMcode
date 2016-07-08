@@ -30,31 +30,27 @@ AM_LDFLAGS = $(BOOST_LDFLAGS)
 
 #AM_CXXFLAGS+=$(BOOST_CXXFLAGS)? AM_LDFLAGS+=$(BOOST_LDFLAGS)?
 
-#===========================================================#
+#============================================================#
 #Always have included modules use paths relative to this
 #parent Makefile.am. Avoid variable expansion in *_SOURCES
-#===========================================================#
+#============================================================#
 #Create shared casm libraries
 include $(srcdir)/src/casm/Makemodule.am
 include $(srcdir)/src/ccasm/Makemodule.am
 
-#===========================================================#
+#============================================================#
 #Take care of all the include headers
 include $(srcdir)/include/casm/Makemodule.am
 include $(srcdir)/include/ccasm/Makemodule.am
 
-#===========================================================#
+#============================================================#
 #Take care of applications
 include $(srcdir)/apps/casm/Makemodule.am
 
-#===========================================================#
+#============================================================#
 #Take care of tests
 include $(srcdir)/tests/unit/Makemodule.am
 
-#=====================DELETE=================================#
-#lib_LTLIBRARIES+=libdumb.la
-#libdumb_la_SOURCES=./src/casm/CASM_global_definitions.cc
-#libdumb_la_LDFLAGS=-avoid-version
 #============================================================#
 #Misc targets
 .FORCE:
@@ -66,6 +62,10 @@ test:
 	echo $(AM_CXXFLAGS)
 	echo $(AM_CPPFLAGS)
 	echo $(casm_LDFLAGS)
+	echo $(BOOST_LDFLAGS)
+	echo $(BOOST_CXXFLAGS)
+	echo $(BOOST_CPPFLAGS)
+	echo $(TXT_VERSION)
 
 #============================================================#
 #Recurse into these places (must be direct children, don't be fancy)
@@ -76,7 +76,7 @@ test:
 #Even though the include/casm/external is distributed through headers, the licensing and other files should
 #also be included.
 EXTRA_DIST=./build-aux/casm_version.txt\
-		   ./man/casm.1\
+		   ./man\
 		   ./python\
 		   ./tests\
 		   ./include/casm/external
