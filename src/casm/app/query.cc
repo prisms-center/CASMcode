@@ -85,17 +85,17 @@ namespace CASM {
     po::variables_map vm;
     bool json_flag(false), no_header(false), verbatim_flag(false), gz_flag(false);
 
-    po::options_description desc("'casm query' usage");
+    //po::options_description desc("'casm query' usage");
     // Set command line options using boost program_options
     Completer::QueryOption query_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, query_opt.desc()), vm); // can throw
 
       /** Start --help option
        */
       if(vm.count("help")) {
-        args.log << std::endl << desc << std::endl;
+        args.log << std::endl << query_opt.desc() << std::endl;
       }
 
       po::notify(vm); // throws on error, so do after help in case of problems
@@ -128,7 +128,7 @@ namespace CASM {
     }
     catch(po::error &e) {
       args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
-      args.err_log << desc << std::endl;
+      args.err_log << query_opt.desc() << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
@@ -138,7 +138,7 @@ namespace CASM {
     }
 
     if(!vm.count("alias") && !vm.count("columns")) {
-      args.log << std::endl << desc << std::endl;
+      args.log << std::endl << query_opt.desc() << std::endl;
     }
 
     // set current path to project root
