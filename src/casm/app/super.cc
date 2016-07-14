@@ -47,7 +47,7 @@ namespace CASM {
        po::value<std::vector<fs::path> >(&m_transf_mat_paths)->multitoken()->value_name(ArgHandler::path()),
        "1 or more files containing a 3x3 transformation matrix used to create a supercell.")
 
-      ("get_transf_mat",
+      ("get-transf-mat",
        "If it exists, find the transformation matrix.")
 
       ("structure",
@@ -123,12 +123,12 @@ namespace CASM {
 
       if(!vm.count("help")) {
         if(!vm.count("duper")) {
-          if(vm.count("transf_mat") + vm.count("get_transf_mat") != 1) {
-            std::cerr << "Error in 'casm super'. Only one of --transf_mat or --get_transf_mat may be chosen." << std::endl;
+          if(vm.count("transf-mat") + vm.count("get-transf-mat") != 1) {
+            std::cerr << "Error in 'casm super'. Only one of --transf-mat or --get-transf-mat may be chosen." << std::endl;
             return ERR_INVALID_ARG;
           }
           if(configname.size() > 1 || scelname.size() > 1 || tmatfile.size() > 1) {
-            std::cerr << "ERROR: more than one --configname, --scelname, or --transf_mat argument "
+            std::cerr << "ERROR: more than one --configname, --scelname, or --transf-mat argument "
                       "is only allowed for option --duper" << std::endl;
             return ERR_INVALID_ARG;
           }
@@ -147,27 +147,27 @@ namespace CASM {
 
         std::cout << "DESCRIPTION" << std::endl;
         std::cout << "                                                                      \n" <<
-                  "  casm super --transf_mat T                                           \n" <<
+                  "  casm super --transf-mat T                                           \n" <<
                   "  - Print super lattice of the PRIM lattice                           \n" <<
                   "                                                                      \n" <<
-                  "  casm super --structure POSCAR --transf_mat T                        \n" <<
+                  "  casm super --structure POSCAR --transf-mat T                        \n" <<
                   "  - Print superstructure of a POSCAR                                  \n" <<
                   "                                                                      \n" <<
-                  "  casm super --configname configname --transf_mat T                   \n" <<
+                  "  casm super --configname configname --transf-mat T                   \n" <<
                   "  - Print superstructure of a configuration                           \n" <<
                   "                                                                      \n" <<
-                  "  casm super --structure POSCAR --unitcell scelname --get_transf_mat  \n" <<
+                  "  casm super --structure POSCAR --unitcell scelname --get-transf-mat  \n" <<
                   "  - Check if POSCAR lattice is a supercell of unit cell lattice and   \n" <<
                   "    if so print the transformation matrix                             \n" <<
                   "  - Uses primitive cell for unitcell if none given                    \n" <<
                   "                                                                      \n" <<
-                  "  casm super --scelname scelname --unitcell scelname --get_transf_mat\n" <<
+                  "  casm super --scelname scelname --unitcell scelname --get-transf-mat\n" <<
                   "  - Check if configuration lattice is a supercell of unit cell lattice.\n" <<
                   "    and print the transformation matrix                               \n" <<
                   "  - Uses primitive cell for unitcell if none given                    \n\n" <<
 
                   "  casm super --duper --scelname scel1 [scel2 ...] --configname con1 [con2 ...]\n"
-                  "    --config [mylist ...] --transf_mat M1 [M2 ...]                    \n" <<
+                  "    --config [mylist ...] --transf-mat M1 [M2 ...]                    \n" <<
                   "  - Makes the superdupercell of the lattices of all inputs            \n" <<
                   "  - Using '--config' with no arguments is equivalent to '--config MASTER',\n" <<
                   "    which uses the master config list                                 \n" <<
@@ -228,7 +228,7 @@ namespace CASM {
     }
     abs_structfile = fs::absolute(structfile);
 
-    if(vm.count("structure") && vm.count("transf_mat")) {
+    if(vm.count("structure") && vm.count("transf-mat")) {
 
       if(!fs::exists(abs_structfile)) {
         std::cout << "ERROR: " << abs_tmatfile[0] << " not found." << std::endl;
@@ -274,7 +274,7 @@ namespace CASM {
       std::map<std::string, Lattice> config_lat;
 
       // collect lattices by constructing from transformation matrices
-      if(vm.count("transf_mat")) {
+      if(vm.count("transf-mat")) {
         for(auto it = abs_tmatfile.begin(); it != abs_tmatfile.end(); ++it) {
           Eigen::Matrix<int, 3, 3, Eigen::RowMajor> T;
           fs::ifstream file(*it);
@@ -432,7 +432,7 @@ namespace CASM {
       return 0;
 
     }
-    else if(vm.count("transf_mat")) {
+    else if(vm.count("transf-mat")) {
 
       Eigen::Matrix3i T;
       if(!fs::exists(abs_tmatfile[0])) {
@@ -624,7 +624,7 @@ namespace CASM {
 
     }
 
-    if(vm.count("get_transf_mat")) {
+    if(vm.count("get-transf-mat")) {
 
       Lattice unit_lat = primclex.get_prim().lattice();
 
@@ -641,7 +641,7 @@ namespace CASM {
         super_lat = primclex.get_supercell(scelname[0]).get_real_super_lattice();
       }
       else {
-        std::cout << "Error in 'casm super --get_transf_mat'. No --structure or --scelname given." << std::endl << std::endl;
+        std::cout << "Error in 'casm super --get-transf-mat'. No --structure or --scelname given." << std::endl << std::endl;
         return 1;
       }
 
