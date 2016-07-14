@@ -141,7 +141,7 @@ namespace CASM {
       matrix_path = enum_opt.matrix_path();
       ezmode = enum_opt.lattice_directions();
 
-      if(vm.count("min") && !vm.count("max")) {
+      if(min_vol != 1 && !vm.count("max")) {
         std::cerr << "\n" << enum_opt.desc() << "\n" << std::endl;
         std::cerr << "Error in 'casm enum'. If --min is given, --max must also be given." << std::endl;
         return ERR_INVALID_ARG;
