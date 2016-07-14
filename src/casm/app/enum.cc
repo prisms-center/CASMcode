@@ -39,7 +39,7 @@ namespace CASM {
       add_scelnames_suboption();
 
       m_desc.add_options()
-      ("min", po::value<int>(&m_min_vol), "Min volume")
+      ("min", po::value<int>(&m_min_vol)->default_value(1), "Min volume")
       ("max", po::value<int>(&m_max_vol), "Max volume")
       ("filter", po::value<std::vector<std::string> >(&m_filter_strs)->multitoken()->value_name(ArgHandler::query()), "Filter configuration enumeration so that only configurations matching a 'casm query'-type expression are recorded")
       ("all,a", "Enumerate configurations for all supercells")
@@ -62,7 +62,7 @@ namespace CASM {
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
 
-    int min_vol = 1, max_vol;
+    int min_vol, max_vol;
     std::vector<std::string> scellname_list, filter_expr;
     //double tol;
     COORD_TYPE coordtype = CASM::CART;
