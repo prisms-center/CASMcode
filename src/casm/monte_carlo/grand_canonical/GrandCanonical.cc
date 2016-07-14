@@ -536,7 +536,11 @@ namespace CASM {
       std::string motif_configname = settings.motif_configname();
       _log << "motif configname: " << motif_configname << "\n";
 
-      if(motif_configname == "auto") {
+      if(motif_configname == "default") {
+        _log << "using configuration with default occupation..." << std::endl;
+        return Configuration(_supercell(), jsonParser(), Array<int>(_supercell().num_sites(), 0)).configdof();
+      }
+      else if(motif_configname == "auto" || motif_configname == "restricted_auto") {
 
         _log << "searching for minimum potential energy motif..." << std::endl;
 
@@ -555,23 +559,79 @@ namespace CASM {
           configmap.insert(std::make_pair(_eci() * correlations(*it, _clexulator()) - cond.param_chem_pot().dot(CASM::comp(*it)), &(*it)));
         }
 
-        const Configuration &min_config = *(configmap.begin()->second);
-        double min_potential_energy = configmap.begin()->first;
-        auto eq_range = configmap.equal_range(min_potential_energy);
-        if(std::distance(eq_range.first, eq_range.second) > 1) {
-          _log << "Warning: Found degenerate ground states with potential energy: "
-               << std::setprecision(8) << min_potential_energy << std::endl;
-          for(auto it = eq_range.first; it != eq_range.second; ++it) {
-            _log << "  " << it->second->name() << std::endl;
+        if(motif_configname == "restricted_auto") {
+
+          // used to check if configurations can fill the monte carlo supercell
+          const Lattice &scel_lat = supercell().get_real_super_lattice();
+          auto begin = primclex().get_prim().factor_group().begin();
+          auto end = primclex().get_prim().factor_group().end();
+
+          // save iterators pointing to configs that will fill the supercell
+          std::vector<decltype(configmap)::const_iterator> allowed;
+
+          // iterate through groups of degenerate configs
+          auto next_it = configmap.begin();
+          while(next_it != configmap.end()) {
+            auto eq_range = configmap.equal_range(next_it->first);
+
+            // save allowed configs
+            for(auto it = eq_range.first; it != eq_range.second; ++it) {
+              const Lattice &motif_lat = it->second->get_supercell().get_real_super_lattice();
+              if(is_supercell(scel_lat, motif_lat, begin, end, TOL).first != end) {
+                allowed.push_back(it);
+              }
+            }
+
+            // if some found, break
+            if(allowed.size()) {
+              break;
+            }
+
+            // else, continue to next group
+            next_it = eq_range.second;
           }
-          _log << "using: " << min_config.name() << "\n" << std::endl;
+
+          if(!allowed.size()) {
+            _log << "Found no enumerated configurations that will fill the supercell\n";
+            _log << "using configuration with default occupation..." << std::endl;
+            return Configuration(_supercell(), jsonParser(), Array<int>(_supercell().num_sites(), 0)).configdof();
+          }
+
+          if(allowed.size() > 1) {
+            _log << "Warning: Found degenerate allowed configurations with potential energy: "
+                 << std::setprecision(8) << allowed[0]->first << std::endl;
+            for(auto it = allowed.begin(); it != allowed.end(); ++it) {
+              _log << "  " << (*it)->second->name() << std::endl;
+            }
+            _log << "using: " << allowed[0]->second->name() << "\n" << std::endl;
+          }
+          else {
+            _log << "using: " << allowed[0]->second->name() << " with potential energy: "
+                 << std::setprecision(8) << allowed[0]->first << "\n" << std::endl;
+          }
+
+          return fill_supercell(_supercell(), *(allowed[0]->second)).configdof();
         }
         else {
-          _log << "using: " << min_config.name() << " with potential energy: "
-               << std::setprecision(8) << min_potential_energy << "\n" << std::endl;
-        }
+          const Configuration &min_config = *(configmap.begin()->second);
+          double min_potential_energy = configmap.begin()->first;
+          auto eq_range = configmap.equal_range(min_potential_energy);
 
-        return fill_supercell(_supercell(), min_config).configdof();
+          if(std::distance(eq_range.first, eq_range.second) > 1) {
+            _log << "Warning: Found degenerate ground states with potential energy: "
+                 << std::setprecision(8) << min_potential_energy << std::endl;
+            for(auto it = eq_range.first; it != eq_range.second; ++it) {
+              _log << "  " << it->second->name() << std::endl;
+            }
+            _log << "using: " << min_config.name() << "\n" << std::endl;
+          }
+          else {
+            _log << "using: " << min_config.name() << " with potential energy: "
+                 << std::setprecision(8) << min_potential_energy << "\n" << std::endl;
+          }
+
+          return fill_supercell(_supercell(), min_config).configdof();
+        }
       }
       else {
         _log << "using configation: " << motif_configname << "\n" << std::endl;

@@ -260,7 +260,7 @@ namespace CASM {
     return notstd::make_unique<HallOfFameType>(
              MonteCarloEnumMetric(set.config_io().parse(enumeration_metric_args())),
              ConfigDoFOccCompare(),
-             enumeration_n_halloffame(),
+             enumeration_N_halloffame(),
              enumeration_tol());
   }
 
@@ -317,16 +317,16 @@ namespace CASM {
   }
 
   /// \brief Returns enumeration halloffame max size (default 100)
-  Index MonteSettings::enumeration_n_halloffame() const {
+  Index MonteSettings::enumeration_N_halloffame() const {
 
     std::string help = "(integer, optional, default=100)\n"
-                       "  The number of configurations that should be included in \n"
-                       "  the enumeration hall of fame.";
+                       "  The number of configurations that are allowed in the \n"
+                       "  enumeration hall of fame.";
 
-    if(!_is_setting("data", "enumeration", "n_halloffame")) {
+    if(!_is_setting("data", "enumeration", "N_halloffame")) {
       return 100;
     }
-    return _get_setting<Index>("data", "enumeration", "n_halloffame", help);
+    return _get_setting<Index>("data", "enumeration", "N_halloffame", help);
   }
 
   /// \brief Returns enumeration halloffame tolerance (default 1e-8)
@@ -334,12 +334,12 @@ namespace CASM {
 
     std::string help = "(number, optional, default=1e-8)\n"
                        "  Tolerance used for floating point comparison of         \n"
-                       "  configurations included in the enumeration hall of fame.";
+                       "  configuration scores in the enumeration hall of fame.";
 
-    if(!_is_setting("data", "enumeration", "tol")) {
+    if(!_is_setting("data", "enumeration", "tolerance")) {
       return 1e-8;
     }
-    return _get_setting<double>("data", "enumeration", "tol", help);
+    return _get_setting<double>("data", "enumeration", "tolerance", help);
   }
 
 

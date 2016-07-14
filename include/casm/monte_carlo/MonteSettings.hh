@@ -161,7 +161,7 @@ namespace CASM {
     std::string enumeration_check_args() const;
 
     /// \brief Returns enumeration halloffame max size (default 100)
-    Index enumeration_n_halloffame() const;
+    Index enumeration_N_halloffame() const;
 
     /// \brief Returns enumeration halloffame tolerance (default 1e-8)
     double enumeration_tol() const;

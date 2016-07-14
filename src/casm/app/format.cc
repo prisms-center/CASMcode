@@ -1100,7 +1100,38 @@ Direct\n\
                 "      each sample will be written to compressed files:             \n" <<
                 "        \"output_directory\"/conditions.i/trajectory.ext.gz        \n" <<
                 "      where 'i' is the condition index and 'ext' is the output     \n" <<
-                "      format.                                                      \n\n\n" <<
+                "      format.                                                      \n\n" <<
+
+                "  /\"enumeration\": (JSON object, optional)                        \n" <<
+                "    If included, save configurations encountered during Monte      \n" <<
+                "    Carlo calculations by keeping a 'hall of fame' of best scoring \n" <<
+                "    configurations. After the calculation at a particular set of   \n" <<
+                "    thermodynamic conditions completes, the configurations in the  \n" <<
+                "    hall of fame are saved to the project configuration list.      \n\n" <<
+
+                "    /\"check\": (string, default=\"eq(1,1)\")                      \n" <<
+                "      A 'casm query'-like string that returns a boolean value      \n" <<
+                "      indicating if (true) a configuration should be considered for\n" <<
+                "      for the enumeration hall of fame. The default always returns \n" <<
+                "      true.                                                        \n\n" <<
+
+                "    /\"metric\": (string, default=\"eq(1,1)\")                     \n" <<
+                "      A 'casm query'-like string that provides a metric for ranking\n" <<
+                "      ranking configurations as they are encountered during a Monte\n" <<
+                "      Carlo calculation. The resulting value is used to create a   \n" <<
+                "      hall of fame of 'best' configurations encountered during the \n" <<
+                "      calculation. When the calculation is complete configurations \n" <<
+                "      in the hall of fame are added to the CASM project config     \n" <<
+                "      list. The 'casm query'-like command should evaluate to a     \n" <<
+                "      number.                                                      \n\n" <<
+
+                "    /\"N_halloffame\": (integer, optional, default=100)            \n" <<
+                "      The number of configurations that are allowed in the         \n" <<
+                "      enumeration hall of fame.                                    \n\n" <<
+
+                "    /\"tolerance\": (number, optional, default=1e-8)               \n" <<
+                "      Tolerance used for floating point comparison of configuration\n" <<
+                "      scores in the enumeration hall of fame.                      \n\n\n" <<
 
 
                 "\"driver\": (JSON object)                                          \n\n" <<
@@ -1109,7 +1140,7 @@ Direct\n\
                 "      Specifies the initial occupation of the supercell.           \n" <<
 
                 "    /\"configname\": (string, optional)                            \n" <<
-                "      A configuration name or \"auto\".                            \n\n" <<
+                "      A configuration name, \"auto\", or \"default\".              \n\n" <<
 
                 "      Specifies the configuration that is tiled to fill the        \n" <<
                 "      supercell. If necessary, symmetry operations may be applied  \n" <<
@@ -1120,7 +1151,13 @@ Direct\n\
                 "        A configuration name (ex. \"SCEL3_3_1_1_0_2_2/0\")         \n" <<
                 "        \"auto\": If the value \"auto\" is used, the enumerated    \n" <<
                 "        configurations will be searched for the configuration with \n" <<
-                "        the lowest potential energy to use as the motif.           \n\n" <<
+                "        the lowest potential energy to use as the motif.           \n" <<
+                "        \"default\": If the value \"default\" is used, the initial \n" <<
+                "        motif occupation is determined from the occupation order in\n" <<
+                "        the PRIM.                                                  \n" <<
+                "        \"restricted_auto\": Same as \"auto\", but only            \n" <<
+                "        configurations that can fill the supercell are considered. \n" <<
+                "        As a last resort, \"default\" is used.                     \n\n" <<
 
                 "    /\"configdof\": (string, optional)                             \n" <<
                 "      Specifies the path to a configdof JSON file, such as         \n" <<
