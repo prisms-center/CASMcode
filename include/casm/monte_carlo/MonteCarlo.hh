@@ -77,6 +77,11 @@ namespace CASM {
     }
 
     /// \brief const Access current microstate
+    const Configuration &config() const {
+      return m_config;
+    }
+
+    /// \brief const Access current microstate
     const ConfigDoF &configdof() const {
       return m_config.configdof();
     }
@@ -166,15 +171,53 @@ namespace CASM {
     template<typename MonteTypeSettings>
     MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings, Log &_log);
 
-    /// \brief const Access the Supercell that *this is based on
-    Supercell &supercell() {
+    /// \brief Access the PrimClex that *this is based on
+    PrimClex &_primclex() const {
+      return m_primclex;
+    }
+
+    /// \brief Access the Supercell that *this is based on
+    Supercell &_supercell() const {
       return m_scel;
     }
 
     /// \brief Access current microstate
-    ConfigDoF &_configdof() {
+    ///
+    /// - This can be used by a const member if it undoes any changes
+    ///   to the ConfigDoF before returning
+    ConfigDoF &_configdof() const {
       return m_config.configdof();
     }
+
+    Log &_log() const {
+      return m_log;
+    }
+
+    MTRand &_mtrand() {
+      return m_twister;
+    }
+
+    /// \brief Access scalar properties map
+    ScalarPropertyMap &_scalar_properties() {
+      return m_scalar_property;
+    }
+
+    /// \brief Access a particular scalar property
+    double &_scalar_property(std::string property_name) {
+      return m_scalar_property.find(property_name)->second;
+    }
+
+    /// \brief const Access vector properties map
+    VectorPropertyMap &_vector_properties() {
+      return m_vector_property;
+    }
+
+    /// \brief const Access a particular vector property
+    Eigen::VectorXd &_vector_property(std::string property_name) {
+      return m_vector_property.find(property_name)->second;
+    }
+
+  private:
 
     /// \brief a map of keyname to property value
     ///
@@ -187,17 +230,14 @@ namespace CASM {
     /// - example: m_vector_property["corr"]
     VectorPropertyMap m_vector_property;
 
-
-  protected:
-
-    /// \brief Contains all input settings (non-owning pointer)
+    /// \brief Contains all input settings
     const MonteSettings &m_settings;
 
-    /// \brief PrimClex for this system (non-owning pointer)
-    const PrimClex &m_primclex;
+    /// \brief PrimClex for this system
+    PrimClex &m_primclex;
 
     /// \brief Supercell for the calculation.
-    Supercell m_scel;
+    mutable Supercell m_scel;
 
     /// \brief Pointer to SuperNeighborList
     const SuperNeighborList *m_nlist;
@@ -223,8 +263,6 @@ namespace CASM {
 
     /// \brief Target for messages
     Log &m_log;
-
-  private:
 
     /// \brief Set the next time convergence is due to be checked
     void _set_check_convergence_time() const;
@@ -257,7 +295,7 @@ namespace CASM {
   };
 
   /// \brief Fill supercell with motif, applying a factor group operation if necessary
-  ConfigDoF fill_supercell(Supercell &mc_scel, const Configuration &motif);
+  Configuration fill_supercell(Supercell &mc_scel, const Configuration &motif);
 
   /// \brief Construct with a starting ConfigDoF as specified the given MonteSettings and prepare data samplers
   template<typename MonteTypeSettings>
@@ -280,6 +318,8 @@ namespace CASM {
       }
     }
   }
+
+  // canonical_equivalent_lattice(superlat, prim.point_group(), crystallography_tol())
 
 }
 #endif

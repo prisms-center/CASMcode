@@ -13,6 +13,11 @@
 namespace CASM {
 
   class MonteCarlo;
+  template<typename ObjectType, typename Metric, typename ObjectCompare>
+  class HallOfFame;
+
+  class MonteCarloEnumMetric;
+  class MonteCarloEnumCheck;
 
   /*
    * MonteSettings is nothing more than a jsonParser that you can expect
@@ -134,6 +139,32 @@ namespace CASM {
 
     /// \brief Directory where output should go
     const fs::path output_directory() const;
+
+
+    // --- Enumerating Configurations ---
+
+    /// \brief Returns true if enumeration is requested. (Default false)
+    bool is_enumeration() const;
+
+    typedef HallOfFame<Configuration, MonteCarloEnumMetric, ConfigDoFOccCompare> HallOfFameType;
+
+    /// \brief Returns the specified enumeration HallOfFame
+    std::unique_ptr<HallOfFameType> enumeration_halloffame(const ProjectSettings &set) const;
+
+    /// \brief Returns a function to check if a Configuration should be considered for the enumeration HallOfFame
+    std::unique_ptr<MonteCarloEnumCheck> enumeration_check(const ProjectSettings &set) const;
+
+    /// \brief Returns 'casm query'-like enumeration metric args
+    std::string enumeration_metric_args() const;
+
+    /// \brief Returns 'casm query'-like enumeration check args
+    std::string enumeration_check_args() const;
+
+    /// \brief Returns enumeration halloffame max size (default 100)
+    Index enumeration_n_halloffame() const;
+
+    /// \brief Returns enumeration halloffame tolerance (default 1e-8)
+    double enumeration_tol() const;
 
 
   protected:

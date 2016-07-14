@@ -332,7 +332,7 @@ namespace CASM {
         m_log.custom("Counter info");
         m_log << "pass: " << run_counter.pass() << "  "
               << "step: " << run_counter.step() << "  "
-              << "samples: " << run_counter.samples() << std::endl;
+              << "samples: " << run_counter.samples() << "\n" << std::endl;
       }
 
       if(m_mc.must_converge()) {

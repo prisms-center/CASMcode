@@ -1207,6 +1207,14 @@ namespace CASM {
 
   }
 
+  /// \brief Order Configuration lexicographically by occuapation
+  bool ConfigDoFOccCompare::operator()(const Configuration &A, const Configuration &B) const {
+    return std::lexicographical_compare(A.configdof().occupation().begin(),
+                                        A.configdof().occupation().end(),
+                                        B.configdof().occupation().begin(),
+                                        B.configdof().occupation().end());
+  }
+
 }
 
 

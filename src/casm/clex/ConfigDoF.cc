@@ -833,8 +833,5 @@ namespace CASM {
     return get_num_each_molecule_vec(configdof, scel).cast<double>() / scel.volume();
   }
 
-
-
-
 }
 

@@ -509,6 +509,11 @@ namespace CASM {
     _config.set_calc_properties(jsonParser());
   }
 
+  /// \brief Order Configuration lexicographically by occuapation
+  struct ConfigDoFOccCompare {
+    bool operator()(const Configuration &A, const Configuration &B) const;
+  };
+
 }
 
 #endif

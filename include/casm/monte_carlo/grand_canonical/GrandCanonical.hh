@@ -4,6 +4,7 @@
 #include "casm/clex/Clex.hh"
 #include "casm/monte_carlo/MonteDefinitions.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
+#include "casm/monte_carlo/MonteCarloEnum.hh"
 #include "casm/monte_carlo/SiteExchanger.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalEvent.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh"
@@ -27,7 +28,7 @@ namespace CASM {
   ///      -reject
   ///      -write_results
   ///
-  class GrandCanonical : public MonteCarlo {
+  class GrandCanonical : public MonteCarloEnum<MonteCarlo> {
 
   public:
 
@@ -65,6 +66,11 @@ namespace CASM {
     /// \brief Nothing needs to be done to reject a GrandCanonicalEvent
     void reject(const EventType &event);
 
+    void check_corr() {
+      std::cout << "corr:" << std::endl;
+      std::cout << correlations_vec(_configdof(), supercell(), _clexulator()) << std::endl;
+      std::cout << "OK corr" << std::endl;
+    }
 
     /// \brief Write results to files
     void write_results(Index cond_index) const;

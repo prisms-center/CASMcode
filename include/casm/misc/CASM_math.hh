@@ -100,7 +100,7 @@ namespace CASM {
     FloatCompare(double _tol) : tol(_tol) {}
 
     template<typename T>
-    bool operator()(const T &A, const T &B) {
+    bool operator()(const T &A, const T &B) const {
       return compare(A, B, tol);
     }
   };
