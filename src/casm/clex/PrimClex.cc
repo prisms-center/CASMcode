@@ -457,11 +457,13 @@ namespace CASM {
     for(Index i = 0; i < supercell_lattices.size(); i++) {
       Index list_size = supercell_list.size();
       Index index = add_canonical_supercell(supercell_lattices[i]);
-      if(supercell_list.size() != list_size && verbose) {
-        std::cout << "  Generated: " << supercell_list[index].get_name() << "\n";
-      }
-      else {
-        std::cout << "  Generated: " << supercell_list[index].get_name() << " (already existed)\n";
+      if(verbose) {
+        if(supercell_list.size() != list_size) {
+          std::cout << "  Generated: " << supercell_list[index].get_name() << "\n";
+        }
+        else {
+          std::cout << "  Generated: " << supercell_list[index].get_name() << " (already existed)\n";
+        }
       }
     }
     return;

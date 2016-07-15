@@ -197,7 +197,6 @@ namespace CASM {
         auto res = _import_primitive(this->_primclex(), scel, config_index);
         configname = res.first;
         is_new = res.second;
-        std::cout << configname << " " << is_new << std::endl;
         this->_primclex().configuration(configname).push_back_source(json_src);
 
         log << std::setw(24) << configname

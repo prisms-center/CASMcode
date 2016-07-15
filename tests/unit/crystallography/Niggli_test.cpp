@@ -8,6 +8,7 @@
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
+#include "ZrOProj.hh"
 
 namespace CASM {
 
@@ -114,6 +115,35 @@ namespace CASM {
     }
     return;
   }
+
+  void ZrO_supercell_enum_test() {
+
+    // ZrO prim
+    Structure prim(test::ZrO_prim());
+    PrimClex primclex(prim, null_log());
+
+    // enumerate size 5 supercells
+    bool verbose = false;
+    primclex.generate_supercells(5, 5, 3, Eigen::Matrix3i::Identity(), verbose);
+
+    // there will be 7
+    int scel_list_size = 7;
+    BOOST_CHECK_EQUAL(primclex.get_supercell_list().size(), scel_list_size);
+
+    // check if the canonical equivalent lattice of this volume 5 left handed
+    // lattice is among the enumerated lattices
+    Eigen::Matrix3d test_lat_mat;
+    test_lat_mat << 3.2339869, 0.0,       -1.6169934,
+                 0.0,       0.0,       14.003574,
+                 0.0,       5.1686783,  0.0;
+    Lattice test_lat(test_lat_mat);
+
+    // this should generate the canonical equivalent lattice and add it, but
+    // since we already enumerated supercells the supercell list size should
+    // not increase
+    Index scel_index = primclex.add_supercell(test_lat);
+    BOOST_CHECK_EQUAL(primclex.get_supercell_list().size(), scel_list_size);
+  }
 }
 
 BOOST_AUTO_TEST_SUITE(NiggliTest)
@@ -136,6 +166,10 @@ BOOST_AUTO_TEST_CASE(EeasyTests) {
 
 BOOST_AUTO_TEST_CASE(EvilNiggliTest) {
   CASM::single_dimension_test();
+}
+
+BOOST_AUTO_TEST_CASE(ZrOScelEnumTest) {
+  CASM::ZrO_supercell_enum_test();
 }
 
 
