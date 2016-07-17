@@ -1115,7 +1115,7 @@ Direct\n\
                 "      for the enumeration hall of fame. The default always returns \n" <<
                 "      true.                                                        \n\n" <<
 
-                "    /\"metric\": (string, default=\"eq(1,1)\")                     \n" <<
+                "    /\"metric\": (string, default=\"clex_hull_dist(ALL)\")         \n" <<
                 "      A 'casm query'-like string that provides a metric for ranking\n" <<
                 "      ranking configurations as they are encountered during a Monte\n" <<
                 "      Carlo calculation. The resulting value is used to create a   \n" <<
