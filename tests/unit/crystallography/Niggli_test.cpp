@@ -144,6 +144,51 @@ namespace CASM {
     Index scel_index = primclex.add_supercell(test_lat);
     BOOST_CHECK_EQUAL(primclex.get_supercell_list().size(), scel_list_size);
   }
+
+  void standard_orientation_compare_test() {
+
+    double tol = TOL;
+
+    Eigen::Matrix3d lat_mat_A;
+    lat_mat_A << 3.233986860000,  0.000000000000,  0.000000000000,
+              0.000000000000,  0.000000000000,  5.601429540000,
+              0.000000000000, -5.168678340000,  0.000000000000;
+
+    Lattice lat_A(lat_mat_A);
+
+    Eigen::Matrix3d lat_mat_A2;
+    lat_mat_A2 << 3.233986860000,  0.000000000000,  0.000000000000,
+               2.22045e-16,     0.000000000000,  5.601429540000,
+               0.000000000000, -5.168678340000,  0.000000000000;
+
+    Lattice lat_A2(lat_mat_A2);
+
+    Eigen::Matrix3d lat_mat_B;
+    lat_mat_B << 3.233986860000,  0.000000000000,  0.000000000000,
+              0.000000000000,  0.000000000000, -5.601429540000,
+              0.000000000000,  5.168678340000,  0.000000000000;
+
+    Lattice lat_B(lat_mat_B);
+
+    BOOST_CHECK_EQUAL(standard_orientation_compare(lat_mat_A, lat_mat_B, tol), true);
+    BOOST_CHECK_EQUAL(standard_orientation_compare(lat_mat_B, lat_mat_A, tol), false);
+
+    BOOST_CHECK_EQUAL(standard_orientation_compare(lat_mat_A2, lat_mat_B, tol), true);
+    BOOST_CHECK_EQUAL(standard_orientation_compare(lat_mat_B, lat_mat_A2, tol), false);
+
+    BOOST_CHECK_EQUAL(standard_orientation_compare(lat_mat_A, lat_mat_A2, tol), false);
+    BOOST_CHECK_EQUAL(standard_orientation_compare(lat_mat_A2, lat_mat_A, tol), false);
+
+    Structure prim(test::ZrO_prim());
+    Lattice canon_A = canonical_equivalent_lattice(lat_A, prim.point_group(), tol);
+    Lattice canon_A2 = canonical_equivalent_lattice(lat_A2, prim.point_group(), tol);
+    Lattice canon_B = canonical_equivalent_lattice(lat_B, prim.point_group(), tol);
+
+    BOOST_CHECK_EQUAL(canon_A == canon_A2, true);
+    BOOST_CHECK_EQUAL(canon_A2 == canon_B, true);
+    BOOST_CHECK_EQUAL(canon_A == canon_B, true);
+
+  };
 }
 
 BOOST_AUTO_TEST_SUITE(NiggliTest)
@@ -170,6 +215,7 @@ BOOST_AUTO_TEST_CASE(EvilNiggliTest) {
 
 BOOST_AUTO_TEST_CASE(ZrOScelEnumTest) {
   CASM::ZrO_supercell_enum_test();
+  CASM::standard_orientation_compare_test();
 }
 
 

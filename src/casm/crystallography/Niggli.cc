@@ -267,15 +267,16 @@ namespace CASM {
    * is selected.
    */
 
-  Lattice canonical_equivalent_lattice(Lattice in_lat, const SymGroup &point_grp, double compare_tol) {
-    in_lat.make_right_handed();
+  Lattice canonical_equivalent_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol) {
+    Lattice lat(in_lat);
+    lat.make_right_handed();
 
     //Ensure you at least get *something* back that's niggli
-    Lattice most_canonical = niggli(in_lat, compare_tol);
+    Lattice most_canonical = niggli(lat, compare_tol);
     Eigen::Matrix3d most_canonical_lat_mat = most_canonical.lat_column_mat();
 
     for(auto it = point_grp.begin(); it != point_grp.end(); ++it) {
-      Eigen::Matrix3d transformed_lat_mat = it->matrix() * in_lat.lat_column_mat();
+      Eigen::Matrix3d transformed_lat_mat = it->matrix() * lat.lat_column_mat();
       Lattice transformed_lat = Lattice(transformed_lat_mat);
 
       Eigen::Matrix3d candidate_lat_mat = niggli(transformed_lat, compare_tol).lat_column_mat();
