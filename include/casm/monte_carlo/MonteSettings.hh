@@ -146,19 +146,20 @@ namespace CASM {
     /// \brief Returns true if enumeration is requested. (Default false)
     bool is_enumeration() const;
 
-    typedef HallOfFame<Configuration, MonteCarloEnumMetric, ConfigDoFOccCompare> HallOfFameType;
-
-    /// \brief Returns the specified enumeration HallOfFame
-    std::unique_ptr<HallOfFameType> enumeration_halloffame(const ProjectSettings &set) const;
-
-    /// \brief Returns a function to check if a Configuration should be considered for the enumeration HallOfFame
-    std::unique_ptr<MonteCarloEnumCheck> enumeration_check(const ProjectSettings &set) const;
-
     /// \brief Returns 'casm query'-like enumeration metric args
     std::string enumeration_metric_args() const;
 
     /// \brief Returns 'casm query'-like enumeration check args
     std::string enumeration_check_args() const;
+
+    /// \brief Enumeration sample mode (default Monte::ENUM_SAMPLE_MODE::ON_SAMPLE)
+    Monte::ENUM_SAMPLE_MODE enumeration_sample_mode() const;
+
+    /// \brief Insert configurations in their canonical form
+    bool enumeration_insert_canonical() const;
+
+    /// \brief Only insert configurations that are not already enumerated
+    bool enumeration_check_existence() const;
 
     /// \brief Returns enumeration halloffame max size (default 100)
     Index enumeration_N_halloffame() const;

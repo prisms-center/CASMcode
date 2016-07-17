@@ -28,7 +28,7 @@ namespace CASM {
   ///      -reject
   ///      -write_results
   ///
-  class GrandCanonical : public MonteCarloEnum<MonteCarlo> {
+  class GrandCanonical : public MonteCarlo {
 
   public:
 
@@ -98,6 +98,9 @@ namespace CASM {
     const Eigen::VectorXd &comp_n() const {
       return *m_comp_n;
     }
+
+    /// \brief Get potential energy
+    double potential_energy(const Configuration &config) const;
 
 
   private:

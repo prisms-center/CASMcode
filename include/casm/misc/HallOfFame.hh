@@ -1,8 +1,9 @@
 #ifndef CASM_HallOfFame
 #define CASM_HallOfFame
 
-#include <map>
-#include <functional>
+#include <set>
+
+#include "casm/misc/CASM_math.hh"
 
 namespace CASM {
 
@@ -58,16 +59,17 @@ namespace CASM {
 
       typedef HallOfFame::const_iterator const_iterator;
 
-      InsertResult(const_iterator _pos, bool _success, double _score, bool _excluded) :
-        pos(_pos), success(_success), score(_score), excluded(_excluded) {}
+      InsertResult(const_iterator _pos, bool _success, double _score, bool _excluded, const_iterator _excluded_pos) :
+        pos(_pos), success(_success), score(_score), excluded(_excluded), excluded_pos(_excluded_pos) {}
 
-      InsertResult(std::pair<const_iterator, bool> _res, double _score, bool _excluded) :
-        pos(_res.first), success(_res.second), score(_score), excluded(_excluded)  {}
+      InsertResult(std::pair<const_iterator, bool> _res, double _score, bool _excluded, const_iterator _excluded_pos) :
+        pos(_res.first), success(_res.second), score(_score), excluded(_excluded), excluded_pos(_excluded_pos)  {}
 
       const_iterator pos;
       bool success;
       double score;
       bool excluded;
+      const_iterator excluded_pos;
     };
 
     /// \brief Constructor
@@ -82,14 +84,21 @@ namespace CASM {
       m_obj_compare(_obj_compare),
       m_score_compare(_score_tol),
       m_halloffame(Compare(m_obj_compare, _score_tol)),
+      m_check_exclude(false),
       m_exclude(Compare(m_obj_compare, _score_tol)),
       m_max_size(_max_size) {}
 
-    /// \brief Create a container of objects that should not be included in the hall of fame
+    /// \brief Add an object that should not be included in the hall of fame
+    void exclude(const ObjectType &obj) {
+      m_exclude.insert(PairType(m_metric(obj), obj));
+      m_check_exclude = true;
+    }
+
+    /// \brief Add objects that should not be included in the hall of fame
     template<typename ObjectIterator>
     void exclude(ObjectIterator begin, ObjectIterator end) {
       for(auto it = begin; it != end; ++it) {
-        m_exclude.insert(PairType(m_metric(*it), *it));
+        exclude(*it);
       }
     }
 
@@ -115,15 +124,16 @@ namespace CASM {
     /// member if necessary to maintain the max_size specified at construction
     InsertResult insert(const ObjectType &obj) {
 
+      auto excluded_pos = m_exclude.end();
       if(m_max_size <= 0) {
-        return InsertResult(m_halloffame.end(), false, std::numeric_limits<double>::quiet_NaN(), false);
+        return InsertResult(m_halloffame.end(), false, std::numeric_limits<double>::quiet_NaN(), false, excluded_pos);
       }
 
       double score = m_metric(obj);
 
       // if score is not good enough for hall of fame, do not insert
       if(m_halloffame.size() == m_max_size && m_score_compare(m_halloffame.rbegin()->first, score)) {
-        return InsertResult(m_halloffame.end(), false, score, false);
+        return InsertResult(m_halloffame.end(), false, score, false, excluded_pos);
       }
 
       PairType test(score, obj);
@@ -133,23 +143,24 @@ namespace CASM {
 
       // if not successful because it already exists in the hall of fame
       if(!res.second) {
-        return InsertResult(res, score, false);
+        return InsertResult(res, score, false, excluded_pos);
       }
 
-      /*
       // if successful, check if in exclude list
-      if(m_exclude.find(test) != m_exclude.end()) {
-        m_halloffame.erase(res.first);
-        return InsertResult(m_halloffame.end(), false, score, true);
+      if(m_check_exclude) {
+        excluded_pos = m_exclude.find(test);
+        if(excluded_pos != m_exclude.end()) {
+          m_halloffame.erase(res.first);
+          return InsertResult(m_halloffame.end(), false, score, true, excluded_pos);
+        }
       }
-      */
 
       // remove any extras
       if(m_halloffame.size() > m_max_size) {
         m_halloffame.erase(std::prev(m_halloffame.end()));
       }
 
-      return InsertResult(res, score, false);
+      return InsertResult(res, score, false, excluded_pos);
     }
 
     void clear() {
@@ -215,6 +226,7 @@ namespace CASM {
     ObjectCompare m_obj_compare;
     FloatCompare m_score_compare;
     ContainerType m_halloffame;
+    bool m_check_exclude;
     ContainerType m_exclude;
     Index m_max_size;
 

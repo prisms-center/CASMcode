@@ -1125,6 +1125,21 @@ Direct\n\
                 "      list. The 'casm query'-like command should evaluate to a     \n" <<
                 "      number.                                                      \n\n" <<
 
+                "    /\"sample_mode\": (string, optional, default=\"on_sample\")    \n" <<
+                "      Indicate when to attempt to insert configurations into the   \n" <<
+                "      enumeration hall of fame. Options are:                       \n" <<
+                "        \"on_accept\": after each accepted Monte Carlo event       \n" <<
+                "        \"on_sample\": after each data sample                      \n\n" <<
+
+                "    /\"check_existence\": (bool, optional, default=true)           \n" <<
+                "      If true, only configurations that do not already exist in the\n" <<
+                "      config list are inserted into the enumeration hall of fame.  \n\n" <<
+
+                "    /\"insert_canonical\": (bool, optional, default=true)          \n" <<
+                "      If true, configurations are inserted into the enumeration    \n" <<
+                "      hall of fame in their canonical form. If 'check_existence' is\n" <<
+                "      true, this must be set to true.                              \n\n" <<
+
                 "    /\"N_halloffame\": (integer, optional, default=100)            \n" <<
                 "      The number of configurations that are allowed in the         \n" <<
                 "      enumeration hall of fame.                                    \n\n" <<

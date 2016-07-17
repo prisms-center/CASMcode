@@ -255,20 +255,6 @@ namespace CASM {
     return true;
   }
 
-  /// \brief Returns the specified enumeration HallOfFame
-  std::unique_ptr<MonteSettings::HallOfFameType> MonteSettings::enumeration_halloffame(const ProjectSettings &set) const {
-    return notstd::make_unique<HallOfFameType>(
-             MonteCarloEnumMetric(set.config_io().parse(enumeration_metric_args())),
-             ConfigDoFOccCompare(),
-             enumeration_N_halloffame(),
-             enumeration_tol());
-  }
-
-  /// \brief Returns the specified enumeration HallOfFame
-  std::unique_ptr<MonteCarloEnumCheck> MonteSettings::enumeration_check(const ProjectSettings &set) const {
-    return notstd::make_unique<MonteCarloEnumCheck>(set.config_io().parse(enumeration_check_args()));
-  }
-
   /// \brief Returns 'casm query'-like enumeration metric
   ///
   /// Expects a string containing the Configuration scoring metric. For instance,
@@ -314,6 +300,54 @@ namespace CASM {
       return "eq(1,1)";
     }
     return _get_setting<std::string>("data", "enumeration", "check", help);
+  }
+
+  /// \brief Enumeration sample mode (default Monte::ENUM_SAMPLE_MODE::ON_SAMPLE)
+  Monte::ENUM_SAMPLE_MODE MonteSettings::enumeration_sample_mode() const {
+    if(!_is_setting("data", "enumeration", "sample_mode")) {
+      return Monte::ENUM_SAMPLE_MODE::ON_SAMPLE;
+    }
+    return _get_setting<Monte::ENUM_SAMPLE_MODE>("data", "enumeration", "sample_mode", help<Monte::ENUM_SAMPLE_MODE>());
+  }
+
+  /// \brief Insert configurations in their canonical form (default true)
+  bool MonteSettings::enumeration_check_existence() const {
+
+    std::string help = "(bool, optional, default=true)\n"
+                       "  If true, only configurations that do not already exist\n"
+                       "  in the config list are inserted into the enumeration  \n"
+                       "  hall of fame.";
+
+    if(!_is_setting("data", "enumeration", "check_existence")) {
+      return true;
+    }
+    return _get_setting<bool>("data", "enumeration", "check_existence", help);
+  }
+
+  /// \brief Insert configurations in their canonical form (default true)
+  bool MonteSettings::enumeration_insert_canonical() const {
+
+    std::string help = "(bool, optional, default=true)\n"
+                       "  If true, configurations are inserted into the         \n"
+                       "  enumeration hall of fame in their canonical form. If  \n"
+                       "  'check_existence' is true, this must be set to true.";
+
+    bool val;
+    if(!_is_setting("data", "enumeration", "insert_canonical")) {
+      val = true;
+    }
+    else {
+      val = _get_setting<bool>("data", "enumeration", "insert_canonical", help);
+    }
+
+    // if check_existence, insert_canonical must be true
+    if(enumeration_check_existence() && !val) {
+      throw std::runtime_error(
+        "Error in Monte Carlo enumeration in settings: "
+        "If 'check_existence' is true, then 'insert_canonical' must be true"
+      );
+    }
+    return val;
   }
 
   /// \brief Returns enumeration halloffame max size (default 100)

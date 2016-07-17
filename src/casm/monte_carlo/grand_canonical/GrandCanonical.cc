@@ -10,7 +10,7 @@ namespace CASM {
 
 
   GrandCanonical::GrandCanonical(PrimClex &primclex, const GrandCanonicalSettings &settings, Log &log):
-    MonteCarloEnum<MonteCarlo>(primclex, settings, log),
+    MonteCarlo(primclex, settings, log),
     m_site_swaps(supercell()),
     m_formation_energy_clex(primclex, settings.formation_energy(primclex)),
     m_all_correlations(settings.all_correlations()),
@@ -27,11 +27,6 @@ namespace CASM {
     _log() << std::setw(16) << "bset: " << desc.bset << "\n";
     _log() << std::setw(16) << "eci: " << desc.eci << "\n";
     _log() << "supercell: \n" << supercell().get_transf_mat() << "\n";
-    if(enum_configs()) {
-      _log() << "configuration enumeration: " << std::boolalpha << true << "\n";
-      _log() << "  check: " << enum_check_args() << "\n";
-      _log() << "  metric: " << enum_metric_args() << "\n";
-    }
     _log() << std::endl;
 
     // set the SuperNeighborList...
@@ -220,11 +215,6 @@ namespace CASM {
     _corr() += event.dCorr() / supercell().volume();
     _comp_n() += event.dN().cast<double>() / supercell().volume();
 
-    // If enumerating, try to save current configuration
-    if(enum_configs()) {
-      enum_insert(config());
-    }
-
     return;
   }
 
@@ -364,11 +354,20 @@ namespace CASM {
     write_observations(settings(), *this, cond_index, _log());
     write_trajectory(settings(), *this, cond_index, _log());
     //write_pos_trajectory(settings(), *this, cond_index);
+  }
 
-    // If enumerating, try to save current configuration
-    if(enum_configs()) {
-      save_configs();
-    }
+  /// \brief Get potential energy
+  ///
+  /// - if(&config == &this->config()) { return potential_energy(); }, else
+  ///   calculate potential_energy = formation_energy - comp_x.dot(param_chem_pot)
+  double GrandCanonical::potential_energy(const Configuration &config) const {
+    //if(&config == &this->config()) { return potential_energy(); }
+
+    auto corr = correlations(config, _clexulator());
+    double formation_energy = _eci() * corr.data();
+    auto comp_x = primclex().composition_axes().param_composition(CASM::comp_n(config));
+    double Ep = formation_energy - comp_x.dot(m_condition.param_chem_pot());
+    return Ep / supercell().volume();
   }
 
   /// \brief Update delta properties in 'event'
