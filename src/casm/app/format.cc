@@ -1156,7 +1156,7 @@ Direct\n\
                 "\"driver\": (JSON object)                                          \n\n" <<
 
                 "  /\"motif\": (JSON object)                                        \n" <<
-                "      Specifies the initial occupation of the supercell.           \n" <<
+                "      Specifies the initial occupation of the supercell.           \n\n" <<
 
                 "    /\"configname\": (string, optional)                            \n" <<
                 "      A configuration name, \"auto\", \"restricted_auto\", or      \n" <<
