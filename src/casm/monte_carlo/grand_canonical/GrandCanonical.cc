@@ -18,6 +18,13 @@ namespace CASM {
 
     const auto &desc = m_formation_energy_clex.desc();
 
+    // set the SuperNeighborList...
+    set_nlist();
+
+    // If the simulation is big enough, use delta cluster functions;
+    // else, calculate all cluster functions
+    m_use_deltas = !nlist().overlaps();
+
     _log().construct("Grand Canonical Monte Carlo");
     _log() << "project: " << this->primclex().get_path() << "\n";
     _log() << "formation_energy cluster expansion: " << desc.name << "\n";
@@ -27,14 +34,8 @@ namespace CASM {
     _log() << std::setw(16) << "bset: " << desc.bset << "\n";
     _log() << std::setw(16) << "eci: " << desc.eci << "\n";
     _log() << "supercell: \n" << supercell().get_transf_mat() << "\n";
+    _log() << "use_deltas: " << std::boolalpha << m_use_deltas << "\n";
     _log() << std::endl;
-
-    // set the SuperNeighborList...
-    set_nlist();
-
-    // If the simulation is big enough, use delta cluster functions;
-    // else, calculate all cluster functions
-    m_use_deltas = !nlist().overlaps();
 
     reset(_initial_configdof(settings, _log()));
 

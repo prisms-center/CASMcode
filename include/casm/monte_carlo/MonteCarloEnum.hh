@@ -117,6 +117,9 @@ namespace CASM {
       return m_insert_canonical;
     }
 
+    /// \brief Clear hall of fame and reset excluded
+    void reset();
+
   private:
 
     /// \brief Insert in hall of fame if 'check' passes

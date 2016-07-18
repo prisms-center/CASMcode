@@ -64,9 +64,7 @@ namespace CASM {
 
     m_enum_check.unique().reset(new MonteCarloEnumCheck(m_dict.parse(set.enumeration_check_args())));
 
-    if(check_existence()) {
-      m_halloffame->exclude(this->primclex().config_begin(), this->primclex().config_end());
-    }
+    reset();
 
     _log().custom("Configuration enumeration");
     _log() << "  check: " << check_args() << "\n";

@@ -102,6 +102,10 @@ namespace CASM {
       }
     }
 
+    void clear_excluded() {
+      m_exclude.clear();
+    }
+
     Metric metric() const {
       return m_metric;
     }

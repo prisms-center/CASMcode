@@ -1125,6 +1125,10 @@ Direct\n\
                 "      list. The 'casm query'-like command should evaluate to a     \n" <<
                 "      number.                                                      \n\n" <<
 
+                "      Besides the properties listed via 'casm query -h properties',\n" <<
+                "      and 'casm query -h operators', both \"check\" and \"metric\" \n" <<
+                "      can also use the property \"potential_energy\".              \n\n" <<
+
                 "    /\"sample_mode\": (string, optional, default=\"on_sample\")    \n" <<
                 "      Indicate when to attempt to insert configurations into the   \n" <<
                 "      enumeration hall of fame. Options are:                       \n" <<

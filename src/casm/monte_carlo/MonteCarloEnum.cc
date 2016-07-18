@@ -216,12 +216,12 @@ namespace CASM {
     _primclex().write_config_list();
 
     auto formatter = m_dict.parse("configname is_primitive is_new score comp potential_energy");
-    FormatFlag(static_cast<std::ostream &>(_log())).print_header(true);
+    auto flag = FormatFlag(_log()).print_header(true);
 
     _log().write("Enumerated configurations to master config list");
     _log() << "configuration enumeration check: " << m_check_args << "\n";
     _log() << "configuration enumeration metric: " << m_metric_args << "\n";
-    _log() << formatter(output.begin(), output.end());
+    _log() << flag << formatter(output.begin(), output.end());
     _log() << std::endl;
 
   }
@@ -240,6 +240,15 @@ namespace CASM {
       i++;
     }
     _log() << std::endl;
+  }
+
+  /// \brief Clear hall of fame and reset excluded
+  void MonteCarloEnum::reset() {
+    m_halloffame->clear();
+    if(check_existence()) {
+      m_halloffame->clear_excluded();
+      m_halloffame->exclude(this->primclex().config_begin(), this->primclex().config_end());
+    }
   }
 
   MonteCarloEnum::HallOfFameType &MonteCarloEnum::_halloffame() {

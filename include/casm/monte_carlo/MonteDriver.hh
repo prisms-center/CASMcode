@@ -329,7 +329,7 @@ namespace CASM {
 
     MonteCounter run_counter(m_settings, m_mc.steps_per_pass());
     if(m_enum) {
-      m_enum->clear();
+      m_enum->reset();
     };
 
     while(true) {
