@@ -1159,7 +1159,8 @@ Direct\n\
                 "      Specifies the initial occupation of the supercell.           \n" <<
 
                 "    /\"configname\": (string, optional)                            \n" <<
-                "      A configuration name, \"auto\", or \"default\".              \n\n" <<
+                "      A configuration name, \"auto\", \"restricted_auto\", or      \n" <<
+                "      \"default\".                                                 \n\n" <<
 
                 "      Specifies the configuration that is tiled to fill the        \n" <<
                 "      supercell. If necessary, symmetry operations may be applied  \n" <<
