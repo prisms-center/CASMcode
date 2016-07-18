@@ -311,7 +311,7 @@ namespace CASM {
     int non_negatives = 0;
     for(int i = 0; i < 3; i++) {
       for(int j = 0; j < 3; j++) {
-        if(sgn(lat_mat(i, j)) != -1) {
+        if(float_sgn(lat_mat(i, j), compare_tol) != -1) {
           non_negatives++;
         }
       }
@@ -338,12 +338,12 @@ namespace CASM {
                            -std::abs(lat_mat(0, 1)),
 
                            //Favor upper triangular
-                           sgn(lat_mat(2, 1)),
-                           sgn(lat_mat(2, 0)),
-                           sgn(lat_mat(1, 0)),
-                           sgn(lat_mat(1, 2)),
-                           sgn(lat_mat(0, 2)),
-                           sgn(lat_mat(0, 1));
+                           float_sgn(lat_mat(2, 1), compare_tol),
+                           float_sgn(lat_mat(2, 0), compare_tol),
+                           float_sgn(lat_mat(1, 0), compare_tol),
+                           float_sgn(lat_mat(1, 2), compare_tol),
+                           float_sgn(lat_mat(0, 2), compare_tol),
+                           float_sgn(lat_mat(0, 1), compare_tol);
 
     return lat_spatial_descriptor;
   }
