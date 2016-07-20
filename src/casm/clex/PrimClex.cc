@@ -557,7 +557,7 @@ namespace CASM {
       if(supercell_list.size() != list_size && verbose) {
         std::cout << "  Generated: " << supercell_list[index].get_name() << "\n";
       }
-      else {
+      else if(verbose) {
         std::cout << "  Generated: " << supercell_list[index].get_name() << " (already existed)\n";
       }
     }
