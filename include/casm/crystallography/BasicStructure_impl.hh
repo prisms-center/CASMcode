@@ -476,7 +476,7 @@ namespace CASM {
 
 
     Lattice new_lat(prim_vec0, prim_vec1, prim_vec2);
-    Lattice reduced_new_lat = new_lat.get_reduced_cell();
+    Lattice reduced_new_lat = niggli(new_lat);
 
     //The lattice so far is OK, but it's noisy enough to matter for large
     //superstructures. We eliminate the noise by reconstructing it now via

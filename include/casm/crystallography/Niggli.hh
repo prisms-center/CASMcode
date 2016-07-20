@@ -113,8 +113,8 @@ namespace CASM {
   ///Find the niggli, most standard oriented version of the given orbit (defined by the given SymGroup) of lattices
   Lattice canonical_equivalent_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol);
 
-  ///Convert the given lattice into it's niggli TYPE ?? reduced form, with the most standard orientation possilbe
-  Lattice niggli(const Lattice &in_lat, double compare_tol);
+  ///Convert the given lattice into it's niggli reduced form, with the most standard orientation possilbe
+  Lattice niggli(const Lattice &in_lat, double compare_tol, bool keep_handedness = false);
 
   ///Check whether the given lattice (represented as a matrix) is in niggli TYPE ?? reduced form (does not check for orientation)
   bool is_niggli(const Eigen::Matrix3d &test_lat_mat, double compare_tol);

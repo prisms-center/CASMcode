@@ -228,12 +228,23 @@ namespace CASM {
    * the Niggli criteria. Because there are several representations
    * of the Lattice that satisfy these conditions, the one with
    * the most standard orientation will be returned.
+   *
+   * The returned Niggli cell will be right handed regardless
+   * of the inputted lattice, unless keep_handedness is set
+   * to true.
    */
 
-  Lattice niggli(const Lattice &in_lat, double compare_tol) {
-    const Lattice reduced_in = in_lat.get_reduced_cell();
+  Lattice niggli(const Lattice &in_lat, double compare_tol, bool keep_handedness) {
 
-    //const Lattice reduced_in = niggli_impl::_niggli(in_lat, compare_tol);
+    Lattice target_lat(in_lat);
+
+    if(!keep_handedness) {
+      target_lat.make_right_handed();
+    }
+
+    const Lattice reduced_in = target_lat.get_reduced_cell();
+
+    //const Lattice reduced_in = niggli_impl::_niggli(target_lat, compare_tol);
     Eigen::Matrix3d best_lat_mat = reduced_in.lat_column_mat();
 
     bool first_niggli = true;
@@ -269,7 +280,7 @@ namespace CASM {
 
   Lattice canonical_equivalent_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol) {
     //Ensure you at least get *something* back that's niggli AND right handed
-    Lattice most_canonical = niggli(in_lat, compare_tol).make_right_handed();
+    Lattice most_canonical = niggli(in_lat, compare_tol, false);
     Eigen::Matrix3d most_canonical_lat_mat = most_canonical.lat_column_mat();
 
     for(auto it = point_grp.begin(); it != point_grp.end(); ++it) {
