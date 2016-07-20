@@ -5,9 +5,11 @@
 #include "casm/crystallography/BasicStructure.hh"
 
 /// What is being used to test it:
+#include "ZrOProj.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/casm_io/VaspIO.hh"
+#include "casm/crystallography/SupercellEnumerator.hh"
 
 using namespace CASM;
 
@@ -238,6 +240,27 @@ BOOST_AUTO_TEST_CASE(POS1Vasp5Test) {
   // Read new file and run tests again
   BasicStructure<Site> struc2(fs::path(testdir / "POS1_vasp5_out"));
   pos1_read_test(struc2);
+
+}
+
+BOOST_AUTO_TEST_CASE(IsPrimitiveTest) {
+
+  Structure prim(test::ZrO_prim());
+
+  const SymGroup effective_pg = prim.factor_group();
+
+  SupercellEnumerator<Lattice> scel_enum(prim.lattice(), effective_pg, 1, 6);
+
+  for(auto it = scel_enum.begin(); it != scel_enum.end(); ++it) {
+
+    Structure super = prim.create_superstruc(*it);
+    BOOST_CHECK_EQUAL(super.lattice().is_right_handed(), true);
+
+    Structure new_prim;
+    super.is_primitive(new_prim);
+    BOOST_CHECK_EQUAL(new_prim.lattice().is_right_handed(), true);
+    BOOST_CHECK_EQUAL(new_prim.lattice().is_right_handed(), super.lattice().is_right_handed());
+  }
 
 }
 
