@@ -173,5 +173,78 @@ namespace CASM {
       }
       return result;
     }
+
+    //************************************************************
+
+    void print_clexulator_member_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent)const {
+      const SiteOrbitBranch &asym_unit(tree.asym_unit());
+      for(Index no = 0; no < asym_unit.size(); no++) {
+        if(asym_unit[no].size() == 0 || asym_unit[no][0].clust_basis.size() == 0)
+          continue;
+
+        stream <<
+               indent << "// Occupation Function tables for basis sites in asymmetric unit " << no << ":\n";
+        for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
+          Index b = asym_unit[no][ne][0].basis_ind();
+          stream << indent << "//   - basis site " << b << ":\n";
+          for(Index f = 0; f < asym_unit[no][ne].clust_basis.size(); f++) {
+            stream <<
+                   indent << "double " << "m_occ_func_" << b << '_' << f << '[' << asym_unit[no][ne][0].site_occupant().size() << "];\n";
+          }
+          stream << '\n';
+        }
+
+      }
+
+    }
+    //************************************************************
+    void print_clexulator_private_method_definitions(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const {
+      const SiteOrbitBranch &asym_unit(tree.asym_unit());
+      for(Index no = 0; no < asym_unit.size(); no++) {
+        if(asym_unit[no].size() == 0 || asym_unit[no][0].clust_basis.size() == 0)
+          continue;
+
+        for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
+          Index b = asym_unit[no][ne][0].basis_ind();
+          stream <<
+                 indent << "// Occupation Function accessors for basis site " << b << ":\n";
+          for(Index f = 0; f < asym_unit[no][ne].clust_basis.size(); f++) {
+            stream <<
+                   indent << "const double &occ_func_" << b << '_' << f << "(const int &nlist_ind)const{return " << "m_occ_func_" << b << '_' << f << "[*(m_occ_ptr+*(m_nlist_ptr+nlist_ind))];}\n";
+          }
+          stream << '\n';
+        }
+
+      }
+    }
+
+    //************************************************************
+
+    void print_to_clexulator_constructor(std::ostream &stream, const SiteOrbitree &tree, const std::string &indent) const {
+      stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+      stream.precision(10);
+
+      const SiteOrbitBranch &asym_unit(tree.asym_unit());
+      for(Index no = 0; no < asym_unit.size(); no++) {
+        for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
+          Index b = asym_unit[no][ne][0].basis_ind();
+          for(Index f = 0; f < asym_unit[no][ne].clust_basis.size(); f++) {
+            for(Index s = 0; s < asym_unit[no][ne][0].site_occupant().size(); s++) {
+              if(s == 0)
+                stream << indent;
+              stream << "m_occ_func_" << b << '_' << f << '[' << s << "] = "
+                     << asym_unit[no][ne].clust_basis[f]->eval(Array<Index>(1, asym_unit[no][ne][0].site_occupant().ID()), Array<Index>(1, s));
+              if(s + 1 == asym_unit[no][ne][0].site_occupant().size())
+                stream << ";\n\n";
+              else
+                stream << ", ";
+            }
+          }
+        }
+      }
+    }
+
+
+
   }
 }

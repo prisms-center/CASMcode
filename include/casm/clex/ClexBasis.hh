@@ -154,7 +154,7 @@ namespace CASM {
   std::vector<std::string> orbit_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
                                                       OrbitType const &_clust_orbit,
                                                       PrimNeighborList &_nlist,
-                                                      std::vector<FunctionVisitor *> const &labelers);
+                                                      std::vector<std::unique_ptr<FunctionVisitor> > const &labelers);
 
   /// \brief Print the flower function formulae for orbit @param _clust_orbit specified by BasisSet @param _bset_orbit
   /// The pivot of the flower is specified by @param _sublat_index
@@ -175,8 +175,14 @@ namespace CASM {
                                                                                std::function<BasisSet(BasisSet const &)> _bset_transform,
                                                                                OrbitType const &_clust_orbit,
                                                                                PrimNeighborList &_nlist,
-                                                                               std::vector<FunctionVisitor *> const &labelers,
+                                                                               std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
                                                                                Index sublat_index);
+
+  template<typename OrbitType>
+  void print_proto_clust_funcs(ClexBasis const &_clex_basis,
+                               std::ostream &out,
+                               BasicStructure<Site> const &_prim,
+                               std::vector<OrbitType > const &_tree);
 
 
   namespace ClexBasis_impl {

@@ -41,7 +41,7 @@ namespace CASM {
     /// - T is considered an iterator if it is incrementable, dereferenceable, and comparable
     template <typename T>
     struct is_iterator < T,
-    void_t < decltype(++std::declval<T &>()),
+           void_t < decltype(++std::declval<T &>()),
            decltype(*std::declval<T &>()),
            decltype(std::declval<T &>() == std::declval<T &>()) > >
        : std::true_type { };
@@ -117,6 +117,32 @@ namespace CASM {
     using MuchLessThan = typename std::conditional<boost::is_integral<T>::value, IntegralLessThan<T>, FloatingPointLessThan<T> >::type;
     // End of MuchLessThan
 
+
+    // ---------------------
+
+    /// \brief Unary transformation that behaves as Identity (i.e. transform(arg) == arg is true)
+    template<typename T>
+    struct UnaryIdentity {
+      T operator()(T const &arg) const {
+        return T;
+      }
+    };
+
+    /// \brief N-nary function that behaves as a constant (i.e. transform(arg1,arg2,...) == constant is true)
+    template<typename OutputType>
+    struct ConstantFunctor {
+      ConstantFunctor(OutputType const &_const) :
+        m_const(_const) {}
+
+      template<typename... Args>
+      OutputType operator()(Args... const &args) const {
+        return m_const;
+      }
+    private:
+      OutputType m_const;
+    };
+
+    // ---------------------
 
     /// \brief Helper Functor for Counter container access using operator[]
     template < typename Container,
