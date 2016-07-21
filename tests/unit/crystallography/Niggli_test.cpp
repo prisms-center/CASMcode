@@ -149,6 +149,8 @@ namespace CASM {
 
     double tol = TOL;
 
+    //This is a known supercell of ZrO
+
     Eigen::Matrix3d lat_mat_A;
     lat_mat_A << 3.233986860000,  0.000000000000,  0.000000000000,
               0.000000000000,  0.000000000000,  5.601429540000,

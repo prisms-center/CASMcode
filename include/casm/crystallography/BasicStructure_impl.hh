@@ -9,6 +9,7 @@
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymGroupRep.hh"
+#include "casm/crystallography/Niggli.hh"
 
 namespace CASM {
   template<typename CoordType>
@@ -476,7 +477,7 @@ namespace CASM {
 
 
     Lattice new_lat(prim_vec0, prim_vec1, prim_vec2);
-    Lattice reduced_new_lat = new_lat.get_reduced_cell();
+    Lattice reduced_new_lat = niggli(new_lat, prim_tol);
 
     //The lattice so far is OK, but it's noisy enough to matter for large
     //superstructures. We eliminate the noise by reconstructing it now via

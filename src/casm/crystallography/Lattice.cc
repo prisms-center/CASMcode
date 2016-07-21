@@ -648,7 +648,12 @@ namespace CASM {
     return is_supercell(*this, tile, symoplist.begin(), symoplist.end(), _tol).first != symoplist.end();
   }
 
-  //********************************************************************
+  /**
+   * A lattice is considered right handed when the
+   * determinant of the lattice vector matrix is positive.
+   * This routine will flip the sign of all the lattice
+   * vectors if it finds that the determinant is negative
+   */
 
   Lattice &Lattice::make_right_handed() {
 
