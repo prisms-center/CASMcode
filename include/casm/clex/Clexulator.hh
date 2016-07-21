@@ -254,8 +254,8 @@ namespace CASM {
     /// \param nlist, A PrimNeighborList to be updated to include the neighborhood
     ///        of this Clexulator
     /// \param status_log Print a message to inform users that compilation is occuring
-    /// \param compile_options Compilation options, by default "g++ -O3 -Wall -fPIC"
-    /// \param so_options Shared library compilation options, by default "g++ -shared"
+    /// \param compile_options Compilation options
+    /// \param so_options Shared library compilation options
     ///
     /// If 'name' is 'X_Clexulator', and 'dirpath' is '/path/to':
     /// - Looks for '/path/to/X_Clexulator.so' and tries to load it.
@@ -269,9 +269,9 @@ namespace CASM {
     Clexulator(std::string name,
                boost::filesystem::path dirpath,
                PrimNeighborList &nlist,
-               Log &status_log = null_log(),
-               std::string compile_options = RuntimeLibrary::default_compile_options(),
-               std::string so_options = RuntimeLibrary::default_so_options()) {
+               Log &status_log,
+               std::string compile_options,
+               std::string so_options) {
 
       namespace fs = boost::filesystem;
 

@@ -859,10 +859,10 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
   
   if read_existing and os.path.exists(fit_data_filename):
     if verbose:
-      print "Reading existing fitting data from:", fit_data_filename
+      print "# Reading existing fitting data from:", fit_data_filename
     fdata = pickle.load(open(fit_data_filename, 'rb'))
     if verbose:
-      print "  DONE"
+      print "#   DONE\n"
     
     s = "Fitting scheme has changed.\n\n" + \
         "To proceed with the existing scheme adjust your input settings to match.\n" + \
@@ -911,10 +911,10 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
       
       # perform query
       if verbose:
-        print "# Querying CASM"
+        print "# Querying CASM:", columns
       sel.query(columns)
       if verbose:
-        print "# DONE"
+        print "#   DONE\n"
       
       data = sel.data
       
@@ -1164,12 +1164,18 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
   
   """
   # construct FittingData
+  if verbose:
+    print "# Get fitting data..."
   fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
     
   # construct model used for fitting
+  if verbose:
+    print "# Construct estimator..."
   estimator = make_estimator(input, verbose=verbose)
   
   # feature selection
+  if verbose:
+    print "# Construct feature selector..."
   selector = make_selector(input, estimator, 
     scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty, verbose=verbose)
   

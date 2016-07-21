@@ -135,12 +135,12 @@ namespace CASM {
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
     const DirectoryStructure &dir = primclex.dir();
-    std::string calctype = primclex.settings().calctype();
-    std::string ref = primclex.settings().ref();
+    const ClexDescription &clex_desc = primclex.settings().default_clex();
+    fs::path comp_axes = dir.composition_axes();
 
     CompositionAxes opt;
-    if(fs::exists(dir.composition_axes(calctype, ref))) {
-      opt.read(dir.composition_axes(calctype, ref));
+    if(fs::exists(comp_axes)) {
+      opt.read(comp_axes);
     }
 
     if(vm.count("display")) {
@@ -187,13 +187,9 @@ namespace CASM {
         std::cout << "\n\n";
 
 
-        if(!fs::exists(dir.ref_dir(calctype, ref))) {
-          fs::create_directories(dir.ref_dir(calctype, ref));
-        }
+        opt.write(comp_axes);
 
-        opt.write(dir.composition_axes(calctype, ref));
-
-        std::cout << "Wrote: " << dir.composition_axes(calctype, ref) << "\n\n";
+        std::cout << "Wrote: " << comp_axes << "\n\n";
 
         if(!opt.has_current_axes) {
           std::cout << "Please use 'casm composition --select' to choose your composition axes.\n\n";
@@ -209,7 +205,7 @@ namespace CASM {
           std::cout << "Error: No composition axes found.\n\n";
 
           std::cout << "Please use 'casm composition --calc' to calculate standard composition axes,\n" <<
-                    "or add custom composition axes to " << dir.composition_axes(calctype, ref) << "\n\n";
+                    "or add custom composition axes to " << comp_axes << "\n\n";
 
           return ERR_MISSING_DEPENDS;
 
@@ -222,7 +218,7 @@ namespace CASM {
                     "found in both the standard and custom compostion axes. Please  \n" <<
                     "edit the custom composition axes to remove this ambiguity.     \n\n" <<
 
-                    "File: " << dir.composition_axes(calctype, ref) << "\n\n";
+                    "File: " << comp_axes << "\n\n";
 
           return ERR_INVALID_INPUT_FILE;
 
@@ -244,9 +240,9 @@ namespace CASM {
 
         std::cout << "\n\n";
 
-        opt.write(dir.composition_axes(calctype, ref));
+        opt.write(comp_axes);
 
-        std::cout << "Wrote: " << dir.composition_axes(calctype, ref) << "\n\n";
+        std::cout << "Wrote: " << comp_axes << "\n\n";
 
       }
 

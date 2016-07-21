@@ -38,10 +38,10 @@ namespace CASM {
       // create basic directories
       set.new_casm_dir();
       set.new_symmetry_dir();
-      set.new_bset_dir(m_bset);
-      set.new_calc_settings_dir(m_calctype);
-      set.new_ref_dir(m_calctype, m_ref);
-      set.new_eci_dir(m_clex, m_calctype, m_ref, m_bset, m_eci);
+      set.new_bset_dir("default");
+      set.new_calc_settings_dir("default");
+      set.new_ref_dir("default", "default");
+      set.new_eci_dir(m_property, "default", "default", "default", "default");
 
       // set project settings
 
@@ -53,27 +53,10 @@ namespace CASM {
 
       set.properties() = m_properties;
 
-      if(!set.set_bset(m_bset)) {
-        exc("basis_set");
-      }
-      if(!set.set_calctype(m_calctype)) {
-        exc("calctype");
-      }
-      if(!set.set_ref(m_calctype, m_ref)) {
-        exc("ref");
-      }
-      if(!set.set_clex(m_clex)) {
-        exc("clex");
-      }
-      if(!set.set_eci(m_clex, m_calctype, m_ref, m_bset, m_eci)) {
-        exc("eci");
-      }
-      if(!set.set_compile_options(m_compile_options)) {
-        exc("compile options");
-      }
-      if(!set.set_so_options(m_so_options)) {
-        exc("so options");
-      }
+      ClexDescription desc("formation_energy", "formation_energy", "default", "default", "default", "default");
+      set.new_clex(desc);
+      set.set_default_clex(desc.name);
+
       if(!set.set_crystallography_tol(m_crystallography_tol)) {
         exc("crystallography_tol");
       }
@@ -144,7 +127,7 @@ namespace CASM {
         opt.standard[std::to_string(i)] = v[i];
       }
 
-      opt.write(dir.composition_axes(set.calctype(), set.ref()));
+      opt.write(dir.composition_axes());
 
     }
     catch(...) {

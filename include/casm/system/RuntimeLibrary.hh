@@ -7,8 +7,8 @@
 #include <functional>
 #include <dlfcn.h>
 #include <cstdlib>
-#include "casm/external/boost.hh"
 #include "casm/system/Popen.hh"
+#include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
 
@@ -19,8 +19,7 @@ namespace CASM {
 
     /// \brief Construct a RuntimeLibrary object, with the options to be used for compile
     ///        the '.o' file and the '.so' file
-    RuntimeLibrary(std::string _compile_options = RuntimeLibrary::default_compile_options(),
-                   std::string _so_options = RuntimeLibrary::default_so_options());
+    RuntimeLibrary(std::string _compile_options, std::string _so_options);
 
     ~RuntimeLibrary();
 
@@ -59,20 +58,21 @@ namespace CASM {
     /// \brief Remove the current library and source code
     void rm();
 
-    /// \brief Default compilation command
-    static std::string default_compile_options();
+    /// \brief Default c++ compiler options
+    static std::pair<std::string, std::string> default_cxxflags();
 
     /// \brief Default c++ compiler options
-    static std::string default_cxxflags();
-
-    /// \brief Default shared library options
-    static std::string default_so_options();
+    static std::pair<std::string, std::string> default_soflags();
 
     /// \brief Return default compiler
-    static std::string cxx();
+    static std::pair<std::string, std::string> default_cxx();
 
-    /// \brief Return include path option for CASM
-    static std::string casm_include();
+    /// \brief Return default prefix for CASM
+    static std::pair<fs::path, std::string> default_casm_prefix();
+
+    /// \brief Return default prefix for boost
+    static std::pair<fs::path, std::string> default_boost_prefix();
+
 
   private:
 
@@ -84,6 +84,12 @@ namespace CASM {
     void *m_handle;
 
   };
+
+  std::string include_path(const fs::path &prefix);
+
+  std::string link_path(const fs::path &prefix);
+
+
 }
 
 #endif

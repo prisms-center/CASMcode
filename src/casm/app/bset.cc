@@ -28,6 +28,7 @@ namespace CASM {
     ("orbits", "Pretty-print orbit prototypes")
     ("functions", "Pretty-print prototype cluster functions for each orbit")
     ("clusters", "Pretty-print all clusters")
+    ("clex", po::value<std::string>(), "Name of the cluster expansion using the basis set")
     ("force,f", "Force overwrite");
 
     try {
@@ -76,24 +77,40 @@ namespace CASM {
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
     const DirectoryStructure &dir = primclex.dir();
     const ProjectSettings &set = primclex.settings();
+    std::string bset;
+    ClexDescription clex_desc;
+
+    if(!vm.count("clex")) {
+      clex_desc = set.default_clex();
+    }
+    else {
+      auto it = set.cluster_expansions().find(vm["clex"].as<std::string>());
+      if(it == set.cluster_expansions().end()) {
+        args.err_log.error("Invalid --clex value");
+        args.err_log << vm["clex"].as<std::string>() << " not found.";
+        return ERR_INVALID_ARG;
+      }
+      clex_desc = it->second;
+    }
+    bset = clex_desc.bset;
 
     if(vm.count("update")) {
 
       // initialize project info
       Structure prim = primclex.get_prim();
 
-      if(!fs::is_regular_file(dir.bspecs(set.bset()))) {
+      if(!fs::is_regular_file(dir.bspecs(bset))) {
         args.err_log.error("'bspecs.json' file not found");
-        args.err_log << "expected basis set specifications file at: " << dir.bspecs(set.bset()) << "\n" << std::endl;
+        args.err_log << "expected basis set specifications file at: " << dir.bspecs(bset) << "\n" << std::endl;
         return ERR_MISSING_INPUT_FILE;
       }
 
 
-      std::vector<fs::path> filepaths({dir.clust(set.bset()),
-                                       dir.basis(set.bset()),
-                                       dir.clexulator_src(set.name(), set.bset()),
-                                       dir.clexulator_o(set.name(), set.bset()),
-                                       dir.clexulator_so(set.name(), set.bset())
+      std::vector<fs::path> filepaths({dir.clust(bset),
+                                       dir.basis(bset),
+                                       dir.clexulator_src(set.name(), bset),
+                                       dir.clexulator_o(set.name(), bset),
+                                       dir.clexulator_so(set.name(), bset)
                                       });
 
       bool any_existing_files = false;
@@ -112,9 +129,9 @@ namespace CASM {
       if(any_existing_files) {
         if(vm.count("force")) {
           args.log << "Using --force. Will overwrite existing files.\n" << std::endl;
-          fs::remove(dir.clexulator_src(set.name(), set.bset()));
-          fs::remove(dir.clexulator_o(set.name(), set.bset()));
-          fs::remove(dir.clexulator_so(set.name(), set.bset()));
+          fs::remove(dir.clexulator_src(set.name(), bset));
+          fs::remove(dir.clexulator_o(set.name(), bset));
+          fs::remove(dir.clexulator_so(set.name(), bset));
         }
         else {
           args.log << "Exiting due to existing files.  Use --force to force overwrite.\n" << std::endl;
@@ -125,7 +142,7 @@ namespace CASM {
       SiteOrbitree tree(prim.lattice());
 
       try {
-        jsonParser bspecs_json(dir.bspecs(set.bset()));
+        jsonParser bspecs_json(dir.bspecs(bset));
 
         args.log.generate("Cluster orbits");
         args.log.begin_lap();
@@ -161,17 +178,17 @@ namespace CASM {
       // -- write clust.json ----------------
       args.log.write("Cluster and basis set files");
       jsonParser clust_json;
-      to_json(jsonHelper(tree, prim), clust_json).write(dir.clust(set.bset()));
+      to_json(jsonHelper(tree, prim), clust_json).write(dir.clust(bset));
 
-      args.log << "write: " << dir.clust(set.bset()) << std::endl;
+      args.log << "write: " << dir.clust(bset) << std::endl;
 
 
       // -- write basis.json ----------------
       jsonParser basis_json;
       write_basis(tree, prim, basis_json, primclex.crystallography_tol());
-      basis_json.write(dir.basis(set.bset()));
+      basis_json.write(dir.basis(bset));
 
-      args.log << "write: " << dir.basis(set.bset()) << std::endl;
+      args.log << "write: " << dir.basis(bset) << std::endl;
 
 
       // -- write global Clexulator
@@ -190,37 +207,37 @@ namespace CASM {
 
       // write source code
       fs::ofstream outfile;
-      outfile.open(dir.clexulator_src(set.name(), set.bset()));
-      print_clexulator(prim, tree, nlist, set.global_clexulator(), outfile, primclex.crystallography_tol());
+      outfile.open(dir.clexulator_src(set.name(), bset));
+      print_clexulator(prim, tree, nlist, set.clexulator(), outfile, primclex.crystallography_tol());
       outfile.close();
-      args.log << "write: " << dir.clexulator_src(set.name(), set.bset()) << "\n" << std::endl;
+      args.log << "write: " << dir.clexulator_src(set.name(), bset) << "\n" << std::endl;
 
       // compile clexulator
-      primclex.global_clexulator(args.log);
+      primclex.clexulator(set.default_clex(), args.log);
     }
     else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
 
-      if(!fs::exists(dir.clust(set.bset()))) {
+      if(!fs::exists(dir.clust(bset))) {
         args.err_log.error("No 'clust.json' file found");
         args.err_log << "Make sure to update your basis set with 'casm bset -u'.\n" << std::endl;
         return ERR_MISSING_DEPENDS;
       }
 
-      primclex.read_global_orbitree(dir.clust(set.bset()));
+      primclex.orbitree(clex_desc);
 
       if(vm.count("orbits")) {
         args.log.custom("Prototype clusters");
-        primclex.get_global_orbitree().print_proto_clust(args.log);
+        primclex.orbitree(clex_desc).print_proto_clust(args.log);
         args.log << std::endl;
       }
       if(vm.count("clusters")) {
         args.log.custom("All clusters");
-        primclex.get_global_orbitree().print_full_clust(args.log);
+        primclex.orbitree(clex_desc).print_full_clust(args.log);
         args.log << std::endl;
       }
       if(vm.count("functions")) {
         args.log.custom("Basis functions");
-        primclex.get_global_orbitree().print_proto_clust_funcs(args.log);
+        primclex.orbitree(clex_desc).print_proto_clust_funcs(args.log);
         args.log << std::endl;
       }
     }

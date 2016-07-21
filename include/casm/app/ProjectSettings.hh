@@ -9,6 +9,7 @@
 #include "casm/app/DirectoryStructure.hh"
 
 #include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/casm_io/json_io/container.hh"
 
@@ -23,6 +24,35 @@ namespace CASM {
   namespace ConfigIO {
     class Selected;
   }
+
+  struct ClexDescription {
+    ClexDescription() {}
+
+    ClexDescription(std::string _name,
+                    std::string _property,
+                    std::string _calctype,
+                    std::string _ref,
+                    std::string _bset,
+                    std::string _eci) :
+      name(_name), property(_property), calctype(_calctype), ref(_ref), bset(_bset), eci(_eci) {}
+
+    std::string name;
+    std::string property;
+    std::string calctype;
+    std::string ref;
+    std::string bset;
+    std::string eci;
+  };
+
+  /// \brief Compare using name strings: A.name < B.name
+  bool operator<(const ClexDescription &A, const ClexDescription &B);
+
+  jsonParser &to_json(const ClexDescription &desc, jsonParser &json);
+
+  void from_json(ClexDescription &desc, const jsonParser &json);
+
+  bool clex_exists(const DirectoryStructure &dir, const ClexDescription &desc);
+
 
   /// \brief Read/modify settings of an already existing CASM project
   ///
@@ -56,26 +86,44 @@ namespace CASM {
     /// \brief Get current properties
     const std::vector<std::string> &properties() const;
 
-    /// \brief Get current basis set name
-    std::string bset() const;
 
-    /// \brief Get current calctype name
-    std::string calctype() const;
+    const std::map<std::string, ClexDescription> &cluster_expansions() const;
 
-    /// \brief Get current ref name
-    std::string ref() const;
+    bool has_clex(std::string name) const;
 
-    /// \brief Get current cluster expansion name
-    std::string clex() const;
+    const ClexDescription &clex(std::string name) const;
 
-    /// \brief Get current eci name
-    std::string eci() const;
+    const ClexDescription &default_clex() const;
+
+    bool new_clex(const ClexDescription &desc);
+
+    bool erase_clex(const ClexDescription &desc);
+
+    bool set_default_clex(const std::string &clex_name);
+
+    bool set_default_clex(const ClexDescription &desc);
+
 
     /// \brief Get neighbor list weight matrix
     Eigen::Matrix3l nlist_weight_matrix() const;
 
     /// \brief Get set of sublattice indices to include in neighbor lists
     const std::set<int> &nlist_sublat_indices() const;
+
+    /// \brief Get c++ compiler
+    std::pair<std::string, std::string> cxx() const;
+
+    /// \brief Get c++ compiler options
+    std::pair<std::string, std::string> cxxflags() const;
+
+    /// \brief Get shared object options
+    std::pair<std::string, std::string> soflags() const;
+
+    /// \brief Get casm prefix
+    std::pair<fs::path, std::string> casm_prefix() const;
+
+    /// \brief Get boost prefix
+    std::pair<fs::path, std::string> boost_prefix() const;
 
     /// \brief Get current compilation options string
     std::string compile_options() const;
@@ -88,7 +136,7 @@ namespace CASM {
 
     /// \brief Get current project crystallography tolerance
     double crystallography_tol() const;
-    
+
     /// \brief Get current project linear algebra tolerance
     double lin_alg_tol() const;
 
@@ -112,7 +160,7 @@ namespace CASM {
 
     // ** Clexulator names **
 
-    std::string global_clexulator() const;
+    std::string clexulator() const;
 
 
     // ** Add directories for additional project data **
@@ -153,20 +201,6 @@ namespace CASM {
     /// \brief Access current properties
     std::vector<std::string> &properties();
 
-    /// \brief Set current basis set to 'bset', if 'bset' exists
-    bool set_bset(std::string bset);
-
-    /// \brief Set current calctype to 'calctype', if 'calctype' exists
-    bool set_calctype(std::string calctype);
-
-    /// \brief Set current calculation reference to 'ref', if 'ref' exists
-    bool set_ref(std::string calctype, std::string ref);
-
-    /// \brief Set current cluster expansion to 'clex', if 'clex' exists
-    bool set_clex(std::string clex);
-
-    /// \brief Set current eci to 'eci', if 'eci' exists
-    bool set_eci(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci);
 
     /// \brief Set neighbor list weight matrix (will delete existing Clexulator
     /// source and compiled code)
@@ -177,18 +211,29 @@ namespace CASM {
     template<typename SublatIterator>
     bool set_nlist_sublat_indices(SublatIterator begin, SublatIterator end);
 
-    /// \brief Set compile options to 'opt'
-    bool set_compile_options(std::string opt);
 
-    /// \brief Set shared library options to 'opt'
-    bool set_so_options(std::string opt);
+    /// \brief Set c++ compiler (empty string to use default)
+    bool set_cxx(std::string opt);
+
+    /// \brief Set c++ compiler options (empty string to use default)
+    bool set_cxxflags(std::string opt);
+
+    /// \brief Set shared object options (empty string to use default)
+    bool set_soflags(std::string opt);
+
+    /// \brief Set casm prefix (empty string to use default)
+    bool set_casm_prefix(fs::path prefix);
+
+    /// \brief Set boost prefix (empty string to use default)
+    bool set_boost_prefix(fs::path prefix);
+
 
     /// \brief Set command used by 'casm view'
     bool set_view_command(std::string opt);
 
     /// \brief Set crystallography tolerance
     bool set_crystallography_tol(double _tol);
-    
+
     /// \brief Set linear algebra tolerance
     bool set_lin_alg_tol(double _tol);
 
@@ -196,22 +241,40 @@ namespace CASM {
     /// \brief Save settings to project settings file
     void commit() const;
 
+    /// \brief Output as JSON
+    jsonParser &to_json(jsonParser &json) const;
+
+    /// \brief Print summary of ProjectSettings, as for 'casm settings -l'
+    void print_summary(Log &log) const;
+
+    /// \brief (deprecated) Set compile options to 'opt' (empty string to use default)
+    bool set_compile_options(std::string opt);
+
+    /// \brief (deprecated) Set shared library options to 'opt' (empty string to use default)
+    bool set_so_options(std::string opt);
+
+
 
   private:
 
     /// \brief Changing the neighbor list properties requires updating Clexulator source code
     void _reset_clexulators();
 
+    /// \brief initialize default compiler options
+    void _load_default_options();
+
+
     DirectoryStructure m_dir;
 
     std::string m_name;
 
-    // CASM project current settings: used to determine where to write things
-    std::string m_bset;
-    std::string m_calctype;
-    std::string m_ref;
-    std::string m_clex;
-    std::string m_eci;
+    // CASM project current settings
+
+    // name : ClexDescription map
+    std::map<std::string, ClexDescription> m_clex;
+
+    // name of default cluster expansion
+    std::string m_default_clex;
 
     // neighbor list settings
     Eigen::Matrix3l m_nlist_weight_matrix;
@@ -221,15 +284,23 @@ namespace CASM {
     std::vector<std::string> m_properties;
 
     // Runtime library compilation settings: compilation options
-    std::string m_compile_options;
-    std::string m_so_options;
+    std::pair<std::string, std::string> m_cxx;
+    std::pair<std::string, std::string> m_cxxflags;
+    std::pair<std::string, std::string> m_soflags;
+    std::pair<fs::path, std::string> m_casm_prefix;
+    std::pair<fs::path, std::string> m_boost_prefix;
+
+    // deprecated reading exactly from settings file
+    std::string m_depr_compile_options;
+    // deprecated reading exactly from settings file
+    std::string m_depr_so_options;
 
     // Command executed by 'casm view'
     std::string m_view_command;
 
     // Crystallography tolerance
     double m_crystallography_tol;
-    
+
     // Linear algebra tolerance
     double m_lin_alg_tol;
 

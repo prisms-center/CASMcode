@@ -376,7 +376,7 @@ namespace CASM {
     return DataFormatterOperator<bool, double, DataObject>("eq", "Equality comparison for two values",
     [](const std::vector<double> &vec)->bool {
       if(vec.size() != 2)
-        throw std::runtime_error("Greater-than operator must receive exactly two values!");
+        throw std::runtime_error("Equality operator must receive exactly two values!");
       return almost_equal(vec[0], vec[1]);
     });
 

@@ -261,22 +261,14 @@ namespace CASM {
     m_debug(m_settings.debug()),
     m_log(_log) {
 
-    try {
+    settings.samplers(primclex, std::inserter(m_sampler, m_sampler.begin()));
 
-      settings.samplers(primclex, std::inserter(m_sampler, m_sampler.begin()));
-
-      m_must_converge = false;
-      for(auto it = m_sampler.cbegin(); it != m_sampler.cend(); ++it) {
-        if(it->second->must_converge()) {
-          m_must_converge = true;
-          break;
-        }
+    m_must_converge = false;
+    for(auto it = m_sampler.cbegin(); it != m_sampler.cend(); ++it) {
+      if(it->second->must_converge()) {
+        m_must_converge = true;
+        break;
       }
-
-    }
-    catch(...) {
-      std::cerr << "ERROR constructing MonteCarlo object" << std::endl;
-      throw;
     }
   }
 
