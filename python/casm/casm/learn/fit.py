@@ -323,6 +323,50 @@ def example_input_PopulationBestFirst():
   return input
 
 
+def example_input_DirectSelection():
+  input = dict()
+  
+  # data
+  input["data"] = dict()
+  input["data"]["filename"] = "train"
+  input["data"]["type"] = "selection"
+  input["data"]["X"] = "corr"
+  input["data"]["y"] = "formation_energy"
+  input["data"]["kwargs"] = None
+  
+  # regression estimator
+  input["estimator"] = dict()
+  input["estimator"]["method"] = "LinearRegression"
+  
+  # feature selection
+  input["feature_selection"] = dict()
+  input["feature_selection"]["method"] = "DirectSelection"
+  d = {
+    "comment" : "Use one of 'bitstring' or 'indices' and delete the other",
+    "bitstring": "111000",
+    "indices" : casm.NoIndent([1, 2, 3, 12, 13, 21])
+  }
+  input["feature_selection"]["kwargs"] = d
+  
+  # sample weighting
+  input["weight"] = dict()
+  input["weight"]["method"] = "wHullDist"
+  input["weight"]["kwargs"] = dict()
+  input["weight"]["kwargs"]["A"] = 0.0
+  input["weight"]["kwargs"]["B"] = 1.0
+  input["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  input["cv"] = dict()
+  input["cv"]["method"] = "LeaveOneOut"
+  input["cv"]["penalty"] = 0.0
+  
+  # hall of fame
+  input["n_halloffame"] = 25
+  
+  return input
+  
+
 def print_input_help():
   
   print \
