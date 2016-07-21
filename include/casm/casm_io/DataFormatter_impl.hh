@@ -1,6 +1,7 @@
 #include "casm/casm_io/DataStream.hh"
 #include "casm/container/Counter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/casm_io/EigenDataStream.hh"
 
 namespace CASM {
 
@@ -83,6 +84,60 @@ namespace CASM {
     }
 
     return;
+  }
+
+  //******************************************************************************
+
+  /// Useful when formatted output can be represented as single value
+  template<typename DataObject>
+  template<typename ValueType>
+  ValueType DataFormatter<DataObject>::evaluate_as_scalar(const DataObject &_obj) const {
+    ValueDataStream<ValueType> value_stream;
+    value_stream << FormattedObject(this, _obj);
+    return value_stream.value();
+  }
+
+  //******************************************************************************
+
+  /// Useful when formatted output can be represented as std::vector
+  template<typename DataObject>
+  template<typename ValueType>
+  std::vector<ValueType> DataFormatter<DataObject>::evaluate_as_vector(const DataObject &_obj) const {
+    VectorDataStream<ValueType> value_stream;
+    value_stream << FormattedObject(this, _obj);
+    return value_stream.value();
+  }
+
+  //******************************************************************************
+
+  /// Useful when formatted output can be represented as Eigen::MatrixXd
+  template<typename DataObject>
+  Eigen::MatrixXd DataFormatter<DataObject>::evaluate_as_matrix(const DataObject &_obj) const {
+    MatrixXdDataStream value_stream;
+    value_stream << FormattedObject(this, _obj);
+    return value_stream.matrix();
+  }
+
+  //******************************************************************************
+
+  /// Useful when formatted output can be represented as std::vector
+  template<typename DataObject>
+  template<typename ValueType, typename IteratorType>
+  std::vector<ValueType> DataFormatter<DataObject>::evaluate_as_vector(IteratorType begin, IteratorType end) const {
+    VectorDataStream<ValueType> value_stream;
+    value_stream << FormattedObject(this, begin, end);
+    return value_stream.value();
+  }
+
+  //******************************************************************************
+
+  /// Useful when formatted output can be represented as an Eigen::MatrixXd
+  template<typename DataObject>
+  template<typename IteratorType>
+  Eigen::MatrixXd DataFormatter<DataObject>::evaluate_as_matrix(IteratorType begin, IteratorType end) const {
+    MatrixXdDataStream value_stream;
+    value_stream << FormattedIteratorPair<IteratorType>(this, begin, end);
+    return value_stream.matrix();
   }
 
   //******************************************************************************

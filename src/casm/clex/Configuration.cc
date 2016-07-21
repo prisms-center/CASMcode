@@ -13,7 +13,7 @@ namespace CASM {
 
   /// Construct a default Configuration
   Configuration::Configuration(Supercell &_supercell, const jsonParser &src, const ConfigDoF &_configdof)
-    : id("none"), supercell(&_supercell), source_updated(true), multiplicity(-1), dof_updated(true),
+    : id("none"), supercell(&_supercell), source_updated(true), multiplicity(-1),
       m_configdof(_configdof), prop_updated(true), m_selected(false) {
     set_source(src);
   }
@@ -21,7 +21,7 @@ namespace CASM {
   //*********************************************************************************
   /// Construct by reading from main data file (json)
   Configuration::Configuration(const jsonParser &json, Supercell &_supercell, Index _id)
-    : supercell(&_supercell), source_updated(false), multiplicity(-1), dof_updated(false),
+    : supercell(&_supercell), source_updated(false), multiplicity(-1),
       m_configdof(_supercell.num_sites()), prop_updated(false) {
 
     std::stringstream ss;
@@ -35,7 +35,7 @@ namespace CASM {
   /*
   /// Construct a Configuration with occupation specified by string 'con_name'
   Configuration::Configuration(Supercell &_supercell, std::string con_name, bool select, const jsonParser &src)
-    : id("none"), supercell(&_supercell), source_updated(true), multiplicity(-1), dof_updated(true),
+    : id("none"), supercell(&_supercell), source_updated(true), multiplicity(-1),
       m_configdof(_supercell.num_sites()), prop_updated(true), m_selected(select) {
 
     set_source(src);
@@ -69,7 +69,6 @@ namespace CASM {
     ss << _id;
     id = ss.str();
 
-    dof_updated = true;
     prop_updated = true;
   }
 
@@ -134,7 +133,7 @@ namespace CASM {
 
   //*********************************************************************************
   void Configuration::set_occupation(const Array<int> &new_occupation) {
-    dof_updated = true;
+    id = "none";
     m_configdof.set_occupation(new_occupation);
     return;
   }
@@ -147,21 +146,21 @@ namespace CASM {
     //    exit(1);
     //}
     //std::cout << "Configuration::set_occ(). i: " << i << " occupation.size(): "<< occupation.size() << "  val: " << val << std::endl;
-    dof_updated = true;
+    id = "none";
     m_configdof.occ(site_l) = val;
   }
 
   //*********************************************************************************
 
   void Configuration::set_displacement(const displacement_matrix_t &new_displacement) {
-    dof_updated = true;
+    id = "none";
     m_configdof.set_displacement(new_displacement);
   }
 
   //*********************************************************************************
 
   void Configuration::set_deformation(const Eigen::Matrix3d &new_deformation) {
-    dof_updated = true;
+    id = "none";
     m_configdof.set_deformation(new_deformation);
   }
 
@@ -1206,6 +1205,14 @@ namespace CASM {
 
     return motif = result;
 
+  }
+
+  /// \brief Order Configuration lexicographically by occuapation
+  bool ConfigDoFOccCompare::operator()(const Configuration &A, const Configuration &B) const {
+    return std::lexicographical_compare(A.configdof().occupation().begin(),
+                                        A.configdof().occupation().end(),
+                                        B.configdof().occupation().begin(),
+                                        B.configdof().occupation().end());
   }
 
 }

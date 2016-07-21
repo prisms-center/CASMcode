@@ -1,6 +1,8 @@
 #include "casm/monte_carlo/MonteSettings.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
+#include "casm/monte_carlo/MonteCarloEnum.hh"
 #include "casm/container/LinearAlgebra.hh"
+#include "casm/misc/HallOfFame.hh"
 
 namespace CASM {
 
@@ -240,6 +242,138 @@ namespace CASM {
       }
       return false;
     }
+  }
+
+
+  // --- Enumerating Configurations ---
+
+  /// \brief Returns true if enumeration is requested. (Default false)
+  bool MonteSettings::is_enumeration() const {
+    if(!_is_setting("data", "enumeration")) {
+      return false;
+    }
+    return true;
+  }
+
+  /// \brief Returns 'casm query'-like enumeration metric
+  ///
+  /// Expects a string containing the Configuration scoring metric. For instance,
+  /// 'clex_hull_dist(ALL)' (which is the default).
+  ///
+  /// Uses boost::lexical_cast<double> on the output to determine the result.
+  std::string MonteSettings::enumeration_metric_args() const {
+
+    std::string help = "(string, optional, default=\"clex_hull_dist(ALL)\")\n"
+                       "  A 'casm query'-like string that provides a metric for \n"
+                       "  ranking configurations as they are encountered during \n"
+                       "  a Monte Carlo calculation. The resulting value is used\n"
+                       "  to create a hall of fame of 'best' configurations     \n"
+                       "  encountered during the calculation. When the          \n"
+                       "  calculation is complete configurations in the hall of \n"
+                       "  fame are added to the CASM project config list.       \n"
+                       "  The 'casm query'-like command should evaluate to a    \n"
+                       "  number.";
+
+    if(!_is_setting("data", "enumeration", "metric")) {
+      return "clex_hull_dist(ALL)";
+    }
+    return _get_setting<std::string>("data", "enumeration", "metric", help);
+  }
+
+  /// \brief Returns 'casm query'-like enumeration check
+  ///
+  /// Expects a string that will convert to true if the current Configuration
+  /// should be scored for enumeration. For instance, perhaps you only want
+  /// to enumerate Configurations that are near or below the currently predicted
+  /// convex hull. Then, use 'lt(clex_hull_dist(ALL),0.005)'. Default always
+  /// returns true.
+  ///
+  /// Uses boost::lexical_cast<bool> on the output to determine the result.
+  std::string MonteSettings::enumeration_check_args() const {
+
+    std::string help = "(string, optional, default=\"eq(1,1)\")\n"
+                       "  A 'casm query'-like string that returns a boolean value \n"
+                       "  indicating if (true) a configuration should be considered\n"
+                       "  for the enumeration hall of fame.";
+
+    if(!_is_setting("data", "enumeration", "check")) {
+      return "eq(1,1)";
+    }
+    return _get_setting<std::string>("data", "enumeration", "check", help);
+  }
+
+  /// \brief Enumeration sample mode (default Monte::ENUM_SAMPLE_MODE::ON_SAMPLE)
+  Monte::ENUM_SAMPLE_MODE MonteSettings::enumeration_sample_mode() const {
+    if(!_is_setting("data", "enumeration", "sample_mode")) {
+      return Monte::ENUM_SAMPLE_MODE::ON_SAMPLE;
+    }
+    return _get_setting<Monte::ENUM_SAMPLE_MODE>("data", "enumeration", "sample_mode", help<Monte::ENUM_SAMPLE_MODE>());
+  }
+
+  /// \brief Insert configurations in their canonical form (default true)
+  bool MonteSettings::enumeration_check_existence() const {
+
+    std::string help = "(bool, optional, default=true)\n"
+                       "  If true, only configurations that do not already exist\n"
+                       "  in the config list are inserted into the enumeration  \n"
+                       "  hall of fame.";
+
+    if(!_is_setting("data", "enumeration", "check_existence")) {
+      return true;
+    }
+    return _get_setting<bool>("data", "enumeration", "check_existence", help);
+  }
+
+  /// \brief Insert configurations in their canonical form (default true)
+  bool MonteSettings::enumeration_insert_canonical() const {
+
+    std::string help = "(bool, optional, default=true)\n"
+                       "  If true, configurations are inserted into the         \n"
+                       "  enumeration hall of fame in their canonical form. If  \n"
+                       "  'check_existence' is true, this must be set to true.";
+
+    bool val;
+    if(!_is_setting("data", "enumeration", "insert_canonical")) {
+      val = true;
+    }
+    else {
+      val = _get_setting<bool>("data", "enumeration", "insert_canonical", help);
+    }
+
+    // if check_existence, insert_canonical must be true
+    if(enumeration_check_existence() && !val) {
+      throw std::runtime_error(
+        "Error in Monte Carlo enumeration in settings: "
+        "If 'check_existence' is true, then 'insert_canonical' must be true"
+      );
+    }
+    return val;
+  }
+
+  /// \brief Returns enumeration halloffame max size (default 100)
+  Index MonteSettings::enumeration_N_halloffame() const {
+
+    std::string help = "(integer, optional, default=100)\n"
+                       "  The number of configurations that are allowed in the \n"
+                       "  enumeration hall of fame.";
+
+    if(!_is_setting("data", "enumeration", "N_halloffame")) {
+      return 100;
+    }
+    return _get_setting<Index>("data", "enumeration", "N_halloffame", help);
+  }
+
+  /// \brief Returns enumeration halloffame tolerance (default 1e-8)
+  double MonteSettings::enumeration_tol() const {
+
+    std::string help = "(number, optional, default=1e-8)\n"
+                       "  Tolerance used for floating point comparison of         \n"
+                       "  configuration scores in the enumeration hall of fame.";
+
+    if(!_is_setting("data", "enumeration", "tolerance")) {
+      return 1e-8;
+    }
+    return _get_setting<double>("data", "enumeration", "tolerance", help);
   }
 
 

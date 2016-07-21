@@ -131,7 +131,7 @@ namespace CASM {
   }
 
   /// \brief Fill supercell with motif, applying a factor group operation if necessary
-  ConfigDoF fill_supercell(Supercell &mc_scel, const Configuration &motif) {
+  Configuration fill_supercell(Supercell &mc_scel, const Configuration &motif) {
 
     const Lattice &motif_lat = motif.get_supercell().get_real_super_lattice();
     const Lattice &scel_lat = mc_scel.get_real_super_lattice();
@@ -155,7 +155,7 @@ namespace CASM {
     }
 
     ConfigTransform f(mc_scel, *res.first);
-    return copy_apply(f, motif).configdof();
+    return copy_apply(f, motif);
   }
 
 }

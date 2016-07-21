@@ -154,15 +154,16 @@ namespace CASM {
     const std::string Corr::Name = "corr";
 
     const std::string Corr::Desc =
-      "Correlation values (evaluated basis functions, normalized per primitive cell).\n"
-      " If no arguements, prints all correlations, using the basis set for the \n"
-      "   default cluster expansion as listed by 'casm settings -l'."
-      " If one argument, accepts either:\n"
-      "   1) a cluster expansion name, for example 'corr(formation_energy)', and "
-      "   evaluates all basis functions; \n"
-      "   or 2) a range of indices of basis functions to evaluate, for example 'corr(ind1:ind2)'.\n"
-      " If two arguments, accepts cluster expansion name and a range of basis "
-      "  functions to evaluate, for example 'corr(formation_energy,ind1:ind2)'.\n";
+      "Correlation values (evaluated basis functions, normalized per primitive cell). "
+      "If no arguements, prints all correlations, using the basis set for the default "
+      "cluster expansion as listed by 'casm settings -l'. "
+      "If one argument, accepts either: "
+      "1) a cluster expansion name, for example 'corr(formation_energy)', and "
+      "evaluates all basis functions, or "
+      "2) a range of indices of basis functions to evaluate, for example "
+      "'corr(ind1:ind2)'. "
+      "If two arguments, accepts cluster expansion name and a range of basis "
+      "functions to evaluate, for example 'corr(formation_energy,ind1:ind2)'.";
 
     /// \brief Returns the atom fraction
     Eigen::VectorXd Corr::evaluate(const Configuration &config) const {

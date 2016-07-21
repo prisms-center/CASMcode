@@ -4,6 +4,7 @@
 #include "casm/clex/Clex.hh"
 #include "casm/monte_carlo/MonteDefinitions.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
+#include "casm/monte_carlo/MonteCarloEnum.hh"
 #include "casm/monte_carlo/SiteExchanger.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalEvent.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh"
@@ -65,6 +66,11 @@ namespace CASM {
     /// \brief Nothing needs to be done to reject a GrandCanonicalEvent
     void reject(const EventType &event);
 
+    void check_corr() {
+      std::cout << "corr:" << std::endl;
+      std::cout << correlations_vec(_configdof(), supercell(), _clexulator()) << std::endl;
+      std::cout << "OK corr" << std::endl;
+    }
 
     /// \brief Write results to files
     void write_results(Index cond_index) const;
@@ -92,6 +98,9 @@ namespace CASM {
     const Eigen::VectorXd &comp_n() const {
       return *m_comp_n;
     }
+
+    /// \brief Get potential energy
+    double potential_energy(const Configuration &config) const;
 
 
   private:
@@ -153,12 +162,8 @@ namespace CASM {
     /// Event to propose, check, accept/reject:
     EventType m_event;
 
-    /// \brief Change in comp_n due of atom being removed. Equal to -1.0/supercell().volume()
-    double m_minus_one_comp_n;
-
-    /// \brief Change in comp_n due of atom being added. Equal to 1.0/supercell().volume()
-    double m_plus_one_comp_n;
-
+    /// \brief If the supercell is large enough, calculate delta correlations directly
+    bool m_use_deltas;
 
 
     // ---- Pointers to properties for faster access
