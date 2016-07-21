@@ -345,7 +345,7 @@ namespace CASM {
       std::cout <<  "No new data were detected." << std::endl << std::endl;
     else {
       std::cout << "Analyzed new data for " << num_updated << " configurations." << std::endl << std::endl;
-      primclex.write_config_list();
+
       if(relax_log.str().size() > 0) {
         std::cout << "WARNING: Abnormal relaxations were detected:\n" << std::endl
                   << "           *** Final Relaxation Report ***" << std::endl
@@ -354,9 +354,9 @@ namespace CASM {
         std::cout << "\nIt is recommended that you review these configurations more carefully.\n" << std::endl;
       }
 
-    }
+      std::cout << "Writing to SCEL database..." << std::endl << std::endl;
+      primclex.print_supercells();
 
-    if(num_updated > 0) {
       std::cout << "Writing to configuration database..." << std::endl << std::endl;
       primclex.write_config_list();
     }
