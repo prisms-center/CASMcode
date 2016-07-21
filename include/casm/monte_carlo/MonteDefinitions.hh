@@ -38,6 +38,12 @@ namespace CASM {
 
     ENUM_IO(CASM::Monte::DRIVE_MODE)
 
+    ///How often to sample runs
+    enum class ENUM_SAMPLE_MODE {
+      ON_SAMPLE, ON_ACCEPT
+    };
+
+    ENUM_IO(CASM::Monte::ENUM_SAMPLE_MODE)
 
   }
 
@@ -48,6 +54,8 @@ namespace CASM {
   ENUM_TRAITS(Monte::SAMPLE_MODE)
 
   ENUM_TRAITS(Monte::DRIVE_MODE)
+
+  ENUM_TRAITS(Monte::ENUM_SAMPLE_MODE)
 
 
 }

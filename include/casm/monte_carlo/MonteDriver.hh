@@ -6,6 +6,7 @@
 
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
+#include "casm/monte_carlo/MonteCarloEnum_impl.hh"
 #include "casm/monte_carlo/MonteSettings.hh"
 
 namespace CASM {
@@ -75,12 +76,14 @@ namespace CASM {
     /// run in debug mode?
     bool m_debug;
 
+    /// Enumerated configurations encountered during Monte Carlo calculations
+    notstd::cloneable_ptr<MonteCarloEnum> m_enum;
   };
 
 
-  /// Perform a single monte carlo step, incrementing monte_run.m_Nstep and monte_run.Npass as it goes
+  /// Perform a single monte carlo step, return true if accepted
   template<typename RunType>
-  void monte_carlo_step(RunType &monte_run);
+  bool monte_carlo_step(RunType &monte_run);
 
 
   template<typename RunType>
@@ -92,7 +95,8 @@ namespace CASM {
     m_drive_mode(m_settings.drive_mode()),
     m_mc(primclex, m_settings, _log),
     m_conditions_list(make_conditions_list(primclex, m_settings)),
-    m_debug(m_settings.debug()) {
+    m_debug(m_settings.debug()),
+    m_enum(m_settings.is_enumeration() ? new MonteCarloEnum(primclex, settings, _log, m_mc) : nullptr) {
   }
 
   /// \brief Run calculations for all conditions, outputting data as you finish each one
@@ -324,7 +328,9 @@ namespace CASM {
     m_log.begin_lap();
 
     MonteCounter run_counter(m_settings, m_mc.steps_per_pass());
-
+    if(m_enum) {
+      m_enum->reset();
+    };
 
     while(true) {
 
@@ -332,7 +338,7 @@ namespace CASM {
         m_log.custom("Counter info");
         m_log << "pass: " << run_counter.pass() << "  "
               << "step: " << run_counter.step() << "  "
-              << "samples: " << run_counter.samples() << std::endl;
+              << "samples: " << run_counter.samples() << "\n" << std::endl;
       }
 
       if(m_mc.must_converge()) {
@@ -371,7 +377,11 @@ namespace CASM {
         break;
       }
 
-      monte_carlo_step(m_mc);
+      bool res = monte_carlo_step(m_mc);
+
+      if(res && m_enum && m_enum->on_accept()) {
+        m_enum->insert(m_mc.config());
+      }
 
       run_counter++;
 
@@ -383,6 +393,9 @@ namespace CASM {
 
         m_mc.sample_data(run_counter.pass(), run_counter.step());
         run_counter.increment_samples();
+        if(m_enum && m_enum->on_sample()) {
+          m_enum->insert(m_mc.config());
+        }
       }
     }
     m_log << std::endl;
@@ -400,6 +413,10 @@ namespace CASM {
     m_log.write("Output files");
     m_mc.write_results(cond_index);
     m_log << std::endl;
+
+    if(m_enum) {
+      m_enum->save_configs();
+    }
 
     return;
   }
@@ -490,7 +507,7 @@ namespace CASM {
   }
 
   template<typename RunType>
-  void monte_carlo_step(RunType &monte_run) {
+  bool monte_carlo_step(RunType &monte_run) {
 
     typedef typename RunType::EventType EventType;
 
@@ -498,13 +515,14 @@ namespace CASM {
 
     if(monte_run.check(event)) {
       monte_run.accept(event);
+      return true;
     }
 
     else {
       monte_run.reject(event);
+      return false;
     }
 
-    return;
   }
 
 }

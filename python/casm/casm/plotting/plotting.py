@@ -1493,7 +1493,7 @@ class ECISelect(object):
     
     self.sel.eci_src = bokeh.models.ColumnDataSource(data=self.sel.eci)
     
-    with open(self.proj.dir.basis(self.proj.settings.bset()), 'r') as f:
+    with open(self.proj.dir.basis(self.proj.settings.default_clex), 'r') as f:
       self.basis = json.load(f)
     
     self.sel.eci_src.data["index"] = range(self.sel.eci.shape[0])

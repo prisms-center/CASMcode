@@ -16,13 +16,13 @@ BOOST_AUTO_TEST_SUITE(ClexulatorTest)
 BOOST_AUTO_TEST_CASE(MakeClexulatorTest) {
   namespace fs = boost::filesystem;
 
-  std::string compile_opt = RuntimeLibrary::cxx() + " " + RuntimeLibrary::default_cxxflags() + " -Iinclude";
-  std::string so_opt = RuntimeLibrary::default_so_options() + " -lboost_system";
+  std::string compile_opt = RuntimeLibrary::default_cxx().first + " " + RuntimeLibrary::default_cxxflags().first + " -Iinclude";
+  std::string so_opt = RuntimeLibrary::default_cxx().first + " " + RuntimeLibrary::default_soflags().first;
 
-  if(std::getenv("CASMBOOST_PATH") != nullptr) {
-    fs::path boost_path(std::getenv("CASMBOOST_PATH"));
-    compile_opt += " -I" + (boost_path / "include").string();
-    so_opt += " -L" + (boost_path / "lib").string();
+  if(!RuntimeLibrary::default_boost_prefix().first.empty()) {
+    fs::path boost_prefix = RuntimeLibrary::default_boost_prefix().first;
+    compile_opt += " " + include_path(boost_prefix);
+    so_opt += " " + link_path(boost_prefix);
   }
 
   std::vector<int> sublat_indices = {0};

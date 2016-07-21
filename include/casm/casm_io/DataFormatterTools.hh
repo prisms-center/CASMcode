@@ -376,7 +376,7 @@ namespace CASM {
     return DataFormatterOperator<bool, double, DataObject>("eq", "Equality comparison for two values",
     [](const std::vector<double> &vec)->bool {
       if(vec.size() != 2)
-        throw std::runtime_error("Greater-than operator must receive exactly two values!");
+        throw std::runtime_error("Equality operator must receive exactly two values!");
       return almost_equal(vec[0], vec[1]);
     });
 
@@ -481,7 +481,7 @@ namespace CASM {
 
   /// \brief Implements a DatumFormatter that is an alias for a combination of others
   ///
-  /// \ingroup DataFormatterOperator
+  /// \ingroup DataFormatter
   ///
   template<typename DataObject>
   class DatumFormatterAlias: public BaseDatumFormatter<DataObject> {
@@ -605,6 +605,10 @@ namespace CASM {
 
   };
 
+  /// \brief Make a DatumFormatterAlias
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   DatumFormatterAlias<DataObject> datum_formatter_alias(
     const std::string &_name,
@@ -614,6 +618,10 @@ namespace CASM {
     return DatumFormatterAlias<DataObject>(_name, _command, _dict, _help);
   }
 
+  /// \brief Make a DatumFormatterAlias
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   DatumFormatterAlias<DataObject> datum_formatter_alias(
     const std::string &_name,
@@ -691,6 +699,7 @@ namespace CASM {
   ///
   /// \seealso GenericDatumFormatter to specialize a scalar DatumFormatter at runtime
   ///
+  /// \ingroup DataFormatter
   ///
   template<typename ValueType, typename DataObject>
   class BaseValueFormatter :
@@ -870,6 +879,7 @@ namespace CASM {
   ///
   /// \seealso Generic1DDatumFormatter to specialize a 1D DatumFormatter at runtime.
   ///
+  /// \ingroup DataFormatter
   ///
   template<typename Container, typename DataObject>
   class Base1DDatumFormatter :
@@ -1048,63 +1058,112 @@ namespace CASM {
     Validator m_validate;
   };
 
-
+  /// \brief Template alias for BaseValueFormatter returning std::string
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   using StringAttribute = BaseValueFormatter<std::string, DataObject>;
 
   /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   using StringAttributeDictionary = DataFormatterDictionary<DataObject, StringAttribute<DataObject> >;
 
   /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   StringAttributeDictionary<DataObject> make_string_dictionary();
 
 
+  /// \brief Template alias for BaseValueFormatter returning bool
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   using BooleanAttribute = BaseValueFormatter<bool, DataObject>;
 
   /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   using BooleanAttributeDictionary = DataFormatterDictionary<DataObject, BooleanAttribute<DataObject> >;
 
   /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   BooleanAttributeDictionary<DataObject> make_boolean_dictionary();
 
 
+  /// \brief Template alias for BaseValueFormatter returning Index
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   using IntegerAttribute = BaseValueFormatter<Index, DataObject>;
 
   /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   using IntegerAttributeDictionary = DataFormatterDictionary<DataObject, IntegerAttribute<DataObject> >;
 
   /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   IntegerAttributeDictionary<DataObject> make_integer_dictionary();
 
 
+  /// \brief Template alias for BaseValueFormatter returning double
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   using ScalarAttribute = BaseValueFormatter<double, DataObject>;
 
   /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   using ScalarAttributeDictionary = DataFormatterDictionary<DataObject, ScalarAttribute<DataObject> >;
 
   /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   ScalarAttributeDictionary<DataObject> make_scalar_dictionary();
 
 
+  /// \brief Template alias for BaseValueFormatter returning Eigen::VectorXd
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   using VectorXdAttribute = Base1DDatumFormatter<Eigen::VectorXd, DataObject>;
 
   /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   using VectorXdAttributeDictionary = DataFormatterDictionary<DataObject, VectorXdAttribute<DataObject> >;
 
   /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
   template<typename DataObject>
   VectorXdAttributeDictionary<DataObject> make_vectorxd_dictionary();
 

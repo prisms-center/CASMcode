@@ -212,7 +212,7 @@ namespace CASM {
       if(vm.count("data") && pos_path.extension() != ".json" && pos_path.extension() != ".JSON") {
         fs::path dft_path = pos_path;
         dft_path.remove_filename();
-        (dft_path /= ("calctype." + primclex.get_curr_calctype())) /= "properties.calc.json";
+        (dft_path /= ("calctype." + primclex.settings().default_clex().calctype)) /= "properties.calc.json";
         if(!fs::exists(dft_path)) {
           dft_path = pos_path;
           dft_path.remove_filename();
@@ -394,7 +394,7 @@ namespace CASM {
           continue;
         }
 
-        fs::path import_target = import_path / ("calctype." + primclex.get_curr_calctype());
+        fs::path import_target = import_path / ("calctype." + primclex.settings().default_clex().calctype);
         if(!fs::exists(import_target))
           fs::create_directories(import_target);
 
