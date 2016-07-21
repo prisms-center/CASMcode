@@ -228,12 +228,23 @@ namespace CASM {
    * the Niggli criteria. Because there are several representations
    * of the Lattice that satisfy these conditions, the one with
    * the most standard orientation will be returned.
+   *
+   * The returned Niggli cell will be right handed regardless
+   * of the inputted lattice, unless keep_handedness is set
+   * to true.
    */
 
-  Lattice niggli(const Lattice &in_lat, double compare_tol) {
-    const Lattice reduced_in = in_lat.get_reduced_cell();
+  Lattice niggli(const Lattice &in_lat, double compare_tol, bool keep_handedness) {
 
-    //const Lattice reduced_in = niggli_impl::_niggli(in_lat, compare_tol);
+    Lattice target_lat(in_lat);
+
+    if(!keep_handedness) {
+      target_lat.make_right_handed();
+    }
+
+    const Lattice reduced_in = target_lat.get_reduced_cell();
+
+    //const Lattice reduced_in = niggli_impl::_niggli(target_lat, compare_tol);
     Eigen::Matrix3d best_lat_mat = reduced_in.lat_column_mat();
 
     bool first_niggli = true;
@@ -268,15 +279,12 @@ namespace CASM {
    */
 
   Lattice canonical_equivalent_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol) {
-    Lattice lat(in_lat);
-    lat.make_right_handed();
-
-    //Ensure you at least get *something* back that's niggli
-    Lattice most_canonical = niggli(lat, compare_tol);
+    //Ensure you at least get *something* back that's niggli AND right handed
+    Lattice most_canonical = niggli(in_lat, compare_tol, false);
     Eigen::Matrix3d most_canonical_lat_mat = most_canonical.lat_column_mat();
 
     for(auto it = point_grp.begin(); it != point_grp.end(); ++it) {
-      Eigen::Matrix3d transformed_lat_mat = it->matrix() * lat.lat_column_mat();
+      Eigen::Matrix3d transformed_lat_mat = it->matrix() * in_lat.lat_column_mat();
       Lattice transformed_lat = Lattice(transformed_lat_mat);
 
       Eigen::Matrix3d candidate_lat_mat = niggli(transformed_lat, compare_tol).lat_column_mat();
@@ -314,7 +322,7 @@ namespace CASM {
     int non_negatives = 0;
     for(int i = 0; i < 3; i++) {
       for(int j = 0; j < 3; j++) {
-        if(sgn(lat_mat(i, j)) != -1) {
+        if(float_sgn(lat_mat(i, j), compare_tol) != -1) {
           non_negatives++;
         }
       }
@@ -341,12 +349,12 @@ namespace CASM {
                            -std::abs(lat_mat(0, 1)),
 
                            //Favor upper triangular
-                           sgn(lat_mat(2, 1)),
-                           sgn(lat_mat(2, 0)),
-                           sgn(lat_mat(1, 0)),
-                           sgn(lat_mat(1, 2)),
-                           sgn(lat_mat(0, 2)),
-                           sgn(lat_mat(0, 1));
+                           float_sgn(lat_mat(2, 1), compare_tol),
+                           float_sgn(lat_mat(2, 0), compare_tol),
+                           float_sgn(lat_mat(1, 0), compare_tol),
+                           float_sgn(lat_mat(1, 2), compare_tol),
+                           float_sgn(lat_mat(0, 2), compare_tol),
+                           float_sgn(lat_mat(0, 1), compare_tol);
 
     return lat_spatial_descriptor;
   }
