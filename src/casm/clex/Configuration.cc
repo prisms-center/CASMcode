@@ -13,7 +13,7 @@ namespace CASM {
 
   /// Construct a default Configuration
   Configuration::Configuration(Supercell &_supercell, const jsonParser &src, const ConfigDoF &_configdof)
-    : id("none"), supercell(&_supercell), source_updated(true), multiplicity(-1), dof_updated(true),
+    : id("none"), supercell(&_supercell), source_updated(true), multiplicity(-1),
       m_configdof(_configdof), prop_updated(true), m_selected(false) {
     set_source(src);
   }
@@ -21,7 +21,7 @@ namespace CASM {
   //*********************************************************************************
   /// Construct by reading from main data file (json)
   Configuration::Configuration(const jsonParser &json, Supercell &_supercell, Index _id)
-    : supercell(&_supercell), source_updated(false), multiplicity(-1), dof_updated(false),
+    : supercell(&_supercell), source_updated(false), multiplicity(-1),
       m_configdof(_supercell.num_sites()), prop_updated(false) {
 
     std::stringstream ss;
@@ -35,7 +35,7 @@ namespace CASM {
   /*
   /// Construct a Configuration with occupation specified by string 'con_name'
   Configuration::Configuration(Supercell &_supercell, std::string con_name, bool select, const jsonParser &src)
-    : id("none"), supercell(&_supercell), source_updated(true), multiplicity(-1), dof_updated(true),
+    : id("none"), supercell(&_supercell), source_updated(true), multiplicity(-1),
       m_configdof(_supercell.num_sites()), prop_updated(true), m_selected(select) {
 
     set_source(src);
@@ -69,7 +69,6 @@ namespace CASM {
     ss << _id;
     id = ss.str();
 
-    dof_updated = true;
     prop_updated = true;
   }
 
@@ -134,7 +133,7 @@ namespace CASM {
 
   //*********************************************************************************
   void Configuration::set_occupation(const Array<int> &new_occupation) {
-    dof_updated = true;
+    id = "none";
     m_configdof.set_occupation(new_occupation);
     return;
   }
@@ -147,21 +146,21 @@ namespace CASM {
     //    exit(1);
     //}
     //std::cout << "Configuration::set_occ(). i: " << i << " occupation.size(): "<< occupation.size() << "  val: " << val << std::endl;
-    dof_updated = true;
+    id = "none";
     m_configdof.occ(site_l) = val;
   }
 
   //*********************************************************************************
 
   void Configuration::set_displacement(const displacement_matrix_t &new_displacement) {
-    dof_updated = true;
+    id = "none";
     m_configdof.set_displacement(new_displacement);
   }
 
   //*********************************************************************************
 
   void Configuration::set_deformation(const Eigen::Matrix3d &new_deformation) {
-    dof_updated = true;
+    id = "none";
     m_configdof.set_deformation(new_deformation);
   }
 
@@ -174,18 +173,9 @@ namespace CASM {
   }
 
   //*********************************************************************************
-  /*
-    void Configuration::set_reference(const Properties &ref) {
-      prop_updated = true;
-      reference = ref;
-      delta = calculated - reference;
-    }
-  */
-  //*********************************************************************************
   void Configuration::set_calc_properties(const jsonParser &calc) {
     prop_updated = true;
     calculated = calc;
-    //delta = calculated - reference;
   }
 
   //*********************************************************************************
@@ -194,7 +184,7 @@ namespace CASM {
     //std::cout << "begin Configuration::read_calculated()" << std::endl;
     bool success = true;
     /// properties.calc.json: contains calculated properties
-    ///   Currently only loading those properties that have references
+    ///   For default clex calctype only
     fs::path filepath = calc_properties_path();
     //std::cout << "filepath: " << filepath << std::endl;
     parsed_props = jsonParser();
@@ -204,7 +194,7 @@ namespace CASM {
       //Record file timestamp
       parsed_props["data_timestamp"] = fs::last_write_time(filepath);
 
-      std::vector<std::string> props = get_primclex().get_curr_property();
+      std::vector<std::string> props = get_primclex().settings().properties();
       for(Index i = 0; i < props.size(); i++) {
         //std::cout << "checking for: " << props[i] << std::endl;
         if(json.contains(props[i])) {
@@ -326,12 +316,6 @@ namespace CASM {
     return get_prim().basis[ get_b(site_l) ].site_occupant()[ occ(site_l) ];
   }
 
-  //*********************************************************************************
-  /*
-    const Properties &Configuration::ref_properties() const {
-      return reference;
-    }
-  */
   //*********************************************************************************
   const Properties &Configuration::calc_properties() const {
     return calculated;
@@ -504,33 +488,30 @@ namespace CASM {
   //********* IO ************
 
 
-  /// Writes the Configuration to a json object
-  ///   Uses PrimClex's current settings to write the appropriate
-  ///   Properties, DeltaProperties and Correlations files
+  /// Writes the Configuration to a json object (the config list)
+  ///   Uses PrimClex's current default settings to write the appropriate properties
   ///
   ///   'json' is a jsonParser JSON object (or will be set to a JSON object)
-  ///   Configuration data is saved in several object, we write the *'d objects:
   ///
-  ///   *config.json:             json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["dof"]
-  ///   *corr.json:               json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CLEX"]["corr"]
-  ///    properties.calc.json:    casmroot/supercells/SCEL_NAME/CONFIG_ID/CURR_CALCTYPE/properties.calc.json
-  ///   *param_composition.json:  json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["param_composition"]
-  ///   *properties.ref.json:     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["ref"]
-  ///   *properties.calc.json:    json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]     // contains param_comp
-  ///   *properties.delta.json:   json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["delta"]
-  ///   *properties.generated.json:   json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["generated"]
+  ///   write_dof, source, selected: (absolute path in config_list)
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["dof"]
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["source"]
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["selected"]
+  ///
+  ///   write_properties: (absolute path in config_list)
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["generated"]
   jsonParser &Configuration::write(jsonParser &json) const {
 
     //std::cout << "begin Configuration::write()" << std::endl;
 
     const ProjectSettings &set = get_primclex().settings();
-    std::string calc_string = "calctype." + set.calctype();
-    std::string ref_string = "ref." + set.ref();
+    std::string calc_string = "calctype." + set.default_clex().calctype;
+    std::string ref_string = "ref." + set.default_clex().ref;
 
     /// write json object hierarchy if not existing
     jsonParser &json_scel = json["supercells"][get_supercell().get_name()];
     jsonParser &json_config = json_scel[get_id()];
-    //jsonParser &json_bset = json_config[get_primclex().get_curr_bset()];
     jsonParser &json_ref = json_config[calc_string][ref_string];
     jsonParser &json_prop = json_ref["properties"];
 
@@ -540,16 +521,8 @@ namespace CASM {
       write_dof(json_config);
     }
 
-    if(!json_config.contains("pos")) {
-      //write_pos(json_config);
-    }
-
     if(source_updated) {
       write_source(json_config);
-    }
-
-    if(!json_ref.contains("param_composition") || prop_updated) {
-      //write_param_composition(json_ref);
     }
 
     if(prop_updated) {
@@ -669,24 +642,21 @@ namespace CASM {
 
   /// Private members:
 
-  /// Reads the Configuration from the expected casm directory
-  ///   Uses PrimClex's current settings to read in the appropriate
-  ///   Properties, DeltaProperties and Correlations files if they exist
+  /// Reads the Configuration from the config list
+  ///   Uses PrimClex's current default settings to read in the appropriate properties
   ///
   /// This is private, because it is only called from the constructor:
   ///   Configuration(const Supercell &_supercell, Index _id)
   ///   It's called from the constructor because of the Supercell pointer
   ///
-  ///   Configuration data is saved in several object, we write the *'d objects:
+  ///   read dof, source, selected: (absolute path in config_list)
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["dof"]
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["source"]
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["selected"]
   ///
-  ///   *config.json:             json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["dof"]
-  ///   *corr.json:               json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CLEX"]["corr"]
-  ///    properties.calc.json:    son["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["properties"]["calc"]
-  ///    param_composition.json:  json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["param_composition"]
-  ///   *properties.ref.json:     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["ref"]
-  ///   *properties.calc.json:    json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
-  ///    properties.delta.json:   json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["delta"]
-  ///   *properties.generated.json:   json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["generated"]
+  ///   read properties: (absolute path in config_list)
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["generated"]
   ///
   void Configuration::read(const jsonParser &json) {
 
@@ -694,8 +664,8 @@ namespace CASM {
 
     const ProjectSettings &set = get_primclex().settings();
 
-    std::string calc_string = "calctype." + set.calctype();
-    std::string ref_string = "ref." + set.ref();
+    std::string calc_string = "calctype." + set.default_clex().calctype;
+    std::string ref_string = "ref." + set.default_clex().ref;
 
     // read dof
     if(!json.contains("supercells"))
@@ -709,15 +679,6 @@ namespace CASM {
 
     read_dof(json_config);
 
-
-    // read correlations
-    /*
-    if(!json_config.contains(get_primclex().get_curr_bset()))
-      return;
-    const jsonParser &json_bset = json_config[get_primclex().get_curr_bset()];
-
-    read_corr(json_bset);
-    */
 
     // read properties: does not attempt to read in new calculation data
     if(!json_config.contains(calc_string))
@@ -737,8 +698,16 @@ namespace CASM {
 
   //*********************************************************************************
 
-  /// Read source and degree of freedom info
-  ///   location: json = supercells/SCEL_NAME/CONFIG_ID
+  /// Read degree of freedom, source, and selected info
+  ///
+  ///   read dof, source, selected:  (absolute path in config_list)
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["dof"]
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["source"]
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["selected"]
+  ///
+  /// Tries to read dof from json["dof"]
+  /// Tries to read source from json["source"]
+  /// Tries to read selected from json["selected"]
   ///
   void Configuration::read_dof(const jsonParser &json) {
 
@@ -760,23 +729,14 @@ namespace CASM {
   /// Read configuration properties
   /// - this does not automatically read new externally calculated properties
   ///
-  ///   location: json = casmroot/supercells/SCEL_NAME/CONFIG_ID/CURR_CALCTYPE/CURR_REF/properties
+  ///   read properties: (absolute path in config_list)
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["generated"]
   ///
-  /// Tries to read reference from json["ref"], if it doesn't exist, tries to generate references
   /// Tries to read calculated from json["calc"]
   /// Tries to read generated from json["gen"]
   ///
-  /// Calculates delta = calculated - reference
-  ///
   void Configuration::read_properties(const jsonParser &json) {
-    /*
-        if(!json.contains("ref")) {
-          generate_reference();
-        }
-        else {
-          from_json(reference, json["ref"]);
-        }
-    */
     if(json.contains("calc")) {
       from_json(calculated, json["calc"]);
     }
@@ -784,9 +744,6 @@ namespace CASM {
     if(json.contains("gen")) {
       from_json(generated, json["gen"]);
     }
-
-    //    delta = calculated - reference;
-
   }
 
   //*********************************************************************************
@@ -796,17 +753,21 @@ namespace CASM {
 
   //*********************************************************************************
   fs::path Configuration::calc_properties_path() const {
-    return get_primclex().dir().calculated_properties(name(), get_primclex().settings().calctype());
+    return get_primclex().dir().calculated_properties(name(), get_primclex().settings().default_clex().calctype);
   }
 
   //*********************************************************************************
   fs::path Configuration::calc_status_path() const {
-    return get_primclex().dir().calc_status(name(), get_primclex().settings().calctype());
+    return get_primclex().dir().calc_status(name(), get_primclex().settings().default_clex().calctype);
   }
 
   //*********************************************************************************
   /// Write config.json file containing degree of freedom info
-  ///   location: json = supercells/SCEL_NAME/CONFIG_ID, adds: dof
+  ///
+  ///   writes dof: (absolute path in config_list)
+  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["dof"]
+  ///
+  ///   adds: json["dof"]
   ///
   jsonParser &Configuration::write_dof(jsonParser &json) const {
 
@@ -902,37 +863,13 @@ namespace CASM {
   ///
   jsonParser &Configuration::write_properties(jsonParser &json) const {
 
-    if(!get_primclex().has_composition_axes()) {
-
-      //json.erase("calc");
-      json.erase("ref");
-      json.erase("delta");
-      json.erase("gen");
-
-      //return json;
-    }
-
     if(calculated.size() == 0) {
       json.erase("calc");
     }
     else {
       json["calc"] = calculated;
     }
-    /*
-        if(reference.size() == 0) {
-          json.erase("ref");
-        }
-        else {
-          json["ref"] = reference;
-        }
 
-        if(delta.size() == 0) {
-          json.erase("delta");
-        }
-        else {
-          json["delta"] = delta;
-        }
-    */
     if(generated.size() == 0) {
       json.erase("gen");
     }
@@ -945,210 +882,6 @@ namespace CASM {
   }
 
   //*********************************************************************************
-  /*
-    /// Generate reference Properties from param_composition and reference states
-    ///   For now only linear interpolation
-    void Configuration::generate_reference() {
-
-      //std::cout << "begin Configuration::generate_reference()" << std::endl;
-
-      prop_updated = true;
-
-      /// If not enough reference states found, we can't generate reference properties
-      ///   Also, clear delta properties...
-      if(!reference_states_exist()) {
-        reference = Properties();
-        delta = calculated - reference;
-        return;
-      }
-
-      /// Read reference states
-      Array<Properties> ref_state_prop;
-      Array<Eigen::VectorXd> ref_state_comp;
-
-      read_reference_states(ref_state_prop, ref_state_comp);
-
-      // Initialize reference Properties
-      reference = Properties();
-
-      auto props = get_primclex().get_curr_property();
-
-      auto generate_ref = [&](const std::string & prop) {
-        if(std::find(props.cbegin(), props.cend(), prop) != props.cend()) {
-          generate_reference_scalar(prop, ref_state_prop, ref_state_comp);
-        }
-        return;
-      };
-
-      generate_ref("energy");
-      generate_ref("relaxed_energy");
-      // add more for other properties here
-
-      /// generating DeltaProperties from Reference and Calculated,
-      ///   not currently checking agreement with existing DeltaProperties file
-      delta = calculated - reference;
-
-      //std::cout << "finish Configuration::generate_reference()" << std::endl;
-    }
-  */
-  //*********************************************************************************
-  /*
-    /// Checks that all needed reference state files exist
-    bool Configuration::reference_states_exist() const {
-
-      if(!get_primclex().has_composition_axes() ||
-         !get_primclex().has_chemical_reference()) {
-        return false;
-      }
-
-      std::string calctype = get_primclex().settings().calctype();
-      std::string ref = get_primclex().settings().ref();
-
-      for(int i = 0; i < get_primclex().composition_axes().independent_compositions() + 1; i++) {
-        if(!fs::exists(get_primclex().dir().ref_state(calctype, ref, i)))
-          return false;
-      }
-      return true;
-    }
-  */
-  //*********************************************************************************
-  /*
-    /// Sets the arrays with the reference state properties read from the CASM directory tree
-    ///
-    void Configuration::read_reference_states(Array<Properties> &ref_state_prop, Array<Eigen::VectorXd> &ref_state_comp) const {
-
-      int Nref = get_primclex().composition_axes().independent_compositions() + 1;
-
-      ref_state_prop.clear();
-      ref_state_comp.clear();
-
-      fs::path ref_dir = get_reference_state_dir();
-      fs::path ref_file;
-
-      for(int i = 0; i < Nref; i++) {
-        ref_file = ref_dir / ("properties.ref_state." + std::to_string(i) + ".json");
-
-        if(!fs::exists(ref_file)) {
-          std::cerr << "Error in Configuration::read_reference_states" << std::endl;
-          std::cerr << "  File does not exist: " << ref_file << std::endl;
-          exit(1);
-        }
-
-        jsonParser json(ref_file);
-
-        if(!json.contains("ref_state")) {
-          std::cerr << "Error in Configuration::read_reference_states" << std::endl;
-          std::cerr << "  File: " << ref_file << std::endl;
-          std::cerr << "  Does not contain 'ref_state'" << std::endl;
-          exit(1);
-        }
-        ref_state_prop.push_back(json["ref_state"]);
-
-        //std::cerr << "\nRef_file:" << ref_file << std::endl;
-        //std::cerr << "Properties:" << std::endl;
-        //std::cerr << ref_state_prop.back() << std::endl;
-
-        if(!json.contains("param_composition")) {
-          std::cerr << "Error in Configuration::read_reference_states" << std::endl;
-          std::cerr << "  File: " << ref_file << std::endl;
-          std::cerr << "  Does not contain 'param_composition'" << std::endl;
-          exit(1);
-        }
-        ref_state_comp.push_back(json["param_composition"].get<Eigen::VectorXd>());
-
-        //std::cerr << "Composition:" << std::endl;
-        //std::cerr << ref_state_comp.back() << std::endl << std::endl << std::endl;
-
-      }
-
-    }
-  */
-  //*********************************************************************************
-  /*
-    /// Read in the 'most local' reference states: either configuration, supercell, or root reference
-    ///   All reference states should be at the same level, so we look for the "properties.ref.0.json" file
-    fs::path Configuration::get_reference_state_dir() const {
-
-      const DirectoryStructure &dir = get_primclex().dir();
-      const ProjectSettings &set = get_primclex().settings();
-
-      fs::path ref_dir;
-      //fs::path set_path = fs::path("settings") / fs::path(get_primclex().get_curr_calctype()) / fs::path(get_primclex().get_curr_ref());
-      //fs::path ref_file("properties.ref_state.0.json");
-
-      // get_path() / set_path / ref_file
-      if(fs::exists(dir.ref_state(set.calctype(), set.ref(), 0))) {
-        // read in config ref
-        //ref_dir = get_path() / set_path;
-        ref_dir = dir.ref_dir(set.calctype(), set.ref());
-      }
-      // get_supercell().get_path() / set_path / ref_file
-      else if(fs::exists(dir.supercell_ref_state(get_supercell().get_name(), set.calctype(), set.ref(), 0))) {
-        // read in supercell ref
-        //ref_dir = get_supercell().get_path() / set_path;
-        ref_dir = dir.supercell_ref_dir(get_supercell().get_name(), set.calctype(), set.ref());
-      }
-      //get_primclex().get_path() / set_path / ref_file
-      else if(fs::exists(dir.configuration_ref_state(name(), set.calctype(), set.ref(), 0))) {
-        // read in root ref
-        //ref_dir = get_primclex().get_path() / set_path;
-        ref_dir = dir.configuration_ref_dir(name(), set.calctype(), set.ref());
-      }
-
-      return ref_dir;
-
-    }
-  */
-  //*********************************************************************************
-  /*
-    void Configuration::generate_reference_scalar(std::string propname, const Array<Properties> &ref_state_prop, const Array<Eigen::VectorXd> &ref_state_comp) {
-
-      //std::cout << "begin generate_reference_scalar()" << std::endl;
-      /// Determine interpolating plane based on reference state property values
-
-      Index N = ref_state_prop.size();
-      Eigen::VectorXd value(N);
-      Eigen::MatrixXd comp(N, N);
-
-      for(Index i = 0; i < N; i++) {
-        if(!ref_state_prop[i].contains(propname)) {
-          std::cerr << "Error in Configuration::generate_reference_scalar()" << std::endl;
-          std::cerr << "  The reference state does not contain '" << propname << "'" << std::endl;
-          exit(1);
-        }
-        value(i) = ref_state_prop[i][propname].get<double>();
-      }
-
-      for(Index i = 0; i < N; i++) {
-        for(Index j = 0; j < N - 1; j++) {
-          comp(i, j) = ref_state_comp[i](j);
-        }
-        comp(i, N - 1) = 1.0;
-      }
-
-      //std::cout << "ref state '" << propname << "': \n" << value.transpose() << std::endl;
-      //std::cout << "comp: \n" << comp << std::endl;
-
-
-      // b = Mx
-      // value = comp * interp_plane
-
-      Eigen::VectorXd interp_plane = comp.fullPivHouseholderQr().solve(value);
-
-      //std::cout << "interp_plane: " << interp_plane.transpose() << std::endl;
-
-      Eigen::VectorXd param_comp = Eigen::VectorXd::Ones(N);
-      param_comp.head(N - 1) = get_param_composition();
-
-      //std::cout << "param_comp: " << param_comp.transpose() << std::endl;
-
-      reference[propname] = param_comp.dot(interp_plane);
-
-      //std::cout << "'" << propname  << "': " << reference[propname].get<double>() << std::endl;
-
-      //std::cout << "finish generate_reference_scalar()" << std::endl;
-    }
-  */
   //--------------------------------------------------------------------------------------------------
   //Structure Factor
   Eigen::VectorXd Configuration::get_struct_fact_intensities() const {
@@ -1248,15 +981,6 @@ namespace CASM {
   }
 
   /// \brief Returns correlations using 'clexulator'.
-  ///
-  /// This still assumes that the PrimClex and Supercell are set up for this, so make sure you've called:
-  /// - primclex.populate_basis_tables(basis_type);
-  /// - primclex.populate_cluster_basis_function_tables();
-  /// - primclex.generate_full_nlist();
-  /// - primclex.populate_clex_supercell_nlists();
-  ///
-  /// In the future that shouldn't be necessary
-  ///
   Correlation correlations(const Configuration &config, Clexulator &clexulator) {
     return correlations(config.configdof(), config.get_supercell(), clexulator);
   }
@@ -1338,8 +1062,21 @@ namespace CASM {
 
   /// \brief Returns the formation energy, normalized per unit cell
   double clex_formation_energy(const Configuration &config) {
-    Clexulator clexulator = config.get_primclex().global_clexulator();
-    return config.get_primclex().global_eci("formation_energy") * correlations(config, clexulator);
+    const auto &primclex = config.get_primclex();
+    auto formation_energy = primclex.settings().clex("formation_energy");
+    Clexulator clexulator = primclex.clexulator(formation_energy);
+    const ECIContainer &eci = primclex.eci(formation_energy);
+
+    if(eci.index().back() >= clexulator.corr_size()) {
+      Log &err_log = default_err_log();
+      err_log.error<Log::standard>("bset and eci mismatch");
+      err_log << "using cluster expansion: 'formation_energy'" << std::endl;
+      err_log << "basis set size: " << clexulator.corr_size() << std::endl;
+      err_log << "max eci index: " << eci.index().back() << std::endl;
+      throw std::runtime_error("Error: bset and eci mismatch");
+    }
+
+    return eci * correlations(config, clexulator);
   }
 
   /// \brief Returns the formation energy, normalized per unit cell
@@ -1349,8 +1086,9 @@ namespace CASM {
 
   /// \brief Return true if all current properties have been been calculated for the configuration
   bool is_calculated(const Configuration &config) {
-    return std::all_of(config.get_primclex().get_curr_property().begin(),
-                       config.get_primclex().get_curr_property().end(),
+    const auto &set = config.get_primclex().settings();
+    return std::all_of(set.properties().begin(),
+                       set.properties().end(),
     [&](const std::string & key) {
       return config.calc_properties().contains(key);
     });
@@ -1391,7 +1129,8 @@ namespace CASM {
   }
 
   bool has_reference_energy(const Configuration &_config) {
-    return _config.get_primclex().has_chemical_reference();
+    return _config.get_primclex().has_composition_axes() &&
+           _config.get_primclex().has_chemical_reference();
   }
 
   bool has_formation_energy(const Configuration &_config) {
@@ -1466,6 +1205,14 @@ namespace CASM {
 
     return motif = result;
 
+  }
+
+  /// \brief Order Configuration lexicographically by occuapation
+  bool ConfigDoFOccCompare::operator()(const Configuration &A, const Configuration &B) const {
+    return std::lexicographical_compare(A.configdof().occupation().begin(),
+                                        A.configdof().occupation().end(),
+                                        B.configdof().occupation().begin(),
+                                        B.configdof().occupation().end());
   }
 
 }

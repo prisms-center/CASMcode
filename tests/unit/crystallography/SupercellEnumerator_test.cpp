@@ -672,7 +672,9 @@ BOOST_AUTO_TEST_CASE(EnumeratorConsistency) {
 
   //Find out where things fail
   //Comparison will fail if you don't compare from pre-written files.
-  boost::filesystem::path failure_point = find_diff(jsonParser(current_test_path), jsonParser(old_test_path));
+  jsonParser curr(current_test_path);
+  jsonParser existing(old_test_path);
+  boost::filesystem::path failure_point = find_diff(curr, existing);
   //BOOST_TEST_MESSAGE("This failure point should be an empty string: '"+failure_point.string()+"'");
 
   BOOST_CHECK_EQUAL(failure_point, ""); //This way it'll print something helpful if it fails
@@ -682,6 +684,10 @@ current test_results.json file. Do not replace anything unless you're certain th
 results were incorrect, and these are an improvement. If you are sure you want to proceed, eliminate this key.";
 
   current_test_results.write(current_test_path);
+
+  std::cout << "curr: \n" << curr["lat_test_cases"][3]["output"]["lats"][20] << std::endl;
+  std::cout << "existing: \n" << existing["lat_test_cases"][3]["output"]["lats"][20] << std::endl;
+
 }
 
 BOOST_AUTO_TEST_CASE(RestrictedEnumeration) {

@@ -9,6 +9,7 @@
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymGroupRep.hh"
+#include "casm/crystallography/Niggli.hh"
 
 namespace CASM {
   template<typename CoordType>
@@ -476,7 +477,7 @@ namespace CASM {
 
 
     Lattice new_lat(prim_vec0, prim_vec1, prim_vec2);
-    Lattice reduced_new_lat = new_lat.get_reduced_cell();
+    Lattice reduced_new_lat = niggli(new_lat, prim_tol);
 
     //The lattice so far is OK, but it's noisy enough to matter for large
     //superstructures. We eliminate the noise by reconstructing it now via
@@ -500,6 +501,7 @@ namespace CASM {
     reduced_new_lat_mat = lattice().lat_column_mat();
     //When constructing this, why are we using *this as the primitive cell? Seems like I should only specify the vectors
     Lattice reconstructed_reduced_new_lat(reduced_new_lat_mat * invtransmat);
+    reconstructed_reduced_new_lat.make_right_handed();
     //Lattice reconstructed_reduced_new_lat(reduced_new_lat_mat*invtransmat,lattice);
 
     new_prim.set_lattice(reconstructed_reduced_new_lat, CART);

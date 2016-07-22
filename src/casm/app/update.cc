@@ -83,7 +83,7 @@ namespace CASM {
     ConfigMapper configmapper(primclex, lattice_weight, vol_tol, ConfigMapper::rotate | ConfigMapper::robust | (vm.count("strict") ? ConfigMapper::strict : 0), tol);
     std::cout << "Reading calculation data... " << std::endl << std::endl;
     std::vector<std::string> bad_config_report;
-    std::vector<std::string> prop_names = primclex.get_curr_property();
+    std::vector<std::string> prop_names = primclex.settings().properties();
     PrimClex::config_iterator it = primclex.config_begin();
     Index num_updated(0);
 
@@ -345,7 +345,7 @@ namespace CASM {
       std::cout <<  "No new data were detected." << std::endl << std::endl;
     else {
       std::cout << "Analyzed new data for " << num_updated << " configurations." << std::endl << std::endl;
-      primclex.write_config_list();
+
       if(relax_log.str().size() > 0) {
         std::cout << "WARNING: Abnormal relaxations were detected:\n" << std::endl
                   << "           *** Final Relaxation Report ***" << std::endl
@@ -354,9 +354,9 @@ namespace CASM {
         std::cout << "\nIt is recommended that you review these configurations more carefully.\n" << std::endl;
       }
 
-    }
+      std::cout << "Writing to SCEL database..." << std::endl << std::endl;
+      primclex.print_supercells();
 
-    if(num_updated > 0) {
       std::cout << "Writing to configuration database..." << std::endl << std::endl;
       primclex.write_config_list();
     }

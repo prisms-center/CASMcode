@@ -69,7 +69,6 @@ namespace CASM {
     //   occupation: [basis0                |basis1               |basis2          |...] up to prim.basis.size()
     //       basis0: [prim0|prim1|prim2|...] up to supercell.volume()
     //
-    bool dof_updated;
     ConfigDoF m_configdof;
 
 
@@ -216,6 +215,12 @@ namespace CASM {
     int get_b(Index site_l) const;
 
     const ConfigDoF &configdof() const {
+      return m_configdof;
+    }
+
+    /// \brief Access the DoF. This will invalidate the Configuration's id.
+    ConfigDoF &configdof() {
+      id = "none";
       return m_configdof;
     }
 
@@ -503,6 +508,11 @@ namespace CASM {
   void reset_properties(Configuration &_config) {
     _config.set_calc_properties(jsonParser());
   }
+
+  /// \brief Order Configuration lexicographically by occuapation
+  struct ConfigDoFOccCompare {
+    bool operator()(const Configuration &A, const Configuration &B) const;
+  };
 
 }
 
