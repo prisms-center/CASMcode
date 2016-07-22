@@ -6,6 +6,8 @@ montecarloincludedir=$(includedir)/casm/monte_carlo
 montecarloinclude_HEADERS=./include/casm/monte_carlo/SiteExchanger.hh\
 						  ./include/casm/monte_carlo/DoFMod.hh\
 						  ./include/casm/monte_carlo/MonteSampler.hh\
+						  ./include/casm/monte_carlo/MonteCarloEnum.hh\
+						  ./include/casm/monte_carlo/MonteCarloEnum_impl.hh\
 						  ./include/casm/monte_carlo/MonteCounter.hh\
 						  ./include/casm/monte_carlo/MonteIO.hh\
 						  ./include/casm/monte_carlo/MonteSettings.hh\

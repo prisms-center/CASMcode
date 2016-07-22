@@ -1,4 +1,5 @@
 libcasm_la_SOURCES += ./src/casm/clex/ChemicalReference.cc\
+                      ./src/casm/clex/Clex.cc\
                       ./src/casm/clex/CompositionConverter.cc\
                       ./src/casm/clex/ConfigDoF.cc\
                       ./src/casm/clex/ConfigIO.cc\

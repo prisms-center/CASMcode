@@ -4,6 +4,7 @@ libcasm_la_SOURCES +=  ./src/casm/monte_carlo/grand_canonical/GrandCanonical.cc\
                        ./src/casm/monte_carlo/grand_canonical/GrandCanonicalSettings.cc\
                        ./src/casm/monte_carlo/MCData.cc\
                        ./src/casm/monte_carlo/MonteCarlo.cc\
+                       ./src/casm/monte_carlo/MonteCarloEnum.cc\
                        ./src/casm/monte_carlo/MonteCounter.cc\
                        ./src/casm/monte_carlo/MonteDefinitions.cc\
                        ./src/casm/monte_carlo/MonteIO.cc\
