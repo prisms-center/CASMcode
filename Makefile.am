@@ -10,6 +10,7 @@ lib_LTLIBRARIES=
 bin_PROGRAMS=
 check_PROGRAMS=
 man1_MANS=
+dist_bin_SCRIPTS=
 
 #===========================================================#
 #Define flags for everything ever
@@ -50,6 +51,10 @@ include $(srcdir)/apps/casm/Makemodule.am
 #============================================================#
 #Take care of tests
 include $(srcdir)/tests/unit/Makemodule.am
+
+#============================================================#
+#Take care of python stuff
+include $(srcdir)/python/Makemodule.am
 
 #============================================================#
 #Misc targets
