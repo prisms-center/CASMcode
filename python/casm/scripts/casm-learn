@@ -95,24 +95,27 @@ if __name__ == "__main__":
       write_eci(proj, indiv.eci, casm.learn.to_json(index, indiv), verbose=args.verbose)
       
     else:
-      # run fitting
       
       # construct hall of fame
       halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
       halloffame_size = input.get("halloffame_size", 25)
-      hall = deap.tools.HallOfFame(halloffame_size)
+      hall = casm.learn.create_halloffame(halloffame_size)
       if args.verbose:
         print "# Hall of Fame size:", halloffame_size, "\n"
       
       if os.path.exists(halloffame_filename):
         existing_hall = casm.learn.open_halloffame(halloffame_filename, args.verbose)
         hall.update(existing_hall)
-    
-      casm.learn.fit_and_select(input, verbose=args.verbose, hall=hall)
       
+      # run fitting
+      if input["feature_selection"]["method"] == "DirectSelection":
+        casm.learn.direct_fit(input, verbose=args.verbose, hall=hall)
+      else:
+        casm.learn.fit_and_select(input, verbose=args.verbose, hall=hall)
+        
       # pickle hall of fame
       casm.learn.save_halloffame(hall, halloffame_filename, args.verbose)
-      
+    
   else:
     
     print \

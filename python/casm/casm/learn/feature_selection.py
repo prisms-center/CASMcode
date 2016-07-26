@@ -1,103 +1,117 @@
-from evolve import *
+from casm.learn.fit import make_fitting_data, make_estimator, make_selector, add_individual_detail
+import casm.learn.cross_validation
 
-class DirectSelection(BaseEstimator, SelectorMixin):
+def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None):
   """
-  Directly specify which basis functions should be selected in an individual.
+  Arguments
+  ---------
+    
+    input: dict
+      The input settings as a dict
+    
+    save: boolean, optional, default=True
+      Save a pickle file containing the training data and scoring metric. The file
+      name, which can be specified by input["fit_data_filename"], defaults to "fit_data.pkl".
+    
+    verbose: boolean, optional, default=True
+      Print information to stdout.
+    
+    read_existing: boolean, optional, default=True
+      If it exists, read the pickle file containing the training data and scoring 
+      metric. The file name, which can be specified by input["fit_data_filename"], 
+      defaults to "fit_data.pkl".
+    
+    hall: deap.tools.HallOfFame, optional, default=None
+      A Hall Of Fame to add resulting individuals to
+    
   
-  The 'indiv' attribute is generated when 'fit' is called.
-  
-  
-  Attributes
-  ----------
+  Returns
+  -------
+    
+    (fdata, estimator, selector)
+    
+    fdata: casm.learn.FittingData
+      A FittingData instance containing the problem data.
     
     estimator:  estimator object implementing 'fit'
-        The estimator specified by the input settings. Not actually used.
-      
-    indices: List[int]
-      The indices of basis functions to be selected
+      The estimator specified by the input settings.
     
-    indiv: List[bool] of length n_features
-      This is a boolean list of shape [n_features], in which an element is True 
-      iff its corresponding feature is selected for retention.
+    selector:  selector object implementing 'fit' and having either a 
+               'get_support()' or 'get_halloffame()' member
+      The feature selector specified by the input settings.
+      
+  
   """
+  # construct FittingData
+  if verbose:
+    print "# Get fitting data..."
+  fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
+    
+  # construct model used for fitting
+  if verbose:
+    print "# Construct estimator..."
+  estimator = make_estimator(input, verbose=verbose)
   
-  def __init__(self, 
-               estimator, 
-               indices=None, 
-               bitstring=None):
-    """
-    Construct using either 'indices' or 'bitstring' to specify which basis
-    functions should be selected.
-    
-    Arguments
-    ---------
-      
-      estimator:  estimator object implementing 'fit'
-        The estimator specified by the input settings.
-      
-      indices: List[int], optional
-        The indices of basis functions
-      
-      bitstring: str, optional
-        String consisting of '0' and '1', with '1' corresponding to selected 
-        basis functions.
-    
-    """
-    
-    self.estimator = estimator
-    
-    if (indices is None) == (bitstring is None):
-      raise Exception("Error constructing DirectSelection: Use either 'indices' "
-                      "or 'bitstring' kwarg to specify selected features")
-    
-    if bitstring is not None:
-      indices = [index for index,bit in enumerate(bitstring) if int(bit)]
-    self.indices = indices
-    
-    self.indiv = None
+  # feature selection
+  if verbose:
+    print "# Construct feature selector..."
+  selector = make_selector(input, estimator, 
+    scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty, verbose=verbose)
   
-    
-  def fit(self, X, y):
-    """
-    Generates self.indiv, an individual of length n_features with basis functions
-    selected as specified by self.indices
-    
-    Arguments
-    ---------
-    
-      X: array-like of shape (n_samples, n_features)
-        The input data
-      
-      y: array-like of shape (n_samples, 1)
-        The values
-    
-    
-    Returns
-    -------
-      
-      self: returns an instance of self.
-    """
-    selected = [False] * X.shape[1]
-    for i in self.indices:
-      selected[i] = True
-    if sum(selected) == 0:
-      raise Exception("Error using DirectSelection: No basis functions selected")
-    self.indiv = casm.learn.creator.Individual(selected)
-    return self
+  if not hasattr(selector, "get_halloffame") and not hasattr(selector, "get_support"):
+    raise Exception("Selector has neither 'get_halloffame' nor 'get_support'")
   
+  # fit
+  if verbose:
+    print "# Fit and select..."
+  t = time.clock()
+  selector.fit(fdata.weighted_X, fdata.weighted_y)
   
-  def _get_support_mask(self):
-    """
-    Return the individual specified at construction.
-    
-    Returns
-    -------
+  # print calculation properties that may be of interest
+  if verbose:
+    # custom for SelectFromModel
+    if hasattr(selector, "estimator_") and hasattr(selector.estimator_, "n_iter_"):
+      print "#   Iterations:", selector.estimator_.n_iter_
+    if hasattr(selector, "estimator_") and hasattr(selector.estimator_, "alpha_"):
+      print "#   Alpha:", selector.estimator_.alpha_
+    if hasattr(selector, "threshold"):
+      print "#   Feature selection threshold:", selector.threshold
+    print "#   DONE  Runtime:", time.clock() - t, "(s)\n"
+  
+  if hall is not None:
+    # store results: Assume selector either has a 'get_halloffame()' attribute, or 'get_support()' member
+    if hasattr(selector, "get_halloffame"):
+      if verbose:
+        print "Adding statistics..."
+      selector_hall = selector.get_halloffame()
+      for i in xrange(len(selector_hall)):
+        add_individual_detail(selector_hall[i], estimator, fdata, input, selector=selector)
+      if verbose:
+        print "  DONE\n"
       
-      support: List[bool] of length n_features
-        This is a boolean list of shape [n_features], in which an element is True 
-        iff its corresponding feature is selected for retention.
+      if verbose:
+        print "Result:"
+      print_halloffame(selector_hall)
+      
+      hall.update(selector_hall)
     
-    """
-    return self.indiv
-  
+    elif hasattr(selector, "get_support"):
+      indiv = casm.learn.creator.Individual(selector.get_support())
+      if verbose:
+        print "Adding statistics..."
+      indiv.fitness.values = casm.learn.cross_validation.cross_val_score(
+        estimator, fdata.weighted_X, indiv, 
+        y=fdata.weighted_y, scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty)
+      add_individual_detail(indiv, estimator, fdata, input, selector=selector)
+      if verbose:
+        print "  DONE\n"
+      
+      if verbose:
+        print "Result:"
+      print_halloffame([indiv])
+      
+      hall.update([indiv])
+    
+  return (fdata, estimator, selector)
+
 

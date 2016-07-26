@@ -230,7 +230,7 @@ def save_population(pop, filename, verbose=False):
 
 
 def initialize_halloffame(filename=None, n_halloffame=25, verbose=False):
-  hall = deap.tools.HallOfFame(n_halloffame)
+  hall = casm.learn.create_halloffame(n_halloffame)
   if verbose:
     print "# Hall of Fame size:", n_halloffame, "\n"
   
@@ -664,7 +664,7 @@ def eaPopulationBestFirst(pop, toolbox, n_generation=10, halloffame=None, stats=
   nevals = evaluate_all(in_pop, toolbox)
   
   # use a HallOfFame for the population
-  pop = deap.tools.HallOfFame(len(in_pop))
+  pop = casm.learn.create_halloffame(len(in_pop))
   pop.update(in_pop)
   
   # set as non-parents, if not specified
@@ -685,7 +685,7 @@ def eaPopulationBestFirst(pop, toolbox, n_generation=10, halloffame=None, stats=
       new_pop = initialize_population(len(pop), toolbox, verbose=verbose)
       for indiv in new_pop:
         indiv.parent = False
-      pop = deap.tools.HallOfFame(len(new_pop))
+      pop = casm.learn.create_halloffame(len(new_pop))
       pop.update(new_pop)
       nevals = evaluate_all(pop, toolbox)
       nonparents = [indiv for indiv in pop if not indiv.parent]
