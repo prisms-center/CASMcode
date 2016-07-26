@@ -98,7 +98,7 @@ if __name__ == "__main__":
       
       # construct hall of fame
       halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
-      halloffame_size = input.get("halloffame_size", 25)
+      halloffame_size = input.get("n_halloffame", 25)
       hall = casm.learn.create_halloffame(halloffame_size)
       if args.verbose:
         print "# Hall of Fame size:", halloffame_size, "\n"

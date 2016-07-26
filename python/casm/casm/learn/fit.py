@@ -593,15 +593,33 @@ def print_input_help():
   #   "DirectSelection": Allows directly specifying which basis functions should
   #     be included.
   #
-  #     Options for "kwargs" (choose one):
+  #     Options for "kwargs":
   #
-  #       "bitstring": str, optional
-  #          String consisting of '0' and '1', with '1' corresponding to selected 
-  #          basis functions. May be shorter than the total number of possible
-  #          basis functions, in which case '0' are effectively padded to the end.
-  #       
-  #       "indices": List[int], optional
-  #          List of indices of basis functions to be selected.
+  #       "population": List[dict]
+  #          Contains a list of options specifying which individuals to fit.
+  #          Options are:
+  #
+  #            "bitstring": Ex.: {"bitstring" : "01110001100"}
+  #              String consisting of '0' and '1', with '1' corresponding to 
+  #              selected basis functions. May be shorter than the total number 
+  #              of possible basis functions, in which case '0' are effectively 
+  #              padded to the end.
+  #
+  #            "indices": Ex.: {"indices" : [1, 2, 3, 7, 8]}
+  #              List of indices of basis functions to be selected.
+  #
+  #            "from_halloffame": Ex.: { "from_halloffame" : "my_halloffame.pkl", 
+  #                                      "individuals" : [0, 2, 5]}
+  #               Specifies a hall of fame .pkl file and particular individuals 
+  #               in the hall (by index) to include in the population. The 
+  #               "individuals" list is optional, with the default behaviour 
+  #               including all individuals in the hall of fame.
+  #
+  #       "use_saved_estimator": boolean, optional, default=False
+  #          If True, and individuals in the input population come from a HallOfFame
+  #          the estimator method stored in the individual's saved input file will
+  #          be used instead of the estimator specified in the current input file.
+  #
   #
   #   Evolutionary algorithms, from casm.learn.feature_selection, are implemented
   #   using deap: http://deap.readthedocs.org/en/master/index.html
@@ -616,6 +634,13 @@ def print_input_help():
   #          Population size. This many random initial starting individuals are 
   #          created.
   #       
+  #       "n_halloffame": int, optional, default=25
+  #          Maxsize of the hall of fame which holds the best individuals 
+  #          encountered in any generation. Upon completion, the individuals in  
+  #          this hall of fame are into your overall casm-learn hall of fame to
+  #          be compared to results obtained from other fitting or feature 
+  #          selection methods.
+  #          
   #       "n_generation": int, optional, default=10
   #          Number of generations between saving the hall of fame.
   #
@@ -658,6 +683,13 @@ def print_input_help():
   #          Population size. This many random initial starting individuals are 
   #          minimized and the results saved in the hall of fame.
   #
+  #       "n_halloffame": int, optional, default=25
+  #          Maxsize of the hall of fame which holds the best individuals 
+  #          encountered in any generation. Upon completion, the individuals in  
+  #          this hall of fame are into your overall casm-learn hall of fame to
+  #          be compared to results obtained from other fitting or feature 
+  #          selection methods.
+  #
   #       "n_generation": int, optional, default=10
   #          Number of generations between saving the hall of fame.
   #
@@ -692,6 +724,13 @@ def print_input_help():
   #          Population size. This many random initial starting individuals are 
   #          included in the starting population, which is minimized, and the 
   #          results are saved in the hall of fame.
+  #
+  #       "n_halloffame": int, optional, default=25
+  #          Maxsize of the hall of fame which holds the best individuals 
+  #          encountered in any generation. Upon completion, the individuals in  
+  #          this hall of fame are into your overall casm-learn hall of fame to
+  #          be compared to results obtained from other fitting or feature 
+  #          selection methods.
   #
   #       "n_generation": int, optional, default=10
   #          Number of generations between saving the hall of fame.

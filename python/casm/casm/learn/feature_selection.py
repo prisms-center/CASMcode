@@ -1,4 +1,6 @@
-from casm.learn.fit import make_fitting_data, make_estimator, make_selector, add_individual_detail
+from evolve import *
+from casm.learn.fit import make_fitting_data, make_estimator, make_selector, \
+  add_individual_detail, print_halloffame
 import casm.learn.cross_validation
 
 def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None):
