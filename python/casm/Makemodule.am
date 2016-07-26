@@ -1,0 +1,41 @@
+casmpy_PYTHON=python/casm/casm/__init__.py\
+			  python/casm/casm/casm.py\
+			  python/casm/casm/noindent.py
+casmpydir=$(pythondir)/casm
+
+
+casmlearn_PYTHON=python/casm/casm/learn/fit.py\
+				 python/casm/casm/learn/linear_model.py\
+				 python/casm/casm/learn/evolve.py\
+				 python/casm/casm/learn/cross_validation.py\
+				 python/casm/casm/learn/feature_selection.py\
+				 python/casm/casm/learn/tools.py\
+				 python/casm/casm/learn/__init__.py
+casmlearndir=$(casmpydir)/learn
+
+casmvaspwrapper_PYTHON=python/casm/casm/vaspwrapper/vaspwrapper.py\
+					   python/casm/casm/vaspwrapper/converge.py\
+					   python/casm/casm/vaspwrapper/relax.py\
+					   python/casm/casm/vaspwrapper/__init__.py
+casmvaspwrapperdir=$(casmpydir)/vaspwrapper
+
+casmproject_PYTHON=python/casm/casm/project/project.py\
+				   python/casm/casm/project/query.py\
+				   python/casm/casm/project/selection.py\
+				   python/casm/casm/project/__init__.py\
+				   python/casm/casm/project/io.py
+casmprojectdir=$(casmpydir)/project
+
+casmplotting_PYTHON=python/casm/casm/plotting/__init__.py\
+					python/casm/casm/plotting/plotting.py
+casmplottingdir=$(casmpydir)/plotting
+
+
+
+
+dist_bin_SCRIPTS+=python/casm/scripts/casm-learn\
+				  python/casm/scripts/casm.view\
+				  python/casm/scripts/vasp.kpoint_converge\
+				  python/casm/scripts/vasp.relax\
+				  python/casm/scripts/vasp.relax.report\
+				  python/casm/scripts/vasp.setup 
