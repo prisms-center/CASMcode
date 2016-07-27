@@ -66,7 +66,7 @@ if __name__ == "__main__":
     
     if args.hall or args.indiv:
       
-      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
+      halloffame_filename = input["problem_specs"].get("halloffame_filename", "halloffame.pkl")
       # print Hall of Fame summary
       if args.verbose:
         print "Loading Hall of Fame:", halloffame_filename
@@ -79,15 +79,16 @@ if __name__ == "__main__":
   
     elif args.select:
       
-      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
+      specs = input["problem_specs"]
+      halloffame_filename = specs.get("halloffame_filename", "halloffame.pkl")
       # print Hall of Fame summary
       existing_hall = casm.learn.open_halloffame(halloffame_filename, args.verbose)
       
-      if "data" not in input:
-        input["data"] = dict()
-      if "kwargs" not in input["data"] or input["data"]["kwargs"] is None:
-        input["data"]["kwargs"] = dict()
-      proj = Project(input["data"]["kwargs"].get("project_path", None))
+      if "data" not in specs:
+        specs["data"] = dict()
+      if "kwargs" not in specs["data"] or specs["data"]["kwargs"] is None:
+        specs["data"]["kwargs"] = dict()
+      proj = Project(specs["data"]["kwargs"].get("project_path", None))
       
       index = args.select[0]
       indiv = existing_hall[index]
@@ -97,7 +98,8 @@ if __name__ == "__main__":
     else:
       
       # construct hall of fame
-      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
+      specs = input["problem_specs"]
+      halloffame_filename = specs.get("halloffame_filename", "halloffame.pkl")
       halloffame_size = input.get("n_halloffame", 25)
       hall = casm.learn.create_halloffame(halloffame_size)
       if args.verbose:
@@ -109,9 +111,9 @@ if __name__ == "__main__":
       
       # run fitting
       if input["feature_selection"]["method"] == "DirectSelection":
-        casm.learn.direct_fit(input, verbose=args.verbose, hall=hall)
+        casm.learn.direct_fit(input, verbose=args.verbose, hall=hall, input_filename=args.settings[0])
       else:
-        casm.learn.fit_and_select(input, verbose=args.verbose, hall=hall)
+        casm.learn.fit_and_select(input, verbose=args.verbose, hall=hall, input_filename=args.settings[0])
         
       # pickle hall of fame
       casm.learn.save_halloffame(hall, halloffame_filename, args.verbose)

@@ -79,7 +79,7 @@ def make_population(n_features, input_options):
   return population
 
 
-def direct_fit(input, save=True, verbose=True, read_existing=True, hall=None):
+def direct_fit(input, save=True, verbose=True, read_existing=True, hall=None, input_filename=None):
   """
   Fit ECI and add details for a set of individuals specified for feature_selection
   method 'DirectSelection' via the 'population' kwarg.
@@ -105,6 +105,9 @@ def direct_fit(input, save=True, verbose=True, read_existing=True, hall=None):
     hall: deap.tools.HallOfFame, optional, default=None
       A Hall Of Fame to add resulting individuals to
     
+    input_filename: str, optional
+      Used to determine the name of the 'specs' file saved.
+  
   
   Returns
   -------
@@ -116,7 +119,7 @@ def direct_fit(input, save=True, verbose=True, read_existing=True, hall=None):
   # construct FittingData
   if verbose:
     print "# Get fitting data..."
-  fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
+  fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True, input_filename=input_filename)
   
   kwargs = input["feature_selection"]["kwargs"]
   

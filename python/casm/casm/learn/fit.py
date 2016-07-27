@@ -2,6 +2,7 @@ import sklearn.linear_model
 import sklearn.cross_validation
 import sklearn.metrics
 import random, re, time, os, types, json, pickle, copy, uuid
+from os.path import splitext, basename
 import numpy as np
 from math import sqrt
 from casm.project import Project, Selection, query
@@ -21,13 +22,33 @@ def _find_method(mods, attrname):
 def example_input_Lasso():
   input = dict()
   
+  specs = dict()
+  
   # data
-  input["data"] = dict()
-  input["data"]["filename"] = "train"
-  input["data"]["type"] = "selection"
-  input["data"]["X"] = "corr"
-  input["data"]["y"] = "formation_energy"
-  input["data"]["kwargs"] = None
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
   
   # regression estimator
   input["estimator"] = dict()
@@ -41,22 +62,6 @@ def example_input_Lasso():
   input["feature_selection"]["method"] = "SelectFromModel"
   input["feature_selection"]["kwargs"] = None
   
-  # sample weighting
-  input["weight"] = dict()
-  input["weight"]["method"] = "wHullDist"
-  input["weight"]["kwargs"] = dict()
-  input["weight"]["kwargs"]["A"] = 0.0
-  input["weight"]["kwargs"]["B"] = 1.0
-  input["weight"]["kwargs"]["kT"] = 0.01
-  
-  # cross validation
-  input["cv"] = dict()
-  input["cv"]["method"] = "KFold"
-  input["cv"]["kwargs"] = dict()
-  input["cv"]["kwargs"]["n_folds"] = 10
-  input["cv"]["kwargs"]["shuffle"] = True
-  input["cv"]["penalty"] = 0.0
-  
   # hall of fame
   input["n_halloffame"] = 25
   
@@ -66,13 +71,33 @@ def example_input_Lasso():
 def example_input_LassoCV():
   input = dict()
 
+  specs = dict()
+  
   # data
-  input["data"] = dict()
-  input["data"]["filename"] = "train"
-  input["data"]["type"] = "selection"
-  input["data"]["X"] = "corr"
-  input["data"]["y"] = "formation_energy"
-  input["data"]["kwargs"] = None
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
   
   # regression estimator
   input["estimator"] = dict()
@@ -87,22 +112,6 @@ def example_input_LassoCV():
   input["feature_selection"]["method"] = "SelectFromModel"
   input["feature_selection"]["kwargs"] = None
   
-  # sample weighting
-  input["weight"] = dict()
-  input["weight"]["method"] = "wHullDist"
-  input["weight"]["kwargs"] = dict()
-  input["weight"]["kwargs"]["A"] = 0.0
-  input["weight"]["kwargs"]["B"] = 1.0
-  input["weight"]["kwargs"]["kT"] = 0.01
-  
-  # cross validation
-  input["cv"] = dict()
-  input["cv"]["method"] = "KFold"
-  input["cv"]["kwargs"] = dict()
-  input["cv"]["kwargs"]["n_folds"] = 10
-  input["cv"]["kwargs"]["shuffle"] = True
-  input["cv"]["penalty"] = 0.0
-  
   # hall of fame
   input["n_halloffame"] = 25
   
@@ -112,13 +121,30 @@ def example_input_LassoCV():
 def example_input_RFE():
   input = dict()
 
+  specs = dict()
+  
   # data
-  input["data"] = dict()
-  input["data"]["filename"] = "train"
-  input["data"]["type"] = "selection"
-  input["data"]["X"] = "corr"
-  input["data"]["y"] = "formation_energy"
-  input["data"]["kwargs"] = None
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "LeaveOneOut"
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
   
   # regression estimator
   input["estimator"] = dict()
@@ -130,20 +156,6 @@ def example_input_RFE():
   input["feature_selection"]["kwargs"] = dict()
   input["feature_selection"]["kwargs"]["n_features_to_select"] = 25
   
-  
-  # sample weighting
-  input["weight"] = dict()
-  input["weight"]["method"] = "wHullDist"
-  input["weight"]["kwargs"] = dict()
-  input["weight"]["kwargs"]["A"] = 0.0
-  input["weight"]["kwargs"]["B"] = 1.0
-  input["weight"]["kwargs"]["kT"] = 0.01
-  
-  # cross validation
-  input["cv"] = dict()
-  input["cv"]["method"] = "LeaveOneOut"
-  input["cv"]["penalty"] = 0.0
-  
   # hall of fame
   input["n_halloffame"] = 25
   
@@ -153,13 +165,30 @@ def example_input_RFE():
 def example_input_GeneticAlgorithm():
   input = dict()
   
+  specs = dict()
+  
   # data
-  input["data"] = dict()
-  input["data"]["filename"] = "train"
-  input["data"]["type"] = "selection"
-  input["data"]["X"] = "corr"
-  input["data"]["y"] = "formation_energy"
-  input["data"]["kwargs"] = None
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "LeaveOneOut"
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
   
   # regression estimator
   input["estimator"] = dict()
@@ -189,20 +218,6 @@ def example_input_GeneticAlgorithm():
   }
   input["feature_selection"]["kwargs"] = d
   
-  
-  # sample weighting
-  input["weight"] = dict()
-  input["weight"]["method"] = "wHullDist"
-  input["weight"]["kwargs"] = dict()
-  input["weight"]["kwargs"]["A"] = 0.0
-  input["weight"]["kwargs"]["B"] = 1.0
-  input["weight"]["kwargs"]["kT"] = 0.01
-  
-  # cross validation
-  input["cv"] = dict()
-  input["cv"]["method"] = "LeaveOneOut"
-  input["cv"]["penalty"] = 0.0
-  
   # hall of fame
   input["n_halloffame"] = 25
   
@@ -212,13 +227,30 @@ def example_input_GeneticAlgorithm():
 def example_input_IndividualBestFirst():
   input = dict()
   
+  specs = dict()
+  
   # data
-  input["data"] = dict()
-  input["data"]["filename"] = "train"
-  input["data"]["type"] = "selection"
-  input["data"]["X"] = "corr"
-  input["data"]["y"] = "formation_energy"
-  input["data"]["kwargs"] = None
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "LeaveOneOut"
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
   
   # regression estimator
   input["estimator"] = dict()
@@ -245,20 +277,6 @@ def example_input_IndividualBestFirst():
   }
   input["feature_selection"]["kwargs"] = d
   
-  
-  # sample weighting
-  input["weight"] = dict()
-  input["weight"]["method"] = "wHullDist"
-  input["weight"]["kwargs"] = dict()
-  input["weight"]["kwargs"]["A"] = 0.0
-  input["weight"]["kwargs"]["B"] = 1.0
-  input["weight"]["kwargs"]["kT"] = 0.01
-  
-  # cross validation
-  input["cv"] = dict()
-  input["cv"]["method"] = "LeaveOneOut"
-  input["cv"]["penalty"] = 0.0
-  
   # hall of fame
   input["n_halloffame"] = 25
   
@@ -268,13 +286,30 @@ def example_input_IndividualBestFirst():
 def example_input_PopulationBestFirst():
   input = dict()
   
+  specs = dict()
+  
   # data
-  input["data"] = dict()
-  input["data"]["filename"] = "train"
-  input["data"]["type"] = "selection"
-  input["data"]["X"] = "corr"
-  input["data"]["y"] = "formation_energy"
-  input["data"]["kwargs"] = None
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "LeaveOneOut"
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
   
   # regression estimator
   input["estimator"] = dict()
@@ -301,20 +336,6 @@ def example_input_PopulationBestFirst():
   }
   input["feature_selection"]["kwargs"] = d
   
-  
-  # sample weighting
-  input["weight"] = dict()
-  input["weight"]["method"] = "wHullDist"
-  input["weight"]["kwargs"] = dict()
-  input["weight"]["kwargs"]["A"] = 0.0
-  input["weight"]["kwargs"]["B"] = 1.0
-  input["weight"]["kwargs"]["kT"] = 0.01
-  
-  # cross validation
-  input["cv"] = dict()
-  input["cv"]["method"] = "LeaveOneOut"
-  input["cv"]["penalty"] = 0.0
-  
   # hall of fame
   input["n_halloffame"] = 25
   
@@ -324,13 +345,30 @@ def example_input_PopulationBestFirst():
 def example_input_DirectSelection():
   input = dict()
   
+  specs = dict()
+  
   # data
-  input["data"] = dict()
-  input["data"]["filename"] = "train"
-  input["data"]["type"] = "selection"
-  input["data"]["X"] = "corr"
-  input["data"]["y"] = "formation_energy"
-  input["data"]["kwargs"] = None
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "LeaveOneOut"
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
   
   # regression estimator
   input["estimator"] = dict()
@@ -349,19 +387,6 @@ def example_input_DirectSelection():
   }
   input["feature_selection"]["kwargs"] = d
   
-  # sample weighting
-  input["weight"] = dict()
-  input["weight"]["method"] = "wHullDist"
-  input["weight"]["kwargs"] = dict()
-  input["weight"]["kwargs"]["A"] = 0.0
-  input["weight"]["kwargs"]["B"] = 1.0
-  input["weight"]["kwargs"]["kT"] = 0.01
-  
-  # cross validation
-  input["cv"] = dict()
-  input["cv"]["method"] = "LeaveOneOut"
-  input["cv"]["penalty"] = 0.0
-  
   # hall of fame
   input["n_halloffame"] = 25
   
@@ -375,6 +400,11 @@ def print_input_help():
   Settings file description:
   ------------------------------------------------------------------------------
   {
+  
+  # The "problem_specs" specify which data to use and how to score candidate
+  # solutions. It consists primarily of "data", "weight", and "cv" settings.
+  
+    "problem_specs" : {
   
   # Specifies the data to use for learning
   #
@@ -418,50 +448,13 @@ def print_input_help():
   #   Options for 'filetype' "json":
   #     Any options to pass to pandas.read_json
   
-    "data" : {
-      "filename": "train",
-      "filetype": "selection",
-      "X": "corr",
-      "y": "formation_energy",
-      "kwargs": null
-    }
-  
-  # A scikit-learn linear model estimator.
-  #
-  #
-  # Object attributes
-  # -----------------
-  #
-  # method: string
-  #   A scikit-learn linear model estimator. 
-  #  
-  #   Options: 'LinearRegression', 'Ridge', 'Lasso', 'LassoCV', etc.
-  #     See: http://scikit-learn.org/stable/modules/linear_model.html
-  #
-  #   Note: The 'LinearRegression' estimator is implemented using 
-  #   casm.learn.linear_model.LinearRegressionForLOOCV', which solves X*b=y using:
-  #     b = np.dot(S, y)
-  #     S = np.linalg.pinv(X.transpose().dot(X)).dot(X.transpose())
-  #     y_pred = np.dot(H, y)
-  #     H = np.dot(X, S)
-  #
-  # kwargs: dict or null, optional, default=dict()
-  #   Additional parameters to be used to construct the estimator 
-  #
-  #   Options for "LinearRegression":
-  #     "pinv": bool, optional, default=True
-  #       If True, use the pseudo-inverse via np.linalg.pinv; else use np.linalg.inv.
-  #   
-  #   Options for other methods:
-  #     Any options to pass to the estimator construtor.
-  #
-  #   By default, the kwarg "fit_intercept" is set to False.
-  #
-  
-    "estimator": {
-      "method": "LinearRegression", 
-      "kwargs": null
-    },
+      "data" : {
+        "filename": "train",
+        "filetype": "selection",
+        "X": "corr",
+        "y": "formation_energy",
+        "kwargs": null
+      },
   
   # Method to use for weighting training data. 
   #
@@ -517,17 +510,10 @@ def print_input_help():
   #     "E0": float
   #     "hull_selection": string
     
-    "weight": {
-      "method": null, 
-      "kwargs": null
-    }
-    
-  # Hall of fame size. 
-  #
-  # he number of individuals to store in t'halloffame.pkl',
-  # as determined by CV score. Default=25.
-  
-    "n_halloffame": 25, 
+      "weight": {
+        "method": null, 
+        "kwargs": null
+      },
   
   # A scikit-learn cross validation method to use to generate cross validation sets.
   #
@@ -570,12 +556,60 @@ def print_input_help():
   #
   #
   
-    "cv": {
-      "method": "LeaveOneOut", 
-      "kwargs": null,
-      "penalty": 0.0
-    }, 
+      "cv": {
+        "method": "LeaveOneOut", 
+        "kwargs": null,
+        "penalty": 0.0
+      }, 
   
+  # Problem specs filename.
+  #
+  # Optional. Name to use for file storing the training data and CV train/test 
+  # sets. The default is determined from the input filename, for example, 
+  # 'my_input_specs.pkl' is used if the input file is named 'my_input.json'.
+  
+      "specs_filename": "problem_specs.pkl"
+    
+    },
+  
+  # A scikit-learn linear model estimator.
+  #
+  #
+  # Object attributes
+  # -----------------
+  #
+  # method: string
+  #   A scikit-learn linear model estimator. 
+  #  
+  #   Options: 'LinearRegression', 'Ridge', 'Lasso', 'LassoCV', etc.
+  #     See: http://scikit-learn.org/stable/modules/linear_model.html
+  #
+  #   Note: The 'LinearRegression' estimator is implemented using 
+  #   casm.learn.linear_model.LinearRegressionForLOOCV', which solves X*b=y using:
+  #     b = np.dot(S, y)
+  #     S = np.linalg.pinv(X.transpose().dot(X)).dot(X.transpose())
+  #     y_pred = np.dot(H, y)
+  #     H = np.dot(X, S)
+  #
+  # kwargs: dict or null, optional, default=dict()
+  #   Additional parameters to be used to construct the estimator 
+  #
+  #   Options for "LinearRegression":
+  #     "pinv": bool, optional, default=True
+  #       If True, use the pseudo-inverse via np.linalg.pinv; else use np.linalg.inv.
+  #   
+  #   Options for other methods:
+  #     Any options to pass to the estimator construtor.
+  #
+  #   By default, the kwarg "fit_intercept" is set to False.
+  #
+  
+    "estimator": {
+      "method": "LinearRegression", 
+      "kwargs": null
+    },
+  
+    
   # A scikit-learn or casm.feature_selection feature selection method.
   #
   #
@@ -781,7 +815,15 @@ def print_input_help():
           "fix_off": []
         }
       }
-    }
+    },
+  
+  # Hall of fame size. 
+  #
+  # The number of individuals to store in 'halloffame.pkl',
+  # as determined by CV score. Default=25.
+  
+    "n_halloffame": 25
+  
   }
   ------------------------------------------------------------------------------
   """
@@ -887,7 +929,7 @@ class FittingData(object):
     self.penalty = penalty
 
 
-def make_fitting_data(input, save=True, verbose=True, read_existing=True):
+def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_filename=None):
   """ 
   Construct a FittingData instance, either by reading existing 'fit_data.pkl',
   or from an input settings.
@@ -900,7 +942,10 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
     
     save: boolean, optional, default=True
       Save a pickle file containing the training data and scoring metric. The file
-      name, which can be specified by input["fit_data_filename"], defaults to "fit_data.pkl".
+      name, which can be specified by input["fit_data_filename"], defaults to 
+      splitext(basename(input_filename))[0] + "_specs.pkl", i.e. 'my_input_specs.pkl'
+      if the input file is named 'my_input.json'. If no input_filename is given,
+      then the default is "problem_specs.pkl".
     
     verbose: boolean, optional, default=True
       Print information to stdout.
@@ -909,6 +954,9 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
       If it exists, read the pickle file containing the training data and scoring 
       metric. The file name, which can be specified by input["fit_data_filename"], 
       defaults to "fit_data.pkl".
+    
+    input_filename: str, optional
+      Used to determine the name of the 'specs' file saved.
   
   
   Returns
@@ -918,28 +966,36 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
       A FittingData instance constructed based on the input parameters.
       
   """
+  if "problem_specs" not in input:
+    input["problem_specs"] = dict()
+  
+  specs = input["problem_specs"]
+  
   # set data defaults if not provided
-  if "data" not in input:
-    input["data"] = dict()
-  if "kwargs" not in input["data"] or input["data"]["kwargs"] is None:
-    input["data"]["kwargs"] = dict()
+  if "data" not in specs:
+    specs["data"] = dict()
+  if "kwargs" not in specs["data"] or specs["data"]["kwargs"] is None:
+    specs["data"]["kwargs"] = dict()
   
   # set weight defaults if not provided
   sample_weight = None
-  if "weight" not in input:
-    input["weight"] = dict()
-  if "kwargs" not in input["weight"] or input["weight"]["kwargs"] is None:
-    input["weight"]["kwargs"] = dict()
-  if "method" not in input["weight"]:
-    input["weight"]["method"] = None
+  if "weight" not in specs:
+    specs["weight"] = dict()
+  if "kwargs" not in specs["weight"] or specs["weight"]["kwargs"] is None:
+    specs["weight"]["kwargs"] = dict()
+  if "method" not in specs["weight"]:
+    specs["weight"]["method"] = None
   
   # set cv kwargs defaults
-  if "kwargs" not in input["cv"] or input["cv"]["kwargs"] is None:
-    input["cv"]["kwargs"] = dict()
+  if "kwargs" not in specs["cv"] or specs["cv"]["kwargs"] is None:
+    specs["cv"]["kwargs"] = dict()
   
   # property, weight, and cv inputs should remain constant
   # estimator and feature_selection might change
-  fit_data_filename = input.get("fit_data_filename", "fit_data.pkl")
+  default_filename = "problem_specs.pkl"
+  if input_filename is not None:
+    default_filename = splitext(basename(input_filename))[0] + "_specs.pkl"
+  fit_data_filename = specs.get("specs_filename", default_filename)
   
   if read_existing and os.path.exists(fit_data_filename):
     if verbose:
@@ -948,15 +1004,15 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
     if verbose:
       print "#   DONE\n"
     
-    s = "Fitting scheme has changed.\n\n" + \
-        "To proceed with the existing scheme adjust your input settings to match.\n" + \
-        "To proceed with the new scheme run in a new directory or delete '" + fit_data_filename + "'."
+    s = "Problem specifications have changed.\n\n" + \
+        "To proceed with the existing specs adjust your input settings \"problem_specs\" to match.\n" + \
+        "To proceed with the new specs run in a new directory or delete '" + fit_data_filename + "'."
     
     def check_input(name):
-      if fdata.input[name] != input[name]:
+      if fdata.input["problem_specs"][name] != specs[name]:
         print "ERROR: Input file and stored data differ. Input '" + name + "' has changed."
-        print "Stored data:\n", json.dumps(fdata.input[name], indent=2)
-        print "Input:\n", json.dumps(input[name], indent=2)
+        print "Stored data:\n", json.dumps(fdata.input["problem_specs"][name], indent=2)
+        print "Input:\n", json.dumps(specs[name], indent=2)
         print s
         exit()
     
@@ -968,26 +1024,26 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
     
     ## get data ####
     
-    filename = input["data"].get("filename", "train")
-    data_type = input["data"].get("type", "selection").lower()
-    X_name = input["data"].get("X", "corr")
-    y_name = input["data"].get("y", "formation_energy")
+    filename = specs["data"].get("filename", "train")
+    data_type = specs["data"].get("type", "selection").lower()
+    X_name = specs["data"].get("X", "corr")
+    y_name = specs["data"].get("y", "formation_energy")
     hull_dist_name = "hull_dist"
     
     if data_type == "selection":
       
       # read training set
-      proj = Project(input["data"]["kwargs"].get("project_path", None), verbose=verbose)
+      proj = Project(specs["data"]["kwargs"].get("project_path", None), verbose=verbose)
       
       sel = Selection(proj, filename, all=False)
       
       # get property name (required)
-      property = input["data"].get("filename", "formation_energy")
+      property = specs["data"].get("filename", "formation_energy")
       
       ## if necessary, query data
       columns = [X_name, y_name, 'is_calculated']
-      if input["weight"]["method"] == "wHullDist":
-        hull_selection = input["weight"]["kwargs"].get("hull_selection", "CALCULATED")
+      if specs["weight"]["method"] == "wHullDist":
+        hull_selection = specs["weight"]["kwargs"].get("hull_selection", "CALCULATED")
         hull_dist_name = "hull_dist(" + hull_selection + ",atom_frac)"
         if verbose:
           print "# wHullDist: Will calculate hull distance:", hull_dist_name
@@ -1004,16 +1060,16 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
       
     elif data_type.lower() == "csv":
       # populate from csv file
-      data = pandas.read_csv(f, **input["data"]["kwargs"])
+      data = pandas.read_csv(f, **specs["data"]["kwargs"])
     
     elif data_type.lower() == "json":
       # populate from json file
-      data = pandas.read_json(self.path, **input["data"]["kwargs"])
+      data = pandas.read_json(self.path, **specs["data"]["kwargs"])
     
     # columns of interest, as numpy arrays
     X = data.loc[:,[x for x in sel.data.columns if re.match(X_name + "\([0-9]*\)", x)]].values
     y = data.loc[:,y_name].values
-    if input["weight"]["method"] == "wHullDist":
+    if specs["weight"]["method"] == "wHullDist":
       hull_dist = data.loc[:,hull_dist_name]
     
     n_samples = X.shape[0]
@@ -1027,61 +1083,59 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
     ## weight (optional)
     
     # get kwargs
-    weight_kwargs = copy.deepcopy(input["weight"]["kwargs"])
+    weight_kwargs = copy.deepcopy(specs["weight"]["kwargs"])
           
     # use method to get weights
-    if input["weight"]["method"] == "wCustom":
+    if specs["weight"]["method"] == "wCustom":
       if verbose:
         print "Reading custom weights"
       sample_weight = data["weight"].values
-    elif input["weight"]["method"] == "wCustom2d":
+    elif specs["weight"]["method"] == "wCustom2d":
       if verbose:
         print "Reading custom2d weights"
       cols = ["weight(" + str(i) + ")" for i in xrange(n_samples)]
       sample_weight = data.loc[:,cols].values
-    elif input["weight"]["method"] == "wHullDist":
+    elif specs["weight"]["method"] == "wHullDist":
       sample_weight = casm.learn.tools.wHullDist(hull_dist, **weight_kwargs)
-    elif input["weight"]["method"] == "wEmin":
+    elif specs["weight"]["method"] == "wEmin":
       sample_weight = casm.learn.tools.wEmin(y, **weight_kwargs)
-    elif input["weight"]["method"] == "wEref":
+    elif specs["weight"]["method"] == "wEref":
       sample_weight = casm.learn.tools.wEref(y, **weight_kwargs)
           
     if verbose:
       print "# Weighting:"
-      print json.dumps(input["weight"], indent=2), "\n"
+      print json.dumps(specs["weight"], indent=2), "\n"
     
     
     ## cv
-    cv_kwargs = copy.deepcopy(input["cv"]["kwargs"])
+    cv_kwargs = copy.deepcopy(specs["cv"]["kwargs"])
     
     # get cv method (required user input) 
-    cv_method = _find_method([sklearn.cross_validation], input["cv"]["method"])
+    cv_method = _find_method([sklearn.cross_validation], specs["cv"]["method"])
     cv = cv_method(n_samples, **cv_kwargs)
     
     if verbose:
       print "# CV:"
-      print json.dumps(input["cv"], indent=2), "\n"
+      print json.dumps(specs["cv"], indent=2), "\n"
     
     ## scoring
     scoring = sklearn.metrics.make_scorer(sklearn.metrics.mean_squared_error, greater_is_better=True)
     
     ## penalty
-    penalty = input["cv"].get("penalty", 0.0)
+    penalty = specs["cv"].get("penalty", 0.0)
     
     fdata = casm.learn.FittingData(X, y, cv, 
       sample_weight=sample_weight, scoring=scoring, penalty=penalty)
     
     fdata.input = dict()
-    fdata.input["data"] = input["data"]
-    fdata.input["cv"] = input["cv"]
-    fdata.input["weight"] = input["weight"]
+    fdata.input["problem_specs"] = specs
     
     if save == True:
       pickle.dump(fdata, open(fit_data_filename, 'wb'))
   
   # during runtime only, if LinearRegression and LeaveOneOut, update fdata.cv and fdata.scoring
   # to use optimized LOOCV score method
-  if input["estimator"].get("method", "LinearRegression") == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
+  if input["estimator"].get("method", "LinearRegression") == "LinearRegression" and specs["cv"]["method"] == "LeaveOneOut":
     fdata.scoring = None
     fdata.cv = casm.learn.cross_validation.LeaveOneOutForLLS(fdata.weighted_y.shape[0])
   
