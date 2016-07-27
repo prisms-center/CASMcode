@@ -35,7 +35,7 @@ namespace CASM {
   ///
   /// \ingroup Clex
   ///
-  class PrimClex {
+  class PrimClex : public Logging {
 
     fs::path root;
 
@@ -80,6 +80,12 @@ namespace CASM {
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
     PrimClex(const fs::path &_root, Log &log = default_log());
 
+    /// Reload PrimClex data from settings
+    void refresh(bool read_settings = false,
+                 bool read_composition = false,
+                 bool read_chem_ref = false,
+                 bool read_configs = false,
+                 bool clear_clex = false);
 
     // **** Accessors ****
 
@@ -301,7 +307,7 @@ namespace CASM {
     const SiteOrbitree &orbitree(const ClexDescription &key) const;
 
     bool has_clexulator(const ClexDescription &key) const;
-    Clexulator clexulator(const ClexDescription &key, Log &status_log = null_log()) const;
+    Clexulator clexulator(const ClexDescription &key) const;
 
     bool has_eci(const ClexDescription &key) const;
     const ECIContainer &eci(const ClexDescription &key) const;
@@ -309,7 +315,7 @@ namespace CASM {
   private:
 
     /// Initialization routines
-    void _init(Log &log);
+    void _init();
 
     mutable std::map<ClexDescription, SiteOrbitree> m_orbitree;
     mutable std::map<ClexDescription, Clexulator> m_clexulator;

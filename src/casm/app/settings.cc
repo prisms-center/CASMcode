@@ -1,6 +1,7 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/clex/PrimClex.hh"
 
 namespace CASM {
 
@@ -248,6 +249,9 @@ namespace CASM {
 
       if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, true, true, true);
+        }
         std::cout << "Set '" << clex_desc.name << "' as default cluster expansion.\n\n";
         return 0;
       }
@@ -280,6 +284,9 @@ namespace CASM {
 
       if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, false, false, true);
+        }
         std::cout << "Switched to new bset '" << clex_desc.bset << "' and 'default' eci.\n\n";
         return 0;
       }
@@ -348,6 +355,9 @@ namespace CASM {
 
       if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, true, true, true);
+        }
         std::cout << "Switched to new calctype '" << clex_desc.calctype << "', ref '" << clex_desc.ref << "', and '" << clex_desc.eci << "' eci.\n\n";
         return 0;
       }
@@ -380,6 +390,9 @@ namespace CASM {
 
       if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, true, true, true);
+        }
         std::cout << "Switched to new ref '" << clex_desc.ref << "', and '" << clex_desc.eci << "' eci.\n\n";
         return 0;
       }
@@ -402,6 +415,9 @@ namespace CASM {
 
       if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, false, false, true);
+        }
         std::cout << "Switched to new eci '" << clex_desc.eci << "'.\n\n";
         return 0;
       }
@@ -424,6 +440,9 @@ namespace CASM {
 
       if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, true, true, true);
+        }
         std::cout << "Set '" << clex_desc.name << "' as default cluster expansion.\n\n";
         return 0;
       }
@@ -449,6 +468,9 @@ namespace CASM {
 
       if(set.erase_clex(set.clex(single_input))) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, true, true, true);
+        }
         std::cout << "Erased cluster expansion named '" << single_input << "'\n\n";
         return 0;
       }
@@ -475,6 +497,9 @@ namespace CASM {
       clex_desc.name = "formation_energy";
       if(set.new_clex(clex_desc)) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, true, true, true);
+        }
         std::cout << "Now using cluster expansion '" << single_input
                   << "' as the default for formation_energy.\n\n";
         return 0;
@@ -490,6 +515,9 @@ namespace CASM {
     else if(vm.count("set-default-clex")) {
       if(set.set_default_clex(single_input)) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, true, true, true);
+        }
         std::cout << "Switched to cluster expansion '" << single_input << "'.\n\n";
         return 0;
       }
@@ -504,6 +532,9 @@ namespace CASM {
       clex_desc.property = single_input;
       if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, true, true, true);
+        }
         std::cout << "Switched to property '" << single_input << "'.\n\n";
         return 0;
       }
@@ -518,6 +549,9 @@ namespace CASM {
       clex_desc.bset = single_input;
       if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, true, true, true);
+        }
         std::cout << "Switched to bset '" << single_input << "'.\n\n";
         return 0;
       }
@@ -557,6 +591,9 @@ namespace CASM {
 
       if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, true, true, true);
+        }
         std::cout << "Switched to calctype '" << clex_desc.calctype << "' and ref '" << clex_desc.ref << "'.\n\n";
         return 0;
       }
@@ -578,6 +615,9 @@ namespace CASM {
 
       if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, true, true, true);
+        }
         std::cout << "Switched to calctype '" << clex_desc.calctype << "' and ref '" << clex_desc.ref << "'.\n\n";
         return 0;
       }
@@ -592,6 +632,9 @@ namespace CASM {
       clex_desc.eci = single_input;
       if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
         set.commit();
+        if(args.primclex) {
+          args.primclex->refresh(true, false, false, false, true);
+        }
         std::cout << "Switched to eci '" << single_input << "'.\n\n";
         return 0;
       }
@@ -605,6 +648,9 @@ namespace CASM {
     else if(vm.count("set-cxx")) {
       set.set_cxx(single_input);
       set.commit();
+      if(args.primclex) {
+        args.primclex->refresh(true, false, false, false, true);
+      }
 
       std::cout << "Set " << _wdefaultval("cxx", set.cxx());
       std::cout << "Compile command is now: '" << set.compile_options() << "'\n\n";
@@ -617,6 +663,9 @@ namespace CASM {
     else if(vm.count("set-cxxflags")) {
       set.set_cxxflags(single_input);
       set.commit();
+      if(args.primclex) {
+        args.primclex->refresh(true, false, false, false, true);
+      }
 
       std::cout << "Set " << _wdefaultval("cxxflags", set.cxxflags());
       std::cout << "Compile command is now: '" << set.compile_options() << "'\n\n";
@@ -628,6 +677,9 @@ namespace CASM {
     else if(vm.count("set-soflags")) {
       set.set_soflags(single_input);
       set.commit();
+      if(args.primclex) {
+        args.primclex->refresh(true, false, false, false, true);
+      }
 
       std::cout << "Set " << _wdefaultval("soflags", set.soflags());
       std::cout << "Shard object compile command is now: '" << set.so_options() << "'\n\n";
@@ -639,6 +691,9 @@ namespace CASM {
     else if(vm.count("set-casm-prefix")) {
       set.set_casm_prefix(single_input);
       set.commit();
+      if(args.primclex) {
+        args.primclex->refresh(true, false, false, false, true);
+      }
 
       std::cout << "Set " << _wdefaultval("casm_prefix", set.casm_prefix());
       std::cout << "Compile command is now: '" << set.compile_options() << "'\n\n";
@@ -651,6 +706,9 @@ namespace CASM {
     else if(vm.count("set-boost-prefix")) {
       set.set_casm_prefix(single_input);
       set.commit();
+      if(args.primclex) {
+        args.primclex->refresh(true, false, false, false, true);
+      }
 
       std::cout << "Set " << _wdefaultval("boost_prefix", set.boost_prefix());
       std::cout << "Compile command is now: '" << set.compile_options() << "'\n\n";
@@ -663,6 +721,9 @@ namespace CASM {
     else if(vm.count("set-view-command")) {
       set.set_view_command(single_input);
       set.commit();
+      if(args.primclex) {
+        args.primclex->refresh(true, false, false, false, false);
+      }
 
       std::cout << "Set view command to: '" << set.view_command() << "'\n\n";
 
