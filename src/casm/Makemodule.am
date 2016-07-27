@@ -18,7 +18,7 @@ include src/casm/hull/Makemodule.am
 include src/casm/crystallography/Makemodule.am
 include src/casm/monte_carlo/Makemodule.am
 
-#These extra libraries to link agains exist solely for the horrible ctypes implementation we've got
+#These extra libraries to link agains exist solely for the ctypes implementation we've got
 libcasm_la_LIBADD=$(BOOST_SYSTEM_LIB)\
                   $(BOOST_FILESYSTEM_LIB)\
                   $(BOOST_PROGRAM_OPTIONS_LIB)\
