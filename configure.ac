@@ -33,6 +33,7 @@ AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR(dlopen from dl library not found!
 
 #I added this
 LT_INIT([shared disable-static])
+AC_PROG_LIBTOOL
 LT_LIB_DLLOAD
 AC_DISABLE_STATIC
 if test "$enable_static" != "no"; then
