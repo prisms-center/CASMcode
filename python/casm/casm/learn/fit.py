@@ -1,11 +1,11 @@
 import sklearn.linear_model
 import sklearn.cross_validation
 import sklearn.metrics
-import random, re, time, os, types, json, pickle, copy, uuid
+import random, re, time, os, types, json, pickle, copy, uuid, shutil
 from os.path import splitext, basename
 import numpy as np
 from math import sqrt
-from casm.project import Project, Selection, query
+from casm.project import Project, Selection, query, write_eci
 import casm.learn.linear_model
 import casm.learn.tools
 import pandas
@@ -817,10 +817,21 @@ def print_input_help():
       }
     },
   
+  # Hall of Fame filename.
+  #
+  # Optional. Default = "halloffame.pkl"
+  # Name to use for file storing the best results obtained to date, as determined
+  # by the CV score. This enables comparison of the results of various estimator
+  # or feature selection methods.
+  
+      "halloffame_filename": "halloffame.pkl"
+    
+    },
+  
   # Hall of fame size. 
   #
-  # The number of individuals to store in 'halloffame.pkl',
-  # as determined by CV score. Default=25.
+  # Optional. Default = 25
+  # The number of individuals to store in the hall of fame.
   
     "n_halloffame": 25
   
@@ -1354,6 +1365,178 @@ def add_individual_detail(indiv, estimator, fdata, input, selector=None):
   return indiv
 
 
+def checkhull(input, hall, selection, indices=None, verbose=True, input_filename=None):
+  """
+  Check for hull properties and add as individual attributes:
+    n_gs_uncalculated: the # of clex-predicted gs that are not calculated
+    n_gs_spurious: the # of clex-predicted gs that are not DFT gs
+    n_gs_missing: the # of DFT gs that are not clex-predicted gs
+  
+  
+  Arguments
+  ---------
+    
+    input: dict
+      The input settings as a dict
+    
+    hall: deap.tools.HallOfFame, optional, default=None
+      A Hall Of Fame containing individuals to check convex hull properties
+    
+    selection: str
+      The name of the selection to use for calculating the convex hull
+      
+    indices: List[int], optional, default=None
+      If given, only check hull properties for specified individuals in the hall
+      of fame.
+    
+    verbose: boolean, optional, default=True
+      Print information to stdout.
+    
+    input_filename: str, optional
+      Used to determine the name of the 'specs' file saved.
+    
+  
+  Note
+  ---------
+    Uses project "lin_alg_tol" to detect hull configurations.
+  
+  
+  """
+  
+  # construct FittingData (to check consistency with input file)
+  if verbose:
+    print "# Get fitting data..."
+  fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True, input_filename=input_filename)
+  
+  # open Project to work on
+  proj = Project(input["problem_specs"]["data"]["kwargs"].get("project_path", None))
+  
+  # tolerance for finding configurations 'on_hull'
+  hull_tol = proj.settings.data["lin_alg_tol"]
+  
+  # save current default clex
+  orig_clex = proj.settings.default_clex
+  clex = copy.deepcopy(orig_clex)
+  all_eci = proj.dir.all_eci(clex.property, clex.calctype, clex.ref, clex.bset)
+  
+  # not sure of all the edge cases, enforcing these seems simpler for now...
+  if clex.name != "formation_energy":
+    print "default clex:", clex.name
+    print "use 'casm settings --set-default-clex formation_energy' to change the default clex"
+    raise Exception("Error using checkhull: default clex must be 'formation_energy'")
+  
+  if input["problem_specs"]["data"].get("y", "formation_energy") != "formation_energy":
+    print "property:", input["problem_specs"]["data"]["y"]
+    raise Exception("Error using checkhull: property must be 'formation_energy'")
+  
+  # load hull selection
+  sel = Selection(proj, "ALL", all=False)
+  
+  # properties to query
+  selected = "selected"
+  is_primitive = "is_primitive"
+  is_calculated = "is_calculated"
+  configname = "configname"
+  dft_hull_dist = "hull_dist(" + selection + ",atom_frac)"
+  clex_hull_dist = "clex_hull_dist(" + selection + ",atom_frac)"
+  comp = "comp"
+  dft_Eform = "formation_energy"
+  clex_Eform = "clex(formation_energy)"
+  
+  sel.query([is_primitive, is_calculated, configname, dft_hull_dist, dft_Eform, comp])
+  
+  compcol = []
+  for col in sel.data.columns:
+    if len(col) >= 5 and col[:5] == "comp(":
+      compcol.append(col)
+  compcol.sort()
+  
+  if indices is None:
+    indices = range(len(hall))
+  
+  # write eci.json
+  eci = "__tmp"
+  clex.eci = eci
+  if eci not in all_eci:
+    proj.command("settings --new-eci " + eci)
+  else:
+    proj.command("settings --set-eci " + eci)
+  
+  # for each individual specified...
+  for indiv_i in indices:
+    
+    if verbose:
+      print "-- Check: individual", indiv_i, " --"
+      print_individual(hall, [indiv_i])
+      print ""
+    
+    # write ECI to use
+    indiv = hall[indiv_i]
+    write_eci(proj, indiv.eci, fit_details=casm.learn.to_json(indiv_i, indiv), clex=clex, verbose=verbose)
+    
+    # query:
+    sel.query([clex_hull_dist, clex_Eform], force=True)
+    
+    #n_gs_uncalculated: the # of clex-predicted gs that are not calculated
+    #n_gs_spurious: the # of clex-predicted gs that are not DFT gs
+    #n_gs_missing: the # of DFT gs that are not clex-predicted gs
+    
+    df = sel.data.sort_values(compcol)
+    df_calc = df[df.loc[:,is_calculated] == 1].apply(pandas.to_numeric, errors='ignore')
+    
+    clex_gs = df[(df.loc[:,is_primitive] == 1) & (df.loc[:,clex_hull_dist] < hull_tol)].drop([selected, is_primitive], 1)
+    dft_gs = df_calc[(df_calc.loc[:,is_primitive] == 1) & (df_calc.loc[:,dft_hull_dist] < hull_tol)]
+    
+    gs_uncalculated = clex_gs[clex_gs.loc[:,is_calculated] == 0]
+    gs_spurious = df_calc[(df_calc.loc[:,clex_hull_dist] < hull_tol) & ~(df_calc.loc[:,dft_hull_dist] < hull_tol)]
+    gs_missing = df_calc[~(df_calc.loc[:,clex_hull_dist] < hull_tol) & (df_calc.loc[:,dft_hull_dist] < hull_tol)]
+        
+    indiv.clex_gs = clex_gs
+    indiv.dft_gs = dft_gs
+    indiv.gs_uncalculated = gs_uncalculated
+    indiv.gs_spurious = gs_spurious
+    indiv.gs_missing = gs_missing
+    
+    indiv.n_gs_uncalculated = gs_uncalculated.shape[0]
+    indiv.n_gs_spurious = gs_spurious.shape[0]
+    indiv.n_gs_missing = gs_missing.shape[0]
+    
+    if verbose:
+      kwargs = {"index":False}
+      if clex_gs.shape[0]:
+        print "Predicted ground states:"
+        print clex_gs.to_string(**kwargs)
+        print ""
+      
+      if dft_gs.shape[0]:
+        print "DFT ground states:"
+        print dft_gs.to_string(**kwargs)
+        print ""
+      
+      if gs_uncalculated.shape[0]:
+        print "Predicted ground states that have not been calculated:"
+        print gs_uncalculated.to_string(**kwargs)
+        print ""
+      
+      if gs_spurious.shape[0]:
+        print "Predicted ground states that are not DFT ground states:"
+        print gs_spurious.to_string(**kwargs)
+        print ""
+      
+      if gs_missing.shape[0]:
+        print "DFT ground states that are not predicted ground states:"
+        print gs_missing.to_string(**kwargs)
+        print ""
+      
+      print "\n"
+    
+  # reset eci setting
+  proj.command("settings --set-eci " + orig_clex.eci)
+  
+  # remove __tmp eci
+  shutil.rmtree(proj.dir.eci_dir(clex))
+  
+
 def bitstr(indiv, n_bits_max=None):
   if n_bits_max is None:
     n_bits_max = len(indiv)
@@ -1414,7 +1597,13 @@ def to_json(index, indiv):
     "note": a descriptive note
     "eci": List of (feature index, coefficient value) pairs
     "input": input settings dict
+  
+  Keys added by --checkhull, if y="formation_energy":
+    "n_gs_uncalculated" : number of predicted ground states not yet calculated by DFT
+    "n_gs_spurious" : number of predicted ground states that are not DFT ground states
+    "n_gs_missing" : number of predicted ground states that are not DFT ground states
     
+  
   Arguments
   ---------
     
@@ -1444,6 +1633,12 @@ def to_json(index, indiv):
   d["estimator_method"] = indiv.estimator_method
   d["feature_selection_method"] = indiv.feature_selection_method
   d["note"] = indiv.note
+  for attr in [ "n_gs_uncalculated", "n_gs_spurious", "n_gs_missing"]:
+    if hasattr(indiv, attr):
+      d[attr] = getattr(indiv, attr)
+  for attr in ["clex_gs", "dft_gs", "gs_uncalculated", "gs_spurious", "gs_missing"]:
+    if hasattr(indiv, attr):
+      d[attr] = json.loads(getattr(indiv, attr).to_json(orient='records'))
   d["eci"] = []
   for bfunc in indiv.eci:
     d["eci"].append(casm.NoIndent(bfunc))
@@ -1468,6 +1663,11 @@ def to_dataframe(indices, hall):
     "note": a descriptive note
     "eci": JSON string of a List of (feature index, coefficient value) pairs
     "input": input settings dict
+  
+  Keys added by --checkhull, if y="formation_energy":
+    "n_gs_uncalculated" : number of predicted ground states not yet calculated by DFT
+    "n_gs_spurious" : number of predicted ground states that are not DFT ground states
+    "n_gs_missing" : number of predicted ground states that are not DFT ground states
   
   
   Arguments
@@ -1526,6 +1726,13 @@ def _print_individual(index, indiv, format=None):
     print "Note:", indiv.note
     print "ECI:\n"
     print_eci(indiv.eci)
+    for attr in ["n_gs_uncalculated", "n_gs_spurious", "n_gs_missing"]:
+      if hasattr(indiv, attr):
+        print attr, getattr(indiv, attr)
+    for attr in ["clex_gs", "dft_gs", "gs_uncalculated", "gs_spurious", "gs_missing"]:
+      if hasattr(indiv, attr):
+        print attr + ":"
+        print getattr(indiv, attr).to_string(index=False)
     print "Input:\n", json.dumps(indiv.input, indent=2)
     return
 
@@ -1709,5 +1916,6 @@ def save_halloffame(hall, halloffame_filename, verbose=False):
   f = open(halloffame_filename, 'wb')
   pickle.dump(hall, f)
   f.close()
+  
 
 

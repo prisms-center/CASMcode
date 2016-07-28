@@ -11,7 +11,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description = 'Fit cluster expansion coefficients (ECI)')
   parser.add_argument('-s', '--settings', nargs=1, help='Settings input filename', type=str)
   parser.add_argument('--format', help='Hall of fame print format. Options are "details", "json", or "csv".', type=str, default=None)
-  parser.add_argument('--path', help='Path to CASM project. Default assumes the current directory is in the CASM project.', type=str, default=os.getcwd())
+  #parser.add_argument('--path', help='Path to CASM project. Default assumes the current directory is in the CASM project.', type=str, default=os.getcwd())
   parser.add_argument('--settings-format', help='Print input file description', action="store_true")
   parser.add_argument('--exLasso', help='Print example input file using Lasso', action="store_true")
   parser.add_argument('--exLassoCV', help='Print example input file using LassoCV', action="store_true")
@@ -21,8 +21,9 @@ if __name__ == "__main__":
   parser.add_argument('--exPopulationBestFirst', help='Print example input file using PopulationBestFirst', action="store_true")
   parser.add_argument('--exDirectSelection', help='Print example input file using DirectSelection', action="store_true")
   parser.add_argument('--hall', help='Print hall of fame summary', action="store_true")
-  parser.add_argument('--indiv', nargs='+', help='Print individual summary. Expects index of individual in hall of fame', type=int)
+  parser.add_argument('--indiv', nargs='+', help='Specify particular individuals by index in hall of fame', type=int)
   parser.add_argument('--select', nargs=1, help='Select individual to use', type=int)
+  parser.add_argument('--checkhull', nargs=1, help='Check convex hull properties using the provided selection', type=str)
   parser.add_argument('-v','--verbose', help='Verbose print', action="store_true", default=False)
   args = parser.parse_args()
   
@@ -64,23 +65,32 @@ if __name__ == "__main__":
         print "Error parsing JSON in", args.settings[0]
         raise e
     
-    if args.hall or args.indiv:
+    if args.hall:
       
-      halloffame_filename = input["problem_specs"].get("halloffame_filename", "halloffame.pkl")
+      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
       # print Hall of Fame summary
-      if args.verbose:
-        print "Loading Hall of Fame:", halloffame_filename
       existing_hall = casm.learn.open_halloffame(halloffame_filename, args.verbose)
       
-      if args.hall:
-        casm.learn.print_halloffame(existing_hall, format=args.format)
-      elif args.indiv:
+      if args.indiv:
         casm.learn.print_individual(existing_hall, args.indiv, format=args.format)
-  
+      elif args.hall:
+        casm.learn.print_halloffame(existing_hall, format=args.format)
+      
+    elif args.checkhull:
+      
+      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
+      # print Hall of Fame summary
+      existing_hall = casm.learn.open_halloffame(halloffame_filename, args.verbose)
+      
+      casm.learn.fit.checkhull(input, existing_hall, args.checkhull[0], indices=args.indiv, verbose=args.verbose, input_filename=args.settings[0])
+      
+      # pickle hall of fame
+      casm.learn.save_halloffame(existing_hall, halloffame_filename, args.verbose)
+      
     elif args.select:
       
       specs = input["problem_specs"]
-      halloffame_filename = specs.get("halloffame_filename", "halloffame.pkl")
+      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
       # print Hall of Fame summary
       existing_hall = casm.learn.open_halloffame(halloffame_filename, args.verbose)
       
@@ -99,7 +109,7 @@ if __name__ == "__main__":
       
       # construct hall of fame
       specs = input["problem_specs"]
-      halloffame_filename = specs.get("halloffame_filename", "halloffame.pkl")
+      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
       halloffame_size = input.get("n_halloffame", 25)
       hall = casm.learn.create_halloffame(halloffame_size)
       if args.verbose:
