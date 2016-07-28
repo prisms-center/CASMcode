@@ -436,7 +436,7 @@ def error_check(jobdir, stdoutfile, err_types):
     if err_types is None:
         possible = [SubSpaceMatrixError()]
     else:
-        err_objs = {'IbzkptError' : IbzkptError(), 'SubSpaceMatrixError' : SubSpaceMatrixError(), 'NBandsError' : NBandsError()}
+        err_objs = {'IbzkptError' : IbzkptError(), 'SubSpaceMatrixError' : SubSpaceMatrixError(), 'NbandsError' : NbandsError()}
         for s in err_types:
             if s not in err_objs.keys():
                 raise VaspError('Invalid err_type: %s'%s)
@@ -483,7 +483,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
                         if ncpus==None, $PBS_NP is used if it exists, else 1
             poll_check_time: how frequently to check if the vasp job is completed
             err_check_time: how frequently to parse vasp output to check for errors
-            err_types:  List of error types to check for. Supported errors: 'IbzkptError', 'SubSpaceMatrixError', 'NBandsError'. Default: None, in which case only SubSpaceMatrixErrors are checked.
+            err_types:  List of error types to check for. Supported errors: 'IbzkptError', 'SubSpaceMatrixError', 'NbandsError'. Default: None, in which case only SubSpaceMatrixErrors are checked.
 
     """
     print "Begin vasp run:"
