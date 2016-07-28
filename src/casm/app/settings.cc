@@ -414,10 +414,17 @@ namespace CASM {
       }
 
       if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
+        //try {
         set.commit();
         if(args.primclex) {
           args.primclex->refresh(true, false, false, false, true);
         }
+        /*}
+        catch(std::exception &e) {
+          args.err_log.error("unknown");
+          args.err_log << "something happened\n" << std::endl;
+        }
+        */
         std::cout << "Switched to new eci '" << clex_desc.eci << "'.\n\n";
         return 0;
       }

@@ -202,6 +202,35 @@ namespace CASM {
     return log;
   }
 
+  class OStringStreamLog : public Log {
+
+  public:
+
+    /// \brief Construct a StringStreamLog
+    ///
+    /// \param verbosity The amount to be printed
+    ///
+    /// For verbosity:
+    /// - 0: print nothing
+    /// - 10: print all standard output
+    /// - 100: print all possible output
+    OStringStreamLog(int _verbosity = standard, bool _show_clock = false) :
+      Log(m_ss, _verbosity, _show_clock) {}
+
+    std::ostringstream &ss() {
+      return m_ss;
+    };
+
+    const std::ostringstream &ss() const {
+      return m_ss;
+    };
+
+  private:
+
+    std::ostringstream m_ss;
+  };
+
+
   class Logging {
 
   public:
