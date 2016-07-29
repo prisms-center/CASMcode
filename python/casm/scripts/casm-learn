@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import os, json, pickle
-from casm.project import Project, write_eci
+from casm.project import Project, Selection, write_eci
 import casm.learn
 import argparse
 import deap.tools
@@ -24,7 +24,7 @@ if __name__ == "__main__":
   parser.add_argument('--indiv', nargs='+', help='Specify particular individuals by index in hall of fame', type=int)
   parser.add_argument('--select', nargs=1, help='Select individual to use', type=int)
   parser.add_argument('--checkhull', nargs=1, help='Check convex hull properties using the provided selection', type=str)
-  #parser.add_argument('--weights', nargs=1, help='Output a training data file containing the calculated weights', type=str)
+  parser.add_argument('--checkspecs', help='Output data and cv files containing the current problem specs', action="store_true", default=False)
   parser.add_argument('-v','--verbose', help='Verbose print', action="store_true", default=False)
   args = parser.parse_args()
   
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     
     with open(args.settings[0], 'r') as f:
       try:
-        input = casm.learn.set_input_defaults(json.load(f))
+        input = casm.learn.set_input_defaults(json.load(f), args.settings[0])
       except Exception as e:
         print "Error parsing JSON in", args.settings[0]
         raise e
@@ -102,6 +102,43 @@ if __name__ == "__main__":
       
       write_eci(proj, indiv.eci, casm.learn.to_json(index, indiv), verbose=args.verbose)
       
+    elif args.checkspecs:
+      
+      specs = input["problem_specs"]
+      
+      # construct or load problem specs
+      fdata = casm.learn.fit.make_fitting_data(input, save=True, verbose=args.verbose, read_existing=True, input_filename=args.settings[0])
+      
+      if args.verbose:
+        print "# Check problem specs:"
+        print json.dumps(input["checkspecs"], indent=2), "\n"
+      
+      # print training data
+      filetype = specs["data"]["filetype"]
+      filename = input["checkspecs"]["data_filename"]
+      kwargs = input["checkspecs"]["data_kwargs"]
+        
+      if filetype == "selection":
+        proj = Project(specs["data"]["kwargs"]["project_path"], verbose=args.verbose)
+        sel = Selection(proj, filename, all=False)
+        sel.save(data=fdata.data, force=True)
+      elif filetype == "csv":
+        fdata.data.to_csv(filename, **kwargs)
+      elif filetype == "json":
+        fdata.data.to_json(filename, **kwargs)
+      
+      if args.verbose:
+        print "# Wrote training data (including weights) to:", filename
+      
+      # print cv
+      cv_filename = input["checkspecs"]["cv_filename"]
+      cv_kwargs = input["checkspecs"]["cv_kwargs"]
+      with open(cv_filename, 'wb') as f:
+        pickle.dump(fdata.cv, f, **cv_kwargs)
+      
+      if args.verbose:
+        print "# Wrote CV data to:", cv_filename, "\n"
+      
     else:
       
       # construct hall of fame
@@ -121,7 +158,7 @@ if __name__ == "__main__":
         casm.learn.direct_fit(input, verbose=args.verbose, hall=hall, input_filename=args.settings[0])
       else:
         casm.learn.fit_and_select(input, verbose=args.verbose, hall=hall, input_filename=args.settings[0])
-        
+      
       # pickle hall of fame
       casm.learn.save_halloffame(hall, halloffame_filename, args.verbose)
     

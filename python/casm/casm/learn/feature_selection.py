@@ -48,18 +48,12 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
   
   """
   # construct FittingData
-  if verbose:
-    print "# Get fitting data..."
   fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True, input_filename=input_filename)
     
   # construct model used for fitting
-  if verbose:
-    print "# Construct estimator..."
   estimator = make_estimator(input, verbose=verbose)
   
   # feature selection
-  if verbose:
-    print "# Construct feature selector..."
   selector = make_selector(input, estimator, 
     scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty, verbose=verbose)
   
@@ -116,7 +110,7 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
       print_halloffame([indiv])
       
       hall.update([indiv])
-    
+  
   return (fdata, estimator, selector)
 
 

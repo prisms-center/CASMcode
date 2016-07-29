@@ -117,8 +117,6 @@ def direct_fit(input, save=True, verbose=True, read_existing=True, hall=None, in
     
   """
   # construct FittingData
-  if verbose:
-    print "# Get fitting data..."
   fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True, input_filename=input_filename)
   
   kwargs = input["feature_selection"]["kwargs"]

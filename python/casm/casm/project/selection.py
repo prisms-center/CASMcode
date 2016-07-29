@@ -181,7 +181,7 @@ class Selection(object):
         self._data.loc[:,'selected'] = self._data.loc[:,'selected'].astype(bool)
         
     
-    def query(self, columns, force=False):
+    def query(self, columns, force=False, verbose=False):
         """
         Query requested columns and store them in 'data'. Will not overwrite
         columns that already exist, unless 'force'==True.
@@ -195,7 +195,24 @@ class Selection(object):
         else:
           _col = columns
         
+        if verbose:
+          print "# Query requested:", columns
+          if force == False:
+            print "# Use existing:", [x for x in columns if x in self.data.columns]
+          else:
+            print "# Overwrite existing:", [x for x in columns if x in self.data.columns]
+          if len(_col) == 0:
+            print "# No query necessary"
+          else:
+            print "# Querying:", _col
+          
+        if len(_col) == 0:
+          return
+        
         df = query.query(self.proj, _col, self, all=self.all)
+        
+        if verbose:
+          print "#   DONE\n"
         
         msg = "querying different numbers of records: {0}, {1}".format(
           self.data.shape, df.shape)

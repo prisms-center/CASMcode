@@ -318,7 +318,8 @@ class EvolutionaryParams(object):
   def __init__(self, n_population=100, n_generation=10, n_repetition=100, n_features_init=1, 
                pop_begin_filename = "population_begin.pkl",
                pop_end_filename = "population_end.pkl",
-               halloffame_filename = "halloffame.pkl",
+               halloffame_filename = "evolve_halloffame.pkl",
+               filename_prefix = "",
                n_halloffame = 25):
     """
     Arguments
@@ -346,6 +347,10 @@ class EvolutionaryParams(object):
       halloffame_filename: string, optional, default="halloffame.pkl"
         Filename where a hall of fame is saved.
       
+      filename_prefix: string
+        Prefix for filenames, typically taken from input file filename excluding 
+        extension.
+    
       n_halloffame: int, optional, default=25
         Number of individuals to save in the hall of fame
   
@@ -356,10 +361,13 @@ class EvolutionaryParams(object):
     
     self.n_features_init = n_features_init
     
-    self.pop_begin_filename = pop_begin_filename
-    self.pop_end_filename = pop_end_filename
+    if len(filename_prefix) != 0:
+      filename_prefix += "_"
     
-    self.halloffame_filename = halloffame_filename
+    self.pop_begin_filename = filename_prefix + pop_begin_filename
+    self.pop_end_filename = filename_prefix + pop_end_filename
+    
+    self.halloffame_filename = filename_prefix + halloffame_filename
     self.n_halloffame = n_halloffame
 
 

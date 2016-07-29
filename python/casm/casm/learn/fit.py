@@ -141,7 +141,10 @@ def example_input_RFE():
   
   # cross validation
   specs["cv"] = dict()
-  specs["cv"]["method"] = "LeaveOneOut"
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
   specs["cv"]["penalty"] = 0.0
   
   input["problem_specs"] = specs
@@ -185,7 +188,10 @@ def example_input_GeneticAlgorithm():
   
   # cross validation
   specs["cv"] = dict()
-  specs["cv"]["method"] = "LeaveOneOut"
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
   specs["cv"]["penalty"] = 0.0
   
   input["problem_specs"] = specs
@@ -211,7 +217,6 @@ def example_input_GeneticAlgorithm():
       "n_repetition": 25, 
       "n_features_init": 5, 
       "n_population": 100, 
-      "halloffame_filename": "ga_halloffame.pkl", 
       "n_halloffame": 50
     }, 
     "cxUniformProb": 0.5
@@ -247,7 +252,10 @@ def example_input_IndividualBestFirst():
   
   # cross validation
   specs["cv"] = dict()
-  specs["cv"]["method"] = "LeaveOneOut"
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
   specs["cv"]["penalty"] = 0.0
   
   input["problem_specs"] = specs
@@ -271,7 +279,6 @@ def example_input_IndividualBestFirst():
       "n_repetition": 25, 
       "n_features_init": 5, 
       "n_population": 10, 
-      "halloffame_filename": "indiv_bestfirst_halloffame.pkl", 
       "n_halloffame": 50
     }
   }
@@ -306,7 +313,10 @@ def example_input_PopulationBestFirst():
   
   # cross validation
   specs["cv"] = dict()
-  specs["cv"]["method"] = "LeaveOneOut"
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
   specs["cv"]["penalty"] = 0.0
   
   input["problem_specs"] = specs
@@ -330,7 +340,6 @@ def example_input_PopulationBestFirst():
       "n_repetition": 25, 
       "n_features_init": 5, 
       "n_population": 50, 
-      "halloffame_filename": "pop_bestfirst_halloffame.pkl", 
       "n_halloffame": 50
     }
   }
@@ -365,7 +374,10 @@ def example_input_DirectSelection():
   
   # cross validation
   specs["cv"] = dict()
-  specs["cv"]["method"] = "LeaveOneOut"
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
   specs["cv"]["penalty"] = 0.0
   
   input["problem_specs"] = specs
@@ -401,12 +413,13 @@ def print_input_help():
   ------------------------------------------------------------------------------
   {
   
-  # The "problem_specs" specify which data to use and how to score candidate
-  # solutions. It consists primarily of "data", "weight", and "cv" settings.
+  # The "problem_specs" options specify which data to use and how to score 
+  # candidate solutions. It consists primarily of "data", "weight", and "cv" 
+  # settings.
   
     "problem_specs" : {
   
-  # Specifies the data to use for learning
+  # The "problem_specs"/"data" options specify the data to use for learning
   #
   #   A filename and filetype describing where to find data to use for learning. 
   #   Also includes the labels of the sample ('X') and target ('y') data to use 
@@ -440,7 +453,9 @@ def print_input_help():
   #  
   #   Options for 'filetype' "selection":
   #     "project_path": indicate the path to a CASM project. Default null uses
-  #       the CASM project containing the current working directory.
+  #       the CASM project containing the current working directory. This option
+  #       is not currently implemented, but included as a placeholder. Currently
+  #       'casm-learn' must be run from inside a CASM project.
   #   
   #   Options for 'filetype' "csv":
   #     Any options to pass to pandas.read_csv
@@ -456,7 +471,8 @@ def print_input_help():
         "kwargs": null
       },
   
-  # Method to use for weighting training data. 
+  # The "problem_specs"/"weight" options specify the method to use for weighting 
+  # training data. 
   #
   #   If weights are included, then the linear model is changed from
   #     X*b = y  ->  L*X*b = L*y, 
@@ -515,7 +531,7 @@ def print_input_help():
         "kwargs": null
       },
   
-  # A scikit-learn cross validation method to use to generate cross validation sets.
+  # The "problem_specs"/"cv" options specify how to generate cross validation sets.
   #
   #   The cv score reported is:
   #
@@ -531,10 +547,15 @@ def print_input_help():
   # -----------------
   #
   # method: string
-  #   A scikit-learn cross validation method. 
+  #   A scikit-learn or casm cross validation method. 
   #  
   #   Options include 'KFold', 'ShuffleSplit', 'LeaveOneOut', etc.
   #     See: http://scikit-learn.org/stable/modules/cross_validation.html
+  #
+  #   CASM also provides the following method:
+  #    'cvCustom': Read a scikit-learn type 'cv' generator or training/test sets
+  #       from a pickle file. This can be used to load the 'cv' data written by 
+  #       'casm-learn --checkspecs' by using the required kwarg 'filename'.
   #
   #     Note: The 'LinearRegression' estimator is implemented using 
   #     casm.learn.linear_model.LinearRegressionForLOOCV', which solves X*b=y using:
@@ -549,20 +570,22 @@ def print_input_help():
   #       LOOCV = np.mean(((y - y_pred)/(1.0 - np.diag(H)))**2)
   #
   # kwargs: dict or null, optional, default=dict()
-  #   Additional parameters to be used to construct the cross-validation method constructor.
+  #   Additional parameters to be used to construct the cross-validation method 
+  #   constructor.
   #
   # penalty: float, optional, default=0.0
   #   The CV score is increased by 'penalty*(number of selected basis function)'
-  #
-  #
   
       "cv": {
-        "method": "LeaveOneOut", 
-        "kwargs": null,
+        "method": "KFold", 
+        "kwargs": {
+          "n_folds": 10,
+          "shuffle": true
+        },
         "penalty": 0.0
       }, 
   
-  # Problem specs filename.
+  # The "problem_specs"/"specs_filename" option:
   #
   # Optional. Name to use for file storing the training data and CV train/test 
   # sets. The default is determined from the input filename, for example, 
@@ -572,8 +595,7 @@ def print_input_help():
     
     },
   
-  # A scikit-learn linear model estimator.
-  #
+  # The "estimator" option specifies a linear model estimator.
   #
   # Object attributes
   # -----------------
@@ -602,7 +624,6 @@ def print_input_help():
   #     Any options to pass to the estimator construtor.
   #
   #   By default, the kwarg "fit_intercept" is set to False.
-  #
   
     "estimator": {
       "method": "LinearRegression", 
@@ -610,19 +631,18 @@ def print_input_help():
     },
   
     
-  # A scikit-learn or casm.feature_selection feature selection method.
-  #
+  # The "feature_selection" option specifies a feature selection method.
   #
   # Object attributes
   # -----------------
   #
   # method: string
-  #   A scikit-learn or casm.feature_selection feature selection method. 
+  #   A scikit-learn or casm.learn.feature_selection feature selection method. 
   #  
   #   Options from sklearn.feature_selection: "SelectFromModel", "RFE", etc.
   #     See: http://scikit-learn.org/stable/modules/feature_selection.html
   #
-  #   Options from casm.feature_selection: 
+  #   Options from casm.learn.feature_selection: 
   #
   #   "DirectSelection": Allows directly specifying which basis functions should
   #     be included.
@@ -664,28 +684,6 @@ def print_input_help():
   #
   #     Options for "kwargs":
   #
-  #       "n_population": int, optional, default=100
-  #          Population size. This many random initial starting individuals are 
-  #          created.
-  #       
-  #       "n_halloffame": int, optional, default=25
-  #          Maxsize of the hall of fame which holds the best individuals 
-  #          encountered in any generation. Upon completion, the individuals in  
-  #          this hall of fame are into your overall casm-learn hall of fame to
-  #          be compared to results obtained from other fitting or feature 
-  #          selection methods.
-  #          
-  #       "n_generation": int, optional, default=10
-  #          Number of generations between saving the hall of fame.
-  #
-  #       "n_repetition": int, optional, default=100
-  #          Number of repetitions of n_generation generations. Each repetition 
-  #          begins with the existing final population.
-  #
-  #       "n_features_init: int or "all", optional, default=0
-  #          Number of randomly selected features to initialize each individual 
-  #          with.
-  #
   #       "selTournamentSize": int, optional, default=3
   #          Tournament size. A larger tournament size weeds out less fit 
   #          individuals more quickly, while a smaller tournament size weeds out 
@@ -697,9 +695,14 @@ def print_input_help():
   #       "mutFlipBitProb": float, optional, default=0.01 
   #          Probability of mutating bits
   #
-  #       "constraints": dict, optional, default=dict()
+  #       "constraints_kwargs": dict, optional, default=dict()
   #          Keyword arguments for setting constraints on allowed individuals. 
   #          See below for options.
+  #
+  #       "evolve_params_kwargs": dict, optional, default=dict()
+  #          Keyword arguments for controlling how long the algorithm runs, how
+  #          new random individuals are initialized, when restart files are 
+  #          written, and the names of the files. See below for options.
   #
   #
   #   "IndividualBestFirst": 
@@ -713,31 +716,14 @@ def print_input_help():
   #
   #     Options for "kwargs":
   #
-  #       "n_population": int, optional, default=100 
-  #          Population size. This many random initial starting individuals are 
-  #          minimized and the results saved in the hall of fame.
-  #
-  #       "n_halloffame": int, optional, default=25
-  #          Maxsize of the hall of fame which holds the best individuals 
-  #          encountered in any generation. Upon completion, the individuals in  
-  #          this hall of fame are into your overall casm-learn hall of fame to
-  #          be compared to results obtained from other fitting or feature 
-  #          selection methods.
-  #
-  #       "n_generation": int, optional, default=10
-  #          Number of generations between saving the hall of fame.
-  #
-  #       "n_repetition": int, optional, default=100
-  #          Number of repetitions of n_generation generations. Each repetition 
-  #          begins with the existing final population.
-  #
-  #       "n_features_init: int, optional, default=5
-  #          Number of randomly selected features to initialize each individual 
-  #          with.
-  #
-  #       "constraints": dict, optional, default=dict()
+  #       "constraints_kwargs": dict, optional, default=dict()
   #          Keyword arguments for setting constraints on allowed individuals. 
   #          See below for options.
+  #
+  #       "evolve_params_kwargs": dict, optional, default=dict()
+  #          Keyword arguments for controlling how long the algorithm runs, how
+  #          new random individuals are initialized, when restart files are 
+  #          written, and the names of the files. See below for options.
   #
   #
   #   "PopulationBestFirst": 
@@ -751,41 +737,23 @@ def print_input_help():
   #     Children are generated by generating all the individual that differ from
   #     the parent by +/- 1 selected feature. 
   #     
-  #
   #     Options for "kwargs":
   #
-  #       "n_population": int, optional, default=100 
-  #          Population size. This many random initial starting individuals are 
-  #          included in the starting population, which is minimized, and the 
-  #          results are saved in the hall of fame.
-  #
-  #       "n_halloffame": int, optional, default=25
-  #          Maxsize of the hall of fame which holds the best individuals 
-  #          encountered in any generation. Upon completion, the individuals in  
-  #          this hall of fame are into your overall casm-learn hall of fame to
-  #          be compared to results obtained from other fitting or feature 
-  #          selection methods.
-  #
-  #       "n_generation": int, optional, default=10
-  #          Number of generations between saving the hall of fame.
-  #
-  #       "n_repetition": int, optional, default=100
-  #          Number of repetitions of n_generation generations. Each repetition 
-  #          begins with the existing final population.
-  #
-  #       "n_features_init: int, optional, default=5
-  #          Number of randomly selected features to initialize each individual 
-  #          with.
-  #
-  #       "constraints": dict, optional, default=dict()
+  #       "constraints_kwargs": dict, optional, default=dict()
   #          Keyword arguments for setting constraints on allowed individuals. 
   #          See below for options.
   #
-  #   The evolutionary algorithms have an optional set of "constraints" parameters
-  #   that may restrict the number of basis functions selected to some range, or
-  #   enforce some basis functions to have or not have coefficients:
+  #       "evolve_params_kwargs": dict, optional, default=dict()
+  #          Keyword arguments for controlling how long the algorithm runs, how
+  #          new random individuals are initialized, when restart files are 
+  #          written, and the names of the files. See below for options.
   #
-  #   Options for "constraints":
+  #
+  #   The evolutionary algorithms have an optional set of "constraints_kwargs" 
+  #   parameters that may restrict the number of basis functions selected to some
+  #    range, or enforce some basis functions to have or not have coefficients:
+  #
+  #   Options for "constraints_kwargs":
   #     "n_features_min": int, optional, default=1
   #        The minimum allowed number of selected features. Must be >=1.
   #
@@ -797,14 +765,56 @@ def print_input_help():
   #  
   #     "fix_off": 1d array-like of int, optional, default=[]
   #        The indices of features to fix off
+  #
+  #
+  #   The evolutionary algorithms share an optional set of "evolve_params_kwargs" 
+  #   parameters that control how long the algorithm runs, how new random 
+  #   individuals are initialized, when restart files are written, and the names
+  #   of the files:
+  #
+  #   Options for "evolve_params_kwargs":
+  #
+  #     "n_population": int, optional, default=100
+  #        Population size. This many random initial starting individuals are 
+  #        created.
+  #     
+  #     "n_halloffame": int, optional, default=25
+  #        Maxsize of the hall of fame which holds the best individuals 
+  #        encountered in any generation. Upon completion, the individuals in  
+  #        this hall of fame are into your overall casm-learn hall of fame to
+  #        be compared to results obtained from other fitting or feature 
+  #        selection methods.
+  #        
+  #     "n_generation": int, optional, default=10
+  #        Number of generations between saving the hall of fame.
+  #
+  #     "n_repetition": int, optional, default=100
+  #        Number of repetitions of n_generation generations. Each repetition 
+  #        begins with the existing final population.
+  #
+  #     "n_features_init: int or "all", optional, default=0
+  #        Number of randomly selected features to initialize each individual 
+  #        with.
+  #
+  #     "pop_begin_filename": string, optional, default="population_begin.pkl"
+  #        Filename where the initial population is read from, if it exists.
+  #
+  #     "pop_end_filename": string, optional, default="population_end.pkl"
+  #        Filename where the final population is saved.
+  #      
+  #     "halloffame_filename": string, optional, default="evolve_halloffame.pkl"
+  #        Filename where a hall of fame is saved holding the best individuals 
+  #        encountered in any generation.
+  #      
+  #     "filename_prefix": string, optional
+  #        Prefix for filenames, default uses input file filename excluding 
+  #        extension. For example, if input file is named "Ef_kfold10.json", then
+  #        "Ef_kfold10_population_begin.pkl", "specs2_population_end.pkl", and 
+  #        "Ef_kfold10_evolve_halloffame.pkl" are used.
   
     "feature_selection" : {
       "method": "GeneticAlgorithm",
       "kwargs": {
-        "n_population": 100,
-        "n_generation": 10,
-        "n_repetition": 100,
-        "Nbunc_init": 0,
         "selTournamentSize": 3,
         "cxUniformProb": 0.5,
         "mutFlipBitProb": 0.01,
@@ -813,11 +823,17 @@ def print_input_help():
           "n_features_max": "all",
           "fix_on": [],
           "fix_off": []
+        },
+        "evolve_params_kwargs": {
+          "n_population": 100,
+          "n_generation": 10,
+          "n_repetition": 100,
+          "n_features_init": 0
         }
       }
     },
   
-  # Hall of Fame filename.
+  # The "halloffame_filename" option:
   #
   # Optional. Default = "halloffame.pkl"
   # Name to use for file storing the best results obtained to date, as determined
@@ -828,17 +844,95 @@ def print_input_help():
     
     },
   
-  # Hall of fame size. 
+  # The "n_halloffame" option:
   #
   # Optional. Default = 25
   # The number of individuals to store in the hall of fame.
   
     "n_halloffame": 25
   
+  # The "checkspecs" option:
+  #
+  #   Currently, these settings are used with the '--checkspecs' option to control
+  #   the output files containing training data (including calculated weights) and
+  #   cv generators or training / testing sets.
+  #
+  #
+  # Object attributes
+  # -----------------
+  #
+  # data_filename: string
+  #   The path to the file where the training data (including weights) should be 
+  #   written
+  #
+  # data_kwargs: dict or null, optional, default=dict()
+  #   Additional parameters to be used to write training data. 
+  #  
+  #   Options for input 'filetype' "selection":
+  #     None.
+  #   
+  #   Options for input 'filetype' "csv":
+  #     Any options to pass to pandas.to_csv
+  #
+  #   Options for input 'filetype' "json":
+  #     Any options to pass to pandas.to_json
+  #
+  # cv_filename: string
+  #   The path to the file where the cv generator or train/tests sets should be 
+  #   written as pickle file
+  #
+  # cv_kwargs: dict or null, optional, default=dict()
+  #   Additional parameters to be used to write cv data using pickle.dump.
+      
+    "checkspecs" : {
+      "data_filename": "check_train",
+      "data_kwargs": null,
+      "cv_filename": "check_cv.pkl",
+      "cv_kwargs": null
+    }
+  
   }
   ------------------------------------------------------------------------------
   """
 
+
+def default_filename(input_filename, default, suffix):
+  """
+  Make a default filename from the input file filename.
+  
+  Implements:
+    filename = default
+    if input_filename is not None:
+      filename = splitext(basename(input_filename))[0] + suffix
+    return filename
+  
+  Arguments
+  ---------
+  
+    input_filename: str or None
+      The input settings filename, which is used in determining the default
+      problem specs filename.
+    
+    default: str
+      Filename if input_filename is None
+    
+    suffix: str
+      If input_filename is not None, append this suffix to the input_filename 
+      (excluding extension) to make the filename.
+    
+  
+  Returns
+  --------
+    
+    filename: str
+      The generated default filename 
+  
+  """
+  filename = default
+  if input_filename is not None:
+    filename = splitext(basename(input_filename))[0] + suffix
+  return filename
+  
 
 def set_input_defaults(input, input_filename=None):
   """
@@ -865,11 +959,8 @@ def set_input_defaults(input, input_filename=None):
   
   specs = input["problem_specs"]
   
-  default_filename = "problem_specs.pkl"
-  if input_filename is not None:
-    default_filename = splitext(basename(input_filename))[0] + "_specs.pkl"
   if "specs_filename" not in specs:
-    specs["specs_filename"] = default_filename
+    specs["specs_filename"] = default_filename(input_filename, "problem_specs.pkl", "_specs.pkl")
   
   # set data defaults if not provided
   if "data" not in specs:
@@ -879,7 +970,7 @@ def set_input_defaults(input, input_filename=None):
     "filename":"train",
     "filetype":"selection",
     "X":"corr",
-    "y":"formation_energy"
+    "y":"formation_energy",
   }
   
   for key, val in defaults.iteritems():
@@ -922,18 +1013,34 @@ def set_input_defaults(input, input_filename=None):
   if "kwargs" not in input["feature_selection"] or input["feature_selection"]["kwargs"] is None:
     input["feature_selection"]["kwargs"] = dict()
   kwargs = input["feature_selection"]["kwargs"]
-  evolve_kwargs = kwargs["evolve_params_kwargs"]
   if "evolve_params_kwargs" in kwargs:
+    evolve_kwargs = kwargs["evolve_params_kwargs"]
     if "halloffame_filename" not in evolve_kwargs:
       evolve_kwargs["halloffame_filename"] = "evolve_halloffame.pkl"
     if "n_halloffame" not in evolve_kwargs:
       evolve_kwargs["n_halloffame"] = 25
+    if "filename_prefix" not in evolve_kwargs and input_filename is not None:
+      evolve_kwargs["filename_prefix"] = splitext(basename(input_filename))[0]
+    
   
   # hall of fame
   if "halloffame_filename" not in input:
     input["halloffame_filename"] = "halloffame.pkl"
   if "n_halloffame" not in input:
     input["n_halloffame"] = 25
+  
+  # checkdata output settings
+  if "checkspecs" not in input:
+    input["checkspecs"] = dict()
+  if "data_filename" not in input["checkspecs"]:
+    suffix = "_data" + splitext(basename(specs["data"]["filename"]))[1]
+    input["checkspecs"]["data_filename"] = default_filename(input_filename, "check_data", suffix)
+  if "data_kwargs" not in input["checkspecs"] or input["checkspecs"]["data_kwargs"] is None:
+    input["checkspecs"]["data_kwargs"] = dict()
+  if "cv_filename" not in input["checkspecs"]:
+    input["checkspecs"]["cv_filename"] = default_filename(input_filename, "check_cv.pkl", "_cv.pkl")
+  if "cv_kwargs" not in input["checkspecs"] or input["checkspecs"]["cv_kwargs"] is None:
+    input["checkspecs"]["cv_kwargs"] = dict()
   
   return input
 
@@ -984,9 +1091,15 @@ class FittingData(object):
     
     penalty: float, optional, default=0.0
       The CV score is increased by 'penalty*(number of selected basis function)'
+    
+    data: pandas.DataFrame, optional, default=None
+        Optionally, store TrainingData.data with weighted_X and weighted_y data 
+        added. No checks are made for consistency of tdata.X, tdata.y and X and 
+        y or other parameters.
+    
   """
   
-  def __init__(self, X, y, cv, sample_weight=[], scoring=None, penalty=0.0):
+  def __init__(self, X, y, cv, sample_weight=[], scoring=None, penalty=0.0, tdata=None):
     """
     Arguments
     ---------
@@ -1017,6 +1130,11 @@ class FittingData(object):
         
       penalty: float, optional, default=0.0
         The CV score is increased by 'penalty*(number of selected basis function)'
+      
+      tdata: TrainingData instance, optional, default=None
+        Optionally, store TrainingData.data with weighted_X and weighted_y data 
+        added. No checks are made for consistency of tdata.X, tdata.y and X and 
+        y or other parameters.
     """
     self.X = X
     self.y = y
@@ -1025,6 +1143,7 @@ class FittingData(object):
     self.n_samples, self.n_features = self.X.shape
     
     # weight
+    self.sample_weight = sample_weight
     self.weighted_y, self.weighted_X, self.W, self.L = casm.learn.tools.set_sample_weight(
       sample_weight, X=self.X, y=self.y)
     
@@ -1036,11 +1155,19 @@ class FittingData(object):
     
     # penalty
     self.penalty = penalty
+    
+    # data
+    if tdata is not None:
+      self.data = tdata.data.copy()
+      for i in xrange(self.n_features):
+        self.data.loc[:,"weighted_" + tdata.X_name + "(" + str(i) + ")"] = self.weighted_X[:,i]
+      for i in xrange(self.n_features):
+        self.data.loc[:,"weighted_" + tdata.y_name] = self.weighted_y
 
 
 class TrainingData(object):
   """ 
-  TrainingData is a data structure used to collect data while reading the training
+  TrainingData is a data structure used to collect data from the training
   data file.
   
     
@@ -1116,7 +1243,9 @@ class TrainingData(object):
       property = specs["data"]["y"]
       
       ## if necessary, query data
-      columns = [self.X_name, self.y_name, 'is_calculated']
+      columns = [x for x in [self.y_name, "is_calculated"] if x not in sel.data.columns]
+      if len([x for x in sel.data.columns if re.match(self.X_name + "\([0-9]*\)", x)]) == 0:
+        columns.append(self.X_name)
       if specs["weight"]["method"] == "wHullDist":
         hull_selection = specs["weight"]["kwargs"]["hull_selection"]
         hull_dist_name = "hull_dist(" + hull_selection + ",atom_frac)"
@@ -1125,11 +1254,8 @@ class TrainingData(object):
         columns.append(hull_dist_name)
       
       # perform query
-      if verbose:
-        print "# Querying CASM:", columns
-      sel.query(columns)
-      if verbose:
-        print "#   DONE\n"
+      if len(columns):
+        sel.query(columns, verbose=verbose)
       
       data = sel.data
       self.sel = sel
@@ -1192,6 +1318,10 @@ def read_sample_weight(input, tdata, verbose=True):
   
   specs = input["problem_specs"]
   
+  if verbose:
+    print "# Weighting:"
+    print json.dumps(specs["weight"], indent=2)
+  
   # get kwargs
   weight_kwargs = copy.deepcopy(specs["weight"]["kwargs"])
         
@@ -1218,8 +1348,7 @@ def read_sample_weight(input, tdata, verbose=True):
     sample_weight = None
   
   if verbose:
-    print "# Weighting:"
-    print json.dumps(specs["weight"], indent=2), "\n"
+    print ""
   
   return sample_weight
       
@@ -1261,6 +1390,9 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_
       A FittingData instance constructed based on the input parameters.
       
   """
+  if verbose:
+    print "# Get problem data..."
+  
   specs = input["problem_specs"]
   
   # property, weight, and cv inputs should remain constant
@@ -1269,7 +1401,7 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_
   
   if read_existing and os.path.exists(fit_data_filename):
     if verbose:
-      print "# Reading existing fitting data from:", fit_data_filename
+      print "# Reading existing problem specs from:", fit_data_filename
     fdata = pickle.load(open(fit_data_filename, 'rb'))
     if verbose:
       print "#   DONE\n"
@@ -1298,7 +1430,7 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_
     if verbose:
       print "# Target:", tdata.y_name
       print "# Training samples:", tdata.n_samples
-      print "# Features:", tdata.n_features
+      print "# Features:", tdata.n_features, "\n"
     
     ## weight (optional)
     sample_weight = read_sample_weight(input, tdata, verbose=verbose)
@@ -1307,7 +1439,7 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_
     cv_kwargs = copy.deepcopy(specs["cv"]["kwargs"])
     
     # get cv method (required user input) 
-    cv_method = _find_method([sklearn.cross_validation], specs["cv"]["method"])
+    cv_method = _find_method([sklearn.cross_validation, casm.learn.cross_validation], specs["cv"]["method"])
     cv = cv_method(tdata.n_samples, **cv_kwargs)
     
     if verbose:
@@ -1321,13 +1453,16 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_
     penalty = specs["cv"]["penalty"]
     
     fdata = casm.learn.FittingData(tdata.X, tdata.y, cv, 
-      sample_weight=sample_weight, scoring=scoring, penalty=penalty)
+      sample_weight=sample_weight, scoring=scoring, penalty=penalty, tdata=tdata)
     
     fdata.input = dict()
     fdata.input["problem_specs"] = specs
     
     if save == True:
       pickle.dump(fdata, open(fit_data_filename, 'wb'))
+    
+    if verbose:
+      print "# Writing problem specs to:", fit_data_filename, "\n"
   
   # during runtime only, if LinearRegression and LeaveOneOut, update fdata.cv and fdata.scoring
   # to use optimized LOOCV score method
@@ -1360,6 +1495,10 @@ def make_estimator(input, verbose = True):
   
   """""
   
+  if verbose:
+    print "# Estimator:"
+    print json.dumps(input["estimator"], indent=2), "\n"
+  
   ## estimator
   
   # get kwargs (default: fit_intercept=False)
@@ -1372,9 +1511,6 @@ def make_estimator(input, verbose = True):
     estimator_method = _find_method([sklearn.linear_model], input["estimator"]["method"])
   estimator = estimator_method(**kwargs)
   
-  if verbose:
-    print "# Estimator:"
-    print json.dumps(input["estimator"], indent=2), "\n"
     
   
   return estimator
@@ -1580,8 +1716,6 @@ def checkhull(input, hall, selection, indices=None, verbose=True, input_filename
   """
   
   # construct FittingData (to check consistency with input file)
-  if verbose:
-    print "# Get fitting data..."
   fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True, input_filename=input_filename)
   
   # open Project to work on
