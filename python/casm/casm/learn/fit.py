@@ -838,8 +838,106 @@ def print_input_help():
   }
   ------------------------------------------------------------------------------
   """
+
+
+def set_input_defaults(input, input_filename=None):
+  """
+  Arguments
+  ---------
   
+    input: dict
+      The input settings as a dict
+    
+    input_filename: str, optional, default=None
+      The input settings filename, which is used in determining the default
+      problem specs filename.
+    
   
+  Returns
+  ---------
+  
+    input: dict
+      The input settings as a dict, with defaults added
+    
+  """
+  if "problem_specs" not in input:
+    input["problem_specs"] = dict()
+  
+  specs = input["problem_specs"]
+  
+  default_filename = "problem_specs.pkl"
+  if input_filename is not None:
+    default_filename = splitext(basename(input_filename))[0] + "_specs.pkl"
+  if "specs_filename" not in specs:
+    specs["specs_filename"] = default_filename
+  
+  # set data defaults if not provided
+  if "data" not in specs:
+    specs["data"] = dict()
+  
+  defaults = {
+    "filename":"train",
+    "filetype":"selection",
+    "X":"corr",
+    "y":"formation_energy"
+  }
+  
+  for key, val in defaults.iteritems():
+    if key not in specs["data"]:
+      specs["data"][key] = val
+  
+  if "kwargs" not in specs["data"] or specs["data"]["kwargs"] is None:
+    specs["data"]["kwargs"] = dict()
+  if specs["data"]["filetype"] == "selection":
+    if "project_path" not in specs["data"]["kwargs"]:
+      specs["data"]["kwargs"]["project_path"] = None
+  
+  # set weight defaults if not provided
+  sample_weight = None
+  if "weight" not in specs:
+    specs["weight"] = dict()
+  if "kwargs" not in specs["weight"] or specs["weight"]["kwargs"] is None:
+    specs["weight"]["kwargs"] = dict()
+  if "method" not in specs["weight"]:
+    specs["weight"]["method"] = None
+  if specs["weight"]["method"] == "wHullDist":
+    if "hull_selection" not in specs["weight"]["kwargs"]:
+      specs["weight"]["kwargs"]["hull_selection"] = "CALCULATED"
+  
+  # set cv defaults
+  if "kwargs" not in specs["cv"] or specs["cv"]["kwargs"] is None:
+    specs["cv"]["kwargs"] = dict()
+  if "penalty" not in specs["cv"]:
+    specs["cv"]["penalty"] = 0.0
+  
+  # set estimator defaults
+  if "method" not in input["estimator"]:
+    input["estimator"]["method"] = "LinearRegression"
+  if "kwargs" not in input["estimator"] or input["estimator"]["kwargs"] is None:
+    input["estimator"]["kwargs"] = dict()
+  if "fit_intercept" not in input["estimator"]["kwargs"]:
+    input["estimator"]["kwargs"]["fit_intercept"] = False
+  
+  # set feature_selection defaults
+  if "kwargs" not in input["feature_selection"] or input["feature_selection"]["kwargs"] is None:
+    input["feature_selection"]["kwargs"] = dict()
+  kwargs = input["feature_selection"]["kwargs"]
+  evolve_kwargs = kwargs["evolve_params_kwargs"]
+  if "evolve_params_kwargs" in kwargs:
+    if "halloffame_filename" not in evolve_kwargs:
+      evolve_kwargs["halloffame_filename"] = "evolve_halloffame.pkl"
+    if "n_halloffame" not in evolve_kwargs:
+      evolve_kwargs["n_halloffame"] = 25
+  
+  # hall of fame
+  if "halloffame_filename" not in input:
+    input["halloffame_filename"] = "halloffame.pkl"
+  if "n_halloffame" not in input:
+    input["n_halloffame"] = 25
+  
+  return input
+
+
 class FittingData(object):
   """ 
   FittingData holds feature values, target values, sample weights, etc. used
@@ -940,6 +1038,192 @@ class FittingData(object):
     self.penalty = penalty
 
 
+class TrainingData(object):
+  """ 
+  TrainingData is a data structure used to collect data while reading the training
+  data file.
+  
+    
+  Attributes
+  ----------
+    
+    filename: str
+      The name of the training data file
+    
+    filetype: str, one of ["selection", "csv", "json"]
+      The data format of the training data file
+    
+    X_name: str
+      The name of the X columns in the training data file
+    
+    X: array-like of shape (n_samples, n_features)
+      The training input samples (correlations).
+    
+    y_name: str
+      The name of the y column in the training data file
+    
+    y: array-like of shape: (n_samples, 1)
+      The target values (property values).
+    
+    n_samples: int
+      The number of samples / target values (number of rows in X)
+    
+    n_features: int
+      The number of features (number of columns in X)
+    
+    sel: casm.Selection, (exists if filetype=="selection")
+      The selection specifying the training data
+    
+    data: pandas.DataFrame
+      Contains the X and y data
+    
+    hull_dist_name: str, (exists if weight method=="wHullDist")
+      The name of the hull_dist column in the training data file
+    
+    hull_dist: array-like of shape: (n_samples, 1), (exists if weight method=="wHullDist")
+      The hull distance values.
+    
+    
+  """
+  def __init__(self, input, verbose=True):
+    """
+    Arguments
+    ---------
+    
+      input: dict
+        The input settings as a dict
+      
+      verbose: boolean, optional, default=True
+        Print information to stdout.
+    
+    """
+    specs = input["problem_specs"]
+    
+    self.filename = specs["data"]["filename"]
+    self.filetype = specs["data"]["filetype"].lower()
+    self.X_name = specs["data"]["X"]
+    self.y_name = specs["data"]["y"]
+    hull_dist_name = "hull_dist"
+    
+    if self.filetype == "selection":
+      
+      # read training set
+      proj = Project(specs["data"]["kwargs"]["project_path"], verbose=verbose)
+      
+      sel = Selection(proj, self.filename, all=False)
+      
+      # get property name (required)
+      property = specs["data"]["y"]
+      
+      ## if necessary, query data
+      columns = [self.X_name, self.y_name, 'is_calculated']
+      if specs["weight"]["method"] == "wHullDist":
+        hull_selection = specs["weight"]["kwargs"]["hull_selection"]
+        hull_dist_name = "hull_dist(" + hull_selection + ",atom_frac)"
+        if verbose:
+          print "# wHullDist: Will calculate hull distance:", hull_dist_name
+        columns.append(hull_dist_name)
+      
+      # perform query
+      if verbose:
+        print "# Querying CASM:", columns
+      sel.query(columns)
+      if verbose:
+        print "#   DONE\n"
+      
+      data = sel.data
+      self.sel = sel
+      
+    elif self.filetype.lower() == "csv":
+      # populate from csv file
+      data = pandas.read_csv(self.filename, **specs["data"]["kwargs"])
+    
+    elif self.filetype.lower() == "json":
+      # populate from json file
+      data = pandas.read_json(self.filename, **specs["data"]["kwargs"])
+    
+    
+    # columns of interest, as numpy arrays
+    X = data.loc[:,[x for x in data.columns if re.match(self.X_name + "\([0-9]*\)", x)]].values
+    y = data.loc[:,self.y_name].values
+    if specs["weight"]["method"] == "wHullDist":
+      self.hull_dist_name = hull_dist_name
+      self.hull_dist = data.loc[:,hull_dist_name]
+    
+    self.X = X
+    self.y = y
+    self.data = data
+    
+    self.n_samples = X.shape[0]
+    self.n_features = X.shape[1]
+
+
+def read_sample_weight(input, tdata, verbose=True):
+  """
+  Read input file and read or calculate sample weights
+  
+  Arguments
+  ---------
+  
+    input: dict
+      The input settings as a dict
+    
+    tdata: TrainingData instance
+      tdata.data is populated with a "weight" column, or the "weight" column
+      is used to generate "sample_weight" output, depending on the weight method
+    
+    verbose: boolean, optional, default=True
+      Print information to stdout.
+  
+  
+  Returns
+  ---------
+    
+    sample_weight: None, 1d array-like of shape (n_samples,1), or 2d array-like of shape (n_samples, n_samples)
+      Sample weights.
+      
+      if sample_weight is None: (unweighted)
+        W = np.matlib.eye(N) 
+      if sample_weight is 1-dimensional:
+        W = np.diag(sample_weight)*Nvalue/np.sum(sample_weight) 
+      if sample_weight is 2-dimensional (must be Hermitian, positive-definite):
+        W = sample_weight*Nvalue/np.sum(sample_weight)
+  """
+  
+  specs = input["problem_specs"]
+  
+  # get kwargs
+  weight_kwargs = copy.deepcopy(specs["weight"]["kwargs"])
+        
+  # use method to get weights
+  if specs["weight"]["method"] == "wCustom":
+    if verbose:
+      print "Reading custom weights"
+    sample_weight = tdata.data["weight"].values
+  elif specs["weight"]["method"] == "wCustom2d":
+    if verbose:
+      print "Reading custom2d weights"
+    cols = ["weight(" + str(i) + ")" for i in xrange(tdata.n_samples)]
+    sample_weight = tdata.data.loc[:,cols].values
+  elif specs["weight"]["method"] == "wHullDist":
+    sample_weight = casm.learn.tools.wHullDist(tdata.hull_dist, **weight_kwargs)
+    tdata.data.loc[:,"weight"] = sample_weight
+  elif specs["weight"]["method"] == "wEmin":
+    sample_weight = casm.learn.tools.wEmin(tdata.y, **weight_kwargs)
+    tdata.data.loc[:,"weight"] = sample_weight
+  elif specs["weight"]["method"] == "wEref":
+    sample_weight = casm.learn.tools.wEref(tdata.y, **weight_kwargs)
+    tdata.data.loc[:,"weight"] = sample_weight
+  else:
+    sample_weight = None
+  
+  if verbose:
+    print "# Weighting:"
+    print json.dumps(specs["weight"], indent=2), "\n"
+  
+  return sample_weight
+      
+
 def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_filename=None):
   """ 
   Construct a FittingData instance, either by reading existing 'fit_data.pkl',
@@ -977,36 +1261,11 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_
       A FittingData instance constructed based on the input parameters.
       
   """
-  if "problem_specs" not in input:
-    input["problem_specs"] = dict()
-  
   specs = input["problem_specs"]
-  
-  # set data defaults if not provided
-  if "data" not in specs:
-    specs["data"] = dict()
-  if "kwargs" not in specs["data"] or specs["data"]["kwargs"] is None:
-    specs["data"]["kwargs"] = dict()
-  
-  # set weight defaults if not provided
-  sample_weight = None
-  if "weight" not in specs:
-    specs["weight"] = dict()
-  if "kwargs" not in specs["weight"] or specs["weight"]["kwargs"] is None:
-    specs["weight"]["kwargs"] = dict()
-  if "method" not in specs["weight"]:
-    specs["weight"]["method"] = None
-  
-  # set cv kwargs defaults
-  if "kwargs" not in specs["cv"] or specs["cv"]["kwargs"] is None:
-    specs["cv"]["kwargs"] = dict()
   
   # property, weight, and cv inputs should remain constant
   # estimator and feature_selection might change
-  default_filename = "problem_specs.pkl"
-  if input_filename is not None:
-    default_filename = splitext(basename(input_filename))[0] + "_specs.pkl"
-  fit_data_filename = specs.get("specs_filename", default_filename)
+  fit_data_filename = specs["specs_filename"]
   
   if read_existing and os.path.exists(fit_data_filename):
     if verbose:
@@ -1030,100 +1289,26 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_
     for name in ["data", "cv", "weight"]:
       check_input(name)
     
-    
   else:
     
     ## get data ####
     
-    filename = specs["data"].get("filename", "train")
-    data_type = specs["data"].get("type", "selection").lower()
-    X_name = specs["data"].get("X", "corr")
-    y_name = specs["data"].get("y", "formation_energy")
-    hull_dist_name = "hull_dist"
-    
-    if data_type == "selection":
-      
-      # read training set
-      proj = Project(specs["data"]["kwargs"].get("project_path", None), verbose=verbose)
-      
-      sel = Selection(proj, filename, all=False)
-      
-      # get property name (required)
-      property = specs["data"].get("filename", "formation_energy")
-      
-      ## if necessary, query data
-      columns = [X_name, y_name, 'is_calculated']
-      if specs["weight"]["method"] == "wHullDist":
-        hull_selection = specs["weight"]["kwargs"].get("hull_selection", "CALCULATED")
-        hull_dist_name = "hull_dist(" + hull_selection + ",atom_frac)"
-        if verbose:
-          print "# wHullDist: Will calculate hull distance:", hull_dist_name
-        columns.append(hull_dist_name)
-      
-      # perform query
-      if verbose:
-        print "# Querying CASM:", columns
-      sel.query(columns)
-      if verbose:
-        print "#   DONE\n"
-      
-      data = sel.data
-      
-    elif data_type.lower() == "csv":
-      # populate from csv file
-      data = pandas.read_csv(f, **specs["data"]["kwargs"])
-    
-    elif data_type.lower() == "json":
-      # populate from json file
-      data = pandas.read_json(self.path, **specs["data"]["kwargs"])
-    
-    # columns of interest, as numpy arrays
-    X = data.loc[:,[x for x in sel.data.columns if re.match(X_name + "\([0-9]*\)", x)]].values
-    y = data.loc[:,y_name].values
-    if specs["weight"]["method"] == "wHullDist":
-      hull_dist = data.loc[:,hull_dist_name]
-    
-    n_samples = X.shape[0]
-    n_features = X.shape[1]
+    tdata = TrainingData(input, verbose=verbose)
     
     if verbose:
-      print "# Target:", y_name
-      print "# Training samples:", n_samples
-      print "# Features:", n_features
+      print "# Target:", tdata.y_name
+      print "# Training samples:", tdata.n_samples
+      print "# Features:", tdata.n_features
     
     ## weight (optional)
-    
-    # get kwargs
-    weight_kwargs = copy.deepcopy(specs["weight"]["kwargs"])
-          
-    # use method to get weights
-    if specs["weight"]["method"] == "wCustom":
-      if verbose:
-        print "Reading custom weights"
-      sample_weight = data["weight"].values
-    elif specs["weight"]["method"] == "wCustom2d":
-      if verbose:
-        print "Reading custom2d weights"
-      cols = ["weight(" + str(i) + ")" for i in xrange(n_samples)]
-      sample_weight = data.loc[:,cols].values
-    elif specs["weight"]["method"] == "wHullDist":
-      sample_weight = casm.learn.tools.wHullDist(hull_dist, **weight_kwargs)
-    elif specs["weight"]["method"] == "wEmin":
-      sample_weight = casm.learn.tools.wEmin(y, **weight_kwargs)
-    elif specs["weight"]["method"] == "wEref":
-      sample_weight = casm.learn.tools.wEref(y, **weight_kwargs)
-          
-    if verbose:
-      print "# Weighting:"
-      print json.dumps(specs["weight"], indent=2), "\n"
-    
+    sample_weight = read_sample_weight(input, tdata, verbose=verbose)
     
     ## cv
     cv_kwargs = copy.deepcopy(specs["cv"]["kwargs"])
     
     # get cv method (required user input) 
     cv_method = _find_method([sklearn.cross_validation], specs["cv"]["method"])
-    cv = cv_method(n_samples, **cv_kwargs)
+    cv = cv_method(tdata.n_samples, **cv_kwargs)
     
     if verbose:
       print "# CV:"
@@ -1133,9 +1318,9 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_
     scoring = sklearn.metrics.make_scorer(sklearn.metrics.mean_squared_error, greater_is_better=True)
     
     ## penalty
-    penalty = specs["cv"].get("penalty", 0.0)
+    penalty = specs["cv"]["penalty"]
     
-    fdata = casm.learn.FittingData(X, y, cv, 
+    fdata = casm.learn.FittingData(tdata.X, tdata.y, cv, 
       sample_weight=sample_weight, scoring=scoring, penalty=penalty)
     
     fdata.input = dict()
@@ -1146,7 +1331,7 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_
   
   # during runtime only, if LinearRegression and LeaveOneOut, update fdata.cv and fdata.scoring
   # to use optimized LOOCV score method
-  if input["estimator"].get("method", "LinearRegression") == "LinearRegression" and specs["cv"]["method"] == "LeaveOneOut":
+  if input["estimator"]["method"] == "LinearRegression" and specs["cv"]["method"] == "LeaveOneOut":
     fdata.scoring = None
     fdata.cv = casm.learn.cross_validation.LeaveOneOutForLLS(fdata.weighted_y.shape[0])
   
@@ -1178,9 +1363,7 @@ def make_estimator(input, verbose = True):
   ## estimator
   
   # get kwargs (default: fit_intercept=False)
-  kwargs = copy.deepcopy(input["estimator"].get("kwargs", dict()))
-  if "fit_intercept" not in kwargs:
-    kwargs["fit_intercept"] = False
+  kwargs = copy.deepcopy(input["estimator"]["kwargs"])
   
   # Use casm version of LinearRegression
   if input["estimator"]["method"] == "LinearRegression":
@@ -1236,14 +1419,7 @@ def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=
   # The feature selector should act like a sklearn.feature_selection class and
   # inherit from sklearn.base.BaseEstimator and sklearn.feature_selection.SelectorMixin,
   
-  kwargs = copy.deepcopy(input["feature_selection"].get("kwargs", dict()))
-  if kwargs is None:
-    kwargs = dict()
-  if "evolve_params_kwargs" in kwargs:
-    if "halloffame_filename" not in kwargs["evolve_params_kwargs"]:
-      kwargs["evolve_params_kwargs"]["halloffame_filename"] = input.get("halloffame_filename", "halloffame.pkl")
-    if "n_halloffame" not in kwargs["evolve_params_kwargs"]:
-      kwargs["evolve_params_kwargs"]["n_halloffame"] = input.get("n_halloffame", 25)
+  kwargs = copy.deepcopy(input["feature_selection"]["kwargs"])
   
   if verbose:
     print "# Feature Selection:"
@@ -1409,7 +1585,7 @@ def checkhull(input, hall, selection, indices=None, verbose=True, input_filename
   fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True, input_filename=input_filename)
   
   # open Project to work on
-  proj = Project(input["problem_specs"]["data"]["kwargs"].get("project_path", None))
+  proj = Project(input["problem_specs"]["data"]["kwargs"]["project_path"])
   
   # tolerance for finding configurations 'on_hull'
   hull_tol = proj.settings.data["lin_alg_tol"]
@@ -1425,7 +1601,7 @@ def checkhull(input, hall, selection, indices=None, verbose=True, input_filename
     print "use 'casm settings --set-default-clex formation_energy' to change the default clex"
     raise Exception("Error using checkhull: default clex must be 'formation_energy'")
   
-  if input["problem_specs"]["data"].get("y", "formation_energy") != "formation_energy":
+  if input["problem_specs"]["data"]["y"] != "formation_energy":
     print "property:", input["problem_specs"]["data"]["y"]
     raise Exception("Error using checkhull: property must be 'formation_energy'")
   

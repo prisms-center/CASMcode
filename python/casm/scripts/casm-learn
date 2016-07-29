@@ -24,6 +24,7 @@ if __name__ == "__main__":
   parser.add_argument('--indiv', nargs='+', help='Specify particular individuals by index in hall of fame', type=int)
   parser.add_argument('--select', nargs=1, help='Select individual to use', type=int)
   parser.add_argument('--checkhull', nargs=1, help='Check convex hull properties using the provided selection', type=str)
+  #parser.add_argument('--weights', nargs=1, help='Output a training data file containing the calculated weights', type=str)
   parser.add_argument('-v','--verbose', help='Verbose print', action="store_true", default=False)
   args = parser.parse_args()
   
@@ -60,14 +61,14 @@ if __name__ == "__main__":
     
     with open(args.settings[0], 'r') as f:
       try:
-        input = json.load(f)
+        input = casm.learn.set_input_defaults(json.load(f))
       except Exception as e:
         print "Error parsing JSON in", args.settings[0]
         raise e
     
     if args.hall:
       
-      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
+      halloffame_filename = input["halloffame_filename"]
       # print Hall of Fame summary
       existing_hall = casm.learn.open_halloffame(halloffame_filename, args.verbose)
       
@@ -78,7 +79,7 @@ if __name__ == "__main__":
       
     elif args.checkhull:
       
-      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
+      halloffame_filename = input["halloffame_filename"]
       # print Hall of Fame summary
       existing_hall = casm.learn.open_halloffame(halloffame_filename, args.verbose)
       
@@ -90,15 +91,11 @@ if __name__ == "__main__":
     elif args.select:
       
       specs = input["problem_specs"]
-      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
+      halloffame_filename = input["halloffame_filename"]
       # print Hall of Fame summary
       existing_hall = casm.learn.open_halloffame(halloffame_filename, args.verbose)
       
-      if "data" not in specs:
-        specs["data"] = dict()
-      if "kwargs" not in specs["data"] or specs["data"]["kwargs"] is None:
-        specs["data"]["kwargs"] = dict()
-      proj = Project(specs["data"]["kwargs"].get("project_path", None))
+      proj = Project(specs["data"]["kwargs"]["project_path"])
       
       index = args.select[0]
       indiv = existing_hall[index]
@@ -109,8 +106,8 @@ if __name__ == "__main__":
       
       # construct hall of fame
       specs = input["problem_specs"]
-      halloffame_filename = input.get("halloffame_filename", "halloffame.pkl")
-      halloffame_size = input.get("n_halloffame", 25)
+      halloffame_filename = input["halloffame_filename"]
+      halloffame_size = input["n_halloffame"]
       hall = casm.learn.create_halloffame(halloffame_size)
       if args.verbose:
         print "# Hall of Fame size:", halloffame_size, "\n"
