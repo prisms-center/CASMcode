@@ -1025,7 +1025,7 @@ def set_input_defaults(input, input_filename=None):
   
   # hall of fame
   if "halloffame_filename" not in input:
-    input["halloffame_filename"] = "halloffame.pkl"
+    input["halloffame_filename"] = default_filename(input_filename, "halloffame.pkl", "_halloffame.pkl")
   if "n_halloffame" not in input:
     input["n_halloffame"] = 25
   
