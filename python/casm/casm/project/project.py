@@ -83,10 +83,10 @@ class ClexDescription(object):
     def __init__(self, name, property, calctype, ref, bset, eci):
       self.name = name
       self.property = property
-      self.calctype = calctype
-      self.ref = ref
-      self.bset = bset
-      self.eci = eci
+      self.calctype = "calctype."+calctype
+      self.ref = "ref."+ref
+      self.bset = "bset."+bset
+      self.eci = "eci."+eci
       
 
 class ProjectSettings(object):
@@ -114,15 +114,18 @@ class ProjectSettings(object):
               raise Exception("No CASM project found using " + path)
         self.path = casm.project_path(path)
         dir = DirectoryStructure(self.path)
+        print dir.project_settings()
+        print type(dir.project_settings())
         self.data = json.load(open(dir.project_settings()))
-        
+
         d = self.data["cluster_expansions"][self.data["default_clex"]]
         self._default_clex = ClexDescription(d["name"], d["property"], d["calctype"], d["ref"], d["bset"], d["eci"])
-        
+
         self._clex = [
-          ClexDescription(d["name"], d["property"], d["calctype"], d["ref"], d["bset"], d["eci"]) 
-          for d[1] in self.data["cluster_expansions"].iteritems() 
+          ClexDescription(d[1]["name"], d[1]["property"], d[1]["calctype"], d[1]["ref"], d[1]["bset"], d[1]["eci"]) 
+          for d in self.data["cluster_expansions"].iteritems()
         ]
+
     
     # -- Accessors --
     

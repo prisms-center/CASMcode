@@ -31,23 +31,22 @@ def project_path(dir=None):
             curr = os.path.dirname(curr)
     return None
 
-def casm_settings(dir=None):
+def casm_settings_path():
     """
-    Crawl up from dir to find '.casm'.  Read '.casm/project_settings.json' as json dict.
-    If not found, return None.
-    
-    - Currently prepends "calctype." to the found calctype, so that it is of the form "calctype.X" as in 
-      previous CASM versions. 
-    
-    
-    If dir == None, set to os.getcwd()
+    Crawl up and find project_settings.json
     """
-    path = project_path(dir)
-    if dir == None:
-      return None
-    input = json.load( open(os.path.join(path, ".casm", "project_settings.json")))
-    input["curr_calctype"] = "calctype." + input["curr_calctype"]
-    return input
+    configdir = os.getcwd()
+    curr = configdir
+    cont = True
+    while cont == True:
+        candidate=os.path.join(curr,".casm")
+        if os.path.exists(candidate):
+            return candidate
+        elif curr == os.path.dirname(curr):
+            return None
+        else:
+            curr = os.path.dirname(curr)
+
 
 def settings_path(name, calctype, configdir=None):
     """
@@ -66,6 +65,7 @@ def settings_path(name, calctype, configdir=None):
     cont = True
     while cont == True:
         check = os.path.join(curr,"settings", calctype, name)
+        print check
         if os.path.exists(check):
             return check
         if os.path.exists(os.path.join(curr,".casm")):
