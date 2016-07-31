@@ -1,4 +1,6 @@
+import warnings
 import casm
+import vasp
 import os, subprocess, json
 from os.path import join
 import ctypes, glob
@@ -529,3 +531,27 @@ class Project(object):
       
       return (qstr, qstr_err, res)
       
+def vasp_input_file_names(settings, configdir):
+    # Find required input files in CASM project directory tree
+    curr_calctype=settings.default_clex.calctype
+
+    incarfile = casm.settings_path("INCAR",curr_calctype,configdir)
+    prim_kpointsfile = casm.settings_path("KPOINTS",curr_calctype,configdir)
+    prim_poscarfile = casm.settings_path("POSCAR",curr_calctype,configdir)
+    super_poscarfile = os.path.join(configdir,"POS")
+    speciesfile = casm.settings_path("SPECIES",curr_calctype,configdir)
+
+    # Verify that required input files exist
+    if incarfile is None:
+        raise vasp.VaspError("vasp_input_file_names failed. No INCAR file found in CASM project.")
+    if prim_kpointsfile is None:
+        raise vasp.VaspError("vasp_input_file_names failed. No KPOINTS file found in CASM project.")
+    if prim_poscarfile is None:
+        warnings.warn("No reference POSCAR file found in CASM project. I hope your KPOINTS mode is A/AUTO/Automatic or this will fail!", vasp.VaspWarning)
+    if super_poscarfile is None:
+        raise vasp.VaspError("vasp_input_file_names failed. No POS file found for this configuration.")
+    if speciesfile is None:
+        raise vasp.VaspError("vasp_input_file_names failed. No SPECIES file found in CASM project.")
+
+    return (incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile)
+

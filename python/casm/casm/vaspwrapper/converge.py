@@ -2,6 +2,7 @@ import os, math, sys, json, re, warnings
 import pbs
 import vasp
 import casm
+import casm.project
 import vaspwrapper
 
 class Converge(object):
@@ -63,7 +64,7 @@ class Converge(object):
             sys.stdout.flush()
 
         # store path to .../config/calctype.name, and create if not existing
-        self.calcdir = os.path.join(self.configdir, self.casm_settings["curr_calctype"])
+        self.calcdir = os.path.join(self.configdir, self.casm_settings.default_clex.calctype)
         try:
             os.mkdir(self.calcdir)
         except:
@@ -72,9 +73,9 @@ class Converge(object):
         # read the settings json file
         print "  Reading converge.json settings file"
         sys.stdout.flush()
-        setfile = casm.settings_path("converge.json",self.casm_settings["curr_calctype"],self.configdir)
+        setfile = casm.settings_path("converge.json",self.casm_settings.default_clex.calctype,self.configdir)
         if setfile == None:
-            raise vaspwrapper.VaspWrapperError("Could not find .../settings/" + self.casm_settings["curr_calctype"] + "/converge.json file.")
+            raise vaspwrapper.VaspWrapperError("Could not find .../settings/" + self.casm_settings.default_clex.calctype + "/converge.json file.")
             sys.stdout.flush()
         self.settings = vaspwrapper.read_settings(setfile)
 
@@ -117,26 +118,7 @@ class Converge(object):
                 POS: structure of the configuration to be relaxed
 
         """
-        incarfile = casm.settings_path("INCAR",self.casm_settings["curr_calctype"],self.configdir)
-        prim_kpointsfile = casm.settings_path("KPOINTS",self.casm_settings["curr_calctype"],self.configdir)
-        prim_poscarfile = casm.settings_path("POSCAR",self.casm_settings["curr_calctype"],self.configdir)
-        super_poscarfile = os.path.join(self.configdir,"POS")
-        speciesfile = casm.settings_path("SPECIES",self.casm_settings["curr_calctype"],self.configdir)
-
-        if incarfile == None or not os.path.isfile(incarfile):
-            raise vasp.VaspError("Relax.setup failed. No incar file: '" + incarfile + "'")
-        if prim_kpointsfile == None or not os.path.isfile(prim_kpointsfile):
-            raise vasp.VaspError("Relax.setup failed. No kpoints file: '" + prim_kpointsfile + "'")
-        if prim_poscarfile == None or not os.path.isfile(prim_poscarfile):
-#            raise vasp.VaspError("Relax.setup failed. No prim poscar file: '" + prim_poscarfile + "'")
-            warnings.warn("No prim poscar file: '" + prim_poscarfile + "', I hope your KPOINTS mode is A/AUTO/Automatic \
-            or this will fail!!!", vasp.VaspWarning)
-            prim_poscarfile = None
-        if super_poscarfile == None or not os.path.isfile(super_poscarfile):
-            raise vasp.VaspError("Relax.setup failed. No pos file: '" + super_poscarfile + "'")
-        if speciesfile == None or not os.path.isfile(speciesfile):
-            raise vasp.VaspError("Relax.setup failed. No species file: '" + speciesfile + "'")
-        sys.stdout.flush()
+        incarfile,prim_kpointsfile,prim_poscarfile,super_poscarfile,speciesfile=casm.project.vasp_input_file_names(self.casm_settings,self.configdir)
 
         vasp.io.write_vasp_input(self.calcdir, incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, self.sort)
 
@@ -340,10 +322,10 @@ class Converge(object):
             # print a local settings file, so that the run_limit can be extended if the
             #   convergence problems are fixed
             try:
-                os.makedirs(os.path.join(self.configdir, "settings", self.casm_settings["curr_calctype"]))
+                os.makedirs(os.path.join(self.configdir, "settings", self.casm_settings.default_clex.calctype))
             except:
                 pass
-            settingsfile = os.path.join(self.configdir, "settings", self.casm_settings["curr_calctype"], "relax.json")
+            settingsfile = os.path.join(self.configdir, "settings", self.casm_settings.default_clex.calctype, "relax.json")
             vaspwrapper.write_settings(self.settings, settingsfile)
 
             print "Writing:", settingsfile
@@ -387,7 +369,7 @@ class Converge(object):
 
         if self.sort:
             super_poscarfile = os.path.join(self.configdir,"POS")
-            speciesfile = casm.settings_path("SPECIES",self.casm_settings["curr_calctype"],self.configdir)
+            speciesfile = casm.settings_path("SPECIES",self.casm_settings.default_clex.calctype,self.configdir)
             species_settings = vasp.io.species_settings(speciesfile)
             super = vasp.io.Poscar(super_poscarfile, species_settings)
             unsort_dict = super.unsort_dict()

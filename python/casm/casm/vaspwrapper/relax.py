@@ -2,7 +2,7 @@ import os, math, sys, json, re, warnings
 import pbs
 import vasp
 import casm
-from casm.project import ProjectSettings
+import casm.project
 import vaspwrapper
 
 class Relax(object):
@@ -44,7 +44,7 @@ class Relax(object):
             configdir = os.getcwd()
 
         print "Reading CASM settings"
-        self.casm_settings = ProjectSettings(casm.casm_settings_path())
+        self.casm_settings = casm.project.ProjectSettings(casm.casm_settings_path())
         if self.casm_settings == None:
             raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
@@ -113,12 +113,9 @@ class Relax(object):
 
         """
         # Find required input files in CASM project directory tree
-        incarfile = casm.settings_path("INCAR",self.casm_settings.default_clex.calctype,self.configdir)
-        prim_kpointsfile = casm.settings_path("KPOINTS",self.casm_settings.default_clex.calctype,self.configdir)
-        prim_poscarfile = casm.settings_path("POSCAR",self.casm_settings.default_clex.calctype,self.configdir)
-        super_poscarfile = os.path.join(self.configdir,"POS")
-        speciesfile = casm.settings_path("SPECIES",self.casm_settings.default_clex.calctype,self.configdir)
+        incarfile,prim_kpointsfile,prim_poscarfile,super_poscarfile,speciesfile=casm.project.vasp_input_file_names(self.casm_settings,self.configdir)
 
+        #print incarfile,prim_kpointsfile,prim_poscarfile,super_poscarfile,speciesfile
         # Verify that required input files exist
         if incarfile is None:
             raise vasp.VaspError("Relax.setup failed. No INCAR file found in CASM project.")
