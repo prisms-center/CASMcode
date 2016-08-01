@@ -61,7 +61,7 @@ class Relax(object):
             sys.stdout.flush()
 
         # store path to .../config/calctype.name, and create if not existing
-        self.calcdir = os.path.join(self.configdir, self.casm_settings.default_clex.calctype)
+        self.calcdir = os.path.join(self.configdir, self.casm_settings.default_clex.calctype_dir())
         try:
             os.mkdir(self.calcdir)
         except:
@@ -70,10 +70,10 @@ class Relax(object):
         # read the settings json file
         print "  Reading relax.json settings file"
         sys.stdout.flush()
-        setfile = casm.settings_path("relax.json",self.casm_settings.default_clex.calctype,self.configdir)
+        setfile = casm.settings_path("relax.json",self.casm_settings.default_clex.calctype_dir(),self.configdir)
 
         if setfile == None:
-            raise vaspwrapper.VaspWrapperError("Could not find .../settings/" + self.casm_settings.default_clex.calctype + "/relax.json file.")
+            raise vaspwrapper.VaspWrapperError("Could not find .../settings/" + self.casm_settings.default_clex.calctype_dir() + "/relax.json file.")
             sys.stdout.flush()
         self.settings = vaspwrapper.read_settings(setfile)
 
@@ -131,15 +131,15 @@ class Relax(object):
         # Find optional input files
         extra_input_files = []
         for s in self.settings["extra_input_files"]:
-            extra_input_files.append(casm.settings_path(s,self.casm_settings.default_clex.calctype,self.configdir))
+            extra_input_files.append(casm.settings_path(s,self.casm_settings.default_clex.calctype_dir(),self.configdir))
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Relax.setup failed. Extra input file " + s + " not found in CASM project.")
         if self.settings["initial"]:
-            extra_input_files += [ casm.settings_path(self.settings["initial"],self.casm_settings.default_clex.calctype,self.configdir) ]
+            extra_input_files += [ casm.settings_path(self.settings["initial"],self.casm_settings.default_clex.calctype_dir(),self.configdir) ]
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Relax.setup failed. No initial INCAR file " + self.settings["initial"] + " found in CASM project.")
         if self.settings["final"]:
-            extra_input_files += [ casm.settings_path(self.settings["final"],self.casm_settings.default_clex.calctype,self.configdir) ]
+            extra_input_files += [ casm.settings_path(self.settings["final"],self.casm_settings.default_clex.calctype_dir(),self.configdir) ]
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Relax.setup failed. No final INCAR file " + self.settings["final"] + " found in CASM project.")
 
@@ -359,10 +359,10 @@ class Relax(object):
             # print a local settings file, so that the run_limit can be extended if the
             #   convergence problems are fixed
             try:
-                os.makedirs(os.path.join(self.configdir, "settings", self.casm_settings.default_clex.calctype))
+                os.makedirs(os.path.join(self.configdir, "settings", self.casm_settings.default_clex.calctype_dir()))
             except:
                 pass
-            settingsfile = os.path.join(self.configdir, "settings", self.casm_settings.default_clex.calctype, "relax.json")
+            settingsfile = os.path.join(self.configdir, "settings", self.casm_settings.default_clex.calctype_dir(), "relax.json")
             vaspwrapper.write_settings(self.settings, settingsfile)
 
             print "Writing:", settingsfile
@@ -418,7 +418,7 @@ class Relax(object):
         # write properties.calc.json
         vaspdir = os.path.join(self.calcdir, "run.final")
 	super_poscarfile = os.path.join(self.configdir,"POS")
-        speciesfile = casm.settings_path("SPECIES",self.casm_settings.default_clex.calctype,self.configdir)
+        speciesfile = casm.settings_path("SPECIES",self.casm_settings.default_clex.calctype_dir(),self.configdir)
         output = self.properties(vaspdir, super_poscarfile, speciesfile)
         outputfile = os.path.join(self.calcdir, "properties.calc.json")
         with open(outputfile, 'w') as file:

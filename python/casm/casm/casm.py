@@ -65,7 +65,6 @@ def settings_path(name, calctype, configdir=None):
     cont = True
     while cont == True:
         check = os.path.join(curr,"settings", calctype, name)
-        print check
         if os.path.exists(check):
             return check
         if os.path.exists(os.path.join(curr,".casm")):

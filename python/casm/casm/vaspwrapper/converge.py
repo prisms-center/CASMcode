@@ -64,7 +64,7 @@ class Converge(object):
             sys.stdout.flush()
 
         # store path to .../config/calctype.name, and create if not existing
-        self.calcdir = os.path.join(self.configdir, self.casm_settings.default_clex.calctype)
+        self.calcdir = os.path.join(self.configdir, self.casm_settings.default_clex.calctype_dir())
         try:
             os.mkdir(self.calcdir)
         except:
@@ -73,9 +73,9 @@ class Converge(object):
         # read the settings json file
         print "  Reading converge.json settings file"
         sys.stdout.flush()
-        setfile = casm.settings_path("converge.json",self.casm_settings.default_clex.calctype,self.configdir)
+        setfile = casm.settings_path("converge.json",self.casm_settings.default_clex.calctype_dir(),self.configdir)
         if setfile == None:
-            raise vaspwrapper.VaspWrapperError("Could not find .../settings/" + self.casm_settings.default_clex.calctype + "/converge.json file.")
+            raise vaspwrapper.VaspWrapperError("Could not find .../settings/" + self.casm_settings.default_clex.calctype_dir() + "/converge.json file.")
             sys.stdout.flush()
         self.settings = vaspwrapper.read_settings(setfile)
 
@@ -322,10 +322,10 @@ class Converge(object):
             # print a local settings file, so that the run_limit can be extended if the
             #   convergence problems are fixed
             try:
-                os.makedirs(os.path.join(self.configdir, "settings", self.casm_settings.default_clex.calctype))
+                os.makedirs(os.path.join(self.configdir, "settings", self.casm_settings.default_clex.calctype_dir()))
             except:
                 pass
-            settingsfile = os.path.join(self.configdir, "settings", self.casm_settings.default_clex.calctype, "relax.json")
+            settingsfile = os.path.join(self.configdir, "settings", self.casm_settings.default_clex.calctype_dir(), "relax.json")
             vaspwrapper.write_settings(self.settings, settingsfile)
 
             print "Writing:", settingsfile
@@ -369,7 +369,7 @@ class Converge(object):
 
         if self.sort:
             super_poscarfile = os.path.join(self.configdir,"POS")
-            speciesfile = casm.settings_path("SPECIES",self.casm_settings.default_clex.calctype,self.configdir)
+            speciesfile = casm.settings_path("SPECIES",self.casm_settings.default_clex.calctype_dir(),self.configdir)
             species_settings = vasp.io.species_settings(speciesfile)
             super = vasp.io.Poscar(super_poscarfile, species_settings)
             unsort_dict = super.unsort_dict()

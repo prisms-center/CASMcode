@@ -85,10 +85,22 @@ class ClexDescription(object):
     def __init__(self, name, property, calctype, ref, bset, eci):
       self.name = name
       self.property = property
-      self.calctype = "calctype."+calctype
-      self.ref = "ref."+ref
-      self.bset = "bset."+bset
-      self.eci = "eci."+eci
+      self.calctype = calctype
+      self.ref = ref
+      self.bset = bset
+      self.eci = eci
+
+    def calctype_dir(self):
+      return "calctype."+self.calctype
+
+    def ref_dir(self):
+      return "ref."+self.ref
+
+    def bset_dir(self):
+      return "bset."+self.bset
+
+    def eci_dir(self):
+      return "eci."+self.eci
       
 
 class ProjectSettings(object):
@@ -532,7 +544,7 @@ class Project(object):
       
 def vasp_input_file_names(settings, configdir):
     # Find required input files in CASM project directory tree
-    curr_calctype=settings.default_clex.calctype
+    curr_calctype=settings.default_clex.calctype_dir()
 
     incarfile = casm.settings_path("INCAR",curr_calctype,configdir)
     prim_kpointsfile = casm.settings_path("KPOINTS",curr_calctype,configdir)
