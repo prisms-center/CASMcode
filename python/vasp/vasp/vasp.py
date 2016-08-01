@@ -393,13 +393,50 @@ class FreezeError(object):
         print "  Kill job and try to continue"
 
 
+class NbandsError(object):
+    """
+    Your highest band is occupied at some k-points! Unless you are
+    """
+    def __init__(self):
+        self.pattern = "Your highest band is occupied at some k-points! Unless you are"
+
+    def __str__(self):
+        return self.pattern
+
+    def error(self, line=None, jobdir=None):
+        """ Check if pattern found in line """
+        if re.search(self.pattern,line):
+            return True
+        return False
+
+    def fix(self, err_jobdir, new_jobdir, settings):
+        """ Try to fix the error by increasing the number of bands"""
+        continue_job(err_jobdir, new_jobdir, settings)
+        with open(os.path.join(err_jobdir,'OUTCAR')) as f:
+            err_outcar = f.read().splitlines()
+        nbands_line = []
+        for line in err_outcar:
+            if "NBANDS" in line:
+                nbands_line.append(line)
+        if len(nbands_line)<1:
+            print "SERIOUS WARNING :  "
+            print "        Couldn't find any reference to nbands in the OUTCAR. Continuing without fixing"
+        else:
+            for l in nbands_line:
+                if 'k-points' in l.strip().split():
+                    print "  Set NBANDS = "+str(int(1.1 * float(l.strip().split()[-1])))
+                    sys.stdout.flush()
+                    io.set_incar_tag({"NBANDS":int(1.1 * float(l.strip().split()[-1]))}, jobdir=new_jobdir)
+                    break
+        
+        
 def error_check(jobdir, stdoutfile, err_types):
     """ Check vasp stdout for errors """
     err = dict()
     if err_types is None:
         possible = [SubSpaceMatrixError()]
     else:
-        err_objs = {'IbzkptError' : IbzkptError(), 'SubSpaceMatrixError' : SubSpaceMatrixError()}
+        err_objs = {'IbzkptError' : IbzkptError(), 'SubSpaceMatrixError' : SubSpaceMatrixError(), 'NbandsError' : NbandsError()}
         for s in err_types:
             if s not in err_objs.keys():
                 raise VaspError('Invalid err_type: %s'%s)
@@ -446,7 +483,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
                         if ncpus==None, $PBS_NP is used if it exists, else 1
             poll_check_time: how frequently to check if the vasp job is completed
             err_check_time: how frequently to parse vasp output to check for errors
-            err_types:  List of error types to check for. Supported errors: 'IbzkptError', 'SubSpaceMatrixError'. Default: None, in which case only SubSpaceMatrixErrors are checked.
+            err_types:  List of error types to check for. Supported errors: 'IbzkptError', 'SubSpaceMatrixError', 'NbandsError'. Default: None, in which case only SubSpaceMatrixErrors are checked.
 
     """
     print "Begin vasp run:"
