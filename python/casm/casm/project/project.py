@@ -117,7 +117,6 @@ class ProjectSettings(object):
         self.path = casm.project_path(path)
         dir = DirectoryStructure(self.path)
         print dir.project_settings()
-        print type(dir.project_settings())
         self.data = json.load(open(dir.project_settings()))
 
         d = self.data["cluster_expansions"][self.data["default_clex"]]
