@@ -31,50 +31,24 @@ def project_path(dir=None):
             curr = os.path.dirname(curr)
     return None
 
-def casm_settings_path():
-    """
-    Crawl up and find project_settings.json
-    """
-    configdir = os.getcwd()
-    curr = configdir
-    cont = True
-    while cont == True:
-        candidate=os.path.join(curr,".casm")
-        if os.path.exists(candidate):
-            return candidate
-        elif curr == os.path.dirname(curr):
-            return None
-        else:
-            curr = os.path.dirname(curr)
+#def casm_settings_path():
+#    """
+#    Crawl up and find project_settings.json
+#    """
+#    configdir = os.getcwd()
+#    curr = configdir
+#    cont = True
+#    while cont == True:
+#        candidate=os.path.join(curr,".casm")
+#        if os.path.exists(candidate):
+#            return candidate
+#        elif curr == os.path.dirname(curr):
+#            return None
+#        else:
+#            curr = os.path.dirname(curr)
+#
 
-
-def settings_path(name, calctype, configdir=None):
-    """
-    Crawl casm directory structure starting at configdir and moving upwards 
-    towards the casm project root directory to find the most relevant settings file or directory.
-    
-    Looks for: ".../settings/calctype." + calctype + "/name'"
-
-    If configdir == None, gets set to os.getcwd()
-    
-    Return None if name not found
-    """
-    if configdir == None:
-        configdir = os.getcwd()
-    curr = configdir
-    cont = True
-    while cont == True:
-        check = os.path.join(curr,"settings", calctype, name)
-        if os.path.exists(check):
-            return check
-        if os.path.exists(os.path.join(curr,".casm")):
-            return None
-        elif curr == os.path.dirname(curr):
-            return None
-        else:
-            curr = os.path.dirname(curr)
-    return None
-
+#Move this into DirectoryStructure
 
 
 
