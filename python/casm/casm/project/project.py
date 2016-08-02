@@ -1,6 +1,5 @@
 import warnings
 import casm
-import vasp
 import os, subprocess, json
 from os.path import join
 import ctypes, glob
