@@ -26,3 +26,5 @@ casm_units_LDADD=libcasm.la\
 				 $(BOOST_REGEX_LIB)\
 				 $(BOOST_CHRONO_LIB)\
 				 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+
+TESTS+=./tests/run_tests

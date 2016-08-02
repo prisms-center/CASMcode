@@ -11,6 +11,7 @@ bin_PROGRAMS=
 check_PROGRAMS=
 man1_MANS=
 dist_bin_SCRIPTS=
+TESTS=
 
 #===========================================================#
 #Define flags for everything ever
@@ -51,7 +52,7 @@ include $(srcdir)/apps/completer/Makemodule.am
 
 #============================================================#
 #Take care of tests
-include $(srcdir)/tests/unit/Makemodule.am
+include $(srcdir)/tests/Makemodule.am
 
 #============================================================#
 #Take care of python stuff

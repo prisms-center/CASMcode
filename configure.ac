@@ -95,7 +95,6 @@ AC_FUNC_STRTOD
 AC_CHECK_FUNCS([floor iswprint memmove memset mkdir pow rmdir select sqrt strchr strpbrk strrchr strstr strtol])
 
 AC_CONFIG_FILES([Makefile
-                 python/Makefile
-                 python/casm/setup.py
-                 python/vasp/setup.py])
+                 tests/run_tests],
+                 [chmod +x tests/run_tests])
 AC_OUTPUT
