@@ -394,16 +394,44 @@ class DirectoryStructure(object):
 
 class Project(object):
     """The Project class contains information about a CASM project
+    
+    Attributes
+    ----------
+      
+      path: str
+        Path to project root directory
+      
+      settings: casm.project.ProjectSettings instance
+        Contains project settings
+      
+      dir: casm.project.DirectoryStructure instance
+        Provides file and directory locations within the project
+      
+      casm_exe: str
+        The casm CLI executable to use when necessary
+      
+      verbose: bool
+        How much to print to stdout
+      
     """
     def __init__(self, path=None, casm_exe=None, verbose=True):
       """
       Construct a CASM Project representation.
 
-      Args:
-          path: path to CASM project (Default=None, uses project containing 
-            current directory). 
-          case_exe: CASM executable to use for command line interface. (Default
-            uses $CASM if it exists in the environment, else "casm")
+      Arguments
+      ----------
+        
+        path: str, optional, default=None 
+          Path to project root directory. Default=None uses project containing 
+          current working directory
+        
+        casm_exe: str, optional, default=None
+          CASM executable to use for command line interface. Default
+          uses $CASM if it exists in the environment, else "casm".
+        
+        verbose: bool, optional, default=True
+          How much to print to stdout
+      
       """
       
       if casm.project_path(path) != casm.project_path():

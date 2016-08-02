@@ -138,7 +138,7 @@ class Selection(object):
           if data is not None:
             self._data = data
             self._clean_data()
-        
+          
           if os.path.exists(self.path) and not force:
             raise Exception("File: " + self.path + " already exists")
         
@@ -149,7 +149,7 @@ class Selection(object):
           if self._is_json():
             self._data.to_json(path_or_buf=backup, orient='records')
           else:
-            self._data.loc[:,"selected"] = self.data.loc[:,"selected"].astype(int)
+            self.data.loc[:,"selected"].astype(int)
             f = open(backup, 'w')
             f.write('#')
             self.data.to_csv(path_or_buf=f, sep=' ', index=False)
@@ -178,7 +178,7 @@ class Selection(object):
     
     
     def _clean_data(self):
-        self._data.loc[:,'selected'] = self._data.loc[:,'selected'].astype(bool)
+        self._data.loc[:,'selected'].astype(bool)
         
     
     def query(self, columns, force=False, verbose=False):
