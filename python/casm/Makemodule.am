@@ -9,6 +9,7 @@ casmlearn_PYTHON=python/casm/casm/learn/fit.py\
 				 python/casm/casm/learn/evolve.py\
 				 python/casm/casm/learn/cross_validation.py\
 				 python/casm/casm/learn/feature_selection.py\
+				 python/casm/casm/learn/direct_selection.py\
 				 python/casm/casm/learn/tools.py\
 				 python/casm/casm/learn/__init__.py
 casmlearndir=$(casmpydir)/learn
