@@ -132,6 +132,9 @@ namespace CASM {
           fs::remove(dir.clexulator_src(set.name(), bset));
           fs::remove(dir.clexulator_o(set.name(), bset));
           fs::remove(dir.clexulator_so(set.name(), bset));
+          if(args.primclex) {
+            args.primclex->refresh(false, false, false, false, true);
+          }
         }
         else {
           args.log << "Exiting due to existing files.  Use --force to force overwrite.\n" << std::endl;
@@ -213,7 +216,7 @@ namespace CASM {
       args.log << "write: " << dir.clexulator_src(set.name(), bset) << "\n" << std::endl;
 
       // compile clexulator
-      primclex.clexulator(set.default_clex(), args.log);
+      primclex.clexulator(set.default_clex());
     }
     else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
 

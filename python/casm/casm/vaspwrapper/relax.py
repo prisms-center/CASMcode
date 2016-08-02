@@ -2,6 +2,7 @@ import os, math, sys, json, re, warnings
 import pbs
 import vasp
 import casm
+import casm.project
 import vaspwrapper
 
 class Relax(object):
@@ -42,10 +43,14 @@ class Relax(object):
         if configdir == None:
             configdir = os.getcwd()
 
+        print "Working on directory "+str(configdir)
+
         print "Reading CASM settings"
-        self.casm_settings = casm.casm_settings(configdir)
+        self.casm_settings = casm.project.ProjectSettings()
         if self.casm_settings == None:
             raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
+
+        self.casm_directories=casm.project.DirectoryStructure()
 
         print "Constructing a CASM VASPWrapper Relax object"
         sys.stdout.flush()
@@ -60,19 +65,25 @@ class Relax(object):
             sys.stdout.flush()
 
         # store path to .../config/calctype.name, and create if not existing
-        self.calcdir = os.path.join(self.configdir, self.casm_settings["curr_calctype"])
+        self.calcdir = self.casm_directories.calctype_dir(configdir,self.casm_settings.default_clex)
         try:
             os.mkdir(self.calcdir)
         except:
             pass
 
+
         # read the settings json file
         print "  Reading relax.json settings file"
         sys.stdout.flush()
-        setfile = casm.settings_path("relax.json",self.casm_settings["curr_calctype"],self.configdir)
+        setfile = self.casm_directories.settings_path_crawl("relax.json",self.casm_settings.default_clex,self.configdir)
+
         if setfile == None:
-            raise vaspwrapper.VaspWrapperError("Could not find .../settings/" + self.casm_settings["curr_calctype"] + "/relax.json file.")
+            raise vaspwrapper.VaspWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
             sys.stdout.flush()
+
+        else:
+            print "Using "+str(setfile)+" as settings..."
+
         self.settings = vaspwrapper.read_settings(setfile)
 
         # add required keys to settings if not present
@@ -111,36 +122,22 @@ class Relax(object):
 
         """
         # Find required input files in CASM project directory tree
-        incarfile = casm.settings_path("INCAR",self.casm_settings["curr_calctype"],self.configdir)
-        prim_kpointsfile = casm.settings_path("KPOINTS",self.casm_settings["curr_calctype"],self.configdir)
-        prim_poscarfile = casm.settings_path("POSCAR",self.casm_settings["curr_calctype"],self.configdir)
-        super_poscarfile = os.path.join(self.configdir,"POS")
-        speciesfile = casm.settings_path("SPECIES",self.casm_settings["curr_calctype"],self.configdir)
+        vaspfiles=casm.vaspwrapper.vasp_input_file_names(self.casm_directories,self.casm_settings.default_clex,self.configdir)
+        incarfile,prim_kpointsfile,prim_poscarfile,super_poscarfile,speciesfile=vaspfiles
 
-        # Verify that required input files exist
-        if incarfile is None:
-            raise vasp.VaspError("Relax.setup failed. No INCAR file found in CASM project.")
-        if prim_kpointsfile is None:
-            raise vasp.VaspError("Relax.setup failed. No KPOINTS file found in CASM project.")
-        if prim_poscarfile is None:
-            warnings.warn("No reference POSCAR file found in CASM project. I hope your KPOINTS mode is A/AUTO/Automatic or this will fail!", vasp.VaspWarning)
-        if super_poscarfile is None:
-            raise vasp.VaspError("Relax.setup failed. No POS file found for this configuration.")
-        if speciesfile is None:
-            raise vasp.VaspError("Relax.setup failed. No SPECIES file found in CASM project.")
 
         # Find optional input files
         extra_input_files = []
         for s in self.settings["extra_input_files"]:
-            extra_input_files.append(casm.settings_path(s,self.casm_settings["curr_calctype"],self.configdir))
+            extra_input_files.append(self.casm_directories.settings_path_crawl(s,self.casm_settings.default_clex,self.configdir))
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Relax.setup failed. Extra input file " + s + " not found in CASM project.")
         if self.settings["initial"]:
-            extra_input_files += [ casm.settings_path(self.settings["initial"],self.casm_settings["curr_calctype"],self.configdir) ]
+            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["initial"],self.casm_settings.default_clex,self.configdir) ]
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Relax.setup failed. No initial INCAR file " + self.settings["initial"] + " found in CASM project.")
         if self.settings["final"]:
-            extra_input_files += [ casm.settings_path(self.settings["final"],self.casm_settings["curr_calctype"],self.configdir) ]
+            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["final"],self.casm_settings.default_clex,self.configdir) ]
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Relax.setup failed. No final INCAR file " + self.settings["final"] + " found in CASM project.")
 
@@ -360,10 +357,10 @@ class Relax(object):
             # print a local settings file, so that the run_limit can be extended if the
             #   convergence problems are fixed
             try:
-                os.makedirs(os.path.join(self.configdir, "settings", self.casm_settings["curr_calctype"]))
+                os.makedirs(self.casm_directories.configuration_calc_settings_dir(self.casm_settings.default_clex))
             except:
                 pass
-            settingsfile = os.path.join(self.configdir, "settings", self.casm_settings["curr_calctype"], "relax.json")
+            settingsfile = os.path.join(self.casm_directories.configuration_calc_settings_dir(self.casm_settings.default_clex), "relax.json")
             vaspwrapper.write_settings(self.settings, settingsfile)
 
             print "Writing:", settingsfile
@@ -419,7 +416,7 @@ class Relax(object):
         # write properties.calc.json
         vaspdir = os.path.join(self.calcdir, "run.final")
 	super_poscarfile = os.path.join(self.configdir,"POS")
-        speciesfile = casm.settings_path("SPECIES",self.casm_settings["curr_calctype"],self.configdir)
+        speciesfile = self.casm_directories.settings_path_crawl("SPECIES",self.casm_settings.default_clex,self.configdir)
         output = self.properties(vaspdir, super_poscarfile, speciesfile)
         outputfile = os.path.join(self.calcdir, "properties.calc.json")
         with open(outputfile, 'w') as file:

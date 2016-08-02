@@ -1,7 +1,8 @@
 #include "ccasm/api.hh"
 #include <wordexp.h>
-#include "boost/iostreams/stream.hpp"
-#include "boost/iostreams/device/null.hpp"
+//#include "boost/iostreams/stream.hpp"
+//#include "boost/iostreams/device/null.hpp"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/external/boost.hh"
 #include "casm/app/casm_functions.hh"
@@ -11,47 +12,43 @@ using namespace CASM;
 extern "C" {
 
   costream *casm_STDOUT() {
-    return reinterpret_cast<costream *>(&std::cout);
+    return reinterpret_cast<costream *>(&default_log());
   }
 
   costream *casm_STDERR() {
-    return reinterpret_cast<costream *>(&std::cerr);
+    return reinterpret_cast<costream *>(&default_err_log());
   }
 
 
-  costream *casm_nullstream_new() {
-    using namespace boost::iostreams;
-    return reinterpret_cast<costream *>(new stream<null_sink>(null_sink()));
-  }
-
-  void casm_nullstream_delete(costream *ptr) {
-    using namespace boost::iostreams;
-    delete reinterpret_cast<stream<null_sink>*>(ptr);
+  costream *casm_nullstream() {
+    return reinterpret_cast<costream *>(&null_log());
   }
 
 
   costream *casm_ostringstream_new() {
-    return reinterpret_cast<costream *>(new std::ostringstream());
+    return reinterpret_cast<costream *>(new OStringStreamLog());
   }
 
   void casm_ostringstream_delete(costream *ptr) {
-    delete reinterpret_cast<std::ostringstream *>(ptr);
+    delete reinterpret_cast<OStringStreamLog *>(ptr);
   }
 
   unsigned long casm_ostringstream_size(costream *ptr) {
-    return reinterpret_cast<std::ostringstream *>(ptr)->tellp();
+    return reinterpret_cast<OStringStreamLog *>(ptr)->ss().tellp();
   }
 
   char *casm_ostringstream_strcpy(costream *ptr, char *c_str) {
-    auto str = reinterpret_cast<std::ostringstream *>(ptr)->str();
+    auto str = reinterpret_cast<OStringStreamLog *>(ptr)->ss().str();
     std::strcpy(c_str, str.c_str());
     return c_str;
   }
 
 
-  cPrimClex *casm_primclex_new(char *path, costream *log) {
-    Log _log(*reinterpret_cast<std::ostream *>(log));
-    PrimClex *ptr = new PrimClex(fs::path(path), _log);
+  cPrimClex *casm_primclex_new(char *path, costream *log, costream *debug_log, costream *err_log) {
+    Log &_log(*reinterpret_cast<Log *>(log));
+    Log &_debug_log(*reinterpret_cast<Log *>(debug_log));
+    Log &_err_log(*reinterpret_cast<Log *>(err_log));
+    PrimClex *ptr = new PrimClex(fs::path(path), _log, _debug_log, _err_log);
     return reinterpret_cast<cPrimClex *>(ptr);
   }
 
@@ -59,11 +56,21 @@ extern "C" {
     delete reinterpret_cast<PrimClex *>(ptr);
   }
 
+  void casm_primclex_refresh(cPrimClex *ptr,
+                             bool read_settings,
+                             bool read_composition,
+                             bool read_chem_ref,
+                             bool read_configs,
+                             bool clear_clex) {
+    PrimClex *_primclex = reinterpret_cast<PrimClex *>(ptr);
+    _primclex->refresh(read_settings, read_composition, read_chem_ref, read_configs, clear_clex);
+  }
 
-  int casm_capi(char *args, cPrimClex *primclex, costream *log, costream *err_log) {
+  int casm_capi(char *args, cPrimClex *primclex, costream *log, costream *debug_log, costream *err_log) {
     PrimClex *_primclex = reinterpret_cast<PrimClex *>(primclex);
-    Log _log(*reinterpret_cast<std::ostream *>(log));
-    Log _err_log(*reinterpret_cast<std::ostream *>(err_log));
+    Log &_log(*reinterpret_cast<Log *>(log));
+    Log &_debug_log(*reinterpret_cast<Log *>(debug_log));
+    Log &_err_log(*reinterpret_cast<Log *>(err_log));
 
     std::string s("casm ");
     s += std::string(args);

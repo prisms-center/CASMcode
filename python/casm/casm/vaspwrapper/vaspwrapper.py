@@ -1,4 +1,5 @@
 import os, shutil, re, subprocess, json
+import warnings
 import vasp.io
 
 class VaspWrapperError(Exception):
@@ -112,4 +113,27 @@ def write_settings(settings, filename):
     json.dump( settings, file, indent=4)
     file.close()
 
+      
+def vasp_input_file_names(dirstruc, clex, configdir=None):
+    # Find required input files in CASM project directory tree
+
+    incarfile = dirstruc.settings_path_crawl("INCAR",clex,configdir)
+    prim_kpointsfile = dirstruc.settings_path_crawl("KPOINTS",clex,configdir)
+    prim_poscarfile = dirstruc.settings_path_crawl("POSCAR",clex,configdir)
+    super_poscarfile = os.path.join(configdir,"POS")
+    speciesfile = dirstruc.settings_path_crawl("SPECIES",clex,configdir)
+
+    # Verify that required input files exist
+    if incarfile is None:
+        raise vasp.VaspError("vasp_input_file_names failed. No INCAR file found in CASM project.")
+    if prim_kpointsfile is None:
+        raise vasp.VaspError("vasp_input_file_names failed. No KPOINTS file found in CASM project.")
+    if prim_poscarfile is None:
+        warnings.warn("No reference POSCAR file found in CASM project. I hope your KPOINTS mode is A/AUTO/Automatic or this will fail!", vasp.VaspWarning)
+    if super_poscarfile is None:
+        raise vasp.VaspError("vasp_input_file_names failed. No POS file found for this configuration.")
+    if speciesfile is None:
+        raise vasp.VaspError("vasp_input_file_names failed. No SPECIES file found in CASM project.")
+
+    return (incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile)
 
