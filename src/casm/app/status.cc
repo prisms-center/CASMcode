@@ -4,9 +4,9 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/clex/PrimClex.hh"
 
+#include "casm/completer/Handlers.hh"
+
 namespace CASM {
-
-
   void status_unitialized() {
 
     std::cout << "NEXT STEPS:\n\n";
@@ -305,44 +305,50 @@ Instructions for fitting ECI:                                          \n\n\
     return update_eci_format(root);
   }
 
-  int status_command(const CommandArgs &args) {
+  namespace Completer {
+    StatusOption::StatusOption(): OptionHandlerBase("status") {}
 
-    po::variables_map vm;
+    void StatusOption::initialize() {
+      add_help_suboption();
 
-    try {
-
-      /// Set command line options using boost program_options
-      po::options_description desc("'casm status' usage");
-      desc.add_options()
-      ("help,h", "Write help documentation")
+      m_desc.add_options()
       ("next,n", "Write next steps")
       ("warning,w", "Suppress warnings")
       ("details,d", "Print detailed information")
       ("update,u", "Update file formats for current version");
 
-      try {
-        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
+      return;
+    }
+  }
 
-        /** --help option
-        */
-        if(vm.count("help")) {
-          std::cout << "\n";
-          std::cout << desc << std::endl;
+  int status_command(const CommandArgs &args) {
 
-          std::cout << "DESCRIPTION" << std::endl;
-          std::cout << "    Get status information for the current CASM project.\n\n";
+    po::variables_map vm;
 
-          return 0;
-        }
+    /// Set command line options using boost program_options
+    Completer::StatusOption status_opt;
+    try {
+      po::store(po::parse_command_line(args.argc, args.argv, status_opt.desc()), vm); // can throw
 
-        po::notify(vm); // throws on error, so do after help in case
-        // there are any problems
+      /** --help option
+      */
+      if(vm.count("help")) {
+        std::cout << "\n";
+        std::cout << status_opt.desc() << std::endl;
+
+        std::cout << "DESCRIPTION" << std::endl;
+        std::cout << "    Get status information for the current CASM project.\n\n";
+
+        return 0;
       }
-      catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
-        return 1;
-      }
+
+      po::notify(vm); // throws on error, so do after help in case
+      // there are any problems
+    }
+    catch(po::error &e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      std::cerr << status_opt.desc() << std::endl;
+      return 1;
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "

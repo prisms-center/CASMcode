@@ -14,7 +14,7 @@ SConscript(['version/SConscript'], {'env':env})
 casm_lib_src_dir = [
   'clex', 'app', 'casm_io', 'casm_io/json_io', 'container', 'crystallography', 'symmetry', 
   'basis_set', 'clusterography', 'kspace', 'misc', 'strain', 'hull', 
-  'phonon', 'monte_carlo', 'monte_carlo/grand_canonical', 'system'
+  'phonon', 'monte_carlo', 'monte_carlo/grand_canonical', 'system', 'completer'
 ]
 
 casm_lib_src = ['CASM_global_definitions.cc'] + [glob(join(x,'*.cc')) for x in casm_lib_src_dir]

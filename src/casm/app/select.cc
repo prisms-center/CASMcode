@@ -3,6 +3,7 @@
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/ConfigSelection.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
 
@@ -15,8 +16,9 @@ namespace CASM {
       for(; begin != end; ++begin) {
         ValueDataStream<bool> select_stream;
         select_stream << tformat(*begin);
-        if(select_stream.value())
+        if(select_stream.value()) {
           begin.set_selected(mk);
+        }
       }
     }
     else {
@@ -74,7 +76,9 @@ namespace CASM {
             << "    Use '[--set | --set-on | --set-off] [criteria]' for specifying or editing a selection.\n";
 
     for(const std::string &str : help_opt) {
-      if(str.empty()) continue;
+      if(str.empty()) {
+        continue;
+      }
 
       if(str[0] == 'o') {
         _stream << "Available operators for use within selection criteria:" << std::endl;
@@ -87,6 +91,35 @@ namespace CASM {
       _stream << std::endl;
     }
     _stream << std::endl;
+  }
+
+  namespace Completer {
+    SelectOption::SelectOption(): OptionHandlerBase("select") {}
+
+    const std::vector<std::string> &SelectOption::criteria_vec() const {
+      return m_criteria_vec;
+    }
+
+    void SelectOption::initialize() {
+      add_general_help_suboption();
+      add_configlists_suboption();
+      add_output_suboption();
+
+      m_desc.add_options()
+      ("json", "Write JSON output (otherwise CSV, unless output extension is '.json' or '.JSON')")
+      ("subset", "Only write selected configurations to output. Can be used by itself or in conjunction with other options")
+      ("xor", "Performs logical XOR on two configuration selections")
+      ("not", "Performs logical NOT on configuration selection")
+      ("or", "Write configurations selected in any of the input lists. Equivalent to logical OR")
+      ("and", "Write configurations selected in all of the input lists. Equivalent to logical AND")
+      ("set-on", po::value<std::vector<std::string> >(&m_criteria_vec)->multitoken()->zero_tokens(), "Add configurations to selection if they meet specified criteria.  Call using 'casm select --set-on [\"criteria\"]'")
+      ("set-off", po::value<std::vector<std::string> >(&m_criteria_vec)->multitoken()->zero_tokens(), "Remove configurations from selection if they meet specified criteria.  Call using 'casm select --set-off [\"criteria\"]'")
+      ("set", po::value<std::vector<std::string> >(&m_criteria_vec)->multitoken(), "Create a selection of Configurations that meet specified criteria.  Call using 'casm select --set [\"criteria\"]'")
+      ("force,f", "Overwrite output file");
+
+      return;
+    }
+
   }
 
   template<bool IsConst>
@@ -119,7 +152,7 @@ namespace CASM {
     //- enumerate supercells and configs and hop local configurations
 
     std::vector<std::string> criteria_vec, help_opt_vec;
-    std::vector<std::string> selection;
+    std::vector<fs::path> selection;
 
     fs::path out_path;
     COORD_TYPE coordtype;
@@ -128,28 +161,14 @@ namespace CASM {
     /// Set command line options using boost program_options
     // NOTE: multitoken() is used instead of implicit_value() because implicit_value() is broken on some systems -- i.e., braid.cnsi.ucsb.edu
     //       (not sure if it's an issue with a particular shell, or boost version, or something else)
-    po::options_description desc("'casm select' usage");
-    desc.add_options()
-    ("help,h", po::value<std::vector<std::string> >(&help_opt_vec)->multitoken()->zero_tokens(), "Write help documentation. Use '--help properties' for a list of selectable properties or '--help operators' for a list of selection operators")
-    ("config,c", po::value<std::vector<std::string> >(&selection)->multitoken(),
-     "One or more configuration files to operate on. If not given, or if given the keyword \"MASTER\" the master list is used.")
-    ("output,o", po::value<fs::path>(&out_path), "Name for output file")
-    ("json", "Write JSON output (otherwise CSV, unless output extension is '.json' or '.JSON')")
-    ("subset", "Only write selected configurations to output. Can be used by itself or in conjunction with other options")
-    ("xor", "Performs logical XOR on two configuration selections")
-    ("not", "Performs logical NOT on configuration selection")
-    ("or", "Write configurations selected in any of the input lists. Equivalent to logical OR")
-    ("and", "Write configurations selected in all of the input lists. Equivalent to logical AND")
-    ("set-on", po::value<std::vector<std::string> >(&criteria_vec)->multitoken()->zero_tokens(), "Add configurations to selection if they meet specified criteria.  Call using 'casm select --set-on [\"criteria\"]'")
-    ("set-off", po::value<std::vector<std::string> >(&criteria_vec)->multitoken()->zero_tokens(), "Remove configurations from selection if they meet specified criteria.  Call using 'casm select --set-off [\"criteria\"]'")
-    ("set", po::value<std::vector<std::string> >(&criteria_vec)->multitoken(), "Create a selection of Configurations that meet specified criteria.  Call using 'casm select --set [\"criteria\"]'")
-    ("force,f", "Overwrite output file");
+    Completer::SelectOption select_opt;
 
     std::string cmd;
     std::vector<std::string> allowed_cmd = {"and", "or", "xor", "not", "set-on", "set-off", "set"};
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, select_opt.desc()), vm); // can throw
+
       Index num_cmd(0);
       for(const std::string &cmd_str : allowed_cmd) {
         if(vm.count(cmd_str)) {
@@ -160,7 +179,6 @@ namespace CASM {
 
       if(!vm.count("help")) {
         if(num_cmd > 1) {
-          args.err_log << desc << std::endl;
           args.err_log << "Error in 'casm select'. Must use exactly one of --set-on, --set-off, --set, --and, --or, --xor, or --not." << std::endl;
           return ERR_INVALID_ARG;
         }
@@ -180,10 +198,15 @@ namespace CASM {
 
       // Start --help option
       if(vm.count("help")) {
-        args.log << std::endl << desc << std::endl;
+        args.log << std::endl << select_opt.desc() << std::endl;
       }
 
       po::notify(vm); // throws on error, so do after help in case of problems
+
+      criteria_vec = select_opt.criteria_vec();
+      help_opt_vec = select_opt.help_opt_vec();
+      selection = select_opt.selection_paths();
+      out_path = select_opt.output_path();
 
       // Finish --help option
       if(vm.count("help")) {
@@ -201,10 +224,12 @@ namespace CASM {
 
       if((vm.count("set-on") || vm.count("set-off") || vm.count("set")) && vm.count("config") && selection.size() != 1) {
         std::string cmd = "--set-on";
-        if(vm.count("set-off"))
+        if(vm.count("set-off")) {
           cmd = "--set-off";
-        if(vm.count("set"))
+        }
+        if(vm.count("set")) {
           cmd = "--set";
+        }
 
         args.err_log << "Error in 'casm select " << cmd << "'. " << selection.size() << " config selections were specified, but no more than one selection is allowed (MASTER list is used if no other is specified)." << std::endl;
         return ERR_INVALID_ARG;
@@ -212,12 +237,12 @@ namespace CASM {
 
     }
     catch(po::error &e) {
-      args.err_log << desc << std::endl;
+      args.err_log << select_opt.desc() << std::endl;
       args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      args.err_log << desc << std::endl;
+      args.err_log << select_opt.desc() << std::endl;
       args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_UNKNOWN;
     }
@@ -269,12 +294,12 @@ namespace CASM {
 
     set.set_selected(config_select);
 
-    args.log.custom("Input config list", selection[0]);
+    args.log.custom("Input config list", selection[0].string());
     write_selection_stats(Ntot, config_select, args.log, false);
     args.log << std::endl;
 
     for(int i = 1; i < selection.size(); ++i) {
-      args.log.custom("Input config list", selection[i]);
+      args.log.custom("Input config list", selection[i].string());
       write_selection_stats(Ntot, tselect[i], args.log, false);
       args.log << std::endl;
     }
@@ -324,7 +349,7 @@ namespace CASM {
         return ERR_INVALID_ARG;
       }
 
-      args.log.custom(std::string("not ") + selection[0]);
+      args.log.custom(std::string("not ") + selection[0].string());
       args.log.begin_lap();
 
       // loop through other lists, keeping only configurations selected in the other lists
@@ -372,7 +397,7 @@ namespace CASM {
         return 1;
       }
 
-      args.log.custom(selection[0] + " xor " + selection[1]);
+      args.log.custom(selection[0].string() + " xor " + selection[1].string());
       args.log.begin_lap();
 
       for(auto it = tselect[1].selected_config_begin(); it != tselect[1].selected_config_end(); ++it) {
@@ -380,8 +405,9 @@ namespace CASM {
         if(config_select.selected(it.name())) {
           config_select.set_selected(it.name(), false);
         }
-        else // If only selected in tselect, add it to config_select
+        else { // If only selected in tselect, add it to config_select
           config_select.set_selected(it.name(), true);
+        }
 
       }
       args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;

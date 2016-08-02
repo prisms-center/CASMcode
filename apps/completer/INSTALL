@@ -1,0 +1,9 @@
+You will need to compile completer.cpp into casm-complete and place the executable somewhere in your path.
+The casm completer will use the libcasm.so to print suggestions that get passed to bash.
+In order to have the completion actually work, you will also need to source the "casm" completion file.
+A typical place to put this is /etc/bash_completion.d but you may just `source casm` at any point.
+Lastly, the bash completer script makes use of functions in the "bash-completion" package,
+so be sure to install that via brew or apt-get.
+
+example compilation command:
+g++ -o casm-complete -I../../include -L/home/jgg/.local/lib -std=c++11 complete.cpp -lcasm -lboost_program_options -lboost_system -lboost_regex

@@ -685,9 +685,6 @@ results were incorrect, and these are an improvement. If you are sure you want t
 
   current_test_results.write(current_test_path);
 
-  std::cout << "curr: \n" << curr["lat_test_cases"][3]["output"]["lats"][20] << std::endl;
-  std::cout << "existing: \n" << existing["lat_test_cases"][3]["output"]["lats"][20] << std::endl;
-
 }
 
 BOOST_AUTO_TEST_CASE(RestrictedEnumeration) {
