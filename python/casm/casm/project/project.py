@@ -1,4 +1,6 @@
+import warnings
 import casm
+import vasp
 import os, subprocess, json
 from os.path import join
 import ctypes, glob
@@ -87,7 +89,7 @@ class ClexDescription(object):
       self.ref = ref
       self.bset = bset
       self.eci = eci
-      
+
 
 class ProjectSettings(object):
     """
@@ -114,15 +116,17 @@ class ProjectSettings(object):
               raise Exception("No CASM project found using " + path)
         self.path = casm.project_path(path)
         dir = DirectoryStructure(self.path)
+        print dir.project_settings()
         self.data = json.load(open(dir.project_settings()))
-        
+
         d = self.data["cluster_expansions"][self.data["default_clex"]]
         self._default_clex = ClexDescription(d["name"], d["property"], d["calctype"], d["ref"], d["bset"], d["eci"])
-        
+
         self._clex = [
-          ClexDescription(d["name"], d["property"], d["calctype"], d["ref"], d["bset"], d["eci"]) 
-          for d[1] in self.data["cluster_expansions"].iteritems() 
+          ClexDescription(d[1]["name"], d[1]["property"], d[1]["calctype"], d[1]["ref"], d[1]["bset"], d[1]["eci"]) 
+          for d in self.data["cluster_expansions"].iteritems()
         ]
+
     
     # -- Accessors --
     
@@ -271,6 +275,33 @@ class DirectoryStructure(object):
 
     # -- Calculations and reference --------
 
+    def settings_path_crawl(self, name, clex, configdir=None):
+        """
+        Crawl casm directory structure starting at configdir and moving upwards 
+        towards the casm project root directory to find the most relevant settings file or directory.
+        
+        Looks for: ".../settings/calctype." + calctype + "/name'"
+
+        If configdir == None, gets set to os.getcwd()
+        
+        Return None if name not found
+        """
+        if configdir == None:
+            configdir = os.getcwd()
+        curr = configdir
+        cont = True
+        while cont == True:
+            check = os.path.join(curr,"settings", self.__calctype(clex.calctype), name)
+            if os.path.exists(check):
+                return check
+            if os.path.exists(os.path.join(curr,".casm")):
+                return None
+            elif curr == os.path.dirname(curr):
+                return None
+            else:
+                curr = os.path.dirname(curr)
+        return None
+
     def supercell_dir(self, scelname):
       """Return supercell directory path (scelname has format SCELV_A_B_C_D_E_F)"""
       return join(self.path, self.__calc_dir, scelname)
@@ -279,10 +310,14 @@ class DirectoryStructure(object):
       """Return configuration directory path (configname has format SCELV_A_B_C_D_E_F/I)"""
       return join(self.path, self.__calc_dir, configname)
 
+    def calctype_dir(self, configname, clex):
+      """Return calctype directory path (e.g. training_data/SCEL_...../0/calctype.default"""
+      return join(self.configuration_dir(configname),self.__calctype(clex.calctype))
 
     def calc_settings_dir(self, clex):
       """Return calculation settings directory path, for global settings"""
-      return join(self.path, self.__calc_dir, self.__set_dir, self.__calctype(clex.calctype))
+      path=join(self.path, self.__calc_dir, self.__set_dir, self.__calctype(clex.calctype))
+      return path
 
     def supercell_calc_settings_dir(self, scelname, clex):
       """Return calculation settings directory path, for supercell specific settings"""
@@ -525,4 +560,3 @@ class Project(object):
       lib_ccasm.casm_ostringstream_delete(ss_err)
       
       return (qstr, qstr_err, res)
-      
