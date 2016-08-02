@@ -1,8 +1,8 @@
 import sklearn.linear_model
 import sklearn.cross_validation
 import sklearn.metrics
-import random, re, time, os, types, json, pickle, copy, uuid, shutil
-from os.path import splitext, basename
+import random, re, time, os, types, json, pickle, copy, uuid, shutil, tempfile
+from os.path import splitext, basename, join
 import numpy as np
 from math import sqrt
 from casm.project import Project, Selection, query, write_eci
@@ -889,6 +889,67 @@ def print_input_help():
       "data_kwargs": null,
       "cv_filename": "check_cv.pkl",
       "cv_kwargs": null
+    },
+  
+  # The "checkhull" option:
+  #
+  #   Currently, these settings are used with the '--checkhull' option to 
+  #   calculate convex hull properties.
+  #
+  #
+  # Object attributes
+  # -----------------
+  #
+  # selection: str, optional, default="ALL"
+  #   A CASM selection (either 'casm select' output filename or one of the 
+  #   standard selections: "MASTER", "CALCULATED", or "ALL") containing all the
+  #   configurations to be considered. The DFT convex hull is generated from 
+  #   the subset of this selection for which 'is_calculated' is true.
+  #
+  # write_results: bool, optional, default=False
+  #   If True, write CASM selection files containing the output data. Output 
+  #   selection files are named "checkhull_(problem_specs_prefix)_(i)_(selname)",
+  #   where 'problem_specs_prefix' is input["problem_specs_prefix"], 'i' is the
+  #   index of the individual in the hall of fame, and 'selname' is one of:
+  #     "dft_gs" : DFT calculated ground states
+  #     "clex_gs" : predicted ground states
+  #     "gs_missing" : DFT ground states that are not predicted ground states
+  #     "gs_spurious" : Predicted ground states that are not DFT ground states
+  #     "uncalculated" : Predicted ground states and near ground states that have not been calculated
+  #     "below_hull" : All configurations predicted below the prediction of the DFT hull
+  #
+  # uncalculated_range: number, optional, default=0.0
+  #   Include all configurations with clex_hull_dist less than this value (+hull_tol)
+  #   in the "uncalculated" configurations results. Default only includes predicted
+  #   ground states.
+  #
+  # ranged_rms: List[number], optional, default=[0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
+  #   Calculates the root-mean-square error for DFT calculated configurations
+  #   within a particular range (in eV/unitcell) of the DFT hull. The list
+  #   provides all the ranges for which the RMSE is requested.
+  #
+  # composition: str, optional, default="atom_frac"
+  #   Composition argument use for 'casm query' properties 'hull_dist' and 
+  #   'clex_hull_dist'. For thermodynamic ground states, use "atom_frac".
+  #
+  # hull_tol: number, optional, default=proj.settings.data["lin_alg_tol"]
+  #   Tolerance used for identify hull states
+  #
+  # dim_tol: number, optional, default=1e-8
+  #   Tolerance for detecting composition dimensionality
+  #
+  # bottom_tol: number, optional, default=1e-8
+  #   Tolerance for detecting which facets form the convex hull bottom
+  
+    "checkhull" : {
+      "selection": "ALL",
+      "write_results": True
+      "uncalculated_range": 1e-8,
+      "ranged_rms": [0.001, 0.005, 0.01, 0.05, 0.1, 0.5],
+      "composition": "atom_frac",
+      "hull_tol": 1e-8,
+      "dim_tol": 1e-8,
+      "bottom_tol": 1e-8
     }
   
   }
@@ -896,22 +957,21 @@ def print_input_help():
   """
 
 
-def default_filename(input_filename, default, suffix):
+def default_filename(prefix, default, suffix):
   """
   Make a default filename from the input file filename.
   
   Implements:
-    filename = default
-    if input_filename is not None:
-      filename = splitext(basename(input_filename))[0] + suffix
-    return filename
+    if prefix is not None:
+      return prefix + suffix
+    else:
+      return default
   
   Arguments
   ---------
   
-    input_filename: str or None
-      The input settings filename, which is used in determining the default
-      problem specs filename.
+    prefix: str or None
+      The prefix used in determining the default filename.
     
     default: str
       Filename if input_filename is None
@@ -928,14 +988,17 @@ def default_filename(input_filename, default, suffix):
       The generated default filename 
   
   """
-  filename = default
-  if input_filename is not None:
-    filename = splitext(basename(input_filename))[0] + suffix
-  return filename
+  if prefix is not None:
+    return prefix + suffix
+  else:
+    return default
   
 
 def set_input_defaults(input, input_filename=None):
   """
+  Set common input defaults. Currently, includes everything except "checkspecs" 
+  and "checkhull" defaults.
+  
   Arguments
   ---------
   
@@ -959,8 +1022,14 @@ def set_input_defaults(input, input_filename=None):
   
   specs = input["problem_specs"]
   
+  if "problem_specs_prefix" not in specs:
+    if input_filename is None:
+      specs["problem_specs_prefix"] = ""
+    else:
+      specs["problem_specs_prefix"] = splitext(basename(input_filename))[0]
+  
   if "specs_filename" not in specs:
-    specs["specs_filename"] = default_filename(input_filename, "problem_specs.pkl", "_specs.pkl")
+    specs["specs_filename"] = default_filename(specs["problem_specs_prefix"], "problem_specs.pkl", "_specs.pkl")
   
   # set data defaults if not provided
   if "data" not in specs:
@@ -1020,27 +1089,14 @@ def set_input_defaults(input, input_filename=None):
     if "n_halloffame" not in evolve_kwargs:
       evolve_kwargs["n_halloffame"] = 25
     if "filename_prefix" not in evolve_kwargs and input_filename is not None:
-      evolve_kwargs["filename_prefix"] = splitext(basename(input_filename))[0]
+      evolve_kwargs["filename_prefix"] = specs["problem_specs_prefix"]
     
   
   # hall of fame
   if "halloffame_filename" not in input:
-    input["halloffame_filename"] = default_filename(input_filename, "halloffame.pkl", "_halloffame.pkl")
+    input["halloffame_filename"] = default_filename(specs["problem_specs_prefix"], "halloffame.pkl", "_halloffame.pkl")
   if "n_halloffame" not in input:
     input["n_halloffame"] = 25
-  
-  # checkdata output settings
-  if "checkspecs" not in input:
-    input["checkspecs"] = dict()
-  if "data_filename" not in input["checkspecs"]:
-    suffix = "_data" + splitext(basename(specs["data"]["filename"]))[1]
-    input["checkspecs"]["data_filename"] = default_filename(input_filename, "check_data", suffix)
-  if "data_kwargs" not in input["checkspecs"] or input["checkspecs"]["data_kwargs"] is None:
-    input["checkspecs"]["data_kwargs"] = dict()
-  if "cv_filename" not in input["checkspecs"]:
-    input["checkspecs"]["cv_filename"] = default_filename(input_filename, "check_cv.pkl", "_cv.pkl")
-  if "cv_kwargs" not in input["checkspecs"] or input["checkspecs"]["cv_kwargs"] is None:
-    input["checkspecs"]["cv_kwargs"] = dict()
   
   return input
 
@@ -1353,7 +1409,7 @@ def read_sample_weight(input, tdata, verbose=True):
   return sample_weight
       
 
-def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_filename=None):
+def make_fitting_data(input, save=True, verbose=True, read_existing=True):
   """ 
   Construct a FittingData instance, either by reading existing 'fit_data.pkl',
   or from an input settings.
@@ -1366,10 +1422,8 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_
     
     save: boolean, optional, default=True
       Save a pickle file containing the training data and scoring metric. The file
-      name, which can be specified by input["fit_data_filename"], defaults to 
-      splitext(basename(input_filename))[0] + "_specs.pkl", i.e. 'my_input_specs.pkl'
-      if the input file is named 'my_input.json'. If no input_filename is given,
-      then the default is "problem_specs.pkl".
+      name is specified by input["problem_specs"]["specs_filename"].  See/use
+      set_input_defaults for default values.
     
     verbose: boolean, optional, default=True
       Print information to stdout.
@@ -1378,9 +1432,6 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True, input_
       If it exists, read the pickle file containing the training data and scoring 
       metric. The file name, which can be specified by input["fit_data_filename"], 
       defaults to "fit_data.pkl".
-    
-    input_filename: str, optional
-      Used to determine the name of the 'specs' file saved.
   
   
   Returns
@@ -1600,6 +1651,18 @@ def add_individual_detail(indiv, estimator, fdata, input, selector=None):
     wrms: float
       The root mean square prediction error of the weighted problem
     
+    mean_absolute_error: float
+      The mean absolute prediction error of the unweighted problem
+    
+    wmean_absolute_error: float
+      The mean absolute prediction error of the weighted problem
+    
+    max_absolute_error: float
+      The maximum absolute prediction error of the unweighted problem
+    
+    wmax_absolute_error: float
+      The maximum absolute prediction error of the weighted problem
+    
     estimator_method: string
       The estimator method class name
     
@@ -1648,11 +1711,20 @@ def add_individual_detail(indiv, estimator, fdata, input, selector=None):
   estimator.fit(fdata.weighted_X[:,casm.learn.tools.indices(indiv)], fdata.weighted_y)
   indiv.eci = casm.learn.tools.eci(indiv, estimator.coef_)
   
+  y_pred = estimator.predict(fdata.X[:,casm.learn.tools.indices(indiv)])
+  weighted_y_pred = estimator.predict(fdata.weighted_X[:,casm.learn.tools.indices(indiv)])
+  
   # rms and wrms
-  indiv.rms = sqrt(sklearn.metrics.mean_squared_error(
-    fdata.y, estimator.predict(fdata.X[:,casm.learn.tools.indices(indiv)])))
-  indiv.wrms = sqrt(sklearn.metrics.mean_squared_error(
-    fdata.weighted_y, estimator.predict(fdata.weighted_X[:,casm.learn.tools.indices(indiv)])))
+  indiv.rms = sqrt(sklearn.metrics.mean_squared_error(fdata.y, y_pred))
+  indiv.wrms = sqrt(sklearn.metrics.mean_squared_error(fdata.weighted_y, weighted_y_pred))
+  
+  # mean_absolute_error
+  indiv.mean_absolute_error = sklearn.metrics.mean_absolute_error(fdata.y, y_pred)
+  indiv.wmean_absolute_error = sklearn.metrics.mean_absolute_error(fdata.weighted_y, weighted_y_pred)
+  
+  # max_absolute_error
+  indiv.max_absolute_error = np.absolute(fdata.y - y_pred).max()
+  indiv.wmax_absolute_error = np.absolute(fdata.weighted_y - weighted_y_pred).max()
   
   # estimator (hide implementation detail)
   indiv.estimator_method = type(estimator).__name__
@@ -1677,25 +1749,91 @@ def add_individual_detail(indiv, estimator, fdata, input, selector=None):
   return indiv
 
 
-def checkhull(input, hall, selection, indices=None, verbose=True, input_filename=None):
+def checkhull(input, hall, indices=None, verbose=True):
   """
-  Check for hull properties and add as individual attributes:
-    n_gs_uncalculated: the # of clex-predicted gs that are not calculated
-    n_gs_spurious: the # of clex-predicted gs that are not DFT gs
-    n_gs_missing: the # of DFT gs that are not clex-predicted gs
+  Check for hull properties and add pandas.DataFrame attributes to each individual:
   
-  
+    "dft_gs" : DFT calculated ground states
+    "clex_gs" : predicted ground states
+    "gs_missing" : DFT ground states that are not predicted ground states
+    "gs_spurious" : Predicted ground states that are not DFT ground states
+    "uncalculated" : Predicted ground states and near ground states that have not been calculated
+    "below_hull" : All configurations predicted below the prediction of the DFT hull
+    "ranged_rms": root-mean-square error calculated for the subset of configurations
+      whose DFT formation energy lies within some range of the DFT convex hull.
+      Currently calculated for ranges 0.001, 0.005, 0.01, 0.05, 0.1, 0.5 eV/unit cell
+    
   Arguments
   ---------
     
     input: dict
-      The input settings as a dict
+      The input settings as a dict. This is expected to have the object 
+      input["checkspecs"], with the following attributes:
+      
+        selection: str, optional, default="ALL"
+          A CASM selection (either 'casm select' output filename or one of the 
+          standard selection "MASTER", "CALCULATED", or "ALL") containing all the
+          configurations to be considered. The DFT convex hull is generated from 
+          the subset of this selection for which 'is_calculated' is true.
+        
+        write_results: bool, optional, default=False
+          If True, write casm selection files containing the output data. Output 
+          selection files are named "checkhull_(problem_specs_prefix)_(i)_(selname)",
+          where 'problem_specs_prefix' is input["problem_specs_prefix"], 'i' is the
+          index of the individual in the hall of fame, and 'selname' is one of:
+            "dft_gs" : DFT calculated ground states
+            "clex_gs" : predicted ground states
+            "gs_missing" : DFT ground states that are not predicted ground states
+            "gs_spurious" : Predicted ground states that are not DFT ground states
+            "uncalculated" : Predicted ground states and near ground states that have not been calculated
+            "below_hull" : All configurations predicted below the prediction of the DFT hull
+        
+        uncalculated_range: number, optional, default=0.0
+          Include all configurations with clex_hull_dist less than this value (+hull_tol)
+          in the "uncalculated" configurations. Default only includes predicted
+          ground states.
+        
+        ranged_rms: List[number], optional, default=[0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
+          Calculates the root-mean-square error for DFT calculated configurations
+          within a particular range (in eV/unitcell) of the DFT hull. The list
+          provides all the ranges for which the RMSE is requested.
+        
+        composition: str, optional, default="atom_frac"
+          Composition argument use for 'casm query' properties 'hull_dist' and 
+          'clex_hull_dist'. For thermodynamic ground states, use "atom_frac".
+        
+        hull_tol: number, optional, default=proj.settings.data["lin_alg_tol"]
+          Tolerance used for identify hull states
+        
+        dim_tol: number, optional, default=1e-8
+          Tolerance for detecting composition dimensionality
+        
+        bottom_tol: number, optional, default=1e-8
+          Tolerance for detecting which facets form the convex hull bottom
+        
+        
+        Example:
+              
+          "checkhull" : {
+            "selection": "ALL",
+            "write_results": True
+            "uncalculated_range": 1e-8,
+            "ranged_rms": [0.001, 0.005, 0.01, 0.05, 0.1, 0.5],
+            "composition": "atom_frac",
+            "hull_tol": 1e-8,
+            "dim_tol": 1e-8,
+            "bottom_tol": 1e-8,
+          }
+    
     
     hall: deap.tools.HallOfFame, optional, default=None
       A Hall Of Fame containing individuals to check convex hull properties
     
     selection: str
       The name of the selection to use for calculating the convex hull
+    
+    write_results: bool, optional, default=True
+      
       
     indices: List[int], optional, default=None
       If given, only check hull properties for specified individuals in the hall
@@ -1704,25 +1842,42 @@ def checkhull(input, hall, selection, indices=None, verbose=True, input_filename
     verbose: boolean, optional, default=True
       Print information to stdout.
     
-    input_filename: str, optional
-      Used to determine the name of the 'specs' file saved.
-    
-  
-  Note
-  ---------
-    Uses project "lin_alg_tol" to detect hull configurations.
-  
   
   """
   
+  # set checkhull default settings
+  if "checkhull" not in input:
+    input["checkhull"] = dict()
+  
+  opt = {
+    "selection":"ALL", 
+    "write_results":False,
+    "uncalculated_range":0.0,
+    "hull_tol":1e-8,
+    "composition":"atom_frac",
+    "dim_tol":1e-8,
+    "bottom_tol":1e-8,
+    "ranged_rms":[0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
+  }
+  
+  for key, val in opt.iteritems():
+    if key not in input["checkhull"] or input["checkhull"][key] is None:
+      input["checkhull"][key] = val
+  
   # construct FittingData (to check consistency with input file)
-  fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True, input_filename=input_filename)
+  fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
   
   # open Project to work on
-  proj = Project(input["problem_specs"]["data"]["kwargs"]["project_path"])
+  proj = Project(input["problem_specs"]["data"]["kwargs"]["project_path"], verbose=verbose)
   
   # tolerance for finding configurations 'on_hull'
-  hull_tol = proj.settings.data["lin_alg_tol"]
+  d = input["checkhull"]
+  selection = d["selection"]
+  write_results = d["write_results"]
+  hull_tol = d["hull_tol"]
+  uncalculated_range = d["uncalculated_range"]
+  dim_tol = d["dim_tol"]
+  bottom_tol = d["bottom_tol"]
   
   # save current default clex
   orig_clex = proj.settings.default_clex
@@ -1740,20 +1895,33 @@ def checkhull(input, hall, selection, indices=None, verbose=True, input_filename
     raise Exception("Error using checkhull: property must be 'formation_energy'")
   
   # load hull selection
-  sel = Selection(proj, "ALL", all=False)
+  sel = Selection(proj, selection, all=False)
+  
+  # create a temporary file containing the subset of the selection that is calculated
+  tmp_dir = join(proj.dir.casm_dir(), "tmp")
+  if not os.path.exists(tmp_dir):
+    os.mkdir(tmp_dir)
+  dft_selection = join(proj.dir.casm_dir(), selection + "_dft")
+  dft_hull_selection = join(proj.dir.casm_dir(), selection + "_dft_hull")
+  proj.command("select -c " + selection + " --set-off 'not(is_calculated)' -f -o " + dft_selection)
   
   # properties to query
   selected = "selected"
   is_primitive = "is_primitive"
   is_calculated = "is_calculated"
   configname = "configname"
-  dft_hull_dist = "hull_dist(" + selection + ",atom_frac)"
-  clex_hull_dist = "clex_hull_dist(" + selection + ",atom_frac)"
+  dft_hull_dist_long = "hull_dist(" + dft_selection + ",atom_frac)"
+  dft_hull_dist = "dft_hull_dist"
+  clex_hull_dist_long = "clex_hull_dist(" + selection + ",atom_frac)"
+  clex_hull_dist = "clex_hull_dist"
+  clex_dft_hull_dist_long = "clex_hull_dist(" + dft_hull_selection + ",atom_frac)"
+  clex_dft_hull_dist = "clex_dft_hull_dist"
   comp = "comp"
   dft_Eform = "formation_energy"
   clex_Eform = "clex(formation_energy)"
   
-  sel.query([is_primitive, is_calculated, configname, dft_hull_dist, dft_Eform, comp])
+  sel.query([comp, is_primitive, is_calculated, configname, dft_hull_dist_long, dft_Eform])
+  
   
   compcol = []
   for col in sel.data.columns:
@@ -1785,67 +1953,213 @@ def checkhull(input, hall, selection, indices=None, verbose=True, input_filename
     write_eci(proj, indiv.eci, fit_details=casm.learn.to_json(indiv_i, indiv), clex=clex, verbose=verbose)
     
     # query:
-    sel.query([clex_hull_dist, clex_Eform], force=True)
+    sel.query([clex_hull_dist_long, clex_Eform], force=True)
     
-    #n_gs_uncalculated: the # of clex-predicted gs that are not calculated
-    #n_gs_spurious: the # of clex-predicted gs that are not DFT gs
-    #n_gs_missing: the # of DFT gs that are not clex-predicted gs
-    
-    df = sel.data.sort_values(compcol)
+    df = sel.data[sel.data.loc[:,is_primitive] == 1].sort_values(compcol)
+    df.rename(
+      inplace=True, 
+      columns={
+        dft_hull_dist_long : dft_hull_dist, 
+        clex_hull_dist_long : clex_hull_dist, 
+      })
     df_calc = df[df.loc[:,is_calculated] == 1].apply(pandas.to_numeric, errors='ignore')
     
-    clex_gs = df[(df.loc[:,is_primitive] == 1) & (df.loc[:,clex_hull_dist] < hull_tol)].drop([selected, is_primitive], 1)
-    dft_gs = df_calc[(df_calc.loc[:,is_primitive] == 1) & (df_calc.loc[:,dft_hull_dist] < hull_tol)]
+    clex_gs = df[df.loc[:,clex_hull_dist] < hull_tol]
+    dft_gs = df_calc[df_calc.loc[:,dft_hull_dist] < hull_tol]
     
-    gs_uncalculated = clex_gs[clex_gs.loc[:,is_calculated] == 0]
+    uncalculated = df[(df.loc[:,clex_hull_dist] < uncalculated_range + hull_tol) & (df.loc[:,is_calculated] == 0)]
     gs_spurious = df_calc[(df_calc.loc[:,clex_hull_dist] < hull_tol) & ~(df_calc.loc[:,dft_hull_dist] < hull_tol)]
     gs_missing = df_calc[~(df_calc.loc[:,clex_hull_dist] < hull_tol) & (df_calc.loc[:,dft_hull_dist] < hull_tol)]
-        
+    
+    # create dft hull selection
+    dft_hull_sel = Selection(proj, dft_hull_selection)
+    dft_hull_sel.save(data=dft_gs, force=True)
+    
+    
+    # query clex_hull_dist using dft_gs
+    sel.query([clex_dft_hull_dist_long])
+    
+    # get all predicted configurations below the predictions of the DFT gs
+    df = sel.data[sel.data.loc[:,is_primitive] == 1].sort_values(compcol)
+    df.rename(
+      inplace=True, 
+      columns={
+        dft_hull_dist_long : dft_hull_dist, 
+        clex_hull_dist_long : clex_hull_dist, 
+        clex_dft_hull_dist_long : clex_dft_hull_dist
+      })
+    below_hull = df[df.loc[:,clex_dft_hull_dist] < -hull_tol]
+    
     indiv.clex_gs = clex_gs
     indiv.dft_gs = dft_gs
-    indiv.gs_uncalculated = gs_uncalculated
+    indiv.uncalculated = uncalculated
     indiv.gs_spurious = gs_spurious
     indiv.gs_missing = gs_missing
+    indiv.below_hull = below_hull
     
-    indiv.n_gs_uncalculated = gs_uncalculated.shape[0]
-    indiv.n_gs_spurious = gs_spurious.shape[0]
-    indiv.n_gs_missing = gs_missing.shape[0]
+    to_drop = [selected,is_primitive,is_calculated]
+    
+    def printer(attr, title):
+      prefix = input["problem_specs"]["problem_specs_prefix"]
+      output_name = "checkhull"
+      if len(prefix) != 0:
+         output_name += "_" + prefix
+      output_name += "_" + str(indiv_i) + "_" + attr
+      
+      df = getattr(indiv, attr)
+      kwargs = {"index":False}
+      if df.shape[0]:
+        if verbose:
+          print title + ":"
+          print df.drop(to_drop, axis=1).to_string(**kwargs)
+          if write_results:
+            print "write:", output_name, "\n"
+          else:
+            print ""
+        if write_results:
+          output_sel = Selection(proj, output_name)
+          output_sel.save(data=df, force=True)
+    
+    printer("dft_gs", "DFT ground states")
+    printer("clex_gs", "Predicted ground states")
+    printer("gs_missing", "DFT ground states that are not predicted ground states")
+    printer("gs_spurious", "Predicted ground states that are not DFT ground states")
+    printer("uncalculated", "Predicted ground states and near ground states that have not been calculated")
+    printer("below_hull", "All configurations predicted below the prediction of the DFT hull")
+    
+    # calculated ranged rms
+    def calc_ranged_rms(r):
+      ranged_df = df_calc[df_calc.loc[:,dft_hull_dist] < r + hull_tol].copy()
+      n = ranged_df.shape[0]
+      ranged_df.loc[:,"diff"] = ranged_df.loc[:,dft_Eform] - ranged_df.loc[:,clex_Eform]
+      ranged_df.loc[:,"diff_sqr"] = ranged_df.loc[:,"diff"]*ranged_df.loc[:,"diff"]
+      rms = sqrt(sklearn.metrics.mean_squared_error(ranged_df.loc[:,dft_Eform], ranged_df.loc[:,clex_Eform]))
+      return (n, rms)
+    
+    ranged_rms = []
+    for r in input["checkhull"]["ranged_rms"]:
+      res = calc_ranged_rms(r)
+      ranged_rms.append({"range": r, "n_config": res[0], "rms": res[1] })
+    ranged_rms.append({"range": "all", "n_config":df_calc.shape[0], "rms":indiv.rms})
+    if verbose:
+      print "ranged_rms:"
+      for d in ranged_rms:
+        print "  RMS error for", d["n_config"], "calculated configurations within", 
+        print d["range"], "eV/unitcell of the DFT hull:", d["rms"]
+      print ""
+    
+    sel.data.drop([clex_dft_hull_dist_long], axis=1, inplace=True)
+    
+    indiv.ranged_rms = ranged_rms
+    indiv.checkhull_settings = input["checkhull"]
     
     if verbose:
-      kwargs = {"index":False}
-      if clex_gs.shape[0]:
-        print "Predicted ground states:"
-        print clex_gs.to_string(**kwargs)
-        print ""
-      
-      if dft_gs.shape[0]:
-        print "DFT ground states:"
-        print dft_gs.to_string(**kwargs)
-        print ""
-      
-      if gs_uncalculated.shape[0]:
-        print "Predicted ground states that have not been calculated:"
-        print gs_uncalculated.to_string(**kwargs)
-        print ""
-      
-      if gs_spurious.shape[0]:
-        print "Predicted ground states that are not DFT ground states:"
-        print gs_spurious.to_string(**kwargs)
-        print ""
-      
-      if gs_missing.shape[0]:
-        print "DFT ground states that are not predicted ground states:"
-        print gs_missing.to_string(**kwargs)
-        print ""
-      
       print "\n"
     
   # reset eci setting
   proj.command("settings --set-eci " + orig_clex.eci)
   
-  # remove __tmp eci
+  # remove __tmp eci and tmp selections
   shutil.rmtree(proj.dir.eci_dir(clex))
+  os.remove(dft_selection)
+  os.remove(dft_hull_selection)
+
+
+def checkspecs(input, verbose=True):
+  """
+  Output data and cv files containing the current problem specs.
+      
+  Arguments
+  ---------
+    
+    input: dict
+      The input settings as a dict. This is expected to have the object 
+      input["checkspecs"], with the following attributes:
+      
+        data_filename: string
+          The path to the file where the training data (including weights) should be 
+          written
+
+        data_kwargs: dict or null, optional, default=dict()
+          Additional parameters to be used to write training data. 
+         
+          Options for input 'filetype' "selection":
+            None.
+          
+          Options for input 'filetype' "csv":
+            Any options to pass to pandas.to_csv
+          
+          Options for input 'filetype' "json":
+            Any options to pass to pandas.to_json
+
+        cv_filename: string
+          The path to the file where the cv generator or train/tests sets should be 
+          written as pickle file
+
+        cv_kwargs: dict or null, optional, default=dict()
+          Additional parameters to be used to write cv data using pickle.dump.
+
+        Example:
+              
+          "checkspecs" : {
+            "data_filename": "check_train",
+            "data_kwargs": null,
+            "cv_filename": "check_cv.pkl",
+            "cv_kwargs": null
+          }
+    
+    verbose: boolean, optional, default=True
+      Print information to stdout.
+    
+  """
+  # set checkspecs default settings
+  if "checkspecs" not in input:
+    input["checkspecs"] = dict()
+  if "data_filename" not in input["checkspecs"]:
+    suffix = "_data" + splitext(basename(specs["data"]["filename"]))[1]
+    input["checkspecs"]["data_filename"] = default_filename(specs["problem_specs_prefix"], "check_data", suffix)
+  if "data_kwargs" not in input["checkspecs"] or input["checkspecs"]["data_kwargs"] is None:
+    input["checkspecs"]["data_kwargs"] = dict()
+  if "cv_filename" not in input["checkspecs"]:
+    input["checkspecs"]["cv_filename"] = default_filename(specs["problem_specs_prefix"], "check_cv.pkl", "_cv.pkl")
+  if "cv_kwargs" not in input["checkspecs"] or input["checkspecs"]["cv_kwargs"] is None:
+    input["checkspecs"]["cv_kwargs"] = dict()
   
+  specs = input["problem_specs"]
+      
+  # construct or load problem specs
+  fdata = casm.learn.fit.make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
+  
+  if verbose:
+    print "# Check problem specs:"
+    print json.dumps(input["checkspecs"], indent=2), "\n"
+  
+  # print training data
+  filetype = specs["data"]["filetype"]
+  filename = input["checkspecs"]["data_filename"]
+  kwargs = input["checkspecs"]["data_kwargs"]
+    
+  if filetype == "selection":
+    proj = Project(specs["data"]["kwargs"]["project_path"], verbose=verbose)
+    sel = Selection(proj, filename, all=False)
+    sel.save(data=fdata.data, force=True)
+  elif filetype == "csv":
+    fdata.data.to_csv(filename, **kwargs)
+  elif filetype == "json":
+    fdata.data.to_json(filename, **kwargs)
+  
+  if verbose:
+    print "# Wrote training data (including weights) to:", filename
+  
+  # print cv
+  cv_filename = input["checkspecs"]["cv_filename"]
+  cv_kwargs = input["checkspecs"]["cv_kwargs"]
+  with open(cv_filename, 'wb') as f:
+    pickle.dump(fdata.cv, f, **cv_kwargs)
+  
+  if verbose:
+    print "# Wrote CV data to:", cv_filename, "\n"
+
 
 def bitstr(indiv, n_bits_max=None):
   if n_bits_max is None:
@@ -1901,17 +2215,26 @@ def to_json(index, indiv):
     "n_selected": number of selected features
     "cv": CV score
     "rms": root-mean-square error
-    "wrms": weighted root-mean-square error
+    "wrms": weighted problem root-mean-square error
+    "mean_absolute_error": mean absolute error
+    "wmean_absolute_error": weighted problem mean absolute error
+    "max_absolute_error": maximum absolute error
+    "wmax_absolute_error": weighted problem maximum absolute error
     "estimator_method": name of estimator method
     "features_selection_method": name of feature selection method
     "note": a descriptive note
     "eci": List of (feature index, coefficient value) pairs
     "input": input settings dict
   
-  Keys added by --checkhull, if y="formation_energy":
-    "n_gs_uncalculated" : number of predicted ground states not yet calculated by DFT
-    "n_gs_spurious" : number of predicted ground states that are not DFT ground states
-    "n_gs_missing" : number of predicted ground states that are not DFT ground states
+  Keys added by --checkhull, if y="formation_energy": pandas.DataFrame
+    "dft_gs" : DFT calculated ground states
+    "clex_gs" : predicted ground states
+    "gs_missing" : DFT ground states that are not predicted ground states
+    "gs_spurious" : Predicted ground states that are not DFT ground states
+    "uncalculated" : Predicted ground states and near ground states that have not been calculated
+    "below_hull" : All configurations predicted below the prediction of the DFT hull
+    "ranged_rms": root-mean-square error calculated for the subset of configurations
+      whose DFT formation energy lies within some range of the DFT convex hull
     
   
   Arguments
@@ -1933,26 +2256,31 @@ def to_json(index, indiv):
   
   """
   d = dict()
-  d["selected"] = bitstr(indiv)
   d["index"] = index
   d["id"] = str(indiv.id)
+  d["selected"] = bitstr(indiv)
   d["n_selected"] = sum(indiv)
   d["cv"] = indiv.fitness.values[0]
-  d["rms"] = indiv.rms
-  d["wrms"] = indiv.wrms
-  d["estimator_method"] = indiv.estimator_method
-  d["feature_selection_method"] = indiv.feature_selection_method
-  d["note"] = indiv.note
-  for attr in [ "n_gs_uncalculated", "n_gs_spurious", "n_gs_missing"]:
-    if hasattr(indiv, attr):
-      d[attr] = getattr(indiv, attr)
-  for attr in ["clex_gs", "dft_gs", "gs_uncalculated", "gs_spurious", "gs_missing"]:
+  
+  attr = [
+    "rms", "wrms", "ranged_rms",
+    "mean_absolute_error", "wmean_absolute_error",
+    "max_absolute_error", "wmax_absolute_error", 
+    "estimator_method", "feature_selection_method",
+    "note",
+    "checkhull_settings"
+  ]
+  for a in attr:
+    if hasattr(indiv, a):
+      d[a] = getattr(indiv,a)
+  
+  for attr in ["clex_gs", "dft_gs", "uncalculated", "gs_spurious", "gs_missing", "below_hull"]:
     if hasattr(indiv, attr):
       d[attr] = json.loads(getattr(indiv, attr).to_json(orient='records'))
   d["eci"] = []
   for bfunc in indiv.eci:
     d["eci"].append(casm.NoIndent(bfunc))
-  d["input"] = indiv.input
+  
   return d
 
 
@@ -1968,17 +2296,26 @@ def to_dataframe(indices, hall):
     "cv": CV score
     "rms": root-mean-square error
     "wrms": weighted root-mean-square error
+    "mean_absolute_error": mean absolute error
+    "wmean_absolute_error": weighted problem mean absolute error
+    "max_absolute_error": maximum absolute error
+    "wmax_absolute_error": weighted problem maximum absolute error
     "estimator_method": name of estimator method
     "features_selection_method": name of feature selection method
     "note": a descriptive note
     "eci": JSON string of a List of (feature index, coefficient value) pairs
     "input": input settings dict
   
-  Keys added by --checkhull, if y="formation_energy":
-    "n_gs_uncalculated" : number of predicted ground states not yet calculated by DFT
-    "n_gs_spurious" : number of predicted ground states that are not DFT ground states
-    "n_gs_missing" : number of predicted ground states that are not DFT ground states
-  
+  Keys added by --checkhull, if y="formation_energy": pandas.DataFrame
+    "dft_gs" : DFT calculated ground states
+    "clex_gs" : predicted ground states
+    "gs_missing" : DFT ground states that are not predicted ground states
+    "gs_spurious" : Predicted ground states that are not DFT ground states
+    "uncalculated" : Predicted ground states and near ground states that have not been calculated
+    "below_hull" : All configurations predicted below the prediction of the DFT hull
+    "ranged_rms": root-mean-square error calculated for the subset of configurations
+      whose DFT formation energy lies within some range of the DFT convex hull
+    
   
   Arguments
   ---------
@@ -2029,21 +2366,32 @@ def _print_individual(index, indiv, format=None):
     print "Selected:", bitstr(indiv)
     print "#Selected:", sum(indiv)
     print "CV:", indiv.fitness.values[0]
-    print "RMS:", indiv.rms
-    print "wRMS:", indiv.wrms
-    print "Estimator:", indiv.estimator_method
-    print "FeatureSelection:", indiv.feature_selection_method
-    print "Note:", indiv.note
-    print "ECI:\n"
+    
+    attr = [
+      "rms", "wrms",
+      "mean_absolute_error", "wmean_absolute_error",
+      "max_absolute_error", "wmax_absolute_error", 
+      "estimator_method", "feature_selection_method",
+      "note",
+    ]
+    for a in attr:
+      if hasattr(indiv, a):
+        print a + ":", getattr(indiv, a)
+    if hasattr(indiv, "ranged_rms"):
+      print "ranged_rms:\n", json.dumps(indiv.ranged_rms, indent=2)
+    
+    
+    print "eci:\n"
     print_eci(indiv.eci)
-    for attr in ["n_gs_uncalculated", "n_gs_spurious", "n_gs_missing"]:
-      if hasattr(indiv, attr):
-        print attr, getattr(indiv, attr)
-    for attr in ["clex_gs", "dft_gs", "gs_uncalculated", "gs_spurious", "gs_missing"]:
+    
+    for attr in ["clex_gs", "dft_gs", "uncalculated", "gs_spurious", "gs_missing", "below_hull"]:
       if hasattr(indiv, attr):
         print attr + ":"
         print getattr(indiv, attr).to_string(index=False)
+    
     print "Input:\n", json.dumps(indiv.input, indent=2)
+    if hasattr(indiv, "checkhull_settings"):
+      print "Checkhull settings:\n", json.dumps(indiv.checkhull_settings, indent=2)
     return
 
 

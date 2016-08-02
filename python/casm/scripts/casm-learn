@@ -23,10 +23,12 @@ if __name__ == "__main__":
   parser.add_argument('--hall', help='Print hall of fame summary', action="store_true")
   parser.add_argument('--indiv', nargs='+', help='Specify particular individuals by index in hall of fame', type=int)
   parser.add_argument('--select', nargs=1, help='Select individual to use', type=int)
-  parser.add_argument('--checkhull', nargs=1, help='Check convex hull properties using the provided selection', type=str)
+  parser.add_argument('--checkhull', help='Check convex hull properties using the provided selection', action="store_true", default=False)
   parser.add_argument('--checkspecs', help='Output data and cv files containing the current problem specs', action="store_true", default=False)
-  parser.add_argument('-v','--verbose', help='Verbose print', action="store_true", default=False)
+  parser.add_argument('-q','--quiet', help='Quiet output', action="store_true", default=False)
   args = parser.parse_args()
+  
+  args.verbose = not args.quiet
   
   if args.settings_format:
     casm.learn.print_input_help()
@@ -59,6 +61,7 @@ if __name__ == "__main__":
     if args.verbose:
       print "Loading", args.settings[0]
     
+    # open input and always set input defaults before doing anything else
     with open(args.settings[0], 'r') as f:
       try:
         input = casm.learn.set_input_defaults(json.load(f), args.settings[0])
@@ -83,7 +86,7 @@ if __name__ == "__main__":
       # print Hall of Fame summary
       existing_hall = casm.learn.open_halloffame(halloffame_filename, args.verbose)
       
-      casm.learn.fit.checkhull(input, existing_hall, args.checkhull[0], indices=args.indiv, verbose=args.verbose, input_filename=args.settings[0])
+      casm.learn.fit.checkhull(input, existing_hall, indices=args.indiv, verbose=args.verbose)
       
       # pickle hall of fame
       casm.learn.save_halloffame(existing_hall, halloffame_filename, args.verbose)
@@ -104,41 +107,8 @@ if __name__ == "__main__":
       
     elif args.checkspecs:
       
-      specs = input["problem_specs"]
-      
-      # construct or load problem specs
-      fdata = casm.learn.fit.make_fitting_data(input, save=True, verbose=args.verbose, read_existing=True, input_filename=args.settings[0])
-      
-      if args.verbose:
-        print "# Check problem specs:"
-        print json.dumps(input["checkspecs"], indent=2), "\n"
-      
-      # print training data
-      filetype = specs["data"]["filetype"]
-      filename = input["checkspecs"]["data_filename"]
-      kwargs = input["checkspecs"]["data_kwargs"]
-        
-      if filetype == "selection":
-        proj = Project(specs["data"]["kwargs"]["project_path"], verbose=args.verbose)
-        sel = Selection(proj, filename, all=False)
-        sel.save(data=fdata.data, force=True)
-      elif filetype == "csv":
-        fdata.data.to_csv(filename, **kwargs)
-      elif filetype == "json":
-        fdata.data.to_json(filename, **kwargs)
-      
-      if args.verbose:
-        print "# Wrote training data (including weights) to:", filename
-      
-      # print cv
-      cv_filename = input["checkspecs"]["cv_filename"]
-      cv_kwargs = input["checkspecs"]["cv_kwargs"]
-      with open(cv_filename, 'wb') as f:
-        pickle.dump(fdata.cv, f, **cv_kwargs)
-      
-      if args.verbose:
-        print "# Wrote CV data to:", cv_filename, "\n"
-      
+      casm.learn.checkspecs(input, verbose=args.verbose)
+           
     else:
       
       # construct hall of fame
@@ -155,9 +125,9 @@ if __name__ == "__main__":
       
       # run fitting
       if input["feature_selection"]["method"] == "DirectSelection":
-        casm.learn.direct_fit(input, verbose=args.verbose, hall=hall, input_filename=args.settings[0])
+        casm.learn.direct_fit(input, verbose=args.verbose, hall=hall)
       else:
-        casm.learn.fit_and_select(input, verbose=args.verbose, hall=hall, input_filename=args.settings[0])
+        casm.learn.fit_and_select(input, verbose=args.verbose, hall=hall)
       
       # pickle hall of fame
       casm.learn.save_halloffame(hall, halloffame_filename, args.verbose)

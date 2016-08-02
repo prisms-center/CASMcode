@@ -3,7 +3,7 @@ from casm.learn.fit import make_fitting_data, make_estimator, make_selector, \
   add_individual_detail, print_halloffame
 import casm.learn.cross_validation
 
-def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None, input_filename=None):
+def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None):
   """
   Arguments
   ---------
@@ -26,10 +26,7 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
     hall: deap.tools.HallOfFame, optional, default=None
       A Hall Of Fame to add resulting individuals to
     
-    input_filename: str, optional
-      Used to determine the name of the 'specs' file saved.
-  
-  
+      
   Returns
   -------
     
@@ -48,7 +45,7 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
   
   """
   # construct FittingData
-  fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True, input_filename=input_filename)
+  fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
     
   # construct model used for fitting
   estimator = make_estimator(input, verbose=verbose)
