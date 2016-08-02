@@ -416,7 +416,7 @@ class Relax(object):
         # write properties.calc.json
         vaspdir = os.path.join(self.calcdir, "run.final")
 	super_poscarfile = os.path.join(self.configdir,"POS")
-        speciesfile = casm.settings_path_crawl("SPECIES",self.casm_settings.default_clex,self.configdir)
+        speciesfile = self.casm_directories.settings_path_crawl("SPECIES",self.casm_settings.default_clex,self.configdir)
         output = self.properties(vaspdir, super_poscarfile, speciesfile)
         outputfile = os.path.join(self.calcdir, "properties.calc.json")
         with open(outputfile, 'w') as file:
