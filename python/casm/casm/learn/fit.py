@@ -1817,7 +1817,7 @@ def checkhull(input, hall, indices=None, verbose=True):
           "checkhull" : {
             "selection": "ALL",
             "write_results": True
-            "uncalculated_range": 1e-8,
+            "uncalculated_range": 0.0,
             "ranged_rms": [0.001, 0.005, 0.01, 0.05, 0.1, 0.5],
             "composition": "atom_frac",
             "hull_tol": 1e-8,
