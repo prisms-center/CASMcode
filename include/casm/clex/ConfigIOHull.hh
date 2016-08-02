@@ -65,7 +65,7 @@ namespace CASM {
 
       // tol used to detect zero singular values during principal component analysis preprocessing before hull calculation
       double m_singular_value_tol;
-      
+
       // tol used to detect which facets are on the bottom of the convex hull
       double m_bottom_facet_tol;
 

@@ -2,22 +2,18 @@
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
 
 
-  // ///////////////////////////////////////
-  // 'format' function for casm
-  //    (add an 'if-else' statement in casm.cpp to call this)
+  namespace Completer {
+    FormatOption::FormatOption(): OptionHandlerBase("format") {}
 
-  int format_command(const CommandArgs &args) {
+    void FormatOption::initialize() {
+      add_help_suboption();
 
-    po::variables_map vm;
-
-    try {
-      po::options_description desc("'casm format' usage");
-      desc.add_options()
-      ("help,h", "Write help documentation")
+      m_desc.add_options()
       ("dir,d", "CASM project directory structure summary")
       ("project_settings", "Description and location of 'project_settings' file")
       ("prim", "Description and location of 'prim.json' and 'PRIM' files")
@@ -32,33 +28,45 @@ namespace CASM {
       ("pos", "Description and location of 'POS' files")
       ("fit", "Description and location of the 'energy', 'corr.in', and 'eci.in' files")
       ("monte", "Description and location of the Monte Carlo input file");
+      return;
+    }
+  }
 
-      try {
-        po::store(po::parse_command_line(args.argc, args.argv, desc), vm);
+  // ///////////////////////////////////////
+  // 'format' function for casm
+  //    (add an 'if-else' statement in casm.cpp to call this)
 
-        /** --help option
-         */
-        if(vm.count("help") || vm.size() == 0) {
-          std::cout << std::endl;
-          std::cout << desc << std::endl;
+  int format_command(const CommandArgs &args) {
 
-          std::cout << "DESCRIPTION" << std::endl;
-          std::cout << "    This option describes the files contained within a CASM project \n";
-          std::cout << "    and where to find them. For a summary of the directory structure\n";
-          std::cout << "    of a CASM project using VASP for calculating configuration use  \n";
-          std::cout << "    the --dir option. Not all files are always present.             \n";
+    po::variables_map vm;
 
-          return 0;
-        }
+    Completer::FormatOption format_opt;
 
-        po::notify(vm);
+    try {
+      po::store(po::parse_command_line(args.argc, args.argv, format_opt.desc()), vm);
 
+      /** --help option
+       */
+      if(vm.count("help") || vm.size() == 0) {
+        std::cout << std::endl;
+        std::cout << format_opt.desc() << std::endl;
+
+        std::cout << "DESCRIPTION" << std::endl;
+        std::cout << "    This option describes the files contained within a CASM project \n";
+        std::cout << "    and where to find them. For a summary of the directory structure\n";
+        std::cout << "    of a CASM project using VASP for calculating configuration use  \n";
+        std::cout << "    the --dir option. Not all files are always present.             \n";
+
+        return 0;
       }
-      catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
-        return 1;
-      }
+
+      po::notify(vm);
+
+    }
+    catch(po::error &e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      std::cerr << format_opt.desc() << std::endl;
+      return 1;
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "

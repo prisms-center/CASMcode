@@ -3,6 +3,8 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/clex/PrimClex.hh"
 
+#include "casm/completer/Handlers.hh"
+
 namespace CASM {
 
   class ClexDescription;
@@ -18,45 +20,65 @@ namespace CASM {
     }
   }
 
+  namespace Completer {
+    SettingsOption::SettingsOption(): OptionHandlerBase("settings") {}
+
+    const std::string &SettingsOption::input_str() const {
+      return m_input_str;
+    }
+
+    const std::vector<std::string> &SettingsOption::input_vec() const {
+      return m_input_vec;
+    }
+
+    void SettingsOption::initialize() {
+      add_help_suboption();
+
+      m_desc.add_options()
+      ("list,l", "List project settings")
+      ("new-property", po::value<std::string>(&m_input_str), "Create cluster expansions for a new property")
+      ("new-bset", po::value<std::string>(&m_input_str), "Create a new basis set")
+      ("new-calctype", po::value<std::vector<std::string> >(&m_input_vec)->multitoken(), "Create a new calculation type")
+      ("new-ref", po::value<std::string>(&m_input_str), "Create a new calculation reference")
+      ("new-eci", po::value<std::string>(&m_input_str), "Create a new set of effective cluster interactions (ECI)")
+      ("set-formation-energy", po::value<std::string>(&m_input_str), "Specify the cluster expansion to use for formation energy")
+      ("new-clex", po::value<std::string>(&m_input_str), "Create a new cluster expansion")
+      ("set-default-clex", po::value<std::string>(&m_input_str), "Set the cluster expansion that CASM uses or acts on by default")
+      ("erase-clex", po::value<std::string>(&m_input_str), "Erase the specified cluster expansion. Does not erase underlying bset, eci, etc.")
+      ("clex", po::value<std::string>(), "The cluster expansion for which to set property, bset, calctype, ref, or eci")
+      ("set-property", po::value<std::string>(&m_input_str), "Set the current basis set")
+      ("set-bset", po::value<std::string>(&m_input_str), "Set the basis set")
+      ("set-calctype", po::value<std::vector<std::string> >(&m_input_vec)->multitoken(), "Set the calculation type")
+      ("set-ref", po::value<std::vector<std::string> >(&m_input_vec)->multitoken(), "Set the calculation reference")
+      ("set-eci", po::value<std::string>(&m_input_str), "Set the effective cluster interactions (ECI)")
+      ("set-view-command", po::value<std::string>(&m_input_str), "Set the command used by 'casm view'.")
+      ("set-cxx", po::value<std::string>(&m_input_str), "Set the c++ compiler. Use '' to revert to default.")
+      ("set-cxxflags", po::value<std::string>(&m_input_str), "Set the c++ compiler options. Use '' to revert to default.")
+      ("set-soflags", po::value<std::string>(&m_input_str), "Set the shared library compilation options. Use '' to revert to default.")
+      ("set-casm-prefix", po::value<std::string>(&m_input_str), "Set the casm prefix. Use '' to revert to default.")
+      ("set-boost-prefix", po::value<std::string>(&m_input_str), "Set the boost prefix. Use '' to revert to default.");
+      return;
+    }
+
+  }
+
   // ///////////////////////////////////////
   // 'settings' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
   int settings_command(const CommandArgs &args) {
 
+
     std::string single_input;
     std::vector<std::string> multi_input;
     COORD_TYPE coordtype;
     po::variables_map vm;
 
-    try {
 
+    try {
       /// Set command line options using boost program_options
-      po::options_description desc("'casm settings' usage");
-      desc.add_options()
-      ("help,h", "Write help documentation")
-      ("list,l", "List project settings")
-      ("new-property", po::value<std::string>(&single_input), "Create cluster expansions for a new property")
-      ("new-bset", po::value<std::string>(&single_input), "Create a new basis set")
-      ("new-calctype", po::value<std::vector<std::string> >(&multi_input)->multitoken(), "Create a new calculation type")
-      ("new-ref", po::value<std::string>(&single_input), "Create a new calculation reference")
-      ("new-eci", po::value<std::string>(&single_input), "Create a new set of effective cluster interactions (ECI)")
-      ("set-formation-energy", po::value<std::string>(&single_input), "Specify the cluster expansion to use for formation energy")
-      ("new-clex", po::value<std::string>(&single_input), "Create a new cluster expansion")
-      ("set-default-clex", po::value<std::string>(&single_input), "Set the cluster expansion that CASM uses or acts on by default")
-      ("erase-clex", po::value<std::string>(&single_input), "Erase the specified cluster expansion. Does not erase underlying bset, eci, etc.")
-      ("clex", po::value<std::string>(), "The cluster expansion for which to set property, bset, calctype, ref, or eci")
-      ("set-property", po::value<std::string>(&single_input), "Set the current basis set")
-      ("set-bset", po::value<std::string>(&single_input), "Set the basis set")
-      ("set-calctype", po::value<std::vector<std::string> >(&multi_input)->multitoken(), "Set the calculation type")
-      ("set-ref", po::value<std::vector<std::string> >(&multi_input)->multitoken(), "Set the calculation reference")
-      ("set-eci", po::value<std::string>(&single_input), "Set the effective cluster interactions (ECI)")
-      ("set-view-command", po::value<std::string>(&single_input), "Set the command used by 'casm view'.")
-      ("set-cxx", po::value<std::string>(&single_input), "Set the c++ compiler. Use '' to revert to default.")
-      ("set-cxxflags", po::value<std::string>(&single_input), "Set the c++ compiler options. Use '' to revert to default.")
-      ("set-soflags", po::value<std::string>(&single_input), "Set the shared library compilation options. Use '' to revert to default.")
-      ("set-casm-prefix", po::value<std::string>(&single_input), "Set the casm prefix. Use '' to revert to default.")
-      ("set-boost-prefix", po::value<std::string>(&single_input), "Set the boost prefix. Use '' to revert to default.");
+      Completer::SettingsOption settings_opt;
+      const po::options_description &desc = settings_opt.desc(); //I'm tired of fixing merge conflicts, this is ugly and should not stay like this.
 
       try {
         po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
