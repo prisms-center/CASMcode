@@ -1,13 +1,12 @@
 import sklearn.linear_model
 import sklearn.cross_validation
 import sklearn.metrics
-import random, re, time, os, types, json, pickle, copy, uuid
+import random, re, time, os, types, json, pickle, copy, uuid, shutil, tempfile
+from os.path import splitext, basename, join
 import numpy as np
 from math import sqrt
-from casm.project import Project, Selection, query
+from casm.project import Project, Selection, query, write_eci
 import casm.learn.linear_model
-import casm.learn.feature_selection
-import casm.learn.cross_validation
 import casm.learn.tools
 import pandas
 
@@ -23,13 +22,33 @@ def _find_method(mods, attrname):
 def example_input_Lasso():
   input = dict()
   
+  specs = dict()
+  
   # data
-  input["data"] = dict()
-  input["data"]["filename"] = "train"
-  input["data"]["type"] = "selection"
-  input["data"]["X"] = "corr"
-  input["data"]["y"] = "formation_energy"
-  input["data"]["kwargs"] = None
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
   
   # regression estimator
   input["estimator"] = dict()
@@ -43,22 +62,6 @@ def example_input_Lasso():
   input["feature_selection"]["method"] = "SelectFromModel"
   input["feature_selection"]["kwargs"] = None
   
-  # sample weighting
-  input["weight"] = dict()
-  input["weight"]["method"] = "wHullDist"
-  input["weight"]["kwargs"] = dict()
-  input["weight"]["kwargs"]["A"] = 0.0
-  input["weight"]["kwargs"]["B"] = 1.0
-  input["weight"]["kwargs"]["kT"] = 0.01
-  
-  # cross validation
-  input["cv"] = dict()
-  input["cv"]["method"] = "KFold"
-  input["cv"]["kwargs"] = dict()
-  input["cv"]["kwargs"]["n_folds"] = 10
-  input["cv"]["kwargs"]["shuffle"] = True
-  input["cv"]["penalty"] = 0.0
-  
   # hall of fame
   input["n_halloffame"] = 25
   
@@ -68,13 +71,33 @@ def example_input_Lasso():
 def example_input_LassoCV():
   input = dict()
 
+  specs = dict()
+  
   # data
-  input["data"] = dict()
-  input["data"]["filename"] = "train"
-  input["data"]["type"] = "selection"
-  input["data"]["X"] = "corr"
-  input["data"]["y"] = "formation_energy"
-  input["data"]["kwargs"] = None
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
   
   # regression estimator
   input["estimator"] = dict()
@@ -89,22 +112,6 @@ def example_input_LassoCV():
   input["feature_selection"]["method"] = "SelectFromModel"
   input["feature_selection"]["kwargs"] = None
   
-  # sample weighting
-  input["weight"] = dict()
-  input["weight"]["method"] = "wHullDist"
-  input["weight"]["kwargs"] = dict()
-  input["weight"]["kwargs"]["A"] = 0.0
-  input["weight"]["kwargs"]["B"] = 1.0
-  input["weight"]["kwargs"]["kT"] = 0.01
-  
-  # cross validation
-  input["cv"] = dict()
-  input["cv"]["method"] = "KFold"
-  input["cv"]["kwargs"] = dict()
-  input["cv"]["kwargs"]["n_folds"] = 10
-  input["cv"]["kwargs"]["shuffle"] = True
-  input["cv"]["penalty"] = 0.0
-  
   # hall of fame
   input["n_halloffame"] = 25
   
@@ -114,13 +121,33 @@ def example_input_LassoCV():
 def example_input_RFE():
   input = dict()
 
+  specs = dict()
+  
   # data
-  input["data"] = dict()
-  input["data"]["filename"] = "train"
-  input["data"]["type"] = "selection"
-  input["data"]["X"] = "corr"
-  input["data"]["y"] = "formation_energy"
-  input["data"]["kwargs"] = None
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
   
   # regression estimator
   input["estimator"] = dict()
@@ -132,20 +159,6 @@ def example_input_RFE():
   input["feature_selection"]["kwargs"] = dict()
   input["feature_selection"]["kwargs"]["n_features_to_select"] = 25
   
-  
-  # sample weighting
-  input["weight"] = dict()
-  input["weight"]["method"] = "wHullDist"
-  input["weight"]["kwargs"] = dict()
-  input["weight"]["kwargs"]["A"] = 0.0
-  input["weight"]["kwargs"]["B"] = 1.0
-  input["weight"]["kwargs"]["kT"] = 0.01
-  
-  # cross validation
-  input["cv"] = dict()
-  input["cv"]["method"] = "LeaveOneOut"
-  input["cv"]["penalty"] = 0.0
-  
   # hall of fame
   input["n_halloffame"] = 25
   
@@ -155,13 +168,33 @@ def example_input_RFE():
 def example_input_GeneticAlgorithm():
   input = dict()
   
+  specs = dict()
+  
   # data
-  input["data"] = dict()
-  input["data"]["filename"] = "train"
-  input["data"]["type"] = "selection"
-  input["data"]["X"] = "corr"
-  input["data"]["y"] = "formation_energy"
-  input["data"]["kwargs"] = None
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
   
   # regression estimator
   input["estimator"] = dict()
@@ -184,26 +217,11 @@ def example_input_GeneticAlgorithm():
       "n_repetition": 25, 
       "n_features_init": 5, 
       "n_population": 100, 
-      "halloffame_filename": "ga_halloffame.pkl", 
       "n_halloffame": 50
     }, 
     "cxUniformProb": 0.5
   }
   input["feature_selection"]["kwargs"] = d
-  
-  
-  # sample weighting
-  input["weight"] = dict()
-  input["weight"]["method"] = "wHullDist"
-  input["weight"]["kwargs"] = dict()
-  input["weight"]["kwargs"]["A"] = 0.0
-  input["weight"]["kwargs"]["B"] = 1.0
-  input["weight"]["kwargs"]["kT"] = 0.01
-  
-  # cross validation
-  input["cv"] = dict()
-  input["cv"]["method"] = "LeaveOneOut"
-  input["cv"]["penalty"] = 0.0
   
   # hall of fame
   input["n_halloffame"] = 25
@@ -214,13 +232,33 @@ def example_input_GeneticAlgorithm():
 def example_input_IndividualBestFirst():
   input = dict()
   
+  specs = dict()
+  
   # data
-  input["data"] = dict()
-  input["data"]["filename"] = "train"
-  input["data"]["type"] = "selection"
-  input["data"]["X"] = "corr"
-  input["data"]["y"] = "formation_energy"
-  input["data"]["kwargs"] = None
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
   
   # regression estimator
   input["estimator"] = dict()
@@ -241,25 +279,10 @@ def example_input_IndividualBestFirst():
       "n_repetition": 25, 
       "n_features_init": 5, 
       "n_population": 10, 
-      "halloffame_filename": "indiv_bestfirst_halloffame.pkl", 
       "n_halloffame": 50
     }
   }
   input["feature_selection"]["kwargs"] = d
-  
-  
-  # sample weighting
-  input["weight"] = dict()
-  input["weight"]["method"] = "wHullDist"
-  input["weight"]["kwargs"] = dict()
-  input["weight"]["kwargs"]["A"] = 0.0
-  input["weight"]["kwargs"]["B"] = 1.0
-  input["weight"]["kwargs"]["kT"] = 0.01
-  
-  # cross validation
-  input["cv"] = dict()
-  input["cv"]["method"] = "LeaveOneOut"
-  input["cv"]["penalty"] = 0.0
   
   # hall of fame
   input["n_halloffame"] = 25
@@ -270,13 +293,33 @@ def example_input_IndividualBestFirst():
 def example_input_PopulationBestFirst():
   input = dict()
   
+  specs = dict()
+  
   # data
-  input["data"] = dict()
-  input["data"]["filename"] = "train"
-  input["data"]["type"] = "selection"
-  input["data"]["X"] = "corr"
-  input["data"]["y"] = "formation_energy"
-  input["data"]["kwargs"] = None
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
   
   # regression estimator
   input["estimator"] = dict()
@@ -297,31 +340,70 @@ def example_input_PopulationBestFirst():
       "n_repetition": 25, 
       "n_features_init": 5, 
       "n_population": 50, 
-      "halloffame_filename": "pop_bestfirst_halloffame.pkl", 
       "n_halloffame": 50
     }
   }
   input["feature_selection"]["kwargs"] = d
-  
-  
-  # sample weighting
-  input["weight"] = dict()
-  input["weight"]["method"] = "wHullDist"
-  input["weight"]["kwargs"] = dict()
-  input["weight"]["kwargs"]["A"] = 0.0
-  input["weight"]["kwargs"]["B"] = 1.0
-  input["weight"]["kwargs"]["kT"] = 0.01
-  
-  # cross validation
-  input["cv"] = dict()
-  input["cv"]["method"] = "LeaveOneOut"
-  input["cv"]["penalty"] = 0.0
   
   # hall of fame
   input["n_halloffame"] = 25
   
   return input
 
+
+def example_input_DirectSelection():
+  input = dict()
+  
+  specs = dict()
+  
+  # data
+  specs["data"] = dict()
+  specs["data"]["filename"] = "train"
+  specs["data"]["type"] = "selection"
+  specs["data"]["X"] = "corr"
+  specs["data"]["y"] = "formation_energy"
+  specs["data"]["kwargs"] = None
+  
+  # sample weighting
+  specs["weight"] = dict()
+  specs["weight"]["method"] = "wHullDist"
+  specs["weight"]["kwargs"] = dict()
+  specs["weight"]["kwargs"]["A"] = 0.0
+  specs["weight"]["kwargs"]["B"] = 1.0
+  specs["weight"]["kwargs"]["kT"] = 0.01
+  
+  # cross validation
+  specs["cv"] = dict()
+  specs["cv"]["method"] = "KFold"
+  specs["cv"]["kwargs"] = dict()
+  specs["cv"]["kwargs"]["n_folds"] = 10
+  specs["cv"]["kwargs"]["shuffle"] = True
+  specs["cv"]["penalty"] = 0.0
+  
+  input["problem_specs"] = specs
+  
+  # regression estimator
+  input["estimator"] = dict()
+  input["estimator"]["method"] = "LinearRegression"
+  
+  # feature selection
+  input["feature_selection"] = dict()
+  input["feature_selection"]["method"] = "DirectSelection"
+  d = {
+    "use_saved_estimator" : False,
+    "population" : [
+      {"from_halloffame" : "my_halloffame.pkl", "individuals" : casm.NoIndent([0, 2, 5]) },
+      {"bitstring": "111000"},
+      {"indices" : casm.NoIndent([1, 2, 3, 12, 13, 21])}
+    ]
+  }
+  input["feature_selection"]["kwargs"] = d
+  
+  # hall of fame
+  input["n_halloffame"] = 25
+  
+  return input
+  
 
 def print_input_help():
   
@@ -331,7 +413,13 @@ def print_input_help():
   ------------------------------------------------------------------------------
   {
   
-  # Specifies the data to use for learning
+  # The "problem_specs" options specify which data to use and how to score 
+  # candidate solutions. It consists primarily of "data", "weight", and "cv" 
+  # settings.
+  
+    "problem_specs" : {
+  
+  # The "problem_specs"/"data" options specify the data to use for learning
   #
   #   A filename and filetype describing where to find data to use for learning. 
   #   Also includes the labels of the sample ('X') and target ('y') data to use 
@@ -365,7 +453,9 @@ def print_input_help():
   #  
   #   Options for 'filetype' "selection":
   #     "project_path": indicate the path to a CASM project. Default null uses
-  #       the CASM project containing the current working directory.
+  #       the CASM project containing the current working directory. This option
+  #       is not currently implemented, but included as a placeholder. Currently
+  #       'casm-learn' must be run from inside a CASM project.
   #   
   #   Options for 'filetype' "csv":
   #     Any options to pass to pandas.read_csv
@@ -373,52 +463,16 @@ def print_input_help():
   #   Options for 'filetype' "json":
   #     Any options to pass to pandas.read_json
   
-    "data" : {
-      "filename": "train",
-      "filetype": "selection",
-      "X": "corr",
-      "y": "formation_energy",
-      "kwargs": null
-    }
+      "data" : {
+        "filename": "train",
+        "filetype": "selection",
+        "X": "corr",
+        "y": "formation_energy",
+        "kwargs": null
+      },
   
-  # A scikit-learn linear model estimator.
-  #
-  #
-  # Object attributes
-  # -----------------
-  #
-  # method: string
-  #   A scikit-learn linear model estimator. 
-  #  
-  #   Options: 'LinearRegression', 'Ridge', 'Lasso', 'LassoCV', etc.
-  #     See: http://scikit-learn.org/stable/modules/linear_model.html
-  #
-  #   Note: The 'LinearRegression' estimator is implemented using 
-  #   casm.learn.linear_model.LinearRegressionForLOOCV', which solves X*b=y using:
-  #     b = np.dot(S, y)
-  #     S = np.linalg.pinv(X.transpose().dot(X)).dot(X.transpose())
-  #     y_pred = np.dot(H, y)
-  #     H = np.dot(X, S)
-  #
-  # kwargs: dict or null, optional, default=dict()
-  #   Additional parameters to be used to construct the estimator 
-  #
-  #   Options for "LinearRegression":
-  #     "pinv": bool, optional, default=True
-  #       If True, use the pseudo-inverse via np.linalg.pinv; else use np.linalg.inv.
-  #   
-  #   Options for other methods:
-  #     Any options to pass to the estimator construtor.
-  #
-  #   By default, the kwarg "fit_intercept" is set to False.
-  #
-  
-    "estimator": {
-      "method": "LinearRegression", 
-      "kwargs": null
-    },
-  
-  # Method to use for weighting training data. 
+  # The "problem_specs"/"weight" options specify the method to use for weighting 
+  # training data. 
   #
   #   If weights are included, then the linear model is changed from
   #     X*b = y  ->  L*X*b = L*y, 
@@ -472,19 +526,12 @@ def print_input_help():
   #     "E0": float
   #     "hull_selection": string
     
-    "weight": {
-      "method": null, 
-      "kwargs": null
-    }
-    
-  # Hall of fame size. 
-  #
-  # he number of individuals to store in t'halloffame.pkl',
-  # as determined by CV score. Default=25.
+      "weight": {
+        "method": null, 
+        "kwargs": null
+      },
   
-    "n_halloffame": 25, 
-  
-  # A scikit-learn cross validation method to use to generate cross validation sets.
+  # The "problem_specs"/"cv" options specify how to generate cross validation sets.
   #
   #   The cv score reported is:
   #
@@ -500,10 +547,15 @@ def print_input_help():
   # -----------------
   #
   # method: string
-  #   A scikit-learn cross validation method. 
+  #   A scikit-learn or casm cross validation method. 
   #  
   #   Options include 'KFold', 'ShuffleSplit', 'LeaveOneOut', etc.
   #     See: http://scikit-learn.org/stable/modules/cross_validation.html
+  #
+  #   CASM also provides the following method:
+  #    'cvCustom': Read a scikit-learn type 'cv' generator or training/test sets
+  #       from a pickle file. This can be used to load the 'cv' data written by 
+  #       'casm-learn --checkspecs' by using the required kwarg 'filename'.
   #
   #     Note: The 'LinearRegression' estimator is implemented using 
   #     casm.learn.linear_model.LinearRegressionForLOOCV', which solves X*b=y using:
@@ -518,45 +570,110 @@ def print_input_help():
   #       LOOCV = np.mean(((y - y_pred)/(1.0 - np.diag(H)))**2)
   #
   # kwargs: dict or null, optional, default=dict()
-  #   Additional parameters to be used to construct the cross-validation method constructor.
+  #   Additional parameters to be used to construct the cross-validation method 
+  #   constructor.
   #
   # penalty: float, optional, default=0.0
   #   The CV score is increased by 'penalty*(number of selected basis function)'
-  #
-  #
   
-    "cv": {
-      "method": "LeaveOneOut", 
-      "kwargs": null,
-      "penalty": 0.0
-    }, 
+      "cv": {
+        "method": "KFold", 
+        "kwargs": {
+          "n_folds": 10,
+          "shuffle": true
+        },
+        "penalty": 0.0
+      }, 
   
-  # A scikit-learn or casm.feature_selection feature selection method.
+  # The "problem_specs"/"specs_filename" option:
   #
+  # Optional. Name to use for file storing the training data and CV train/test 
+  # sets. The default is determined from the input filename, for example, 
+  # 'my_input_specs.pkl' is used if the input file is named 'my_input.json'.
+  
+      "specs_filename": "problem_specs.pkl"
+    
+    },
+  
+  # The "estimator" option specifies a linear model estimator.
   #
   # Object attributes
   # -----------------
   #
   # method: string
-  #   A scikit-learn or casm.feature_selection feature selection method. 
+  #   A scikit-learn linear model estimator. 
+  #  
+  #   Options: 'LinearRegression', 'Ridge', 'Lasso', 'LassoCV', etc.
+  #     See: http://scikit-learn.org/stable/modules/linear_model.html
+  #
+  #   Note: The 'LinearRegression' estimator is implemented using 
+  #   casm.learn.linear_model.LinearRegressionForLOOCV', which solves X*b=y using:
+  #     b = np.dot(S, y)
+  #     S = np.linalg.pinv(X.transpose().dot(X)).dot(X.transpose())
+  #     y_pred = np.dot(H, y)
+  #     H = np.dot(X, S)
+  #
+  # kwargs: dict or null, optional, default=dict()
+  #   Additional parameters to be used to construct the estimator 
+  #
+  #   Options for "LinearRegression":
+  #     "pinv": bool, optional, default=True
+  #       If True, use the pseudo-inverse via np.linalg.pinv; else use np.linalg.inv.
+  #   
+  #   Options for other methods:
+  #     Any options to pass to the estimator construtor.
+  #
+  #   By default, the kwarg "fit_intercept" is set to False.
+  
+    "estimator": {
+      "method": "LinearRegression", 
+      "kwargs": null
+    },
+  
+    
+  # The "feature_selection" option specifies a feature selection method.
+  #
+  # Object attributes
+  # -----------------
+  #
+  # method: string
+  #   A scikit-learn or casm.learn.feature_selection feature selection method. 
   #  
   #   Options from sklearn.feature_selection: "SelectFromModel", "RFE", etc.
   #     See: http://scikit-learn.org/stable/modules/feature_selection.html
   #
-  #   Options from casm.feature_selection: 
+  #   Options from casm.learn.feature_selection: 
   #
   #   "DirectSelection": Allows directly specifying which basis functions should
   #     be included.
   #
-  #     Options for "kwargs" (choose one):
+  #     Options for "kwargs":
   #
-  #       "bitstring": str, optional
-  #          String consisting of '0' and '1', with '1' corresponding to selected 
-  #          basis functions. May be shorter than the total number of possible
-  #          basis functions, in which case '0' are effectively padded to the end.
-  #       
-  #       "indices": List[int], optional
-  #          List of indices of basis functions to be selected.
+  #       "population": List[dict]
+  #          Contains a list of options specifying which individuals to fit.
+  #          Options are:
+  #
+  #            "bitstring": Ex.: {"bitstring" : "01110001100"}
+  #              String consisting of '0' and '1', with '1' corresponding to 
+  #              selected basis functions. May be shorter than the total number 
+  #              of possible basis functions, in which case '0' are effectively 
+  #              padded to the end.
+  #
+  #            "indices": Ex.: {"indices" : [1, 2, 3, 7, 8]}
+  #              List of indices of basis functions to be selected.
+  #
+  #            "from_halloffame": Ex.: { "from_halloffame" : "my_halloffame.pkl", 
+  #                                      "individuals" : [0, 2, 5]}
+  #               Specifies a hall of fame .pkl file and particular individuals 
+  #               in the hall (by index) to include in the population. The 
+  #               "individuals" list is optional, with the default behaviour 
+  #               including all individuals in the hall of fame.
+  #
+  #       "use_saved_estimator": boolean, optional, default=False
+  #          If True, and individuals in the input population come from a HallOfFame
+  #          the estimator method stored in the individual's saved input file will
+  #          be used instead of the estimator specified in the current input file.
+  #
   #
   #   Evolutionary algorithms, from casm.learn.feature_selection, are implemented
   #   using deap: http://deap.readthedocs.org/en/master/index.html
@@ -566,21 +683,6 @@ def print_input_help():
   #     probability of mating and mutating is set to 1.0.
   #
   #     Options for "kwargs":
-  #
-  #       "n_population": int, optional, default=100
-  #          Population size. This many random initial starting individuals are 
-  #          created.
-  #       
-  #       "n_generation": int, optional, default=10
-  #          Number of generations between saving the hall of fame.
-  #
-  #       "n_repetition": int, optional, default=100
-  #          Number of repetitions of n_generation generations. Each repetition 
-  #          begins with the existing final population.
-  #
-  #       "n_features_init: int or "all", optional, default=0
-  #          Number of randomly selected features to initialize each individual 
-  #          with.
   #
   #       "selTournamentSize": int, optional, default=3
   #          Tournament size. A larger tournament size weeds out less fit 
@@ -593,9 +695,14 @@ def print_input_help():
   #       "mutFlipBitProb": float, optional, default=0.01 
   #          Probability of mutating bits
   #
-  #       "constraints": dict, optional, default=dict()
+  #       "constraints_kwargs": dict, optional, default=dict()
   #          Keyword arguments for setting constraints on allowed individuals. 
   #          See below for options.
+  #
+  #       "evolve_params_kwargs": dict, optional, default=dict()
+  #          Keyword arguments for controlling how long the algorithm runs, how
+  #          new random individuals are initialized, when restart files are 
+  #          written, and the names of the files. See below for options.
   #
   #
   #   "IndividualBestFirst": 
@@ -609,24 +716,14 @@ def print_input_help():
   #
   #     Options for "kwargs":
   #
-  #       "n_population": int, optional, default=100 
-  #          Population size. This many random initial starting individuals are 
-  #          minimized and the results saved in the hall of fame.
-  #
-  #       "n_generation": int, optional, default=10
-  #          Number of generations between saving the hall of fame.
-  #
-  #       "n_repetition": int, optional, default=100
-  #          Number of repetitions of n_generation generations. Each repetition 
-  #          begins with the existing final population.
-  #
-  #       "n_features_init: int, optional, default=5
-  #          Number of randomly selected features to initialize each individual 
-  #          with.
-  #
-  #       "constraints": dict, optional, default=dict()
+  #       "constraints_kwargs": dict, optional, default=dict()
   #          Keyword arguments for setting constraints on allowed individuals. 
   #          See below for options.
+  #
+  #       "evolve_params_kwargs": dict, optional, default=dict()
+  #          Keyword arguments for controlling how long the algorithm runs, how
+  #          new random individuals are initialized, when restart files are 
+  #          written, and the names of the files. See below for options.
   #
   #
   #   "PopulationBestFirst": 
@@ -640,34 +737,23 @@ def print_input_help():
   #     Children are generated by generating all the individual that differ from
   #     the parent by +/- 1 selected feature. 
   #     
-  #
   #     Options for "kwargs":
   #
-  #       "n_population": int, optional, default=100 
-  #          Population size. This many random initial starting individuals are 
-  #          included in the starting population, which is minimized, and the 
-  #          results are saved in the hall of fame.
-  #
-  #       "n_generation": int, optional, default=10
-  #          Number of generations between saving the hall of fame.
-  #
-  #       "n_repetition": int, optional, default=100
-  #          Number of repetitions of n_generation generations. Each repetition 
-  #          begins with the existing final population.
-  #
-  #       "n_features_init: int, optional, default=5
-  #          Number of randomly selected features to initialize each individual 
-  #          with.
-  #
-  #       "constraints": dict, optional, default=dict()
+  #       "constraints_kwargs": dict, optional, default=dict()
   #          Keyword arguments for setting constraints on allowed individuals. 
   #          See below for options.
   #
-  #   The evolutionary algorithms have an optional set of "constraints" parameters
-  #   that may restrict the number of basis functions selected to some range, or
-  #   enforce some basis functions to have or not have coefficients:
+  #       "evolve_params_kwargs": dict, optional, default=dict()
+  #          Keyword arguments for controlling how long the algorithm runs, how
+  #          new random individuals are initialized, when restart files are 
+  #          written, and the names of the files. See below for options.
   #
-  #   Options for "constraints":
+  #
+  #   The evolutionary algorithms have an optional set of "constraints_kwargs" 
+  #   parameters that may restrict the number of basis functions selected to some
+  #    range, or enforce some basis functions to have or not have coefficients:
+  #
+  #   Options for "constraints_kwargs":
   #     "n_features_min": int, optional, default=1
   #        The minimum allowed number of selected features. Must be >=1.
   #
@@ -679,14 +765,56 @@ def print_input_help():
   #  
   #     "fix_off": 1d array-like of int, optional, default=[]
   #        The indices of features to fix off
+  #
+  #
+  #   The evolutionary algorithms share an optional set of "evolve_params_kwargs" 
+  #   parameters that control how long the algorithm runs, how new random 
+  #   individuals are initialized, when restart files are written, and the names
+  #   of the files:
+  #
+  #   Options for "evolve_params_kwargs":
+  #
+  #     "n_population": int, optional, default=100
+  #        Population size. This many random initial starting individuals are 
+  #        created.
+  #     
+  #     "n_halloffame": int, optional, default=25
+  #        Maxsize of the hall of fame which holds the best individuals 
+  #        encountered in any generation. Upon completion, the individuals in  
+  #        this hall of fame are into your overall casm-learn hall of fame to
+  #        be compared to results obtained from other fitting or feature 
+  #        selection methods.
+  #        
+  #     "n_generation": int, optional, default=10
+  #        Number of generations between saving the hall of fame.
+  #
+  #     "n_repetition": int, optional, default=100
+  #        Number of repetitions of n_generation generations. Each repetition 
+  #        begins with the existing final population.
+  #
+  #     "n_features_init: int or "all", optional, default=0
+  #        Number of randomly selected features to initialize each individual 
+  #        with.
+  #
+  #     "pop_begin_filename": string, optional, default="population_begin.pkl"
+  #        Filename where the initial population is read from, if it exists.
+  #
+  #     "pop_end_filename": string, optional, default="population_end.pkl"
+  #        Filename where the final population is saved.
+  #      
+  #     "halloffame_filename": string, optional, default="evolve_halloffame.pkl"
+  #        Filename where a hall of fame is saved holding the best individuals 
+  #        encountered in any generation.
+  #      
+  #     "filename_prefix": string, optional
+  #        Prefix for filenames, default uses input file filename excluding 
+  #        extension. For example, if input file is named "Ef_kfold10.json", then
+  #        "Ef_kfold10_population_begin.pkl", "specs2_population_end.pkl", and 
+  #        "Ef_kfold10_evolve_halloffame.pkl" are used.
   
     "feature_selection" : {
       "method": "GeneticAlgorithm",
       "kwargs": {
-        "n_population": 100,
-        "n_generation": 10,
-        "n_repetition": 100,
-        "Nbunc_init": 0,
         "selTournamentSize": 3,
         "cxUniformProb": 0.5,
         "mutFlipBitProb": 0.01,
@@ -695,14 +823,284 @@ def print_input_help():
           "n_features_max": "all",
           "fix_on": [],
           "fix_off": []
+        },
+        "evolve_params_kwargs": {
+          "n_population": 100,
+          "n_generation": 10,
+          "n_repetition": 100,
+          "n_features_init": 0
         }
       }
+    },
+  
+  # The "halloffame_filename" option:
+  #
+  # Optional. Default = "halloffame.pkl"
+  # Name to use for file storing the best results obtained to date, as determined
+  # by the CV score. This enables comparison of the results of various estimator
+  # or feature selection methods.
+  
+      "halloffame_filename": "halloffame.pkl"
+    
+    },
+  
+  # The "n_halloffame" option:
+  #
+  # Optional. Default = 25
+  # The number of individuals to store in the hall of fame.
+  
+    "n_halloffame": 25
+  
+  # The "checkspecs" option:
+  #
+  #   Currently, these settings are used with the '--checkspecs' option to control
+  #   the output files containing training data (including calculated weights) and
+  #   cv generators or training / testing sets.
+  #
+  #
+  # Object attributes
+  # -----------------
+  #
+  # data_filename: string
+  #   The path to the file where the training data (including weights) should be 
+  #   written
+  #
+  # data_kwargs: dict or null, optional, default=dict()
+  #   Additional parameters to be used to write training data. 
+  #  
+  #   Options for input 'filetype' "selection":
+  #     None.
+  #   
+  #   Options for input 'filetype' "csv":
+  #     Any options to pass to pandas.to_csv
+  #
+  #   Options for input 'filetype' "json":
+  #     Any options to pass to pandas.to_json
+  #
+  # cv_filename: string
+  #   The path to the file where the cv generator or train/tests sets should be 
+  #   written as pickle file
+  #
+  # cv_kwargs: dict or null, optional, default=dict()
+  #   Additional parameters to be used to write cv data using pickle.dump.
+      
+    "checkspecs" : {
+      "data_filename": "check_train",
+      "data_kwargs": null,
+      "cv_filename": "check_cv.pkl",
+      "cv_kwargs": null
+    },
+  
+  # The "checkhull" option:
+  #
+  #   Currently, these settings are used with the '--checkhull' option to 
+  #   calculate convex hull properties.
+  #
+  #
+  # Object attributes
+  # -----------------
+  #
+  # selection: str, optional, default="ALL"
+  #   A CASM selection (either 'casm select' output filename or one of the 
+  #   standard selections: "MASTER", "CALCULATED", or "ALL") containing all the
+  #   configurations to be considered. The DFT convex hull is generated from 
+  #   the subset of this selection for which 'is_calculated' is true.
+  #
+  # write_results: bool, optional, default=False
+  #   If True, write CASM selection files containing the output data. Output 
+  #   selection files are named "checkhull_(problem_specs_prefix)_(i)_(selname)",
+  #   where 'problem_specs_prefix' is input["problem_specs_prefix"], 'i' is the
+  #   index of the individual in the hall of fame, and 'selname' is one of:
+  #     "dft_gs" : DFT calculated ground states
+  #     "clex_gs" : predicted ground states
+  #     "gs_missing" : DFT ground states that are not predicted ground states
+  #     "gs_spurious" : Predicted ground states that are not DFT ground states
+  #     "uncalculated" : Predicted ground states and near ground states that have not been calculated
+  #     "below_hull" : All configurations predicted below the prediction of the DFT hull
+  #
+  # uncalculated_range: number, optional, default=0.0
+  #   Include all configurations with clex_hull_dist less than this value (+hull_tol)
+  #   in the "uncalculated" configurations results. Default only includes predicted
+  #   ground states.
+  #
+  # ranged_rms: List[number], optional, default=[0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
+  #   Calculates the root-mean-square error for DFT calculated configurations
+  #   within a particular range (in eV/unitcell) of the DFT hull. The list
+  #   provides all the ranges for which the RMSE is requested.
+  #
+  # composition: str, optional, default="atom_frac"
+  #   Composition argument use for 'casm query' properties 'hull_dist' and 
+  #   'clex_hull_dist'. For thermodynamic ground states, use "atom_frac".
+  #
+  # hull_tol: number, optional, default=proj.settings.data["lin_alg_tol"]
+  #   Tolerance used for identify hull states
+  #
+  # dim_tol: number, optional, default=1e-8
+  #   Tolerance for detecting composition dimensionality
+  #
+  # bottom_tol: number, optional, default=1e-8
+  #   Tolerance for detecting which facets form the convex hull bottom
+  
+    "checkhull" : {
+      "selection": "ALL",
+      "write_results": True
+      "uncalculated_range": 1e-8,
+      "ranged_rms": [0.001, 0.005, 0.01, 0.05, 0.1, 0.5],
+      "composition": "atom_frac",
+      "hull_tol": 1e-8,
+      "dim_tol": 1e-8,
+      "bottom_tol": 1e-8
     }
+  
   }
   ------------------------------------------------------------------------------
   """
+
+
+def default_filename(prefix, default, suffix):
+  """
+  Make a default filename from the input file filename.
   
+  Implements:
+    if prefix is not None:
+      return prefix + suffix
+    else:
+      return default
   
+  Arguments
+  ---------
+  
+    prefix: str or None
+      The prefix used in determining the default filename.
+    
+    default: str
+      Filename if input_filename is None
+    
+    suffix: str
+      If input_filename is not None, append this suffix to the input_filename 
+      (excluding extension) to make the filename.
+    
+  
+  Returns
+  --------
+    
+    filename: str
+      The generated default filename 
+  
+  """
+  if prefix is not None:
+    return prefix + suffix
+  else:
+    return default
+  
+
+def set_input_defaults(input, input_filename=None):
+  """
+  Set common input defaults. Currently, includes everything except "checkspecs" 
+  and "checkhull" defaults.
+  
+  Arguments
+  ---------
+  
+    input: dict
+      The input settings as a dict
+    
+    input_filename: str, optional, default=None
+      The input settings filename, which is used in determining the default
+      problem specs filename.
+    
+  
+  Returns
+  ---------
+  
+    input: dict
+      The input settings as a dict, with defaults added
+    
+  """
+  if "problem_specs" not in input:
+    input["problem_specs"] = dict()
+  
+  specs = input["problem_specs"]
+  
+  if "problem_specs_prefix" not in specs:
+    if input_filename is None:
+      specs["problem_specs_prefix"] = ""
+    else:
+      specs["problem_specs_prefix"] = splitext(basename(input_filename))[0]
+  
+  if "specs_filename" not in specs:
+    specs["specs_filename"] = default_filename(specs["problem_specs_prefix"], "problem_specs.pkl", "_specs.pkl")
+  
+  # set data defaults if not provided
+  if "data" not in specs:
+    specs["data"] = dict()
+  
+  defaults = {
+    "filename":"train",
+    "filetype":"selection",
+    "X":"corr",
+    "y":"formation_energy",
+  }
+  
+  for key, val in defaults.iteritems():
+    if key not in specs["data"]:
+      specs["data"][key] = val
+  
+  if "kwargs" not in specs["data"] or specs["data"]["kwargs"] is None:
+    specs["data"]["kwargs"] = dict()
+  if specs["data"]["filetype"] == "selection":
+    if "project_path" not in specs["data"]["kwargs"]:
+      specs["data"]["kwargs"]["project_path"] = None
+  
+  # set weight defaults if not provided
+  sample_weight = None
+  if "weight" not in specs:
+    specs["weight"] = dict()
+  if "kwargs" not in specs["weight"] or specs["weight"]["kwargs"] is None:
+    specs["weight"]["kwargs"] = dict()
+  if "method" not in specs["weight"]:
+    specs["weight"]["method"] = None
+  if specs["weight"]["method"] == "wHullDist":
+    if "hull_selection" not in specs["weight"]["kwargs"]:
+      specs["weight"]["kwargs"]["hull_selection"] = "CALCULATED"
+  
+  # set cv defaults
+  if "kwargs" not in specs["cv"] or specs["cv"]["kwargs"] is None:
+    specs["cv"]["kwargs"] = dict()
+  if "penalty" not in specs["cv"]:
+    specs["cv"]["penalty"] = 0.0
+  
+  # set estimator defaults
+  if "method" not in input["estimator"]:
+    input["estimator"]["method"] = "LinearRegression"
+  if "kwargs" not in input["estimator"] or input["estimator"]["kwargs"] is None:
+    input["estimator"]["kwargs"] = dict()
+  if "fit_intercept" not in input["estimator"]["kwargs"]:
+    input["estimator"]["kwargs"]["fit_intercept"] = False
+  
+  # set feature_selection defaults
+  if "kwargs" not in input["feature_selection"] or input["feature_selection"]["kwargs"] is None:
+    input["feature_selection"]["kwargs"] = dict()
+  kwargs = input["feature_selection"]["kwargs"]
+  if "evolve_params_kwargs" in kwargs:
+    evolve_kwargs = kwargs["evolve_params_kwargs"]
+    if "halloffame_filename" not in evolve_kwargs:
+      evolve_kwargs["halloffame_filename"] = "evolve_halloffame.pkl"
+    if "n_halloffame" not in evolve_kwargs:
+      evolve_kwargs["n_halloffame"] = 25
+    if "filename_prefix" not in evolve_kwargs and input_filename is not None:
+      evolve_kwargs["filename_prefix"] = specs["problem_specs_prefix"]
+    
+  
+  # hall of fame
+  if "halloffame_filename" not in input:
+    input["halloffame_filename"] = default_filename(specs["problem_specs_prefix"], "halloffame.pkl", "_halloffame.pkl")
+  if "n_halloffame" not in input:
+    input["n_halloffame"] = 25
+  
+  return input
+
+
 class FittingData(object):
   """ 
   FittingData holds feature values, target values, sample weights, etc. used
@@ -749,9 +1147,15 @@ class FittingData(object):
     
     penalty: float, optional, default=0.0
       The CV score is increased by 'penalty*(number of selected basis function)'
+    
+    data: pandas.DataFrame, optional, default=None
+        Optionally, store TrainingData.data with weighted_X and weighted_y data 
+        added. No checks are made for consistency of tdata.X, tdata.y and X and 
+        y or other parameters.
+    
   """
   
-  def __init__(self, X, y, cv, sample_weight=[], scoring=None, penalty=0.0):
+  def __init__(self, X, y, cv, sample_weight=[], scoring=None, penalty=0.0, tdata=None):
     """
     Arguments
     ---------
@@ -782,6 +1186,11 @@ class FittingData(object):
         
       penalty: float, optional, default=0.0
         The CV score is increased by 'penalty*(number of selected basis function)'
+      
+      tdata: TrainingData instance, optional, default=None
+        Optionally, store TrainingData.data with weighted_X and weighted_y data 
+        added. No checks are made for consistency of tdata.X, tdata.y and X and 
+        y or other parameters.
     """
     self.X = X
     self.y = y
@@ -790,6 +1199,7 @@ class FittingData(object):
     self.n_samples, self.n_features = self.X.shape
     
     # weight
+    self.sample_weight = sample_weight
     self.weighted_y, self.weighted_X, self.W, self.L = casm.learn.tools.set_sample_weight(
       sample_weight, X=self.X, y=self.y)
     
@@ -801,7 +1211,203 @@ class FittingData(object):
     
     # penalty
     self.penalty = penalty
+    
+    # data
+    if tdata is not None:
+      self.data = tdata.data.copy()
+      for i in xrange(self.n_features):
+        self.data.loc[:,"weighted_" + tdata.X_name + "(" + str(i) + ")"] = self.weighted_X[:,i]
+      for i in xrange(self.n_features):
+        self.data.loc[:,"weighted_" + tdata.y_name] = self.weighted_y
 
+
+class TrainingData(object):
+  """ 
+  TrainingData is a data structure used to collect data from the training
+  data file.
+  
+    
+  Attributes
+  ----------
+    
+    filename: str
+      The name of the training data file
+    
+    filetype: str, one of ["selection", "csv", "json"]
+      The data format of the training data file
+    
+    X_name: str
+      The name of the X columns in the training data file
+    
+    X: array-like of shape (n_samples, n_features)
+      The training input samples (correlations).
+    
+    y_name: str
+      The name of the y column in the training data file
+    
+    y: array-like of shape: (n_samples, 1)
+      The target values (property values).
+    
+    n_samples: int
+      The number of samples / target values (number of rows in X)
+    
+    n_features: int
+      The number of features (number of columns in X)
+    
+    sel: casm.Selection, (exists if filetype=="selection")
+      The selection specifying the training data
+    
+    data: pandas.DataFrame
+      Contains the X and y data
+    
+    hull_dist_name: str, (exists if weight method=="wHullDist")
+      The name of the hull_dist column in the training data file
+    
+    hull_dist: array-like of shape: (n_samples, 1), (exists if weight method=="wHullDist")
+      The hull distance values.
+    
+    
+  """
+  def __init__(self, input, verbose=True):
+    """
+    Arguments
+    ---------
+    
+      input: dict
+        The input settings as a dict
+      
+      verbose: boolean, optional, default=True
+        Print information to stdout.
+    
+    """
+    specs = input["problem_specs"]
+    
+    self.filename = specs["data"]["filename"]
+    self.filetype = specs["data"]["filetype"].lower()
+    self.X_name = specs["data"]["X"]
+    self.y_name = specs["data"]["y"]
+    hull_dist_name = "hull_dist"
+    
+    if self.filetype == "selection":
+      
+      # read training set
+      proj = Project(specs["data"]["kwargs"]["project_path"], verbose=verbose)
+      
+      sel = Selection(proj, self.filename, all=False)
+      
+      # get property name (required)
+      property = specs["data"]["y"]
+      
+      ## if necessary, query data
+      columns = [x for x in [self.y_name, "is_calculated"] if x not in sel.data.columns]
+      if len([x for x in sel.data.columns if re.match(self.X_name + "\([0-9]*\)", x)]) == 0:
+        columns.append(self.X_name)
+      if specs["weight"]["method"] == "wHullDist":
+        hull_selection = specs["weight"]["kwargs"]["hull_selection"]
+        hull_dist_name = "hull_dist(" + hull_selection + ",atom_frac)"
+        if verbose:
+          print "# wHullDist: Will calculate hull distance:", hull_dist_name
+        columns.append(hull_dist_name)
+      
+      # perform query
+      if len(columns):
+        sel.query(columns, verbose=verbose)
+      
+      data = sel.data
+      self.sel = sel
+      
+    elif self.filetype.lower() == "csv":
+      # populate from csv file
+      data = pandas.read_csv(self.filename, **specs["data"]["kwargs"])
+    
+    elif self.filetype.lower() == "json":
+      # populate from json file
+      data = pandas.read_json(self.filename, **specs["data"]["kwargs"])
+    
+    
+    # columns of interest, as numpy arrays
+    X = data.loc[:,[x for x in data.columns if re.match(self.X_name + "\([0-9]*\)", x)]].values
+    y = data.loc[:,self.y_name].values
+    if specs["weight"]["method"] == "wHullDist":
+      self.hull_dist_name = hull_dist_name
+      self.hull_dist = data.loc[:,hull_dist_name]
+    
+    self.X = X
+    self.y = y
+    self.data = data
+    
+    self.n_samples = X.shape[0]
+    self.n_features = X.shape[1]
+
+
+def read_sample_weight(input, tdata, verbose=True):
+  """
+  Read input file and read or calculate sample weights
+  
+  Arguments
+  ---------
+  
+    input: dict
+      The input settings as a dict
+    
+    tdata: TrainingData instance
+      tdata.data is populated with a "weight" column, or the "weight" column
+      is used to generate "sample_weight" output, depending on the weight method
+    
+    verbose: boolean, optional, default=True
+      Print information to stdout.
+  
+  
+  Returns
+  ---------
+    
+    sample_weight: None, 1d array-like of shape (n_samples,1), or 2d array-like of shape (n_samples, n_samples)
+      Sample weights.
+      
+      if sample_weight is None: (unweighted)
+        W = np.matlib.eye(N) 
+      if sample_weight is 1-dimensional:
+        W = np.diag(sample_weight)*Nvalue/np.sum(sample_weight) 
+      if sample_weight is 2-dimensional (must be Hermitian, positive-definite):
+        W = sample_weight*Nvalue/np.sum(sample_weight)
+  """
+  
+  specs = input["problem_specs"]
+  
+  if verbose:
+    print "# Weighting:"
+    print json.dumps(specs["weight"], indent=2)
+  
+  # get kwargs
+  weight_kwargs = copy.deepcopy(specs["weight"]["kwargs"])
+        
+  # use method to get weights
+  if specs["weight"]["method"] == "wCustom":
+    if verbose:
+      print "Reading custom weights"
+    sample_weight = tdata.data["weight"].values
+  elif specs["weight"]["method"] == "wCustom2d":
+    if verbose:
+      print "Reading custom2d weights"
+    cols = ["weight(" + str(i) + ")" for i in xrange(tdata.n_samples)]
+    sample_weight = tdata.data.loc[:,cols].values
+  elif specs["weight"]["method"] == "wHullDist":
+    sample_weight = casm.learn.tools.wHullDist(tdata.hull_dist, **weight_kwargs)
+    tdata.data.loc[:,"weight"] = sample_weight
+  elif specs["weight"]["method"] == "wEmin":
+    sample_weight = casm.learn.tools.wEmin(tdata.y, **weight_kwargs)
+    tdata.data.loc[:,"weight"] = sample_weight
+  elif specs["weight"]["method"] == "wEref":
+    sample_weight = casm.learn.tools.wEref(tdata.y, **weight_kwargs)
+    tdata.data.loc[:,"weight"] = sample_weight
+  else:
+    sample_weight = None
+  
+  if verbose:
+    print ""
+  
+  return sample_weight
+      
 
 def make_fitting_data(input, save=True, verbose=True, read_existing=True):
   """ 
@@ -816,7 +1422,8 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
     
     save: boolean, optional, default=True
       Save a pickle file containing the training data and scoring metric. The file
-      name, which can be specified by input["fit_data_filename"], defaults to "fit_data.pkl".
+      name is specified by input["problem_specs"]["specs_filename"].  See/use
+      set_input_defaults for default values.
     
     verbose: boolean, optional, default=True
       Print information to stdout.
@@ -834,170 +1441,83 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
       A FittingData instance constructed based on the input parameters.
       
   """
-  # set data defaults if not provided
-  if "data" not in input:
-    input["data"] = dict()
-  if "kwargs" not in input["data"] or input["data"]["kwargs"] is None:
-    input["data"]["kwargs"] = dict()
+  if verbose:
+    print "# Get problem data..."
   
-  # set weight defaults if not provided
-  sample_weight = None
-  if "weight" not in input:
-    input["weight"] = dict()
-  if "kwargs" not in input["weight"] or input["weight"]["kwargs"] is None:
-    input["weight"]["kwargs"] = dict()
-  if "method" not in input["weight"]:
-    input["weight"]["method"] = None
-  
-  # set cv kwargs defaults
-  if "kwargs" not in input["cv"] or input["cv"]["kwargs"] is None:
-    input["cv"]["kwargs"] = dict()
+  specs = input["problem_specs"]
   
   # property, weight, and cv inputs should remain constant
   # estimator and feature_selection might change
-  fit_data_filename = input.get("fit_data_filename", "fit_data.pkl")
+  fit_data_filename = specs["specs_filename"]
   
   if read_existing and os.path.exists(fit_data_filename):
     if verbose:
-      print "# Reading existing fitting data from:", fit_data_filename
+      print "# Reading existing problem specs from:", fit_data_filename
     fdata = pickle.load(open(fit_data_filename, 'rb'))
     if verbose:
       print "#   DONE\n"
     
-    s = "Fitting scheme has changed.\n\n" + \
-        "To proceed with the existing scheme adjust your input settings to match.\n" + \
-        "To proceed with the new scheme run in a new directory or delete '" + fit_data_filename + "'."
+    s = "Problem specifications have changed.\n\n" + \
+        "To proceed with the existing specs adjust your input settings \"problem_specs\" to match.\n" + \
+        "To proceed with the new specs run in a new directory or delete '" + fit_data_filename + "'."
     
     def check_input(name):
-      if fdata.input[name] != input[name]:
+      if fdata.input["problem_specs"][name] != specs[name]:
         print "ERROR: Input file and stored data differ. Input '" + name + "' has changed."
-        print "Stored data:\n", json.dumps(fdata.input[name], indent=2)
-        print "Input:\n", json.dumps(input[name], indent=2)
+        print "Stored data:\n", json.dumps(fdata.input["problem_specs"][name], indent=2)
+        print "Input:\n", json.dumps(specs[name], indent=2)
         print s
         exit()
     
     for name in ["data", "cv", "weight"]:
       check_input(name)
     
-    
   else:
     
     ## get data ####
     
-    filename = input["data"].get("filename", "train")
-    data_type = input["data"].get("type", "selection").lower()
-    X_name = input["data"].get("X", "corr")
-    y_name = input["data"].get("y", "formation_energy")
-    hull_dist_name = "hull_dist"
-    
-    if data_type == "selection":
-      
-      # read training set
-      proj = Project(input["data"]["kwargs"].get("project_path", None), verbose=verbose)
-      
-      sel = Selection(proj, filename, all=False)
-      
-      # get property name (required)
-      property = input["data"].get("filename", "formation_energy")
-      
-      ## if necessary, query data
-      columns = [X_name, y_name, 'is_calculated']
-      if input["weight"]["method"] == "wHullDist":
-        hull_selection = input["weight"]["kwargs"].get("hull_selection", "CALCULATED")
-        hull_dist_name = "hull_dist(" + hull_selection + ",atom_frac)"
-        if verbose:
-          print "# wHullDist: Will calculate hull distance:", hull_dist_name
-        columns.append(hull_dist_name)
-      
-      # perform query
-      if verbose:
-        print "# Querying CASM:", columns
-      sel.query(columns)
-      if verbose:
-        print "#   DONE\n"
-      
-      data = sel.data
-      
-    elif data_type.lower() == "csv":
-      # populate from csv file
-      data = pandas.read_csv(f, **input["data"]["kwargs"])
-    
-    elif data_type.lower() == "json":
-      # populate from json file
-      data = pandas.read_json(self.path, **input["data"]["kwargs"])
-    
-    # columns of interest, as numpy arrays
-    X = data.loc[:,[x for x in sel.data.columns if re.match(X_name + "\([0-9]*\)", x)]].values
-    y = data.loc[:,y_name].values
-    if input["weight"]["method"] == "wHullDist":
-      hull_dist = data.loc[:,hull_dist_name]
-    
-    n_samples = X.shape[0]
-    n_features = X.shape[1]
+    tdata = TrainingData(input, verbose=verbose)
     
     if verbose:
-      print "# Target:", y_name
-      print "# Training samples:", n_samples
-      print "# Features:", n_features
+      print "# Target:", tdata.y_name
+      print "# Training samples:", tdata.n_samples
+      print "# Features:", tdata.n_features, "\n"
     
     ## weight (optional)
-    
-    # get kwargs
-    weight_kwargs = copy.deepcopy(input["weight"]["kwargs"])
-          
-    # use method to get weights
-    if input["weight"]["method"] == "wCustom":
-      if verbose:
-        print "Reading custom weights"
-      sample_weight = data["weight"].values
-    elif input["weight"]["method"] == "wCustom2d":
-      if verbose:
-        print "Reading custom2d weights"
-      cols = ["weight(" + str(i) + ")" for i in xrange(n_samples)]
-      sample_weight = data.loc[:,cols].values
-    elif input["weight"]["method"] == "wHullDist":
-      sample_weight = casm.learn.tools.wHullDist(hull_dist, **weight_kwargs)
-    elif input["weight"]["method"] == "wEmin":
-      sample_weight = casm.learn.tools.wEmin(y, **weight_kwargs)
-    elif input["weight"]["method"] == "wEref":
-      sample_weight = casm.learn.tools.wEref(y, **weight_kwargs)
-          
-    if verbose:
-      print "# Weighting:"
-      print json.dumps(input["weight"], indent=2), "\n"
-    
+    sample_weight = read_sample_weight(input, tdata, verbose=verbose)
     
     ## cv
-    cv_kwargs = copy.deepcopy(input["cv"]["kwargs"])
+    cv_kwargs = copy.deepcopy(specs["cv"]["kwargs"])
     
     # get cv method (required user input) 
-    cv_method = _find_method([sklearn.cross_validation], input["cv"]["method"])
-    cv = cv_method(n_samples, **cv_kwargs)
+    cv_method = _find_method([sklearn.cross_validation, casm.learn.cross_validation], specs["cv"]["method"])
+    cv = cv_method(tdata.n_samples, **cv_kwargs)
     
     if verbose:
       print "# CV:"
-      print json.dumps(input["cv"], indent=2), "\n"
+      print json.dumps(specs["cv"], indent=2), "\n"
     
     ## scoring
     scoring = sklearn.metrics.make_scorer(sklearn.metrics.mean_squared_error, greater_is_better=True)
     
     ## penalty
-    penalty = input["cv"].get("penalty", 0.0)
+    penalty = specs["cv"]["penalty"]
     
-    fdata = casm.learn.FittingData(X, y, cv, 
-      sample_weight=sample_weight, scoring=scoring, penalty=penalty)
+    fdata = casm.learn.FittingData(tdata.X, tdata.y, cv, 
+      sample_weight=sample_weight, scoring=scoring, penalty=penalty, tdata=tdata)
     
     fdata.input = dict()
-    fdata.input["data"] = input["data"]
-    fdata.input["cv"] = input["cv"]
-    fdata.input["weight"] = input["weight"]
+    fdata.input["problem_specs"] = specs
     
     if save == True:
       pickle.dump(fdata, open(fit_data_filename, 'wb'))
+    
+    if verbose:
+      print "# Writing problem specs to:", fit_data_filename, "\n"
   
   # during runtime only, if LinearRegression and LeaveOneOut, update fdata.cv and fdata.scoring
   # to use optimized LOOCV score method
-  if input["estimator"].get("method", "LinearRegression") == "LinearRegression" and input["cv"]["method"] == "LeaveOneOut":
+  if input["estimator"]["method"] == "LinearRegression" and specs["cv"]["method"] == "LeaveOneOut":
     fdata.scoring = None
     fdata.cv = casm.learn.cross_validation.LeaveOneOutForLLS(fdata.weighted_y.shape[0])
   
@@ -1026,12 +1546,14 @@ def make_estimator(input, verbose = True):
   
   """""
   
+  if verbose:
+    print "# Estimator:"
+    print json.dumps(input["estimator"], indent=2), "\n"
+  
   ## estimator
   
   # get kwargs (default: fit_intercept=False)
-  kwargs = copy.deepcopy(input["estimator"].get("kwargs", dict()))
-  if "fit_intercept" not in kwargs:
-    kwargs["fit_intercept"] = False
+  kwargs = copy.deepcopy(input["estimator"]["kwargs"])
   
   # Use casm version of LinearRegression
   if input["estimator"]["method"] == "LinearRegression":
@@ -1040,9 +1562,6 @@ def make_estimator(input, verbose = True):
     estimator_method = _find_method([sklearn.linear_model], input["estimator"]["method"])
   estimator = estimator_method(**kwargs)
   
-  if verbose:
-    print "# Estimator:"
-    print json.dumps(input["estimator"], indent=2), "\n"
     
   
   return estimator
@@ -1087,14 +1606,7 @@ def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=
   # The feature selector should act like a sklearn.feature_selection class and
   # inherit from sklearn.base.BaseEstimator and sklearn.feature_selection.SelectorMixin,
   
-  kwargs = copy.deepcopy(input["feature_selection"].get("kwargs", dict()))
-  if kwargs is None:
-    kwargs = dict()
-  if "evolve_params_kwargs" in kwargs:
-    if "halloffame_filename" not in kwargs["evolve_params_kwargs"]:
-      kwargs["evolve_params_kwargs"]["halloffame_filename"] = input.get("halloffame_filename", "halloffame.pkl")
-    if "n_halloffame" not in kwargs["evolve_params_kwargs"]:
-      kwargs["evolve_params_kwargs"]["n_halloffame"] = input.get("n_halloffame", 25)
+  kwargs = copy.deepcopy(input["feature_selection"]["kwargs"])
   
   if verbose:
     print "# Feature Selection:"
@@ -1122,121 +1634,7 @@ def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=
   return selector
 
 
-def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None):
-  """
-  Arguments
-  ---------
-    
-    input: dict
-      The input settings as a dict
-    
-    save: boolean, optional, default=True
-      Save a pickle file containing the training data and scoring metric. The file
-      name, which can be specified by input["fit_data_filename"], defaults to "fit_data.pkl".
-    
-    verbose: boolean, optional, default=True
-      Print information to stdout.
-    
-    read_existing: boolean, optional, default=True
-      If it exists, read the pickle file containing the training data and scoring 
-      metric. The file name, which can be specified by input["fit_data_filename"], 
-      defaults to "fit_data.pkl".
-    
-    hall: deap.tools.HallOfFame, optional, default=None
-      A Hall Of Fame to add resulting individuals to
-    
-  
-  Returns
-  -------
-    
-    (fdata, estimator, selector)
-    
-    fdata: casm.learn.FittingData
-      A FittingData instance containing the problem data.
-    
-    estimator:  estimator object implementing 'fit'
-      The estimator specified by the input settings.
-    
-    selector:  selector object implementing 'fit' and having either a 
-               'get_support()' or 'get_halloffame()' member
-      The feature selector specified by the input settings.
-      
-  
-  """
-  # construct FittingData
-  if verbose:
-    print "# Get fitting data..."
-  fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
-    
-  # construct model used for fitting
-  if verbose:
-    print "# Construct estimator..."
-  estimator = make_estimator(input, verbose=verbose)
-  
-  # feature selection
-  if verbose:
-    print "# Construct feature selector..."
-  selector = make_selector(input, estimator, 
-    scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty, verbose=verbose)
-  
-  if not hasattr(selector, "get_halloffame") and not hasattr(selector, "get_support"):
-    raise Exception("Selector has neither 'get_halloffame' nor 'get_support'")
-  
-  # fit
-  if verbose:
-    print "# Fit and select..."
-  t = time.clock()
-  selector.fit(fdata.weighted_X, fdata.weighted_y)
-  
-  # print calculation properties that may be of interest
-  if verbose:
-    # custom for SelectFromModel
-    if hasattr(selector, "estimator_") and hasattr(selector.estimator_, "n_iter_"):
-      print "#   Iterations:", selector.estimator_.n_iter_
-    if hasattr(selector, "estimator_") and hasattr(selector.estimator_, "alpha_"):
-      print "#   Alpha:", selector.estimator_.alpha_
-    if hasattr(selector, "threshold"):
-      print "#   Feature selection threshold:", selector.threshold
-    print "#   DONE  Runtime:", time.clock() - t, "(s)\n"
-  
-  if hall is not None:
-    # store results: Assume selector either has a 'get_halloffame()' attribute, or 'get_support()' member
-    if hasattr(selector, "get_halloffame"):
-      if verbose:
-        print "Adding statistics..."
-      selector_hall = selector.get_halloffame()
-      for i in xrange(len(selector_hall)):
-        add_individual_detail(selector_hall[i], estimator, fdata, selector, input)
-      if verbose:
-        print "  DONE\n"
-      
-      if verbose:
-        print "Result:"
-      print_halloffame(selector_hall)
-      
-      hall.update(selector_hall)
-    
-    elif hasattr(selector, "get_support"):
-      indiv = casm.learn.creator.Individual(selector.get_support())
-      if verbose:
-        print "Adding statistics..."
-      indiv.fitness.values = casm.learn.cross_validation.cross_val_score(
-        estimator, fdata.weighted_X, indiv, 
-        y=fdata.weighted_y, scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty)
-      add_individual_detail(indiv, estimator, fdata, selector, input)
-      if verbose:
-        print "  DONE\n"
-      
-      if verbose:
-        print "Result:"
-      print_halloffame([indiv])
-      
-      hall.update([indiv])
-    
-  return (fdata, estimator, selector)
-
-
-def add_individual_detail(indiv, estimator, fdata, selector, input):
+def add_individual_detail(indiv, estimator, fdata, input, selector=None):
   """
   Adds attributes to an individual describing the details of the method used 
   calculate it and the it's prediction ability. 
@@ -1252,6 +1650,18 @@ def add_individual_detail(indiv, estimator, fdata, selector, input):
     
     wrms: float
       The root mean square prediction error of the weighted problem
+    
+    mean_absolute_error: float
+      The mean absolute prediction error of the unweighted problem
+    
+    wmean_absolute_error: float
+      The mean absolute prediction error of the weighted problem
+    
+    max_absolute_error: float
+      The maximum absolute prediction error of the unweighted problem
+    
+    wmax_absolute_error: float
+      The maximum absolute prediction error of the weighted problem
     
     estimator_method: string
       The estimator method class name
@@ -1282,13 +1692,13 @@ def add_individual_detail(indiv, estimator, fdata, selector, input):
     fdata: casm.learn.FittingData
       A FittingData instance containing the problem data.
     
-    selector:  selector object implementing 'fit' and having either a 
-               'get_support()' or 'get_halloffame()' member
-      The feature selector specified by the input settings.
-    
     input: dict
       The input settings
-  
+    
+    selector:  selector object implementing 'fit' and having either a 
+               'get_support()' or 'get_halloffame()' member, optional, default=None
+      The feature selector specified by the input settings.
+    
     
   Note
   ----
@@ -1301,11 +1711,20 @@ def add_individual_detail(indiv, estimator, fdata, selector, input):
   estimator.fit(fdata.weighted_X[:,casm.learn.tools.indices(indiv)], fdata.weighted_y)
   indiv.eci = casm.learn.tools.eci(indiv, estimator.coef_)
   
+  y_pred = estimator.predict(fdata.X[:,casm.learn.tools.indices(indiv)])
+  weighted_y_pred = estimator.predict(fdata.weighted_X[:,casm.learn.tools.indices(indiv)])
+  
   # rms and wrms
-  indiv.rms = sqrt(sklearn.metrics.mean_squared_error(
-    fdata.y, estimator.predict(fdata.X[:,casm.learn.tools.indices(indiv)])))
-  indiv.wrms = sqrt(sklearn.metrics.mean_squared_error(
-    fdata.weighted_y, estimator.predict(fdata.weighted_X[:,casm.learn.tools.indices(indiv)])))
+  indiv.rms = sqrt(sklearn.metrics.mean_squared_error(fdata.y, y_pred))
+  indiv.wrms = sqrt(sklearn.metrics.mean_squared_error(fdata.weighted_y, weighted_y_pred))
+  
+  # mean_absolute_error
+  indiv.mean_absolute_error = sklearn.metrics.mean_absolute_error(fdata.y, y_pred)
+  indiv.wmean_absolute_error = sklearn.metrics.mean_absolute_error(fdata.weighted_y, weighted_y_pred)
+  
+  # max_absolute_error
+  indiv.max_absolute_error = np.absolute(fdata.y - y_pred).max()
+  indiv.wmax_absolute_error = np.absolute(fdata.weighted_y - weighted_y_pred).max()
   
   # estimator (hide implementation detail)
   indiv.estimator_method = type(estimator).__name__
@@ -1313,7 +1732,10 @@ def add_individual_detail(indiv, estimator, fdata, selector, input):
     indiv.estimator_method = "LinearRegression"
   
   # feature_selection
-  indiv.feature_selection_method = type(selector).__name__
+  if selector is not None:
+    indiv.feature_selection_method = type(selector).__name__
+  elif not hasattr(indiv, "feature_selection_method"):
+    indiv.feature_selection_method = "DirectSelection"
   
   # note
   indiv.note = input.get("note", "")
@@ -1325,6 +1747,418 @@ def add_individual_detail(indiv, estimator, fdata, selector, input):
   indiv.id = uuid.uuid4()
   
   return indiv
+
+
+def checkhull(input, hall, indices=None, verbose=True):
+  """
+  Check for hull properties and add pandas.DataFrame attributes to each individual:
+  
+    "dft_gs" : DFT calculated ground states
+    "clex_gs" : predicted ground states
+    "gs_missing" : DFT ground states that are not predicted ground states
+    "gs_spurious" : Predicted ground states that are not DFT ground states
+    "uncalculated" : Predicted ground states and near ground states that have not been calculated
+    "below_hull" : All configurations predicted below the prediction of the DFT hull
+    "ranged_rms": root-mean-square error calculated for the subset of configurations
+      whose DFT formation energy lies within some range of the DFT convex hull.
+      Currently calculated for ranges 0.001, 0.005, 0.01, 0.05, 0.1, 0.5 eV/unit cell
+    
+  Arguments
+  ---------
+    
+    input: dict
+      The input settings as a dict. This is expected to have the object 
+      input["checkspecs"], with the following attributes:
+      
+        selection: str, optional, default="ALL"
+          A CASM selection (either 'casm select' output filename or one of the 
+          standard selection "MASTER", "CALCULATED", or "ALL") containing all the
+          configurations to be considered. The DFT convex hull is generated from 
+          the subset of this selection for which 'is_calculated' is true.
+        
+        write_results: bool, optional, default=False
+          If True, write casm selection files containing the output data. Output 
+          selection files are named "checkhull_(problem_specs_prefix)_(i)_(selname)",
+          where 'problem_specs_prefix' is input["problem_specs_prefix"], 'i' is the
+          index of the individual in the hall of fame, and 'selname' is one of:
+            "dft_gs" : DFT calculated ground states
+            "clex_gs" : predicted ground states
+            "gs_missing" : DFT ground states that are not predicted ground states
+            "gs_spurious" : Predicted ground states that are not DFT ground states
+            "uncalculated" : Predicted ground states and near ground states that have not been calculated
+            "below_hull" : All configurations predicted below the prediction of the DFT hull
+        
+        uncalculated_range: number, optional, default=0.0
+          Include all configurations with clex_hull_dist less than this value (+hull_tol)
+          in the "uncalculated" configurations. Default only includes predicted
+          ground states.
+        
+        ranged_rms: List[number], optional, default=[0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
+          Calculates the root-mean-square error for DFT calculated configurations
+          within a particular range (in eV/unitcell) of the DFT hull. The list
+          provides all the ranges for which the RMSE is requested.
+        
+        composition: str, optional, default="atom_frac"
+          Composition argument use for 'casm query' properties 'hull_dist' and 
+          'clex_hull_dist'. For thermodynamic ground states, use "atom_frac".
+        
+        hull_tol: number, optional, default=proj.settings.data["lin_alg_tol"]
+          Tolerance used for identify hull states
+        
+        dim_tol: number, optional, default=1e-8
+          Tolerance for detecting composition dimensionality
+        
+        bottom_tol: number, optional, default=1e-8
+          Tolerance for detecting which facets form the convex hull bottom
+        
+        
+        Example:
+              
+          "checkhull" : {
+            "selection": "ALL",
+            "write_results": True
+            "uncalculated_range": 0.0,
+            "ranged_rms": [0.001, 0.005, 0.01, 0.05, 0.1, 0.5],
+            "composition": "atom_frac",
+            "hull_tol": 1e-8,
+            "dim_tol": 1e-8,
+            "bottom_tol": 1e-8,
+          }
+    
+    
+    hall: deap.tools.HallOfFame, optional, default=None
+      A Hall Of Fame containing individuals to check convex hull properties
+    
+    selection: str
+      The name of the selection to use for calculating the convex hull
+    
+    write_results: bool, optional, default=True
+      
+      
+    indices: List[int], optional, default=None
+      If given, only check hull properties for specified individuals in the hall
+      of fame.
+    
+    verbose: boolean, optional, default=True
+      Print information to stdout.
+    
+  
+  """
+  
+  # set checkhull default settings
+  if "checkhull" not in input:
+    input["checkhull"] = dict()
+  
+  opt = {
+    "selection":"ALL", 
+    "write_results":False,
+    "uncalculated_range":0.0,
+    "hull_tol":1e-8,
+    "composition":"atom_frac",
+    "dim_tol":1e-8,
+    "bottom_tol":1e-8,
+    "ranged_rms":[0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
+  }
+  
+  for key, val in opt.iteritems():
+    if key not in input["checkhull"] or input["checkhull"][key] is None:
+      input["checkhull"][key] = val
+  
+  # construct FittingData (to check consistency with input file)
+  fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
+  
+  # open Project to work on
+  proj = Project(input["problem_specs"]["data"]["kwargs"]["project_path"], verbose=verbose)
+  
+  # tolerance for finding configurations 'on_hull'
+  d = input["checkhull"]
+  selection = d["selection"]
+  write_results = d["write_results"]
+  hull_tol = d["hull_tol"]
+  uncalculated_range = d["uncalculated_range"]
+  dim_tol = d["dim_tol"]
+  bottom_tol = d["bottom_tol"]
+  
+  # save current default clex
+  orig_clex = proj.settings.default_clex
+  clex = copy.deepcopy(orig_clex)
+  all_eci = proj.dir.all_eci(clex.property, clex.calctype, clex.ref, clex.bset)
+  
+  # not sure of all the edge cases, enforcing these seems simpler for now...
+  if clex.name != "formation_energy":
+    print "default clex:", clex.name
+    print "use 'casm settings --set-default-clex formation_energy' to change the default clex"
+    raise Exception("Error using checkhull: default clex must be 'formation_energy'")
+  
+  if input["problem_specs"]["data"]["y"] != "formation_energy":
+    print "property:", input["problem_specs"]["data"]["y"]
+    raise Exception("Error using checkhull: property must be 'formation_energy'")
+  
+  # load hull selection
+  sel = Selection(proj, selection, all=False)
+  
+  # create a temporary file containing the subset of the selection that is calculated
+  tmp_dir = join(proj.dir.casm_dir(), "tmp")
+  if not os.path.exists(tmp_dir):
+    os.mkdir(tmp_dir)
+  dft_selection = join(proj.dir.casm_dir(), selection + "_dft")
+  dft_hull_selection = join(proj.dir.casm_dir(), selection + "_dft_hull")
+  proj.command("select -c " + selection + " --set-off 'not(is_calculated)' -f -o " + dft_selection)
+  
+  # properties to query
+  selected = "selected"
+  is_primitive = "is_primitive"
+  is_calculated = "is_calculated"
+  configname = "configname"
+  dft_hull_dist_long = "hull_dist(" + dft_selection + ",atom_frac)"
+  dft_hull_dist = "dft_hull_dist"
+  clex_hull_dist_long = "clex_hull_dist(" + selection + ",atom_frac)"
+  clex_hull_dist = "clex_hull_dist"
+  clex_dft_hull_dist_long = "clex_hull_dist(" + dft_hull_selection + ",atom_frac)"
+  clex_dft_hull_dist = "clex_dft_hull_dist"
+  comp = "comp"
+  dft_Eform = "formation_energy"
+  clex_Eform = "clex(formation_energy)"
+  
+  sel.query([comp, is_primitive, is_calculated, configname, dft_hull_dist_long, dft_Eform])
+  
+  
+  compcol = []
+  for col in sel.data.columns:
+    if len(col) >= 5 and col[:5] == "comp(":
+      compcol.append(col)
+  compcol.sort()
+  
+  if indices is None:
+    indices = range(len(hall))
+  
+  # write eci.json
+  eci = "__tmp"
+  clex.eci = eci
+  if eci not in all_eci:
+    proj.command("settings --new-eci " + eci)
+  else:
+    proj.command("settings --set-eci " + eci)
+  
+  # for each individual specified...
+  for indiv_i in indices:
+    
+    if verbose:
+      print "-- Check: individual", indiv_i, " --"
+      print_individual(hall, [indiv_i])
+      print ""
+    
+    # write ECI to use
+    indiv = hall[indiv_i]
+    write_eci(proj, indiv.eci, fit_details=casm.learn.to_json(indiv_i, indiv), clex=clex, verbose=verbose)
+    
+    # query:
+    sel.query([clex_hull_dist_long, clex_Eform], force=True)
+    
+    df = sel.data[sel.data.loc[:,is_primitive] == 1].sort_values(compcol)
+    df.rename(
+      inplace=True, 
+      columns={
+        dft_hull_dist_long : dft_hull_dist, 
+        clex_hull_dist_long : clex_hull_dist, 
+      })
+    df_calc = df[df.loc[:,is_calculated] == 1].apply(pandas.to_numeric, errors='ignore')
+    
+    clex_gs = df[df.loc[:,clex_hull_dist] < hull_tol]
+    dft_gs = df_calc[df_calc.loc[:,dft_hull_dist] < hull_tol]
+    
+    uncalculated = df[(df.loc[:,clex_hull_dist] < uncalculated_range + hull_tol) & (df.loc[:,is_calculated] == 0)]
+    gs_spurious = df_calc[(df_calc.loc[:,clex_hull_dist] < hull_tol) & ~(df_calc.loc[:,dft_hull_dist] < hull_tol)]
+    gs_missing = df_calc[~(df_calc.loc[:,clex_hull_dist] < hull_tol) & (df_calc.loc[:,dft_hull_dist] < hull_tol)]
+    
+    # create dft hull selection
+    dft_hull_sel = Selection(proj, dft_hull_selection)
+    dft_hull_sel.save(data=dft_gs, force=True)
+    
+    
+    # query clex_hull_dist using dft_gs
+    sel.query([clex_dft_hull_dist_long])
+    
+    # get all predicted configurations below the predictions of the DFT gs
+    df = sel.data[sel.data.loc[:,is_primitive] == 1].sort_values(compcol)
+    df.rename(
+      inplace=True, 
+      columns={
+        dft_hull_dist_long : dft_hull_dist, 
+        clex_hull_dist_long : clex_hull_dist, 
+        clex_dft_hull_dist_long : clex_dft_hull_dist
+      })
+    below_hull = df[df.loc[:,clex_dft_hull_dist] < -hull_tol]
+    
+    indiv.clex_gs = clex_gs
+    indiv.dft_gs = dft_gs
+    indiv.uncalculated = uncalculated
+    indiv.gs_spurious = gs_spurious
+    indiv.gs_missing = gs_missing
+    indiv.below_hull = below_hull
+    
+    to_drop = [selected,is_primitive,is_calculated]
+    
+    def printer(attr, title):
+      prefix = input["problem_specs"]["problem_specs_prefix"]
+      output_name = "checkhull"
+      if len(prefix) != 0:
+         output_name += "_" + prefix
+      output_name += "_" + str(indiv_i) + "_" + attr
+      
+      df = getattr(indiv, attr)
+      kwargs = {"index":False}
+      if df.shape[0]:
+        if verbose:
+          print title + ":"
+          print df.drop(to_drop, axis=1).to_string(**kwargs)
+          if write_results:
+            print "write:", output_name, "\n"
+          else:
+            print ""
+        if write_results:
+          output_sel = Selection(proj, output_name)
+          output_sel.save(data=df, force=True)
+    
+    printer("dft_gs", "DFT ground states")
+    printer("clex_gs", "Predicted ground states")
+    printer("gs_missing", "DFT ground states that are not predicted ground states")
+    printer("gs_spurious", "Predicted ground states that are not DFT ground states")
+    printer("uncalculated", "Predicted ground states and near ground states that have not been calculated")
+    printer("below_hull", "All configurations predicted below the prediction of the DFT hull")
+    
+    # calculated ranged rms
+    def calc_ranged_rms(r):
+      ranged_df = df_calc[df_calc.loc[:,dft_hull_dist] < r + hull_tol].copy()
+      n = ranged_df.shape[0]
+      ranged_df.loc[:,"diff"] = ranged_df.loc[:,dft_Eform] - ranged_df.loc[:,clex_Eform]
+      ranged_df.loc[:,"diff_sqr"] = ranged_df.loc[:,"diff"]*ranged_df.loc[:,"diff"]
+      rms = sqrt(sklearn.metrics.mean_squared_error(ranged_df.loc[:,dft_Eform], ranged_df.loc[:,clex_Eform]))
+      return (n, rms)
+    
+    ranged_rms = []
+    for r in input["checkhull"]["ranged_rms"]:
+      res = calc_ranged_rms(r)
+      ranged_rms.append({"range": r, "n_config": res[0], "rms": res[1] })
+    ranged_rms.append({"range": "all", "n_config":df_calc.shape[0], "rms":indiv.rms})
+    if verbose:
+      print "ranged_rms:"
+      for d in ranged_rms:
+        print "  RMS error for", d["n_config"], "calculated configurations within", 
+        print d["range"], "eV/unitcell of the DFT hull:", d["rms"]
+      print ""
+    
+    sel.data.drop([clex_dft_hull_dist_long], axis=1, inplace=True)
+    
+    indiv.ranged_rms = ranged_rms
+    indiv.checkhull_settings = input["checkhull"]
+    
+    if verbose:
+      print "\n"
+    
+  # reset eci setting
+  proj.command("settings --set-eci " + orig_clex.eci)
+  
+  # remove __tmp eci and tmp selections
+  shutil.rmtree(proj.dir.eci_dir(clex))
+  os.remove(dft_selection)
+  os.remove(dft_hull_selection)
+
+
+def checkspecs(input, verbose=True):
+  """
+  Output data and cv files containing the current problem specs.
+      
+  Arguments
+  ---------
+    
+    input: dict
+      The input settings as a dict. This is expected to have the object 
+      input["checkspecs"], with the following attributes:
+      
+        data_filename: string
+          The path to the file where the training data (including weights) should be 
+          written
+
+        data_kwargs: dict or null, optional, default=dict()
+          Additional parameters to be used to write training data. 
+         
+          Options for input 'filetype' "selection":
+            None.
+          
+          Options for input 'filetype' "csv":
+            Any options to pass to pandas.to_csv
+          
+          Options for input 'filetype' "json":
+            Any options to pass to pandas.to_json
+
+        cv_filename: string
+          The path to the file where the cv generator or train/tests sets should be 
+          written as pickle file
+
+        cv_kwargs: dict or null, optional, default=dict()
+          Additional parameters to be used to write cv data using pickle.dump.
+
+        Example:
+              
+          "checkspecs" : {
+            "data_filename": "check_train",
+            "data_kwargs": null,
+            "cv_filename": "check_cv.pkl",
+            "cv_kwargs": null
+          }
+    
+    verbose: boolean, optional, default=True
+      Print information to stdout.
+    
+  """
+  # set checkspecs default settings
+  if "checkspecs" not in input:
+    input["checkspecs"] = dict()
+  if "data_filename" not in input["checkspecs"]:
+    suffix = "_data" + splitext(basename(specs["data"]["filename"]))[1]
+    input["checkspecs"]["data_filename"] = default_filename(specs["problem_specs_prefix"], "check_data", suffix)
+  if "data_kwargs" not in input["checkspecs"] or input["checkspecs"]["data_kwargs"] is None:
+    input["checkspecs"]["data_kwargs"] = dict()
+  if "cv_filename" not in input["checkspecs"]:
+    input["checkspecs"]["cv_filename"] = default_filename(specs["problem_specs_prefix"], "check_cv.pkl", "_cv.pkl")
+  if "cv_kwargs" not in input["checkspecs"] or input["checkspecs"]["cv_kwargs"] is None:
+    input["checkspecs"]["cv_kwargs"] = dict()
+  
+  specs = input["problem_specs"]
+      
+  # construct or load problem specs
+  fdata = casm.learn.fit.make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
+  
+  if verbose:
+    print "# Check problem specs:"
+    print json.dumps(input["checkspecs"], indent=2), "\n"
+  
+  # print training data
+  filetype = specs["data"]["filetype"]
+  filename = input["checkspecs"]["data_filename"]
+  kwargs = input["checkspecs"]["data_kwargs"]
+    
+  if filetype == "selection":
+    proj = Project(specs["data"]["kwargs"]["project_path"], verbose=verbose)
+    sel = Selection(proj, filename, all=False)
+    sel.save(data=fdata.data, force=True)
+  elif filetype == "csv":
+    fdata.data.to_csv(filename, **kwargs)
+  elif filetype == "json":
+    fdata.data.to_json(filename, **kwargs)
+  
+  if verbose:
+    print "# Wrote training data (including weights) to:", filename
+  
+  # print cv
+  cv_filename = input["checkspecs"]["cv_filename"]
+  cv_kwargs = input["checkspecs"]["cv_kwargs"]
+  with open(cv_filename, 'wb') as f:
+    pickle.dump(fdata.cv, f, **cv_kwargs)
+  
+  if verbose:
+    print "# Wrote CV data to:", cv_filename, "\n"
 
 
 def bitstr(indiv, n_bits_max=None):
@@ -1381,13 +2215,28 @@ def to_json(index, indiv):
     "n_selected": number of selected features
     "cv": CV score
     "rms": root-mean-square error
-    "wrms": weighted root-mean-square error
+    "wrms": weighted problem root-mean-square error
+    "mean_absolute_error": mean absolute error
+    "wmean_absolute_error": weighted problem mean absolute error
+    "max_absolute_error": maximum absolute error
+    "wmax_absolute_error": weighted problem maximum absolute error
     "estimator_method": name of estimator method
     "features_selection_method": name of feature selection method
     "note": a descriptive note
     "eci": List of (feature index, coefficient value) pairs
     "input": input settings dict
+  
+  Keys added by --checkhull, if y="formation_energy": pandas.DataFrame
+    "dft_gs" : DFT calculated ground states
+    "clex_gs" : predicted ground states
+    "gs_missing" : DFT ground states that are not predicted ground states
+    "gs_spurious" : Predicted ground states that are not DFT ground states
+    "uncalculated" : Predicted ground states and near ground states that have not been calculated
+    "below_hull" : All configurations predicted below the prediction of the DFT hull
+    "ranged_rms": root-mean-square error calculated for the subset of configurations
+      whose DFT formation energy lies within some range of the DFT convex hull
     
+  
   Arguments
   ---------
     
@@ -1407,20 +2256,31 @@ def to_json(index, indiv):
   
   """
   d = dict()
-  d["selected"] = bitstr(indiv)
   d["index"] = index
   d["id"] = str(indiv.id)
+  d["selected"] = bitstr(indiv)
   d["n_selected"] = sum(indiv)
   d["cv"] = indiv.fitness.values[0]
-  d["rms"] = indiv.rms
-  d["wrms"] = indiv.wrms
-  d["estimator_method"] = indiv.estimator_method
-  d["feature_selection_method"] = indiv.feature_selection_method
-  d["note"] = indiv.note
+  
+  attr = [
+    "rms", "wrms", "ranged_rms",
+    "mean_absolute_error", "wmean_absolute_error",
+    "max_absolute_error", "wmax_absolute_error", 
+    "estimator_method", "feature_selection_method",
+    "note",
+    "checkhull_settings"
+  ]
+  for a in attr:
+    if hasattr(indiv, a):
+      d[a] = getattr(indiv,a)
+  
+  for attr in ["clex_gs", "dft_gs", "uncalculated", "gs_spurious", "gs_missing", "below_hull"]:
+    if hasattr(indiv, attr):
+      d[attr] = json.loads(getattr(indiv, attr).to_json(orient='records'))
   d["eci"] = []
   for bfunc in indiv.eci:
     d["eci"].append(casm.NoIndent(bfunc))
-  d["input"] = indiv.input
+  
   return d
 
 
@@ -1436,12 +2296,26 @@ def to_dataframe(indices, hall):
     "cv": CV score
     "rms": root-mean-square error
     "wrms": weighted root-mean-square error
+    "mean_absolute_error": mean absolute error
+    "wmean_absolute_error": weighted problem mean absolute error
+    "max_absolute_error": maximum absolute error
+    "wmax_absolute_error": weighted problem maximum absolute error
     "estimator_method": name of estimator method
     "features_selection_method": name of feature selection method
     "note": a descriptive note
     "eci": JSON string of a List of (feature index, coefficient value) pairs
     "input": input settings dict
   
+  Keys added by --checkhull, if y="formation_energy": pandas.DataFrame
+    "dft_gs" : DFT calculated ground states
+    "clex_gs" : predicted ground states
+    "gs_missing" : DFT ground states that are not predicted ground states
+    "gs_spurious" : Predicted ground states that are not DFT ground states
+    "uncalculated" : Predicted ground states and near ground states that have not been calculated
+    "below_hull" : All configurations predicted below the prediction of the DFT hull
+    "ranged_rms": root-mean-square error calculated for the subset of configurations
+      whose DFT formation energy lies within some range of the DFT convex hull
+    
   
   Arguments
   ---------
@@ -1492,14 +2366,32 @@ def _print_individual(index, indiv, format=None):
     print "Selected:", bitstr(indiv)
     print "#Selected:", sum(indiv)
     print "CV:", indiv.fitness.values[0]
-    print "RMS:", indiv.rms
-    print "wRMS:", indiv.wrms
-    print "Estimator:", indiv.estimator_method
-    print "FeatureSelection:", indiv.feature_selection_method
-    print "Note:", indiv.note
-    print "ECI:\n"
+    
+    attr = [
+      "rms", "wrms",
+      "mean_absolute_error", "wmean_absolute_error",
+      "max_absolute_error", "wmax_absolute_error", 
+      "estimator_method", "feature_selection_method",
+      "note",
+    ]
+    for a in attr:
+      if hasattr(indiv, a):
+        print a + ":", getattr(indiv, a)
+    if hasattr(indiv, "ranged_rms"):
+      print "ranged_rms:\n", json.dumps(indiv.ranged_rms, indent=2)
+    
+    
+    print "eci:\n"
     print_eci(indiv.eci)
+    
+    for attr in ["clex_gs", "dft_gs", "uncalculated", "gs_spurious", "gs_missing", "below_hull"]:
+      if hasattr(indiv, attr):
+        print attr + ":"
+        print getattr(indiv, attr).to_string(index=False)
+    
     print "Input:\n", json.dumps(indiv.input, indent=2)
+    if hasattr(indiv, "checkhull_settings"):
+      print "Checkhull settings:\n", json.dumps(indiv.checkhull_settings, indent=2)
     return
 
 
@@ -1682,5 +2574,6 @@ def save_halloffame(hall, halloffame_filename, verbose=False):
   f = open(halloffame_filename, 'wb')
   pickle.dump(hall, f)
   f.close()
+  
 
 

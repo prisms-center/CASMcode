@@ -17,10 +17,11 @@ namespace CASM {
   //                                **** Constructors ****
   //*******************************************************************************************
   /// Initial construction of a PrimClex, from a primitive Structure
-  PrimClex::PrimClex(const Structure &_prim, Log &log) :
+  PrimClex::PrimClex(const Structure &_prim, Log &log, Log &debug_log, Log &err_log) :
+    Logging(log, debug_log, err_log),
     prim(_prim) {
 
-    _init(log);
+    _init();
 
     return;
   }
@@ -29,22 +30,23 @@ namespace CASM {
   //*******************************************************************************************
   /// Construct PrimClex from existing CASM project directory
   ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-  PrimClex::PrimClex(const fs::path &_root, Log &log):
+  PrimClex::PrimClex(const fs::path &_root, Log &log, Log &debug_log, Log &err_log):
+    Logging(log, debug_log, err_log),
     root(_root),
     m_dir(_root),
     m_settings(_root),
     prim(read_prim(m_dir.prim())) {
 
-    _init(log);
+    _init();
 
   }
 
   /// Initialization routines
   ///  - If !root.empty(), read all saved data to generate all Supercells and Configurations, etc.
-  void PrimClex::_init(Log &log) {
+  void PrimClex::_init() {
 
-    log.construct("CASM Project");
-    log << "from: " << root << "\n";
+    log().construct("CASM Project");
+    log() << "from: " << root << "\n" << std::endl;
 
     std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
 
@@ -60,50 +62,122 @@ namespace CASM {
       return;
     }
 
+    bool read_settings = false;
+    bool read_composition = true;
+    bool read_chem_ref = true;
+    bool read_configs = true;
 
-    bool any_print = false;
+    refresh(false, true, true, true);
+  }
 
-    // here add stuff to read directory structure...
+  /// \brief Reload PrimClex data from settings
+  ///
+  /// \param read_settings Read project_settings.json
+  /// \param read_composition Read composition_axes.json
+  /// \param read_chem_ref Read chemical_reference.json
+  /// \param read_configs Read SCEL and config_list.json
+  /// \param clear_clex Clear stored orbitrees, clexulators, and eci
+  ///
+  /// - This does not check if what you request will cause problems.
+  ///
+  void PrimClex::refresh(bool read_settings,
+                         bool read_composition,
+                         bool read_chem_ref,
+                         bool read_configs,
+                         bool clear_clex) {
 
-    // read param composition
-    auto comp_axes = m_dir.composition_axes();
-    if(fs::is_regular_file(comp_axes)) {
-      log << "read: " << comp_axes << "\n";
+    log().custom("Load project data");
 
-      CompositionAxes opt(comp_axes);
-
-      if(opt.has_current_axes) {
-        m_has_composition_axes = true;
-        m_comp_converter = opt.curr;
+    if(read_settings) {
+      try {
+        m_settings = ProjectSettings(root);
+      }
+      catch(std::exception &e) {
+        err_log().error("reading project_settings.json");
+        err_log() << "file: " << m_dir.project_settings() << "\n" << std::endl;
       }
     }
 
-    // read chemical reference
-    auto chem_ref_path = m_dir.chemical_reference(m_settings.default_clex().calctype, m_settings.default_clex().ref);
-    if(fs::is_regular_file(chem_ref_path)) {
-      log << "read: " << chem_ref_path << "\n";
-      m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim, lin_alg_tol()));
+    if(read_composition) {
+      m_has_composition_axes = false;
+      auto comp_axes = m_dir.composition_axes();
+
+      try {
+        if(fs::is_regular_file(comp_axes)) {
+          log() << "read: " << comp_axes << "\n";
+
+          CompositionAxes opt(comp_axes);
+
+          if(opt.has_current_axes) {
+            m_has_composition_axes = true;
+            m_comp_converter = opt.curr;
+          }
+        }
+      }
+      catch(std::exception &e) {
+        err_log().error("reading composition_axes.json");
+        err_log() << "file: " << comp_axes << "\n" << std::endl;
+      }
     }
 
-    // read supercells
-    if(fs::is_regular_file(root / "training_data" / "SCEL")) {
+    if(read_chem_ref) {
 
-      log << "read: " << root / "training_data" / "SCEL" << "\n";
-      fs::ifstream scel(root / "training_data" / "SCEL");
-      read_supercells(scel);
+      // read chemical reference
+      m_chem_ref.reset();
+      auto chem_ref_path = m_dir.chemical_reference(m_settings.default_clex().calctype, m_settings.default_clex().ref);
 
+      try {
+        if(fs::is_regular_file(chem_ref_path)) {
+          log() << "read: " << chem_ref_path << "\n";
+          m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim, lin_alg_tol()));
+        }
+      }
+      catch(std::exception &e) {
+        err_log().error("reading chemical_reference.json");
+        err_log() << "file: " << chem_ref_path << "\n" << std::endl;
+      }
     }
 
-    // read config_list
-    if(fs::is_regular_file(get_config_list_path())) {
+    if(read_configs) {
 
-      log << "read: " << get_config_list_path() << "\n";
-      read_config_list();
+      supercell_list.clear();
+
+      try {
+        // read supercells
+        if(fs::is_regular_file(m_dir.SCEL())) {
+          log() << "read: " << m_dir.SCEL() << "\n";
+          fs::ifstream scel(m_dir.SCEL());
+          read_supercells(scel);
+        }
+      }
+      catch(std::exception &e) {
+        err_log().error("reading SCEL");
+        err_log() << "file: " << m_dir.SCEL() << "\n" << std::endl;
+      }
+
+      try {
+        // read config_list
+        if(fs::is_regular_file(get_config_list_path())) {
+          log() << "read: " << get_config_list_path() << "\n";
+          read_config_list();
+        }
+      }
+      catch(std::exception &e) {
+        err_log().error("reading config_list.json");
+        err_log() << "file: " << m_dir.config_list() << "\n" << std::endl;
+      }
     }
 
-    log << std::endl;
+    if(clear_clex) {
+      m_nlist.reset();
+      m_orbitree.clear();
+      m_clexulator.clear();
+      m_eci.clear();
+      log() << "refresh cluster expansions\n";
+    }
+
+    log() << std::endl;
   }
-
 
   //*******************************************************************************************
   // **** Accessors ****
@@ -949,7 +1023,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  Clexulator PrimClex::clexulator(const ClexDescription &key, Log &status_log) const {
+  Clexulator PrimClex::clexulator(const ClexDescription &key) const {
 
     auto it = m_clexulator.find(key);
     if(it == m_clexulator.end()) {
@@ -963,7 +1037,7 @@ namespace CASM {
              std::make_pair(key, Clexulator(settings().name() + "_Clexulator",
                                             dir().clexulator_dir(key.bset),
                                             nlist(),
-                                            status_log,
+                                            log(),
                                             settings().compile_options(),
                                             settings().so_options()))).first;
     }
