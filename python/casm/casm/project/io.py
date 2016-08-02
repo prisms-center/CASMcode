@@ -19,7 +19,7 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
         Description of the fitting method used to generate the ECI,
         usually as output by casm.learn.to_json
       
-      clex: ClexDescription instance, optional, default=proj.settings.clex_default
+      clex: ClexDescription instance, optional, default=proj.settings.default_clex
         Specifies where to write the ECI
     
     """
@@ -55,7 +55,10 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
     filename = dir.eci(clex)
     
     if verbose:
-      print "Writing:", filename
+      print "Writing:", filename, "\n"
     with open(filename, 'w') as f:
       f.write(json.dumps(j, indent=2, cls=casm.NoIndentEncoder))
+    
+    # refresh proj to reflect new eci
+    proj.refresh(clear_clex=True)
 

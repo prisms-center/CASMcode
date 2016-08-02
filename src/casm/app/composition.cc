@@ -258,6 +258,10 @@ namespace CASM {
 
         std::cout << "Wrote: " << comp_axes << "\n\n";
 
+        if(args.primclex) {
+          args.primclex->refresh(false, true, true, false);
+        };
+
       }
 
       return 0;

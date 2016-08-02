@@ -1,3 +1,4 @@
+import warnings
 import casm
 import os, subprocess, json
 from os.path import join
@@ -25,12 +26,7 @@ lib_ccasm.casm_STDOUT.restype = ctypes.c_void_p
 
 lib_ccasm.casm_STDERR.restype = ctypes.c_void_p
 
-
-lib_ccasm.casm_nullstream_new.restype = ctypes.c_void_p
-
-lib_ccasm.casm_nullstream_delete.argtypes = [ctypes.c_void_p]
-lib_ccasm.casm_nullstream_delete.restype = None
-
+lib_ccasm.casm_nullstream.restype = ctypes.c_void_p
 
 lib_ccasm.casm_ostringstream_new.restype = ctypes.c_void_p
 
@@ -49,6 +45,9 @@ lib_ccasm.casm_primclex_new.restype = ctypes.c_void_p
 
 lib_ccasm.casm_primclex_delete.argtypes = [ctypes.c_void_p]
 lib_ccasm.casm_primclex_delete.restype = None
+
+lib_ccasm.casm_primclex_refresh.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool]
+lib_ccasm.casm_primclex_refresh.restype = None
 
 lib_ccasm.casm_capi.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
 lib_ccasm.casm_capi.restype = ctypes.c_int
@@ -87,7 +86,7 @@ class ClexDescription(object):
       self.ref = ref
       self.bset = bset
       self.eci = eci
-      
+
 
 class ProjectSettings(object):
     """
@@ -106,23 +105,27 @@ class ProjectSettings(object):
             path: path to CASM project (Default=None, uses project containing current directory). 
 
         """
-        if path is None:
-          if casm.project_path(path) is None:
-            if path is None:
-              raise Exception("No CASM project found using " + os.getcwd())
-            else:
-              raise Exception("No CASM project found using " + path)
+        if casm.project_path(path) is None:
+          if path is None:
+            raise Exception("No CASM project found using " + os.getcwd())
+          else:
+            raise Exception("No CASM project found using " + path)
         self.path = casm.project_path(path)
         dir = DirectoryStructure(self.path)
         self.data = json.load(open(dir.project_settings()))
-        
+
         d = self.data["cluster_expansions"][self.data["default_clex"]]
         self._default_clex = ClexDescription(d["name"], d["property"], d["calctype"], d["ref"], d["bset"], d["eci"])
-        
+
         self._clex = [
-          ClexDescription(d["name"], d["property"], d["calctype"], d["ref"], d["bset"], d["eci"]) 
-          for d[1] in self.data["cluster_expansions"].iteritems() 
+          ClexDescription(d[1]["name"], d[1]["property"], d[1]["calctype"], d[1]["ref"], d[1]["bset"], d[1]["eci"]) 
+          for d in self.data["cluster_expansions"].iteritems()
         ]
+        
+        d = self.data["cluster_expansions"].get("formation_energy", None)
+        self._formation_energy_clex = None
+        if d is not None:
+          self._formation_energy_clex = ClexDescription(d["name"], d["property"], d["calctype"], d["ref"], d["bset"], d["eci"])
     
     # -- Accessors --
     
@@ -133,6 +136,10 @@ class ProjectSettings(object):
     @property
     def default_clex(self):
         return self._default_clex
+    
+    @property
+    def formation_energy_clex(self):
+        return self._formation_energy_clex
     
 
 class DirectoryStructure(object):
@@ -145,12 +152,11 @@ class DirectoryStructure(object):
             path: path to CASM project (Default=None, uses project containing current directory). 
 
         """
-        if path is None:
-          if casm.project_path(path) is None:
-            if path is None:
-              raise Exception("No CASM project found using " + os.getcwd())
-            else:
-              raise Exception("No CASM project found using " + path)
+        if casm.project_path(path) is None:
+          if path is None:
+            raise Exception("No CASM project found using " + os.getcwd())
+          else:
+            raise Exception("No CASM project found using " + path)
         self.path = casm.project_path(path)
         self.__casm_dir = ".casm"
         self.__bset_dir = "basis_sets"
@@ -164,23 +170,23 @@ class DirectoryStructure(object):
 
     def all_bset(self):
       """Check filesystem directory structure and return list of all basis set names"""
-      return __all_settings("bset", join(self.path, self.__bset_dir))
+      return self.__all_settings("bset", join(self.path, self.__bset_dir))
 
     def all_calctype(self):
       """Check filesystem directory structure and return list of all calctype names"""
-      return __all_settings("calctype", join(self.path, self.__calc_dir, self.__set_dir))
+      return self.__all_settings("calctype", join(self.path, self.__calc_dir, self.__set_dir))
     
     def all_ref(self, calctype):
       """Check filesystem directory structure and return list of all ref names for a given calctype"""
-      return __all_settings("ref", calc_settings_dir(calctype))
+      return self.__all_settings("ref", self.calc_settings_dir(calctype))
 
     def all_clex_name(self):
       """Check filesystem directory structure and return list of all cluster expansion names"""
-      return __all_settings("clex", join(self.path, self.__clex_dir))
+      return self.__all_settings("clex", join(self.path, self.__clex_dir))
 
     def all_eci(self, property, calctype, ref, bset):
       """Check filesystem directory structure and return list of all eci names"""
-      return __all_settings("eci", join(self.path, self.__clex_dir, __clex_name(property), __calctype(calctype), __ref(ref), __bset(bset)))
+      return self.__all_settings("eci", join(self.path, self.__clex_dir, self.__clex_name(property), self.__calctype(calctype), self.__ref(ref), self.__bset(bset)))
 
 
     # ** File and Directory paths **
@@ -271,6 +277,33 @@ class DirectoryStructure(object):
 
     # -- Calculations and reference --------
 
+    def settings_path_crawl(self, name, clex, configdir=None):
+        """
+        Crawl casm directory structure starting at configdir and moving upwards 
+        towards the casm project root directory to find the most relevant settings file or directory.
+        
+        Looks for: ".../settings/calctype." + calctype + "/name'"
+
+        If configdir == None, gets set to os.getcwd()
+        
+        Return None if name not found
+        """
+        if configdir == None:
+            configdir = os.getcwd()
+        curr = configdir
+        cont = True
+        while cont == True:
+            check = os.path.join(curr,"settings", self.__calctype(clex.calctype), name)
+            if os.path.exists(check):
+                return check
+            if os.path.exists(os.path.join(curr,".casm")):
+                return None
+            elif curr == os.path.dirname(curr):
+                return None
+            else:
+                curr = os.path.dirname(curr)
+        return None
+
     def supercell_dir(self, scelname):
       """Return supercell directory path (scelname has format SCELV_A_B_C_D_E_F)"""
       return join(self.path, self.__calc_dir, scelname)
@@ -279,6 +312,9 @@ class DirectoryStructure(object):
       """Return configuration directory path (configname has format SCELV_A_B_C_D_E_F/I)"""
       return join(self.path, self.__calc_dir, configname)
 
+    def calctype_dir(self, configname, clex):
+      """Return calctype directory path (e.g. training_data/SCEL_...../0/calctype.default"""
+      return join(self.configuration_dir(configname),self.__calctype(clex.calctype))
 
     def calc_settings_dir(self, clex):
       """Return calculation settings directory path, for global settings"""
@@ -372,7 +408,7 @@ class DirectoryStructure(object):
       Find all directories at 'location' that match 'pattern.something'
       and return a std::vector of the 'something'
       """
-    
+      
       all = [];
       pattern += ".";
 
@@ -381,33 +417,63 @@ class DirectoryStructure(object):
         return all
       
       for item in os.listdir(location):
-        if os.path.isdir(item) and item[:len(pattern)+1] == pattern:
-          all.append(item[len(pattern)+1:])
-          
+        if os.path.isdir(os.path.join(location,item)) and item[:len(pattern)] == pattern:
+          all.append(item[len(pattern):])
       return sorted(all)
 
     
 
 class Project(object):
     """The Project class contains information about a CASM project
+    
+    Attributes
+    ----------
+      
+      path: str
+        Path to project root directory
+      
+      settings: casm.project.ProjectSettings instance
+        Contains project settings
+      
+      dir: casm.project.DirectoryStructure instance
+        Provides file and directory locations within the project
+      
+      casm_exe: str
+        The casm CLI executable to use when necessary
+      
+      verbose: bool
+        How much to print to stdout
+      
     """
     def __init__(self, path=None, casm_exe=None, verbose=True):
       """
       Construct a CASM Project representation.
 
-      Args:
-          path: path to CASM project (Default=None, uses project containing 
-            current directory). 
-          case_exe: CASM executable to use for command line interface. (Default
-            uses $CASM if it exists in the environment, else "casm")
+      Arguments
+      ----------
+        
+        path: str, optional, default=None 
+          Path to project root directory. Default=None uses project containing 
+          current working directory
+        
+        casm_exe: str, optional, default=None
+          CASM executable to use for command line interface. Default
+          uses $CASM if it exists in the environment, else "casm".
+        
+        verbose: bool, optional, default=True
+          How much to print to stdout
+      
       """
+      
+      if casm.project_path(path) != casm.project_path():
+        raise Exception("Running from outside a CASM project is not currently supported")
+      
       # set path to this CASM project
-      if path is None:
-        if casm.project_path(path) is None:
-          if path is None:
-            raise Exception("No CASM project found using " + os.getcwd())
-          else:
-            raise Exception("No CASM project found using " + path)
+      if casm.project_path(path) is None:
+        if path is None:
+          raise Exception("No CASM project found using " + os.getcwd())
+        else:
+          raise Exception("No CASM project found using " + path)
       
       # set executable name
       if casm_exe is None:
@@ -417,8 +483,7 @@ class Project(object):
           casm_exe = "casm"
       
       self.path = casm.project_path(path)
-      self.dir = DirectoryStructure(path)
-      self.settings = ProjectSettings(path)
+      self.__refresh()
       self.casm_exe = casm_exe
       self.verbose = verbose
       
@@ -438,13 +503,14 @@ class Project(object):
         if self.verbose:
           streamptr = lib_ccasm.casm_STDOUT()
         else:
-          streamptr = lib_ccasm.casm_ostringstream_new()
+          streamptr = lib_ccasm.casm_nullstream()
         
-        self._ptr = lib_ccasm.casm_primclex_new(self.path, streamptr)
+        if self.verbose:
+          errstreamptr = lib_ccasm.casm_STDERR()
+        else:
+          errstreamptr = lib_ccasm.casm_nullstream()
         
-        if not self.verbose:
-          #qstr = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss))
-          lib_ccasm.casm_ostringstream_delete(streamptr)
+        self._ptr = lib_ccasm.casm_primclex_new(self.path, streamptr, streamptr, errstreamptr)
         
     
     def __unload(self):
@@ -454,7 +520,34 @@ class Project(object):
       if self._ptr is not None:
         lib_ccasm.casm_primclex_delete(self._ptr)
         self._ptr = None
-        
+    
+    
+    def __refresh(self):
+      """
+      Reload self.settings and self.dir
+      
+      Use this after adding or modifying files in the CASM project but no
+      special call to refresh PrimClex properties is required
+      """
+      self.dir = DirectoryStructure(self.path)
+      self.settings = ProjectSettings(self.path)
+    
+    def refresh(self, read_settings=False, read_composition=False, read_chem_ref=False, read_configs=False, clear_clex=False):
+      """
+      Refresh PrimClex properties to reflect changes to CASM project files.
+      """
+      if read_settings:
+        self.dir = DirectoryStructure(self.path)
+        self.settings = ProjectSettings(self.path)
+      if self._ptr is not None:
+        lib_ccasm.casm_primclex_refresh(
+          self.data(), 
+          read_settings,
+          read_composition,
+          read_chem_ref,
+          read_configs,
+          clear_clex)
+      
     
     def data(self):
       """
@@ -487,11 +580,9 @@ class Project(object):
       Returns:
         (stdout, stderr, returncode): The result of running the command via the command line iterface
       """
-      cwd = os.getcwd()
-      os.chdir(self.path)
-      child = subprocess.Popen([self.casm_exe] + args.split(),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+      child = subprocess.Popen([self.casm_exe] + args.split(),stdout=subprocess.PIPE,stderr=subprocess.PIPE, cwd=self.path)
       result = child.communicate()
-      os.chdir(cwd)
+      self.__refresh()
       return (result[0], result[1], child.returncode)
     
     
@@ -505,14 +596,12 @@ class Project(object):
       Returns:
         (stdout, stderr, returncode): The result of running the command via the command line iterface
       """
-      cwd = os.getcwd()
-      os.chdir(self.path)
-      
-      # construct stringstream objects to capture stdout, stderr
+      # construct stringstream objects to capture stdout, debug, stderr
       ss = lib_ccasm.casm_ostringstream_new()
+      ss_debug = lib_ccasm.casm_ostringstream_new()
       ss_err = lib_ccasm.casm_ostringstream_new()
       
-      res = lib_ccasm.casm_capi(args, self.data(), ss, ss_err)
+      res = lib_ccasm.casm_capi(args, self.data(), ss, ss_debug, ss_err)
       
       # copy string and delete stringstream
       qstr = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss))
@@ -520,9 +609,15 @@ class Project(object):
       lib_ccasm.casm_ostringstream_delete(ss)
       
       # copy string and delete stringstream
+      qstr_debug = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss_debug))
+      lib_ccasm.casm_ostringstream_strcpy(ss_debug, qstr_debug)
+      lib_ccasm.casm_ostringstream_delete(ss_debug)
+      
+      # copy string and delete stringstream
       qstr_err = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss_err))
       lib_ccasm.casm_ostringstream_strcpy(ss_err, qstr_err)
       lib_ccasm.casm_ostringstream_delete(ss_err)
       
+      self.__refresh()
       return (qstr, qstr_err, res)
       

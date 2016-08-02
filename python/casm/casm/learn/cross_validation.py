@@ -1,5 +1,6 @@
 import sklearn.cross_validation
 import numpy as np
+import pickle
 from math import sqrt
 from casm.learn.linear_model import LinearRegressionForLOOCV
 from casm.learn.tools import indices
@@ -22,6 +23,18 @@ def LeaveOneOutForLLS(n_samples, **kwargs):
   
   """
   return [(range(n_samples), range(n_samples))] 
+
+
+def cvCustom(n_samples, filename=None):
+  """
+  Read CV generator or train / test sets from a pickle file.
+  """
+  if filename == None:
+    raise Exception("Error using cvCustom: filename is None")
+  
+  with open(filename, 'rb') as f:
+    return pickle.load(f)
+  
 
 
 def cross_val_score(estimator, X, individual, y=None, scoring=None, cv=None, penalty=0.0, fit_params=None):

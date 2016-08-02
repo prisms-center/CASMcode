@@ -348,6 +348,7 @@ namespace CASM {
     std::string calctype = clex_desc.calctype;
     std::string ref = clex_desc.ref;
     fs::path chem_ref_path = primclex.dir().chemical_reference(calctype, ref);
+    int result_code;
 
     if(vm.count("display")) {
       if(!primclex.has_chemical_reference()) {
@@ -360,6 +361,7 @@ namespace CASM {
       ChemicalReferencePrinter p(std::cout, primclex.chemical_reference());
       p.print_all();
 
+      result_code = 0;
     }
     else if(vm.count("set-auto")) {
       try {
@@ -368,7 +370,7 @@ namespace CASM {
         ChemicalReferencePrinter p(std::cout, chem_ref);
         p.print_all();
         write_chemical_reference(chem_ref, chem_ref_path);
-        return 0;
+        result_code = 0;
       }
       catch(std::exception &e) {
         std::cerr << "Error setting reference states automatically.\n\n";
@@ -397,11 +399,11 @@ namespace CASM {
 
         if(!fs::exists(chem_ref_path)) {
           // -- Initializing ref
-          return initialize_global(chem_ref_path, primclex, json_ref, lin_alg_tol);
+          result_code = initialize_global(chem_ref_path, primclex, json_ref, lin_alg_tol);
         }
         else {
           // -- Updating project-wide ref
-          return update_global(chem_ref_path, primclex, json_ref, lin_alg_tol);
+          result_code = update_global(chem_ref_path, primclex, json_ref, lin_alg_tol);
         }
       }
 
@@ -409,14 +411,14 @@ namespace CASM {
 
       else if(vm.count("configname")) {
 
-        return update_config(configname, chem_ref_path, primclex, json_ref, lin_alg_tol);
+        result_code = update_config(configname, chem_ref_path, primclex, json_ref, lin_alg_tol);
       }
 
       // --- Set supercell specific ref
 
       else {
 
-        return update_supercell(scelname, chem_ref_path, primclex, json_ref, lin_alg_tol);
+        result_code = update_supercell(scelname, chem_ref_path, primclex, json_ref, lin_alg_tol);
 
       }
 
@@ -434,12 +436,10 @@ namespace CASM {
         else {
           fs::remove(chem_ref_path);
           std::cout << "Erased chemical reference" << std::endl;
-          return 0;
         }
       }
 
       ChemicalReference chem_ref = primclex.chemical_reference();
-      bool result;
 
       // --- Erase configuration specific ref
 
@@ -451,7 +451,6 @@ namespace CASM {
         else {
           std::cout << "Erased specialized reference for " << configname << std::endl;
           write_chemical_reference(chem_ref, chem_ref_path);
-          return 0;
         }
       }
 
@@ -465,14 +464,20 @@ namespace CASM {
         else {
           std::cout << "Erased specialized reference for " << scelname << std::endl;
           write_chemical_reference(chem_ref, chem_ref_path);
-          return 0;
         }
       }
 
+      result_code = 0;
 
     }
 
-    return 0;
+    if(!result_code) {
+      if(args.primclex) {
+        args.primclex->refresh(false, false, true, false);
+      }
+    }
+
+    return result_code;
   }
 
 }
