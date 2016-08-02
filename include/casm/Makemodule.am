@@ -16,3 +16,4 @@ include include/casm/version/Makemodule.am
 include include/casm/hull/Makemodule.am
 include include/casm/crystallography/Makemodule.am
 include include/casm/monte_carlo/Makemodule.am
+include include/casm/completer/Makemodule.am
