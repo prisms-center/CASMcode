@@ -160,8 +160,10 @@ cxxflags.append('-Wno-deprecated-register')
 cxxflags.append('-Wno-deprecated-declarations')
 cxxflags.append('-DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long')
 
-boost_no_cxx11_scoped_enums = ARGUMENTS.get('boost_no_cxx11_scoped_enums', '0')
-if 'CASM_BOOST_NO_CXX11_SCOPED_ENUMS' in os.environ:
+boost_no_cxx11_scoped_enums = '0'
+if ARGUMENTS.get('boost_no_cxx11_scoped_enums', False):
+  boost_no_cxx11_scoped_enums = ARGUMENTS.get('boost_no_cxx11_scoped_enums', '0')
+elif 'CASM_BOOST_NO_CXX11_SCOPED_ENUMS' in os.environ:
   boost_no_cxx11_scoped_enums = '1'
 if boost_no_cxx11_scoped_enums == '1':
   cxxflags.append('-DBOOST_NO_CXX11_SCOPED_ENUMS')
@@ -391,3 +393,93 @@ if not env['IS_INSTALL']:
   env.NoClean(env['INSTALL_TARGETS'])
   if debug_level == '1':
     env.Clean(casm_lib, Glob('*.s') + Glob('*.ii'))
+
+##### Configuration checks
+if 'configure' in COMMAND_LINE_TARGETS:
+  
+  def CheckBOOST_PREFIX(conf):
+    
+    boost_prefix_str = boost_prefix
+    if boost_prefix_str is None:
+      boost_prefix_str = 'None'
+    
+    conf.Message('BOOST_PREFIX: ' + boost_prefix_str)
+    if ARGUMENTS.get('boost_prefix', False):
+      conf.Message('  Was set via scons command line --boost_prefix...')
+    elif 'CASM_BOOST_PREFIX' in os.environ:
+      conf.Message('  Was set via environment variable CASM_BOOST_PREFIX...')
+    conf.Message('Checking if BOOST_PREFIX setting is correct... ')
+    BOOST_PREFIX_test="""
+    #include "boost/filesystem.hpp"
+    int main(int argc, char* argv[]) {
+      boost::filesystem::path p("foo");
+      return 0;
+    }
+    """
+    res = conf.TryLink(BOOST_PREFIX_test, ".cpp")
+    conf.Result(res)
+    return res
+  
+  def CheckBOOST_version(conf, version):
+    # Boost versions are in format major.minor.subminor
+    v_arr = version.split(".")
+    version_n = 0
+    if len(v_arr) > 0:
+        version_n += int(v_arr[0])*100000
+    if len(v_arr) > 1:
+        version_n += int(v_arr[1])*100
+    if len(v_arr) > 2:
+        version_n += int(v_arr[2])
+
+    conf.Message('Checking for Boost version >= %s... ' % (version))
+    ret = conf.TryRun("""
+    #include <boost/version.hpp>
+
+    int main() 
+    {
+        return BOOST_VERSION >= %d ? 0 : 1;
+    }
+    """ % version_n, '.cpp')[0]
+    conf.Result(ret)
+    return ret
+  
+  def CheckBOOST_NO_CXX11_SCOPED_ENUMS(conf):
+    conf.Message('Checking if BOOST_NO_CXX11_SCOPED_ENUMS setting is correct... ')
+    if ARGUMENTS.get('boost_no_cxx11_scoped_enums', False):
+      conf.Message('  Was set via scons command line --boost_no_cxx11_scoped_enums...')
+    elif 'CASM_BOOST_NO_CXX11_SCOPED_ENUMS' in os.environ:
+      conf.Message('  Was set via environment variable CASM_BOOST_NO_CXX11_SCOPED_ENUMS...')
+    
+    BOOST_NO_CXX11_SCOPED_ENUMS_test="""
+    #include "boost/filesystem.hpp"
+    int main(int argc, char* argv[]) {
+      boost::filesystem::copy_file("foo", "bar");
+      return 0;
+    }
+    """
+    res = conf.TryLink(BOOST_NO_CXX11_SCOPED_ENUMS_test, ".cpp")
+    conf.Result(res)
+    return res
+  
+  conf = Configure(
+    env.Clone(LIBPATH=install_lib_paths, LIBS=['boost_system', 'boost_filesystem']),
+    custom_tests = {
+      'CheckBOOST_PREFIX' : CheckBOOST_PREFIX,
+      'CheckBOOST_version' : CheckBOOST_version,
+      'CheckBOOST_NO_CXX11_SCOPED_ENUMS': CheckBOOST_NO_CXX11_SCOPED_ENUMS})
+  
+  def if_failed(msg):
+    print "\nConfiguration checks failed."
+    print msg
+    exit()
+  
+  if not conf.CheckBOOST_PREFIX():
+    if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
+  if not conf.CheckBOOST_version('1.54'):
+    if_failed("Please check your boost version") 
+  if not conf.CheckBOOST_NO_CXX11_SCOPED_ENUMS():
+    if_failed("Please check your boost installation or the CASM_BOOST_NO_CXX11_SCOPED_ENUMS environment variable")
+  
+  print "Configuration checks passed."
+  exit()
+  
