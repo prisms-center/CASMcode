@@ -1,20 +1,5 @@
 # set environment variables recognized by CASM during installation and use
 
-#  Sets the -O optimization compiler option. Default is '3', which indicates -O3.
-#  Order of precedence:
-#    1) $CASM_OPTIMIZATIONLEVEL
-#    2) "3" (default)
-#
-#export CASM_OPTIMIZATIONLEVEL="3"
-
-#   If "1", sets to compile with debugging symbols. In this case, the optimization level gets set to -O0, and NDEBUG does not get set. If "0" (default), then -DNDEBUG is used.
-#
-#  Order of precedence:
-#    1) $CASM_DEBUGSTATE
-#    2) "0" (default)
-#
-#export CASM_DEBUGSTATE="0"
-
 #  Recognized by install scripts and 'casm' CLI executable for CASM install location (headers and shared libraries)
 #  Order of precedence:
 #    1) $CASM_PREFIX
@@ -43,6 +28,21 @@
 #    3) "g++"
 #
 #export CASM_CXX="g++"
+
+#  Sets the -O optimization compiler option. Default is '3', which indicates -O3.
+#  Order of precedence:
+#    1) $CASM_OPTIMIZATIONLEVEL
+#    2) "3" (default)
+#
+#export CASM_OPTIMIZATIONLEVEL="3"
+
+#   If "1", sets to compile with debugging symbols. In this case, the optimization level gets set to -O0, and NDEBUG does not get set. If "0" (default), then -DNDEBUG is used.
+#
+#  Order of precedence:
+#    1) $CASM_DEBUGSTATE
+#    2) "0" (default)
+#
+#export CASM_DEBUGSTATE="0"
 
 #  recognized by 'casm' CLI executable for setting runtime compilation
 #  order of precedence:
