@@ -22,35 +22,35 @@ Help("""
       
       Recognized environment variables:
       
-      $CXX:
+      $CASM_CXX, $CXX:
         Explicitly set the C++ compiler. If not set, scons chooses a default compiler.
       
-      $CASMPREFIX:
+      $CASM_PREFIX:
         Where to install CASM. By default, this uses '/usr/local'. Then header files are
-        installed in '$CASMPREFIX/include', shared libraries in '$CASMPREFIX/lib', executables
-        in '$CASMPREFIX/bin', and the path is used for the setup.py --prefix option for 
+        installed in '$CASM_PREFIX/include', shared libraries in '$CASM_PREFIX/lib', executables
+        in '$CASM_PREFIX/bin', and the path is used for the setup.py --prefix option for 
         installing python packages.
       
-      $CASMBOOST_PATH:
-        Search path for Boost. '$CASMBOOST_PATH/include' is searched for header files, and
-        '$CASMBOOST_PATH/lib' for libraries. Boost and CASM should be compiled with the 
+      $CASM_BOOST_PREFIX:
+        Search path for Boost. '$CASM_BOOST_PREFIX/include' is searched for header files, and
+        '$CASM_BOOST_PREFIX/lib' for libraries. Boost and CASM should be compiled with the 
         same compiler.
 
-      $OPTIMIZATIONLEVEL:
+      $CASM_OPTIMIZATIONLEVEL:
         Sets the -O optimization compiler option. If not set, uses -O3.
 
-      $DEBUGSTATE:
+      $CASM_DEBUGSTATE:
         Sets to compile with debugging symbols. In this case, the optimization level gets 
         set to -O0, and NDEBUG does not get set.
 
       $LD_LIBRARY_PATH:
-        Search path for dynamic libraries, may need $CASMBOOST_LIB 
-        and $CASMPREFIX/lib added to it.
+        Search path for dynamic libraries, may need $CASM_BOOST_PREFIX/lib 
+        and $CASM_PREFIX/lib added to it.
         On Mac OS X, this variable is $DYLD_FALLBACK_LIBRARY_PATH.
         This should be added to your ~/.bash_profile (Linux) or ~/.profile (Mac).
       
-      $CASMBOOST_NO_CXX11_SCOPED_ENUMS:
-        If defined, will compile with -DCASMBOOST_NO_CXX11_SCOPED_ENUMS. Use this
+      $CASM_BOOST_NO_CXX11_SCOPED_ENUMS:
+        If defined, will compile with -DCASM_BOOST_NO_CXX11_SCOPED_ENUMS. Use this
         if linking to boost libraries compiled without c++11.
       
       
@@ -60,11 +60,11 @@ Help("""
           'opt=X' to set optimization level, '-OX'. Default is 3.
           'debug=X' with X=0 to use '-DNDEBUG', 
              or with X=1 to set debug mode compiler options '-O0 -g -save-temps'.
-             Overrides $DEBUGSTATE.
-          'prefix=X' to set installation directory. Default is '/usr/local'. Overrides $CASMPREFIX.
-          'boost_path=X' set boost search path. Overrides $CASMBOOST_PATH.
+             Overrides $CASM_DEBUGSTATE.
+          'prefix=X' to set installation directory. Default is '/usr/local'. Overrides $CASM_PREFIX.
+          'boost_prefix=X' set boost search path. Overrides $CASM_BOOST_PPREFIX.
           'boost_no_cxx11_scoped_enums=1' to use '-DBOOST_NO_CXX11_SCOPED_ENUMS'.
-             Overrides $CASMBOOST_NO_CXX11_SCOPED_ENUMS.
+             Overrides $CASM_BOOST_NO_CXX11_SCOPED_ENUMS.
      """)
 
 def version(version_number):
@@ -132,8 +132,8 @@ ccflags.append('-Wno-unused-parameter')
 debug_level = '0'
 if 'debug' in ARGUMENTS:
   debug_level = ARGUMENTS.get('debug')
-elif 'DEBUGSTATE' in os.environ:
-  debug_level = os.environ['DEBUGSTATE']
+elif 'CASM_DEBUGSTATE' in os.environ:
+  debug_level = os.environ['CASM_DEBUGSTATE']
 
 if debug_level == '0':
   ccflags = ccflags + ['-DNDEBUG']
@@ -142,8 +142,8 @@ elif debug_level == '1':
   ccflags = ccflags + ['-g', '-save-temps']
   cxxflags = cxxflags + ['-g', '-save-temps']  
 
-if 'OPTIMIZATIONLEVEL' in os.environ:
-  opt_level = os.environ['OPTIMIZATIONLEVEL']
+if 'CASM_OPTIMIZATIONLEVEL' in os.environ:
+  opt_level = os.environ['CASM_OPTIMIZATIONLEVEL']
 else:
   if debug_level == '0':
     opt_level = '3'
@@ -161,7 +161,7 @@ cxxflags.append('-Wno-deprecated-declarations')
 cxxflags.append('-DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long')
 
 boost_no_cxx11_scoped_enums = ARGUMENTS.get('boost_no_cxx11_scoped_enums', '0')
-if 'CASMBOOST_NO_CXX11_SCOPED_ENUMS' in os.environ:
+if 'CASM_BOOST_NO_CXX11_SCOPED_ENUMS' in os.environ:
   boost_no_cxx11_scoped_enums = '1'
 if boost_no_cxx11_scoped_enums == '1':
   cxxflags.append('-DBOOST_NO_CXX11_SCOPED_ENUMS')
@@ -170,14 +170,14 @@ if boost_no_cxx11_scoped_enums == '1':
 ccflags.append('-DGZSTREAM_NAMESPACE=gz')
 
 
-boost_path = None
-if 'boost_path' in ARGUMENTS:
-  boost_path = ARGUMENTS.get('boost_path')
-elif 'CASMBOOST_PATH' in os.environ:
-  boost_path = os.environ['CASMBOOST_PATH']
-if(boost_path != None):
-  include_paths.append(os.path.join(boost_path, 'include'))
-  lib_paths.append(os.path.join(boost_path, 'lib'))
+boost_prefix = None
+if 'boost_prefix' in ARGUMENTS:
+  boost_prefix = ARGUMENTS.get('boost_prefix')
+elif 'CASM_BOOST_PREFIX' in os.environ:
+  boost_prefix = os.environ['CASM_BOOST_PREFIX']
+if(boost_prefix != None):
+  include_paths.append(os.path.join(boost_prefix, 'include'))
+  lib_paths.append(os.path.join(boost_prefix, 'lib'))
 
 # where everything is built
 build_lib_paths = copy.deepcopy(lib_paths)
@@ -190,8 +190,8 @@ install_lib_paths = copy.deepcopy(lib_paths)
 prefix = '/usr/local'
 if 'prefix' in ARGUMENTS:
   prefix = ARGUMENTS.get('prefix')
-elif 'CASMPREFIX' in os.environ:
-  prefix = os.environ['CASMPREFIX']
+elif 'CASM_PREFIX' in os.environ:
+  prefix = os.environ['CASM_PREFIX']
 install_lib_paths.append(os.path.join(prefix, 'lib'))
 Export('install_lib_paths')
 

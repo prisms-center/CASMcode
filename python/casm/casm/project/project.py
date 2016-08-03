@@ -6,15 +6,15 @@ import ctypes, glob
 
 if 'LIBCASM' in os.environ:
   libname = os.environ['LIBCASM']
-elif 'CASMPREFIX' in os.environ:
-  libname = glob.glob(join(os.environ['CASMPREFIX'], 'lib', 'libcasm.*'))[0]
+elif 'CASM_PREFIX' in os.environ:
+  libname = glob.glob(join(os.environ['CASM_PREFIX'], 'lib', 'libcasm.*'))[0]
 else:
   libname = glob.glob(join('/usr', 'local', 'lib', 'libcasm.*'))[0]
 lib_casm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
 
 if 'LIBCCASM' in os.environ:
   libname = os.environ['LIBCCASM']
-elif 'CASMPREFIX' in os.environ:
+elif 'CASM_PREFIX' in os.environ:
   libname = glob.glob(join(os.environ['CASMPREFIX'], 'lib', 'libccasm.*'))[0]
 else:
   libname = glob.glob(join('/usr', 'local', 'lib', 'libccasm.*'))[0]

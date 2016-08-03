@@ -161,16 +161,13 @@ namespace CASM {
 
     std::vector<std::string> _casm_env() {
       return std::vector<std::string> {
-        "CASM_PREFIX",
-        "CASMPREFIX",
-        "HHCASM"
+        "CASM_PREFIX"
       };
     }
 
     std::vector<std::string> _boost_env() {
       return std::vector<std::string> {
-        "CASM_BOOST_PREFIX",
-        "CASMBOOST_PATH",
+        "CASM_BOOST_PREFIX"
       };
     }
 
@@ -212,8 +209,6 @@ namespace CASM {
   /// \brief Return include path option for CASM
   ///
   /// \returns $CASM_PREFIX if environment variable CASM_PREFIX exists,
-  ///          $CASMPREFIX" if (deprecated) environment variable CASMPREFIX exists,
-  ///          $HHCASM if (deprecated) environment variable HHCASM exists,
   ///          otherwise "/usr/local"
   std::pair<fs::path, std::string> RuntimeLibrary::default_casm_prefix() {
     auto res = _use_env(_casm_env(), "/usr/local");
@@ -223,7 +218,6 @@ namespace CASM {
   /// \brief Return include path option for boost
   ///
   /// \returns $CASM_BOOST_PREFIX if environment variable CASM_BOOST_PREFIX exists,
-  ///          $CASMBOOST_PATH if (deprecated) environment variable CASMBOOST_PATH exists,
   ///          otherwise an empty string
   std::pair<fs::path, std::string> RuntimeLibrary::default_boost_prefix() {
     auto res = _use_env(_boost_env());
