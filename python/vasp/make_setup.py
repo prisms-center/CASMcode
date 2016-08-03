@@ -7,11 +7,8 @@ version = sys.argv[1]
 url = sys.argv[2]
 
 setup_string = \
-"""import sys
-if sys.version_info >= (2, 6):
-  from setuptools import setup
-else:
-  from distutils.core import setup
+"""
+from distutils.core import setup
 import glob
 setup(name='vasp',
       version='{0}',
