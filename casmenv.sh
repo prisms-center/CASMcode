@@ -5,14 +5,8 @@
 #    1) $CASM_PREFIX
 #    2) "/usr/local"
 #
-export CASM_PREFIX="/Users/bpuchala/software/casm/clang-7.0"
+#export CASM_PREFIX="/usr/local"
 
-# If setting CASM_PREFIX, also set this to your version of Python,
-#   $CASM_PREFIX/lib/$PYTHON_VERSION/site-packages will be added to PYTHONPATH 
-#
-#   default=python2.7
-#
-PYTHON_VERSION="python2.7"  
 
 #  Recognized by install scripts and 'casm' CLI executable for locating boost install location
 #  Order of precedence:
@@ -98,6 +92,7 @@ if [ ! -z ${CASM_PREFIX} ]; then
   echo "PATH: "$PATH
   
   # Add $CASM_PREFIX/lib/$PYTHON_VERSION/site-packages to PYTHONPATH
+  PYTHON_VERSION=python$(python -c "import sys; print sys.version[:3]")
   export PYTHONPATH=$CASM_PREFIX/lib/$PYTHON_VERSION/site-packages:$PYTHONPATH
   echo "PYTHONPATH: "$PYTHONPATH
   
