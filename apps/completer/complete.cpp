@@ -2,7 +2,6 @@
 #include <iterator>
 #include "casm/completer/Complete.hh"
 #include "casm/completer/Handlers.hh"
-#include "completer_functions.hh"
 
 using namespace CASM;
 
