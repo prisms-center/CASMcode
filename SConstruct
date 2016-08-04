@@ -456,14 +456,15 @@ if 'configure' in COMMAND_LINE_TARGETS:
   
   def CheckBoost_prefix(conf, boost_prefix):
     conf.Message('BOOST_PREFIX: ' + str(boost_prefix) + '\n')
-    conf.Message('Checking... ') 
+    conf.Message('Checking for boost headers... ') 
     _path = include_path(boost_prefix, 'boost')
     if _path is not None:
-      conf.Message('found ' + join(_path, 'boost'))
-      return 1
+      conf.Message('found ' + join(_path, 'boost') + '... ')
+      res = 1
     else:
-      conf.Result(0)
-      return 0
+      res = 0
+    conf.Result(res)
+    return res
   
   def CheckBoost_version(conf, version):
     # Boost versions are in format major.minor.subminor

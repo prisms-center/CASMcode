@@ -51,6 +51,7 @@ for i, src_name in enumerate(test_name):
                        "Clusterography", "SupercellEnumerator", "Niggli"]:
     test = lenv.Program(os.path.join(lenv['UNIT_TEST_BIN'], src_name), 
                        [unit_obj, common_obj, test_obj[i]],
+                       LIBPATH=build_lib_paths,
                        LINKFLAGS=linkflags,
                        LIBS=libs2)
     if src_name[:-5] == "Structure":
@@ -64,6 +65,7 @@ for i, src_name in enumerate(test_name):
   elif src_name[:-5] == "Clexulator":
     test = lenv.Program(os.path.join(lenv['UNIT_TEST_BIN'], src_name), 
                        [unit_obj, common_obj, test_obj[i]],
+                       LIBPATH=build_lib_paths,
                        LINKFLAGS=linkflags,
                        LIBS=libs3)
   else:
