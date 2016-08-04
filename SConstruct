@@ -397,7 +397,7 @@ if not env['IS_INSTALL']:
 ##### Configuration checks
 if 'configure' in COMMAND_LINE_TARGETS:
   
-  def CheckBOOST_PREFIX(conf):
+  def CheckBoost_prefix(conf):
     
     boost_prefix_str = boost_prefix
     if boost_prefix_str is None:
@@ -420,7 +420,7 @@ if 'configure' in COMMAND_LINE_TARGETS:
     conf.Result(res)
     return res
   
-  def CheckBOOST_version(conf, version):
+  def CheckBoost_version(conf, version):
     # Boost versions are in format major.minor.subminor
     v_arr = version.split(".")
     version_n = 0
@@ -441,6 +441,21 @@ if 'configure' in COMMAND_LINE_TARGETS:
     }
     """ % version_n, '.cpp')[0]
     conf.Result(ret)
+    
+    if not ret:
+      print "Found Boost version:", conf.TryRun("""
+      #include <boost/version.hpp>
+      #include <iostream>
+      int main() 
+      {
+          std::cout << BOOST_VERSION / 100000 << "."      // major version
+                    << BOOST_VERSION / 100 % 1000 << "."  // minor version
+                    << BOOST_VERSION % 100                // patch level
+                    << std::endl;
+          return 0;
+      }
+      """, ".cpp")[1],
+    
     return ret
   
   def CheckBOOST_NO_CXX11_SCOPED_ENUMS(conf):
@@ -464,8 +479,8 @@ if 'configure' in COMMAND_LINE_TARGETS:
   conf = Configure(
     env.Clone(LIBPATH=install_lib_paths, LIBS=['boost_system', 'boost_filesystem']),
     custom_tests = {
-      'CheckBOOST_PREFIX' : CheckBOOST_PREFIX,
-      'CheckBOOST_version' : CheckBOOST_version,
+      'CheckBoost_prefix' : CheckBoost_prefix,
+      'CheckBoost_version' : CheckBoost_version,
       'CheckBOOST_NO_CXX11_SCOPED_ENUMS': CheckBOOST_NO_CXX11_SCOPED_ENUMS})
   
   def if_failed(msg):
@@ -473,9 +488,9 @@ if 'configure' in COMMAND_LINE_TARGETS:
     print msg
     exit()
   
-  if not conf.CheckBOOST_PREFIX():
+  if not conf.CheckBoost_prefix():
     if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
-  if not conf.CheckBOOST_version('1.54'):
+  if not conf.CheckBoost_version('1.55'):
     if_failed("Please check your boost version") 
   if not conf.CheckBOOST_NO_CXX11_SCOPED_ENUMS():
     if_failed("Please check your boost installation or the CASM_BOOST_NO_CXX11_SCOPED_ENUMS environment variable")
