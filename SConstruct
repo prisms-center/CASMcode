@@ -490,7 +490,7 @@ if 'configure' in COMMAND_LINE_TARGETS:
   
   if not conf.CheckBoost_prefix():
     if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
-  if not conf.CheckBoost_version('1.55'):
+  if not conf.CheckBoost_version('1.54'):
     if_failed("Please check your boost version") 
   if not conf.CheckBOOST_NO_CXX11_SCOPED_ENUMS():
     if_failed("Please check your boost installation or the CASM_BOOST_NO_CXX11_SCOPED_ENUMS environment variable")
