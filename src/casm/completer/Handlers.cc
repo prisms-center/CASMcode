@@ -112,7 +112,7 @@ namespace CASM {
      * know which types of completions to suggest.
      */
 
-    const std::vector<std::pair<std::string, ARG_TYPE> > ArgHandler::m_argument_table( {
+    const std::vector<std::pair<std::string, ARG_TYPE> > ArgHandler::m_argument_table({
       std::make_pair("<path>", ARG_TYPE::PATH),
       std::make_pair("<command>", ARG_TYPE::COMMAND),
       std::make_pair("<supercell>", ARG_TYPE::SCELNAME),
@@ -129,6 +129,12 @@ namespace CASM {
       m_gzip_flag(false),
       m_tag(init_option_tag),
       m_desc(std::string("'casm ") + init_option_tag + std::string("' usage")) {
+    }
+
+    OptionHandlerBase::OptionHandlerBase(const std::string &init_option_tag, const std::string &init_descriptor):
+      m_gzip_flag(false),
+      m_tag(init_option_tag),
+      m_desc(init_descriptor) {
     }
 
     const std::string &OptionHandlerBase::tag() const {
