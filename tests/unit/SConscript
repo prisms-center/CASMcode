@@ -8,6 +8,11 @@ Import('env', 'casm_lib', 'casm', 'build_lib_paths')
 
 lenv = env.Clone(CPPPATH = env['CPPPATH'] + [os.getcwd()])
 
+libs1 = [lenv['boost_unit_test_framework'], lenv['boost_system'], lenv['boost_filesystem']]
+libs2 = libs1 + [lenv['boost_regex'], 'casm']
+libs3 = libs2 + [lenv['dl']]
+libs4 = libs3 + [lenv['boost_chrono']]
+
 common_obj = lenv.Object('Common.cpp')
 unit_obj = lenv.Object('unit_test.cpp')
 test_src = glob.glob('*/*_test.cpp')
@@ -24,7 +29,7 @@ unit_test = lenv.Program(os.path.join(lenv['UNIT_TEST_BIN'],'unit_test'),
                         [unit_obj, test_obj, common_obj],
                         LINKFLAGS=linkflags,
                         LIBPATH=build_lib_paths,
-                        LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem', 'boost_regex', 'boost_chrono', 'dl', 'casm'])
+                        LIBS=libs4)
 Depends(unit_test, [casm_lib, casm])
 
 # Execute 'scons unit' to compile & run all unit tests
@@ -47,7 +52,7 @@ for i, src_name in enumerate(test_name):
     test = lenv.Program(os.path.join(lenv['UNIT_TEST_BIN'], src_name), 
                        [unit_obj, common_obj, test_obj[i]],
                        LINKFLAGS=linkflags,
-                       LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem', 'boost_regex'] + casm_lib)
+                       LIBS=libs2)
     if src_name[:-5] == "Structure":
       Clean(test,  Structure_out)
     if src_name[:-5] == "Clexulator":
@@ -60,11 +65,11 @@ for i, src_name in enumerate(test_name):
     test = lenv.Program(os.path.join(lenv['UNIT_TEST_BIN'], src_name), 
                        [unit_obj, common_obj, test_obj[i]],
                        LINKFLAGS=linkflags,
-                       LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem', 'boost_regex', 'dl'] + casm_lib)
+                       LIBS=libs3)
   else:
     test = lenv.Program(os.path.join(lenv['UNIT_TEST_BIN'], src_name), 
                        [unit_obj, test_obj[i]],
-                       LIBS=['boost_unit_test_framework', 'boost_system', 'boost_filesystem'])
+                       LIBS=libs1)
     
   # Execute 'scons Motif' or 'scons Structure', etc. to compile & run some unit tests
   if src_name[:-5] == "App":

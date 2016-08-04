@@ -1,7 +1,7 @@
 # http://www.scons.org/doc/production/HTML/scons-user.html
 # This is: Sconstruct
 
-import os, glob, copy, shutil, subprocess
+import os, glob, copy, shutil, subprocess, imp, re
 
 from os.path import join
 
@@ -103,8 +103,53 @@ def version(version_number):
     version_number += ".changes"
   
   return version_number
-  
 
+def include_path(prefix, name):
+  """
+  Return prefix/include where prefix/include/name exists, or None
+  
+  If prefix is None, check /usr and /usr/local, else just check prefix
+  
+  """
+  if prefix is None:
+    for path in ['/usr', '/usr/local']:
+      dirpath = join(path, 'include', name)
+      if os.path.isdir(dirpath) and os.access(dirpath, os.R_OK):
+        return join(path, 'include')
+  else:
+    dirpath = join(prefix, 'include', name)
+    if os.path.isdir(dirpath) and os.access(dirpath, os.R_OK):
+      return join(prefix, 'include')
+  return None
+
+def lib_path(prefix, name):
+  """
+  Return prefix/lib where prefix/include/name exists, or None
+  
+  If prefix is None, check /usr and /usr/local, else just check prefix
+  
+  """
+  if prefix is None:
+    for path in ['/usr', '/usr/local']:
+      dirpath = join(path, 'include', name)
+      if os.path.isdir(dirpath) and os.access(dirpath, os.R_OK):
+        return join(path, 'lib')
+  else:
+    dirpath = join(prefix, 'include', name)
+    if os.path.isdir(dirpath) and os.access(dirpath, os.R_OK):
+      return join(prefix, 'lib')
+  return None
+
+def lib_name(prefix, includename, libname):
+  """
+  Uses re.match('lib(' + libname + '.*)\.(dylib|a|so).*',string) on all files
+  in the prefix/lib directory to get the libname to use. If none found, return None.
+  """
+  for p in os.listdir(lib_path(prefix, includename)):
+    m = re.match('lib(' + libname + '.*)\.(dylib|a|so).*',p)
+    if m:
+      return m.group(1)
+  return None
 
 ##### Set version_number
 
@@ -205,8 +250,10 @@ env = Environment(ENV = os.environ,
                   PREFIX = prefix)
 
 # set a non-default c++ compiler
-if 'CXX' in os.environ:
-  env.Replace(CXX = env['CXX'])
+if 'CASM_CXX' in os.environ:
+  env.Replace(CXX = os.environ['CASM_CXX'])
+elif 'CXX' in os.environ:
+  env.Replace(CXX = os.environ['CXX'])
 elif 'cxx' in ARGUMENTS:
   env.Replace(CXX = ARGUMENTS.get('cxx'))
 
@@ -235,6 +282,16 @@ env.Append(INSTALL_TARGETS = [])
 env.Append(IS_TEST = 0)
 env.Append(IS_INSTALL = 0)
 
+
+env.Replace(boost_system=lib_name(boost_prefix, 'boost', 'boost_system')) 
+env.Replace(boost_filesystem=lib_name(boost_prefix, 'boost', 'boost_filesystem')) 
+env.Replace(boost_program_options=lib_name(boost_prefix, 'boost', 'boost_program_options')) 
+env.Replace(boost_regex=lib_name(boost_prefix, 'boost', 'boost_regex')) 
+env.Replace(boost_chrono=lib_name(boost_prefix, 'boost', 'boost_chrono')) 
+env.Replace(boost_unit_test_framework=lib_name(boost_prefix, 'boost', 'boost_unit_test_framework')) 
+env.Replace(z='z') 
+env.Replace(dl='dl') 
+  
 # make compiler errors and warnings in color
 env['ENV']['TERM'] = os.environ['TERM']
 
@@ -261,14 +318,14 @@ if env['PLATFORM'] == 'darwin':
   linkflags = ['-install_name', '@rpath/libcasm.dylib']
 
 # use boost libraries
-boost_libs = ['boost_system', 'boost_filesystem', 'boost_program_options', 'boost_regex', 'boost_chrono']
+boost_libs = [env['boost_system'], env['boost_filesystem'], env['boost_program_options'], env['boost_regex'], env['boost_chrono']]
 
 # build casm shared library from all shared objects
 casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'), 
                              env['CASM_SOBJ'], 
                              LIBPATH=build_lib_paths,
                              LINKFLAGS=linkflags,
-                             LIBS=boost_libs + ['z'])
+                             LIBS=boost_libs + [env['z']])
                              
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + casm_lib
 Export('casm_lib')
@@ -279,7 +336,7 @@ casm_lib_install = env.SharedLibrary(os.path.join(env['PREFIX'], 'lib', 'casm'),
                                      env['CASM_SOBJ'], 
                                      LIBPATH=install_lib_paths, 
                                      LINKFLAGS=linkflags,
-                                     LIBS=boost_libs + ['z'])
+                                     LIBS=boost_libs + [env['z']])
 Export('casm_lib_install')
 env.Alias('casm_lib_install', casm_lib_install)
 env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [casm_lib_install]
@@ -397,28 +454,16 @@ if not env['IS_INSTALL']:
 ##### Configuration checks
 if 'configure' in COMMAND_LINE_TARGETS:
   
-  def CheckBoost_prefix(conf):
-    
-    boost_prefix_str = boost_prefix
-    if boost_prefix_str is None:
-      boost_prefix_str = 'None'
-    
-    conf.Message('BOOST_PREFIX: ' + boost_prefix_str)
-    if ARGUMENTS.get('boost_prefix', False):
-      conf.Message('  Was set via scons command line --boost_prefix...')
-    elif 'CASM_BOOST_PREFIX' in os.environ:
-      conf.Message('  Was set via environment variable CASM_BOOST_PREFIX...')
-    conf.Message('Checking if BOOST_PREFIX setting is correct... ')
-    BOOST_PREFIX_test="""
-    #include "boost/filesystem.hpp"
-    int main(int argc, char* argv[]) {
-      boost::filesystem::path p("foo");
-      return 0;
-    }
-    """
-    res = conf.TryLink(BOOST_PREFIX_test, ".cpp")
-    conf.Result(res)
-    return res
+  def CheckBoost_prefix(conf, boost_prefix):
+    conf.Message('BOOST_PREFIX: ' + str(boost_prefix) + '\n')
+    conf.Message('Checking... ') 
+    _path = include_path(boost_prefix, 'boost')
+    if _path is not None:
+      conf.Message('found ' + join(_path, 'boost'))
+      return 1
+    else:
+      conf.Result(0)
+      return 0
   
   def CheckBoost_version(conf, version):
     # Boost versions are in format major.minor.subminor
@@ -476,8 +521,19 @@ if 'configure' in COMMAND_LINE_TARGETS:
     conf.Result(res)
     return res
   
+  def check_module(module_name):
+    print "Checking for Python module '" + module_name + "'... ",
+    try:
+      imp.find_module(module_name)
+      res = 1
+      print "yes"
+    except:
+      res = 0
+      print "no"
+    return res
+  
   conf = Configure(
-    env.Clone(LIBPATH=install_lib_paths, LIBS=['boost_system', 'boost_filesystem']),
+    env.Clone(LIBPATH=install_lib_paths, LIBS=[env['boost_system'], env['boost_filesystem']]),
     custom_tests = {
       'CheckBoost_prefix' : CheckBoost_prefix,
       'CheckBoost_version' : CheckBoost_version,
@@ -488,12 +544,40 @@ if 'configure' in COMMAND_LINE_TARGETS:
     print msg
     exit()
   
-  if not conf.CheckBoost_prefix():
+  if not conf.CheckLib(env['z']):
+    if_failed("Please check your installation")
+  if not conf.CheckLib(env['dl']):
+    if_failed("Please check your installation")
+  if not conf.CheckLib(env['boost_system']):
+    if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
+  if not conf.CheckLib(env['boost_filesystem']):
+    if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
+  if not conf.CheckLib(env['boost_program_options']):
+    if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
+  if not conf.CheckLib(env['boost_regex']):
+    if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
+  if not conf.CheckLib(env['boost_chrono']):
+    if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
+  if not conf.CheckLib(env['boost_unit_test_framework']):
+    if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
+  if not conf.CheckBoost_prefix(boost_prefix):
     if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
   if not conf.CheckBoost_version('1.54'):
     if_failed("Please check your boost version") 
   if not conf.CheckBOOST_NO_CXX11_SCOPED_ENUMS():
     if_failed("Please check your boost installation or the CASM_BOOST_NO_CXX11_SCOPED_ENUMS environment variable")
+  
+  for module_name in ['numpy', 'sklearn', 'deap', 'pandas']:
+    if not check_module(module_name):
+      if_failed("Python module '" + module_name + "' is not installed")
+  if not check_module('pbs'):
+      if_failed("""
+      Python module '%s' is not installed
+        This module is only necessary for setting up and submitting DFT jobs
+        **It is not the module available from pip**"
+        It is available from: https://github.com/prisms-center/pbs
+      """ % module_name)
+  
   
   print "Configuration checks passed."
   exit()
