@@ -19,8 +19,8 @@ casm enum --configs --max 6
 casm select --set-on
 casm query -k comp corr -o query_results.txt
 
-casm super --configname SCEL4_2_2_1_1_1_0/0 --transf_mat M2
-casm super --configname SCEL4_2_2_1_1_1_0/0 --transf_mat M3
-casm super --configname SCEL4_2_2_1_1_1_0/1 --transf_mat M3
+casm super --configname SCEL4_2_2_1_1_1_0/0 --transf-mat M2
+casm super --configname SCEL4_2_2_1_1_1_0/0 --transf-mat M3
+casm super --configname SCEL4_2_2_1_1_1_0/1 --transf-mat M3
 
 
