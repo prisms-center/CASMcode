@@ -104,6 +104,33 @@ def version(version_number):
   
   return version_number
 
+def cxx():
+  """Get c++ compiler"""
+  # set a non-default c++ compiler
+  if 'cxx' in ARGUMENTS:
+    return ARGUMENTS.get('cxx')
+  elif 'CASM_CXX' in os.environ:
+    return os.environ['CASM_CXX']
+  elif 'CXX' in os.environ:
+    return os.environ['CXX']
+  return "g++"
+
+def prefix():
+  """Install location"""
+  if 'prefix' in ARGUMENTS:
+    return ARGUMENTS.get('prefix')
+  elif 'CASM_PREFIX' in os.environ:
+    return os.environ['CASM_PREFIX']
+  return  '/usr/local'
+
+def boost_prefix():
+  """Boost location"""
+  if 'boost_prefix' in ARGUMENTS:
+    return ARGUMENTS.get('boost_prefix')
+  elif 'CASM_BOOST_PREFIX' in os.environ:
+    return os.environ['CASM_BOOST_PREFIX']
+  return None
+
 def include_path(prefix, name):
   """
   Return prefix/include where prefix/include/name exists, or None
@@ -151,6 +178,69 @@ def lib_name(prefix, includename, libname):
       return m.group(1)
   return None
 
+def debug_level():
+  if 'debug' in ARGUMENTS:
+    return ARGUMENTS.get('debug')
+  elif 'CASM_DEBUGSTATE' in os.environ:
+    return os.environ['CASM_DEBUGSTATE']
+  return '0'
+
+def opt_level():
+  if 'opt' in ARGUMENTS:
+    return ARGUMENTS.get('opt')
+  elif 'CASM_OPTIMIZATIONLEVEL' in os.environ:
+    return os.environ['CASM_OPTIMIZATIONLEVEL']
+  else:
+    _debug_level = debug_level()
+    if _debug_level == '0':
+      return '3'
+    else:
+      return '0'
+
+def boost_no_cxx11_scoped_enums():
+  if 'boost_no_cxx11_scoped_enums' in ARGUMENTS:
+    return True
+  elif 'CASM_BOOST_NO_CXX11_SCOPED_ENUMS' in os.environ:
+    return True
+  return False
+
+def compile_flags():
+  # command-line variables (C and C++)
+  ccflags = []
+  cxxflags = []
+
+  #ccflags.append('-Wall')
+  ccflags.append('-Wno-unused-parameter')
+
+  _debug_level = debug_level()
+  
+  if _debug_level == '0':
+    ccflags = ccflags + ['-DNDEBUG']
+    cxxflags = cxxflags + ['-DNDEBUG']
+  elif _debug_level == '1':
+    ccflags = ccflags + ['-g', '-save-temps']
+    cxxflags = cxxflags + ['-g', '-save-temps']  
+
+  _opt = "-O" + opt_level()
+
+  ccflags.append(_opt)
+  cxxflags.append(_opt)
+
+  # C++ only
+  #cxxflags = []
+  cxxflags.append('--std=c++11')
+  cxxflags.append('-Wno-deprecated-register')
+  cxxflags.append('-Wno-deprecated-declarations')
+  cxxflags.append('-DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long')
+
+  if boost_no_cxx11_scoped_enums():
+    cxxflags.append('-DBOOST_NO_CXX11_SCOPED_ENUMS')
+  
+  # set gzstream namespace to 'gz'
+  ccflags.append('-DGZSTREAM_NAMESPACE=gz')
+  
+  return (ccflags, cxxflags)
+
 ##### Set version_number
 
 version_number = version('0.2a1')
@@ -160,111 +250,26 @@ Export('version_number', 'url')
 
 ##### Environment setup
 
-# include paths
-include_paths = [join(os.getcwd(), i) for i in ['include', 'include/casm/app'] ]
+env = Environment()
 
-# lib paths
-lib_paths = []
+# C++ compiler
+env.Replace(CXX=cxx())
 
-# command-line variables (C and C++)
-ccflags = []
-cxxflags = []
-
-#ccflags.append('-Wall')
-
-ccflags.append('-Wno-unused-parameter')
-
-debug_level = '0'
-if 'debug' in ARGUMENTS:
-  debug_level = ARGUMENTS.get('debug')
-elif 'CASM_DEBUGSTATE' in os.environ:
-  debug_level = os.environ['CASM_DEBUGSTATE']
-
-if debug_level == '0':
-  ccflags = ccflags + ['-DNDEBUG']
-  cxxflags = cxxflags + ['-DNDEBUG']
-elif debug_level == '1':
-  ccflags = ccflags + ['-g', '-save-temps']
-  cxxflags = cxxflags + ['-g', '-save-temps']  
-
-if 'CASM_OPTIMIZATIONLEVEL' in os.environ:
-  opt_level = os.environ['CASM_OPTIMIZATIONLEVEL']
-else:
-  if debug_level == '0':
-    opt_level = '3'
-  else:
-    opt_level = '0'
-
-ccflags.append("-O" + ARGUMENTS.get('opt',opt_level))
-cxxflags.append("-O" + ARGUMENTS.get('opt',opt_level))
-
-# C++ only
-#cxxflags = []
-cxxflags.append('--std=c++11')
-cxxflags.append('-Wno-deprecated-register')
-cxxflags.append('-Wno-deprecated-declarations')
-cxxflags.append('-DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long')
-
-boost_no_cxx11_scoped_enums = '0'
-if ARGUMENTS.get('boost_no_cxx11_scoped_enums', False):
-  boost_no_cxx11_scoped_enums = ARGUMENTS.get('boost_no_cxx11_scoped_enums', '0')
-elif 'CASM_BOOST_NO_CXX11_SCOPED_ENUMS' in os.environ:
-  boost_no_cxx11_scoped_enums = '1'
-if boost_no_cxx11_scoped_enums == '1':
-  cxxflags.append('-DBOOST_NO_CXX11_SCOPED_ENUMS')
-
-# set gzstream namespace to 'gz'
-ccflags.append('-DGZSTREAM_NAMESPACE=gz')
-
-
-boost_prefix = None
-if 'boost_prefix' in ARGUMENTS:
-  boost_prefix = ARGUMENTS.get('boost_prefix')
-elif 'CASM_BOOST_PREFIX' in os.environ:
-  boost_prefix = os.environ['CASM_BOOST_PREFIX']
-if(boost_prefix != None):
-  include_paths.append(os.path.join(boost_prefix, 'include'))
-  lib_paths.append(os.path.join(boost_prefix, 'lib'))
-
-# where everything is built
-build_lib_paths = copy.deepcopy(lib_paths)
-build_lib_paths.append(os.path.join(os.getcwd(), 'lib'))
-Export('build_lib_paths')
-
-
-# where everything should be installed
-install_lib_paths = copy.deepcopy(lib_paths)
-prefix = '/usr/local'
-if 'prefix' in ARGUMENTS:
-  prefix = ARGUMENTS.get('prefix')
-elif 'CASM_PREFIX' in os.environ:
-  prefix = os.environ['CASM_PREFIX']
-install_lib_paths.append(os.path.join(prefix, 'lib'))
-Export('install_lib_paths')
-
-env = Environment(ENV = os.environ,
-                  CCFLAGS = ccflags,
-                  CXXFLAGS = cxxflags,
-                  CPPPATH = include_paths,
-                  LIBPATH = lib_paths,
-                  PREFIX = prefix)
-
-# set a non-default c++ compiler
-if 'CASM_CXX' in os.environ:
-  env.Replace(CXX = os.environ['CASM_CXX'])
-elif 'CXX' in os.environ:
-  env.Replace(CXX = os.environ['CXX'])
-elif 'cxx' in ARGUMENTS:
-  env.Replace(CXX = ARGUMENTS.get('cxx'))
+# C and C++ flags
+ccflags, cxxflags = compile_flags()
+env.Replace(CCFLAGS=ccflags, CXXFLAGS=cxxflags)
 
 # where the shared libraries should go
-env.Append(CASM_LIB = os.path.join(os.getcwd(), 'lib'))
+env.Append(LIBDIR = join(os.getcwd(), 'lib'))
 
 # where the compiled binary should go
-unit_test_bin = os.path.join(os.getcwd(), 'tests', 'unit', 'bin')
-env.Append(UNIT_TEST_BIN = unit_test_bin)
-casm_bin = os.path.join(os.getcwd(), 'bin')
-env.Append(CASM_BIN = casm_bin)
+env.Append(BINDIR = join(os.getcwd(), 'bin'))
+
+# where the headers are
+env.Append(INCDIR = join(os.getcwd(), 'include'))
+
+# where test binaries should go
+env.Append(UNIT_TEST_BINDIR = join(os.getcwd(), 'tests', 'unit', 'bin'))
 
 # collect header files
 env.Append(CASM_SOBJ = [])
@@ -282,21 +287,27 @@ env.Append(INSTALL_TARGETS = [])
 env.Append(IS_TEST = 0)
 env.Append(IS_INSTALL = 0)
 
+# collect casm prefix
+env.Replace(PREFIX=prefix())
 
-env.Replace(boost_system=lib_name(boost_prefix, 'boost', 'boost_system')) 
-env.Replace(boost_filesystem=lib_name(boost_prefix, 'boost', 'boost_filesystem')) 
-env.Replace(boost_program_options=lib_name(boost_prefix, 'boost', 'boost_program_options')) 
-env.Replace(boost_regex=lib_name(boost_prefix, 'boost', 'boost_regex')) 
-env.Replace(boost_chrono=lib_name(boost_prefix, 'boost', 'boost_chrono')) 
-env.Replace(boost_unit_test_framework=lib_name(boost_prefix, 'boost', 'boost_unit_test_framework')) 
+# collect boost prefix
+env.Replace(BOOST_PREFIX=boost_prefix())
+
+# collect library names
+env.Replace(boost_system=lib_name(env['BOOST_PREFIX'], 'boost', 'boost_system')) 
+env.Replace(boost_filesystem=lib_name(env['BOOST_PREFIX'], 'boost', 'boost_filesystem')) 
+env.Replace(boost_program_options=lib_name(env['BOOST_PREFIX'], 'boost', 'boost_program_options')) 
+env.Replace(boost_regex=lib_name(env['BOOST_PREFIX'], 'boost', 'boost_regex')) 
+env.Replace(boost_chrono=lib_name(env['BOOST_PREFIX'], 'boost', 'boost_chrono')) 
+env.Replace(boost_unit_test_framework=lib_name(env['BOOST_PREFIX'], 'boost', 'boost_unit_test_framework')) 
 env.Replace(z='z') 
 env.Replace(dl='dl') 
-  
+
 # make compiler errors and warnings in color
 env['ENV']['TERM'] = os.environ['TERM']
 
 # set testing environment
-env['ENV']['PATH'] = env['CASM_BIN'] + ":" + env['ENV']['PATH']
+env['ENV']['PATH'] = env['BINDIR'] + ":" + env['ENV']['PATH']
 
 
 ##### Call all SConscript files for shared objects
@@ -317,26 +328,37 @@ linkflags = ""
 if env['PLATFORM'] == 'darwin':
   linkflags = ['-install_name', '@rpath/libcasm.dylib']
 
+build_lib_paths = []
+if 'BOOST_PREFIX' in env and env['BOOST_PREFIX'] is not None:
+  build_lib_paths.append(join(env['BOOST_PREFIX']), 'lib')
+Export('build_lib_paths')
+
 # use boost libraries
-boost_libs = [env['boost_system'], env['boost_filesystem'], env['boost_program_options'], env['boost_regex'], env['boost_chrono']]
+libs = [
+  env['boost_system'], 
+  env['boost_filesystem'], 
+  env['boost_program_options'], 
+  env['boost_regex'], 
+  env['boost_chrono'],
+  env['z']]
 
 # build casm shared library from all shared objects
-casm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'casm'), 
+casm_lib = env.SharedLibrary(join(env['LIBDIR'], 'casm'), 
                              env['CASM_SOBJ'], 
                              LIBPATH=build_lib_paths,
                              LINKFLAGS=linkflags,
-                             LIBS=boost_libs + [env['z']])
+                             LIBS=libs)
                              
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + casm_lib
 Export('casm_lib')
 env.Alias('libcasm', casm_lib)
 
 # Library Install instructions
-casm_lib_install = env.SharedLibrary(os.path.join(env['PREFIX'], 'lib', 'casm'), 
+casm_lib_install = env.SharedLibrary(join(env['PREFIX'], 'lib', 'casm'), 
                                      env['CASM_SOBJ'], 
-                                     LIBPATH=install_lib_paths, 
+                                     LIBPATH=build_lib_paths, 
                                      LINKFLAGS=linkflags,
-                                     LIBS=boost_libs + [env['z']])
+                                     LIBS=libs)
 Export('casm_lib_install')
 env.Alias('casm_lib_install', casm_lib_install)
 env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [casm_lib_install]
@@ -351,23 +373,25 @@ linkflags = ""
 if env['PLATFORM'] == 'darwin':
   linkflags = ['-install_name', '@rpath/libccasm.dylib']
 
+install_lib_paths = build_lib_paths + [join(env['PREFIX'], 'lib')]
+
 # build casm shared library from all shared objects
-ccasm_lib = env.SharedLibrary(os.path.join(env['CASM_LIB'], 'ccasm'), 
+ccasm_lib = env.SharedLibrary(join(env['LIBDIR'], 'ccasm'), 
                              env['CCASM_SOBJ'], 
-                             LIBPATH=build_lib_paths,
+                             LIBPATH=install_lib_paths,
                              LINKFLAGS=linkflags,
-                             LIBS=boost_libs + ['casm'])
+                             LIBS=libs + ['casm'])
                              
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + ccasm_lib
 Export('ccasm_lib')
 env.Alias('libccasm', ccasm_lib)
 
 # Library Install instructions
-ccasm_lib_install = env.SharedLibrary(os.path.join(env['PREFIX'], 'lib', 'ccasm'), 
-                                     env['CCASM_SOBJ'], 
-                                     LIBPATH=install_lib_paths, 
-                                     LINKFLAGS=linkflags,
-                                     LIBS=boost_libs + ['casm'])
+ccasm_lib_install = env.SharedLibrary(join(env['PREFIX'], 'lib', 'ccasm'), 
+                                      env['CCASM_SOBJ'], 
+                                      LIBPATH=install_lib_paths, 
+                                      LINKFLAGS=linkflags,
+                                      LIBS=libs + ['casm'])
 Export('ccasm_lib_install')
 env.Alias('ccasm_lib_install', ccasm_lib_install)
 env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + [ccasm_lib_install]
@@ -377,19 +401,11 @@ if 'ccasm_lib_install' in COMMAND_LINE_TARGETS:
 
 
 # Include Install instructions
-
-# for all header files: install h/path/to/X.hh as prefix/casm/path/to/X.hh
-# we'll create a dict of file -> install dir
-
-include_dir = os.path.join(env['PREFIX'],'include')
-casm_include = os.path.join('include', 'casm')
-Export('casm_include')
-
-casm_include_install = env.Install(include_dir, casm_include)
+casm_include_install = env.Install(join(env['PREFIX'], 'include'), join(env['INCDIR'], 'casm'))
 
 Export('casm_include_install')
 env.Alias('casm_include_install', casm_include_install)
-env.Clean('casm_include_install', os.path.join(include_dir,'casm'))
+env.Clean('casm_include_install', join(env['PREFIX'], 'include','casm'))
 env['INSTALL_TARGETS'] = env['INSTALL_TARGETS'] + casm_include_install
 
 if 'casm_include_install' in COMMAND_LINE_TARGETS:
@@ -402,9 +418,6 @@ SConscript(['apps/casm/SConscript'], {'env':env})
 
 # tests/unit
 SConscript(['tests/unit/SConscript'], {'env': env})
-
-# tests/casm
-SConscript(['tests/casm/SConscript'], {'env': env})
 
 
 ##### Python packages
@@ -437,7 +450,7 @@ if 'install' in COMMAND_LINE_TARGETS:
 # if we're supposed to install them, rm -r include_dir/casm
 would_install_include = ['casm_include_install', 'install']
 if [i for i in would_install_include if i in COMMAND_LINE_TARGETS]:
-  path = os.path.join(include_dir, 'casm')
+  path = join(env['PREFIX'], 'include', 'casm')
   if os.path.exists(path):
     print "rm", path
     shutil.rmtree(path)
@@ -561,7 +574,7 @@ if 'configure' in COMMAND_LINE_TARGETS:
     if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
   if not conf.CheckLib(env['boost_unit_test_framework']):
     if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
-  if not conf.CheckBoost_prefix(boost_prefix):
+  if not conf.CheckBoost_prefix(env['BOOST_PREFIX']):
     if_failed("Please check your boost installation or the CASM_BOOST_PREFIX environment variable")
   if not conf.CheckBoost_version('1.54'):
     if_failed("Please check your boost version") 
