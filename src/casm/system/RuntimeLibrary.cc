@@ -111,7 +111,8 @@ namespace CASM {
 
     m_handle = dlopen((m_filename_base + ".so").c_str(), RTLD_NOW);
     if(!m_handle) {
-      throw std::runtime_error(std::string("Cannot open library: ") + m_filename_base + ".so");;
+      fprintf(stderr, "dlopen failed: %s\n", dlerror());
+      throw std::runtime_error(std::string("Cannot open library: ") + m_filename_base + ".so");
     }
   }
 
