@@ -1,4 +1,5 @@
-check_PROGRAMS += casm_units
+check_PROGRAMS += casm\
+				  casm_units
 
 casm_units_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
 
@@ -28,3 +29,7 @@ casm_units_LDADD=libcasm.la\
 				 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 TESTS+=./tests/run_tests
+
+include ./tests/unit/App/Makemodule.am
+include ./tests/unit/casm_io/Makemodule.am
+include ./tests/unit/clex/Makemodule.am

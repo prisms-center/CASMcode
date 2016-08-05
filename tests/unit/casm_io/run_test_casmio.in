@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cd @abs_top_srcdir@
+@abs_top_builddir@/casm_unit_casmio --log_level=test_suite --catch_system_errors=no
