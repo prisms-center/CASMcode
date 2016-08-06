@@ -98,9 +98,19 @@ AC_CONFIG_FILES([
                  Makefile
                  tests/unit/App/run_test_App
                  tests/unit/casm_io/run_test_casm_io
+                 tests/unit/clex/run_test_clex
+                 tests/unit/clusterography/run_test_clusterography
+                 tests/unit/container/run_test_container
+                 tests/unit/crystallography/run_test_crystallography
+                 tests/unit/system/run_test_system
                  ],
                  [
                   chmod +x tests/unit/App/run_test_App
                   chmod +x tests/unit/casm_io/run_test_casm_io
+                  chmod +x tests/unit/clex/run_test_clex
+                  chmod +x tests/unit/clusterography/run_test_clusterography
+                  chmod +x tests/unit/container/run_test_container
+                  chmod +x tests/unit/crystallography/run_test_crystallography
+                  chmod +x tests/unit/system/run_test_system
                   ])
 AC_OUTPUT
