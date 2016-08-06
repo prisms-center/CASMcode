@@ -94,7 +94,13 @@ AC_FUNC_REALLOC
 AC_FUNC_STRTOD
 AC_CHECK_FUNCS([floor iswprint memmove memset mkdir pow rmdir select sqrt strchr strpbrk strrchr strstr strtol])
 
-AC_CONFIG_FILES([Makefile
-                 tests/run_tests],
-                 [chmod +x tests/run_tests])
+AC_CONFIG_FILES([
+                 Makefile
+                 tests/unit/App/run_test_App
+                 tests/unit/casm_io/run_test_casm_io
+                 ],
+                 [
+                  chmod +x tests/unit/App/run_test_App
+                  chmod +x tests/unit/casm_io/run_test_casm_io
+                  ])
 AC_OUTPUT

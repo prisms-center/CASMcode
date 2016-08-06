@@ -1,16 +1,17 @@
-check_PROGRAMS += casm_unit_casmio
+check_PROGRAMS += casm_unit_casm_io
 
-casm_unit_casmio_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
+casm_unit_casm_io_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
 
-casm_unit_casmio_SOURCES = ./tests/unit/unit_test.cpp\
-						   ./tests/unit/Common.cpp\
-						   ./tests/unit/casm_io/jsonParser_test.cpp
+casm_unit_casm_io_SOURCES = ./tests/unit/unit_test.cpp\
+							./tests/unit/Common.cpp\
+							./tests/unit/casm_io/jsonParser_test.cpp
 
-casm_unit_casmio_LDADD=libcasm.la\
-				 $(BOOST_SYSTEM_LIB)\
-				 $(BOOST_FILESYSTEM_LIB)\
-				 $(BOOST_PROGRAM_OPTIONS_LIB)\
-				 $(BOOST_REGEX_LIB)\
-				 $(BOOST_CHRONO_LIB)\
-				 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+casm_unit_casm_io_LDADD=libcasm.la\
+						$(BOOST_SYSTEM_LIB)\
+						$(BOOST_FILESYSTEM_LIB)\
+						$(BOOST_PROGRAM_OPTIONS_LIB)\
+						$(BOOST_REGEX_LIB)\
+						$(BOOST_CHRONO_LIB)\
+						$(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
+TESTS+=./tests/unit/casm_io/run_test_casm_io

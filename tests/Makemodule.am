@@ -1,35 +1,33 @@
-check_PROGRAMS += casm\
-				  casm_units
+check_PROGRAMS += casm
 
-casm_units_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
+#casm_units_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
+#
+#casm_units_SOURCES = ./tests/unit/clex/test_Clexulator.cc\
+#					 ./tests/unit/Common.cpp\
+#					 ./tests/unit/unit_test.cpp\
+#					 ./tests/unit/App/App_test.cpp\
+#					 ./tests/unit/system/RuntimeLibrary_test.cpp\
+#					 ./tests/unit/casm_io/jsonParser_test.cpp\
+#					 ./tests/unit/container/Counter_test.cpp\
+#					 ./tests/unit/clex/ConfigIO_test.cpp\
+#					 ./tests/unit/clex/ChemicalReference_test.cpp\
+#					 ./tests/unit/clex/NeighborList_test.cpp\
+#					 ./tests/unit/clex/PrimClex_test.cpp\
+#					 ./tests/unit/clex/Clexulator_test.cpp\
+#					 ./tests/unit/crystallography/BasicStructure_test.cpp\
+#					 ./tests/unit/crystallography/Lattice_test.cpp\
+#					 ./tests/unit/crystallography/Coordinate_test.cpp\
+#					 ./tests/unit/crystallography/Structure_test.cpp 
+#
+#casm_units_LDADD=libcasm.la\
+#				 $(BOOST_SYSTEM_LIB)\
+#				 $(BOOST_FILESYSTEM_LIB)\
+#				 $(BOOST_PROGRAM_OPTIONS_LIB)\
+#				 $(BOOST_REGEX_LIB)\
+#				 $(BOOST_CHRONO_LIB)\
+#				 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
-casm_units_SOURCES = ./tests/unit/clex/test_Clexulator.cc\
-					 ./tests/unit/Common.cpp\
-					 ./tests/unit/unit_test.cpp\
-					 ./tests/unit/App/App_test.cpp\
-					 ./tests/unit/system/RuntimeLibrary_test.cpp\
-					 ./tests/unit/casm_io/jsonParser_test.cpp\
-					 ./tests/unit/container/Counter_test.cpp\
-					 ./tests/unit/clex/ConfigIO_test.cpp\
-					 ./tests/unit/clex/ChemicalReference_test.cpp\
-					 ./tests/unit/clex/NeighborList_test.cpp\
-					 ./tests/unit/clex/PrimClex_test.cpp\
-					 ./tests/unit/clex/Clexulator_test.cpp\
-					 ./tests/unit/crystallography/BasicStructure_test.cpp\
-					 ./tests/unit/crystallography/Lattice_test.cpp\
-					 ./tests/unit/crystallography/Coordinate_test.cpp\
-					 ./tests/unit/crystallography/Structure_test.cpp 
-
-casm_units_LDADD=libcasm.la\
-				 $(BOOST_SYSTEM_LIB)\
-				 $(BOOST_FILESYSTEM_LIB)\
-				 $(BOOST_PROGRAM_OPTIONS_LIB)\
-				 $(BOOST_REGEX_LIB)\
-				 $(BOOST_CHRONO_LIB)\
-				 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
-
-TESTS+=./tests/run_tests
 
 include ./tests/unit/App/Makemodule.am
-include ./tests/unit/casm_io/Makemodule.am
-include ./tests/unit/clex/Makemodule.am
+#include ./tests/unit/casm_io/Makemodule.am
+#include ./tests/unit/clex/Makemodule.am
