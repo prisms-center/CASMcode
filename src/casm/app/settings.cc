@@ -196,7 +196,8 @@ namespace CASM {
         po::notify(vm); // throws on error, so do after help in case
         // there are any problems
 
-
+        single_input = settings_opt.input_str();
+        multi_input = settings_opt.input_vec();
 
       }
       catch(po::error &e) {

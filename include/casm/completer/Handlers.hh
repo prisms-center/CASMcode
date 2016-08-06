@@ -101,6 +101,9 @@ namespace CASM {
       ///Define the name of the command during construction
       OptionHandlerBase(const std::string &init_option_tag);
 
+      ///More explicit initialization
+      OptionHandlerBase(const std::string &init_option_tag, const std::string &init_descriptor);
+
       ///Get the program options, filled with the initialized values
       const po::options_description &desc();
 
