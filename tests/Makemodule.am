@@ -27,7 +27,12 @@ check_PROGRAMS += casm
 #				 $(BOOST_CHRONO_LIB)\
 #				 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
+#BUILT_SOURCES+=./tests/unit/Common.hh\
+#               ./tests/unit/ZrOProj.hh\
+#               ./tests/unit/FCCTernaryProj.hh\
+#               ./tests/unit/Proj.hh
 
+include ./tests/unit/Makemodule.am
 include ./tests/unit/App/Makemodule.am
 include ./tests/unit/casm_io/Makemodule.am
 include ./tests/unit/clex/Makemodule.am
@@ -35,3 +40,4 @@ include ./tests/unit/clusterography/Makemodule.am
 include ./tests/unit/container/Makemodule.am
 include ./tests/unit/crystallography/Makemodule.am
 include ./tests/unit/system/Makemodule.am
+

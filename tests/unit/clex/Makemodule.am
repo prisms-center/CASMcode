@@ -3,13 +3,13 @@ check_PROGRAMS += casm_unit_clex
 casm_unit_clex_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
 
 casm_unit_clex_SOURCES = ./tests/unit/unit_test.cpp\
-						 ./tests/unit/Common.cpp\
 						 ./tests/unit/clex/ChemicalReference_test.cpp\
 						 ./tests/unit/clex/Clexulator_test.cpp\
 						 ./tests/unit/clex/ConfigIO_test.cpp\
 						 ./tests/unit/clex/NeighborList_test.cpp\
 						 ./tests/unit/clex/PrimClex_test.cpp\
-						 ./tests/unit/clex/test_Clexulator.cc
+						 ./tests/unit/clex/test_Clexulator.cc\
+						 libcasmtesting.a
 
 casm_unit_clex_LDADD=libcasm.la\
 					 $(BOOST_SYSTEM_LIB)\

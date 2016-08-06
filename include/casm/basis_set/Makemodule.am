@@ -1,4 +1,4 @@
-basissetincludedir=$(includedir)/casm/basisi_set
+basissetincludedir=$(includedir)/casm/basis_set
 basissetinclude_HEADERS=./include/casm/basis_set/BasisFunction.hh\
 						./include/casm/basis_set/BasisSet.hh\
 						./include/casm/basis_set/chebychev.m\

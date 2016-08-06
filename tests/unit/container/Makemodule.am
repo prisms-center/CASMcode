@@ -3,8 +3,9 @@ check_PROGRAMS += casm_unit_container
 casm_unit_container_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
 
 casm_unit_container_SOURCES = ./tests/unit/unit_test.cpp\
-							  ./tests/unit/Common.cpp\
-							  ./tests/unit/container/Counter_test.cpp
+							  ./tests/unit/container/Counter_test.cpp\
+							  libcasmtesting.a
+
 
 casm_unit_container_LDADD=libcasm.la\
 						  $(BOOST_SYSTEM_LIB)\

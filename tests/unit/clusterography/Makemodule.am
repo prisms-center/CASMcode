@@ -3,8 +3,8 @@ check_PROGRAMS += casm_unit_clusterography
 casm_unit_clusterography_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
 
 casm_unit_clusterography_SOURCES = ./tests/unit/unit_test.cpp\
-								   ./tests/unit/Common.cpp\
-								   ./tests/unit/clusterography/Clusterography_test.cpp
+								   ./tests/unit/clusterography/Clusterography_test.cpp\
+								   libcasmtesting.a
 
 casm_unit_clusterography_LDADD=libcasm.la\
 							   $(BOOST_SYSTEM_LIB)\
@@ -15,3 +15,5 @@ casm_unit_clusterography_LDADD=libcasm.la\
 							   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 TESTS+=./tests/unit/clusterography/run_test_clusterography
+
+EXTRA_DIST+=./tests/unit/clusterography/test_cases.json

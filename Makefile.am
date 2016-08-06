@@ -7,6 +7,7 @@ ACLOCAL_AMFLAGS = -I build-aux/m4
 #===========================================================#
 #Start out empty, let the Makemodule.am files fill these in
 lib_LTLIBRARIES=
+noinst_LIBRARIES=
 bin_PROGRAMS=
 check_PROGRAMS=
 man1_MANS=
@@ -31,6 +32,20 @@ AM_CPPFLAGS = -I$(srcdir)/include/casm/external/qhull/libqhull_r/\
 AM_LDFLAGS = $(BOOST_LDFLAGS)
 
 #AM_CXXFLAGS+=$(BOOST_CXXFLAGS)? AM_LDFLAGS+=$(BOOST_LDFLAGS)?
+
+BUILT_SOURCES=
+
+#============================================================#
+#Files that arent sources for executalbes or headers that get installed, but are needed in the distribution.
+#Even though the include/casm/external is distributed through headers, the licensing and other files should
+#also be included.
+EXTRA_DIST=
+
+EXTRA_DIST+=./build-aux/casm_version.txt\
+			./man
+
+#Extra files that should be cleaned up upon `distclean`
+DISTCLEANFILES=
 
 #============================================================#
 #Always have included modules use paths relative to this
@@ -76,18 +91,5 @@ test:
 
 #============================================================#
 #Recurse into these places (must be direct children, don't be fancy)
-#SUBDIRS= python
-
-#============================================================#
-#Files that arent sources for executalbes or headers that get installed, but are needed in the distribution.
-#Even though the include/casm/external is distributed through headers, the licensing and other files should
-#also be included.
-EXTRA_DIST=./build-aux/casm_version.txt\
-		   ./man\
-		   ./python\
-		   ./tests\
-		   ./include/casm/external
-
-#Extra files that should be cleaned up upon `distclean`
-DISTCLEANFILES=./python/Makefile
+#SUBDIRS= ##DO NOT USE THIS. SERIOUSLY.##
 
