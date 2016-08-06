@@ -149,29 +149,32 @@ void triangle_count_test() {
   HermiteCounter::Index totals = HermiteCounter_impl::upper_size(7);
   BOOST_CHECK_EQUAL(totals, -7 + 7 + 6 + 5 + 4 + 3 + 2 + 1);
 
-  int dims = 5;
-  int det = 30;
+  //  int dims = 5;
+  //  int det = 30;
+  //
+  //  Eigen::VectorXi mid_diagonal(Eigen::VectorXi::Ones(dims));
+  //  mid_diagonal(0) = 5;
+  //  mid_diagonal(1) = 3;
+  //  mid_diagonal(4) = 2;
+  //
+  //  auto countertest = HermiteCounter_impl::_upper_tri_counter(mid_diagonal);
+  //  auto finalcount = countertest;
+  //
+  //  for(; countertest.valid(); countertest++) {
+  //    finalcount = countertest;
+  //  }
+  //
+  //  Eigen::VectorXi end_count_value(Eigen::VectorXi::Zero(dims));
+  //  end_count_value(0) = 4;
+  //  end_count_value(1) = 4;
+  //  end_count_value(2) = 4;
+  //  end_count_value(3) = 4;
+  //  end_count_value(4) = 2;
+  //  end_count_value(5) = 2;
+  //  end_count_value(6) = 2;
 
-  Eigen::VectorXi mid_diagonal(Eigen::VectorXi::Ones(dims));
-  mid_diagonal(0) = 5;
-  mid_diagonal(1) = 3;
-  mid_diagonal(4) = 2;
-
-  auto countertest = HermiteCounter_impl::_upper_tri_counter(mid_diagonal);
-  auto finalcount = countertest;
-
-  for(; countertest.valid(); countertest++) {
-    finalcount = countertest;
-  }
-
-  Eigen::VectorXi end_count_value(Eigen::VectorXi::Zero(dims));
-  end_count_value(0) = 4;
-  end_count_value(1) = 4;
-  end_count_value(2) = 4;
-  end_count_value(3) = 4;
-  end_count_value(4) = 2;
-  end_count_value(5) = 2;
-  end_count_value(6) = 2;
+  //  BP: ^above is not testing anything and 'end_count_value(5)' and
+  //  'end_count_value(6)' don't exist, so I'm commenting them out for now
 
   return;
 }
