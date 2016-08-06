@@ -4,7 +4,7 @@ casm_unit_App_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
 
 casm_unit_App_SOURCES = ./tests/unit/unit_test.cpp\
 						./tests/unit/Common.cpp\
-						./test/unit/App/App_test.cpp
+						./tests/unit/App/App_test.cpp
 
 casm_unit_App_LDADD=libcasm.la\
 				 $(BOOST_SYSTEM_LIB)\
