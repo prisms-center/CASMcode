@@ -38,7 +38,8 @@ namespace test {
   public:
 
     ZrOProj() :
-      Proj(fs::absolute(fs::path("tests/unit/App/ZrO")),
+        //Use PID to get unique naming. Otherwise different tests might obliterate your directory mid testing if you run in parallel
+      Proj(fs::absolute(fs::path(std::string("tests/unit/App/ZrO")+std::to_string(::getppid()))),
            ZrO_prim(),
            "ZrO",
            "HCP Zr with octahedral interstitial O") {}

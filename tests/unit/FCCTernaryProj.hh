@@ -41,7 +41,8 @@ namespace test {
   public:
 
     FCCTernaryProj() :
-      Proj(fs::absolute(fs::path("tests/unit/App/FCC_ternary")),
+        //Use PID to get unique naming. Otherwise different tests might obliterate your directory mid testing if you run in parallel
+      Proj(fs::absolute(fs::path(std::string("tests/unit/App/FCC_ternary.")+std::to_string(::getppid()))),
            FCC_ternary_prim(),
            "FCC_ternary",
            "FCC Ternary with A, B, C occupation") {}
