@@ -8,12 +8,15 @@ Import('env', 'casm_lib', 'casm', 'build_lib_paths')
 
 lenv = env.Clone()
 
-lenv.Replace(CPPPATH = [lenv['INCDIR'], os.getcwd()])
+# include paths
+candidates = [
+  env['INCDIR'], 
+  env.include_path(env['BOOST_PREFIX'], 'boost'),
+  os.getcwd()
+]
+cpppath = [x for x in candidates if x is not None]
 
-libs1 = [lenv['boost_unit_test_framework'], lenv['boost_system'], lenv['boost_filesystem']]
-libs2 = libs1 + [lenv['boost_regex'], 'casm']
-libs3 = libs2 + [lenv['dl']]
-libs4 = libs3 + [lenv['boost_chrono']]
+lenv.Replace(CPPPATH = cpppath)
 
 common_obj = lenv.Object('Common.cpp')
 unit_obj = lenv.Object('unit_test.cpp')
