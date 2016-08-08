@@ -48,7 +48,7 @@ class Relax(object):
         sys.stdout.flush()
 
         # store path to .../relaxdir, and create if not existing
-        if relaxdir == None:
+        if relaxdir is None:
             relaxdir = os.getcwd()
         self.relaxdir = os.path.abspath(relaxdir)
 
@@ -63,7 +63,7 @@ class Relax(object):
 
         self.finaldir = os.path.join(self.relaxdir, "run.final")
 
-        if settings == None:
+        if settings is None:
             self.settings = dict()
         else:
             self.settings = settings
@@ -249,7 +249,7 @@ class Relax(object):
                 result = vasp.run(self.rundir[-1],npar=self.settings["npar"],ncore=self.settings["ncore"],command=self.settings["vasp_cmd"],ncpus=self.settings["ncpus"],kpar=self.settings["kpar"],err_types=self.settings["err_types"])
 
                 # if no errors, continue
-                if result == None or self.not_converging():
+                if result is None or self.not_converging():
                     break
 
                 # else, attempt to fix first error

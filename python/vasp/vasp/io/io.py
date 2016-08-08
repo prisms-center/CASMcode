@@ -22,7 +22,7 @@ class VaspIOError(Exception):
 
 def job_complete(jobdir=None):
     """Return True if vasp job at path 'jobdir' is complete"""
-    if jobdir == None:
+    if jobdir is None:
         jobdir = os.getcwd()
     outcarfile = os.path.join(jobdir, "OUTCAR")
     if (not os.path.isfile(outcarfile)) and (not os.path.isfile(outcarfile+".gz")):
@@ -34,7 +34,7 @@ def job_complete(jobdir=None):
 
 def get_incar_tag(key, jobdir=None):
     """Opens INCAR in 'jobdir' and returns 'key' value."""
-    if jobdir == None:
+    if jobdir is None:
         jobdir = os.getcwd()
     tincar = incar.Incar(os.path.join(jobdir,"INCAR"))
     for k in tincar.tags:
@@ -45,9 +45,9 @@ def get_incar_tag(key, jobdir=None):
 
 def set_incar_tag(tag_dict,jobdir=None):
     """Opens INCAR in 'jobdir', sets 'key' value, and writes INCAR
-        If 'val' == None, the tag is removed from the INCAR.
+        If 'val' is None, the tag is removed from the INCAR.
     """
-    if jobdir == None:
+    if jobdir is None:
         jobdir = os.getcwd()
     incarfile = os.path.join(jobdir,"INCAR")
     tincar = incar.Incar(incarfile)
@@ -55,7 +55,7 @@ def set_incar_tag(tag_dict,jobdir=None):
     for key, val in tag_dict.iteritems():
         for k in tincar.tags:
             if key.lower() == k.lower():
-                if (val == None) or (str(val).strip() == ""):
+                if (val is None) or (str(val).strip() == ""):
                     del tincar.tags[k]
                 else:
                     tincar.tags[k] = val
@@ -102,7 +102,7 @@ def write_stopcar(mode='e', jobdir=None):
     """ Write STOPCAR file with two modes:
         mode = 'e' for 'VASP stops at the next electronic step'
         mode = 'i' for 'VASP stops at the next ionic step' """
-    if jobdir == None:
+    if jobdir is None:
         jobdir = os.getcwd()
     if mode.lower()[0] == 'e':
         stop_string = "LABORT = .TRUE."

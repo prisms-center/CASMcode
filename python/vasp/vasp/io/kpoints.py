@@ -106,7 +106,7 @@ class Kpoints:
 
         elif True:
 
-            if prim == None:
+            if prim is None:
                 raise KpointsError("No POSCAR was provided for the PRIM, so the PRIM KPOINTS could not be scaled!")
             
             super_kpoints.subdivisions = [1, 1, 1]
