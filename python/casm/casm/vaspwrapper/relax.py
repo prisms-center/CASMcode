@@ -268,7 +268,7 @@ class Relax(object):
         if self.settings["prerun"] is not None:
           cmd += self.settings["prerun"] + "\n"
         cmd = "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + self.configdir + "').run()\"\n"
-        if self.settings["prerun"] is not None:
+        if self.settings["postrun"] is not None:
           cmd += self.settings["postrun"] + "\n"
         
         print "Constructing a PBS job"
