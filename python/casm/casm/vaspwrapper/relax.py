@@ -121,7 +121,7 @@ class Relax(object):
             print "  Read settings from:", setfile
         self.settings = vaspwrapper.read_settings(setfile)
 
-        # add required keys to settings if not present
+        # set default settings if not present
         if not "ncore" in self.settings:
             self.settings["ncore"] = None
         if not "npar" in self.settings:
@@ -134,7 +134,11 @@ class Relax(object):
             self.settings["ncpus"] = None
         if not "run_limit" in self.settings:
             self.settings["run_limit"] = None
-
+        if not "prerun" in self.settings:
+            self.settings["prerun"] = None
+        if not "postrun" in self.settings:
+            self.settings["postrun"] = None
+        
         self.auto = auto
         self.sort = sort
         print "  DONE\n"
