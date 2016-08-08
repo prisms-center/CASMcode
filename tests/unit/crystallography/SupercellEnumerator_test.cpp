@@ -164,7 +164,16 @@ void triangle_count_test() {
     finalcount = countertest;
   }
 
-  Eigen::VectorXi end_count_value(Eigen::VectorXi::Zero(dims));
+  //The initial matrix is 5x5 with diagonal [ 5 3 1 1 2 ], so it has determinant=30
+  //The Hermite matrix with highest ranking for this determinant will therefore be:
+  //    5 4 4 4 4
+  //    0 3 2 2 2
+  //    0 0 1 0 0
+  //    0 0 0 1 0
+  //    0 0 0 0 2
+  //Which gives the upper triangular vector [ 4 4 4 4 2 2 2 0 0 0 ]
+
+  Eigen::VectorXi end_count_value(Eigen::VectorXi::Zero(HermiteCounter_impl::upper_size(5)));
   end_count_value(0) = 4;
   end_count_value(1) = 4;
   end_count_value(2) = 4;
@@ -172,6 +181,9 @@ void triangle_count_test() {
   end_count_value(4) = 2;
   end_count_value(5) = 2;
   end_count_value(6) = 2;
+  //Rest of the values are zero
+  
+  BOOST_CHECK_EQUAL(finalcount.current(), end_count_value);
 
   return;
 }
@@ -684,9 +696,6 @@ current test_results.json file. Do not replace anything unless you're certain th
 results were incorrect, and these are an improvement. If you are sure you want to proceed, eliminate this key.";
 
   current_test_results.write(current_test_path);
-
-  std::cout << "curr: \n" << curr["lat_test_cases"][3]["output"]["lats"][20] << std::endl;
-  std::cout << "existing: \n" << existing["lat_test_cases"][3]["output"]["lats"][20] << std::endl;
 
 }
 

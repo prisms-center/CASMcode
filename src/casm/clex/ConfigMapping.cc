@@ -97,9 +97,9 @@ namespace CASM {
     m_pclex(&_pclex),
     m_lattice_weight(_lattice_weight),
     m_max_volume_change(_max_volume_change),
-    m_robust_flag(options &robust),
-    m_strict_flag(options &strict),
-    m_rotate_flag(options &rotate),
+    m_robust_flag(options & robust),
+    m_strict_flag(options & strict),
+    m_rotate_flag(options & rotate),
     m_tol(max(1e-9, _tol)) {
     //squeeze lattice_weight into (0,1] if necessary
     m_lattice_weight = max(min(_lattice_weight, 1.0), 1e-9);
