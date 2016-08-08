@@ -68,8 +68,11 @@ def read_settings(filename):
 
     required = ["queue", "ppn", "atom_per_proc", "walltime"]
 
-    optional = ["account","pmem","priority","message","email","qos","npar","ncore", "kpar", "ncpus","vasp_cmd","run_limit","nrg_convergence", \
-                "encut", "kpoints","extra_input_files", "move", "copy", "remove", "compress", "backup", "initial", "final", "strict_kpoints", "err_types"]
+    optional = ["account","pmem","priority","message","email","qos","npar","ncore", 
+                "kpar", "ncpus","vasp_cmd","run_limit","nrg_convergence",
+                "encut", "kpoints","extra_input_files", "move", "copy", "remove", 
+                "compress", "backup", "initial", "final", "strict_kpoints", "err_types",
+                "prerun", "postrun"]
     for key in required:
         if not key in settings:
             raise VaspWrapperError( key + "' missing from: '" + filename + "'")
