@@ -161,13 +161,13 @@ def write_vasp_input(dirpath, incarfile, prim_kpointsfile, prim_poscarfile, supe
     write_potcar(os.path.join(dirpath,'POTCAR'), super, species_settings, sort)
 
     # copy extra input files
-    print "  Copying extra input files",
+    if len(extra_input_files):
+        print "  Copying extra input files",
     for s in extra_input_files:
-        print s,
+        print "    ", s
         shutil.copy(s,dirpath)
-    print ""
-
-    print "VASP input files complete\n"
+    
+    print "  DONE\n"
     sys.stdout.flush()
 
 

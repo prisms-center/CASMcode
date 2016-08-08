@@ -277,31 +277,52 @@ class DirectoryStructure(object):
 
     # -- Calculations and reference --------
 
-    def settings_path_crawl(self, name, clex, configdir=None):
+    def settings_path_crawl(self, filename, configname, clex):
         """
-        Crawl casm directory structure starting at configdir and moving upwards 
-        towards the casm project root directory to find the most relevant settings file or directory.
+        Returns the path to the first file named 'filename' found in the settings 
+        directories.
         
-        Looks for: ".../settings/calctype." + calctype + "/name'"
-
-        If configdir == None, gets set to os.getcwd()
+        Searches:
+          1) self.configuration_calc_settings_dir(configname, clex)
+          2) self.supercell_calc_settings_dir(scelname, clex)
+          3) self.calc_settings_dir(clex)
+          DirectoryStructure.configuration_calc_settings_dir(configname, clex)Crawl casm directory structure starting at configdir and moving upwards 
         
-        Return None if name not found
+        Returns None if file named 'filename' not found in any of the three directories.
+        
+        
+        Arguments
+        ---------
+          filename: str
+            The name of the file being searched for
+          
+          configname: str
+            The name of the configuration
+            
+          clex: a casm.project.ClexDescription instance
+            Used to specify the calctype to find settings for
+          
+        
+        Returns
+        ---------
+          filepath: str or None
+            The path to the first file named 'filename' found in the settings
+            directories, or None if not found.
+      
         """
-        if configdir == None:
-            configdir = os.getcwd()
-        curr = configdir
-        cont = True
-        while cont == True:
-            check = os.path.join(curr,"settings", self.__calctype(clex.calctype), name)
-            if os.path.exists(check):
-                return check
-            if os.path.exists(os.path.join(curr,".casm")):
-                return None
-            elif curr == os.path.dirname(curr):
-                return None
-            else:
-                curr = os.path.dirname(curr)
+        filepath = join(self.configuration_calc_settings_dir(configname, clex), filename)
+        if os.path.exists(filepath):
+          return filepath
+        
+        scelname = configname.split('/')[0]
+        filepath = join(self.supercell_calc_settings_dir(scelname, clex), filename)
+        if os.path.exists(filepath):
+          return filepath
+        
+        filepath = join(self.calc_settings_dir(clex), filename)
+        if os.path.exists(filepath):
+          return filepath
+        
         return None
 
     def supercell_dir(self, scelname):
@@ -311,7 +332,11 @@ class DirectoryStructure(object):
     def configuration_dir(self, configname):
       """Return configuration directory path (configname has format SCELV_A_B_C_D_E_F/I)"""
       return join(self.path, self.__calc_dir, configname)
-
+    
+    def POS(self, configname):
+      """Return path to POS file"""
+      return join(self.configuration_dir(configname), "POS")
+    
     def calctype_dir(self, configname, clex):
       """Return calctype directory path (e.g. training_data/SCEL_...../0/calctype.default"""
       return join(self.configuration_dir(configname),self.__calctype(clex.calctype))

@@ -114,14 +114,66 @@ def write_settings(settings, filename):
     file.close()
 
       
-def vasp_input_file_names(dirstruc, clex, configdir=None):
+def vasp_input_file_names(dir, configname, clex):
+    """
+    Collect casm.vaspwrapper input files from the CASM project hierarchy
+    
+    Looks for:
+      
+      INCAR:   
+        The base INCAR file used for calculations. Found via:
+          DirectoryStructure.settings_path_crawl
+      
+      KPOINTS:
+        The KPOINTS file specifying the k-point grid for a reference structure
+        which is then scaled to be approximately the same density for other
+        structures. Found via:
+          DirectoryStructure.settings_path_crawl
+      
+      KPOINTS_REF: (optional)
+        The reference structure used to determine the k-point density, if not
+        running in Auto mode. If running VASP with AUTO KPOINTS mode, this file
+        is not necessary. Found via:
+          DirectoryStructure.settings_path_crawl
+      
+      POS: 
+        The CASM-generated POS file giving the initial structure to be calculated.
+      
+      SPECIES:
+        The SPECIES file specifying Vasp settings for each species in the structure.
+      
+    
+    Arguments
+    ---------
+      
+      dir: casm.project.DirectoryStructure instance
+        CASM project directory hierarchy
+      
+      configname: str
+        The name of the configuration to be calculated
+      
+      clex: casm.project.ClexDescription instance
+        The cluster expansion being worked on. Used for the 'calctype' settings.
+    
+    
+    Returns
+    -------
+      
+      filepaths: tuple(INCAR, KPOINTS, KPOINTS_REF, POS, SPECIES)
+        A tuple containing the paths to the vaspwrapper input files
+    
+    
+    Raises
+    ------
+      If any required file is not found.
+    
+    """
     # Find required input files in CASM project directory tree
-
-    incarfile = dirstruc.settings_path_crawl("INCAR",clex,configdir)
-    prim_kpointsfile = dirstruc.settings_path_crawl("KPOINTS",clex,configdir)
-    prim_poscarfile = dirstruc.settings_path_crawl("POSCAR",clex,configdir)
-    super_poscarfile = os.path.join(configdir,"POS")
-    speciesfile = dirstruc.settings_path_crawl("SPECIES",clex,configdir)
+    incarfile = dir.settings_path_crawl("INCAR", configname, clex)
+    prim_kpointsfile = dir.settings_path_crawl("KPOINTS", configname, clex)
+    prim_poscarfile = dir.settings_path_crawl("POSCAR", configname, clex)
+    super_poscarfile = dir.POS(configname)
+    speciesfile = dir.settings_path_crawl("SPECIES", configname, clex)
 
     # Verify that required input files exist
     if incarfile is None:
