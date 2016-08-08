@@ -74,32 +74,29 @@ class Relax(object):
         
         if configdir is None:
             configdir = os.getcwd()
-          
-        print "  Working on directory " + str(configdir)
-        
-        print "  Reading CASM settings"
-        self.casm_directories=casm.project.DirectoryStructure()
-        self.casm_settings = casm.project.ProjectSettings()
-        if self.casm_settings is None:
-            raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
-        
-        # fixed to default_clex for now
-        self.clex = self.casm_settings.default_clex
-        
-        
-        print "  Setting up directories"
-        sys.stdout.flush()
+        print "  Input directory:", configdir
         
         # get the configname from the configdir path
         _res = os.path.split(configdir)
         self.configname = os.path.split(_res[0])[1] + "/" + _res[1]
+        print "  Configuration:", self.configname + str(configdir)
+        
+        print "  Reading CASM settings"
+        self.casm_directories=casm.project.DirectoryStructure(configdir)
+        self.casm_settings = casm.project.ProjectSettings(configdir)
+        if self.casm_settings is None:
+            raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
+        
         if os.path.abspath(configdir) != self.configdir:
             print ""
             print "input configdir:", configdir
             print "determined configname:", self.configname
             print "expected configdir given configname:", self.configdir
             raise vaspwrapper.VaspWrapperError("Mismatch between configname and configdir")
-
+        
+        # fixed to default_clex for now
+        self.clex = self.casm_settings.default_clex
+        
         # store path to .../config/calctype.name, and create if not existing
         self.calcdir = self.casm_directories.calctype_dir(self.configname, self.clex)
         try:
@@ -189,11 +186,13 @@ class Relax(object):
     def submit(self):
         """Submit a PBS job for this VASP relaxation"""
 
+        print "Submitting..."
+        print "Configuration:", self.configname
         # first, check if the job has already been submitted and is not completed
         db = pbs.JobDB()
-        print "rundir", self.calcdir
+        print "Calculation directory:", self.configdir
         id = db.select_regex_id("rundir", self.calcdir)
-        print "id:", id
+        print "JobID:", id
         sys.stdout.flush()
         if id != []:
             for j in id:
@@ -267,7 +266,7 @@ class Relax(object):
         cmd = ""
         if self.settings["prerun"] is not None:
           cmd += self.settings["prerun"] + "\n"
-        cmd = "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + self.configdir + "').run()\"\n"
+        cmd += "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + self.configdir + "').run()\"\n"
         if self.settings["postrun"] is not None:
           cmd += self.settings["postrun"] + "\n"
         
