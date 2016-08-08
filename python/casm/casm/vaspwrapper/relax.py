@@ -190,7 +190,7 @@ class Relax(object):
         print "Configuration:", self.configname
         # first, check if the job has already been submitted and is not completed
         db = pbs.JobDB()
-        print "Calculation directory:", self.configdir
+        print "Calculation directory:", self.calcdir
         id = db.select_regex_id("rundir", self.calcdir)
         print "JobID:", id
         sys.stdout.flush()
