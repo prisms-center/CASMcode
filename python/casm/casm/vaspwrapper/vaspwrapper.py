@@ -55,6 +55,8 @@ def read_settings(filename):
         "initial" : location of INCAR with tags for the initial run, if desired (e.g. to generate a PBE WAVECAR for use with M06-L)
         "final" : location of INCAR with tags for the final run, if desired (e.g. "ISMEAR = -5", etc). Otherwise, the settings enforced are ("ISMEAR = -5", "NSW = 0", "IBRION = -1", "ISIF = 2")
         "err_types" : list of errors to check for. Allowed entries are "IbzkptError" and "SubSpaceMatrixError". Default: ["SubSpaceMatrixError"]
+        "prerun" : bash commands to run before vasp.Relax.run (default None)
+        "postrun" : bash commands to run after vasp.Relax.run completes (default None)
     """
     try:
         file = open(filename)

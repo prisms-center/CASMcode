@@ -258,7 +258,15 @@ class Relax(object):
         sys.stdout.flush()
         pos = vasp.io.Poscar(os.path.join(self.configdir,"POS"))
         N = len(pos.basis)
-
+        
+        # construct command to be run
+        cmd = ""
+        if self.settings["prerun"] is not None:
+          cmd += self.settings["prerun"] + "\n"
+        cmd = "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + self.configdir + "').run()\"\n"
+        if self.settings["prerun"] is not None:
+          cmd += self.settings["postrun"] + "\n"
+        
         print "Constructing a PBS job"
         sys.stdout.flush()
         # construct a pbs.Job
@@ -273,7 +281,7 @@ class Relax(object):
                       message=self.settings["message"],\
                       email=self.settings["email"],\
                       priority=self.settings["priority"],\
-                      command="python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + self.configdir + "').run()\"",\
+                      command=cmd,\
                       auto=self.auto)
 
         print "Submitting"
