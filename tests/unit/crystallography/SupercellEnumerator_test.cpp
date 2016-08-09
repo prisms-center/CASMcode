@@ -182,7 +182,7 @@ void triangle_count_test() {
   end_count_value(5) = 2;
   end_count_value(6) = 2;
   //Rest of the values are zero
-  
+
   BOOST_CHECK_EQUAL(finalcount.current(), end_count_value);
 
   return;
