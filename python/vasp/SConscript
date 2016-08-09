@@ -2,13 +2,18 @@
 # This is: python/vasp
 
 import os
+from distutils.spawn import find_executable
 
 Import('env', 'version_number', 'url')
 
 pyvasp_setup = env.Command('setup.py', ['make_setup.py'], 'cd python/vasp && python make_setup.py ' + version_number + ' ' + url)
 env.NoClean(pyvasp_setup)
 
-pyvasp_install = env.Command('installed.txt', [pyvasp_setup], 'cd python/vasp && python setup.py install --prefix=' + env['PREFIX'] + ' --record installed.txt')
+cmd = 'cd python/vasp && ' + find_executable('python') + ' setup.py install'
+cmd += ' --prefix=' + env['PREFIX']
+cmd += ' --record installed.txt'
+
+pyvasp_install = env.Command('installed.txt', [pyvasp_setup], cmd)
 AlwaysBuild(pyvasp_install)
 Alias('pyvasp_install', pyvasp_install)  
 

@@ -19,74 +19,106 @@ class Relax(object):
         'run.i' directories are only created when ready.
         'run.final' is a final constant volume run {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}
 
-        This automatically looks for VASP settings files in .../settings/calctype.name,
-        where '...' is the nearest parent directory of 'self.configdir' in the CASM project repository
+        This automatically looks for VASP settings files using:
+          casm.project.DirectoryStructure.settings_path_crawl
 
-        Contains:
-            self.configdir (.../config)
-            self.calcdir   (.../config/calctype.name)
-
-            self.settings = dictionary of settings for pbs and the relaxation, see vaspwrapper.read_settings
-
-            self.auto = True if using pbs module's JobDB to manage pbs jobs
-            self.sort = True if sorting atoms in POSCAR by type
+    Attributes
+    ----------
+      
+      casm_settings: casm.project.ProjectSettings instance
+        CASM project settings
+      
+      casm_directories: casm.project.DirectoryStructure instance
+        CASM project directory hierarchy
+      
+      settings: dict
+        Settings for pbs and the relaxation, see vaspwrapper.read_settings
+      
+      configdir: str
+        Directory where configuration results are stored. The result of:
+          casm.project.DirectoryStructure.configuration_dir(self.configname)
+      
+      configname: str
+        The name of the configuration to be calculated
+      
+      auto: boolean
+        True if using pbs module's JobDB to manage pbs jobs
+      
+      sort: boolean
+        True if sorting atoms in POSCAR by type
+      
+      clex: casm.project.ClexDescription instance
+        The cluster expansion being worked on. Used for the 'calctype' settings.
+        Currently, fixed to self.casm_settings.default_clex.
+    
     """
-    def __init__(self, configdir=None, auto = True, sort = True):
+    def __init__(self, configdir=None, auto=True, sort=True):
         """
         Construct a VASP relaxation job object.
 
-        Args:
-            configdir: path to configuration
-            auto: True if using pbs module's JobDB to manage pbs jobs
+        Arguments
+        ----------
+    
+            configdir: str, optional, default=None
+              Path to configuration directory. If None, uses the current working
+              directory
+            
+            auto: boolean, optional, default=True,
+              Use True to use the pbs module's JobDB to manage pbs jobs
+            
+            sort: boolean, optional, default=True,
+              Use True to sort atoms in POSCAR by type
 
         """
-        if configdir == None:
+        print "Construct a casm.vaspwrapper.Relax instance:"
+        
+        if configdir is None:
             configdir = os.getcwd()
-
-        print "Working on directory "+str(configdir)
-
-        print "Reading CASM settings"
-        self.casm_settings = casm.project.ProjectSettings()
-        if self.casm_settings == None:
+        print "  Input directory:", configdir
+        
+        # get the configname from the configdir path
+        _res = os.path.split(configdir)
+        self.configname = os.path.split(_res[0])[1] + "/" + _res[1]
+        print "  Configuration:", self.configname + str(configdir)
+        
+        print "  Reading CASM settings"
+        self.casm_directories=casm.project.DirectoryStructure(configdir)
+        self.casm_settings = casm.project.ProjectSettings(configdir)
+        if self.casm_settings is None:
             raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
-
-        self.casm_directories=casm.project.DirectoryStructure()
-
-        print "Constructing a CASM VASPWrapper Relax object"
-        sys.stdout.flush()
-
-        print "  Setting up directories"
-        sys.stdout.flush()
-
-        # store path to .../config, if not existing raise
-        self.configdir = os.path.abspath(configdir)
-        if not os.path.isdir(self.configdir):
-            raise vasp.VaspError("Error in casm.vasp.relax: Did not find directory: " + self.configdir)
-            sys.stdout.flush()
-
+        
+        if os.path.abspath(configdir) != self.configdir:
+            print ""
+            print "input configdir:", configdir
+            print "determined configname:", self.configname
+            print "expected configdir given configname:", self.configdir
+            raise vaspwrapper.VaspWrapperError("Mismatch between configname and configdir")
+        
+        # fixed to default_clex for now
+        self.clex = self.casm_settings.default_clex
+        
         # store path to .../config/calctype.name, and create if not existing
-        self.calcdir = self.casm_directories.calctype_dir(configdir,self.casm_settings.default_clex)
+        self.calcdir = self.casm_directories.calctype_dir(self.configname, self.clex)
         try:
             os.mkdir(self.calcdir)
         except:
             pass
-
+        print "  Calculations directory:", self.calcdir
 
         # read the settings json file
         print "  Reading relax.json settings file"
         sys.stdout.flush()
-        setfile = self.casm_directories.settings_path_crawl("relax.json",self.casm_settings.default_clex,self.configdir)
+        setfile = self.casm_directories.settings_path_crawl("relax.json", self.configname, self.clex)
 
-        if setfile == None:
+        if setfile is None:
             raise vaspwrapper.VaspWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
             sys.stdout.flush()
 
         else:
-            print "Using "+str(setfile)+" as settings..."
-
+            print "  Read settings from:", setfile
         self.settings = vaspwrapper.read_settings(setfile)
 
-        # add required keys to settings if not present
+        # set default settings if not present
         if not "ncore" in self.settings:
             self.settings["ncore"] = None
         if not "npar" in self.settings:
@@ -99,14 +131,21 @@ class Relax(object):
             self.settings["ncpus"] = None
         if not "run_limit" in self.settings:
             self.settings["run_limit"] = None
-
-
-
+        if not "prerun" in self.settings:
+            self.settings["prerun"] = None
+        if not "postrun" in self.settings:
+            self.settings["postrun"] = None
+        
         self.auto = auto
         self.sort = sort
-        print "VASP Relax object constructed\n"
+        print "  DONE\n"
         sys.stdout.flush()
-
+    
+    
+    @property
+    def configdir(self):
+      return self.casm_directories.configuration_dir(self.configname)
+    
 
     def setup(self):
         """ Setup initial relaxation run
@@ -122,26 +161,23 @@ class Relax(object):
 
         """
         # Find required input files in CASM project directory tree
-        vaspfiles=casm.vaspwrapper.vasp_input_file_names(self.casm_directories,self.casm_settings.default_clex,self.configdir)
+        vaspfiles=casm.vaspwrapper.vasp_input_file_names(self.casm_directories, self.configname, self.clex)
         incarfile,prim_kpointsfile,prim_poscarfile,super_poscarfile,speciesfile=vaspfiles
-
-
+        
         # Find optional input files
         extra_input_files = []
         for s in self.settings["extra_input_files"]:
-            extra_input_files.append(self.casm_directories.settings_path_crawl(s,self.casm_settings.default_clex,self.configdir))
+            extra_input_files.append(self.casm_directories.settings_path_crawl(s, self.configname, self.clex))
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Relax.setup failed. Extra input file " + s + " not found in CASM project.")
         if self.settings["initial"]:
-            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["initial"],self.casm_settings.default_clex,self.configdir) ]
+            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["initial"], self.configname, self.clex) ]
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Relax.setup failed. No initial INCAR file " + self.settings["initial"] + " found in CASM project.")
         if self.settings["final"]:
-            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["final"],self.casm_settings.default_clex,self.configdir) ]
+            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["final"], self.configname, self.clex) ]
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Relax.setup failed. No final INCAR file " + self.settings["final"] + " found in CASM project.")
-
-
         sys.stdout.flush()
 
         vasp.io.write_vasp_input(self.calcdir, incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, self.sort, extra_input_files,self.settings["strict_kpoints"])
@@ -150,11 +186,13 @@ class Relax(object):
     def submit(self):
         """Submit a PBS job for this VASP relaxation"""
 
+        print "Submitting..."
+        print "Configuration:", self.configname
         # first, check if the job has already been submitted and is not completed
         db = pbs.JobDB()
-        print "rundir", self.calcdir
+        print "Calculation directory:", self.calcdir
         id = db.select_regex_id("rundir", self.calcdir)
-        print "id:", id
+        print "JobID:", id
         sys.stdout.flush()
         if id != []:
             for j in id:
@@ -219,12 +257,20 @@ class Relax(object):
         os.chdir(self.calcdir)
 
         # determine the number of atoms in the configuration
-        print "  Counting atoms in the POSCAR"
+        print "Counting atoms in the POSCAR"
         sys.stdout.flush()
         pos = vasp.io.Poscar(os.path.join(self.configdir,"POS"))
         N = len(pos.basis)
-
-        print "  Constructing a PBS job"
+        
+        # construct command to be run
+        cmd = ""
+        if self.settings["prerun"] is not None:
+          cmd += self.settings["prerun"] + "\n"
+        cmd += "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + self.configdir + "').run()\"\n"
+        if self.settings["postrun"] is not None:
+          cmd += self.settings["postrun"] + "\n"
+        
+        print "Constructing a PBS job"
         sys.stdout.flush()
         # construct a pbs.Job
         job = pbs.Job(name=casm.jobname(self.configdir),\
@@ -238,10 +284,10 @@ class Relax(object):
                       message=self.settings["message"],\
                       email=self.settings["email"],\
                       priority=self.settings["priority"],\
-                      command="python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + self.configdir + "').run()\"",\
+                      command=cmd,\
                       auto=self.auto)
 
-        print "  Submitting"
+        print "Submitting"
         sys.stdout.flush()
         # submit the job
         job.submit()
@@ -268,7 +314,7 @@ class Relax(object):
         elif settings["npar"] == "VASP_DEFAULT":
             settings["npar"] = None
 
-        if settings["npar"] == None:
+        if settings["npar"] is None:
             if settings["ncore"] == "CASM_DEFAULT":
                 if "PBS_NUM_PPN" in os.environ:
                     settings["ncore"] = int(os.environ["PBS_NUM_PPN"])
@@ -279,13 +325,13 @@ class Relax(object):
         else:
             settings["ncore"] = None
 
-        if settings["ncpus"] == None or settings["ncpus"] == "CASM_DEFAULT":
+        if settings["ncpus"] is None or settings["ncpus"] == "CASM_DEFAULT":
             if "PBS_NP" in os.environ:
                 settings["ncpus"] = int(os.environ["PBS_NP"])
             else:
                 settings["ncpus"] = None
 
-        if settings["run_limit"] == None or settings["run_limit"] == "CASM_DEFAULT":
+        if settings["run_limit"] is None or settings["run_limit"] == "CASM_DEFAULT":
             settings["run_limit"] = 10
 
         return settings
@@ -356,11 +402,14 @@ class Relax(object):
 
             # print a local settings file, so that the run_limit can be extended if the
             #   convergence problems are fixed
+            
+            config_set_dir = self.casm_directories.configuration_calc_settings_dir(self.configname, self.clex)
+            
             try:
-                os.makedirs(self.casm_directories.configuration_calc_settings_dir(self.casm_settings.default_clex))
+                os.makedirs(config_set_dir)
             except:
                 pass
-            settingsfile = os.path.join(self.casm_directories.configuration_calc_settings_dir(self.casm_settings.default_clex), "relax.json")
+            settingsfile = os.path.join(config_set_dir, "relax.json")
             vaspwrapper.write_settings(self.settings, settingsfile)
 
             print "Writing:", settingsfile
@@ -415,8 +464,8 @@ class Relax(object):
       if self.is_converged():
         # write properties.calc.json
         vaspdir = os.path.join(self.calcdir, "run.final")
-	super_poscarfile = os.path.join(self.configdir,"POS")
-        speciesfile = self.casm_directories.settings_path_crawl("SPECIES",self.casm_settings.default_clex,self.configdir)
+        super_poscarfile = os.path.join(self.configdir,"POS")
+        speciesfile = self.casm_directories.settings_path_crawl("SPECIES", self.configname, self.clex)
         output = self.properties(vaspdir, super_poscarfile, speciesfile)
         outputfile = os.path.join(self.calcdir, "properties.calc.json")
         with open(outputfile, 'w') as file:

@@ -599,7 +599,7 @@ namespace CASM {
     typedef typename UniqueMapType::const_iterator const_iterator;
 
     DataFormatterDictionary() :
-      UniqueMapType([](const value_type & value)->std::string {
+      UniqueMapType([](const value_type &value)->std::string {
       return value.name();
     },
     DictionaryConverter<DataObject, DatumFormatterType>()) {}
