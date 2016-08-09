@@ -49,7 +49,7 @@ lib_ccasm.casm_primclex_delete.restype = None
 lib_ccasm.casm_primclex_refresh.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool]
 lib_ccasm.casm_primclex_refresh.restype = None
 
-lib_ccasm.casm_capi.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+lib_ccasm.casm_capi.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
 lib_ccasm.casm_capi.restype = ctypes.c_int
 
 
