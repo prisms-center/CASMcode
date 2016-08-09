@@ -32,7 +32,7 @@ Report calculation results (print calc.properties.json file) for all selected co
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description = 'Submit calculations for CASM')
-  parser.add_argument('--configs', help=configs_help, type=str, default="MASTER")
+  parser.add_argument('-c', '--configs', help=configs_help, type=str, default="MASTER")
   parser.add_argument('--run', help=run_help, action="store_true", default=False)
   parser.add_argument('--submit', help=submit_help, action="store_true", default=False)
   parser.add_argument('--setup', help=setup_help, action="store_true", default=False)
