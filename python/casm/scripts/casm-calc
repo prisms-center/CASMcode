@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import argparse, json
+import argparse, json, sys
+from os.path import join
 from casm import NoIndentEncoder
 from casm.project import Project, Selection
 from casm.vaspwrapper import Relax
@@ -39,39 +40,46 @@ if __name__ == "__main__":
   parser.add_argument('--report', help=report_help, action="store_true", default=False)
   args = parser.parse_args()
   
-  proj = Project()
-  sel = Selection(proj, args.configs)
+  try:
+    proj = Project()
+    sel = Selection(proj, args.configs, all=False)
   
-  if args.setup:
-    sel.write_pos()
-    for configname in sel.data["configname"]:
-      relaxation = Relax(proj.dir.configuration_dir(configname))
-      relaxation.setup()
-  
-  elif args.submit:
-    sel.write_pos()
-    for configname in sel.data["configname"]:
-      relaxation = Relax(proj.dir.configuration_dir(configname))
-      relaxation.submit()
-  
-  elif args.run:
-    sel.write_pos()
-    for configname in sel.data["configname"]:
-      relaxation = Relax(proj.dir.configuration_dir(configname))
-      relaxation.run()
-  
-  elif args.report:
-    for configname in sel.data["configname"]:
-      configdir = proj.dir.configuration_dir(configname)
-      clex = proj.settings.default_clex
-      calcdir = proj.dir.calctype_dir(configname, clex)
-      try:
-        output = Relax.properties(configdir)
-      except:
-        print("Unable to report properties for directory {}. Please verify that "
-              "it contains a completed VASP calculation.".format(configdir))
-        raise
-
-      with open(proj.dir.calculated_properties(configname, clex), 'w') as file:
-        file.write(json.dumps(output, file, cls=NoIndentEncoder, indent=4, sort_keys=True))
-
+    if args.setup:
+      sel.write_pos()
+      for configname in sel.data["configname"]:
+        relaxation = Relax(proj.dir.configuration_dir(configname))
+        relaxation.setup()
+    
+    elif args.submit:
+      sel.write_pos()
+      for configname in sel.data["configname"]:
+        relaxation = Relax(proj.dir.configuration_dir(configname))
+        relaxation.submit()
+    
+    elif args.run:
+      sel.write_pos()
+      for configname in sel.data["configname"]:
+        relaxation = Relax(proj.dir.configuration_dir(configname))
+        relaxation.run()
+    
+    elif args.report:
+      for configname in sel.data["configname"]:
+        configdir = proj.dir.configuration_dir(configname)
+        clex = proj.settings.default_clex
+        calcdir = proj.dir.calctype_dir(configname, clex)
+        finaldir = join(calcdir, "run.final")
+        try:
+          output = Relax.properties(finaldir)
+          calc_props = proj.dir.calculated_properties(configname, clex)
+          with open(calc_props, 'w') as file:
+            print "writing:", calc_props
+            file.write(json.dumps(output, file, cls=NoIndentEncoder, indent=4, sort_keys=True))
+        except:
+          print("Unable to report properties for directory {}.\n" 
+                "Please verify that it contains a completed VASP calculation.".format(configdir))
+          raise
+  except Exception as e:
+    print e
+    sys.exit(1)
+      
+      

@@ -490,6 +490,9 @@ class Project(object):
       
       """
       
+      # will hold a ctypes.c_void_p when loading CASM project into memory
+      self._ptr = None
+      
       if casm.project_path(path) != casm.project_path():
         raise Exception("Running from outside a CASM project is not currently supported")
       
@@ -512,9 +515,7 @@ class Project(object):
       self.casm_exe = casm_exe
       self.verbose = verbose
       
-      # will hold a ctypes.c_void_p when loading CASM project into memory
-      self._ptr = None
-    
+      
     
     def __del__(self):
       self.__unload()
