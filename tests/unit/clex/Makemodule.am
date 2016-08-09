@@ -8,8 +8,7 @@ casm_unit_clex_SOURCES = ./tests/unit/unit_test.cpp\
 						 ./tests/unit/clex/ConfigIO_test.cpp\
 						 ./tests/unit/clex/NeighborList_test.cpp\
 						 ./tests/unit/clex/PrimClex_test.cpp\
-						 ./tests/unit/clex/test_Clexulator.cc\
-						 libcasmtesting.a
+						 ./tests/unit/clex/test_Clexulator.cc
 
 casm_unit_clex_LDADD=libcasm.la\
 					 $(BOOST_SYSTEM_LIB)\
@@ -17,6 +16,7 @@ casm_unit_clex_LDADD=libcasm.la\
 					 $(BOOST_PROGRAM_OPTIONS_LIB)\
 					 $(BOOST_REGEX_LIB)\
 					 $(BOOST_CHRONO_LIB)\
-					 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+					 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)\
+					 libcasmtesting.a
 
 TESTS+=./tests/unit/clex/run_test_clex

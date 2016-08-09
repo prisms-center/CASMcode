@@ -3,8 +3,7 @@ check_PROGRAMS += casm_unit_system
 casm_unit_system_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
 
 casm_unit_system_SOURCES = ./tests/unit/unit_test.cpp\
-						   ./tests/unit/system/RuntimeLibrary_test.cpp\
-                           libcasmtesting.a
+						   ./tests/unit/system/RuntimeLibrary_test.cpp
 
 casm_unit_system_LDADD=libcasm.la\
 					   $(BOOST_SYSTEM_LIB)\
@@ -12,6 +11,7 @@ casm_unit_system_LDADD=libcasm.la\
 					   $(BOOST_PROGRAM_OPTIONS_LIB)\
 					   $(BOOST_REGEX_LIB)\
 					   $(BOOST_CHRONO_LIB)\
-					   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+					   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)\
+					   libcasmtesting.a
 
 TESTS+=./tests/unit/system/run_test_system

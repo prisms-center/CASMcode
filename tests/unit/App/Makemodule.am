@@ -3,8 +3,7 @@ check_PROGRAMS += casm_unit_App
 casm_unit_App_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
 
 casm_unit_App_SOURCES = ./tests/unit/unit_test.cpp\
-						./tests/unit/App/App_test.cpp\
-                        libcasmtesting.a
+						./tests/unit/App/App_test.cpp
 
 nodist_casm_unit_App_SOURCES = ./tests/unit/Common.hh
 
@@ -14,6 +13,7 @@ casm_unit_App_LDADD=libcasm.la\
 					$(BOOST_PROGRAM_OPTIONS_LIB)\
 					$(BOOST_REGEX_LIB)\
 					$(BOOST_CHRONO_LIB)\
-					$(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+					$(BOOST_UNIT_TEST_FRAMEWORK_LIB)\
+					libcasmtesting.a
 
 TESTS+=./tests/unit/App/run_test_App
