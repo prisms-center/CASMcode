@@ -42,7 +42,8 @@ BUILT_SOURCES=
 EXTRA_DIST=
 
 EXTRA_DIST+=./build-aux/casm_version.txt\
-			./man
+			./man\
+			./casmenv.sh
 
 #Extra files that should be cleaned up upon `distclean`
 DISTCLEANFILES=

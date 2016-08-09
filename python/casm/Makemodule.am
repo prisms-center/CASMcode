@@ -36,7 +36,6 @@ casmplottingdir=$(casmpydir)/plotting
 
 dist_bin_SCRIPTS+=python/casm/scripts/casm-learn\
 				  python/casm/scripts/casm.view\
-				  python/casm/scripts/vasp.kpoint_converge\
 				  python/casm/scripts/vasp.relax\
 				  python/casm/scripts/vasp.relax.report\
 				  python/casm/scripts/vasp.setup 

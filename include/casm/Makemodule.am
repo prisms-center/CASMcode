@@ -1,4 +1,4 @@
-include include/casm/experimental.am
+#include include/casm/experimental.am
 
 casmincludedir=$(includedir)/casm
 casminclude_HEADERS=include/casm/CASM_global_definitions.hh
