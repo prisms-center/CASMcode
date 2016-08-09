@@ -53,12 +53,10 @@ namespace CASM {
         std::cout << "DESCRIPTION\n"
                   << "    Executes the requested command for each selected configuration,\n"
                   << "    with the path to the configuration as an argument.             \n\n"
-                  << "    Example: casm run --exec \"vasp.relax\" --write-pos\n"
+                  << "    Example: casm run --exec \"vasp.relax\"\n"
                   << "    - calls:\n"
                   << "        'vasp.relax $ROOT/training_data/$SCELNAME/$CONFIGID'\n"
-                  << "      for each config selected in config_list\n"
-                  << "    - The '--write-pos' option makes casm write the POS file  \n"
-                  << "      before executing the given command.                     \n\n";
+                  << "      for each config selected in config_list\n\n";
 
         return 0;
       }
@@ -90,11 +88,12 @@ namespace CASM {
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    const auto &dir = primclex.dir();
 
     try {
       if(!vm.count("config") || (selection == "MASTER")) {
         for(auto it = primclex.selected_config_begin(); it != primclex.selected_config_end(); ++it) {
-          if(vm.count("write-pos")) {
+          if(!fs::exists(dir.POS(it->name()))) {
             it->write_pos();
           }
 
@@ -108,7 +107,7 @@ namespace CASM {
       else if(vm.count("config") && fs::exists(selection)) {
         ConfigSelection<true> config_select(primclex, selection);
         for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
-          if(vm.count("write-pos")) {
+          if(!fs::exists(dir.POS(it->name()))) {
             it->write_pos();
           }
 

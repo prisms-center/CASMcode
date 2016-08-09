@@ -6,7 +6,8 @@ Import('env', 'version_number')
 cmd = 'cd src/casm/version && sed -e "s|MY_VERSION|' + version_number + '|g" < version_template.cc > version.cc'
 version_cc = env.Command(['version.cc'], 'version_template.cc', cmd)
 
-version_obj = env.SharedObject('version.cc')
+version_obj = env.SharedObject('version.cc',
+                               CPPPATH=[env['INCDIR']])
 AlwaysBuild(version_obj)
 env['CASM_SOBJ'] = env['CASM_SOBJ'] + [version_obj]
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + [version_obj]

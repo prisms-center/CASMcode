@@ -19,7 +19,15 @@ casm_lib_src_dir = [
 
 casm_lib_src = ['CASM_global_definitions.cc'] + [glob(join(x,'*.cc')) for x in casm_lib_src_dir]
 
-casm_lib_sobj = env.SharedObject(casm_lib_src)
+#include path
+candidates = [
+  env['INCDIR'], 
+  env.include_path(env['BOOST_PREFIX'], 'boost')
+]
+cpppath = [x for x in candidates if x is not None]
+
+casm_lib_sobj = env.SharedObject(casm_lib_src, 
+                                 CPPPATH=cpppath)
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + casm_lib_sobj
 env['CASM_SOBJ'] = env['CASM_SOBJ'] + casm_lib_sobj
 

@@ -217,6 +217,10 @@ namespace CASM {
       return m_root / m_calc_dir / configname;
     }
 
+    /// \brief Return path to POS file
+    fs::path POS(std::string configname) const {
+      return configuration_dir(configname) / "POS";
+    }
 
     /// \brief Return calculation settings directory path, for global settings
     fs::path calc_settings_dir(std::string calctype) const {

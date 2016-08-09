@@ -69,7 +69,7 @@ class Incar:
     def _make_natural_type(self):
         """ Convert self.tags values from strings into their 'natural type' (int, float, etc.) """
         for tag in self.tags:
-            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
+            if self.tags[tag] is None or str(self.tags[tag]).strip() == "":
                 self.tags[tag] = None
             else:
                 if tag.lower() in VASP_TAG_INT_LIST:
@@ -165,7 +165,7 @@ class Incar:
         except IOError as e:
             raise e
         for tag in self.tags:
-            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
+            if self.tags[tag] is None or str(self.tags[tag]).strip() == "":
                 pass
             else:
                 if tag.lower() in VASP_TAG_SITEF_LIST + VASP_TAG_SPECF_LIST:

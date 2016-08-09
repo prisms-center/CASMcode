@@ -162,14 +162,14 @@ class Poscar:
 
     def volume(self, lattice=None):
         """ Returns scalar triple product of lattice vectors """
-        if lattice == None:
+        if lattice is None:
             lattice = self._lattice
         return np.inner(lattice[0,:], np.cross(lattice[1,:],lattice[2,:]))
 
 
     def reciprocal_volume(self, reciprocal_lattice=None):
         """ Returns scalar triple product of reciprocal lattice vector """
-        if reciprocal_lattice == None:
+        if reciprocal_lattice is None:
             reciprocal_lattice = self._reciprocal_lattice
         return self.volume(reciprocal_lattice)
 
