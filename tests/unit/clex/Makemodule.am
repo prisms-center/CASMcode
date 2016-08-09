@@ -11,12 +11,12 @@ casm_unit_clex_SOURCES = ./tests/unit/unit_test.cpp\
 						 ./tests/unit/clex/test_Clexulator.cc
 
 casm_unit_clex_LDADD=libcasm.la\
+					 libcasmtesting.a\
 					 $(BOOST_SYSTEM_LIB)\
 					 $(BOOST_FILESYSTEM_LIB)\
 					 $(BOOST_PROGRAM_OPTIONS_LIB)\
 					 $(BOOST_REGEX_LIB)\
 					 $(BOOST_CHRONO_LIB)\
-					 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)\
-					 libcasmtesting.a
+					 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 TESTS+=./tests/unit/clex/run_test_clex

@@ -6,12 +6,12 @@ casm_unit_system_SOURCES = ./tests/unit/unit_test.cpp\
 						   ./tests/unit/system/RuntimeLibrary_test.cpp
 
 casm_unit_system_LDADD=libcasm.la\
+					   libcasmtesting.a\
 					   $(BOOST_SYSTEM_LIB)\
 					   $(BOOST_FILESYSTEM_LIB)\
 					   $(BOOST_PROGRAM_OPTIONS_LIB)\
 					   $(BOOST_REGEX_LIB)\
 					   $(BOOST_CHRONO_LIB)\
-					   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)\
-					   libcasmtesting.a
+					   $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 TESTS+=./tests/unit/system/run_test_system
