@@ -7,10 +7,27 @@
 #include "casm/clusterography/Orbitree.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clusterography/jsonClust.hh"
-
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
 
+  namespace Completer {
+
+    BsetOption::BsetOption(): OptionHandlerBase("bset") {}
+
+    void BsetOption::initialize() {
+      add_help_suboption();
+
+      m_desc.add_options()
+      ("update,u", "Update basis set")
+      ("orbits", "Pretty-print orbit prototypes")
+      ("functions", "Pretty-print prototype cluster functions for each orbit")
+      ("clusters", "Pretty-print all clusters")
+      ("clex", po::value<std::string>(), "Name of the cluster expansion using the basis set")
+      ("force,f", "Force overwrite");
+      return;
+    }
+  }
 
   // ///////////////////////////////////////
   // 'clusters' function for casm
@@ -21,25 +38,17 @@ namespace CASM {
     po::variables_map vm;
 
     /// Set command line options using boost program_options
-    po::options_description desc("'casm bset' usage");
-    desc.add_options()
-    ("help,h", "Write help documentation")
-    ("update,u", "Update basis set")
-    ("orbits", "Pretty-print orbit prototypes")
-    ("functions", "Pretty-print prototype cluster functions for each orbit")
-    ("clusters", "Pretty-print all clusters")
-    ("clex", po::value<std::string>(), "Name of the cluster expansion using the basis set")
-    ("force,f", "Force overwrite");
+    Completer::BsetOption bset_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, bset_opt.desc()), vm); // can throw
       bool call_help = false;
 
       /** --help option
        */
       if(vm.count("help") || call_help) {
         args.log << "\n";
-        args.log << desc << std::endl;
+        args.log << bset_opt.desc() << std::endl;
 
         args.log << "DESCRIPTION" << std::endl;
         args.log << "    Generate and inspect cluster basis functions. A bspecs.json file should be available at\n"
@@ -53,12 +62,12 @@ namespace CASM {
       // there are any problems
     }
     catch(po::error &e) {
-      args.err_log << desc << std::endl;
+      args.err_log << bset_opt.desc() << std::endl;
       args.err_log << "\nERROR: " << e.what() << std::endl << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      args.err_log << desc << std::endl;
+      args.err_log << bset_opt.desc() << std::endl;
       args.err_log << "\nERROR: "  << e.what() << std::endl;
       return ERR_UNKNOWN;
 
@@ -246,7 +255,7 @@ namespace CASM {
     }
     else {
       args.err_log.error("Unknown error");
-      args.err_log << desc << "\n" << std::endl;
+      args.err_log << bset_opt.desc() << "\n" << std::endl;
     }
 
     return 0;

@@ -2,22 +2,18 @@
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
 
 
-  // ///////////////////////////////////////
-  // 'format' function for casm
-  //    (add an 'if-else' statement in casm.cpp to call this)
+  namespace Completer {
+    FormatOption::FormatOption(): OptionHandlerBase("format") {}
 
-  int format_command(const CommandArgs &args) {
+    void FormatOption::initialize() {
+      add_help_suboption();
 
-    po::variables_map vm;
-
-    try {
-      po::options_description desc("'casm format' usage");
-      desc.add_options()
-      ("help,h", "Write help documentation")
+      m_desc.add_options()
       ("dir,d", "CASM project directory structure summary")
       ("project_settings", "Description and location of 'project_settings' file")
       ("prim", "Description and location of 'prim.json' and 'PRIM' files")
@@ -32,33 +28,45 @@ namespace CASM {
       ("pos", "Description and location of 'POS' files")
       ("fit", "Description and location of the 'energy', 'corr.in', and 'eci.in' files")
       ("monte", "Description and location of the Monte Carlo input file");
+      return;
+    }
+  }
 
-      try {
-        po::store(po::parse_command_line(args.argc, args.argv, desc), vm);
+  // ///////////////////////////////////////
+  // 'format' function for casm
+  //    (add an 'if-else' statement in casm.cpp to call this)
 
-        /** --help option
-         */
-        if(vm.count("help") || vm.size() == 0) {
-          std::cout << std::endl;
-          std::cout << desc << std::endl;
+  int format_command(const CommandArgs &args) {
 
-          std::cout << "DESCRIPTION" << std::endl;
-          std::cout << "    This option describes the files contained within a CASM project \n";
-          std::cout << "    and where to find them. For a summary of the directory structure\n";
-          std::cout << "    of a CASM project using VASP for calculating configuration use  \n";
-          std::cout << "    the --dir option. Not all files are always present.             \n";
+    po::variables_map vm;
 
-          return 0;
-        }
+    Completer::FormatOption format_opt;
 
-        po::notify(vm);
+    try {
+      po::store(po::parse_command_line(args.argc, args.argv, format_opt.desc()), vm);
 
+      /** --help option
+       */
+      if(vm.count("help") || vm.size() == 0) {
+        std::cout << std::endl;
+        std::cout << format_opt.desc() << std::endl;
+
+        std::cout << "DESCRIPTION" << std::endl;
+        std::cout << "    This option describes the files contained within a CASM project \n";
+        std::cout << "    and where to find them. For a summary of the directory structure\n";
+        std::cout << "    of a CASM project using VASP for calculating configuration use  \n";
+        std::cout << "    the --dir option. Not all files are always present.             \n";
+
+        return 0;
       }
-      catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
-        return 1;
-      }
+
+      po::notify(vm);
+
+    }
+    catch(po::error &e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      std::cerr << format_opt.desc() << std::endl;
+      return 1;
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "
@@ -440,19 +448,63 @@ Direct\n\
                 "    \"pmem\": string for requested memory (default None)            \n" <<
                 "    \"priority\": requested job priority (default \"0\")            \n" <<
                 "    \"message\": when to send messages about jobs (ex. \"abe\",     \n" <<
-                "                 default \"a\")                                     \n" <<
+                "               default \"a\")                                       \n" <<
                 "    \"email\": where to send messages (ex. \"me@fake.com\", default \n" <<
-                "               None)                                                \n" <<
+                "             None)                                                  \n" <<
+                "    \"qos\": quality of service, 'qos' option (ex. \"fluxoe\")      \n" <<
                 "    \"npar\": vasp incar setting (default None)                     \n" <<
                 "    \"ncore\": vasp incar setting (default None)                    \n" <<
+                "    \"kpar\": vasp incar setting (default None)                     \n" <<
                 "    \"vasp_cmd\": vasp execution command (default is \"vasp\" if    \n" <<
-                "                  ncpus=1, else \"mpirun -np {NCPUS} vasp\"         \n" <<
+                "                ncpus=1, else \"mpirun -np {NCPUS} vasp\"           \n" <<
                 "    \"ncpus\": number of cpus (cores) to run on (default $PBS_NP)   \n" <<
                 "    \"run_limit\": number of vasp runs until \"not_converging\"     \n" <<
-                "                   (default 10)                                     \n" <<
+                "                 (default 10)                                       \n" <<
                 "    \"nrg_convergence\": converged if last two runs complete and    \n" <<
-                "                         differ in energy by less than this amount  \n" <<
-                "                         (default None)                             \n\n";
+                "                       differ in energy by less than this amount    \n" <<
+                "                       (default None)                               \n" <<
+                "    \"move\": files to move at the end of a run (ex. \"POTCAR\",    \n" <<
+                "            \"WAVECAR\"], default [\"POTCAR\"])                     \n" <<
+                "    \"copy\": files to copy from run to run (ex. [\"INCAR\",        \n" <<
+                "            \"KPOINTS\"], default [\"INCAR, KPOINTS\"])             \n" <<
+                "    \"remove\": files to remove at the end of a run (ex. [\"IBZKPT\",\n" <<
+                "              \"CHGCAR\"], default [\"IBKZPT\", \"CHG\", \"CHGCAR\",\n" <<
+                "              \"WAVECAR\", \"TMPCAR\", \"EIGENVAL\", \"DOSCAR\",    \n" <<
+                "              \"PROCAR\", \"PCDAT\", \"XDATCAR\", \"LOCPOT\", \"ELFCAR\",\n" <<
+                "              \"PROOUT\"]                                           \n" <<
+                "    \"compress\": files to compress at the end of a run (ex.        \n" <<
+                "                [\"OUTCAR\", \"vasprun.xml\"], default [])          \n" <<
+                "    \"backup\": files to compress to backups at the end of a run,   \n" <<
+                "              used in conjunction with move (ex. [\"WAVECAR\"])     \n" <<
+                "    \"encut\": [START, STOP, STEP] values for converging ENCUT to   \n" <<
+                "             within nrg_convergence (ex. [\"450\", \"Auto\",        \n" <<
+                "             \"10\"], default [\"Auto\", \"Auto\", \"10\"] where    \n" <<
+                "             \"Auto\" is either the largest ENMAX in all POTCARS    \n" <<
+                "             called in SPECIES for START, or 2.0 * largest ENMAX    \n" <<
+                "             for STOP)                                              \n" <<
+                "    \"kpoints\": [start, stop, step] values for converging KPOINTS  \n" <<
+                "               to within nrg_convergence (ex. [\"5\", \"50\", \"1\"],\n" <<
+                "               default [\"5\", \"Auto\", \"1\"] where \"Auto\" can  \n" <<
+                "               only be used for STOP and means to keep increasing   \n" <<
+                "               the KPOINTS length by STEP until either              \n" <<
+                "               nrg_convergence or walltime is reached). For meaning \n" <<
+                "               of the KPOINTS length parameter see the VASP         \n" <<
+                "               documentation at http://cms.mpi.univie.ac.at/vasp/   \n" <<
+                "               vasp/Automatic_k_mesh_generation.html                \n" <<
+                "    \"extra_input_files\": extra input files to be copied from the  \n" <<
+                "                         settings directory, e.g., a vdW kernel     \n" <<
+                "                         file.                                      \n" <<
+                "    \"initial\": location of INCAR with tags for the initial run,   \n" <<
+                "               if desired (e.g. to generate a PBE WAVECAR for use   \n" <<
+                "               with M06-L)                                          \n" <<
+                "    \"final\": location of INCAR with tags for the final run, if    \n" <<
+                "             desired (e.g. \"ISMEAR = -5\", etc). Otherwise, the    \n" <<
+                "             settings enforced are (\"ISMEAR = -5\", \"NSW = 0\",   \n" <<
+                "              \"IBRION = -1\", \"ISIF = 2\")                        \n" <<
+                "    \"err_types\": list of errors to check for. Allowed entries are \n" <<
+                "                 \"IbzkptError\" and \"SubSpaceMatrixError\".       \n" <<
+                "                 Default: [\"SubSpaceMatrixError\"]                 \n" <<
+                "\n";
 
       std::cout << "EXAMPLE: relax.json \n";
       std::cout << "-------\n";

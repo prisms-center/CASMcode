@@ -7,6 +7,7 @@
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteDriver.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
 
@@ -48,6 +49,28 @@ namespace CASM {
 
   }
 
+  namespace Completer {
+
+    MonteOption::MonteOption(): OptionHandlerBase("monte") {};
+
+    void MonteOption::initialize() {
+      add_help_suboption();
+      add_verbosity_suboption();
+      add_settings_suboption();
+
+      m_desc.add_options()
+      ("initial-POSCAR", po::value<Index>(&m_condition_index), "Given the condition index, print a POSCAR for the initial state of a monte carlo run.")
+      ("final-POSCAR", po::value<Index>(&m_condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
+      ("traj-POSCAR", po::value<Index>(&m_condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
+      return;
+    }
+
+    Index MonteOption::condition_index() const {
+      return m_condition_index;
+    };
+
+  }
+
   int monte_command(const CommandArgs &args) {
 
     fs::path settings_path;
@@ -55,48 +78,42 @@ namespace CASM {
     po::variables_map vm;
     Index condition_index;
 
+    // Set command line options using boost program_options
+    Completer::MonteOption monte_opt;
+
     try {
+      po::store(po::parse_command_line(args.argc, args.argv, monte_opt.desc()), vm); // can throw
 
-      // Set command line options using boost program_options
-      po::options_description desc("'casm monte' usage");
-      desc.add_options()
-      ("help,h", "Print help message")
-      ("settings,s", po::value<fs::path>(&settings_path)->required(), "The Monte Carlo input file. See 'casm format --monte'.")
-      ("verbosity", po::value<std::string>(&verbosity_str)->default_value("standard"), "Verbosity of output. Options are 'none', 'quiet', 'standard', 'verbose', 'debug', or an integer 0-100 (0: none, 100: all).")
-      ("initial-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print a POSCAR for the initial state of a monte carlo run.")
-      ("final-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
-      ("traj-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
-
-      try {
-        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
-
-        /** --help option
-        */
-        if(vm.count("help")) {
-          print_monte_help(desc);
-          return 0;
-        }
-
-        po::notify(vm); // throws on error, so do after help in case
-        // there are any problems
-
-        if(vm.count("verbosity")) {
-          auto res = Log::verbosity_level(verbosity_str);
-          if(!res.first) {
-            args.err_log.error("--verbosity");
-            args.err_log << "Expected: 'none', 'quiet', 'standard', 'verbose', "
-                         "'debug', or an integer 0-100 (0: none, 100: all)" << "\n" << std::endl;
-            return ERR_INVALID_ARG;
-          }
-          args.log.set_verbosity(res.second);
-        }
-
+      /** --help option
+      */
+      if(vm.count("help")) {
+        print_monte_help(monte_opt.desc());
+        return 0;
       }
-      catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
-        return 1;
+
+      po::notify(vm); // throws on error, so do after help in case
+      // there are any problems
+
+      settings_path = monte_opt.settings_path();
+      verbosity_str = monte_opt.verbosity_str();
+      condition_index = monte_opt.condition_index();
+
+      if(vm.count("verbosity")) {
+        auto res = Log::verbosity_level(verbosity_str);
+        if(!res.first) {
+          args.err_log.error("--verbosity");
+          args.err_log << "Expected: 'none', 'quiet', 'standard', 'verbose', "
+                       "'debug', or an integer 0-100 (0: none, 100: all)" << "\n" << std::endl;
+          return ERR_INVALID_ARG;
+        }
+        args.log.set_verbosity(res.second);
       }
+
+    }
+    catch(po::error &e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      std::cerr << monte_opt.desc() << std::endl;
+      return 1;
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "

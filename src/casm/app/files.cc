@@ -3,8 +3,41 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/casm_io/FileEnumerator.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
+
+  namespace Completer {
+    FilesOption::FilesOption(): OptionHandlerBase("files") {}
+
+    const std::vector<std::string> &FilesOption::calc_vec() const {
+      return m_calc_vec;
+    }
+
+    const std::string &FilesOption::settings_str() const {
+      return m_settings_str;
+    }
+
+    void FilesOption::initialize() {
+      add_help_suboption();
+      add_output_suboption();
+      add_gzip_suboption();
+
+      m_desc.add_options()
+      ("settings",
+       po::value<std::string>(&m_settings_str)->default_value("curr"),
+       "Which settings to include. "
+       "One of: 'curr' (default), 'all'.")
+
+      ("calc",
+       po::value<std::vector<std::string> >(&m_calc_vec)->multitoken(),
+       "Which calculation files to include. "
+       "May be zero (default) or more of: 'settings', 'status', 'all'.") //TODO: Include these in ArgHandler
+
+      ("relative,R",
+       "Print relative path from project root directory.");
+    }
+  }
 
 
   // ///////////////////////////////////////
@@ -16,38 +49,14 @@ namespace CASM {
     po::variables_map vm;
     fs::path out_path;
     std::string settings;
-    std::vector<std::string> calc;
-    bool gz_flag(false);
+    std::vector<std::string> calc;  //These variable names are bad and you should feel bad
+    bool gz_flag;
 
     /// Set command line options using boost program_options
-    po::options_description desc("'casm files' usage");
-    desc.add_options()
-    ("help,h", "Write help documentation")
-
-    ("settings",
-     po::value<std::string>(&settings)->default_value("curr"),
-     "Which settings to include. "
-     "One of: 'curr' (default), 'all'.")
-
-    ("calc",
-     po::value<std::vector<std::string> >(&calc)->multitoken(),
-     "Which calculation files to include. "
-     "May be zero (default) or more of: 'settings', 'status', 'all'.")
-
-    ("relative,R",
-     "Print relative path from project root directory.")
-
-    ("gzip,z",
-     po::value(&gz_flag)->zero_tokens(),
-     "Write gzipped output file.")
-
-    ("output,o",
-     po::value<fs::path>(&out_path),
-     "Name for output file. Use STDOUT to print results without extra messages. ");
-
+    Completer::FilesOption files_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, files_opt.desc()), vm); // can throw
 
       if(!vm.count("help")) {
 
@@ -74,7 +83,7 @@ namespace CASM {
        */
       if(vm.count("help")) {
         std::cout << "\n";
-        std::cout << desc << std::endl;
+        std::cout << files_opt.desc() << std::endl;
 
 
         std::cout << "DESCRIPTION  \n"
@@ -138,18 +147,22 @@ namespace CASM {
       }
 
 
-
       po::notify(vm); // throws on error, so do after help in case
       // there are any problems
 
+      out_path = files_opt.output_path();
+      settings = files_opt.settings_str();
+      calc = files_opt.calc_vec();
+      gz_flag = files_opt.gzip_flag();
+
     }
     catch(po::error &e) {
-      std::cerr << desc << std::endl;
+      std::cerr << files_opt.desc() << std::endl;
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      std::cerr << desc << std::endl;
+      std::cerr << files_opt.desc() << std::endl;
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_UNKNOWN;
     }
@@ -176,10 +189,10 @@ namespace CASM {
     // set output_stream: where the file paths are written
     std::unique_ptr<std::ostream> uniq_fout;
     std::ostream &output_stream = make_ostream_if(vm.count("output"), args.log, uniq_fout, out_path, gz_flag);
-    
+
     // set status_stream: where query settings and PrimClex initialization messages are sent
     Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
-    
+
     // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;

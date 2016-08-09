@@ -149,32 +149,41 @@ void triangle_count_test() {
   HermiteCounter::Index totals = HermiteCounter_impl::upper_size(7);
   BOOST_CHECK_EQUAL(totals, -7 + 7 + 6 + 5 + 4 + 3 + 2 + 1);
 
-  //  int dims = 5;
-  //  int det = 30;
-  //
-  //  Eigen::VectorXi mid_diagonal(Eigen::VectorXi::Ones(dims));
-  //  mid_diagonal(0) = 5;
-  //  mid_diagonal(1) = 3;
-  //  mid_diagonal(4) = 2;
-  //
-  //  auto countertest = HermiteCounter_impl::_upper_tri_counter(mid_diagonal);
-  //  auto finalcount = countertest;
-  //
-  //  for(; countertest.valid(); countertest++) {
-  //    finalcount = countertest;
-  //  }
-  //
-  //  Eigen::VectorXi end_count_value(Eigen::VectorXi::Zero(dims));
-  //  end_count_value(0) = 4;
-  //  end_count_value(1) = 4;
-  //  end_count_value(2) = 4;
-  //  end_count_value(3) = 4;
-  //  end_count_value(4) = 2;
-  //  end_count_value(5) = 2;
-  //  end_count_value(6) = 2;
+  int dims = 5;
+  int det = 30;
 
-  //  BP: ^above is not testing anything and 'end_count_value(5)' and
-  //  'end_count_value(6)' don't exist, so I'm commenting them out for now
+  Eigen::VectorXi mid_diagonal(Eigen::VectorXi::Ones(dims));
+  mid_diagonal(0) = 5;
+  mid_diagonal(1) = 3;
+  mid_diagonal(4) = 2;
+
+  auto countertest = HermiteCounter_impl::_upper_tri_counter(mid_diagonal);
+  auto finalcount = countertest;
+
+  for(; countertest.valid(); countertest++) {
+    finalcount = countertest;
+  }
+
+  //The initial matrix is 5x5 with diagonal [ 5 3 1 1 2 ], so it has determinant=30
+  //The Hermite matrix with highest ranking for this determinant will therefore be:
+  //    5 4 4 4 4
+  //    0 3 2 2 2
+  //    0 0 1 0 0
+  //    0 0 0 1 0
+  //    0 0 0 0 2
+  //Which gives the upper triangular vector [ 4 4 4 4 2 2 2 0 0 0 ]
+
+  Eigen::VectorXi end_count_value(Eigen::VectorXi::Zero(HermiteCounter_impl::upper_size(5)));
+  end_count_value(0) = 4;
+  end_count_value(1) = 4;
+  end_count_value(2) = 4;
+  end_count_value(3) = 4;
+  end_count_value(4) = 2;
+  end_count_value(5) = 2;
+  end_count_value(6) = 2;
+  //Rest of the values are zero
+
+  BOOST_CHECK_EQUAL(finalcount.current(), end_count_value);
 
   return;
 }
@@ -687,6 +696,7 @@ current test_results.json file. Do not replace anything unless you're certain th
 results were incorrect, and these are an improvement. If you are sure you want to proceed, eliminate this key.";
 
   current_test_results.write(current_test_path);
+
 }
 
 BOOST_AUTO_TEST_CASE(RestrictedEnumeration) {
