@@ -34,7 +34,8 @@ extern "C" {
   }
 
   unsigned long casm_ostringstream_size(costream *ptr) {
-    return reinterpret_cast<OStringStreamLog *>(ptr)->ss().tellp();
+    typedef std::char_traits<char>::pos_type pos_type;
+    return reinterpret_cast<OStringStreamLog *>(ptr)->ss().tellp() + pos_type(1);
   }
 
   char *casm_ostringstream_strcpy(costream *ptr, char *c_str) {

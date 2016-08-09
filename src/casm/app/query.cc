@@ -235,8 +235,14 @@ namespace CASM {
     for(int p = 0; p < columns.size(); p++) {
       status_log << "   - " << columns[p] << std::endl;
     }
-    if(vm.count("output"))
-      status_log << "to " << fs::absolute(out_path) << std::endl;
+    if(vm.count("output")) {
+      if(out_path.string() == "STDOUT") {
+        status_log << "to " << out_path << std::endl;
+      }
+      else {
+        status_log << "to " << fs::absolute(out_path) << std::endl;
+      }
+    }
     status_log << std::endl;
 
     // Construct DataFormatter

@@ -644,5 +644,5 @@ class Project(object):
       lib_ccasm.casm_ostringstream_delete(ss_err)
       
       self.__refresh()
-      return (qstr, qstr_err, res)
+      return (qstr.value, qstr_err.value, res)
       
