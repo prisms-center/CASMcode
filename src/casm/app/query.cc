@@ -50,7 +50,8 @@ namespace CASM {
       ("no-header,n", po::value(&m_no_header_flag)->default_value(false)->zero_tokens(), "Print without header (CSV only)")
       ("alias", po::value<std::vector<std::string> >(&m_new_alias_vec)->multitoken(),
        "Create an alias for a query that will persist within this project. "
-       "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
+       "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")
+      ("write-pos", "Write POS file for each configuration");
 
       return;
     }
@@ -177,8 +178,8 @@ namespace CASM {
       }
 
     }
-    if(!vm.count("columns")) {
-      args.err_log << "ERROR: the option '--columns' is required but missing" << std::endl;
+    if(!vm.count("columns") && !vm.count("write-pos")) {
+      args.err_log << "ERROR: the option '--columns' or '--write-pos' is required but missing" << std::endl;
       return ERR_INVALID_ARG;
     }
 
@@ -263,6 +264,12 @@ namespace CASM {
 
       auto begin = vm.count("all") ? selection.config_begin() : selection.selected_config_begin();
       auto end = vm.count("all") ? selection.config_end() : selection.selected_config_end();
+
+      if(vm.count("write-pos")) {
+        for(auto it = begin; it != end; ++it) {
+          it->write_pos();
+        }
+      }
 
       // JSON output block
       if(json_flag) {

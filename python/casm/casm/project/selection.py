@@ -222,6 +222,21 @@ class Selection(object):
           self.data.loc[:,c] = df.loc[:,c].values
     
     
+    def write_pos(self, all=False):
+        """
+        Write POS file for configurations
+        
+        Arguments
+        ---------
+          
+          all: bool, optional, default=False
+            if True, will write POS file for all configurations in the selection
+            whether selected or not. If False, only write POS file for selected
+            configurations.
+        """
+        self.proj.command("query -c " + self.path + " --write-pos")
+    
+    
     def add_data(self, name, data=None, force=False):
         """
         Equivalent to:

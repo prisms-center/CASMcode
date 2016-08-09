@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+
+import argparse, json
+from casm import NoIndentEncoder
+from casm.project import Project, Selection
+from casm.vaspwrapper import Relax
+
+# casm-calc --configs selection
+#           --calculator "vasp"
+#           --scheduler "pbs"
+#           --run / --submit / --setup / --report
+
+configs_help = """
+CASM selection file or one of 'CALCULATED', 'ALL', or 'MASTER' (Default)
+"""
+
+run_help = """
+Run calculation for all selected configurations.
+"""
+
+submit_help = """
+Submit calculation for all selected configurations.
+"""
+
+setup_help = """
+Setup calculation for all selected configurations.
+"""
+
+report_help = """
+Report calculation results (print calc.properties.json file) for all selected configurations.
+"""
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description = 'Submit calculations for CASM')
+  parser.add_argument('--configs', help=configs_help, type=str, default="MASTER")
+  parser.add_argument('--run', help=run_help, action="store_true", default=False)
+  parser.add_argument('--submit', help=submit_help, action="store_true", default=False)
+  parser.add_argument('--setup', help=setup_help, action="store_true", default=False)
+  parser.add_argument('--report', help=report_help, action="store_true", default=False)
+  args = parser.parse_args()
+  
+  proj = Project()
+  sel = Selection(proj, args.configs)
+  
+  if args.setup:
+    sel.write_pos()
+    for configname in sel.data["configname"]:
+      relaxation = Relax(proj.dir.configuration_dir(configname))
+      relaxation.setup()
+  
+  elif args.submit:
+    sel.write_pos()
+    for configname in sel.data["configname"]:
+      relaxation = Relax(proj.dir.configuration_dir(configname))
+      relaxation.submit()
+  
+  elif args.run:
+    sel.write_pos()
+    for configname in sel.data["configname"]:
+      relaxation = Relax(proj.dir.configuration_dir(configname))
+      relaxation.run()
+  
+  elif args.report:
+    for configname in sel.data["configname"]:
+      configdir = proj.dir.configuration_dir(configname)
+      clex = proj.settings.default_clex
+      calcdir = proj.dir.calctype_dir(configname, clex)
+      try:
+        output = Relax.properties(configdir)
+      except:
+        print("Unable to report properties for directory {}. Please verify that "
+              "it contains a completed VASP calculation.".format(configdir))
+        raise
+
+      with open(proj.dir.calculated_properties(configname, clex), 'w') as file:
+        file.write(json.dumps(output, file, cls=NoIndentEncoder, indent=4, sort_keys=True))
+
