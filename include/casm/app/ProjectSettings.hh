@@ -36,6 +36,8 @@ namespace CASM {
                     std::string _eci) :
       name(_name), property(_property), calctype(_calctype), ref(_ref), bset(_bset), eci(_eci) {}
 
+    void print(std::ostream &sout, bool is_default, int indent = 0) const;
+
     std::string name;
     std::string property;
     std::string calctype;
