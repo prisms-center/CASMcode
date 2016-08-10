@@ -1,4 +1,5 @@
 import os, json, glob, ctypes
+from os.path import join
 
 class API(object):
   """
@@ -83,7 +84,7 @@ class API(object):
       self.lib_ccasm.casm_primclex_refresh.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool]
       self.lib_ccasm.casm_primclex_refresh.restype = None
 
-      self.lib_ccasm.casm_capi.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+      self.lib_ccasm.casm_capi.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
       self.lib_ccasm.casm_capi.restype = ctypes.c_int
   
   __api = None
@@ -253,7 +254,7 @@ class API(object):
     return
   
   
-  def __call__(self, args, primclex, log, debug_log, err_log):
+  def __call__(self, args, primclex, root, log, debug_log, err_log):
     """
     Make an API call
     
@@ -268,6 +269,10 @@ class API(object):
       
       primclex: CASM::PrimClex pointer
         A pointer to a CASM::PrimClex, as obtained from API.primclex_new()
+      
+      root: str
+        A string giving the path to a root directory of a CASM project, typically
+        casm.project.Project.path
       
       log: CASM::Log pointer
         A pointer to a CASM::Log to write standard output
@@ -323,7 +328,7 @@ class API(object):
             Unknown attempting to overwrite another CASM project
     
     """
-    return API.__api.lib_ccasm.casm_capi(args, primclex, log, debug_log, err_log)
+    return API.__api.lib_ccasm.casm_capi(args, primclex, root, log, debug_log, err_log)
     
 
 def jobname(configdir):

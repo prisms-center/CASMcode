@@ -38,6 +38,6 @@ extern "C" {
                              bool clear_clex);
 
 
-  int casm_capi(char *args, cPrimClex *primclex, costream *log, costream *debug_log, costream *err_log);
+  int casm_capi(char *args, cPrimClex *primclex, char *root, costream *log, costream *debug_log, costream *err_log);
 
 }

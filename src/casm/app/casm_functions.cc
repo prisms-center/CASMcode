@@ -6,19 +6,92 @@
 
 namespace CASM {
 
+
+  /// \brief CommandArgs constructor
+  ///
+  /// \param _argc int, as from main
+  /// \param _argv char*[], as from main
+  /// \param _primclex pointer to PrimClex or nullptr
+  /// \param _root location of CASM project. If empty path, will use root of the
+  ///        CASM project containing current working directory
+  /// \param _log Log for stdout
+  /// \param _err_log Log for stderr
+  ///
   CommandArgs::CommandArgs(int _argc,
                            char *_argv[],
                            PrimClex *_primclex,
+                           fs::path _root,
                            Log &_log,
                            Log &_err_log) :
     argc(_argc),
     argv(_argv),
     primclex(_primclex),
+    root(_root),
+    log(_log),
+    err_log(_err_log),
+    parse_result(0),
+    m_free_p(false) {
+    _init();
+  }
+
+  /// \brief CommandArgs constructor
+  ///
+  /// \param _args std::string of form 'casm [subcommand] [opt...]'
+  /// \param _primclex pointer to PrimClex or nullptr
+  /// \param _root location of CASM project. If empty path, will use root of the
+  ///        CASM project containing current working directory
+  /// \param _log Log for stdout
+  /// \param _err_log Log for stderr
+  ///
+  CommandArgs::CommandArgs(std::string _args,
+                           PrimClex *_primclex,
+                           fs::path _root,
+                           Log &_log,
+                           Log &_err_log) :
+    primclex(_primclex),
+    root(_root),
     log(_log),
     err_log(_err_log) {
 
-    // set project 'root'
-    root = find_casmroot(fs::current_path());
+    // parse _args -> argc, argv
+    int parse_result = wordexp(_args.c_str(), &m_p, 0);
+    if(parse_result) {
+      _err_log << "Error parsing query: '" << _args << "'" << std::endl;
+      _err_log << "wordexp() error: " << parse_result << std::endl;
+      switch(parse_result) {
+      case 1: {
+        _err_log << "Check for illegal unescaped characters: |, &, ;, <, >, (, ), {, }" << std::endl;
+        break;
+      }
+      default: {
+        _err_log << "Check 'man wordexp' for error code meaning" << std::endl;
+      }
+      }
+      return;
+    }
+
+    m_free_p = true;
+    argc = m_p.we_wordc;
+    argv = m_p.we_wordv;
+
+    std::vector<std::string> args(argv, argv + argc);
+
+    _init();
+  }
+
+  CommandArgs::~CommandArgs() {
+    if(m_free_p) {
+      wordfree(&m_p);
+    }
+  }
+
+  void CommandArgs::_init() {
+
+    // set project 'root' if not already set
+    if(root.empty()) {
+      root = find_casmroot(fs::current_path());
+    }
+    err_log << "CommandArgs root: " << root << std::endl;
 
     // set 'command'
     command = (argc > 1) ? std::string(argv[1]) : "";
@@ -154,6 +227,25 @@ namespace CASM {
       return ERR_INVALID_ARG;
     }
   }
+
+  /*
+  /// \brief Executes casm_api in specified working directory
+  int casm_api(const CommandArgs &args, fs::path working_dir) {
+    fs::path prev = fs::current_path();
+    fs::current_path(working_dir);
+    int res;
+
+    try {
+      res = casm_api(args);
+    }
+    catch(...) {
+      fs::current_path(prev);
+      throw;
+    }
+    return res;
+  }
+  */
+
 
 
   /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then

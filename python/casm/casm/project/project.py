@@ -545,26 +545,10 @@ class Project(object):
       Returns:
         (stdout, stderr, returncode): The result of running the command via the command line iterface
       """
-      return self.command_via_capi(args)
+      return self._command_via_capi(args)
     
         
-    def command_via_cli(self, args):
-      """
-      Execute a command via the command line interface. 
-      
-      Args:
-        args: A string containing the command to be executed. Ex: "select --set-on -o /abspath/to/my_selection"
-      
-      Returns:
-        (stdout, stderr, returncode): The result of running the command via the command line iterface
-      """
-      child = subprocess.Popen([self.casm_exe] + args.split(),stdout=subprocess.PIPE,stderr=subprocess.PIPE, cwd=self.path)
-      result = child.communicate()
-      self.__refresh()
-      return (result[0], result[1], child.returncode)
-    
-    
-    def command_via_capi(self, args):
+    def _command_via_capi(self, args):
       """
       Execute a command via the c api. 
       
@@ -582,12 +566,7 @@ class Project(object):
       ss_debug = self._api.ostringstream_new()
       ss_err = self._api.ostringstream_new()
       
-      prev = os.getcwd()
-      os.chdir(self.path)
-      try:
-        res = self._api(args, self.data(), ss, ss_debug, ss_err)
-      finally:
-        os.chdir(prev)
+      res = self._api(args, self.data(), self.path, ss, ss_debug, ss_err)
       
       # copy strings and delete stringstreams
       stdout = self._api.ostringstream_to_str(ss)
