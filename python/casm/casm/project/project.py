@@ -447,9 +447,6 @@ class Project(object):
       # will keep a casm.API instance
       self._api = None
       
-      if project_path(path) != project_path():
-        raise Exception("Running from outside a CASM project is not currently supported")
-      
       # set path to this CASM project
       if project_path(path) is None:
         if path is None:
@@ -585,7 +582,12 @@ class Project(object):
       ss_debug = self._api.ostringstream_new()
       ss_err = self._api.ostringstream_new()
       
-      res = self._api(args, self.data(), ss, ss_debug, ss_err)
+      prev = os.getcwd()
+      os.chdir(self.path)
+      try:
+        res = self._api(args, self.data(), ss, ss_debug, ss_err)
+      finally:
+        os.chdir(prev)
       
       # copy strings and delete stringstreams
       stdout = self._api.ostringstream_to_str(ss)
