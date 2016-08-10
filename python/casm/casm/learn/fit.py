@@ -943,7 +943,7 @@ def print_input_help():
   
     "checkhull" : {
       "selection": "ALL",
-      "write_results": True
+      "write_results": true,
       "uncalculated_range": 1e-8,
       "ranged_rms": [0.001, 0.005, 0.01, 0.05, 0.1, 0.5],
       "composition": "atom_frac",

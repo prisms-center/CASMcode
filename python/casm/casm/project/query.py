@@ -1,6 +1,5 @@
 import casm
-from casm.project import lib_ccasm
-import pandas, StringIO, ctypes
+import pandas, StringIO
 
 def query(proj, columns, selection=None, verbatim=True, all=False):
   """Return a pandas DataFrame object containing the output of a 

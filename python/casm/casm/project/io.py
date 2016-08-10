@@ -8,7 +8,7 @@ def write_eci(proj, eci, fit_details=None, clex=None, verbose=False):
     Arguments
     ---------
     
-      proj: casm.Project instance
+      proj: casm.project.Project instance
         The CASM project
       
       eci: an iterable of tuple of (index, values)
