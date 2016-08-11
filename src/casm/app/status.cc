@@ -367,12 +367,11 @@ Instructions for fitting ECI:                                          \n\n\
     std::cout << "\n#################################\n\n";
 
     std::cout << "CASM status:\n\n";
-    std::cout << "1) Project initialized: ";
 
     const fs::path &root = args.root;
 
     if(root.empty()) {
-      std::cout << " FALSE\n\n";
+      std::cout << "1) Project initialized: FALSE\n\n";
 
       if(vm.count("next")) {
         std::cout << "\n#################################\n\n";
@@ -416,7 +415,7 @@ Instructions for fitting ECI:                                          \n\n\
     std::string eci = desc.eci;
 
 
-    std::cout << "TRUE\n";
+    std::cout << "1) Project initialized: TRUE\n\n";
     std::cout << "- Project name: " << primclex.name() << std::endl;
     std::cout << "- Project location: " << primclex.get_path().string() << std::endl;
 
