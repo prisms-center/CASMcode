@@ -34,7 +34,8 @@ extern "C" {
   }
 
   unsigned long casm_ostringstream_size(costream *ptr) {
-    return reinterpret_cast<OStringStreamLog *>(ptr)->ss().tellp();
+    typedef std::char_traits<char>::pos_type pos_type;
+    return reinterpret_cast<OStringStreamLog *>(ptr)->ss().tellp() + pos_type(1);
   }
 
   char *casm_ostringstream_strcpy(costream *ptr, char *c_str) {
@@ -66,7 +67,7 @@ extern "C" {
     _primclex->refresh(read_settings, read_composition, read_chem_ref, read_configs, clear_clex);
   }
 
-  int casm_capi(char *args, cPrimClex *primclex, costream *log, costream *debug_log, costream *err_log) {
+  int casm_capi(char *args, cPrimClex *primclex, char *root, costream *log, costream *debug_log, costream *err_log) {
     PrimClex *_primclex = reinterpret_cast<PrimClex *>(primclex);
     Log &_log(*reinterpret_cast<Log *>(log));
     Log &_debug_log(*reinterpret_cast<Log *>(debug_log));
@@ -75,30 +76,14 @@ extern "C" {
     std::string s("casm ");
     s += std::string(args);
 
-    // parse args -> argc, argv
-    wordexp_t p;
-    int res = wordexp(s.c_str(), &p, 0);
-    if(res) {
-      _err_log << "Error parsing query: '" << args << "'" << std::endl;
-      _err_log << "wordexp() error: " << res << std::endl;
-      switch(res) {
-      case 1: {
-        _err_log << "Check for illegal unescaped characters: |, &, ;, <, >, (, ), {, }" << std::endl;
-        break;
-      }
-      default: {
-        _err_log << "Check 'man wordexp' for error code meaning" << std::endl;
-      }
-      }
-      return res;
+    fs::path _root(root);
+
+    CommandArgs command_args(s, _primclex, _root, _log, _err_log);
+    if(command_args.parse_result) {
+      return command_args.parse_result;
     }
 
-    CommandArgs command_args(p.we_wordc, p.we_wordv, _primclex, _log, _err_log);
-    res = casm_api(command_args);
-
-    wordfree(&p);
-
-    return res;
+    return casm_api(command_args);
   }
 
 }

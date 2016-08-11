@@ -5,6 +5,8 @@
 
 #include "casm/completer/Handlers.hh"
 
+#include <functional>
+
 namespace CASM {
 
   class ClexDescription;
@@ -38,7 +40,7 @@ namespace CASM {
       ("list,l", "List project settings")
       ("new-property", po::value<std::string>(&m_input_str), "Create cluster expansions for a new property")
       ("new-bset", po::value<std::string>(&m_input_str), "Create a new basis set")
-      ("new-calctype", po::value<std::vector<std::string> >(&m_input_vec)->multitoken(), "Create a new calculation type")
+      ("new-calctype", po::value<std::string>(&m_input_str), "Create a new calculation type")
       ("new-ref", po::value<std::string>(&m_input_str), "Create a new calculation reference")
       ("new-eci", po::value<std::string>(&m_input_str), "Create a new set of effective cluster interactions (ECI)")
       ("set-formation-energy", po::value<std::string>(&m_input_str), "Specify the cluster expansion to use for formation energy")
@@ -48,9 +50,10 @@ namespace CASM {
       ("clex", po::value<std::string>(), "The cluster expansion for which to set property, bset, calctype, ref, or eci")
       ("set-property", po::value<std::string>(&m_input_str), "Set the current basis set")
       ("set-bset", po::value<std::string>(&m_input_str), "Set the basis set")
-      ("set-calctype", po::value<std::vector<std::string> >(&m_input_vec)->multitoken(), "Set the calculation type")
-      ("set-ref", po::value<std::vector<std::string> >(&m_input_vec)->multitoken(), "Set the calculation reference")
+      ("set-calctype", po::value<std::string>(&m_input_str), "Set the calculation type")
+      ("set-ref", po::value<std::string>(&m_input_str), "Set the calculation reference")
       ("set-eci", po::value<std::string>(&m_input_str), "Set the effective cluster interactions (ECI)")
+      ("set-all", po::value<std::vector<std::string> >(&m_input_vec)->multitoken(), "Set the current property, calctype, ref, bset, and eci all at once.")
       ("set-view-command", po::value<std::string>(&m_input_str), "Set the command used by 'casm view'.")
       ("set-cxx", po::value<std::string>(&m_input_str), "Set the c++ compiler. Use '' to revert to default.")
       ("set-cxxflags", po::value<std::string>(&m_input_str), "Set the c++ compiler options. Use '' to revert to default.")
@@ -61,6 +64,187 @@ namespace CASM {
     }
 
   }
+
+  namespace {
+
+    /// "create": for 'new-X'
+    /// "do_not_create": for 'set-X'
+    enum create_mode {create, do_not_create};
+
+    /// Just a local data structure to ease passing
+    struct Data {
+
+      typedef std::pair<std::string, create_mode> pair_type;
+
+      Data(PrimClex *_primclex,
+           DirectoryStructure &_dir,
+           ProjectSettings &_set,
+           ClexDescription &_desc,
+           Log &_log,
+           Log &_err_log) :
+        primclex(_primclex),
+        dir(_dir),
+        set(_set),
+        desc(_desc),
+        log(_log),
+        err_log(_err_log),
+        property(pair_type(desc.property, do_not_create)),
+        calctype(pair_type(desc.calctype, do_not_create)),
+        ref(pair_type(desc.ref, do_not_create)),
+        bset(pair_type(desc.bset, do_not_create)),
+        eci(pair_type(desc.eci, do_not_create)) {}
+
+      PrimClex *primclex;
+      DirectoryStructure &dir;
+      ProjectSettings &set;
+      ClexDescription &desc;
+      Log &log;
+      Log &err_log;
+
+      pair_type property;
+      pair_type calctype;
+      pair_type ref;
+      pair_type bset;
+      pair_type eci;
+
+      int update() {
+
+        // the resulting clex if successful
+        ClexDescription tdesc(desc.name, property.first, calctype.first, ref.first, bset.first, eci.first);
+
+        bool res = try_new("property", property,
+        [&]() {
+          return contains(dir.all_property(), tdesc.property);
+        },
+        [&]() {
+          return set.new_clex_dir(tdesc.property);
+        }) &&
+        try_new("calctype", calctype,
+        [&]() {
+          return contains(dir.all_calctype(), tdesc.calctype);
+        },
+        [&]() {
+          return set.new_calc_settings_dir(tdesc.calctype);
+        }) &&
+        try_new("ref", ref,
+        [&]() {
+          return contains(dir.all_ref(tdesc.calctype), tdesc.ref);
+        },
+        [&]() {
+          return set.new_ref_dir(tdesc.calctype, tdesc.ref);
+        }) &&
+        try_new("bset", bset,
+        [&]() {
+          return contains(dir.all_bset(), tdesc.bset);
+        },
+        [&]() {
+          return set.new_bset_dir(tdesc.bset);
+        }) &&
+        try_new("eci", eci,
+        [&]() {
+          return contains(dir.all_eci(tdesc.property, tdesc.calctype, tdesc.ref, tdesc.bset), tdesc.eci);
+        },
+        [&]() {
+          return set.new_eci_dir(tdesc.property, tdesc.calctype, tdesc.ref, tdesc.bset, tdesc.eci);
+        });
+
+        // If could not create settings directories
+        if(!res) {
+          return 1;
+        }
+
+        if(clex_exists(dir, tdesc) && set.set_default_clex(tdesc)) {
+          set.commit();
+
+          bool read_settings = true;
+          bool read_composition = false;
+
+          bool read_chem_ref = false;
+          bool read_configs = false;
+          if((desc.property != tdesc.property) ||
+             (desc.calctype != tdesc.calctype) ||
+             (desc.ref != tdesc.ref)) {
+            read_chem_ref = true;
+            read_configs = true;
+          }
+
+          bool clear_clex = false;
+          if((desc.property != tdesc.property) ||
+             (desc.bset != tdesc.bset) ||
+             (desc.eci != tdesc.eci)) {
+            clear_clex = true;
+          }
+
+          desc = tdesc;
+          log << "Updated default settings:\n";
+          bool is_default = true;
+          int indent = 0;
+          desc.print(log, is_default, indent);
+
+          if(primclex) {
+            primclex->refresh(read_settings, read_composition, read_chem_ref, read_configs, clear_clex);
+          }
+          return 0;
+        }
+        else {
+          err_log << "Unknown error: Could not switch settings." << std::endl;
+          err_log << "Tried to switch to:\n";
+          tdesc.print(err_log, false, 0);
+          return 1;
+        }
+      }
+
+      /// \brief Try to create new settings, if requested
+      ///
+      /// \param set_name: 'property', 'calctype', 'ref', etc.
+      /// \param set: pair of, for example, <'default', create_mode>
+      /// \param check_f: function returns true if setting exists, false if not
+      /// \param new_f: function to create setting
+      ///
+      /// if create and check_f():
+      ///   return success;
+      /// if create and !check_f():
+      ///   return new_f();
+      /// if do_not_create and !check_f():
+      ///   return fail;
+      /// if do_not_create and check_f():
+      ///   return success;
+      bool try_new(std::string set_name, pair_type set, std::function<bool ()> check_f, std::function<bool ()> new_f) {
+
+        create_mode _cmode = set.second;
+
+        if(_cmode == create && check_f()) {
+          return true;
+        }
+        if(_cmode == create && !check_f()) {
+          bool res = new_f();
+          if(res) {
+            log << "Created new " << set_name << ": '" << set.first << "'\n";
+
+          }
+          else {
+            err_log << "Could not create new " << set_name << ": '" << set.first << "'\n";
+          }
+          return res;
+        }
+
+        if(_cmode == do_not_create && !check_f()) {
+          err_log << "Error: The " << set_name << " named '" << set.first << "' does not exist.\n";
+          err_log << "  Check your input or use --new-" << set_name << " to create it first.\n";
+
+          return false;
+        }
+
+        if(_cmode == do_not_create && check_f()) {
+          return true;
+        }
+
+        // shouldn't be able to get here
+        throw std::runtime_error("Unknown error updating CASM settings");
+      }
+    };
+  }
+
 
   // ///////////////////////////////////////
   // 'settings' function for casm
@@ -88,7 +272,7 @@ namespace CASM {
         std::vector<std::string> all_opt = {"list",
                                             "new-property", "new-bset", "new-calctype", "new-ref", "new-eci",
                                             "new-clex", "set-formation-energy", "erase-clex",
-                                            "set-default-clex", "set-property", "set-bset", "set-calctype", "set-ref", "set-eci",
+                                            "set-default-clex", "set-property", "set-bset", "set-calctype", "set-ref", "set-eci", "set-all",
                                             "set-cxx", "set-cxxflags", "set-soflags", "set-casm-prefix", "set-boost-prefix",
                                             "set-view-command"
                                            };
@@ -98,13 +282,15 @@ namespace CASM {
         }
 
         // must call one and only one option at a time:
-        if(option_count == 0) {
-          args.log << "Error in 'casm settings'. No option selected." << std::endl;
-          call_help = true;
-        }
-        else if(option_count > 1) {
-          args.log << "Error in 'casm settings'. Use one option (other than --clex) at a time." << std::endl;
-          call_help = true;
+        if(!vm.count("help")) {
+          if(option_count == 0) {
+            args.log << "Error in 'casm settings'. No option selected." << std::endl;
+            call_help = true;
+          }
+          else if(option_count > 1) {
+            args.log << "Error in 'casm settings'. Use one option (other than --clex) at a time." << std::endl;
+            call_help = true;
+          }
         }
 
         // --help option
@@ -143,41 +329,39 @@ namespace CASM {
 
                    "      casm settings --new-property 'my_new_property'         \n" <<
                    "      casm settings --new-bset 'my_new_bset'                 \n" <<
-                   "      casm settings --new-calctype 'my_new_calctype' ['my_new_ref']\n" <<
+                   "      casm settings --new-calctype 'my_new_calctype'         \n" <<
                    "      casm settings --new-ref 'my_new_ref'                   \n" <<
                    "      casm settings --new-eci 'my_new_eci'                   \n" <<
                    "      - Creates new settings directories with appropriate    \n" <<
                    "        names                                                \n" <<
-                   "      - For --new-property, a new 'default' eci is created.  \n" <<
-                   "      - For --new-calctype, a new reference may optionally be\n" <<
-                   "        speficied. If it is not, a new 'default' reference is\n" <<
-                   "        created.                                             \n" <<
+                   "      - For --new-property, new 'default' calctype, ref, and \n" <<
+                   "        eci are created.                                     \n" <<
+                   "      - For --new-calctype, a new 'default' ref is created.  \n" <<
                    "      - For --new-ref, a new reference is created for the    \n" <<
                    "        current calctype                                     \n" <<
                    "      - For --new-eci, a new eci directory is created for the\n" <<
                    "         current clex, calctype and ref.                     \n\n" <<
 
-
                    "      casm settings --set-property 'other_property'          \n" <<
                    "      casm settings --set-bset 'other_bset'                  \n" <<
-                   "      casm settings --set-calctype 'other_calctype' ['other_ref'] \n" <<
-                   "      casm settings --set-ref ['other_calctype'] 'other_ref' \n" <<
+                   "      casm settings --set-calctype 'other_calctype'          \n" <<
+                   "      casm settings --set-ref 'other_ref'                    \n" <<
                    "      casm settings --set-eci 'other_eci'                    \n" <<
+                   "      casm settings --set-all 'property' 'calctype', 'ref', 'bset', 'eci'\n" <<
                    "      - Switch the current settings                          \n" <<
                    "      - For --set-property, standard options are:            \n" <<
                    "        - 'formation_energy' (the only standard option for now)\n" <<
-                   "        - 'formation_energy' (the only standard option for now)\n" <<
-                   "        given, 'ref_default' is used, or if that doesn't     \n" <<
-                   "        exist the first one found is used.                   \n" <<
-                   "      - For --set-calctype 'other_ref' is optional, if not   \n" <<
-                   "        given, 'ref_default' is used, or if that doesn't     \n" <<
-                   "        exist the first one found is used.                   \n" <<
-                   "      - For --set-ref, 'other_calctype' is optional if among \n" <<
-                   "        all calctype there is no other reference called      \n" <<
-                   "        'other_ref'. Otherwise it is required.               \n" <<
-                   "      - For --set-ref, 'other_calctype' is optional if among \n" <<
-                   "        all calctype there is no other reference called      \n" <<
-                   "        'other_ref'. Otherwise it is required.               \n\n" <<
+                   "        After switching, the 'default' calctype, ref, bset,  \n" <<
+                   "        and eci are used"
+                   "      - For --set-calctype, the current property and bset are\n" <<
+                   "        maintained, and the 'default' ref, and eci are used. \n" <<
+                   "      - For --set-ref, the current property, calctype, and   \n" <<
+                   "        bset are maintained, and the 'default' eci is used.  \n" <<
+                   "      - For --set-bset, the current property, calctype, and  \n" <<
+                   "        ref are maintained, and the 'default' eci is used.   \n" <<
+                   "      - For --set-eci, the current property, calctype, ref,  \n" <<
+                   "        and bset are maintained.                             \n" <<
+                   "      - For --set-all, all settings are switched at once.    \n\n" <<
 
                    "      casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'\n" <<
                    "      - Sets the command used by 'casm view' to open         \n" <<
@@ -216,6 +400,7 @@ namespace CASM {
     const fs::path &root = args.root;
     if(root.empty()) {
       args.err_log.error("No casm project found");
+      args.err_log << "current_path: " << fs::current_path() << std::endl;
       args.err_log << std::endl;
       return ERR_NO_PROJ;
     }
@@ -234,6 +419,10 @@ namespace CASM {
       clex_desc = it->second;
     }
 
+    Data d(args.primclex, dir, set, clex_desc, args.log, args.err_log);
+
+    typedef Data::pair_type pair_type;
+
     // disply all settings
     if(vm.count("list")) {
       set.print_summary(args.log);
@@ -242,219 +431,50 @@ namespace CASM {
 
     // create new cluster_expansions/clex.property directory and sub-directories
     else if(vm.count("new-property")) {
-      if(set.new_clex_dir(single_input)) {
-        args.log << "Created new property '" << single_input << "'.\n\n";
-        clex_desc.property = single_input;
 
-        // and create matching eci
-        if(set.new_eci_dir(clex_desc.property, clex_desc.calctype, clex_desc.ref, clex_desc.bset, "default")) {
-          clex_desc.eci = "default";
-          args.log << "Created new eci 'default'.\n\n";
-        }
-        else {
-          args.log << "Could not create new eci 'default'.\n\n";
-          return 1;
-        }
-      }
-      else {
-        args.log << "Could not create new property '" << single_input << "'.\n\n";
-        return 1;
-      }
+      d.property = pair_type(single_input, create);
+      d.calctype = pair_type("default", create);
+      d.ref = pair_type("default", create);
+      d.bset = pair_type("default", create);
+      d.eci = pair_type("default", create);
 
-      clex_desc.name = single_input;
-      if(set.new_clex(clex_desc)) {
-        args.log << "Created new cluster expansion named '" << single_input << "'\n\n";
-      }
-      else {
-        args.log << "Could not create new cluster expansion named '" << single_input << "'.\n\n";
-        return 1;
-      }
-
-      if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
-        set.commit();
-        if(args.primclex) {
-          args.primclex->refresh(true, false, true, true, true);
-        }
-        args.log << "Set '" << clex_desc.name << "' as default cluster expansion.\n\n";
-        return 0;
-      }
-      else {
-        args.log << "Could not set '" << clex_desc.name << "' as default cluster expansion.\n\n";
-        return 1;
-      }
+      return d.update();
     }
 
     // create new bset, and default eci for current calctype and ref
     else if(vm.count("new-bset")) {
-      if(set.new_bset_dir(single_input)) {
-        clex_desc.bset = single_input;
-        args.log << "Created new bset '" << single_input << "'.\n\n";
 
-        // and create matching eci
-        if(set.new_eci_dir(clex_desc.property, clex_desc.calctype, clex_desc.ref, clex_desc.bset, "default")) {
-          clex_desc.eci = "default";
-          args.log << "Created new eci 'default'.\n\n";
-        }
-        else {
-          args.log << "Could not create new eci 'default'.\n\n";
-          return 1;
-        }
-      }
-      else {
-        args.log << "Could not create new bset '" << single_input << "'.\n\n";
-        return 1;
-      }
+      d.bset = pair_type(single_input, create);
+      d.eci = pair_type("default", create);
 
-      if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
-        set.commit();
-        if(args.primclex) {
-          args.primclex->refresh(true, false, false, false, true);
-        }
-        args.log << "Switched to new bset '" << clex_desc.bset << "' and 'default' eci.\n\n";
-        return 0;
-      }
-      else {
-        args.log << "Could not switch new bset '" << clex_desc.bset << "' and 'default' eci.\n\n";
-        return 1;
-      }
+      return d.update();
     }
 
     // create new calctype, and ref (either as specified, or default)
     else if(vm.count("new-calctype")) {
 
-      // create new calctype
-      if(set.new_calc_settings_dir(multi_input[0])) {
-        clex_desc.calctype = multi_input[0];
-        args.log << "Created new calctype '" << multi_input[0] << "'.\n\n";
+      d.calctype = pair_type(single_input, create);
+      d.ref = pair_type("default", create);
+      d.eci = pair_type("default", create);
 
-        // if ref given, create specified ref
-        if(multi_input.size() > 1) {
-          if(set.new_ref_dir(multi_input[0], multi_input[1])) {
-            clex_desc.ref = multi_input[1];
-            args.log << "Created new ref '" << multi_input[1] << "'.\n\n";
-
-            // and create matching eci
-            if(set.new_eci_dir(clex_desc.property, clex_desc.calctype, clex_desc.ref, clex_desc.bset, "default")) {
-              args.log << "Created new eci 'default'.\n\n";
-            }
-            else {
-              args.log << "Could not create new eci 'default'.\n\n";
-              return 1;
-            }
-          }
-          else {
-            args.log << "Could not create new ref '" << multi_input[0] << "'.\n\n";
-            return 1;
-          }
-        }
-        // else create default ref
-        else {
-          if(set.new_ref_dir(multi_input[0], "default")) {
-            clex_desc.ref = "default";
-            args.log << "Created new ref 'default'.\n\n";
-
-            // and create matching eci
-            if(set.new_eci_dir(clex_desc.property, clex_desc.calctype, clex_desc.ref, clex_desc.bset, "default")) {
-              clex_desc.eci = "default";
-              args.log << "Created new eci 'default'.\n\n";
-            }
-            else {
-              args.log << "Could not create new eci 'default'.\n\n";
-              return 1;
-            }
-          }
-          else {
-            args.log << "Could not create new ref 'default'.\n\n";
-            return 1;
-          }
-        }
-
-        return 0;
-      }
-      else {
-        args.log << "Could not create new calctype '" << multi_input[0] << "'.\n\n";
-        return 1;
-      }
-
-      if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
-        set.commit();
-        if(args.primclex) {
-          args.primclex->refresh(true, false, true, true, true);
-        }
-        args.log << "Switched to new calctype '" << clex_desc.calctype << "', ref '" << clex_desc.ref << "', and '" << clex_desc.eci << "' eci.\n\n";
-        return 0;
-      }
-      else {
-        args.log << "Could not switch to new calctype '" << clex_desc.calctype << "', ref '" << clex_desc.ref << "', and '" << clex_desc.eci << "' eci.\n\n";
-        return 1;
-      }
+      return d.update();
     }
 
     // create new ref for current calctype
     else if(vm.count("new-ref")) {
-      if(set.new_ref_dir(clex_desc.calctype, single_input)) {
-        clex_desc.ref = single_input;
-        args.log << "Created new ref '" << single_input << "'.\n\n";
 
-        // and create matching eci
-        if(set.new_eci_dir(clex_desc.property, clex_desc.calctype, clex_desc.ref, clex_desc.bset, "default")) {
-          clex_desc.eci = "default";
-          args.log << "Created new eci 'default'.\n\n";
-        }
-        else {
-          args.log << "Could not create new eci 'default'.\n\n";
-          return 1;
-        }
-      }
-      else {
-        args.log << "Could not create new ref '" << single_input << "'.\n\n";
-        return 1;
-      }
+      d.ref = pair_type(single_input, create);
+      d.eci = pair_type("default", create);
 
-      if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
-        set.commit();
-        if(args.primclex) {
-          args.primclex->refresh(true, false, true, true, true);
-        }
-        args.log << "Switched to new ref '" << clex_desc.ref << "', and '" << clex_desc.eci << "' eci.\n\n";
-        return 0;
-      }
-      else {
-        args.log << "Could not switch to new ref '" << clex_desc.ref << "', and '" << clex_desc.eci << "' eci.\n\n";
-        return 1;
-      }
+      return d.update();
     }
 
     // create new eci directory
     else if(vm.count("new-eci")) {
-      if(set.new_eci_dir(clex_desc.property, clex_desc.calctype, clex_desc.ref, clex_desc.bset, single_input)) {
-        clex_desc.eci = single_input;
-        args.log << "Created new eci '" << single_input << "'.\n\n";
-      }
-      else {
-        args.log << "Could not create new eci '" << single_input << "'.\n\n";
-        return 1;
-      }
 
-      if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
-        //try {
-        set.commit();
-        if(args.primclex) {
-          args.primclex->refresh(true, false, false, false, true);
-        }
-        /*}
-        catch(std::exception &e) {
-          args.err_log.error("unknown");
-          args.err_log << "something happened\n" << std::endl;
-        }
-        */
-        args.log << "Switched to new eci '" << clex_desc.eci << "'.\n\n";
-        return 0;
-      }
-      else {
-        args.log << "Could not switch to new eci '" << clex_desc.eci << "'.\n\n";
-        return 1;
-      }
+      d.eci = pair_type(single_input, create);
+
+      return d.update();
     }
 
     // create new cluster expansion settings group
@@ -557,121 +577,69 @@ namespace CASM {
       }
     }
 
-    // set bset
+    // set property
     else if(vm.count("set-property")) {
-      clex_desc.property = single_input;
-      if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
-        set.commit();
-        if(args.primclex) {
-          args.primclex->refresh(true, false, true, true, true);
-        }
-        args.log << "Switched to property '" << single_input << "'.\n\n";
-        return 0;
-      }
-      else {
-        args.log << "Could not switch to property '" << single_input << "'.\n\n";
-        return 1;
-      }
+
+      d.property = pair_type(single_input, do_not_create);
+      d.calctype = pair_type("default", do_not_create);
+      d.ref = pair_type("default", do_not_create);
+      d.bset = pair_type("default", do_not_create);
+      d.eci = pair_type("default", create);
+
+      return d.update();
     }
 
     // set bset
     else if(vm.count("set-bset")) {
-      clex_desc.bset = single_input;
-      if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
-        set.commit();
-        if(args.primclex) {
-          args.primclex->refresh(true, false, true, true, true);
-        }
-        args.log << "Switched to bset '" << single_input << "'.\n\n";
-        return 0;
-      }
-      else {
-        args.log << "Could not switch to bset '" << single_input << "'.\n\n";
-        return 1;
-      }
+
+      d.bset = pair_type(single_input, do_not_create);
+      d.eci = pair_type("default", create);
+
+      return d.update();
     }
 
-    // set calctype. if ref given, set also; else select default, else select first found
+    // set calctype
     else if(vm.count("set-calctype")) {
 
-      // if ref given
-      if(multi_input.size() > 1) {
-        clex_desc.calctype = multi_input[0];
-        clex_desc.ref = multi_input[1];
-      }
-      // else figure out ref
-      else {
-        std::vector<std::string> all = dir.all_ref(clex_desc.calctype);
+      d.calctype = pair_type(single_input, do_not_create);
+      d.ref = pair_type("default", do_not_create);
+      d.eci = pair_type("default", create);
 
-        // if no ref, create default
-        if(!all.size()) {
-          args.log << "No ref found. Creating 'default'.\n\n";
-          set.new_ref_dir(clex_desc.calctype, "default");
-          clex_desc.ref = "default";
-        }
-        // if default exists, set to default
-        else if(std::find(all.begin(), all.end(), "default") != all.end()) {
-          clex_desc.ref = "default";
-        }
-        // else set first found
-        else {
-          clex_desc.ref = all[0];
-        }
-      }
-
-      if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
-        set.commit();
-        if(args.primclex) {
-          args.primclex->refresh(true, false, true, true, true);
-        }
-        args.log << "Switched to calctype '" << clex_desc.calctype << "' and ref '" << clex_desc.ref << "'.\n\n";
-        return 0;
-      }
-      else {
-        args.log << "Could not switch to calctype '" << clex_desc.calctype << "' and ref '" << clex_desc.ref << "'.\n\n";
-        return 1;
-      }
+      return d.update();
     }
 
-    // if given calctype and ref, set both; if only given one argument set ref in current calctype
+    // set ref
     else if(vm.count("set-ref")) {
-      if(multi_input.size() > 1) {
-        clex_desc.calctype = multi_input[0];
-        clex_desc.ref = multi_input[1];
-      }
-      else {
-        clex_desc.ref = multi_input[0];
-      }
 
-      if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
-        set.commit();
-        if(args.primclex) {
-          args.primclex->refresh(true, false, true, true, true);
-        }
-        args.log << "Switched to calctype '" << clex_desc.calctype << "' and ref '" << clex_desc.ref << "'.\n\n";
-        return 0;
-      }
-      else {
-        args.log << "Could not switch to calctype '" << clex_desc.calctype << "' and ref '" << clex_desc.ref << "'.\n\n";
-        return 1;
-      }
+      d.ref = pair_type(single_input, do_not_create);
+      d.eci = pair_type("default", create);
+
+      return d.update();
     }
 
     // set eci
     else if(vm.count("set-eci")) {
-      clex_desc.eci = single_input;
-      if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
-        set.commit();
-        if(args.primclex) {
-          args.primclex->refresh(true, false, false, false, true);
-        }
-        args.log << "Switched to eci '" << single_input << "'.\n\n";
-        return 0;
+
+      d.eci = pair_type(single_input, do_not_create);
+
+      return d.update();
+    }
+
+    // set all
+    else if(vm.count("set-all")) {
+
+      if(multi_input.size() != 5) {
+        args.log << "Error using --set-all: Expected 5 arguments: 'property' 'calctype' 'ref' 'bset' 'eci'" << std::endl;
+        return ERR_INVALID_ARG;
       }
-      else {
-        args.log << "Could not switch to eci '" << single_input << "'.\n\n";
-        return 1;
-      }
+
+      d.property = pair_type(multi_input[0], do_not_create);
+      d.calctype = pair_type(multi_input[1], do_not_create);
+      d.ref = pair_type(multi_input[2], do_not_create);
+      d.bset = pair_type(multi_input[3], do_not_create);
+      d.eci = pair_type(multi_input[4], create);
+
+      return d.update();
     }
 
     // set cxx

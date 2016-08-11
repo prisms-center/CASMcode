@@ -32,6 +32,21 @@ namespace CASM {
     return sublat_indices;
   }
 
+  void ClexDescription::print(std::ostream &sout, bool is_default, int indent) const {
+    std::string in(' ', indent);
+    sout << in << name;
+    if(is_default) {
+      sout << "*";
+    }
+    sout << ": \n";
+    sout << in << std::setw(16) << "property: " << property << "\n";
+    sout << in << std::setw(16) << "calctype: " << calctype << "\n";
+    sout << in << std::setw(16) << "ref: " << ref << "\n";
+    sout << in << std::setw(16) << "bset: " << bset << "\n";
+    sout << in << std::setw(16) << "eci: " << eci << "\n";
+    sout << "\n";
+  }
+
   /// \brief Compare using name strings: A.name < B.name
   bool operator<(const ClexDescription &A, const ClexDescription &B) {
     return A.name < B.name;
@@ -61,7 +76,7 @@ namespace CASM {
     return contains(dir.all_calctype(), desc.calctype) &&
            contains(dir.all_ref(desc.calctype), desc.ref) &&
            contains(dir.all_bset(), desc.bset) &&
-           contains(dir.all_eci(desc.property, desc.calctype, desc.ref, desc.bset), desc.calctype);
+           contains(dir.all_eci(desc.property, desc.calctype, desc.ref, desc.bset), desc.eci);
   }
 
 
@@ -493,8 +508,8 @@ namespace CASM {
   }
 
   /// \brief Add an eci directory
-  bool ProjectSettings::new_eci_dir(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
-    return fs::create_directories(m_dir.eci_dir(clex, calctype, ref, bset, eci));
+  bool ProjectSettings::new_eci_dir(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const {
+    return fs::create_directories(m_dir.eci_dir(property, calctype, ref, bset, eci));
   }
 
 
@@ -669,18 +684,11 @@ namespace CASM {
 
     log.custom<Log::standard>("Cluster expansions");
     for(auto it = m_clex.begin(); it != m_clex.end(); ++it) {
+
       const ClexDescription &desc = it->second;
-      log << desc.name;
-      if(desc.name == m_default_clex) {
-        log << "*";
-      }
-      log << ": \n";
-      log << std::setw(16) << "property: " << desc.property << "\n";
-      log << std::setw(16) << "calctype: " << desc.calctype << "\n";
-      log << std::setw(16) << "ref: " << desc.ref << "\n";
-      log << std::setw(16) << "bset: " << desc.bset << "\n";
-      log << std::setw(16) << "eci: " << desc.eci << "\n";
-      log << "\n";
+      bool is_default = (desc.name == m_default_clex);
+      int indent = 0;
+      desc.print(log, is_default, indent);
     }
     log << std::endl;
 

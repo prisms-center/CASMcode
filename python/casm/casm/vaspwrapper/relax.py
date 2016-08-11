@@ -79,7 +79,7 @@ class Relax(object):
         # get the configname from the configdir path
         _res = os.path.split(configdir)
         self.configname = os.path.split(_res[0])[1] + "/" + _res[1]
-        print "  Configuration:", self.configname + str(configdir)
+        print "  Configuration:", self.configname
         
         print "  Reading CASM settings"
         self.casm_directories=casm.project.DirectoryStructure(configdir)

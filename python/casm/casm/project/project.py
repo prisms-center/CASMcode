@@ -1,56 +1,7 @@
 import warnings
-import casm
+from casm import project_path, API
 import os, subprocess, json
 from os.path import join
-import ctypes, glob
-
-if 'LIBCASM' in os.environ:
-  libname = os.environ['LIBCASM']
-elif 'CASM_PREFIX' in os.environ:
-  libname = glob.glob(join(os.environ['CASM_PREFIX'], 'lib', 'libcasm.*'))[0]
-else:
-  libname = glob.glob(join('/usr', 'local', 'lib', 'libcasm.*'))[0]
-lib_casm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
-
-if 'LIBCCASM' in os.environ:
-  libname = os.environ['LIBCCASM']
-elif 'CASM_PREFIX' in os.environ:
-  libname = glob.glob(join(os.environ['CASM_PREFIX'], 'lib', 'libccasm.*'))[0]
-else:
-  libname = glob.glob(join('/usr', 'local', 'lib', 'libccasm.*'))[0]
-lib_ccasm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
-
-#### Argument types
-
-lib_ccasm.casm_STDOUT.restype = ctypes.c_void_p
-
-lib_ccasm.casm_STDERR.restype = ctypes.c_void_p
-
-lib_ccasm.casm_nullstream.restype = ctypes.c_void_p
-
-lib_ccasm.casm_ostringstream_new.restype = ctypes.c_void_p
-
-lib_ccasm.casm_ostringstream_delete.argtypes = [ctypes.c_void_p]
-lib_ccasm.casm_ostringstream_delete.restype = None
-
-lib_ccasm.casm_ostringstream_size.argtypes = [ctypes.c_void_p]
-lib_ccasm.casm_ostringstream_size.restype = ctypes.c_ulong
-
-lib_ccasm.casm_ostringstream_strcpy.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_char)]
-lib_ccasm.casm_ostringstream_strcpy.restype = ctypes.POINTER(ctypes.c_char)
-
-
-lib_ccasm.casm_primclex_new.argtypes = [ctypes.c_char_p, ctypes.c_void_p]
-lib_ccasm.casm_primclex_new.restype = ctypes.c_void_p
-
-lib_ccasm.casm_primclex_delete.argtypes = [ctypes.c_void_p]
-lib_ccasm.casm_primclex_delete.restype = None
-
-lib_ccasm.casm_primclex_refresh.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool]
-lib_ccasm.casm_primclex_refresh.restype = None
-
-lib_ccasm.casm_capi.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
-lib_ccasm.casm_capi.restype = ctypes.c_int
 
 
 class ClexDescription(object):
@@ -105,12 +56,12 @@ class ProjectSettings(object):
             path: path to CASM project (Default=None, uses project containing current directory). 
 
         """
-        if casm.project_path(path) is None:
+        if project_path(path) is None:
           if path is None:
             raise Exception("No CASM project found using " + os.getcwd())
           else:
             raise Exception("No CASM project found using " + path)
-        self.path = casm.project_path(path)
+        self.path = project_path(path)
         dir = DirectoryStructure(self.path)
         self.data = json.load(open(dir.project_settings()))
 
@@ -152,12 +103,12 @@ class DirectoryStructure(object):
             path: path to CASM project (Default=None, uses project containing current directory). 
 
         """
-        if casm.project_path(path) is None:
+        if project_path(path) is None:
           if path is None:
             raise Exception("No CASM project found using " + os.getcwd())
           else:
             raise Exception("No CASM project found using " + path)
-        self.path = casm.project_path(path)
+        self.path = project_path(path)
         self.__casm_dir = ".casm"
         self.__bset_dir = "basis_sets"
         self.__calc_dir = "training_data"
@@ -490,11 +441,14 @@ class Project(object):
       
       """
       
-      if casm.project_path(path) != casm.project_path():
-        raise Exception("Running from outside a CASM project is not currently supported")
+      # will hold a ctypes.c_void_p when loading CASM project into memory
+      self._ptr = None
+      
+      # will keep a casm.API instance
+      self._api = None
       
       # set path to this CASM project
-      if casm.project_path(path) is None:
+      if project_path(path) is None:
         if path is None:
           raise Exception("No CASM project found using " + os.getcwd())
         else:
@@ -507,14 +461,12 @@ class Project(object):
         else:
           casm_exe = "casm"
       
-      self.path = casm.project_path(path)
+      self.path = project_path(path)
       self.__refresh()
       self.casm_exe = casm_exe
       self.verbose = verbose
       
-      # will hold a ctypes.c_void_p when loading CASM project into memory
-      self._ptr = None
-    
+      
     
     def __del__(self):
       self.__unload()
@@ -525,17 +477,18 @@ class Project(object):
       Explicitly load CASM project into memory.
       """
       if self._ptr is None:
+        self._api = API()
         if self.verbose:
-          streamptr = lib_ccasm.casm_STDOUT()
+          streamptr = self._api.stdout()
         else:
-          streamptr = lib_ccasm.casm_nullstream()
+          streamptr = self._api.nullstream()
         
         if self.verbose:
-          errstreamptr = lib_ccasm.casm_STDERR()
+          errstreamptr = self._api.stderr()
         else:
-          errstreamptr = lib_ccasm.casm_nullstream()
+          errstreamptr = self._api.nullstream()
         
-        self._ptr = lib_ccasm.casm_primclex_new(self.path, streamptr, streamptr, errstreamptr)
+        self._ptr = self._api.primclex_new(self.path, streamptr, streamptr, errstreamptr)
         
     
     def __unload(self):
@@ -543,7 +496,7 @@ class Project(object):
       Explicitly unload CASM project from memory.
       """
       if self._ptr is not None:
-        lib_ccasm.casm_primclex_delete(self._ptr)
+        self._api.primclex_delete(self._ptr)
         self._ptr = None
     
     
@@ -565,7 +518,7 @@ class Project(object):
         self.dir = DirectoryStructure(self.path)
         self.settings = ProjectSettings(self.path)
       if self._ptr is not None:
-        lib_ccasm.casm_primclex_refresh(
+        self._api.primclex_refresh(
           self.data(), 
           read_settings,
           read_composition,
@@ -592,26 +545,10 @@ class Project(object):
       Returns:
         (stdout, stderr, returncode): The result of running the command via the command line iterface
       """
-      return self.command_via_capi(args)
+      return self._command_via_capi(args)
     
         
-    def command_via_cli(self, args):
-      """
-      Execute a command via the command line interface. 
-      
-      Args:
-        args: A string containing the command to be executed. Ex: "select --set-on -o /abspath/to/my_selection"
-      
-      Returns:
-        (stdout, stderr, returncode): The result of running the command via the command line iterface
-      """
-      child = subprocess.Popen([self.casm_exe] + args.split(),stdout=subprocess.PIPE,stderr=subprocess.PIPE, cwd=self.path)
-      result = child.communicate()
-      self.__refresh()
-      return (result[0], result[1], child.returncode)
-    
-    
-    def command_via_capi(self, args):
+    def _command_via_capi(self, args):
       """
       Execute a command via the c api. 
       
@@ -621,28 +558,25 @@ class Project(object):
       Returns:
         (stdout, stderr, returncode): The result of running the command via the command line iterface
       """
+      # this also ensures self._api is not None
+      data = self.data()
+      
       # construct stringstream objects to capture stdout, debug, stderr
-      ss = lib_ccasm.casm_ostringstream_new()
-      ss_debug = lib_ccasm.casm_ostringstream_new()
-      ss_err = lib_ccasm.casm_ostringstream_new()
+      ss = self._api.ostringstream_new()
+      ss_debug = self._api.ostringstream_new()
+      ss_err = self._api.ostringstream_new()
       
-      res = lib_ccasm.casm_capi(args, self.data(), ss, ss_debug, ss_err)
+      res = self._api(args, self.data(), self.path, ss, ss_debug, ss_err)
       
-      # copy string and delete stringstream
-      qstr = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss))
-      lib_ccasm.casm_ostringstream_strcpy(ss, qstr)
-      lib_ccasm.casm_ostringstream_delete(ss)
+      # copy strings and delete stringstreams
+      stdout = self._api.ostringstream_to_str(ss)
+      self._api.ostringstream_delete(ss)
       
-      # copy string and delete stringstream
-      qstr_debug = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss_debug))
-      lib_ccasm.casm_ostringstream_strcpy(ss_debug, qstr_debug)
-      lib_ccasm.casm_ostringstream_delete(ss_debug)
+      self._api.ostringstream_delete(ss_debug)
       
-      # copy string and delete stringstream
-      qstr_err = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss_err))
-      lib_ccasm.casm_ostringstream_strcpy(ss_err, qstr_err)
-      lib_ccasm.casm_ostringstream_delete(ss_err)
+      stderr = self._api.ostringstream_to_str(ss_err)
+      self._api.ostringstream_delete(ss_err)
       
       self.__refresh()
-      return (qstr, qstr_err, res)
+      return (stdout, stderr, res)
       
