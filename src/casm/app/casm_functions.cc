@@ -54,7 +54,7 @@ namespace CASM {
     err_log(_err_log) {
 
     // parse _args -> argc, argv
-    int parse_result = wordexp(_args.c_str(), &m_p, 0);
+    parse_result = wordexp(_args.c_str(), &m_p, 0);
     if(parse_result) {
       _err_log << "Error parsing query: '" << _args << "'" << std::endl;
       _err_log << "wordexp() error: " << parse_result << std::endl;
@@ -73,8 +73,6 @@ namespace CASM {
     m_free_p = true;
     argc = m_p.we_wordc;
     argv = m_p.we_wordv;
-
-    std::vector<std::string> args(argv, argv + argc);
 
     _init();
   }

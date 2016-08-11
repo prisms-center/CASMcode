@@ -78,8 +78,6 @@ extern "C" {
 
     fs::path _root(root);
 
-    _err_log << "_root: " << _root << std::endl;
-
     CommandArgs command_args(s, _primclex, _root, _log, _err_log);
     if(command_args.parse_result) {
       return command_args.parse_result;
