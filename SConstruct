@@ -1,7 +1,7 @@
 # http://www.scons.org/doc/production/HTML/scons-user.html
 # This is: Sconstruct
 
-import os, glob, copy, shutil, subprocess, imp, re
+import sys, os, glob, copy, shutil, subprocess, imp, re
 
 from os.path import join
 
@@ -575,13 +575,24 @@ if 'configure' in COMMAND_LINE_TARGETS:
   def check_module(module_name):
     print "Checking for Python module '" + module_name + "'... ",
     try:
-      imp.find_module(module_name)
-      res = 1
-      print "yes"
-    except:
-      res = 0
-      print "no"
-    return res
+      res = imp.find_module(module_name)
+      if res:
+        print "yes"
+        return 1
+    except ImportError:
+      pass
+    for item in sys.path:
+      importer = sys.path_importer_cache.get(item)
+      if importer:
+        try:
+          result = importer.find_module(module_name, [item])
+          if result:
+            print "yes"
+            return 1
+        except ImportError:
+          pass
+    print "no"
+    return 0
   
   conf = Configure(
     env.Clone(LIBPATH=install_lib_paths,
@@ -619,12 +630,12 @@ if 'configure' in COMMAND_LINE_TARGETS:
     if not check_module(module_name):
       if_failed("Python module '" + module_name + "' is not installed")
   if not check_module('pbs'):
-      if_failed("""
-      Python module '%s' is not installed
+      print """
+      Python module 'pbs' is not installed
         This module is only necessary for setting up and submitting DFT jobs
         **It is not the module available from pip**"
         It is available from: https://github.com/prisms-center/pbs
-      """ % module_name)
+      """
   
   
   print "Configuration checks passed."
