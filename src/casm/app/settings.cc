@@ -282,13 +282,15 @@ namespace CASM {
         }
 
         // must call one and only one option at a time:
-        if(option_count == 0) {
-          args.log << "Error in 'casm settings'. No option selected." << std::endl;
-          call_help = true;
-        }
-        else if(option_count > 1) {
-          args.log << "Error in 'casm settings'. Use one option (other than --clex) at a time." << std::endl;
-          call_help = true;
+        if(!vm.count("help")) {
+          if(option_count == 0) {
+            args.log << "Error in 'casm settings'. No option selected." << std::endl;
+            call_help = true;
+          }
+          else if(option_count > 1) {
+            args.log << "Error in 'casm settings'. Use one option (other than --clex) at a time." << std::endl;
+            call_help = true;
+          }
         }
 
         // --help option

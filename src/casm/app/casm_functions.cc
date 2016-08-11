@@ -91,7 +91,6 @@ namespace CASM {
     if(root.empty()) {
       root = find_casmroot(fs::current_path());
     }
-    err_log << "CommandArgs root: " << root << std::endl;
 
     // set 'command'
     command = (argc > 1) ? std::string(argv[1]) : "";
