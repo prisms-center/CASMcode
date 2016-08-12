@@ -33,7 +33,8 @@ casmplottingdir=$(casmpydir)/plotting
 
 
 
-dist_bin_SCRIPTS+=python/casm/scripts/casm-learn\
+dist_bin_SCRIPTS+=python/casm/scripts/casm-calc\
+				  python/casm/scripts/casm-learn\
 				  python/casm/scripts/casm.view\
 				  python/casm/scripts/vasp.relax\
 				  python/casm/scripts/vasp.relax.report\
