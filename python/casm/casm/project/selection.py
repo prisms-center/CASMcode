@@ -1,5 +1,5 @@
-import project
-import query
+from casm.project.project import Project
+from casm.project.query import query
 import os, subprocess, json, copy
 import pandas
 import numpy as np
@@ -46,8 +46,8 @@ class Selection(object):
 
         """
         if proj == None:
-          proj = project.Project()
-        elif not isinstance(proj, project.Project):
+          proj = Project()
+        elif not isinstance(proj, Project):
           raise Exception("Error constructing Selection: proj argument is not a CASM project")
         self.proj = proj
         
@@ -72,7 +72,7 @@ class Selection(object):
         """
         if self._data is None:
           if self.path in ["MASTER", "ALL", "CALCULATED"]:
-            self._data = query.query(self.proj, ['configname', 'selected'], self)
+            self._data = query(self.proj, ['configname', 'selected'], self)
           elif self._is_json():
             self._data = pandas.read_json(self.path, orient='records')
           else:
@@ -209,7 +209,7 @@ class Selection(object):
         if len(_col) == 0:
           return
         
-        df = query.query(self.proj, _col, self, all=self.all)
+        df = query(self.proj, _col, self, all=self.all)
         
         if verbose:
           print "#   DONE\n"
@@ -220,6 +220,21 @@ class Selection(object):
         
         for c in df.columns:
           self.data.loc[:,c] = df.loc[:,c].values
+    
+    
+    def write_pos(self, all=False):
+        """
+        Write POS file for configurations
+        
+        Arguments
+        ---------
+          
+          all: bool, optional, default=False
+            if True, will write POS file for all configurations in the selection
+            whether selected or not. If False, only write POS file for selected
+            configurations.
+        """
+        self.proj.command("query -c " + self.path + " --write-pos")
     
     
     def add_data(self, name, data=None, force=False):

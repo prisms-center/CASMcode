@@ -31,35 +31,15 @@ namespace CASM {
 - See 'casm format' for descriptions and locations of the 'prim.json' file.\n";
   }
 
-  void standard_composition_uncalculated() {
-
-    std::cout << "NEXT STEPS:\n\n";
-
-    std::cout <<
-              "Calculate standard composition axes\n\
-- Execute: 'casm composition --calc'                                      \n\
-- If successful, standard composition axes will be printed to screen and  \n\
-  saved in the 'composition_axes.json' file.                              \n\
-- Then execute 'casm composition -s key' to select one of the listed axes.\n\
-- If none of the composition axes are satisfactory, edit the file         \n\
-  'composition_axes.json' to add your own custom composition axes to the  \n\
-  'custom_axes' JSON object.\n\n";
-
-    std::cout <<
-              "- See 'casm format' for a description and the location of  \n\
-   the 'composition_axes.json' file.\n\n";
-
-  }
-
   void composition_unselected() {
 
     std::cout << "NEXT STEPS:\n\n";
 
     std::cout <<
               "Select composition axes\n\
-- Execute: 'casm composition -d' to display composition axes.             \n\
-- Then execute 'casm composition -s N' to select one of the listed axes.  \n\
-- If none of the composition axes are satisfactory, edit the file         \n\
+- Execute: 'casm composition -d' to display standard composition axes.    \n\
+- Then execute 'casm composition -s <#>' to select one of the listed axes.\n\
+- If no standard composition axis is satisfactory, edit the file          \n\
   'composition_axes.json' to add your own custom composition axes to the  \n\
   'custom_axes' JSON object.\n\n";
 
@@ -367,12 +347,11 @@ Instructions for fitting ECI:                                          \n\n\
     std::cout << "\n#################################\n\n";
 
     std::cout << "CASM status:\n\n";
-    std::cout << "1) Project initialized: ";
 
     const fs::path &root = args.root;
 
     if(root.empty()) {
-      std::cout << " FALSE\n\n";
+      std::cout << "1) Project initialized: FALSE\n\n";
 
       if(vm.count("next")) {
         std::cout << "\n#################################\n\n";
@@ -416,7 +395,7 @@ Instructions for fitting ECI:                                          \n\n\
     std::string eci = desc.eci;
 
 
-    std::cout << "TRUE\n";
+    std::cout << "1) Project initialized: TRUE\n\n";
     std::cout << "- Project name: " << primclex.name() << std::endl;
     std::cout << "- Project location: " << primclex.get_path().string() << std::endl;
 
@@ -440,25 +419,6 @@ Instructions for fitting ECI:                                          \n\n\
     /// 2) Composition axes
 
     std::cout << "2) Composition axes \n";
-
-    std::cout << "- Standard composition axes calculated: ";
-
-    if(!fs::is_regular_file(primclex.dir().composition_axes())) {
-      std::cout << "FALSE\n\n";
-
-      if(vm.count("next")) {
-        std::cout << "\n#################################\n\n";
-
-        standard_composition_uncalculated();
-      }
-      else {
-        std::cout << "For next steps, run 'casm status -n'\n\n";
-      }
-
-      return 0;
-    }
-
-    std::cout << "TRUE\n";
 
     std::cout << "- Composition axes selected: ";
 

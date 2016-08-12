@@ -18,7 +18,6 @@ namespace CASM {
       add_configlist_suboption();
 
       m_desc.add_options()
-      ("write-pos", "Write POS file for each selected configuration before executing the command")
       ("exec,e", po::value<std::string>(&m_exec_str)->required()->value_name(ArgHandler::command()), "Command to execute");
       return;
     }

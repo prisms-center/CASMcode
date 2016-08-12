@@ -1,6 +1,7 @@
 #ifndef CASM_FUNCTIONS_HH
 #define CASM_FUNCTIONS_HH
 
+#include <wordexp.h>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/Log.hh"
 
@@ -37,22 +38,50 @@ namespace CASM {
   /// \brief Data structure holding basic CASM command info
   struct CommandArgs {
 
+    /// \brief CommandArgs constructor
     CommandArgs(int _argc,
                 char *_argv[],
                 PrimClex *_primclex = nullptr,
+                fs::path _root = fs::path(),
                 Log &_log = default_log(),
                 Log &_err_log = default_err_log());
+
+    /// \brief CommandArgs constructor
+    CommandArgs(std::string _args,
+                PrimClex *_primclex = nullptr,
+                fs::path _root = fs::path(),
+                Log &_log = default_log(),
+                Log &_err_log = default_err_log());
+
+    CommandArgs(const CommandArgs &other) = delete;
+    CommandArgs(CommandArgs &&other) = delete;
+    CommandArgs &operator=(const CommandArgs &) = delete;
+    CommandArgs &operator=(CommandArgs &&) = delete;
+
+    /// \brief CommandArgs destructor
+    ~CommandArgs();
 
     int argc;
     char **argv;
     PrimClex *primclex;
+    fs::path root;
     Log &log;
     Log &err_log;
 
-    fs::path root;
+    /// stores error codes when attempting to parse std::string _args -> argc, argv
+    int parse_result;
+
     bool is_help;
     bool write_log;
     std::string command;
+
+  private:
+
+    void _init();
+
+    /// Used when parsing std::string args -> argc, argv
+    bool m_free_p;
+    wordexp_t m_p;
 
   };
 
@@ -64,6 +93,9 @@ namespace CASM {
 
   /// \brief Executes CASM commands specified by args
   int casm_api(const CommandArgs &args);
+
+  // /// \brief Executes casm_api in specified working directory
+  // int casm_api(const CommandArgs &args, fs::path working_dir);
 
 
 

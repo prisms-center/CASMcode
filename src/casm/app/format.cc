@@ -81,13 +81,14 @@ namespace CASM {
       std::cout << "  The expected CASM project directory structure with VASP settings  \n";
       std::cout << "  files:                                                            \n";
       std::cout << "                                                                    \n";
-      std::cout << "    $ROOT/.casm                                                     \n";
-      std::cout << "      project_settings.json                                         \n";
-      std::cout << "      config_list.json                                              \n";
       std::cout << "    $ROOT/                                                          \n";
       std::cout << "      prim.json                                                     \n";
       std::cout << "      (PRIM)                                                        \n";
       std::cout << "      LOG                                                           \n";
+      std::cout << "    $ROOT/.casm                                                     \n";
+      std::cout << "      project_settings.json                                         \n";
+      std::cout << "      config_list.json                                              \n";
+      std::cout << "      composition_axes.json                                         \n";
       std::cout << "    $ROOT/symmetry/                                                 \n";
       std::cout << "      lattice_point_group.json                                      \n";
       std::cout << "      factor_group.json                                             \n";
@@ -105,7 +106,6 @@ namespace CASM {
       std::cout << "      KPOINTS                                                       \n";
       std::cout << "      POSCAR                                                        \n";
       std::cout << "    $ROOT/training_data/settings/$CURR_CALCTYPE/$CURR_REF/          \n";
-      std::cout << "      composition_axes.json                                         \n";
       std::cout << "      chemical_reference.json                                       \n";
       std::cout << "    $ROOT/training_data/$SCELNAME/                                  \n";
       std::cout << "      LAT                                                           \n";
@@ -632,7 +632,7 @@ LCHARG = .FALSE.\n";
       std::cout << "\n### composition_axes.json ##################\n\n";
 
       std::cout << "LOCATION WHEN GENERATED:\n";
-      std::cout << "$ROOT/training_data/settings/$CURR_CALCTYPE/$CURR_REF/composition_axes.json\n";
+      std::cout << "$ROOT/.casm/composition_axes.json\n";
       std::cout << "\n\n";
 
       std::cout << "DESCRIPTION:\n";

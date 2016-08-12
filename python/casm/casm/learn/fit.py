@@ -943,7 +943,7 @@ def print_input_help():
   
     "checkhull" : {
       "selection": "ALL",
-      "write_results": True
+      "write_results": true,
       "uncalculated_range": 1e-8,
       "ranged_rms": [0.001, 0.005, 0.01, 0.05, 0.1, 0.5],
       "composition": "atom_frac",
@@ -1901,8 +1901,8 @@ def checkhull(input, hall, indices=None, verbose=True):
   tmp_dir = join(proj.dir.casm_dir(), "tmp")
   if not os.path.exists(tmp_dir):
     os.mkdir(tmp_dir)
-  dft_selection = join(proj.dir.casm_dir(), selection + "_dft")
-  dft_hull_selection = join(proj.dir.casm_dir(), selection + "_dft_hull")
+  dft_selection = join(tmp_dir, selection + "_dft")
+  dft_hull_selection = join(tmp_dir, selection + "_dft_hull")
   proj.command("select -c " + selection + " --set-off 'not(is_calculated)' -f -o " + dft_selection)
   
   # properties to query
@@ -2112,6 +2112,8 @@ def checkspecs(input, verbose=True):
       Print information to stdout.
     
   """
+  specs = input["problem_specs"]
+  
   # set checkspecs default settings
   if "checkspecs" not in input:
     input["checkspecs"] = dict()

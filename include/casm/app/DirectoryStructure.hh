@@ -67,7 +67,7 @@ namespace CASM {
       return _all_settings("ref", calc_settings_dir(calctype));
     }
 
-    /// \brief Check filesystem directory structure and return list of all cluster expansion names
+    /// \brief Check filesystem directory structure and return list of all property names
     std::vector<std::string> all_property() const {
       return _all_settings("clex", m_root / m_clex_dir);
     }
@@ -274,13 +274,13 @@ namespace CASM {
     }
 
     /// \brief Returns path to eci directory
-    fs::path eci_dir(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
-      return clex_dir(clex) / _calctype(calctype) / _ref(ref) / _bset(bset) / _eci(eci);
+    fs::path eci_dir(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const {
+      return clex_dir(property) / _calctype(calctype) / _ref(ref) / _bset(bset) / _eci(eci);
     }
 
     /// \brief Returns path to eci.json
-    fs::path eci(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
-      return eci_dir(clex, calctype, ref, bset, eci) / "eci.json";
+    fs::path eci(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const {
+      return eci_dir(property, calctype, ref, bset, eci) / "eci.json";
     }
 
 
@@ -299,8 +299,8 @@ namespace CASM {
     // -- deprecated ------------------------------------
 
     /// \brief Returns path to eci.out
-    fs::path eci_out(std::string clex, std::string calctype, std::string ref, std::string bset, std::string eci) const {
-      return eci_dir(clex, calctype, ref, bset, eci) / "eci.out";
+    fs::path eci_out(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const {
+      return eci_dir(property, calctype, ref, bset, eci) / "eci.out";
     }
 
     /// \brief Query aliases file
