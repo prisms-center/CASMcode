@@ -223,6 +223,23 @@ namespace CASM {
         try {
 
           GrandCanonicalSettings gc_settings(settings_path);
+
+          if(gc_settings.dependent_runs()) {
+            throw std::invalid_argument("ERROR in LTE1 calculation: dependents_runs must be false");
+          }
+
+          bool ok = false;
+          if(gc_settings.is_motif_configname() &&
+             (gc_settings.motif_configname() == "auto" ||
+              gc_settings.motif_configname() == "restricted_auto")) {
+            ok = true;
+          }
+
+          if(!ok) {
+            throw std::invalid_argument("ERROR in LTE1 calculation: must use "
+                                        "motif \"configname\": \"auto\" or \"restricted_auto\"");
+          }
+
           GrandCanonicalDirectoryStructure dir(gc_settings.output_directory());
           if(gc_settings.write_csv()) {
             if(fs::exists(dir.results_csv())) {
@@ -258,11 +275,21 @@ namespace CASM {
             num_conditions = (final - init) / incr + 1;
           }
 
+          ConfigDoF configdof;
+          std::string configname;
+
           auto cond = init;
           for(int index = 0; index < num_conditions; ++index) {
 
+            if(gc_settings.motif_configname() == "auto") {
+              std::tie(configdof, configname) = gc.auto_motif(cond);
+            }
+            else if(gc_settings.motif_configname() == "restricted_auto") {
+              std::tie(configdof, configname) = gc.restricted_auto_motif(cond);
+            }
             if(index != 0) {
               gc.set_conditions(cond);
+              gc.set_configdof(configdof);
             }
 
             if(gc.debug()) {
@@ -278,7 +305,7 @@ namespace CASM {
             double phi_LTE1 = gc.lte_grand_canonical_free_energy();
 
             log.write("Output files");
-            write_lte_results(gc_settings, gc, phi_LTE1, log);
+            write_lte_results(gc_settings, gc, phi_LTE1, configname, log);
             log << std::endl;
             cond += incr;
 
