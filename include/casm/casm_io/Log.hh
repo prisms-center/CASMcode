@@ -125,6 +125,13 @@ namespace CASM {
     int verbosity() const;
 
     void set_verbosity(int _verbosity);
+    
+    template<int _required_verbosity>
+    Log& require() {
+      static_assert(_required_verbosity >= none && _required_verbosity <= debug, "CASM::Log _required_verbosity must be <= 100");
+      m_print = (m_verbosity >= _required_verbosity);
+      return *this;
+    }
 
 
     void reset(std::ostream &_ostream = std::cout, int _verbosity = standard, bool _show_clock = false);
@@ -136,6 +143,10 @@ namespace CASM {
     friend Log &operator<<(Log &log, std::ostream & (*fptr)(std::ostream &));
 
     operator std::ostream &();
+    
+    explicit operator bool () {
+      return m_print;
+    }
 
     /// \brief Read verbosity level from a string
     static std::pair<bool, int> verbosity_level(std::string s);

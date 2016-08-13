@@ -270,6 +270,7 @@ namespace CASM {
   /// - T
   /// - phi_LTE
   /// - Beta
+  /// - configname
   /// - gs_potential_energy
   /// - gs_formation_energy
   /// - param_chem_pot(a) ...
@@ -281,7 +282,7 @@ namespace CASM {
   /// { "key0":[...], "key1":[...], ... }
   /// \endcode
   ///
-  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc, const double &phi_LTE1) {
+  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc, const double &phi_LTE1, const std::string &configname) {
 
     DataFormatter<ConstMonteCarloPtr> formatter;
 
@@ -293,6 +294,7 @@ namespace CASM {
     // always sample Beta, potential_energy, and formation_energy
     {
       formatter.push_back(MonteCarloBetaFormatter<GrandCanonical>());
+      formatter.push_back(ConstantValueFormatter<std::string, ConstMonteCarloPtr>("configname", configname));
       name = "gs_potential_energy";
       auto evaluator = [ = ](const ConstMonteCarloPtr & ptr) {
         return static_cast<const GrandCanonical *>(ptr)->potential_energy();
@@ -909,12 +911,12 @@ namespace CASM {
   }
 
   /// \brief Will create new file or append to existing results file the results of the latest run
-  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc, const double &phi_LTE1, Log &_log) {
+  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc, const double &phi_LTE1, const std::string &configname, Log &_log) {
     try {
 
       fs::create_directories(settings.output_directory());
       GrandCanonicalDirectoryStructure dir(settings.output_directory());
-      auto formatter = make_lte_results_formatter(mc, phi_LTE1);
+      auto formatter = make_lte_results_formatter(mc, phi_LTE1, configname);
 
       // write csv path results
       if(settings.write_csv()) {

@@ -54,6 +54,16 @@ namespace CASM {
     /// \brief Set configdof and clear previously collected data
     void set_configdof(const ConfigDoF &configdof, const std::string &msg = "");
 
+    /// \brief Set configdof and conditions and clear previously collected data
+    std::pair<ConfigDoF, std::string> set_state(
+      const GrandCanonicalConditions &new_conditions,
+      const GrandCanonicalSettings &settings);
+
+    /// \brief Set configdof and conditions and clear previously collected data
+    void set_state(const CondType &new_conditions,
+                   const ConfigDoF &configdof,
+                   const std::string &msg = "");
+
     /// \brief Propose a new event, calculate delta properties, and return reference to it
     const EventType &propose();
 
@@ -133,6 +143,21 @@ namespace CASM {
       return m_formation_energy_clex.eci();
     }
 
+    /// \brief Calculate delta correlations for an event
+    void _set_dCorr(GrandCanonicalEvent &event,
+                    Index mutating_site,
+                    int sublat,
+                    int current_occupant,
+                    int new_occupant,
+                    bool use_deltas,
+                    bool all_correlations) const;
+
+    /// \brief Print correlations to _log()
+    void _print_correlations(const Eigen::VectorXd &corr,
+                             std::string title,
+                             std::string colheader,
+                             bool all_correlations) const;
+
     /// \brief Calculate delta properties for an event and update the event with those properties
     void _update_deltas(GrandCanonicalEvent &event,
                         Index mutating_site,
@@ -143,8 +168,17 @@ namespace CASM {
     /// \brief Calculate properties given current conditions
     void _update_properties();
 
-    /// \brief Select initial configdof
-    ConfigDoF _initial_configdof(const GrandCanonicalSettings &settings, Log &_log);
+    /// \brief Generate supercell filling ConfigDoF from default configuration
+    ConfigDoF _default_motif() const;
+
+    /// \brief Generate minimum potential energy ConfigDoF
+    std::pair<ConfigDoF, std::string> _auto_motif(const GrandCanonicalConditions &cond) const;
+
+    /// \brief Generate minimum potential energy ConfigDoF for this supercell
+    std::pair<ConfigDoF, std::string> _restricted_auto_motif(const GrandCanonicalConditions &cond) const;
+
+    /// \brief Generate supercell filling ConfigDoF from configuration
+    ConfigDoF _configname_motif(const std::string &configname) const;
 
 
     ///Keeps track of what sites can change to what

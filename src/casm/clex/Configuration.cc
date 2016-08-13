@@ -236,8 +236,15 @@ namespace CASM {
   }
 
   //*********************************************************************************
+  /// \brief SCELV_A_B_C_D_E_F/i
   std::string Configuration::name() const {
     return get_supercell().get_name() + "/" + get_id();
+  }
+
+  //*********************************************************************************
+  /// \brief SCELV_A_B_C_D_E_F.i (only use this when 'name' won't work)
+  std::string Configuration::altname() const {
+    return get_supercell().get_name() + "." + get_id();
   }
 
   //*********************************************************************************

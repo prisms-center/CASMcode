@@ -2,9 +2,32 @@
 #include "casm/clex/Configuration.hh"
 
 namespace CASM {
+  
+  
+  bool SamplerNameCompare::operator()(const std::string& A, const std::string& B) const {
+    std::string::size_type Apos1 = A.find_first_of("([");
+    std::string::size_type Bpos1 = B.find_first_of("([");
+    if(A.substr(0, Apos1) == B.substr(0, Bpos1)) {
+      std::string::size_type Apos2 = A.find_first_of("])");
+      std::string::size_type Bpos2 = B.find_first_of("])");
+      
+      std::string Aindex = A.substr(Apos1+1, Apos2-Apos1-1);
+      std::string Bindex = B.substr(Bpos1+1, Bpos2-Bpos1-1);
+      
+      for(int i=0; i<Aindex.size(); i++) {
+        if(!std::isdigit(Aindex[i])) {
+          return Aindex < Bindex;
+        }
+      }
+      
+      return std::stoi(Aindex) < std::stoi(Bindex);
+    }
+    return A.substr(0, Apos1) < B.substr(0, Bpos1);
+  }
 
   /// \brief Samples all requested property data, and stores pass and step number sample was taken at
   void MonteCarlo::sample_data(MonteCounter::size_type pass, MonteCounter::size_type step) {
+    
     // call MonteSamper::sample(*this) for all samplers
     for(auto it = m_sampler.begin(); it != m_sampler.end(); ++it) {
       it->second->sample(*this);
@@ -44,15 +67,32 @@ namespace CASM {
     }
 
     m_is_equil_uptodate = true;
-
+    
+    
+    _log().check<Log::verbose>("Equilibration");
+    _log() << std::boolalpha 
+           << std::setw(24) << "quantity"
+           << std::setw(20) << "is_equilibrated"
+           << std::setw(16) << "at_sample"
+           << std::endl;
     // check if all samplers that must converge have equilibrated, and find the maximum
     //   of the number of samples needed to equilibrate
     MonteSampler::size_type max_equil_samples = 0;
     for(auto it = m_sampler.cbegin(); it != m_sampler.cend(); ++it) {
       if(it->second->must_converge()) {
-
+        
         // is_equilibrated returns std::pair(is_equilibrated?, equil_samples)
         auto equil = it->second->is_equilibrated();
+        
+        _log() << std::setw(24) << it->second->name()
+               << std::setw(20) << (equil.first ? "true" : "false"); // why isn't boolapha working?
+        if(equil.first) {
+          _log() << std::setw(16) << equil.second << std::endl;
+        } 
+        else {
+          _log() << std::setw(16) << "unknown" << std::endl;
+        }
+        
         if(!equil.first) {
           return m_is_equil = std::make_pair(false, MonteSampler::size_type(0));
         }
@@ -60,8 +100,15 @@ namespace CASM {
           max_equil_samples = equil.second;
         }
       }
+      else {
+//        _log() << std::setw(24) << it->second->name()
+//               << std::setw(20) << "unknown"
+//               << std::setw(16) << "unknown" << std::endl;
+      }
     }
-
+    
+    _log() << "Overall equilibration at sample: " << max_equil_samples << "\n" << std::endl;
+    
     return m_is_equil = std::make_pair(true, max_equil_samples);
   }
 
@@ -73,7 +120,7 @@ namespace CASM {
   ///   samplers that must converge have equilibrated
   ///
   bool MonteCarlo::is_converged() const {
-
+  
     // if we've already calculated convergence, return result
     if(m_is_converged_uptodate) {
       return m_is_converged;
@@ -95,18 +142,43 @@ namespace CASM {
       m_is_converged = false;
       return m_is_converged;
     }
-
+    
+    _log().check<Log::verbose>("Convergence");
+    _log() << std::boolalpha
+           << std::setw(24) << "quantity"
+           << std::setw(16) << "mean" 
+           << std::setw(16) << "req_prec"
+           << std::setw(16) << "calc_prec"
+           << std::setw(16) << "is_converged"
+           << std::endl;
+    
     // check if all samplers that must converge have converged using data in range [max_equil_samples, end)
     m_is_converged = std::all_of(m_sampler.cbegin(),
                                  m_sampler.cend(),
     [ = ](const SamplerMap::value_type & val) {
       if(val.second->must_converge()) {
-        return val.second->is_converged(equil.second);
+        bool result = val.second->is_converged(equil.second);
+        _log() << std::setw(24) << val.second->name()
+               << std::setw(16) << val.second->mean(equil.second) 
+               << std::setw(16) << val.second->requested_precision() 
+               << std::setw(16) << val.second->calculated_precision(equil.second)
+               << std::setw(16) << (result ? "true" : "false") // why isn't boolapha working?
+               << std::endl;
+        return result;
       }
       else {
+//        _log() << std::setw(24) << val.second->name()
+//               << std::setw(16) << val.second->mean(equil.second) 
+//               << std::setw(16) << "none" 
+//               << std::setw(16) << "unknown"
+//               << std::setw(16) << "unknown"
+//               << std::endl;
         return true;
       }
     });
+    
+    _log() << "Overall convergence?: " << std::boolalpha << m_is_converged << "\n" << std::endl;
+    
     return m_is_converged;
   }
 
@@ -114,7 +186,7 @@ namespace CASM {
   ///
   /// Currently set to every 10 samples
   bool MonteCarlo::check_convergence_time() const {
-
+    
     if(m_sample_time.size() >= m_next_convergence_check) {
       return true;
     }
