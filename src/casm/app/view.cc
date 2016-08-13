@@ -15,7 +15,7 @@ namespace CASM {
     void ViewOption::initialize() {
       add_help_suboption();
       add_confignames_suboption();
-      add_configlist_suboption();
+      add_configlist_nodefault_suboption();
 
       return;
     }
@@ -26,16 +26,16 @@ namespace CASM {
     fs::path selection;
     po::variables_map vm;
     bool force;
-    std::vector<std::string> configname;
+    std::vector<std::string> confignames;
 
 
 
     // Set command line options using boost program_options
     Completer::ViewOption view_opt;
 
-    // allow configname as positional options
+    // allow confignames as positional options
     po::positional_options_description p;
-    p.add("configname", -1);
+    p.add("confignames", -1);
 
     try {
       po::store(po::command_line_parser(args.argc - 1, args.argv + 1).options(view_opt.desc()).positional(p).run(), vm);
@@ -64,7 +64,7 @@ namespace CASM {
       // there are any problems
 
       selection = view_opt.selection_path().string();
-      configname = view_opt.config_strs();
+      confignames = view_opt.config_strs();
     }
     catch(po::error &e) {
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
@@ -111,9 +111,9 @@ namespace CASM {
       config_select = ConfigSelection<false>(primclex, selection);
     }
 
-    // add --configname (or positional) input
-    for(int i = 0; i < configname.size(); i++) {
-      config_select.set_selected(configname[i], true);
+    // add --confignames (or positional) input
+    for(int i = 0; i < confignames.size(); i++) {
+      config_select.set_selected(confignames[i], true);
     }
 
     fs::path tmp_dir = root / ".casm" / "tmp";

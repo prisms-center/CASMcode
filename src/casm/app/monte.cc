@@ -223,6 +223,24 @@ namespace CASM {
         try {
 
           GrandCanonicalSettings gc_settings(settings_path);
+
+          if(gc_settings.dependent_runs()) {
+            throw std::invalid_argument("ERROR in LTE1 calculation: dependents_runs must be false");
+          }
+
+          bool ok = false;
+          if(gc_settings.is_motif_configname() &&
+             (gc_settings.motif_configname() == "auto" ||
+              gc_settings.motif_configname() == "restricted_auto")) {
+            ok = true;
+          }
+
+          if(!ok) {
+            throw std::invalid_argument("ERROR in LTE1 calculation: must use one of\n"
+                                        "  \"driver\"/\"motif\"/\"configname\": \"auto\"\n"
+                                        "  \"driver\"/\"motif\"/\"configname\": \"restricted_auto\"");
+          }
+
           GrandCanonicalDirectoryStructure dir(gc_settings.output_directory());
           if(gc_settings.write_csv()) {
             if(fs::exists(dir.results_csv())) {
@@ -245,7 +263,7 @@ namespace CASM {
           log.custom("LTE Calculation");
           log << "Phi_LTE(1) = potential_energy_gs - kT*ln(Z'(1))/N" << std::endl;
           log << "Z'(1) = sum_i(exp(-dPE_i/kT), summing over ground state and single spin flips" << std::endl;
-          log << "dPE_i: (potential_energy_i - potential_energy_gs)*N" << std::endl << std::endl;
+          log << "dPE_i: (potential_energy_i - potential_energy_gs)*N" << "\n\n" << std::endl;
 
           auto init = gc_settings.initial_conditions();
           auto incr = init;
@@ -258,12 +276,12 @@ namespace CASM {
             num_conditions = (final - init) / incr + 1;
           }
 
+          std::string configname;
+
           auto cond = init;
           for(int index = 0; index < num_conditions; ++index) {
 
-            if(index != 0) {
-              gc.set_conditions(cond);
-            }
+            configname = gc.set_state(cond, gc_settings).second;
 
             if(gc.debug()) {
               const auto &comp_converter = gc.primclex().composition_axes();
@@ -278,10 +296,11 @@ namespace CASM {
             double phi_LTE1 = gc.lte_grand_canonical_free_energy();
 
             log.write("Output files");
-            write_lte_results(gc_settings, gc, phi_LTE1, log);
+            write_lte_results(gc_settings, gc, phi_LTE1, configname, log);
             log << std::endl;
             cond += incr;
 
+            log << std::endl;
           }
 
         }
@@ -294,10 +313,6 @@ namespace CASM {
       else if(monte_settings.method() == Monte::METHOD::Metropolis) {
 
         try {
-
-          //std::cout << "\n-------------------------------\n";
-          //monte_settings.print(std::cout);
-          //std::cout << "\n-------------------------------\n\n";
 
           MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(settings_path), log, err_log);
           driver.run();

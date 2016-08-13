@@ -57,7 +57,7 @@ namespace CASM {
       _sanity_throw();
     }
 
-    bool Suboption::_sanity_throw() const {
+    void Suboption::_sanity_throw() const {
       if(m_long.size() < 3 || m_short.size() != 2) {
         throw std::runtime_error("--long option must be at least 3 characters long and -s(hort) must be exactly 2!");
       }

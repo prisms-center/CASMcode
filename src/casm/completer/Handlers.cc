@@ -223,13 +223,39 @@ namespace CASM {
 
     void OptionHandlerBase::add_configlist_suboption() {
       m_desc.add_options()
-      ("config,c", po::value<fs::path>(&m_selection_path)->default_value("MASTER")->value_name(ArgHandler::path()), "Only consider the selected configurations of the given selection file. If not specified, or 'MASTER' is given, the master list of your project will be used.");
+      ("config,c",
+       po::value<fs::path>(&m_selection_path)->default_value("MASTER")->value_name(ArgHandler::path()),
+       "Only consider the selected configurations of the given selection file. "
+       "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
+       "If not specified, or 'MASTER' is given, the master list of your project will be used.");
       return;
     }
 
     void OptionHandlerBase::add_configlists_suboption() {
       m_desc.add_options()
-      ("configs,c", po::value<std::vector<fs::path> >(&m_selection_paths)->default_value(std::vector<fs::path> {"MASTER"})->value_name(ArgHandler::path()), "Only consider the selected configurations of the given selection files. If not specified, or 'MASTER' is given, the master list of your project will be used.");
+      ("configs,c",
+       po::value<std::vector<fs::path> >(&m_selection_paths)->default_value(std::vector<fs::path> {"MASTER"})->value_name(ArgHandler::path()),
+       "Only consider the selected configurations of the given selection files. "
+       "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
+       "If not specified, or 'MASTER' is given, the master list of your project will be used.");
+      return;
+    }
+
+    void OptionHandlerBase::add_configlist_nodefault_suboption() {
+      m_desc.add_options()
+      ("config,c",
+       po::value<fs::path>(&m_selection_path)->value_name(ArgHandler::path()),
+       "Only consider the selected configurations of the given selection file. "
+       "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. ");
+      return;
+    }
+
+    void OptionHandlerBase::add_configlists_nodefault_suboption() {
+      m_desc.add_options()
+      ("configs,c",
+       po::value<std::vector<fs::path> >(&m_selection_paths)->value_name(ArgHandler::path()),
+       "Only consider the selected configurations of the given selection files. "
+       "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. ");
       return;
     }
 

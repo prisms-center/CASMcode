@@ -55,7 +55,7 @@ namespace CASM {
   DataFormatter<ConstMonteCarloPtr> make_results_formatter(const GrandCanonical &mc);
 
   /// \brief Make a results formatter
-  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc, const double &phi_LTE1);
+  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc, const double &phi_LTE1, const std::string &configname);
 
   /// \brief Make a observation formatter
   DataFormatter<std::pair<ConstMonteCarloPtr, Index> > make_observation_formatter(const GrandCanonical &mc);
@@ -99,7 +99,7 @@ namespace CASM {
   GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalLTEFormatter(const double &phi_LTE1);
 
   /// \brief Will create new file or append to existing results file the results of the latest run
-  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc, const double &phi_LTE1, Log &_log);
+  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc, const double &phi_LTE1, const std::string &configname, Log &_log);
 
 }
 

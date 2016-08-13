@@ -13,6 +13,14 @@
 #include "casm/monte_carlo/MonteCounter.hh"
 
 namespace CASM {
+  
+  struct SamplerNameCompare {
+    
+    SamplerNameCompare() {};
+    
+    bool operator()(const std::string& A, const std::string& B) const;
+    
+  };
 
 
   /// \brief Interface base class for all types of Monte Carlo simulations (not meant to be used polymorphically)
@@ -43,7 +51,7 @@ namespace CASM {
     /// - scalar example: m_sampler["formation_energy"]
     /// - vector example: m_sampler["corr(12)"]
     ///
-    typedef std::map<std::string, notstd::cloneable_ptr<MonteSampler> > SamplerMap;
+    typedef std::map<std::string, notstd::cloneable_ptr<MonteSampler>, SamplerNameCompare> SamplerMap;
 
     /// \brief a vector of std::pair(pass, step) indicating when samples were taken
     typedef std::vector<std::pair<MonteCounter::size_type, MonteCounter::size_type> > SampleTimes;
@@ -318,8 +326,6 @@ namespace CASM {
       }
     }
   }
-
-  // canonical_equivalent_lattice(superlat, prim.point_group(), crystallography_tol())
 
 }
 #endif

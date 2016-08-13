@@ -9,6 +9,9 @@
 namespace CASM {
 
 
+  /// \brief Constructs a GrandCanonical object and prepares it for running based on MonteSettings
+  ///
+  /// - Does not set 'state': conditions or ConfigDoF
   GrandCanonical::GrandCanonical(PrimClex &primclex, const GrandCanonicalSettings &settings, Log &log):
     MonteCarlo(primclex, settings, log),
     m_site_swaps(supercell()),
@@ -35,15 +38,19 @@ namespace CASM {
     _log() << std::setw(16) << "eci: " << desc.eci << "\n";
     _log() << "supercell: \n" << supercell().get_transf_mat() << "\n";
     _log() << "use_deltas: " << std::boolalpha << m_use_deltas << "\n";
+    _log() << "\nSampling: \n";
+    _log() << std::setw(24) << "quantity" << std::setw(24) << "requested_precision" << "\n";
+    for(auto it=samplers().begin(); it!=samplers().end(); ++it) {
+      _log() << std::setw(24) << it->first;
+      if(it->second->must_converge()) {
+        _log() << std::setw(24) << it->second->requested_precision() << std::endl;
+      }
+      else {
+        _log() << std::setw(24) << "none" << std::endl;
+      }
+    }
+    _log() << "\nautomatic convergence mode?: " << std::boolalpha << must_converge() << std::endl;
     _log() << std::endl;
-
-    reset(_initial_configdof(settings, _log()));
-
-    _log().set("Initial Conditions");
-    _log() << settings.initial_conditions() << std::endl << std::endl;
-    m_condition = settings.initial_conditions();
-
-    _update_properties();
 
   }
 
@@ -84,6 +91,79 @@ namespace CASM {
     _update_properties();
   }
 
+  /// \brief Set configdof and conditions and clear previously collected data
+  ///
+  /// \returns Specified ConfigDoF and configname (or configdof path)
+  ///
+  std::pair<ConfigDoF, std::string> GrandCanonical::set_state(
+    const GrandCanonicalConditions &new_conditions,
+    const GrandCanonicalSettings &settings) {
+
+    _log().set("Conditions");
+    _log() << new_conditions << std::endl;
+
+    m_condition = new_conditions;
+
+    ConfigDoF configdof;
+    std::string configname;
+
+    if(settings.is_motif_configname()) {
+
+      std::string configname = settings.motif_configname();
+
+      if(configname == "default") {
+        configdof = _default_motif();
+      }
+      else if(configname == "auto") {
+        std::tie(configdof, configname) = _auto_motif(new_conditions);
+      }
+      else if(configname == "restricted_auto") {
+        std::tie(configdof, configname) = _restricted_auto_motif(new_conditions);
+      }
+      else {
+        configdof = _configname_motif(configname);
+      }
+
+    }
+    else if(settings.is_motif_configdof()) {
+      _log().set("DoF");
+      _log() << "motif configdof: " << settings.motif_configdof_path() << "\n";
+      _log() << "using configdof: " << settings.motif_configdof_path() << "\n" << std::endl;
+      configdof = settings.motif_configdof();
+      configname = settings.motif_configdof_path().string();
+    }
+    else {
+      throw std::runtime_error("Error: Must specify motif \"configname\" or \"configdof\"");
+    }
+
+    reset(configdof);
+    _update_properties();
+
+    return std::make_pair(configdof, configname);
+  }
+
+  /// \brief Set configdof and conditions and clear previously collected data
+  void GrandCanonical::set_state(const GrandCanonicalConditions &new_conditions,
+                                 const ConfigDoF &configdof,
+                                 const std::string &msg) {
+    _log().set("Conditions");
+    _log() << new_conditions << std::endl << std::endl;
+
+    m_condition = new_conditions;
+
+    _log().set("DoF");
+    if(!msg.empty()) {
+      _log() << msg << "\n";
+    }
+    _log() << std::endl;
+
+    reset(configdof);
+    _update_properties();
+
+    return;
+  }
+
+
   /// \brief Propose a new event, calculate delta properties, and return reference to it
   ///
   /// Randomly picks a site that's allowed more than one occupant, and randomly picks what occupant it
@@ -105,9 +185,6 @@ namespace CASM {
     const std::vector<int> &possible_mutation = m_site_swaps.possible_swap()[sublat][current_occupant];
     int new_occupant = possible_mutation[_mtrand().randInt(possible_mutation.size() - 1)];
 
-    // Update delta properties in m_event
-    _update_deltas(m_event, mutating_site, sublat, current_occupant, new_occupant);
-
     if(debug()) {
       const auto &site_occ = primclex().get_prim().basis[sublat].site_occupant();
       _log().custom("Propose event");
@@ -119,32 +196,12 @@ namespace CASM {
 
               << "  beta: " << m_condition.beta() << "\n"
               << "  T: " << m_condition.temperature() << std::endl;
+    }
 
-      _log() << std::setw(12) << "i" << std::setw(16) << "ECI" << std::setw(16) << "dCorr" << std::endl;
+    // Update delta properties in m_event
+    _update_deltas(m_event, mutating_site, sublat, current_occupant, new_occupant);
 
-      if(m_all_correlations) {
-        for(int i = 0; i < m_event.dCorr().size(); ++i) {
-
-          double eci = 0.0;
-          Index index = find_index(_eci().index(), i);
-          if(index != _eci().index().size()) {
-            eci = _eci().value()[index];
-          }
-
-          _log() << std::setw(12) << i
-                 << std::setw(16) << std::setprecision(8) << eci
-                 << std::setw(16) << std::setprecision(8) << m_event.dCorr()[i] << std::endl;
-
-        }
-      }
-      else {
-        for(int i = 0; i < _eci().value().size(); ++i) {
-          _log() << std::setw(12) << _eci().index()[i]
-                 << std::setw(16) << std::setprecision(8) << _eci().value()[i]
-                 << std::setw(16) << std::setprecision(8) << m_event.dCorr()[_eci().index()[i]] << std::endl;
-
-        }
-      }
+    if(debug()) {
 
       auto origin = primclex().composition_axes().origin();
       auto exchange_chem_pot = m_condition.exchange_chem_pot();
@@ -290,7 +347,6 @@ namespace CASM {
 
         //save the result
         double dpot_nrg = event.dEpot();
-
         if(dpot_nrg < 0.0) {
           Log &err_log = default_err_log();
           err_log.error<Log::standard>("Calculating low temperature expansion");
@@ -371,6 +427,123 @@ namespace CASM {
     return Ep / supercell().volume();
   }
 
+  /// \brief Calculate delta correlations for an event
+  void GrandCanonical::_set_dCorr(GrandCanonicalEvent &event,
+                                  Index mutating_site,
+                                  int sublat,
+                                  int current_occupant,
+                                  int new_occupant,
+                                  bool use_deltas,
+                                  bool all_correlations) const {
+
+    // uses _clexulator(), nlist(), _configdof()
+
+    // Point the Clexulator to the right neighborhood and right ConfigDoF
+    _clexulator().set_config_occ(_configdof().occupation().begin());
+    _clexulator().set_nlist(nlist().sites(nlist().unitcell_index(mutating_site)).data());
+
+    if(use_deltas) {
+
+      // Calculate the change in correlations due to this event
+      if(all_correlations) {
+        _clexulator().calc_delta_point_corr(sublat,
+                                            current_occupant,
+                                            new_occupant,
+                                            event.dCorr().data());
+      }
+      else {
+        auto begin = _eci().index().data();
+        auto end = begin + _eci().index().size();
+        _clexulator().calc_restricted_delta_point_corr(sublat,
+                                                       current_occupant,
+                                                       new_occupant,
+                                                       event.dCorr().data(),
+                                                       begin,
+                                                       end);
+      }
+    }
+    else {
+
+      Eigen::VectorXd before { Eigen::VectorXd::Zero(event.dCorr().size()) };
+      Eigen::VectorXd after { Eigen::VectorXd::Zero(event.dCorr().size()) };
+
+      // Calculate the change in points correlations due to this event
+      if(all_correlations) {
+
+        // Calculate before
+        _clexulator().calc_point_corr(sublat, before.data());
+
+        // Apply change
+        _configdof().occ(mutating_site) = new_occupant;
+
+        // Calculate after
+        _clexulator().calc_point_corr(sublat, after.data());
+      }
+      else {
+        auto begin = _eci().index().data();
+        auto end = begin + _eci().index().size();
+
+        // Calculate before
+        _clexulator().calc_restricted_point_corr(sublat, before.data(), begin, end);
+
+        // Apply change
+        _configdof().occ(mutating_site) = new_occupant;
+
+        // Calculate after
+        _clexulator().calc_restricted_point_corr(sublat, after.data(), begin, end);
+
+      }
+
+      // Calculate the change in correlations due to this event
+      event.dCorr() = after - before;
+
+      // Unapply changes
+      _configdof().occ(mutating_site) = current_occupant;
+    }
+
+    if(debug()) {
+      _print_correlations(event.dCorr(), "delta correlations", "dCorr", all_correlations);
+    }
+  }
+
+  /// \brief Print correlations to _log()
+  void GrandCanonical::_print_correlations(const Eigen::VectorXd &corr,
+                                           std::string title,
+                                           std::string colheader,
+                                           bool all_correlations) const {
+
+    _log().calculate(title);
+    _log() << std::setw(12) << "i"
+           << std::setw(16) << "ECI"
+           << std::setw(16) << colheader
+           << std::endl;
+
+    for(int i = 0; i < corr.size(); ++i) {
+
+      double eci = 0.0;
+      bool calculated = true;
+      Index index = find_index(_eci().index(), i);
+      if(index != _eci().index().size()) {
+        eci = _eci().value()[index];
+      }
+      if(!all_correlations && index == _eci().index().size()) {
+        calculated = false;
+      }
+
+      _log() << std::setw(12) << i
+             << std::setw(16) << std::setprecision(8) << eci;
+      if(calculated) {
+        _log() << std::setw(16) << std::setprecision(8) << corr[i];
+      }
+      else {
+        _log() << std::setw(16) << "unknown";
+      }
+      _log() << std::endl;
+
+    }
+    _log() << std::endl;
+  }
+
   /// \brief Update delta properties in 'event'
   void GrandCanonical::_update_deltas(GrandCanonicalEvent &event,
                                       Index mutating_site,
@@ -395,43 +568,7 @@ namespace CASM {
 
     // ---- set dcorr --------------
 
-    // Point the Clexulator to the right neighborhood
-    _clexulator().set_nlist(nlist().sites(nlist().unitcell_index(mutating_site)).data());
-
-    if(m_use_deltas) {
-
-      // Calculate the change in correlations due to this event
-      if(m_all_correlations) {
-        _clexulator().calc_delta_point_corr(sublat,
-                                            current_occupant,
-                                            new_occupant,
-                                            event.dCorr().data());
-      }
-      else {
-        auto begin = _eci().index().data();
-        auto end = begin + _eci().index().size();
-        _clexulator().calc_restricted_delta_point_corr(sublat,
-                                                       current_occupant,
-                                                       new_occupant,
-                                                       event.dCorr().data(),
-                                                       begin,
-                                                       end);
-      }
-    }
-    else {
-
-      int &occ = _configdof().occ(event.occupational_change().site_index());
-      int from_value = occ;
-
-      // Apply changes to configuration (just a single occupant change)
-      occ = event.occupational_change().to_value();
-
-      // Calculate the change in correlations due to this event
-      event.dCorr() = (correlations_vec(_configdof(), supercell(), _clexulator()) - corr()) * supercell().volume();
-
-      // Unapply changes
-      occ = from_value;
-    }
+    _set_dCorr(event, mutating_site, sublat, current_occupant, new_occupant, m_use_deltas, m_all_correlations);
 
     // ---- set dformation_energy --------------
 
@@ -462,33 +599,7 @@ namespace CASM {
 
     if(debug()) {
 
-      _log().custom("Calculate correlations");
-      _log() << std::setw(12) << "i" << std::setw(16) << "ECI" << std::setw(16) << "corr" << std::endl;
-
-      if(m_all_correlations) {
-        for(int i = 0; i < corr().size(); ++i) {
-
-          double eci = 0.0;
-          Index index = find_index(_eci().index(), i);
-          if(index != _eci().index().size()) {
-            eci = _eci().value()[index];
-          }
-
-          _log() << std::setw(12) << i
-                 << std::setw(16) << std::setprecision(8) << eci
-                 << std::setw(16) << std::setprecision(8) << corr()[i] << std::endl;
-
-        }
-      }
-      else {
-        for(int i = 0; i < _eci().value().size(); ++i) {
-          _log() << std::setw(12) << _eci().index()[i]
-                 << std::setw(16) << std::setprecision(8) << _eci().value()[i]
-                 << std::setw(16) << std::setprecision(8) << corr()[_eci().index()[i]] << std::endl;
-
-        }
-      }
-      _log() << std::endl;
+      _print_correlations(corr(), "correlations", "corr", m_all_correlations);
 
       auto origin = primclex().composition_axes().origin();
       auto exchange_chem_pot = m_condition.exchange_chem_pot();
@@ -518,135 +629,137 @@ namespace CASM {
 
   }
 
-  /// \brief Select initial configdof
+  /// \brief Generate supercell filling ConfigDoF from default configuration
+  ConfigDoF GrandCanonical::_default_motif() const {
+    _log().set("DoF");
+    _log() << "motif configname: default\n";
+    _log() << "using configuration with default occupation...\n" << std::endl;
+    return Configuration(_supercell(), jsonParser(), Array<int>(_supercell().num_sites(), 0)).configdof();
+  }
+
+  /// \brief Generate minimum potential energy ConfigDoF
   ///
-  /// - "motif"/"configname": If "auto", use 0K ground state at given mu; else
-  ///   use configuration with given name
-  /// - "motif"/"configdof": Open configdof file with given name; must be for
-  ///   the specified supercell.
-  /// - Also prints messages describing what ConfigDoF is being used
-  ConfigDoF GrandCanonical::_initial_configdof(
-    const GrandCanonicalSettings &settings,
-    Log &_log) {
+  /// Raises exception if it doesn't tile the supercell
+  std::pair<ConfigDoF, std::string> GrandCanonical::_auto_motif(const GrandCanonicalConditions &cond) const {
 
-    _log.set("Initial DoF");
+    _log().set("DoF");
+    _log() << "motif configname: auto\n";
+    _log() << "searching for minimum potential energy motif..." << std::endl;
 
-    if(settings.is_motif_configname()) {
+    double tol = 1e-6;
+    auto compare = [&](double A, double B) {
+      return A < B - tol;
+    };
 
-      std::string motif_configname = settings.motif_configname();
-      _log << "motif configname: " << motif_configname << "\n";
+    _log() << "using conditions: \n";
+    _log() << cond << std::endl;
 
-      if(motif_configname == "default") {
-        _log << "using configuration with default occupation..." << std::endl;
-        return Configuration(_supercell(), jsonParser(), Array<int>(_supercell().num_sites(), 0)).configdof();
-      }
-      else if(motif_configname == "auto" || motif_configname == "restricted_auto") {
-
-        _log << "searching for minimum potential energy motif..." << std::endl;
-
-        double tol = 1e-6;
-        auto compare = [&](double A, double B) {
-          return A < B - tol;
-        };
-
-        GrandCanonicalConditions cond = settings.initial_conditions();
-
-        _log << "using conditions: \n";
-        _log << cond << std::endl;
-
-        std::multimap<double, const Configuration *, decltype(compare)> configmap(compare);
-        for(auto it = primclex().config_begin(); it != primclex().config_end(); ++it) {
-          configmap.insert(std::make_pair(_eci() * correlations(*it, _clexulator()) - cond.param_chem_pot().dot(CASM::comp(*it)), &(*it)));
-        }
-
-        if(motif_configname == "restricted_auto") {
-
-          // used to check if configurations can fill the monte carlo supercell
-          const Lattice &scel_lat = supercell().get_real_super_lattice();
-          auto begin = primclex().get_prim().factor_group().begin();
-          auto end = primclex().get_prim().factor_group().end();
-
-          // save iterators pointing to configs that will fill the supercell
-          std::vector<decltype(configmap)::const_iterator> allowed;
-
-          // iterate through groups of degenerate configs
-          auto next_it = configmap.begin();
-          while(next_it != configmap.end()) {
-            auto eq_range = configmap.equal_range(next_it->first);
-
-            // save allowed configs
-            for(auto it = eq_range.first; it != eq_range.second; ++it) {
-              const Lattice &motif_lat = it->second->get_supercell().get_real_super_lattice();
-              if(is_supercell(scel_lat, motif_lat, begin, end, TOL).first != end) {
-                allowed.push_back(it);
-              }
-            }
-
-            // if some found, break
-            if(allowed.size()) {
-              break;
-            }
-
-            // else, continue to next group
-            next_it = eq_range.second;
-          }
-
-          if(!allowed.size()) {
-            _log << "Found no enumerated configurations that will fill the supercell\n";
-            _log << "using configuration with default occupation..." << std::endl;
-            return Configuration(_supercell(), jsonParser(), Array<int>(_supercell().num_sites(), 0)).configdof();
-          }
-
-          if(allowed.size() > 1) {
-            _log << "Warning: Found degenerate allowed configurations with potential energy: "
-                 << std::setprecision(8) << allowed[0]->first << std::endl;
-            for(auto it = allowed.begin(); it != allowed.end(); ++it) {
-              _log << "  " << (*it)->second->name() << std::endl;
-            }
-            _log << "using: " << allowed[0]->second->name() << "\n" << std::endl;
-          }
-          else {
-            _log << "using: " << allowed[0]->second->name() << " with potential energy: "
-                 << std::setprecision(8) << allowed[0]->first << "\n" << std::endl;
-          }
-
-          return fill_supercell(_supercell(), *(allowed[0]->second)).configdof();
-        }
-        else {
-          const Configuration &min_config = *(configmap.begin()->second);
-          double min_potential_energy = configmap.begin()->first;
-          auto eq_range = configmap.equal_range(min_potential_energy);
-
-          if(std::distance(eq_range.first, eq_range.second) > 1) {
-            _log << "Warning: Found degenerate ground states with potential energy: "
-                 << std::setprecision(8) << min_potential_energy << std::endl;
-            for(auto it = eq_range.first; it != eq_range.second; ++it) {
-              _log << "  " << it->second->name() << std::endl;
-            }
-            _log << "using: " << min_config.name() << "\n" << std::endl;
-          }
-          else {
-            _log << "using: " << min_config.name() << " with potential energy: "
-                 << std::setprecision(8) << min_potential_energy << "\n" << std::endl;
-          }
-
-          return fill_supercell(_supercell(), min_config).configdof();
-        }
-      }
-      else {
-        _log << "using configation: " << motif_configname << "\n" << std::endl;
-        return fill_supercell(_supercell(), primclex().configuration(motif_configname)).configdof();
-      }
-
+    std::multimap<double, const Configuration *, decltype(compare)> configmap(compare);
+    for(auto it = primclex().config_begin(); it != primclex().config_end(); ++it) {
+      configmap.insert(std::make_pair(_eci() * correlations(*it, _clexulator()) - cond.param_chem_pot().dot(CASM::comp(*it)), &(*it)));
     }
-    else if(settings.is_motif_configdof()) {
-      _log << "motif configdof: " << settings.motif_configdof_path() << "\n";
-      _log << "using configdof: " << settings.motif_configdof_path() << "\n" << std::endl;
-      return settings.motif_configdof();
+
+    const Configuration &min_config = *(configmap.begin()->second);
+    double min_potential_energy = configmap.begin()->first;
+    auto eq_range = configmap.equal_range(min_potential_energy);
+
+    if(std::distance(eq_range.first, eq_range.second) > 1) {
+      _log() << "Warning: Found degenerate ground states with potential energy: "
+             << std::setprecision(8) << min_potential_energy << std::endl;
+      for(auto it = eq_range.first; it != eq_range.second; ++it) {
+        _log() << "  " << it->second->name() << std::endl;
+      }
+      _log() << "using: " << min_config.name() << "\n" << std::endl;
     }
     else {
-      throw std::runtime_error("Error: Must specify motif \"configname\" or \"configdof\"");
+      _log() << "using: " << min_config.name() << " with potential energy: "
+             << std::setprecision(8) << min_potential_energy << "\n" << std::endl;
     }
+
+    return std::make_pair(fill_supercell(_supercell(), min_config).configdof(), min_config.name());
+  }
+
+  /// \brief Generate minimum potential energy ConfigDoF for this supercell
+  std::pair<ConfigDoF, std::string> GrandCanonical::_restricted_auto_motif(const GrandCanonicalConditions &cond) const {
+
+    _log().set("DoF");
+    _log() << "motif configname: restricted_auto\n";
+    _log() << "searching for minimum potential energy motif..." << std::endl;
+
+    double tol = 1e-6;
+    auto compare = [&](double A, double B) {
+      return A < B - tol;
+    };
+
+    _log() << "using conditions: \n";
+    _log() << cond << std::endl;
+
+    std::multimap<double, const Configuration *, decltype(compare)> configmap(compare);
+    for(auto it = primclex().config_begin(); it != primclex().config_end(); ++it) {
+      configmap.insert(std::make_pair(_eci() * correlations(*it, _clexulator()) - cond.param_chem_pot().dot(CASM::comp(*it)), &(*it)));
+    }
+
+    // used to check if configurations can fill the monte carlo supercell
+    const Lattice &scel_lat = supercell().get_real_super_lattice();
+    auto begin = primclex().get_prim().factor_group().begin();
+    auto end = primclex().get_prim().factor_group().end();
+
+    // save iterators pointing to configs that will fill the supercell
+    std::vector<decltype(configmap)::const_iterator> allowed;
+
+    // iterate through groups of degenerate configs
+    auto next_it = configmap.begin();
+    while(next_it != configmap.end()) {
+      auto eq_range = configmap.equal_range(next_it->first);
+
+      // save allowed configs
+      for(auto it = eq_range.first; it != eq_range.second; ++it) {
+        const Lattice &motif_lat = it->second->get_supercell().get_real_super_lattice();
+        if(is_supercell(scel_lat, motif_lat, begin, end, TOL).first != end) {
+          allowed.push_back(it);
+        }
+      }
+
+      // if some found, break
+      if(allowed.size()) {
+        break;
+      }
+
+      // else, continue to next group
+      next_it = eq_range.second;
+    }
+
+    if(!allowed.size()) {
+      _log() << "Found no enumerated configurations that will fill the supercell\n";
+      _log() << "using configuration with default occupation..." << std::endl;
+      return std::make_pair(
+               Configuration(_supercell(), jsonParser(), Array<int>(_supercell().num_sites(), 0)).configdof(),
+               "default");
+    }
+
+    if(allowed.size() > 1) {
+      _log() << "Warning: Found degenerate allowed configurations with potential energy: "
+             << std::setprecision(8) << allowed[0]->first << std::endl;
+      for(auto it = allowed.begin(); it != allowed.end(); ++it) {
+        _log() << "  " << (*it)->second->name() << std::endl;
+      }
+      _log() << "using: " << allowed[0]->second->name() << "\n" << std::endl;
+    }
+    else {
+      _log() << "using: " << allowed[0]->second->name() << " with potential energy: "
+             << std::setprecision(8) << allowed[0]->first << "\n" << std::endl;
+    }
+
+    return std::make_pair(fill_supercell(_supercell(), *(allowed[0]->second)).configdof(), allowed[0]->second->name());
+  }
+
+  /// \brief Generate supercell filling ConfigDoF from configuration
+  ConfigDoF GrandCanonical::_configname_motif(const std::string &configname) const {
+
+    _log().set("DoF");
+    _log() << "motif configname: " << configname << "\n";
+    _log() << "using configation: " << configname << "\n" << std::endl;
+    return fill_supercell(_supercell(), primclex().configuration(configname)).configdof();
   }
 
 }

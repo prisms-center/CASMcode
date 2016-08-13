@@ -1,0 +1,4 @@
+POTCAR_DIR_PATH = /path/to/vasp_potentials
+SPECIES    ALIAS    POTCAR  POTCAR_location
+Zr          Zr       1       PAW_PBE/Zr_sv 
+O           O        1       PAW_PBE/O

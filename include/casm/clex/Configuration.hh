@@ -185,7 +185,11 @@ namespace CASM {
       return multiplicity;
     }
 
+    /// \brief SCELV_A_B_C_D_E_F/i
     std::string name() const;
+
+    /// \brief SCELV_A_B_C_D_E_F.i (only use this when 'name' won't work)
+    std::string altname() const;
 
     std::string calc_status() const;
 
