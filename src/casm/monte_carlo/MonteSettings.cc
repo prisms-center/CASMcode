@@ -473,7 +473,7 @@ namespace CASM {
   /// \brief Returns the number of passes requested
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::N_pass() const {
     std::string help = "int (optional)";
-    return _get_setting<size_type>("data", "N_pass");
+    return _get_setting<size_type>("data", "N_pass", help);
   }
 
   /// \brief Returns true if the number of steps has been specified
@@ -485,7 +485,7 @@ namespace CASM {
   /// \brief Returns the number of steps requested
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::N_step() const {
     std::string help = "int (optional)";
-    return _get_setting<size_type>("data", "N_step");
+    return _get_setting<size_type>("data", "N_step", help);
   }
 
   /// \brief Returns true if the number of samples has been specified
