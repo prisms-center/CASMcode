@@ -61,13 +61,7 @@ if __name__ == "__main__":
     if args.verbose:
       print "Loading", args.settings[0]
     
-    # open input and always set input defaults before doing anything else
-    with open(args.settings[0], 'r') as f:
-      try:
-        input = casm.learn.set_input_defaults(json.load(f), args.settings[0])
-      except Exception as e:
-        print "Error parsing JSON in", args.settings[0]
-        raise e
+    input = casm.learn.open_input(args.settings[0])
     
     if args.hall:
       
