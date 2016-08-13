@@ -146,6 +146,16 @@ namespace CASM {
 
       //-------------------------------------------------------------------------------------//
 
+      ///Add --config suboption (no default)
+      void add_configlist_nodefault_suboption();
+
+      //----------------------------//
+
+      ///Add --configs suboption (no default)
+      void add_configlists_nodefault_suboption();
+
+      //-------------------------------------------------------------------------------------//
+
       ///Add a plain --help suboption
       void add_help_suboption();
 

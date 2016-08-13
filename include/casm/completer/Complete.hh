@@ -65,7 +65,7 @@ namespace CASM {
       const ARG_TYPE m_expected_arg;
 
       ///Make sure values make sense
-      bool _sanity_throw() const;
+      void _sanity_throw() const;
     };
 
     namespace Suboption_impl {

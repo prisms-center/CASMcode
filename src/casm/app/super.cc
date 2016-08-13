@@ -39,7 +39,7 @@ namespace CASM {
       add_help_suboption();
       add_confignames_suboption();
       add_scelnames_suboption();
-      add_configlists_suboption();
+      add_configlists_nodefault_suboption();
       add_coordtype_suboption();
 
       m_desc.add_options()
