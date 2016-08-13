@@ -7,9 +7,9 @@
     "formation_energy" : "formation_energy"
   },
   "supercell" : [
-    [9, 0, 0],
-    [0, 9, 0],
-    [0, 0, 9]
+    [3, 0, 0],
+    [0, 3, 0],
+    [0, 0, 3]
   ],
   "data" : {
     "sample_by" : "pass",
@@ -26,7 +26,7 @@
     "measurements" : [ 
       { 
         "quantity" : "formation_energy",
-        "precision" : 1e-3
+        "precision" : 1e-2
       },
       { 
         "quantity" : "potential_energy"
@@ -39,7 +39,7 @@
       },
       { 
         "quantity" : "comp",
-        "precision" : 1e-3
+        "precision" : 1e-2
       },
       { 
         "quantity" : "comp_n"
@@ -49,7 +49,7 @@
       }
     ],
     "storage" : {
-      "write_observations" : false,
+      "write_observations" : true,
       "write_trajectory" : false,
       "output_format" : ["csv", "json"]
     },
@@ -64,7 +64,7 @@
   },
   "driver" : {
     "mode" : "incremental",
-    "dependent_runs" : true, 
+    "dependent_runs" : false, 
     "motif" : {
       "configname" : "restricted_auto",
       "_configname" : "SCEL3_3_1_1_0_2_2/0",
@@ -72,7 +72,7 @@
     },
     "initial_conditions" : {
       "param_chem_pot" : {
-        "a" : -2.00
+        "a" : -3.00
       },
       "temperature" : 600.0,
       "tolerance" : 0.001
