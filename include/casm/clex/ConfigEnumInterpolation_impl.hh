@@ -35,6 +35,7 @@ namespace CASM {
       _current().set_deformation(current().deformation() + m_deformation_inc);
 
     ++_step();
+    _current().set_source(source());
     return current();
   }
 
@@ -53,6 +54,7 @@ namespace CASM {
       _current().set_deformation(initial().deformation() + ((double)new_step)*m_deformation_inc);
 
     _step() = new_step;
+    _current().set_source(source());
     return current();
   }
 }

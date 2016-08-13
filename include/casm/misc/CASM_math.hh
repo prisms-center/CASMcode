@@ -1,8 +1,10 @@
 #ifndef CASM_MATH_HH
 #define CASM_MATH_HH
-
 #include "casm/CASM_global_definitions.hh"
 #include "casm/container/Array.hh"
+//Maybe we should transition to boost math library?
+//#include <boost/math/special_functions/binomial.hpp>
+#include <boost/math/special_functions/factorials.hpp>
 #include <iostream>
 #include <cmath>
 #include <cstddef>
@@ -34,59 +36,117 @@ namespace CASM {
   // *******************************************************************************************
 
   /// \brief If T is not integral, use std::abs(val) < tol;
-  template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type* = nullptr>
+  template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type * = nullptr>
   inline
   bool almost_zero(const T &val, double tol = TOL) {
     return std::abs(val) < tol;
   }
-  
+
   /// \brief If std::complex<T>, use std::abs(val) < tol;
-  template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type* = nullptr>
+  template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type * = nullptr>
   inline
   bool almost_zero(const std::complex<T> &val, double tol = TOL) {
     return std::abs(val) < tol;
   }
-  
+
   /// \brief If T is integral, val == 0;
-  template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type* = nullptr>
+  template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type * = nullptr>
   inline
   bool almost_zero(const T &val, double tol = TOL) {
     return val == 0;
   }
-  
+
   /// \brief Equivalent to almost_zero(double(val.norm()), tol);
-  inline
-  bool almost_zero(const Eigen::MatrixXd &val, double tol = TOL) {
-    return almost_zero(double(val.norm()), tol);
+  template <typename Derived>
+  bool almost_zero(const Eigen::MatrixBase<Derived> &val, double tol = TOL) {
+    return val.isZero(tol);
   }
 
   // *******************************************************************************************
-  
+
   /// \brief If T is not integral, use almost_zero(val1 - val2, tol);
-  template <typename T, typename std::enable_if<!std::is_integral<T>::value, T>::type* = nullptr>
+  template < typename T, typename std::enable_if < !std::is_integral<T>::value, T >::type * = nullptr >
   bool almost_equal(const T &val1, const T &val2, double tol = TOL) {
     return almost_zero(val1 - val2, tol);
   }
-  
+
   /// \brief If T is integral type, use val1 == val2;
-  template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type* = nullptr>
+  template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type * = nullptr>
   bool almost_equal(const T &val1, const T &val2, double tol = TOL) {
     return val1 == val2;
   }
 
   // *******************************************************************************************
+
+  /// \brief Floating point comparison with tol, return A < B
+  ///
+  /// Implements:
+  /// \code
+  /// if(!almost_equal(A,B,tol)) { return A < B; }
+  /// return false;
+  /// \endcode
+  template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type * = nullptr>
+  bool compare(const T &A, const T &B, double tol) {
+    if(!almost_equal(A, B, tol)) {
+      return A < B;
+    }
+    return false;
+  }
+
+  struct FloatCompare {
+
+    double tol;
+
+    FloatCompare(double _tol) : tol(_tol) {}
+
+    template<typename T>
+    bool operator()(const T &A, const T &B) const {
+      return compare(A, B, tol);
+    }
+  };
+
+
+  /// \brief Floating point lexicographical comparison with tol
+  template<class InputIt1, class InputIt2>
+  bool float_lexicographical_compare(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2, double tol) {
+    FloatCompare compare(tol);
+    return std::lexicographical_compare(first1, last1, first2, last2, compare);
+  }
+
+  /// \brief Floating point lexicographical comparison with tol
+  inline bool float_lexicographical_compare(const Eigen::VectorXd &A, const Eigen::VectorXd &B, double tol) {
+    return float_lexicographical_compare(A.data(), A.data() + A.size(), B.data(), B.data() + B.size(), tol);
+  }
+
+  // *******************************************************************************************
   //Return sign of number
 
-  template <typename T> int sgn(T val) {
+  template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type * = nullptr>
+  int sgn(T val) {
     return (T(0) < val) - (val < T(0));
   }
 
+  template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type * = nullptr>
+  int float_sgn(T val, double compare_tol = TOL) {
+    T zeroval(0);
+    if(compare(zeroval, val, compare_tol)) {
+      return 1;
+    }
+
+    else if(compare(val, zeroval, compare_tol)) {
+      return -1;
+    }
+
+    else {
+      return 0;
+    }
+  }
   // *******************************************************************************************
 
   // Works for signed and unsigned types
   template <typename IntType>
   IntType nchoosek(IntType n, IntType k) {
-    assert(k <= n && 0 < k);
+    assert(k <= n && 0 <= k);
     if(n < 2 * k)
       k = n - k;
 
@@ -103,8 +163,17 @@ namespace CASM {
 
 
   // *******************************************************************************************
+  /// \brief Computes the Damerescau-Levenshtein distance
+  ///   -- the number of edits (deletions, insertions, transpositions) to go from string 'a' to string 'b'
+  int dl_string_dist(const std::string &a, const std::string &b);
+
+  // *******************************************************************************************
 
   double ran0(int &idum);
+
+  // *******************************************************************************************
+
+  using boost::math::factorial;
 
   // *******************************************************************************************
   /// Find greatest common factor
@@ -116,20 +185,31 @@ namespace CASM {
 
   // *******************************************************************************************
 
-  /* This creates Gaussians using the formula:
-   * f(x) = a*e^(-(x-b)^2/(c^2))
-   *************************************************************/
-
+  // evaluates Gaussians using the formula:
+  // f(x) = a*e^(-(x-b)^2/(c^2))
   double gaussian(double a, double x, double b, double c);
 
-  // *******************************************************************************************
+  // calculates Gaussian moments given by the integral:
+  // m = \int_{\infty}^{\infty} dx x^pow*exp[-x^2/(2*sigma^2)]/(\sqrt(2*\pi)*sigma)
+  double gaussian_moment(int expon, double sigma);
+
+  // calculates Gaussian moments given by the integral:
+  // m = \int_{\infty}^{\infty} dx x^pow*exp[-(x-x0)^2/(2*sigma^2)]/(\sqrt(2*\pi)*sigma)
+  double gaussian_moment(int expon, double sigma, double x0);
 
 
   Eigen::VectorXd eigen_vector_from_string(const std::string &tstr, const int &size);
 
   // *******************************************************************************************
-  // calculates gcf(abs(i1),abs(i2)) and finds bezout coefficients p1 and p2 such that
-  //             p1*i1 + p2*i2 = gcf(abs(i1),abs(i2));
+  /// \brief Calculate greatest common factor of two integers, and bezout coefficients
+  ///
+  /// \returns greatest common factor
+  ////
+  /// \param i1,i2 two integers for which to find greatest common factor
+  /// \param[out] p1, p2 bezout coefficients such that p1*i1 + p2*i2 = gcf(abs(i1),abs(i2));
+  ///
+  /// \see smith_normal_form
+  ///
   template<typename IntType>
   IntType extended_gcf(IntType i1, IntType i2, IntType &p1, IntType &p2) {
     IntType s1 = sgn(i1);
@@ -267,7 +347,16 @@ namespace CASM {
     }
     return result;
   }
+
   // ************************************************************
+
+  template<typename Derived>
+  double length(const Eigen::MatrixBase<Derived> &value) {
+    return value.norm();
+  }
+
+  // ************************************************************
+
   template<typename Derived>
   ReturnArray<Index> partition_distinct_values(const Eigen::MatrixBase<Derived> &value, double tol = TOL) {
     Array<Index> subspace_dims;
@@ -305,25 +394,144 @@ namespace CASM {
     // *******************************************************************************************
     void hungarian_method(const Eigen::MatrixXd &cost_matrix_arg, std::vector<Index> &optimal_assignments, const double _tol);
 
-    void reduce_cost(Eigen::MatrixXd &cost_matrix);
+    //void reduce_cost(Eigen::MatrixXd &cost_matrix, double _infinity);
 
-    void find_zeros(const Eigen::MatrixXd &cost_matrix, Eigen::MatrixXi &zero_marks, double _tol);
+    //void find_zeros(const Eigen::MatrixXd &cost_matrix, Eigen::MatrixXi &zero_marks, double _tol);
 
-    bool check_assignment(const Eigen::MatrixXi &zero_marks, Eigen::VectorXi &col_covered);
+    //bool check_assignment(const Eigen::MatrixXi &zero_marks, Eigen::VectorXi &col_covered);
 
-    int prime_zeros(const Eigen::MatrixXd &cost_matrix, Eigen::VectorXi &row_covered, Eigen::VectorXi &col_covered, Eigen::MatrixXi &zero_marks, double &min, Eigen::VectorXi &first_prime_zero);
+    //int prime_zeros(const Eigen::MatrixXd &cost_matrix, Eigen::VectorXi &row_covered, Eigen::VectorXi &col_covered, Eigen::MatrixXi &zero_marks, double &min, Eigen::VectorXi &first_prime_zero);
 
-    int alternating_path(const Eigen::MatrixXd &cost_matrix, const Eigen::VectorXi &first_prime_zero, Eigen::MatrixXi &zero_marks, Eigen::VectorXi &row_covered, Eigen::VectorXi &col_covered);
+    //int alternating_path(const Eigen::MatrixXd &cost_matrix, const Eigen::VectorXi &first_prime_zero, Eigen::MatrixXi &zero_marks, Eigen::VectorXi &row_covered, Eigen::VectorXi &col_covered);
 
-    int update_costs(const Eigen::VectorXi &row_covered, const Eigen::VectorXi &col_covered, const double min, Eigen::MatrixXd &cost_matrix);
+    //int update_costs(const Eigen::VectorXi &row_covered, const Eigen::VectorXi &col_covered, const double min, Eigen::MatrixXd &cost_matrix);
   }
+
+  //*******************************************************************************************
+  ///Take a vector of doubles, and multiply by some factor that turns it into a vector of integers (within a tolerance)
+  template <typename Derived>
+  Eigen::Matrix<int,
+        Derived::RowsAtCompileTime,
+        Derived::ColsAtCompileTime>
+  scale_to_int(const Eigen::MatrixBase<Derived> &val, double _tol = TOL) {
+
+    typedef Eigen::Matrix<int, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> int_mat_type;
+    typedef Eigen::Matrix<double, Derived::RowsAtCompileTime, Derived::ColsAtCompileTime> dub_mat_type;
+
+    int_mat_type ints(int_mat_type::Zero(val.rows(), val.cols()));
+
+    dub_mat_type dubs(val);
+
+    Index min_i(-1), min_j(-1);
+    double min_coeff = 2; //all values are <=1;
+    for(Index i = 0; i < dubs.rows(); i++) {
+      for(Index j = 0; j < dubs.cols(); j++) {
+        if(almost_zero(dubs(i, j))) {
+          dubs(i, j) = 0.0;
+        }
+        else if(std::abs(dubs(i, j)) < std::abs(min_coeff)) {
+          min_coeff = dubs(i, j);
+          min_i = i;
+          min_j = j;
+        }
+      }
+    }
+    if(valid_index(min_i))
+      dubs /= std::abs(min_coeff);
+    else
+      return ints;
+
+
+    //We want to multiply the miller indeces by some factor such that all indeces become integers.
+    //In order to do this we pick a tolerance to work with and round the miller indeces if they are close
+    //enough to the integer value (e.g. 2.95 becomes 3). Choosing a tolerance that is too small will
+    //result in the "primitive-slab" blowing up.
+
+    //Begin choosing a factor and multiply all indeces by it (starting with 1). Then round the non-smallest
+    //miller indeces (smallest index requires no rounding, since it will always be a perfect
+    //integer thanks to the previous division).
+    //Next take absolute value of difference between rounded indeces and actual values (int_diff 1 & 2).
+    //If the difference for both indeces is smaller than the tolerance then you've reached the desired
+    //accuracy and the rounded indeces can be used to construct the "primitive-slab" cell. If not, increase the
+    //factor by 1 and try again, until the tolerance is met.
+    bool within_tol = false;
+
+    dub_mat_type tdubs;
+    Index i, j;
+    for(Index factor = 1; factor < 1000 && !within_tol; factor++) {
+      tdubs = double(factor) * dubs;
+      for(Index i = 0; i < dubs.rows(); i++) {
+        for(Index j = 0; j < dubs.cols(); j++) {
+          if(!almost_zero(round(tdubs(i, j)) - tdubs(i, j), _tol))
+            break;
+        }
+        if(j < dubs.cols())
+          break;
+      }
+      if(dubs.rows() <= i)
+        within_tol = true;
+    }
+
+    if(within_tol) {
+      for(Index i = 0; i < dubs.rows(); i++) {
+        for(Index j = 0; j < dubs.cols(); j++) {
+          ints(i, j) = round(tdubs(i, j));
+        }
+      }
+    }
+
+    return ints;
+  }
+
+
 }
 
 namespace Eigen {
+  template <typename Derived1, typename Derived2>
+  inline
+  bool almost_equal(const Eigen::MatrixBase<Derived1> &val1, const Eigen::MatrixBase<Derived2> &val2, double tol = CASM::TOL) {
+    return CASM::almost_zero(val1 - val2, tol);
+  }
+
+  /**
+   * Checks to see whether the given matrix is symmetric
+   * by checking if its transpose is equal to itself.
+   * Only works for square matrices n x n.
+   * (Reflected along 0,0 to n,n)
+   */
+
   template <typename Derived>
   inline
-  bool almost_equal(const Eigen::MatrixBase<Derived> &val1, const Eigen::MatrixBase<Derived> &val2, double tol = CASM::TOL) {
-    return CASM::almost_zero(double((val1 - val2).norm()), tol);
+  bool is_symmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
+    return CASM::almost_zero(test_mat - test_mat.transpose(), test_tol);
+  }
+
+  /**
+   * Checks to see if the given matrix is persymmetric, i.e.
+   * whether it's symmetric along the cross diagonal.
+   * Only works for square matrices n x n.
+   * (Reflected along 0,n to n,0)
+   */
+
+  template <typename Derived>
+  inline
+  bool is_persymmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
+    //Reverse order of columns and rows
+    auto rev_mat = test_mat.colwise().reverse().eval().rowwise().reverse().eval();
+    return CASM::almost_zero(test_mat - rev_mat.transpose(), test_tol);
+  }
+
+  /**
+   * Checks to see if the given matrix is bisymmetric, i.e.
+   * whether it's symmetric along both diagonals.
+   * Only works for square matrices n x n.
+   * (Reflected along 0,n to n,0 AND 0,0 to n,n)
+   */
+
+  template <typename Derived>
+  inline
+  bool is_bisymmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
+    return (is_symmetric(test_mat, test_tol) && is_persymmetric(test_mat, test_tol));
   }
 }
 

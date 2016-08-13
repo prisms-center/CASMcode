@@ -1,101 +1,183 @@
 #include "casm/clex/PrimClex.hh"
 
-#include <boost/algorithm/string.hpp>
+#include "casm/external/boost.hh"
 
+#include "casm/misc/algorithm.hh"
 #include "casm/clex/ConfigIterator.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clusterography/jsonClust.hh"
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/casm_io/SafeOfstream.hh"
-
+#include "casm/crystallography/Coordinate.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/crystallography/Niggli.hh"
 
 namespace CASM {
-
-
-
   //*******************************************************************************************
   //                                **** Constructors ****
   //*******************************************************************************************
   /// Initial construction of a PrimClex, from a primitive Structure
-  PrimClex::PrimClex(const Structure &_prim) :
-    prim(_prim),
-    global_orbitree(_prim.lattice()) {
-    //prim.generate_factor_group();
+  PrimClex::PrimClex(const Structure &_prim, Log &log, Log &debug_log, Log &err_log) :
+    Logging(log, debug_log, err_log),
+    prim(_prim) {
+
+    _init();
+
     return;
-  };
+  }
 
 
   //*******************************************************************************************
   /// Construct PrimClex from existing CASM project directory
   ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-  PrimClex::PrimClex(const fs::path &_root, std::ostream &sout):
+  PrimClex::PrimClex(const fs::path &_root, Log &log, Log &debug_log, Log &err_log):
+    Logging(log, debug_log, err_log),
     root(_root),
     m_dir(_root),
     m_settings(_root),
-    prim(read_prim(m_dir.prim())),
-    global_orbitree(prim.lattice()) {
+    prim(read_prim(m_dir.prim())) {
 
-    //prim.generate_factor_group();
-    bool any_print = false;
-
-    // here add stuff to read directory structure...
-
-    // read .casmroot current settings
-    try {
-      jsonParser settings(root / ".casm" / "project_settings.json");
-      from_json(curr_property, settings["curr_properties"]);
-      from_json(curr_clex, settings["curr_clex"]);
-      from_json(curr_calctype, settings["curr_calctype"]);
-      from_json(curr_ref, settings["curr_ref"]);
-      from_json(curr_bset, settings["curr_bset"]);
-      from_json(curr_eci, settings["curr_eci"]);
-      settings.get_else(compile_options, "compile_options", RuntimeLibrary::default_compile_options());
-      settings.get_else(so_options, "so_options", RuntimeLibrary::default_so_options());
-      from_json(m_name, settings["name"]);
-    }
-    catch(std::exception &e) {
-      std::cerr << "Error in PrimClex::PrimClex(const fs::path &_root, std::ostream &sout) reading .casmroot" << std::endl;
-      std::cerr << e.what() << std::endl;
-      exit(1);
-    }
-
-    // read param composition
-    auto comp_axes = m_dir.composition_axes(m_settings.calctype(), m_settings.ref());
-    if(fs::is_regular_file(comp_axes)) {
-      sout << "  Read " << comp_axes << std::endl;
-
-      CompositionAxes opt(comp_axes);
-
-      if(opt.has_current_axes) {
-        m_has_composition_axes = true;
-        m_comp_converter = opt.curr;
-      }
-    }
-
-    // read supercells
-    if(fs::is_regular_file(root / "training_data" / "SCEL")) {
-
-      any_print = true;
-      sout << "  Read " << root / "training_data" / "SCEL" << std::endl;
-      fs::ifstream scel(root / "training_data" / "SCEL");
-      read_supercells(scel);
-
-    }
-
-    // read config_list
-    if(fs::is_regular_file(get_config_list_path())) {
-
-      any_print = true;
-      sout << "  Read " << get_config_list_path() << std::endl;
-      read_config_list();
-    }
-
-    if(any_print)
-      sout << "\n" << std::flush;
-
+    _init();
 
   }
 
+  /// Initialization routines
+  ///  - If !root.empty(), read all saved data to generate all Supercells and Configurations, etc.
+  void PrimClex::_init() {
+
+    log().construct("CASM Project");
+    log() << "from: " << root << "\n" << std::endl;
+
+    std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
+
+    m_vacancy_allowed = false;
+    for(int i = 0; i < struc_mol_name.size(); ++i) {
+      if(is_vacancy(struc_mol_name[i])) {
+        m_vacancy_allowed = true;
+        m_vacancy_index = i;
+      }
+    }
+
+    if(root.empty()) {
+      return;
+    }
+
+    bool read_settings = false;
+    bool read_composition = true;
+    bool read_chem_ref = true;
+    bool read_configs = true;
+
+    refresh(false, true, true, true);
+  }
+
+  /// \brief Reload PrimClex data from settings
+  ///
+  /// \param read_settings Read project_settings.json
+  /// \param read_composition Read composition_axes.json
+  /// \param read_chem_ref Read chemical_reference.json
+  /// \param read_configs Read SCEL and config_list.json
+  /// \param clear_clex Clear stored orbitrees, clexulators, and eci
+  ///
+  /// - This does not check if what you request will cause problems.
+  ///
+  void PrimClex::refresh(bool read_settings,
+                         bool read_composition,
+                         bool read_chem_ref,
+                         bool read_configs,
+                         bool clear_clex) {
+
+    log().custom("Load project data");
+
+    if(read_settings) {
+      try {
+        m_settings = ProjectSettings(root);
+      }
+      catch(std::exception &e) {
+        err_log().error("reading project_settings.json");
+        err_log() << "file: " << m_dir.project_settings() << "\n" << std::endl;
+      }
+    }
+
+    if(read_composition) {
+      m_has_composition_axes = false;
+      auto comp_axes = m_dir.composition_axes();
+
+      try {
+        if(fs::is_regular_file(comp_axes)) {
+          log() << "read: " << comp_axes << "\n";
+
+          CompositionAxes opt(comp_axes);
+
+          if(opt.has_current_axes) {
+            m_has_composition_axes = true;
+            m_comp_converter = opt.curr;
+          }
+        }
+      }
+      catch(std::exception &e) {
+        err_log().error("reading composition_axes.json");
+        err_log() << "file: " << comp_axes << "\n" << std::endl;
+      }
+    }
+
+    if(read_chem_ref) {
+
+      // read chemical reference
+      m_chem_ref.reset();
+      auto chem_ref_path = m_dir.chemical_reference(m_settings.default_clex().calctype, m_settings.default_clex().ref);
+
+      try {
+        if(fs::is_regular_file(chem_ref_path)) {
+          log() << "read: " << chem_ref_path << "\n";
+          m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim, lin_alg_tol()));
+        }
+      }
+      catch(std::exception &e) {
+        err_log().error("reading chemical_reference.json");
+        err_log() << "file: " << chem_ref_path << "\n" << std::endl;
+      }
+    }
+
+    if(read_configs) {
+
+      supercell_list.clear();
+
+      try {
+        // read supercells
+        if(fs::is_regular_file(m_dir.SCEL())) {
+          log() << "read: " << m_dir.SCEL() << "\n";
+          fs::ifstream scel(m_dir.SCEL());
+          read_supercells(scel);
+        }
+      }
+      catch(std::exception &e) {
+        err_log().error("reading SCEL");
+        err_log() << "file: " << m_dir.SCEL() << "\n" << std::endl;
+      }
+
+      try {
+        // read config_list
+        if(fs::is_regular_file(get_config_list_path())) {
+          log() << "read: " << get_config_list_path() << "\n";
+          read_config_list();
+        }
+      }
+      catch(std::exception &e) {
+        err_log().error("reading config_list.json");
+        err_log() << "file: " << m_dir.config_list() << "\n" << std::endl;
+      }
+    }
+
+    if(clear_clex) {
+      m_nlist.reset();
+      m_orbitree.clear();
+      m_clexulator.clear();
+      m_eci.clear();
+      log() << "refresh cluster expansions\n";
+    }
+
+    log() << std::endl;
+  }
 
   //*******************************************************************************************
   // **** Accessors ****
@@ -103,7 +185,7 @@ namespace CASM {
 
   /// Return project name
   std::string PrimClex::name() const {
-    return m_name;
+    return settings().name();
   }
 
   //*******************************************************************************************
@@ -135,60 +217,6 @@ namespace CASM {
 
   // ** Current settings accessors **
 
-  //*******************************************************************************************
-  /// Return current property settings
-  const std::vector<std::string> &PrimClex::get_curr_property() const {
-    return curr_property;
-  }
-
-  //*******************************************************************************************
-  /// Return current clex settings
-  std::string PrimClex::get_curr_clex() const {
-    return curr_clex;
-  }
-
-  //*******************************************************************************************
-  /// Return current calctype setting
-  std::string PrimClex::get_curr_calctype() const {
-    return curr_calctype;
-  }
-
-  //*******************************************************************************************
-  /// Return current reference setting
-  std::string PrimClex::get_curr_ref() const {
-    return curr_ref;
-  }
-
-  //*******************************************************************************************
-  /// Return cluster settings
-  std::string PrimClex::get_curr_bset() const {
-    return curr_bset;
-  }
-
-  //*******************************************************************************************
-  /// Return current global clexulator name
-  std::string PrimClex::get_curr_clexulator() const {
-    return name() + "_Clexulator";
-  }
-
-  //*******************************************************************************************
-  /// Return current eci settings
-  std::string PrimClex::get_curr_eci() const {
-    return curr_eci;
-  }
-
-  //*******************************************************************************************
-  /// Return compiler options
-  std::string PrimClex::get_compile_options() const {
-    return compile_options;
-  }
-
-  //*******************************************************************************************
-  /// Return shared library options
-  std::string PrimClex::get_so_options() const {
-    return so_options;
-  }
-
   // ** Composition accessors **
 
   //*******************************************************************************************
@@ -203,6 +231,19 @@ namespace CASM {
     return m_comp_converter;
   }
 
+  // ** Chemical reference **
+
+  //*******************************************************************************************
+  /// check if ChemicalReference object initialized
+  bool PrimClex::has_chemical_reference() const {
+    return static_cast<bool>(m_chem_ref);
+  }
+
+  //*******************************************************************************************
+  /// const Access ChemicalReference object
+  const ChemicalReference &PrimClex::chemical_reference() const {
+    return *m_chem_ref;
+  }
 
 
   // ** Prim and Orbitree accessors **
@@ -214,16 +255,35 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  /// const Access to global orbitree
-  const SiteOrbitree &PrimClex::get_global_orbitree() const {
-    return global_orbitree;
-  };
+
+  PrimNeighborList &PrimClex::nlist() const {
+
+    // lazy neighbor list generation
+    if(!m_nlist) {
+
+      // construct nlist
+      m_nlist = notstd::make_cloneable<PrimNeighborList>(
+                  settings().nlist_weight_matrix(),
+                  settings().nlist_sublat_indices().begin(),
+                  settings().nlist_sublat_indices().end()
+                );
+    }
+
+    return *m_nlist;
+  }
 
   //*******************************************************************************************
-
-  const Array<UnitCellCoord> &PrimClex::get_prim_nlist() const {
-    return prim_nlist;
+  /// returns true if vacancy are an allowed species
+  bool PrimClex::vacancy_allowed() const {
+    return m_vacancy_allowed;
   }
+
+  //*******************************************************************************************
+  /// returns the index of vacancies in composition vectors
+  Index PrimClex::vacancy_index() const {
+    return m_vacancy_index;
+  }
+
 
   // ** Supercell and Configuration accessors **
 
@@ -276,7 +336,7 @@ namespace CASM {
     boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
     Index config_ind;
     if(splt_vec.size() != 2) {
-      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), cannot locate configuration " << configname << "\n"
+      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), cannot locate configuration named '" << configname << "'\n"
                 << "                Exiting...\n";
       assert(0);
       exit(1);
@@ -324,7 +384,6 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-
   /// Configuration iterator: begin
   PrimClex::config_iterator PrimClex::config_begin() {
     if(supercell_list.size() == 0 || supercell_list[0].get_config_list().size() > 0)
@@ -340,6 +399,20 @@ namespace CASM {
 
   //*******************************************************************************************
   /// const Configuration iterator: begin
+  PrimClex::config_const_iterator PrimClex::config_begin() const {
+    if(supercell_list.size() == 0 || supercell_list[0].get_config_list().size() > 0)
+      return config_const_iterator(this, 0, 0);
+    return ++config_const_iterator(this, 0, 0);
+  }
+
+  //*******************************************************************************************
+  /// const Configuration iterator: end
+  PrimClex::config_const_iterator PrimClex::config_end() const {
+    return config_const_iterator(this, supercell_list.size(), 0);
+  }
+
+  //*******************************************************************************************
+  /// const Configuration iterator: begin
   PrimClex::config_const_iterator PrimClex::config_cbegin() const {
     if(supercell_list.size() == 0 || supercell_list[0].get_config_list().size() > 0)
       return config_const_iterator(this, 0, 0);
@@ -351,7 +424,6 @@ namespace CASM {
   PrimClex::config_const_iterator PrimClex::config_cend() const {
     return config_const_iterator(this, supercell_list.size(), 0);
   }
-
 
   //*******************************************************************************************
   /// Configuration iterator: begin
@@ -382,21 +454,6 @@ namespace CASM {
   /// const Configuration iterator: end
   PrimClex::config_const_iterator PrimClex::selected_config_cend() const {
     return config_const_iterator(this, supercell_list.size(), 0, true);
-  }
-
-
-  // ** Neighbor list accessors **
-  //*******************************************************************************************
-  /// Return number of sites in primitive cell neighborhood
-  Index PrimClex::get_nlist_size() const {
-    return prim_nlist.size();
-  }
-
-  //*******************************************************************************************
-  /// Returns UnitCellCoord, 'delta', indicating where neighbor site 'nlist_index' is located in the neighborhood
-  ///    neighbor_unit_cell_coord = UnitCellCoord(b,i,j,k) + this->get_nlist_uccoord(nlist_index)
-  const UnitCellCoord &PrimClex::get_nlist_uccoord(Index nlist_index) const {
-    return prim_nlist[nlist_index];
   }
 
 
@@ -441,330 +498,49 @@ namespace CASM {
 
   // **** Unorganized mess of functions ... ****
 
-  //***********************************************************
   /**
-   * Calculates the distances between all sites of a cluster from
-   * the first site in the cluster of all clusters in the orbitree,
-   * then stores this "delta" in the primitive neighbor list if it
-   * hasn't been added already.
-   * In the process, it updates the value
-   * of nlist_ind() of every site in the given orbitree to
-   * hold the index of where said site was placed in the neighbor
-   * list, relative to the first site of the cluster.
+   * Generates all unique supercells between volStart and
+   * volEnd of PRIM volumes. Call this routine before you
+   * enumerate configurations.
    *
-   * Example:
-   * A triple cluster made from
-   * Cluster site       |       Site in primitive       |       nlist_ind
-   * 0                          2                               2
-   * 1                          6                               7
-   * 2                          1                               8
+   * The provided transformation matrix can be used to enumerate
+   * over lattice vectors that are not the ones belonging to the
+   * primitive lattice (e.g. enumerate supercells of another supercell,
+   * or enumerate over a particular lattice plane)
    *
-   * Cluster site is just the index of the site inside the cluster (which is of type Array<Site>)
-   * Site in primitive tells you what site in the basis of your primitive your cluster site corresponds to (inconsequential here)
-   * nlist_ind is what you use to read prim_nlist and gets set in this routine.
+   * The number of dimensions (must be equal to 1, 2 or 3) specify
+   * which directions the supercells should be enumerated in, resulting
+   * in 1D, 2D or 3D supercells. The enumeration is relative to the provided
+   * transformation matrix. For dimension n, the first n columns of the
+   * transformation matrix are used to construct supercells, while
+   * the remaining 3-n columns remain fixed.
    *
-   * The entire prim_nlist is based off of the first site in the cluster. To get the
-   * distance between cluster site 0 and 1, you look at prim_nlist[7], to get
-   * the distance between cluster site 0 and 2, you look at prim_nlist[8].
+   * The new functionality of restricted supercell enumeration can
+   * be easily bypassed by passing dims=3 and G=Eigen::Matrix3i::Identity()
+   *
+   * @param[in] volStart Minimum volume supercell, relative to det(G)
+   * @param[in] volEnd Maximum volume supercell, relative to det(G)
+   * @param[in] dims Number of dimensions to enumerate over (1D, 2D or 3D supercells)
+   * @param[in] G Generating matrix. Restricts enumeration to resulting vectors of P*G, where P=primitive.
    *
    */
-  //***********************************************************
 
-  void PrimClex::append_to_nlist(SiteOrbitree &new_tree) {
-    // We include all the primitive-cell neighbors by default at the front of the prim_nlist
-    // This might be overkill in the long term (e.g., for large primitive cells where only a few sites have DoFs)
-    // In that case, we may change tactics and construct a separate list of nlist_inds that correspond to prim-cell neighbors
-    // We need this information in some form for calculating differential correlations
-    if(!prim_nlist.size()) {
-      for(Index b = 0; b < prim.basis.size(); b++)
-        prim_nlist.push_back(UnitCellCoord(b, 0, 0, 0));
-    }
-
-    Array<Index> clust_nlist_inds;
-
-    //For each site we encounter we access the appropriate slot in the neighbor list and append all other sites
-    //to it in the form of UnitCellCoords
-
-    //branches
-    for(Index i = 0; i < new_tree.size(); i++) {
-      //orbits
-      for(Index j = 0; j < new_tree[i].size(); j++) {
-        //clusters
-        for(Index k = 0; k < new_tree[i][j].size(); k++) {
-          //tuccl corresponds to the first site in the cluster
-          UnitCellCoord tuccl = prim.get_unit_cell_coord(new_tree[i][j][k][0]);
-
-          clust_nlist_inds.resize(new_tree[i][j][k].size());
-          //neighbor sites
-          for(Index b = 0; b < new_tree[i][j][k].size(); b++) {
-            //tuccb corresponds to a site that neighbors tuccl
-            UnitCellCoord tuccb = prim.get_unit_cell_coord(new_tree[i][j][k][b]);
-            UnitCellCoord delta = tuccb - tuccl;
-
-            clust_nlist_inds[b] = prim_nlist.find(delta);
-
-            //If delta is not already in prim_nlist, add it (the value of clust_nlist_inds[b] makes sense after the push_back)
-            if(clust_nlist_inds[b] == prim_nlist.size()) {
-              prim_nlist.push_back(delta);
-            }
-          }
-          //Update nlist_inds of the cluster sites so they know where they live in the neighbor list
-          new_tree[i][j][k].set_nlist_inds(clust_nlist_inds);
-        }
-      }
-    }
-
-    return;
-  };
-
-  //***********************************************************
-  /**
-   * Calculates the distances between all sites from each other
-   * in every cluster of the orbitree, then stores this "delta"
-   * in the primitive neighbor list if it hasn't been added already.
-   * In the process, it updates the value
-   * of nlist_ind of every site in the given orbitree to
-   * hold the index of where said site was placed in the neighbor
-   * list, relative to the first site of the cluster.
-   *
-   * This routine is essentially the same as PrimClex::append_to_nlist,
-   * except it compares all sites in a cluster to all other sites
-   * instead of just the first one (note additional loop over 'l').
-   * The result is a neighbor list that contains transitional "delta",
-   * without using flowertrees. It will be equal in size or larger than
-   * neighbor list generated by PrimClex::append_to_nlist
-   */
-  //***********************************************************
-
-  void PrimClex::append_to_nlist_perm(SiteOrbitree &new_tree) {
-
-    // We include all the primitive-cell neighbors by default at the front of the prim_nlist
-    // This might be overkill in the long term (e.g., for large primitive cells where only a few sites have DoFs)
-    // In that case, we may change tactics and construct a separate list of nlist_inds that correspond to prim-cell neighbors
-    // We need this information in some form for calculating differential correlations
-    if(!prim_nlist.size()) {
-      for(Index b = 0; b < prim.basis.size(); b++)
-        prim_nlist.push_back(UnitCellCoord(b, 0, 0, 0));
-    }
-
-
-
-    //For each site we encounter we access the appropriate slot in the neighbor list and append all other sites
-    //to it in the form of UnitCellCoords
-
-    Array<Index> clust_nlist_inds;
-
-    //branches
-    for(Index i = 0; i < new_tree.size(); i++) {
-      //orbits
-      for(Index j = 0; j < new_tree[i].size(); j++) {
-        //clusters
-        for(Index k = 0; k < new_tree[i][j].size(); k++) {
-
-          clust_nlist_inds.resize(new_tree[i][j][k].size());
-
-          //sites
-          for(Index l = 0; l < new_tree[i][j][k].size(); l++) {
-            //tuccl corresponds to a particular site we're looking at
-            UnitCellCoord tuccl = prim.get_unit_cell_coord(new_tree[i][j][k][l]);
-            //neighbor sites
-            for(Index b = 0; b < new_tree[i][j][k].size(); b++) {
-              //tuccb corresponds to a site that neighbors tuccl
-              UnitCellCoord tuccb = prim.get_unit_cell_coord(new_tree[i][j][k][b]);
-              UnitCellCoord delta = tuccb - tuccl;
-
-              clust_nlist_inds[b] = prim_nlist.find(delta);
-
-              //If delta is not already in prim_nlist, add it (the value of clust_nlist_inds[b] makes sense after the push_back)
-              if(clust_nlist_inds[b] == prim_nlist.size()) {
-                prim_nlist.push_back(delta);
-              }
-            }
-
-            // we set the first set of nlist_inds as the current indices
-            if(l == 0) {
-              new_tree[i][j][k].set_nlist_inds(clust_nlist_inds);
-            }
-
-            // save any other unique ones that we find
-            Index t(0);
-            for(t = 0; t < new_tree[i][j][k].trans_nlists().size(); t++) {
-              if(clust_nlist_inds.all_in(new_tree[i][j][k].trans_nlist(t)))
-                break;
-            }
-            if(t == new_tree[i][j][k].trans_nlists().size())
-              new_tree[i][j][k].add_trans_nlist(clust_nlist_inds);
-          }
-        }
-      }
-    }
-
-    return;
-  };
-
-  //*******************************************************************************************
-  /**
-   * Begin by constructing the flowertrees from the global
-   * orbitree, then use every flowertree to get a full neighbor
-   * list and updated nlist_ind of the sites in the flowertree. Then
-   * update nlist_ind of each site the global orbitree, which won't add
-   * any new sites to the neighbor list.
-   *
-   * You might not want to actually use this routine if you're
-   * just interested in a global cluster expansion. You could
-   * generate fewer neighbors (no flowertrees) and have all the
-   * information you need. This routine would generate the
-   * FULL neighbor list for every orbitree that lives in
-   * the PrimClex.
-   */
-  //*******************************************************************************************
-
-  void PrimClex::generate_full_nlist() {
-    if(prim_nlist.size()) {
-      std::cerr << "WARNING: In PrimClex::generate_full_nlist(), prim_nlist was previously initialized and is about to be overwritten!!\n";
-      prim_nlist.clear();
-    }
-
-    for(Index b = 0; b < get_prim().basis.size(); b++) {
-      if(get_prim().basis[b].site_occupant().size() > 1) {
-        m_dof_manager.add_dof(get_prim().basis[b].site_occupant().type_name());
-        break;
-      }
-    }
-    for(Index b = 0; b < get_prim().basis.size(); b++) {
-      for(Index i = 0; i < get_prim().basis[i].displacement().size(); i++)
-        m_dof_manager.add_dof(get_prim().basis[b].displacement()[i].type_name());
-    }
-
-    //Update nlist_ind for global orbitree
-    append_to_nlist_perm(global_orbitree);
-
-    //Populate flowertrees for calculating correlations later and update indices of the sites
-    /*prim.generate_flowertrees(global_orbitree, flowertrees);
-
-    std::cout << "nlist size before flowertrees: " << prim_nlist.size() << " \n";
-    for(Index q = 0; q < flowertrees.size(); q++) {
-      append_to_nlist(flowertrees[q]);
-      //flowertrees[q].print_full_clust(std::cout);
-      //std::cout << std::endl;
-    }
-    std::cout << "nlist size after flowertrees: " << prim_nlist.size() << " \n";
-    */
-
-    m_dof_manager.resize_neighborhood(prim_nlist.size());
-
-    // We can add more as needed
-    m_dof_manager.register_dofs(global_orbitree);
-    //std::ofstream clex_stream("clexulator.cc");
-    //print_clexulator(clex_stream, "MyClexulator", global_orbitree);
-    //clex_stream.close();
-
-    return;
-  };
-
-  //*******************************************************************************************
-  /**
-   * Makes flowertrees out of the global orbitree that lives
-   * in PrimClex
-   */
-  //*******************************************************************************************
-
-  void PrimClex::populate_flowertrees() {
-    //Populate flowertrees in one swoop
-    prim.generate_flowertrees(global_orbitree, flowertrees);
-    return;
-  };
-  //\John G 070713
-
-
-  //John G 011013
-  //*******************************************************************************************
-  /**
-   * Generates the global orbitree that lives
-   * in PrimClex using the given CSPECS
-   */
-  //*******************************************************************************************
-  void PrimClex::generate_global_orbitree(const fs::path &cspecs) {
-
-    std::cout  << "  Read " << cspecs << std::endl << std::endl;
-
-    fs::ifstream in_clust(cspecs);
-    global_orbitree.read_CSPECS(in_clust);
-    global_orbitree.min_num_components = 2;
-    global_orbitree.min_length = 0.0001;
-    in_clust.close();
-    global_orbitree.generate_orbitree(prim);
-    global_orbitree.collect_basis_info(prim);
-    //std::cout << "----------------------------------------------\n\t\tGLOBAL ORBITREE\n----------------------------------------------\n ";
-    //global_orbitree.print_full_clust(std::cout);
-    return;
-  };
-  //\John G 011013
-
-  //*******************************************************************************************
-  void PrimClex::read_global_orbitree(const std::string &fclust_path) {
-    read_global_orbitree(fs::path(fclust_path));
-  }
-
-  //*******************************************************************************************
-  void PrimClex::read_global_orbitree(const fs::path &fclust_path) {
-
-    std::cout  << "  Read " << fclust_path << std::endl << std::endl;
-
-    global_orbitree.min_num_components = 2;     //What if we want other things?
-    global_orbitree.min_length = 0.0001;
-    from_json(jsonHelper(global_orbitree, prim), jsonParser(fclust_path.string()));
-    global_orbitree.collect_basis_info(prim);
-
-  }
-
-  //*******************************************************************************************
-  void PrimClex::read_custom_clusters(const std::string &custom_clusters, bool subclusters) {
-    read_custom_clusters(fs::path(custom_clusters), subclusters);
-  }
-  //*******************************************************************************************
-  void PrimClex::read_custom_clusters(const fs::path &custom_clusters, bool subclusters) {
-    //Empty Orbitrees seem to have nothing set, I dont think this is a
-    //safe way to create empty objects. It would be good if the
-    //default constructor set them to 'invalid' values
-    if(global_orbitree.size() == 0) {
-      global_orbitree.min_num_components = 2;
-      global_orbitree.min_length = 0.0001;
-    }
-    global_orbitree.read_custom_clusters_from_json(jsonParser(custom_clusters), prim, prim.factor_group(), subclusters);
-  }
-
-  //*******************************************************************************************
-  /**  GENERATE_SUPERCELLS
-   *   Generates all unique supercells between volStart and
-   *   volEnd of PRIM volumes. Call this routine before you
-   *   enumerate configurations.
-   *
-   *  ARN 100213
-   */
-  //*******************************************************************************************
-  void PrimClex::generate_supercells(int volStart, int volEnd, bool verbose) {
+  void PrimClex::generate_supercells(int volStart, int volEnd, int dims, const Eigen::Matrix3i &G, bool verbose) {
     Array < Lattice > supercell_lattices;
-    prim.lattice().generate_supercells(supercell_lattices, prim.factor_group(), volEnd, volStart);    //point_group?
+    prim.lattice().generate_supercells(supercell_lattices, prim.factor_group(), volStart, volEnd, dims, G);
     for(Index i = 0; i < supercell_lattices.size(); i++) {
       Index list_size = supercell_list.size();
       Index index = add_canonical_supercell(supercell_lattices[i]);
-      if(supercell_list.size() != list_size) {
-        std::cout << "  Generated: " << supercell_list[index].get_name() << "\n";
-      }
-      else {
-        std::cout << "  Generated: " << supercell_list[index].get_name() << " (already existed)\n";
+      if(verbose) {
+        if(supercell_list.size() != list_size) {
+          std::cout << "  Generated: " << supercell_list[index].get_name() << "\n";
+        }
+        else {
+          std::cout << "  Generated: " << supercell_list[index].get_name() << " (already existed)\n";
+        }
       }
     }
-
-    //std::cout << supercell_lattices.size() << " supercells were generated\n";
-
-  }
-  //*******************************************************************************************
-  void PrimClex::generate_supercell_nlists() {
-    for(Index i = 0; i < supercell_list.size(); i++) {
-      supercell_list[i].generate_neighbor_list();
-    }
+    return;
   }
 
   //*******************************************************************************************
@@ -781,12 +557,10 @@ namespace CASM {
    */
   //*******************************************************************************************
   Index PrimClex::add_canonical_supercell(const Lattice &superlat) {
-
     if(!superlat.is_supercell_of(prim.lattice())) {
-      std::cerr << "ERROR in PrimClex::add_canoical_supercell()." << std::endl
-                << "  'superlat' lattice primitive is not prim lattice primitive" << std::endl
-                << "  So that everything plays nicely, make sure the supercell lattice" << std::endl
-                << "  is based on PrimClex::prim." << std::endl;
+      std::cerr << "ERROR in PrimClex::add_canonical_supercell()." << std::endl
+                << "  Passed a Supercell Lattice that is not a superlattice of PRIM lattice\n" << std::endl;
+      assert(0);
       exit(1);
     }
 
@@ -822,20 +596,8 @@ namespace CASM {
    */
   //*******************************************************************************************
   Index PrimClex::add_supercell(const Lattice &superlat) {
-    return add_canonical_supercell(niggli(superlat, prim.point_group(), tol()));
+    return add_canonical_supercell(canonical_equivalent_lattice(superlat, prim.point_group(), crystallography_tol()));
 
-  }
-
-  //*******************************************************************************************
-  /**  ENUMERATE_ALL_CONFIGURATIONS
-   *   Loops through all the supercells in supercell_list and calls
-   *   the enumerate_configuration routines on all of them
-   */
-  //*******************************************************************************************
-  void PrimClex::enumerate_all_configurations() {
-    for(Index i = 0; i < supercell_list.size(); i++) {
-      supercell_list[i].enumerate_all_occupation_configurations();
-    }
   }
 
   //*******************************************************************************************
@@ -844,17 +606,16 @@ namespace CASM {
 
     // also write supercells/supercell_path directories with LAT files
     try {
-      fs::create_directory("training_data");
+      fs::create_directory(get_path() / "training_data");
     }
     catch(const fs::filesystem_error &ex) {
       std::cerr << "Error in PrimClex::print_supercells()." << std::endl;
       std::cerr << ex.what() << std::endl;
     }
 
-    BP::BP_Write scelfile((fs::path("training_data") / "SCEL").string());
-    scelfile.newfile();
+    fs::ofstream scelfile(get_path() / "training_data" / "SCEL");
 
-    print_supercells(scelfile.get_ostream());
+    print_supercells(scelfile);
 
     for(Index i = 0; i < supercell_list.size(); i++) {
       try {
@@ -862,9 +623,8 @@ namespace CASM {
 
         fs::path latpath = supercell_list[i].get_path() / "LAT";
         if(!fs::exists(latpath)) {
-          BP::BP_Write latfile(latpath.string());
-          latfile.newfile();
-          supercell_list[i].get_real_super_lattice().print(latfile.get_ostream());
+          fs::ofstream latfile(latpath);
+          supercell_list[i].get_real_super_lattice().print(latfile);
         }
       }
       catch(const fs::filesystem_error &ex) {
@@ -900,7 +660,7 @@ namespace CASM {
     //  0 1 0
     //  0 0 2
 
-    Matrix3<double> mat;
+    Eigen::Matrix3d mat;
 
     std::string s;
     while(!stream.eof()) {
@@ -909,89 +669,10 @@ namespace CASM {
         std::getline(stream, s);
         stream >> mat;
 
-        //Lattice lat(prim.lattice.coord_trans(CASM::FRAC)*mat);
-        Lattice lat(prim.lattice().coord_trans(FRAC)*mat);
-        add_canonical_supercell(lat);
+        add_canonical_supercell(Lattice(prim.lattice().lat_column_mat()*mat));
       }
     }
   }
-
-  //*******************************************************************************************
-  /**
-   * Use the global_orbitree of *this to populate the global correlations in the
-   * specified configuration config_index of the given supercell.
-   * The method will match the size of the correlations in the configuration
-   * to said orbitree and pass it down to methods of orbitree, filling up
-   * values.
-   */
-  //*******************************************************************************************
-  /*
-    void PrimClex::populate_global_correlations(const Index &scell_index, const Index &config_index) {
-      supercell_list[scell_index].populate_correlations(global_clexulator, config_index);
-      return;
-    }
-
-    void PrimClex::populate_global_correlations(const Index &scell_index) {
-      supercell_list[scell_index].populate_correlations(global_clexulator);
-      return;
-    }
-
-    void PrimClex::generate_global_correlations() {
-      for(Index i = 0; i < supercell_list.size(); i++) {
-        supercell_list[i].populate_correlations(global_clexulator);
-      }
-      return;
-    }
-
-    void PrimClex::print_correlations(std::string corrFileName) {
-      std::ofstream corrFile;
-      corrFile.open(corrFileName.c_str());
-      for(Index i = 0; i < supercell_list.size(); i++) {
-        supercell_list[i].print_clex_correlations(corrFile);
-      }
-    }
-  */
-  //*******************************************************************************************
-  /*
-   * Just calls print_global_correlations_simple on every supercell
-   * that lives in *this PrimClex, which in turns calls the required print
-   * routine on every one of its configurations. Meant for creating old CASM style
-   * corr.in files.
-   */
-  //*******************************************************************************************
-  /*
-    void PrimClex::print_global_correlations_simple(std::ostream &corrstream) const {
-      for(Index s = 0; s < supercell_list.size(); s++) {
-        supercell_list[s].print_global_correlations_simple(corrstream);
-      }
-      return;
-    }
-
-    */
-
-  //*******************************************************************************************
-  //Construct the basis set for each site
-  void PrimClex::populate_basis_tables(const char &basis_type) {
-    prim.fill_occupant_bases(basis_type);
-  }
-
-  //*******************************************************************************************
-  void PrimClex::populate_cluster_basis_function_tables() {
-    global_orbitree.generate_clust_bases();
-    //global_orbitree.fill_discrete_bases_tensors();
-  }
-
-  //*******************************************************************************************
-  // void PrimClex::read_relaxed_structure(Index superNum, Index configNum) {
-  //   supercell_list[superNum].read_relaxed_structure(configNum, prim.lattice);
-  // }
-
-  //*******************************************************************************************
-  // void PrimClex::collect_clex_relaxations() {
-  //   for(Index i = 0; i < supercell_list.size(); i++) {
-  //     supercell_list[i].read_clex_relaxations(prim.lattice);
-  //   }
-  // }
 
   //*******************************************************************************************
   /**
@@ -1043,25 +724,18 @@ namespace CASM {
   };
 
   //*******************************************************************************************
-  Matrix3<int> PrimClex::calc_transf_mat(const Lattice &superlat) const {
-    Matrix3<int> tmp_transf_mat;
-    Matrix3<double> ttrans = prim.lattice().coord_trans(FRAC).inverse() * superlat.coord_trans(FRAC);
-    if(ttrans.is_integer()) {
-      for(int i = 0; i < 3; i++) {
-        for(int j = 0; j < 3; j++) {
-          tmp_transf_mat(i, j) = round(ttrans(i, j));
-        }
-      }
-    }
-    else {
+  Eigen::Matrix3i PrimClex::calc_transf_mat(const Lattice &superlat) const {
+    Eigen::Matrix3d ttrans = prim.lattice().inv_lat_column_mat() * superlat.lat_column_mat();
+    if(!is_integer(ttrans, TOL)) {
       std::cerr << "Error in PrimClex::calc_transf_mat(const Lattice &superlat)" << std::endl
                 << "  Bad supercell, the transformation matrix is not integer. Exiting!" << std::endl;
       exit(1);
     }
-    return tmp_transf_mat;
+    return iround(ttrans);
   }
 
   //*******************************************************************************************
+
   /// \brief Sets the composition axes
   ///
   /// Also:
@@ -1073,271 +747,330 @@ namespace CASM {
     m_comp_converter = _converter;
     m_has_composition_axes = true;
 
-    // We need some way to make sure param compositions get updated...
-    generate_references();
-
   }
 
   //*******************************************************************************************
-  /// Delete 'properties.ref_state.X.json' files,
-  /// Then call 'clear_reference_properties'
-  void PrimClex::clear_reference_states() {
-    for(int i = 0; i < composition_axes().independent_compositions() + 1; i++) {
-      fs::remove(dir().ref_state(settings().calctype(), settings().ref(), i));
-    }
-    generate_references();
-  }
-
-  //*******************************************************************************************
-  /// Sets the root reference state to be the calculated properties of the chosen config
-  /// Does not call 'generate_references' so written files will be out-of-date until you do so!!!
-  void PrimClex::set_reference_state(int refid, const Configuration &config) {
-
-    //std::cout << "begin set_reference_state()" << std::endl;
-
-    std::string reason_invalid;
-    if(!valid_reference_state(refid, config, reason_invalid)) {
-      std::cerr << "Error in PrimClex::set_reference_state." << std::endl
-                << "  Could not use  SCEL: " << config.get_supercell().get_name() << " ConfigID: " << config.get_id() << "  for reference state: " << refid << std::endl
-                << "  " << reason_invalid << std::endl;
-      exit(1);
-    }
-
-    jsonParser json;
-
-    json["supercell_name"] = config.get_supercell().get_name();
-    json["configid"] = config.get_id();
-
-    json["param_composition"] = config.get_param_composition();
-    json["ref_state"] = config.calc_properties();
-
-    //std::cout << "Set refid: " << refid << std::endl;
-    //std::cout << "Reference State:\n" << json << "\n" << std::endl;
-
-    json.write(dir().ref_state(settings().calctype(), settings().ref(), refid));
-
-    //std::cout << "finish set_reference_state()" << std::endl;
-  }
-
-  //*******************************************************************************************
-  /// Check that it is valid to use 'config' as reference state 'refid', returns bool and if false, sets 'reason_invalid'
-  ///   Currently checks:
-  ///     1) that the necessary properties have been calculated,
-  ///     2) that the same Configuration is not being used twice
-  ///   Needs to check that reference states span composition space
-  bool PrimClex::valid_reference_state(int refid, const Configuration &config, std::string &reason_invalid) const {
-
-    // Check that the Configuration has all the curr_property calculated
-    for(Index i = 0; i < get_curr_property().size(); i++) {
-      if(!config.calc_properties().contains(get_curr_property()[i])) {
-        reason_invalid = "You are attempting to use a Configuration for which the property '" + get_curr_property()[i] + "' has not been calculated.";
-        return false;
+  /*
+    /// Delete 'properties.ref_state.X.json' files,
+    /// Then call 'clear_reference_properties'
+    void PrimClex::clear_reference_states() {
+      for(int i = 0; i < composition_axes().independent_compositions() + 1; i++) {
+        fs::remove(dir().ref_state(settings().calctype(), settings().ref(), i));
       }
+      generate_references();
     }
-
-    // Check that a Configuration is not being used for multiple reference states
-    for(int i = 0; i < composition_axes().independent_compositions() + 1; i++) {
-      if(i == refid)
-        continue;
-
-      if(!fs::exists(dir().ref_state(settings().calctype(), settings().ref(), i)))
-        continue;
-
-      jsonParser json(dir().ref_state(settings().calctype(), settings().ref(), i));
-
-      if(json["configid"] == "custom" || json["supercell_name"] == "custom")
-        continue;
-
-      if(json["configid"] == config.get_id() && json["supercell_name"] == config.get_supercell().get_name()) {
-        reason_invalid =  "You are attempting to use the same Configuration for >1 reference state and I can't allow that.";
-        return false;
-      }
-    }
-
-    // Here I should check that references span the necessary composition space, but I'm not yet
-
-    //   First read all reference states that have already been set, then check that this new one is not a linear combination of those
-
-    return true;
-  }
-
+  */
   //*******************************************************************************************
-  /// find calculated configurations closest to
-  /// [0, 0, 0, ...], [1, 0, 0, ...], [0, 1, 0, ...], [0, 0, 1, ...], ...
-  /// and set them as the root reference states, also calls generate_references
-  /// Clears refrence states and properties whether or not it succeeds
-  void PrimClex::set_reference_state_auto() {
+  /*
+    /// Sets the root reference state to be the calculated properties of the chosen config
+    /// Does not call 'generate_references' so written files will be out-of-date until you do so!!!
+    void PrimClex::set_reference_state(int refid, const Configuration &config) {
 
-    //std::cout << "begin set_reference_state_auto()" << std::endl;
+      //std::cout << "begin set_reference_state()" << std::endl;
 
+      std::string reason_invalid;
+      if(!valid_reference_state(refid, config, reason_invalid)) {
+        std::cerr << "Error in PrimClex::set_reference_state." << std::endl
+                  << "  Could not use  SCEL: " << config.get_supercell().get_name() << " ConfigID: " << config.get_id() << "  for reference state: " << refid << std::endl
+                  << "  " << reason_invalid << std::endl;
+        exit(1);
+      }
+
+      jsonParser json;
+
+      json["supercell_name"] = config.get_supercell().get_name();
+      json["configid"] = config.get_id();
+
+      json["param_composition"] = config.get_param_composition();
+      json["ref_state"] = config.calc_properties();
+
+      //std::cout << "Set refid: " << refid << std::endl;
+      //std::cout << "Reference State:\n" << json << "\n" << std::endl;
+
+      json.write(dir().ref_state(settings().calctype(), settings().ref(), refid));
+
+      //std::cout << "finish set_reference_state()" << std::endl;
+    }
+  */
+  //*******************************************************************************************
+  /*
+    /// Check that it is valid to use 'config' as reference state 'refid', returns bool and if false, sets 'reason_invalid'
+    ///   Currently checks:
+    ///     1) that the necessary properties have been calculated,
+    ///     2) that the same Configuration is not being used twice
+    ///   Needs to check that reference states span composition space
+    bool PrimClex::valid_reference_state(int refid, const Configuration &config, std::string &reason_invalid) const {
+
+      // Check that the Configuration has all the curr_property calculated
+      for(Index i = 0; i < get_curr_property().size(); i++) {
+        if(!config.calc_properties().contains(get_curr_property()[i])) {
+          reason_invalid = "You are attempting to use a Configuration for which the property '" + get_curr_property()[i] + "' has not been calculated.";
+          return false;
+        }
+      }
+
+      // Check that a Configuration is not being used for multiple reference states
+      for(int i = 0; i < composition_axes().independent_compositions() + 1; i++) {
+        if(i == refid)
+          continue;
+
+        if(!fs::exists(dir().ref_state(settings().calctype(), settings().ref(), i)))
+          continue;
+
+        jsonParser json(dir().ref_state(settings().calctype(), settings().ref(), i));
+
+        if(json["configid"] == "custom" || json["supercell_name"] == "custom")
+          continue;
+
+        if(json["configid"] == config.get_id() && json["supercell_name"] == config.get_supercell().get_name()) {
+          reason_invalid =  "You are attempting to use the same Configuration for >1 reference state and I can't allow that.";
+          return false;
+        }
+      }
+
+      // Here I should check that references span the necessary composition space, but I'm not yet
+
+      //   First read all reference states that have already been set, then check that this new one is not a linear combination of those
+
+      return true;
+    }
+  */
+  //*******************************************************************************************
+  /*
     /// find calculated configurations closest to
     /// [0, 0, 0, ...], [1, 0, 0, ...], [0, 1, 0, ...], [0, 0, 1, ...], ...
+    /// and set them as the root reference states, also calls generate_references
+    /// Clears refrence states and properties whether or not it succeeds
+    void PrimClex::set_reference_state_auto() {
 
-    // Clear current references
-    clear_reference_states();
+      //std::cout << "begin set_reference_state_auto()" << std::endl;
 
-    int Naxes = composition_axes().independent_compositions();
+      /// find calculated configurations closest to
+      /// [0, 0, 0, ...], [1, 0, 0, ...], [0, 1, 0, ...], [0, 0, 1, ...], ...
 
-    //std::cout << "Naxes: " << Naxes << std::endl;
+      // Clear current references
+      clear_reference_states();
 
-    Eigen::VectorXd target = Eigen::VectorXd::Zero(Naxes);
+      int Naxes = composition_axes().independent_compositions();
 
-    //std::cout << "Ref: " << 0 << "  target: " << target.transpose() << std::endl;
-    set_reference_state(0, closest_calculated_config(target));
+      //std::cout << "Naxes: " << Naxes << std::endl;
 
-    for(int i = 0; i < Naxes; i++) {
+      Eigen::VectorXd target = Eigen::VectorXd::Zero(Naxes);
 
-      target(i) = 1.0;
-      //std::cout << "Ref: " << i + 1 << "  target: " << target.transpose() << std::endl;
-      set_reference_state(i + 1, closest_calculated_config(target));
-      target(i) = 0.0;
+      //std::cout << "Ref: " << 0 << "  target: " << target.transpose() << std::endl;
+      set_reference_state(0, closest_calculated_config(target));
+
+      for(int i = 0; i < Naxes; i++) {
+
+        target(i) = 1.0;
+        //std::cout << "Ref: " << i + 1 << "  target: " << target.transpose() << std::endl;
+        set_reference_state(i + 1, closest_calculated_config(target));
+        target(i) = 0.0;
+      }
+
+      //std::cout << "generate references" << std::endl;
+      generate_references();
+
+      //std::cout << "finish set_reference_state_auto()" << std::endl;
+
     }
-
-    //std::cout << "generate references" << std::endl;
-    generate_references();
-
-    //std::cout << "finish set_reference_state_auto()" << std::endl;
-
-  }
-
+  */
 
   //*******************************************************************************************
-  /// Clear 'reference' and 'delta' properties from all Configurations
-  /// Re-write all Configurations, updating:
-  ///   param_composition.json
-  ///   properties.calc.json
-  ///   properties.ref.json
-  ///   properties.delta.json
-  void PrimClex::generate_references() {
+  /*
+    /// Clear 'reference' and 'delta' properties from all Configurations
+    /// Re-write all Configurations, updating:
+    ///   param_composition.json
+    ///   properties.calc.json
+    ///   properties.ref.json
+    ///   properties.delta.json
+    void PrimClex::generate_references() {
 
-    //std::cout << "begin PrimClex::generate_references()" << std::endl;
+      //std::cout << "begin PrimClex::generate_references()" << std::endl;
 
-    for(config_iterator it = config_begin(); it != config_end(); ++it) {
-      it->generate_reference();
+      for(config_iterator it = config_begin(); it != config_end(); ++it) {
+        it->generate_reference();
+      }
+
+      write_config_list();
+
+      //std::cout << "finish PrimClex::generate_references()" << std::endl;
+
     }
-
-    write_config_list();
-
-    //std::cout << "finish PrimClex::generate_references()" << std::endl;
-
-  }
-
+  */
 
   //*******************************************************************************************
   /// private:
 
   //*******************************************************************************************
-  /// Return the configuration closest in param_composition to the target_param_comp
-  ///   Tie break returns configuration in smallest supercell (first found at that size)
-  const Configuration &PrimClex::closest_calculated_config(const Eigen::VectorXd &target_param_comp) const {
+  /*
+    /// Return the configuration closest in param_composition to the target_param_comp
+    ///   Tie break returns configuration in smallest supercell (first found at that size)
+    const Configuration &PrimClex::closest_calculated_config(const Eigen::VectorXd &target_param_comp) const {
 
-    //std::cout << "begin closest_calculated_config()" << std::endl;
+      //std::cout << "begin closest_calculated_config()" << std::endl;
 
-    /// return reference to Configuration with param_comp closest to target_param_comp
-    ///   tie break goes to first Configuration with fewest atoms
-    ///
-    ///   must be Configurations for which the curr_properties have been calculated
+      /// return reference to Configuration with param_comp closest to target_param_comp
+      ///   tie break goes to first Configuration with fewest atoms
+      ///
+      ///   must be Configurations for which the curr_properties have been calculated
 
-    Eigen::VectorXd param_comp;
-    Eigen::VectorXd closest_comp;
+      Eigen::VectorXd param_comp;
+      Eigen::VectorXd closest_comp;
 
-    double curr_dist;
-    double close_dist = -1;
-    Index close_super = -1;
-    Index close_config;
-    Index close_size;
+      double curr_dist;
+      double close_dist = -1;
+      Index close_super = -1;
+      Index close_config;
+      Index close_size;
 
-    for(Index i = 0; i < supercell_list.size(); i++) {
-      for(Index j = 0; j < supercell_list[i].get_config_list().size(); j++) {
+      for(Index i = 0; i < supercell_list.size(); i++) {
+        for(Index j = 0; j < supercell_list[i].get_config_list().size(); j++) {
 
-        const Configuration &config = supercell_list[i].get_config(j);
+          const Configuration &config = supercell_list[i].get_config(j);
 
-        // check if the config has been calculated
-        //std::cout << "\n\nScell: " << supercell_list[i].get_name() << "  Config: " << j << "\n" << config.calc_properties() << std::endl;
+          // check if the config has been calculated
+          //std::cout << "\n\nScell: " << supercell_list[i].get_name() << "  Config: " << j << "\n" << config.calc_properties() << std::endl;
 
-        if(config.calc_properties().size() == 0)
-          continue;
+          if(config.calc_properties().size() == 0)
+            continue;
 
-        curr_dist = (target_param_comp - config.get_param_composition()).norm();
+          curr_dist = (target_param_comp - config.get_param_composition()).norm();
 
-        if(!valid_index(close_super) ||
-           (almost_equal(curr_dist, close_dist, TOL) && config.size() < close_size) ||
-           (curr_dist < close_dist)) {
-          close_super = i;
-          close_config = j;
-          close_dist = curr_dist;
-          close_size = config.size();
-        }
+          if(!valid_index(close_super) ||
+             (almost_equal(curr_dist, close_dist, TOL) && config.size() < close_size) ||
+             (curr_dist < close_dist)) {
+            close_super = i;
+            close_config = j;
+            close_dist = curr_dist;
+            close_size = config.size();
+          }
 
-      } // for j
-    } // for i
+        } // for j
+      } // for i
 
-    if(!valid_index(close_super)) {
-      std::cerr << "Error in PrimClex::closest_calculated_config" << std::endl
-                << "  Could not find a calculated Configuration." << std::endl;
-      exit(1);
+      if(!valid_index(close_super)) {
+        std::cerr << "Error in PrimClex::closest_calculated_config" << std::endl
+                  << "  Could not find a calculated Configuration." << std::endl;
+        exit(1);
+      }
+
+      //std::cout << "Closest Calculated:  SCEL: " << supercell_list[close_super].get_name() << "  Config: " <<
+      //          close_config << "  ParamComp: " << supercell_list[close_super].get_config(close_config).get_param_composition().transpose() << std::endl;
+
+      //std::cout << "finish closest_calculated_config()" << std::endl;
+
+      return supercell_list[close_super].get_config(close_config);
     }
-
-    //std::cout << "Closest Calculated:  SCEL: " << supercell_list[close_super].get_name() << "  Config: " <<
-    //          close_config << "  ParamComp: " << supercell_list[close_super].get_config(close_config).get_param_composition().transpose() << std::endl;
-
-    //std::cout << "finish closest_calculated_config()" << std::endl;
-
-    return supercell_list[close_super].get_config(close_config);
-  }
-
+  */
 
   //*******************************************************************************************
+
   Eigen::MatrixXd PrimClex::shift_vectors() const {
     Eigen::MatrixXd tau(prim.basis.size(), 3);
     for(int i = 0; i < prim.basis.size(); i++) {
-      for(int j = 0; j < 3; j++)
-        tau(i, j) = prim.basis[i].get(j, CART);
+      tau.row(i) = prim.basis[i].const_cart().transpose();
     }
     return tau;
   }
 
   //*******************************************************************************************
-  void PrimClex::populate_structure_factor() {
-    for(Index i = 0; i < supercell_list.size(); i++)
-      populate_structure_factor(i);
-    return;
-  }
-
-  //*******************************************************************************************
-  void PrimClex::populate_structure_factor(const Index &scell_index) {
-    supercell_list[scell_index].populate_structure_factor();
-    return;
-  }
-
-  //*******************************************************************************************
-  void PrimClex::populate_structure_factor(const Index &scell_index, const Index &config_index) {
-    supercell_list[scell_index].populate_structure_factor(config_index);
-    return;
-  }
-
-  //*******************************************************************************************
-  Clexulator PrimClex::global_clexulator() const {
-    if(!m_global_clexulator.initialized()) {
-      if(!fs::exists(dir().clexulator_src(settings().name(), settings().bset()))) {
-        throw std::runtime_error(
-          std::string("Error loading clexulator ") + settings().bset() + ". No basis functions exist.");
+  /// const Access to global orbitree
+  bool PrimClex::has_orbitree(const ClexDescription &key) const {
+    auto it = m_orbitree.find(key);
+    if(it == m_orbitree.end()) {
+      if(!fs::exists(dir().clust(key.bset))) {
+        return false;
       }
-      m_global_clexulator = Clexulator(settings().global_clexulator(),
-                                       dir().clexulator_dir(settings().bset()),
-                                       settings().compile_options(),
-                                       settings().so_options());
     }
-    return m_global_clexulator;
+    return true;
+
+  };
+
+  //*******************************************************************************************
+
+  const SiteOrbitree &PrimClex::orbitree(const ClexDescription &key) const {
+
+    auto it = m_orbitree.find(key);
+    if(it == m_orbitree.end()) {
+      it = m_orbitree.insert(std::make_pair(key, SiteOrbitree(get_prim().lattice()))).first;
+      SiteOrbitree &tree = it->second;
+
+      // these could be specified via settings
+      tree.min_num_components = 2;
+      tree.min_length = 0.0001;
+
+      from_json(jsonHelper(tree, prim), jsonParser(dir().clust(key.bset)));
+      tree.generate_clust_bases();
+
+    }
+
+    return it->second;
+
   }
 
   //*******************************************************************************************
-  ECIContainer PrimClex::global_eci(std::string clex_name)const {
-    return ECIContainer(dir().eci_out(clex_name,
-                                      settings().calctype(),
-                                      settings().ref(),
-                                      settings().bset(),
-                                      settings().eci()));
+
+  bool PrimClex::has_clexulator(const ClexDescription &key) const {
+    auto it = m_clexulator.find(key);
+    if(it == m_clexulator.end()) {
+      if(!fs::exists(dir().clexulator_src(settings().name(), key.bset))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  //*******************************************************************************************
+
+  Clexulator PrimClex::clexulator(const ClexDescription &key) const {
+
+    auto it = m_clexulator.find(key);
+    if(it == m_clexulator.end()) {
+
+      if(!fs::exists(dir().clexulator_src(settings().name(), key.bset))) {
+        throw std::runtime_error(
+          std::string("Error loading clexulator ") + key.bset + ". No basis functions exist.");
+      }
+
+      it = m_clexulator.insert(
+             std::make_pair(key, Clexulator(settings().name() + "_Clexulator",
+                                            dir().clexulator_dir(key.bset),
+                                            nlist(),
+                                            log(),
+                                            settings().compile_options(),
+                                            settings().so_options()))).first;
+    }
+    return it->second;
+  }
+
+  //*******************************************************************************************
+
+  bool PrimClex::has_eci(const ClexDescription &key) const {
+
+    auto it = m_eci.find(key);
+    if(it == m_eci.end()) {
+      return fs::exists(dir().eci(key.property, key.calctype, key.ref, key.bset, key.eci));
+    }
+    return true;
+  }
+
+  //*******************************************************************************************
+
+  const ECIContainer &PrimClex::eci(const ClexDescription &key) const {
+
+    auto it = m_eci.find(key);
+    if(it == m_eci.end()) {
+      fs::path eci_path = dir().eci(key.property, key.calctype, key.ref, key.bset, key.eci);
+      if(!fs::exists(eci_path)) {
+        throw std::runtime_error(
+          std::string("Error loading ECI. eci.json does not exist.\n")
+          + "  Expected at: " + eci_path.string());
+      }
+
+      it = m_eci.insert(std::make_pair(key, read_eci(eci_path))).first;
+    }
+    return it->second;
   }
 
   //*******************************************************************************************
@@ -1350,7 +1083,7 @@ namespace CASM {
     try {
 
       SiteOrbitree tree(prim.lattice());
-
+      tree.set_bspecs(json);
       // --- first generate global orbitree -------------
 
 
@@ -1379,6 +1112,7 @@ namespace CASM {
         bool verbose = false;
         tree.read_custom_clusters_from_json(json["orbit_specs"], prim, prim.factor_group(), verbose);
       }
+      tree.collect_basis_info(prim);
 
       return tree;
     }
@@ -1390,33 +1124,16 @@ namespace CASM {
 
   }
 
-  //*******************************************************************************************
-  /// \brief Expand a neighbor list to include neighborhood of another SiteOrbitree
-  /**
-   * Calculates the distances between all sites from each other
-   * in every cluster of the orbitree, then stores this "delta"
-   * in the primitive neighbor list if it hasn't been added already.
-   * In the process, it updates the value
-   * of nlist_ind of every site in the given orbitree to
-   * hold the index of where said site was placed in the neighbor
-   * list, relative to the first site of the cluster.
-   */
-  //*******************************************************************************************
-  void expand_nlist(const Structure &prim, SiteOrbitree &tree, Array<UnitCellCoord> &nlist) {
-
-    // We include all the primitive-cell neighbors by default at the front of the prim_nlist
-    // This might be overkill in the long term (e.g., for large primitive cells where only a few sites have DoFs)
-    // In that case, we may change tactics and construct a separate list of nlist_inds that correspond to prim-cell neighbors
-    // We need this information in some form for calculating differential correlations
-    if(!nlist.size()) {
-      for(Index b = 0; b < prim.basis.size(); b++)
-        nlist.push_back(UnitCellCoord(b, 0, 0, 0));
-    }
+  void set_nlist_ind(const Structure &prim, SiteOrbitree &tree, const PrimNeighborList &nlist, double xtal_tol) {
 
     //For each site we encounter we access the appropriate slot in the neighbor list and append all other sites
     //to it in the form of UnitCellCoords
 
     Array<Index> clust_nlist_inds;
+
+    const auto &sublat_indices = nlist.sublat_indices();
+
+    Index N_sublat = sublat_indices.size();
 
     //branches
     for(Index i = 0; i < tree.size(); i++) {
@@ -1429,20 +1146,37 @@ namespace CASM {
 
           //sites
           for(Index l = 0; l < tree[i][j][k].size(); l++) {
+
             //tuccl corresponds to a particular site we're looking at
-            UnitCellCoord tuccl = prim.get_unit_cell_coord(tree[i][j][k][l]);
+            UnitCellCoord tuccl(tree[i][j][k][l], prim, xtal_tol);
+
             //neighbor sites
             for(Index b = 0; b < tree[i][j][k].size(); b++) {
+
               //tuccb corresponds to a site that neighbors tuccl
-              UnitCellCoord tuccb = prim.get_unit_cell_coord(tree[i][j][k][b]);
-              UnitCellCoord delta = tuccb - tuccl;
+              UnitCellCoord tuccb(tree[i][j][k][b], prim, xtal_tol);
+              UnitCell delta = tuccb.unitcell() - tuccl.unitcell();
 
-              clust_nlist_inds[b] = nlist.find(delta);
-
-              //If delta is not already in nlist, add it (the value of clust_nlist_inds[b] makes sense after the push_back)
-              if(clust_nlist_inds[b] == nlist.size()) {
-                nlist.push_back(delta);
+              auto unitcell_index = find_index(nlist, delta);
+              if(unitcell_index == nlist.size()) {
+                std::cerr << "Error generating unitcell index." << std::endl;
+                std::cerr << "  Did not find unitcell: " << delta.transpose() << " in the prim nlist." << std::endl;
+                exit(1);
               }
+
+              auto sublat_index = find_index(sublat_indices, tuccb.sublat());
+              if(sublat_index == sublat_indices.size()) {
+                std::cerr << "Error generating sublat index" << std::endl;
+                std::cerr << "  Did not find sublat: " << tuccb.sublat() << " in the nlist sublattice indices: " << jsonParser(sublat_indices) << std::endl;
+                exit(1);
+              }
+
+              clust_nlist_inds[b] = unitcell_index * N_sublat + sublat_index;
+
+              // //If delta is not already in nlist, add it (the value of clust_nlist_inds[b] makes sense after the push_back)
+              // if(clust_nlist_inds[b] == nlist.size()) {
+              //  nlist.push_back(delta);
+              // }
             }
 
             // we set the first set of nlist_inds as the current indices
@@ -1468,24 +1202,27 @@ namespace CASM {
   /// \brief Print clexulator
   void print_clexulator(const Structure &prim,
                         SiteOrbitree &tree,
-                        const Array<UnitCellCoord> &nlist,
+                        const PrimNeighborList &nlist,
                         std::string class_name,
-                        std::ostream &stream) {
+                        std::ostream &stream,
+                        double xtal_tol) {
+
+    set_nlist_ind(prim, tree, nlist, xtal_tol);
 
     DoFManager dof_manager;
-
-    for(Index b = 0; b < prim.basis.size(); b++) {
+    Index Nsublat = prim.basis.size();
+    for(Index b = 0; b < Nsublat; b++) {
       if(prim.basis[b].site_occupant().size() > 1) {
         dof_manager.add_dof(prim.basis[b].site_occupant().type_name());
         break;
       }
     }
-    for(Index b = 0; b < prim.basis.size(); b++) {
+    for(Index b = 0; b < Nsublat; b++) {
       for(Index i = 0; i < prim.basis[i].displacement().size(); i++)
         dof_manager.add_dof(prim.basis[b].displacement()[i].type_name());
     }
 
-    dof_manager.resize_neighborhood(nlist.size());
+    dof_manager.resize_neighborhood(nlist.size()*nlist.sublat_indices().size());
 
     // We can add more as needed
     dof_manager.register_dofs(tree);
@@ -1515,36 +1252,36 @@ namespace CASM {
                        indent << "  BasisFuncPtr m_orbit_func_list[" << N_corr << "];\n\n" <<
 
                        indent << "  // array of pointers to member functions for calculating flower functions\n" <<
-                       indent << "  BasisFuncPtr m_flower_func_lists[" << prim.basis.size() << "][" << N_corr << "];\n\n" <<
+                       indent << "  BasisFuncPtr m_flower_func_lists[" << Nsublat << "][" << N_corr << "];\n\n" <<
 
                        /**** for separate 1D method pointer lists:
                        indent << "  BasisFuncPtr
-                       for(Index i = 0; i < prim.basis.size(); i++) {
+                       for(Index i = 0; i < Nsublat; i++) {
                          private_def_stream << " m_flower_func_at_" << i << "_list[" << N_corr << "]";
-                         if(i + 1 < prim.basis.size())
+                         if(i + 1 < Nsublat)
                            private_def_stream << ',';
                        }
                        private_def_stream << ";\n\n" <<
                        **/
 
                        indent << "  // array of pointers to member functions for calculating DELTA flower functions\n" <<
-                       indent << "  DeltaBasisFuncPtr m_delta_func_lists[" << prim.basis.size() << "][" << N_corr << "];\n\n";
+                       indent << "  DeltaBasisFuncPtr m_delta_func_lists[" << Nsublat << "][" << N_corr << "];\n\n";
 
     /**** for separate 1D method pointer lists:
     indent << "  DeltaBasisFuncPtr";
 
-    for(Index i = 0; i < prim.basis.size(); i++) {
+    for(Index i = 0; i < Nsublat; i++) {
     private_def_stream << " m_delta_func_at_" << i << "_list[" << N_corr << "]";
-    if(i + 1 < prim.basis.size())
+    if(i + 1 < Nsublat)
     private_def_stream << ',';
     }
     private_def_stream << ";\n\n";
     **/
 
-    dof_manager.print_clexulator_member_definitions(private_def_stream, prim, indent + "  ");
+    dof_manager.print_clexulator_member_definitions(private_def_stream, tree, indent + "  ");
 
     // perhaps some more correlation calculating options here
-    dof_manager.print_clexulator_private_method_definitions(private_def_stream, prim, indent + "  ");
+    dof_manager.print_clexulator_private_method_definitions(private_def_stream, tree, indent + "  ");
 
     private_def_stream <<
                        indent << "  //default functions for basis function evaluation \n" <<
@@ -1578,7 +1315,7 @@ namespace CASM {
                       indent << "  /// \\brief Calculate the change in select point correlations due to changing an occupant\n" <<
                       indent << "  void calc_restricted_delta_point_corr(int b_index, int occ_i, int occ_f, double *corr_begin, size_type const* ind_list_begin, size_type const* ind_list_end) const override;\n\n";
 
-    dof_manager.print_clexulator_public_method_definitions(public_def_stream, prim, indent + "  ");
+    dof_manager.print_clexulator_public_method_definitions(public_def_stream, tree, indent + "  ");
 
 
     //linear function index
@@ -1588,11 +1325,11 @@ namespace CASM {
     //std::cout << "Initialized " << labelers.size() << " labelers \n";
 
     Array<std::string> orbit_method_names(N_corr);
-    Array<Array<std::string> > flower_method_names(prim.basis.size(), Array<std::string>(N_corr));
-    //Array< Array<Array<std::string> > > dflower_method_names(N_corr, Array<Array<std::string> >(prim.basis.size()));
+    Array<Array<std::string> > flower_method_names(Nsublat, Array<std::string>(N_corr));
+    //Array< Array<Array<std::string> > > dflower_method_names(N_corr, Array<Array<std::string> >(Nsublat));
 
     //this is very configuration-centric
-    Array<Array<std::string> > dflower_method_names(prim.basis.size(), Array<std::string>(N_corr));
+    Array<Array<std::string> > dflower_method_names(Nsublat, Array<std::string>(N_corr));
 
     // temporary storage for formula
     Array<std::string> formulae, tformulae;
@@ -1636,74 +1373,83 @@ namespace CASM {
         make_newline = false;
 
         // loop over flowers (i.e., basis sites of prim)
-        for(Index nb = 0; nb < prim.basis.size(); nb++) {
-          formulae = tree[np][no].flower_function_cpp_strings(labelers, nb);
-          for(Index nf = 0; nf < formulae.size(); nf++) {
-            if(!formulae[nf].size())
-              continue;
-            make_newline = true;
-            flower_method_names[nb][lf + nf] = "site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
-            private_def_stream <<
-                               indent << "  double " << flower_method_names[nb][lf + nf] << "() const;\n";
+        const SiteOrbitBranch &asym_unit(tree.asym_unit());
+        for(Index na = 0; na < asym_unit.size(); na++) {
+          for(Index ne = 0; ne < asym_unit[na].size(); ne++) {
+            Index nb = asym_unit[na][ne][0].basis_ind();
+            auto nlist_index = find_index(nlist.sublat_indices(), nb);
+            if(nlist_index != nlist.sublat_indices().size()) {
+              formulae = tree[np][no].flower_function_cpp_strings(labelers, nlist_index);
+              for(Index nf = 0; nf < formulae.size(); nf++) {
+                if(!formulae[nf].size())
+                  continue;
+                make_newline = true;
+                flower_method_names[nb][lf + nf] = "site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
+                private_def_stream <<
+                                   indent << "  double " << flower_method_names[nb][lf + nf] << "() const;\n";
 
-            bfunc_imp_stream <<
-                             indent << "double " << class_name << "::" << flower_method_names[nb][lf + nf] << "() const{\n" <<
-                             indent << "  return " << formulae[nf] << ";\n" <<
-                             indent << "}\n";
+                bfunc_imp_stream <<
+                                 indent << "double " << class_name << "::" << flower_method_names[nb][lf + nf] << "() const{\n" <<
+                                 indent << "  return " << formulae[nf] << ";\n" <<
+                                 indent << "}\n";
 
-            //dflower_method_names[nb][lf + nf].resize(prim.basis[nb].occupant_basis().size());
-          }
-          if(make_newline) {
-            bfunc_imp_stream << '\n';
-            private_def_stream << '\n';
-          }
-          make_newline = false;
-
-          // Very configuration-centric -> Find a way to move this block to OccupationDoFEnvironment:
-          formulae.resize(formulae.size(), std::string());
-          // loop over site basis functions
-          for(Index nsbf = 0; nsbf < prim.basis[nb].occupant_basis().size(); nsbf++) {
-            std::string delta_prefix = "(m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_f] - m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_i])";
-
-            tformulae = tree[np][no].delta_occfunc_flower_function_cpp_strings(labelers, nb, nsbf);
-            for(Index nf = 0; nf < tformulae.size(); nf++) {
-              if(!tformulae[nf].size())
-                continue;
-
-              if(formulae[nf].size())
-                formulae[nf] += " + ";
-
-              formulae[nf] += delta_prefix;
-
-              if(tformulae[nf] == "1" || tformulae[nf] == "(1)")
-                continue;
-
-              formulae[nf] += "*";
-              formulae[nf] += tformulae[nf];
-              //formulae[nf] += ")";
+              }
             }
-          }
-          for(Index nf = 0; nf < formulae.size(); nf++) {
-            if(!formulae[nf].size())
-              continue;
-            make_newline = true;
+            if(make_newline) {
+              bfunc_imp_stream << '\n';
+              private_def_stream << '\n';
+            }
+            make_newline = false;
 
-            dflower_method_names[nb][lf + nf] = "delta_site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
-            private_def_stream <<
-                               indent << "  double " << dflower_method_names[nb][lf + nf] << "(int occ_i, int occ_f) const;\n";
+            // Very configuration-centric -> Find a way to move this block to OccupationDoFEnvironment:
+            formulae.resize(formulae.size(), std::string());
+            // loop over site basis functions
+            const BasisSet &site_basis(asym_unit[na][ne].clust_basis);
+            for(Index nsbf = 0; nsbf < site_basis.size(); nsbf++) {
+              std::string delta_prefix = "(m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_f] - m_occ_func_" + std::to_string(nb) + "_" + std::to_string(nsbf) + "[occ_i])";
 
-            bfunc_imp_stream <<
-                             indent << "double " << class_name << "::" << dflower_method_names[nb][lf + nf] << "(int occ_i, int occ_f) const{\n" <<
-                             indent << "  return " << formulae[nf] << ";\n" <<
-                             indent << "}\n";
+              if(nlist_index != nlist.sublat_indices().size()) {
+                tformulae = tree[np][no].delta_occfunc_flower_function_cpp_strings(site_basis, labelers, nlist_index, nb, nsbf);
+                for(Index nf = 0; nf < tformulae.size(); nf++) {
+                  if(!tformulae[nf].size())
+                    continue;
+
+                  if(formulae[nf].size())
+                    formulae[nf] += " + ";
+
+                  formulae[nf] += delta_prefix;
+
+                  if(tformulae[nf] == "1" || tformulae[nf] == "(1)")
+                    continue;
+
+                  formulae[nf] += "*";
+                  formulae[nf] += tformulae[nf];
+                  //formulae[nf] += ")";
+                }
+              }
+            }
+            for(Index nf = 0; nf < formulae.size(); nf++) {
+              if(!formulae[nf].size())
+                continue;
+              make_newline = true;
+
+              dflower_method_names[nb][lf + nf] = "delta_site_eval_at_" + std::to_string(nb) + "_bfunc_" + std::to_string(np) + "_" + std::to_string(no) + "_" + std::to_string(nf);
+              private_def_stream <<
+                                 indent << "  double " << dflower_method_names[nb][lf + nf] << "(int occ_i, int occ_f) const;\n";
+
+              bfunc_imp_stream <<
+                               indent << "double " << class_name << "::" << dflower_method_names[nb][lf + nf] << "(int occ_i, int occ_f) const{\n" <<
+                               indent << "  return " << formulae[nf] << ";\n" <<
+                               indent << "}\n";
+            }
+            if(make_newline) {
+              bfunc_imp_stream << '\n';
+              private_def_stream << '\n';
+            }
+            make_newline = false;
+            // \End Configuration specific part
           }
-          if(make_newline) {
-            bfunc_imp_stream << '\n';
-            private_def_stream << '\n';
-          }
-          make_newline = false;
-        }
-        // \End Configuration specific part
+        }//\End loop over flowers
 
         lf += tlf;
       }
@@ -1720,7 +1466,7 @@ namespace CASM {
                          indent << class_name << "::" << class_name << "() :\n" <<
                          indent << "  Clexulator_impl::Base(" << nlist.size() << ", " << N_corr << ") {\n";
 
-    dof_manager.print_to_clexulator_constructor(interface_imp_stream, prim, indent + "  ");
+    dof_manager.print_to_clexulator_constructor(interface_imp_stream, tree, indent + "  ");
 
     for(Index nf = 0; nf < orbit_method_names.size(); nf++) {
       if(orbit_method_names[nf].size() == 0)
@@ -1755,6 +1501,88 @@ namespace CASM {
       }
       interface_imp_stream << "\n\n";
     }
+
+    // Write weight matrix used for the neighbor list
+    PrimNeighborList::Matrix3Type W = nlist.weight_matrix();
+    interface_imp_stream << indent << "  m_weight_matrix.row(0) << " << W(0, 0) << ", " << W(0, 1) << ", " << W(0, 2) << ";\n";
+    interface_imp_stream << indent << "  m_weight_matrix.row(1) << " << W(1, 0) << ", " << W(1, 1) << ", " << W(1, 2) << ";\n";
+    interface_imp_stream << indent << "  m_weight_matrix.row(2) << " << W(2, 0) << ", " << W(2, 1) << ", " << W(2, 2) << ";\n\n";
+
+    // Write neighborhood of UnitCellCoord
+    // expand the nlist to contain 'global_orbitree' (all that is needed for now)
+    std::set<UnitCellCoord> nbors;
+    neighborhood(std::inserter(nbors, nbors.begin()), tree, prim, TOL);
+
+    /*
+    for(auto it = nbors.begin(); it != nbors.end(); ++it) {
+      interface_imp_stream << indent << "  m_neighborhood.insert(UnitCellCoord("
+                           << it->sublat() << ", "
+                           << it->unitcell(0) << ", "
+                           << it->unitcell(1) << ", "
+                           << it->unitcell(2) << "));\n";
+    }
+    */
+
+    interface_imp_stream << indent << "  m_neighborhood = std::set<UnitCellCoord> {\n";
+    auto it = nbors.begin();
+    while(it != nbors.end()) {
+      interface_imp_stream << indent << "    {UnitCellCoord("
+                           << it->sublat() << ", "
+                           << it->unitcell(0) << ", "
+                           << it->unitcell(1) << ", "
+                           << it->unitcell(2) << ")}";
+      ++it;
+      if(it != nbors.end()) {
+        interface_imp_stream << ",";
+      }
+      interface_imp_stream << "\n";
+    }
+    interface_imp_stream << indent << "  };\n";
+    interface_imp_stream << "\n\n";
+
+    interface_imp_stream << indent <<  "  m_orbit_neighborhood.resize(corr_size());\n";
+    Index lno = 0;
+    for(Index nb = 0; nb < tree.size(); ++nb) {
+      for(Index no = 0; no < tree[nb].size(); ++no) {
+        std::set<UnitCellCoord> orbit_nbors;
+        orbit_neighborhood(std::inserter(orbit_nbors, orbit_nbors.begin()), tree, prim, nb, no, TOL);
+
+        Index proto_index = lno;
+        /*
+        for(auto it = orbit_nbors.begin(); it != orbit_nbors.end(); ++it) {
+          interface_imp_stream << indent << "  m_orbit_neighborhood[" << lno << "].insert(UnitCellCoord("
+                               << it->sublat() << ", "
+                               << it->unitcell(0) << ", "
+                               << it->unitcell(1) << ", "
+                               << it->unitcell(2) << "));\n";
+        }
+        */
+        interface_imp_stream << indent << "  m_orbit_neighborhood[" << lno << "] = std::set<UnitCellCoord> {\n";
+        auto it = orbit_nbors.begin();
+        while(it != orbit_nbors.end()) {
+          interface_imp_stream << indent << "    {UnitCellCoord("
+                               << it->sublat() << ", "
+                               << it->unitcell(0) << ", "
+                               << it->unitcell(1) << ", "
+                               << it->unitcell(2) << ")}";
+          ++it;
+          if(it != orbit_nbors.end()) {
+            interface_imp_stream << ",";
+          }
+          interface_imp_stream << "\n";
+        }
+        interface_imp_stream << indent << "  };\n";
+        ++lno;
+        for(Index nf = 1; nf < tree.prototype(nb, no).clust_basis.size(); ++nf) {
+          interface_imp_stream << indent << "  m_orbit_neighborhood[" << lno << "] = m_orbit_neighborhood[" << proto_index << "];\n";
+          ++lno;
+        }
+        interface_imp_stream << "\n";
+
+      }
+    }
+
+
     interface_imp_stream <<
                          indent << "}\n\n";
 
@@ -1820,7 +1648,9 @@ namespace CASM {
            "\n\n\n" <<
            "/****** CLEXULATOR CLASS FOR PRIM ******" << std::endl;
 
-    prim.print(stream);
+    jsonParser json;
+    write_prim(prim, json, FRAC);
+    stream << json;
 
     stream <<
            "**/\n\n\n" <<

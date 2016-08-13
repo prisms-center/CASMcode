@@ -1,13 +1,14 @@
 #ifndef SUPERCELL_HH
 #define SUPERCELL_HH
 
+#include "casm/misc/cloneable_ptr.hh"
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/Configuration.hh"
-#include "casm/clex/ConfigEnumIterator.hh"
 #include "casm/clex/ConfigDoF.hh"
+#include "casm/clex/NeighborList.hh"
 
 namespace CASM {
 
@@ -17,6 +18,10 @@ namespace CASM {
   class PrimClex;
   class Clexulator;
 
+  /// \brief Represents a supercell of a PrimClex
+  ///
+  /// \ingroup Clex
+  ///
   class Supercell {
 
   public:
@@ -52,7 +57,7 @@ namespace CASM {
     //       operations that aren't in m_factor_group. You should access elements of the SymGroupRep using
     //       the the Supercel::factor_group_permute(int) method, so that you don't encounter the gaps
     //       OR, see note for Supercell::permutation_symrep() below.
-    mutable Index m_perm_symrep_ID;
+    mutable SymGroupRepID m_perm_symrep_ID;
 
     // m_factor_group is factor group of the super cell, found by identifying the subgroup of
     // (*this).get_prim().factor_group() that leaves the supercell lattice vectors unchanged
@@ -66,28 +71,6 @@ namespace CASM {
     //       m_strain(init_config.get_supercell().strain
     //       (*this).superstruc().factor_group() is the group formed by the cosets of Tsuper in the supercell space group
     mutable SymGroup m_factor_group;
-
-    // m_trans_permute describes how translations by a primitive lattice translation permutes the sites
-    // of the Supercell. m_trans_permute[i] is the effect of translating all sites by (*this).uccoord[i]
-    // and mapping them back within the Supercell. m_trans_permute.size() == (*this).volume()
-    // NOTE: m_trans_permute can be thought of as the translational factor group formed by the the cosets
-    //       of the group Tsuper in the group Tprim, as they are defined above
-    //mutable Array<Permutation> m_trans_permute;
-
-    //Indices that map the linear index to the bijk point in real space
-    //  Generate in void Supercell::fill_supercell() which is called in constructors
-    //  This always exists and is populated
-    //Array < UnitCellCoord > config_index_to_bijk;
-
-    //Indices that map the linear index to the apqr point in reciprocal space
-    //Array < UnitCellCoord > config_index_to_apqr;
-
-    //Array of coordinates for both real and reciprocal space
-    //Array<Coordinate> real_coords;  //primitive=primitive
-    //Array<Coordinate> recip_coords; //primitive=recip(primitive)
-
-    //The current 'state' of the supercell in reciprocal space
-    //  Configuration recip_curr_state;
 
     /// unique name of the supercell based on hermite normal form (see generate_name() )
     std::string name;
@@ -137,12 +120,18 @@ namespace CASM {
     void generate_phase_factor(const Eigen::MatrixXd &shift_vectors, const Array<bool> &is_commensurate, const bool &override);
     ///************************************************************************************************
 
-    Array< Array<Index> >    nlists;  //[scell site][ nbor_indices]
+    /// SuperNeighborList, mutable for lazy construction
+    mutable notstd::cloneable_ptr<SuperNeighborList> m_nlist;
+
+    /// Store size of PrimNeighborList at time of construction of SuperNeighborList
+    /// to enable checking if SuperNeighborList should be re-constructed
+    mutable Index m_nlist_size_at_construction;
+
 
     // Could hold either enumerated configurations or any 'saved' configurations
     ConfigList config_list;
 
-    Matrix3 < int > transf_mat;
+    Eigen::Matrix3i transf_mat;
 
     double scaling;
 
@@ -159,24 +148,15 @@ namespace CASM {
     //Supercell(PrimClex *_prim);
     Supercell(const Supercell &RHS);
     Supercell(PrimClex *_prim, const Lattice &superlattice);
-    Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix);
-    //Supercell(PrimClex *_prim, const Eigen::Matrix3i &superlattice_matrix);   //I wish
-    //Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix, const Lattice &superlattice, const int warningFlag = 1);
-    //Supercell(PrimClex *_prim, std::string _name);
-    //Supercell(PrimClex *_prim, const Lattice &superlattice, std::string _name);
-    //Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix, std::string _name);
-    //Supercell(PrimClex *_prim, const Matrix3<int> &superlattice_matrix, const Lattice &superlattice, std::string _name, const int warningFlag = 1);
+    Supercell(PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &superlattice_matrix);
+
 
     // **** Coordinates ****
-    //UnitCellCoord get_bijk(Vector3<double> cartesian_coord, int b) const;
     Index get_linear_index(const Site &site, double tol = TOL) const;
     Index get_linear_index(const Coordinate &coord, double tol = TOL) const;
     Index find(const UnitCellCoord &bijk) const;
     Coordinate coord(const UnitCellCoord &bijk) const;
     Coordinate coord(Index linear_ind) const;
-
-    // only used for populate_bijk_l_map
-    //void location_within(const UnitCellCoord &supercell_point, Array< Array < Array <Array <Index > > > > &linear_index, const UnitCellCoord &centering);
 
     // returns maximum allowed occupation bitstring -- used for initializing enumeration counters
     ReturnArray<int> max_allowed_occupation() const;
@@ -200,9 +180,6 @@ namespace CASM {
     Eigen::MatrixXd recip_coordinates() const;
 
     // **** Accessors ****
-    //PrimClex &get_primclex() {
-    //return *primclex;
-    //}
 
     const PrimClex &get_primclex() const {
       return *primclex;
@@ -252,13 +229,13 @@ namespace CASM {
     //       SymGroupRep::get_representation(m_factor_group[i]) or SymGroupRep::get_permutation(m_factor_group[i]),
     //       so that you don't encounter the gaps (i.e., the representation can be indexed using the
     //       SymOps of m_factor_group
-    Index permutation_symrep_ID()const {
-      if(m_perm_symrep_ID == Index(-1))
+    SymGroupRepID permutation_symrep_ID()const {
+      if(m_perm_symrep_ID.empty())
         generate_permutations();
       return m_perm_symrep_ID;
     }
 
-    SymGroupRep const *permutation_symrep() const {
+    SymGroupRep const &permutation_symrep() const {
       return get_prim().factor_group().representation(permutation_symrep_ID());
     }
 
@@ -266,24 +243,20 @@ namespace CASM {
       return i / volume();
     }
 
-    Matrix3<int> get_transf_mat() const {
+    const Eigen::Matrix3i &get_transf_mat() const {
       return transf_mat;
     };
-    Lattice get_real_super_lattice() const {
+
+    const Lattice &get_real_super_lattice() const {
       return real_super_lattice;
     };
-    Lattice get_recip_prim_lattice() const {
+
+    const Lattice &get_recip_prim_lattice() const {
       return recip_prim_lattice;
     };
 
-    // get indices of neighbor sites ('nlist_index') in Configuration to some 'site'
-    Index get_nlist_l(Index pivot_l, Index nlist_index) const {
-      return nlists[pivot_l][nlist_index];
-    };
-
-    const Array<Index> &get_nlist(Index pivot_l) const {
-      return nlists[pivot_l];
-    };
+    /// \brief Returns the SuperNeighborList
+    const SuperNeighborList &nlist() const;
 
 
     ConfigList &get_config_list() {
@@ -309,32 +282,6 @@ namespace CASM {
     // begin and end const_iterators for iterating over configurations
     config_const_iterator config_cbegin() const;
     config_const_iterator config_cend() const;
-
-    /*
-    TransitionList &transition_list() {
-      return m_transition_list;
-    };
-
-    const TransitionList &transition_list() const {
-      return m_transition_list;
-    };
-
-    Transition &transition(int i) {
-      return m_transition_list[i];
-    }
-
-    const Transition &transition(int i) const {
-      return m_transition_list[i];
-    };
-
-    // begin and end iterators for iterating over transitions
-    trans_iterator trans_begin();
-    trans_iterator config_end();
-
-    // begin and end const_iterators for iterating over transitions
-    trans_const_iterator trans_cbegin() const;
-    trans_const_iterator trans_cend() const;
-    */
 
     Index get_id() const {
       return m_id;
@@ -374,10 +321,6 @@ namespace CASM {
       m_id = id;
     }
 
-    //void set_selection(const Array<std::string> &criteria);
-    //void set_selection(const Array<std::string> &criteria, Configuration &config);
-
-
     // **** Generating functions ****
 
     // Populate m_factor_group -- probably should be private
@@ -385,13 +328,6 @@ namespace CASM {
 
     // Populate m_trans_permute -- probably should be private
     void generate_permutations() const;
-
-    //void fill_supercell();
-    //void populate_bijk_l_map(Array< Array < Array <Array <Index > > > > &linear_index, UnitCellCoord &centering);
-    void generate_neighbor_list();
-
-    ///Return true if the Supercell is smaller than the neighborhood of the sites, causing periodic overlap
-    bool neighbor_image_overlaps() const;
 
     //\John G 070713
     void generate_name();
@@ -415,24 +351,6 @@ namespace CASM {
 
     // **** Enumerating functions ****
 
-    /// Loop over all configurations enumerated by 'enumerator' and add them to the Supercell, if they are not already present
-    void add_enumerated_configurations(ConfigEnum<Configuration> &enumerator);
-
-    /// Loop over all configurations enumerated by some (invisible) enumerator from 'it_begin' to 'it_end', adding them to the Supercell, if they are not already present
-    void add_enumerated_configurations(ConfigEnumIterator<Configuration> it_begin, ConfigEnumIterator<Configuration> it_end);
-
-    /// Enumerate all possible occupation configurations that are symmetrically equivalent and fit inside this supercell (but cannot be described by a smaller supercell)
-    void enumerate_all_occupation_configurations();
-
-    /// Enumerate 'Nstep' configurations that linearly interpolate deformation and displacement from 'initial' configuration to 'final' configuration
-    /// 'initial' and 'final' must either have the same occupation or have unspecified occupation
-    /// The range can be adjusted using 'being_delta' and 'end_delta' (which can be positive or negative). begin_delta<0 indicates interpolation starts
-    /// abs(begin_delta) number of steps *before* 'initial'. positive values indicate interpolation starts the specified number of steps *after* initial.
-    /// semantics are similar for 'end_delta', but for the final configuration.
-    void enumerate_interpolated_configurations(Supercell::config_const_iterator initial, Supercell::config_const_iterator final,
-                                               long Nstep, long begin_delta = 0, long end_delta = 0);
-
-
     //Functions for enumerating configurations that are perturbations of a 'background' structure
     void enumerate_perturb_configurations(const std::string &background, fs::path CSPECS, double tol = TOL, bool verbose = false, bool print = false);
     void enumerate_perturb_configurations(Configuration background_config, fs::path CSPECS, double tol = TOL, bool verbose = false, bool print = false);
@@ -453,19 +371,10 @@ namespace CASM {
     void read_config_list(const jsonParser &json);
 
     template<typename ConfigIterType>
+    void add_unique_canon_configs(ConfigIterType it_begin, ConfigIterType it_end);
+
+    template<typename ConfigIterType>
     void add_configs(ConfigIterType it_begin, ConfigIterType it_end);
-
-    // **** Correlations ****
-    //void calc_correlations_curr();
-    //void calc_corr_all();
-    //void calc_curr_energy();
-    //void calc_clex_correlations();
-
-    //Fill up values in the correlations of all configurations
-    //    void populate_correlations(Clexulator &clexulator);
-    //Fill up values in the correlations of configuration specified by index
-    //    void populate_correlations(Clexulator &clexulator, const Index &config_index);
-
 
     // **** Other ****
     // Reads a relaxed structure and calculates the strains and stretches using the reference structure
@@ -474,15 +383,8 @@ namespace CASM {
     void read_clex_relaxations(const Lattice &home_lattice);
 
     bool is_supercell_of(const Structure &structure) const;
-    bool is_supercell_of(const Structure &structure, Matrix3<double> &multimat) const;
+    bool is_supercell_of(const Structure &structure, Eigen::Matrix3d &multimat) const;
     ReturnArray<int> vacant()const;
-
-    // used with set_selection()
-    //bool is_operator(const std::string &q) const;
-    //std::string operate(const std::string &q, const std::string &A) const;
-    //std::string operate(const std::string &q, const std::string &A, const std::string &B) const;
-    //bool is_unary(const std::string &q) const;
-    //std::string convert_variable(const std::string &q, const Configuration &config) const;
 
     // **** Printing ****
 
@@ -497,33 +399,52 @@ namespace CASM {
                             const Array< Array< Array<permute_const_iterator> > > &perturb_config_symop_index,
                             bool print_config_name) const;
 
-    // Va_mode		description
-    // 0			print no information about the vacancies
-    // 1			print only the coordinates of the vacancies
-    // 2			print the number of vacancies and the coordinates of the vacancies
-    void print(const Configuration &config, std::ostream &stream, COORD_TYPE mode, int Va_mode = 0, char term = 0, int prec = 7, int pad = 5) const;
-    void print(std::ostream &stream, Configuration tconfig) const;
-
     ///Call Configuration::write out every configuration in supercell
     jsonParser &write_config_list(jsonParser &json);
 
-    //void printUCC(std::ostream &stream, COORD_TYPE mode, UnitCellCoord ucc);
-    // this function finds the displacements of a structure defined by the CONTCAR passed by stream, and the real_super_lattice
-    void findConfigDisplacements(Structure tstruc, Index config_num);
-    void findDisplacements();
     void printUCC(std::ostream &stream, COORD_TYPE mode, UnitCellCoord ucc, char term = 0, int prec = 7, int pad = 5) const;
     //\Michael 241013
 
-    // **** ParamComposition Calculators ****
-    //    std::map < std::string , double > composition_calculate(int ConfigNum);
-    //    std::map < std::string , double > true_composition_calculate(int ConfigNum);
-    //    std::map < int , std::map <std::string , double > > sublattice_composition_calculate(int ConfigNum);
-    //Array< Array< double > > sublattice_composition_calculate(int ConfigNum);
-    //    std::map < std::string , double > calculate_composition(int ConfigName);
-    //    std::map < std::string , double > calculate_true_composition(int ConfigName);
-    //void populate_sublat_to_comp();
-
   };
+
+  //*******************************************************************************
+  // Warning: Assumes configurations are in canonical form
+  template<typename ConfigIterType>
+  void Supercell::add_unique_canon_configs(ConfigIterType it_begin, ConfigIterType it_end) {
+    // Remember existing configs, to avoid duplicates
+    //   Enumerated configurations are added after existing configurations
+    Index N_existing = config_list.size();
+    Index N_existing_enumerated = 0;
+    //std::cout << "ADDING CONFIGS TO SUPERCELL; N_exiting: " << N_existing << " N_enumerated: " << N_existing_enumerated << "\n";
+    //std::cout << "beginning iterator: " << it_begin->occupation() << "\n";
+    // Loops through all possible configurations
+    for(; it_begin != it_end; ++it_begin) {
+      //std::cout << "Attempting to add configuration: " << it_begin->occupation() << "\n";
+      // Adds the configuration to the list, if not among previously existing configurations
+
+      bool add = true;
+      if(N_existing_enumerated != N_existing) {
+        for(Index i = 0; i < N_existing; i++) {
+          if(config_list[i].configdof() == it_begin->configdof()) {
+            config_list[i].push_back_source(it_begin->source());
+            add = false;
+            N_existing_enumerated++;
+            break;
+          }
+        }
+      }
+      if(add) {
+        config_list.push_back(*it_begin);
+        // get source info from enumerator
+        //config_list.back().set_source(it_begin.source());
+        config_list.back().set_id(config_list.size() - 1);
+        config_list.back().set_selected(false);
+      }
+    }
+
+  }
+
+  //*******************************************************************************
 
   template<typename ConfigIterType>
   void Supercell::add_configs(ConfigIterType it_begin, ConfigIterType it_end) {
@@ -538,6 +459,8 @@ namespace CASM {
       }
     }
   }
+
+  std::string generate_name(const Eigen::Matrix3i &transf_mat);
 
 }
 #endif

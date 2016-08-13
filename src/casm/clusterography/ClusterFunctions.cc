@@ -6,7 +6,6 @@
 #include "casm/clusterography/Orbitree.hh"
 //#include "casm/clusterography/HopCluster.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/BP_C++/BP_Parse.hh"
 
 namespace CASM {
 

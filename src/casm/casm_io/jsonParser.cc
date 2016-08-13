@@ -63,81 +63,39 @@ namespace CASM {
 
   template<>
   bool from_json<bool>(const jsonParser &json) {
-    try {
-      return json.get_bool();
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return json.get_bool();
   }
 
   template<>
   int from_json<int>(const jsonParser &json) {
-    try {
-      return json.get_int();
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return json.get_int();
   }
 
   template<>
   unsigned int from_json<unsigned int>(const jsonParser &json) {
-    try {
-      return (unsigned int) json.get_int();
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return (unsigned int) json.get_int();
   }
 
   template<>
   long int from_json<long int>(const jsonParser &json) {
-    try {
-      return (long int) json.get_int64();
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return (long int) json.get_int64();
   }
 
   template<>
   unsigned long int from_json<unsigned long int>(const jsonParser &json) {
-    try {
-      return (unsigned long int) json.get_uint64();
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return (unsigned long int) json.get_uint64();
   }
 
   template<>
   double from_json<double>(const jsonParser &json) {
     double d;
-    try {
-      from_json(d, json);
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    from_json(d, json);
     return d;
   }
 
   template<>
   std::string from_json<std::string>(const jsonParser &json) {
-    try {
-      return json.get_str();
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return json.get_str();
   }
 
   template<>
@@ -147,101 +105,58 @@ namespace CASM {
 
 
   void from_json(bool &value, const jsonParser &json) {
-    try {
-      value = json.get_bool();
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    value = json.get_bool();
   }
 
   void from_json(int &value, const jsonParser &json) {
-    try {
-      value = json.get_int();
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    value = json.get_int();
   }
 
   void from_json(unsigned int &value, const jsonParser &json) {
-    try {
-      value = json.get_int();
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    value = json.get_int();
   }
 
   void from_json(long int &value, const jsonParser &json) {
-    try {
-      value = json.get_int64();
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    value = json.get_int64();
   }
 
   void from_json(unsigned long int &value, const jsonParser &json) {
-    try {
-      value = json.get_uint64();
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    value = json.get_uint64();
   }
 
   void from_json(double &value, const jsonParser &json) {
-    try {
-      if(json.is_string()) {
-        std::string str = json.get_str();
-        if(str == "nan") {
-          value = sqrt(-1.0);
-        }
-        else if(str == "inf") {
-          value = 1.0 / 0.0;
-        }
-        else if(str == "-inf") {
-          value = -1.0 / 0.0;
-        }
-        else {
-          throw std::runtime_error("Expected json real, received string other than 'nan', 'inf', or '-inf': '" + str + "'");
-        }
+    if(json.is_string()) {
+      std::string str = json.get_str();
+      if(str == "nan") {
+        value = sqrt(-1.0);
+      }
+      else if(str == "inf") {
+        value = 1.0 / 0.0;
+      }
+      else if(str == "-inf") {
+        value = -1.0 / 0.0;
       }
       else {
-        value = json.get_real();
+        throw std::runtime_error("Expected json real, received string other than 'nan', 'inf', or '-inf': '" + str + "'");
       }
     }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
+    else {
+      value = json.get_real();
     }
   }
 
   void from_json(std::string &value, const jsonParser &json) {
-    try {
-      value = json.get_str();
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    value = json.get_str();
   }
 
   void from_json(jsonParser &value, const jsonParser &json) {
-    try {
-      value = json;
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    value = json;
   }
+
+  void from_json(fs::path &value, const jsonParser &json) {
+    value = fs::path(json.get_str());
+  }
+
 
 
   // ---- Read/Print JSON  ----------------------------------
@@ -315,7 +230,7 @@ namespace CASM {
     return type() == json_spirit::real_type;
   }
 
-  /// Check if number type (not including int)
+  /// Check if string
   bool jsonParser::is_string() const {
     return type() == json_spirit::str_type;
   }
@@ -337,68 +252,63 @@ namespace CASM {
   ///   If it does not exist, create it with value == 'null' and return a reference
   jsonParser &jsonParser::operator[](const std::string &name) {
 
-    try {
+    json_spirit::mObject &obj = get_obj();
+    json_spirit::mObject::iterator it = obj.find(name);
 
-      json_spirit::mObject &obj = get_obj();
-      json_spirit::mObject::iterator it = obj.find(name);
-
-      // if 'name' not found, add it and with value 'null'
-      if(it == obj.end()) {
-        obj[name] = json_spirit::mValue(json_spirit::mObject());
-      }
-      return (jsonParser &) obj[name];
+    // if 'name' not found, add it and with value 'null'
+    if(it == obj.end()) {
+      obj[name] = json_spirit::mValue(json_spirit::mObject());
     }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return (jsonParser &) obj[name];
   }
 
   /// Return a reference to the sub-jsonParser (JSON value) with 'name' if it exists.
   ///   Will throw if the 'name' doesn't exist.
   const jsonParser &jsonParser::operator[](const std::string &name) const {
 
-    try {
+    const json_spirit::mObject &obj = get_obj();
+    json_spirit::mObject::const_iterator it = obj.find(name);
 
-      const json_spirit::mObject &obj = get_obj();
-      json_spirit::mObject::const_iterator it = obj.find(name);
-
-      // if 'name' not found, add it and with value 'null'
-      if(it == obj.end()) {
-        throw std::runtime_error("Const operator[] access, but " + name + " does not exist");
-      }
-      return (const jsonParser &) it->second;
+    // if 'name' not found, add it and with value 'null'
+    if(it == obj.end()) {
+      throw std::runtime_error("Const operator[] access, but " + name + " does not exist");
     }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return (const jsonParser &) it->second;
   }
 
   /// Return a reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
   jsonParser &jsonParser::operator[](const int &element) {
 
-    try {
-      return (jsonParser &) get_array()[element];
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return (jsonParser &) get_array()[element];
   }
 
   /// Return a const reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
   const jsonParser &jsonParser::operator[](const int &element) const {
 
-    try {
-      return (const jsonParser &) get_array()[element];
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return (const jsonParser &) get_array()[element];
   }
 
+  /// Return the location at which jsonParser 'A' != 'B' as a boost::filesystem::path
+  boost::filesystem::path find_diff(const jsonParser &A, const jsonParser &B, boost::filesystem::path diff) {
+    auto A_it = A.cbegin();
+    auto B_it = B.cbegin();
+    while(A_it != A.cend()) {
+      if(*A_it != *B_it) {
+        if(A.is_obj() && B.is_obj()) {
+          return find_diff(*A_it, *B_it, diff / A_it.name());
+        }
+        else if(A.is_array() && B.is_array()) {
+          std::stringstream ss;
+          ss << "[" << std::distance(A.cbegin(), A_it) << "]";
+          return find_diff(*A_it, *B_it, diff / ss.str());
+        }
+        return diff;
+      }
+      ++A_it;
+      ++B_it;
+    }
+    return diff;
+  }
 
   /// Returns array size if *this is a JSON array, object size if *this is a JSON object, 1 otherwise
   jsonParser::size_type jsonParser::size() const {
@@ -418,6 +328,11 @@ namespace CASM {
       return iterator(this, get_array().begin());
     else
       return iterator(this, 0);
+  }
+
+  /// Returns const_iterator to beginning of JSON object or JSON array
+  jsonParser::const_iterator jsonParser::begin() const {
+    return cbegin();
   }
 
   /// Returns const iterator to beginning of const JSON object or JSON array
@@ -440,6 +355,11 @@ namespace CASM {
       return iterator(this, 0);
   }
 
+  /// Returns iterator to end of JSON object or JSON array
+  jsonParser::const_iterator jsonParser::end() const {
+    return cend();
+  }
+
   /// Returns const_iterator to end of JSON object or JSON array
   jsonParser::const_iterator jsonParser::cend() const {
     if(is_obj())
@@ -452,24 +372,12 @@ namespace CASM {
 
   /// Return iterator to JSON object value with 'name'
   jsonParser::iterator jsonParser::find(const std::string &name) {
-    try {
-      return iterator(this, get_obj().find(name));
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return iterator(this, get_obj().find(name));
   }
 
   /// Return const_iterator to JSON object value with 'name'
   jsonParser::const_iterator jsonParser::find(const std::string &name) const {
-    try {
-      return const_iterator(this, get_obj().find(name));
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return const_iterator(this, get_obj().find(name));
   }
 
   /// Return true if JSON object contains 'name'

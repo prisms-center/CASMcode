@@ -1,97 +1,9 @@
 #include "casm/container/LinearAlgebra.hh"
+#include "casm/container/Counter.hh"
 
-#include <boost/math/special_functions/round.hpp>
+#include "casm/external/boost.hh"
 
 namespace CASM {
-
-  //John G 020613
-
-  //*******************************************************************************************
-  /**
-   * Adds number of nearest neighbors together if they fall
-   * within a certain given distance (range) and then
-   * averages the distance.
-   */
-  //*******************************************************************************************
-  Array<Array<double> > oneNN_blur(const Array<Array<double> > &oneNN, double range) {
-    if(oneNN.size() != 2 || oneNN[0].size() != oneNN[1].size() || oneNN[0].size() < 2) {
-      std::cerr << "ERROR in oneNN_blur" << std::endl;
-      std::cerr << "Expected a double array with equally sized inner arrays of size greater than 1." << std::endl;
-      exit(70);
-    }
-
-    Array<Array<double> > blurred_oneNN;
-    blurred_oneNN.resize(2);
-
-    blurred_oneNN[0].push_back(oneNN[0][0]);
-    blurred_oneNN[1].push_back(oneNN[1][0]);
-
-    for(Index i = 1; i < oneNN[0].size() - 1; i++) {
-      double diff = std::abs(blurred_oneNN[1].back() - oneNN[1][i]);
-      if(diff < range) {
-        blurred_oneNN[1].back() = (blurred_oneNN[0].back() * blurred_oneNN[1].back() + oneNN[0][i] * oneNN[1][i]) / (blurred_oneNN[0].back() + oneNN[0][i]);
-        blurred_oneNN[0].back() += oneNN[0][i];
-      }
-
-      else {
-        blurred_oneNN[0].push_back(oneNN[0][i]);
-        blurred_oneNN[1].push_back(oneNN[1][i]);
-      }
-    }
-    return blurred_oneNN;
-    //I have not tested whether the average lengths make sense!
-  }
-
-  //*******************************************************************************************
-  /**
-   * Goes through the full nearest neighbor table and blurs
-   * each one
-   */
-  //*******************************************************************************************
-  Array<Array<Array<double> > > NN_blur(const Array<Array<Array<double> > > &NN, double range) {
-    Array<Array<Array<double> > > blurred_NN;
-    for(Index i = 0; i < NN.size(); i++) {
-      blurred_NN.push_back(oneNN_blur(NN[i], range));
-    }
-    return blurred_NN;
-  }
-
-  //\John G 020613
-
-  //*******************************************************************************************
-  /**
-   * Adds number of nearest neighbors together if they fall
-   * within a certain given distance (range) and then
-   * averages the distance.
-   */
-  //*******************************************************************************************
-  Array<Array<double> > NN_blur(const Array<Array<double> > &NN, double range) {
-    if(NN.size() != 2 || NN[0].size() != NN[1].size() || NN[0].size() < 2) {
-      std::cerr << "ERROR in NN_blur" << std::endl;
-      std::cerr << "Expected a double array with equally sized inner arrays of size greater than 1." << std::endl;
-      exit(70);
-    }
-
-    Array<Array<double> > blurred_NN;
-    blurred_NN.resize(2);
-
-    blurred_NN[0].push_back(NN[0][0]);
-    blurred_NN[1].push_back(NN[1][0]);
-
-    for(Index i = 0; i < NN[0].size() - 1; i++) {
-      double diff = std::abs(NN[1][i] - NN[1][i + 1]);
-      if(diff < range) {
-        blurred_NN[1].back() = (blurred_NN[0].back() * blurred_NN[1].back() + NN[0][i + 1] * NN[1][i + 1]) / (blurred_NN[0].back() + NN[0][i + 1]);
-        blurred_NN[0].back() += NN[0][i];
-      }
-
-      else {
-        blurred_NN[0].push_back(NN[0][i + 1]);
-        blurred_NN[1].push_back(NN[1][i + 1]);
-      }
-    }
-    return blurred_NN;
-  }
 
   //*******************************************************************************************
   /**
@@ -131,23 +43,6 @@ namespace CASM {
   }
 
 
-  /// \brief Round Eigen::Matrix3d to Eigen::Matrix3i
-  ///
-  /// \returns an Eigen:Matrix3i
-  ///
-  /// \param M Eigen::Matrix3d to be rounded to integer
-  ///
-  /// For each coefficient, sets \code Mint(i,j) = boost::math::iround(Mdouble(i, j)) \endcode
-  ///
-  Eigen::Matrix3i iround(const Eigen::Matrix3d &M) {
-    Eigen::Matrix3i Mint(M.rows(), M.cols());
-    for(int i = 0; i < M.rows(); i++) {
-      for(int j = 0; j < M.cols(); j++) {
-        Mint(i, j) = boost::math::iround(M(i, j));
-      }
-    }
-    return Mint;
-  }
 
   /// \brief Return the hermite normal form, M == H*V
   ///
@@ -254,5 +149,74 @@ namespace CASM {
     return std::make_pair(H, V);
   }
 
+
+  /// \brief Get angle, in radians, between two vectors on range [0,pi]
+  double angle(const Eigen::Ref<const Eigen::Vector3d> &a, const Eigen::Ref<const Eigen::Vector3d> &b) {
+    return acos(a.dot(b)) / (a.norm() * b.norm());
+  }
+
+  ///return signed angle, in radians, between -pi and pi that describe separation in direction of two vectors
+  double signed_angle(const Eigen::Ref<const Eigen::Vector3d> &a,
+                      const Eigen::Ref<const Eigen::Vector3d> &b,
+                      const Eigen::Ref<const Eigen::Vector3d> &pos_ref) {
+    if(pos_ref.dot(a.cross(b)) < 0) {
+      return -angle(a, b);
+    }
+    else
+      return angle(a, b);
+  }
+
+  /// \brief Round entries that are within tol of being integer to that integer value
+  Eigen::MatrixXd pretty(const Eigen::MatrixXd &M, double tol) {
+    Eigen::MatrixXd Mp(M);
+    for(int i = 0; i < M.rows(); i++) {
+      for(int j = 0; j < M.cols(); j++) {
+        if(std::abs(std::round(M(i, j)) - M(i, j)) < tol) {
+          Mp(i, j) = std::round(M(i, j));
+        }
+      }
+    }
+    return Mp;
+  }
+
+  std::vector<Eigen::Matrix3i> _unimodular_matrices(bool positive, bool negative) {
+    std::vector<Eigen::Matrix3i> uni_det_mats;
+    int totalmats = 3480;
+
+    if(positive && negative) {
+      totalmats = totalmats * 2;
+    }
+
+    uni_det_mats.reserve(totalmats);
+
+    EigenCounter<Eigen::Matrix3i> transmat_count(Eigen::Matrix3i::Constant(-1), Eigen::Matrix3i::Constant(1), Eigen::Matrix3i::Constant(1));
+
+    for(; transmat_count.valid(); ++transmat_count) {
+      if(positive && transmat_count.current().determinant() == 1) {
+        uni_det_mats.push_back(transmat_count.current());
+      }
+
+      if(negative && transmat_count.current().determinant() == -1) {
+        uni_det_mats.push_back(transmat_count.current());
+      }
+    }
+
+    return uni_det_mats;
+  }
+
+  const std::vector<Eigen::Matrix3i> &positive_unimodular_matrices() {
+    static std::vector<Eigen::Matrix3i> static_positive(_unimodular_matrices(true, false));
+    return static_positive;
+  }
+
+  const std::vector<Eigen::Matrix3i> &negative_unimodular_matrices() {
+    static std::vector<Eigen::Matrix3i> static_negative(_unimodular_matrices(true, false));
+    return static_negative;
+  }
+
+  const std::vector<Eigen::Matrix3i> &unimodular_matrices() {
+    static std::vector<Eigen::Matrix3i> static_all(_unimodular_matrices(true, false));
+    return static_all;
+  }
 }
 

@@ -14,6 +14,42 @@ namespace CASM {
   ///\brief  SymPermutation describes how a symmetry operation permutes a list of 'things'
   /// For example, Coordinates in a Cluster, basis atoms in a Structure, Clusters in an Orbit, etc.
   class SymPermutation: public SymOpRepresentation {
+  public:
+    /// Initialize a SymPermutation with the permutation array.
+    /// The corresponding matrix is generated automatically
+    SymPermutation(const Array<Index> &init_permute) : m_permute(init_permute), m_has_mat(false) {
+
+    }
+
+    /// Initialize a SymPermutation with the permutation array.
+    /// The corresponding matrix is generated automatically
+    SymPermutation(const Permutation &init_permute) : m_permute(init_permute), m_has_mat(false) {
+
+    }
+
+    double character() const override;
+
+    /// Return pointer to a copy of this SymPermutation
+    SymOpRepresentation *copy() const override {
+      return new SymPermutation(*this);
+    }
+
+    /// Access the permutation array 'm_permute'
+    Permutation const *get_permutation() const override {
+      return &m_permute;
+    }
+
+    /// Access the permutation matrix
+    Eigen::MatrixXd const *get_MatrixXd() const override {
+      if(!m_has_mat)
+        _calc_mat();
+      return &m_mat;
+    }
+
+    jsonParser &to_json(jsonParser &json) const override;
+
+    void from_json(const jsonParser &json) override;
+
   private:
     /// Array of indices, of length 'n'. An index 'm_permute[j]' before application of symmetry
     /// resides at index 'j' after application of symmetry
@@ -28,40 +64,8 @@ namespace CASM {
     mutable Eigen::MatrixXd m_mat;
 
     /// Generate the matrix of permutation, when m_permute is known
-    void calc_mat() const;
+    void _calc_mat() const;
 
-  public:
-    /// fixes alignment of m_mat
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    /// Initialize a SymPermutation with the permutation array.
-    /// The corresponding matrix is generated automatically
-    SymPermutation(const Array<Index> &init_permute) : m_permute(init_permute), m_has_mat(false) {
-
-    };
-
-    double get_character() const;
-
-    /// Return pointer to a copy of this SymPermutation
-    SymOpRepresentation *copy() const {
-      return new SymPermutation(*this);
-    };
-
-    /// Access the permutation array 'm_permute'
-    Permutation const *get_permutation() const {
-      return &m_permute;
-    };
-
-    /// Access the permutation matrix
-    Eigen::MatrixXd const *get_MatrixXd() const {
-      if(!m_has_mat)
-        calc_mat();
-      return &m_mat;
-    };
-
-    jsonParser &to_json(jsonParser &json) const;
-
-    void from_json(const jsonParser &json);
   };
 
   jsonParser &to_json(const SymPermutation &sym, jsonParser &json);

@@ -8,94 +8,9 @@
 //#include "casm/clusterography/HopCluster.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigIterator.hh"
-#include "casm/clex/ConfigEnum.hh"
-#include "casm/clex/ConfigEnumAllOccupations.hh"
-#include "casm/clex/ConfigEnumInterpolation.hh"
 #include "casm/clex/Clexulator.hh"
 
 namespace CASM {
-
-
-  /*****************************************************************/
-  // GENERATE_NEIGHBOR_LIST_REGULAR
-  // This generates the neighbor list for any non-diagonal supercell
-  // of the PRIM. It first generates the mapping between bijk and
-  // l(i.e. given bijk, we will know what its linear index is).
-  // It then assigns the jth neighbor to the linear index in linear_
-  // index[b][i+delta_i][j+delta_j][k+delta_k]
-  //
-  // ARN 082513
-  /*****************************************************************/
-
-  void Supercell::generate_neighbor_list() {
-
-    nlists.resize(num_sites());
-
-    //Use the bijk->l map to populate the linear index
-    for(Index i = 0; i < num_sites(); i++) {
-
-      nlists[i].resize(get_primclex().get_nlist_size());
-
-      for(Index j = 0; j < nlists[i].size(); j++) {
-
-        const UnitCellCoord &delta = get_primclex().get_nlist_uccoord(j);
-
-        nlists[i][j] = find(uccoord(i) + delta);
-
-      }
-    }
-
-    return;
-  }
-
-  /**
-   * If the size of *this is smaller than the CSPECS used to generate
-   * the neighbor list, then the neighborhood will overlap with its
-   * periodic image, causing issues with anything involving a
-   * Clexulator.
-   *
-   * This routine returns true if such a problem occurs.
-   * If any of the first N indices of any basis site neighbor list
-   * is repeated, then that means the neighborhood is larger than
-   * *this, where N is the number of sites in the primitive.
-   * It should only be necessary to check one of each primitive basis
-   * atom in the supercell basis.
-   */
-
-  bool Supercell::neighbor_image_overlaps() const {
-    //loop over one of each basis type in the supercell
-    //for(Index i = 0; i < num_sites(); i = i + volume()) {
-    for(Index i = 0; i < num_sites(); i++) {
-      //loop over the first N sites in the list of site i and check for repeated values
-      for(Index j = 0; j < basis_size(); j++) {
-        //if the neighbor appears more than once, then you have periodicity issues
-        if(nlists[i].reverse_find(nlists[i][j]) != j) {
-          return true;
-        }
-      }
-
-    }
-
-    return false;
-  }
-
-  /*****************************************************************/
-  /*
-    void Supercell::populate_correlations(Clexulator &clexulator) {
-      for(Index i = 0; i < config_list.size(); i++) {
-        config_list[i].set_correlations(clexulator);
-      }
-      return;
-    }
-
-
-    void Supercell::populate_correlations(Clexulator &clexulator, const Index &config_num) {
-
-      config_list[config_num].set_correlations(clexulator);
-
-    }
-  */
-  /*****************************************************************/
 
   //Given a Site and tolerance, return linear index into Configuration
   //   This may be slow, first converts Site -> UnitCellCoord,
@@ -129,7 +44,7 @@ namespace CASM {
 
   Coordinate Supercell::coord(const UnitCellCoord &bijk) const {
     Coordinate tcoord(m_prim_grid.coord(bijk, SCEL));
-    tcoord(CART) += (*primclex).get_prim().basis[bijk[0]](CART);
+    tcoord.cart() += (*primclex).get_prim().basis[bijk[0]].cart();
     return tcoord;
   };
 
@@ -137,7 +52,7 @@ namespace CASM {
 
   Coordinate Supercell::coord(Index l) const {
     Coordinate tcoord(m_prim_grid.coord(l % volume(), SCEL));
-    tcoord(CART) += (*primclex).get_prim().basis[get_b(l)](CART);
+    tcoord.cart() += (*primclex).get_prim().basis[get_b(l)].cart();
     return tcoord;
   };
 
@@ -160,6 +75,25 @@ namespace CASM {
     return primclex->get_prim();
   }
 
+  /// \brief Returns the SuperNeighborList
+  const SuperNeighborList &Supercell::nlist() const {
+
+    // if any additions to the prim nlist, must update the super nlist
+    if(get_primclex().nlist().size() != m_nlist_size_at_construction) {
+      m_nlist.unique().reset();
+    }
+
+    // lazy construction of neighbor list
+    if(!m_nlist) {
+      m_nlist_size_at_construction = get_primclex().nlist().size();
+      m_nlist = notstd::make_cloneable<SuperNeighborList>(
+                  m_prim_grid,
+                  get_primclex().nlist()
+                );
+    }
+    return *m_nlist;
+  };
+
   /*****************************************************************/
 
   // begin and end iterators for iterating over configurations
@@ -180,26 +114,6 @@ namespace CASM {
     return ++config_const_iterator(primclex, m_id, config_list.size() - 1);
   }
 
-  /*
-  // begin and end iterators for iterating over transitions
-  Supercell::trans_iterator Supercell::trans_begin() {
-    return trans_iterator( primclex, m_id, 0);
-  }
-
-  Supercell::trans_iterator Supercell::config_end() {
-    return ++trans_iterator( primclex, m_id, trans_list.size()-1);
-  }
-
-  // begin and end const_iterators for iterating over transitions
-  Supercell::trans_const_iterator Supercell::trans_cbegin() const {
-    return trans_const_iterator( primclex, m_id, 0);
-  }
-
-  Supercell::trans_const_iterator Supercell::trans_cend() const {
-    return ++trans_const_iterator( primclex, m_id, trans_list.size()-1);
-  }
-  */
-
   /*****************************************************************/
 
   const SymGroup &Supercell::factor_group() const {
@@ -212,7 +126,7 @@ namespace CASM {
 
   // permutation_symrep() populates permutation symrep if needed
   const Permutation &Supercell::factor_group_permute(Index i) const {
-    return *(permutation_symrep()->get_permutation(factor_group()[i]));
+    return *(permutation_symrep().get_permutation(factor_group()[i]));
   }
   /*****************************************************************/
 
@@ -260,72 +174,6 @@ namespace CASM {
   }
 
   //*******************************************************************************
-
-  void Supercell::add_enumerated_configurations(ConfigEnum<Configuration> &enumerator) {
-    add_enumerated_configurations(enumerator.begin(), enumerator.end());
-  }
-
-  //*******************************************************************************
-
-  void Supercell::add_enumerated_configurations(ConfigEnumIterator<Configuration> it_begin, ConfigEnumIterator<Configuration> it_end) {
-
-    // Remember existing configs, to avoid duplicates
-    //   Enumerated configurations are added after existing configurations
-    Index N_existing = config_list.size();
-    Index N_existing_enumerated = 0;
-    //std::cout << "ADDING CONFIGS TO SUPERCELL; N_exiting: " << N_existing << " N_enumerated: " << N_existing_enumerated << "\n";
-    //std::cout << "beginning iterator: " << it_begin->occupation() << "\n";
-    // Loops through all possible configurations
-    for(; it_begin != it_end; ++it_begin) {
-      //std::cout << "Attempting to add configuration: " << it_begin->occupation() << "\n";
-      // Adds the configuration to the list, if not among previously existing configurations
-
-      bool add = true;
-      if(N_existing_enumerated != N_existing) {
-        for(Index i = 0; i < N_existing; i++) {
-          if(config_list[i].configdof() == it_begin->configdof()) {
-            config_list[i].push_back_source(it_begin.source());
-            add = false;
-            N_existing_enumerated++;
-            break;
-          }
-        }
-      }
-      if(add) {
-        config_list.push_back(*it_begin);
-        // get source info from enumerator
-        config_list.back().set_source(it_begin.source());
-        config_list.back().set_id(config_list.size() - 1);
-      }
-    }
-
-  }
-
-  //*******************************************************************************
-
-  void Supercell::enumerate_all_occupation_configurations() {
-    Configuration init_config(*this), final_config(*this);
-
-    init_config.set_occupation(Array<int>(num_sites(), 0));
-    final_config.set_occupation(max_allowed_occupation());
-
-    ConfigEnumAllOccupations<Configuration> enumerator(init_config, final_config, permute_begin(), permute_end());
-    add_enumerated_configurations(enumerator);
-
-  }
-
-  //*******************************************************************************
-
-  void Supercell::enumerate_interpolated_configurations(Supercell::config_const_iterator initial, Supercell::config_const_iterator final,
-                                                        long Nstep, long begin_delta, long end_delta) {
-
-    ConfigEnumInterpolation<Configuration> enumerator(*initial, *final, Nstep);
-    ConfigEnumIterator<Configuration> it_begin(enumerator.begin() + begin_delta), it_end(enumerator.end() + end_delta);
-    add_enumerated_configurations(it_begin, it_end);
-
-  }
-
-  //*******************************************************************************
   /**
    *   enumerate_perturb_configurations, using filename of 'background' structure
    */
@@ -335,7 +183,7 @@ namespace CASM {
     fs::ifstream file(background);
     background_struc.read(file);
     enumerate_perturb_configurations(background_struc, CSPECS, tol, verbose, print);
-  };
+  }
 
   //*******************************************************************************
   /**
@@ -454,7 +302,7 @@ namespace CASM {
         {
           if(fs::exists(config_path / "CSPECS"))
             fs::remove(config_path / "CSPECS");
-          fs::copy_file(fs::path(CSPECS), config_path / "CSPECS");
+          fs::copy(fs::path(CSPECS), config_path / "CSPECS");
         }
 
         // write CLUST
@@ -711,6 +559,7 @@ namespace CASM {
       //std::cout << "new config" << std::endl;
       config_list.push_back(canon_config);
       config_list.back().set_id(config_list.size() - 1);
+      config_list.back().set_selected(false);
       return true;
       //std::cout << "    added" << std::endl;
     }
@@ -765,9 +614,8 @@ namespace CASM {
     recip_prim_lattice(RHS.recip_prim_lattice),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
-    m_perm_symrep_ID(-1),
     name(RHS.name),
-    nlists(RHS.nlists),
+    m_nlist(RHS.m_nlist),
     config_list(RHS.config_list),
     transf_mat(RHS.transf_mat),
     scaling(RHS.scaling),
@@ -776,13 +624,12 @@ namespace CASM {
 
   //*******************************************************************************
 
-  Supercell::Supercell(PrimClex *_prim, const Matrix3<int> &transf_mat_init) :
+  Supercell::Supercell(PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
     primclex(_prim),
-    real_super_lattice((*primclex).get_prim().lattice().coord_trans(FRAC) * transf_mat_init),
+    real_super_lattice((*primclex).get_prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
     recip_prim_lattice(real_super_lattice.get_reciprocal()),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
-    m_perm_symrep_ID(-1),
     transf_mat(transf_mat_init) {
     scaling = 1.0;
     generate_name();
@@ -798,7 +645,6 @@ namespace CASM {
     recip_prim_lattice(real_super_lattice.get_reciprocal()),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
-    m_perm_symrep_ID(-1),
     transf_mat(primclex->calc_transf_mat(superlattice)) {
     /*std::cerr << "IN SUPERCELL CONSTRUCTOR:\n"
               << "transf_mat is\n" << transf_mat << '\n'
@@ -818,96 +664,6 @@ namespace CASM {
   }
 
   //*******************************************************************************
-
-  // Va_mode is default set to 0
-  // Va_mode		description
-  // 0			print no information about the vacancies
-  // 1			print only the coordinates of the vacancies
-  // 2			print the number of vacancies and the coordinates of the vacancies
-  void Supercell::print(const Configuration &config, std::ostream &stream, COORD_TYPE mode, int Va_mode, char term, int prec, int pad) const {
-    std::string mol_name, tcoord;
-    std::ostringstream num_mol_list, coord_stream;
-    stream << config.name() << std::endl;
-    real_super_lattice.print(stream);
-    Array<int> vacancies;
-
-    Array<Molecule> struc_molecule = get_prim().get_struc_molecule();
-
-    //declare hash
-    std::map<std::string, std::vector<int> > uccHash;
-    // declare hash iterator (for comparisons in the loop)
-    std::map<std::string, std::vector<int> >::iterator it;
-    // loop through all sites and get the unit cell coords
-    for(Index l = 0; l < num_sites(); l++) {
-      // config -> UnitCellCoord
-      //UnitCellCoord ucc = uccoord(l);
-
-      if(!config.get_mol(l).is_vacancy()) {
-
-        mol_name = config.get_mol(l).name;
-        // check if mol_name is already in our hash
-        it = uccHash.find(mol_name);
-        if(it != uccHash.end()) {
-          std::vector<int> tarray = it-> second;
-          tarray.push_back(l);
-          uccHash[mol_name]  = tarray;
-        }
-        // otherwise add a new pair
-        else {
-          std::vector<int> tarray;
-          tarray.push_back(l);
-          uccHash[mol_name] = tarray;
-        }
-      }
-      //store vacancies into a separate array
-      else {
-        vacancies.push_back(l);
-      }
-    }
-
-
-    // print names of molecules and numbers and start up coordinate stream
-    it = uccHash.begin();
-    if(it != uccHash.end()) {
-      stream << it -> first;
-      num_mol_list << it -> second.size();
-      for(Index i = 0; i < it->second.size(); i++) {
-        coord(it->second.at(i)).print(coord_stream, mode, '\n', prec, pad);
-      }
-      it++;
-    }
-
-    for(; it != uccHash.end(); it++) {
-      stream << ' ' << it-> first;
-      num_mol_list << ' ' << it-> second.size();
-      for(Index i = 0; i < it->second.size(); i++) {
-        coord(it->second.at(i)).print(coord_stream, mode, '\n', prec, pad);
-      }
-    }
-
-    // add vacancies to list of molecules in the supercell
-    if(Va_mode == 2)
-      stream << " Va";
-    if(Va_mode != 0) {
-      for(Index i = 0; i < vacancies.size(); i++) {
-        coord(vacancies.at(i)).print(coord_stream, mode, '\n', prec, pad);
-      }
-    }
-
-    stream << std::endl;
-    stream << num_mol_list.str() << std::endl;
-
-    //print the COORD_TYPE
-    if(mode == FRAC)
-      stream << "Direct\n";
-    else if(mode == CART)
-      stream << "Cartesian\n";
-    else
-      std::cerr << "error the mode isn't defined";
-    stream << coord_stream.str() << std::endl;
-    return;
-  }
-
   /**
    * Run through every selected Configuration in *this and call write() on it. This will
    * update all the JSON files and also rewrite POS, DoF etc. Meant for when
@@ -923,76 +679,6 @@ namespace CASM {
   }
 
 
-  //*******************************************************************************
-
-  //This function stores the displacements from a relaxed structure  to a unrelaxed super cell and stores them in the corresponding configuration of the super cell
-  void Supercell::findConfigDisplacements(Structure tstruc, Index config_num) {
-
-    double min_disp, tdisp;
-    UnitCellCoord tUCC;
-    Coordinate disp_coord(real_super_lattice);
-
-    if(tstruc.basis.size() != num_sites()) {
-      std::cerr << "The number of basis sites in the relaxed and unrelaxed structure does not match";
-      exit(EXIT_FAILURE);
-    }
-
-    Configuration::displacement_matrix_t displacement(3, num_sites());
-
-    //loop through all the sites of the supercell
-    for(Index i = 0; i < num_sites(); i++) {
-      min_disp = -1;
-      //loop through all the sites in the structure
-      for(Index j = 0; j < tstruc.basis.size(); j++) {
-        //check to see that the molecules are the same name
-        if(config_list[config_num].get_mol(i).name == tstruc.basis[j].occ_name()) {
-          //construct the coordinate in the super cell
-          Coordinate tcoor = coord(i);
-
-          //find the displacement of the two coordinates
-          tdisp = tstruc.basis[j].min_dist(tcoor);
-          //compare this displacement with the smallest displacement found
-          //since displacement cannot be < 0, we use this to show that it is the first case
-          if(min_disp < 0) {
-            min_disp = tdisp;
-            disp_coord = (Coordinate)tstruc.basis[j] - tcoor;
-          }
-          else if(tdisp < min_disp) {
-            min_disp = tdisp;
-            disp_coord = (Coordinate)tstruc.basis[j] - tcoor;
-          }
-        }
-      }
-      //store the displacement vector in configuration
-      displacement.col(i) = static_cast<Eigen::VectorXd>(disp_coord(CART));
-    }
-    config_list[config_num].set_displacement(displacement);
-  }
-
-  //*******************************************************************************
-  /*
-    void Supercell::print_clex_correlations(std::ostream &corrFile) {
-      Array<double> tcorr;
-      for(Index i = 0; i < config_list.size(); i++) {
-        tcorr = config_list[i].get_correlations().get_unrolled_correlations();
-        corrFile << tcorr << std::endl;
-      }
-    }
-  */
-  //*******************************************************************************
-  /*
-   * Just calls print_global_correlations_simple on every configuration
-   * that lives in *this supercell. Meant for creating old CASM style
-   * corr.in files.
-   */
-  /*
-    void Supercell::print_global_correlations_simple(std::ostream &corrstream) const {
-      for(Index c = 0; c < config_list.size(); c++) {
-        config_list[c].print_correlations_simple(corrstream);
-      }
-      return;
-    }
-  */
   //*******************************************************************************
   /**
    *   Print the PERTURB file for perturbations enumerated around a Configuration
@@ -1046,357 +732,18 @@ namespace CASM {
 
   }
 
-  //*******************************************************************************
-  /*
-    void Supercell::set_selection(const Array<std::string> &criteria) {
-      for(Index i = 0; i < config_list.size(); i++)
-        set_selection(criteria, config_list[i]);
-    }
-  */
-  //***********************************************************
-  /**
-   *   Set 'selected?' to 'true' for configurations that meet 'criteria'.
-   *
-   *   Used in 'casm select --set'.
-   *
-   *   'criteria' is a list of operators and arguments
-   *      listed in reverse polish notation:
-   *
-   *   operators:
-   *       on: *if this is first, then set matching to 'true'
-   *       off: *if this is first, then set matching to 'false'
-   *       re: regular expression matching
-   *       eq: ==
-   *       ne: !=
-   *       lt: <
-   *       le: <=
-   *       gt: >
-   *       ge: >=
-   *       also: add, sub, div, mult, pow
-   *       also: AND, OR, XOR, NOT
-   *    arguments:
-   *       "scell", "config", "configid", "calculated", "groundstate" (mol name), (string), (double)
-   *
-   *    example:
-   *       casm select --set on
-   *         - use to set 'selected?'=true for all configuations
-   *         - calls set_selection with criteria = ['on']
-   *
-   *       casm select --set off scell SCEL3 re
-   *         - use to set 'selected?'=false for all volume 3 configuations
-   *         - calls set_selection with criteria = ['scell', 'SCEL3', 're']
-   *
-   *
-   *       casm select --set on scell SCEL3 re A le 0.5 AND
-   *         - use to set 'selected?'=true for all volume 3 configuations with A concentration less than or equal to 0.5
-   *         - calls set_selection with criteria = ['scell', 'SCEL3', 're', 'A', 'lt', '0.501', 'AND']
-   *
-   */
-  //***********************************************************
-  /*  void Supercell::set_selection(const Array<std::string> &criteria, Configuration &config) {
-      if(criteria.size() == 0) {
-        std::cerr << "Error in Supercell::set_selection(const Array<std::string> &criteria, Configuration &config)" << std::endl;
-        std::cerr << "  criteria.size() must be > 0." << std::endl;
-        exit(1);
-      }
-
-      // The first 'criteria' should be whether to select or unselect if the expressions comes out as true ("1")
-      bool mk;
-      if(criteria[0] == "on")
-        mk = true;
-      else if(criteria[0] == "off")
-        mk = false;
-      else {
-        std::cerr << "Error in Supercell::set_selection(const Array<std::string> &criteria, Configuration &config)" << std::endl;
-        std::cerr << "  criteria[0] must be \"on\" or \"off\", but you gave \"" << criteria[0] << "\"" << std::endl;
-        exit(1);
-      }
-
-      std::string q;
-      std::string A, B;
-      Array<std::string> stack;
-
-
-      // If just 'on' or 'off', then select or unselect all
-      if(criteria.size() == 1) {
-        config.set_selected(mk);
-        return;
-      }
-
-      // Evaluate the expression by operating on the values in the 'criteria' list one by one
-      //   For each value:
-      //     check if it is an operator, if true: evaluate it and add result to stack
-      //     else check if it is a variable, if it is: substitute in the appropriate value
-      //   By the end of the 'criteria' list, the 'stack' should have only one entry which is "1" or "0"
-      stack.clear();
-      for(Index j = 1; j < criteria.size(); j++) {
-        q = criteria[j];
-        if(is_operator(q)) {
-          if(is_unary(q)) {
-            A = stack.back();
-            stack.pop_back();
-            stack.push_back(operate(q, A));
-          }
-          else {
-            B = stack.back();
-            stack.pop_back();
-            A = stack.back();
-            stack.pop_back();
-            stack.push_back(operate(q, A, B));
-          }
-        }
-        else {
-          stack.push_back(convert_variable(q, config));
-        }
-      }
-
-      if(stack.size() != 1) {
-        std::cerr << "Error in Supercell::set_selection(const Array<std::string> &criteria, Configuration &config)" << std::endl;
-        std::cerr << "  stack.size() != 1, check your criteria." << std::endl;
-        std::cerr << "  stack: " << stack << std::endl;
-        std::cerr << "  criteria: " << criteria << std::endl;
-        exit(1);
-      }
-
-      if(stack[0] == "1") {
-        config.set_selected(mk);
-      }
-      else if(stack[0] != "0") {
-        std::cerr << "Error in Supercell::set_selection(const Array<std::string> &criteria, Configuration &config)" << std::endl;
-        std::cerr << "  stack[0]: " << stack[0] << std::endl;
-        exit(1);
-      }
-      return;
-    }
-  */
-  //*******************************************************************************
-  /*
-    bool Supercell::is_operator(const std::string &q) const {
-      //std::cout << "is_operator: " << q << std::endl;
-
-      if(q == "NOT")
-        return true;
-      if(q == "AND")
-        return true;
-      if(q == "OR")
-        return true;
-      if(q == "XOR")
-        return true;
-      if(q == "re")
-        return true;
-      if(q == "rs")
-        return true;
-      if(q == "eq")
-        return true;
-      if(q == "ne")
-        return true;
-      if(q == "lt")
-        return true;
-      if(q == "le")
-        return true;
-      if(q == "gt")
-        return true;
-      if(q == "ge")
-        return true;
-      if(q == "add")
-        return true;
-      if(q == "sub")
-        return true;
-      if(q == "div")
-        return true;
-      if(q == "mult")
-        return true;
-      if(q == "pow")
-        return true;
-      return false;
-    }
-  */
-  //*******************************************************************************
-  /*
-    std::string Supercell::operate(const std::string &q, const std::string &A) const {
-      //std::cout << "operate1: " << q << "  A: " << A << std::endl;
-
-      if(q == "NOT")
-        return A == "0" ? "1" : "0";
-
-      std::cerr << "Error in Supercell::operate(const std::string &q, const std::string &A)" << std::endl;
-      std::cerr << "  q: " << q << " is not recognized" << std::endl;
-      exit(1);
-      return "err";
-    }
-  */
-  //*******************************************************************************
-  /*
-    std::string Supercell::operate(const std::string &q, const std::string &A, const std::string &B) const {
-      //std::cout << "operate2: " << q << "  A: " << A << "  B: " << B << std::endl;
-
-      if(q == "AND")
-        return (A == "0" || B == "0") ? "0" : "1";
-      if(q == "OR")
-        return (A == "0" && B == "0") ? "0" : "1";
-      if(q == "XOR")
-        return ((A == "0") != (B == "0")) ? "0" : "1";
-      if(q == "re") {
-        boost::regex e(B);
-        //std::cout << "A: " << A << "  B: " << B << "  regex_match: " << boost::regex_match(A, e) << std::endl;
-        return boost::regex_match(A, e) ? "1" : "0";
-      }
-      if(q == "rs") {
-        boost::regex e(B);
-        //std::cout << "A: " << A << "  B: " << B << "  regex_search: " << boost::regex_search(A, e) << std::endl;
-        return boost::regex_search(A, e) ? "1" : "0";
-      }
-      if(q == "eq")
-        return (A == B) ? "1" : "0";
-      if(q == "ne")
-        return (A != B) ? "1" : "0";
-      if(q == "lt")
-        return (std::stod(A) < std::stod(B)) ? "1" : "0";
-      if(q == "le")
-        return (std::stod(A) <= std::stod(B)) ? "1" : "0";
-      if(q == "gt")
-        return (std::stod(A) > std::stod(B)) ? "1" : "0";
-      if(q == "ge")
-        return (std::stod(A) >= std::stod(B)) ? "1" : "0";
-      if(q == "add")
-        return std::to_string(std::stod(A) + std::stod(B));
-      if(q == "sub")
-        return std::to_string(std::stod(A) - std::stod(B));
-      if(q == "div")
-        return std::to_string(std::stod(A) / std::stod(B));
-      if(q == "mult")
-        return std::to_string(std::stod(A) * std::stod(B));
-      if(q == "pow")
-        return std::to_string(pow(std::stod(A), std::stod(B)));
-
-      std::cerr << "Error in Supercell::operate(const std::string &q, const std::string &A, const std::string &B)" << std::endl;
-      std::cerr << "  q: " << q << " is not recognized" << std::endl;
-      exit(1);
-      return "err";
-    }
-  */
-  //*******************************************************************************
-  /*
-    bool Supercell::is_unary(const std::string &q) const {
-      return q == "NOT" ? true : false;
-    }
-  */
-  //***********************************************************
-  /**  convert variables
-   *
-   *   if q is:
-   *      "scelname", returns this->name
-   *      "configname", returns config.name()
-   *      the name of a molecule allowed in the prim,
-   *        returns that molecule's 'true_composition'
-   *      "calculated", returns:
-   *        config.get_calculated().contains(get_primclex().get_curr_property().begin(), get_primclex().get_curr_property().end())
-   *   else:
-   *      not a variable, returns q
-   */
-  //***********************************************************
-  /*  std::string Supercell::convert_variable(const std::string &q, const Configuration &config) const {
-      // check for a variable
-      if(q == "scelname")
-        return name;
-      if(q == "configname")
-        return config.name();
-      if(q == "is_groundstate") {
-        bool is_groundstate;
-        config.get_generated().get_else(is_groundstate, "is_groundstate", false);
-        return is_groundstate ? "1" : "0";
-      }
-      if(q == "is_calculated") {
-        return std::all_of(get_primclex().get_curr_property().begin(),
-                           get_primclex().get_curr_property().end(),
-                           [&](const std::string &key) {
-                             return config.get_calculated().contains(key);
-                           }) ? "1" : "0";
-      }
-      if(q == "dist_from_hull") {
-        if(!config.get_generated().contains("dist_from_hull")) {
-          std::cerr << "WARNING: Configuration " << config.get_path() << std::endl
-                    << "         Does not have an initialized 'dist_from_hull' field in its generated properties." << std::endl;
-          return "NAN";
-        }
-        else
-          return config.get_generated()["dist_from_hull"].get<std::string>();
-      }
-      if(q == "formation_energy") {
-        if(!config.get_delta().contains("relaxed_energy")) {
-          std::cerr << "WARNING: Configuration " << config.get_path() << std::endl
-                    << "         Does not have an initialized 'relaxed_energy' field in its delta properties." << std::endl
-                    << "         Please verify that all desired properties are specified in the project settings." << std::endl;
-          return "NAN";
-        }
-        else
-          return config.get_delta()["relaxed_energy"].get<std::string>();
-      }
-
-      // try matching 'comp(x)', 'true_comp(x)', 'mol_comp(x)'
-      std::smatch sm;
-
-      // parametric composition
-      auto comp_e = std::regex("comp\\((.*)\\)");
-      std::regex_match(q, sm, comp_e);
-      if(sm.size()) {
-        std::string ss = sm[1];
-        int index = ((int) ss[0]) - ((int) 'a');
-        int Nind = config.get_primclex().composition_axes().independent_compositions();
-        if(index >= Nind) {
-          throw std::runtime_error(
-            std::string("Error in selecting: '") + q + "'.\n" +
-                        "  looking for '" + ss[0] + "', with composition index: " + std::to_string(index) +
-                        "  but, # independent compositions: " + std::to_string(Nind));
-        }
-        return std::to_string(config.get_param_composition()[index]);
-      }
-
-      Array<Molecule> struc_molecule = (*primclex).get_prim().get_struc_molecule();
-
-      // 'true' composition i.e. include vacancies in the count
-      auto true_comp_e = std::regex("true_comp\\((.*)\\)");
-      std::regex_match(q, sm, true_comp_e);
-      if(sm.size()) {
-        std::string ss = sm[1];
-        for(int i = 0; i < struc_molecule.size(); i++)
-          if(struc_molecule[i].name == ss) {
-            return std::to_string(config.get_true_composition()[i]);
-          }
-        throw std::runtime_error(
-            std::string("Error in selecting: '") + q + "'.\n" +
-                        "  Attempting to get 'true' composition, but could not find molecule '" + ss + "'");
-      }
-
-      // 'mol' composition i.e. include do not include vacancies in the count
-      auto mol_comp_e = std::regex("mol_comp\\((.*)\\)");
-      std::regex_match(q, sm, mol_comp_e);
-      if(sm.size()) {
-        std::string ss = sm[1];
-        for(int i = 0; i < struc_molecule.size(); i++)
-          if(struc_molecule[i].name == ss)
-            return std::to_string(config.get_composition()[i]);
-        throw std::runtime_error(
-            std::string("Error in selecting: '") + q + "'.\n" +
-                        "  Attempting to get mol composition, but could not find molecule '" + ss + "'");
-      }
-
-      // else not a variable:
-      return q;
-    }
-  */
   //***********************************************************
 
   void Supercell::generate_factor_group()const {
     real_super_lattice.find_invariant_subgroup(get_prim().factor_group(), m_factor_group);
-    m_factor_group.set_lattice(real_super_lattice, CART);
+    m_factor_group.set_lattice(real_super_lattice);
     return;
   }
 
   //***********************************************************
 
   void Supercell::generate_permutations()const {
-    if(m_perm_symrep_ID != Index(-1)) {
+    if(!m_perm_symrep_ID.empty()) {
       std::cerr << "WARNING: In Supercell::generate_permutations(), but permutations data already exists.\n"
                 << "         It will be overwritten.\n";
     }
@@ -1425,23 +772,8 @@ namespace CASM {
   //***********************************************************
 
   void Supercell::generate_name() {
-    //calc_hnf();
-    /*
-    Matrix3<int> tmat = transf_mat.transpose();
-    Matrix3 < int > hnf;
-    tmat.hermite_normal_form(hnf);
-    hnf = hnf.transpose();
-    name = "SCEL";
-    std::stringstream tname;
-    tname << hnf(0, 0)*hnf(1, 1)*hnf(2, 2) << "_" << hnf(0, 0) << "_" << hnf(1, 1) << "_" << hnf(2, 2) << "_" << hnf(0, 1) << "_" << hnf(0, 2) << "_" << hnf(1, 2);
-    name.append(tname.str());
-    */
-
-    Eigen::Matrix3i H = hermite_normal_form(Eigen::Matrix3i(transf_mat)).first;
-    name = "SCEL";
-    std::stringstream tname;
-    tname << H(0, 0)*H(1, 1)*H(2, 2) << "_" << H(0, 0) << "_" << H(1, 1) << "_" << H(2, 2) << "_" << H(1, 2) << "_" << H(0, 2) << "_" << H(0, 1);
-    name.append(tname.str());
+    name = CASM::generate_name(transf_mat);
+    return;
   }
 
   //***********************************************************
@@ -1472,7 +804,7 @@ namespace CASM {
    */
   //***********************************************************
   bool Supercell::is_supercell_of(const Structure &structure) const {
-    Matrix3<double> mat;
+    Eigen::Matrix3d mat;
     return is_supercell_of(structure, mat);
   };
 
@@ -1482,7 +814,7 @@ namespace CASM {
    *  - Does *NOT* check basis sites
    */
   //***********************************************************
-  bool Supercell::is_supercell_of(const Structure &structure, Matrix3<double> &mat) const {
+  bool Supercell::is_supercell_of(const Structure &structure, Eigen::Matrix3d &mat) const {
     Structure tstruct = structure;
     SymGroup point_group;
     tstruct.lattice().generate_point_group(point_group);
@@ -1504,7 +836,7 @@ namespace CASM {
   //***********************************************************
   Configuration Supercell::configuration(const BasicStructure<Site> &structure_to_config, double tol) {
     //Because the user is a fool and the supercell may not be a supercell (This still doesn't check the basis!)
-    Matrix3<double> transmat;
+    Eigen::Matrix3d transmat;
     if(!structure_to_config.lattice().is_supercell_of(get_prim().lattice(), get_prim().factor_group(), transmat)) {
       std::cerr << "ERROR in Supercell::configuration" << std::endl;
       std::cerr << "The provided structure is not a supercell of the PRIM. Tranformation matrix was:" << std::endl;
@@ -1647,23 +979,6 @@ namespace CASM {
   }
 
   //***********************************************************
-  /**  Returns a Structure equivalent to the Supercell
-   *  - basis sites are ordered to agree with Supercell::config_index_to_bijk
-   *  - occupation set to config
-   *  - prim set to the new Structure, not the (*primclex).prim
-   */
-  //***********************************************************
-  /*
-  Structure Supercell::structure(const Configuration &config) const {
-    Structure superstruc = superstructure(config);
-    Lattice lat(superstruc.lattice().coord_trans(FRAC));
-    superstruc.set_lattice(lat, CART);
-
-    return superstruc;
-  }
-  */
-
-  //***********************************************************
   /**  Returns an Array<int> consistent with
    *     Configuration::occupation that is all vacancies.
    *     A site which can not contain a vacancy is set to -1.
@@ -1691,8 +1006,7 @@ namespace CASM {
     for(int i = 0; i < volume(); i++) {
       Coordinate temp_real_point = m_prim_grid.coord(i, SCEL);
       temp_real_point.within(); //should this also be voronoi within?
-      for(int j = 0; j < 3; j++)
-        real_coords(i, j) = temp_real_point.get(j, CART);
+      real_coords.row(i) = temp_real_point.const_cart().transpose();
     }
     return real_coords;
   }
@@ -1712,20 +1026,14 @@ namespace CASM {
       Coordinate temp_kpoint = recip_grid.coord(i, PRIM);
       temp_kpoint.set_lattice(temp_recip_lattice, CART);
       temp_kpoint.within(); //This is temporary, should be replaced by a call to voronoi_within()
-      temp_kpoint.update();
-      for(int j = 0; j < 3; j++)
-        kpoint_coords(i, j) = temp_kpoint.get(j, CART);
+
+      kpoint_coords.row(i) = temp_kpoint.const_cart().transpose();
     }
     return kpoint_coords;
   }
 
   Array< bool > Supercell::is_commensurate_kpoint(const Eigen::MatrixXd &recip_coordinates, double tol) {
-    Eigen::MatrixXd recip_lat(3, 3);
-    Matrix3<double> lat_vectors = recip_prim_lattice.coord_trans(FRAC);
-    for(int i = 0; i < 3; i++)
-      for(int j = 0; j < 3; j++)
-        recip_lat(i, j) = lat_vectors(j, i);
-    Eigen::MatrixXd recip_frac_coords = recip_coordinates * recip_lat.inverse();
+    Eigen::MatrixXd recip_frac_coords = recip_coordinates * recip_prim_lattice.inv_lat_column_mat();
     //    std::cout<<"Recip Frac Coords"<<std::endl<<recip_frac_coords<<std::endl;
     Array<bool> is_commensurate(recip_coordinates.rows(), true);
     for(int i = 0; i < recip_frac_coords.rows(); i++) {
@@ -1817,6 +1125,18 @@ namespace CASM {
     return;
   }
 
+  std::string generate_name(const Eigen::Matrix3i &transf_mat) {
+    std::string name_str;
+
+    Eigen::Matrix3i H = hermite_normal_form(transf_mat).first;
+    name_str = "SCEL";
+    std::stringstream tname;
+    //Consider using a for loop with HermiteCounter_impl::_canonical_unroll here
+    tname << H(0, 0)*H(1, 1)*H(2, 2) << "_" << H(0, 0) << "_" << H(1, 1) << "_" << H(2, 2) << "_" << H(1, 2) << "_" << H(0, 2) << "_" << H(0, 1);
+    name_str.append(tname.str());
+
+    return name_str;
+  }
 
 }
 

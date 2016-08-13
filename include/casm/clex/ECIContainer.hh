@@ -1,45 +1,74 @@
-#ifndef ECICONTAINER_HH
-#define ECICONTAINER_HH
+#ifndef CASM_ECICONTAINER_HH
+#define CASM_ECICONTAINER_HH
 
-#include "casm/container/Array.hh"
 #include "casm/clex/Correlation.hh"
-
+#include "casm/clex/Clexulator.hh"
 
 namespace CASM {
 
-  /**
-   * Container class to package ScalarECI with their corresponding indexes. This way they can't get mixed up.
-   * Holds only a ScalarECI (Array<double>) and a list of indexes (Array<Index>) that you would
-   * need to know how to multiply with correlations.
-   */
-
+  /// \brief A sparse container of ECI values and their corresponding orbit indices.
   class ECIContainer {
-  public:
-    //typedef Clexulator::size_type size_type;
-    typedef unsigned int size_type;
-    typedef Array<double> ScalarECI;
-    ECIContainer() {};
-    ECIContainer(const fs::path &eci_fit_file);
 
-    const ScalarECI &eci_list() const {
-      return m_eci_list;
+  public:
+
+    typedef Clexulator::size_type size_type;
+
+    /// \brief Default constructor
+    ECIContainer() {};
+
+    /// \brief Construct from range of ECI values and corresponding orbit indices
+    ///
+    /// \param eci_begin,eci_end Iterators of range of ECI values
+    /// \param index_begin Iterator to beginning of range (of size equal to
+    ///        [eci_begin, eci_end)) containing the orbit indices of the corresponding
+    ///        ECI values.
+    ///
+    template<typename SparseECIIterator, typename OrbitIndexIterator>
+    ECIContainer(SparseECIIterator eci_begin, SparseECIIterator eci_end, OrbitIndexIterator index_begin) {
+      auto eci_it = eci_begin;
+      auto index_it = index_begin;
+      for(; eci_it != eci_end; ++eci_it, ++index_it) {
+        m_value.push_back(*eci_it);
+        m_index.push_back(*index_it);
+      }
     }
-    const Array<size_type> &eci_index_list() const {
-      return m_eci_index_list;
+
+    /// \brief Number of eci specified (no guarentee they are all non-zero)
+    size_type size() const {
+      return m_value.size();
+    }
+
+    /// \brief const Access ECI values
+    const std::vector<double> &value() const {
+      return m_value;
+    }
+
+    /// \brief const Access orbit indices of ECI values
+    const std::vector<size_type> &index() const {
+      return m_index;
     }
 
   private:
-    //Efective cluster interactions (typdef of Array<double>)
-    ScalarECI m_eci_list;
-    //These tell you which correlations m_eci correspond to
-    Array<size_type> m_eci_index_list;
+
+    /// Efective cluster interaction values
+    std::vector<double> m_value;
+
+    /// Orbit index for each coefficient in m_value
+    std::vector<size_type> m_index;
 
   };
 
+  /// \brief Evaluate property given an ECIContainer and Correlation
   double operator*(const ECIContainer &_eci, const Correlation &_corr);
 
-  namespace ECIContainer_impl {
-    void populate_eci(const fs::path &filepath, ECIContainer::ScalarECI &mc_eci, Array<ECIContainer::size_type> &mc_eci_index);
-  }
+  /// \brief Evaluate property given an ECIContainer and pointer to beginning of range of correlation
+  double operator*(const ECIContainer &_eci, double const *_corr_begin);
+
+  /// \brief Read eci.out file from specified path (deprecated)
+  ECIContainer read_eci_out(const fs::path &filepath);
+
+  /// \brief Read eci.json file from specified path
+  ECIContainer read_eci(const fs::path &filepath);
+
 }
 #endif

@@ -11,6 +11,7 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  class SymGroupRepID;
   class Coordinate;
   class UnitCellCoord;
   class SiteCluster;
@@ -25,6 +26,9 @@ namespace CASM {
   protected:
     Lattice m_lattice;
 
+    ///Specifies whether selectice dynamics is on or of for DFT calculations
+    bool SD_flag;
+
   public: // PUBLIC DATA MEMBERS -- (long-term, at least lattice should be made private and only updated via Structure::set_lattice)
     /// User-specified name of this Structure
     std::string title;
@@ -35,7 +39,7 @@ namespace CASM {
 
   private: // PRIVATE METHODS
 
-    void main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option);
+    void main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option) const;
 
   public: // PUBLIC METHODS
 
@@ -114,8 +118,8 @@ namespace CASM {
     void generate_factor_group_slow(SymGroup &factor_group, double map_tol) const;
     void fg_converge(double small_tol, double large_tol, double increment);
     void fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
-    Index generate_permutation_representation(const MasterSymGroup &factor_group, bool verbose)const;
-    Index generate_basis_permutation_representation(const MasterSymGroup &factor_group, bool verbose)const;
+
+    SymGroupRepID generate_basis_permutation_representation(const MasterSymGroup &factor_group, bool verbose)const;
 
     void symmetrize(const SymGroup &relaxed_factors);
     void symmetrize(const double &tolerance);
@@ -151,7 +155,7 @@ namespace CASM {
     //Array<Array<Array<double> > > get_NN_table(const double &maxr);
 
     ///Add vacuum and shift c vector. The vacuum is always added parallel to c, and the shift vector should also be parallel to the ab plane (x,y,0)
-    void add_vacuum_shift(BasicStructure &new_surface_struc, double vacuum_thickness, Vector3<double> shift, COORD_TYPE mode) const;
+    void add_vacuum_shift(BasicStructure &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const;
     void add_vacuum_shift(BasicStructure &new_surface_struc, double vacuum_thickness, Coordinate shift) const;  //Because Anton thought a coordinate would be better
     ///Adds vacuum layer on top of ab plane
     void add_vacuum(BasicStructure &new_surface_struc, double vacuum_thickness) const;
@@ -171,18 +175,9 @@ namespace CASM {
     //CASM canonical input/output
     virtual void read(std::istream &stream);  //John do this
 
-    // print BasicStructure, listing all possible molecules on each site
-    void print(std::ostream &stream, COORD_TYPE mode = FRAC); //John do this too, modified by BP
-    //void print5(std::ostream &stream, COORD_TYPE mode = FRAC); //John G 050513, modified by BP - No longer allowed
-    void print5(std::ostream &stream, COORD_TYPE mode = FRAC, int Va_mode = 0, char term = 0, int prec = 7, int pad = 5) const; // added by Michael
-
-    // print BasicStructure, listing current occupying molecules on each site
-    void print_occ(std::ostream &stream, COORD_TYPE mode = FRAC); //John do this too, modified by BP
-    void print5_occ(std::ostream &stream, COORD_TYPE mode = FRAC); //John G 050513, modified by BP
-
     /// Output other formats
-    void print_xyz(std::ostream &stream);
-    void print_cif(std::ostream &stream);
+    void print_xyz(std::ostream &stream) const;
+    void print_cif(std::ostream &stream) const;
 
     jsonParser &to_json(jsonParser &json) const;
 

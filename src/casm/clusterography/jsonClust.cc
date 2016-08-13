@@ -6,15 +6,10 @@ namespace CASM {
     SiteCluster &clust = clust_helper.value();
     const Structure &struc = clust_helper.struc();
     UnitCellCoord ucc;
-    try {
-      for(Index i = 0; i < json["sites"].size(); i++) {
-        from_json(ucc, json["sites"][i]);
-        clust.push_back(struc.get_site(ucc));
-      }
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
+    // can throw
+    for(Index i = 0; i < json["sites"].size(); i++) {
+      from_json(ucc, json["sites"][i]);
+      clust.push_back(struc.get_site(ucc));
     }
 
   }
@@ -51,30 +46,24 @@ namespace CASM {
     SiteOrbitBranch &branch = branch_helper.value();
     const Structure &struc = branch_helper.struc();
 
-    try {
+    //can throw
 
-      if(json.contains("pivot")) {
-        SiteCluster new_pivot(branch.pivot.get_home());
-        from_json(jsonHelper(new_pivot, struc), json["pivot"]);
-        branch.set_pivot(new_pivot);
-      }
-
-      branch.reserve(json["orbits"].size());
-
-      for(Index i = 0; i < json["orbits"].size(); i++) {
-        SiteCluster tproto(branch.pivot.get_home());
-        from_json(jsonHelper(tproto, struc), json["orbits"][i]["prototype"]);
-        tproto.calc_properties();
-        branch.push_back(SiteOrbit(tproto));
-        branch.back().get_equivalent(struc.factor_group());
-        branch.back().get_cluster_symmetry();
-      }
-
+    if(json.contains("pivot")) {
+      SiteCluster new_pivot(branch.pivot.home());
+      from_json(jsonHelper(new_pivot, struc), json["pivot"]);
+      branch.set_pivot(new_pivot);
     }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
+
+    branch.reserve(json["orbits"].size());
+
+    for(Index i = 0; i < json["orbits"].size(); i++) {
+      SiteCluster tproto(branch.pivot.home());
+      from_json(jsonHelper(tproto, struc), json["orbits"][i]["prototype"]);
+      tproto.calc_properties();
+      branch.push_back(SiteOrbit(tproto));
+      branch.back().get_equivalent(struc.factor_group());
     }
+
 
   }
 
@@ -99,21 +88,18 @@ namespace CASM {
   void from_json(SiteOrbitreeJsonHelper tree_helper, const jsonParser &json) {
     SiteOrbitree &tree = tree_helper.value();
     const Structure &struc = tree_helper.struc();
-    try {
-      //tree.set_name(json["name"].get<std::string>());
-      //tree.set_cspecs(json["cspecs"]);
-      tree.set_lattice(json["lattice"].get<Lattice>(), CART);
+    //tree.set_name(json["name"].get<std::string>());
+    //tree.set_cspecs(json["cspecs"]);
+    tree.set_lattice(json["lattice"].get<Lattice>(), CART);
 
-      tree.resize(json["branches"].size());
-      for(Index i = 0; i < json["branches"].size(); i++) {
-        from_json(jsonHelper(tree[i], struc), json["branches"][i]);
-      }
+    tree.resize(json["branches"].size());
+    for(Index i = 0; i < json["branches"].size(); i++) {
+      from_json(jsonHelper(tree[i], struc), json["branches"][i]);
     }
-
-    catch(...) {
-      /// re-throw exceptions
-      throw;
+    if(json.contains("bspecs")) {
+      tree.set_bspecs(json["bspecs"]);
     }
+    tree.collect_basis_info(struc);
   }
 
   //*******************************************************************************************
@@ -130,6 +116,7 @@ namespace CASM {
     for(Index i = 0; i < tree.size(); i++) {
       json["branches"].push_back(jsonHelper(tree[i], struc));
     }
+    json["bspecs"] = tree.bspecs();
     return json;
   }
 

@@ -1,0 +1,12 @@
+# http://www.scons.org/doc/production/HTML/scons-user.html
+# This is: src/ccasm/SConscript
+
+Import('env')
+
+# get source files
+ccasm_lib_src = ['api.cc']
+
+ccasm_lib_sobj = env.SharedObject(ccasm_lib_src,
+                                  CPPPATH=env['INCDIR'])
+env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + ccasm_lib_sobj
+env['CCASM_SOBJ'] = env['CCASM_SOBJ'] + ccasm_lib_sobj

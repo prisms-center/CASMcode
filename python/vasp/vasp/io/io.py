@@ -22,7 +22,7 @@ class VaspIOError(Exception):
 
 def job_complete(jobdir=None):
     """Return True if vasp job at path 'jobdir' is complete"""
-    if jobdir == None:
+    if jobdir is None:
         jobdir = os.getcwd()
     outcarfile = os.path.join(jobdir, "OUTCAR")
     if (not os.path.isfile(outcarfile)) and (not os.path.isfile(outcarfile+".gz")):
@@ -34,7 +34,7 @@ def job_complete(jobdir=None):
 
 def get_incar_tag(key, jobdir=None):
     """Opens INCAR in 'jobdir' and returns 'key' value."""
-    if jobdir == None:
+    if jobdir is None:
         jobdir = os.getcwd()
     tincar = incar.Incar(os.path.join(jobdir,"INCAR"))
     for k in tincar.tags:
@@ -45,9 +45,9 @@ def get_incar_tag(key, jobdir=None):
 
 def set_incar_tag(tag_dict,jobdir=None):
     """Opens INCAR in 'jobdir', sets 'key' value, and writes INCAR
-        If 'val' == None, the tag is removed from the INCAR.
+        If 'val' is None, the tag is removed from the INCAR.
     """
-    if jobdir == None:
+    if jobdir is None:
         jobdir = os.getcwd()
     incarfile = os.path.join(jobdir,"INCAR")
     tincar = incar.Incar(incarfile)
@@ -55,7 +55,7 @@ def set_incar_tag(tag_dict,jobdir=None):
     for key, val in tag_dict.iteritems():
         for k in tincar.tags:
             if key.lower() == k.lower():
-                if (val == None) or (str(val).strip() == ""):
+                if (val is None) or (str(val).strip() == ""):
                     del tincar.tags[k]
                 else:
                     tincar.tags[k] = val
@@ -102,7 +102,7 @@ def write_stopcar(mode='e', jobdir=None):
     """ Write STOPCAR file with two modes:
         mode = 'e' for 'VASP stops at the next electronic step'
         mode = 'i' for 'VASP stops at the next ionic step' """
-    if jobdir == None:
+    if jobdir is None:
         jobdir = os.getcwd()
     if mode.lower()[0] == 'e':
         stop_string = "LABORT = .TRUE."
@@ -123,7 +123,7 @@ def write_stopcar(mode='e', jobdir=None):
 
 
 
-def write_vasp_input(dirpath, incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, sort=True, extra_input_files=[]):
+def write_vasp_input(dirpath, incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile, sort=True, extra_input_files=[], strict_kpoints=False):
     """ Write VASP input files in directory 'dirpath' """
     print "Setting up VASP input files:", dirpath
 
@@ -144,7 +144,11 @@ def write_vasp_input(dirpath, incarfile, prim_kpointsfile, prim_poscarfile, supe
     print "  Reading INCAR:", incarfile
     super_incar = incar.Incar(incarfile, species_settings, super, sort)
     print "  Generating supercell KPOINTS"
-    super_kpoints = prim_kpoints.super_kpoints(prim, super)
+    if strict_kpoints:
+        super_kpoints = prim_kpoints
+    else:
+        super_kpoints = prim_kpoints.super_kpoints(prim, super)
+
 
     # write main input files
     print "  Writing supercell POSCAR:", os.path.join(dirpath,'POSCAR')
@@ -157,13 +161,13 @@ def write_vasp_input(dirpath, incarfile, prim_kpointsfile, prim_poscarfile, supe
     write_potcar(os.path.join(dirpath,'POTCAR'), super, species_settings, sort)
 
     # copy extra input files
-    print "  Copying extra input files",
+    if len(extra_input_files):
+        print "  Copying extra input files",
     for s in extra_input_files:
-        print s,
+        print "    ", s
         shutil.copy(s,dirpath)
-    print ""
-
-    print "VASP input files complete\n"
+    
+    print "  DONE\n"
     sys.stdout.flush()
 
 

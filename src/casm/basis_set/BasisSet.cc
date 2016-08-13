@@ -1,34 +1,59 @@
 #include "casm/basis_set/BasisSet.hh"
+
+#include <algorithm>
+
 #include "casm/misc/CASM_math.hh"
+
 #include "casm/container/Permutation.hh"
-#include "casm/container/IsoCounter.hh"
 #include "casm/container/Counter.hh"
+#include "casm/container/IsoCounter.hh"
 #include "casm/container/MultiCounter.hh"
-#include "casm/basis_set/DoF.hh"
+
+#include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymMatrixXd.hh"
+#include "casm/symmetry/SymPermutation.hh"
+#include "casm/symmetry/SymGroupRep.hh"
+
+#include "casm/basis_set/Variable.hh"
 #include "casm/basis_set/PolynomialFunction.hh"
 #include "casm/basis_set/OccupantFunction.hh"
-#include "casm/symmetry/SymGroupRep.hh"
-#include "casm/symmetry/SymMatrixXd.hh"
+#include "casm/basis_set/FunctionVisitor.hh"
 
 namespace CASM {
 
-  //******************************************************************************
+  //*******************************************************************************************
 
   BasisSet::BasisSet(const BasisSet &init_basis) :
-    Array<Function * >(0), m_basis_symrep_ID(init_basis.basis_symrep_ID()),
+    Array<Function * >(0),
+    m_basis_symrep_ID(init_basis.basis_symrep_ID()),
+    m_name(init_basis.name()),
+    m_basis_ID(init_basis.m_basis_ID),
     m_min_poly_order(init_basis.m_min_poly_order),
     m_max_poly_order(init_basis.m_max_poly_order),
-    subspaces(init_basis.subspaces) {
+    //m_eval_cache & m_deval_cache are taken care of by BasisSet::push_back
+    //m_eval_cache(init_basis.m_eval_cache),
+    //m_deval_cache(init_basis.m_deval_cache),
+    m_dof_IDs(init_basis.m_dof_IDs),
+    m_dof_subbases(init_basis.m_dof_subbases),
+    m_min_poly_constraints(init_basis.min_poly_constraints()),
+    m_max_poly_constraints(init_basis.max_poly_constraints()) {
+
+    for(Index i = 0; i < init_basis.m_argument.size(); i++) {
+      m_argument.push_back(init_basis.m_argument[i]->shared_copy());
+    }
+
     for(Index i = 0; i < init_basis.size(); i++) {
       if(!init_basis[i])
-        push_back(NULL);
-      else
+        push_back(nullptr);
+      else {
         push_back(init_basis[i]->copy());
+        _back()->set_arguments(m_argument);
+      }
     }
 
   }
 
-  //******************************************************************************
+  //*******************************************************************************************
 
   const BasisSet &BasisSet::operator=(const BasisSet &RHS) {
     if(this == &RHS) {
@@ -36,32 +61,42 @@ namespace CASM {
     }
     clear();
     m_basis_symrep_ID = RHS.basis_symrep_ID();
-    subspaces = RHS.subspaces;
     m_min_poly_order = RHS.min_poly_order();
     m_max_poly_order = RHS.max_poly_order();
+    //m_eval_cache & m_deval_cache are taken care of by BasisSet::push_back
+    //m_eval_cache = RHS.m_eval_cache;
+    //m_deval_cache = RHS.m_deval_cache;
+    m_eval_cache.clear();
+    m_deval_cache.clear();
+    m_name = RHS.name();
+    m_dof_IDs = RHS.m_dof_IDs;
+    m_dof_subbases = RHS.m_dof_subbases;
+    _min_poly_constraints() = RHS.min_poly_constraints();
+    _max_poly_constraints() = RHS.max_poly_constraints();
 
+    m_argument.clear();
+    for(Index i = 0; i < RHS.m_argument.size(); i++) {
+      m_argument.push_back(RHS.m_argument[i]->shared_copy());
+    }
     for(Index i = 0; i < RHS.size(); i++) {
       if(!RHS[i])
-        push_back(NULL);
-      else
+        push_back(nullptr);
+      else {
         push_back(RHS[i]->copy());
+        _back()->set_arguments(m_argument);
+      }
     }
     return *this;
   }
 
 
-  //******************************************************************************
+  //*******************************************************************************************
 
-  void BasisSet::append(const BasisSet &RHS) {
-    for(Index i = 0; i < RHS.size(); i++) {
-      if(!RHS[i])
-        push_back(NULL);
-      else
-        push_back(RHS[i]->copy());
-    }
+  BasisSet::~BasisSet() {
+    clear();
   }
 
-  //******************************************************************************
+  //*******************************************************************************************
 
   void BasisSet::clear() {
     for(Index i = 0; i < size(); i++) {
@@ -69,272 +104,423 @@ namespace CASM {
         delete at(i);
     }
     Array<Function *>::clear();
+    _refresh_ID();
   }
 
-  //******************************************************************************
+  //*******************************************************************************************
 
-  BasisSet::~BasisSet() {
-    clear();
+  void BasisSet::append(const BasisSet &RHS) {
+    //Before appending functions, copy over  DoF IDs and subbasis info
+    for(Index i = 0; i < RHS.m_dof_IDs.size(); i++) {
+      Index ID_ind = m_dof_IDs.find(RHS.m_dof_IDs[i]);
+      if(ID_ind == m_dof_IDs.size()) {
+        assert(0 && "In BasisSet::append(), it is unsafe to append a BasisSet whose dependencies differ from (this).");
+        m_dof_IDs.push_back(RHS.m_dof_IDs[i]);
+        m_dof_subbases.push_back(SubBasis());
+      }
+
+      for(Index j = 0; j < RHS.m_dof_subbases[i].size(); j++) {
+        //std::cout << "*** Push back " << j << " to subbases " << ID_ind << " value " << RHS.m_dof_subbases[i][j] + size() << "\n\n";
+        m_dof_subbases[ID_ind].push_back(RHS.m_dof_subbases[i][j] + size());
+      }
+    }
+
+    //Convert polynomial constraints
+    _min_poly_constraints().reserve(min_poly_constraints().size() + RHS.min_poly_constraints().size());
+    for(Index i = 0; i < RHS.min_poly_constraints().size(); i++) {
+      _min_poly_constraints().push_back(RHS.min_poly_constraints()[i]);
+      for(Index j = 0; j < min_poly_constraints().back().first.size(); j++)
+        _min_poly_constraints().back().first[i] += size();
+    }
+
+    _max_poly_constraints().reserve(max_poly_constraints().size() + RHS.max_poly_constraints().size());
+    for(Index i = 0; i < RHS.max_poly_constraints().size(); i++) {
+      _max_poly_constraints().push_back(RHS.max_poly_constraints()[i]);
+      for(Index j = 0; j < max_poly_constraints().back().first.size(); j++)
+        _max_poly_constraints().back().first[i] += size();
+    }
+
+    //Convert RHS.min_poly_order() and RHS.max_poly_order into polynomial constraints
+    if(RHS.min_poly_order() > 0) {
+      _min_poly_constraints().push_back(PolyConstraint(Array<Index>::sequence(size(), size() + RHS.size() - 1), RHS.min_poly_order()));
+    }
+    if(valid_index(RHS.max_poly_order())) {
+      _max_poly_constraints().push_back(PolyConstraint(Array<Index>::sequence(size(), size() + RHS.size() - 1), RHS.max_poly_order()));
+    }
+    for(Index i = 0; i < RHS.size(); i++) {
+      if(!RHS[i])
+        push_back(nullptr);
+      else {
+        push_back(RHS[i]->copy());
+        _back()->set_arguments(m_argument);
+      }
+    }
+    _refresh_ID();
   }
 
-  //******************************************************************************
+  //*******************************************************************************************
+
   BasisSet BasisSet::poly_quotient_set(const Function *divisor) const {
     BasisSet new_set;
     for(Index i = 0; i < size(); i++) {
       if(!at(i))
-        new_set.push_back(NULL);
+        new_set.push_back(nullptr);
       else
         new_set.push_back(at(i)->poly_quotient(divisor));
     }
     return new_set;
   }
 
-  //******************************************************************************
-  void BasisSet::accept(const FunctionVisitor &visitor) {
-    //std::cout << "Accepting visitor of type " << visitor.type_name() << "... \n";
-    for(Index i = 0; i < size(); i++) {
-      if(at(i))
-        at(i)->accept(visitor);
+  //*******************************************************************************************
+
+  bool BasisSet::satisfies_exponent_constraints(const Array<Index> &expons)const {
+    Index exp_sum;
+    for(Index i = 0; i < max_poly_constraints().size(); i++) {
+      exp_sum = 0;
+      for(Index j = 0; j < max_poly_constraints()[i].first.size(); j++) {
+        exp_sum += expons[max_poly_constraints()[i].first[j]];
+      }
+      if(max_poly_constraints()[i].second < exp_sum)
+        return false;
     }
+    for(Index i = 0; i < min_poly_constraints().size(); i++) {
+      exp_sum = 0;
+      for(Index j = 0; j < min_poly_constraints()[i].first.size(); j++) {
+        exp_sum += expons[min_poly_constraints()[i].first[j]];
+      }
+      if(exp_sum < min_poly_constraints()[i].second)
+        return false;
+    }
+    exp_sum = expons.sum();
+    if(valid_index(min_poly_order()) && exp_sum < min_poly_order())
+      return false;
+    if(valid_index(max_poly_order()) && max_poly_order() < exp_sum)
+      return false;
+    return true;
+  }
+  //*******************************************************************************************
+  bool BasisSet::accept(const FunctionVisitor &visitor) {
+    bool is_changed(false), tchanged;
+    //std::cout << "Accepting visitor of type " << visitor.type_name() << "... \n";
+    for(Index i = 0; i < m_argument.size(); i++) {
+      tchanged = m_argument[i]->accept(visitor);
+      is_changed = tchanged || is_changed;
+    }
+    //std::cout << "BasisSet " << name() << " (" << this << ") and is_changed is " << is_changed << "\n";
+
+    for(Index i = 0; i < size(); i++) {
+      if(at(i)) {
+        if(is_changed)
+          at(i)->clear_formula();
+        tchanged = at(i)->accept(visitor, this);
+        is_changed = tchanged || is_changed;
+      }
+    }
+    //if(is_changed)_refresh_ID(); //should we do this here?
+    return is_changed;
   }
 
-  //******************************************************************************
+  //*******************************************************************************************
   /// Remotely evaluate each basis function and add it to the respective value in cumulant
   void BasisSet::remote_eval_and_add_to(Array<double> &cumulant)const {
     assert(size() == cumulant.size());
+    for(Index i = 0; i < m_argument.size(); i++)
+      m_argument[i]->_eval_to_cache();
+
     for(Index i = 0; i < size(); i++) {
       if(at(i))
-        cumulant[i] += at(i)->remote_eval();
+        cumulant[i] += at(i)->cache_eval();
     }
   }
 
-  //******************************************************************************
+  //*******************************************************************************************
+  /// Remotely evaluate derivative of each basis function (w.r.t. dvar) and add it to the respective value in cumulant
+  void BasisSet::remote_deval_and_add_to(Array<double> &cumulant, const DoF::RemoteHandle &dvar)const {
+    assert(size() == cumulant.size());
+    for(Index i = 0; i < m_argument.size(); i++)
+      m_argument[i]->_deval_to_cache(dvar);
 
-  void BasisSet::update_dof_IDs(const Array<Index> &before_IDs, const Array<Index> &after_IDs) {
+    for(Index i = 0; i < size(); i++) {
+      if(at(i))
+        cumulant[i] += at(i)->cache_deval(dvar);
+    }
+  }
+
+  //*******************************************************************************************
+
+  bool BasisSet::compare(const BasisSet &RHS)const {
+    if(m_argument.size() != RHS.m_argument.size() || size() != RHS.size())
+      return false;
+
+    for(Index i = 0; i < m_argument.size(); i++) {
+      if(!m_argument[i]->compare(*(RHS.m_argument[i])))
+        return false;
+    }
+
+    for(Index i = 0; i < size(); i++) {
+      if(!(at(i)->shallow_compare(RHS[i])))
+        return false;
+    }
+    return true;
+  }
+
+  //*******************************************************************************************
+
+  int BasisSet::dependency_layer() const {
+    int result = -1;
+    for(Index i = 0; i < m_argument.size(); i++)
+      result = CASM::max(result, m_argument[i]->dependency_layer());
+    return ++result;
+  }
+  //*******************************************************************************************
+  /// Remotely evaluate each basis function and add it to the respective value in cumulant
+  void BasisSet::_eval_to_cache()const {
+    remote_eval_to(m_eval_cache.begin(), m_eval_cache.end());
+  }
+  //*******************************************************************************************
+  /// Remotely evaluate each basis function and add it to the respective value in cumulant
+  void BasisSet::_deval_to_cache(const DoF::RemoteHandle &dvar)const {
+    remote_eval_to(m_eval_cache.begin(), m_eval_cache.end());
+    remote_deval_to(m_deval_cache.begin(), m_deval_cache.end(), dvar);
+    //std::cout << "eval_cache: " << m_eval_cache << "\ndeval_cache: " << m_deval_cache << "\n\n";
+
+  }
+  //*******************************************************************************************
+  void BasisSet::set_variable_basis(const Array<ContinuousDoF> &tvar_compon, SymGroupRepID _var_sym_rep_ID) {
+    m_argument.clear();
+    m_basis_symrep_ID = _var_sym_rep_ID;
+    Array<Index> tdof_IDs;
+    for(Index i = 0; i < tvar_compon.size(); i++) {
+      if(!tvar_compon[i].is_locked() && !tdof_IDs.contains(tvar_compon[i].ID()))
+        tdof_IDs.push_back(tvar_compon[i].ID());
+    }
+    set_dof_IDs(tdof_IDs);
+    for(Index i = 0; i < tvar_compon.size(); i++) {
+      push_back(new Variable(tvar_compon, i, _var_sym_rep_ID));
+    }
+    _refresh_ID();
+  }
+  //*******************************************************************************************
+  void BasisSet::set_dof_IDs(const Array<Index> &new_IDs) {
+    _update_dof_IDs(m_dof_IDs, new_IDs);
+  }
+  //*******************************************************************************************
+  // Pass before_IDs by value to avoid aliasing issues when called from BasisSet::set_dof_IDs()
+  void BasisSet::_update_dof_IDs(const Array<Index> before_IDs, const Array<Index> &after_IDs) {
+    //std::cout << "BasisSet " << this << " --> m_dof_IDs is " << m_dof_IDs << "; before_IDs: " << before_IDs << "; after_ID: " << after_IDs << "\n" << std::endl;
+    if(before_IDs.size() != after_IDs.size() && size() > 0) {
+      std::cerr << "CRITICAL ERROR: In BasisSet::update_dof_IDs(), new IDs are incompatible with current IDs.\n"
+                << "                Exiting...\n";
+      assert(0);
+      exit(1);
+    }
+
+    //update m_dof_IDs after the other stuff, for easier debugging
+    if(m_dof_IDs.size() == 0) {
+      m_dof_IDs = after_IDs;
+      m_dof_subbases.resize(after_IDs.size());
+    }
+    else {
+      Index m;
+      for(Index i = 0; i < m_dof_IDs.size(); i++) {
+        m = before_IDs.find(m_dof_IDs[i]);
+        if(m == before_IDs.size()) {
+          std::cerr << "CRITICAL ERROR: In BasisSet::update_dof_IDs(), new IDs are incompatible with current IDs.\n"
+                    << "                Exiting...\n";
+          assert(0);
+          exit(1);
+        }
+        m_dof_IDs[i] = after_IDs[m];
+      }
+    }
+
+    for(Index i = 0; i < m_argument.size(); i++)
+      m_argument[i]->_update_dof_IDs(before_IDs, after_IDs);
+
     for(Index i = 0; i < size(); i++) {
       if(at(i))
         at(i)->update_dof_IDs(before_IDs, after_IDs);
     }
 
+
     return;
   }
 
-  //******************************************************************************
+  //*******************************************************************************************
 
-  void BasisSet::construct_invariant_cluster_polynomials(const Array<Array<BasisSet const *> > &site_args,
-                                                         const Array<BasisSet const *> &global_args,
-                                                         const SymGroup &head_group,
-                                                         const SymGroupRep &permute_group,
-                                                         Index max_poly_order) {
+  std::vector< std::set<Index> > BasisSet::independent_sub_bases() const {
+    std::vector< std::set<Index> > result;
+    std::vector<bool> unclaimed(size(), true);
+    for(Index i = 0; i < dof_sub_bases().size(); i++) {
+      if(dof_sub_basis(i).size() == 0)
+        continue;
+      Index j = 0;
+      for(j = 0; j < result.size(); j++) {
+        if(result[j].find(dof_sub_basis(i)[0]) != result[j].end()) {
+          break;
+        }
+      }
+      if(j == result.size())
+        result.emplace_back();
+      for(Index k = 0; k < dof_sub_basis(i).size(); k++) {
+        unclaimed[dof_sub_basis(i)[k]] = false;
+        result[j].insert(dof_sub_basis(i)[k]);
+      }
+    }
+    bool has_unclaimed = false;
+    for(Index i = 0; i < unclaimed.size(); i++) {
+      if(unclaimed[i]) {
+        if(!has_unclaimed) {
+          result.emplace_back();
+          has_unclaimed = true;
+        }
+        result.back().insert(i);
+      }
+    }
+    return result;
+  }
 
-    construct_invariant_cluster_polynomials(site_args, global_args, head_group, permute_group, Array<Index>(site_args.size(), 1), max_poly_order);
+  //*******************************************************************************************
+
+  int BasisSet::register_remotes(const std::string &dof_name, const Array<DoF::RemoteHandle> &remote_handles) {
+    int sum(0);
+    for(Index i = 0; i < size(); i++)
+      sum += at(i)->register_remotes(dof_name, remote_handles);
+
+    for(Index i = 0; i < m_argument.size(); i++)
+      sum += m_argument[i]->register_remotes(dof_name, remote_handles);
+
+    return sum;
+  }
+
+  //*******************************************************************************************
+
+  void BasisSet::construct_polynomials_by_order(const Array<BasisSet const * > &tsubs, Index order) {
+
+
+    _set_arguments(tsubs);
+    //Array<BasisSet const *> abset(m_argument);
+    PolynomialFunction tpoly(m_argument);
+    Array<Index> curr_expon(tpoly.poly_coeffs().depth(), 0);
+
+    IsoCounter<Array<Index> > exp_count(Array<Index>(tsubs[0]->size(), 0), Array<Index>(tsubs[0]->size(), order), 1, order);
+
+    do {
+      for(int i = 0; i < exp_count.size(); i++) {
+        //std::cout << exp_count()[i] << " ";
+        curr_expon[i] = exp_count()[i];
+      }
+      PolyTrie<double> new_trie(curr_expon.size());
+      new_trie(curr_expon) = 1.0;
+      push_back(tpoly.copy(new_trie));
+      //std::cout << std::endl;
+    }
+    while(++exp_count);
+
 
   }
 
+  //*******************************************************************************************
 
-  //******************************************************************************
-  // construct_invariant_cluster_polynomials is specialized for clusters with multiple degrees of freedom per site
-  //    - site_args[s][f] is a pointer to the set 'f' of degrees of freedom on site 's' in the cluster
-  //    - global_args[f] is a pointer to the set 'f' of degrees of freedom not attached to a site
-  //                     which may include cluster DoFs (e.g., CDAs, which aren't attached to specific sites) or crystal DoFs (e.g., strains)
-  //    - head_group is the cluster point group
-  //    - permute_group is the permutation representation of the cluster group (which does not get stored as Master representation, but perhaps should)
-  //    - min_site_order specifies the minimum order allowed for all DoFs of a particular site. Overloaded (see above) so that default value is (1,...,1)
-  //                     This default is correct for most cases, but not when cluster DoFs exist. More complicated situations may require an overloaded version
-  //                     that accepts some sort of filter functor.
-  //    - max_poly_order specifies the overall maximum polynomial order allowed for this basis set
-  //
-  // We assume that each polynomial must include at least one DoF from each
+  void BasisSet::construct_invariant_polynomials(const Array<BasisSet const *> &tsubs, const SymGroup &head_group, Index order, Index min_dof_order) {
 
-  void BasisSet::construct_invariant_cluster_polynomials(const Array<Array<BasisSet const *> > &site_args,
-                                                         const Array<BasisSet const *> &global_args,
-                                                         const SymGroup &head_group,
-                                                         const SymGroupRep &permute_group,
-                                                         const Array<Index> &min_site_order,
-                                                         Index max_poly_order) {
-    typedef IsoCounter<CASM::Array<Index> > OrderCount;
-    typedef MultiCounter<OrderCount> MultiOrderCount;
-    typedef MultiCounter<MultiOrderCount> ExponCount;
-
-    //Inspect the site_args and global_args
-    Index N_args(0);
-    Array<BasisSet const *> all_bset;
-    Array<Index> main_min(site_args.size() + 1, 0), main_max(site_args.size() + 1, 0), block_dims(site_args.size() + 1, 0);
-    Array<Array<Index> > sub_mins(site_args.size() + 1), sub_maxs(site_args.size() + 1);
-    for(Index i = 0; i < site_args.size(); i++) {
-      sub_mins[i].resize(site_args[i].size());
-      sub_maxs[i].resize(site_args[i].size());
-      //std::cout << "site_args[" << i << "].size() is " << site_args[i].size() << '\n';
-      for(Index j = 0; j < site_args[i].size(); j++) {
-        block_dims[i] += site_args[i][j]->size();
-        N_args += site_args[i][j]->size();
-
-        main_min[i] += site_args[i][j]->min_poly_order();
-        main_max[i] += site_args[i][j]->max_poly_order();
-
-        sub_mins[i][j] = site_args[i][j]->min_poly_order();
-        sub_maxs[i][j] = site_args[i][j]->max_poly_order();
-
-        all_bset.push_back(site_args[i][j]);
+    _set_arguments(tsubs);
+    //std::cout << "Constructing invariant polynomials from DoFs:\n";
+    for(Index i = 0; i < tsubs.size(); ++i) {
+      if((tsubs[i]->basis_symrep_ID()).empty()) {
+        tsubs[i]->get_symmetry_representation(head_group);
       }
-      main_min[i] = CASM::max(main_min[i], min_site_order[i]);
+      //std::cout << tsubs[i]->name() << "  ";
     }
 
-    for(Index j = 0; j < global_args.size(); j++) {
-      block_dims.back() += global_args[j]->size();
-      N_args += global_args[j]->size();
-
-      main_min.back() += global_args[j]->min_poly_order();
-      main_max.back() += global_args[j]->max_poly_order();
-
-      sub_mins.back()[j] = global_args[j]->min_poly_order();
-      sub_maxs.back()[j] = global_args[j]->max_poly_order();
-
-      all_bset.push_back(global_args[j]);
+    if(tsubs.size() == 0 && min_poly_order() < 1) {
+      PolyTrie<double> ttrie(0);
+      ttrie(Array<Index>(0)) = 1.0;
+      push_back(new PolynomialFunction(m_argument, ttrie));
+      return;
     }
-    //std::cout << "BLOCK_DIMS: " << block_dims << '\n';
-    //std::cout << "MAIN_MIN: " << main_min << '\n';
-    //std::cout << "MAIN_MAX: " << main_max << '\n';
-    //std::cout << "SUB_MINS: " << sub_mins << '\n';
-    //std::cout << "SUB_MAXS: " << sub_maxs << '\n';
-
-    // Make some IsoCounters
-    // main_partition ensures that each
-    OrderCount main_partition(main_min, main_max, 1, main_min.sum());
-
-    MultiOrderCount sub_partitions;
-    ExponCount exp_counter;
-    for(Index i = 0; i < sub_mins.size(); i++) {
-      sub_partitions.push_back(OrderCount(sub_mins[i], sub_maxs[i], 1, main_partition[i]));
-    }
-
-    for(Index i = 0; i < site_args.size(); i++) {
-      exp_counter.push_back(MultiOrderCount());
-      for(Index j = 0; j < site_args[i].size(); j++) {
-        exp_counter[i].push_back(OrderCount(Array<Index>(site_args[i][j]->size(), 0),
-                                            Array<Index>(site_args[i][j]->size(), sub_maxs[i][j]),
-                                            1, sub_partitions[i][j]));
-      }
-    }
-
-    exp_counter.push_back(MultiOrderCount());
-    for(Index j = 0; j < global_args.size(); j++) {
-      exp_counter.back().push_back(OrderCount(Array<Index>(global_args[j]->size(), 0),
-                                              Array<Index>(global_args[j]->size(), sub_maxs.back()[j]),
-                                              1, sub_partitions.back()[j]));
-    }
-
-    // Make exponent permutations out of perm_group
-    Array<Permutation> exp_perm;
-    Permutation tperm(0);
-    exp_perm.reserve(permute_group.size());
-    for(Index i = 0; i < permute_group.size(); i++) {
-      tperm = *(permute_group.get_permutation(i));
-      tperm.append_fixed_points(1);
-      exp_perm.push_back(tperm.make_block_permutation(block_dims));
-    }
-
-    Index poly_order = main_min.sum();
-    max_poly_order = CASM::min(main_max.sum(), max_poly_order);
+    //std::cout << "\n\n";
+    //std::cout << "dof_IDs are: " << dof_IDs() << "\n\n";
+    //std::cout << "dof_sub_bases are: " << dof_sub_bases() << "\n\n";
     PolynomialFunction *tpoly;
-    Array<Index> curr_exp(N_args, 0);
-    Index ne;
-    //std::cout << "poly_order is " << poly_order << " and max_poly_order is " << max_poly_order << '\n';
-    for(; poly_order <= max_poly_order; poly_order++) {
-      main_partition.set_sum_constraint(poly_order);
-      ////std::cout << "INIT main_partition: " << main_partition() << '\n';
-      while(main_partition.valid()) {
-        //std::cout << "main_partition: " << main_partition() << '\n';
-        for(Index i = 0; i < sub_partitions.size(); i++) {
-          sub_partitions[i].set_sum_constraint(main_partition[i]);
+    Array<Index> curr_exp;
+    typedef BasisSet::SubBasis SubBasis;
+    typedef IsoCounter<Array<Index> > OrderCount;
+    typedef MultiCounter<OrderCount> ExpCount;
+
+    // Add constraints that set a minimum combined order for each local dofset
+    for(Index i = 0; i < dof_IDs().size() && min_dof_order >= 0; i++) {
+      SubBasis big_sub_basis;
+      Index offset = 0;
+      for(Index j = 0; j < tsubs.size(); j++) {
+        //std::cout << "dof_IDs of tsub " << j << " are " << tsubs[j]->dof_IDs() << "\n";
+        Index ID_ind = (tsubs[j]->dof_IDs()).find(dof_IDs()[i]);
+        if(ID_ind == (tsubs[j]->dof_IDs()).size())
+          continue;
+        const SubBasis &sub_basis(tsubs[j]->dof_sub_basis(ID_ind));
+        for(Index b = 0; b < sub_basis.size(); b++) {
+          big_sub_basis.push_back(sub_basis[b] + offset);
         }
-        //std::cout << "INIT sub_partitions: " << sub_partitions() << '\n';
-        while(sub_partitions.valid()) {
-          //std::cout << "sub_partitions: " << sub_partitions() << '\n';
-          for(Index i = 0; i < exp_counter.size(); i++) {
-            for(Index j = 0; j < exp_counter[i].size(); j++) {
-              exp_counter[i][j].set_sum_constraint(sub_partitions[i][j]);
-            }
-          }
-          //std::cout << "INIT exp_counter: " << exp_counter() << '\n';
-          while(exp_counter.valid()) {
-            //std::cout << "exp_counter: " << exp_counter() << '\n';
-            ne = 0;
-            for(Index i = 0; i < exp_counter.size(); i++) {
-              for(Index j = 0; j < exp_counter[i].size(); j++) {
-                for(Index k = 0; k < exp_counter[i][j].size(); k++) {
-                  curr_exp[ne++] = exp_counter[i][j][k];
-                }
-              }
-            }
-            //std::cout << "curr_exp is" << curr_exp << "\n";
-            tpoly = new PolynomialFunction(all_bset);
-            for(Index i = 0; i < head_group.size(); i++) {
-              tpoly->transform_monomial_and_add(1, exp_perm[i].permute(curr_exp), head_group[i]);
-            }
-            push_back(tpoly);
+        offset += tsubs[j]->size();
+      }
+      //std::cout << "Adding min constraint: " << big_sub_basis << ":  " << min_dof_order << "\n";
+      add_min_poly_constraint(big_sub_basis, min_dof_order);
+    }
+    //\ end DoFset constraints
 
+    OrderCount::Container initial_order(tsubs.size(), 0), final_order(tsubs.size(), order);
+    for(Index i = 0; i < tsubs.size(); i++) {
+      if(valid_index(tsubs[i]->min_poly_order()))
+        initial_order[i] = tsubs[i]->min_poly_order();
+      if(valid_index(tsubs[i]->max_poly_order()))
+        final_order[i] = tsubs[i]->max_poly_order();
+    }
+    //std::cout << "order_count from: " << initial_order << " to final order: " << final_order << "\n\n";
+    OrderCount order_count(initial_order, final_order, 1, order);
 
-            exp_counter++;
-          }
+    ExpCount exp_count;
+    for(Index i = 0; i < tsubs.size(); i++) {
+      exp_count.push_back(OrderCount(Array<Index>(tsubs[i]->size(), 0), Array<Index>(tsubs[i]->size(), order), 1, order_count[i]));
+      curr_exp.append(exp_count.back());
+    }
 
-          sub_partitions++;
+    for(; order_count.valid(); ++order_count) {
+      for(Index i = 0; i < exp_count.size(); i++)
+        exp_count[i].set_sum_constraint(order_count[i]);
+      for(; exp_count.valid(); ++exp_count) {
+        bool valid_expon = true;
+        for(Index i = 0; i < exp_count.size() && valid_expon; i++)
+          valid_expon = tsubs[i]->satisfies_exponent_constraints(exp_count[i]());
+
+        if(!valid_expon)
+          continue;
+
+        Index ne = 0;
+        ExpCount::const_value_iterator it(exp_count.value_begin()), it_end(exp_count.value_end());
+        for(; it != it_end; ++it) {
+          curr_exp[ne++] = *it;
         }
+        if(!satisfies_exponent_constraints(curr_exp))
+          continue;
+        //else:
+        //std::cout << "Adding exponent " << curr_exp << "\n\n";
 
-        main_partition++;
+        tpoly = new PolynomialFunction(m_argument);
+        for(Index i = 0; i < head_group.size(); i++) {
+          tpoly->transform_monomial_and_add(1, curr_exp, head_group[i]);
+        }
+        push_back(tpoly);
       }
     }
-    // If Gram_Schmidt() is too slow for large basis sets, we can change it to work on each order separately
     Gram_Schmidt();
+
+    //std::cout << "Result, with " << size() << " invariant functions:\n";
+    //for(Index i = 0; i < size(); i++)
+    //std::cout << "F_" << i << " = " << at(i)->tex_formula() << "\n\n";
     return;
   }
 
-
-
-  //John G 011013
-
-  //********************************************************
-  /**	Fills up your basis with occupation basis polynomials.
-   *    For a site of N components (0,1,2,3...N-1) there are
-   *    N-1 basis functions. Polynomial i evaluates to 1 if
-   *    if component i+1 is occupying the site. If that's not
-   *    the case the polynomial evaluates to 0.
-   */
-  //********************************************************
-
-  void BasisSet::construct_discrete_occupations(const DiscreteDoF &allowed_occs, Index basis_ind, Index sym_rep_ind) {
-    m_max_poly_order = 1;
-    //Start by making the strings for the individual formula pieces (e.g. "1", "p_Ni", "p_Si"...)
-    //Array<std::string> tformula_bits;
-    Index N = allowed_occs.size();
-
-
-    //We create a table such that multiplying it with an array of coefficients gives
-    //the right evaluation for the basis functions. Identity works.
-    //Eigen::MatrixXd teval_table = Eigen::MatrixXd::Identity(N, N);
-
-    //Start making occupation polynomials excluding the 0th one
-    //We just need to make the coefficient vectors now that give the right values
-    //when multiplied by the eval_table (e.g. [0100],[0010],[0001] for quaternary)
-
-    Eigen::VectorXd tcoeffs(N);
-    for(Index i = 1; i < N; i++) {
-      tcoeffs.setZero();
-
-      tcoeffs[i] = 1;
-      OccupantFunction tOF(allowed_occs, tcoeffs, size(), basis_ind, sym_rep_ind);
-
-      //tOF.formula_bits = tformula_bits;
-
-      push_back(tOF.copy());
-    }
-    if(sym_rep_ind == Index(-2))
-      m_basis_symrep_ID = -2;
-
-    return;
-  }
-
-  //*******************************************************************************
+  //*******************************************************************************************
   // Construct generalized occupant functions that is orthonormal with respect to
   // the inner product defined by gram_mat.
   //   - gram_mat should look like a covariance matrix of random vectors, of dimension
@@ -352,9 +538,23 @@ namespace CASM {
   // The second property places constraints on 'W'.  We attempt to find a 'B' that is similar to the Chebychev
   // basis in certain limiting cases.
 
-  void BasisSet::construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs, const Eigen::MatrixXd &gram_mat, Index basis_ind, Index sym_rep_ind) {
+  void BasisSet::construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
+                                                          const Eigen::MatrixXd &gram_mat,
+                                                          Index basis_ind,
+                                                          const SymGroup &symgroup) {
+
+    m_argument.clear();
     m_max_poly_order = 1;
     Index N = allowed_occs.size();
+    if(N <= 1) {
+      m_basis_symrep_ID = SymGroupRepID::identity(0);
+      return;
+    }
+
+    if(!allowed_occs.is_locked()) {
+      set_dof_IDs(Array<Index>(1, allowed_occs.ID()));
+      m_dof_subbases[0] = Array<Index>::sequence(0, N - 2);
+    }
     //std::cout << "INSIDE construct_orthonormal_discrete_functions and gram_mat is \n";
     //std::cout << gram_mat << "\n\n";
     if(!almost_zero(Eigen::MatrixXd(gram_mat - gram_mat.transpose()))) {
@@ -378,23 +578,23 @@ namespace CASM {
     // ** step 1: find a generic 'B' matrix
 
     //Use SVD instead of eigendecomposition so that 'U' and 'V' matrices are orthogonal
-    Eigen::JacobiSVD<Eigen::MatrixXd> tsvd(gram_mat, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    Eigen::MatrixXd inv_sqrtS(Eigen::MatrixXd::Zero(N, N));
-    for(Index i = 0; i < N; i++) {
-      if(almost_zero(tsvd.singularValues()[i]) || tsvd.singularValues()[i] < 0) {
-        // we could 'fix' gram_mat, but that could cause mysterious behavior - leave it to the user
-        std::cerr << "CRITICAL ERROR: Passed a Gram Matrix to BasisSet::construct_orthonormal_discrete_functions that is not positive-definite.\n"
-                  << "                Gram Matrix is:\n" << gram_mat << "\nExiting...\n";
-        exit(1);
-      }
-      inv_sqrtS(i, i) = 1.0 / sqrt(tsvd.singularValues()[i]);
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> teig(gram_mat, Eigen::ComputeEigenvectors);
+    if(teig.eigenvalues().minCoeff() < TOL) {
+      // we could 'fix' gram_mat, but that could cause mysterious behavior - leave it to the user
+      std::cerr << "CRITICAL ERROR: Passed a Gram Matrix to BasisSet::construct_orthonormal_discrete_functions that is not positive-definite.\n"
+                << "                Gram Matrix is:\n" << gram_mat << "\nSmallest Eigenvalue = " << teig.eigenvalues().minCoeff() << "; Exiting...\n";
+      exit(1);
     }
 
-    // B matrix is matrix square root of gram_mat.inverse(). Its columns form an orthonormal basis
-    // wrt gram_mat but it is ill-suited for our purposes.
-    Eigen::MatrixXd B(tsvd.matrixV()*inv_sqrtS * tsvd.matrixU().transpose());
+    // B matrix is matrix square root of gram_mat.inverse(). Its columns form an orthonormal basis wrt gram_mat
+    // In other words,
+    //         B = V*(1.0/sqrt(D))*V.inverse()
+    // where V is matrix of eigenvectors (as columns) of gram_mat and D is diagonal matrix of eigenvalues of gram_mat
+    // B is not ideally oriented for our purposes, so the rest of the algorithm will be focused on fixing the orientation
+    Eigen::MatrixXd B = teig.eigenvectors() * (teig.eigenvalues().array().cwiseInverse().cwiseSqrt().matrix().asDiagonal()) * teig.eigenvectors().inverse();
 
-    // ** step 2: Make seed basis. This will be used to seed optimized transformation of 'B'
+
+    // ** step 2: Make seed basis. This will be used to seed optimized orientation of 'B'
     Eigen::MatrixXd tseed(Eigen::MatrixXd::Zero(N, N));
     Eigen::MatrixXd::Index max_ind(0);
     if(conc_vec.maxCoeff(&max_ind) < 0.75) {
@@ -413,6 +613,7 @@ namespace CASM {
       tseed = tcos_table.householderQr().householderQ();
     }
     else {
+      // there is an outlier probability --> set seed matrix to occupation basis, with specis 'i==max_ind' as solvent
       Eigen::MatrixXd::Index curr_i(0);
       for(Eigen::MatrixXd::Index i = 0; i < B.rows(); i++) {
         tseed(i, 0) = 1;
@@ -438,15 +639,39 @@ namespace CASM {
 
     // Columns of B are our basis functions, orthonormal wrt gram_mat
     for(Index i = 1; i < N; i++) {
-      OccupantFunction tOF(allowed_occs, B.col(i), size(), basis_ind, sym_rep_ind);
+      int sign_change = 1;
+      double max_abs(0.0);
+      // The sign of each OccupantFunction is ambiguous, so we use a convention
+      // Force sign convention max(function(occupation))=max(abs(function(occupation)))
+      // If multiple occupations evaluate to the same abs(phi) and it is the maximal abs(phi),
+      // then use convention that the last occurence is positive
+      // It IS confusing, but here's a simple example:
+      //
+      //    phi(occ) = {-1, 0, 1}  is always preferred over phi_alt(occ) = {1, 0, -1}
+      //
+      // even though they are otherwise both equally valid basis functions
+      for(Index j = 0; j < B.rows(); j++) {
+        if(std::abs(B(j, i)) > (max_abs - TOL)) {
+          max_abs = std::abs(B(j, i));
+          sign_change = float_sgn(B(j, i));
+        }
+      }
+      OccupantFunction tOF(allowed_occs, double(sign_change)*B.col(i), size(), basis_ind, allowed_occs.sym_rep_ID());
 
       push_back(tOF.copy());
     }
-    if(sym_rep_ind == Index(-2))
-      m_basis_symrep_ID = -2;
+
+    // ** step 4: Calculate BasisSet symmetry representation, based on allowed_occs.sym_rep_ID() && B matrix
+    // Q*B.T=B.T*S, where we know S (how to transform a column vector), and we want Q (how to transform row vector)
+    // so Q=B.T*S*inv(B.T)
+    if(allowed_occs.sym_rep_ID().is_identity())
+      m_basis_symrep_ID = SymGroupRepID::identity(N - 1);
+    else
+      m_basis_symrep_ID = symgroup.master_group().add_transformed_rep(allowed_occs.sym_rep_ID(), Eigen::MatrixXd(B.transpose()));
+
   }
 
-  //*******************************************************************************
+  //*******************************************************************************************
   // Construct orthonormal basis set of OccupantFunctions for degree of freedom 'allowed_occs'
   //    - 'occ_probs' is an array of probabilities; occ_prob[i] is the probability of allowed_occs
   //                  taking on value allowed_occs[i].
@@ -459,16 +684,22 @@ namespace CASM {
   // of the Chebychev polynomials when the probabilities are equal, and orthonormality of the occupation basis when
   // only one probability is non-zero.
 
-  void BasisSet::construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs, const Array<double> &occ_probs, Index basis_ind, Index sym_rep_ind) {
+  void BasisSet::construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
+                                                          const Array<double> &occ_probs,
+                                                          Index basis_ind,
+                                                          const SymGroup &symgroup) {
+
     Index N = allowed_occs.size();
     if(allowed_occs.size() != occ_probs.size()) {
       std::cerr << "CRITICAL ERROR: In BasiSet::construct_orthonormal_discrete_functions(), occ_probs and allowed_occs are incompatible!\nExiting...\n";
+      assert(0);
       exit(1);
     }
 
     if(!almost_equal(1.0, occ_probs.sum())) {
-      std::cerr << "CRITICAL ERROR: In BasiSet::construct_orthonormal_discrete_functions(), occ_probs must sum to 1 (they definite a probability distributation).\n"
+      std::cerr << "CRITICAL ERROR: In BasiSet::construct_orthonormal_discrete_functions(), occ_probs must sum to 1 (they specify a probability distributation).\n"
                 << "                occ_probs is: " << occ_probs << "\nExiting...\n";
+      assert(0);
       exit(1);
     }
 
@@ -495,45 +726,100 @@ namespace CASM {
         gram_mat(i, j) += occ_probs[i] * occ_probs[j];
       }
     }
-    construct_orthonormal_discrete_functions(allowed_occs, gram_mat, basis_ind, sym_rep_ind);
+    construct_orthonormal_discrete_functions(allowed_occs, gram_mat, basis_ind, symgroup);
   }
 
 
-  //******************************************************************************
-
+  //*******************************************************************************************
   void BasisSet::calc_invariant_functions(const SymGroup &head_group) {
     Function *tfunc, *trans_func;
     for(Index nf = 0; nf < size(); nf++) {
-      // std::cout << "trying function " << nf << " of " << size() << ":  ";
-      // at(nf)->print(std::cout);
-      // std::cout << "\n";
+      //std::cout << "trying function " << nf << " of " << size() << ":  ";
+      //at(nf)->print(std::cout);
+      //std::cout << "\n";
       tfunc = at(nf)->copy();
       at(nf)->scale(0.0);
       for(Index ng = 0; ng < head_group.size(); ng++) {
-        trans_func = tfunc->sym_copy(head_group[ng]);
+        trans_func = tfunc->sym_copy_coeffs(head_group[ng]);
         at(nf)->plus_in_place(trans_func);
         delete trans_func;
       }
-      // std::cout << "Result of Reynold's operator is ";
-      // at(nf)->print(std::cout);
-      // std::cout << "\n";
+      //std::cout << "Result of Reynold's operator is ";
+      //at(nf)->print(std::cout);
+      //std::cout << "\n";
       delete tfunc;
     }
     Gram_Schmidt();
     return;
   }
 
-  //******************************************************************************
+  //*******************************************************************************************
+  // Checks block_shape_matrix of BasisSet symmetry representation to see that there are
+  // as many blocks as there are irreducible representations
 
-  Function *BasisSet::linear_combination(const Eigen::VectorXd &coeffs) const {
-    if(!size()) return NULL;
+  bool BasisSet::is_normal_basis_for(const SymGroup &head_group) {
+    //First do some basic checks to ensure problem is well-defined
+    if(m_basis_symrep_ID.empty()) {
+      get_symmetry_representation(head_group);
+    }
+    if(m_basis_symrep_ID.empty()) {
+      std::cerr << "CRITICAL ERROR: Inside BasisSet::is_normal_basis_for() and cannot calculate a valid SymGroup representation. Exiting...\n";
+      exit(1);
+    }
+    if(!head_group.size())
+      return true;
+
+    SymGroupRep const &t_rep(head_group[0].master_group().representation(m_basis_symrep_ID));
+
+    //Check that block-diagonalization matches number of irreps
+    return t_rep.num_blocks(head_group) == (t_rep.num_each_real_irrep(head_group)).sum();
+
+  }
+
+  //*******************************************************************************************
+
+  BasisSet BasisSet::calc_normal_basis(const SymGroup &head_group, Eigen::MatrixXd &trans_mat) const {
+    if(m_basis_symrep_ID.empty()) {
+      get_symmetry_representation(head_group);
+    }
+    if(m_basis_symrep_ID.empty()) {
+      std::cerr << "CRITICAL ERROR: Inside BasisSet::calc_normal_basis() and cannot calculate a valid SymGroup representation. Exiting...\n";
+      exit(1);
+    }
+    if(!head_group.size()) {
+      std::cerr << "CRITICAL ERROR: Inside BasisSet::calc_normal_basis() and and passed empty SymGroup. Exiting...\n";
+    }
+
+
+    SymGroupRep const &t_rep(head_group[0].master_group().representation(m_basis_symrep_ID));
+    trans_mat = t_rep.get_irrep_trans_mat(head_group);
+    BasisSet normal_basis(transform_copy(trans_mat));
+    normal_basis.m_basis_symrep_ID = (t_rep.coord_transformed_copy(trans_mat)).add_copy_to_master();
+    return normal_basis;
+  }
+
+  //*******************************************************************************************
+
+  void BasisSet::push_back(Function *new_func) {
+    Array<Function *>::push_back(new_func);
+    m_eval_cache.push_back(0.0);
+    m_deval_cache.push_back(0.0);
+    if(m_argument.size() == 0 && new_func != nullptr) {
+      _set_arguments(new_func->argument_bases());
+    }
+  }
+
+  //*******************************************************************************************
+
+  Function *BasisSet::_linear_combination(const Eigen::VectorXd &coeffs) const {
+    if(!size()) return nullptr;
     if(size() != coeffs.size()) {
-      std::cerr << "FATAL ERROR: In BasisSet::linear_combination, the number of basis functions \n"
+      std::cerr << "FATAL ERROR: In BasisSet::_linear_combination, the number of basis functions \n"
                 << "does not match the size of the coefficient vector. Exiting...\n";
       exit(1);
     }
 
-    Function *combfunc(NULL), *tfunc(NULL);
+    Function *combfunc(nullptr), *tfunc(nullptr);
 
     for(EigenIndex i = 0; i < coeffs.size(); i++) {
       if(almost_zero(coeffs[i])) continue;
@@ -554,7 +840,7 @@ namespace CASM {
     return combfunc;
   }
 
-  //******************************************************************************
+  //*******************************************************************************************
 
   /// Essentially, perform a change of basis on BasisSet as defined by trans_mat.
   /// Returns a BasisSet whos elements are linear combinations of the original BasisSet.
@@ -569,7 +855,7 @@ namespace CASM {
       exit(1);
     }
     for(EigenIndex nc = 0; nc < trans_mat.rows(); nc++) {
-      copy_basis.push_back(linear_combination(trans_mat.row(nc)));
+      copy_basis.push_back(_linear_combination(trans_mat.row(nc)));
     }
 
     // We should also transform the SymGroupRep, but we only have the ID, not the MasterSymGroup
@@ -577,17 +863,36 @@ namespace CASM {
     return copy_basis;
   }
 
-  //******************************************************************************
-
-  BasisSet &BasisSet::apply_sym(const SymOp &op) {
-    for(Index i = 0; i < size(); i++) {
-      at(i)->apply_sym(op);
+  //*******************************************************************************************
+  //TODO: Transform functions with mixed dependency layers
+  BasisSet &BasisSet::apply_sym(const SymOp &op, int _dependency_layer /* = 1 */) {
+    int this_dep_layer = dependency_layer();
+    if(this_dep_layer == _dependency_layer) {
+      for(Index i = 0; i < size(); i++)
+        at(i)->apply_sym_coeffs(op);
     }
-
+    else {
+      for(Index i = 0; i < m_argument.size(); i++) {
+        m_argument[i]->apply_sym(op, _dependency_layer);
+      }
+    }
     return *this;
   }
 
-  //******************************************************************************
+  //*******************************************************************************************
+
+  void BasisSet::_set_arguments(const Array<BasisSet const *> &new_args) {
+    if(m_argument.size()) {
+      std::cerr << "CRITICAL ERROR: In BasisSet::_set_arguments(), cannot reset arguments of already-initialized BasisSet.\n"
+                << "                Exiting...\n";
+      exit(1);
+    }
+    m_argument.reserve(new_args.size());
+    for(Index i = 0; i < new_args.size(); i++)
+      m_argument.push_back(new_args[i]->shared_copy());
+  }
+
+  //*******************************************************************************************
   // Does modified Gram-Schmidt procedure, using tolerance checking for increased speed and stability
   // In worst case, this requires N*(N-1)/2 binary operations
 
@@ -601,7 +906,7 @@ namespace CASM {
     bool is_unchanged(true);
     Index i, j;
     double tcoeff;
-    Function *tfunc(NULL);
+    Function *tfunc(nullptr);
 
     // loop over functions
     for(i = 0; i < size(); i++) {
@@ -643,12 +948,12 @@ namespace CASM {
       }
 
     }
-    if(!is_unchanged) m_basis_symrep_ID = -1;
+    if(!is_unchanged) m_basis_symrep_ID = SymGroupRepID();
     return is_unchanged;
 
   }
 
-  //******************************************************************************
+  //*******************************************************************************************
 
   bool BasisSet::Gaussian_Elim() {
     bool is_unchanged(true);
@@ -704,17 +1009,17 @@ namespace CASM {
       at(i)->small_to_zero(2 * TOL);
     }
 
-    if(!is_unchanged) m_basis_symrep_ID = -1;
+    if(!is_unchanged) m_basis_symrep_ID = SymGroupRepID();
 
     return is_unchanged;
 
   }
-  //******************************************************************************
+  //*******************************************************************************************
   void BasisSet::get_symmetry_representation(const SymGroup &head_group) const {
     if(!head_group.size() || !head_group[0].has_valid_master()) return;
 
-    m_basis_symrep_ID = head_group.make_empty_representation();
-    Function *tfunct(NULL);
+    m_basis_symrep_ID = head_group.add_empty_representation();
+    Function *tfunct(nullptr);
     Eigen::MatrixXd tRep(size(), size());
 
     for(Index ng = 0; ng < head_group.size(); ng++) {
@@ -722,7 +1027,7 @@ namespace CASM {
       //store it in matrix tRep
       for(Index nb1 = 0; nb1 < size(); nb1++) {
 
-        tfunct = at(nb1)->sym_copy(head_group[ng]);
+        tfunct = at(nb1)->sym_copy_coeffs(head_group[ng]);
         for(Index nb2 = 0; nb2 < size(); nb2++) {
           tRep(nb2, nb1) = tfunct->dot(at(nb2));
         }
@@ -736,30 +1041,32 @@ namespace CASM {
 
   }
 
-  //******************************************************************************
+  //*******************************************************************************************
 
   bool BasisSet::make_orthogonal_to(const BasisSet &ortho_basis) {
     bool ortho_flag(true);
     for(Index i = 0; i < ortho_basis.size(); i++) {
       ortho_flag = make_orthogonal_to(ortho_basis[i]) && ortho_flag;
+
     }
     return ortho_flag;
   }
 
-  //******************************************************************************
+  //*******************************************************************************************
 
   bool BasisSet::make_orthogonal_to(Function const *ortho_func) {
-
-    Index i;
-    double tcoeff;
-    Function *tfunc(ortho_func->copy());
 
     bool ortho_flag(true);
     if(!size()) {
       return ortho_flag;
     }
 
+    double tcoeff;
+    Function *tfunc(ortho_func->copy());
+
+    //std::cout << "Ortho_func: " << tfunc->tex_formula() << "\n\n";
     tcoeff = tfunc->dot(tfunc);
+    //std::cout << "Squared magnitude is " << tcoeff << "\n";
 
     if(almost_zero(tcoeff)) {
       delete tfunc;
@@ -769,20 +1076,23 @@ namespace CASM {
     if(!almost_zero(tcoeff - 1.0)) {
       tfunc->scale(1.0 / sqrt(tcoeff));
     }
-    for(i = 0; i < size(); i++) {
+    for(Index i = 0; i < size(); i++) {
+      //std::cout << "Func " << i << ":  " << at(i)->tex_formula() << "\n\n";
       tcoeff = (at(i)->dot(tfunc));
-
+      //std::cout << "Projection: " << tcoeff << "\n\n";
       if(almost_zero(tcoeff)) {
         continue;
       }
       ortho_flag = false;
       //You're changing the BasisSet, so the representation is no longer useable!
-      m_basis_symrep_ID = -1;
+      m_basis_symrep_ID = SymGroupRepID();
 
       tfunc->scale(tcoeff);
       at(i)->minus_in_place(tfunc);
       tfunc->scale(1.0 / tcoeff);
       at(i)->normalize();
+
+      //std::cout << "Result is " << at(i)->tex_formula() << "\n\n";
     }
 
     delete tfunc;
@@ -792,9 +1102,9 @@ namespace CASM {
   }
 
 
-  //********************************************************
+  //*******************************************************************************************
   //** jsonParser stuff - BasisSet
-  //********************************************************
+  //*******************************************************************************************
 
   jsonParser &BasisSet::to_json(jsonParser &json) const {
 
@@ -810,12 +1120,12 @@ namespace CASM {
     json["m_basis_symrep_ID"] = m_basis_symrep_ID;
 
     // Array<BasisSet> subspaces;
-    json["subspaces"] = subspaces;
+    //json["subspaces"] = m_subspaces;
 
     return json;
   }
 
-  //********************************************************
+  //*******************************************************************************************
 
   /*
   void BasisSet::from_json(const jsonParser &json) {
@@ -825,18 +1135,25 @@ namespace CASM {
   }
   */
 
-  //********************************************************
+
+  //*******************************************************************************************
 
   jsonParser &to_json(const BasisSet &bset, jsonParser &json) {
     return bset.to_json(json);
   }
 
+  //*******************************************************************************************
   /*
   // No reading functions for now
   void from_json(BasisSet &bset, const jsonParser &json) {
     return bset.from_json(json);
   }
   */
+
+  //*******************************************************************************************
+  BasisSet operator*(const SymOp &LHS, const BasisSet &RHS) {
+    return BasisSet(RHS).apply_sym(LHS);
+  }
 
 }
 

@@ -27,12 +27,11 @@ namespace CASM {
 
     /// Group symmetry operations that map the lattice and basis of Structure onto themselves,
     /// assuming that the crystal is periodic
-    mutable MasterSymGroup factor_group_internal;
+    mutable MasterSymGroup m_factor_group;
     /// This holds the representation id of the permutation representation
-    mutable Index perm_rep_ID, basis_perm_rep_ID;
+    mutable SymGroupRepID basis_perm_rep_ID;
     ///Specifies whether selectice dynamics is on or of for DFT calculations
     bool SD_flag;
-
 
   public: //PUBLIC DATA MEMBERS (Public for now)
 
@@ -51,9 +50,9 @@ namespace CASM {
   public: //PUBLIC METHODS
 
     //  ****Constructors****
-    Structure() : BasicStructure<Site>(), perm_rep_ID(-1), basis_perm_rep_ID(-1) {}
-    explicit Structure(const Lattice &init_lat) : BasicStructure<Site>(init_lat), perm_rep_ID(-1), basis_perm_rep_ID(-1) {}
-    explicit Structure(const BasicStructure<Site> &base) : BasicStructure<Site>(base), perm_rep_ID(-1), basis_perm_rep_ID(-1) {}
+    Structure() : BasicStructure<Site>() {}
+    explicit Structure(const Lattice &init_lat) : BasicStructure<Site>(init_lat) {}
+    explicit Structure(const BasicStructure<Site> &base) : BasicStructure<Site>(base) {}
     explicit Structure(const fs::path &filepath);
 
     /// Have to explicitly define the copy constructor so that factor_group
@@ -66,19 +65,14 @@ namespace CASM {
     //const MasterSymGroup &factor_group();
     const SymGroup &point_group() const;
     //const SymGroup &point_group();
-    SymGroupRep const *permutation_symrep();
-    SymGroupRep const *permutation_symrep()const;
-    Index permutation_symrep_ID();
-    Index permutation_symrep_ID()const;
-    SymGroupRep const *basis_permutation_symrep();
     SymGroupRep const *basis_permutation_symrep()const;
-    Index basis_permutation_symrep_ID();
-    Index basis_permutation_symrep_ID()const;
+    SymGroupRepID basis_permutation_symrep_ID()const;
 
-    Array<Specie> get_struc_specie() const;
-    Array<Molecule> get_struc_molecule() const;
-    Array<int> get_num_each_specie() const;
-    Array<int> get_num_each_molecule() const;
+    std::vector<Specie> get_struc_specie() const;
+    std::vector<Molecule> get_struc_molecule() const;
+    std::vector<std::string> get_struc_molecule_name() const;
+    Eigen::VectorXi get_num_each_specie() const;
+    Eigen::VectorXi get_num_each_molecule() const;
 
     // ****Mutators****
 
@@ -116,11 +110,8 @@ namespace CASM {
     void fg_converge(double large_tol);
     void fg_converge(double small_tol, double large_tol, double increment);
 
-    /// Obtain the permutation representation of factor_group, returns its rep_id, and sets internal perm_rep_id
-    Index generate_permutation_representation(bool verbose = false) const;
-
     /// Obtain the basis permutation representation of factor_group, returns its rep_id, and sets internal basis_perm_rep_ID
-    Index generate_basis_permutation_representation(bool verbose = false) const;
+    SymGroupRepID generate_basis_permutation_representation(bool verbose = false) const;
 
     void symmetrize(const SymGroup &relaxed_factors);
     void symmetrize(const double &tolerace);
@@ -168,16 +159,12 @@ namespace CASM {
 
 
     //John G 051112
-    //Return copy of *this that's reoriented to match a and axb of refstruc
-    Structure reorient(const Matrix3<double> reorientmat, bool override = 0) const;
-    Structure align_with(const Structure &refstruc, bool override = 0) const;
-    Structure align_standard(bool override = 0) const;
     Structure stack_on(const Structure &understruc, bool override = 0) const;
     //\John G 051112
 
     //John G 121212
     /// Return reflection of structure
-    Structure get_reflection(bool override = 0) const;
+    Structure get_reflection() const;
     /// If atoms are too close together, average their distance and make them one
     void clump_atoms(double maxdist); //Only for same atom types
     /// Rearrange basis by grouping atoms by type
@@ -191,11 +178,8 @@ namespace CASM {
     Array<Array<Array<double> > > get_NN_table(const double &maxr);
     //\John G 050513
 
-    ///Populate basis set of every site in the structure
-    void fill_occupant_bases(const char &basis_type);	//John G 011013
-
     ///Add vacuum and shift c vector. The vacuum is always added parallel to c, and the shift vector should also be parallel to the ab plane (x,y,0)
-    void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Vector3<double> shift, COORD_TYPE mode) const;
+    void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const;
     void add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Coordinate shift) const;  //Because Anton thought a coordinate would be better
     ///Adds vacuum layer on top of ab plane
     void add_vacuum(Structure &new_surface_struc, double vacuum_thickness) const;
@@ -207,32 +191,11 @@ namespace CASM {
     /// for exact interpolation, choose "LOCAL" or "1", for nearest-image interpolation, choose "PERIODIC" or "0"
     void intpol(Structure end_struc, int Nofimag, PERIODICITY_TYPE mode, Array<Structure> &images);
 
-    //void linear_interpolate(Structure end_struc, int num_images, Array<Structure> &images);
-    /// Print intpolated images in seperate directries
-    void print_hop_images(Array<Structure> images, std::string location);
-
-
     // ****Input/Output****
-
-    //CASM canonical input/output
-    void read(std::istream &stream);  //John do this
-
-    // print Structure, listing all possible molecules on each site
-    void print(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John do this too, modified by BP
-
-    void print5(std::ostream &stream, COORD_TYPE mode = FRAC, int Va_mode = 0, char term = 0, int prec = 7, int pad = 5) const; // added by Michael
-
-    // print Structure, listing current occupying molecules on each site
-    void print_occ(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John do this too, modified by BP
-    void print5_occ(std::ostream &stream, COORD_TYPE mode = FRAC) const; //John G 050513, modified by BP
-
-    /// Output other formats
-    void print_xyz(std::ostream &stream) const;
-    void print_cif(std::ostream &stream);
 
     /// For each symmetrically distinct site, print the symmetry operations that map it onto itself
     void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag);
-    void print_factor_group(std::ostream &stream) const;
+    //void print_factor_group(std::ostream &stream) const;
 
     bool read_species(); //Ivy 11/27/12
     void assign_species(Array<std::string> &names, Array<double> &masses, Array<double> &magmoms, Array<double> &Us, Array<double> &Js); //Added by Ivy
@@ -262,11 +225,11 @@ namespace CASM {
 
   /// Returns 'converter' which converts site_occupant indices to 'mol_list' indices:
   ///   mol_list_index = converter[basis_site][site_occupant_index]
-  Array< Array<int> > get_index_converter(const Structure &struc, Array<Molecule> mol_list);
+  std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<Molecule> mol_list);
 
   /// Returns 'converter' which converts site_occupant indices to 'mol_name_list' indices:
   ///   mol_name_list_index = converter[basis_site][site_occupant_index]
-  Array< Array<int> > get_index_converter(const Structure &struc, Array<std::string> mol_name_list);
+  std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<std::string> mol_name_list);
 
 };
 

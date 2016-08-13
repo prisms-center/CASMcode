@@ -33,7 +33,7 @@ namespace CASM {
     }
   public:
 
-    ConfigEnumIterator() : m_enum_ptr(NULL), m_step(-1) {}
+    ConfigEnumIterator() : m_enum_ptr(nullptr), m_step(-1) {}
 
     ConfigEnumIterator(enumerator_type &_enumerator, difference_type _step) :
       m_enum_ptr(&_enumerator), m_step(_step) { }

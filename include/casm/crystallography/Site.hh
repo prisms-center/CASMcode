@@ -3,7 +3,6 @@
 
 #include <iostream>
 
-#include "casm/basis_set/BasisSet.hh"
 #include "casm/crystallography/Molecule.hh"
 
 namespace CASM {
@@ -15,6 +14,9 @@ namespace CASM {
     explicit Site(const Lattice &init_home);
     Site(const Coordinate &init_pos, const std::string &occ_name);
 
+    /// \brief Construct site with initial position and the allowed Molecule
+    Site(const Coordinate &init_pos, std::initializer_list<Molecule> site_occ);
+
     const MoleculeOccupant &site_occupant() const {
       return m_site_occupant;
     }
@@ -23,14 +25,6 @@ namespace CASM {
       return m_displacement;
     }
 
-    const BasisSet &occupant_basis() const {
-      return m_occupant_basis;
-    }
-
-    ///Make basis functions of a type specified by std::string and store in occupant_basis
-    void fill_occupant_basis(const char &basis_type);
-
-    ///Copy another basis set into m_occupant_basis
     void update_data_members(const Site &_ref_site);
 
     /// Checks if current occupant is a vacancy
@@ -47,8 +41,6 @@ namespace CASM {
     /// If you only need to know occupant name or whether site is vacant, use Site::is_vacant() or Site::occ_name() instead
     const Molecule &occ() const;
 
-    Lattice const *home_ptr() const;
-
     bool compare(const Coordinate &test_coord, double compare_tol = TOL) const;
     bool compare(const Site &test_site, double compare_tol = TOL) const; //Ivy
     bool compare(const Site &test_site, const Coordinate &shift, double compare_tol = TOL) const;
@@ -59,9 +51,6 @@ namespace CASM {
     bool contains(const std::string &name) const;
     bool contains(const std::string &name, int &index) const;
 
-    void invalidate(COORD_TYPE mode);
-
-    void set_lattice(const Lattice &new_lat);
     void set_lattice(const Lattice &new_lat, COORD_TYPE mode);//John G
 
     void set_site_occupant(const MoleculeOccupant &new_dof) {
@@ -88,13 +77,10 @@ namespace CASM {
 
     Site &apply_sym(const SymOp &op);
     Site &apply_sym_no_trans(const SymOp &op);
-    void set_SD_flag(bool sdx, bool sdy, bool sdz);
-    void set_SD_flag(const Vector3<bool> &SDvec);
-
 
     void read(std::istream &stream, bool SD_is_on = false);
     void read(std::istream &stream, std::string &elem, bool SD_is_on);
-    //void print5(std::ostream &stream, bool SD_is_on = false)const;  //John G 050513
+
     void print(std::ostream &stream) const;
     void print_occ(std::ostream &stream) const;
     void print_mol(std::ostream &stream, int spaces, char delim, bool SD_is_on = false)const;
@@ -115,7 +101,6 @@ namespace CASM {
     //Index into PrimClex neighbor list
     Index m_nlist_ind;     //John G 230913
     mutable Index m_type_ID;
-    BasisSet m_occupant_basis;
 
     // displacement degrees of freedom of the molecule.
     // These may be x,y,z, or a subspace (e.g., displacement only in the x--y plane).
@@ -127,9 +112,6 @@ namespace CASM {
     MoleculeOccupant m_site_occupant;
 
     //============
-
-    //Selective dynamics
-    Vector3<bool> SD_flag;
 
     bool _compare_type_no_ID(const Site &test_site) const;
     Index _type_ID() const;

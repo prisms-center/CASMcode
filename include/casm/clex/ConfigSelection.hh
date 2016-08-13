@@ -3,6 +3,7 @@
 
 #include <limits>
 #include "casm/clex/Configuration.hh"
+#include "casm/casm_io/DataFormatter.hh"
 
 namespace CASM {
 
@@ -90,17 +91,31 @@ namespace CASM {
     ConfigSelection() {};
 
     /// \brief Construct a configuration selection from all configurations
-    explicit ConfigSelection(PrimClexType &_primclex);
+    //explicit ConfigSelection(PrimClexType &_primclex);
 
     /// \brief Reads a configuration selection from file at 'selection_path'
+    /// - If selection_path=="MASTER", load master config_list as selection
+    /// - If selection_path=="ALL", load all from config_list as selection
+    /// - If selection_path=="NONE", load all from config_list as not selected
+    /// - If selection_path=="CALCULATED", load configurations for which 'is_calculated' returns true
+    /// - Else, assume path to file:
+    ///   - Checks extension to determine file type:
+    ///     - Ending in '.json' or '.JSON' for JSON formatted file
+    ///     - Otherwise, CSV formatted file
+    ///   - If column headers are detected, they are also stored, and can be accessed using 'ConfigSelection::col_headers()'
+    ///     - Currently, the first two columns are always 'name' and 'selected' so these headers are assumed and not stored
     ///
-    /// - Checks extension to determine file type:
-    ///   - Ending in '.json' or '.JSON' for JSON formatted file
-    ///   - Otherwise, CSV formatted file
-    /// - If column headers are detected, they are also stored, and can be accessed using 'ConfigSelection::col_headers()'
-    ///   - Currently, the first two columns are always 'name' and 'selected' so these headers are assumed and not stored
-    ///
-    ConfigSelection(PrimClexType &_primclex, const fs::path &selection_path);
+    ConfigSelection(PrimClexType &_primclex, const fs::path &selection_path = "MASTER");
+
+    //ConfigSelection(const ConfigSelection &) =default;
+
+    ConfigSelection(const ConfigSelection<false> &RHS) :
+      m_primclex(RHS.m_primclex), m_name(RHS.m_name), m_config(RHS.m_config), m_col_headers(RHS.m_col_headers) {
+      //swap(m_col_headers,RHS.m_col_headers);
+      //swap(m_config,RHS.m_config);
+    }
+
+    ConfigSelection &operator=(const ConfigSelection &) = default;
 
     Index size() const {
       return m_config.size();
@@ -114,28 +129,46 @@ namespace CASM {
       return const_iterator(m_config.find(configname), m_config.begin(), m_config.end(), m_primclex);
     }
 
-    value_type &operator[](const std::string &configname) const;
-
     void read(std::istream &_input);
 
     const jsonParser &from_json(const jsonParser &_json);
 
-    jsonParser &to_json(jsonParser &_json, bool only_selected = false) const;
+    jsonParser &to_json(const DataFormatterDictionary<Configuration> &_dict,
+                        jsonParser &_json,
+                        bool only_selected = false) const;
 
+    /// \brief check if configuration is selected (returns false if 'configname' cannot be found
     bool selected(const std::string &configname) const {
-      return m_config.find(configname)->second;
+      auto find_it = m_config.find(configname);
+      return find_it != m_config.end() && find_it->second;
+    }
+
+    bool selected(const Configuration &config) const {
+      return selected(config.name());
     }
 
     void set_selected(const std::string &configname, bool is_selected) {
       m_config[configname] = is_selected;
     }
 
+    void set_selected(const Configuration &config, bool is_selected) {
+      set_selected(config.name(), is_selected);
+    }
+
     iterator config_begin() {
       return iterator(m_config.begin(), m_config.begin(), m_config.end(), m_primclex);
     }
 
+    const_iterator config_begin() const {
+      return const_iterator(m_config.cbegin(), m_config.cbegin(), m_config.cend(), m_primclex);
+    }
+
     iterator config_end() {
       return iterator(m_config.end(), m_config.begin(), m_config.end(), m_primclex);
+    }
+
+    const_iterator config_end() const {
+      return const_iterator(m_config.cend(), m_config.cbegin(), m_config.cend(), m_primclex);
     }
 
     const_iterator config_cbegin() const {
@@ -150,8 +183,16 @@ namespace CASM {
       return iterator(m_config.begin(), m_config.begin(), m_config.end(), m_primclex, true);
     }
 
+    const_iterator selected_config_begin() const {
+      return const_iterator(m_config.cbegin(), m_config.cbegin(), m_config.cend(), m_primclex, true);
+    }
+
     iterator selected_config_end() {
       return iterator(m_config.end(), m_config.begin(), m_config.end(), m_primclex, true);
+    }
+
+    const_iterator selected_config_end() const {
+      return const_iterator(m_config.cend(), m_config.cbegin(), m_config.cend(), m_primclex, true);
     }
 
     const_iterator selected_config_cbegin() const {
@@ -180,11 +221,19 @@ namespace CASM {
       return m_col_headers;
     }
 
-    void print(std::ostream &_out, bool only_selected = false) const;
+    const std::string &name() const {
+      return m_name;
+    }
+
+    void print(const DataFormatterDictionary<Configuration> &_dict,
+               std::ostream &_out,
+               bool only_selected = false) const;
 
   private:
-    PrimClexType *m_primclex;
+    friend class ConfigSelection < !IsConst >;
 
+    PrimClexType *m_primclex;
+    std::string m_name;
     std::map<std::string, bool> m_config;
     std::vector<std::string> m_col_headers;
 

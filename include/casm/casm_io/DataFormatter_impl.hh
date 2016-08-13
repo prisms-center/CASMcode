@@ -1,7 +1,12 @@
 #include "casm/casm_io/DataStream.hh"
 #include "casm/container/Counter.hh"
+#include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/casm_io/EigenDataStream.hh"
+
 namespace CASM {
 
+
+  //****************************************************************************************
   template<typename DataObject>
   void BaseDatumFormatter<DataObject>::_parse_index_expression(const std::string &_expr) {
     //std::cout << "Parsing index expression: " << _expr << "\n";
@@ -83,6 +88,60 @@ namespace CASM {
 
   //******************************************************************************
 
+  /// Useful when formatted output can be represented as single value
+  template<typename DataObject>
+  template<typename ValueType>
+  ValueType DataFormatter<DataObject>::evaluate_as_scalar(const DataObject &_obj) const {
+    ValueDataStream<ValueType> value_stream;
+    value_stream << FormattedObject(this, _obj);
+    return value_stream.value();
+  }
+
+  //******************************************************************************
+
+  /// Useful when formatted output can be represented as std::vector
+  template<typename DataObject>
+  template<typename ValueType>
+  std::vector<ValueType> DataFormatter<DataObject>::evaluate_as_vector(const DataObject &_obj) const {
+    VectorDataStream<ValueType> value_stream;
+    value_stream << FormattedObject(this, _obj);
+    return value_stream.value();
+  }
+
+  //******************************************************************************
+
+  /// Useful when formatted output can be represented as Eigen::MatrixXd
+  template<typename DataObject>
+  Eigen::MatrixXd DataFormatter<DataObject>::evaluate_as_matrix(const DataObject &_obj) const {
+    MatrixXdDataStream value_stream;
+    value_stream << FormattedObject(this, _obj);
+    return value_stream.matrix();
+  }
+
+  //******************************************************************************
+
+  /// Useful when formatted output can be represented as std::vector
+  template<typename DataObject>
+  template<typename ValueType, typename IteratorType>
+  std::vector<ValueType> DataFormatter<DataObject>::evaluate_as_vector(IteratorType begin, IteratorType end) const {
+    VectorDataStream<ValueType> value_stream;
+    value_stream << FormattedObject(this, begin, end);
+    return value_stream.value();
+  }
+
+  //******************************************************************************
+
+  /// Useful when formatted output can be represented as an Eigen::MatrixXd
+  template<typename DataObject>
+  template<typename IteratorType>
+  Eigen::MatrixXd DataFormatter<DataObject>::evaluate_as_matrix(IteratorType begin, IteratorType end) const {
+    MatrixXdDataStream value_stream;
+    value_stream << FormattedIteratorPair<IteratorType>(this, begin, end);
+    return value_stream.matrix();
+  }
+
+  //******************************************************************************
+
   template<typename DataObject>
   void DataFormatter<DataObject>::print(const DataObject &_obj, std::ostream &_stream) const {
     if(!m_initialized)
@@ -141,6 +200,32 @@ namespace CASM {
   //******************************************************************************
 
   template<typename DataObject>
+  jsonParser &DataFormatter<DataObject>::to_json_arrays(const DataObject &_obj, jsonParser &json) const {
+    if(!m_initialized) {
+      _initialize(_obj);
+    }
+
+    jsonParser::iterator it;
+    jsonParser::iterator end = json.end();
+
+    for(Index i = 0; i < m_data_formatters.size(); i++) {
+      jsonParser tmp;
+      m_data_formatters[i]->to_json(_obj, tmp);
+      it = json.find(m_data_formatters[i]->short_header(_obj));
+      if(it == end) {
+        json[m_data_formatters[i]->short_header(_obj)].put_array().push_back(tmp);
+      }
+      else {
+        it->push_back(tmp);
+      }
+    }
+
+    return json;
+  }
+
+  //******************************************************************************
+
+  template<typename DataObject>
   void DataFormatter<DataObject>::print_header(const DataObject &_template_obj, std::ostream &_stream) const {
     _stream << m_comment;
     if(!m_initialized)
@@ -166,8 +251,9 @@ namespace CASM {
   }
 
   //******************************************************************************
+
   template<typename DataObject>
-  void DataFormatter<DataObject>::_initialize(const DataObject &_template_obj)const {
+  void DataFormatter<DataObject>::_initialize(const DataObject &_template_obj) const {
     for(Index i = 0; i < m_data_formatters.size(); i++)
       m_data_formatters[i]->init(_template_obj);
     m_initialized = true;
@@ -176,18 +262,64 @@ namespace CASM {
 
   //******************************************************************************
 
-  template<typename DataObject>
-  void DataFormatterDictionary<DataObject>::print_help(std::ostream &_stream, int width, int separation) const {
-    typename container::const_iterator it_begin(m_formatter_map.cbegin()), it_end(m_formatter_map.cend());
-    std::string::size_type len(0);
-    for(typename container::const_iterator it = it_begin; it != it_end; ++it) {
-      len = max(len, it->first.size());
+
+  /// \brief Equivalent to find, but set 'home' and throws error with
+  /// suggestion if @param _name not found
+  template<typename DataObject, typename DatumFormatterType>
+  typename DataFormatterDictionary<DataObject, DatumFormatterType>::const_iterator
+  DataFormatterDictionary<DataObject, DatumFormatterType>::lookup(
+    const key_type &_name) const {
+
+    typedef DataFormatterDictionary<DataObject, DatumFormatterType> dict_type;
+
+    auto res = this->find(_name);
+    if(res != this->end()) {
+      res->set_home(*this);
+      return res;
     }
-    for(typename container::const_iterator it = it_begin; it != it_end; ++it) {
-      _stream << std::string(5, ' ') << it->first << std::string(len - it->first.size() + separation, ' ');
+    else {
+
+      // If no match, try to use demerescau-levenshtein distance to make a helpful suggestion
+      int min_dist(-1);
+      auto it = this->begin();
+      for(; it != this->end(); ++it) {
+        int dist = dl_string_dist(_name, it->name());
+        if(min_dist < 0 || dist < min_dist) {
+          min_dist = dist;
+          //std::cout << "New best: \"" << it->first << "\" aka \"" << it->second->name() << "\"\n";
+          res = it;
+        }
+      }
+
+      throw std::runtime_error("CRITICAL ERROR: Invalid format flag \"" + _name + "\" specified.\n"
+                               + "                Did you mean \"" + res->name() + "\"?\n");
+
+    }
+
+  }
+
+  /// \brief Generates formatted help using the 'name' and 'description' of all
+  ///        contained BaseDatumFormatter
+  ///
+  template<typename DataObject, typename DatumFormatterType>
+  void DataFormatterDictionary<DataObject, DatumFormatterType>::print_help(
+    std::ostream &_stream,
+    typename BaseDatumFormatter<DataObject>::FormatterType ftype,
+    int width, int separation) const {
+
+    const_iterator it_begin(this->cbegin()), it_end(this->cend());
+    std::string::size_type len(0);
+    for(auto it = it_begin; it != it_end; ++it) {
+      if(ftype == it->type())
+        len = max(len, it->name().size());
+    }
+    for(auto it = it_begin; it != it_end; ++it) {
+      if(ftype != it->type())
+        continue;
+      _stream << std::string(5, ' ') << it->name() << std::string(len - it->name().size() + separation, ' ');
       std::string::size_type wcount(0);
-      std::string::const_iterator str_end(it->second->description().cend());
-      for(std::string::const_iterator str_it = it->second->description().cbegin(); str_it != str_end; ++str_it) {
+      std::string::const_iterator str_end(it->description().cend());
+      for(std::string::const_iterator str_it = it->description().cbegin(); str_it != str_end; ++str_it) {
         if(wcount >= width && isspace(*str_it)) {
           _stream << std::endl << std::string(5 + len + separation, ' ');
           wcount = 0;
@@ -201,113 +333,64 @@ namespace CASM {
     }
   }
 
-  //****************************************************************************************
 
-  /*
-   * break 'input' string into a list of format tags and their (option) arguments
-   */
-  template<typename DataObject>
-  void DataFormatterDictionary<DataObject>::_parse(const std::string &input,
-                                                   std::vector<std::string> &formatter_names,
-                                                   std::vector<std::string> &formatter_args) {
-    std::string::const_iterator it(input.cbegin()), it_end(input.cend()), t_it1, t_it2;
-    while(it != it_end) {
-      while(it != it_end && isspace(*it))
-        ++it;
-      if(it == it_end)
-        break;
-      // Identified a formatter tag, save starting iterator
-      t_it1 = it;
-      // find end of formatter tag
-      while(it != it_end && !isspace(*it) && (*it) != '(')
-        ++it;
+  /// \brief Use the vector of strings to build a DataFormatter<DataObject>
+  ///
+  /// Expects vector of "formattername(argument1,argument2,...)"
+  ///
+  /// Uses DataFormatterDictionary<DataObject>::lookup to suggest alternatives if
+  /// exact request not found.
+  ///
+  template<typename DataObject, typename DatumFormatterType>
+  DataFormatter<DataObject> DataFormatterDictionary<DataObject, DatumFormatterType>::parse(
+    const std::vector<std::string> &input) const {
 
-      // push_back formatter tag, and push_back an empty string for its optional arguments
-      formatter_names.push_back(std::string(t_it1, it));
-      formatter_args.push_back(std::string());
-
-
-      // no argument, we've reached beginning of new tag
-      if(it == it_end || (*it) != '(')
-        continue;
-
-      // from here on, we're parsing arguments:
-      while(it != it_end && isspace(*(++it)));//skipspace
-
-      // start of argument
-      t_it1 = it;
-
-      while(it != it_end && (*it) != ')') {
-        if((*it) == '(') {
-          std::cerr << "CRITICAL ERROR: Invalid parentheses in formatting string:\n"
-                    << "                " << input << "\n"
-                    << "                Exiting...\n";
-          exit(1);
-        }
-        ++it;
-      }
-      if(it == it_end) {
-        std::cerr << "CRITICAL ERROR: Mismatched parentheses in formatting string:\n"
-                  << "                " << input << "\n"
-                  << "                Exiting...\n";
-        exit(1);
-      }
-      t_it2 = it;
-      while(isspace(*(--t_it2)));//remove trailing space
-      t_it2++;
-
-      formatter_args.back() = std::string(t_it1, t_it2);
-
-      ++it;
-    }
-
-  }
-
-  //****************************************************************************************
-  /*
-   * Use the vector of strings to build a DataFormatter<DataObject>
-   */
-  template<typename DataObject>
-  DataFormatter<DataObject> DataFormatterDictionary<DataObject>::parse(const std::vector<std::string> &input) const {
     DataFormatter<DataObject> formatter;
     std::vector<std::string> format_tags, format_args;
-    for(Index i = 0; i < input.size(); i++)
-      _parse(input[i], format_tags, format_args);
-
-    const BaseDatumFormatter<DataObject> *proto_format_ptr;
+    for(Index i = 0; i < input.size(); i++) {
+      split_formatter_expression(input[i], format_tags, format_args);
+    }
     for(Index i = 0; i < format_tags.size(); i++) {
-      if(!contains(format_tags[i], proto_format_ptr)) {
-        std::cerr << "CRITICAL ERROR: Invalid format flag \"" << format_tags[i] << "\" specified for DataObject printing.\n"
-                  << "                Did you mean \"" << proto_format_ptr->name() << "\"?\n"
-                  << "                Exiting...\n";
-        exit(1);
-      }
-      formatter.push_back(*proto_format_ptr, format_args[i]);
+      formatter.push_back(*lookup(format_tags[i]), format_args[i]);
+    }
+    return formatter;
+  }
+
+  /// \brief Use a single string to build a DataFormatter<DataObject>
+  ///
+  /// Expects string of "formattername(argument1,argument2,...) formattername(argument1,argument2,...) ..."
+  ///
+  /// Uses DataFormatterDictionary<DataObject>::lookup to suggest alternatives if
+  /// exact request not found.
+  ///
+  template<typename DataObject, typename DatumFormatterType>
+  DataFormatter<DataObject> DataFormatterDictionary<DataObject, DatumFormatterType>::parse(
+    const std::string &input) const {
+
+    DataFormatter<DataObject> formatter;
+    std::vector<std::string> format_tags, format_args;
+    split_formatter_expression(input, format_tags, format_args);
+
+    for(Index i = 0; i < format_tags.size(); i++) {
+      formatter.push_back(*lookup(format_tags[i]), format_args[i]);
     }
     return formatter;
   }
 
   //****************************************************************************************
   /*
-   * Use a single string to build a DataFormatter<DataObject>
-   */
-  template<typename DataObject>
-  DataFormatter<DataObject> DataFormatterDictionary<DataObject>::parse(const std::string &input) const {
-    DataFormatter<DataObject> formatter;
-    std::vector<std::string> format_tags, format_args;
-    _parse(input, format_tags, format_args);
-
-    const BaseDatumFormatter<DataObject> *proto_format_ptr;
-    for(Index i = 0; i < format_tags.size(); i++) {
-      if(!contains(format_tags[i], proto_format_ptr)) {
-        std::cerr << "CRITICAL ERROR: Invalid format flag \"" << format_tags[i] << "\" specified for DataObject printing.\n"
-                  << "                Did you mean \"" << proto_format_ptr->name() << "\"?\n"
-                  << "                Exiting...\n";
-        exit(1);
+    template<typename DataObject>
+    void DataFormatterParser<DataObject>::load_aliases(const fs::path &alias_path) {
+      if(!fs::exists(alias_path)) {
+        return;
       }
-      formatter.push_back(*proto_format_ptr, format_args[i]);
+      jsonParser mjson(alias_path);
+
+      auto it(mjson.cbegin()), it_end(mjson.cend());
+      for(; it != it_end; ++it) {
+        add_custom_formatter(datum_formatter_alias<DataObject>(it.name(), it->get<std::string>()));
+      }
     }
-    return formatter;
-  }
+    */
 
 }

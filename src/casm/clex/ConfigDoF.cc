@@ -3,34 +3,40 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/clex/Correlation.hh"
 #include "casm/clex/Clexulator.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/clex/NeighborList.hh"
 
 
 namespace CASM {
 
-  ConfigDoF::ConfigDoF(Index _N) :
+  ConfigDoF::ConfigDoF(Index _N, double _tol) :
     m_N(_N),
+    m_occupation(m_N),
     m_deformation(Eigen::Matrix3d::Identity()),
-    m_is_strained(false) {
+    m_is_strained(false),
+    m_tol(_tol) {
   }
 
   //*******************************************************************************
 
-  ConfigDoF::ConfigDoF(const Array<int> &_occ):
+  ConfigDoF::ConfigDoF(const Array<int> &_occ, double _tol):
     m_N(_occ.size()),
     m_occupation(_occ),
     m_deformation(Eigen::Matrix3d::Identity()),
-    m_is_strained(false) {
+    m_is_strained(false),
+    m_tol(_tol) {
   }
 
   //*******************************************************************************
 
-  ConfigDoF::ConfigDoF(const Array<int> &_occ, const Eigen::MatrixXd &_disp, const Eigen::Matrix3d &_deformation):
+  ConfigDoF::ConfigDoF(const Array<int> &_occ, const Eigen::MatrixXd &_disp, const Eigen::Matrix3d &_deformation, double _tol):
     m_N(_occ.size()),
     m_occupation(_occ),
     m_displacement(_disp),
     m_deformation(_deformation),
-    m_is_strained(false) {
+    m_is_strained(false),
+    m_tol(_tol) {
     if(size() != occupation().size() || size() != displacement().cols()) {
       std::cerr << "CRITICAL ERROR: Attempting to initialize ConfigDoF with data structures of incompatible size: \n"
                 << "                occupation().size() = " << occupation().size() << " and displacement().size() = " << displacement().size() << "\n"
@@ -46,25 +52,35 @@ namespace CASM {
     if(occupation() != RHS.occupation())
       return false;
 
-    // floating-point comparison tolerance is m_tol
+    double _tol = max(tol(), RHS.tol());
+    // floating-point comparison tolerance is _tol
 
     if(!has_displacement()) {
-      if(RHS.has_displacement() && !almost_zero(RHS.displacement(), m_tol))
+      if(RHS.has_displacement() && !almost_zero(RHS.displacement(), _tol)) {
+        //std::cout << "FALSE 1: " << _tol << "\n" << RHS.displacement() << "\n";
         return false;
+      }
     }
     //    has_displacement()==true;
     else if(!RHS.has_displacement()) {
-      if(!almost_zero(displacement(), m_tol))
+      if(!almost_zero(displacement(), _tol)) {
+        //std::cout << "FALSE 2: " << _tol << "\n" << displacement() << "\n";
         return false;
+      }
     }
     //    has_displacement()==true && RHS.has_displacement==true;
-    else if(!almost_equal(displacement(), RHS.displacement(), m_tol))
+    else if(!almost_equal(displacement(), RHS.displacement(), _tol)) {
+      //std::cout << "FALSE 3: " << _tol << "\n" << RHS.displacement() << "\n\n" << displacement() << "\n";;
       return false;
+    }
 
     if(is_strained() || RHS.is_strained()) {
       //Deformation defaults to identity--should work in all cases
-      if(!Eigen::almost_equal(deformation(), RHS.deformation(), m_tol))
+      if(!Eigen::almost_equal(deformation(), RHS.deformation(), _tol)) {
+        //std::cout << "FALSE 4: " << _tol << "\n" << RHS.deformation() << "\n\n" << deformation() << "\n";;
         return false;
+
+      }
     }
 
     return true;
@@ -101,6 +117,7 @@ namespace CASM {
       std::cerr << "CRITICAL ERROR: In ConfigDoF::set_occupation(), attempting to set occupation to size " << new_occupation.size() << ",\n"
                 << "                which does not match initialized size of ConfigDoF -> " << size() << "\n"
                 << "                Exiting...\n";
+      assert(0);
       exit(1);
     }
 
@@ -118,6 +135,7 @@ namespace CASM {
       std::cerr << "CRITICAL ERROR: In ConfigDoF::set_displacement(), attempting to set displacement to size " << new_displacement.cols() << ",\n"
                 << "                which does not match initialized size of ConfigDoF -> " << size() << "\n"
                 << "                Exiting...\n";
+      assert(0);
       exit(1);
     }
 
@@ -133,7 +151,7 @@ namespace CASM {
 
   //*******************************************************************************
 
-  bool ConfigDoF::is_primitive(PermuteIterator it_begin, double tol) const {
+  bool ConfigDoF::is_primitive(PermuteIterator it_begin, double _tol) const {
 
     Index i, j;
     Index permute_ind;
@@ -168,7 +186,7 @@ namespace CASM {
         for(i = 0; i < size(); i++) {
           for(j = 0; j < 3; j++) {
             permute_ind = it_begin.permute_ind(i);
-            if(almost_equal(disp(permute_ind)[j], disp(i)[j], tol)) {
+            if(almost_equal(disp(permute_ind)[j], disp(i)[j], _tol)) {
               proceed_to_next = true;
               break;
             }
@@ -189,8 +207,8 @@ namespace CASM {
 
   //*******************************************************************************
 
-  ReturnArray<PermuteIterator> ConfigDoF::factor_group(PermuteIterator it_begin, PermuteIterator it_end, double tol) const {
-    Array<PermuteIterator> factorgroup;
+  std::vector<PermuteIterator> ConfigDoF::factor_group(PermuteIterator it_begin, PermuteIterator it_end, double _tol) const {
+    std::vector<PermuteIterator> factorgroup;
 
     Index i, j;
     Index permute_ind;
@@ -201,7 +219,7 @@ namespace CASM {
     displacement_matrix_t new_disp;
 
     while(it_begin != it_end) {
-      fg_cart_op = it_begin.sym_op().get_matrix(CART);
+      fg_cart_op = it_begin.sym_op().matrix();
       it_next_fg = it_begin.begin_next_fg_op();
 
       bool proceed_to_next = false;
@@ -211,7 +229,7 @@ namespace CASM {
         new_F = fg_cart_op * deformation() * fg_cart_op.transpose();
         for(i = 0; i < 3; i++) {
           for(j = 0; j < 3; j++) {
-            if(!almost_equal(new_F(i, j), deformation()(i, j), tol)) {
+            if(!almost_equal(new_F(i, j), deformation()(i, j), _tol)) {
               proceed_to_next = true;
               break;
             }
@@ -257,7 +275,7 @@ namespace CASM {
           for(i = 0; i < size(); i++) {
             for(j = 0; j < 3; j++) {
               permute_ind = it_begin.permute_ind(i);
-              if(!almost_equal(new_disp(j, permute_ind), disp(i)[j], tol)) {
+              if(!almost_equal(new_disp(j, permute_ind), disp(i)[j], _tol)) {
                 proceed_to_next = true;
                 break;
               }
@@ -308,18 +326,18 @@ namespace CASM {
    */
   //*******************************************************************************
   /// Check if Configuration is canonical w.r.t. supercell factor group specified by it_begin && it_end
-  /// tolerance 'tol' is used for fuzzy comparisons
+  /// tolerance '_tol' is used for fuzzy comparisons
 
   bool ConfigDoF::is_canonical(PermuteIterator it_begin, PermuteIterator it_end, double tol) const {
-    return _is_canonical(it_begin, it_end, NULL, tol);
+    return _is_canonical(it_begin, it_end, nullptr, tol);
   }
 
   //*******************************************************************************
   /// Check if Configuration is canonical w.r.t. supercell factor group specified by it_begin && it_end
-  /// tolerance 'tol' is used for fuzzy comparisons
+  /// tolerance '_tol' is used for fuzzy comparisons
   /// populates factorgroup at the same time (only when is_canonical evaluates to 'true'), since algorithms are so similar
 
-  bool ConfigDoF::is_canonical(PermuteIterator it_begin, PermuteIterator it_end, Array<PermuteIterator> &factorgroup, double tol) const {
+  bool ConfigDoF::is_canonical(PermuteIterator it_begin, PermuteIterator it_end, std::vector<PermuteIterator> &factorgroup, double tol) const {
     return _is_canonical(it_begin, it_end, &factorgroup, tol);
   }
 
@@ -330,9 +348,9 @@ namespace CASM {
    */
   //*******************************************************************************
 
-  ConfigDoF ConfigDoF::canonical_form(PermuteIterator it_begin, PermuteIterator it_end, double tol) const {
+  ConfigDoF ConfigDoF::canonical_form(PermuteIterator it_begin, PermuteIterator it_end, double _tol) const {
     PermuteIterator it_canon;
-    return _canonical_form(it_begin, it_end, it_canon, NULL, tol);
+    return _canonical_form(it_begin, it_end, it_canon, nullptr, _tol);
   }
 
   //*******************************************************************************
@@ -345,7 +363,7 @@ namespace CASM {
 
   ConfigDoF ConfigDoF::canonical_form(PermuteIterator it_begin, PermuteIterator it_end,
                                       PermuteIterator &it_canon, double tol) const {
-    return _canonical_form(it_begin, it_end, it_canon, NULL, tol);
+    return _canonical_form(it_begin, it_end, it_canon, nullptr, tol);
   }
 
   //*******************************************************************************
@@ -359,14 +377,14 @@ namespace CASM {
   //*******************************************************************************
 
   ConfigDoF ConfigDoF::canonical_form(PermuteIterator it_begin, PermuteIterator it_end,
-                                      PermuteIterator &it_canon, Array<PermuteIterator> &factorgroup, double tol) const {
+                                      PermuteIterator &it_canon, std::vector<PermuteIterator> &factorgroup, double tol) const {
     return _canonical_form(it_begin, it_end, it_canon, &factorgroup, tol);
   }
 
   //*******************************************************************************
   /// This version calculates the factor group of the configuration, but only if it is canonical (i.e., returns true), since loop terminates
   /// early otherwise.  This private method uses the pointer fg_ptr so that we only need one implementation for the various different public methods above
-  bool ConfigDoF::_is_canonical(PermuteIterator it_begin, PermuteIterator it_end, Array<PermuteIterator> *fg_ptr, double tol) const {
+  bool ConfigDoF::_is_canonical(PermuteIterator it_begin, PermuteIterator it_end, std::vector<PermuteIterator> *fg_ptr, double _tol) const {
 
     if(fg_ptr)
       fg_ptr->clear();
@@ -381,7 +399,7 @@ namespace CASM {
 
     while(it_begin != it_end) {
       bool skip_to_next_op = false;
-      fg_cart_op = it_begin.sym_op().get_matrix(CART);
+      fg_cart_op = it_begin.sym_op().matrix();
       it_next_fg = it_begin.begin_next_fg_op();
 
       // check for canonical strain first, since it is fastest
@@ -389,12 +407,12 @@ namespace CASM {
         new_F = fg_cart_op * deformation() * fg_cart_op.transpose();
         for(i = 0; i < 3; i++) {
           for(j = 0; j < 3; j++) {
-            if(new_F(i, j) > deformation()(i, j) + tol) {
+            if(new_F(i, j) > deformation()(i, j) + _tol) {
               if(fg_ptr)
                 fg_ptr->clear();
               return false;
             }
-            else if(new_F(i, j) < deformation()(i, j) - tol) {
+            else if(new_F(i, j) < deformation()(i, j) - _tol) {
               skip_to_next_op = true;
               break;
             }
@@ -441,12 +459,12 @@ namespace CASM {
           for(i = 0; i < size(); i++) {
             for(j = 0; j < 3; j++) {
               permute_ind = it_begin.permute_ind(i);
-              if(disp(permute_ind)[j] > disp(i)[j] + tol) {
+              if(disp(permute_ind)[j] > disp(i)[j] + _tol) {
                 if(fg_ptr)
                   fg_ptr->clear();
                 return false;
               }
-              else if(disp(permute_ind)[j] < disp(i)[j] - tol) {
+              else if(disp(permute_ind)[j] < disp(i)[j] - _tol) {
                 skip_to_next_op = true; // for sake of consistency & calculating factorgroup
                 break;
               }
@@ -478,7 +496,7 @@ namespace CASM {
   //*******************************************************************************
 
   ConfigDoF ConfigDoF::_canonical_form(PermuteIterator it_begin, PermuteIterator it_end,
-                                       PermuteIterator &it_canon, Array<PermuteIterator> *fg_ptr, double tol) const {
+                                       PermuteIterator &it_canon, std::vector<PermuteIterator> *fg_ptr, double _tol) const {
     // canonical form is 'largest-valued' configuration bitstring
     if(fg_ptr)
       fg_ptr->clear();
@@ -495,7 +513,7 @@ namespace CASM {
     displacement_matrix_t new_disp;
 
     while(it_begin != it_end) {
-      fg_cart_op = it_begin.sym_op().get_matrix(CART);
+      fg_cart_op = it_begin.sym_op().matrix();
       it_next_fg = it_begin.begin_next_fg_op();
 
       bool skip_to_next_op = false;
@@ -505,7 +523,7 @@ namespace CASM {
         new_F = fg_cart_op * deformation() * fg_cart_op.transpose();
         for(i = 0; i < 3; i++) {
           for(j = 0; j < 3; j++) {
-            if(new_F(i, j) > best_config.deformation()(i, j) + tol) {
+            if(new_F(i, j) > best_config.deformation()(i, j) + _tol) {
               it_canon = it_begin;
               best_config = it_canon * (*this);
               //if we were filling up the factor group previously, we need to clear it and start over:
@@ -520,7 +538,7 @@ namespace CASM {
               ++it_begin;
               break;
             }
-            else if(new_F(i, j) < best_config.deformation()(i, j) - tol) {
+            else if(new_F(i, j) < best_config.deformation()(i, j) - _tol) {
               skip_to_next_op = true;
               break;
             }
@@ -578,7 +596,7 @@ namespace CASM {
           for(i = 0; i < size(); i++) {
             for(j = 0; j < 3; j++) {
               permute_ind = it_begin.permute_ind(i);
-              if(best_config.disp(i)[j] < new_disp(j, permute_ind) - tol) {
+              if(best_config.disp(i)[j] < new_disp(j, permute_ind) - _tol) {
                 skip_to_next_op = true; // not necessary, but in case we add other DoFs...
                 it_canon = it_begin;
                 best_config = it_canon * (*this);
@@ -590,7 +608,7 @@ namespace CASM {
 
                 break;
               }
-              else if(new_disp(j, permute_ind) < best_config.disp(i)[j] - tol) {
+              else if(new_disp(j, permute_ind) < best_config.disp(i)[j] - _tol) {
                 skip_to_next_op = true;
                 break;
               }
@@ -626,6 +644,7 @@ namespace CASM {
   //*******************************************************************************
 
   jsonParser &ConfigDoF::to_json(jsonParser &json) const {
+    json = jsonParser::object();
     if(occupation().size())
       json["occupation"] = occupation();
     if(displacement().size())
@@ -647,11 +666,12 @@ namespace CASM {
       std::cerr << "CRITICAL ERROR: In ConfigDoF::from_json(), parsing displacement having size " << displacement().cols() << ",\n"
                 << "                which does not match initialized size of ConfigDoF -> " << size() << "\n"
                 << "                Exiting...\n";
+      assert(0);
       exit(1);
     }
 
     if(json.contains("deformation")) {
-      Eigen::from_json(_deformation(), json["deformation"]);
+      CASM::from_json(_deformation(), json["deformation"]);
       m_is_strained = true;
     }
   }
@@ -672,7 +692,7 @@ namespace CASM {
 
   ConfigDoF operator*(const PermuteIterator &it, const ConfigDoF &dof) {
     ConfigDoF tconfig(dof.size());
-    Eigen::Matrix3d fg_cart_op = it.sym_op().get_matrix(CART);
+    Eigen::Matrix3d fg_cart_op = it.sym_op().matrix();
     if(dof.is_strained())
       tconfig.set_deformation(fg_cart_op * dof.deformation() * fg_cart_op.transpose());
 
@@ -702,7 +722,7 @@ namespace CASM {
     //Size of the supercell will be used for normalizing correlations to a per primitive cell value
     int scel_vol = scel.volume();
 
-    Correlation correlations(clexulator.corr_size(), 0.0);
+    Correlation correlations = Correlation::Zero(clexulator.corr_size());
 
     //Inform Clexulator of the bitstring
 
@@ -718,7 +738,7 @@ namespace CASM {
     for(int v = 0; v < scel_vol; v++) {
 
       //Point the Clexulator to the right neighborhood
-      clexulator.set_nlist(scel.get_nlist(v).begin());
+      clexulator.set_nlist(scel.nlist().sites(v).data());
 
       //Fill up contributions
       clexulator.calc_global_corr_contribution(&tcorr[0]);
@@ -738,16 +758,80 @@ namespace CASM {
     return correlations;
   }
 
+  /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
+  Eigen::VectorXd correlations_vec(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator) {
 
+    //Size of the supercell will be used for normalizing correlations to a per primitive cell value
+    int scel_vol = scel.volume();
 
-  //ConfigDoF &apply(const Permutation &perm, ConfigDoF &dof) {
-  //  //apply(perm, dof.occupation);        //Apply permutation to occupation
-  //  //apply(perm, dof.displacement);      //Apply permutation to displacement (???)
-  //  //apply(perm, dof.id);                //Apply permutation to id (???)
-  //  return dof;
-  //}
+    Eigen::VectorXd correlations = Eigen::VectorXd::Zero(clexulator.corr_size());
 
+    //Inform Clexulator of the bitstring
 
+    //TODO: This will probably get more complicated with displacements and stuff
+    clexulator.set_config_occ(configdof.occupation().begin());
+    //mc_clexor.set_config_disp(mc_confdof.m_displacements.begin());   //or whatever
+    //mc_clexor.set_config_strain(mc_confdof.m_strain.begin());   //or whatever
+
+    //Holds contribution to global correlations from a particular neighborhood
+    Eigen::VectorXd tcorr = correlations;
+    //std::vector<double> corr(clexulator.corr_size(), 0.0);
+
+    for(int v = 0; v < scel_vol; v++) {
+
+      //Point the Clexulator to the right neighborhood
+      clexulator.set_nlist(scel.nlist().sites(v).data());
+
+      //Fill up contributions
+      clexulator.calc_global_corr_contribution(tcorr.data());
+
+      correlations += tcorr;
+
+    }
+
+    correlations /= (double) scel_vol;
+
+    return correlations;
+  }
+
+  /// \brief Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::get_struc_molecule()
+  ReturnArray<int> get_num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
+
+    // [basis_site][site_occupant_index]
+    auto convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
+
+    // create an array to count the number of each molecule
+    Array<int> num_each_molecule(scel.get_prim().get_struc_molecule().size(), 0);
+
+    // count the number of each molecule
+    for(Index i = 0; i < configdof.size(); i++) {
+      num_each_molecule[ convert[ scel.get_b(i) ][ configdof.occ(i)] ]++;
+    }
+
+    return num_each_molecule;
+  }
+
+  /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::get_struc_molecule()
+  Eigen::VectorXi get_num_each_molecule_vec(const ConfigDoF &configdof, const Supercell &scel) {
+
+    // [basis_site][site_occupant_index]
+    auto convert = get_index_converter(scel.get_prim(), scel.get_prim().get_struc_molecule());
+
+    // create an array to count the number of each molecule
+    Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.get_prim().get_struc_molecule().size());
+
+    // count the number of each molecule
+    for(Index i = 0; i < configdof.size(); i++) {
+      num_each_molecule(convert[ scel.get_b(i) ][ configdof.occ(i)])++;
+    }
+
+    return num_each_molecule;
+  }
+
+  /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
+  Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel) {
+    return get_num_each_molecule_vec(configdof, scel).cast<double>() / scel.volume();
+  }
 
 }
 

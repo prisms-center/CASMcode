@@ -28,10 +28,25 @@ namespace CASM {
     /// member to store 'source' info that will be used to tag enumerated configurations
     jsonParser m_source;
   public:
+    ConfigEnum() {};
+
     ConfigEnum(const value_type &_initial, const value_type &_final, Index _N_steps) :
       m_initial(_initial), m_final(_final), m_current(_initial), m_step(0), m_N_steps(_N_steps) {
-
+      reset_properties(m_initial);
+      reset_properties(m_final);
+      reset_properties(m_current);
     };
+
+    void initialize(const value_type &_initial, const value_type &_final, Index _N_steps) {
+      m_initial = _initial;
+      m_final = _final;
+      m_current = _initial;
+      reset_properties(m_initial);
+      reset_properties(m_final);
+      reset_properties(m_current);
+      m_step = 0;
+      m_N_steps = _N_steps;
+    }
 
     virtual ~ConfigEnum() {};
 

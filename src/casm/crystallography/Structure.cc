@@ -8,13 +8,14 @@
 #include "casm/clusterography/SiteCluster.hh"
 #include "casm/clusterography/Orbitree.hh"
 #include "casm/clusterography/jsonClust.hh"
+#include "casm/misc/algorithm.hh"
 
 
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  Structure::Structure(const fs::path &filepath) : BasicStructure<Site>(), perm_rep_ID(-1), basis_perm_rep_ID(-1) {
+  Structure::Structure(const fs::path &filepath) : BasicStructure<Site>() {
     if(!fs::exists(filepath)) {
       std::cerr << "Error in Structure::Structure(const fs::path &filepath)." << std::endl;
       std::cerr << "  File does not exist at: " << filepath << std::endl;
@@ -64,45 +65,36 @@ namespace CASM {
 
     SD_flag = RHS.SD_flag;
 
-    perm_rep_ID = RHS.perm_rep_ID; //this *should* work
     basis_perm_rep_ID = RHS.basis_perm_rep_ID; //this *should* work
 
-    factor_group_internal = RHS.factor_group_internal;
-    factor_group_internal.set_lattice(lattice(), CART);
-
+    m_factor_group = RHS.m_factor_group;
+    m_factor_group.set_lattice(lattice());
   }
 
-  //***********************************************************
-  /*
-  Structure &Structure::apply_sym(const SymOp &op) { //AAB
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i].apply_sym(op);
-    }
-    return *this;
-  }
-  */
   //***********************************************************
 
 
   void Structure::generate_factor_group_slow(double map_tol) const {
-    factor_group_internal.clear();
-    BasicStructure<Site>::generate_factor_group_slow(factor_group_internal, map_tol);
+    m_factor_group.clear();
+    m_factor_group.set_lattice(lattice());
+    BasicStructure<Site>::generate_factor_group_slow(m_factor_group, map_tol);
     return;
   }
 
   //************************************************************
   void Structure::generate_factor_group(double map_tol) const {
-    factor_group_internal.clear();
-    //std::cout << "GENERATING STRUCTURE FACTOR GROUP " << &factor_group_internal << "\n";
-    BasicStructure<Site>::generate_factor_group(factor_group_internal, map_tol);
+    m_factor_group.clear();
+    m_factor_group.set_lattice(lattice());
+    //std::cout << "GENERATING STRUCTURE FACTOR GROUP " << &m_factor_group << "\n";
+    BasicStructure<Site>::generate_factor_group(m_factor_group, map_tol);
     return;
   }
 
   //************************************************************
   const MasterSymGroup &Structure::factor_group() const {
-    if(!factor_group_internal.size())
+    if(!m_factor_group.size())
       generate_factor_group();
-    return factor_group_internal;
+    return m_factor_group;
   }
 
   //************************************************************
@@ -112,47 +104,14 @@ namespace CASM {
 
   //***********************************************************
 
-  SymGroupRep const *Structure::permutation_symrep() const {
-    if(perm_rep_ID == Index(-1))
-      generate_permutation_representation();
-
-    SymGroupRep const *perm_group(factor_group().representation(perm_rep_ID));
-    if(!perm_group) {
-      generate_permutation_representation();
-      perm_group = factor_group().representation(perm_rep_ID);
-    }
-
-    return perm_group;
-  }
-
-  //***********************************************************
-
-  Index Structure::permutation_symrep_ID() const {
-    if(perm_rep_ID == Index(-1))
-      generate_permutation_representation();
-
-    return perm_rep_ID;
-  }
-
-  //***********************************************************
-
   SymGroupRep const *Structure::basis_permutation_symrep() const {
-    if(basis_perm_rep_ID == Index(-1))
-      generate_basis_permutation_representation();
-
-    SymGroupRep const *perm_group(factor_group().representation(basis_perm_rep_ID));
-    if(!perm_group) {
-      generate_basis_permutation_representation();
-      perm_group = factor_group().representation(basis_perm_rep_ID);
-    }
-
-    return perm_group;
+    return &(factor_group().representation(basis_permutation_symrep_ID()));
   }
 
   //***********************************************************
 
-  Index Structure::basis_permutation_symrep_ID() const {
-    if(basis_perm_rep_ID == Index(-1))
+  SymGroupRepID Structure::basis_permutation_symrep_ID() const {
+    if(basis_perm_rep_ID.empty())
       generate_basis_permutation_representation();
 
     return basis_perm_rep_ID;
@@ -161,10 +120,10 @@ namespace CASM {
   //************************************************************
 
   /// Returns an Array of each *possible* Specie in this Structure
-  Array<Specie> Structure::get_struc_specie() const {
+  std::vector<Specie> Structure::get_struc_specie() const {
 
-    Array<Molecule> struc_molecule = get_struc_molecule();
-    Array<Specie> struc_specie;
+    std::vector<Molecule> struc_molecule = get_struc_molecule();
+    std::vector<Specie> struc_specie;
 
     Index i, j;
 
@@ -172,7 +131,7 @@ namespace CASM {
     for(i = 0; i < struc_molecule.size(); i++) {
       // For each atomposition in the molecule
       for(j = 0; j < struc_molecule[i].size(); j++) {
-        if(!struc_specie.contains(struc_molecule[i][j].specie)) {
+        if(!contains(struc_specie, struc_molecule[i][j].specie)) {
           struc_specie.push_back(struc_molecule[i][j].specie);
         }
       }
@@ -184,14 +143,9 @@ namespace CASM {
   //************************************************************
 
   /// Returns an Array of each *possible* Molecule in this Structure
-  Array<Molecule> Structure::get_struc_molecule() const {
+  std::vector<Molecule> Structure::get_struc_molecule() const {
 
-    //Check if basis is empty
-    if(basis.size() == 0) {
-      std::cerr << "Warning in Structure::get_struc_molecule():  basis.size() == 0" << std::endl;
-    }
-
-    Array<Molecule> struc_molecule;
+    std::vector<Molecule> struc_molecule;
     Index i, j;
 
     //loop over all Sites in basis
@@ -199,7 +153,7 @@ namespace CASM {
       //loop over all Molecules in Site
       for(j = 0; j < basis[i].site_occupant().size(); j++) {
         //Collect unique Molecules
-        if(!struc_molecule.contains(basis[i].site_occupant()[j])) {
+        if(!contains(struc_molecule, basis[i].site_occupant()[j])) {
           struc_molecule.push_back(basis[i].site_occupant()[j]);
         }
       }
@@ -208,14 +162,29 @@ namespace CASM {
     return struc_molecule;
   }
 
+  /// Returns an Array of each *possible* Molecule in this Structure
+  std::vector<std::string> Structure::get_struc_molecule_name() const {
+
+    // get Molecule allowed in prim, and how many there are
+    std::vector<Molecule> struc_mol = get_struc_molecule();
+
+    // store Molecule names in vector
+    std::vector<std::string> struc_mol_name;
+    for(int i = 0; i < struc_mol.size(); i++) {
+      struc_mol_name.push_back(struc_mol[i].name);
+    }
+
+    return struc_mol_name;
+  }
+
   //************************************************************
 
   /// Returns a list of how many of each specie exist in this Structure
   ///   The Specie types are ordered according to get_struc_specie()
-  Array<int> Structure::get_num_each_specie() const {
+  Eigen::VectorXi Structure::get_num_each_specie() const {
 
-    Array<Specie> struc_specie = get_struc_specie();
-    Array<int> num_each_specie(struc_specie.size(), 0);
+    std::vector<Specie> struc_specie = get_struc_specie();
+    Eigen::VectorXi num_each_specie = Eigen::VectorXi::Zero(struc_specie.size());
 
     Index i, j;
     // For each site
@@ -223,7 +192,7 @@ namespace CASM {
       // For each atomposition in the molecule on the site
       for(j = 0; j < basis[i].occ().size(); j++) {
         // Count the present specie
-        num_each_specie[ struc_specie.find(basis[i].occ()[j].specie)]++;
+        num_each_specie(find_index(struc_specie, basis[i].occ()[j].specie))++;
       }
     }
 
@@ -234,16 +203,16 @@ namespace CASM {
 
   /// Returns a list of how many of each molecule exist in this Structure
   ///   The molecule types are ordered according to get_struc_molecule()
-  Array<int> Structure::get_num_each_molecule() const {
+  Eigen::VectorXi Structure::get_num_each_molecule() const {
 
-    Array<Molecule> struc_molecule = get_struc_molecule();
-    Array<int> num_each_molecule(struc_molecule.size(), 0);
+    std::vector<Molecule> struc_molecule = get_struc_molecule();
+    Eigen::VectorXi num_each_molecule = Eigen::VectorXi(struc_molecule.size());
 
     Index i;
     // For each site
     for(i = 0; i < basis.size(); i++) {
       // Count the molecule
-      num_each_molecule[ struc_molecule.find(basis[i].occ())]++;
+      num_each_molecule(find_index(struc_molecule, basis[i].occ()))++;
     }
 
     return num_each_molecule;
@@ -254,691 +223,28 @@ namespace CASM {
 
   //************************************************************
   void Structure::fg_converge(double small_tol, double large_tol, double increment) {
-    BasicStructure<Site>::fg_converge(factor_group_internal, small_tol, large_tol, increment);
+    BasicStructure<Site>::fg_converge(m_factor_group, small_tol, large_tol, increment);
     return;
   }
 
   //************************************************************
   void Structure::fg_converge(double large_tol) {
-    BasicStructure<Site>::fg_converge(factor_group_internal, TOL, large_tol, (large_tol - TOL) / 10.0);
+    BasicStructure<Site>::fg_converge(m_factor_group, TOL, large_tol, (large_tol - TOL) / 10.0);
     return;
   }
 
   //************************************************************
-  void Structure::print_factor_group(std::ostream &stream) const {
+  /*void Structure::print_factor_group(std::ostream &stream) const {
     stream << "Factor Group of " << title << ", containing "
            << factor_group().size() << " symmetry operations:\n";
-    for(Index i = 0; i < factor_group_internal.size(); i++) {
-      factor_group_internal[i].print(stream);
+
+    for(Index i = 0; i < m_factor_group.size(); i++) {
+      m_factor_group[i].print(stream);
     }
 
     return;
   }
-
-  //************************************************************
-  void Structure::print5(std::ostream &stream, COORD_TYPE mode, int Va_mode, char term, int prec, int pad) const {
-    std::string mol_name;
-    std::ostringstream num_mol_list, coord_stream;
-    Array<Site> vacancies;
-
-    // this statement assumes that the scaling is 1.0 always, this may needed to be changed
-    stream << title << std::endl;
-    lattice().print(stream);
-
-    //declare hash
-    std::map<std::string, Array<Site> > siteHash;
-    //declare iterator for hash
-    std::map<std::string, Array<Site> >::iterator it;
-    //loop through all sites
-    for(Index i = 0; i < basis.size(); i++) {
-      Site tsite = basis[i];
-      mol_name = tsite.occ_name();
-
-      if(mol_name != "Va") {
-        //check if mol_name is already in the hash
-        it = siteHash.find(mol_name);
-        if(it != siteHash.end()) {
-          Array<Site> tarray = it-> second;
-          tarray.push_back(tsite);
-          siteHash[mol_name]  = tarray;
-        }
-        // otherwise add a new pair
-        else {
-          Array<Site> tarray;
-          tarray.push_back(tsite);
-          siteHash[mol_name] = tarray;
-        }
-      }
-      //store vacancies into a separate array
-      else {
-        vacancies.push_back(tsite);
-      }
-    }
-    //print names of molecules and numbers, also populate coord_stream
-    it = siteHash.begin();
-    stream << it -> first;
-    num_mol_list << it -> second.size();
-    for(Index i = 0; i < it->second.size(); i++) {
-      Site tsite = it->second.at(i);
-      tsite.Coordinate::print(coord_stream, mode, term, prec, pad);
-      coord_stream << std::endl;
-    }
-    it++;
-
-    for(; it != siteHash.end(); it++) {
-      stream << ' ' << it-> first;
-      num_mol_list << ' ' << it-> second.size();
-      for(Index i = 0; i < it->second.size(); i++) {
-        Site tsite = it->second.at(i);
-        tsite.Coordinate::print(coord_stream, mode, term, prec, pad);
-        coord_stream << std::endl;
-      }
-    }
-    // add vacancies depending on the mode
-    if(Va_mode == 2)
-      stream << " Va";
-    if(Va_mode != 0) {
-      for(Index i = 0; i < vacancies.size(); i++) {
-        Site tsite = vacancies.at(i);
-        tsite.Coordinate::print(coord_stream, mode, term, prec, pad);
-        coord_stream << std::endl;
-      }
-    }
-    stream << std::endl;
-    stream << num_mol_list.str() << std::endl;
-    //print the COORD_TYPE
-    if(mode == FRAC)
-      stream << "Direct\n";
-    else if(mode == CART)
-      stream << "Cartesian\n";
-    else
-      std::cerr << "error the mode isn't defined";
-    stream << coord_stream.str() << std::endl;
-    return;
-
-  }
-  //************************************************************
-  //read a POSCAR like file and collect all the structure variables
-  //modified to read PRIM file and determine which basis to use
-  //Changed by Ivy to read new VASP POSCAR format
-  void Structure::read(std::istream &stream) {
-    int i, t_int;
-    char ch;
-    Array<double> num_elem;
-    Array<std::string> elem_array;
-    bool read_elem = false;
-    std::string tstr;
-    std::stringstream tstrstream;
-
-    Site tsite(lattice());
-
-    SD_flag = false;
-    getline(stream, title);
-
-    m_lattice.read(stream);
-
-    stream.ignore(100, '\n');
-
-    //Search for Element Names
-    ch = stream.peek();
-    while(ch != '\n' && !stream.eof()) {
-      if(isalpha(ch)) {
-        read_elem = true;
-        stream >> tstr;
-        elem_array.push_back(tstr);
-        ch = stream.peek();
-      }
-      else if(ch == ' ' || ch == '\t') {
-        stream.ignore();
-        ch = stream.peek();
-      }
-      else if(ch >= '0' && ch <= '9') {
-        break;
-      }
-      else {
-        throw std::runtime_error(
-          std::string("Error attempting to read Structure. Error reading atom names."));
-      }
-    }
-
-    if(read_elem == true) {
-      stream.ignore(10, '\n');
-      ch = stream.peek();
-    }
-
-    //Figure out how many species
-    int num_sites = 0;
-    while(ch != '\n' && !stream.eof()) {
-      if(ch >= '0' && ch <= '9') {
-        stream >> t_int;
-        num_elem.push_back(t_int);
-        num_sites += t_int;
-        ch = stream.peek();
-      }
-      else if(ch == ' ' || ch == '\t') {
-        stream.ignore();
-        ch = stream.peek();
-      }
-      else {
-        std::cerr << "Error in line 6 of structure input file. Line 6 of structure input file should contain the number of sites." << std::endl;
-        exit(1);
-      }
-    }
-    stream.get(ch);
-
-    // fractional coordinates or cartesian
-    COORD_MODE input_mode(FRAC);
-
-    stream.get(ch);
-    while(ch == ' ' || ch == '\t') {
-      stream.get(ch);
-    }
-
-    if(ch == 'S' || ch == 's') {
-      SD_flag = true;
-      stream.ignore(1000, '\n');
-      while(ch == ' ' || ch == '\t') {
-        stream.get(ch);
-      }
-      stream.get(ch);
-    }
-
-    if(ch == 'D' || ch == 'd') {
-      input_mode.set(FRAC);
-    }
-    else if(ch == 'C' || ch == 'c') {
-      input_mode.set(CART);
-    }
-    else if(!SD_flag) {
-      std::cerr << "Error in line 7 of structure input file. Line 7 of structure input file should specify Direct, Cartesian, or Selective Dynamics." << std::endl;
-      exit(1);
-    }
-    else if(SD_flag) {
-      std::cerr << "Error in line 8 of structure input file. Line 8 of structure input file should specify Direct or Cartesian when Selective Dynamics is on." << std::endl;
-      exit(1);
-    }
-
-    stream.ignore(1000, '\n');
-    //Clear basis if it is not empty
-    if(basis.size() != 0) {
-      std::cerr << "The structure is going to be overwritten." << std::endl;
-      basis.clear();
-    }
-
-    if(read_elem) {
-      int j = -1;
-      int sum_elem = 0;
-      basis.reserve(num_sites);
-      for(i = 0; i < num_sites; i++) {
-        if(i == sum_elem) {
-          j++;
-          sum_elem += num_elem[j];
-        }
-
-        tsite.read(stream, elem_array[j], SD_flag);
-        basis.push_back(tsite);
-      }
-    }
-    else {
-      //read the site info
-      basis.reserve(num_sites);
-      for(i = 0; i < num_sites; i++) {
-        tsite.read(stream, SD_flag);
-        if((stream.rdstate() & std::ifstream::failbit) != 0) {
-          std::cerr << "Error reading site " << i + 1 << " from structure input file." << std::endl;
-          exit(1);
-        }
-        basis.push_back(tsite);
-      }
-    }
-
-    // Check whether there are additional sites listed in the input file
-    Vector3< double > coord;
-    stream >> coord;
-    if((stream.rdstate() & std::ifstream::failbit) == 0) {
-      std::cerr << "ERROR: too many sites listed in structure input file." << std::endl;
-      exit(1);
-    }
-
-    update();
-    return;
-
-  }
-
-  //************************************************************
-  // print structure and include all possible occupants on each site, using VASP5 format - NOT ALLOWED
-
-  //void Structure::print5(std::ostream &stream, COORD_TYPE mode)
-  //{
-  //    main_print( stream, mode, true, 0);
-  //}
-
-  //************************************************************
-  // print structure and include all possible occupants on each site, using VASP4 format
-
-  void Structure::print(std::ostream &stream, COORD_TYPE mode) const {
-    main_print(stream, mode, false, 0);
-  }
-
-  //************************************************************
-  // print structure and include current occupant on each site, using VASP5 format
-
-  void Structure::print5_occ(std::ostream &stream, COORD_TYPE mode) const {
-    main_print(stream, mode, true, 1);
-  }
-
-  //************************************************************
-  // print structure and include current occupant on each site, using VASP4 format
-
-  void Structure::print_occ(std::ostream &stream, COORD_TYPE mode) const {
-    main_print(stream, mode, false, 1);
-  }
-
-  //************************************************************
-  // Private print routine called by public routines
-  //   by BP, collected and modified the existing print routines (by John G?) into 1 function
-  void Structure::main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option) const {
-    //std::cout << "begin Structure::main_print()" << std::endl;
-    // No Sorting (For now... Figure out how to do this for molecules later...)
-    // If option == 0 (print all possible occupants), make sure comparing all possible occupants
-    // If option == 1 (print occupying molecule name), compare just the occupant
-    // If option == 2 (print all atoms of molecule), (don't do this yet)
-
-    if(option < 0 || option > 2) {
-      std::cerr << "Error in Structure::main_print()." << std::endl;
-      std::cerr << "  option " << option << " does not exist.  Use option = 0 or 1" << std::endl;
-      std::exit(1);
-    }
-    else {
-      if(version5 && (option == 0)) {
-        std::cerr << "Error in Structure::main_print()." << std::endl;
-        std::cerr << "  Trying to print a Structure with VASP version 5 format" << std::endl;
-        std::cerr << "  and option == 0 (print all possible occupants).  This can't be done." << std::endl;
-        std::cerr << "  Either use version 4 format, or option 1 (print occupying molecule name)." << std::endl;
-        std::exit(1);
-      }
-
-      if(option == 2) {
-        std::cerr << "Error in Structure::main_print()." << std::endl;
-        std::cerr << "  Trying to print all atom positions (option 2), but this is not yet coded." << std::endl;
-        std::exit(1);
-      }
-    }
-
-    Array<std::string> site_names;
-
-    // This is for sorting molecules by type. - NO LONGER USING THIS
-    //Array<int> site_order;
-    //site_order.reserve(basis.size());
-
-    // Count up each species and their names
-    // This is total for structure - NOT GOING TO SET THIS ANYMORE
-    // num_each_specie.resize(struc_molecule.size(), 0);
-
-    // This is consequentive molecules of same name
-    // If option == 0 (print all possible occupants), make sure comparing all possible occupants
-    // If option == 1 (print occupying molecule name), compare just the occupant
-    // If option == 2 (print all atoms of molecule), (don't do this yet)
-    Array<int> num_each_specie_for_printing;
-
-    // if option == 1 (print current occupants), check that current state is not -1 (unknown occupant)
-    if(option == 1) {
-      //std::cout << "  check curr state" << std::endl;
-      for(Index j = 0; j < basis.size(); j++) {
-        if(basis[j].site_occupant().value() == -1) {
-          std::cerr << "Error in Structure::main_print() using option 1 (print occupying molecule name)." << std::endl;
-          std::cerr << "  basis " << j << " occupant state is unknown." << std::endl;
-          std::exit(1);
-        }
-      }
-    }
-
-
-    //std::cout << "  get num each specie for printing" << std::endl;
-
-    for(Index i = 0; i < basis.size(); i++) {
-      if(option == 0) { //(print all possible occupants)
-        if(i == 0)
-          num_each_specie_for_printing.push_back(1);
-        else if(basis[i - 1].site_occupant().compare(basis[i].site_occupant(), false))
-          num_each_specie_for_printing.back()++;
-        else
-          num_each_specie_for_printing.push_back(1);
-      }
-      else if(option == 1) {   //(print all occupying molecule)
-        if(basis[i].occ_name() == "Va") {
-          continue;
-        }
-
-        if(i == 0) {
-          num_each_specie_for_printing.push_back(1);
-          site_names.push_back(basis[i].occ_name());
-        }
-        else if(basis[i - 1].occ_name() == basis[i].occ_name())
-          num_each_specie_for_printing.back()++;
-        else {
-          num_each_specie_for_printing.push_back(1);
-          site_names.push_back(basis[i].occ_name());
-        }
-
-      }
-    }
-
-    stream << title << '\n';
-
-    // Output lattice: scaling factor and lattice vectors
-    //std::cout << "  print lattice" << std::endl;
-    lattice().print(stream);
-
-    // Output species names
-    //std::cout << "  print specie names" << std::endl;
-    if(version5) {
-      for(Index i = 0; i < site_names.size(); i++) {
-        stream << " " << site_names[i];
-      }
-      stream << std::endl;
-    }
-
-
-    // Output species counts
-    //std::cout << "  print specie counts" << std::endl;
-    for(Index i = 0; i < num_each_specie_for_printing.size(); i++) {
-      stream << " " << num_each_specie_for_printing[i];
-    }
-    stream << std::endl;
-
-    if(SD_flag) {
-      stream << "Selective Dynamics\n";
-    }
-
-
-    COORD_MODE output_mode(mode);
-
-    stream << COORD_MODE::NAME() << '\n';
-
-    // Output coordinates
-    //std::cout << "  print coords" << std::endl;
-
-    for(Index i = 0; i < basis.size(); i++) {
-      if(option == 0) {	// print all possible occupying molecules
-        basis[i].print(stream);
-        stream << '\n';
-      }
-      else if(option == 1 && basis[i].occ_name() != "Va") {	// print occupying molecule
-        basis[i].print_occ(stream);
-        stream << '\n';
-      }
-      else if(option == 2)	// print all atoms in molecule
-        basis[i].print_mol(stream, 0, '\n', SD_flag);
-    }
-    stream << std::flush ;
-
-    //std::cout << "finish Structure::main_print()" << std::endl;
-
-    return;
-  }
-
-  //***********************************************************
-  void Structure::print_xyz(std::ostream &stream) const {
-    stream << basis.size() << '\n';
-    stream << title << '\n';
-    stream.precision(7);
-    stream.width(11);
-    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-
-    for(Index i = 0; i < basis.size(); i++) {
-      stream << std::setw(2) << basis[i].occ_name();
-      stream << std::setw(12) << basis[i](CART) << '\n';
-    }
-
-  }
-
-  //***********************************************************
-
-  void Structure::print_cif(std::ostream &stream) {
-    const char quote = '\'';
-    const char indent[] = "   ";
-
-    //double amag, bmag, cmag;
-    //double alpha, beta, gamma;
-
-    // Copying format based on VESTA .cif output.
-
-    // Heading text.
-
-    stream << '#';
-    for(int i = 0; i < 70; i++) {
-      stream << '=';
-    }
-    stream << "\n\n";
-    stream << "# CRYSTAL DATA\n\n";
-    stream << '#';
-    for(int i = 0; i < 70; i++) {
-      stream << '-';
-    }
-    stream << "\n\n";
-    stream << "data_CASM\n\n\n";
-
-    stream.precision(5);
-    stream.width(11);
-    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
-
-    stream << std::setw(40) << "_pd_phase_name" << quote << title << quote << '\n';
-    stream << std::setw(40) << "_cell_length_a" << lattice().lengths[0] << '\n';
-    stream << std::setw(40) << "_cell_length_b" << lattice().lengths[1] << '\n';
-    stream << std::setw(40) << "_cell_length_c" << lattice().lengths[2] << '\n';
-    stream << std::setw(40) << "_cell_angle_alpha" << lattice().angles[0] << '\n';
-    stream << std::setw(40) << "_cell_angle_beta" << lattice().angles[1] << '\n';
-    stream << std::setw(40) << "_cell_angle_gamma" << lattice().angles[2] << '\n';
-    stream << std::setw(40) << "_symmetry_space_group_name_H-M" << quote << "TBD" << quote << '\n';
-    stream << std::setw(40) << "_symmetry_Int_Tables_number" << "TBD" << "\n\n";
-
-    stream << "loop_\n";
-    stream << "_symmetry_equiv_pos_as_xyz\n";
-
-    // Equivalent atom positions here. Form: 'x, y, z', '-x, -y, -z', 'x+1/2, y+1/2, z', etc.
-    // Use stream << indent << etc.
-
-    stream << '\n';
-    stream << "loop_\n";
-    stream << indent << "_atom_site_label" << '\n';
-    stream << indent << "_atom_site_occupancy" << '\n';
-    stream << indent << "_atom_site_fract_x" << '\n';
-    stream << indent << "_atom_site_fract_y" << '\n';
-    stream << indent << "_atom_site_fract_z" << '\n';
-    stream << indent << "_atom_site_adp_type" << '\n';
-    stream << indent << "_atom_site_B_iso_or_equiv" << '\n';
-    stream << indent << "_atom_site_type_symbol" << '\n';
-
-    // Use stream << indent << etc.
-  }
-
-
-  //***********************************************************
-  /**
   */
-  //***********************************************************
-  /*bool Structure::read_species() {
-
-    Array<std::string> names;
-    Array<double> masses;
-    Array<double> magmoms;
-    Array<double> Us;
-    Array<double> Js;
-    std::string tstring;
-    double value;
-    Index i;
-    bool match = true;
-    std::ifstream stream;
-    stream.open("SPECIES");
-
-    Array<Specie> struc_species = get_struc_specie();
-
-    //If cannot open species file, will assign default masses
-    //read in from elements file.
-    if(!stream) {
-      std::cout << "*************************************\n"
-                << "ERROR in Structure::read_species: \n"
-                << "Could not open SPECIES file. \n"
-                << "Going to assign default masses. \n"
-                << "*************************************\n";
-      for(i = 0; i < struc_species.size(); i++) {
-        masses.push_back(Elements::get_mass(struc_species[i].name));
-        names.push_back(struc_species[i].name);
-      }
-
-      assign_species(names, masses, magmoms, Us, Js);
-      return false;
-    }
-
-    //Reading in from SPECIES
-    for(i = 0; i < struc_species.size(); i++) {
-      stream >> tstring;
-      names.push_back(tstring);
-    }
-
-    //Check to see the elements read in actually match
-    for(i = 0; i < names.size(); i++) {
-
-      Specie tspecie(names[i]);
-
-      if(struc_species.find(tspecie) == struc_species.size()) {
-        std::cout << "****************************************\n"
-                  << "ERROR in Structure::read_species: \n"
-                  << "None of species in SPECIES match those\n"
-                  << "belonging to this structure.\n"
-                  << "Going to assign default masses.\n"
-                  << "****************************************\n";
-        match = false;
-        break;
-      }
-    }
-
-    //If could not find elements of Structure in SPECIES,
-    //will look it up in default element list.
-    if(match == false) {
-
-
-      //This is so that the incorrect species names that were read in
-      //won't be used in assign_species
-      //names.clear();
-
-      for(i = 0; i < struc_species.size(); i++) {
-        masses.push_back(Elements::get_mass(struc_species[i].name));
-        names.push_back(struc_species[i].name);
-      }
-
-      assign_species(names, masses, magmoms, Us, Js);
-      return false;
-    }
-
-    while(stream >> tstring) {
-
-      if((tstring == "mass") || (tstring == "MASS")) {
-
-        for(i = 0; i < struc_species.size(); i++) {
-          stream >> value;
-          masses.push_back(value);
-        }
-        stream.ignore(256, '\n');
-      }
-      else if((tstring == "magmom") || (tstring == "MAGMOM")) {
-
-        for(i = 0; i < struc_species.size(); i++) {
-          stream >> value;
-          magmoms.push_back(value);
-        }
-        stream.ignore(256, '\n');
-      }
-      else if((tstring == "u") || (tstring == "U")) {
-
-        for(i = 0; i < struc_species.size(); i++) {
-          stream >> value;
-          Us.push_back(value);
-
-        }
-        stream.ignore(256, '\n');
-      }
-      else if((tstring == "j") || (tstring == "J")) {
-
-        for(i = 0; i < struc_species.size(); i++) {
-          stream >> value;
-          Js.push_back(value);
-
-        }
-        stream.ignore(256, '\n');
-      }
-      else {
-        std::cout << "***********************************\n"
-                  << "ERROR in Structure::read_species\n: "
-                  << stream.rdbuf()
-                  << " is not a valid field for SPECIES \n"
-                  << "***********************************\n";
-      }
-    }
-
-    stream.close();
-
-    assign_species(names, masses, magmoms, Us, Js);
-
-    return true;
-  };
-  */
-  //***********************************************************
-  /**
-   * Assigns the names, masses, magmoms, Us, and Js read in
-   * from SPECIES to the right atom.
-   */
-  //***********************************************************
-
-  // THIS NEEDS TO BE MOVED TO Site/Molecule
-  /*
-  void Structure::assign_species(Array<std::string> &names, Array<double> &masses, Array<double> &magmoms, Array<double> &Us, Array<double> &Js) {
-
-    Index j;
-
-    for(Index b = 0; b < basis.size(); b++) {
-
-      j = names.find(basis[b].site_occupant()[0][0].specie.name);
-
-      if(j == names.size()) {
-        std::cerr << "****************************************\n"
-                  << "ERROR in Structure::assign_species:\n"
-                  << "Could not find "
-                  << basis[b].site_occupant()[0][0].specie.name
-                  << "\n"
-                  << "****************************************\n";
-      }
-
-      if(masses.size() != 0) {
-
-        basis[b].site_occupant()[0][0].specie.mass = masses[j];
-
-      }
-
-      if(magmoms.size() != 0) {
-
-        basis[b].site_occupant[0][0].specie.magmom = magmoms[j];
-
-      }
-
-      if(Us.size() != 0) {
-
-        basis[b].site_occupant[0][0].specie.U = Us[j];
-
-      }
-
-      if(Js.size() != 0) {
-
-        basis[b].site_occupant[0][0].specie.J = Js[j];
-
-      }
-    }
-
-
-  };
-  */
-
   //***********************************************************
   /**
    * It is NOT wise to use this function unless you have already
@@ -957,8 +263,6 @@ namespace CASM {
   void Structure::fill_supercell(const Structure &prim, double map_tol) {
     Index i, j;
 
-    //Updating lattice_trans matrices that connect the supercell to primitive -- Changed 11/08/12
-    m_lattice.calc_conversions();
     SymGroup latvec_pg;
     m_lattice.generate_point_group(latvec_pg);
 
@@ -979,7 +283,7 @@ namespace CASM {
 
         //reset lattice for most recent superstructure Site
         //set_lattice() converts fractional coordinates to be compatible with new lattice
-        basis.back().set_lattice(lattice());
+        basis.back().set_lattice(lattice(), CART);
 
         basis.back().within();
         for(Index k = 0; k < basis.size() - 1; k++) {
@@ -990,7 +294,7 @@ namespace CASM {
         }
       }
     }
-    //std::cout << "WORKING ON FACTOR GROUP " << &factor_group_internal << " for structure with volume " << prim_grid.size() << ":\n";
+    //std::cout << "WORKING ON FACTOR GROUP " << &m_factor_group << " for structure with volume " << prim_grid.size() << ":\n";
     //trans_and_expand primitive factor_group
     for(i = 0; i < prim.factor_group().size(); i++) {
       if(latvec_pg.find_no_trans(prim.factor_group()[i]) == latvec_pg.size()) {
@@ -998,22 +302,20 @@ namespace CASM {
       }
       else {
         for(Index j = 0; j < prim_grid.size(); j++) {
-          factor_group_internal.push_back(SymOp(prim.factor_group()[i].get_matrix(CART),
-                                                prim.factor_group()[i].tau(CART) + prim_grid.coord(j, SCEL)(CART), lattice(), CART));
-          factor_group_internal.back().within();
-          //OLD VERSION:
-          //factor_group_internal.push_back(SymOp(prim_grid.coord(j, SCEL))*prim.factor_group()[i]);
-          //factor_group_internal.back().set_lattice(lattice, CART);
+          Coordinate t_tau(prim.factor_group()[i].tau() + prim_grid.coord(j, SCEL).const_cart(), lattice(), CART);
+          t_tau.within();
+          m_factor_group.push_back(SymOp(prim.factor_group()[i].matrix(),
+                                         t_tau.cart()));
         }
       }
     }
-    if(factor_group_internal.size() > 200) {// how big is too big? this is at least big enough for FCC conventional cell
+    if(m_factor_group.size() > 200) {// how big is too big? this is at least big enough for FCC conventional cell
 #ifndef NDEBUG
       std::cerr << "WARNING: You have a very large factor group of a non-primitive structure. Certain symmetry features will be unavailable.\n";
 #endif
-      factor_group_internal.invalidate_multi_tables();
+      m_factor_group.invalidate_multi_tables();
     }
-    //std::cout << "Final size is: " << factor_group_internal.size() << "\n";
+    //std::cout << "Final size is: " << m_factor_group.size() << "\n";
     update();
 
     return;
@@ -1052,13 +354,13 @@ namespace CASM {
       for(Index j = 0; j < asym_unit[i].size(); j++) {
         stream << "Site: ";
         asym_unit.at(i).at(j).at(0).print(stream); //Print the site (not cluster) for the asymmetric unit
-        stream << " Total Symmetry Operations: " << asym_unit[i][j].clust_group.size() << "\n";
+        stream << " Total Symmetry Operations: " << asym_unit[i][j].clust_group().size() << "\n";
 
-        for(Index nc = 0; nc < asym_unit[i][j].clust_group.size(); nc++) {
+        for(Index nc = 0; nc < asym_unit[i][j].clust_group().size(); nc++) {
           //print_short is a new fxn I added in SymOp to not print out the whole symmetry matrix
           if(shorttag == 0) {
             stream <<  std::setw(4)  << nc + 1 << ": ";
-            //asym_unit[i][j].clust_group[nc].print_short(stream); // I turned this off because the "print_short" function does not appear to exist...
+            //asym_unit[i][j].clust_group()[nc].print_short(stream); // I turned this off because the "print_short" function does not appear to exist...
           }
 
 
@@ -1066,7 +368,10 @@ namespace CASM {
             stream.flags(std::ios::left);
             stream << "\n" <<  std::setw(3)  << nc + 1 << ": ";
             stream.unsetf(std::ios::left);
-            asym_unit[i][j].clust_group[nc].print(stream);
+            if(mode == CART)
+              asym_unit[i][j].clust_group()[nc].print(stream, Eigen::Matrix3d::Identity());
+            else
+              asym_unit[i][j].clust_group()[nc].print(stream, lattice().inv_lat_column_mat());
           }
         }
         stream << "\n  ---------------------------------------------------------------------   \n\n";
@@ -1084,7 +389,7 @@ namespace CASM {
       basis[nb].set_basis_ind(nb);
     }
     within();
-    factor_group_internal.clear();
+    m_factor_group.clear();
 
     /** Should we also invalidate the occupants?
     for(Index i = 0; i < basis.size(); i++) {
@@ -1155,7 +460,7 @@ namespace CASM {
 
 
     for(na = 0; na < asym_unit.size(); na++) {
-      asym_unit.prototype(na).clust_group.get_character_table();
+      asym_unit.prototype(na).clust_group().character_table();
       //std::cout << "Working on asym_unit element " << na + 1 << '\n';
       nb = out_tree.size();
 
@@ -1308,9 +613,9 @@ namespace CASM {
       std::cerr << "*******************************************\n"
                 << "ERROR in Structure::map_superstruc_to_prim:\n"
                 << "The structure \n";
-      print(std::cerr);
+      std::cerr << jsonParser(*this) << std::endl;
       std::cerr << "is not a supercell of the given prim!\n";
-      prim.print(std::cerr);
+      std::cerr << jsonParser(prim) << std::endl;
       std::cerr << "*******************************************\n";
       exit(1);
     }
@@ -1358,127 +663,19 @@ namespace CASM {
   //
   void Structure::set_lattice(const Lattice &new_lat, COORD_TYPE mode) {
     bool is_equiv(lattice() == new_lat);
-    COORD_TYPE not_mode(CART);
-    if(mode == CART) {
-      not_mode = FRAC;
-    }
-
-    for(Index nb = 0; nb < basis.size(); nb++) {
-      basis[nb].invalidate(not_mode);
-    }
 
     m_lattice = new_lat;
 
+    for(Index nb = 0; nb < basis.size(); nb++) {
+      basis[nb].set_lattice(lattice(), mode);
+    }
 
     if(is_equiv)
-      factor_group_internal.set_lattice(new_lat, mode);
+      m_factor_group.set_lattice(lattice());
     else
       reset();
   }
 
-  //John G 051112
-  //***********************************************************
-  /**
-   * Given a rotational matrix rotate the
-   * ENTIRE structure in cartesian space. This yields the same
-   * structure, just with different cartesian definitions of
-   * the lattice vectors
-   *
-   * Non primitive structures aren't allowed because you can't
-   * update the new primitive pointer without having the new
-   * primitive structure you want it pointing at falling out of
-   * scope.
-   */
-  //***********************************************************
-
-  Structure Structure::reorient(const Matrix3<double> reorientmat, bool override) const {
-    if(!is_primitive() && !override) {
-      std::cerr << "ERROR in Structure::reorient" << std::endl;
-      std::cerr << "This function is for primitive cells only. Reduce your structure and try again." << std::endl;
-      exit(11);
-    }
-
-    Structure reorientstruc(*this);
-
-    Lattice reorientlat(reorientmat * lattice().lat_column_mat());
-    reorientstruc.set_lattice(reorientlat, FRAC);
-
-    if(override) {
-      std::cerr << "WARNING in Structure::reorient (are you using Structure::align_with or Structure::align_standard?)" << std::endl;
-      std::cerr << "You've chosen to forcibly reorient or align a non-primitive structure. The primitive lattice of your rotated structure will point to itself." << std::endl;
-    }
-
-    reorientstruc.update();
-
-    return reorientstruc;
-  }
-
-
-  //***********************************************************
-  /**
-   *	This function takes two structures and returns a third
-   *	structure identical to the one it is called on, only
-   *	its vectors are reoriented to match the the structure
-   *	it is passed. I.e. the returned structure is reoriented
-   *	to have a and axb pointing in the same direction as
-   *	the structure it is passed on.
-   *
-   *	This function was meant to be used with Structure::stack_on,
-   *	which effectively stacks different cells to create
-   *	heterostructures
-   */
-  //***********************************************************
-
-  Structure Structure::align_with(const Structure &refstruc, bool override) const {
-    if(!is_primitive() && !override) {
-      std::cerr << "ERROR in Structure::align_with" << std::endl;
-      std::cerr << "This function is for primitive cells only. Reduce your structure and try again." << std::endl;
-      exit(12);
-    }
-
-    Vector3<double> rotaxis;
-    double angle;
-    Matrix3<double> rotmat;
-
-    //First align the a vectors
-    rotaxis = lattice()[0].cross(refstruc.lattice()[0]);
-    angle = lattice()[0].get_signed_angle(refstruc.lattice()[0], rotaxis);
-
-    rotmat = rotaxis.get_rotation_mat(angle);
-
-    Structure aaligned = reorient(rotmat, override);
-
-    //Then turn axb along the a axis
-    rotaxis = aaligned.lattice()[0];
-    angle = (aaligned.lattice()[0].cross(aaligned.lattice()[1])).get_signed_angle(refstruc.lattice()[0].cross(refstruc.lattice()[1]), rotaxis);
-
-    rotmat = rotaxis.get_rotation_mat(angle);
-    return aaligned.reorient(rotmat, override);
-  }
-
-  //***********************************************************
-  /**
-   * Reorients structure to have a along (x,0,0), b along (x,y,0)
-   * and c along (x,y,z).
-   */
-  //***********************************************************
-
-  Structure Structure::align_standard(bool override) const {
-    if(!is_primitive() && !override) {
-      std::cerr << "ERROR in Structure::align_with_standard" << std::endl;
-      std::cerr << "This function is for primitive cells only. Reduce your structure and try again." << std::endl;
-      exit(15);
-    }
-
-    Lattice standardlat(Vector3<double>(1, 0, 0),
-                        Vector3<double>(0, 1, 0),
-                        Vector3<double>(0, 0, 1));
-
-    Structure standardstruc(standardlat);
-
-    return align_with(standardstruc, override);
-
-  }
 
   //***********************************************************
   /**
@@ -1497,8 +694,7 @@ namespace CASM {
 
     //Before doing anything check to see that lattices are aligned correctly (paralled ab planes)
     if(!override) {
-      double axbangle;
-      axbangle = (understruc.lattice()[0].cross(understruc.lattice()[1])).get_angle(overstruc.lattice()[0].cross(overstruc.lattice()[1]));
+      double axbangle = angle(understruc.lattice()[0].cross(understruc.lattice()[1]), overstruc.lattice()[0].cross(overstruc.lattice()[1]));
 
       if(!almost_zero(axbangle)) {
         std::cerr << "ERROR in Structure::stack_on" << std::endl;
@@ -1544,7 +740,7 @@ namespace CASM {
     //Fill up empty space in heterostruc with overstruc
     for(Index i = 0; i < overstruc.basis.size(); i++) {
       Site tsite(overstruc.basis[i]);
-      tsite(CART) = tsite(CART) + understruc.lattice()[2];
+      tsite.cart() = tsite.const_cart() + understruc.lattice()[2];
       tsite.set_lattice(heterostruc.lattice(), CART);
       heterostruc.basis.push_back(tsite);
 
@@ -1570,35 +766,14 @@ namespace CASM {
    * make a reflected superlattice to fill it with.
    */
   //***********************************************************
-  Structure Structure::get_reflection(bool override) const {
-    if(!is_primitive()) {
-      if(override) {
-        std::cerr << "WARNING in Structure::get_reflection! Your structure isn't primitive but you've chosen to continue anyway." << std::endl;
-        std::cerr << "Your reflected structure will have a lattice that points to itself." << std::endl;
-      }
-
-      else {
-        std::cerr << "ERROR in Structure::get_reflection! Your structure isn't primitive." << std::endl;
-        std::cerr << "This function is for primitive cells." << std::endl;
-        exit(20);
-      }
-    }
+  Structure Structure::get_reflection() const {
 
     Structure reflectstruc(*this);
-    Matrix3<double> zmat(0);
-    zmat.at(0, 0) = 1;
-    zmat.at(1, 1) = 1;
-    zmat.at(2, 2) = -1;
+    Eigen::Vector3d zreflect;
+    zreflect << 1, 1, -1;
 
-    SymOp zmirror(zmat, lattice(), CASM::CART);
-
-    //reflectstruc.apply_sym(zmirror);
-    for(Index i = 0; i < reflectstruc.basis.size(); i++) {
-      reflectstruc.basis[i].apply_sym(zmirror);
-    }
-
-    Lattice reflectlat = m_lattice.get_reflection(override);
-    reflectstruc.set_lattice(reflectlat, CASM::CART);
+    // resets the lattice and reflects cartesian coordinates of the basis atoms
+    reflectstruc.set_lattice(Lattice(zreflect.asDiagonal() * lattice().lat_column_mat()), FRAC);
 
     reflectstruc.update();
 
@@ -1635,8 +810,8 @@ namespace CASM {
     for(Index i = 0; i < siamese[2].size(); i++) {
       for(Index j = 0; j < siamese[2][i].size(); j++) {
         Site avgsite(siamese[2][i][j][1]);
-        avgsite(CART) = (siamese[2][i][j][0](CART) + siamese[2][i][j][1](CART)) * 0.5;
-        avgsite.set_lattice(lattice(), CASM::CART); //It's dumb that I need to do this
+        avgsite.cart() = (siamese[2][i][j][0].const_cart() + siamese[2][i][j][1].const_cart()) * 0.5;
+        avgsite.set_lattice(lattice(), CART); //It's dumb that I need to do this
         avgsite.within();
 
         std::cout << "###############" << std::endl;
@@ -1712,7 +887,7 @@ namespace CASM {
 
   Structure Structure::stamp_with(SiteCluster stamp, bool lat_override, bool im_override) const {
     //The following check may not work properly
-    if(!lat_override && !lattice().is_supercell_of((stamp.get_home()), point_group())) {
+    if(!lat_override && !lattice().is_supercell_of((stamp.home()), point_group())) {
       std::cerr << "ERROR in Structure::stamp_with (are you using Structure::bedazzle?)" << std::endl;
       std::cerr << "The lattice of your cluster is not related to the lattice of the structure you want to stamp!" << std::endl;
       exit(60);
@@ -1871,7 +1046,7 @@ namespace CASM {
             smallest = dist;
           }
         }
-        bshift(CART) *= (1.0 / relaxed_factors.size());
+        bshift.cart() *= (1.0 / relaxed_factors.size());
         avg_basis[b] += bshift;
       }
 
@@ -1901,21 +1076,6 @@ namespace CASM {
 
   //***********************************************************
   /**
-   * Using char as a way to specify which occupation basis you're interested
-   * in. This routine will call the appropriate methods in every
-   * site to fill the basis sets with functions
-   */
-  //***********************************************************
-
-  void Structure::fill_occupant_bases(const char &basis_type) {
-    for(Index i = 0; i < basis.size(); i++) {
-      basis[i].fill_occupant_basis(basis_type);
-    }
-    return;
-  }
-
-  //***********************************************************
-  /**
    *  Call this on a structure to get new_surface_struc: the structure with a
    *  layer of vacuum added parallel to the ab plane.
    *  vacuum_thickness: thickness of vacuum layer (Angstroms)
@@ -1925,21 +1085,21 @@ namespace CASM {
    */
   //***********************************************************
 
-  void Structure::add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Vector3<double> shift, COORD_TYPE mode) const {
+  void Structure::add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Eigen::Vector3d shift, COORD_TYPE mode) const {
 
     Coordinate cshift(shift, lattice(), mode);    //John G 121030
-    if(!almost_zero(cshift(FRAC)[2])) {
-      std::cerr << cshift(FRAC) << std::endl;
+    if(!almost_zero(cshift.frac(2))) {
+      std::cerr << cshift.const_frac() << std::endl;
       std::cerr << "WARNING: You're shifting in the c direction! This will mess with your vacuum and/or structure!!" << std::endl;
       std::cerr << "See Structure::add_vacuum_shift" << std::endl;
     }
 
-    Vector3<double> vacuum_vec;                 //unit vector perpendicular to ab plane
+    Eigen::Vector3d vacuum_vec;                 //unit vector perpendicular to ab plane
     vacuum_vec = lattice()[0].cross(lattice()[1]);
     vacuum_vec.normalize();
     Lattice new_lattice(lattice()[0],
                         lattice()[1],
-                        lattice()[2] + vacuum_thickness * vacuum_vec + cshift(CART)); //Add vacuum and shift to c vector
+                        lattice()[2] + vacuum_thickness * vacuum_vec + cshift.const_cart()); //Add vacuum and shift to c vector
 
     new_surface_struc = *this;
     new_surface_struc.set_lattice(new_lattice, CART);
@@ -1948,18 +1108,14 @@ namespace CASM {
 
   //***********************************************************
   void Structure::add_vacuum_shift(Structure &new_surface_struc, double vacuum_thickness, Coordinate shift) const {
-    if(shift.get_home() != &lattice()) {
-      std::cerr << "WARNING: The lattice from your shift coordinate does not match the lattice of your structure!" << std::endl;
-      std::cerr << "See Structure::add_vacuum_shift" << std::endl << std::endl;
-    }
 
-    add_vacuum_shift(new_surface_struc, vacuum_thickness, shift(CART), CART);
+    add_vacuum_shift(new_surface_struc, vacuum_thickness, shift.cart(), CART);
     return;
   }
 
   //***********************************************************
   void Structure::add_vacuum(Structure &new_surface_struc, double vacuum_thickness) const {
-    Vector3<double> shift(0, 0, 0);
+    Eigen::Vector3d shift(0, 0, 0);
 
     add_vacuum_shift(new_surface_struc, vacuum_thickness, shift, FRAC);
 
@@ -1996,7 +1152,7 @@ namespace CASM {
       for(Index i = 0 ; i < basis.size(); i++) {
         Coordinate temp(lattice());
 
-        temp(FRAC) = (basis[i] - end_struc.basis[i])(FRAC) * m / (Nofimag + 1);
+        temp.frac() = (basis[i] - end_struc.basis[i]).const_frac() * m / (Nofimag + 1);
 
         tstruc.basis[i] = basis[i] + temp;
 
@@ -2010,126 +1166,7 @@ namespace CASM {
     return ;
   }
 
-  //*****************************************************************************
-  /**
-     Creates num_images structures that are linearly interpolated between (*this)
-     and the end_struc
-     CAUTION: Use with caution currently. It DOES NOT check to find the atom closest to
-     itself in the end_struc, so if the basis sites are reorganized, structures
-     are bound to get messed up. Also ensure that the end_struc lattice is simply
-     a strained version of the current lattice, and that there are no rotations
-     in it. Or, for that matter that it is the same lattice that has been rela-
-     xed in some way
-     Checks and fixes coming soon
-  */
-  //*****************************************************************************
-  /*
-  void Structure::linear_interpolate(Structure end_struc, int num_images, Array<Structure> &images) {
-    std::cerr << "WARNING: This function assumes you are passing it structures in a certain way. I hope you know what you are doing.\n";
-    Array<Lattice> interp_lat;
-    lattice().linear_interpolate(end_struc.lattice(), num_images, interp_lat);
-    Array<Coordinate> increment_coord;
-    for(Index i = 0; i < basis.size(); i++) {
-      Vector3<double> ttrans;
-      for(int j = 0; j < 3; j++) {
-        ttrans[j] = (end_struc.basis[i](CART)[j] - basis[i](CART)[j]) / double(num_images + 1);
-      }
-      Coordinate tCoord(ttrans, lattice(), CART);
-      increment_coord.push_back(tCoord);
-    }
-    for(int i = 0; i <= (num_images + 1); i++) {
-      Structure tstruc(*this);
-      for(Index j = 0; j < basis.size(); j++) {
-        tstruc.basis[j].update(CART);
-        tstruc.basis[j](CART) += increment_coord[j](CART) * i;
-        tstruc.basis[j].update(FRAC);
-      }
-      tstruc.set_lattice(interp_lat[i], CART);
-      images.push_back(tstruc);
-    }
-    return;
-  }
-  */
-  //***********************************************************
-  /**
-   * Create numbered subdirectories and copies the appropriate
-   * POSCAR files into those.
-   * you can choose where you want to create subdirectories and name
-   */
-  //***********************************************************
-  void Structure::print_hop_images(Array<Structure> images, std::string location) {
 
-    std::ofstream out;
-    if(mkdir(location.c_str(), 0777) == -1) {
-      std::cerr << " This Directory is already existed, it will be over-written in previous files.  \n";
-    };
-
-
-
-    for(Index i = 0; i < images.size() ; i ++) {
-      std::stringstream convert;
-      std::string imag_num, POSCAR, name;
-
-      convert << i;
-      if(i > 10) {
-        name = location + "/POSCAR" + convert.str();
-      }
-      else {
-        name = location + "/POSCAR0" + convert.str();
-      }
-
-      out.open(name.c_str());
-      images[i].print(out);
-      out.close();
-
-      if(i > 10) {
-        imag_num = location + "/" + convert.str(); //it the name of subdirectories 10, 11
-        POSCAR = imag_num + "/POSCAR";
-      }
-      else {
-        imag_num = location + "/0" + convert.str(); // 01 02
-        POSCAR = imag_num + "/POSCAR";
-      }
-
-      if(mkdir(imag_num.c_str(), 0777) == -1) {
-        ;
-      }
-
-      out.open(POSCAR.c_str());
-      if(out.is_open()) {
-        images[i].print(out);
-      }
-      else {
-        std::cerr << "ERROR creating POSCAR " << i << "\n";
-      }
-      out.close();
-
-
-    }
-
-    return;
-  }
-
-
-  //***********************************************************
-
-  //This function gets the permutation representation of the
-  // factor group operations of the structure. It first applies
-  // the factor group operation to the structure, and then tries
-  // to map the new position of the basis atom to the various positions
-  // before symmetry was applied. It only checks the positions after
-  // it brings the basis within the crystal.
-
-  // ROUTINE STILL NEEDS TO BE TESTED!
-
-  //***********************************************************
-
-  // non-const version - calculates factor group if it doesn't already exist
-  Index Structure::generate_permutation_representation(bool verbose) const {
-    perm_rep_ID = BasicStructure<Site>::generate_permutation_representation(factor_group(), verbose);
-
-    return perm_rep_ID;
-  }
 
   //***********************************************************
 
@@ -2142,10 +1179,8 @@ namespace CASM {
 
   // ROUTINE STILL NEEDS TO BE TESTED!
 
-  // non-const version - calculates factor group if it doesn't already exist
-  Index Structure::generate_basis_permutation_representation(bool verbose) const {
+  SymGroupRepID Structure::generate_basis_permutation_representation(bool verbose) const {
     basis_perm_rep_ID = BasicStructure<Site>::generate_basis_permutation_representation(factor_group(), verbose);
-
     return basis_perm_rep_ID;
   }
 
@@ -2169,7 +1204,7 @@ namespace CASM {
       basis[i] += shift;
     }
 
-    factor_group_internal += shift;
+    m_factor_group += shift.cart();
     return (*this);
   }
 
@@ -2180,7 +1215,7 @@ namespace CASM {
     for(Index i = 0; i < basis.size(); i++) {
       basis[i] -= shift;
     }
-    factor_group_internal -= shift;
+    m_factor_group -= shift.cart();
     return (*this);
   }
 
@@ -2191,11 +1226,8 @@ namespace CASM {
     // class Structure : public BasicStructure<Site>
     BasicStructure<Site>::to_json(json);
 
-    // mutable MasterSymGroup factor_group_internal;
-    json["factor_group"] = factor_group_internal;
-
-    // mutable int perm_rep_id;
-    json["perm_rep_ID"] = perm_rep_ID;
+    // mutable MasterSymGroup m_factor_group;
+    json["factor_group"] = m_factor_group;
 
     // bool SD_flag;
     json["SD_flag"] = SD_flag;
@@ -2213,14 +1245,9 @@ namespace CASM {
       BasicStructure<Site> &basic = *this;
       basic.from_json(json);
 
-      // mutable MasterSymGroup factor_group_internal;
-      factor_group_internal.clear();
-      Coordinate coord(lattice());
-      factor_group_internal.push_back(SymOp(coord));
-      factor_group_internal.from_json(json["factor_group"]);
-
-      // mutable int perm_rep_ID;
-      CASM::from_json(perm_rep_ID, json["perm_rep_ID"]);
+      // mutable MasterSymGroup m_factor_group;
+      m_factor_group.clear();
+      m_factor_group.from_json(json["factor_group"]);
 
       // bool SD_flag;
       CASM::from_json(SD_flag, json["SD_flag"]);
@@ -2267,15 +1294,15 @@ namespace CASM {
 
   /// Returns 'converter' which converts Site::site_occupant indices to 'mol_list' indices:
   ///   mol_list_index = converter[basis_site][site_occupant_index]
-  Array< Array<int> > get_index_converter(const Structure &struc, Array<Molecule> mol_list) {
+  std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<Molecule> mol_list) {
 
-    Array< Array<int> > converter(struc.basis.size());
+    std::vector< std::vector<Index> > converter(struc.basis.size());
 
     for(Index i = 0; i < struc.basis.size(); i++) {
       converter[i].resize(struc.basis[i].site_occupant().size());
 
       for(Index j = 0; j < struc.basis[i].site_occupant().size(); j++) {
-        converter[i][j] = mol_list.find(struc.basis[i].site_occupant()[j]);
+        converter[i][j] = find_index(mol_list, struc.basis[i].site_occupant()[j]);
       }
     }
 
@@ -2285,15 +1312,15 @@ namespace CASM {
 
   /// Returns 'converter' which converts Site::site_occupant indices to 'mol_name_list' indices:
   ///   mol_name_list_index = converter[basis_site][site_occupant_index]
-  Array< Array<int> > get_index_converter(const Structure &struc, Array<std::string> mol_name_list) {
+  std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<std::string> mol_name_list) {
 
-    Array< Array<int> > converter(struc.basis.size());
+    std::vector< std::vector<Index> > converter(struc.basis.size());
 
     for(Index i = 0; i < struc.basis.size(); i++) {
       converter[i].resize(struc.basis[i].site_occupant().size());
 
       for(Index j = 0; j < struc.basis[i].site_occupant().size(); j++) {
-        converter[i][j] = mol_name_list.find(struc.basis[i].site_occupant()[j].name);
+        converter[i][j] = find_index(mol_name_list, struc.basis[i].site_occupant()[j].name);
       }
     }
 

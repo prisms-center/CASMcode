@@ -162,14 +162,14 @@ class Poscar:
 
     def volume(self, lattice=None):
         """ Returns scalar triple product of lattice vectors """
-        if lattice == None:
+        if lattice is None:
             lattice = self._lattice
         return np.inner(lattice[0,:], np.cross(lattice[1,:],lattice[2,:]))
 
 
     def reciprocal_volume(self, reciprocal_lattice=None):
         """ Returns scalar triple product of reciprocal lattice vector """
-        if reciprocal_lattice == None:
+        if reciprocal_lattice is None:
             reciprocal_lattice = self._reciprocal_lattice
         return self.volume(reciprocal_lattice)
 
@@ -241,10 +241,11 @@ class Poscar:
                 lat.append([float(x) for x in line.split()])
             except ValueError:
                 raise PoscarError("Could not read lattice vector: '" + line + "'")
-        self._lattice = np.array(lat)
+        self._lattice = self.scaling*np.array(lat)
         if self._lattice.shape!=(3,3):
             raise PoscarError("Lattice shape error: " + np.array_str(self._lattice))
         self._reciprocal_lattice = 2.0*math.pi*np.linalg.inv(np.transpose(self._lattice))
+        self.scaling=1.0
         return
 
 

@@ -1,11 +1,13 @@
-#ifndef CORRELATION_HH
-#define CORRELATION_HH
+#ifndef CASM_CORRELATION_HH
+#define CASM_CORRELATION_HH
 
-#include "casm/container/Array.hh"
+#include "casm/external/Eigen/Dense"
 #include "casm/clusterography/Orbitree.hh"
 
 namespace CASM {
-  typedef Array<double> Correlation;
+
+  typedef Eigen::VectorXd Correlation;
+
   template<class U>
   void match_shape(Correlation &corr, const Array<Array<Array<U> > > &thing) {
 
@@ -17,7 +19,7 @@ namespace CASM {
         num_corr += thing[i][j].size();
       }
     }
-    corr.resize(num_corr, 0);
+    corr = Eigen::VectorXd::Zero(num_corr);
   }
 
   template<class ClustType>
@@ -28,7 +30,7 @@ namespace CASM {
         num_corr += tree.prototype(i, j).clust_basis.size();
       }
     }
-    corr.resize(num_corr, 0);
+    corr = Eigen::VectorXd::Zero(num_corr);
   }
 }
 

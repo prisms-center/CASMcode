@@ -1,0 +1,95 @@
+{
+  "comment" : "This is a sample input file. Unrecognized attributes (like the ones prepended with '_') are ignored.",
+  "debug" : false,
+  "ensemble" : "grand_canonical",
+  "method" : "metropolis",
+  "model" : {
+    "formation_energy" : "formation_energy"
+  },
+  "supercell" : [
+    [9, 0, 0],
+    [0, 9, 0],
+    [0, 0, 9]
+  ],
+  "data" : {
+    "sample_by" : "pass",
+    "sample_period" : 1,
+    "_N_sample" : 1000, 
+    "_N_pass" : 1000,
+    "_N_step" : 1000,
+    "_max_pass" : 10000,
+    "min_pass" : 1000,
+    "_max_step" : 10000,
+    "_max_sample" : 500,
+    "_min_sample" : 100,
+    "confidence" : 0.95,
+    "measurements" : [ 
+      { 
+        "quantity" : "formation_energy",
+        "precision" : 1e-3
+      },
+      { 
+        "quantity" : "potential_energy"
+      },
+      { 
+        "quantity" : "atom_frac"
+      },
+      { 
+        "quantity" : "site_frac"
+      },
+      { 
+        "quantity" : "comp",
+        "precision" : 1e-3
+      },
+      { 
+        "quantity" : "comp_n"
+      },
+      {
+        "quantity" : "all_correlations"
+      }
+    ],
+    "storage" : {
+      "write_observations" : false,
+      "write_trajectory" : false,
+      "output_format" : ["csv", "json"]
+    },
+    "_enumeration": {
+      "check" : "eq(1,1)",
+      "metric" : "clex_hull_dist(ALL)",
+      "insert_canonical" : true,
+      "check_existence" : true,
+      "N_halloffame" : 100,
+      "sample_mode" : "on_sample"
+    }
+  },
+  "driver" : {
+    "mode" : "incremental",
+    "dependent_runs" : true, 
+    "motif" : {
+      "configname" : "restricted_auto",
+      "_configname" : "SCEL3_3_1_1_0_2_2/0",
+      "_configdof" : "path/to/final_state.json"
+    },
+    "initial_conditions" : {
+      "param_chem_pot" : {
+        "a" : -2.00
+      },
+      "temperature" : 600.0,
+      "tolerance" : 0.001
+    },
+    "final_conditions" : {
+      "param_chem_pot" : {
+        "a" : 0.0
+      },
+      "temperature" : 600.0,
+      "tolerance" : 0.001
+    },
+    "incremental_conditions" : {
+      "param_chem_pot" : {
+        "a" : 0.1
+      },
+      "temperature" : 0.0,
+      "tolerance" : 0.001
+    }
+  }
+}

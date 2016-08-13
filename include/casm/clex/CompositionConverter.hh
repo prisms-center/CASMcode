@@ -12,6 +12,10 @@ namespace CASM {
 
   class Structure;
 
+  /// \brief Convert between number of species per unit cell and parametric composition
+  ///
+  /// \ingroup Clex
+  ///
   class CompositionConverter {
 
   public:
@@ -33,6 +37,9 @@ namespace CASM {
     /// \brief The dimensionality of the composition space
     size_type independent_compositions() const;
 
+    /// \brief Composition variable names: "a", "b", ...
+    static std::string comp_var(size_type i);
+
     /// \brief The order of components in mol composition vectors
     std::vector<std::string> components() const;
 
@@ -42,17 +49,29 @@ namespace CASM {
     /// \brief The mol composition of the parameteric composition axes end members
     Eigen::VectorXd end_member(size_type i) const;
 
+    /// \brief Return the matrix Mij = dx_i/dn_j
+    Eigen::MatrixXd dparam_dmol() const;
+
+    /// \brief Return the matrix Mij = dn_i/dx_j
+    Eigen::MatrixXd dmol_dparam() const;
+
     /// \brief Convert number of mol per prim, 'n' to parametric composition 'x'
     Eigen::VectorXd param_composition(const Eigen::VectorXd &n) const;
 
+    /// \brief Convert change in number of atoms per prim, 'dn' to change in parametric composition 'dx'
+    Eigen::VectorXd dparam_composition(const Eigen::VectorXd &dn) const;
+
     /// \brief Convert parametric composition, 'x', to number of mol per prim, 'n'
-    Eigen::VectorXd mol_composition(const Eigen::VectorXd &n) const;
+    Eigen::VectorXd mol_composition(const Eigen::VectorXd &x) const;
+
+    /// \brief Convert change in parametric composition, 'dx', to change in number of mol per prim, 'dn'
+    Eigen::VectorXd dmol_composition(const Eigen::VectorXd &dx) const;
 
     /// \brief Convert dG/dn to dG/dx
-    Eigen::VectorXd param_mu(const Eigen::VectorXd atomic_mu) const;
+    Eigen::VectorXd param_chem_pot(const Eigen::VectorXd chem_pot) const;
 
     /// \brief Convert dG/dx to dG/dn
-    Eigen::VectorXd atomic_mu(const Eigen::VectorXd param_mu) const;
+    Eigen::VectorXd chem_pot(const Eigen::VectorXd param_chem_pot) const;
 
 
     /// \brief Return formula for x->n
@@ -66,6 +85,15 @@ namespace CASM {
 
     /// \brief Return formula for end member
     std::string end_member_formula(size_type i) const;
+
+    /// \brief Return formula for comp(i) in terms of comp_n(A), comp_n(B), ...
+    std::string comp_formula(size_type i) const;
+
+    /// \brief Return formula for comp_n(components()[i]) in terms of comp(a), comp(b), ...
+    std::string comp_n_formula(size_type i) const;
+
+    /// \brief Return formula for param_chem_pot(i) in terms of chem_pot(A), chem_pot(B), ...
+    std::string param_chem_pot_formula(size_type i) const;
 
 
   private:
@@ -116,11 +144,29 @@ namespace CASM {
   /// \brief Pretty-print map of name/CompositionConverter pairs
   void display_composition_axes(std::ostream &stream, const std::map<std::string, CompositionConverter> &map);
 
+  /// \brief Pretty-print comp in terms of comp_n
+  void display_comp(std::ostream &stream, const CompositionConverter &f, int indent = 0);
+
+  /// \brief Pretty-print comp_n in terms of comp
+  void display_comp_n(std::ostream &stream, const CompositionConverter &f, int indent = 0);
+
+  /// \brief Pretty-print param_chem_pot in terms of chem_pot
+  void display_param_chem_pot(std::ostream &stream, const CompositionConverter &f, int indent = 0);
+
   /// \brief Serialize CompositionConverter to JSON
   jsonParser &to_json(const CompositionConverter &f, jsonParser &json);
 
   /// \brief Deserialize CompositionConverter from JSON
   void from_json(CompositionConverter &f, const jsonParser &json);
+
+  /// \brief Generate a column matrix containing all the possible molecular end members
+  Eigen::MatrixXd end_members(const Structure &prim);
+
+  /// \brief Return the composition space of a Structure
+  Eigen::MatrixXd composition_space(const Structure &prim, double tol = 1e-14);
+
+  /// \brief Return the null composition space of a Structure
+  Eigen::MatrixXd null_composition_space(const Structure &prim, double tol = 1e-14);
 
 
   // ------ Definitions ---------------------------------------------
@@ -209,6 +255,8 @@ namespace CASM {
 
     return result;
   }
+
+
 }
 
 #endif

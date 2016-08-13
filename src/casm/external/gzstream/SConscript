@@ -1,0 +1,12 @@
+# http://www.scons.org/doc/production/HTML/scons-user.html
+# This is: src/casm/external/gzstream/SConscript
+
+Import('env')
+
+# include gzstream.h
+gzstream_include = ['../../../../include/casm/external/gzstream']
+
+# build gzstream
+gzstream_sobj = env.SharedObject('gzstream.C', CPPPATH = gzstream_include)
+env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + gzstream_sobj
+env['CASM_SOBJ'] = env['CASM_SOBJ'] + gzstream_sobj

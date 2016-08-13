@@ -2,6 +2,7 @@
 #define JSONSTRUC_HH
 
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Site.hh"
 #include "casm/casm_io/jsonParser.hh"
 
 
@@ -73,7 +74,7 @@ namespace CASM {
       struc.set_lattice(tlat, FRAC);
       Index l = 0;
 
-      Vector3<double> tvec;
+      Eigen::Vector3d tvec;
       for(Index i = 0; i < json["atoms_per_type"].size(); i++) {
         CASM::from_json(tstr, json["atom_type"][i]);
         for(Index j = 0; j < json["atoms_per_type"][i].get<Index>(); j++) {

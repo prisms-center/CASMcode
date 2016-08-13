@@ -16,7 +16,7 @@ namespace CASM {
     typedef typename CounterType::value_type value_type;
     typedef typename CounterType::size_type size_type;
 
-    CounterValueIterator(CounterType const *_counter_ptr = NULL, size_type _ind = 0) : m_counter_ptr(_counter_ptr), m_ind(_ind) {}
+    CounterValueIterator(CounterType const *_counter_ptr = nullptr, size_type _ind = 0) : m_counter_ptr(_counter_ptr), m_ind(_ind) {}
     //CounterValueIterator(const CounterValueIterator &_it);
 
     bool operator==(const CounterValueIterator &_it) {
@@ -31,6 +31,7 @@ namespace CASM {
       ++m_ind;
       return *this;
     }
+
     CounterValueIterator operator++(int) {
       CounterValueIterator t_it(*this);
       ++(*this);
@@ -349,10 +350,10 @@ namespace CASM {
 
   private:
     /// A functor that enables different ways of accessing the container, by default: container[index]
-    const Access m_access;
+    Access m_access;
 
     /// A functor that enables custom comparison, by default: operator<
-    const Compare m_compare;
+    Compare m_compare;
 
     /// Initial container values
     Container m_initial;

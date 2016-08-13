@@ -1,11 +1,13 @@
 #ifndef CONFIGENUMALLOCCUPATIONS_HH
 #define CONFIGENUMALLOCCUPATIONS_HH
 
-#include "casm/clex/ConfigEnum.hh"
 #include "casm/container/Counter.hh"
 #include "casm/symmetry/PermuteIterator.hh"
+#include "casm/clex/ConfigEnum.hh"
 
 namespace CASM {
+
+  class Supercell;
 
   template <typename ConfigType>
   class ConfigEnumAllOccupations : public ConfigEnum<ConfigType> {
@@ -22,6 +24,7 @@ namespace CASM {
     using ConfigEnum<ConfigType>::current;
     using ConfigEnum<ConfigType>::num_steps;
     using ConfigEnum<ConfigType>::step;
+    using ConfigEnum<ConfigType>::source;
   private:
     Counter<Array<int> > m_counter;
     PermuteIterator m_perm_begin, m_perm_end;
@@ -36,6 +39,7 @@ namespace CASM {
       return m_perm_end;
     }
   public:
+    ConfigEnumAllOccupations(Supercell &_scel);
     ConfigEnumAllOccupations(const value_type &_initial, const value_type &_final, PermuteIterator perm_begin, PermuteIterator perm_end);
 
     // **** Mutators ****

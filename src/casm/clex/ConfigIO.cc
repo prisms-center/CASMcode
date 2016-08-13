@@ -1,236 +1,30 @@
-#include <functional>
 #include "casm/clex/ConfigIO.hh"
-#include "casm/clex/ConfigIOHull.hh"
-#include "casm/clex/ConfigIOStrucScore.hh"
+
+#include <functional>
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/app/DirectoryStructure.hh"
-#include "casm/app/ProjectSettings.hh"
+#include "casm/clex/Norm.hh"
+#include "casm/clex/ConfigIOHull.hh"
+#include "casm/clex/ConfigIONovelty.hh"
+#include "casm/clex/ConfigIOStrucScore.hh"
+#include "casm/clex/ConfigIOStrain.hh"
+#include "casm/clex/ConfigIOSelected.hh"
 
 namespace CASM {
-  int ConfigIOParser::hack = ConfigIOParser::init(std::function<void(DataFormatterDictionary<Configuration>&) >(ConfigIO::initialize_formatting_dictionary));
 
   namespace ConfigIO_impl {
 
-
-    //"DFT formation energy, normalized per primitive cell and measured relative to current reference states"
-    double get_config_formation_energy(const Configuration &_config) {
-      return _config.delta_properties().contains("relaxed_energy") ? _config.delta_properties()["relaxed_energy"].get<double>() : NAN;
-    }
-
-    bool has_config_formation_energy(const Configuration &_config) {
-      return _config.delta_properties().contains("relaxed_energy");
-    }
-
-    //"Green-Lagrange strain of dft-relaxed configuration, relative to the ideal crystal.
-    //Ordered as [E(0,0), E(1,1), E(2,2), E(1,2), E(0,2), E(0,1)].  Accepts index as argument on interval [0,5]"
-    std::vector<double> get_config_relaxation_strain(const Configuration &_config) {
-      return _config.calc_properties().contains("relaxation_strain") ? _config.calc_properties()["relaxation_strain"].get<std::vector<double> >() : std::vector<double>(6, NAN);
-    }
-
-    bool has_config_relaxation_strain(const Configuration &_config) {
-      return _config.calc_properties().contains("relaxation_strain");
-    }
-
-    //"Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)"
-    double get_config_rms_force(const Configuration &_config) {
-      return _config.calc_properties().contains("rms_force") ? _config.delta_properties()["rms_force"].get<double>() : NAN;
-    }
-
-    bool has_config_rms_force(const Configuration &_config) {
-      return _config.delta_properties().contains("rms_force");
-    }
-
-    //"Cost function that describes the degree to which basis sites have relaxed."
-    double get_config_basis_deformation(const Configuration &_config) {
-      return _config.calc_properties().contains("basis_deformation") ? _config.calc_properties()["basis_deformation"].get<double>() : NAN;
-    }
-
-    bool has_config_basis_deformation(const Configuration &_config) {
-      return _config.calc_properties().contains("basis_deformation");
-    }
-
-    //"Cost function that describes the degree to which lattice has relaxed."
-    double get_config_lattice_deformation(const Configuration &_config) {
-      return _config.calc_properties().contains("lattice_deformation") ? _config.calc_properties()["lattice_deformation"].get<double>() : NAN;
-    }
-
-    bool has_config_lattice_deformation(const Configuration &_config) {
-      return _config.calc_properties().contains("lattice_deformation");
-    }
-
-    //"Change in volume due to relaxation, expressed as the ratio V/V_0."
-    double get_config_volume_relaxation(const Configuration &_config) {
-      return _config.calc_properties().contains("volume_relaxation") ? _config.calc_properties()["volume_relaxation"].get<double>() : NAN;
-    }
-
-    bool has_config_volume_relaxation(const Configuration &_config) {
-      return _config.calc_properties().contains("volume_relaxation");
-    }
-
-    //"Change in volume due to relaxation, expressed as the ratio V/V_0."
-    double get_config_dist_from_hull(const Configuration &_config) {
-      return _config.generated_properties().contains("dist_from_hull") ? _config.generated_properties()["dist_from_hull"].get<double>() : NAN;
-    }
-
-    bool has_config_dist_from_hull(const Configuration &_config) {
-      return _config.generated_properties().contains("dist_from_hull");
-    }
-
-
-    double get_config_deformation_change(const Configuration &_config) {
-      return std::abs(_config.deformation().determinant()) - 1.0;
-    }
-
-
-    //****************************************************************************************
-
-    std::string CorrConfigFormatter::long_header(const Configuration &_tmplt) const {
-
-      Correlation corr = correlations(_tmplt, m_clexulator);
-
-      std::stringstream ss, word_ss;
-      if(_index_rules().size() == 0) {
-        for(Index lin_ind = 0; lin_ind < corr.size(); lin_ind++) {
-          word_ss.str(std::string());
-          word_ss.clear();
-          word_ss << "corr(" << lin_ind << ")";
-          ss << ' ' << std::setw(16) << word_ss.str();
-        }
-      }
-      else {
-        for(Index i = 0; i < _index_rules().size(); i++) {
-          word_ss.str(std::string());
-          word_ss.clear();
-          word_ss << "corr(" << _index_rules()[i][0] << ')';
-          ss << ' ' << std::setw(16) << word_ss.str();
-        }
-      }
-
-      return ss.str();
-    }
-
-    //****************************************************************************************
-
-    void CorrConfigFormatter::inject(const Configuration &_config, DataStream &_stream, Index) const {
-
-      Correlation corr = correlations(_config, m_clexulator);
-
-      //Cases
-      if(_index_rules().size() == 0) {
-        for(Index nc = 0; nc < corr.size(); nc++) {
-          _stream << corr[nc];
-        }
-      }
-      else if(_index_rules()[0].size() == 1) {
-        IndexContainer::const_iterator it(_index_rules().cbegin()), it_end(_index_rules().cend());
-        for(; it != it_end; ++it) {
-          if((*it)[0] < corr.size())
-            _stream <<  corr[(*it)[0]];
-          else
-            _stream <<  double(NAN) << DataStream::failbit;
-        }
-      }
-
-    }
-
-    //****************************************************************************************
-
-    void CorrConfigFormatter::print(const Configuration &_config, std::ostream &_stream, Index) const {
-
-      Correlation corr = correlations(_config, m_clexulator);
-
-      _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      _stream.precision(8);
-
-      //Cases
-      if(_index_rules().size() == 0) {
-        for(Index nc = 0; nc < corr.size(); nc++) {
-          _stream << ' ' << std::setw(16) << corr[nc];
-        }
-      }
-      else if(_index_rules()[0].size() == 1) {
-        IndexContainer::const_iterator it(_index_rules().cbegin()), it_end(_index_rules().cend());
-        for(; it != it_end; ++it) {
-          if((*it)[0] < corr.size())
-            _stream <<  ' ' << std::setw(16) << corr[(*it)[0]];
-          else
-            _stream <<  std::setw(17) << "unknown";
-        }
-      }
-
-    }
-
-    //****************************************************************************************
-
-    jsonParser &CorrConfigFormatter::to_json(const Configuration &_config, jsonParser &json)const {
-      json = correlations(_config, m_clexulator);
-      return json;
-    }
-
-    //****************************************************************************************
-    void CorrConfigFormatter::init(const Configuration &_tmplt) const {
-      if(!m_clexulator.initialized()) {
-        m_clexulator = _tmplt.get_primclex().global_clexulator();
-      }
-    };
-
-    //****************************************************************************************
-    bool ClexConfigFormatter::parse_args(const std::string &args) {
-      if(m_clex_name.size())
-        return false;
-      m_clex_name = args;
-      return true;
-    }
-
-    //****************************************************************************************
-
-    void ClexConfigFormatter::init(const Configuration &_tmplt) const {
-      if(!m_clexulator.initialized()) {
-        m_clexulator = _tmplt.get_primclex().global_clexulator();
-      }
-
-      m_eci = _tmplt.get_primclex().global_eci(m_clex_name);
-    };
-
-    //****************************************************************************************
-
-    std::string ClexConfigFormatter::short_header(const Configuration &_tmplt) const {
-      return "clex(" + m_clex_name + ")";
-    }
-
-    //****************************************************************************************
-
-    void ClexConfigFormatter::inject(const Configuration &_config, DataStream &_stream, Index) const {
-      _stream << m_eci *correlations(_config, m_clexulator);
-    }
-
-    //****************************************************************************************
-
-    void ClexConfigFormatter::print(const Configuration &_config, std::ostream &_stream, Index) const {
-      _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      _stream.precision(8);
-
-      _stream << m_eci *correlations(_config, m_clexulator);
-
-    }
-
-    //****************************************************************************************
-
-    jsonParser &ClexConfigFormatter::to_json(const Configuration &_config, jsonParser &json)const {
-      json = m_eci * correlations(_config, m_clexulator);
-      return json;
-    }
-
-    //****************************************************************************************
-    bool SiteFracConfigFormatter::parse_args(const std::string &args) {
+    /// \brief Expects arguments of the form 'name' or 'name(Au)', 'name(Pt)', etc.
+    bool MolDependent::parse_args(const std::string &args) {
       if(args.size() > 0)
         m_mol_names.push_back(args);
       return true;
     }
-    //****************************************************************************************
-    void SiteFracConfigFormatter::init(const Configuration &_tmplt) const {
-      Array<Molecule> struc_molecule = _tmplt.get_primclex().get_prim().get_struc_molecule();
+
+    /// \brief Adds index rules corresponding to the parsed args
+    void MolDependent::init(const Configuration &_tmplt) const {
+      auto struc_molecule = _tmplt.get_primclex().get_prim().get_struc_molecule();
+
       if(m_mol_names.size() == 0) {
         for(Index i = 0; i < struc_molecule.size(); i++) {
           _add_rule(std::vector<Index>({i}));
@@ -240,147 +34,54 @@ namespace CASM {
       else {
         for(Index n = 0; n < m_mol_names.size(); n++) {
           Index i = 0;
-          for(i = 0; i < struc_molecule.size(); i++)
+          for(i = 0; i < struc_molecule.size(); i++) {
             if(struc_molecule[i].name == m_mol_names[n]) {
               _add_rule(std::vector<Index>({i}));
+              break;
             }
+          }
           if(i == struc_molecule.size())
-            throw std::runtime_error(std::string("Format tag: 'site_frac(") + m_mol_names[n] + ")' does not correspond to a viable composition.\n");
+            throw std::runtime_error(std::string("Format tag: '") + name() + "(" +
+                                     m_mol_names[n] + ")' does not correspond to a viable composition.\n");
         }
       }
     }
 
-    //****************************************************************************************
-
-    std::string SiteFracConfigFormatter::long_header(const Configuration &_tmplt) const {
+    /// \brief Long header returns: 'name(Au)   name(Pt)   ...'
+    std::string MolDependent::long_header(const Configuration &_tmplt) const {
       std::string t_header;
-      for(Index c = 0; c < _index_rules().size(); c++) {
-        t_header += name() + "(" + m_mol_names[_index_rules()[c][0]] + ")";
-        if(c != _index_rules().size() - 1) {
+      for(Index c = 0; c < m_mol_names.size(); c++) {
+        t_header += name() + "(" + m_mol_names[c] + ")";
+        if(c != m_mol_names.size() - 1) {
           t_header += "   ";
         }
       }
       return t_header;
     }
+  }
 
-    //****************************************************************************************
+  namespace ConfigIO {
 
-    void SiteFracConfigFormatter::inject(const Configuration &_config, DataStream &_stream, Index) const {
-      auto comp = _config.get_true_composition();
+    // --- Comp implementations -----------
 
-      for(Index c = 0; c < _index_rules().size(); c++) {
-        _stream << comp[_index_rules()[c][0]];
-      }
-      return;
+    const std::string Comp::Name = "comp";
+
+    const std::string Comp::Desc =
+      "Parametric composition parameters, individual label as argument. "
+      "Without argument, all values are printed. Ex: comp(a), comp(b), etc.";
+
+    /// \brief Returns the parametric composition
+    Eigen::VectorXd Comp::evaluate(const Configuration &config) const {
+      return comp(config);
     }
 
-    //****************************************************************************************
-
-    void SiteFracConfigFormatter::print(const Configuration &_config, std::ostream &_stream, Index) const {
-      auto comp = _config.get_true_composition();
-
-      _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      _stream.precision(8);
-
-
-      for(Index c = 0; c < _index_rules().size(); c++) {
-        _stream << comp[_index_rules()[c][0]];
-        if(c != _index_rules().size() - 1) {
-          _stream << "      ";
-        }
-      }
-      return;
+    /// \brief Returns true if the PrimClex has composition axes
+    bool Comp::validate(const Configuration &config) const {
+      return config.get_primclex().has_composition_axes();
     }
 
-    //****************************************************************************************
-
-    jsonParser &SiteFracConfigFormatter::to_json(const Configuration &_config, jsonParser &json)const {
-      json = _config.get_true_composition();
-      return json;
-    }
-
-    //****************************************************************************************
-
-    bool AtomFracConfigFormatter::parse_args(const std::string &args) {
-      if(args.size() > 0)
-        m_mol_names.push_back(args);
-      return true;
-    }
-
-    //****************************************************************************************
-
-    void AtomFracConfigFormatter::init(const Configuration &_tmplt) const {
-      Array<Molecule> struc_molecule = _tmplt.get_primclex().get_prim().get_struc_molecule();
-      if(m_mol_names.size() == 0) {
-        for(Index i = 0; i < struc_molecule.size(); i++) {
-          _add_rule(std::vector<Index>({i}));
-          m_mol_names.push_back(struc_molecule[i].name);
-        }
-      }
-      else {
-        for(Index n = 0; n < m_mol_names.size(); n++) {
-          Index i = 0;
-          for(i = 0; i < struc_molecule.size(); i++)
-            if(struc_molecule[i].name == m_mol_names[n]) {
-              _add_rule(std::vector<Index>({i}));
-            }
-          if(i == struc_molecule.size())
-            throw std::runtime_error(std::string("Format tag: 'atom_frac(") + m_mol_names[n] + ")' does not correspond to a viable composition.\n");
-        }
-      }
-    }
-
-    //****************************************************************************************
-
-    std::string AtomFracConfigFormatter::long_header(const Configuration &_tmplt) const {
-      std::string t_header;
-      for(Index c = 0; c < _index_rules().size(); c++) {
-        t_header += name() + "(" + m_mol_names[_index_rules()[c][0]] + ")";
-        if(c != _index_rules().size() - 1) {
-          t_header += "   ";
-        }
-      }
-      return t_header;
-    }
-
-    //****************************************************************************************
-
-    void AtomFracConfigFormatter::inject(const Configuration &_config, DataStream &_stream, Index) const {
-      auto comp = _config.get_composition();
-
-      for(Index c = 0; c < _index_rules().size(); c++) {
-        _stream << comp[_index_rules()[c][0]];
-      }
-      return;
-    }
-
-    //****************************************************************************************
-
-    void AtomFracConfigFormatter::print(const Configuration &_config, std::ostream &_stream, Index) const {
-      auto comp = _config.get_composition();
-
-      _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      _stream.precision(8);
-
-
-      for(Index c = 0; c < _index_rules().size(); c++) {
-        _stream << comp[_index_rules()[c][0]];
-        if(c != _index_rules().size() - 1) {
-          _stream << "      ";
-        }
-      }
-      return;
-    }
-
-    //****************************************************************************************
-
-    jsonParser &AtomFracConfigFormatter::to_json(const Configuration &_config, jsonParser &json)const {
-      json = _config.get_composition();
-      return json;
-    }
-    //****************************************************************************************
-
-    bool CompConfigFormatter::parse_args(const std::string &args) {
+    /// \brief Expects arguments of the form 'comp(a)', 'comp(b)', etc.
+    bool Comp::parse_args(const std::string &args) {
       if(args.size() == 1) {
         _add_rule(std::vector<Index>({(Index)(args[0] - 'a')}));
       }
@@ -391,237 +92,504 @@ namespace CASM {
       return true;
     }
 
-
-    //****************************************************************************************
-
-    void CompConfigFormatter::init(const Configuration &_tmplt) const {
-
-      Index Nind = _tmplt.get_param_composition().size();
-      if(_index_rules().size() == 0) {
-        for(Index i = 0; i < Nind; i++)
-          _add_rule(std::vector<Index>({i}));
-      }
-      else {
-        for(Index i = 0; i < _index_rules().size(); i++) {
-          if(_index_rules()[i][0] < 0 || _index_rules()[i][0] >= Nind)
-            throw std::runtime_error(std::string("Format tag: 'comp(") + std::to_string((char)('a' + _index_rules()[i][0])) + ") is out of bounds.\n");
-
-        }
-      }
-    }
-
-    //****************************************************************************************
-
-    std::string CompConfigFormatter::long_header(const Configuration &_tmplt) const {
+    /// \brief Long header returns: 'comp(a)   comp(b)   ...'
+    std::string Comp::long_header(const Configuration &_tmplt) const {
       std::string t_header;
       for(Index c = 0; c < _index_rules().size(); c++) {
         t_header += name() + "(";
         t_header.push_back((char)('a' + _index_rules()[c][0]));
         t_header.push_back(')');
         if(c != _index_rules().size() - 1) {
-          t_header += "        ";
+          t_header += "   ";
         }
       }
       return t_header;
     }
 
-    //****************************************************************************************
 
-    void CompConfigFormatter::inject(const Configuration &_config, DataStream &_stream, Index) const {
-      Eigen::VectorXd p_comp = _config.get_param_composition();
+    // --- CompN implementations -----------
 
-      for(Index c = 0; c < _index_rules().size(); c++) {
-        _stream << p_comp(_index_rules()[c][0]);
-      }
-      return;
+    const std::string CompN::Name = "comp_n";
+
+    const std::string CompN::Desc =
+      "Number of each species per unit cell, including vacancies. "
+      "No argument prints all available values. Ex: comp_n, comp_n(Au), comp_n(Pt), etc.";
+
+    /// \brief Returns the number of each species per unit cell
+    Eigen::VectorXd CompN::evaluate(const Configuration &config) const {
+      return comp_n(config);
     }
 
-    //****************************************************************************************
 
-    void CompConfigFormatter::print(const Configuration &_config, std::ostream &_stream, Index) const {
-      Eigen::VectorXd p_comp = _config.get_param_composition();
+    // --- SiteFrac implementations -----------
 
-      _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-      _stream.precision(8);
+    const std::string SiteFrac::Name = "site_frac";
 
-      for(Index c = 0; c < _index_rules().size(); c++) {
-        _stream << p_comp(_index_rules()[c][0]);
-        if(c != _index_rules().size() - 1) {
-          _stream << "     ";
+    const std::string SiteFrac::Desc =
+      "Fraction of sites occupied by a species, including vacancies. "
+      "No argument prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.";
+
+    /// \brief Returns the site fraction
+    Eigen::VectorXd SiteFrac::evaluate(const Configuration &config) const {
+      return site_frac(config);
+    }
+
+
+    // --- AtomFrac implementations -----------
+
+    const std::string AtomFrac::Name = "atom_frac";
+
+    const std::string AtomFrac::Desc =
+      "Fraction of atoms that are a particular species, excluding vacancies.  "
+      "Without argument, all values are printed. Ex: atom_frac(Au), atom_frac(Pt), etc.";
+
+    /// \brief Returns the site fraction
+    Eigen::VectorXd AtomFrac::evaluate(const Configuration &config) const {
+      return species_frac(config);
+    }
+
+
+    // --- Corr implementations -----------
+
+    const std::string Corr::Name = "corr";
+
+    const std::string Corr::Desc =
+      "Correlation values (evaluated basis functions, normalized per primitive cell). "
+      "If no arguements, prints all correlations, using the basis set for the default "
+      "cluster expansion as listed by 'casm settings -l'. "
+      "If one argument, accepts either: "
+      "1) a cluster expansion name, for example 'corr(formation_energy)', and "
+      "evaluates all basis functions, or "
+      "2) a range of indices of basis functions to evaluate, for example "
+      "'corr(ind1:ind2)'. "
+      "If two arguments, accepts cluster expansion name and a range of basis "
+      "functions to evaluate, for example 'corr(formation_energy,ind1:ind2)'.";
+
+    /// \brief Returns the atom fraction
+    Eigen::VectorXd Corr::evaluate(const Configuration &config) const {
+      return correlations(config, m_clexulator);
+    }
+
+    /// \brief If not yet initialized, use the default clexulator from the PrimClex
+    void Corr::init(const Configuration &_tmplt) const {
+      if(!m_clexulator.initialized()) {
+        const PrimClex &primclex = _tmplt.get_primclex();
+        ClexDescription desc = m_clex_name.empty() ?
+                               primclex.settings().default_clex() : primclex.settings().clex(m_clex_name);
+        m_clexulator = primclex.clexulator(desc);
+      }
+
+      VectorXdAttribute<Configuration>::init(_tmplt);
+
+    }
+
+    /// \brief Expects 'corr', 'corr(clex_name)', 'corr(index_expression)', or
+    /// 'corr(clex_name,index_expression)'
+    bool Corr::parse_args(const std::string &args) {
+      std::vector<std::string> splt_vec;
+      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+
+      if(!splt_vec.size()) {
+        return true;
+      }
+      else if(splt_vec.size() == 1) {
+        if(splt_vec[0].find(':') != std::string::npos) {
+          _parse_index_expression(splt_vec[0]);
+        }
+        else {
+          m_clex_name = splt_vec[0];
         }
       }
-      return;
+      else if(splt_vec.size() == 2) {
+        m_clex_name = splt_vec[0];
+        _parse_index_expression(splt_vec[1]);
+      }
+      else {
+        std::stringstream ss;
+        ss << "Too many arguments for 'clex'.  Received: " << args << "\n";
+        throw std::runtime_error(ss.str());
+      }
+      return true;
     }
 
-    //****************************************************************************************
+    // --- Clex implementations -----------
 
-    jsonParser &CompConfigFormatter::to_json(const Configuration &_config, jsonParser &json)const {
-      json = _config.get_param_composition();
-      return json;
+    const std::string Clex::Name = "clex";
+
+    const std::string Clex::Desc =
+      "Predicted property value."
+      " Accepts arguments ($clex_name,$norm)."
+      " ($clex_name is a cluster expansion name as listed by 'casm settings -l', default=the default clex)"
+      " ($norm is the normalization, either 'per_species', or 'per_unitcell' <--default)";
+
+    Clex::Clex() :
+      ScalarAttribute<Configuration>(Name, Desc) {
+      parse_args("");
     }
 
-    //****************************************************************************************
-    /*End ConfigIO_impl*/
+    Clex::Clex(const Clexulator &clexulator, const ECIContainer &eci, const Norm<Configuration> &norm) :
+      ScalarAttribute<Configuration>(Name, Desc),
+      m_clexulator(clexulator),
+      m_eci(eci),
+      m_norm(norm) {
+    }
+
+    /// \brief Returns the atom fraction
+    double Clex::evaluate(const Configuration &config) const {
+      return m_eci * correlations(config, m_clexulator) / _norm(config);
+    }
+
+    /// \brief Clone using copy constructor
+    std::unique_ptr<Clex> Clex::clone() const {
+      return std::unique_ptr<Clex>(this->_clone());
+    }
+
+    /// \brief If not yet initialized, use the default cluster expansion from the PrimClex
+    void Clex::init(const Configuration &_tmplt) const {
+      if(!m_clexulator.initialized()) {
+        const PrimClex &primclex = _tmplt.get_primclex();
+        ClexDescription desc = m_clex_name.empty() ?
+                               primclex.settings().default_clex() : primclex.settings().clex(m_clex_name);
+        m_clexulator = primclex.clexulator(desc);
+        m_eci = primclex.eci(desc);
+        if(m_eci.index().back() >= m_clexulator.corr_size()) {
+          Log &err_log = default_err_log();
+          err_log.error<Log::standard>("bset and eci mismatch");
+          err_log << "basis set size: " << m_clexulator.corr_size() << std::endl;
+          err_log << "max eci index: " << m_eci.index().back() << std::endl;
+          throw std::runtime_error("Error: bset and eci mismatch");
+        }
+      }
+    }
+
+    /// \brief Expects 'clex', 'clex(formation_energy)', or 'clex(formation_energy,per_species)'
+    bool Clex::parse_args(const std::string &args) {
+      std::vector<std::string> splt_vec;
+      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+
+      m_clex_name = "";
+      if(splt_vec.size()) {
+        m_clex_name = splt_vec[0];
+      }
+
+      m_norm = notstd::make_cloneable<Norm<Configuration> >();
+      if(splt_vec.size() == 2) {
+        if(splt_vec[1] == "per_unitcell") {
+          m_norm = notstd::make_cloneable<Norm<Configuration> >();
+        }
+        else if(splt_vec[1] == "per_species") {
+          m_norm = notstd::make_cloneable<NormPerSpecies>();
+        }
+        else {
+          std::stringstream ss;
+          ss << "Error parsing second argument for 'clex'.  Received: " << args << "\n";
+          throw std::runtime_error(ss.str());
+        }
+      }
+
+      if(splt_vec.size() > 2) {
+        std::stringstream ss;
+        ss << "Too many arguments for 'clex'.  Received: " << args << "\n";
+        throw std::runtime_error(ss.str());
+      }
+
+      return true;
+    }
+
+    /// \brief Returns the normalization
+    double Clex::_norm(const Configuration &config) const {
+      return (*m_norm)(config);
+    }
+
+    /// \brief Clone using copy constructor
+    Clex *Clex::_clone() const {
+      return new Clex(*this);
+    }
+
+
+    /*End ConfigIO*/
   }
 
   namespace ConfigIO {
-    ConfigIO_impl::GenericConfigFormatter<std::string> configname() {
-      return ConfigIO_impl::GenericConfigFormatter<std::string>("configname",
-                                                                "Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#'",
-      [](const Configuration & config)->std::string{
+
+    template<>
+    Selected selected_in(const ConfigSelection<true> &_selection) {
+      return Selected(_selection);
+    }
+
+    template<>
+    Selected selected_in(const ConfigSelection<false> &_selection) {
+      return Selected(_selection);
+    }
+
+    Selected selected_in() {
+      return Selected();
+    }
+
+
+    GenericConfigFormatter<std::string> configname() {
+      return GenericConfigFormatter<std::string>("configname",
+                                                 "Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#'",
+      [](const Configuration & config)->std::string {
         return config.name();
       });
     }
 
-    ConfigIO_impl::GenericConfigFormatter<std::string> scelname() {
-      return ConfigIO_impl::GenericConfigFormatter<std::string>("scelname",
-                                                                "Supercell name, in the form 'SCEL#_#_#_#_#_#_#'",
-      [](const Configuration & config)->std::string{
+    GenericConfigFormatter<std::string> scelname() {
+      return GenericConfigFormatter<std::string>("scelname",
+                                                 "Supercell name, in the form 'SCEL#_#_#_#_#_#_#'",
+      [](const Configuration & config)->std::string {
         return config.get_supercell().get_name();
       });
     }
 
-    ConfigIO_impl::GenericConfigFormatter<Index> scel_size() {
-      return ConfigIO_impl::GenericConfigFormatter<Index>("scel_size",
-                                                          "Supercell volume, given as the integer number of unit cells",
-      [](const Configuration & config)->Index{
+
+
+    GenericConfigFormatter<std::string> calc_status() {
+      return GenericConfigFormatter<std::string>("calc_status",
+                                                 "Status of calculation.",
+                                                 CASM::calc_status,
+                                                 CASM::has_calc_status);
+    }
+
+    GenericConfigFormatter<std::string> failure_type() {
+      return GenericConfigFormatter<std::string>("failure_type",
+                                                 "Reason for calculation failure.",
+                                                 CASM::failure_type,
+                                                 CASM::has_failure_type);
+    }
+
+
+    GenericConfigFormatter<Index> scel_size() {
+      return GenericConfigFormatter<Index>("scel_size",
+                                           "Supercell volume, given as the integer number of unit cells",
+      [](const Configuration & config)->Index {
         return config.get_supercell().volume();
       });
     }
 
+    GenericConfigFormatter<Index> multiplicity() {
+      return GenericConfigFormatter<Index>("multiplicity",
+                                           "Symmetric multiplicity of the configuration, excluding translational equivalents.",
+      [](const Configuration & config)->Index {
+        return config.get_prim().factor_group().size() / config.factor_group(config.get_supercell().permute_begin(), config.get_supercell().permute_end()).size();
+      });
+    }
 
-    ConfigIO_impl::GenericConfigFormatter<bool> selected() {
-      return ConfigIO_impl::GenericConfigFormatter<bool>("selected",
-                                                         "Specifies whether configuration is selected (1/true) or not (0/false)",
+
+    /*
+    GenericConfigFormatter<bool> selected() {
+      return GenericConfigFormatter<bool>("selected",
+                                          "Specifies whether configuration is selected (1/true) or not (0/false)",
       [](const Configuration & config)->bool{
         return config.selected();
       });
     }
+    */
 
-    ConfigIO_impl::GenericConfigFormatter<double> formation_energy() {
-      return ConfigIO_impl::GenericConfigFormatter<double>("formation_energy",
-                                                           "DFT formation energy, normalized per primitive cell and measured relative to current reference states",
-                                                           ConfigIO_impl::get_config_formation_energy,
-                                                           ConfigIO_impl::has_config_formation_energy);
+    GenericConfigFormatter<double> relaxed_energy() {
+      return GenericConfigFormatter<double>(
+               "relaxed_energy",
+               "DFT relaxed energy, normalized per primitive cell",
+               CASM::relaxed_energy,
+               has_relaxed_energy);
     }
 
-    Generic1DDatumFormatter<std::vector<double>, Configuration >relaxation_strain() {
+    GenericConfigFormatter<double> relaxed_energy_per_species() {
+      return GenericConfigFormatter<double>(
+               "relaxed_energy_per_atom",
+               "DFT relaxed energy, normalized per atom",
+               CASM::relaxed_energy_per_species,
+               has_relaxed_energy);
+    }
+
+    GenericConfigFormatter<double> reference_energy() {
+      return GenericConfigFormatter<double>(
+               "reference_energy",
+               "reference energy, normalized per primitive cell, as determined by current reference states",
+               CASM::reference_energy,
+               has_reference_energy);
+    }
+
+    GenericConfigFormatter<double> reference_energy_per_species() {
+      return GenericConfigFormatter<double>(
+               "reference_energy_per_atom",
+               "reference energy, normalized per atom, as determined by current reference states",
+               CASM::reference_energy_per_species,
+               has_reference_energy);
+    }
+
+    GenericConfigFormatter<double> formation_energy() {
+      return GenericConfigFormatter<double>(
+               "formation_energy",
+               "DFT formation energy, normalized per primitive cell and measured "
+               "relative to current reference states",
+               CASM::formation_energy,
+               has_formation_energy);
+    }
+
+    GenericConfigFormatter<double> formation_energy_per_species() {
+      return GenericConfigFormatter<double>(
+               "formation_energy_per_atom",
+               "DFT formation energy, normalized per atom and measured relative to "
+               "current reference states",
+               CASM::formation_energy_per_species,
+               has_formation_energy);
+    }
+
+    /*Generic1DDatumFormatter<std::vector<double>, Configuration >relaxation_strain() {
       return Generic1DDatumFormatter<std::vector<double>, Configuration >("relaxation_strain",
                                                                           "Green-Lagrange strain of dft-relaxed configuration, relative to the ideal crystal.  Ordered as [E(0,0), E(1,1), E(2,2), E(1,2), E(0,2), E(0,1)].  Accepts index as argument on interval [0,5]",
-                                                                          ConfigIO_impl::get_config_relaxation_strain,
-                                                                          ConfigIO_impl::has_config_relaxation_strain,
+                                                                          CASM::relaxation_strain,
+                                                                          has_relaxation_strain,
       [](const std::vector<double> &cont)->Index{
         return 6;
       });
+      }*/
+
+    GenericConfigFormatter<bool> is_calculated() {
+      return GenericConfigFormatter<bool>("is_calculated",
+                                          "True (1) if all current properties have been been calculated for the configuration",
+                                          CASM::is_calculated);
     }
 
-    ConfigIO_impl::GenericConfigFormatter<bool> is_calculated() {
-      return ConfigIO_impl::GenericConfigFormatter<bool>("is_calculated",
-                                                         "True (1) if all current properties have been been calculated for the configuration",
-      [](const Configuration & config)->bool{
-        return std::all_of(config.get_primclex().get_curr_property().begin(),
-        config.get_primclex().get_curr_property().end(),
-        [&](const std::string & key) {
-          return config.calc_properties().contains(key);
-        });
-      });
+    GenericConfigFormatter<bool> is_primitive() {
+      return GenericConfigFormatter<bool>("is_primitive",
+                                          "True (1) if the configuration cannot be described within a smaller supercell",
+                                          CASM::is_primitive);
     }
 
-    ConfigIO_impl::GenericConfigFormatter<double> rms_force() {
-      return ConfigIO_impl::GenericConfigFormatter<double>("rms_force",
-                                                           "Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)",
-                                                           ConfigIO_impl::get_config_rms_force,
-                                                           ConfigIO_impl::has_config_rms_force);
+    GenericConfigFormatter<bool> is_canonical() {
+      return GenericConfigFormatter<bool>("is_canonical",
+                                          "True (1) if the configuration cannot be transfromed by symmetry to a configuration with higher lexicographic order",
+                                          CASM::is_canonical);
     }
 
-    ConfigIO_impl::GenericConfigFormatter<double> basis_deformation() {
-      return ConfigIO_impl::GenericConfigFormatter<double>("basis_deformation",
-                                                           "Cost function that describes the degree to which basis sites have relaxed",
-                                                           ConfigIO_impl::get_config_basis_deformation,
-                                                           ConfigIO_impl::has_config_basis_deformation);
+    GenericConfigFormatter<double> rms_force() {
+      return GenericConfigFormatter<double>("rms_force",
+                                            "Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)",
+                                            CASM::rms_force,
+                                            has_rms_force);
     }
 
-    ConfigIO_impl::GenericConfigFormatter<double> lattice_deformation() {
-      return ConfigIO_impl::GenericConfigFormatter<double>("lattice_deformation",
-                                                           "Cost function that describes the degree to which lattice has relaxed.",
-                                                           ConfigIO_impl::get_config_lattice_deformation,
-                                                           ConfigIO_impl::has_config_lattice_deformation);
+    GenericConfigFormatter<double> basis_deformation() {
+      return GenericConfigFormatter<double>("basis_deformation",
+                                            "Cost function that describes the degree to which basis sites have relaxed",
+                                            CASM::basis_deformation,
+                                            has_basis_deformation);
     }
 
-    ConfigIO_impl::GenericConfigFormatter<double> dist_from_hull() {
-      return ConfigIO_impl::GenericConfigFormatter<double>("dist_from_hull",
-                                                           "Distance from DFT hull, extracted from config_list database",
-                                                           ConfigIO_impl::get_config_dist_from_hull,
-                                                           ConfigIO_impl::has_config_dist_from_hull);
+    GenericConfigFormatter<double> lattice_deformation() {
+      return GenericConfigFormatter<double>("lattice_deformation",
+                                            "Cost function that describes the degree to which lattice has relaxed.",
+                                            CASM::lattice_deformation,
+                                            has_lattice_deformation);
     }
 
-    ConfigIO_impl::GenericConfigFormatter<double> volume_relaxation() {
-      return ConfigIO_impl::GenericConfigFormatter<double>("volume_relaxation",
-                                                           "Change in volume due to relaxation, expressed as the ratio V/V_0.",
-                                                           ConfigIO_impl::get_config_volume_relaxation,
-                                                           ConfigIO_impl::has_config_volume_relaxation);
-    }
-
-    void initialize_formatting_dictionary(DataFormatterDictionary<Configuration> &dict) {
-      dict // <-- add to dict
-      //Self-contained formatters
-      .add_formatter(ConfigIO_impl::CorrConfigFormatter())
-      .add_formatter(ConfigIO_impl::ClexConfigFormatter())
-      .add_formatter(ConfigIO_impl::CompConfigFormatter())
-      .add_formatter(ConfigIO_impl::AtomFracConfigFormatter())
-      .add_formatter(ConfigIO_impl::SiteFracConfigFormatter())
-
-      //Generic formatters
-      .add_formatter(ConfigIO::selected())
-      .add_formatter(ConfigIO::configname())
-      .add_formatter(ConfigIO::scelname())
-      .add_formatter(ConfigIO::scel_size())
-      .add_formatter(ConfigIO::formation_energy())
-      .add_formatter(ConfigIO::is_calculated())
-      .add_formatter(ConfigIO::relaxation_strain())
-      .add_formatter(ConfigIO::rms_force())
-      .add_formatter(ConfigIO::basis_deformation())
-      .add_formatter(ConfigIO::lattice_deformation())
-      .add_formatter(ConfigIO::volume_relaxation())
-
-      .add_formatter(ConfigIO_impl::StrucScoreConfigFormatter())
-      //hull formatters with specialized naming to disambiguate
-      .add_formatter(ConfigIO_impl::OnHullConfigFormatter("on_hull",
-                                                          std::string("Whether configuration is the formation_energy convex hull (i.e., is a groundstate).")
-                                                          + " Accepts argument $selection (one of: <filename>, 'all', MASTER <--default)"
-                                                          /* and $composition_type (one of: comp, atom_frac, site_frac).  "*/
-                                                          + "  Ex: on_hull(MASTER" +/*,atom_frac*/ ").", "formation_energy"))
-      .add_formatter(ConfigIO_impl::OnHullConfigFormatter("on_clex_hull",
-                                                          std::string("Whether configuration is on the *cluster-expanded* formation_energy convex hull")
-                                                          + " (i.e., is a *predicted* groundstate)."
-                                                          + " Accepts argument $selection (one of: <filename>, 'all', MASTER <--default)"
-                                                          /*and $composition_type (one of: comp, atom_frac, site_frac).  "*/
-                                                          + " Ex: on_hull(MASTER).", "clex(formation_energy)"))
-      .add_formatter(ConfigIO_impl::HullDistConfigFormatter("hull_dist",
-                                                            std::string("Distance, in eV, of a configuration's formation_energy from the convex hull.")
-                                                            + " Accepts argument $selection (one of: <filename>, 'all', MASTER <--default)"
-                                                            /*and $composition_type (one of: comp, atom_frac, site_frac).  "*/
-                                                            + " Ex: on_hull(MASTER).", "formation_energy"))
-      .add_formatter(ConfigIO_impl::HullDistConfigFormatter("clex_hull_dist",
-                                                            std::string("Distance, in eV, of a configuration's *cluster-expanded* formation_energy")
-                                                            + " from the convex hull of *cluster-expanded* formation energies."
-                                                            + " Accepts argument $selection (one of: <filename>, 'all', MASTER <--default)"
-                                                            /*and $composition_type (one of: comp, atom_frac, site_frac).  "*/
-                                                            + " Ex: on_hull(MASTER).", "clex(formation_energy)"));
+    GenericConfigFormatter<double> volume_relaxation() {
+      return GenericConfigFormatter<double>("volume_relaxation",
+                                            "Change in volume due to relaxation, expressed as the ratio V/V_0.",
+                                            CASM::volume_relaxation,
+                                            has_volume_relaxation);
     }
 
     /*End ConfigIO*/
   }
 
-  //****************************************************************************************
-  //****************************************************************************************
-  /*
-    DataFormatterDictionary<Configuration> &ConfigIOParser::dictionary() {
-    static DataFormatterDictionary<Configuration>
-    m_dict = std::function<void(DataFormatterDictionary<Configuration>&) >(ConfigIO_impl::initialize_config_formatter);
-    return m_dict;
-    }
-  */
-  //  ConfigIOParser::init(std::function<void(DataFormatterDictionary<Configuration>&) >(ConfigIO_impl::initialize_config_formatter));
+  template<>
+  StringAttributeDictionary<Configuration> make_string_dictionary<Configuration>() {
+
+    using namespace ConfigIO;
+    StringAttributeDictionary<Configuration> dict;
+
+    dict.insert(
+      configname(),
+      scelname(),
+      calc_status(),
+      failure_type()
+    );
+
+    return dict;
+  }
+
+  template<>
+  BooleanAttributeDictionary<Configuration> make_boolean_dictionary<Configuration>() {
+
+    using namespace ConfigIO;
+    BooleanAttributeDictionary<Configuration> dict;
+
+    dict.insert(
+      is_calculated(),
+      is_canonical(),
+      is_primitive(),
+      //selected(),
+      selected_in(),
+      OnClexHull(),
+      OnHull()
+    );
+
+    return dict;
+  }
+
+  template<>
+  IntegerAttributeDictionary<Configuration> make_integer_dictionary<Configuration>() {
+
+    using namespace ConfigIO;
+    IntegerAttributeDictionary<Configuration> dict;
+
+    dict.insert(
+      scel_size(),
+      multiplicity()
+    );
+
+    return dict;
+  }
+
+  template<>
+  ScalarAttributeDictionary<Configuration> make_scalar_dictionary<Configuration>() {
+
+    using namespace ConfigIO;
+    ScalarAttributeDictionary<Configuration> dict;
+
+    dict.insert(
+      Clex(),
+      HullDist(),
+      ClexHullDist(),
+      Novelty(),
+      relaxed_energy(),
+      relaxed_energy_per_species(),
+      reference_energy(),
+      reference_energy_per_species(),
+      formation_energy(),
+      formation_energy_per_species(),
+      rms_force(),
+      basis_deformation(),
+      lattice_deformation(),
+      volume_relaxation()
+    );
+
+    return dict;
+  }
+
+  template<>
+  VectorXdAttributeDictionary<Configuration> make_vectorxd_dictionary<Configuration>() {
+
+    using namespace ConfigIO;
+    VectorXdAttributeDictionary<Configuration> dict;
+
+    dict.insert(
+      AtomFrac(),
+      Comp(),
+      CompN(),
+      Corr(),
+      RelaxationStrain(),
+      DoFStrain(),
+      SiteFrac(),
+      StrucScore()
+    );
+
+    return dict;
+  }
+
 }
 

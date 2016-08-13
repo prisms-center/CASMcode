@@ -11,7 +11,7 @@ VASP_TAG_INT_LIST = ['ialgo','ibrion','icharg','images','ismear','ispin',\
 VASP_TAG_FLOAT_LIST = ['ediff','ediffg','emax','emin','encut','potim','sigma',\
                      'enmax','symprec', 'time', 'hfscreen','amix','bmix',\
                      'amix_mag', 'bmix_mag']
-VASP_TAG_BOOL_LIST = ['lcharg','lreal','lsorbit','lwave','lscalapack', 'lscalu',\
+VASP_TAG_BOOL_LIST = ['lcharg','lsorbit','lwave','lscalapack', 'lscalu',\
                      'lplane', 'lhfcalc', 'shiftred', 'evenonly', 'oddonly',\
                      'addgrid', 'ldau', 'lasph']
 # Site-wise list of arrays of FLOAT
@@ -20,7 +20,7 @@ VASP_TAG_SITEF_LIST = ['magmom','rwigs']
 VASP_TAG_SPECF_LIST = ['ldauu', 'ldauj']
 # Site-wise list of arrays of INT
 VASP_TAG_SPECI_LIST = ['ldaul']
-VASP_TAG_STRING_LIST = ['algo','prec','system', 'precfock']
+VASP_TAG_STRING_LIST = ['algo','prec','system', 'precfock','lreal']
 
 # The master list of VASP tags is a union of the above -> need to allow for 'miscellaneous' ?
 VASP_TAG_LIST = VASP_TAG_INT_LIST + VASP_TAG_SITEF_LIST + VASP_TAG_SPECI_LIST + VASP_TAG_BOOL_LIST + VASP_TAG_FLOAT_LIST + VASP_TAG_STRING_LIST + VASP_TAG_SPECF_LIST
@@ -69,7 +69,7 @@ class Incar:
     def _make_natural_type(self):
         """ Convert self.tags values from strings into their 'natural type' (int, float, etc.) """
         for tag in self.tags:
-            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
+            if self.tags[tag] is None or str(self.tags[tag]).strip() == "":
                 self.tags[tag] = None
             else:
                 if tag.lower() in VASP_TAG_INT_LIST:
@@ -149,7 +149,12 @@ class Incar:
                 # add the value of the 'tag' for each atom into the self.tags list
                 for alias in sorted(pos.keys()):
                     if key.lower() in (VASP_TAG_SPECF_LIST + VASP_TAG_SPECI_LIST):
-                        self.tags[key].append(species[alias].tags[key])
+                      # for species-specific tags, use the value specified for the
+                      # species whose pseudopotential is being used for this alias
+                      for name in species.keys():
+                        if species[name].alias == alias and species[name].write_potcar:
+                          self.tags[key].append(species[name].tags[key])
+                          break
                     else:
                         for site in pos[alias]:
                             self.tags[key].append( species[site.occupant].tags[key] )
@@ -160,7 +165,7 @@ class Incar:
         except IOError as e:
             raise e
         for tag in self.tags:
-            if self.tags[tag] == None or str(self.tags[tag]).strip() == "":
+            if self.tags[tag] is None or str(self.tags[tag]).strip() == "":
                 pass
             else:
                 if tag.lower() in VASP_TAG_SITEF_LIST + VASP_TAG_SPECF_LIST:

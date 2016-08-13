@@ -18,7 +18,7 @@ namespace internal {
 template<typename MatrixType>
 struct traits<SparseView<MatrixType> > : traits<MatrixType>
 {
-  typedef int Index;
+  typedef typename MatrixType::Index Index;
   typedef Sparse StorageKind;
   enum {
     Flags = int(traits<MatrixType>::Flags) & (RowMajorBit)
@@ -35,9 +35,9 @@ class SparseView : public SparseMatrixBase<SparseView<MatrixType> >
 public:
   EIGEN_SPARSE_PUBLIC_INTERFACE(SparseView)
 
-  SparseView(const MatrixType& mat, const Scalar& m_reference = Scalar(0),
-             typename NumTraits<Scalar>::Real m_epsilon = NumTraits<Scalar>::dummy_precision()) : 
-    m_matrix(mat), m_reference(m_reference), m_epsilon(m_epsilon) {}
+  explicit SparseView(const MatrixType& mat, const Scalar& reference = Scalar(0),
+                      const RealScalar &epsilon = NumTraits<Scalar>::dummy_precision())
+    : m_matrix(mat), m_reference(reference), m_epsilon(epsilon) {}
 
   class InnerIterator;
 
@@ -56,6 +56,7 @@ protected:
 template<typename MatrixType>
 class SparseView<MatrixType>::InnerIterator : public _MatrixTypeNested::InnerIterator
 {
+  typedef typename SparseView::Index Index;
 public:
   typedef typename _MatrixTypeNested::InnerIterator IterBase;
   InnerIterator(const SparseView& view, Index outer) :
@@ -88,7 +89,7 @@ private:
 
 template<typename Derived>
 const SparseView<Derived> MatrixBase<Derived>::sparseView(const Scalar& m_reference,
-                                                          typename NumTraits<Scalar>::Real m_epsilon) const
+                                                          const typename NumTraits<Scalar>::Real& m_epsilon) const
 {
   return SparseView<Derived>(derived(), m_reference, m_epsilon);
 }

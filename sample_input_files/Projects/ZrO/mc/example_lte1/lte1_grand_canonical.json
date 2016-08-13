@@ -1,0 +1,51 @@
+{
+  "comment" : "This is a sample input file. Unrecognized attributes (like the ones prepended with '_') are ignored.",
+  "debug" : false,
+  "ensemble" : "grand_canonical",
+  "method" : "lte1",
+  "model" : {
+    "formation_energy" : "formation_energy"
+  },
+  "supercell" : [
+    [9, 0, 0],
+    [0, 9, 0],
+    [0, 0, 9]
+  ],
+  "data" : {
+    "storage" : {
+      "write_observations" : false,
+      "write_trajectory" : false,
+      "output_format" : ["csv", "json"]
+    }
+  },
+  "driver" : {
+    "mode" : "incremental",
+    "dependent_runs" : false, 
+    "motif" : {
+      "configname" : "restricted_auto",
+      "_configname" : "SCEL3_3_1_1_0_2_2/0",
+      "_configdof" : "path/to/final_state.json"
+    },
+    "initial_conditions" : {
+      "param_chem_pot" : {
+        "a" : -3.00
+      },
+      "temperature" : 200.0,
+      "tolerance" : 0.001
+    },
+    "final_conditions" : {
+      "param_chem_pot" : {
+        "a" : 0.0
+      },
+      "temperature" : 200.0,
+      "tolerance" : 0.001
+    },
+    "incremental_conditions" : {
+      "param_chem_pot" : {
+        "a" : 0.1
+      },
+      "temperature" : 0.0,
+      "tolerance" : 0.001
+    }
+  }
+}

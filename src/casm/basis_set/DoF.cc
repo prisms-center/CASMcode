@@ -1,5 +1,6 @@
 #include "casm/basis_set/DoF.hh"
 
+// needed for to/from json... this should be fixed
 #include "casm/crystallography/Molecule.hh"
 
 namespace CASM {
@@ -67,7 +68,7 @@ namespace CASM {
       Array<Molecule> domain;
       //std::cout<<"The size of the dof is "<<dof.get_domain().size()<<std::endl;
       ////std::cout<<"The dof "
-      Molecule mol(*dof.get_domain().at(0).home());
+      Molecule mol(*(dof[0].home()));
       //domain.clear();
       //std::cout<<"Done initializing molecule"<<std::endl;
       for(int i = 0; i < json["m_domain"].size(); i++) {
@@ -169,5 +170,5 @@ namespace CASM {
     }
   }
 
-};
+}
 
