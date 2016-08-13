@@ -31,8 +31,6 @@ AM_CPPFLAGS = -I$(srcdir)/include/casm/external/qhull/libqhull_r/\
 
 AM_LDFLAGS = $(BOOST_LDFLAGS)
 
-#AM_CXXFLAGS+=$(BOOST_CXXFLAGS)? AM_LDFLAGS+=$(BOOST_LDFLAGS)?
-
 BUILT_SOURCES=
 
 #============================================================#
@@ -43,7 +41,8 @@ EXTRA_DIST=
 
 EXTRA_DIST+=./build-aux/casm_version.txt\
 			./man\
-			./casmenv.sh
+			./casmenv.sh\
+			./sample_input_files
 
 #Extra files that should be cleaned up upon `distclean`
 DISTCLEANFILES=
