@@ -121,6 +121,8 @@ namespace CASM {
   configurations for a particular supercell.                           \n\
 - Generated configurations are listed in the 'config_list.json' file.  \n\
   This file should not usually be edited manually.                     \n\
+- Use the 'casm view' command to quickly view configurations in your   \n\
+  favorite visualization program. See 'casm view -h' for help.         \n\
 - See 'casm enum --desc' for extended help documentation on how to use \n\
   '--filter' command to perform restricted enumeration of              \n\
   configurations.                                                      \n\
@@ -144,27 +146,31 @@ Instructions for volume relaxed VASP energies:                         \n\n\
   settings files.                                                      \n\
 - Select which configurations to calculate properties for using the    \n\
   'casm select' command. Use 'casm select --set on' to select all      \n\
-  configurations. By default, the 'is selected?' state of each         \n\
+  configurations. By default, the 'selected' state of each             \n\
   configuration is stored by CASM in the master config_list.json file, \n\
-  located in the hidden '.casm' directory. You can also save additional\n\
-  selection using the 'casm select -o' option to write a selection to a\n\
-  file. Selections may be operated on to create new selections that    \n\
-  are subsets, unions, or intersections of existing selections.        \n\
-  Selection files may also be edited manually or via programs for more \n\
+  located in the hidden '.casm' directory. The standard selections     \n\
+  'MASTER', 'CALCULATED', 'ALL', or 'NONE' may always be used.         \n\
+- You can also save additional selection using the 'casm select -o'    \n\
+  option to write a selection to a file.                               \n\
+- Selections may be operated on to create new selections that are      \n\
+  subsets, unions, or intersections of existing selections.            \n\
+- Selection files may also be edited manually or via programs for more \n\
   complex selections than currently supported by 'casm select'. For all\n\
   options related to selection configurations, see 'casm select -h'.   \n\
 - Selections may be used to query the properties of particular         \n\
   configurations using the 'casm query' command. See 'casm query -h'   \n\
   for the complete list of options.                                    \n\
-- Execute 'casm run -e \"vasp.relax\" --write-pos' to submit  \n\
-  VASP jobs for all selected configurations. This depends on the python\n\
-  modules 'pbs', 'casm', and 'vasp' being installed and the script     \n\
-  'vasp.relax' being in the PATH. Only configurations which have not   \n\
-  yet been calculated will run.                                        \n\
-  *Note: You can also use 'casm run -e \"vasp.setup\" --write-pos to   \n\
-  setup VASP input files for all selected configuration, but not submit\n\
-  the jobs. This is often a useful first step to check that input files\n\
-  have been prepared correctly.*                                       \n\
+- Execute: 'casm run -e \"vasp.relax\"' to submit VASP jobs for all    \n\
+  selected configurations. \n\
+- This depends on the python modules 'pbs', 'casm', and 'vasp' being   \n\
+  installed and the script 'vasp.relax' being in the PATH. Only        \n\
+  configurations which have not yet been calculated will run.          \n\
+- Note: You can also use 'casm run -e \"vasp.setup\"' to setup VASP    \n\
+  input files for all selected configuration, but not submit the jobs. \n\
+  This is often a useful first step to check that input files have been\n\
+  prepared correctly.                                                  \n\
+- Note: The functionality of 'vasp.relax' and 'vasp.setup' is now also \n\
+  included in the 'casm-calc' program. See 'casm-calc -h' for help.    \n\
 - VASP results will be stored at:                                      \n\
     '$ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/properties.calc.json'\n\
   Results in 'properties.calc.json' are expected to be ordered to match\n\
@@ -221,11 +227,9 @@ Instructions for generating basis functions:                           \n\n\
   See 'casm format --bspecs' for an example file.                      \n\
 - Execute 'casm bset -u' to generate basis functions. If you edit the  \n\
   'bspecs.json' file, execute 'casm bset -u' again to update basis     \n\
-  functions.                                                           \n\n";
-
-    std::cout <<
-              "- See 'casm format --bspecs' for a description and location of   \n\
-   the 'bspecs.json' files.\n\n";
+  functions.                                                           \n\
+- See 'casm format --bspecs' for description and location of the       \n\
+  'bspecs.json' file.\n\n";
   }
 
   void eci_uncalculated() {
@@ -235,43 +239,46 @@ Instructions for generating basis functions:                           \n\n\
               "Fit effective cluster interactions (ECI)\n\
                                                                        \n\
 Instructions for fitting ECI:                                          \n\n\
+- Create a new directory within the CASM project, for example:         \n\
+    mkdir fit_1 && cd fit_1                                            \n\
 - Select which configurations to use as the training data with the     \n\
-  'casm select' command. Use 'casm select --set on' to select all      \n\
-  configurations. See 'casm select -h' for options.                    \n\
-- Execute 'casm fit' to generate input files for fitting eci with the  \n\
-  program 'eci_search'.                                                \n\
-- Execute 'eci_search -h' for descriptions of the available fitting    \n\
-  options                                                              \n\
-- Results will be stored at:                                           \n\
-    'root/cluster_expansions/clex.formation_energy/SCELNAME/CURR_CALCTYPE/CURR_REF/CURR_ECI/energy\n\
-    'root/cluster_expansions/clex.formation_energy/SCELNAME/CURR_CALCTYPE/CURR_REF/CURR_ECI/eci.in\n\
-    'root/cluster_expansions/clex.formation_energy/SCELNAME/CURR_CALCTYPE/CURR_REF/CURR_ECI/corr.in\n\n";
-
-    std::cout <<
-              "- See 'casm format --fit' for a description and location of   \n\
-   the 'energy', 'eci.in', and 'corr.in' files.\n\n";
+  'casm select' command. To select all calculated configurations:      \n\
+    casm select --set 'is_calculated' -o train                         \n\
+- See 'casm select -h' for more options.                               \n\
+- Create a 'casm-learn' input file. Several example input files can be \n\
+  generated from 'casm-learn --exMethodName'. For example:             \n\
+    casm-learn --exGeneticAlgorithm > fit_1_ga.json                    \n\
+  This file can be edited to adjust the problem being solved (training \n\
+  data, weighting scheme, cross validation sets and scoring, linear    \n\
+  estimator method, feature selection method, etc.)                    \n\
+- See 'casm-learn --settings-format' for description and help with the \n\
+  input file.                                                          \n\
+- Execute: 'casm-learn -s fit_1_ga.json'                               \n\
+- Results are stored in a Hall Of Fame file containing the best        \n\
+  solutions as determined from cross validation scores.                \n\
+- Different estimator methods (LinearRegression, Lasso, etc.) and      \n\
+  different feature selection methods (GeneticAlgorithm, RFE, etc.) can\n\
+  be used with the same problem specs (training data, weighting scheme,\n\
+  cross validation sets and scoring) and compared in a single Hall Of  \n\
+  Fame.                                                                \n\
+- When some candidate ECI have been stored in a Hall Of Fame, use the  \n\
+  'casm-learn --checkhull' option to check if ground state configurations \n\
+  are accurately predicted by the cluster expansion.                   \n\
+- When ready, use 'casm-learn --select' to write an 'eci.json' file to \n\
+  use for Monte Carlo. \n\
+- See 'casm format --eci' for a description and location of the        \n\
+  'eci.json' files.\n\n";
   }
 
-  void advanced_steps() {
+  void montecarlo() {
 
     std::cout << "NEXT STEPS:\n\n";
 
     std::cout <<
-              "Advanced steps\n\
+              "Monte Carlo calculations\n\
                                                                        \n\
-- Alternative calculation settings, composition axes, or reference     \n\
-  states can be explored within a single CASM project.                 \n\
-                                                                       \n\
-- Use 'casm settings' to add a new calculation type. This will create  \n\
-  directories with alternative VASP calculation settings, such as a    \n\
-  different psuedopotential or spin polarization setting. Then use     \n\
-  'casm run' as usual to calculate configuration properties using the  \n\
-  alternative settings.                                                \n\
-                                                                       \n\
-- Use 'casm settings' to add an alternative reference states, then use \n\
-  'casm composition' and 'casm ref' as usual to set alternative        \n\
-  composition axes or reference states.\n\n";
-
+- Use 'casm monte' to run Monte Carlo calculations.                    \n\
+- See 'casm monte --format' and 'casm monte -h' for help.              \n\n";
   }
 
   int update_eci_format(fs::path root) {
@@ -697,7 +704,7 @@ Instructions for fitting ECI:                                          \n\n\
     if(vm.count("next")) {
       std::cout << "\n#################################\n\n";
 
-      advanced_steps();
+      montecarlo();
     }
     else {
       std::cout << "For next steps, run 'casm status -n'\n\n";
