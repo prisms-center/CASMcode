@@ -46,7 +46,7 @@ namespace CASM {
       ("supercells,s", "Enumerate supercells")
       ("configs,c", "Enumerate configurations")
       ("matrix,m", po::value<fs::path>(&m_matrix_path)->value_name(ArgHandler::path()), "Specify a matrix to apply to the primitive cell before beginning enumeration")
-      ("lattice-directions,z", po::value<std::string>(&m_lattice_directions_str), "Restrict enumeration along a, b or c lattice vectors");
+      ("lattice-directions,z", po::value<std::string>(&m_lattice_directions_str)->default_value("abc"), "Restrict enumeration along a, b or c lattice vectors");
 
       return;
     }
@@ -92,11 +92,14 @@ namespace CASM {
         std::cout << "\n";
         std::cout << enum_opt.desc() << std::endl;
 
-        std::cout << "DESCRIPTION" << std::endl;
-        std::cout << "    Enumerate supercells and configurations\n";
-        std::cout << "    - expects a PRIM file in the project root directory \n";
-        std::cout << "    - if --min is given, then --max must be given \n";
-        std::cout << std::endl;
+        std::cout << "DESCRIPTION\n" << std::endl;
+
+        std::cout << "  casm enum --supercells --max V                        \n"
+                  "  - To enumerate supercells up to volume V (units: number\n"
+                  "    of primitive cells)                                 \n"
+                  "  - Use --matrix and --lattice-directions for restricted\n"
+                  "    enumeration: \n\n";
+
         std::cout << "  --matrix" << std::endl;
         std::cout << "    - When using --supercells, you may use the this option             " << std::endl;
         std::cout << "      to specify a transformation matrix to apply to your primitive    " << std::endl;
@@ -131,9 +134,24 @@ namespace CASM {
         std::cout << "      If this is the case, then the meaning of 'a', 'b' and 'c' changes" << std::endl;
         std::cout << "      from the lattice vectors of your PRIM, to the  vectors of the    " << std::endl;
         std::cout << "      lattice resulting from multiplying your PRIM by the specified    " << std::endl;
-        std::cout << "      matrix." << std::endl;
+        std::cout << "      matrix.\n\n";
 
+        std::cout << "  casm enum --configs --all'                             \n"
+                  "  - To enumerate configurations for all supercells.      \n\n"
 
+                  "  casm enum --configs --min MINV --max MAXV              \n"
+                  "  - To enumerate configurations for supercells ranging in\n"
+                  "    volume from MINV to MAXV (units: number of primitive \n"
+                  "    cells).                                              \n\n"
+
+                  "  casm enum --configs --scellname NAME                   \n"
+                  "  - To enumerate configurations for a particular         \n"
+                  "    supercell.                                           \n\n"
+
+                  "  casm enum --configs [...] --filter '... casm query commands...' \n"
+                  "  - To perform restricted enumeration of configurations  \n"
+                  "    such that only configurations the return '1' (true)  \n"
+                  "    for a particular 'casm query' command are retained.  \n\n";
         return 0;
       }
 
@@ -267,7 +285,7 @@ namespace CASM {
 
     }
     else if(vm.count("configs")) {
-      if(vm.count("dimensions") || vm.count("matrix") || vm.count("lattice-directions")) {
+      if(vm.count("dimensions") || vm.count("matrix") || (dims < 3)) {
         std::cerr << "Option --configs in conjunction with limited supercell enumeration is currently unsupported" << std::endl;
         return ERR_INVALID_ARG;
       }

@@ -69,8 +69,7 @@ namespace CASM {
 \n\
 - Subsequently, work on the CASM project can be done by executing 'casm'  \n\
   from the project's root directory or any subdirectory.                  \n\
-\n\
-- See 'casm format' for descriptions and locations of the 'prim.json' file.\n";
+- See 'casm format --prim' for description and location of the 'prim.json' file.\n";
   }
 
   void composition_unselected() {
@@ -83,10 +82,8 @@ namespace CASM {
 - Then execute 'casm composition -s <#>' to select one of the listed axes.\n\
 - If no standard composition axis is satisfactory, edit the file          \n\
   'composition_axes.json' to add your own custom composition axes to the  \n\
-  'custom_axes' JSON object.\n\n";
-
-    std::cout <<
-              "- See 'casm format' for a description and the location of  \n\
+  'custom_axes' JSON object.\n\
+- See 'casm format --comp' for description and the location of  \n\
    the 'composition_axes.json' file.\n\n";
 
   }
@@ -99,10 +96,11 @@ namespace CASM {
               "Enumerate supercells\n\
 - Execute: 'casm enum --supercells --max V' to enumerate supercells up to \n\
   volume V (units: number of primitive cells).                            \n\
-- Supercells are listed in the SCEL file.\n\n";
-
-    std::cout <<
-              "- See 'casm format' for a description and location of the  \n\
+- Supercells are listed in the SCEL file.\n\
+- See 'casm enum --desc' for extended help documentation on how to use the\n\
+  '--matrix' and '--lattice-directions' options to perform restricted     \n\
+  supercell enumeration (i.e. 2d, 1d, multiples of other supercells).     \n\
+- See 'casm format' for a description and location of the  \n\
    'SCEL' file.\n\n";
 
   }
@@ -122,14 +120,15 @@ namespace CASM {
 - Execute: 'casm enum --configs --scellname NAME' to enumerate         \n\
   configurations for a particular supercell.                           \n\
 - Generated configurations are listed in the 'config_list.json' file.  \n\
-  This file should not usually be edited manually.                     \n\n";
-
-    std::cout <<
-              "- See 'casm format' for a description and location of   \n\
-   the 'config_list.json' file.                                        \n\
- - See 'casm format' for a description and location of                 \n\
-   the data files related to a particular configuration.\n\n";
-
+  This file should not usually be edited manually.                     \n\
+- See 'casm enum --desc' for extended help documentation on how to use \n\
+  '--filter' command to perform restricted enumeration of              \n\
+  configurations.                                                      \n\
+- Once you have a cluster expansion, see 'casm format --monte' for     \n\
+  a description of how to save configurations enumerated during Monte  \n\
+  Carlo calculations.                                                  \n\
+- See 'casm format --config' for a description and location of         \n\
+   the 'config_list.json' file.                                        \n\n";
   }
 
   void configs_uncalculated() {
