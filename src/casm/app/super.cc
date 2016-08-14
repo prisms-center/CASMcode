@@ -121,7 +121,7 @@ namespace CASM {
     try {
       po::store(po::parse_command_line(args.argc, args.argv, super_opt.desc()), vm); // can throw
 
-      if(!vm.count("help")) {
+      if(!vm.count("help") && !vm.count("desc")) {
         if(!vm.count("duper")) {
           if(vm.count("transf-mat") + vm.count("get-transf-mat") != 1) {
             std::cerr << "Error in 'casm super'. Only one of --transf-mat or --get-transf-mat may be chosen." << std::endl;
@@ -145,6 +145,12 @@ namespace CASM {
         std::cout << "\n";
         std::cout << super_opt.desc() << std::endl;
 
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << super_opt.desc() << std::endl;
         std::cout << "DESCRIPTION" << std::endl;
         std::cout << "                                                                      \n" <<
                   "  casm super --transf-mat T                                           \n" <<

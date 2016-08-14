@@ -17,18 +17,59 @@ namespace CASM {
   This will be called the 'project root directory' or project's 'location'.\n\
 - Add a 'prim.json' file to the directory describing the primitive cell.  \n\
   See 'casm format --prim' for the format of the 'prim.json' file.        \n\
-- Execute: 'casm init --name myproject'                                   \n\
-- The 'basis_sets' and 'cluster_expansions' directories are created with a\n\
-  default format.                                                         \n\
-- If necessary, set compilation options using                             \n\
-    'casm settings --set-compile-options' and                             \n\
-    'casm settings --set-so-options'.                                     \n\
-  This may be necessary if, for instance, the CASM header files are       \n\
-  installed in a location that is not in your default compiler search path.\n\
-- Subsequently, work on 'myproject' can be done by executing 'casm' from  \n\
-  the project's root directory or any subdirectory.                       \n\
+- Execute: 'casm init'                                                    \n\
+- Several directories are created: 'symmetry', 'basis_sets',              \n\
+  'training_data', and 'cluster_expansions'  \n\
+- If necessary, set configuration options for runtime compilation and     \n\
+  linking by using the 'casm settings' command or by setting environment  \n\
+  variables. \n\
+                                                                          \n\
+    'cxx': \n\
+      Specifies compiler to use. In order of priority: \n\
+        1) User specified by 'casm settings --set-cxx' (use '' to clear) \n\
+        2) $CASM_CXX \n\
+        3) $CXX \n\
+        4) \"g++\" \n\
 \n\
-- See 'casm format' for descriptions and locations of the 'prim.json' file.\n";
+    'cxxflags': \n\
+      Compiler flags. In order of priority: \n\
+        1) User specified by 'casm settings --set-cxxflags' \n\
+        2) $CASM_CXXFLAGS \n\
+        3) \"-O3 -Wall -fPIC --std=c++11\" \n\
+\n\
+    'soflags': \n\
+      Shared object construction flags. In order of priority: \n\
+        1) User specified by 'casm settings --set-soflags' \n\
+        2) $CASM_SOFLAGS \n\
+        3) \"-shared -lboost_system\" \n\
+\n\
+    'casm_prefix': \n\
+      If not in a standard search path, CASM header files are expected in \n\
+      '$CASM_PREFIX/include', and shared libraries in '$CASM_PREFIX/lib'. \n\
+      In order of priority: \n\
+        1) User specified by 'casm settings --set-casm-prefix' \n\
+        2) $CASM_PREFIX \n\
+        3) (default search paths) \n\
+\n\
+    Note: For the 'casm' Python package, $LIBCASM and $LIBCCASM, have \n\
+    highest priority for locating libcasm and libccasm, respectively. \n\
+\n\
+    'boost_prefix': \n\
+      If not in a standard search path, boost libraries are expected in \n\
+      '$CASM_BOOST_PREFIX/lib'. \n\
+      In order of priority: \n\
+        1) User specified by 'casm settings --set-boost-prefix' \n\
+        2) $CASM_BOOST_PREFIX \n\
+        3) (default search paths) \n\
+\n\
+    Note: If shared libraries are installed in non-standard locations, you \n\
+    may need to set: \n\
+      (Linux) export LD_LIBRARY_PATH=$CASM_PREFIX/lib:$CASM_BOOST_PREFIX/lib:$LD_LIBRARY_PATH \n\
+      (Mac)   export DYLD_FALLBACK_LIBRARY_PATH=$CASM_PREFIX/lib:$CASM_BOOST_PREFIX/lib:$DYLD_FALLBACK_LIBRARY_PATH \n\
+\n\
+- Subsequently, work on the CASM project can be done by executing 'casm'  \n\
+  from the project's root directory or any subdirectory.                  \n\
+- See 'casm format --prim' for description and location of the 'prim.json' file.\n";
   }
 
   void composition_unselected() {
@@ -41,10 +82,8 @@ namespace CASM {
 - Then execute 'casm composition -s <#>' to select one of the listed axes.\n\
 - If no standard composition axis is satisfactory, edit the file          \n\
   'composition_axes.json' to add your own custom composition axes to the  \n\
-  'custom_axes' JSON object.\n\n";
-
-    std::cout <<
-              "- See 'casm format' for a description and the location of  \n\
+  'custom_axes' JSON object.\n\
+- See 'casm format --comp' for description and the location of  \n\
    the 'composition_axes.json' file.\n\n";
 
   }
@@ -57,10 +96,11 @@ namespace CASM {
               "Enumerate supercells\n\
 - Execute: 'casm enum --supercells --max V' to enumerate supercells up to \n\
   volume V (units: number of primitive cells).                            \n\
-- Supercells are listed in the SCEL file.\n\n";
-
-    std::cout <<
-              "- See 'casm format' for a description and location of the  \n\
+- Supercells are listed in the SCEL file.\n\
+- See 'casm enum --desc' for extended help documentation on how to use the\n\
+  '--matrix' and '--lattice-directions' options to perform restricted     \n\
+  supercell enumeration (i.e. 2d, 1d, multiples of other supercells).     \n\
+- See 'casm format' for a description and location of the  \n\
    'SCEL' file.\n\n";
 
   }
@@ -80,14 +120,17 @@ namespace CASM {
 - Execute: 'casm enum --configs --scellname NAME' to enumerate         \n\
   configurations for a particular supercell.                           \n\
 - Generated configurations are listed in the 'config_list.json' file.  \n\
-  This file should not usually be edited manually.                     \n\n";
-
-    std::cout <<
-              "- See 'casm format' for a description and location of   \n\
-   the 'config_list.json' file.                                        \n\
- - See 'casm format' for a description and location of                 \n\
-   the data files related to a particular configuration.\n\n";
-
+  This file should not usually be edited manually.                     \n\
+- Use the 'casm view' command to quickly view configurations in your   \n\
+  favorite visualization program. See 'casm view -h' for help.         \n\
+- See 'casm enum --desc' for extended help documentation on how to use \n\
+  '--filter' command to perform restricted enumeration of              \n\
+  configurations.                                                      \n\
+- Once you have a cluster expansion, see 'casm format --monte' for     \n\
+  a description of how to save configurations enumerated during Monte  \n\
+  Carlo calculations.                                                  \n\
+- See 'casm format --config' for a description and location of         \n\
+   the 'config_list.json' file.                                        \n\n";
   }
 
   void configs_uncalculated() {
@@ -103,27 +146,28 @@ Instructions for volume relaxed VASP energies:                         \n\n\
   settings files.                                                      \n\
 - Select which configurations to calculate properties for using the    \n\
   'casm select' command. Use 'casm select --set on' to select all      \n\
-  configurations. By default, the 'is selected?' state of each         \n\
+  configurations. By default, the 'selected' state of each             \n\
   configuration is stored by CASM in the master config_list.json file, \n\
-  located in the hidden '.casm' directory. You can also save additional\n\
-  selection using the 'casm select -o' option to write a selection to a\n\
-  file. Selections may be operated on to create new selections that    \n\
-  are subsets, unions, or intersections of existing selections.        \n\
-  Selection files may also be edited manually or via programs for more \n\
+  located in the hidden '.casm' directory. The standard selections     \n\
+  'MASTER', 'CALCULATED', 'ALL', or 'NONE' may always be used.         \n\
+- You can also save additional selection using the 'casm select -o'    \n\
+  option to write a selection to a file.                               \n\
+- Selections may be operated on to create new selections that are      \n\
+  subsets, unions, or intersections of existing selections.            \n\
+- Selection files may also be edited manually or via programs for more \n\
   complex selections than currently supported by 'casm select'. For all\n\
   options related to selection configurations, see 'casm select -h'.   \n\
 - Selections may be used to query the properties of particular         \n\
   configurations using the 'casm query' command. See 'casm query -h'   \n\
   for the complete list of options.                                    \n\
-- Execute 'casm run -e \"vasp.relax\" --write-pos' to submit  \n\
-  VASP jobs for all selected configurations. This depends on the python\n\
-  modules 'pbs', 'casm', and 'vasp' being installed and the script     \n\
-  'vasp.relax' being in the PATH. Only configurations which have not   \n\
-  yet been calculated will run.                                        \n\
-  *Note: You can also use 'casm run -e \"vasp.setup\" --write-pos to   \n\
-  setup VASP input files for all selected configuration, but not submit\n\
-  the jobs. This is often a useful first step to check that input files\n\
-  have been prepared correctly.*                                       \n\
+- Execute: 'casm-calc --setup' to setup VASP input files for all       \n\
+  selected configuration, but not submit the jobs. This is often a     \n\
+  useful first step to check that input files have been prepared       \n\
+  correctly.                                                           \n\
+- Execute: 'casm-calc --submit' to submit VASP jobs for all selected   \n\
+  configurations. Only configurations which have not yet been          \n\
+  calculated will run.                                                 \n\
+- See 'casm-calc -h' for help and other options.                       \n\
 - VASP results will be stored at:                                      \n\
     '$ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/properties.calc.json'\n\
   Results in 'properties.calc.json' are expected to be ordered to match\n\
@@ -180,11 +224,9 @@ Instructions for generating basis functions:                           \n\n\
   See 'casm format --bspecs' for an example file.                      \n\
 - Execute 'casm bset -u' to generate basis functions. If you edit the  \n\
   'bspecs.json' file, execute 'casm bset -u' again to update basis     \n\
-  functions.                                                           \n\n";
-
-    std::cout <<
-              "- See 'casm format --bspecs' for a description and location of   \n\
-   the 'bspecs.json' files.\n\n";
+  functions.                                                           \n\
+- See 'casm format --bspecs' for description and location of the       \n\
+  'bspecs.json' file.\n\n";
   }
 
   void eci_uncalculated() {
@@ -194,43 +236,46 @@ Instructions for generating basis functions:                           \n\n\
               "Fit effective cluster interactions (ECI)\n\
                                                                        \n\
 Instructions for fitting ECI:                                          \n\n\
+- Create a new directory within the CASM project, for example:         \n\
+    mkdir fit_1 && cd fit_1                                            \n\
 - Select which configurations to use as the training data with the     \n\
-  'casm select' command. Use 'casm select --set on' to select all      \n\
-  configurations. See 'casm select -h' for options.                    \n\
-- Execute 'casm fit' to generate input files for fitting eci with the  \n\
-  program 'eci_search'.                                                \n\
-- Execute 'eci_search -h' for descriptions of the available fitting    \n\
-  options                                                              \n\
-- Results will be stored at:                                           \n\
-    'root/cluster_expansions/clex.formation_energy/SCELNAME/CURR_CALCTYPE/CURR_REF/CURR_ECI/energy\n\
-    'root/cluster_expansions/clex.formation_energy/SCELNAME/CURR_CALCTYPE/CURR_REF/CURR_ECI/eci.in\n\
-    'root/cluster_expansions/clex.formation_energy/SCELNAME/CURR_CALCTYPE/CURR_REF/CURR_ECI/corr.in\n\n";
-
-    std::cout <<
-              "- See 'casm format --fit' for a description and location of   \n\
-   the 'energy', 'eci.in', and 'corr.in' files.\n\n";
+  'casm select' command. To select all calculated configurations:      \n\
+    casm select --set 'is_calculated' -o train                         \n\
+- See 'casm select -h' for more options.                               \n\
+- Create a 'casm-learn' input file. Several example input files can be \n\
+  generated from 'casm-learn --exMethodName'. For example:             \n\
+    casm-learn --exGeneticAlgorithm > fit_1_ga.json                    \n\
+  This file can be edited to adjust the problem being solved (training \n\
+  data, weighting scheme, cross validation sets and scoring, linear    \n\
+  estimator method, feature selection method, etc.)                    \n\
+- See 'casm-learn --settings-format' for description and help with the \n\
+  input file.                                                          \n\
+- Execute: 'casm-learn -s fit_1_ga.json'                               \n\
+- Results are stored in a Hall Of Fame file containing the best        \n\
+  solutions as determined from cross validation scores.                \n\
+- Different estimator methods (LinearRegression, Lasso, etc.) and      \n\
+  different feature selection methods (GeneticAlgorithm, RFE, etc.) can\n\
+  be used with the same problem specs (training data, weighting scheme,\n\
+  cross validation sets and scoring) and compared in a single Hall Of  \n\
+  Fame.                                                                \n\
+- When some candidate ECI have been stored in a Hall Of Fame, use the  \n\
+  'casm-learn --checkhull' option to check if ground state configurations \n\
+  are accurately predicted by the cluster expansion.                   \n\
+- When ready, use 'casm-learn --select' to write an 'eci.json' file to \n\
+  use for Monte Carlo. \n\
+- See 'casm format --eci' for a description and location of the        \n\
+  'eci.json' files.\n\n";
   }
 
-  void advanced_steps() {
+  void montecarlo() {
 
     std::cout << "NEXT STEPS:\n\n";
 
     std::cout <<
-              "Advanced steps\n\
+              "Monte Carlo calculations\n\
                                                                        \n\
-- Alternative calculation settings, composition axes, or reference     \n\
-  states can be explored within a single CASM project.                 \n\
-                                                                       \n\
-- Use 'casm settings' to add a new calculation type. This will create  \n\
-  directories with alternative VASP calculation settings, such as a    \n\
-  different psuedopotential or spin polarization setting. Then use     \n\
-  'casm run' as usual to calculate configuration properties using the  \n\
-  alternative settings.                                                \n\
-                                                                       \n\
-- Use 'casm settings' to add an alternative reference states, then use \n\
-  'casm composition' and 'casm ref' as usual to set alternative        \n\
-  composition axes or reference states.\n\n";
-
+- Use 'casm monte' to run Monte Carlo calculations.                    \n\
+- See 'casm monte --format' and 'casm monte -h' for help.              \n\n";
   }
 
   int update_eci_format(fs::path root) {
@@ -295,7 +340,7 @@ Instructions for fitting ECI:                                          \n\n\
       ("next,n", "Write next steps")
       ("warning,w", "Suppress warnings")
       ("details,d", "Print detailed information")
-      ("update,u", "Update file formats for current version");
+      ("all,a", "Print all 'casm status -n' help messages");
 
       return;
     }
@@ -316,6 +361,12 @@ Instructions for fitting ECI:                                          \n\n\
         std::cout << "\n";
         std::cout << status_opt.desc() << std::endl;
 
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << status_opt.desc() << std::endl;
         std::cout << "DESCRIPTION" << std::endl;
         std::cout << "    Get status information for the current CASM project.\n\n";
 
@@ -337,16 +388,17 @@ Instructions for fitting ECI:                                          \n\n\
 
     }
 
-    if(vm.count("update")) {
-      return update_format(find_casmroot(fs::current_path()));
-    }
-
-
     /// 1) Check if a project exists
 
     std::cout << "\n#################################\n\n";
 
     std::cout << "CASM status:\n\n";
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      status_unitialized();
+    }
+
 
     const fs::path &root = args.root;
 
@@ -415,8 +467,14 @@ Instructions for fitting ECI:                                          \n\n\
     }
     std::cout << std::endl << std::endl;
 
-
     /// 2) Composition axes
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      std::cout << "\n2) Composition axes \n\n";
+      composition_unselected();
+
+    }
 
     std::cout << "2) Composition axes \n";
 
@@ -450,7 +508,18 @@ Instructions for fitting ECI:                                          \n\n\
 
     /// 3) Configuration generation
 
-    std::cout << "3) Generate configurations \n";
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      std::cout << "3) Generate configurations \n\n";
+
+      supercells_ungenerated();
+
+      configs_ungenerated();
+
+    }
+
+    std::cout << "\n3) Generate configurations \n";
 
     int tot_gen = 0;
     int tot_calc = 0;
@@ -507,11 +576,18 @@ Instructions for fitting ECI:                                          \n\n\
 
     std::cout << std::endl << std::endl;
 
-
-
     /// 4) Calculate configuration properties
 
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      std::cout << "4) Calculate configuration properties\n\n";
+      configs_uncalculated();
+
+    }
+
     std::cout << "4) Calculate configuration properties\n";
+
     std::cout << "- Current calctype: " << calctype << "\n";
     std::cout << "- Current cluster expansion: " << desc.name << "\n";
     std::cout << "- Number of configurations calculated: " << tot_calc << " / " << tot_gen << " generated (Update with 'casm update')\n\n";
@@ -567,7 +643,15 @@ Instructions for fitting ECI:                                          \n\n\
 
     /// 5) Choose chemical reference
 
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      std::cout << "5) Choose chemical reference\n\n";
+      references_unset();
+    }
+
     std::cout << "5) Choose chemical reference\n";
+
     std::cout << "- Chemical reference set: ";
     if(primclex.has_chemical_reference()) {
       std::cout << "TRUE" << "\n";
@@ -599,8 +683,14 @@ Instructions for fitting ECI:                                          \n\n\
     std::cout << std::endl;
 
 
-
     /// 6) Generate basis functions:
+
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      std::cout << "6) Generate basis functions: \n\n";
+      bset_uncalculated();
+    }
 
     std::cout << "6) Generate basis functions: ";
 
@@ -620,9 +710,14 @@ Instructions for fitting ECI:                                          \n\n\
     }
     std::cout << "TRUE\n\n\n";
 
-
-
     /// 7) Fit effective cluster interactions (ECI):
+
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      std::cout << "7) Fit effective cluster interactions (ECI): \n\n";
+      eci_uncalculated();
+    }
 
     std::cout << "7) Fit effective cluster interactions (ECI): ";
 
@@ -642,22 +737,18 @@ Instructions for fitting ECI:                                          \n\n\
     }
     std::cout << "TRUE\n\n\n";
 
-
-    /// 7) Advanced steps
+    /// 7) Monte Carlo
 
     std::cout << std::endl;
 
-    if(vm.count("next")) {
+    if(vm.count("next") || vm.count("all")) {
       std::cout << "\n#################################\n\n";
-
-      advanced_steps();
+      std::cout << "8) Monte Carlo Calculations: \n\n";
+      montecarlo();
     }
     else {
       std::cout << "For next steps, run 'casm status -n'\n\n";
     }
-
-
-
 
     return 0;
 

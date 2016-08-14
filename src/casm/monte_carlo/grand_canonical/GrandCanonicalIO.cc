@@ -286,6 +286,7 @@ namespace CASM {
 
     DataFormatter<ConstMonteCarloPtr> formatter;
 
+    formatter.push_back(ConstantValueFormatter<std::string, ConstMonteCarloPtr>("configname", configname));
     formatter.push_back(MonteCarloTFormatter<GrandCanonical>());
     formatter.push_back(GrandCanonicalLTEFormatter(phi_LTE1));
     std::set<std::string> exclude;
@@ -294,7 +295,6 @@ namespace CASM {
     // always sample Beta, potential_energy, and formation_energy
     {
       formatter.push_back(MonteCarloBetaFormatter<GrandCanonical>());
-      formatter.push_back(ConstantValueFormatter<std::string, ConstMonteCarloPtr>("configname", configname));
       name = "gs_potential_energy";
       auto evaluator = [ = ](const ConstMonteCarloPtr & ptr) {
         return static_cast<const GrandCanonical *>(ptr)->potential_energy();

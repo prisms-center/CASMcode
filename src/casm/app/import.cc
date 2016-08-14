@@ -99,6 +99,13 @@ namespace CASM {
         std::cout << std::endl;
         std::cout << import_opt.desc() << std::endl;
 
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << import_opt.desc() << std::endl;
+
         std::cout << "DESCRIPTION" << std::endl;
         std::cout << "    Import structure specified by --pos. If it doesn't exist make a directory for it and copy data over" << std::endl;
         std::cout << "    If a *.json file is specified, it will be interpreted as a 'calc.properties.json' file." << std::endl;

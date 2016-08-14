@@ -42,6 +42,13 @@ namespace CASM {
         std::cout << "\n";
         std::cout << init_opt.desc() << std::endl;
 
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << init_opt.desc() << std::endl;
+
         std::cout << "DESCRIPTION                                                \n" <<
                   "    Initialize a new CASM project in the current directory.\n" <<
                   "    - Expects a prim.json file in the current directory    \n" <<
