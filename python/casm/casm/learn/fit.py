@@ -1101,6 +1101,31 @@ def set_input_defaults(input, input_filename=None):
   return input
 
 
+def open_input(input_filename):
+  """
+  Read casm-learn input file into a dict
+  
+  Arguments
+  ---------
+    
+    input_filename: str
+      The path to the input file
+  
+  Returns
+  -------
+    input: dict
+      The result of reading the input file and running it through 
+      casm.learn.set_input_defaults
+  """
+  # open input and always set input defaults before doing anything else
+  with open(input_filename, 'r') as f:
+    try:
+      input = set_input_defaults(json.load(f), input_filename)
+    except Exception as e:
+      print "Error parsing JSON in", args.settings[0]
+      raise e
+  return input
+
 class FittingData(object):
   """ 
   FittingData holds feature values, target values, sample weights, etc. used

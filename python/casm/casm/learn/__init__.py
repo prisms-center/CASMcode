@@ -70,7 +70,7 @@ def create_halloffame(maxsize, rel_tol=1e-6):
 from fit import example_input_Lasso, example_input_LassoCV, example_input_RFE, \
  example_input_GeneticAlgorithm, example_input_IndividualBestFirst, \
  example_input_PopulationBestFirst, example_input_DirectSelection, \
- set_input_defaults, \
+ open_input, set_input_defaults, \
  FittingData, TrainingData, \
  print_input_help, print_individual, print_population, print_halloffame, print_eci, \
  to_json, open_halloffame, save_halloffame, \
@@ -90,6 +90,7 @@ __all__ = __all__ = [
   'example_input_IndividualBestFirst',
   'example_input_PopulationBestFirst', 
   'example_input_DirectSelection',
+  'open_input',
   'set_input_defaults',
   'FittingData', 
   'TrainingData',

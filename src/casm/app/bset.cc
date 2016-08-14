@@ -50,6 +50,12 @@ namespace CASM {
         args.log << "\n";
         args.log << bset_opt.desc() << std::endl;
 
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        args.log << "\n";
+        args.log << bset_opt.desc() << std::endl;
         args.log << "DESCRIPTION" << std::endl;
         args.log << "    Generate and inspect cluster basis functions. A bspecs.json file should be available at\n"
                  << "        $ROOT/basis_set/$current_bset/bspecs.json\n"

@@ -47,6 +47,12 @@ namespace CASM {
         std::cout << "\n";
         std::cout << view_opt.desc() << std::endl;
 
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << view_opt.desc() << std::endl;
         std::cout << "This allows opening visualization programs directly from \n"
                   "CASM. It iterates over all selected configurations and   \n"
                   "one by one writes a POSCAR and executes                  \n"

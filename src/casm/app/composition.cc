@@ -78,7 +78,7 @@ namespace CASM {
       bool call_help = false;
 
       //quit out if there are no arguments
-      if(!vm.count("help")) {
+      if(!vm.count("help") && !vm.count("desc")) {
         if(vm.count("calc") + vm.count("select") + vm.count("display") + vm.count("update") != 1) {
           std::cout << "Error in 'casm composition'. You need to use either --calc, --select, --display, or --update." << std::endl;
           call_help = true;
@@ -88,6 +88,13 @@ namespace CASM {
       /** --help option
        */
       if(vm.count("help") || call_help) {
+        std::cout << std::endl;
+        std::cout << comp_opt.desc() << std::endl;
+
+        return 0;
+      }
+
+      if(vm.count("desc")) {
         std::cout << std::endl;
         std::cout << comp_opt.desc() << std::endl;
 

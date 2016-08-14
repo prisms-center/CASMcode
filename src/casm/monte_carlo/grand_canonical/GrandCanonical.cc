@@ -40,7 +40,7 @@ namespace CASM {
     _log() << "use_deltas: " << std::boolalpha << m_use_deltas << "\n";
     _log() << "\nSampling: \n";
     _log() << std::setw(24) << "quantity" << std::setw(24) << "requested_precision" << "\n";
-    for(auto it=samplers().begin(); it!=samplers().end(); ++it) {
+    for(auto it = samplers().begin(); it != samplers().end(); ++it) {
       _log() << std::setw(24) << it->first;
       if(it->second->must_converge()) {
         _log() << std::setw(24) << it->second->requested_precision() << std::endl;
@@ -109,7 +109,7 @@ namespace CASM {
 
     if(settings.is_motif_configname()) {
 
-      std::string configname = settings.motif_configname();
+      configname = settings.motif_configname();
 
       if(configname == "default") {
         configdof = _default_motif();
