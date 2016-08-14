@@ -160,17 +160,14 @@ Instructions for volume relaxed VASP energies:                         \n\n\
 - Selections may be used to query the properties of particular         \n\
   configurations using the 'casm query' command. See 'casm query -h'   \n\
   for the complete list of options.                                    \n\
-- Execute: 'casm run -e \"vasp.relax\"' to submit VASP jobs for all    \n\
-  selected configurations. \n\
-- This depends on the python modules 'pbs', 'casm', and 'vasp' being   \n\
-  installed and the script 'vasp.relax' being in the PATH. Only        \n\
-  configurations which have not yet been calculated will run.          \n\
-- Note: You can also use 'casm run -e \"vasp.setup\"' to setup VASP    \n\
-  input files for all selected configuration, but not submit the jobs. \n\
-  This is often a useful first step to check that input files have been\n\
-  prepared correctly.                                                  \n\
-- Note: The functionality of 'vasp.relax' and 'vasp.setup' is now also \n\
-  included in the 'casm-calc' program. See 'casm-calc -h' for help.    \n\
+- Execute: 'casm-calc --setup' to setup VASP input files for all       \n\
+  selected configuration, but not submit the jobs. This is often a     \n\
+  useful first step to check that input files have been prepared       \n\
+  correctly.                                                           \n\
+- Execute: 'casm-calc --submit' to submit VASP jobs for all selected   \n\
+  configurations. Only configurations which have not yet been          \n\
+  calculated will run.                                                 \n\
+- See 'casm-calc -h' for help and other options.                       \n\
 - VASP results will be stored at:                                      \n\
     '$ROOT/training_data/$SCELNAME/$CONFIGID/$CURR_CALCTYPE/properties.calc.json'\n\
   Results in 'properties.calc.json' are expected to be ordered to match\n\

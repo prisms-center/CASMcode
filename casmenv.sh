@@ -15,6 +15,8 @@
 #
 #export CASM_BOOST_PREFIX=""
 
+# 
+
 #  Recognized by install scripts. Use this if linking to boost libraries compiled without c++11. If defined, (i.e. CASM_BOOST_NO_CXX11_SCOPED_ENUMS=1) will compile with -DBOOST_NO_CXX11_SCOPED_ENUMS option.
 #  Order of precedence:
 #    1) if $CASM_BOOST_NO_CXX11_SCOPED_ENUMS defined
@@ -105,6 +107,17 @@ if [ ! -z ${CASM_PREFIX} ]; then
 
 fi
 
+#  If CASM_BOOST_PREFIX is set, update library search path
+if [ ! -z ${CASM_BOOST_PREFIX} ]; then
+  
+  # For Linux, set LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=$CASM_BOOST_PREFIX/lib:$LD_LIBRARY_PATH
+  
+  # For Mac, set DYLD_LIBRARY_FALLBACK_PATH
+  export DYLD_FALLBACK_LIBRARY_PATH=$CASM_BOOST_PREFIX/lib:$DYLD_FALLBACK_LIBRARY_PATH
+  
+fi
+
 # If testing:
 if [ ! -z ${CASM_REPO} ]; then
   
@@ -114,25 +127,12 @@ if [ ! -z ${CASM_REPO} ]; then
   export PATH=$CASM_REPO/bin:$CASM_REPO/python/casm/scripts:$PATH
   export PYTHONPATH=$CASM_REPO/python/casm:$PYTHONPATH
   
-  if [ ! -z ${DYLD_FALLBACK_LIBRARY_PATH} ]; then
-    # For testing on Mac, use DYLD_FALLBACK_LIBRARY_PATH:
-    export DYLD_FALLBACK_LIBRARY_PATH=$CASM_REPO/lib:$DYLD_FALLBACK_LIBRARY_PATH
-    
-    #  If CASM_BOOST_PREFIX is set, update library search path
-    if [ ! -z ${CASM_BOOST_PREFIX} ]; then
-      # For testing on Mac, set DYLD_LIBRARY_FALLBACK_PATH
-      export DYLD_FALLBACK_LIBRARY_PATH=$CASM_BOOST_PREFIX/lib:$DYLD_FALLBACK_LIBRARY_PATH
-    fi
-  else
-    # For testing on Linux, use LD_LIBRARY_PATH:
-    export LD_LIBRARY_PATH=$CASM_REPO/lib:$LD_LIBRARY_PATH
-    
-    #  If CASM_BOOST_PREFIX is set, update library search path
-    if [ ! -z ${CASM_BOOST_PREFIX} ]; then
-      # For testing on Mac, set DYLD_LIBRARY_FALLBACK_PATH
-      export LD_LIBRARY_PATH=$CASM_BOOST_PREFIX/lib:$LD_LIBRARY_PATH
-    fi
-  fi
+  # For testing on Linux, use LD_LIBRARY_PATH:
+  export LD_LIBRARY_PATH=$CASM_REPO/lib:$LD_LIBRARY_PATH
+  
+  # For testing on Mac, use DYLD_FALLBACK_LIBRARY_PATH:
+  export DYLD_FALLBACK_LIBRARY_PATH=$CASM_REPO/lib:$DYLD_FALLBACK_LIBRARY_PATH
+  
 fi
 
 
