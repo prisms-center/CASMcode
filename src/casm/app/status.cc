@@ -342,8 +342,7 @@ Instructions for fitting ECI:                                          \n\n\
       m_desc.add_options()
       ("next,n", "Write next steps")
       ("warning,w", "Suppress warnings")
-      ("details,d", "Print detailed information")
-      ("update,u", "Update file formats for current version");
+      ("details,d", "Print detailed information");
 
       return;
     }
@@ -390,11 +389,6 @@ Instructions for fitting ECI:                                          \n\n\
       return 1;
 
     }
-
-    if(vm.count("update")) {
-      return update_format(find_casmroot(fs::current_path()));
-    }
-
 
     /// 1) Check if a project exists
 
