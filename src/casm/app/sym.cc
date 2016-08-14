@@ -45,6 +45,12 @@ namespace CASM {
         std::cout << "\n";
         std::cout << sym_opt.desc() << std::endl;
 
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << sym_opt.desc() << std::endl;
         std::cout << "DESCRIPTION" << std::endl;
         std::cout << "    Display symmetry group information.\n";
 

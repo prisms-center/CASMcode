@@ -58,6 +58,13 @@ namespace CASM {
         std::cout << "\n";
         std::cout << perturb_opt.desc() << std::endl;
 
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << perturb_opt.desc() << std::endl;
+
         std::cout << "DESCRIPTION" << std::endl;
         std::cout << "    Generate supercells that are perturbations of a reference\n";
         std::cout << "    configuration.                                           \n";

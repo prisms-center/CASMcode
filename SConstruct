@@ -6,7 +6,8 @@ import sys, os, glob, copy, shutil, subprocess, imp, re
 from os.path import join
 
 Help("""
-      Type: 'scons' to build all binaries,
+      Type: 'scons configure' to run configuration checks,
+            'scons' to build all binaries,
             'scons install' to install all libraries, binaries, scripts and python packages,
             'scons test' to run all tests,
             'scons unit' to run all unit tests,
@@ -43,10 +44,9 @@ Help("""
         Sets to compile with debugging symbols. In this case, the optimization level gets 
         set to -O0, and NDEBUG does not get set.
 
-      $LD_LIBRARY_PATH:
+      $LD_LIBRARY_PATH (Linux) or $DYLD_FALLBACK_LIBRARY_PATH (Mac):
         Search path for dynamic libraries, may need $CASM_BOOST_PREFIX/lib 
         and $CASM_PREFIX/lib added to it.
-        On Mac OS X, this variable is $DYLD_FALLBACK_LIBRARY_PATH.
         This should be added to your ~/.bash_profile (Linux) or ~/.profile (Mac).
       
       $CASM_BOOST_NO_CXX11_SCOPED_ENUMS:

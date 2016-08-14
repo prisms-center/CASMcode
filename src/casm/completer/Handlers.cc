@@ -261,7 +261,8 @@ namespace CASM {
 
     void OptionHandlerBase::add_help_suboption() {
       m_desc.add_options()
-      ("help,h", "Print help message");
+      ("help,h", "Print help message")
+      ("desc", "Print extended usage description");
       return;
     }
 

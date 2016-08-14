@@ -269,7 +269,7 @@ namespace CASM {
 
         bool call_help = false;
 
-        std::vector<std::string> all_opt = {"list",
+        std::vector<std::string> all_opt = {"list", "desc",
                                             "new-property", "new-bset", "new-calctype", "new-ref", "new-eci",
                                             "new-clex", "set-formation-energy", "erase-clex",
                                             "set-default-clex", "set-property", "set-bset", "set-calctype", "set-ref", "set-eci", "set-all",
@@ -298,6 +298,12 @@ namespace CASM {
           args.log << "\n";
           args.log << desc << std::endl;
 
+          return 0;
+        }
+
+        if(vm.count("desc")) {
+          args.log << "\n";
+          args.log << desc << std::endl;
           args.log << "DESCRIPTION" << std::endl;
           args.log << "\n";
           args.log << "    Often it is useful to try multiple different basis sets, \n" <<
@@ -362,6 +368,49 @@ namespace CASM {
                    "      - For --set-eci, the current property, calctype, ref,  \n" <<
                    "        and bset are maintained.                             \n" <<
                    "      - For --set-all, all settings are switched at once.    \n\n" <<
+
+                   "      casm settings --set-cxx 'cxx'                          \n" <<
+                   "      - Specifies compiler to use. In order of priority: \n"
+                   "        1) User specified by 'casm settings --set-cxx' \n"
+                   "           (use '' to clear) \n"
+                   "        2) $CASM_CXX \n"
+                   "        3) $CXX \n"
+                   "        4) \"g++\" \n\n"
+
+                   "      casm settings --set-cxxflags 'cxxflags'                \n"
+                   "      - Specifies compiler options. In order of priority:    \n"
+                   "        1) User specified by 'casm settings --set-cxxflags' \n"
+                   "           (use '' to clear) \n"
+                   "        2) $CASM_CXXFLAGS \n"
+                   "        3) \"-O3 -Wall -fPIC --std=c++11\" \n\n"
+
+                   "      casm settings --set-soflags 'soflags' \n"
+                   "      - Specifies shared object construction flags. In order \n"
+                   "        of priority: \n"
+                   "        1) User specified by 'casm settings --set-soflags' \n"
+                   "           (use '' to clear) \n"
+                   "        2) $CASM_SOFLAGS \n"
+                   "        3) \"-shared -lboost_system\" \n\n"
+
+                   "      casm settings --set-casm-prefix 'casm_prefix' \n"
+                   "      - Specifies to find CASM header files in                \n"
+                   "          '$CASM_PREFIX/include', \n"
+                   "        and shared libraries in \n"
+                   "          '$CASM_PREFIX/lib'. \n"
+                   "        In order of priority: \n"
+                   "        1) User specified by 'casm settings --set-casm-prefix' \n"
+                   "           (use '' to clear) \n"
+                   "        2) $CASM_PREFIX \n"
+                   "        3) (default search paths) \n\n"
+
+                   "      casm settings --set-boost-prefix 'boost_prefix' \n"
+                   "      - Specifies that boost libraries are expected in \n"
+                   "        '$CASM_BOOST_PREFIX/lib'. \n"
+                   "        In order of priority: \n"
+                   "        1) User specified by 'casm settings --set-boost-prefix' \n"
+                   "           (use '' to clear) \n"
+                   "        2) $CASM_BOOST_PREFIX \n"
+                   "        3) (default search paths) \n\n"
 
                    "      casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'\n" <<
                    "      - Sets the command used by 'casm view' to open         \n" <<

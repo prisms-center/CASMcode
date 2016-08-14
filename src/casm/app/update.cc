@@ -63,6 +63,13 @@ namespace CASM {
       if(vm.count("help")) {
         std::cout << std::endl;
         std::cout << update_opt.desc() << std::endl;
+
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << update_opt.desc() << std::endl;
         std::cout << "DESCRIPTION" << std::endl;
         std::cout << "    Updates all values and files after manual changes or configuration \n";
         std::cout << "    calculations.\n";

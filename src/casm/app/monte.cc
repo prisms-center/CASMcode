@@ -14,6 +14,11 @@ namespace CASM {
   void print_monte_help(const po::options_description &desc) {
     std::cout << "\n";
     std::cout << desc << std::endl;
+  }
+
+  void print_monte_desc(const po::options_description &desc) {
+    std::cout << "\n";
+    std::cout << desc << std::endl;
 
     std::cout << "DESCRIPTION\n" <<
               "  Perform Monte Carlo calculations.                          \n\n" <<
@@ -88,6 +93,11 @@ namespace CASM {
       */
       if(vm.count("help")) {
         print_monte_help(monte_opt.desc());
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        print_monte_desc(monte_opt.desc());
         return 0;
       }
 
