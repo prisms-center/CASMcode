@@ -243,7 +243,7 @@ def compile_flags():
 
 ##### Set version_number
 
-version_number = version('0.2a1')
+version_number = version('0.2.0')
 url = 'https://github.com/prisms-center/CASMcode'
 Export('version_number', 'url')
 
