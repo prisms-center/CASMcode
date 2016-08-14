@@ -191,7 +191,7 @@ namespace CASM {
       bool call_help = false;
 
       //quit out if there are no arguments
-      if(!vm.count("help")) {
+      if(!vm.count("help") && !vm.count("desc")) {
         if(vm.count("set") + vm.count("display") + vm.count("erase") + vm.count("set-auto") != 1) {
           std::cout << "Error in 'casm ref'. Please select one of --display, \n";
           std::cout << "--set, --set-auto, or --erase to use this option." << std::endl;
@@ -220,6 +220,13 @@ namespace CASM {
        */
       if(vm.count("help") || call_help) {
         std::cout << std::endl;
+        std::cout << ref_opt.desc() << std::endl;
+
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
         std::cout << ref_opt.desc() << std::endl;
 
         std::cout << "DESCRIPTION" << std::endl;

@@ -17,16 +17,61 @@ namespace CASM {
   This will be called the 'project root directory' or project's 'location'.\n\
 - Add a 'prim.json' file to the directory describing the primitive cell.  \n\
   See 'casm format --prim' for the format of the 'prim.json' file.        \n\
-- Execute: 'casm init --name myproject'                                   \n\
-- The 'basis_sets' and 'cluster_expansions' directories are created with a\n\
-  default format.                                                         \n\
-- If necessary, set compilation options using                             \n\
-    'casm settings --set-compile-options' and                             \n\
-    'casm settings --set-so-options'.                                     \n\
-  This may be necessary if, for instance, the CASM header files are       \n\
-  installed in a location that is not in your default compiler search path.\n\
-- Subsequently, work on 'myproject' can be done by executing 'casm' from  \n\
-  the project's root directory or any subdirectory.                       \n\
+- Execute: 'casm init'                                                    \n\
+- Several directories are created:                                        \n\
+    'symmetry'                                                            \n\
+    'basis_sets'                                                          \n\
+    'training_data'                                                       \n\
+    'cluster_expansions'                                                  \n\
+- If necessary, set configuration options for runtime compilation and     \n\
+  linking by using the 'casm settings' command or by setting environment  \n\
+  variables. \n\
+                                                                          \n\
+    'cxx': \n\
+      Specifies compiler to use. In order of priority: \n\
+        1) User specified by 'casm settings --set-cxx' (use '' to clear) \n\
+        2) $CASM_CXX \n\
+        3) $CXX \n\
+        4) \"g++\" \n\
+\n\
+    'cxxflags': \n\
+      Compiler flags. In order of priority: \n\
+        1) User specified by 'casm settings --set-cxxflags' \n\
+        2) $CASM_CXXFLAGS \n\
+        3) \"-O3 -Wall -fPIC --std=c++11\" \n\
+\n\
+    'soflags': \n\
+      Shared object construction flags. In order of priority: \n\
+        1) User specified by 'casm settings --set-soflags' \n\
+        2) $CASM_SOFLAGS \n\
+        3) \"-shared -lboost_system\" \n\
+\n\
+    'casm_prefix': \n\
+      If not in a standard search path, CASM header files are expected in \n\
+      '$CASM_PREFIX/include', and shared libraries in '$CASM_PREFIX/lib'. \n\
+      In order of priority: \n\
+        1) User specified by 'casm settings --set-casm-prefix' \n\
+        2) $CASM_PREFIX \n\
+        3) (default search paths) \n\
+\n\
+    Note: For the 'casm' Python package, $LIBCASM and $LIBCCASM, have \n\
+    highest priority for locating libcasm and libccasm, respectively. \n\
+\n\
+    'boost_prefix': \n\
+      If not in a standard search path, boost libraries are expected in \n\
+      '$CASM_BOOST_PREFIX/lib'. \n\
+      In order of priority: \n\
+        1) User specified by 'casm settings --set-boost-prefix' \n\
+        2) $CASM_BOOST_PREFIX \n\
+        3) (default search paths) \n\
+\n\
+    Note: If shared libraries are installed in non-standard locations, you \n\
+    may need to set: \n\
+      (Linux) export LD_LIBRARY_PATH=$CASM_PREFIX/lib:$CASM_BOOST_PREFIX/lib:$LD_LIBRARY_PATH \n\
+      (Mac)   export DYLD_FALLBACK_LIBRARY_PATH=$CASM_PREFIX/lib:$CASM_BOOST_PREFIX/lib:$DYLD_FALLBACK_LIBRARY_PATH \n\
+\n\
+- Subsequently, work on the CASM project can be done by executing 'casm'  \n\
+  from the project's root directory or any subdirectory.                  \n\
 \n\
 - See 'casm format' for descriptions and locations of the 'prim.json' file.\n";
   }
@@ -316,6 +361,12 @@ Instructions for fitting ECI:                                          \n\n\
         std::cout << "\n";
         std::cout << status_opt.desc() << std::endl;
 
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << status_opt.desc() << std::endl;
         std::cout << "DESCRIPTION" << std::endl;
         std::cout << "    Get status information for the current CASM project.\n\n";
 

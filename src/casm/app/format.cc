@@ -51,6 +51,13 @@ namespace CASM {
         std::cout << std::endl;
         std::cout << format_opt.desc() << std::endl;
 
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << format_opt.desc() << std::endl;
+
         std::cout << "DESCRIPTION" << std::endl;
         std::cout << "    This option describes the files contained within a CASM project \n";
         std::cout << "    and where to find them. For a summary of the directory structure\n";
@@ -173,17 +180,40 @@ namespace CASM {
 
       std::cout << "LOCATION WHEN GENERATED:\n";
       std::cout << "$ROOT/prim.json\n";
-      std::cout << "$ROOT/PRIM\n\n\n";
+      std::cout << "$ROOT/PRIM (legacy)\n\n\n";
 
       std::cout << "DESCRIPTION:\n";
       std::cout << "'prim.json' describes the primitive cell structure. It includes the lattice \n";
       std::cout << "vectors, crystal basis sites and a list of possible occupant molecules on each\n";
       std::cout << "basis site.\n\n";
 
-      std::cout << "- Molecule names are case sensitive.\n";
-      std::cout << "- 'Va' is reserved for vacancies.\n";
-      std::cout << "- The default tolerance for checking symmetry is 1e-5, so basis site coordinates\n";
-      std::cout << "  should include 6 significant digits or more.\n\n\n";
+      std::cout <<  "'prim.json' parameters:                                            \n\n"
+
+                "\"title\" (string):                                                \n"
+                "  A title for the project. Must consist of alphanumeric characters \n"
+                "  and underscores only. The first character may not be a number.   \n\n"
+
+                "\"lattice_vectors\" (JSON array of 3 JSON arrays of 3 numbers):    \n"
+                "  Lattice vectors for the primitive structure, in Angstroms.       \n\n"
+
+                "\"coordinate_mode\" (string):                                      \n"
+                "  Coordinate mode for basis sites. One of:                         \n"
+                "    \"Fractional\" or \"Direct\",                                  \n"
+                "    \"Cartesian\"                                                  \n\n"
+
+                "\"basis\" (JSON array of JSON objects):                            \n\n"
+
+                "  /\"coordinate\" (JSON array of 3 numbers):                       \n"
+                "    Coordinate of the basis site with units as specified by the    \n"
+                "    the \"coordinate_mode\" parameter. The default tolerance for   \n"
+                "    checking symmetry is 1e-5, so basis site coordinates should    \n"
+                "    include 6 significant digits or more.                          \n"
+
+                "  /\"occupant_dof\" (JSON array of string):                        \n"
+                "    A list of the possible occupant atoms (and in future versions  \n"
+                "    CASM, molecules) that on each site. The names are case         \n"
+                "    sensitive, and \"Va\" is reserved for vacancies.               \n\n\n";
+
 
       std::cout << "EXAMPLE 1: An FCC ternary alloy of elements A, B, and C\n";
       std::cout << "-------\n";

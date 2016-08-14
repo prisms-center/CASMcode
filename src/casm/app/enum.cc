@@ -85,6 +85,12 @@ namespace CASM {
         std::cout << "\n";
         std::cout << enum_opt.desc() << std::endl;
 
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << enum_opt.desc() << std::endl;
 
         std::cout << "DESCRIPTION" << std::endl;
         std::cout << "    Enumerate supercells and configurations\n";

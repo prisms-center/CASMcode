@@ -85,6 +85,12 @@ namespace CASM {
         std::cout << "\n";
         std::cout << files_opt.desc() << std::endl;
 
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << files_opt.desc() << std::endl;
 
         std::cout << "DESCRIPTION  \n"
                   "    Enumerate files used by this CASM project\n"

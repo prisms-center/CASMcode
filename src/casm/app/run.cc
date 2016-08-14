@@ -49,6 +49,12 @@ namespace CASM {
         std::cout << "\n";
         std::cout << run_opt.desc() << std::endl;
 
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << run_opt.desc() << std::endl;
         std::cout << "DESCRIPTION\n"
                   << "    Executes the requested command for each selected configuration,\n"
                   << "    with the path to the configuration as an argument.             \n\n"
