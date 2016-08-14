@@ -18,11 +18,8 @@ namespace CASM {
 - Add a 'prim.json' file to the directory describing the primitive cell.  \n\
   See 'casm format --prim' for the format of the 'prim.json' file.        \n\
 - Execute: 'casm init'                                                    \n\
-- Several directories are created:                                        \n\
-    'symmetry'                                                            \n\
-    'basis_sets'                                                          \n\
-    'training_data'                                                       \n\
-    'cluster_expansions'                                                  \n\
+- Several directories are created: 'symmetry', 'basis_sets',              \n\
+  'training_data', and 'cluster_expansions'  \n\
 - If necessary, set configuration options for runtime compilation and     \n\
   linking by using the 'casm settings' command or by setting environment  \n\
   variables. \n\

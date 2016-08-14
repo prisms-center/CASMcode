@@ -22,11 +22,14 @@ namespace CASM {
       ("vasp", "Description and location of VASP settings files")
       ("comp", "Description and location of 'composition_axes.json' file")
       ("bspecs", "Description and location of 'bspecs.json' file")
+      ("clust", "Description and location of 'clust.json' file")
+      ("basis", "Description and location of 'basis.json' file")
+      ("clex", "Description and location of '$TITLE_Clexulator.*' files")
       ("ref", "Description and location of 'chemical_reference.json' files")
       ("scel", "Description and location of 'SCEL' file")
       ("lat", "Description and location of 'LAT' files")
       ("pos", "Description and location of 'POS' files")
-      ("fit", "Description and location of the 'energy', 'corr.in', and 'eci.in' files")
+      ("eci", "Description and location of 'eci.json' file")
       ("monte", "Description and location of the Monte Carlo input file");
       return;
     }
@@ -102,8 +105,9 @@ namespace CASM {
       std::cout << "      crystal_point_group.json                                      \n";
       std::cout << "    $ROOT/basis_sets/$CURR_BSET/                                    \n";
       std::cout << "      bspecs.json                                                   \n";
+      std::cout << "      basis.json                                                    \n";
       std::cout << "      clust.json                                                    \n";
-      std::cout << "      $NAME_Clexulator.cc                                           \n";
+      std::cout << "      $TITLE_Clexulator.*                                           \n";
       std::cout << "    $ROOT/training_data/                                            \n";
       std::cout << "      SCEL                                                          \n";
       std::cout << "    $ROOT/training_data/settings/$CURR_CALCTYPE/                    \n";
@@ -122,10 +126,7 @@ namespace CASM {
       std::cout << "      (VASP results)                                                \n";
       std::cout << "      properties.calc.json                                          \n";
       std::cout << "    $ROOT/cluster_expansions/clex.formation_energy/$CURR_BSET/$CURR_CALCTYPE/$CURR_REF/$CURR_ECI\n";
-      std::cout << "      energy                                                        \n";
-      std::cout << "      corr.in                                                       \n";
-      std::cout << "      eci.in                                                        \n";
-      std::cout << "      eci.out                                                       \n";
+      std::cout << "      eci.json                                                      \n";
       std::cout << " \n";
       std::cout << " \n";
       std::cout << "    Variable descriptions:                                          \n";
@@ -148,6 +149,8 @@ namespace CASM {
       std::cout << "    transformation matrix.                                          \n";
       std::cout << " \n";
       std::cout << "    $CONFIGID: Configuration id, a unique integer.                  \n";
+      std::cout << " \n";
+      std::cout << "    $TITLE: Title of the CASM project                               \n";
       std::cout << "\n";
       std::cout << "    Note: The 'settings' heirarchy can be located at the project    \n";
       std::cout << "    level as shown above, or at the supercell or configuration level\n";
@@ -170,7 +173,7 @@ namespace CASM {
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
       std::cout <<
-                "{\n  \"compile_options\" : \"g++ -O3 -Wall -fPIC --std=c++11\",\n  \"curr_bset\" : \"default\",\n  \"curr_calctype\" : \"default\",\n  \"curr_clex\" : \"formation_energy\",\n  \"curr_eci\" : \"default\",\n  \"curr_properties\" : [ \"relaxed_energy\" ],\n  \"curr_ref\" : \"default\",\n  \"name\" : \"ZrO\",\n  \"so_options\" : \"g++ -shared -lboost_system\",\n  \"tol\" : 0.000010000000\n}\n";
+                "{\n  \"cluster_expansions\" : {\n    \"formation_energy\" : {\n      \"bset\" : \"default\",\n      \"calctype\" : \"default\",\n      \"eci\" : \"default\",\n      \"name\" : \"formation_energy\",\n      \"property\" : \"formation_energy\",\n      \"ref\" : \"default\"\n    }\n  },\n  \"crystallography_tol\" : 1.000000000000000082e-05,\n  \"curr_properties\" : [ \"relaxed_energy\" ],\n  \"default_clex\" : \"formation_energy\",\n  \"lin_alg_tol\" : 1.000000000000000036e-10,\n  \"name\" : \"ZrO\",\n  \"nlist_sublat_indices\" : [ 2, 3 ],\n  \"nlist_weight_matrix\" : [\n    [ 2, -1, 0 ],\n    [ -1, 2, 0 ],\n    [ 0, 0, 5 ]\n  ],\n  \"query_alias\" : {\n  },\n  \"view_command\" : \"casm.view \\\"open -a /Applications/VESTA/VESTA.app\\\"\"\n}" << std::endl;
       std::cout << "-------\n";
       std::cout << std::endl << std::endl;
     }
@@ -678,28 +681,28 @@ LCHARG = .FALSE.\n";
                 "  attribute with its index as the key. The keys should not be       \n" <<
                 "  repeats of any of the standard_axes.                              \n\n" <<
 
-                "standard_axes/composition_axes:components                           \n" <<
+                "standard_axes/custom_axes:components                                \n" <<
                 "  A JSON array containing the names of possible species.            \n\n" <<
 
-                "standard_axes/composition_axes:independent_compositions             \n" <<
+                "standard_axes/custom_axes:independent_compositions                  \n" <<
                 "  The number of independent composition axes.                       \n\n" <<
 
-                "standard_axes/composition_axes:origin                               \n" <<
+                "standard_axes/custom_axes:origin                                    \n" <<
                 "  The composition of origin the of composition axes in terms of     \n" <<
                 "  number of each component species per primitive cell, ordered as in\n" <<
                 "  the 'components' array.                                           \n\n" <<
 
-                "standard_axes/composition_axes:a, b, c, ...                         \n" <<
+                "standard_axes/custom_axes:a, b, c, ...                              \n" <<
                 "  The composition of end members a, b, c, etc. in terms of number of\n" <<
                 "  each component species per primitive cell, ordered as in the      \n" <<
                 "  'components' array.                                               \n\n" <<
 
-                "standard_axes/composition_axes:param_formula:                       \n" <<
+                "standard_axes/custom_axes:param_formula:                            \n" <<
                 "  The formula that converts 'comp_n' (# of each component per       \n" <<
                 "  primitive cell) to 'comp' (composition relative the selected      \n" <<
                 "  composition axes).                                                \n\n" <<
 
-                "standard_axes/composition_axes:mol_formula:                         \n" <<
+                "standard_axes/custom_axes:mol_formula:                              \n" <<
                 "  The formula that converts 'comp' (composition relative the        \n" <<
                 "  selected composition axes) to 'comp_n' (# of each component per   \n" <<
                 "  primitive cell).                                                  \n\n\n";
@@ -773,6 +776,113 @@ LCHARG = .FALSE.\n";
                 "{\n  \"basis_functions\" : {\n    \"site_basis_functions\" : \"occupation\"\n  },\n  \"orbit_branch_specs\" : {\n    \"2\" : {\"max_length\" : 4.01},\n    \"3\" : {\"max_length\" : 3.01}\n  },\n  \"orbit_specs\" : [\n    {\n      \"coordinate_mode\" : \"Direct\",\n      \"prototype\" : [\n        [ 0.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 1.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 2.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 3.000000000000, 0.000000000000, 0.000000000000 ]\n      ],\n      \"include_subclusters\" : true  \n    },\n    {\n      \"coordinate_mode\" : \"Integral\",\n      \"prototype\" : [\n        [ 0, 0, 0, 0 ],\n        [ 1, 0, 0, 0 ],\n        [ 0, 0, 0, 3 ]\n      ],\n      \"include_subclusters\" : true\n    }\n  ]\n}\n";
       std::cout << "-------\n";
 
+    }
+
+    if(vm.count("clust")) {
+      std::cout << "\n### clust.json ##################\n\n";
+
+      std::cout << "LOCATION:\n";
+      std::cout << "$ROOT/basis_sets/$CURR_BSET/clust.json\n";
+      std::cout << "\n\n";
+
+      std::cout << "DESCRIPTION:\n";
+      std::cout << "This JSON file contains the coordinates of sites in the prototype   \n" <<
+                "clusters generated using the 'bspecs.json' specifications.          \n\n";
+
+
+      std::cout << "Prototype clusters can be accessed via:                            \n"
+                "  [\"branches\"][branch_index][\"orbits\"][orbit_index][\"prototype\"]\n\n"
+
+                "\"prototype\": (JSON object)                                       \n"
+
+                "  /\"max_length\": (number)                                        \n"
+                "     Maximum pair distance between sites in the cluster            \n\n"
+
+                "  /\"min_length\": (number)                                        \n"
+                "     Minimum pair distance between sites in the cluster            \n\n"
+
+                "  /\"sites\": (JSON array of Integral coordinates)                 \n"
+                "     An array listing sites in the prototype cluster using Integral\n"
+                "     coordinates. Integral coordinates are 4-element integer arrays\n"
+                "     indicating sublattice index, b, followed by unit cell indices,\n"
+                "     i, j, k.                                                      \n\n"
+
+                "\"bspecs\": (JSON object)                                          \n"
+                "  For reference, the contents of the 'bspecs.json' file used to    \n"
+                "  generate these clusters is reproduced here.                      \n\n"
+
+                "\"lattice\": (JSON object)                                         \n"
+                "  For reference, so that the Integral coordinates can be converted \n"
+                "  into Fractional or Cartesian coordinates, the lattice vectors    \n"
+                "  of the primitive structure are reproduced here.                  \n\n" << std::endl;
+    }
+
+    if(vm.count("basis")) {
+      std::cout << "\n### basis.json ##################\n\n";
+
+      std::cout << "LOCATION:\n";
+      std::cout << "$ROOT/basis_sets/$CURR_BSET/basis.json\n";
+      std::cout << "\n\n";
+
+      std::cout << "DESCRIPTION:\n";
+      std::cout << "This JSON file contains the basis functions generated using the    \n"
+                "'bspecs.json' specifications.                                      \n\n";
+
+
+      std::cout << "\"site_functions\": (JSON array of JSON object)                    \n"
+                "  Gives the site basis functions. One JSON object for each basis   \n"
+                "  site. \n\n"
+
+                "  /\"sublat\": (int)                                               \n"
+                "    Basis site index.                                              \n\n"
+
+                "  /\"asym_unit\": (int)                                            \n"
+                "    Index of the asymmetric unit this basis site belongs to.       \n\n"
+
+                "  /\"basis\": (JSON object)                                        \n"
+                "     Gives the value of each site basis function for each possible \n"
+                "     occupant. Of the form:                                        \n\n"
+                "       { \n"
+                "         \"\\\\phi_b_i\": { \n"
+                "           \"A\": val, \n"
+                "           \"B\": val, \n"
+                "           ... \n"
+                "         }, \n"
+                "         ... \n"
+                "       } \n"
+
+                "\"cluster_functions\": (JSON array of JSON object)                 \n"
+                "  Gives the cluster basis functions. One JSON object for each      \n"
+                "  cluster basis function.                                          \n\n"
+
+                "  /\"linear_function_index\": (int)                                \n"
+                "    Linear function index. This corresponds to ECI indices.        \n\n"
+
+                "  /\"mult\": (int)                                                 \n"
+                "    Multiplicity of symmetrically equivalent cluter functions.     \n\n"
+
+                "  /\"orbit\": (JSON array of 3 int)                                \n"
+                "     Gives the cluster branch index, cluster orbit index, and index\n"
+                "     of this basis function in the cluster basis.                  \n\n"
+
+                "  /\"prototype\": (JSON object)                                    \n"
+                "     Specifies the prototype cluster, as in the 'clust.json' file. \n\n"
+
+                "  /\"prototype_function\": (string)                                \n"
+                "     Latex-style function for the prototype cluster.               \n\n" << std::endl;
+    }
+
+    if(vm.count("clex")) {
+      std::cout << "\n### $TITLE_Clexulator.* ##################\n\n";
+
+      std::cout << "LOCATION:\n";
+      std::cout << "$ROOT/basis_sets/$CURR_BSET/$TITLE_Clexulator.*\n";
+      std::cout << "\n\n";
+
+      std::cout << "DESCRIPTION:\n";
+      std::cout << "$TITLE_Clexulator.cc contains C++ code generated by CASM for       \n"
+                "the cluster basis functions. It is automatically compiled into     \n"
+                "$TITLE_Clexulator.o and $TITLE_Clexulator.so for use by CASM.      \n\n" << std::endl;
     }
 
     if(vm.count("ref")) {
@@ -993,61 +1103,26 @@ Direct\n\
 
     }
 
-    if(vm.count("fit")) {
-      std::cout << "\n### fit ##################\n\n";
+    if(vm.count("eci")) {
+      std::cout << "\n### eci.json ##################\n\n";
 
-      std::cout << "LOCATION WHEN GENERATED:\n";
-      std::cout << "$ROOT/cluster_expansions/clex.formation_energy/$CURR_BSET/$CURR_CALCTYPE/$CURR_REF/$CURR_ECI/energy\n";
-      std::cout << "$ROOT/cluster_expansions/clex.formation_energy/$CURR_BSET/$CURR_CALCTYPE/$CURR_REF/$CURR_ECI/corr.in\n";
-      std::cout << "$ROOT/cluster_expansions/clex.formation_energy/$CURR_BSET/$CURR_CALCTYPE/$CURR_REF/$CURR_ECI/eci.in\n\n\n";
+      std::cout << "LOCATION:\n";
+      std::cout << "$ROOT/cluster_expansions/clex.formation_energy/$CURR_BSET/$CURR_CALCTYPE/$CURR_REF/$CURR_ECI/eci.json\n";
+      std::cout << "\n\n";
 
       std::cout << "DESCRIPTION:\n";
-      std::cout << "The 'energy' file contains information about every selected    \n" <<
-                "configuration that will be included as training data for fitting ECI.\n\n" <<
+      std::cout << "This is a copy of the $ROOT/basis_sets/$CURR_BSET/'basis.json' file \n"
+                "with the following additions:                                      \n\n"
 
-                "1st column:                                                        \n" <<
-                "  Formation energy determined from the reference states.           \n" <<
-                "  (See 'casm ref' and 'casm format --ref_state' for details)       \n\n" <<
+                "\"cluster_functions\": (JSON array of JSON object)                 \n\n"
 
-                "2nd column:                                                        \n" <<
-                "  Weight to be placed on configuration when fitting energies with  \n" <<
-                "  eci_search.                                                      \n\n" <<
+                "  /\"eci\": (number, optional, default=0.0)                        \n"
+                "     The value of the ECI for the cluster basis function. If not   \n"
+                "     given, use 0.0.                                               \n\n"
 
-                "3rd and following columns:                                         \n" <<
-                "  Composition of configuration. For a system with N independent    \n" <<
-                "  occupants there will be N-1 columns (see 'casm comp')            \n\n" <<
-
-                "2nd column from back:                                              \n" <<
-                "  Distance to convex hull. Groundstates will have a value of 0.0000.\n\n" <<
-
-                "Last column:                                                       \n" <<
-                "  Path to configuration.                                           \n\n" <<
-
-                "The energy file is to be used together with the corr.in and eci.in \n" <<
-                "files to fit the cluster expansion using the eci_search program.   \n\n";
-
-      std::cout << "The 'corr.in' file contains a matrix of correlations for each   \n" <<
-                "selected configuration.    \n\n";
-
-      std::cout << "The 'eci.in' file contains a list of calculated correlations and \n" <<
-                "can be used to control with correlations are fit by 'eci_search'. \n\n";
-
-      std::cout << "The 'eci.out' file contains the fitted ECI as calculated by 'eci_search'.\n\n";
-
-      std::cout << "EXAMPLE: energy\n";
-      std::cout << "-------\n";
-      std::cout <<
-                "#formation_energy    n/a    n/a    n/a    path    \n\
-0.0000000000000  1.000000000000  1.000000000000  0.000000000000  /home/user/science/supercells/SCEL1_1_1_1_0_0_0/0  \n\
-0.0000000000000  1.000000000000  0.000000000000  0.000000000000  /home/user/science/supercells/SCEL1_1_1_1_0_0_0/1  \n\
--0.415501770000  1.000000000000  0.500000000000  0.243052905000  /home/user/science/supercells/SCEL2_1_1_2_0_0_0/0  \n\
--0.658554675000  1.000000000000  0.500000000000  0.000000000000  /home/user/science/supercells/SCEL2_1_2_1_0_0_1/0  \n\
--0.307639756667  1.000000000000  0.666666666667  0.131644213333  /home/user/science/supercells/SCEL3_1_1_3_0_0_0/0  \n\
--0.243993753333  1.000000000000  0.333333333333  0.277377812022  /home/user/science/supercells/SCEL3_1_1_3_0_0_0/1  \n\
--0.388569660000  1.000000000000  0.666666666667  0.050714310000  /home/user/science/supercells/SCEL3_1_3_1_0_0_1/0  \n\
--0.444539536667  1.000000000000  0.333333333333  0.076832028688  /home/user/science/supercells/SCEL3_1_3_1_0_0_1/1  \n\
--0.377047050000  1.000000000000  0.666666666667  0.062236920000  /home/user/science/supercells/SCEL3_1_3_1_0_0_2/0  \n";
-      std::cout << "-------\n";
+                "\"fit\": (JSON object)                                             \n"
+                "  Data from 'casm-learn' specifying how the ECI where generated and\n"
+                "  some goodness of fit measures.                                   \n\n" << std::endl;
 
     }
 
@@ -1088,9 +1163,9 @@ Direct\n\
 
                 "\"model\": (JSON object)                                           \n\n" <<
 
-                "  /\"clex\", /\"bset\", /\"calctype\", /\"ref\", /\"eci\": (string)\n" <<
-                "    The CASM project settings that should be used for the monte    \n" <<
-                "    carlo calculation.                                             \n\n\n" <<
+                "  /\"formation_energy\": (string, optional, default=\"formation_energy\")\n" <<
+                "    Specifies the cluster expansion to use to calculated formation \n"
+                "    energy. Should be one of the ones listed by 'casm settings -l'.\n\n\n" <<
 
 
                 "\"supercell\": (3x3 JSON arrays of integers)                      \n" <<
@@ -1333,13 +1408,13 @@ Direct\n\
       std::cout << "EXAMPLE: Settings for an incremental Metropolis calculation     \n" <<
                 "with increasing temperature in automatic convergence mode.\n";
       std::cout << "-------\n";
-      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like the ones prepended with '_' are ignored.\",\n  \"debug\" : false,\n  \"ensemble\" : \"grand_canonical\",\n  \"method\" : \"metropolis\",\n  \"model\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\"\n  },\n  \"supercell\" : [\n    [10, 0, 0],\n    [0, 10, 0],\n    [0, 0, 10]\n  ],\n  \"data\" : {\n    \"sample_by\" : \"pass\",\n    \"sample_period\" : 1,\n    \"_N_sample\" : 1000, \n    \"_N_pass\" : 1000,\n    \"_N_step\" : 1000,\n    \"_max_pass\" : 10000,\n    \"min_pass\" : 1000,\n    \"_max_step\" : 10000,\n    \"_max_sample\" : 500,\n    \"_min_sample\" : 100,\n    \"confidence\" : 0.95,\n    \"measurements\" : [ \n      { \n        \"quantity\" : \"formation_energy\"\n      },\n      { \n        \"quantity\" : \"potential_energy\"\n      },\n      { \n        \"quantity\" : \"atom_frac\"\n      },\n      { \n        \"quantity\" : \"site_frac\"\n      },\n      { \n        \"quantity\" : \"comp\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp_n\"\n      }\n    ],\n    \"storage\" : {\n      \"write_observations\" : false,\n      \"write_trajectory\" : false,\n      \"output_format\" : [\"csv\", \"json\"]\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\", \n    \"motif\" : {\n      \"configname\" : \"auto\",\n      \"_configname\" : \"SCEL3_3_1_1_0_2_2/0\",\n      \"_configdof\" : \"path/to/final_state.json\"\n    },\n    \"initial_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 100.0,\n      \"tolerance\" : 0.001\n    },\n    \"final_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 1000.0,\n      \"tolerance\" : 0.001\n    },\n    \"incremental_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : 0.0\n      },\n      \"temperature\" : 10.0,\n      \"tolerance\" : 0.001\n    }\n  }\n}\n";
+      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like the ones prepended with '_' are ignored.\",\n  \"debug\" : false,\n  \"ensemble\" : \"grand_canonical\",\n  \"method\" : \"metropolis\",\n  \"model\" : {\n    \"formation_energy\" : \"formation_energy\"\n  },\n  \"supercell\" : [\n    [10, 0, 0],\n    [0, 10, 0],\n    [0, 0, 10]\n  ],\n  \"data\" : {\n    \"sample_by\" : \"pass\",\n    \"sample_period\" : 1,\n    \"_N_sample\" : 1000, \n    \"_N_pass\" : 1000,\n    \"_N_step\" : 1000,\n    \"_max_pass\" : 10000,\n    \"min_pass\" : 1000,\n    \"_max_step\" : 10000,\n    \"_max_sample\" : 500,\n    \"_min_sample\" : 100,\n    \"confidence\" : 0.95,\n    \"measurements\" : [ \n      { \n        \"quantity\" : \"formation_energy\"\n      },\n      { \n        \"quantity\" : \"potential_energy\"\n      },\n      { \n        \"quantity\" : \"atom_frac\"\n      },\n      { \n        \"quantity\" : \"site_frac\"\n      },\n      { \n        \"quantity\" : \"comp\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp_n\"\n      }\n    ],\n    \"storage\" : {\n      \"write_observations\" : false,\n      \"write_trajectory\" : false,\n      \"output_format\" : [\"csv\", \"json\"]\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\", \n    \"motif\" : {\n      \"configname\" : \"auto\",\n      \"_configname\" : \"SCEL3_3_1_1_0_2_2/0\",\n      \"_configdof\" : \"path/to/final_state.json\"\n    },\n    \"initial_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 100.0,\n      \"tolerance\" : 0.001\n    },\n    \"final_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 1000.0,\n      \"tolerance\" : 0.001\n    },\n    \"incremental_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : 0.0\n      },\n      \"temperature\" : 10.0,\n      \"tolerance\" : 0.001\n    }\n  }\n}\n";
       std::cout << "-------\n\n";
 
       std::cout << "EXAMPLE: Settings for an custom drive mode LTE1 calculation with\n" <<
                 "increasing temperature.\n";
       std::cout << "-------\n";
-      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like the ones prepended with '_' are ignored.\",\n  \"debug\" : false,\n  \"ensemble\" : \"grand_canonical\",\n  \"method\" : \"lte1\",\n  \"model\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\"\n  },\n  \"supercell\" : [\n    [9, 0, 0],\n    [0, 9, 0],\n    [0, 0, 9]\n  ],\n  \"data\" : {\n    \"storage\" : {\n      \"write_observations\" : false,\n      \"write_trajectory\" : false,\n      \"output_format\" : [\"csv\", \"json\"]\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\", \n    \"motif\" : {\n      \"configname\" : \"auto\",\n      \"_configname\" : \"SCEL3_3_1_1_0_2_2/0\",\n      \"_configdof\" : \"path/to/final_state.json\"\n    },\n    \"custom_conditions\" : [\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 100.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 200.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 400.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 800.0,\n        \"tolerance\" : 0.001\n      }\n    ]\n  }\n}\n";
+      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like the ones prepended with '_' are ignored.\",\n  \"debug\" : false,\n  \"ensemble\" : \"grand_canonical\",\n  \"method\" : \"lte1\",\n  \"model\" : {\n    \"formation_energy\" : \"formation_energy\"\n  },\n  \"supercell\" : [\n    [9, 0, 0],\n    [0, 9, 0],\n    [0, 0, 9]\n  ],\n  \"data\" : {\n    \"storage\" : {\n      \"write_observations\" : false,\n      \"write_trajectory\" : false,\n      \"output_format\" : [\"csv\", \"json\"]\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\", \n    \"motif\" : {\n      \"configname\" : \"auto\",\n      \"_configname\" : \"SCEL3_3_1_1_0_2_2/0\",\n      \"_configdof\" : \"path/to/final_state.json\"\n    },\n    \"custom_conditions\" : [\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 100.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 200.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 400.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 800.0,\n        \"tolerance\" : 0.001\n      }\n    ]\n  }\n}\n";
       std::cout << "-------\n";
 
     }
