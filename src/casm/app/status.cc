@@ -342,7 +342,8 @@ Instructions for fitting ECI:                                          \n\n\
       m_desc.add_options()
       ("next,n", "Write next steps")
       ("warning,w", "Suppress warnings")
-      ("details,d", "Print detailed information");
+      ("details,d", "Print detailed information")
+      ("all,a", "Print all 'casm status -n' help messages");
 
       return;
     }
@@ -395,6 +396,12 @@ Instructions for fitting ECI:                                          \n\n\
     std::cout << "\n#################################\n\n";
 
     std::cout << "CASM status:\n\n";
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      status_unitialized();
+    }
+
 
     const fs::path &root = args.root;
 
@@ -463,8 +470,14 @@ Instructions for fitting ECI:                                          \n\n\
     }
     std::cout << std::endl << std::endl;
 
-
     /// 2) Composition axes
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      std::cout << "\n2) Composition axes \n\n";
+      composition_unselected();
+
+    }
 
     std::cout << "2) Composition axes \n";
 
@@ -498,7 +511,18 @@ Instructions for fitting ECI:                                          \n\n\
 
     /// 3) Configuration generation
 
-    std::cout << "3) Generate configurations \n";
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      std::cout << "3) Generate configurations \n\n";
+
+      supercells_ungenerated();
+
+      configs_ungenerated();
+
+    }
+
+    std::cout << "\n3) Generate configurations \n";
 
     int tot_gen = 0;
     int tot_calc = 0;
@@ -555,11 +579,18 @@ Instructions for fitting ECI:                                          \n\n\
 
     std::cout << std::endl << std::endl;
 
-
-
     /// 4) Calculate configuration properties
 
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      std::cout << "4) Calculate configuration properties\n\n";
+      configs_uncalculated();
+
+    }
+
     std::cout << "4) Calculate configuration properties\n";
+
     std::cout << "- Current calctype: " << calctype << "\n";
     std::cout << "- Current cluster expansion: " << desc.name << "\n";
     std::cout << "- Number of configurations calculated: " << tot_calc << " / " << tot_gen << " generated (Update with 'casm update')\n\n";
@@ -615,7 +646,15 @@ Instructions for fitting ECI:                                          \n\n\
 
     /// 5) Choose chemical reference
 
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      std::cout << "5) Choose chemical reference\n\n";
+      references_unset();
+    }
+
     std::cout << "5) Choose chemical reference\n";
+
     std::cout << "- Chemical reference set: ";
     if(primclex.has_chemical_reference()) {
       std::cout << "TRUE" << "\n";
@@ -647,8 +686,14 @@ Instructions for fitting ECI:                                          \n\n\
     std::cout << std::endl;
 
 
-
     /// 6) Generate basis functions:
+
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      std::cout << "6) Generate basis functions: \n\n";
+      bset_uncalculated();
+    }
 
     std::cout << "6) Generate basis functions: ";
 
@@ -668,9 +713,14 @@ Instructions for fitting ECI:                                          \n\n\
     }
     std::cout << "TRUE\n\n\n";
 
-
-
     /// 7) Fit effective cluster interactions (ECI):
+
+
+    if(vm.count("all")) {
+      std::cout << "\n#################################\n\n";
+      std::cout << "7) Fit effective cluster interactions (ECI): \n\n";
+      eci_uncalculated();
+    }
 
     std::cout << "7) Fit effective cluster interactions (ECI): ";
 
@@ -690,22 +740,18 @@ Instructions for fitting ECI:                                          \n\n\
     }
     std::cout << "TRUE\n\n\n";
 
-
-    /// 7) Advanced steps
+    /// 7) Monte Carlo
 
     std::cout << std::endl;
 
-    if(vm.count("next")) {
+    if(vm.count("next") || vm.count("all")) {
       std::cout << "\n#################################\n\n";
-
+      std::cout << "8) Monte Carlo Calculations: \n\n";
       montecarlo();
     }
     else {
       std::cout << "For next steps, run 'casm status -n'\n\n";
     }
-
-
-
 
     return 0;
 
