@@ -66,6 +66,11 @@ namespace CASM {
       return m_must_converge;
     }
 
+    /// \brief Returns requested precision on the mean
+    double requested_precision() const {
+      return m_prec;
+    }
+
     /// \brief Returns true if convergence criteria have been met for data sampled in range [equil_samples, end)
     ///
     /// - If must_converge() == false, always returns false

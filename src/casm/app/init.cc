@@ -1,11 +1,25 @@
 #include <cstring>
 
-#include <casm/core>
+#include "casm/CASM_global_definitions.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/completer/Handlers.hh"
+#include "casm/crystallography/Niggli.hh"
 
 namespace CASM {
+
+  namespace Completer {
+    InitOption::InitOption(): OptionHandlerBase("init") {}
+
+    void InitOption::initialize() {
+      add_help_suboption();
+
+      m_desc.add_options()
+      ("force,f", "Force using a non-reduced, non-primitive, or left-handed PRIM");
+      return;
+    }
+  }
 
   // ///////////////////////////////////////
   // 'init' function for casm
@@ -16,40 +30,41 @@ namespace CASM {
     std::string name;
     po::variables_map vm;
 
+    /// Set command line options using boost program_options
+    Completer::InitOption init_opt;
+
     try {
+      po::store(po::parse_command_line(args.argc, args.argv, init_opt.desc()), vm); // can throw
 
-      /// Set command line options using boost program_options
-      po::options_description desc("'casm init' usage");
-      desc.add_options()
-      ("help,h", "Write help documentation")
-      ("force,f", "Force using a non-reduced, non-primitive, or left-handed PRIM");
+      /** --help option
+      */
+      if(vm.count("help")) {
+        std::cout << "\n";
+        std::cout << init_opt.desc() << std::endl;
 
-      try {
-        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
-
-        /** --help option
-        */
-        if(vm.count("help")) {
-          std::cout << "\n";
-          std::cout << desc << std::endl;
-
-          std::cout << "DESCRIPTION                                                \n" <<
-                    "    Initialize a new CASM project in the current directory.\n" <<
-                    "    - Expects a prim.json file in the current directory    \n" <<
-                    "    - If not found, looks for a PRIM file in the current   \n" <<
-                    "      directory and creates prim.json.                     \n\n";
-
-          return 0;
-        }
-
-        po::notify(vm); // throws on error, so do after help in case
-        // there are any problems
+        return 0;
       }
-      catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
-        return ERR_INVALID_ARG;
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << init_opt.desc() << std::endl;
+
+        std::cout << "DESCRIPTION                                                \n" <<
+                  "    Initialize a new CASM project in the current directory.\n" <<
+                  "    - Expects a prim.json file in the current directory    \n" <<
+                  "    - If not found, looks for a PRIM file in the current   \n" <<
+                  "      directory and creates prim.json.                     \n\n";
+
+        return 0;
       }
+
+      po::notify(vm); // throws on error, so do after help in case
+      // there are any problems
+    }
+    catch(po::error &e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      std::cerr << init_opt.desc() << std::endl;
+      return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "
@@ -140,7 +155,7 @@ namespace CASM {
                   << "       primitive structure to file 'prim.true.json'.\n\n";
 
         Structure tmp(true_prim);
-        Lattice lat_niggli = niggli(true_prim.lattice(), tmp.point_group(), TOL);
+        Lattice lat_niggli = canonical_equivalent_lattice(true_prim.lattice(), tmp.point_group(), TOL);
         tmp.set_lattice(lat_niggli, CART);
 
         fs::ofstream primfile(root / "prim.true.json");
@@ -161,7 +176,7 @@ namespace CASM {
     }
 
     /// Check that the PRIM is in reduced form:
-    Lattice niggli_lat = niggli(prim.lattice(), prim.point_group(), TOL);
+    Lattice niggli_lat = canonical_equivalent_lattice(prim.lattice(), prim.point_group(), TOL);
 
     bool is_standard_niggli = almost_equal(niggli_lat.lat_column_mat(), prim.lattice().lat_column_mat());
 
@@ -174,7 +189,7 @@ namespace CASM {
         }
 
         Structure tmp(true_prim);
-        Lattice lat_niggli = niggli(true_prim.lattice(), tmp.point_group(), TOL);
+        Lattice lat_niggli = canonical_equivalent_lattice(true_prim.lattice(), tmp.point_group(), TOL);
         tmp.set_lattice(lat_niggli, CART);
 
         fs::ofstream primfile(root / "prim.niggli.json");

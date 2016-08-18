@@ -194,6 +194,25 @@ namespace CASM {
     ///Output selected data from DataObject to DataStream
     void inject(const DataObject &_obj, DataStream &_stream) const;
 
+    /// Useful when formatted output can be represented as single value
+    template<typename ValueType>
+    ValueType evaluate_as_scalar(const DataObject &_obj) const;
+
+    /// Useful when formatted output can be represented as std::vector
+    template<typename ValueType>
+    std::vector<ValueType> evaluate_as_vector(const DataObject &_obj) const;
+
+    /// Useful when formatted output can be represented as Eigen::MatrixXd
+    Eigen::MatrixXd evaluate_as_matrix(const DataObject &_obj) const;
+
+    /// Useful when formatted output can be represented as std::vector
+    template<typename ValueType, typename IteratorType>
+    std::vector<ValueType> evaluate_as_vector(IteratorType begin, IteratorType end) const;
+
+    /// Useful when formatted output can be represented as an Eigen::MatrixXd
+    template<typename IteratorType>
+    Eigen::MatrixXd evaluate_as_matrix(IteratorType begin, IteratorType end) const;
+
     ///Output data as specified by *this of the given DataObject
     void print(const DataObject &_obj, std::ostream &_stream) const;
 

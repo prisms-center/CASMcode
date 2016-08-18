@@ -1,6 +1,5 @@
 import casm
-from casm.project import lib_ccasm
-import pandas, StringIO, ctypes
+import pandas, StringIO
 
 def query(proj, columns, selection=None, verbatim=True, all=False):
   """Return a pandas DataFrame object containing the output of a 
@@ -16,10 +15,25 @@ def query(proj, columns, selection=None, verbatim=True, all=False):
      Returns:
        data: a pandas DataFrame containing the query results
   """
-  return query_via_capi(proj, columns, selection, verbatim, all)
+  args = _query_args(proj, columns, selection, verbatim, all, api=True)
+  
+  stdout, stderr, returncode = proj.command(args)
+  
+  try:
+    return pandas.read_csv(StringIO.StringIO(stdout[1:]), sep=' *', engine='python')
+  except:
+    print "Error in casm.query"
+    print "  proj:", proj.path
+    print "  Attempted to execute: '" + args + "'"
+    print "---- stdout: ---------------------"
+    print stdout
+    print "---- stderr: ---------------------"
+    print stderr
+    print "----------------------------------"
+    raise
     
 
-def query_args(proj, columns, selection=None, verbatim=True, all=False, api=False):
+def _query_args(proj, columns, selection=None, verbatim=True, all=False, api=False):
   """
   Args:
        columns: iterable of strings corresponding to 'casm query -k' args
@@ -49,57 +63,4 @@ def query_args(proj, columns, selection=None, verbatim=True, all=False, api=Fals
   args += " -o STDOUT"
   return args
   
-    
-def query_via_cli(proj, columns, selection=None, verbatim=True, all=False):
-  
-  args = query_args(proj, columns, selection, verbatim, all)
-  
-  (stdout, stderr) = proj.command(args)
-  
-  try:
-    return pandas.read_csv(StringIO.StringIO(stdout[1:]), sep=' *', engine='python')
-  except:
-    print "Error in casm.query"
-    print "  proj:", proj.path
-    print "  executable:", proj.casm_exe
-    print "  Attempted to execute: '" + args + "'"
-    print "---- stdout: ---------------------"
-    print stdout
-    print "---- stderr: ---------------------"
-    print stderr
-    print "----------------------------------"
-    raise
 
-def query_via_capi(proj, columns, selection=None, verbatim=True, all=False):
-    
-  args = query_args(proj, columns, selection, verbatim, all, api=True)
-  
-  # construct stringstream objects
-  ss = lib_ccasm.casm_ostringstream_new()
-  ss_err = lib_ccasm.casm_ostringstream_new()
-  
-  res = lib_ccasm.casm_capi(args, proj.data(), ss, ss_err)
-  
-  # copy string and delete stringstream
-  qstr = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss))
-  lib_ccasm.casm_ostringstream_strcpy(ss, qstr)
-  lib_ccasm.casm_ostringstream_delete(ss)
-  
-  # copy string and delete stringstream
-  qstr_err = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss_err))
-  lib_ccasm.casm_ostringstream_strcpy(ss_err, qstr_err)
-  lib_ccasm.casm_ostringstream_delete(ss_err)
-  
-  try:
-    return pandas.read_csv(StringIO.StringIO(qstr.value[1:]), sep=' *', engine='python')
-  except:
-    print "Error in casm.query"
-    print "  proj:", proj.path
-    print "  Attempted to execute: '" + args + "'"
-    print "---- stdout: ---------------------"
-    print qstr.value
-    print "---- stderr: ---------------------"
-    print qstr_err.value
-    print "----------------------------------"
-    raise
-    

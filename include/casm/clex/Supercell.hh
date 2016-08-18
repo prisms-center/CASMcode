@@ -390,5 +390,7 @@ namespace CASM {
     }
   }
 
+  std::string generate_name(const Eigen::Matrix3i &transf_mat);
+
 }
 #endif

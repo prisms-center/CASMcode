@@ -6,6 +6,7 @@
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/casm_io/Log.hh"
 
 namespace CASM {
 
@@ -252,8 +253,9 @@ namespace CASM {
     /// \param dirpath Directory containing the source code and compiled object file.
     /// \param nlist, A PrimNeighborList to be updated to include the neighborhood
     ///        of this Clexulator
-    /// \param compile_options Compilation options, by default "g++ -O3 -Wall -fPIC"
-    /// \param so_options Shared library compilation options, by default "g++ -shared"
+    /// \param status_log Print a message to inform users that compilation is occuring
+    /// \param compile_options Compilation options
+    /// \param so_options Shared library compilation options
     ///
     /// If 'name' is 'X_Clexulator', and 'dirpath' is '/path/to':
     /// - Looks for '/path/to/X_Clexulator.so' and tries to load it.
@@ -267,8 +269,9 @@ namespace CASM {
     Clexulator(std::string name,
                boost::filesystem::path dirpath,
                PrimNeighborList &nlist,
-               std::string compile_options = RuntimeLibrary::default_compile_options(),
-               std::string so_options = RuntimeLibrary::default_so_options()) {
+               Log &status_log,
+               std::string compile_options,
+               std::string so_options) {
 
       namespace fs = boost::filesystem;
 
@@ -284,7 +287,22 @@ namespace CASM {
           if(fs::exists(dirpath / (name + ".cc"))) {
 
             // Compile it
-            m_lib->compile((dirpath / name).string());
+            try {
+              status_log.compiling<Log::standard>(name);
+              status_log.begin_lap();
+              status_log << "compile time depends on how many basis functions are included" << std::endl;
+              m_lib->compile((dirpath / name).string());
+              status_log << "compile time: " << status_log.lap_time() << " (s)\n" << std::endl;
+            }
+            catch(std::exception &e) {
+              status_log << "Error compiling clexulator. To fix: \n";
+              status_log << "  - Check compiler error messages.\n";
+              status_log << "  - Check compiler options with 'casm settings -l'\n";
+              status_log << "    - Update compiler options with 'casm settings --set-compile-options '...options...'\n";
+              status_log << "    - Make sure the casm headers can be found by including '-I/path/to/casm'\n";
+              status_log << "  - The default compiler is 'g++'. Override by setting the environment variable CXX\n" << std::endl;
+              throw e;
+            }
           }
           else {
             throw std::runtime_error(

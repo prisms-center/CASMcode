@@ -22,6 +22,7 @@
 *.orig
 [#]*[#]
 *.bkup
+*.old
 
 # Mac files
 .DS_Store
@@ -63,6 +64,7 @@ bin/*
 builds
 
 #autotools self generating
+configure
 Makefile
 Makefile.in
 build-aux

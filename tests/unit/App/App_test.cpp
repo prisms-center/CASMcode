@@ -7,7 +7,6 @@
 /// What is being used to test it:
 #include <boost/filesystem.hpp>
 
-#include "casm/CASM_classes.hh"
 #include "Common.hh"
 
 using namespace CASM;
@@ -31,6 +30,7 @@ BOOST_AUTO_TEST_SUITE(AppTest)
 BOOST_AUTO_TEST_CASE(ProjectCommands) {
 
   Popen p;
+  Log &log = default_log();
 
   // checks for what happens when running casm from a non-project directory
   std::vector<Checks> command = {
@@ -60,14 +60,34 @@ BOOST_AUTO_TEST_CASE(ProjectCommands) {
   proj.push_back(notstd::make_unique<test::ZrOProj>());
 
   for(auto proj_it = proj.begin(); proj_it != proj.end(); ++proj_it) {
+    log.custom<Log::standard>("Test project: " + (*proj_it)->title);
+    log << "root: " << (*proj_it)->dir << std::endl;
+
+    log << "testing 'casm init'" << std::endl;
     (*proj_it)->check_init();
+
+    log << "testing 'casm sym'" << std::endl;
     (*proj_it)->check_symmetry();
+
+    log << "testing 'casm composition'" << std::endl;
     (*proj_it)->check_composition();
+
+    log << "testing 'casm bset'" << std::endl;
     (*proj_it)->check_bset();
+
+    log << "testing 'casm enum'" << std::endl;
     (*proj_it)->check_enum();
+
+    log << "testing 'casm select'" << std::endl;
     (*proj_it)->check_select();
+
+    log << "testing 'casm query'" << std::endl;
     (*proj_it)->check_query();
-    rm_project(**proj_it);
+
+    //log << "removing test project" << std::endl;
+    //rm_project(**proj_it);
+    log << std::endl;
+
   }
 
 }

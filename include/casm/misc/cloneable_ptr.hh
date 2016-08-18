@@ -20,7 +20,6 @@ namespace notstd {
   template<typename Type>
   class cloneable_ptr;
 
-
   /// \brief make a cloneable_ptr<T> via T(Args... args)
   template<typename T, typename ...Args>
   cloneable_ptr<T> make_cloneable(Args &&...args) {

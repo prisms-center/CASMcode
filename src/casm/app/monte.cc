@@ -7,10 +7,16 @@
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteDriver.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
 
   void print_monte_help(const po::options_description &desc) {
+    std::cout << "\n";
+    std::cout << desc << std::endl;
+  }
+
+  void print_monte_desc(const po::options_description &desc) {
     std::cout << "\n";
     std::cout << desc << std::endl;
 
@@ -48,6 +54,28 @@ namespace CASM {
 
   }
 
+  namespace Completer {
+
+    MonteOption::MonteOption(): OptionHandlerBase("monte") {};
+
+    void MonteOption::initialize() {
+      add_help_suboption();
+      add_verbosity_suboption();
+      add_settings_suboption();
+
+      m_desc.add_options()
+      ("initial-POSCAR", po::value<Index>(&m_condition_index), "Given the condition index, print a POSCAR for the initial state of a monte carlo run.")
+      ("final-POSCAR", po::value<Index>(&m_condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
+      ("traj-POSCAR", po::value<Index>(&m_condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
+      return;
+    }
+
+    Index MonteOption::condition_index() const {
+      return m_condition_index;
+    };
+
+  }
+
   int monte_command(const CommandArgs &args) {
 
     fs::path settings_path;
@@ -55,48 +83,47 @@ namespace CASM {
     po::variables_map vm;
     Index condition_index;
 
+    // Set command line options using boost program_options
+    Completer::MonteOption monte_opt;
+
     try {
+      po::store(po::parse_command_line(args.argc, args.argv, monte_opt.desc()), vm); // can throw
 
-      // Set command line options using boost program_options
-      po::options_description desc("'casm monte' usage");
-      desc.add_options()
-      ("help,h", "Print help message")
-      ("settings,s", po::value<fs::path>(&settings_path)->required(), "The Monte Carlo input file. See 'casm format --monte'.")
-      ("verbosity", po::value<std::string>(&verbosity_str)->default_value("standard"), "Verbosity of output. Options are 'none', 'quiet', 'standard', 'verbose', 'debug', or an integer 0-100 (0: none, 100: all).")
-      ("initial-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print a POSCAR for the initial state of a monte carlo run.")
-      ("final-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print a POSCAR for the final state of a monte carlo run.")
-      ("traj-POSCAR", po::value<Index>(&condition_index), "Given the condition index, print POSCARs for the state at every sample of monte carlo run. Requires an existing trajectory file.");
-
-      try {
-        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
-
-        /** --help option
-        */
-        if(vm.count("help")) {
-          print_monte_help(desc);
-          return 0;
-        }
-
-        po::notify(vm); // throws on error, so do after help in case
-        // there are any problems
-
-        if(vm.count("verbosity")) {
-          auto res = Log::verbosity_level(verbosity_str);
-          if(!res.first) {
-            args.err_log.error("--verbosity");
-            args.err_log << "Expected: 'none', 'quiet', 'standard', 'verbose', "
-                         "'debug', or an integer 0-100 (0: none, 100: all)" << "\n" << std::endl;
-            return ERR_INVALID_ARG;
-          }
-          args.log.set_verbosity(res.second);
-        }
-
+      /** --help option
+      */
+      if(vm.count("help")) {
+        print_monte_help(monte_opt.desc());
+        return 0;
       }
-      catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
-        return 1;
+
+      if(vm.count("desc")) {
+        print_monte_desc(monte_opt.desc());
+        return 0;
       }
+
+      po::notify(vm); // throws on error, so do after help in case
+      // there are any problems
+
+      settings_path = monte_opt.settings_path();
+      verbosity_str = monte_opt.verbosity_str();
+      condition_index = monte_opt.condition_index();
+
+      if(vm.count("verbosity")) {
+        auto res = Log::verbosity_level(verbosity_str);
+        if(!res.first) {
+          args.err_log.error("--verbosity");
+          args.err_log << "Expected: 'none', 'quiet', 'standard', 'verbose', "
+                       "'debug', or an integer 0-100 (0: none, 100: all)" << "\n" << std::endl;
+          return ERR_INVALID_ARG;
+        }
+        args.log.set_verbosity(res.second);
+      }
+
+    }
+    catch(po::error &e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      std::cerr << monte_opt.desc() << std::endl;
+      return 1;
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "
@@ -206,6 +233,24 @@ namespace CASM {
         try {
 
           GrandCanonicalSettings gc_settings(settings_path);
+
+          if(gc_settings.dependent_runs()) {
+            throw std::invalid_argument("ERROR in LTE1 calculation: dependents_runs must be false");
+          }
+
+          bool ok = false;
+          if(gc_settings.is_motif_configname() &&
+             (gc_settings.motif_configname() == "auto" ||
+              gc_settings.motif_configname() == "restricted_auto")) {
+            ok = true;
+          }
+
+          if(!ok) {
+            throw std::invalid_argument("ERROR in LTE1 calculation: must use one of\n"
+                                        "  \"driver\"/\"motif\"/\"configname\": \"auto\"\n"
+                                        "  \"driver\"/\"motif\"/\"configname\": \"restricted_auto\"");
+          }
+
           GrandCanonicalDirectoryStructure dir(gc_settings.output_directory());
           if(gc_settings.write_csv()) {
             if(fs::exists(dir.results_csv())) {
@@ -228,7 +273,7 @@ namespace CASM {
           log.custom("LTE Calculation");
           log << "Phi_LTE(1) = potential_energy_gs - kT*ln(Z'(1))/N" << std::endl;
           log << "Z'(1) = sum_i(exp(-dPE_i/kT), summing over ground state and single spin flips" << std::endl;
-          log << "dPE_i: (potential_energy_i - potential_energy_gs)*N" << std::endl << std::endl;
+          log << "dPE_i: (potential_energy_i - potential_energy_gs)*N" << "\n\n" << std::endl;
 
           auto init = gc_settings.initial_conditions();
           auto incr = init;
@@ -241,12 +286,12 @@ namespace CASM {
             num_conditions = (final - init) / incr + 1;
           }
 
+          std::string configname;
+
           auto cond = init;
           for(int index = 0; index < num_conditions; ++index) {
 
-            if(index != 0) {
-              gc.set_conditions(cond);
-            }
+            configname = gc.set_state(cond, gc_settings).second;
 
             if(gc.debug()) {
               const auto &comp_converter = gc.primclex().composition_axes();
@@ -261,10 +306,11 @@ namespace CASM {
             double phi_LTE1 = gc.lte_grand_canonical_free_energy();
 
             log.write("Output files");
-            write_lte_results(gc_settings, gc, phi_LTE1, log);
+            write_lte_results(gc_settings, gc, phi_LTE1, configname, log);
             log << std::endl;
             cond += incr;
 
+            log << std::endl;
           }
 
         }
@@ -277,10 +323,6 @@ namespace CASM {
       else if(monte_settings.method() == Monte::METHOD::Metropolis) {
 
         try {
-
-          //std::cout << "\n-------------------------------\n";
-          //monte_settings.print(std::cout);
-          //std::cout << "\n-------------------------------\n\n";
 
           MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(settings_path), log, err_log);
           driver.run();

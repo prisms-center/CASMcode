@@ -27,13 +27,17 @@ namespace CASM {
     };
 
 
-    const std::string traits<Monte::DRIVE_MODE>::name = "mode";
-
     const std::multimap<Monte::DRIVE_MODE, std::vector<std::string> > traits<Monte::DRIVE_MODE>::strval = {
       {Monte::DRIVE_MODE::INCREMENTAL, {"Incremental", "incremental"} },
       {Monte::DRIVE_MODE::CUSTOM, {"Custom", "custom"} }
     };
 
+    const std::string traits<Monte::ENUM_SAMPLE_MODE>::name = "sample_mode";
+
+    const std::multimap<Monte::ENUM_SAMPLE_MODE, std::vector<std::string> > traits<Monte::ENUM_SAMPLE_MODE>::strval = {
+      {Monte::ENUM_SAMPLE_MODE::ON_ACCEPT, {"on_accept"} },
+      {Monte::ENUM_SAMPLE_MODE::ON_SAMPLE, {"on_sample"} }
+    };
   }
 }
 

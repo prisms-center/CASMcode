@@ -1,6 +1,7 @@
 #include "casm/crystallography/Lattice.hh"
 
 #include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/Niggli.hh"
 #include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
@@ -57,8 +58,8 @@ namespace CASM {
     Eigen::Matrix3d latmat;
     latmat <<
            1, -1.0 / sqrt(3.0), 0,
-           1, 1.0 / sqrt(3.0),  0,
-           0, 0, sqrt(3.0) / 2.0;
+           0, 2.0 / sqrt(3.0),  0,
+           0, 0, sqrt(3.0);
 
     return Lattice(latmat.transpose());
   }
@@ -380,7 +381,7 @@ namespace CASM {
     SupercellEnumerator<Lattice> enumerator(*this, effective_pg, min_prim_vol, max_prim_vol + 1, dims, G);
     supercell.clear();
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
-      supercell.push_back(niggli(*it, effective_pg, TOL));
+      supercell.push_back(canonical_equivalent_lattice(*it, effective_pg, TOL));
     }
     return;
   }
@@ -647,7 +648,12 @@ namespace CASM {
     return is_supercell(*this, tile, symoplist.begin(), symoplist.end(), _tol).first != symoplist.end();
   }
 
-  //********************************************************************
+  /**
+   * A lattice is considered right handed when the
+   * determinant of the lattice vector matrix is positive.
+   * This routine will flip the sign of all the lattice
+   * vectors if it finds that the determinant is negative
+   */
 
   Lattice &Lattice::make_right_handed() {
 
@@ -1087,445 +1093,6 @@ namespace CASM {
     return Lattice(op.matrix() * lat.lat_column_mat());
   }
 
-  namespace niggli_impl {
-
-    /// Check that x < y, given some tolerance
-    ///   Returns x < (y - tol)
-    ///   Helper function for niggli
-    bool _lt(double x, double y, double tol) {
-      return x < (y - tol);
-    }
-
-    /// Check that x > y, given some tolerance
-    ///   returns y < x - tol
-    ///   Helper function for niggli
-    bool _gt(double x, double y, double tol) {
-      return y < (x - tol);
-    }
-
-    /// Check that x == y, given some tolerance
-    ///   returns !(_lt(x,y,tol) || _gt(x,y,tol))
-    ///   Helper function for niggli
-    bool _eq(double x, double y, double tol) {
-      return !(_lt(x, y, tol) || _gt(x, y, tol));
-    }
-
-    /// Product of off-diagonal signs of S (= lat.transpose()*lat)
-    ///   Helper function for niggli
-    int _niggli_skew_product_step3(const Eigen::Matrix3d &S, double tol) {
-      int S12 = 0;
-      if(_gt(S(1, 2), 0.0, tol)) {
-        S12 = 1;
-      }
-      else if(_lt(S(1, 2), 0.0, tol)) {
-        S12 = -1;
-      }
-
-      int S02 = 0;
-      if(_gt(S(0, 2), 0.0, tol)) {
-        S02 = 1;
-      }
-      else if(_lt(S(0, 2), 0.0, tol)) {
-        S02 = -1;
-      }
-
-      return S12 * S02 * S12;
-    }
-
-    /// Product of off-diagonal signs of S (= lat.transpose()*lat)
-    ///   Helper function for niggli
-    int _niggli_skew_product(const Eigen::Matrix3d &S, double tol) {
-      int S12 = 0;
-      if(_gt(S(1, 2), 0.0, tol)) {
-        S12 = 1;
-      }
-      else if(_lt(S(1, 2), 0.0, tol)) {
-        S12 = -1;
-      }
-
-      int S02 = 0;
-      if(_gt(S(0, 2), 0.0, tol)) {
-        S02 = 1;
-      }
-      else if(_lt(S(0, 2), 0.0, tol)) {
-        S02 = -1;
-      }
-
-      int S01 = 0;
-      if(_gt(S(0, 1), 0.0, tol)) {
-        S01 = 1;
-      }
-      else if(_lt(S(0, 1), 0.0, tol)) {
-        S01 = -1;
-      }
-
-      return S12 * S02 * S01;
-    }
-
-    /// \brief Returns an equivalent \ref Lattice in Niggli form
-    ///
-    /// \returns an equivalent \ref Lattice in Niggli form
-    ///
-    /// \param lat a \ref Lattice
-    /// \param tol tolerance for floating point comparisons
-    ///
-    /// The Niggli cell is a unique choice of lattice vectors for a particular lattice.
-    /// It minimizes lattice vector lengths, and chooses a particular angular orientation.
-    ///
-    /// This implementation function does not set the standard spatial orientation.
-    ///
-    /// \see
-    /// I. Krivy and B. Gruber, Acta Cryst. (1976). A32, 297.
-    /// <a href="http://dx.doi.org/10.1107/S0567739476000636">[doi:10.1107/S0567739476000636]</a>
-    /// R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams, Acta Cryst. (2004). A60, 1.
-    /// <a href="http://dx.doi.org/10.1107/S010876730302186X"> [doi:10.1107/S010876730302186X]</a>
-    ///
-    Lattice _niggli(const Lattice &lat, double tol) {
-
-      //std::cout << "begin _niggli(const Lattice &lat, double tol)" << std::endl;
-
-      // Get helper functions
-      using namespace niggli_impl;
-
-      //  S = lat.transpose()*lat, is a matrix of lattice vector scalar products,
-      //    this is sometimes called the metric tensor
-      //
-      //    S(0,0) = a*a, S(0,1) = a*b, etc.
-      //
-      Eigen::Matrix3d reduced = lat.lat_column_mat();
-      Eigen::Matrix3d S = reduced.transpose() * reduced;
-
-      while(true) {
-
-        // in notes: a = reduced.col(0), b = reduced.col(1), c = reduced.col(2)
-        //   a*a is scalar product
-
-
-        // 1)
-        // if a*a > b*b or
-        //    a*a == b*b and std::abs(b*c*2.0) > std::abs(a*c*2.0),
-        // then permute a and b
-        if(_gt(S(0, 0), S(1, 1), tol) ||
-           (_eq(S(0, 0), S(1, 1), tol) && _gt(std::abs(S(1, 2)), std::abs(S(0, 2)), tol))) {
-          reduced.col(0).swap(reduced.col(1));
-          reduced *= -1.0;
-          S = reduced.transpose() * reduced;
-        }
-
-
-        // 2)
-        // if b*b > c*c or
-        //    b*b == c*c and std::abs(a*c*2.0) > std::abs(a*b*2.0),
-        // then permute b and c
-        if(_gt(S(1, 1), S(2, 2), tol) ||
-           (_eq(S(1, 1), S(2, 2), tol) && _gt(std::abs(S(0, 2)), std::abs(S(0, 1)), tol))) {
-          reduced.col(1).swap(reduced.col(2));
-          reduced *= -1.0;
-          S = reduced.transpose() * reduced;
-
-          continue;
-        }
-
-        // 3)
-        // if (2*b*c)*(2*a*c)*(2*a*b) > 0,  *** is this right? **
-        if(_niggli_skew_product(S, tol) > 0) {
-
-          // if (2*b*c)*(2*a*c)*(2*b*c) > 0,
-          // if(_niggli_skew_product_step3(S, tol) > 0) {
-
-          // if (b*c) < 0.0, flip a
-          if(_lt(S(1, 2), 0.0, tol)) {
-            reduced.col(0) *= -1;
-          }
-
-          // if (a*c) < 0.0, flip b
-          if(_lt(S(0, 2), 0.0, tol)) {
-            reduced.col(1) *= -1;
-          }
-
-          // if (a*b) < 0.0, flip c
-          if(_lt(S(0, 1), 0.0, tol)) {
-            reduced.col(2) *= -1;
-          }
-
-          S = reduced.transpose() * reduced;
-
-        }
-
-        // 4)
-        // if (2*b*c)*(2*a*c)*(2*a*b) <= 0,
-        if(_niggli_skew_product(S, tol) <= 0) {
-
-          int i = 1, j = 1, k = 1;
-          int *p;
-
-
-          // !! paper says (a*b), but I think they mean (b*c)
-          // if (b*c) > 0.0, i = -1
-          if(_gt(S(1, 2), 0.0, tol)) {
-            i = -1;
-          }
-          // else if( !(b*c < 0)), p = &i;
-          else if(!(_lt(S(1, 2), 0.0, tol))) {
-            p = &i;
-          }
-
-          // if (a*c) > 0.0, j = -1
-          if(_gt(S(0, 2), 0.0, tol)) {
-            j = -1;
-          }
-          // else if( !(a*c < 0)), p = &j;
-          else if(!(_lt(S(0, 2), 0.0, tol))) {
-            p = &j;
-          }
-
-          // if (a*b) > 0.0, k = -1
-          if(_gt(S(0, 1), 0.0, tol)) {
-            k = -1;
-          }
-          // else if( !(a*b < 0)), p = &k;
-          else if(!(_lt(S(0, 1), 0.0, tol))) {
-            p = &k;
-          }
-
-          if(i * j * k < 0) {
-            *p = -1;
-          }
-
-          reduced.col(0) *= i;
-          reduced.col(1) *= j;
-          reduced.col(2) *= k;
-
-          S = reduced.transpose() * reduced;
-
-        }
-
-        // 5)
-        // if std::abs(2.0*S(1,2)) > S(1,1) or
-        //    (2.0*S(1,2) == S(1,1) and 2.0*2.0*S(0,2) < 2.0*S(0,1)) or
-        //    (2.0*S(1,2) == -S(1,1) and 2.0*S(0,1) < 0.0)
-        if(_gt(std::abs(2.0 * S(1, 2)), S(1, 1), tol) ||
-           (_eq(2.0 * S(1, 2), S(1, 1), tol) && _lt(2.0 * S(0, 2), S(0, 1), tol)) ||
-           (_eq(2.0 * S(1, 2), -S(1, 1), tol) && _lt(S(0, 1), 0.0, tol))) {
-
-          // if (b*c) > 0.0, subtract b from c
-          if(_gt(S(1, 2), 0.0, tol)) {
-            reduced.col(2) -= reduced.col(1);
-          }
-          // else if (b*c) < 0.0, add b to c
-          else if(_lt(S(1, 2), 0.0, tol)) {
-            reduced.col(2) += reduced.col(1);
-          }
-
-          S = reduced.transpose() * reduced;
-
-          continue;
-        }
-
-        // 6)
-        // if std::abs(2.0*S(0,2)) > S(0,0) or
-        //    (2.0*S(0,2) == S(0,0) and 2.0*2.0*S(1,2) < 2.0*S(0,1)) or
-        //    (2.0*S(0,2) == -S(0,0) and 2.0*S(0,1) < 0.0)
-        if(_gt(std::abs(2.0 * S(0, 2)), S(0, 0), tol) ||
-           (_eq(2.0 * S(0, 2), S(0, 0), tol) && _lt(2.0 * S(1, 2), S(0, 1), tol)) ||
-           (_eq(2.0 * S(0, 2), -S(0, 0), tol) && _lt(S(0, 1), 0.0, tol))) {
-
-          // if (a*c) > 0.0, subtract a from c
-          if(_gt(S(0, 2), 0.0, tol)) {
-            reduced.col(2) -= reduced.col(0);
-          }
-          // else if (a*c) < 0.0, add a to c
-          else if(_lt(S(0, 2), 0.0, tol)) {
-            reduced.col(2) += reduced.col(0);
-          }
-
-          S = reduced.transpose() * reduced;
-
-          continue;
-        }
-
-        // 7)
-        // if std::abs(2.0*S(0,1)) > S(0,0) or
-        //    (2.0*S(0,1) == S(0,0) and 2.0*2.0*S(1,2) < 2.0*S(0,2)) or
-        //    (2.0*S(0,1) == -S(0,0) and 2.0*S(0,2) < 0.0)
-        if(_gt(std::abs(2.0 * S(0, 1)), S(0, 0), tol) ||
-           (_eq(2.0 * S(0, 1), S(0, 0), tol) && _lt(2.0 * S(1, 2), S(0, 2), tol)) ||
-           (_eq(2.0 * S(0, 1), -S(0, 0), tol) && _lt(S(0, 2), 0.0, tol))) {
-
-          // if (a*b) > 0.0, subtract a from b
-          if(_gt(S(0, 1), 0.0, tol)) {
-            reduced.col(1) -= reduced.col(0);
-          }
-          // else if (a*b) < 0.0, add a to b
-          else if(_lt(S(0, 1), 0.0, tol)) {
-            reduced.col(1) += reduced.col(0);
-          }
-
-          S = reduced.transpose() * reduced;
-
-          continue;
-        }
-
-        // 8)
-        // let tmp = 2*b*c + 2*a*c + 2*a*b + a*a + b*b
-        // if  tmp < 0.0 or
-        //     tmp == 0 and 2*(a*a + 2*a*c) + 2*a*b > 0
-        double tmp = 2.0 * S(1, 2) + 2.0 * S(0, 2) + 2.0 * S(0, 1) + S(0, 0) + S(1, 1);
-        if(_lt(tmp, 0.0, tol) ||
-           (_eq(tmp, 0.0, tol) && _gt(2.0 * (S(0, 0) + 2.0 * S(0, 2)) + 2.0 * S(0, 1), 0.0, tol))) {
-
-          // add a and b to c
-          reduced.col(2) += reduced.col(0);
-          reduced.col(2) += reduced.col(1);
-
-          S = reduced.transpose() * reduced;
-
-          continue;
-        }
-
-        break;
-
-      } // end while
-
-      return Lattice(reduced);
-    }
-
-  }
-
-  /// \brief Returns an equivalent \ref Lattice in Niggli form
-  ///
-  /// \returns an equivalent \ref Lattice in Niggli form
-  ///
-  /// \param lat a \ref Lattice
-  /// \param tol tolerance for floating point comparisons
-  ///
-  /// The Niggli cell is a unique choice of lattice vectors for a particular lattice.
-  /// It minimizes lattice vector lengths, and chooses a particular angular orientation.
-  ///
-  /// With the angular orientation fixed, the final spatial orientation of the lattice is
-  /// set using standard_orientation.
-  ///
-  /// \see
-  /// I. Krivy and B. Gruber, Acta Cryst. (1976). A32, 297.
-  /// <a href="http://dx.doi.org/10.1107/S0567739476000636">[doi:10.1107/S0567739476000636]</a>
-  /// R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams, Acta Cryst. (2004). A60, 1.
-  /// <a href="http://dx.doi.org/10.1107/S010876730302186X"> [doi:10.1107/S010876730302186X]</a>
-  ///
-  Lattice niggli(const Lattice &lat, const SymGroup &point_grp, double tol) {
-    Lattice reduced = niggli_impl::_niggli(lat, tol);
-    return standard_orientation(reduced, point_grp, tol);
-  }
-
-  /// \brief Rotate the Lattice to a standard orientation using point group operations
-  Lattice standard_orientation(const Lattice &lat, const SymGroup &point_grp, double tol) {
-
-    Eigen::Matrix3d start = lat.lat_column_mat();
-    Eigen::Matrix3d best = start;
-    bool is_sym1 = almost_equal(best, best.transpose(), tol);
-    Eigen::Matrix3d tmp;
-    Eigen::Matrix3d ptmp = best;
-    ptmp.col(0).swap(ptmp.col(2));
-    ptmp.row(0).swap(ptmp.row(2));
-    bool is_sym2 = almost_equal(ptmp, best, tol);
-    // rotate cell so that the lattice vectors are mostly aligned
-    //    with Cartesian coordinate axes... and the lattice matrix is symmetric (if possible)
-    for(int i = 0; i < point_grp.size(); i++) {
-
-      tmp = point_grp[i].matrix() * start;
-      if(tmp.determinant() < 0.0) {
-        continue;
-      }
-
-      bool better = false;
-
-      bool tmp_sym1 = (almost_equal(tmp, tmp.transpose(), tol));
-      if(is_sym1) {
-        if(!tmp_sym1) {
-          continue;
-        }
-
-        ptmp = tmp;
-        ptmp.col(0).swap(ptmp.col(2));
-        ptmp.row(0).swap(ptmp.row(2));
-        bool tmp_sym2 = almost_equal(ptmp, tmp, tol);
-        if(is_sym2) {
-          if(!tmp_sym2) {
-            continue;
-          }
-        }
-        else if(tmp_sym2) {
-          is_sym1 = tmp_sym1;
-          is_sym2 = tmp_sym2;
-          best = tmp;
-          continue;
-        }
-      }
-      else if(tmp_sym1) {
-        ptmp = tmp;
-        ptmp.col(0).swap(ptmp.col(2));
-        ptmp.row(0).swap(ptmp.row(2));
-        is_sym2 = almost_equal(ptmp, tmp, tol);
-        is_sym1 = tmp_sym1;
-        best = tmp;
-        continue;
-      }
-
-      if(almost_equal(best(0, 0), tmp(0, 0), tol)) {
-        if(almost_equal(best(1, 0), tmp(1, 0), tol)) {
-          if(almost_equal(best(2, 0), tmp(2, 0), tol)) {
-            if(almost_equal(best(1, 1), tmp(1, 1), tol)) {
-              if(almost_equal(best(0, 1), tmp(0, 1), tol)) {
-                if(almost_equal(best(2, 1), tmp(2, 1), tol)) {
-                  if(almost_equal(best(2, 2), tmp(2, 2), tol)) {
-                    if(almost_equal(best(0, 2), tmp(0, 2), tol)) {
-                      if(almost_equal(best(1, 2), tmp(1, 2), tol)) {
-                        better = false;
-                      }
-                      else if(tmp(1, 2) > best(1, 2)) {
-                        better = true;
-                      }
-                    }
-                    else if(tmp(0, 2) > best(0, 2)) {
-                      better = true;
-                    }
-                  }
-                  else if(tmp(2, 2) > best(2, 2)) {
-                    better = true;
-                  }
-                }
-                else if(tmp(2, 1) > best(2, 1)) {
-                  better = true;
-                }
-              }
-              else if(tmp(0, 1) > best(0, 1)) {
-                better = true;
-              }
-            }
-            else if(tmp(1, 1) > best(1, 1)) {
-              better = true;
-            }
-          }
-          else if(tmp(2, 0) > best(2, 0)) {
-            better = true;
-          }
-        }
-        else if(tmp(1, 0) > best(1, 0)) {
-          better = true;
-        }
-      }
-      else if(tmp(0, 0) > best(0, 0)) {
-        better = true;
-      }
-
-      if(better) {
-        best = tmp;
-      }
-
-    }
-
-    return Lattice(best);
-  }
-
 
   ///\brief returns Lattice that is smallest possible supercell of both input Lattice
   ///
@@ -1594,7 +1161,6 @@ namespace CASM {
     }
     return std::make_pair(false, T.cast<int>());
   }
-
 
 }
 

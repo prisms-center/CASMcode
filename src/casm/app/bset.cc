@@ -8,6 +8,23 @@
 
 namespace CASM {
 
+  namespace Completer {
+
+    BsetOption::BsetOption(): OptionHandlerBase("bset") {}
+
+    void BsetOption::initialize() {
+      add_help_suboption();
+
+      m_desc.add_options()
+      ("update,u", "Update basis set")
+      ("orbits", "Pretty-print orbit prototypes")
+      ("functions", "Pretty-print prototype cluster functions for each orbit")
+      ("clusters", "Pretty-print all clusters")
+      ("clex", po::value<std::string>(), "Name of the cluster expansion using the basis set")
+      ("force,f", "Force overwrite");
+      return;
+    }
+  }
 
   // ///////////////////////////////////////
   // 'clusters' function for casm
@@ -18,29 +35,28 @@ namespace CASM {
     po::variables_map vm;
 
     /// Set command line options using boost program_options
-    po::options_description desc("'casm bset' usage");
-    desc.add_options()
-    ("help,h", "Write help documentation")
-    ("update,u", "Update basis set")
-    ("orbits", "Pretty-print orbit prototypes")
-    ("functions", "Pretty-print prototype cluster functions for each orbit")
-    ("clusters", "Pretty-print all clusters")
-    ("force,f", "Force overwrite");
+    Completer::BsetOption bset_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, bset_opt.desc()), vm); // can throw
       bool call_help = false;
 
       /** --help option
        */
       if(vm.count("help") || call_help) {
-        std::cout << "\n";
-        std::cout << desc << std::endl;
+        args.log << "\n";
+        args.log << bset_opt.desc() << std::endl;
 
-        std::cout << "DESCRIPTION" << std::endl;
-        std::cout << "    Generate and inspect cluster basis functions. A bspecs.json file should be available at\n"
-                  << "        $ROOT/basis_set/$current_bset/bspecs.json\n"
-                  << "    Run 'casm format --bspecs' for an example file.\n\n" ;
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        args.log << "\n";
+        args.log << bset_opt.desc() << std::endl;
+        args.log << "DESCRIPTION" << std::endl;
+        args.log << "    Generate and inspect cluster basis functions. A bspecs.json file should be available at\n"
+                 << "        $ROOT/basis_set/$current_bset/bspecs.json\n"
+                 << "    Run 'casm format --bspecs' for an example file.\n\n" ;
 
         return 0;
       }
@@ -49,13 +65,13 @@ namespace CASM {
       // there are any problems
     }
     catch(po::error &e) {
-      std::cerr << desc << std::endl;
-      std::cerr << "\nERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << bset_opt.desc() << std::endl;
+      args.err_log << "\nERROR: " << e.what() << std::endl << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      std::cerr << desc << std::endl;
-      std::cerr << "\nERROR: "  << e.what() << std::endl;
+      args.err_log << bset_opt.desc() << std::endl;
+      args.err_log << "\nERROR: "  << e.what() << std::endl;
       return ERR_UNKNOWN;
 
     }
@@ -71,31 +87,42 @@ namespace CASM {
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+    const DirectoryStructure &dir = primclex.dir();
+    const ProjectSettings &set = primclex.settings();
+    std::string bset;
+    ClexDescription clex_desc;
 
-    // not sure how this will work yet...
-    std::vector<std::string> dof_keys = {"occupation"};
+    if(!vm.count("clex")) {
+      clex_desc = set.default_clex();
+    }
+    else {
+      auto it = set.cluster_expansions().find(vm["clex"].as<std::string>());
+      if(it == set.cluster_expansions().end()) {
+        args.err_log.error("Invalid --clex value");
+        args.err_log << vm["clex"].as<std::string>() << " not found.";
+        return ERR_INVALID_ARG;
+      }
+      clex_desc = it->second;
+    }
+    bset = clex_desc.bset;
 
     if(vm.count("update")) {
 
       // initialize project info
-      DirectoryStructure dir(root);
-      ProjectSettings set(root);
-      Structure prim(read_prim(dir.prim()));
+      Structure prim = primclex.get_prim();
 
-      std::cout << "\n***************************\n" << std::endl;
-
-
-      if(!fs::is_regular_file(dir.bspecs(set.bset()))) {
-        std::cout << "Error in 'casm bset': No basis set specifications file found at: " << dir.bspecs(set.bset()) << std::endl;
+      if(!fs::is_regular_file(dir.bspecs(bset))) {
+        args.err_log.error("'bspecs.json' file not found");
+        args.err_log << "expected basis set specifications file at: " << dir.bspecs(bset) << "\n" << std::endl;
         return ERR_MISSING_INPUT_FILE;
       }
 
 
-      std::vector<fs::path> filepaths({dir.clust(set.bset()),
-                                       dir.basis(set.bset()),
-                                       dir.clexulator_src(set.name(), set.bset()),
-                                       dir.clexulator_o(set.name(), set.bset()),
-                                       dir.clexulator_so(set.name(), set.bset())
+      std::vector<fs::path> filepaths({dir.clust(bset),
+                                       dir.basis(bset),
+                                       dir.clexulator_src(set.name(), bset),
+                                       dir.clexulator_o(set.name(), bset),
+                                       dir.clexulator_so(set.name(), bset)
                                       });
 
       bool any_existing_files = false;
@@ -104,27 +131,25 @@ namespace CASM {
       [&](const fs::path & p) {
         if(fs::exists(p)) {
           if(!any_existing_files) {
-            std::cout << "Existing files:\n";
+            args.log.custom("Found existing files");
             any_existing_files = true;
           }
-          std::cout << "  " << p << "\n";
+          args.log << "found: " << p << "\n";
         }
       });
 
-      std::cout << "\n";
-
       if(any_existing_files) {
         if(vm.count("force")) {
-          std::cout << "Using --force. Will overwrite existing files.\n\n";
-          fs::remove(dir.clexulator_src(set.name(), set.bset()));
-          fs::remove(dir.clexulator_o(set.name(), set.bset()));
-          fs::remove(dir.clexulator_so(set.name(), set.bset()));
-
-          std::cout << "\n***************************\n" << std::endl;
-
+          args.log << "Using --force. Will overwrite existing files.\n" << std::endl;
+          fs::remove(dir.clexulator_src(set.name(), bset));
+          fs::remove(dir.clexulator_o(set.name(), bset));
+          fs::remove(dir.clexulator_so(set.name(), bset));
+          if(args.primclex) {
+            args.primclex->refresh(false, false, false, false, true);
+          }
         }
         else {
-          std::cout << "Exiting due to existing files.  Use --force to force overwrite.\n\n";
+          args.log << "Exiting due to existing files.  Use --force to force overwrite.\n" << std::endl;
           return ERR_EXISTING_FILE;
         }
       }
@@ -134,7 +159,7 @@ namespace CASM {
       std::unique_ptr<ClexBasis> clex_basis;
 
       try {
-        bspecs_json.read(dir.bspecs(set.bset()));
+        jsonParser bspecs_json(dir.bspecs(bset));
 
         args.log.construct("Orbitree");
         args.log << std::endl;
@@ -204,28 +229,18 @@ namespace CASM {
         args.log << std::endl;
       }
 
+      // compile clexulator
+      //primclex.clexulator(set.default_clex());
     }
     else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
 
-      DirectoryStructure dir(root);
-      ProjectSettings set(root);
-
-      if(!fs::exists(dir.clust(set.bset()))) {
-        std::cerr << "ERROR: No 'clust.json' file found. Make sure to update your basis set with 'casm bset -u'.\n";
+      if(!fs::exists(dir.clust(bset))) {
+        args.err_log.error("No 'clust.json' file found");
+        args.err_log << "Make sure to update your basis set with 'casm bset -u'.\n" << std::endl;
         return ERR_MISSING_DEPENDS;
       }
 
-      PrimClex primclex(root, args.log);
-      jsonParser clust_json(dir.clust(set.bset()));
-
-      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-      read_clust(
-        std::back_inserter(orbits),
-        clust_json,
-        primclex.prim(),
-        primclex.prim().factor_group(),
-        PrimPeriodicIntegralClusterSymCompare(set.crystallography_tol())
-      );
+      auto orbits = primclex.orbitree(clex_desc);
 
       if(vm.count("orbits")) {
         print_clust(orbits.begin(), orbits.end(), args.log, ProtoSitesPrinter());
@@ -244,7 +259,8 @@ namespace CASM {
       }
     }
     else {
-      std::cerr << "\n" << desc << "\n";
+      args.err_log.error("Unknown error");
+      args.err_log << bset_opt.desc() << "\n" << std::endl;
     }
 
     return 0;

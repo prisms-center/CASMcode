@@ -21,7 +21,7 @@ namespace CASM {
       Hull::CalculatorOptions options;
       Clex clex;
       options["comp"] = Hull::CalculatorPair(Comp().clone(), clex.clone());
-      clex.parse_args("formation_energy_per_species");
+      clex.parse_args("formation_energy,per_species");
       options["atom_frac"] = Hull::CalculatorPair(SpeciesFrac().clone(), clex.clone());
       return options;
     }

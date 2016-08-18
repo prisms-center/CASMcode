@@ -288,7 +288,7 @@ class IbzkptError(object):
                 kpt.write(os.path.join(new_jobdir,"KPOINTS"))
 #        else:
 #            symprec = io.get_incar_tag("SYMPREC", jobdir = new_jobdir)
-#            if symprec == None or symprec < 1.1e-8:
+#            if symprec is None or symprec < 1.1e-8:
 #                print "  Set SYMPREC = 1e-8"
 #                io.set_incar_tag({"SYMPREC": 1e-8}, jobdir = new_jobdir)
 #            elif io.get_incar_tag("ISYM", jobdir = new_jobdir) != 0:
@@ -360,7 +360,7 @@ class FreezeError(object):
         most_recent_file = None
         for f in os.listdir(jobdir):
             t = time.time() - os.path.getmtime(os.path.join(jobdir,f))
-            if most_recent == None:
+            if most_recent is None:
                 most_recent = t
                 most_recent_file = f
             elif t < most_recent:
@@ -393,13 +393,50 @@ class FreezeError(object):
         print "  Kill job and try to continue"
 
 
+class NbandsError(object):
+    """
+    Your highest band is occupied at some k-points! Unless you are
+    """
+    def __init__(self):
+        self.pattern = "Your highest band is occupied at some k-points! Unless you are"
+
+    def __str__(self):
+        return self.pattern
+
+    def error(self, line=None, jobdir=None):
+        """ Check if pattern found in line """
+        if re.search(self.pattern,line):
+            return True
+        return False
+
+    def fix(self, err_jobdir, new_jobdir, settings):
+        """ Try to fix the error by increasing the number of bands"""
+        continue_job(err_jobdir, new_jobdir, settings)
+        with open(os.path.join(err_jobdir,'OUTCAR')) as f:
+            err_outcar = f.read().splitlines()
+        nbands_line = []
+        for line in err_outcar:
+            if "NBANDS" in line:
+                nbands_line.append(line)
+        if len(nbands_line)<1:
+            print "SERIOUS WARNING :  "
+            print "        Couldn't find any reference to nbands in the OUTCAR. Continuing without fixing"
+        else:
+            for l in nbands_line:
+                if 'k-points' in l.strip().split():
+                    print "  Set NBANDS = "+str(int(1.1 * float(l.strip().split()[-1])))
+                    sys.stdout.flush()
+                    io.set_incar_tag({"NBANDS":int(1.1 * float(l.strip().split()[-1]))}, jobdir=new_jobdir)
+                    break
+        
+        
 def error_check(jobdir, stdoutfile, err_types):
     """ Check vasp stdout for errors """
     err = dict()
     if err_types is None:
         possible = [SubSpaceMatrixError()]
     else:
-        err_objs = {'IbzkptError' : IbzkptError(), 'SubSpaceMatrixError' : SubSpaceMatrixError()}
+        err_objs = {'IbzkptError' : IbzkptError(), 'SubSpaceMatrixError' : SubSpaceMatrixError(), 'NbandsError' : NbandsError()}
         for s in err_types:
             if s not in err_objs.keys():
                 raise VaspError('Invalid err_type: %s'%s)
@@ -432,12 +469,12 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
         The 'command' is executed in the directory 'jobdir'.
 
         Args:
-            jobdir:     directory to run vasp.  If jobdir == None, the current directory is used.
-            stdout:     filename to write to.  If stdout == None, "std.out" is used.
-            stderr:     filename to write to.  If stderr == None, "std.err" is used.
-            npar:       (int or None) VASP INCAR NPAR setting. If npar == None, then NPAR is removed from INCAR
-            kpar:       (int or None) VASP INCAR KPAR setting. If kpar == None, then KPAR is removed from INCAR
-            ncore:      (int or None) VASP INCAR NCORE setting. If not npar == None or ncore == None, then NCORE is removed from INCAR
+            jobdir:     directory to run vasp.  If jobdir is None, the current directory is used.
+            stdout:     filename to write to.  If stdout is None, "std.out" is used.
+            stderr:     filename to write to.  If stderr is None, "std.err" is used.
+            npar:       (int or None) VASP INCAR NPAR setting. If npar is None, then NPAR is removed from INCAR
+            kpar:       (int or None) VASP INCAR KPAR setting. If kpar is None, then KPAR is removed from INCAR
+            ncore:      (int or None) VASP INCAR NCORE setting. If not npar is None or ncore is None, then NCORE is removed from INCAR
             command:    (str or None) vasp execution command
                         If command != None: then 'command' is run in a subprocess
                         Else, if ncpus == 1, then command = "vasp"
@@ -446,25 +483,25 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
                         if ncpus==None, $PBS_NP is used if it exists, else 1
             poll_check_time: how frequently to check if the vasp job is completed
             err_check_time: how frequently to parse vasp output to check for errors
-            err_types:  List of error types to check for. Supported errors: 'IbzkptError', 'SubSpaceMatrixError'. Default: None, in which case only SubSpaceMatrixErrors are checked.
+            err_types:  List of error types to check for. Supported errors: 'IbzkptError', 'SubSpaceMatrixError', 'NbandsError'. Default: None, in which case only SubSpaceMatrixErrors are checked.
 
     """
     print "Begin vasp run:"
     sys.stdout.flush()
 
-    if jobdir == None:
+    if jobdir is None:
         jobdir = os.getcwd()
 
     currdir = os.getcwd()
     os.chdir(jobdir)
 
-    if ncpus == None:
+    if ncpus is None:
         if "PBS_NP" in os.environ:
             ncpus = os.environ["PBS_NP"]
         else:
             ncpus = 1
 
-    if command == None:
+    if command is None:
         if ncpus == 1:
             command = "vasp"
         else:
@@ -473,7 +510,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
     if re.search("\{NCPUS\}",command):
         command = command.format(NCPUS=str(ncpus))
 
-    if not npar == None:
+    if not npar is None:
         ncore = None
 
     io.set_incar_tag({"NPAR":npar, "NCORE":ncore, "KPAR":kpar}, jobdir)
@@ -491,7 +528,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
     poll = p.poll()
     last_check = time.time()
     stopcar_time = None
-    while poll  == None:
+    while poll  is None:
         time.sleep(poll_check_time)
 
         if time.time() - last_check > err_check_time:
@@ -504,7 +541,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
                     sys.stdout.flush()
                     p.kill()
                 # Other errors can be killed with STOPCAR, which is safer
-                elif stopcar_time == None:
+                elif stopcar_time is None:
                     print "  Found errors:",
                     for e in err:
                         print e,
@@ -530,7 +567,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
     sys.stdout.flush()
 
     # check finished job for errors
-    if err == None:
+    if err is None:
         err = error_check(jobdir, os.path.join(jobdir,stdout), err_types)
         if err != None:
             print "  Found errors:",

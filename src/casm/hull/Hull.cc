@@ -290,9 +290,9 @@ namespace CASM {
         std::cerr << f(invalid_data.begin(), invalid_data.end()) << "\n";
 
         std::stringstream ss;
-        ss << "Error in Hull(): Invalid composition or energy data. "
-           "Make sure you have set composition axes and all selected configurations "
-           "have calculation results.";
+        ss << "Error in Hull(): Invalid composition or energy data. \n"
+           "Make sure you have set composition axes, all selected configurations\n"
+           "have calculation results, and you have set your chemical reference.";
         throw std::runtime_error(ss.str());
       }
     }

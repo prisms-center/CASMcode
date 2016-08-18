@@ -1,9 +1,39 @@
 #include <cstring>
 
-#include "casm/CASM_classes.hh"
+#include "casm/CASM_global_definitions.hh"
+#include "casm/app/casm_functions.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
 
+
+  namespace Completer {
+    FormatOption::FormatOption(): OptionHandlerBase("format") {}
+
+    void FormatOption::initialize() {
+      add_help_suboption();
+
+      m_desc.add_options()
+      ("dir,d", "CASM project directory structure summary")
+      ("project_settings", "Description and location of 'project_settings' file")
+      ("prim", "Description and location of 'prim.json' and 'PRIM' files")
+      ("config_list", "Description and location of 'config_list.json' file")
+      ("sym", "Description and location of 'lattice_point_group.json', 'factor_group.json' and 'crystal_point_group.json' files")
+      ("vasp", "Description and location of VASP settings files")
+      ("comp", "Description and location of 'composition_axes.json' file")
+      ("bspecs", "Description and location of 'bspecs.json' file")
+      ("clust", "Description and location of 'clust.json' file")
+      ("basis", "Description and location of 'basis.json' file")
+      ("clex", "Description and location of '$TITLE_Clexulator.*' files")
+      ("ref", "Description and location of 'chemical_reference.json' files")
+      ("scel", "Description and location of 'SCEL' file")
+      ("lat", "Description and location of 'LAT' files")
+      ("pos", "Description and location of 'POS' files")
+      ("eci", "Description and location of 'eci.json' file")
+      ("monte", "Description and location of the Monte Carlo input file");
+      return;
+    }
+  }
 
   // ///////////////////////////////////////
   // 'format' function for casm
@@ -13,51 +43,40 @@ namespace CASM {
 
     po::variables_map vm;
 
+    Completer::FormatOption format_opt;
+
     try {
-      po::options_description desc("'casm format' usage");
-      desc.add_options()
-      ("help,h", "Write help documentation")
-      ("dir,d", "CASM project directory structure summary")
-      ("project_settings", "Description and location of 'project_settings' file")
-      ("prim", "Description and location of 'prim.json' and 'PRIM' files")
-      ("config_list", "Description and location of 'config_list.json' file")
-      ("sym", "Description and location of 'lattice_point_group.json', 'factor_group.json' and 'crystal_point_group.json' files")
-      ("vasp", "Description and location of VASP settings files")
-      ("comp", "Description and location of 'composition_axes.json' file")
-      ("bspecs", "Description and location of 'bspecs.json' file")
-      ("ref", "Description and location of 'chemical_reference.json' files")
-      ("scel", "Description and location of 'SCEL' file")
-      ("lat", "Description and location of 'LAT' files")
-      ("pos", "Description and location of 'POS' files")
-      ("fit", "Description and location of the 'energy', 'corr.in', and 'eci.in' files")
-      ("monte", "Description and location of the Monte Carlo input file");
+      po::store(po::parse_command_line(args.argc, args.argv, format_opt.desc()), vm);
 
-      try {
-        po::store(po::parse_command_line(args.argc, args.argv, desc), vm);
+      /** --help option
+       */
+      if(vm.count("help") || vm.size() == 0) {
+        std::cout << std::endl;
+        std::cout << format_opt.desc() << std::endl;
 
-        /** --help option
-         */
-        if(vm.count("help") || vm.size() == 0) {
-          std::cout << std::endl;
-          std::cout << desc << std::endl;
-
-          std::cout << "DESCRIPTION" << std::endl;
-          std::cout << "    This option describes the files contained within a CASM project \n";
-          std::cout << "    and where to find them. For a summary of the directory structure\n";
-          std::cout << "    of a CASM project using VASP for calculating configuration use  \n";
-          std::cout << "    the --dir option. Not all files are always present.             \n";
-
-          return 0;
-        }
-
-        po::notify(vm);
-
+        return 0;
       }
-      catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
-        return 1;
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << format_opt.desc() << std::endl;
+
+        std::cout << "DESCRIPTION" << std::endl;
+        std::cout << "    This option describes the files contained within a CASM project \n";
+        std::cout << "    and where to find them. For a summary of the directory structure\n";
+        std::cout << "    of a CASM project using VASP for calculating configuration use  \n";
+        std::cout << "    the --dir option. Not all files are always present.             \n";
+
+        return 0;
       }
+
+      po::notify(vm);
+
+    }
+    catch(po::error &e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      std::cerr << format_opt.desc() << std::endl;
+      return 1;
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "
@@ -72,21 +91,23 @@ namespace CASM {
       std::cout << "  The expected CASM project directory structure with VASP settings  \n";
       std::cout << "  files:                                                            \n";
       std::cout << "                                                                    \n";
-      std::cout << "    $ROOT/.casm                                                     \n";
-      std::cout << "      project_settings.json                                         \n";
-      std::cout << "      config_list.json                                              \n";
       std::cout << "    $ROOT/                                                          \n";
       std::cout << "      prim.json                                                     \n";
       std::cout << "      (PRIM)                                                        \n";
       std::cout << "      LOG                                                           \n";
+      std::cout << "    $ROOT/.casm                                                     \n";
+      std::cout << "      project_settings.json                                         \n";
+      std::cout << "      config_list.json                                              \n";
+      std::cout << "      composition_axes.json                                         \n";
       std::cout << "    $ROOT/symmetry/                                                 \n";
       std::cout << "      lattice_point_group.json                                      \n";
       std::cout << "      factor_group.json                                             \n";
       std::cout << "      crystal_point_group.json                                      \n";
       std::cout << "    $ROOT/basis_sets/$CURR_BSET/                                    \n";
       std::cout << "      bspecs.json                                                   \n";
+      std::cout << "      basis.json                                                    \n";
       std::cout << "      clust.json                                                    \n";
-      std::cout << "      $NAME_Clexulator.cc                                           \n";
+      std::cout << "      $TITLE_Clexulator.*                                           \n";
       std::cout << "    $ROOT/training_data/                                            \n";
       std::cout << "      SCEL                                                          \n";
       std::cout << "    $ROOT/training_data/settings/$CURR_CALCTYPE/                    \n";
@@ -96,7 +117,6 @@ namespace CASM {
       std::cout << "      KPOINTS                                                       \n";
       std::cout << "      POSCAR                                                        \n";
       std::cout << "    $ROOT/training_data/settings/$CURR_CALCTYPE/$CURR_REF/          \n";
-      std::cout << "      composition_axes.json                                         \n";
       std::cout << "      chemical_reference.json                                       \n";
       std::cout << "    $ROOT/training_data/$SCELNAME/                                  \n";
       std::cout << "      LAT                                                           \n";
@@ -106,10 +126,7 @@ namespace CASM {
       std::cout << "      (VASP results)                                                \n";
       std::cout << "      properties.calc.json                                          \n";
       std::cout << "    $ROOT/cluster_expansions/clex.formation_energy/$CURR_BSET/$CURR_CALCTYPE/$CURR_REF/$CURR_ECI\n";
-      std::cout << "      energy                                                        \n";
-      std::cout << "      corr.in                                                       \n";
-      std::cout << "      eci.in                                                        \n";
-      std::cout << "      eci.out                                                       \n";
+      std::cout << "      eci.json                                                      \n";
       std::cout << " \n";
       std::cout << " \n";
       std::cout << "    Variable descriptions:                                          \n";
@@ -132,6 +149,8 @@ namespace CASM {
       std::cout << "    transformation matrix.                                          \n";
       std::cout << " \n";
       std::cout << "    $CONFIGID: Configuration id, a unique integer.                  \n";
+      std::cout << " \n";
+      std::cout << "    $TITLE: Title of the CASM project                               \n";
       std::cout << "\n";
       std::cout << "    Note: The 'settings' heirarchy can be located at the project    \n";
       std::cout << "    level as shown above, or at the supercell or configuration level\n";
@@ -154,7 +173,7 @@ namespace CASM {
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
       std::cout <<
-                "{\n  \"compile_options\" : \"g++ -O3 -Wall -fPIC --std=c++11\",\n  \"curr_bset\" : \"default\",\n  \"curr_calctype\" : \"default\",\n  \"curr_clex\" : \"formation_energy\",\n  \"curr_eci\" : \"default\",\n  \"curr_properties\" : [ \"relaxed_energy\" ],\n  \"curr_ref\" : \"default\",\n  \"name\" : \"ZrO\",\n  \"so_options\" : \"g++ -shared -lboost_system\",\n  \"tol\" : 0.000010000000\n}\n";
+                "{\n  \"cluster_expansions\" : {\n    \"formation_energy\" : {\n      \"bset\" : \"default\",\n      \"calctype\" : \"default\",\n      \"eci\" : \"default\",\n      \"name\" : \"formation_energy\",\n      \"property\" : \"formation_energy\",\n      \"ref\" : \"default\"\n    }\n  },\n  \"crystallography_tol\" : 1.000000000000000082e-05,\n  \"curr_properties\" : [ \"relaxed_energy\" ],\n  \"default_clex\" : \"formation_energy\",\n  \"lin_alg_tol\" : 1.000000000000000036e-10,\n  \"name\" : \"ZrO\",\n  \"nlist_sublat_indices\" : [ 2, 3 ],\n  \"nlist_weight_matrix\" : [\n    [ 2, -1, 0 ],\n    [ -1, 2, 0 ],\n    [ 0, 0, 5 ]\n  ],\n  \"query_alias\" : {\n  },\n  \"view_command\" : \"casm.view \\\"open -a /Applications/VESTA/VESTA.app\\\"\"\n}" << std::endl;
       std::cout << "-------\n";
       std::cout << std::endl << std::endl;
     }
@@ -164,17 +183,40 @@ namespace CASM {
 
       std::cout << "LOCATION WHEN GENERATED:\n";
       std::cout << "$ROOT/prim.json\n";
-      std::cout << "$ROOT/PRIM\n\n\n";
+      std::cout << "$ROOT/PRIM (legacy)\n\n\n";
 
       std::cout << "DESCRIPTION:\n";
       std::cout << "'prim.json' describes the primitive cell structure. It includes the lattice \n";
       std::cout << "vectors, crystal basis sites and a list of possible occupant molecules on each\n";
       std::cout << "basis site.\n\n";
 
-      std::cout << "- Molecule names are case sensitive.\n";
-      std::cout << "- 'Va' is reserved for vacancies.\n";
-      std::cout << "- The default tolerance for checking symmetry is 1e-5, so basis site coordinates\n";
-      std::cout << "  should include 6 significant digits or more.\n\n\n";
+      std::cout <<  "'prim.json' parameters:                                            \n\n"
+
+                "\"title\" (string):                                                \n"
+                "  A title for the project. Must consist of alphanumeric characters \n"
+                "  and underscores only. The first character may not be a number.   \n\n"
+
+                "\"lattice_vectors\" (JSON array of 3 JSON arrays of 3 numbers):    \n"
+                "  Lattice vectors for the primitive structure, in Angstroms.       \n\n"
+
+                "\"coordinate_mode\" (string):                                      \n"
+                "  Coordinate mode for basis sites. One of:                         \n"
+                "    \"Fractional\" or \"Direct\",                                  \n"
+                "    \"Cartesian\"                                                  \n\n"
+
+                "\"basis\" (JSON array of JSON objects):                            \n\n"
+
+                "  /\"coordinate\" (JSON array of 3 numbers):                       \n"
+                "    Coordinate of the basis site with units as specified by the    \n"
+                "    the \"coordinate_mode\" parameter. The default tolerance for   \n"
+                "    checking symmetry is 1e-5, so basis site coordinates should    \n"
+                "    include 6 significant digits or more.                          \n"
+
+                "  /\"occupant_dof\" (JSON array of string):                        \n"
+                "    A list of the possible occupant atoms (and in future versions  \n"
+                "    CASM, molecules) that on each site. The names are case         \n"
+                "    sensitive, and \"Va\" is reserved for vacancies.               \n\n\n";
+
 
       std::cout << "EXAMPLE 1: An FCC ternary alloy of elements A, B, and C\n";
       std::cout << "-------\n";
@@ -439,19 +481,63 @@ Direct\n\
                 "    \"pmem\": string for requested memory (default None)            \n" <<
                 "    \"priority\": requested job priority (default \"0\")            \n" <<
                 "    \"message\": when to send messages about jobs (ex. \"abe\",     \n" <<
-                "                 default \"a\")                                     \n" <<
+                "               default \"a\")                                       \n" <<
                 "    \"email\": where to send messages (ex. \"me@fake.com\", default \n" <<
-                "               None)                                                \n" <<
+                "             None)                                                  \n" <<
+                "    \"qos\": quality of service, 'qos' option (ex. \"fluxoe\")      \n" <<
                 "    \"npar\": vasp incar setting (default None)                     \n" <<
                 "    \"ncore\": vasp incar setting (default None)                    \n" <<
+                "    \"kpar\": vasp incar setting (default None)                     \n" <<
                 "    \"vasp_cmd\": vasp execution command (default is \"vasp\" if    \n" <<
-                "                  ncpus=1, else \"mpirun -np {NCPUS} vasp\"         \n" <<
+                "                ncpus=1, else \"mpirun -np {NCPUS} vasp\"           \n" <<
                 "    \"ncpus\": number of cpus (cores) to run on (default $PBS_NP)   \n" <<
                 "    \"run_limit\": number of vasp runs until \"not_converging\"     \n" <<
-                "                   (default 10)                                     \n" <<
+                "                 (default 10)                                       \n" <<
                 "    \"nrg_convergence\": converged if last two runs complete and    \n" <<
-                "                         differ in energy by less than this amount  \n" <<
-                "                         (default None)                             \n\n";
+                "                       differ in energy by less than this amount    \n" <<
+                "                       (default None)                               \n" <<
+                "    \"move\": files to move at the end of a run (ex. \"POTCAR\",    \n" <<
+                "            \"WAVECAR\"], default [\"POTCAR\"])                     \n" <<
+                "    \"copy\": files to copy from run to run (ex. [\"INCAR\",        \n" <<
+                "            \"KPOINTS\"], default [\"INCAR, KPOINTS\"])             \n" <<
+                "    \"remove\": files to remove at the end of a run (ex. [\"IBZKPT\",\n" <<
+                "              \"CHGCAR\"], default [\"IBKZPT\", \"CHG\", \"CHGCAR\",\n" <<
+                "              \"WAVECAR\", \"TMPCAR\", \"EIGENVAL\", \"DOSCAR\",    \n" <<
+                "              \"PROCAR\", \"PCDAT\", \"XDATCAR\", \"LOCPOT\", \"ELFCAR\",\n" <<
+                "              \"PROOUT\"]                                           \n" <<
+                "    \"compress\": files to compress at the end of a run (ex.        \n" <<
+                "                [\"OUTCAR\", \"vasprun.xml\"], default [])          \n" <<
+                "    \"backup\": files to compress to backups at the end of a run,   \n" <<
+                "              used in conjunction with move (ex. [\"WAVECAR\"])     \n" <<
+                "    \"encut\": [START, STOP, STEP] values for converging ENCUT to   \n" <<
+                "             within nrg_convergence (ex. [\"450\", \"Auto\",        \n" <<
+                "             \"10\"], default [\"Auto\", \"Auto\", \"10\"] where    \n" <<
+                "             \"Auto\" is either the largest ENMAX in all POTCARS    \n" <<
+                "             called in SPECIES for START, or 2.0 * largest ENMAX    \n" <<
+                "             for STOP)                                              \n" <<
+                "    \"kpoints\": [start, stop, step] values for converging KPOINTS  \n" <<
+                "               to within nrg_convergence (ex. [\"5\", \"50\", \"1\"],\n" <<
+                "               default [\"5\", \"Auto\", \"1\"] where \"Auto\" can  \n" <<
+                "               only be used for STOP and means to keep increasing   \n" <<
+                "               the KPOINTS length by STEP until either              \n" <<
+                "               nrg_convergence or walltime is reached). For meaning \n" <<
+                "               of the KPOINTS length parameter see the VASP         \n" <<
+                "               documentation at http://cms.mpi.univie.ac.at/vasp/   \n" <<
+                "               vasp/Automatic_k_mesh_generation.html                \n" <<
+                "    \"extra_input_files\": extra input files to be copied from the  \n" <<
+                "                         settings directory, e.g., a vdW kernel     \n" <<
+                "                         file.                                      \n" <<
+                "    \"initial\": location of INCAR with tags for the initial run,   \n" <<
+                "               if desired (e.g. to generate a PBE WAVECAR for use   \n" <<
+                "               with M06-L)                                          \n" <<
+                "    \"final\": location of INCAR with tags for the final run, if    \n" <<
+                "             desired (e.g. \"ISMEAR = -5\", etc). Otherwise, the    \n" <<
+                "             settings enforced are (\"ISMEAR = -5\", \"NSW = 0\",   \n" <<
+                "              \"IBRION = -1\", \"ISIF = 2\")                        \n" <<
+                "    \"err_types\": list of errors to check for. Allowed entries are \n" <<
+                "                 \"IbzkptError\" and \"SubSpaceMatrixError\".       \n" <<
+                "                 Default: [\"SubSpaceMatrixError\"]                 \n" <<
+                "\n";
 
       std::cout << "EXAMPLE: relax.json \n";
       std::cout << "-------\n";
@@ -579,7 +665,7 @@ LCHARG = .FALSE.\n";
       std::cout << "\n### composition_axes.json ##################\n\n";
 
       std::cout << "LOCATION WHEN GENERATED:\n";
-      std::cout << "$ROOT/training_data/settings/$CURR_CALCTYPE/$CURR_REF/composition_axes.json\n";
+      std::cout << "$ROOT/.casm/composition_axes.json\n";
       std::cout << "\n\n";
 
       std::cout << "DESCRIPTION:\n";
@@ -595,28 +681,28 @@ LCHARG = .FALSE.\n";
                 "  attribute with its index as the key. The keys should not be       \n" <<
                 "  repeats of any of the standard_axes.                              \n\n" <<
 
-                "standard_axes/composition_axes:components                           \n" <<
+                "standard_axes/custom_axes:components                                \n" <<
                 "  A JSON array containing the names of possible species.            \n\n" <<
 
-                "standard_axes/composition_axes:independent_compositions             \n" <<
+                "standard_axes/custom_axes:independent_compositions                  \n" <<
                 "  The number of independent composition axes.                       \n\n" <<
 
-                "standard_axes/composition_axes:origin                               \n" <<
+                "standard_axes/custom_axes:origin                                    \n" <<
                 "  The composition of origin the of composition axes in terms of     \n" <<
                 "  number of each component species per primitive cell, ordered as in\n" <<
                 "  the 'components' array.                                           \n\n" <<
 
-                "standard_axes/composition_axes:a, b, c, ...                         \n" <<
+                "standard_axes/custom_axes:a, b, c, ...                              \n" <<
                 "  The composition of end members a, b, c, etc. in terms of number of\n" <<
                 "  each component species per primitive cell, ordered as in the      \n" <<
                 "  'components' array.                                               \n\n" <<
 
-                "standard_axes/composition_axes:param_formula:                       \n" <<
+                "standard_axes/custom_axes:param_formula:                            \n" <<
                 "  The formula that converts 'comp_n' (# of each component per       \n" <<
                 "  primitive cell) to 'comp' (composition relative the selected      \n" <<
                 "  composition axes).                                                \n\n" <<
 
-                "standard_axes/composition_axes:mol_formula:                         \n" <<
+                "standard_axes/custom_axes:mol_formula:                              \n" <<
                 "  The formula that converts 'comp' (composition relative the        \n" <<
                 "  selected composition axes) to 'comp_n' (# of each component per   \n" <<
                 "  primitive cell).                                                  \n\n\n";
@@ -690,6 +776,113 @@ LCHARG = .FALSE.\n";
                 "{\n  \"basis_functions\" : {\n    \"site_basis_functions\" : \"occupation\"\n  },\n  \"orbit_branch_specs\" : {\n    \"2\" : {\"max_length\" : 4.01},\n    \"3\" : {\"max_length\" : 3.01}\n  },\n  \"orbit_specs\" : [\n    {\n      \"coordinate_mode\" : \"Direct\",\n      \"prototype\" : [\n        [ 0.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 1.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 2.000000000000, 0.000000000000, 0.000000000000 ],\n        [ 3.000000000000, 0.000000000000, 0.000000000000 ]\n      ],\n      \"include_subclusters\" : true  \n    },\n    {\n      \"coordinate_mode\" : \"Integral\",\n      \"prototype\" : [\n        [ 0, 0, 0, 0 ],\n        [ 1, 0, 0, 0 ],\n        [ 0, 0, 0, 3 ]\n      ],\n      \"include_subclusters\" : true\n    }\n  ]\n}\n";
       std::cout << "-------\n";
 
+    }
+
+    if(vm.count("clust")) {
+      std::cout << "\n### clust.json ##################\n\n";
+
+      std::cout << "LOCATION:\n";
+      std::cout << "$ROOT/basis_sets/$CURR_BSET/clust.json\n";
+      std::cout << "\n\n";
+
+      std::cout << "DESCRIPTION:\n";
+      std::cout << "This JSON file contains the coordinates of sites in the prototype   \n" <<
+                "clusters generated using the 'bspecs.json' specifications.          \n\n";
+
+
+      std::cout << "Prototype clusters can be accessed via:                            \n"
+                "  [\"branches\"][branch_index][\"orbits\"][orbit_index][\"prototype\"]\n\n"
+
+                "\"prototype\": (JSON object)                                       \n"
+
+                "  /\"max_length\": (number)                                        \n"
+                "     Maximum pair distance between sites in the cluster            \n\n"
+
+                "  /\"min_length\": (number)                                        \n"
+                "     Minimum pair distance between sites in the cluster            \n\n"
+
+                "  /\"sites\": (JSON array of Integral coordinates)                 \n"
+                "     An array listing sites in the prototype cluster using Integral\n"
+                "     coordinates. Integral coordinates are 4-element integer arrays\n"
+                "     indicating sublattice index, b, followed by unit cell indices,\n"
+                "     i, j, k.                                                      \n\n"
+
+                "\"bspecs\": (JSON object)                                          \n"
+                "  For reference, the contents of the 'bspecs.json' file used to    \n"
+                "  generate these clusters is reproduced here.                      \n\n"
+
+                "\"lattice\": (JSON object)                                         \n"
+                "  For reference, so that the Integral coordinates can be converted \n"
+                "  into Fractional or Cartesian coordinates, the lattice vectors    \n"
+                "  of the primitive structure are reproduced here.                  \n\n" << std::endl;
+    }
+
+    if(vm.count("basis")) {
+      std::cout << "\n### basis.json ##################\n\n";
+
+      std::cout << "LOCATION:\n";
+      std::cout << "$ROOT/basis_sets/$CURR_BSET/basis.json\n";
+      std::cout << "\n\n";
+
+      std::cout << "DESCRIPTION:\n";
+      std::cout << "This JSON file contains the basis functions generated using the    \n"
+                "'bspecs.json' specifications.                                      \n\n";
+
+
+      std::cout << "\"site_functions\": (JSON array of JSON object)                    \n"
+                "  Gives the site basis functions. One JSON object for each basis   \n"
+                "  site. \n\n"
+
+                "  /\"sublat\": (int)                                               \n"
+                "    Basis site index.                                              \n\n"
+
+                "  /\"asym_unit\": (int)                                            \n"
+                "    Index of the asymmetric unit this basis site belongs to.       \n\n"
+
+                "  /\"basis\": (JSON object)                                        \n"
+                "     Gives the value of each site basis function for each possible \n"
+                "     occupant. Of the form:                                        \n\n"
+                "       { \n"
+                "         \"\\\\phi_b_i\": { \n"
+                "           \"A\": val, \n"
+                "           \"B\": val, \n"
+                "           ... \n"
+                "         }, \n"
+                "         ... \n"
+                "       } \n"
+
+                "\"cluster_functions\": (JSON array of JSON object)                 \n"
+                "  Gives the cluster basis functions. One JSON object for each      \n"
+                "  cluster basis function.                                          \n\n"
+
+                "  /\"linear_function_index\": (int)                                \n"
+                "    Linear function index. This corresponds to ECI indices.        \n\n"
+
+                "  /\"mult\": (int)                                                 \n"
+                "    Multiplicity of symmetrically equivalent cluter functions.     \n\n"
+
+                "  /\"orbit\": (JSON array of 3 int)                                \n"
+                "     Gives the cluster branch index, cluster orbit index, and index\n"
+                "     of this basis function in the cluster basis.                  \n\n"
+
+                "  /\"prototype\": (JSON object)                                    \n"
+                "     Specifies the prototype cluster, as in the 'clust.json' file. \n\n"
+
+                "  /\"prototype_function\": (string)                                \n"
+                "     Latex-style function for the prototype cluster.               \n\n" << std::endl;
+    }
+
+    if(vm.count("clex")) {
+      std::cout << "\n### $TITLE_Clexulator.* ##################\n\n";
+
+      std::cout << "LOCATION:\n";
+      std::cout << "$ROOT/basis_sets/$CURR_BSET/$TITLE_Clexulator.*\n";
+      std::cout << "\n\n";
+
+      std::cout << "DESCRIPTION:\n";
+      std::cout << "$TITLE_Clexulator.cc contains C++ code generated by CASM for       \n"
+                "the cluster basis functions. It is automatically compiled into     \n"
+                "$TITLE_Clexulator.o and $TITLE_Clexulator.so for use by CASM.      \n\n" << std::endl;
     }
 
     if(vm.count("ref")) {
@@ -910,61 +1103,26 @@ Direct\n\
 
     }
 
-    if(vm.count("fit")) {
-      std::cout << "\n### fit ##################\n\n";
+    if(vm.count("eci")) {
+      std::cout << "\n### eci.json ##################\n\n";
 
-      std::cout << "LOCATION WHEN GENERATED:\n";
-      std::cout << "$ROOT/cluster_expansions/clex.formation_energy/$CURR_BSET/$CURR_CALCTYPE/$CURR_REF/$CURR_ECI/energy\n";
-      std::cout << "$ROOT/cluster_expansions/clex.formation_energy/$CURR_BSET/$CURR_CALCTYPE/$CURR_REF/$CURR_ECI/corr.in\n";
-      std::cout << "$ROOT/cluster_expansions/clex.formation_energy/$CURR_BSET/$CURR_CALCTYPE/$CURR_REF/$CURR_ECI/eci.in\n\n\n";
+      std::cout << "LOCATION:\n";
+      std::cout << "$ROOT/cluster_expansions/clex.formation_energy/$CURR_BSET/$CURR_CALCTYPE/$CURR_REF/$CURR_ECI/eci.json\n";
+      std::cout << "\n\n";
 
       std::cout << "DESCRIPTION:\n";
-      std::cout << "The 'energy' file contains information about every selected    \n" <<
-                "configuration that will be included as training data for fitting ECI.\n\n" <<
+      std::cout << "This is a copy of the $ROOT/basis_sets/$CURR_BSET/'basis.json' file \n"
+                "with the following additions:                                      \n\n"
 
-                "1st column:                                                        \n" <<
-                "  Formation energy determined from the reference states.           \n" <<
-                "  (See 'casm ref' and 'casm format --ref_state' for details)       \n\n" <<
+                "\"cluster_functions\": (JSON array of JSON object)                 \n\n"
 
-                "2nd column:                                                        \n" <<
-                "  Weight to be placed on configuration when fitting energies with  \n" <<
-                "  eci_search.                                                      \n\n" <<
+                "  /\"eci\": (number, optional, default=0.0)                        \n"
+                "     The value of the ECI for the cluster basis function. If not   \n"
+                "     given, use 0.0.                                               \n\n"
 
-                "3rd and following columns:                                         \n" <<
-                "  Composition of configuration. For a system with N independent    \n" <<
-                "  occupants there will be N-1 columns (see 'casm comp')            \n\n" <<
-
-                "2nd column from back:                                              \n" <<
-                "  Distance to convex hull. Groundstates will have a value of 0.0000.\n\n" <<
-
-                "Last column:                                                       \n" <<
-                "  Path to configuration.                                           \n\n" <<
-
-                "The energy file is to be used together with the corr.in and eci.in \n" <<
-                "files to fit the cluster expansion using the eci_search program.   \n\n";
-
-      std::cout << "The 'corr.in' file contains a matrix of correlations for each   \n" <<
-                "selected configuration.    \n\n";
-
-      std::cout << "The 'eci.in' file contains a list of calculated correlations and \n" <<
-                "can be used to control with correlations are fit by 'eci_search'. \n\n";
-
-      std::cout << "The 'eci.out' file contains the fitted ECI as calculated by 'eci_search'.\n\n";
-
-      std::cout << "EXAMPLE: energy\n";
-      std::cout << "-------\n";
-      std::cout <<
-                "#formation_energy    n/a    n/a    n/a    path    \n\
-0.0000000000000  1.000000000000  1.000000000000  0.000000000000  /home/user/science/supercells/SCEL1_1_1_1_0_0_0/0  \n\
-0.0000000000000  1.000000000000  0.000000000000  0.000000000000  /home/user/science/supercells/SCEL1_1_1_1_0_0_0/1  \n\
--0.415501770000  1.000000000000  0.500000000000  0.243052905000  /home/user/science/supercells/SCEL2_1_1_2_0_0_0/0  \n\
--0.658554675000  1.000000000000  0.500000000000  0.000000000000  /home/user/science/supercells/SCEL2_1_2_1_0_0_1/0  \n\
--0.307639756667  1.000000000000  0.666666666667  0.131644213333  /home/user/science/supercells/SCEL3_1_1_3_0_0_0/0  \n\
--0.243993753333  1.000000000000  0.333333333333  0.277377812022  /home/user/science/supercells/SCEL3_1_1_3_0_0_0/1  \n\
--0.388569660000  1.000000000000  0.666666666667  0.050714310000  /home/user/science/supercells/SCEL3_1_3_1_0_0_1/0  \n\
--0.444539536667  1.000000000000  0.333333333333  0.076832028688  /home/user/science/supercells/SCEL3_1_3_1_0_0_1/1  \n\
--0.377047050000  1.000000000000  0.666666666667  0.062236920000  /home/user/science/supercells/SCEL3_1_3_1_0_0_2/0  \n";
-      std::cout << "-------\n";
+                "\"fit\": (JSON object)                                             \n"
+                "  Data from 'casm-learn' specifying how the ECI where generated and\n"
+                "  some goodness of fit measures.                                   \n\n" << std::endl;
 
     }
 
@@ -1005,9 +1163,9 @@ Direct\n\
 
                 "\"model\": (JSON object)                                           \n\n" <<
 
-                "  /\"clex\", /\"bset\", /\"calctype\", /\"ref\", /\"eci\": (string)\n" <<
-                "    The CASM project settings that should be used for the monte    \n" <<
-                "    carlo calculation.                                             \n\n\n" <<
+                "  /\"formation_energy\": (string, optional, default=\"formation_energy\")\n" <<
+                "    Specifies the cluster expansion to use to calculated formation \n"
+                "    energy. Should be one of the ones listed by 'casm settings -l'.\n\n\n" <<
 
 
                 "\"supercell\": (3x3 JSON arrays of integers)                      \n" <<
@@ -1099,16 +1257,67 @@ Direct\n\
                 "      each sample will be written to compressed files:             \n" <<
                 "        \"output_directory\"/conditions.i/trajectory.ext.gz        \n" <<
                 "      where 'i' is the condition index and 'ext' is the output     \n" <<
-                "      format.                                                      \n\n\n" <<
+                "      format.                                                      \n\n" <<
+
+                "  /\"enumeration\": (JSON object, optional)                        \n" <<
+                "    If included, save configurations encountered during Monte      \n" <<
+                "    Carlo calculations by keeping a 'hall of fame' of best scoring \n" <<
+                "    configurations. After the calculation at a particular set of   \n" <<
+                "    thermodynamic conditions completes, the configurations in the  \n" <<
+                "    hall of fame are saved to the project configuration list.      \n\n" <<
+
+                "    /\"check\": (string, default=\"eq(1,1)\")                      \n" <<
+                "      A 'casm query'-like string that returns a boolean value      \n" <<
+                "      indicating if (true) a configuration should be considered for\n" <<
+                "      for the enumeration hall of fame. The default always returns \n" <<
+                "      true.                                                        \n\n" <<
+
+                "    /\"metric\": (string, default=\"clex_hull_dist(ALL)\")         \n" <<
+                "      A 'casm query'-like string that provides a metric for ranking\n" <<
+                "      ranking configurations as they are encountered during a Monte\n" <<
+                "      Carlo calculation. The resulting value is used to create a   \n" <<
+                "      hall of fame of 'best' configurations encountered during the \n" <<
+                "      calculation. When the calculation is complete configurations \n" <<
+                "      in the hall of fame are added to the CASM project config     \n" <<
+                "      list. The 'casm query'-like command should evaluate to a     \n" <<
+                "      number.                                                      \n\n" <<
+
+                "      Besides the properties listed via 'casm query -h properties',\n" <<
+                "      and 'casm query -h operators', both \"check\" and \"metric\" \n" <<
+                "      can also use the property \"potential_energy\".              \n\n" <<
+
+                "    /\"sample_mode\": (string, optional, default=\"on_sample\")    \n" <<
+                "      Indicate when to attempt to insert configurations into the   \n" <<
+                "      enumeration hall of fame. Options are:                       \n" <<
+                "        \"on_accept\": after each accepted Monte Carlo event       \n" <<
+                "        \"on_sample\": after each data sample                      \n\n" <<
+
+                "    /\"check_existence\": (bool, optional, default=true)           \n" <<
+                "      If true, only configurations that do not already exist in the\n" <<
+                "      config list are inserted into the enumeration hall of fame.  \n\n" <<
+
+                "    /\"insert_canonical\": (bool, optional, default=true)          \n" <<
+                "      If true, configurations are inserted into the enumeration    \n" <<
+                "      hall of fame in their canonical form. If 'check_existence' is\n" <<
+                "      true, this must be set to true.                              \n\n" <<
+
+                "    /\"N_halloffame\": (integer, optional, default=100)            \n" <<
+                "      The number of configurations that are allowed in the         \n" <<
+                "      enumeration hall of fame.                                    \n\n" <<
+
+                "    /\"tolerance\": (number, optional, default=1e-8)               \n" <<
+                "      Tolerance used for floating point comparison of configuration\n" <<
+                "      scores in the enumeration hall of fame.                      \n\n\n" <<
 
 
                 "\"driver\": (JSON object)                                          \n\n" <<
 
                 "  /\"motif\": (JSON object)                                        \n" <<
-                "      Specifies the initial occupation of the supercell.           \n" <<
+                "      Specifies the initial occupation of the supercell.           \n\n" <<
 
                 "    /\"configname\": (string, optional)                            \n" <<
-                "      A configuration name or \"auto\".                            \n\n" <<
+                "      A configuration name, \"auto\", \"restricted_auto\", or      \n" <<
+                "      \"default\".                                                 \n\n" <<
 
                 "      Specifies the configuration that is tiled to fill the        \n" <<
                 "      supercell. If necessary, symmetry operations may be applied  \n" <<
@@ -1119,7 +1328,13 @@ Direct\n\
                 "        A configuration name (ex. \"SCEL3_3_1_1_0_2_2/0\")         \n" <<
                 "        \"auto\": If the value \"auto\" is used, the enumerated    \n" <<
                 "        configurations will be searched for the configuration with \n" <<
-                "        the lowest potential energy to use as the motif.           \n\n" <<
+                "        the lowest potential energy to use as the motif.           \n" <<
+                "        \"default\": If the value \"default\" is used, the initial \n" <<
+                "        motif occupation is determined from the occupation order in\n" <<
+                "        the PRIM.                                                  \n" <<
+                "        \"restricted_auto\": Same as \"auto\", but only            \n" <<
+                "        configurations that can fill the supercell are considered. \n" <<
+                "        As a last resort, \"default\" is used.                     \n\n" <<
 
                 "    /\"configdof\": (string, optional)                             \n" <<
                 "      Specifies the path to a configdof JSON file, such as         \n" <<
@@ -1193,13 +1408,13 @@ Direct\n\
       std::cout << "EXAMPLE: Settings for an incremental Metropolis calculation     \n" <<
                 "with increasing temperature in automatic convergence mode.\n";
       std::cout << "-------\n";
-      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like the ones prepended with '_' are ignored.\",\n  \"debug\" : false,\n  \"ensemble\" : \"grand_canonical\",\n  \"method\" : \"metropolis\",\n  \"model\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\"\n  },\n  \"supercell\" : [\n    [10, 0, 0],\n    [0, 10, 0],\n    [0, 0, 10]\n  ],\n  \"data\" : {\n    \"sample_by\" : \"pass\",\n    \"sample_period\" : 1,\n    \"_N_sample\" : 1000, \n    \"_N_pass\" : 1000,\n    \"_N_step\" : 1000,\n    \"_max_pass\" : 10000,\n    \"min_pass\" : 1000,\n    \"_max_step\" : 10000,\n    \"_max_sample\" : 500,\n    \"_min_sample\" : 100,\n    \"confidence\" : 0.95,\n    \"measurements\" : [ \n      { \n        \"quantity\" : \"formation_energy\"\n      },\n      { \n        \"quantity\" : \"potential_energy\"\n      },\n      { \n        \"quantity\" : \"atom_frac\"\n      },\n      { \n        \"quantity\" : \"site_frac\"\n      },\n      { \n        \"quantity\" : \"comp\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp_n\"\n      }\n    ],\n    \"storage\" : {\n      \"write_observations\" : false,\n      \"write_trajectory\" : false,\n      \"output_format\" : [\"csv\", \"json\"]\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\", \n    \"motif\" : {\n      \"configname\" : \"auto\",\n      \"_configname\" : \"SCEL3_3_1_1_0_2_2/0\",\n      \"_configdof\" : \"path/to/final_state.json\"\n    },\n    \"initial_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 100.0,\n      \"tolerance\" : 0.001\n    },\n    \"final_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 1000.0,\n      \"tolerance\" : 0.001\n    },\n    \"incremental_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : 0.0\n      },\n      \"temperature\" : 10.0,\n      \"tolerance\" : 0.001\n    }\n  }\n}\n";
+      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like the ones prepended with '_' are ignored.\",\n  \"debug\" : false,\n  \"ensemble\" : \"grand_canonical\",\n  \"method\" : \"metropolis\",\n  \"model\" : {\n    \"formation_energy\" : \"formation_energy\"\n  },\n  \"supercell\" : [\n    [10, 0, 0],\n    [0, 10, 0],\n    [0, 0, 10]\n  ],\n  \"data\" : {\n    \"sample_by\" : \"pass\",\n    \"sample_period\" : 1,\n    \"_N_sample\" : 1000, \n    \"_N_pass\" : 1000,\n    \"_N_step\" : 1000,\n    \"_max_pass\" : 10000,\n    \"min_pass\" : 1000,\n    \"_max_step\" : 10000,\n    \"_max_sample\" : 500,\n    \"_min_sample\" : 100,\n    \"confidence\" : 0.95,\n    \"measurements\" : [ \n      { \n        \"quantity\" : \"formation_energy\"\n      },\n      { \n        \"quantity\" : \"potential_energy\"\n      },\n      { \n        \"quantity\" : \"atom_frac\"\n      },\n      { \n        \"quantity\" : \"site_frac\"\n      },\n      { \n        \"quantity\" : \"comp\",\n        \"precision\" : 1e-3\n      },\n      { \n        \"quantity\" : \"comp_n\"\n      }\n    ],\n    \"storage\" : {\n      \"write_observations\" : false,\n      \"write_trajectory\" : false,\n      \"output_format\" : [\"csv\", \"json\"]\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\", \n    \"motif\" : {\n      \"configname\" : \"auto\",\n      \"_configname\" : \"SCEL3_3_1_1_0_2_2/0\",\n      \"_configdof\" : \"path/to/final_state.json\"\n    },\n    \"initial_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 100.0,\n      \"tolerance\" : 0.001\n    },\n    \"final_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : -1.75\n      },\n      \"temperature\" : 1000.0,\n      \"tolerance\" : 0.001\n    },\n    \"incremental_conditions\" : {\n      \"param_chem_pot\" : {\n        \"a\" : 0.0\n      },\n      \"temperature\" : 10.0,\n      \"tolerance\" : 0.001\n    }\n  }\n}\n";
       std::cout << "-------\n\n";
 
       std::cout << "EXAMPLE: Settings for an custom drive mode LTE1 calculation with\n" <<
                 "increasing temperature.\n";
       std::cout << "-------\n";
-      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like the ones prepended with '_' are ignored.\",\n  \"debug\" : false,\n  \"ensemble\" : \"grand_canonical\",\n  \"method\" : \"lte1\",\n  \"model\" : {\n    \"clex\" : \"formation_energy\",\n    \"bset\" : \"default\",\n    \"calctype\" : \"default\",\n    \"ref\" : \"default\",\n    \"eci\" : \"default\"\n  },\n  \"supercell\" : [\n    [9, 0, 0],\n    [0, 9, 0],\n    [0, 0, 9]\n  ],\n  \"data\" : {\n    \"storage\" : {\n      \"write_observations\" : false,\n      \"write_trajectory\" : false,\n      \"output_format\" : [\"csv\", \"json\"]\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\", \n    \"motif\" : {\n      \"configname\" : \"auto\",\n      \"_configname\" : \"SCEL3_3_1_1_0_2_2/0\",\n      \"_configdof\" : \"path/to/final_state.json\"\n    },\n    \"custom_conditions\" : [\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 100.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 200.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 400.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 800.0,\n        \"tolerance\" : 0.001\n      }\n    ]\n  }\n}\n";
+      std::cout << "{\n  \"comment\" : \"This is a sample input file. Unrecognized attributes (like the ones prepended with '_' are ignored.\",\n  \"debug\" : false,\n  \"ensemble\" : \"grand_canonical\",\n  \"method\" : \"lte1\",\n  \"model\" : {\n    \"formation_energy\" : \"formation_energy\"\n  },\n  \"supercell\" : [\n    [9, 0, 0],\n    [0, 9, 0],\n    [0, 0, 9]\n  ],\n  \"data\" : {\n    \"storage\" : {\n      \"write_observations\" : false,\n      \"write_trajectory\" : false,\n      \"output_format\" : [\"csv\", \"json\"]\n    }\n  },\n  \"driver\" : {\n    \"mode\" : \"incremental\", \n    \"motif\" : {\n      \"configname\" : \"auto\",\n      \"_configname\" : \"SCEL3_3_1_1_0_2_2/0\",\n      \"_configdof\" : \"path/to/final_state.json\"\n    },\n    \"custom_conditions\" : [\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 100.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 200.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 400.0,\n        \"tolerance\" : 0.001\n      },\n      {\n        \"param_chem_pot\" : {\n          \"a\" : 0.0\n        },\n        \"temperature\" : 800.0,\n        \"tolerance\" : 0.001\n      }\n    ]\n  }\n}\n";
       std::cout << "-------\n";
 
     }

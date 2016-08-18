@@ -35,21 +35,8 @@ namespace CASM {
 
     // --- Project settings ---------------------
 
-    /// \brief Given a settings jsonParser figure out what the project clex settings to use are:
-    std::string clex() const;
-
-    /// \brief Given a settings jsonParser figure out what the project bset settings to use are:
-    std::string bset() const;
-
-    /// \brief Given a settings jsonParser figure out what the project calctype settings to use are:
-    std::string calctype() const;
-
-    /// \brief Given a settings jsonParser figure out what the project ref settings to use are:
-    std::string ref() const;
-
-    /// \brief Given a settings jsonParser figure out what the project eci settings to use are:
-    std::string eci() const;
-
+    /// \brief Get formation energy cluster expansion
+    ClexDescription formation_energy(const PrimClex &primclex) const;
 
 
     // --- Sampler settings ---------------------
@@ -175,8 +162,9 @@ namespace CASM {
 
       }
       catch(std::runtime_error &e) {
-        std::cerr << "ERROR in 'MonteSettings::samplers(const PrimClex &primclex, SamplerInsertIterator result)'\n" << std::endl;
-        std::cerr << "Error reading [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
+        Log &err_log = default_err_log();
+        err_log.error<Log::standard>("'MonteSettings::samplers(const PrimClex &primclex, SamplerInsertIterator result)'");
+        err_log << "Error reading [\"" << level1 << "\"][\"" << level2 << "\"]\n" << std::endl;
         throw;
       }
     }
@@ -247,8 +235,9 @@ namespace CASM {
         }
       }
       catch(std::runtime_error &e) {
-        std::cerr << "ERROR in 'MonteSettings::samplers(const PrimClex &primclex, SamplerInsertIterator result)'\n" << std::endl;
-        std::cerr << "Error reading [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
+        Log &err_log = default_err_log();
+        err_log.error<Log::standard>("'MonteSettings::samplers(const PrimClex &primclex, SamplerInsertIterator result)'");
+        err_log << "Error reading [\"" << level1 << "\"][\"" << level2 << "\"]\n" << std::endl;
         throw;
       }
     }
@@ -433,7 +422,7 @@ namespace CASM {
     double prec;
     MonteSampler *ptr;
 
-    for(size_type i = 0; i < primclex.global_clexulator().corr_size(); i++) {
+    for(size_type i = 0; i < primclex.clexulator(formation_energy(primclex)).corr_size(); i++) {
 
       prop_name = "corr";
       print_name = std::string("corr(") + std::to_string(i) + ")";
@@ -469,7 +458,7 @@ namespace CASM {
 
     MonteSampler *ptr;
 
-    ECIContainer _eci = read_eci(primclex.dir().eci(clex(), bset(), calctype(), ref(), eci()));
+    ECIContainer _eci = primclex.eci(formation_energy(primclex));
 
     for(size_type ii = 0; ii < _eci.index().size(); ii++) {
 

@@ -1,5 +1,5 @@
-import project
-import query
+from casm.project.project import Project
+from casm.project.query import query
 import os, subprocess, json, copy
 import pandas
 import numpy as np
@@ -46,8 +46,8 @@ class Selection(object):
 
         """
         if proj == None:
-          proj = project.Project()
-        elif not isinstance(proj, project.Project):
+          proj = Project()
+        elif not isinstance(proj, Project):
           raise Exception("Error constructing Selection: proj argument is not a CASM project")
         self.proj = proj
         
@@ -72,7 +72,7 @@ class Selection(object):
         """
         if self._data is None:
           if self.path in ["MASTER", "ALL", "CALCULATED"]:
-            self._data = query.query(self.proj, ['configname', 'selected'], self)
+            self._data = query(self.proj, ['configname', 'selected'], self)
           elif self._is_json():
             self._data = pandas.read_json(self.path, orient='records')
           else:
@@ -138,7 +138,7 @@ class Selection(object):
           if data is not None:
             self._data = data
             self._clean_data()
-        
+          
           if os.path.exists(self.path) and not force:
             raise Exception("File: " + self.path + " already exists")
         
@@ -149,7 +149,7 @@ class Selection(object):
           if self._is_json():
             self._data.to_json(path_or_buf=backup, orient='records')
           else:
-            self._data.loc[:,"selected"] = self.data.loc[:,"selected"].astype(int)
+            self.data.loc[:,"selected"].astype(int)
             f = open(backup, 'w')
             f.write('#')
             self.data.to_csv(path_or_buf=f, sep=' ', index=False)
@@ -178,10 +178,10 @@ class Selection(object):
     
     
     def _clean_data(self):
-        self._data.loc[:,'selected'] = self._data.loc[:,'selected'].astype(bool)
+        self._data.loc[:,'selected'].astype(bool)
         
     
-    def query(self, columns, force=False):
+    def query(self, columns, force=False, verbose=False):
         """
         Query requested columns and store them in 'data'. Will not overwrite
         columns that already exist, unless 'force'==True.
@@ -195,7 +195,24 @@ class Selection(object):
         else:
           _col = columns
         
-        df = query.query(self.proj, _col, self, all=self.all)
+        if verbose:
+          print "# Query requested:", columns
+          if force == False:
+            print "# Use existing:", [x for x in columns if x in self.data.columns]
+          else:
+            print "# Overwrite existing:", [x for x in columns if x in self.data.columns]
+          if len(_col) == 0:
+            print "# No query necessary"
+          else:
+            print "# Querying:", _col
+          
+        if len(_col) == 0:
+          return
+        
+        df = query(self.proj, _col, self, all=self.all)
+        
+        if verbose:
+          print "#   DONE\n"
         
         msg = "querying different numbers of records: {0}, {1}".format(
           self.data.shape, df.shape)
@@ -203,6 +220,21 @@ class Selection(object):
         
         for c in df.columns:
           self.data.loc[:,c] = df.loc[:,c].values
+    
+    
+    def write_pos(self, all=False):
+        """
+        Write POS file for configurations
+        
+        Arguments
+        ---------
+          
+          all: bool, optional, default=False
+            if True, will write POS file for all configurations in the selection
+            whether selected or not. If False, only write POS file for selected
+            configurations.
+        """
+        self.proj.command("query -c " + self.path + " --write-pos")
     
     
     def add_data(self, name, data=None, force=False):

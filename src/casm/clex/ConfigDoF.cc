@@ -773,8 +773,5 @@ namespace CASM {
     return num_each_molecule(configdof, scel).cast<double>() / scel.volume();
   }
 
-
-
-
 }
 

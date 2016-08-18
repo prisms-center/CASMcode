@@ -1,56 +1,42 @@
-import casm
+import warnings
+from casm import project_path, API
 import os, subprocess, json
-import ctypes, glob
-
-if 'LIBCASM' in os.environ:
-  libname = os.environ['LIBCASM']
-elif 'CASMPREFIX' in os.environ:
-  libname = glob.glob(os.path.join(os.environ['CASMPREFIX'], 'lib', 'libcasm.*'))[0]
-else:
-  libname = glob.glob(os.path.join('/usr', 'local', 'lib', 'libcasm.*'))[0]
-lib_casm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
-
-if 'LIBCCASM' in os.environ:
-  libname = os.environ['LIBCCASM']
-elif 'CASMPREFIX' in os.environ:
-  libname = glob.glob(os.path.join(os.environ['CASMPREFIX'], 'lib', 'libccasm.*'))[0]
-else:
-  libname = glob.glob(os.path.join('/usr', 'local', 'lib', 'libccasm.*'))[0]
-lib_ccasm = ctypes.CDLL(libname, mode=ctypes.RTLD_GLOBAL)
-
-#### Argument types
-
-lib_ccasm.casm_STDOUT.restype = ctypes.c_void_p
-
-lib_ccasm.casm_STDERR.restype = ctypes.c_void_p
+from os.path import join
 
 
-lib_ccasm.casm_nullstream_new.restype = ctypes.c_void_p
-
-lib_ccasm.casm_nullstream_delete.argtypes = [ctypes.c_void_p]
-lib_ccasm.casm_nullstream_delete.restype = None
-
-
-lib_ccasm.casm_ostringstream_new.restype = ctypes.c_void_p
-
-lib_ccasm.casm_ostringstream_delete.argtypes = [ctypes.c_void_p]
-lib_ccasm.casm_ostringstream_delete.restype = None
-
-lib_ccasm.casm_ostringstream_size.argtypes = [ctypes.c_void_p]
-lib_ccasm.casm_ostringstream_size.restype = ctypes.c_ulong
-
-lib_ccasm.casm_ostringstream_strcpy.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_char)]
-lib_ccasm.casm_ostringstream_strcpy.restype = ctypes.POINTER(ctypes.c_char)
-
-
-lib_ccasm.casm_primclex_new.argtypes = [ctypes.c_char_p, ctypes.c_void_p]
-lib_ccasm.casm_primclex_new.restype = ctypes.c_void_p
-
-lib_ccasm.casm_primclex_delete.argtypes = [ctypes.c_void_p]
-lib_ccasm.casm_primclex_delete.restype = None
-
-lib_ccasm.casm_capi.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
-lib_ccasm.casm_capi.restype = ctypes.c_int
+class ClexDescription(object):
+    """
+    Settings for a cluster expansion
+    
+    Attributes
+    ----------
+      
+      name: str
+        Cluster expansion name
+      
+      property: str
+        Name of the property being cluster expanded
+      
+      calctype: str
+        Calctype name
+      
+      ref: str
+        Reference state name
+      
+      bset: str
+        Basis set
+      
+      eci: str
+        ECI set name
+      
+    """
+    def __init__(self, name, property, calctype, ref, bset, eci):
+      self.name = name
+      self.property = property
+      self.calctype = calctype
+      self.ref = ref
+      self.bset = bset
+      self.eci = eci
 
 
 class ProjectSettings(object):
@@ -70,67 +56,41 @@ class ProjectSettings(object):
             path: path to CASM project (Default=None, uses project containing current directory). 
 
         """
-        if path is None:
-          if casm.project_path(path) is None:
-            if path is None:
-              raise Exception("No CASM project found using " + os.getcwd())
-            else:
-              raise Exception("No CASM project found using " + path)
-        self.path = casm.project_path(path)
+        if project_path(path) is None:
+          if path is None:
+            raise Exception("No CASM project found using " + os.getcwd())
+          else:
+            raise Exception("No CASM project found using " + path)
+        self.path = project_path(path)
         dir = DirectoryStructure(self.path)
         self.data = json.load(open(dir.project_settings()))
+
+        d = self.data["cluster_expansions"][self.data["default_clex"]]
+        self._default_clex = ClexDescription(d["name"], d["property"], d["calctype"], d["ref"], d["bset"], d["eci"])
+
+        self._clex = [
+          ClexDescription(d[1]["name"], d[1]["property"], d[1]["calctype"], d[1]["ref"], d[1]["bset"], d[1]["eci"]) 
+          for d in self.data["cluster_expansions"].iteritems()
+        ]
         
+        d = self.data["cluster_expansions"].get("formation_energy", None)
+        self._formation_energy_clex = None
+        if d is not None:
+          self._formation_energy_clex = ClexDescription(d["name"], d["property"], d["calctype"], d["ref"], d["bset"], d["eci"])
     
     # -- Accessors --
     
-    def bset(self):
-        return self.data["curr_bset"]
+    @property
+    def cluster_expansions(self):
+        return self._clex
     
-    def calctype(self):
-        return self.data["curr_calctype"]
+    @property
+    def default_clex(self):
+        return self._default_clex
     
-    def eci(self):
-        return self.data["curr_eci"]
-    
-    def clex(self):
-        return self.data["curr_clex"]
-    
-    def ref(self):
-        return self.data["curr_ref"]
-    
-    def properties(self):
-        return self.data["curr_properties"]
-    
-    def name(self):
-        return self.data["name"]
-    
-    
-    # -- Mutators --
-    
-    def set_bset(self, bset):
-        self.data["curr_bset"] = bset
-    
-    def set_calctype(self, calctype):
-        self.data["curr_calctype"] = calctype
-    
-    def set_eci(self, eci):
-        self.data["curr_eci"] = eci
-    
-    def set_clex(self, clex):
-        self.data["curr_clex"] = clex
-    
-    def set_ref(self, ref):
-        self.data["curr_ref"] = ref
-    
-    def set_properties(self, properties):
-        self.data["curr_properties"] = list(properties)
-    
-    
-    def commit(self):
-        dir = DirectoryStructure(self.path)
-        f = open(dir.project_settings(),'w')
-        json.dump(self.data, f)
-        f.close()
+    @property
+    def formation_energy_clex(self):
+        return self._formation_energy_clex
     
 
 class DirectoryStructure(object):
@@ -143,13 +103,12 @@ class DirectoryStructure(object):
             path: path to CASM project (Default=None, uses project containing current directory). 
 
         """
-        if path is None:
-          if casm.project_path(path) is None:
-            if path is None:
-              raise Exception("No CASM project found using " + os.getcwd())
-            else:
-              raise Exception("No CASM project found using " + path)
-        self.path = casm.project_path(path)
+        if project_path(path) is None:
+          if path is None:
+            raise Exception("No CASM project found using " + os.getcwd())
+          else:
+            raise Exception("No CASM project found using " + path)
+        self.path = project_path(path)
         self.__casm_dir = ".casm"
         self.__bset_dir = "basis_sets"
         self.__calc_dir = "training_data"
@@ -162,23 +121,23 @@ class DirectoryStructure(object):
 
     def all_bset(self):
       """Check filesystem directory structure and return list of all basis set names"""
-      return __all_settings("bset", os.path.join(self.path, self.__bset_dir))
+      return self.__all_settings("bset", join(self.path, self.__bset_dir))
 
     def all_calctype(self):
       """Check filesystem directory structure and return list of all calctype names"""
-      return __all_settings("calctype", os.path.join(self.path, self.__calc_dir, self.__set_dir))
+      return self.__all_settings("calctype", join(self.path, self.__calc_dir, self.__set_dir))
     
     def all_ref(self, calctype):
       """Check filesystem directory structure and return list of all ref names for a given calctype"""
-      return __all_settings("ref", calc_settings_dir(calctype))
+      return self.__all_settings("ref", self.calc_settings_dir(calctype))
 
-    def all_clex(self):
+    def all_clex_name(self):
       """Check filesystem directory structure and return list of all cluster expansion names"""
-      return __all_settings("clex", os.path.join(self.path, self.__clex_dir))
+      return self.__all_settings("clex", join(self.path, self.__clex_dir))
 
-    def all_eci(self, clex, calctype, ref, bset):
+    def all_eci(self, property, calctype, ref, bset):
       """Check filesystem directory structure and return list of all eci names"""
-      return __all_settings("eci", os.path.join(self.path, self.__clex_dir, __clex(clex), __calctype(calctype), __ref(ref), __bset(bset)))
+      return self.__all_settings("eci", join(self.path, self.__clex_dir, self.__clex_name(property), self.__calctype(calctype), self.__ref(ref), self.__bset(bset)))
 
 
     # ** File and Directory paths **
@@ -192,135 +151,214 @@ class DirectoryStructure(object):
 
     def prim(self):
       """Return prim.json path"""
-      return os.path.join(self.path, "prim.json")
+      return join(self.path, "prim.json")
 
     # -- Hidden .casm directory --------
 
     def casm_dir(self):
       """Return hidden .casm dir path"""
-      return os.path.join(self.path, self.__casm_dir)
+      return join(self.path, self.__casm_dir)
 
     def project_settings(self):
       """Return project_settings.json path"""
-      return os.path.join(self.casm_dir(), "project_settings.json")
+      return join(self.casm_dir(), "project_settings.json")
 
     def scel_list(self, scelname):
       """Return master scel_list.json path"""
-      return os.path.join(self.casm_dir(), "scel_list.json")
+      return join(self.casm_dir(), "scel_list.json")
 
     def config_list(self):
       """Return master config_list.json file path"""
-      return os.path.join(self.casm_dir(), "config_list.json")
+      return join(self.casm_dir(), "config_list.json")
 
 
     # -- Symmetry --------
 
     def symmetry_dir(self):
       """Return symmetry directory path"""
-      return os.path.join(self.path, self.sym_dir)
+      return join(self.path, self.sym_dir)
 
     def lattice_point_group(self):
       """Return lattice_point_group.json path"""
-      return os.path.join(self.symmetry_dir(), "lattice_point_group.json")
+      return join(self.symmetry_dir(), "lattice_point_group.json")
 
     def factor_group(self):
       """Return factor_group.json path"""
-      return os.path.join(self.symmetry_dir(), "factor_group.json")
+      return join(self.symmetry_dir(), "factor_group.json")
 
     def crystal_point_group(self):
       """Return crystal_point_group.json path"""
-      return os.path.join(self.symmetry_dir(), "crystal_point_group.json")
+      return join(self.symmetry_dir(), "crystal_point_group.json")
 
 
     # -- Basis sets --------
 
-    def bset_dir(self, bset):
+    def bset_dir(self, clex):
       """Return path to directory contain basis set info"""
-      return os.path.join(self.path, self.__bset_dir, self.__bset(bset))
+      return join(self.path, self.__bset_dir, self.__bset(clex.bset))
 
-    def bspecs(self, bset):
+    def bspecs(self, clex):
       """Return basis function specs (bspecs.json) file path"""
-      return os.path.join(self.bset_dir(bset), "bspecs.json")
+      return join(self.bset_dir(clex), "bspecs.json")
 
-    def clust(self, bset):
+    def clust(self, clex):
       """Returns path to the clust.json file"""
-      return os.path.join(self.bset_dir(bset), "clust.json")
+      return join(self.bset_dir(clex), "clust.json")
     
-    def basis(self, bset):
+    def basis(self, clex):
       """Returns path to the basis.json file"""
-      return os.path.join(self.bset_dir(bset), "basis.json")
+      return join(self.bset_dir(clex), "basis.json")
 
-    def clexulator_dir(self, bset):
+    def clexulator_dir(self, clex):
       """Returns path to directory containing global clexulator"""
-      return os.path.join(self.bset_dir(bset))
+      return join(self.bset_dir(clex))
 
-    def clexulator_src(self, project, bset):
+    def clexulator_src(self, project, clex):
       """Returns path to global clexulator source file"""
-      return os.path.join(self.bset_dir(bset), (project + "_Clexulator.cc"))
+      return join(self.bset_dir(clex), (project + "_Clexulator.cc"))
 
-    def clexulator_o(self, project, bset):
+    def clexulator_o(self, project, clex):
       """Returns path to global clexulator.o file"""
-      return os.path.join(self.bset_dir(bset), (project + "_Clexulator.o"))
+      return join(self.bset_dir(clex), (project + "_Clexulator.o"))
     
-    def clexulator_so(self, project, bset):
+    def clexulator_so(self, project, clex):
       """Returns path to global clexulator so file"""
-      return os.path.join(self.bset_dir(bset), (project + "_Clexulator.so"))
+      return join(self.bset_dir(clex), (project + "_Clexulator.so"))
 
 
     # -- Calculations and reference --------
 
+    def settings_path_crawl(self, filename, configname, clex):
+        """
+        Returns the path to the first file named 'filename' found in the settings 
+        directories.
+        
+        Searches:
+          1) self.configuration_calc_settings_dir(configname, clex)
+          2) self.supercell_calc_settings_dir(scelname, clex)
+          3) self.calc_settings_dir(clex)
+          DirectoryStructure.configuration_calc_settings_dir(configname, clex)Crawl casm directory structure starting at configdir and moving upwards 
+        
+        Returns None if file named 'filename' not found in any of the three directories.
+        
+        
+        Arguments
+        ---------
+          filename: str
+            The name of the file being searched for
+          
+          configname: str
+            The name of the configuration
+            
+          clex: a casm.project.ClexDescription instance
+            Used to specify the calctype to find settings for
+          
+        
+        Returns
+        ---------
+          filepath: str or None
+            The path to the first file named 'filename' found in the settings
+            directories, or None if not found.
+      
+        """
+        filepath = join(self.configuration_calc_settings_dir(configname, clex), filename)
+        if os.path.exists(filepath):
+          return filepath
+        
+        scelname = configname.split('/')[0]
+        filepath = join(self.supercell_calc_settings_dir(scelname, clex), filename)
+        if os.path.exists(filepath):
+          return filepath
+        
+        filepath = join(self.calc_settings_dir(clex), filename)
+        if os.path.exists(filepath):
+          return filepath
+        
+        return None
+
     def supercell_dir(self, scelname):
       """Return supercell directory path (scelname has format SCELV_A_B_C_D_E_F)"""
-      return os.path.join(self.path, self.__calc_dir, scelname)
+      return join(self.path, self.__calc_dir, scelname)
 
     def configuration_dir(self, configname):
       """Return configuration directory path (configname has format SCELV_A_B_C_D_E_F/I)"""
-      return os.path.join(self.path, self.__calc_dir, configname)
-
-
-    def calc_settings_dir(self, calctype):
-      """Return calculation settings directory path, for global settings"""
-      return os.path.join(self.path, self.__calc_dir, self.__set_dir, self.__calctype(calctype))
-
-    def supercell_calc_settings_dir(self, scelname, calctype):
-      """Return calculation settings directory path, for supercell specific settings"""
-      return os.path.join(self.supercell_dir(scelname), self.__set_dir, self.__calctype(calctype))
-
-    def configuration_calc_settings_dir(self, configname, calctype):
-      """Return calculation settings directory path, for configuration specific settings"""
-      return os.path.join(self.configuration_dir(configname), self.__set_dir, self.__calctype(calctype))
-
-    def calculated_properties(self, configname, calctype):
-      """Return calculated properties file path"""
-      return os.path.join(self.configuration_dir(configname), self.__calctype(calctype), "properties.calc.json")
-
-
-    def ref_dir(self, calctype, ref):
-      """Return calculation reference settings directory path, for global settings"""
-      return os.path.join(self.calc_settings_dir(calctype), self.__ref(ref))
-
-    def composition_axes(self, calctype, ref):
-      """Return composition axes file path"""
-      return os.path.join(self.ref_dir(calctype, ref), "composition_axes.json")
+      return join(self.path, self.__calc_dir, configname)
     
-    def chemical_reference(self, calctype, ref):
+    def POS(self, configname):
+      """Return path to POS file"""
+      return join(self.configuration_dir(configname), "POS")
+    
+    def calctype_dir(self, configname, clex):
+      """Return calctype directory path (e.g. training_data/SCEL_...../0/calctype.default"""
+      return join(self.configuration_dir(configname),self.__calctype(clex.calctype))
+
+    def calc_settings_dir(self, clex):
+      """Return calculation settings directory path, for global settings"""
+      return join(self.path, self.__calc_dir, self.__set_dir, self.__calctype(clex.calctype))
+
+    def supercell_calc_settings_dir(self, scelname, clex):
+      """Return calculation settings directory path, for supercell specific settings"""
+      return join(self.supercell_dir(scelname), self.__set_dir, self.__calctype(clex.calctype))
+
+    def configuration_calc_settings_dir(self, configname, clex):
+      """Return calculation settings directory path, for configuration specific settings"""
+      return join(self.configuration_dir(configname), self.__set_dir, self.__calctype(clex.calctype))
+
+    def calculated_properties(self, configname, clex):
+      """Return calculated properties file path"""
+      return join(self.configuration_dir(configname), self.__calctype(clex.calctype), "properties.calc.json")
+
+
+    def ref_dir(self, clex):
+      """Return calculation reference settings directory path, for global settings"""
+      return join(self.calc_settings_dir(clex.calctype), self.__ref(clex.ref))
+
+    def composition_axes(self):
+      """Return composition axes file path"""
+      return join(self.casm_dir(), "composition_axes.json")
+    
+    def chemical_reference(self, clex):
       """Return chemical reference file path"""
-      return os.path.join(self.ref_dir(calctype, ref), "chemical_reference.json")
+      return join(self.ref_dir(clex), "chemical_reference.json")
     
 
     # -- Cluster expansions --------
 
-    def clex_dir(self, clex):
+    def property_dir(self, clex):
       """Returns path to eci directory"""
-      return os.path.join(self.path, self.__clex_dir, self.__clex(clex))
+      return join(self.path, self.__clex_dir, self.__clex_name(clex.property))
 
-    def eci_dir(self, clex, calctype, ref, bset, eci):
-      """Returns path to eci directory"""
-      return os.path.join(self.clex_dir(clex), self.__calctype(calctype), self.__ref(ref), self.__bset(bset), self.__eci(eci))
+    def eci_dir(self, clex):
+      """
+      Returns path to eci directory
+      
+      Arguments
+      ---------
+        clex: a casm.project.ClexDescription instance
+          Specifies the cluster expansion to get the eci directory for
+        
+      Returns
+      -------
+        p: str
+          Path to the eci directory
+      """
+      return join(self.property_dir(clex), self.__calctype(clex.calctype), self.__ref(clex.ref), self.__bset(clex.bset), self.__eci(clex.eci))
 
-    def eci(self, clex, calctype, ref, bset, eci):
-      """Returns path to eci.json"""
-      return os.path.join(self.eci_dir(clex, calctype, ref, bset, eci), "eci.json")
+    def eci(self, clex):
+      """
+      Returns path to eci.json
+      
+      Arguments
+      ---------
+        clex: a casm.project.ClexDescription instance
+          Specifies the cluster expansion to get the eci.json for
+        
+      Returns
+      -------
+        p: str
+          Path to the eci directory
+      """
+      return join(self.eci_dir(clex), "eci.json")
 
 
     # private:
@@ -334,8 +372,8 @@ class DirectoryStructure(object):
     def __ref(self, ref):
       return "ref." + ref
 
-    def __clex(self, clex):
-      return "clex." + clex
+    def __clex_name(self, clex_name):
+      return "clex." + clex_name
 
     def __eci(self, eci):
       return "eci." + eci
@@ -346,7 +384,7 @@ class DirectoryStructure(object):
       Find all directories at 'location' that match 'pattern.something'
       and return a std::vector of the 'something'
       """
-    
+      
       all = [];
       pattern += ".";
 
@@ -355,33 +393,66 @@ class DirectoryStructure(object):
         return all
       
       for item in os.listdir(location):
-        if os.path.isdir(item) and item[:len(pattern)+1] == pattern:
-          all.append(item[len(pattern)+1:])
-          
+        if os.path.isdir(os.path.join(location,item)) and item[:len(pattern)] == pattern:
+          all.append(item[len(pattern):])
       return sorted(all)
 
     
 
 class Project(object):
     """The Project class contains information about a CASM project
+    
+    Attributes
+    ----------
+      
+      path: str
+        Path to project root directory
+      
+      settings: casm.project.ProjectSettings instance
+        Contains project settings
+      
+      dir: casm.project.DirectoryStructure instance
+        Provides file and directory locations within the project
+      
+      casm_exe: str
+        The casm CLI executable to use when necessary
+      
+      verbose: bool
+        How much to print to stdout
+      
     """
     def __init__(self, path=None, casm_exe=None, verbose=True):
       """
       Construct a CASM Project representation.
 
-      Args:
-          path: path to CASM project (Default=None, uses project containing 
-            current directory). 
-          case_exe: CASM executable to use for command line interface. (Default
-            uses $CASM if it exists in the environment, else "casm")
+      Arguments
+      ----------
+        
+        path: str, optional, default=None 
+          Path to project root directory. Default=None uses project containing 
+          current working directory
+        
+        casm_exe: str, optional, default=None
+          CASM executable to use for command line interface. Default
+          uses $CASM if it exists in the environment, else "casm".
+        
+        verbose: bool, optional, default=True
+          How much to print to stdout
+      
       """
+      
+      # will hold a ctypes.c_void_p when loading CASM project into memory
+      self._ptr = None
+      
+      # will keep a casm.API instance
+      self._api = None
+      
       # set path to this CASM project
-      if path is None:
-        if casm.project_path(path) is None:
-          if path is None:
-            raise Exception("No CASM project found using " + os.getcwd())
-          else:
-            raise Exception("No CASM project found using " + path)
+      if project_path(path) is None:
+        if path is None:
+          raise Exception("No CASM project found using " + os.getcwd())
+        else:
+          raise Exception("No CASM project found using " + path)
       
       # set executable name
       if casm_exe is None:
@@ -390,15 +461,12 @@ class Project(object):
         else:
           casm_exe = "casm"
       
-      self.path = casm.project_path(path)
-      self.dir = DirectoryStructure(path)
-      self.settings = ProjectSettings(path)
+      self.path = project_path(path)
+      self.__refresh()
       self.casm_exe = casm_exe
       self.verbose = verbose
       
-      # will hold a ctypes.c_void_p when loading CASM project into memory
-      self._ptr = None
-    
+      
     
     def __del__(self):
       self.__unload()
@@ -409,16 +477,18 @@ class Project(object):
       Explicitly load CASM project into memory.
       """
       if self._ptr is None:
+        self._api = API()
         if self.verbose:
-          streamptr = lib_ccasm.casm_STDOUT()
+          streamptr = self._api.stdout()
         else:
-          streamptr = lib_ccasm.casm_ostringstream_new()
+          streamptr = self._api.nullstream()
         
-        self._ptr = lib_ccasm.casm_primclex_new(self.path, streamptr)
+        if self.verbose:
+          errstreamptr = self._api.stderr()
+        else:
+          errstreamptr = self._api.nullstream()
         
-        if not self.verbose:
-          #qstr = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss))
-          lib_ccasm.casm_ostringstream_delete(streamptr)
+        self._ptr = self._api.primclex_new(self.path, streamptr, streamptr, errstreamptr)
         
     
     def __unload(self):
@@ -426,9 +496,36 @@ class Project(object):
       Explicitly unload CASM project from memory.
       """
       if self._ptr is not None:
-        lib_ccasm.casm_primclex_delete(self._ptr)
+        self._api.primclex_delete(self._ptr)
         self._ptr = None
-        
+    
+    
+    def __refresh(self):
+      """
+      Reload self.settings and self.dir
+      
+      Use this after adding or modifying files in the CASM project but no
+      special call to refresh PrimClex properties is required
+      """
+      self.dir = DirectoryStructure(self.path)
+      self.settings = ProjectSettings(self.path)
+    
+    def refresh(self, read_settings=False, read_composition=False, read_chem_ref=False, read_configs=False, clear_clex=False):
+      """
+      Refresh PrimClex properties to reflect changes to CASM project files.
+      """
+      if read_settings:
+        self.dir = DirectoryStructure(self.path)
+        self.settings = ProjectSettings(self.path)
+      if self._ptr is not None:
+        self._api.primclex_refresh(
+          self.data(), 
+          read_settings,
+          read_composition,
+          read_chem_ref,
+          read_configs,
+          clear_clex)
+      
     
     def data(self):
       """
@@ -448,28 +545,10 @@ class Project(object):
       Returns:
         (stdout, stderr, returncode): The result of running the command via the command line iterface
       """
-      return self.command_via_capi(args)
+      return self._command_via_capi(args)
     
         
-    def command_via_cli(self, args):
-      """
-      Execute a command via the command line interface. 
-      
-      Args:
-        args: A string containing the command to be executed. Ex: "select --set-on -o /abspath/to/my_selection"
-      
-      Returns:
-        (stdout, stderr, returncode): The result of running the command via the command line iterface
-      """
-      cwd = os.getcwd()
-      os.chdir(self.path)
-      child = subprocess.Popen([self.casm_exe] + args.split(),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-      result = child.communicate()
-      os.chdir(cwd)
-      return (result[0], result[1], child.returncode)
-    
-    
-    def command_via_capi(self, args):
+    def _command_via_capi(self, args):
       """
       Execute a command via the c api. 
       
@@ -479,24 +558,25 @@ class Project(object):
       Returns:
         (stdout, stderr, returncode): The result of running the command via the command line iterface
       """
-      cwd = os.getcwd()
-      os.chdir(self.path)
+      # this also ensures self._api is not None
+      data = self.data()
       
-      # construct stringstream objects to capture stdout, stderr
-      ss = lib_ccasm.casm_ostringstream_new()
-      ss_err = lib_ccasm.casm_ostringstream_new()
+      # construct stringstream objects to capture stdout, debug, stderr
+      ss = self._api.ostringstream_new()
+      ss_debug = self._api.ostringstream_new()
+      ss_err = self._api.ostringstream_new()
       
-      res = lib_ccasm.casm_capi(args, self.data(), ss, ss_err)
+      res = self._api(args, self.data(), self.path, ss, ss_debug, ss_err)
       
-      # copy string and delete stringstream
-      qstr = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss))
-      lib_ccasm.casm_ostringstream_strcpy(ss, qstr)
-      lib_ccasm.casm_ostringstream_delete(ss)
+      # copy strings and delete stringstreams
+      stdout = self._api.ostringstream_to_str(ss)
+      self._api.ostringstream_delete(ss)
       
-      # copy string and delete stringstream
-      qstr_err = ctypes.create_string_buffer(lib_ccasm.casm_ostringstream_size(ss_err))
-      lib_ccasm.casm_ostringstream_strcpy(ss_err, qstr_err)
-      lib_ccasm.casm_ostringstream_delete(ss_err)
+      self._api.ostringstream_delete(ss_debug)
       
-      return (qstr, qstr_err, res)
+      stderr = self._api.ostringstream_to_str(ss_err)
+      self._api.ostringstream_delete(ss_err)
+      
+      self.__refresh()
+      return (stdout, stderr, res)
       

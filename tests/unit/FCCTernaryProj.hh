@@ -1,7 +1,17 @@
 #ifndef CASMtest_FCCTernaryProj
 #define CASMtest_FCCTernaryProj
 
+#include "Proj.hh"
+#include "casm/CASM_global_definitions.hh"
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Site.hh"
+#include "casm/casm_io/Log.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/ConfigIterator.hh"
+
+
 using namespace CASM;
+
 
 namespace test {
 
@@ -144,11 +154,12 @@ namespace test {
       m_p.popen(cd_and() + "casm bset -u");
       BOOST_CHECK_MESSAGE(m_p.exit_code() == 0, m_p.gets());
 
-      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*clust\.json)")) == true, m_p.gets());
-      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Wrote.*)" + title + R"(_Clexulator\.cc)")) == true, m_p.gets());
+      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*clust\.json)")) == true, m_p.gets());
+      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*basis\.json)")) == true, m_p.gets());
+      BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*)" + title + R"(_Clexulator\.cc)")) == true, m_p.gets());
 
-      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clust(m_set.bset())), m_p.gets());
-      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.bset())), m_p.gets());
+      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clust(m_set.default_clex().bset)), m_p.gets());
+      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.default_clex().bset)), m_p.gets());
 
       std::string str;
 

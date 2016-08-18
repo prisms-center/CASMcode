@@ -68,7 +68,6 @@ namespace CASM {
     //   occupation: [basis0                |basis1               |basis2          |...] up to prim.basis.size()
     //       basis0: [prim0|prim1|prim2|...] up to supercell.volume()
     //
-    bool m_dof_updated;
     ConfigDoF m_configdof;
 
 
@@ -179,7 +178,11 @@ namespace CASM {
       return m_multiplicity;
     }
 
+    /// \brief SCELV_A_B_C_D_E_F/i
     std::string name() const;
+
+    /// \brief SCELV_A_B_C_D_E_F.i (only use this when 'name' won't work)
+    std::string altname() const;
 
     std::string calc_status() const;
 
@@ -209,6 +212,12 @@ namespace CASM {
     int sublat(Index site_l) const;
 
     const ConfigDoF &configdof() const {
+      return m_configdof;
+    }
+
+    /// \brief Access the DoF. This will invalidate the Configuration's id.
+    ConfigDoF &configdof() {
+      id = "none";
       return m_configdof;
     }
 
@@ -474,6 +483,11 @@ namespace CASM {
   void reset_properties(Configuration &_config) {
     _config.set_calc_properties(jsonParser());
   }
+
+  /// \brief Order Configuration lexicographically by occuapation
+  struct ConfigDoFOccCompare {
+    bool operator()(const Configuration &A, const Configuration &B) const;
+  };
 
 }
 

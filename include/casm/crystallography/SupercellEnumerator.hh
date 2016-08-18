@@ -126,7 +126,7 @@ namespace CASM {
     /// \brief Unroll a Hermit normal form square matrix into a vector such that it's canonical form is easy to compare
     Eigen::VectorXi _canonical_unroll(const Eigen::MatrixXi &hermit_mat);
 
-    /// \brief Compare two integer matrices and see which one is lexicographically greatest (returns 0 if it's the first, 1 if it's the second)
+    /// \brief Compare two integer matrices and see which one is lexicographically greatest. Returns true if H0<H1
     bool _canonical_compare(const Eigen::MatrixXi &H0, const Eigen::MatrixXi &H1);
   }
 

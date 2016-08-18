@@ -349,10 +349,8 @@ namespace CASM {
   //***********************************************************
 
   void Supercell::generate_name() {
-    Eigen::Matrix3i H = hermite_normal_form(m_transf_mat).first;
-    std::stringstream tname;
-    tname << "SCEL" << H(0, 0)*H(1, 1)*H(2, 2) << "_" << H(0, 0) << "_" << H(1, 1) << "_" << H(2, 2) << "_" << H(1, 2) << "_" << H(0, 2) << "_" << H(0, 1);
-    m_name = tname.str();
+    m_name = CASM::generate_name(transf_mat);
+    return;
   }
 
   //***********************************************************

@@ -111,7 +111,8 @@ namespace CASM {
 
     m_handle = dlopen((m_filename_base + ".so").c_str(), RTLD_NOW);
     if(!m_handle) {
-      throw std::runtime_error(std::string("Cannot open library: ") + m_filename_base + ".so");;
+      fprintf(stderr, "dlopen failed: %s\n", dlerror());
+      throw std::runtime_error(std::string("Cannot open library: ") + m_filename_base + ".so");
     }
   }
 
@@ -138,63 +139,104 @@ namespace CASM {
     m_filename_base = "";
   }
 
-  /// \brief Default compilation command
-  ///
-  /// \returns "$CXX -O3 -Wall -fPIC --std=c++11 $CASM_INCLUDE"
-  ///
-  /// $CXX and $CASM_INCLUDE depend on current environment variables:
-  /// - $CXX is replaced with "$CXX" if CXX exists and "g++" otherwise
-  /// - $CASM_INCLUDE is replaced with "-I$CASMPREFIX/include" if CASMPREFIX exists
-  std::string RuntimeLibrary::default_compile_options() {
+  namespace {
 
-    return cxx() + " " + default_cxxflags() + " " + casm_include();
+    std::vector<std::string> _cxx_env() {
+      return std::vector<std::string> {
+        "CASM_CXX",
+        "CXX"
+      };
+    }
+
+    std::vector<std::string> _cxxflags_env() {
+      return std::vector<std::string> {
+        "CASM_CXXFLAGS",
+      };
+    }
+
+    std::vector<std::string> _soflags_env() {
+      return std::vector<std::string> {
+        "CASM_SOFLAGS"
+      };
+    }
+
+    std::vector<std::string> _casm_env() {
+      return std::vector<std::string> {
+        "CASM_PREFIX"
+      };
+    }
+
+    std::vector<std::string> _boost_env() {
+      return std::vector<std::string> {
+        "CASM_BOOST_PREFIX"
+      };
+    }
+
+    /// \brief Some function of environment variables
+    std::pair<std::string, std::string> _use_env(std::vector<std::string> var, std::string _default = "") {
+      for(const auto &v : var) {
+        char *_env = std::getenv(v.c_str());
+        if(_env != nullptr) {
+          return std::make_pair(std::string(_env), v);
+        }
+      }
+      return std::make_pair(_default, "default");
+    }
+  }
+
+  /// \brief Return default compiler and specifying variable
+  ///
+  /// \returns "$CASM_CXX" if environment variable CASM_CXX exists,
+  ///          "$CXX" if environment variable CXX exists,
+  ///          otherwise "g++"
+  std::pair<std::string, std::string> RuntimeLibrary::default_cxx() {
+    return _use_env(_cxx_env(), "g++");
   }
 
   /// \brief Default c++ compiler options
   ///
   /// \returns "-O3 -Wall -fPIC --std=c++11"
-  std::string RuntimeLibrary::default_cxxflags() {
-    return "-O3 -Wall -fPIC --std=c++11";
+  std::pair<std::string, std::string> RuntimeLibrary::default_cxxflags() {
+    return _use_env(_cxxflags_env(), "-O3 -Wall -fPIC --std=c++11");
   }
 
-  /// \brief Default shared library options
+  /// \brief Default c++ shared library options
   ///
-  /// \returns "$CXX -shared"
-  std::string RuntimeLibrary::default_so_options() {
-    return cxx() + " -shared" + " -lboost_system";
-  }
-
-  /// \brief Return default compiler
-  ///
-  /// - if environment variable CXX exists, uses that, otherwise "g++"
-  std::string RuntimeLibrary::cxx() {
-    std::string result = "g++";
-    char *CXX = std::getenv("CXX");
-    if(CXX != nullptr) {
-      result = std::string(CXX);
-    }
-    return result;
+  /// \returns "-shared -lboost_system"
+  std::pair<std::string, std::string> RuntimeLibrary::default_soflags() {
+    return _use_env(_soflags_env(), "-shared -lboost_system");
   }
 
   /// \brief Return include path option for CASM
   ///
-  /// \returns "-I$HHCASM/include" if environment variable HHCASM exists,
-  ///          "-I$CASMPREFIX/include" if environment variable CASMPREFIX exists,
-  ///          otherwise an empty string
-  std::string RuntimeLibrary::casm_include() {
-    std::string result = "";
-
-    char *HHCASM = std::getenv("HHCASM");
-    if(HHCASM != nullptr) {
-      result = "-I" + (boost::filesystem::path(HHCASM) / "include").string();
-    }
-    else {
-      char *CASMPREFIX = std::getenv("CASMPREFIX");
-      if(CASMPREFIX != nullptr) {
-        result = "-I" + (boost::filesystem::path(CASMPREFIX) / "include").string();
-      }
-    }
-    return result;
+  /// \returns $CASM_PREFIX if environment variable CASM_PREFIX exists,
+  ///          otherwise "/usr/local"
+  std::pair<fs::path, std::string> RuntimeLibrary::default_casm_prefix() {
+    auto res = _use_env(_casm_env(), "/usr/local");
+    return std::make_pair(fs::path(res.first), res.second);
   }
+
+  /// \brief Return include path option for boost
+  ///
+  /// \returns $CASM_BOOST_PREFIX if environment variable CASM_BOOST_PREFIX exists,
+  ///          otherwise an empty string
+  std::pair<fs::path, std::string> RuntimeLibrary::default_boost_prefix() {
+    auto res = _use_env(_boost_env());
+    return std::make_pair(fs::path(res.first), res.second);
+  }
+
+  std::string include_path(const fs::path &prefix) {
+    if(!prefix.empty()) {
+      return "-I" + (prefix / "include").string();
+    }
+    return "";
+  };
+
+  std::string link_path(const fs::path &prefix) {
+    if(!prefix.empty()) {
+      return "-L" + (prefix / "lib").string();
+    }
+    return "";
+  };
 
 }

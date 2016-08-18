@@ -6,8 +6,50 @@
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ConfigEnumIterator.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
+
+  namespace Completer {
+    EnumOption::EnumOption(): OptionHandlerBase("enum") {}
+
+    int EnumOption::min_vol() const {
+      return m_min_vol;
+    }
+
+    int EnumOption::max_vol() const {
+      return m_max_vol;
+    }
+
+    const std::vector<std::string> &EnumOption::filter_strs() const {
+      return m_filter_strs;
+    }
+
+    const fs::path &EnumOption::matrix_path() const {
+      return m_matrix_path;
+    }
+
+    const std::string &EnumOption::lattice_directions() const {
+      return m_lattice_directions_str;
+    }
+
+    void EnumOption::initialize() {
+      add_help_suboption();
+      add_scelnames_suboption();
+
+      m_desc.add_options()
+      ("min", po::value<int>(&m_min_vol)->default_value(1), "Min volume")
+      ("max", po::value<int>(&m_max_vol), "Max volume")
+      ("filter", po::value<std::vector<std::string> >(&m_filter_strs)->multitoken()->value_name(ArgHandler::query()), "Filter configuration enumeration so that only configurations matching a 'casm query'-type expression are recorded")
+      ("all,a", "Enumerate configurations for all supercells")
+      ("supercells,s", "Enumerate supercells")
+      ("configs,c", "Enumerate configurations")
+      ("matrix,m", po::value<fs::path>(&m_matrix_path)->value_name(ArgHandler::path()), "Specify a matrix to apply to the primitive cell before beginning enumeration")
+      ("lattice-directions,z", po::value<std::string>(&m_lattice_directions_str)->default_value("abc"), "Restrict enumeration along a, b or c lattice vectors");
+
+      return;
+    }
+  }
 
 
   // ///////////////////////////////////////
@@ -19,7 +61,7 @@ namespace CASM {
     //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
     //- enumerate supercells and configs and hop local configurations
 
-    int min_vol = 1, max_vol;
+    int min_vol, max_vol;
     std::vector<std::string> scellname_list, filter_expr;
     //double tol;
     COORD_TYPE coordtype = CASM::CART;
@@ -28,43 +70,35 @@ namespace CASM {
     Eigen::Matrix3i G = Eigen::Matrix3i::Identity();    //The matrix that defines the lattice vectors to enumerate over relative to the primitive vectors
     Eigen::Matrix3i P = Eigen::Matrix3i::Identity();    //Shuffles G around so that the first dims vectors are at the left
     fs::path matrix_path;
-    std::string ezmode = "abc";
+    std::string ezmode = "abc"; //Assign default in ::initialize()?
     po::variables_map vm;
 
-
-    /// Set command line options using boost program_options
-    po::options_description desc("'casm enum' usage");
-    desc.add_options()
-    ("help,h", "Write help documentation")
-    ("min", po::value<int>(&min_vol), "Min volume")
-    ("max", po::value<int>(&max_vol), "Max volume")
-    ("filter", po::value<std::vector<std::string> >(&filter_expr)->multitoken(), "Filter configuration enumeration so that only configurations matching a 'casm query'-type expression are recorded")
-    ("scellname,n", po::value<std::vector<std::string> >(&scellname_list)->multitoken(), "Enumerate configs for given supercells")
-    ("all,a", "Enumerate configurations for all supercells")
-    ("supercells,s", "Enumerate supercells")
-    ("configs,c", "Enumerate configurations")
-    ("matrix,m", po::value<fs::path>(&matrix_path), "Specify a matrix to apply to the primitive cell before beginning enumeration")
-    ("lattice-directions,z", po::value<std::string>(&ezmode), "Restrict enumeration along a, b or c lattice vectors");
-
-    // currently unused...
-    //("tol", po::value<double>(&tol)->default_value(CASM::TOL), "Tolerance used for checking symmetry")
-    //("coord", po::value<COORD_TYPE>(&coordtype)->default_value(CASM::CART), "Coord mode: FRAC=0, or (default) CART=1");
+    Completer::EnumOption enum_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, enum_opt.desc()), vm); // can throw
 
       /** --help option
        */
       if(vm.count("help")) {
         std::cout << "\n";
-        std::cout << desc << std::endl;
+        std::cout << enum_opt.desc() << std::endl;
 
+        return 0;
+      }
 
-        std::cout << "DESCRIPTION" << std::endl;
-        std::cout << "    Enumerate supercells and configurations\n";
-        std::cout << "    - expects a PRIM file in the project root directory \n";
-        std::cout << "    - if --min is given, then --max must be given \n";
-        std::cout << std::endl;
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << enum_opt.desc() << std::endl;
+
+        std::cout << "DESCRIPTION\n" << std::endl;
+
+        std::cout << "  casm enum --supercells --max V                        \n"
+                  "  - To enumerate supercells up to volume V (units: number\n"
+                  "    of primitive cells)                                 \n"
+                  "  - Use --matrix and --lattice-directions for restricted\n"
+                  "    enumeration: \n\n";
+
         std::cout << "  --matrix" << std::endl;
         std::cout << "    - When using --supercells, you may use the this option             " << std::endl;
         std::cout << "      to specify a transformation matrix to apply to your primitive    " << std::endl;
@@ -99,17 +133,39 @@ namespace CASM {
         std::cout << "      If this is the case, then the meaning of 'a', 'b' and 'c' changes" << std::endl;
         std::cout << "      from the lattice vectors of your PRIM, to the  vectors of the    " << std::endl;
         std::cout << "      lattice resulting from multiplying your PRIM by the specified    " << std::endl;
-        std::cout << "      matrix." << std::endl;
+        std::cout << "      matrix.\n\n";
 
+        std::cout << "  casm enum --configs --all'                             \n"
+                  "  - To enumerate configurations for all supercells.      \n\n"
 
+                  "  casm enum --configs --min MINV --max MAXV              \n"
+                  "  - To enumerate configurations for supercells ranging in\n"
+                  "    volume from MINV to MAXV (units: number of primitive \n"
+                  "    cells).                                              \n\n"
+
+                  "  casm enum --configs --scellname NAME                   \n"
+                  "  - To enumerate configurations for a particular         \n"
+                  "    supercell.                                           \n\n"
+
+                  "  casm enum --configs [...] --filter '... casm query commands...' \n"
+                  "  - To perform restricted enumeration of configurations  \n"
+                  "    such that only configurations the return '1' (true)  \n"
+                  "    for a particular 'casm query' command are retained.  \n\n";
         return 0;
       }
 
       po::notify(vm); // throws on error, so do after help in case
       // there are any problems
 
-      if(vm.count("min") && !vm.count("max")) {
-        std::cerr << "\n" << desc << "\n" << std::endl;
+      min_vol = enum_opt.min_vol();
+      max_vol = enum_opt.max_vol();
+      scellname_list = enum_opt.supercell_strs();
+      filter_expr = enum_opt.filter_strs();
+      matrix_path = enum_opt.matrix_path();
+      ezmode = enum_opt.lattice_directions();
+
+      if(min_vol != 1 && !vm.count("max")) {
+        std::cerr << "\n" << enum_opt.desc() << "\n" << std::endl;
         std::cerr << "Error in 'casm enum'. If --min is given, --max must also be given." << std::endl;
         return ERR_INVALID_ARG;
       }
@@ -125,7 +181,7 @@ namespace CASM {
           }
         }
         if(bad_args) {
-          std::cerr << std::endl << desc << std::endl << std::endl;
+          std::cerr << std::endl << enum_opt.desc() << std::endl << std::endl;
           std::cerr << "When using --lattice-directions, specify the primitive lattice vectors you want to enumerate over with a string." << std::endl;
           std::cerr << "For example, to enumerate over only a and b, pass 'ab'. To enumerate over only c pass 'c'." << std::endl;
 
@@ -133,28 +189,28 @@ namespace CASM {
         }
       }
       if(vm.count("supercells") + vm.count("configs") != 1) {
-        std::cerr << "\n" << desc << "\n" << std::endl;
+        std::cerr << "\n" << enum_opt.desc() << "\n" << std::endl;
         std::cerr << "Error in 'casm enum'. Exactly one of either --supercells or --configs must be given." << std::endl;
         return ERR_INVALID_ARG;
       }
       if(vm.count("supercells") && !vm.count("max")) {
-        std::cerr << "\n" << desc << "\n" << std::endl;
+        std::cerr << "\n" << enum_opt.desc() << "\n" << std::endl;
         std::cerr << "Error in 'casm enum'. If --supercells is given, --max must be given." << std::endl;
         return ERR_INVALID_ARG;
       }
       if(vm.count("configs") && (vm.count("max") + vm.count("all") != 1)) {
-        std::cerr << "\n" << desc << "\n" << std::endl;
+        std::cerr << "\n" << enum_opt.desc() << "\n" << std::endl;
         std::cerr << "Error in 'casm enum'. If --configs is given, exactly one of either --max or --all must be given." << std::endl;
         return ERR_INVALID_ARG;
       }
     }
     catch(po::error &e) {
-      std::cerr << desc << std::endl;
+      std::cerr << enum_opt.desc() << std::endl;
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      std::cerr << desc << std::endl;
+      std::cerr << enum_opt.desc() << std::endl;
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_UNKNOWN;
 
@@ -228,7 +284,7 @@ namespace CASM {
 
     }
     else if(vm.count("configs")) {
-      if(vm.count("dimensions") || vm.count("matrix") || vm.count("lattice-directions")) {
+      if(vm.count("dimensions") || vm.count("matrix") || (dims < 3)) {
         std::cerr << "Option --configs in conjunction with limited supercell enumeration is currently unsupported" << std::endl;
         return ERR_INVALID_ARG;
       }

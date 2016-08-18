@@ -34,7 +34,7 @@ namespace CASM {
   ///
   /// \ingroup Clex
   ///
-  class PrimClex {
+  class PrimClex : public Logging {
 
     DirectoryStructure m_dir;
     ProjectSettings m_settings;
@@ -69,12 +69,18 @@ namespace CASM {
     // **** Constructors ****
 
     /// Initial construction of a PrimClex, from a primitive Structure
-    PrimClex(const Structure &_prim, Log &log = default_log());
+    PrimClex(const Structure &_prim, Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log());
 
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-    PrimClex(const fs::path &_root, Log &log = default_log());
+    PrimClex(const fs::path &_root, Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log());
 
+    /// Reload PrimClex data from settings
+    void refresh(bool read_settings = false,
+                 bool read_composition = false,
+                 bool read_chem_ref = false,
+                 bool read_configs = false,
+                 bool clear_clex = false);
 
     // ** Directory path and settings accessors **
 
@@ -217,20 +223,24 @@ namespace CASM {
 
     Index add_canonical_supercell(const Lattice &superlat);
 
+    bool has_orbitree(const ClexDescription &key) const;
+    const SiteOrbitree &orbitree(const ClexDescription &key) const;
 
-    bool has_global_clexulator() const;
-    Clexulator global_clexulator() const;
+    bool has_clexulator(const ClexDescription &key) const;
+    Clexulator clexulator(const ClexDescription &key) const;
 
-    bool has_global_eci(std::string clex_name) const;
-    const ECIContainer &global_eci(std::string clex_name) const;
+    bool has_eci(const ClexDescription &key) const;
+    const ECIContainer &eci(const ClexDescription &key) const;
 
   private:
 
     /// Initialization routines
-    void _init(Log &log);
+    void _init();
 
-    mutable ECIContainer m_global_eci;
-    mutable Clexulator m_global_clexulator;
+    mutable std::map<ClexDescription, SiteOrbitree> m_orbitree;
+    mutable std::map<ClexDescription, Clexulator> m_clexulator;
+    mutable std::map<ClexDescription, ECIContainer> m_eci;
+
   };
 
 
