@@ -29,23 +29,25 @@ namespace notstd {
 
   /// \brief Base type inherits from std::false_type if T does not have clone method
   template <typename T, typename = void>
-  struct has_clone : std::false_type { };
+  struct has_clone : std::false_type {
+  };
 
   /// \brief Specialized case inherits from std::true_type if T does have clone method
   template <typename T>
-  struct has_clone<T, CASM::CASM_TMP::void_t<decltype(&T::clone)> > : std::true_type { };
+struct has_clone<T, CASM::CASM_TMP::void_t<decltype(&T::clone)> > : std::true_type {
+  };
 
-  template<typename T, typename std::enable_if<!has_clone<T>::value, void>::type* = nullptr>
+  template < typename T, typename std::enable_if < !has_clone<T>::value, void >::type * = nullptr >
   std::unique_ptr<T> clone(const T &obj) {
     return std::unique_ptr<T>(new T(obj));
   }
 
-  template<typename T, typename std::enable_if<has_clone<T>::value, void>::type* = nullptr>
+  template<typename T, typename std::enable_if<has_clone<T>::value, void>::type * = nullptr>
   std::unique_ptr<T> clone(const T &obj) {
     return obj.clone();
   }
 
-  
+
   /// \brief A 'cloneable_ptr' can be used in place of 'unique_ptr'
   ///
   /// If you are creating a class 'MyNewClass' that will have 'std::unique_ptr<Type> m_data'
@@ -91,7 +93,7 @@ namespace notstd {
     /// \brief Construct by moving other
     cloneable_ptr(cloneable_ptr &&other) :
       m_unique(std::move(other.unique())) {}
-    
+
     /// \brief Construct by moving other
     template<typename U>
     cloneable_ptr(cloneable_ptr<U> &&other) :

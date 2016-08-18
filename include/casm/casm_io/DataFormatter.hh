@@ -217,14 +217,14 @@ namespace CASM {
         }
       }
 
-      m_data_formatters.emplace_back(new_formatter);
+      m_data_formatters.emplace_back(new_formatter.clone());
       m_col_sep.push_back(0);
       m_col_width.push_back(0);
       m_data_formatters.back()->parse_args(args);
     }
 
     void push_back(const BaseDatumFormatter<DataObject> &new_formatter) {
-      m_data_formatters.emplace_back(new_formatter);
+      m_data_formatters.emplace_back(new_formatter.clone());
       m_col_sep.push_back(0);
       m_col_width.push_back(0);
     }
@@ -545,21 +545,23 @@ namespace CASM {
     // (i.e. a BaseDatumFormatter*) to formatter*
 
     notstd::cloneable_ptr<formatter> operator()(const formatter &value) {
-      return notstd::cloneable_ptr<formatter>(static_cast<formatter *>(value.clone().release()));
+      return notstd::cloneable_ptr<formatter>(value.clone());
     }
 
   };
 
+  /*
   template<typename DataObject>
   struct DictionaryConverter<DataObject, BaseDatumFormatter<DataObject> > {
 
     typedef BaseDatumFormatter<DataObject> formatter;
 
     notstd::cloneable_ptr<formatter> operator()(const formatter &value) {
-      return notstd::cloneable_ptr<formatter>(value);
+      return notstd::cloneable_ptr<formatter>(value.clone());
     }
 
   };
+  */
 
 
   /// \brief  Parsing dictionary for constructing a DataFormatter<DataObject> object.
