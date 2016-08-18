@@ -3,6 +3,9 @@
 
 #include <memory>
 #include <iostream>
+#include <utility>
+
+#include "casm/misc/CASM_TMP.hh"
 
 namespace notstd {
 
@@ -30,20 +33,19 @@ namespace notstd {
 
   /// \brief Specialized case inherits from std::true_type if T does have clone method
   template <typename T>
-struct has_clone<T, void_t<decltype(T::clone)> > : std::true_type { };
+  struct has_clone<T, CASM::CASM_TMP::void_t<decltype(&T::clone)> > : std::true_type { };
 
-
-  template<typename T>
-  std::unique_ptr<T> clone(const T &obj, typename std::enable_if<has_clone<T>::value, T>::type * = nullptr) {
-    return obj.clone();
-  }
-
-  template<typename T>
-  std::unique_ptr<T> clone(const T &obj, typename std::enable_if < !has_clone<T>::value, T >::type * = nullptr) {
+  template<typename T, typename std::enable_if<!has_clone<T>::value, void>::type* = nullptr>
+  std::unique_ptr<T> clone(const T &obj) {
     return std::unique_ptr<T>(new T(obj));
   }
 
+  template<typename T, typename std::enable_if<has_clone<T>::value, void>::type* = nullptr>
+  std::unique_ptr<T> clone(const T &obj) {
+    return obj.clone();
+  }
 
+  
   /// \brief A 'cloneable_ptr' can be used in place of 'unique_ptr'
   ///
   /// If you are creating a class 'MyNewClass' that will have 'std::unique_ptr<Type> m_data'
@@ -69,11 +71,6 @@ struct has_clone<T, void_t<decltype(T::clone)> > : std::true_type { };
     explicit cloneable_ptr(pointer ptr) :
       m_unique(ptr) {}
 
-    /// \brief Construct by cloning obj
-    explicit cloneable_ptr(const Type &obj) :
-      m_unique(clone(obj)) {}
-
-
     /// \brief Construct by cloning other
     cloneable_ptr(const cloneable_ptr &other) :
       m_unique() {
@@ -91,6 +88,10 @@ struct has_clone<T, void_t<decltype(T::clone)> > : std::true_type { };
       }
     }
 
+    /// \brief Construct by moving other
+    cloneable_ptr(cloneable_ptr &&other) :
+      m_unique(std::move(other.unique())) {}
+    
     /// \brief Construct by moving other
     template<typename U>
     cloneable_ptr(cloneable_ptr<U> &&other) :
