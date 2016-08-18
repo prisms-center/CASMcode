@@ -35,7 +35,6 @@ namespace CASM {
   ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///
-  /// \ingroup Clusterography
   template<typename Derived>
   class SymCompare {
 

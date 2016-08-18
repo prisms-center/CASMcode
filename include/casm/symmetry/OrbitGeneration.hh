@@ -19,15 +19,20 @@ namespace CASM {
   template<typename _OrbitType>
   struct OrbitGeneratorCompare;
 
+  template<typename _OrbitType>
+  struct CanonicalGenerator;
+
   /// \brief An std::set of Orbit
   ///
   /// \ingroup OrbitGeneration
   ///
-  template<OrbitType>
+  template<typename OrbitType>
   using OrbitGeneratorSet = std::set<typename OrbitType::Element, OrbitGeneratorCompare<OrbitType> >;
 
   /// \brief Data structure that holds canonical generating elements and
   /// can then make sorted orbits
+  ///
+  /// \ingroup OrbitGeneration
   ///
   template<typename _OrbitType>
   struct OrbitGenerators {
@@ -41,11 +46,11 @@ namespace CASM {
       group(_group),
       sym_compare(_sym_compare),
       m_element_compare(sym_compare),
-      m_generate_canonicalr(group, sym_compare),
+      m_generate_canonical(group, sym_compare),
       elements(m_element_compare) {}
 
     /// \brief Try inserting an element
-    std::pair<OrbitGeneratorSet<OrbitType>::iterator, bool> insert(const Element &test) {
+    std::pair<typename OrbitGeneratorSet<OrbitType>::iterator, bool> insert(const Element &test) {
       return elements.insert(m_generate_canonical(test));
     }
 
