@@ -165,7 +165,7 @@ namespace CASM {
   template<typename ClusterOutputIterator, typename SymCompareType>
   ClusterOutputIterator read_clust(
     ClusterOutputIterator result,
-    jsonParser &json,
+    const jsonParser &json,
     const Structure &prim,
     const SymGroup &generating_grp,
     const SymCompareType &sym_compare) {

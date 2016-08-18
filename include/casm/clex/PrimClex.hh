@@ -11,8 +11,8 @@
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ChemicalReference.hh"
-#include "casm/misc/cloneable_ptr.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/clex/ClexBasis.hh"
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
@@ -223,8 +223,9 @@ namespace CASM {
 
     Index add_canonical_supercell(const Lattice &superlat);
 
-    bool has_orbitree(const ClexDescription &key) const;
-    const SiteOrbitree &orbitree(const ClexDescription &key) const;
+
+    bool has_clex_basis(const ClexDescription &key) const;
+    const ClexBasis &clex_basis(const ClexDescription &key) const;
 
     bool has_clexulator(const ClexDescription &key) const;
     Clexulator clexulator(const ClexDescription &key) const;
@@ -237,7 +238,7 @@ namespace CASM {
     /// Initialization routines
     void _init();
 
-    mutable std::map<ClexDescription, SiteOrbitree> m_orbitree;
+    mutable std::map<ClexDescription, ClexBasis> m_clex_basis;
     mutable std::map<ClexDescription, Clexulator> m_clexulator;
     mutable std::map<ClexDescription, ECIContainer> m_eci;
 

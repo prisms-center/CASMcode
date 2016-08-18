@@ -215,7 +215,7 @@ namespace CASM {
   //*********************************************************************************
   /// \brief SCELV_A_B_C_D_E_F.i (only use this when 'name' won't work)
   std::string Configuration::altname() const {
-    return get_supercell().get_name() + "." + get_id();
+    return supercell().name() + "." + id();
   }
 
   //*********************************************************************************
@@ -712,7 +712,7 @@ namespace CASM {
 
   //*********************************************************************************
   fs::path Configuration::calc_status_path() const {
-    return primclex().dir().calc_status(name(), get_primclex().settings().default_clex().calctype);
+    return primclex().dir().calc_status(name(), primclex().settings().default_clex().calctype);
   }
 
   //*********************************************************************************
@@ -836,8 +836,8 @@ namespace CASM {
   }
 
   /// \brief Returns correlations using 'clexulator'.
-  Correlation correlations(const Configuration &config, Clexulator &clexulator) {
-    return correlations(config.configdof(), config.get_supercell(), clexulator);
+  Eigen::VectorXd correlations(const Configuration &config, Clexulator &clexulator) {
+    return correlations(config.configdof(), config.supercell(), clexulator);
   }
 
   /// Returns parametric composition, as calculated using PrimClex::param_comp

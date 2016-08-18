@@ -2,14 +2,15 @@
 
 #include "casm/external/boost.hh"
 
-#include "casm/misc/algorithm.hh"
-#include "casm/clex/ConfigIterator.hh"
-#include "casm/clex/ECIContainer.hh"
 #include "casm/system/RuntimeLibrary.hh"
+#include "casm/misc/algorithm.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/crystallography/Coordinate.hh"
-#include "casm/app/AppIO.hh"
 #include "casm/crystallography/Niggli.hh"
+#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/clex/ConfigIterator.hh"
+#include "casm/clex/ECIContainer.hh"
+#include "casm/app/AppIO.hh"
 
 namespace CASM {
   //*******************************************************************************************
@@ -44,8 +45,9 @@ namespace CASM {
   void PrimClex::_init() {
 
     log().construct("CASM Project");
-    log() << "from: " << root << "\n" << std::endl;
+    log() << "from: " << dir().root_dir() << "\n" << std::endl;
 
+    auto struc_mol_name = prim().get_struc_molecule_name();
     m_vacancy_allowed = false;
     for(int i = 0; i < struc_mol_name.size(); ++i) {
       if(is_vacancy(struc_mol_name[i])) {
@@ -86,7 +88,7 @@ namespace CASM {
 
     if(read_settings) {
       try {
-        m_settings = ProjectSettings(root);
+        m_settings = ProjectSettings(dir().root_dir());
       }
       catch(std::exception &e) {
         err_log().error("reading project_settings.json");
@@ -125,7 +127,7 @@ namespace CASM {
       try {
         if(fs::is_regular_file(chem_ref_path)) {
           log() << "read: " << chem_ref_path << "\n";
-          m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim, lin_alg_tol()));
+          m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim(), settings().lin_alg_tol()));
         }
       }
       catch(std::exception &e) {
@@ -153,20 +155,20 @@ namespace CASM {
 
       try {
         // read config_list
-        if(fs::is_regular_file(get_config_list_path())) {
-          log() << "read: " << get_config_list_path() << "\n";
+        if(fs::is_regular_file(dir().config_list())) {
+          log() << "read: " << dir().config_list() << "\n";
           read_config_list();
         }
       }
       catch(std::exception &e) {
         err_log().error("reading config_list.json");
-        err_log() << "file: " << m_dir.config_list() << "\n" << std::endl;
+        err_log() << "file: " << dir().config_list() << "\n" << std::endl;
       }
     }
 
     if(clear_clex) {
       m_nlist.reset();
-      m_orbitree.clear();
+      m_clex_basis.clear();
       m_clexulator.clear();
       m_eci.clear();
       log() << "refresh cluster expansions\n";
@@ -556,7 +558,7 @@ namespace CASM {
    */
   //*******************************************************************************************
   Index PrimClex::add_supercell(const Lattice &superlat) {
-    return add_canonical_supercell(canonical_equivalent_lattice(superlat, m_prim.point_group(), crystallography_tol()));
+    return add_canonical_supercell(canonical_equivalent_lattice(superlat, m_prim.point_group(), settings().crystallography_tol()));
 
   }
 
@@ -685,9 +687,9 @@ namespace CASM {
 
   //*******************************************************************************************
   /// const Access to global orbitree
-  bool PrimClex::has_orbitree(const ClexDescription &key) const {
-    auto it = m_orbitree.find(key);
-    if(it == m_orbitree.end()) {
+  bool PrimClex::has_clex_basis(const ClexDescription &key) const {
+    auto it = m_clex_basis.find(key);
+    if(it == m_clex_basis.end()) {
       if(!fs::exists(dir().clust(key.bset))) {
         return false;
       }
@@ -698,19 +700,29 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  const SiteOrbitree &PrimClex::orbitree(const ClexDescription &key) const {
+  /// \brief Get iterators over the range of orbits
+  const ClexBasis &PrimClex::clex_basis(const ClexDescription &key) const {
 
-    auto it = m_orbitree.find(key);
-    if(it == m_orbitree.end()) {
-      it = m_orbitree.insert(std::make_pair(key, SiteOrbitree(get_prim().lattice()))).first;
-      SiteOrbitree &tree = it->second;
+    auto it = m_clex_basis.find(key);
+    if(it == m_clex_basis.end()) {
 
-      // these could be specified via settings
-      tree.min_num_components = 2;
-      tree.min_length = 0.0001;
+      it = m_clex_basis.insert(std::make_pair(key, ClexBasis(prim()))).first;
 
-      from_json(jsonHelper(tree, prim), jsonParser(dir().clust(key.bset)));
-      tree.generate_clust_bases();
+      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+
+      read_clust(
+        std::back_inserter(orbits),
+        jsonParser(dir().clust(key.bset)),
+        prim(),
+        prim().factor_group(),
+        PrimPeriodicIntegralClusterSymCompare(settings().crystallography_tol())
+      );
+
+      jsonParser bspecs_json;
+      bspecs_json.read(dir().bspecs(key.bset));
+
+      ClexBasis &clex_basis = it->second;
+      clex_basis.generate(orbits.begin(), orbits.end(), bspecs_json, {"occupation"});
 
     }
 
