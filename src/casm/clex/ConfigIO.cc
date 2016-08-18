@@ -173,7 +173,7 @@ namespace CASM {
     /// \brief If not yet initialized, use the default clexulator from the PrimClex
     void Corr::init(const Configuration &_tmplt) const {
       if(!m_clexulator.initialized()) {
-        const PrimClex &primclex = _tmplt.get_primclex();
+        const PrimClex &primclex = _tmplt.primclex();
         ClexDescription desc = m_clex_name.empty() ?
                                primclex.settings().default_clex() : primclex.settings().clex(m_clex_name);
         m_clexulator = primclex.clexulator(desc);
@@ -231,7 +231,7 @@ namespace CASM {
       ScalarAttribute<Configuration>(Name, Desc),
       m_clexulator(clexulator),
       m_eci(eci),
-      m_norm(norm) {
+      m_norm(norm.clone()) {
     }
 
     /// \brief Returns the atom fraction
@@ -247,7 +247,7 @@ namespace CASM {
     /// \brief If not yet initialized, use the default cluster expansion from the PrimClex
     void Clex::init(const Configuration &_tmplt) const {
       if(!m_clexulator.initialized()) {
-        const PrimClex &primclex = _tmplt.get_primclex();
+        const PrimClex &primclex = _tmplt.primclex();
         ClexDescription desc = m_clex_name.empty() ?
                                primclex.settings().default_clex() : primclex.settings().clex(m_clex_name);
         m_clexulator = primclex.clexulator(desc);

@@ -16,8 +16,6 @@ namespace CASM {
   class UnitCellCoord;
   class SiteCluster;
   class MasterSymGroup;
-  template<typename ClustType> class GenericOrbitree;
-  typedef GenericOrbitree<SiteCluster> SiteOrbitree;
 
 
   ///\brief BasicStructure specifies the lattice and atomic basis of a crystal

@@ -217,7 +217,7 @@ namespace CASM {
 
     /// \brief Access the DoF. This will invalidate the Configuration's id.
     ConfigDoF &configdof() {
-      id = "none";
+      m_id = "none";
       return m_configdof;
     }
 
