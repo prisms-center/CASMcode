@@ -10,9 +10,7 @@ namespace CASM {
 
   class PrimClex;
   class ECIContainer;
-  template<typename ClustType> class GenericOrbitree;
-  class SiteCluster;
-  typedef GenericOrbitree<SiteCluster> SiteOrbitree;
+  class ClexBasis;
 
   /// \brief Data structure used for cluster expansions
   class Clex {
@@ -22,17 +20,17 @@ namespace CASM {
     Clex() {}
 
     Clex(const PrimClex &_primclex) :
-      m_primclex(&_primclex), m_orbitree(nullptr), m_eci(nullptr) {}
+      m_primclex(&_primclex), m_clex_basis(nullptr), m_eci(nullptr) {}
 
     Clex(const PrimClex &_primclex, const ClexDescription &_desc) :
-      m_primclex(&_primclex), m_desc(_desc), m_orbitree(nullptr), m_eci(nullptr) {}
+      m_primclex(&_primclex), m_desc(_desc), m_clex_basis(nullptr), m_eci(nullptr) {}
 
 
     const PrimClex &primclex() const;
 
     const ClexDescription &desc() const;
 
-    const SiteOrbitree &orbitree() const;
+    const ClexBasis &clex_basis() const;
 
     Clexulator &clexulator(Log &status_log = null_log()) const;
 
@@ -48,8 +46,8 @@ namespace CASM {
     /// Cluster expansion description: name, property, calctype, ref, bset, eci
     ClexDescription m_desc;
 
-    /// Pointer to SiteOrbitree held by PrimClex
-    mutable const SiteOrbitree *m_orbitree;
+    /// Pointer to ClexBasis held by PrimClex
+    mutable const ClexBasis *m_clex_basis;
 
     /// Clexulator (obtained from PrimClex, but must be separate object because
     /// of how Clexulator are evaluated)

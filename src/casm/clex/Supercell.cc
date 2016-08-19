@@ -349,7 +349,7 @@ namespace CASM {
   //***********************************************************
 
   void Supercell::generate_name() {
-    m_name = CASM::generate_name(transf_mat);
+    m_name = CASM::generate_name(m_transf_mat);
     return;
   }
 

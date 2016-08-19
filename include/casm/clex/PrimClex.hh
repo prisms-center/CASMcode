@@ -224,6 +224,12 @@ namespace CASM {
     Index add_canonical_supercell(const Lattice &superlat);
 
 
+    bool has_orbits(const ClexDescription &key) const;
+    template<typename OrbitOutputIterator, typename SymCompareType>
+    OrbitOutputIterator orbits(const ClexDescription &key,
+                               OrbitOutputIterator result,
+                               const SymCompareType &sym_compare) const;
+
     bool has_clex_basis(const ClexDescription &key) const;
     const ClexBasis &clex_basis(const ClexDescription &key) const;
 

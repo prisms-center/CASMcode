@@ -587,8 +587,8 @@ Instructions for fitting ECI:                                          \n\n\
     }
 
     std::cout << "4) Calculate configuration properties\n";
-    std::cout << "- Current calctype: " << primclex.settings().calctype() << "\n";
-    std::cout << "- Current cluster expansion: " << primclex.settings().clex() << "\n";
+    std::cout << "- Current calctype: " << calctype << "\n";
+    std::cout << "- Current cluster expansion: " << desc.name << "\n";
     std::cout << "- Number of configurations calculated: " << tot_calc << " / " << tot_gen << " generated (Update with 'casm update')\n\n";
 
     if(vm.count("details")) {

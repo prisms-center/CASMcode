@@ -13,12 +13,12 @@ namespace CASM {
     return m_desc;
   }
 
-  const SiteOrbitree &Clex::orbitree() const {
+  const ClexBasis &Clex::clex_basis() const {
 
-    if(m_orbitree == nullptr) {
-      m_orbitree = &primclex().orbitree(m_desc);
+    if(m_clex_basis == nullptr) {
+      m_clex_basis = &primclex().clex_basis(m_desc);
     }
-    return *m_orbitree;
+    return *m_clex_basis;
   }
 
   Clexulator &Clex::clexulator(Log &status_log) const {

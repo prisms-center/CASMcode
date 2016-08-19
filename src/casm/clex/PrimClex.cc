@@ -686,6 +686,30 @@ namespace CASM {
   };
 
   //*******************************************************************************************
+  bool PrimClex::has_orbits(const ClexDescription &key) const {
+    if(!fs::exists(dir().clust(key.bset))) {
+      return false;
+    }
+    return true;
+  }
+
+  //*******************************************************************************************
+  template<typename OrbitOutputIterator, typename SymCompareType>
+  OrbitOutputIterator PrimClex::orbits(
+    const ClexDescription &key,
+    OrbitOutputIterator result,
+    const SymCompareType &sym_compare) const {
+
+    return read_clust(
+             result,
+             jsonParser(dir().clust(key.bset)),
+             prim(),
+             prim().factor_group(),
+             sym_compare);
+  }
+
+
+  //*******************************************************************************************
   /// const Access to global orbitree
   bool PrimClex::has_clex_basis(const ClexDescription &key) const {
     auto it = m_clex_basis.find(key);

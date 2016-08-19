@@ -78,7 +78,7 @@ namespace CASM {
 
     void check_corr() {
       std::cout << "corr:" << std::endl;
-      std::cout << correlations_vec(_configdof(), supercell(), _clexulator()) << std::endl;
+      std::cout << correlations(_configdof(), supercell(), _clexulator()) << std::endl;
       std::cout << "OK corr" << std::endl;
     }
 

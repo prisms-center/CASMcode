@@ -5,6 +5,7 @@
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ClexBasis.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
 
@@ -92,6 +93,9 @@ namespace CASM {
     std::string bset;
     ClexDescription clex_desc;
 
+    // not sure how this will work yet...
+    std::vector<std::string> dof_keys = {"occupation"};
+
     if(!vm.count("clex")) {
       clex_desc = set.default_clex();
     }
@@ -109,7 +113,7 @@ namespace CASM {
     if(vm.count("update")) {
 
       // initialize project info
-      Structure prim = primclex.get_prim();
+      Structure prim = primclex.prim();
 
       if(!fs::is_regular_file(dir.bspecs(bset))) {
         args.err_log.error("'bspecs.json' file not found");
@@ -186,9 +190,9 @@ namespace CASM {
       {
         jsonParser clust_json;
         write_clust(orbits.begin(), orbits.end(), clust_json, ProtoSitesPrinter(), bspecs_json);
-        clust_json.write(dir.clust(set.bset()));
+        clust_json.write(dir.clust(bset));
 
-        args.log.write(dir.clust(set.bset()).string());
+        args.log.write(dir.clust(bset).string());
         args.log << std::endl;
       }
 
@@ -197,9 +201,9 @@ namespace CASM {
       {
         jsonParser basis_json;
         write_clust(orbits.begin(), orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json);
-        basis_json.write(dir.basis(set.bset()));
+        basis_json.write(dir.basis(bset));
 
-        args.log.write(dir.basis(set.bset()).string());
+        args.log.write(dir.basis(bset).string());
         args.log << std::endl;
       }
 
@@ -220,12 +224,12 @@ namespace CASM {
 
         // write source code
         fs::ofstream outfile;
-        outfile.open(dir.clexulator_src(set.name(), set.bset()));
+        outfile.open(dir.clexulator_src(set.name(), bset));
         throw std::runtime_error("Error: print_clexulator is being re-implemented");
         //print_clexulator(*clex_basis, nlist, set.global_clexulator(), outfile, set.crystallography_tol());
         outfile.close();
 
-        args.log.write(dir.clexulator_src(set.name(), set.bset()).string());
+        args.log.write(dir.clexulator_src(set.name(), bset).string());
         args.log << std::endl;
       }
 
@@ -240,7 +244,12 @@ namespace CASM {
         return ERR_MISSING_DEPENDS;
       }
 
-      auto orbits = primclex.orbitree(clex_desc);
+      typedef PrimPeriodicIntegralClusterOrbit orbit_type;
+      std::vector<orbit_type> orbits;
+      primclex.orbits(
+        clex_desc,
+        std::back_inserter(orbits),
+        orbit_type::SymCompareType(set.crystallography_tol()));
 
       if(vm.count("orbits")) {
         print_clust(orbits.begin(), orbits.end(), args.log, ProtoSitesPrinter());
@@ -249,13 +258,11 @@ namespace CASM {
         print_clust(orbits.begin(), orbits.end(), args.log, FullSitesPrinter());
       }
       if(vm.count("functions")) {
-        jsonParser bspecs_json;
-        bspecs_json.read(dir.bspecs(set.bset()));
-
-        ClexBasis clex_basis(primclex.prim());
-        clex_basis.generate(orbits.begin(), orbits.end(), bspecs_json, dof_keys);
-
-        print_clust(orbits.begin(), orbits.end(), args.log, ProtoFuncsPrinter(clex_basis));
+        print_clust(
+          orbits.begin(),
+          orbits.end(),
+          args.log,
+          ProtoFuncsPrinter(primclex.clex_basis(clex_desc)));
       }
     }
     else {
