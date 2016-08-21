@@ -43,6 +43,72 @@ namespace CASM {
 
   const std::string ChemicalReference::Desc = "Returns a reference energy as interpolated via a composition-energy hyperplane.";
 
+  namespace {
+
+    Eigen::MatrixXd _species_frac_matrix(const PrimClex &primclex,
+                                         const std::vector<std::string> &ref_config) {
+      Eigen::MatrixXd _N(primclex.composition_axes().components().size(), ref_config.size());
+      for(int i = 0; i < ref_config.size(); ++i) {
+        _N.col(i) = species_frac(primclex.configuration(ref_config[i]));
+      }
+      return _N;
+    }
+
+    Eigen::MatrixXd _species_frac_space(const Eigen::MatrixXd &_N) {
+      // The input space
+      Eigen::MatrixXd N(_N.rows(), _N.cols() - 1);
+      for(int i = 0; i < N.cols(); i++) {
+        N.col(i) = _N.col(i + 1) - _N.col(0);
+      }
+      return N;
+    }
+
+    bool _rank(const Eigen::MatrixXd &N,
+               double lin_alg_tol) {
+      auto Qr = N.transpose().fullPivHouseholderQr();
+      Qr.setThreshold(lin_alg_tol);
+      return Qr.rank();
+    }
+
+    // Eliminate ref config until the rank of the defined species_frac space
+    // is the same as the number of ref config.
+    void _prune_ref_config(const PrimClex &primclex,
+                           std::vector<std::string> &ref_config,
+                           double lin_alg_tol) {
+      // Each column of _N is the species_frac of the corresponding ref config
+      Eigen::MatrixXd _N = _species_frac_matrix(primclex, ref_config);
+
+      // Contains vectors spanning the space defined by the ref config
+      // N has _N.cols() - 1 columns, with N.col(i) being _N.col(i) - _N.col(0)
+      Eigen::MatrixXd N = _species_frac_space(_N);
+
+      while(_rank(N, lin_alg_tol) != N.cols()) {
+
+        // remove ref_config whose summed distance in species_frac space to all
+        // others is the minimum
+        double min_dist = std::numeric_limits<double>::max();
+        double min_dist_ref = -1;
+        for(int i = 0; i < ref_config.size(); ++i) {
+          double tot_dist = 0.0;
+          for(int j = 0; j < ref_config.size(); ++j) {
+            if(i != j) {
+              tot_dist += (_N.col(i) - _N.col(j)).norm();
+            }
+          }
+          if(tot_dist < min_dist) {
+            min_dist_ref = i;
+            min_dist = tot_dist;
+          }
+        }
+
+        ref_config.erase(ref_config.begin() + min_dist_ref);
+        _N = _species_frac_matrix(primclex, ref_config);
+        N = _species_frac_space(_N);
+      }
+
+    }
+
+  }
 
   /// \brief Convert a set of ChemicalReferenceState to a hyperplane, including checks
   Eigen::VectorXd ChemicalReference::_calc_hyperplane(
@@ -69,18 +135,15 @@ namespace CASM {
     // --- check that the input space is full rank (excluding Va) --------------
 
     // The input space
-    Eigen::MatrixXd N(_N.rows(), _N.cols() - 1);
-    for(int i = 0; i < N.cols(); i++) {
-      N.col(i) = _N.col(i + 1) - _N.col(0);
-    }
+    Eigen::MatrixXd N = _species_frac_space(_N);
 
-    auto Qr = N.transpose().fullPivHouseholderQr();
-    Qr.setThreshold(tol);
-    if(Qr.rank() != N.cols()) {
+    int r = _rank(N, tol);
+
+    if(r != N.cols()) {
       std::cerr << "Error in ChemicalReference::hyperplane " << std::endl;
       std::cerr << "Input space (column vectors of atom_frac):\n" << N << std::endl;
       std::cerr << "Rows correspond to: " << jsonParser(struc_mol_name) << std::endl;
-      std::cerr << "Input space rank: " << Qr.rank() << std::endl;
+      std::cerr << "Input space rank: " << r << std::endl;
       throw std::runtime_error("Error in ChemicalReference::hyperplane: Too many reference states specified");
     }
 
@@ -162,13 +225,11 @@ namespace CASM {
   ChemicalReference auto_chemical_reference(const PrimClex &primclex, double lin_alg_tol) {
 
     auto closest_calculated_config = [&](const Eigen::VectorXd & target) {
-      //std::cout << "begin closest_calculated_config()" << std::endl;
 
       // return name of Configuration with param_comp closest to target_param_comp
       //   tie break goes to first Configuration with fewest atoms
       //
       //   must be Configurations for which the relaxed_energy has been calculated
-
       auto begin = primclex.config_begin();
       auto end = primclex.config_end();
       auto res = end;
@@ -190,7 +251,6 @@ namespace CASM {
         std::cerr << "Error in auto_chemical_reference: Could not find any configurations\n";
         throw std::runtime_error("Error in auto_chemical_reference: Could not find any configurations");
       }
-
       return res->name();
     };
 
@@ -218,9 +278,15 @@ namespace CASM {
       }
 
       ref_config.push_back(configname);
+
       target(i) = 0.0;
     }
 
+    // make sure there are the right number of references in species_frac space
+    // (may be 1 extra if pure Va configuration is possible)
+    _prune_ref_config(primclex, ref_config, lin_alg_tol);
+
+    // construct ChemicalReferenceState
     std::vector<ChemicalReferenceState> ref_states;
     for(auto it = ref_config.begin(); it != ref_config.end(); ++it) {
       ref_states.emplace_back(primclex.configuration(*it),
