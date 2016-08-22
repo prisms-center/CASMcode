@@ -27,6 +27,8 @@ namespace CASM {
     };
 
 
+    const std::string traits<Monte::DRIVE_MODE>::name = "mode";
+
     const std::multimap<Monte::DRIVE_MODE, std::vector<std::string> > traits<Monte::DRIVE_MODE>::strval = {
       {Monte::DRIVE_MODE::INCREMENTAL, {"Incremental", "incremental"} },
       {Monte::DRIVE_MODE::CUSTOM, {"Custom", "custom"} }

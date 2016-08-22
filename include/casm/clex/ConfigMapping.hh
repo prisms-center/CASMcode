@@ -9,6 +9,10 @@ namespace CASM {
   class PrimClex;
   class Configuration;
   class ConfigDoF;
+  class Site;
+  class Coordinate;
+  template<typename CoordType>
+  class BasicStructure;
 
   /// A class for mapping an arbitrary crystal structure as a configuration of a crystal template
   /// as described by a PrimClex.  ConfigMapper manages options for the mapping algorithm and mapping cost function

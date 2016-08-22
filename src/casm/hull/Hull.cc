@@ -28,8 +28,8 @@ namespace CASM {
              double _singular_value_tol,
              double _bottom_facet_tol) :
     m_selection(_selection),
-    m_comp_calculator(_comp_calculator),
-    m_energy_calculator(_energy_calculator) {
+    m_comp_calculator(_comp_calculator.clone()),
+    m_energy_calculator(_energy_calculator.clone()) {
 
     Hull_impl::_validate_input(m_selection, *m_comp_calculator, *m_energy_calculator);
 

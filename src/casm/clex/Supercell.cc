@@ -565,6 +565,20 @@ namespace CASM {
     return occupation;
   }
 
+  std::string generate_name(const Eigen::Matrix3i &transf_mat) {
+    std::string name_str;
+
+    Eigen::Matrix3i H = hermite_normal_form(transf_mat).first;
+    name_str = "SCEL";
+    std::stringstream tname;
+    //Consider using a for loop with HermiteCounter_impl::_canonical_unroll here
+    tname << H(0, 0)*H(1, 1)*H(2, 2)
+          << "_" << H(0, 0) << "_" << H(1, 1) << "_" << H(2, 2)
+          << "_" << H(1, 2) << "_" << H(0, 2) << "_" << H(0, 1);
+    name_str.append(tname.str());
+
+    return name_str;
+  }
 
 }
 

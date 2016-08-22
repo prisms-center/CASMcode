@@ -29,14 +29,14 @@ namespace CASM {
     m_use_deltas = !nlist().overlaps();
 
     _log().construct("Grand Canonical Monte Carlo");
-    _log() << "project: " << this->primclex().get_path() << "\n";
+    _log() << "project: " << this->primclex().dir().root_dir() << "\n";
     _log() << "formation_energy cluster expansion: " << desc.name << "\n";
     _log() << std::setw(16) << "property: " << desc.property << "\n";
     _log() << std::setw(16) << "calctype: " << desc.calctype << "\n";
     _log() << std::setw(16) << "ref: " << desc.ref << "\n";
     _log() << std::setw(16) << "bset: " << desc.bset << "\n";
     _log() << std::setw(16) << "eci: " << desc.eci << "\n";
-    _log() << "supercell: \n" << supercell().get_transf_mat() << "\n";
+    _log() << "supercell: \n" << supercell().transf_mat() << "\n";
     _log() << "use_deltas: " << std::boolalpha << m_use_deltas << "\n";
     _log() << "\nSampling: \n";
     _log() << std::setw(24) << "quantity" << std::setw(24) << "requested_precision" << "\n";
@@ -585,7 +585,7 @@ namespace CASM {
   void GrandCanonical::_update_properties() {
 
     // initialize properties and store pointers to the data strucures
-    _vector_properties()["corr"] = correlations_vec(_configdof(), supercell(), _clexulator());
+    _vector_properties()["corr"] = correlations(_configdof(), supercell(), _clexulator());
     m_corr = &_vector_property("corr");
 
     _vector_properties()["comp_n"] = CASM::comp_n(_configdof(), supercell());
@@ -700,9 +700,9 @@ namespace CASM {
     }
 
     // used to check if configurations can fill the monte carlo supercell
-    const Lattice &scel_lat = supercell().get_real_super_lattice();
-    auto begin = primclex().get_prim().factor_group().begin();
-    auto end = primclex().get_prim().factor_group().end();
+    const Lattice &scel_lat = supercell().real_super_lattice();
+    auto begin = primclex().prim().factor_group().begin();
+    auto end = primclex().prim().factor_group().end();
 
     // save iterators pointing to configs that will fill the supercell
     std::vector<decltype(configmap)::const_iterator> allowed;
@@ -714,7 +714,7 @@ namespace CASM {
 
       // save allowed configs
       for(auto it = eq_range.first; it != eq_range.second; ++it) {
-        const Lattice &motif_lat = it->second->get_supercell().get_real_super_lattice();
+        const Lattice &motif_lat = it->second->supercell().real_super_lattice();
         if(is_supercell(scel_lat, motif_lat, begin, end, TOL).first != end) {
           allowed.push_back(it);
         }

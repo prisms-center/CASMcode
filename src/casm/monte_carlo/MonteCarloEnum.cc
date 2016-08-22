@@ -6,7 +6,7 @@ namespace CASM {
   /// \brief Insert in hall of fame if 'check' passes
   MonteCarloEnum::HallOfFameType::InsertResult MonteCarloEnum::_insert(const Configuration &config) {
     if(insert_canonical()) {
-      const Supercell &scel = config.get_supercell();
+      const Supercell &scel = config.supercell();
       auto begin = scel.permute_begin();
       auto end = scel.permute_end();
       decltype(begin) canon_it;
@@ -120,23 +120,23 @@ namespace CASM {
   Configuration MonteCarloEnum::_canon_scel_config(const Configuration &config) const {
 
     // try to get canonical equivalent supercell from list of already encountered supercell
-    std::string scel_name = config.get_supercell().get_name();
+    std::string scel_name = config.supercell().name();
     auto it = m_canon_scel.find(scel_name);
 
     // if not yet encountered
     if(it == m_canon_scel.end()) {
 
       // get supercell index from primclex
-      Index Nscel = primclex().get_supercell_list().size();
-      Index scel_index = _primclex().add_supercell(config.get_supercell().get_real_super_lattice());
+      Index Nscel = primclex().supercell_list().size();
+      Index scel_index = _primclex().add_supercell(config.supercell().real_super_lattice());
 
       // save pointer
-      it = m_canon_scel.insert(std::make_pair(scel_name, &_primclex().get_supercell(scel_index))).first;
+      it = m_canon_scel.insert(std::make_pair(scel_name, &_primclex().supercell(scel_index))).first;
 
       // if this is a new supercell for the project, write SCEL file
-      if(Nscel != primclex().get_supercell_list().size()) {
+      if(Nscel != primclex().supercell_list().size()) {
         _log().generate("New supercell");
-        _log() << "supercell: " << it->second->get_name() << "\n";
+        _log() << "supercell: " << it->second->name() << "\n";
         _log() << "write: SCEL\n";
         _log() << std::endl;
         primclex().print_supercells();
@@ -172,11 +172,11 @@ namespace CASM {
       // get equivalent configuration (not necessarily canonical) in the
       // canonical equivalent supercell stored in the primclex
       Configuration config = _canon_scel_config(val.second);
-      Supercell &canon_scel = config.get_supercell();
+      Supercell &canon_scel = config.supercell();
 
       // add config to supercell (the saved config will be canonical)
       is_new = canon_scel.add_config(config, config_index, permute_it);
-      Configuration &canon_config = canon_scel.get_config(config_index);
+      Configuration &canon_config = canon_scel.config(config_index);
 
       is_prim = is_primitive(canon_config);
       if(is_new) {
