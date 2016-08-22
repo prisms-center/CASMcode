@@ -168,14 +168,13 @@ namespace CASM {
         args.log.construct("Orbitree");
         args.log << std::endl;
 
-        make_orbits(prim,
-                    prim.factor_group(),
-                    bspecs_json,
-                    set.crystallography_tol(),
-                    alloy_sites_filter,
-                    PrimPeriodicIntegralClusterSymCompare(set.crystallography_tol()),
-                    std::back_inserter(orbits),
-                    args.log);
+        make_prim_periodic_orbits(
+          prim,
+          bspecs_json,
+          alloy_sites_filter,
+          set.crystallography_tol(),
+          std::back_inserter(orbits),
+          args.log);
 
         clex_basis.reset(new ClexBasis(prim));
         clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json, dof_keys);
@@ -226,7 +225,7 @@ namespace CASM {
         fs::ofstream outfile;
         outfile.open(dir.clexulator_src(set.name(), bset));
         throw std::runtime_error("Error: print_clexulator is being re-implemented");
-        //print_clexulator(*clex_basis, nlist, set.global_clexulator(), outfile, set.crystallography_tol());
+        //print_clexulator(...);
         outfile.close();
 
         args.log.write(dir.clexulator_src(set.name(), bset).string());

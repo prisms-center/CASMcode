@@ -59,9 +59,9 @@ namespace CASM {
     OrbitOutputIterator make_orbits(OrbitOutputIterator result) {
 
       // generate sorted orbits
-      std::set<orbit_type> orbits;
+      std::set<OrbitType> orbits;
       for(const auto &e : elements) {
-        orbits.insert(orbit_type(e, group, sym_compare));
+        orbits.insert(OrbitType(e, group, sym_compare));
       }
 
       // output Orbits
@@ -75,7 +75,7 @@ namespace CASM {
   private:
 
     CanonicalGenerator<OrbitType> m_generate_canonical;
-    OrbitGeneratorCompare m_element_compare;
+    OrbitGeneratorCompare<OrbitType> m_element_compare;
 
   };
 

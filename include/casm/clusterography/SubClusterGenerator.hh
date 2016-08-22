@@ -12,7 +12,7 @@ namespace CASM {
   template<typename ClusterType>
   class SubClusterGenerator :
     public boost::iterator_facade <
-    SubClusterIterator,
+    SubClusterGenerator<ClusterType>,
     ClusterType,
     boost::forward_traversal_tag > {
 
@@ -23,14 +23,16 @@ namespace CASM {
 
     /// \brief Construt with the cluster to find subclusters of
     explicit SubClusterGenerator(const ClusterType &clust) :
-      m_cluster(std::make_unique<ClusterType>(clust)),
-      m_current(std::make_unique<ClusterType>(clust)),
+      m_cluster(notstd::make_unique<ClusterType>(clust)),
+      m_current(notstd::make_unique<ClusterType>(clust)),
       m_current_valid(false),
       m_site_counter(std::vector<int>(m_cluster->size(), 0),
                      std::vector<int>(m_cluster->size(), 1),
                      std::vector<int>(m_cluster->size(), 1)) {}
 
   private:
+
+    friend class boost::iterator_core_access;
 
     void increment() {
       ++m_site_counter;

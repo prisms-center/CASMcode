@@ -103,7 +103,7 @@ namespace CASM {
     ///   to check equivalence
     const_iterator find(const Element &e) const {
       return std::find_if(begin(), end(), [&](const Element & B) {
-        return m_sym_compare.intra_orbit_equal(e, B);
+        return m_sym_compare.equal(e, B);
       });
     }
 
