@@ -14,8 +14,8 @@
 
 namespace CASM {
   PrimGrid::PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB) {
-    m_lat[PRIM] = &p_lat;
-    m_lat[SCEL] = &s_lat;
+    m_lat[static_cast<int>(PRIM)] = &p_lat;
+    m_lat[static_cast<int>(SCEL)] = &s_lat;
 
     m_NB = NB;
 
@@ -86,8 +86,8 @@ namespace CASM {
                      const Eigen::Ref<const PrimGrid::matrix_type> &U,
                      const Eigen::Ref<const PrimGrid::matrix_type> &Smat,
                      Index NB) : m_U(U) {
-    m_lat[PRIM] = &p_lat;
-    m_lat[SCEL] = &s_lat;
+    m_lat[static_cast<int>(PRIM)] = &p_lat;
+    m_lat[static_cast<int>(SCEL)] = &s_lat;
 
     m_NB = NB;
 
@@ -143,7 +143,7 @@ namespace CASM {
   //**********************************************************************************************
   Index PrimGrid::find(const Coordinate &_coord) const {
 
-    auto frac((m_lat[PRIM]->inv_lat_column_mat()*_coord.cart()).array() + TOL);
+    auto frac((m_lat[static_cast<int>(PRIM)]->inv_lat_column_mat()*_coord.cart()).array() + TOL);
     UnitCell ijk(frac.unaryExpr(std::ptr_fun(floor)).matrix().cast<long>());
 
     return find(ijk);
@@ -159,7 +159,7 @@ namespace CASM {
   //**********************************************************************************************
 
   Index PrimGrid::find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord) const {
-    return find(Coordinate(_cart_coord, *m_lat[PRIM], CART));
+    return find(Coordinate(_cart_coord, *m_lat[static_cast<int>(PRIM)], CART));
   }
 
   //**********************************************************************************************
@@ -211,9 +211,9 @@ namespace CASM {
 
   Coordinate PrimGrid::coord(const UnitCell &ijk, CELL_TYPE lat_mode)const {
 
-    Coordinate tcoord(ijk.cast<double>(), *(m_lat[PRIM]), FRAC);
+    Coordinate tcoord(ijk.cast<double>(), *(m_lat[static_cast<int>(PRIM)]), FRAC);
 
-    tcoord.set_lattice(*(m_lat[lat_mode]), CART);
+    tcoord.set_lattice(*(m_lat[static_cast<int>(lat_mode)]), CART);
     return tcoord;
   }
 

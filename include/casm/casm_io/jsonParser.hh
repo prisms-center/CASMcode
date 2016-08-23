@@ -13,6 +13,9 @@
 
 namespace CASM {
 
+  namespace fs = boost::filesystem;
+  namespace po = boost::program_options;
+
   template<bool IsConst>
   class jsonParserIterator;
 

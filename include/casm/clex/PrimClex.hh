@@ -262,7 +262,8 @@ namespace CASM {
              jsonParser(dir().clust(key.bset)),
              prim(),
              prim().factor_group(),
-             sym_compare);
+             sym_compare,
+             settings().crystallography_tol());
   }
 
 

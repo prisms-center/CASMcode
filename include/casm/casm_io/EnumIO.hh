@@ -5,7 +5,6 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
-#include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_TMP.hh"
 #include "casm/casm_io/jsonParser.hh"
 

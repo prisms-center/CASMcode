@@ -723,7 +723,8 @@ namespace CASM {
         jsonParser(dir().clust(key.bset)),
         prim(),
         prim().factor_group(),
-        PrimPeriodicIntegralClusterSymCompare(settings().crystallography_tol())
+        PrimPeriodicIntegralClusterSymCompare(settings().crystallography_tol()),
+        settings().crystallography_tol()
       );
 
       jsonParser bspecs_json;

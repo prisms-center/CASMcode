@@ -6,20 +6,34 @@ namespace CASM {
     return 0 <= i;
   }
 
-  std::istream &operator>>(std::istream &sin, COORD_TYPE &coord) {
-    std::string s;
-    sin >> s;
-    if(s == "FRAC" || s == "0") {
-      coord = FRAC;
-    }
-    else if(s == "CART" || s == "1") {
-      coord = CART;
-    }
-    else if(s == "COORD_DEFAULT" || s == "2") {
-      coord = COORD_DEFAULT;
-    }
-    return sin;
+  namespace CASM_TMP {
+
+    const std::string traits<COORD_TYPE>::name = "coordinate_mode";
+
+    const std::multimap<COORD_TYPE, std::vector<std::string> > traits<COORD_TYPE>::strval = {
+      {COORD_TYPE::FRAC, {"Direct", "direct", "Fractional", "fractional", "FRAC"} },
+      {COORD_TYPE::CART, {"Cartesian", "cartesian", "CART"} },
+      {COORD_TYPE::INTEGRAL, {"Integral", "integral", "INTEGRAL"} },
+      {COORD_TYPE::COORD_DEFAULT, {"COORD_DEFAULT"} }
+    };
+
+    const std::string traits<PERIODICITY_TYPE>::name = "periodicity_type";
+
+    const std::multimap<PERIODICITY_TYPE, std::vector<std::string> > traits<PERIODICITY_TYPE>::strval = {
+      {PERIODICITY_TYPE::PERIODIC, {"PERIODIC"} },
+      {PERIODICITY_TYPE::LOCAL, {"LOCAL"} },
+      {PERIODICITY_TYPE::PERIODICITY_DEFAULT, {"PERIODICITY_DEFAULT"} }
+    };
+
+    const std::string traits<CELL_TYPE>::name = "cell_type";
+
+    const std::multimap<CELL_TYPE, std::vector<std::string> > traits<CELL_TYPE>::strval = {
+      {CELL_TYPE::PRIM, {"PRIM"} },
+      {CELL_TYPE::SCEL, {"SCEL"} }
+    };
+
   }
+
 
   void print_splash(std::ostream &out) {
 

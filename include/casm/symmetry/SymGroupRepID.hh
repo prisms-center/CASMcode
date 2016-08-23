@@ -2,6 +2,7 @@
 #define SYMGROUPREPID_HH
 
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/CASM_global_definitions.hh"
 #include <iostream>
 
 namespace CASM {

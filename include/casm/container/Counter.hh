@@ -2,6 +2,7 @@
 #define COUNTER_HH
 
 #include "casm/container/BaseCounter.hh"
+#include "casm/misc/CASM_math.hh"
 
 namespace CASM {
 
