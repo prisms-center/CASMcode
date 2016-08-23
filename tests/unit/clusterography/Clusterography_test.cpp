@@ -9,7 +9,6 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/AppIO.hh"
-#include "casm/clusterography/jsonClust.hh"
 #include "Common.hh"
 
 using namespace CASM;
@@ -93,11 +92,12 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
     // generate asym unit
     {
       std::vector<PrimPeriodicIntegralClusterOrbit> asym_unit;
-      make_asymmetric_unit(
+      make_prim_periodic_asymmetric_unit(
         prim,
-        prim.factor_group(),
-        PrimPeriodicIntegralClusterSymCompare(crystallography_tol),
-        std::back_inserter(asym_unit));
+        alloy_sites_filter,
+        crystallography_tol,
+        std::back_inserter(asym_unit),
+        std::cout);
 
       // run checks:
       check("asym_unit", j, expected_asym_unit(asym_unit.begin(), asym_unit.end()), test_cases_path, quiet);
@@ -106,14 +106,13 @@ BOOST_AUTO_TEST_CASE(ClusterographyTest) {
     // generate cluster orbits
     {
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-      make_orbits(prim,
-                  prim.factor_group(),
-                  j["bspecs"],
-                  crystallography_tol,
-                  alloy_sites_filter,
-                  PrimPeriodicIntegralClusterSymCompare(crystallography_tol),
-                  std::back_inserter(orbits),
-                  std::cout);
+      make_prim_periodic_orbits(
+        prim,
+        j["bspecs"],
+        alloy_sites_filter,
+        crystallography_tol,
+        std::back_inserter(orbits),
+        std::cout);
 
       // run checks:
       check("Nclusters", j, expected_Nclusters(orbits.begin(), orbits.end()), test_cases_path, quiet);

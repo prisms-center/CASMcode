@@ -128,7 +128,7 @@ namespace CASM {
 
     // there will be 7
     int scel_list_size = 7;
-    BOOST_CHECK_EQUAL(primclex.get_supercell_list().size(), scel_list_size);
+    BOOST_CHECK_EQUAL(primclex.supercell_list().size(), scel_list_size);
 
     // check if the canonical equivalent lattice of this volume 5 left handed
     // lattice is among the enumerated lattices
@@ -142,7 +142,7 @@ namespace CASM {
     // since we already enumerated supercells the supercell list size should
     // not increase
     Index scel_index = primclex.add_supercell(test_lat);
-    BOOST_CHECK_EQUAL(primclex.get_supercell_list().size(), scel_list_size);
+    BOOST_CHECK_EQUAL(primclex.supercell_list().size(), scel_list_size);
   }
 
   void standard_orientation_compare_test() {

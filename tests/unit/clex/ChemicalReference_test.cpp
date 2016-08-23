@@ -3,6 +3,7 @@
 
 /// What is being tested:
 #include "casm/clex/ChemicalReference.hh"
+#include "casm/casm_io/json_io/clex.hh"
 
 /// What is being used to test it:
 
