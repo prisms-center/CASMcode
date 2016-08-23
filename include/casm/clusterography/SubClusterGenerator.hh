@@ -45,6 +45,9 @@ namespace CASM {
                           m_site_counter.value_end(),
                           other.m_site_counter.value_begin());
       }
+      if(!valid() && !other.valid()) {
+        return true;
+      }
       return false;
     }
 
@@ -62,7 +65,7 @@ namespace CASM {
     }
 
     bool valid() const {
-      if(!m_cluster) {
+      if(!m_cluster || !m_site_counter.valid()) {
         return false;
       }
       return m_site_counter.valid();

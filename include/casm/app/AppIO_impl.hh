@@ -168,12 +168,13 @@ namespace CASM {
     const jsonParser &json,
     const Structure &prim,
     const SymGroup &generating_grp,
-    const SymCompareType &sym_compare) {
+    const SymCompareType &sym_compare,
+    double xtal_tol) {
 
     typedef Orbit<IntegralCluster, SymCompareType> orbit_type;
 
     for(const auto &j : json["orbits"]) {
-      *result++ = orbit_type(j["prototype"].get<IntegralCluster>(prim), generating_grp, sym_compare);
+      *result++ = orbit_type(j["prototype"].get<IntegralCluster>(prim, xtal_tol), generating_grp, sym_compare);
     }
     return result;
   }

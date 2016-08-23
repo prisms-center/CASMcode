@@ -32,44 +32,16 @@ namespace CASM {
   typedef CoordCluster<UnitCellCoord> IntegralCluster;
 
   /// \brief Write IntegralCluster to JSON object
-  ///
-  /// Format:
-  /// \code
-  /// {
-  ///   "min_length" : number,
-  ///   "max_length" : number,
-  ///   "sites" : [
-  ///     [b, i, j, k],
-  ///     ...
-  ///   ]
-  /// }
-  /// \endcode
-  inline jsonParser &to_json(const IntegralCluster &clust, jsonParser &json) {
-    json.put_obj();
-    json["min_length"] = clust.min_length();
-    json["max_length"] = clust.max_length();
-    json["sites"].put_array(clust.begin(), clust.end());
-    return json;
-  }
+  jsonParser &to_json(const IntegralCluster &clust, jsonParser &json);
 
   /// \brief Read from JSON
-  inline void from_json(IntegralCluster &clust, const jsonParser &json) {
-    UnitCellCoord coord(clust.prim());
-    for(auto it = json.begin(); it != json.end(); ++it) {
-      from_json(clust.elements(), json["sites"], coord);
-    }
-    return;
-  }
+  void from_json(IntegralCluster &clust, const jsonParser &json, double xtal_tol);
 
   template<>
   struct jsonConstructor<IntegralCluster> {
 
     /// \brief Construct from JSON
-    static IntegralCluster from_json(const jsonParser &json, const Structure &prim) {
-      IntegralCluster clust(prim);
-      CASM::from_json(clust, json);
-      return clust;
-    }
+    static IntegralCluster from_json(const jsonParser &json, const Structure &prim, double xtal_tol);
   };
 
 

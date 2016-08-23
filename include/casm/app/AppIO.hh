@@ -240,7 +240,8 @@ namespace CASM {
     const jsonParser &json,
     const Structure &prim,
     const SymGroup &generating_grp,
-    const SymCompareType &sym_compare);
+    const SymCompareType &sym_compare,
+    double xtal_tol);
 
   /// \brief Write Orbit<IntegralCluster, SymCompareType> to JSON, including 'bspecs'
   template<typename ClusterOrbitIterator, typename Printer>

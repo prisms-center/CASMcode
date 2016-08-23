@@ -576,7 +576,7 @@ namespace CASM {
 
         // read orbit generating cluster from bspecs
         cluster_type input_cluster(prim);
-        from_json(input_cluster, *it);
+        from_json(input_cluster, *it, xtal_tol);
 
         // check if subclusters should be included (yes by default)
         auto f_it = it->find("include_subclusters");
