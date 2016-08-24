@@ -185,7 +185,7 @@ namespace CASM {
                << ":  Expanding orbit " << std::distance(begin, orbit_generator_it)
                << " / " << std::distance(begin, end)
                << "  of branch " << orbit_generator_it->size()
-               << ".  New orbits: " << generators.elements.size() - orig_size << "\r" << std::flush;
+               << ".  New orbits: " << generators.elements.size() - orig_size << std::flush;
 
         // by looping over each site in the grid,
         for(auto site_it = candidate_sites.first; site_it != candidate_sites.second; ++site_it) {
@@ -250,9 +250,6 @@ namespace CASM {
 
       return generators;
     }
-
-
-
   }
 
 
@@ -334,41 +331,56 @@ namespace CASM {
     typedef typename OrbitOutputIterator::container_type container_type;
     typedef typename container_type::value_type orbit_type;
 
-    /// Construct an OrbitGenerators object to collect orbit generating elements
-    OrbitGenerators<orbit_type> generators(begin->generating_group(), begin->sym_compare());
+    // -- Collect orbit generating elements for each branch, to generate the next branch
+    std::vector<OrbitGenerators<orbit_type> > generators;
+    generators.reserve(std::distance(begin, end));
 
+    // -- Combines all orbit branches
+    OrbitGenerators<orbit_type> all_generators(begin->generating_group(), begin->sym_compare());
+
+    // branches should be ordered already, so insert with end as hint
+    auto insert_branch = [&](OrbitGenerators<orbit_type> &all, OrbitGenerators<orbit_type> &branch) {
+      for(auto it = branch.elements.begin(); it != branch.elements.end(); ++it) {
+        all.elements.insert(all.elements.end(), *it);
+      }
+    };
 
     // -- construct null cluster orbit
 
-    //std::cout << "begin orbits()" << std::endl;
     auto specs_it = begin;
-    auto prev_begin = generators.elements.begin();
-    auto prev_end = generators.elements.end();
-
     if(specs_it != end) {
-      _insert_null_cluster_generator(specs_it->prim(), generators);
 
-      prev_begin = prev_end;
-      prev_end = generators.elements.end();
+      generators.emplace_back(begin->generating_group(), begin->sym_compare());
+      _insert_null_cluster_generator(specs_it->prim(), generators.back());
+
       ++specs_it;
+      insert_branch(all_generators, generators.back());
     }
 
     // -- construct additional branches
     // print status messages
     std::string clean(100, ' ');
 
-    // generate orbit branches 1+:
+    // generate orbit branches 1+ using the previously generated branch:
+    auto prev_gen = generators.begin();
     while(specs_it != end) {
 
       // print status message
       status << clean << '\r' << "Calculating orbit branch "
              << std::distance(begin, specs_it) << "\r" << std::flush;
 
-      _insert_next_orbitbranch_generators(prev_begin, prev_end, *specs_it, generators, status);
 
-      prev_begin = prev_end;
-      prev_end = generators.elements.end();
+      generators.emplace_back(specs_it->generating_group(), specs_it->sym_compare());
+      _insert_next_orbitbranch_generators(
+        prev_gen->elements.begin(),
+        prev_gen->elements.end(),
+        *specs_it,
+        generators.back(),
+        status);
+
       ++specs_it;
+      ++prev_gen;
+      insert_branch(all_generators, generators.back());
     }
 
     // -- add custom orbit generators
@@ -378,11 +390,11 @@ namespace CASM {
              << i << "/"
              << custom_generators.size() << "\r" << std::flush;
 
-      generators.insert(custom_generators[i]);
+      all_generators.insert(custom_generators[i]);
     }
 
     // make orbits
-    return generators.make_orbits(result);
+    return all_generators.make_orbits(result);
   }
 
   /* -- Generate prim periodic orbits --------------------------------------- */
@@ -580,7 +592,8 @@ namespace CASM {
 
         // check if subclusters should be included (yes by default)
         auto f_it = it->find("include_subclusters");
-        if(f_it != it->end() && f_it->get<bool>()) {
+        if(f_it == it->end() ||
+           (f_it != it->end() && f_it->get<bool>())) {
           _insert_subcluster_generators(input_cluster, generators, status);
         }
         else {

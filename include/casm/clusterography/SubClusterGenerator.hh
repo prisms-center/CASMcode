@@ -8,6 +8,7 @@ namespace CASM {
   /// \brief Generates subclusters of a cluster with an iterator-like interface
   ///
   /// - Includes the null cluster and the original cluster
+  /// - Does not check symmetry
   ///
   template<typename ClusterType>
   class SubClusterGenerator :

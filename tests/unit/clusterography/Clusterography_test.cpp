@@ -44,7 +44,7 @@ jsonParser expected_Nclusters(OrbitIterator begin, OrbitIterator end) {
   jsonParser nclust = jsonParser::array();
   // check Nclusters for each orbit
   for(auto it = begin; it != end; ++it) {
-    nclust.push_back(it->size());
+    nclust.push_back((int)it->size());
   }
   return nclust;
 }

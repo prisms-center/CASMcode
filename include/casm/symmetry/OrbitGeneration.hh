@@ -47,7 +47,8 @@ namespace CASM {
       sym_compare(_sym_compare),
       m_element_compare(sym_compare),
       m_generate_canonical(group, sym_compare),
-      elements(m_element_compare) {}
+      elements(m_element_compare) {
+    }
 
     /// \brief Try inserting an element
     std::pair<typename OrbitGeneratorSet<OrbitType>::iterator, bool> insert(const Element &test) {
@@ -58,10 +59,10 @@ namespace CASM {
     template<typename OrbitOutputIterator>
     OrbitOutputIterator make_orbits(OrbitOutputIterator result) {
 
-      // generate sorted orbits
-      std::set<OrbitType> orbits;
+      // orbit generating elements should already by sorted
+      std::vector<OrbitType> orbits;
       for(const auto &e : elements) {
-        orbits.insert(OrbitType(e, group, sym_compare));
+        orbits.emplace_back(e, group, sym_compare);
       }
 
       // output Orbits
@@ -70,12 +71,15 @@ namespace CASM {
 
     const SymGroup &group;
     const SymCompareType &sym_compare;
-    OrbitGeneratorSet<OrbitType> elements;
 
   private:
 
-    CanonicalGenerator<OrbitType> m_generate_canonical;
     OrbitGeneratorCompare<OrbitType> m_element_compare;
+    CanonicalGenerator<OrbitType> m_generate_canonical;
+
+  public:
+
+    OrbitGeneratorSet<OrbitType> elements;
 
   };
 
@@ -98,7 +102,7 @@ namespace CASM {
       sym_compare(_sym_compare) {}
 
     bool operator()(const Element &A, const Element &B) const {
-      return sym_compare.compare(A, B);
+      return sym_compare.inter_orbit_compare(A, B);
     };
   };
 
