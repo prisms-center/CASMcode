@@ -6,7 +6,14 @@ Import('env')
 # get source files
 ccasm_lib_src = ['api.cc']
 
+#include path
+candidates = [
+  env['INCDIR'],
+  env.include_path(env['BOOST_PREFIX'], 'boost')
+]
+cpppath = [x for x in candidates if x is not None]
+
 ccasm_lib_sobj = env.SharedObject(ccasm_lib_src,
-                                  CPPPATH=env['INCDIR'])
+                                  CPPPATH=cpppath)
 env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + ccasm_lib_sobj
 env['CCASM_SOBJ'] = env['CCASM_SOBJ'] + ccasm_lib_sobj
