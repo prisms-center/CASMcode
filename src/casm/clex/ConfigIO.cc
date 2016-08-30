@@ -160,10 +160,11 @@ namespace CASM {
       "If one argument, accepts either: "
       "1) a cluster expansion name, for example 'corr(formation_energy)', and "
       "evaluates all basis functions, or "
-      "2) a range of indices of basis functions to evaluate, for example "
-      "'corr(ind1:ind2)'. "
-      "If two arguments, accepts cluster expansion name and a range of basis "
-      "functions to evaluate, for example 'corr(formation_energy,ind1:ind2)'.";
+      "2) an integer index or range of indices of basis functions to evaluate, "
+      "for example 'corr(6)', or 'corr(0:6)'. "
+      "If two arguments, accepts cluster expansion name and an integer index or "
+      "range of basis functions to evaluate, for example 'corr(formation_energy,6)' "
+      "or 'corr(formation_energy,0:6)'.";
 
     /// \brief Returns the atom fraction
     Eigen::VectorXd Corr::evaluate(const Configuration &config) const {
@@ -193,7 +194,8 @@ namespace CASM {
         return true;
       }
       else if(splt_vec.size() == 1) {
-        if(splt_vec[0].find(':') != std::string::npos) {
+        if((splt_vec[0].find_first_not_of("0123456789") == std::string::npos) ||
+           (splt_vec[0].find(':') != std::string::npos)) {
           _parse_index_expression(splt_vec[0]);
         }
         else {
