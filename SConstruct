@@ -493,6 +493,19 @@ if not env['IS_INSTALL']:
 ##### Configuration checks
 if 'configure' in COMMAND_LINE_TARGETS:
   
+  def CheckCXX11(conf):
+    conf.Message('Checking for c++11... ') 
+    
+    ret = conf.TryRun("""
+    int main() {
+      int a = 1;
+      auto b = a;
+      return 0;
+    }
+    """, '.cpp')[0]
+    conf.Result(ret)
+    return ret
+  
   def CheckBoost_prefix(conf, boost_prefix):
     conf.Message('BOOST_PREFIX: ' + str(boost_prefix) + '\n')
     conf.Message('Checking for boost headers... ') 
@@ -598,6 +611,7 @@ if 'configure' in COMMAND_LINE_TARGETS:
     env.Clone(LIBPATH=install_lib_paths,
               CPPPATH=cpppath),
     custom_tests = {
+      'CheckCXX11' : CheckCXX11,
       'CheckBoost_prefix' : CheckBoost_prefix,
       'CheckBoost_libname' : CheckBoost_libname,
       'CheckBoost_version' : CheckBoost_version,
@@ -610,6 +624,8 @@ if 'configure' in COMMAND_LINE_TARGETS:
   
   # Note: CheckLib with autoadd=1 (default), because some libraries depend on each other
   
+  if not conf.CheckCXX11():
+    if_failed("C++11 is required. Please check your compiler.")
   for x in ['z', 'dl']:
     if not conf.CheckLib(env[x]):
       if_failed("Please check your installation")
