@@ -63,8 +63,8 @@ namespace CASM {
       return N;
     }
 
-    bool _rank(const Eigen::MatrixXd &N,
-               double lin_alg_tol) {
+    int _rank(const Eigen::MatrixXd &N,
+              double lin_alg_tol) {
       auto Qr = N.transpose().fullPivHouseholderQr();
       Qr.setThreshold(lin_alg_tol);
       return Qr.rank();
