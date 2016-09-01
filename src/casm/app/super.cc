@@ -128,12 +128,12 @@ namespace CASM {
             return ERR_INVALID_ARG;
           }
           if(configname.size() > 1 || scelname.size() > 1 || tmatfile.size() > 1) {
-            std::cerr << "ERROR: more than one --configname, --scelname, or --transf-mat argument "
+            std::cerr << "ERROR: more than one --confignames, --scelnames, or --transf-mat argument "
                       "is only allowed for option --duper" << std::endl;
             return ERR_INVALID_ARG;
           }
           if(config_path.size() > 0) {
-            std::cerr << "ERROR: the --config option is only allowed with option --duper" << std::endl;
+            std::cerr << "ERROR: the --configs option is only allowed with option --duper" << std::endl;
             return ERR_INVALID_ARG;
           }
         }
@@ -159,7 +159,7 @@ namespace CASM {
                   "  casm super --structure POSCAR --transf-mat T                        \n" <<
                   "  - Print superstructure of a POSCAR                                  \n" <<
                   "                                                                      \n" <<
-                  "  casm super --configname configname --transf-mat T                   \n" <<
+                  "  casm super --confignames configname --transf-mat T                   \n" <<
                   "  - Print superstructure of a configuration                           \n" <<
                   "                                                                      \n" <<
                   "  casm super --structure POSCAR --unitcell scelname --get-transf-mat  \n" <<
@@ -167,15 +167,15 @@ namespace CASM {
                   "    if so print the transformation matrix                             \n" <<
                   "  - Uses primitive cell for unitcell if none given                    \n" <<
                   "                                                                      \n" <<
-                  "  casm super --scelname scelname --unitcell scelname --get-transf-mat\n" <<
+                  "  casm super --scelnames scelname --unitcell scelname --get-transf-mat\n" <<
                   "  - Check if configuration lattice is a supercell of unit cell lattice.\n" <<
                   "    and print the transformation matrix                               \n" <<
                   "  - Uses primitive cell for unitcell if none given                    \n\n" <<
 
-                  "  casm super --duper --scelname scel1 [scel2 ...] --configname con1 [con2 ...]\n"
-                  "    --config [mylist ...] --transf-mat M1 [M2 ...]                    \n" <<
+                  "  casm super --duper --scelnames scel1 [scel2 ...] --confignames con1 [con2 ...]\n"
+                  "    --configs [mylist ...] --transf-mat M1 [M2 ...]                    \n" <<
                   "  - Makes the superdupercell of the lattices of all inputs            \n" <<
-                  "  - Using '--config' with no arguments is equivalent to '--config MASTER',\n" <<
+                  "  - Using '--configs' with no arguments is equivalent to '--configs MASTER',\n" <<
                   "    which uses the master config list                                 \n" <<
                   "  - Default applies prim point group ops to try to find minimum volume\n" <<
                   "    superdupercell, disable with '--fixed-orientation'                \n\n";
@@ -292,31 +292,31 @@ namespace CASM {
         }
       }
 
-      // collect supercells from --scelname
-      if(vm.count("scelname")) {
+      // collect supercells from --scelnames
+      if(vm.count("scelnames")) {
         for(auto it = scelname.begin(); it != scelname.end(); ++it) {
           lat[*it] = primclex.get_supercell(*it).get_real_super_lattice();
         }
       }
 
-      // collect configs from --configname
-      if(vm.count("configname")) {
+      // collect configs from --confignames
+      if(vm.count("confignames")) {
         for(auto it = configname.begin(); it != configname.end(); ++it) {
           config_lat[*it] = lat[*it] = primclex.configuration(*it).get_supercell().get_real_super_lattice();
         }
       }
 
-      // collect configs from lists via --config
-      if(vm.count("config")) {
+      // collect configs from lists via --configs
+      if(vm.count("configs")) {
 
-        // MASTER config list if '--config' only
+        // MASTER config list if '--configs' only
         if(config_path.size() == 0) {
           ConstConfigSelection selection(primclex);
           for(auto it = selection.selected_config_begin(); it != selection.selected_config_end(); ++it) {
             config_lat[it.name()] = lat[it.name()] = it->get_supercell().get_real_super_lattice();
           }
         }
-        // all input config list if '--config X Y ...'
+        // all input config list if '--configs X Y ...'
         else {
           for(auto c_it = config_path.begin(); c_it != config_path.end(); ++c_it) {
             if(c_it->string() == "MASTER") {
@@ -486,7 +486,7 @@ namespace CASM {
 
 
       // super lattice
-      if(vm.count("scelname")) {
+      if(vm.count("scelnames")) {
 
         Supercell &scel = primclex.get_supercell(scelname[0]);
 
@@ -510,7 +510,7 @@ namespace CASM {
 
       }
       // super structure
-      else if(vm.count("configname")) {
+      else if(vm.count("confignames")) {
 
         std::stringstream ss;
         const Configuration &con = primclex.configuration(configname[0]);
@@ -643,11 +643,11 @@ namespace CASM {
       if(vm.count("structure")) {
         super_lat = BasicStructure<Site>(abs_structfile).lattice();
       }
-      else if(vm.count("scelname")) {
+      else if(vm.count("scelnames")) {
         super_lat = primclex.get_supercell(scelname[0]).get_real_super_lattice();
       }
       else {
-        std::cout << "Error in 'casm super --get-transf-mat'. No --structure or --scelname given." << std::endl << std::endl;
+        std::cout << "Error in 'casm super --get-transf-mat'. No --structure or --scelnames given." << std::endl << std::endl;
         return 1;
       }
 
