@@ -243,9 +243,12 @@ def compile_flags():
 
 ##### Set version_number
 
-version_number = version('0.2.0')
-url = 'https://github.com/prisms-center/CASMcode'
-Export('version_number', 'url')
+if debug_level == '0':
+  ccflags = ccflags + ['-DNDEBUG']
+  cxxflags = cxxflags + ['-DNDEBUG']
+elif debug_level == '1':
+  ccflags = ccflags + ['-g', '-save-temps']
+  cxxflags = cxxflags + ['-g', '-save-temps']  
 
 
 ##### Environment setup
