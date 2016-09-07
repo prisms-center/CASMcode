@@ -117,7 +117,7 @@ def direct_fit(input, save=True, verbose=True, read_existing=True, hall=None):
   fdata = make_fitting_data(input, save=True, verbose=verbose, read_existing=True)
   
   kwargs = input["feature_selection"]["kwargs"]
-
+  
   population = make_population(fdata.n_features, kwargs["population"])
   
   for indiv_i, indiv in enumerate(population):
