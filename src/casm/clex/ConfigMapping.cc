@@ -9,14 +9,14 @@
 namespace CASM {
   namespace ConfigMapping {
     double strain_cost(const Lattice &relaxed_lat, const ConfigDoF &_dof, const Index Nsites) {
-      return LatticeMap::calc_strain_cost(_dof.deformation(), relaxed_lat.vol() / double(Nsites));
+      return LatticeMap::calc_strain_cost(_dof.deformation(), relaxed_lat.vol() / double(max(Nsites, Index(1))));
     }
 
     //*******************************************************************************************
 
     double basis_cost(const ConfigDoF &_dof, Index Nsites) {
       // mean square displacement distance in deformed coordinate system
-      return (_dof.deformation() * _dof.displacement() * _dof.displacement().transpose() * _dof.deformation().transpose()).trace() / double(Nsites);
+      return (_dof.deformation() * _dof.displacement() * _dof.displacement().transpose() * _dof.deformation().transpose()).trace() / double(max(Nsites, Index(1)));
     }
 
     //*******************************************************************************************
@@ -97,9 +97,9 @@ namespace CASM {
     m_pclex(&_pclex),
     m_lattice_weight(_lattice_weight),
     m_max_volume_change(_max_volume_change),
-    m_robust_flag(options &robust),
-    m_strict_flag(options &strict),
-    m_rotate_flag(options &rotate),
+    m_robust_flag(options & robust),
+    m_strict_flag(options & strict),
+    m_rotate_flag(options & rotate),
     m_tol(max(1e-9, _tol)) {
     //squeeze lattice_weight into (0,1] if necessary
     m_lattice_weight = max(min(_lattice_weight, 1.0), 1e-9);
@@ -545,7 +545,7 @@ namespace CASM {
                                                        ttrans_mat,
                                                        _lattices_of_vol(i_vol),
                                                        m_tol);
-      strain_cost = lw * LatticeMap::calc_strain_cost(tF, struc.lattice().vol() / num_atoms);
+      strain_cost = lw * LatticeMap::calc_strain_cost(tF, struc.lattice().vol() / max(num_atoms, 1.));
 
       if(best_cost < strain_cost)
         continue;
@@ -640,7 +640,7 @@ namespace CASM {
     //Initialize with simplest mapping onto supercell 'i', so that we don't change the crystal setting unnecessarily
     tF = struc.lattice().lat_column_mat() * imposed_lat.inv_lat_column_mat();
 
-    strain_cost = lw * LatticeMap::calc_strain_cost(tF, struc.lattice().vol() / num_atoms);
+    strain_cost = lw * LatticeMap::calc_strain_cost(tF, struc.lattice().vol() / max(num_atoms, 1.));
 
     // If simplest mapping seems viable, check it further
     if(strain_cost < best_cost) {
@@ -684,6 +684,7 @@ namespace CASM {
       strain_cost = lw * strainmap.next_mapping_better_than(best_cost).strain_cost();
 
     while(strain_cost < best_cost) {  // only enter loop if there's a chance of improving on current best
+
       tstruc = struc;
       // We modify the deformed structure so that its lattice is a deformed version of the nearest ideal lattice
       // Don't need matrixN if we use set_lattice(CART), because matrixF depends on matrixN implicitly
@@ -706,9 +707,10 @@ namespace CASM {
         //no longer unexpected
         //throw std::runtime_error("Unexpected error in deformed_struc_to_config_dof(). This should never happen!\n");
       }
+      basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis.size());
       //std::cout << "New strain_cost = " << strain_cost << ";   and basis_cost = " << basis_cost << "  TOTAL: " << strain_cost + basis_cost << "\n";
       //std::cout << "  Compare -> best_cost = " << best_cost << "\n";
-      basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis.size());
+
       tot_cost = strain_cost + basis_cost;
       //std::cout << "      complex map: best_cost " << best_cost << "    strain_cost " << strain_cost << "    tot_cost " << tot_cost << "\n";
       if(tot_cost < best_cost) {
@@ -977,8 +979,10 @@ namespace CASM {
       // trans_coord is a vector from IDEAL to RELAXED
       // Subtract this from every rstruc coordinate
       Index num_translations(1);
-      //if(translate_flag == true)
-      num_translations += scel.get_prim().basis.size();
+
+      if(rstruc.basis.size())
+        num_translations += scel.get_prim().basis.size();
+
       //num_translations = rstruc.basis.size();
       //std::cout << "num_translations is " << num_translations << "\n";
       for(Index n = 0; n < num_translations; n++) {
@@ -991,34 +995,46 @@ namespace CASM {
         if(n > 0 && !scel.get_prim().basis[n - 1].contains(rstruc.basis[0].occ_name()))
           continue;
 
-        Coordinate ref_coord(rstruc.basis[0]);
+        Coordinate ref_coord(rstruc.lattice());
 
-        if(n > 0)
+        if(n == 0 && rstruc.basis.size()) {
+          ref_coord = rstruc.basis[0];
+        }
+        else if(n > 0) {
           ref_coord.frac() = scel.coord((n - 1) * scel.volume()).frac();
-
-        // find translation rstruc+ttrans such that rstruc.basis[0] is coincident with ref_coord
-        trans_dist = ref_coord.min_dist(rstruc.basis[0], ttrans);
-
-        // within_trans is an attempt to find the smallest equivalent translation to ttrans -- really should use voronoi_within, if it worked
-        within_trans = ttrans;
-        within_trans.set_lattice(scel.get_prim().lattice(), CART);
-        //std::cout << "Before:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n";
-        within_trans.within();// <-- should be voronoi_within()?
-        //std::cout << "After:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n\n\n";
-        within_trans_dist = within_trans.const_cart().norm();
-        if(within_trans_dist < trans_dist) {
-          within_trans.set_lattice(rstruc.lattice(), CART);
-          ttrans = within_trans;
-          trans_dist = within_trans_dist;
         }
 
+
+        if(rstruc.basis.size() == 0) { // allow pure Va edge case
+          trans_dist = 0.;
+          ttrans.frac() = Eigen::Vector3d::Zero();
+        }
+        else { // default case
+          // find translation rstruc+ttrans such that rstruc.basis[0] is coincident with ref_coord
+          trans_dist = ref_coord.min_dist(rstruc.basis[0], ttrans);
+
+          // within_trans is an attempt to find the smallest equivalent translation to ttrans -- maybe should use voronoi_within
+          within_trans = ttrans;
+          within_trans.set_lattice(scel.get_prim().lattice(), CART);
+          //std::cout << "Before:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n";
+          within_trans.within();// <-- should be voronoi_within()?
+          //std::cout << "After:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n\n\n";
+          within_trans_dist = within_trans.const_cart().norm();
+          if(within_trans_dist < trans_dist) {
+            within_trans.set_lattice(rstruc.lattice(), CART);
+            ttrans = within_trans;
+            trans_dist = within_trans_dist;
+          }
+        }
+
+
         if(!ConfigMap_impl::calc_cost_matrix(scel, rstruc, ttrans, metric, cost_matrix)) {
+
           //std::cerr << "In Supercell::struc_to_config. Cannot construct cost matrix." << std::endl;
           //std::cerr << "This message is probably OK, if you are using translate_flag == true." << std::endl;
           //continue;
           return false;
         }
-
         //std::cout << "cost_matrix is\n" << cost_matrix <<  "\n\n";
 
         // The mapping routine is called here
@@ -1029,9 +1045,10 @@ namespace CASM {
         if(optimal_assignments.size() < rstruc.basis.size())
           return false;
 
-        //std::cout << "mean is " << mean << " and stddev is " << stddev << "\n";
+
         // add small penalty (~_tol) for larger translation distances, so that shortest equivalent translation is used
         mean += _tol * trans_dist / 10.0;
+
         if(mean < min_mean) {
           //std::cout << "mean " << mean << " is better than min_mean " << min_mean <<"\n";
 
@@ -1184,22 +1201,34 @@ namespace CASM {
         if(n > 0 && config.get_mol(n - 1).name != rstruc.basis[0].occ_name())
           continue;
 
-        Coordinate ref_coord(rstruc.basis[0]);
+        Coordinate ref_coord(rstruc.lattice());
 
-        if(n > 0)
-          ref_coord.frac() = scel.coord(n - 1).frac();
+        if(n == 0 && rstruc.basis.size()) {
+          ref_coord = rstruc.basis[0];
+        }
+        else if(n > 0) {
+          ref_coord.frac() = scel.coord((n - 1) * scel.volume()).frac();
+        }
 
-        trans_dist = ref_coord.min_dist(rstruc.basis[0], ttrans);
-        within_trans = ttrans;
-        within_trans.set_lattice(scel.get_prim().lattice(), CART);
-        //std::cout << "Before:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n";
-        within_trans.within();// <-- should be voronoi_within()?
-        //std::cout << "After:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n\n\n";
-        within_trans_dist = within_trans.const_cart().norm();
-        if(within_trans_dist < trans_dist) {
-          within_trans.set_lattice(rstruc.lattice(), CART);
-          ttrans = within_trans;
-          trans_dist = within_trans_dist;
+
+        if(rstruc.basis.size() == 0) { // allow pure Va edge case
+          trans_dist = 0.;
+          ttrans.frac() = Eigen::Vector3d::Zero();
+        }
+        else { // default case
+
+          trans_dist = ref_coord.min_dist(rstruc.basis[0], ttrans);
+          within_trans = ttrans;
+          within_trans.set_lattice(scel.get_prim().lattice(), CART);
+          //std::cout << "Before:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n";
+          within_trans.within();// <-- should be voronoi_within()?
+          //std::cout << "After:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n\n\n";
+          within_trans_dist = within_trans.const_cart().norm();
+          if(within_trans_dist < trans_dist) {
+            within_trans.set_lattice(rstruc.lattice(), CART);
+            ttrans = within_trans;
+            trans_dist = within_trans_dist;
+          }
         }
 
         if(!ConfigMap_impl::calc_cost_matrix(config, rstruc, ttrans, metric, cost_matrix)) {
