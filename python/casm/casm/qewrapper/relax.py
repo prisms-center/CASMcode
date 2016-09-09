@@ -45,6 +45,11 @@ class Relax(object):
 
         print "Working on directory "+str(configdir)
 
+        # get the configname from the configdir path
+        _res = os.path.split(configdir)
+        self.configname = os.path.split(_res[0])[1] + "/" + _res[1]
+        print "  Configuration:", self.configname
+
         print "Reading CASM settings"
         self.casm_settings = casm.project.ProjectSettings()
         if self.casm_settings == None:
@@ -65,7 +70,7 @@ class Relax(object):
             sys.stdout.flush()
 
         # store path to .../config/calctype.name, and create if not existing
-        self.calcdir = self.casm_directories.calctype_dir(configdir,self.casm_settings.default_clex)
+        self.calcdir = self.casm_directories.calctype_dir(self.configname,self.casm_settings.default_clex)
         try:
             os.mkdir(self.calcdir)
         except:
@@ -75,7 +80,7 @@ class Relax(object):
         # read the settings json file
         print "  Reading relax.json settings file"
         sys.stdout.flush()
-        setfile = self.casm_directories.settings_path_crawl("relax.json",self.casm_settings.default_clex,self.configdir)
+        setfile = self.casm_directories.settings_path_crawl("relax.json",self.configname,self.casm_settings.default_clex)
 
         if setfile == None:
             raise qewrapper.QEWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")

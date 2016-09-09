@@ -18,6 +18,8 @@ if configdir == None:
 	configdir = os.getcwd()
 
 configdir=os.path.abspath(configdir)
+_res = os.path.split(configdir)
+configname = os.path.split(_res[0])[1] + "/" + _res[1]
 
 casm_settings=casm.project.ProjectSettings()
 if casm_settings == None:
@@ -25,11 +27,11 @@ if casm_settings == None:
 
 casm_directories=casm.project.DirectoryStructure()
 
-calcdir=casm_directories.calctype_dir(configdir,casm_settings.default_clex)
+calcdir=casm_directories.calctype_dir(configname,casm_settings.default_clex)
 
 print "  Reading relax.json settings file"
 sys.stdout.flush()
-setfile = casm_directories.settings_path_crawl("relax.json",casm_settings.default_clex,configdir)
+setfile = casm_directories.settings_path_crawl("relax.json",configname,casm_settings.default_clex)
 
 if setfile == None:
     raise casm.qewrapper.QEWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
