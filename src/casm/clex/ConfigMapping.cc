@@ -392,14 +392,14 @@ namespace CASM {
     }
 
     // If structure's lattice is not a supercell of the primitive lattice, then import as deformed_structure
-    if(!valid_mapping) // if not a supercell or m_robust_flag=true, treat as deformed
+    if(!valid_mapping) { // if not a supercell or m_robust_flag=true, treat as deformed
       valid_mapping = deformed_struc_to_configdof(struc,
                                                   mapped_configdof,
                                                   mapped_lat,
                                                   best_assignment,
                                                   cart_op,
                                                   best_cost);
-
+    }
     return valid_mapping;
   }
 
@@ -528,16 +528,16 @@ namespace CASM {
     min_vol = max(min_vol, 1);
     max_vol = max(max_vol, 1);
 
-    //std::cout << "max_va_fraction: " << max_va_fraction << "   Volume range: " << min_vol << " to " << max_vol << "\n";
+
     Eigen::Matrix3d ttrans_mat, tF, rotF;
-    //Eigen::Matrix3d best_trans;
+
     double strain_cost(1e10), basis_cost(1e10), tot_cost;//, best_strain_cost, best_basis_cost;
     ConfigDoF tdof;
     BasicStructure<Site> tstruc(struc);
     Lattice tlat;
-    //std::cout << "First pass: ";
+
+    // First pass:  Find a reasonable upper bound
     for(Index i_vol = min_vol; i_vol <= max_vol; i_vol++) {
-      //std::cout << "v=" << i_vol << "   ";
       tlat = ConfigMapping::find_nearest_super_lattice(primclex().get_prim().lattice(),
                                                        struc.lattice(),
                                                        primclex().get_prim().point_group(),
@@ -547,9 +547,10 @@ namespace CASM {
                                                        m_tol);
       strain_cost = lw * LatticeMap::calc_strain_cost(tF, struc.lattice().vol() / max(num_atoms, 1.));
 
-      if(best_cost < strain_cost)
+      if(best_cost < strain_cost) {
         continue;
-      //std::cout << "best_cost " << best_cost << "   strain_cost " << strain_cost << "\n";
+      }
+
       tstruc = struc;
 
       //make tstruc an un-rotated, un-strained version of struc
@@ -561,7 +562,6 @@ namespace CASM {
       }
 
       Supercell scel(&primclex(), tlat);
-
       if(!ConfigMap_impl::preconditioned_struc_to_configdof(scel,
                                                             tstruc,
                                                             rotF,
@@ -572,24 +572,21 @@ namespace CASM {
         continue;
       basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis.size());
       tot_cost = strain_cost + basis_cost;
-      //std::cout << "\n**Starting strain_cost = " << strain_cost << ";   and basis_cost = " << basis_cost << "  TOTAL: " << strain_cost + basis_cost << "\n";
+
       if(tot_cost < best_cost) {
         best_cost = tot_cost - m_tol;
         swap(best_assignment, assignment);
-        //best_strain_cost = strain_cost;
-        //best_basis_cost = basis_cost;
+
         cart_op = rotF * tF.inverse();
 
-        //best_trans = tlat.inv_lat_column_mat() * rotF.inverse() * struc.lattice().lat_column_mat();
-        //std::cout << "tF is:\n" << tF << "\n and N is:\n" << best_trans << "\n";
         swap(mapped_configdof, tdof);
 
         mapped_lat = tlat;
       }
     }
-    //std::cout << "\n\n";
 
-    //std::cout << "Second pass:\n";
+
+    //Second pass: Find the absolute best mapping
     for(Index i_vol = min_vol; i_vol <= max_vol; i_vol++) {
       //std::cout << "  vol = " << i_vol << "\n";
       const std::vector<Lattice> &lat_vec = _lattices_of_vol(i_vol);
@@ -613,8 +610,8 @@ namespace CASM {
       return false;
     }
 
-    //std::cout << "FINAL COST IS: " << best_cost << "\n";//FINAL TRANS MAT IS:\n" << best_trans << "\n\n";
-    return mapped_configdof.size() >= struc.basis.size();
+    // If mapped_configdof is empty, it means that nothing better than best_cost was found
+    return mapped_configdof.size() > 0;
   }
 
   //*******************************************************************************************
@@ -659,9 +656,11 @@ namespace CASM {
                                                             true,
                                                             m_tol))
         return false;
+
       basis_cost = bw * ConfigMapping::basis_cost(tdof, struc.basis.size());
       //std::cout << "\n**Starting strain_cost = " << strain_cost << ";   and basis_cost = " << basis_cost << "  TOTAL: " << strain_cost + basis_cost << "\n";
       tot_cost = strain_cost + basis_cost;
+
       //std::cout << "    scel.name = " << scel.get_name()  << "  simple map: strain_cost " << strain_cost << "   best_cost " << best_cost << "    tot_cost " << tot_cost << "\n";
       if(tot_cost < best_cost) {
         best_cost = tot_cost - m_tol;
@@ -713,6 +712,7 @@ namespace CASM {
 
       tot_cost = strain_cost + basis_cost;
       //std::cout << "      complex map: best_cost " << best_cost << "    strain_cost " << strain_cost << "    tot_cost " << tot_cost << "\n";
+
       if(tot_cost < best_cost) {
         //std::cout << "Old best_trans, with cost " << best_cost << ":\n" << best_trans << "\n";
         best_cost = tot_cost - m_tol;
@@ -970,20 +970,19 @@ namespace CASM {
       Eigen::MatrixXd cost_matrix;
       std::vector<Index> optimal_assignments;
       //BasicStructure<Site> best_ideal_struc(rstruc);
-      Coordinate ttrans(rstruc.lattice()), best_trans(rstruc.lattice());
-      Coordinate within_trans(ttrans);
+      Coordinate best_trans(rstruc.lattice());
       double min_mean = 10E10;
-      double trans_dist, within_trans_dist;
 
       // We want to get rid of translations.
-      // trans_coord is a vector from IDEAL to RELAXED
-      // Subtract this from every rstruc coordinate
+      // define translation such that:
+      //    IDEAL = RELAXED + translation
+      // and use it when calculating cost matrix
+
       Index num_translations(1);
 
       if(rstruc.basis.size())
         num_translations += scel.get_prim().basis.size();
 
-      //num_translations = rstruc.basis.size();
       //std::cout << "num_translations is " << num_translations << "\n";
       for(Index n = 0; n < num_translations; n++) {
         double mean;
@@ -995,59 +994,32 @@ namespace CASM {
         if(n > 0 && !scel.get_prim().basis[n - 1].contains(rstruc.basis[0].occ_name()))
           continue;
 
-        Coordinate ref_coord(rstruc.lattice());
+        Coordinate translation(scel.get_prim().lattice());
 
-        if(n == 0 && rstruc.basis.size()) {
-          ref_coord = rstruc.basis[0];
-        }
-        else if(n > 0) {
-          ref_coord.frac() = scel.coord((n - 1) * scel.volume()).frac();
-        }
-
-
-        if(rstruc.basis.size() == 0) { // allow pure Va edge case
-          trans_dist = 0.;
-          ttrans.frac() = Eigen::Vector3d::Zero();
-        }
-        else { // default case
-          // find translation rstruc+ttrans such that rstruc.basis[0] is coincident with ref_coord
-          trans_dist = ref_coord.min_dist(rstruc.basis[0], ttrans);
-
-          // within_trans is an attempt to find the smallest equivalent translation to ttrans -- maybe should use voronoi_within
-          within_trans = ttrans;
-          within_trans.set_lattice(scel.get_prim().lattice(), CART);
-          //std::cout << "Before:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n";
-          within_trans.within();// <-- should be voronoi_within()?
-          //std::cout << "After:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n\n\n";
-          within_trans_dist = within_trans.const_cart().norm();
-          if(within_trans_dist < trans_dist) {
-            within_trans.set_lattice(rstruc.lattice(), CART);
-            ttrans = within_trans;
-            trans_dist = within_trans_dist;
-          }
+        // Always try the non-translated case (n==0), in case it gives best result
+        // Also try translating first basis atom onto each chemically compatible site of PRIM (n>0)
+        if(n > 0) {
+          translation.cart() = scel.coord((n - 1) * scel.volume()).const_cart() - rstruc.basis[0].const_cart();
+          translation.voronoi_within();
         }
 
-
-        if(!ConfigMap_impl::calc_cost_matrix(scel, rstruc, ttrans, metric, cost_matrix)) {
-
-          //std::cerr << "In Supercell::struc_to_config. Cannot construct cost matrix." << std::endl;
-          //std::cerr << "This message is probably OK, if you are using translate_flag == true." << std::endl;
-          //continue;
+        if(!ConfigMap_impl::calc_cost_matrix(scel, rstruc, translation, metric, cost_matrix)) {
+          /// Indicates that structure is incompatible with supercell, so return false
           return false;
         }
-        //std::cout << "cost_matrix is\n" << cost_matrix <<  "\n\n";
 
         // The mapping routine is called here
         mean = hungarian_method(cost_matrix, optimal_assignments, _tol);
 
-        // if optimal_assignments is smaller than rstruc.basis.size(), then rstruc is incompattible
-        // with the supercell (optimal_assignments.size()==0 if the hungarian routine detects an incompatibility)
-        if(optimal_assignments.size() < rstruc.basis.size())
+        // if optimal_assignments is smaller than rstruc.basis.size(), then rstruc is incompattible with supercell
+        // (optimal_assignments.size()==0 if the hungarian routine detects an incompatibility)
+        if(optimal_assignments.size() < rstruc.basis.size()) {
           return false;
+        }
 
 
         // add small penalty (~_tol) for larger translation distances, so that shortest equivalent translation is used
-        mean += _tol * trans_dist / 10.0;
+        mean += _tol * translation.const_cart().norm() / 10.0;
 
         if(mean < min_mean) {
           //std::cout << "mean " << mean << " is better than min_mean " << min_mean <<"\n";
@@ -1056,7 +1028,7 @@ namespace CASM {
           swap(best_assignments, optimal_assignments);
 
           // best shifted structure
-          best_trans = ttrans;
+          best_trans.cart() = translation.cart();
 
           // update the minimum mean costs
           min_mean = mean;
@@ -1102,7 +1074,7 @@ namespace CASM {
         }
       }
 
-      avg_disp /= double(rstruc.basis.size());
+      avg_disp /= max(double(rstruc.basis.size()), 1.);
 
 
       // End of filling displacements
@@ -1133,7 +1105,7 @@ namespace CASM {
           rel_basis_atom = "Va";
         }
 
-
+        // set occupant and check for errors
         if(!scel.get_prim().basis[scel.get_b(i)].contains(rel_basis_atom, config_dof.occ(i))) {
           //std::cout << "best_assignments is " << best_assignments << "\n";
           //std::cout << "at site " << i << " corresponding to basis " << scel.get_b(i) << "  attempting to assign type " << rel_basis_atom << "\n";
@@ -1141,6 +1113,7 @@ namespace CASM {
           //std::cerr << "CRITICAL ERROR: In Supercell::struc_to_configdof atoms of relaxed/custom structure are incompatible\n"
           //        << "                with the number or type of atomic species allowed in PRIM. Exiting...\n";
           //exit(1);
+
           return false;
         }
       }
@@ -1177,80 +1150,55 @@ namespace CASM {
       Eigen::MatrixXd cost_matrix;
       std::vector<Index> optimal_assignments;
       //BasicStructure<Site> best_ideal_struc(rstruc);
-      Coordinate ttrans(rstruc.lattice()), best_trans(rstruc.lattice());
-      Coordinate within_trans(ttrans);
+      Coordinate best_trans(rstruc.lattice());
 
       double min_mean = 10E10;
-      double trans_dist, within_trans_dist;
 
       // We want to get rid of translations.
-      // trans_coord is a vector from IDEAL to RELAXED
-      // Subtract this from every rstruc coordinate
+      // define translation such that:
+      //    IDEAL = RELAXED + translation
+      // and use it when calculating cost matrix
+
       Index num_translations(1);
-      //if(translate_flag == true)
-      num_translations += config.size();
+
+      num_translations += rstruc.basis.size();
+
       //num_translations = rstruc.basis.size();
       //std::cout << "num_translations is " << num_translations << "\n";
       for(Index n = 0; n < num_translations; n++) {
         double mean;
 
-        //shift_struc has **ideal lattice**
-        //BasicStructure<Site> shift_struc(rstruc);
-
-
-        if(n > 0 && config.get_mol(n - 1).name != rstruc.basis[0].occ_name())
+        if(n > 0 && config.get_mol(0).name != rstruc.basis[n - 1].occ_name())
           continue;
 
-        Coordinate ref_coord(rstruc.lattice());
+        Coordinate translation(scel.get_real_super_lattice());
 
-        if(n == 0 && rstruc.basis.size()) {
-          ref_coord = rstruc.basis[0];
-        }
-        else if(n > 0) {
-          ref_coord.frac() = scel.coord((n - 1) * scel.volume()).frac();
-        }
-
-
-        if(rstruc.basis.size() == 0) { // allow pure Va edge case
-          trans_dist = 0.;
-          ttrans.frac() = Eigen::Vector3d::Zero();
-        }
-        else { // default case
-
-          trans_dist = ref_coord.min_dist(rstruc.basis[0], ttrans);
-          within_trans = ttrans;
-          within_trans.set_lattice(scel.get_prim().lattice(), CART);
-          //std::cout << "Before:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n";
-          within_trans.within();// <-- should be voronoi_within()?
-          //std::cout << "After:  within_trans " << within_trans.frac() << "; V_number: " << within_trans.voronoi_number() << "\n\n\n";
-          within_trans_dist = within_trans.const_cart().norm();
-          if(within_trans_dist < trans_dist) {
-            within_trans.set_lattice(rstruc.lattice(), CART);
-            ttrans = within_trans;
-            trans_dist = within_trans_dist;
-          }
+        // Always try the non-translated case (n==0), in case it gives best result
+        // Also try translating first basis atom onto each chemically compatible site of PRIM (n>0)
+        if(n > 0) {
+          translation.cart() = scel.coord(0).const_cart() - rstruc.basis[n - 1].const_cart();
+          translation.voronoi_within();
         }
 
-        if(!ConfigMap_impl::calc_cost_matrix(config, rstruc, ttrans, metric, cost_matrix)) {
+        if(!ConfigMap_impl::calc_cost_matrix(config, rstruc, translation, metric, cost_matrix)) {
           //std::cerr << "In Supercell::struc_to_config. Cannot construct cost matrix." << std::endl;
           //std::cerr << "This message is probably OK, if you are using translate_flag == true." << std::endl;
           //continue;
           return false;
         }
 
-        //std::cout << "cost_matrix is\n" << cost_matrix <<  "\n\n";
-
         // The mapping routine is called here
         mean = hungarian_method(cost_matrix, optimal_assignments, _tol);
 
         // if optimal_assignments is smaller than rstruc.basis.size(), then rstruc is incompattible
         // with the supercell (optimal_assignments.size()==0 if the hungarian routine detects an incompatibility)
-        if(optimal_assignments.size() < rstruc.basis.size())
+        if(optimal_assignments.size() < rstruc.basis.size()) {
           return false;
+        }
 
         //std::cout << "mean is " << mean << " and stddev is " << stddev << "\n";
         // add small penalty (~_tol) for larger translation distances, so that shortest equivalent translation is used
-        mean += _tol * trans_dist / 10.0;
+        mean += _tol * translation.const_cart().norm() / 10.0;
         if(mean < min_mean) {
           //std::cout << "mean " << mean << " is better than min_mean " << min_mean <<"\n";
 
@@ -1258,7 +1206,7 @@ namespace CASM {
           swap(best_assignments, optimal_assignments);
 
           // best shifted structure
-          best_trans = ttrans;
+          best_trans = translation;
 
           // update the minimum mean costs
           min_mean = mean;
@@ -1304,7 +1252,7 @@ namespace CASM {
         }
       }
 
-      avg_disp /= double(rstruc.basis.size());
+      avg_disp /= max(double(rstruc.basis.size()), 1.);
 
 
       // End of filling displacements
