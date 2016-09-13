@@ -72,7 +72,7 @@ def read_settings(filename):
                 "kpar", "ncpus","vasp_cmd","run_limit","nrg_convergence",
                 "encut", "kpoints","extra_input_files", "move", "copy", "remove", 
                 "compress", "backup", "initial", "final", "strict_kpoints", "err_types",
-                "prerun", "postrun"]
+                "prerun", "postrun","calculator"]
     for key in required:
         if not key in settings:
             raise VaspWrapperError( key + "' missing from: '" + filename + "'")

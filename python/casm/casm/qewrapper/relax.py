@@ -133,7 +133,7 @@ class Relax(object):
         """
         # Find required input files in CASM project directory tree
         infilename=self.settings["infilename"]
-        qefiles=casm.qewrapper.qe_input_file_names(self.casm_directories,self.casm_settings.default_clex,infilename,self.configdir)
+        qefiles=casm.qewrapper.qe_input_file_names(self.casm_directories,self.configname,self.casm_settings.default_clex,infilename)
         infilename,super_poscarfile,speciesfile=qefiles
 
 
@@ -342,10 +342,10 @@ class Relax(object):
         elif status == "incomplete":
 
             if task == "setup":
-                self.setup(infilename)
+                self.setup()
 
             self.report_status("started")
-            (status, task) = relaxation.run(infilename,outfilename)
+            (status, task) = relaxation.run()
 
         else:
             self.report_status("failed","unknown")
@@ -431,7 +431,7 @@ class Relax(object):
             # write properties.calc.json
             qedir = os.path.join(self.calcdir, "run.final")
             super_poscarfile = os.path.join(self.configdir,"POS")
-            speciesfile = self.casm_directories.settings_path_crawl("SPECIES",self.casm_settings.default_clex,self.configdir)
+            speciesfile = self.casm_directories.settings_path_crawl("SPECIES",self.configname,self.casm_settings.default_clex)
             output = self.properties(qedir, outfilename)
             outputfile = os.path.join(self.calcdir, "properties.calc.json")
             with open(outputfile, 'w') as file:
