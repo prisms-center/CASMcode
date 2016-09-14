@@ -140,15 +140,15 @@ class Relax(object):
         # Find optional input files
         extra_input_files = []
         for s in self.settings["extra_input_files"]:
-            extra_input_files.append(self.casm_directories.settings_path_crawl(s,self.casm_settings.default_clex,self.configdir))
+            extra_input_files.append(self.casm_directories.settings_path_crawl(s,,self.configname,self.casm_settings.default_clex))
             if extra_input_files[-1] is None:
                 raise quantumespresso.QuantumEspressoError("Relax.setup failed. Extra input file " + s + " not found in CASM project.")
         if self.settings["initial"]:
-            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["initial"],self.casm_settings.default_clex,self.configdir) ]
+            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["initial"],self.configname,self.casm_settings.default_clex) ]
             if extra_input_files[-1] is None:
                 raise quantumespresso.QuantumEspressoError("Relax.setup failed. No initial  Infile " + self.settings["initial"] + " found in CASM project.")
         if self.settings["final"]:
-            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["final"],self.casm_settings.default_clex,self.configdir) ]
+            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["final"],self.configname,self.casm_settings.default_clex) ]
             if extra_input_files[-1] is None:
                 raise quantumespresso.QuantumEspressoError("Relax.setup failed. No final Infile " + self.settings["final"] + " found in CASM project.")
 
