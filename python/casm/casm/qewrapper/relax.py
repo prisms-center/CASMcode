@@ -140,7 +140,7 @@ class Relax(object):
         # Find optional input files
         extra_input_files = []
         for s in self.settings["extra_input_files"]:
-            extra_input_files.append(self.casm_directories.settings_path_crawl(s,,self.configname,self.casm_settings.default_clex))
+            extra_input_files.append(self.casm_directories.settings_path_crawl(s,self.configname,self.casm_settings.default_clex))
             if extra_input_files[-1] is None:
                 raise quantumespresso.QuantumEspressoError("Relax.setup failed. Extra input file " + s + " not found in CASM project.")
         if self.settings["initial"]:
