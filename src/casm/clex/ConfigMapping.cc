@@ -91,12 +91,14 @@ namespace CASM {
 
   ConfigMapper::ConfigMapper(PrimClex &_pclex,
                              double _lattice_weight,
-                             double _max_volume_change/*=0.25*/,
+                             double _max_volume_change/*=0.5*/,
                              int options/*=robust*/,
                              double _tol/*=TOL*/) :
     m_pclex(&_pclex),
     m_lattice_weight(_lattice_weight),
     m_max_volume_change(_max_volume_change),
+    m_min_va_frac(0.),
+    m_max_va_frac(1.),
     m_robust_flag(options & robust),
     m_strict_flag(options & strict),
     m_rotate_flag(options & rotate),
@@ -508,14 +510,18 @@ namespace CASM {
       // the convex hull of the end-members, but we need to wait for improvements to convex hull
       // routines
 
-      // min_vol assumes no vacancies -- best case scenario
-      min_vol = ceil((num_atoms / double(primclex().get_prim().basis.size())) - m_tol);
-      //For practical purposes, set maximum Va fraction to 0.75
-      double max_va_fraction = min(0.75, double(primclex().get_prim().max_possible_vacancies()) / double(primclex().get_prim().basis.size()));
-      // This is for the worst case scenario -- lots of vacancies
-      max_vol = ceil(num_atoms / (double(primclex().get_prim().basis.size()) * (1.0 - max_va_fraction)) - m_tol);
+      int max_n_va = primclex().get_prim().max_possible_vacancies();
+      double max_va_frac_limit = double(max_n_va) / double(primclex().get_prim().basis.size());
+      double t_min_va_frac = min(min_va_frac(), max_va_frac_limit);
+      double t_max_va_frac = min(max_va_frac(), max_va_frac_limit);
 
-      if(max_va_fraction > TOL) {
+      // min_vol assumes min number vacancies -- best case scenario
+      min_vol = ceil((num_atoms / (double(primclex().get_prim().basis.size())) * 1. - t_min_va_frac) - m_tol);
+
+      // This is for the worst case scenario -- lots of vacancies
+      max_vol = ceil(num_atoms / (double(primclex().get_prim().basis.size()) * (1.0 - t_max_va_frac)) - m_tol);
+
+      if(t_max_va_frac > TOL) {
         //Nvol is rounded integer volume-- assume that answer is within 30% of this volume, and use it to tighten our bounds
         int Nvol = round(std::abs(struc.lattice().vol() / primclex().get_prim().lattice().vol()));
         int new_min_vol = min(max_vol, max(round((1.0 - m_max_volume_change) * double(Nvol)), min_vol));

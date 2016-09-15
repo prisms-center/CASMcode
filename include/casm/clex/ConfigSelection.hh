@@ -78,7 +78,7 @@ namespace CASM {
     bool m_selected_only;
   };
 
-  template <bool IsConst = false>
+  template <bool IsConst>
   class ConfigSelection {
   public:
     typedef CASM_TMP::ConstSwitch<IsConst, PrimClex> PrimClexType;

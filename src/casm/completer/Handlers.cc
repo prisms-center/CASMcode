@@ -221,23 +221,23 @@ namespace CASM {
       return selected_mode;
     }
 
-    void OptionHandlerBase::add_configlist_suboption() {
+    void OptionHandlerBase::add_configlist_suboption(const fs::path &_default) {
       m_desc.add_options()
       ("config,c",
-       po::value<fs::path>(&m_selection_path)->default_value("MASTER")->value_name(ArgHandler::path()),
-       "Only consider the selected configurations of the given selection file. "
-       "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
-       "If not specified, or 'MASTER' is given, the master list of your project will be used.");
+       po::value<fs::path>(&m_selection_path)->default_value(_default)->value_name(ArgHandler::path()),
+       (std::string("Only consider the selected configurations of the given selection file. "
+                    "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
+                    "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
       return;
     }
 
-    void OptionHandlerBase::add_configlists_suboption() {
+    void OptionHandlerBase::add_configlists_suboption(const fs::path &_default) {
       m_desc.add_options()
       ("configs,c",
-       po::value<std::vector<fs::path> >(&m_selection_paths)->default_value(std::vector<fs::path> {"MASTER"})->value_name(ArgHandler::path()),
-       "Only consider the selected configurations of the given selection files. "
-       "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
-       "If not specified, or 'MASTER' is given, the master list of your project will be used.");
+       po::value<std::vector<fs::path> >(&m_selection_paths)->default_value(std::vector<fs::path> {_default})->value_name(ArgHandler::path()),
+       (std::string("Only consider the selected configurations of the given selection file2. "
+                    "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
+                    "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
       return;
     }
 
