@@ -143,8 +143,10 @@ class Relax(object):
                     err_index += 1
 
 
-    def setup(self, initdir, infilename, settings):
+    def setup(self, initdir, settings):
         """ mv all files and directories (besides initdir) into initdir """
+
+        infilename=settings["infilename"]
 
         print "Moving files into initial run directory:", initdir
         initdir = os.path.abspath(initdir)
@@ -164,11 +166,12 @@ class Relax(object):
             print "  Set Infile tags:", new_values, "\n"
             sys.stdout.flush()
 
-    def complete(self,outfilename):
+    def complete(self):
         """Check if the Quantum Espresso relaxation is complete.
 
            Completion criteria: .../config/qe/relax/run.final/outfilename exists and is complete
         """
+        outfilename= self.settings["outfilename"]
         myoutfile = os.path.join(self.finaldir,outfilename)
         if not os.path.isfile(myoutfile):
             return False
@@ -177,7 +180,7 @@ class Relax(object):
         return True
 
 
-    def converged(self,outfilename):
+    def converged(self):
         """Check if configuration is relaxed.
 
            This is called when self.rundir[-1] is complete and not a constant volume job.
@@ -187,6 +190,7 @@ class Relax(object):
                                     or 2) the last two jobs had final E0 differ by less than
                                           self.settings["nrg_convergence"]
         """
+        outfilename=self.settings["outfilename"]
         if len(self.rundir) >= 2:
             if qeio.ionic_steps(outfilename,self.rundir[-1]) <= 3:
                 return True
@@ -212,7 +216,7 @@ class Relax(object):
         return False
 
 
-    def run(self,infilename,outfilename):
+    def run(self):
         """ Perform a series of quantum espresso jobs to relax a structure. Performs a series of quantum espresso calculations until
             convergence is reached according to the criteria in 'status()'. Then performs a final constant volume run
         """
@@ -221,22 +225,25 @@ class Relax(object):
         sys.stdout.flush()
 
         # get current status of the relaxation:
-        (status, task) = self.status(infilename,outfilename)
+        (status, task) = self.status()
         print "\n++  status:", status, "  next task:", task
         sys.stdout.flush()
+
+        infilename=self.settings["infilename"]
+        outfilename=self.settings["outfilename"]
 
         while status == "incomplete":
             if task == "setup":
                 self.add_rundir()
-                self.setup(self.rundir[-1], infilename,self.settings)
+                self.setup(self.rundir[-1], self.settings)
 
             elif task == "relax":
                 self.add_rundir()
-                quantumespresso.continue_job(self.rundir[-2], self.rundir[-1],infilename,outfilename, self.settings)
+                quantumespresso.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
 
             elif task == "constant":
                 self.add_rundir()
-                quantumespresso.continue_job(self.rundir[-2], self.rundir[-1],infilename, outfilename,self.settings)
+                quantumespresso.continue_job(self.rundir[-2], self.rundir[-1],self.settings)
 
                 # set Infile to calculation = relax
                 if (self.settings["final"] != None) and (os.path.isfile(os.path.join(self.relaxdir,self.settings["final"]))):
@@ -257,7 +264,7 @@ class Relax(object):
             else:
                 # probably hit walltime
                 self.add_rundir()
-                quantumespresso.continue_job(self.rundir[-2], self.rundir[-1],infilename, outfilename, self.settings)
+                quantumespresso.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
 
             while True:
                 # run quantum espresso
@@ -293,7 +300,7 @@ class Relax(object):
                             print f, " restored!"
                     sys.stdout.flush()
 
-            (status, task) = self.status(infilename,outfilename)
+            (status, task) = self.status()
             print "\n++  status:", status, "  next task:", task
             sys.stdout.flush()
 
@@ -309,7 +316,7 @@ class Relax(object):
         return (status, task)
 
 
-    def status(self,infilename,outfilename):
+    def status(self):
         """ Determine the status of a quantum espresso relaxation series of runs. Individual runs in the series
             are in directories labeled "run.0", "run.1", etc.
 
@@ -322,7 +329,8 @@ class Relax(object):
             quantum espresso job directory that is not yet completed, "relax" indicates another
             volume relaxation job is required, and "constant" that a constant volume run is required.
         """
-
+        infilename=self.settings["infilename"]
+        outfilename=self.settings["outfilename"]
         # check if all complete
         if qeio.job_complete(outfilename,self.finaldir):
             return ("complete",None)
@@ -349,7 +357,7 @@ class Relax(object):
                     return ("incomplete", "constant")
 
             # elif convergence criteria met
-            if self.converged(outfilename):
+            if self.converged():
                 return ("incomplete", "constant")
 
             # elif not converging, return 'not_converging' error

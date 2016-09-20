@@ -192,7 +192,7 @@ class Relax(object):
         outfilename=self.settings["outfilename"]
 
         # check the current status
-        (status, task) = relaxation.status(infilename,outfilename)
+        (status, task) = relaxation.status()
 
         if status == "complete":
             print "Status:", status, "  Not submitting."
@@ -211,7 +211,7 @@ class Relax(object):
 
             # ensure results report written
             if not os.path.isfile(os.path.join(self.calcdir, "properties.calc.json")):
-                self.finalize(outfilename)
+                self.finalize()
 
             return
 
@@ -313,7 +313,7 @@ class Relax(object):
         relaxation = quantumespresso.Relax(self.calcdir, self.run_settings())
 
         # check the current status
-        (status, task) = relaxation.status(infilename,outfilename)
+        (status, task) = relaxation.status()
 
 
         if status == "complete":
@@ -329,7 +329,7 @@ class Relax(object):
                     sys.stdout.flush()
 
             # write results to properties.calc.json
-            self.finalize(outfilename)
+            self.finalize()
             return
 
         elif status == "not_converging":
@@ -394,7 +394,7 @@ class Relax(object):
                     sys.stdout.flush()
 
             # write results to properties.calc.json
-            self.finalize(outfilename)
+            self.finalize()
 
         else:
             self.report_status("failed","unknown")
@@ -426,8 +426,9 @@ class Relax(object):
         print "Wrote " + outputfile
         sys.stdout.flush()
 
-    def finalize(self,outfilename):
-        if self.is_converged(outfilename):
+    def finalize(self):
+        outfilename=self.settings["outfilename"]
+        if self.is_converged():
             # write properties.calc.json
             qedir = os.path.join(self.calcdir, "run.final")
             super_poscarfile = os.path.join(self.configdir,"POS")
@@ -440,9 +441,9 @@ class Relax(object):
             sys.stdout.flush()
             self.report_status('complete')
 
-    def is_converged(self,outfilename):
+    def is_converged(self):
       # Check for electronic convergence in completed calculations. Returns True or False.
-      
+      outfilename=self.settings["outfilename"]
       # Verify that the last relaxation reached electronic convergence
       relaxation = quantumespresso.Relax(self.calcdir, self.run_settings())
       for i in range(len(relaxation.rundir)):

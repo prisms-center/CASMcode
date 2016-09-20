@@ -17,7 +17,7 @@ class QuantumEspressoWarning(Warning):
     def __str__(self):
         return self.msg
 
-def continue_job(jobdir, contdir, infilename, outfilename,settings):
+def continue_job(jobdir, contdir, settings):
 # def continue_job(jobdir,\
 #                  contdir,\
 #                  move = io.DEFAULT_VASP_MOVE_LIST,\
@@ -43,6 +43,8 @@ def continue_job(jobdir, contdir, infilename, outfilename,settings):
     print "Continue Quantum Espresso job:\n  Original: " + jobdir + "\n  Continuation: " + contdir
     sys.stdout.flush()
 
+    infilename=settings["infilename"]
+    outfilename=settings["outfilename"]
     # remove duplicates
     move = list(set(settings['move']+settings['extra_input_files']))
     copy = list(set(settings['copy']+[infilename]))
@@ -50,7 +52,7 @@ def continue_job(jobdir, contdir, infilename, outfilename,settings):
     compress = list(set(settings['compress']))
     backup = list(set(settings['backup']))
 
-    # Check that necessary files are being moved/copied: INCAR, POTCAR, KPOINTS
+    # Check that necessary files are being moved/copied 
     if not infilename in (move + copy):
         warnings.warn("Warning: Infile not found in either 'move' or 'copy'. Copying " + infilename + " by default", QuantumEspressoWarning)
         copy += [infilename]
@@ -64,7 +66,7 @@ def continue_job(jobdir, contdir, infilename, outfilename,settings):
             warnings.warn("Warning: %s found in both 'move' and 'copy'. The file will be copied only." % f, QuantumEspressoWarning)
             move = list(set(move) - set([f]))
         if f in compress:
-            raise VaspError("Error in casm.vasp.general.continue_job(). %s found in both 'move' and 'compress', but these options contradict. Did you mean 'backup'?" % f)
+            raise QuantumEspressoError("Error in casm.quantumespresso.continue_job(). %s found in both 'move' and 'compress', but these options contradict. Did you mean 'backup'?" % f)
     for f in copy:
         if re.match(".*.wfc.*",f) or re.match(".*.igk.*",f):
             warnings.warn("Warning: %s can be rather huge. It is suggested to include %s in 'move', rather than 'copy'. If you're worried about corruption due to interrupted runs, add %s to 'backup' as well." % (f, f, f), QuantumEspressoWarning)
@@ -264,10 +266,10 @@ class FreezeError(object):
         return False
 
 
-    def fix(self, err_jobdir, new_jobdir, infilename, settings):
+    def fix(self, err_jobdir, new_jobdir, settings):
         """ Fix by killing the job and resubmitting.
         """
-        continue_job(err_jobdir, new_jobdir, infilename ,settings)
+        continue_job(err_jobdir, new_jobdir, settings)
         print "  Kill job and try to continue"
 
 
@@ -287,9 +289,11 @@ class NbandsError(object):
             return True
         return False
 
-    def fix(self, err_jobdir, new_jobdir, infilename, outfilename,settings):
+    def fix(self, err_jobdir, new_jobdir, settings):
         """ Try to fix the error by increasing the number of bands"""
-        continue_job(err_jobdir, new_jobdir, infilename, settings)
+        infilename=settings["infilename"]
+        outfilename=settings["outfilename"]
+        continue_job(err_jobdir, new_jobdir, settings)
         with open(os.path.join(err_jobdir,outfilename)) as f:
             err_outcar = f.read().splitlines()
         nbands_line = []
@@ -348,7 +352,7 @@ def run(infilename, outfilename, jobdir = None, stdout = "std.out", stderr = "st
             jobdir:     directory to run quantumespresso.  If jobdir == None, the current directory is used.
             stdout:     filename to write to.  If stdout == None, "std.out" is used.
             stderr:     filename to write to.  If stderr == None, "std.err" is used.
-            command:    (str or None) vasp execution command
+            command:    (str or None) qe execution command
                         If command != None: then 'command' is run in a subprocess
                         Else, if ncpus == 1, then command = "pw.x < infilename > outfilename"
                         Else, command = "mpirun -np {NCPUS} pw.x < infilename > outfilename"
