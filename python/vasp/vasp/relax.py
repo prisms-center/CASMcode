@@ -85,6 +85,20 @@ class Relax(object):
             self.settings["nrg_convergence"] = None
         if not "compress" in self.settings:
             self.settings["compress"] = []
+        if not "move" in self.settings:
+            self.settings["move"] = []
+        if not "copy" in self.settings:
+            self.settings["copy"] = []
+        if not "backup" in self.settings:
+            self.settings["backup"] = []
+        if not "remove" in self.settings:
+            self.settings["remove"] = []
+        if not "extra_input_files" in self.settings:
+            self.settings["extra_input_files"] = []
+        if not "initial" in self.settings:
+            self.settings["initial"] = None
+        if not "final" in self.settings:
+            self.settings["final"] = None
         if not "err_types" in self.settings:
             self.settings["err_types"] = ['SubSpaceMatrixError']
 
