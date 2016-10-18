@@ -1,0 +1,51 @@
+&CONTROL
+ calculation = 'vc-relax',
+ pseudo_dir = '../',
+ tprnfor = .true.,
+ prefix = 'ZrO',
+ restart_mode = 'from_scratch',
+ tstress = .true.,
+/
+&SYSTEM
+ ecutwfc = 25.0,
+ occupations = 'fixed',
+ ibrav = 0,
+ nat = 4,
+ ntyp = 2,
+ ecutrho = 100.0,
+/
+&ELECTRONS
+ diagonalization = 'cg',
+ mixing_mode = 'plain',
+ mixing_beta = 0.7,
+ conv_thr = 1e-08,
+ electron_maxstep= 200,
+/
+&IONS
+ ion_dynamics = 'bfgs',
+/
+&CELL
+ press = 0.1,
+ cell_factor = 1.6,
+ cell_dynamics = 'bfgs',
+/
+
+ATOMIC_SPECIES
+ Zr 91.22 Zr.UPF
+ O 16.00 O.UPF
+ 
+CELL_PARAMETERS angstrom
+ 3.233986860000 0.000000000000 0.000000000000
+ -1.61699343000 2.800714770000 0.000000000000
+ 0.000000000000 0.000000000000 5.168678340000
+
+ATOMIC_POSITIONS crystal
+Zr 0.000000 0.000000 0.000000
+Zr 0.666666 0.333333 0.500000
+O 0.333333 0.666666 0.250000
+O 0.333333 0.666666 0.750000
+
+K_POINTS automatic
+ 4 4 4 0 0 0
+
+
