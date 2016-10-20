@@ -14,12 +14,12 @@ class TestRun(unittest.TestCase):
     """
     Read test case data
     """
-    self.cases = fixtures.read_test_cases(".")["run"]
+    self.cases = fixtures.read_vasp_test_cases(".")["run"]
     print ""
   
   def test_run_single(self):
     """
-    Test case["calculator"].Relax.run()
+    Test vasp.Relax.run()
     """
     curr=os.getcwd()
     cases = self.cases["run_single"]
@@ -37,74 +37,43 @@ class TestRun(unittest.TestCase):
       db=pbs.JobDB()
 
       #initialize Relax object and begin relaxation
-      if case["calculator"]=="quantumespresso":
-        cmd ="python -c \"import quantumespresso; relaxation=quantumespresso.Relax('" + relaxdir +"');relaxation.settings['"+ "infilename" +"']='"+ case["infilename"] + "';relaxation.settings['"+ "outfilename" +"']='"+ case["outfilename"] +"';relaxation.run();\"\n"
+      cmd = "python -c \"import vasp; relaxation=vasp.Relax('" + relaxdir +"');relaxation.run();\"\n"
 
-        job = pbs.Job(name="casm_unit_test",\
-                      account=None,\
-                      nodes=1,\
-                      ppn=2,\
-                      walltime="1:00:00",\
-                      pmem=None,\
-                      qos=None,\
-                      queue="batch",\
-                      message=None,\
-                      email=None,\
-                      priority=0,\
-                      command=cmd,\
-                      auto=True)
-        os.chdir(relaxdir)
-        job.submit()
-        os.chdir(curr)
+      job = pbs.Job(name="casm_unit_test",\
+                    account=None,\
+                    nodes=1,\
+                    ppn=2,\
+                    walltime="1:00:00",\
+                    pmem=None,\
+                    qos=None,\
+                    queue="batch",\
+                    message=None,\
+                    email=None,\
+                    priority=0,\
+                    command=cmd,\
+                    auto=True)
+      os.chdir(relaxdir)
+      job.submit()
+      os.chdir(curr)
+      db.update();
+      id = db.select_regex_id("rundir",relaxdir)
+      j=db.select_job(id[-1])
+      while j["jobstatus"]=="Q":
+        time.sleep(10)
         db.update();
-        id = db.select_regex_id("rundir",relaxdir)
         j=db.select_job(id[-1])
-        while (j["jobstatus"]=="Q" or j["jobstatus"]=="R"):
-          time.sleep(10)
-          db.update();
-          j=db.select_job(id[-1])
-        self.assertTrue(exists(join(relaxdir,"run.final/"+case["outfilename"])))
-        if relaxdir==join(filesdir,"relaxdir"):
-          shutil.rmtree(relaxdir)
-        print "done!"
-      else:
-        cmd = "python -c \"import vasp; relaxation=vasp.Relax('" + relaxdir +"');relaxation.run();\"\n"
-
-        job = pbs.Job(name="casm_unit_test",\
-                      account=None,\
-                      nodes=1,\
-                      ppn=2,\
-                      walltime="1:00:00",\
-                      pmem=None,\
-                      qos=None,\
-                      queue="batch",\
-                      message=None,\
-                      email=None,\
-                      priority=0,\
-                      command=cmd,\
-                      auto=True)
-        os.chdir(relaxdir)
-        job.submit()
-        os.chdir(curr)
+      while j["jobstatus"]=="R":
+        time.sleep(10)
         db.update();
-        id = db.select_regex_id("rundir",relaxdir)
         j=db.select_job(id[-1])
-        while j["jobstatus"]=="Q":
-          time.sleep(10)
-          db.update();
-          j=db.select_job(id[-1])
-        while j["jobstatus"]=="R":
-          time.sleep(10)
-          db.update();
-          j=db.select_job(id[-1])
-        self.assertTrue(exists(join(relaxdir,"run.final/OUTCAR")))
-        if relaxdir==join(filesdir,"relaxdir"):
-          shutil.rmtree(relaxdir)
-        print "done!"
+      self.assertTrue(exists(join(relaxdir,"run.final/OUTCAR")))
+      if relaxdir==join(filesdir,"relaxdir"):
+        shutil.rmtree(relaxdir)
+      print "done!"
 
   def test_setup_many(self):
     """
-    Test setup of casm.(calc)wrapper
+    Test casm.vaspwrapper.setup() using casm-calc --setup
     """
     cases = self.cases["setup_many"]
     from casm.project import Project,Selection
@@ -135,28 +104,18 @@ class TestRun(unittest.TestCase):
       psel=subprocess.Popen(shlex.split("casm select --set-on"))
       psel.wait()
       settings_dir = join(casmproj,"training_data/settings/calctype.default")
-      if case["calculator"]=="quantumespresso":
-        for line in fileinput.input(case["infilename"],inplace=1):
-          if "$!%&" in line:
-            line = line.replace("$!%&",os.getcwd())
-          sys.stdout.write(line)
-        shutil.copyfile(case["infilename"],join(settings_dir,case["infilename"]))
-        for line in fileinput.input("QSPECIES",inplace=1):
-          if "$!%&" in line:
-            line = line.replace("$!%&",os.getcwd())
-          sys.stdout.write(line)
-        shutil.copyfile("QSPECIES",join(settings_dir,"SPECIES"))
-        shutil.copyfile("qrelax.json",join(settings_dir,"relax.json"))
-      if case["calculator"]=="vasp":
-        shutil.copyfile("INCAR",join(settings_dir,"INCAR"))
-        shutil.copyfile("KPOINTS",join(settings_dir,"KPOINTS"))
-        shutil.copyfile("POSCAR",join(settings_dir,"POSCAR"))
-        for line in fileinput.input("VSPECIES",inplace=1):
-          if "$!%&" in line:
-            line = line.replace("$!%&",os.getcwd())
-          sys.stdout.write(line)
-        shutil.copyfile("VSPECIES",join(settings_dir,"SPECIES"))
-        shutil.copyfile("vrelax.json",join(settings_dir,"relax.json"))
+
+      #move files to settings directory
+      shutil.copyfile("INCAR",join(settings_dir,"INCAR"))
+      shutil.copyfile("KPOINTS",join(settings_dir,"KPOINTS"))
+      shutil.copyfile("POSCAR",join(settings_dir,"POSCAR"))
+      for line in fileinput.input("VSPECIES",inplace=1):
+        if "$!%&" in line:
+          line = line.replace("$!%&",os.getcwd())
+        sys.stdout.write(line)
+      shutil.copyfile("VSPECIES",join(settings_dir,"SPECIES"))
+      shutil.copyfile("vrelax.json",join(settings_dir,"relax.json"))
+
       psetup=subprocess.Popen(shlex.split("casm-calc --setup"))
       psetup.wait()
       train_data=join(casmproj,"training_data")
@@ -168,13 +127,10 @@ class TestRun(unittest.TestCase):
               print "Checking", config
               self.assertTrue(exists(join(join(join(join(train_data,dirName),config)),"POS")))
               copiedfiles=os.listdir(join(join(join(join(train_data,dirName),config)),"calctype.default"))
-              if case["calculator"]=="quantumespresso":
-                self.assertTrue(case["infilename"] in copiedfiles)
-              if case["calculator"]=="vasp":
-                self.assertTrue("INCAR" in copiedfiles)
-                self.assertTrue("POSCAR" in copiedfiles)
-                self.assertTrue("POTCAR" in copiedfiles)
-                self.assertTrue("KPOINTS" in copiedfiles)
+              self.assertTrue("INCAR" in copiedfiles)
+              self.assertTrue("POSCAR" in copiedfiles)
+              self.assertTrue("POTCAR" in copiedfiles)
+              self.assertTrue("KPOINTS" in copiedfiles)
       os.chdir(curr_dir)
       if os.path.isdir(join(filesdir,"casmproj")):
         shutil.rmtree(join(filesdir,"casmproj"))
@@ -182,7 +138,7 @@ class TestRun(unittest.TestCase):
 
   def test_run_many(self):
     """
-    Test run of casm.(calc)wrapper
+    Test casm.vaspwrapper.run() using casm-calc --submit
     """
     cases = self.cases["run_many"]
     from casm.project import Project,Selection
@@ -213,30 +169,18 @@ class TestRun(unittest.TestCase):
       psel=subprocess.Popen(shlex.split("casm select --set-on"))
       psel.wait()
       settings_dir = join(casmproj,"training_data/settings/calctype.default")
-      if case["calculator"]=="quantumespresso":
-        for line in fileinput.input(case["infilename"],inplace=1):
-          if "$!%&" in line:
-            line = line.replace("$!%&",os.getcwd())
-          sys.stdout.write(line)
-        shutil.copyfile(case["infilename"],join(settings_dir,case["infilename"]))
-        for line in fileinput.input("QSPECIES",inplace=1):
-          if "$!%&" in line:
-            line = line.replace("$!%&",os.getcwd())
-          sys.stdout.write(line)
-        shutil.copyfile("QSPECIES",join(settings_dir,"SPECIES"))
-        shutil.copyfile("qrelax.json",join(settings_dir,"relax.json"))
-      if case["calculator"]=="vasp":
-        shutil.copyfile("INCAR",join(settings_dir,"INCAR"))
-        shutil.copyfile("KPOINTS",join(settings_dir,"KPOINTS"))
-        shutil.copyfile("POSCAR",join(settings_dir,"POSCAR"))
-        for line in fileinput.input("VSPECIES",inplace=1):
-          if "$!%&" in line:
-            line = line.replace("$!%&",os.getcwd())
-          sys.stdout.write(line)
-        shutil.copyfile("VSPECIES",join(settings_dir,"SPECIES"))
-        shutil.copyfile("vrelax.json",join(settings_dir,"relax.json"))
-      psetup=subprocess.Popen(shlex.split("casm-calc --submit"))
-      psetup.wait()
+      #Move files to setting directory
+      shutil.copyfile("INCAR",join(settings_dir,"INCAR"))
+      shutil.copyfile("KPOINTS",join(settings_dir,"KPOINTS"))
+      shutil.copyfile("POSCAR",join(settings_dir,"POSCAR"))
+      for line in fileinput.input("VSPECIES",inplace=1):
+        if "$!%&" in line:
+          line = line.replace("$!%&",os.getcwd())
+        sys.stdout.write(line)
+      shutil.copyfile("VSPECIES",join(settings_dir,"SPECIES"))
+      shutil.copyfile("vrelax.json",join(settings_dir,"relax.json"))
+      psubmit=subprocess.Popen(shlex.split("casm-calc --submit"))
+      psubmit.wait()
       db=pbs.JobDB()
       db.update();
 

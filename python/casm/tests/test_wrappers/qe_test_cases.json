@@ -9,13 +9,6 @@
       {
         "comment" : "test case 1",
         "proj" : "ZrO_HCP_test",
-        "calculator":"vasp",
-        "max_vol":2
-      },
-      {
-        "comment" : "test case 1",
-        "proj" : "ZrO_HCP_test",
-        "calculator":"quantumespresso",
         "infilename":"ZrO.in",
         "max_vol":2
       }
@@ -24,13 +17,6 @@
       {
         "comment" : "test case 1",
         "proj" : "ZrO_HCP_test",
-        "calculator":"vasp",
-        "max_vol":2
-      },
-      {
-        "comment" : "test case 1",
-        "proj" : "ZrO_HCP_test",
-        "calculator":"quantumespresso",
         "infilename":"ZrO.in",
         "max_vol":2
       }
@@ -39,14 +25,8 @@
        {
         "comment" : "test case 1",
         "proj" : "ZrO_HCP_test_relax/quantumespresso",
-        "calculator":"quantumespresso",
         "infilename":"ZrO.in",
         "outfilename":"ZrO.out"
-      },
-      {
-        "comment" : "test case 2",
-        "proj" : "ZrO_HCP_test_relax/vasp",
-        "calculator":"vasp"
       }
     ]
   }
