@@ -8,39 +8,58 @@
 namespace CASM {
 
   template<typename ConfigIterType>
-  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, bool mk) {
+  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, bool mk, Log &err_log) {
     //boost::trim(criteria);
 
-    if(criteria.size()) {
-      DataFormatter<Configuration> tformat(dict.parse(criteria));
-      for(; begin != end; ++begin) {
-        ValueDataStream<bool> select_stream;
-        select_stream << tformat(*begin);
-        if(select_stream.value()) {
+    try {
+      if(criteria.size()) {
+        DataFormatter<Configuration> tformat(dict.parse(criteria));
+        for(; begin != end; ++begin) {
+          if(begin.selected() == mk)
+            continue;
+          ValueDataStream<bool> select_stream;
+          if(select_stream.fail()) {
+            err_log << "Warning: Unable to apply criteria \"" << criteria << "\" to configuration " <<  begin.name() << "\n";
+            continue;
+          }
+
+          select_stream << tformat(*begin);
+          if(select_stream.value()) {
+            begin.set_selected(mk);
+          }
+        }
+      }
+      else {
+        for(; begin != end; ++begin) {
           begin.set_selected(mk);
         }
       }
     }
-    else {
-      for(; begin != end; ++begin) {
-        begin.set_selected(mk);
-      }
+    catch(std::exception &e) {
+      throw std::runtime_error(std::string("Failure to select using criteria \"") + criteria + "\" for configuration " + begin.name() + "\n    Reason:  " + e.what());
     }
-
     return;
   }
 
   template<typename ConfigIterType>
-  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria) {
+  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, Log &err_log) {
     //boost::trim(criteria);
-
-    if(criteria.size()) {
-      DataFormatter<Configuration> tformat(dict.parse(criteria));
-      for(; begin != end; ++begin) {
-        ValueDataStream<bool> select_stream;
-        select_stream << tformat(*begin);
-        begin.set_selected(select_stream.value());
+    try {
+      if(criteria.size()) {
+        DataFormatter<Configuration> tformat(dict.parse(criteria));
+        for(; begin != end; ++begin) {
+          ValueDataStream<bool> select_stream;
+          if(select_stream.fail()) {
+            err_log << "Warning: Unable to apply criteria \"" << criteria << "\" to configuration " <<  begin.name() << "\n";
+            continue;
+          }
+          select_stream << tformat(*begin);
+          begin.set_selected(select_stream.value());
+        }
       }
+    }
+    catch(std::exception &e) {
+      throw std::runtime_error(std::string("Failure to select using criteria \"") + criteria + "\" for configuration " + begin.name() + "\n    Reason:  " + e.what());
     }
 
     return;
@@ -328,10 +347,16 @@ namespace CASM {
       }
       args.log.begin_lap();
 
-      if(vm.count("set"))
-        set_selection(set.config_io(), config_select.config_begin(), config_select.config_end(), criteria);
-      else
-        set_selection(set.config_io(), config_select.config_begin(), config_select.config_end(), criteria, select_switch);
+      try {
+        if(vm.count("set"))
+          set_selection(set.config_io(), config_select.config_begin(), config_select.config_end(), criteria, args.err_log);
+        else
+          set_selection(set.config_io(), config_select.config_begin(), config_select.config_end(), criteria, select_switch, args.err_log);
+      }
+      catch(std::exception &e) {
+        args.err_log << "ERROR: " << e.what() << "\n";
+        return ERR_INVALID_ARG;
+      }
 
       args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;
     }
