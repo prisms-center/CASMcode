@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <functional>
 namespace CASM {
 
   class DataStream {
