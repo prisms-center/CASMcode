@@ -68,7 +68,7 @@ for i, src_name in enumerate(test_name):
   
   # individual tests that need common linking options
   if src_name[:-5] in ["Structure", "BasicStructure", "ConfigIODictionary", "App", 
-                       "ConfigIO", "PrimClex", "ChemicalReference", "NeighborList",
+                       "ConfigIO", "Coordinate", "PrimClex", "ChemicalReference", "NeighborList",
                        "Clusterography", "SupercellEnumerator", "Niggli",
                        "settings"]:
     test = lenv.Program(os.path.join(lenv['UNIT_TEST_BINDIR'], src_name), 
