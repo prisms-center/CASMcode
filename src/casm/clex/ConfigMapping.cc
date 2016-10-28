@@ -198,7 +198,7 @@ namespace CASM {
       robust_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
       relaxation_properties["best_mapping"]["basis_deformation"] = bc;
       relaxation_properties["best_mapping"]["lattice_deformation"] = sc;
-      relaxation_properties["best_mapping"]["volume_relaxation"] = suggested_configdof.deformation().determinant();
+      relaxation_properties["best_mapping"]["volume_relaxation"] = tconfigdof.deformation().determinant();
 
     }
     else {
