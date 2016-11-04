@@ -164,18 +164,6 @@ class Relax(object):
         vaspfiles=casm.vaspwrapper.vasp_input_file_names(self.casm_directories, self.configname, self.clex)
         incarfile,prim_kpointsfile,prim_poscarfile,super_poscarfile,speciesfile=vaspfiles
 
-        # # Verify that required input files exist
-        # if incarfile is None:
-        #     raise vasp.VaspError("Relax.setup failed. No INCAR file found in CASM project.")
-        # if prim_kpointsfile is None:
-        #     raise vasp.VaspError("Relax.setup failed. No KPOINTS file found in CASM project.")
-        # if prim_poscarfile is None:
-        #     warnings.warn("No reference POSCAR file found in CASM project. I hope your KPOINTS mode is A/AUTO/Automatic or this will fail!", vasp.VaspWarning)
-        # if super_poscarfile is None:
-        #     raise vasp.VaspError("Relax.setup failed. No POS file found for this configuration.")
-        # if speciesfile is None:
-        #     raise vasp.VaspError("Relax.setup failed. No SPECIES file found in CASM project.")
-
         # Find optional input files
         extra_input_files = []
         for s in self.settings["extra_input_files"]:
