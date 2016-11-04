@@ -266,7 +266,7 @@ class Relax(object):
         cmd = ""
         if self.settings["preamble"] is not None:
         # Append any instructions given in the 'preamble' file, if given
-            preamble = casm.settings_path(self.settings["preamble"], self.casm_settings["curr_calctype"], self.configdir)
+            preamble = self.casm_directories.settings_path_crawl(self.settings["preamble"], self.configname, self.clex)
             with open(preamble) as my_preamble:
                 cmd += "".join(my_preamble)
         # Or just execute a single prerun line, if given
