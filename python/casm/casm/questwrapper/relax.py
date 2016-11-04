@@ -4,9 +4,12 @@ import os
 import math
 import sys
 import json
+import re
+import warnings
 import pbs
 import seqquest
 import casm
+import casm.project
 from . import questwrapper
 
 class Relax(object):
@@ -23,79 +26,127 @@ class Relax(object):
         'run.i' directories are only created when ready.
         'run.final' is a final constant volume run
 
-        This automatically looks for VASP settings files in .../settings/calctype.name,
-        where '...' is the nearest parent directory of 'self.configdir' in the CASM project repository
+        This automatically looks for SeqQuest settings files using:
+          casm.project.DirectoryStructure.settings_path_crawl
 
-        Contains:
-            self.configdir (.../config)
-            self.calcdir   (.../config/calctype.name)
+    Attributes
+    ----------
 
-            self.settings = dictionary of settings for pbs and the relaxation, see questwrapper.read_settings
+      casm_settings: casm.project.ProjectSettings instance
+        CASM project settings
 
-            self.auto = True if using pbs module's JobDB to manage pbs jobs
-            self.sort = True if sorting atoms in POSCAR by type
+      casm_directories: casm.project.DirectoryStructure instance
+        CASM project directory hierarchy
+
+      settings: dict
+        Settings for pbs and the relaxation, see questwrapper.read_settings
+
+      configdir: str
+        Directory where configuration results are stored. The result of:
+          casm.project.DirectoryStructure.configuration_dir(self.configname)
+
+      configname: str
+        The name of the configuration to be calculated
+
+      auto: boolean
+        True if using pbs module's JobDB to manage pbs jobs
+
+      sort: boolean
+        True if sorting atoms in POSCAR by type
+
+      clex: casm.project.ClexDescription instance
+        The cluster expansion being worked on. Used for the 'calctype' settings.
+        Currently, fixed to self.casm_settings.default_clex.
+
     """
     def __init__(self, configdir=None, auto=True, sort=True):
         """
         Construct a SeqQuest relaxation job object.
 
-        Args:
-            configdir: path to configuration
-            auto: True if using pbs module's JobDB to manage pbs jobs
+        Arguments
+        ----------
+
+            configdir: str, optional, default=None
+              Path to configuration directory. If None, uses the current working
+              directory
+
+            auto: boolean, optional, default=True,
+              Use True to use the pbs module's JobDB to manage pbs jobs
+
+            sort: boolean, optional, default=True,
+              Use True to sort atoms in POSCAR by type
 
         """
+        print "Construct a casm.questwrapper.Relax instance:"
+
         if configdir is None:
             configdir = os.getcwd()
+        print "  Input directory:", configdir
 
-        print "Reading CASM settings"
+        # get the configname from the configdir path
+        _res = os.path.split(configdir)
+        self.configname = os.path.split(_res[0])[1] + "/" + _res[1]
+        print "  Configuration:", self.configname
+
+        print "  Reading CASM settings"
         self.casm_directories = casm.project.DirectoryStructure(configdir)
         self.casm_settings = casm.project.ProjectSettings(configdir)
         if self.casm_settings is None:
-            raise questwrapper.QuestWrapperError("Not in a CASM project.\
-                                                  The file '.casm' directory was not found.")
+            raise questwrapper.QuestWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
 
-        print "Constructing a CASM QuestWrapper Relax object"
-        sys.stdout.flush()
+        if os.path.abspath(configdir) != self.configdir:
+            print ""
+            print "input configdir:", configdir
+            print "determined configname:", self.configname
+            print "expected configdir given configname:", self.configdir
+            raise questwrapper.QuestWrapperError("Mismatch between configname and configdir")
 
-        print "  Setting up directories"
-        sys.stdout.flush()
-
-        # store path to .../config, if not existing raise
-        self.configdir = os.path.abspath(configdir)
-        if not os.path.isdir(self.configdir):
-            raise seqquest.SeqQuestError("Error in casm.quest.relax: Did not find directory: "
-                                         + self.configdir)
+        # fixed to default_clex for now
+        self.clex = self.casm_settings.default_clex
 
         # store path to .../config/calctype.name, and create if not existing
-        self.calcdir = os.path.join(self.configdir, self.casm_settings["curr_calctype"])
+        self.calcdir = self.casm_directories.calctype_dir(self.configname, self.clex)
         try:
             os.mkdir(self.calcdir)
         except OSError:
             pass
+        print "  Calculations directory:", self.calcdir
 
         # read the settings json file
         print "  Reading relax.json settings file"
         sys.stdout.flush()
-        setfile = casm.settings_path("relax.json", self.casm_settings["curr_calctype"],
-                                     self.configdir)
+        setfile = self.casm_directories.settings_path_crawl("relax.json", self.configname, self.clex)
+
         if setfile is None:
-            raise questwrapper.QuestWrapperError("Could not find .../settings/"
-                                                 + self.casm_settings["curr_calctype"]
-                                                 + "/relax.json file.")
+            raise questwrapper.QuestWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
+            sys.stdout.flush()
+
+        else:
+            print "  Read settings from:", setfile
         self.settings = questwrapper.read_settings(setfile)
 
-        # add required keys to settings if not present
+        # set default settings if not present
         if not "run_cmd" in self.settings:
             self.settings["run_cmd"] = None
         if not "ncpus" in self.settings:
             self.settings["ncpus"] = None
         if not "run_limit" in self.settings:
             self.settings["run_limit"] = None
+        if not "prerun" in self.settings:
+            self.settings["prerun"] = None
+        if not "postrun" in self.settings:
+            self.settings["postrun"] = None
 
         self.auto = auto
         self.sort = sort
-        print "SeqQuest Relax object constructed\n"
+        print "  DONE\n"
         sys.stdout.flush()
+
+
+    @property
+    def configdir(self):
+      return self.casm_directories.configuration_dir(self.configname)
+
 
     def setup(self):
         """ Setup initial relaxation run
@@ -109,73 +160,51 @@ class Relax(object):
 
         """
         # Find required input files in CASM project directory tree
-        # self.species = species_settings(speciesfile)
-        # self.lcao_in = LcaoIN(lcao_in_file, speciesfile=speciesfile, POS=super_poscarfile)
-        lcao_in = casm.settings_path("lcao.in", self.casm_settings["curr_calctype"], self.configdir)
-        super_poscarfile = os.path.join(self.configdir, "POS")
-        speciesfile = casm.settings_path("SPECIES", self.casm_settings["curr_calctype"],
-                                         self.configdir)
-
-        # Verify that required input files exist
-        if lcao_in is None:
-            raise seqquest.SeqQuestError("Relax.setup failed. No lcao.in file found in CASM\
-					 project.")
-        if super_poscarfile is None:
-            raise seqquest.SeqQuestError("Relax.setup failed. No POS file found for this\
-					 configuration.")
-        if speciesfile is None:
-            raise seqquest.SeqQuestError("Relax.setup failed. No SPECIES file found in CASM\
- 					 project.")
+        questfiles=casm.questwrapper.quest_input_file_names(self.casm_directories, self.configname, self.clex)
+        lcao_in,super_poscarfile,speciesfile=questfiles
 
         # Find optional input files
         extra_input_files = []
         for s in self.settings["extra_input_files"]:
-            extra_input_files.append(casm.settings_path(s, self.casm_settings["curr_calctype"],
-                                                        self.configdir))
+            extra_input_files.append(self.casm_directories.settings_path_crawl(s, self.configname, self.clex))
             if extra_input_files[-1] is None:
-                raise seqquest.SeqQuestError("Relax.setup failed. Extra input file "
-                                             + s + " not found in CASM project.")
+                raise quest.SeqQuestError("Relax.setup failed. Extra input file " + s + " not found in CASM project.")
         if self.settings["initial"]:
-            extra_input_files += [casm.settings_path(self.settings["initial"],
-                                                     self.casm_settings["curr_calctype"],
-                                                     self.configdir)]
+            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["initial"], self.configname, self.clex) ]
             if extra_input_files[-1] is None:
-                raise seqquest.SeqQuestError("Relax.setup failed. No initial lcao.in file "
-                                             + self.settings["initial"] + " found in CASM project.")
+                raise quest.SeqQuestError("Relax.setup failed. No initial lcao.in file " + self.settings["initial"] + " found in CASM project.")
         if self.settings["final"]:
-            extra_input_files += [casm.settings_path(self.settings["final"],
-                                                     self.casm_settings["curr_calctype"],
-                                                     self.configdir)]
+            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["final"], self.configname, self.clex) ]
             if extra_input_files[-1] is None:
-                raise seqquest.SeqQuestError("Relax.setup failed. No final lcao.in file "
-                                             + self.settings["final"] + " found in CASM project.")
+                raise vasp.VaspError("Relax.setup failed. No final lcao.in file " + self.settings["final"] + " found in CASM project.")
 
-        if self.settings["cont_relax"] is not None:
-            if os.path.isfile(os.path.join("..", "calctype"+self.settings["cont_relax"],
-                                           "properties.calc.json")):
-                with open(os.path.isfile(os.path.join("..", "calctype"+self.settings["cont_relax"],
-                                                      "properties.calc.json"))) as stream:
-                    final = json.load(stream)
-                    with open(os.path.join(self.calcdir, self.settings["cont_relax"] + "_POS",
-                                           "w")) as fake_pos:
-                        fake_pos.write("Cont from " + self.settings["cont_relax"] + "\n")
-                        fake_pos.write("1.0000000000 \n")
-                        fake_pos.write("\n".join(["     " + "  ".join(map(str, x))
-                                                  for x in final['relaxed_lattice']]) + "\n")
-                        fake_pos.write(" ".join(final['atom_type'])+"\n")
-                        fake_pos.write(" ".join(map(str, final['atoms_per_type']))+"\n")
-                        fake_pos.write("Cartesian\n")
-                        basis_idx = 0
-                        for t, n in zip(final['atom_type'], final['atoms_per_type']):   #pylint: disable=invalid-name
-                            for _ in range(n):
-                                fake_pos.write("     "
-                                               + "  ".join(map(str,
-                                                               final['relaxed_basis'][basis_idx]))
-                                               + "  " +  t + "\n")
-                                basis_idx += 1
+        ### TODO: FIX THIS TO USE NEW DIRECTORY METHODS ###
+        # if self.settings["cont_relax"] is not None:
+        #     if os.path.isfile(os.path.join("..", "calctype"+self.settings["cont_relax"],
+        #                                    "properties.calc.json")):
+        #         with open(os.path.isfile(os.path.join("..", "calctype"+self.settings["cont_relax"],
+        #                                               "properties.calc.json"))) as stream:
+        #             final = json.load(stream)
+        #             with open(os.path.join(self.calcdir, self.settings["cont_relax"] + "_POS",
+        #                                    "w")) as fake_pos:
+        #                 fake_pos.write("Cont from " + self.settings["cont_relax"] + "\n")
+        #                 fake_pos.write("1.0000000000 \n")
+        #                 fake_pos.write("\n".join(["     " + "  ".join(map(str, x))
+        #                                           for x in final['relaxed_lattice']]) + "\n")
+        #                 fake_pos.write(" ".join(final['atom_type'])+"\n")
+        #                 fake_pos.write(" ".join(map(str, final['atoms_per_type']))+"\n")
+        #                 fake_pos.write("Cartesian\n")
+        #                 basis_idx = 0
+        #                 for t, n in zip(final['atom_type'], final['atoms_per_type']):   #pylint: disable=invalid-name
+        #                     for _ in range(n):
+        #                         fake_pos.write("     "
+        #                                        + "  ".join(map(str,
+        #                                                        final['relaxed_basis'][basis_idx]))
+        #                                        + "  " +  t + "\n")
+        #                         basis_idx += 1
 
-            if os.path.isfile(os.path.join(self.calcdir, self.settings["cont_relax"] + "_POS")):
-                super_poscarfile = os.path.join(self.calcdir, self.settings["cont_relax"] + "_POS")
+        #     if os.path.isfile(os.path.join(self.calcdir, self.settings["cont_relax"] + "_POS")):
+        #         super_poscarfile = os.path.join(self.calcdir, self.settings["cont_relax"] + "_POS")
 
         sys.stdout.flush()
 
@@ -184,11 +213,13 @@ class Relax(object):
     def submit(self):   #pylint: disable=too-many-statements
         """Submit a PBS job for this SeqQuest relaxation"""
 
+        print "Submitting..."
+        print "Configuration:", self.configname
         # first, check if the job has already been submitted and is not completed
         db = pbs.JobDB()
-        print "rundir", self.calcdir
+        print "Calculation directory:", self.calcdir
         id = db.select_regex_id("rundir", self.calcdir)
-        print "id:", id
+        print "JobID:", id
         sys.stdout.flush()
         if id != []:
             for j in id:
@@ -235,8 +266,11 @@ class Relax(object):
         elif status != "incomplete":
             raise questwrapper.QuestWrapperError("unexpected relaxation status: '" + status
                                                  + "' and task: '" + task + "'")
+            # This code can never be reached...
+            # sys.stdout.flush()
+            # return
 
-        print "Preparing to submit a VASP relaxation PBS job"
+        print "Preparing to submit a SeqQuest relaxation PBS job"
         sys.stdout.flush()
 
         # cd to configdir, submit jobs from configdir, then cd back to currdir
@@ -244,24 +278,27 @@ class Relax(object):
         os.chdir(self.calcdir)
 
         # determine the number of atoms in the configuration
-        print "  Counting atoms in the POSCAR"
+        print "Counting atoms in the POSCAR"
         sys.stdout.flush()
         geom = seqquest.seqquest_io.Geom.POS(os.path.join(self.configdir, "POS"))
         N = len(geom.basis)
 
-        # Construct the run command
-        command = "python -c \"import casm.questwrapper; casm.questwrapper.Relax('" + self.configdir + "').run()\""
+        # construct command to be run
+        cmd = ""
         if self.settings["preamble"] is not None:
         # Append any instructions given in the 'preamble' file, if given
             preamble = casm.settings_path(self.settings["preamble"],
                                           self.casm_settings["curr_calctype"],
                                           self.configdir)
             with open(preamble) as my_preamble:
-                command = "".join(my_preamble) + command
-                # for line in my_preamble:
-                #     command = line.rstrip() + "; " + command
+                cmd += "".join(my_preamble) + "\n"
+        if self.settings["prerun"] is not None:
+          cmd += self.settings["prerun"] + "\n"
+        cmd += "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + self.configdir + "').run()\"\n"
+        if self.settings["postrun"] is not None:
+          cmd += self.settings["postrun"] + "\n"
 
-        print "  Constructing a PBS job"
+        print "Constructing a PBS job"
         sys.stdout.flush()
         # construct a pbs.Job
         job = pbs.Job(name=casm.jobname(self.configdir),\
@@ -275,10 +312,10 @@ class Relax(object):
                       message=self.settings["message"],\
                       email=self.settings["email"],\
                       priority=self.settings["priority"],\
-                      command=command,\
+                      command=cmd,\
                       auto=self.auto)
 
-        print "  Submitting"
+        print "Submitting"
         sys.stdout.flush()
         # submit the job
         job.submit()
@@ -287,8 +324,9 @@ class Relax(object):
         # return to current directory
         os.chdir(currdir)
 
-        print "CASM questwrapper relaxation PBS job submission complete\n"
+        print "CASM QuestWrapper relaxation PBS job submission complete\n"
         sys.stdout.flush()
+
 
     def run_settings(self):
         """ Set default values based on runtime environment"""
@@ -309,8 +347,9 @@ class Relax(object):
 
         return settings
 
+
     def run(self):
-        """ Setup input files, run a vasp relaxation, and report results """
+        """ Setup input files, run a quest relaxation, and report results """
 
         # construct the Relax object
         relaxation = seqquest.Relax(self.calcdir, self.run_settings())
@@ -337,7 +376,7 @@ class Relax(object):
 
         elif status == "not_converging":
             print "Status:", status
-            self.report_status("failed", "run_limit")
+            self.report_status("failed","run_limit")
             print "Returning"
             sys.stdout.flush()
             return
@@ -353,7 +392,7 @@ class Relax(object):
         else:
             self.report_status("failed", "unknown")
             raise questwrapper.QuestWrapperError("unexpected relaxation status: '"
-                                                 + status + "' and task: '" + task + "'")
+            sys.stdout.flush()
 
 
         # once the run is done, update database records accordingly
@@ -370,17 +409,18 @@ class Relax(object):
 
             print "Not Converging!"
             sys.stdout.flush()
-            self.report_status("failed", "run_limit")
+            self.report_status("failed","run_limit")
 
             # print a local settings file, so that the run_limit can be extended if the
             #   convergence problems are fixed
+
+            config_set_dir = self.casm_directories.configuration_calc_settings_dir(self.configname, self.clex)
+
             try:
-                os.makedirs(os.path.join(self.configdir, "settings",
-                                         self.casm_settings["curr_calctype"]))
+                os.makedirs(config_set_dir)
             except OSError:
                 pass
-            settingsfile = os.path.join(self.configdir, "settings",
-                                        self.casm_settings["curr_calctype"], "relax.json")
+            settingsfile = os.path.join(config_set_dir, "relax.json")
             questwrapper.write_settings(self.settings, settingsfile)
 
             print "Writing:", settingsfile
@@ -402,9 +442,10 @@ class Relax(object):
             self.finalize()
 
         else:
-            self.report_status("failed", "unknown")
-            raise questwrapper.QuestWrapperError("vasp relaxation complete with unexpected status: '"
+            self.report_status("failed","unknown")
+            raise questwrapper.QuestWrapperError("quest relaxation complete with unexpected status: '"
                                                  + status + "' and task: '" + task + "'")
+            sys.stdout.flush()
 
     def report_status(self, status, failure_type=None):
         """Report calculation status to status.json file in configuration directory.
