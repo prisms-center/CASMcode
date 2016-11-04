@@ -75,8 +75,7 @@ class Relax(object):
         # read the settings json file
         print "  Reading relax.json settings file"
         sys.stdout.flush()
-        setfile = casm.settings_path("relax.json", self.casm_settings["curr_calctype"],
-                                     self.configdir)
+        setfile = self.casm_directories.settings_path_crawl("relax.json", self.configname, self.clex)
         if setfile is None:
             raise questwrapper.QuestWrapperError("Could not find .../settings/"
                                                  + self.casm_settings["curr_calctype"]
@@ -110,10 +109,9 @@ class Relax(object):
         # Find required input files in CASM project directory tree
         # self.species = species_settings(speciesfile)
         # self.lcao_in = LcaoIN(lcao_in_file, speciesfile=speciesfile, POS=super_poscarfile)
-        lcao_in = casm.settings_path("lcao.in", self.casm_settings["curr_calctype"], self.configdir)
+        lcao_in = self.casm_directories.settings_path_crawl("lcao.in", self.configname, self.clex)
         super_poscarfile = os.path.join(self.configdir, "POS")
-        speciesfile = casm.settings_path("SPECIES", self.casm_settings["curr_calctype"],
-                                         self.configdir)
+        speciesfile = self.casm_directories.settings_path_crawl("SPECIES", self.configname, self.clex)
 
         # Verify that required input files exist
         if lcao_in is None:
@@ -126,28 +124,23 @@ class Relax(object):
             raise seqquest.SeqQuestError("Relax.setup failed. No SPECIES file found in CASM\
  					 project.")
 
+
         # Find optional input files
         extra_input_files = []
         for s in self.settings["extra_input_files"]:
-            extra_input_files.append(casm.settings_path(s, self.casm_settings["curr_calctype"],
-                                                        self.configdir))
+            extra_input_files.append(self.casm_directories.settings_path_crawl(s, self.configname, self.clex))
             if extra_input_files[-1] is None:
-                raise seqquest.SeqQuestError("Relax.setup failed. Extra input file "
-                                             + s + " not found in CASM project.")
+                raise vasp.VaspError("Relax.setup failed. Extra input file " + s + " not found in CASM project.")
         if self.settings["initial"]:
-            extra_input_files += [casm.settings_path(self.settings["initial"],
-                                                     self.casm_settings["curr_calctype"],
-                                                     self.configdir)]
+            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["initial"], self.configname, self.clex) ]
             if extra_input_files[-1] is None:
-                raise seqquest.SeqQuestError("Relax.setup failed. No initial lcao.in file "
-                                             + self.settings["initial"] + " found in CASM project.")
+                raise vasp.VaspError("Relax.setup failed. No initial INCAR file " + self.settings["initial"] + " found in CASM project.")
         if self.settings["final"]:
-            extra_input_files += [casm.settings_path(self.settings["final"],
-                                                     self.casm_settings["curr_calctype"],
-                                                     self.configdir)]
+            extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["final"], self.configname, self.clex) ]
             if extra_input_files[-1] is None:
-                raise seqquest.SeqQuestError("Relax.setup failed. No final lcao.in file "
-                                             + self.settings["final"] + " found in CASM project.")
+                raise vasp.VaspError("Relax.setup failed. No final INCAR file " + self.settings["final"] + " found in CASM project.")
+        sys.stdout.flush()
+
 
         if self.settings["cont_relax"] is not None:
             if os.path.isfile(os.path.join("..", "calctype"+self.settings["cont_relax"],
@@ -252,9 +245,7 @@ class Relax(object):
         command = "python -c \"import casm.questwrapper; casm.questwrapper.Relax('" + self.configdir + "').run()\""
         if self.settings["preamble"] is not None:
         # Append any instructions given in the 'preamble' file, if given
-            preamble = casm.settings_path(self.settings["preamble"],
-                                          self.casm_settings["curr_calctype"],
-                                          self.configdir)
+            preamble = self.casm_directories.settings_path_crawl(self.settings["preamble"], self.configname, self.clex)
             with open(preamble) as my_preamble:
                 command = "".join(my_preamble) + command
                 # for line in my_preamble:
