@@ -246,10 +246,34 @@ class Relax(object):
 
             while True:
                 # run vasp
-                result = vasp.run(self.rundir[-1],npar=self.settings["npar"],ncore=self.settings["ncore"],command=self.settings["vasp_cmd"],ncpus=self.settings["ncpus"],kpar=self.settings["kpar"],err_types=self.settings["err_types"])
+                result = vasp.run(self.rundir[-1], npar=self.settings["npar"],ncore=self.settings["ncore"],command=self.settings["vasp_cmd"],ncpus=self.settings["ncpus"],kpar=self.settings["kpar"],err_types=self.settings["err_types"])
 
                 # if no errors, continue
                 if result is None or self.not_converging():
+                    # Check for actions that should be taken after the initial run
+                    if len(self.rundir) == 1:
+                        if self.settings["fine_ngx"]:
+                            outcarfile = os.path.join(self.rundir[-1], "OUTCAR")
+                            if not os.path.isfile(outcarfile):
+                                # This is an error but I'm not sure what to do about it
+                                pass
+                            else:
+                                init_outcar = io.Outcar(outcarfile)
+                                if not init_outcar.complete:
+                                    # This is an error but I'm not sure what to do about it
+                                    pass
+                                elif (init_outcar.ngx is None or
+                                      init_outcar.ngy is None or
+                                      init_outcar.ngz is None):
+                                    # This is an error but I'm not sure what to do about it
+                                    pass
+                                else:
+                                    ng_tags = {
+                                        "ngx" : init_outcar.ngx*2,
+                                        "ngy" : init_outcar.ngy*2,
+                                        "ngz" : init_outcar.ngz*2}
+                                    print ng_tags
+                                    io.set_incar_tag(ng_tags, self.relaxdir, "INCAR.base")
                     break
 
                 # else, attempt to fix first error
