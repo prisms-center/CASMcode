@@ -48,7 +48,8 @@ class Relax(object):
             configdir = os.getcwd()
 
         print "Reading CASM settings"
-        self.casm_settings = casm.casm_settings(configdir)
+        self.casm_directories = casm.project.DirectoryStructure(configdir)
+        self.casm_settings = casm.project.ProjectSettings(configdir)
         if self.casm_settings is None:
             raise questwrapper.QuestWrapperError("Not in a CASM project.\
                                                   The file '.casm' directory was not found.")
