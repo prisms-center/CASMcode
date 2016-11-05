@@ -1,4 +1,10 @@
-""" FIXME """
+""" Wrapper for handling seqquest/casm integration """
+import os
+import shutil
+import re
+import subprocess
+import json
+import warnings
 
 import json
 import seqquest.seqquest_io
@@ -29,7 +35,7 @@ def read_settings(filename):
         "message": when to send messages about jobs (ex. "abe", default "a")
         "email": where to send messages (ex. "me@fake.com", default None)
         "qos": quality of service, 'qos' option (ex. "fluxoe")
-        "run_cmd": vasp execution command (default is "vasp" (ncpus=1) or "mpirun -np {NCPUS} vasp" (ncpus!=1))
+        "run_cmd": quest execution command (default is "vasp" (ncpus=1) or "mpirun -np {NCPUS} vasp" (ncpus!=1))
         "ncpus": number of cpus (cores) to run on (default $PBS_NP)
         "run_limit": number of vasp runs until "not_converging" (default 10)
         "nrg_convergence": converged if last two runs complete and differ in energy by less than this amount (default None)
@@ -38,18 +44,15 @@ def read_settings(filename):
         "remove": files to remove at the end of a run (ex. ["IBZKPT", "CHGCAR"], default ["IBKZPT", "CHG", "CHGCAR", "WAVECAR", "TMPCAR", "EIGENVAL", "DOSCAR", "PROCAR", "PCDAT", "XDATCAR", "LOCPOT", "ELFCAR", "PROOUT"]
         "compress": files to compress at the end of a run (ex. ["OUTCAR", "vasprun.xml"], default [])
         "backup": files to compress to backups at the end of a run, used in conjunction with move (ex. ["WAVECAR"])
+        "cont_relax": name of a calctype to initialize a calculation from, using the lcao.geom from ../calctype.cont_relax/run.final (ex. "default")
         "extra_input_files": extra input files to be copied from the settings directory, e.g., a vdW kernel file.
         "initial" : location of INCAR with tags for the initial run, if desired (e.g. to generate a PBE WAVECAR for use with M06-L)
         "final" : location of INCAR with tags for the final run, if desired (e.g. "ISMEAR = -5", etc). Otherwise, the settings enforced are ("ISMEAR = -5", "NSW = 0", "IBRION = -1", "ISIF = 2")
         "err_types" : list of errors to check for. Allowed entries are "IbzkptError" and "SubSpaceMatrixError". Default: ["SubSpaceMatrixError"]
         "preamble" : a text file containing anything that MUST be run before python is invoked (e.g. module.txt which contains "module load python", or "source foo")
         "prop": USED IN vasp.converge ONLY. Property to converge with respect to (current options are "KPOINT" and "ENCUT")
-        "prop_start": USED IN vasp.converge ONLY. Starting value of "prop", e.g. 450 (for ENCUT) or 5 (for KPOINTS) or [4 4 4] (for KPOINTS)
-        "prop_stop": USED IN vasp.converge ONLY. Ending value of "prop", e.g. 550 (for ENCUT) or 20 (for KPOINTS).
-        "prop_step": USED IN vasp.converge ONLY. Delta value of "prop", e.g. 10 (for ENCUT) or 2 (for KPOINTS) or [1 1 2] (for KPOINTS)
-        "tol" : USED IN vasp.converge ONLY. Tolerance type for convergence, e.g. relaxed_energy. Optional
-        "tol_amount" : USED IN vasp.converge ONLY. Tolerance criteria convergence, e.g. 0.001. If the abs difference between two runs in their "tol" is smaller than "tol_amount", the "prop" is considered converged.
-        "name" : USED IN vasp.converge ONLY. Name used in the .../config/calctype.calc/NAME/property_i directory scheme, where, if not specified, "prop"_converge is used as NAME
+        "prerun" : bash commands to run before vasp.Relax.run (default None)
+        "postrun" : bash commands to run after vasp.Relax.run completes (default None)
     """
     try:
         stream = open(filename)
@@ -66,7 +69,7 @@ def read_settings(filename):
                 "extra_input_files", "move", "copy", "remove", "compress", "backup", "initial",
                 "final", "strict_kpoints", "err_types", "preamble", "prop", "prop_start",
                 "prop_stop", "prop_step", "tol", "tol_amount", "name", "fine_ngx",
-                "cont_relax"]
+                "prerun", "postrun", "cont_relax"]
     for key in required:
         if not key in settings:
             raise QuestWrapperError( key + "' missing from: '" + filename + "'")
@@ -107,6 +110,7 @@ def read_settings(filename):
 
     return settings
 
+
 def write_settings(settings, filename):
     """ Write 'settings' as json file, 'filename' """
     stream = open(filename, 'w')
@@ -130,3 +134,64 @@ def read_properties(filename):
             properties[key] = None
 
     return properties
+
+def quest_input_file_names(dir, configname, clex):
+    """
+    Collect casm.questwrapper input files from the CASM project hierarchy
+
+    Looks for:
+
+      lcao.in:
+        The base lcao.in file used for calculations. Found via:
+          DirectoryStructure.settings_path_crawl
+
+      POS:
+        The CASM-generated POS file giving the initial structure to be calculated.
+
+      SPECIES:
+        The SPECIES file specifying Vasp settings for each species in the structure.
+
+
+    Arguments
+    ---------
+
+      dir: casm.project.DirectoryStructure instance
+        CASM project directory hierarchy
+
+      configname: str
+        The name of the configuration to be calculated
+
+      clex: casm.project.ClexDescription instance
+        The cluster expansion being worked on. Used for the 'calctype' settings.
+
+
+    Returns
+    -------
+
+      filepaths: tuple(lcao.in, POS, SPECIES)
+        A tuple containing the paths to the questwrapper input files
+
+
+    Raises
+    ------
+      If any required file is not found.
+
+    """
+    # Find required input files in CASM project directory tree
+    lcao_in = dir.settings_path_crawl("lcao.in", configname, clex)
+    super_poscarfile = dir.POS(configname)
+    speciesfile = dir.settings_path_crawl("SPECIES", configname, clex)
+
+    # Verify that required input files exist
+    if lcao_in is None:
+        raise seqquest.SeqQuestError("Relax.setup failed. No lcao.in file found in CASM\
+                                    project.")
+    if super_poscarfile is None:
+        raise seqquest.SeqQuestError("Relax.setup failed. No POS file found for this\
+                                    configuration.")
+    if speciesfile is None:
+        raise seqquest.SeqQuestError("Relax.setup failed. No SPECIES file found in CASM\
+                                    project.")
+
+    return (lcao_in, super_poscarfile, speciesfile)
+
