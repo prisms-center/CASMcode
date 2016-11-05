@@ -1,12 +1,7 @@
 """ Wrapper for handling seqquest/casm integration """
-import os
-import shutil
-import re
-import subprocess
-import json
-import warnings
 
 import json
+
 import seqquest.seqquest_io
 
 class QuestWrapperError(Exception):

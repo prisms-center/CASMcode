@@ -4,8 +4,6 @@ import os
 import math
 import sys
 import json
-import re
-import warnings
 import pbs
 import seqquest
 import casm
@@ -145,7 +143,7 @@ class Relax(object):
 
     @property
     def configdir(self):
-      return self.casm_directories.configuration_dir(self.configname)
+        return self.casm_directories.configuration_dir(self.configname)
 
 
     def setup(self):
@@ -168,15 +166,15 @@ class Relax(object):
         for s in self.settings["extra_input_files"]:
             extra_input_files.append(self.casm_directories.settings_path_crawl(s, self.configname, self.clex))
             if extra_input_files[-1] is None:
-                raise quest.SeqQuestError("Relax.setup failed. Extra input file " + s + " not found in CASM project.")
+                raise seqquest.SeqQuestError("Relax.setup failed. Extra input file " + s + " not found in CASM project.")
         if self.settings["initial"]:
             extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["initial"], self.configname, self.clex) ]
             if extra_input_files[-1] is None:
-                raise quest.SeqQuestError("Relax.setup failed. No initial lcao.in file " + self.settings["initial"] + " found in CASM project.")
+                raise seqquest.SeqQuestError("Relax.setup failed. No initial lcao.in file " + self.settings["initial"] + " found in CASM project.")
         if self.settings["final"]:
             extra_input_files += [ self.casm_directories.settings_path_crawl(self.settings["final"], self.configname, self.clex) ]
             if extra_input_files[-1] is None:
-                raise vasp.VaspError("Relax.setup failed. No final lcao.in file " + self.settings["final"] + " found in CASM project.")
+                raise seqquest.SeqQuestError("Relax.setup failed. No final lcao.in file " + self.settings["final"] + " found in CASM project.")
 
         ### TODO: FIX THIS TO USE NEW DIRECTORY METHODS ###
         # if self.settings["cont_relax"] is not None:
@@ -287,16 +285,14 @@ class Relax(object):
         cmd = ""
         if self.settings["preamble"] is not None:
         # Append any instructions given in the 'preamble' file, if given
-            preamble = casm.settings_path(self.settings["preamble"],
-                                          self.casm_settings["curr_calctype"],
-                                          self.configdir)
+            preamble = self.casm_directories.settings_path_crawl(self.settings["preamble"], self.configname, self.clex)
             with open(preamble) as my_preamble:
                 cmd += "".join(my_preamble) + "\n"
         if self.settings["prerun"] is not None:
-          cmd += self.settings["prerun"] + "\n"
+            cmd += self.settings["prerun"] + "\n"
         cmd += "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + self.configdir + "').run()\"\n"
         if self.settings["postrun"] is not None:
-          cmd += self.settings["postrun"] + "\n"
+            cmd += self.settings["postrun"] + "\n"
 
         print "Constructing a PBS job"
         sys.stdout.flush()
@@ -391,7 +387,7 @@ class Relax(object):
 
         else:
             self.report_status("failed", "unknown")
-            raise questwrapper.QuestWrapperError("unexpected relaxation status: '"
+            raise questwrapper.QuestWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
             sys.stdout.flush()
 
 
