@@ -614,8 +614,9 @@ namespace CASM {
     recip_prim_lattice(RHS.recip_prim_lattice),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
-    name(RHS.name),
+    m_name(RHS.m_name),
     m_nlist(RHS.m_nlist),
+    m_canonical(nullptr),
     config_list(RHS.config_list),
     transf_mat(RHS.transf_mat),
     scaling(RHS.scaling),
@@ -630,9 +631,9 @@ namespace CASM {
     recip_prim_lattice(real_super_lattice.get_reciprocal()),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
+    m_canonical(nullptr),
     transf_mat(transf_mat_init) {
     scaling = 1.0;
-    generate_name();
     //    fill_reciprocal_supercell();
   }
 
@@ -643,6 +644,7 @@ namespace CASM {
     //real_super_lattice((get_prim()).lattice().lat_column_mat()*transf_mat),
     real_super_lattice(superlattice),
     recip_prim_lattice(real_super_lattice.get_reciprocal()),
+    m_canonical(nullptr),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
     transf_mat(primclex->calc_transf_mat(superlattice)) {
@@ -659,7 +661,6 @@ namespace CASM {
               << "\n and product with transf_mat is \n" << (*primclex).get_prim().lattice.lat_column_mat()*transf_mat << "\n";
     */
     scaling = 1.0;
-    generate_name();
 
   }
 
@@ -696,7 +697,7 @@ namespace CASM {
 
     jsonParser json = jsonParser::object();
 
-    json["supercell_name"] = name;
+    json["supercell_name"] = get_name();
     if(print_config_name) {
       json["config"] = background_config.name();
     }
@@ -771,15 +772,34 @@ namespace CASM {
 
   //***********************************************************
 
-  void Supercell::generate_name() {
-    name = CASM::generate_name(transf_mat);
-    return;
+  void Supercell::_generate_name() const {
+    if(is_canonical()) {
+      m_name = CASM::generate_name(transf_mat);
+    }
+    else {
+      /*
+      ... to do ...
+      Supercell& canon = canonical_form();
+      ScelEnumEquivalents e(canon);
+
+      for(auto it = e.begin(); it != e.end(); ++it) {
+        if(this->is_equivalent(*it)) {
+          break;
+        }
+      }
+
+      m_name = canon.get_name() + "." + std::to_string(e.sym_op().index());
+      */
+
+      Supercell &canon = canonical_form();
+      m_name = canon.get_name() + ".non_canonical_equivalent";
+    }
   }
 
   //***********************************************************
 
   fs::path Supercell::get_path() const {
-    return get_primclex().get_path() / "training_data" / name;
+    return get_primclex().get_path() / "training_data" / get_name();
   }
 
   /*
@@ -795,6 +815,15 @@ namespace CASM {
       }
     }
     return amount_selected;
+  }
+
+  //***********************************************************
+
+  Supercell &Supercell::canonical_form() const {
+    if(!m_canonical) {
+      m_canonical = &get_primclex().get_supercell(get_primclex().add_supercell(get_real_super_lattice()));
+    }
+    return *m_canonical;
   }
 
   //***********************************************************
@@ -1124,6 +1153,37 @@ namespace CASM {
     config_list[config_index].calc_struct_fact();
     return;
   }
+
+  bool Supercell::operator<(const Supercell &B) const {
+    if(&get_primclex() != &B.get_primclex()) {
+      throw std::runtime_error(
+        "Error using Supercell::operator<(const Supercell& B): "
+        "Only Supercell with the same PrimClex may be compared this way.");
+    }
+    if(volume() != B.volume()) {
+      return volume() < B.volume();
+    }
+    return get_real_super_lattice() < B.get_real_super_lattice();
+  }
+
+  bool Supercell::_eq(const Supercell &B) const {
+    if(&get_primclex() != &B.get_primclex()) {
+      throw std::runtime_error(
+        "Error using Supercell::operator==(const Supercell& B): "
+        "Only Supercell with the same PrimClex may be compared this way.");
+    }
+    return get_transf_mat() == B.get_transf_mat();
+  }
+
+
+  Supercell &apply(const SymOp &op, Supercell &scel) {
+    return scel = copy_apply(op, scel);
+  }
+
+  Supercell copy_apply(const SymOp &op, const Supercell &scel) {
+    return Supercell(&scel.get_primclex(), copy_apply(op, scel.get_real_super_lattice()));
+  }
+
 
   std::string generate_name(const Eigen::Matrix3i &transf_mat) {
     std::string name_str;

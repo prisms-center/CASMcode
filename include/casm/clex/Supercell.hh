@@ -22,7 +22,7 @@ namespace CASM {
   ///
   /// \ingroup Clex
   ///
-  class Supercell {
+  class Supercell : public Comparisons<Supercell> {
 
   public:
 
@@ -72,8 +72,8 @@ namespace CASM {
     //       (*this).superstruc().factor_group() is the group formed by the cosets of Tsuper in the supercell space group
     mutable SymGroup m_factor_group;
 
-    /// unique name of the supercell based on hermite normal form (see generate_name() )
-    std::string name;
+    /// unique name of the supercell based on hermite normal form (see _generate_name() )
+    mutable std::string m_name;
 
 
     ///************************************************************************************************
@@ -127,6 +127,8 @@ namespace CASM {
     /// to enable checking if SuperNeighborList should be re-constructed
     mutable Index m_nlist_size_at_construction;
 
+    /// Store a pointer to the canonical equivalent Supercell
+    mutable Supercell *m_canonical;
 
     // Could hold either enumerated configurations or any 'saved' configurations
     ConfigList config_list;
@@ -181,7 +183,7 @@ namespace CASM {
 
     // **** Accessors ****
 
-    const PrimClex &get_primclex() const {
+    PrimClex &get_primclex() const {
       return *primclex;
     }
 
@@ -287,8 +289,17 @@ namespace CASM {
       return m_id;
     }
 
+    /// \brief Return supercell name
+    ///
+    /// - If lattice is the canonical equivalent, then return 'SCELV_A_B_C_D_E_F'
+    /// - Else, return 'SCELV_A_B_C_D_E_F.$FG_INDEX', where $FG_INDEX is the index of the first
+    ///   symmetry operation in the primitive structure's factor group such that the lattice
+    ///   is equivalent to `apply(fg_op, canonical equivalent)`
     std::string get_name() const {
-      return name;
+      if(m_name.empty()) {
+        _generate_name();
+      }
+      return m_name;
     };
 
     // Populates m_factor_group (if necessary) and returns it.
@@ -314,6 +325,24 @@ namespace CASM {
 
     ///Count how many configs are selected in *this
     Index amount_selected() const;
+
+    bool is_canonical() const {
+      return get_real_super_lattice().is_canonical();
+    }
+
+    SymOp to_canonical() const {
+      return get_real_super_lattice().to_canonical();
+    }
+
+    SymOp from_canonical() const {
+      return get_real_super_lattice().from_canonical();
+    }
+
+    Supercell &canonical_form() const;
+
+    bool is_equivalent(const Supercell &B) const;
+
+    bool operator<(const Supercell &B) const;
 
     // **** Mutators ****
 
@@ -405,7 +434,22 @@ namespace CASM {
     void printUCC(std::ostream &stream, COORD_TYPE mode, UnitCellCoord ucc, char term = 0, int prec = 7, int pad = 5) const;
     //\Michael 241013
 
+  private:
+
+    friend Comparisons<Supercell>;
+
+    bool _eq(const Supercell &B) const;
+
+    void _add_canon_config(const Configuration &config);
+
+    void _generate_name() const;
+
   };
+
+  Supercell &apply(const SymOp &op, Supercell &scel);
+
+  Supercell copy_apply(const SymOp &op, const Supercell &scel);
+
 
   //*******************************************************************************
   // Warning: Assumes configurations are in canonical form
