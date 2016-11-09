@@ -58,7 +58,7 @@ namespace CASM {
     m_halloffame.unique().reset(
       new HallOfFameType(
         MonteCarloEnumMetric(m_dict.parse(metric_args())),
-        ConfigDoFOccCompare(),
+        std::less<Configuration>(),
         set.enumeration_N_halloffame(),
         set.enumeration_tol()));
 

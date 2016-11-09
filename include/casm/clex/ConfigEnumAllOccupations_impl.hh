@@ -18,7 +18,7 @@ namespace CASM {
     _source() = "occupation_enumeration";
 
     // Make sure that current() has primitive canonical config
-    if(!(current().is_primitive(_perm_begin()) && current().is_canonical(_perm_begin(), _perm_end()))) {
+    if(!(current().is_primitive() && current().is_canonical())) {
       //std::cout << "INITIAL ENUMERATION STATE IS NOT CANONICAL!\n";
       increment();
     }
@@ -48,7 +48,7 @@ namespace CASM {
     _source() = "occupation_enumeration";
 
     // Make sure that current() has primitive canonical config
-    if(!(current().is_primitive(_perm_begin) && current().is_canonical(_perm_begin, _perm_end))) {
+    if(!(current().is_primitive() && current().is_canonical())) {
       //std::cout << "INITIAL ENUMERATION STATE IS NOT CANONICAL!\n";
       increment();
     }
@@ -70,7 +70,7 @@ namespace CASM {
     while(!is_valid_config && ++m_counter) {
 
       _current().set_occupation(m_counter());
-      is_valid_config = current().is_primitive(_perm_begin()) && current().is_canonical(_perm_begin(), _perm_end());
+      is_valid_config = current().is_primitive() && current().is_canonical();
       //std::cout << "counter() is: " << m_counter() << ";  is_valid_config: " << is_valid_config
       //<< ";  is_valid_counter: " << m_counter.valid() << "\n";
     }

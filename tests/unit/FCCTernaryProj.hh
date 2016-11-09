@@ -17,13 +17,13 @@ namespace test {
 
   inline BasicStructure<Site> FCC_ternary_prim() {
 
-    // lattice vectors as rows
+    // lattice vectors as cols
     Eigen::Matrix3d lat;
-    lat << 2.0, 2.0, 0.0,
-        0.0, 2.0, 2.0,
-        2.0, 0.0, 2.0;
+    lat << 0.0, 2.0, 2.0,
+        2.0, 0.0, 2.0,
+        2.0, 2.0, 0.0;
 
-    BasicStructure<Site> struc(Lattice(lat.transpose()));
+    BasicStructure<Site> struc {Lattice{lat}};
     struc.title = "FCC_ternary";
 
     Molecule A = make_atom("A", struc.lattice());

@@ -92,6 +92,16 @@ namespace CASM {
     }
 
     //*******************************************************************************************
+    Array(std::initializer_list<T> in) :
+      N(0), NMax(0), Vals(nullptr) {
+
+      reserve(in.size());
+      auto it = in.begin();
+      for(; it != in.end(); ++it)
+        push_back(*it);
+    }
+
+    //*******************************************************************************************
 
     Array(ReturnArray<T> &RHS);
 

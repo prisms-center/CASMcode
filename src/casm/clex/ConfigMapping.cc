@@ -216,8 +216,7 @@ namespace CASM {
     Supercell::permute_const_iterator it_canon;
 
     if(hint_ptr != nullptr) {
-      ConfigDoF canon_relaxed_occ, canon_ideal_occ;
-      Supercell const &scel(hint_ptr->get_supercell());
+      Supercell &scel(hint_ptr->get_supercell());
       if(mapped_lat.is_equivalent(scel.get_real_super_lattice(), m_tol)) {
         if(m_strict_flag && relaxed_occ.occupation() == (hint_ptr->configdof()).occupation()) {
           // config is unchanged
@@ -225,9 +224,9 @@ namespace CASM {
           is_new_config = false;
         }
         else {
-          canon_relaxed_occ = relaxed_occ.canonical_form(scel.permute_begin(), scel.permute_end(), it_canon, m_tol);
+          Configuration canon_relaxed_occ = Configuration(scel, jsonParser(), relaxed_occ).canonical_form();
 
-          canon_ideal_occ = (hint_ptr->configdof()).canonical_form(scel.permute_begin(), scel.permute_end(), m_tol);
+          Configuration canon_ideal_occ = hint_ptr->canonical_form();
           //std::cout << "canon_relaxed_occ.occupation() is " << canon_relaxed_occ.occupation() << "\n";
           //std::cout << "canon_ideal_occ.occupation() is " << canon_ideal_occ.occupation() << "\n";
 
@@ -257,14 +256,14 @@ namespace CASM {
     }
 
     // transform deformation tensor to match canonical form and apply operation to cart_op
-    ConfigDoF trans_configdof = it_canon * tconfigdof;
+    ConfigDoF trans_configdof = copy_apply(it_canon, tconfigdof);
     relaxation_properties["best_mapping"]["relaxation_deformation"] = trans_configdof.deformation();
     relaxation_properties["best_mapping"]["relaxation_displacement"] = trans_configdof.displacement().transpose();
 
     cart_op = it_canon.sym_op().matrix() * cart_op;
 
     // compose permutations
-    std::vector<Index>tperm = (*it_canon).permute(best_assignment);
+    std::vector<Index>tperm = it_canon.combined_permute().permute(best_assignment);
 
     //copy non-vacancy part of permutation into best_assignment
     best_assignment.resize(_struc.basis.size());
@@ -349,7 +348,7 @@ namespace CASM {
     cart_op = it_canon.sym_op().matrix() * cart_op;
 
     // compose permutations
-    std::vector<Index>tperm = (*it_canon).permute(best_assignment);
+    std::vector<Index>tperm = it_canon.combined_permute().permute(best_assignment);
 
     //copy non-vacancy part of permutation into best_assignment
     best_assignment.resize(_struc.basis.size());
