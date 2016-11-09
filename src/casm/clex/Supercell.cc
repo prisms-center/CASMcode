@@ -143,6 +143,20 @@ namespace CASM {
   }
 
   /*****************************************************************/
+
+  /// \brief Begin iterator over translation permutations
+  Supercell::permute_const_iterator Supercell::translate_begin() const {
+    return permute_begin();
+  }
+
+  /*****************************************************************/
+
+  /// \brief End iterator over translation permutations
+  Supercell::permute_const_iterator Supercell::translate_end() const {
+    return permute_begin().begin_next_fg_op();
+  }
+
+  /*****************************************************************/
   /* //Example usage case:
    *  Supercell my_supercell;
    *  Configuration my_config(my_supercell, configuration_info);
@@ -150,19 +164,22 @@ namespace CASM {
    *  my_dof.is_canonical(my_supercell.permute_begin(),my_supercell.permute_end());
    */
   Supercell::permute_const_iterator Supercell::permute_begin() const {
-    return permute_const_iterator(SymGroupRep::RemoteHandle(this->factor_group(), this->permutation_symrep_ID()),
-                                  m_prim_grid,
-                                  0, 0); // starting indices
+    return permute_it(0, 0); // starting indices
   }
 
   /*****************************************************************/
 
   Supercell::permute_const_iterator Supercell::permute_end() const {
-    return permute_const_iterator(SymGroupRep::RemoteHandle(factor_group(), permutation_symrep_ID()),
-                                  m_prim_grid,
-                                  factor_group().size(), 0); // one past final indices
+    return permute_it(factor_group().size(), 0); // one past final indices
   }
 
+  /*****************************************************************/
+
+  Supercell::permute_const_iterator Supercell::permute_it(Index fg_index, Index trans_index) const {
+    return permute_const_iterator(SymGroupRep::RemoteHandle(factor_group(), permutation_symrep_ID()),
+                                  m_prim_grid,
+                                  fg_index, trans_index); // one past final indices
+  }
 
   /*****************************************************************/
 
@@ -506,15 +523,23 @@ namespace CASM {
    */
   //*******************************************************************************
   bool Supercell::contains_config(const Configuration &config, Index &index) const {
-    for(Index i = 0; i < config_list.size(); i++)
-      if(config.configdof() == config_list[i].configdof()) {
-        index = i;
-        return true;
-      }
-
-    index = config_list.size();
-    return false;
+    auto res = m_config_map.find(&config);
+    if(res == m_config_map.end()) {
+      index = config_list.size();
+      return false;
+    }
+    index = res->second;
+    return true;
   };
+
+  //*******************************************************************************
+  Supercell::config_const_iterator Supercell::find(const Configuration &config) const {
+    auto res = m_config_map.find(&config);
+    if(res == m_config_map.end()) {
+      return config_cend();
+    }
+    return config_const_iterator(&get_primclex(), get_id(), res->second);
+  }
 
   //*******************************************************************************
   /**
@@ -536,7 +561,7 @@ namespace CASM {
   bool Supercell::add_config(const Configuration &config, Index &index, Supercell::permute_const_iterator &permute_it) {
     // 'canon_config' is 'config' permuted to canonical form
     //    std::cout << "get canon_config" << std::endl;
-    Configuration canon_config = config.canonical_form(permute_begin(), permute_end(), permute_it);
+    Configuration canon_config = config.canonical_form();
 
     // std::cout << "    config: " << config.occupation() << std::endl;
     // std::cout << "     canon: " << canon_config.occupation() << std::endl;
@@ -557,9 +582,7 @@ namespace CASM {
     //std::cout << "check if canon_config is in config_list" << std::endl;
     if(!contains_config(canon_config, index)) {
       //std::cout << "new config" << std::endl;
-      config_list.push_back(canon_config);
-      config_list.back().set_id(config_list.size() - 1);
-      config_list.back().set_selected(false);
+      _add_canon_config(canon_config);
       return true;
       //std::cout << "    added" << std::endl;
     }
@@ -567,6 +590,50 @@ namespace CASM {
       config_list[index].push_back_source(canon_config.source());
     }
     return false;
+  }
+
+  //*******************************************************************************
+
+  /// \brief Insert a configuration that may be non-canonical
+  std::pair<Supercell::config_const_iterator, bool>
+  Supercell::insert_config(const Configuration &config) {
+    return insert_canon_config(config.canonical_form());
+  }
+
+  //*******************************************************************************
+
+  /// \brief Insert a configuration that is known to be canonical
+  std::pair<Supercell::config_const_iterator, bool>
+  Supercell::insert_canon_config(const Configuration &canon_config) {
+    Index index;
+    bool inserted = false;
+    if(!contains_config(canon_config, index)) {
+      _add_canon_config(canon_config);
+      index = config_list.size() - 1;
+      inserted = true;
+    }
+    config_const_iterator it(&get_primclex(), get_id(), index);
+    return std::make_pair(it, inserted);
+  }
+
+  //*******************************************************************************
+  /**
+   *   Adds to config_list, assuming 'canon_config' is in canonical form and not
+   *   already there
+   */
+  //*******************************************************************************
+  void Supercell::_add_canon_config(const Configuration &canon_config) {
+
+    if(this != &canon_config.get_supercell()) {
+      throw std::runtime_error("Error adding Configuration to Supercell: Supercell mismatch");
+    }
+    //std::cout << "new config" << std::endl;
+    config_list.push_back(canon_config);
+    config_list.back().set_id(config_list.size() - 1);
+    m_config_map.insert(
+      std::make_pair(&config_list.back(),
+                     boost::lexical_cast<Index>(config_list.back().get_id())));
+    config_list.back().set_selected(false);
   }
 
   //*******************************************************************************
@@ -596,6 +663,9 @@ namespace CASM {
 
       if(json["supercells"][get_name()].contains(ss.str())) {
         config_list.push_back(Configuration(json, *this, configid));
+        m_config_map.insert(
+          std::make_pair(&config_list.back(),
+                         boost::lexical_cast<Index>(config_list.back().get_id())));
       }
       else {
         return;
