@@ -315,6 +315,59 @@ namespace CASM {
 
   //*******************************************************************************
 
+  /// \brief Insert this configuration (in canonical form) in the canonical Supercell config list
+  ///
+  /// \param primitive_only If true, only the primitive Configuration is inserted.
+  ///
+  /// - By convention, the primitive canonical form of a configuration must
+  ///   always be saved in the config list.
+  /// - By default, both the primitive canonical Configuration and the equivalent
+  ///   non-primitive Configuration in the canonical Supercell are saved
+  /// - Optionally, this can insert just the primitive Configuration
+  ///
+  ConfigInsertResult Configuration::insert(bool primitive_only) const {
+
+    ConfigInsertResult res;
+
+    Configuration pconfig = this->primitive().in_canonical_supercell();
+    Supercell &canon_scel = pconfig.get_supercell();
+    Index config_index;
+
+    res.insert_primitive = canon_scel.add_canon_config(pconfig, config_index);
+
+    res.primitive_it = PrimClex::config_const_iterator(
+                         &get_primclex(),
+                         canon_scel.get_id(),
+                         config_index);
+
+    // if the primitive supercell is the same as the equivalent canonical supercell
+    if(get_supercell().canonical_form() == pconfig.get_supercell()) {
+      res.insert_canonical = res.insert_primitive;
+      res.canonical_it = res.primitive_it;
+    }
+    else {
+      if(primitive_only) {
+        res.insert_canonical = false;
+      }
+      else {
+        // primitive is returned as canonical form in canonical supercell
+        Supercell &canon_scel = get_supercell().canonical_form();
+        Index config_index;
+        Supercell::permute_const_iterator permute_it;
+
+        res.insert_canonical = canon_scel.add_config(this->in_canonical_supercell(), config_index, permute_it);
+
+        res.canonical_it = PrimClex::config_const_iterator(
+                             &get_primclex(),
+                             canon_scel.get_id(),
+                             config_index);
+      }
+    }
+    return res;
+  }
+
+  //*******************************************************************************
+
   /// \brief Returns the subgroup of the Supercell factor group that leaves the
   ///        Configuration unchanged
   std::vector<PermuteIterator> Configuration::factor_group() const {
