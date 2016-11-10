@@ -376,9 +376,6 @@ namespace CASM {
     // Populate m_trans_permute -- probably should be private
     void generate_permutations() const;
 
-    //\John G 070713
-    void generate_name();
-
     /// Calculate reference properties for a configuration (must have reference states in appropriate directories)
     void generate_reference_config_props(Index config_index);
     /// Calculate reference properties for each configuration in *this (see above)

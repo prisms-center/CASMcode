@@ -3,7 +3,7 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/clex/ConfigEqual.hh"
+#include "casm/clex/ConfigIsEquivalent.hh"
 #include "casm/clex/ScelEnumEquivalents.hh"
 
 namespace CASM {
@@ -16,7 +16,7 @@ namespace CASM {
 
       template<typename PermuteOutputIterator>
       PermuteOutputIterator operator()(const Configuration &config, PermuteIterator begin, PermuteIterator end, PermuteOutputIterator result) {
-        ConfigEqual f(config, config.crystallography_tol());
+        ConfigIsEquivalent f(config, config.crystallography_tol());
         return std::copy_if(begin, end, result, f);
       }
 

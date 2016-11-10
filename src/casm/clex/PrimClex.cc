@@ -5,13 +5,13 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/clex/ConfigIterator.hh"
 #include "casm/clex/ECIContainer.hh"
+#include "casm/clex/ScelEnum.hh"
 #include "casm/clusterography/jsonClust.hh"
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Niggli.hh"
-#include "casm/crystallography/SupercellEnumerator.hh"
 
 namespace CASM {
   //*******************************************************************************************
@@ -47,7 +47,9 @@ namespace CASM {
   void PrimClex::_init() {
 
     log().construct("CASM Project");
-    log() << "from: " << root << "\n" << std::endl;
+    if(!root.empty()) {
+      log() << "from: " << root << "\n" << std::endl;
+    }
 
     std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
 
@@ -290,6 +292,12 @@ namespace CASM {
 
   //*******************************************************************************************
   /// const Access entire supercell_list
+  boost::container::stable_vector<Supercell> &PrimClex::get_supercell_list() {
+    return supercell_list;
+  };
+
+  //*******************************************************************************************
+  /// const Access entire supercell_list
   const boost::container::stable_vector<Supercell> &PrimClex::get_supercell_list() const {
     return supercell_list;
   };
@@ -311,9 +319,9 @@ namespace CASM {
   const Supercell &PrimClex::get_supercell(std::string scellname) const {
     Index index;
     if(!contains_supercell(scellname, index)) {
-      std::cout << "Error in PrimClex::get_supercell(std::string scellname) const." << std::endl;
-      std::cout << "  supercell '" << scellname << "' not found." << std::endl;
-      exit(1);
+      err_log().error("Accessing supercell");
+      err_log() << "supercell '" << scellname << "' not found." << std::endl;
+      throw std::invalid_argument("Error in PrimClex::get_supercell(std::string scellname) const: Not found");
     }
     return supercell_list[index];
   };
@@ -321,14 +329,14 @@ namespace CASM {
   //*******************************************************************************************
   /// Access supercell by name
   Supercell &PrimClex::get_supercell(std::string scellname) {
-    Index index;
-    if(!contains_supercell(scellname, index)) {
-      std::cout << "Error in PrimClex::get_supercell(std::string scellname)." << std::endl;
-      std::cout << "  supercell '" << scellname << "' not found." << std::endl;
-      exit(1);
-    }
-    return supercell_list[index];
-  };
+    return const_cast<Supercell &>(static_cast<const PrimClex &>(*this).get_supercell(scellname));
+  }
+
+  //*******************************************************************************************
+  /// Access supercell by Lattice, adding if necessary
+  Supercell &PrimClex::get_supercell(const Lattice &lat) {
+    return get_supercell(add_supercell(lat));
+  }
 
   //*******************************************************************************************
   /// access configuration by name (of the form "scellname/[NUMBER]", e.g., ("SCEL1_1_1_1_0_0_0/0")
@@ -337,51 +345,37 @@ namespace CASM {
     boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
     Index config_ind;
     if(splt_vec.size() != 2) {
-      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), cannot locate configuration named '" << configname << "'\n"
-                << "                Exiting...\n";
-      assert(0);
-      exit(1);
+      err_log().error("Accessing configuration");
+      err_log() << "configuration '" << configname << "' not found." << std::endl;
+      throw std::invalid_argument("Error in PrimClex::configuration(const std::string &configname) const: Not found");
     }
 
     try {
       config_ind = boost::lexical_cast<Index>(splt_vec[1]);
     }
-    catch(boost::bad_lexical_cast &) {
-      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), malformed input:" << configname << "\n"
-                << "                Exiting...\n";
-      assert(0);
-      exit(1);
+    catch(boost::bad_lexical_cast &e) {
+      err_log().error("Invalid config index");
+      err_log() << "CRITICAL ERROR: In PrimClex::configuration(), malformed input:" << configname << "\n";
+      throw e;
     }
 
-
-    return get_supercell(splt_vec[0]).get_config(config_ind);
+    try {
+      return get_supercell(splt_vec[0]).get_config_list().at(config_ind);
+    }
+    catch(std::out_of_range &e) {
+      err_log().error("Invalid config index");
+      err_log() << "ERROR: In PrimClex::configuration(), configuration index out of range\n";
+      err_log() << "configname: " << configname << "\n";
+      err_log() << "index: " << config_ind << "\n";
+      err_log() << "config_list.size(): " << get_supercell(splt_vec[0]).get_config_list().size() << "\n";
+      throw e;
+    }
   }
 
   //*******************************************************************************************
 
   Configuration &PrimClex::configuration(const std::string &configname) {
-    std::vector<std::string> splt_vec;
-    boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
-
-    Index config_ind;
-    if(splt_vec.size() != 2) {
-      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), cannot locate configuration " << configname << "\n"
-                << "                Exiting...\n";
-      assert(0);
-      exit(1);
-    }
-
-    try {
-      config_ind = boost::lexical_cast<Index>(splt_vec[1]);
-    }
-    catch(boost::bad_lexical_cast &) {
-      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), malformed input:" << configname << "\n"
-                << "                Exiting...\n";
-      assert(0);
-      exit(1);
-    }
-
-    return get_supercell(splt_vec[0]).get_config(config_ind);
+    return const_cast<Configuration &>(static_cast<const PrimClex &>(*this).configuration(configname));
   }
 
   //*******************************************************************************************
@@ -499,49 +493,13 @@ namespace CASM {
 
   // **** Unorganized mess of functions ... ****
 
-  /**
-   * Generates all unique supercells between volStart and
-   * volEnd of PRIM volumes. Call this routine before you
-   * enumerate configurations.
-   *
-   * The provided transformation matrix can be used to enumerate
-   * over lattice vectors that are not the ones belonging to the
-   * primitive lattice (e.g. enumerate supercells of another supercell,
-   * or enumerate over a particular lattice plane)
-   *
-   * The number of dimensions (must be equal to 1, 2 or 3) specify
-   * which directions the supercells should be enumerated in, resulting
-   * in 1D, 2D or 3D supercells. The enumeration is relative to the provided
-   * transformation matrix. For dimension n, the first n columns of the
-   * transformation matrix are used to construct supercells, while
-   * the remaining 3-n columns remain fixed.
-   *
-   * The new functionality of restricted supercell enumeration can
-   * be easily bypassed by passing dims=3 and G=Eigen::Matrix3i::Identity()
-   *
-   * @param[in] volStart Minimum volume supercell, relative to det(G)
-   * @param[in] volEnd Maximum volume supercell, relative to det(G)
-   * @param[in] dirs Scel
-   * @param[in] G Generating matrix. Restricts enumeration to resulting vectors of P*G, where P=primitive.
-   *
-   */
-
-  void PrimClex::generate_supercells(int volStart, int volEnd, std::string dirs, const Eigen::Matrix3i &G, bool verbose) {
-    Array < Lattice > supercell_lattices;
-    ScelEnumProps enum_props(volStart, volEnd + 1, dirs, G);
-    prim.lattice().generate_supercells(supercell_lattices, prim.factor_group(), enum_props);
-    for(Index i = 0; i < supercell_lattices.size(); i++) {
-      Index list_size = supercell_list.size();
-      Index index = add_canonical_supercell(supercell_lattices[i]);
-      if(verbose) {
-        if(supercell_list.size() != list_size) {
-          std::cout << "  Generated: " << supercell_list[index].get_name() << "\n";
-        }
-        else {
-          std::cout << "  Generated: " << supercell_list[index].get_name() << " (already existed)\n";
-        }
-      }
-    }
+  /// \brief Generate supercells of a certain volume and shape and store them in the array of supercells
+  ///
+  /// \param enum_props An ScelEnumProps instance, see constructor for details
+  ///
+  void PrimClex::generate_supercells(const ScelEnumProps &enum_props) {
+    ScelEnumByProps e(*this, enum_props);
+    for(auto it = e.begin(); it != e.end(); ++it) {}
     return;
   }
 

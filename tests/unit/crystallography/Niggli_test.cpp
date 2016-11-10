@@ -125,7 +125,8 @@ namespace CASM {
 
     // enumerate size 5 supercells
     bool verbose = false;
-    primclex.generate_supercells(5, 5, "abc", Eigen::Matrix3i::Identity(), verbose);
+    ScelEnumProps enum_props(5, 6);
+    primclex.generate_supercells(enum_props);
 
     // there will be 7
     int scel_list_size = 7;
