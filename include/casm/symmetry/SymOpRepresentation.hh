@@ -119,6 +119,15 @@ namespace CASM {
     Index m_op_index;
   };
 
+  struct SymRepIndexCompare {
+
+    SymRepIndexCompare() {}
+
+    bool operator()(const SymOpRepresentation &A, const SymOpRepresentation &B) const {
+      return A.index() < B.index();
+    }
+  };
+
   jsonParser &to_json(const SymOpRepresentation *rep, jsonParser &json);
   /// This allocates a new object to 'rep'.
   void from_json(SymOpRepresentation *rep, const jsonParser &json);
