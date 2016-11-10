@@ -13,7 +13,7 @@ namespace CASM {
 
   /// \brief Enumerate equivalent Lattics, given a SymGroup
   ///
-  /// - The 'begin' Lattice is always the canonical form, with respect to the 
+  /// - The 'begin' Lattice is always the canonical form, with respect to the
   ///   specified SymGroup
   class LatticeEnumEquivalents :
     public EnumEquivalents<Lattice, Array<SymOp>::const_iterator, SymOp, SymRepIndexCompare> {

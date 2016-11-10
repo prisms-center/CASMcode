@@ -38,6 +38,8 @@ namespace test {
   /// \brief Build a CASM project at 'proj_dir/title' using the prim
   void make_project(const Proj &proj) {
 
+    rm_project(proj);
+
     jsonParser json;
     write_prim(proj.prim, json, FRAC);
     json["description"] = proj.desc;
