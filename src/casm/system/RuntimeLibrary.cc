@@ -1,60 +1,70 @@
 #include "casm/system/RuntimeLibrary.hh"
+#include "casm/casm_io/Log.hh"
 
 namespace CASM {
 
   /// \brief Construct a RuntimeLibrary object, with the options to be used for compile
   ///        the '.o' file and the '.so' file
-  RuntimeLibrary::RuntimeLibrary(std::string _compile_options,
-                                 std::string _so_options) :
-    m_compile_options(_compile_options),
-    m_so_options(_so_options),
-    m_filename_base(""),
-    m_handle(nullptr) {}
+  RuntimeLibrary::RuntimeLibrary(std::string filename_base,
+                                 std::string compile_options,
+                                 std::string so_options,
+                                 Log &status_log,
+                                 std::string compile_msg) :
+    m_filename_base(filename_base),
+    m_compile_options(compile_options),
+    m_so_options(so_options),
+    m_handle(nullptr) {
+
+    // If the shared library doesn't exist
+    if(!fs::exists(m_filename_base + ".so")) {
+
+      // But the library source code does
+      if(fs::exists(m_filename_base + ".cc")) {
+
+        // Compile it
+        try {
+          status_log.compiling<Log::standard>(m_filename_base + ".cc");
+          status_log.begin_lap();
+          status_log << compile_msg << std::endl;
+          _compile();
+          status_log << "compile time: " << status_log.lap_time() << " (s)\n" << std::endl;
+        }
+        catch(std::exception &e) {
+          status_log << "Error compiling clexulator. To fix: \n";
+          status_log << "  - Check compiler error messages.\n";
+          status_log << "  - Check compiler options with 'casm settings -l'\n";
+          status_log << "    - Update compiler options with 'casm settings --set-compile-options '...options...'\n";
+          status_log << "    - Make sure the casm headers can be found by including '-I/path/to/casm'\n";
+          status_log << "  - The default compiler is 'g++'. Override by setting the environment variable CXX\n" << std::endl;
+          throw e;
+        }
+      }
+      else {
+        throw std::runtime_error(
+          std::string("Error in RuntimeLibrary\n") +
+          "  Could not find '" + m_filename_base + ".so' or '" + m_filename_base + ".cc'");
+      }
+    }
+
+    // If the shared library exists
+    if(fs::exists(m_filename_base + ".so")) {
+
+      // Load the library with the Clexulator
+      _load();
+
+    }
+    else {
+      throw std::runtime_error(
+        std::string("Error in Clexulator constructor\n") +
+        "  Did not find '" + m_filename_base + ".so'");
+    }
+
+  }
 
   RuntimeLibrary::~RuntimeLibrary() {
     if(m_handle != nullptr) {
-      close();
+      _close();
     }
-  }
-
-  /// \brief Compile a shared library
-  ///
-  /// \param _filename_base Base name for the source code file. For example, "hello" results in writing "hello.cc",
-  ///        and compiling "hello.o" and "hello.so" in the current working directory.
-  /// \param _source A std::string containing the source code to be written. For example,
-  /// \code
-  /// std::string cc_file;
-  ///
-  /// cc_file = std::string("#include <iostream>\n") +
-  ///           "extern \"C\" int hello() {\n" +
-  ///           "   std::cout << \"Hello, my name is Ultron. I'm here to protect you.\" << '\\n';\n" +
-  ///           "   return 42;\n" +
-  ///           "}\n";
-  /// \endcode
-  ///
-  /// \result Writes a file "example.cc", and compiles an object file and shared library using the options
-  ///         provided when this RuntimeLibrary object was constructed. By default, "example.o" and "example.so".
-  ///
-  /// To enable runtime symbol lookup use C-style functions, i.e use extern "C" for functions you want to use
-  /// via get_function.  This means no member functions or overloaded functions.
-  ///
-  void RuntimeLibrary::compile(std::string _filename_base, std::string _source) {
-
-    if(m_handle != nullptr) {
-      close();
-    }
-
-    m_filename_base = _filename_base;
-
-    // write the source code
-    std::ofstream file(m_filename_base + ".cc");
-    file << _source;
-    file.close();
-
-    // compile the source code into a dynamic library
-    Popen p;
-    p.popen(m_compile_options + " -o " + m_filename_base + ".o" + " -c " + m_filename_base + ".cc");
-    p.popen(m_so_options + " -o " + m_filename_base + ".so" + " " + m_filename_base + ".o");
   }
 
   /// \brief Compile a shared library
@@ -68,12 +78,7 @@ namespace CASM {
   /// To enable runtime symbol lookup use C-style functions, i.e use extern "C" for functions you want to use
   /// via get_function.  This means no member functions or overloaded functions.
   ///
-  void RuntimeLibrary::compile(std::string _filename_base) {
-    if(m_handle != nullptr) {
-      close();
-    }
-
-    m_filename_base = _filename_base;
+  void RuntimeLibrary::_compile() {
 
     // compile the source code into a dynamic library
     Popen p;
@@ -96,18 +101,11 @@ namespace CASM {
     }
   }
 
-
   /// \brief Load a library with a given name
   ///
   /// \param _filename_base For "hello", this loads "hello.so"
   ///
-  void RuntimeLibrary::load(std::string _filename_base) {
-
-    if(m_handle != nullptr) {
-      close();
-    }
-
-    m_filename_base = _filename_base;
+  void RuntimeLibrary::_load() {
 
     m_handle = dlopen((m_filename_base + ".so").c_str(), RTLD_NOW);
     if(!m_handle) {
@@ -119,24 +117,19 @@ namespace CASM {
   /// \brief Close the current library
   ///
   /// This is also done on destruction.
-  void RuntimeLibrary::close() {
+  void RuntimeLibrary::_close() {
     // close
-    if(m_handle != nullptr && m_filename_base != "") {
+    if(m_handle != nullptr) {
       dlclose(m_handle);
     }
   }
 
   /// \brief Remove the current library and source code
   void RuntimeLibrary::rm() {
-    if(m_filename_base == "") {
-      return;
-    }
-
+    _close();
     // rm
     Popen p;
     p.popen(std::string("rm -f ") + m_filename_base + ".cc " + m_filename_base + ".o " + m_filename_base + ".so");
-
-    m_filename_base = "";
   }
 
   namespace {
