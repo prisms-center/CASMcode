@@ -1,6 +1,6 @@
 &CONTROL
  calculation = 'vc-relax',
- pseudo_dir = '../',
+ pseudo_dir = '$!%&',
  tprnfor = .true.,
  prefix = 'ZrO',
  restart_mode = 'from_scratch',

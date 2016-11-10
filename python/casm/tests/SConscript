@@ -4,25 +4,28 @@
 import os, glob
 
 # Import dependencies
-Import('env', 'casm_lib', 'casm', 'build_lib_paths')
+Import('env', 'casm_lib', 'casm')
 
 lenv=env.Clone()
 
 lenv.SetDefault(CASM_TEST_PROJECTS= os.path.join(os.getcwd(),"test_wrappers"))
+
 ### wrapper tests
 wrapper_tests = glob.glob('test_wrappers/*_test.py')
 test_name = [ os.path.splitext(os.path.basename(test))[0] for test in wrapper_tests]
-for test in wrapper_tests:
-	Depends(test, [lenv,casm_lib, casm]) 
 
 
 # for each wrapper test
 for i,testname in enumerate(test_name):
-	mytest=lenv.Program(wrapper_tests[i])
-	env.Alias(testname[:-5], mytest, "python " + wrapper_tests[i])
+
+	mytest=lenv.Command(testname + ".out",wrapper_tests[i],"python $SOURCE > $TARGET")
+
+	Depends(mytest, [lenv,casm_lib, casm])
+	AlwaysBuild(mytest)
+	env.Alias(testname[:-5], mytest)
 	if testname[:-5] in COMMAND_LINE_TARGETS:
 		env['IS_TEST'] = 1
-AlwaysBuild(wrapper_tests)
+
 
 ### add more tests later...
 #all_tests = [wrapper_tests, ...other tests...]

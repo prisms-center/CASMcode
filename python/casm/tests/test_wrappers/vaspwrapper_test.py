@@ -27,11 +27,25 @@ class TestRun(unittest.TestCase):
       # do tests
       
       # load Relax directory
-      filesdir = os.path.join(fixtures.projects_dir, case["proj"])
-      if os.path.isdir(os.path.join(filesdir,"relaxdir")):
-        shutil.rmtree(os.path.join(filesdir,"relaxdir"))
-      shutil.copytree(filesdir,os.path.join(filesdir,"relaxdir"))
-      relaxdir = os.path.join(filesdir,"relaxdir")
+      filesdir = join(fixtures.projects_dir, case["proj"])
+      if os.path.isdir(join(filesdir,"relaxdir")):
+        shutil.rmtree(join(filesdir,"relaxdir"))
+      shutil.copytree(filesdir,join(filesdir,"relaxdir"))
+      relaxdir = join(filesdir,"relaxdir")
+      ##CREATE POTCAR##
+      if "VASP_POTENTIAL_DIR" not in os.environ.keys():
+        print "NO SPECIFIED ENVIRONMENT VARIABLE VASP_POTENTIAL_DIR\n"
+        print "USING DEFAULT OF $HOME/vasp_potentials\n"
+        vasp_pot="$HOME/vasp_potentials"
+      else:
+        vasp_pot=os.environ["VASP_POTENTIAL_DIR"].encode('ascii','ignore')
+      with open(join(relaxdir,"POTCAR"),'wb') as wfd:
+        for f in case["potcars"]:
+          with open(join(join(vasp_pot,f),"POTCAR"),'rb') as fd:
+            shutil.copyfileobj(fd, wfd)
+          fd.close()
+      wfd.close()
+
       print "Relax dir is",relaxdir
 
       db=pbs.JobDB()
@@ -83,11 +97,19 @@ class TestRun(unittest.TestCase):
       # do tests
       # create casm project
       filesdir = join(fixtures.projects_dir, case["proj"])
-      if os.path.isdir(join(filesdir,"casmproj")):
-        shutil.rmtree(join(filesdir,"casmproj"))
-      shutil.copytree(filesdir,join(filesdir,"casmproj"))
-      casmproj = join(filesdir,"casmproj")
-
+      if os.path.isdir(join(filesdir,"casmproj_vasp")):
+        shutil.rmtree(join(filesdir,"casmproj_vasp"))
+      os.mkdir(join(filesdir,"casmproj_vasp"))
+      for file in os.listdir(filesdir):
+        if os.path.isfile(join(filesdir,file)):
+            shutil.copy(join(filesdir,file),join(filesdir,"casmproj_vasp"))
+      casmproj = join(filesdir,"casmproj_vasp")
+      if "VASP_POTENTIAL_DIR" not in os.environ.keys():
+        print "NO SPECIFIED ENVIRONMENT VARIABLE VASP_POTENTIAL_DIR\n"
+        print "USING DEFAULT OF $HOME/vasp_potentials\n"
+        vasp_pot="$HOME/vasp_potentials"
+      else:
+        vasp_pot=os.environ["VASP_POTENTIAL_DIR"].encode('ascii','ignore')
       #proj = casm.project.Project(path=join(filesdir, "casmproj"))
       print "casm project dir is", casmproj
       os.chdir(casmproj)
@@ -111,7 +133,7 @@ class TestRun(unittest.TestCase):
       shutil.copyfile("POSCAR",join(settings_dir,"POSCAR"))
       for line in fileinput.input("VSPECIES",inplace=1):
         if "$!%&" in line:
-          line = line.replace("$!%&",os.getcwd())
+          line = line.replace("$!%&",vasp_pot)
         sys.stdout.write(line)
       shutil.copyfile("VSPECIES",join(settings_dir,"SPECIES"))
       shutil.copyfile("vrelax.json",join(settings_dir,"relax.json"))
@@ -132,8 +154,8 @@ class TestRun(unittest.TestCase):
               self.assertTrue("POTCAR" in copiedfiles)
               self.assertTrue("KPOINTS" in copiedfiles)
       os.chdir(curr_dir)
-      if os.path.isdir(join(filesdir,"casmproj")):
-        shutil.rmtree(join(filesdir,"casmproj"))
+      if os.path.isdir(join(filesdir,"casmproj_vasp")):
+        shutil.rmtree(join(filesdir,"casmproj_vasp"))
       print "done!"   
 
   def test_run_many(self):
@@ -148,11 +170,19 @@ class TestRun(unittest.TestCase):
       # do tests
       # create casm project
       filesdir = join(fixtures.projects_dir, case["proj"])
-      if os.path.isdir(join(filesdir,"casmproj")):
-        shutil.rmtree(join(filesdir,"casmproj"))
-      shutil.copytree(filesdir,join(filesdir,"casmproj"))
-      casmproj = join(filesdir,"casmproj")
-
+      if os.path.isdir(join(filesdir,"casmproj_vasp")):
+        shutil.rmtree(join(filesdir,"casmproj_vasp"))
+      os.mkdir(join(filesdir,"casmproj_vasp"))
+      for file in os.listdir(filesdir):
+        if os.path.isfile(join(filesdir,file)):
+            shutil.copy(join(filesdir,file),join(filesdir,"casmproj_vasp"))
+      casmproj = join(filesdir,"casmproj_vasp")
+      if "VASP_POTENTIAL_DIR" not in os.environ.keys():
+        print "NO SPECIFIED ENVIRONMENT VARIABLE VASP_POTENTIAL_DIR\n"
+        print "USING DEFAULT OF $HOME/vasp_potentials\n"
+        vasp_pot="$HOME/vasp_potentials"
+      else:
+        vasp_pot=os.environ["VASP_POTENTIAL_DIR"].encode('ascii','ignore')
       #proj = casm.project.Project(path=join(filesdir, "casmproj"))
       print "casm project dir is", casmproj
       os.chdir(casmproj)
@@ -175,7 +205,7 @@ class TestRun(unittest.TestCase):
       shutil.copyfile("POSCAR",join(settings_dir,"POSCAR"))
       for line in fileinput.input("VSPECIES",inplace=1):
         if "$!%&" in line:
-          line = line.replace("$!%&",os.getcwd())
+          line = line.replace("$!%&",vasp_pot)
         sys.stdout.write(line)
       shutil.copyfile("VSPECIES",join(settings_dir,"SPECIES"))
       shutil.copyfile("vrelax.json",join(settings_dir,"relax.json"))
@@ -211,8 +241,8 @@ class TestRun(unittest.TestCase):
                 self.assertFalse(exists(join(join(join(join(join(train_data,dirName),config)),"calctype.default"),"properties.calc.json")))
                 print dirName + config + " failed and did not produce properties.calc.json as expected"
       os.chdir(curr_dir)
-      if os.path.isdir(join(filesdir,"casmproj")):
-        shutil.rmtree(join(filesdir,"casmproj"))
+      if os.path.isdir(join(filesdir,"casmproj_vasp")):
+        shutil.rmtree(join(filesdir,"casmproj_vasp"))
       print "done!" 
 
 if __name__ == '__main__':

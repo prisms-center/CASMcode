@@ -34,6 +34,19 @@ class TestRun(unittest.TestCase):
       relaxdir = os.path.join(filesdir,"relaxdir")
       print "Relax dir is",relaxdir
 
+      ##DYNAMICALLY LOCATE PSEUDO_DIR##
+      if "QE_POTENTIAL_DIR" not in os.environ.keys():
+        print "NO SPECIFIED ENVIRONMENT VARIABLE QE_POTENTIAL_DIR\n"
+        print "USING DEFAULT OF ~/quantum_espresso/pseudo\n"
+        qe_pot="~/quantum_espresso/pseudo"
+      else:
+        qe_pot=os.environ["QE_POTENTIAL_DIR"].encode('ascii','ignore')
+      for line in fileinput.input(os.path.join(relaxdir,case["infilename"]),inplace=1):
+        if "$!%&" in line:
+          line = line.replace("$!%&",qe_pot)
+        sys.stdout.write(line)
+
+
       db=pbs.JobDB()
 
       #initialize Relax object and begin relaxation
@@ -71,6 +84,13 @@ class TestRun(unittest.TestCase):
     """
     Test casm.qewrapper.setup() using casm-calc --setup
     """
+
+    if "QE_POTENTIAL_DIR" not in os.environ.keys():
+      print "NO SPECIFIED ENVIRONMENT VARIABLE QE_POTENTIAL_DIR\n"
+      print "USING DEFAULT OF $HOME/quantum_espresso/pseudo\n"
+      qe_pot="~/quantum_espresso/pseudo"
+    else:
+      qe_pot=os.environ["QE_POTENTIAL_DIR"].encode('ascii','ignore')
     cases = self.cases["setup_many"]
     from casm.project import Project,Selection
     import subprocess,shlex,sys,fileinput
@@ -79,10 +99,15 @@ class TestRun(unittest.TestCase):
       # do tests
       # create casm project
       filesdir = join(fixtures.projects_dir, case["proj"])
-      if os.path.isdir(join(filesdir,"casmproj")):
-        shutil.rmtree(join(filesdir,"casmproj"))
-      shutil.copytree(filesdir,join(filesdir,"casmproj"))
-      casmproj = join(filesdir,"casmproj")
+      if os.path.isdir(join(filesdir,"casmproj_qe")):
+        shutil.rmtree(join(filesdir,"casmproj_qe"))
+      os.mkdir(join(filesdir,"casmproj_qe"))
+      for file in os.listdir(filesdir):
+        if os.path.isfile(join(filesdir,file)):
+            shutil.copy(join(filesdir,file),join(filesdir,"casmproj_qe"))
+      casmproj = join(filesdir,"casmproj_qe")
+
+
 
       #proj = casm.project.Project(path=join(filesdir, "casmproj"))
       print "casm project dir is", casmproj
@@ -103,12 +128,12 @@ class TestRun(unittest.TestCase):
       #Move files to settings directory
       for line in fileinput.input(case["infilename"],inplace=1):
         if "$!%&" in line:
-          line = line.replace("$!%&",os.getcwd())
+          line = line.replace("$!%&",os.qe_pot)
         sys.stdout.write(line)
       shutil.copyfile(case["infilename"],join(settings_dir,case["infilename"]))
       for line in fileinput.input("QSPECIES",inplace=1):
         if "$!%&" in line:
-          line = line.replace("$!%&",os.getcwd())
+          line = line.replace("$!%&",qe_pot)
         sys.stdout.write(line)
       shutil.copyfile("QSPECIES",join(settings_dir,"SPECIES"))
       shutil.copyfile("qrelax.json",join(settings_dir,"relax.json"))
@@ -126,14 +151,20 @@ class TestRun(unittest.TestCase):
               copiedfiles=os.listdir(join(join(join(join(train_data,dirName),config)),"calctype.default"))
               self.assertTrue(case["infilename"] in copiedfiles)
       os.chdir(curr_dir)
-      if os.path.isdir(join(filesdir,"casmproj")):
-        shutil.rmtree(join(filesdir,"casmproj"))
+      if os.path.isdir(join(filesdir,"casmproj_qe")):
+        shutil.rmtree(join(filesdir,"casmproj_qe"))
       print "done!"   
 
   def test_run_many(self):
     """
     Test of casm.qewrapper.run() using casm-calc --submit
     """
+    if "QE_POTENTIAL_DIR" not in os.environ.keys():
+      print "NO SPECIFIED ENVIRONMENT VARIABLE QE_POTENTIAL_DIR\n"
+      print "USING DEFAULT OF ~/quantum_espresso/pseudo\n"
+      qe_pot="~/quantum_espresso/pseudo"
+    else:
+      qe_pot=os.environ["QE_POTENTIAL_DIR"].encode('ascii','ignore')
     cases = self.cases["run_many"]
     from casm.project import Project,Selection
     import subprocess,shlex,sys,fileinput
@@ -142,10 +173,13 @@ class TestRun(unittest.TestCase):
       # do tests
       # create casm project
       filesdir = join(fixtures.projects_dir, case["proj"])
-      if os.path.isdir(join(filesdir,"casmproj")):
-        shutil.rmtree(join(filesdir,"casmproj"))
-      shutil.copytree(filesdir,join(filesdir,"casmproj"))
-      casmproj = join(filesdir,"casmproj")
+      if os.path.isdir(join(filesdir,"casmproj_qe")):
+        shutil.rmtree(join(filesdir,"casmproj_qe"))
+      os.mkdir(join(filesdir,"casmproj_qe"))
+      for file in os.listdir(filesdir):
+        if os.path.isfile(join(filesdir,file)):
+            shutil.copy(join(filesdir,file),join(filesdir,"casmproj_qe"))
+      casmproj = join(filesdir,"casmproj_qe")
 
       #proj = casm.project.Project(path=join(filesdir, "casmproj"))
       print "casm project dir is", casmproj
@@ -166,12 +200,12 @@ class TestRun(unittest.TestCase):
       #Move files to settings directory
       for line in fileinput.input(case["infilename"],inplace=1):
         if "$!%&" in line:
-          line = line.replace("$!%&",os.getcwd())
+          line = line.replace("$!%&",qe_pot)
         sys.stdout.write(line)
       shutil.copyfile(case["infilename"],join(settings_dir,case["infilename"]))
       for line in fileinput.input("QSPECIES",inplace=1):
         if "$!%&" in line:
-          line = line.replace("$!%&",os.getcwd())
+          line = line.replace("$!%&",qe_pot)
         sys.stdout.write(line)
       shutil.copyfile("QSPECIES",join(settings_dir,"SPECIES"))
       shutil.copyfile("qrelax.json",join(settings_dir,"relax.json"))
@@ -207,8 +241,8 @@ class TestRun(unittest.TestCase):
                 self.assertFalse(exists(join(join(join(join(join(train_data,dirName),config)),"calctype.default"),"properties.calc.json")))
                 print dirName + config + " failed and did not produce properties.calc.json as expected"
       os.chdir(curr_dir)
-      if os.path.isdir(join(filesdir,"casmproj")):
-        shutil.rmtree(join(filesdir,"casmproj"))
+      if os.path.isdir(join(filesdir,"casmproj_qe")):
+        shutil.rmtree(join(filesdir,"casmproj_qe"))
       print "done!" 
 
 if __name__ == '__main__':

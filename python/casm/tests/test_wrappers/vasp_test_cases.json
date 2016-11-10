@@ -22,7 +22,8 @@
     "run_single" : [
       {
         "comment" : "test case 2",
-        "proj" : "ZrO_HCP_test_relax/vasp"
+        "proj" : "ZrO_HCP_test_relax/vasp",
+        "potcars" : ["PAW_PBE/Zr_sv","PAW_PBE/O_s"]
       }
     ]
   }
