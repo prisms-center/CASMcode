@@ -171,6 +171,10 @@ namespace CASM {
       return m_settings_path;
     }
 
+    std::string OptionHandlerBase::input_str() const {
+      return m_input_str;
+    }
+
     const fs::path OptionHandlerBase::output_path() const {
       return m_output_path;
     }
@@ -279,11 +283,33 @@ namespace CASM {
       return;
     }
 
-    void OptionHandlerBase::add_settings_suboption() {
+    void OptionHandlerBase::add_settings_suboption(bool required) {
       std::string help_str = "Settings input file specifying which parameters should be used. See 'casm format --" + m_tag + "'.";
 
-      m_desc.add_options()
-      ("settings,s", po::value<fs::path>(&m_settings_path)->required()->value_name(ArgHandler::path()), help_str.c_str());
+      if(required) {
+        m_desc.add_options()
+        ("settings,s", po::value<fs::path>(&m_settings_path)->required()->value_name(ArgHandler::path()), help_str.c_str());
+      }
+      else {
+        m_desc.add_options()
+        ("settings,s", po::value<fs::path>(&m_settings_path)->value_name(ArgHandler::path()), help_str.c_str());
+      }
+
+      return;
+    }
+
+    void OptionHandlerBase::add_input_suboption(bool required) {
+      std::string help_str = "String specifying input settings. See 'casm format --" + m_tag + "'.";
+
+      if(required) {
+        m_desc.add_options()
+        ("input,i", po::value<std::string>(&m_input_str)->required(), help_str.c_str());
+      }
+      else {
+        m_desc.add_options()
+        ("input,i", po::value<std::string>(&m_input_str), help_str.c_str());
+      }
+
       return;
     }
 

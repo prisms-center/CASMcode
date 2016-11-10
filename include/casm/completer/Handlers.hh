@@ -183,8 +183,19 @@ namespace CASM {
 
       //-------------------------------------------------------------------------------------//
 
+      ///Add a --input suboption. Expects a corresponding `casm format` to go with it.
+      void add_input_suboption(bool required = true);
+
+      ///The settings path to go with add_input_suboption()
+      std::string m_input_str;
+
+      ///Returns the path corresponding to add_input_suboption
+      std::string input_str() const;
+
+      //-------------------------------------------------------------------------------------//
+
       ///Add a --settings suboption. Expects a corresponding `casm format` to go with it.
-      void add_settings_suboption();
+      void add_settings_suboption(bool required = true);
 
       ///The settings path to go with add_settings_suboption()
       fs::path m_settings_path;
@@ -748,34 +759,28 @@ namespace CASM {
 
     public:
 
-      using OptionHandlerBase::supercell_strs;
-
       EnumOption();
 
-      int min_vol() const;
+      using OptionHandlerBase::settings_path;
+      using OptionHandlerBase::input_str;
 
-      int max_vol() const;
+      void add_desc_vec_suboption() {
+        m_desc.add_options()
+        ("help,h", "Print help message.")
+        ("desc", po::value<std::vector<std::string> >(&m_desc_vec)->multitoken()->zero_tokens(), "Print extended usage description. Use '--desc MethodName [MethodName2...]' for detailed option description. Partial matches of method names will be included.");
+        return;
+      }
 
-      const std::vector<std::string> &filter_strs() const;
-
-      const fs::path &matrix_path() const;
-
-      const std::string &lattice_directions() const;
+      const std::vector<std::string> &desc_vec() const {
+        return m_desc_vec;
+      }
 
 
     private:
 
       void initialize() override;
 
-      int m_min_vol;
-
-      int m_max_vol;
-
-      std::vector<std::string> m_filter_strs;   //This could be merged together with casm query --columns
-
-      fs::path m_matrix_path;   //This could be merged together with casm super --transf-mat
-
-      std::string m_lattice_directions_str;
+      std::vector<std::string> m_desc_vec;
 
     };
 
