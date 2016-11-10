@@ -239,7 +239,7 @@ namespace CASM {
   ///
   /// Derived classes should contain ENUMERATOR_MEMBERS(MyDerivedClass) in the
   /// class definition to automatically implement:
-  ///   - name, clone, _clone,
+  ///   - name
   ///
   /// In CASM namespace near the derived class definition, include:
   /// - For enumerators only meant to be used internally:
@@ -316,10 +316,6 @@ namespace CASM {
 
     reverse_iterator rend() {
       return reverse_iterator(begin());
-    }
-
-    std::unique_ptr<RandomAccessEnumeratorBase> clone() const {
-      return std::unique_ptr<RandomAccessEnumeratorBase>(this->_clone());
     }
 
     /// Number of elements in enumerator
@@ -479,10 +475,6 @@ namespace CASM {
     /// Derived enumerators must implement name
     std::string name() const {
       ptr->name();
-    }
-
-    std::unique_ptr<RandomAccessEnumerator> clone() const {
-      return std::unique_ptr<RandomAccessEnumerator>(this->_clone());
     }
 
     std::unique_ptr<RandomAccessEnumeratorBase<ValueType, IsConst> > ptr;
