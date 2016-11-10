@@ -11,6 +11,7 @@
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/SupercellEnumerator.hh"
 
 namespace CASM {
   //*******************************************************************************************
@@ -520,14 +521,15 @@ namespace CASM {
    *
    * @param[in] volStart Minimum volume supercell, relative to det(G)
    * @param[in] volEnd Maximum volume supercell, relative to det(G)
-   * @param[in] dims Number of dimensions to enumerate over (1D, 2D or 3D supercells)
+   * @param[in] dirs Scel
    * @param[in] G Generating matrix. Restricts enumeration to resulting vectors of P*G, where P=primitive.
    *
    */
 
-  void PrimClex::generate_supercells(int volStart, int volEnd, int dims, const Eigen::Matrix3i &G, bool verbose) {
+  void PrimClex::generate_supercells(int volStart, int volEnd, std::string dirs, const Eigen::Matrix3i &G, bool verbose) {
     Array < Lattice > supercell_lattices;
-    prim.lattice().generate_supercells(supercell_lattices, prim.factor_group(), volStart, volEnd, dims, G);
+    ScelEnumProps enum_props(volStart, volEnd + 1, dirs, G);
+    prim.lattice().generate_supercells(supercell_lattices, prim.factor_group(), enum_props);
     for(Index i = 0; i < supercell_lattices.size(); i++) {
       Index list_size = supercell_list.size();
       Index index = add_canonical_supercell(supercell_lattices[i]);

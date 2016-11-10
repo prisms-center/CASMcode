@@ -62,7 +62,7 @@ namespace CASM {
 
       double best_cost = 10e10;
       //We only bother checking pre-existing supercells of min_vol <= volume <=max_vol;
-      SupercellEnumerator<Lattice> enumerator(prim_lat, sym_group, min_vol, max_vol + 1);
+      SupercellEnumerator<Lattice> enumerator(prim_lat, sym_group, ScelEnumProps(min_vol, max_vol + 1));
 
       Index l = 0;
       //std::cout << "min_vol is " << min_vol << "max_vol is " << max_vol << "\n";
@@ -740,7 +740,10 @@ namespace CASM {
       return it->second;
 
     std::vector<Lattice> lat_vec;
-    SupercellEnumerator<Lattice> enumerator(primclex().get_prim().lattice(), primclex().get_prim().point_group(), prim_vol, prim_vol + 1);
+    SupercellEnumerator<Lattice> enumerator(
+      primclex().get_prim().lattice(),
+      primclex().get_prim().point_group(),
+      ScelEnumProps(prim_vol, prim_vol + 1));
 
     Index l = 0;
     //std::cout << "min_vol is " << min_vol << "max_vol is " << max_vol << "\n";

@@ -99,8 +99,8 @@ void lattice_superduper_test() {
   SymGroup pg;
   Lattice lat(Lattice::fcc());
 
-  long min_vol = 1, max_vol = 5;
-  SupercellEnumerator<Lattice> enumerator(lat, pg, min_vol, max_vol);
+  ScelEnumProps enum_props(1, 6);
+  SupercellEnumerator<Lattice> enumerator(lat, pg, enum_props);
 
   std::vector<Lattice> lat_list(enumerator.begin(), enumerator.end());
 

@@ -247,7 +247,7 @@ namespace CASM {
 
   //*******************************************************************************
 
-  /// \brief Returns the operation that applied to the canonical form returns *this
+  /// \brief Returns the operation that applied to *this returns the canonical form
   SymOp Lattice::from_canonical(double tol) const {
     return to_canonical().inverse();
   }
@@ -256,7 +256,7 @@ namespace CASM {
 
   /// \brief Returns the canonical equivalent Lattice, using the point group of the Lattice
   ///
-  /// - As implemented by canonical_equivalent_lattice
+  /// - To specify different symmetry, see canonical_equivalent_lattice
   Lattice Lattice::canonical_form(double tol) const {
     SymGroup pg;
     this->generate_point_group(pg, tol);
@@ -266,8 +266,6 @@ namespace CASM {
   //*******************************************************************************
 
   /// \brief Returns the canonical equivalent Lattice, using the provided point group
-  ///
-  /// - As implemented by canonical_equivalent_lattice
   Lattice Lattice::canonical_form(const SymGroup &pg, double tol) const {
     return canonical_equivalent_lattice(*this, pg, tol);
   }
@@ -382,11 +380,9 @@ namespace CASM {
   ///
   void Lattice::generate_supercells(Array<Lattice> &supercell,
                                     const SymGroup &effective_pg,
-                                    int min_prim_vol,
-                                    int max_prim_vol,
-                                    int dims,
-                                    const Eigen::Matrix3i &G) const {
-    SupercellEnumerator<Lattice> enumerator(*this, effective_pg, min_prim_vol, max_prim_vol + 1, dims, G);
+                                    const ScelEnumProps &enum_props) const {
+
+    SupercellEnumerator<Lattice> enumerator(*this, effective_pg, enum_props);
     supercell.clear();
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
       supercell.push_back(canonical_equivalent_lattice(*it, effective_pg, TOL));
@@ -1184,10 +1180,11 @@ namespace CASM {
     return std::make_pair(false, T.cast<int>());
   }
 
-  /// \brief Returns the minimum non-zero volume Lattice obtainable by replacing
-  ///         one Lattice vector with the provided vector
+  /// \brief Returns a minimum volume Lattice obtainable by replacing one
+  ///        Lattice vector with tau
   ///
   /// - No guarantee on the result being canonical in any way
+  ///
   ///
   /// \relates Lattice
   ///

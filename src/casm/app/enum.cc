@@ -69,7 +69,6 @@ namespace CASM {
 
     int dims = 3;
     Eigen::Matrix3i G = Eigen::Matrix3i::Identity();    //The matrix that defines the lattice vectors to enumerate over relative to the primitive vectors
-    Eigen::Matrix3i P = Eigen::Matrix3i::Identity();    //Shuffles G around so that the first dims vectors are at the left
     fs::path matrix_path;
     std::string ezmode = "abc"; //Assign default in ::initialize()?
     po::variables_map vm;
@@ -246,10 +245,6 @@ namespace CASM {
           ezmode.push_back('c');
         }
       }
-      P = Eigen::Matrix3i::Zero();
-      P(ezmode[0] - 'a', 0) = 1;
-      P(ezmode[1] - 'a', 1) = 1;
-      P(ezmode[2] - 'a', 2) = 1;
     }
     if(vm.count("matrix")) {
       fs::ifstream matstream(matrix_path);
@@ -277,7 +272,7 @@ namespace CASM {
       }
       std::cout << std::endl;
 
-      primclex.generate_supercells(min_vol, max_vol, dims, G * P, true);
+      primclex.generate_supercells(min_vol, max_vol, ezmode, G, true);
       std::cout << "\n  DONE." << std::endl << std::endl;
 
       std::cout << "Write SCEL." << std::endl << std::endl;
