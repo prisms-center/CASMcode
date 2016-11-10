@@ -125,11 +125,11 @@ namespace CASM {
 
     "ScelEnum: \n\n"
 
-    "  min_volume: int, >0 (default=1)\n"
+    "  min: int, >0 (default=1)\n"
     "    The minimum volume supercell to enumerate. The volume is measured\n"
     "    relative the unit cell being used to generate supercells.\n"
     "\n"
-    "  max_volume: int, >= min_volume (default=max existing scel_size)\n"
+    "  max: int, >= min (default=max existing scel_size)\n"
     "    The maximum volume supercell to enumerate. The volume is measured\n"
     "    relative the unit cell being used to generate supercells.\n"
     "\n"
