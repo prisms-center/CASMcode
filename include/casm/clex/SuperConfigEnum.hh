@@ -144,7 +144,6 @@ namespace CASM {
 
   /// \brief Constructor, using all Supercell permutations
   ///
-  /// - By default only primitive canonical Configurations are enumerated
   template<typename ConfigIterator>
   SuperConfigEnum::SuperConfigEnum(Supercell &_target_scel,
                                    ConfigIterator _begin,
@@ -157,7 +156,6 @@ namespace CASM {
 
   /// \brief Constructor
   ///
-  /// - By default only primitive canonical Configurations are enumerated
   template<typename ConfigIterator>
   SuperConfigEnum::SuperConfigEnum(Supercell &_target_scel,
                                    ConfigIterator _begin,
