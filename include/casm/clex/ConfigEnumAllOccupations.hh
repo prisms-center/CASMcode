@@ -6,9 +6,9 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
-namespace CASM {
+ENUMERATOR_INTERFACE_TRAITS(ConfigEnumAllOccupations)
 
-  ENUMERATOR_INTERFACE_TRAITS(ConfigEnumAllOccupations)
+namespace CASM {
 
   /// \brief Enumerate over all possible occupations in a particular Supercell
   ///

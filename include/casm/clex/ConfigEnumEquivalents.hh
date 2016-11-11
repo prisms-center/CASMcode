@@ -6,13 +6,12 @@
 #include "casm/symmetry/EnumEquivalents.hh"
 #include "casm/clex/Configuration.hh"
 
+ENUMERATOR_TRAITS(ConfigEnumEquivalents)
+
 namespace CASM {
 
   class Supercell;
   class FillSupercell;
-
-
-  ENUMERATOR_TRAITS(ConfigEnumEquivalents)
 
   /// \brief Enumerate all equivalent Configurations in a Supercell, as generated
   ///        by Supercell factor group symmetry

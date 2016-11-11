@@ -5,6 +5,12 @@
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
 
+extern "C" {
+  CASM::EnumInterfaceBase *make_SuperConfigEnum_interface() {
+    return new CASM::EnumInterface<CASM::SuperConfigEnum>();
+  }
+}
+
 namespace CASM {
 
   const std::string CASM_TMP::traits<CASM::SuperConfigEnum>::name = "SuperConfigEnum";

@@ -1,8 +1,23 @@
 #include "casm/clex/ConfigEnumInterpolation.hh"
 
+extern "C" {
+  CASM::EnumInterfaceBase *make_ConfigEnumInterpolation_interface() {
+    return new CASM::EnumInterface<CASM::ConfigEnumInterpolation>();
+  }
+}
+
 namespace CASM {
 
   const std::string CASM_TMP::traits<ConfigEnumInterpolation>::name = "ConfigEnumInterpolation";
+
+  const std::string CASM_TMP::traits<ConfigEnumInterpolation>::help =
+    "ConfigEnumInterpolation: \n\n"
+
+    "  ... include help documentation here ... \n\n";
+
+  int EnumInterface<ConfigEnumInterpolation>::run(PrimClex &primclex, const jsonParser &_kwargs) const {
+    throw std::runtime_error("EnumInterface<ConfigEnumAllOccupations>::run is not implemented");
+  }
 
   /// \brief Constructor
   ///

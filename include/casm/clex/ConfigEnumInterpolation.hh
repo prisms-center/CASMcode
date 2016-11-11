@@ -4,9 +4,9 @@
 #include "casm/container/RandomAccessEnumerator.hh"
 #include "casm/clex/Configuration.hh"
 
-namespace CASM {
+ENUMERATOR_INTERFACE_TRAITS(ConfigEnumInterpolation)
 
-  ENUMERATOR_INTERFACE_TRAITS(ConfigEnumInterpolation)
+namespace CASM {
 
   /// Interpolate displacements and strains between two configurations with
   /// identical occupation

@@ -1,5 +1,11 @@
 #include "casm/clex/ScelEnum_impl.hh"
 
+extern "C" {
+  CASM::EnumInterfaceBase *make_ScelEnum_interface() {
+    return new CASM::EnumInterface<CASM::ScelEnum>();
+  }
+}
+
 namespace CASM {
 
   namespace {

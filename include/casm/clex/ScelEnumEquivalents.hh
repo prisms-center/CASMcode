@@ -6,9 +6,9 @@
 #include "casm/symmetry/EnumEquivalents.hh"
 #include "casm/clex/Supercell.hh"
 
-namespace CASM {
+ENUMERATOR_TRAITS(ScelEnumEquivalents)
 
-  ENUMERATOR_TRAITS(ScelEnumEquivalents)
+namespace CASM {
 
   class ScelEnumEquivalents :
     public EnumEquivalents <

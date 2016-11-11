@@ -7,10 +7,9 @@
 #include "casm/container/Counter.hh"
 #include "casm/clex/Configuration.hh"
 
+ENUMERATOR_INTERFACE_TRAITS(ConfigEnumStrain)
+
 namespace CASM {
-
-
-  ENUMERATOR_INTERFACE_TRAITS(ConfigEnumStrain)
 
   /// Enumerate strained Configurations
   ///

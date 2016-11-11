@@ -5,9 +5,24 @@
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/algorithm.hh"
 
+extern "C" {
+  CASM::EnumInterfaceBase *make_ConfigEnumStrain_interface() {
+    return new CASM::EnumInterface<CASM::ConfigEnumStrain>();
+  }
+}
+
 namespace CASM {
 
-  const std::string CASM_TMP::traits<CASM::ConfigEnumStrain>::name = "ConfigEnumStrain";
+  const std::string CASM_TMP::traits<ConfigEnumStrain>::name = "ConfigEnumStrain";
+
+  const std::string CASM_TMP::traits<ConfigEnumStrain>::help =
+    "ConfigEnumStrain: \n\n"
+
+    "  ... include help documentation here ... \n\n";
+
+  int EnumInterface<ConfigEnumStrain>::run(PrimClex &primclex, const jsonParser &_kwargs) const {
+    throw std::runtime_error("EnumInterface<Strain>::run is not implemented");
+  }
 
   ConfigEnumStrain::ConfigEnumStrain(Supercell &_scel,
                                      const Configuration &_init,

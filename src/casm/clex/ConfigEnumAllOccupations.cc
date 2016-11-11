@@ -7,6 +7,12 @@
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
 
+extern "C" {
+  CASM::EnumInterfaceBase *make_ConfigEnumAllOccupations_interface() {
+    return new CASM::EnumInterface<CASM::ConfigEnumAllOccupations>();
+  }
+}
+
 namespace CASM {
 
   const std::string CASM_TMP::traits<ConfigEnumAllOccupations>::name = "ConfigEnumAllOccupations";
@@ -106,7 +112,7 @@ namespace CASM {
     log << "# new configurations: " << Nfinal - Ninit << "\n";
     log << "# configurations in this project: " << Nfinal << "\n" << std::endl;
 
-    std::cout << "Write SCEL..." << std::endl;
+    log << "Write SCEL..." << std::endl;
     primclex.print_supercells();
     log << "  DONE" << std::endl << std::endl;
 

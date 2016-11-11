@@ -6,10 +6,9 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 
+ENUMERATOR_INTERFACE_TRAITS(SuperConfigEnum)
+
 namespace CASM {
-
-
-  ENUMERATOR_INTERFACE_TRAITS(SuperConfigEnum)
 
   /// \brief Given a selection of Configurations, enumerate all tilings into
   /// some supercell

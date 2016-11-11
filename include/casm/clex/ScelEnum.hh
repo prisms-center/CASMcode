@@ -7,9 +7,9 @@
 #include "casm/container/RandomAccessEnumerator.hh"
 #include "casm/clex/Supercell.hh"
 
-namespace CASM {
+ENUMERATOR_VARIABLECONST_TRAITS(ScelEnumByNameT)
 
-  ENUMERATOR_VARIABLECONST_TRAITS(ScelEnumByNameT)
+namespace CASM {
 
   template<bool IsConst = true>
   class ScelEnumByNameT : public RandomAccessEnumeratorBase<Supercell, IsConst> {
@@ -48,10 +48,12 @@ namespace CASM {
 
   typedef ScelEnumByNameT<true> ConstScelEnumByName;
   typedef ScelEnumByNameT<false> ScelEnumByName;
+}
 
 
+ENUMERATOR_VARIABLECONST_TRAITS(ScelEnumByPropsT)
 
-  ENUMERATOR_VARIABLECONST_TRAITS(ScelEnumByPropsT)
+namespace CASM {
 
   template<bool IsConst = true>
   class ScelEnumByPropsT : public InputEnumeratorBase<Supercell, IsConst> {
@@ -85,9 +87,12 @@ namespace CASM {
   typedef ScelEnumByPropsT<true> ConstScelEnumByProps;
   typedef ScelEnumByPropsT<false> ScelEnumByProps;
 
+}
 
 
-  ENUMERATOR_INTERFACE_VARIABLECONST_TRAITS(ScelEnumT)
+ENUMERATOR_INTERFACE_VARIABLECONST_TRAITS(ScelEnumT)
+
+namespace CASM {
 
   /// \brief Enumerate over Supercell
   ///

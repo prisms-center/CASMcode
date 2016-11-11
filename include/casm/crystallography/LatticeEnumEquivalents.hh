@@ -5,11 +5,11 @@
 #include "casm/symmetry/SymOpRepresentation.hh"
 #include "casm/crystallography/Lattice.hh"
 
+ENUMERATOR_TRAITS(LatticeEnumEquivalents)
+
 namespace CASM {
 
   class SymGroup;
-
-  ENUMERATOR_TRAITS(LatticeEnumEquivalents)
 
   /// \brief Enumerate equivalent Lattics, given a SymGroup
   ///
