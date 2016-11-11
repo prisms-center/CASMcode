@@ -119,6 +119,11 @@ namespace CASM {
       return m_root / m_casm_dir / "config_list.json";
     }
 
+    /// \brief Return project_settings.json path
+    fs::path enumerators() const {
+      return m_root / m_casm_dir / "enumerators";
+    }
+
     // -- Symmetry --------
 
     /// \brief Return symmetry directory path

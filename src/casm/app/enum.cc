@@ -35,6 +35,10 @@ namespace CASM {
     //casm enum --settings input.json
     //- enumerate supercells, configs, hop local configurations, etc.
 
+    // For enumerator plugins.
+    // Order of destruction matters, this must be declared before 'enumerators'
+    std::vector<std::shared_ptr<RuntimeLibrary> > custom_lib;
+
     // Add standard enumerators here
     EnumeratorMap enumerators = make_enumerator_map();
     enumerators.insert(
@@ -43,11 +47,10 @@ namespace CASM {
       EnumInterface<SuperConfigEnum>()
     );
 
-
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex *primclex;
     po::variables_map vm;
-
     Completer::EnumOption enum_opt;
-
     const fs::path &root = args.root;
 
     try {
@@ -62,24 +65,42 @@ namespace CASM {
         }
 
         if(vm.count("settings") + vm.count("input") != 1) {
-          std::cerr << "Error in 'casm enum'. One and only one of --settings or --input must be chosen." << std::endl;
+          args.err_log << "Error in 'casm enum'. One and only one of --settings or --input must be chosen." << std::endl;
           return ERR_INVALID_ARG;
         }
       }
 
+      if(!root.empty()) {
+
+        primclex = &make_primclex_if_not(args, uniq_primclex);
+
+        load_enumerator_plugins(
+          *primclex,
+          std::inserter(enumerators, enumerators.end()),
+          std::back_inserter(custom_lib));
+
+      }
+
+
       /** --help option
        */
       if(vm.count("help")) {
-        std::cout << "\n";
-        std::cout << enum_opt.desc() << std::endl;
+        args.log << "\n";
+        args.log << enum_opt.desc() << std::endl;
 
-        std::cout << "The current enumeration methods are:\n\n";
-
-        for(const auto &e : enumerators) {
-          std::cout << "  " << e.name() << std::endl;
+        if(!root.empty()) {
+          args.log << "The enumeration methods are:\n\n";
+        }
+        else {
+          args.log << "No casm project found\n";
+          args.log << "The standard enumeration methods are:\n\n";
         }
 
-        std::cout << "\nFor complete options description, use 'casm enum --desc MethodName'.\n\n";
+        for(const auto &e : enumerators) {
+          args.log << "  " << e.name() << std::endl;
+        }
+
+        args.log << "\nFor complete options description, use 'casm enum --desc MethodName'.\n\n";
 
         return 0;
       }
@@ -88,22 +109,30 @@ namespace CASM {
       // there are any problems
 
       if(vm.count("desc") && enum_opt.desc_vec().size()) {
-        std::cout << "\n";
+        args.log << "\n";
 
         bool match = false;
         for(const auto &in_name : enum_opt.desc_vec()) {
           for(const auto &e : enumerators) {
             if(e.name().substr(0, in_name.size()) == in_name) {
-              std::cout << e.help() << std::endl;
+              args.log << e.help() << std::endl;
               match = true;
             }
           }
         }
 
         if(!match) {
-          std::cout << "No match found. The current enumeration methods are:\n\n";
+
+          if(!root.empty()) {
+            args.log << "No match found. The enumeration methods are:\n\n";
+          }
+          else {
+            args.log << "No casm project found\n";
+            args.log << "No match found. The standard enumeration methods are:\n\n";
+          }
+
           for(const auto &e : enumerators) {
-            std::cout << "  " << e.name() << std::endl;
+            args.log << "  " << e.name() << std::endl;
           }
         }
 
@@ -111,52 +140,63 @@ namespace CASM {
       }
 
       if(vm.count("desc")) {
-        std::cout << "\n";
-        std::cout << enum_opt.desc() << std::endl;
+        args.log << "\n";
+        args.log << enum_opt.desc() << std::endl;
 
-        std::cout << "DESCRIPTION\n" << std::endl;
+        args.log << "DESCRIPTION\n" << std::endl;
 
-        std::cout << "  casm enum --settings input.sjon                                      \n"
-                  "  - Input settings in JSON format to run an enumeration. The expected  \n"
-                  "    format is:                                                         \n"
-                  "\n"
-                  "    {\n"
-                  "      \"MethodName\": {\n"
-                  "        \"option1\" : ...,\n"
-                  "        \"option2\" : ...,\n"
-                  "         ...\n"
-                  "      }\n"
-                  "    }\n"
-                  "\n"
-                  "The current enumeration methods are:\n\n";
+        args.log << "  casm enum --settings input.sjon                                      \n"
+                 "  - Input settings in JSON format to run an enumeration. The expected  \n"
+                 "    format is:                                                         \n"
+                 "\n"
+                 "    {\n"
+                 "      \"MethodName\": {\n"
+                 "        \"option1\" : ...,\n"
+                 "        \"option2\" : ...,\n"
+                 "         ...\n"
+                 "      }\n"
+                 "    }\n"
+                 "\n";
 
-        for(const auto &e : enumerators) {
-          std::cout << "  " << e.name() << std::endl;
+        if(!root.empty()) {
+          args.log << "The enumeration methods are:\n\n";
+        }
+        else {
+          args.log << "No casm project found\n";
+          args.log << "The standard enumeration methods are:\n\n";
         }
 
-        std::cout << "\nFor complete options help, use 'casm enum --desc MethodName'.\n\n";
+        for(const auto &e : enumerators) {
+          args.log << "  " << e.name() << std::endl;
+        }
+
+        args.log << "\nFor complete options help for a particular method, \n"
+                 "use 'casm enum --desc MethodName'.\n\n";
+
+        args.log << "Custom enumerator plugins can be added by placing source code \n"
+                 "in the CASM project directory: \n"
+                 "  $ROOT/.casm/enumerators \n\n"
+
+                 "For examples of how to write enumerators see: \n"
+                 "  $REPO/include/casm/enumerators \n"
+                 "  $REPO/src/casm/enumerators \n"
+                 "where: \n"
+                 "  REPO=https://github.com/prisms-center/CASMcode/tree/master \n\n";
 
         return 0;
       }
     }
     catch(po::error &e) {
-      std::cerr << enum_opt.desc() << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << enum_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      std::cerr << enum_opt.desc() << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << enum_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_UNKNOWN;
 
     }
-
-    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
-    // Then whichever exists, store reference in 'primclex'
-    std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    const DirectoryStructure &dir = primclex.dir();
-    const ProjectSettings &set = primclex.settings();
 
     jsonParser input;
     if(vm.count("settings")) {
@@ -170,9 +210,9 @@ namespace CASM {
       args.err_log << std::endl;
     }
     auto it = input.begin();
-    int res = enumerators[it.name()].run(primclex, *it);
+    int res = enumerators[it.name()].run(*primclex, *it);
 
-    std::cout << std::endl;
+    args.log << std::endl;
 
     return res;
   };

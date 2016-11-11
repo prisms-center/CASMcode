@@ -366,6 +366,14 @@ namespace CASM {
     });
   }
 
+  /// \brief Load enumerator plugins from a CASM project
+  template<typename EnumeratorMapInserter, typename RuntimeLibInserter>
+  std::pair<EnumeratorMapInserter, RuntimeLibInserter>
+  load_enumerator_plugins(
+    const PrimClex &primclex,
+    EnumeratorMapInserter enum_it,
+    RuntimeLibInserter lib_it);
+
   /// \brief Template class to be specialized for each enumerator that may be accessed via the API
   template<typename Derived>
   class EnumInterface {};
@@ -396,6 +404,7 @@ namespace CASM {
 
 
 #define ENUMERATOR_TRAITS(EnumMethod)\
+namespace CASM {\
 \
   class EnumMethod;\
 \
@@ -405,8 +414,10 @@ namespace CASM {
       static const std::string name;\
     };\
   }\
- 
+}
+
 #define ENUMERATOR_VARIABLECONST_TRAITS(EnumMethod)\
+namespace CASM {\
 \
   template<bool IsConst>\
   class EnumMethod;\
@@ -417,7 +428,8 @@ namespace CASM {
       static const std::string name;\
     };\
   }\
- 
+}
+
 #define ENUMERATOR_MEMBERS(EnumMethod)\
   public:\
 \
@@ -426,7 +438,12 @@ namespace CASM {
     }\
 \
  
+#define MAKE_INTERFACE(NAME) make_ ## NAME ## _command()
+
 #define ENUMERATOR_INTERFACE_TRAITS(EnumMethod)\
+extern "C" CASM::EnumInterfaceBase* MAKE_INTERFACE(EnumMethod); \
+\
+namespace CASM {\
 \
   class EnumMethod;\
 \
@@ -464,8 +481,12 @@ namespace CASM {
     }\
 \
   };\
- 
+}
+
 #define ENUMERATOR_INTERFACE_VARIABLECONST_TRAITS(EnumMethod)\
+extern "C" CASM::EnumInterfaceBase* MAKE_INTERFACE(EnumMethod); \
+\
+namespace CASM {\
 \
   template<bool IsConst>\
   class EnumMethod;\
@@ -504,7 +525,8 @@ namespace CASM {
     }\
 \
   };\
- 
+}
+
 
 }
 
