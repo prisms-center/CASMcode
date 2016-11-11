@@ -461,7 +461,7 @@ namespace CASM {
   /// \brief Number of explicit equilibration passes requsted for each run
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::equilibration_passes_each_run() const {
     std::string help = "int (optional)";
-    return _get_setting<size_type>("data", "equilibration_passes_each_run");
+    return _get_setting<size_type>("data", "equilibration_passes_each_run", help);
   }
 
 
