@@ -366,14 +366,6 @@ namespace CASM {
     });
   }
 
-  /// \brief Load enumerator plugins from a CASM project
-  template<typename EnumeratorMapInserter, typename RuntimeLibInserter>
-  std::pair<EnumeratorMapInserter, RuntimeLibInserter>
-  load_enumerator_plugins(
-    const PrimClex &primclex,
-    EnumeratorMapInserter enum_it,
-    RuntimeLibInserter lib_it);
-
   /// \brief Template class to be specialized for each enumerator that may be accessed via the API
   template<typename Derived>
   class EnumInterface {};

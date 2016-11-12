@@ -41,6 +41,9 @@ BOOST_AUTO_TEST_CASE(Test1) {
   cp("TestEnum.hh");
   cp("TestEnum.cc");
 
+  // refresh to load plugins
+  primclex.refresh(true);
+
   auto check = [&](std::string str) {
     CommandArgs args(str, &primclex, primclex.dir().root_dir(), null_log());
     BOOST_CHECK(!enum_command(args));

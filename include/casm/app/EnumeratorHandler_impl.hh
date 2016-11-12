@@ -1,7 +1,4 @@
-#ifndef CASM_Enumerator_impl
-#define CASM_Enumerator_impl
-
-#include "casm/container/Enumerator.hh"
+#include "casm/app/EnumeratorHandler.hh"
 #include "casm/clex/PrimClex.hh"
 
 namespace CASM {
@@ -10,7 +7,7 @@ namespace CASM {
   ///
   /// \param primclex CASM project to read enumerator plugins from
   /// \param enum_it Inserter to EnumeratorMap where the plugins should be stored
-  /// \param lib_it Inserter to container of std::shared_ptr<RuntimeLibrary>
+  /// \param lib_it Inserter to container of pair<std::string, std::shared_ptr<RuntimeLibrary> >
   ///        holding the libraries with the enumerator plugins
   ///
   /// - Checks the directory `primclex.dir().enumerators()` for `ENUMNAME.cc` files
@@ -22,7 +19,7 @@ namespace CASM {
   ///   object
   ///
   /// \note The lifetime of the RuntimeLibrary must be longer than the lifetime
-  /// of the EnumeratorMap
+  /// of the EnumInterface
   ///
   template<typename EnumeratorMapInserter, typename RuntimeLibInserter>
   std::pair<EnumeratorMapInserter, RuntimeLibInserter>
@@ -34,6 +31,11 @@ namespace CASM {
     // If 'args.primclex', use that, else construct PrimClex in 'primclex'
     // Then whichever exists, store reference in 'primclex'
     const DirectoryStructure &dir = primclex.dir();
+
+    if(dir.root_dir().empty()) {
+      return std::make_pair(enum_it, lib_it);
+    }
+
     const ProjectSettings &set = primclex.settings();
 
     if(fs::is_directory(dir.enumerators())) {
@@ -67,7 +69,7 @@ namespace CASM {
 
           // will clone on insert
           *enum_it++ = *ptr;
-          *lib_it++ = lib_ptr;
+          *lib_it++ = std::make_pair(ptr->name(), lib_ptr);
         }
       }
     }
@@ -76,5 +78,3 @@ namespace CASM {
   }
 
 }
-
-#endif

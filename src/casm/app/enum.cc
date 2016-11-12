@@ -35,18 +35,7 @@ namespace CASM {
     //casm enum --settings input.json
     //- enumerate supercells, configs, hop local configurations, etc.
 
-    // For enumerator plugins.
-    // Order of destruction matters, this must be declared before 'enumerators'
-    std::vector<std::shared_ptr<RuntimeLibrary> > custom_lib;
-
-    // Add standard enumerators here
-    EnumeratorMap enumerators = make_enumerator_map();
-    enumerators.insert(
-      EnumInterface<ScelEnum>(),
-      EnumInterface<ConfigEnumAllOccupations>(),
-      EnumInterface<SuperConfigEnum>()
-    );
-
+    EnumeratorMap *enumerators;
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex *primclex;
     po::variables_map vm;
@@ -71,16 +60,9 @@ namespace CASM {
       }
 
       if(!root.empty()) {
-
         primclex = &make_primclex_if_not(args, uniq_primclex);
-
-        load_enumerator_plugins(
-          *primclex,
-          std::inserter(enumerators, enumerators.end()),
-          std::back_inserter(custom_lib));
-
+        enumerators = &primclex->enumerator_handler().map();
       }
-
 
       /** --help option
        */
@@ -90,16 +72,12 @@ namespace CASM {
 
         if(!root.empty()) {
           args.log << "The enumeration methods are:\n\n";
+        
+          for(const auto &e : *enumerators) {
+            args.log << "  " << e.name() << std::endl;
+          }
         }
-        else {
-          args.log << "No casm project found\n";
-          args.log << "The standard enumeration methods are:\n\n";
-        }
-
-        for(const auto &e : enumerators) {
-          args.log << "  " << e.name() << std::endl;
-        }
-
+        
         args.log << "\nFor complete options description, use 'casm enum --desc MethodName'.\n\n";
 
         return 0;
@@ -113,7 +91,7 @@ namespace CASM {
 
         bool match = false;
         for(const auto &in_name : enum_opt.desc_vec()) {
-          for(const auto &e : enumerators) {
+          for(const auto &e : *enumerators) {
             if(e.name().substr(0, in_name.size()) == in_name) {
               args.log << e.help() << std::endl;
               match = true;
@@ -125,14 +103,10 @@ namespace CASM {
 
           if(!root.empty()) {
             args.log << "No match found. The enumeration methods are:\n\n";
-          }
-          else {
-            args.log << "No casm project found\n";
-            args.log << "No match found. The standard enumeration methods are:\n\n";
-          }
-
-          for(const auto &e : enumerators) {
-            args.log << "  " << e.name() << std::endl;
+          
+            for(const auto &e : *enumerators) {
+              args.log << "  " << e.name() << std::endl;
+            }
           }
         }
 
@@ -145,44 +119,42 @@ namespace CASM {
 
         args.log << "DESCRIPTION\n" << std::endl;
 
-        args.log << "  casm enum --settings input.sjon                                      \n"
-                 "  - Input settings in JSON format to run an enumeration. The expected  \n"
-                 "    format is:                                                         \n"
-                 "\n"
-                 "    {\n"
-                 "      \"MethodName\": {\n"
-                 "        \"option1\" : ...,\n"
-                 "        \"option2\" : ...,\n"
-                 "         ...\n"
-                 "      }\n"
-                 "    }\n"
-                 "\n";
+        args.log << "  casm enum --settings input.json                                      \n"
+                    "  casm enum --input '{...JSON...}'                                     \n"
+                    "  - Input settings in JSON format to run an enumeration. The expected  \n"
+                    "    format is:                                                         \n"
+                    "\n"
+                    "    {\n"
+                    "      \"MethodName\": {\n"
+                    "        \"option1\" : ...,\n"
+                    "        \"option2\" : ...,\n"
+                    "         ...\n"
+                    "      }\n"
+                    "    }\n"
+                    "\n";
 
         if(!root.empty()) {
           args.log << "The enumeration methods are:\n\n";
+
+          for(const auto &e : *enumerators) {
+            args.log << "  " << e.name() << std::endl;
+          }
+        
+
+          args.log << "\nFor complete options help for a particular method, \n"
+                   "use 'casm enum --desc MethodName'.\n\n";
+
+          args.log << "Custom enumerator plugins can be added by placing source code \n"
+                   "in the CASM project directory: \n"
+                   "  " << primclex->dir().enumerators() << " \n\n"
+
+                   "For examples of how to write enumerators see: \n"
+                   "  $REPO/include/casm/enumerators \n"
+                   "  $REPO/src/casm/enumerators \n"
+                   "where: \n"
+                   "  REPO=https://github.com/prisms-center/CASMcode/tree/master \n\n";
         }
-        else {
-          args.log << "No casm project found\n";
-          args.log << "The standard enumeration methods are:\n\n";
-        }
-
-        for(const auto &e : enumerators) {
-          args.log << "  " << e.name() << std::endl;
-        }
-
-        args.log << "\nFor complete options help for a particular method, \n"
-                 "use 'casm enum --desc MethodName'.\n\n";
-
-        args.log << "Custom enumerator plugins can be added by placing source code \n"
-                 "in the CASM project directory: \n"
-                 "  $ROOT/.casm/enumerators \n\n"
-
-                 "For examples of how to write enumerators see: \n"
-                 "  $REPO/include/casm/enumerators \n"
-                 "  $REPO/src/casm/enumerators \n"
-                 "where: \n"
-                 "  REPO=https://github.com/prisms-center/CASMcode/tree/master \n\n";
-
+        
         return 0;
       }
     }
@@ -210,7 +182,7 @@ namespace CASM {
       args.err_log << std::endl;
     }
     auto it = input.begin();
-    int res = enumerators[it.name()].run(*primclex, *it);
+    int res = enumerators->find(it.name())->run(*primclex, *it);
 
     args.log << std::endl;
 

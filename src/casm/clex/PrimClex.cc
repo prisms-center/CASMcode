@@ -61,6 +61,13 @@ namespace CASM {
       }
     }
 
+    // make enumerators handler
+    m_enumerator_handler = notstd::make_cloneable<EnumeratorHandler>(*this);
+
+    // make config queries handler
+    m_config_query_handler = notstd::make_cloneable<QueryHandler<Configuration> >(*this);
+
+
     if(root.empty()) {
       return;
     }
@@ -75,13 +82,14 @@ namespace CASM {
 
   /// \brief Reload PrimClex data from settings
   ///
-  /// \param read_settings Read project_settings.json
+  /// \param read_settings Read project_settings.json and plugins
   /// \param read_composition Read composition_axes.json
   /// \param read_chem_ref Read chemical_reference.json
   /// \param read_configs Read SCEL and config_list.json
   /// \param clear_clex Clear stored orbitrees, clexulators, and eci
   ///
   /// - This does not check if what you request will cause problems.
+  /// - ToDo: refactor into separate functions
   ///
   void PrimClex::refresh(bool read_settings,
                          bool read_composition,
@@ -94,6 +102,13 @@ namespace CASM {
     if(read_settings) {
       try {
         m_settings = ProjectSettings(root);
+
+        // re-make enumerators handler
+        m_enumerator_handler = notstd::make_cloneable<EnumeratorHandler>(*this);
+
+        // re-make config queries handler
+        m_config_query_handler = notstd::make_cloneable<QueryHandler<Configuration> >(*this);
+
       }
       catch(std::exception &e) {
         err_log().error("reading project_settings.json");

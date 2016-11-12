@@ -17,6 +17,8 @@
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/app/EnumeratorHandler.hh"
+#include "casm/app/QueryHandler.hh"
 
 /// Cluster expansion class
 namespace CASM {
@@ -41,6 +43,9 @@ namespace CASM {
 
     DirectoryStructure m_dir;
     ProjectSettings m_settings;
+
+    notstd::cloneable_ptr<EnumeratorHandler> m_enumerator_handler;
+    notstd::cloneable_ptr<QueryHandler<Configuration> > m_config_query_handler;
 
     Structure prim;
     bool m_vacancy_allowed;
@@ -105,6 +110,14 @@ namespace CASM {
 
     const ProjectSettings &settings() const {
       return m_settings;
+    }
+
+    EnumeratorHandler &enumerator_handler() const {
+      return *m_enumerator_handler;
+    }
+
+    QueryHandler<Configuration> &config_query_handler() const {
+      return *m_config_query_handler;
     }
 
     double crystallography_tol() const {
