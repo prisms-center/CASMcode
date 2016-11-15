@@ -90,7 +90,7 @@ namespace CASM {
               enumerator.begin(),
               enumerator.end(),
               filter_expr,
-              primclex.settings().config_io()),
+              primclex.settings().query_handler<Configuration>().dict()),
             filter_end(enumerator.end())
           );
         }

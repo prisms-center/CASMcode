@@ -119,8 +119,19 @@ namespace CASM {
           query_help(dict, std::cout, help_opt_vec);
         }
         else {
+          // set status_stream: where query settings and PrimClex initialization messages are sent
+          Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
+
+          // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
+          // Then whichever exists, store reference in 'primclex'
+          std::unique_ptr<PrimClex> uniq_primclex;
+          if(out_path.string() == "STDOUT") {
+            args.log.set_verbosity(0);
+          }
+          PrimClex &primclex = make_primclex_if_not(args, uniq_primclex, status_log);
+
           ProjectSettings set(args.root);
-          query_help(set.config_io(), args.log, help_opt_vec);
+          query_help(set.query_handler<Configuration>().dict(), args.log, help_opt_vec);
         }
         return 0;
       }
@@ -166,7 +177,7 @@ namespace CASM {
       std::string alias_command = boost::trim_copy(std::string(++it, new_alias_str.cend()));
 
       try {
-        set.add_alias(alias_name, alias_command, args.err_log);
+        set.query_handler<Configuration>().add_alias(alias_name, alias_command);
         set.commit();
         return 0;
       }
@@ -246,7 +257,7 @@ namespace CASM {
     status_log << std::endl;
 
     // Construct DataFormatter
-    primclex.settings().set_selected(selection);
+    primclex.settings().query_handler<Configuration>().set_selected(selection);
     DataFormatter<Configuration> formatter;
 
     try {
@@ -258,7 +269,7 @@ namespace CASM {
       }
       all_columns.insert(all_columns.end(), columns.cbegin(), columns.cend());
 
-      formatter.append(primclex.settings().config_io().parse(all_columns));
+      formatter.append(primclex.settings().query_handler<Configuration>().dict().parse(all_columns));
 
     }
     catch(std::exception &e) {

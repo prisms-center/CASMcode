@@ -61,7 +61,7 @@ namespace CASM {
 
       if(!root.empty()) {
         primclex = &make_primclex_if_not(args, uniq_primclex);
-        enumerators = &primclex->enumerator_handler().map();
+        enumerators = &primclex->settings().enumerator_handler().map();
       }
 
       /** --help option
@@ -72,12 +72,12 @@ namespace CASM {
 
         if(!root.empty()) {
           args.log << "The enumeration methods are:\n\n";
-        
+
           for(const auto &e : *enumerators) {
             args.log << "  " << e.name() << std::endl;
           }
         }
-        
+
         args.log << "\nFor complete options description, use 'casm enum --desc MethodName'.\n\n";
 
         return 0;
@@ -103,7 +103,7 @@ namespace CASM {
 
           if(!root.empty()) {
             args.log << "No match found. The enumeration methods are:\n\n";
-          
+
             for(const auto &e : *enumerators) {
               args.log << "  " << e.name() << std::endl;
             }
@@ -120,18 +120,18 @@ namespace CASM {
         args.log << "DESCRIPTION\n" << std::endl;
 
         args.log << "  casm enum --settings input.json                                      \n"
-                    "  casm enum --input '{...JSON...}'                                     \n"
-                    "  - Input settings in JSON format to run an enumeration. The expected  \n"
-                    "    format is:                                                         \n"
-                    "\n"
-                    "    {\n"
-                    "      \"MethodName\": {\n"
-                    "        \"option1\" : ...,\n"
-                    "        \"option2\" : ...,\n"
-                    "         ...\n"
-                    "      }\n"
-                    "    }\n"
-                    "\n";
+                 "  casm enum --input '{...JSON...}'                                     \n"
+                 "  - Input settings in JSON format to run an enumeration. The expected  \n"
+                 "    format is:                                                         \n"
+                 "\n"
+                 "    {\n"
+                 "      \"MethodName\": {\n"
+                 "        \"option1\" : ...,\n"
+                 "        \"option2\" : ...,\n"
+                 "         ...\n"
+                 "      }\n"
+                 "    }\n"
+                 "\n";
 
         if(!root.empty()) {
           args.log << "The enumeration methods are:\n\n";
@@ -139,14 +139,14 @@ namespace CASM {
           for(const auto &e : *enumerators) {
             args.log << "  " << e.name() << std::endl;
           }
-        
+
 
           args.log << "\nFor complete options help for a particular method, \n"
                    "use 'casm enum --desc MethodName'.\n\n";
 
           args.log << "Custom enumerator plugins can be added by placing source code \n"
                    "in the CASM project directory: \n"
-                   "  " << primclex->dir().enumerators() << " \n\n"
+                   "  " << primclex->dir().enumerator_plugins() << " \n\n"
 
                    "For examples of how to write enumerators see: \n"
                    "  $REPO/include/casm/enumerators \n"
@@ -154,7 +154,7 @@ namespace CASM {
                    "where: \n"
                    "  REPO=https://github.com/prisms-center/CASMcode/tree/master \n\n";
         }
-        
+
         return 0;
       }
     }

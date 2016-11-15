@@ -26,6 +26,22 @@ namespace CASM {
   template<typename ConfigType, typename PrimClexType>
   class ConfigIterator;
 
+
+  namespace ConfigIO {
+    class Selected;
+  }
+  template <bool IsConst> class ConfigSelection;
+  typedef ConfigSelection<true> ConstConfigSelection;
+
+  template<typename DataObject> struct QueryTraits;
+
+  template<>
+  struct QueryTraits<Configuration> {
+    static const std::string name;
+    typedef ConfigIO::Selected Selected;
+    typedef ConstConfigSelection Selection;
+  };
+
   /// \defgroup Configuration
   ///
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell

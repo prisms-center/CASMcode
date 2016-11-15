@@ -44,9 +44,6 @@ namespace CASM {
     DirectoryStructure m_dir;
     ProjectSettings m_settings;
 
-    notstd::cloneable_ptr<EnumeratorHandler> m_enumerator_handler;
-    notstd::cloneable_ptr<QueryHandler<Configuration> > m_config_query_handler;
-
     Structure prim;
     bool m_vacancy_allowed;
     Index m_vacancy_index;
@@ -79,11 +76,11 @@ namespace CASM {
     // **** Constructors ****
 
     /// Initial construction of a PrimClex, from a primitive Structure
-    PrimClex(const Structure &_prim, Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log());
+    PrimClex(const Structure &_prim, const Logging &logging = Logging());
 
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-    PrimClex(const fs::path &_root, Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log());
+    PrimClex(const fs::path &_root, const Logging &logging = Logging());
 
     /// Reload PrimClex data from settings
     void refresh(bool read_settings = false,
@@ -110,14 +107,6 @@ namespace CASM {
 
     const ProjectSettings &settings() const {
       return m_settings;
-    }
-
-    EnumeratorHandler &enumerator_handler() const {
-      return *m_enumerator_handler;
-    }
-
-    QueryHandler<Configuration> &config_query_handler() const {
-      return *m_config_query_handler;
     }
 
     double crystallography_tol() const {

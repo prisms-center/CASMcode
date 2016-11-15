@@ -18,7 +18,7 @@ namespace CASM {
     m_metric_args(set.enumeration_metric_args()),
     m_check_existence(set.enumeration_check_existence()),
     m_insert_canonical(set.enumeration_insert_canonical()),
-    m_dict(primclex.settings().config_io()) {
+    m_dict(primclex.settings().query_handler<Configuration>().dict()) {
 
     m_dict.insert(
       ConfigIO::GenericConfigFormatter<double>(

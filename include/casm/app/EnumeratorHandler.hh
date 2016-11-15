@@ -9,13 +9,13 @@
 
 namespace CASM {
 
-  class PrimClex;
+  class ProjectSettings;
 
   class EnumeratorHandler {
 
   public:
 
-    EnumeratorHandler(const PrimClex &primclex);
+    EnumeratorHandler(const ProjectSettings &set);
 
     ~EnumeratorHandler() {
       // order of deletion matters
@@ -33,7 +33,7 @@ namespace CASM {
 
   private:
 
-    PrimClex const *m_primclex;
+    const ProjectSettings *m_set;
 
     EnumeratorMap m_enumerator;
 
@@ -45,7 +45,7 @@ namespace CASM {
   template<typename EnumeratorMapInserter, typename RuntimeLibInserter>
   std::pair<EnumeratorMapInserter, RuntimeLibInserter>
   load_enumerator_plugins(
-    const PrimClex &primclex,
+    const ProjectSettings &set,
     EnumeratorMapInserter enum_it,
     RuntimeLibInserter lib_it);
 

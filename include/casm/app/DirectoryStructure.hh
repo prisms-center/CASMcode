@@ -4,8 +4,10 @@
 #include <string>
 #include <vector>
 
-
 namespace CASM {
+
+  template<typename DataObject>
+  class QueryTraits;
 
   /// return path to current or parent directory containing ".casm" directory
   ///   if none found, return empty path
@@ -119,9 +121,15 @@ namespace CASM {
       return m_root / m_casm_dir / "config_list.json";
     }
 
-    /// \brief Return project_settings.json path
-    fs::path enumerators() const {
+    /// \brief Return enumerators plugin dir
+    fs::path enumerator_plugins() const {
       return m_root / m_casm_dir / "enumerators";
+    }
+
+    /// \brief Return enumerators plugin dir
+    template<typename DataObject>
+    fs::path query_plugins() const {
+      return m_root / m_casm_dir / "query" / QueryTraits<DataObject>::name;
     }
 
     // -- Symmetry --------

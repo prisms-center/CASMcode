@@ -216,8 +216,19 @@ namespace CASM {
           select_help(dict, args.log, help_opt_vec);
         }
         else {
+          // set status_stream: where query settings and PrimClex initialization messages are sent
+          Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
+
+          // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
+          // Then whichever exists, store reference in 'primclex'
+          std::unique_ptr<PrimClex> uniq_primclex;
+          if(out_path.string() == "STDOUT") {
+            args.log.set_verbosity(0);
+          }
+          PrimClex &primclex = make_primclex_if_not(args, uniq_primclex, status_log);
+
           ProjectSettings set(root);
-          select_help(set.config_io(), args.log, help_opt_vec);
+          select_help(set.query_handler<Configuration>().dict(), args.log, help_opt_vec);
         }
         return 0;
       }
@@ -292,7 +303,7 @@ namespace CASM {
       tselect.push_back(ConstConfigSelection(primclex, selection[i]));
     }
 
-    set.set_selected(config_select);
+    set.query_handler<Configuration>().set_selected(config_select);
 
     args.log.custom("Input config list", selection[0].string());
     write_selection_stats(Ntot, config_select, args.log, false);
@@ -329,9 +340,9 @@ namespace CASM {
       args.log.begin_lap();
 
       if(vm.count("set"))
-        set_selection(set.config_io(), config_select.config_begin(), config_select.config_end(), criteria);
+        set_selection(set.query_handler<Configuration>().dict(), config_select.config_begin(), config_select.config_end(), criteria);
       else
-        set_selection(set.config_io(), config_select.config_begin(), config_select.config_end(), criteria, select_switch);
+        set_selection(set.query_handler<Configuration>().dict(), config_select.config_begin(), config_select.config_end(), criteria, select_switch);
 
       args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;
     }
@@ -439,7 +450,7 @@ namespace CASM {
     else {
 
       args.log.write("Selection");
-      int ret_code = write_selection(set.config_io(), config_select, vm.count("force"), out_path, vm.count("json"), only_selected, args.err_log);
+      int ret_code = write_selection(set.query_handler<Configuration>().dict(), config_select, vm.count("force"), out_path, vm.count("json"), only_selected, args.err_log);
       args.log << "write: " << out_path << "\n" << std::endl;
 
       args.log.custom("Output config list", out_path.string());

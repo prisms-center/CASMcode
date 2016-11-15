@@ -18,8 +18,8 @@ namespace CASM {
   //                                **** Constructors ****
   //*******************************************************************************************
   /// Initial construction of a PrimClex, from a primitive Structure
-  PrimClex::PrimClex(const Structure &_prim, Log &log, Log &debug_log, Log &err_log) :
-    Logging(log, debug_log, err_log),
+  PrimClex::PrimClex(const Structure &_prim, const Logging &logging) :
+    Logging(logging),
     prim(_prim) {
 
     _init();
@@ -31,8 +31,8 @@ namespace CASM {
   //*******************************************************************************************
   /// Construct PrimClex from existing CASM project directory
   ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-  PrimClex::PrimClex(const fs::path &_root, Log &log, Log &debug_log, Log &err_log):
-    Logging(log, debug_log, err_log),
+  PrimClex::PrimClex(const fs::path &_root, const Logging &logging):
+    Logging(logging),
     root(_root),
     m_dir(_root),
     m_settings(_root),
@@ -60,13 +60,6 @@ namespace CASM {
         m_vacancy_index = i;
       }
     }
-
-    // make enumerators handler
-    m_enumerator_handler = notstd::make_cloneable<EnumeratorHandler>(*this);
-
-    // make config queries handler
-    m_config_query_handler = notstd::make_cloneable<QueryHandler<Configuration> >(*this);
-
 
     if(root.empty()) {
       return;
@@ -101,14 +94,7 @@ namespace CASM {
 
     if(read_settings) {
       try {
-        m_settings = ProjectSettings(root);
-
-        // re-make enumerators handler
-        m_enumerator_handler = notstd::make_cloneable<EnumeratorHandler>(*this);
-
-        // re-make config queries handler
-        m_config_query_handler = notstd::make_cloneable<QueryHandler<Configuration> >(*this);
-
+        m_settings = ProjectSettings(root, *this);
       }
       catch(std::exception &e) {
         err_log().error("reading project_settings.json");

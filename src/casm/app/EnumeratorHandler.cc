@@ -5,8 +5,8 @@
 
 namespace CASM {
 
-  EnumeratorHandler::EnumeratorHandler(const PrimClex &primclex) :
-    m_primclex(&primclex),
+  EnumeratorHandler::EnumeratorHandler(const ProjectSettings &set) :
+    m_set(&set),
     m_enumerator(make_enumerator_map()) {
 
     m_enumerator.insert(
@@ -16,7 +16,7 @@ namespace CASM {
     );
 
     load_enumerator_plugins(
-      *m_primclex,
+      *m_set,
       std::inserter(m_enumerator, m_enumerator.end()),
       std::inserter(m_lib, m_lib.end()));
   }
@@ -27,7 +27,7 @@ namespace CASM {
   }
 
   template std::pair<enum_it_type, runtimelib_it_type> load_enumerator_plugins(
-    const PrimClex &primclex,
+    const ProjectSettings &set,
     enum_it_type enum_it,
     runtimelib_it_type lib_it);
 

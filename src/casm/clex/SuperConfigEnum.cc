@@ -194,7 +194,7 @@ namespace CASM {
                       superconfig_enum.begin(),
                       superconfig_enum.end(),
                       filter_expr,
-                      primclex.settings().config_io());
+                      primclex.settings().query_handler<Configuration>().dict());
           auto end = filter_end(superconfig_enum.end());
           for(; it != end; ++it) {
             it->insert(primitive_only);

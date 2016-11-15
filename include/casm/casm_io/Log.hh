@@ -125,9 +125,9 @@ namespace CASM {
     int verbosity() const;
 
     void set_verbosity(int _verbosity);
-    
+
     template<int _required_verbosity>
-    Log& require() {
+    Log &require() {
       static_assert(_required_verbosity >= none && _required_verbosity <= debug, "CASM::Log _required_verbosity must be <= 100");
       m_print = (m_verbosity >= _required_verbosity);
       return *this;
@@ -143,7 +143,7 @@ namespace CASM {
     friend Log &operator<<(Log &log, std::ostream & (*fptr)(std::ostream &));
 
     operator std::ostream &();
-    
+
     explicit operator bool () {
       return m_print;
     }
@@ -247,27 +247,27 @@ namespace CASM {
   public:
 
     Logging(Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log()) :
-      m_log(log),
-      m_debug_log(debug_log),
-      m_err_log(err_log) {}
+      m_log(&log),
+      m_debug_log(&debug_log),
+      m_err_log(&err_log) {}
 
     Log &log() const {
-      return m_log;
+      return *m_log;
     }
 
     Log &debug_log() const {
-      return m_debug_log;
+      return *m_debug_log;
     }
 
     Log &err_log() const {
-      return m_err_log;
+      return *m_err_log;
     }
 
   private:
 
-    Log &m_log;
-    Log &m_debug_log;
-    Log &m_err_log;
+    Log *m_log;
+    Log *m_debug_log;
+    Log *m_err_log;
 
   };
 

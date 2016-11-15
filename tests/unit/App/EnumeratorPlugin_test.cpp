@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     fs::path src = "tests/unit/App" / filename;
     BOOST_REQUIRE(fs::exists(src));
 
-    fs::path dest = primclex.dir().enumerators();
+    fs::path dest = primclex.dir().enumerator_plugins();
     fs::create_directories(dest);
     BOOST_REQUIRE(fs::exists(dest));
 

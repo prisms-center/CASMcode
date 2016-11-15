@@ -1,4 +1,4 @@
-#include "casm/app/QueryHandler.hh"
+#include "casm/app/QueryHandler_impl.hh"
 
 namespace CASM {
 
