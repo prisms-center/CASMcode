@@ -113,7 +113,6 @@ namespace CASM {
       return std::make_pair(dict_it, lib_it);
     }
 
-
     if(fs::is_directory(dir.query_plugins<DataObject>())) {
 
       // loop over custom query files *.cc
@@ -135,11 +134,11 @@ namespace CASM {
                            p_s.substr(0, p_size - 3),
                            set.compile_options() + " -I" + dir.query_plugins<DataObject>().string(),
                            set.so_options() + " -lcasm -L" + (set.casm_prefix().first / "lib").string(),
-                           set.log(),
-                           msg);
+                           msg,
+                           set);
 
           auto make_formatter = lib_ptr->template get_function<signature>(
-            "make_" + f_s.substr(0, f_size - 3) + "_interface");
+            "make_" + f_s.substr(0, f_size - 3) + "_formatter");
 
           std::unique_ptr<formatter_type> ptr(make_formatter());
 

@@ -253,7 +253,7 @@ namespace CASM {
     /// \param dirpath Directory containing the source code and compiled object file.
     /// \param nlist, A PrimNeighborList to be updated to include the neighborhood
     ///        of this Clexulator
-    /// \param status_log Print a message to inform users that compilation is occuring
+    /// \param logging Print messages to inform users that compilation is occuring
     /// \param compile_options Compilation options
     /// \param so_options Shared library compilation options
     ///
@@ -269,7 +269,7 @@ namespace CASM {
     Clexulator(std::string name,
                boost::filesystem::path dirpath,
                PrimNeighborList &nlist,
-               Log &status_log,
+               const Logging &logging,
                std::string compile_options,
                std::string so_options) {
 
@@ -280,7 +280,6 @@ namespace CASM {
                 (dirpath / name).string(),
                 compile_options,
                 so_options,
-                status_log,
                 "compile time depends on how many basis functions are included");
 
       // Get the Clexulator factory function

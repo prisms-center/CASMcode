@@ -263,6 +263,10 @@ namespace CASM {
       return *m_err_log;
     }
 
+    static Logging null() {
+      return Logging(null_log(), null_log(), null_log());
+    }
+
   private:
 
     Log *m_log;

@@ -227,8 +227,7 @@ namespace CASM {
           }
           PrimClex &primclex = make_primclex_if_not(args, uniq_primclex, status_log);
 
-          ProjectSettings set(root);
-          select_help(set.query_handler<Configuration>().dict(), args.log, help_opt_vec);
+          select_help(primclex.settings().query_handler<Configuration>().dict(), args.log, help_opt_vec);
         }
         return 0;
       }

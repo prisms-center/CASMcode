@@ -129,9 +129,10 @@ namespace CASM {
             args.log.set_verbosity(0);
           }
           PrimClex &primclex = make_primclex_if_not(args, uniq_primclex, status_log);
-
-          ProjectSettings set(args.root);
-          query_help(set.query_handler<Configuration>().dict(), args.log, help_opt_vec);
+          query_help(
+            primclex.settings().query_handler<Configuration>().dict(),
+            args.log,
+            help_opt_vec);
         }
         return 0;
       }

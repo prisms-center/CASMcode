@@ -8,13 +8,14 @@ namespace CASM {
   RuntimeLibrary::RuntimeLibrary(std::string filename_base,
                                  std::string compile_options,
                                  std::string so_options,
-                                 Log &status_log,
-                                 std::string compile_msg) :
+                                 std::string compile_msg,
+                                 const Logging &logging) :
+    Logging(logging),
     m_filename_base(filename_base),
     m_compile_options(compile_options),
     m_so_options(so_options),
     m_handle(nullptr) {
-
+    
     // If the shared library doesn't exist
     if(!fs::exists(m_filename_base + ".so")) {
 
@@ -23,19 +24,19 @@ namespace CASM {
 
         // Compile it
         try {
-          status_log.compiling<Log::standard>(m_filename_base + ".cc");
-          status_log.begin_lap();
-          status_log << compile_msg << std::endl;
+          log().compiling<Log::standard>(m_filename_base + ".cc");
+          log().begin_lap();
+          log() << compile_msg << std::endl;
           _compile();
-          status_log << "compile time: " << status_log.lap_time() << " (s)\n" << std::endl;
+          log() << "compile time: " << log().lap_time() << " (s)\n" << std::endl;
         }
         catch(std::exception &e) {
-          status_log << "Error compiling clexulator. To fix: \n";
-          status_log << "  - Check compiler error messages.\n";
-          status_log << "  - Check compiler options with 'casm settings -l'\n";
-          status_log << "    - Update compiler options with 'casm settings --set-compile-options '...options...'\n";
-          status_log << "    - Make sure the casm headers can be found by including '-I/path/to/casm'\n";
-          status_log << "  - The default compiler is 'g++'. Override by setting the environment variable CXX\n" << std::endl;
+          log() << "Error compiling clexulator. To fix: \n";
+          log() << "  - Check compiler error messages.\n";
+          log() << "  - Check compiler options with 'casm settings -l'\n";
+          log() << "    - Update compiler options with 'casm settings --set-compile-options '...options...'\n";
+          log() << "    - Make sure the casm headers can be found by including '-I/path/to/casm'\n";
+          log() << "  - The default compiler is 'g++'. Override by setting the environment variable CXX\n" << std::endl;
           throw e;
         }
       }
@@ -85,18 +86,18 @@ namespace CASM {
     std::string cmd = m_compile_options + " -o " + m_filename_base + ".o" + " -c " + m_filename_base + ".cc";
     p.popen(cmd);
     if(p.exit_code()) {
-      std::cerr << "Error compiling: " << m_filename_base + ".cc" << std::endl;
-      std::cerr << "Attempted: " << cmd << std::endl;
-      std::cerr << p.gets() << std::endl;
+      err_log() << "Error compiling: " << m_filename_base + ".cc" << std::endl;
+      err_log() << "Attempted: " << cmd << std::endl;
+      err_log() << p.gets() << std::endl;
       throw std::runtime_error("Can not compile " + m_filename_base + ".cc");
     }
 
     cmd = m_so_options + " -o " + m_filename_base + ".so" + " " + m_filename_base + ".o";
     p.popen(cmd);
     if(p.exit_code()) {
-      std::cerr << "Error compiling shared object: " << m_filename_base + ".so" << std::endl;
-      std::cerr << "Attempted: " << cmd << std::endl;
-      std::cerr << p.gets() << std::endl;
+      err_log() << "Error compiling shared object: " << m_filename_base + ".so" << std::endl;
+      err_log() << "Attempted: " << cmd << std::endl;
+      err_log() << p.gets() << std::endl;
       throw std::runtime_error("Can not compile " + m_filename_base + ".o");
     }
   }

@@ -12,7 +12,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(EnumeratorPluginTest)
+BOOST_AUTO_TEST_SUITE(QueryPluginTest)
 
 BOOST_AUTO_TEST_CASE(Test1) {
 
@@ -20,8 +20,9 @@ BOOST_AUTO_TEST_CASE(Test1) {
   make_project(proj);
   proj.check_init();
   proj.check_composition();
+  proj.check_enum();
 
-  PrimClex primclex(proj.dir, null_log());
+  PrimClex primclex(proj.dir, Logging(null_log(), null_log(), null_log()));
 
   auto cp = [&](std::string _filename) {
 
@@ -29,7 +30,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     fs::path src = "tests/unit/App" / filename;
     BOOST_REQUIRE(fs::exists(src));
 
-    fs::path dest = primclex.dir().enumerator_plugins();
+    fs::path dest = primclex.dir().query_plugins<Configuration>();
     fs::create_directories(dest);
     BOOST_REQUIRE(fs::exists(dest));
 
@@ -38,24 +39,35 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   };
 
-  cp("TestEnum.hh");
-  cp("TestEnum.cc");
+  // functor formatter
+  cp("TestCompN.hh");
+  cp("TestCompN.cc");
+
+  // generic formatter
+  cp("TestConfigname.hh");
+  cp("TestConfigname.cc");
 
   // refresh to load plugins
   primclex.refresh(true);
-
+  
   auto check = [&](std::string str) {
-    CommandArgs args(str, &primclex, primclex.dir().root_dir(), primclex);
-    BOOST_CHECK(!enum_command(args));
+    CommandArgs args(str, &primclex, primclex.dir().root_dir(), Logging::null());
+    return !casm_api(args);
   };
+  
+  BOOST_CHECK(check(R"(casm select -h)"));
 
-  check(R"(enum -h)");
+  BOOST_CHECK(check(R"(casm select --set-on)"));
 
-  check(R"(enum --desc TestEnum)");
+  BOOST_CHECK(check(R"(casm query -h p)"));
 
-  check(R"(enum -i '{"TestEnum": {"supercells": {"max": 4}}}')");
+  BOOST_CHECK(check(R"(casm query -k test_comp_n)"));
 
-  BOOST_CHECK_EQUAL(std::distance(primclex.config_begin(), primclex.config_end()), 336);
+  BOOST_CHECK(check(R"(casm query -k 'test_comp_n(Zr)')"));
+
+  BOOST_CHECK(check(R"(casm query -k 'test_comp_n(O)')"));
+
+  BOOST_CHECK(check(R"(casm query -k 'test_configname')"));
 
 }
 

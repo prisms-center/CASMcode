@@ -9,13 +9,12 @@
 #include <cstdlib>
 #include "casm/system/Popen.hh"
 #include "casm/CASM_global_definitions.hh"
+#include "casm/casm_io/Log.hh"
 
 namespace CASM {
 
-  class Log;
-
   /// \brief Write, compile, load and use code at runtime
-  class RuntimeLibrary {
+  class RuntimeLibrary : public Logging {
 
   public:
 
@@ -25,8 +24,8 @@ namespace CASM {
       std::string _filename_base,
       std::string _compile_options,
       std::string _so_options,
-      Log &status_log,
-      std::string compile_msg);
+      std::string compile_msg,
+      const Logging &logging = Logging());
 
     ~RuntimeLibrary();
 
