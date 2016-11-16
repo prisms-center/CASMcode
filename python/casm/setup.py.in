@@ -1,0 +1,14 @@
+import sys
+from distutils.core import setup
+import glob
+
+setup(name='casm',
+      version='@VERSION@',
+      url='@PACKAGE_URL@',
+      description='CASM Python API and interface with DFT codes.',
+      author='CASM developers',
+      author_email='@PACKAGE_BUGREPORT@',
+      license='LGPL2.1',
+      packages=['casm','casm.vaspwrapper', 'casm.learn', 'casm.project', 'casm.plotting'],
+      scripts=glob.glob('scripts/*')
+      )

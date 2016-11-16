@@ -146,4 +146,4 @@ BOOST_AUTO_TEST_CASE(FindDiffTest) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
-#include "../src/casm/casm_io/jsonParser.cc"
+//#include "../src/casm/casm_io/jsonParser.cc"

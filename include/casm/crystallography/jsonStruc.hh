@@ -4,9 +4,12 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/container.hh"
 
 
 namespace CASM {
+  class Site;
+
   template< bool IsConst >
   class SimpleJSonSiteStructure {
   public:

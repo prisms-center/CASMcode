@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 
+#include "casm/CASM_global_definitions.hh"
+
+
 namespace CASM {
 
   template<typename DataObject>

@@ -1,0 +1,21 @@
+libcasm_la_SOURCES += ./src/casm/clex/ChemicalReference.cc\
+                      ./src/casm/clex/Clex.cc\
+                      ./src/casm/clex/CompositionConverter.cc\
+                      ./src/casm/clex/ConfigDoF.cc\
+                      ./src/casm/clex/ConfigIO.cc\
+                      ./src/casm/clex/ConfigIOHull.cc\
+                      ./src/casm/clex/ConfigIONovelty.cc\
+                      ./src/casm/clex/ConfigIOSelected.cc\
+                      ./src/casm/clex/ConfigIOStrain.cc\
+                      ./src/casm/clex/ConfigIOStrucScore.cc\
+                      ./src/casm/clex/ConfigIterator.cc\
+                      ./src/casm/clex/ConfigMapping.cc\
+                      ./src/casm/clex/Configuration.cc\
+                      ./src/casm/clex/DoFManager.cc\
+                      ./src/casm/clex/ECIContainer.cc\
+                      ./src/casm/clex/NeighborList.cc\
+                      ./src/casm/clex/ParamComposition.cc\
+                      ./src/casm/clex/PrimClex.cc\
+                      ./src/casm/clex/Properties.cc\
+                      ./src/casm/clex/Reference.cc\
+                      ./src/casm/clex/Supercell.cc

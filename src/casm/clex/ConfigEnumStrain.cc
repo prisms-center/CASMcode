@@ -2,6 +2,8 @@
 #include <algorithm>
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/clex/ConfigEnumStrain.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/algorithm.hh"
 

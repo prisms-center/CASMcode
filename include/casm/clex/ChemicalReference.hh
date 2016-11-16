@@ -1,7 +1,6 @@
 #ifndef CASM_ChemicalReference
 #define CASM_ChemicalReference
 
-#include "casm/crystallography/Structure.hh"
 #include "casm/clex/Reference.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/clex/ConfigIO.hh"
@@ -9,6 +8,7 @@
 namespace CASM {
 
   class PrimClex;
+  class Structure;
 
   /// \brief Stores the composition and energy in a single reference state
   ///

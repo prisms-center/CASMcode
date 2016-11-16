@@ -1,0 +1,7 @@
+libcasm_la_SOURCES += ./src/casm/basis_set/BasisFunction.cc\
+                      ./src/casm/basis_set/BasisSet.cc\
+                      ./src/casm/basis_set/DoF.cc\
+                      ./src/casm/basis_set/FunctionVisitor.cc\
+                      ./src/casm/basis_set/OccupantFunction.cc\
+                      ./src/casm/basis_set/PolynomialFunction.cc\
+                      ./src/casm/basis_set/Variable.cc

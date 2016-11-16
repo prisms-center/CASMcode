@@ -47,7 +47,7 @@ def make_population(n_features, input_options):
     
     if "bitstring" in opt:
       indiv = empty_individual(n_features)
-      for index, bit in enumerate(opt["bitstring"]):
+      for index, bit in enumerate(input_options["bitstring"]):
         if int(bit):
           indiv[index] = True
       if sum(indiv) == 0:
@@ -56,7 +56,7 @@ def make_population(n_features, input_options):
     
     elif "indices" in opt:
       indiv = empty_individual(n_features)
-      for index in opt["indices"]:
+      for index in input_options["indices"]:
         indiv[index] = True
       if sum(indiv) == 0:
         raise Exception("Error using making individual from bitstring: No basis functions selected")
@@ -65,7 +65,7 @@ def make_population(n_features, input_options):
     elif "from_halloffame" in opt:
       hall = open_halloffame(opt["from_halloffame"])
       if "individuals" in opt:
-        for index in opt["individuals"]:
+        for index in input_options["individuals"]:
           population.append(hall[index])
       else:
         for indiv in hall:

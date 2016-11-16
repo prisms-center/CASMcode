@@ -1,0 +1,16 @@
+vasppy_PYTHON=python/vasp/vasp/relax.py\
+			  python/vasp/vasp/__init__.py\
+			  python/vasp/vasp/vasp.py
+vasppydir=$(pythondir)/vasp
+
+vaspio_PYTHON=python/vasp/vasp/io/oszicar.py\
+			  python/vasp/vasp/io/poscar.py\
+			  python/vasp/vasp/io/species.py\
+			  python/vasp/vasp/io/kpoints.py\
+			  python/vasp/vasp/io/vasprun.py\
+			  python/vasp/vasp/io/__init__.py\
+			  python/vasp/vasp/io/io.py\
+			  python/vasp/vasp/io/vaspio.py\
+			  python/vasp/vasp/io/incar.py\
+			  python/vasp/vasp/io/outcar.py
+vaspiodir=$(vasppydir)/io
