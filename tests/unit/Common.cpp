@@ -66,7 +66,7 @@ namespace test {
     write_prim(proj.prim, json, FRAC);
     json["description"] = proj.desc;
 
-    fs::create_directory(proj.dir);
+    fs::create_directories(proj.dir);
 
     json.write(proj.dir / "prim.json");
 
