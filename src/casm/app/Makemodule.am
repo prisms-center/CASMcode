@@ -1,4 +1,8 @@
 libcasm_la_SOURCES += ./src/casm/app/AppIO.cc\
+                      ./src/casm/app/EnumeratorHandler.cc\
+                      ./src/casm/app/ProjectBuilder.cc\
+                      ./src/casm/app/ProjectSettings.cc\
+                      ./src/casm/app/QueryHandler.cc\
                       ./src/casm/app/bset.cc\
                       ./src/casm/app/casm_functions.cc\
                       ./src/casm/app/composition.cc\
@@ -9,8 +13,6 @@ libcasm_la_SOURCES += ./src/casm/app/AppIO.cc\
                       ./src/casm/app/init.cc\
                       ./src/casm/app/monte.cc\
                       ./src/casm/app/perturb.cc\
-                      ./src/casm/app/ProjectBuilder.cc\
-                      ./src/casm/app/ProjectSettings.cc\
                       ./src/casm/app/query.cc\
                       ./src/casm/app/ref.cc\
                       ./src/casm/app/run.cc\

@@ -1,25 +1,23 @@
 clexincludedir=$(includedir)/casm/clex
 clexinclude_HEADERS=./include/casm/clex/ChemicalReference.hh\
-					./include/casm/clex/Clexulator_Draft.hh\
-					./include/casm/clex/clexulator_example.cc.hide\
 					./include/casm/clex/Clex.hh\
 					./include/casm/clex/Clexulator.hh\
 					./include/casm/clex/CompositionConverter.hh\
-					./include/casm/clex/ConfigDoF.hh\
+					./include/casm/clex/ConfigCompare.hh\
+          ./include/casm/clex/ConfigDoF.hh\
+					./include/casm/clex/ConfigDoFCompare.hh\
+					./include/casm/clex/ConfigDoFIsEquivalent.hh\
 					./include/casm/clex/ConfigEnumAllOccupations.hh\
-					./include/casm/clex/ConfigEnumAllOccupations_impl.hh\
-					./include/casm/clex/ConfigEnum.hh\
+					./include/casm/clex/ConfigEnumEquivalents.hh\
 					./include/casm/clex/ConfigEnumInterpolation.hh\
-					./include/casm/clex/ConfigEnumInterpolation_impl.hh\
-					./include/casm/clex/ConfigEnumIterator.hh\
 					./include/casm/clex/ConfigEnumStrain.hh\
-					./include/casm/clex/ConfigEnumStrain_impl.hh\
 					./include/casm/clex/ConfigIO.hh\
 					./include/casm/clex/ConfigIOHull.hh\
 					./include/casm/clex/ConfigIONovelty.hh\
 					./include/casm/clex/ConfigIOSelected.hh\
 					./include/casm/clex/ConfigIOStrain.hh\
 					./include/casm/clex/ConfigIOStrucScore.hh\
+					./include/casm/clex/ConfigIsEquivalent.hh\
 					./include/casm/clex/ConfigIterator.hh\
 					./include/casm/clex/ConfigMapping.hh\
 					./include/casm/clex/ConfigSelection.hh\
@@ -35,4 +33,8 @@ clexinclude_HEADERS=./include/casm/clex/ChemicalReference.hh\
 					./include/casm/clex/PrimClex.hh\
 					./include/casm/clex/Properties.hh\
 					./include/casm/clex/Reference.hh\
+					./include/casm/clex/ScelEnum.hh\
+					./include/casm/clex/ScelEnumEquivalents.hh\
+					./include/casm/clex/ScelEnum_impl.hh\
+					./include/casm/clex/SuperConfigEnum.hh\
 					./include/casm/clex/Supercell.hh

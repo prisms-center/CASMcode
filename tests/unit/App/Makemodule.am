@@ -4,6 +4,8 @@ casm_unit_App_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
 
 casm_unit_App_SOURCES = ./tests/unit/unit_test.cpp\
 						./tests/unit/App/App_test.cpp\
+						./tests/unit/App/EnumeratorPlugin_test.cpp\
+						./tests/unit/App/QueryPlugin_test.cpp\
 						./tests/unit/App/settings_test.cpp
 
 nodist_casm_unit_App_SOURCES = ./tests/unit/Common.hh

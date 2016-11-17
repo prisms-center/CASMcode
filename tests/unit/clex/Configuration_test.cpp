@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   config.clear_deformation();
   BOOST_CHECK_EQUAL(config.has_deformation(), false);
 
-  config.set_deformation(disp_matrix_t::Zero(3, 1));
+  config.set_deformation(Eigen::Matrix3d::Zero());
   BOOST_CHECK_EQUAL(config.has_deformation(), true);
 
 
