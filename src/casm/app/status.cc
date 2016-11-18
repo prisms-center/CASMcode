@@ -43,24 +43,27 @@ namespace CASM {
         2) $CASM_SOFLAGS \n\
         3) \"-shared -lboost_system\" \n\
 \n\
-    'casm_prefix': \n\
-      If not in a standard search path, CASM header files are expected in \n\
-      '$CASM_PREFIX/include', and shared libraries in '$CASM_PREFIX/lib'. \n\
+    'casm headers and libraries': \n\
+      CASM header files and shared libraries are expected in the following\n\
+      locations.                                                          \n\
       In order of priority: \n\
-        1) User specified by 'casm settings --set-casm-prefix' \n\
-        2) $CASM_PREFIX \n\
+        1) User specified by 'casm settings --set-casm-includedir' and \n\
+           'casm settings --set-casm-libdir' \n\
+        2) $CASM_INCLUDEDIR and $CASM_LIBDIR \n\
+        3) $CASM_PREFIX/include and $CASM_PREFIX/lib \n\
         3) (default search paths) \n\
 \n\
     Note: For the 'casm' Python package, $LIBCASM and $LIBCCASM, have \n\
     highest priority for locating libcasm and libccasm, respectively. \n\
 \n\
-    'boost_prefix': \n\
-      If not in a standard search path, boost libraries are expected in \n\
-      '$CASM_BOOST_PREFIX/lib'. \n\
+    'boost headers and libraries': \n\
+      The boost libraries are expected in the following locations.        \n\
       In order of priority: \n\
-        1) User specified by 'casm settings --set-boost-prefix' \n\
-        2) $CASM_BOOST_PREFIX \n\
-        3) (default search paths) \n\
+        1) User specified by 'casm settings --set-boost-includedir' and \n\
+           'casm settings --set-boost-libdir' and \n\
+        2) $CASM_BOOST_INCLUDEDIR and $CASM_BOOST_LIBDIR \n\
+        3) $CASM_BOOST_PREFIX/include $CASM_BOOST_PREFIX/lib \n\
+        4) (default search paths) \n\
 \n\
     Note: If shared libraries are installed in non-standard locations, you \n\
     may need to set: \n\

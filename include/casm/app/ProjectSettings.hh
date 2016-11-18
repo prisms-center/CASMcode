@@ -127,11 +127,17 @@ namespace CASM {
     /// \brief Get shared object options
     std::pair<std::string, std::string> soflags() const;
 
-    /// \brief Get casm prefix
-    std::pair<fs::path, std::string> casm_prefix() const;
+    /// \brief Get casm includedir
+    std::pair<fs::path, std::string> casm_includedir() const;
 
-    /// \brief Get boost prefix
-    std::pair<fs::path, std::string> boost_prefix() const;
+    /// \brief Get casm libdir
+    std::pair<fs::path, std::string> casm_libdir() const;
+
+    /// \brief Get boost includedir
+    std::pair<fs::path, std::string> boost_includedir() const;
+
+    /// \brief Get boost libdir
+    std::pair<fs::path, std::string> boost_libdir() const;
 
     /// \brief Get current compilation options string
     std::string compile_options() const;
@@ -247,11 +253,25 @@ namespace CASM {
     /// \brief Set shared object options (empty string to use default)
     bool set_soflags(std::string opt);
 
+
     /// \brief Set casm prefix (empty string to use default)
-    bool set_casm_prefix(fs::path prefix);
+    bool set_casm_prefix(fs::path dir);
+
+    /// \brief Set casm includedir (empty string to use default)
+    bool set_casm_includedir(fs::path dir);
+
+    /// \brief Set casm libdir (empty string to use default)
+    bool set_casm_libdir(fs::path dir);
+
 
     /// \brief Set boost prefix (empty string to use default)
-    bool set_boost_prefix(fs::path prefix);
+    bool set_boost_prefix(fs::path dir);
+
+    /// \brief Set boost includedir (empty string to use default)
+    bool set_boost_includedir(fs::path dir);
+
+    /// \brief Set boost libdir (empty string to use default)
+    bool set_boost_libdir(fs::path dir);
 
 
     /// \brief Set command used by 'casm view'
@@ -316,8 +336,10 @@ namespace CASM {
     std::pair<std::string, std::string> m_cxx;
     std::pair<std::string, std::string> m_cxxflags;
     std::pair<std::string, std::string> m_soflags;
-    std::pair<fs::path, std::string> m_casm_prefix;
-    std::pair<fs::path, std::string> m_boost_prefix;
+    std::pair<fs::path, std::string> m_casm_includedir;
+    std::pair<fs::path, std::string> m_casm_libdir;
+    std::pair<fs::path, std::string> m_boost_includedir;
+    std::pair<fs::path, std::string> m_boost_libdir;
 
     // deprecated reading exactly from settings file
     std::string m_depr_compile_options;
