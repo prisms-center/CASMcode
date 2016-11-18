@@ -3,7 +3,7 @@
 ./version.sh
 
 version=$(cat build-aux/casm_version.txt)
-reversion="0.2.X-${version#*-}"
+reversion="0.3a0-${version#*-}"
 
 echo $reversion > build-aux/casm_version.txt
 
