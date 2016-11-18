@@ -1,60 +1,71 @@
 #include "casm/system/RuntimeLibrary.hh"
+#include "casm/casm_io/Log.hh"
 
 namespace CASM {
 
   /// \brief Construct a RuntimeLibrary object, with the options to be used for compile
   ///        the '.o' file and the '.so' file
-  RuntimeLibrary::RuntimeLibrary(std::string _compile_options,
-                                 std::string _so_options) :
-    m_compile_options(_compile_options),
-    m_so_options(_so_options),
-    m_filename_base(""),
-    m_handle(nullptr) {}
+  RuntimeLibrary::RuntimeLibrary(std::string filename_base,
+                                 std::string compile_options,
+                                 std::string so_options,
+                                 std::string compile_msg,
+                                 const Logging &logging) :
+    Logging(logging),
+    m_filename_base(filename_base),
+    m_compile_options(compile_options),
+    m_so_options(so_options),
+    m_handle(nullptr) {
+
+    // If the shared library doesn't exist
+    if(!fs::exists(m_filename_base + ".so")) {
+
+      // But the library source code does
+      if(fs::exists(m_filename_base + ".cc")) {
+
+        // Compile it
+        try {
+          log().compiling<Log::standard>(m_filename_base + ".cc");
+          log().begin_lap();
+          log() << compile_msg << std::endl;
+          _compile();
+          log() << "compile time: " << log().lap_time() << " (s)\n" << std::endl;
+        }
+        catch(std::exception &e) {
+          log() << "Error compiling clexulator. To fix: \n";
+          log() << "  - Check compiler error messages.\n";
+          log() << "  - Check compiler options with 'casm settings -l'\n";
+          log() << "    - Update compiler options with 'casm settings --set-compile-options '...options...'\n";
+          log() << "    - Make sure the casm headers can be found by including '-I/path/to/casm'\n";
+          log() << "  - The default compiler is 'g++'. Override by setting the environment variable CXX\n" << std::endl;
+          throw e;
+        }
+      }
+      else {
+        throw std::runtime_error(
+          std::string("Error in RuntimeLibrary\n") +
+          "  Could not find '" + m_filename_base + ".so' or '" + m_filename_base + ".cc'");
+      }
+    }
+
+    // If the shared library exists
+    if(fs::exists(m_filename_base + ".so")) {
+
+      // Load the library with the Clexulator
+      _load();
+
+    }
+    else {
+      throw std::runtime_error(
+        std::string("Error in Clexulator constructor\n") +
+        "  Did not find '" + m_filename_base + ".so'");
+    }
+
+  }
 
   RuntimeLibrary::~RuntimeLibrary() {
     if(m_handle != nullptr) {
-      close();
+      _close();
     }
-  }
-
-  /// \brief Compile a shared library
-  ///
-  /// \param _filename_base Base name for the source code file. For example, "hello" results in writing "hello.cc",
-  ///        and compiling "hello.o" and "hello.so" in the current working directory.
-  /// \param _source A std::string containing the source code to be written. For example,
-  /// \code
-  /// std::string cc_file;
-  ///
-  /// cc_file = std::string("#include <iostream>\n") +
-  ///           "extern \"C\" int hello() {\n" +
-  ///           "   std::cout << \"Hello, my name is Ultron. I'm here to protect you.\" << '\\n';\n" +
-  ///           "   return 42;\n" +
-  ///           "}\n";
-  /// \endcode
-  ///
-  /// \result Writes a file "example.cc", and compiles an object file and shared library using the options
-  ///         provided when this RuntimeLibrary object was constructed. By default, "example.o" and "example.so".
-  ///
-  /// To enable runtime symbol lookup use C-style functions, i.e use extern "C" for functions you want to use
-  /// via get_function.  This means no member functions or overloaded functions.
-  ///
-  void RuntimeLibrary::compile(std::string _filename_base, std::string _source) {
-
-    if(m_handle != nullptr) {
-      close();
-    }
-
-    m_filename_base = _filename_base;
-
-    // write the source code
-    std::ofstream file(m_filename_base + ".cc");
-    file << _source;
-    file.close();
-
-    // compile the source code into a dynamic library
-    Popen p;
-    p.popen(m_compile_options + " -o " + m_filename_base + ".o" + " -c " + m_filename_base + ".cc");
-    p.popen(m_so_options + " -o " + m_filename_base + ".so" + " " + m_filename_base + ".o");
   }
 
   /// \brief Compile a shared library
@@ -68,46 +79,34 @@ namespace CASM {
   /// To enable runtime symbol lookup use C-style functions, i.e use extern "C" for functions you want to use
   /// via get_function.  This means no member functions or overloaded functions.
   ///
-  void RuntimeLibrary::compile(std::string _filename_base) {
-    if(m_handle != nullptr) {
-      close();
-    }
-
-    m_filename_base = _filename_base;
+  void RuntimeLibrary::_compile() {
 
     // compile the source code into a dynamic library
     Popen p;
     std::string cmd = m_compile_options + " -o " + m_filename_base + ".o" + " -c " + m_filename_base + ".cc";
     p.popen(cmd);
     if(p.exit_code()) {
-      std::cerr << "Error compiling: " << m_filename_base + ".cc" << std::endl;
-      std::cerr << "Attempted: " << cmd << std::endl;
-      std::cerr << p.gets() << std::endl;
+      err_log() << "Error compiling: " << m_filename_base + ".cc" << std::endl;
+      err_log() << "Attempted: " << cmd << std::endl;
+      err_log() << p.gets() << std::endl;
       throw std::runtime_error("Can not compile " + m_filename_base + ".cc");
     }
 
     cmd = m_so_options + " -o " + m_filename_base + ".so" + " " + m_filename_base + ".o";
     p.popen(cmd);
     if(p.exit_code()) {
-      std::cerr << "Error compiling shared object: " << m_filename_base + ".so" << std::endl;
-      std::cerr << "Attempted: " << cmd << std::endl;
-      std::cerr << p.gets() << std::endl;
+      err_log() << "Error compiling shared object: " << m_filename_base + ".so" << std::endl;
+      err_log() << "Attempted: " << cmd << std::endl;
+      err_log() << p.gets() << std::endl;
       throw std::runtime_error("Can not compile " + m_filename_base + ".o");
     }
   }
-
 
   /// \brief Load a library with a given name
   ///
   /// \param _filename_base For "hello", this loads "hello.so"
   ///
-  void RuntimeLibrary::load(std::string _filename_base) {
-
-    if(m_handle != nullptr) {
-      close();
-    }
-
-    m_filename_base = _filename_base;
+  void RuntimeLibrary::_load() {
 
     m_handle = dlopen((m_filename_base + ".so").c_str(), RTLD_NOW);
     if(!m_handle) {
@@ -119,24 +118,19 @@ namespace CASM {
   /// \brief Close the current library
   ///
   /// This is also done on destruction.
-  void RuntimeLibrary::close() {
+  void RuntimeLibrary::_close() {
     // close
-    if(m_handle != nullptr && m_filename_base != "") {
+    if(m_handle != nullptr) {
       dlclose(m_handle);
     }
   }
 
   /// \brief Remove the current library and source code
   void RuntimeLibrary::rm() {
-    if(m_filename_base == "") {
-      return;
-    }
-
+    _close();
     // rm
     Popen p;
     p.popen(std::string("rm -f ") + m_filename_base + ".cc " + m_filename_base + ".o " + m_filename_base + ".so");
-
-    m_filename_base = "";
   }
 
   namespace {
@@ -209,32 +203,106 @@ namespace CASM {
 
   /// \brief Return include path option for CASM
   ///
-  /// \returns $CASM_PREFIX if environment variable CASM_PREFIX exists,
-  ///          otherwise "/usr/local"
-  std::pair<fs::path, std::string> RuntimeLibrary::default_casm_prefix() {
-    auto res = _use_env(_casm_env(), "/usr/local");
-    return std::make_pair(fs::path(res.first), res.second);
+  /// \returns In order of preference: $CASM_INCLUDEDIR, or
+  ///          $CASM_PREFIX/include, or "/usr/local/include"
+  std::pair<fs::path, std::string> RuntimeLibrary::default_casm_includedir() {
+    char *_env;
+
+    // if CASM_INCLUDEDIR exists
+    _env = std::getenv("CASM_INCLUDEDIR");
+    if(_env != nullptr) {
+      return std::make_pair(std::string(_env), "CASM_INCLUDEDIR");
+    }
+
+    // if CASM_PREFIX exists
+    _env = std::getenv("CASM_PREFIX");
+    if(_env != nullptr) {
+      return std::make_pair(fs::path(_env) / "include", "CASM_PREFIX");
+    }
+
+    // else
+    return std::make_pair(fs::path("/usr/local/include"), "default");
+  }
+
+  /// \brief Return lib path option for CASM
+  ///
+  /// \returns In order of preference: $CASM_LIBDIR, or
+  ///          $CASM_PREFIX/lib, or "/usr/local/lib"
+  std::pair<fs::path, std::string> RuntimeLibrary::default_casm_libdir() {
+    char *_env;
+
+    // if CASM_INCLUDEDIR exists
+    _env = std::getenv("CASM_LIBDIR");
+    if(_env != nullptr) {
+      return std::make_pair(std::string(_env), "CASM_LIBDIR");
+    }
+
+    // if CASM_PREFIX exists
+    _env = std::getenv("CASM_PREFIX");
+    if(_env != nullptr) {
+      return std::make_pair(fs::path(_env) / "lib", "CASM_PREFIX");
+    }
+
+    // else
+    return std::make_pair(fs::path("/usr/local/lib"), "default");
   }
 
   /// \brief Return include path option for boost
   ///
-  /// \returns $CASM_BOOST_PREFIX if environment variable CASM_BOOST_PREFIX exists,
-  ///          otherwise an empty string
-  std::pair<fs::path, std::string> RuntimeLibrary::default_boost_prefix() {
-    auto res = _use_env(_boost_env());
-    return std::make_pair(fs::path(res.first), res.second);
+  /// \returns In order of preference: $CASM_BOOST_INCLUDEDIR, or
+  ///          $CASM_BOOST_PREFIX/include, or "/usr/local/include"
+  std::pair<fs::path, std::string> RuntimeLibrary::default_boost_includedir() {
+    char *_env;
+
+    // if CASM_BOOST_INCLUDEDIR exists
+    _env = std::getenv("CASM_BOOST_INCLUDEDIR");
+    if(_env != nullptr) {
+      return std::make_pair(std::string(_env), "CASM_BOOST_INCLUDEDIR");
+    }
+
+    // if CASM_BOOST_PREFIX exists
+    _env = std::getenv("CASM_BOOST_PREFIX");
+    if(_env != nullptr) {
+      return std::make_pair(fs::path(_env) / "include", "CASM_BOOST_PREFIX");
+    }
+
+    // else
+    return std::make_pair(fs::path("/usr/local/include"), "default");
   }
 
-  std::string include_path(const fs::path &prefix) {
-    if(!prefix.empty()) {
-      return "-I" + (prefix / "include").string();
+  /// \brief Return lib path option for boost
+  ///
+  /// \returns In order of preference: $CASM_BOOST_LIBDIR, or
+  ///          $CASM_BOOST_PREFIX/lib, or "/usr/local/lib"
+  std::pair<fs::path, std::string> RuntimeLibrary::default_boost_libdir() {
+    char *_env;
+
+    // if CASM_BOOST_INCLUDEDIR exists
+    _env = std::getenv("CASM_BOOST_LIBDIR");
+    if(_env != nullptr) {
+      return std::make_pair(std::string(_env), "CASM_BOOST_LIBDIR");
+    }
+
+    // if CASM_BOOST_PREFIX exists
+    _env = std::getenv("CASM_BOOST_PREFIX");
+    if(_env != nullptr) {
+      return std::make_pair(fs::path(_env) / "lib", "CASM_BOOST_PREFIX");
+    }
+
+    // else
+    return std::make_pair(fs::path("/usr/local/lib"), "default");
+  }
+
+  std::string include_path(const fs::path &dir) {
+    if(!dir.empty()) {
+      return "-I" + dir.string();
     }
     return "";
   };
 
-  std::string link_path(const fs::path &prefix) {
-    if(!prefix.empty()) {
-      return "-L" + (prefix / "lib").string();
+  std::string link_path(const fs::path &dir) {
+    if(!dir.empty()) {
+      return "-L" + dir.string();
     }
     return "";
   };

@@ -1,0 +1,1 @@
+./configure --prefix=$(pwd)/builds/auto CXXFLAGS='-DNDEBUG -O3 --std=c++11 -Wno-deprecated-register -Wno-deprecated-declarations -DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long -Wno-unused-parameter -DGZSTREAM_NAMESPACE=gz -fPIC'

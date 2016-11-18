@@ -247,27 +247,31 @@ namespace CASM {
   public:
 
     Logging(Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log()) :
-      m_log(log),
-      m_debug_log(debug_log),
-      m_err_log(err_log) {}
+      m_log(&log),
+      m_debug_log(&debug_log),
+      m_err_log(&err_log) {}
 
     Log &log() const {
-      return m_log;
+      return *m_log;
     }
 
     Log &debug_log() const {
-      return m_debug_log;
+      return *m_debug_log;
     }
 
     Log &err_log() const {
-      return m_err_log;
+      return *m_err_log;
+    }
+
+    static Logging null() {
+      return Logging(null_log(), null_log(), null_log());
     }
 
   private:
 
-    Log &m_log;
-    Log &m_debug_log;
-    Log &m_err_log;
+    Log *m_log;
+    Log *m_debug_log;
+    Log *m_err_log;
 
   };
 

@@ -16,6 +16,8 @@
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/app/EnumeratorHandler.hh"
+#include "casm/app/QueryHandler.hh"
 
 /// Cluster expansion class
 namespace CASM {
@@ -69,11 +71,11 @@ namespace CASM {
     // **** Constructors ****
 
     /// Initial construction of a PrimClex, from a primitive Structure
-    PrimClex(const Structure &_prim, Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log());
+    PrimClex(const Structure &_prim, const Logging &logging = Logging());
 
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-    PrimClex(const fs::path &_root, Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log());
+    PrimClex(const fs::path &_root, const Logging &logging = Logging());
 
     /// Reload PrimClex data from settings
     void refresh(bool read_settings = false,
@@ -133,6 +135,9 @@ namespace CASM {
 
     // ** Supercell and Configuration accessors **
 
+    /// Access entire supercell_list
+    boost::container::stable_vector<Supercell> &get_supercell_list();
+
     /// const Access entire supercell_list
     const boost::container::stable_vector<Supercell> &supercell_list() const;
 
@@ -147,6 +152,9 @@ namespace CASM {
 
     /// Access supercell by name
     Supercell &supercell(std::string scellname);
+
+    /// Access supercell by Lattice, adding if necessary
+    Supercell &get_supercell(const Lattice &lat);
 
     /// access configuration by name (of the form "scellname/[NUMBER]", e.g., ("SCEL1_1_1_1_0_0_0/0")
     const Configuration &configuration(const std::string &configname) const;
@@ -195,7 +203,7 @@ namespace CASM {
     // **** Functions for preparing CLEXulators ****
 
     /// \brief Generate supercells of a certain volume and shape and store them in the array of supercells
-    void generate_supercells(int volStart, int volEnd, int dims, const Eigen::Matrix3i &G, bool verbose);
+    void generate_supercells(const ScelEnumProps &enum_props);
 
     //Enumerate configurations for all the supercells that are stored in 'supercell_list'
     void print_enum_info(std::ostream &stream);

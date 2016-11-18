@@ -1,0 +1,2 @@
+libcasm_la_SOURCES += ./src/casm/completer/Complete.cc\
+                      ./src/casm/completer/Handlers.cc

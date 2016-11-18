@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(ProjectCommands) {
     Checks("composition", "-d", "-h"),
     Checks("sym", "", "-h"),
     Checks("bset", "", "-h"),
-    Checks("enum", "--supercells --max 1", "-h"),
+    Checks("enum", "", "-h"),
     Checks("select", "", "-h"),
     Checks("query", "", "-h")
   };

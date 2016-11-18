@@ -143,7 +143,7 @@ namespace CASM {
   ///
   /// \ingroup DataFormatter
   ///
-  template<typename DataObject>
+  template<typename _DataObject>
   class DataFormatter {
     // These are private classes that sweeten the I/O syntax
     // they have to be forward declared ahead of DataFormatter::operator()
@@ -152,6 +152,9 @@ namespace CASM {
 
     class FormattedObject;
   public:
+
+    typedef _DataObject DataObject;
+
     DataFormatter(int _sep = 4, int _precision = 12, std::string _comment = "#") :
       m_initialized(false), m_prec(_precision), m_sep(_sep), m_indent(0), m_comment(_comment) {
       m_data_formatters.reserve(100);
@@ -293,10 +296,11 @@ namespace CASM {
   ///
   /// \ingroup DataFormatter
   ///
-  template<typename DataObject>
+  template<typename _DataObject>
   class BaseDatumFormatter {
   public:
 
+    typedef _DataObject DataObject;
     enum FormatterType {Property, Operator};
     typedef long difference_type;
     typedef DataFormatterDictionary<DataObject, BaseDatumFormatter<DataObject> > DictType;
@@ -587,12 +591,14 @@ namespace CASM {
   ///
   /// \ingroup DataFormatter
   ///
-  template<typename DataObject, typename DatumFormatterType = BaseDatumFormatter<DataObject> >
+  template<typename _DataObject, typename _DatumFormatterType = BaseDatumFormatter<_DataObject> >
   class DataFormatterDictionary :
-    public notstd::unique_cloneable_map<std::string, DatumFormatterType> {
+    public notstd::unique_cloneable_map<std::string, _DatumFormatterType> {
 
   public:
 
+    typedef _DataObject DataObject;
+    typedef _DatumFormatterType DatumFormatterType;
     typedef notstd::unique_cloneable_map<std::string, DatumFormatterType> UniqueMapType;
     typedef typename UniqueMapType::key_type key_type;
     typedef typename UniqueMapType::value_type value_type;

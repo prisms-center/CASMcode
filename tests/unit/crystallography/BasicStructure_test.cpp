@@ -249,7 +249,8 @@ BOOST_AUTO_TEST_CASE(IsPrimitiveTest) {
 
   const SymGroup effective_pg = prim.factor_group();
 
-  SupercellEnumerator<Lattice> scel_enum(prim.lattice(), effective_pg, 1, 6);
+  ScelEnumProps enum_props(1, 6);
+  SupercellEnumerator<Lattice> scel_enum(prim.lattice(), effective_pg, enum_props);
 
   for(auto it = scel_enum.begin(); it != scel_enum.end(); ++it) {
 

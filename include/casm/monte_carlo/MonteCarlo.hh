@@ -302,9 +302,6 @@ namespace CASM {
 
   };
 
-  /// \brief Fill supercell with motif, applying a factor group operation if necessary
-  Configuration fill_supercell(Supercell &mc_scel, const Configuration &motif);
-
   /// \brief Construct with a starting ConfigDoF as specified the given MonteSettings and prepare data samplers
   template<typename MonteTypeSettings>
   MonteCarlo::MonteCarlo(PrimClex &primclex, const MonteTypeSettings &settings, Log &_log) :

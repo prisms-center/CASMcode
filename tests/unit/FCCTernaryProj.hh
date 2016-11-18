@@ -17,13 +17,13 @@ namespace test {
 
   inline BasicStructure<Site> FCC_ternary_prim() {
 
-    // lattice vectors as rows
+    // lattice vectors as cols
     Eigen::Matrix3d lat;
-    lat << 2.0, 2.0, 0.0,
-        0.0, 2.0, 2.0,
-        2.0, 0.0, 2.0;
+    lat << 0.0, 2.0, 2.0,
+        2.0, 0.0, 2.0,
+        2.0, 2.0, 0.0;
 
-    BasicStructure<Site> struc(Lattice(lat.transpose()));
+    BasicStructure<Site> struc {Lattice{lat}};
     struc.title = "FCC_ternary";
 
     Molecule A = make_atom("A", struc.lattice());
@@ -41,7 +41,8 @@ namespace test {
   public:
 
     FCCTernaryProj() :
-      Proj(fs::absolute(fs::path("tests/unit/App/FCC_ternary")),
+        //Use PID to get unique naming. Otherwise different tests might obliterate your directory mid testing if you run in parallel
+      Proj(fs::absolute(fs::path(std::string("tests/unit/test_projects/FCC_ternary.")+std::to_string(::getppid()))),
            FCC_ternary_prim(),
            "FCC_ternary",
            "FCC Ternary with A, B, C occupation") {}
@@ -199,7 +200,7 @@ namespace test {
     void check_enum() override {
 
       {
-        m_p.popen(cd_and() + "casm enum --supercells --max 10");
+        m_p.popen(cd_and() + "casm enum -i '{\"ScelEnum\":{\"max\":10}}'");
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);
@@ -207,7 +208,7 @@ namespace test {
       }
 
       {
-        m_p.popen(cd_and() + "casm enum --configs --max 6");
+        m_p.popen(cd_and() + "casm enum -i '{\"ConfigEnumAllOccupations\":{\"supercells\":{\"max\":6}}}'");
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);

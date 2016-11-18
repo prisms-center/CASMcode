@@ -17,11 +17,19 @@ namespace CASM {
   class PrimClex;
   class Clexulator;
 
+  struct ConfigMapCompare {
+
+    bool operator()(const Configuration *A, const Configuration *B) const {
+      return *A < *B;
+    }
+
+  };
+
   /// \brief Represents a supercell of a PrimClex
   ///
   /// \ingroup Clex
   ///
-  class Supercell {
+  class Supercell : public Comparisons<Supercell> {
 
   public:
 
@@ -63,8 +71,8 @@ namespace CASM {
     //       (*this).superstruc().factor_group() is the group formed by the cosets of Tsuper in the supercell space group
     mutable SymGroup m_factor_group;
 
-    /// unique name of the supercell based on hermite normal form (see generate_name() )
-    std::string m_name;
+    /// unique name of the supercell based on hermite normal form (see _generate_name() )
+    mutable std::string m_name;
 
     /// SuperNeighborList, mutable for lazy construction
     mutable notstd::cloneable_ptr<SuperNeighborList> m_nlist;
@@ -73,9 +81,14 @@ namespace CASM {
     /// to enable checking if SuperNeighborList should be re-constructed
     mutable Index m_nlist_size_at_construction;
 
+    /// Store a pointer to the canonical equivalent Supercell
+    mutable Supercell *m_canonical;
 
     // Could hold either enumerated configurations or any 'saved' configurations
     ConfigList m_config_list;
+
+    // Improve performance of 'contains_config' by sorting Configuration
+    std::map<const Configuration *, Index, ConfigMapCompare> m_config_map;
 
     Eigen::Matrix3i m_transf_mat;
 
@@ -172,7 +185,7 @@ namespace CASM {
 
     // **** Accessors ****
 
-    const PrimClex &primclex() const {
+    PrimClex &get_primclex() const {
       return *m_primclex;
     }
 
@@ -253,11 +266,16 @@ namespace CASM {
       return m_id;
     }
 
-    void set_id(Index id) {
-      m_id = id;
-    }
-
-    std::string name() const {
+    /// \brief Return supercell name
+    ///
+    /// - If lattice is the canonical equivalent, then return 'SCELV_A_B_C_D_E_F'
+    /// - Else, return 'SCELV_A_B_C_D_E_F.$FG_INDEX', where $FG_INDEX is the index of the first
+    ///   symmetry operation in the primitive structure's factor group such that the lattice
+    ///   is equivalent to `apply(fg_op, canonical equivalent)`
+    std::string get_name() const {
+      if(m_name.empty()) {
+        _generate_name();
+      }
       return m_name;
     };
 
@@ -275,9 +293,16 @@ namespace CASM {
     // Populates m_trans_permute if needed
     const Array<Permutation> &translation_permute() const;
 
+    /// \brief Begin iterator over pure translational permutations
+    permute_const_iterator translate_begin() const;
+
+    /// \brief End iterator over pure translational permutations
+    permute_const_iterator translate_end() const;
+
     // begin and end iterators for iterating over translation and factor group permutations
     permute_const_iterator permute_begin() const;
     permute_const_iterator permute_end() const;
+    permute_const_iterator permute_it(Index fg_index, Index trans_index) const;
 
     ///Return path to supercell directory
     fs::path path() const;
@@ -285,6 +310,25 @@ namespace CASM {
     ///Count how many configs are selected in *this
     Index amount_selected() const;
 
+    bool is_canonical() const {
+      return get_real_super_lattice().is_canonical();
+    }
+
+    SymOp to_canonical() const {
+      return get_real_super_lattice().to_canonical();
+    }
+
+    SymOp from_canonical() const {
+      return get_real_super_lattice().from_canonical();
+    }
+
+    Supercell &canonical_form() const;
+
+    bool is_equivalent(const Supercell &B) const;
+
+    bool operator<(const Supercell &B) const;
+
+    // **** Mutators ****
 
     // **** Generating functions ****
 
@@ -294,9 +338,6 @@ namespace CASM {
     // Populate m_trans_permute -- probably should be private
     void generate_permutations() const;
 
-    //\John G 070713
-    void generate_name();
-
 
     // **** Enumerating functions ****
 
@@ -305,6 +346,11 @@ namespace CASM {
     bool add_config(const Configuration &config);
     bool add_config(const Configuration &config, Index &index, Supercell::permute_const_iterator &permute_it);
     bool add_canon_config(const Configuration &config, Index &index);
+
+    std::pair<config_const_iterator, bool> insert_config(const Configuration &config);
+    std::pair<config_const_iterator, bool> insert_canon_config(const Configuration &config);
+    config_const_iterator find(const Configuration &config) const;
+
     void read_config_list(const jsonParser &json);
 
     template<typename ConfigIterType>
@@ -334,7 +380,24 @@ namespace CASM {
     ///Call Configuration::write out every configuration in supercell
     jsonParser &write_config_list(jsonParser &json);
 
+    void printUCC(std::ostream &stream, COORD_TYPE mode, UnitCellCoord ucc, char term = 0, int prec = 7, int pad = 5) const;
+    //\Michael 241013
+
+  private:
+
+    friend Comparisons<Supercell>;
+
+    bool _eq(const Supercell &B) const;
+
+    void _add_canon_config(const Configuration &config);
+
+    void _generate_name() const;
+
   };
+
+  Supercell &apply(const SymOp &op, Supercell &scel);
+
+  Supercell copy_apply(const SymOp &op, const Supercell &scel);
 
 
   //*******************************************************************************
@@ -345,6 +408,7 @@ namespace CASM {
     //   Enumerated configurations are added after existing configurations
     Index N_existing = m_config_list.size();
     Index N_existing_enumerated = 0;
+    Index index;
     //std::cout << "ADDING CONFIGS TO SUPERCELL; N_exiting: " << N_existing << " N_enumerated: " << N_existing_enumerated << "\n";
     //std::cout << "beginning iterator: " << it_begin->occupation() << "\n";
     // Loops through all possible configurations
@@ -354,21 +418,14 @@ namespace CASM {
 
       bool add = true;
       if(N_existing_enumerated != N_existing) {
-        for(Index i = 0; i < N_existing; i++) {
-          if(m_config_list[i].configdof() == it_begin->configdof()) {
-            m_config_list[i].push_back_source(it_begin->source());
-            add = false;
-            N_existing_enumerated++;
-            break;
-          }
+        if(contains_config(*it_begin, index)) {
+          config_list[index].push_back_source(it_begin->source());
+          add = false;
+          N_existing_enumerated++;
         }
       }
       if(add) {
-        m_config_list.push_back(*it_begin);
-        // get source info from enumerator
-        //m_config_list.back().set_source(it_begin.source());
-        m_config_list.back().set_id(m_config_list.size() - 1);
-        m_config_list.back().set_selected(false);
+        _add_canon_config(*it_begin);
       }
     }
 
@@ -378,15 +435,8 @@ namespace CASM {
 
   template<typename ConfigIterType>
   void Supercell::add_configs(ConfigIterType it_begin, ConfigIterType it_end) {
-    if(ConfigIterType::is_canonical_iter()) {
-      for(; it_begin != it_end; ++it_begin) {
-        add_canon_config(*it_begin);
-      }
-    }
-    else {
-      for(; it_begin != it_end; ++it_begin) {
-        add_config(*it_begin);
-      }
+    for(; it_begin != it_end; ++it_begin) {
+      add_config(*it_begin);
     }
   }
 

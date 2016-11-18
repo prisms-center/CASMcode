@@ -1,4 +1,5 @@
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/misc/CASM_math.hh"
 
 namespace CASM {
 
@@ -207,6 +208,42 @@ namespace CASM {
     return stream;
   }
 
+  bool jsonParser::almost_equal(const jsonParser &B, double tol) const {
+    if(type() != B.type()) {
+      return false;
+    }
+
+    if(is_array()) {
+      auto f = [ = ](const jsonParser & _A, const jsonParser & _B) {
+        return _A.almost_equal(_B, tol);
+      };
+      bool res = (size() == B.size() && std::equal(begin(), end(), B.begin(), f));
+      return res;
+    }
+    else if(is_obj()) {
+      if(size() != B.size()) {
+        return false;
+      }
+      auto A_it = begin();
+      auto A_end = end();
+      auto B_it = B.begin();
+      for(; A_it != A_end; ++A_it, ++B_it) {
+        if(A_it.name() != B_it.name() || !A_it->almost_equal(*B_it, tol)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    else if(is_number()) {
+      bool res = CASM::almost_equal(this->get<double>(), B.get<double>(), tol);
+      return res;
+    }
+    else {
+      bool res = (*this == B);
+      return res;
+    }
+  }
+
 
   // ------ Type Checking Methods ------------------------------------
 
@@ -276,6 +313,57 @@ namespace CASM {
     return (const jsonParser &) it->second;
   }
 
+  /// Return a reference to the sub-jsonParser (JSON value) with specified relative path
+  ///   Will throw if the 'path' doesn't exist.
+  ///
+  /// - If 'path' is 'A/B/C', then json[path] is equivalent to json[A][B][C]
+  /// - If any sub-jsonParser is an array, it will attempt to convert the filename to int
+  jsonParser &jsonParser::at(const fs::path &path) {
+    return const_cast<jsonParser &>(static_cast<const jsonParser *>(this)->at(path));
+  }
+
+  /// Return a reference to the sub-jsonParser (JSON value) with specified relative path
+  ///   Will throw if the 'path' doesn't exist.
+  ///
+  /// - If 'path' is 'A/B/C', then json[path] is equivalent to json[A][B][C]
+  /// - If any sub-jsonParser is an array, it will attempt to convert the filename to int
+  const jsonParser &jsonParser::at(const fs::path &path) const {
+    if(!path.is_relative()) {
+      throw std::invalid_argument(
+        "Error in jsonParser::operator[](const fs::path &path): path must be relative");
+    }
+    const jsonParser *curr = this;
+    for(auto it = path.begin(); it != path.end(); ++it) {
+      if(curr->is_array()) {
+        int index = std::stoi(it->string());
+        if(curr->size() > index) {
+          curr = &((*curr)[index]);
+        }
+        else {
+          std::string msg = "Error in jsonParser::at: attempted to access element outside of array range";
+          std::cerr << "path: " << path << std::endl;
+          std::cerr << "index: " << index << std::endl;
+          std::cerr << "curr->size(): " << curr->size() << std::endl;
+          throw std::invalid_argument(msg);
+        }
+      }
+      else {
+        auto res = curr->find(it->string());
+        if(res != curr->end()) {
+          curr = &((*curr)[it->string()]);
+        }
+        else {
+          std::string msg = "Error in jsonParser::at: key not found";
+          std::cerr << "path: " << path << std::endl;
+          std::cerr << "key: " << it->string() << std::endl;
+          throw std::invalid_argument(msg);
+        }
+      }
+    }
+
+    return *curr;
+  }
+
   /// Return a reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
   jsonParser &jsonParser::operator[](const int &element) {
 
@@ -299,8 +387,36 @@ namespace CASM {
         }
         else if(A.is_array() && B.is_array()) {
           std::stringstream ss;
-          ss << "[" << std::distance(A.cbegin(), A_it) << "]";
+          ss << std::distance(A.cbegin(), A_it);
           return find_diff(*A_it, *B_it, diff / ss.str());
+        }
+        return diff;
+      }
+      ++A_it;
+      ++B_it;
+    }
+    return diff;
+  }
+
+  /// Return the location at which jsonParser !A.almost_equal(B, tol) as a boost::filesystem::path
+  boost::filesystem::path find_diff(const jsonParser &A, const jsonParser &B, double tol, boost::filesystem::path diff) {
+    auto A_it = A.cbegin();
+    auto B_it = B.cbegin();
+    while(A_it != A.cend()) {
+      if(!A_it->almost_equal(*B_it, tol)) {
+        if(A.is_obj() && B.is_obj()) {
+          if(A.size() != B.size()) {
+            return diff;
+          }
+          return find_diff(*A_it, *B_it, tol, diff / A_it.name());
+        }
+        else if(A.is_array() && B.is_array()) {
+          if(A.size() != B.size()) {
+            return diff;
+          }
+          std::stringstream ss;
+          ss << std::distance(A.cbegin(), A_it);
+          return find_diff(*A_it, *B_it, tol, diff / ss.str());
         }
         return diff;
       }

@@ -6,12 +6,7 @@ namespace CASM {
   /// \brief Insert in hall of fame if 'check' passes
   MonteCarloEnum::HallOfFameType::InsertResult MonteCarloEnum::_insert(const Configuration &config) {
     if(insert_canonical()) {
-      const Supercell &scel = config.supercell();
-      auto begin = scel.permute_begin();
-      auto end = scel.permute_end();
-      decltype(begin) canon_it;
-      double tol = TOL;
-      return m_halloffame->insert(_canon_scel_config(config).canonical_form(begin, end, canon_it, tol));
+      return m_halloffame->insert(config.in_canonical_supercell().canonical_form());
     }
     else {
       return m_halloffame->insert(config);
@@ -116,37 +111,6 @@ namespace CASM {
     }
   }
 
-  /// \brief Generate equivalent config in the canonical equivalent supercell
-  Configuration MonteCarloEnum::_canon_scel_config(const Configuration &config) const {
-
-    // try to get canonical equivalent supercell from list of already encountered supercell
-    std::string scel_name = config.supercell().name();
-    auto it = m_canon_scel.find(scel_name);
-
-    // if not yet encountered
-    if(it == m_canon_scel.end()) {
-
-      // get supercell index from primclex
-      Index Nscel = primclex().supercell_list().size();
-      Index scel_index = _primclex().add_supercell(config.supercell().real_super_lattice());
-
-      // save pointer
-      it = m_canon_scel.insert(std::make_pair(scel_name, &_primclex().supercell(scel_index))).first;
-
-      // if this is a new supercell for the project, write SCEL file
-      if(Nscel != primclex().supercell_list().size()) {
-        _log().generate("New supercell");
-        _log() << "supercell: " << it->second->name() << "\n";
-        _log() << "write: SCEL\n";
-        _log() << std::endl;
-        primclex().print_supercells();
-      }
-    }
-
-    // return configuration in the canonical equivalent supercell
-    return fill_supercell(*(it->second), config);
-  }
-
   /// \brief Save configurations in the hall of fame to the config list
   void MonteCarloEnum::save_configs() {
 
@@ -171,7 +135,7 @@ namespace CASM {
 
       // get equivalent configuration (not necessarily canonical) in the
       // canonical equivalent supercell stored in the primclex
-      Configuration config = _canon_scel_config(val.second);
+      Configuration config = val.second.in_canonical_supercell();
       Supercell &canon_scel = config.supercell();
 
       // add config to supercell (the saved config will be canonical)

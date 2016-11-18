@@ -36,7 +36,14 @@ namespace CASM {
   class PrimClex;
 
   /// \brief Data structure holding basic CASM command info
-  struct CommandArgs {
+  struct CommandArgs : public Logging {
+
+    /// \brief CommandArgs constructor
+    CommandArgs(int _argc,
+                char *_argv[],
+                PrimClex *_primclex,
+                fs::path _root,
+                const Logging &logging);
 
     /// \brief CommandArgs constructor
     CommandArgs(int _argc,
@@ -44,14 +51,23 @@ namespace CASM {
                 PrimClex *_primclex = nullptr,
                 fs::path _root = fs::path(),
                 Log &_log = default_log(),
-                Log &_err_log = default_err_log());
+                Log &_err_log = default_err_log()) :
+      CommandArgs(_argc, _argv, _primclex, _root, Logging(_log, _log, _err_log)) {}
+
+
+    /// \brief CommandArgs constructor
+    CommandArgs(std::string _args,
+                PrimClex *_primclex,
+                fs::path _root,
+                const Logging &logging);
 
     /// \brief CommandArgs constructor
     CommandArgs(std::string _args,
                 PrimClex *_primclex = nullptr,
                 fs::path _root = fs::path(),
                 Log &_log = default_log(),
-                Log &_err_log = default_err_log());
+                Log &_err_log = default_err_log()) :
+      CommandArgs(_args, _primclex, _root, Logging(_log, _log, _err_log)) {}
 
     CommandArgs(const CommandArgs &other) = delete;
     CommandArgs(CommandArgs &&other) = delete;

@@ -90,11 +90,12 @@ namespace CASM {
     SymGroup pg;
     testlat.generate_point_group(pg);
 
-    int dims = 1;
+    std::string dirs = "a";
     int minvol = 1;
     int maxvol = 10;
 
-    SupercellEnumerator<Lattice> latenumerator(testlat, pg, minvol, maxvol + 1, dims);
+    ScelEnumProps enum_props(minvol, maxvol + 1, dirs);
+    SupercellEnumerator<Lattice> latenumerator(testlat, pg, enum_props);
     std::vector<Lattice> enumerated_lat(latenumerator.begin(), latenumerator.end());
 
 
@@ -124,7 +125,8 @@ namespace CASM {
 
     // enumerate size 5 supercells
     bool verbose = false;
-    primclex.generate_supercells(5, 5, 3, Eigen::Matrix3i::Identity(), verbose);
+    ScelEnumProps enum_props(5, 6);
+    primclex.generate_supercells(enum_props);
 
     // there will be 7
     int scel_list_size = 7;

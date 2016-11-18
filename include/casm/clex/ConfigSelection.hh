@@ -2,8 +2,10 @@
 #define ConfigSelection_HH
 
 #include <limits>
-#include "casm/clex/Configuration.hh"
 #include "casm/casm_io/DataFormatter.hh"
+#include "casm/clex/Configuration.hh"
+#include "casm/clex/ConfigIO.hh"
+#include "casm/clex/PrimClex.hh"
 
 namespace CASM {
 

@@ -53,8 +53,6 @@ namespace CASM {
       return m_N;
     }
 
-    bool operator==(const ConfigDoF &RHS) const;
-
     double tol()const {
       return m_tol;
     }
@@ -92,12 +90,12 @@ namespace CASM {
     }
 
     double &F(Index i, Index j) {
-      assert(is_strained() && "Non-const method ConfigDoF::F() should only be called after ConfigDoF::set_deformation()!!!");
+      assert(has_deformation() && "Non-const method ConfigDoF::F() should only be called after ConfigDoF::set_deformation()!!!");
       return m_deformation(i, j);
     }
 
-    bool is_strained() const {
-      return m_is_strained;
+    bool has_deformation() const {
+      return m_has_deformation;
     }
 
     bool has_displacement() const {
@@ -117,27 +115,16 @@ namespace CASM {
     /// or if ConfigDoF::size()==0, sets ConfigDoF::size() to _displacement.cols()
     void set_displacement(const displacement_matrix_t &_displacement);
 
-    /// set_deformation sets ConfigDoF::is_strained() to true
+    /// set_deformation sets ConfigDoF::has_deformation() to true
     void set_deformation(const Eigen::Matrix3d &_deformation);
 
     void clear();
 
+    void clear_occupation();
+    void clear_displacement();
+    void clear_deformation();
+
     void swap(ConfigDoF &RHS);
-
-    // pass iterator, 'it_begin', to first translation operation (indexed 0,0) to determine if configdof is a primitive cell
-    bool is_primitive(PermuteIterator it_begin, double _tol = TOL) const;
-
-    std::vector<PermuteIterator> factor_group(PermuteIterator it_begin, PermuteIterator it_end, double tol = TOL) const;
-
-    bool is_canonical(PermuteIterator it_begin, PermuteIterator it_end, double _tol = TOL) const;
-
-    bool is_canonical(PermuteIterator it_begin, PermuteIterator it_end, std::vector<PermuteIterator> &factor_group, double tol = TOL) const;
-
-    ConfigDoF canonical_form(PermuteIterator it_begin, PermuteIterator it_end, double _tol = TOL) const;
-
-    ConfigDoF canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, double _tol = TOL) const;
-
-    ConfigDoF canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, std::vector<PermuteIterator> &factor_group, double tol = TOL) const;
 
     //**** I/O ****
     jsonParser &to_json(jsonParser &json) const;
@@ -163,7 +150,7 @@ namespace CASM {
     ///to the deformed lattice vectors via L_deformed = m_deformation * L_reference -- (L is a 3x3 matrix whose columns are the lattice vectors)
     Eigen::Matrix3d m_deformation;
 
-    bool m_is_strained;
+    bool m_has_deformation;
 
     /// Tolerance used for transformation to canonical form -- used also for comparisons, since
     /// Since comparisons are only meaningful to within the tolerance used for finding the canonical form
@@ -183,21 +170,15 @@ namespace CASM {
       return m_deformation;
     }
 
-    // *** private implementation of is_canonical() and canonical_form()
-    bool _is_canonical(PermuteIterator it_begin, PermuteIterator it_end, std::vector<PermuteIterator> *fg_ptr = nullptr, double tol = TOL) const;
-
-    ConfigDoF _canonical_form(PermuteIterator it_begin, PermuteIterator it_end, PermuteIterator &it_canon, std::vector<PermuteIterator> *fg_ptr = nullptr, double tol = TOL) const;
-
   };
 
   jsonParser &to_json(const ConfigDoF &value, jsonParser &json);
 
   void from_json(ConfigDoF &value, const jsonParser &json);
 
-
   // Calculate transformed ConfigDoF from PermuteIterator via
-  //   transformed_configdof = permute_iterator * configdof
-  ConfigDoF operator*(const PermuteIterator &it, const ConfigDoF &dof);
+  //   apply(permute_iterator, dof)
+  ConfigDoF &apply(const PermuteIterator &it, ConfigDoF &dof);
 
   void swap(ConfigDoF &A, ConfigDoF &B);
 

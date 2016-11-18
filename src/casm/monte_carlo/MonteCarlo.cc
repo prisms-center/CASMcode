@@ -202,32 +202,4 @@ namespace CASM {
 
   }
 
-  /// \brief Fill supercell with motif, applying a factor group operation if necessary
-  Configuration fill_supercell(Supercell &mc_scel, const Configuration &motif) {
-
-    const Lattice &motif_lat = motif.supercell().real_super_lattice();
-    const Lattice &scel_lat = mc_scel.real_super_lattice();
-    auto begin = mc_scel.primclex().prim().factor_group().begin();
-    auto end = mc_scel.primclex().prim().factor_group().end();
-
-    auto res = is_supercell(scel_lat, motif_lat, begin, end, TOL);
-    if(res.first == end) {
-
-      std::cerr << "Requested supercell transformation matrix: \n"
-                << mc_scel.transf_mat() << "\n";
-      std::cerr << "Requested motif Configuration: " <<
-                motif.name() << "\n";
-      std::cerr << "Configuration transformation matrix: \n"
-                << motif.supercell().transf_mat() << "\n";
-
-      throw std::runtime_error(
-        "Error in 'fill_supercell(const Supercell &mc_scel, const Configuration& motif)'\n"
-        "  The motif cannot be tiled onto the specified supercell."
-      );
-    }
-
-    ConfigTransform f(mc_scel, *res.first);
-    return copy_apply(f, motif);
-  }
-
 }

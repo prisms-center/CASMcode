@@ -676,7 +676,9 @@ namespace CASM {
              << std::setprecision(8) << min_potential_energy << "\n" << std::endl;
     }
 
-    return std::make_pair(fill_supercell(_supercell(), min_config).configdof(), min_config.name());
+    return std::make_pair(
+             min_config.fill_supercell(_supercell(), primclex().get_prim().factor_group()).configdof(),
+             min_config.name());
   }
 
   /// \brief Generate minimum potential energy ConfigDoF for this supercell
@@ -701,8 +703,9 @@ namespace CASM {
 
     // used to check if configurations can fill the monte carlo supercell
     const Lattice &scel_lat = supercell().real_super_lattice();
-    auto begin = primclex().prim().factor_group().begin();
-    auto end = primclex().prim().factor_group().end();
+    const SymGroup &g = primclex().prim().factor_group();
+    auto begin = g.begin();
+    auto end = g.end();
 
     // save iterators pointing to configs that will fill the supercell
     std::vector<decltype(configmap)::const_iterator> allowed;
@@ -750,7 +753,9 @@ namespace CASM {
              << std::setprecision(8) << allowed[0]->first << "\n" << std::endl;
     }
 
-    return std::make_pair(fill_supercell(_supercell(), *(allowed[0]->second)).configdof(), allowed[0]->second->name());
+    return std::make_pair(
+             allowed[0]->second->fill_supercell(_supercell(), g).configdof(),
+             allowed[0]->second->name());
   }
 
   /// \brief Generate supercell filling ConfigDoF from configuration
@@ -759,7 +764,10 @@ namespace CASM {
     _log().set("DoF");
     _log() << "motif configname: " << configname << "\n";
     _log() << "using configation: " << configname << "\n" << std::endl;
-    return fill_supercell(_supercell(), primclex().configuration(configname)).configdof();
+
+    const Configuration &config = primclex().configuration(configname);
+    const SymGroup &g = primclex().get_prim().factor_group();
+    return config.fill_supercell(_supercell(), g).configdof();
   }
 
 }
