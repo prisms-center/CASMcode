@@ -66,12 +66,12 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsTest) {
 
     // run checks:
     jsonParser json_scel;
-    json_scel = (Index) primclex.get_supercell_list().size();
+    json_scel = (Index) primclex.supercell_list().size();
     check("Nscel", j, json_scel, test_cases_path, quiet);
 
     // generate configurations
     jsonParser json = jsonParser::array();
-    for(auto &scel : primclex.get_supercell_list()) {
+    for(auto &scel : primclex.supercell_list()) {
       ConfigEnumAllOccupations e(scel);
       json.push_back(std::distance(e.begin(), e.end()));
     }

@@ -10,14 +10,18 @@
 #include "casm/container/Array.hh"
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/symmetry/PermuteIterator.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/Properties.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/ConfigIterator.hh"
 
 namespace CASM {
 
+  class Molecule;
+  class Structure;
   class PrimClex;
   class Supercell;
+  class Configuration;
   class UnitCellCoord;
   class Clexulator;
   class FillSupercell;
@@ -198,7 +202,7 @@ namespace CASM {
     /// which occupant is at each of the 'N' sites of the configuration. The
     /// occupant on site l can be obtained from the occupation variable using:
     /// \code
-    /// Molecule on_site_l = config.get_prim().basis[ config.get_b(l) ].site_occupant[ config.occupation()[l]];
+    /// Molecule on_site_l = config.prim().basis[ config.sublat(l) ].site_occupant[ config.occupation()[l]];
     /// \endcode
     /// - For a CASM project, the occupation variables will be ordered according
     /// to the occupant DoF in a "prim.json" file. This means that for the
@@ -213,7 +217,7 @@ namespace CASM {
     ///
     /// The occupant on site l can be obtained from the occupation variable using:
     /// \code
-    /// Molecule on_site_l = config.get_prim().basis[ config.get_b(l) ].site_occupant[config.occ(l)];
+    /// Molecule on_site_l = config.prim().basis[ config.sublat(l) ].site_occupant[config.occ(l)];
     /// \endcode
     /// - For a CASM project, the occupation variables will be ordered according
     /// to the occupant DoF in a "prim.json" file. This means that for the
@@ -351,8 +355,8 @@ namespace CASM {
     /// \brief Get symmetric multiplicity (i.e., size of configuration's factor_group)
     ///
     /// - Must first be set via Configuration::set_multiplicity
-    int get_multiplicity()const {
-      return multiplicity;
+    int multiplicity()const {
+      return m_multiplicity;
     }
 
     /// \brief SCELV_A_B_C_D_E_F/i
@@ -370,7 +374,7 @@ namespace CASM {
     Index size() const;
 
     /// \brief Get the primitive Structure for this Configuration
-    const Structure &get_prim() const;
+    const Structure &prim() const;
 
     /// \brief True if this Configuration is currently selected in the MASTER config list
     bool selected() const {
@@ -378,19 +382,19 @@ namespace CASM {
     }
 
     /// \brief Get the PrimClex for this Configuration
-    PrimClex &get_primclex() const;
+    PrimClex &primclex() const;
 
     /// \brief Get the Supercell for this Configuration
-    Supercell &get_supercell() const;
+    Supercell &supercell() const;
 
     /// \brief Get the PrimClex crystallography_tol
     double crystallography_tol() const;
 
     /// \brief Get the UnitCellCoord for a given linear site index
-    UnitCellCoord get_uccoord(Index site_l) const;
+    UnitCellCoord uccoord(Index site_l) const;
 
     /// \brief Get the basis site index for a given linear linear site index
-    int get_b(Index site_l) const;
+    int sublat(Index site_l) const;
 
     /// \brief const Access the DoF
     const ConfigDoF &configdof() const {
@@ -416,7 +420,7 @@ namespace CASM {
     /// which occupant is at each of the 'N' sites of the configuration. The
     /// occupant on site l can be obtained from the occupation variable using:
     /// \code
-    /// Molecule on_site_l = config.get_prim().basis[ config.get_b(l) ].site_occupant[ config.occupation()[l]];
+    /// Molecule on_site_l = config.prim().basis[ config.sublat(l) ].site_occupant[ config.occupation()[l]];
     /// \endcode
     /// - For a CASM project, the occupation variables will be ordered according
     /// to the occupant DoF in a "prim.json" file. This means that for the
@@ -430,7 +434,7 @@ namespace CASM {
     ///
     /// The occupant on site l can be obtained from the occupation variable using:
     /// \code
-    /// Molecule on_site_l = config.get_prim().basis[ config.get_b(l) ].site_occupant[config.occ(l)];
+    /// Molecule on_site_l = config.prim().basis[ config.sublat(l) ].site_occupant[config.occ(l)];
     /// \endcode
     /// - For a CASM project, the occupation variables will be ordered according
     /// to the occupant DoF in a "prim.json" file. This means that for the
@@ -444,10 +448,10 @@ namespace CASM {
     ///
     /// Equivalent to:
     /// \code
-    /// config.get_prim().basis[ config.get_b(l) ].site_occupant[ config.occupation()[l]];
+    /// config.prim().basis[ config.sublat(l) ].site_occupant[ config.occupation()[l]];
     /// \endcode
     ///
-    const Molecule &get_mol(Index site_l) const;
+    const Molecule &mol(Index site_l) const;
 
 
     /// \brief True if Configuration has displacement DoF
@@ -497,7 +501,7 @@ namespace CASM {
     }
 
 
-    //fs::path get_reference_state_dir() const;
+    //fs::path reference_state_dir() const;
 
     //const Properties &ref_properties() const;
 
@@ -592,7 +596,7 @@ namespace CASM {
     }
 
     void _invalidate_id() {
-      id = "none";
+      m_id = "none";
       m_name.clear();
     }
 

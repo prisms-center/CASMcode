@@ -3,6 +3,7 @@
 
 #include <type_traits>
 #include <cassert>
+#include <iterator>
 
 namespace CASM {
   namespace CASM_TMP {
@@ -39,7 +40,7 @@ namespace CASM {
     /// - T is considered an iterator if it is incrementable, dereferenceable, and comparable
     template <typename T>
     struct is_iterator < T,
-           void_t < decltype(++std::declval<T &>()),
+    void_t < decltype(++std::declval<T &>()),
            decltype(*std::declval<T &>()),
            decltype(std::declval<T &>() == std::declval<T &>()) > >
        : std::true_type { };
@@ -58,6 +59,8 @@ namespace CASM {
       std::enable_if < is_iterator<T>::type::value &&
       std::is_same<typename std::iterator_traits<T>::value_type, V>::type::value, void >;
 
+    template<bool IsConst, typename T>
+    using ConstSwitch = typename std::conditional<IsConst, const T, T>::type;
 
     /// \brief Helper Functor for Counter container access using operator[]
     template < typename Container,

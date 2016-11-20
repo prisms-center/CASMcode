@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   PrimClex primclex(proj.dir, null_log());
 
   Eigen::Vector3d a, b, c;
-  std::tie(a, b, c) = primclex.get_prim().lattice().vectors();
+  std::tie(a, b, c) = primclex.prim().lattice().vectors();
 
   {
     Supercell scel {&primclex, Lattice(a, b, c)};
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
   PrimClex primclex(proj.dir, null_log());
 
   Eigen::Vector3d a, b, c;
-  std::tie(a, b, c) = primclex.get_prim().lattice().vectors();
+  std::tie(a, b, c) = primclex.prim().lattice().vectors();
 
   {
     Supercell scel {&primclex, Lattice(a, b, c)};

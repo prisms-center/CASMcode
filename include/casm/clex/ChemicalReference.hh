@@ -312,7 +312,7 @@ namespace CASM {
       indent(_indent),
       indent_incr(_indent_incr),
       ref(_ref),
-      struc_mol_name(ref.prim().get_struc_molecule_name()) {}
+      struc_mol_name(ref.prim().struc_molecule_name()) {}
 
     // -- data --
     std::ostream &stream;
@@ -470,7 +470,7 @@ namespace CASM {
                                                 double tol) {
 
     // store Molecule names in vector
-    std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
+    std::vector<std::string> struc_mol_name = prim.struc_molecule_name();
 
     // --- find any Molecule not in the prim, add to end of vector -------------
 

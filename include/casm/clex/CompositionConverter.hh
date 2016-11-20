@@ -178,7 +178,7 @@ namespace CASM {
   /// \param _end_members 1 or more end members for parameteric composition space axes
   ///
   /// - origin and end members should be Eigen::VectorXd giving number of atoms per type per prim
-  /// - length of origin and end members should match size of prim.get_struc_molecule()
+  /// - length of origin and end members should match size of prim.struc_molecule()
   ///
   template<typename ComponentIterator, typename... EndMembers>
   CompositionConverter::CompositionConverter(ComponentIterator begin,
@@ -203,7 +203,7 @@ namespace CASM {
   /// \param _end_members Column vector matrix of end members for parameteric composition space axes
   ///
   /// - origin and columns in end members should be Eigen::VectorXd giving number of atoms per prim
-  /// - length of origin and end members should match size of prim.get_struc_molecule()
+  /// - length of origin and end members should match size of prim.struc_molecule()
   ///
   template<typename ComponentIterator>
   CompositionConverter::CompositionConverter(ComponentIterator begin,
@@ -239,18 +239,18 @@ namespace CASM {
     param_comp.generate_composition_space();
 
     std::vector<std::string> components;
-    for(int i = 0; i < param_comp.get_components().size(); i++) {
-      components.push_back(param_comp.get_components()[i]);
+    for(int i = 0; i < param_comp.components().size(); i++) {
+      components.push_back(param_comp.components()[i]);
     }
 
-    for(int i = 0; i < param_comp.get_allowed_list().size(); i++) {
-      const ParamComposition &curr = param_comp.get_allowed_list()[i];
-      Eigen::MatrixXd end_members(curr.get_origin().size(), curr.get_spanning_end_members().size());
-      for(int j = 0; j < curr.get_spanning_end_members().size(); j++) {
-        end_members.col(j) = curr.get_spanning_end_members()[j];
+    for(int i = 0; i < param_comp.allowed_list().size(); i++) {
+      const ParamComposition &curr = param_comp.allowed_list()[i];
+      Eigen::MatrixXd end_members(curr.origin().size(), curr.spanning_end_members().size());
+      for(int j = 0; j < curr.spanning_end_members().size(); j++) {
+        end_members.col(j) = curr.spanning_end_members()[j];
       }
 
-      *result++ = CompositionConverter(components.begin(), components.end(), curr.get_origin(), end_members);
+      *result++ = CompositionConverter(components.begin(), components.end(), curr.origin(), end_members);
     }
 
     return result;

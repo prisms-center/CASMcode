@@ -98,6 +98,10 @@ namespace CASM {
       return m_settings;
     }
 
+    /// \brief Get the crystallography_tol
+    double crystallography_tol() const {
+      return settings().crystallography_tol();
+    }
 
 
     // ** Composition accessors **
@@ -136,7 +140,7 @@ namespace CASM {
     // ** Supercell and Configuration accessors **
 
     /// Access entire supercell_list
-    boost::container::stable_vector<Supercell> &get_supercell_list();
+    boost::container::stable_vector<Supercell> &supercell_list();
 
     /// const Access entire supercell_list
     const boost::container::stable_vector<Supercell> &supercell_list() const;
@@ -154,7 +158,7 @@ namespace CASM {
     Supercell &supercell(std::string scellname);
 
     /// Access supercell by Lattice, adding if necessary
-    Supercell &get_supercell(const Lattice &lat);
+    Supercell &supercell(const Lattice &lat);
 
     /// access configuration by name (of the form "scellname/[NUMBER]", e.g., ("SCEL1_1_1_1_0_0_0/0")
     const Configuration &configuration(const std::string &configname) const;

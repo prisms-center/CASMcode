@@ -1,6 +1,7 @@
 #ifndef BASECOUNTER_HH
 #define BASECOUNTER_HH
 
+#include <iterator>
 #include "casm/misc/CASM_TMP.hh"
 
 namespace CASM {

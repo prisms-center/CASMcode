@@ -1,12 +1,9 @@
 clusterographyincludedir=$(includedir)/casm/clusterography
-clusterographyinclude_HEADERS=./include/casm/clusterography/ClusterFunctions.hh\
-							  ./include/casm/clusterography/Cluster.hh\
-							  ./include/casm/clusterography/Cluster_impl.hh\
-							  ./include/casm/clusterography/jsonClust.hh\
-							  ./include/casm/clusterography/OrbitBranch.hh\
-							  ./include/casm/clusterography/OrbitBranch_impl.hh\
-							  ./include/casm/clusterography/Orbit.hh\
-							  ./include/casm/clusterography/Orbit_impl.hh\
-							  ./include/casm/clusterography/Orbitree.hh\
-							  ./include/casm/clusterography/Orbitree_impl.hh\
-							  ./include/casm/clusterography/SiteCluster.hh
+clusterographyinclude_HEADERS=./include/casm/clusterography/ClusterInvariants.hh\
+							  ./include/casm/clusterography/ClusterInvariants_impl.hh\
+							  ./include/casm/clusterography/ClusterOrbits.hh\
+                ./include/casm/clusterography/ClusterOrbits_impl.hh\
+							  ./include/casm/clusterography/CoordCluster.hh\
+                ./include/casm/clusterography/GenericCluster.hh\
+                ./include/casm/clusterography/IntegralCluster.hh\
+                ./include/casm/clusterography/SubClusterGenerator.hh

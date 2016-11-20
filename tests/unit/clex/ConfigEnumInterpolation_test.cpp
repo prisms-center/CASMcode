@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   double tol = primclex.crystallography_tol();
 
   Eigen::Vector3d a, b, c;
-  std::tie(a, b, c) = primclex.get_prim().lattice().vectors();
+  std::tie(a, b, c) = primclex.prim().lattice().vectors();
 
   Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
 

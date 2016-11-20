@@ -94,15 +94,15 @@ namespace CASM {
 
     // use the unit cell point group
     SupercellEnumerator<Lattice> superlat_enum(
-      primclex.get_prim().lattice(),
+      primclex.prim().lattice(),
       unit_cell.factor_group(),
       enum_props);
 
     auto check_is_supercell = [&](const Lattice & plat) {
-      auto end = primclex.get_prim().factor_group().end();
-      return is_supercell(unit_cell.get_real_super_lattice(),
+      auto end = primclex.prim().factor_group().end();
+      return is_supercell(unit_cell.real_super_lattice(),
                           plat,
-                          primclex.get_prim().factor_group().begin(),
+                          primclex.prim().factor_group().begin(),
                           end,
                           primclex.crystallography_tol()).first != end;
     };
@@ -137,9 +137,9 @@ namespace CASM {
         if(!check_is_supercell(pconfig.ideal_lattice())) {
           primclex.err_log().error("Invalid subconfig");
           primclex.err_log() << "subconfig: " << config.name() << "\n";
-          primclex.err_log() << "subconfig transf_mat: \n" << config.get_supercell().get_transf_mat() << "\n";
-          primclex.err_log() << "prim transf_mat: \n" << pconfig.get_supercell().get_transf_mat() << "\n";
-          primclex.err_log() << "unit cell: \n" << unit_cell.get_transf_mat() << "\n";
+          primclex.err_log() << "subconfig transf_mat: \n" << config.supercell().transf_mat() << "\n";
+          primclex.err_log() << "prim transf_mat: \n" << pconfig.supercell().transf_mat() << "\n";
+          primclex.err_log() << "unit cell: \n" << unit_cell.transf_mat() << "\n";
           throw std::invalid_argument("Error in SuperConfigEnum: subconfig does not fit in the unit cell");
         }
         prim_subconfig.insert(std::make_pair(pconfig, config.name()));
@@ -153,9 +153,9 @@ namespace CASM {
         if(!check_is_supercell(pconfig.ideal_lattice())) {
           primclex.err_log().error("Invalid subconfig");
           primclex.err_log() << "subconfig: " << it->name() << "\n";
-          primclex.err_log() << "subconfig transf_mat: \n" << it->get_supercell().get_transf_mat() << "\n";
-          primclex.err_log() << "prim transf_mat: \n" << pconfig.get_supercell().get_transf_mat() << "\n";
-          primclex.err_log() << "unit cell: \n" << unit_cell.get_transf_mat() << "\n";
+          primclex.err_log() << "subconfig transf_mat: \n" << it->supercell().transf_mat() << "\n";
+          primclex.err_log() << "prim transf_mat: \n" << pconfig.supercell().transf_mat() << "\n";
+          primclex.err_log() << "unit cell: \n" << unit_cell.transf_mat() << "\n";
           throw std::invalid_argument("Error in SuperConfigEnum: subconfig does not fit in the unit cell");
         }
         prim_subconfig.insert(std::make_pair(pconfig, it->name()));
@@ -182,11 +182,11 @@ namespace CASM {
       Supercell target_scel(&primclex, superlat);
 
       Supercell &canon_scel = target_scel.canonical_form();
-      log << "Enumerate configurations for " << canon_scel.get_name() << " ...  " << std::flush;
+      log << "Enumerate configurations for " << canon_scel.name() << " ...  " << std::flush;
 
       // enumerate super-configurations
       SuperConfigEnum superconfig_enum(target_scel, subconfig.begin(), subconfig.end());
-      Index num_before = canon_scel.get_config_list().size();
+      Index num_before = canon_scel.config_list().size();
 
       if(kwargs.contains("filter")) {
         try {
@@ -212,7 +212,7 @@ namespace CASM {
           it->insert(primitive_only);
         }
       }
-      log << (canon_scel.get_config_list().size() - num_before) << " configs." << std::endl;
+      log << (canon_scel.config_list().size() - num_before) << " configs." << std::endl;
     }
     log << "  DONE." << std::endl << std::endl;
 
@@ -237,17 +237,17 @@ namespace CASM {
 
     // check that all sub-config have same supercell
     for(auto it = sub_config().begin(); it != sub_config().end(); ++it) {
-      if(&it->get_supercell() != &(sub_config().begin()->get_supercell())) {
+      if(&it->supercell() != &(sub_config().begin()->supercell())) {
         throw std::runtime_error("Error constructing SuperConfigEnum: "
                                  "Sub-Configurations with different Supercells");
       }
     }
-    m_sub_scel = &(m_sub_config.begin()->get_supercell());
+    m_sub_scel = &(m_sub_config.begin()->supercell());
 
     // construct PrimGrid
     m_prim_grid = notstd::make_cloneable<PrimGrid>(
-                    _sub_supercell().get_real_super_lattice(),
-                    _target_supercell().get_real_super_lattice()
+                    _sub_supercell().real_super_lattice(),
+                    _target_supercell().real_super_lattice()
                   );
 
     // initialize 'm_counter' to count over all possible sub-config on
@@ -262,10 +262,10 @@ namespace CASM {
     // and same for all other site DoF
     m_index_map.resize(prim_grid().size());
     for(int i = 0; i < prim_grid().size(); ++i) {
-      UnitCell ref = _sub_supercell().get_transf_mat().cast<Index>() * prim_grid().unitcell(i);
+      UnitCell ref = _sub_supercell().transf_mat().cast<Index>() * prim_grid().unitcell(i);
       for(int j = 0; j < _sub_supercell().num_sites(); ++j) {
         UnitCellCoord uccord = _sub_supercell().uccoord(j) + ref;
-        Index linear_index = _target_supercell().find(uccord);
+        Index linear_index = _target_supercell().linear_index(uccord);
         m_index_map[i].push_back(linear_index);
       }
     }

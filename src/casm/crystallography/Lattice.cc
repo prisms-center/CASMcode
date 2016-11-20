@@ -143,7 +143,7 @@ namespace CASM {
 
   //********************************************************************
   //Gets the reciprocal lattice from the lattice vectors... (AAB)
-  Lattice Lattice::get_reciprocal() const {
+  Lattice Lattice::reciprocal() const {
     /* Old Expression
        return Lattice(2 * M_PI * cross_prod(vecs[1], vecs[2])/vol,
        2 * M_PI * cross_prod(vecs[2], vecs[0]) / vol,
@@ -157,9 +157,9 @@ namespace CASM {
 
   Array<int> Lattice::calc_kpoints(Array<int> prim_kpoints, Lattice prim_lat) {
     Array<int> super_kpoints = prim_kpoints;
-    //    Lattice prim_recip_lat = (lattice.primitive->get_reciprocal());
-    Lattice prim_recip_lat = (prim_lat.get_reciprocal());
-    Lattice recip_lat = (*this).get_reciprocal();
+    //    Lattice prim_recip_lat = (lattice.primitive->reciprocal());
+    Lattice prim_recip_lat = (prim_lat.reciprocal());
+    Lattice recip_lat = (*this).reciprocal();
     double prim_density = (prim_kpoints[0] * prim_kpoints[1] * prim_kpoints[2]) / (prim_recip_lat.vol());
     double super_density = 0;
 
@@ -291,7 +291,7 @@ namespace CASM {
                                            Eigen::Matrix3i::Constant(1));
 
     //For this algorithm to work, lattice needs to be in reduced form.
-    Lattice tlat_reduced(get_reduced_cell());
+    Lattice tlat_reduced(reduced_cell());
     LatticeIsEquivalent is_equiv(tlat_reduced, pg_tol);
     do {
       if(is_equiv(pg_count())) {
@@ -410,7 +410,7 @@ namespace CASM {
    * cell.
    *
    */
-  Lattice Lattice::get_reduced_cell() const {
+  Lattice Lattice::reduced_cell() const {
 
     int i, j, k, nv;
     Array<Eigen::Matrix3d > skew;
@@ -555,7 +555,7 @@ namespace CASM {
     Eigen::Vector3d tpoint;
     int i;
 
-    Lattice tlat_reduced(get_reduced_cell());
+    Lattice tlat_reduced(reduced_cell());
     //Count over all lattice vectors, face diagonals, and body diagonals
     //originating from origin;
     EigenCounter<Eigen::Vector3i > combo_count(Eigen::Vector3i(-1, -1, -1),
@@ -672,7 +672,7 @@ namespace CASM {
   //\John G 121212
   //********************************************************************************************************
 
-  Eigen::Vector3i Lattice::get_millers(Eigen::Vector3d plane_normal, double tolerance) const {
+  Eigen::Vector3i Lattice::millers(Eigen::Vector3d plane_normal, double tolerance) const {
     //Get fractional coordinates of plane_normal in recip_lattice
     //These are h, k, l
     //For miller indeces h, k and l    plane_normal[CART]=h*a.recip+k*b.recip+l*c.recip
@@ -686,7 +686,7 @@ namespace CASM {
    *  are multiplied by a factor such that their values are integers. This corresponds
    *  to the plane being shifted so that it lands on three lattice sites. Using these
    *  lattice sites new vectors A and B that lie on the desired plane can be constructed.
-   *  The choice of vector C is somewhat arbitrary. get_lattice_in_plane will first
+   *  The choice of vector C is somewhat arbitrary. lattice_in_plane will first
    *  construct C to be the shortest most orthogonal vector possible. The user is then
    *  given the option to make C more orthogonal to A and B in exchange for a greater
    *  length.
@@ -695,7 +695,7 @@ namespace CASM {
    */
   //********************************************************************
 
-  Lattice Lattice::get_lattice_in_plane(Eigen::Vector3i millers, int max_vol) const {  //John G 121030
+  Lattice Lattice::lattice_in_plane(Eigen::Vector3i millers, int max_vol) const {  //John G 121030
     //Hold new lattice vectors in these. Then at the end we make an actual Lattice out of it
     Eigen::Matrix3d surface_cell, last_surface_cell;    //Holds new lattice vectors, two of which are in the surface plane
 
@@ -1164,7 +1164,7 @@ namespace CASM {
     //Matrix 'N_1', as above is now equal to inverse(V) * S
 
     Lattice tlat(lat1.lat_column_mat() * (inverse(V)*S).cast<double>());
-    return tlat.get_reduced_cell();
+    return tlat.reduced_cell();
   }
 
   //*******************************************************************************************

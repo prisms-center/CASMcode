@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   PrimClex primclex(proj.dir, null_log());
 
   Eigen::Vector3d a, b, c;
-  std::tie(a, b, c) = primclex.get_prim().lattice().vectors();
+  std::tie(a, b, c) = primclex.prim().lattice().vectors();
 
   Supercell scel {&primclex, Lattice(a, b, c)};
 
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
   PrimClex primclex(proj.dir, null_log());
 
   Eigen::Vector3d a, b, c;
-  std::tie(a, b, c) = primclex.get_prim().lattice().vectors();
+  std::tie(a, b, c) = primclex.prim().lattice().vectors();
 
   Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
 
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
   {
     // Identity op
     Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
-    const SymGroup &fg = config.get_supercell().factor_group();
+    const SymGroup &fg = config.supercell().factor_group();
     Configuration filled = config.fill_supercell(scel, fg[0]);
 
     Configuration check(scel);
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
   {
     // supercell
     Supercell scel {&primclex, Lattice(c, a - b, 2.*(a + b - c))};
-    const SymGroup &fg = config.get_supercell().factor_group();
+    const SymGroup &fg = config.supercell().factor_group();
     Configuration filled = config.fill_supercell(scel, fg[0]);
 
     Configuration check(scel);
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
   {
     // 90 deg rotation
     Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
-    const SymGroup &fg = config.get_supercell().factor_group();
+    const SymGroup &fg = config.supercell().factor_group();
     //std::cout << to_string(fg.info(1), CART) << std::endl;
     Configuration filled = config.fill_supercell(scel, fg[1]);
 
@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
   {
     // Identity op
     Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
-    const SymGroup &fg = config.get_supercell().factor_group();
+    const SymGroup &fg = config.supercell().factor_group();
     Configuration filled = config.fill_supercell(scel, fg[0]);
 
     Configuration check(scel);
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
   {
     // supercell
     Supercell scel {&primclex, Lattice(c, a - b, 2.*(a + b - c))};
-    const SymGroup &fg = config.get_supercell().factor_group();
+    const SymGroup &fg = config.supercell().factor_group();
     Configuration filled = config.fill_supercell(scel, fg[0]);
 
     Configuration check(scel);
@@ -183,7 +183,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
   {
     // 90 deg rotation
     Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
-    const SymGroup &fg = config.get_supercell().factor_group();
+    const SymGroup &fg = config.supercell().factor_group();
     Configuration filled = config.fill_supercell(scel, fg[1]);
 
     Configuration check(scel);

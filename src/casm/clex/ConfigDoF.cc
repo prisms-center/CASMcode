@@ -231,14 +231,14 @@ namespace CASM {
     return correlations;
   }
 
-  /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::get_struc_molecule()
+  /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::struc_molecule()
   Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
 
     // [basis_site][site_occupant_index]
-    auto convert = index_converter(scel.prim(), scel.prim().get_struc_molecule());
+    auto convert = index_converter(scel.prim(), scel.prim().struc_molecule());
 
     // create an array to count the number of each molecule
-    Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.prim().get_struc_molecule().size());
+    Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.prim().struc_molecule().size());
 
     // count the number of each molecule
     for(Index i = 0; i < configdof.size(); i++) {
@@ -248,7 +248,7 @@ namespace CASM {
     return num_each_molecule;
   }
 
-  /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::get_struc_molecule()
+  /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::struc_molecule()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel) {
     return num_each_molecule(configdof, scel).cast<double>() / scel.volume();
   }

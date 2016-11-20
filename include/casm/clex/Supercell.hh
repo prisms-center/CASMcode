@@ -185,9 +185,12 @@ namespace CASM {
 
     // **** Accessors ****
 
-    PrimClex &get_primclex() const {
+    PrimClex &primclex() const {
       return *m_primclex;
     }
+
+    /// \brief Get the PrimClex crystallography_tol
+    double crystallography_tol() const;
 
     const PrimGrid &prim_grid() const {
       return m_prim_grid;
@@ -272,7 +275,7 @@ namespace CASM {
     /// - Else, return 'SCELV_A_B_C_D_E_F.$FG_INDEX', where $FG_INDEX is the index of the first
     ///   symmetry operation in the primitive structure's factor group such that the lattice
     ///   is equivalent to `apply(fg_op, canonical equivalent)`
-    std::string get_name() const {
+    std::string name() const {
       if(m_name.empty()) {
         _generate_name();
       }
@@ -311,15 +314,15 @@ namespace CASM {
     Index amount_selected() const;
 
     bool is_canonical() const {
-      return get_real_super_lattice().is_canonical();
+      return real_super_lattice().is_canonical();
     }
 
     SymOp to_canonical() const {
-      return get_real_super_lattice().to_canonical();
+      return real_super_lattice().to_canonical();
     }
 
     SymOp from_canonical() const {
-      return get_real_super_lattice().from_canonical();
+      return real_super_lattice().from_canonical();
     }
 
     Supercell &canonical_form() const;
@@ -329,6 +332,10 @@ namespace CASM {
     bool operator<(const Supercell &B) const;
 
     // **** Mutators ****
+
+    void set_id(Index id) {
+      m_id = id;
+    }
 
     // **** Generating functions ****
 
@@ -419,7 +426,7 @@ namespace CASM {
       bool add = true;
       if(N_existing_enumerated != N_existing) {
         if(contains_config(*it_begin, index)) {
-          config_list[index].push_back_source(it_begin->source());
+          m_config_list[index].push_back_source(it_begin->source());
           add = false;
           N_existing_enumerated++;
         }

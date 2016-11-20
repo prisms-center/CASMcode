@@ -23,7 +23,7 @@ namespace CASM {
 
     /// \brief Adds index rules corresponding to the parsed args
     void MolDependent::init(const Configuration &_tmplt) const {
-      auto struc_molecule = _tmplt.primclex().prim().get_struc_molecule();
+      auto struc_molecule = _tmplt.primclex().prim().struc_molecule();
 
       if(m_mol_names.size() == 0) {
         for(Index i = 0; i < struc_molecule.size(); i++) {

@@ -18,12 +18,12 @@ namespace CASM {
     std::function<Eigen::VectorXd(Configuration)> n,
     std::function<double(Configuration)> e) {
 
-    auto names = config.prim().get_struc_molecule_name();
+    auto names = config.prim().struc_molecule_name();
     auto vec = n(config);
 
     if(vec.size() != names.size()) {
       std::cerr << "Error constructing ChemicalReferenceState: Number of species != vec.size()\n";
-      std::cerr << "  get_struc_molecule_name: " << names << "\n";
+      std::cerr << "  struc_molecule_name: " << names << "\n";
       std::cerr << "  n(config): " << vec << std::endl;
       throw std::runtime_error("Error constructing ChemicalReferenceState: Number of species != vec.size()");
     }
@@ -153,11 +153,11 @@ namespace CASM {
     Eigen::MatrixXd C = composition_space(prim, tol);
 
     // get Molecule allowed in prim, and how many there are
-    std::vector<Molecule> struc_mol = prim.get_struc_molecule();
+    std::vector<Molecule> struc_mol = prim.struc_molecule();
     for(int i = 0; i < struc_mol.size(); i++) {
       if(!is_molecule_name(struc_mol[i], struc_mol_name[i])) {
         std::cerr << "Error in ChemicalReference::hyperplane " << std::endl;
-        std::cerr << "Initial struc_mol_name must be in same order as prim.get_struc_molecule()" << std::endl;
+        std::cerr << "Initial struc_mol_name must be in same order as prim.struc_molecule()" << std::endl;
         throw std::runtime_error("Error in ChemicalReference::hyperplane: Molecule name mismatch");
       }
     }

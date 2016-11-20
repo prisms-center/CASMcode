@@ -24,7 +24,6 @@ clexinclude_HEADERS=./include/casm/clex/ChemicalReference.hh\
 					./include/casm/clex/ConfigSelection_impl.hh\
 					./include/casm/clex/Configuration.hh\
 					./include/casm/clex/Correlation.hh\
-					./include/casm/clex/DoFManager.hh\
 					./include/casm/clex/ECIContainer.hh\
 					./include/casm/clex/FilteredConfigIterator.hh\
 					./include/casm/clex/NeighborList.hh\

@@ -13,29 +13,6 @@ namespace CASM {
     if(contains("relaxed_energy") && delta.contains("relaxed_energy"))
       (*this)["relaxed_energy"] = (*this)["relaxed_energy"].get<double>() + delta["relaxed_energy"].get<double>();
 
-    // add forces
-    /*
-    if(contains("forces") && delta.contains("forces")) {
-      Array< Vector3<double> > f, f_delta;
-      from_json(f, (*this)["forces"]);
-      from_json(f_delta, delta["forces"]);
-      for(int i = 0; i < f.size(); i++)
-        f[i] += f_delta[i];
-      (*this)["forces"] = f;
-    }
-    */
-
-    // add deformation -- a guess at what this could be ...
-    /*
-    if(contains("structure") && delta.contains("deformation")) {
-      BasicStructure<Coordinate> struc;
-      Deformation deformation;
-      from_json(struc, (*this)["structure"]);
-      from_json(deformation, delta["deformation"]);
-      (*this)["structure"] = struc * deformation.get_strain() + deformation.get_displacement();
-    }
-    */
-
     return *this;
   }
 

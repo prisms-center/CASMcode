@@ -45,10 +45,6 @@ namespace CASM {
     using TypedTol = IfIntegralTol<T, std::is_integral<T>::value >;
     // End of IfIntegralTol
 
-    template<bool IsConst, typename T>
-    using ConstSwitch = typename std::conditional<IsConst, const T, T>::type;
-
-
     // Definitions for MuchLessThan
     template<typename value_type>
     struct IntegralLessThan {
@@ -74,53 +70,6 @@ namespace CASM {
     // End of MuchLessThan
 
   }
-
-  /// \brief Implements other comparisons in terms of Derived::operator<(const Derived& B)
-  /// is implemented
-  ///
-  /// Implements:
-  /// - '>', '<=', '>=', '==', '!='
-  /// - '==' and '!=' can be specialized in Derived by implementing private methods
-  ///   '_eq' and '_ne'
-  template<typename Derived>
-  struct Comparisons {
-
-    bool operator>(const Derived &B) const {
-      return B < derived();
-    };
-
-    bool operator<=(const Derived &B) const {
-      return !(B < derived());
-    };
-
-    bool operator>=(const Derived &B) const {
-      return !(derived() < B);
-    };
-
-    bool operator==(const Derived &B) const {
-      return derived()._eq(B);
-    };
-
-    bool operator!=(const Derived &B) const {
-      return derived()._ne(B);
-    };
-
-
-  protected:
-
-    const Derived &derived() const {
-      return *static_cast<const Derived *>(this);
-    }
-
-    bool _eq(const Derived &B) const {
-      return (!(derived() < B) && !(B < derived()));
-    };
-
-    bool _ne(const Derived &B) const {
-      return !derived()._eq(B);
-    };
-
-  };
 
   // *******************************************************************************************
 

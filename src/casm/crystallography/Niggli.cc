@@ -242,7 +242,7 @@ namespace CASM {
       target_lat.make_right_handed();
     }
 
-    const Lattice reduced_in = target_lat.get_reduced_cell();
+    const Lattice reduced_in = target_lat.reduced_cell();
 
     //const Lattice reduced_in = niggli_impl::_niggli(target_lat, compare_tol);
     Eigen::Matrix3d best_lat_mat = reduced_in.lat_column_mat();

@@ -268,7 +268,7 @@ namespace CASM {
       //Prints out all prototype clusters (CLUST file)
 
       if(_tree.index.size() != _tree.size())
-        _tree.get_index();
+        _tree.index();
 
       out << "COORD_MODE = " << COORD_MODE::NAME() << std::endl << std::endl;
 
@@ -326,9 +326,9 @@ namespace CASM {
                     std::ostream &out,
                     SiteOrbitree const &_tree) const {
     if(_tree.index.size() != _tree.size())
-      get_index();
+      index();
     if(_tree.subcluster.size() != _tree.size())
-      _tree.get_hierarchy();
+      _tree.hierarchy();
 
     out << std::left
         << std::setw(8) << "label"

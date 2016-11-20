@@ -124,10 +124,10 @@ namespace CASM {
     Index find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord) const;
 
     /// map a UnitCell inside the supercell
-    UnitCell get_within(const UnitCell &ijk)const;
+    UnitCell within(const UnitCell &ijk)const;
 
     /// map a UnitCellCoord inside the supercell
-    UnitCellCoord get_within(const UnitCellCoord &_uccoord)const;
+    UnitCellCoord within(const UnitCellCoord &_uccoord)const;
 
     // get Coordinate or UnitCell from linear index
     Coordinate coord(Index l, CELL_TYPE lat_mode)const;

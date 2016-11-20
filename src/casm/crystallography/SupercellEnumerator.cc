@@ -36,7 +36,7 @@ namespace CASM {
       from_json(generating_matrix, input["unit_cell"]);
     }
     else if(input["unit_cell"].is_string()) {
-      generating_matrix = primclex.get_supercell(input["unit_cell"].get<std::string>()).get_transf_mat();
+      generating_matrix = primclex.supercell(input["unit_cell"].get<std::string>()).transf_mat();
     }
     else {
       throw std::invalid_argument(
@@ -86,7 +86,7 @@ namespace CASM {
 
     // read "max" scel size, or by default use largest existing supercell
     ScelEnumProps::size_type max_scel_size = 1;
-    for(const auto &scel : primclex.get_supercell_list()) {
+    for(const auto &scel : primclex.supercell_list()) {
       if(scel.volume() > max_scel_size) {
         max_scel_size = scel.volume();
       }

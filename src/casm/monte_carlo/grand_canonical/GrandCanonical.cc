@@ -677,7 +677,7 @@ namespace CASM {
     }
 
     return std::make_pair(
-             min_config.fill_supercell(_supercell(), primclex().get_prim().factor_group()).configdof(),
+             min_config.fill_supercell(_supercell(), primclex().prim().factor_group()).configdof(),
              min_config.name());
   }
 
@@ -766,7 +766,7 @@ namespace CASM {
     _log() << "using configation: " << configname << "\n" << std::endl;
 
     const Configuration &config = primclex().configuration(configname);
-    const SymGroup &g = primclex().get_prim().factor_group();
+    const SymGroup &g = primclex().prim().factor_group();
     return config.fill_supercell(_supercell(), g).configdof();
   }
 

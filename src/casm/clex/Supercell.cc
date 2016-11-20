@@ -56,7 +56,7 @@ namespace CASM {
   }
 
   Supercell::config_iterator Supercell::config_end() {
-    return ++config_iterator(m_primclex, m_id, m_config_list.size() - 1);
+    return ++config_iterator(m_primclex, m_id, config_list().size() - 1);
   }
 
   // begin and end const_iterators for iterating over configurations
@@ -65,7 +65,7 @@ namespace CASM {
   }
 
   Supercell::config_const_iterator Supercell::config_cend() const {
-    return ++config_const_iterator(m_primclex, m_id, m_config_list.size() - 1);
+    return ++config_const_iterator(m_primclex, m_id, config_list().size() - 1);
   }
 
   /*****************************************************************/
@@ -146,7 +146,7 @@ namespace CASM {
 
   //*******************************************************************************
   /**
-   *   Checks if the Configuration 'config' is contained in Supercell::m_config_list.
+   *   Checks if the Configuration 'config' is contained in Supercell::config_list().
    *     Only checks Configuration::occupation for equivalence.
    *     Does not check for symmetrically equivalent Configurations, so put your
    *     'config' in canonical form first.
@@ -159,19 +159,19 @@ namespace CASM {
 
   //*******************************************************************************
   /**
-   *   Checks if the Configuration 'config' is contained in Supercell::m_config_list.
+   *   Checks if the Configuration 'config' is contained in Supercell::config_list().
    *     Only checks Configuration::configdof for equivalence.
    *     Does not check for symmetrically equivalent Configurations, so put your
    *     'config' in canonical form first.
    *
-   *   If equivalent found, 'index' contains it's index into m_config_list, else
-   *     'index' = m_config_list.size().
+   *   If equivalent found, 'index' contains it's index into config_list, else
+   *     'index' = config_list().size().
    */
   //*******************************************************************************
   bool Supercell::contains_config(const Configuration &config, Index &index) const {
     auto res = m_config_map.find(&config);
     if(res == m_config_map.end()) {
-      index = config_list.size();
+      index = config_list().size();
       return false;
     }
     index = res->second;
@@ -184,13 +184,13 @@ namespace CASM {
     if(res == m_config_map.end()) {
       return config_cend();
     }
-    return config_const_iterator(&get_primclex(), get_id(), res->second);
+    return config_const_iterator(&primclex(), id(), res->second);
   }
 
   //*******************************************************************************
   /**
-   *   Converts 'config' to canonical form, then adds to m_config_list if not already
-   *     present. Location in m_config_list is stored in 'index'.
+   *   Converts 'config' to canonical form, then adds to config_list if not already
+   *     present. Location in config_list is stored in 'index'.
    *     Permutation that resulted in canonical form is stored in 'permute_it'.
    *     Return 'true' if new config, 'false' otherwise.
    *
@@ -217,8 +217,8 @@ namespace CASM {
 
   //*******************************************************************************
   /**
-   *   Assumes 'canon_config' is in canonical form, adds to m_config_list if not already there.
-   *     Location in m_config_list is stored in 'index'.
+   *   Assumes 'canon_config' is in canonical form, adds to config_list if not already there.
+   *     Location in config_list is stored in 'index'.
    */
   //*******************************************************************************
   bool Supercell::add_canon_config(const Configuration &canon_config, Index &index) {
@@ -255,10 +255,10 @@ namespace CASM {
     bool inserted = false;
     if(!contains_config(canon_config, index)) {
       _add_canon_config(canon_config);
-      index = config_list.size() - 1;
+      index = config_list().size() - 1;
       inserted = true;
     }
-    config_const_iterator it(&get_primclex(), get_id(), index);
+    config_const_iterator it(&primclex(), id(), index);
     return std::make_pair(it, inserted);
   }
 
@@ -270,16 +270,16 @@ namespace CASM {
   //*******************************************************************************
   void Supercell::_add_canon_config(const Configuration &canon_config) {
 
-    if(this != &canon_config.get_supercell()) {
+    if(this != &canon_config.supercell()) {
       throw std::runtime_error("Error adding Configuration to Supercell: Supercell mismatch");
     }
     //std::cout << "new config" << std::endl;
-    config_list.push_back(canon_config);
-    config_list.back().set_id(config_list.size() - 1);
+    config_list().push_back(canon_config);
+    config_list().back().set_id(config_list().size() - 1);
     m_config_map.insert(
-      std::make_pair(&config_list.back(),
-                     boost::lexical_cast<Index>(config_list.back().get_id())));
-    config_list.back().set_selected(false);
+      std::make_pair(&config_list().back(),
+                     boost::lexical_cast<Index>(config_list().back().id())));
+    config_list().back().set_selected(false);
   }
 
   //*******************************************************************************
@@ -287,7 +287,7 @@ namespace CASM {
   void Supercell::read_config_list(const jsonParser &json) {
 
     // Provide an error check
-    if(m_config_list.size() != 0) {
+    if(config_list().size() != 0) {
       std::cerr << "Error in Supercell::read_configuration." << std::endl;
       std::cerr << "  config_list().size() != 0, only use this once" << std::endl;
       exit(1);
@@ -308,10 +308,10 @@ namespace CASM {
       ss << configid;
 
       if(json["supercells"][name()].contains(ss.str())) {
-        config_list.push_back(Configuration(json, *this, configid));
+        config_list().push_back(Configuration(json, *this, configid));
         m_config_map.insert(
-          std::make_pair(&config_list.back(),
-                         boost::lexical_cast<Index>(config_list.back().get_id())));
+          std::make_pair(&config_list().back(),
+                         boost::lexical_cast<Index>(config_list().back().id())));
       }
       else {
         return;
@@ -362,9 +362,13 @@ namespace CASM {
       throw std::invalid_argument("Error constructing Supercell: the transformation matrix is not integer");
     }
     m_transf_mat = res.second;
+  }
 
-    generate_name();
+  //*******************************************************************************
 
+  /// \brief Get the PrimClex crystallography_tol
+  double Supercell::crystallography_tol() const {
+    return primclex().crystallography_tol();
   }
 
   //*******************************************************************************
@@ -376,7 +380,7 @@ namespace CASM {
    */
 
   jsonParser &Supercell::write_config_list(jsonParser &json) {
-    for(Index c = 0; c < m_config_list.size(); c++) {
+    for(Index c = 0; c < config_list().size(); c++) {
       m_config_list[c].write(json);
     }
     return json;
@@ -423,7 +427,7 @@ namespace CASM {
 
   void Supercell::_generate_name() const {
     if(is_canonical()) {
-      m_name = CASM::generate_name(transf_mat);
+      m_name = CASM::generate_name(m_transf_mat);
     }
     else {
       /*
@@ -437,11 +441,11 @@ namespace CASM {
         }
       }
 
-      m_name = canon.get_name() + "." + std::to_string(e.sym_op().index());
+      m_name = canon.name() + "." + std::to_string(e.sym_op().index());
       */
 
       Supercell &canon = canonical_form();
-      m_name = canon.get_name() + ".non_canonical_equivalent";
+      m_name = canon.name() + ".non_canonical_equivalent";
     }
   }
 
@@ -458,7 +462,7 @@ namespace CASM {
 
   Index Supercell::amount_selected() const {
     Index amount_selected = 0;
-    for(Index c = 0; c < m_config_list.size(); c++) {
+    for(Index c = 0; c < config_list().size(); c++) {
       if(m_config_list[c].selected()) {
         amount_selected++;
       }
@@ -470,7 +474,7 @@ namespace CASM {
 
   Supercell &Supercell::canonical_form() const {
     if(!m_canonical) {
-      m_canonical = &get_primclex().get_supercell(get_primclex().add_supercell(get_real_super_lattice()));
+      m_canonical = &primclex().supercell(primclex().add_supercell(real_super_lattice()));
     }
     return *m_canonical;
   }
@@ -640,9 +644,9 @@ namespace CASM {
    */
 
   Structure Supercell::superstructure(Index config_index) const {
-    if(config_index >= m_config_list.size()) {
+    if(config_index >= config_list().size()) {
       std::cerr << "ERROR in Supercell::superstructure" << std::endl;
-      std::cerr << "Requested superstructure of configuration with index " << config_index << " but there are only " << m_config_list.size() << " configurations" << std::endl;
+      std::cerr << "Requested superstructure of configuration with index " << config_index << " but there are only " << config_list().size() << " configurations" << std::endl;
       exit(185);
     }
     return superstructure(m_config_list[config_index]);

@@ -79,10 +79,10 @@ namespace CASM {
 
     for(auto &scel : scel_enum) {
 
-      log << "Enumerate configurations for " << scel.get_name() << " ...  " << std::flush;
+      log << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
 
       ConfigEnumAllOccupations enumerator(scel);
-      Index num_before = scel.get_config_list().size();
+      Index num_before = scel.config_list().size();
       if(kwargs.contains("filter")) {
         try {
           scel.add_unique_canon_configs(
@@ -103,7 +103,7 @@ namespace CASM {
         scel.add_unique_canon_configs(enumerator.begin(), enumerator.end());
       }
 
-      log << (scel.get_config_list().size() - num_before) << " configs." << std::endl;
+      log << (scel.config_list().size() - num_before) << " configs." << std::endl;
     }
     log << "  DONE." << std::endl << std::endl;
 

@@ -5,6 +5,7 @@
 
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/misc/Comparisons.hh"
 #include "casm/container/multivector.hh"
 #include "casm/symmetry/SymCompare.hh"
 

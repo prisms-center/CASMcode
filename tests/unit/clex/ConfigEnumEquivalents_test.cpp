@@ -69,11 +69,11 @@ BOOST_AUTO_TEST_CASE(Test1) {
     std::map<Index, Index> prim_count;
     std::map<Index, Index> total_count;
 
-    for(Index i = 0; i < primclex.get_supercell_list().size(); ++i) {
+    for(Index i = 0; i < primclex.supercell_list().size(); ++i) {
 
       // for each supercell, enumerate unique configurations
-      Supercell &scel = primclex.get_supercell(i);
-      //std::cout << "scel: " << scel.get_name() << std::endl;
+      Supercell &scel = primclex.supercell(i);
+      //std::cout << "scel: " << scel.name() << std::endl;
       //std::cout << "max_occupation: " << scel.max_allowed_occupation() << std::endl;
 
       ConfigEnumAllOccupations enumerator(scel);
@@ -83,9 +83,9 @@ BOOST_AUTO_TEST_CASE(Test1) {
       // add prim configurations from smaller supercells that tile scel
       for(Index j = 0; j < i; j++) {
         jsonParser json;
-        ScelEnumEquivalents e(primclex.get_supercell(j));
+        ScelEnumEquivalents e(primclex.supercell(j));
         for(const auto &tunit : e) {
-          if(is_supercell(scel.get_real_super_lattice(), tunit.get_real_super_lattice(), tol).first) {
+          if(is_supercell(scel.real_super_lattice(), tunit.real_super_lattice(), tol).first) {
             total_count[i] += prim_count[j];
           }
         }

@@ -98,7 +98,7 @@ namespace CASM {
     Array<int> calc_kpoints(Array<int> prim_kpoints, Lattice prim_lat);
 
     /// \brief Return reciprocal lattice
-    Lattice get_reciprocal() const;
+    Lattice reciprocal() const;
 
     /// \brief Populate \param point_group with the point group of this lattice
     /// \param point_group should be empty
@@ -144,7 +144,7 @@ namespace CASM {
 
     /// \brief Find the lattice vectors which give most compact unit cell
     /// Compactness is measured by how close lat_column_mat().transpose()*lat_column_mat() is to a diagonal matrix
-    Lattice get_reduced_cell() const;
+    Lattice reduced_cell() const;
 
     void print_voronoi_table(std::ostream &stream) const;
 
@@ -204,10 +204,10 @@ namespace CASM {
     bool is_right_handed() const;
 
     ///Given a normal vector, a Vector3 containing the miller indeces for the lattice is generated
-    Eigen::Vector3i get_millers(Eigen::Vector3d plane_normal, double tolerance = TOL) const;
+    Eigen::Vector3i millers(Eigen::Vector3d plane_normal, double tolerance = TOL) const;
 
     ///Generates a lattice with vectors a and b parallel to the plane described by the miller indeces
-    Lattice get_lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; //John G 121030
+    Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; //John G 121030
 
     Array<double> pg_converge(double large_tol);
     void pg_converge(double small_tol, double large_tol, double increment);

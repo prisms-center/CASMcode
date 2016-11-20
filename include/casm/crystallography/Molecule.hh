@@ -105,23 +105,14 @@ namespace CASM {
       return m_home;
     }
 
-    void get_center(); //TODO
-
-    void generate_point_group(); //TODO
-
     bool is_vacancy() const {
       return CASM::is_vacancy(name);
     };
 
-    Molecule &apply_sym(const SymOp &op); //TODO
-    Molecule &apply_sym_no_trans(const SymOp &op); //TODO
+    Molecule &apply_sym(const SymOp &op);
+    Molecule &apply_sym_no_trans(const SymOp &op);
 
     void set_lattice(const Lattice &new_lat, COORD_TYPE invariant_mode);
-
-    Molecule get_union(const Molecule &RHS); //TODO
-
-    Molecule &operator*=(const SymOp &RHS); //TODO
-    Molecule &operator+=(const Coordinate &RHS); //TODO
 
     bool operator==(const Molecule &RHS) const;
     bool contains(const std::string &name) const;
@@ -134,10 +125,6 @@ namespace CASM {
     // Lattice must be set already
     void from_json(const jsonParser &json);
   };
-
-  Molecule operator*(const SymOp &LHS, const Molecule &RHS); //TODO
-  Molecule operator+(const Coordinate &LHS, const Molecule &RHS); //TODO
-  Molecule operator+(const Molecule &LHS, const Coordinate &RHS); //TODO
 
   /// \brief Return an atomic Molecule with specified name and Lattice
   Molecule make_atom(std::string atom_name, const Lattice &lat);

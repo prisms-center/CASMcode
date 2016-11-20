@@ -418,7 +418,7 @@ namespace CASM {
     shift.push_back(lattice()[2]);
 
     //We want to minimize the volume of the primitivized cell, but to make it not a weird shape
-    //that leads to noise we also minimize the dot products like get_reduced cell would
+    //that leads to noise we also minimize the dot products like reduced cell would
     min_vol = std::abs(lattice().vol());
     for(sh = 0; sh < shift.size(); sh++) {
       for(sh1 = sh + 1; sh1 < shift.size(); sh1++) {

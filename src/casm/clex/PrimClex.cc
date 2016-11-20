@@ -6,7 +6,6 @@
 #include "casm/clex/ConfigIterator.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/ScelEnum.hh"
-#include "casm/clusterography/jsonClust.hh"
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/casm_io/SafeOfstream.hh"
@@ -52,7 +51,7 @@ namespace CASM {
     log().construct("CASM Project");
     log() << "from: " << dir().root_dir() << "\n" << std::endl;
 
-    auto struc_mol_name = prim().get_struc_molecule_name();
+    auto struc_mol_name = prim().struc_molecule_name();
     m_vacancy_allowed = false;
     for(int i = 0; i < struc_mol_name.size(); ++i) {
       if(is_vacancy(struc_mol_name[i])) {
@@ -285,7 +284,7 @@ namespace CASM {
     if(!contains_supercell(scellname, index)) {
       err_log().error("Accessing supercell");
       err_log() << "supercell '" << scellname << "' not found." << std::endl;
-      throw std::invalid_argument("Error in PrimClex::get_supercell(std::string scellname) const: Not found");
+      throw std::invalid_argument("Error in PrimClex::supercell(std::string scellname) const: Not found");
     }
     return m_supercell_list[index];
   };
@@ -298,8 +297,8 @@ namespace CASM {
 
   //*******************************************************************************************
   /// Access supercell by Lattice, adding if necessary
-  Supercell &PrimClex::get_supercell(const Lattice &lat) {
-    return get_supercell(add_supercell(lat));
+  Supercell &PrimClex::supercell(const Lattice &lat) {
+    return supercell(add_supercell(lat));
   }
 
   //*******************************************************************************************

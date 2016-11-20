@@ -69,7 +69,7 @@ namespace CASM {
     /// Return the UnitCellCoord corresponding to test_site (i.e., finds the basis index and
     /// the lattice translation)
     //   template<typename CoordType2>
-    //   UnitCellCoord get_unit_cell_coord(const CoordType2 &test_site, double tol = TOL)const;
+    //   UnitCellCoord unit_cell_coord(const CoordType2 &test_site, double tol = TOL)const;
 
     // ****Mutators****
 
@@ -97,7 +97,7 @@ namespace CASM {
     /// Translate all basis sites so that they are inside the unit cell
     void within();
 
-    //CoordType get_site(const UnitCellCoord &ucc) const;
+    //CoordType site(const UnitCellCoord &ucc) const;
 
     ///change the lattice and update site coordinates.  Argument 'mode' specifies which mode is preserved
     /// e.g.: struc.set_lattice(new_lat, CART) calculates all Cartesian coordinates,

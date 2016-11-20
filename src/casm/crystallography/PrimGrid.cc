@@ -152,7 +152,7 @@ namespace CASM {
   //**********************************************************************************************
 
   Index PrimGrid::find(const UnitCell &_unitcell) const {
-    UnitCell mnp = to_canonical(get_within(_unitcell));
+    UnitCell mnp = to_canonical(within(_unitcell));
     return mnp[0] + mnp[1] * m_stride[0] + mnp[2] * m_stride[1];
   }
 
@@ -190,7 +190,7 @@ namespace CASM {
   */
 
   /// map a UnitCell inside the supercell
-  UnitCell PrimGrid::get_within(const UnitCell &ijk)const {
+  UnitCell PrimGrid::within(const UnitCell &ijk)const {
 
     vector_type vec2 = m_plane_mat * ijk;
 
@@ -202,9 +202,9 @@ namespace CASM {
   }
 
   /// map a UnitCellCoord inside the supercell
-  UnitCellCoord PrimGrid::get_within(const UnitCellCoord &bijk)const {
+  UnitCellCoord PrimGrid::within(const UnitCellCoord &bijk)const {
 
-    return UnitCellCoord(bijk.unit(), bijk.sublat(), get_within(bijk.unitcell()));
+    return UnitCellCoord(bijk.unit(), bijk.sublat(), within(bijk.unitcell()));
   }
 
   //**********************************************************************************************
@@ -361,7 +361,7 @@ namespace CASM {
         ijk[i] += m_U(i, j) * mnp[j];
       }
     }
-    return get_within(ijk);
+    return within(ijk);
   };
 
   //==============================================================================================

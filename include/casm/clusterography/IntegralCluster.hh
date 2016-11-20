@@ -238,7 +238,7 @@ namespace CASM {
         return obj;
       }
       std::sort(obj.begin(), obj.end());
-      auto trans = obj[0].unitcell() - m_prim_grid.get_within(obj[0]).unitcell();
+      auto trans = obj[0].unitcell() - m_prim_grid.within(obj[0]).unitcell();
       return obj - trans;
     }
 

@@ -19,7 +19,7 @@ namespace CASM {
 
     m_scelptr.reserve(scelnames.size());
     for(auto it = scelnames.begin(); it != scelnames.end(); ++it) {
-      m_scelptr.push_back(&m_primclex->get_supercell(*it));
+      m_scelptr.push_back(&m_primclex->supercell(*it));
     }
     _init();
   }
@@ -35,7 +35,7 @@ namespace CASM {
     m_primclex(&primclex) {
 
     for(auto it = begin; it != end; ++it) {
-      m_scelptr.push_back(&m_primclex->get_supercell(*it));
+      m_scelptr.push_back(&m_primclex->supercell(*it));
     }
     _init();
   }
@@ -50,7 +50,7 @@ namespace CASM {
 
     m_scelptr.reserve(input.size());
     for(auto it = input.begin(); it != input.end(); ++it) {
-      m_scelptr.push_back(&m_primclex->get_supercell(it->get<std::string>()));
+      m_scelptr.push_back(&m_primclex->supercell(it->get<std::string>()));
     }
     _init();
   }
@@ -83,8 +83,8 @@ namespace CASM {
     m_primclex(&primclex) {
 
     m_lattice_enum.reset(new SupercellEnumerator<Lattice>(
-                           m_primclex->get_prim().lattice(),
-                           m_primclex->get_prim().factor_group(),
+                           m_primclex->prim().lattice(),
+                           m_primclex->prim().factor_group(),
                            enum_props
                          ));
 
@@ -92,7 +92,7 @@ namespace CASM {
     m_lat_end = m_lattice_enum->end();
 
     if(m_lat_it != m_lat_end) {
-      this->_initialize(&m_primclex->get_supercell(m_primclex->add_supercell(*m_lat_it)));
+      this->_initialize(&m_primclex->supercell(m_primclex->add_supercell(*m_lat_it)));
     }
     else {
       this->_invalidate();
@@ -109,7 +109,7 @@ namespace CASM {
   void ScelEnumByPropsT<IsConst>::increment() {
     ++m_lat_it;
     if(m_lat_it != m_lat_end) {
-      this->_set_current_ptr(&m_primclex->get_supercell(m_primclex->add_supercell(*m_lat_it)));
+      this->_set_current_ptr(&m_primclex->supercell(m_primclex->add_supercell(*m_lat_it)));
       this->_increment_step();
     }
     else {
@@ -207,7 +207,7 @@ namespace CASM {
     Log &log = primclex.log();
     log.begin(name());
 
-    auto &supercell_list = primclex.get_supercell_list();
+    auto &supercell_list = primclex.supercell_list();
     Index list_size = supercell_list.size();
 
     bool verbose = true;
@@ -215,10 +215,10 @@ namespace CASM {
     for(auto &scel : scel_enum) {
       if(verbose) {
         if(supercell_list.size() != list_size) {
-          std::cout << "  Generated: " << scel.get_name() << "\n";
+          std::cout << "  Generated: " << scel.name() << "\n";
         }
         else {
-          std::cout << "  Generated: " << scel.get_name() << " (already existed)\n";
+          std::cout << "  Generated: " << scel.name() << " (already existed)\n";
         }
       }
       list_size = supercell_list.size();

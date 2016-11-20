@@ -11,7 +11,6 @@
 #include "casm/symmetry/SymInfo.hh"
 
 #include "casm/casm_io/json_io/container.hh"
-#include "casm/casm_io/json_io/global.hh"
 
 namespace CASM {
   //INITIALIZE STATIC MEMBER MasterSymGroup::GROUP_COUNT
