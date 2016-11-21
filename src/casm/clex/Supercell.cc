@@ -355,10 +355,14 @@ namespace CASM {
     m_canonical(nullptr),
     m_prim_grid((*m_primclex).prim().lattice(), m_real_super_lattice, (*m_primclex).prim().basis.size()) {
 
-    auto res = is_supercell(superlattice, prim().lattice(), primclex().settings().lin_alg_tol());
+    auto res = is_supercell(superlattice, prim().lattice(), primclex().settings().crystallography_tol());
     if(!res.first) {
-      std::cerr << "Error in Supercell(PrimClex *_prim, const Lattice &superlattice)" << std::endl
-                << "  Bad supercell, the transformation matrix is not integer." << std::endl;
+      _prim->err_log() << "Error in Supercell(PrimClex *_prim, const Lattice &superlattice)" << std::endl
+                       << "  Bad supercell, the transformation matrix is not integer." << std::endl;
+      _prim->err_log() << "superlattice: \n" << superlattice.lat_column_mat() << std::endl;
+      _prim->err_log() << "prim lattice: \n" << prim().lattice().lat_column_mat() << std::endl;
+      _prim->err_log() << "lin_alg_tol: " << primclex().settings().lin_alg_tol() << std::endl;
+      _prim->err_log() << "transformation matrix: \n" << prim().lattice().lat_column_mat().inverse() * superlattice.lat_column_mat() << std::endl;
       throw std::invalid_argument("Error constructing Supercell: the transformation matrix is not integer");
     }
     m_transf_mat = res.second;

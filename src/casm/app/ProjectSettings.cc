@@ -79,6 +79,11 @@ namespace CASM {
            contains(dir.all_eci(desc.property, desc.calctype, desc.ref, desc.bset), desc.eci);
   }
 
+  /// \brief Default constructor
+  ProjectSettings::ProjectSettings() :
+    m_crystallography_tol(CASM::TOL),
+    m_lin_alg_tol(1e-10) {}
+
 
   /// \brief Construct CASM project settings for a new project
   ///

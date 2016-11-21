@@ -68,7 +68,7 @@ namespace CASM {
   public:
 
     /// \brief Default constructor
-    ProjectSettings() {}
+    ProjectSettings();
 
     /// \brief Construct CASM project settings for a new project
     ///
