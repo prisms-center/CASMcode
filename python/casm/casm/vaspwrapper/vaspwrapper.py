@@ -197,3 +197,21 @@ def vasp_input_file_names(dir, configname, clex):
 
     return (incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile)
 
+def read_properties(filename):
+    """ Read a properties.calc.json"""
+    required = ["atom_type", "atoms_per_type", "coord_mode", "relaxed_basis", "relaxed_energy", "relaxed_forces", "relaxed_lattice"]
+    optional = ["relaxed_magmom", "relaxed_mag_basis"]
+
+    with open(filename, 'r') as myfile:
+        properties = json.load(myfile)
+
+    for key in required:
+        if not key in properties:
+            raise VaspWrapperError(key + "' missing from: '" + filename + "'")
+
+    for key in optional:
+        if not key in properties:
+            properties[key] = None
+
+    return properties
+
