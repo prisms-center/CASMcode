@@ -341,33 +341,17 @@ namespace CASM {
   //*******************************************************************************************
   /// access configuration by name (of the form "scellname/[NUMBER]", e.g., ("SCEL1_1_1_1_0_0_0/0")
   const Configuration &PrimClex::configuration(const std::string &configname) const {
-    std::vector<std::string> splt_vec;
-    boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
-    Index config_ind;
-    if(splt_vec.size() != 2) {
-      err_log().error("Accessing configuration");
-      err_log() << "configuration '" << configname << "' not found." << std::endl;
-      throw std::invalid_argument("Error in PrimClex::configuration(const std::string &configname) const: Not found");
-    }
+    auto res = Configuration::split_name(configname);
 
     try {
-      config_ind = boost::lexical_cast<Index>(splt_vec[1]);
-    }
-    catch(boost::bad_lexical_cast &e) {
-      err_log().error("Invalid config index");
-      err_log() << "CRITICAL ERROR: In PrimClex::configuration(), malformed input:" << configname << "\n";
-      throw e;
-    }
-
-    try {
-      return get_supercell(splt_vec[0]).get_config_list().at(config_ind);
+      return get_supercell(res.first).get_config_list().at(res.second);
     }
     catch(std::out_of_range &e) {
       err_log().error("Invalid config index");
       err_log() << "ERROR: In PrimClex::configuration(), configuration index out of range\n";
       err_log() << "configname: " << configname << "\n";
-      err_log() << "index: " << config_ind << "\n";
-      err_log() << "config_list.size(): " << get_supercell(splt_vec[0]).get_config_list().size() << "\n";
+      err_log() << "index: " << res.second << "\n";
+      err_log() << "config_list.size(): " << get_supercell(res.first).get_config_list().size() << "\n";
       throw e;
     }
   }
@@ -375,7 +359,7 @@ namespace CASM {
   //*******************************************************************************************
 
   Configuration &PrimClex::configuration(const std::string &configname) {
-    return configuration(configname);
+    return const_cast<Configuration &>(static_cast<const PrimClex &>(*this).configuration(configname));
   }
 
   //*******************************************************************************************

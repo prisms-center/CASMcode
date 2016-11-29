@@ -588,6 +588,8 @@ namespace CASM {
     /// - Must have the same Supercell
     bool operator<(const Configuration &B) const;
 
+    /// \brief Split configuration name string into scelname and config index
+    static std::pair<std::string, Index> split_name(std::string configname);
 
   private:
     /// Convenience accessors:
