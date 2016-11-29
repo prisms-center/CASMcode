@@ -116,8 +116,8 @@ namespace json_spirit
         
         bool force_column_;
         bool force_row_;
-        bool scientific_;
         bool remove_trailing_zeros_;
+        bool scientific_;
 
         class Variant_converter_visitor : public boost::static_visitor< Variant > 
         {

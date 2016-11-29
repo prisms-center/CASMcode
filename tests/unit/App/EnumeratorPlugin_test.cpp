@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   check(R"(enum --desc TestEnum)");
 
-  check(R"(enum -i '{"TestEnum": {"supercells": {"max": 4}}}')");
+  check(R"(enum --method TestEnum -i '{"supercells": {"max": 4}}')");
 
   BOOST_CHECK_EQUAL(std::distance(primclex.config_begin(), primclex.config_end()), 336);
 

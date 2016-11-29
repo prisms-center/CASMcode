@@ -27,12 +27,12 @@ namespace CASM {
 
   public:
 
-    typedef Index step_type;
+    typedef long step_type;
 
     /// Default constructor
     EnumeratorBase() :
-      m_step(0),
-      m_valid(false) {}
+      m_valid(false),
+      m_step(0) {}
 
     ~EnumeratorBase() {}
 
@@ -325,6 +325,10 @@ namespace CASM {
 
   class PrimClex;
 
+  namespace Completer {
+    class EnumOption;
+  }
+
   /// \brief Base class for generic use of enumerators that may be accessed through the API
   class EnumInterfaceBase {
 
@@ -338,7 +342,7 @@ namespace CASM {
 
     virtual std::string name() const = 0;
 
-    virtual int run(PrimClex &primclex, const jsonParser &kwargs) const = 0;
+    virtual int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const = 0;
 
     std::unique_ptr<EnumInterfaceBase> clone() const {
       return std::unique_ptr<EnumInterfaceBase>(this->_clone());
@@ -392,7 +396,7 @@ namespace CASM {
   // - const std::string CASM_TMP::traits<EnumMethod>::help;
   //
   // Function:
-  // - int EnumInterface<EnumMethod>::run(PrimClex &primclex, const jsonParser &kwargs) const;
+  // - int EnumInterface<EnumMethod>::run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const;
 
 
 #define ENUMERATOR_TRAITS(EnumMethod)\
@@ -460,7 +464,7 @@ namespace CASM {\
       return CASM_TMP::traits<EnumMethod>::help;\
     }\
 \
-    int run(PrimClex &primclex, const jsonParser &kwargs) const override;\
+    int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const override;\
 \
     std::unique_ptr<EnumInterface<EnumMethod> > clone() const {\
       return std::unique_ptr<EnumInterface<EnumMethod> >(this->_clone());\
@@ -504,7 +508,7 @@ namespace CASM {\
       return CASM_TMP::traits<EnumMethod<IsConst> >::help;\
     }\
 \
-    int run(PrimClex &primclex, const jsonParser &kwargs) const override;\
+    int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const override;\
 \
     std::unique_ptr<EnumInterface<EnumMethod<IsConst> > > clone() const {\
       return std::unique_ptr<EnumInterface<EnumMethod<IsConst> > >(this->_clone());\

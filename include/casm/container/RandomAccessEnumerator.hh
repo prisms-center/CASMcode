@@ -351,16 +351,6 @@ namespace CASM {
       return this->dereference();
     }
 
-    /// Reference an element in enumerator, with in-range assertion
-    reference at(size_type n) {
-      if(n < 0 || n >= size()) {
-        std::string s = "Error: " + this->name() + " out-of-range";
-        throw std::out_of_range(s);
-      }
-      return (*this)[n];
-    }
-
-
   protected:
 
     using ValEnumerator<ValueType, IsConst>::_initialize;
