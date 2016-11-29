@@ -49,14 +49,12 @@ namespace CASM {
   ///
   /// - min: int (default=1)
   /// - max: int (default=max existing supercell size)
-  /// - existing_only: bool (default=false)
   /// - dirs: string, (default="abc")
   /// - unit_cell: 3x3 matrix of int, or string (default=identity matrix)
   /// \code
   /// {
   ///   "min" : 1,
   ///   "max" : 5,
-  ///   "existing_only" : true,
   ///   "dirs" : "abc",
   ///   "unit_cell" : [
   ///     [0, 0, 0],

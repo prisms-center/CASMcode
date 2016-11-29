@@ -324,6 +324,13 @@ namespace CASM {
   // ---- Interface ---------------------
 
   class PrimClex;
+  template<bool>
+  class ScelEnumT;
+  typedef ScelEnumT<false> ScelEnum;
+  class ScelEnumProps;
+  class Lattice;
+  template<typename T>
+  class SupercellEnumerator;
 
   namespace Completer {
     class EnumOption;
@@ -369,6 +376,55 @@ namespace CASM {
       return notstd::clone(e);
     });
   }
+
+  /// \brief Standardizes parsing casm enum input options to make ScelEnum JSON input
+  jsonParser make_enumerator_scel_enum_input(
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt);
+
+  /// \brief Standardizes parsing casm enum input options to make an ScelEnumProps
+  ScelEnumProps make_enumerator_scel_enum_props(
+    PrimClex &primclex,
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt);
+
+  /// \brief Standardizes parsing casm enum input options to make an SupercellEnumerator<Lattice>
+  std::unique_ptr<SupercellEnumerator<Lattice> > make_enumerator_superlat_enum(
+    PrimClex &primclex,
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt);
+
+  /// \brief Standardizes parsing casm enum input options to make an ScelEnum
+  std::unique_ptr<ScelEnum> make_enumerator_scel_enum(
+    PrimClex &primclex,
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt);
+
+  /// \brief Standardizes parsing casm enum filter expressions
+  std::vector<std::string> make_enumerator_filter_expr(
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt);
+
+  /// \brief Standardizes insertion from enumerators that construct unique
+  /// primitive canonical configurations
+  template<typename ScelIterator, typename ConfigEnumConstructor>
+  int insert_unique_canon_configs(
+    std::string method,
+    PrimClex &primclex,
+    ScelIterator begin,
+    ScelIterator end,
+    ConfigEnumConstructor f,
+    std::vector<std::string> filter_expr);
+
+  /// \brief Standardizes insertion from enumerators that construct configurations
+  template<typename LatticeIterator, typename ConfigEnumConstructor>
+  int insert_configs(
+    std::string method,
+    PrimClex &primclex,
+    LatticeIterator begin,
+    LatticeIterator end,
+    ConfigEnumConstructor f,
+    std::vector<std::string> filter_expr);
 
   /// \brief Load enumerator plugins from a CASM project
   template<typename EnumeratorMapInserter, typename RuntimeLibInserter>
