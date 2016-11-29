@@ -27,7 +27,7 @@ namespace CASM {
 
   public:
 
-    typedef Index step_type;
+    typedef long step_type;
 
     /// Default constructor
     EnumeratorBase() :
