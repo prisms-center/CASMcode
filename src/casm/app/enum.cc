@@ -199,12 +199,7 @@ namespace CASM {
     else if(vm.count("input")) {
       input = jsonParser::parse(enum_opt.input_str());
     }
-    if(input.size() != 1) {
-      args.err_log.error("Expected a single attribute in the input");
-      args.err_log << std::endl;
-    }
-    auto it = input.begin();
-    int res = enumerators->find(it.name())->run(*primclex, *it, enum_opt);
+    int res = enumerators->find(enum_opt.method())->run(*primclex, input, enum_opt);
 
     args.log << std::endl;
 
