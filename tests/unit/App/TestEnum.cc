@@ -6,6 +6,7 @@
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/completer/Handlers.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_TestEnum_interface() {
@@ -31,26 +32,28 @@ namespace CASM {
     "\n"
     "  Examples:\n"
     "    To enumerate all occupations in supercells up to and including size 4:\n"
-    "     '{\"TestEnum\": {\"supercells\": {\"max\": 4}}}' \n"
+    "      casm enum --method TestEnum -i '{\"supercells\": {\"max\": 4}}' \n"
     "\n"
     "    To enumerate all occupations in all existing supercells:\n"
-    "     '{\"TestEnum\": {}}' \n"
+    "      casm enum --method TestEnum\n"
     "\n"
     "    To enumerate all occupations in all particular supercells:\n"
-    "     '{ \n"
-    "        \"TestEnum\": { \n"
-    "          \"supercells\": { \n"
-    "            \"name\": [\n"
-    "              \"SCEL1_1_1_1_0_0_0\",\n"
-    "              \"SCEL2_1_2_1_0_0_0\",\n"
-    "              \"SCEL4_1_4_1_0_0_0\"\n"
-    "            ]\n"
-    "          } \n"
+    "      casm enum --method TestEnum -i \n"
+    "      '{ \n"
+    "        \"supercells\": { \n"
+    "          \"name\": [\n"
+    "            \"SCEL1_1_1_1_0_0_0\",\n"
+    "            \"SCEL2_1_2_1_0_0_0\",\n"
+    "            \"SCEL4_1_4_1_0_0_0\"\n"
+    "          ]\n"
     "        } \n"
     "      }' \n\n";
 
 
-  int EnumInterface<TestEnum>::run(PrimClex &primclex, const jsonParser &_kwargs) const {
+  int EnumInterface<TestEnum>::run(
+    PrimClex &primclex,
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt) const {
 
     jsonParser kwargs {_kwargs};
     if(kwargs.is_null()) {
@@ -61,6 +64,25 @@ namespace CASM {
     jsonParser scel_input;
     scel_input["existing_only"] = true;
     kwargs.get_if(scel_input, "supercells");
+
+    // check supercell shortcuts
+    if(enum_opt.vm().count("min")) {
+      scel_input["min"] = enum_opt.min_volume();
+    }
+
+    if(enum_opt.vm().count("max")) {
+      scel_input["max"] = enum_opt.max_volume();
+    }
+
+    if(enum_opt.all_existing()) {
+      scel_input.erase("min");
+      scel_input.erase("max");
+      scel_input["existing_only"] = true;
+    }
+
+    if(enum_opt.vm().count("scelnames")) {
+      scel_input["name"] = enum_opt.supercell_strs();
+    }
 
     ScelEnum scel_enum(primclex, scel_input);
 
@@ -73,7 +95,11 @@ namespace CASM {
 
     std::vector<std::string> filter_expr;
 
-    if(kwargs.contains("filter")) {
+    // check shortcuts
+    if(enum_opt.vm().count("filter")) {
+      filter_expr = enum_opt.filter_strs();
+    }
+    else if(kwargs.contains("filter")) {
       filter_expr.push_back(kwargs["filter"].get<std::string>());
     };
 
