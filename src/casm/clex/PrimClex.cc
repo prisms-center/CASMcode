@@ -375,7 +375,7 @@ namespace CASM {
   //*******************************************************************************************
 
   Configuration &PrimClex::configuration(const std::string &configname) {
-    return const_cast<Configuration &>(static_cast<const PrimClex &>(*this).configuration(configname));
+    return configuration(configname);
   }
 
   //*******************************************************************************************
