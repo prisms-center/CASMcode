@@ -20,7 +20,10 @@ namespace CASM {
 
     "  ... include help documentation here ... \n\n";
 
-  int EnumInterface<ConfigEnumStrain>::run(PrimClex &primclex, const jsonParser &_kwargs) const {
+  int EnumInterface<ConfigEnumStrain>::run(
+    PrimClex &primclex,
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt) const {
     throw std::runtime_error("EnumInterface<Strain>::run is not implemented");
   }
 

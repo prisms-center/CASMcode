@@ -266,6 +266,9 @@ namespace CASM {
 
     bool contains_supercell(std::string scellname, Index &index) const;
 
+    bool contains_supercell(const Supercell &scel) const;
+    bool contains_supercell(const Supercell &scel, Index &index) const;
+
     Index add_supercell(const Lattice &superlat);
 
     Index add_canonical_supercell(const Lattice &superlat);

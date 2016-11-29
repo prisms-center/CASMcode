@@ -4,6 +4,7 @@
 #include "casm/clex/ConfigEnumEquivalents.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/completer/Handlers.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_SuperConfigEnum_interface() {
@@ -39,34 +40,36 @@ namespace CASM {
     "\n"
     "  Examples:\n"
     "    To enumerate super-configurations of listed sub-configurations:\n"
+    "     casm enum --method SuperConfigEnum -i \n"
     "     '{ \n"
-    "        \"SuperConfigEnum\": {\n"
-    "          \"supercells\": { \n"
-    "            \"max\": 4, \n"
-    "            \"unit_cell\": \"SCEL2_1_2_1_0_0_0\" \n"
-    "          },\n"
-    "          \"subconfigs\": [\n"
-    "            \"SCEL1_1_1_1_0_0_0/0\",\n"
-    "            \"SCEL2_1_2_1_0_0_0/0\",\n"
-    "            \"SCEL2_1_2_1_0_0_0/1\"\n"
-    "          ]\n"
-    "        } \n"
+    "        \"supercells\": { \n"
+    "          \"max\": 4, \n"
+    "          \"unit_cell\": \"SCEL2_1_2_1_0_0_0\" \n"
+    "        },\n"
+    "        \"subconfigs\": [\n"
+    "          \"SCEL1_1_1_1_0_0_0/0\",\n"
+    "          \"SCEL2_1_2_1_0_0_0/0\",\n"
+    "          \"SCEL2_1_2_1_0_0_0/1\"\n"
+    "        ]\n"
     "      }' \n"
     "\n"
     "    To enumerate super-configurations of listed sub-configurations from a \n"
     "    selection file:\n"
+    "     casm enum --method SuperConfigEnum -i \n"
     "     '{ \n"
-    "        \"SuperConfigEnum\": {\n"
-    "          \"supercells\": { \n"
-    "            \"max\": 4, \n"
-    "            \"unit_cell\": \"SCEL2_1_2_1_0_0_0\" \n"
-    "          }, \n"
-    "          \"subconfigs\": \"selection_filename\"\n"
-    "        } \n"
+    "        \"supercells\": { \n"
+    "          \"max\": 4, \n"
+    "          \"unit_cell\": \"SCEL2_1_2_1_0_0_0\" \n"
+    "        }, \n"
+    "        \"subconfigs\": \"selection_filename\"\n"
     "      }' \n"
     "\n";
 
-  int EnumInterface<SuperConfigEnum>::run(PrimClex &primclex, const jsonParser &_kwargs) const {
+  int EnumInterface<SuperConfigEnum>::run(
+    PrimClex &primclex,
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt) const {
+
     if(_kwargs.contains("name")) {
       throw std::invalid_argument(
         "Error in SuperConfigEnum JSON input: 'name' is not allowed in the 'supercell' option");
@@ -85,6 +88,22 @@ namespace CASM {
     jsonParser scel_input;
     scel_input["existing_only"] = true;
     kwargs.get_if(scel_input, "supercells");
+
+    // check supercell shortcuts
+    if(enum_opt.vm().count("min")) {
+      scel_input["min"] = enum_opt.min_volume();
+    }
+    if(enum_opt.vm().count("max")) {
+      scel_input["max"] = enum_opt.max_volume();
+    }
+    if(enum_opt.vm().count("all")) {
+      scel_input.erase("min");
+      scel_input.erase("max");
+      scel_input["existing_only"] = true;
+    }
+    if(enum_opt.vm().count("scelnames")) {
+      scel_input["name"] = enum_opt.supercell_strs();
+    }
 
     ScelEnumProps enum_props = make_scel_enum_props(primclex, scel_input);
 
@@ -116,7 +135,11 @@ namespace CASM {
 
     // parse a filter expression
     std::vector<std::string> filter_expr;
-    if(kwargs.contains("filter")) {
+    // check shortcuts
+    if(enum_opt.vm().count("filter")) {
+      filter_expr = enum_opt.filter_strs();
+    }
+    else if(kwargs.contains("filter")) {
       filter_expr.push_back(kwargs["filter"].get<std::string>());
     };
 

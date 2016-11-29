@@ -3,6 +3,7 @@
 
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
 
@@ -79,8 +80,9 @@ namespace CASM {
 
   /// \brief Construct with PrimClex and ScelEnumProps settings
   template<bool IsConst>
-  ScelEnumByPropsT<IsConst>::ScelEnumByPropsT(PrimClex &primclex, const ScelEnumProps &enum_props) :
-    m_primclex(&primclex) {
+  ScelEnumByPropsT<IsConst>::ScelEnumByPropsT(PrimClex &primclex, const ScelEnumProps &enum_props, bool existing_only) :
+    m_primclex(&primclex),
+    m_existing_only(existing_only) {
 
     m_lattice_enum.reset(new SupercellEnumerator<Lattice>(
                            m_primclex->get_prim().lattice(),
@@ -91,6 +93,11 @@ namespace CASM {
     m_lat_it = m_lattice_enum->begin();
     m_lat_end = m_lattice_enum->end();
 
+    while(!_include(*m_lat_it) && m_lat_it != m_lat_end) {
+      std::cout << "here 0" << std::endl;
+      ++m_lat_it;
+    }
+
     if(m_lat_it != m_lat_end) {
       this->_initialize(&m_primclex->get_supercell(m_primclex->add_supercell(*m_lat_it)));
     }
@@ -99,15 +106,30 @@ namespace CASM {
     }
   }
 
+  namespace {
+
+    bool _get_else(const jsonParser &json, std::string key, bool default_value) {
+      bool tmp;
+      json.get_else<bool>(tmp, key, default_value);
+      return tmp;
+    }
+  }
+
   /// \brief Construct with PrimClex and ScelEnumProps JSON settings
   template<bool IsConst>
   ScelEnumByPropsT<IsConst>::ScelEnumByPropsT(PrimClex &primclex, const jsonParser &input) :
-    ScelEnumByPropsT(primclex, make_scel_enum_props(primclex, input)) {}
+    ScelEnumByPropsT(primclex, make_scel_enum_props(primclex, input), _get_else(input, "existing_only", false)) {}
 
   /// Implements increment over supercells
   template<bool IsConst>
   void ScelEnumByPropsT<IsConst>::increment() {
     ++m_lat_it;
+
+    while(!_include(*m_lat_it) && m_lat_it != m_lat_end) {
+      std::cout << "here 1" << std::endl;
+      ++m_lat_it;
+    }
+
     if(m_lat_it != m_lat_end) {
       this->_set_current_ptr(&m_primclex->get_supercell(m_primclex->add_supercell(*m_lat_it)));
       this->_increment_step();
@@ -115,6 +137,20 @@ namespace CASM {
     else {
       this->_invalidate();
     }
+  }
+
+  /// Check for existing supercells
+  template<bool IsConst>
+  bool ScelEnumByPropsT<IsConst>::_include(const Lattice &lat) const {
+    if(m_existing_only) {
+      Lattice canon_lat = canonical_equivalent_lattice(
+                            *m_lat_it,
+                            m_primclex->get_prim().point_group(),
+                            m_primclex->crystallography_tol());
+      Supercell tmp(m_primclex, canon_lat);
+      return m_primclex->contains_supercell(tmp);
+    }
+    return true;
   }
 
   template<bool IsConst>
@@ -134,7 +170,7 @@ namespace CASM {
     "    relative the unit cell being used to generate supercells.\n"
     "\n"
     "  existing_only: bool (default=false)\n"
-    "    If true, only existing supercells are used. This is useful when this\n"
+    "    If true, only existing supercells are used. This is useful when it\n"
     "    is used as input to a Configuration enumeration method.\n"
     "\n"
     "  dirs: string (default=\"abc\")\n"
@@ -177,32 +213,34 @@ namespace CASM {
     "Examples:\n"
     "\n"
     "    To enumerate supercells up to and including size 4:\n"
-    "      '{\"ScelEnum\": {\"max\": 4}}' \n"
+    "      casm enum --method SuperConfigEnum -i '{\"max\": 4}' \n"
     "\n"
     "    To enumerate 2d supercells up to and including size 4:\n"
-    "      '{\"ScelEnum\": {\"max\": 4, \"dirs\": \"ab\"}}' \n"
+    "      casm enum --method SuperConfigEnum -i '{\"max\": 4, \"dirs\": \"ab\"}' \n"
     "\n"
     "    If the prim is primitive FCC, two dimensional supercells of the \n"
     "    conventional FCC unit cell up to and including 4x the unit cell volume\n"
     "    could be enumerated using:\n"
     "\n"
+    "     casm enum --method SuperConfigEnum -i \n"
     "     '{\n"
-    "        \"ScelEnum\": {\n"
-    "          \"min\": 1,\n"
-    "          \"max\": 4,\n"
-    "          \"dirs\": \"ab\",\n"
-    "          \"unit_cell\" : [\n"
-    "            [-1,  1,  1],\n"
-    "            [ 1, -1,  1],\n"
-    "            [ 1,  1, -1],\n"
-    "          ],\n"
-    "        }\n"
+    "        \"min\": 1,\n"
+    "        \"max\": 4,\n"
+    "        \"dirs\": \"ab\",\n"
+    "        \"unit_cell\" : [\n"
+    "          [-1,  1,  1],\n"
+    "          [ 1, -1,  1],\n"
+    "          [ 1,  1, -1]\n"
+    "        ]\n"
     "      }'\n"
     "\n";
 
 
   template<bool IsConst>
-  int EnumInterface<ScelEnumT<IsConst> >::run(PrimClex &primclex, const jsonParser &kwargs) const {
+  int EnumInterface<ScelEnumT<IsConst> >::run(
+    PrimClex &primclex,
+    const jsonParser &kwargs,
+    const Completer::EnumOption &enum_opt) const {
 
     Log &log = primclex.log();
     log.begin(name());
@@ -211,27 +249,38 @@ namespace CASM {
     Index list_size = supercell_list.size();
 
     bool verbose = true;
-    ScelEnum scel_enum(primclex, kwargs);
+
+    jsonParser input {kwargs};
+    // check supercell shortcuts
+    if(enum_opt.vm().count("min")) {
+      input["min"] = enum_opt.min_volume();
+    }
+    if(enum_opt.vm().count("max")) {
+      input["max"] = enum_opt.max_volume();
+    }
+
+    ScelEnum scel_enum(primclex, input);
     for(auto &scel : scel_enum) {
       if(verbose) {
         if(supercell_list.size() != list_size) {
-          std::cout << "  Generated: " << scel.get_name() << "\n";
+          log << "  Generated: " << scel.get_name() << "\n";
         }
         else {
-          std::cout << "  Generated: " << scel.get_name() << " (already existed)\n";
+          log << "  Generated: " << scel.get_name() << " (already existed)\n";
         }
       }
       list_size = supercell_list.size();
     }
     log << "  DONE." << std::endl << std::endl;
 
-    std::cout << "Write SCEL..." << std::endl;
+    log << "Write SCEL..." << std::endl;
     primclex.print_supercells();
     log << "  DONE" << std::endl << std::endl;
 
     log << "Writing config_list..." << std::endl;
     primclex.write_config_list();
     log << "  DONE" << std::endl;
+
     return 0;
   }
 

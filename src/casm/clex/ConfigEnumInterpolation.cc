@@ -15,7 +15,10 @@ namespace CASM {
 
     "  ... include help documentation here ... \n\n";
 
-  int EnumInterface<ConfigEnumInterpolation>::run(PrimClex &primclex, const jsonParser &_kwargs) const {
+  int EnumInterface<ConfigEnumInterpolation>::run(
+    PrimClex &primclex,
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt) const {
     throw std::runtime_error("EnumInterface<ConfigEnumAllOccupations>::run is not implemented");
   }
 

@@ -61,7 +61,7 @@ namespace CASM {
   public:
 
     /// \brief Construct with PrimClex and ScelEnumProps settings
-    ScelEnumByPropsT(PrimClex &primclex, const ScelEnumProps &enum_props);
+    ScelEnumByPropsT(PrimClex &primclex, const ScelEnumProps &enum_props, bool existing_only = false);
 
     /// \brief Construct with PrimClex and ScelEnumProps JSON settings
     ScelEnumByPropsT(PrimClex &primclex, const jsonParser &input);
@@ -74,6 +74,9 @@ namespace CASM {
 
   private:
 
+    /// Check for existing supercells
+    bool _include(const Lattice &lat) const;
+
     /// Implements increment over supercells
     void increment() override;
 
@@ -82,6 +85,8 @@ namespace CASM {
     std::unique_ptr<SupercellEnumerator<Lattice> > m_lattice_enum;
     SupercellEnumerator<Lattice>::const_iterator m_lat_it;
     SupercellEnumerator<Lattice>::const_iterator m_lat_end;
+
+    bool m_existing_only;
   };
 
   typedef ScelEnumByPropsT<true> ConstScelEnumByProps;

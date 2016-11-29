@@ -683,6 +683,15 @@ namespace CASM {
 
   };
 
+  bool PrimClex::contains_supercell(const Supercell &scel) const {
+    Index tmp;
+    return contains_supercell(scel, tmp);
+  }
+
+  bool PrimClex::contains_supercell(const Supercell &scel, Index &index) const {
+    return contains_supercell(scel.get_name(), index);
+  }
+
   //*******************************************************************************************
   Eigen::Matrix3i PrimClex::calc_transf_mat(const Lattice &superlat) const {
     Eigen::Matrix3d ttrans = prim.lattice().inv_lat_column_mat() * superlat.lat_column_mat();
