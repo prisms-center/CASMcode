@@ -98,9 +98,9 @@ namespace CASM {
                             SpecializedRef _config_ref = SpecializedRef()) :
       Reference(_name, _desc),
       m_input(_input),
-      m_global_ref(_global_ref),
       m_config_ref(_config_ref),
-      m_supercell_ref(_supercell_ref) {}
+      m_supercell_ref(_supercell_ref),
+      m_global_ref(_global_ref) {}
 
     virtual ~HyperPlaneReferenceBase() {}
 

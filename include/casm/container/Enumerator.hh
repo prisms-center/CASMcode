@@ -31,8 +31,8 @@ namespace CASM {
 
     /// Default constructor
     EnumeratorBase() :
-      m_step(0),
-      m_valid(false) {}
+      m_valid(false),
+      m_step(0) {}
 
     ~EnumeratorBase() {}
 
