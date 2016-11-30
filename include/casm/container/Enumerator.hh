@@ -52,33 +52,33 @@ namespace CASM {
    *  - To save results from enumerators of general Configurations: ::insert_configs
    *
    *
-   *  For Enumerators only meant to be used internally, in the global namespace
-   *  use the macros:
-   *    ENUM_TRAITS or ENUM_VARIABLECONST_TRAITS
-   *    and ENUM_MEMBERS
-   *
-   *  Requires source code definition of:
+   *  For Enumerators only meant to be used internally the required members are:
    *
    *  Variables:
-   *  - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
+   *  - \code public: static const std::string enumerator_name; \endcode
+   *
+   *  Functions:
+   *  - \code public: std::string name() const override { return enumerator_name; } \endcode
    *
    *
-   *  For Enumerators to be added to the API, in the global namespace use the
-   *  macros:
-   *    ENUM_INTERFACE_TRAITS or ENUM_INTERFACE_VARIABLECONST_TRAITS
-   *    and ENUM_INTERFACE_MEMBERS
-   *
-   *  Requires source code definition of:
+   *  For Enumerators to be added to the API the required members are:
    *
    *  Variables:
-   *  - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
-   *  - const std::string CASM::CASM_TMP::traits<EnumMethod>::help;
+   *  - \code public: static const std::string enumerator_name; \endcode
+   *  - \code public: static const std::string interface_help; \endcode
    *
-   *  Function:
-   *  - int CASM::EnumInterface<EnumMethod>::run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const;
+   *  Functions:
+   *  - public: std::string name() const override { return enumerator_name; } \endcode
+   *  - public: static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt); \endcode
    *
    *  To enable use as a plugin:
-   *  - extern "C" { CASM::EnumInterfaceBase *make_EnumMethod_interface(); }
+   *  - \code
+   *    extern "C" {
+   *      CASM::EnumInterfaceBase *make_EnumMethod_interface() {
+   *        return new CASM::EnumInterface<CASM::ConfigEnumAllOccupations>();
+   *      }
+   *    }
+   *    \endcode
    *  - To use an enumerator as a plugin for an existing CASM project, place the
    *    source code in the `.casm/enumerators` directory in a file named
    *    `EnumMethodName.cc`, where `EnumMethod` is the name of the enumerator
@@ -398,6 +398,7 @@ namespace CASM {
 
   };
 
+  /** @}*/
 
   // ---- Interface ---------------------
 
@@ -413,6 +414,10 @@ namespace CASM {
   namespace Completer {
     class EnumOption;
   }
+
+  /** \addtogroup Enumerator
+      @{
+  */
 
   /// \brief Base class for generic use of enumerators that may be accessed through the API
   class EnumInterfaceBase {
@@ -514,198 +519,34 @@ namespace CASM {
 
   /// \brief Template class to be specialized for each enumerator that may be accessed via the API
   template<typename Derived>
-  class EnumInterface {};
+  class EnumInterface : public EnumInterfaceBase {
 
-  /// For Enumerators only meant to be used internally, use the macros:
-  ///   ENUM_TRAITS or ENUM_VARIABLECONST_TRAITS
-  ///   and ENUM_MEMBERS
-  ///
-  /// Requires source code definition of:
-  ///
-  /// Variables:
-  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
+  public:
 
-#define ENUMERATOR_TRAITS(EnumMethod)\
-namespace CASM {\
-\
-  class EnumMethod;\
-\
-  namespace CASM_TMP {\
-    template<>\
-    struct traits<EnumMethod> {\
-      static const std::string name;\
-    };\
-  }\
-}
+    std::string help() const override {
+      return Derived::interface_help;
+    }
 
-  /// For Enumerators only meant to be used internally, use the macros:
-  ///   ENUM_TRAITS or ENUM_VARIABLECONST_TRAITS
-  ///   and ENUM_MEMBERS
-  ///
-  /// Requires source code definition of:
-  ///
-  /// Variables:
-  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
+    std::string name() const override {
+      return Derived::enumerator_name;
+    }
 
-#define ENUMERATOR_VARIABLECONST_TRAITS(EnumMethod)\
-namespace CASM {\
-\
-  template<bool IsConst>\
-  class EnumMethod;\
-\
-  namespace CASM_TMP {\
-    template<bool IsConst>\
-    struct traits<EnumMethod<IsConst> > {\
-      static const std::string name;\
-    };\
-  }\
-}
+    int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const override {
+      return Derived::run(primclex, kwargs, enum_opt);
+    }
 
-  /// For Enumerators to be added to the API, use the macros:
-  ///   ENUM_INTERFACE_TRAITS or ENUM_INTERFACE_VARIABLECONST_TRAITS
-  ///   and ENUM_INTERFACE_MEMBERS
-  ///
-  /// Requires source code definition of:
-  ///
-  /// Variables:
-  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
-  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::help;
-  ///
-  /// Functions:
-  /// - int CASM::EnumInterface<EnumMethod>::run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const;
-  ///
-  /// To enable use as a plugin:
-  /// - extern "C" { CASM::EnumInterfaceBase *make_EnumMethod_interface(); }
+    std::unique_ptr<EnumInterfaceBase> clone() const {
+      return std::unique_ptr<EnumInterfaceBase>(this->_clone());
+    }
 
-#define ENUMERATOR_MEMBERS(EnumMethod)\
-  public:\
-\
-    std::string name() const override {\
-      return CASM_TMP::traits<EnumMethod>::name;\
-    }\
-\
- 
-#define MAKE_INTERFACE(NAME) make_ ## NAME ## _command()
+  private:
+
+    EnumInterfaceBase *_clone() const override {
+      return new EnumInterface<Derived>(*this);
+    }
 
 
-  /// For Enumerators to be added to the API, use the macros:
-  ///   ENUM_INTERFACE_TRAITS or ENUM_INTERFACE_VARIABLECONST_TRAITS
-  ///   and ENUM_INTERFACE_MEMBERS
-  ///
-  /// Requires source code definition of:
-  ///
-  /// Variables:
-  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
-  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::help;
-  ///
-  /// Functions:
-  /// - int CASM::EnumInterface<EnumMethod>::run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const;
-  ///
-  /// To enable use as a plugin:
-  /// - extern "C" { CASM::EnumInterfaceBase *make_EnumMethod_interface(); }
-
-#define ENUMERATOR_INTERFACE_TRAITS(EnumMethod)\
-extern "C" CASM::EnumInterfaceBase* MAKE_INTERFACE(EnumMethod); \
-\
-namespace CASM {\
-\
-  class EnumMethod;\
-\
-  namespace CASM_TMP {\
-    template<>\
-    struct traits<EnumMethod> {\
-      static const std::string name;\
-      static const std::string help;\
-    };\
-  }\
-\
-  template<>\
-  class EnumInterface<EnumMethod> : public EnumInterfaceBase {\
-\
-  public:\
-\
-    std::string name() const override {\
-      return CASM_TMP::traits<EnumMethod>::name;\
-    }\
-\
-    std::string help() const override {\
-      return CASM_TMP::traits<EnumMethod>::help;\
-    }\
-\
-    int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const override;\
-\
-    std::unique_ptr<EnumInterface<EnumMethod> > clone() const {\
-      return std::unique_ptr<EnumInterface<EnumMethod> >(this->_clone());\
-    };\
-\
-  private:\
-\
-    EnumInterface<EnumMethod>* _clone() const override {\
-      return new EnumInterface<EnumMethod>(*this);\
-    }\
-\
-  };\
-}
-
-  /// For Enumerators to be added to the API, use the macros:
-  ///   ENUM_INTERFACE_TRAITS or ENUM_INTERFACE_VARIABLECONST_TRAITS
-  ///   and ENUM_INTERFACE_MEMBERS
-  ///
-  /// Requires source code definition of:
-  ///
-  /// Variables:
-  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
-  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::help;
-  ///
-  /// Functions:
-  /// - int CASM::EnumInterface<EnumMethod>::run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const;
-  ///
-  /// To enable use as a plugin:
-  /// - extern "C" { CASM::EnumInterfaceBase *make_EnumMethod_interface(); }
-
-#define ENUMERATOR_INTERFACE_VARIABLECONST_TRAITS(EnumMethod)\
-extern "C" CASM::EnumInterfaceBase* MAKE_INTERFACE(EnumMethod); \
-\
-namespace CASM {\
-\
-  template<bool IsConst>\
-  class EnumMethod;\
-\
-  namespace CASM_TMP {\
-    template<bool IsConst>\
-    struct traits<EnumMethod<IsConst> > {\
-      static const std::string name;\
-      static const std::string help;\
-    };\
-  }\
-\
-  template<bool IsConst>\
-  class EnumInterface<EnumMethod<IsConst> > : public EnumInterfaceBase {\
-\
-  public:\
-\
-    std::string name() const override {\
-      return CASM_TMP::traits<EnumMethod<IsConst> >::name;\
-    }\
-\
-    std::string help() const override {\
-      return CASM_TMP::traits<EnumMethod<IsConst> >::help;\
-    }\
-\
-    int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const override;\
-\
-    std::unique_ptr<EnumInterface<EnumMethod<IsConst> > > clone() const {\
-      return std::unique_ptr<EnumInterface<EnumMethod<IsConst> > >(this->_clone());\
-    };\
-\
-  private:\
-\
-    EnumInterface<EnumMethod<IsConst> >* _clone() const override {\
-      return new EnumInterface<EnumMethod<IsConst> >(*this);\
-    }\
-\
-  };\
-}
+  };
 
   /** @}*/
 

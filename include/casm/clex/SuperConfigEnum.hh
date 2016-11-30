@@ -6,7 +6,9 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 
-ENUMERATOR_INTERFACE_TRAITS(SuperConfigEnum)
+extern "C" {
+  CASM::EnumInterfaceBase *make_SuperConfigEnum_interface();
+}
 
 namespace CASM {
 
@@ -19,7 +21,7 @@ namespace CASM {
   ///   sub_config
   /// - enumerates all Configurations, including non-primitive and non-canonical
   ///
-  /// \ingroup Enumerator
+  /// \ingroup ConfigEnumGroup
   ///
   class SuperConfigEnum : public InputEnumeratorBase<Configuration> {
 
@@ -41,7 +43,13 @@ namespace CASM {
                     PermuteIterator _perm_begin,
                     PermuteIterator _perm_end);
 
-    ENUMERATOR_MEMBERS(SuperConfigEnum)
+    std::string name() const override {
+      return enumerator_name;
+    }
+
+    static const std::string enumerator_name;
+    static const std::string interface_help;
+    static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 
 
     // -- Unique -------------------

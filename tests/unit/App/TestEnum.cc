@@ -17,9 +17,9 @@ extern "C" {
 
 namespace CASM {
 
-  const std::string CASM_TMP::traits<TestEnum>::name = "TestEnum";
+  const std::string TestEnum::enumerator_name = "TestEnum";
 
-  const std::string CASM_TMP::traits<TestEnum>::help =
+  const std::string TestEnum::interface_help =
     "TestEnum: \n\n"
 
     "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
@@ -50,10 +50,10 @@ namespace CASM {
     "        } \n"
     "      }' \n\n";
 
-  int EnumInterface<TestEnum>::run(
+  int TestEnum::run(
     PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) const {
+    const Completer::EnumOption &enum_opt) {
 
     std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
@@ -63,7 +63,7 @@ namespace CASM {
     };
 
     int returncode = insert_unique_canon_configs(
-                       name(),
+                       enumerator_name,
                        primclex,
                        scel_enum->begin(),
                        scel_enum->end(),

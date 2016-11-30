@@ -7,13 +7,15 @@
 #include "casm/container/Counter.hh"
 #include "casm/clex/Configuration.hh"
 
-ENUMERATOR_INTERFACE_TRAITS(ConfigEnumStrain)
+extern "C" {
+  CASM::EnumInterfaceBase *make_ConfigEnumStrain_interface();
+}
 
 namespace CASM {
 
   /// Enumerate strained Configurations
   ///
-  /// \ingroup Enumerator
+  /// \ingroup ConfigEnumGroup
   ///
   class ConfigEnumStrain : public InputEnumeratorBase<Configuration> {
 
@@ -27,7 +29,13 @@ namespace CASM {
                      const std::vector<double> &magnitudes,
                      std::string _mode);
 
-    ENUMERATOR_MEMBERS(ConfigEnumStrain)
+    std::string name() const override {
+      return enumerator_name;
+    }
+
+    static const std::string enumerator_name;
+    static const std::string interface_help;
+    static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 
   private:
 

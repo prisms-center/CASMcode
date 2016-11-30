@@ -15,9 +15,9 @@ extern "C" {
 
 namespace CASM {
 
-  const std::string CASM_TMP::traits<CASM::SuperConfigEnum>::name = "SuperConfigEnum";
+  const std::string SuperConfigEnum::enumerator_name = "SuperConfigEnum";
 
-  const std::string CASM_TMP::traits<CASM::SuperConfigEnum>::help =
+  const std::string SuperConfigEnum::interface_help =
 
     "SuperConfigEnum: \n\n"
 
@@ -146,10 +146,10 @@ namespace CASM {
     primclex.log() << std::endl;
   }
 
-  int EnumInterface<SuperConfigEnum>::run(
+  int SuperConfigEnum::run(
     PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) const {
+    const Completer::EnumOption &enum_opt) {
 
     // -- Disallow 'name' & --scelnames options --
     if(_kwargs.contains("name") || enum_opt.vm().count("scelnames")) {
@@ -194,7 +194,7 @@ namespace CASM {
     };
 
     int returncode = insert_configs(
-                       name(),
+                       enumerator_name,
                        primclex,
                        superlat_enum->begin(),
                        superlat_enum->end(),

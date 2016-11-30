@@ -6,8 +6,6 @@
 #include "casm/symmetry/EnumEquivalents.hh"
 #include "casm/clex/Configuration.hh"
 
-ENUMERATOR_TRAITS(ConfigEnumEquivalents)
-
 namespace CASM {
 
   class Supercell;
@@ -22,6 +20,7 @@ namespace CASM {
   ///   using the Supercell factor group symmetry
   ///
   /// \ingroup EnumEquivalents
+  /// \ingroup ConfigEnumGroup
   ///
   class ConfigEnumEquivalents : public EnumEquivalents<Configuration, PermuteIterator> {
 
@@ -33,7 +32,12 @@ namespace CASM {
 
     ConfigEnumEquivalents(const Configuration &config, PermuteIterator begin, PermuteIterator end);
 
-    ENUMERATOR_MEMBERS(ConfigEnumEquivalents)
+    std::string name() const override {
+      return enumerator_name;
+    }
+
+    static const std::string enumerator_name;
+
   };
 
 }

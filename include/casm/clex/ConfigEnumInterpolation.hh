@@ -4,14 +4,16 @@
 #include "casm/container/RandomAccessEnumerator.hh"
 #include "casm/clex/Configuration.hh"
 
-ENUMERATOR_INTERFACE_TRAITS(ConfigEnumInterpolation)
+extern "C" {
+  CASM::EnumInterfaceBase *make_ConfigEnumInterpolation_interface();
+}
 
 namespace CASM {
 
   /// Interpolate displacements and strains between two configurations with
   /// identical occupation
   ///
-  /// \ingroup Enumerator
+  /// \ingroup ConfigEnumGroup
   ///
   class ConfigEnumInterpolation : public RandomAccessEnumeratorBase<Configuration> {
 
@@ -21,7 +23,13 @@ namespace CASM {
 
     ConfigEnumInterpolation(const value_type &_initial, const value_type &_final, Index _size);
 
-    ENUMERATOR_MEMBERS(ConfigEnumInterpolation)
+    std::string name() const override {
+      return enumerator_name;
+    }
+
+    static const std::string enumerator_name;
+    static const std::string interface_help;
+    static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 
   private:
 

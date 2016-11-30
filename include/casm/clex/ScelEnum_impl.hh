@@ -8,9 +8,13 @@
 namespace CASM {
 
   template<bool IsConst>
-  const std::string CASM_TMP::traits<ScelEnumByNameT<IsConst> >::name = "ScelEnumByName";
+  const std::string ScelEnumByNameT<IsConst>::enumerator_name = "ScelEnumByName";
 
-  /// \brief Construct with PrimClex and ScelEnumProps settings
+  /// \brief Construct with PrimClex a initializer_list of Supercell names
+  ///
+  /// \param primclex A PrimClex for which to enumerate Supercells
+  /// \param scelnames A list of names of Supercells to enumerate
+  ///
   template<bool IsConst>
   ScelEnumByNameT<IsConst>::ScelEnumByNameT(
     PrimClex &primclex,
@@ -25,7 +29,11 @@ namespace CASM {
     _init();
   }
 
-  /// \brief Construct with PrimClex and ScelEnumProps settings
+  /// \brief Construct with PrimClex and a range of Supercell names
+  ///
+  /// \param primclex A PrimClex for which to enumerate Supercells
+  /// \param begin,end A range of names of Supercells to enumerate
+  ///
   template<bool IsConst>
   template<typename ScelNameIterator>
   ScelEnumByNameT<IsConst>::ScelEnumByNameT(
@@ -41,7 +49,11 @@ namespace CASM {
     _init();
   }
 
-  /// \brief Construct with PrimClex and array of supercell names
+  /// \brief Construct with PrimClex and JSON array containing supercell names
+  ///
+  /// \param primclex A PrimClex for which to enumerate Supercells
+  /// \param input A JSON array of names of Supercells to enumerate
+  ///
   template<bool IsConst>
   ScelEnumByNameT<IsConst>::ScelEnumByNameT(
     PrimClex &primclex,
@@ -76,9 +88,15 @@ namespace CASM {
 
 
   template<bool IsConst>
-  const std::string CASM_TMP::traits<ScelEnumByPropsT<IsConst> >::name = "ScelEnumByProps";
+  const std::string ScelEnumByPropsT<IsConst>::enumerator_name = "ScelEnumByProps";
 
   /// \brief Construct with PrimClex and ScelEnumProps settings
+  ///
+  /// \param primclex A PrimClex for which to enumerate Supercells
+  /// \param enum_props Specifies which Supercells to enumerate
+  /// \param existing_only Skip Supercells specified by enum_props but not already
+  ///        existing in the Supercell list
+  ///
   template<bool IsConst>
   ScelEnumByPropsT<IsConst>::ScelEnumByPropsT(PrimClex &primclex, const ScelEnumProps &enum_props, bool existing_only) :
     m_primclex(&primclex),
@@ -116,6 +134,15 @@ namespace CASM {
   }
 
   /// \brief Construct with PrimClex and ScelEnumProps JSON settings
+  ///
+  /// \param primclex A PrimClex for which to enumerate Supercells
+  /// \param input JSON used to make an ScelEnumProps object specifying which
+  ///        Supercells to enumerate, via ::make_scel_enum_props
+  ///
+  /// - The JSON input is also checked for the boolean property "existing_only",
+  ///   which if true indicates that Supercell not already included in the
+  ///   supercell list should be skipped
+  ///
   template<bool IsConst>
   ScelEnumByPropsT<IsConst>::ScelEnumByPropsT(PrimClex &primclex, const jsonParser &input) :
     ScelEnumByPropsT(primclex, make_scel_enum_props(primclex, input), _get_else(input, "existing_only", false)) {}
@@ -126,7 +153,6 @@ namespace CASM {
     ++m_lat_it;
 
     while(!_include(*m_lat_it) && m_lat_it != m_lat_end) {
-      std::cout << "here 1" << std::endl;
       ++m_lat_it;
     }
 
@@ -153,11 +179,13 @@ namespace CASM {
     return true;
   }
 
+  /// \relates ::ScelEnumT
   template<bool IsConst>
-  const std::string CASM_TMP::traits<ScelEnumT<IsConst> >::name = "ScelEnum";
+  const std::string ScelEnumT<IsConst>::enumerator_name = "ScelEnum";
 
+  /// \relates ::ScelEnumT
   template<bool IsConst>
-  const std::string CASM_TMP::traits<ScelEnumT<IsConst> >::help =
+  const std::string ScelEnumT<IsConst>::interface_help =
 
     "ScelEnum: \n\n"
 
@@ -235,15 +263,15 @@ namespace CASM {
     "      }'\n"
     "\n";
 
-
+  /// \relates ::ScelEnumT
   template<bool IsConst>
-  int EnumInterface<ScelEnumT<IsConst> >::run(
+  int ScelEnumT<IsConst>::run(
     PrimClex &primclex,
     const jsonParser &kwargs,
-    const Completer::EnumOption &enum_opt) const {
+    const Completer::EnumOption &enum_opt) {
 
     Log &log = primclex.log();
-    log.begin(name());
+    log.begin(enumerator_name);
 
     auto &supercell_list = primclex.get_supercell_list();
     Index list_size = supercell_list.size();

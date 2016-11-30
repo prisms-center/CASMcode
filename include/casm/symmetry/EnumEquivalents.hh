@@ -96,7 +96,6 @@ namespace CASM {
       }
     }
 
-    ENUMERATOR_MEMBERS(EnumEquivalents)
 
   public:
 

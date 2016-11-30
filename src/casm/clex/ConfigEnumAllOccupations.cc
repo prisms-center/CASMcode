@@ -17,11 +17,9 @@ extern "C" {
 
 namespace CASM {
 
-  /// \relates ConfigEnumAllOccupations
-  const std::string CASM_TMP::traits<ConfigEnumAllOccupations>::name = "ConfigEnumAllOccupations";
+  const std::string ConfigEnumAllOccupations::enumerator_name = "ConfigEnumAllOccupations";
 
-  /// \relates ConfigEnumAllOccupations
-  const std::string CASM_TMP::traits<ConfigEnumAllOccupations>::help =
+  const std::string ConfigEnumAllOccupations::interface_help =
     "ConfigEnumAllOccupations: \n\n"
 
     "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
@@ -52,11 +50,10 @@ namespace CASM {
     "        } \n"
     "      }' \n\n";
 
-  /// \relates ConfigEnumAllOccupations
-  int EnumInterface<ConfigEnumAllOccupations>::run(
+  int ConfigEnumAllOccupations::run(
     PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) const {
+    const Completer::EnumOption &enum_opt) {
 
     std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
@@ -66,7 +63,7 @@ namespace CASM {
     };
 
     int returncode = insert_unique_canon_configs(
-                       name(),
+                       enumerator_name,
                        primclex,
                        scel_enum->begin(),
                        scel_enum->end(),
