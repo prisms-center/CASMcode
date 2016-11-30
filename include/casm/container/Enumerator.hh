@@ -9,6 +9,84 @@
 
 namespace CASM {
 
+  /** \defgroup Enumerator
+   *
+   *  Enumerators are classes that implement methods to enumerate Supercells,
+   *  Configurations, and other objects by providing iterators over a range of
+   *  enumerated objects. The objects are not usually stored in the enumerators
+   *  but constructed as iterators are modified or dereferenced. New enumerators
+   *  can be created by inheriting from:
+   *  - InputEnumeratorBase (for single-pass  enumerators)
+   *  - RandomAccessEnumeratorBase (for multi-pass, random-access enumerators)
+   *
+   *  Some example enumerators are:
+   *  - ScelEnumT, ScelEnumByNameT, ScelEnumByPropsT
+   *  - ConfigEnumAllOccupations
+   *  - ConfigEnumInterpolation
+   *  - ConfigEnumStrain
+   *  - SuperConfigEnum
+   *
+   *  Some macros and functions can be used to help implement the required
+   *  members in an Enumerator class. Most enumerators provide iterators that
+   *  dereference as const reference to the object of interest. In some cases it
+   *  may be useful to implement enumerators via a template class using a boolean
+   *  template parameter to specify whether dereferencing iterators results in a
+   *  const or non-const reference to the objects being enumerated. This is what
+   *  the VARIABLECONST macros are intended for.
+   *
+   *  Enumerators are required to "know" their own name by implementing a
+   *  traits class with 'name' as a const std::string member. For enumerators
+   *  meant to be accessible via the 'casm enum' API, the traits class must also
+   *  have a 'help' const std::string member explaining the enumerator and the
+   *  input parameters, and a 'CASM::EnumInterface<EnumMethod>::run' method which
+   *  implements collecting input parameters from the CLI, executing the enumerator
+   *  and saving the resulting objects. Some helper functions exist to make
+   *  parsing input and saving results easier:
+   *
+   *  - To collect CLI input and construct an ScelEnum which enumerates canonical
+   *  Supercell: ::make_enumerator_scel_enum
+   *  - To collect CLI input and construct an SupercellEnumerator<Lattice> which
+   *  enumerates super-lattices which may not be canonical: ::make_enumerator_superlat_enum
+   *  - To save results from enumerators of unique, primitive, canonical
+   *  Configurations: ::insert_unique_canon_configs
+   *  - To save results from enumerators of general Configurations: ::insert_configs
+   *
+   *
+   *  For Enumerators only meant to be used internally, in the global namespace
+   *  use the macros:
+   *    ENUM_TRAITS or ENUM_VARIABLECONST_TRAITS
+   *    and ENUM_MEMBERS
+   *
+   *  Requires source code definition of:
+   *
+   *  Variables:
+   *  - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
+   *
+   *
+   *  For Enumerators to be added to the API, in the global namespace use the
+   *  macros:
+   *    ENUM_INTERFACE_TRAITS or ENUM_INTERFACE_VARIABLECONST_TRAITS
+   *    and ENUM_INTERFACE_MEMBERS
+   *
+   *  Requires source code definition of:
+   *
+   *  Variables:
+   *  - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
+   *  - const std::string CASM::CASM_TMP::traits<EnumMethod>::help;
+   *
+   *  Function:
+   *  - int CASM::EnumInterface<EnumMethod>::run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const;
+   *
+   *  To enable use as a plugin:
+   *  - extern "C" { CASM::EnumInterfaceBase *make_EnumMethod_interface(); }
+   *  - To use an enumerator as a plugin for an existing CASM project, place the
+   *    source code in the `.casm/enumerators` directory in a file named
+   *    `EnumMethodName.cc`, where `EnumMethod` is the name of the enumerator
+   *    class.
+
+      @{
+  */
+
   template<typename ValueType, bool IsConst>
   class ValEnumerator;
 
@@ -438,30 +516,14 @@ namespace CASM {
   template<typename Derived>
   class EnumInterface {};
 
-
-
-  // For Enumerators only meant to be used internally, use the macros:
-  //   ENUM_TRAITS or ENUM_VARIABLECONST_TRAITS
-  //   and ENUM_MEMBERS
-  // Requires source code definition of:
-  //
-  // Variables:
-  // - const std::string CASM_TMP::traits<EnumMethod>::name;
-  //
-
-  // For Enumerators to be added to the API, use the macros:
-  //   ENUM_INTERFACE_TRAITS or ENUM_INTERFACE_VARIABLECONST_TRAITS
-  //   and ENUM_INTERFACE_MEMBERS
-  //
-  // Requires source code definition of:
-  //
-  // Variables:
-  // - const std::string CASM_TMP::traits<EnumMethod>::name;
-  // - const std::string CASM_TMP::traits<EnumMethod>::help;
-  //
-  // Function:
-  // - int EnumInterface<EnumMethod>::run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const;
-
+  /// For Enumerators only meant to be used internally, use the macros:
+  ///   ENUM_TRAITS or ENUM_VARIABLECONST_TRAITS
+  ///   and ENUM_MEMBERS
+  ///
+  /// Requires source code definition of:
+  ///
+  /// Variables:
+  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
 
 #define ENUMERATOR_TRAITS(EnumMethod)\
 namespace CASM {\
@@ -475,6 +537,15 @@ namespace CASM {\
     };\
   }\
 }
+
+  /// For Enumerators only meant to be used internally, use the macros:
+  ///   ENUM_TRAITS or ENUM_VARIABLECONST_TRAITS
+  ///   and ENUM_MEMBERS
+  ///
+  /// Requires source code definition of:
+  ///
+  /// Variables:
+  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
 
 #define ENUMERATOR_VARIABLECONST_TRAITS(EnumMethod)\
 namespace CASM {\
@@ -490,6 +561,22 @@ namespace CASM {\
   }\
 }
 
+  /// For Enumerators to be added to the API, use the macros:
+  ///   ENUM_INTERFACE_TRAITS or ENUM_INTERFACE_VARIABLECONST_TRAITS
+  ///   and ENUM_INTERFACE_MEMBERS
+  ///
+  /// Requires source code definition of:
+  ///
+  /// Variables:
+  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
+  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::help;
+  ///
+  /// Functions:
+  /// - int CASM::EnumInterface<EnumMethod>::run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const;
+  ///
+  /// To enable use as a plugin:
+  /// - extern "C" { CASM::EnumInterfaceBase *make_EnumMethod_interface(); }
+
 #define ENUMERATOR_MEMBERS(EnumMethod)\
   public:\
 \
@@ -499,6 +586,23 @@ namespace CASM {\
 \
  
 #define MAKE_INTERFACE(NAME) make_ ## NAME ## _command()
+
+
+  /// For Enumerators to be added to the API, use the macros:
+  ///   ENUM_INTERFACE_TRAITS or ENUM_INTERFACE_VARIABLECONST_TRAITS
+  ///   and ENUM_INTERFACE_MEMBERS
+  ///
+  /// Requires source code definition of:
+  ///
+  /// Variables:
+  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
+  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::help;
+  ///
+  /// Functions:
+  /// - int CASM::EnumInterface<EnumMethod>::run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const;
+  ///
+  /// To enable use as a plugin:
+  /// - extern "C" { CASM::EnumInterfaceBase *make_EnumMethod_interface(); }
 
 #define ENUMERATOR_INTERFACE_TRAITS(EnumMethod)\
 extern "C" CASM::EnumInterfaceBase* MAKE_INTERFACE(EnumMethod); \
@@ -542,6 +646,22 @@ namespace CASM {\
 \
   };\
 }
+
+  /// For Enumerators to be added to the API, use the macros:
+  ///   ENUM_INTERFACE_TRAITS or ENUM_INTERFACE_VARIABLECONST_TRAITS
+  ///   and ENUM_INTERFACE_MEMBERS
+  ///
+  /// Requires source code definition of:
+  ///
+  /// Variables:
+  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::name;
+  /// - const std::string CASM::CASM_TMP::traits<EnumMethod>::help;
+  ///
+  /// Functions:
+  /// - int CASM::EnumInterface<EnumMethod>::run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const;
+  ///
+  /// To enable use as a plugin:
+  /// - extern "C" { CASM::EnumInterfaceBase *make_EnumMethod_interface(); }
 
 #define ENUMERATOR_INTERFACE_VARIABLECONST_TRAITS(EnumMethod)\
 extern "C" CASM::EnumInterfaceBase* MAKE_INTERFACE(EnumMethod); \
@@ -587,6 +707,7 @@ namespace CASM {\
   };\
 }
 
+  /** @}*/
 
 }
 

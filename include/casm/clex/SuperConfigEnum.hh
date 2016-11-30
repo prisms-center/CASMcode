@@ -18,6 +18,9 @@ namespace CASM {
   /// - 'target_scel' is used to refer to the Supercell that is being tiled by
   ///   sub_config
   /// - enumerates all Configurations, including non-primitive and non-canonical
+  ///
+  /// \ingroup Enumerator
+  ///
   class SuperConfigEnum : public InputEnumeratorBase<Configuration> {
 
     // -- Required members -------------------

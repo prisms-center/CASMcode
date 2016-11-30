@@ -285,6 +285,8 @@ namespace CASM {
   }
 
   /// \brief Construct with PrimClex and JSON settings
+  ///
+  /// \see EnumInterface<ScelEnumT<IsConst> >::run
   template<bool IsConst>
   ScelEnumT<IsConst>::ScelEnumT(PrimClex &primclex, const jsonParser &input) {
 

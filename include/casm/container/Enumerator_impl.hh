@@ -80,6 +80,7 @@ namespace CASM {
   /// \brief Standardizes insertion from enumerators that construct unique
   /// primitive canonical configurations
   ///
+  /// \param method Enumerator name, printed to screen
   /// \param primclex PrimClex to add Configurations to
   /// \param begin,end Iterators over canonical Supercell
   /// \param f A function that signature `std::unique_ptr<EnumMethod> f(Supercell&)`
@@ -152,6 +153,7 @@ namespace CASM {
 
   /// \brief Standardizes insertion from enumerators that construct configurations
   ///
+  /// \param method Enumerator name, printed to screen
   /// \param primclex PrimClex to add Configurations to
   /// \param begin,end Iterators over lattice (need not be canonical), to be used for Supercell
   /// \param f A function that signature `std::unique_ptr<EnumMethod> f(Supercell&)`

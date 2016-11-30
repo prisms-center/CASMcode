@@ -17,8 +17,10 @@ extern "C" {
 
 namespace CASM {
 
+  /// \relates ConfigEnumAllOccupations
   const std::string CASM_TMP::traits<ConfigEnumAllOccupations>::name = "ConfigEnumAllOccupations";
 
+  /// \relates ConfigEnumAllOccupations
   const std::string CASM_TMP::traits<ConfigEnumAllOccupations>::help =
     "ConfigEnumAllOccupations: \n\n"
 
@@ -50,6 +52,7 @@ namespace CASM {
     "        } \n"
     "      }' \n\n";
 
+  /// \relates ConfigEnumAllOccupations
   int EnumInterface<ConfigEnumAllOccupations>::run(
     PrimClex &primclex,
     const jsonParser &_kwargs,

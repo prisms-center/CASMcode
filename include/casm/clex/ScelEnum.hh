@@ -11,6 +11,19 @@ ENUMERATOR_VARIABLECONST_TRAITS(ScelEnumByNameT)
 
 namespace CASM {
 
+  /** \defgroup ScelEnum
+   *
+   *  \ingroup Enumerator
+   *
+   *  @{
+  */
+
+
+  /// \brief Enumerate over Supercell
+  ///
+  /// - Specify Supercell by providing a list of names of Supercell already
+  ///   included in PrimClex
+  ///
   template<bool IsConst = true>
   class ScelEnumByNameT : public RandomAccessEnumeratorBase<Supercell, IsConst> {
 
@@ -46,7 +59,10 @@ namespace CASM {
     std::vector<Supercell *> m_scelptr;
   };
 
+  /// \relates ScelEnumByNameT
   typedef ScelEnumByNameT<true> ConstScelEnumByName;
+
+  /// \relates ScelEnumByNameT
   typedef ScelEnumByNameT<false> ScelEnumByName;
 }
 
@@ -55,6 +71,11 @@ ENUMERATOR_VARIABLECONST_TRAITS(ScelEnumByPropsT)
 
 namespace CASM {
 
+  /// \brief Enumerate over Supercell
+  ///
+  /// - Specify Supercell using ScelEnumProps (min/max volume, dirs, unit_cell)
+  /// - Enumerated Supercell are canonical, included in PrimClex
+  ///
   template<bool IsConst = true>
   class ScelEnumByPropsT : public InputEnumeratorBase<Supercell, IsConst> {
 
@@ -89,7 +110,10 @@ namespace CASM {
     bool m_existing_only;
   };
 
+  /// \relates ScelEnumByPropsT
   typedef ScelEnumByPropsT<true> ConstScelEnumByProps;
+
+  /// \relates ScelEnumByPropsT
   typedef ScelEnumByPropsT<false> ScelEnumByProps;
 
 }
@@ -101,9 +125,8 @@ namespace CASM {
 
   /// \brief Enumerate over Supercell
   ///
-  /// - Unified Interface for ScelEnumByName and ScelEnumByProps
-  ///
-  /// \ingroup ScelEnum
+  /// - Provides a unified Interface for ScelEnumByName and ScelEnumByProps
+  /// - Enumerated Supercell are canonical, included in PrimClex
   ///
   template<bool IsConst = true>
   class ScelEnumT : public InputEnumeratorBase<Supercell, IsConst> {
@@ -129,10 +152,13 @@ namespace CASM {
     InputEnumerator<Supercell, false> m_enum;
   };
 
+  /// \relates ScelEnumT
   typedef ScelEnumT<true> ConstScelEnum;
+
+  /// \relates ScelEnumT
   typedef ScelEnumT<false> ScelEnum;
 
-
+  /** @}*/
 }
 
 #endif

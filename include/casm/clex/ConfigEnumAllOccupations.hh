@@ -12,7 +12,7 @@ namespace CASM {
 
   /// \brief Enumerate over all possible occupations in a particular Supercell
   ///
-  /// \ingroup ConfigEnum
+  /// \ingroup Enumerator
   ///
   class ConfigEnumAllOccupations : public InputEnumeratorBase<Configuration> {
 

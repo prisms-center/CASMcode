@@ -13,7 +13,7 @@ namespace CASM {
 
   /// Enumerate strained Configurations
   ///
-  /// \ingroup ConfigEnum
+  /// \ingroup Enumerator
   ///
   class ConfigEnumStrain : public InputEnumeratorBase<Configuration> {
 

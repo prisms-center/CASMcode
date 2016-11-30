@@ -10,6 +10,10 @@ ENUMERATOR_TRAITS(ScelEnumEquivalents)
 
 namespace CASM {
 
+  /// \brief Enumerate equivalent Supercell
+  ///
+  /// \ingroup EnumEquivalents
+  ///
   class ScelEnumEquivalents :
     public EnumEquivalents <
     Supercell,

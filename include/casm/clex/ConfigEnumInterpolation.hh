@@ -11,7 +11,7 @@ namespace CASM {
   /// Interpolate displacements and strains between two configurations with
   /// identical occupation
   ///
-  /// \ingroup ConfigEnum
+  /// \ingroup Enumerator
   ///
   class ConfigEnumInterpolation : public RandomAccessEnumeratorBase<Configuration> {
 
