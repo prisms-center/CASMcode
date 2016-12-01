@@ -11,6 +11,8 @@ namespace CASM {
 
   /** \defgroup Enumerator
    *
+   *  \ingroup Container
+   *
    *  Enumerators are classes that implement methods to enumerate Supercells,
    *  Configurations, and other objects by providing iterators over a range of
    *  enumerated objects. The objects are not usually stored in the enumerators

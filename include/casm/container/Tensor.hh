@@ -21,6 +21,13 @@ namespace CASM {
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  /** \defgroup Tensor
+   *
+   *  \ingroup Container
+   *
+   *  @{
+  */
+
   template<class T>
   class Tensor : public Array<T> {
     Index Nrank;
@@ -1210,7 +1217,7 @@ namespace CASM {
     return true;
   }
 
-
+  /** @} */
 };
 
 #endif
