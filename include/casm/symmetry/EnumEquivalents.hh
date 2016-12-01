@@ -8,7 +8,10 @@ namespace CASM {
 
   /** \defgroup EnumEquivalents
    *
+   *  \brief Enumerate equivalent objects
+   *
    *  \ingroup Symmetry
+   *  \ingroup Enumerator
    *
    *  @{
   */

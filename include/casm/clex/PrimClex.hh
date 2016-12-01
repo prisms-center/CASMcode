@@ -27,7 +27,7 @@ namespace CASM {
 
   /// \defgroup Clex
   ///
-  /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
+  /// \brief The functions and classes related to evaluating cluster expansions
   ///
 
 
