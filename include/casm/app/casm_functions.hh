@@ -5,6 +5,14 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/Log.hh"
 
+/**
+ *  \defgroup API
+ *
+ *  \brief Relates to the CASM API
+ *
+ *  @{
+ */
+
 // Command line input is not valid
 #define ERR_INVALID_ARG 1
 
@@ -30,10 +38,20 @@
 // Unknown attempting to overwrite another CASM project
 #define ERR_OTHER_PROJ 8
 
+/** @} */
 
+/// \brief Main CASM namespace
 namespace CASM {
 
   class PrimClex;
+
+  /**
+   *  \defgroup API
+   *
+   *  \brief Relates to the CASM API
+   *
+   *  @{
+   */
 
   /// \brief Data structure holding basic CASM command info
   struct CommandArgs {
@@ -158,6 +176,7 @@ namespace CASM {
 
   int view_command(const CommandArgs &args);
 
+  /** @} */
 }
 
 #endif

@@ -7,6 +7,12 @@
 
 namespace CASM {
 
+  /**
+   * \ingroup Project
+   *
+   * @{
+   */
+
   /// return path to current or parent directory containing ".casm" directory
   ///   if none found, return empty path
   inline fs::path find_casmroot(const fs::path &cwd) {
@@ -386,6 +392,8 @@ namespace CASM {
     std::string m_clex_dir;
 
   };
+
+  /** @} */
 }
 
 #endif

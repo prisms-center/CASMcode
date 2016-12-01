@@ -25,6 +25,24 @@ namespace CASM {
     class Selected;
   }
 
+  /** \defgroup Project
+   *
+   *  \brief Relates to CASM project settings, directory structure, etc.
+   *
+   *  @{
+  */
+
+  /// \brief Specifies a particular cluster expansion
+  ///
+  /// - Cluster expansions are given an identifying name as a shortcut
+  /// - Cluster expansions are fully specified via:
+  ///   - property: the property being expanded, for instance 'formation_energy'
+  ///   - calctype: the type of calculations of the property the cluster
+  ///     expansion is fit to
+  ///   - ref: indicates a reference used to calculate the property being
+  ///     expanded
+  ///   - bset: the basis set used
+  ///
   struct ClexDescription {
     ClexDescription() {}
 
@@ -326,6 +344,7 @@ namespace CASM {
     return true;
   }
 
+  /** @} */
 }
 
 #endif
