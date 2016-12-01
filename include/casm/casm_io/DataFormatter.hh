@@ -22,6 +22,14 @@ namespace CASM {
   ///
   /// \brief Functions and classes related to formatting data
   ///
+  /// \ingroup casmIO
+
+
+  /// \defgroup DataFormatterTypes Basic Types
+  ///
+  /// \brief Base types for creating data formatters
+  ///
+  /// \ingroup DataFormatter
 
 
   class DataStream;
@@ -291,7 +299,7 @@ namespace CASM {
   /// The job of a DatumFormatter is to access and format a particular type of
   /// data that is stored in a <DataObject> class, which is a template paramter.
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
   class BaseDatumFormatter {

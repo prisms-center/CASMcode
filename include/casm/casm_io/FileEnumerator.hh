@@ -9,6 +9,10 @@ namespace CASM {
 
   // -- Get lists of files -----------------------------
 
+  /// \brief Lists all files in a CASM project, for use with 'casm files' command
+  ///
+  /// \ingroup casmIO
+  ///
   class FileEnumerator {
 
   public:
@@ -145,6 +149,7 @@ namespace CASM {
   /// - PRIM
   /// - project_settings.json
   /// - config_list.json
+  /// - enumerator plugins
   /// - SCEL
   /// - lattice_point_group.json
   /// - factor_group.json
@@ -159,6 +164,7 @@ namespace CASM {
     for(auto it = v.begin(); it != v.end(); ++it) {
       result = _if_exists(result, *it);
     }
+    result = _all_that_exists(result, m_dir.enumerators());
     return result;
   }
 
