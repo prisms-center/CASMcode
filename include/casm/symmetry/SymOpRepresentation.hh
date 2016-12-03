@@ -14,7 +14,7 @@ namespace CASM {
   class UnitCellCoord;
   class SymBasisPermute;
 
-  /** \defgroup Symmetry
+  /** \ingroup Symmetry
    *
    *  @{
   */
