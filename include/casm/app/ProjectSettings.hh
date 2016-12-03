@@ -29,6 +29,14 @@ namespace CASM {
    *
    *  \brief Relates to CASM project settings, directory structure, etc.
    *
+   *  A CASM project encompasses all the settings, calculations, cluster
+   *  expansions, Monte Carlo results, etc. related to a single parent
+   *  crystal structure (known as the 'prim').
+   *
+   *  All the results and data related to a CASM project are stored in a
+   *  directory with structure defined by the DirectoryStructure class, and
+   *  accessible through the top-level data structure PrimClex.
+   *
    *  @{
   */
 

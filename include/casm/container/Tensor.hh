@@ -24,7 +24,7 @@ namespace CASM {
   /** \defgroup Tensor
    *
    *  \ingroup Container
-   *
+   *  \brief Data structure representing tensors
    *  @{
   */
 

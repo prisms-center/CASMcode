@@ -377,20 +377,4 @@ namespace CASM {
     return formatter;
   }
 
-  //****************************************************************************************
-  /*
-    template<typename DataObject>
-    void DataFormatterParser<DataObject>::load_aliases(const fs::path &alias_path) {
-      if(!fs::exists(alias_path)) {
-        return;
-      }
-      jsonParser mjson(alias_path);
-
-      auto it(mjson.cbegin()), it_end(mjson.cend());
-      for(; it != it_end; ++it) {
-        add_custom_formatter(datum_formatter_alias<DataObject>(it.name(), it->get<std::string>()));
-      }
-    }
-    */
-
 }

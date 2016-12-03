@@ -25,6 +25,7 @@ namespace CASM {
   /** \defgroup LinearAlgebra
    *
    *  \ingroup Container
+   *  \brief Linear algebra routines
    *
    *  @{
   */

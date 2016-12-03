@@ -12,6 +12,7 @@ namespace CASM {
   /** \defgroup Enumerator
    *
    *  \ingroup Container
+   *  \brief Algorithms for enumerating objects such as Lattice, Supercell, Configuration
    *
    *  Enumerators are classes that implement methods to enumerate Supercells,
    *  Configurations, and other objects by providing iterators over a range of

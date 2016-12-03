@@ -29,11 +29,12 @@ namespace CASM {
    *  \defgroup Array
    *
    *  \ingroup Container
+   *  \brief Basic std::vector like container (deprecated)
    *
    *  @{
    */
 
-  /// \brief Basic std::vector like deprecated container
+  /// \brief Basic std::vector like container (deprecated)
   ///
   /// - Legacy container that incorporated various useful algorithms, now being
   ///   slowly replaced
