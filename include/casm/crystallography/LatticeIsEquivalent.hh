@@ -7,6 +7,10 @@
 namespace CASM {
 
   /// \brief Putting all the Lattice comparisons in one place
+  ///
+  /// \ingroup Lattice
+  /// \ingroup IsEquivalent
+  ///
   class LatticeIsEquivalent {
 
   public:

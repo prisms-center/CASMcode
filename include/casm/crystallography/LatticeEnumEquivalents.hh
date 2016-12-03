@@ -13,6 +13,10 @@ namespace CASM {
   ///
   /// - The 'begin' Lattice is always the canonical form, with respect to the
   ///   specified SymGroup
+  ///
+  /// \ingroup EnumEquivalents
+  /// \ingroup LatticeEnum
+  ///
   class LatticeEnumEquivalents :
     public EnumEquivalents<Lattice, Array<SymOp>::const_iterator, SymOp, SymRepIndexCompare> {
 

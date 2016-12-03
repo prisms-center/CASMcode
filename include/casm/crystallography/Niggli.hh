@@ -7,6 +7,10 @@ namespace CASM {
   class Lattice;
   class SymGroup;
 
+  /** \ingroup Lattice
+   *  @{
+   */
+
   /**
    * Returns a values of A, B, C, ksi, eta and zeta.
    * If the initialization cell has vector lenghts a, b and c,
@@ -131,6 +135,7 @@ namespace CASM {
   /// \brief Determine whether high_score has a more standard format than low_score
   bool standard_orientation_compare(const Eigen::Matrix3d &low_score_lat_mat, const Eigen::Matrix3d &high_score_lat_mat, double compare_tol);
 
+  /** @} */
 }
 
 #endif

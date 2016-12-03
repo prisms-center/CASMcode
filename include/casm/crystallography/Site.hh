@@ -9,6 +9,10 @@ namespace CASM {
 
   class SymOp;
 
+  /** \ingroup Coordinate
+   *  @{
+   */
+
   class Site : public Coordinate {
   public:
     explicit Site(const Lattice &init_home);
@@ -128,6 +132,7 @@ namespace CASM {
   Site operator+(const Site &LHS, const Coordinate &RHS);
   Site operator+(const Coordinate &LHS, const Site &RHS);
 
+  /** @} */
 }
 
 #endif

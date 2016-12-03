@@ -11,6 +11,12 @@
 
 namespace CASM {
 
+  /** \defgroup Molecule
+   *  \ingroup Crystallography
+   *  \brief Relates to Molecule
+   *  @{
+   */
+
   class Molecule;
   template <typename T>
   class OccupantDoF;
@@ -85,6 +91,12 @@ namespace CASM {
 
   //****************************************************
 
+  /** \defgroup Molecule
+   *  \ingroup Crystallography
+   *  \brief Relates to Molecule
+   *  @{
+   */
+
   class Molecule : public Array<AtomPosition> {
 
     Lattice const *m_home;
@@ -154,5 +166,6 @@ namespace CASM {
   // Lattice must be set already
   void from_json(Molecule &mol, const jsonParser &json);
 
+  /** @} */
 };
 #endif
