@@ -199,8 +199,7 @@ namespace CASM {
     else if(vm.count("input")) {
       input = jsonParser::parse(enum_opt.input_str());
     }
-
-    int res = enumerators[enum_opt.method()].run(*primclex, input, enum_opt);
+    int res = enumerators->find(enum_opt.method())->run(*primclex, input, enum_opt);
 
     args.log << std::endl;
 

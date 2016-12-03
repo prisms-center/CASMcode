@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
   OStringStreamLog ss_err_log;
 
   // construct PrimClex
-  PrimClex primclex(proj.dir, ss_log, ss_debug_log, ss_err_log);
+  PrimClex primclex(proj.dir, Logging(ss_log, ss_debug_log, ss_err_log));
 
   auto exec = [&](const std::string & args) {
     CommandArgs cmdargs(args, &primclex, proj.dir, ss_log, ss_err_log);
