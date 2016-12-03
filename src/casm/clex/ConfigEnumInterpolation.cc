@@ -8,15 +8,18 @@ extern "C" {
 
 namespace CASM {
 
-  const std::string CASM_TMP::traits<ConfigEnumInterpolation>::name = "ConfigEnumInterpolation";
+  const std::string ConfigEnumInterpolation::enumerator_name = "ConfigEnumInterpolation";
 
-  const std::string CASM_TMP::traits<ConfigEnumInterpolation>::help =
+  const std::string ConfigEnumInterpolation::interface_help =
     "ConfigEnumInterpolation: \n\n"
 
     "  ... include help documentation here ... \n\n";
 
-  int EnumInterface<ConfigEnumInterpolation>::run(PrimClex &primclex, const jsonParser &_kwargs) const {
-    throw std::runtime_error("EnumInterface<ConfigEnumAllOccupations>::run is not implemented");
+  int ConfigEnumInterpolation::run(
+    PrimClex &primclex,
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt) {
+    throw std::runtime_error("ConfigEnumAllOccupations::run is not implemented");
   }
 
   /// \brief Constructor

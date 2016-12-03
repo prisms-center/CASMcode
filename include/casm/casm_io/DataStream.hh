@@ -5,6 +5,8 @@
 #include <iostream>
 namespace CASM {
 
+  /// \ingroup DataFormatter
+  ///
   class DataStream {
   public:
     enum DataStreamTraits {

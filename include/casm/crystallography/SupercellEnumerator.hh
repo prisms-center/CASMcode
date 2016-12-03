@@ -16,6 +16,16 @@ namespace CASM {
 
   class PrimClex;
 
+  /** \defgroup LatticeEnum Lattice Enumerators
+   *
+   *  \ingroup Enumerator
+   *  \ingroup Lattice
+   *
+   *  \brief Enumerates Lattice
+   *
+   *  @{
+   */
+
   /// Data structure for holding supercell enumeration properties
   class ScelEnumProps {
 
@@ -677,6 +687,7 @@ namespace CASM {
   /// \brief Return canonical hermite normal form of the supercell matrix, and op used to find it
   Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const SymGroup &effective_pg, const Lattice &ref_lattice);
 
+  /** @} */
 }
 
 #endif

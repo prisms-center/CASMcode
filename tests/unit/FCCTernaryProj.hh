@@ -200,7 +200,7 @@ namespace test {
     void check_enum() override {
 
       {
-        m_p.popen(cd_and() + "casm enum -i '{\"ScelEnum\":{\"max\":10}}'");
+        m_p.popen(cd_and() + "casm enum --method ScelEnum --max 10");
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);
@@ -208,7 +208,7 @@ namespace test {
       }
 
       {
-        m_p.popen(cd_and() + "casm enum -i '{\"ConfigEnumAllOccupations\":{\"supercells\":{\"max\":6}}}'");
+        m_p.popen(cd_and() + "casm enum --method ConfigEnumAllOccupations --max 6");
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);

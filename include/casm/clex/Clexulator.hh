@@ -235,7 +235,7 @@ namespace CASM {
   /// the print_clexulator function. This source code may be compiled, linked,
   /// and used at runtime via Clexulator.
   ///
-  /// \ingroup Clex
+  /// \ingroup ClexClex
   ///
   class Clexulator {
 

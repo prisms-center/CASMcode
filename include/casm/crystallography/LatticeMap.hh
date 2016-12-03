@@ -4,6 +4,11 @@
 #include "casm/container/LinearAlgebra.hh"
 
 namespace CASM {
+
+  /** \ingroup Lattice
+   *  @{
+   */
+
   /// Find the ideal mapping of Lattice _ideal onto Lattice _strained
   /// Denoting _ideal.lat_column_mat() as 'L1' and _strained.lat_column_mat() as 'L2', we want a mapping
   ///            L2 = F*L1*N
@@ -57,5 +62,7 @@ namespace CASM {
     double _calc_strain_cost() const;
 
   };
+
+  /** @} */
 }
 #endif

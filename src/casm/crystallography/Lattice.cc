@@ -7,19 +7,21 @@
 
 namespace CASM {
 
+  namespace {
 
-#define VEC_LAT_IT std::vector<Lattice>::iterator
-#define VEC_SYMOP_BACK_INSERTER std::back_insert_iterator<std::vector<SymOp> >
-#define ARRAY_SYMOP_CIT Array<SymOp>::const_iterator
+    typedef std::vector<Lattice>::iterator vec_lat_it;
+    typedef std::back_insert_iterator<std::vector<SymOp> > vec_symop_back_inserter;
+    typedef Array<SymOp>::const_iterator array_symop_cit;
+  }
 
-  template Lattice superdupercell<VEC_LAT_IT, ARRAY_SYMOP_CIT>(
-    VEC_LAT_IT, VEC_LAT_IT, ARRAY_SYMOP_CIT, ARRAY_SYMOP_CIT);
+  template Lattice superdupercell<vec_lat_it, array_symop_cit>(
+    vec_lat_it, vec_lat_it, array_symop_cit, array_symop_cit);
 
-  template VEC_SYMOP_BACK_INSERTER Lattice::find_invariant_subgroup<ARRAY_SYMOP_CIT, VEC_SYMOP_BACK_INSERTER>(
-    ARRAY_SYMOP_CIT, ARRAY_SYMOP_CIT, VEC_SYMOP_BACK_INSERTER, double) const;
+  template vec_symop_back_inserter Lattice::find_invariant_subgroup<array_symop_cit, vec_symop_back_inserter>(
+    array_symop_cit, array_symop_cit, vec_symop_back_inserter, double) const;
 
-  template std::pair<ARRAY_SYMOP_CIT, Eigen::MatrixXi> CASM::is_supercell<Lattice, ARRAY_SYMOP_CIT>(
-    const Lattice &, const Lattice &, ARRAY_SYMOP_CIT, ARRAY_SYMOP_CIT, double);
+  template std::pair<array_symop_cit, Eigen::MatrixXi> CASM::is_supercell<Lattice, array_symop_cit>(
+    const Lattice &, const Lattice &, array_symop_cit, array_symop_cit, double);
 
 
   Lattice::Lattice(const Eigen::Vector3d &vec1,

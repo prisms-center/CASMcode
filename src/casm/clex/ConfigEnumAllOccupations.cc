@@ -6,6 +6,8 @@
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/completer/Handlers.hh"
+#include "casm/container/Enumerator_impl.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_ConfigEnumAllOccupations_interface() {
@@ -15,9 +17,9 @@ extern "C" {
 
 namespace CASM {
 
-  const std::string CASM_TMP::traits<ConfigEnumAllOccupations>::name = "ConfigEnumAllOccupations";
+  const std::string ConfigEnumAllOccupations::enumerator_name = "ConfigEnumAllOccupations";
 
-  const std::string CASM_TMP::traits<ConfigEnumAllOccupations>::help =
+  const std::string ConfigEnumAllOccupations::interface_help =
     "ConfigEnumAllOccupations: \n\n"
 
     "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
@@ -31,95 +33,44 @@ namespace CASM {
     "\n"
     "  Examples:\n"
     "    To enumerate all occupations in supercells up to and including size 4:\n"
-    "     '{\"ConfigEnumAllOccupations\": {\"supercells\": {\"max\": 4}}}' \n"
+    "      casm enum --method ConfigEnumAllOccupations -i '{\"supercells\": {\"max\": 4}}' \n"
     "\n"
     "    To enumerate all occupations in all existing supercells:\n"
-    "     '{\"ConfigEnumAllOccupations\": {}}' \n"
+    "      casm enum --method ConfigEnumAllOccupations\n"
     "\n"
     "    To enumerate all occupations in all particular supercells:\n"
-    "     '{ \n"
-    "        \"ConfigEnumAllOccupations\": { \n"
-    "          \"supercells\": { \n"
-    "            \"name\": [\n"
-    "              \"SCEL1_1_1_1_0_0_0\",\n"
-    "              \"SCEL2_1_2_1_0_0_0\",\n"
-    "              \"SCEL4_1_4_1_0_0_0\"\n"
-    "            ]\n"
-    "          } \n"
+    "      casm enum --method ConfigEnumAllOccupations -i \n"
+    "      '{ \n"
+    "        \"supercells\": { \n"
+    "          \"name\": [\n"
+    "            \"SCEL1_1_1_1_0_0_0\",\n"
+    "            \"SCEL2_1_2_1_0_0_0\",\n"
+    "            \"SCEL4_1_4_1_0_0_0\"\n"
+    "          ]\n"
     "        } \n"
     "      }' \n\n";
 
+  int ConfigEnumAllOccupations::run(
+    PrimClex &primclex,
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt) {
 
-  int EnumInterface<ConfigEnumAllOccupations>::run(PrimClex &primclex, const jsonParser &_kwargs) const {
+    std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
+    std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
-    jsonParser kwargs {_kwargs};
-    if(kwargs.is_null()) {
-      kwargs = jsonParser::object();
-    }
-
-    // default is use all existing Supercells
-    jsonParser scel_input;
-    scel_input["existing_only"] = true;
-    kwargs.get_if(scel_input, "supercells");
-
-    ScelEnum scel_enum(primclex, scel_input);
-
-    Log &log = primclex.log();
-
-    Index Ninit = std::distance(primclex.config_begin(), primclex.config_end());
-    log << "# configurations in this project: " << Ninit << "\n" << std::endl;
-
-    log.begin(name());
-
-    std::vector<std::string> filter_expr;
-
-    if(kwargs.contains("filter")) {
-      filter_expr.push_back(kwargs["filter"].get<std::string>());
+    auto lambda = [&](Supercell & scel) {
+      return notstd::make_unique<ConfigEnumAllOccupations>(scel);
     };
 
-    for(auto &scel : scel_enum) {
+    int returncode = insert_unique_canon_configs(
+                       enumerator_name,
+                       primclex,
+                       scel_enum->begin(),
+                       scel_enum->end(),
+                       lambda,
+                       filter_expr);
 
-      log << "Enumerate configurations for " << scel.get_name() << " ...  " << std::flush;
-
-      ConfigEnumAllOccupations enumerator(scel);
-      Index num_before = scel.get_config_list().size();
-      if(kwargs.contains("filter")) {
-        try {
-          scel.add_unique_canon_configs(
-            filter_begin(
-              enumerator.begin(),
-              enumerator.end(),
-              filter_expr,
-              primclex.settings().query_handler<Configuration>().dict()),
-            filter_end(enumerator.end())
-          );
-        }
-        catch(std::exception &e) {
-          primclex.err_log() << "Cannot filter configurations using the expression provided: \n" << e.what() << "\nExiting...\n";
-          return ERR_INVALID_ARG;
-        }
-      }
-      else {
-        scel.add_unique_canon_configs(enumerator.begin(), enumerator.end());
-      }
-
-      log << (scel.get_config_list().size() - num_before) << " configs." << std::endl;
-    }
-    log << "  DONE." << std::endl << std::endl;
-
-    Index Nfinal = std::distance(primclex.config_begin(), primclex.config_end());
-
-    log << "# new configurations: " << Nfinal - Ninit << "\n";
-    log << "# configurations in this project: " << Nfinal << "\n" << std::endl;
-
-    log << "Write SCEL..." << std::endl;
-    primclex.print_supercells();
-    log << "  DONE" << std::endl << std::endl;
-
-    log << "Writing config_list..." << std::endl;
-    primclex.write_config_list();
-    log << "  DONE" << std::endl;
-    return 0;
+    return returncode;
   }
 
 

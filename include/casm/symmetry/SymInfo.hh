@@ -12,6 +12,10 @@
 
 namespace CASM {
 
+  /** \ingroup Symmetry
+   *  @{
+   */
+
   enum class symmetry_type {
     identity_op,
     mirror_op,
@@ -76,6 +80,7 @@ namespace CASM {
   /// \brief Add to existing JSON object
   void add_sym_info(const SymInfo &info, jsonParser &j);
 
+  /** @} */
 }
 
 #endif

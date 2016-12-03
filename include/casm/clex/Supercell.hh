@@ -26,9 +26,13 @@ namespace CASM {
 
   };
 
-  /// \brief Represents a supercell of a PrimClex
-  ///
-  /// \ingroup Clex
+  /** \defgroup Supercell
+   *  \ingroup Clex
+   *  \brief Represents a supercell of the primitive parent crystal structure
+   *  @{
+   */
+
+  /// \brief Represents a supercell of the primitive parent crystal structure
   ///
   class Supercell : public Comparisons<Supercell> {
 
@@ -513,5 +517,6 @@ namespace CASM {
 
   std::string generate_name(const Eigen::Matrix3i &transf_mat);
 
+  /** @} */
 }
 #endif

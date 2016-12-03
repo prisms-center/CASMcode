@@ -1293,6 +1293,27 @@ namespace CASM {
     return f(B);
   }
 
+  std::pair<std::string, Index> Configuration::split_name(std::string configname) {
+    std::vector<std::string> splt_vec;
+    boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
+    Index config_ind;
+    if(splt_vec.size() != 2) {
+      default_err_log().error("Parsing configuration name");
+      default_err_log() << "configuration '" << configname << "' not valid." << std::endl;
+      throw std::invalid_argument("Error in Configuration::split_name(const std::string &configname) const: Not valid");
+    }
+
+    try {
+      config_ind = boost::lexical_cast<Index>(splt_vec[1]);
+    }
+    catch(boost::bad_lexical_cast &e) {
+      default_err_log().error("Invalid config index");
+      default_err_log() << "CRITICAL ERROR: In PrimClex::configuration(), malformed input:" << configname << "\n";
+      throw e;
+    }
+    return std::make_pair(splt_vec[0], config_ind);
+  }
+
   bool Configuration::_eq(const Configuration &B) const {
     if(get_supercell() != B.get_supercell()) {
       return false;

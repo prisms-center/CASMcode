@@ -9,11 +9,11 @@
 
 namespace CASM {
 
-  /// \defgroup ConfigIO
+  /// \defgroup ConfigIO Configuration Queries
   ///
-  /// \brief DatumFormatters that act on Configuration
+  /// \brief Data formatters that return Configuration properties
   ///
-  /// \ingroup Configuration
+  /// \ingroup DataFormatter
 
 
   class Configuration;
@@ -24,14 +24,16 @@ namespace CASM {
   template<bool IsConst>
   class ConfigSelection;
 
+  /**  \addtogroup ConfigIO
+       @{
+   */
+
   namespace ConfigIO_impl {
 
     /// \brief Returns fraction of sites occupied by a species
     ///
     /// Fraction of sites occupied by a species, including vacancies. No argument
     /// prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.
-    ///
-    /// \ingroup ConfigIO
     ///
     class MolDependent : public VectorXdAttribute<Configuration> {
 
@@ -66,8 +68,6 @@ namespace CASM {
 
     /// \brief Template alias for Configuration formatters of specified ValueType
     ///
-    /// \ingroup ConfigIO
-    ///
     template<typename ValueType>
     using GenericConfigFormatter = GenericDatumFormatter<ValueType, Configuration>;
 
@@ -77,7 +77,6 @@ namespace CASM {
 
     /// \brief Calculate param composition of a Configuration
     ///
-    /// \ingroup ConfigIO
     class Comp : public VectorXdAttribute<Configuration> {
 
     public:
@@ -125,7 +124,6 @@ namespace CASM {
 
     /// \brief Calculate number of each species per unit cell
     ///
-    /// \ingroup ConfigIO
     class CompN : public ConfigIO_impl::MolDependent {
 
     public:
@@ -164,8 +162,6 @@ namespace CASM {
     /// Fraction of sites occupied by a species, including vacancies. No argument
     /// prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.
     ///
-    /// \ingroup ConfigIO
-    ///
     class SiteFrac : public ConfigIO_impl::MolDependent {
 
     public:
@@ -202,8 +198,6 @@ namespace CASM {
     ///
     /// Fraction of species that are a particular species, excluding vacancies.
     /// Without argument, all values are printed. Ex: atom_frac(Au), atom_frac(Pt), etc.
-    ///
-    /// \ingroup ConfigIO
     ///
     class AtomFrac : public ConfigIO_impl::MolDependent {
 
@@ -242,8 +236,6 @@ namespace CASM {
     /// \brief Returns correlation values
     ///
     /// Evaluated basis function values, normalized per primitive cell;
-    ///
-    /// \ingroup ConfigIO
     ///
     class Corr : public VectorXdAttribute<Configuration> {
 
@@ -297,8 +289,6 @@ namespace CASM {
     /// \brief Returns predicted formation energy
     ///
     /// Returns predicted formation energy (only formation energy for now)
-    ///
-    /// \ingroup ConfigIO
     ///
     class Clex : public ScalarAttribute<Configuration> {
 
@@ -423,6 +413,8 @@ namespace CASM {
 
   template<>
   VectorXdAttributeDictionary<Configuration> make_vectorxd_dictionary<Configuration>();
+
+  /** @} */
 
 }
 

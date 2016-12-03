@@ -8,7 +8,10 @@
 
 
 namespace CASM {
-  class Site;
+
+  /** \ingroup Structure
+   *  @{
+   */
 
   template< bool IsConst >
   class SimpleJSonSiteStructure {
@@ -113,6 +116,7 @@ namespace CASM {
     return SimpleJSonSiteStructure<false>(struc, prefix);
   }
 
+  /** @} */
 }
 
 #endif

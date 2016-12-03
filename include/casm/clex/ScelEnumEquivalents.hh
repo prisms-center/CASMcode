@@ -6,10 +6,13 @@
 #include "casm/symmetry/EnumEquivalents.hh"
 #include "casm/clex/Supercell.hh"
 
-ENUMERATOR_TRAITS(ScelEnumEquivalents)
-
 namespace CASM {
 
+  /// \brief Enumerate equivalent Supercell
+  ///
+  /// \ingroup EnumEquivalents
+  /// \ingroup ScelEnumGroup
+  ///
   class ScelEnumEquivalents :
     public EnumEquivalents <
     Supercell,
@@ -23,7 +26,12 @@ namespace CASM {
 
     ScelEnumEquivalents(const Supercell &scel);
 
-    ENUMERATOR_MEMBERS(ScelEnumEquivalents)
+    std::string name() const override {
+      return enumerator_name;
+    }
+
+    static const std::string enumerator_name;
+
   };
 
 }

@@ -14,12 +14,30 @@ namespace CASM {
 
     void EnumOption::initialize() {
       bool required = false;
-      add_desc_vec_suboption();
-      add_verbosity_suboption();
 
-      // must have one
+      m_desc.add_options()
+      ("help,h", "Print help message.")
+      ("desc",
+       po::value<std::vector<std::string> >(&m_desc_vec)->multitoken()->zero_tokens(),
+       "Print extended usage description. "
+       "Use '--desc MethodName [MethodName2...]' for detailed option description. "
+       "Partial matches of method names will be included.")
+      ("method", po::value<std::string>(&m_method), "Method to use")
+      ("min", po::value<int>(&m_min_volume)->default_value(1), "Min volume")
+      ("max", po::value<int>(&m_max_volume), "Max volume")
+      ("filter",
+       po::value<std::vector<std::string> >(&m_filter_strs)->multitoken()->value_name(ArgHandler::query()),
+       "Filter configuration enumeration so that only configurations matching a "
+       "'casm query'-type expression are recorded")
+      ("all,a",
+       po::bool_switch(&m_all_existing)->default_value(false),
+       "Enumerate configurations for all existing supercells");
+
+      add_verbosity_suboption();
       add_settings_suboption(required);
       add_input_suboption(required);
+      add_scelnames_suboption();
+      add_confignames_suboption();
 
       return;
     }
@@ -38,8 +56,8 @@ namespace CASM {
     EnumeratorMap *enumerators;
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex *primclex;
-    po::variables_map vm;
     Completer::EnumOption enum_opt;
+    po::variables_map &vm = enum_opt.vm();
     const fs::path &root = args.root;
 
     try {
@@ -53,8 +71,13 @@ namespace CASM {
           return ERR_NO_PROJ;
         }
 
-        if(vm.count("settings") + vm.count("input") != 1) {
-          args.err_log << "Error in 'casm enum'. One and only one of --settings or --input must be chosen." << std::endl;
+        if(vm.count("method") != 1) {
+          args.err_log << "Error in 'casm enum'. The --method option is required." << std::endl;
+          return ERR_INVALID_ARG;
+        }
+
+        if(vm.count("settings") + vm.count("input") == 2) {
+          args.err_log << "Error in 'casm enum'. The options --settings or --input may not both be chosen." << std::endl;
           return ERR_INVALID_ARG;
         }
       }
@@ -167,7 +190,6 @@ namespace CASM {
       args.err_log << enum_opt.desc() << std::endl;
       args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_UNKNOWN;
-
     }
 
     jsonParser input;
@@ -177,12 +199,8 @@ namespace CASM {
     else if(vm.count("input")) {
       input = jsonParser::parse(enum_opt.input_str());
     }
-    if(input.size() != 1) {
-      args.err_log.error("Expected a single attribute in the input");
-      args.err_log << std::endl;
-    }
-    auto it = input.begin();
-    int res = enumerators->find(it.name())->run(*primclex, *it);
+
+    int res = enumerators[enum_opt.method()].run(*primclex, input, enum_opt);
 
     args.log << std::endl;
 

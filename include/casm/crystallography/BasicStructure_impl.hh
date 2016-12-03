@@ -646,7 +646,6 @@ namespace CASM {
     CoordType2 tsite = bsite;
 
     tsite.set_lattice(lattice(), CART);
-    int x, y, z;
 
     Index b;
 

@@ -15,14 +15,17 @@ extern "C" {
 
 namespace CASM {
 
-  const std::string CASM_TMP::traits<ConfigEnumStrain>::name = "ConfigEnumStrain";
+  const std::string ConfigEnumStrain::enumerator_name = "ConfigEnumStrain";
 
-  const std::string CASM_TMP::traits<ConfigEnumStrain>::help =
+  const std::string ConfigEnumStrain::interface_help =
     "ConfigEnumStrain: \n\n"
 
     "  ... include help documentation here ... \n\n";
 
-  int EnumInterface<ConfigEnumStrain>::run(PrimClex &primclex, const jsonParser &_kwargs) const {
+  int ConfigEnumStrain::run(
+    PrimClex &primclex,
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt) {
     throw std::runtime_error("EnumInterface<Strain>::run is not implemented");
   }
 

@@ -27,16 +27,28 @@ namespace CASM {
 
   template<typename T, typename U> class ConfigIterator;
 
-  /// \defgroup Clex
-  ///
-  /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
-  ///
+  /** \defgroup Clex
+   *
+   * \brief The functions and classes related to evaluating cluster expansions
+   */
 
+  /** \defgroup PrimClex
+   *  \ingroup Clex
+   *  \ingroup Project
+   *  \brief PrimClex is the top-level data structure for a CASM project
+   *
+   *  @{
+   */
 
-  /// \brief PrimClex stores the primitive Structure and lots of related data
+  /// \brief PrimClex is the top-level data structure for a CASM project
   ///
-  /// \ingroup Clex
-  ///
+  /// The PrimClex provides access to:
+  /// - the parent crystal structure, the `prim`
+  /// - project files & settings
+  /// - composition axes & references
+  /// - supercells & configurations
+  /// - clusters, basis sets, neighbor lists, & ECI
+  /// -
   class PrimClex : public Logging {
 
     fs::path root;
@@ -267,6 +279,9 @@ namespace CASM {
     int amount_selected() const;
 
     bool contains_supercell(std::string scellname, Index &index) const;
+
+    bool contains_supercell(const Supercell &scel) const;
+    bool contains_supercell(const Supercell &scel, Index &index) const;
 
     Index add_supercell(const Lattice &superlat);
 

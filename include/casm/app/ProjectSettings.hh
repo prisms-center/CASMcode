@@ -27,6 +27,32 @@ namespace CASM {
     class Selected;
   }
 
+  /** \defgroup Project
+   *
+   *  \brief Relates to CASM project settings, directory structure, etc.
+   *
+   *  A CASM project encompasses all the settings, calculations, cluster
+   *  expansions, Monte Carlo results, etc. related to a single parent
+   *  crystal structure (known as the 'prim').
+   *
+   *  All the results and data related to a CASM project are stored in a
+   *  directory with structure defined by the DirectoryStructure class, and
+   *  accessible through the top-level data structure PrimClex.
+   *
+   *  @{
+  */
+
+  /// \brief Specifies a particular cluster expansion
+  ///
+  /// - Cluster expansions are given an identifying name as a shortcut
+  /// - Cluster expansions are fully specified via:
+  ///   - property: the property being expanded, for instance 'formation_energy'
+  ///   - calctype: the type of calculations of the property the cluster
+  ///     expansion is fit to
+  ///   - ref: indicates a reference used to calculate the property being
+  ///     expanded
+  ///   - bset: the basis set used
+  ///
   struct ClexDescription {
     ClexDescription() {}
 
@@ -369,6 +395,7 @@ namespace CASM {
     return true;
   }
 
+  /** @} */
 }
 
 #endif

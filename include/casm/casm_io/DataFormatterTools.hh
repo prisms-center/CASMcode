@@ -481,7 +481,7 @@ namespace CASM {
 
   /// \brief Implements a DatumFormatter that is an alias for a combination of others
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
   class DatumFormatterAlias: public BaseDatumFormatter<DataObject> {
@@ -635,7 +635,7 @@ namespace CASM {
 
   /// \brief Prints a string value specified at construction.  A header string can also be passed.
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename ValueType, typename DataObject>
   class ConstantValueFormatter: public BaseDatumFormatter<DataObject> {
@@ -699,7 +699,7 @@ namespace CASM {
   ///
   /// \seealso GenericDatumFormatter to specialize a scalar DatumFormatter at runtime
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename ValueType, typename DataObject>
   class BaseValueFormatter :
@@ -778,7 +778,7 @@ namespace CASM {
   /// \brief A DatumFormatter that returns a value of specified type, via functions
   ///        that may be specified at runtime
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename ValueType, typename DataObject>
   class GenericDatumFormatter : public BaseValueFormatter<ValueType, DataObject> {
@@ -879,7 +879,7 @@ namespace CASM {
   ///
   /// \seealso Generic1DDatumFormatter to specialize a 1D DatumFormatter at runtime.
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename Container, typename DataObject>
   class Base1DDatumFormatter :
@@ -1000,7 +1000,7 @@ namespace CASM {
   /// \brief A DatumFormatter that returns a 1D value of specified type, via functions
   ///        that may be specified at runtime
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename Container, typename DataObject>
   class Generic1DDatumFormatter : public Base1DDatumFormatter<Container, DataObject> {
@@ -1060,7 +1060,7 @@ namespace CASM {
 
   /// \brief Template alias for BaseValueFormatter returning std::string
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
   using StringAttribute = BaseValueFormatter<std::string, DataObject>;
@@ -1082,7 +1082,7 @@ namespace CASM {
 
   /// \brief Template alias for BaseValueFormatter returning bool
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
   using BooleanAttribute = BaseValueFormatter<bool, DataObject>;
@@ -1104,7 +1104,7 @@ namespace CASM {
 
   /// \brief Template alias for BaseValueFormatter returning Index
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
   using IntegerAttribute = BaseValueFormatter<Index, DataObject>;
@@ -1126,7 +1126,7 @@ namespace CASM {
 
   /// \brief Template alias for BaseValueFormatter returning double
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
   using ScalarAttribute = BaseValueFormatter<double, DataObject>;
@@ -1148,7 +1148,7 @@ namespace CASM {
 
   /// \brief Template alias for BaseValueFormatter returning Eigen::VectorXd
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
   using VectorXdAttribute = Base1DDatumFormatter<Eigen::VectorXd, DataObject>;

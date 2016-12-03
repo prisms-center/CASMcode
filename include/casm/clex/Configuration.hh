@@ -47,6 +47,8 @@ namespace CASM {
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
   ///
   /// \ingroup Clex
+  ///
+  /// @{
 
 
   /// \brief Holds results of Configuration::insert
@@ -56,8 +58,6 @@ namespace CASM {
   ///   non-primitive
   /// - 'primitive' refers to the primitive canonical Configuration.
   ///
-  /// \ingroup Configuration
-  /// \ingroup Clex
   struct ConfigInsertResult {
 
     typedef ConfigIterator<const Configuration, const PrimClex> config_const_iterator;
@@ -78,8 +78,6 @@ namespace CASM {
 
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
   ///
-  /// \ingroup Configuration
-  /// \ingroup Clex
   class Configuration : public Comparisons<Configuration> {
   private:
 
@@ -604,6 +602,8 @@ namespace CASM {
     /// - Must have the same Supercell
     bool operator<(const Configuration &B) const;
 
+    /// \brief Split configuration name string into scelname and config index
+    static std::pair<std::string, Index> split_name(std::string configname);
 
   private:
     /// Convenience accessors:
@@ -812,6 +812,8 @@ namespace CASM {
   void reset_properties(Configuration &_config) {
     _config.set_calc_properties(jsonParser());
   }
+
+  /** @} */
 
 }
 

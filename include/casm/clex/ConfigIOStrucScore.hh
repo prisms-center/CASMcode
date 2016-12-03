@@ -12,9 +12,11 @@ namespace CASM {
   class Configuration;
 
   namespace ConfigIO {
-    /*
-     */
 
+    /// \brief Evaluates the mapping of a configuration onto an arbitrary primitive structure
+    ///
+    /// \ingroup ConfigIO
+    ///
     class StrucScore: public VectorXdAttribute<Configuration> {
     public:
       StrucScore() :

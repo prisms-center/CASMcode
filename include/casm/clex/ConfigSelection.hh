@@ -17,6 +17,10 @@ namespace CASM {
 
   typedef ConfigSelection<true> ConstConfigSelection;
 
+  /** \defgroup Selection
+   *  \brief Enables creating, reading, writing, and using selections of objects
+   *  @{
+   */
 
   template <bool IsConst, bool IsConstIterator>
   class ConfigSelectionIterator : public std::iterator <std::bidirectional_iterator_tag,
@@ -391,6 +395,7 @@ namespace CASM {
     std::string convert_variable(const std::string &q, const Configuration &config);
   }
 
+  /** @} */
 }
 #include "casm/clex/ConfigSelection_impl.hh"
 #endif
