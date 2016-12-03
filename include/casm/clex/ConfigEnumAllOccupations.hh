@@ -13,9 +13,9 @@ extern "C" {
 namespace CASM {
 
   /** \defgroup ConfigEnumGroup Configuration Enumerators
-   *
+   *  \ingroup Configuration
    *  \ingroup Enumerator
-   *
+   *  \brief Enumerates Configuration
    *  @{
   */
 

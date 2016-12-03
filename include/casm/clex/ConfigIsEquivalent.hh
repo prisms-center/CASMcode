@@ -6,10 +6,17 @@
 
 namespace CASM {
 
+  /** \defgroup ConfigIsEquivalent
+   *  \ingroup Configuration
+   *  \brief Methods for comparing Configurations (with the same Supercell)
+   *  @{
+   */
+
   /// \brief Class for comparison of Configurations (with the same Supercell)
   ///
   /// - The call operators return the value for equality comparison,
   ///   and if not equivalent, also store the result for less than comparison
+  ///
   class ConfigIsEquivalent {
 
   public:
@@ -139,6 +146,7 @@ namespace CASM {
     mutable bool m_less;
   };
 
+  /** @} */
 }
 
 #endif

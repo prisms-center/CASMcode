@@ -7,6 +7,10 @@
 
 namespace CASM {
 
+  /** \ingroup ConfigIsEquivalent
+   *  @{
+   */
+
   /// Namespace containing DoF comparison functors
   namespace DoFIsEquivalent {
 
@@ -471,6 +475,7 @@ namespace CASM {
     return ConfigDoFIsEquivalent(notstd::make_unique<ConfigDoFIsEquivalentType>(std::forward<Args>(args)...));
   }
 
+  /** @} */
 }
 
 #endif

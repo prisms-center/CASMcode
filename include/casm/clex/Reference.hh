@@ -17,6 +17,12 @@ namespace CASM {
 
   typedef ScalarAttribute<Configuration> Reference;
 
+  /** \defgroup Reference
+   *
+   *  \ingroup Clex
+   *  \brief Specify a reference for a cluster expanded property
+   *  @{
+   */
 
   /// \brief Maps all Configurations to the same value
   class ConstantReference : public Reference {
@@ -283,6 +289,7 @@ namespace CASM {
 
   };
 
+  /** @} */
 
 }
 
