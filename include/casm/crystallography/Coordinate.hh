@@ -28,6 +28,9 @@ namespace CASM {
     typedef Eigen::Vector3d vector_type;
     typedef vector_type::Index size_type;
 
+    /// \brief construct a coordinate describing origin of _home lattice
+    static Coordinate origin(const Lattice &_home);
+
     // NOTE: Coordinate does not have a default constructor
     // e.g: this is not allowed-> Coordinate() : home(nullptr) { is_current[FRAC]=false; is_current[CART]=false;};
 
@@ -278,6 +281,11 @@ namespace CASM {
 
     Index m_basis_ind;
   };
+
+  inline
+  Coordinate Coordinate::origin(const Lattice &_home) {
+    return Coordinate(_home);
+  }
 
   jsonParser &to_json(const Coordinate &value, jsonParser &json);
 
