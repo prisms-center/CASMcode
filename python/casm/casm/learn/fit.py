@@ -1898,6 +1898,7 @@ def checkhull(input, hall, indices=None, verbose=True):
   # tolerance for finding configurations 'on_hull'
   d = input["checkhull"]
   selection = d["selection"]
+  composition = d["composition"]
   write_results = d["write_results"]
   hull_tol = d["hull_tol"]
   uncalculated_range = d["uncalculated_range"]
@@ -1935,11 +1936,11 @@ def checkhull(input, hall, indices=None, verbose=True):
   is_primitive = "is_primitive"
   is_calculated = "is_calculated"
   configname = "configname"
-  dft_hull_dist_long = "hull_dist(" + dft_selection + ",atom_frac)"
+  dft_hull_dist_long = "hull_dist(" + dft_selection + "," + composition + ")"
   dft_hull_dist = "dft_hull_dist"
-  clex_hull_dist_long = "clex_hull_dist(" + selection + ",atom_frac)"
+  clex_hull_dist_long = "clex_hull_dist(" + selection + "," + composition + ")"
   clex_hull_dist = "clex_hull_dist"
-  clex_dft_hull_dist_long = "clex_hull_dist(" + dft_hull_selection + ",atom_frac)"
+  clex_dft_hull_dist_long = "clex_hull_dist(" + dft_hull_selection + "," + composition + ")"
   clex_dft_hull_dist = "clex_dft_hull_dist"
   comp = "comp"
   dft_Eform = "formation_energy"
