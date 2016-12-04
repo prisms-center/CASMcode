@@ -169,9 +169,8 @@ namespace CASM {
   template<bool IsConst>
   bool ScelEnumByPropsT<IsConst>::_include(const Lattice &lat) const {
     if(m_existing_only) {
-      Lattice canon_lat = canonical_equivalent_lattice(
-                            *m_lat_it,
-                            m_primclex->get_prim().point_group(),
+      Lattice canon_lat = m_lat_it->canonical_form(
+                            m_primclex->prim().point_group(),
                             m_primclex->crystallography_tol());
       Supercell tmp(m_primclex, canon_lat);
       return m_primclex->contains_supercell(tmp);
@@ -291,10 +290,10 @@ namespace CASM {
     for(auto &scel : scel_enum) {
       if(verbose) {
         if(supercell_list.size() != list_size) {
-          log << "  Generated: " << scel.get_name() << "\n";
+          log << "  Generated: " << scel.name() << "\n";
         }
         else {
-          log << "  Generated: " << scel.get_name() << " (already existed)\n";
+          log << "  Generated: " << scel.name() << " (already existed)\n";
         }
       }
       list_size = supercell_list.size();

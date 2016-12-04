@@ -307,14 +307,14 @@ namespace CASM {
     auto res = Configuration::split_name(configname);
 
     try {
-      return get_supercell(res.first).get_config_list().at(res.second);
+      return supercell(res.first).config_list().at(res.second);
     }
     catch(std::out_of_range &e) {
       err_log().error("Invalid config index");
       err_log() << "ERROR: In PrimClex::configuration(), configuration index out of range\n";
       err_log() << "configname: " << configname << "\n";
       err_log() << "index: " << res.second << "\n";
-      err_log() << "config_list.size(): " << get_supercell(res.first).get_config_list().size() << "\n";
+      err_log() << "config_list.size(): " << supercell(res.first).config_list().size() << "\n";
       throw e;
     }
   }
@@ -637,7 +637,7 @@ namespace CASM {
   }
 
   bool PrimClex::contains_supercell(const Supercell &scel, Index &index) const {
-    return contains_supercell(scel.get_name(), index);
+    return contains_supercell(scel.name(), index);
   }
 
   //*******************************************************************************************

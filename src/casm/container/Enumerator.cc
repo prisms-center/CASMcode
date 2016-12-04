@@ -70,7 +70,7 @@ namespace CASM {
     Supercell unit_cell(&primclex, enum_props.generating_matrix());
 
     return notstd::make_unique<SupercellEnumerator<Lattice> >(
-             primclex.get_prim().lattice(),
+             primclex.prim().lattice(),
              unit_cell.factor_group(),
              enum_props);
   }

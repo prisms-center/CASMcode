@@ -38,11 +38,11 @@ namespace CASM {
 
     for(auto scel_it = begin; scel_it != end; ++scel_it) {
       Supercell &scel = *scel_it;
-      log << "Enumerate configurations for " << scel.get_name() << " ...  " << std::flush;
+      log << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
 
       auto enumerator_ptr = f(scel);
       auto &enumerator = *enumerator_ptr;
-      Index num_before = scel.get_config_list().size();
+      Index num_before = scel.config_list().size();
       if(!filter_expr.empty()) {
         try {
           scel.add_unique_canon_configs(
@@ -63,7 +63,7 @@ namespace CASM {
         scel.add_unique_canon_configs(enumerator.begin(), enumerator.end());
       }
 
-      log << (scel.get_config_list().size() - num_before) << " configs." << std::endl;
+      log << (scel.config_list().size() - num_before) << " configs." << std::endl;
     }
     log << "  DONE." << std::endl << std::endl;
 
@@ -116,11 +116,11 @@ namespace CASM {
     for(auto scel_lat_it = begin; scel_lat_it != end; ++scel_lat_it) {
       Supercell scel(&primclex, *scel_lat_it);
       Supercell &canon_scel = scel.canonical_form();
-      log << "Enumerate configurations for " << canon_scel.get_name() << " ...  " << std::flush;
+      log << "Enumerate configurations for " << canon_scel.name() << " ...  " << std::flush;
 
       auto enumerator_ptr = f(scel);
       auto &enumerator = *enumerator_ptr;
-      Index num_before = canon_scel.get_config_list().size();
+      Index num_before = canon_scel.config_list().size();
       if(!filter_expr.empty()) {
         try {
           auto it = filter_begin(
@@ -146,7 +146,7 @@ namespace CASM {
         }
       }
 
-      log << (canon_scel.get_config_list().size() - num_before) << " configs." << std::endl;
+      log << (canon_scel.config_list().size() - num_before) << " configs." << std::endl;
     }
     log << "  DONE." << std::endl << std::endl;
 
