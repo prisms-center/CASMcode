@@ -79,6 +79,10 @@ namespace CASM {
     void from_json(Permutation &perm, const jsonParser &json);
   */
 
+  /**  \ingroup jsonParser
+   *
+   *  @{
+  */
 
   // --- std::map<std::string, T> --------------
 
@@ -242,6 +246,7 @@ namespace CASM {
     }
   }
 
+  /** @} */
 }
 
 #endif

@@ -17,6 +17,8 @@ namespace CASM {
   /// A class for mapping an arbitrary crystal structure as a configuration of a crystal template
   /// as described by a PrimClex.  ConfigMapper manages options for the mapping algorithm and mapping cost function
   /// It also caches some information about supercell lattices so that batch imports are more efficient
+  ///
+  /// \ingroup Configuration
   class ConfigMapper {
   public:
     enum NullInitializer {null_initializer};

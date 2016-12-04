@@ -5,6 +5,11 @@
 
 namespace CASM {
 
+  /** \ingroup ConfigIsEquivalent
+   *
+   *  @{
+   */
+
   /// \brief Wrapper class for generic less than comparison of ConfigDoF
   ///
   /// - Wraps a functor derived from ConfigDoFIsEquivalentBase that is specialized for
@@ -69,6 +74,8 @@ namespace CASM {
   ConfigDoFCompare make_dof_compare(Args &&...args) {
     return ConfigDoFCompare(notstd::make_unique<ConfigDoFIsEquivalentType>(std::forward<Args>(args)...));
   }
+
+  /** @} */
 }
 
 #endif

@@ -20,7 +20,6 @@ namespace CASM {
   /// a LatticeStrain that tells you the strain of the Configuration. Everything
   /// is public.
   ///
-  /// \ingroup Clex
   /// \ingroup Configuration
   ///
   class ConfigDoF {

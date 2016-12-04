@@ -20,6 +20,15 @@ namespace CASM {
   class UnitCellCoord;
   typedef CoordCluster<UnitCellCoord> IntegralCluster;
   template<typename Element, typename SymCompareType> class Orbit;
+  /** \defgroup ProjectIO
+   *
+   *  \ingroup Project
+   *  \ingroup casmIO
+   *
+   *  \brief Relates to CASM project input/output
+   *
+   *  @{
+  */
 
 
   // --------- PrimIO Declarations --------------------------------------------------

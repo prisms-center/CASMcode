@@ -7,6 +7,10 @@
 namespace CASM {
 
   /// \brief Putting all the Lattice comparisons in one place
+  ///
+  /// \ingroup Lattice
+  /// \ingroup IsEquivalent
+  ///
   class LatticeIsEquivalent {
 
   public:
@@ -28,10 +32,13 @@ namespace CASM {
 
     const Lattice &lat() const;
 
+    /// Return the mapping error, calculated after performing an equivalence check
     double map_error() const;
 
+    /// Return the cartesian SymOp matrix, stored after performing an equivalence check
     Eigen::Matrix3d cart_op() const;
 
+    /// Return the SymOp, constructed from the map_error and cart_op stored after performing an equivalence check
     SymOp sym_op() const;
 
   private:

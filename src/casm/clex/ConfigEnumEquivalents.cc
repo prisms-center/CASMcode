@@ -23,7 +23,7 @@ namespace CASM {
     };
   }
 
-  const std::string CASM_TMP::traits<ConfigEnumEquivalents>::name = "ConfigEnumEquivalents";
+  const std::string ConfigEnumEquivalents::enumerator_name = "ConfigEnumEquivalents";
 
   ConfigEnumEquivalents::ConfigEnumEquivalents(
     const Configuration &config) :

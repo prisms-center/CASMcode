@@ -16,6 +16,8 @@ namespace CASM {
 
       \brief Functions and classes related to VASP input/output
 
+      \ingroup casmIO
+
     */
 
     /// \brief Store SelectiveDynamics options

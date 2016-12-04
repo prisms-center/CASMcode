@@ -9,6 +9,7 @@
 
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
+#include "casm/app/casm_functions.hh"
 
 using namespace CASM;
 
@@ -70,6 +71,38 @@ BOOST_AUTO_TEST_CASE(Test1) {
   }
 
   rm_project(proj);
+}
+
+BOOST_AUTO_TEST_CASE(Test2) {
+
+  // create a project
+  test::FCCTernaryProj proj;
+  proj.check_init();
+
+  // in case you want to see what's happening
+  OStringStreamLog ss_log;
+  OStringStreamLog ss_debug_log;
+  OStringStreamLog ss_err_log;
+
+  // construct PrimClex
+  PrimClex primclex(proj.dir, Logging(ss_log, ss_debug_log, ss_err_log));
+
+  auto exec = [&](const std::string & args) {
+    CommandArgs cmdargs(args, &primclex, proj.dir, ss_log, ss_err_log);
+    int code = casm_api(cmdargs);
+    //std::cout << ss_log.ss().str() << std::endl;
+    //std::cout << ss_err_log.ss().str() << std::endl;
+    return code;
+  };
+
+  BOOST_CHECK_EQUAL(exec("casm enum -h"), 0);
+  BOOST_CHECK_EQUAL(exec("casm enum --method ScelEnum --max 4"), 0);
+  BOOST_CHECK_EQUAL(exec("casm enum --method ConfigEnumAllOccupations --all"), 0);
+  BOOST_CHECK_EQUAL(exec("casm enum --method ScelEnum --max 8"), 0);
+  BOOST_CHECK_EQUAL(exec("casm enum --method ConfigEnumAllOccupations --max 6 -i '{\"existing_only\":true}'"), 0);
+
+  rm_project(proj);
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

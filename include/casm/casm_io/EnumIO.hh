@@ -10,6 +10,19 @@
 
 namespace CASM {
 
+  /// \defgroup casmIO IO
+  ///
+  /// \brief Input/output classes and functions
+
+  /// \defgroup EnumIO
+  ///
+  /// \brief Helpers for enum class IO
+  ///
+  /// \ingroup casmIO
+
+  template <typename T>
+  struct traits {};
+
   /// \brief Print help message describing recognized strings for allowed enum values
   ///
   /// Of form:

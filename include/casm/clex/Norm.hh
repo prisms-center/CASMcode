@@ -5,6 +5,10 @@
 
 namespace CASM {
 
+  /** \ingroup Reference
+   *  @{
+   */
+
   template<typename DataObject>
   class Norm {
 
@@ -69,6 +73,8 @@ namespace CASM {
       return new NormPerSpecies(*this);
     }
   };
+
+  /** @} */
 }
 
 #endif

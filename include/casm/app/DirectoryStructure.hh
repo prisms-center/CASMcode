@@ -9,6 +9,12 @@
 
 namespace CASM {
 
+  /**
+   * \ingroup Project
+   *
+   * @{
+   */
+
   template<typename DataObject>
   class QueryTraits;
 
@@ -402,6 +408,8 @@ namespace CASM {
     std::string m_clex_dir;
 
   };
+
+  /** @} */
 }
 
 #endif

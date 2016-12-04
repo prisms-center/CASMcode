@@ -5,6 +5,27 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/Log.hh"
 
+/**
+ *  \defgroup API
+ *
+ *  \brief Relates to the CASM API
+ *
+ *  All primary CASM functionality is included in the CASM library 'libcasm'.
+ *
+ *  The CASM API refers to the actions that can be performed by passing string
+ *  commands through the extern "C" function ::casm_capi which in turn calls
+ *  functions in libcasm. The ::casm_capi function and a limited set of others
+ *  that allow for constructing PrimClex objects and input/output streams are
+ *  available in the library 'libccasm'.
+ *
+ *  The CASM API is primarily intended to be used via the command line
+ *  executable 'casm', which provides documentation of the allowed options, or
+ *  the 'casm' Python package, but can be also be accessed directly to enable
+ *  integration with other software.
+ *
+ *  @{
+ */
+
 // Command line input is not valid
 #define ERR_INVALID_ARG 1
 
@@ -30,10 +51,20 @@
 // Unknown attempting to overwrite another CASM project
 #define ERR_OTHER_PROJ 8
 
+/** @} */
 
+/// \brief Main CASM namespace
 namespace CASM {
 
   class PrimClex;
+
+  /**
+   *  \defgroup API
+   *
+   *  \brief Relates to the CASM API
+   *
+   *  @{
+   */
 
   /// \brief Data structure holding basic CASM command info
   struct CommandArgs : public Logging {
@@ -174,6 +205,7 @@ namespace CASM {
 
   int view_command(const CommandArgs &args);
 
+  /** @} */
 }
 
 #endif

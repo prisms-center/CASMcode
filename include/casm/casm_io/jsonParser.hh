@@ -19,6 +19,16 @@ namespace CASM {
   template<bool IsConst>
   class jsonParserIterator;
 
+  /**
+   * \defgroup jsonParser
+   *
+   * \brief JSON input/output
+   *
+   * \ingroup casmIO
+   *
+   * @{
+   */
+
   /// jsonParser allows for reading / writing JSON data
   ///
   /// JSON consists of values, which can be of type:
@@ -809,6 +819,8 @@ namespace CASM {
     auto it = json.begin();
     value = std::make_pair<Key, T>(it.name(), *it);
   }
+
+  /** @} */
 }
 
 #endif

@@ -12,7 +12,9 @@
 
 namespace CASM {
 
-  class SymOp;
+  /** \ingroup Coordinate
+   *  @{
+   */
 
   /// \brief Unit Cell Indices
   ///
@@ -309,6 +311,8 @@ namespace CASM {
 
     return;
   }
+
+  /** @} */
 }
 #endif
 

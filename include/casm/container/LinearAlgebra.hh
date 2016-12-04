@@ -22,6 +22,14 @@
 #include "casm/misc/CASM_math.hh"
 namespace CASM {
 
+  /** \defgroup LinearAlgebra
+   *
+   *  \ingroup Container
+   *  \brief Linear algebra routines
+   *
+   *  @{
+  */
+
   void get_Hermitian(Eigen::MatrixXcd &original_mat, Eigen::MatrixXcd &hermitian_mat, Eigen::MatrixXcd &antihermitian_mat); //Ivy
   bool is_Hermitian(Eigen::MatrixXcd &mat); //Ivy
   void poly_fit(Eigen::VectorXcd &xvec, Eigen::VectorXcd &yvec, Eigen::VectorXcd &coeffs, int degree);
@@ -377,5 +385,7 @@ namespace CASM {
   const std::vector<Eigen::Matrix3i> &positive_unimodular_matrices();
   const std::vector<Eigen::Matrix3i> &negative_unimodular_matrices();
   const std::vector<Eigen::Matrix3i> &unimodular_matrices();
+
+  /** @} */
 }
 #endif

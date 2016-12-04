@@ -12,6 +12,12 @@ namespace CASM {
   class ECIContainer;
   class ClexBasis;
 
+  /** \defgroup ClexClex Clex
+   *  \ingroup Clex
+   *  \brief Relates to cluster expansion basis sets and ECI
+   *  @{
+   */
+
   /// \brief Data structure used for cluster expansions
   class Clex {
 
@@ -61,6 +67,7 @@ namespace CASM {
   /// \brief Compare using descriptions: A.desc() < B.desc()
   bool operator<(const Clex &A, const Clex &B);
 
+  /** @} */
 }
 
 #endif

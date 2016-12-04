@@ -7,6 +7,10 @@
 
 namespace CASM {
 
+  /** \ingroup SymGroup
+   *  @{
+   */
+
   /// \brief Type-safe ID object for communicating and accessing Symmetry representation info
 
   /// SymGroupRepIDs can be returned by routines that creat a SymGroupRep inside the MasterSymGroup
@@ -113,5 +117,7 @@ namespace CASM {
     out << "{group_index = " << _id.group_index() << ", rep_index = " << _id.rep_index() << "}";
     return out;
   }
+
+  /** @} */
 }
 #endif

@@ -4,6 +4,8 @@
 #include "casm/clex/ConfigEnumEquivalents.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/completer/Handlers.hh"
+#include "casm/container/Enumerator.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_SuperConfigEnum_interface() {
@@ -13,9 +15,9 @@ extern "C" {
 
 namespace CASM {
 
-  const std::string CASM_TMP::traits<CASM::SuperConfigEnum>::name = "SuperConfigEnum";
+  const std::string SuperConfigEnum::enumerator_name = "SuperConfigEnum";
 
-  const std::string CASM_TMP::traits<CASM::SuperConfigEnum>::help =
+  const std::string SuperConfigEnum::interface_help =
 
     "SuperConfigEnum: \n\n"
 
@@ -39,64 +41,38 @@ namespace CASM {
     "\n"
     "  Examples:\n"
     "    To enumerate super-configurations of listed sub-configurations:\n"
+    "     casm enum --method SuperConfigEnum -i \n"
     "     '{ \n"
-    "        \"SuperConfigEnum\": {\n"
-    "          \"supercells\": { \n"
-    "            \"max\": 4, \n"
-    "            \"unit_cell\": \"SCEL2_1_2_1_0_0_0\" \n"
-    "          },\n"
-    "          \"subconfigs\": [\n"
-    "            \"SCEL1_1_1_1_0_0_0/0\",\n"
-    "            \"SCEL2_1_2_1_0_0_0/0\",\n"
-    "            \"SCEL2_1_2_1_0_0_0/1\"\n"
-    "          ]\n"
-    "        } \n"
+    "        \"supercells\": { \n"
+    "          \"max\": 4, \n"
+    "          \"unit_cell\": \"SCEL2_1_2_1_0_0_0\" \n"
+    "        },\n"
+    "        \"subconfigs\": [\n"
+    "          \"SCEL1_1_1_1_0_0_0/0\",\n"
+    "          \"SCEL2_1_2_1_0_0_0/0\",\n"
+    "          \"SCEL2_1_2_1_0_0_0/1\"\n"
+    "        ]\n"
     "      }' \n"
     "\n"
     "    To enumerate super-configurations of listed sub-configurations from a \n"
     "    selection file:\n"
+    "     casm enum --method SuperConfigEnum -i \n"
     "     '{ \n"
-    "        \"SuperConfigEnum\": {\n"
-    "          \"supercells\": { \n"
-    "            \"max\": 4, \n"
-    "            \"unit_cell\": \"SCEL2_1_2_1_0_0_0\" \n"
-    "          }, \n"
-    "          \"subconfigs\": \"selection_filename\"\n"
-    "        } \n"
+    "        \"supercells\": { \n"
+    "          \"max\": 4, \n"
+    "          \"unit_cell\": \"SCEL2_1_2_1_0_0_0\" \n"
+    "        }, \n"
+    "        \"subconfigs\": \"selection_filename\"\n"
     "      }' \n"
     "\n";
 
-  int EnumInterface<SuperConfigEnum>::run(PrimClex &primclex, const jsonParser &_kwargs) const {
-    if(_kwargs.contains("name")) {
-      throw std::invalid_argument(
-        "Error in SuperConfigEnum JSON input: 'name' is not allowed in the 'supercell' option");
-    }
-
-    // construct the superlattice enumerator
-    jsonParser kwargs {_kwargs};
-    if(kwargs.is_null()) {
-      kwargs = jsonParser::object();
-    }
-
-    bool primitive_only = true;
-    kwargs.get_if(primitive_only, "primitive_only");
-
-    // default is use all existing Supercells
-    jsonParser scel_input;
-    scel_input["existing_only"] = true;
-    kwargs.get_if(scel_input, "supercells");
-
-    ScelEnumProps enum_props = make_scel_enum_props(primclex, scel_input);
-
-    // the unit cell that will be the supercell of the subconfigs that are
-    // tiled to form the super-configurations
-    Supercell unit_cell(&primclex, enum_props.generating_matrix());
-
-    // use the unit cell point group
-    SupercellEnumerator<Lattice> superlat_enum(
-      primclex.prim().lattice(),
-      unit_cell.factor_group(),
-      enum_props);
+  /// sub-routine for EnumInterface<SuperConfigEnum>::run,
+  ///   generates primitive configurations from input
+  void _generate_primitives(
+    PrimClex &primclex,
+    const Supercell &unit_cell,
+    const jsonParser &kwargs,
+    std::map<Configuration, std::string> &prim_subconfig) {
 
     auto check_is_supercell = [&](const Lattice & plat) {
       auto end = primclex.prim().factor_group().end();
@@ -107,26 +83,11 @@ namespace CASM {
                           primclex.crystallography_tol()).first != end;
     };
 
-    // output initial info
-    Log &log = primclex.log();
-    Index Ninit = std::distance(primclex.config_begin(), primclex.config_end());
-    log << "# configurations in this project: " << Ninit << "\n" << std::endl;
-
-    log.begin(name());
-
-    // parse a filter expression
-    std::vector<std::string> filter_expr;
-    if(kwargs.contains("filter")) {
-      filter_expr.push_back(kwargs["filter"].get<std::string>());
-    };
-
-    // -- get primitive of all subconfigs from input--
-    std::map<Configuration, std::string> prim_subconfig;
-
     if(!kwargs.contains("subconfigs")) {
       throw std::invalid_argument(
         "Error in SuperConfigEnum JSON input: 'subconfigs' is required");
     }
+    Log &log = primclex.log();
     log << "Input sub-configurations:\n";
     if(kwargs["subconfigs"].is_array()) {
       const jsonParser &j = kwargs["subconfigs"];
@@ -161,9 +122,17 @@ namespace CASM {
         prim_subconfig.insert(std::make_pair(pconfig, it->name()));
       }
     }
+  }
 
-    log << "\nGenerating equivalents: \n";
-    std::vector<Configuration> subconfig;
+  /// sub-routine for EnumInterface<SuperConfigEnum>::run,
+  ///   generates equivalent configurations of all primitive configurations
+  void _generate_equivalents(
+    const PrimClex &primclex,
+    Supercell &unit_cell,
+    const std::map<Configuration, std::string> &prim_subconfig,
+    std::vector<Configuration> &subconfig) {
+
+    primclex.log() << "\nGenerating equivalents: \n";
     for(auto &_pair : prim_subconfig) {
       auto &pconfig = _pair.first;
       FillSupercell f(unit_cell, pconfig, primclex.crystallography_tol());
@@ -171,67 +140,70 @@ namespace CASM {
       Index eq_count = 0;
       for(auto it = e.begin(); it != e.end(); ++it) {
         subconfig.push_back(*it);
-        log << "  Config: " << it->name() << "\n" << *it << "\n";
+        primclex.log() << "  Config: " << it->name() << "\n" << *it << "\n";
       }
     }
-    log << std::endl;
-
-    // all supercells of the unit cell, unique by the 'unit_cell' factor group
-    for(auto &superlat : superlat_enum) {
-
-      Supercell target_scel(&primclex, superlat);
-
-      Supercell &canon_scel = target_scel.canonical_form();
-      log << "Enumerate configurations for " << canon_scel.name() << " ...  " << std::flush;
-
-      // enumerate super-configurations
-      SuperConfigEnum superconfig_enum(target_scel, subconfig.begin(), subconfig.end());
-      Index num_before = canon_scel.config_list().size();
-
-      if(kwargs.contains("filter")) {
-        try {
-          auto it = filter_begin(
-                      superconfig_enum.begin(),
-                      superconfig_enum.end(),
-                      filter_expr,
-                      primclex.settings().query_handler<Configuration>().dict());
-          auto end = filter_end(superconfig_enum.end());
-          for(; it != end; ++it) {
-            it->insert(primitive_only);
-          }
-        }
-        catch(std::exception &e) {
-          primclex.err_log() << "Cannot filter configurations using the expression provided: \n" << e.what() << "\nExiting...\n";
-          return ERR_INVALID_ARG;
-        }
-      }
-      else {
-        auto it = superconfig_enum.begin();
-        auto end = superconfig_enum.end();
-        for(; it != end; ++it) {
-          it->insert(primitive_only);
-        }
-      }
-      log << (canon_scel.config_list().size() - num_before) << " configs." << std::endl;
-    }
-    log << "  DONE." << std::endl << std::endl;
-
-    Index Nfinal = std::distance(primclex.config_begin(), primclex.config_end());
-
-    log << "# new configurations: " << Nfinal - Ninit << "\n";
-    log << "# configurations in this project: " << Nfinal << "\n" << std::endl;
-
-    std::cout << "Write SCEL..." << std::endl;
-    primclex.print_supercells();
-    log << "  DONE" << std::endl << std::endl;
-
-    log << "Writing config_list..." << std::endl;
-    primclex.write_config_list();
-    log << "  DONE" << std::endl;
-    return 0;
+    primclex.log() << std::endl;
   }
 
+  int SuperConfigEnum::run(
+    PrimClex &primclex,
+    const jsonParser &_kwargs,
+    const Completer::EnumOption &enum_opt) {
 
+    // -- Disallow 'name' & --scelnames options --
+    if(_kwargs.contains("name") || enum_opt.vm().count("scelnames")) {
+      throw std::invalid_argument(
+        "Error in SuperConfigEnum JSON input: 'name' is not allowed in the 'supercell' option");
+    }
+
+    // -- Option to include non-primitive --
+    bool primitive_only = true;
+    _kwargs.get_if(primitive_only, "primitive_only");
+
+    // -- make <SupercellEnumerator<Lattice> & filter_expr from input
+    std::unique_ptr<SupercellEnumerator<Lattice> > superlat_enum = make_enumerator_superlat_enum(primclex, _kwargs, enum_opt);
+    std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
+
+    // -- Unit cell --
+    // the unit cell that will be the supercell of the subconfigs that are
+    // tiled to form the super-configurations
+    Supercell unit_cell(&primclex, *superlat_enum->begin());
+
+
+    // -- get primitive of all subconfigs from input--
+    std::map<Configuration, std::string> prim_subconfig;
+    _generate_primitives(
+      primclex,
+      unit_cell,
+      _kwargs,
+      prim_subconfig);
+
+
+    // -- generate equivalents of each primitive config --
+    std::vector<Configuration> subconfig;
+    _generate_equivalents(
+      primclex,
+      unit_cell,
+      prim_subconfig,
+      subconfig);
+
+    // -- Enumerator construction --
+    auto lambda = [&](Supercell & scel) {
+      return notstd::make_unique<SuperConfigEnum>(scel, subconfig.begin(), subconfig.end());
+    };
+
+    int returncode = insert_configs(
+                       enumerator_name,
+                       primclex,
+                       superlat_enum->begin(),
+                       superlat_enum->end(),
+                       lambda,
+                       filter_expr,
+                       primitive_only);
+
+    return returncode;
+  }
 
   void SuperConfigEnum::_init() {
 

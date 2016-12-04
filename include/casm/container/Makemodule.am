@@ -3,11 +3,16 @@ containerinclude_HEADERS=./include/casm/container/Array.hh\
 						 ./include/casm/container/BaseCounter.hh\
 						 ./include/casm/container/ContainerTraits.hh\
 						 ./include/casm/container/Counter.hh\
+						 ./include/casm/container/Enumerator.hh\
+						 ./include/casm/container/Enumerator_impl.hh\
+						 ./include/casm/container/InputEnumerator.hh\
 						 ./include/casm/container/IsoCounter.hh\
 						 ./include/casm/container/LinearAlgebra.hh\
 						 ./include/casm/container/MultiCounter.hh\
 						 ./include/casm/container/multivector.hh\
 						 ./include/casm/container/Permutation.hh\
 						 ./include/casm/container/PolyTrie.hh\
+						 ./include/casm/container/RandomAccessEnumerator.hh\
 						 ./include/casm/container/Template_Algorithms.hh\
-						 ./include/casm/container/Tensor.hh
+						 ./include/casm/container/Tensor.hh\
+             ./include/casm/container/multivector.hh

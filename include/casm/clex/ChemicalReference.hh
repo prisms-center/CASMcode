@@ -10,6 +10,11 @@ namespace CASM {
   class PrimClex;
   class Structure;
 
+  /** \ingroup Reference
+   *
+   *  @{
+   */
+
   /// \brief Stores the composition and energy in a single reference state
   ///
   /// - Should not include Va
@@ -510,6 +515,8 @@ namespace CASM {
     // use E, N to calculate hyperplane
     return _calc_hyperplane(prim, struc_mol_name, N, E, tol);
   }
+
+  /** @} */
 }
 
 #endif

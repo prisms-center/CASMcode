@@ -17,6 +17,11 @@ namespace CASM {
   class SiteCluster;
   class MasterSymGroup;
 
+  /** \defgroup Structure
+   *  \ingroup Crystallography
+   *  \brief Specifies the lattice and basis of a crystal
+   *  @{
+   */
 
   ///\brief BasicStructure specifies the lattice and atomic basis of a crystal
   template<typename CoordType>
@@ -176,6 +181,8 @@ namespace CASM {
   // Assumes constructor CoordType::CoordType(Lattice) exists
   template<typename CoordType>
   void from_json(BasicStructure<CoordType> &basic, const jsonParser &json);
+
+  /** @} */
 
 };
 

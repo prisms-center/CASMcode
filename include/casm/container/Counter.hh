@@ -7,8 +7,11 @@
 namespace CASM {
 
   /** \defgroup Counter
-
-      @{
+   *
+   *  \ingroup Container
+   *  \brief Counters allow looping over many incrementing variables in one loop
+   *
+   *  @{
   */
 
   /// \brief A Counter allows looping over many incrementing variables in one loop.

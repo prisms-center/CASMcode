@@ -141,6 +141,16 @@ namespace CASM {
       return m_tag;
     }
 
+    ///Get the variables map
+    po::variables_map &OptionHandlerBase::vm() {
+      return m_vm;
+    }
+
+    ///Get the variables map
+    const po::variables_map &OptionHandlerBase::vm() const {
+      return m_vm;
+    }
+
     /**
      * Check if there are any program options in the options description. If there aren't, then
      * this is the first time someone is asking for those values, which we set through the

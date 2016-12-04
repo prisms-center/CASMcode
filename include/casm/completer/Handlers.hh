@@ -104,6 +104,12 @@ namespace CASM {
       ///More explicit initialization
       OptionHandlerBase(const std::string &init_option_tag, const std::string &init_descriptor);
 
+      ///Get the variables map
+      po::variables_map &vm();
+
+      ///Get the variables map
+      const po::variables_map &vm() const;
+
       ///Get the program options, filled with the initialized values
       const po::options_description &desc();
 
@@ -118,6 +124,9 @@ namespace CASM {
 
       ///Boost program options. All the derived classes have them, but will fill them up themselves
       po::options_description m_desc;
+
+      ///Boost program options variable map
+      po::variables_map m_vm;
 
       ///Fill in the options descriptions accordingly
       virtual void initialize() = 0;
@@ -763,24 +772,43 @@ namespace CASM {
 
       using OptionHandlerBase::settings_path;
       using OptionHandlerBase::input_str;
-
-      void add_desc_vec_suboption() {
-        m_desc.add_options()
-        ("help,h", "Print help message.")
-        ("desc", po::value<std::vector<std::string> >(&m_desc_vec)->multitoken()->zero_tokens(), "Print extended usage description. Use '--desc MethodName [MethodName2...]' for detailed option description. Partial matches of method names will be included.");
-        return;
-      }
+      using OptionHandlerBase::supercell_strs;
 
       const std::vector<std::string> &desc_vec() const {
         return m_desc_vec;
       }
 
+      std::string method() const {
+        return m_method;
+      }
+
+      int min_volume() const {
+        return m_min_volume;
+      }
+
+      int max_volume() const {
+        return m_max_volume;
+      }
+
+      bool all_existing() const {
+        return m_all_existing;
+      }
+
+      const std::vector<std::string> &filter_strs() const {
+        return m_filter_strs;
+      }
 
     private:
 
       void initialize() override;
 
       std::vector<std::string> m_desc_vec;
+
+      std::string m_method;
+      int m_min_volume;
+      int m_max_volume;
+      bool m_all_existing;
+      std::vector<std::string> m_filter_strs;
 
     };
 

@@ -7,10 +7,31 @@
 #include "casm/container/RandomAccessEnumerator.hh"
 #include "casm/clex/Supercell.hh"
 
-ENUMERATOR_VARIABLECONST_TRAITS(ScelEnumByNameT)
+/** \defgroup ScelEnumGroup Supercell Enumerators
+ *
+ *  \ingroup Enumerator
+ *  \ingroup Supercell
+ *  \brief Enumerates Supercell
+ *  @{
+*/
+
+extern "C" {
+  CASM::EnumInterfaceBase *make_ScelEnum_interface();
+}
 
 namespace CASM {
 
+
+  /// \brief Enumerate over Supercell
+  ///
+  /// - Specify Supercell by providing a list of names of Supercell already
+  ///   included in PrimClex
+  /// - Template parameter determines if dereferencing iterators returns
+  ///   const or non-const Supercell references
+  /// - Typedefs are provided for const-ness switching:
+  ///   - ::ScelEnumByName for ScelEnumByNameT\<false\>
+  ///   - ::ConstScelEnumByName for ScelEnumByNameT\<true\>
+  ///
   template<bool IsConst = true>
   class ScelEnumByNameT : public RandomAccessEnumeratorBase<Supercell, IsConst> {
 
@@ -30,7 +51,12 @@ namespace CASM {
     /// \brief Construct with PrimClex and array of supercell names
     ScelEnumByNameT(PrimClex &primclex, const jsonParser &input);
 
-    ENUMERATOR_MEMBERS(ScelEnumByNameT)
+    std::string name() const override {
+      return enumerator_name;
+    }
+
+    static const std::string enumerator_name;
+
 
   private:
 
@@ -46,22 +72,31 @@ namespace CASM {
     std::vector<Supercell *> m_scelptr;
   };
 
+  /// \relates ScelEnumByNameT
   typedef ScelEnumByNameT<true> ConstScelEnumByName;
+
+  /// \relates ScelEnumByNameT
   typedef ScelEnumByNameT<false> ScelEnumByName;
-}
 
 
-ENUMERATOR_VARIABLECONST_TRAITS(ScelEnumByPropsT)
-
-namespace CASM {
-
+  /// \brief Enumerate over Supercell
+  ///
+  /// - Specify Supercell using ScelEnumProps (min/max volume, dirs, unit_cell)
+  /// - Enumerated Supercell are canonical, included in PrimClex
+  /// - Template parameter determines if dereferencing iterators returns
+  ///   const or non-const Supercell references
+  /// - References are invalidated after incrementing an iterator
+  /// - Typedefs are provided for const-ness switching:
+  ///   - ::ScelEnumByProps for ScelEnumByPropsT<false>
+  ///   - ::ConstScelEnumByProps for ScelEnumByPropsT<true>
+  ///
   template<bool IsConst = true>
   class ScelEnumByPropsT : public InputEnumeratorBase<Supercell, IsConst> {
 
   public:
 
     /// \brief Construct with PrimClex and ScelEnumProps settings
-    ScelEnumByPropsT(PrimClex &primclex, const ScelEnumProps &enum_props);
+    ScelEnumByPropsT(PrimClex &primclex, const ScelEnumProps &enum_props, bool existing_only = false);
 
     /// \brief Construct with PrimClex and ScelEnumProps JSON settings
     ScelEnumByPropsT(PrimClex &primclex, const jsonParser &input);
@@ -70,9 +105,17 @@ namespace CASM {
     ScelEnumByPropsT &operator=(const ScelEnumByPropsT &) = delete;
 
 
-    ENUMERATOR_MEMBERS(ScelEnumByPropsT)
+    std::string name() const override {
+      return enumerator_name;
+    }
+
+    static const std::string enumerator_name;
+
 
   private:
+
+    /// Check for existing supercells
+    bool _include(const Lattice &lat) const;
 
     /// Implements increment over supercells
     void increment() override;
@@ -82,23 +125,28 @@ namespace CASM {
     std::unique_ptr<SupercellEnumerator<Lattice> > m_lattice_enum;
     SupercellEnumerator<Lattice>::const_iterator m_lat_it;
     SupercellEnumerator<Lattice>::const_iterator m_lat_end;
+
+    bool m_existing_only;
   };
 
+  /// \relates ScelEnumByPropsT
   typedef ScelEnumByPropsT<true> ConstScelEnumByProps;
+
+  /// \relates ScelEnumByPropsT
   typedef ScelEnumByPropsT<false> ScelEnumByProps;
 
-}
-
-
-ENUMERATOR_INTERFACE_VARIABLECONST_TRAITS(ScelEnumT)
-
-namespace CASM {
 
   /// \brief Enumerate over Supercell
   ///
-  /// - Unified Interface for ScelEnumByName and ScelEnumByProps
-  ///
-  /// \ingroup ScelEnum
+  /// - Provides a unified Interface for ScelEnumByName and ScelEnumByProps
+  /// - Enumerated Supercell are canonical, included in PrimClex
+  /// - Template parameter determines if dereferencing iterators returns
+  ///   const or non-const Supercell references
+  /// - If ScelEnumByProps, references are invalidated after incrementing an
+  ///   iterator
+  /// - Typedefs are provided for const-ness switching:
+  ///   - ::ScelEnum for ScelEnumT<false>
+  ///   - ::ConstScelEnum for ScelEnumT<true>
   ///
   template<bool IsConst = true>
   class ScelEnumT : public InputEnumeratorBase<Supercell, IsConst> {
@@ -112,7 +160,14 @@ namespace CASM {
     ScelEnumT &operator=(const ScelEnumT &) = delete;
 
 
-    ENUMERATOR_MEMBERS(ScelEnumT)
+    std::string name() const override {
+      return enumerator_name;
+    }
+
+    static const std::string enumerator_name;
+    static const std::string interface_help;
+    static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+
 
   private:
 
@@ -124,10 +179,14 @@ namespace CASM {
     InputEnumerator<Supercell, false> m_enum;
   };
 
+  /// \relates ScelEnumT
   typedef ScelEnumT<true> ConstScelEnum;
+
+  /// \relates ScelEnumT
   typedef ScelEnumT<false> ScelEnum;
 
-
 }
+
+/** @}*/
 
 #endif
