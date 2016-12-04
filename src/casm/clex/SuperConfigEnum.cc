@@ -5,7 +5,7 @@
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
-#include "casm/container/Enumerator_impl.hh"
+#include "casm/container/Enumerator.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_SuperConfigEnum_interface() {

@@ -2,6 +2,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
 
+
 namespace CASM {
 
   template<typename DataObject>

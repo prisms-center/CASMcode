@@ -164,7 +164,7 @@ namespace CASM {
     for(auto it = v.begin(); it != v.end(); ++it) {
       result = _if_exists(result, *it);
     }
-    result = _all_that_exists(result, m_dir.enumerators());
+    result = _all_that_exist(result, m_dir.enumerator_plugins());
     return result;
   }
 
