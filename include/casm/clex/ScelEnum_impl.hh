@@ -112,7 +112,6 @@ namespace CASM {
     m_lat_end = m_lattice_enum->end();
 
     while(!_include(*m_lat_it) && m_lat_it != m_lat_end) {
-      std::cout << "here 0" << std::endl;
       ++m_lat_it;
     }
 
@@ -197,7 +196,7 @@ namespace CASM {
     "    The maximum volume supercell to enumerate. The volume is measured\n"
     "    relative the unit cell being used to generate supercells.\n"
     "\n"
-    "  existing_only: bool (default=false)\n"
+    "  existing_only: bool (default=true)\n"
     "    If true, only existing supercells are used. This is useful when it\n"
     "    is used as input to a Configuration enumeration method.\n"
     "\n"
