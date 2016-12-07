@@ -646,7 +646,8 @@ class Converge(object):
                 # Or just execute a single prerun line, if given
                 if self.settings["prerun"] is not None:
                     cmd += self.settings["prerun"] + "\n"
-                cmd += "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Relax('" + self.configdir + "').run()\"\n"
+                cmd += "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Converge(configdir='" + self.configdir + "', propdir='" + propdir + "', prop=" + str(prop) + ").run()\"\n"
+
                 if self.settings["postrun"] is not None:
                     cmd += self.settings["postrun"] + "\n"
 
@@ -681,8 +682,8 @@ class Converge(object):
             except UserWarning:
                 continue
 
-    print "CASM VASPWrapper Convergence PBS job submission complete\n"
-    sys.stdout.flush()
+        print "CASM VASPWrapper Convergence PBS job submission complete\n"
+        sys.stdout.flush()
 
 
     def run_settings(self):
