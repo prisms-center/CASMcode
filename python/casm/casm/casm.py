@@ -348,6 +348,8 @@ def project_path(dir=None):
     """
     if dir == None:
       dir = os.getcwd()
+    else:
+      dir = os.path.abspath(dir)
     if not os.path.isdir(dir):
       raise Exception("Error, no directory named: " + dir)
     curr = dir
