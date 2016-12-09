@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <functional>
 namespace CASM {
 
   class DataStream {
@@ -15,7 +16,9 @@ namespace CASM {
 
     static DataStream &endl(DataStream &_strm) {
       return _strm.newline();
-    };
+    }
+
+    static std::function<DataStream &(DataStream &_strm)> failure(std::string const &_msg);
 
     DataStream(DataStreamTraits _traits = none) :
       m_traits(_traits) {}
@@ -52,6 +55,10 @@ namespace CASM {
       return F(*this);
     }
 
+    DataStream &operator<<(const std::function<DataStream & (DataStream &)> &F) {
+      return F(*this);
+    }
+
     virtual DataStream &newline() {
       return *this;
     }
@@ -67,8 +74,18 @@ namespace CASM {
 
     void clear_fail() {
       m_traits &= ~failbit;
+      m_err_msg.clear();
     }
+
+    std::string const &err_msg() const {
+      return m_err_msg;
+    }
+
   protected:
+
+    void _set_err_msg(std::string const &_msg) {
+      m_err_msg = _msg;
+    }
 
     bool _skipfail() {
       return m_traits & skipfail;
@@ -76,6 +93,7 @@ namespace CASM {
 
   private:
     int m_traits;
+    std::string m_err_msg;
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -125,6 +143,15 @@ namespace CASM {
     int m_count;
 
   };
+
+  inline
+  std::function<DataStream &(DataStream &_strm)> DataStream::failure(std::string const &_msg) {
+    return [&_msg](DataStream & _stream)->DataStream & {
+      _stream << failbit;
+      _stream._set_err_msg(_msg);
+      return _stream;
+    };
+  }
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
