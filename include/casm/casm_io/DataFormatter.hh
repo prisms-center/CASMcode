@@ -235,6 +235,9 @@ namespace CASM {
     ///print the header, using _tmplt_obj to inspect array sizes, etc.
     void print_header(const DataObject &_tmplt_obj, std::ostream &_stream) const;
 
+    ///\brief Returns all column header strings as std::vector<std::string>
+    std::vector<std::string> col_header(const DataObject &_template_obj) const;
+
     /// Add a particular BaseDatumFormatter to *this
     /// If the previous Formatter matches the new formatter, try to just parse the new args into it
     void push_back(const BaseDatumFormatter<DataObject> &new_formatter, const std::string &args) {
@@ -361,12 +364,34 @@ namespace CASM {
       return true;
     }
 
+    ///\brief Returns a header string for each scalar produced by the formatter
+    /// parsing the entries in the col_header should reproduce the exact query
+    /// described by the formatter.
+    /// Ex: "clex(formation_energy)" or "comp(a)", "comp(c)"
+    ///
+    /// - Default uses col_header
+    virtual std::vector<std::string> col_header(const DataObject &_template_obj) const {
+      return std::vector<std::string> {this->short_header(_template_obj)};
+    }
+
     ///\brief Returns a long expression for each scalar produced by the formatter
     /// parsing the long_header should reproduce the exact query described by the formatter
     /// Ex: "clex(formation_energy)" or "comp(a)    comp(c)"
+    ///
+    /// - Default uses col_header
     virtual std::string long_header(const DataObject &_template_obj) const {
-      return short_header(_template_obj);
-    };
+      auto _col = col_header(_template_obj);
+      if(_col.size() == 1) {
+        return _col[0];
+      }
+
+      std::stringstream t_ss;
+      for(Index i = 0; i < _col.size(); i++) {
+        t_ss << "       " << _col[i];
+      }
+
+      return t_ss.str();
+    }
 
     ///\brief Returns a short expression for the formatter
     /// parsing the short_header should allow the formatter to be recreated

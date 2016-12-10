@@ -51,8 +51,8 @@ namespace CASM {
       /// \brief Adds index rules corresponding to the parsed args
       void init(const Configuration &_tmplt) const override;
 
-      /// \brief Long header returns: 'name(Au)   name(Pt)   ...'
-      std::string long_header(const Configuration &_tmplt) const override;
+      /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
+      std::vector<std::string> col_header(const Configuration &_tmplt) const override;
 
     private:
       mutable std::vector<std::string> m_mol_names;
@@ -109,8 +109,8 @@ namespace CASM {
       /// \brief Expects arguments of the form 'comp' or 'comp(a)', 'comp(b)', etc.
       bool parse_args(const std::string &args) override;
 
-      /// \brief Long header returns: 'comp(a)   comp(b)   ...'
-      std::string long_header(const Configuration &_tmplt) const override;
+      /// \brief col_header returns: {'comp(a)', 'comp(b)', ...'}
+      std::vector<std::string> col_header(const Configuration &_tmplt) const override;
 
     private:
 
