@@ -57,9 +57,11 @@ namespace CASM {
     bool parse_args(const std::string &_args) override;
 
     void inject(const DataObject &_data_obj, DataStream &_stream, Index pass_index) const override {
-      _stream << _evaluate(_data_obj);
       if(!validate(_data_obj)) {
-        _stream << DataStream::failbit;
+        _stream << DataStream::failbit << ValueType();
+      }
+      else {
+        _stream << _evaluate(_data_obj);
       }
     }
 
@@ -743,9 +745,10 @@ namespace CASM {
     ///
     /// - sets DataStream::failbit if validation fails
     virtual void inject(const DataObject &_data_obj, DataStream &_stream, Index pass_index = 0) const override {
-      _stream << this->evaluate(_data_obj);
       if(!this->validate(_data_obj))
-        _stream << DataStream::failbit;
+        _stream << DataStream::failbit << ValueType();
+      else
+        _stream << this->evaluate(_data_obj);
     }
 
     /// \brief Default implementation prints each element in a column, via operator<<
@@ -895,6 +898,7 @@ namespace CASM {
 
     /// \brief Access methods for Container
     typedef typename ContainerTraits<Container>::Access Access;
+    typedef typename ContainerTraits<Container>::value_type ValueType;
 
 
     /// \brief Constructor
@@ -957,10 +961,16 @@ namespace CASM {
 
       Container val = this->evaluate(_data_obj);
       auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
-      if(!this->validate(_data_obj))
+      if(!this->validate(_data_obj)) {
         _stream << DataStream::failbit;
-      for(; it != end_it; ++it) {
-        _stream << Access::at(val, (*it)[0]);
+        for(; it != end_it; ++it) {
+          _stream << ValueType();
+        }
+      }
+      else {
+        for(; it != end_it; ++it) {
+          _stream << Access::at(val, (*it)[0]);
+        }
       }
     }
 
