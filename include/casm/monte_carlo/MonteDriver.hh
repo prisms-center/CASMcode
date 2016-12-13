@@ -394,7 +394,7 @@ namespace CASM {
               << "step: " << run_counter.step() << "  "
               << "take sample " << m_mc.sample_times().size() << "\n" << std::endl;
 
-        m_mc.sample_data(run_counter.pass(), run_counter.step());
+        m_mc.sample_data(run_counter);
         run_counter.increment_samples();
         if(m_enum && m_enum->on_sample()) {
           m_enum->insert(m_mc.config());

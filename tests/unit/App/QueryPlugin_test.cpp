@@ -73,6 +73,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   BOOST_CHECK(check(R"(casm query -k 'test_configname')"));
 
+  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

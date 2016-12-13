@@ -130,7 +130,7 @@ namespace CASM {
     // ---- Data sampling -------------
 
     /// \brief Samples all requested property data, and stores pass and step number sample was taken at
-    void sample_data(MonteCounter::size_type pass, MonteCounter::size_type step);
+    void sample_data(const MonteCounter &counter);
 
     /// \brief Clear all data from all samplers
     void clear_samples();
@@ -313,7 +313,7 @@ namespace CASM {
     m_debug(m_settings.debug()),
     m_log(_log) {
 
-    settings.samplers(primclex, std::inserter(m_sampler, m_sampler.begin()));
+    settings.samplers(primclex, m_config, std::inserter(m_sampler, m_sampler.begin()));
 
     m_must_converge = false;
     for(auto it = m_sampler.cbegin(); it != m_sampler.cend(); ++it) {

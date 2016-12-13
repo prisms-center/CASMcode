@@ -252,6 +252,19 @@ namespace CASM {
 
   //******************************************************************************
 
+  ///\brief Returns all column header strings as std::vector<std::string>
+  template<typename DataObject>
+  std::vector<std::string> DataFormatter<DataObject>::col_header(const DataObject &_template_obj) const {
+    std::vector<std::string> col;
+    for(Index i = 0; i < m_data_formatters.size(); i++) {
+      auto v2 = m_data_formatters[i]->col_header(_template_obj);
+      col.insert(col.end(), v2.begin(), v2.end());
+    }
+    return col;
+  }
+
+  //******************************************************************************
+
   template<typename DataObject>
   void DataFormatter<DataObject>::_initialize(const DataObject &_template_obj) const {
     for(Index i = 0; i < m_data_formatters.size(); i++)

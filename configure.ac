@@ -102,6 +102,7 @@ AC_CONFIG_FILES([tests/unit/clex/run_test_clex],                        [chmod +
 AC_CONFIG_FILES([tests/unit/clusterography/run_test_clusterography],    [chmod +x tests/unit/clusterography/run_test_clusterography])
 AC_CONFIG_FILES([tests/unit/container/run_test_container],              [chmod +x tests/unit/container/run_test_container])
 AC_CONFIG_FILES([tests/unit/crystallography/run_test_crystallography],  [chmod +x tests/unit/crystallography/run_test_crystallography])
+AC_CONFIG_FILES([tests/unit/monte_carlo/run_test_monte_carlo],      [chmod +x tests/unit/monte_carlo/run_test_monte_carlo])
 AC_CONFIG_FILES([tests/unit/system/run_test_system],                    [chmod +x tests/unit/system/run_test_system])
 
 

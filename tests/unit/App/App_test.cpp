@@ -84,8 +84,8 @@ BOOST_AUTO_TEST_CASE(ProjectCommands) {
     log << "testing 'casm query'" << std::endl;
     (*proj_it)->check_query();
 
-    //log << "removing test project" << std::endl;
-    //rm_project(**proj_it);
+    log << "removing test project" << std::endl;
+    rm_project(**proj_it);
     log << std::endl;
 
   }

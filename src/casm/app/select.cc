@@ -359,9 +359,9 @@ namespace CASM {
 
       try {
         if(vm.count("set"))
-          set_selection(set.query_handler<Configuration>().dict(), config_select.config_begin(), config_select.config_end(), criteria);
+          set_selection(set.query_handler<Configuration>().dict(), config_select.config_begin(), config_select.config_end(), criteria, args.err_log);
         else
-          set_selection(set.query_handler<Configuration>().dict(), config_select.config_begin(), config_select.config_end(), criteria, select_switch);
+          set_selection(set.query_handler<Configuration>().dict(), config_select.config_begin(), config_select.config_end(), criteria, select_switch, args.err_log);
       }
       catch(std::exception &e) {
         args.err_log << "ERROR: " << e.what() << "\n";

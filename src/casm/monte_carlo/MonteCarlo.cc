@@ -26,13 +26,13 @@ namespace CASM {
   }
 
   /// \brief Samples all requested property data, and stores pass and step number sample was taken at
-  void MonteCarlo::sample_data(MonteCounter::size_type pass, MonteCounter::size_type step) {
+  void MonteCarlo::sample_data(const MonteCounter &counter) {
 
     // call MonteSamper::sample(*this) for all samplers
     for(auto it = m_sampler.begin(); it != m_sampler.end(); ++it) {
-      it->second->sample(*this);
+      it->second->sample(*this, counter);
     }
-    m_sample_time.push_back(std::make_pair(pass, step));
+    m_sample_time.push_back(std::make_pair(counter.pass(), counter.step()));
 
     if(m_write_trajectory) {
       m_trajectory.push_back(configdof());
