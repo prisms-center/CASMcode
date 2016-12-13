@@ -88,7 +88,7 @@ namespace CASM {
     /// \brief Orders orbit prototypes, breaking invariants_compare ties
     ///
     /// - Returns 'true' to indicate A < B
-    /// - Equivalence is indicated by \code !compare(A,B) && !compare(B,A) \endcode
+    /// - Equivalence is indicated by \code !inter_orbit_compare(A,B) && !inter_orbit_compare(B,A) \endcode
     /// - Assumes elements are in canonical form
     bool inter_orbit_compare(const Element &A, const Element &B) const {
       return derived().inter_orbit_compare_impl(A, B);
@@ -96,7 +96,7 @@ namespace CASM {
 
     /// \brief Check equivalence of prototypes in different orbit
     ///
-    /// \returns \code !compare(A,B) && !compare(B,A) \endcode
+    /// \returns \code !inter_orbit_compare(A,B) && !inter_orbit_compare(B,A) \endcode
     ///
     /// - Assumes elements are in canonical form
     bool inter_orbit_equal(const Element &A, const Element &B) const {

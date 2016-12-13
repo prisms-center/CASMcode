@@ -1002,7 +1002,7 @@ namespace CASM {
         if(n > 0 && !scel.prim().basis[n - 1].contains(rstruc.basis[0].occ_name()))
           continue;
 
-        Coordinate translation(scel.get_prim().lattice());
+        Coordinate translation(scel.prim().lattice());
 
         // Always try the non-translated case (n==0), in case it gives best result
         // Also try translating first basis atom onto each chemically compatible site of PRIM (n>0)
@@ -1179,7 +1179,7 @@ namespace CASM {
         if(n > 0 && config.mol(0).name != rstruc.basis[n - 1].occ_name())
           continue;
 
-        Coordinate translation(scel.get_real_super_lattice());
+        Coordinate translation(scel.real_super_lattice());
 
         // Always try the non-translated case (n==0), in case it gives best result
         // Also try translating first basis atom onto each chemically compatible site of PRIM (n>0)
