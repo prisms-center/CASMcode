@@ -117,7 +117,6 @@ namespace CASM {
     ///
     bool is_converged(double prec) const {
       return m_calculated_prec <= prec;
-
     }
 
     /// \brief <X>

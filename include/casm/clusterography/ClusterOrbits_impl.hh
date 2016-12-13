@@ -4,6 +4,8 @@
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/misc/algorithm.hh"
+#include "casm/symmetry/OrbitGeneration.hh"
+#include "casm/clusterography/SubClusterGenerator.hh"
 
 namespace CASM {
 
@@ -11,7 +13,7 @@ namespace CASM {
 
     /// Read max_length vector from 'bspecs' JSON
     ///
-    /// \returns std::vector<double> giving 'max_length' for clusters in branch 2+ (pairs, triplets, etc.)
+    /// \returns std::vector<double> giving 'max_length' for clusters in branch 0, 1, etc.
     ///
     /// probably should get organized somewhere...
     std::vector<double> max_length_from_bspecs(const jsonParser &bspecs) {
@@ -19,10 +21,10 @@ namespace CASM {
       std::vector<double> max_length;
 
       auto update_max_length = [&](int branch, double length) {
-        while(branch - 1 > max_length.size()) {
+        while(branch >= max_length.size()) {
           max_length.push_back(0.0);
         }
-        max_length[branch - 2] = length;
+        max_length[branch] = length;
       };
 
       if(bspecs.contains("orbit_branch_specs")) {
@@ -39,7 +41,7 @@ namespace CASM {
 
   /* -- Cluster Orbit generating function definitions ------------------------------------- */
 
-  /// \brief Output the neighborhood of UnitCellCoord within max_radius of a unit cell
+  /// \brief Output the neighborhood of UnitCellCoord within max_radius of any site in unit cell
   ///
   /// \param unit The unit cell Structure
   /// \param max_radius The neighborhood distance cutoff
@@ -87,51 +89,171 @@ namespace CASM {
     return result;
   }
 
-  /// \brief Generate the asymmetric unit, including all sites
-  ///
-  /// \param prim A PrimType
-  /// \param generating_grp Iterators over SymOp to use for generating the asymmetric unit orbit
-  /// \param compare Determines the symmetry properties used to generated the orbits
-  /// \param result An output iterator for orbits of IntegralCluster
-  ///
-  /// \relates IntegralCluster
-  ///
-  template<typename OrbitOutputIterator, typename SymCompareType>
-  OrbitOutputIterator make_asymmetric_unit(
-    const IntegralCluster::PrimType &prim,
-    const SymGroup &generating_grp,
-    const SymCompareType &sym_compare,
-    OrbitOutputIterator result) {
 
-    typedef typename OrbitOutputIterator::container_type container_type;
-    typedef typename container_type::value_type orbit_type;
+  // ------- Generating elements generation ------------------------------------
 
-    std::vector<bool> assigned(prim.basis.size(), false);
+  namespace {
 
-    // for all sites in the basis
-    for(int i = 0; i < assigned.size(); i++) {
-      if(assigned[i])
-        continue;
+    /// \brief Insert the null cluster
+    ///
+    /// \param prim A PrimType
+    /// \param generators OrbitGenerators<OrbitType> instance collecting orbit
+    ///        generating elements
+    ///
+    /// \relates IntegralCluster
+    ///
+    template<typename OrbitType>
+    OrbitGenerators<OrbitType> &_insert_null_cluster_generator(
+      const Structure &prim,
+      OrbitGenerators<OrbitType> &generators) {
+
+      typedef typename OrbitType::Element cluster_type;
 
       // create a prototype cluster
-      IntegralCluster cluster(prim);
+      cluster_type test(prim);
+      generators.insert(test);
 
-      cluster.elements().push_back(UnitCellCoord(prim, i, UnitCell(0, 0, 0)));
-
-      // generate an orbit
-      orbit_type orbit(cluster, generating_grp, sym_compare);
-
-      // note sites that have been added to the orbit
-      for(int j = 0; j < orbit.size(); j++) {
-        assigned[orbit[j][0].sublat()] = true;
-      }
-
-      // add the orbit to the asym_unit
-      *result++ = orbit;
+      return generators;
     }
 
-    return result;
+    /// \brief Insert the generating elements for the asymmetric unit, including all sites
+    ///
+    /// \param prim A PrimType
+    /// \param generators OrbitGenerators<OrbitType> instance collecting orbit
+    ///        generating elements
+    ///
+    /// \relates IntegralCluster
+    ///
+    template<typename OrbitType>
+    OrbitGenerators<OrbitType> &_insert_asymmetric_unit_generators(
+      const Structure &prim,
+      OrbitGenerators<OrbitType> &generators) {
+
+      typedef typename OrbitType::Element cluster_type;
+
+      // for all sites in the basis
+      for(int i = 0; i < prim.basis.size(); i++) {
+        // create a prototype cluster
+        cluster_type test(prim);
+        test.elements().push_back(UnitCellCoord(prim, i, UnitCell(0, 0, 0)));
+        generators.insert(test);
+      }
+
+      return generators;
+    }
+
+    /// \brief Use orbits of size n to insert generating elements for orbits of size n+1
+    ///
+    /// \param begin,end A range of input orbit generating clusters of size n
+    /// \param specs OrbitBranchSpecs for orbits of size n+1
+    /// \param generators An OrbitGeneratorSet<OrbitType> >& to store
+    ///        generating elements for orbits of size n+1
+    /// \param stutus Stream for status messages
+    ///
+    /// Uses SymCompareType::compare to find unique generating elements
+    ///
+    /// \ingroup IntegralCluster
+    ///
+    template<typename OrbitType, typename OrbitGeneratorIterator>
+    OrbitGenerators<OrbitType> &_insert_next_orbitbranch_generators(
+      OrbitGeneratorIterator begin,
+      OrbitGeneratorIterator end,
+      const OrbitBranchSpecs<OrbitType> &specs,
+      OrbitGenerators<OrbitType> &generators,
+      std::ostream &status) {
+
+      typedef typename OrbitType::Element cluster_type;
+      typedef OrbitType orbit_type;
+
+      const auto &sym_compare = specs.sym_compare();
+      const auto &filter = specs.filter();
+      const auto &g = specs.generating_group();
+
+      // print status messages
+      std::string clean(100, ' ');
+
+      // contains a pair of iterators over candidate UnitCellCoord
+      auto candidate_sites = specs.candidate_sites();
+      Index orig_size = generators.elements.size();
+
+      // for each orbit generator of size n
+      for(auto orbit_generator_it = begin; orbit_generator_it != end; ++orbit_generator_it) {
+
+        // print status messages
+        status << clean << '\r'
+               << "  Calculating orbit branch " << orbit_generator_it->size() + 1
+               << ":  Expanding orbit " << std::distance(begin, orbit_generator_it)
+               << " / " << std::distance(begin, end)
+               << "  of branch " << orbit_generator_it->size()
+               << ".  New orbits: " << generators.elements.size() - orig_size << std::flush;
+
+        // by looping over each site in the grid,
+        for(auto site_it = candidate_sites.first; site_it != candidate_sites.second; ++site_it) {
+
+          // don't duplicate sites in cluster
+          if(contains(*orbit_generator_it, *site_it)) {
+            continue;
+          }
+
+          // create a test cluster from prototype
+          cluster_type test(*orbit_generator_it);
+
+          // add the new site
+          test.elements().push_back(*site_it);
+
+          // filter clusters
+          if(!filter(test)) {
+            continue;
+          }
+
+          // try inserting test (only uniques will be kept)
+          generators.insert(test);
+        }
+      }
+
+      // print status messages
+      status << clean << '\r';
+
+      return generators;
+    }
+
+    /// \brief Given a cluster, generate all subcluster generators
+    ///
+    /// \param cluster A cluster to generate subclusters of
+    /// \param generators An OrbitGeneratorSet<OrbitType>& to store generating
+    ///        elements for subclusters of cluster
+    /// \param stutus Stream for status messages
+    ///
+    /// Uses SymCompareType::compare to find unique generating elements
+    ///
+    /// \ingroup IntegralCluster
+    ///
+    template<typename OrbitType>
+    OrbitGenerators<OrbitType> &_insert_subcluster_generators(
+      typename OrbitType::Element cluster,
+      OrbitGenerators<OrbitType> &generators,
+      std::ostream &status) {
+
+      typedef typename OrbitType::Element cluster_type;
+      typedef OrbitType orbit_type;
+
+      // Construct a functor that returns takes a cluster and returns it in a canonical form
+      CanonicalGenerator<orbit_type> canonical_generator(generators.group, generators.sym_compare);
+
+      // SubClusterGenerator allows iterating over subclusters (includes null and original cluster)
+      SubClusterGenerator<cluster_type> it(cluster);
+      SubClusterGenerator<cluster_type> end;
+
+      while(it != end) {
+        generators.elements.insert(canonical_generator(*it++));
+      }
+
+      return generators;
+    }
   }
+
+
+  // ------- Generating asymmetric unit orbits ---------------------------------
 
   /// \brief Generate the asymmetric unit, using OrbitBranchSpecs
   ///
@@ -173,181 +295,196 @@ namespace CASM {
                                             OrbitOutputIterator result,
                                             std::ostream &status) {
 
-    typedef IntegralCluster cluster_type;
-    typedef cluster_type::InvariantsType invariants_type;
+    /// Construct an OrbitGenerators object to collect orbit generating elements
+    OrbitGenerators<OrbitType> generators(specs.generating_group(), specs.sym_compare());
 
-    const auto &sym_compare = specs.sym_compare();
-    const auto &filter = specs.filter();
-    const auto &g = specs.generating_group();
+    auto get_prototype = [](typename std::iterator_traits<OrbitInputIterator>::reference orbit) {
+      return orbit.prototype();
+    };
 
-    // store orbits as we find them
-    std::set<OrbitType> orbits;
+    auto tbegin = boost::make_transform_iterator(begin, get_prototype);
+    auto tend = boost::make_transform_iterator(end, get_prototype);
 
-    // print status messages
-    std::string clean(100, ' ');
+    /// Use OrbitBranchSpecs to insert orbit generating elements for the next orbitbranch
+    _insert_next_orbitbranch_generators(tbegin, tend, specs, generators, status);
 
-    // contains a pair of iterators over candidate UnitCellCoord
-    auto candidate_sites = specs.candidate_sites();
-
-    // for each orbit of size n
-    for(auto orbit_it = begin; orbit_it != end; ++orbit_it) {
-
-      // print status messages
-      status << clean << '\r'
-             << "  Calculating orbit branch " << orbit_it->prototype().size() + 1
-             << ":  Expanding orbit " << std::distance(begin, orbit_it)
-             << " / " << std::distance(begin, end)
-             << "  of branch " << orbit_it->prototype().size()
-             << ".  New orbits: " << orbits.size() << "\r" << std::flush;
-
-      // by looping over each site in the grid,
-      for(auto site_it = candidate_sites.first; site_it != candidate_sites.second; ++site_it) {
-
-        // don't duplicate sites in cluster
-        if(contains(orbit_it->prototype(), *site_it)) {
-          continue;
-        }
-
-        // create a test cluster from prototype
-        cluster_type test(orbit_it->prototype());
-
-        // add the new site
-        test.elements().push_back(*site_it);
-
-        // 'prepare' the test cluster for comparison
-        test = sym_compare.prepare(test);
-
-        // filter clusters
-        if(!filter(test)) {
-          continue;
-        }
-
-        // try to find test cluster in already found orbits
-        auto it = find_orbit(orbits.begin(), orbits.end(), test);
-        if(it != orbits.end()) {
-          continue;
-        }
-
-        // if not yet found, use test to generate a new Orbit
-        orbits.insert(OrbitType(test, g, sym_compare));
-
-      }
-    }
-
-    // output Orbits
-    result = std::move(orbits.begin(), orbits.end(), result);
-
-    // print status messages
-    status << clean << '\r';
-
-    return result;
+    /// Generate orbits from the orbit generating elements
+    return generators.make_orbits(result);
   }
 
-  /// \brief Generate Orbit using OrbitBranchSpecs
+
+  /// \brief Generate Orbit<IntegralCluster> using OrbitBranchSpecs
   ///
-  /// \param begin,end OrbitBranchSpecsIterators over range of OrbitBranchSpecs,
-  ///                  with one for each orbit branch to be calculated
-  /// \param result OutputIterator for resulting Orbit
-  /// \param stutus Stream for status messages
-  ///
-  ///
-  /// \ingroup IntegralCluster
+  /// \param begin,end A range of OrbitBranchSpecs, starting with the null branch
+  /// \param custom_generators A vector of custom orbit generating clusters
+  /// \param result An output iterator for Orbit
+  /// \param status Stream for status messages
   ///
   template<typename OrbitBranchSpecsIterator, typename OrbitOutputIterator>
   OrbitOutputIterator make_orbits(
     OrbitBranchSpecsIterator begin,
     OrbitBranchSpecsIterator end,
+    const std::vector<IntegralCluster> &custom_generators,
     OrbitOutputIterator result,
     std::ostream &status) {
 
     typedef typename OrbitOutputIterator::container_type container_type;
     typedef typename container_type::value_type orbit_type;
 
-    // Temporarily store Orbits because we need to use ranges of them to
-    //   construct successive orbit branches
-    std::vector<orbit_type> _orbits;
+    // -- Collect orbit generating elements for each branch, to generate the next branch
+    std::vector<OrbitGenerators<orbit_type> > generators;
+    generators.reserve(std::distance(begin, end));
+
+    // -- Combines all orbit branches
+    OrbitGenerators<orbit_type> all_generators(begin->generating_group(), begin->sym_compare());
+
+    // branches should be ordered already, so insert with end as hint
+    auto insert_branch = [&](OrbitGenerators<orbit_type> &all, OrbitGenerators<orbit_type> &branch) {
+      for(auto it = branch.elements.begin(); it != branch.elements.end(); ++it) {
+        all.elements.insert(all.elements.end(), *it);
+      }
+    };
 
     // -- construct null cluster orbit
 
-    //std::cout << "begin orbits()" << std::endl;
     auto specs_it = begin;
+    if(specs_it != end) {
 
-    // generate the null cluster orbit
-    IntegralCluster empty(specs_it->prim());
-    orbit_type null_cluster_orbit(empty, specs_it->generating_group(), specs_it->sym_compare());
+      generators.emplace_back(begin->generating_group(), begin->sym_compare());
+      _insert_null_cluster_generator(specs_it->prim(), generators.back());
 
-
-    // -- construct asymmetric unit
-
-    // print status message
-    std::string clean(80, ' ');
-    status << clean << '\r' << "Calculating asymmetric unit\r" << std::flush;
-
-    ++specs_it;
-
-    // generate asymmetic unit, store iterators to begin and end of size=1 orbits
-    make_asymmetric_unit(*specs_it, std::back_inserter(_orbits), status);
-
+      ++specs_it;
+      insert_branch(all_generators, generators.back());
+    }
 
     // -- construct additional branches
+    // print status messages
+    std::string clean(100, ' ');
 
-    // generate the second orbit branch from the orbits in range [a, b), where b is the current end
-    int a = 1;
-    int b = _orbits.size();
-
-    // generate second+ orbit branches:
-    ++specs_it;
-    for(; specs_it != end; ++specs_it) {
+    // generate orbit branches 1+ using the previously generated branch:
+    auto prev_gen = generators.begin();
+    while(specs_it != end) {
 
       // print status message
       status << clean << '\r' << "Calculating orbit branch "
              << std::distance(begin, specs_it) << "\r" << std::flush;
 
-      // generate an orbitbranch from the orbits in range [a, next_a), where next_a is the current end
-      make_next_orbitbranch(_orbits.cbegin() + a, _orbits.cend(), *specs_it, std::back_inserter(_orbits), status);
 
-      // update the range of orbits for the next orbit branch
-      a = b;
-      b = _orbits.size();
+      generators.emplace_back(specs_it->generating_group(), specs_it->sym_compare());
+      _insert_next_orbitbranch_generators(
+        prev_gen->elements.begin(),
+        prev_gen->elements.end(),
+        *specs_it,
+        generators.back(),
+        status);
 
+      ++specs_it;
+      ++prev_gen;
+      insert_branch(all_generators, generators.back());
     }
 
-    // copy results
-    std::copy(_orbits.cbegin(), _orbits.cend(), result);
+    // -- add custom orbit generators
 
-    //std::cout << "finish orbits()" << std::endl;
-    return result;
+    for(int i = 0; i < custom_generators.size(); ++i) {
+      status << clean << '\r' << "Adding custom orbit "
+             << i << "/"
+             << custom_generators.size() << "\r" << std::flush;
+
+      all_generators.insert(custom_generators[i]);
+    }
+
+    // make orbits
+    return all_generators.make_orbits(result);
   }
 
+  /* -- Generate prim periodic orbits --------------------------------------- */
 
-
-  /// \brief Generate Orbit by specifying max cluster length for each branch
+  /// \brief Generate the prim periodic asymmetric unit
   ///
-  /// \param prim Primitive structure
-  /// \param generating_grp Iterators over SymOp to use for generating the asymmetric unit orbit
-  /// \param max_length Max cluster site displacement, for branches 2+
+  /// \param prim A PrimType
   /// \param site_filter A filter function that returns true for Site that
-  ///        should be considered for the neighborhood (i.e. to check the number of components)
-  /// \param sym_compare Determines the symmetry properties used to generated the orbits
-  /// \param result An output iterator for Orbit
-  /// \param stutus Stream for status messages
+  ///        should be considered for the neighborhood (i.e. to check the number
+  ///        of components)
+  /// \param xtal_tol Crystallography tolerance
+  /// \param result An output iterator for orbits of IntegralCluster
+  /// \param status Stream for status messages
   ///
+  /// - Uses prim.factor_group as the generating group
+  /// - Uses PrimPeriodicIntegralClusterSymCompare(xtal_tol) for cluster equivalence
+  /// - Figures out candidate_sites from max_length and site_filter input to
+  ///   create OrbitBranchSpecs and calls make_orbits
   ///
-  /// \ingroup IntegralCluster
+  /// \relates IntegralCluster
   ///
-  template<typename OrbitOutputIterator, typename SymCompareType>
-  OrbitOutputIterator make_orbits(
-    const IntegralCluster::PrimType &prim,
-    const SymGroup &generating_grp,
-    const std::vector<double> &max_length,
-    double crystallography_tol,
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_prim_periodic_asymmetric_unit(
+    const Structure &prim,
     const std::function<bool (Site)> &site_filter,
-    const SymCompareType &sym_compare,
+    double xtal_tol,
     OrbitOutputIterator result,
     std::ostream &status) {
 
-    typedef IntegralCluster cluster_type;
-    typedef Orbit<IntegralCluster, SymCompareType> orbit_type;
+    typedef PrimPeriodicIntegralClusterOrbit orbit_type;
+    typedef typename orbit_type::Element cluster_type;
+
+    const SymGroup &generating_grp = prim.factor_group();
+    PrimPeriodicIntegralClusterSymCompare sym_compare(xtal_tol);
+
+    std::vector<UnitCellCoord> candidate_sites;
+    for(int i = 0; i < prim.basis.size(); ++i) {
+      if(site_filter(prim.basis[i])) {
+        candidate_sites.emplace_back(prim, i, 0, 0, 0);
+      }
+    }
+
+    OrbitBranchSpecs<orbit_type> specs(
+      prim,
+      candidate_sites.begin(),
+      candidate_sites.end(),
+      generating_grp,
+    [](const cluster_type & test) {
+      return true;
+    },
+    sym_compare);
+
+    return make_asymmetric_unit(specs, result, status);
+  }
+
+  /// \brief Generate Orbit<IntegralCluster> by specifying max cluster length for each branch
+  ///
+  /// \param prim Primitive structure
+  /// \param max_length vector of max_length of pairs of cluster sites. Expects
+  ///        that max_length[b] is the max_length for orbit branch b. The values
+  ///        for the null cluster and point clusters are ignored.
+  /// \param custom_generators A vector of custom orbit generating clusters
+  /// \param site_filter A filter function that returns true for Site that
+  ///        should be considered for the neighborhood (i.e. to check the number
+  ///        of components)
+  /// \param xtal_tol Crystallography tolerance
+  /// \param result An output iterator for Orbit
+  /// \param status Stream for status messages
+  ///
+  /// - Uses prim.factor_group as the generating group
+  /// - Uses PrimPeriodicIntegralClusterSymCompare(xtal_tol) for cluster equivalence
+  /// - Figures out candidate_sites from max_length and site_filter input to
+  ///   create OrbitBranchSpecs and calls make_orbits
+  ///
+  /// \relates IntegralCluster
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_prim_periodic_orbits(
+    const Structure &prim,
+    const std::vector<double> &max_length,
+    const std::vector<IntegralCluster> &custom_generators,
+    const std::function<bool (Site)> &site_filter,
+    double xtal_tol,
+    OrbitOutputIterator result,
+    std::ostream &status) {
+
+    typedef PrimPeriodicIntegralClusterOrbit orbit_type;
+    typedef typename orbit_type::Element cluster_type;
+
+    const SymGroup &generating_grp = prim.factor_group();
+    PrimPeriodicIntegralClusterSymCompare sym_compare(xtal_tol);
 
     // collect OrbitBranchSpecs here
     std::vector<OrbitBranchSpecs<orbit_type> > specs;
@@ -356,149 +493,120 @@ namespace CASM {
     std::vector<UnitCellCoord> candidate_sites;
 
     // --- add specs for null cluster orbit ------------------
-    specs.emplace_back(prim,
-                       candidate_sites.begin(),
-                       candidate_sites.end(),
-                       generating_grp,
-    [](const cluster_type & test) {
-      return true;
-    },
-    sym_compare);
+    if(max_length.size() >= 1) {
+      specs.emplace_back(prim,
+                         candidate_sites.begin(),
+                         candidate_sites.end(),
+                         generating_grp,
+      [](const cluster_type & test) {
+        return true;
+      },
+      sym_compare);
+    }
 
 
     // --- add specs for asymmetric unit orbit ------------------
-    for(int i = 0; i < prim.basis.size(); ++i) {
-      candidate_sites.emplace_back(prim, i, 0, 0, 0);
+    if(max_length.size() >= 2) {
+      for(int i = 0; i < prim.basis.size(); ++i) {
+        if(site_filter(prim.basis[i])) {
+          candidate_sites.emplace_back(prim, i, 0, 0, 0);
+        }
+      }
+      specs.emplace_back(prim,
+                         candidate_sites.begin(),
+                         candidate_sites.end(),
+                         generating_grp,
+      [](const cluster_type & test) {
+        return true;
+      },
+      sym_compare);
     }
-    specs.emplace_back(prim,
-                       candidate_sites.begin(),
-                       candidate_sites.end(),
-                       generating_grp,
-    [](const cluster_type & test) {
-      return true;
-    },
-    sym_compare);
-
 
     // --- add specs for additional orbit branches ------------------
-    for(auto it = max_length.begin(); it != max_length.end(); ++it) {
+    for(auto it = max_length.begin() + 2; it != max_length.end(); ++it) {
 
       // construct the neighborhood of sites to consider for the orbit
       candidate_sites.clear();
-      neighborhood(prim, *it, site_filter, std::back_inserter(candidate_sites), crystallography_tol);
+      neighborhood(prim, *it, site_filter, std::back_inserter(candidate_sites), xtal_tol);
+
+      auto max_length_filter = [ = ](const cluster_type & test) {
+        return test.invariants().displacement().back() < *it;
+      };
 
       specs.emplace_back(prim,
                          candidate_sites.begin(),
                          candidate_sites.end(),
                          generating_grp,
-      [ = ](const cluster_type & test) {
-        return test.invariants().displacement().back() < *it;
-      },
-      sym_compare);
+                         max_length_filter,
+                         sym_compare);
     }
 
     // now generate orbits
-    return make_orbits(specs.begin(), specs.end(), result, status);
+    return make_orbits(specs.begin(), specs.end(), custom_generators, result, status);
+
   }
 
-  /// \brief Generate Orbit from bspecs.json-type JSON input file
+  /// \brief Generate Orbit<IntegralCluster> from bspecs.json-type JSON input file
   ///
   /// \param prim Primitive structure
-  /// \param generating_grp Iterators over SymOp to use for generating the asymmetric unit orbit
-  /// \param bspecs 'bspecs.json'-like JSON object
+  /// \param bspecs jsonParser containing bspecs.json contents
   /// \param site_filter A filter function that returns true for Site that
-  ///        should be considered for the neighborhood (i.e. to check the number of components)
-  /// \param sym_compare Determines the symmetry properties used to generated the orbits
+  ///        should be considered for the neighborhood (i.e. to check the number
+  ///        of components)
+  /// \param xtal_tol Crystallography tolerance
   /// \param result An output iterator for Orbit
-  /// \param stutus Stream for status messages
+  /// \param status Stream for status messages
   ///
+  /// - Uses prim.factor_group as the generating group
+  /// - Uses PrimPerioidicIntegralClusterSymCompare(xtal_tol) for cluster equivalence
+  /// - Converts input to max_length and custom_generators and calls make_orbits
   ///
-  /// \ingroup IntegralCluster
-  ///
-  template<typename OrbitOutputIterator, typename SymCompareType>
-  OrbitOutputIterator make_orbits(
-    const IntegralCluster::PrimType &prim,
-    const SymGroup &generating_grp,
+  /// \relates IntegralCluster
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_prim_periodic_orbits(
+    const Structure &prim,
     const jsonParser &bspecs,
-    double crystallography_tol,
     const std::function<bool (Site)> &site_filter,
-    const SymCompareType &sym_compare,
+    double xtal_tol,
     OrbitOutputIterator result,
     std::ostream &status) {
 
-    typedef Orbit<IntegralCluster, SymCompareType> orbit_type;
+    typedef PrimPeriodicIntegralClusterOrbit orbit_type;
+    typedef typename orbit_type::Element cluster_type;
 
-    // generate orbits
-    std::vector<orbit_type> orbits;
-    make_orbits(
-      prim,
-      generating_grp,
-      max_length_from_bspecs(bspecs),
-      crystallography_tol,
-      site_filter,
-      sym_compare,
-      std::back_inserter(orbits),
-      status
-    );
+    // read max_length from bspecs
+    std::vector<double> max_length = max_length_from_bspecs(bspecs);
 
-    // read custom orbit specs
-    // generate custom clusters
-    // make_custom_orbits(...)
+    // collect custom orbit generating clusters in 'generators'
+    PrimPeriodicIntegralClusterSymCompare sym_compare(xtal_tol);
+    OrbitGenerators<orbit_type> generators(prim.factor_group(), sym_compare);
+
     if(bspecs.contains("orbit_specs")) {
-      throw std::runtime_error("Error: the orbit_specs generation is being re-implemented");
-    }
 
-    // output orbits
-    return std::move(orbits.begin(), orbits.end(), result);
-  }
+      // for each custom orbit
+      for(auto it = bspecs["orbit_specs"].begin(); it != bspecs["orbit_specs"].end(); ++it) {
 
-  /*
-    /// \brief Output all subclusters (whether symmetrically equivalent or not)
-    template<typename ClusterType, typename OutputIterator>
-    OutputIterator subclusters(
-      const ClusterType& cluster,
-      OutputIterator result) {
+        // read orbit generating cluster from bspecs
+        cluster_type input_cluster(prim);
+        from_json(input_cluster, *it, xtal_tol);
 
-      // --- enumerate subclusters ----
-
-      // count over subclusters to create test subcluster
-
-        // prepare, and intra-orbit compare
-
-      // ... insert unique
-      // ... output
-    }
-
-    OutputIterator subcluster_orbits(
-      const ClusterType& cluster,
-      OutputIterator result,
-      const SymGroup& grp,
-      const SymCompare<ClusterType>& sym_compare);
-  */
-
-  /*
-    "orbit_specs" : [
-      {
-        "coordinate_mode" : "Direct",
-        "prototype" : [
-          [ 0.000000000000, 0.000000000000, 0.000000000000 ],
-          [ 1.000000000000, 0.000000000000, 0.000000000000 ],
-          [ 2.000000000000, 0.000000000000, 0.000000000000 ],
-          [ 3.000000000000, 0.000000000000, 0.000000000000 ]
-        ],
-        "include_subclusters" : true
-      },
-      {
-        "coordinate_mode" : "Integral",
-        "prototype" : [
-          [ 0, 0, 0, 0 ],
-          [ 1, 0, 0, 0 ],
-          [ 0, 0, 0, 3 ]
-        ],
-        "include_subclusters" : true
+        // check if subclusters should be included (yes by default)
+        auto f_it = it->find("include_subclusters");
+        if(f_it == it->end() ||
+           (f_it != it->end() && f_it->get<bool>())) {
+          _insert_subcluster_generators(input_cluster, generators, status);
+        }
+        else {
+          generators.insert(input_cluster);
+        }
       }
-    ]
-  */
+    }
+
+    std::vector<cluster_type> custom_generators(generators.elements.begin(), generators.elements.end());
+
+    return make_prim_periodic_orbits(prim, max_length, custom_generators, site_filter, xtal_tol, result, status);
+
+  }
 
 
   /* -- Cluster Orbit access/usage function definitions ------------------------------------- */

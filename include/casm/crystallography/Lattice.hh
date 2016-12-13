@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cmath>
 
+#include "casm/misc/Comparisons.hh"
 #include "casm/container/Array.hh"
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/container/Counter.hh"
@@ -13,10 +14,24 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   class SymGroup;
   class SymOp;
+  class ScelEnumProps;
 
-  class Lattice {
+  /** \defgroup Crystallography
+   *
+   *  \brief Relates to crystallography
+   */
+
+  /** \defgroup Lattice
+   *  \ingroup Crystallography
+   *  \brief Relates to Lattice
+   *
+   *  @{
+   */
+
+  class Lattice : public Comparisons<Lattice> {
   public:
-    typedef Eigen::Matrix3d::ConstColXpr LatVec;
+    typedef Eigen::Matrix3d::ColXpr LatVec;
+    typedef Eigen::Matrix3d::ConstColXpr ConstLatVec;
 
     Lattice(const Eigen::Vector3d &vec1, const Eigen::Vector3d &vec2,
             const Eigen::Vector3d &vec3);
@@ -38,14 +53,27 @@ namespace CASM {
     static Lattice hexagonal();
 
     /// \brief Get i'th lattice vector as column expression
-    LatVec operator[](Index i)const {
+    LatVec operator[](Index i) {
       return m_lat_mat.col(i);
+    }
+
+    /// \brief Get i'th lattice vector as column expression
+    ConstLatVec operator[](Index i)const {
+      return m_lat_mat.col(i);
+    }
+
+    std::tuple<LatVec, LatVec, LatVec> vectors() {
+      return std::make_tuple(m_lat_mat.col(0), m_lat_mat.col(1), m_lat_mat.col(2));
+    }
+
+    std::tuple<ConstLatVec, ConstLatVec, ConstLatVec> vectors() const {
+      return std::make_tuple(m_lat_mat.col(0), m_lat_mat.col(1), m_lat_mat.col(2));
     }
 
     /// \brief Return scaled copy of this lattice (Note: Volume will be scaled by scale^3)
     Lattice scaled_lattice(double scale) const;
 
-    /// \brief Return angle between lattice vectors (*this)[(i+1)%3] and (*this)[(i+2)%3]
+    /// \brief Return angle between lattice vectors (*this)[(i+1)%3] and (*this)[(i+2)%3], in degrees
     double angle(Index i)const;
 
     /// \brief Return length of i'th lattice vector
@@ -56,10 +84,19 @@ namespace CASM {
       return lat_column_mat().determinant();
     }
 
+    /// \brief Return voronoi table, which specifies outward-pointing normals of Lattice Voronoi cell.
+    /// outward-pointing normals are given as rows of the matrix, and defined such that
+    /// if (voronoi_table()*coord.cart()).maxCoeff()>1, then 'coord' is outside of the voronoi cell
+    Eigen::MatrixXd const &voronoi_table() const {
+      if(!m_voronoi_table.size()) {
+        _generate_voronoi_table();
+      }
+      return m_voronoi_table;
+    }
+
     /// \brief Radius of the largest sphere that fits wholly within the voronoi cell
     double inner_voronoi_radius() const {
-      if(voronoi_table.empty())
-        generate_voronoi_table();
+      voronoi_table();
       return m_inner_voronoi_radius;
     }
 
@@ -82,7 +119,7 @@ namespace CASM {
     Array<int> calc_kpoints(Array<int> prim_kpoints, Lattice prim_lat);
 
     /// \brief Return reciprocal lattice
-    Lattice get_reciprocal() const;
+    Lattice reciprocal() const;
 
     /// \brief Populate \param point_group with the point group of this lattice
     /// \param point_group should be empty
@@ -90,15 +127,36 @@ namespace CASM {
     /// that are slightly distorted due to numerical noise
     void generate_point_group(SymGroup &point_group, double pg_tol = TOL) const;
 
+    /// \brief Output the SymOp that leave this lattice invariant
+    template<typename SymOpIterator, typename SymOpOutputIterator>
+    SymOpOutputIterator find_invariant_subgroup(SymOpIterator begin, SymOpIterator end, SymOpOutputIterator result, double pg_tol = TOL) const;
+
     /// \brief populate \param sub_group with  subset of \param super_group that leaves this lattice invariant
     /// \param sub_group should be empty
     void find_invariant_subgroup(const SymGroup &super_group, SymGroup &sub_group, double pg_tol = TOL) const;
+
+
+    /// \brief Check if Lattice is in the canonical form
+    bool is_canonical(double tol = TOL) const;
+
+    /// \brief Returns the operation that applied to *this returns the canonical form
+    SymOp to_canonical(double tol = TOL) const;
+
+    /// \brief Returns the operation that applied to the canonical form returns *this
+    SymOp from_canonical(double tol = TOL) const;
+
+    /// \brief Returns the canonical equivalent Lattice, using the point group of the Lattice
+    Lattice canonical_form(double tol = TOL) const;
+
+    /// \brief Returns the canonical equivalent Lattice, using the provided point group
+    Lattice canonical_form(const SymGroup &pg, double tol = TOL) const;
+
 
     /// \brief Populate \param supercell with symmetrically distinct supercells of this lattice
     /// Superlattices are enumerated with volumes \param min_prim_vol <= volume <= \param max_prim_vol
     /// \param effective_pg is a group that should either be equivalent to the full point group of this lattice
     /// or be a subgroup of that full point group
-    void generate_supercells(Array<Lattice> &supercell, const SymGroup &effective_pg, int min_prim_vol, int max_prim_vol, int dims, const Eigen::Matrix3i &T) const;
+    void generate_supercells(Array<Lattice> &supercell, const SymGroup &effective_pg, const ScelEnumProps &enum_props) const;
 
     /// \brief make a supercell of this lattice.
     /// Equivalent to Lattice(lat_column_mat()*trans_mat)
@@ -107,7 +165,7 @@ namespace CASM {
 
     /// \brief Find the lattice vectors which give most compact unit cell
     /// Compactness is measured by how close lat_column_mat().transpose()*lat_column_mat() is to a diagonal matrix
-    Lattice get_reduced_cell() const;
+    Lattice reduced_cell() const;
 
     void print_voronoi_table(std::ostream &stream) const;
 
@@ -142,8 +200,8 @@ namespace CASM {
     /// Are two lattices the same, even if they have different lattice vectors
     bool is_equivalent(const Lattice &RHS, double tol) const;
 
-    /// Are lattice vectors identical for two lattices, within TOL
-    bool operator==(const Lattice &RHS) const;
+    /// \brief Compare two Lattice
+    bool operator<(const Lattice &RHS) const;
 
     ///Matrix that relates two lattices (e.g., strain or slat)
     //Eigen::Matrix3d operator/(const Lattice &RHS);
@@ -167,10 +225,10 @@ namespace CASM {
     bool is_right_handed() const;
 
     ///Given a normal vector, a Vector3 containing the miller indeces for the lattice is generated
-    Eigen::Vector3i get_millers(Eigen::Vector3d plane_normal, double tolerance = TOL) const;
+    Eigen::Vector3i millers(Eigen::Vector3d plane_normal, double tolerance = TOL) const;
 
     ///Generates a lattice with vectors a and b parallel to the plane described by the miller indeces
-    Lattice get_lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; //John G 121030
+    Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; //John G 121030
 
     Array<double> pg_converge(double large_tol);
     void pg_converge(double small_tol, double large_tol, double increment);
@@ -183,11 +241,16 @@ namespace CASM {
 
   private:
 
+    friend Comparisons<Lattice>;
+
+    /// Are lattice vectors identical for two lattices, within TOL
+    bool _eq(const Lattice &RHS) const;
+
     /// \brief populate voronoi information.
-    void generate_voronoi_table() const;
+    void _generate_voronoi_table() const;
 
     mutable double m_inner_voronoi_radius;
-    mutable std::vector<Eigen::Vector3d> voronoi_table;
+    mutable Eigen::MatrixXd m_voronoi_table;
 
     //Coordinate Conversion Matrices
     //0 is fractional to cartesion; 1 is cartesian to fractional
@@ -201,6 +264,7 @@ namespace CASM {
 
   };
 
+
   // write Lattice in json as array of vectors
   jsonParser &to_json(const Lattice &lat, jsonParser &json);
   void from_json(Lattice &lat, const jsonParser &json);
@@ -213,18 +277,6 @@ namespace CASM {
 
      Lattice operator*(const Eigen::Matrix3d &LHS, const Lattice &RHS);
   */
-
-  namespace niggli_impl {
-
-    /// \brief Returns an equivalent Lattice in Niggli form, but without setting standard orientation
-    Lattice _niggli(const Lattice &lat, double tol);
-  }
-
-  /// \brief Returns an equivalent Lattice in Niggli form with a standard orientation
-  Lattice niggli(const Lattice &lat, const SymGroup &point_grp, double tol);
-
-  /// \brief Rotate the Lattice to a standard orientation using allowed point group operations
-  Lattice standard_orientation(const Lattice &lat, const SymGroup &point_grp, double tol);
 
   /// \brief Returns the volume of a Lattice
   double volume(const Lattice &lat);
@@ -263,6 +315,11 @@ namespace CASM {
                          SymOpIterator op_begin = SymOpIterator(),
                          SymOpIterator op_end = SymOpIterator());
 
+  Lattice replace_vector(const Lattice &lat, const Eigen::Vector3d &new_vector, double tol);
+
+
+
+
   //********************************************************************
   ///\brief Returns 'frac_mat' which is transformation of 'cart_mat'
   /// if
@@ -290,74 +347,6 @@ namespace CASM {
   }
 
   //********************************************************************
-  /**
-   * This function generates a grid of points between max_radius and
-   * min_radius. Additionally, it also fills up the points with a basis
-   */
-  //********************************************************************
-
-  template<typename CoordType, typename CoordType2>
-  Array<CoordType> Lattice::gridstruc_build(double max_radius, double min_radius, Array<CoordType> basis, CoordType2 lat_point) {
-    Eigen::Vector3i dim;
-    dim = enclose_sphere(max_radius);
-    EigenCounter<Eigen::Vector3i > grid_count(-dim, dim, Eigen::Vector3i(1));
-    double min_dist, dist;
-    Array<CoordType> gridstruc;
-    Eigen::Vector3i temp;
-
-    do {
-      lat_point(FRAC) = grid_count();
-
-      for(Index i = 0; i < basis.size(); i++) {
-        CoordType tatom(basis[i] + lat_point);
-        //get distance to closest basis site in the unit cell at the origin
-
-        min_dist = 1e20;
-        for(Index j = 0; j < basis.size(); j++) {
-          dist = tatom.dist(basis[j]);
-          if(dist < min_dist)
-            min_dist = dist;
-        }
-        if(min_dist < min_radius) {
-          continue;
-        }
-        if(min_dist < max_radius) {
-          gridstruc.push_back(tatom);
-          //          std::cout<<"tatom"<<tatom<<"\t Min Dist"<<min_dist<<"\n";
-        }
-      }
-    }
-    while(++grid_count);
-
-    return gridstruc;
-  }
-
-
-  ///\brief returns Lattice that is smallest possible supercell of all input Lattice
-  ///
-  /// If SymOpIterator are provided they are applied to each Lattice in an attempt
-  /// to find the smallest possible superdupercell of all symmetrically transformed Lattice
-  template<typename LatIterator, typename SymOpIterator>
-  Lattice superdupercell(LatIterator begin,
-                         LatIterator end,
-                         SymOpIterator op_begin,
-                         SymOpIterator op_end) {
-
-    Lattice best = *begin;
-    for(auto it = ++begin; it != end; ++it) {
-      Lattice tmp_best = superdupercell(best, *it);
-      for(auto op_it = op_begin; op_it != op_end; ++op_it) {
-        Lattice test = superdupercell(best, copy_apply(*op_it, *it));
-        if(std::abs(volume(test)) < std::abs(volume(tmp_best))) {
-          tmp_best = test;
-        }
-      }
-      best = tmp_best;
-    }
-    return best;
-  }
-
-  //********************************************************************
   // A column of trans_mat specifies a lattice vector of the supercell in terms of the
   // lattice vectors of (*this) lattice.
   template <typename T>
@@ -380,27 +369,7 @@ namespace CASM {
     return Lattice(Eigen::Matrix3d(lat.lat_column_mat()) * transf_mat.cast<double>());
   }
 
-  /// Check if there is a symmetry operation, op, and transformation matrix T,
-  ///   such that scel is a supercell of the result of applying op to unit
-  ///
-  /// \returns pair corresponding to first successful op and T, or with op=end if not successful
-  template<typename Object, typename OpIterator>
-  std::pair<OpIterator, Eigen::MatrixXi> is_supercell(
-    const Object &scel,
-    const Object &unit,
-    OpIterator begin,
-    OpIterator end,
-    double tol) {
-
-    std::pair<bool, Eigen::MatrixXi> res;
-    for(auto it = begin; it != end; ++it) {
-      res = is_supercell(scel, copy_apply(*it, unit), tol);
-      if(res.first) {
-        return std::make_pair(it, res.second);
-      }
-    }
-    return std::make_pair(end, res.second);
-  }
+  /** @} */
 
 }
 #endif

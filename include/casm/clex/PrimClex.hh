@@ -11,11 +11,13 @@
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ChemicalReference.hh"
-#include "casm/misc/cloneable_ptr.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/clex/ClexBasis.hh"
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/app/EnumeratorHandler.hh"
+#include "casm/app/QueryHandler.hh"
 
 /// Cluster expansion class
 namespace CASM {
@@ -24,17 +26,29 @@ namespace CASM {
 
   template<typename T, typename U> class ConfigIterator;
 
-  /// \defgroup Clex
-  ///
-  /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
-  ///
+  /** \defgroup Clex
+   *
+   * \brief The functions and classes related to evaluating cluster expansions
+   */
 
+  /** \defgroup PrimClex
+   *  \ingroup Clex
+   *  \ingroup Project
+   *  \brief PrimClex is the top-level data structure for a CASM project
+   *
+   *  @{
+   */
 
-  /// \brief PrimClex stores the primitive Structure and lots of related data
+  /// \brief PrimClex is the top-level data structure for a CASM project
   ///
-  /// \ingroup Clex
-  ///
-  class PrimClex {
+  /// The PrimClex provides access to:
+  /// - the parent crystal structure, the `prim`
+  /// - project files & settings
+  /// - composition axes & references
+  /// - supercells & configurations
+  /// - clusters, basis sets, neighbor lists, & ECI
+  /// -
+  class PrimClex : public Logging {
 
     DirectoryStructure m_dir;
     ProjectSettings m_settings;
@@ -69,12 +83,18 @@ namespace CASM {
     // **** Constructors ****
 
     /// Initial construction of a PrimClex, from a primitive Structure
-    PrimClex(const Structure &_prim, Log &log = default_log());
+    PrimClex(const Structure &_prim, const Logging &logging = Logging());
 
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-    PrimClex(const fs::path &_root, Log &log = default_log());
+    PrimClex(const fs::path &_root, const Logging &logging = Logging());
 
+    /// Reload PrimClex data from settings
+    void refresh(bool read_settings = false,
+                 bool read_composition = false,
+                 bool read_chem_ref = false,
+                 bool read_configs = false,
+                 bool clear_clex = false);
 
     // ** Directory path and settings accessors **
 
@@ -90,6 +110,10 @@ namespace CASM {
       return m_settings;
     }
 
+    /// \brief Get the crystallography_tol
+    double crystallography_tol() const {
+      return settings().crystallography_tol();
+    }
 
 
     // ** Composition accessors **
@@ -127,6 +151,9 @@ namespace CASM {
 
     // ** Supercell and Configuration accessors **
 
+    /// Access entire supercell_list
+    boost::container::stable_vector<Supercell> &supercell_list();
+
     /// const Access entire supercell_list
     const boost::container::stable_vector<Supercell> &supercell_list() const;
 
@@ -141,6 +168,9 @@ namespace CASM {
 
     /// Access supercell by name
     Supercell &supercell(std::string scellname);
+
+    /// Access supercell by Lattice, adding if necessary
+    Supercell &supercell(const Lattice &lat);
 
     /// access configuration by name (of the form "scellname/[NUMBER]", e.g., ("SCEL1_1_1_1_0_0_0/0")
     const Configuration &configuration(const std::string &configname) const;
@@ -189,7 +219,7 @@ namespace CASM {
     // **** Functions for preparing CLEXulators ****
 
     /// \brief Generate supercells of a certain volume and shape and store them in the array of supercells
-    void generate_supercells(int volStart, int volEnd, int dims, const Eigen::Matrix3i &G, bool verbose);
+    void generate_supercells(const ScelEnumProps &enum_props);
 
     //Enumerate configurations for all the supercells that are stored in 'supercell_list'
     void print_enum_info(std::ostream &stream);
@@ -213,25 +243,55 @@ namespace CASM {
 
     bool contains_supercell(std::string scellname, Index &index) const;
 
+    bool contains_supercell(const Supercell &scel) const;
+    bool contains_supercell(const Supercell &scel, Index &index) const;
+
     Index add_supercell(const Lattice &superlat);
 
     Index add_canonical_supercell(const Lattice &superlat);
 
 
-    bool has_global_clexulator() const;
-    Clexulator global_clexulator(Log &status_log = null_log()) const;
+    bool has_orbits(const ClexDescription &key) const;
+    template<typename OrbitOutputIterator, typename SymCompareType>
+    OrbitOutputIterator orbits(const ClexDescription &key,
+                               OrbitOutputIterator result,
+                               const SymCompareType &sym_compare) const;
 
-    bool has_global_eci(std::string clex_name) const;
-    const ECIContainer &global_eci(std::string clex_name) const;
+    bool has_clex_basis(const ClexDescription &key) const;
+    const ClexBasis &clex_basis(const ClexDescription &key) const;
+
+    bool has_clexulator(const ClexDescription &key) const;
+    Clexulator clexulator(const ClexDescription &key) const;
+
+    bool has_eci(const ClexDescription &key) const;
+    const ECIContainer &eci(const ClexDescription &key) const;
 
   private:
 
     /// Initialization routines
-    void _init(Log &log);
+    void _init();
 
-    mutable ECIContainer m_global_eci;
-    mutable Clexulator m_global_clexulator;
+    mutable std::map<ClexDescription, ClexBasis> m_clex_basis;
+    mutable std::map<ClexDescription, Clexulator> m_clexulator;
+    mutable std::map<ClexDescription, ECIContainer> m_eci;
+
   };
+
+  //*******************************************************************************************
+  template<typename OrbitOutputIterator, typename SymCompareType>
+  OrbitOutputIterator PrimClex::orbits(
+    const ClexDescription &key,
+    OrbitOutputIterator result,
+    const SymCompareType &sym_compare) const {
+
+    return read_clust(
+             result,
+             jsonParser(dir().clust(key.bset)),
+             prim(),
+             prim().factor_group(),
+             sym_compare,
+             settings().crystallography_tol());
+  }
 
 
 }

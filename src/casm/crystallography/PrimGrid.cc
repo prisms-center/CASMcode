@@ -14,8 +14,8 @@
 
 namespace CASM {
   PrimGrid::PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB) {
-    m_lat[PRIM] = &p_lat;
-    m_lat[SCEL] = &s_lat;
+    m_lat[static_cast<int>(PRIM)] = &p_lat;
+    m_lat[static_cast<int>(SCEL)] = &s_lat;
 
     m_NB = NB;
 
@@ -86,8 +86,8 @@ namespace CASM {
                      const Eigen::Ref<const PrimGrid::matrix_type> &U,
                      const Eigen::Ref<const PrimGrid::matrix_type> &Smat,
                      Index NB) : m_U(U) {
-    m_lat[PRIM] = &p_lat;
-    m_lat[SCEL] = &s_lat;
+    m_lat[static_cast<int>(PRIM)] = &p_lat;
+    m_lat[static_cast<int>(SCEL)] = &s_lat;
 
     m_NB = NB;
 
@@ -143,7 +143,7 @@ namespace CASM {
   //**********************************************************************************************
   Index PrimGrid::find(const Coordinate &_coord) const {
 
-    auto frac((m_lat[PRIM]->inv_lat_column_mat()*_coord.cart()).array() + TOL);
+    auto frac((m_lat[static_cast<int>(PRIM)]->inv_lat_column_mat()*_coord.cart()).array() + TOL);
     UnitCell ijk(frac.unaryExpr(std::ptr_fun(floor)).matrix().cast<long>());
 
     return find(ijk);
@@ -152,14 +152,14 @@ namespace CASM {
   //**********************************************************************************************
 
   Index PrimGrid::find(const UnitCell &_unitcell) const {
-    UnitCell mnp = to_canonical(get_within(_unitcell));
+    UnitCell mnp = to_canonical(within(_unitcell));
     return mnp[0] + mnp[1] * m_stride[0] + mnp[2] * m_stride[1];
   }
 
   //**********************************************************************************************
 
   Index PrimGrid::find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord) const {
-    return find(Coordinate(_cart_coord, *m_lat[PRIM], CART));
+    return find(Coordinate(_cart_coord, *m_lat[static_cast<int>(PRIM)], CART));
   }
 
   //**********************************************************************************************
@@ -190,7 +190,7 @@ namespace CASM {
   */
 
   /// map a UnitCell inside the supercell
-  UnitCell PrimGrid::get_within(const UnitCell &ijk)const {
+  UnitCell PrimGrid::within(const UnitCell &ijk)const {
 
     vector_type vec2 = m_plane_mat * ijk;
 
@@ -202,18 +202,18 @@ namespace CASM {
   }
 
   /// map a UnitCellCoord inside the supercell
-  UnitCellCoord PrimGrid::get_within(const UnitCellCoord &bijk)const {
+  UnitCellCoord PrimGrid::within(const UnitCellCoord &bijk)const {
 
-    return UnitCellCoord(bijk.unit(), bijk.sublat(), get_within(bijk.unitcell()));
+    return UnitCellCoord(bijk.unit(), bijk.sublat(), within(bijk.unitcell()));
   }
 
   //**********************************************************************************************
 
   Coordinate PrimGrid::coord(const UnitCell &ijk, CELL_TYPE lat_mode)const {
 
-    Coordinate tcoord(ijk.cast<double>(), *(m_lat[PRIM]), FRAC);
+    Coordinate tcoord(ijk.cast<double>(), *(m_lat[static_cast<int>(PRIM)]), FRAC);
 
-    tcoord.set_lattice(*(m_lat[lat_mode]), CART);
+    tcoord.set_lattice(*(m_lat[static_cast<int>(lat_mode)]), CART);
     return tcoord;
   }
 
@@ -361,7 +361,7 @@ namespace CASM {
         ijk[i] += m_U(i, j) * mnp[j];
       }
     }
-    return get_within(ijk);
+    return within(ijk);
   };
 
   //==============================================================================================

@@ -122,11 +122,11 @@ BOOST_AUTO_TEST_CASE(Make) {
   ss << "\n-----------------------\n";
   {
     std::vector<cloner> dict;
-    dict.emplace_back(ConfigIO::Corr());
-    dict.emplace_back(ConfigIO::CompN());
-    dict.emplace_back(format_operator_add<Configuration>());
-    dict.emplace_back(format_operator_sub<Configuration>());
-    dict.emplace_back(format_operator_eq<Configuration>());
+    dict.emplace_back(ConfigIO::Corr().clone());
+    dict.emplace_back(ConfigIO::CompN().clone());
+    dict.emplace_back(format_operator_add<Configuration>().clone());
+    dict.emplace_back(format_operator_sub<Configuration>().clone());
+    dict.emplace_back(format_operator_eq<Configuration>().clone());
 
     ss << "get iterator" << std::endl;
     auto it = dict.begin();
@@ -142,11 +142,11 @@ BOOST_AUTO_TEST_CASE(Make) {
   ss << "\n-----------------------\n";
   {
     std::map<std::string, cloner > dict;
-    dict["corr"] = cloner(ConfigIO::Corr());
-    dict["comp_n"] =  cloner(ConfigIO::CompN());
-    dict["add"] = cloner(format_operator_add<Configuration>());
-    dict["sub"] = cloner(format_operator_sub<Configuration>());
-    dict["eq"] = cloner(format_operator_eq<Configuration>());
+    dict["corr"] = ConfigIO::Corr().clone();
+    dict["comp_n"] =  ConfigIO::CompN().clone();
+    dict["add"] = format_operator_add<Configuration>().clone();
+    dict["sub"] = format_operator_sub<Configuration>().clone();
+    dict["eq"] = format_operator_eq<Configuration>().clone();
 
     ss << "get iterator" << std::endl;
     auto it = dict.begin();
@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(Make) {
   BaseDatumFormatter<Configuration> *ptr = &adder;
   ss << "ptr adder name: " << ptr->name() << std::endl;
 
-  notstd::cloneable_ptr< BaseDatumFormatter<Configuration> > cl_ptr(adder);
+  notstd::cloneable_ptr< BaseDatumFormatter<Configuration> > cl_ptr(adder.clone());
   ss << "cl_ptr adder name: " << cl_ptr->name() << std::endl;
 
   auto other = cl_ptr;

@@ -6,6 +6,8 @@
 
 
 namespace CASM {
+  template<typename CoordType>
+  class BasicStructure;
   class Structure;
   class UnitCell;
 

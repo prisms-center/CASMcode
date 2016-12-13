@@ -492,7 +492,7 @@ namespace CASM {
     }
 
     /// \brief Set occupant by index
-    void set_value(int occ_index) {
+    void set_value(int occ_index) override {
       if(Index(occ_index) >= m_domain.size()) {
         throw std::runtime_error("In OccupantDoF::set_value(): Bad Assignment, occ_index>=size.\n");
       }

@@ -20,6 +20,15 @@ namespace CASM {
   class UnitCellCoord;
   typedef CoordCluster<UnitCellCoord> IntegralCluster;
   template<typename Element, typename SymCompareType> class Orbit;
+  /** \defgroup ProjectIO
+   *
+   *  \ingroup Project
+   *  \ingroup casmIO
+   *
+   *  \brief Relates to CASM project input/output
+   *
+   *  @{
+  */
 
 
   // --------- PrimIO Declarations --------------------------------------------------
@@ -237,10 +246,11 @@ namespace CASM {
   template<typename ClusterOutputIterator, typename SymCompareType>
   ClusterOutputIterator read_clust(
     ClusterOutputIterator result,
-    jsonParser &json,
+    const jsonParser &json,
     const Structure &prim,
     const SymGroup &generating_grp,
-    const SymCompareType &sym_compare);
+    const SymCompareType &sym_compare,
+    double xtal_tol);
 
   /// \brief Write Orbit<IntegralCluster, SymCompareType> to JSON, including 'bspecs'
   template<typename ClusterOrbitIterator, typename Printer>

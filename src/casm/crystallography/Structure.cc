@@ -119,32 +119,32 @@ namespace CASM {
   //************************************************************
 
   /// Returns an Array of each *possible* Specie in this Structure
-  std::vector<AtomSpecie> Structure::get_struc_specie() const {
+  std::vector<AtomSpecie> Structure::struc_specie() const {
 
-    std::vector<Molecule> struc_molecule = get_struc_molecule();
-    std::vector<AtomSpecie> struc_specie;
+    std::vector<Molecule> tstruc_molecule = struc_molecule();
+    std::vector<AtomSpecie> tstruc_specie;
 
     Index i, j;
 
     //For each molecule type
-    for(i = 0; i < struc_molecule.size(); i++) {
+    for(i = 0; i < tstruc_molecule.size(); i++) {
       // For each atomposition in the molecule
-      for(j = 0; j < struc_molecule[i].size(); j++) {
-        if(!contains(struc_specie, struc_molecule[i].atom(j).specie())) {
-          struc_specie.push_back(struc_molecule[i].atom(j).specie());
+      for(j = 0; j < tstruc_molecule[i].size(); j++) {
+        if(!contains(tstruc_specie, tstruc_molecule[i].atom(j).specie())) {
+          tstruc_specie.push_back(tstruc_molecule[i].atom(j).specie());
         }
       }
     }
 
-    return struc_specie;
+    return tstruc_specie;
   }
 
   //************************************************************
 
   /// Returns an Array of each *possible* Molecule in this Structure
-  std::vector<Molecule> Structure::get_struc_molecule() const {
+  std::vector<Molecule> Structure::struc_molecule() const {
 
-    std::vector<Molecule> struc_molecule;
+    std::vector<Molecule> tstruc_molecule;
     Index i, j;
 
     //loop over all Sites in basis
@@ -152,20 +152,20 @@ namespace CASM {
       //loop over all Molecules in Site
       for(j = 0; j < basis[i].site_occupant().size(); j++) {
         //Collect unique Molecules
-        if(!contains(struc_molecule, basis[i].site_occupant()[j])) {
-          struc_molecule.push_back(basis[i].site_occupant()[j]);
+        if(!contains(tstruc_molecule, basis[i].site_occupant()[j])) {
+          tstruc_molecule.push_back(basis[i].site_occupant()[j]);
         }
       }
     }//end loop over all Sites
 
-    return struc_molecule;
+    return tstruc_molecule;
   }
 
   /// Returns an Array of each *possible* Molecule in this Structure
-  std::vector<std::string> Structure::get_struc_molecule_name() const {
+  std::vector<std::string> Structure::struc_molecule_name() const {
 
     // get Molecule allowed in prim, and how many there are
-    std::vector<Molecule> struc_mol = get_struc_molecule();
+    std::vector<Molecule> struc_mol = struc_molecule();
 
     // store Molecule names in vector
     std::vector<std::string> struc_mol_name;
@@ -179,11 +179,11 @@ namespace CASM {
   //************************************************************
 
   /// Returns a list of how many of each specie exist in this Structure
-  ///   The Specie types are ordered according to get_struc_specie()
-  Eigen::VectorXi Structure::get_num_each_specie() const {
+  ///   The Specie types are ordered according to struc_specie()
+  Eigen::VectorXi Structure::num_each_specie() const {
 
-    std::vector<AtomSpecie> struc_specie = get_struc_specie();
-    Eigen::VectorXi num_each_specie = Eigen::VectorXi::Zero(struc_specie.size());
+    std::vector<AtomSpecie> tstruc_specie = struc_specie();
+    Eigen::VectorXi tnum_each_specie = Eigen::VectorXi::Zero(tstruc_specie.size());
 
     Index i, j;
     // For each site
@@ -191,30 +191,30 @@ namespace CASM {
       // For each atomposition in the molecule on the site
       for(j = 0; j < basis[i].occ().size(); j++) {
         // Count the present specie
-        num_each_specie(find_index(struc_specie, basis[i].occ().atom(j).specie()))++;
+        tnum_each_specie(find_index(tstruc_specie, basis[i].occ().atom(j).specie()))++;
       }
     }
 
-    return num_each_specie;
+    return tnum_each_specie;
   }
 
   //************************************************************
 
   /// Returns a list of how many of each molecule exist in this Structure
-  ///   The molecule types are ordered according to get_struc_molecule()
-  Eigen::VectorXi Structure::get_num_each_molecule() const {
+  ///   The molecule types are ordered according to struc_molecule()
+  Eigen::VectorXi Structure::num_each_molecule() const {
 
-    std::vector<Molecule> struc_molecule = get_struc_molecule();
-    Eigen::VectorXi num_each_molecule = Eigen::VectorXi(struc_molecule.size());
+    std::vector<Molecule> tstruc_molecule = struc_molecule();
+    Eigen::VectorXi tnum_each_molecule = Eigen::VectorXi(tstruc_molecule.size());
 
     Index i;
     // For each site
     for(i = 0; i < basis.size(); i++) {
       // Count the molecule
-      num_each_molecule(find_index(struc_molecule, basis[i].occ()))++;
+      tnum_each_molecule(find_index(tstruc_molecule, basis[i].occ()))++;
     }
 
-    return num_each_molecule;
+    return tnum_each_molecule;
   }
 
 

@@ -1,0 +1,9 @@
+clusterographyincludedir=$(includedir)/casm/clusterography
+clusterographyinclude_HEADERS=./include/casm/clusterography/ClusterInvariants.hh\
+							  ./include/casm/clusterography/ClusterInvariants_impl.hh\
+							  ./include/casm/clusterography/ClusterOrbits.hh\
+                ./include/casm/clusterography/ClusterOrbits_impl.hh\
+							  ./include/casm/clusterography/CoordCluster.hh\
+                ./include/casm/clusterography/GenericCluster.hh\
+                ./include/casm/clusterography/IntegralCluster.hh\
+                ./include/casm/clusterography/SubClusterGenerator.hh

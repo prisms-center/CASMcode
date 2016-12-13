@@ -1,0 +1,31 @@
+check_PROGRAMS += casm_unit_crystallography
+
+casm_unit_crystallography_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
+
+casm_unit_crystallography_SOURCES = ./tests/unit/unit_test.cpp\
+									./tests/unit/crystallography/BasicStructure_test.cpp\
+									./tests/unit/crystallography/Coordinate_test.cpp\
+									./tests/unit/crystallography/Lattice_test.cpp\
+									./tests/unit/crystallography/Niggli_test.cpp\
+									./tests/unit/crystallography/Structure_test.cpp\
+									./tests/unit/crystallography/SupercellEnumerator_test.cpp
+
+casm_unit_crystallography_LDADD=libcasm.la\
+								libcasmtesting.a\
+								$(BOOST_SYSTEM_LIB)\
+								$(BOOST_FILESYSTEM_LIB)\
+								$(BOOST_PROGRAM_OPTIONS_LIB)\
+								$(BOOST_REGEX_LIB)\
+								$(BOOST_CHRONO_LIB)\
+								$(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+
+TESTS+=./tests/unit/crystallography/run_test_crystallography
+
+EXTRA_DIST+=./tests/unit/crystallography/POS1\
+			./tests/unit/crystallography/POS1_prim.json\
+			./tests/unit/crystallography/PRIM1\
+			./tests/unit/crystallography/PRIM2\
+			./tests/unit/crystallography/PRIM3\
+			./tests/unit/crystallography/PRIM4\
+			./tests/unit/crystallography/PRIM5\
+			./tests/unit/crystallography/test_cases.json

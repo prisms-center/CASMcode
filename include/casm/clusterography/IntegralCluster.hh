@@ -32,41 +32,16 @@ namespace CASM {
   typedef CoordCluster<UnitCellCoord> IntegralCluster;
 
   /// \brief Write IntegralCluster to JSON object
-  ///
-  /// Format:
-  /// \code
-  /// {
-  ///   "min_length" : number,
-  ///   "max_length" : number,
-  ///   "sites" : [
-  ///     [b, i, j, k],
-  ///     ...
-  ///   ]
-  /// }
-  /// \endcode
-  inline jsonParser &to_json(const IntegralCluster &clust, jsonParser &json) {
-    json.put_obj();
-    json["min_length"] = clust.min_length();
-    json["max_length"] = clust.max_length();
-    json["sites"].put_array(clust.begin(), clust.end());
-    return json;
-  }
+  jsonParser &to_json(const IntegralCluster &clust, jsonParser &json);
 
   /// \brief Read from JSON
-  inline void from_json(IntegralCluster &clust, const jsonParser &json) {
-    from_json(clust.elements(), json["sites"], clust.prim());
-    return;
-  }
+  void from_json(IntegralCluster &clust, const jsonParser &json, double xtal_tol);
 
   template<>
   struct jsonConstructor<IntegralCluster> {
 
     /// \brief Construct from JSON
-    static IntegralCluster from_json(const jsonParser &json, const Structure &prim) {
-      IntegralCluster clust(prim);
-      CASM::from_json(clust, json);
-      return clust;
-    }
+    static IntegralCluster from_json(const jsonParser &json, const Structure &prim, double xtal_tol);
   };
 
 
@@ -92,7 +67,7 @@ namespace CASM {
   /// \brief CRTP Base class for IntegralClusterSymCompare
   ///
   /// Implements:
-  /// - 'intra_orbit_compare_impl', via lexicographical_compare of UnitCellCoord
+  /// - 'compare_impl', via comparison of cluster size and lexicographical_compare of UnitCellCoord
   ///
   /// Does not implement:
   /// - 'prepare_impl'
@@ -100,7 +75,7 @@ namespace CASM {
   /// The ClusterSymCompare hierarchy:
   /// - SymCompare
   ///   - ClusterSymCompare
-  ///     - IntegralClusterSymCompare (implements 'intra_orbit_compare_impl')
+  ///     - IntegralClusterSymCompare (implements 'compare_impl')
   ///       - LocalSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
@@ -115,14 +90,18 @@ namespace CASM {
     IntegralClusterSymCompare(double tol) :
       ClusterSymCompare<IntegralClusterSymCompare<Derived> >(tol) {}
 
-    /// \brief Orders 'prepared' elements in the same orbit
+    /// \brief Orders 'prepared' elements
     ///
     /// - Returns 'true' to indicate A < B
     /// - Equivalence is indicated by \code !compare(A,B) && !compare(B,A) \endcode
     /// - Assumes elements are 'prepared' before being compared
     /// Implementation:
+    /// - compare A.size(), B.size()
     /// - lexicographical_compare of element in A and B
-    bool intra_orbit_compare_impl(const IntegralCluster &A, const IntegralCluster &B) const {
+    bool compare_impl(const IntegralCluster &A, const IntegralCluster &B) const {
+      if(A.size() != B.size()) {
+        return A.size() < B.size();
+      }
       return lexicographical_compare(A.begin(), A.end(), B.begin(), B.end());
     }
   };
@@ -134,7 +113,7 @@ namespace CASM {
   /// The ClusterSymCompare hierarchy:
   /// - SymCompare
   ///   - ClusterSymCompare
-  ///     - IntegralClusterSymCompare (implements 'intra_orbit_compare_impl')
+  ///     - IntegralClusterSymCompare (implements 'compare_impl')
   ///       - LocalSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
@@ -179,7 +158,7 @@ namespace CASM {
   /// The ClusterSymCompare hierarchy:
   /// - SymCompare
   ///   - ClusterSymCompare
-  ///     - IntegralClusterSymCompare (implements 'intra_orbit_compare_impl')
+  ///     - IntegralClusterSymCompare (implements 'compare_impl')
   ///       - LocalSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
@@ -226,7 +205,7 @@ namespace CASM {
   /// The ClusterSymCompare hierarchy:
   /// - SymCompare
   ///   - ClusterSymCompare
-  ///     - IntegralClusterSymCompare (implements 'intra_orbit_compare_impl')
+  ///     - IntegralClusterSymCompare (implements 'compare_impl')
   ///       - LocalSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
@@ -259,7 +238,7 @@ namespace CASM {
         return obj;
       }
       std::sort(obj.begin(), obj.end());
-      auto trans = obj[0].unitcell() - m_prim_grid.get_within(obj[0]).unitcell();
+      auto trans = obj[0].unitcell() - m_prim_grid.within(obj[0]).unitcell();
       return obj - trans;
     }
 

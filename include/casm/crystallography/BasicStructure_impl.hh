@@ -10,6 +10,7 @@
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymGroupRep.hh"
+#include "casm/crystallography/Niggli.hh"
 
 namespace CASM {
   template<typename CoordType>
@@ -389,6 +390,8 @@ namespace CASM {
 
     for(b1 = 1; b1 < basis.size(); b1++) {
       tshift = basis[0] - basis[b1];
+      if(almost_zero(tshift.min_dist(Coordinate::origin(lattice()))))
+        continue;
       num_suc_maps = 0;
       for(b2 = 0; b2 < basis.size(); b2++) {
         for(b3 = 0; b3 < basis.size(); b3++) {
@@ -417,7 +420,7 @@ namespace CASM {
     shift.push_back(lattice()[2]);
 
     //We want to minimize the volume of the primitivized cell, but to make it not a weird shape
-    //that leads to noise we also minimize the dot products like get_reduced cell would
+    //that leads to noise we also minimize the dot products like reduced cell would
     min_vol = std::abs(lattice().vol());
     for(sh = 0; sh < shift.size(); sh++) {
       for(sh1 = sh + 1; sh1 < shift.size(); sh1++) {
@@ -436,7 +439,7 @@ namespace CASM {
 
 
     Lattice new_lat(prim_vec0, prim_vec1, prim_vec2);
-    Lattice reduced_new_lat = new_lat.get_reduced_cell();
+    Lattice reduced_new_lat = niggli(new_lat, prim_tol);
 
     //The lattice so far is OK, but it's noisy enough to matter for large
     //superstructures. We eliminate the noise by reconstructing it now via
@@ -460,6 +463,7 @@ namespace CASM {
     reduced_new_lat_mat = lattice().lat_column_mat();
     //When constructing this, why are we using *this as the primitive cell? Seems like I should only specify the vectors
     Lattice reconstructed_reduced_new_lat(reduced_new_lat_mat * invtransmat);
+    reconstructed_reduced_new_lat.make_right_handed();
     //Lattice reconstructed_reduced_new_lat(reduced_new_lat_mat*invtransmat,lattice);
 
     new_prim.set_lattice(reconstructed_reduced_new_lat, CART);

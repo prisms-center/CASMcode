@@ -106,11 +106,11 @@ def set_sample_weight(sample_weight, y=None, X=None):
     
     (weighted_y, weighted_X, W, L)
     
-    weighted_X: None, or array-like of shape: (n_samples, n_features)
-      If X given as input, the weighted training input data, weighted_X = L*x.
-    
     weighted_y: None, or array-like of shape: (n_samples, 1)
       If y given as input, the weighted target values, weighted_y = L*y. 
+    
+    weighted_X: None, or array-like of shape: (n_samples, n_features)
+      If X given as input, the weighted training input data, weighted_X = L*x.
     
     W: array-like of shape: (n_samples, n_samples)
       Contains sample weights. 

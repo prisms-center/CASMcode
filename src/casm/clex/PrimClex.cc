@@ -5,9 +5,15 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/clex/ConfigIterator.hh"
 #include "casm/clex/ECIContainer.hh"
+#include "casm/clex/ScelEnum.hh"
 #include "casm/system/RuntimeLibrary.hh"
+#include "casm/misc/algorithm.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/Niggli.hh"
+#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/clex/ConfigIterator.hh"
+#include "casm/clex/ECIContainer.hh"
 #include "casm/app/AppIO.hh"
 
 namespace CASM {
@@ -15,10 +21,11 @@ namespace CASM {
   //                                **** Constructors ****
   //*******************************************************************************************
   /// Initial construction of a PrimClex, from a primitive Structure
-  PrimClex::PrimClex(const Structure &_prim, Log &log) :
+  PrimClex::PrimClex(const Structure &_prim, const Logging &logging) :
+    Logging(logging),
     m_prim(_prim) {
 
-    _init(log);
+    _init();
 
     return;
   }
@@ -27,24 +34,24 @@ namespace CASM {
   //*******************************************************************************************
   /// Construct PrimClex from existing CASM project directory
   ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-  PrimClex::PrimClex(const fs::path &_root, Log &log):
+  PrimClex::PrimClex(const fs::path &_root, const Logging &logging):
+    Logging(logging),
     m_dir(_root),
     m_settings(_root),
     m_prim(read_prim(m_dir.prim())) {
 
-    log.construct("CASM Project");
-    log << "from: " << dir().root_dir() << "\n";
-
-    _init(log);
+    _init();
 
   }
 
   /// Initialization routines
   ///  - If !root.empty(), read all saved data to generate all Supercells and Configurations, etc.
-  void PrimClex::_init(Log &log) {
+  void PrimClex::_init() {
 
-    std::vector<std::string> struc_mol_name = m_prim.get_struc_molecule_name();
+    log().construct("CASM Project");
+    log() << "from: " << dir().root_dir() << "\n" << std::endl;
 
+    auto struc_mol_name = prim().struc_molecule_name();
     m_vacancy_allowed = false;
     for(int i = 0; i < struc_mol_name.size(); ++i) {
       if(is_vacancy(struc_mol_name[i])) {
@@ -57,48 +64,122 @@ namespace CASM {
       return;
     }
 
+    bool read_settings = false;
+    bool read_composition = true;
+    bool read_chem_ref = true;
+    bool read_configs = true;
 
-    bool any_print = false;
+    refresh(false, true, true, true);
+  }
 
-    // here add stuff to read directory structure...
+  /// \brief Reload PrimClex data from settings
+  ///
+  /// \param read_settings Read project_settings.json and plugins
+  /// \param read_composition Read composition_axes.json
+  /// \param read_chem_ref Read chemical_reference.json
+  /// \param read_configs Read SCEL and config_list.json
+  /// \param clear_clex Clear stored orbitrees, clexulators, and eci
+  ///
+  /// - This does not check if what you request will cause problems.
+  /// - ToDo: refactor into separate functions
+  ///
+  void PrimClex::refresh(bool read_settings,
+                         bool read_composition,
+                         bool read_chem_ref,
+                         bool read_configs,
+                         bool clear_clex) {
 
-    // read param composition
-    auto comp_axes = m_dir.composition_axes(m_settings.calctype(), m_settings.ref());
-    if(fs::is_regular_file(comp_axes)) {
-      log << "read: " << comp_axes << "\n";
+    log().custom("Load project data");
 
-      CompositionAxes opt(comp_axes);
-
-      if(opt.has_current_axes) {
-        m_has_composition_axes = true;
-        m_comp_converter = opt.curr;
+    if(read_settings) {
+      try {
+        m_settings = ProjectSettings(dir().root_dir(), *this);
+      }
+      catch(std::exception &e) {
+        err_log().error("reading project_settings.json");
+        err_log() << "file: " << m_dir.project_settings() << "\n" << std::endl;
       }
     }
 
-    // read chemical reference
-    auto chem_ref_path = m_dir.chemical_reference(m_settings.calctype(), m_settings.ref());
-    if(fs::is_regular_file(chem_ref_path)) {
-      log << "read: " << chem_ref_path << "\n";
-      m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, m_prim, settings().lin_alg_tol()));
+    if(read_composition) {
+      m_has_composition_axes = false;
+      auto comp_axes = m_dir.composition_axes();
+
+      try {
+        if(fs::is_regular_file(comp_axes)) {
+          log() << "read: " << comp_axes << "\n";
+
+          CompositionAxes opt(comp_axes);
+
+          if(opt.has_current_axes) {
+            m_has_composition_axes = true;
+            m_comp_converter = opt.curr;
+          }
+        }
+      }
+      catch(std::exception &e) {
+        err_log().error("reading composition_axes.json");
+        err_log() << "file: " << comp_axes << "\n" << std::endl;
+      }
     }
 
-    // read supercells
-    if(fs::is_regular_file(dir().SCEL())) {
+    if(read_chem_ref) {
 
-      log << "read: " << dir().SCEL() << "\n";
-      fs::ifstream scel(dir().SCEL());
-      read_supercells(scel);
+      // read chemical reference
+      m_chem_ref.reset();
+      auto chem_ref_path = m_dir.chemical_reference(m_settings.default_clex().calctype, m_settings.default_clex().ref);
 
+      try {
+        if(fs::is_regular_file(chem_ref_path)) {
+          log() << "read: " << chem_ref_path << "\n";
+          m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim(), settings().lin_alg_tol()));
+        }
+      }
+      catch(std::exception &e) {
+        err_log().error("reading chemical_reference.json");
+        err_log() << "file: " << chem_ref_path << "\n" << std::endl;
+      }
     }
 
-    // read config_list
-    if(fs::is_regular_file(dir().config_list())) {
+    if(read_configs) {
 
-      log << "read: " << dir().config_list() << "\n";
-      read_config_list();
+      m_supercell_list.clear();
+
+      try {
+        // read supercells
+        if(fs::is_regular_file(m_dir.SCEL())) {
+          log() << "read: " << m_dir.SCEL() << "\n";
+          fs::ifstream scel(m_dir.SCEL());
+          read_supercells(scel);
+        }
+      }
+      catch(std::exception &e) {
+        err_log().error("reading SCEL");
+        err_log() << "file: " << m_dir.SCEL() << "\n" << std::endl;
+      }
+
+      try {
+        // read config_list
+        if(fs::is_regular_file(dir().config_list())) {
+          log() << "read: " << dir().config_list() << "\n";
+          read_config_list();
+        }
+      }
+      catch(std::exception &e) {
+        err_log().error("reading config_list.json");
+        err_log() << "file: " << dir().config_list() << "\n" << std::endl;
+      }
     }
 
-    log << std::endl;
+    if(clear_clex) {
+      m_nlist.reset();
+      m_clex_basis.clear();
+      m_clexulator.clear();
+      m_eci.clear();
+      log() << "refresh cluster expansions\n";
+    }
+
+    log() << std::endl;
   }
 
 
@@ -174,6 +255,12 @@ namespace CASM {
 
   //*******************************************************************************************
   /// const Access entire supercell_list
+  boost::container::stable_vector<Supercell> &PrimClex::supercell_list() {
+    return m_supercell_list;
+  };
+
+  //*******************************************************************************************
+  /// const Access entire supercell_list
   const boost::container::stable_vector<Supercell> &PrimClex::supercell_list() const {
     return m_supercell_list;
   };
@@ -195,9 +282,9 @@ namespace CASM {
   const Supercell &PrimClex::supercell(std::string scellname) const {
     Index index;
     if(!contains_supercell(scellname, index)) {
-      std::cout << "Error in PrimClex::supercell(std::string scellname) const." << std::endl;
-      std::cout << "  supercell '" << scellname << "' not found." << std::endl;
-      exit(1);
+      err_log().error("Accessing supercell");
+      err_log() << "supercell '" << scellname << "' not found." << std::endl;
+      throw std::invalid_argument("Error in PrimClex::supercell(std::string scellname) const: Not found");
     }
     return m_supercell_list[index];
   };
@@ -205,67 +292,37 @@ namespace CASM {
   //*******************************************************************************************
   /// Access supercell by name
   Supercell &PrimClex::supercell(std::string scellname) {
-    Index index;
-    if(!contains_supercell(scellname, index)) {
-      std::cout << "Error in PrimClex::supercell(std::string scellname)." << std::endl;
-      std::cout << "  supercell '" << scellname << "' not found." << std::endl;
-      exit(1);
-    }
-    return m_supercell_list[index];
-  };
+    return const_cast<Supercell &>(static_cast<const PrimClex &>(*this).supercell(scellname));
+  }
+
+  //*******************************************************************************************
+  /// Access supercell by Lattice, adding if necessary
+  Supercell &PrimClex::supercell(const Lattice &lat) {
+    return supercell(add_supercell(lat));
+  }
 
   //*******************************************************************************************
   /// access configuration by name (of the form "scellname/[NUMBER]", e.g., ("SCEL1_1_1_1_0_0_0/0")
   const Configuration &PrimClex::configuration(const std::string &configname) const {
-    std::vector<std::string> splt_vec;
-    boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
-    Index config_ind;
-    if(splt_vec.size() != 2) {
-      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), cannot locate configuration named '" << configname << "'\n"
-                << "                Exiting...\n";
-      assert(0);
-      exit(1);
-    }
+    auto res = Configuration::split_name(configname);
 
     try {
-      config_ind = boost::lexical_cast<Index>(splt_vec[1]);
+      return supercell(res.first).config_list().at(res.second);
     }
-    catch(boost::bad_lexical_cast &) {
-      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), malformed input:" << configname << "\n"
-                << "                Exiting...\n";
-      assert(0);
-      exit(1);
+    catch(std::out_of_range &e) {
+      err_log().error("Invalid config index");
+      err_log() << "ERROR: In PrimClex::configuration(), configuration index out of range\n";
+      err_log() << "configname: " << configname << "\n";
+      err_log() << "index: " << res.second << "\n";
+      err_log() << "config_list.size(): " << supercell(res.first).config_list().size() << "\n";
+      throw e;
     }
-
-
-    return supercell(splt_vec[0]).config(config_ind);
   }
 
   //*******************************************************************************************
 
   Configuration &PrimClex::configuration(const std::string &configname) {
-    std::vector<std::string> splt_vec;
-    boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
-
-    Index config_ind;
-    if(splt_vec.size() != 2) {
-      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), cannot locate configuration " << configname << "\n"
-                << "                Exiting...\n";
-      assert(0);
-      exit(1);
-    }
-
-    try {
-      config_ind = boost::lexical_cast<Index>(splt_vec[1]);
-    }
-    catch(boost::bad_lexical_cast &) {
-      std::cerr << "CRITICAL ERROR: In PrimClex::configuration(), malformed input:" << configname << "\n"
-                << "                Exiting...\n";
-      assert(0);
-      exit(1);
-    }
-
-    return supercell(splt_vec[0]).config(config_ind);
+    return const_cast<Configuration &>(static_cast<const PrimClex &>(*this).configuration(configname));
   }
 
   //*******************************************************************************************
@@ -384,47 +441,13 @@ namespace CASM {
 
   // **** Unorganized mess of functions ... ****
 
-
-  /**
-   * Generates all unique supercells between volStart and
-   * volEnd of PRIM volumes. Call this routine before you
-   * enumerate configurations.
-   *
-   * The provided transformation matrix can be used to enumerate
-   * over lattice vectors that are not the ones belonging to the
-   * primitive lattice (e.g. enumerate supercells of another supercell,
-   * or enumerate over a particular lattice plane)
-   *
-   * The number of dimensions (must be equal to 1, 2 or 3) specify
-   * which directions the supercells should be enumerated in, resulting
-   * in 1D, 2D or 3D supercells. The enumeration is relative to the provided
-   * transformation matrix. For dimension n, the first n columns of the
-   * transformation matrix are used to construct supercells, while
-   * the remaining 3-n columns remain fixed.
-   *
-   * The new functionality of restricted supercell enumeration can
-   * be easily bypassed by passing dims=3 and G=Eigen::Matrix3i::Identity()
-   *
-   * @param[in] volStart Minimum volume supercell, relative to det(G)
-   * @param[in] volEnd Maximum volume supercell, relative to det(G)
-   * @param[in] dims Number of dimensions to enumerate over (1D, 2D or 3D supercells)
-   * @param[in] G Generating matrix. Restricts enumeration to resulting vectors of P*G, where P=primitive.
-   *
-   */
-
-  void PrimClex::generate_supercells(int volStart, int volEnd, int dims, const Eigen::Matrix3i &G, bool verbose) {
-    Array < Lattice > supercell_lattices;
-    m_prim.lattice().generate_supercells(supercell_lattices, m_prim.factor_group(), volStart, volEnd, dims, G);
-    for(Index i = 0; i < supercell_lattices.size(); i++) {
-      Index list_size = m_supercell_list.size();
-      Index index = add_canonical_supercell(supercell_lattices[i]);
-      if(m_supercell_list.size() != list_size && verbose) {
-        std::cout << "  Generated: " << m_supercell_list[index].name() << "\n";
-      }
-      else {
-        std::cout << "  Generated: " << m_supercell_list[index].name() << " (already existed)\n";
-      }
-    }
+  /// \brief Generate supercells of a certain volume and shape and store them in the array of supercells
+  ///
+  /// \param enum_props An ScelEnumProps instance, see constructor for details
+  ///
+  void PrimClex::generate_supercells(const ScelEnumProps &enum_props) {
+    ScelEnumByProps e(*this, enum_props);
+    for(auto it = e.begin(); it != e.end(); ++it) {}
     return;
   }
 
@@ -481,7 +504,7 @@ namespace CASM {
    */
   //*******************************************************************************************
   Index PrimClex::add_supercell(const Lattice &superlat) {
-    return add_canonical_supercell(niggli(superlat, m_prim.point_group(), settings().crystallography_tol()));
+    return add_canonical_supercell(canonical_equivalent_lattice(superlat, m_prim.point_group(), settings().crystallography_tol()));
 
   }
 
@@ -608,10 +631,75 @@ namespace CASM {
 
   };
 
+  bool PrimClex::contains_supercell(const Supercell &scel) const {
+    Index tmp;
+    return contains_supercell(scel, tmp);
+  }
+
+  bool PrimClex::contains_supercell(const Supercell &scel, Index &index) const {
+    return contains_supercell(scel.name(), index);
+  }
+
   //*******************************************************************************************
-  bool PrimClex::has_global_clexulator() const {
-    if(!m_global_clexulator.initialized()) {
-      if(!fs::exists(dir().clexulator_src(settings().name(), settings().bset()))) {
+  bool PrimClex::has_orbits(const ClexDescription &key) const {
+    if(!fs::exists(dir().clust(key.bset))) {
+      return false;
+    }
+    return true;
+  }
+
+  //*******************************************************************************************
+  /// const Access to global orbitree
+  bool PrimClex::has_clex_basis(const ClexDescription &key) const {
+    auto it = m_clex_basis.find(key);
+    if(it == m_clex_basis.end()) {
+      if(!fs::exists(dir().clust(key.bset))) {
+        return false;
+      }
+    }
+    return true;
+
+  };
+
+  //*******************************************************************************************
+
+  /// \brief Get iterators over the range of orbits
+  const ClexBasis &PrimClex::clex_basis(const ClexDescription &key) const {
+
+    auto it = m_clex_basis.find(key);
+    if(it == m_clex_basis.end()) {
+
+      it = m_clex_basis.insert(std::make_pair(key, ClexBasis(prim()))).first;
+
+      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+
+      read_clust(
+        std::back_inserter(orbits),
+        jsonParser(dir().clust(key.bset)),
+        prim(),
+        prim().factor_group(),
+        PrimPeriodicIntegralClusterSymCompare(settings().crystallography_tol()),
+        settings().crystallography_tol()
+      );
+
+      jsonParser bspecs_json;
+      bspecs_json.read(dir().bspecs(key.bset));
+
+      ClexBasis &clex_basis = it->second;
+      clex_basis.generate(orbits.begin(), orbits.end(), bspecs_json, {"occupation"});
+
+    }
+
+    return it->second;
+
+  }
+
+  //*******************************************************************************************
+
+  bool PrimClex::has_clexulator(const ClexDescription &key) const {
+    auto it = m_clexulator.find(key);
+    if(it == m_clexulator.end()) {
+      if(!fs::exists(dir().clexulator_src(settings().name(), key.bset))) {
         return false;
       }
     }
@@ -619,51 +707,55 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  Clexulator PrimClex::global_clexulator(Log &status_log) const {
-    if(!m_global_clexulator.initialized()) {
 
-      if(!fs::exists(dir().clexulator_src(settings().name(), settings().bset()))) {
+  Clexulator PrimClex::clexulator(const ClexDescription &key) const {
+
+    auto it = m_clexulator.find(key);
+    if(it == m_clexulator.end()) {
+
+      if(!fs::exists(dir().clexulator_src(settings().name(), key.bset))) {
         throw std::runtime_error(
-          std::string("Error loading clexulator ") + settings().bset() + ". No basis functions exist.");
+          std::string("Error loading clexulator ") + key.bset + ". No basis functions exist.");
       }
 
-      m_global_clexulator = Clexulator(settings().global_clexulator(),
-                                       dir().clexulator_dir(settings().bset()),
-                                       nlist(),
-                                       status_log,
-                                       settings().compile_options(),
-                                       settings().so_options());
+      it = m_clexulator.insert(
+             std::make_pair(key, Clexulator(settings().name() + "_Clexulator",
+                                            dir().clexulator_dir(key.bset),
+                                            nlist(),
+                                            log(),
+                                            settings().compile_options(),
+                                            settings().so_options()))).first;
     }
-    return m_global_clexulator;
+    return it->second;
   }
 
   //*******************************************************************************************
-  bool PrimClex::has_global_eci(std::string clex_name) const {
 
-    if(m_global_eci.value().size()) {
-      return true;
+  bool PrimClex::has_eci(const ClexDescription &key) const {
+
+    auto it = m_eci.find(key);
+    if(it == m_eci.end()) {
+      return fs::exists(dir().eci(key.property, key.calctype, key.ref, key.bset, key.eci));
     }
-
-    return fs::exists(dir().eci(clex_name,
-                                settings().calctype(),
-                                settings().ref(),
-                                settings().bset(),
-                                settings().eci()));
+    return true;
   }
 
   //*******************************************************************************************
-  const ECIContainer &PrimClex::global_eci(std::string clex_name) const {
-    if(!m_global_eci.value().size()) {
-      fs::path eci_path = dir().eci(clex_name, settings().calctype(),
-                                    settings().ref(), settings().bset(), settings().eci());
+
+  const ECIContainer &PrimClex::eci(const ClexDescription &key) const {
+
+    auto it = m_eci.find(key);
+    if(it == m_eci.end()) {
+      fs::path eci_path = dir().eci(key.property, key.calctype, key.ref, key.bset, key.eci);
       if(!fs::exists(eci_path)) {
         throw std::runtime_error(
-          std::string("Error loading global ECI. eci.json does not exist.\n")
+          std::string("Error loading ECI. eci.json does not exist.\n")
           + "  Expected at: " + eci_path.string());
       }
-      m_global_eci = read_eci(eci_path);
+
+      it = m_eci.insert(std::make_pair(key, read_eci(eci_path))).first;
     }
-    return m_global_eci;
+    return it->second;
   }
 
 }

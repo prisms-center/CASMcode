@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/clusterography/IntegralCluster.hh"
 
 namespace CASM {
 
@@ -110,7 +111,7 @@ namespace CASM {
 
   };
 
-  /// \brief Output the neighborhood of UnitCellCoord within max_radius of a unit cell
+  /// \brief Output the neighborhood of UnitCellCoord within max_radius of any sites in unit cell
   template<typename CoordType, typename OutputIterator>
   OutputIterator neighborhood(
     const Structure &unit,
@@ -121,14 +122,6 @@ namespace CASM {
 
 
   /* -- Cluster Orbit generating function declarations ------------------------------------- */
-
-  /// \brief Generate the asymmetric unit, including all sites
-  template<typename OrbitOutputIterator, typename SymCompareType>
-  OrbitOutputIterator make_asymmetric_unit(
-    const Structure &prim,
-    const SymGroup &generating_grp,
-    const SymCompareType &sym_compare,
-    OrbitOutputIterator result);
 
   /// \brief Generate the asymmetric unit, using OrbitBranchSpecs
   template<typename OrbitType, typename OrbitOutputIterator>
@@ -151,30 +144,40 @@ namespace CASM {
   OrbitOutputIterator make_orbits(
     OrbitBranchSpecsIterator begin,
     OrbitBranchSpecsIterator end,
+    const std::vector<IntegralCluster> &custom_generators,
+    OrbitOutputIterator result,
+    std::ostream &status);
+
+
+  /* -- Generate prim periodic orbits --------------------------------------- */
+
+  /// \brief Generate the asymmetric unit, including all sites
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_prim_periodic_asymmetric_unit(
+    const Structure &prim,
+    const std::function<bool (Site)> &site_filter,
+    double xtal_tol,
     OrbitOutputIterator result,
     std::ostream &status);
 
   /// \brief Generate Orbit<IntegralCluster> by specifying max cluster length for each branch
-  template<typename OrbitOutputIterator, typename SymCompareType>
-  OrbitOutputIterator make_orbits(
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_prim_periodic_orbits(
     const Structure &prim,
-    const SymGroup &generating_grp,
     const std::vector<double> &max_length,
-    double crystallography_tol,
+    const std::vector<IntegralCluster> &custom_generators,
     const std::function<bool (Site)> &site_filter,
-    const SymCompareType &sym_compare,
+    double xtal_tol,
     OrbitOutputIterator result,
     std::ostream &status);
 
   /// \brief Generate Orbit<IntegralCluster> from bspecs.json-type JSON input file
-  template<typename OrbitOutputIterator, typename SymCompareType>
-  OrbitOutputIterator make_orbits(
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_prim_periodic_orbits(
     const Structure &prim,
-    const SymGroup &generating_grp,
     const jsonParser &bspecs,
-    double crystallography_tol,
     const std::function<bool (Site)> &site_filter,
-    const SymCompareType &sym_compare,
+    double xtal_tol,
     OrbitOutputIterator result,
     std::ostream &status);
 

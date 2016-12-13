@@ -3,10 +3,10 @@
 
 /// What is being tested:
 #include "casm/clex/ChemicalReference.hh"
+#include "casm/casm_io/json_io/clex.hh"
 
 /// What is being used to test it:
 
-#include "casm/casm_io/json_io/clex.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "Common.hh"
 #include "FCCTernaryProj.hh"

@@ -7,33 +7,27 @@
 #include <functional>
 #include <dlfcn.h>
 #include <cstdlib>
-#include "casm/external/boost.hh"
 #include "casm/system/Popen.hh"
+#include "casm/CASM_global_definitions.hh"
+#include "casm/casm_io/Log.hh"
 
 namespace CASM {
 
   /// \brief Write, compile, load and use code at runtime
-  class RuntimeLibrary {
+  class RuntimeLibrary : public Logging {
 
   public:
 
     /// \brief Construct a RuntimeLibrary object, with the options to be used for compile
     ///        the '.o' file and the '.so' file
-    RuntimeLibrary(std::string _compile_options = RuntimeLibrary::default_compile_options(),
-                   std::string _so_options = RuntimeLibrary::default_so_options());
+    RuntimeLibrary(
+      std::string _filename_base,
+      std::string _compile_options,
+      std::string _so_options,
+      std::string compile_msg,
+      const Logging &logging = Logging());
 
     ~RuntimeLibrary();
-
-    /// \brief Compile a shared library
-    void compile(std::string _filename_base,
-                 std::string _source);
-
-    /// \brief Compile a shared library
-    void compile(std::string _filename_base);
-
-
-    /// \brief Load a library with a given name
-    void load(std::string _filename_base);
 
     /// \brief Obtain a function from the current library
     ///
@@ -53,37 +47,56 @@ namespace CASM {
       return func;
     }
 
-    /// \brief Close the current library
-    void close();
-
     /// \brief Remove the current library and source code
     void rm();
 
-    /// \brief Default compilation command
-    static std::string default_compile_options();
+    /// \brief Default c++ compiler options
+    static std::pair<std::string, std::string> default_cxxflags();
 
     /// \brief Default c++ compiler options
-    static std::string default_cxxflags();
-
-    /// \brief Default shared library options
-    static std::string default_so_options();
+    static std::pair<std::string, std::string> default_soflags();
 
     /// \brief Return default compiler
-    static std::string cxx();
+    static std::pair<std::string, std::string> default_cxx();
 
-    /// \brief Return include path option for CASM
-    static std::string casm_include();
+    /// \brief Return default includedir for CASM
+    static std::pair<fs::path, std::string> default_casm_includedir();
+
+    /// \brief Return default libdir for CASM
+    static std::pair<fs::path, std::string> default_casm_libdir();
+
+    /// \brief Return default includedir for boost
+    static std::pair<fs::path, std::string> default_boost_includedir();
+
+    /// \brief Return default libdir for boost
+    static std::pair<fs::path, std::string> default_boost_libdir();
+
 
   private:
 
-    std::string m_compile_options;
-    std::string m_so_options;
+    /// \brief Compile a shared library
+    void _compile();
+
+    /// \brief Load a library with a given name
+    void _load();
+
+    /// \brief Close the current library
+    void _close();
+
 
     std::string m_filename_base;
+    std::string m_compile_options;
+    std::string m_so_options;
 
     void *m_handle;
 
   };
+
+  std::string include_path(const fs::path &dir);
+
+  std::string link_path(const fs::path &dir);
+
+
 }
 
 #endif

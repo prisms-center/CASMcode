@@ -11,6 +11,10 @@ namespace CASM {
   class MasterSymGroup;
   class Lattice;
 
+  /** \ingroup SymOp
+   *  @{
+   */
+
   ///\brief  SymBasisPermute describes how a symmetry operation permutes atoms in a basis
   ///
   /// - ::SymOp transforms Cartesian coordinate (x) like:
@@ -21,8 +25,6 @@ namespace CASM {
   /// - For transforming basis sites, a lookup table is stored that maps
   ///     UnitCellSite(UnitCell(0,0,0), b) -> UnitCellSite'
   ///   which is used to set the sublat and is added to u' along with L.inv*T
-  ///
-  /// \ingroup Symmetry
   class SymBasisPermute: public SymOpRepresentation {
   private:
 

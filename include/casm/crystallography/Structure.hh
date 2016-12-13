@@ -20,6 +20,10 @@ namespace CASM {
 
   //  typedef GenericOrbitree<SiteCluster> SiteOrbitree;
 
+  /** \ingroup Structure
+   *  @{
+   */
+
   ///\brief Structure specifies the lattice and atomic basis of a crystal
   class Structure : public BasicStructure<Site> {
   protected: //PROTECTED DATA MEMBERS
@@ -67,12 +71,11 @@ namespace CASM {
     SymGroupRep const *basis_permutation_symrep()const;
     SymGroupRepID basis_permutation_symrep_ID()const;
 
-    // AtomSpecie will eventually change to ChemicalSpecie for composition purposes
-    std::vector<AtomSpecie> get_struc_specie() const;
-    std::vector<Molecule> get_struc_molecule() const;
-    std::vector<std::string> get_struc_molecule_name() const;
-    Eigen::VectorXi get_num_each_specie() const;
-    Eigen::VectorXi get_num_each_molecule() const;
+    std::vector<AtomSpecie> struc_specie() const;
+    std::vector<Molecule> struc_molecule() const;
+    std::vector<std::string> struc_molecule_name() const;
+    Eigen::VectorXi num_each_specie() const;
+    Eigen::VectorXi num_each_molecule() const;
 
     // ****Mutators****
 
@@ -181,6 +184,7 @@ namespace CASM {
   ///   mol_name_list_index = converter[basis_site][site_occupant_index]
   std::vector< std::vector<Index> > index_converter(const Structure &struc, std::vector<std::string> mol_name_list);
 
+  /** @} */
 };
 
 //#include "casm/clusterography/Orbitree_impl.hh"

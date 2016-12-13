@@ -5,11 +5,23 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
-#include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_TMP.hh"
 #include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
+
+  /// \defgroup casmIO IO
+  ///
+  /// \brief Input/output classes and functions
+
+  /// \defgroup EnumIO
+  ///
+  /// \brief Helpers for enum class IO
+  ///
+  /// \ingroup casmIO
+
+  template <typename T>
+  struct traits {};
 
   /// \brief Print help message describing recognized strings for allowed enum values
   ///

@@ -19,7 +19,7 @@ namespace CASM {
       const SymCompareType &sym_compare) {
 
       auto equal = [&](const Element & A, const Element & B) {
-        return sym_compare.intra_orbit_equal(A, B);
+        return sym_compare.equal(A, B);
       };
 
       int count = 0;
@@ -69,10 +69,10 @@ namespace CASM {
       return m_sym_compare.prepare(A);
     };
     auto compare = [&](const Element & A, const Element & B) {
-      return m_sym_compare.intra_orbit_compare(A, B);
+      return m_sym_compare.compare(A, B);
     };
     auto equal = [&](const Element & A, const Element & B) {
-      return m_sym_compare.intra_orbit_equal(A, B);
+      return m_sym_compare.equal(A, B);
     };
 
     // generate equivalents
@@ -134,7 +134,7 @@ namespace CASM {
   ///   be the Orbit<Element, SymCompareType> type
   /// - Expects `e` to be `prepared` via `SymCompareType::prepare`
   /// - Assume range of orbit is sorted according to `SymCompareType::invariants_compare`
-  /// - Uses `SymCompareType::intra_orbit_compare` (via `Orbit::contains`) to check for
+  /// - Uses `SymCompareType::compare` (via `Orbit::contains`) to check for
   ///   element in orbit
   template<typename OrbitIterator, typename Element>
   OrbitIterator find_orbit(OrbitIterator begin, OrbitIterator end, Element e) {

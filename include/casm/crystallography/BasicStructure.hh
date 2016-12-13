@@ -16,9 +16,12 @@ namespace CASM {
   class UnitCellCoord;
   class SiteCluster;
   class MasterSymGroup;
-  template<typename ClustType> class GenericOrbitree;
-  typedef GenericOrbitree<SiteCluster> SiteOrbitree;
 
+  /** \defgroup Structure
+   *  \ingroup Crystallography
+   *  \brief Specifies the lattice and basis of a crystal
+   *  @{
+   */
 
   ///\brief BasicStructure specifies the lattice and atomic basis of a crystal
   template<typename CoordType>
@@ -71,7 +74,7 @@ namespace CASM {
     /// Return the UnitCellCoord corresponding to test_site (i.e., finds the basis index and
     /// the lattice translation)
     //   template<typename CoordType2>
-    //   UnitCellCoord get_unit_cell_coord(const CoordType2 &test_site, double tol = TOL)const;
+    //   UnitCellCoord unit_cell_coord(const CoordType2 &test_site, double tol = TOL)const;
 
     // ****Mutators****
 
@@ -99,7 +102,7 @@ namespace CASM {
     /// Translate all basis sites so that they are inside the unit cell
     void within();
 
-    //CoordType get_site(const UnitCellCoord &ucc) const;
+    //CoordType site(const UnitCellCoord &ucc) const;
 
     ///change the lattice and update site coordinates.  Argument 'mode' specifies which mode is preserved
     /// e.g.: struc.set_lattice(new_lat, CART) calculates all Cartesian coordinates,
@@ -178,6 +181,8 @@ namespace CASM {
   // Assumes constructor CoordType::CoordType(Lattice) exists
   template<typename CoordType>
   void from_json(BasicStructure<CoordType> &basic, const jsonParser &json);
+
+  /** @} */
 
 };
 

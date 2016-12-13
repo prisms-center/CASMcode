@@ -19,6 +19,10 @@ namespace CASM {
 
   class SymGroupRepHandle;
 
+  /** \ingroup SymGroup
+   *  @{
+   */
+
   ///\brief SymGroupRep is an alternative representation of a SymGroup for something other than real space.
   /// There is a one-to-one correspondence of SymOps in some SymGroup with the SymOpRepresentations in SymGroupRep
   /// SymGroupRep does not know or care about the specifics of what the SymOpRepresentations describe
@@ -262,6 +266,8 @@ namespace CASM {
 
     }
   };
+
+  /** @} */
 }
 
 #endif

@@ -1,4 +1,5 @@
 import os, shutil, re, subprocess, json
+import warnings
 import vasp.io
 
 class VaspWrapperError(Exception):
@@ -54,6 +55,8 @@ def read_settings(filename):
         "initial" : location of INCAR with tags for the initial run, if desired (e.g. to generate a PBE WAVECAR for use with M06-L)
         "final" : location of INCAR with tags for the final run, if desired (e.g. "ISMEAR = -5", etc). Otherwise, the settings enforced are ("ISMEAR = -5", "NSW = 0", "IBRION = -1", "ISIF = 2")
         "err_types" : list of errors to check for. Allowed entries are "IbzkptError" and "SubSpaceMatrixError". Default: ["SubSpaceMatrixError"]
+        "prerun" : bash commands to run before vasp.Relax.run (default None)
+        "postrun" : bash commands to run after vasp.Relax.run completes (default None)
     """
     try:
         file = open(filename)
@@ -65,8 +68,11 @@ def read_settings(filename):
 
     required = ["queue", "ppn", "atom_per_proc", "walltime"]
 
-    optional = ["account","pmem","priority","message","email","qos","npar","ncore", "kpar", "ncpus","vasp_cmd","run_limit","nrg_convergence", \
-                "encut", "kpoints","extra_input_files", "move", "copy", "remove", "compress", "backup", "initial", "final", "strict_kpoints", "err_types"]
+    optional = ["account","pmem","priority","message","email","qos","npar","ncore", 
+                "kpar", "ncpus","vasp_cmd","run_limit","nrg_convergence",
+                "encut", "kpoints","extra_input_files", "move", "copy", "remove", 
+                "compress", "backup", "initial", "final", "strict_kpoints", "err_types",
+                "prerun", "postrun"]
     for key in required:
         if not key in settings:
             raise VaspWrapperError( key + "' missing from: '" + filename + "'")
@@ -112,4 +118,79 @@ def write_settings(settings, filename):
     json.dump( settings, file, indent=4)
     file.close()
 
+      
+def vasp_input_file_names(dir, configname, clex):
+    """
+    Collect casm.vaspwrapper input files from the CASM project hierarchy
+    
+    Looks for:
+      
+      INCAR:   
+        The base INCAR file used for calculations. Found via:
+          DirectoryStructure.settings_path_crawl
+      
+      KPOINTS:
+        The KPOINTS file specifying the k-point grid for a reference structure
+        which is then scaled to be approximately the same density for other
+        structures. Found via:
+          DirectoryStructure.settings_path_crawl
+      
+      KPOINTS_REF: (optional)
+        The reference structure used to determine the k-point density, if not
+        running in Auto mode. If running VASP with AUTO KPOINTS mode, this file
+        is not necessary. Found via:
+          DirectoryStructure.settings_path_crawl
+      
+      POS: 
+        The CASM-generated POS file giving the initial structure to be calculated.
+      
+      SPECIES:
+        The SPECIES file specifying Vasp settings for each species in the structure.
+      
+    
+    Arguments
+    ---------
+      
+      dir: casm.project.DirectoryStructure instance
+        CASM project directory hierarchy
+      
+      configname: str
+        The name of the configuration to be calculated
+      
+      clex: casm.project.ClexDescription instance
+        The cluster expansion being worked on. Used for the 'calctype' settings.
+    
+    
+    Returns
+    -------
+      
+      filepaths: tuple(INCAR, KPOINTS, KPOINTS_REF, POS, SPECIES)
+        A tuple containing the paths to the vaspwrapper input files
+    
+    
+    Raises
+    ------
+      If any required file is not found.
+    
+    """
+    # Find required input files in CASM project directory tree
+    incarfile = dir.settings_path_crawl("INCAR", configname, clex)
+    prim_kpointsfile = dir.settings_path_crawl("KPOINTS", configname, clex)
+    prim_poscarfile = dir.settings_path_crawl("POSCAR", configname, clex)
+    super_poscarfile = dir.POS(configname)
+    speciesfile = dir.settings_path_crawl("SPECIES", configname, clex)
+
+    # Verify that required input files exist
+    if incarfile is None:
+        raise vasp.VaspError("vasp_input_file_names failed. No INCAR file found in CASM project.")
+    if prim_kpointsfile is None:
+        raise vasp.VaspError("vasp_input_file_names failed. No KPOINTS file found in CASM project.")
+    if prim_poscarfile is None:
+        warnings.warn("No reference POSCAR file found in CASM project. I hope your KPOINTS mode is A/AUTO/Automatic or this will fail!", vasp.VaspWarning)
+    if super_poscarfile is None:
+        raise vasp.VaspError("vasp_input_file_names failed. No POS file found for this configuration.")
+    if speciesfile is None:
+        raise vasp.VaspError("vasp_input_file_names failed. No SPECIES file found in CASM project.")
+
+    return (incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile)
 

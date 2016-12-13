@@ -17,7 +17,7 @@ namespace CASM {
   /// Derived needs to implement the following *private* methods:
   /// - Element Derived::prepare_impl(const Element &A) const
   ///   - use to put Element into a canonical comparison form, i.e. sort a cluster
-  /// - bool Derived::intra_orbit_compare_impl(const Element &A, const Element &B) const
+  /// - bool Derived::compare_impl(const Element &A, const Element &B) const
   ///   - used to identify unique equivalents
   /// - bool Derived::invariants_compare_impl(const Element &A, const Element &B) const
   ///   - first order comparison of orbits
@@ -30,12 +30,11 @@ namespace CASM {
   /// The ClusterSymCompare hierarchy:
   /// - SymCompare
   ///   - ClusterSymCompare (implements 'invariants_compare_impl', 'inter_orbit_compare_impl', and 'apply_sym_impl')
-  ///     - IntegralClusterSymCompare (implements 'intra_orbit_compare_impl')
+  ///     - IntegralClusterSymCompare (implements 'compare_impl')
   ///       - LocalSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///
-  /// \ingroup Clusterography
   template<typename Derived>
   class SymCompare {
 
@@ -53,21 +52,21 @@ namespace CASM {
       return derived().prepare_impl(obj);
     }
 
-    /// \brief Orders 'prepared' elements in the same orbit
+    /// \brief Orders 'prepared' elements
     ///
     /// - Returns 'true' to indicate A < B
     /// - Assumes elements are 'prepared' before being compared
-    bool intra_orbit_compare(const Element &A, const Element &B) const {
-      return derived().intra_orbit_compare_impl(A, B);
+    bool compare(const Element &A, const Element &B) const {
+      return derived().compare_impl(A, B);
     }
 
-    /// \brief Check equivalence of elements in the same orbit
+    /// \brief Check equivalence of 'prepared' elements
     ///
-    /// \returns \code !intra_orbit_compare(A,B) && !intra_orbit_compare(B,A) \endcode
+    /// \returns \code !compare(A,B) && !compare(B,A) \endcode
     ///
     /// - Assumes elements are 'prepared' before being compared
-    bool intra_orbit_equal(const Element &A, const Element &B) const {
-      return !intra_orbit_compare(A, B) && !intra_orbit_compare(B, A);
+    bool equal(const Element &A, const Element &B) const {
+      return !compare(A, B) && !compare(B, A);
     }
 
     /// \brief Defines an order for elements that have different invariants
@@ -89,7 +88,7 @@ namespace CASM {
     /// \brief Orders orbit prototypes, breaking invariants_compare ties
     ///
     /// - Returns 'true' to indicate A < B
-    /// - Equivalence is indicated by \code !compare(A,B) && !compare(B,A) \endcode
+    /// - Equivalence is indicated by \code !inter_orbit_compare(A,B) && !inter_orbit_compare(B,A) \endcode
     /// - Assumes elements are in canonical form
     bool inter_orbit_compare(const Element &A, const Element &B) const {
       return derived().inter_orbit_compare_impl(A, B);
@@ -97,7 +96,7 @@ namespace CASM {
 
     /// \brief Check equivalence of prototypes in different orbit
     ///
-    /// \returns \code !compare(A,B) && !compare(B,A) \endcode
+    /// \returns \code !inter_orbit_compare(A,B) && !inter_orbit_compare(B,A) \endcode
     ///
     /// - Assumes elements are in canonical form
     bool inter_orbit_equal(const Element &A, const Element &B) const {
@@ -155,7 +154,7 @@ namespace CASM {
     Element e(sym_compare.prepare(element));
     SymGroup result;
     for(const auto &op : generating_grp) {
-      if(sym_compare.intra_orbit_equal(e, sym_compare.prepare(copy_apply(op, e)))) {
+      if(sym_compare.equal(e, sym_compare.prepare(copy_apply(op, e)))) {
         result.push_back(op);
       }
     }

@@ -1,6 +1,10 @@
 #include <iostream>
 #include <sstream>
 
+/** \ingroup API
+ *  @{
+ */
+
 /// For CASM::PrimClex*
 typedef struct cPrimClex cPrimClex;
 
@@ -14,10 +18,7 @@ extern "C" {
 
   costream *casm_STDERR();
 
-
   costream *casm_nullstream_new();
-
-  void casm_nullstream_delete(costream *ptr);
 
 
   costream *casm_ostringstream_new();
@@ -29,11 +30,20 @@ extern "C" {
   char *casm_ostringstream_strcpy(costream *ptr, char *c_str);
 
 
-  cPrimClex *casm_primclex_new(char *path, costream *log);
+  cPrimClex *casm_primclex_new(char *path, costream *log, costream *debug_log, costream *err_log);
 
   void casm_primclex_delete(cPrimClex *ptr);
 
+  void casm_primclex_refresh(cPrimClex *ptr,
+                             bool read_settings,
+                             bool read_composition,
+                             bool read_chem_ref,
+                             bool read_configs,
+                             bool clear_clex);
 
-  int casm_capi(char *args, cPrimClex *primclex, costream *log, costream *err_log);
+
+  int casm_capi(char *args, cPrimClex *primclex, char *root, costream *log, costream *debug_log, costream *err_log);
 
 }
+
+/** @} */

@@ -11,21 +11,19 @@ namespace test {
   /// Checks:
   /// \code
   /// if(expected.contains(test)) {
-  ///   BOOST_CHECK_EQUAL(expected[test], calculated);
+  ///   BOOST_CHECK(expected[test].almost_equal, calculated);
   /// }
   /// \endcode
   ///
   /// If \code !expected.contains(test) && !quiet \endcode, print the calculated
   /// JSON so that it can be added to the test data.
-  void check(std::string test,
+  bool check(std::string test,
              const jsonParser &expected,
              const jsonParser &calculated,
              fs::path test_cases_path,
-             bool quiet) {
-    if(expected.contains(test)) {
-      BOOST_CHECK_EQUAL(expected[test], calculated);
-    }
-    else if(!quiet) {
+             bool quiet,
+             double tol) {
+    if(!expected.contains(test) && !quiet) {
       std::cout << "Test case: " << expected["title"] << " has no \"" << test << "\" test data." << std::endl;
       std::cout << "To use the current CASM results, add the following to the " << expected["title"]
                 << " test case in " << test_cases_path << std::endl;
@@ -33,16 +31,42 @@ namespace test {
       j[test] = calculated;
       std::cout << j << std::endl;
     }
+
+    bool ok;
+    fs::path diff_path;
+    if(tol == 0.0) {
+      ok = (expected[test] == calculated);
+      if(!ok) {
+        diff_path = find_diff(expected[test], calculated);
+      }
+    }
+    else {
+      ok = expected[test].almost_equal(calculated, tol);
+      if(!ok) {
+        fs::path diff_path = find_diff(expected[test], calculated, tol);
+      }
+    }
+
+    if(!ok) {
+      std::cout << "Difference at: " << diff_path << std::endl;
+      std::cout << "Expected: \n" << expected[test].at(diff_path) << "\n"
+                << "Found: \n" << calculated.at(diff_path) << std::endl;
+    }
+    BOOST_CHECK(ok);
+
+    return ok;
   }
 
   /// \brief Build a CASM project at 'proj_dir/title' using the prim
   void make_project(const Proj &proj) {
 
+    rm_project(proj);
+
     jsonParser json;
     write_prim(proj.prim, json, FRAC);
     json["description"] = proj.desc;
 
-    fs::create_directory(proj.dir);
+    fs::create_directories(proj.dir);
 
     json.write(proj.dir / "prim.json");
 
@@ -86,6 +110,8 @@ namespace test {
     test::make_project(*this);
 
     m_set = ProjectSettings(dir);
+    m_set.set_casm_prefix(fs::current_path());
+    m_set.commit();
 
     BOOST_CHECK_EQUAL(true, fs::exists(dir));
 
@@ -99,7 +125,7 @@ namespace test {
     BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.lattice_point_group()));
 
     // composition axes
-    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.composition_axes(m_set.calctype(), m_set.ref())));
+    BOOST_CHECK_EQUAL(true, fs::exists(m_dirs.composition_axes()));
   }
 
   /// \brief Check that 'casm sym' runs without error
@@ -134,9 +160,10 @@ namespace test {
   /// \brief Default checks that enumerating supercells and configurations can
   /// be run for '--max 2' without error, but doesn't check results
   void Proj::check_enum() {
-    m_p.popen(cd_and() + "casm enum --supercells --max 2");
+    m_p.popen(cd_and() + "casm enum --method ScelEnum --max 2");
     BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
-    m_p.popen(cd_and() + "casm enum --configs --max 2");
+
+    m_p.popen(cd_and() + "casm enum --method ConfigEnumAllOccupations --all");
     BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
   }
 

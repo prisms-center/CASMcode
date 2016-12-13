@@ -10,6 +10,9 @@ namespace CASM {
   class MasterSymGroup;
   class Lattice;
 
+  /** \ingroup Symmetry
+   *  @{
+   */
 
   ///\brief  SymPermutation describes how a symmetry operation permutes a list of 'things'
   /// For example, Coordinates in a Cluster, basis atoms in a Structure, Clusters in an Orbit, etc.
@@ -71,6 +74,6 @@ namespace CASM {
   jsonParser &to_json(const SymPermutation &sym, jsonParser &json);
   void from_json(SymPermutation &sym, const jsonParser &json);
 
-
+  /** @{ */
 }
 #endif

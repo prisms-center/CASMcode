@@ -66,7 +66,7 @@ namespace CASM {
     // Sign convention for 'axis': first non-zero element is positive
     for(Index i = 0; i < 3; i++) {
       if(!almost_zero(_axis[i])) {
-        _axis *= sgn(_axis[i]);
+        _axis *= float_sgn(_axis[i]);
         break;
       }
     }

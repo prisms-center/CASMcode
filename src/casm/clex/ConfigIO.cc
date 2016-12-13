@@ -23,7 +23,7 @@ namespace CASM {
 
     /// \brief Adds index rules corresponding to the parsed args
     void MolDependent::init(const Configuration &_tmplt) const {
-      auto struc_molecule = _tmplt.primclex().prim().get_struc_molecule();
+      auto struc_molecule = _tmplt.primclex().prim().struc_molecule();
 
       if(m_mol_names.size() == 0) {
         for(Index i = 0; i < struc_molecule.size(); i++) {
@@ -47,16 +47,13 @@ namespace CASM {
       }
     }
 
-    /// \brief Long header returns: 'name(Au)   name(Pt)   ...'
-    std::string MolDependent::long_header(const Configuration &_tmplt) const {
-      std::string t_header;
+    /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
+    std::vector<std::string> MolDependent::col_header(const Configuration &_tmplt) const {
+      std::vector<std::string> col;
       for(Index c = 0; c < m_mol_names.size(); c++) {
-        t_header += name() + "(" + m_mol_names[c] + ")";
-        if(c != m_mol_names.size() - 1) {
-          t_header += "   ";
-        }
+        col.push_back(name() + "(" + m_mol_names[c] + ")");
       }
-      return t_header;
+      return col;
     }
   }
 
@@ -92,18 +89,13 @@ namespace CASM {
       return true;
     }
 
-    /// \brief Long header returns: 'comp(a)   comp(b)   ...'
-    std::string Comp::long_header(const Configuration &_tmplt) const {
-      std::string t_header;
+    /// \brief col_header returns: {'comp(a)', 'comp(b)', ...}
+    std::vector<std::string> Comp::col_header(const Configuration &_tmplt) const {
+      std::vector<std::string> col;
       for(Index c = 0; c < _index_rules().size(); c++) {
-        t_header += name() + "(";
-        t_header.push_back((char)('a' + _index_rules()[c][0]));
-        t_header.push_back(')');
-        if(c != _index_rules().size() - 1) {
-          t_header += "   ";
-        }
+        col.push_back(name() + "(" + (char)('a' + _index_rules()[c][0]) + ")");
       }
-      return t_header;
+      return col;
     }
 
 
@@ -154,22 +146,64 @@ namespace CASM {
     const std::string Corr::Name = "corr";
 
     const std::string Corr::Desc =
-      "Average correlation values, normalized per primitive cell; "
-      "accepts range as argument, for example corr(ind1:ind2)";
+      "Correlation values (evaluated basis functions, normalized per primitive cell). "
+      "If no arguements, prints all correlations, using the basis set for the default "
+      "cluster expansion as listed by 'casm settings -l'. "
+      "If one argument, accepts either: "
+      "1) a cluster expansion name, for example 'corr(formation_energy)', and "
+      "evaluates all basis functions, or "
+      "2) an integer index or range of indices of basis functions to evaluate, "
+      "for example 'corr(6)', or 'corr(0:6)'. "
+      "If two arguments, accepts cluster expansion name and an integer index or "
+      "range of basis functions to evaluate, for example 'corr(formation_energy,6)' "
+      "or 'corr(formation_energy,0:6)'.";
 
     /// \brief Returns the atom fraction
     Eigen::VectorXd Corr::evaluate(const Configuration &config) const {
       return correlations(config, m_clexulator);
     }
 
-    /// \brief If not yet initialized, use the global clexulator from the PrimClex
+    /// \brief If not yet initialized, use the default clexulator from the PrimClex
     void Corr::init(const Configuration &_tmplt) const {
       if(!m_clexulator.initialized()) {
-        m_clexulator = _tmplt.primclex().global_clexulator();
+        const PrimClex &primclex = _tmplt.primclex();
+        ClexDescription desc = m_clex_name.empty() ?
+                               primclex.settings().default_clex() : primclex.settings().clex(m_clex_name);
+        m_clexulator = primclex.clexulator(desc);
       }
 
       VectorXdAttribute<Configuration>::init(_tmplt);
 
+    }
+
+    /// \brief Expects 'corr', 'corr(clex_name)', 'corr(index_expression)', or
+    /// 'corr(clex_name,index_expression)'
+    bool Corr::parse_args(const std::string &args) {
+      std::vector<std::string> splt_vec;
+      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+
+      if(!splt_vec.size()) {
+        return true;
+      }
+      else if(splt_vec.size() == 1) {
+        if((splt_vec[0].find_first_not_of("0123456789") == std::string::npos) ||
+           (splt_vec[0].find(':') != std::string::npos)) {
+          _parse_index_expression(splt_vec[0]);
+        }
+        else {
+          m_clex_name = splt_vec[0];
+        }
+      }
+      else if(splt_vec.size() == 2) {
+        m_clex_name = splt_vec[0];
+        _parse_index_expression(splt_vec[1]);
+      }
+      else {
+        std::stringstream ss;
+        ss << "Too many arguments for 'clex'.  Received: " << args << "\n";
+        throw std::runtime_error(ss.str());
+      }
+      return true;
     }
 
     // --- Clex implementations -----------
@@ -177,19 +211,21 @@ namespace CASM {
     const std::string Clex::Name = "clex";
 
     const std::string Clex::Desc =
-      "Predicted property value, currently supports 'clex(formation_energy)' and "
-      "'clex(formation_energy_per_species)'. Default is 'clex(formation_energy)'.";
+      "Predicted property value."
+      " Accepts arguments ($clex_name,$norm)."
+      " ($clex_name is a cluster expansion name as listed by 'casm settings -l', default=the default clex)"
+      " ($norm is the normalization, either 'per_species', or 'per_unitcell' <--default)";
 
     Clex::Clex() :
       ScalarAttribute<Configuration>(Name, Desc) {
       parse_args("");
     }
 
-    Clex::Clex(const Clexulator &clexulator, const ECIContainer &eci, const std::string args) :
+    Clex::Clex(const Clexulator &clexulator, const ECIContainer &eci, const Norm<Configuration> &norm) :
       ScalarAttribute<Configuration>(Name, Desc),
       m_clexulator(clexulator),
-      m_eci(eci) {
-      parse_args(args);
+      m_eci(eci),
+      m_norm(norm.clone()) {
     }
 
     /// \brief Returns the atom fraction
@@ -202,36 +238,56 @@ namespace CASM {
       return std::unique_ptr<Clex>(this->_clone());
     }
 
-    /// \brief If not yet initialized, use the global clexulator and eci from the PrimClex
+    /// \brief If not yet initialized, use the default cluster expansion from the PrimClex
     void Clex::init(const Configuration &_tmplt) const {
       if(!m_clexulator.initialized()) {
-        m_clexulator = _tmplt.primclex().global_clexulator();
-        m_eci = _tmplt.primclex().global_eci("formation_energy");
+        const PrimClex &primclex = _tmplt.primclex();
+        ClexDescription desc = m_clex_name.empty() ?
+                               primclex.settings().default_clex() : primclex.settings().clex(m_clex_name);
+        m_clexulator = primclex.clexulator(desc);
+        m_eci = primclex.eci(desc);
+        if(m_eci.index().back() >= m_clexulator.corr_size()) {
+          Log &err_log = default_err_log();
+          err_log.error<Log::standard>("bset and eci mismatch");
+          err_log << "basis set size: " << m_clexulator.corr_size() << std::endl;
+          err_log << "max eci index: " << m_eci.index().back() << std::endl;
+          throw std::runtime_error("Error: bset and eci mismatch");
+        }
       }
     }
 
-    /// \brief Expects 'clex', 'clex(formation_energy)', or 'clex(formation_energy_per_species)'
+    /// \brief Expects 'clex', 'clex(formation_energy)', or 'clex(formation_energy,per_species)'
     bool Clex::parse_args(const std::string &args) {
-      m_clex_name = args;
-      if(args == "") {
-        m_norm = notstd::make_cloneable<Norm<Configuration> >();
-        return true;
+      std::vector<std::string> splt_vec;
+      boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+
+      m_clex_name = "";
+      if(splt_vec.size()) {
+        m_clex_name = splt_vec[0];
       }
-      if(args == "formation_energy") {
-        m_norm = notstd::make_cloneable<Norm<Configuration> >();
-        return true;
+
+      m_norm = notstd::make_cloneable<Norm<Configuration> >();
+      if(splt_vec.size() == 2) {
+        if(splt_vec[1] == "per_unitcell") {
+          m_norm = notstd::make_cloneable<Norm<Configuration> >();
+        }
+        else if(splt_vec[1] == "per_species") {
+          m_norm = notstd::make_cloneable<NormPerSpecies>();
+        }
+        else {
+          std::stringstream ss;
+          ss << "Error parsing second argument for 'clex'.  Received: " << args << "\n";
+          throw std::runtime_error(ss.str());
+        }
       }
-      if(args == "formation_energy_per_species") {
-        m_norm = notstd::make_cloneable<NormPerSpecies>();
-        return true;
-      }
-      else {
+
+      if(splt_vec.size() > 2) {
         std::stringstream ss;
-        ss << "Error parsing arguments for 'clex'.\n"
-           "  Received: " << args << "\n"
-           "  Allowed options are: 'formation_energy' (Default), or 'formation_energy_per_species'";
+        ss << "Too many arguments for 'clex'.  Received: " << args << "\n";
         throw std::runtime_error(ss.str());
       }
+
+      return true;
     }
 
     /// \brief Returns the normalization
@@ -310,7 +366,7 @@ namespace CASM {
       return GenericConfigFormatter<Index>("multiplicity",
                                            "Symmetric multiplicity of the configuration, excluding translational equivalents.",
       [](const Configuration & config)->Index {
-        return config.prim().factor_group().size() / config.factor_group(config.supercell().permute_begin(), config.supercell().permute_end()).size();
+        return config.prim().factor_group().size() / config.factor_group().size();
       });
     }
 

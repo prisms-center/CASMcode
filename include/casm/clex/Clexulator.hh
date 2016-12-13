@@ -74,7 +74,7 @@ namespace CASM {
       ///
       void calc_global_corr_contribution(ConfigDoF const &_config_dof,
                                          long int const *_n_list_begin,
-                                         double *_corr_begin) const {
+                                         double *corr_begin) const {
         m_config_ptr = &_config_dof;
         _set_nlist(_n_list_begin);
         _global_prepare();
@@ -278,16 +278,16 @@ namespace CASM {
       /// int l_index = my_supercell.find(bijk); // Linear index of site in Configuration
       /// \endcode
       ///
-      void _set_nlist(const long int *_nlist_ptr) {
+      void _set_nlist(const long int *_nlist_ptr) const {
         m_nlist_ptr = _nlist_ptr;
         return;
       }
 
       /// \brief Pointer to ConfigDoF for which evaluation is occuring
-      ConfigDoF const *m_config_ptr;
+      mutable ConfigDoF const *m_config_ptr;
 
       /// \brief Pointer to neighbor list
-      const long int *m_nlist_ptr;
+      mutable long int const *m_nlist_ptr;
 
       /// \brief The UnitCellCoord involved in calculating the basis functions,
       /// relative origin UnitCell
@@ -309,7 +309,7 @@ namespace CASM {
   /// the print_clexulator function. This source code may be compiled, linked,
   /// and used at runtime via Clexulator.
   ///
-  /// \ingroup Clex
+  /// \ingroup ClexClex
   ///
   class Clexulator {
 
@@ -327,9 +327,9 @@ namespace CASM {
     /// \param dirpath Directory containing the source code and compiled object file.
     /// \param nlist, A PrimNeighborList to be updated to include the neighborhood
     ///        of this Clexulator
-    /// \param status_log Print a message to inform users that compilation is occuring
-    /// \param compile_options Compilation options, by default "g++ -O3 -Wall -fPIC"
-    /// \param so_options Shared library compilation options, by default "g++ -shared"
+    /// \param logging Print messages to inform users that compilation is occuring
+    /// \param compile_options Compilation options
+    /// \param so_options Shared library compilation options
     ///
     /// If 'name' is 'X_Clexulator', and 'dirpath' is '/path/to':
     /// - Looks for '/path/to/X_Clexulator.so' and tries to load it.
@@ -343,87 +343,40 @@ namespace CASM {
     Clexulator(std::string name,
                boost::filesystem::path dirpath,
                PrimNeighborList &nlist,
-               Log &status_log = null_log(),
-               std::string compile_options = RuntimeLibrary::default_compile_options(),
-               std::string so_options = RuntimeLibrary::default_so_options()) {
+               const Logging &logging,
+               std::string compile_options,
+               std::string so_options) {
 
       namespace fs = boost::filesystem;
 
-      try {
+      // Construct the RuntimeLibrary that will store the loaded clexulator library
+      m_lib = std::make_shared<RuntimeLibrary>(
+                (dirpath / name).string(),
+                compile_options,
+                so_options,
+                "compile time depends on how many basis functions are included");
 
-        // Construct the RuntimeLibrary that will store the loaded clexulator library
-        m_lib = std::make_shared<RuntimeLibrary>(compile_options, so_options);
+      // Get the Clexulator factory function
+      std::function<Clexulator_impl::Base* (void)> factory;
+      factory = m_lib->get_function<Clexulator_impl::Base* (void)>("make_" + name);
 
-        // If the shared library doesn't exist
-        if(!fs::exists(dirpath / (name + ".so"))) {
+      // Use the factory to construct the clexulator and store it in m_clex
+      m_clex.reset(factory());
 
-          // But the library source code does
-          if(fs::exists(dirpath / (name + ".cc"))) {
-
-            // Compile it
-            try {
-              status_log.compiling<Log::standard>(name);
-              status_log.begin_lap();
-              status_log << "compile time depends on how many basis functions are included" << std::endl;
-              m_lib->compile((dirpath / name).string());
-              status_log << "compile time: " << status_log.lap_time() << " (s)\n" << std::endl;
-            }
-            catch(std::exception &e) {
-              status_log << "Error compiling clexulator. To fix: \n";
-              status_log << "  - Check compiler error messages.\n";
-              status_log << "  - Check compiler options with 'casm settings -l'\n";
-              status_log << "    - Update compiler options with 'casm settings --set-compile-options '...options...'\n";
-              status_log << "    - Make sure the casm headers can be found by including '-I/path/to/casm'\n";
-              status_log << "  - The default compiler is 'g++'. Override by setting the environment variable CXX\n" << std::endl;
-              throw e;
-            }
-          }
-          else {
-            throw std::runtime_error(
-              std::string("Error in Clexulator constructor\n") +
-              "  Could not find '" + dirpath.string() + "/" + name + ".so' or '" + dirpath.string() + "/" + name + ".cc'");
-          }
-        }
-
-        // If the shared library exists
-        if(fs::exists(dirpath / (name + ".so"))) {
-
-          // Load the library with the Clexulator
-          m_lib->load((dirpath / name).string());
-
-          // Get the Clexulator factory function
-          std::function<Clexulator_impl::Base* (void)> factory;
-          factory = m_lib->get_function<Clexulator_impl::Base* (void)>("make_" + name);
-
-          // Use the factory to construct the clexulator and store it in m_clex
-          m_clex.reset(factory());
-        }
-        else {
-          throw std::runtime_error(
-            std::string("Error in Clexulator constructor\n") +
-            "  Did not find '" + dirpath.string() + "/" + name + ".so'");
-        }
-
-        // Check nlist has the right weight_matrix
-        if(nlist.weight_matrix() != m_clex->weight_matrix()) {
-          std::cerr << "Error in Clexulator constructor: weight matrix of neighbor "
-                    "list does not match the weight matrix used to print the "
-                    "clexulator." << std::endl;
-          std::cerr << "nlist weight matrix: \n" << nlist.weight_matrix() << std::endl;
-          std::cerr << "clexulator weight matrix: \n" << m_clex->weight_matrix() << std::endl;
-          throw std::runtime_error(
-            "Error in Clexulator constructor: weight matrix of neighbor list does "
-            "not match the weight matrix used to print the clexulator. Try 'casm bset -uf'.");
-        }
-
-        // Expand the given neighbor list as necessary
-        nlist.expand(neighborhood().begin(), neighborhood().end());
+      // Check nlist has the right weight_matrix
+      if(nlist.weight_matrix() != m_clex->weight_matrix()) {
+        std::cerr << "Error in Clexulator constructor: weight matrix of neighbor "
+                  "list does not match the weight matrix used to print the "
+                  "clexulator." << std::endl;
+        std::cerr << "nlist weight matrix: \n" << nlist.weight_matrix() << std::endl;
+        std::cerr << "clexulator weight matrix: \n" << m_clex->weight_matrix() << std::endl;
+        throw std::runtime_error(
+          "Error in Clexulator constructor: weight matrix of neighbor list does "
+          "not match the weight matrix used to print the clexulator. Try 'casm bset -uf'.");
       }
-      catch(const std::exception &e) {
-        std::cout << "Error in Clexulator constructor" << std::endl;
-        std::cout << e.what() << std::endl;
-        throw e;
-      }
+
+      // Expand the given neighbor list as necessary
+      nlist.expand(neighborhood().begin(), neighborhood().end());
 
     }
 

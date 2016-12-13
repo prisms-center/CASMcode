@@ -2,12 +2,16 @@
 #define COUNTER_HH
 
 #include "casm/container/BaseCounter.hh"
+#include "casm/misc/CASM_math.hh"
 
 namespace CASM {
 
   /** \defgroup Counter
-
-      @{
+   *
+   *  \ingroup Container
+   *  \brief Counters allow looping over many incrementing variables in one loop
+   *
+   *  @{
   */
 
   /// \brief A Counter allows looping over many incrementing variables in one loop.

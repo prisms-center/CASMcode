@@ -9,10 +9,16 @@ namespace CASM {
   class PrimClex;
   class Configuration;
   class ConfigDoF;
+  class Site;
+  class Coordinate;
+  template<typename CoordType>
+  class BasicStructure;
 
   /// A class for mapping an arbitrary crystal structure as a configuration of a crystal template
   /// as described by a PrimClex.  ConfigMapper manages options for the mapping algorithm and mapping cost function
   /// It also caches some information about supercell lattices so that batch imports are more efficient
+  ///
+  /// \ingroup Configuration
   class ConfigMapper {
   public:
     enum NullInitializer {null_initializer};
@@ -23,7 +29,13 @@ namespace CASM {
                  };
 
     ///\brief Default construction not allowed -- this constructor provides an override
-    ConfigMapper(NullInitializer) : m_pclex(nullptr) {}
+    ConfigMapper(NullInitializer) :
+      m_pclex(nullptr),
+      m_lattice_weight(0.5),
+      m_max_volume_change(0.5),
+      m_min_va_frac(0.),
+      m_max_va_frac(1.) {
+    }
 
     ///\brief Construct and initialize a ConfigMapper
     ///\param _pclex the PrimClex that describes the crystal template
@@ -54,7 +66,7 @@ namespace CASM {
     ///\param _tol tolerance for mapping comparisons
     ConfigMapper(PrimClex &_pclex,
                  double _lattice_weight,
-                 double _max_volume_change = 0.25,
+                 double _max_volume_change = 0.5,
                  int _options = robust, // this should actually be a bitwise-OR of ConfigMapper::Options
                  double _tol = TOL);
 
@@ -70,6 +82,27 @@ namespace CASM {
     double lattice_weight() const {
       return m_lattice_weight;
     }
+
+    void set_lattice_weight(double _lw) {
+      m_lattice_weight = max(min(_lw, 1.0), 1e-9);
+    }
+
+    double min_va_frac() const {
+      return m_min_va_frac;
+    }
+
+    void set_min_va_frac(double _min_va) {
+      m_min_va_frac = max(_min_va, 0.);
+    }
+
+    double max_va_frac() const {
+      return m_max_va_frac;
+    }
+
+    void set_max_va_frac(double _max_va) {
+      m_max_va_frac = min(_max_va, 1.);
+    }
+
 
     ///\brief imports structure specified by 'pos_path' into primclex() by finding optimal mapping
     ///       and then setting displacements and strain to zero (only the mapped occupation is preserved)
@@ -238,7 +271,10 @@ namespace CASM {
   private:
     PrimClex *m_pclex;
     mutable std::map<Index, std::vector<Lattice> > m_superlat_map;
-    double m_lattice_weight, m_max_volume_change;
+    double m_lattice_weight;
+    double m_max_volume_change;
+    double m_min_va_frac;
+    double m_max_va_frac;
     bool m_robust_flag, m_strict_flag, m_rotate_flag;
     double m_tol;
     std::vector<std::pair<std::string, Index> > m_fixed_components;

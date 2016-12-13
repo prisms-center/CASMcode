@@ -10,6 +10,11 @@ namespace CASM {
 
   class Structure;
 
+  /**
+   * \ingroup ProjectIO
+   *
+   * @{
+   */
 
   // --- ChemicalReferenceState -------------------
 
@@ -64,6 +69,8 @@ namespace CASM {
                  const jsonParser &json,
                  const Structure &prim,
                  double tol = 1e-14);
+
+  /** @} */
 
 }
 

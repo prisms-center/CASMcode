@@ -2,9 +2,14 @@
 #define SYMGROUPREPID_HH
 
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/CASM_global_definitions.hh"
 #include <iostream>
 
 namespace CASM {
+
+  /** \ingroup SymGroup
+   *  @{
+   */
 
   /// \brief Type-safe ID object for communicating and accessing Symmetry representation info
 
@@ -112,5 +117,7 @@ namespace CASM {
     out << "{group_index = " << _id.group_index() << ", rep_index = " << _id.rep_index() << "}";
     return out;
   }
+
+  /** @} */
 }
 #endif

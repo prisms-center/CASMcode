@@ -653,7 +653,7 @@ namespace CASM {
       for(Index j = 0; j < B.rows(); j++) {
         if(std::abs(B(j, i)) > (max_abs - TOL)) {
           max_abs = std::abs(B(j, i));
-          sign_change = sgn(B(j, i));
+          sign_change = float_sgn(B(j, i));
         }
       }
       OccupantFunction tOF(allowed_occs, double(sign_change)*B.col(i), size(), basis_ind, allowed_occs.sym_rep_ID());

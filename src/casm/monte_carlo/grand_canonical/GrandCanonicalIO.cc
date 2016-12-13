@@ -204,7 +204,7 @@ namespace CASM {
     }
 
     // always sample comp_n
-    auto struc_mol_name = mc.primclex().prim().get_struc_molecule_name();
+    auto struc_mol_name = mc.primclex().prim().struc_molecule_name();
     for(int i = 0; i < struc_mol_name.size(); ++i) {
       name = std::string("comp_n(") + struc_mol_name[i] + ")";
       formatter.push_back(MonteCarloMeanFormatter(name));
@@ -270,6 +270,7 @@ namespace CASM {
   /// - T
   /// - phi_LTE
   /// - Beta
+  /// - configname
   /// - gs_potential_energy
   /// - gs_formation_energy
   /// - param_chem_pot(a) ...
@@ -281,10 +282,11 @@ namespace CASM {
   /// { "key0":[...], "key1":[...], ... }
   /// \endcode
   ///
-  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc, const double &phi_LTE1) {
+  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc, const double &phi_LTE1, const std::string &configname) {
 
     DataFormatter<ConstMonteCarloPtr> formatter;
 
+    formatter.push_back(ConstantValueFormatter<std::string, ConstMonteCarloPtr>("configname", configname));
     formatter.push_back(MonteCarloTFormatter<GrandCanonical>());
     formatter.push_back(GrandCanonicalLTEFormatter(phi_LTE1));
     std::set<std::string> exclude;
@@ -329,7 +331,7 @@ namespace CASM {
     }
 
     // always sample comp_n
-    auto struc_mol_name = mc.primclex().prim().get_struc_molecule_name();
+    auto struc_mol_name = mc.primclex().prim().struc_molecule_name();
     for(int i = 0; i < struc_mol_name.size(); ++i) {
       name = std::string("gs_comp_n(") + struc_mol_name[i] + ")";
       auto evaluator = [ = ](const ConstMonteCarloPtr & ptr) {
@@ -909,12 +911,12 @@ namespace CASM {
   }
 
   /// \brief Will create new file or append to existing results file the results of the latest run
-  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc, const double &phi_LTE1, Log &_log) {
+  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc, const double &phi_LTE1, const std::string &configname, Log &_log) {
     try {
 
       fs::create_directories(settings.output_directory());
       GrandCanonicalDirectoryStructure dir(settings.output_directory());
-      auto formatter = make_lte_results_formatter(mc, phi_LTE1);
+      auto formatter = make_lte_results_formatter(mc, phi_LTE1, configname);
 
       // write csv path results
       if(settings.write_csv()) {

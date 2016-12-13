@@ -11,6 +11,7 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/external/Eigen/Dense"
+#include "casm/crystallography/Niggli.hh"
 
 using namespace CASM;
 boost::filesystem::path testdir("tests/unit/crystallography");
@@ -163,7 +164,16 @@ void triangle_count_test() {
     finalcount = countertest;
   }
 
-  Eigen::VectorXi end_count_value(Eigen::VectorXi::Zero(dims));
+  //The initial matrix is 5x5 with diagonal [ 5 3 1 1 2 ], so it has determinant=30
+  //The Hermite matrix with highest ranking for this determinant will therefore be:
+  //    5 4 4 4 4
+  //    0 3 2 2 2
+  //    0 0 1 0 0
+  //    0 0 0 1 0
+  //    0 0 0 0 2
+  //Which gives the upper triangular vector [ 4 4 4 4 2 2 2 0 0 0 ]
+
+  Eigen::VectorXi end_count_value(Eigen::VectorXi::Zero(HermiteCounter_impl::upper_size(5)));
   end_count_value(0) = 4;
   end_count_value(1) = 4;
   end_count_value(2) = 4;
@@ -171,6 +181,9 @@ void triangle_count_test() {
   end_count_value(4) = 2;
   end_count_value(5) = 2;
   end_count_value(6) = 2;
+  //Rest of the values are zero
+
+  BOOST_CHECK_EQUAL(finalcount.current(), end_count_value);
 
   return;
 }
@@ -377,66 +390,77 @@ void expand_dims_test() {
   return;
 }
 
-void it_matrix_test(boost::filesystem::path expected_mats) {
-  jsonParser readmats(expected_mats);
+jsonParser mat_test_case(const std::string &pos_filename, int minvol, int maxvol) {
+  const Structure test_struc(testdir / pos_filename);
+  const Lattice test_lat = test_struc.lattice();
+  const SymGroup effective_pg = test_struc.factor_group();
 
-  Array<Eigen::Matrix3Xi> past_enumerated_mat;
-  int minvol, maxvol;
+  Array<Eigen::Matrix3i> enumerated_mats;
 
-  from_json(minvol, readmats["min_vol"]);
-  from_json(maxvol, readmats["max_vol"]);
-  from_json(past_enumerated_mat, readmats["mats"]);
-
-  boost::filesystem::path posfile;
-  Array<Eigen::Matrix3Xi> enumerated_mat;
-
-  from_json(posfile, readmats["source"]);
-  Structure test_struc(testdir / posfile);
-  Lattice test_lat = test_struc.lattice();
-  const auto effective_pg = test_struc.factor_group();
-
-  SupercellEnumerator<Lattice> test_enumerator(test_lat, effective_pg, minvol, maxvol);
+  ScelEnumProps enum_props(minvol, maxvol + 1);
+  SupercellEnumerator<Lattice> test_enumerator(test_lat, effective_pg, enum_props);
 
   for(auto it = test_enumerator.begin(); it != test_enumerator.end(); ++it) {
-    enumerated_mat.push_back(it.matrix());
+    enumerated_mats.push_back(it.matrix());
   }
 
-  BOOST_CHECK_EQUAL(past_enumerated_mat.size(), enumerated_mat.size());
+  jsonParser mat_dump;
+  mat_dump["input"]["min_vol"] = minvol;
+  mat_dump["input"]["max_vol"] = maxvol;
+  mat_dump["input"]["source"] = pos_filename;
+  mat_dump["output"]["mats"] = enumerated_mats;
 
-  for(Index i = 0; i < past_enumerated_mat.size(); i++) {
-    BOOST_CHECK(enumerated_mat.contains(past_enumerated_mat[i]));
-  }
-
-  return;
+  return mat_dump;
 }
 
-void it_lat_test(boost::filesystem::path expected_lats) {
-  jsonParser readlats(expected_lats);
-  Array<Lattice> past_enumerated_lats;
-  int minvol, maxvol;
+jsonParser lat_test_case(const std::string &pos_filename, int minvol, int maxvol) {
+  const Structure test_struc(testdir / pos_filename);
+  const Lattice test_lat = test_struc.lattice();
+  const SymGroup effective_pg = test_struc.factor_group();
 
-  from_json(minvol, readlats["min_vol"]);
-  from_json(maxvol, readlats["max_vol"]);
-  from_json(past_enumerated_lats, readlats["lats"]);
-
-  boost::filesystem::path posfile;
   Array<Lattice> enumerated_lats;
+  ScelEnumProps enum_props(minvol, maxvol + 1);
+  test_lat.generate_supercells(enumerated_lats, effective_pg, enum_props);
 
-  from_json(posfile, readlats["source"]);
-  Structure test_struc(testdir / posfile);
-  Lattice test_lat = test_struc.lattice();
-  const auto effective_pg = test_struc.factor_group();
+  jsonParser lat_dump;
+  lat_dump["input"]["min_vol"] = minvol;
+  lat_dump["input"]["max_vol"] = maxvol;
+  lat_dump["input"]["source"] = pos_filename;
+  lat_dump["output"]["lats"] = enumerated_lats;
 
-  test_lat.generate_supercells(enumerated_lats, effective_pg, minvol, maxvol, 3, Eigen::Matrix3i::Identity());
+  return lat_dump;
+}
 
+jsonParser generate_all_test_cases() {
+  jsonParser all_test_cases;
 
-  BOOST_CHECK_EQUAL(past_enumerated_lats.size(), enumerated_lats.size());
+  //********************************************************************//
 
-  for(Index i = 0; i < past_enumerated_lats.size(); i++) {
-    BOOST_CHECK(enumerated_lats.contains(past_enumerated_lats[i]));
-  }
+  std::vector<jsonParser> all_mat_tests;
+  all_mat_tests.push_back(mat_test_case("POS1" , 1, 6));
+  all_mat_tests.push_back(mat_test_case("PRIM1", 2, 9));
+  all_mat_tests.push_back(mat_test_case("PRIM2", 4, 7));
+  all_mat_tests.push_back(mat_test_case("PRIM4", 1, 8));
 
-  return;
+  all_test_cases["mat_test_cases"] = all_mat_tests;
+
+  //********************************************************************//
+
+  std::vector<jsonParser> all_lat_tests;
+  all_lat_tests.push_back(lat_test_case("POS1" , 2, 6));
+  all_lat_tests.push_back(lat_test_case("PRIM1", 2, 9));
+  all_lat_tests.push_back(lat_test_case("PRIM2", 3, 7));
+  all_lat_tests.push_back(lat_test_case("PRIM4", 1, 8));
+  all_lat_tests.push_back(lat_test_case("PRIM5", 1, 8));
+
+  all_test_cases["lat_test_cases"] = all_lat_tests;
+
+  //********************************************************************//
+
+  jsonParser test1 = all_test_cases;
+  jsonParser test2 = all_test_cases;
+
+  return all_test_cases;
 }
 
 void unroll_test() {
@@ -478,7 +502,7 @@ void compare_test() {
        0, 1, 0,
        0, 0, 1;
 
-  BOOST_CHECK_EQUAL(HermiteCounter_impl::_canonical_compare(low, high), 1);
+  BOOST_CHECK(HermiteCounter_impl::_canonical_compare(low, high));
 
   low << 1, 9, 9,
       0, 9, 9,
@@ -488,7 +512,7 @@ void compare_test() {
        0, 9, 9,
        0, 9, 9;
 
-  BOOST_CHECK_EQUAL(HermiteCounter_impl::_canonical_compare(low, high), 1);
+  BOOST_CHECK(HermiteCounter_impl::_canonical_compare(low, high));
 
   return;
 }
@@ -506,7 +530,8 @@ void trans_enum_test() {
 
   Lattice bigunit = make_supercell(testlat, transmat);
 
-  SupercellEnumerator<Lattice> enumerator(testlat, pg, 1, 5 + 1, dims, transmat);
+  ScelEnumProps enum_props(1, 5 + 1, "abc", transmat);
+  SupercellEnumerator<Lattice> enumerator(testlat, pg, enum_props);
 
   std::vector<Lattice> enumerated_lat(enumerator.begin(), enumerator.end());
 
@@ -516,40 +541,6 @@ void trans_enum_test() {
 
   return;
 }
-
-/*
-void restricted_test()
-{
-    Lattice testlat=Lattice::fcc();
-    SymGroup pg;
-    testlat.generate_point_group(pg);
-    int dims=1;
-
-    SupercellEnumerator<Lattice> enumerator(testlat,pg,1,5+1,dims);
-    std::vector<Lattice> enumerated_lat(enumerator.begin(), enumerator.end());
-
-    BOOST_CHECK_EQUAL(enumerated_lat.size(),5);
-
-    int l=1;
-    for(auto it=enumerated_lat.begin(); it!=enumerated_lat.end(); ++it)
-    {
-        Eigen::Matrix3i comp_transmat;
-        comp_transmat<<(l),0,0,
-            0,1,0,
-            0,0,1;
-
-        Lattice comparelat=make_supercell(testlat,comp_transmat);
-
-        Lattice nigglicompare=niggli(comparelat,pg,TOL);
-        Lattice nigglitest=niggli(*it,pg,TOL);
-
-        BOOST_CHECK(nigglicompare==nigglitest);
-        l++;
-    }
-
-    return;
-}
-*/
 
 void restricted_test() {
   std::vector<Lattice> all_test_lats;
@@ -564,7 +555,8 @@ void restricted_test() {
     testlat.generate_point_group(pg);
     int dims = 1;
 
-    SupercellEnumerator<Lattice> enumerator(testlat, pg, 1, 15 + 1, dims);
+    ScelEnumProps enum_props(1, 15 + 1, "a");
+    SupercellEnumerator<Lattice> enumerator(testlat, pg, enum_props);
 
     int l = 1;
     for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
@@ -605,24 +597,68 @@ BOOST_AUTO_TEST_CASE(HermiteCounting) {
 //Tests in here were created by first getting results from
 //before HermiteCounter existed and then making sure the results
 //didn't change after it was introduced
+
+//Unfortunately, the old niggli routines weren't working as
+//they should have been, so these hard coded examples to check
+//had to be regenerated...
+
 BOOST_AUTO_TEST_CASE(EnumeratorConsistency) {
 
-  it_matrix_test(boost::filesystem::path(testdir / "POS1_1_6_mats.json"));
-  it_matrix_test(boost::filesystem::path(testdir / "PRIM1_2_9_mats.json"));
-  it_matrix_test(boost::filesystem::path(testdir / "PRIM2_4_7_mats.json"));
-  it_matrix_test(boost::filesystem::path(testdir / "PRIM4_1_8_mats.json"));
+  boost::filesystem::path old_test_path = testdir / "test_cases.json";
+  boost::filesystem::path current_test_path = testdir / "current_test_results.json";
 
-  it_lat_test(boost::filesystem::path(testdir / "POS1_2_6_lats.json"));
-  it_lat_test(boost::filesystem::path(testdir / "PRIM1_2_9_lats.json"));
-  it_lat_test(boost::filesystem::path(testdir / "PRIM2_3_7_lats.json"));
-  it_lat_test(boost::filesystem::path(testdir / "PRIM4_1_8_lats.json"));
-  it_lat_test(boost::filesystem::path(testdir / "PRIM5_1_8_lats.json"));
+  jsonParser current_test_results = generate_all_test_cases();
+  current_test_results.write(current_test_path);
+
+  //Find out where things fail
+  //Comparison will fail if you don't compare from pre-written files.
+  jsonParser curr(current_test_path);
+  jsonParser existing(old_test_path);
+
+  boost::filesystem::path failure_point = find_diff(curr, existing, TOL);
+
+  if(!failure_point.empty()) {
+    std::cout << "Difference at: " << failure_point << "\n" << std::endl;
+
+    auto &_existing = existing.at(failure_point);
+    auto &_curr = curr.at(failure_point);
+    if(_existing.type() != _curr.type()) {
+      std::cout << "Different types\n" << std::endl;
+    }
+    else if(_existing.is_array() && (_existing.size() != _curr.type())) {
+      std::cout << "Different array sizes" << std::endl;
+      std::cout << "  Expected: " << _existing.size() << std::endl;
+      std::cout << "  Found: " << _curr.size() << std::endl;
+
+    }
+    else if(_existing.is_obj() && (_existing.size() != _curr.type())) {
+      std::cout << "Different object sizes\n" << std::endl;
+      std::cout << "  Expected: " << _existing.size() << std::endl;
+      std::cout << "  Found: " << _curr.size() << std::endl;
+
+    }
+    else {
+      std::cout << "Different values\n" << std::endl;
+    }
+
+    std::cout << "Expected: \n" << existing.at(failure_point) << "\n"
+              << "Found: \n" << curr.at(failure_point) << std::endl;
+  }
+
+
+  BOOST_CHECK(failure_point.empty());
+
+  current_test_results["WARNING"] = "This has been added as an inconvenience to anyone who is thinking of replacing the \
+current test_results.json file. Do not replace anything unless you're certain the old \
+results were incorrect, and these are an improvement. If you are sure you want to proceed, eliminate this key.";
+
+  current_test_results.write(current_test_path);
+
 }
 
 BOOST_AUTO_TEST_CASE(RestrictedEnumeration) {
   trans_enum_test();
   restricted_test();
-  //restricted_trans_enum_test();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

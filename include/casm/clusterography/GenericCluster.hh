@@ -228,12 +228,12 @@ namespace CASM {
   ///
   /// Does not implement:
   /// - 'prepare_impl'
-  /// - 'intra_orbit_compare_impl'
+  /// - 'compare_impl'
   ///
   /// The ClusterSymCompare hierarchy:
   /// - SymCompare
   ///   - ClusterSymCompare
-  ///     - IntegralClusterSymCompare (implements 'intra_orbit_compare_impl')
+  ///     - IntegralClusterSymCompare (implements 'compare_impl')
   ///       - LocalSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - PrimPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
   ///       - ScelPeriodicSymCompare<IntegralCluster> (implements 'prepare_impl')
@@ -270,7 +270,7 @@ namespace CASM {
 
     }
 
-    // intra_orbit_compare_impl : implement in Derived
+    // compare_impl : implement in Derived
 
     /// \brief Orders 'prepared' elements in the same orbit
     ///
@@ -304,7 +304,7 @@ namespace CASM {
       }
 
       // next lexicographical_compare of Element in A and B
-      return this->intra_orbit_compare(A, B);
+      return this->compare(A, B);
     }
 
     /// \brief Apply symmetry to this

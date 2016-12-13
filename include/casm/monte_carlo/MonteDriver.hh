@@ -6,6 +6,7 @@
 
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
+#include "casm/monte_carlo/MonteCarloEnum_impl.hh"
 #include "casm/monte_carlo/MonteSettings.hh"
 
 namespace CASM {
@@ -75,12 +76,14 @@ namespace CASM {
     /// run in debug mode?
     bool m_debug;
 
+    /// Enumerated configurations encountered during Monte Carlo calculations
+    notstd::cloneable_ptr<MonteCarloEnum> m_enum;
   };
 
 
-  /// Perform a single monte carlo step, incrementing monte_run.m_Nstep and monte_run.Npass as it goes
+  /// Perform a single monte carlo step, return true if accepted
   template<typename RunType>
-  void monte_carlo_step(RunType &monte_run);
+  bool monte_carlo_step(RunType &monte_run);
 
 
   template<typename RunType>
@@ -92,7 +95,8 @@ namespace CASM {
     m_drive_mode(m_settings.drive_mode()),
     m_mc(primclex, m_settings, _log),
     m_conditions_list(make_conditions_list(primclex, m_settings)),
-    m_debug(m_settings.debug()) {
+    m_debug(m_settings.debug()),
+    m_enum(m_settings.is_enumeration() ? new MonteCarloEnum(primclex, settings, _log, m_mc) : nullptr) {
   }
 
   /// \brief Run calculations for all conditions, outputting data as you finish each one
@@ -147,54 +151,59 @@ namespace CASM {
     }
     m_log << std::endl;
 
-    // save initial configdof if not dependent runs
-    ConfigDoF initial_configdof;
-    if(!m_settings.dependent_runs()) {
-      initial_configdof = m_mc.configdof();
-    }
+    if(m_settings.dependent_runs()) {
 
-    // if starting from initial condition
-    if(start_i == 0) {
-      // perform any requested explicit equilibration passes
-      if(m_settings.is_equilibration_passes_first_run()) {
-        auto equil_passes = m_settings.equilibration_passes_first_run();
+      // if starting from initial condition
+      if(start_i == 0) {
 
-        m_log.write("DoF");
-        m_log << "write: " << m_dir.initial_state_firstruneq_json(0) << "\n" << std::endl;
+        // set intial state
+        m_mc.set_state(m_conditions_list[0], m_settings);
 
-        jsonParser json;
-        fs::create_directories(m_dir.conditions_dir(0));
-        to_json(m_mc.configdof(), json).write(m_dir.initial_state_firstruneq_json(0));
+        // perform any requested explicit equilibration passes
+        if(m_settings.dependent_runs() && m_settings.is_equilibration_passes_first_run()) {
 
-        m_log.begin("Equilibration passes");
-        m_log << equil_passes << " equilibration passes\n" << std::endl;
+          auto equil_passes = m_settings.equilibration_passes_first_run();
 
-        MonteCounter equil_counter(m_settings, m_mc.steps_per_pass());
-        while(equil_counter.pass() != equil_passes) {
-          monte_carlo_step(m_mc);
-          equil_counter++;
+          m_log.write("DoF");
+          m_log << "write: " << m_dir.initial_state_firstruneq_json(0) << "\n" << std::endl;
+
+          jsonParser json;
+          fs::create_directories(m_dir.conditions_dir(0));
+          to_json(m_mc.configdof(), json).write(m_dir.initial_state_firstruneq_json(0));
+
+          m_log.begin("Equilibration passes");
+          m_log << equil_passes << " equilibration passes\n" << std::endl;
+
+          MonteCounter equil_counter(m_settings, m_mc.steps_per_pass());
+          while(equil_counter.pass() != equil_passes) {
+            monte_carlo_step(m_mc);
+            equil_counter++;
+          }
         }
-
       }
-    }
-    else if(m_settings.dependent_runs()) {
-      // read end state of previous condition
-      ConfigDoF configdof = m_mc.configdof();
-      from_json(configdof, jsonParser(m_dir.final_state_json(start_i - 1)));
+      else {
 
-      m_mc.set_configdof(configdof, std::string("Using: ") + m_dir.final_state_json(start_i - 1).string());
+        // read end state of previous condition
+        ConfigDoF configdof = m_mc.configdof();
+        from_json(configdof, jsonParser(m_dir.final_state_json(start_i - 1)));
+
+        m_mc.set_configdof(configdof, std::string("Using: ") + m_dir.final_state_json(start_i - 1).string());
+      }
     }
 
     // Run for all conditions, outputting data as you finish each one
     for(Index i = start_i; i < m_conditions_list.size(); i++) {
       if(!m_settings.dependent_runs()) {
-        m_mc.set_configdof(initial_configdof, "reset to initial DoF");
+        m_mc.set_state(m_conditions_list[i], m_settings);
       }
       else {
+        m_mc.set_conditions(m_conditions_list[i]);
+
         m_log.custom("Continue with existing DoF");
         m_log << std::endl;
       }
       single_run(i);
+      m_log << std::endl;
     }
 
     return;
@@ -289,8 +298,6 @@ namespace CASM {
 
     fs::create_directories(m_dir.conditions_dir(cond_index));
 
-    m_mc.set_conditions(m_conditions_list[cond_index]);
-
     // perform any requested explicit equilibration passes
     if(m_settings.is_equilibration_passes_each_run()) {
 
@@ -324,15 +331,17 @@ namespace CASM {
     m_log.begin_lap();
 
     MonteCounter run_counter(m_settings, m_mc.steps_per_pass());
-
+    if(m_enum) {
+      m_enum->reset();
+    };
 
     while(true) {
 
       if(debug()) {
-        m_log.custom("Counter info");
+        m_log.custom<Log::debug>("Counter info");
         m_log << "pass: " << run_counter.pass() << "  "
               << "step: " << run_counter.step() << "  "
-              << "samples: " << run_counter.samples() << std::endl;
+              << "samples: " << run_counter.samples() << "\n" << std::endl;
       }
 
       if(m_mc.must_converge()) {
@@ -351,10 +360,10 @@ namespace CASM {
 
           if(m_mc.check_convergence_time()) {
 
-            m_log.check<Log::verbose>("Convergence");
-            m_log << std::boolalpha;
-            m_log << "is equilibrated: " << m_mc.is_equilibrated().first << std::endl;
-            m_log << "is converged: " << m_mc.is_converged() << std::endl;
+            m_log.require<Log::verbose>() << "\n";
+            m_log.custom<Log::verbose>("Begin convergence checks");
+            m_log << "samples: " << m_mc.sample_times().size() << std::endl;
+            m_log << std::endl;
 
             if(m_mc.is_converged()) {
               break;
@@ -371,18 +380,25 @@ namespace CASM {
         break;
       }
 
-      monte_carlo_step(m_mc);
+      bool res = monte_carlo_step(m_mc);
+
+      if(res && m_enum && m_enum->on_accept()) {
+        m_enum->insert(m_mc.config());
+      }
 
       run_counter++;
 
       if(run_counter.sample_time()) {
-        m_log.custom<Log::verbose>("Sample data");
+        m_log.custom<Log::debug>("Sample data");
         m_log << "pass: " << run_counter.pass() << "  "
               << "step: " << run_counter.step() << "  "
               << "take sample " << m_mc.sample_times().size() << "\n" << std::endl;
 
-        m_mc.sample_data(run_counter.pass(), run_counter.step());
+        m_mc.sample_data(run_counter);
         run_counter.increment_samples();
+        if(m_enum && m_enum->on_sample()) {
+          m_enum->insert(m_mc.config());
+        }
       }
     }
     m_log << std::endl;
@@ -400,6 +416,10 @@ namespace CASM {
     m_log.write("Output files");
     m_mc.write_results(cond_index);
     m_log << std::endl;
+
+    if(m_enum) {
+      m_enum->save_configs();
+    }
 
     return;
   }
@@ -490,7 +510,7 @@ namespace CASM {
   }
 
   template<typename RunType>
-  void monte_carlo_step(RunType &monte_run) {
+  bool monte_carlo_step(RunType &monte_run) {
 
     typedef typename RunType::EventType EventType;
 
@@ -498,13 +518,14 @@ namespace CASM {
 
     if(monte_run.check(event)) {
       monte_run.accept(event);
+      return true;
     }
 
     else {
       monte_run.reject(event);
+      return false;
     }
 
-    return;
   }
 
 }

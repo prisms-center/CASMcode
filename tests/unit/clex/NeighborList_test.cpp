@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(PrimNeighborListBasics) {
   BOOST_CHECK_EQUAL(nlist2.size(), 177);
 
   // clone
-  notstd::cloneable_ptr<PrimNeighborList> ptr1(nlist);
+  notstd::cloneable_ptr<PrimNeighborList> ptr1(nlist.clone());
   BOOST_CHECK_EQUAL(ptr1->size(), 177);
   std::unique_ptr<PrimNeighborList> ptr2 = nlist.clone();
   BOOST_CHECK_EQUAL(ptr2->size(), 177);
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(SuperNeighborListBasics) {
   SuperNeighborList super_nlist2 = super_nlist;
 
   // clone
-  notstd::cloneable_ptr<SuperNeighborList> ptr1(super_nlist);
+  notstd::cloneable_ptr<SuperNeighborList> ptr1(super_nlist.clone());
   std::unique_ptr<SuperNeighborList> ptr2 = super_nlist.clone();
   notstd::cloneable_ptr<SuperNeighborList> ptr3 = ptr1;
 
@@ -147,14 +147,12 @@ BOOST_AUTO_TEST_CASE(Proj) {
   jsonParser bspecs_json(proj.bspecs());
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   double crystallography_tol = TOL;
-  make_orbits(prim,
-              prim.factor_group(),
-              bspecs_json,
-              crystallography_tol,
-              alloy_sites_filter,
-              PrimPeriodicIntegralClusterSymCompare(crystallography_tol),
-              std::back_inserter(orbits),
-              std::cout);
+  make_prim_periodic_orbits(prim,
+                            bspecs_json,
+                            alloy_sites_filter,
+                            crystallography_tol,
+                            std::back_inserter(orbits),
+                            std::cout);
 
   // expand the nlist to contain 'tree'
   std::set<UnitCellCoord> nbors;
@@ -170,6 +168,7 @@ BOOST_AUTO_TEST_CASE(Proj) {
   nlist.expand(nbors.begin(), nbors.end());
   BOOST_CHECK_EQUAL(nlist.size(), 381);
 
+  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

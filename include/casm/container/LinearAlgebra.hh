@@ -22,6 +22,14 @@
 #include "casm/misc/CASM_math.hh"
 namespace CASM {
 
+  /** \defgroup LinearAlgebra
+   *
+   *  \ingroup Container
+   *  \brief Linear algebra routines
+   *
+   *  @{
+  */
+
   void get_Hermitian(Eigen::MatrixXcd &original_mat, Eigen::MatrixXcd &hermitian_mat, Eigen::MatrixXcd &antihermitian_mat); //Ivy
   bool is_Hermitian(Eigen::MatrixXcd &mat); //Ivy
   void poly_fit(Eigen::VectorXcd &xvec, Eigen::VectorXcd &yvec, Eigen::VectorXcd &coeffs, int degree);
@@ -63,7 +71,7 @@ namespace CASM {
   /// \brief Check if Eigen::Matrix is unimodular
   template<typename Derived>
   bool is_unimodular(const Eigen::MatrixBase<Derived> &M, double tol) {
-    return is_integer(M, tol) && almost_equal(M.determinant(), static_cast<typename Derived::Scalar>(1), tol);
+    return is_integer(M, tol) && almost_equal(std::abs(M.determinant()), static_cast<typename Derived::Scalar>(1), tol);
   }
 
   /// \brief Check if Eigen::Matrix is diagonal
@@ -373,5 +381,11 @@ namespace CASM {
     return;
   }
 
+  std::vector<Eigen::Matrix3i> _unimodular_matrices(bool positive, bool negative);
+  const std::vector<Eigen::Matrix3i> &positive_unimodular_matrices();
+  const std::vector<Eigen::Matrix3i> &negative_unimodular_matrices();
+  const std::vector<Eigen::Matrix3i> &unimodular_matrices();
+
+  /** @} */
 }
 #endif

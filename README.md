@@ -9,6 +9,7 @@ This version of CASM supports:
   - Occupational degrees of freedom. 
 - High-throughput calculations using:
   - VASP: [https://www.vasp.at](https://www.vasp.at)  
+- Semi-Grand canonical Monte Carlo calculations
 
 CASM is updated frequently with support for new effective Hamiltonians, new interfaces for first-principles electronic structure codes, and new Monte Carlo methods. Collaboration is welcome and new features can be incorporated by forking the repository on GitHub, creating a new feature, and submitting pull requests. If you are interested in developing features that involve a significant time investment we encourage you to first contact the CASM development team at <casm-developers@lists.engr.ucsb.edu>.
 
@@ -18,7 +19,7 @@ CASM is currently beta software with very active development. Our goal is that t
 
 CASM can be cited using the following four references:
 
-- [ref1]        CASM, v0.1.0 (2015). Available from https://github.com/prisms-center/CASMcode. doi:[include doi here]
+- [ref1]        CASM, v0.2.0 (2016). Available from https://github.com/prisms-center/CASMcode. doi:[include doi here]
   - DOIs are generated after a release is archived so they cannot be included in the README for the current release. The appropriate DOI for a particular release can be obtained from the wiki page: <https://github.com/prisms-center/CASMcode/wiki/DOIs>.
 - [ref2] 	J. C. Thomas, A. Van der Ven, *Finite-temperature properties of strongly anharmonic and mechanically unstable crystal phases from first principles*, *Physical Review B*, **88**, 214111 (2013).
 - [ref3] 	B. Puchala, A. Van der Ven, *Thermodynamics of the Zr-O system from first-principles calculations*, *Physical Review B*, **88**, 094108 (2013).
@@ -57,7 +58,7 @@ CASM is developed by the Van der Ven group, originally at the University of Mich
 
 **Developers**:  John Goiri and Anirudh Natarajan.
 
-**Other contributors**: Min-Hua Chen, Jonathon Bechtel, Max Radin, Elizabeth Decolvenaere and Anna Belak
+**Other contributors**: Min-Hua Chen, Jonathon Bechtel, Max Radin, Elizabeth Decolvenaere, Anna Belak, Liang Tian, and Naga Sri Harsha Gunda
 
 #### Acknowledgements ####
 
@@ -89,7 +90,7 @@ See INSTALL.md
 
 The ``casm`` executable includes extensive help documentation describing the various commands and options. Simply executing ``casm`` will display a list of possible commands, and executing ``casm <cmd> -h`` will display help documentation particular to the chosen command.
 
-For a beginner, the best place to start is to follow the suggestions printed when calling ``casm status -n``.  This provides step-by-step instructions for creating a CASM project, generating symmetry information, setting composition axes, enumerating configurations, calculating energies with VASP, setting reference states, and fitting an effective Hamiltonian. The subcommand ``casm format`` provides information on the directory structure of the CASM project and the format of all the CASM files.
+For a beginner, the best place to start is to follow the suggestions printed when calling ``casm status -n``.  This provides step-by-step instructions for creating a CASM project, generating symmetry information, setting composition axes, enumerating configurations, calculating energies with VASP, setting reference states, and fitting an effective Hamiltonian using the program ``casm-learn``. ``casm-learn`` provides The subcommand ``casm format`` provides information on the directory structure of the CASM project and the format of all the CASM files.
 
 All that is needed to start a new project is a ``prim.json`` file describing the crystal structure of the material being studied. See ``casm format --prim`` for a description and examples. Typically one will create a new project directory containing the ``prim.json`` file and then initialize the casm project. For example:
 
@@ -108,15 +109,9 @@ All that is needed to start a new project is a ``prim.json`` file describing the
 
 After initializing a casm project: 
 
-- ``casm`` generates code that is compiled and linked at runtime in order to evaluate effective Hamiltonians in a highly optimized manner. If you installed the CASM header files in a location that is not in your default search path you must specify in your CASM project settings where to find the header files. You can inspect the current settings via ``casm settings -l``, and then add the correct include path via ``casm settings --set-compile-options``. For example:
-    
-        casm settings --set-compile-options 'g++ -O3 -Wall -fPIC --std=c++11 -I/path/to/include/casm'
-
-- Shared object compilation options may be set via ``casm settings --set-so-options``. For example (using the default settings):
-
-        casm settings --set-so-options 'g++ -shared -lboost_system'
+- ``casm`` generates code that is compiled and linked at runtime in order to evaluate effective Hamiltonians in a highly optimized manner. If you installed the CASM header files and libraries in a location that is not in your default search path you must specify where to find them. Often the default compilation options work well, but there are some cases when the c++ compiler, compiler flags, or shared object construction flags might need to be customized. You can inspect the current settings via ``casm settings -l`` and options to change them via ``casm settings --desc``.
 
 
-An html tutorial describing the creation of an example CASM project and typical steps is coming soon.
+
 
 

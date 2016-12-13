@@ -3,8 +3,7 @@
 
 #include <type_traits>
 #include <cassert>
-
-#include "casm/CASM_global_definitions.hh"
+#include <iterator>
 
 namespace CASM {
   namespace CASM_TMP {
@@ -60,63 +59,8 @@ namespace CASM {
       std::enable_if < is_iterator<T>::type::value &&
       std::is_same<typename std::iterator_traits<T>::value_type, V>::type::value, void >;
 
-    // --------------------
-
-    // Definitions for IfIntegralTol
-    template <typename tol_type, bool IsIntegral>
-    struct IfIntegralTol;
-
-    template <typename tol_type>
-    struct IfIntegralTol<tol_type, true> {
-      IfIntegralTol() {};
-      IfIntegralTol(tol_type) {};
-      tol_type tol() const {
-        return 0;
-      }
-    };
-
-    template <typename tol_type>
-    struct IfIntegralTol<tol_type, false> {
-      IfIntegralTol(tol_type _tol) : m_tol(_tol) {};
-      tol_type tol() {
-        return m_tol;
-      }
-    private:
-      tol_type m_tol;
-    };
-
-    template<typename T>
-    using TypedTol = IfIntegralTol<T, std::is_integral<T>::value >;
-    // End of IfIntegralTol
-
     template<bool IsConst, typename T>
     using ConstSwitch = typename std::conditional<IsConst, const T, T>::type;
-
-
-    // Definitions for MuchLessThan
-    template<typename value_type>
-    struct IntegralLessThan {
-      IntegralLessThan() {};
-      IntegralLessThan(value_type) {};
-      bool operator()(const value_type &A, const value_type &B) const {
-        return A < B;
-      };
-    };
-
-    template<typename value_type>
-    struct FloatingPointLessThan {
-      FloatingPointLessThan(value_type _tol = TOL) : m_tol(_tol) {};
-      bool operator()(const value_type &A, const value_type &B) const {
-        return A + m_tol < B;
-      };
-    private:
-      value_type m_tol;
-    };
-
-    template<typename T>
-    using MuchLessThan = typename std::conditional<boost::is_integral<T>::value, IntegralLessThan<T>, FloatingPointLessThan<T> >::type;
-    // End of MuchLessThan
-
 
     // ---------------------
 
@@ -124,7 +68,7 @@ namespace CASM {
     template<typename T>
     struct UnaryIdentity {
       T operator()(T const &arg) const {
-        return T;
+        return arg;
       }
     };
 
@@ -134,8 +78,8 @@ namespace CASM {
       ConstantFunctor(OutputType const &_const) :
         m_const(_const) {}
 
-      template<typename... Args>
-      OutputType operator()(Args... const &args) const {
+      template<typename ... Args>
+      OutputType operator()(Args const &... args) const {
         return m_const;
       }
     private:

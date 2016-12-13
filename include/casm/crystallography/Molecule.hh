@@ -11,6 +11,12 @@
 
 namespace CASM {
 
+  /** \defgroup Molecule
+   *  \ingroup Crystallography
+   *  \brief Relates to Molecule
+   *  @{
+   */
+
   class Molecule;
   //****************************************************
   ///\brief Lightweight container for atom properties.
@@ -113,8 +119,13 @@ namespace CASM {
     static AtomPosition from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
   };
 
-
   //****************************************************
+
+  /** \defgroup Molecule
+   *  \ingroup Crystallography
+   *  \brief Relates to Molecule
+   *  @{
+   */
 
   class Molecule {
   public:
@@ -180,7 +191,6 @@ namespace CASM {
 
     jsonParser &to_json(jsonParser &json, Eigen::Matrix3d const &c2f_mat) const;
 
-    // Lattice must be set already
     void from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
 
   private:
@@ -189,10 +199,6 @@ namespace CASM {
     std::map<std::string, MoleculeAttribute> m_attribute_map;
     bool m_divisible;
   };
-
-  Molecule operator*(const SymOp &LHS, const Molecule &RHS); //TODO
-  Molecule operator+(const Coordinate &LHS, const Molecule &RHS); //TODO
-  Molecule operator+(const Molecule &LHS, const Coordinate &RHS); //TODO
 
   inline
   bool operator==(Molecule const &A, Molecule const &B) {
@@ -212,13 +218,13 @@ namespace CASM {
 
   jsonParser &to_json(const Molecule &mol, jsonParser &json, Eigen::Matrix3d const &c2f_mat);
 
-  // Lattice must be set already
   void from_json(Molecule &mol, const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
 
   template<>
   struct jsonConstructor<Molecule> {
     static Molecule from_json(const jsonParser &json, Eigen::Matrix3d const &f2c_mat);
   };
-
+  /** @} */
 }
+
 #endif

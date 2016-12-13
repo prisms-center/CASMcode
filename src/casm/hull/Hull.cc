@@ -28,8 +28,8 @@ namespace CASM {
              double _singular_value_tol,
              double _bottom_facet_tol) :
     m_selection(_selection),
-    m_comp_calculator(_comp_calculator),
-    m_energy_calculator(_energy_calculator) {
+    m_comp_calculator(_comp_calculator.clone()),
+    m_energy_calculator(_energy_calculator.clone()) {
 
     Hull_impl::_validate_input(m_selection, *m_comp_calculator, *m_energy_calculator);
 
@@ -290,9 +290,9 @@ namespace CASM {
         std::cerr << f(invalid_data.begin(), invalid_data.end()) << "\n";
 
         std::stringstream ss;
-        ss << "Error in Hull(): Invalid composition or energy data. "
-           "Make sure you have set composition axes and all selected configurations "
-           "have calculation results.";
+        ss << "Error in Hull(): Invalid composition or energy data. \n"
+           "Make sure you have set composition axes, all selected configurations\n"
+           "have calculation results, and you have set your chemical reference.";
         throw std::runtime_error(ss.str());
       }
     }

@@ -5,6 +5,7 @@
 
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/misc/Comparisons.hh"
 #include "casm/container/multivector.hh"
 #include "casm/symmetry/SymCompare.hh"
 
@@ -103,7 +104,7 @@ namespace CASM {
     ///   to check equivalence
     const_iterator find(const Element &e) const {
       return std::find_if(begin(), end(), [&](const Element & B) {
-        return m_sym_compare.intra_orbit_equal(e, B);
+        return m_sym_compare.equal(e, B);
       });
     }
 

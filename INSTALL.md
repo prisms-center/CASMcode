@@ -78,13 +78,18 @@ Boost can be downloaded and installed from source following instructions found a
 
 CASM includes python modules for automating the submission and analysis of VASP calculations. They have been most extensively tested using Python 2.7.5, and should be compatible with versions 2.x+. (*Note however that for recent versions of SCons, support for Python versions before 2.7 has been deprecated.*) The latest version can be obtained from the Python website: [https://www.python.org](https://www.python.org)
 
-**NumPy**
+Individual module dependencies include:
 
-Individual module dependencies include NumPy ([http://www.numpy.org](http://www.numpy.org)), which can be obtained by installing SciPy using one of the methods described on their website:  [http://www.scipy.org/install.html](http://www.scipy.org/install.html).
+- **SciPy** ([https://www.scipy.org](https://www.scipy.org)), which can be obtained using one of the methods described on their website:  [http://www.scipy.org/install.html](http://www.scipy.org/install.html). The particular SciPy packages needed are:
+	- **numpy**  ([http://www.numpy.org](http://www.numpy.org))
+	- **pandas** ([http://pandas.pydata.org](http://pandas.pydata.org))
 
-**pbs**
+- **scikit-learn** ([http://scikit-learn.org](http://scikit-learn.org))
 
-The Python module pbs is used to automate submission and management of PBS batch jobs on a cluster. It can be obtained from its GitHub repository: [https://github.com/prisms-center/pbs](https://github.com/prisms-center/pbs).
+- **deap** ([http://deap.readthedocs.io/en/master/](http://deap.readthedocs.io/en/master/)), the Distributed Evolutionary Algorithm Package, used for genetic algorithms.
+	- **scoop** ([http://scoop.readthedocs.io/en/latest/](http://scoop.readthedocs.io/en/latest/)), required for deap. 		
+
+- **pbs** The Python module pbs is used to automate submission and management of PBS batch jobs on a cluster. It can be obtained from its GitHub repository: [https://github.com/prisms-center/pbs](https://github.com/prisms-center/pbs). *Note: This is not the pbs module available for installation via pip.*
 
 
 ### Included with CASM
@@ -124,7 +129,8 @@ CASM is built using SCons, but some configuration of environment variables may b
 
 and is also reproduced here:
 
-      Type: 'scons' to build all binaries,
+      Type: 'scons configure' to run configuration checks,
+            'scons' to build all binaries,
             'scons install' to install all libraries, binaries, scripts and python packages,
             'scons test' to run all tests,
             'scons unit' to run all unit tests,
@@ -140,32 +146,35 @@ and is also reproduced here:
       
       Recognized environment variables:
       
-      $CXX:
+      $CASM_CXX, $CXX:
         Explicitly set the C++ compiler. If not set, scons chooses a default compiler.
       
-      $CASMPREFIX:
+      $CASM_PREFIX:
         Where to install CASM. By default, this uses '/usr/local'. Then header files are
-        installed in '$CASMPREFIX/include', shared libraries in '$CASMPREFIX/lib', executables
-        in '$CASMPREFIX/bin', and the path is used for the setup.py --prefix option for 
+        installed in '$CASM_PREFIX/include', shared libraries in '$CASM_PREFIX/lib', executables
+        in '$CASM_PREFIX/bin', and the path is used for the setup.py --prefix option for 
         installing python packages.
       
-      $CASMBOOST_PATH:
-        Search path for Boost. '$CASMBOOST_PATH/include' is searched for header files, and
-        '$CASMBOOST_PATH/lib' for libraries. Boost and CASM should be compiled with the 
+      $CASM_BOOST_PREFIX:
+        Search path for Boost. '$CASM_BOOST_PREFIX/include' is searched for header files, and
+        '$CASM_BOOST_PREFIX/lib' for libraries. Boost and CASM should be compiled with the 
         same compiler.
-        
-      $OPTIMIZATIONLEVEL:
+
+      $CASM_OPTIMIZATIONLEVEL:
         Sets the -O optimization compiler option. If not set, uses -O3.
 
-      $DEBUGSTATE:
+      $CASM_DEBUGSTATE:
         Sets to compile with debugging symbols. In this case, the optimization level gets 
         set to -O0, and NDEBUG does not get set.
 
-      $LD_LIBRARY_PATH:
-        Search path for dynamic libraries, may need $CASMBOOST_PATH/lib 
-        and $CASMPREFIX/lib added to it.
-        On Mac OS X, this variable is $DYLD_FALLBACK_LIBRARY_PATH.
+      $LD_LIBRARY_PATH (Linux) or $DYLD_FALLBACK_LIBRARY_PATH (Mac):
+        Search path for dynamic libraries, may need $CASM_BOOST_PREFIX/lib 
+        and $CASM_PREFIX/lib added to it.
         This should be added to your ~/.bash_profile (Linux) or ~/.profile (Mac).
+      
+      $CASM_BOOST_NO_CXX11_SCOPED_ENUMS:
+        If defined, will compile with -DCASM_BOOST_NO_CXX11_SCOPED_ENUMS. Use this
+        if linking to boost libraries compiled without c++11.
       
       
       Additional options that override environment variables:
@@ -173,45 +182,63 @@ and is also reproduced here:
       Use 'cxx=X' to set the C++ compiler. Default is chosen by scons.
           'opt=X' to set optimization level, '-OX'. Default is 3.
           'debug=X' with X=0 to use '-DNDEBUG', 
-                    or with X=1 to set debug mode compiler options '-O0 -g -save-temps'.
-                    Overrides $DEBUGSTATE.
-          'prefix=X' to set installation directory. Default is '/usr/local'. 
-                    Overrides $CASMPREFIX.
-          'boost_path=X' set boost search path. Overrides $CASMBOOST_PATH.
+             or with X=1 to set debug mode compiler options '-O0 -g -save-temps'.
+             Overrides $CASM_DEBUGSTATE.
+          'prefix=X' to set installation directory. Default is '/usr/local'. Overrides $CASM_PREFIX.
+          'boost_prefix=X' set boost search path. Overrides $CASM_BOOST_PPREFIX.
+          'boost_no_cxx11_scoped_enums=1' to use '-DBOOST_NO_CXX11_SCOPED_ENUMS'.
+             Overrides $CASM_BOOST_NO_CXX11_SCOPED_ENUMS.
+     
+	  Use scons -H for help about command-line options.
 
 
+The script ``casmenv.sh`` provides a list of environment variables that you are recogized by CASM during installation and use.  A copy of this file can be used to configure your environment before installing or using CASM. For instance:
+	
+	mkdir $HOME/modules
+	cp /path/to/CASMcode/casmenv.sh $HOME/modules/casm
+	... edit $HOME/modules/casm ...
 
-For example, on a cluster where Boost is installed in a shared directory ``/home/software/rhel6/boost/1.54.0-gcc-4.7.0`` (*Important: Boost and CASM should be compiled with the same compiler.*), and your executables and Python modules are stored in your userspace at ``$HOME/software``, you could add the following to the ``.bash_profile`` file in your home directory:
+Then to set your environment before installing or using CASM:
+	
+	source $HOME/modules/casm
 
-    export CASMBOOST_PATH=/home/software/rhel6/boost/1.54.0-gcc-4.7.0
-    export CASMPREFIX=$HOME/software
-    export PATH=$PATH:$CASMPREFIX/bin
-    export CPATH=$CPATH:$CASMPREFIX/include
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CASMPREFIX/lib
+If you are working in a shared computing environment where other modules such as VASP must be imported, they can also be imported in this script.
 
-and then run ``source $HOME/.bash_profile`` for these changes to take effect. These commands to set environment variables could also be run from the command line, in which case the environment variables only persist until your terminal session is closed. *Note: On Mac OS X, use ``DYLD_FALLBACK_LIBRARY_PATH`` instead of ``LD_LIBRARY_PATH``.*
+After setting up your environment, run:
+
+	cd /path/to/CASMcode
+	scons configure
+
+to perform a number of configuration checks. Once they pass, you are ready to install CASM.
 
 #### Build and install
 
 
 Once any necessary environment variables are set, you are ready to build and install. Move to the directory in which the CASM source resides and run ``scons install``:
 
-    cd /path/to/CASM
+    cd /path/to/CASMcode
     scons install
 
 *Note: Use 'scons install -j N', where N is number of jobs, to enable multi-threaded compilation. This can make a nice difference.*
 
 This will compile and install:
 
-- ``$CASMPREFIX/bin/casm`` the primary CASM program
-- ``$CASMPREFIX/bin/eci_search`` a program for fitting effective cluster interactions (ECI)
-- ``$CASMPREFIX/bin/vasp.setup`` a script for setting up VASP jobs
-- ``$CASMPREFIX/bin/vasp.relax`` a script for setting up and submitting VASP jobs
-- ``$CASMPREFIX/bin/kpoint_converge`` a script for performing k-point convergence
-- ``$CASMPREFIX/include/casm/`` headers files for ``libcasm``
-- ``$CASMPREFIX/lib/libcasm.so`` a shared library containing much of the implementation. May be ``libcasm.dylib`` on Mac OS X.
-- ``$CASMPREFIX/lib/pythonX.Y/site-packages/casm`` a python package that provides an interface between ``casm`` and the software used to calculate training data. Currently only VASP is supported.
-- ``$CASMPREFIX/lib/pythonX.Y/site-packages/vasp`` a python package for running VASP calculations.
+- ``$CASM_PREFIX/bin/casm`` the primary CASM program
+- ``$CASM_PREFIX/bin/casm-learn`` a program for fitting effective cluster interactions (ECI)
+- ``$CASM_PREFIX/bin/casm-calc`` a program that helps setup and run high throughput *ab initio* calculations
+- ``$CASM_PREFIX/include/casm/`` headers files for ``libcasm``
+- ``$CASM_PREFIX/lib/libcasm.*`` a shared library containing much of the implementation. May be ``libcasm.dylib`` on Mac OS X.
+- ``$CASM_PREFIX/lib/libccasm.*`` a shared library providing a C interface to ``libcasm.*`` used by the ``casm`` Python package
+- ``$CASM_PREFIX/lib/pythonX.Y/site-packages/casm`` a python package that provides an interface between ``casm`` and the software used to calculate training data. Currently only VASP is supported.
+- ``$CASM_PREFIX/lib/pythonX.Y/site-packages/vasp`` a python package for running VASP calculations.
+
+The functionality provided by ``casm-calc`` is also provided by the legacy scripts:
+
+- ``$CASM_PREFIX/bin/vasp.setup`` a script for setting up VASP jobs
+- ``$CASM_PREFIX/bin/vasp.relax`` a script for setting up and submitting VASP jobs
+- ``$CASM_PREFIX/bin/vasp.relax.report`` a script for setting up and submitting VASP jobs
+
+
 
 
 #### Checking installation ####
@@ -249,65 +276,71 @@ If ``casm`` is installed correctly, execute ``casm`` from any directory and you 
 
 **Frequently encountered issues**:
 
-- I tried to install (``scons install``) or uninstall (``scons install -c``), but get errors about not having permission.
-  - If you don't have permissions to write to ``/usr/local/``, as is usual on a computer cluster, you can change the environment variable ``$CASMPREFIX`` to a location that you do have permission to use. For instance, you can create a software directory in your home directory:
+- **I tried to install (``scons install``) or uninstall (``scons install -c``), but get errors about not having permission.**
+  - If you don't have permissions to write to ``/usr/local/``, as is usual on a computer cluster, you can change the environment variable ``$CASM_PREFIX`` in your configure script ``$HOME/modules/casm`` to a location that you do have permission to use. For instance, you can create a software directory in your home directory:
   
       	cd ~
       	mkdir software
     
-    Then you can edit the ``.bash_profile`` file in your home directory to set your ``$PATH`` and libary search path to include your software directory by adding the lines:
+    To make the changes take effect open a new session and 
     
-        export CASMPREFIX=$HOME/software
-        export PATH=$PATH:$CASMPREFIX/bin
-        export CPATH=$CPATH:$CASMPREFIX/include        
-        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CASMPREFIX/lib
-        
-    To make the changes take effect use ``source ~/.bash_profile`` or open a new session. Then try installing again (``cd /path/to/CASM; scons install``). *Note: On Mac OS X, use ``DYLD_FALLBACK_LIBRARY_PATH`` instead of ``LD_LIBRARY_PATH``.*
+    	source $HOME/modules/casm
+    
+    Then try installing again 
+    	
+    	cd /path/to/CASMcode
+    	scons install
 
   - If you have administrative access you can install using ``sudo``, although this is not recommended. For example: ``sudo scons install``.
 
         
 
-- I installed CASM without errors, but when I try to execute ``casm`` I get the error:
+- **I installed CASM without errors, but when I try to execute ``casm`` I get the error**:
 
         $ casm
 		-bash: casm: command not found
 		
-  If ``scons install`` ran without error, this means that ``casm`` was installed in a directory that is not in your $PATH. You can check what directories are searched for executables using ``echo $PATH``. Possible solutions include:
-  1. Uninstall CASM and re-install it in a directory that is in your ``$PATH``. This can be accomplished by uninstalling (``scons install -c``) and changing ``$CASMPREFIX`` such that ``$CASMPREFIX/bin`` is in your ``$PATH`` (``export $CASMPREFIX=/some/place/in_my_path/)
-  1. Append the location where ``casm`` was installed to your ``$PATH``. This can be accomplished by adding the line ``export PATH=$PATH:/path/to/bin`` to the file ``.bash_profile`` in your home directory, where ``/path/to/bin`` is replaced with the actual path to the directory where ``casm`` is installed. 
+  If ``scons install`` ran without error, this means that ``casm`` was installed in a directory that is not in your $PATH. You can check what directories are searched for executables using ``echo $PATH``. One solution is to:
+  1. Uninstall CASM and re-install it in a directory that is in your ``$PATH``. This can be accomplished by uninstalling (``scons install -c``) and changing ``$CASM_PREFIX`` in ``$HOME/modules/casm`` such that ``$CASM_PREFIX/bin`` is in your ``$PATH``. To make the changes take effect open a new session and 
+    
+    		source $HOME/modules/casm 
    
 
-- I installed CASM without errors, but when I try to execute ``casm`` I get the error: 
+- **I installed CASM without errors, but when I try to execute ``casm`` I get the error**: 
     
         $ casm
         casm: error while loading shared libraries: libcasm.so: cannot open 
         shared object file: No such file or directory
   
   This means ``casm`` has been installed correctly but the shared library ``libcasm.so`` (or ``libcasm.dylib`` on Mac OS X) is not being found in any of the places being searched.  Possible solutions include:
-  - (Linux): Update the default library search path using ``ldconfig``. For example, see [this](http://codeyarns.com/2014/01/14/how-to-add-library-directory-to-ldconfig-cache/).
-  - Change the ``LD_LIBRARY_PATH`` environment variable to specify which directory to search for ``libcasm`` by editing the ``.bash_profile`` file in your home directory to include:
+  - Check that the ``LD_LIBRARY_PATH`` environment variable in ``$HOME/modules/casm`` is specifyign which directory to search for ``libcasm``:
        
-        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$CASM_PREFIX/lib:$LD_LIBRARY_PATH
         
-  *Note: On Mac OS X, use ``DYLD_FALLBACK_LIBRARY_PATH`` instead of ``LD_LIBRARY_PATH``.*
-
+    To make the changes take effect open a new session and 
+    
+    	source $HOME/modules/casm
+    
+    *Note: On Mac OS X, use ``DYLD_FALLBACK_LIBRARY_PATH`` instead of ``LD_LIBRARY_PATH``.*
+  - (Linux): Update the default library search path using ``ldconfig``. For example, see [this](http://codeyarns.com/2014/01/14/how-to-add-library-directory-to-ldconfig-cache/).
+ 
 #### For developers: Testing new features ####
 
 If you are developing new features you can run all unit and integration tests from the main repository directory via:
 
-    scons test
+    scons unit
 
 Individual tests can also be run via:
 
     scons unit
     scons casm_test
     scons eci_search_test
-    # replace UnitTestName with a particular unit test (UnitTestName in tests/unit/*/UnitTestName_test.cpp)
+    # replace UnitTestName with a particular unit test:
+    # (UnitTestName in tests/unit/*/UnitTestName_test.cpp)
     scons UnitTestName
 
-Individual tests may be cleaned by re-running with any of the above commands with an added ``-c``. For instance ``scons Clexulator -c`` or ``scons casm_test -c``. In particular, ``scons test`` and ``scons casm_test`` must be cleaned before re-running or there will be errors about trying to initialize a CASM project in a directory where one already exists. 
+Individual tests may be cleaned by re-running with any of the above commands with an added ``-c``. For instance ``scons Clexulator -c`` or ``scons casm_test -c``. 
 
-New unit tests using the Boost unit test framework can be added and automatically run by placing a ``UnitTestName_test.cpp`` file in any subdirectory of ``tests/unit`` by following the template of existing unit tests. If the unit test creates any files that it doesn't remove by itself, the ``tests/unit/SConscript`` file should be edited to enable cleaning them.
+New unit tests using the Boost unit test framework can be added and run by placing a ``UnitTestName_test.cpp`` file in any subdirectory of ``tests/unit``, following the template of existing unit tests. If the unit test needs to link to libraries or creates any files that it doesn't remove by itself, the ``tests/unit/SConscript`` file should be edited to enable link needed libraries and clean generated them.
 
 

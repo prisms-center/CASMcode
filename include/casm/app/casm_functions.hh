@@ -1,8 +1,30 @@
 #ifndef CASM_FUNCTIONS_HH
 #define CASM_FUNCTIONS_HH
 
+#include <wordexp.h>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/Log.hh"
+
+/**
+ *  \defgroup API
+ *
+ *  \brief Relates to the CASM API
+ *
+ *  All primary CASM functionality is included in the CASM library 'libcasm'.
+ *
+ *  The CASM API refers to the actions that can be performed by passing string
+ *  commands through the extern "C" function ::casm_capi which in turn calls
+ *  functions in libcasm. The ::casm_capi function and a limited set of others
+ *  that allow for constructing PrimClex objects and input/output streams are
+ *  available in the library 'libccasm'.
+ *
+ *  The CASM API is primarily intended to be used via the command line
+ *  executable 'casm', which provides documentation of the allowed options, or
+ *  the 'casm' Python package, but can be also be accessed directly to enable
+ *  integration with other software.
+ *
+ *  @{
+ */
 
 // Command line input is not valid
 #define ERR_INVALID_ARG 1
@@ -29,30 +51,84 @@
 // Unknown attempting to overwrite another CASM project
 #define ERR_OTHER_PROJ 8
 
+/** @} */
 
+/// \brief Main CASM namespace
 namespace CASM {
 
   class PrimClex;
 
-  /// \brief Data structure holding basic CASM command info
-  struct CommandArgs {
+  /**
+   *  \defgroup API
+   *
+   *  \brief Relates to the CASM API
+   *
+   *  @{
+   */
 
+  /// \brief Data structure holding basic CASM command info
+  struct CommandArgs : public Logging {
+
+    /// \brief CommandArgs constructor
+    CommandArgs(int _argc,
+                char *_argv[],
+                PrimClex *_primclex,
+                fs::path _root,
+                const Logging &logging);
+
+    /// \brief CommandArgs constructor
     CommandArgs(int _argc,
                 char *_argv[],
                 PrimClex *_primclex = nullptr,
+                fs::path _root = fs::path(),
                 Log &_log = default_log(),
-                Log &_err_log = default_err_log());
+                Log &_err_log = default_err_log()) :
+      CommandArgs(_argc, _argv, _primclex, _root, Logging(_log, _log, _err_log)) {}
+
+
+    /// \brief CommandArgs constructor
+    CommandArgs(std::string _args,
+                PrimClex *_primclex,
+                fs::path _root,
+                const Logging &logging);
+
+    /// \brief CommandArgs constructor
+    CommandArgs(std::string _args,
+                PrimClex *_primclex = nullptr,
+                fs::path _root = fs::path(),
+                Log &_log = default_log(),
+                Log &_err_log = default_err_log()) :
+      CommandArgs(_args, _primclex, _root, Logging(_log, _log, _err_log)) {}
+
+    CommandArgs(const CommandArgs &other) = delete;
+    CommandArgs(CommandArgs &&other) = delete;
+    CommandArgs &operator=(const CommandArgs &) = delete;
+    CommandArgs &operator=(CommandArgs &&) = delete;
+
+    /// \brief CommandArgs destructor
+    ~CommandArgs();
 
     int argc;
     char **argv;
     PrimClex *primclex;
+    fs::path root;
     Log &log;
     Log &err_log;
 
-    fs::path root;
+    /// stores error codes when attempting to parse std::string _args -> argc, argv
+    int parse_result;
+
     bool is_help;
     bool write_log;
     std::string command;
+
+  private:
+
+    void _init();
+
+    /// Used when parsing std::string args -> argc, argv
+    bool m_free_p;
+    wordexp_t m_p;
 
   };
 
@@ -64,6 +140,9 @@ namespace CASM {
 
   /// \brief Executes CASM commands specified by args
   int casm_api(const CommandArgs &args);
+
+  // /// \brief Executes casm_api in specified working directory
+  // int casm_api(const CommandArgs &args, fs::path working_dir);
 
 
 
@@ -126,6 +205,7 @@ namespace CASM {
 
   int view_command(const CommandArgs &args);
 
+  /** @} */
 }
 
 #endif

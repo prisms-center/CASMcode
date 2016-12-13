@@ -52,7 +52,7 @@ class Outcar(object):
             try:
                 if re.search("LOOP",line):
                     t = float(line.split()[-1])
-                    if self.slowest_loop == None:
+                    if self.slowest_loop is None:
                         self.slowest_loop = t
                     elif t > self.slowest_loop:
                         self.slowest_loop = t

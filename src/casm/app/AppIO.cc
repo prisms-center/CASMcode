@@ -41,23 +41,8 @@ namespace CASM {
       Eigen::Vector3d vec;
 
       // read basis coordinate mode
-      std::string coordinate_mode;
-      from_json(coordinate_mode, json["coordinate_mode"]);
       COORD_TYPE mode;
-      if(coordinate_mode == "Fractional") {
-        mode = FRAC;
-      }
-      else if(coordinate_mode == "Direct") {
-        mode = FRAC;
-      }
-      else if(coordinate_mode == "Cartesian") {
-        mode = CART;
-      }
-      else {
-        throw std::runtime_error(
-          std::string(" Invalid: \"coordinate_mode\"\n") +
-          "   Expected one of \"Fractional\", \"Direct\", or \"Cartesian\"");
-      }
+      from_json(mode, json["coordinate_mode"]);
 
       // read basis sites
       for(int i = 0; i < json["basis"].size(); i++) {
@@ -480,7 +465,14 @@ namespace CASM {
   PRINT_CLUST_INST(ITERATOR,INSERTER,ProtoSitesPrinter) \
   PRINT_CLUST_INST(ITERATOR,INSERTER,FullSitesPrinter) \
   PRINT_CLUST_INST(ITERATOR,INSERTER,ProtoFuncsPrinter) \
-  template INSERTER read_clust<INSERTER, typename ORBIT::SymCompareType>(INSERTER result, jsonParser &json, const Structure &prim, const SymGroup& generating_grp, const typename ORBIT::SymCompareType &sym_compare);
+  template void print_site_basis_funcs<ITERATOR>(ITERATOR begin, ITERATOR end, const ClexBasis &clex_basis, std::ostream &out, COORD_TYPE mode); \
+  template INSERTER read_clust<INSERTER, typename ORBIT::SymCompareType>(\
+    INSERTER result,\
+    const jsonParser &json,\
+    const Structure &prim,\
+    const SymGroup& generating_grp,\
+    const typename ORBIT::SymCompareType &sym_compare,\
+    double xtal_tol);
 
 #define _VECTOR_IT(ORBIT) std::vector<ORBIT>::iterator
 #define _VECTOR_INSERTER(ORBIT) std::back_insert_iterator<std::vector<ORBIT> >

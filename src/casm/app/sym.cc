@@ -5,51 +5,67 @@
 #include "casm/app/AppIO.hh"
 #include "casm/app/casm_functions.hh"
 
+#include "casm/completer/Handlers.hh"
+
 namespace CASM {
+
+  namespace Completer {
+    SymOption::SymOption(): OptionHandlerBase("sym") {}
+
+    void SymOption::initialize() {
+      add_help_suboption();
+      add_coordtype_suboption();
+      m_desc.add_options()
+      ("lattice-point-group", "Pretty print lattice point group")
+      ("factor-group", "Pretty print factor group")
+      ("crystal-point-group", "Pretty print crystal point group");
+
+      return;
+    }
+  }
+
 
   // ///////////////////////////////////////
   // 'sym' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
   int sym_command(const CommandArgs &args) {
-    std::string name;
+    //std::string name;
     COORD_TYPE coordtype;
     po::variables_map vm;
 
+    /// Set command line options using boost program_options
+    Completer::SymOption sym_opt;
     try {
+      po::store(po::parse_command_line(args.argc, args.argv, sym_opt.desc()), vm); // can throw
 
-      /// Set command line options using boost program_options
-      po::options_description desc("'casm sym' usage");
-      desc.add_options()
-      ("help,h", "Write help documentation")
-      ("lattice-point-group", "Pretty print lattice point group")
-      ("factor-group", "Pretty print factor group")
-      ("crystal-point-group", "Pretty print crystal point group")
-      ("coord", po::value<COORD_TYPE>(&coordtype)->default_value(CASM::CART), "Coord mode: FRAC=0, or CART=1");
+      /** --help option
+      */
+      if(vm.count("help")) {
+        std::cout << "\n";
+        std::cout << sym_opt.desc() << std::endl;
 
-      try {
-        po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
-
-        /** --help option
-        */
-        if(vm.count("help")) {
-          std::cout << "\n";
-          std::cout << desc << std::endl;
-
-          std::cout << "DESCRIPTION" << std::endl;
-          std::cout << "    Display symmetry group information.\n";
-
-          return 0;
-        }
-
-        po::notify(vm); // throws on error, so do after help in case
-        // there are any problems
+        return 0;
       }
-      catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
-        return ERR_INVALID_ARG;
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << sym_opt.desc() << std::endl;
+        std::cout << "DESCRIPTION" << std::endl;
+        std::cout << "    Display symmetry group information.\n";
+
+        return 0;
       }
+
+      po::notify(vm); // throws on error, so do after help in case
+      // there are any problems
+
+      coordtype = sym_opt.coordtype_enum();
+    }
+    catch(po::error &e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      std::cerr << sym_opt.desc() << std::endl;
+      return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
       std::cerr << "Unhandled Exception reached the top of main: "
