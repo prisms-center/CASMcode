@@ -14,6 +14,10 @@ namespace CASM {
   class UnitCellCoord;
   class SymBasisPermute;
 
+  /** \defgroup Symmetry
+   *
+   *  @{
+  */
 
   ///\brief SymOpRepresentation is the base class for anything describes a symmetry operation
   class SymOpRepresentation {
@@ -131,6 +135,8 @@ namespace CASM {
   jsonParser &to_json(const SymOpRepresentation *rep, jsonParser &json);
   /// This allocates a new object to 'rep'.
   void from_json(SymOpRepresentation *rep, const jsonParser &json);
+
+  /** @}*/
 
 }
 #endif

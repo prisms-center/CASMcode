@@ -1898,6 +1898,7 @@ def checkhull(input, hall, indices=None, verbose=True):
   # tolerance for finding configurations 'on_hull'
   d = input["checkhull"]
   selection = d["selection"]
+  composition = d["composition"]
   write_results = d["write_results"]
   hull_tol = d["hull_tol"]
   uncalculated_range = d["uncalculated_range"]
@@ -1935,11 +1936,11 @@ def checkhull(input, hall, indices=None, verbose=True):
   is_primitive = "is_primitive"
   is_calculated = "is_calculated"
   configname = "configname"
-  dft_hull_dist_long = "hull_dist(" + dft_selection + ",atom_frac)"
+  dft_hull_dist_long = "hull_dist(" + dft_selection + "," + composition + ")"
   dft_hull_dist = "dft_hull_dist"
-  clex_hull_dist_long = "clex_hull_dist(" + selection + ",atom_frac)"
+  clex_hull_dist_long = "clex_hull_dist(" + selection + "," + composition + ")"
   clex_hull_dist = "clex_hull_dist"
-  clex_dft_hull_dist_long = "clex_hull_dist(" + dft_hull_selection + ",atom_frac)"
+  clex_dft_hull_dist_long = "clex_hull_dist(" + dft_hull_selection + "," + composition + ")"
   clex_dft_hull_dist = "clex_dft_hull_dist"
   comp = "comp"
   dft_Eform = "formation_energy"
@@ -1977,8 +1978,16 @@ def checkhull(input, hall, indices=None, verbose=True):
     indiv = hall[indiv_i]
     write_eci(proj, indiv.eci, fit_details=casm.learn.to_json(indiv_i, indiv), clex=clex, verbose=verbose)
     
+    df = sel.data[sel.data.loc[:,is_primitive] == 1].sort_values(compcol)
+    df_calc = df[df.loc[:,is_calculated] == 1].apply(pandas.to_numeric, errors='ignore')
+    dft_gs = df_calc[df_calc.loc[:,dft_hull_dist_long] < hull_tol]
+
+    # create dft hull selection
+    dft_hull_sel = Selection(proj, dft_hull_selection)
+    dft_hull_sel.save(data=dft_gs, force=True)
+
     # query:
-    sel.query([clex_hull_dist_long, clex_Eform], force=True)
+    sel.query([clex_hull_dist_long, clex_Eform, clex_dft_hull_dist_long], force=True)
     
     df = sel.data[sel.data.loc[:,is_primitive] == 1].sort_values(compcol)
     df.rename(
@@ -1986,6 +1995,7 @@ def checkhull(input, hall, indices=None, verbose=True):
       columns={
         dft_hull_dist_long : dft_hull_dist, 
         clex_hull_dist_long : clex_hull_dist, 
+        clex_dft_hull_dist_long : clex_dft_hull_dist
       })
     df_calc = df[df.loc[:,is_calculated] == 1].apply(pandas.to_numeric, errors='ignore')
     
@@ -1995,24 +2005,6 @@ def checkhull(input, hall, indices=None, verbose=True):
     uncalculated = df[(df.loc[:,clex_hull_dist] < uncalculated_range + hull_tol) & (df.loc[:,is_calculated] == 0)]
     gs_spurious = df_calc[(df_calc.loc[:,clex_hull_dist] < hull_tol) & ~(df_calc.loc[:,dft_hull_dist] < hull_tol)]
     gs_missing = df_calc[~(df_calc.loc[:,clex_hull_dist] < hull_tol) & (df_calc.loc[:,dft_hull_dist] < hull_tol)]
-    
-    # create dft hull selection
-    dft_hull_sel = Selection(proj, dft_hull_selection)
-    dft_hull_sel.save(data=dft_gs, force=True)
-    
-    
-    # query clex_hull_dist using dft_gs
-    sel.query([clex_dft_hull_dist_long])
-    
-    # get all predicted configurations below the predictions of the DFT gs
-    df = sel.data[sel.data.loc[:,is_primitive] == 1].sort_values(compcol)
-    df.rename(
-      inplace=True, 
-      columns={
-        dft_hull_dist_long : dft_hull_dist, 
-        clex_hull_dist_long : clex_hull_dist, 
-        clex_dft_hull_dist_long : clex_dft_hull_dist
-      })
     below_hull = df[df.loc[:,clex_dft_hull_dist] < -hull_tol]
     
     indiv.clex_gs = clex_gs

@@ -18,7 +18,7 @@ namespace CASM {
 
   }
 
-  const std::string CASM_TMP::traits<ScelEnumEquivalents>::name = "ScelEnumEquivalents";
+  const std::string ScelEnumEquivalents::enumerator_name = "ScelEnumEquivalents";
 
   ScelEnumEquivalents::ScelEnumEquivalents(const Supercell &scel) :
     EnumEquivalents<Supercell, Array<SymOp>::const_iterator, SymOp, SymRepIndexCompare>(

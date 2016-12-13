@@ -430,6 +430,8 @@ namespace CASM {
 
     for(b1 = 1; b1 < basis.size(); b1++) {
       tshift = basis[0] - basis[b1];
+      if(almost_zero(tshift.min_dist(Coordinate::origin(lattice()))))
+        continue;
       num_suc_maps = 0;
       for(b2 = 0; b2 < basis.size(); b2++) {
         for(b3 = 0; b3 < basis.size(); b3++) {

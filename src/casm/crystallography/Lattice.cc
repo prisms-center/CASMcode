@@ -97,17 +97,18 @@ namespace CASM {
 
   //********************************************************************
   double Lattice::angle(Index i) const {
-    double t_a = m_lat_mat.col((i + 1) % 3).dot(m_lat_mat.col((i + 2) % 3)) / (length((i + 1) % 3) * length((i + 2) % 3));
+    //double t_a = m_lat_mat.col((i + 1) % 3).dot(m_lat_mat.col((i + 2) % 3)) / (length((i + 1) % 3) * length((i + 2) % 3));
     //Make sure that cos(angle) is between 0 and 1
-    if((t_a - 1.0) > 0.0) {
-      t_a = 1.0;
-    }
+    //if((t_a - 1.0) > 0.0) {
+    //t_a = 1.0;
+    //}
 
-    if((t_a + 1.0) < 0.0) {
-      t_a = -1.0;
-    }
+    //if((t_a + 1.0) < 0.0) {
+    //t_a = -1.0;
+    //}
 
-    return (180.0 / M_PI) * acos(t_a);
+    //return (180.0 / M_PI) * acos(t_a);
+    return (180.0 / M_PI) * CASM::angle(m_lat_mat.col((i + 1) % 3), m_lat_mat.col((i + 2) % 3));
   }
 
   //********************************************************************
@@ -501,22 +502,10 @@ namespace CASM {
   //********************************************************************
 
   double Lattice::max_voronoi_measure(const Eigen::Vector3d &pos, Eigen::Vector3d &lattice_trans)const {
+    Eigen::MatrixXd::Index maxv;
+    double maxproj = (voronoi_table() * pos).maxCoeff(&maxv);
 
-    double tproj(-1), maxproj(-1);
-    int maxv;
-    if(!voronoi_table.size()) {
-      generate_voronoi_table();
-    }
-
-    for(Index nv = 0; nv < voronoi_table.size(); nv++) {
-      tproj = pos.dot(voronoi_table[nv]);
-      if(tproj > maxproj) {
-        maxproj = tproj;
-        maxv = nv;
-      }
-    }
-
-    lattice_trans = (2.*floor(maxproj / 2. + (0.5 - TOL)) / voronoi_table[maxv].squaredNorm()) * voronoi_table[maxv];
+    lattice_trans = (2.*floor(maxproj / 2. + (0.5 - TOL / 2.)) / m_voronoi_table.row(maxv).squaredNorm()) * m_voronoi_table.row(maxv);
 
     return maxproj;
 
@@ -528,12 +517,10 @@ namespace CASM {
     int tnum = 0;
     double tproj = 0;
 
-    if(!voronoi_table.size()) {
-      generate_voronoi_table();
-    }
+    Eigen::MatrixXd const &vtable = voronoi_table();
 
-    for(Index nv = 0; nv < voronoi_table.size(); nv++) {
-      tproj = pos.dot(voronoi_table[nv]);
+    for(Index nv = 0; nv < vtable.size(); nv++) {
+      tproj = vtable.row(nv) * pos;
       if(almost_equal(tproj, 1.0)) {
         tnum++;
       }
@@ -547,50 +534,52 @@ namespace CASM {
   }
   //********************************************************************
 
-  void Lattice::generate_voronoi_table() const {
-    voronoi_table.clear();
+  void Lattice::_generate_voronoi_table() const {
     //There are no fewer than 12 points in the voronoi table
-    voronoi_table.reserve(12);
+    m_voronoi_table.resize(12, 3);
 
     m_inner_voronoi_radius = 1e20;
 
     Eigen::Vector3d tpoint;
     int i;
-
+    int nrows = 1;
     Lattice tlat_reduced(get_reduced_cell());
+
     //Count over all lattice vectors, face diagonals, and body diagonals
     //originating from origin;
     EigenCounter<Eigen::Vector3i > combo_count(Eigen::Vector3i(-1, -1, -1),
                                                Eigen::Vector3i(1, 1, 1),
                                                Eigen::Vector3i(1, 1, 1));
 
-    //std::cout << "For angles " << angles[0] << ", " << angles[1] << ", " << angles[2] << ", Voronoi table is: \n";
+
     //For each linear combination, check to see if it is on a face, edge, or vertex of the voronoi cell
     for(; combo_count.valid(); ++combo_count) {
       if(combo_count().isZero()) continue;
       //A linear combination does not fall on the voronoi boundary if the angle between
-      //any two of the vectors forming that combination are obtuse
+      //any two of the vectors forming that combination are acute
       for(i = 0; i < 3; i++) {
-        if((combo_count[(i + 1) % 3] && combo_count[(i + 2) % 3])
-           && std::abs(90.0 * abs(combo_count[(i + 1) % 3] - combo_count[(i + 2) % 3]) - angle(i)) + TOL < 90) {
+        if(combo_count[(i + 1) % 3] == 0 || combo_count[(i + 2) % 3] == 0)
+          continue;
+        if((180. / M_PI)*CASM::angle(combo_count[(i + 1) % 3]*tlat_reduced[(i + 1) % 3], combo_count[(i + 2) % 3]*tlat_reduced[(i + 2) % 3]) + TOL < 90.) {
           break;
         }
       }
 
       if(i == 3) {
+        if(nrows > m_voronoi_table.rows())
+          m_voronoi_table.conservativeResize(nrows, Eigen::NoChange);
+
         tpoint = tlat_reduced.lat_column_mat() * combo_count().cast<double>();
 
         double t_rad = tpoint.norm();
         if((t_rad / 2.) < m_inner_voronoi_radius)
           m_inner_voronoi_radius = t_rad / 2.;
 
-        tpoint *= (2. / (t_rad * t_rad));
-        voronoi_table.push_back(tpoint);
-        //std::cout << voronoi_table.back();
+        m_voronoi_table.row(nrows - 1) = (2. / (t_rad * t_rad)) * tpoint;
+        nrows++;
       }
 
     }
-
     return;
   }
 

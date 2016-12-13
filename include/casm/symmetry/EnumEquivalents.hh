@@ -6,6 +6,13 @@
 
 namespace CASM {
 
+  /** \defgroup EnumEquivalents
+   *
+   *  \ingroup Symmetry
+   *
+   *  @{
+  */
+
   template <
     typename ObjectType,
     typename SymOpIterator,
@@ -33,7 +40,7 @@ namespace CASM {
   /// - bool operator<(SymOpType& A, SymOpType& B);
   ///
   ///
-  /// \ingroup Symmetry
+  /// \ingroup EnumEquivalents
   ///
   template <
     typename ObjectType,
@@ -89,7 +96,6 @@ namespace CASM {
       }
     }
 
-    ENUMERATOR_MEMBERS(EnumEquivalents)
 
   public:
 

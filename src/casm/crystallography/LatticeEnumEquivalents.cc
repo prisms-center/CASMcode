@@ -23,7 +23,7 @@ namespace CASM {
 
   }
 
-  const std::string CASM_TMP::traits<LatticeEnumEquivalents>::name = "LatticeEnumEquivalents";
+  const std::string LatticeEnumEquivalents::enumerator_name = "LatticeEnumEquivalents";
 
   /// \brief Constructor
   ///

@@ -5,8 +5,6 @@
 #include "casm/symmetry/SymOpRepresentation.hh"
 #include "casm/crystallography/Lattice.hh"
 
-ENUMERATOR_TRAITS(LatticeEnumEquivalents)
-
 namespace CASM {
 
   class SymGroup;
@@ -21,7 +19,11 @@ namespace CASM {
   public:
     LatticeEnumEquivalents(const Lattice &lat, const SymGroup &super_g, double tol);
 
-    ENUMERATOR_MEMBERS(LatticeEnumEquivalents)
+    std::string name() const override {
+      return enumerator_name;
+    }
+
+    static const std::string enumerator_name;
   };
 
 }

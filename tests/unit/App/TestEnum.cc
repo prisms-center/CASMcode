@@ -7,6 +7,7 @@
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
+#include "casm/container/Enumerator_impl.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_TestEnum_interface() {
@@ -16,9 +17,9 @@ extern "C" {
 
 namespace CASM {
 
-  const std::string CASM_TMP::traits<TestEnum>::name = "TestEnum";
+  const std::string TestEnum::enumerator_name = "TestEnum";
 
-  const std::string CASM_TMP::traits<TestEnum>::help =
+  const std::string TestEnum::interface_help =
     "TestEnum: \n\n"
 
     "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
@@ -49,103 +50,27 @@ namespace CASM {
     "        } \n"
     "      }' \n\n";
 
-
-  int EnumInterface<TestEnum>::run(
+  int TestEnum::run(
     PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) const {
+    const Completer::EnumOption &enum_opt) {
 
-    jsonParser kwargs {_kwargs};
-    if(kwargs.is_null()) {
-      kwargs = jsonParser::object();
-    }
+    std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
+    std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
-    // default is use all existing Supercells
-    jsonParser scel_input;
-    scel_input["existing_only"] = true;
-    kwargs.get_if(scel_input, "supercells");
-
-    // check supercell shortcuts
-    if(enum_opt.vm().count("min")) {
-      scel_input["min"] = enum_opt.min_volume();
-    }
-
-    if(enum_opt.vm().count("max")) {
-      scel_input["max"] = enum_opt.max_volume();
-    }
-
-    if(enum_opt.all_existing()) {
-      scel_input.erase("min");
-      scel_input.erase("max");
-      scel_input["existing_only"] = true;
-    }
-
-    if(enum_opt.vm().count("scelnames")) {
-      scel_input["name"] = enum_opt.supercell_strs();
-    }
-
-    ScelEnum scel_enum(primclex, scel_input);
-
-    Log &log = primclex.log();
-
-    Index Ninit = std::distance(primclex.config_begin(), primclex.config_end());
-    log << "# configurations in this project: " << Ninit << "\n" << std::endl;
-
-    log.begin(name());
-
-    std::vector<std::string> filter_expr;
-
-    // check shortcuts
-    if(enum_opt.vm().count("filter")) {
-      filter_expr = enum_opt.filter_strs();
-    }
-    else if(kwargs.contains("filter")) {
-      filter_expr.push_back(kwargs["filter"].get<std::string>());
+    auto lambda = [&](Supercell & scel) {
+      return notstd::make_unique<TestEnum>(scel);
     };
 
-    for(auto &scel : scel_enum) {
+    int returncode = insert_unique_canon_configs(
+                       enumerator_name,
+                       primclex,
+                       scel_enum->begin(),
+                       scel_enum->end(),
+                       lambda,
+                       filter_expr);
 
-      log << "Enumerate configurations for " << scel.get_name() << " ...  " << std::flush;
-
-      TestEnum enumerator(scel);
-      Index num_before = scel.get_config_list().size();
-      if(kwargs.contains("filter")) {
-        try {
-          scel.add_unique_canon_configs(
-            filter_begin(
-              enumerator.begin(),
-              enumerator.end(),
-              filter_expr,
-              primclex.settings().query_handler<Configuration>().dict()),
-            filter_end(enumerator.end())
-          );
-        }
-        catch(std::exception &e) {
-          primclex.err_log() << "Cannot filter configurations using the expression provided: \n" << e.what() << "\nExiting...\n";
-          return ERR_INVALID_ARG;
-        }
-      }
-      else {
-        scel.add_unique_canon_configs(enumerator.begin(), enumerator.end());
-      }
-
-      log << (scel.get_config_list().size() - num_before) << " configs." << std::endl;
-    }
-    log << "  DONE." << std::endl << std::endl;
-
-    Index Nfinal = std::distance(primclex.config_begin(), primclex.config_end());
-
-    log << "# new configurations: " << Nfinal - Ninit << "\n";
-    log << "# configurations in this project: " << Nfinal << "\n" << std::endl;
-
-    log << "Write SCEL..." << std::endl;
-    primclex.print_supercells();
-    log << "  DONE" << std::endl << std::endl;
-
-    log << "Writing config_list..." << std::endl;
-    primclex.write_config_list();
-    log << "  DONE" << std::endl;
-    return 0;
+    return returncode;
   }
 
 
