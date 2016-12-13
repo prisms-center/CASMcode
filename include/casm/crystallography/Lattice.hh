@@ -73,7 +73,7 @@ namespace CASM {
     /// \brief Return scaled copy of this lattice (Note: Volume will be scaled by scale^3)
     Lattice scaled_lattice(double scale) const;
 
-    /// \brief Return angle between lattice vectors (*this)[(i+1)%3] and (*this)[(i+2)%3]
+    /// \brief Return angle between lattice vectors (*this)[(i+1)%3] and (*this)[(i+2)%3], in degrees
     double angle(Index i)const;
 
     /// \brief Return length of i'th lattice vector
@@ -84,10 +84,19 @@ namespace CASM {
       return lat_column_mat().determinant();
     }
 
+    /// \brief Return voronoi table, which specifies outward-pointing normals of Lattice Voronoi cell.
+    /// outward-pointing normals are given as rows of the matrix, and defined such that
+    /// if (voronoi_table()*coord.cart()).maxCoeff()>1, then 'coord' is outside of the voronoi cell
+    Eigen::MatrixXd const &voronoi_table() const {
+      if(!m_voronoi_table.size()) {
+        _generate_voronoi_table();
+      }
+      return m_voronoi_table;
+    }
+
     /// \brief Radius of the largest sphere that fits wholly within the voronoi cell
     double inner_voronoi_radius() const {
-      if(voronoi_table.empty())
-        generate_voronoi_table();
+      voronoi_table();
       return m_inner_voronoi_radius;
     }
 
@@ -238,10 +247,10 @@ namespace CASM {
     bool _eq(const Lattice &RHS) const;
 
     /// \brief populate voronoi information.
-    void generate_voronoi_table() const;
+    void _generate_voronoi_table() const;
 
     mutable double m_inner_voronoi_radius;
-    mutable std::vector<Eigen::Vector3d> voronoi_table;
+    mutable Eigen::MatrixXd m_voronoi_table;
 
     //Coordinate Conversion Matrices
     //0 is fractional to cartesion; 1 is cartesian to fractional

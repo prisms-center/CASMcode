@@ -2,6 +2,7 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/ConfigIterator.hh"
 #include "casm/crystallography/jsonStruc.hh"
+#include "casm/clex/ConfigSelection.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/app/casm_functions.hh"
 
@@ -26,14 +27,27 @@ namespace CASM {
       return m_vol_tolerance;
     }
 
+    double UpdateOption::min_va_frac() const {
+      return m_min_va_frac;
+    }
+
+    double UpdateOption::max_va_frac() const {
+      return m_max_va_frac;
+    }
+
     void UpdateOption::initialize() {
       add_help_suboption();
+      add_configlist_suboption("ALL");
 
       m_desc.add_options()
       ("cost-weight,w", po::value<double>(&m_lattice_weight)->default_value(0.5),
        "Adjusts cost function for mapping optimization (cost=w*lattice_deformation+(1-w)*basis_deformation)")
-      ("max-vol-change", po::value<double>(&m_vol_tolerance)->default_value(0.25),
-       "Adjusts range of SCEL volumes searched while mapping imported structure onto ideal crystal (only necessary if the presence of vacancies makes the volume ambiguous). Default is +/- 25% of relaxed_vol/prim_vol. Smaller values yield faster import, larger values may yield more accurate mapping.")
+      ("max-vol-change", po::value<double>(&m_vol_tolerance)->default_value(0.3),
+       "Adjusts range of SCEL volumes searched while mapping imported structure onto ideal crystal (only necessary if the presence of vacancies makes the volume ambiguous). Default is +/- 25% of relaxed_vol/prim_vol. Smaller values yield faster execution, larger values may yield more accurate mapping.")
+      ("max-va-frac", po::value<double>(&m_max_va_frac)->default_value(0.5),
+       "Places upper bound on the fraction of sites that are allowed to be vacant after relaxed structure is mapped onto the ideal crystal. Smaller values yield faster execution, larger values may yield more accurate mapping. Has no effect if supercell volume can be inferred from the number of atoms in the structure. Default value allows up to 50% of sites to be vacant.")
+      ("min-va-frac", po::value<double>(&m_min_va_frac)->default_value(0.),
+       "Places lower bound on the fraction of sites that are allowed to be vacant after relaxed structure is mapped onto the ideal crystal. Nonzero values may yield faster execution if updating configurations that are known to have a large number of vacancies, at potential sacrifice of mapping accuracy.  Has no effect if supercell volume can be inferred from the number of atoms in the structure. Default value allows as few as 0% of sites to be vacant.")
       ("force,f", "Force all configurations to update (otherwise, use timestamps to determine which configurations to update)")
       ("strict,s", "Attempt to import exact configuration.");
 
@@ -108,15 +122,23 @@ namespace CASM {
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
     ConfigMapper configmapper(primclex, lattice_weight, vol_tol, ConfigMapper::rotate | ConfigMapper::robust | (vm.count("strict") ? ConfigMapper::strict : 0), tol);
+    configmapper.set_min_va_frac(update_opt.min_va_frac());
+    configmapper.set_max_va_frac(update_opt.max_va_frac());
     std::cout << "Reading calculation data... " << std::endl << std::endl;
     std::vector<std::string> bad_config_report;
     std::vector<std::string> prop_names = primclex.settings().properties();
-    PrimClex::config_iterator it = primclex.config_begin();
+
     Index num_updated(0);
 
     std::map<Configuration *, std::map<Configuration *, Update_impl::Data> > update_map;
 
-    for(; it != primclex.config_end(); ++it) {
+    // Get configuration selection
+    ConfigSelection<false> selection(primclex, update_opt.selection_path());
+
+    auto it =  selection.selected_config_begin();
+    auto end = selection.selected_config_end();
+
+    for(; it != end; ++it) {
       /// Read properties.calc.json file containing externally calculated properties
       ///   location: casmroot/supercells/SCEL_NAME/CONFIG_ID/CURR_CALCTYPE/properties.calc.json
       ///

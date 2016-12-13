@@ -28,6 +28,13 @@ namespace CASM {
       return m_vol_tolerance;
     }
 
+    double ImportOption::min_va_frac() const {
+      return m_min_va_frac;
+    }
+
+    double ImportOption::max_va_frac() const {
+      return m_max_va_frac;
+    }
     const std::vector<fs::path> &ImportOption::pos_vec() const {
       return m_pos_vec;
     }
@@ -46,6 +53,10 @@ namespace CASM {
       ("min-energy", "Resolve mapping conflicts based on energy rather than deformation.")
       ("max-vol-change", po::value<double>(&m_vol_tolerance)->default_value(0.25),
        "Adjusts range of SCEL volumes searched while mapping imported structure onto ideal crystal (only necessary if the presence of vacancies makes the volume ambiguous). Default is +/- 25% of relaxed_vol/prim_vol. Smaller values yield faster import, larger values may yield more accurate mapping.")
+      ("max-va-frac", po::value<double>(&m_max_va_frac)->default_value(0.5),
+       "Places upper bound on the fraction of sites that are allowed to be vacant after imported structure is mapped onto the ideal crystal. Smaller values yield faster execution, larger values may yield more accurate mapping. Has no effect if supercell volume can be inferred from the number of atoms in the structure. Default value allows up to 50% of sites to be vacant.")
+      ("min-va-frac", po::value<double>(&m_min_va_frac)->default_value(0.),
+       "Places lower bound on the fraction of sites that are allowed to be vacant after imported structure is mapped onto the ideal crystal. Nonzero values may yield faster execution if updating configurations that are known to have a large number of vacancies, at potential sacrifice of mapping accuracy.  Has no effect if supercell volume can be inferred from the number of atoms in the structure. Default value allows as few as 0% of sites to be vacant.")
       ("batch,b", po::value<fs::path>(&m_batch_path)->value_name(ArgHandler::path()), "Path to batch file, which should list one structure file path per line (can be used in combination with --pos)")
       ("rotate,r", "Rotate structure to be consistent with setting of PRIM")
       ("ideal,i", "Assume imported structures are unstrained (ideal) for faster importing. Can be slower if used on deformed structures, in which case more robust methods will be used")
@@ -194,6 +205,8 @@ namespace CASM {
     if(vm.count("strict")) map_opt |= ConfigMapper::strict;
     if(!vm.count("ideal")) map_opt |= ConfigMapper::robust;
     ConfigMapper configmapper(primclex, lattice_weight, vol_tol, map_opt, tol);
+    configmapper.set_min_va_frac(import_opt.min_va_frac());
+    configmapper.set_max_va_frac(import_opt.max_va_frac());
 
 
     // import_map keeps track of mapping collisions -- only used if vm.count("data")
