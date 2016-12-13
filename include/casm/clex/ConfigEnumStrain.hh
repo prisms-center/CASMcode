@@ -1,42 +1,52 @@
-#ifndef CONFIGENUMSTRAIN_HH
-#define CONFIGENUMSTRAIN_HH
+#ifndef CASM_ConfigEnumStrain
+#define CASM_ConfigEnumStrain
 
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/strain/StrainConverter.hh"
-#include "casm/clex/ConfigEnum.hh"
+#include "casm/container/InputEnumerator.hh"
 #include "casm/container/Counter.hh"
+#include "casm/clex/Configuration.hh"
+
+extern "C" {
+  CASM::EnumInterfaceBase *make_ConfigEnumStrain_interface();
+}
 
 namespace CASM {
 
-  class Supercell;
+  /// Enumerate strained Configurations
+  ///
+  /// \ingroup ConfigEnumGroup
+  ///
+  class ConfigEnumStrain : public InputEnumeratorBase<Configuration> {
 
-  template <typename ConfigType>
-  class ConfigEnumStrain : public ConfigEnum<ConfigType> {
+    // -- Required members -------------------
+
   public:
-    typedef typename ConfigEnum<ConfigType>::step_type step_type;
 
-    // ConfigType is either Configurations or ConfigDoF
-    typedef typename ConfigEnum<ConfigType>::value_type value_type;
+    ConfigEnumStrain(Supercell &scel,
+                     const Configuration &_init,
+                     const std::vector<Index> &subspace_partitions,
+                     const std::vector<double> &magnitudes,
+                     std::string _mode);
 
-    typedef typename ConfigEnum<ConfigType>::iterator iterator;
+    std::string name() const override {
+      return enumerator_name;
+    }
 
-    using ConfigEnum<ConfigType>::initial;
-    using ConfigEnum<ConfigType>::final;
-    using ConfigEnum<ConfigType>::current;
-    using ConfigEnum<ConfigType>::num_steps;
-    using ConfigEnum<ConfigType>::step;
-    using ConfigEnum<ConfigType>::source;
-
-    ConfigEnumStrain(Supercell &scel, const value_type &_init, const std::vector<Index> &subspace_partitions, const std::vector<double> &magnitudes, std::string _mode);
-
-    // **** Mutators ****
-    // increment m_current and return a reference to it
-    const value_type &increment();
-
-    // set m_current to correct value at specified step and return a reference to it
-    const value_type &goto_step(step_type _step);
+    static const std::string enumerator_name;
+    static const std::string interface_help;
+    static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 
   private:
+
+    /// Implements increment over all strain states
+    void increment() override;
+
+
+    // -- Unique -------------------
+
+    Configuration m_current;
+
     // counts over strain grid
     EigenCounter<Eigen::VectorXd> m_counter;
     // counts over transformation matrices
@@ -46,9 +56,6 @@ namespace CASM {
     std::vector<Eigen::MatrixXd> m_trans_mats;
     PermuteIterator m_perm_begin, m_perm_end;
     Eigen::MatrixXd m_shape_factor;
-    using ConfigEnum<ConfigType>::_current;
-    using ConfigEnum<ConfigType>::_step;
-    using ConfigEnum<ConfigType>::_source;
 
     const PermuteIterator &_perm_begin() {
       return m_perm_begin;
@@ -56,10 +63,9 @@ namespace CASM {
     const PermuteIterator &_perm_end() {
       return m_perm_end;
     }
+
   };
 
 }
-
-#include "casm/clex/ConfigEnumStrain_impl.hh"
 
 #endif

@@ -63,7 +63,7 @@ namespace CASM {
   /// \brief Check if Eigen::Matrix is unimodular
   template<typename Derived>
   bool is_unimodular(const Eigen::MatrixBase<Derived> &M, double tol) {
-    return is_integer(M, tol) && almost_equal(M.determinant(), static_cast<typename Derived::Scalar>(1), tol);
+    return is_integer(M, tol) && almost_equal(std::abs(M.determinant()), static_cast<typename Derived::Scalar>(1), tol);
   }
 
   /// \brief Check if Eigen::Matrix is diagonal

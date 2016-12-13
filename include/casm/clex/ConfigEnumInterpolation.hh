@@ -1,46 +1,53 @@
-#ifndef CONFIGENUMINTERPOLATION_HH
-#define CONFIGENUMINTERPOLATION_HH
+#ifndef CASM_ConfigEnumInterpolation
+#define CASM_ConfigEnumInterpolation
+
+#include "casm/container/RandomAccessEnumerator.hh"
+#include "casm/clex/Configuration.hh"
+
+extern "C" {
+  CASM::EnumInterfaceBase *make_ConfigEnumInterpolation_interface();
+}
 
 namespace CASM {
 
-  template <typename ConfigType>
-  class ConfigEnumInterpolation : public ConfigEnum<ConfigType> {
+  /// Interpolate displacements and strains between two configurations with
+  /// identical occupation
+  ///
+  /// \ingroup ConfigEnumGroup
+  ///
+  class ConfigEnumInterpolation : public RandomAccessEnumeratorBase<Configuration> {
+
+    // -- Required members -------------------
+
   public:
-    typedef typename ConfigEnum<ConfigType>::step_type step_type;
 
-    // ConfigType is either Configuration or ConfigDoF
-    typedef typename ConfigEnum<ConfigType>::value_type value_type;
+    ConfigEnumInterpolation(const value_type &_initial, const value_type &_final, Index _size);
 
-    typedef typename ConfigEnum<ConfigType>::iterator iterator;
+    std::string name() const override {
+      return enumerator_name;
+    }
 
-    using ConfigEnum<ConfigType>::initial;
-    using ConfigEnum<ConfigType>::final;
-    using ConfigEnum<ConfigType>::current;
-    using ConfigEnum<ConfigType>::num_steps;
-    using ConfigEnum<ConfigType>::step;
-    using ConfigEnum<ConfigType>::source;
+    static const std::string enumerator_name;
+    static const std::string interface_help;
+    static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+
   private:
+
+    /// Implements goto_step
+    Configuration *at_step(step_type n) override;
+
+
+    // -- Unique members -------------------
+
+    Configuration m_current;
+    Configuration m_initial;
+    Configuration m_final;
+
     typename value_type::displacement_matrix_t m_displacement_inc;
     Eigen::Matrix3d m_deformation_inc;
-
-    using ConfigEnum<ConfigType>::_current;
-    using ConfigEnum<ConfigType>::_step;
-    using ConfigEnum<ConfigType>::_source;
-
-  public:
-    ConfigEnumInterpolation(const value_type &_initial, const value_type &_final, Index _N_steps);
-
-    // **** Mutators ****
-    // increment m_current and return a reference to it
-    const value_type &increment();
-
-    // set m_current to correct value at specified step and return a reference to it
-    const value_type &goto_step(step_type _step);
 
   };
 
 }
-
-#include "casm/clex/ConfigEnumInterpolation_impl.hh"
 
 #endif

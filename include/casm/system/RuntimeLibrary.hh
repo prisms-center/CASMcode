@@ -12,6 +12,8 @@
 
 namespace CASM {
 
+  class Log;
+
   /// \brief Write, compile, load and use code at runtime
   class RuntimeLibrary {
 
@@ -19,20 +21,14 @@ namespace CASM {
 
     /// \brief Construct a RuntimeLibrary object, with the options to be used for compile
     ///        the '.o' file and the '.so' file
-    RuntimeLibrary(std::string _compile_options, std::string _so_options);
+    RuntimeLibrary(
+      std::string _filename_base,
+      std::string _compile_options,
+      std::string _so_options,
+      Log &status_log,
+      std::string compile_msg);
 
     ~RuntimeLibrary();
-
-    /// \brief Compile a shared library
-    void compile(std::string _filename_base,
-                 std::string _source);
-
-    /// \brief Compile a shared library
-    void compile(std::string _filename_base);
-
-
-    /// \brief Load a library with a given name
-    void load(std::string _filename_base);
 
     /// \brief Obtain a function from the current library
     ///
@@ -51,9 +47,6 @@ namespace CASM {
 
       return func;
     }
-
-    /// \brief Close the current library
-    void close();
 
     /// \brief Remove the current library and source code
     void rm();
@@ -76,10 +69,19 @@ namespace CASM {
 
   private:
 
-    std::string m_compile_options;
-    std::string m_so_options;
+    /// \brief Compile a shared library
+    void _compile();
+
+    /// \brief Load a library with a given name
+    void _load();
+
+    /// \brief Close the current library
+    void _close();
+
 
     std::string m_filename_base;
+    std::string m_compile_options;
+    std::string m_so_options;
 
     void *m_handle;
 

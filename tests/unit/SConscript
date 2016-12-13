@@ -44,7 +44,6 @@ unit_test = lenv.Program(os.path.join(lenv['UNIT_TEST_BINDIR'],'unit_test'),
                           lenv['boost_chrono'],
                           lenv['dl'],
                           'casm'])
-Depends(unit_test, [casm_lib, casm])
 
 # Execute 'scons unit' to compile & run all unit tests
 env.Alias('unit', unit_test, unit_test[0].abspath + " --log_level=test_suite --catch_system_errors=no")
@@ -56,42 +55,34 @@ if 'unit' in COMMAND_LINE_TARGETS:
 
 ### Compile and run individual tests
 # Execute 'scons Motif' or 'scons Structure', etc. to compile & run individual unit tests
-  
-# list of output files that need to be cleaned
-Structure_out = glob.glob('crystallography/*_out') + ['crystallography/POS1_prim.json']
-Clexulator_out = ['clex/test_Clexulator.o', 'clex/test_Clexulator.so']
-App_out = ['App/FCC_ternary', 'App/ZrO']
 
-Clean(unit_test,  Structure_out + Clexulator_out + App_out)
+# list of dependencies for a particular test
+depends = {
+  "App" : [casm_lib, casm]
+}
+
+# list of output files that need to be cleaned for a particular test
+to_clean = {
+  "Structure" : glob.glob('crystallography/*_out') + ['crystallography/POS1_prim.json'],
+  "Clexulator" : ['clex/test_Clexulator.o', 'clex/test_Clexulator.so'],
+  "App" : ['App/FCC_ternary', 'App/ZrO']
+}
+
+# list tests that need '--catch_system_errors=no"
+no_catch = [
+  "App",
+  "EnumeratorPlugin",
+  "QueryPlugin"
+]
+
+Depends(unit_test, [val for val in depends.itervalues()])
+Clean(unit_test,  [val for val in to_clean.itervalues()])
 
 for i, src_name in enumerate(test_name):
   
-  # individual tests that need common linking options
-  if src_name[:-5] in ["Structure", "BasicStructure", "ConfigIODictionary", "App", 
-                       "ConfigIO", "Coordinate", "PrimClex", "ChemicalReference", "NeighborList",
-                       "Clusterography", "SupercellEnumerator", "Niggli",
-                       "settings"]:
-    test = lenv.Program(os.path.join(lenv['UNIT_TEST_BINDIR'], src_name), 
-                       [unit_obj, common_obj, test_obj[i]],
-                       LIBPATH=build_lib_paths,
-                       LINKFLAGS=linkflags,
-                       LIBS=[
-                         lenv['boost_unit_test_framework'], 
-                         lenv['boost_system'], 
-                         lenv['boost_filesystem'],
-                         lenv['boost_regex'],
-                         'casm'])
-    
-    # cleaning instructions
-    if src_name[:-5] == "Structure":
-      Clean(test,  Structure_out)
-    if src_name[:-5] == "App":
-      Depends(test, [casm_lib, casm])
-      Clean(test,  App_out)
+  sname = src_name[:-5]
   
-  # individual tests that need other linking options
-  elif src_name[:-5] == "Clexulator":
-    test = lenv.Program(os.path.join(lenv['UNIT_TEST_BINDIR'], src_name), 
+  test = lenv.Program(os.path.join(lenv['UNIT_TEST_BINDIR'], src_name), 
                        [unit_obj, common_obj, test_obj[i]],
                        LIBPATH=build_lib_paths,
                        LINKFLAGS=linkflags,
@@ -102,25 +93,19 @@ for i, src_name in enumerate(test_name):
                          lenv['boost_regex'],
                          lenv['dl'],
                          'casm'])
-    
-    if src_name[:-5] == "Clexulator":
-      Clean(test,  Clexulator_out)
   
-  # individual tests that need other linking options
-  else:
-    test = lenv.Program(os.path.join(lenv['UNIT_TEST_BINDIR'], src_name), 
-                       [unit_obj, test_obj[i]],
-                       LIBS=[
-                         lenv['boost_unit_test_framework'], 
-                         lenv['boost_system'], 
-                         lenv['boost_filesystem']])
+  if sname in depends:
+    Depends(test, depends[sname])
+  
+  if sname in to_clean:
+    Clean(test, to_clean[sname])
   
   # set command line options for running the unit tests
-  if src_name[:-5] == "App":
-    env.Alias(src_name[:-5], test, test[0].abspath + " --log_level=test_suite --catch_system_errors=no")
+  if sname in no_catch:
+    env.Alias(sname, test, test[0].abspath + " --log_level=test_suite --catch_system_errors=no")
   else:
-    env.Alias(src_name[:-5], test, test[0].abspath + " --log_level=test_suite")
+    env.Alias(sname, test, test[0].abspath + " --log_level=test_suite")
   AlwaysBuild(test)
     
-  if src_name[:-5] in COMMAND_LINE_TARGETS:
+  if sname in COMMAND_LINE_TARGETS:
     env['IS_TEST'] = 1

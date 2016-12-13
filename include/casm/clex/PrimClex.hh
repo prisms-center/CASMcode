@@ -161,6 +161,9 @@ namespace CASM {
 
     // ** Supercell and Configuration accessors **
 
+    /// Access entire supercell_list
+    boost::container::stable_vector<Supercell> &get_supercell_list();
+
     /// const Access entire supercell_list
     const boost::container::stable_vector<Supercell> &get_supercell_list() const;
 
@@ -175,6 +178,9 @@ namespace CASM {
 
     /// Access supercell by name
     Supercell &get_supercell(std::string scellname);
+
+    /// Access supercell by Lattice, adding if necessary
+    Supercell &get_supercell(const Lattice &lat);
 
     /// access configuration by name (of the form "scellname/[NUMBER]", e.g., ("SCEL1_1_1_1_0_0_0/0")
     const Configuration &configuration(const std::string &configname) const;
@@ -213,6 +219,7 @@ namespace CASM {
 
     Eigen::MatrixXd shift_vectors() const;
 
+
     // **** Mutators ****
 
     /// Sets the composition axes, updates all configuration references,
@@ -235,7 +242,7 @@ namespace CASM {
     /// Use the given CSPECS
 
     /// \brief Generate supercells of a certain volume and shape and store them in the array of supercells
-    void generate_supercells(int volStart, int volEnd, int dims, const Eigen::Matrix3i &G, bool verbose);
+    void generate_supercells(const ScelEnumProps &enum_props);
 
     //Enumerate configurations for all the supercells that are stored in 'supercell_list'
     void print_enum_info(std::ostream &stream);
@@ -258,6 +265,9 @@ namespace CASM {
     int amount_selected() const;
 
     bool contains_supercell(std::string scellname, Index &index) const;
+
+    bool contains_supercell(const Supercell &scel) const;
+    bool contains_supercell(const Supercell &scel, Index &index) const;
 
     Index add_supercell(const Lattice &superlat);
 

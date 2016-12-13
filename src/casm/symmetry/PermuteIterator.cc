@@ -31,8 +31,13 @@ namespace CASM {
     return *this;
   }
 
+  /// Returns a copy
+  const PermuteIterator &PermuteIterator::operator*() const {
+    return *this;
+  }
+
   /// Returns the combination of factor_group permutation and translation permutation
-  Permutation PermuteIterator::operator*() const {
+  Permutation PermuteIterator::combined_permute() const {
     return translation_permute() * factor_group_permute();
   }
 
@@ -84,17 +89,20 @@ namespace CASM {
     return before_array[ factor_group_permute()[ translation_permute()[i] ] ];
   }
 
-  bool PermuteIterator::operator==(const PermuteIterator &iter) {
+  bool PermuteIterator::operator<(const PermuteIterator &iter) const {
+    if(this->factor_group_index() == iter.factor_group_index()) {
+      return this->translation_index() < iter.translation_index();
+    }
+    return this->factor_group_index() < iter.factor_group_index();
+  }
+
+  bool PermuteIterator::_eq(const PermuteIterator &iter) const {
     if(m_fg_permute_rep == iter.m_fg_permute_rep &&
        m_prim_grid == iter.m_prim_grid &&
        m_factor_group_index == iter.m_factor_group_index &&
        m_translation_index == iter.m_translation_index)
       return true;
     return false;
-  }
-
-  bool PermuteIterator::operator!=(const PermuteIterator &iter) {
-    return !(*this == iter);
   }
 
   // prefix ++PermuteIterator

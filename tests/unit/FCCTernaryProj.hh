@@ -17,13 +17,13 @@ namespace test {
 
   inline BasicStructure<Site> FCC_ternary_prim() {
 
-    // lattice vectors as rows
+    // lattice vectors as cols
     Eigen::Matrix3d lat;
-    lat << 2.0, 2.0, 0.0,
-        0.0, 2.0, 2.0,
-        2.0, 0.0, 2.0;
+    lat << 0.0, 2.0, 2.0,
+        2.0, 0.0, 2.0,
+        2.0, 2.0, 0.0;
 
-    BasicStructure<Site> struc(Lattice(lat.transpose()));
+    BasicStructure<Site> struc {Lattice{lat}};
     struc.title = "FCC_ternary";
 
     Molecule A = make_atom("A", struc.lattice());
@@ -199,7 +199,7 @@ namespace test {
     void check_enum() override {
 
       {
-        m_p.popen(cd_and() + "casm enum --supercells --max 10");
+        m_p.popen(cd_and() + "casm enum --method ScelEnum --max 10");
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);
@@ -207,7 +207,7 @@ namespace test {
       }
 
       {
-        m_p.popen(cd_and() + "casm enum --configs --max 6");
+        m_p.popen(cd_and() + "casm enum --method ConfigEnumAllOccupations --max 6");
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);

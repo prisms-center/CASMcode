@@ -374,7 +374,7 @@ namespace CASM {
       return GenericConfigFormatter<Index>("multiplicity",
                                            "Symmetric multiplicity of the configuration, excluding translational equivalents.",
       [](const Configuration & config)->Index {
-        return config.get_prim().factor_group().size() / config.factor_group(config.get_supercell().permute_begin(), config.get_supercell().permute_end()).size();
+        return config.get_prim().factor_group().size() / config.factor_group().size();
       });
     }
 
