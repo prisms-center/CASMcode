@@ -146,7 +146,7 @@ namespace CASM {
     Log &log = args.log;
     Log &err_log = args.err_log;
 
-    
+
     const DirectoryStructure &dir = primclex.dir();
     ProjectSettings &set = primclex.settings();
 
