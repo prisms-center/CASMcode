@@ -134,7 +134,7 @@ namespace CASM {
       //-------------------------------------------------------------------------------------//
 
       ///Add --config suboption (defaults to MASTER)
-      void add_configlist_suboption();
+      void add_configlist_suboption(const fs::path &_default = "MASTER");
 
       ///The selection string to go with add_config_suboption
       fs::path m_selection_path;
@@ -145,7 +145,7 @@ namespace CASM {
       //----------------------------//
 
       ///Add --configs suboption (defaults to MASTER)
-      void add_configlists_suboption();
+      void add_configlists_suboption(const fs::path &_default = "MASTER");
 
       ///The selection string to go with add_config_suboption
       std::vector<fs::path> m_selection_paths;
@@ -514,6 +514,10 @@ namespace CASM {
 
       double lattice_weight() const;
 
+      double min_va_frac() const;
+
+      double max_va_frac() const;
+
       const std::vector<fs::path> &pos_vec() const;
 
       const fs::path &batch_path() const;
@@ -526,6 +530,10 @@ namespace CASM {
       double m_vol_tolerance;
 
       double m_lattice_weight;
+
+      double m_min_va_frac;
+
+      double m_max_va_frac;
 
       std::vector<fs::path> m_pos_vec;
 
@@ -721,11 +729,17 @@ namespace CASM {
 
       using OptionHandlerBase::coordtype_enum;
 
+      using OptionHandlerBase::selection_path;
+
       UpdateOption();
 
       double vol_tolerance() const;
 
       double lattice_weight() const;
+
+      double min_va_frac() const;
+
+      double max_va_frac() const;
 
     private:
 
@@ -734,6 +748,10 @@ namespace CASM {
       double m_vol_tolerance;
 
       double m_lattice_weight;  //TODO: Push to base? Other commands use this
+
+      double m_min_va_frac;
+
+      double m_max_va_frac;
 
     };
 

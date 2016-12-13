@@ -439,7 +439,8 @@ namespace CASM {
 
         for(i = 0; i < gridstruc.size(); i++) {
 
-          //if(orbit(np-1,no).prototype.contains(gridstruc[i])) continue;
+          if(tclust.contains(gridstruc[i]))
+            continue;
 
           //tclust = orbit(np - 1, no).prototype;
           tclust.push_back(gridstruc[i]);
@@ -564,7 +565,9 @@ namespace CASM {
 
             for(; i < gridstruc.size(); i++) {
 
-              //tclust = orbit(np - 1, no).prototype;
+              if(tclust.contains(gridstruc[i]))
+                continue;
+
               tclust.push_back(gridstruc[i]);
 
               tclust.within();
@@ -624,9 +627,9 @@ namespace CASM {
 
         for(i = 0; i < gridstruc.size(); i++) {
 
-          //if(orbit(np-1,no).prototype.contains(gridstruc[i])) continue;
+          if(tclust.contains(gridstruc[i]))
+            continue;
 
-          //tclust = orbit(np - 1, no).prototype;
           tclust.push_back(gridstruc[i]);
 
 #ifdef DEBUG
@@ -747,7 +750,9 @@ namespace CASM {
 
             for(; i < gridstruc.size(); i++) {
 
-              //tclust = orbit(np - 1, no).prototype;
+              if(tclust.contains(gridstruc[i]))
+                continue;
+
               tclust.push_back(gridstruc[i]);
 
               tclust.within();
@@ -828,9 +833,9 @@ namespace CASM {
 
         for(i = 0; i < gridstruc.size(); i++) {
 
-          //if(orbit(np-1,no).prototype.contains(gridstruc[i])) continue;
+          if(tclust.contains(gridstruc[i]))
+            continue;
 
-          //tclust = orbit(np - 1, no).prototype;
           tclust.push_back(gridstruc[i]);
 
           tclust.within();
@@ -1303,9 +1308,9 @@ namespace CASM {
 
         for(i = 0; i < gridstruc.size(); i++) {
 
-          //if(orbit(np - 1, no).prototype.contains(gridstruc[i])) continue;
+          if(tclust.contains(gridstruc[i]))
+            continue;
 
-          //tclust = orbit(np - 1, no).prototype;
           tclust.push_back(gridstruc[i]);
 
           if(tclust.image_check(reduced_cell, num_images)) continue;
@@ -2036,7 +2041,8 @@ namespace CASM {
         // check all sites in gridstruc
         for(i = 0; i < gridstruc.size(); i++) {
 
-          //tclust = orbit(np - 1, no).prototype;
+          if(tclust.contains(gridstruc[i]))
+            continue;
 
           // add a site to the test clust
           tclust.push_back(gridstruc[i]);

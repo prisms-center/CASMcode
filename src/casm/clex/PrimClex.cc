@@ -1042,7 +1042,7 @@ namespace CASM {
 
       //global_orbitree.read_CSPECS(in_clust);
       tree.min_num_components = 2;
-      tree.min_length = CASM::TOL;
+      tree.min_length = -CASM::TOL;
 
       tree.max_length.clear();
       auto update_max_length = [&](int branch, double max_length) {

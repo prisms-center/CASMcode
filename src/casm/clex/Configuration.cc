@@ -461,9 +461,14 @@ namespace CASM {
       }
       //Get RMS force:
       if(json.contains("relaxed_forces")) {
-        Eigen::MatrixXd forces;
-        from_json(forces, json["relaxed_forces"]);
-        parsed_props["rms_force"] = sqrt((forces.transpose() * forces).trace() / double(forces.rows()));
+        if(json["relaxed_forces"].size()) {
+          Eigen::MatrixXd forces;
+          from_json(forces, json["relaxed_forces"]);
+          parsed_props["rms_force"] = sqrt((forces.transpose() * forces).trace() / double(forces.rows()));
+        }
+        else {
+          parsed_props["rms_force"] = 0.;
+        }
       }
     }
     else
