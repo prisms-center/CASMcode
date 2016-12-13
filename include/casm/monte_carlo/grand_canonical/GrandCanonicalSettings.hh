@@ -15,7 +15,7 @@ namespace CASM {
     GrandCanonicalSettings() {}
 
     /// \brief Construct EquilibriumMonteSettings by reading a settings JSON file
-    GrandCanonicalSettings(const fs::path &read_path);
+    GrandCanonicalSettings(const PrimClex &primclex, const fs::path &read_path);
 
 
     // --- GrandCanonicalConditions settings ---------------------

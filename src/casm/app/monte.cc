@@ -146,7 +146,7 @@ namespace CASM {
     Log &log = args.log;
     Log &err_log = args.err_log;
 
-
+    
     const DirectoryStructure &dir = primclex.dir();
     ProjectSettings &set = primclex.settings();
 
@@ -185,7 +185,7 @@ namespace CASM {
 
       if(vm.count("initial-POSCAR")) {
         try {
-          GrandCanonicalSettings gc_settings(settings_path);
+          GrandCanonicalSettings gc_settings(primclex, settings_path);
           const GrandCanonical gc(primclex, gc_settings, log);
 
           log.write("Initial POSCAR");
@@ -200,7 +200,7 @@ namespace CASM {
       }
       else if(vm.count("final-POSCAR")) {
         try {
-          GrandCanonicalSettings gc_settings(settings_path);
+          GrandCanonicalSettings gc_settings(primclex, settings_path);
           const GrandCanonical gc(primclex, gc_settings, log);
 
           log.write("Final POSCAR");
@@ -215,7 +215,7 @@ namespace CASM {
       }
       else if(vm.count("traj-POSCAR")) {
         try {
-          GrandCanonicalSettings gc_settings(settings_path);
+          GrandCanonicalSettings gc_settings(primclex, settings_path);
           const GrandCanonical gc(primclex, gc_settings, log);
 
           log.write("Trajectory POSCARs");
@@ -232,7 +232,7 @@ namespace CASM {
 
         try {
 
-          GrandCanonicalSettings gc_settings(settings_path);
+          GrandCanonicalSettings gc_settings(primclex, settings_path);
 
           if(gc_settings.dependent_runs()) {
             throw std::invalid_argument("ERROR in LTE1 calculation: dependents_runs must be false");
@@ -323,8 +323,7 @@ namespace CASM {
       else if(monte_settings.method() == Monte::METHOD::Metropolis) {
 
         try {
-
-          MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(settings_path), log, err_log);
+          MonteDriver<GrandCanonical> driver(primclex, GrandCanonicalSettings(primclex, settings_path), log, err_log);
           driver.run();
         }
         catch(std::exception &e) {
