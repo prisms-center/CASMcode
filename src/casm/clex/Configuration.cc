@@ -613,6 +613,11 @@ namespace CASM {
   }
 
   //*********************************************************************************
+  Index Configuration::linear_index(UnitCellCoord bijk) const {
+    return supercell().linear_index(bijk);
+  }
+
+  //*********************************************************************************
   int Configuration::sublat(Index site_l) const {
     return supercell().sublat(site_l);
   }

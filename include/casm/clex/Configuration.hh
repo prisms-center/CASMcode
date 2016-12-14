@@ -391,6 +391,9 @@ namespace CASM {
     /// \brief Get the UnitCellCoord for a given linear site index
     UnitCellCoord uccoord(Index site_l) const;
 
+    /// \brief Return the linear index corresponding to integral coordinates
+    Index linear_index(const UnitCellCoord &bijk) const;
+
     /// \brief Get the basis site index for a given linear linear site index
     int sublat(Index site_l) const;
 

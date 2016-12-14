@@ -41,6 +41,24 @@ namespace CASM {
     }
   };
 
+  /// \brief Add UnitCell to object
+  template<typename T>
+  T operator+(T t, UnitCell frac) {
+    return t += frac;
+  }
+
+  /// \brief Add UnitCell to object
+  template<typename T>
+  T operator+(UnitCell frac, T t) {
+    return t += frac;
+  }
+
+  /// \brief Subtract UnitCell from object
+  template<typename T>
+  T operator-(T t, UnitCell frac) {
+    return t -= frac;
+  }
+
   /* -- UnitCellCoord Declarations ------------------------------------- */
 
   /// \brief Unit Cell Coordinates
@@ -124,15 +142,6 @@ namespace CASM {
   inline std::ostream &operator<<(std::ostream &sout, const UnitCellCoord &site) {
     return sout << site.sublat() << ", " << site.unitcell().transpose();
   }
-
-  /// \brief Add UnitCell to UnitCellCoord
-  inline UnitCellCoord operator+(UnitCell frac, UnitCellCoord site);
-
-  /// \brief Add UnitCell to UnitCellCoord
-  inline UnitCellCoord operator+(UnitCellCoord site, UnitCell frac);
-
-  /// \brief Subtract UnitCell from UnitCellCoord
-  inline UnitCellCoord operator-(UnitCellCoord site, UnitCell frac);
 
   /// \brief Print to json as [b, i, j, k]
   jsonParser &to_json(const UnitCellCoord &ucc_val, jsonParser &fill_json);
@@ -261,21 +270,6 @@ namespace CASM {
            A.unitcell()(1) == B.unitcell()(1) &&
            A.unitcell()(2) == B.unitcell()(2) &&
            A.sublat() == B.sublat();
-  }
-
-  /// \brief Add UnitCell to UnitCellCoord
-  inline UnitCellCoord operator+(UnitCell frac, UnitCellCoord site) {
-    return site += frac;
-  }
-
-  /// \brief Add UnitCell to UnitCellCoord
-  inline UnitCellCoord operator+(UnitCellCoord site, UnitCell frac) {
-    return site += frac;
-  }
-
-  /// \brief Subtract UnitCell from UnitCellCoord
-  inline UnitCellCoord operator-(UnitCellCoord site, UnitCell frac) {
-    return site -= frac;
   }
 
 
