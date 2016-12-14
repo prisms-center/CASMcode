@@ -392,7 +392,9 @@ namespace CASM {
     }
     else {
       // else construct from pieces
-      return cxx().first + " " + soflags().first + " " + link_path(boost_libdir().first);
+      return cxx().first + " " + soflags().first + " " +
+             link_path(boost_libdir().first) + " " +
+             link_path(casm_libdir().first);
     }
   }
 
