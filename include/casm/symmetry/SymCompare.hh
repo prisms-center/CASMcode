@@ -22,10 +22,14 @@ namespace CASM {
   /// - bool Derived::invariants_compare_impl(const Element &A, const Element &B) const
   ///   - first order comparison of orbits
   ///   - speeds up identifying orbits that might contain an element
+  ///
+  /// Derived should optionally implement:
   /// - bool Derived::inter_orbit_compare_impl(const Element &A, const Element &B) const
   ///   - breaks 'invariants_compare' ties
+  ///   - default uses this->compare(A, B)
   /// - void Derived::apply_sym_impl(const SymOp &op) const
   ///   - not sure if this is needed... use to apply_sym to the SymCompare object itself
+  ///   - default does nothing
   ///
   /// The ClusterSymCompare hierarchy:
   /// - SymCompare
@@ -123,6 +127,28 @@ namespace CASM {
     const MostDerived &derived() const {
       return *static_cast<const MostDerived *>(this);
     }
+
+    /// \brief Orders orbit prototypes, breaking invariants_compare ties
+    ///
+    /// - Returns 'true' to indicate A < B
+    /// - Equivalence is indicated by \code !compare(A,B) && !compare(B,A) \endcode
+    ///
+    /// Implementation:
+    /// - First, check invariants_compare
+    /// - Break ties with, compare(A, B)
+    bool inter_orbit_compare_impl(const Element &A, const Element &B) const {
+
+      // first compare invariants
+      if(this->invariants_compare(A.invariants(), B.invariants())) {
+        return true;
+      }
+      if(this->invariants_compare(B.invariants(), A.invariants())) {
+        return false;
+      }
+
+      // next lexicographical_compare of Element in A and B
+      return this->compare(A, B);
+    }
   };
 
   /// \brief Template class to be specialized for comparisons with aperiodic symmetry
@@ -160,6 +186,28 @@ namespace CASM {
     }
     return result;
   }
+
+  /// \brief CRTP Base class for types that should be SymComparable
+  template<typename Derived>
+  class SymComparable : public CASM_TMP::CRTPBase<Derived> {
+  public:
+    typedef typename CASM_TMP::traits<Derived>::InvariantsType InvariantsType;
+
+    const InvariantsType &invariants() const {
+      if(!m_invariants) {
+        m_invariants = notstd::make_cloneable<InvariantsType>(this->derived());
+      }
+      return *m_invariants;
+    }
+
+  protected:
+
+    void _reset_invariants() {
+      m_invariants.reset();
+    }
+
+    mutable notstd::cloneable_ptr<InvariantsType> m_invariants;
+  };
 
 }
 

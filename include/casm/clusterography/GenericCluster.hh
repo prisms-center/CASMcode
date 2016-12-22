@@ -15,6 +15,22 @@ namespace CASM {
 
   /* -- GenericCluster Declarations ------------------------------------- */
 
+  template<typename Derived> class GenericCluster;
+
+  namespace CASM_TMP {
+
+    /// \brief Traits class for GenericCluster
+    ///
+    /// \ingroup IntegralCluster
+    ///
+    template<typename Derived>
+    struct traits<GenericCluster<Derived> > {
+      typedef typename traits<Derived>::MostDerived MostDerived;
+      typedef typename traits<Derived>::Element Element;
+      typedef typename traits<Derived>::InvariantsType InvariantsType;
+    };
+  }
+
   /// \brief A CRTP base class for a cluster of anything
   ///
   /// - Needs a CASM_TMP::traits<Derived>::Element type
@@ -24,7 +40,7 @@ namespace CASM {
   /// \ingroup Clusterography
   ///
   template<typename Derived>
-  class GenericCluster {
+  class GenericCluster : public SymComparable<GenericCluster<Derived> > {
 
   public:
 
@@ -38,7 +54,7 @@ namespace CASM {
 
     /// \brief Iterator to first UnitCellCoord in the cluster
     iterator begin() {
-      m_invariants.reset();
+      this->_reset_invariants();
       return m_element.begin();
     }
 
@@ -49,7 +65,7 @@ namespace CASM {
 
     /// \brief Iterator to the past-the-last UnitCellCoord in the cluster
     iterator end() {
-      m_invariants.reset();
+      this->_reset_invariants();
       return m_element.end();
     }
 
@@ -75,7 +91,7 @@ namespace CASM {
 
     /// \brief Access a UnitCellCoord in the cluster by index
     value_type &operator[](size_type index) {
-      m_invariants.reset();
+      this->_reset_invariants();
       return m_element[index];
     }
 
@@ -86,7 +102,7 @@ namespace CASM {
 
     /// \brief Access a UnitCellCoord in the cluster by index
     value_type &element(size_type index) {
-      m_invariants.reset();
+      this->_reset_invariants();
       return m_element[index];
     }
 
@@ -97,20 +113,13 @@ namespace CASM {
 
     /// \brief Access vector of elements
     std::vector<Element> &elements() {
-      m_invariants.reset();
+      this->_reset_invariants();
       return m_element;
     }
 
     /// \brief const Access vector of elements
     const std::vector<Element> &elements() const {
       return m_element;
-    }
-
-    const InvariantsType &invariants() const {
-      if(!m_invariants) {
-        m_invariants = notstd::make_cloneable<InvariantsType>(derived());
-      }
-      return *m_invariants;
     }
 
   protected:
@@ -124,20 +133,9 @@ namespace CASM {
                    InputIterator _end) :
       m_element(_begin, _end) {}
 
-
-    MostDerived &derived() {
-      return *static_cast<MostDerived *>(this);
-    }
-
-    const MostDerived &derived() const {
-      return *static_cast<const MostDerived *>(this);
-    }
-
   private:
 
     std::vector<Element> m_element;
-
-    mutable notstd::cloneable_ptr<InvariantsType> m_invariants;
 
   };
 
@@ -223,7 +221,6 @@ namespace CASM {
   ///
   /// Implements:
   /// - 'invariants_compare_impl' using 'compare'
-  /// - 'inter_orbit_compare_impl' using 'cluster_inter_orbit_compare'
   /// - 'apply_sym_impl' (does nothing)
   ///
   /// Does not implement:
@@ -262,7 +259,7 @@ namespace CASM {
 
     /// \brief Constructor
     ///
-    /// \param tol Tolerance for inter_orbit_compare of site-to-site distances
+    /// \param tol Tolerance for invariants_compare of site-to-site distances
     ///
     ClusterSymCompare(double tol):
       SymCompare<ClusterSymCompare<Derived> >(),
@@ -282,29 +279,6 @@ namespace CASM {
     /// - Then compare all displacements, from longest to shortest
     bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const {
       return compare(A, B, tol());
-    }
-
-    /// \brief Orders orbit prototypes, breaking invariants_compare ties
-    ///
-    /// - Returns 'true' to indicate A < B
-    /// - Equivalence is indicated by \code !compare(A,B) && !compare(B,A) \endcode
-    /// - Assumes elements are in canonical form
-    ///
-    /// Implementation:
-    /// - First, check invariants_compare
-    /// - Break ties with, std::lexicographical_compare of elements in A and B
-    bool inter_orbit_compare_impl(const ClusterType &A, const ClusterType &B) const {
-
-      // first compare invariants
-      if(this->invariants_compare(A.invariants(), B.invariants())) {
-        return true;
-      }
-      if(this->invariants_compare(B.invariants(), A.invariants())) {
-        return false;
-      }
-
-      // next lexicographical_compare of Element in A and B
-      return this->compare(A, B);
     }
 
     /// \brief Apply symmetry to this

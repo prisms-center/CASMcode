@@ -174,7 +174,28 @@ namespace CASM {
 
     };
 
+    // ---------------------
 
+    /// \brief Base class for CRTP pattern
+    ///
+    /// - Expects traits: CASM_TMP::traits<Derived>::MostDerived
+    template<typename Derived>
+    class CRTPBase {
+
+    public:
+
+      typedef typename CASM_TMP::traits<Derived>::MostDerived MostDerived;
+
+    protected:
+
+      MostDerived &derived() {
+        return *static_cast<MostDerived *>(this);
+      }
+
+      const MostDerived &derived() const {
+        return *static_cast<const MostDerived *>(this);
+      }
+    };
   }
 
 }
