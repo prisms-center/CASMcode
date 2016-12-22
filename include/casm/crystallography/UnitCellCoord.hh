@@ -41,23 +41,24 @@ namespace CASM {
     }
   };
 
-  /// \brief Add UnitCell to object
-  template<typename T>
-  T operator+(T t, UnitCell frac) {
-    return t += frac;
-  }
+  template<typename Derived>
+  struct Translatable {
 
-  /// \brief Add UnitCell to object
-  template<typename T>
-  T operator+(UnitCell frac, T t) {
-    return t += frac;
-  }
+    Derived operator+(UnitCell frac) {
+      Derived tmp {derived()};
+      return tmp += frac;
+    }
 
-  /// \brief Subtract UnitCell from object
-  template<typename T>
-  T operator-(T t, UnitCell frac) {
-    return t -= frac;
-  }
+    Derived operator-(UnitCell frac) {
+      Derived tmp {derived()};
+      return tmp -= frac;
+    }
+
+  protected:
+    const Derived &derived() const {
+      return *static_cast<const Derived *>(this);
+    }
+  };
 
   /* -- UnitCellCoord Declarations ------------------------------------- */
 
@@ -65,7 +66,7 @@ namespace CASM {
   ///
   /// - Represent a crystal site using UnitCell indices and sublattice index
   ///
-  class UnitCellCoord : public Comparisons<UnitCellCoord> {
+  class UnitCellCoord : public Comparisons<UnitCellCoord>, public Translatable<UnitCellCoord> {
 
   public:
 
