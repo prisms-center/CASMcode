@@ -28,10 +28,12 @@ namespace CASM {
     return (name == "VA" || name == "va" || name == "Va");
   }
 
-  class Specie {
+  class Specie : public Comparisons<Specie> {
   public:
     std::string name;
-    double mass, magmom, U, J; //Changed 05/10/13 -- was int
+    //BP: for current Kinetics logic, Specie is essentially "Atom"
+    //  (spherically symmetric, comparable by name only)
+    //  double mass, magmom, U, J; //Changed 05/10/13 -- was int
     Specie() { };
     explicit Specie(std::string init_name) : name(init_name) { };
 
@@ -39,10 +41,15 @@ namespace CASM {
       return CASM::is_vacancy(name);
     }
 
+    bool operator<(const Specie &RHS) const {
+      return name < RHS.name;
+    };
 
-    bool operator==(const Specie &RHS) const {
-      return
-        (name == RHS.name);
+  private:
+
+    friend Comparisons<Specie>;
+    bool _eq(const Specie &RHS) const {
+      return (name == RHS.name);
     };
 
   };
@@ -97,7 +104,9 @@ namespace CASM {
    *  @{
    */
 
-  class Molecule : public Array<AtomPosition> {
+  class Molecule :
+    public Array<AtomPosition>,
+    public Comparisons<Molecule> {
 
     Lattice const *m_home;
 
@@ -121,12 +130,18 @@ namespace CASM {
       return CASM::is_vacancy(name);
     };
 
+    /// \brief Check if Molecule is indivisible
+    ///
+    /// - Currently, always false
+    bool is_indivisible() const {
+      return false;
+    }
+
     Molecule &apply_sym(const SymOp &op);
     Molecule &apply_sym_no_trans(const SymOp &op);
 
     void set_lattice(const Lattice &new_lat, COORD_TYPE invariant_mode);
 
-    bool operator==(const Molecule &RHS) const;
     bool contains(const std::string &name) const;
 
     void read(std::istream &stream);
@@ -136,6 +151,16 @@ namespace CASM {
 
     // Lattice must be set already
     void from_json(const jsonParser &json);
+
+    /// \brief Name comparison via '<', '>', '<=', '>='
+    bool operator<(const Molecule &B) const;
+
+  private:
+
+    friend Comparisons<Molecule>;
+
+    /// \brief center and AtomPosition comparison via '==', '!='
+    bool _eq(const Molecule &B) const;
   };
 
   /// \brief Return an atomic Molecule with specified name and Lattice
