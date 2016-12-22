@@ -231,6 +231,39 @@ namespace CASM {
     void clear_occupation();
 
 
+    /// \brief Hold vectors of specie ids, for each occupant molecule
+    ///
+    /// - This will invalidate the Configuration's id
+    /// - specie id vectors for each site will be sized to match the current
+    ///   occupant molecule and set with value 0
+    void init_specie_id();
+
+    /// \brief Access specie ids
+    ///
+    /// - No guarantee is made that these vectors are the correct size
+    std::vector<std::vector<Index> > &specie_id();
+
+    /// \brief const Access specie ids
+    ///
+    /// - No guarantee is made that these vectors are the correct size
+    const std::vector<std::vector<Index> > &specie_id() const;
+
+    /// \brief Access specie ids
+    ///
+    /// - No guarantee is made that these vectors are the correct size
+    std::vector<Index> &specie_id(Index site_l);
+
+    /// \brief const Access specie ids
+    ///
+    /// - No guarantee is made that these vectors are the correct size
+    const std::vector<Index> &specie_id(Index site_l) const;
+
+    /// \brief Clear specie ids
+    ///
+    /// - This will invalidate the Configuration's id
+    void clear_specie_id();
+
+
     /// \brief Set all occupant displacements to (0.,0.,0.)
     ///
     /// - This will invalidate the Configuration's id

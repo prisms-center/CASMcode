@@ -93,6 +93,10 @@ namespace CASM {
       return m_deformation(i, j);
     }
 
+    const std::vector<std::vector<Index> > &specie_id() const {
+      return m_specie_id;
+    }
+
     bool has_deformation() const {
       return m_has_deformation;
     }
@@ -103,6 +107,10 @@ namespace CASM {
 
     bool has_occupation() const {
       return size() != 0 && occupation().size() == size();
+    }
+
+    bool has_specie_id() const {
+      return size() != 0 && specie_id().size() == size();
     }
 
     //**** MUTATORS ****
@@ -117,11 +125,17 @@ namespace CASM {
     /// set_deformation sets ConfigDoF::has_deformation() to true
     void set_deformation(const Eigen::Matrix3d &_deformation);
 
+    /// Access specie id data
+    std::vector<std::vector<Index> > &specie_id() {
+      return m_specie_id;
+    }
+
     void clear();
 
     void clear_occupation();
     void clear_displacement();
     void clear_deformation();
+    void clear_specie_id();
 
     void swap(ConfigDoF &RHS);
 
@@ -150,6 +164,8 @@ namespace CASM {
     Eigen::Matrix3d m_deformation;
 
     bool m_has_deformation;
+
+    std::vector<std::vector<Index> > m_specie_id;
 
     /// Tolerance used for transformation to canonical form -- used also for comparisons, since
     /// Since comparisons are only meaningful to within the tolerance used for finding the canonical form

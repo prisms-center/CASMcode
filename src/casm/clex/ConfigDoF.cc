@@ -52,6 +52,7 @@ namespace CASM {
     clear_occupation();
     clear_displacement();
     clear_deformation();
+    clear_specie_id();
   }
 
   void ConfigDoF::clear_occupation() {
@@ -67,12 +68,17 @@ namespace CASM {
     m_has_deformation = false;
   }
 
+  void ConfigDoF::clear_specie_id() {
+    specie_id().clear();
+  }
+
   //*******************************************************************************
 
   void ConfigDoF::swap(ConfigDoF &RHS) {
     _deformation().swap(RHS._deformation());
     _occupation().swap(RHS._occupation());
     _displacement().swap(RHS._displacement());
+    specie_id().swap(RHS.specie_id());
     std::swap(m_N, RHS.m_N);
     std::swap(m_tol, RHS.m_tol);
     std::swap(m_has_deformation, RHS.m_has_deformation);
@@ -130,6 +136,8 @@ namespace CASM {
       json["displacement"] = displacement();
     if(has_deformation())
       json["deformation"] = deformation();
+    if(has_specie_id())
+      json["specie_id"] = specie_id();
 
     return json;
   }
@@ -153,6 +161,8 @@ namespace CASM {
       CASM::from_json(_deformation(), json["deformation"]);
       m_has_deformation = true;
     }
+
+    json.get_if(specie_id(), "specie_id");
   }
 
   //*******************************************************************************
@@ -185,6 +195,11 @@ namespace CASM {
       dof.set_displacement(Eigen::MatrixXd(3, dof.size()));
       for(Index i = 0; i < dof.size(); i++)
         dof.disp(i) = new_disp.col(tperm[i]);
+    }
+
+    if(dof.has_specie_id()) {
+      // just haven't implemented this yet...
+      throw std::runtime_error("Error in apply(const PermuteIterator &it, ConfigDoF &dof): dof.has_specie_id() == true");
     }
     return dof;
   }

@@ -157,6 +157,48 @@ namespace CASM {
   }
 
   //*********************************************************************************
+
+  void Configuration::init_specie_id() {
+    _invalidate_id();
+    m_configdof.specie_id().resize(this->size());
+    for(Index i = 0; i < this->size(); ++i) {
+      m_configdof.specie_id()[i].resize(mol(i).size(), 0);
+    }
+  }
+
+  //*********************************************************************************
+
+  std::vector<std::vector<Index> > &Configuration::specie_id() {
+    _invalidate_id();
+    return m_configdof.specie_id();
+  }
+
+  //*********************************************************************************
+
+  const std::vector<std::vector<Index> > &Configuration::specie_id() const {
+    return m_configdof.specie_id();
+  }
+
+  //*********************************************************************************
+
+  std::vector<Index> &Configuration::specie_id(Index site_l) {
+    _invalidate_id();
+    return m_configdof.specie_id()[site_l];
+  }
+
+  //*********************************************************************************
+
+  const std::vector<Index> &Configuration::specie_id(Index site_l) const {
+    return m_configdof.specie_id()[site_l];
+  }
+
+  //*********************************************************************************
+
+  void Configuration::clear_specie_id() {
+    m_configdof.clear_specie_id();
+  }
+
+  //*********************************************************************************
   void Configuration::init_displacement() {
     set_displacement(displacement_matrix_t::Zero(3, this->size()));
   }
@@ -613,7 +655,7 @@ namespace CASM {
   }
 
   //*********************************************************************************
-  Index Configuration::linear_index(UnitCellCoord bijk) const {
+  Index Configuration::linear_index(const UnitCellCoord &bijk) const {
     return supercell().linear_index(bijk);
   }
 
