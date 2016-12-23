@@ -1,4 +1,6 @@
 kineticsincludedir=$(includedir)/casm/kinetics
-kineticsinclude_HEADERS=./include/casm/kinetics/DiffusionTransformationenum.hh\
-                        ./include/casm/kinetics/DoFTransformation.hh
+kineticsinclude_HEADERS=./include/casm/kinetics/DiffusionTransformation.hh\
+                        ./include/casm/kinetics/DiffusionTransformationenum.hh\
+                        ./include/casm/kinetics/DoFTransformation.hh\
+                        ./include/casm/kinetics/OccupationTransformation.hh
 					

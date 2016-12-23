@@ -3,8 +3,7 @@
 
 #include "casm/container/Counter.hh"
 #include "casm/container/InputEnumerator.hh"
-#include "casm/symmetry/SymCompare.hh"
-#include "casm/kinetics/DoFTransformation.hh"
+#include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
