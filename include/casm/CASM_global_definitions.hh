@@ -101,7 +101,8 @@ namespace CASM {
   /// - Default is equivalent to \code obj.apply_sym(f, args...) \endcode
   template<typename Object, typename Transform, typename...Args>
   Object &apply(const Transform &f, Object &obj, Args &&...args) {
-    return obj.apply_sym(f, std::forward<Args>(args)...);
+    obj.apply_sym(f, std::forward<Args>(args)...);
+    return obj;
   }
 
   /// Copy and apply a transformation
