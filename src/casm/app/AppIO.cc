@@ -1,6 +1,7 @@
 #include "casm/app/AppIO_impl.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
+#include "casm/kinetics/DiffusionTransformation.hh"
 
 namespace CASM {
 
@@ -426,27 +427,42 @@ namespace CASM {
 
   // ---------- Orbit<IntegralCluster> & ClexBasis IO ------------------------------------------------------------------
 
-
-  SitesPrinter::SitesPrinter(int _indent_space, char _delim, COORD_TYPE _mode) :
+  PrinterBase::PrinterBase(int _indent_space, char _delim, COORD_TYPE _mode) :
     indent_space(_indent_space),
     delim(_delim),
     mode(_mode) {}
 
-  std::string SitesPrinter::indent() const {
+  std::string PrinterBase::indent() const {
     return std::string(indent_space, ' ');
   }
 
-  void SitesPrinter::coord_mode(std::ostream &out) {
+  void PrinterBase::coord_mode(std::ostream &out) {
     out << "COORD_MODE = " << mode << std::endl << std::endl;
   }
 
-  void SitesPrinter::print_sites(const IntegralCluster &clust, std::ostream &out) {
+
+  const std::string Printer<IntegralCluster>::element_name = "Clusters";
+
+  void Printer<IntegralCluster>::print(const IntegralCluster &clust, std::ostream &out) {
+    COORD_TYPE _mode = mode;
+    if(_mode == COORD_DEFAULT) {
+      _mode = COORD_MODE::CHECK();
+    }
+    COORD_MODE printer_mode(_mode);
     for(const auto &coord : clust) {
       out << indent() << indent() << indent();
-      out.setf(std::ios::showpoint, std::ios_base::fixed);
-      out.precision(5);
-      out.width(9);
-      coord.site().print(out);
+      if(_mode == INTEGRAL) {
+        out << coord;
+        out << " ";
+        coord.site().site_occupant().print(out);
+        out << std::flush;
+      }
+      else {
+        out.setf(std::ios::showpoint, std::ios_base::fixed);
+        out.precision(5);
+        out.width(9);
+        coord.site().print(out);
+      }
       if(delim)
         out << delim;
       out << std::flush;
@@ -491,5 +507,10 @@ namespace CASM {
   ORBIT_SET_INST(PrimPeriodicIntegralClusterOrbit)
   ORBIT_SET_INST(ScelPeriodicIntegralClusterOrbit)
 
+
+#define DIFFTRANS_VECTOR_INST(ORBIT) \
+  PRINT_CLUST_INST(_VECTOR_IT(ORBIT), _VECTOR_INSERTER(ORBIT), PrototypePrinter<Kinetics::DiffusionTransformation>)
+
+  DIFFTRANS_VECTOR_INST(Kinetics::PrimPeriodicDiffTransOrbit)
 }
 

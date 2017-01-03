@@ -112,34 +112,66 @@ namespace CASM {
 
   // ---------- casm bset --orbits, --clusters, --functions --------------------------------------
 
-  struct SitesPrinter {
+  struct PrinterBase {
 
     int indent_space;
     char delim;
     COORD_TYPE mode;
 
 
-    SitesPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC);
+    PrinterBase(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC);
 
     std::string indent() const;
 
     void coord_mode(std::ostream &out);
 
-    void print_sites(const IntegralCluster &clust, std::ostream &out);
   };
 
-  /// \brief Print Orbit<IntegralCluster, SymCompareType>, including only prototypes
-  struct ProtoSitesPrinter : public SitesPrinter {
+  template<typename _Element>
+  struct Printer : public PrinterBase {
 
-    ProtoSitesPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
-      SitesPrinter(_indent_space, _delim, _mode) {}
+    typedef _Element Element;
+
+    Printer(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      PrinterBase(_indent_space, _delim, _mode) {}
+
+    void print(const Element &element, std::ostream &out) {
+      COORD_MODE printer_mode(mode);
+      out << element;
+    }
+  };
+
+  template<>
+  struct Printer<IntegralCluster> : public PrinterBase {
+
+    typedef IntegralCluster Element;
+    static const std::string element_name;
+
+    Printer(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      PrinterBase(_indent_space, _delim, _mode) {}
+
+    void print(const Element &element, std::ostream &out);
+  };
+
+  typedef Printer<IntegralCluster> SitesPrinter;
+
+  /// \brief Print Orbit<IntegralCluster, SymCompareType>, including only prototypes
+  template<typename _Element>
+  struct PrototypePrinter : public Printer<_Element> {
+
+    using Printer<_Element>::indent;
+    using Printer<_Element>::element_name;
+    using Printer<_Element>::print;
+
+    PrototypePrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      Printer<_Element>(_indent_space, _delim, _mode) {}
 
 
     template<typename OrbitType>
     void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
       out << indent() << indent() << "Prototype" << " of " << orbit.size()
-          << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
-      print_sites(orbit.prototype(), out);
+          << " Equivalent " << element_name << " in Orbit " << orbit_index << std::endl;
+      print(orbit.prototype(), out);
     }
 
     /// \brief Print to JSON
@@ -154,19 +186,26 @@ namespace CASM {
     }
   };
 
-  /// \brief Print Orbit<IntegralCluster, SymCompareType>, including all equivalents
-  struct FullSitesPrinter : public SitesPrinter {
+  typedef PrototypePrinter<IntegralCluster> ProtoSitesPrinter;
 
-    FullSitesPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
-      SitesPrinter(_indent_space, _delim, _mode) {}
+  /// \brief Print Orbit<IntegralCluster, SymCompareType>, including all equivalents
+  template<typename _Element>
+  struct FullOrbitPrinter : public Printer<_Element> {
+
+    using Printer<_Element>::indent;
+    using Printer<_Element>::element_name;
+    using Printer<_Element>::print;
+
+    FullOrbitPrinter(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = FRAC) :
+      Printer<_Element>(_indent_space, _delim, _mode) {}
 
 
     template<typename OrbitType>
     void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
       for(Index equiv_index = 0; equiv_index != orbit.size(); ++equiv_index) {
         out << indent() << indent() << equiv_index << " of " << orbit.size()
-            << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
-        print_sites(orbit.prototype(), out);
+            << " Equivalent " << element_name << " in Orbit " << orbit_index << std::endl;
+        print(orbit.prototype(), out);
       }
     }
 
@@ -182,6 +221,8 @@ namespace CASM {
       return json;
     }
   };
+
+  typedef FullOrbitPrinter<IntegralCluster> FullSitesPrinter;
 
   /// \brief Print Orbit<IntegralCluster, SymCompareType> & ClexBasis, including prototypes and prototype basis functions
   struct ProtoFuncsPrinter : public SitesPrinter {
@@ -199,7 +240,7 @@ namespace CASM {
     void operator()(const OrbitType &orbit, std::ostream &out, Index orbit_index, Index Norbits) {
       out << indent() << indent() << "Prototype" << " of " << orbit.size()
           << " Equivalent Clusters in Orbit " << orbit_index << std::endl;
-      print_sites(orbit.prototype(), out);
+      print(orbit.prototype(), out);
 
       throw std::runtime_error("Error printing basis functions: ProtoFuncsPrinter not implemented");
       //print_clust_basis(out, nf, 8, '\n');

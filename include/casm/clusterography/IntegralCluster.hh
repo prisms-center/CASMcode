@@ -31,6 +31,9 @@ namespace CASM {
   ///
   typedef CoordCluster<UnitCellCoord> IntegralCluster;
 
+  /// \brief Print IntegralCluster to stream, using default Printer<IntegralCluster>
+  std::ostream &operator<<(std::ostream &sout, const IntegralCluster &clust);
+
   /// \brief Write IntegralCluster to JSON object
   jsonParser &to_json(const IntegralCluster &clust, jsonParser &json);
 

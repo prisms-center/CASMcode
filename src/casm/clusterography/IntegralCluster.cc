@@ -1,7 +1,15 @@
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/app/AppIO.hh"
 
 namespace CASM {
+
+  /// \brief Print IntegralCluster to stream, using default Printer<IntegralCluster>
+  std::ostream &operator<<(std::ostream &sout, const IntegralCluster &clust) {
+    SitesPrinter printer {6, '\n', INTEGRAL};
+    printer.print(clust, sout);
+    return sout;
+  }
 
   /// \brief Write IntegralCluster to JSON object
   ///
