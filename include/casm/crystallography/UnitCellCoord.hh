@@ -100,8 +100,11 @@ namespace CASM {
     /// \brief Get corresponding coordinate
     Coordinate coordinate() const;
 
-    /// \brief Get corresponding site
+    /// \brief Get a copy of corresponding site
     Site site() const;
+
+    /// \brief Get reference to corresponding sublattice site in the unit structure
+    const Site &sublat_site() const;
 
     UnitCell &unitcell();
     const UnitCell &unitcell() const;

@@ -17,6 +17,16 @@ namespace CASM {
     return unit().basis[sublat()] + Coordinate(unitcell().cast<double>(), unit().lattice(), FRAC);
   }
 
+  /// \brief Get reference to corresponding sublattice site in the unit structure
+  const Site &UnitCellCoord::sublat_site() const {
+    if(sublat() < 0 || sublat() >= unit().basis.size()) {
+      std::cerr << "CRITICAL ERROR: In BasicStructure<CoordType>::get_site(), UnitCellCoord " << *this << " is out of bounds!\n"
+                << "                Cannot index basis, which contains " << unit().basis.size() << " objects.\n";
+      throw std::runtime_error("Error: in 'UnitCellCoord::site()': Cannot convert UnitCellCoord to Site");
+    }
+    return unit().basis[sublat()];
+  }
+
   UnitCellCoord &UnitCellCoord::apply_sym(const SymOp &op) {
     const SymBasisPermute &rep = *op.get_basis_permute_rep(unit().basis_permutation_symrep_ID());
 
