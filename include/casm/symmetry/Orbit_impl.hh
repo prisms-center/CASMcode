@@ -2,6 +2,7 @@
 #define CASM_Orbit_impl
 
 #include "casm/symmetry/Orbit.hh"
+#include "casm/misc/algorithm.hh"
 
 namespace CASM {
 
