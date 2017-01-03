@@ -1,9 +1,21 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/symmetry/Orbit_impl.hh"
 
 namespace CASM {
 
+  template class Orbit<Kinetics::DiffusionTransformation, Kinetics::PrimPeriodicDiffTransSymCompare>;
+
   namespace Kinetics {
+
+    namespace {
+      std::ostream &operator<<(std::ostream &sout, const std::map<Specie, Index> &count) {
+        for(const auto &t : count) {
+          sout << "  " << t.first.name << ": " << t.second << std::endl;
+        }
+        return sout;
+      }
+    }
 
     // SpecieLocation
 
@@ -11,6 +23,39 @@ namespace CASM {
       uccoord(_uccoord),
       occ(_occ),
       pos(_pos) {}
+
+    /// \brief Print DiffusionTransformationInvariants
+    std::ostream &operator<<(std::ostream &sout, const SpecieLocation &obj) {
+      sout << obj.uccoord << " : " << obj.occ << " " << obj.pos;
+      return sout;
+    }
+
+  }
+
+  jsonParser &to_json(const Kinetics::SpecieLocation &obj, jsonParser &json) {
+    json.put_obj();
+    json["uccoord"] = obj.uccoord;
+    json["occ"] = obj.occ;
+    json["pos"] = obj.pos;
+    return json;
+  }
+
+  Kinetics::SpecieLocation jsonConstructor<Kinetics::SpecieLocation>::from_json(const jsonParser &json, const Structure &prim) {
+    return Kinetics::SpecieLocation {
+      json["uccoord"].get<UnitCellCoord>(prim),
+      json["occ"].get<Index>(),
+      json["pos"].get<Index>()
+    };
+  }
+
+  void from_json(Kinetics::SpecieLocation &obj, const jsonParser &json) {
+    from_json(obj.uccoord, json["uccoord"]);
+    from_json(obj.occ, json["occ"]);
+    from_json(obj.pos, json["pos"]);
+  }
+
+
+  namespace Kinetics {
 
 
     // SpecieTrajectory
@@ -43,6 +88,30 @@ namespace CASM {
       using std::swap;
       swap(from, to);
     }
+
+  }
+
+  jsonParser &to_json(const Kinetics::SpecieTrajectory &traj, jsonParser &json) {
+    json.put_obj();
+    to_json(traj.to, json["to"]);
+    to_json(traj.from, json["from"]);
+    return json;
+  }
+
+  Kinetics::SpecieTrajectory jsonConstructor<Kinetics::SpecieTrajectory>::from_json(const jsonParser &json, const Structure &prim) {
+    return Kinetics::SpecieTrajectory {
+      json["from"].get<Kinetics::SpecieLocation>(prim),
+      json["to"].get<Kinetics::SpecieLocation>(prim)
+    };
+  }
+
+  void from_json(Kinetics::SpecieTrajectory &traj, const jsonParser &json) {
+    from_json(traj.from, json["from"]);
+    from_json(traj.to, json["to"]);
+  }
+
+
+  namespace Kinetics {
 
 
     // DiffusionTransformationInvariants
@@ -90,16 +159,22 @@ namespace CASM {
       m_tol(tol) {}
 
     PrimPeriodicDiffTransSymCompare::Element PrimPeriodicDiffTransSymCompare::prepare_impl(const Element &A) const {
-      Element tmp = A.prepared();
-      return tmp -= tmp.occ_transform()[0].uccoord.unitcell();
+      if(A.occ_transform().size()) {
+        Element tmp = A.sorted();
+        tmp -= tmp.occ_transform()[0].uccoord.unitcell();
+        return tmp;
+      }
+      else {
+        return A;
+      }
     }
 
     bool PrimPeriodicDiffTransSymCompare::compare_impl(const Element &A, const Element &B) const {
       return A < B;
     }
 
-    bool PrimPeriodicDiffTransSymCompare::invariants_compare_impl(const Element &A, const Element &B) const {
-      return CASM::compare(A.invariants(), B.invariants(), tol());
+    bool PrimPeriodicDiffTransSymCompare::invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const {
+      return CASM::compare(A, B, tol());
     }
 
 
@@ -151,20 +226,11 @@ namespace CASM {
     /// - no indivisble molecules are broken up,
     /// - some change occurs on every unitcell site (not a sub-hopcluster)
     bool DiffusionTransformation::is_valid_specie_traj() const {
-      if(!_specie_types_map()) {
-        return false;
-      }
-      if(_breaks_indivisible_mol()) {
-        return false;
-      }
-      if(_is_subcluster_transformation()) {
-        return false;
-      }
-      return true;
+      return specie_types_map() && !breaks_indivisible_mol() && !is_subcluster_transformation();
     }
 
     /// \brief Check if any SpecieTrajectory maps a Specie onto the wrong type
-    bool DiffusionTransformation::_specie_types_map() const {
+    bool DiffusionTransformation::specie_types_map() const {
       return std::all_of(
                specie_traj().begin(),
                specie_traj().end(),
@@ -174,7 +240,7 @@ namespace CASM {
     }
 
     /// \brief Check if any indivisible Molecules are broken
-    bool DiffusionTransformation::_breaks_indivisible_mol() const {
+    bool DiffusionTransformation::breaks_indivisible_mol() const {
 
       // sort by 'from' uccoord (this may not typically be necessary, but let's be safe)
       auto tmp = specie_traj();
@@ -192,8 +258,18 @@ namespace CASM {
 
     /// \brief Check if removing any site would leave the DiffusionTransformation unchanged
     ///
-    /// - Is a subcluster if there is any unitcell site on which no species change positions
-    bool DiffusionTransformation::_is_subcluster_transformation() const {
+    /// - Is a subcluster if there is any unitcell site on which no species change positions,
+    ///   of if any site begins and ends as a vacancy
+    bool DiffusionTransformation::is_subcluster_transformation() const {
+
+      // check if any vacancy transforms into a "different" vacancy
+      auto is_va_to_va = [&](const OccupationTransformation & t) {
+        return t.from_mol().is_vacancy() && t.to_mol().is_vacancy();
+      };
+
+      if(std::any_of(m_occ_transform.begin(), m_occ_transform.end(), is_va_to_va)) {
+        return true;
+      }
 
       // sort SpecieTrajectory by 'from' molecule
       typedef std::map<UnitCellCoord, std::vector<SpecieTrajectory> > map_type;
@@ -209,75 +285,13 @@ namespace CASM {
         });
       };
 
-      // check if any Molecule is unchanged
+      // check if any Molecule is completely unchanged
       return std::any_of(m.begin(), m.end(), is_no_change_mol);
     }
 
     /// \brief Check if occ_transform and specie_traj are valid
     bool DiffusionTransformation::is_valid() const {
       return is_valid_occ_transform() && is_valid_specie_traj();
-    }
-
-    /// \brief Check if in canonical form
-    ///
-    /// - Uses prim factor group
-    /// - Being in canonical form does not imply that this is sorted
-    bool DiffusionTransformation::is_canonical() const {
-      return is_canonical(prim().factor_group());
-    }
-
-    /// \brief Check if in canonical form
-    ///
-    /// - Being in canonical form does not imply that this is sorted
-    bool DiffusionTransformation::is_canonical(const SymGroup &g) const {
-      return std::none_of(
-               g.begin(),
-               g.end(),
-      [&](const SymOp & op) {
-        return *this < this->copy_apply_sym(op);
-      });
-    }
-
-    /// \brief Returns the operation that applied to *this returns the canonical form
-    ///
-    /// - Uses prim factor group
-    SymOp DiffusionTransformation::to_canonical() const {
-      return to_canonical(prim().factor_group());
-    }
-
-    /// \brief Returns the operation that applied to *this returns the canonical form
-    SymOp DiffusionTransformation::to_canonical(const SymGroup &g) const {
-      auto it = std::max_element(
-                  g.begin(),
-                  g.end(),
-      [&](const SymOp & op_A, const SymOp & op_B) {
-        return this->copy_apply_sym(op_A) < this->copy_apply_sym(op_B);
-      });
-      return *it;
-    }
-
-    /// \brief Returns the operation that applied to the the canonical form returns *this
-    ///
-    /// - Uses prim factor group
-    SymOp DiffusionTransformation::from_canonical() const {
-      return from_canonical(prim().factor_group());
-    }
-
-    /// \brief Returns the operation that applied to the the canonical form returns *this
-    SymOp DiffusionTransformation::from_canonical(const SymGroup &g) const {
-      return to_canonical(g).inverse();
-    }
-
-    /// \brief Return canonical form
-    ///
-    /// - Uses prim factor group
-    DiffusionTransformation DiffusionTransformation::canonical_form() const {
-      return canonical_form(prim().factor_group());
-    }
-
-    /// \brief Return canonical form
-    DiffusionTransformation DiffusionTransformation::canonical_form(const SymGroup &g) const {
-      return this->copy_apply_sym(to_canonical(g));
     }
 
     std::vector<OccupationTransformation> &DiffusionTransformation::occ_transform() {
@@ -325,16 +339,16 @@ namespace CASM {
     /// - lexicographic comparison of [size, occ_transform, specie_traj], for the sorted
     ///   versions of this and B.
     bool DiffusionTransformation::operator<(const DiffusionTransformation &B) const {
-      return this->prepared()._lt(B.prepared());
+      return this->sorted()._lt(B.sorted());
     }
 
-    /// \brief Puts this in a prepared form, to prepare for comparisons
+    /// \brief Puts this in a sorted form, to enable comparisons
     ///
     /// - the forward and reverse occ_transform and specie_traj are sorted in
     ///   ascending order
     /// - this becomes the minimum of the forward and reverse
     ///
-    DiffusionTransformation &DiffusionTransformation::prepare() {
+    DiffusionTransformation &DiffusionTransformation::sort() {
       _forward_sort();
       DiffusionTransformation rev {*this};
       rev.reverse();
@@ -347,16 +361,24 @@ namespace CASM {
 
     /// \brief Returns the sorted version of this
     ///
-    DiffusionTransformation DiffusionTransformation::prepared() const {
+    DiffusionTransformation DiffusionTransformation::sorted() const {
       DiffusionTransformation tmp {*this};
-      return tmp.prepare();
+      return tmp.sort();
     }
 
-    DiffusionTransformation DiffusionTransformation::copy_apply_sym(const SymOp &op) const {
-      DiffusionTransformation t {*this};
-      t.apply_sym(op);
-      return t;
+    /// \brief Check if sorted
+    bool DiffusionTransformation::is_sorted() const {
+      DiffusionTransformation _tmp = sorted();
+      return !this->_lt(_tmp) && !_tmp._lt(*this);
     }
+
+    /*
+        DiffusionTransformation DiffusionTransformation::copy_apply_sym(const SymOp &op) const {
+          DiffusionTransformation t {*this};
+          t.apply_sym(op);
+          return t;
+        }
+    */
 
     Configuration &DiffusionTransformation::apply_to_impl(Configuration &config) const {
 
@@ -504,7 +526,7 @@ namespace CASM {
     std::map<Specie, Index> DiffusionTransformation::_from_specie_count() const {
       std::map<Specie, Index> _specie_count = _empty_specie_count();
       for(const auto &t : m_occ_transform) {
-        const Molecule &mol = t.uccoord.site().site_occupant()[t.from_value];
+        const Molecule &mol = t.uccoord.sublat_site().site_occupant()[t.from_value];
         for(const AtomPosition &specie_pos : mol) {
           _specie_count[specie_pos.specie]++;
         }
@@ -515,7 +537,7 @@ namespace CASM {
     std::map<Specie, Index> DiffusionTransformation::_to_specie_count() const {
       std::map<Specie, Index> _specie_count = _empty_specie_count();
       for(const auto &t : m_occ_transform) {
-        const Molecule &mol = t.uccoord.site().site_occupant()[t.to_value];
+        const Molecule &mol = t.uccoord.sublat_site().site_occupant()[t.to_value];
         for(const AtomPosition &specie_pos : mol) {
           _specie_count[specie_pos.specie]++;
         }
@@ -532,6 +554,77 @@ namespace CASM {
       return _specie_count;
     }
 
+    /// \brief Print DiffusionTransformation to stream, using default Printer<Kinetics::DiffusionTransformation>
+    std::ostream &operator<<(std::ostream &sout, const DiffusionTransformation &trans) {
+      Printer<Kinetics::DiffusionTransformation> printer;
+      printer.print(trans, sout);
+      return sout;
+    }
   }
+
+  /// \brief Write DiffusionTransformation to JSON object
+  jsonParser &to_json(const Kinetics::DiffusionTransformation &trans, jsonParser &json) {
+    json.put_obj();
+    json["occ_transform"].put_array(trans.occ_transform().begin(), trans.occ_transform().end());
+    json["specie_traj"].put_array(trans.specie_traj().begin(), trans.specie_traj().end());
+    return json;
+  }
+
+  Kinetics::DiffusionTransformation jsonConstructor<Kinetics::DiffusionTransformation>::from_json(const jsonParser &json, const Structure &prim) {
+    Kinetics::DiffusionTransformation trans {prim};
+    CASM::from_json(trans, json, prim);
+    return trans;
+  }
+
+  /// \brief Read from JSON
+  void from_json(Kinetics::DiffusionTransformation &trans, const jsonParser &json, const Structure &prim) {
+    if(json["occ_transform"].size() > 0) {
+      from_json(
+        trans.occ_transform(),
+        json["occ_transform"],
+        json["occ_transform"][0].get<Kinetics::OccupationTransformation>(prim));
+    }
+    if(json["specie_traj"].size() > 0) {
+      from_json(
+        trans.specie_traj(),
+        json["specie_traj"],
+        json["specie_traj"][0].get<Kinetics::SpecieTrajectory>(prim));
+    }
+  }
+
+  const std::string Printer<Kinetics::DiffusionTransformation>::element_name = "DiffusionTransformation";
+
+  void Printer<Kinetics::DiffusionTransformation>::print(const Kinetics::DiffusionTransformation &trans, std::ostream &out) {
+    COORD_MODE printer_mode(mode);
+
+    if(trans.is_valid()) {
+      for(const auto &traj : trans.specie_traj()) {
+        out << indent() << indent() << indent();
+        out << traj.from.specie().name + ": " << traj.from << "  ->  " << traj.to;
+
+        if(delim)
+          out << delim;
+        out << std::flush;
+      }
+    }
+    else {
+      out << indent() << indent() << indent() << "occupation transformation:" << delim;
+      for(const auto &t : trans.occ_transform()) {
+        out << t;
+      }
+      out << indent() << indent() << indent() << "specie trajectory:" << delim;
+      for(const auto &traj : trans.specie_traj()) {
+        out << indent() << indent() << indent();
+        out << traj.from << " (" << traj.from.specie().name << ")";
+        out << "  ->  ";
+        out << traj.to << " (" << traj.to.specie().name << ")";
+
+        if(delim)
+          out << delim;
+        out << std::flush;
+      }
+    }
+  }
+
 }
 

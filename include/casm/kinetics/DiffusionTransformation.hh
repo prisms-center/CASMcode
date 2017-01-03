@@ -8,6 +8,8 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clusterography/ClusterInvariants.hh"
 #include "casm/clusterography/IntegralCluster.hh"
+#include "casm/casm_io/jsonParser.hh"
+#include "casm/app/AppIO.hh"
 
 namespace CASM {
 
@@ -35,7 +37,7 @@ namespace CASM {
       }
 
       const Molecule &mol() const {
-        return uccoord.site().site_occupant()[occ];
+        return uccoord.sublat_site().site_occupant()[occ];
       }
 
       const Specie &specie() const {
@@ -48,6 +50,24 @@ namespace CASM {
         return std::make_tuple(uccoord, occ, pos);
       }
     };
+
+    /// \brief Print DiffusionTransformationInvariants
+    std::ostream &operator<<(std::ostream &sout, const SpecieLocation &obj);
+
+  }
+
+  jsonParser &to_json(const Kinetics::SpecieLocation &obj, jsonParser &json);
+
+  template<>
+  struct jsonConstructor<Kinetics::SpecieLocation> {
+
+    static Kinetics::SpecieLocation from_json(const jsonParser &json, const Structure &prim);
+  };
+
+  void from_json(Kinetics::SpecieLocation &obj, const jsonParser &json);
+
+
+  namespace Kinetics {
 
     /// \brief Describes how one specie moves
     class SpecieTrajectory : public Comparisons<SpecieTrajectory> {
@@ -86,6 +106,20 @@ namespace CASM {
       }
 
     };
+  }
+
+  jsonParser &to_json(const Kinetics::SpecieTrajectory &traj, jsonParser &json);
+
+  template<>
+  struct jsonConstructor<Kinetics::SpecieTrajectory> {
+
+    static Kinetics::SpecieTrajectory from_json(const jsonParser &json, const Structure &prim);
+  };
+
+  void from_json(Kinetics::SpecieTrajectory &traj, const jsonParser &json);
+
+
+  namespace Kinetics {
 
     class DiffusionTransformation;
 
@@ -154,11 +188,20 @@ namespace CASM {
 
     private:
 
+      friend class SymCompare<PrimPeriodicDiffTransSymCompare>;
+
       Element prepare_impl(const Element &A) const;
 
       bool compare_impl(const Element &A, const Element &B) const;
 
-      bool invariants_compare_impl(const Element &A, const Element &B) const;
+      bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
+
+      /// \brief Apply symmetry to this
+      ///
+      /// - Affects no change
+      void apply_sym_impl(const SymOp &op) {
+        return;
+      }
 
       double m_tol;
 
@@ -200,21 +243,16 @@ namespace CASM {
 
       bool is_valid_occ_transform() const;
 
+      /// \brief Check specie_types_map() && !breaks_indivisible_mol() && !is_subcluster_transformation()
       bool is_valid_specie_traj() const;
 
+      bool specie_types_map() const;
+
+      bool breaks_indivisible_mol() const;
+
+      bool is_subcluster_transformation() const;
+
       bool is_valid() const;
-
-      bool is_canonical() const;
-      bool is_canonical(const SymGroup &g) const;
-
-      SymOp to_canonical() const;
-      SymOp to_canonical(const SymGroup &g) const;
-
-      SymOp from_canonical() const;
-      SymOp from_canonical(const SymGroup &g) const;
-
-      DiffusionTransformation canonical_form() const;
-      DiffusionTransformation canonical_form(const SymGroup &g) const;
 
       std::vector<OccupationTransformation> &occ_transform();
       const std::vector<OccupationTransformation> &occ_transform() const;
@@ -225,13 +263,16 @@ namespace CASM {
       const IntegralCluster &cluster() const;
       const std::map<Specie, Index> &specie_count() const;
 
+      /// \brief Compare DiffusionTransformation
+      ///
+      /// - Comparison is made using the sorted forms
       bool operator<(const DiffusionTransformation &B) const;
 
-      DiffusionTransformation &prepare();
+      DiffusionTransformation &sort();
 
-      DiffusionTransformation prepared() const;
+      DiffusionTransformation sorted() const;
 
-      DiffusionTransformation copy_apply_sym(const SymOp &op) const;
+      bool is_sorted() const;
 
       /// \brief Return the cluster size
       Index size() const {
@@ -260,12 +301,6 @@ namespace CASM {
 
       DiffusionTransformation *_clone() const override;
 
-      bool _specie_types_map() const;
-
-      bool _breaks_indivisible_mol() const;
-
-      bool _is_subcluster_transformation() const;
-
       void _forward_sort();
 
       bool _lt(const DiffusionTransformation &B) const;
@@ -289,7 +324,38 @@ namespace CASM {
       mutable notstd::cloneable_ptr<std::map<Specie, Index> > m_specie_count;
 
     };
+
+    /// \brief Print DiffusionTransformation to stream, using default Printer<Kinetics::DiffusionTransformation>
+    std::ostream &operator<<(std::ostream &sout, const DiffusionTransformation &trans);
+
+    typedef Orbit<DiffusionTransformation, PrimPeriodicDiffTransSymCompare> PrimPeriodicDiffTransOrbit;
+
   }
+
+  /// \brief Write DiffusionTransformation to JSON object
+  jsonParser &to_json(const Kinetics::DiffusionTransformation &trans, jsonParser &json);
+
+  template<>
+  struct jsonConstructor<Kinetics::DiffusionTransformation> {
+
+    static Kinetics::DiffusionTransformation from_json(const jsonParser &json, const Structure &prim);
+  };
+
+  /// \brief Read from JSON
+  void from_json(Kinetics::DiffusionTransformation &trans, const jsonParser &json, const Structure &prim);
+
+  template<>
+  struct Printer<Kinetics::DiffusionTransformation> : public PrinterBase {
+
+    typedef Kinetics::DiffusionTransformation Element;
+    static const std::string element_name;
+
+    Printer(int _indent_space = 6, char _delim = '\n', COORD_TYPE _mode = INTEGRAL) :
+      PrinterBase(_indent_space, _delim, _mode) {}
+
+    void print(const Element &element, std::ostream &out);
+  };
+
 }
 
 #endif

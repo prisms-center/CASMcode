@@ -4,10 +4,20 @@ namespace CASM {
 
   namespace Kinetics {
 
-    /// \brief Construct with an IntegralCluster, and generating_grp
-    DiffusionTransformationEnum::DiffusionTransformationEnum(const IntegralCluster &clust, const SymGroup &generating_grp) :
+    namespace {
+
+      std::ostream &operator<<(std::ostream &sout, const IntegralCluster &clust) {
+        SitesPrinter printer;
+        printer.print(clust, std::cout);
+        sout << std::endl;
+        return sout;
+      }
+    }
+
+    /// \brief Construct with an IntegralCluster
+    DiffusionTransformationEnum::DiffusionTransformationEnum(const IntegralCluster &clust) :
       m_cluster(clust),
-      m_generating_grp(&generating_grp) {
+      m_current(new DiffusionTransformation(clust.prim())) {
 
       // initialize to/from counter
       _init_occ_counter();
@@ -18,7 +28,8 @@ namespace CASM {
 
       // set initial DiffTrans
       _set_current();
-      if(!(m_current->is_valid() && m_current->is_canonical(*m_generating_grp))) {
+
+      if(!m_current->is_valid()) {
         increment();
       }
 
@@ -36,46 +47,40 @@ namespace CASM {
     /// Implements increment
     void DiffusionTransformationEnum::increment() {
 
-      // get the next valid canonical DiffTrans
+      // get the next valid DiffTrans
+      // to do so, get the next valid specie trajectory
       do {
 
-        // to do so, get the next valid specie trajectory
-        do {
+        // by taking a permutation of possible 'to' specie position
+        bool valid_perm = std::next_permutation(m_to_loc.begin(), m_to_loc.end());
 
-          // by taking a permutation of possible 'to' specie position
-          bool valid_perm = std::next_permutation(m_to_loc.begin(), m_to_loc.end());
+        // if no more possible specie trajectory,
+        if(!valid_perm) {
 
-          // if no more possible specie trajectory,
-          if(!valid_perm) {
-
-            // get next valid from/to occupation values
-            do {
-              m_occ_counter++;
-              _update_current_occ_transform();
-            }
-            while(m_occ_counter.valid() && m_current->is_valid_occ_transform());
-
-            // if no more possible from/to occupation values, return
-            if(!m_occ_counter.valid()) {
-              _invalidate();
-              return;
-            }
-            else {
-              m_from_loc = _init_from_loc(m_occ_counter());
-              m_to_loc = _init_to_loc(m_occ_counter());
-              _update_current_occ_transform();
-              _set_current_loc();
-            }
+          // get next valid from/to occupation values
+          do {
+            m_occ_counter++;
+            _update_current_occ_transform();
           }
-          _update_current_to_loc();
-        }
-        while(!m_current->is_valid_specie_traj());
+          while(m_occ_counter.valid() && !m_current->is_valid_occ_transform());
 
+          // if no more possible from/to occupation values, return
+          if(!m_occ_counter.valid()) {
+            _invalidate();
+            return;
+          }
+          else {
+            m_from_loc = _init_from_loc(m_occ_counter());
+            m_to_loc = _init_to_loc(m_occ_counter());
+            _update_current_occ_transform();
+            _set_current_loc();
+          }
+        }
+        _update_current_to_loc();
       }
-      while(!m_current->is_canonical(*m_generating_grp));
+      while(!m_current->is_valid_specie_traj());
 
       _increment_step();
-
     }
 
 
@@ -98,7 +103,7 @@ namespace CASM {
       std::vector<Index> init_occ(N * 2, 0);
       std::vector<Index> final_occ(N * 2);
       for(int i = 0; i < N; i++) {
-        final_occ[i] = cluster()[i].site().site_occupant().size();
+        final_occ[i] = cluster()[i].site().site_occupant().size() - 1;
         final_occ[i + N] = final_occ[i];
       }
       std::vector<Index> incr(N * 2, 1);

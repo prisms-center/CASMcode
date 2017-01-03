@@ -4,6 +4,7 @@
 #include "casm/container/Counter.hh"
 #include "casm/container/InputEnumerator.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
+#include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
@@ -13,21 +14,19 @@ namespace CASM {
     /// \brief Enumerate DiffusionTransformation for a particular IntegralCluster
     ///
     /// - InputEnumerator
-    /// - Outputs all unique, canonical DiffusionTransformation for a particular
-    ///   IntegralCluster and generating group
+    /// - Outputs all valid DiffusionTransformation for a particular
+    ///   IntegralCluster. Results may include duplicates, non-canonical, unsorted forms.
+    /// -
+    /// - To get unique orbits, see for example make_prim_periodic_diffusion_transformation_orbits
+    ///
     class DiffusionTransformationEnum : public InputEnumeratorBase<DiffusionTransformation> {
 
       // -- Required members -------------------
 
     public:
 
-      /// \brief Construct with an IntegralCluster, prim factor group, and SymCompare object
-      template<typename SymCompareType>
-      DiffusionTransformationEnum(const IntegralCluster &clust, const SymCompareType &sym_compare) :
-        DiffusionTransformationEnum(clust, invariant_subgroup(clust, clust.prim().factor_group(), sym_compare)) {}
-
-      /// \brief Construct with an IntegralCluster, and generating_grp
-      DiffusionTransformationEnum(const IntegralCluster &clust, const SymGroup &generating_grp);
+      /// \brief Construct with an IntegralCluster
+      DiffusionTransformationEnum(const IntegralCluster &clust);
 
       std::string name() const override {
         return enumerator_name;
@@ -72,9 +71,15 @@ namespace CASM {
       std::vector<SpecieLocation> m_to_loc;
 
       IntegralCluster m_cluster;
-      const SymGroup *m_generating_grp;
       notstd::cloneable_ptr<DiffusionTransformation> m_current;
     };
+
+    template<typename OrbitOutputIterator, typename IntegralClusterOrbitInputIterator>
+    OrbitOutputIterator make_prim_periodic_diff_trans_orbits(
+      IntegralClusterOrbitInputIterator begin,
+      IntegralClusterOrbitInputIterator end,
+      double xtal_tol,
+      OrbitOutputIterator result);
   }
 }
 
