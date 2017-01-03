@@ -83,11 +83,11 @@ namespace CASM {
     // **** Constructors ****
 
     /// Initial construction of a PrimClex, from a primitive Structure
-    PrimClex(const Structure &_prim, const Logging &logging = Logging());
+    explicit PrimClex(const Structure &_prim, const Logging &logging = Logging());
 
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-    PrimClex(const fs::path &_root, const Logging &logging = Logging());
+    explicit PrimClex(const fs::path &_root, const Logging &logging = Logging());
 
     /// Reload PrimClex data from settings
     void refresh(bool read_settings = false,
