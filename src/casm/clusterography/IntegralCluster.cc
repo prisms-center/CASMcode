@@ -63,8 +63,8 @@ namespace CASM {
     json.get_if(coord_type, "coordinate_mode");
 
     if(coord_type == INTEGRAL) {
-      UnitCellCoord coord(clust.prim());
-      from_json(clust.elements(), json[name], coord);
+      //UnitCellCoord coord(clust.prim());
+      from_json(clust.elements(), json[name], clust.prim());
     }
     else {
       clust.elements().clear();

@@ -6,6 +6,7 @@
 
 
 namespace CASM {
+  class Site;
   template<typename CoordType>
   class BasicStructure;
   class Structure;
@@ -30,13 +31,18 @@ namespace CASM {
     typedef std::vector<BSetOrbit>::const_iterator BSetOrbitIterator;
 
     /// \brief Initialize from Structure, in order to get Site DoF and global DoF info
-    ClexBasis(Structure const &_prim) {}
+    ClexBasis(Structure const &_prim);
+
+    Structure const &prim() const;
+
+    /// \brief Total number of basis sites in primitive cell
+    Index n_sublat() const;
 
     /// \brief Total number of BasisSet orbits
     Index n_orbits() const;
 
     /// \brief Total number of basis functions
-    Index n_funcions() const;
+    Index n_functions() const;
 
     /// \brief Const access of clust basis of orbit @param orbit_ind and equivalent cluster @param equiv_ind
     BasisSet const &clust_basis(Index orbit_ind,
@@ -96,6 +102,8 @@ namespace CASM {
     /// \brief Performs heavy lifting for populating site bases in m_site_bases
     void _populate_site_bases(Structure const &_prim);
 
+    Structure const *m_prim_ptr;
+
     notstd::cloneable_ptr<BasisBuilder> m_basis_builder;
 
     /// \brief Collection of all cluster BasisSets, one per cluster orbit
@@ -108,6 +116,7 @@ namespace CASM {
     std::map<DoFKey, BasisSet> m_global_bases;
 
     jsonParser m_bspecs;
+
   };
 
 
@@ -151,34 +160,6 @@ namespace CASM {
                           int space = 18,
                           char delim = '\n');
 
-  /// returns std::vector of std::string, each of which is
-  template<typename OrbitType>
-  std::vector<std::string> orbit_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
-                                                      OrbitType const &_clust_orbit,
-                                                      PrimNeighborList &_nlist,
-                                                      std::vector<std::unique_ptr<FunctionVisitor> > const &labelers);
-
-  /// \brief Print the flower function formulae for orbit @param _clust_orbit specified by BasisSet @param _bset_orbit
-  /// The pivot of the flower is specified by @param _sublat_index
-
-  /// The flower function of site @param _sublat_index and orbit @param _clust_orbit is obtained by summing the contributions of all
-  /// cluster functions from @param _bset_orbit that 'touch' the site (b,i,j,k)=(sublat_index,0,0,0), including functions that are
-  /// found by translations of equivalent clusters in @param _clust_orbit.
-  /// Depending on the orbit periodicity (i.e., Orbit::sym_compare()), not all translations of the cluster that touch (sublat_index,0,0,0)
-  /// are translationally equivalent. Thus, the result is the std::map that associates UnitCell (i.e, translation) to a set of formulae,
-  /// (i.e., std::vector<std::string>), with one formula per function in _clust_orbit[i] (some or all formulae may evaluate to zero, if
-  /// if @param _clust_orbit doesn't include site of type @param _sublat_index.
-
-  /// @param _bset_transfrom is a function/functor that applies a transformation to each _bset_orbit[i].
-  /// @param _nlist is the PrimNeighborList, used to index sites in the neighborhood
-  /// @param _labelers is a set of FunctionVisitors that can be used to control formatting of the formulae
-  template<typename OrbitType>
-  std::map< UnitCell, std::vector< std::string > > flower_function_cpp_strings(ClexBasis::BSetOrbit _bset_orbit, // used as temporary
-                                                                               std::function<BasisSet(BasisSet const &)> _bset_transform,
-                                                                               OrbitType const &_clust_orbit,
-                                                                               PrimNeighborList &_nlist,
-                                                                               std::vector<std::unique_ptr<FunctionVisitor> > const &labelers,
-                                                                               Index sublat_index);
 
   template<typename OrbitType>
   void print_proto_clust_funcs(ClexBasis const &_clex_basis,

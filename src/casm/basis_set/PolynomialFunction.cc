@@ -158,6 +158,12 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+
+  bool PolynomialFunction::_accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr/*=nullptr*/) const {
+    return visitor.visit(*this, home_basis_ptr);
+  }
+
+  //*******************************************************************************************
   bool PolynomialFunction::depends_on(const Function *test_func) const {
     Index sub_ind(0), arg_ind(0), linear_ind(0);
     for(sub_ind = 0; sub_ind < m_argument.size(); sub_ind++) {

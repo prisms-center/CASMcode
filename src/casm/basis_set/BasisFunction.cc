@@ -158,7 +158,22 @@ namespace CASM {
     //m_formula.clear();
     //m_tex_formula.clear();
     //}
+    return _accept(visitor, home_basis_ptr);// || is_updated;
+  }
 
+  //*******************************************************************************************
+
+  bool Function::accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr) const {
+    //bool is_updated(false);
+    //std::cout << "INSIDE BASE Function::accept\n";
+    // shared_basis
+    //for(Index i = 0; i < m_argument.size(); i++)
+    //is_updated = (m_argument[i]->accept(visitor)) || is_updated; // should we add && depends_on to first part?
+
+    //if(is_updated) {
+    //m_formula.clear();
+    //m_tex_formula.clear();
+    //}
     return _accept(visitor, home_basis_ptr);// || is_updated;
   }
 

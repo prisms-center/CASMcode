@@ -104,7 +104,9 @@ namespace CASM {
 
     //for derived accept method, always do:
     //accept(const FunctionVisitor &visitor){Function::accept(visitor); visitor->visit(*this);}
-    bool accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL);
+    bool accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = nullptr);
+    bool accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = nullptr) const;
+
     virtual void small_to_zero(double tol = TOL) = 0;
     virtual Index num_terms() const = 0;
     virtual double leading_coefficient() const = 0;
@@ -113,7 +115,7 @@ namespace CASM {
     virtual int class_ID() const = 0;
     virtual void scale(double scale_factor) = 0;
     virtual SparseTensor<double> const *get_coeffs()const {
-      return NULL;
+      return nullptr;
     }
 
     virtual Eigen::VectorXd const *get_eigen_coeffs() const {
@@ -122,6 +124,7 @@ namespace CASM {
 
     virtual double remote_eval() const = 0;
     virtual double remote_deval(const DoF::RemoteHandle &dvar) const = 0;
+
 
     virtual double cache_eval() const = 0;
     virtual double cache_deval(const DoF::RemoteHandle &dvar) const = 0;
@@ -189,12 +192,12 @@ namespace CASM {
     // Function::extend_hierarchy() is called at first object initialization of a new derived type
     static void extend_hierarchy() {
       for(Index i = 0; i < inner_prod_table.size(); i++) {
-        operation_table[i].push_back(NULL);
-        inner_prod_table[i].push_back(NULL);
+        operation_table[i].push_back(nullptr);
+        inner_prod_table[i].push_back(nullptr);
       }
 
-      inner_prod_table.push_back(Array<InnerProduct * > (inner_prod_table.size() + 1, NULL));
-      operation_table.push_back(Array<FunctionOperation * > (operation_table.size() + 1, NULL));
+      inner_prod_table.push_back(Array<InnerProduct * > (inner_prod_table.size() + 1, nullptr));
+      operation_table.push_back(Array<FunctionOperation * > (operation_table.size() + 1, nullptr));
     }
 
     Index func_ID;
@@ -248,7 +251,9 @@ namespace CASM {
 
     virtual Function *_apply_sym(const SymOp &op) = 0;
 
-    virtual bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL) = 0;
+    virtual bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = nullptr) = 0;
+
+    virtual bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = nullptr) const = 0;
 
     virtual bool _update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
       // default action: do nothing, report that function does not change (via 'return false');

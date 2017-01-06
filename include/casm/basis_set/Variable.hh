@@ -114,6 +114,7 @@ namespace CASM {
   protected:
     Function *_apply_sym(const SymOp &op);
     bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL);
+    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL) const;
 
     bool _update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs);
 

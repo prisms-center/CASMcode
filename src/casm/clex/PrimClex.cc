@@ -686,7 +686,7 @@ namespace CASM {
       bspecs_json.read(dir().bspecs(key.bset));
 
       ClexBasis &clex_basis = it->second;
-      clex_basis.generate(orbits.begin(), orbits.end(), bspecs_json, {"occupation"});
+      clex_basis.generate(orbits.begin(), orbits.end(), bspecs_json);
 
     }
 

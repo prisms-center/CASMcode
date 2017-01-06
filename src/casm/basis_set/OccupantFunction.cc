@@ -41,10 +41,13 @@ namespace CASM {
 
   //*******************************************************************************************
 
+  bool OccupantFunction::_accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr/*=NULL*/) {
+    return visitor.visit(*this, home_basis_ptr);
+  }
 
   //*******************************************************************************************
 
-  bool OccupantFunction::_accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr/*=NULL*/) {
+  bool OccupantFunction::_accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr/*=NULL*/) const {
     return visitor.visit(*this, home_basis_ptr);
   }
 
@@ -279,6 +282,13 @@ namespace CASM {
     m_formula.clear();
     refresh_ID();
     m_eval_table *= scale_factor;
+  }
+
+  //*******************************************************************************************
+
+
+  double OccupantFunction::discrete_eval(int state) const {
+    return m_eval_table[state];
   }
 
   //*******************************************************************************************

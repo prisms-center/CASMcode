@@ -465,7 +465,6 @@ namespace CASM {
   PRINT_CLUST_INST(ITERATOR,INSERTER,ProtoSitesPrinter) \
   PRINT_CLUST_INST(ITERATOR,INSERTER,FullSitesPrinter) \
   PRINT_CLUST_INST(ITERATOR,INSERTER,ProtoFuncsPrinter) \
-  template void print_site_basis_funcs<ITERATOR>(ITERATOR begin, ITERATOR end, const ClexBasis &clex_basis, std::ostream &out, COORD_TYPE mode); \
   template INSERTER read_clust<INSERTER, typename ORBIT::SymCompareType>(\
     INSERTER result,\
     const jsonParser &json,\

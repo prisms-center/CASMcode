@@ -7,6 +7,49 @@
 #include "casm/misc/CASM_math.hh"
 namespace CASM {
 
+  bool FunctionVisitor::visit(Variable const &host, BasisSet const *bset_ptr)const {
+    return this->_generic_visit(host, bset_ptr);
+  }
+
+  bool FunctionVisitor::visit(Variable &host, BasisSet const *bset_ptr)const {
+    return this->_generic_visit(host, bset_ptr);
+  }
+
+  bool FunctionVisitor::visit(OccupantFunction const &host, BasisSet const *bset_ptr)const {
+    return this->_generic_visit(host, bset_ptr);
+  }
+
+  bool FunctionVisitor::visit(OccupantFunction &host, BasisSet const *bset_ptr)const {
+    return this->_generic_visit(host, bset_ptr);
+  }
+
+  bool FunctionVisitor::visit(PolynomialFunction const &host, BasisSet const *bset_ptr)const {
+    return this->_generic_visit(host, bset_ptr);
+  }
+
+  bool FunctionVisitor::visit(PolynomialFunction &host, BasisSet const *bset_ptr)const {
+    return this->_generic_visit(host, bset_ptr);
+  }
+
+
+  bool FunctionVisitor::_generic_visit(Function &host, BasisSet const *bset_ptr)const {
+    Function const &const_host(host);
+    return this->_generic_visit(const_host, bset_ptr);
+  }
+
+  bool FunctionVisitor::_generic_visit(Function const &host, BasisSet const *bset_ptr)const {
+    return false;
+  }
+
+  bool OccFuncEvaluator::visit(OccupantFunction &host, BasisSet const *bset_ptr)const {
+    m_value = host.discrete_eval(m_state);
+    return false;
+  }
+
+  bool OccFuncEvaluator::visit(OccupantFunction const &host, BasisSet const *bset_ptr)const {
+    m_value = host.discrete_eval(m_state);
+    return false;
+  }
 
   OccFuncLabeler::OccFuncLabeler(const std::string &_template) {
     // parse _template into the Array m_sub_strings
@@ -207,29 +250,12 @@ namespace CASM {
     //std::cout << "substring expression: " << m_sub_strings << " and bset_name is " << m_bset_name << '\n';
   }
 
-  //*******************************************************************************************
-
-  bool SubExpressionLabeler::visit(Variable &host, BasisSet const *bset_ptr)const {
-    return _generic_visit(host, bset_ptr);
-  }
-
-  //*******************************************************************************************
-
-  bool SubExpressionLabeler::visit(OccupantFunction &host, BasisSet const *bset_ptr)const {
-    return _generic_visit(host, bset_ptr);
-  }
-
-  //*******************************************************************************************
-
-  bool SubExpressionLabeler::visit(PolynomialFunction &host, BasisSet const *bset_ptr)const {
-    return _generic_visit(host, bset_ptr);
-  }
 
   //*******************************************************************************************
 
   bool SubExpressionLabeler::_generic_visit(Function &host, BasisSet const *bset_ptr) const {
 
-    if(bset_ptr == NULL || (bset_ptr->name()).find(m_bset_name) != 0) {
+    if(bset_ptr == nullptr || (bset_ptr->name()).find(m_bset_name) != 0) {
       //std::cout << "_generic_visit(): bset_ptr is " << bset_ptr << "\n";
       return false;
     }

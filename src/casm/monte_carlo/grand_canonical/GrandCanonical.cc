@@ -191,8 +191,8 @@ namespace CASM {
 
       _log()  << "  Mutating site (linear index): " << mutating_site << "\n"
               << "  Mutating site (b, i, j, k): " << supercell().uccoord(mutating_site) << "\n"
-              << "  Current occupant: " << current_occupant << " (" << site_occ[current_occupant].name << ")\n"
-              << "  Proposed occupant: " << new_occupant << " (" << site_occ[new_occupant].name << ")\n\n"
+              << "  Current occupant: " << current_occupant << " (" << site_occ[current_occupant].name() << ")\n"
+              << "  Proposed occupant: " << new_occupant << " (" << site_occ[new_occupant].name() << ")\n\n"
 
               << "  beta: " << m_condition.beta() << "\n"
               << "  T: " << m_condition.temperature() << std::endl;
@@ -438,15 +438,13 @@ namespace CASM {
 
     // uses _clexulator(), nlist(), _configdof()
 
-    // Point the Clexulator to the right neighborhood and right ConfigDoF
-    _clexulator().set_config_occ(_configdof().occupation().begin());
-    _clexulator().set_nlist(nlist().sites(nlist().unitcell_index(mutating_site)).data());
-
     if(use_deltas) {
 
       // Calculate the change in correlations due to this event
       if(all_correlations) {
-        _clexulator().calc_delta_point_corr(sublat,
+        _clexulator().calc_delta_point_corr(_configdof(),
+                                            nlist().sites(nlist().unitcell_index(mutating_site)).data(),
+                                            sublat,
                                             current_occupant,
                                             new_occupant,
                                             event.dCorr().data());
@@ -454,7 +452,9 @@ namespace CASM {
       else {
         auto begin = _eci().index().data();
         auto end = begin + _eci().index().size();
-        _clexulator().calc_restricted_delta_point_corr(sublat,
+        _clexulator().calc_restricted_delta_point_corr(_configdof(),
+                                                       nlist().sites(nlist().unitcell_index(mutating_site)).data(),
+                                                       sublat,
                                                        current_occupant,
                                                        new_occupant,
                                                        event.dCorr().data(),
@@ -471,26 +471,42 @@ namespace CASM {
       if(all_correlations) {
 
         // Calculate before
-        _clexulator().calc_point_corr(sublat, before.data());
+        _clexulator().calc_point_corr(_configdof(),
+                                      nlist().sites(nlist().unitcell_index(mutating_site)).data(),
+                                      sublat,
+                                      before.data());
 
         // Apply change
         _configdof().occ(mutating_site) = new_occupant;
 
         // Calculate after
-        _clexulator().calc_point_corr(sublat, after.data());
+        _clexulator().calc_point_corr(_configdof(),
+                                      nlist().sites(nlist().unitcell_index(mutating_site)).data(),
+                                      sublat,
+                                      after.data());
       }
       else {
         auto begin = _eci().index().data();
         auto end = begin + _eci().index().size();
 
         // Calculate before
-        _clexulator().calc_restricted_point_corr(sublat, before.data(), begin, end);
+        _clexulator().calc_restricted_point_corr(_configdof(),
+                                                 nlist().sites(nlist().unitcell_index(mutating_site)).data(),
+                                                 sublat,
+                                                 before.data(),
+                                                 begin,
+                                                 end);
 
         // Apply change
         _configdof().occ(mutating_site) = new_occupant;
 
         // Calculate after
-        _clexulator().calc_restricted_point_corr(sublat, after.data(), begin, end);
+        _clexulator().calc_restricted_point_corr(_configdof(),
+                                                 nlist().sites(nlist().unitcell_index(mutating_site)).data(),
+                                                 sublat,
+                                                 after.data(),
+                                                 begin,
+                                                 end);
 
       }
 

@@ -70,11 +70,27 @@ namespace CASM {
 
       virtual std::string site_basis_description(BasisSet site_bset, Site site) const = 0;
 
+      virtual std::string clexulator_constructor_string(Structure const &_prim,
+                                                        std::vector<BasisSet> const &site_bases,
+                                                        std::string const &indent) const = 0;
+
+      virtual std::string clexulator_member_definitions_string(Structure const &_prim,
+                                                               std::vector<BasisSet> const &site_bases,
+                                                               std::string const &indent) const = 0;
+
+      virtual std::string clexulator_private_method_definitions_string(Structure const &_prim,
+                                                                       std::vector<BasisSet> const &site_bases,
+                                                                       std::string const &indent) const = 0;
+
+      virtual std::string clexulator_public_method_definitions_string(Structure const &_prim,
+                                                                      std::vector<BasisSet> const &site_bases,
+                                                                      std::string const &indent) const = 0;
       /// \brief non-virtual method to obtain copy through Traits pointer
       std::unique_ptr<Traits> clone() const {
         return std::unique_ptr<Traits>(static_cast<Traits *>(_clone()));
       }
     };
+
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     class OccupationDoFTraits : public Traits {
@@ -121,6 +137,24 @@ namespace CASM {
           }
         }
         return ss.str();
+      }
+
+      std::string clexulator_constructor_string(Structure const &_prim,
+                                                std::vector<BasisSet> const &site_bases,
+                                                std::string const &indent) const override;
+
+      std::string clexulator_member_definitions_string(Structure const &_prim,
+                                                       std::vector<BasisSet> const &site_bases,
+                                                       std::string const &indent) const override;
+
+      std::string clexulator_private_method_definitions_string(Structure const &_prim,
+                                                               std::vector<BasisSet> const &site_bases,
+                                                               std::string const &indent) const override;
+
+      std::string clexulator_public_method_definitions_string(Structure const &_prim,
+                                                              std::vector<BasisSet> const &site_bases,
+                                                              std::string const &indent) const override {
+        return std::string();
       }
 
       /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site

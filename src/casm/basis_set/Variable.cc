@@ -44,6 +44,12 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+
+  bool Variable::_accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr/*=NULL*/) const {
+    return visitor.visit(*this, home_basis_ptr);
+  }
+
+  //*******************************************************************************************
   bool Variable::is_zero() const {
     //Could check to see if arguments are zero.  For now, assume this is done at time of construction
     for(EigenIndex i = 0; i < m_coeffs.size(); i++) {

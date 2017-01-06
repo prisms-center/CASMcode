@@ -56,27 +56,32 @@ namespace CASM {
       public notstd::unique_cloneable_map<std::string, BasicTraits> {
 
     public:
-      typedef notstd::unique_cloneable_map<std::string, BasicTraits> UniqueMapType;
-      typedef typename UniqueMapType::key_type key_type;
-      typedef typename UniqueMapType::value_type value_type;
-      typedef typename UniqueMapType::size_type size_type;
-      typedef typename UniqueMapType::iterator iterator;
-      typedef typename UniqueMapType::const_iterator const_iterator;
+      typedef notstd::unique_cloneable_map<std::string, BasicTraits> Base;
+
+      typedef typename Base::key_type key_type;
+      typedef typename Base::value_type value_type;
+      typedef typename Base::size_type size_type;
+      typedef typename Base::iterator iterator;
+      typedef typename Base::const_iterator const_iterator;
+
+      using Base::find;
+      using Base::begin;
+      using Base::end;
 
       TraitsDictionary() :
-        UniqueMapType([](const value_type & value)->std::string {
+        Base([](const value_type & value)->std::string {
         return value.name();
       },
       DictionaryConverter()) {}
 
-      using UniqueMapType::insert;
+      using Base::insert;
 
       /// \brief Equivalent to find, but throw error with suggestion if @param _name not found
       notstd::cloneable_ptr<BasicTraits> lookup(const key_type &_name) const;
 
       /// \brief True if dictionary contains entry for @param _name
       bool contains(const key_type &_name) const {
-        return this->find(_name) != this->end();
+        return find(_name) != end();
       }
 
       //void print_help(std::ostream &_stream) const;

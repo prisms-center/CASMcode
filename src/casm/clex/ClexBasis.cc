@@ -3,9 +3,15 @@
 #include "casm/container/algorithm.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/app/AppIO.hh" // necessary for write_prim() function
 
 namespace CASM {
 
+
+  ClexBasis::ClexBasis(Structure const &_prim) :
+    m_prim_ptr(&_prim) {
+
+  }
 
   //********************************************************************
 
@@ -92,10 +98,12 @@ namespace CASM {
 
   void ClexBasis::_populate_site_bases(Structure const &_prim) {
     std::vector<Orbit<IntegralCluster, PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
-    make_asymmetric_unit(_prim,
-                         _prim.factor_group(),
-                         PrimPeriodicSymCompare<IntegralCluster>(TOL),
-                         std::back_inserter(asym_unit));
+    std::ostream nullstream(0);
+    make_prim_periodic_asymmetric_unit(_prim,
+                                       CASM_TMP::ConstantFunctor<bool>(true),
+                                       TOL,
+                                       std::back_inserter(asym_unit),
+                                       nullstream);
     for(DoFKey const &dof_type : ClexBasis_impl::extract_dof_types(_prim))
       m_site_bases[dof_type] = DoFType::traits(dof_type).construct_site_bases(_prim, asym_unit, bspecs());
   }

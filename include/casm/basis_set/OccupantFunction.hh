@@ -37,9 +37,9 @@ namespace CASM {
     }
 
     static int sclass_ID();
-    int class_ID() const;
+    int class_ID() const override;
 
-    std::string type_name() const {
+    std::string type_name() const override {
       return "OccupantFunction";
     }
 
@@ -60,49 +60,53 @@ namespace CASM {
     }
 
 
-    Function *copy() const;
+    Function *copy() const override;
 
-    bool is_zero() const;
-    Index num_terms() const;
+    bool is_zero() const override;
+    Index num_terms() const override;
 
     const Eigen::VectorXd &eval_table() const {
       return m_eval_table;
     }
 
-    double leading_coefficient() const;
-    double leading_coefficient(Index &index) const;
-    double get_coefficient(Index i) const;
+    double leading_coefficient() const override;
+    double leading_coefficient(Index &index) const override;
+    double get_coefficient(Index i) const override;
 
 
-    void small_to_zero(double tol = TOL);
-    void scale(double scale_factor);
-    void make_formula() const;
+    void small_to_zero(double tol = TOL) override;
+    void scale(double scale_factor) override;
+    void make_formula() const override;
 
-    int register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles);
+    int register_remotes(const std::vector<DoF::RemoteHandle> &remote_handles) override;
 
     bool compare(const OccupantFunction *RHS) const;
 
     static void fill_dispatch_table();
-    Eigen::VectorXd const *get_eigen_coeffs() const;
+    Eigen::VectorXd const *get_eigen_coeffs() const override;
 
-    double remote_eval() const;
+    double discrete_eval(int state) const;
 
-    double remote_deval(const DoF::RemoteHandle &dvar) const;
+    double remote_eval() const override;
 
-    double cache_eval() const {
+    double remote_deval(const DoF::RemoteHandle &dvar) const override;
+
+    double cache_eval() const override {
       return remote_eval();
     }
 
-    double cache_deval(const DoF::RemoteHandle &dvar)const {
+    double cache_deval(const DoF::RemoteHandle &dvar)const override {
       return remote_deval(dvar);
     }
 
-    jsonParser &to_json(jsonParser &json) const;
+    jsonParser &to_json(jsonParser &json) const override;
     void from_json(const jsonParser &json);
   protected:
-    Function *_apply_sym(const SymOp &op);
+    Function *_apply_sym(const SymOp &op) override;
 
-    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL);
+    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL) override;
+
+    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL) const override;
 
     bool _update_dof_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) override;
 

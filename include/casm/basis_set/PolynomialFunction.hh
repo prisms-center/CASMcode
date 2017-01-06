@@ -124,7 +124,10 @@ namespace CASM {
 
     Function *_apply_sym(const SymOp &op);
     Function *_apply_sym(const SymOp &op, const std::vector<bool> &transform_flags);
+
     bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL);
+
+    bool _accept(const FunctionVisitor &visitor, BasisSet const *home_basis_ptr = NULL)const;
   };
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

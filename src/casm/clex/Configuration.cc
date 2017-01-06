@@ -1697,7 +1697,7 @@ namespace CASM {
     for(Index i = 0; i < c.size(); ++i) {
       sout << "Linear index: " << i << "  UnitCellCoord: " << c.uccoord(i) << std::endl;
       if(c.has_occupation()) {
-        sout << "  Occupation: " << c.occ(i) << "  (" << c.mol(i).name << ")\n";
+        sout << "  Occupation: " << c.occ(i) << "  (" << c.mol(i).name() << ")\n";
       }
       if(c.has_displacement()) {
         sout << "  Displacement: " << c.disp(i).transpose() << "\n";

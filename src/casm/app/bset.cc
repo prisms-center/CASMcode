@@ -178,7 +178,7 @@ namespace CASM {
           args.log);
 
         clex_basis.reset(new ClexBasis(prim));
-        clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json, dof_keys);
+        clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json);
 
       }
       catch(std::exception &e) {

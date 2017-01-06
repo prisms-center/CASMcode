@@ -6,16 +6,16 @@ namespace CASM {
     /// \brief Equivalent to find, but throw error with suggestion if _name not found
     notstd::cloneable_ptr<BasicTraits> TraitsDictionary::lookup(const key_type &_name) const {
 
-      auto res = this->find(_name);
-      if(res != this->end()) {
-        return notstd::cloneable_ptr<BasicTraits>(*res);
+      auto res = find(_name);
+      if(res != end()) {
+        return res->clone();
       }
       else {
 
         // If no match, try to use demerescau-levenshtein distance to make a helpful suggestion
-        auto it = this->begin();
+        auto it = begin();
         int min_dist(-1);
-        for(; it != this->end(); ++it) {
+        for(; it != end(); ++it) {
           int dist = dl_string_dist(_name, it->name());
           if(min_dist < 0 || dist < min_dist) {
             min_dist = dist;
