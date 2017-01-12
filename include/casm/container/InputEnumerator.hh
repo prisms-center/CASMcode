@@ -263,7 +263,7 @@ namespace CASM {
 
   private:
 
-    using ValEnumerator<ValueType, IsConst>::_decrement_step; // hide
+    //using ValEnumerator<ValueType, IsConst>::_decrement_step; // hide
     virtual void increment() = 0;
 
   };
