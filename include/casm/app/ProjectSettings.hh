@@ -27,6 +27,32 @@ namespace CASM {
     class Selected;
   }
 
+  /** \defgroup Project
+   *
+   *  \brief Relates to CASM project settings, directory structure, etc.
+   *
+   *  A CASM project encompasses all the settings, calculations, cluster
+   *  expansions, Monte Carlo results, etc. related to a single parent
+   *  crystal structure (known as the 'prim').
+   *
+   *  All the results and data related to a CASM project are stored in a
+   *  directory with structure defined by the DirectoryStructure class, and
+   *  accessible through the top-level data structure PrimClex.
+   *
+   *  @{
+  */
+
+  /// \brief Specifies a particular cluster expansion
+  ///
+  /// - Cluster expansions are given an identifying name as a shortcut
+  /// - Cluster expansions are fully specified via:
+  ///   - property: the property being expanded, for instance 'formation_energy'
+  ///   - calctype: the type of calculations of the property the cluster
+  ///     expansion is fit to
+  ///   - ref: indicates a reference used to calculate the property being
+  ///     expanded
+  ///   - bset: the basis set used
+  ///
   struct ClexDescription {
     ClexDescription() {}
 
@@ -127,11 +153,17 @@ namespace CASM {
     /// \brief Get shared object options
     std::pair<std::string, std::string> soflags() const;
 
-    /// \brief Get casm prefix
-    std::pair<fs::path, std::string> casm_prefix() const;
+    /// \brief Get casm includedir
+    std::pair<fs::path, std::string> casm_includedir() const;
 
-    /// \brief Get boost prefix
-    std::pair<fs::path, std::string> boost_prefix() const;
+    /// \brief Get casm libdir
+    std::pair<fs::path, std::string> casm_libdir() const;
+
+    /// \brief Get boost includedir
+    std::pair<fs::path, std::string> boost_includedir() const;
+
+    /// \brief Get boost libdir
+    std::pair<fs::path, std::string> boost_libdir() const;
 
     /// \brief Get current compilation options string
     std::string compile_options() const;
@@ -247,11 +279,25 @@ namespace CASM {
     /// \brief Set shared object options (empty string to use default)
     bool set_soflags(std::string opt);
 
+
     /// \brief Set casm prefix (empty string to use default)
-    bool set_casm_prefix(fs::path prefix);
+    bool set_casm_prefix(fs::path dir);
+
+    /// \brief Set casm includedir (empty string to use default)
+    bool set_casm_includedir(fs::path dir);
+
+    /// \brief Set casm libdir (empty string to use default)
+    bool set_casm_libdir(fs::path dir);
+
 
     /// \brief Set boost prefix (empty string to use default)
-    bool set_boost_prefix(fs::path prefix);
+    bool set_boost_prefix(fs::path dir);
+
+    /// \brief Set boost includedir (empty string to use default)
+    bool set_boost_includedir(fs::path dir);
+
+    /// \brief Set boost libdir (empty string to use default)
+    bool set_boost_libdir(fs::path dir);
 
 
     /// \brief Set command used by 'casm view'
@@ -316,8 +362,10 @@ namespace CASM {
     std::pair<std::string, std::string> m_cxx;
     std::pair<std::string, std::string> m_cxxflags;
     std::pair<std::string, std::string> m_soflags;
-    std::pair<fs::path, std::string> m_casm_prefix;
-    std::pair<fs::path, std::string> m_boost_prefix;
+    std::pair<fs::path, std::string> m_casm_includedir;
+    std::pair<fs::path, std::string> m_casm_libdir;
+    std::pair<fs::path, std::string> m_boost_includedir;
+    std::pair<fs::path, std::string> m_boost_libdir;
 
     // deprecated reading exactly from settings file
     std::string m_depr_compile_options;
@@ -347,6 +395,7 @@ namespace CASM {
     return true;
   }
 
+  /** @} */
 }
 
 #endif

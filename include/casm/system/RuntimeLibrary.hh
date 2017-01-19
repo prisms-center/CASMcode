@@ -59,11 +59,17 @@ namespace CASM {
     /// \brief Return default compiler
     static std::pair<std::string, std::string> default_cxx();
 
-    /// \brief Return default prefix for CASM
-    static std::pair<fs::path, std::string> default_casm_prefix();
+    /// \brief Return default includedir for CASM
+    static std::pair<fs::path, std::string> default_casm_includedir();
 
-    /// \brief Return default prefix for boost
-    static std::pair<fs::path, std::string> default_boost_prefix();
+    /// \brief Return default libdir for CASM
+    static std::pair<fs::path, std::string> default_casm_libdir();
+
+    /// \brief Return default includedir for boost
+    static std::pair<fs::path, std::string> default_boost_includedir();
+
+    /// \brief Return default libdir for boost
+    static std::pair<fs::path, std::string> default_boost_libdir();
 
 
   private:
@@ -86,9 +92,9 @@ namespace CASM {
 
   };
 
-  std::string include_path(const fs::path &prefix);
+  std::string include_path(const fs::path &dir);
 
-  std::string link_path(const fs::path &prefix);
+  std::string link_path(const fs::path &dir);
 
 
 }

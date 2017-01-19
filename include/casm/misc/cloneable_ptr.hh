@@ -6,6 +6,7 @@
 
 #include "casm/misc/CASM_TMP.hh"
 
+/// \brief Non-std smart pointer classes and functions
 namespace notstd {
 
   /// \brief c++11 does not include 'make_unique'

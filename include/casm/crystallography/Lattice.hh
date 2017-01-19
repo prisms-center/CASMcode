@@ -16,6 +16,18 @@ namespace CASM {
   class SymOp;
   class ScelEnumProps;
 
+  /** \defgroup Crystallography
+   *
+   *  \brief Relates to crystallography
+   */
+
+  /** \defgroup Lattice
+   *  \ingroup Crystallography
+   *  \brief Relates to Lattice
+   *
+   *  @{
+   */
+
   class Lattice : public Comparisons<Lattice> {
   public:
     typedef Eigen::Matrix3d::ColXpr LatVec;
@@ -356,6 +368,8 @@ namespace CASM {
   inline Lattice make_supercell(const Lattice &lat, const Eigen::Matrix3i &transf_mat) {
     return Lattice(Eigen::Matrix3d(lat.lat_column_mat()) * transf_mat.cast<double>());
   }
+
+  /** @} */
 
 }
 #endif

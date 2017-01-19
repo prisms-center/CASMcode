@@ -9,6 +9,10 @@
 namespace CASM {
   class PrimGrid;
 
+  /** \ingroup SymOp
+   *  @{
+   */
+
   /// Permutation bidirectional Iterator class
   ///   Can iterate over all combined factor group and translation permutations for a Supercell
   ///
@@ -129,5 +133,6 @@ namespace CASM {
   jsonParser &to_json(const PermuteIterator &clust, jsonParser &json);
   void from_json(PermuteIterator &clust, const jsonParser &json);
 
+  /** @} */
 }
 #endif

@@ -13,6 +13,10 @@
 
 namespace CASM {
 
+  /** \ingroup Coordinate
+   *  @{
+   */
+
   /// \brief Unit Cell Indices
   ///
   /// - Integer vector to represent a particular unit cell using multiples of the unit cell vectors
@@ -276,6 +280,8 @@ namespace CASM {
 
     return;
   }
+
+  /** @} */
 }
 #endif
 

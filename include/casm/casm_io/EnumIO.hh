@@ -9,11 +9,15 @@
 
 namespace CASM {
 
+  /// \defgroup casmIO IO
+  ///
+  /// \brief Input/output classes and functions
+
   /// \defgroup EnumIO
   ///
   /// \brief Helpers for enum class IO
   ///
-  /// \ingroup CASM_IO
+  /// \ingroup casmIO
 
   template <typename T>
   struct traits {};
@@ -107,7 +111,7 @@ namespace CASM {
     static const std::multimap<ENUM, std::vector<std::string> > strval; \
   \
   }; \
-
+ 
 #define ENUM_IO(ENUM) \
   inline std::ostream &operator<<(std::ostream &sout, const ENUM& val) { \
     sout << to_string<ENUM>(val); \
@@ -128,7 +132,7 @@ namespace CASM {
   inline void from_json(ENUM& val, const jsonParser& json) { \
     val = from_string<ENUM>(json.get<std::string>()); \
   } \
-
+ 
 
 }
 

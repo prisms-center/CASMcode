@@ -16,6 +16,15 @@ namespace CASM {
 
   // --- These functions are for the casm executable file I/O -----------
 
+  /** \defgroup ProjectIO
+   *
+   *  \ingroup Project
+   *  \ingroup casmIO
+   *
+   *  \brief Relates to CASM project input/output
+   *
+   *  @{
+  */
 
   // --------- PrimIO Declarations --------------------------------------------------
 
@@ -124,6 +133,8 @@ namespace CASM {
 
   /// \brief Write summary of basis functions
   void write_basis(const SiteOrbitree &tree, const Structure &prim, jsonParser &json, double tol);
+
+  /** @} */
 }
 
 #endif

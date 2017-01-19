@@ -44,7 +44,7 @@ PROJECT_NUMBER         =
 # for a project that appears at the top of each page and should give viewer a
 # quick idea about the purpose of the project. Keep the description short.
 
-PROJECT_BRIEF          = "Clusters Applied to Statistical Mechanics"
+PROJECT_BRIEF          = A Clusters Approach to Statistical Mechanics
 
 # With the PROJECT_LOGO tag one can specify an logo or icon that is included in
 # the documentation. The maximum height of the logo should not exceed 55 pixels
@@ -625,7 +625,7 @@ ENABLED_SECTIONS       =
 # documentation regardless of this setting.
 # Minimum value: 0, maximum value: 10000, default value: 30.
 
-MAX_INITIALIZER_LINES  = 3000
+MAX_INITIALIZER_LINES  = 30
 
 # Set the SHOW_USED_FILES tag to NO to disable the list of files generated at
 # the bottom of the documentation of classes and structs. If set to YES the list
@@ -1898,7 +1898,7 @@ ENABLE_PREPROCESSING   = YES
 # The default value is: NO.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-MACRO_EXPANSION        = YES
+MACRO_EXPANSION        = NO
 
 # If the EXPAND_ONLY_PREDEF and MACRO_EXPANSION tags are both set to YES then
 # the macro expansion is limited to the macros specified with the PREDEFINED and

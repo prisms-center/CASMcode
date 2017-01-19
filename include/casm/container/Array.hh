@@ -18,7 +18,28 @@ namespace CASM {
   template<class T>
   class ReturnArray;
 
+  /**
+   *  \defgroup Container
+   *
+   *  \brief Useful containers
+   *
+   */
 
+  /**
+   *  \defgroup Array
+   *
+   *  \ingroup Container
+   *  \brief Basic std::vector like container (deprecated)
+   *
+   *  @{
+   */
+
+  /// \brief Basic std::vector like container (deprecated)
+  ///
+  /// - Legacy container that incorporated various useful algorithms, now being
+  ///   slowly replaced
+  /// - Prefer to use std::vector except when necessary for compatibility
+  ///
   template<class T>
   class Array {
   private:
@@ -1097,6 +1118,7 @@ namespace CASM {
     }
   };
 
+  /** @} */
 
 }
 

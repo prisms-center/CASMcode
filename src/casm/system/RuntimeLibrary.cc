@@ -15,7 +15,7 @@ namespace CASM {
     m_compile_options(compile_options),
     m_so_options(so_options),
     m_handle(nullptr) {
-    
+
     // If the shared library doesn't exist
     if(!fs::exists(m_filename_base + ".so")) {
 
@@ -203,32 +203,106 @@ namespace CASM {
 
   /// \brief Return include path option for CASM
   ///
-  /// \returns $CASM_PREFIX if environment variable CASM_PREFIX exists,
-  ///          otherwise "/usr/local"
-  std::pair<fs::path, std::string> RuntimeLibrary::default_casm_prefix() {
-    auto res = _use_env(_casm_env(), "/usr/local");
-    return std::make_pair(fs::path(res.first), res.second);
+  /// \returns In order of preference: $CASM_INCLUDEDIR, or
+  ///          $CASM_PREFIX/include, or "/usr/local/include"
+  std::pair<fs::path, std::string> RuntimeLibrary::default_casm_includedir() {
+    char *_env;
+
+    // if CASM_INCLUDEDIR exists
+    _env = std::getenv("CASM_INCLUDEDIR");
+    if(_env != nullptr) {
+      return std::make_pair(std::string(_env), "CASM_INCLUDEDIR");
+    }
+
+    // if CASM_PREFIX exists
+    _env = std::getenv("CASM_PREFIX");
+    if(_env != nullptr) {
+      return std::make_pair(fs::path(_env) / "include", "CASM_PREFIX");
+    }
+
+    // else
+    return std::make_pair(fs::path("/usr/local/include"), "default");
+  }
+
+  /// \brief Return lib path option for CASM
+  ///
+  /// \returns In order of preference: $CASM_LIBDIR, or
+  ///          $CASM_PREFIX/lib, or "/usr/local/lib"
+  std::pair<fs::path, std::string> RuntimeLibrary::default_casm_libdir() {
+    char *_env;
+
+    // if CASM_INCLUDEDIR exists
+    _env = std::getenv("CASM_LIBDIR");
+    if(_env != nullptr) {
+      return std::make_pair(std::string(_env), "CASM_LIBDIR");
+    }
+
+    // if CASM_PREFIX exists
+    _env = std::getenv("CASM_PREFIX");
+    if(_env != nullptr) {
+      return std::make_pair(fs::path(_env) / "lib", "CASM_PREFIX");
+    }
+
+    // else
+    return std::make_pair(fs::path("/usr/local/lib"), "default");
   }
 
   /// \brief Return include path option for boost
   ///
-  /// \returns $CASM_BOOST_PREFIX if environment variable CASM_BOOST_PREFIX exists,
-  ///          otherwise an empty string
-  std::pair<fs::path, std::string> RuntimeLibrary::default_boost_prefix() {
-    auto res = _use_env(_boost_env());
-    return std::make_pair(fs::path(res.first), res.second);
+  /// \returns In order of preference: $CASM_BOOST_INCLUDEDIR, or
+  ///          $CASM_BOOST_PREFIX/include, or "/usr/local/include"
+  std::pair<fs::path, std::string> RuntimeLibrary::default_boost_includedir() {
+    char *_env;
+
+    // if CASM_BOOST_INCLUDEDIR exists
+    _env = std::getenv("CASM_BOOST_INCLUDEDIR");
+    if(_env != nullptr) {
+      return std::make_pair(std::string(_env), "CASM_BOOST_INCLUDEDIR");
+    }
+
+    // if CASM_BOOST_PREFIX exists
+    _env = std::getenv("CASM_BOOST_PREFIX");
+    if(_env != nullptr) {
+      return std::make_pair(fs::path(_env) / "include", "CASM_BOOST_PREFIX");
+    }
+
+    // else
+    return std::make_pair(fs::path("/usr/local/include"), "default");
   }
 
-  std::string include_path(const fs::path &prefix) {
-    if(!prefix.empty()) {
-      return "-I" + (prefix / "include").string();
+  /// \brief Return lib path option for boost
+  ///
+  /// \returns In order of preference: $CASM_BOOST_LIBDIR, or
+  ///          $CASM_BOOST_PREFIX/lib, or "/usr/local/lib"
+  std::pair<fs::path, std::string> RuntimeLibrary::default_boost_libdir() {
+    char *_env;
+
+    // if CASM_BOOST_INCLUDEDIR exists
+    _env = std::getenv("CASM_BOOST_LIBDIR");
+    if(_env != nullptr) {
+      return std::make_pair(std::string(_env), "CASM_BOOST_LIBDIR");
+    }
+
+    // if CASM_BOOST_PREFIX exists
+    _env = std::getenv("CASM_BOOST_PREFIX");
+    if(_env != nullptr) {
+      return std::make_pair(fs::path(_env) / "lib", "CASM_BOOST_PREFIX");
+    }
+
+    // else
+    return std::make_pair(fs::path("/usr/local/lib"), "default");
+  }
+
+  std::string include_path(const fs::path &dir) {
+    if(!dir.empty()) {
+      return "-I" + dir.string();
     }
     return "";
   };
 
-  std::string link_path(const fs::path &prefix) {
-    if(!prefix.empty()) {
-      return "-L" + (prefix / "lib").string();
+  std::string link_path(const fs::path &dir) {
+    if(!dir.empty()) {
+      return "-L" + dir.string();
     }
     return "";
   };

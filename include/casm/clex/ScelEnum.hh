@@ -10,7 +10,8 @@
 /** \defgroup ScelEnumGroup Supercell Enumerators
  *
  *  \ingroup Enumerator
- *
+ *  \ingroup Supercell
+ *  \brief Enumerates Supercell
  *  @{
 */
 

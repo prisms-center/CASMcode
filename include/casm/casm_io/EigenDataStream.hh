@@ -4,6 +4,9 @@
 #include "casm/casm_io/DataStream.hh"
 #include "casm/external/Eigen/Dense"
 namespace CASM {
+
+  /// \ingroup DataFormatter
+  ///
   class MatrixXdDataStream : public DataStream {
   public:
     MatrixXdDataStream(DataStreamTraits _traits = none) : DataStream(_traits), m_matrix(1, 0), m_row(0), m_col(0) {}
@@ -50,6 +53,8 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+  /// \ingroup DataFormatter
+  ///
   class LabeledMatrixXdDataStream : public MatrixXdDataStream {
   public:
     LabeledMatrixXdDataStream(DataStreamTraits _traits = none) :

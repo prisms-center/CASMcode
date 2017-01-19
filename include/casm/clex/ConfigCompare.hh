@@ -5,6 +5,11 @@
 
 namespace CASM {
 
+  /** \ingroup ConfigIsEquivalent
+   *
+   *  @{
+   */
+
   /// \brief Class for less than comparison of Configurations (with the same Supercell)
   class ConfigCompare {
 
@@ -43,6 +48,7 @@ namespace CASM {
 
   };
 
+  /** @} */
 }
 
 #endif

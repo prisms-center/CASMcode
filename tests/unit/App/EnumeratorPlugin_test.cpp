@@ -23,6 +23,10 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   PrimClex primclex(proj.dir, null_log());
 
+  // for autotools
+  primclex.settings().set_casm_libdir(fs::current_path() / ".libs");
+  primclex.settings().commit();
+
   auto cp = [&](std::string _filename) {
 
     fs::path filename(_filename);
@@ -57,6 +61,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   BOOST_CHECK_EQUAL(std::distance(primclex.config_begin(), primclex.config_end()), 336);
 
+  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

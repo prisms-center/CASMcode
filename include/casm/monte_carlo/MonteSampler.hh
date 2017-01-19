@@ -3,7 +3,10 @@
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/monte_carlo/MCData.hh"
+#include "casm/monte_carlo/MonteCounter.hh"
 #include "casm/clex/CompositionConverter.hh"
+#include "casm/casm_io/DataFormatter.hh"
+#include "casm/clex/Configuration.hh"
 
 namespace CASM {
 
@@ -12,7 +15,7 @@ namespace CASM {
   /// \brief An abstract base class for sampling and storing data observations
   ///
   /// - Derived classes "know" how to sample a particular property via implementation
-  ///   of 'virtual void sample(const MonteCarlo &mc) = 0;'
+  ///   of 'virtual void sample(const MonteCarlo &mc, const MonteCounter &counter) = 0;'
   /// - Optionally may require and check for convergence to some level of precision
   ///   given a particular confidence level
   ///
@@ -36,7 +39,9 @@ namespace CASM {
     virtual ~MonteSampler() {}
 
 
-    virtual void sample(const MonteCarlo &mc) = 0;
+    virtual void sample(const MonteCarlo &mc, const MonteCounter &counter) {
+      throw std::runtime_error("Error: MonteSampler base class used to sample");
+    }
 
     /// \brief Clear all data observations
     void clear() {
@@ -65,7 +70,7 @@ namespace CASM {
     bool must_converge() const {
       return m_must_converge;
     }
-    
+
     /// \brief Returns requested precision on the mean
     double requested_precision() const {
       return m_prec;
@@ -132,7 +137,9 @@ namespace CASM {
     }
 
     /// \brief Clone this object
-    virtual std::unique_ptr<MonteSampler> clone() const = 0;
+    std::unique_ptr<MonteSampler> clone() const {
+      return std::unique_ptr<MonteSampler>(this->_clone());
+    }
 
 
   protected:
@@ -145,6 +152,10 @@ namespace CASM {
     }
 
   private:
+
+    virtual MonteSampler *_clone() const {
+      return new MonteSampler(*this);
+    }
 
     void _check_convergence(size_type equil_samples) const {
 
@@ -199,12 +210,18 @@ namespace CASM {
 
 
     /// \brief Sample data from a MonteCarlo calculation
-    void sample(const MonteCarlo &mc);
+    void sample(const MonteCarlo &mc, const MonteCounter &counter);
 
     /// \brief Clone this object
-    std::unique_ptr<MonteSampler> clone() const;
+    std::unique_ptr<ScalarMonteSampler> clone() const {
+      return std::unique_ptr<ScalarMonteSampler>(this->_clone());
+    }
 
   private:
+
+    virtual ScalarMonteSampler *_clone() const {
+      return new ScalarMonteSampler(*this);
+    }
 
     std::string m_property_name;
 
@@ -235,17 +252,94 @@ namespace CASM {
 
 
     /// \brief Sample data from a MonteCarlo calculation
-    void sample(const MonteCarlo &mc);
+    void sample(const MonteCarlo &mc, const MonteCounter &counter);
 
     /// \brief Clone this object
-    std::unique_ptr<MonteSampler> clone() const;
+    std::unique_ptr<VectorMonteSampler> clone() const {
+      return std::unique_ptr<VectorMonteSampler>(this->_clone());
+    }
 
   private:
+
+    virtual VectorMonteSampler *_clone() const {
+      return new VectorMonteSampler(*this);
+    }
 
     std::string m_property_name;
 
     size_type m_index;
 
+  };
+
+  /// \brief Sampler for individual elements of a vector property
+  ///
+  class QueryMonteSampler : public MonteSampler {
+
+  public:
+
+    /// \brief Data structure to make queries occur once each sample time
+    ///
+    class Formatter {
+
+    public:
+
+      typedef Index size_type;
+
+      /// \brief Construct sampler that does not need to converge
+      Formatter(const DataFormatter<Configuration> &formatter);
+
+      DataFormatter<Configuration> &get() {
+        return m_formatter;
+      }
+
+      const DataFormatter<Configuration> &get() const {
+        return m_formatter;
+      }
+
+      /// \brief Evaluate datum formatters, if necessary, and return result
+      const Eigen::VectorXd &sample(const MonteCarlo &mc, const MonteCounter &counter);
+
+    private:
+
+      DataFormatter<Configuration> m_formatter;
+      Eigen::VectorXd m_value;
+      std::pair<MonteCounter::size_type, MonteCounter::size_type> m_last_sample;
+    };
+
+    typedef Index size_type;
+
+    /// \brief Construct sampler that does not need to converge
+    QueryMonteSampler(std::shared_ptr<QueryMonteSampler::Formatter> formatter,
+                      size_type _index,
+                      std::string print_name,
+                      double data_confidence,
+                      size_type data_initsize);
+
+    /// \brief Construct sampler that must converge
+    QueryMonteSampler(std::shared_ptr<QueryMonteSampler::Formatter> formatter,
+                      size_type _index,
+                      std::string print_name,
+                      double data_prec,
+                      double data_confidence,
+                      size_type data_initsize);
+
+
+    /// \brief Sample data from a MonteCarlo calculation
+    void sample(const MonteCarlo &mc, const MonteCounter &counter);
+
+    /// \brief Clone this object
+    std::unique_ptr<QueryMonteSampler> clone() const {
+      return std::unique_ptr<QueryMonteSampler>(this->_clone());
+    }
+
+  private:
+
+    virtual QueryMonteSampler *_clone() const {
+      return new QueryMonteSampler(*this);
+    }
+
+    size_type m_index;
+    std::shared_ptr<QueryMonteSampler::Formatter> m_formatter;
   };
 
   /// \brief Sampler for parametric composition
@@ -275,12 +369,18 @@ namespace CASM {
 
 
     /// \brief Sample data from a MonteCarlo calculation
-    void sample(const MonteCarlo &mc);
+    void sample(const MonteCarlo &mc, const MonteCounter &counter);
 
     /// \brief Clone this object
-    std::unique_ptr<MonteSampler> clone() const;
+    std::unique_ptr<CompMonteSampler> clone() const {
+      return std::unique_ptr<CompMonteSampler>(this->_clone());
+    }
 
   private:
+
+    virtual CompMonteSampler *_clone() const {
+      return new CompMonteSampler(*this);
+    }
 
     size_type m_index;
 
@@ -316,12 +416,18 @@ namespace CASM {
 
 
     /// \brief Sample data from a MonteCarlo calculation
-    void sample(const MonteCarlo &mc);
+    void sample(const MonteCarlo &mc, const MonteCounter &counter);
 
     /// \brief Clone this object
-    std::unique_ptr<MonteSampler> clone() const;
+    std::unique_ptr<SiteFracMonteSampler> clone() const {
+      return std::unique_ptr<SiteFracMonteSampler>(this->_clone());
+    }
 
   private:
+
+    virtual SiteFracMonteSampler *_clone() const {
+      return new SiteFracMonteSampler(*this);
+    }
 
     size_type m_index;
 
@@ -357,12 +463,18 @@ namespace CASM {
 
 
     /// \brief Sample data from a MonteCarlo calculation
-    void sample(const MonteCarlo &mc);
+    void sample(const MonteCarlo &mc, const MonteCounter &counter);
 
     /// \brief Clone this object
-    std::unique_ptr<MonteSampler> clone() const;
+    std::unique_ptr<AtomFracMonteSampler> clone() const {
+      return std::unique_ptr<AtomFracMonteSampler>(this->_clone());
+    }
 
   private:
+
+    virtual AtomFracMonteSampler *_clone() const {
+      return new AtomFracMonteSampler(*this);
+    }
 
     size_type m_index;
 

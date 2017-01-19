@@ -22,7 +22,15 @@ namespace CASM {
 
   }
 
+  /** \defgroup Coordinate
+   *  \ingroup Crystallography
+   *  \brief Relates to coordinates
+   *
+   *  @{
+   */
 
+  /// \brief Represents cartesian and fractional coordinates
+  ///
   class Coordinate {
   public:
     typedef Eigen::Vector3d vector_type;
@@ -304,6 +312,8 @@ namespace CASM {
     return Coordinate(LHS) -= RHS;
   }
 
+  /** @} */
+
   namespace Coordinate_impl {
 
     /// \brief A class to enable vector assignment to the fractional vector of a Coordinate
@@ -313,6 +323,8 @@ namespace CASM {
     /// Coordinate coord;
     /// coord.frac() = Coordinate::vector_type(a,b,c);
     /// \endcode
+    ///
+    /// \relates Coordinate
     ///
     class FracCoordinate {
     public:
@@ -384,6 +396,8 @@ namespace CASM {
     /// coord.frac(2) = c;
     /// \endcode
     ///
+    /// \relates Coordinate
+    ///
     class FracCoordinateComponent {
     public:
 
@@ -438,6 +452,8 @@ namespace CASM {
     /// Coordinate coord;
     /// coord.cart() = Coordinate::vector_type(a,b,c);
     /// \endcode
+    ///
+    /// \relates Coordinate
     ///
     class CartCoordinate {
     public:
@@ -507,6 +523,8 @@ namespace CASM {
     /// coord.cart(1) = b;
     /// coord.cart(2) = c;
     /// \endcode
+    ///
+    /// \relates Coordinate
     ///
     class CartCoordinateComponent {
     public:
@@ -579,6 +597,7 @@ namespace CASM {
   Coordinate_impl::CartCoordinateComponent Coordinate::cart(Coordinate::size_type index) {
     return Coordinate_impl::CartCoordinateComponent(*this, index);
   }
+
 }
 
 namespace std {

@@ -10,9 +10,15 @@
 namespace CASM {
 
   /** \defgroup Symmetry
-   *
+   *  \brief Relates to symmetry operations and groups
+   */
+
+  /** \defgroup SymOp
+   *  \ingroup Symmetry
+   *  \brief Relates to symmetry operations
    *  @{
   */
+
 
   class MasterSymGroup;
 

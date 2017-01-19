@@ -24,6 +24,10 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   PrimClex primclex(proj.dir, Logging(null_log(), null_log(), null_log()));
 
+  // for autotools
+  primclex.settings().set_casm_libdir(fs::current_path() / ".libs");
+  primclex.settings().commit();
+
   auto cp = [&](std::string _filename) {
 
     fs::path filename(_filename);
@@ -49,12 +53,12 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   // refresh to load plugins
   primclex.refresh(true);
-  
+
   auto check = [&](std::string str) {
     CommandArgs args(str, &primclex, primclex.dir().root_dir(), Logging::null());
     return !casm_api(args);
   };
-  
+
   BOOST_CHECK(check(R"(casm select -h)"));
 
   BOOST_CHECK(check(R"(casm select --set-on)"));
@@ -69,6 +73,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   BOOST_CHECK(check(R"(casm query -k 'test_configname')"));
 
+  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

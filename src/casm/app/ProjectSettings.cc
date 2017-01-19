@@ -161,8 +161,26 @@ namespace CASM {
         _read_if(m_cxx, "cxx");
         _read_if(m_cxxflags, "cxxflags");
         _read_if(m_soflags, "soflags");
-        _read_path_if(m_casm_prefix, "casm_prefix");
-        _read_path_if(m_boost_prefix, "boost_prefix");
+
+        fs::path tmp;
+        if(settings.get_if(tmp, "casm_prefix")) {
+          m_casm_includedir.first = tmp / "include";
+          m_casm_includedir.second = "project_settings";
+          m_casm_libdir.first = tmp / "lib";
+          m_casm_libdir.second = "project_settings";
+        }
+        if(settings.get_if(tmp, "boost_prefix")) {
+          m_boost_includedir.first = tmp / "include";
+          m_boost_includedir.second = "project_settings";
+          m_boost_libdir.first = tmp / "lib";
+          m_boost_libdir.second = "project_settings";
+        }
+
+        _read_path_if(m_casm_includedir, "casm_includedir");
+        _read_path_if(m_casm_libdir, "casm_libdir");
+        _read_path_if(m_boost_includedir, "boost_includedir");
+        _read_path_if(m_boost_libdir, "boost_libdir");
+
         settings.get_if(m_depr_compile_options, "compile_options");
         settings.get_if(m_depr_so_options, "so_options");
 
@@ -333,14 +351,24 @@ namespace CASM {
     return m_soflags.first.empty() ? RuntimeLibrary::default_soflags() : m_soflags;
   }
 
-  /// \brief Get casm prefix
-  std::pair<fs::path, std::string> ProjectSettings::casm_prefix() const {
-    return m_casm_prefix.first.empty() ? RuntimeLibrary::default_casm_prefix() : m_casm_prefix;
+  /// \brief Get casm includedir
+  std::pair<fs::path, std::string> ProjectSettings::casm_includedir() const {
+    return m_casm_includedir.first.empty() ? RuntimeLibrary::default_casm_includedir() : m_casm_includedir;
   }
 
-  /// \brief Get boost prefix
-  std::pair<fs::path, std::string> ProjectSettings::boost_prefix() const {
-    return m_boost_prefix.first.empty() ? RuntimeLibrary::default_boost_prefix() : m_boost_prefix;
+  /// \brief Get casm libdir
+  std::pair<fs::path, std::string> ProjectSettings::casm_libdir() const {
+    return m_casm_libdir.first.empty() ? RuntimeLibrary::default_casm_libdir() : m_casm_libdir;
+  }
+
+  /// \brief Get boost includedir
+  std::pair<fs::path, std::string> ProjectSettings::boost_includedir() const {
+    return m_boost_includedir.first.empty() ? RuntimeLibrary::default_boost_includedir() : m_boost_includedir;
+  }
+
+  /// \brief Get boost libdir
+  std::pair<fs::path, std::string> ProjectSettings::boost_libdir() const {
+    return m_boost_libdir.first.empty() ? RuntimeLibrary::default_boost_libdir() : m_boost_libdir;
   }
 
   /// \brief Get current compilation options string
@@ -351,8 +379,8 @@ namespace CASM {
     else {
       // else construct from pieces
       return cxx().first + " " + cxxflags().first + " " +
-             include_path(casm_prefix().first) + " " +
-             include_path(boost_prefix().first);
+             include_path(casm_includedir().first) + " " +
+             include_path(boost_includedir().first);
     }
   }
 
@@ -364,7 +392,9 @@ namespace CASM {
     }
     else {
       // else construct from pieces
-      return cxx().first + " " + soflags().first + " " + link_path(boost_prefix().first);
+      return cxx().first + " " + soflags().first + " " +
+             link_path(boost_libdir().first) + " " +
+             link_path(casm_libdir().first);
     }
   }
 
@@ -482,16 +512,41 @@ namespace CASM {
 
   /// \brief Set casm prefix (empty string to use default)
   bool ProjectSettings::set_casm_prefix(fs::path prefix)  {
-    m_casm_prefix = std::make_pair(prefix, "project_settings");
+    m_casm_includedir = std::make_pair(prefix / "include", "project_settings");
+    m_casm_libdir = std::make_pair(prefix / "lib", "project_settings");
+    return true;
+  }
+
+  /// \brief Set casm includedir (empty string to use default)
+  bool ProjectSettings::set_casm_includedir(fs::path dir)  {
+    m_casm_includedir = std::make_pair(dir, "project_settings");
+    return true;
+  }
+
+  /// \brief Set casm libdir (empty string to use default)
+  bool ProjectSettings::set_casm_libdir(fs::path dir)  {
+    m_casm_libdir = std::make_pair(dir, "project_settings");
     return true;
   }
 
   /// \brief Set boost prefix (empty string to use default)
   bool ProjectSettings::set_boost_prefix(fs::path prefix)  {
-    m_boost_prefix = std::make_pair(prefix, "project_settings");
+    m_boost_includedir = std::make_pair(prefix / "include", "project_settings");
+    m_boost_libdir = std::make_pair(prefix / "lib", "project_settings");
     return true;
   }
 
+  /// \brief Set boost includedir (empty string to use default)
+  bool ProjectSettings::set_boost_includedir(fs::path dir)  {
+    m_boost_includedir = std::make_pair(dir, "project_settings");
+    return true;
+  }
+
+  /// \brief Set boost libdir (empty string to use default)
+  bool ProjectSettings::set_boost_libdir(fs::path dir)  {
+    m_boost_libdir = std::make_pair(dir, "project_settings");
+    return true;
+  }
 
   /// \brief (deprecated) Set compile options to 'opt' (empty string to use default)
   bool ProjectSettings::set_compile_options(std::string opt) {
@@ -556,8 +611,10 @@ namespace CASM {
   void ProjectSettings::_load_default_options() {
     m_cxx = RuntimeLibrary::default_cxx();
     m_cxxflags = RuntimeLibrary::default_cxxflags();
-    m_casm_prefix = RuntimeLibrary::default_casm_prefix();
-    m_boost_prefix = RuntimeLibrary::default_boost_prefix();
+    m_casm_includedir = RuntimeLibrary::default_casm_includedir();
+    m_casm_libdir = RuntimeLibrary::default_casm_libdir();
+    m_boost_includedir = RuntimeLibrary::default_boost_includedir();
+    m_boost_libdir = RuntimeLibrary::default_boost_libdir();
     m_soflags = RuntimeLibrary::default_soflags();
   }
 
@@ -582,8 +639,10 @@ namespace CASM {
     _write_if("cxx", m_cxx.first);
     _write_if("cxxflags", m_cxxflags.first);
     _write_if("soflags", m_soflags.first);
-    _write_if("casm_prefix", m_casm_prefix.first.string());
-    _write_if("boost_prefix", m_boost_prefix.first.string());
+    _write_if("casm_includedir", m_casm_includedir.first.string());
+    _write_if("casm_libdir", m_casm_libdir.first.string());
+    _write_if("boost_includedir", m_boost_includedir.first.string());
+    _write_if("boost_libdir", m_boost_libdir.first.string());
     _write_if("compile_options", m_depr_compile_options);
     _write_if("so_options", m_depr_so_options);
 
@@ -666,12 +725,15 @@ namespace CASM {
     log << _wdefaultval("cxx", cxx())
         << _wdefaultval("cxxflags", cxxflags())
         << _wdefaultval("soflags", soflags())
-        << _wdefaultval("casm_prefix", casm_prefix())
-        << _wdefaultval("boost_prefix", boost_prefix()) << std::endl;
+        << _wdefaultval("casm_includedir", casm_includedir())
+        << _wdefaultval("casm_libdir", casm_libdir())
+        << _wdefaultval("boost_includedir", boost_includedir())
+        << _wdefaultval("boost_libdir", boost_libdir()) << std::endl;
 
     if(!m_depr_compile_options.empty()) {
       log << "Note: using deprecated 'compile_options' value from .casm/project_settings.json \n"
-          "explicitly instead of individual compiler settings (cxx, cxxflags, casm_prefix, boost_prefix).\n"
+          "explicitly instead of individual compiler settings (cxx, cxxflags, casm_includedir,\n"
+          "boost_includedir).\n"
           "Delete 'compile_options' from .casm/project_settings.json manually \n"
           "to use begin using the individually set settings.\n";
     }
@@ -679,7 +741,7 @@ namespace CASM {
 
     if(!m_depr_so_options.empty()) {
       log << "Note: using deprecated 'so_options' value from .casm/project_settings.json \n"
-          "explicitly instead of individual compiler settings (cxx, soflags, casm_prefix, boost_prefix).\n"
+          "explicitly instead of individual compiler settings (cxx, cxxflags, boost_libdir).\n"
           "Delete 'so_options' from .casm/project_settings.json manually \n"
           "to use begin using the individually set settings.\n";
     }

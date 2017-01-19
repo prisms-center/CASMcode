@@ -11,6 +11,9 @@ namespace CASM {
 
   /** \defgroup Enumerator
    *
+   *  \ingroup Container
+   *  \brief Algorithms for enumerating objects such as Lattice, Supercell, Configuration
+   *
    *  Enumerators are classes that implement methods to enumerate Supercells,
    *  Configurations, and other objects by providing iterators over a range of
    *  enumerated objects. The objects are not usually stored in the enumerators
@@ -507,15 +510,8 @@ namespace CASM {
     LatticeIterator begin,
     LatticeIterator end,
     ConfigEnumConstructor f,
-    std::vector<std::string> filter_expr);
-
-  /// \brief Load enumerator plugins from a CASM project
-  template<typename EnumeratorMapInserter, typename RuntimeLibInserter>
-  std::pair<EnumeratorMapInserter, RuntimeLibInserter>
-  load_enumerator_plugins(
-    const PrimClex &primclex,
-    EnumeratorMapInserter enum_it,
-    RuntimeLibInserter lib_it);
+    std::vector<std::string> filter_expr,
+    bool primitive_only);
 
   /// \brief Template class to be specialized for each enumerator that may be accessed via the API
   template<typename Derived>

@@ -2,6 +2,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
 
+
 namespace CASM {
 
   template<typename DataObject>
@@ -130,10 +131,11 @@ namespace CASM {
 
           std::string msg = "compiling new custom query: " + f_s.substr(0, f_size - 3);
 
+          // '-L$CASM_PREFIX/.libs' is a hack so 'make check' works
           auto lib_ptr = std::make_shared<RuntimeLibrary>(
                            p_s.substr(0, p_size - 3),
-                           set.compile_options() + " -I" + dir.query_plugins<DataObject>().string(),
-                           set.so_options() + " -lcasm -L" + (set.casm_prefix().first / "lib").string(),
+                           set.compile_options() + " " + include_path(dir.query_plugins<DataObject>()),
+                           set.so_options() + " -lcasm ",
                            msg,
                            set);
 
