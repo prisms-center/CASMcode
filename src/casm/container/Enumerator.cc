@@ -1,9 +1,6 @@
 #include "casm/container/Enumerator_impl.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/clex/ScelEnum.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/system/RuntimeLibrary.hh"
-#include "casm/completer/Handlers.hh"
 
 namespace CASM {
 
