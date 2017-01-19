@@ -18,8 +18,8 @@ namespace CASM {
   //                                **** Constructors ****
   //*******************************************************************************************
   /// Initial construction of a PrimClex, from a primitive Structure
-  PrimClex::PrimClex(const Structure &_prim, Log &log, Log &debug_log, Log &err_log) :
-    Logging(log, debug_log, err_log),
+  PrimClex::PrimClex(const Structure &_prim, const Logging &logging) :
+    Logging(logging),
     prim(_prim) {
 
     _init();
@@ -31,8 +31,8 @@ namespace CASM {
   //*******************************************************************************************
   /// Construct PrimClex from existing CASM project directory
   ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-  PrimClex::PrimClex(const fs::path &_root, Log &log, Log &debug_log, Log &err_log):
-    Logging(log, debug_log, err_log),
+  PrimClex::PrimClex(const fs::path &_root, const Logging &logging):
+    Logging(logging),
     root(_root),
     m_dir(_root),
     m_settings(_root),
@@ -75,13 +75,14 @@ namespace CASM {
 
   /// \brief Reload PrimClex data from settings
   ///
-  /// \param read_settings Read project_settings.json
+  /// \param read_settings Read project_settings.json and plugins
   /// \param read_composition Read composition_axes.json
   /// \param read_chem_ref Read chemical_reference.json
   /// \param read_configs Read SCEL and config_list.json
   /// \param clear_clex Clear stored orbitrees, clexulators, and eci
   ///
   /// - This does not check if what you request will cause problems.
+  /// - ToDo: refactor into separate functions
   ///
   void PrimClex::refresh(bool read_settings,
                          bool read_composition,
@@ -93,7 +94,7 @@ namespace CASM {
 
     if(read_settings) {
       try {
-        m_settings = ProjectSettings(root);
+        m_settings = ProjectSettings(root, *this);
       }
       catch(std::exception &e) {
         err_log().error("reading project_settings.json");

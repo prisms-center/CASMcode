@@ -11,8 +11,26 @@
 #include "casm/clex/ConfigIsEquivalent.hh"
 #include "casm/clex/ConfigCompare.hh"
 #include "casm/clex/ConfigIterator.hh"
+#include "casm/clex/ConfigIOSelected.hh"
+#include "casm/app/QueryHandler_impl.hh"
 
 namespace CASM {
+
+  const std::string QueryTraits<Configuration>::name = "Configuration";
+
+  template class QueryHandler<Configuration>;
+
+  namespace {
+    typedef std::insert_iterator<std::map<std::string, std::shared_ptr<RuntimeLibrary> > > runtimelib_it_type;
+    typedef std::insert_iterator<DataFormatterDictionary<Configuration> > config_dict_it_type;
+  }
+
+  template std::pair<config_dict_it_type, runtimelib_it_type> load_query_plugins(
+    const ProjectSettings &set,
+    config_dict_it_type dict_it,
+    runtimelib_it_type lib_it);
+
+
 
   /// Construct a default Configuration
   Configuration::Configuration(Supercell &_supercell, const jsonParser &src, const ConfigDoF &_configdof)

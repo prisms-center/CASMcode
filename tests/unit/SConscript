@@ -70,9 +70,7 @@ to_clean = {
 
 # list tests that need '--catch_system_errors=no"
 no_catch = [
-  "App",
-  "EnumeratorPlugin",
-  "QueryPlugin"
+  "App", "EnumeratorPlugin", "QueryPlugin"
 ]
 
 Depends(unit_test, [val for val in depends.itervalues()])

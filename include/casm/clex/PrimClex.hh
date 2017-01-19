@@ -17,6 +17,8 @@
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/app/EnumeratorHandler.hh"
+#include "casm/app/QueryHandler.hh"
 
 /// Cluster expansion class
 namespace CASM {
@@ -74,11 +76,11 @@ namespace CASM {
     // **** Constructors ****
 
     /// Initial construction of a PrimClex, from a primitive Structure
-    PrimClex(const Structure &_prim, Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log());
+    PrimClex(const Structure &_prim, const Logging &logging = Logging());
 
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-    PrimClex(const fs::path &_root, Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log());
+    PrimClex(const fs::path &_root, const Logging &logging = Logging());
 
     /// Reload PrimClex data from settings
     void refresh(bool read_settings = false,

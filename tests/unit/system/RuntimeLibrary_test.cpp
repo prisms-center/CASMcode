@@ -37,8 +37,8 @@ BOOST_AUTO_TEST_CASE(FunctionTest) {
     cc_filename_base,
     compile_opt,
     so_opt,
-    default_log(),
-    "Compiling RuntimeLibrary test code");
+    "Compiling RuntimeLibrary test code",
+    Logging::null());
 
   BOOST_CHECK_EQUAL(true, true);
 

@@ -160,9 +160,10 @@ namespace test {
   /// \brief Default checks that enumerating supercells and configurations can
   /// be run for '--max 2' without error, but doesn't check results
   void Proj::check_enum() {
-    m_p.popen(cd_and() + "casm enum -i '{\"ScelEnum\":{\"max\":2}}'");
+    m_p.popen(cd_and() + "casm enum --method ScelEnum --max 2");
     BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
-    m_p.popen(cd_and() + "casm enum -i '{\"ConfigEnumAllOccupations\":{\"supercells\":{\"max\":2}}}'");
+
+    m_p.popen(cd_and() + "casm enum --method ConfigEnumAllOccupations --all");
     BOOST_CHECK_EQUAL(m_p.exit_code(), 0);
   }
 
