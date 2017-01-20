@@ -111,6 +111,13 @@ namespace test {
 
     m_set = ProjectSettings(dir);
     m_set.set_casm_prefix(fs::current_path());
+
+    // handle scons and autotools
+    if(!fs::exists(m_set.casm_libdir().first / "libcasm.dylib") &&
+       !fs::exists(m_set.casm_libdir().first / "libcasm.so")) {
+      m_set.set_casm_libdir(fs::current_path() / ".libs");
+    }
+
     m_set.commit();
 
     BOOST_CHECK_EQUAL(true, fs::exists(dir));

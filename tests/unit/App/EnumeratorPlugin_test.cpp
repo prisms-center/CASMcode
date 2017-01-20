@@ -23,10 +23,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   PrimClex primclex(proj.dir, null_log());
 
-  // for autotools
-  primclex.settings().set_casm_libdir(fs::current_path() / ".libs");
-  primclex.settings().commit();
-
   auto cp = [&](std::string _filename) {
 
     fs::path filename(_filename);

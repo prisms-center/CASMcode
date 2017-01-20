@@ -58,7 +58,9 @@ if 'unit' in COMMAND_LINE_TARGETS:
 
 # list of dependencies for a particular test
 depends = {
-  "App" : [casm_lib, casm]
+  "App" : [casm_lib, casm],
+  "EnumeratorPlugin" : [casm_lib, casm],
+  "QueryPlugin" : [casm_lib, casm]
 }
 
 # list of output files that need to be cleaned for a particular test
