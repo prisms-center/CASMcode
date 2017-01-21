@@ -22,7 +22,6 @@ casm_unit_crystallography_LDADD=libcasm.la\
 TESTS+=./tests/unit/crystallography/run_test_crystallography
 
 EXTRA_DIST+=./tests/unit/crystallography/POS1\
-			./tests/unit/crystallography/POS1_prim.json\
 			./tests/unit/crystallography/PRIM1\
 			./tests/unit/crystallography/PRIM2\
 			./tests/unit/crystallography/PRIM3\
