@@ -160,8 +160,6 @@ class Incar:
                           self.tags[key].append(species[name].tags[key])
                           break
                     else:
-                        #for site in pos[alias]:
-                        #    self.tags[key].append( species[site.occupant].tags[key] )
                         self.tags[key].append( str(len(pos[alias])) + "*" + str(species[pos[alias][0].occupant].tags[key]) )
 
     def write(self, filename):
