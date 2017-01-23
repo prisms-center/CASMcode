@@ -91,7 +91,11 @@ class Incar:
                     temp = []
                     for value in self.tags[tag].split():
                         try:
-                            temp.append(float(value))
+                            item=value.split('*')
+                            if len(item)==1:
+                                temp.append(float(value))
+                            else:
+                                temp.append(str(item[0])+'*'+str(float(item[1])))
                         except ValueError:
                             raise IncarError("Could not convert '" + tag + "' : '" + self.tags[tag] + "' to float list")
                     self.tags[tag] = temp
@@ -156,8 +160,7 @@ class Incar:
                           self.tags[key].append(species[name].tags[key])
                           break
                     else:
-                        for site in pos[alias]:
-                            self.tags[key].append( species[site.occupant].tags[key] )
+                        self.tags[key].append( str(len(pos[alias])) + "*" + str(species[pos[alias][0].occupant].tags[key]) )
 
     def write(self, filename):
         try:
