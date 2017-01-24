@@ -21,7 +21,6 @@ BOOST_AUTO_TEST_SUITE(DiffusionTransformationTest)
 BOOST_AUTO_TEST_CASE(Test0) {
 
   test::ZrOProj proj;
-  make_project(proj);
   proj.check_init();
   proj.check_composition();
 
@@ -156,8 +155,6 @@ BOOST_AUTO_TEST_CASE(Test0) {
   vecprinter("orbit_count", orbit_count);
   vecprinter("mult", mult);
   */
-
-  rm_project(proj);
 
 }
 

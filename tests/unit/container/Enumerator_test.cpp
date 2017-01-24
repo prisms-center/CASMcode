@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   PrimClex primclex(proj.dir, null_log());
 
   Eigen::Vector3d a, b, c;
-  std::tie(a, b, c) = primclex.get_prim().lattice().vectors();
+  std::tie(a, b, c) = primclex.prim().lattice().vectors();
 
   std::vector<std::string> m_names;
 
@@ -38,8 +38,8 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
     Index count = 0;
     for(; it != end; ++it, ++count) {
-      m_names.push_back(it->get_name());
-      //std::cout << it->get_name() << std::endl;
+      m_names.push_back(it->name());
+      //std::cout << it->name() << std::endl;
     }
     BOOST_CHECK_EQUAL(count, 20);
     BOOST_CHECK(it == end);
