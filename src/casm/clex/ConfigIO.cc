@@ -377,7 +377,7 @@ namespace CASM {
         SymGroup sym_group;
         sym_group.set_lattice(config.ideal_lattice());
         std::vector<PermuteIterator> config_factor_group;
-        config_factor_group = config.factor_group(config.get_supercell().permute_begin(), config.get_supercell().permute_end());
+        config_factor_group = config.factor_group();
         bool new_symop;
         for(int i = 0; i < config_factor_group.size(); i++) {
           new_symop = true;
