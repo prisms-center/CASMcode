@@ -49,7 +49,7 @@ extern "C" {
     Log &_log(*reinterpret_cast<Log *>(log));
     Log &_debug_log(*reinterpret_cast<Log *>(debug_log));
     Log &_err_log(*reinterpret_cast<Log *>(err_log));
-    PrimClex *ptr = new PrimClex(fs::path(path), _log, _debug_log, _err_log);
+    PrimClex *ptr = new PrimClex(fs::path(path), Logging(_log, _debug_log, _err_log));
     return reinterpret_cast<cPrimClex *>(ptr);
   }
 

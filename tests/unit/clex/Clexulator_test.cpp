@@ -19,10 +19,12 @@ BOOST_AUTO_TEST_CASE(MakeClexulatorTest) {
   std::string compile_opt = RuntimeLibrary::default_cxx().first + " " + RuntimeLibrary::default_cxxflags().first + " -Iinclude";
   std::string so_opt = RuntimeLibrary::default_cxx().first + " " + RuntimeLibrary::default_soflags().first;
 
-  if(!RuntimeLibrary::default_boost_prefix().first.empty()) {
-    fs::path boost_prefix = RuntimeLibrary::default_boost_prefix().first;
-    compile_opt += " " + include_path(boost_prefix);
-    so_opt += " " + link_path(boost_prefix);
+  if(!RuntimeLibrary::default_boost_includedir().first.empty()) {
+    compile_opt += " " + include_path(RuntimeLibrary::default_boost_includedir().first);
+  }
+
+  if(!RuntimeLibrary::default_boost_libdir().first.empty()) {
+    so_opt += " " + link_path(RuntimeLibrary::default_boost_libdir().first);
   }
 
   std::vector<int> sublat_indices = {0};

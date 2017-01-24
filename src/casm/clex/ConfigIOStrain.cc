@@ -62,13 +62,16 @@ namespace CASM {
 
     //****************************************************************************************
 
-    std::string RelaxationStrain::long_header(const Configuration &_tmplt) const {
-      std::stringstream t_ss;
+    std::vector<std::string> RelaxationStrain::col_header(const Configuration &_tmplt) const {
+      std::vector<std::string> col;
       auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
       Index s = max(8 - int(name().size()), 0);
-      for(; it != end_it; ++it)
+      for(; it != end_it; ++it) {
+        std::stringstream t_ss;
         t_ss << "    " << name() << '(' << m_metric_name << ',' << (*it)[0] << ')';
-      return t_ss.str();
+        col.push_back(t_ss.str());
+      }
+      return col;
     }
 
 
@@ -135,13 +138,16 @@ namespace CASM {
 
     //****************************************************************************************
 
-    std::string DoFStrain::long_header(const Configuration &_tmplt) const {
-      std::stringstream t_ss;
+    std::vector<std::string> DoFStrain::col_header(const Configuration &_tmplt) const {
+      std::vector<std::string> col;
       auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
       Index s = max(8 - int(name().size()), 0);
-      for(; it != end_it; ++it)
-        t_ss << "    " << name() << '(' << m_metric_name << ',' << (*it)[0] << ')';
-      return t_ss.str();
+      for(; it != end_it; ++it) {
+        std::stringstream t_ss;
+        t_ss << name() << '(' << m_metric_name << ',' << (*it)[0] << ')';
+        col.push_back(t_ss.str());
+      }
+      return col;
     }
 
 

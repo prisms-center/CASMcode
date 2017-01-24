@@ -2,8 +2,10 @@
 #define ConfigSelection_HH
 
 #include <limits>
-#include "casm/clex/Configuration.hh"
 #include "casm/casm_io/DataFormatter.hh"
+#include "casm/clex/Configuration.hh"
+#include "casm/clex/ConfigIO.hh"
+#include "casm/clex/PrimClex.hh"
 
 namespace CASM {
 
@@ -15,6 +17,10 @@ namespace CASM {
 
   typedef ConfigSelection<true> ConstConfigSelection;
 
+  /** \defgroup Selection
+   *  \brief Enables creating, reading, writing, and using selections of objects
+   *  @{
+   */
 
   template <bool IsConst, bool IsConstIterator>
   class ConfigSelectionIterator : public std::iterator <std::bidirectional_iterator_tag,
@@ -78,7 +84,7 @@ namespace CASM {
     bool m_selected_only;
   };
 
-  template <bool IsConst = false>
+  template <bool IsConst>
   class ConfigSelection {
   public:
     typedef CASM_TMP::ConstSwitch<IsConst, PrimClex> PrimClexType;
@@ -389,6 +395,7 @@ namespace CASM {
     std::string convert_variable(const std::string &q, const Configuration &config);
   }
 
+  /** @} */
 }
 #include "casm/clex/ConfigSelection_impl.hh"
 #endif

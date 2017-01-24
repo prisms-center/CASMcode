@@ -1,0 +1,2 @@
+versionincludedir=$(includedir)/casm/version
+versioninclude_HEADERS=./include/casm/version/version.hh

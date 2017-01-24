@@ -415,14 +415,14 @@ namespace CASM {
 
 
       if(vm.count("add-canonical")) {
-        std::cout << "Add super configurations (Occupation only):\n";
+        std::cout << "Add super configurations:\n";
         for(auto it = config_lat.begin(); it != config_lat.end(); ++it) {
           auto res = is_supercell(superduper, it->second, begin, end, TOL);
-          ConfigTransform f(superduper_scel, *res.first);
+          FillSupercell f(superduper_scel, *res.first);
           Index config_index;
           Supercell::permute_const_iterator permute_it;
           bool result = superduper_scel.add_config(
-                          copy_apply(f, primclex.configuration(it->first)),
+                          f(primclex.configuration(it->first)),
                           config_index,
                           permute_it);
           if(result) {

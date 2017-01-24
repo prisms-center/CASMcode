@@ -8,39 +8,58 @@
 namespace CASM {
 
   template<typename ConfigIterType>
-  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, bool mk) {
+  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, bool mk, Log &err_log) {
     //boost::trim(criteria);
 
-    if(criteria.size()) {
-      DataFormatter<Configuration> tformat(dict.parse(criteria));
-      for(; begin != end; ++begin) {
-        ValueDataStream<bool> select_stream;
-        select_stream << tformat(*begin);
-        if(select_stream.value()) {
+    try {
+      if(criteria.size()) {
+        DataFormatter<Configuration> tformat(dict.parse(criteria));
+        for(; begin != end; ++begin) {
+          if(begin.selected() == mk)
+            continue;
+          ValueDataStream<bool> select_stream;
+          if(select_stream.fail()) {
+            err_log << "Warning: Unable to apply criteria \"" << criteria << "\" to configuration " <<  begin.name() << "\n";
+            continue;
+          }
+
+          select_stream << tformat(*begin);
+          if(select_stream.value()) {
+            begin.set_selected(mk);
+          }
+        }
+      }
+      else {
+        for(; begin != end; ++begin) {
           begin.set_selected(mk);
         }
       }
     }
-    else {
-      for(; begin != end; ++begin) {
-        begin.set_selected(mk);
-      }
+    catch(std::exception &e) {
+      throw std::runtime_error(std::string("Failure to select using criteria \"") + criteria + "\" for configuration " + begin.name() + "\n    Reason:  " + e.what());
     }
-
     return;
   }
 
   template<typename ConfigIterType>
-  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria) {
+  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, Log &err_log) {
     //boost::trim(criteria);
-
-    if(criteria.size()) {
-      DataFormatter<Configuration> tformat(dict.parse(criteria));
-      for(; begin != end; ++begin) {
-        ValueDataStream<bool> select_stream;
-        select_stream << tformat(*begin);
-        begin.set_selected(select_stream.value());
+    try {
+      if(criteria.size()) {
+        DataFormatter<Configuration> tformat(dict.parse(criteria));
+        for(; begin != end; ++begin) {
+          ValueDataStream<bool> select_stream;
+          if(select_stream.fail()) {
+            err_log << "Warning: Unable to apply criteria \"" << criteria << "\" to configuration " <<  begin.name() << "\n";
+            continue;
+          }
+          select_stream << tformat(*begin);
+          begin.set_selected(select_stream.value());
+        }
       }
+    }
+    catch(std::exception &e) {
+      throw std::runtime_error(std::string("Failure to select using criteria \"") + criteria + "\" for configuration " + begin.name() + "\n    Reason:  " + e.what());
     }
 
     return;
@@ -216,8 +235,18 @@ namespace CASM {
           select_help(dict, args.log, help_opt_vec);
         }
         else {
-          ProjectSettings set(root);
-          select_help(set.config_io(), args.log, help_opt_vec);
+          // set status_stream: where query settings and PrimClex initialization messages are sent
+          Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
+
+          // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
+          // Then whichever exists, store reference in 'primclex'
+          std::unique_ptr<PrimClex> uniq_primclex;
+          if(out_path.string() == "STDOUT") {
+            args.log.set_verbosity(0);
+          }
+          PrimClex &primclex = make_primclex_if_not(args, uniq_primclex, status_log);
+
+          select_help(primclex.settings().query_handler<Configuration>().dict(), args.log, help_opt_vec);
         }
         return 0;
       }
@@ -292,7 +321,7 @@ namespace CASM {
       tselect.push_back(ConstConfigSelection(primclex, selection[i]));
     }
 
-    set.set_selected(config_select);
+    set.query_handler<Configuration>().set_selected(config_select);
 
     args.log.custom("Input config list", selection[0].string());
     write_selection_stats(Ntot, config_select, args.log, false);
@@ -328,10 +357,16 @@ namespace CASM {
       }
       args.log.begin_lap();
 
-      if(vm.count("set"))
-        set_selection(set.config_io(), config_select.config_begin(), config_select.config_end(), criteria);
-      else
-        set_selection(set.config_io(), config_select.config_begin(), config_select.config_end(), criteria, select_switch);
+      try {
+        if(vm.count("set"))
+          set_selection(set.query_handler<Configuration>().dict(), config_select.config_begin(), config_select.config_end(), criteria, args.err_log);
+        else
+          set_selection(set.query_handler<Configuration>().dict(), config_select.config_begin(), config_select.config_end(), criteria, select_switch, args.err_log);
+      }
+      catch(std::exception &e) {
+        args.err_log << "ERROR: " << e.what() << "\n";
+        return ERR_INVALID_ARG;
+      }
 
       args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;
     }
@@ -439,7 +474,7 @@ namespace CASM {
     else {
 
       args.log.write("Selection");
-      int ret_code = write_selection(set.config_io(), config_select, vm.count("force"), out_path, vm.count("json"), only_selected, args.err_log);
+      int ret_code = write_selection(set.query_handler<Configuration>().dict(), config_select, vm.count("force"), out_path, vm.count("json"), only_selected, args.err_log);
       args.log << "write: " << out_path << "\n" << std::endl;
 
       args.log.custom("Output config list", out_path.string());

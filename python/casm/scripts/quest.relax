@@ -1,0 +1,19 @@
+#!/usr/bin/env python
+import casm
+import casm.questwrapper
+import sys
+
+print "Begin quest.relax"
+
+if len(sys.argv) != 2:
+    print "Usage: quest.relax configdir"
+    sys.exit()
+
+configdir = sys.argv[1]
+
+relaxation = casm.questwrapper.Relax(configdir)
+
+relaxation.submit()
+
+print "Finish quest.relax\n\n"
+

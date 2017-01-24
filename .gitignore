@@ -24,6 +24,9 @@
 *.bkup
 *.old
 
+# Debugging files
+*.bc
+
 # Mac files
 .DS_Store
 
@@ -58,6 +61,7 @@ src/general/populator
 
 #scons
 .sconsign.dblite
+.sconf_temp
 
 #binaries
 bin/*

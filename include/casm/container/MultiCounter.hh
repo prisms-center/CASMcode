@@ -4,6 +4,12 @@
 #include "casm/container/BaseCounter.hh"
 
 namespace CASM {
+
+  /** \ingroup Counter
+
+      @{
+  */
+
   template<typename SubCounterType>
   class MultiCounter;
 
@@ -209,6 +215,7 @@ namespace CASM {
     return stream << counter();
   }
 
+  /** @} */
 }
 
 

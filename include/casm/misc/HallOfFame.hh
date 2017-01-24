@@ -79,7 +79,7 @@ namespace CASM {
     /// \param _max_size The maximum number of 'ObjectType' objects to store in the HallOfFame
     /// \param _metric_tol The tolerance used for comparing scores, via FloatCompare
     ///
-    HallOfFame(Metric _metric, ObjectCompare _obj_compare, Index _max_size = 100, double _score_tol = TOL):
+    HallOfFame(Metric _metric, ObjectCompare _obj_compare = std::less<ObjectType>(), Index _max_size = 100, double _score_tol = TOL):
       m_metric(_metric),
       m_obj_compare(_obj_compare),
       m_score_compare(_score_tol),

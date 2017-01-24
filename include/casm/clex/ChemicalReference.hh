@@ -1,7 +1,6 @@
 #ifndef CASM_ChemicalReference
 #define CASM_ChemicalReference
 
-#include "casm/crystallography/Structure.hh"
 #include "casm/clex/Reference.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/clex/ConfigIO.hh"
@@ -9,6 +8,12 @@
 namespace CASM {
 
   class PrimClex;
+  class Structure;
+
+  /** \ingroup Reference
+   *
+   *  @{
+   */
 
   /// \brief Stores the composition and energy in a single reference state
   ///
@@ -510,6 +515,8 @@ namespace CASM {
     // use E, N to calculate hyperplane
     return _calc_hyperplane(prim, struc_mol_name, N, E, tol);
   }
+
+  /** @} */
 }
 
 #endif
