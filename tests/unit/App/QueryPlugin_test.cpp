@@ -17,7 +17,6 @@ BOOST_AUTO_TEST_SUITE(QueryPluginTest)
 BOOST_AUTO_TEST_CASE(Test1) {
 
   test::ZrOProj proj;
-  make_project(proj);
   proj.check_init();
   proj.check_composition();
   proj.check_enum();
@@ -69,7 +68,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   BOOST_CHECK(check(R"(casm query -k 'test_configname')"));
 
-  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -18,7 +18,7 @@ BOOST_AUTO_TEST_SUITE(ScelEnumTest)
 BOOST_AUTO_TEST_CASE(Test1) {
 
   test::ZrOProj proj;
-  make_project(proj);
+  proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
 
@@ -70,7 +70,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
     BOOST_CHECK(it == end);
   }
 
-  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_CASE(Test2) {
@@ -100,8 +99,6 @@ BOOST_AUTO_TEST_CASE(Test2) {
   BOOST_CHECK_EQUAL(exec("casm enum --method ConfigEnumAllOccupations --all"), 0);
   BOOST_CHECK_EQUAL(exec("casm enum --method ScelEnum --max 8"), 0);
   BOOST_CHECK_EQUAL(exec("casm enum --method ConfigEnumAllOccupations --max 6 -i '{\"existing_only\":true}'"), 0);
-
-  rm_project(proj);
 
 }
 

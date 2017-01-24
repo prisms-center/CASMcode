@@ -1,5 +1,7 @@
 #include "Common.hh"
 
+#include <thread>
+#include <chrono>
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/app/ProjectBuilder.hh"
@@ -57,34 +59,38 @@ namespace test {
     return ok;
   }
 
-  /// \brief Build a CASM project at 'proj_dir/title' using the prim
-  void make_project(const Proj &proj) {
+  /// \brief Create a new project directory, appending ".(#)" to ensure
+  /// it is a new project
+  fs::path proj_dir(fs::path init) {
 
-    rm_project(proj);
-
-    jsonParser json;
-    write_prim(proj.prim, json, FRAC);
-    json["description"] = proj.desc;
-
-    fs::create_directories(proj.dir);
-
-    json.write(proj.dir / "prim.json");
-
-    // build a project
-    ProjectBuilder builder(proj.dir, proj.title, "formation_energy");
-    builder.build();
-
-  }
-
-  /// \brief Remove a CASM project, checking first that there is a '.casm' dir
-  ///
-  /// Be careful! This does a recursive remove of the entire proj_dir!
-  void rm_project(const Proj &proj) {
-
-    if(fs::exists(proj.dir / ".casm")) {
-      fs::remove_all(proj.dir);
+    fs::path result = fs::absolute(init);
+    int index = 0;
+    std::string dot = ".";
+    while(!fs::create_directories(result)) {
+      result = fs::path(init.string() + dot + std::to_string(index));
+      ++index;
     }
 
+    return result;
+  }
+
+  /// \brief Build a CASM project at 'proj_dir/title' using the prim
+  void Proj::make() {
+
+    if(!fs::exists(dir / ".casm")) {
+      jsonParser json;
+      write_prim(prim, json, FRAC);
+      json["description"] = desc;
+
+      json.write(dir / "prim.json");
+
+      // build a project
+      ProjectBuilder builder(dir, title, "formation_energy");
+      builder.build();
+    }
+
+    // (re)load ProjectSettings
+    m_set = notstd::make_cloneable<ProjectSettings>(dir);
   }
 
   /// \brief Check some aspects of a SymGroup json
@@ -105,20 +111,17 @@ namespace test {
   /// \brief Check that 'casm init' runs without error and expected files are created
   void Proj::check_init() {
 
-    test::rm_project(*this);
+    make();
 
-    test::make_project(*this);
-
-    m_set = ProjectSettings(dir);
-    m_set.set_casm_prefix(fs::current_path());
+    m_set->set_casm_prefix(fs::current_path());
 
     // handle scons and autotools
-    if(!fs::exists(m_set.casm_libdir().first / "libcasm.dylib") &&
-       !fs::exists(m_set.casm_libdir().first / "libcasm.so")) {
-      m_set.set_casm_libdir(fs::current_path() / ".libs");
+    if(!fs::exists(m_set->casm_libdir().first / "libcasm.dylib") &&
+       !fs::exists(m_set->casm_libdir().first / "libcasm.so")) {
+      m_set->set_casm_libdir(fs::current_path() / ".libs");
     }
 
-    m_set.commit();
+    m_set->commit();
 
     BOOST_CHECK_EQUAL(true, fs::exists(dir));
 

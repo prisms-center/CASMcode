@@ -17,7 +17,6 @@ BOOST_AUTO_TEST_SUITE(EnumeratorPluginTest)
 BOOST_AUTO_TEST_CASE(Test1) {
 
   test::ZrOProj proj;
-  make_project(proj);
   proj.check_init();
   proj.check_composition();
 
@@ -57,7 +56,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   BOOST_CHECK_EQUAL(std::distance(primclex.config_begin(), primclex.config_end()), 336);
 
-  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
