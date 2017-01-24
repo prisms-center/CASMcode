@@ -3,14 +3,124 @@
 
 #include "casm/external/Eigen/Dense"
 
+#include "casm/misc/cloneable_ptr.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/casm_io/Log.hh"
 
 #include "casm/container/Counter.hh"
 
 namespace CASM {
+
+  class PrimClex;
+
+  /** \defgroup LatticeEnum Lattice Enumerators
+   *
+   *  \ingroup Enumerator
+   *  \ingroup Lattice
+   *
+   *  \brief Enumerates Lattice
+   *
+   *  @{
+   */
+
+  /// Data structure for holding supercell enumeration properties
+  class ScelEnumProps {
+
+  public:
+
+    typedef long size_type;
+
+    /// \brief Constructor
+    ///
+    /// \param begin_volume The beginning volume to enumerate
+    /// \param end_volume The past-the-last volume to enumerate
+    /// \param dirs String indicating which lattice vectors to enumerate
+    ///        over. Some combination of 'a', 'b', and 'c', where 'a' indicates
+    ///        the first lattice vector of the unit cell, 'b' the second, and 'c'
+    ///        the third.
+    /// \param generating_matrix This matrix, G, transforms the primitive lattice
+    ///         vectors into the unit cell lattice vectors which are used to generate
+    ///        supercells. So the generated supercells, S = P*G*T, where S and P
+    ///        are column vector matrices of the supercell and primitive cell,
+    ///        respectively, and G and T are integer tranformation matrices.
+    ScelEnumProps(size_type begin_volume,
+                  size_type end_volume,
+                  std::string dirs = "abc",
+                  Eigen::Matrix3i generating_matrix = Eigen::Matrix3i::Identity()) :
+      m_begin_volume(begin_volume),
+      m_end_volume(end_volume),
+      m_dims(dirs.size()),
+      m_dirs(dirs) {
+
+      for(int i = 0; i < m_dirs.size(); i++) {
+        if(m_dirs[i] != 'a' && m_dirs[i] != 'b' && m_dirs[i] != 'c') {
+          std::string msg = "Error constructing ScelEnumProps: an element of dirs != 'a', 'b', or 'c'";
+          default_err_log().error("Constructing ScelEnumProps");
+          default_err_log() << msg << "\n" << std::endl;
+          throw std::invalid_argument(msg);
+        }
+      }
+
+      // add missing directions to 'dirs',
+      // then permute 'G' so that the specified 'dirs' are first
+      while(m_dirs.size() != 3) {
+        if(std::find(m_dirs.begin(), m_dirs.end(), 'a') == m_dirs.end()) {
+          m_dirs.push_back('a');
+        }
+        if(std::find(m_dirs.begin(), m_dirs.end(), 'b') == m_dirs.end()) {
+          m_dirs.push_back('b');
+        }
+        if(std::find(m_dirs.begin(), m_dirs.end(), 'c') == m_dirs.end()) {
+          m_dirs.push_back('c');
+        }
+      }
+      Eigen::Matrix3i P = Eigen::Matrix3i::Zero();
+      P(m_dirs[0] - 'a', 0) = 1;
+      P(m_dirs[1] - 'a', 1) = 1;
+      P(m_dirs[2] - 'a', 2) = 1;
+
+      m_gen_mat = generating_matrix * P;
+    }
+
+
+    size_type begin_volume() const {
+      return m_begin_volume;
+    }
+
+    size_type end_volume() const {
+      return m_end_volume;
+    }
+
+    int dims() const {
+      return m_dims;
+    }
+
+    std::string dirs() const {
+      return m_dirs;
+    }
+
+    Eigen::Matrix3i generating_matrix() const {
+      return m_gen_mat;
+    }
+
+  private:
+
+    size_type m_begin_volume;
+    size_type m_end_volume;
+    int m_dims;
+    std::string m_dirs;
+    Eigen::Matrix3i m_gen_mat;
+
+  };
+
+  /// \brief Read unit cell transformation matrix from JSON input
+  Eigen::Matrix3i make_unit_cell(PrimClex &primclex, const jsonParser &json);
+
+  /// \brief Make a ScelEnumProps object from JSON input
+  ScelEnumProps make_scel_enum_props(PrimClex &primclex, const jsonParser &input);
 
   /**
    * Given the dimensions of a square matrix and its determinant,
@@ -152,8 +262,7 @@ namespace CASM {
     typedef const UnitType &reference;
     typedef const UnitType *pointer;
 
-    //required for forward iterator
-    //SupercellIterator<UnitType>() {}
+    SupercellIterator<UnitType>() {}
 
     SupercellIterator<UnitType>(const SupercellEnumerator<UnitType> &enumerator,
                                 int volume,
@@ -215,7 +324,7 @@ namespace CASM {
     const SupercellEnumerator<UnitType> *m_enum;
 
     /// \brief Current supercell matrix in HermitCounter form
-    HermiteCounter m_current;
+    notstd::cloneable_ptr<HermiteCounter> m_current;
 
     /// \brief A supercell, stored here so that iterator dereferencing will be OK. Only used when requested.
     mutable UnitType m_super;
@@ -245,16 +354,12 @@ namespace CASM {
     /// \returns a SupercellEnumerator
     ///
     /// \param unit The thing that is tiled to form supercells. For now Lattice.
+    /// \param enum_props Data structure specifying how to enumerate supercells
     /// \param tol Tolerance for generating the point group
-    /// \param begin_volume The beginning volume to enumerate
-    /// \param end_volume The past-the-last volume to enumerate
     ///
     SupercellEnumerator(UnitType unit,
-                        double tol,
-                        size_type begin_volume,
-                        size_type end_volume,
-                        int init_dims = 3,
-                        Eigen::Matrix3i init_gen_mat = Eigen::Matrix3i::Identity());
+                        const ScelEnumProps &enum_props,
+                        double tol);
 
     /// \brief Construct a SupercellEnumerator using custom point group operations
     ///
@@ -262,15 +367,12 @@ namespace CASM {
     ///
     /// \param unit The thing that is tiled to form supercells. For now Lattice.
     /// \param point_grp Point group operations to use for checking supercell uniqueness.
-    /// \param begin_volume The beginning volume to enumerate
-    /// \param end_volume The past-the-last volume to enumerate
+    /// \param enum_props Data structure specifying how to enumerate supercells
     ///
     SupercellEnumerator(UnitType unit,
                         const SymGroup &point_grp,
-                        size_type begin_volume,
-                        size_type end_volume,
-                        int init_dims = 3,
-                        Eigen::Matrix3i init_gen_mat = Eigen::Matrix3i::Identity());
+                        const ScelEnumProps &enum_props);
+
 
     /// \brief Access the unit the is being made into supercells
     const UnitType &unit() const;
@@ -372,7 +474,7 @@ namespace CASM {
   SupercellIterator<UnitType>::SupercellIterator(const SupercellEnumerator<UnitType> &enumerator,
                                                  int volume,
                                                  int dims):
-    m_current(volume, dims),
+    m_current(notstd::make_cloneable<HermiteCounter>(volume, dims)),
     m_super_updated(false),
     m_enum(&enumerator) {
     if(enumerator.begin_volume() > enumerator.end_volume()) {
@@ -432,12 +534,12 @@ namespace CASM {
 
   template<typename UnitType>
   HermiteCounter::value_type SupercellIterator<UnitType>::volume() const {
-    return m_current.determinant();
+    return m_current->determinant();
   }
 
   template<typename UnitType>
   Eigen::Matrix3i SupercellIterator<UnitType>::matrix() const {
-    Eigen::Matrix3i expanded = HermiteCounter_impl::_expand_dims(m_current(), m_enum->gen_mat());
+    Eigen::Matrix3i expanded = HermiteCounter_impl::_expand_dims((*m_current)(), m_enum->gen_mat());
     return canonical_hnf(expanded, m_enum->point_group(), m_enum->lattice());
   }
 
@@ -468,15 +570,15 @@ namespace CASM {
   template<typename UnitType>
   void SupercellIterator<UnitType>::_increment() {
     m_canon_hist.push_back(matrix());
-    HermiteCounter::value_type last_determinant = m_current.determinant();
-    ++m_current;
+    HermiteCounter::value_type last_determinant = m_current->determinant();
+    ++(*m_current);
 
-    if(last_determinant != m_current.determinant()) {
+    if(last_determinant != m_current->determinant()) {
       m_canon_hist.clear();
     }
 
     while(std::find(m_canon_hist.begin(), m_canon_hist.end(), matrix()) != m_canon_hist.end()) {
-      ++m_current;
+      ++(*m_current);
     }
 
     m_super_updated = false;
@@ -565,19 +667,13 @@ namespace CASM {
 
   template<>
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
-                                                    double tol,
-                                                    size_type begin_volume,
-                                                    size_type end_volume,
-                                                    int init_dims,
-                                                    Eigen::Matrix3i init_gen_mat);
+                                                    const ScelEnumProps &enum_props,
+                                                    double tol);
 
   template<>
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
                                                     const SymGroup &point_grp,
-                                                    size_type begin_volume,
-                                                    size_type end_volume,
-                                                    int init_dims,
-                                                    Eigen::Matrix3i init_gen_mat);
+                                                    const ScelEnumProps &enum_props);
 
   template<>
   Eigen::Matrix3i enforce_min_volume<Lattice>(
@@ -591,6 +687,7 @@ namespace CASM {
   /// \brief Return canonical hermite normal form of the supercell matrix, and op used to find it
   Eigen::Matrix3i canonical_hnf(const Eigen::Matrix3i &T, const SymGroup &effective_pg, const Lattice &ref_lattice);
 
+  /** @} */
 }
 
 #endif

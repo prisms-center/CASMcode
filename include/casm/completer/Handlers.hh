@@ -104,6 +104,12 @@ namespace CASM {
       ///More explicit initialization
       OptionHandlerBase(const std::string &init_option_tag, const std::string &init_descriptor);
 
+      ///Get the variables map
+      po::variables_map &vm();
+
+      ///Get the variables map
+      const po::variables_map &vm() const;
+
       ///Get the program options, filled with the initialized values
       const po::options_description &desc();
 
@@ -119,13 +125,16 @@ namespace CASM {
       ///Boost program options. All the derived classes have them, but will fill them up themselves
       po::options_description m_desc;
 
+      ///Boost program options variable map
+      po::variables_map m_vm;
+
       ///Fill in the options descriptions accordingly
       virtual void initialize() = 0;
 
       //-------------------------------------------------------------------------------------//
 
       ///Add --config suboption (defaults to MASTER)
-      void add_configlist_suboption();
+      void add_configlist_suboption(const fs::path &_default = "MASTER");
 
       ///The selection string to go with add_config_suboption
       fs::path m_selection_path;
@@ -136,7 +145,7 @@ namespace CASM {
       //----------------------------//
 
       ///Add --configs suboption (defaults to MASTER)
-      void add_configlists_suboption();
+      void add_configlists_suboption(const fs::path &_default = "MASTER");
 
       ///The selection string to go with add_config_suboption
       std::vector<fs::path> m_selection_paths;
@@ -183,8 +192,19 @@ namespace CASM {
 
       //-------------------------------------------------------------------------------------//
 
+      ///Add a --input suboption. Expects a corresponding `casm format` to go with it.
+      void add_input_suboption(bool required = true);
+
+      ///The settings path to go with add_input_suboption()
+      std::string m_input_str;
+
+      ///Returns the path corresponding to add_input_suboption
+      std::string input_str() const;
+
+      //-------------------------------------------------------------------------------------//
+
       ///Add a --settings suboption. Expects a corresponding `casm format` to go with it.
-      void add_settings_suboption();
+      void add_settings_suboption(bool required = true);
 
       ///The settings path to go with add_settings_suboption()
       fs::path m_settings_path;
@@ -494,6 +514,10 @@ namespace CASM {
 
       double lattice_weight() const;
 
+      double min_va_frac() const;
+
+      double max_va_frac() const;
+
       const std::vector<fs::path> &pos_vec() const;
 
       const fs::path &batch_path() const;
@@ -506,6 +530,10 @@ namespace CASM {
       double m_vol_tolerance;
 
       double m_lattice_weight;
+
+      double m_min_va_frac;
+
+      double m_max_va_frac;
 
       std::vector<fs::path> m_pos_vec;
 
@@ -701,11 +729,17 @@ namespace CASM {
 
       using OptionHandlerBase::coordtype_enum;
 
+      using OptionHandlerBase::selection_path;
+
       UpdateOption();
 
       double vol_tolerance() const;
 
       double lattice_weight() const;
+
+      double min_va_frac() const;
+
+      double max_va_frac() const;
 
     private:
 
@@ -714,6 +748,10 @@ namespace CASM {
       double m_vol_tolerance;
 
       double m_lattice_weight;  //TODO: Push to base? Other commands use this
+
+      double m_min_va_frac;
+
+      double m_max_va_frac;
 
     };
 
@@ -748,34 +786,47 @@ namespace CASM {
 
     public:
 
-      using OptionHandlerBase::supercell_strs;
-
       EnumOption();
 
-      int min_vol() const;
+      using OptionHandlerBase::settings_path;
+      using OptionHandlerBase::input_str;
+      using OptionHandlerBase::supercell_strs;
 
-      int max_vol() const;
+      const std::vector<std::string> &desc_vec() const {
+        return m_desc_vec;
+      }
 
-      const std::vector<std::string> &filter_strs() const;
+      std::string method() const {
+        return m_method;
+      }
 
-      const fs::path &matrix_path() const;
+      int min_volume() const {
+        return m_min_volume;
+      }
 
-      const std::string &lattice_directions() const;
+      int max_volume() const {
+        return m_max_volume;
+      }
 
+      bool all_existing() const {
+        return m_all_existing;
+      }
+
+      const std::vector<std::string> &filter_strs() const {
+        return m_filter_strs;
+      }
 
     private:
 
       void initialize() override;
 
-      int m_min_vol;
+      std::vector<std::string> m_desc_vec;
 
-      int m_max_vol;
-
-      std::vector<std::string> m_filter_strs;   //This could be merged together with casm query --columns
-
-      fs::path m_matrix_path;   //This could be merged together with casm super --transf-mat
-
-      std::string m_lattice_directions_str;
+      std::string m_method;
+      int m_min_volume;
+      int m_max_volume;
+      bool m_all_existing;
+      std::vector<std::string> m_filter_strs;
 
     };
 

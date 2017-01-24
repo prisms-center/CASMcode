@@ -6,6 +6,7 @@
 
 #include "casm/misc/CASM_TMP.hh"
 
+/// \brief Non-std smart pointer classes and functions
 namespace notstd {
 
   /// \brief c++11 does not include 'make_unique'
@@ -14,7 +15,14 @@ namespace notstd {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
   }
 
-
+  class Cloneable {
+  public:
+    std::unique_ptr<Cloneable> clone() const {
+      return std::unique_ptr<Cloneable>(this->_clone());
+    }
+  private:
+    virtual Cloneable *_clone() const = 0;
+  };
 
   template<typename Type>
   class cloneable_ptr;

@@ -4,6 +4,9 @@
 #include "casm/casm_io/DataStream.hh"
 #include "casm/external/Eigen/Dense"
 namespace CASM {
+
+  /// \ingroup DataFormatter
+  ///
   class MatrixXdDataStream : public DataStream {
   public:
     MatrixXdDataStream(DataStreamTraits _traits = none) : DataStream(_traits), m_matrix(1, 0), m_row(0), m_col(0) {}
@@ -11,10 +14,10 @@ namespace CASM {
       if(m_col == m_matrix.cols()) {
         if(m_row > 0 || m_matrix.rows() != 1)
           throw std::runtime_error("Attempting to stream non-rectangular data to Eigen::MatrixXd using MatrixXdDataStream, at row=" + std::to_string(m_row) + ", col=" + std::to_string(m_row) + "\n");
-        m_matrix = (Eigen::MatrixXd(m_matrix.rows(), m_col + 1) << m_matrix, 0.0).finished();
+        m_matrix.conservativeResize(Eigen::NoChange, m_col + 1);
       }
       if(m_row == m_matrix.rows()) {
-        m_matrix = (Eigen::MatrixXd(m_row + 1, m_matrix.cols()) << m_matrix, Eigen::MatrixXd::Zero(1, m_matrix.cols())).finished();
+        m_matrix.conservativeResize(m_row + 1, Eigen::NoChange);
       }
       m_matrix(m_row, m_col++) = _d;
       return *this;
@@ -50,6 +53,8 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+  /// \ingroup DataFormatter
+  ///
   class LabeledMatrixXdDataStream : public MatrixXdDataStream {
   public:
     LabeledMatrixXdDataStream(DataStreamTraits _traits = none) :

@@ -43,20 +43,20 @@ def read_settings(filename):
         "remove": files to remove at the end of a run (ex. ["IBZKPT", "CHGCAR"], default ["IBKZPT", "CHG", "CHGCAR", "WAVECAR", "TMPCAR", "EIGENVAL", "DOSCAR", "PROCAR", "PCDAT", "XDATCAR", "LOCPOT", "ELFCAR", "PROOUT"]
         "compress": files to compress at the end of a run (ex. ["OUTCAR", "vasprun.xml"], default [])
         "backup": files to compress to backups at the end of a run, used in conjunction with move (ex. ["WAVECAR"])
-
-        "encut": [START, STOP, STEP] values for converging ENCUT to within nrg_convergence (ex. ["450", "Auto", "10"],
-                 default ["Auto", "Auto", "10"] where "Auto" is either the largest ENMAX in all POTCARS called in SPECIES for START,
-                 or 2.0 * largest ENMAX for STOP)
-        "kpoints": [start, stop, step] values for converging KPOINTS to within nrg_convergence (ex. ["5", "50", "1"],
-                 default ["5", "Auto", "1"] where "Auto" can only be used for STOP and means to keep increasing the KPOINTS length
-                 by STEP until either nrg_convergence or walltime is reached). For meaning of the KPOINTS length parameter see
-                 the VASP documentation at http://cms.mpi.univie.ac.at/vasp/vasp/Automatic_k_mesh_generation.html
         "extra_input_files": extra input files to be copied from the settings directory, e.g., a vdW kernel file.
         "initial" : location of INCAR with tags for the initial run, if desired (e.g. to generate a PBE WAVECAR for use with M06-L)
         "final" : location of INCAR with tags for the final run, if desired (e.g. "ISMEAR = -5", etc). Otherwise, the settings enforced are ("ISMEAR = -5", "NSW = 0", "IBRION = -1", "ISIF = 2")
         "err_types" : list of errors to check for. Allowed entries are "IbzkptError" and "SubSpaceMatrixError". Default: ["SubSpaceMatrixError"]
+        "preamble" : a text file containing anything that MUST be run before python is invoked (e.g. module.txt which contains "module load python", or "source foo")
         "prerun" : bash commands to run before vasp.Relax.run (default None)
         "postrun" : bash commands to run after vasp.Relax.run completes (default None)
+        "prop": USED IN vasp.converge ONLY. Property to converge with respect to (current options are "KPOINT" and "ENCUT")
+        "prop_start": USED IN vasp.converge ONLY. Starting value of "prop", e.g. 450 (for ENCUT) or 5 (for KPOINTS) or [4 4 4] (for KPOINTS)
+        "prop_stop": USED IN vasp.converge ONLY. Ending value of "prop", e.g. 550 (for ENCUT) or 20 (for KPOINTS).
+        "prop_step": USED IN vasp.converge ONLY. Delta value of "prop", e.g. 10 (for ENCUT) or 2 (for KPOINTS) or [1 1 2] (for KPOINTS)
+        "tol" : USED IN vasp.converge ONLY. Tolerance type for convergence, e.g. relaxed_energy. Optional
+        "tol_amount" : USED IN vasp.converge ONLY. Tolerance criteria convergence, e.g. 0.001. If the abs difference between two runs in their "tol" is smaller than "tol_amount", the "prop" is considered converged.
+        "name" : USED IN vasp.converge ONLY. Name used in the .../config/calctype.calc/NAME/property_i directory scheme, where, if not specified, "prop"_converge is used as NAME
     """
     try:
         file = open(filename)
@@ -68,11 +68,12 @@ def read_settings(filename):
 
     required = ["queue", "ppn", "atom_per_proc", "walltime"]
 
-    optional = ["account","pmem","priority","message","email","qos","npar","ncore", 
+    optional = ["account","pmem","priority","message","email","qos","npar","ncore",
                 "kpar", "ncpus","vasp_cmd","run_limit","nrg_convergence",
-                "encut", "kpoints","extra_input_files", "move", "copy", "remove", 
+                "encut", "kpoints","extra_input_files", "move", "copy", "remove",
                 "compress", "backup", "initial", "final", "strict_kpoints", "err_types",
-                "prerun", "postrun","calculator"]
+                "calculator","preamble", "prerun", "postrun", "prop", "prop_start", "prop_stop",
+                "prop_step", "tol", "tol_amount", "name", "fine_ngx"]
     for key in required:
         if not key in settings:
             raise VaspWrapperError( key + "' missing from: '" + filename + "'")
@@ -104,6 +105,8 @@ def read_settings(filename):
         settings["extra_input_files"] = []
     if settings["strict_kpoints"] == None:
         settings["strict_kpoints"] = False
+    if settings["fine_ngx"] == None:
+        settings["fine_ngx"] = False
     for k in settings.keys():
         if k not in required:
             if k not in optional:
@@ -118,60 +121,60 @@ def write_settings(settings, filename):
     json.dump( settings, file, indent=4)
     file.close()
 
-      
+
 def vasp_input_file_names(dir, configname, clex):
     """
     Collect casm.vaspwrapper input files from the CASM project hierarchy
-    
+
     Looks for:
-      
-      INCAR:   
+
+      INCAR:
         The base INCAR file used for calculations. Found via:
           DirectoryStructure.settings_path_crawl
-      
+
       KPOINTS:
         The KPOINTS file specifying the k-point grid for a reference structure
         which is then scaled to be approximately the same density for other
         structures. Found via:
           DirectoryStructure.settings_path_crawl
-      
+
       KPOINTS_REF: (optional)
         The reference structure used to determine the k-point density, if not
         running in Auto mode. If running VASP with AUTO KPOINTS mode, this file
         is not necessary. Found via:
           DirectoryStructure.settings_path_crawl
-      
-      POS: 
+
+      POS:
         The CASM-generated POS file giving the initial structure to be calculated.
-      
+
       SPECIES:
         The SPECIES file specifying Vasp settings for each species in the structure.
-      
-    
+
+
     Arguments
     ---------
-      
+
       dir: casm.project.DirectoryStructure instance
         CASM project directory hierarchy
-      
+
       configname: str
         The name of the configuration to be calculated
-      
+
       clex: casm.project.ClexDescription instance
         The cluster expansion being worked on. Used for the 'calctype' settings.
-    
-    
+
+
     Returns
     -------
-      
+
       filepaths: tuple(INCAR, KPOINTS, KPOINTS_REF, POS, SPECIES)
         A tuple containing the paths to the vaspwrapper input files
-    
-    
+
+
     Raises
     ------
       If any required file is not found.
-    
+
     """
     # Find required input files in CASM project directory tree
     incarfile = dir.settings_path_crawl("INCAR", configname, clex)
@@ -193,4 +196,22 @@ def vasp_input_file_names(dir, configname, clex):
         raise vasp.VaspError("vasp_input_file_names failed. No SPECIES file found in CASM project.")
 
     return (incarfile, prim_kpointsfile, prim_poscarfile, super_poscarfile, speciesfile)
+
+def read_properties(filename):
+    """ Read a properties.calc.json"""
+    required = ["atom_type", "atoms_per_type", "coord_mode", "relaxed_basis", "relaxed_energy", "relaxed_forces", "relaxed_lattice"]
+    optional = ["relaxed_magmom", "relaxed_mag_basis"]
+
+    with open(filename, 'r') as myfile:
+        properties = json.load(myfile)
+
+    for key in required:
+        if not key in properties:
+            raise VaspWrapperError(key + "' missing from: '" + filename + "'")
+
+    for key in optional:
+        if not key in properties:
+            properties[key] = None
+
+    return properties
 

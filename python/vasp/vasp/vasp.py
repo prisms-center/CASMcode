@@ -1,17 +1,24 @@
-import os, shutil, re, subprocess, sys, time, gzip, warnings
-import io
+""" Job manipuation routines for VASP"""
 
+import abc
+import os
+import shutil
+import re
+import subprocess
+import sys
+import time
+import gzip
+import warnings
+import signal
+from . import io
 
 class VaspError(Exception):
-    def __init__(self,msg):
-        self.msg = msg
-
-    def __str__(self):
-        return self.msg
-
+    """ VASP related errors """
+    pass
 
 class VaspWarning(Warning):
-    def __init__(self,msg):
+    """ VASP related warnings"""
+    def __init__(self, msg):
         self.msg = msg
 
     def __str__(self):
@@ -120,7 +127,7 @@ def continue_job(jobdir, contdir, settings):
     # make compressed backups of files sensitive to corruption (e.g. WAVECAR)
     print " backup:"
     for file in backup:
-        if os.path.isfile(os.path.join(jobdir,file)):
+        if os.path.isfile(os.path.join(jobdir, file)):
             print file,
             # Open target file, target file.gz
             f_in = open(os.path.join(jobdir, file), 'rb')
@@ -132,33 +139,41 @@ def continue_job(jobdir, contdir, settings):
     print ""
 
     # copy CONTCAR/POSCAR/etc
-    if os.path.isfile(os.path.join(jobdir,"CONTCAR")) and os.path.getsize(os.path.join(jobdir,"CONTCAR")) > 0:
-        shutil.copyfile(os.path.join(jobdir,"CONTCAR"),os.path.join(contdir,"POSCAR"))
+    if os.path.isfile(os.path.join(jobdir, "CONTCAR")) and os.path.getsize(os.path.join(jobdir, "CONTCAR")) > 0:
+        shutil.copyfile(os.path.join(jobdir, "CONTCAR"), os.path.join(contdir, "POSCAR"))
         print "  cp CONTCAR -> POSCAR"
     else:
-        shutil.copyfile(os.path.join(jobdir,"POSCAR"),os.path.join(contdir,"POSCAR"))
+        shutil.copyfile(os.path.join(jobdir, "POSCAR"), os.path.join(contdir, "POSCAR"))
         print "  no CONTCAR: cp POSCAR -> POSCAR"
 
     # move files
     print "  mv:",
     for file in move:
         print file,
-        os.rename(os.path.join(jobdir,file),os.path.join(contdir,file))
+        # This prevents a missing file from crashing the vasprun (e.g. a missing WAVECAR)
+        if os.path.isfile(os.path.join(jobdir, file)):
+            os.rename(os.path.join(jobdir, file), os.path.join(contdir, file))
+        else:
+            print "Could not find file %s, skipping!" % file
     print ""
 
     # copy files
     print "  cp:",
     for file in copy:
         print file,
-        shutil.copyfile(os.path.join(jobdir,file),os.path.join(contdir,file))
+        # This prevents a missing file from crashing the vasprun (e.g. a missing WAVECAR)
+        if os.path.isfile(os.path.join(jobdir, file)):
+            shutil.copyfile(os.path.join(jobdir, file), os.path.join(contdir, file))
+        else:
+            print "Could not find file %s, skipping!" % file
     print ""
 
     # remove files
     print "  rm:",
     for file in remove:
-        if os.path.isfile(os.path.join(jobdir,file)):
+        if os.path.isfile(os.path.join(jobdir, file)):
             print file,
-            os.remove(os.path.join(jobdir,file))
+            os.remove(os.path.join(jobdir, file))
     print ""
 
     # compress files
@@ -230,50 +245,102 @@ def complete_job(jobdir, settings):
     print ""
     sys.stdout.flush()
 
+class _RunError(object):
+    """ Template class for all run errors to be caught """
+    ___metaclass__ = abc.ABCMeta
 
-class IbzkptError(object):
+    @abc.abstractmethod
+    def error(self, line=None, jobdir=None):
+        """ Check for the error in the OUTCAR """
+
+    @abc.abstractmethod
+    def fix(self, err_jobdir, new_jobdir, settings):
+        """ Fix the error """
+
+    @abc.abstractproperty
+    def pattern(self):
+        """ The pattern the Class matches to """
+
+    def __str__(self):
+        return self.pattern
+
+class _CrashError(object):
+    """ Template class for all crash-related errors to be caught """
+    ___metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def error(self, line=None, jobdir=None):
+        """ Check for the error in the OUTCAR """
+
+    @abc.abstractmethod
+    def fix(self, err_jobdir, new_jobdir, settings):
+        """ Fix the error """
+
+    @abc.abstractproperty
+    def pattern(self):
+        """ The pattern the Class matches to """
+
+    def __str__(self):
+        return self.pattern
+
+class _FreezeError(object):
+    """ Template class for all crash-related errors to be caught """
+    ___metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def error(self, line=None, jobdir=None):
+        """ Check for the error in the OUTCAR """
+
+    @abc.abstractmethod
+    def fix(self, err_jobdir, new_jobdir, settings):
+        """ Fix the error """
+
+    @abc.abstractproperty
+    def pattern(self):
+        """ The pattern the Class matches to """
+
+    def __str__(self):
+        return self.pattern
+
+class IbzkptError(_RunError):
     """ VERY BAD NEWS! internal error in subroutine IBZKPT
 
         This is not necessarily a fatal error.  Also, these fixes are not working.
     """
-    def __init__(self):
-        self.pattern = "VERY BAD NEWS! internal error in subroutine IBZKPT"
-#        self.pattern = "DONOTMATCH"
-
+    # This should be a class member: all IbzkptErrors have it
+    pattern = "VERY BAD NEWS! internal error in subroutine IBZKPT"
 
     def __str__(self):
         return self.pattern
 
 
+
     def error(self, line=None, jobdir=None):
-        """ Check if pattern found in line, and KPOINTS subdivisions are odd or not Gamma-centered """
+        """ Check if pattern found in line, and KPOINTS subdivisions are odd or not Gamma"""
         if re.search(self.pattern, line):
-            kpt = io.Kpoints(os.path.join(jobdir,"KPOINTS"))
+            kpt = io.Kpoints(os.path.join(jobdir, "KPOINTS"))
             odd = True
             for i in range(len(kpt.subdivisions)):
                 if kpt.subdivisions[i] % 2 == 0:
                     odd = False
-            if odd == False or kpt.automode[0].lower() != "g":
+            if odd is False or kpt.automode[0].lower() != "g":
                 return True
         return False
-
 
     def fix(self, err_jobdir, new_jobdir, settings):
         """ Try to fix by making kpoints subdivisions odd or changing kpoint length"""
         continue_job(err_jobdir, new_jobdir, settings)
-        kpt = io.Kpoints(os.path.join(new_jobdir,"KPOINTS"))
+        kpt = io.Kpoints(os.path.join(new_jobdir, "KPOINTS"))
 
         if kpt.automode[0].lower() == "a":
             old_kpt = kpt.subdivisions[0]
-            ocr = io.Outcar(os.path.join(err_jobdir,"OUTCAR"))
+            ocr = io.Outcar(os.path.join(err_jobdir, "OUTCAR"))
             max_k = max(ocr.kpts)
             kpt.automode = "GAMMA"
             kpt.subdivisions = [max_k, max_k, max_k]
             kpt.shift = [0.0, 0.0, 0.0]
             print "  Changed KPOINTS from AUTO (%s) to GAMMA (%s)" % (old_kpt, kpt.subdivisions)
-#           kpt.subdivisions[0]+=1
-#           print "  Increased KPOINTS length from ", kpt.subdivisions[0]-1, " to ", kpt.subdivisions[0]
-            kpt.write(os.path.join(new_jobdir,"KPOINTS"))
+            kpt.write(os.path.join(new_jobdir, "KPOINTS"))
 
         else:
             odd = True
@@ -285,7 +352,7 @@ class IbzkptError(object):
             if odd == False:
                 print "  Set KPOINTS subdivision to be odd:", kpt.subdivisions, "and mode to Gamma"
                 kpt.automode = "Gamma"
-                kpt.write(os.path.join(new_jobdir,"KPOINTS"))
+                kpt.write(os.path.join(new_jobdir, "KPOINTS"))
 #        else:
 #            symprec = io.get_incar_tag("SYMPREC", jobdir = new_jobdir)
 #            if symprec is None or symprec < 1.1e-8:
@@ -296,22 +363,19 @@ class IbzkptError(object):
 #                io.set_incar_tag({"ISYM": 0}, jobdir = new_jobdir)
 
 
-class SubSpaceMatrixError(object):
+class SubSpaceMatrixError(_RunError):
     """WARNING: Sub-Space-Matrix is not hermitian"""
-    def __init__(self):
-        self.pattern = "WARNING: Sub-Space-Matrix is not hermitian"
 
+    pattern = "WARNING: Sub-Space-Matrix is not hermitian"
 
     def __str__(self):
         return self.pattern
-
 
     def error(self, line=None, jobdir=None):
         """ Check if pattern found in line """
         if re.search(self.pattern, line):
             return True
         return False
-
 
     def fix(self, err_jobdir, new_jobdir, settings):
         """ First attempt:
@@ -326,79 +390,36 @@ class SubSpaceMatrixError(object):
         if io.get_incar_tag("ALGO", jobdir=new_jobdir) != "VeryFast":
             print "  Set Algo = VeryFast, and Unset IALGO"
             io.set_incar_tag({"IALGO":None, "ALGO":"VeryFast"}, jobdir=new_jobdir)
-        elif io.get_incar_tag("IBRION",jobdir=new_jobdir) != 1:
+        elif io.get_incar_tag("IBRION", jobdir=new_jobdir) != 1:
             print "  Set IBRION = 1 and POTIM = 0.1"
             sys.stdout.flush()
             io.set_incar_tag({"IBRION":1, "POTIM":0.1}, jobdir=new_jobdir)
-        elif io.get_incar_tag("LREAL", jobdir = new_jobdir) != False:
+        elif io.get_incar_tag("LREAL", jobdir=new_jobdir) != False:
             print "  Set LREAL = .FALSE."
             sys.stdout.flush()
             io.set_incar_tag({"LREAL":False}, jobdir=new_jobdir)
 
-
-class FreezeError(object):
-    """VASP appears frozen"""
-    def __init__(self):
-        self.pattern = None
-
-
-    def __str__(self):
-        return "VASP appears to have frozen"
-
+class WavecarError(_CrashError):
+    """ A bad WAVECAR is causing the job to crash/abort """
+    pattern = "  ERROR: while reading WAVECAR, plane wave coefficients changed"
 
     def error(self, line=None, jobdir=None):
-        """ Check if VASP appears frozen
-
-            Returns true if:
-            1) no file has been modified for 5 minutes
-            2) 'LOOP+' exists in OUTCAR and no output file has been modified
-            in 5x the time for the slowest loop
-        """
-
-        # Check if any files modified in last 300 s
-        most_recent = None
-        most_recent_file = None
-        for f in os.listdir(jobdir):
-            t = time.time() - os.path.getmtime(os.path.join(jobdir,f))
-            if most_recent is None:
-                most_recent = t
-                most_recent_file = f
-            elif t < most_recent:
-                most_recent = t
-                most_recent_file = f
-
-        print "Most recent file output (" + f + "):", most_recent, " seconds ago."
-        sys.stdout.flush()
-        if t < 300:
-            return False
-
-        outcar = io.Outcar(os.path.join(jobdir, "OUTCAR"))
-        if outcar.complete:
-            print "outcar.complete:", outcar.complete
-            sys.stdout.flush()
-            return False
-        elif outcar.slowest_loop != None and most_recent > 5.0*outcar.slowest_loop:
-            print "slowest_loop:", outcar.slowest_loop
-            print "5.0*slowest_loop:", 5.0*outcar.slowest_loop
-            print "most_recent:", most_recent
-            sys.stdout.flush()
+        """ Check if pattern found in line """
+        if re.search(self.pattern, line):
             return True
         return False
 
-
     def fix(self, err_jobdir, new_jobdir, settings):
-        """ Fix by killing the job and resubmitting.
-        """
+        """ Delete WAVECAR and retry """
         continue_job(err_jobdir, new_jobdir, settings)
-        print "  Kill job and try to continue"
+        if os.path.isfile(os.path.join(new_jobdir, "WAVECAR")):
+            os.remove(os.path.join(new_jobdir, "WAECAR"))
+        with open(os.path.join(new_jobdir, "WAVECAR"), 'a') as f:
+            pass
 
-
-class NbandsError(object):
-    """
-    Your highest band is occupied at some k-points! Unless you are
-    """
-    def __init__(self):
-        self.pattern = "Your highest band is occupied at some k-points! Unless you are"
+class NbandsError(_RunError):
+    """Your highest band is occupied at some k-points! Unless you are"""
+    pattern = "Your highest band is occupied at some k-points! Unless you are"
 
     def __str__(self):
         return self.pattern
@@ -428,15 +449,71 @@ class NbandsError(object):
                     sys.stdout.flush()
                     io.set_incar_tag({"NBANDS":int(1.1 * float(l.strip().split()[-1]))}, jobdir=new_jobdir)
                     break
-        
-        
+
+class FreezeError(_FreezeError):
+    """VASP appears frozen"""
+    pattern = None
+
+    def __str__(self):
+        return "VASP appears to have frozen"
+
+    @staticmethod
+    def error(line=None, jobdir=None):  #pylint: disable=unused-argument
+        """ Check if VASP appears frozen
+
+            Returns true if:
+            1) no file has been modified for 5 minutes
+            2) 'LOOP+' exists in OUTCAR and no output file has been modified
+            in 5x the time for the slowest loop
+        """
+
+        # Check if any files modified in last 300 s
+        most_recent = None
+        most_recent_file = None
+        for f in os.listdir(jobdir):
+            t = time.time() - os.path.getmtime(os.path.join(jobdir, f))
+            if most_recent is None:
+                most_recent = t
+                most_recent_file = f
+            elif t < most_recent:
+                most_recent = t
+                most_recent_file = f
+
+        print "Most recent file output (" + most_recent_file + "):", most_recent, " seconds ago."
+        sys.stdout.flush()
+        if t < 300:
+            return False
+
+        outcar = io.Outcar(os.path.join(jobdir, "OUTCAR"))
+        if outcar.complete:
+            print "outcar.complete:", outcar.complete
+            sys.stdout.flush()
+            return False
+        elif outcar.slowest_loop != None and most_recent > 5.0*outcar.slowest_loop:
+            print "slowest_loop:", outcar.slowest_loop
+            print "5.0*slowest_loop:", 5.0*outcar.slowest_loop
+            print "most_recent:", most_recent
+            sys.stdout.flush()
+            return True
+        return False
+
+    @staticmethod
+    def fix(err_jobdir, new_jobdir, settings):
+        """ Fix by killing the job and resubmitting.
+        """
+        continue_job(err_jobdir, new_jobdir, settings)
+        print "  Kill job and try to continue"
+
 def error_check(jobdir, stdoutfile, err_types):
     """ Check vasp stdout for errors """
     err = dict()
+    err_objs = {}
+    for i_err in _RunError.__subclasses__():
+        err_objs[i_err.__name__] = i_err()
     if err_types is None:
         possible = [SubSpaceMatrixError()]
     else:
-        err_objs = {'IbzkptError' : IbzkptError(), 'SubSpaceMatrixError' : SubSpaceMatrixError(), 'NbandsError' : NbandsError()}
+        # err_objs = {'IbzkptError' : IbzkptError(), 'SubSpaceMatrixError' : SubSpaceMatrixError(), 'NbandsError' : NbandsError()}
         for s in err_types:
             if s not in err_objs.keys():
                 raise VaspError('Invalid err_type: %s'%s)
@@ -451,7 +528,7 @@ def error_check(jobdir, stdoutfile, err_types):
                     err[ p.__class__.__name__] = p
 
     # Error to check for once
-    possible = [FreezeError()]
+    possible = [i_err() for i_err in _FreezeError.__subclasses__()]
     for p in possible:
         if p.error(line=None, jobdir=jobdir):
             err[ p.__class__.__name__] = p
@@ -462,6 +539,24 @@ def error_check(jobdir, stdoutfile, err_types):
     else:
         return err
 
+def crash_check(jobdir, stdoutfile, crash_types):
+    """ Check vasp stdout for evidence of a crash """
+    err = None
+    possible = [i_err() for i_err in _CrashError.__subclasses__()]
+    ocar = io.Outcar(os.path.join(jobdir, "OUTCAR"))
+    if ocar.complete:
+        return None
+    # Error to check line by line, only track most-recent error
+    sout = open(stdoutfile, 'r')
+    for line in sout:
+        for p in possible:
+            if p.error(line=line, jobdir=jobdir):
+                err = p
+    sout.close()
+    if err is None:
+        return None
+    else:
+        return {err.__class__.__name__: err}
 
 def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=None, command=None, ncpus=None, kpar=None, poll_check_time = 5.0, err_check_time = 60.0, err_types=None):
     """ Run vasp using subprocess.
@@ -498,6 +593,8 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
     if ncpus is None:
         if "PBS_NP" in os.environ:
             ncpus = os.environ["PBS_NP"]
+        elif "SLURM_NTASKS" in os.environ:
+            ncpus = os.environ["SLURM_NTASKS"]
         else:
             ncpus = 1
 
@@ -509,6 +606,9 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
 
     if re.search("\{NCPUS\}",command):
         command = command.format(NCPUS=str(ncpus))
+
+    ### Expand remaining environment variables
+    command = os.path.expandvars(command)
 
     if not npar is None:
         ncore = None
@@ -539,7 +639,13 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
                 if "FreezeError" in err.keys():
                     print "  VASP is frozen, killing job"
                     sys.stdout.flush()
+                    # Sometimes p.kill doesn't work if the process is on multiple nodes
+                    os.kill(p.pid, signal.SIGKILL)
                     p.kill()
+                    # If the job is re-invoked (e.g. via mpirun or srun) too quickly
+                    #   after the previous job ended, infinitiband clusters can have
+                    #   some issues with resource allocation. A 30s sleep solves this.
+                    time.sleep(30)
                 # Other errors can be killed with STOPCAR, which is safer
                 elif stopcar_time is None:
                     print "  Found errors:",
@@ -549,11 +655,17 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
                     sys.stdout.flush()
                     io.write_stopcar('e', jobdir)
                     stopcar_time = time.time()
+                    time.sleep(30)
                 # If the STOPCAR exists, wait 5 min before manually killing the job
                 elif time.time() - stopcar_time > 300:
                     print "  VASP is non-responsive, killing job"
                     sys.stdout.flush()
+                    os.kill(p.pid, signal.SIGKILL)
                     p.kill()
+                    # If the job is re-invoked (e.g. via mpirun or srun) too quickly
+                    #   after the previous job ended, infinitiband clusters can have
+                    #   some issues with resource allocation. A 30s sleep solves this.
+                    time.sleep(30)
 
         poll = p.poll()
 
@@ -568,12 +680,14 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
 
     # check finished job for errors
     if err is None:
-        err = error_check(jobdir, os.path.join(jobdir,stdout), err_types)
-        if err != None:
-            print "  Found errors:",
-            for e in err:
-                print e,
-        print "\n"
+        # Crash-type errors take priority over any other error that may show up
+        err = crash_check(jobdir, os.path.join(jobdir, stdout), err_types)
+        if err is None:
+            err = error_check(jobdir, os.path.join(jobdir,stdout), err_types)
+    if err != None:
+        print "  Found errors:",
+        for e in err:
+            print e,
+    print "\n"
 
     return err
-

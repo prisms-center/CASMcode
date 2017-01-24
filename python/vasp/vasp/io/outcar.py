@@ -20,6 +20,11 @@ class Outcar(object):
         self.filename = filename
         self.complete = False
         self.slowest_loop = None
+        self.ngx = None
+        self.ngy = None
+        self.ngz = None
+        self.found_ngx = False
+
         self.read()
 
 
@@ -56,6 +61,17 @@ class Outcar(object):
                         self.slowest_loop = t
                     elif t > self.slowest_loop:
                         self.slowest_loop = t
+            except:
+                pass
+
+            try:
+                r = re.match(r"\s*dimension x,y,z\s*NGX\s*=\s*([0-9]*)\s*NGY\s*=\s*([0-9]*)\s*NGZ\s*=\s*([0-9]*)\s*", line)
+                # if r:
+                if r and not self.found_ngx:
+                    self.ngx = int(r.group(1))
+                    self.ngy = int(r.group(2))
+                    self.ngz = int(r.group(3))
+                    self.found_ngx = True
             except:
                 pass
 

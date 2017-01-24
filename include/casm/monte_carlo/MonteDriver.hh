@@ -359,12 +359,12 @@ namespace CASM {
         else {
 
           if(m_mc.check_convergence_time()) {
-            
+
             m_log.require<Log::verbose>() << "\n";
             m_log.custom<Log::verbose>("Begin convergence checks");
             m_log << "samples: " << m_mc.sample_times().size() << std::endl;
             m_log << std::endl;
-            
+
             if(m_mc.is_converged()) {
               break;
             }
@@ -394,7 +394,7 @@ namespace CASM {
               << "step: " << run_counter.step() << "  "
               << "take sample " << m_mc.sample_times().size() << "\n" << std::endl;
 
-        m_mc.sample_data(run_counter.pass(), run_counter.step());
+        m_mc.sample_data(run_counter);
         run_counter.increment_samples();
         if(m_enum && m_enum->on_sample()) {
           m_enum->insert(m_mc.config());

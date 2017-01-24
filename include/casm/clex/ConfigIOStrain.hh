@@ -52,7 +52,7 @@ namespace CASM {
 
       std::string short_header(const Configuration &_config) const override;
 
-      std::string long_header(const Configuration &_config) const override;
+      std::vector<std::string> col_header(const Configuration &_config) const override;
       /*
             void inject(const Configuration &_config, DataStream &_stream, Index) const override;
 
@@ -113,7 +113,7 @@ namespace CASM {
 
       std::string short_header(const Configuration &_config) const override;
 
-      std::string long_header(const Configuration &_config) const override;
+      std::vector<std::string> col_header(const Configuration &_config) const override;
       /*
             void inject(const Configuration &_config, DataStream &_stream, Index) const override;
 

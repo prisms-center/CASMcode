@@ -1,6 +1,10 @@
 #include <iostream>
 #include <sstream>
 
+/** \ingroup API
+ *  @{
+ */
+
 /// For CASM::PrimClex*
 typedef struct cPrimClex cPrimClex;
 
@@ -41,3 +45,5 @@ extern "C" {
   int casm_capi(char *args, cPrimClex *primclex, char *root, costream *log, costream *debug_log, costream *err_log);
 
 }
+
+/** @} */

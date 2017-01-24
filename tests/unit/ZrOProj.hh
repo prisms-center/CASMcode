@@ -38,7 +38,8 @@ namespace test {
   public:
 
     ZrOProj() :
-      Proj(fs::absolute(fs::path("tests/unit/App/ZrO")),
+        //Use PID to get unique naming. Otherwise different tests might obliterate your directory mid testing if you run in parallel
+      Proj(fs::absolute(fs::path(std::string("tests/unit/test_projects/ZrO.")+std::to_string(::getppid()))),
            ZrO_prim(),
            "ZrO",
            "HCP Zr with octahedral interstitial O") {}
@@ -139,16 +140,18 @@ namespace test {
     void check_enum() override {
 
       {
-        m_p.popen(cd_and() + "casm enum --supercells --max 10");
-        PrimClex primclex(dir, null_log());
+        m_p.popen(cd_and() + "casm enum --method ScelEnum --max 10");
+        std::stringstream ss;
+        Log log(ss);
+        PrimClex primclex(dir, log);
         BOOST_CHECK_MESSAGE(primclex.get_supercell_list().size() == 147, m_p.gets());
       }
 
       {
-        m_p.popen(cd_and() + "casm enum --configs --max 6");
+        m_p.popen(cd_and() + "casm enum --method ConfigEnumAllOccupations --max 6");
         std::stringstream ss;
         Log log(ss);
-        PrimClex primclex(dir, null_log());
+        PrimClex primclex(dir, log);
         BOOST_CHECK_MESSAGE(std::distance(primclex.config_begin(), primclex.config_end()) == 5763, m_p.gets());
       }
     }

@@ -12,6 +12,9 @@
 namespace CASM {
 
   /// \brief Sets up directories and files for a new CASM project
+  ///
+  /// \ingroup Project
+  ///
   class ProjectBuilder {
 
   public:

@@ -152,7 +152,7 @@ namespace CASM {
 
   /// \brief Get angle, in radians, between two vectors on range [0,pi]
   double angle(const Eigen::Ref<const Eigen::Vector3d> &a, const Eigen::Ref<const Eigen::Vector3d> &b) {
-    return acos(a.dot(b)) / (a.norm() * b.norm());
+    return acos(a.dot(b) / (a.norm() * b.norm()));
   }
 
   ///return signed angle, in radians, between -pi and pi that describe separation in direction of two vectors

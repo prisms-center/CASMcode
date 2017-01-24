@@ -6,65 +6,62 @@
 
 namespace CASM {
 
-
-  /// \brief CommandArgs constructor
+  /// \brief CommandArgs constructor - specify logging
   ///
   /// \param _argc int, as from main
   /// \param _argv char*[], as from main
   /// \param _primclex pointer to PrimClex or nullptr
   /// \param _root location of CASM project. If empty path, will use root of the
   ///        CASM project containing current working directory
-  /// \param _log Log for stdout
-  /// \param _err_log Log for stderr
+  /// \param _logging Logging object to use
   ///
   CommandArgs::CommandArgs(int _argc,
                            char *_argv[],
                            PrimClex *_primclex,
                            fs::path _root,
-                           Log &_log,
-                           Log &_err_log) :
+                           const Logging &_logging) :
+    Logging(_logging),
     argc(_argc),
     argv(_argv),
     primclex(_primclex),
     root(_root),
-    log(_log),
-    err_log(_err_log),
+    log(Logging::log()),
+    err_log(Logging::err_log()),
     parse_result(0),
     m_free_p(false) {
     _init();
   }
 
-  /// \brief CommandArgs constructor
+  /// \brief CommandArgs constructor - specify logging
   ///
   /// \param _args std::string of form 'casm [subcommand] [opt...]'
   /// \param _primclex pointer to PrimClex or nullptr
   /// \param _root location of CASM project. If empty path, will use root of the
   ///        CASM project containing current working directory
-  /// \param _log Log for stdout
-  /// \param _err_log Log for stderr
+  /// \param _logging Logging object to use
   ///
   CommandArgs::CommandArgs(std::string _args,
                            PrimClex *_primclex,
                            fs::path _root,
-                           Log &_log,
-                           Log &_err_log) :
+                           const Logging &_logging) :
+    Logging(_logging),
     primclex(_primclex),
     root(_root),
-    log(_log),
-    err_log(_err_log) {
+    log(Logging::log()),
+    err_log(Logging::err_log()) {
 
     // parse _args -> argc, argv
     parse_result = wordexp(_args.c_str(), &m_p, 0);
     if(parse_result) {
-      _err_log << "Error parsing query: '" << _args << "'" << std::endl;
-      _err_log << "wordexp() error: " << parse_result << std::endl;
+      err_log << "Error parsing query: '" << _args << "'" << std::endl;
+      err_log << "wordexp() error: " << parse_result << std::endl;
       switch(parse_result) {
       case 1: {
-        _err_log << "Check for illegal unescaped characters: |, &, ;, <, >, (, ), {, }" << std::endl;
+        err_log << "Check for illegal unescaped characters: |, &, ;, <, >, (, ), {, }" << std::endl;
         break;
       }
       default: {
-        _err_log << "Check 'man wordexp' for error code meaning" << std::endl;
+        err_log << "Check 'man wordexp' for error code meaning" << std::endl;
       }
       }
       return;

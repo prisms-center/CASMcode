@@ -54,7 +54,7 @@ namespace CASM {
 
   public:
 
-    typedef HallOfFame<Configuration, MonteCarloEnumMetric, ConfigDoFOccCompare> HallOfFameType;
+    typedef HallOfFame<Configuration, MonteCarloEnumMetric> HallOfFameType;
 
     template<typename MonteTypeSettings, typename MonteCarloType>
     MonteCarloEnum(PrimClex &primclex, const MonteTypeSettings &settings, Log &log, MonteCarloType &mc);
@@ -135,9 +135,6 @@ namespace CASM {
     Log &_log() const {
       return m_log;
     }
-
-    /// \brief Generate equivalent config in the canonical equivalent supercell
-    Configuration _canon_scel_config(const Configuration &config) const;
 
 
     /// \brief PrimClex for this system

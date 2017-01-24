@@ -1,0 +1,4 @@
+#!/bin/bash
+export PATH=@abs_top_builddir@:$PATH
+cd @abs_top_srcdir@
+@abs_top_builddir@/casm_unit_container --log_level=test_suite --catch_system_errors=no

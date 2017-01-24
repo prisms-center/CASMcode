@@ -14,6 +14,10 @@ namespace CASM {
   class UnitCellCoord;
   class SymBasisPermute;
 
+  /** \ingroup Symmetry
+   *
+   *  @{
+  */
 
   ///\brief SymOpRepresentation is the base class for anything describes a symmetry operation
   class SymOpRepresentation {
@@ -107,7 +111,7 @@ namespace CASM {
   protected:
     /// Protected constructor to allow internal construction of masterless symops
     SymOpRepresentation(MasterSymGroup const *_master_group_ptr, SymGroupRepID _rep_ID, Index _op_index) :
-      m_master_group(_master_group_ptr), m_op_index(_op_index), m_rep_ID(_rep_ID) {}
+      m_master_group(_master_group_ptr), m_rep_ID(_rep_ID), m_op_index(_op_index) {}
 
     /// Pointer to the MasterSymGroup where prototype of this SymOp lives
     MasterSymGroup const *m_master_group;
@@ -119,9 +123,20 @@ namespace CASM {
     Index m_op_index;
   };
 
+  struct SymRepIndexCompare {
+
+    SymRepIndexCompare() {}
+
+    bool operator()(const SymOpRepresentation &A, const SymOpRepresentation &B) const {
+      return A.index() < B.index();
+    }
+  };
+
   jsonParser &to_json(const SymOpRepresentation *rep, jsonParser &json);
   /// This allocates a new object to 'rep'.
   void from_json(SymOpRepresentation *rep, const jsonParser &json);
+
+  /** @}*/
 
 }
 #endif

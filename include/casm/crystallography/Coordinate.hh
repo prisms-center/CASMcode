@@ -22,11 +22,22 @@ namespace CASM {
 
   }
 
+  /** \defgroup Coordinate
+   *  \ingroup Crystallography
+   *  \brief Relates to coordinates
+   *
+   *  @{
+   */
 
+  /// \brief Represents cartesian and fractional coordinates
+  ///
   class Coordinate {
   public:
     typedef Eigen::Vector3d vector_type;
     typedef vector_type::Index size_type;
+
+    /// \brief construct a coordinate describing origin of _home lattice
+    static Coordinate origin(const Lattice &_home);
 
     // NOTE: Coordinate does not have a default constructor
     // e.g: this is not allowed-> Coordinate() : home(nullptr) { is_current[FRAC]=false; is_current[CART]=false;};
@@ -279,6 +290,11 @@ namespace CASM {
     Index m_basis_ind;
   };
 
+  inline
+  Coordinate Coordinate::origin(const Lattice &_home) {
+    return Coordinate(_home);
+  }
+
   jsonParser &to_json(const Coordinate &value, jsonParser &json);
 
   // Lattice must be set already
@@ -296,6 +312,8 @@ namespace CASM {
     return Coordinate(LHS) -= RHS;
   }
 
+  /** @} */
+
   namespace Coordinate_impl {
 
     /// \brief A class to enable vector assignment to the fractional vector of a Coordinate
@@ -305,6 +323,8 @@ namespace CASM {
     /// Coordinate coord;
     /// coord.frac() = Coordinate::vector_type(a,b,c);
     /// \endcode
+    ///
+    /// \relates Coordinate
     ///
     class FracCoordinate {
     public:
@@ -376,6 +396,8 @@ namespace CASM {
     /// coord.frac(2) = c;
     /// \endcode
     ///
+    /// \relates Coordinate
+    ///
     class FracCoordinateComponent {
     public:
 
@@ -430,6 +452,8 @@ namespace CASM {
     /// Coordinate coord;
     /// coord.cart() = Coordinate::vector_type(a,b,c);
     /// \endcode
+    ///
+    /// \relates Coordinate
     ///
     class CartCoordinate {
     public:
@@ -499,6 +523,8 @@ namespace CASM {
     /// coord.cart(1) = b;
     /// coord.cart(2) = c;
     /// \endcode
+    ///
+    /// \relates Coordinate
     ///
     class CartCoordinateComponent {
     public:
@@ -571,6 +597,7 @@ namespace CASM {
   Coordinate_impl::CartCoordinateComponent Coordinate::cart(Coordinate::size_type index) {
     return Coordinate_impl::CartCoordinateComponent(*this, index);
   }
+
 }
 
 namespace std {

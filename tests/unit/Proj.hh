@@ -15,14 +15,6 @@ using namespace CASM;
 
 namespace test {
 
-
-  /// \brief Check expected JSON vs calculated JSON using BOOST_CHECK_EQUAL
-  void check(std::string test,
-             const jsonParser &expected,
-             const jsonParser &calculated,
-             fs::path test_cases_path,
-             bool quiet);
-
   class Proj {
 
   public:
@@ -84,6 +76,8 @@ namespace test {
     void _check_composition_axes(Iterator begin, Iterator end);
 
   };
+
+
 
   /// \brief Build a CASM project at 'proj_dir' using the prim
   ///
