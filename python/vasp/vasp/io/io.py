@@ -43,13 +43,15 @@ def get_incar_tag(key, jobdir=None):
     return None
 
 
-def set_incar_tag(tag_dict,jobdir=None):
+def set_incar_tag(tag_dict,jobdir=None, name=None):
     """Opens INCAR in 'jobdir', sets 'key' value, and writes INCAR
         If 'val' is None, the tag is removed from the INCAR.
     """
+    if name is None:
+        name = "INCAR"
     if jobdir is None:
         jobdir = os.getcwd()
-    incarfile = os.path.join(jobdir,"INCAR")
+    incarfile = os.path.join(jobdir,name)
     tincar = incar.Incar(incarfile)
 
     for key, val in tag_dict.iteritems():
@@ -166,7 +168,7 @@ def write_vasp_input(dirpath, incarfile, prim_kpointsfile, prim_poscarfile, supe
     for s in extra_input_files:
         print "    ", s
         shutil.copy(s,dirpath)
-    
+
     print "  DONE\n"
     sys.stdout.flush()
 

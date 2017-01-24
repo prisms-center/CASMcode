@@ -60,7 +60,7 @@ namespace CASM {
           auto lib_ptr = std::make_shared<RuntimeLibrary>(
                            p_s.substr(0, p_size - 3),
                            set.compile_options() + " " + include_path(dir.enumerator_plugins()),
-                           set.so_options() + " -lcasm " + link_path(set.casm_libdir().first),
+                           set.so_options() + " -lcasm ",
                            msg,
                            set);
 

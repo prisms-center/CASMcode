@@ -12,6 +12,7 @@ namespace test {
              fs::path test_cases_path,
              bool quiet,
              double tol = 0.0);
+
 }
 
 #endif

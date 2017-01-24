@@ -10,15 +10,14 @@ setup_string = \
 """
 from distutils.core import setup
 import glob
-setup(name='casm',
+setup(name='seqquest',
       version='{0}',
       url='{1}',
-      description='CASM Python API and interface with DFT codes.',
+      description='A wrapper for submitting and collecting SeqQuest jobs developed for CASM',
       author='CASM developers',
       author_email='casm-developers@lists.engr.ucsb.edu',
       license='LGPL2.1',
-      packages=['casm','casm.vaspwrapper', 'casm.questwrapper', 'casm.learn', 'casm.project', 'casm.plotting'],
-      scripts=glob.glob('scripts/*')
+      packages=['seqquest','seqquest.seqquest_io']
       )
 """.format(version, url)
 

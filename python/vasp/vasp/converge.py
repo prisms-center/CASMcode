@@ -1,36 +1,50 @@
-import os, math, sys, shutil, gzip
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-import vasp, io
+""" Converge class, methods, and errors """
 
-class Relax(object):
-    """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
+# External
+import os
+# import math
+import sys
+# sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+import shutil
+import gzip
 
-        The relaxation is initialized in a directory containing VASP input files, called 'relaxdir'.
+# Internal
+import vasp #pylint: disable=relative-import
+import io #pylint: disable=relative-import
+
+
+#pylint: disable=line-too-long, too-many-statements, too-many-branches, too-many-return-statements
+
+class Converge(object):
+    """The Converge class contains functions for setting up, executing, and parsing a VASP convergence.
+
+        The convergence is initialized in a directory containing VASP input files, named after the value
+        of the property it is probing (e.g., .../ENCUT/10).
         It then creates the following directory structure:
-        .../relaxdir/
-            run.0/
-            run.1/
-            ...
-            run.final/
+        .../prop/propdir/
+                 run.0/
+                 run.1/
+                 ...
+                 run.final/
 
 
 
         'run.i' directories are only created when ready.
-        'run.final' is a final constant volume run {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}.
+        'run.final' is a final constant volume run {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1, OR INCAR.final if provided}.
 
         Contains:
-            self.relaxdir  (.../relax)
-            self.rundir    (list of .../relax/run.i)
-            self.finaldir (.../relax/run.final)
+            self.propdir (.../prop/prop_value)
+            self.rundir    (list of .../prop/prop_value/run.i)
+            self.finaldir (.../prop/prop_value/run.final)
     """
-    def __init__(self, relaxdir=None, settings=None):
+    def __init__(self, propdir=None, settings=None, prop=None):
         """
-        Construct a VASP relaxation job object.
+        Construct a VASP convergence job object.
 
         Args:
-            configdir:  path to vasp relaxation directory
+            configdir:  path to vasp convergence directory
             settings:   dictionary-like object containing settings, or if None, it reads
-                        the json file: .../relaxdir/relax.json
+                        the json file: .../configdir/converge.json
 
                 possible settings keys are:
                     used by vasp.run() function:
@@ -44,68 +58,70 @@ class Relax(object):
 
         """
 
-        print "Constructing a VASP Relax object"
+        print "Constructing a VASP Converge object"
         sys.stdout.flush()
 
-        # store path to .../relaxdir, and create if not existing
-        if relaxdir is None:
-            relaxdir = os.getcwd()
-        self.relaxdir = os.path.abspath(relaxdir)
+        # store path to .../prop/propdir, and create if not existing
+        if propdir is None:
+            propdir = os.getcwd()
+        self.propdir = os.path.abspath(propdir)
 
-        print "  Relax directory:", self.relaxdir
+        print "  Converge directory:", self.propdir
         sys.stdout.flush()
 
-        # find existing .../relaxdir/run.run_index directories, store paths in self.rundir list
+        # find existing .../prop/propdir/run.run_index directories, store paths in self.rundir list
         self.rundir = []
         self.errdir = []
         self.update_rundir()
         self.update_errdir()
 
-        self.finaldir = os.path.join(self.relaxdir, "run.final")
+        self.finaldir = os.path.join(self.propdir, "run.final")
 
         if settings is None:
             self.settings = dict()
         else:
             self.settings = settings
 
+        self.prop = prop
+
         # set default settings:
-        if not "npar" in self.settings:
+        if "npar" not in self.settings:
             self.settings["npar"] = None
-        if not "kpar" in self.settings:
+        if "kpar" not in self.settings:
             self.settings["kpar"] = None
-        if not "ncore" in self.settings:
+        if "ncore" not in self.settings:
             self.settings["ncore"] = None
-        if not "vasp_cmd" in self.settings:
+        if "vasp_cmd" not in self.settings:
             self.settings["vasp_cmd"] = None
-        if not "ncpus" in self.settings:
+        if "ncpus" not in self.settings:
             self.settings["ncpus"] = None
-        if not "run_limit" in self.settings:
+        if "run_limit" not in self.settings:
             self.settings["run_limit"] = 10
-        if not "nrg_convergence" in self.settings:
+        if "nrg_convergence" not in self.settings:
             self.settings["nrg_convergence"] = None
-        if not "compress" in self.settings:
+        if "compress" not in self.settings:
             self.settings["compress"] = []
-        if not "err_types" in self.settings:
+        if "err_types" not in self.settings:
             self.settings["err_types"] = ['SubSpaceMatrixError']
 
-        print "VASP Relax object constructed\n"
+        print "VASP Converge object constructed\n"
         sys.stdout.flush()
 
 
     def add_rundir(self):
         """Make a new run.i directory"""
-        os.mkdir(os.path.join(self.relaxdir, "run." + str(len(self.rundir))))
+        os.mkdir(os.path.join(self.propdir, "run." + str(len(self.rundir))))
         self.update_rundir()
         self.update_errdir()
 
 
     def update_rundir(self):
-        """Find all .../config/vasp/relax/run.i directories, store paths in self.rundir list"""
+        """Find all .../config/calctype/prop/prop_value/run.i directories, store paths in self.rundir list"""
         self.rundir = []
         run_index = len(self.rundir)
-        while os.path.isdir( os.path.join(self.relaxdir, "run." + str(run_index))):
-                self.rundir.append( os.path.join(self.relaxdir, "run." + str(run_index)) )
-                run_index += 1
+        while os.path.isdir(os.path.join(self.propdir, "run." + str(run_index))):
+            self.rundir.append(os.path.join(self.propdir, "run." + str(run_index)))
+            run_index += 1
 
 
     def add_errdir(self):
@@ -115,44 +131,44 @@ class Relax(object):
 
 
     def update_errdir(self):
-        """Find all .../config/vasp/relax/run.i_err.j directories, store paths in self.errdir list"""
+        """Find all .../config/calctype/prop/prop_value/run.i_err.j directories, store paths in self.errdir list"""
         self.errdir = []
         if len(self.rundir) == 0:
             pass
         else:
             err_index = len(self.errdir)
             while os.path.isdir(self.rundir[-1] + "_err." + str(err_index)):
-                    self.errdir.append(self.rundir[-1] + "_err." + str(err_index))
-                    err_index += 1
+                self.errdir.append(self.rundir[-1] + "_err." + str(err_index))
+                err_index += 1
 
 
-    def setup(self, initdir, settings):
+    def setup(self, initdir):
         """ mv all files and directories (besides initdir) into initdir """
 
         print "Moving files into initial run directory:", initdir
         initdir = os.path.abspath(initdir)
-        for p in os.listdir(self.relaxdir):
-            if (p in (io.VASP_INPUT_FILE_LIST + self.settings["extra_input_files"])) and (os.path.join(self.relaxdir, p) != initdir):
-                os.rename(os.path.join(self.relaxdir,p), os.path.join(initdir,p))
+        for my_prop in os.listdir(self.propdir):
+            if (my_prop in io.VASP_INPUT_FILE_LIST + self.settings["extra_input_files"]) and (os.path.join(self.propdir, my_prop) != initdir):
+                os.rename(os.path.join(self.propdir, my_prop), os.path.join(initdir, my_prop))
         print ""
         sys.stdout.flush()
 
         # Keep a backup copy of the base INCAR
-        shutil.copyfile(os.path.join(initdir,"INCAR"),os.path.join(self.relaxdir,"INCAR.base"))
+        shutil.copyfile(os.path.join(initdir, "INCAR"), os.path.join(self.propdir, "INCAR.base"))
 
         # If an initial incar is called for, copy it in and set the appropriate flag
-        if (self.settings["initial"] != None) and (os.path.isfile(os.path.join(self.relaxdir,self.settings["initial"]))):
-            new_values = io.Incar(os.path.join(self.relaxdir,self.settings["initial"])).tags
+        if (self.settings["initial"] != None) and (os.path.isfile(os.path.join(self.propdir, self.settings["initial"]))):
+            new_values = io.Incar(os.path.join(self.propdir, self.settings["initial"])).tags
             io.set_incar_tag(new_values, initdir)
             print "  Set INCAR tags:", new_values, "\n"
             sys.stdout.flush()
 
     def complete(self):
-        """Check if the VASP relaxation is complete.
+        """Check if the VASP convergence is complete.
 
-           Completion criteria: .../config/vasp/relax/run.final/OUTCAR exists and is complete
+           Completion criteria: .../config/calctype/prop/prop_value/run.final/OUTCAR exists and is complete
         """
-        outcarfile = os.path.join(self.finaldir,"OUTCAR")
+        outcarfile = os.path.join(self.finaldir, "OUTCAR")
         if not os.path.isfile(outcarfile):
             return False
         if not io.Outcar(outcarfile).complete():
@@ -175,9 +191,9 @@ class Relax(object):
                 return True
             if self.settings["nrg_convergence"] != None:
                 if io.job_complete(self.rundir[-1]) and io.job_complete(self.rundir[-2]):
-                    o1 = io.Oszicar(os.path.join(self.rundir[-1],"OSZICAR"))
-                    o2 = io.Oszicar(os.path.join(self.rundir[-2],"OSZICAR"))
-                    if abs( o1.E[-1] - o2.E[-1]) < self.settings["nrg_convergence"]:
+                    osz_1 = io.Oszicar(os.path.join(self.rundir[-1], "OSZICAR"))
+                    osz_2 = io.Oszicar(os.path.join(self.rundir[-2], "OSZICAR"))
+                    if abs(osz_1.E[-1] - osz_2.E[-1]) < self.settings["nrg_convergence"]:
                         return True
 
         return False
@@ -201,7 +217,7 @@ class Relax(object):
             {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}.
         """
 
-        print "Begin VASP relaxation run"
+        print "Begin VASP convergence run"
         sys.stdout.flush()
 
         # get current status of the relaxation:
@@ -212,20 +228,20 @@ class Relax(object):
         while status == "incomplete":
             if task == "setup":
                 self.add_rundir()
-                self.setup(self.rundir[-1], self.settings)
+                self.setup(self.rundir[-1])
 
             elif task == "relax":
                 self.add_rundir()
                 vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
-                shutil.copyfile(os.path.join(self.relaxdir,"INCAR.base"),os.path.join(self.rundir[-1],"INCAR"))
+                shutil.copyfile(os.path.join(self.propdir, "INCAR.base"), os.path.join(self.rundir[-1], "INCAR"))
 
             elif task == "constant":
                 self.add_rundir()
                 vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
 
                 # set INCAR to ISIF = 2, ISMEAR = -5, NSW = 0, IBRION = -1
-                if (self.settings["final"] != None) and (os.path.isfile(os.path.join(self.relaxdir,self.settings["final"]))):
-                    new_values = io.Incar(os.path.join(self.relaxdir, self.settings["final"])).tags
+                if (self.settings["final"] != None) and (os.path.isfile(os.path.join(self.propdir, self.settings["final"]))):
+                    new_values = io.Incar(os.path.join(self.propdir, self.settings["final"])).tags
                 else:
                     new_values = {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}
 
@@ -235,7 +251,7 @@ class Relax(object):
                 else:
                     new_values["SYSTEM"] = io.get_incar_tag("SYSTEM", self.rundir[-1]) + " final"
 
-                io.set_incar_tag( new_values, self.rundir[-1])
+                io.set_incar_tag(new_values, self.rundir[-1])
                 print "  Set INCAR tags:", new_values, "\n"
                 sys.stdout.flush()
 
@@ -246,7 +262,7 @@ class Relax(object):
 
             while True:
                 # run vasp
-                result = vasp.run(self.rundir[-1], npar=self.settings["npar"],ncore=self.settings["ncore"],command=self.settings["vasp_cmd"],ncpus=self.settings["ncpus"],kpar=self.settings["kpar"],err_types=self.settings["err_types"])
+                result = vasp.run(self.rundir[-1], npar=self.settings["npar"], ncore=self.settings["ncore"], command=self.settings["vasp_cmd"], ncpus=self.settings["ncpus"], kpar=self.settings["kpar"], err_types=self.settings["err_types"])
 
                 # if no errors, continue
                 if result is None or self.not_converging():
@@ -273,7 +289,8 @@ class Relax(object):
                                         "ngy" : init_outcar.ngy*2,
                                         "ngz" : init_outcar.ngz*2}
                                     print ng_tags
-                                    io.set_incar_tag(ng_tags, self.relaxdir, "INCAR.base")
+                                    io.set_incar_tag(ng_tags, self.propdir, "INCAR.base")
+
                     break
 
                 # else, attempt to fix first error
@@ -286,20 +303,20 @@ class Relax(object):
                 sys.stdout.flush()
 
                 print "Attempting to fix error:", str(err)
-                err.fix(self.errdir[-1],self.rundir[-1], self.settings)
+                err.fix(self.errdir[-1], self.rundir[-1], self.settings)
                 print ""
                 sys.stdout.flush()
 
                 if (self.settings["backup"] != None) and len(self.rundir) > 1:
                     print "Restoring from backups:"
-                    for f in self.settings["backup"]:
-                        if os.path.isfile(os.path.join(self.rundir[-2], f + "_BACKUP.gz")):
-                            f_in = gzip.open(os.path.join(self.rundir[-2], f + "_BACKUP.gz", 'rb'))
-                            f_out = open(os.path.join(self.rundir[-1], f, 'wb'))
+                    for my_file in self.settings["backup"]:
+                        if os.path.isfile(os.path.join(self.rundir[-2], my_file + "_BACKUP.gz")):
+                            f_in = gzip.open(os.path.join(self.rundir[-2], my_file + "_BACKUP.gz", 'rb'))
+                            f_out = open(os.path.join(self.rundir[-1], my_file, 'wb'))
                             f_out.write(f_in.read())
                             f_in.close()
                             f_out.close()
-                            print f, " restored!"
+                            print my_file, " restored!"
                     sys.stdout.flush()
 
             (status, task) = self.status()
@@ -319,24 +336,24 @@ class Relax(object):
 
 
     def status(self):
-        """ Determine the status of a vasp relaxation series of runs. Individual runs in the series
+        """ Determine the status of a vasp convergence series of runs. Individual runs in the series
             are in directories labeled "run.0", "run.1", etc.
 
             Returns a tuple: (status = "incomplete" or "complete" or "not_converging",
                                 task = continuedir or "relax" or "constant" or None)
 
-            The first value is the status of the entire relaxation.
+            The first value is the status of the entire convergence.
 
             The second value is the current task, where 'continuedir' is the path to a
             vasp job directory that is not yet completed, "relax" indicates another
-            volume relaxation job is required, and "constant" that a constant volume run is required.
+            volume convergence job is required, and "constant" that a constant volume run is required.
         """
 
         # check if all complete
         if io.job_complete(self.finaldir):
-            return ("complete",None)
+            return ("complete", None)
 
-        # check status of relaxation runs
+        # check status of convergence runs
         self.update_rundir()
 
         # if not yet started
@@ -355,8 +372,8 @@ class Relax(object):
                     return ("complete", None)
 
             # elif constant volume run (but not the final one)
-            if io.get_incar_tag("ISIF", self.rundir[-1]) in [0,1,2]:
-                if io.get_incar_tag("NSW", self.rundir[-1]) == len(io.Oszicar(os.path.join(self.rundir[-1],"OSZICAR")).E):
+            if io.get_incar_tag("ISIF", self.rundir[-1]) in [0, 1, 2]:
+                if io.get_incar_tag("NSW", self.rundir[-1]) == len(io.Oszicar(os.path.join(self.rundir[-1], "OSZICAR")).E):
                     return ("incomplete", "relax")      # static run hit NSW limit and so isn't "done"
                 else:
                     return ("incomplete", "constant")

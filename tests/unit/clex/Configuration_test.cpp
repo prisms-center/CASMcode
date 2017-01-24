@@ -18,7 +18,7 @@ BOOST_AUTO_TEST_SUITE(ConfigurationTest)
 BOOST_AUTO_TEST_CASE(Test1) {
 
   test::FCCTernaryProj proj;
-  make_project(proj);
+  proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
 
@@ -79,8 +79,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
   config.set_deformation(Eigen::Matrix3d::Zero());
   BOOST_CHECK_EQUAL(config.has_deformation(), true);
 
-
-  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_CASE(Test2) {
@@ -88,7 +86,7 @@ BOOST_AUTO_TEST_CASE(Test2) {
   // test Configuration::fill_supercell
 
   test::FCCTernaryProj proj;
-  make_project(proj);
+  proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
 
@@ -194,7 +192,6 @@ BOOST_AUTO_TEST_CASE(Test2) {
     BOOST_CHECK_EQUAL(filled, check);
   }
 
-  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

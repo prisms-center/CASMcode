@@ -128,7 +128,6 @@ BOOST_AUTO_TEST_CASE(NeighborListTestLatticeTests) {
 BOOST_AUTO_TEST_CASE(Proj) {
 
   test::FCCTernaryProj proj;
-
   proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
@@ -168,7 +167,6 @@ BOOST_AUTO_TEST_CASE(Proj) {
   nlist.expand(nbors.begin(), nbors.end());
   BOOST_CHECK_EQUAL(nlist.size(), 381);
 
-  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

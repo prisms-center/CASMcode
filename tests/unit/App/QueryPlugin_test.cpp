@@ -17,16 +17,11 @@ BOOST_AUTO_TEST_SUITE(QueryPluginTest)
 BOOST_AUTO_TEST_CASE(Test1) {
 
   test::ZrOProj proj;
-  make_project(proj);
   proj.check_init();
   proj.check_composition();
   proj.check_enum();
 
   PrimClex primclex(proj.dir, Logging(null_log(), null_log(), null_log()));
-
-  // for autotools
-  primclex.settings().set_casm_libdir(fs::current_path() / ".libs");
-  primclex.settings().commit();
 
   auto cp = [&](std::string _filename) {
 
@@ -73,7 +68,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   BOOST_CHECK(check(R"(casm query -k 'test_configname')"));
 
-  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
