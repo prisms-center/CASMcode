@@ -11,11 +11,8 @@ if len(sys.argv) != 2:
 
 configdir = sys.argv[1]
 
-print "  Construct a VASP relaxation"
 relaxation = casm.vaspwrapper.Relax(configdir)
-
-print "  Setting up input files..."
 relaxation.setup()
 
-print "Finish vasp.setup"
+print "Finish vasp.setup\n\n"
 

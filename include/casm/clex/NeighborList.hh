@@ -7,6 +7,10 @@ namespace CASM {
 
   class PrimGrid;
 
+  /** \ingroup ClexClex
+   *  @{
+   */
+
   /// \brief The PrimNeighborList gives the coordinates of UnitCell that are neighbors of the origin UnitCell
   ///
   /// - The PrimNeighborList is constructed with a weighting matrix, M, that defines the shape of neighborhood
@@ -234,6 +238,7 @@ namespace CASM {
     _expand(prev_range);
   }
 
+  /** @} */
 }
 
 #endif

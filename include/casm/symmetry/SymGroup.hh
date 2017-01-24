@@ -14,8 +14,16 @@ namespace CASM {
   class SymGroup;
   class MasterSymGroup;
   class SymGroupRep;
+  class SymInfo;
+
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  /** \defgroup SymGroup
+   *  \ingroup Symmetry
+   *  \brief Relates to symmetry groups
+   *  @{
+   */
 
   ///\brief SymGroup is a collection of symmetry operations that satisfy the group property
   /// The symmetry operations are stored as their coordinate representation, as described by the SymOp class
@@ -42,6 +50,8 @@ namespace CASM {
     virtual void clear_tables();
 
     void set_lattice(const Lattice &new_lat);
+
+    const Lattice &lattice() const;
 
     const MasterSymGroup &master_group() const {
       assert(size() && at(0).has_valid_master());
@@ -71,11 +81,8 @@ namespace CASM {
     Index find_periodic(const SymOp &test_op, double tol = TOL) const;
     ReturnArray<Index> find_all_periodic(const Array<SymOp> &subgroup, double tol = TOL) const;
 
-    /// Sort SymOps in SymGroup
-    /// Positive determinant SymOps come before negative determinant
-    /// Sorted in order of decreasing character (trace)
+    /// \brief Sort SymOp in the SymGroup
     virtual void sort();
-    virtual void sort_by_class(); //AAB
 
     /// Adds SymOps from 'other_group' and enforces the group property
     // Should we change the name to something else?
@@ -179,9 +186,9 @@ namespace CASM {
 
     void from_json(const jsonParser &json);
 
-  protected:
-    const Lattice &_lattice() const;
+    SymInfo info(Index i) const;
 
+  protected:
     void _generate_conjugacy_classes() const;
     void _generate_character_table() const;
     void _generate_centralizers() const;
@@ -292,7 +299,7 @@ namespace CASM {
     void clear();
 
     void sort();
-    void sort_by_class();
+    //void sort_by_class();
 
     const SymGroup &point_group() const;
 
@@ -366,8 +373,10 @@ namespace CASM {
                         const Lattice &lat,
                         PERIODICITY_TYPE periodicity,
                         double _tol);
+
   SymOp within_cell(const SymOp &a, const Lattice &lat, PERIODICITY_TYPE periodicity);
 
+  /** @} */
 }
 
 #endif

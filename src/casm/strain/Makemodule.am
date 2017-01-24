@@ -1,0 +1,1 @@
+libcasm_la_SOURCES += ./src/casm/strain/StrainConverter.cc

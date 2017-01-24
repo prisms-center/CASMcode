@@ -16,6 +16,8 @@ namespace CASM {
 
       \brief Functions and classes related to VASP input/output
 
+      \ingroup casmIO
+
     */
 
     /// \brief Store SelectiveDynamics options
@@ -438,17 +440,17 @@ namespace CASM {
     /// - assumes all species are atomic
     ///
     inline PrintPOSCAR::PrintPOSCAR(const Configuration &config) :
-      vaspio_impl::PrintPOSCARBase(config.get_supercell().get_real_super_lattice()) {
+      vaspio_impl::PrintPOSCARBase(config.supercell().real_super_lattice()) {
 
       set_title(config.name());
 
-      const Supercell &scel = config.get_supercell();
+      const Supercell &scel = config.supercell();
 
       // create tuples collecting (Atom name, Coordinate, SelectiveDynamics) for each site
       for(int i = 0; i < config.size(); ++i) {
         m_atom_order.push_back(
           tuple_type(
-            config.get_mol(i).name,
+            config.mol(i).name,
             scel.coord(i), // no displacement yet
             SelectiveDynamics()
           )
@@ -473,11 +475,11 @@ namespace CASM {
     /// - assumes all species are atomic
     ///
     inline PrintPOSCAR::PrintPOSCAR(const Supercell &scel, const ConfigDoF &configdof) :
-      vaspio_impl::PrintPOSCARBase(scel.get_real_super_lattice()) {
+      vaspio_impl::PrintPOSCARBase(scel.real_super_lattice()) {
 
       // get occupant name for site i in configdof
       auto occ_name = [&](int i) {
-        return scel.get_prim().basis[scel.get_b(i)].site_occupant()[configdof.occ(i)].name;
+        return scel.prim().basis[scel.sublat(i)].site_occupant()[configdof.occ(i)].name;
       };
 
       // create tuples collecting (Atom name, Coordinate, SelectiveDynamics) for each site

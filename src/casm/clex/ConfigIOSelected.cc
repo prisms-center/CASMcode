@@ -7,7 +7,7 @@ namespace CASM {
       if(m_selection.size() == 0) {
         if(m_selection_name.empty())
           m_selection_name = "MASTER";
-        m_selection = ConstConfigSelection(_tmplt.get_primclex(), m_selection_name);
+        m_selection = ConstConfigSelection(_tmplt.primclex(), m_selection_name);
       }
       else if(m_selection_name.empty()) {
         m_selection_name = m_selection.name();

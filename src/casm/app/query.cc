@@ -1,9 +1,9 @@
 #include <string>
 #include <boost/algorithm/string.hpp>
 #include "casm/app/casm_functions.hh"
-#include "casm/CASM_classes.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOSelected.hh"
+#include "casm/completer/Complete.hh"
 
 namespace CASM {
 
@@ -32,6 +32,52 @@ namespace CASM {
     _stream << std::endl;
   }
 
+  namespace Completer {
+
+    QueryOption::QueryOption(): OptionHandlerBase("query") {};
+
+    void QueryOption::initialize() {
+      add_general_help_suboption();
+      add_configlist_suboption();
+      add_output_suboption();
+      add_gzip_suboption();
+
+      m_desc.add_options()
+      ("columns,k", po::value<std::vector<std::string> >(&m_columns_vec)->multitoken()->zero_tokens()->value_name(ArgHandler::query()), "List of values you want printed as columns")
+      ("json,j", po::value(&m_json_flag)->default_value(false)->zero_tokens(), "Print in JSON format (CSV otherwise, unless output extension is .json/.JSON)")
+      ("verbatim,v", po::value(&m_verbatim_flag)->default_value(false)->zero_tokens(), "Print exact properties specified, without prepending 'name' and 'selected' entries")
+      ("all,a", "Print results all configurations in input selection, whether or not they are selected.")
+      ("no-header,n", po::value(&m_no_header_flag)->default_value(false)->zero_tokens(), "Print without header (CSV only)")
+      ("alias", po::value<std::vector<std::string> >(&m_new_alias_vec)->multitoken(),
+       "Create an alias for a query that will persist within this project. "
+       "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")
+      ("write-pos", "Write POS file for each configuration");
+
+      return;
+    }
+
+    const std::vector<std::string> &QueryOption::columns_vec() const {
+      return m_columns_vec;
+    }
+
+    const std::vector<std::string> &QueryOption::new_alias_vec() const {
+      return m_new_alias_vec;
+    }
+
+    bool QueryOption::json_flag() const {
+      return m_json_flag;
+    }
+
+    bool QueryOption::verbatim_flag() const {
+      return m_verbatim_flag;
+    }
+
+    bool QueryOption::no_header_flag() const {
+      return m_no_header_flag;
+    }
+
+  }
+
   int query_command(const CommandArgs &args) {
 
     std::string selection_str;
@@ -40,33 +86,30 @@ namespace CASM {
     po::variables_map vm;
     bool json_flag(false), no_header(false), verbatim_flag(false), gz_flag(false);
 
-    po::options_description desc("'casm query' usage");
+    //po::options_description desc("'casm query' usage");
     // Set command line options using boost program_options
-    desc.add_options()
-    ("help,h", po::value<std::vector<std::string> >(&help_opt_vec)->multitoken()->zero_tokens(), "Print general help. Use '--help properties' for a list of query-able properties or '--help operators' for a list of query operators")
-    ("config,c", po::value<std::string>(&selection_str)->default_value("MASTER"), "config_list files containing configurations for which to collect energies")
-    ("columns,k", po::value<std::vector<std::string> >(&columns)->multitoken()->zero_tokens(), "List of values you want printed as columns")
-    ("json,j", po::value(&json_flag)->zero_tokens(), "Print in JSON format (CSV otherwise, unless output extension is .json/.JSON)")
-    ("verbatim,v", po::value(&verbatim_flag)->zero_tokens(), "Print exact properties specified, without prepending 'name' and 'selected' entries")
-    ("output,o", po::value<fs::path>(&out_path), "Name for output file. Use STDOUT to print results without extra messages. CSV format unless extension is .json/.JSON, or --json option used.")
-    ("gzip,z", po::value(&gz_flag)->zero_tokens(), "Write gzipped output file.")
-    ("all,a", "Print results all configurations in input selection, whether or not they are selected.")
-    ("no-header,n", po::value(&no_header)->zero_tokens(), "Print without header (CSV only)")
-    ("alias", po::value<std::vector<std::string> >(&new_alias)->multitoken(),
-     "Create an alias for a query that will persist within this project. "
-     "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'");
-
+    Completer::QueryOption query_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, query_opt.desc()), vm); // can throw
 
       /** Start --help option
        */
       if(vm.count("help")) {
-        args.log << std::endl << desc << std::endl;
+        args.log << std::endl << query_opt.desc() << std::endl;
       }
 
       po::notify(vm); // throws on error, so do after help in case of problems
+
+      selection_str = query_opt.selection_path().string();
+      out_path = query_opt.output_path();
+      columns = query_opt.columns_vec();
+      help_opt_vec = query_opt.help_opt_vec();
+      new_alias = query_opt.new_alias_vec();
+      json_flag = query_opt.json_flag();
+      no_header = query_opt.no_header_flag();
+      verbatim_flag = query_opt.verbatim_flag();
+      gz_flag = query_opt.gzip_flag();
 
       /** Finish --help option
        */
@@ -76,8 +119,20 @@ namespace CASM {
           query_help(dict, std::cout, help_opt_vec);
         }
         else {
-          ProjectSettings set(args.root);
-          query_help(set.config_io(), args.log, help_opt_vec);
+          // set status_stream: where query settings and PrimClex initialization messages are sent
+          Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
+
+          // If '_primclex', use that, else construct PrimClex in 'uniq_primclex'
+          // Then whichever exists, store reference in 'primclex'
+          std::unique_ptr<PrimClex> uniq_primclex;
+          if(out_path.string() == "STDOUT") {
+            args.log.set_verbosity(0);
+          }
+          PrimClex &primclex = make_primclex_if_not(args, uniq_primclex, status_log);
+          query_help(
+            primclex.settings().query_handler<Configuration>().dict(),
+            args.log,
+            help_opt_vec);
         }
         return 0;
       }
@@ -86,7 +141,7 @@ namespace CASM {
     }
     catch(po::error &e) {
       args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
-      args.err_log << desc << std::endl;
+      args.err_log << query_opt.desc() << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
@@ -96,7 +151,7 @@ namespace CASM {
     }
 
     if(!vm.count("alias") && !vm.count("columns")) {
-      args.log << std::endl << desc << std::endl;
+      args.log << std::endl << query_opt.desc() << std::endl;
     }
 
     // set current path to project root
@@ -123,7 +178,7 @@ namespace CASM {
       std::string alias_command = boost::trim_copy(std::string(++it, new_alias_str.cend()));
 
       try {
-        set.add_alias(alias_name, alias_command, args.err_log);
+        set.query_handler<Configuration>().add_alias(alias_name, alias_command);
         set.commit();
         return 0;
       }
@@ -135,8 +190,8 @@ namespace CASM {
       }
 
     }
-    if(!vm.count("columns")) {
-      args.err_log << "ERROR: the option '--columns' is required but missing" << std::endl;
+    if(!vm.count("columns") && !vm.count("write-pos")) {
+      args.err_log << "ERROR: the option '--columns' or '--write-pos' is required but missing" << std::endl;
       return ERR_INVALID_ARG;
     }
 
@@ -172,7 +227,7 @@ namespace CASM {
     std::unique_ptr<std::ostream> uniq_fout;
     std::ostream &output_stream = make_ostream_if(vm.count("output"), args.log, uniq_fout, out_path, gz_flag);
     output_stream << FormatFlag(output_stream).print_header(!no_header);
-    
+
     // set status_stream: where query settings and PrimClex initialization messages are sent
     Log &status_log = (out_path.string() == "STDOUT") ? args.err_log : args.log;
 
@@ -192,12 +247,18 @@ namespace CASM {
     for(int p = 0; p < columns.size(); p++) {
       status_log << "   - " << columns[p] << std::endl;
     }
-    if(vm.count("output"))
-      status_log << "to " << fs::absolute(out_path) << std::endl;
+    if(vm.count("output")) {
+      if(out_path.string() == "STDOUT") {
+        status_log << "to " << out_path << std::endl;
+      }
+      else {
+        status_log << "to " << fs::absolute(out_path) << std::endl;
+      }
+    }
     status_log << std::endl;
 
     // Construct DataFormatter
-    primclex.settings().set_selected(selection);
+    primclex.settings().query_handler<Configuration>().set_selected(selection);
     DataFormatter<Configuration> formatter;
 
     try {
@@ -209,7 +270,7 @@ namespace CASM {
       }
       all_columns.insert(all_columns.end(), columns.cbegin(), columns.cend());
 
-      formatter.append(primclex.settings().config_io().parse(all_columns));
+      formatter.append(primclex.settings().query_handler<Configuration>().dict().parse(all_columns));
 
     }
     catch(std::exception &e) {
@@ -221,6 +282,12 @@ namespace CASM {
 
       auto begin = vm.count("all") ? selection.config_begin() : selection.selected_config_begin();
       auto end = vm.count("all") ? selection.config_end() : selection.selected_config_end();
+
+      if(vm.count("write-pos")) {
+        for(auto it = begin; it != end; ++it) {
+          it->write_pos();
+        }
+      }
 
       // JSON output block
       if(json_flag) {

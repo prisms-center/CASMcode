@@ -11,6 +11,12 @@
 
 namespace CASM {
 
+  /** \defgroup Molecule
+   *  \ingroup Crystallography
+   *  \brief Relates to Molecule
+   *  @{
+   */
+
   class Molecule;
   template <typename T>
   class OccupantDoF;
@@ -22,10 +28,12 @@ namespace CASM {
     return (name == "VA" || name == "va" || name == "Va");
   }
 
-  class Specie {
+  class Specie : public Comparisons<Specie> {
   public:
     std::string name;
-    double mass, magmom, U, J; //Changed 05/10/13 -- was int
+    //BP: for current Kinetics logic, Specie is essentially "Atom"
+    //  (spherically symmetric, comparable by name only)
+    //  double mass, magmom, U, J; //Changed 05/10/13 -- was int
     Specie() { };
     explicit Specie(std::string init_name) : name(init_name) { };
 
@@ -33,10 +41,15 @@ namespace CASM {
       return CASM::is_vacancy(name);
     }
 
+    bool operator<(const Specie &RHS) const {
+      return name < RHS.name;
+    };
 
-    bool operator==(const Specie &RHS) const {
-      return
-        (name == RHS.name);
+  private:
+
+    friend Comparisons<Specie>;
+    bool _eq(const Specie &RHS) const {
+      return (name == RHS.name);
     };
 
   };
@@ -61,7 +74,7 @@ namespace CASM {
                  std::string sp_name,
                  const Lattice &init_lattice,
                  COORD_TYPE mode,
-                 sd_type _SD_flag = sd_type {false, false, false}) :
+    sd_type _SD_flag = sd_type {{false, false, false}}) :
       Coordinate(elem1, elem2, elem3, init_lattice, mode),
       specie(sp_name),
       SD_flag(_SD_flag) { };
@@ -85,7 +98,15 @@ namespace CASM {
 
   //****************************************************
 
-  class Molecule : public Array<AtomPosition> {
+  /** \defgroup Molecule
+   *  \ingroup Crystallography
+   *  \brief Relates to Molecule
+   *  @{
+   */
+
+  class Molecule :
+    public Array<AtomPosition>,
+    public Comparisons<Molecule> {
 
     Lattice const *m_home;
 
@@ -105,25 +126,22 @@ namespace CASM {
       return m_home;
     }
 
-    void get_center(); //TODO
-
-    void generate_point_group(); //TODO
-
     bool is_vacancy() const {
       return CASM::is_vacancy(name);
     };
 
-    Molecule &apply_sym(const SymOp &op); //TODO
-    Molecule &apply_sym_no_trans(const SymOp &op); //TODO
+    /// \brief Check if Molecule is indivisible
+    ///
+    /// - Currently, always false
+    bool is_indivisible() const {
+      return false;
+    }
+
+    Molecule &apply_sym(const SymOp &op);
+    Molecule &apply_sym_no_trans(const SymOp &op);
 
     void set_lattice(const Lattice &new_lat, COORD_TYPE invariant_mode);
 
-    Molecule get_union(const Molecule &RHS); //TODO
-
-    Molecule &operator*=(const SymOp &RHS); //TODO
-    Molecule &operator+=(const Coordinate &RHS); //TODO
-
-    bool operator==(const Molecule &RHS) const;
     bool contains(const std::string &name) const;
 
     void read(std::istream &stream);
@@ -133,11 +151,17 @@ namespace CASM {
 
     // Lattice must be set already
     void from_json(const jsonParser &json);
-  };
 
-  Molecule operator*(const SymOp &LHS, const Molecule &RHS); //TODO
-  Molecule operator+(const Coordinate &LHS, const Molecule &RHS); //TODO
-  Molecule operator+(const Molecule &LHS, const Coordinate &RHS); //TODO
+    /// \brief Name comparison via '<', '>', '<=', '>='
+    bool operator<(const Molecule &B) const;
+
+  private:
+
+    friend Comparisons<Molecule>;
+
+    /// \brief center and AtomPosition comparison via '==', '!='
+    bool _eq(const Molecule &B) const;
+  };
 
   /// \brief Return an atomic Molecule with specified name and Lattice
   Molecule make_atom(std::string atom_name, const Lattice &lat);
@@ -154,5 +178,6 @@ namespace CASM {
   // Lattice must be set already
   void from_json(Molecule &mol, const jsonParser &json);
 
+  /** @} */
 };
 #endif

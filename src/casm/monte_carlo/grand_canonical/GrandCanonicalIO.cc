@@ -204,7 +204,7 @@ namespace CASM {
     }
 
     // always sample comp_n
-    auto struc_mol_name = mc.primclex().get_prim().get_struc_molecule_name();
+    auto struc_mol_name = mc.primclex().prim().struc_molecule_name();
     for(int i = 0; i < struc_mol_name.size(); ++i) {
       name = std::string("comp_n(") + struc_mol_name[i] + ")";
       formatter.push_back(MonteCarloMeanFormatter(name));
@@ -270,6 +270,7 @@ namespace CASM {
   /// - T
   /// - phi_LTE
   /// - Beta
+  /// - configname
   /// - gs_potential_energy
   /// - gs_formation_energy
   /// - param_chem_pot(a) ...
@@ -281,10 +282,11 @@ namespace CASM {
   /// { "key0":[...], "key1":[...], ... }
   /// \endcode
   ///
-  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc, const double &phi_LTE1) {
+  DataFormatter<ConstMonteCarloPtr> make_lte_results_formatter(const GrandCanonical &mc, const double &phi_LTE1, const std::string &configname) {
 
     DataFormatter<ConstMonteCarloPtr> formatter;
 
+    formatter.push_back(ConstantValueFormatter<std::string, ConstMonteCarloPtr>("configname", configname));
     formatter.push_back(MonteCarloTFormatter<GrandCanonical>());
     formatter.push_back(GrandCanonicalLTEFormatter(phi_LTE1));
     std::set<std::string> exclude;
@@ -329,7 +331,7 @@ namespace CASM {
     }
 
     // always sample comp_n
-    auto struc_mol_name = mc.primclex().get_prim().get_struc_molecule_name();
+    auto struc_mol_name = mc.primclex().prim().struc_molecule_name();
     for(int i = 0; i < struc_mol_name.size(); ++i) {
       name = std::string("gs_comp_n(") + struc_mol_name[i] + ")";
       auto evaluator = [ = ](const ConstMonteCarloPtr & ptr) {
@@ -553,7 +555,7 @@ namespace CASM {
       GrandCanonicalDirectoryStructure dir(settings.output_directory());
       fs::create_directories(dir.conditions_dir(cond_index));
       auto formatter = make_trajectory_formatter(mc);
-      const Structure &prim = mc.primclex().get_prim();
+      const Structure &prim = mc.primclex().prim();
 
       std::vector<std::pair<ConstMonteCarloPtr, Index> > observations;
       ConstMonteCarloPtr ptr = &mc;
@@ -711,8 +713,8 @@ namespace CASM {
     std::vector<ConfigDoF> trajectory;
 
     // create super structure matching supercell
-    BasicStructure<Site> primstruc = mc.supercell().get_prim();
-    BasicStructure<Site> superstruc = primstruc.create_superstruc(mc.supercell().get_real_super_lattice());
+    BasicStructure<Site> primstruc = mc.supercell().prim();
+    BasicStructure<Site> superstruc = primstruc.create_superstruc(mc.supercell().real_super_lattice());
 
     if(mc.settings().write_json()) {
 
@@ -909,12 +911,12 @@ namespace CASM {
   }
 
   /// \brief Will create new file or append to existing results file the results of the latest run
-  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc, const double &phi_LTE1, Log &_log) {
+  void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc, const double &phi_LTE1, const std::string &configname, Log &_log) {
     try {
 
       fs::create_directories(settings.output_directory());
       GrandCanonicalDirectoryStructure dir(settings.output_directory());
-      auto formatter = make_lte_results_formatter(mc, phi_LTE1);
+      auto formatter = make_lte_results_formatter(mc, phi_LTE1, configname);
 
       // write csv path results
       if(settings.write_csv()) {

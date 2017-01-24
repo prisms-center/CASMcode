@@ -7,16 +7,17 @@
 #include "casm/casm_io/Log.hh"
 
 #include "casm/crystallography/Structure.hh"
-#include "casm/clex/DoFManager.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ChemicalReference.hh"
-#include "casm/misc/cloneable_ptr.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/clex/ClexBasis.hh"
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/app/EnumeratorHandler.hh"
+#include "casm/app/QueryHandler.hh"
 
 /// Cluster expansion class
 namespace CASM {
@@ -25,48 +26,39 @@ namespace CASM {
 
   template<typename T, typename U> class ConfigIterator;
 
-  /// \defgroup Clex
-  ///
-  /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
-  ///
+  /** \defgroup Clex
+   *
+   * \brief The functions and classes related to evaluating cluster expansions
+   */
 
+  /** \defgroup PrimClex
+   *  \ingroup Clex
+   *  \ingroup Project
+   *  \brief PrimClex is the top-level data structure for a CASM project
+   *
+   *  @{
+   */
 
-  /// \brief PrimClex stores the primitive Structure and lots of related data
+  /// \brief PrimClex is the top-level data structure for a CASM project
   ///
-  /// \ingroup Clex
-  ///
-  class PrimClex {
-
-    fs::path root;
+  /// The PrimClex provides access to:
+  /// - the parent crystal structure, the `prim`
+  /// - project files & settings
+  /// - composition axes & references
+  /// - supercells & configurations
+  /// - clusters, basis sets, neighbor lists, & ECI
+  /// -
+  class PrimClex : public Logging {
 
     DirectoryStructure m_dir;
     ProjectSettings m_settings;
 
-    std::string m_name;
-
-    Structure prim;
+    Structure m_prim;
     bool m_vacancy_allowed;
     Index m_vacancy_index;
 
-    mutable DoFManager m_dof_manager;
-
-
-    // CASM project current settings: used to determine where to write things
-    std::vector<std::string> curr_property;
-    std::string curr_clex;
-    std::string curr_calctype;
-    std::string curr_ref;
-    std::string curr_bset;
-    std::string curr_eci;
-
-    // Runtime library compilation settings: compilation options
-    std::string compile_options;
-    std::string so_options;
-
-    SiteOrbitree global_orbitree;
-
     /// Contains all the supercells that were involved in the enumeration.
-    boost::container::stable_vector< Supercell > supercell_list;
+    boost::container::stable_vector< Supercell > m_supercell_list;
 
 
     /// CompositionConverter specifies parameteric composition axes and converts between
@@ -91,20 +83,20 @@ namespace CASM {
     // **** Constructors ****
 
     /// Initial construction of a PrimClex, from a primitive Structure
-    PrimClex(const Structure &_prim, Log &log = default_log());
+    explicit PrimClex(const Structure &_prim, const Logging &logging = Logging());
 
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-    PrimClex(const fs::path &_root, Log &log = default_log());
+    explicit PrimClex(const fs::path &_root, const Logging &logging = Logging());
 
+    /// Reload PrimClex data from settings
+    void refresh(bool read_settings = false,
+                 bool read_composition = false,
+                 bool read_chem_ref = false,
+                 bool read_configs = false,
+                 bool clear_clex = false);
 
-    // **** Accessors ****
-
-    /// Return project name
-    std::string name() const;
-
-
-    // ** Directory path accessors **
+    // ** Directory path and settings accessors **
 
     const DirectoryStructure &dir() const {
       return m_dir;
@@ -118,54 +110,11 @@ namespace CASM {
       return m_settings;
     }
 
+    /// \brief Get the crystallography_tol
     double crystallography_tol() const {
       return settings().crystallography_tol();
     }
-    
-    double lin_alg_tol() const {
-      return settings().lin_alg_tol();
-    }
 
-    /// Return casm project directory path
-    fs::path get_path() const;
-
-    /// Return supercell directory path
-    fs::path get_path(const Index &scel_index) const;
-
-    /// Return configuration directory path
-    fs::path get_path(const Index &scel_index, const Index &config_index) const;
-
-    /// Return config_list.json file path
-    fs::path get_config_list_path() const;
-
-    // ** Current settings accessors **
-
-    /// Return current property settings
-    const std::vector<std::string> &get_curr_property() const;
-
-    /// Return current clex settings
-    std::string get_curr_clex() const;
-
-    /// Return current calctype setting
-    std::string get_curr_calctype() const;
-
-    /// Return current reference setting
-    std::string get_curr_ref() const;
-
-    /// Return basis set settings
-    std::string get_curr_bset() const;
-
-    /// Return current global clexulator name
-    std::string get_curr_clexulator() const;
-
-    /// Return current eci settings
-    std::string get_curr_eci() const;
-
-    /// Return compiler options
-    std::string get_compile_options() const;
-
-    /// Return shared library options
-    std::string get_so_options() const;
 
     // ** Composition accessors **
 
@@ -174,6 +123,7 @@ namespace CASM {
 
     /// const Access CompositionConverter object
     const CompositionConverter &composition_axes() const;
+
 
     // ** Chemical reference **
 
@@ -184,13 +134,10 @@ namespace CASM {
     const ChemicalReference &chemical_reference() const;
 
 
-    // ** Prim and Orbitree accessors **
+    // ** Accessors **
 
     /// const Access to primitive Structure
-    const Structure &get_prim() const;
-
-    /// const Access to global orbitree
-    const SiteOrbitree &get_global_orbitree() const;
+    const Structure &prim() const;
 
     ///Access to the primitive neighbor list
     PrimNeighborList &nlist() const;
@@ -201,22 +148,29 @@ namespace CASM {
     /// returns the index of vacancies in composition vectors
     Index vacancy_index() const;
 
+
     // ** Supercell and Configuration accessors **
 
+    /// Access entire supercell_list
+    boost::container::stable_vector<Supercell> &supercell_list();
+
     /// const Access entire supercell_list
-    const boost::container::stable_vector<Supercell> &get_supercell_list() const;
+    const boost::container::stable_vector<Supercell> &supercell_list() const;
 
     /// const Access supercell by index
-    const Supercell &get_supercell(Index i) const;
+    const Supercell &supercell(Index i) const;
 
     /// Access supercell by index
-    Supercell &get_supercell(Index i);
+    Supercell &supercell(Index i);
 
     /// const Access supercell by name
-    const Supercell &get_supercell(std::string scellname) const;
+    const Supercell &supercell(std::string scellname) const;
 
     /// Access supercell by name
-    Supercell &get_supercell(std::string scellname);
+    Supercell &supercell(std::string scellname);
+
+    /// Access supercell by Lattice, adding if necessary
+    Supercell &supercell(const Lattice &lat);
 
     /// access configuration by name (of the form "scellname/[NUMBER]", e.g., ("SCEL1_1_1_1_0_0_0/0")
     const Configuration &configuration(const std::string &configname) const;
@@ -253,14 +207,6 @@ namespace CASM {
     config_const_iterator selected_config_cend() const;
 
 
-    Eigen::MatrixXd shift_vectors() const;
-
-    // **** Mutators ****
-
-    /// Sets the composition axes, updates all configuration references,
-    ///   and writes the updated configuration info
-    void set_composition_axes(const CompositionConverter &_converter);
-
     // **** IO ****
 
     ///Call Configuration::write on every configuration to update files
@@ -272,15 +218,8 @@ namespace CASM {
 
     // **** Functions for preparing CLEXulators ****
 
-    //Generate the global orbitree
-    //John G 011013
-    /// Use the given CSPECS
-
-    //Read the global Orbitree from a clust.json file
-    void read_global_orbitree(const fs::path &fclust);
-
-    //Generate supercells of a certain volume and store them in the array of supercells
-    void generate_supercells(int volStart, int volEnd, bool verbose);
+    /// \brief Generate supercells of a certain volume and shape and store them in the array of supercells
+    void generate_supercells(const ScelEnumProps &enum_props);
 
     //Enumerate configurations for all the supercells that are stored in 'supercell_list'
     void print_enum_info(std::ostream &stream);
@@ -304,75 +243,56 @@ namespace CASM {
 
     bool contains_supercell(std::string scellname, Index &index) const;
 
+    bool contains_supercell(const Supercell &scel) const;
+    bool contains_supercell(const Supercell &scel, Index &index) const;
+
     Index add_supercell(const Lattice &superlat);
 
     Index add_canonical_supercell(const Lattice &superlat);
 
-    Eigen::Matrix3i calc_transf_mat(const Lattice &superlat) const;
 
-    /// Set internal values of each DoFEnvironment
-    void set_global_dof_state(const Configuration &curr_config)const {
-      m_dof_manager.set_global_dof_state(curr_config);
-    };
+    bool has_orbits(const ClexDescription &key) const;
+    template<typename OrbitOutputIterator, typename SymCompareType>
+    OrbitOutputIterator orbits(const ClexDescription &key,
+                               OrbitOutputIterator result,
+                               const SymCompareType &sym_compare) const;
 
-    void set_local_dof_state(const Configuration &curr_config, Index l)const {
-      m_dof_manager.set_local_dof_state(curr_config, l);
-    };
+    bool has_clex_basis(const ClexDescription &key) const;
+    const ClexBasis &clex_basis(const ClexDescription &key) const;
 
-    /// Delete 'properties.ref_state.X.json' files,
-    /// Then call 'clear_reference_properties'
-    //void clear_reference_states();
+    bool has_clexulator(const ClexDescription &key) const;
+    Clexulator clexulator(const ClexDescription &key) const;
 
-    /// Sets the root reference state to be the calculated properties of the chosen config
-    /// Calls 'clear_reference_properties'
-    //void set_reference_state(int refid, const Configuration &config);
+    bool has_eci(const ClexDescription &key) const;
+    const ECIContainer &eci(const ClexDescription &key) const;
 
-    /// Check that it is valid to use 'config' as reference state 'refid', returns bool and if false, sets 'reason_invalid'
-    ///   Currently checks:
-    ///     1) that the necessary properties have been calculated,
-    ///     2) that the same Configuration is not being used twice
-    ///   Needs to check that reference states span composition space
-    //bool valid_reference_state(int refid, const Configuration &config, std::string &reason_invalid) const;
-
-    /// find calculated configurations closest to
-    /// [0, 0, 0, ...], [1, 0, 0, ...], [0, 1, 0, ...], [0, 0, 1, ...], ...
-    /// and set them as the root reference states, also calls regenerate_references
-    /// Clears reference states and properties whether or not it succeeds
-    //void set_reference_state_auto();
-
-    /// Clear 'reference' and 'delta' properties from all Configurations
-    /// Re-write all Configurations, updating:
-    ///   param_composition.json
-    ///   properties.calc.json
-    ///   properties.ref.json
-    ///   properties.delta.json
-    //void generate_references();
-
-    bool has_global_clexulator() const;
-    Clexulator global_clexulator() const;
-
-    bool has_global_eci(std::string clex_name) const;
-    const ECIContainer &global_eci(std::string clex_name) const;
   private:
 
     /// Initialization routines
-    void _init(Log &log);
+    void _init();
 
-    mutable ECIContainer m_global_eci;
-    mutable Clexulator m_global_clexulator;
+    mutable std::map<ClexDescription, ClexBasis> m_clex_basis;
+    mutable std::map<ClexDescription, Clexulator> m_clexulator;
+    mutable std::map<ClexDescription, ECIContainer> m_eci;
+
   };
 
+  //*******************************************************************************************
+  template<typename OrbitOutputIterator, typename SymCompareType>
+  OrbitOutputIterator PrimClex::orbits(
+    const ClexDescription &key,
+    OrbitOutputIterator result,
+    const SymCompareType &sym_compare) const {
 
-  /// \brief Make orbitree. For now specifically global.
-  SiteOrbitree make_orbitree(Structure &prim, const jsonParser &json);
+    return read_clust(
+             result,
+             jsonParser(dir().clust(key.bset)),
+             prim(),
+             prim().factor_group(),
+             sym_compare,
+             settings().crystallography_tol());
+  }
 
-  /// \brief Print clexulator
-  void print_clexulator(const Structure &prim,
-                        SiteOrbitree &tree,
-                        const PrimNeighborList &nlist,
-                        std::string class_name,
-                        std::ostream &stream,
-                        double xtal_tol);
 
 }
 #endif

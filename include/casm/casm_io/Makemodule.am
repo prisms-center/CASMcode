@@ -1,0 +1,21 @@
+casmioincludedir=$(includedir)/casm/casm_io
+casmioinclude_HEADERS=./include/casm/casm_io/Args.hh\
+					  ./include/casm/casm_io/DataFormatter.hh\
+					  ./include/casm/casm_io/DataFormatter_impl.hh\
+					  ./include/casm/casm_io/DataFormatterTools.hh\
+					  ./include/casm/casm_io/DataFormatterTools_impl.hh\
+					  ./include/casm/casm_io/DataStream.hh\
+					  ./include/casm/casm_io/EigenDataStream.hh\
+					  ./include/casm/casm_io/EnumIO.hh\
+            ./include/casm/casm_io/FileEnumerator.hh\
+					  ./include/casm/casm_io/FormatFlag.hh\
+					  ./include/casm/casm_io/jsonParser.hh\
+					  ./include/casm/casm_io/Log.hh\
+					  ./include/casm/casm_io/SafeOfstream.hh\
+					  ./include/casm/casm_io/VaspIO.hh
+					  
+
+
+casmiojsonincludedir=$(casmioincludedir)/json_io
+casmiojsoninclude_HEADERS=./include/casm/casm_io/json_io/clex.hh\
+					  ./include/casm/casm_io/json_io/container.hh

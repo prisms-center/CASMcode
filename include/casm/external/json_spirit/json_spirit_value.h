@@ -116,8 +116,8 @@ namespace json_spirit
         
         bool force_column_;
         bool force_row_;
-        bool scientific_;
         bool remove_trailing_zeros_;
+        bool scientific_;
 
         class Variant_converter_visitor : public boost::static_visitor< Variant > 
         {
@@ -276,81 +276,81 @@ namespace json_spirit
 
     template< class Config >
     Value_impl< Config >::Value_impl()
-    :   v_( Null() ), force_column_(false), force_row_(false), remove_trailing_zeros_(false)
+    :   v_( Null() ), force_column_(false), force_row_(false), remove_trailing_zeros_(false), scientific_(false)
     {
     }
 
     template< class Config >
     Value_impl< Config >::Value_impl( const Const_str_ptr value )
-    :  v_( String_type( value ) ), force_column_(false), force_row_(false), remove_trailing_zeros_(false)
+    :  v_( String_type( value ) ), force_column_(false), force_row_(false), remove_trailing_zeros_(false), scientific_(false)
     {
     }
 
     template< class Config >
     Value_impl< Config >::Value_impl( const String_type& value )
-    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false)
+    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false), scientific_(false)
     {
     }
 
     template< class Config >
     Value_impl< Config >::Value_impl( const Object& value )
-    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false)
+    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false), scientific_(false)
     {
     }
 
     template< class Config >
     Value_impl< Config >::Value_impl( const Array& value )
-    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false)
+    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false), scientific_(false)
     {
     }
 
     template< class Config >
     Value_impl< Config >::Value_impl( bool value )
-    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false)
+    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false), scientific_(false)
     {
     }
 
     template< class Config >
     Value_impl< Config >::Value_impl( int value )
-    :   v_( static_cast< boost::int64_t >( value ) ), force_column_(false), force_row_(false), remove_trailing_zeros_(false)
+    :   v_( static_cast< boost::int64_t >( value ) ), force_column_(false), force_row_(false), remove_trailing_zeros_(false), scientific_(false)
     {
     }
 
     template< class Config >
     Value_impl< Config >::Value_impl( boost::int64_t value )
-    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false)
+    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false), scientific_(false)
     {
     }
 
     template< class Config >
     Value_impl< Config >::Value_impl( boost::uint64_t value )
-    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false)
+    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false), scientific_(false)
     {
     }
 
     template< class Config >
     Value_impl< Config >::Value_impl( double value )
-    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false)
+    :   v_( value ), force_column_(false), force_row_(false), remove_trailing_zeros_(false), scientific_(false)
     {
     }
 
     template< class Config >
     Value_impl< Config >::Value_impl( const Value_impl< Config >& other )
-    :   v_( other.v_ ), force_column_(other.force_column_), force_row_(other.force_row_), remove_trailing_zeros_(other.remove_trailing_zeros_)
+    :   v_( other.v_ ), force_column_(other.force_column_), force_row_(other.force_row_), remove_trailing_zeros_(other.remove_trailing_zeros_), scientific_(other.scientific_)
     {
     }
 
     template< class Config >
     template< class Iter >
     Value_impl< Config >::Value_impl( Iter first, Iter last )
-    :   v_( Array( first, last ) ), force_column_(false), force_row_(false), remove_trailing_zeros_(false)
+    :   v_( Array( first, last ) ), force_column_(false), force_row_(false), remove_trailing_zeros_(false), scientific_(false)
     {
     }
 
     template< class Config >
     template< BOOST_VARIANT_ENUM_PARAMS( typename T ) >
     Value_impl< Config >::Value_impl( const boost::variant< BOOST_VARIANT_ENUM_PARAMS(T) >& variant )
-    :   v_( boost::apply_visitor( Variant_converter_visitor(), variant) ), force_column_(false), force_row_(false), remove_trailing_zeros_(false)
+    :   v_( boost::apply_visitor( Variant_converter_visitor(), variant) ), force_column_(false), force_row_(false), remove_trailing_zeros_(false), scientific_(false)
     {
     }
 
@@ -363,6 +363,7 @@ namespace json_spirit
         std::swap( force_column_, tmp.force_column_ );
         std::swap( force_row_, tmp.force_row_ );
         std::swap( remove_trailing_zeros_, tmp.remove_trailing_zeros_ );
+        std::swap( scientific_, tmp.scientific_ );
         
         return *this;
     }

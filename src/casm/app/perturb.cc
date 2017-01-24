@@ -1,9 +1,31 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/clex/ConfigEnumStrain.hh"
 #include "casm/clex/ConfigSelection.hh"
-#include "casm/clex/ConfigEnumIterator.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
+
+  namespace Completer {
+    PerturbOption::PerturbOption(): OptionHandlerBase("perturb") {}
+
+    const fs::path &PerturbOption::cspecs_path() const {
+      return m_cspecs_path;
+    }
+
+    void PerturbOption::initialize() {
+      add_help_suboption();
+      add_configlist_suboption();
+      m_desc.add_options()
+      ("occ", "Perturb occupations")
+      ("cspecs", po::value<fs::path>(&m_cspecs_path)->value_name(ArgHandler::path()), "Cluster specifications file defining perturbation");
+      //("strain,s", "Generate strain perturbations")
+      //("gridsize", po::value<std::vector<Index> > (&subgrids)->multitoken(), "Size of grid for each subspace")
+      //("mag", po::value<std::vector<double> > (&mags)->multitoken(), "Magnitude of grid")
+      //("poly-order", po::value<Index> (&poly_order)->default_value(6), "Max order of strain polynomials")
+      //("strainmode", po::value<std::string> (&strain_mode)->default_value("GL"), "Strain mode name");
+      return;
+    }
+  }
 
 
   // ///////////////////////////////////////
@@ -11,6 +33,10 @@ namespace CASM {
   //    (add an 'if-else' statement in casm.cpp to call this)
 
   int perturb_command(const CommandArgs &args) {
+
+    throw std::runtime_error("Error: 'casm perturb' is being re-implemented");
+
+    /*
 
     double tol = CASM::TOL;
     bool is_trans = false;
@@ -20,33 +46,26 @@ namespace CASM {
     po::variables_map vm;
     std::vector<Index> subgrids;
     std::vector<double> mags;
-    double inc_value;
     std::string strain_mode;
     Index poly_order;
 
     /// Set command line options using boost program_options
-    po::options_description desc("'casm perturb' usage");
-    desc.add_options()
-    ("help,h", "Write help documentation")
-    ("occ", "Perturb occupations")
-    ("cspecs", po::value<fs::path>(&cspecs_path), "Cluster specifications file defining perturbation")
-    ("config,c", po::value<fs::path>(&selection),
-     "Selected configurations are used reference for generating perturbations. If not specified, or 'MASTER' given, uses master list selection.");
-    //("strain,s", "Generate strain perturbations")
-    //("gridsize", po::value<std::vector<Index> > (&subgrids)->multitoken(), "Size of grid for each subspace")
-    //("mag", po::value<std::vector<double> > (&mags)->multitoken(), "Magnitude of grid")
-    //("poly-order", po::value<Index> (&poly_order)->default_value(6), "Max order of strain polynomials")
-    //("strainmode", po::value<std::string> (&strain_mode)->default_value("GL"), "Strain mode name");
-
+    Completer::PerturbOption perturb_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, perturb_opt.desc()), vm); // can throw
 
-      /** --help option
-       */
+      // --help option
       if(vm.count("help")) {
         std::cout << "\n";
-        std::cout << desc << std::endl;
+        std::cout << perturb_opt.desc() << std::endl;
+
+        return 0;
+      }
+
+      if(vm.count("desc")) {
+        std::cout << "\n";
+        std::cout << perturb_opt.desc() << std::endl;
 
         std::cout << "DESCRIPTION" << std::endl;
         std::cout << "    Generate supercells that are perturbations of a reference\n";
@@ -64,10 +83,12 @@ namespace CASM {
       po::notify(vm); // throws on error, so do after help in case
       // there are any problems
 
+      cspecs_path = perturb_opt.cspecs_path();
+      selection = perturb_opt.selection_path();
     }
     catch(po::error &e) {
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      std::cerr << desc << std::endl;
+      std::cerr << perturb_opt.desc() << std::endl;
       return 1;
     }
     catch(std::exception &e) {
@@ -96,11 +117,11 @@ namespace CASM {
 
     if(vm.count("strain")) {
       StrainConverter sconvert(strain_mode);
-      sconvert.set_symmetrized_sop(primclex.get_prim().point_group());
+      sconvert.set_symmetrized_sop(primclex.prim().point_group());
 
       Eigen::MatrixXd axes = sconvert.sop_transf_mat();
       std::vector<Index> mult;
-      std::vector<Eigen::MatrixXd> wedges = sconvert.irreducible_wedges(primclex.get_prim().point_group(), mult);
+      std::vector<Eigen::MatrixXd> wedges = sconvert.irreducible_wedges(primclex.prim().point_group(), mult);
 
       Index num_sub = wedges.size();
 
@@ -118,7 +139,7 @@ namespace CASM {
       BasisSet poly;
       for(Index i = 0; i <= poly_order; i++) {
         BasisSet tmono;
-        tmono.construct_invariant_polynomials(Array<BasisSet const *>(1, &strain_vars), primclex.get_prim().point_group(), i);
+        tmono.construct_invariant_polynomials(Array<BasisSet const *>(1, &strain_vars), primclex.prim().point_group(), i);
         poly.append(tmono);
       }
 
@@ -163,7 +184,7 @@ namespace CASM {
       bool print = true;
       for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
         Index num_before = (it->get_supercell()).get_config_list().size();
-        ConfigEnumStrain<Configuration> enumerator(it->get_supercell(), *it, subgrids, mags, strain_mode);
+        ConfigEnumStrain enumerator(it->get_supercell(), *it, subgrids, mags, strain_mode);
         (it->get_supercell()).add_unique_canon_configs(enumerator.begin(), enumerator.end());
         std::cout << "Enumerated " << (it->get_supercell()).get_config_list().size() - num_before << " deformations.\n";
       }
@@ -189,13 +210,13 @@ namespace CASM {
       bool verbose = false;
       bool print = true;
       for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
-        std::cout << "  " << it->get_supercell().get_name() << "/" << it->get_id() << std::endl;
-        it->get_supercell().enumerate_perturb_configurations(*it, abs_cspecs_path, tol, verbose, print);
+        std::cout << "  " << it->supercell().name() << "/" << it->id() << std::endl;
+        it->supercell().enumerate_perturb_configurations(*it, abs_cspecs_path, tol, verbose, print);
       }
     }
     else {
       std::cout << "\n";
-      std::cout << desc << std::endl;
+      std::cout << perturb_opt.desc() << std::endl;
 
       std::cout << "DESCRIPTION" << std::endl;
       std::cout << "    Generate supercells that are perturbations of a reference\n";
@@ -219,7 +240,7 @@ namespace CASM {
     std::cout << std::endl;
 
     return 0;
+    */
   };
-
 }
 

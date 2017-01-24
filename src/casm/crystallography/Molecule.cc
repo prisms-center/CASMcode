@@ -10,20 +10,20 @@ namespace CASM {
   jsonParser &to_json(const Specie &specie, jsonParser &json) {
     json.put_obj();
     json["name"] = specie.name;
-    json["mass"] = specie.mass;
-    json["magmom"] = specie.magmom;
-    json["U"] = specie.U;
-    json["J"] = specie.J;
+    //json["mass"] = specie.mass;
+    //json["magmom"] = specie.magmom;
+    //json["U"] = specie.U;
+    //json["J"] = specie.J;
     return json;
   }
 
   void from_json(Specie &specie, const jsonParser &json) {
     try {
       from_json(specie.name, json["name"]);
-      from_json(specie.mass, json["mass"]);
-      from_json(specie.magmom, json["magmom"]);
-      from_json(specie.U, json["U"]);
-      from_json(specie.J, json["J"]);
+      //from_json(specie.mass, json["mass"]);
+      //from_json(specie.magmom, json["magmom"]);
+      //from_json(specie.U, json["U"]);
+      //from_json(specie.J, json["J"]);
     }
     catch(...) {
       /// re-throw exceptions
@@ -180,7 +180,17 @@ namespace CASM {
    */
   //****************************************************
   //TODO:
-  bool Molecule::operator==(const Molecule &RHS) const {
+  bool Molecule::operator<(const Molecule &RHS) const {
+    return name < RHS.name;
+  }
+
+  //****************************************************
+  /**
+   *
+   */
+  //****************************************************
+  //TODO:
+  bool Molecule::_eq(const Molecule &RHS) const {
 
     Index i, j;
     if(center != RHS.center)

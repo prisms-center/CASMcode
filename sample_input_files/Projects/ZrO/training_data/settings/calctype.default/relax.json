@@ -1,0 +1,11 @@
+{
+  "account":"prismsproject_fluxoe",
+  "qos":"flux",
+  "queue":"fluxoe",
+  "priority":"-200",
+  "walltime":"48:00:00",
+  "pmem":"3800mb",
+  "ppn":"16",
+  "atom_per_proc":"2",
+  "run_limit":10,
+}

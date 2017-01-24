@@ -22,4 +22,4 @@ except:
 with open('properties.calc.json', 'w') as file:
   file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
 
-print "Finish vasp.relax.report"
+print "Finish vasp.relax.report\n\n"

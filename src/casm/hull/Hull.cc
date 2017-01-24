@@ -25,10 +25,11 @@ namespace CASM {
   Hull::Hull(const ConstConfigSelection &_selection,
              const CompCalculator &_comp_calculator,
              const EnergyCalculator &_energy_calculator,
-             double _singular_value_tol) :
+             double _singular_value_tol,
+             double _bottom_facet_tol) :
     m_selection(_selection),
-    m_comp_calculator(_comp_calculator),
-    m_energy_calculator(_energy_calculator) {
+    m_comp_calculator(_comp_calculator.clone()),
+    m_energy_calculator(_energy_calculator.clone()) {
 
     Hull_impl::_validate_input(m_selection, *m_comp_calculator, *m_energy_calculator);
 
@@ -93,7 +94,7 @@ namespace CASM {
         new(&outnorm) Eigen::Map<const Eigen::VectorXd>((*facet_it).hyperplane().begin(), dim);
         b = -outnorm(dim - 1);
 
-        if(b > 0.0) {
+        if(b > _bottom_facet_tol) {
           m_bottom_facets.push_back(std::make_pair(*facet_it, b));
         }
       }
@@ -289,9 +290,9 @@ namespace CASM {
         std::cerr << f(invalid_data.begin(), invalid_data.end()) << "\n";
 
         std::stringstream ss;
-        ss << "Error in Hull(): Invalid composition or energy data. "
-           "Make sure you have set composition axes and all selected configurations "
-           "have calculation results.";
+        ss << "Error in Hull(): Invalid composition or energy data. \n"
+           "Make sure you have set composition axes, all selected configurations\n"
+           "have calculation results, and you have set your chemical reference.";
         throw std::runtime_error(ss.str());
       }
     }

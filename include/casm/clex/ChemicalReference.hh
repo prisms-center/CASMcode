@@ -1,7 +1,6 @@
 #ifndef CASM_ChemicalReference
 #define CASM_ChemicalReference
 
-#include "casm/crystallography/Structure.hh"
 #include "casm/clex/Reference.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/clex/ConfigIO.hh"
@@ -9,6 +8,12 @@
 namespace CASM {
 
   class PrimClex;
+  class Structure;
+
+  /** \ingroup Reference
+   *
+   *  @{
+   */
 
   /// \brief Stores the composition and energy in a single reference state
   ///
@@ -312,7 +317,7 @@ namespace CASM {
       indent(_indent),
       indent_incr(_indent_incr),
       ref(_ref),
-      struc_mol_name(ref.prim().get_struc_molecule_name()) {}
+      struc_mol_name(ref.prim().struc_molecule_name()) {}
 
     // -- data --
     std::ostream &stream;
@@ -470,7 +475,7 @@ namespace CASM {
                                                 double tol) {
 
     // store Molecule names in vector
-    std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
+    std::vector<std::string> struc_mol_name = prim.struc_molecule_name();
 
     // --- find any Molecule not in the prim, add to end of vector -------------
 
@@ -510,6 +515,8 @@ namespace CASM {
     // use E, N to calculate hyperplane
     return _calc_hyperplane(prim, struc_mol_name, N, E, tol);
   }
+
+  /** @} */
 }
 
 #endif

@@ -636,20 +636,20 @@ namespace CASM {
   ///
   /// - Each column corresponds to a point in composition space (specifying number
   ///   of each Molecule per prim)
-  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule,
+  /// - Each row corresponds to a Molecule, ordered as from Structure::struc_molecule,
   ///   with units number Molecule / prim
   Eigen::MatrixXd end_members(const Structure &prim) {
     ParamComposition param_comp(prim);
     param_comp.generate_components();
     param_comp.generate_sublattice_map();
     param_comp.generate_prim_end_members();
-    return param_comp.get_prim_end_members().transpose();
+    return param_comp.prim_end_members().transpose();
   }
 
   /// \brief Non-orthogonal composition space
   Eigen::MatrixXd _composition_space(const Structure &prim, double tol) {
     // Get Va index if it exists, and store 0 or 1 in N_Va
-    std::vector<std::string> struc_mol_name = prim.get_struc_molecule_name();
+    std::vector<std::string> struc_mol_name = prim.struc_molecule_name();
     Index Va_index = find_index_if(struc_mol_name, [ = ](const std::string & str) {
       return is_vacancy(str);
     });
@@ -679,7 +679,7 @@ namespace CASM {
   /// \param tol tolerance for checking rank (default 1e-14)
   ///
   /// - Each column corresponds to an orthogonal vector in atom fraction space
-  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule
+  /// - Each row corresponds to a Molecule, ordered as from Structure::struc_molecule
   Eigen::MatrixXd composition_space(const Structure &prim, double tol) {
     auto Qr = _composition_space(prim, tol).fullPivHouseholderQr();
     Qr.setThreshold(tol);
@@ -694,7 +694,7 @@ namespace CASM {
   /// \param tol tolerance for checking rank (default 1e-14)
   ///
   /// - Each column corresponds to an orthogonal vector in atom fraction space
-  /// - Each row corresponds to a Molecule, ordered as from Structure::get_struc_molecule
+  /// - Each row corresponds to a Molecule, ordered as from Structure::struc_molecule
   Eigen::MatrixXd null_composition_space(const Structure &prim, double tol) {
     auto Qr = _composition_space(prim, tol).fullPivHouseholderQr();
     Qr.setThreshold(tol);

@@ -1,6 +1,7 @@
 #ifndef BASECOUNTER_HH
 #define BASECOUNTER_HH
 
+#include <iterator>
 #include "casm/misc/CASM_TMP.hh"
 
 namespace CASM {
@@ -14,10 +15,18 @@ namespace CASM {
   class CounterValueIterator {
   public:
     typedef typename CounterType::value_type value_type;
+    typedef typename CounterType::size_type difference_type;
     typedef typename CounterType::size_type size_type;
+    typedef std::random_access_iterator_tag iterator_category;
+    typedef const value_type &reference;
+    typedef const value_type *pointer;
 
-    CounterValueIterator(CounterType const *_counter_ptr = nullptr, size_type _ind = 0) : m_counter_ptr(_counter_ptr), m_ind(_ind) {}
-    //CounterValueIterator(const CounterValueIterator &_it);
+    CounterValueIterator(CounterType const *_counter_ptr = nullptr, size_type _ind = 0) :
+      m_counter_ptr(_counter_ptr), m_ind(_ind) {}
+
+    //explicit CounterValueIterator(const CounterValueIterator &_it) :
+    //  m_counter_ptr(_it.m_counter_ptr),
+    //  m_ind(_it.m_ind) {}
 
     bool operator==(const CounterValueIterator &_it) {
       return (m_counter_ptr == _it.m_counter_ptr && m_ind == _it.m_ind);
@@ -31,16 +40,17 @@ namespace CASM {
       ++m_ind;
       return *this;
     }
+
     CounterValueIterator operator++(int) {
       CounterValueIterator t_it(*this);
       ++(*this);
       return t_it;
     }
 
-    const value_type &operator*() const {
+    reference operator*() const {
       return (*m_counter_ptr)[m_ind];
     }
-    value_type const *operator->() const {
+    pointer operator->() const {
       return &operator*();
     }
 

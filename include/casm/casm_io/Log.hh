@@ -37,6 +37,11 @@ namespace CASM {
     }
 
     template<int _required_verbosity = standard>
+    void generate(const std::string &what) {
+      _add<_required_verbosity>("Generate", what);
+    }
+
+    template<int _required_verbosity = standard>
     void set(const std::string &what) {
       _add<_required_verbosity>("Set", what);
     }
@@ -82,6 +87,11 @@ namespace CASM {
     }
 
     template<int _required_verbosity = standard>
+    void compiling(const std::string &what) {
+      _add<_required_verbosity>("Compiling", what);
+    }
+
+    template<int _required_verbosity = standard>
     void custom(const std::string &what) {
       static_assert(_required_verbosity >= none && _required_verbosity <= debug, "CASM::Log _required_verbosity must be <= 100");
       m_print = (m_verbosity >= _required_verbosity);
@@ -116,6 +126,13 @@ namespace CASM {
 
     void set_verbosity(int _verbosity);
 
+    template<int _required_verbosity>
+    Log &require() {
+      static_assert(_required_verbosity >= none && _required_verbosity <= debug, "CASM::Log _required_verbosity must be <= 100");
+      m_print = (m_verbosity >= _required_verbosity);
+      return *this;
+    }
+
 
     void reset(std::ostream &_ostream = std::cout, int _verbosity = standard, bool _show_clock = false);
 
@@ -126,6 +143,10 @@ namespace CASM {
     friend Log &operator<<(Log &log, std::ostream & (*fptr)(std::ostream &));
 
     operator std::ostream &();
+
+    explicit operator bool () {
+      return m_print;
+    }
 
     /// \brief Read verbosity level from a string
     static std::pair<bool, int> verbosity_level(std::string s);
@@ -175,6 +196,7 @@ namespace CASM {
 
   Log &operator<<(Log &log, std::ostream & (*fptr)(std::ostream &));
 
+
   inline Log &default_log() {
     static Log log;
     return log;
@@ -190,6 +212,69 @@ namespace CASM {
     static Log log(nullout);
     return log;
   }
+
+  class OStringStreamLog : public Log {
+
+  public:
+
+    /// \brief Construct a StringStreamLog
+    ///
+    /// \param verbosity The amount to be printed
+    ///
+    /// For verbosity:
+    /// - 0: print nothing
+    /// - 10: print all standard output
+    /// - 100: print all possible output
+    OStringStreamLog(int _verbosity = standard, bool _show_clock = false) :
+      Log(m_ss, _verbosity, _show_clock) {}
+
+    std::ostringstream &ss() {
+      return m_ss;
+    };
+
+    const std::ostringstream &ss() const {
+      return m_ss;
+    };
+
+  private:
+
+    std::ostringstream m_ss;
+  };
+
+
+  class Logging {
+
+  public:
+
+    Logging(Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log()) :
+      m_log(&log),
+      m_debug_log(&debug_log),
+      m_err_log(&err_log) {}
+
+    Log &log() const {
+      return *m_log;
+    }
+
+    Log &debug_log() const {
+      return *m_debug_log;
+    }
+
+    Log &err_log() const {
+      return *m_err_log;
+    }
+
+    static Logging null() {
+      return Logging(null_log(), null_log(), null_log());
+    }
+
+  private:
+
+    Log *m_log;
+    Log *m_debug_log;
+    Log *m_err_log;
+
+  };
+
 }
 
 #endif

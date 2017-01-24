@@ -6,19 +6,86 @@
 
 namespace CASM {
 
+  /// \brief CommandArgs constructor - specify logging
+  ///
+  /// \param _argc int, as from main
+  /// \param _argv char*[], as from main
+  /// \param _primclex pointer to PrimClex or nullptr
+  /// \param _root location of CASM project. If empty path, will use root of the
+  ///        CASM project containing current working directory
+  /// \param _logging Logging object to use
+  ///
   CommandArgs::CommandArgs(int _argc,
                            char *_argv[],
                            PrimClex *_primclex,
-                           Log &_log,
-                           Log &_err_log) :
+                           fs::path _root,
+                           const Logging &_logging) :
+    Logging(_logging),
     argc(_argc),
     argv(_argv),
     primclex(_primclex),
-    log(_log),
-    err_log(_err_log) {
+    root(_root),
+    log(Logging::log()),
+    err_log(Logging::err_log()),
+    parse_result(0),
+    m_free_p(false) {
+    _init();
+  }
 
-    // set project 'root'
-    root = find_casmroot(fs::current_path());
+  /// \brief CommandArgs constructor - specify logging
+  ///
+  /// \param _args std::string of form 'casm [subcommand] [opt...]'
+  /// \param _primclex pointer to PrimClex or nullptr
+  /// \param _root location of CASM project. If empty path, will use root of the
+  ///        CASM project containing current working directory
+  /// \param _logging Logging object to use
+  ///
+  CommandArgs::CommandArgs(std::string _args,
+                           PrimClex *_primclex,
+                           fs::path _root,
+                           const Logging &_logging) :
+    Logging(_logging),
+    primclex(_primclex),
+    root(_root),
+    log(Logging::log()),
+    err_log(Logging::err_log()) {
+
+    // parse _args -> argc, argv
+    parse_result = wordexp(_args.c_str(), &m_p, 0);
+    if(parse_result) {
+      err_log << "Error parsing query: '" << _args << "'" << std::endl;
+      err_log << "wordexp() error: " << parse_result << std::endl;
+      switch(parse_result) {
+      case 1: {
+        err_log << "Check for illegal unescaped characters: |, &, ;, <, >, (, ), {, }" << std::endl;
+        break;
+      }
+      default: {
+        err_log << "Check 'man wordexp' for error code meaning" << std::endl;
+      }
+      }
+      return;
+    }
+
+    m_free_p = true;
+    argc = m_p.we_wordc;
+    argv = m_p.we_wordv;
+
+    _init();
+  }
+
+  CommandArgs::~CommandArgs() {
+    if(m_free_p) {
+      wordfree(&m_p);
+    }
+  }
+
+  void CommandArgs::_init() {
+
+    // set project 'root' if not already set
+    if(root.empty()) {
+      root = find_casmroot(fs::current_path());
+    }
 
     // set 'command'
     command = (argc > 1) ? std::string(argv[1]) : "";
@@ -155,6 +222,25 @@ namespace CASM {
     }
   }
 
+  /*
+  /// \brief Executes casm_api in specified working directory
+  int casm_api(const CommandArgs &args, fs::path working_dir) {
+    fs::path prev = fs::current_path();
+    fs::current_path(working_dir);
+    int res;
+
+    try {
+      res = casm_api(args);
+    }
+    catch(...) {
+      fs::current_path(prev);
+      throw;
+    }
+    return res;
+  }
+  */
+
+
 
   /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
   ///        return reference to existing or constructed PrimClex
@@ -168,7 +254,7 @@ namespace CASM {
   PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex) {
     return make_primclex_if_not(args, uniq_primclex, args.log);
   }
-  
+
   /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
   ///        return reference to existing or constructed PrimClex
   ///
@@ -179,7 +265,7 @@ namespace CASM {
   /// \returns reference to PrimClex (either newly constructed managed by
   ///          uniq_primclex, or existing pointed at by args.primclex)
   ///
-  PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex, Log& status_log) {
+  PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex, Log &status_log) {
     if(!args.primclex) {
       uniq_primclex.reset(new PrimClex(args.root, status_log));
       return *uniq_primclex;

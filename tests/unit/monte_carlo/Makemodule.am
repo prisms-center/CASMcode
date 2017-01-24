@@ -1,0 +1,19 @@
+check_PROGRAMS += casm_unit_monte_carlo
+
+casm_unit_monte_carlo_CXXFLAGS=$(AM_CXXFLAGS) -I$(top_srcdir)/tests/unit/
+
+casm_unit_monte_carlo_SOURCES = ./tests/unit/unit_test.cpp\
+						./tests/unit/monte_carlo/GrandCanonical_test.cpp
+
+nodist_casm_unit_monte_carlo_SOURCES = ./tests/unit/Common.hh
+
+casm_unit_monte_carlo_LDADD=libcasm.la\
+					libcasmtesting.a\
+					$(BOOST_SYSTEM_LIB)\
+					$(BOOST_FILESYSTEM_LIB)\
+					$(BOOST_PROGRAM_OPTIONS_LIB)\
+					$(BOOST_REGEX_LIB)\
+					$(BOOST_CHRONO_LIB)\
+					$(BOOST_UNIT_TEST_FRAMEWORK_LIB)
+
+TESTS+=./tests/unit/monte_carlo/run_test_monte_carlo

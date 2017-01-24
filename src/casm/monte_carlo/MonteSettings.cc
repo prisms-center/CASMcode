@@ -1,6 +1,8 @@
 #include "casm/monte_carlo/MonteSettings.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
+#include "casm/monte_carlo/MonteCarloEnum.hh"
 #include "casm/container/LinearAlgebra.hh"
+#include "casm/misc/HallOfFame.hh"
 
 namespace CASM {
 
@@ -30,12 +32,12 @@ namespace CASM {
 
   /// \brief Return type of Monte Carlo ensemble
   Monte::ENSEMBLE MonteSettings::ensemble() const {
-    return _get_setting<Monte::ENSEMBLE>("ensemble", Monte::help<Monte::ENSEMBLE>());
+    return _get_setting<Monte::ENSEMBLE>("ensemble", help<Monte::ENSEMBLE>());
   }
 
   /// \brief Return type of Monte Carlo method
   Monte::METHOD MonteSettings::method() const {
-    return _get_setting<Monte::METHOD>("method", Monte::help<Monte::METHOD>());
+    return _get_setting<Monte::METHOD>("method", help<Monte::METHOD>());
   }
 
   /// \brief Run in debug mode?
@@ -100,7 +102,7 @@ namespace CASM {
 
   /// \brief Given a settings jsonParser figure out the drive mode. Expects drive_mode/incremental,custom
   const Monte::DRIVE_MODE MonteSettings::drive_mode() const {
-    return _get_setting<Monte::DRIVE_MODE>("driver", "mode", Monte::help<Monte::DRIVE_MODE>());
+    return _get_setting<Monte::DRIVE_MODE>("driver", "mode", help<Monte::DRIVE_MODE>());
   }
 
   /// \brief If dependent runs, start subsequent calculations with the final state
@@ -153,7 +155,7 @@ namespace CASM {
     std::string level1 = "data";
     std::string level2 = "storage";
     std::string level3 = "write_POSCAR_snapshots";
-    std::string help = "bool (default=false)";
+    std::string help = "(bool, default=false)";
     if(!_is_setting(level1, level2, level3)) {
       return false;
     }
@@ -166,7 +168,7 @@ namespace CASM {
     std::string level1 = "data";
     std::string level2 = "storage";
     std::string level3 = "write_observations";
-    std::string help = "bool (default=false)";
+    std::string help = "(bool, default=false)";
     if(!_is_setting(level1, level2, level3)) {
       return false;
     }
@@ -179,44 +181,32 @@ namespace CASM {
     std::string level1 = "data";
     std::string level2 = "storage";
     std::string level3 = "output_format";
+    std::string help = "(string or JSON array of string, optional, default='csv')\n"
+                       "  Accepts: 'csv' or 'CSV' to write .csv files\n"
+                       "           'json' or 'JSON' to write .json files\n"
+                       "  Use an array to write in multiple formats.\n";
 
-    try {
-
-      if(!(*this)[level1][level2].contains(level3)) {
-        return true;
-      }
-
-      const jsonParser &ref = (*this)[level1][level2][level3];
-
-      if(ref.is_string()) {
-        std::string input = ref.get<std::string>();
-        if(input == "csv" || input == "CSV") {
-          return true;
-        }
-        return false;
-      }
-      else if(ref.is_array()) {
-        for(auto it = ref.cbegin(); it != ref.cend(); ++it) {
-          std::string input = it->get<std::string>();
-          if(input == "csv" || input == "CSV") {
-            return true;
-          }
-        }
-        return false;
-      }
-
-      throw std::runtime_error(
-        std::string("ERROR in 'MonteSettings::write_csv()'\n") +
-        "  Expected [\"data\"][\"storage\"][\"output_format\"] to contain a string or array of strings.");
+    if(!_is_setting(level1, level2, level3)) {
+      return true;
     }
 
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in MonteSettings::write_csv" << std::endl;
-      std::cerr << "[\"data\"][\"storage\"] must exist" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"output_format\"] exists, it may be a string or an array of strings" << std::endl;
-      std::cerr << "  if any of those strings is \"csv\" or \"CSV\", return true (do write .csv files)" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"output_format\"] does not exist, default is true (do write .csv files)" << std::endl;
-      throw e;
+    const jsonParser &ref = (*this)[level1][level2][level3];
+
+    if(ref.is_array()) {
+      std::vector<std::string> formats = _get_setting<std::vector<std::string> >(level1, level2, level3, help);
+      for(auto it = formats.begin(); it != formats.end(); ++it) {
+        if(*it == "csv" || *it == "CSV") {
+          return true;
+        }
+      }
+      return false;
+    }
+    else {
+      std::string input = _get_setting<std::string>(level1, level2, level3, help);
+      if(input == "csv" || input == "CSV") {
+        return true;
+      }
+      return false;
     }
   }
 
@@ -225,44 +215,165 @@ namespace CASM {
     std::string level1 = "data";
     std::string level2 = "storage";
     std::string level3 = "output_format";
-    try {
+    std::string help = "(string or JSON array of string, optional, default='csv')\n"
+                       "  Accepts: 'csv' or 'CSV' to write .csv files\n"
+                       "           'json' or 'JSON' to write .json files\n"
+                       "  Use an array to write in multiple formats.\n";
 
-      if(!(*this)[level1][level2].contains(level3)) {
-        return false;
-      }
+    if(!_is_setting(level1, level2, level3)) {
+      return false;
+    }
 
-      const jsonParser &ref = (*this)[level1][level2][level3];
+    const jsonParser &ref = (*this)[level1][level2][level3];
 
-      if(ref.is_string()) {
-        std::string input = ref.get<std::string>();
-        if(input == "json" || input == "JSON") {
+    if(ref.is_array()) {
+      std::vector<std::string> formats = _get_setting<std::vector<std::string> >(level1, level2, level3, help);
+      for(auto it = formats.begin(); it != formats.end(); ++it) {
+        if(*it == "json" || *it == "JSON") {
           return true;
         }
-        return false;
       }
-      else if(ref.is_array()) {
-        for(auto it = ref.cbegin(); it != ref.cend(); ++it) {
-          std::string input = it->get<std::string>();
-          if(input == "json" || input == "JSON") {
-            return true;
-          }
-        }
-        return false;
+      return false;
+    }
+    else {
+      std::string input = _get_setting<std::string>(level1, level2, level3, help);
+      if(input == "json" || input == "JSON") {
+        return true;
       }
+      return false;
+    }
+  }
 
+
+  // --- Enumerating Configurations ---
+
+  /// \brief Returns true if enumeration is requested. (Default false)
+  bool MonteSettings::is_enumeration() const {
+    if(!_is_setting("data", "enumeration")) {
+      return false;
+    }
+    return true;
+  }
+
+  /// \brief Returns 'casm query'-like enumeration metric
+  ///
+  /// Expects a string containing the Configuration scoring metric. For instance,
+  /// 'clex_hull_dist(ALL)' (which is the default).
+  ///
+  /// Uses boost::lexical_cast<double> on the output to determine the result.
+  std::string MonteSettings::enumeration_metric_args() const {
+
+    std::string help = "(string, optional, default=\"clex_hull_dist(ALL)\")\n"
+                       "  A 'casm query'-like string that provides a metric for \n"
+                       "  ranking configurations as they are encountered during \n"
+                       "  a Monte Carlo calculation. The resulting value is used\n"
+                       "  to create a hall of fame of 'best' configurations     \n"
+                       "  encountered during the calculation. When the          \n"
+                       "  calculation is complete configurations in the hall of \n"
+                       "  fame are added to the CASM project config list.       \n"
+                       "  The 'casm query'-like command should evaluate to a    \n"
+                       "  number.";
+
+    if(!_is_setting("data", "enumeration", "metric")) {
+      return "clex_hull_dist(ALL)";
+    }
+    return _get_setting<std::string>("data", "enumeration", "metric", help);
+  }
+
+  /// \brief Returns 'casm query'-like enumeration check
+  ///
+  /// Expects a string that will convert to true if the current Configuration
+  /// should be scored for enumeration. For instance, perhaps you only want
+  /// to enumerate Configurations that are near or below the currently predicted
+  /// convex hull. Then, use 'lt(clex_hull_dist(ALL),0.005)'. Default always
+  /// returns true.
+  ///
+  /// Uses boost::lexical_cast<bool> on the output to determine the result.
+  std::string MonteSettings::enumeration_check_args() const {
+
+    std::string help = "(string, optional, default=\"eq(1,1)\")\n"
+                       "  A 'casm query'-like string that returns a boolean value \n"
+                       "  indicating if (true) a configuration should be considered\n"
+                       "  for the enumeration hall of fame.";
+
+    if(!_is_setting("data", "enumeration", "check")) {
+      return "eq(1,1)";
+    }
+    return _get_setting<std::string>("data", "enumeration", "check", help);
+  }
+
+  /// \brief Enumeration sample mode (default Monte::ENUM_SAMPLE_MODE::ON_SAMPLE)
+  Monte::ENUM_SAMPLE_MODE MonteSettings::enumeration_sample_mode() const {
+    if(!_is_setting("data", "enumeration", "sample_mode")) {
+      return Monte::ENUM_SAMPLE_MODE::ON_SAMPLE;
+    }
+    return _get_setting<Monte::ENUM_SAMPLE_MODE>("data", "enumeration", "sample_mode", help<Monte::ENUM_SAMPLE_MODE>());
+  }
+
+  /// \brief Insert configurations in their canonical form (default true)
+  bool MonteSettings::enumeration_check_existence() const {
+
+    std::string help = "(bool, optional, default=true)\n"
+                       "  If true, only configurations that do not already exist\n"
+                       "  in the config list are inserted into the enumeration  \n"
+                       "  hall of fame.";
+
+    if(!_is_setting("data", "enumeration", "check_existence")) {
+      return true;
+    }
+    return _get_setting<bool>("data", "enumeration", "check_existence", help);
+  }
+
+  /// \brief Insert configurations in their canonical form (default true)
+  bool MonteSettings::enumeration_insert_canonical() const {
+
+    std::string help = "(bool, optional, default=true)\n"
+                       "  If true, configurations are inserted into the         \n"
+                       "  enumeration hall of fame in their canonical form. If  \n"
+                       "  'check_existence' is true, this must be set to true.";
+
+    bool val;
+    if(!_is_setting("data", "enumeration", "insert_canonical")) {
+      val = true;
+    }
+    else {
+      val = _get_setting<bool>("data", "enumeration", "insert_canonical", help);
+    }
+
+    // if check_existence, insert_canonical must be true
+    if(enumeration_check_existence() && !val) {
       throw std::runtime_error(
-        std::string("ERROR in 'MonteSettings::write_json()'\n") +
-        "  Expected [\"data\"][\"storage\"][\"output_format\"] to contain a string or array of strings.");
+        "Error in Monte Carlo enumeration in settings: "
+        "If 'check_existence' is true, then 'insert_canonical' must be true"
+      );
     }
+    return val;
+  }
 
-    catch(std::runtime_error &e) {
-      std::cerr << "ERROR in MonteSettings::write_json" << std::endl;
-      std::cerr << "[\"data\"][\"storage\"] must exist" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"output_format\"] exists, it may be a string or an array of strings" << std::endl;
-      std::cerr << "  if any of those strings is \"json\" or \"JSON\", return true (do write .json files)" << std::endl;
-      std::cerr << "if [\"data\"][\"storage\"][\"output_format\"] does not exist, default is false (do not write .json files)" << std::endl;
-      throw e;
+  /// \brief Returns enumeration halloffame max size (default 100)
+  Index MonteSettings::enumeration_N_halloffame() const {
+
+    std::string help = "(integer, optional, default=100)\n"
+                       "  The number of configurations that are allowed in the \n"
+                       "  enumeration hall of fame.";
+
+    if(!_is_setting("data", "enumeration", "N_halloffame")) {
+      return 100;
     }
+    return _get_setting<Index>("data", "enumeration", "N_halloffame", help);
+  }
+
+  /// \brief Returns enumeration halloffame tolerance (default 1e-8)
+  double MonteSettings::enumeration_tol() const {
+
+    std::string help = "(number, optional, default=1e-8)\n"
+                       "  Tolerance used for floating point comparison of         \n"
+                       "  configuration scores in the enumeration hall of fame.";
+
+    if(!_is_setting("data", "enumeration", "tolerance")) {
+      return 1e-8;
+    }
+    return _get_setting<double>("data", "enumeration", "tolerance", help);
   }
 
 
@@ -273,8 +384,9 @@ namespace CASM {
     }
 
     catch(std::runtime_error &e) {
-      std::cerr << "ERROR in MonteSettings::is_" << level2 << std::endl;
-      std::cerr << "No [\"" << level1 << "\"] setting found" << std::endl;
+      Log &err_log = default_err_log();
+      err_log.error<Log::standard>("Reading Monte Carlo settings");
+      err_log << "No [\"" << level1 << "\"] setting found.\n" << std::endl;
       throw e;
     }
   }
@@ -286,12 +398,13 @@ namespace CASM {
     }
 
     catch(std::runtime_error &e) {
-      std::cerr << "ERROR in MonteSettings::is_" << level2 << "_" << level3 << std::endl;
+      Log &err_log = default_err_log();
+      err_log.error<Log::standard>("Reading Monte Carlo settings");
       if(this->contains(level1)) {
-        std::cerr << "No [\"" << level1 << "\"][\"" << level2 << "\"] setting found" << std::endl;
+        err_log << "No [\"" << level1 << "\"][\"" << level2 << "\"] setting found" << std::endl;
       }
       else {
-        std::cerr << "No [\"" << level1 << "\"] setting found" << std::endl;
+        err_log << "No [\"" << level1 << "\"] setting found" << std::endl;
       }
       throw;
     }
@@ -306,12 +419,12 @@ namespace CASM {
 
   /// \brief Sample by pass?
   bool EquilibriumMonteSettings::sample_by_pass() const {
-    return Monte::SAMPLE_MODE::PASS == _get_setting<Monte::SAMPLE_MODE>("data", "sample_by", Monte::help<Monte::SAMPLE_MODE>());
+    return Monte::SAMPLE_MODE::PASS == _get_setting<Monte::SAMPLE_MODE>("data", "sample_by", help<Monte::SAMPLE_MODE>());
   }
 
   /// \brief Sample by step?
   bool EquilibriumMonteSettings::sample_by_step() const {
-    return Monte::SAMPLE_MODE::STEP == _get_setting<Monte::SAMPLE_MODE>("data", "sample_by", Monte::help<Monte::SAMPLE_MODE>());
+    return Monte::SAMPLE_MODE::STEP == _get_setting<Monte::SAMPLE_MODE>("data", "sample_by", help<Monte::SAMPLE_MODE>());
   }
 
   /// \brief Figure out how often to take samples
@@ -320,7 +433,7 @@ namespace CASM {
     size_type value = 1;
     std::string level1 = "data";
     std::string level2 = "sample_period";
-    std::string help = "int (default=1)\n"
+    std::string help = "(int, default=1)\n"
                        "  In conjunction with \"sample_by\", determines how often to make observations.";
     if(!_is_setting(level1, level2)) {
       return 1;
@@ -348,7 +461,7 @@ namespace CASM {
   /// \brief Number of explicit equilibration passes requsted for each run
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::equilibration_passes_each_run() const {
     std::string help = "int (optional)";
-    return _get_setting<size_type>("data", "equilibration_passes_each_run");
+    return _get_setting<size_type>("data", "equilibration_passes_each_run", help);
   }
 
 
@@ -360,7 +473,7 @@ namespace CASM {
   /// \brief Returns the number of passes requested
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::N_pass() const {
     std::string help = "int (optional)";
-    return _get_setting<size_type>("data", "N_pass");
+    return _get_setting<size_type>("data", "N_pass", help);
   }
 
   /// \brief Returns true if the number of steps has been specified
@@ -372,7 +485,7 @@ namespace CASM {
   /// \brief Returns the number of steps requested
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::N_step() const {
     std::string help = "int (optional)";
-    return _get_setting<size_type>("data", "N_step");
+    return _get_setting<size_type>("data", "N_step", help);
   }
 
   /// \brief Returns true if the number of samples has been specified
@@ -461,46 +574,43 @@ namespace CASM {
 
   /// \brief Figure out how large data containers should be
   EquilibriumMonteSettings::size_type EquilibriumMonteSettings::max_data_length() const {
-    try {
-      if(!_is_setting("data", "sample_by")) {
-        return 1024;
+    if(!_is_setting("data", "sample_by")) {
+      return 1024;
+    }
+    else if(sample_by_pass()) {
+      if(is_max_pass()) {
+        return (max_pass() / sample_period());
       }
-      else if(sample_by_pass()) {
-        if(is_max_pass()) {
-          return (max_pass() / sample_period());
-        }
-        else if(is_N_pass()) {
-          return (N_pass() / sample_period());
-        }
-        else if(is_N_sample()) {
-          return N_sample();
-        }
-        else {
-          return 1024;
-        }
+      else if(is_N_pass()) {
+        return (N_pass() / sample_period());
       }
-      else if(sample_by_step()) {
-        if(is_max_step()) {
-          return (max_step() / sample_period());
-        }
-        else if(is_N_step()) {
-          return (N_step() / sample_period());
-        }
-        else if(is_N_sample()) {
-          return N_sample();
-        }
-        else {
-          return 1024;
-        }
+      else if(is_N_sample()) {
+        return N_sample();
       }
       else {
-        throw std::runtime_error(std::string("Error in MonteSettings::max_data_length()"));
+        return 1024;
       }
     }
-    catch(...) {
-      std::cerr << "ERROR: Could not get max data length." << std::endl;
-      std::cerr << "Please check 'sample_by', 'max_pass' or 'max_step', and 'sample_period' in your input file" << std::endl;
-      throw;
+    else if(sample_by_step()) {
+      if(is_max_step()) {
+        return (max_step() / sample_period());
+      }
+      else if(is_N_step()) {
+        return (N_step() / sample_period());
+      }
+      else if(is_N_sample()) {
+        return N_sample();
+      }
+      else {
+        return 1024;
+      }
+    }
+    else {
+      Log &err_log = default_err_log();
+      err_log.error<Log::standard>("Reading Monte Carlo settings");
+      err_log << "Could not determine max data length.\n";
+      err_log << "Please check 'sample_by', 'max_pass' or 'max_step', and 'sample_period' in your input file.\n" << std::endl;
+      throw std::runtime_error(std::string("Error determining max_data_length"));
     }
 
   }

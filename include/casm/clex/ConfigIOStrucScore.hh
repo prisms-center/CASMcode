@@ -12,9 +12,11 @@ namespace CASM {
   class Configuration;
 
   namespace ConfigIO {
-    /*
-     */
 
+    /// \brief Evaluates the mapping of a configuration onto an arbitrary primitive structure
+    ///
+    /// \ingroup ConfigIO
+    ///
     class StrucScore: public VectorXdAttribute<Configuration> {
     public:
       StrucScore() :
@@ -45,7 +47,7 @@ namespace CASM {
 
       std::string short_header(const Configuration &_config) const override;
 
-      std::string long_header(const Configuration &_config) const override;
+      std::vector<std::string> col_header(const Configuration &_config) const override;
       /*
             void inject(const Configuration &_config, DataStream &_stream, Index) const override;
 

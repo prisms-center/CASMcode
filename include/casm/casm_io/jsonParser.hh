@@ -13,8 +13,21 @@
 
 namespace CASM {
 
+  namespace fs = boost::filesystem;
+  namespace po = boost::program_options;
+
   template<bool IsConst>
   class jsonParserIterator;
+
+  /**
+   * \defgroup jsonParser
+   *
+   * \brief JSON input/output
+   *
+   * \ingroup casmIO
+   *
+   * @{
+   */
 
   /// jsonParser allows for reading / writing JSON data
   ///
@@ -137,7 +150,7 @@ namespace CASM {
 
     /// Do not force printing double using scientific notation
     using json_spirit::mValue::unset_scientific;
-    
+
     /// Do not remove trailing zeros for real (double) values
     using json_spirit::mValue::unset_remove_trailing_zeros;
 
@@ -147,6 +160,8 @@ namespace CASM {
     bool operator!=(const jsonParser &json) const {
       return !(json_spirit::mValue::operator==(json));
     }
+
+    bool almost_equal(const jsonParser &B, double tol) const;
 
 
     // ------ Type Checking Methods ------------------------------------
@@ -169,6 +184,20 @@ namespace CASM {
     /// Return a reference to the sub-jsonParser (JSON value) with 'name' if it exists.
     ///   Will throw if the 'name' doesn't exist.
     const jsonParser &operator[](const std::string &name) const;
+
+    /// Return a reference to the sub-jsonParser (JSON value) with specified relative path
+    ///   Will throw if the 'path' doesn't exist.
+    ///
+    /// - If 'path' is 'A/B/C', then json.at(path) is equivalent to json[A][B][C]
+    /// - If any sub-jsonParser is an array, it will attempt to convert the filename to int
+    jsonParser &at(const fs::path &path);
+
+    /// Return a reference to the sub-jsonParser (JSON value) with specified relative path
+    ///   Will throw if the 'path' doesn't exist.
+    ///
+    /// - If 'path' is 'A/B/C', then json.at(path) is equivalent to json[A][B][C]
+    /// - If any sub-jsonParser is an array, it will attempt to convert the filename to int
+    const jsonParser &at(const fs::path &path) const;
 
     /// Return a reference to the sub-jsonParser (JSON value) from index 'element' iff jsonParser is a JSON array
     jsonParser &operator[](const int &element);
@@ -477,6 +506,9 @@ namespace CASM {
 
   /// Return the location at which jsonParser 'A' != 'B' as a boost::filesystem::path
   boost::filesystem::path find_diff(const jsonParser &A, const jsonParser &B, boost::filesystem::path diff = boost::filesystem::path());
+
+  /// Return the location at which jsonParser !A.almost_equal(B, tol) as a boost::filesystem::path
+  boost::filesystem::path find_diff(const jsonParser &A, const jsonParser &B, double tol, boost::filesystem::path diff = boost::filesystem::path());
 
 
   /// jsonParser bidirectional Iterator class
@@ -787,6 +819,8 @@ namespace CASM {
     auto it = json.begin();
     value = std::make_pair<Key, T>(it.name(), *it);
   }
+
+  /** @} */
 }
 
 #endif

@@ -2,12 +2,46 @@
 
 #include "casm/app/casm_functions.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/FilteredConfigIterator.hh"
-#include "casm/clex/ConfigIO.hh"
+#include "casm/clex/ScelEnum.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
-#include "casm/clex/ConfigEnumIterator.hh"
+#include "casm/clex/SuperConfigEnum.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
+
+  namespace Completer {
+    EnumOption::EnumOption(): OptionHandlerBase("enum") {}
+
+    void EnumOption::initialize() {
+      bool required = false;
+
+      m_desc.add_options()
+      ("help,h", "Print help message.")
+      ("desc",
+       po::value<std::vector<std::string> >(&m_desc_vec)->multitoken()->zero_tokens(),
+       "Print extended usage description. "
+       "Use '--desc MethodName [MethodName2...]' for detailed option description. "
+       "Partial matches of method names will be included.")
+      ("method", po::value<std::string>(&m_method), "Method to use")
+      ("min", po::value<int>(&m_min_volume)->default_value(1), "Min volume")
+      ("max", po::value<int>(&m_max_volume), "Max volume")
+      ("filter",
+       po::value<std::vector<std::string> >(&m_filter_strs)->multitoken()->value_name(ArgHandler::query()),
+       "Filter configuration enumeration so that only configurations matching a "
+       "'casm query'-type expression are recorded")
+      ("all,a",
+       po::bool_switch(&m_all_existing)->default_value(false),
+       "Enumerate configurations for all existing supercells");
+
+      add_verbosity_suboption();
+      add_settings_suboption(required);
+      add_input_suboption(required);
+      add_scelnames_suboption();
+      add_confignames_suboption();
+
+      return;
+    }
+  }
 
 
   // ///////////////////////////////////////
@@ -16,47 +50,58 @@ namespace CASM {
 
   int enum_command(const CommandArgs &args) {
 
-    //casm enum [—supercell min max] [—config supercell ] [—hopconfigs hop.background]
-    //- enumerate supercells and configs and hop local configurations
+    //casm enum --settings input.json
+    //- enumerate supercells, configs, hop local configurations, etc.
 
-    int min_vol = 1, max_vol;
-    std::vector<std::string> scellname_list, filter_expr;
-    //double tol;
-    COORD_TYPE coordtype = CASM::CART;
-    po::variables_map vm;
-
-
-    /// Set command line options using boost program_options
-    po::options_description desc("'casm enum' usage");
-    desc.add_options()
-    ("help,h", "Write help documentation")
-    ("min", po::value<int>(&min_vol), "Min volume")
-    ("max", po::value<int>(&max_vol), "Max volume")
-    ("filter", po::value<std::vector<std::string> >(&filter_expr)->multitoken(), "Filter configuration enumeration so that only configurations matching a 'casm query'-type expression are recorded")
-    ("scellname,n", po::value<std::vector<std::string> >(&scellname_list)->multitoken(), "Enumerate configs for given supercells")
-    ("all,a", "Enumerate configurations for all supercells")
-    ("supercells,s", "Enumerate supercells")
-    ("configs,c", "Enumerate configurations");
-
-    // currently unused...
-    //("tol", po::value<double>(&tol)->default_value(CASM::TOL), "Tolerance used for checking symmetry")
-    //("coord", po::value<COORD_TYPE>(&coordtype)->default_value(CASM::CART), "Coord mode: FRAC=0, or (default) CART=1");
+    EnumeratorMap *enumerators;
+    std::unique_ptr<PrimClex> uniq_primclex;
+    PrimClex *primclex;
+    Completer::EnumOption enum_opt;
+    po::variables_map &vm = enum_opt.vm();
+    const fs::path &root = args.root;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, desc), vm); // can throw
+      po::store(po::parse_command_line(args.argc, args.argv, enum_opt.desc()), vm); // can throw
+
+      if(!vm.count("help") && !vm.count("desc")) {
+
+        if(root.empty()) {
+          args.err_log.error("No casm project found");
+          args.err_log << std::endl;
+          return ERR_NO_PROJ;
+        }
+
+        if(vm.count("method") != 1) {
+          args.err_log << "Error in 'casm enum'. The --method option is required." << std::endl;
+          return ERR_INVALID_ARG;
+        }
+
+        if(vm.count("settings") + vm.count("input") == 2) {
+          args.err_log << "Error in 'casm enum'. The options --settings or --input may not both be chosen." << std::endl;
+          return ERR_INVALID_ARG;
+        }
+      }
+
+      if(!root.empty()) {
+        primclex = &make_primclex_if_not(args, uniq_primclex);
+        enumerators = &primclex->settings().enumerator_handler().map();
+      }
 
       /** --help option
        */
       if(vm.count("help")) {
-        std::cout << "\n";
-        std::cout << desc << std::endl;
+        args.log << "\n";
+        args.log << enum_opt.desc() << std::endl;
 
+        if(!root.empty()) {
+          args.log << "The enumeration methods are:\n\n";
 
-        std::cout << "DESCRIPTION" << std::endl;
-        std::cout << "    Enumerate supercells and configurations\n";
-        std::cout << "    - expects a PRIM file in the project root directory \n";
-        std::cout << "    - if --min is given, then --max must be given \n";
+          for(const auto &e : *enumerators) {
+            args.log << "  " << e.name() << std::endl;
+          }
+        }
 
+        args.log << "\nFor complete options description, use 'casm enum --desc MethodName'.\n\n";
 
         return 0;
       }
@@ -64,134 +109,101 @@ namespace CASM {
       po::notify(vm); // throws on error, so do after help in case
       // there are any problems
 
-      if(vm.count("min") && !vm.count("max")) {
-        std::cerr << "\n" << desc << "\n" << std::endl;
-        std::cerr << "Error in 'casm enum'. If --min is given, --max must also be given." << std::endl;
-        return ERR_INVALID_ARG;
+      if(vm.count("desc") && enum_opt.desc_vec().size()) {
+        args.log << "\n";
+
+        bool match = false;
+        for(const auto &in_name : enum_opt.desc_vec()) {
+          for(const auto &e : *enumerators) {
+            if(e.name().substr(0, in_name.size()) == in_name) {
+              args.log << e.help() << std::endl;
+              match = true;
+            }
+          }
+        }
+
+        if(!match) {
+
+          if(!root.empty()) {
+            args.log << "No match found. The enumeration methods are:\n\n";
+
+            for(const auto &e : *enumerators) {
+              args.log << "  " << e.name() << std::endl;
+            }
+          }
+        }
+
+        return 0;
       }
-      if(vm.count("supercells") + vm.count("configs") != 1) {
-        std::cerr << "\n" << desc << "\n" << std::endl;
-        std::cerr << "Error in 'casm enum'. Exactly one of either --supercells or --configs must be given." << std::endl;
-        return ERR_INVALID_ARG;
-      }
-      if(vm.count("supercells") && !vm.count("max")) {
-        std::cerr << "\n" << desc << "\n" << std::endl;
-        std::cerr << "Error in 'casm enum'. If --supercells is given, --max must be given." << std::endl;
-        return ERR_INVALID_ARG;
-      }
-      if(vm.count("configs") && (vm.count("max") + vm.count("all") != 1)) {
-        std::cerr << "\n" << desc << "\n" << std::endl;
-        std::cerr << "Error in 'casm enum'. If --configs is given, exactly one of either --max or --all must be given." << std::endl;
-        return ERR_INVALID_ARG;
+
+      if(vm.count("desc")) {
+        args.log << "\n";
+        args.log << enum_opt.desc() << std::endl;
+
+        args.log << "DESCRIPTION\n" << std::endl;
+
+        args.log << "  casm enum --settings input.json                                      \n"
+                 "  casm enum --input '{...JSON...}'                                     \n"
+                 "  - Input settings in JSON format to run an enumeration. The expected  \n"
+                 "    format is:                                                         \n"
+                 "\n"
+                 "    {\n"
+                 "      \"MethodName\": {\n"
+                 "        \"option1\" : ...,\n"
+                 "        \"option2\" : ...,\n"
+                 "         ...\n"
+                 "      }\n"
+                 "    }\n"
+                 "\n";
+
+        if(!root.empty()) {
+          args.log << "The enumeration methods are:\n\n";
+
+          for(const auto &e : *enumerators) {
+            args.log << "  " << e.name() << std::endl;
+          }
+
+
+          args.log << "\nFor complete options help for a particular method, \n"
+                   "use 'casm enum --desc MethodName'.\n\n";
+
+          args.log << "Custom enumerator plugins can be added by placing source code \n"
+                   "in the CASM project directory: \n"
+                   "  " << primclex->dir().enumerator_plugins() << " \n\n"
+
+                   "For examples of how to write enumerators see: \n"
+                   "  $REPO/include/casm/enumerators \n"
+                   "  $REPO/src/casm/enumerators \n"
+                   "where: \n"
+                   "  REPO=https://github.com/prisms-center/CASMcode/tree/master \n\n";
+        }
+
+        return 0;
       }
     }
     catch(po::error &e) {
-      std::cerr << desc << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << enum_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      std::cerr << desc << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << enum_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_UNKNOWN;
-
     }
 
-    COORD_MODE C(coordtype);
-
-    const fs::path &root = args.root;
-    if(root.empty()) {
-      args.err_log.error("No casm project found");
-      args.err_log << std::endl;
-      return ERR_NO_PROJ;
+    jsonParser input;
+    if(vm.count("settings")) {
+      input = jsonParser {enum_opt.settings_path()};
     }
-
-    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
-    // Then whichever exists, store reference in 'primclex'
-    std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    const DirectoryStructure &dir = primclex.dir();
-    const ProjectSettings &set = primclex.settings();
-
-    if(vm.count("supercells")) {
-      std::cout << "\n***************************\n" << std::endl;
-
-      std::cout << "Generating supercells from " << min_vol << " to " << max_vol << std::endl << std::endl;
-      primclex.generate_supercells(min_vol, max_vol, true);
-      std::cout << "\n  DONE." << std::endl << std::endl;
-
-      std::cout << "Write SCEL." << std::endl << std::endl;
-      primclex.print_supercells();
-
+    else if(vm.count("input")) {
+      input = jsonParser::parse(enum_opt.input_str());
     }
-    else if(vm.count("configs")) {
-      std::cout << "\n***************************\n" << std::endl;
-      std::vector<Supercell *> scel_selection;
+    int res = enumerators->find(enum_opt.method())->run(*primclex, input, enum_opt);
 
-      //Build the supercell selection based on user input
-      if(vm.count("all")) {
-        std::cout << "Enumerate all configurations" << std::endl << std::endl;
-        for(int j = 0; j < primclex.get_supercell_list().size(); j++)
-          scel_selection.push_back(&(primclex.get_supercell(j)));
-      }
-      else {
-        if(vm.count("max")) {
-          std::cout << "Enumerate configurations from volume " << min_vol << " to " << max_vol << std::endl << std::endl;
-          for(int j = 0; j < primclex.get_supercell_list().size(); j++) {
-            if(primclex.get_supercell(j).volume() >= min_vol && primclex.get_supercell(j).volume() <= max_vol)
-              scel_selection.push_back(&(primclex.get_supercell(j)));
-          }
-        }
-        if(vm.count("scellname")) {
-          Index j;
-          std::cout << "Enumerate configurations for named supercells" << std::endl << std::endl;
-          for(int i = 0; i < scellname_list.size(); i++) {
-            if(!primclex.contains_supercell(scellname_list[i], j)) {
-              std::cout << "Error in 'casm enum'. Did not find supercell: " << scellname_list[i] << std::endl;
-              return 1;
-            }
-            scel_selection.push_back(&(primclex.get_supercell(j)));
-          }
-        }
-      }
-      //\Finished building supercell selection
+    args.log << std::endl;
 
-      if(scel_selection.empty()) {
-        std::cout << "Did not find any supercells. Make sure to 'casm enum --supercells' first!" << std::endl << std::endl;
-        return ERR_MISSING_DEPENDS;
-      }
-
-      //We have the selection. Now do enumeration
-      for(auto it = scel_selection.begin(); it != scel_selection.end(); ++it) {
-        std::cout << "  Enumerate configurations for " << (**it).get_name() << " ...  " << std::flush;
-
-        ConfigEnumAllOccupations<Configuration> enumerator(**it);
-        Index num_before = (**it).get_config_list().size();
-        if(vm.count("filter")) {
-          try {
-            (**it).add_unique_canon_configs(filter_begin(enumerator.begin(), enumerator.end(), filter_expr, set.config_io()), filter_end(enumerator.end()));
-          }
-          catch(std::exception &e) {
-            std::cerr << "Cannot filter configurations using the expression provided: \n" << e.what() << "\nExiting...\n";
-            return ERR_INVALID_ARG;
-          }
-        }
-        else
-          (**it).add_unique_canon_configs(enumerator.begin(), enumerator.end());
-
-        std::cout << ((**it).get_config_list().size() - num_before) << " configs." << std::endl;
-      }
-      std::cout << "  DONE." << std::endl << std::endl;
-
-    }
-
-    std::cout << "Writing config_list..." << std::endl;
-    primclex.write_config_list();
-    std::cout << "  DONE" << std::endl;
-
-    std::cout << std::endl;
-
-    return 0;
+    return res;
   };
 
 }

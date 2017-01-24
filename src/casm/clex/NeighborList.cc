@@ -195,8 +195,6 @@ namespace CASM {
     // use the PrimNeighborList to generate the UnitCell and Site indices for
     //   the neighbors of each UnitCell in the supercell
 
-    UnitCellCoord bijk;
-
     // for each unit cell in the supercell
     for(Index i = 0; i < m_prim_grid_size; ++i) {
 

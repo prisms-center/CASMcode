@@ -36,6 +36,48 @@ void lattice_pg_test() {
   }
 }
 
+void lattice_is_equivalent_test() {
+
+  double tol = TOL;
+
+  {
+    SymGroup pg;
+    Lattice fcc = Lattice::fcc();
+    fcc.generate_point_group(pg, tol);
+
+    for(const auto &op : pg) {
+      BOOST_CHECK_EQUAL(fcc.is_equivalent(copy_apply(op, fcc), tol), 1);
+    }
+  }
+  {
+    SymGroup pg;
+    Lattice bcc = Lattice::bcc();
+    bcc.generate_point_group(pg, tol);
+
+    for(const auto &op : pg) {
+      BOOST_CHECK_EQUAL(bcc.is_equivalent(copy_apply(op, bcc), tol), 1);
+    }
+  }
+  {
+    SymGroup pg;
+    Lattice cubic = Lattice::cubic();
+    cubic.generate_point_group(pg, tol);
+
+    for(const auto &op : pg) {
+      BOOST_CHECK_EQUAL(cubic.is_equivalent(copy_apply(op, cubic), tol), 1);
+    }
+  }
+  {
+    SymGroup pg;
+    Lattice hex = Lattice::hexagonal();
+    hex.generate_point_group(pg, tol);
+
+    for(const auto &op : pg) {
+      BOOST_CHECK_EQUAL(hex.is_equivalent(copy_apply(op, hex), tol), 1);
+    }
+  }
+}
+
 void lattice_read_test() {
   std::stringstream lat_stream("   2.5000\n"
                                "   1.1 1.2 1.3\n"
@@ -53,11 +95,12 @@ void lattice_read_test() {
 }
 
 void lattice_superduper_test() {
+  //This point group will remain empty so that it checks more cases
   SymGroup pg;
   Lattice lat(Lattice::fcc());
 
-  long min_vol = 1, max_vol = 5;
-  SupercellEnumerator<Lattice> enumerator(lat, pg, min_vol, max_vol);
+  ScelEnumProps enum_props(1, 6);
+  SupercellEnumerator<Lattice> enumerator(lat, pg, enum_props);
 
   std::vector<Lattice> lat_list(enumerator.begin(), enumerator.end());
 
@@ -80,6 +123,10 @@ BOOST_AUTO_TEST_CASE(ReadTest) {
 
 BOOST_AUTO_TEST_CASE(PointGroupTest) {
   lattice_pg_test();
+}
+
+BOOST_AUTO_TEST_CASE(IsEquivalentTest) {
+  lattice_is_equivalent_test();
 }
 
 BOOST_AUTO_TEST_CASE(SuperDuperTest) {

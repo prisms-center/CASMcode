@@ -117,6 +117,23 @@ namespace CASM {
   }
 
   //********************************************************************
+
+  /// \brief Print normalized vector
+  void Coordinate::print_axis(std::ostream &stream, COORD_TYPE mode, char term, int prec, int pad) const {
+
+    stream.precision(prec);
+    stream.width(prec + pad);
+    stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+
+    if(mode == CART)
+      stream << const_cart().normalized().transpose();
+    else if(mode == FRAC)
+      stream << const_frac().normalized().transpose();
+    if(term) stream << term;
+    return;
+  }
+
+  //********************************************************************
   // Finds distance between two coordinates
 
   double Coordinate::dist(const Coordinate &neighbor) const {
@@ -360,15 +377,8 @@ namespace CASM {
     json.put_obj();
 
     // mutable Vector3< double > coord[2];
-    json["FRAC"].put_array();
-    json["FRAC"].push_back(m_frac_coord[0]);
-    json["FRAC"].push_back(m_frac_coord[1]);
-    json["FRAC"].push_back(m_frac_coord[2]);
-
-    json["CART"].put_array();
-    json["CART"].push_back(m_cart_coord[0]);
-    json["CART"].push_back(m_cart_coord[1]);
-    json["CART"].push_back(m_cart_coord[2]);
+    to_json_array(m_frac_coord, json["FRAC"]);
+    to_json_array(m_frac_coord, json["CART"]);
 
     // mutable int basis_ind;
     json["basis_ind"] = basis_ind();

@@ -3,7 +3,11 @@
 
 #include <memory>
 #include <iostream>
+#include <utility>
 
+#include "casm/misc/CASM_TMP.hh"
+
+/// \brief Non-std smart pointer classes and functions
 namespace notstd {
 
   /// \brief c++11 does not include 'make_unique'
@@ -12,16 +16,42 @@ namespace notstd {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
   }
 
-
+  class Cloneable {
+  public:
+    std::unique_ptr<Cloneable> clone() const {
+      return std::unique_ptr<Cloneable>(this->_clone());
+    }
+  private:
+    virtual Cloneable *_clone() const = 0;
+  };
 
   template<typename Type>
   class cloneable_ptr;
-
 
   /// \brief make a cloneable_ptr<T> via T(Args... args)
   template<typename T, typename ...Args>
   cloneable_ptr<T> make_cloneable(Args &&...args) {
     return cloneable_ptr<T>(new T(std::forward<Args>(args)...));
+  }
+
+  /// \brief Base type inherits from std::false_type if T does not have clone method
+  template <typename T, typename = void>
+  struct has_clone : std::false_type {
+  };
+
+  /// \brief Specialized case inherits from std::true_type if T does have clone method
+  template <typename T>
+struct has_clone<T, CASM::CASM_TMP::void_t<decltype(&T::clone)> > : std::true_type {
+  };
+
+  template < typename T, typename std::enable_if < !has_clone<T>::value, void >::type * = nullptr >
+  std::unique_ptr<T> clone(const T &obj) {
+    return std::unique_ptr<T>(new T(obj));
+  }
+
+  template<typename T, typename std::enable_if<has_clone<T>::value, void>::type * = nullptr>
+  std::unique_ptr<T> clone(const T &obj) {
+    return obj.clone();
   }
 
 
@@ -50,16 +80,11 @@ namespace notstd {
     explicit cloneable_ptr(pointer ptr) :
       m_unique(ptr) {}
 
-    /// \brief Construct by cloning obj
-    explicit cloneable_ptr(const Type &obj) :
-      m_unique(obj.clone()) {}
-
-
     /// \brief Construct by cloning other
     cloneable_ptr(const cloneable_ptr &other) :
       m_unique() {
       if(other) {
-        m_unique = std::move(other->clone());
+        m_unique = std::move(clone(*other));
       }
     }
 
@@ -68,9 +93,13 @@ namespace notstd {
     cloneable_ptr(const cloneable_ptr<U> &other) :
       m_unique() {
       if(other) {
-        m_unique = std::move(other->clone());
+        m_unique = std::move(clone(*other));
       }
     }
+
+    /// \brief Construct by moving other
+    cloneable_ptr(cloneable_ptr &&other) :
+      m_unique(std::move(other.unique())) {}
 
     /// \brief Construct by moving other
     template<typename U>
@@ -83,7 +112,7 @@ namespace notstd {
     cloneable_ptr(const std::unique_ptr<U> &other) :
       m_unique() {
       if(other) {
-        m_unique = std::move(other->clone());
+        m_unique = std::move(clone(*other));
       }
     }
 
@@ -111,7 +140,7 @@ namespace notstd {
     template<typename U>
     cloneable_ptr &operator=(const std::unique_ptr<U> &other) {
       if(other) {
-        unique() = other.clone();
+        unique() = clone(*other);
       }
       else {
         unique().reset();
@@ -133,6 +162,11 @@ namespace notstd {
 
     pointer operator->() const {
       return &(this->operator*());
+    }
+
+    /// \brief Reset contained unique_ptr
+    void reset() {
+      return m_unique.reset();
     }
 
     /// \brief Access contained unique_ptr

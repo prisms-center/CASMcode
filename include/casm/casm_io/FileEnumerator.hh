@@ -1,3 +1,6 @@
+#ifndef CASM_FileEnumerator
+#define CASM_FileEnumerator
+
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigIterator.hh"
 
@@ -6,6 +9,10 @@ namespace CASM {
 
   // -- Get lists of files -----------------------------
 
+  /// \brief Lists all files in a CASM project, for use with 'casm files' command
+  ///
+  /// \ingroup casmIO
+  ///
   class FileEnumerator {
 
   public:
@@ -47,7 +54,7 @@ namespace CASM {
 
   private:
 
-    /// make paths relative to m_primclex.get_path() if m_relative
+    /// make paths relative to m_primclex.dir().root_dir() if m_relative
     fs::path _if_relative(fs::path path);
 
     /// output path if it exists
@@ -68,7 +75,7 @@ namespace CASM {
 
     std::vector<std::string> m_all_bset;
     std::vector<std::string> m_all_calctype;
-    std::vector<std::string> m_all_clex;
+    std::vector<std::string> m_all_property;
 
   };
 
@@ -94,13 +101,13 @@ namespace CASM {
     m_relative(_relative),
     m_all_bset(m_dir.all_bset()),
     m_all_calctype(m_dir.all_calctype()),
-    m_all_clex(m_dir.all_clex()) {}
+    m_all_property(m_dir.all_property()) {}
 
 
   /// make paths relative to CASM project root directory
   inline fs::path FileEnumerator::_if_relative(fs::path path) {
     if(m_relative) {
-      auto a = m_primclex.get_path().string().size() + 1;
+      auto a = m_primclex.dir().root_dir().string().size() + 1;
       auto b = path.string().size();
       return fs::path(path.string().substr(a, b));
     }
@@ -142,6 +149,7 @@ namespace CASM {
   /// - PRIM
   /// - project_settings.json
   /// - config_list.json
+  /// - enumerator plugins
   /// - SCEL
   /// - lattice_point_group.json
   /// - factor_group.json
@@ -156,6 +164,7 @@ namespace CASM {
     for(auto it = v.begin(); it != v.end(); ++it) {
       result = _if_exists(result, *it);
     }
+    result = _all_that_exist(result, m_dir.enumerator_plugins());
     return result;
   }
 
@@ -170,7 +179,7 @@ namespace CASM {
 
     // bset dependent:
     for(auto bset : m_all_bset) {
-      if(!m_all_settings && bset != m_set.bset()) {
+      if(!m_all_settings && bset != m_set.default_clex().bset) {
         continue;
       }
       result = _if_exists(result, m_dir.bspecs(bset));
@@ -190,15 +199,15 @@ namespace CASM {
 
     // calctype / ref dependent
     for(auto calctype : m_all_calctype) {
-      if(!m_all_settings && calctype != m_set.calctype()) {
+      if(!m_all_settings && calctype != m_set.default_clex().calctype) {
         continue;
       }
       auto all_ref = m_dir.all_ref(calctype);
       for(auto ref : all_ref) {
-        if(!m_all_settings && ref != m_set.ref()) {
+        if(!m_all_settings && ref != m_set.default_clex().ref) {
           continue;
         }
-        result = _if_exists(result, m_dir.composition_axes(calctype, ref));
+        result = _if_exists(result, m_dir.composition_axes());
         result = _if_exists(result, m_dir.chemical_reference(calctype, ref));
       }
     }
@@ -214,12 +223,12 @@ namespace CASM {
 
     // eci
     if(!m_all_settings) {
-      result = _if_exists(result, m_dir.eci(m_set.clex(), m_set.calctype(), m_set.ref(), m_set.bset(), m_set.eci()));
-      result = _if_exists(result, m_dir.eci_out(m_set.clex(), m_set.calctype(), m_set.ref(), m_set.bset(), m_set.eci()));
+      result = _if_exists(result, m_dir.eci(m_set.default_clex().property, m_set.default_clex().calctype, m_set.default_clex().ref, m_set.default_clex().bset, m_set.default_clex().eci));
+      result = _if_exists(result, m_dir.eci_out(m_set.default_clex().property, m_set.default_clex().calctype, m_set.default_clex().ref, m_set.default_clex().bset, m_set.default_clex().eci));
     }
     else {
 
-      for(auto clex : m_all_clex) {
+      for(auto clex : m_all_property) {
         for(auto calctype : m_all_calctype) {
           auto all_ref = m_dir.all_ref(calctype);
           for(auto ref : all_ref) {
@@ -245,19 +254,19 @@ namespace CASM {
   OutputIterator FileEnumerator::calc_settings_files(OutputIterator result) {
 
     for(auto calctype : m_all_calctype) {
-      if(!m_all_settings && calctype != m_set.calctype()) {
+      if(!m_all_settings && calctype != m_set.default_clex().calctype) {
         continue;
       }
 
-      auto scel_begin = m_primclex.get_supercell_list().begin();
-      auto scel_end = m_primclex.get_supercell_list().end();
+      auto scel_begin = m_primclex.supercell_list().begin();
+      auto scel_end = m_primclex.supercell_list().end();
 
       // calculation settings: global
       result = _all_that_exist(result, m_dir.calc_settings_dir(calctype));
 
       // supercell level
       for(auto scel_it = scel_begin; scel_it != scel_end; ++scel_it) {
-        result = _all_that_exist(result, m_dir.supercell_calc_settings_dir(scel_it->get_name(), calctype));
+        result = _all_that_exist(result, m_dir.supercell_calc_settings_dir(scel_it->name(), calctype));
       }
 
       auto begin = m_primclex.config_begin();
@@ -278,7 +287,7 @@ namespace CASM {
   OutputIterator FileEnumerator::calc_status_files(OutputIterator result) {
 
     for(auto calctype : m_all_calctype) {
-      if(!m_all_settings && calctype != m_set.calctype()) {
+      if(!m_all_settings && calctype != m_set.default_clex().calctype) {
         continue;
       }
 
@@ -312,7 +321,7 @@ namespace CASM {
         if(fs::is_directory(*it)) {
           std::string dir = it->path().filename().string();
           if(dir.substr(0, pattern.size()) == pattern) {
-            if(dir.substr(pattern.size(), dir.size()) != m_set.calctype()) {
+            if(dir.substr(pattern.size(), dir.size()) != m_set.default_clex().calctype) {
               it.no_push();
             }
           }
@@ -327,3 +336,5 @@ namespace CASM {
   }
 
 }
+
+#endif

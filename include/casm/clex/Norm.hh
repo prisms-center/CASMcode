@@ -5,6 +5,10 @@
 
 namespace CASM {
 
+  /** \ingroup Reference
+   *  @{
+   */
+
   template<typename DataObject>
   class Norm {
 
@@ -34,7 +38,7 @@ namespace CASM {
 
     /// \brief Return configuration supercell size
     double operator()(const Configuration &config) const override {
-      return config.get_supercell().volume();
+      return config.supercell().volume();
     }
 
     /// \brief Clone
@@ -69,6 +73,8 @@ namespace CASM {
       return new NormPerSpecies(*this);
     }
   };
+
+  /** @} */
 }
 
 #endif

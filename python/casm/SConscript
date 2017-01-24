@@ -2,13 +2,18 @@
 # This is: python/casm
 
 import os
+from distutils.spawn import find_executable
 
 Import('env', 'version_number', 'url')
 
 pycasm_setup = env.Command('setup.py', ['make_setup.py'], 'cd python/casm && python make_setup.py ' + version_number + ' ' + url)
 env.NoClean(pycasm_setup)
 
-pycasm_install = env.Command('installed.txt', [pycasm_setup], 'cd python/casm && python setup.py install --prefix=' + env['PREFIX'] + ' --record installed.txt')
+cmd = 'cd python/casm && ' + find_executable('python') + ' setup.py install'
+cmd += ' --prefix=' + env['PREFIX']
+cmd += ' --record installed.txt'
+
+pycasm_install = env.Command('installed.txt', [pycasm_setup], cmd)
 AlwaysBuild(pycasm_install)
 Alias('pycasm_install', pycasm_install)  
 

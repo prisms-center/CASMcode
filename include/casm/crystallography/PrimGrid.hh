@@ -23,6 +23,10 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  /** \ingroup Lattice
+   *  @{
+   */
+
   class PrimGrid {
   private:
     typedef Eigen::Matrix<long, 3, 3> matrix_type;
@@ -84,13 +88,13 @@ namespace CASM {
     Eigen::Matrix<long, 3, 1> m_S;
 
 
-    /// Convert UnitCellCoord (bijk) to canonical UnitCellCoord (bmnp)
+    /// Convert UnitCell (ijk) to canonical UnitCell (mnp)
     /// mnp = invU * ijk
-    UnitCellCoord to_canonical(const UnitCellCoord &bijk) const;
+    UnitCell to_canonical(const UnitCell &ijk) const;
 
-    /// Convert canonical UnitCellCoord (bmnp) to UnitCellCoord (bijk)
+    /// Convert canonical UnitCell (mnp) to UnitCell (ijk)
     /// U*mnp = ijk
-    UnitCellCoord from_canonical(const UnitCellCoord &bmnp) const;
+    UnitCell from_canonical(const UnitCell &mnp) const;
 
 
   public:
@@ -118,20 +122,21 @@ namespace CASM {
       return m_S[i];
     };
 
-    // find linear index that is translational equivalent to Coordinate or UnitCellCoord
+    // find linear index that is translational equivalent to Coordinate or UnitCell
     Index find(const Coordinate &_coord) const;
     Index find(const UnitCell &_unitcell) const;
-    Index find(const UnitCellCoord &_coord) const;
     Index find_cart(const Eigen::Ref<const Eigen::Vector3d> &_cart_coord) const;
 
-    // map a UnitCellCoord inside the supercell
-    UnitCellCoord get_within(const UnitCellCoord &_uccoord)const;
+    /// map a UnitCell inside the supercell
+    UnitCell within(const UnitCell &ijk)const;
 
-    // get Coordinate or UnitCellCoord from linear index
+    /// map a UnitCellCoord inside the supercell
+    UnitCellCoord within(const UnitCellCoord &_uccoord)const;
+
+    // get Coordinate or UnitCell from linear index
     Coordinate coord(Index l, CELL_TYPE lat_mode)const;
-    Coordinate coord(const UnitCellCoord &bijk, CELL_TYPE lat_mode)const;
+    Coordinate coord(const UnitCell &ijk, CELL_TYPE lat_mode)const;
     UnitCell unitcell(Index i)const;
-    UnitCellCoord uccoord(Index i)const;
 
     SymGroupRepID make_permutation_representation(const SymGroup &group, SymGroupRepID basis_permute_rep)const;
 
@@ -159,5 +164,6 @@ namespace CASM {
     SymOp sym_op(Index l) const;
   };
 
+  /** @} */
 }
 #endif

@@ -14,6 +14,63 @@
 
 namespace CASM {
 
+  namespace CASM_TMP {
+
+    // --------------------
+
+    // Definitions for IfIntegralTol
+    template <typename tol_type, bool IsIntegral>
+    struct IfIntegralTol;
+
+    template <typename tol_type>
+    struct IfIntegralTol<tol_type, true> {
+      IfIntegralTol() {};
+      IfIntegralTol(tol_type) {};
+      tol_type tol() const {
+        return 0;
+      }
+    };
+
+    template <typename tol_type>
+    struct IfIntegralTol<tol_type, false> {
+      IfIntegralTol(tol_type _tol) : m_tol(_tol) {};
+      tol_type tol() {
+        return m_tol;
+      }
+    private:
+      tol_type m_tol;
+    };
+
+    template<typename T>
+    using TypedTol = IfIntegralTol<T, std::is_integral<T>::value >;
+    // End of IfIntegralTol
+
+    // Definitions for MuchLessThan
+    template<typename value_type>
+    struct IntegralLessThan {
+      IntegralLessThan() {};
+      IntegralLessThan(value_type) {};
+      bool operator()(const value_type &A, const value_type &B) const {
+        return A < B;
+      };
+    };
+
+    template<typename value_type>
+    struct FloatingPointLessThan {
+      FloatingPointLessThan(value_type _tol = TOL) : m_tol(_tol) {};
+      bool operator()(const value_type &A, const value_type &B) const {
+        return A + m_tol < B;
+      };
+    private:
+      value_type m_tol;
+    };
+
+    template<typename T>
+    using MuchLessThan = typename std::conditional<boost::is_integral<T>::value, IntegralLessThan<T>, FloatingPointLessThan<T> >::type;
+    // End of MuchLessThan
+
+  }
+
   // *******************************************************************************************
 
   //round function -- rounds to nearest whole number; half-integers are rounded away from zero
@@ -77,12 +134,70 @@ namespace CASM {
   }
 
   // *******************************************************************************************
+
+  /// \brief Floating point comparison with tol, return A < B
+  ///
+  /// Implements:
+  /// \code
+  /// if(!almost_equal(A,B,tol)) { return A < B; }
+  /// return false;
+  /// \endcode
+  template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type * = nullptr>
+  bool compare(const T &A, const T &B, double tol) {
+    if(!almost_equal(A, B, tol)) {
+      return A < B;
+    }
+    return false;
+  }
+
+  struct FloatCompare {
+
+    double tol;
+
+    FloatCompare(double _tol) : tol(_tol) {}
+
+    template<typename T>
+    bool operator()(const T &A, const T &B) const {
+      return compare(A, B, tol);
+    }
+  };
+
+
+  /// \brief Floating point lexicographical comparison with tol
+  template<class InputIt1, class InputIt2>
+  bool float_lexicographical_compare(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2, double tol) {
+    FloatCompare compare(tol);
+    return std::lexicographical_compare(first1, last1, first2, last2, compare);
+  }
+
+  /// \brief Floating point lexicographical comparison with tol
+  inline bool float_lexicographical_compare(const Eigen::VectorXd &A, const Eigen::VectorXd &B, double tol) {
+    return float_lexicographical_compare(A.data(), A.data() + A.size(), B.data(), B.data() + B.size(), tol);
+  }
+
+  // *******************************************************************************************
   //Return sign of number
 
-  template <typename T> int sgn(T val) {
+  template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type * = nullptr>
+  int sgn(T val) {
     return (T(0) < val) - (val < T(0));
   }
 
+  template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type * = nullptr>
+  int float_sgn(T val, double compare_tol = TOL) {
+    T zeroval(0);
+    if(compare(zeroval, val, compare_tol)) {
+      return 1;
+    }
+
+    else if(compare(val, zeroval, compare_tol)) {
+      return -1;
+    }
+
+    else {
+      return 0;
+    }
+  }
   // *******************************************************************************************
 
   // Works for signed and unsigned types
@@ -433,6 +548,47 @@ namespace Eigen {
   inline
   bool almost_equal(const Eigen::MatrixBase<Derived1> &val1, const Eigen::MatrixBase<Derived2> &val2, double tol = CASM::TOL) {
     return CASM::almost_zero(val1 - val2, tol);
+  }
+
+  /**
+   * Checks to see whether the given matrix is symmetric
+   * by checking if its transpose is equal to itself.
+   * Only works for square matrices n x n.
+   * (Reflected along 0,0 to n,n)
+   */
+
+  template <typename Derived>
+  inline
+  bool is_symmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
+    return CASM::almost_zero(test_mat - test_mat.transpose(), test_tol);
+  }
+
+  /**
+   * Checks to see if the given matrix is persymmetric, i.e.
+   * whether it's symmetric along the cross diagonal.
+   * Only works for square matrices n x n.
+   * (Reflected along 0,n to n,0)
+   */
+
+  template <typename Derived>
+  inline
+  bool is_persymmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
+    //Reverse order of columns and rows
+    auto rev_mat = test_mat.colwise().reverse().eval().rowwise().reverse().eval();
+    return CASM::almost_zero(test_mat - rev_mat.transpose(), test_tol);
+  }
+
+  /**
+   * Checks to see if the given matrix is bisymmetric, i.e.
+   * whether it's symmetric along both diagonals.
+   * Only works for square matrices n x n.
+   * (Reflected along 0,n to n,0 AND 0,0 to n,n)
+   */
+
+  template <typename Derived>
+  inline
+  bool is_bisymmetric(const Eigen::MatrixBase<Derived> &test_mat, double test_tol = CASM::TOL) {
+    return (is_symmetric(test_mat, test_tol) && is_persymmetric(test_mat, test_tol));
   }
 }
 

@@ -8,6 +8,18 @@
 
 
 namespace CASM {
+
+  /** \defgroup Symmetry
+   *  \brief Relates to symmetry operations and groups
+   */
+
+  /** \defgroup SymOp
+   *  \ingroup Symmetry
+   *  \brief Relates to symmetry operations
+   *  @{
+  */
+
+
   class MasterSymGroup;
 
   ///\brief SymOp is the Coordinate representation of a symmetry operation
@@ -15,31 +27,6 @@ namespace CASM {
   /// a symetry operation transforms 3D spatial coordinates
   class SymOp : public SymOpRepresentation {
   public:
-
-    /// \brief Simple struct to be used as return type for SymOp::info().
-    struct SymInfo {
-      /// One of: identity_op, mirror_op, glide_op, rotation_op, screw_op,
-      ///         inversion_op, rotoinversion_op, or invalid_op
-      symmetry_type op_type;
-
-      /// Rotation axis if operation S is rotation/screw operation
-      /// If improper operation, rotation axis of inversion*S
-      /// (implying that axis is normal vector for a mirror plane)
-      /// normalized to length 1
-      /// axis is zero if operation is identity or inversion
-      Eigen::Vector3d axis;
-
-      /// Rotation angle, if operation S is rotation/screw operation
-      /// If improper operation, rotation angle of inversion*S
-      double angle;
-
-      /// Component of tau parallel to 'axis' (for rotation)
-      /// or perpendicular to 'axis', for mirror operation
-      Eigen::Vector3d screw_glide_shift;
-
-      /// A Cartesian coordinate that is invariant to the operation (if one exists)
-      Eigen::Vector3d location;
-    };
 
     typedef Eigen::Matrix3d matrix_type;
     typedef Eigen::Vector3d vector_type;
@@ -112,12 +99,6 @@ namespace CASM {
     /// In other words, transforms coordinates of this SymOp by
     /// transformation specified by 'op':  op.inverse()*(*this)*op
     SymOp &apply_sym(const SymOp &op);
-
-    /// Use SymOp::matrix() and SymOp::tau() to populate a SymInfo object with type of symmetry,
-    /// axis (i.e., rotation axis or mirror normal), screw/glide shift, and location
-    /// because SymOp doesn't know any lattice info, it can't tell between rotation and screw or mirror and glide
-    /// it assumes that a rotation is a screw and that a mirror is a glide when populating SymInfo::screw_glide_shift
-    SymInfo info() const;
 
     /// calculate and return character of this SymOp (neglecting tau)
     double character() const override {
@@ -192,6 +173,8 @@ namespace CASM {
 
   //std::istream& operator>> (std::istream &stream, SymOp &op){op.read(stream); return stream;};
   //std::ostream& operator<< (std::ostream &stream, SymOp &op){op.print(stream); return stream;};
+
+  /** @}*/
 
 }
 #endif

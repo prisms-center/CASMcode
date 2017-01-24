@@ -13,6 +13,16 @@
 
 namespace CASM {
 
+  /**
+   *  \defgroup PolyTrie
+   *
+   *  \ingroup Container
+   *
+   *  \brief A trie structure for representing polynomials
+   *
+   *  @{
+   */
+
   template<typename T>
   class PolyTrie;
   template<typename T>
@@ -895,7 +905,7 @@ namespace CASM {
 
   }
 
-
+  /** @} */
 
 }
 

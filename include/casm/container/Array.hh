@@ -18,7 +18,28 @@ namespace CASM {
   template<class T>
   class ReturnArray;
 
+  /**
+   *  \defgroup Container
+   *
+   *  \brief Useful containers
+   *
+   */
 
+  /**
+   *  \defgroup Array
+   *
+   *  \ingroup Container
+   *  \brief Basic std::vector like container (deprecated)
+   *
+   *  @{
+   */
+
+  /// \brief Basic std::vector like container (deprecated)
+  ///
+  /// - Legacy container that incorporated various useful algorithms, now being
+  ///   slowly replaced
+  /// - Prefer to use std::vector except when necessary for compatibility
+  ///
   template<class T>
   class Array {
   private:
@@ -88,6 +109,16 @@ namespace CASM {
       reserve(std::distance(begin, end));
       auto it = begin;
       for(; it != end; ++it)
+        push_back(*it);
+    }
+
+    //*******************************************************************************************
+    Array(std::initializer_list<T> in) :
+      N(0), NMax(0), Vals(nullptr) {
+
+      reserve(in.size());
+      auto it = in.begin();
+      for(; it != in.end(); ++it)
         push_back(*it);
     }
 
@@ -1087,6 +1118,7 @@ namespace CASM {
     }
   };
 
+  /** @} */
 
 }
 

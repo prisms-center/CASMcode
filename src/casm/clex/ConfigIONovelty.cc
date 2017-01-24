@@ -20,11 +20,11 @@ namespace CASM {
 
       // Cases control which configurations to use for obtaining novelty data
       if(m_selection == "all")
-        mat_wrapper << m_format(_tmplt.get_primclex().config_cbegin(), _tmplt.get_primclex().config_cend());
+        mat_wrapper << m_format(_tmplt.primclex().config_cbegin(), _tmplt.primclex().config_cend());
       else if(m_selection == "MASTER" || m_selection.empty())
-        mat_wrapper << m_format(_tmplt.get_primclex().selected_config_cbegin(), _tmplt.get_primclex().selected_config_cend());
+        mat_wrapper << m_format(_tmplt.primclex().selected_config_cbegin(), _tmplt.primclex().selected_config_cend());
       else {
-        ConstConfigSelection select(_tmplt.get_primclex(), m_selection);
+        ConstConfigSelection select(_tmplt.primclex(), m_selection);
         mat_wrapper << m_format(select.selected_config_cbegin(), select.selected_config_cend());
       }
 

@@ -230,7 +230,7 @@ def save_population(pop, filename, verbose=False):
 
 
 def initialize_halloffame(filename=None, n_halloffame=25, verbose=False):
-  hall = deap.tools.HallOfFame(n_halloffame)
+  hall = casm.learn.create_halloffame(n_halloffame)
   if verbose:
     print "# Hall of Fame size:", n_halloffame, "\n"
   
@@ -318,7 +318,8 @@ class EvolutionaryParams(object):
   def __init__(self, n_population=100, n_generation=10, n_repetition=100, n_features_init=1, 
                pop_begin_filename = "population_begin.pkl",
                pop_end_filename = "population_end.pkl",
-               halloffame_filename = "halloffame.pkl",
+               halloffame_filename = "evolve_halloffame.pkl",
+               filename_prefix = "",
                n_halloffame = 25):
     """
     Arguments
@@ -346,6 +347,10 @@ class EvolutionaryParams(object):
       halloffame_filename: string, optional, default="halloffame.pkl"
         Filename where a hall of fame is saved.
       
+      filename_prefix: string
+        Prefix for filenames, typically taken from input file filename excluding 
+        extension.
+    
       n_halloffame: int, optional, default=25
         Number of individuals to save in the hall of fame
   
@@ -356,10 +361,13 @@ class EvolutionaryParams(object):
     
     self.n_features_init = n_features_init
     
-    self.pop_begin_filename = pop_begin_filename
-    self.pop_end_filename = pop_end_filename
+    if len(filename_prefix) != 0:
+      filename_prefix += "_"
     
-    self.halloffame_filename = halloffame_filename
+    self.pop_begin_filename = filename_prefix + pop_begin_filename
+    self.pop_end_filename = filename_prefix + pop_end_filename
+    
+    self.halloffame_filename = filename_prefix + halloffame_filename
     self.n_halloffame = n_halloffame
 
 
@@ -664,7 +672,7 @@ def eaPopulationBestFirst(pop, toolbox, n_generation=10, halloffame=None, stats=
   nevals = evaluate_all(in_pop, toolbox)
   
   # use a HallOfFame for the population
-  pop = deap.tools.HallOfFame(len(in_pop))
+  pop = casm.learn.create_halloffame(len(in_pop))
   pop.update(in_pop)
   
   # set as non-parents, if not specified
@@ -685,7 +693,7 @@ def eaPopulationBestFirst(pop, toolbox, n_generation=10, halloffame=None, stats=
       new_pop = initialize_population(len(pop), toolbox, verbose=verbose)
       for indiv in new_pop:
         indiv.parent = False
-      pop = deap.tools.HallOfFame(len(new_pop))
+      pop = casm.learn.create_halloffame(len(new_pop))
       pop.update(new_pop)
       nevals = evaluate_all(pop, toolbox)
       nonparents = [indiv for indiv in pop if not indiv.parent]
@@ -802,6 +810,7 @@ class EvolutionaryFeatureSelection(BaseEstimator, SelectorMixin):
     
     
     ## read or construct initial population
+    self.toolbox.decorate("population", enforce_constraints(self.constraints))
     self.pop = initialize_population(self.evolve_params.n_population, self.toolbox, 
       filename=self.evolve_params.pop_begin_filename, verbose=self.verbose)
     self.pop_begin = copy.deepcopy(self.pop)

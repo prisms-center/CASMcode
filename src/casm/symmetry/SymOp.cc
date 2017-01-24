@@ -114,202 +114,13 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  /**
-   *
-   *
-   */
-  //*******************************************************************************************
-
-  SymOp::SymInfo SymOp::info() const {
-    SymInfo result;
-
-    // Simplest case is identity: has no axis and no location
-    if(almost_equal(matrix().trace(), 3.)) {
-      result.angle = 0;
-      result.op_type = identity_op;
-      result.axis = vector_type::Zero();
-      result.location = vector_type::Zero();
-      return result;
-    }
-
-    // second simplest case is inversion: has no axis and location is tau()/2
-    if(almost_equal(matrix().trace(), -3.)) {
-      result.angle = 0;
-      result.op_type = inversion_op;
-      result.axis = vector_type::Zero();
-      result.location = tau() / 2.;
-      return result;
-    }
-
-    // det is -1 if improper and +1 if proper
-    int det = round(matrix().determinant());
-
-    // Find eigen decomposition of proper operation (by multiplying by determinant)
-    Eigen::EigenSolver<matrix_type> t_eig(det * matrix());
-
-    // 'axis' is eigenvector whose eigenvalue is +1
-    for(Index i = 0; i < 3; i++) {
-      if(almost_equal(t_eig.eigenvalues()(i), std::complex<double>(1, 0))) {
-        result.axis = t_eig.eigenvectors().col(i).real();
-        break;
-      }
-    }
-
-    // Sign convention for 'axis': first non-zero element is positive
-    for(Index i = 0; i < 3; i++) {
-      if(!almost_zero(result.axis[i])) {
-        result.axis *= sgn(result.axis[i]);
-        break;
-      }
-    }
-
-    vector_type ortho = result.axis.unitOrthogonal();
-    vector_type rot = matrix() * ortho;
-
-    result.angle = int(round((180. / M_PI) * atan2(result.axis.dot(ortho.cross(rot)), ortho.dot(rot)))) + 180;
-    if(det < 0) {
-      if(almost_equal(result.angle, 180.)) {
-        result.op_type = mirror_op;
-        // shift is component of tau perpendicular to axis
-        result.screw_glide_shift = tau() - tau().dot(result.axis) * result.axis;
-        // location is 1/2 of component of tau parallel to axis: matrix()*location+tau() = -location+tau() = location
-        result.location = tau().dot(result.axis) * result.axis / 2.;
-      }
-      else {
-        result.op_type = rotoinversion_op;
-        // shift is component of tau parallel to axis
-        result.screw_glide_shift = tau().dot(result.axis) * result.axis;
-        // rotoinversion is point symmetry, so we can solve matrix()*p+tau()=p for invariant point p
-        result.location = (matrix_type::Identity() - matrix()).inverse() * tau();
-      }
-    }
-    else {
-      result.op_type = rotation_op;
-      // shift is component of tau parallel to axis
-      result.screw_glide_shift = tau().dot(result.axis) * result.axis;
-      // Can only solve 2d location problem
-      Eigen::MatrixXd tmat(3, 2);
-      tmat << ortho, ortho.cross(result.axis);
-      // if A = tmat.transpose()*matrix()*tmat and s=tmat.transpose()*tau()
-      // then 2d invariant point 'v' is solution to A*v+s=v
-      // implies 3d invariant point 'p' is p=tmat*(eye(2)-A).inverse()*s
-      result.location = tmat * (Eigen::MatrixXd::Identity(2, 2) - tmat.transpose() * matrix() * tmat).inverse() * tmat.transpose() * tau();
-    }
-    return result;
-  }
-
-
-  //*******************************************************************************************
-  void SymOp::print_short(std::ostream &stream, const Eigen::Ref<const SymOp::matrix_type> &c2f_mat) const {
-
-    stream.precision(3);
-    SymInfo t_info = info();
-
-    switch(t_info.op_type) {
-    case identity_op:
-      stream << "Identity Operation \n";
-      break;
-
-    case mirror_op:
-      stream.setf(std::ios::showpoint);
-      stream << "Mirror Operation with plane Normal = " << std::setw(7) << (c2f_mat * t_info.axis).transpose() << '\n';
-      break;
-
-    case glide_op:
-      stream.setf(std::ios::showpoint);
-      stream << "Glide Operation with plane Normal = " << std::setw(7) << (c2f_mat * t_info.axis).transpose() << '\n'
-             << "Glide Vector:" << std::setw(7) << (c2f_mat * t_info.screw_glide_shift).transpose() << '\n';
-      break;
-
-    case rotation_op:
-      stream.unsetf(std::ios::showpoint);
-      stream << std::setprecision(3) << t_info.angle << "-degree Rotation Operation about axis";
-      stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << (c2f_mat * t_info.axis).transpose()  << '\n';
-      break;
-
-    case screw_op:
-      stream.unsetf(std::ios::showpoint);
-      stream << std::setprecision(3) << t_info.angle << "-degree Screw Operation along axis";
-      stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << (c2f_mat * t_info.axis).transpose() << "\n Screw Vector:" << std::setw(7) << (c2f_mat * t_info.screw_glide_shift).transpose() << '\n';
-      break;
-
-    case inversion_op:
-      stream << "Inversion Operation\n";
-      break;
-
-    case rotoinversion_op:
-      stream.unsetf(std::ios::showpoint);
-      stream << std::setprecision(3) << t_info.angle << "-degree Rotoinversion Operation about axis";
-      stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << (c2f_mat * t_info.axis).transpose() << "\n";
-      break;
-
-    case invalid_op:
-      stream << "Invalid Operation !!! \n";
-      break;
-
-    }
-
-  }
-
-  //*******************************************************************************************
 
   void SymOp::print(std::ostream &stream, const Eigen::Ref<const SymOp::matrix_type> &c2f_mat) const {
-    SymInfo t_info = info();
 
     int tprec = stream.precision();
     std::ios::fmtflags tflags = stream.flags();
 
     stream.precision(3);
-
-    switch(info().op_type) {
-    case identity_op:
-      stream << "Identity Operation \n";
-      break;
-
-    case mirror_op:
-      stream.setf(std::ios::showpoint);
-      stream << "Mirror Operation with plane Normal = " << std::setw(7) << (c2f_mat * t_info.axis).transpose() << '\n';
-      break;
-
-    case glide_op:
-      stream.setf(std::ios::showpoint);
-      stream << "Glide Operation with plane Normal = " << std::setw(7) << (c2f_mat * t_info.axis).transpose() << '\n'
-             << "Glide Vector:" << std::setw(7) << (c2f_mat * t_info.screw_glide_shift).transpose() << '\n';
-      break;
-
-    case rotation_op:
-      stream.unsetf(std::ios::showpoint);
-      stream << std::setprecision(3) << t_info.angle << "-degree Rotation Operation about axis";
-      stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << (c2f_mat * t_info.axis).transpose()  << '\n';
-      break;
-
-    case screw_op:
-      stream.unsetf(std::ios::showpoint);
-      stream << std::setprecision(3) << t_info.angle << "-degree Screw Operation along axis";
-      stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << (c2f_mat * t_info.axis).transpose() << "\n Screw Vector:" << std::setw(7) << (c2f_mat * t_info.screw_glide_shift).transpose() << '\n';
-      break;
-
-    case inversion_op:
-      stream << "Inversion Operation\n";
-      break;
-
-    case rotoinversion_op:
-      stream.unsetf(std::ios::showpoint);
-      stream << std::setprecision(3) << t_info.angle << "-degree Rotoinversion Operation about axis";
-      stream.setf(std::ios::showpoint);
-      stream << std::setw(7) << (c2f_mat * t_info.axis).transpose() << "\n";
-      break;
-
-    case invalid_op:
-      stream << "Invalid Operation !!! \n";
-      break;
-
-    }
 
     stream.flags(std::ios::left);
     stream << std::setw(53) << "Symmetry Operation Matrix" << "Shift \n"; //SOM has 25 chars, width of those 3 columns are 14 each, so 42 width.  Shift width is 22, so spacing of 9-11 extra characters, so add 5 more to get in the middle
@@ -337,8 +148,6 @@ namespace CASM {
   jsonParser &SymOp::to_json(jsonParser &json) const {
     json.put_obj();
 
-    auto t_info = info();
-
     // Members not included:
     //
     // From SymOpRepresentation:
@@ -350,8 +159,6 @@ namespace CASM {
 
     json["SymOpRep_type"] = "SymOp";
 
-    ///type of symmetry, given by one of the allowed values of symmetry_type
-    json["symmetry"] = t_info.op_type;
     json["op_index"] = m_op_index;
     json["rep_ID"] = m_rep_ID;
 
@@ -359,19 +166,7 @@ namespace CASM {
     json["symmetry_mat"] = matrix();
 
     // mutable Coordinate tau_vec;
-    json["tau"] = tau();
-
-    // mutable Coordinate location;
-    //json["location"] = location;
-
-    // mutable Coordinate eigenvec;
-    json["eigenvec"] = t_info.axis;
-
-    // mutable double rotation_angle;
-    json["rotation_angle"] = t_info.angle;
-
-    // mutable Coordinate screw_glide_shift;
-    json["screw_glide_shift"] = t_info.screw_glide_shift;
+    to_json_array(tau(), json["tau"]);
 
     // double map_error;
     json["map_error"] = map_error();

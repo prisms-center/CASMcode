@@ -12,6 +12,7 @@
 
 #include "casm/external/Eigen/Dense"
 #include "casm/external/boost.hh"
+#include "casm/casm_io/EnumIO.hh"
 
 namespace CASM {
 
@@ -54,18 +55,43 @@ namespace CASM {
   typedef EigenIndex Index;
   bool valid_index(Index i);
 
-  enum COORD_TYPE {FRAC = 0, CART = 1, COORD_DEFAULT = 2};
-  std::istream &operator>>(std::istream &sin, COORD_TYPE &coord);
+  enum class COORD_TYPE {
+    FRAC, CART, INTEGRAL, COORD_DEFAULT
+  };
+
+  const COORD_TYPE FRAC = COORD_TYPE::FRAC;
+  const COORD_TYPE CART = COORD_TYPE::CART;
+  const COORD_TYPE INTEGRAL = COORD_TYPE::INTEGRAL;
+  const COORD_TYPE COORD_DEFAULT = COORD_TYPE::COORD_DEFAULT;
+
+  ENUM_IO(COORD_TYPE)
+  ENUM_TRAITS(COORD_TYPE)
 
 
+  enum class PERIODICITY_TYPE {
+    PERIODIC, LOCAL, PERIODICITY_DEFAULT
+  };
 
-  enum PERIODICITY_TYPE {PERIODIC = 0, LOCAL = 1, PERIODICITY_DEFAULT = 2};
+  const PERIODICITY_TYPE PERIODIC = PERIODICITY_TYPE::PERIODIC;
+  const PERIODICITY_TYPE LOCAL = PERIODICITY_TYPE::LOCAL;
+  const PERIODICITY_TYPE PERIODICITY_DEFAULT = PERIODICITY_TYPE::PERIODICITY_DEFAULT;
 
-  enum CELL_TYPE {PRIM = 0, SCEL = 1};
 
-  enum COMPLEX_OUTPUT_TYPE {REAL = 0, IMAG = 1, COMPLEX = 2}; // Added by Ivy
+  ENUM_IO(PERIODICITY_TYPE)
+  ENUM_TRAITS(PERIODICITY_TYPE)
 
-  enum CASMfileTypes {TYPEFILE, TYPEDIR, TYPEOTHER, IOERR}; // Moved from FileSystemInterface.cc by Ivy 01/16/14
+
+  enum class CELL_TYPE {
+    PRIM, SCEL
+  };
+
+  const CELL_TYPE PRIM = CELL_TYPE::PRIM;
+  const CELL_TYPE SCEL = CELL_TYPE::SCEL;
+
+  ENUM_IO(CELL_TYPE)
+  ENUM_TRAITS(CELL_TYPE)
+
+
 
   //************************************************************
 
@@ -75,11 +101,13 @@ namespace CASM {
   /// - Default is equivalent to \code obj.apply_sym(f, args...) \endcode
   template<typename Object, typename Transform, typename...Args>
   Object &apply(const Transform &f, Object &obj, Args &&...args) {
-    return obj.apply_sym(f, std::forward<Args>(args)...);
+    obj.apply_sym(f, std::forward<Args>(args)...);
+    return obj;
   }
 
   /// Copy and apply a transformation
   /// - We can also include a specialization for cloneable objects, via SFINAE
+  /// - Default is equivalent to \code Object result(obj); apply(f, obj, args...) \endcode
   template<typename Object, typename Transform, typename...Args>
   Object copy_apply(const Transform &f, Object obj, Args &&...args) {
     return apply(f, obj, std::forward<Args>(args)...);

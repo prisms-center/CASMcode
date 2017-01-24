@@ -21,7 +21,7 @@ namespace CASM {
       Hull::CalculatorOptions options;
       Clex clex;
       options["comp"] = Hull::CalculatorPair(Comp().clone(), clex.clone());
-      clex.parse_args("formation_energy_per_species");
+      clex.parse_args("formation_energy,per_species");
       options["atom_frac"] = Hull::CalculatorPair(SpeciesFrac().clone(), clex.clone());
       return options;
     }
@@ -40,10 +40,11 @@ namespace CASM {
       "Whether configuration is a vertex on the formation_energy convex hull (i.e., is a groundstate)."
       " Only one Configuration out of a set that have identical or almost identical points in"
       " composition/energy space will return true."
-      " Accepts arguments ($selection, $composition, $tol)."
+      " Accepts arguments ($selection,$composition,$dim_tol,$bottom_tol)."
       " ($selection may be one of: <filename>, 'ALL', 'CALCULATED', 'MASTER' <--default)"
       " ($composition may be one of: 'comp', 'atom_frac' <--default)"
-      " ($tol: tolerance for detecting composition dimensionality, default=1e-8)"
+      " ($dim_tol: tolerance for detecting composition dimensionality, default=1e-8)"
+      " ($bottom_tol: tolerance for detecting which facets form the convex hull bottom, default=1e-8)"
       " For 'comp', 'formation_energy' is used. For 'atom_frac', 'formation_energy_per_atom' is used."
       " Ex: on_hull, on_hull(MASTER,comp).";
 
@@ -77,10 +78,11 @@ namespace CASM {
 
     const std::string HullDist::Desc =
       "Distance, in eV, of a configuration's formation_energy_per_atom above the convex hull."
-      " Accepts arguments ($selection,$composition)."
+      " Accepts arguments ($selection,$composition,$dim_tol,$bottom_tol)."
       " ($selection may be one of: <filename>, 'ALL', 'CALCULATED', 'MASTER' <--default)"
       " ($composition may be one of: 'comp', 'atom_frac' <--default)."
-      " ($tol: tolerance for detecting composition dimensionality, default=1e-8)"
+      " ($dim_tol: tolerance for detecting composition dimensionality, default=1e-8)"
+      " ($bottom_tol: tolerance for detecting which facets form the convex hull bottom, default=1e-8)"
       " For 'comp', 'formation_energy' is used. For 'atom_frac', 'formation_energy_per_atom' is used."
       " Ex: hull_dist, hull_dist(MASTER,comp).";
 
@@ -110,10 +112,11 @@ namespace CASM {
       "convex hull (i.e., is a *predicted* groundstate)."
       " Only one Configuration out of a set that have identical or almost identical points in"
       " composition/energy space will return true."
-      " Accepts arguments ($selection,$composition)."
+      " Accepts arguments ($selection,$composition,$dim_tol,$bottom_tol)."
       " ($selection may be one of: <filename>, 'ALL', 'CALCULATED', 'MASTER' <--default)"
       " ($composition may be one of: 'comp', 'atom_frac' <--default)"
-      " ($tol: tolerance for detecting composition dimensionality, default=1e-8)"
+      " ($dim_tol: tolerance for detecting composition dimensionality, default=1e-8)"
+      " ($bottom_tol: tolerance for detecting which facets form the convex hull bottom, default=1e-8)"
       " For 'comp', 'clex(formation_energy)' is used. For 'atom_frac', 'clex(formation_energy_per_atom)' is used."
       " Ex: clex_hull_dist, clex_hull_dist(MASTER,comp).";
 
@@ -151,10 +154,11 @@ namespace CASM {
     const std::string ClexHullDist::Desc =
       "Distance, in eV, of a configuration's *cluster-expanded* "
       "formation_energy_per_atom above the convex hull."
-      " Accepts arguments ($selection,$composition)."
+      " Accepts arguments ($selection,$composition,$dim_tol,$bottom_tol)."
       " ($selection may be one of: <filename>, 'ALL', 'CALCULATED', 'MASTER' <--default)"
       " ($composition may be one of: 'comp', 'atom_frac' <--default)"
-      " ($tol: tolerance for detecting composition dimensionality, default=1e-8)"
+      " ($dim_tol: tolerance for detecting composition dimensionality, default=1e-8)"
+      " ($bottom_tol: tolerance for detecting which facets form the convex hull bottom, default=1e-8)"
       " For 'comp', 'clex(formation_energy)' is used. For 'atom_frac', 'clex(formation_energy_per_atom)' is used."
       " Ex: clex_hull_dist, clex_hull_dist(MASTER,comp).";
 

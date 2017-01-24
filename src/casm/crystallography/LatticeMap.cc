@@ -2,8 +2,12 @@
 #include "casm/crystallography/LatticeMap.hh"
 namespace CASM {
   LatticeMap::LatticeMap(const Lattice &_ideal, const Lattice &_strained, Index num_atoms, double _tol/*=TOL*/, int _range/*=2*/) :
-    m_L1(Eigen::Matrix3d(_ideal.get_reduced_cell().lat_column_mat())), m_L2(Eigen::Matrix3d(_strained.get_reduced_cell().lat_column_mat())),
-    m_scale(pow(std::abs(m_L2.determinant() / m_L1.determinant()), 1.0 / 3.0)), m_atomic_vol(std::abs(m_L2.determinant() / (double)num_atoms)),  m_tol(_tol), m_cost(1e20),
+    m_L1(Eigen::Matrix3d(_ideal.reduced_cell().lat_column_mat())),
+    m_L2(Eigen::Matrix3d(_strained.reduced_cell().lat_column_mat())),
+    m_scale(pow(std::abs(m_L2.determinant() / m_L1.determinant()), 1.0 / 3.0)),
+    m_atomic_vol(std::abs(m_L2.determinant() / (double)num_atoms)),
+    m_tol(_tol),
+    m_cost(1e20),
     m_inv_count(-std::abs(_range) * IMatType::Ones(3, 3), std::abs(_range) * IMatType::Ones(3, 3), IMatType::Ones(3, 3)) {
 
     m_U = Eigen::Matrix3d(_ideal.inv_lat_column_mat()) * m_L1;

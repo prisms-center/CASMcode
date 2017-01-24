@@ -4,10 +4,14 @@
 #include "casm/container/Array.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/container/Permutation.hh"
-
+#include "casm/misc/Comparisons.hh"
 
 namespace CASM {
   class PrimGrid;
+
+  /** \ingroup SymOp
+   *  @{
+   */
 
   /// Permutation bidirectional Iterator class
   ///   Can iterate over all combined factor group and translation permutations for a Supercell
@@ -28,7 +32,9 @@ namespace CASM {
   ///     but this is actually only an input iterator... meaning operator* returns by value
   ///
   ///
-  class PermuteIterator : std::iterator <std::bidirectional_iterator_tag, Permutation> {
+  class PermuteIterator :
+    public std::iterator <std::bidirectional_iterator_tag, PermuteIterator>,
+    public Comparisons<PermuteIterator> {
 
     /// permutation representation of factor group acting on sites of the supercell
     SymGroupRep::RemoteHandle m_fg_permute_rep;
@@ -56,7 +62,10 @@ namespace CASM {
     PermuteIterator &operator=(PermuteIterator iter);
 
     /// Returns the combination of factor_group permutation and translation permutation
-    Permutation operator*() const;
+    const PermuteIterator &operator*() const;
+
+    /// Returns the combination of factor_group permutation and translation permutation
+    Permutation combined_permute() const;
 
     /// Apply the combined factor_group permutation and translation permutation being pointed at
     template<typename T>
@@ -86,9 +95,7 @@ namespace CASM {
     template<typename T>
     const T &permute_by_bit(Index i, const Array<T> &before_array) const;
 
-    bool operator==(const PermuteIterator &iter);
-
-    bool operator!=(const PermuteIterator &iter);
+    bool operator<(const PermuteIterator &iter) const;
 
     // prefix ++PermuteIterator
     PermuteIterator &operator++();
@@ -115,10 +122,17 @@ namespace CASM {
 
     friend void swap(PermuteIterator &a, PermuteIterator &b);
 
+  private:
+
+    friend Comparisons<PermuteIterator>;
+
+    bool _eq(const PermuteIterator &iter) const;
+
   };
 
   jsonParser &to_json(const PermuteIterator &clust, jsonParser &json);
   void from_json(PermuteIterator &clust, const jsonParser &json);
 
+  /** @} */
 }
 #endif
