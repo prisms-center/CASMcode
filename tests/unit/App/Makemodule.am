@@ -20,3 +20,10 @@ casm_unit_App_LDADD=libcasm.la\
 					$(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 TESTS+=./tests/unit/App/run_test_App
+
+EXTRA_DIST+=./tests/unit/App/TestCompN.cc\
+            ./tests/unit/App/TestCompN.hh\
+            ./tests/unit/App/TestConfigname.cc\
+            ./tests/unit/App/TestConfigname.hh\
+            ./tests/unit/App/TestEnum.cc\
+            ./tests/unit/App/TestEnum.hh
