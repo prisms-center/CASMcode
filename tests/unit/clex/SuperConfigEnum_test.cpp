@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_SUITE(SuperConfigEnumTest)
 BOOST_AUTO_TEST_CASE(Test1) {
 
   test::FCCTernaryProj proj;
-  make_project(proj);
+  proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
 
@@ -69,7 +69,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
     BOOST_CHECK_EQUAL(cmap.size(), 22);
   }
 
-  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

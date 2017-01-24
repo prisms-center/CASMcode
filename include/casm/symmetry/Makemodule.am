@@ -1,5 +1,6 @@
 symmetryincludedir=$(includedir)/casm/symmetry
-symmetryinclude_HEADERS=./include/casm/symmetry/SymOp.hh\
+symmetryinclude_HEADERS=./include/casm/symmetry/EnumEquivalents.hh\
+            ./include/casm/symmetry/SymOp.hh\
 						./include/casm/symmetry/SymGroupRepID.hh\
 						./include/casm/symmetry/SymBasisPermute.hh\
 						./include/casm/symmetry/SymMatrixXd.hh\

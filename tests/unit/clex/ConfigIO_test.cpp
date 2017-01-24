@@ -190,7 +190,6 @@ BOOST_AUTO_TEST_CASE(Make) {
 BOOST_AUTO_TEST_CASE(AllTest) {
 
   test::FCCTernaryProj proj;
-
   proj.check_init();
   proj.check_composition();
   proj.check_enum();
@@ -223,8 +222,6 @@ BOOST_AUTO_TEST_CASE(AllTest) {
   }
 
   //std::cout << ss.str() << std::endl;
-
-  rm_project(proj);
 
 }
 
