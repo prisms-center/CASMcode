@@ -374,21 +374,7 @@ namespace CASM {
       return GenericConfigFormatter<std::string>("pointgroup_name",
                                                  "Name of the configuration's point group.",
       [](const Configuration & config)->std::string{
-        SymGroup sym_group;
-        sym_group.set_lattice(config.ideal_lattice());
-        std::vector<PermuteIterator> config_factor_group;
-        config_factor_group = config.factor_group();
-        bool new_symop;
-        for(int i = 0; i < config_factor_group.size(); i++) {
-          new_symop = true;
-          if(i > 0) {
-            if(config_factor_group[i].factor_group_index() == config_factor_group[i - 1].factor_group_index())
-              new_symop = false;
-          }
-          if(new_symop)
-            sym_group.push_back(config_factor_group[i].sym_op());
-        }
-        return sym_group.get_name();
+        return config.point_group().get_name();
       });
     }
 
