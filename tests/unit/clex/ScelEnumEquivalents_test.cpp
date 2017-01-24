@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_SUITE(ScelEnumEquivalentsTest)
 BOOST_AUTO_TEST_CASE(Test1) {
 
   test::ZrOProj proj;
-  make_project(proj);
+  proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
 
@@ -41,13 +41,12 @@ BOOST_AUTO_TEST_CASE(Test1) {
     BOOST_CHECK_EQUAL(1, std::distance(e.begin(), e.end()));
   }
 
-  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_CASE(Test2) {
 
   test::FCCTernaryProj proj;
-  make_project(proj);
+  proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
 
@@ -90,7 +89,6 @@ BOOST_AUTO_TEST_CASE(Test2) {
     BOOST_CHECK_EQUAL(12, std::distance(e.begin(), e.end()));
   }
 
-  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

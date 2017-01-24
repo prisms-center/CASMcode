@@ -48,7 +48,6 @@ BOOST_AUTO_TEST_CASE(Basics) {
   //std::cout << ss_log.ss().str() << std::endl;
   //std::cout << ss_err_log.ss().str() << std::endl;
 
-  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

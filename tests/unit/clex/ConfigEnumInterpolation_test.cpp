@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_SUITE(ConfigEnumInterpolationTest)
 BOOST_AUTO_TEST_CASE(Test1) {
 
   test::FCCTernaryProj proj;
-  make_project(proj);
+  proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
   double tol = primclex.crystallography_tol();
@@ -58,7 +58,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
     ++i;
   }
 
-  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

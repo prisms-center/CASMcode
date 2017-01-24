@@ -20,7 +20,7 @@ namespace CASM {
   template vec_symop_back_inserter Lattice::find_invariant_subgroup<array_symop_cit, vec_symop_back_inserter>(
     array_symop_cit, array_symop_cit, vec_symop_back_inserter, double) const;
 
-  template std::pair<array_symop_cit, Eigen::MatrixXi> CASM::is_supercell<Lattice, array_symop_cit>(
+  template std::pair<array_symop_cit, Eigen::MatrixXi> is_supercell<Lattice, array_symop_cit>(
     const Lattice &, const Lattice &, array_symop_cit, array_symop_cit, double);
 
 

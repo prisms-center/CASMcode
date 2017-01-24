@@ -26,3 +26,7 @@ casm_unit_clex_LDADD=libcasm.la\
 					 $(BOOST_UNIT_TEST_FRAMEWORK_LIB)
 
 TESTS+=./tests/unit/clex/run_test_clex
+
+EXTRA_DIST+=./tests/unit/clex/ConfigEnumAllOccupations_test_cases.json\
+            ./tests/unit/clex/ConfigEnumEquivalents_test_cases.json\
+            ./tests/unit/clex/test_Clexulator.cc

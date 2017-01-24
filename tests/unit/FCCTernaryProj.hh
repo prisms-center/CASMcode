@@ -41,8 +41,7 @@ namespace test {
   public:
 
     FCCTernaryProj() :
-        //Use PID to get unique naming. Otherwise different tests might obliterate your directory mid testing if you run in parallel
-      Proj(fs::absolute(fs::path(std::string("tests/unit/test_projects/FCC_ternary.")+std::to_string(::getppid()))),
+      Proj(proj_dir("tests/unit/test_projects/FCC_ternary"),
            FCC_ternary_prim(),
            "FCC_ternary",
            "FCC Ternary with A, B, C occupation") {}
@@ -159,8 +158,8 @@ namespace test {
       BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*basis\.json)")) == true, m_p.gets());
       BOOST_CHECK_MESSAGE(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(write:.*)" + title + R"(_Clexulator\.cc)")) == true, m_p.gets());
 
-      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clust(m_set.default_clex().bset)), m_p.gets());
-      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clexulator_src(m_set.name(), m_set.default_clex().bset)), m_p.gets());
+      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clust(m_set->default_clex().bset)), m_p.gets());
+      BOOST_CHECK_MESSAGE(true == fs::exists(m_dirs.clexulator_src(m_set->name(), m_set->default_clex().bset)), m_p.gets());
 
       std::string str;
 

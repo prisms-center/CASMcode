@@ -1,12 +1,21 @@
 # http://www.scons.org/doc/production/HTML/scons-user.html
 # This is: test/unit/SConscript
 
-import os, glob
+import os
+import glob
+import shutil
 
 # Import dependencies
 Import('env', 'casm_lib', 'casm', 'build_lib_paths')
 
 lenv = env.Clone()
+
+# remove existing test directories
+test_dir = 'test_projects'
+if os.path.exists(test_dir):
+  shutil.rmtree(test_dir)
+if not os.path.exists(test_dir):
+  os.makedirs(test_dir)
 
 # include paths
 candidates = [
@@ -58,7 +67,9 @@ if 'unit' in COMMAND_LINE_TARGETS:
 
 # list of dependencies for a particular test
 depends = {
-  "App" : [casm_lib, casm]
+  "App" : [casm_lib, casm],
+  "EnumeratorPlugin" : [casm_lib, casm],
+  "QueryPlugin" : [casm_lib, casm]
 }
 
 # list of output files that need to be cleaned for a particular test

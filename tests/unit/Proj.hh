@@ -59,13 +59,19 @@ namespace test {
     /// \brief Check "casm query"
     virtual void check_query();
 
+    /// \brief Build a CASM project at 'proj_dir' using the prim
+    ///
+    /// Typically, proj_dir.filename() == title
+    void make();
+
+    static std::vector<fs::path> &directory_list;
 
   protected:
 
     Popen m_p;
     boost::smatch m_match;
     DirectoryStructure m_dirs;
-    ProjectSettings m_set;
+    notstd::cloneable_ptr<ProjectSettings> m_set;
 
     void _check_symmetry(int lat_pg_op, int lat_pg_class,
                          int xtal_pg_op, int xtal_pg_class,
@@ -77,17 +83,9 @@ namespace test {
 
   };
 
-
-
-  /// \brief Build a CASM project at 'proj_dir' using the prim
-  ///
-  /// Typically, proj_dir.filename() == title
-  void make_project(const Proj &proj);
-
-  /// \brief Remove a CASM project, checking first that there is a '.casm' dir
-  ///
-  /// Be careful! This does a recursive remove of the entire proj_dir!
-  void rm_project(const Proj &proj);
+  /// \brief Create a new project directory, appending ".(#)" to ensure
+  /// it is a new project
+  fs::path proj_dir(fs::path init);
 
   /// \brief Check some aspects of a SymGroup json, including the expected
   ///        number of conjugacy classes and operations

@@ -18,7 +18,6 @@ BOOST_AUTO_TEST_SUITE(GrandCanonicalTest)
 BOOST_AUTO_TEST_CASE(Test0) {
 
   test::ZrOProj proj;
-  make_project(proj);
   proj.check_init();
   proj.check_composition();
 
@@ -54,7 +53,6 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   BOOST_CHECK(check(std::string("casm monte -s ") + settings_dest.string()));
 
-  rm_project(proj);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
