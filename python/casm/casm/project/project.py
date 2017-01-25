@@ -2,6 +2,9 @@ import warnings
 from casm import project_path, API
 import os, subprocess, json
 from os.path import join
+from casm.project import syminfo
+import numpy as np
+import math
 
 
 class ClexDescription(object):
@@ -414,6 +417,9 @@ class Project(object):
       dir: casm.project.DirectoryStructure instance
         Provides file and directory locations within the project
       
+      prim: casm.project.Prim instance
+        Represents the primitive crystal structure
+      
       casm_exe: str
         The casm CLI executable to use when necessary
       
@@ -509,6 +515,13 @@ class Project(object):
       """
       self.dir = DirectoryStructure(self.path)
       self.settings = ProjectSettings(self.path)
+      self._prim = None
+    
+    @property
+    def prim(self):
+        if self._prim is None:
+            self._prim = Prim(self)
+        return self._prim
     
     def refresh(self, read_settings=False, read_composition=False, read_chem_ref=False, read_configs=False, clear_clex=False):
       """
@@ -579,4 +592,121 @@ class Project(object):
       
       self.__refresh()
       return (stdout, stderr, res)
-      
+
+
+class Prim(object):
+    """The Primitive Crystal Structure
+    
+    Attributes
+    ----------
+    
+        proj: casm.Project
+          the CASM project the Prim belongs to
+    
+        lattice_matrix: np.array of shape (3, 3)
+          lattice vectors as matrix columns
+        
+        basis: List(dict)
+          crystal basis, as read directly from prim.json (format may change)
+        
+        coordinate_mode: str
+          crystal basis coordinate_mode, as read directly from prim.json (format
+          may change)
+        
+        lattice_symmetry_s: str
+          lattice point group, in Schoenflies notation
+        
+        lattice_symmetry_hm: str
+          lattice point group, in Hermann-Mauguin notation
+        
+        lattice_system: str
+          lattice system name, ('cubic', 'hexagonal', 'rhombohedral', etc.)
+        
+        crystal_symmetry_s: str
+          crystal point group, in Schoenflies notation
+    
+        crystal_symmetry_hm: str
+          crystal point group, in Hermann-Mauguin notation
+    
+        crystal_system: str
+          crystal system name, ('cubic', 'hexagonal', 'trigonal', etc.)
+        
+        crystal_family: str
+          crystal family name, ('cubic', 'hexagonal', etc.)
+        
+        components: List[str]
+          occupational components
+        
+        elements: List[str]
+          all allowed elements
+        
+        n_independent_compositions: int
+          number of independent composition axes
+        
+        degrees_of_freedom: List[str]
+          allowed degrees of freedom, from:
+            'occupation'
+    
+    """
+    
+    def __init__(self, proj):
+        """
+        Construct a CASM Prim
+
+        Arguments
+        ---------
+          
+          proj: casm.Project, optional, default=Project containing the current working directory
+            the CASM project the Prim belongs to
+        
+        """
+        if proj == None:
+            proj = Project()
+        elif not isinstance(proj, Project):
+            raise Exception("Error constructing Prim: proj argument is not a CASM Project")
+        self.proj = proj
+        
+        # raw prim.json (for some properties not yet supported in the casm.project API)
+        with open(self.proj.dir.prim()) as f:
+            raw_prim = json.load(f)
+        self.lattice_matrix = np.array(raw_prim['lattice_vectors']).transpose()
+        self.basis = raw_prim['basis']
+        self.coordinate_mode = raw_prim['coordinate_mode']
+    
+        def _angle(a, b):
+            return math.acos(np.dot(a,b) / (np.linalg.norm(a) * np.linalg.norm(b)))
+    
+        def _lattice_parameters(L):
+            a = np.linalg.norm(L[:,0])
+            b = np.linalg.norm(L[:,1])
+            c = np.linalg.norm(L[:,2])
+            alpha = _angle(L[:,1], L[:,2])
+            beta = _angle(L[:,0], L[:,2])
+            gamma = _angle(L[:,0], L[:,1])
+            return {'a':a, 'b':b, 'c':c, 'alpha':alpha, 'beta':beta, 'gamma':gamma}
+        self.lattice_parameters = _lattice_parameters(self.lattice_matrix)
+        
+        (stdout, stderr, returncode) = proj.command("sym")
+        
+        # lattice symmetry
+        self.lattice_symmetry_s = syminfo.lattice_symmetry(stdout)
+        self.lattice_symmetry_hm = syminfo.hm_symmetry(self.lattice_symmetry_s)
+        self.lattice_system = syminfo.lattice_system(self.lattice_symmetry_s)
+    
+        # crystal symmetry
+        self.crystal_symmetry_s = syminfo.crystal_symmetry(stdout)
+        self.crystal_symmetry_hm = syminfo.hm_symmetry(self.crystal_symmetry)
+        self.crystal_system = syminfo.crystal_system(self.crystal_symmetry_s)
+        self.crystal_family = syminfo.crystal_family(self.crystal_symmetry_s)
+    
+        # composition (v0.2.X: elements and components are identical, only 'occupation' allowed)
+        with open(dir.composition_axes()) as f:
+            raw_composition_axes = json.load(f)
+        
+        self.components = raw_composition_axes['standard_axes']['0']['components']
+        self.elements = self.components
+        self.n_independent_compositions = raw_composition_axes['standard_axes']['0']['independent_compositions']
+        self.degrees_of_freedom = ['occupation']
+    
+    
+    
