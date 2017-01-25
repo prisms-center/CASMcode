@@ -674,7 +674,9 @@ class Prim(object):
         self.coordinate_mode = raw_prim['coordinate_mode']
     
         def _angle(a, b):
-            return math.acos(np.dot(a,b) / (np.linalg.norm(a) * np.linalg.norm(b)))
+            return math.degrees(math.acos(
+                np.dot(a,b) / (np.linalg.norm(a) * np.linalg.norm(b))
+            ))
     
         def _lattice_parameters(L):
             a = np.linalg.norm(L[:,0])
