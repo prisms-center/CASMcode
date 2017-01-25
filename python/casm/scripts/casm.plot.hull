@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+from casm.project import Project, Selection
+from casm.plotting import ConvexHullPlot
+import argparse
+import os
+import sys
+from bokeh.io import curdoc
+from bokeh.client import push_session
+
+path_help = "Path to project directory (default uses current directory)"
+selection_help = "Selection of configurations to find hull distance"
+hull_selection_help = "Selection of configurations used to determine the convex hull"
+desc_help = "Print extended usage description"
+usage_desc = """
+Plot the convex hull of calculated formation energies
+
+Before running you must start the bokeh server:
+- install bokeh with: 'pip install bokeh'
+- start server: 'bokeh serve'
+
+Hovering over data points will show:
+- configuration name
+- Ef ('formation_energy')
+- hull_dist
+- comp('a')
+
+If you have 'casm view' setup, then clicking on a configuration in the plot
+will attempt to use 'casm view' to view that configuration.
+"""
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description = 'Plot convex hull')
+    parser.add_argument('--desc', help=desc_help, default=False, action="store_true")
+    parser.add_argument('--path', help=path_help, type=str, default=os.getcwd())
+    parser.add_argument('--selection', help=selection_help, default="MASTER")
+    parser.add_argument('--hull_selection', help=hull_selection_help, default="MASTER")
+
+    # ignore 'mc casm'
+    args = parser.parse_args(sys.argv[1:])
+    
+    if args.desc:
+        print usage_desc
+        sys.exit(1)
+    
+    print "path:", args.path
+    print "selection:", args.selection
+    print "hull_selection:", args.hull_selection
+    
+    proj = Project(args.path)
+    prim = proj.prim
+    if prim.n_independent_compositions != 1:
+        print "error: currently plot.hull only works for binary alloys"
+        print "in project:", proj.path
+        print "n_independent_compositions:", prim.n_independent_compositions
+        sys.exit(1)
+    
+    selection = Selection(proj, args.selection)
+    hull_selection = Selection(proj, args.hull_selection)
+    
+    hullplot = ConvexHullPlot(selection, hull_selection)
+    
+    # set up session
+    session = push_session(curdoc())
+    curdoc().add_root(hullplot.layout)
+    session.show() # open the document in a browser
+    session.loop_until_closed() # run forever
+

@@ -319,6 +319,9 @@ class ConvexHullPlot(object):
   
   def _query(self):
     
+    self.sel.add_data('configname')
+    add_src_data(self.sel, 'configname', self.sel.data.loc[:,'configname'])
+    
     self.sel.add_data(self.x)
     add_src_data(self.sel, self.x, self.sel.data.loc[:,self.x])
     
