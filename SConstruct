@@ -315,10 +315,16 @@ env['ENV']['TERM'] = os.environ['TERM']
 # set testing environment (for running tests)
 env['ENV']['PATH'] = env['BINDIR'] + ":" + env['ENV']['PATH']
 
-# set LD_LIBRARY_PATH or DYLD_FALLBACK_LIBRARY_PATH (for running configuration tests)
-for x in ['LD_LIBRARY_PATH', 'DYLD_LIBRARY_FALLBACK_PATH']:
-  if x in os.environ:
-    env['ENV'][x] = os.environ[x]
+# set execution environment variables (for running tests)
+casm_var = ['CXX', 'CASM_CXX', 'CASM_CXXFLAGS', 'CASM_SOFLAGS',
+  'CASM_BOOST_PREFIX', 'CASM_BOOST_INCLUDEDIR', 'CASM_BOOST_LIBDIR',
+  'LD_LIBRARY_PATH', 'DYLD_LIBRARY_FALLBACK_PATH']
+for var in casm_var:
+  if var in os.environ:
+    env['ENV'][var] = os.environ[var]
+
+env['ENV']['CASM_INCLUDEDIR'] = env['INCDIR']
+env['ENV']['CASM_LIBDIR'] = env['LIBDIR']
 
 # add methods to use elsewhre
 env.AddMethod(include_path)
