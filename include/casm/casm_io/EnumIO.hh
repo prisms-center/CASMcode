@@ -20,9 +20,6 @@ namespace CASM {
   ///
   /// \ingroup casmIO
 
-  template <typename T>
-  struct traits {};
-
   /// \brief Print help message describing recognized strings for allowed enum values
   ///
   /// Of form:
@@ -104,15 +101,17 @@ namespace CASM {
   }
 
 #define ENUM_TRAITS(ENUM) \
+namespace CASM_TMP {\
   template<> \
-  struct CASM_TMP::traits<ENUM> { \
+  struct traits<ENUM> { \
   \
     static const std::string name; \
   \
     static const std::multimap<ENUM, std::vector<std::string> > strval; \
   \
   }; \
- 
+}
+
 #define ENUM_IO(ENUM) \
   inline std::ostream &operator<<(std::ostream &sout, const ENUM& val) { \
     sout << to_string<ENUM>(val); \

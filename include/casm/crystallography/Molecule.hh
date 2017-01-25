@@ -155,6 +155,12 @@ namespace CASM {
     /// \brief Name comparison via '<', '>', '<=', '>='
     bool operator<(const Molecule &B) const;
 
+    using Comparisons<Molecule>::operator==;
+    using Comparisons<Molecule>::operator!=;
+    using Comparisons<Molecule>::operator<=;
+    using Comparisons<Molecule>::operator>;
+    using Comparisons<Molecule>::operator>=;
+
   private:
 
     friend Comparisons<Molecule>;
