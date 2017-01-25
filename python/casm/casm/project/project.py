@@ -695,12 +695,12 @@ class Prim(object):
     
         # crystal symmetry
         self.crystal_symmetry_s = syminfo.crystal_symmetry(stdout)
-        self.crystal_symmetry_hm = syminfo.hm_symmetry(self.crystal_symmetry)
+        self.crystal_symmetry_hm = syminfo.hm_symmetry(self.crystal_symmetry_s)
         self.crystal_system = syminfo.crystal_system(self.crystal_symmetry_s)
         self.crystal_family = syminfo.crystal_family(self.crystal_symmetry_s)
     
         # composition (v0.2.X: elements and components are identical, only 'occupation' allowed)
-        with open(dir.composition_axes()) as f:
+        with open(self.proj.dir.composition_axes()) as f:
             raw_composition_axes = json.load(f)
         
         self.components = raw_composition_axes['standard_axes']['0']['components']
