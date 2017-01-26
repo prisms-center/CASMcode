@@ -84,6 +84,26 @@ def hull_dist_per_atom(path="CALCULATED"):
   """
   return 'hull_dist(' + path + ',atom_frac)'
 
+def clex_hull_dist(path="CALCULATED"):
+  """
+  Equivalent to 'clex_hull_dist(' + path + ',comp)'
+  
+  Arguments:
+    path: a CASM Selection path, default "CALCULATED"
+  
+  """
+  return 'clex_' + hull_dist(path)
+
+def clex_hull_dist_per_atom(path="CALCULATED"):
+  """
+  Equivalent to 'hull_dist(' + path + ',atom_frac)'
+  
+  Arguments:
+    path: a CASM Selection path, default "CALCULATED"
+  
+  """
+  return 'clex_' + hull_dist_per_atom(path)
+
 def add_src_data(sel, name, data, force=False):
   if sel.src is None:
     sel.src = bokeh.models.ColumnDataSource(data={name:data})
@@ -96,7 +116,7 @@ def add_src_data(sel, name, data, force=False):
     if name not in sel.src.data.keys() or force == True:
       sel.src.data[name] = data
     
-def add_hull_data(sel, hull_sel=None, hull_tol=1e-8, force=False):
+def add_hull_data(sel, hull_sel=None, hull_tol=1e-8, force=False, dft=True, clex=True, clex_of_dft=True):
   """
   Adds hull_dist, hull_dist_per_atom, and 'on_hull' to sel.data.
   
@@ -110,13 +130,40 @@ def add_hull_data(sel, hull_sel=None, hull_tol=1e-8, force=False):
   
   path = hull_sel.path
   
-  sel.add_data(hull_dist(path), force=force)
-  sel.add_data(hull_dist_per_atom(path), force=force)
+  if dft:
+    sel.add_data(hull_dist(path), force=force)
+    sel.add_data(hull_dist_per_atom(path), force=force)
+    
+    if force or 'on_hull' not in sel.data.columns:
+      sel.data.loc[_unselected(sel),'on_hull'] = False
+      dft_on_hull = map(lambda x: abs(x) < hull_tol, sel.data.loc[_selected(sel),hull_dist_per_atom(path)])
+      sel.data.loc[_selected(sel), 'on_hull'] = dft_on_hull
   
-  if force or 'on_hull' not in sel.data.columns:
-    sel.data.loc[_unselected(sel),'on_hull'] = False
-    on_hull = map(lambda x: abs(x) < hull_tol, sel.data.loc[_selected(sel),hull_dist_per_atom(path)])
-    sel.data.loc[_selected(sel), 'on_hull'] = on_hull
+  if clex:
+    sel.add_data(clex_hull_dist(path), force=force)
+    sel.add_data(clex_hull_dist_per_atom(path), force=force)
+    
+    if force or 'on_clex_hull' not in sel.data.columns:
+      sel.data.loc[_unselected(sel),'on_clex_hull'] = False
+      clex_on_hull = map(lambda x: abs(x) < hull_tol, sel.data.loc[_selected(sel),clex_hull_dist_per_atom(path)])
+      sel.data.loc[_selected(sel), 'on_clex_hull'] = clex_on_hull
+  
+  if clex_of_dft and clex and dft:
+    # create dft hull selection
+    dft_hull_sel = casm.project.Selection(sel.proj, hull_sel.path + ".dft_hull")
+    
+    dft_hull_sel.save(data=sel.data[sel.data.loc[:,'on_hull']==True], force=force)
+
+    # query:
+    sel.add_data(clex_hull_dist(dft_hull_sel.path), force=force)
+    sel.add_data(clex_hull_dist_per_atom(dft_hull_sel.path), force=force)
+    
+    if force or 'on_clex_of_dft_hull' not in sel.data.columns:
+      sel.data.loc[_unselected(sel),'on_clex_of_dft_hull'] = False
+      clex_of_dft_on_hull = map(lambda x: abs(x) < hull_tol, sel.data.loc[_selected(sel), clex_hull_dist_per_atom(dft_hull_sel.path)])
+      sel.data.loc[_selected(sel), 'on_clex_of_dft_hull'] = clex_of_dft_on_hull
+    
+  
   
 
 def view_on_tap(sel, attrname, old, new):
