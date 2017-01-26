@@ -10,7 +10,10 @@ from bokeh.client import push_session
 
 path_help = "Path to project directory (default uses current directory)"
 selection_help = "Selection of configurations to find hull distance"
+all_help = "If given, plot all configurations (selected and unselected)"
 hull_selection_help = "Selection of configurations used to determine the convex hull"
+comp_help = "Composition axis. Should be 'comp(x)', 'comp_n(X)', or 'atom_frac(X)'."
+nrg_help = "Energy axis. Should be 'formation_energy' or 'formation_energy_per_atom'."
 desc_help = "Print extended usage description"
 usage_desc = """
 Plot the convex hull of calculated formation energies
@@ -21,9 +24,9 @@ Before running you must start the bokeh server:
 
 Hovering over data points will show:
 - configuration name
-- Ef ('formation_energy')
-- hull_dist
-- comp('a')
+- Ef / Ef_per_atom
+- hull_dist / hull_dist_per_atom
+- comp / comp_n / atom_frac
 
 If you have 'casm view' setup, then clicking on a configuration in the plot
 will attempt to use 'casm view' to view that configuration.
@@ -36,6 +39,9 @@ if __name__ == "__main__":
     parser.add_argument('--path', help=path_help, type=str, default=os.getcwd())
     parser.add_argument('--selection', help=selection_help, default="MASTER")
     parser.add_argument('--hull_selection', help=hull_selection_help, default="MASTER")
+    parser.add_argument('--all', help=all_help, default=False, action="store_true")
+    parser.add_argument('--x', help=comp_help, type=str, default="comp(a)")
+    parser.add_argument('--y', help=nrg_help, type=str, default="formation_energy")
 
     # ignore 'mc casm'
     args = parser.parse_args(sys.argv[1:])
@@ -56,10 +62,10 @@ if __name__ == "__main__":
         print "n_independent_compositions:", prim.n_independent_compositions
         sys.exit(1)
     
-    selection = Selection(proj, args.selection)
+    selection = Selection(proj, args.selection, all=args.all)
     hull_selection = Selection(proj, args.hull_selection)
     
-    hullplot = ConvexHullPlot(selection, hull_selection)
+    hullplot = ConvexHullPlot(selection, hull_selection, x=args.x, y=args.y)
     
     # set up session
     session = push_session(curdoc())

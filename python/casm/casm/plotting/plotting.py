@@ -7,7 +7,9 @@ import casm.project
 
 import os
 import casm.learn
-import json, pickle
+import json
+import pickle
+import re
 
 import bokeh.client
 import bokeh.io
@@ -243,13 +245,32 @@ class ConvexHullPlot(object):
     """
     Arguments:
       sel: A CASM Selection
-      x: (str) column name to use as x axis. Default='comp(a)'.
-      y: (str) column name to use as y axis. Default='formation_energy'.
+      x: (str) column name to use as x axis. Default='comp(a)'. Must be 'comp(x)', 'comp_n(X)', or 'atom_frac(X)'.
+      y: (str) column name to use as y axis. Default='formation_energy'. Must be 'formation_energy' or 'formation_energy_per_atom'.
       hull_sel: (Selection or None) a CASM Selection, to use for the hull. Default uses sel.
       hull_tol: (number, default 1e-8) tolerance to decide if configuration is on the hull
     """
     self.sel = sel
+    
+    self.is_comp = False
+    self.is_comp_n = False
+    self.is_atom_frac = False
+    if re.match('\s*comp\(.*\)\s*', x):
+      self.is_comp = True
+    elif re.match('\s*comp_n\(.*\)\s*', x):
+      self.is_comp_n = True
+    elif re.match('\s*atom_frac\(.*\)\s*', x):
+      self.is_atom_frac = True
+    else:
+        raise ValueError("ConvexHullPlot x: '" + x + "' is not allowed.")
     self.x = x
+    
+    if y == 'formation_energy':
+        self.Ef_per_atom = False
+    elif y == 'formation_energy_per_atom':
+        self.Ef_per_atom = True
+    else:
+        raise ValueError("ConvexHullPlot y: '" + y + "' is not allowed.")
     self.y = y
     
     if hull_sel is None:
@@ -271,6 +292,7 @@ class ConvexHullPlot(object):
     
     # callbacks
     self.sel.selection_callbacks.append(self.update)
+    
     
   
   @property
@@ -299,16 +321,30 @@ class ConvexHullPlot(object):
 
     # hover over a point to see 'configname', 'Ef', and 'comp(a)'
     tooltips = [
-        ("configname","@configname"), 
-        ("Ef","@formation_energy{1.1111}"),
-        ("hull_dist", "@{" + hull_dist(self.hull_sel.path) + "}{1.1111}")
+        ("configname","@configname")
     ]
     
-    i = ord('a')
-    while "comp(" + chr(i) + ")" in self.sel.src.data.keys():
-      s = "comp(" + chr(i) + ")"
-      tooltips.append((s, "@{" + s + "}{1.1111}"))
-      i += 1
+    # tooltips for energy
+    if self.Ef_per_atom:
+      tooltips.append(("Ef_per_atom","@formation_energy_per_atom{1.1111}"))
+      tooltips.append(("hull_dist_per_atom", "@{" + hull_dist_per_atom(self.hull_sel.path) + "}{1.1111}"))
+    else:
+      tooltips.append(("Ef","@formation_energy{1.1111}"))
+      tooltips.append(("hull_dist", "@{" + hull_dist(self.hull_sel.path) + "}{1.1111}"))
+    
+    # tooltips for composition
+    if self.is_comp:
+      for key in self.sel.src.data.keys():
+        if re.match('\s*comp\(.*\)\s*', key):
+          tooltips.append((key, "@{" + key + "}{1.1111}"))
+    elif self.is_comp_n:
+      for key in self.sel.src.data.keys():
+        if re.match('\s*comp_n\(.*\)\s*', key):
+          tooltips.append((key, "@{" + key + "}{1.1111}"))
+    elif self.is_atom_frac:
+      for key in self.sel.src.data.keys():
+        if re.match('\s*atom_frac\(.*\)\s*', key):
+          tooltips.append((key, "@{" + key + "}{1.1111}"))
     
     self.tap_action = ConfigurationTapAction(self.sel)
 
@@ -316,20 +352,39 @@ class ConvexHullPlot(object):
     self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[cr]))
     self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[cr]))
     self.p_.add_tools(bokeh.models.LassoSelectTool(renderers=[cr]))
+    
   
   def _query(self):
     
     self.sel.add_data('configname')
     add_src_data(self.sel, 'configname', self.sel.data.loc[:,'configname'])
     
-    self.sel.add_data(self.x)
-    add_src_data(self.sel, self.x, self.sel.data.loc[:,self.x])
+    # query comp / atom_frac and add to self.sel.src
+    if self.is_comp:
+      self.sel.query(["comp"])
+      for key in self.sel.data.keys():
+        if re.match('\s*comp\(.*\)\s*', key):
+          add_src_data(self.sel, key, self.sel.data.loc[:,key])
+    elif self.is_comp_n:
+      self.sel.query(["comp_n"])
+      for key in self.sel.data.keys():
+        if re.match('\s*comp_n\(.*\)\s*', key):
+          add_src_data(self.sel, key, self.sel.data.loc[:,key])
+    elif self.is_atom_frac:
+      self.sel.query(["atom_frac"])
+      for key in self.sel.data.keys():
+        if re.match('\s*atom_frac\(.*\)\s*', key):
+          add_src_data(self.sel, key, self.sel.data.loc[:,key])
     
+    # energy
     self.sel.add_data(self.y)
     add_src_data(self.sel, self.y, self.sel.data.loc[:,self.y])
     
     add_hull_data(self.sel, self.hull_sel, self.hull_tol, force=True)
-    add_src_data(self.sel, hull_dist(self.hull_sel.path), self.sel.data.loc[:,hull_dist(self.hull_sel.path)])
+    if self.Ef_per_atom:
+      add_src_data(self.sel, hull_dist_per_atom(self.hull_sel.path), self.sel.data.loc[:,hull_dist_per_atom(self.hull_sel.path)])
+    else:
+      add_src_data(self.sel, hull_dist(self.hull_sel.path), self.sel.data.loc[:,hull_dist(self.hull_sel.path)])
     
     # set hull line data
     on_hull = self.sel.data.loc[:,'on_hull'] == True
@@ -339,6 +394,7 @@ class ConvexHullPlot(object):
     
     # source for hull data
     self.calc_hull_src = bokeh.models.ColumnDataSource(data=sorted_df_on_hull)
+    
   
   def update(self):
     """
