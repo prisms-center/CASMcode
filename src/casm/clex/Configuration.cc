@@ -477,6 +477,10 @@ namespace CASM {
         else
           success = false;
       }
+      //Get relaxed magmom:
+      if(json.contains("relaxed_magmom") {
+        parsed_props["relaxed_magmom"] = json["relaxed_magmom"].get<double>() / get_supercell().volume();
+      }
       //Get RMS force:
       if(json.contains("relaxed_forces")) {
         if(json["relaxed_forces"].size()) {
