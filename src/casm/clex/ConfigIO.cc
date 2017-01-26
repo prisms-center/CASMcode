@@ -370,6 +370,13 @@ namespace CASM {
       });
     }
 
+    GenericConfigFormatter<std::string> pointgroup_name() {
+      return GenericConfigFormatter<std::string>("pointgroup_name",
+                                                 "Name of the configuration's point group.",
+      [](const Configuration & config)->std::string{
+        return config.point_group().get_name();
+      });
+    }
 
     /*
     GenericConfigFormatter<bool> selected() {
@@ -500,7 +507,8 @@ namespace CASM {
       configname(),
       scelname(),
       calc_status(),
-      failure_type()
+      failure_type(),
+      pointgroup_name()
     );
 
     return dict;
