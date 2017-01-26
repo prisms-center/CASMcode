@@ -351,7 +351,7 @@ Direct\n\
       std::cout << "EXAMPLE:\n";
       std::cout << "-------\n";
       std::cout <<
-                "{\n  \"supercells\" : {\n    \"SCEL1_1_1_1_0_0_0\" : {\n      \"0\" : {\n        \"calctype.default\" : {\n          \"ref.default\" : {\n            \"properties\" : {\n              \"calc\" : {\n                \"basis_deformation\" : 0.000000000000,\n                \"data_timestamp\" : 1441172550,\n                \"lattice_deformation\" : 0.000000676576,\n                \"relaxation_strain\" : [ 0.001443293898, 0.001443293305, 0.002332246990, 0.000000000000, 0.000000000000, -0.000000001264 ],\n                \"relaxed_energy\" : -17.093958770000,\n                \"rms_force\" : 0.000000000000,\n                \"volume_relaxation\" : 1.005222845232\n              },\n              \"delta\" : {\n                \"relaxed_energy\" : 0.000000000000\n              },\n              \"ref\" : {\n                \"relaxed_energy\" : -17.093958770000\n              }\n            }\n          }\n        },\n        \"dof\" : {\n          \"occupation\" : [ 0, 0, 0, 0 ]\n        },\n        \"selected\" : false,\n        \"source\" : [ \"occupation_enumeration\" ]\n      },\n\
+                "{\n  \"supercells\" : {\n    \"SCEL1_1_1_1_0_0_0\" : {\n      \"0\" : {\n        \"calctype.default\" : {\n          \"ref.default\" : {\n            \"properties\" : {\n              \"calc\" : {\n                \"basis_deformation\" : 0.000000000000,\n                \"data_timestamp\" : 1441172550,\n                \"lattice_deformation\" : 0.000000676576,\n                \"relaxation_strain\" : [ 0.001443293898, 0.001443293305, 0.002332246990, 0.000000000000, 0.000000000000, -0.000000001264 ],\n                \"relaxed_energy\" : -17.093958770000,\n                \"rms_force\" : 0.000000000000,\n                \"relaxed_magmom\" : -4.125372200000,\n                \"volume_relaxation\" : 1.005222845232\n              },\n              \"delta\" : {\n                \"relaxed_energy\" : 0.000000000000\n              },\n              \"ref\" : {\n                \"relaxed_energy\" : -17.093958770000\n              }\n            }\n          }\n        },\n        \"dof\" : {\n          \"occupation\" : [ 0, 0, 0, 0 ]\n        },\n        \"selected\" : false,\n        \"source\" : [ \"occupation_enumeration\" ]\n      },\n\
       ... other configurations ...\n\
     },\n\
     ... other supercells ... \n\
@@ -646,6 +646,12 @@ LCHARG = .FALSE.\n";
         [0.33077698, 0.33844594, 0.33077698]\n\
     ], \n\
     \"relaxed_energy\": -16.27773537, \n\
+    \"relaxed_mag_basis\": [\n\
+        -3.93,\n\
+         3.82,\n\
+         1.198\n\
+    ], \n\
+    \"relaxed_magmom\": -1.3086, \n\
     \"relaxed_forces\": [\n\
         [0.0, 0.0, 0.0], \n\
         [0.0, 0.00987362, -0.00987362], \n\
