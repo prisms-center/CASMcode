@@ -116,9 +116,12 @@ def add_src_data(sel, name, data, force=False):
     if name not in sel.src.data.keys() or force == True:
       sel.src.data[name] = data
     
-def add_hull_data(sel, hull_sel=None, hull_tol=1e-8, force=False, dft=True, clex=True, clex_of_dft=True):
+def add_hull_data(sel, hull_sel=None, dft_hull_sel=None, hull_tol=1e-8, force=False, dft=True, clex=True, clex_of_dft=True):
   """
-  Adds hull_dist, hull_dist_per_atom, and 'on_hull' to sel.data.
+  Adds to sel.data, (where path=hull_sel.path): 
+    hull_dist(path), hull_dist_per_atom(path), and 'on_hull'
+    clex_hull_dist(path), clex_hull_dist_per_atom(path), and 'on_clex_hull'
+    clex_hull_dist(path.dft_hull), clex_hull_dist_per_atom(path.dft_hull), and 'on_clex_of_dft_hull'
   
   Arguments:
     sel: a CASM Selection, to get hull distances for.
@@ -131,6 +134,7 @@ def add_hull_data(sel, hull_sel=None, hull_tol=1e-8, force=False, dft=True, clex
   path = hull_sel.path
   
   if dft:
+    sel.add_data('is_calculated', force=force)
     sel.add_data(hull_dist(path), force=force)
     sel.add_data(hull_dist_per_atom(path), force=force)
     
@@ -150,8 +154,6 @@ def add_hull_data(sel, hull_sel=None, hull_tol=1e-8, force=False, dft=True, clex
   
   if clex_of_dft and clex and dft:
     # create dft hull selection
-    dft_hull_sel = casm.project.Selection(sel.proj, hull_sel.path + ".dft_hull")
-    
     dft_hull_sel.save(data=sel.data[sel.data.loc[:,'on_hull']==True], force=force)
 
     # query:
@@ -162,7 +164,6 @@ def add_hull_data(sel, hull_sel=None, hull_tol=1e-8, force=False, dft=True, clex
       sel.data.loc[_unselected(sel),'on_clex_of_dft_hull'] = False
       clex_of_dft_on_hull = map(lambda x: abs(x) < hull_tol, sel.data.loc[_selected(sel), clex_hull_dist_per_atom(dft_hull_sel.path)])
       sel.data.loc[_selected(sel), 'on_clex_of_dft_hull'] = clex_of_dft_on_hull
-    
   
   
 
@@ -239,8 +240,31 @@ class ConfigStyle(object):
     self.hover_color = "orange"
     self.hover_alpha = 0.7
 
+class ClexConfigStyle(object):
+  def __init__(self):
+    ### style
+    self.selected_color = "#05ff58"
+    self.selected_radii = 10
+    self.unselected_color = "blue"
+    self.unselected_radii = 7
+    self.fill_alpha = 0.5
+    
+    self.cutoff_color = "red"
+    self.cutoff_line_width = 1
+    self.cutoff_alpha = 1.0
 
-def update_glyphs(sel, selected=None, on_hull=None):
+    self.off_hull_line_color = "#05ff58"
+    self.on_hull_line_color = "#05ff58"
+    self.off_hull_line_width = 2.0
+    self.on_hull_line_width = 2.0
+    self.on_hull_line_alpha = 1.0
+    self.off_hull_line_alpha = 1.0
+
+    self.hover_color = "orange"
+    self.hover_alpha = 0.7
+
+
+def update_glyphs(sel, selected=None):
   """
   Use the selected and on_hull iterables to update glyph styles based on sel.style.
   """
@@ -248,15 +272,20 @@ def update_glyphs(sel, selected=None, on_hull=None):
   if selected is None:
     selected = sel.data['selected']
   
-  if on_hull is None:
-    if 'on_hull' in sel.data.columns:
-      on_hull = sel.data['on_hull']
-  
   style = sel.style
   
+  ## dft points:
   # colors to plot selected (True), and unselected (False) configurations
   colormap = dict({True:style.selected_color, False:style.unselected_color})
   
+  # radii to plot selected (True), and unselected (False) configurations
+  radiimap = dict({True:style.selected_radii, False:style.unselected_radii})
+  
+  sel.src.data['color'] = map(lambda x: colormap[x], selected)
+  sel.src.data['radii'] = map(lambda x: radiimap[x], selected)
+  
+  
+  ## on dft hull:
   # colors to plot on_hull (True), and not on_hull (False) configurations
   linecolormap = dict({True:style.on_hull_line_color, False:style.off_hull_line_color})
   
@@ -266,16 +295,48 @@ def update_glyphs(sel, selected=None, on_hull=None):
   # width to plot on_hull (True), and not on_hull (False) configurations
   linealphamap = dict({True:style.on_hull_line_alpha, False:style.off_hull_line_alpha})
   
-  # radii to plot selected (True), and unselected (False) configurations
-  radiimap = dict({True:style.selected_radii, False:style.unselected_radii})
-  
-  sel.src.data['color'] = map(lambda x: colormap[x], selected)
-  sel.src.data['radii'] = map(lambda x: radiimap[x], selected)
+  on_hull = None
+  if 'on_hull' in sel.data.columns:
+    on_hull = sel.data['on_hull']
   
   if on_hull is not None:
     sel.src.data['line_color'] = map(lambda x: linecolormap[x], on_hull)
     sel.src.data['line_width'] = map(lambda x: linewidthmap[x], on_hull)
     sel.src.data['line_alpha'] = map(lambda x: linealphamap[x], on_hull)
+  
+  
+  ## clex points:
+  
+  style = sel.clex_style
+  
+  # colors to plot selected (True), and unselected (False) configurations
+  colormap = dict({True:style.selected_color, False:style.unselected_color})
+  
+  # radii to plot selected (True), and unselected (False) configurations
+  radiimap = dict({True:style.selected_radii, False:style.unselected_radii})
+  
+  sel.src.data['clex_color'] = map(lambda x: colormap[x], selected)
+  sel.src.data['clex_radii'] = map(lambda x: radiimap[x], selected)
+  
+  
+  ## on clex hull:
+  # colors to plot on_hull (True), and not on_hull (False) configurations
+  linecolormap = dict({True:style.on_hull_line_color, False:style.off_hull_line_color})
+  
+  # width to plot on_hull (True), and not on_hull (False) configurations
+  linewidthmap = dict({True:style.on_hull_line_width, False:style.off_hull_line_width})
+  
+  # width to plot on_hull (True), and not on_hull (False) configurations
+  linealphamap = dict({True:style.on_hull_line_alpha, False:style.off_hull_line_alpha})
+  
+  on_clex_hull = None
+  if 'on_clex_hull' in sel.data.columns:
+    on_clex_hull = sel.data['on_clex_hull']
+  
+  if on_clex_hull is not None:
+    sel.src.data['clex_line_color'] = map(lambda x: linecolormap[x], on_hull)
+    sel.src.data['clex_line_width'] = map(lambda x: linewidthmap[x], on_hull)
+    sel.src.data['clex_line_alpha'] = map(lambda x: linealphamap[x], on_hull)
   
 
 class ConvexHullPlot(object):
@@ -298,6 +359,7 @@ class ConvexHullPlot(object):
       hull_tol: (number, default 1e-8) tolerance to decide if configuration is on the hull
     """
     self.sel = sel
+    self.dft_hull_sel = casm.project.Selection(sel.proj, hull_sel.path + ".dft_hull")
     
     self.is_comp = False
     self.is_comp_n = False
@@ -351,10 +413,11 @@ class ConvexHullPlot(object):
     # add 'style' to the selection if not already existing
     if not hasattr(self.sel, 'style'):
       self.sel.style = ConfigStyle()
+      self.sel.clex_style = ClexConfigStyle()
       update_glyphs(self.sel)
-    style = self.sel.style
     
     # plot formation energy vs comp, with convex hull states
+    style = self.sel.style
     self.p_ = bokeh.plotting.Figure(plot_width=800, plot_height=400, tools=self.tools)
     cr = self.p_.circle(self.x, self.y, source=self.sel.src, 
       size='radii', fill_color='color', fill_alpha=style.fill_alpha, 
@@ -362,6 +425,18 @@ class ConvexHullPlot(object):
       hover_alpha=style.hover_alpha, hover_color=style.hover_color)
     self.hull_line = self.p_.line(self.x, self.y, source=self.calc_hull_src, 
       line_color=style.on_hull_line_color, line_width=1.0)
+    
+    style = self.sel.clex_style
+    cr_clex = self.p_.x(self.x, self.y_clex, source=self.sel.src, 
+      size='clex_radii', fill_color='clex_color', fill_alpha=style.fill_alpha, 
+      line_color='clex_line_color', line_width='clex_line_width', line_alpha='clex_line_alpha',
+      hover_alpha=style.hover_alpha, hover_color=style.hover_color)
+    self.clex_hull_line = self.p_.line(self.x, self.y, source=self.clex_hull_src, 
+      line_color=style.on_hull_line_color, line_width=1.0)
+    
+    style = self.sel.style
+    self.clex_of_dft_hull_line = self.p_.line(self.x, self.y, source=self.clex_of_dft_hull_src, 
+      line_color=style.on_hull_line_color, line_width=1.0, line_dash="4 4")
 
     self.p_.xaxis.axis_label = self.x
     self.p_.yaxis.axis_label = self.y
@@ -374,10 +449,14 @@ class ConvexHullPlot(object):
     # tooltips for energy
     if self.Ef_per_atom:
       tooltips.append(("Ef_per_atom","@formation_energy_per_atom{1.1111}"))
+      tooltips.append(("clex_Ef_per_atom","@{clex(formation_energy,per_species)}{1.1111}"))
       tooltips.append(("hull_dist_per_atom", "@{" + hull_dist_per_atom(self.hull_sel.path) + "}{1.1111}"))
+      tooltips.append(("clex_hull_dist_per_atom", "@{" + clex_hull_dist_per_atom(self.hull_sel.path) + "}{1.1111}"))
     else:
       tooltips.append(("Ef","@formation_energy{1.1111}"))
+      tooltips.append(("clex_Ef","@{clex(formation_energy)}{1.1111}"))
       tooltips.append(("hull_dist", "@{" + hull_dist(self.hull_sel.path) + "}{1.1111}"))
+      tooltips.append(("clex_hull_dist", "@{" + clex_hull_dist(self.hull_sel.path) + "}{1.1111}"))
     
     # tooltips for composition
     if self.is_comp:
@@ -395,10 +474,10 @@ class ConvexHullPlot(object):
     
     self.tap_action = ConfigurationTapAction(self.sel)
 
-    self.p_.add_tools(self.tap_action.tool(view_on_tap, [cr]))
-    self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[cr]))
-    self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[cr]))
-    self.p_.add_tools(bokeh.models.LassoSelectTool(renderers=[cr]))
+    self.p_.add_tools(self.tap_action.tool(view_on_tap, [cr, cr_clex]))
+    self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[cr, cr_clex]))
+    self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[cr, cr_clex]))
+    self.p_.add_tools(bokeh.models.LassoSelectTool(renderers=[cr, cr_clex]))
     
   
   def _query(self):
@@ -427,20 +506,32 @@ class ConvexHullPlot(object):
     self.sel.add_data(self.y)
     add_src_data(self.sel, self.y, self.sel.data.loc[:,self.y])
     
-    add_hull_data(self.sel, self.hull_sel, self.hull_tol, force=True)
+    # clex energy
+    if self.Ef_per_atom:
+      self.y_clex = 'clex(formation_energy,per_species)'
+    else:
+      self.y_clex = 'clex(formation_energy)'
+    self.sel.add_data(self.y_clex)
+    add_src_data(self.sel, self.y_clex, self.sel.data.loc[:,self.y_clex])
+    
+    add_hull_data(self.sel, self.hull_sel, self.dft_hull_sel, self.hull_tol, force=True)
     if self.Ef_per_atom:
       add_src_data(self.sel, hull_dist_per_atom(self.hull_sel.path), self.sel.data.loc[:,hull_dist_per_atom(self.hull_sel.path)])
+      add_src_data(self.sel, clex_hull_dist_per_atom(self.hull_sel.path), self.sel.data.loc[:,clex_hull_dist_per_atom(self.hull_sel.path)])
+      add_src_data(self.sel, clex_hull_dist_per_atom(self.dft_hull_sel.path), self.sel.data.loc[:,clex_hull_dist_per_atom(self.dft_hull_sel.path)])
     else:
       add_src_data(self.sel, hull_dist(self.hull_sel.path), self.sel.data.loc[:,hull_dist(self.hull_sel.path)])
-    
-    # set hull line data
-    on_hull = self.sel.data.loc[:,'on_hull'] == True
-    df_on_hull = self.sel.data.loc[on_hull, [self.x, self.y, hull_dist(self.hull_sel.path)]]
-    sorted_df_on_hull = df_on_hull.sort_values([hull_dist(self.hull_sel.path), self.x])
-    self.sorted_hull_indices = sorted_df_on_hull.index
+      add_src_data(self.sel, clex_hull_dist(self.hull_sel.path), self.sel.data.loc[:,clex_hull_dist(self.hull_sel.path)])
+      add_src_data(self.sel, clex_hull_dist(self.dft_hull_sel.path), self.sel.data.loc[:,clex_hull_dist(self.dft_hull_sel.path)])
     
     # source for hull data
-    self.calc_hull_src = bokeh.models.ColumnDataSource(data=sorted_df_on_hull)
+    self.calc_hull_src = bokeh.models.ColumnDataSource(data=self.sort_hull_line())
+    
+    # source for clex hull data
+    self.clex_hull_src = bokeh.models.ColumnDataSource(data=self.sort_clex_hull_line())
+    
+    # source for clex of dft hull data
+    self.clex_of_dft_hull_src = bokeh.models.ColumnDataSource(data=self.sort_clex_of_dft_hull_line())
     
   
   def update(self):
@@ -449,30 +540,57 @@ class ConvexHullPlot(object):
     """
     
     # update y-data
-    add_hull_data(self.sel, self.hull_sel, self.hull_tol, force=True)
+    add_hull_data(self.sel, self.hull_sel, self.dft_hull_sel, self.hull_tol, force=True)
     add_src_data(self.sel, hull_dist(self.hull_sel.path), self.sel.data.loc[:,hull_dist(self.hull_sel.path)])
     
-    # set hull line data
+    self.update_hull_line()
+    self.update_clex_hull_line()
+    slef.update_clex_of_dft_hull_line()
+
+  def sort_hull_line(self):
+    # sort hull line data
     on_hull = self.sel.data.loc[:,'on_hull'] == True
     df_on_hull = self.sel.data.loc[on_hull, [self.x, self.y, hull_dist(self.hull_sel.path)]]
     sorted_df_on_hull = df_on_hull.sort_values([hull_dist(self.hull_sel.path), self.x])
     self.sorted_hull_indices = sorted_df_on_hull.index
-    
-    # source for hull data
-    self.calc_hull_src.data[self.x] = self.sel.data.loc[self.sorted_hull_indices, self.x]
-    self.calc_hull_src.data[self.y] = self.sel.data.loc[self.sorted_hull_indices, self.y]
+    return sorted_df_on_hull
+  
+  def sort_clex_hull_line(self):
+    # sort clex hull line data
+    on_clex_hull = self.sel.data.loc[:,'on_clex_hull'] == True
+    df_on_clex_hull = self.sel.data.loc[on_clex_hull, [self.x, self.y, clex_hull_dist(self.hull_sel.path)]]
+    sorted_df_on_clex_hull = df_on_clex_hull.sort_values([clex_hull_dist(self.hull_sel.path), self.x])
+    self.sorted_clex_hull_indices = sorted_df_on_clex_hull.index
+    return sorted_df_on_clex_hull
+  
+  def sort_clex_of_dft_hull_line(self):
+    # set clex of dft hull line data
+    on_clex_of_dft_hull = self.sel.data.loc[:,'on_clex_of_dft_hull'] == True
+    df_on_clex_of_dft_hull = self.sel.data.loc[on_clex_of_dft_hull, [self.x, self.y, clex_hull_dist(self.dft_hull_sel.path)]]
+    sorted_df_on_clex_of_dft_hull = df_on_clex_of_dft_hull.sort_values([clex_hull_dist(self.dft_hull_sel.path), self.x])
+    self.sorted_clex_of_dft_hull_indices = sorted_df_on_clex_of_dft_hull.index
+    return sorted_df_on_clex_of_dft_hull
   
   def update_hull_line(self):
-    
-    # set hull line data
-    on_hull = self.sel.data.loc[:,'on_hull'] == True
-    df_on_hull = self.sel.data.loc[on_hull, [self.x, self.y, hull_dist(self.hull_sel.path)]]
-    sorted_df_on_hull = df_on_hull.sort_values([hull_dist(self.hull_sel.path), self.x])
-    self.sorted_hull_indices = sorted_df_on_hull.index
+    self.sort_hull_line()
     
     # source for hull data
     self.calc_hull_src.data[self.x] = self.sel.data.loc[self.sorted_hull_indices, self.x]
     self.calc_hull_src.data[self.y] = self.sel.data.loc[self.sorted_hull_indices, self.y]
+
+  def update_clex_hull_line(self):
+    self.sort_clex_hull_line()
+    
+    # source for clex hull data
+    self.clex_hull_src.data[self.x] = self.sel.data.loc[self.sorted_clex_hull_indices, self.x]
+    self.clex_hull_src.data[self.y] = self.sel.data.loc[self.sorted_clex_hull_indices, self.y]
+
+  def update_hull_line(self):
+    self.sort_clex_of_dft_hull_line()
+    
+    # source for clex of dft hull data
+    self.clex_of_dft_hull_src.data[self.x] = self.sel.data.loc[self.sorted_clex_of_dft_hull_indices, self.x]
+    self.clex_of_dft_hull_src.data[self.y] = self.sel.data.loc[self.sorted_clex_of_dft_hull_indices, self.y]
 
 
 class Scatter(object):
