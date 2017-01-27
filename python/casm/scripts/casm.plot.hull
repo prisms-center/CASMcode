@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
 from casm.project import Project, Selection
-from casm.plotting import ConvexHullPlot
+import casm.plotting
 import argparse
 import os
 import sys
+import json
 from bokeh.io import curdoc
 from bokeh.client import push_session
 
@@ -14,6 +15,8 @@ all_help = "If given, plot all configurations (selected and unselected)"
 hull_selection_help = "Selection of configurations used to determine the convex hull"
 comp_help = "Composition axis. Should be 'comp(x)', 'comp_n(X)', or 'atom_frac(X)'."
 nrg_help = "Energy axis. Should be 'formation_energy' or 'formation_energy_per_atom'."
+dft_style_help = "Name of file containing styling values for dft calculations"
+clex_style_help = "Name of file containing styling values for clex calculations"
 desc_help = "Print extended usage description"
 usage_desc = """
 Plot the convex hull of calculated formation energies
@@ -30,6 +33,10 @@ Hovering over data points will show:
 
 If you have 'casm view' setup, then clicking on a configuration in the plot
 will attempt to use 'casm view' to view that configuration.
+
+You can edit visual attributes using --dft_style and --clex_style. The default
+values will be printed to files "dft_style.json" and "clex_style.json" if not 
+specified.
 """
 
 if __name__ == "__main__":
@@ -42,6 +49,8 @@ if __name__ == "__main__":
     parser.add_argument('--all', help=all_help, default=False, action="store_true")
     parser.add_argument('--x', help=comp_help, type=str, default="comp(a)")
     parser.add_argument('--y', help=nrg_help, type=str, default="formation_energy")
+    parser.add_argument('--dft_style', help=dft_style_help, type=str, default="dft_style.json")
+    parser.add_argument('--clex_style', help=dft_style_help, type=str, default="clex_style.json")
 
     # ignore 'mc casm'
     args = parser.parse_args(sys.argv[1:])
@@ -65,7 +74,25 @@ if __name__ == "__main__":
     selection = Selection(proj, args.selection, all=args.all)
     hull_selection = Selection(proj, args.hull_selection)
     
-    hullplot = ConvexHullPlot(selection, hull_selection, x=args.x, y=args.y)
+    if os.path.exists(args.dft_style):
+        with open(args.dft_style, 'r') as f:
+            dft_style = json.load(f)
+    else:
+        dft_style = casm.plotting.dft_style
+        with open(args.dft_style, 'w') as f:
+            json.dump(dft_style, f, indent=2, sort_keys=True)
+    
+    if os.path.exists(args.clex_style):
+        with open(args.clex_style, 'r') as f:
+            clex_style = json.load(f)
+    else:
+        clex_style = casm.plotting.clex_style
+        with open(args.clex_style, 'w') as f:
+            json.dump(clex_style, f, indent=2, sort_keys=True)
+    
+    
+    hullplot = casm.plotting.ConvexHullPlot(selection, hull_selection, x=args.x,
+        y=args.y, dft_style=dft_style, clex_style=clex_style)
     
     # set up session
     session = push_session(curdoc())
