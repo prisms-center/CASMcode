@@ -322,6 +322,8 @@ namespace CASM {
     ///        Configuration unchanged
     std::vector<PermuteIterator> factor_group() const;
 
+    /// \brief Returns the point group that leaves the Configuration unchanged
+    SymGroup point_group() const;
 
     /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
     Configuration fill_supercell(Supercell &scel, const SymOp &op) const;

@@ -397,6 +397,27 @@ namespace CASM {
   }
 
   //*******************************************************************************
+  
+  /// \brief Returns the point group that leaves the Configuration unchanged
+  SymGroup Configuration::point_group() const {
+    SymGroup sym_group;
+    sym_group.set_lattice(ideal_lattice());
+    std::vector<PermuteIterator> config_factor_group;
+    config_factor_group = factor_group();
+    bool new_symop;
+    for(int i = 0; i < config_factor_group.size(); i++) {
+      new_symop = true;
+      if(i > 0) {
+        if(config_factor_group[i].factor_group_index() == config_factor_group[i - 1].factor_group_index())
+          new_symop = false;
+      }
+      if(new_symop)
+         sym_group.push_back(config_factor_group[i].sym_op());
+      }
+    return sym_group;
+  }
+
+  //*******************************************************************************
 
   /// \brief Fills supercell 'scel' with reoriented configuration, op*(*this)
   Configuration Configuration::fill_supercell(Supercell &scel, const SymOp &op) const {
