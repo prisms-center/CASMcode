@@ -33,6 +33,9 @@ namespace CASM {
       }
 
       static const std::string enumerator_name;
+      static const std::string interface_help;
+      /// Implements run
+      static int run(PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt);
 
     private:
 
@@ -40,6 +43,7 @@ namespace CASM {
       /// Implements increment
       void increment() override;
 
+      
 
       // -- Unique -------------------
 

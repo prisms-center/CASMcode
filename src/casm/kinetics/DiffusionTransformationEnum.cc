@@ -1,4 +1,15 @@
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
+#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
+#include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/app/AppIO_impl.hh"
+
+extern "C" {
+  CASM::EnumInterfaceBase *make_DiffusionTransformationEnum_interface() {
+    return new CASM::EnumInterface<CASM::Kinetics::DiffusionTransformationEnum>();
+  }
+}
 
 namespace CASM {
 
@@ -43,6 +54,36 @@ namespace CASM {
     }
 
     const std::string DiffusionTransformationEnum::enumerator_name = "DiffusionTransformationEnum";
+    const std::string DiffusionTransformationEnum::interface_help =
+    "DiffusionTransformationEnum: \n\n"
+
+    "  clusters: JSON settings "
+    "    Indicate clusters to enumerate all occupational diffusion transformations. The \n"
+    "    JSON item 'bspecs' should be a bspecs style initialization of cluster number and sizes.\n"
+    "              \n\n"
+
+    "  filter: string (optional, default=None)\n"
+    "    A query command to use to filter which Diffusion Transformations are kept.          \n"
+    "\n"
+    "  Examples:\n"
+    "    To enumerate all transformations up to a certain maximum distance more \n"
+    "    restricted than that specified in the bspecs entry of the JSON: \n"
+    "     casm enum --method DiffusionTransformationEnum --max 6.50\n"
+    "\n"
+    "    To enumerate all transformations for all enumerated clusters:\n"
+    "      casm enum --method DiffusionTransformationEnum\n"
+    "\n"
+    "    To enumerate all transformations that involve a Vacancy:\n"
+    "      casm enum --method DiffusionTransformationEnum --require Va \n"
+    "      'TEMPORARY FILLER DOCUMENTATION \n"
+    "        \"supercells\": { \n"
+    "          \"name\": [\n"
+    "            \"SCEL1_1_1_1_0_0_0\",\n"
+    "            \"SCEL2_1_2_1_0_0_0\",\n"
+    "            \"SCEL4_1_4_1_0_0_0\"\n"
+    "          ]\n"
+    "        } \n"
+    "      }' \n\n";
 
     /// Implements increment
     void DiffusionTransformationEnum::increment() {
@@ -83,6 +124,46 @@ namespace CASM {
       _increment_step();
     }
 
+    /// Implements run
+    int DiffusionTransformationEnum::run(PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt){
+      
+      jsonParser kwargs;
+      if(!_kwargs.get_if(kwargs, "bspecs")) {
+        std::cerr << "DiffusionTransformationEnum currently has no default and requires a correct JSON with a bspecs tag within it" <<std::endl;
+        std::cerr << "Core dump will occur because cannot find proper input" << std::endl; 
+      }
+      
+      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+      std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
+      
+      auto end = make_prim_periodic_orbits(
+        primclex.prim(), _kwargs["bspecs"], alloy_sites_filter,primclex.crystallography_tol(),std::back_inserter(orbits),primclex.log());
+      // Need a generator
+      /*auto lambda = [&](IntegralCluster clust) {
+      return notstd::make_unique<DiffusionTransformationEnum>(clust);
+      };*/
+      
+      std::vector< PrimPeriodicDiffTransOrbit > diff_trans_orbits;
+      auto end2 = make_prim_periodic_diff_trans_orbits(
+        orbits.begin(),orbits.end(),primclex.crystallography_tol(),std::back_inserter(diff_trans_orbits));
+      
+
+      // use templating? put in Enumerator or no?
+      // insert_unique_canon_difftrans
+      /*int returncode = insert_unique_canon_difftrans(
+                       enumerator_name,
+                       primclex,
+                       orbits.begin(),
+                       end,
+                       lambda,
+                       filter_expr);
+      */
+      
+      PrototypePrinter<Kinetics::DiffusionTransformation> printer;
+      print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), std::cout, printer);
+      
+      return 0;
+    }
 
     // -- Unique -------------------
 
