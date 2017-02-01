@@ -172,10 +172,15 @@ def lib_name(prefix, includename, libname):
   Uses re.match('lib(' + libname + '.*)\.(dylib|a|so).*',string) on all files
   in the prefix/lib directory to get the libname to use. If none found, return None.
   """
-  for p in os.listdir(lib_path(prefix, includename)):
-    m = re.match('lib(' + libname + '.*)\.(dylib|a|so).*',p)
-    if m:
-      return m.group(1)
+  try:
+    for p in os.listdir(lib_path(prefix, includename)):
+      if p is None:
+        continue
+      m = re.match('lib(' + libname + '.*)\.(dylib|a|so).*',p)
+      if m:
+        return m.group(1)
+  except TypeError:
+    pass
   return None
 
 def debug_level():
