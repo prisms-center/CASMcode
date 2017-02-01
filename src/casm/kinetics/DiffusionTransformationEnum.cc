@@ -65,8 +65,17 @@ namespace CASM {
     "  filter: string (optional, default=None)\n"
     "    A query command to use to filter which Diffusion Transformations are kept.          \n"
     "\n"
+    "  required species: JSON settings  "
+    "    Indicate required species to enforce that a given species must be a part of the diffusion \n"
+    "    transformation. The JSON item 'require' should be an array of species names.\n"
+    "    i.e. ''require'': [''Va'',''O''] \n\n"
+    "  excluded species: JSON settings  "
+    "    Indicate excluded species to enforce that a given species must not be a part of the diffusion \n"
+    "    transformation. The JSON item 'exclude' should be an array of species names.\n"
+    "    i.e. ''exclude'': [''Al',''Ti''] \n\n"
     "  Examples:\n"
-    "    To enumerate all transformations up to a certain maximum distance more \n"
+    "  THIS DOCUMENTATION IS HYPOTHETICAL AND SHORTCUTS HAVE NOT BEEN IMPLEMENTED"   
+    "  To enumerate all transformations up to a certain maximum distance more \n"
     "    restricted than that specified in the bspecs entry of the JSON: \n"
     "     casm enum --method DiffusionTransformationEnum --max 6.50\n"
     "\n"
@@ -158,7 +167,36 @@ namespace CASM {
                        lambda,
                        filter_expr);
       */
-      
+      if(_kwargs.get_if(kwargs, "require")) {
+        std::vector<std::string> require;
+        for (auto it = _kwargs["require"].begin(); it!= _kwargs["require"].end();++it){
+          require.push_back(from_json<std::string>(*it));
+        }              
+        for (auto it = diff_trans_orbits.begin(); it != diff_trans_orbits.end(); ++it){
+          auto speciemap = it->prototype().specie_count();
+          for (auto it2 = speciemap.begin(); it2 != speciemap.end();++it2){ 
+            if (std::find(require.begin(),require.end(),it2->first.name)!=require.end() && it2->second==0){
+              diff_trans_orbits.erase(it);
+              --it;
+            }
+          }
+        }
+      }
+      if(_kwargs.get_if(kwargs, "exclude")) {
+        std::vector<std::string> require;
+        for (auto it = _kwargs["exclude"].begin(); it!= _kwargs["exclude"].end();++it){
+          require.push_back(from_json<std::string>(*it));
+        }              
+        for (auto it = diff_trans_orbits.begin(); it != diff_trans_orbits.end(); ++it){
+          auto speciemap = it->prototype().specie_count();
+          for (auto it2 = speciemap.begin(); it2 != speciemap.end();++it2){ 
+            if (std::find(require.begin(),require.end(),it2->first.name)!=require.end() && it2->second!=0){
+              diff_trans_orbits.erase(it);
+              --it;
+            }
+          }
+        }
+      }
       PrototypePrinter<Kinetics::DiffusionTransformation> printer;
       print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), std::cout, printer);
       
