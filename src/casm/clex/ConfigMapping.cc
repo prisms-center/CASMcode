@@ -99,9 +99,9 @@ namespace CASM {
     m_max_volume_change(_max_volume_change),
     m_min_va_frac(0.),
     m_max_va_frac(1.),
-    m_robust_flag(options &robust),
-    m_strict_flag(options &strict),
-    m_rotate_flag(options &rotate),
+    m_robust_flag(options & robust),
+    m_strict_flag(options & strict),
+    m_rotate_flag(options & rotate),
     m_tol(max(1e-9, _tol)) {
     //squeeze lattice_weight into (0,1] if necessary
     m_lattice_weight = max(min(_lattice_weight, 1.0), 1e-9);
@@ -224,15 +224,15 @@ namespace CASM {
           // config is unchanged
           imported_name = hint_ptr->name();
           is_new_config = false;
+          it_canon = hint_ptr->get_supercell().permute_begin();
         }
         else {
-          Configuration canon_relaxed_occ = Configuration(scel, jsonParser(), relaxed_occ).canonical_form();
 
-          Configuration canon_ideal_occ = hint_ptr->canonical_form();
-          //std::cout << "canon_relaxed_occ.occupation() is " << canon_relaxed_occ.occupation() << "\n";
-          //std::cout << "canon_ideal_occ.occupation() is " << canon_ideal_occ.occupation() << "\n";
+          Supercell::permute_const_iterator relaxed_it_canon = Configuration(scel, jsonParser(), relaxed_occ).to_canonical();
+          Supercell::permute_const_iterator ideal_rev_it_canon = hint_ptr->from_canonical();
+          it_canon = ideal_rev_it_canon * relaxed_it_canon;
 
-          if(canon_relaxed_occ.occupation() == canon_ideal_occ.occupation()) {
+          if(relaxed_occ.occupation() == copy_apply(it_canon.inverse(), *hint_ptr).occupation()) {
             // config is unchanged
             imported_name = hint_ptr->name();
             is_new_config = false;
@@ -256,7 +256,9 @@ namespace CASM {
         imported_name = primclex().supercell(import_scel_index).config(import_config_index).name();
       }
     }
+    else {
 
+    }
     // transform deformation tensor to match canonical form and apply operation to cart_op
     ConfigDoF trans_configdof = copy_apply(it_canon, tconfigdof);
     relaxation_properties["best_mapping"]["relaxation_deformation"] = trans_configdof.deformation();

@@ -1206,7 +1206,8 @@ Direct\n\
                 "        (= formation_energy - sum_i(mu_i*comp_i))                  \n" <<
                 "      \"non_zero_eci_correlations\": correlations (per unit cell)  \n" <<
                 "        which have non-zero eci values.                            \n" <<
-                "      \"all_correlations\": correlations (per unit cell)           \n\n" <<
+                "      \"all_correlations\": correlations (per unit cell)           \n" <<
+                "      \"<anything else>\": is interpreted as a 'casm query' query  \n\n" <<
 
                 "  /\"confidence\": (number, range (0.0, 1.0), default 0.95)        \n" <<
                 "    The confidence level used for calculating the precision in the \n" <<
