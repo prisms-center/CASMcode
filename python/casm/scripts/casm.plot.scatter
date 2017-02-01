@@ -1,0 +1,223 @@
+#!/usr/bin/env python
+
+from casm.project import Project, Selection
+import casm.plotting
+import argparse
+import os
+import sys
+import json
+from bokeh.io import curdoc
+from bokeh.client import push_session
+import bokeh.plotting
+import bokeh.models
+
+input_help = "Input file"
+desc_help = "Print extended usage description"
+usage_desc = """
+Scatter plot of CASM query output
+
+Before running you must start the bokeh server:
+- install bokeh with: 'pip install bokeh'
+- start server: 'bokeh serve'
+
+If you have 'casm view' setup, then clicking on a configuration in the plot
+will attempt to use 'casm view' to view that configuration.
+
+You can edit visual attributes in the input JSON. The default
+values will be printed to files "<input_name>.tmp" if not specified.
+
+Input file attributes:
+
+  figure_kwargs: JSON object (optional)
+    Input arguments for bokeh.models.Figure
+  
+  series: JSON array of JSON objects
+    An array of JSON objects, each containing information for one series to be
+    plotted:
+
+    project: str (optional, default=os.getcwd())
+      Path to CASM project to get data from
+    
+    selection: str (optional, default="MASTER")
+      Path to selection to use
+    
+    x: str
+      Query to use for x-values
+    
+    y: str
+      Query to use for y-values
+    
+    legend: str (optional, default=<y>)
+      String to use for legend, default uses 'y' value
+    
+    tooltips: JSON array of str (optional, default=[])
+      Additional properties to query and include in 'tooltips' info that appears
+      when hovering over a data point.
+    
+    tooltips_exlude: JSON array of str (optional, default=[])
+      Properties to exclude from the 'tooltips'.
+    
+    style: JSON object (optional, default=casm.plotting.scatter_series_style(<series index>, {})
+      Visual styling attribute values. Defaults are determined casm.plotting.scatter_series_style.
+      The 'marker' value should be one of the methods of bokeh.models.Figure
+    
+
+Example input file:
+
+{
+  "figure_kwargs": {
+    "plot_height": 400,
+    "plot_width": 800,
+    "tools": "crosshair,pan,reset,resize,box_zoom"
+  },
+  "series": [
+    {
+      "project": null,
+      "selection": "MASTER",
+      "x": "comp(a)",
+      "y": "formation_energy",
+      "tooltips": [
+        "scel_size",
+        "volume_relaxation"
+      ],
+      "legend":"formation_energy"
+    },
+    {
+      "project": null,
+      "selection": "MASTER",
+      "x": "comp(a)",
+      "y": "clex(formation_energy)",
+      "tooltips": [
+        "scel_size",
+        "volume_relaxation"
+      ],
+      "tooltips_exclude": [
+        "project",
+        "selection"
+      ]
+    }
+  ]
+}
+
+'style' example:
+
+{
+  "hover_alpha": 0.7, 
+  "hover_color": "orange", 
+  "selected": {
+    "line_color": "blue", 
+    "line_alpha": 0.0, 
+    "line_width": 0.0, 
+    "color": "blue", 
+    "fill_alpha": 0.5, 
+    "radii": 10
+  }, 
+  "unselected": {
+    "line_color": "gray", 
+    "line_alpha": 0.0, 
+    "line_width": 0.0, 
+    "color": "gray", 
+    "fill_alpha": 0.3, 
+    "radii": 7
+  }, 
+  "marker": "circle"
+}
+
+"""
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description = 'Scatter plot')
+    parser.add_argument('--desc', help=desc_help, default=False, action="store_true")
+    parser.add_argument('input', nargs='?', help=input_help, type=str)
+    
+    
+    # ignore 'mc casm'
+    args = parser.parse_args(sys.argv[1:])
+    
+    if args.desc:
+        print usage_desc
+        sys.exit(1)
+    
+    with open(args.input, 'r') as f:
+        input = json.load(f)
+    
+    figure_kwargs = input.get('figure_kwargs', casm.plotting.default_figure_kwargs)
+    
+    ## Construct a figure
+    fig = bokeh.plotting.Figure(**figure_kwargs)
+    
+    
+    # for each requested series, add data:
+    p = []
+    
+    data = casm.plotting.PlottingData()
+    
+    # loop over all series querying data
+    for i, series in enumerate(input['series']):
+        
+        proj = data.project(series.get('project',os.getcwd()))
+        sel = data.selection(proj.path, series.get('selection','MASTER'))
+        
+        columns = [series['x'], series['y']] + series['tooltips']
+        sel.query(columns) 
+        for col in sel.data.columns:
+            casm.plotting.add_src_data(sel, col, sel.data.loc[:,col])
+            
+        # add project and selection path
+        N = sel.data.shape[0]
+        sel.add_data('project', [sel.proj.path]*N)
+        sel.add_data('selection', [sel.path]*N)
+    
+    # after all series have queried data, generate plots
+    for i, series in enumerate(input['series']):    
+        tooltips = []
+        
+        for col in sel.data.columns:
+            if col in series.get('tooltips_exclude', []):
+                continue
+            if col in casm.plotting.float_dtypes:
+                tooltips.append((col,"@{" + col + "}{1.1111}"))
+            else:
+                tooltips.append((col,"@{" + col + "}"))
+            
+        method_kwargs = series.get('method_kwargs', dict())
+        
+        style = series.get('style', dict())
+        style = casm.plotting.scatter_series_style(i, style)
+        casm.plotting.update_scatter_glyphs(sel, style, str(i))
+        
+        curr = getattr(fig, style['marker'])(
+            series['x'],
+            series['y'],
+            source=sel.src,
+            size='radii.' + str(i),
+            fill_color='color.' + str(i),
+            fill_alpha='fill_alpha.' + str(i), 
+            line_color='line_color.' + str(i),
+            line_width='line_width.' + str(i),
+            line_alpha='line_alpha.' + str(i),
+            hover_alpha=style['hover_alpha'],
+            hover_color=style['hover_color'],
+            legend=series.get('legend', series['y']))
+        
+        if i == 0:
+            fig.xaxis.axis_label = series['x']
+            fig.yaxis.axis_label = series['y']
+        
+        data.tap_action.add_callback(sel, casm.plotting.view_on_tap, [curr])
+        fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[curr]))
+        
+        p.append(curr)
+        
+    # add tools
+    fig.add_tools(data.tap_action.tool())
+    fig.add_tools(bokeh.models.BoxSelectTool(renderers=p))
+    fig.add_tools(bokeh.models.LassoSelectTool(renderers=p))
+    
+    # set up session
+    session = push_session(curdoc())
+    curdoc().add_root(fig)
+    session.show() # open the document in a browser
+    session.loop_until_closed() # run forever
+

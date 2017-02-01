@@ -9,14 +9,7 @@ import json
 from bokeh.io import curdoc
 from bokeh.client import push_session
 
-path_help = "Path to project directory (default uses current directory)"
-selection_help = "Selection of configurations to find hull distance"
-all_help = "If given, plot all configurations (selected and unselected)"
-hull_selection_help = "Selection of configurations used to determine the convex hull"
-comp_help = "Composition axis. Should be 'comp(x)', 'comp_n(X)', or 'atom_frac(X)'."
-nrg_help = "Energy axis. Should be 'formation_energy' or 'formation_energy_per_atom'."
-dft_style_help = "Name of file containing styling values for dft calculations"
-clex_style_help = "Name of file containing styling values for clex calculations"
+input_help = "Input file"
 desc_help = "Print extended usage description"
 usage_desc = """
 Plot the convex hull of calculated formation energies
@@ -37,21 +30,113 @@ will attempt to use 'casm view' to view that configuration.
 You can edit visual attributes using --dft_style and --clex_style. The default
 values will be printed to files "dft_style.json" and "clex_style.json" if not 
 specified.
+
+Input file attributes:
+
+  figure_kwargs: JSON object (optional)
+    Input arguments for bokeh.models.Figure
+  
+  series: JSON array of one JSON object
+    An array with one JSON object:
+
+    project: str (optional, default=os.getcwd())
+      Path to CASM project to get data from
+    
+    selection: str (optional, default="MASTER")
+      Path to selection to use
+    
+    x: str
+      Query to use for x-values. Should be one of 'comp(x)', 'comp_n(X)', or
+      'atom_frac(X)'.
+    
+    y: str
+      Query to use for y-values. Should be one of 'formation_energy' or 
+      'formation_energy_per_atom'.
+    
+    tooltips: JSON array of str (optional, default=[])
+      Additional properties to query and include in 'tooltips' info that appears
+      when hovering over a data point.
+    
+    tooltips_exlude: JSON array of str (optional, default=[])
+      Properties to exclude from the 'tooltips'.
+    
+    dft_style: JSON object (optional, default=casm.plotting.dft_hull_style({})
+      Visual styling attribute values for calculated energies. Defaults are 
+      determined casm.plotting.dft_hull_style. The 'marker' value should be one 
+      of the methods of bokeh.models.Figure
+    
+    clex_style: JSON object (optional, default=casm.plotting.dft_hull_style({})
+      Visual styling attribute values for predicted energies. Defaults are 
+      determined casm.plotting.clex_hull_style. The 'marker' value should be one 
+      of the methods of bokeh.models.Figure
+    
+
+Example input file:
+
+{
+  "figure_kwargs": {
+    "plot_height": 400,
+    "plot_width": 800,
+    "tools": "crosshair,pan,reset,resize,box_zoom"
+  },
+  "series": [
+    {
+      "project": null,
+      "selection": "MASTER",
+      "hull_selection":"MASTER",
+      "x": "comp(a)",
+      "y": "formation_energy",
+      "tooltips": [
+        "scel_size"
+      ],
+      "tooltips_exclude": [
+        "project",
+        "selection"
+      ]
+    }
+  ]
+}
+
+'dft_style' example:
+
+{
+  "hull_line_dash": "", 
+  "hover_alpha": 0.7, 
+  "fill_alpha": 0.5, 
+  "selected": {
+    "color": "red", 
+    "radii": 10
+  }, 
+  "hull_line_width": 1.0, 
+  "on_hull": {
+    "line_color": "red", 
+    "line_width": 2.0, 
+    "line_alpha": 0.8
+  }, 
+  "marker": "circle", 
+  "hover_color": "orange", 
+  "unselected": {
+    "color": "gray", 
+    "radii": 7
+  }, 
+  "off_hull": {
+    "line_color": "blue", 
+    "line_width": 0.0, 
+    "line_alpha": 0.0
+  }
+}
+
+'clex_style' has one additional property: 
+  'clex_of_dft_hull_line_dash': "4 4"
+
 """
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description = 'Plot convex hull')
     parser.add_argument('--desc', help=desc_help, default=False, action="store_true")
-    parser.add_argument('--path', help=path_help, type=str, default=os.getcwd())
-    parser.add_argument('--selection', help=selection_help, default="MASTER")
-    parser.add_argument('--hull_selection', help=hull_selection_help, default="MASTER")
-    parser.add_argument('--all', help=all_help, default=False, action="store_true")
-    parser.add_argument('--x', help=comp_help, type=str, default="comp(a)")
-    parser.add_argument('--y', help=nrg_help, type=str, default="formation_energy")
-    parser.add_argument('--dft_style', help=dft_style_help, type=str, default="dft_style.json")
-    parser.add_argument('--clex_style', help=dft_style_help, type=str, default="clex_style.json")
-
+    parser.add_argument('input', help=input_help, type=str)
+    
     # ignore 'mc casm'
     args = parser.parse_args(sys.argv[1:])
     
@@ -59,40 +144,31 @@ if __name__ == "__main__":
         print usage_desc
         sys.exit(1)
     
-    print "path:", args.path
-    print "selection:", args.selection
-    print "hull_selection:", args.hull_selection
+    with open(args.input, 'r') as f:
+        input = json.load(f)
     
-    proj = Project(args.path)
-    prim = proj.prim
-    if prim.n_independent_compositions != 1:
-        print "error: currently plot.hull only works for binary alloys"
-        print "in project:", proj.path
-        print "n_independent_compositions:", prim.n_independent_compositions
-        sys.exit(1)
+    data = casm.plotting.PlottingData()
     
-    selection = Selection(proj, args.selection, all=args.all)
-    hull_selection = Selection(proj, args.hull_selection)
+    for i, series in enumerate(input['series']):
     
-    if os.path.exists(args.dft_style):
-        with open(args.dft_style, 'r') as f:
-            dft_style = json.load(f)
-    else:
-        dft_style = casm.plotting.dft_style
-        with open(args.dft_style, 'w') as f:
-            json.dump(dft_style, f, indent=2, sort_keys=True)
-    
-    if os.path.exists(args.clex_style):
-        with open(args.clex_style, 'r') as f:
-            clex_style = json.load(f)
-    else:
-        clex_style = casm.plotting.clex_style
-        with open(args.clex_style, 'w') as f:
-            json.dump(clex_style, f, indent=2, sort_keys=True)
-    
-    
-    hullplot = casm.plotting.ConvexHullPlot(selection, hull_selection, x=args.x,
-        y=args.y, dft_style=dft_style, clex_style=clex_style)
+        proj = data.project(series.get('project',os.getcwd()))
+        
+        prim = proj.prim
+        if prim.n_independent_compositions != 1:
+            print "error: currently plot.hull only works for binary alloys"
+            print "in project:", proj.path
+            print "n_independent_compositions:", prim.n_independent_compositions
+            sys.exit(1)
+        
+        selection = data.selection(proj.path, series.get('selection','MASTER'), kwargs={"all":series.get('all', True)})
+        hull_selection = data.selection(proj.path, series.get('hull_selection','MASTER'))
+        
+        dft_style = casm.plotting.dft_hull_style(series.get('dft_style', dict()))
+        clex_style = casm.plotting.clex_hull_style(series.get('clex_style', dict()))
+        
+        hullplot = casm.plotting.ConvexHullPlot(selection, hull_selection, x=series['x'],
+            y=series['y'], dft_style=dft_style, clex_style=clex_style, data=data,
+            tooltips=series.get('tooltips',[]), tooltips_exclude=series.get('tooltips_exclude',[]))
     
     # set up session
     session = push_session(curdoc())

@@ -10,11 +10,16 @@ import casm.learn
 import json
 import pickle
 import re
+import copy
 
 import bokeh.client
 import bokeh.io
 
 from bokeh.plotting import hplot, vplot
+
+int_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
+float_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
+numerics = int_dtypes + float_dtypes
 
 class Session(object):
   def __init__(self, doc=None):
@@ -128,14 +133,55 @@ def view_on_tap(sel, attrname, old, new):
     sel.proj.command(args=args)
 
 
-class ConfigurationTapAction(object):
+class PlottingData(object):
+    def __init__(self):
+        self.data_ = dict()
+        self.tap_action = TapAction(self)
+    
+    def add_project(self, proj_list):
+        for proj in proj_list:
+            if proj.path not in self.data_:
+                self.data_[proj.path] = {'project':proj, 'selections':{}}
+            else:
+                self.data_[proj.path]['project'] = proj
+    
+    def add_selection(self, sel_list):
+        for sel in sel_list:
+            if sel.proj.path not in self.data_:
+                self.data_[sel.proj.path] = {'project':sel.proj, 'selections':{sel.path:sel}}
+            else:
+                self.data_[sel.proj.path]['selections'][sel.path] = sel
+        
+    def project(self, proj_path=None, kwargs=dict()):
+        if proj_path is None:
+            proj_path = os.getcwd()
+        if proj_path not in self.data_:
+            proj = casm.project.Project(proj_path, **kwargs)
+            self.add_project([proj])
+        return self.data_[proj_path]['project']
+    
+    def selection(self, proj_path=None, sel_path="MASTER", kwargs=dict()):
+        if proj_path is None:
+            proj_path = os.getcwd()
+        if sel_path is None:
+            sel_path = "MASTER"
+        if sel_path not in self.data_[proj_path]['selections']:
+            sel = casm.project.Selection(self.project(proj_path), sel_path, **kwargs)
+            self.add_selection([sel])
+        return self.data_[proj_path]['selections'][sel_path]
+        
+        
+        
+    
+
+class TapAction(object):
   """
   Enable execution of a python function when a glyph is 'tapped' in a bokeh plot.
   
   Example:
     p = ... a Bokeh plot
     circles = p.circ(... A set of circles) 
-    my_tap_action = ConfigurationTapAction(sel)
+    my_tap_action = TapAction(sel)
     def f(sel, attrname, old, new):
       if len(sel.src.selected['1d']['indices']) == 1:
         # the index of the tapped configuration:
@@ -145,126 +191,238 @@ class ConfigurationTapAction(object):
       
     # call f when a circle is tapped
     p.add_tools(my_tap_action.tool(f, [circles]))
+  
+  Attributes:
+  
+      data: PlottingData instance
+          Use to store associated Project and Selection
+      
+      py_callback: {<sel_name>:<Python function>}
+          Dict of callback functions with signature: f(Selection, attrname, old, new).
+          Set the callback function using the 'tool' method. See 'view_on_tap'
+          for an example.
 
   """
   
-  def __init__(self, sel):
-    self.tap_indicator_src = bokeh.models.ColumnDataSource(data={"x":[0]})
+  def __init__(self, data):
+    """
+    Arguments:
+    
+        data: PlottingData instance
+    """
+    self.tap_indicator_src = bokeh.models.ColumnDataSource(data={"x":[0], "project":['None'], "selection":['None']})
     self.js_callback = bokeh.models.CustomJS(args={'src':self.tap_indicator_src}, code="""
       var data = src.get('data');
       data['x'][0] = data['x'][0] + 1;
+      data['project'][0] = cb_obj.data['project'][0];
+      data['selection'][0] = cb_obj.data['selection'][0];
+      console.log(cb_obj); // Logs output to dev tools console.
+      // alert(str); // Displays output using window.alert()
       src.set('data', data);
       """)
-    self.sel = sel
-    self.py_callback = None
+    self.data = data
+    self.py_callback = dict()
+    self.renderers = []
   
   def __call__(self, attrname, old, new):
-    self.py_callback(self.sel, attrname, old, new)
+    proj_path = new['project'][0]
+    sel_path = new['selection'][0]
+    sel = self.data.selection(proj_path, sel_path)
+    self.py_callback[sel_path](sel, attrname, old, new)
   
-  def tool(self, callback=None, renderers=None):
-    self.py_callback = callback
+  def add_callback(self, sel, callback=None, renderers=None):
+    self.py_callback[sel.path] = callback
+    self.renderers += renderers
+  
+  def tool(self):
     self.tap_indicator_src.on_change('data', self)
-    return bokeh.models.TapTool(callback=self.js_callback, renderers=renderers)
+    return bokeh.models.TapTool(callback=self.js_callback, renderers=self.renderers)
 
 
-dft_style = {
-  
-  'marker': 'circle',
-  
-  'selected_color': "blue",
-  'selected_radii': 10,
-  'unselected_color': "green",
-  'unselected_radii': 7,
-  'fill_alpha': 0.5,
-  
-  'cutoff_color': "red",
-  'cutoff_line_width': 1,
-  'cutoff_alpha': 1.0,
+# convex hull plot
 
-  'off_hull_line_color': "blue",
-  'on_hull_line_color': "#FF4105",
-  'off_hull_line_width': 0.0,
-  'on_hull_line_width': 2.0,
-  'on_hull_line_alpha': 0.8,
-  'off_hull_line_alpha': 0.0,
-  
-  'hull_line_width': 1.0,
-  'hull_line_dash': "",
-
-  'hover_color': "orange",
-  'hover_alpha': 0.7
+default_dft_hull_style = {
+  "marker": "circle",
+  "hover_color": "orange",
+  "hover_alpha": 0.7,
+  "fill_alpha": 0.5,
+  "selected": {
+    "color": "red",
+    "radii": 10
+  },
+  "unselected": {
+    "color": "gray",
+    "radii": 7
+  },
+  "on_hull": {
+    "line_color": "red",
+    "line_width": 2.0,
+    "line_alpha": 0.8
+  },
+  "off_hull": {
+    "line_color": "blue",
+    "line_width": 0.0,
+    "line_alpha": 0.0
+  },
+  "hull_line_width": 1.0,
+  "hull_line_dash": ""
 }
 
-clex_style = {
-  
-  'marker': 'x',
-  
-  'selected_color': "#05ff58",
-  'selected_radii': 10,
-  'unselected_color': "blue",
-  'unselected_radii': 7,
-  'fill_alpha': 0.5,
-  
-  'cutoff_color': "red",
-  'cutoff_line_width': 1,
-  'cutoff_alpha': 1.0,
-
-  'off_hull_line_color': "#05ff58",
-  'on_hull_line_color': "#05ff58",
-  'off_hull_line_width': 2.0,
-  'on_hull_line_width': 2.0,
-  'on_hull_line_alpha': 1.0,
-  'off_hull_line_alpha': 1.0,
-  
-  'hull_line_width': 1.0,
-  'hull_line_dash': "",
-  'clex_of_dft_hull_line_dash': "4 4",
-
-  'hover_color': "orange",
-  'hover_alpha': 0.7
+default_clex_hull_style = {
+  "marker": "x",
+  "hover_color": "orange",
+  "hover_alpha": 0.7,
+  "fill_alpha": 0.5,
+  "selected": {
+    "color": "blue",
+    "radii": 10
+  },
+  "unselected": {
+    "color": "gray",
+    "radii": 7
+  },
+  "on_hull": {
+    "line_color": "blue",
+    "line_width": 2.0,
+    "line_alpha": 0.8
+  },
+  "off_hull": {
+    "line_color": "blue",
+    "line_width": 1.5,
+    "line_alpha": 0.5
+  },
+  "hull_line_width": 1.0,
+  "hull_line_dash": "",
+  "clex_of_dft_hull_line_dash": "4 4"
 }
 
-def update_dft_glyphs(sel, selected=None):
+def _hull_style(input, default):
+    for val in ['marker', 'hover_color', 'hover_alpha', 'selected',
+        'hull_line_width', 'hull_line_dash', 'fill_alpha',
+        'clex_of_dft_hull_line_dash']:
+        if val in default and val not in input:
+            input[val] = default[val]
+    for tmp in ['selected', 'unselected']:
+        if tmp not in input:
+            input[tmp] = dict()
+        for val in ['color', 'radii']:
+            if val not in input[tmp]:
+                input[tmp][val] = default[tmp][val]
+    for tmp in ['on_hull', 'off_hull']:
+        if tmp not in input:
+            input[tmp] = dict()
+        for val in ['line_color', 'line_width', 'line_alpha']:
+            if val not in input[tmp]:
+                input[tmp][val] = default[tmp][val]
+    return input
+
+def dft_hull_style(input):
+    return _hull_style(input, default_dft_hull_style)
+
+def clex_hull_style(input):
+    return _hull_style(input, default_clex_hull_style)
+
+
+rank_select_cutoff_style = {
+  "color": "red",
+  "line_width": 1,
+  "alpha": 1.0
+}
+
+default_scatter_style = {
+  "marker": "circle",
+  "hover_color": "orange",
+  "hover_alpha": 0.7,
+  "selected": {
+    "color": "blue",
+    "radii": 10,
+    "line_color": "blue",
+    "line_width": 0.0,
+    "line_alpha": 0.0,
+    "fill_alpha": 0.5
+  },
+  "unselected": {
+    "color": "green",
+    "radii": 7,
+    "line_color": "gray",
+    "line_width": 0.0,
+    "line_alpha": 0.0,
+    "fill_alpha": 0.3
+  }
+}
+
+default_figure_kwargs = {
+    "plot_height": 400,
+    "plot_width": 800,
+    "tools": "crosshair,pan,reset,resize,box_zoom"
+}
+
+
+def scatter_series_style(index, input):
+  selected_color = ["blue", "red", "green", "black", "cyan", "magenta", "yellow", "orange"]
+  unselected_color = ["gray", "gray", "gray", "gray", "gray", "gray", "gray", "gray"]
+  marker = ["circle", "triangle", "square", "diamond", "x", "cross"]
+  
+  for val in ['hover_color', 'hover_alpha']:
+      if val not in input:
+          input[val] = default_scatter_style[val]
+  
+  if 'marker' not in input:
+      input['marker'] = marker[index % 6]
+  
+  if 'selected' not in input:
+      input['selected'] = copy.deepcopy(default_scatter_style['selected'])
+      input['selected']['color'] = selected_color[index % 8]
+      input['selected']['line_color'] = selected_color[index % 8]
+  else:
+      for key in ['radii', 'line_width', 'line_alpha', 'fill_alpha']:
+          if key not in input['selected']:
+              input['selected'][key] = default_scatter_style['selected'][key]
+      if 'color' not in input['selected']:
+          input['selected']['color'] = selected_color[index % 8]
+      if 'line_color' not in input['selected']:
+          input['selected']['line_color'] = selected_color[index % 8]
+  
+  if 'unselected' not in input:
+      input['unselected'] = copy.deepcopy(default_scatter_style['unselected'])
+      input['unselected']['color'] = unselected_color[index % 8]
+      input['unselected']['line_color'] = unselected_color[index % 8]
+  else:
+      for key in ['radii', 'line_width', 'line_alpha', 'fill_alpha']:
+          if key not in input['unselected']:
+              input['unselected'][key] = default_scatter_style['unselected'][key]
+      if 'color' not in input['unselected']:
+          input['unselected']['color'] = unselected_color[index % 8]
+      if 'line_color' not in input['unselected']:
+          input['unselected']['line_color'] = unselected_color[index % 8]
+  
+  return input
+
+
+def update_dft_hull_glyphs(sel, style, selected=None):
   """
   Use the selected and on_hull iterables to update glyph styles based on sel.dft_style.
   """
-  
   if selected is None:
     selected = sel.data['selected']
   
-  style = sel.dft_style
+  ## clex points:
   
-  ## dft points:
-  # colors to plot selected (True), and unselected (False) configurations
-  colormap = dict({True:style['selected_color'], False:style['unselected_color']})
-  
-  # radii to plot selected (True), and unselected (False) configurations
-  radiimap = dict({True:style['selected_radii'], False:style['unselected_radii']})
-  
-  sel.src.data['color'] = map(lambda x: colormap[x], selected)
-  sel.src.data['radii'] = map(lambda x: radiimap[x], selected)
-  
-  
-  ## on dft hull:
-  # colors to plot on_hull (True), and not on_hull (False) configurations
-  linecolormap = dict({True:style['on_hull_line_color'], False:style['off_hull_line_color']})
-  
-  # width to plot on_hull (True), and not on_hull (False) configurations
-  linewidthmap = dict({True:style['on_hull_line_width'], False:style['off_hull_line_width']})
-  
-  # width to plot on_hull (True), and not on_hull (False) configurations
-  linealphamap = dict({True:style['on_hull_line_alpha'], False:style['off_hull_line_alpha']})
-  
-  on_hull = None
+  for value in ['color', 'radii']:
+    cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
+    sel.src.data[value] = map(lambda x: cmap[x], selected)
+
+  on_dft_hull = None
   if 'on_dft_hull' in sel.data.columns:
-    on_hull = sel.data['on_dft_hull']
+    on_dft_hull = sel.data['on_dft_hull']
   
-  if on_hull is not None:
-    sel.src.data['line_color'] = map(lambda x: linecolormap[x], on_hull)
-    sel.src.data['line_width'] = map(lambda x: linewidthmap[x], on_hull)
-    sel.src.data['line_alpha'] = map(lambda x: linealphamap[x], on_hull)
+  if on_dft_hull is not None:
+    for value in ['line_color', 'line_width', 'line_alpha']:
+      cmap = dict({True:style['on_hull'][value], False:style['off_hull'][value]})
+      sel.src.data[value] = map(lambda x: cmap[x], on_dft_hull)
+
   
-def update_clex_glyphs(sel, selected=None):
+def update_clex_hull_glyphs(sel, style, selected=None):
   """
   Use the selected and on_hull iterables to update glyph styles based on sel.clex_style.
   """
@@ -274,39 +432,30 @@ def update_clex_glyphs(sel, selected=None):
   
   ## clex points:
   
-  style = sel.clex_style
-  
-  # colors to plot selected (True), and unselected (False) configurations
-  colormap = dict({True:style['selected_color'], False:style['unselected_color']})
-  
-  # radii to plot selected (True), and unselected (False) configurations
-  radiimap = dict({True:style['selected_radii'], False:style['unselected_radii']})
-  
-  sel.src.data['clex_color'] = map(lambda x: colormap[x], selected)
-  sel.src.data['clex_radii'] = map(lambda x: radiimap[x], selected)
-  
-  
-  ## on clex hull:
-  # colors to plot on_hull (True), and not on_hull (False) configurations
-  linecolormap = dict({True:style['on_hull_line_color'], False:style['off_hull_line_color']})
-  
-  # width to plot on_hull (True), and not on_hull (False) configurations
-  linewidthmap = dict({True:style['on_hull_line_width'], False:style['off_hull_line_width']})
-  
-  # width to plot on_hull (True), and not on_hull (False) configurations
-  linealphamap = dict({True:style['on_hull_line_alpha'], False:style['off_hull_line_alpha']})
-  
+  for value in ['color', 'radii']:
+    cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
+    sel.src.data['clex_' + value] = map(lambda x: cmap[x], selected)
+
   on_clex_hull = None
   if 'on_clex_hull' in sel.data.columns:
     on_clex_hull = sel.data['on_clex_hull']
   
   if on_clex_hull is not None:
-    sel.src.data['clex_line_color'] = map(lambda x: linecolormap[x], on_clex_hull)
-    sel.src.data['clex_line_width'] = map(lambda x: linewidthmap[x], on_clex_hull)
-    sel.src.data['clex_line_alpha'] = map(lambda x: linealphamap[x], on_clex_hull)
+    for value in ['line_color', 'line_width', 'line_alpha']:
+      cmap = dict({True:style['on_hull'][value], False:style['off_hull'][value]})
+      sel.src.data['clex_' + value] = map(lambda x: cmap[x], on_clex_hull)
 
-def update_glyphs(sel, selected=None):
-  update_dft_glyphs(sel, selected)
+
+def update_scatter_glyphs(sel, style, id, selected=None):
+  
+  if selected is None:
+    selected = sel.data['selected']
+  
+  ## clex points:
+  
+  for value in ['color', 'radii', 'line_color', 'line_width', 'line_alpha', 'fill_alpha']:
+    cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
+    sel.src.data[value + '.' + id] = map(lambda x: cmap[x], selected) 
 
 
 class ConvexHullPlot(object):
@@ -317,10 +466,12 @@ class ConvexHullPlot(object):
     sel: a CASM Selection used to make the figure
     x: the value of the x-axis, 'comp(a)' by default
     y: the value of the y-axis, 'formation_energy' by default
+    data: PlottingData instance
   """
   
   def __init__(self, sel, hull_sel=None, hull_tol=1e-8, x='comp(a)',
-      y='formation_energy', dft_style=dft_style, clex_style=clex_style):
+      y='formation_energy', dft_style=dft_hull_style, clex_style=clex_hull_style,
+      fig=None, data=None, tooltips=[], tooltips_exclude=[]):
     """
     Arguments:
       sel: A CASM Selection
@@ -328,6 +479,8 @@ class ConvexHullPlot(object):
       y: (str) column name to use as y axis. Default='formation_energy'. Must be 'formation_energy' or 'formation_energy_per_atom'.
       hull_sel: (Selection or None) a CASM Selection, to use for the hull. Default uses sel.
       hull_tol: (number, default 1e-8) tolerance to decide if configuration is on the hull
+      fig: bokeh.plotting.Figure
+      data: PlottingData object
     """
     self.sel = sel
     if hull_sel is None:
@@ -335,6 +488,11 @@ class ConvexHullPlot(object):
     self.hull_sel = hull_sel
     self.hull_sel_calculated = casm.project.Selection(sel.proj, hull_sel.path + ".calculated")
     self.dft_hull_sel = casm.project.Selection(sel.proj, hull_sel.path + ".dft_hull")
+    
+    if data is None:
+        self.data = PlottingData()
+    self.data = data
+    self.data.add_selection([self.sel, self.hull_sel, self.hull_sel_calculated, self.dft_hull_sel])
     
     self.is_comp = False
     self.is_comp_n = False
@@ -364,8 +522,15 @@ class ConvexHullPlot(object):
     
     self.hull_tol = hull_tol
     
-    self.sel.dft_style = dft_style
-    self.sel.clex_style = clex_style
+    self.dft_style = dft_style
+    self.clex_style = clex_style
+    
+    self.tooltips = tooltips
+    self.tooltips_exclude = tooltips_exclude
+    
+    if fig is None:
+        fig = bokeh.plotting.Figure(**default_figure_kwargs)
+    self.p_ = fig
     
     # TOOLS in bokeh plot
     self.tools = "crosshair,pan,reset,resize,box_zoom"
@@ -373,11 +538,11 @@ class ConvexHullPlot(object):
     #add data to sel.src if necessary
     self._query()
     
-    # will store the plot object in self.p_
+    # will store the Figure object in self.fig
     self._plot()
     
     # store plot in layout
-    self.layout = self.p
+    self.layout = self.fig
     
     # callbacks
     #self.sel.selection_callbacks.append(self.update)
@@ -385,45 +550,45 @@ class ConvexHullPlot(object):
     
   
   @property
-  def p(self):
+  def fig(self):
     return self.p_
   
   def _plot(self):
     
-    update_dft_glyphs(self.sel)
-    update_clex_glyphs(self.sel)
+    update_dft_hull_glyphs(self.sel, self.dft_style)
+    update_clex_hull_glyphs(self.sel, self.clex_style)
     
     # plot formation energy vs comp, with convex hull states
     
     # dft
-    style = self.sel.dft_style
-    self.p_ = bokeh.plotting.Figure(plot_width=800, plot_height=400, tools=self.tools)
-    cr = getattr(self.p_, style['marker'])(self.x, self.y, source=self.sel.src, 
+    style = self.dft_style
+    
+    self.r_dft = getattr(self.p_, style['marker'])(self.x, self.y, source=self.sel.src, 
       size='radii', fill_color='color', fill_alpha=style['fill_alpha'], 
       line_color='line_color', line_width='line_width', line_alpha='line_alpha',
       hover_alpha=style['hover_alpha'], hover_color=style['hover_color'],
       legend="dft")
-    self.hull_line = self.p_.line(self.x, self.y, source=self.calc_hull_src, 
-      line_color=style['on_hull_line_color'], line_width=style['hull_line_width'],
+    self.r_dft_hull_line = self.p_.line(self.x, self.y, source=self.calc_hull_src, 
+      line_color=style['on_hull']['line_color'], line_width=style['hull_line_width'],
       line_dash=style['hull_line_dash'],
       legend="dft")
     
     # clex
-    style = self.sel.clex_style
-    cr_clex = getattr(self.p_, style['marker'])(self.x, self.y_clex, source=self.sel.src, 
+    style = self.clex_style
+    self.r_clex = getattr(self.p_, style['marker'])(self.x, self.y_clex, source=self.sel.src, 
       size='clex_radii', fill_color='clex_color', fill_alpha=style['fill_alpha'], 
       line_color='clex_line_color', line_width='clex_line_width', line_alpha='clex_line_alpha',
       hover_alpha=style['hover_alpha'], hover_color=style['hover_color'],
       legend="clex")
-    self.clex_hull_line = self.p_.line(self.x, self.y_clex, source=self.clex_hull_src, 
-      line_color=style['on_hull_line_color'], line_width=style['hull_line_width'],
+    self.r_clex_hull_line = self.p_.line(self.x, self.y_clex, source=self.clex_hull_src, 
+      line_color=style['on_hull']['line_color'], line_width=style['hull_line_width'],
       line_dash=style['hull_line_dash'],
       legend="clex")
     
     # clex of dft hull
-    style = self.sel.clex_style
-    self.clex_of_dft_hull_line = self.p_.line(self.x, self.y_clex, source=self.clex_of_dft_hull_src, 
-      line_color=style['on_hull_line_color'], line_width=style['hull_line_width'],
+    style = self.clex_style
+    self.r_clex_of_dft_hull_line = self.p_.line(self.x, self.y_clex, source=self.clex_of_dft_hull_src, 
+      line_color=style['on_hull']['line_color'], line_width=style['hull_line_width'],
       line_dash=style['clex_of_dft_hull_line_dash'],
       legend="clex_of_dft_hull")
 
@@ -449,6 +614,14 @@ class ConvexHullPlot(object):
       tooltips.append(("clex_hull_dist", "@{" + clex_hull_dist(self.hull_sel.path) + "}{1.1111}"))
       tooltips.append(("clex_of_dft_hull_dist", "@{" + clex_hull_dist(self.dft_hull_sel.path) + "}{1.1111}"))
     
+    for col in self.tooltips + ['project', 'selection']:
+        if col in self.tooltips_exclude:
+            continue
+        if col in float_dtypes:
+            tooltips.append((col,"@{" + col + "}{1.1111}"))
+        else:
+            tooltips.append((col,"@{" + col + "}"))
+    
     # tooltips for composition
     if self.is_comp:
       for key in self.sel.src.data.keys():
@@ -463,12 +636,8 @@ class ConvexHullPlot(object):
         if re.match('\s*atom_frac\(.*\)\s*', key):
           tooltips.append((key, "@{" + key + "}{1.1111}"))
     
-    self.tap_action = ConfigurationTapAction(self.sel)
-
-    self.p_.add_tools(self.tap_action.tool(view_on_tap, [cr, cr_clex]))
-    self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[cr, cr_clex]))
-    self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[cr, cr_clex]))
-    self.p_.add_tools(bokeh.models.LassoSelectTool(renderers=[cr, cr_clex]))
+    self.data.tap_action.add_callback(self.sel, view_on_tap, [self.r_dft, self.r_clex])
+    self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r_dft, self.r_clex]))
     
   
   def _set_on_hull(self, sel, on_hull_label, hull_dist_label):
@@ -476,10 +645,10 @@ class ConvexHullPlot(object):
     Use the 'hull_dist_label' column, and self.hull_tol to create the boolean
     column 'on_hull_label' indicating which configurations are on the hull.
     """
-    sel.data.loc[_unselected(sel),on_hull_label] = False
+    sel.data.loc[_unselected(sel), on_hull_label] = False
     on_hull = map(lambda x: abs(x) < self.hull_tol, sel.data.loc[_selected(sel), hull_dist_label])
-    sel.data.loc[_selected(sel),on_hull_label] = on_hull
-  
+    sel.data.loc[_selected(sel), on_hull_label] = on_hull
+
   
   def _query(self):
     
@@ -501,8 +670,14 @@ class ConvexHullPlot(object):
       hull_dist(self.hull_sel_calculated.path),
       hull_dist_per_atom(self.hull_sel_calculated.path),
       clex_hull_dist(self.hull_sel.path),
-      clex_hull_dist_per_atom(self.hull_sel.path)],
+      clex_hull_dist_per_atom(self.hull_sel.path)] + self.tooltips,
       force=force)
+    
+    # add project and selection path
+    N = self.sel.data.shape[0]
+    self.sel.add_data('project', [self.sel.proj.path]*N)
+    self.sel.add_data('selection', [self.sel.path]*N)
+    
     
     # convert to numeric (NaN) for configurations without DFT calculations 
     self.sel.data.loc[:,hull_dist(self.hull_sel_calculated.path)] = \
@@ -703,7 +878,7 @@ class Scatter(object):
         (self.x,"@{" + self.x + "}{1.1111}"),
         (self.y,"@{" + self.y + "}{1.1111}")
     ]
-    self.tap_action = ConfigurationTapAction(self.sel)
+    self.tap_action = TapAction(self.sel)
     self.p_.add_tools(self.tap_action.tool(view_on_tap, [cr]))
     self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[cr]))
     self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[cr]))
