@@ -224,7 +224,7 @@ namespace CASM {
           // config is unchanged
           imported_name = hint_ptr->name();
           is_new_config = false;
-          it_canon = hint_ptr->get_supercell().permute_begin();
+          it_canon = hint_ptr->supercell().permute_begin();
         }
         else {
 
