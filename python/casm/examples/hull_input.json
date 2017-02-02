@@ -13,10 +13,6 @@
       "y": "formation_energy",
       "tooltips": [
         "scel_size"
-      ],
-      "tooltips_exclude": [
-        "project",
-        "selection"
       ]
     }
   ]

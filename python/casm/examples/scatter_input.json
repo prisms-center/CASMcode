@@ -24,10 +24,6 @@
       "tooltips": [
         "scel_size",
         "volume_relaxation"
-      ],
-      "tooltips_exclude": [
-        "project",
-        "selection"
       ]
     }
   ]
