@@ -21,6 +21,10 @@ int_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
 float_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
 numerics = int_dtypes + float_dtypes
 
+class Generic(object):
+    def __init__(self):
+        pass
+
 class Session(object):
   def __init__(self, doc=None):
     if doc is None:
@@ -161,14 +165,13 @@ class PlottingData(object):
         return self.data_[proj_path]['project']
     
     def selection(self, proj_path=None, sel_path="MASTER", kwargs=dict()):
-        if proj_path is None:
-            proj_path = os.getcwd()
+        proj = self.project(proj_path)
         if sel_path is None:
             sel_path = "MASTER"
-        if sel_path not in self.data_[proj_path]['selections']:
-            sel = casm.project.Selection(self.project(proj_path), sel_path, **kwargs)
+        if sel_path not in self.data_[proj.path]['selections']:
+            sel = casm.project.Selection(self.project(proj.path), sel_path, **kwargs)
             self.add_selection([sel])
-        return self.data_[proj_path]['selections'][sel_path]
+        return self.data_[proj.path]['selections'][sel_path]
         
         
         
@@ -461,38 +464,68 @@ def update_scatter_glyphs(sel, style, id, selected=None):
 class ConvexHullPlot(object):
   """
   Attributes:
-    p: a bokeh Figure containing formation energies and the convex hull
-    layout: a bokeh layout element holding p
-    sel: a CASM Selection used to make the figure
-    x: the value of the x-axis, 'comp(a)' by default
-    y: the value of the y-axis, 'formation_energy' by default
-    data: PlottingData instance
+      data
+      sel
+      hull_sel
+      hull_sel_calculated
+      dft_hull_sel
+      is_comp, is_comp_n, is_atom_frac
+      x, x_all, y, y_clex
+      hull_tol
+      dft_style, clex_style
+      tooltips, tooltips_exclude
+      r_dft, r_dft_hull_line
+      r_clex, r_clex_hull_line, r_clex_of_dft_hull_line
+      renderers
+      sorted_dft_hull
+      sorted_clex_hull
+      sorted_clex_of_dft_hull
   """
   
-  def __init__(self, sel, hull_sel=None, hull_tol=1e-8, x='comp(a)',
-      y='formation_energy', dft_style=dft_hull_style, clex_style=clex_hull_style,
-      fig=None, data=None, tooltips=[], tooltips_exclude=[]):
+  def __init__(self, data=None, project=None, selection="MASTER", hull_selection=None, 
+    x='comp(a)', y='formation_energy', tooltips=[], tooltips_exclude=[],
+    dft_style={}, clex_style={}, hull_tol=1e-8, index=0, type=None):
     """
     Arguments:
+      data: PlottingData object
+      project: path to CASM project
+      selection: path for CASM Selection
+      hull_selection: path for CASM Selection to use for the hull. Default uses selection.
       sel: A CASM Selection
       x: (str) column name to use as x axis. Default='comp(a)'. Must be 'comp(x)', 'comp_n(X)', or 'atom_frac(X)'.
       y: (str) column name to use as y axis. Default='formation_energy'. Must be 'formation_energy' or 'formation_energy_per_atom'.
-      hull_sel: (Selection or None) a CASM Selection, to use for the hull. Default uses sel.
+      tooltips:
+      tooltips_exclude:
+      dft_style:
+      clex_style:
       hull_tol: (number, default 1e-8) tolerance to decide if configuration is on the hull
-      fig: bokeh.plotting.Figure
-      data: PlottingData object
     """
-    self.sel = sel
-    if hull_sel is None:
-      hull_sel = sel
-    self.hull_sel = hull_sel
-    self.hull_sel_calculated = casm.project.Selection(sel.proj, hull_sel.path + ".calculated")
-    self.dft_hull_sel = casm.project.Selection(sel.proj, hull_sel.path + ".dft_hull")
-    
     if data is None:
         self.data = PlottingData()
     self.data = data
-    self.data.add_selection([self.sel, self.hull_sel, self.hull_sel_calculated, self.dft_hull_sel])
+    
+    if project is None:
+        project = os.getcwd()
+    proj = self.data.project(project)
+    
+    prim = proj.prim
+    if prim.n_independent_compositions != 1:
+        print "in project:", proj.path
+        print "n_independent_compositions:", prim.n_independent_compositions
+        raise Exception("Currently ConvexHullPlot only works for binary alloys")
+    
+    if selection is None:
+      selection = "MASTER"
+    self.sel = self.data.selection(project, selection)
+    
+    if hull_selection is None:
+      hull_selection = selection
+    self.hull_sel = self.data.selection(project, hull_selection)
+    
+    self.hull_sel_calculated = casm.project.Selection(self.sel.proj, self.hull_sel.path + ".calculated")
+    self.dft_hull_sel = casm.project.Selection(self.sel.proj, self.hull_sel.path + ".dft_hull")
+    
+    self.data.add_selection([self.hull_sel_calculated, self.dft_hull_sel])
     
     self.is_comp = False
     self.is_comp_n = False
@@ -522,78 +555,62 @@ class ConvexHullPlot(object):
     
     self.hull_tol = hull_tol
     
-    self.dft_style = dft_style
-    self.clex_style = clex_style
+    self.dft_style = casm.plotting.dft_hull_style(copy.deepcopy(dft_style))
+    self.clex_style = casm.plotting.clex_hull_style(copy.deepcopy(clex_style))
     
     self.tooltips = tooltips
     self.tooltips_exclude = tooltips_exclude
     
+  
+  def plot(self, fig=None, tap_action=None):
+    
     if fig is None:
-        fig = bokeh.plotting.Figure(**default_figure_kwargs)
-    self.p_ = fig
-    
-    # TOOLS in bokeh plot
-    self.tools = "crosshair,pan,reset,resize,box_zoom"
-    
-    #add data to sel.src if necessary
-    self._query()
-    
-    # will store the Figure object in self.fig
-    self._plot()
-    
-    # store plot in layout
-    self.layout = self.fig
-    
-    # callbacks
-    #self.sel.selection_callbacks.append(self.update)
-    
-    
-  
-  @property
-  def fig(self):
-    return self.p_
-  
-  def _plot(self):
+        fig = bokeh.models.Figure(**default_figure_kwargs)
     
     update_dft_hull_glyphs(self.sel, self.dft_style)
     update_clex_hull_glyphs(self.sel, self.clex_style)
     
     # plot formation energy vs comp, with convex hull states
+    self.renderers = []
     
     # dft
     style = self.dft_style
     
-    self.r_dft = getattr(self.p_, style['marker'])(self.x, self.y, source=self.sel.src, 
+    self.r_dft = getattr(fig, style['marker'])(self.x, self.y, source=self.sel.src, 
       size='radii', fill_color='color', fill_alpha=style['fill_alpha'], 
       line_color='line_color', line_width='line_width', line_alpha='line_alpha',
       hover_alpha=style['hover_alpha'], hover_color=style['hover_color'],
       legend="dft")
-    self.r_dft_hull_line = self.p_.line(self.x, self.y, source=self.calc_hull_src, 
+    self.r_dft_hull_line = fig.line(self.x, self.y, source=self.calc_hull_src, 
       line_color=style['on_hull']['line_color'], line_width=style['hull_line_width'],
       line_dash=style['hull_line_dash'],
       legend="dft")
     
     # clex
     style = self.clex_style
-    self.r_clex = getattr(self.p_, style['marker'])(self.x, self.y_clex, source=self.sel.src, 
+    self.r_clex = getattr(fig, style['marker'])(self.x, self.y_clex, source=self.sel.src, 
       size='clex_radii', fill_color='clex_color', fill_alpha=style['fill_alpha'], 
       line_color='clex_line_color', line_width='clex_line_width', line_alpha='clex_line_alpha',
       hover_alpha=style['hover_alpha'], hover_color=style['hover_color'],
       legend="clex")
-    self.r_clex_hull_line = self.p_.line(self.x, self.y_clex, source=self.clex_hull_src, 
+    self.r_clex_hull_line = fig.line(self.x, self.y_clex, source=self.clex_hull_src, 
       line_color=style['on_hull']['line_color'], line_width=style['hull_line_width'],
       line_dash=style['hull_line_dash'],
       legend="clex")
     
     # clex of dft hull
     style = self.clex_style
-    self.r_clex_of_dft_hull_line = self.p_.line(self.x, self.y_clex, source=self.clex_of_dft_hull_src, 
+    self.r_clex_of_dft_hull_line = fig.line(self.x, self.y_clex, source=self.clex_of_dft_hull_src, 
       line_color=style['on_hull']['line_color'], line_width=style['hull_line_width'],
       line_dash=style['clex_of_dft_hull_line_dash'],
       legend="clex_of_dft_hull")
 
-    self.p_.xaxis.axis_label = self.x
-    self.p_.yaxis.axis_label = self.y
+    self.renderers = [self.r_dft, 
+      self.r_dft_hull_line, self.r_clex, 
+      self.r_clex_hull_line, self.r_clex_of_dft_hull_line]
+    
+    fig.xaxis.axis_label = self.x
+    fig.yaxis.axis_label = self.y
 
     # hover over a point to see 'configname', 'Ef', and 'comp(a)'
     tooltips = [
@@ -636,8 +653,10 @@ class ConvexHullPlot(object):
         if re.match('\s*atom_frac\(.*\)\s*', key):
           tooltips.append((key, "@{" + key + "}{1.1111}"))
     
-    self.data.tap_action.add_callback(self.sel, view_on_tap, [self.r_dft, self.r_clex])
-    self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r_dft, self.r_clex]))
+    if tap_action is not None:
+        tap_action.add_callback(self.sel, view_on_tap, [self.r_dft, self.r_clex])
+    
+    fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r_dft, self.r_clex]))
     
   
   def _set_on_hull(self, sel, on_hull_label, hull_dist_label):
@@ -650,7 +669,7 @@ class ConvexHullPlot(object):
     sel.data.loc[_selected(sel), on_hull_label] = on_hull
 
   
-  def _query(self):
+  def query(self):
     
     force = True
     
@@ -787,102 +806,96 @@ class Scatter(object):
     y: the value of the y-axis, 'comp(a)' by default
   """
   
-  def __init__(self, sel, x='comp(a)', y='comp(a)'):
+  def __init__(self, data=None, project=None, selection="MASTER",
+    x='comp(a)', y='formation_energy', tooltips=[], tooltips_exclude=[],
+    legend=None, style={}, index=0, type=None):
     """
     Arguments:
-      sel: A CASM Selection
-      x: (str) property name to use as x axis, 'comp(a)' by default.
-      y: (str) property name to use as y axis, 'comp(a)' by default.
+        data: PlottingData object
+        project: path to CASM project
+        selection: path for CASM Selection
+        hull_selection: path for CASM Selection to use for the hull. Default uses selection.
+        sel: A CASM Selection
+        x: (str) column name to use as x axis. Default='comp(a)'
+        y: (str) column name to use as y axis. Default='formation_energy'
+        tooltips:
+        tooltips_exclude:
+        legend:
+        style:
+        index:
     """
+    if data is None:
+        self.data = PlottingData()
+    self.data = data
     
-    self.sel = sel
+    if project is None:
+        project = os.getcwd()
+    
+    if selection is None:
+      selection = "MASTER"
+    self.sel = self.data.selection(project, selection)
     
     self.x = x
-    self.sel.add_data('configname')
-    add_src_data(self.sel, 'configname', self.sel.data['configname'])
-    
-    self.sel.add_data(x)
-    add_src_data(self.sel, self.x, self.sel.data.loc[:,self.x])
-    
     self.y = y
-    self.sel.add_data(y)
-    add_src_data(self.sel, self.y, self.sel.data.loc[:,self.y])
     
-    # TOOLS in bokeh plot
-    self.tools = "crosshair,pan,reset,resize,box_zoom"
+    if legend is None:
+        legend = y
+    self.legend = legend
+    self.index = index
+    self.style = scatter_series_style(self.index, copy.deepcopy(style))
     
-    self._plot()
-    
-    # store plot in layout
-    self.layout = self.p
-  
-  @property
-  def p(self):
-    return self.p_
-  
-  def _plot(self):
-    
-    # add 'style' to the selection if not already existing
-    if not hasattr(self.sel, 'dft_style'):
-      self.sel.dft_style = dft_style
-      update_glyphs(self.sel)
-    
-    style = self.sel.dft_style
-    
-    # plot formation energy vs comp, with convex hull states
-    if True:
-      self.p_ = bokeh.plotting.Figure(plot_width=400, plot_height=400, tools=self.tools)
-      
-      cr = getattr(self.p_, style['marker'])(self.x, self.y, source=self.sel.src, 
-        size='radii', fill_color='color', fill_alpha=style['fill_alpha'],
-        line_color='line_color', line_width='line_width', line_alpha='line_alpha',
-        hover_alpha=style['hover_alpha'], hover_color=style['hover_color'])
-    
-    else:
-      # rug plot
-      x_max = max(self.sel.src.data[self.x])
-      x_min = min(self.sel.src.data[self.x])
-      y_max = max(self.sel.src.data[self.y])
-      y_min = min(self.sel.src.data[self.y])
-      x_rug_length = (y_max - y_min)/20.0
-      y_rug_length = (x_max - x_min)/20.0
-      
-      self.p_ = bokeh.plotting.Figure(
-        plot_width=400, plot_height=400, tools=self.tools,
-        x_range=(x_min-y_rug_length, x_max+2*y_rug_length), y_range=(y_min-x_rug_length, y_max+2*x_rug_length))
-      
-      cr = self.p_.circle(self.x, self.y, source=self.sel.src, 
-        size='radii', fill_color='color', fill_alpha=style['fill_alpha'],
-        line_color='line_color', line_width='line_width', line_alpha='line_alpha',
-        hover_alpha=style['hover_alpha'], hover_color=style['hover_color'])
-      
-      x_rug = self.p_.segment(
-        x0=self.x, x1=self.x,
-        y0=y_max + x_rug_length, y1=y_max + 2.0*x_rug_length,
-        source=self.sel.src,
-        line_color='line_color', line_width=1.0)
-      
-      y_rug = self.p_.segment(
-        x0=x_max + y_rug_length, x1=x_max + 2.0*y_rug_length,
-        y0=self.y, y1=self.y,
-        source=self.sel.src,
-        line_color='line_color', line_width=1.0)
+    self.tooltips = tooltips
+    self.tooltips_exclude = tooltips_exclude
     
     
-    self.p_.xaxis.axis_label = self.x
-    self.p_.yaxis.axis_label = self.y
+  def query(self):
+      columns = [self.x, self.y] + self.tooltips
+      self.sel.query(columns) 
+      for col in self.sel.data.columns:
+          add_src_data(self.sel, col, self.sel.data.loc[:,col])
+          
+      # add project and selection path
+      N = self.sel.data.shape[0]
+      self.sel.add_data('project', [self.sel.proj.path]*N)
+      self.sel.add_data('selection', [self.sel.path]*N)
 
-    # hover over a point to see 'configname', 'x', and 'y'
-    tooltips = [
-        ("configname","@configname"), 
-        (self.x,"@{" + self.x + "}{1.1111}"),
-        (self.y,"@{" + self.y + "}{1.1111}")
-    ]
-    self.tap_action = TapAction(self.sel)
-    self.p_.add_tools(self.tap_action.tool(view_on_tap, [cr]))
-    self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[cr]))
-    self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[cr]))
-    self.p_.add_tools(bokeh.models.LassoSelectTool(renderers=[cr]))
+
+  def plot(self, fig=None, tap_action=None):
+      tooltips = []
+        
+      for col in self.sel.data.columns:
+          if col in self.tooltips_exclude:
+              continue
+          if col in casm.plotting.float_dtypes:
+              tooltips.append((col,"@{" + col + "}{1.1111}"))
+          else:
+              tooltips.append((col,"@{" + col + "}"))
+          
+      update_scatter_glyphs(self.sel, self.style, str(self.index))
+      
+      self.r = getattr(fig, self.style['marker'])(
+          self.x,
+          self.y,
+          source=self.sel.src,
+          size='radii.' + str(self.index),
+          fill_color='color.' + str(self.index),
+          fill_alpha='fill_alpha.' + str(self.index), 
+          line_color='line_color.' + str(self.index),
+          line_width='line_width.' + str(self.index),
+          line_alpha='line_alpha.' + str(self.index),
+          hover_alpha=self.style['hover_alpha'],
+          hover_color=self.style['hover_color'],
+          legend=self.legend)
+      
+      self.renderers = [self.r]
+      
+      if self.index == 0:
+          fig.xaxis.axis_label = self.x
+          fig.yaxis.axis_label = self.y
+      
+      tap_action.add_callback(self.sel, casm.plotting.view_on_tap, [self.r])
+      fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r]))
+    
 
 
 class Histogram(object):
@@ -2094,6 +2107,5 @@ class GUIOptions(object):
   @value.setter
   def value(self, _value):
     self.widget.value = _value
- 
- 
+
 

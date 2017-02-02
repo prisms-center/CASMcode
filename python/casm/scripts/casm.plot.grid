@@ -10,6 +10,7 @@ from bokeh.io import curdoc
 from bokeh.client import push_session
 import bokeh.plotting
 import bokeh.models
+import bokeh.layouts
 
 input_help = "Input file"
 desc_help = "Print extended usage description"
@@ -65,36 +66,47 @@ Input file attributes:
 Example input file:
 
 {
-  "figure_kwargs": {
-    "plot_height": 400,
-    "plot_width": 800,
-    "tools": "crosshair,pan,reset,resize,box_zoom"
-  },
-  "series": [
+  "shape": [2, 1],
+  "subplots": [
     {
-      "project": null,
-      "selection": "MASTER",
-      "x": "comp(a)",
-      "y": "formation_energy",
-      "tooltips": [
-        "scel_size",
-        "volume_relaxation"
-      ],
-      "legend":"formation_energy"
+      "pos": [0, 0],
+      "figure_kwargs": {
+        "plot_height": 400,
+        "plot_width": 800,
+        "tools": "crosshair,pan,reset,resize,box_zoom"
+      },
+      "series": [
+        {
+          "type": "scatter",
+          "project": null,
+          "selection": "MASTER",
+          "x": "comp(a)",
+          "y": "formation_energy",
+          "tooltips": [
+            "scel_size",
+            "volume_relaxation"
+          ],
+          "legend":"formation_energy"
+        },
+        {
+          "type": "scatter",
+          "project": null,
+          "selection": "MASTER",
+          "x": "comp(a)",
+          "y": "clex(formation_energy)",
+          "tooltips": [
+            "scel_size",
+            "volume_relaxation"
+          ],
+          "tooltips_exclude": [
+            "project",
+            "selection"
+          ]
+        }
+      ]
     },
     {
-      "project": null,
-      "selection": "MASTER",
-      "x": "comp(a)",
-      "y": "clex(formation_energy)",
-      "tooltips": [
-        "scel_size",
-        "volume_relaxation"
-      ],
-      "tooltips_exclude": [
-        "project",
-        "selection"
-      ]
+      ... other sub plots ...
     }
   ]
 }
@@ -125,6 +137,10 @@ Example input file:
 
 """
 
+def make_grid(val, shape):
+    row = [val]*shape[1]
+    return [row]*shape[0]
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description = 'Scatter plot')
@@ -140,33 +156,60 @@ if __name__ == "__main__":
         sys.exit(1)
     
     with open(args.input, 'r') as f:
-        input = json.load(f)
+        grid_input = json.load(f)
     
     data = casm.plotting.PlottingData()
-    figure_kwargs = input.get('figure_kwargs', casm.plotting.default_figure_kwargs)
-    fig = bokeh.plotting.Figure(**figure_kwargs)
-    tap_action = casm.plotting.TapAction(data)
-    renderers = []
+    grid = make_grid(None, grid_input['shape'])
+    renderers = make_grid([], grid_input['shape'])
+    tap_action = make_grid(casm.plotting.TapAction(data), grid_input['shape'])
     
-    for index, series in enumerate(input['series']):
-        series['self'] = casm.plotting.Scatter(data=data, index=index, **series)
+    options = {
+      'hull':casm.plotting.ConvexHullPlot,
+      'scatter':casm.plotting.Scatter
+    }
+    for subplot in grid_input['subplots']:
+        for index, series in enumerate(subplot['series']):
+            series['self'] = options[series['type']](data=data, index=index, **series)
     
-    # first query data necessary for all series
-    for series in input['series']:
-        series['self'].query()
+    # first query data necessary for all series in every figure
+    for subplot in grid_input['subplots']:
+        for series in subplot['series']:
+            series['self'].query()
+        
+    # next create plots
+    for subplot in grid_input['subplots']:
     
-    for series in input['series']:
-        series['self'].plot(fig, tap_action)
-        renderers += series['self'].renderers
+        figure_kwargs = subplot.get('figure_kwargs', casm.plotting.default_figure_kwargs)
     
-    # add tools
-    fig.add_tools(tap_action.tool())
-    fig.add_tools(bokeh.models.BoxSelectTool(renderers=renderers))
-    fig.add_tools(bokeh.models.LassoSelectTool(renderers=renderers))
+        r = subplot['pos'][0]
+        c = subplot['pos'][1]
+        
+        ## Construct a figure
+        grid[r][c] = bokeh.plotting.Figure(**figure_kwargs)
+        fig = grid[r][c]
+        
+        for series in subplot['series']:
+            series['self'].plot(fig, tap_action=tap_action[r][c])
+            renderers[r][c] += series['self'].renderers
+        
+        # add tools
+        fig.add_tools(tap_action[r][c].tool())
+        fig.add_tools(bokeh.models.BoxSelectTool(renderers=renderers[r][c]))
+        fig.add_tools(bokeh.models.LassoSelectTool(renderers=renderers[r][c]))
+    
+    print grid
+    
+    gplot = bokeh.layouts.gridplot(grid)
+    
+    print gplot
+    print gplot.__dict__
     
     # set up session
     session = push_session(curdoc())
-    curdoc().add_root(fig)
+    curdoc().add_root(gplot)
     session.show() # open the document in a browser
     session.loop_until_closed() # run forever
+
+        
+    
 

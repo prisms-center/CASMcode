@@ -8,6 +8,8 @@ import sys
 import json
 from bokeh.io import curdoc
 from bokeh.client import push_session
+import bokeh.plotting
+import bokeh.models
 
 input_help = "Input file"
 desc_help = "Print extended usage description"
@@ -148,31 +150,22 @@ if __name__ == "__main__":
         input = json.load(f)
     
     data = casm.plotting.PlottingData()
+    figure_kwargs = input.get('figure_kwargs', casm.plotting.default_figure_kwargs)
+    fig = bokeh.plotting.Figure(**figure_kwargs)
+    tap_action = casm.plotting.TapAction(data)
     
-    for i, series in enumerate(input['series']):
+    hullplot = casm.plotting.ConvexHullPlot(data, **input['series'][0])
+    hullplot.query()
+    hullplot.plot(fig, tap_action)
     
-        proj = data.project(series.get('project',os.getcwd()))
-        
-        prim = proj.prim
-        if prim.n_independent_compositions != 1:
-            print "error: currently plot.hull only works for binary alloys"
-            print "in project:", proj.path
-            print "n_independent_compositions:", prim.n_independent_compositions
-            sys.exit(1)
-        
-        selection = data.selection(proj.path, series.get('selection','MASTER'), kwargs={"all":series.get('all', True)})
-        hull_selection = data.selection(proj.path, series.get('hull_selection','MASTER'))
-        
-        dft_style = casm.plotting.dft_hull_style(series.get('dft_style', dict()))
-        clex_style = casm.plotting.clex_hull_style(series.get('clex_style', dict()))
-        
-        hullplot = casm.plotting.ConvexHullPlot(selection, hull_selection, x=series['x'],
-            y=series['y'], dft_style=dft_style, clex_style=clex_style, data=data,
-            tooltips=series.get('tooltips',[]), tooltips_exclude=series.get('tooltips_exclude',[]))
+    # add tools
+    fig.add_tools(tap_action.tool())
+    fig.add_tools(bokeh.models.BoxSelectTool(renderers=hullplot.renderers))
+    fig.add_tools(bokeh.models.LassoSelectTool(renderers=hullplot.renderers))
     
     # set up session
     session = push_session(curdoc())
-    curdoc().add_root(hullplot.layout)
+    curdoc().add_root(fig)
     session.show() # open the document in a browser
     session.loop_until_closed() # run forever
 
