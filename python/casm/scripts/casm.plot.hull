@@ -20,18 +20,8 @@ Before running you must start the bokeh server:
 - install bokeh with: 'pip install bokeh'
 - start server: 'bokeh serve'
 
-Hovering over data points will show:
-- configuration name
-- Ef / Ef_per_atom
-- hull_dist / hull_dist_per_atom
-- comp / comp_n / atom_frac
-
 If you have 'casm view' setup, then clicking on a configuration in the plot
 will attempt to use 'casm view' to view that configuration.
-
-You can edit visual attributes using --dft_style and --clex_style. The default
-values will be printed to files "dft_style.json" and "clex_style.json" if not 
-specified.
 
 Input file attributes:
 

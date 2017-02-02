@@ -23,9 +23,6 @@ Before running you must start the bokeh server:
 If you have 'casm view' setup, then clicking on a configuration in the plot
 will attempt to use 'casm view' to view that configuration.
 
-You can edit visual attributes in the input JSON. The default
-values will be printed to files "<input_name>.tmp" if not specified.
-
 Input file attributes:
 
   figure_kwargs: JSON object (optional)
