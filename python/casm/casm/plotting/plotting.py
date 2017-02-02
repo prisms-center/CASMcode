@@ -11,6 +11,7 @@ import json
 import pickle
 import re
 import copy
+import imp
 
 import bokeh.client
 import bokeh.io
@@ -159,6 +160,8 @@ class PlottingData(object):
     def project(self, proj_path=None, kwargs=dict()):
         if proj_path is None:
             proj_path = os.getcwd()
+        else:
+            proj_path = os.path.abspath(proj_path)
         if proj_path not in self.data_:
             proj = casm.project.Project(proj_path, **kwargs)
             self.add_project([proj])
@@ -168,6 +171,8 @@ class PlottingData(object):
         proj = self.project(proj_path)
         if sel_path is None:
             sel_path = "MASTER"
+        if sel_path not in ["MASTER", "ALL", "CALCULATED"]:
+            sel_path = os.path.abspath(sel_path)
         if sel_path not in self.data_[proj.path]['selections']:
             sel = casm.project.Selection(self.project(proj.path), sel_path, **kwargs)
             self.add_selection([sel])
@@ -401,6 +406,25 @@ def scatter_series_style(index, input):
   
   return input
 
+def rankplot_style(input):
+    index = 0
+    
+    if 'selected' not in input:
+      input['selected'] = dict()
+    if 'line_width' not in input['selected']:
+      input['selected']['line_width'] = 1.0
+    if 'line_alpha' not in input['selected']:
+      input['selected']['line_alpha'] = 1.0
+    
+    if 'unselected' not in input:
+      input['unselected'] = dict()
+    if 'line_width' not in input['unselected']:
+      input['unselected']['line_width'] = 1.0
+    if 'line_alpha' not in input['selected']:
+      input['unselected']['line_alpha'] = 1.0
+   
+    return scatter_series_style(index, input)
+
 
 def update_dft_hull_glyphs(sel, style, selected=None):
   """
@@ -483,7 +507,7 @@ class ConvexHullPlot(object):
   """
   
   def __init__(self, data=None, project=None, selection="MASTER", hull_selection=None, 
-    x='comp(a)', y='formation_energy', tooltips=[], tooltips_exclude=[],
+    x='comp(a)', y='formation_energy', tooltips=[],
     dft_style={}, clex_style={}, hull_tol=1e-8, index=0, series_name=None, type=None):
     """
     Arguments:
@@ -495,7 +519,6 @@ class ConvexHullPlot(object):
       x: (str) column name to use as x axis. Default='comp(a)'. Must be 'comp(x)', 'comp_n(X)', or 'atom_frac(X)'.
       y: (str) column name to use as y axis. Default='formation_energy'. Must be 'formation_energy' or 'formation_energy_per_atom'.
       tooltips:
-      tooltips_exclude:
       dft_style:
       clex_style:
       hull_tol: (number, default 1e-8) tolerance to decide if configuration is on the hull
@@ -559,7 +582,6 @@ class ConvexHullPlot(object):
     self.clex_style = casm.plotting.clex_hull_style(copy.deepcopy(clex_style))
     
     self.tooltips = tooltips
-    self.tooltips_exclude = tooltips_exclude
     
   
   def plot(self, fig=None, tap_action=None):
@@ -635,9 +657,8 @@ class ConvexHullPlot(object):
           tooltips.append(("clex_hull_dist", "@{" + clex_hull_dist(self.hull_sel.path) + "}{1.1111}"))
           tooltips.append(("clex_of_dft_hull_dist", "@{" + clex_hull_dist(self.dft_hull_sel.path) + "}{1.1111}"))
         
-        for col in self.tooltips + ['project', 'selection']:
-            if col in self.tooltips_exclude:
-                continue
+        for col in self.tooltips:
+            
             if col in float_dtypes:
                 tooltips.append((col,"@{" + col + "}{1.1111}"))
             else:
@@ -810,7 +831,7 @@ class Scatter(object):
   """
   
   def __init__(self, data=None, project=None, selection="MASTER",
-    x='comp(a)', y='formation_energy', tooltips=[], tooltips_exclude=[],
+    x='comp(a)', y='formation_energy', tooltips=[],
     legend=None, style={}, index=0, series_name=None, type=None):
     """
     Arguments:
@@ -851,7 +872,6 @@ class Scatter(object):
     self.style = scatter_series_style(self.index, copy.deepcopy(style))
     
     self.tooltips = tooltips
-    self.tooltips_exclude = tooltips_exclude
     
     
   def query(self):
@@ -899,9 +919,7 @@ class Scatter(object):
       if self.tooltips is not None:
           tooltips = []
             
-          for col in self.sel.data.columns:
-              if col in self.tooltips_exclude:
-                  continue
+          for col in self.tooltips + [self.x, self.y]:
               if col in casm.plotting.float_dtypes:
                   tooltips.append((col,"@{" + col + "}{1.1111}"))
               else:
@@ -1144,28 +1162,64 @@ class GridPlot(object):
 class RankPlot(object):
   """
   Attributes:
-    p: a bokeh Figure containing formation energies and the convex hull
-    layout: a bokeh layout element holding p
     sel: a CASM Selection used to make the figure
-    scoring: a scoring function to operate on a DataFrame and return a Series
     score_id: a UUID to use for the 'score' column name in the sel.src ColumnDataSource
     rank_id: a UUID to use for the 'rank' column name in the sel.src ColumnDataSource
     max_score: the maximum score
     min_score: the minimum score
   """
-  
-  def __init__(self, sel, scoring, name="Score", mode='set', tooltips=None, on_tap=view_on_tap):
+  def __init__(self, data=None, project=None, selection="MASTER", to_query=[],
+    scoring_query=None, scoring_module=None, scoring_function=None,
+    tooltips=[], index=0, type=None,
+    style={}, series_name=None, name=None):
     """
     Arguments:
-      sel: A CASM Selection
-      scoring: (function) a scoring function to operate on a row of sel.data
-      name: y-axis label to describe the scoring function
-      tooltips: Customize tooltips. Default includes configname, score, and rank.
-      on_tap: Customize callback that occurs upon tapping a point. Default is view_on_tap.
+      data: PlottingData instance
+      project: str (optional, default=os.getcwd())
+      selection: str (optional, default="MASTER")
+      query: List[str]
+      scoring_query: str
+      scoring_module: str
+      scoring_function: str
+      tooltips: List[str]
+      tooltips_exclude: List[str]
+      index: int
+      type: str
     """
-    self.sel = sel
+    if data is None:
+        self.data = PlottingData()
+    self.data = data
     
-    self.scoring = scoring
+    if project is None:
+        project = os.getcwd()
+    
+    if selection is None:
+      selection = "MASTER"
+    self.sel = self.data.selection(project, selection)
+    
+    self.scoring_query = scoring_query
+    
+    self.to_query = to_query
+    self.scoring_module = scoring_module
+    self.scoring_function = scoring_function
+    
+    if self.scoring_query is not None:
+        if self.scoring_query not in self.to_query:
+            self.to_query.append(self.scoring_query)
+    
+    self.style = rankplot_style(copy.deepcopy(style))
+    
+    self.index = index
+    if series_name is None:
+        series_name = str(self.index)
+    self.series_name = series_name
+    
+    self.tooltips = tooltips
+    
+    if name is None:
+        name = scoring_query
+    if name is None:
+        name = scoring_module + '.' + scoring_function
     self.name = name
     
     self.score_id = str(uuid.uuid4())
@@ -1174,62 +1228,57 @@ class RankPlot(object):
     self._max_score = None
     self._min_score = None
     
-    # TOOLS in bokeh plot
-    self.tools = "crosshair,pan,reset,resize,box_zoom"
-    self.tooltips = tooltips
-    self.on_tap = on_tap
-    
-    self.score()
-    
-    self._plot()
-    
-    # store plot in layout
-    self.layout = self.p
-    
   
-  @property
-  def p(self):
-    return self.p_
-  
-  def _plot(self):
+  def plot(self, fig=None, tap_action=None):
     
-    # add 'style' to the selection if not already existing
-    if not hasattr(self.sel, 'dft_style'):
-      self.sel.dft_style = dft_style
-      update_glyphs(self.sel)
+    update_scatter_glyphs(self.sel, self.style, self.series_name)
     
-    style = self.sel.dft_style
+    self.r_stem = fig.segment(
+      self.rank_id, 0, self.rank_id, self.score_id, source=self.sel.src, 
+      line_color='line_color.' + self.series_name,
+      line_width='line_width.' + self.series_name,
+      line_alpha='line_alpha.' + self.series_name,
+      hover_alpha=self.style['hover_alpha'],
+      hover_color=self.style['hover_color'])
     
-    _tools = [self.tools]
-    
-    self.p_ = bokeh.plotting.Figure(plot_width=800, plot_height=400, tools=_tools)
-    p_stem = self.p_.segment(self.rank_id, 0, self.rank_id, self.score_id, source=self.sel.src, 
-      line_color='color', line_width=1.0,
-      hover_alpha=style['hover_alpha'], hover_color=style['hover_color'])
-    
-    p_circ = self.p_.circle(self.rank_id, self.score_id, source=self.sel.src, 
-      size='radii', fill_color='color', fill_alpha=style['fill_alpha'],
-      line_color='line_color', line_width='line_width', line_alpha='line_alpha',
-      hover_alpha=style['hover_alpha'], hover_color=style['hover_color'])
+    self.r_circ = fig.circle(
+      self.rank_id,
+      self.score_id,
+      source=self.sel.src, 
+      size='radii.' + self.series_name,
+      fill_color='color.' + self.series_name,
+      fill_alpha='fill_alpha.' + self.series_name, 
+      line_width=0.,
+      line_alpha=0.,
+      hover_alpha=self.style['hover_alpha'],
+      hover_color=self.style['hover_color'])
 
-    self.p_.xaxis.axis_label = "Rank"
-    self.p_.yaxis.axis_label = self.name
+    fig.xaxis.axis_label = "Rank"
+    fig.yaxis.axis_label = self.name
     
-    if self.tooltips is None:
-      # hover over a point to see 'configname', 'score', Ef', and 'comp(a)'
-      self.tooltips = [
-          ("configname","@configname"), 
-          ("score","@{" + self.score_id + "}{1.1111}"), 
-          ("rank","@{" + self.rank_id + "}{1.1111}")
-      ]
     
-    if self.on_tap is not None:
-      self.tap_action = ConfigurationTapAction(self.sel)
-      self.p_.add_tools(self.tap_action.tool(self.on_tap, [p_circ]))
+    self.renderers = [self.r_stem, self.r_circ]
     
-    self.p_.add_tools(bokeh.models.HoverTool(tooltips=self.tooltips, renderers=[p_circ]))
-    self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[p_circ]))
-    self.p_.add_tools(bokeh.models.LassoSelectTool(renderers=[p_circ]))
+    if tap_action is not None:
+        tap_action.add_callback(self.sel, casm.plotting.view_on_tap, [self.r_circ])
+    
+    if self.tooltips is not None:
+        tooltips = []
+        
+        for col in self.tooltips + [self.score_id, self.rank_id]:
+            
+            if col == self.score_id:
+                tooltips.append(("score","@{" + self.score_id + "}{1.1111}"))
+            elif col == self.rank_id:
+                tooltips.append(("rank","@{" + self.rank_id + "}{1.1111}"))
+            elif col in casm.plotting.float_dtypes:
+                tooltips.append((col,"@{" + col + "}{1.1111}"))
+            else:
+                tooltips.append((col,"@{" + col + "}"))
+        
+        fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r_circ]))
+    else:
+        fig.add_tools(bokeh.models.HoverTool(tooltips=None, renderers=[self.r_circ]))
   
   @property
   def max_score(self):
@@ -1243,31 +1292,54 @@ class RankPlot(object):
       self._min_score = min(self.sel.src.data[self.score_id])
     return self._min_score
   
-  def score(self, scoring=None):
+  def score(self):
     """
     Calculate 'score' and 'rank', but do not change selection. May also change the
     'scoring' function.
     """
-    if scoring is not None:
-      self.scoring = scoring
+    if self.scoring_query is not None:
+        self.sel.data.loc[:,self.score_id] = self.sel.data.loc[:,self.scoring_query]
+    else:
+        f, filename, description = imp.find_module(self.scoring_module)
+        try:
+            module = imp.load_module(self.scoring_module, f, filename, description)
+            self.sel.data.loc[:,self.score_id] = getattr(module, self.scoring_function)(self.sel)
+        finally:
+            if f:
+                f.close()
     
-    try:
-      # score
-      self.df = pandas.DataFrame(self.scoring(self.sel), columns=['score'])
-      self.df.loc[:,'selected'] = self.sel.data.loc[:,'selected']
-    except:
-      print "Error applying scoring function"
-      raise
-      
+    # convert to numeric (NaN) 
+    self.sel.data.loc[:,self.score_id] = pandas.to_numeric(self.sel.data[self.score_id], errors='coerce')
+    
     # add 'score' to src, as self.score_id
-    add_src_data(self.sel, self.score_id, self.df['score'], force=True)
+    add_src_data(self.sel, self.score_id, self.sel.data.loc[:,self.score_id], force=True)
     
     # rank
-    self.df.loc[self.df.sort_values(['score']).index, 'rank'] = range(self.df.shape[0])
+    self.sel.data.loc[self.sel.data.sort_values([self.score_id, 'configname']).index, self.rank_id] = range(self.sel.data.shape[0])
     
     # add 'rank' to src as self.rank_id
-    add_src_data(self.sel, self.rank_id, self.df['rank'], force=True)
+    add_src_data(self.sel, self.rank_id, self.sel.data.loc[:,self.rank_id], force=True)
     
+    self._min_score = None
+    self._max_score = None
+
+  def query(self):
+    columns = copy.deepcopy(self.to_query)
+    if self.tooltips is not None:
+        columns += self.tooltips
+    self.sel.query(columns) 
+        
+    # add project and selection path
+    N = self.sel.data.shape[0]
+    self.sel.add_data('project', [self.sel.proj.path]*N)
+    self.sel.add_data('selection', [self.sel.path]*N)
+    self.sel.add_data('configname')
+    
+    for col in self.sel.data.columns:
+        add_src_data(self.sel, col, self.sel.data.loc[:,col])
+    
+    self.score()
+        
 
 class RankSelect(object):
   """

@@ -49,10 +49,7 @@ Input file attributes:
     
     tooltips: JSON array of str (optional, default=[])
       Additional properties to query and include in 'tooltips' info that appears
-      when hovering over a data point.
-    
-    tooltips_exlude: JSON array of str (optional, default=[])
-      Properties to exclude from the 'tooltips'.
+      when hovering over a data point. Set to 'null' to disable.
     
     style: JSON object (optional, default=casm.plotting.scatter_series_style(<series index>, {})
       Visual styling attribute values. Defaults are determined casm.plotting.scatter_series_style.
@@ -87,10 +84,6 @@ Example input file:
       "tooltips": [
         "scel_size",
         "volume_relaxation"
-      ],
-      "tooltips_exclude": [
-        "project",
-        "selection"
       ]
     }
   ]
