@@ -458,7 +458,7 @@ def update_scatter_glyphs(sel, style, id, selected=None):
   
   for value in ['color', 'radii', 'line_color', 'line_width', 'line_alpha', 'fill_alpha']:
     cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
-    sel.src.data[value + '.' + id] = map(lambda x: cmap[x], selected) 
+    sel.src.data[value + '.' + id] = map(lambda x: cmap[x], selected)
 
 
 class ConvexHullPlot(object):
@@ -484,7 +484,7 @@ class ConvexHullPlot(object):
   
   def __init__(self, data=None, project=None, selection="MASTER", hull_selection=None, 
     x='comp(a)', y='formation_energy', tooltips=[], tooltips_exclude=[],
-    dft_style={}, clex_style={}, hull_tol=1e-8, index=0, type=None):
+    dft_style={}, clex_style={}, hull_tol=1e-8, index=0, series_name=None, type=None):
     """
     Arguments:
       data: PlottingData object
@@ -612,51 +612,54 @@ class ConvexHullPlot(object):
     fig.xaxis.axis_label = self.x
     fig.yaxis.axis_label = self.y
 
+    if tap_action is not None:
+        tap_action.add_callback(self.sel, view_on_tap, [self.r_dft, self.r_clex])
+    
     # hover over a point to see 'configname', 'Ef', and 'comp(a)'
     tooltips = [
         ("configname","@configname")
     ]
     
-    # tooltips for energy
-    if self.Ef_per_atom:
-      tooltips.append(("Ef_per_atom","@formation_energy_per_atom{1.1111}"))
-      tooltips.append(("clex_Ef_per_atom","@{clex(formation_energy,per_species)}{1.1111}"))
-      tooltips.append(("hull_dist_per_atom", "@{" + hull_dist_per_atom(self.hull_sel_calculated.path) + "}{1.1111}"))
-      tooltips.append(("clex_hull_dist_per_atom", "@{" + clex_hull_dist_per_atom(self.hull_sel.path) + "}{1.1111}"))
-      tooltips.append(("clex_of_dft_hull_dist_per_atom", "@{" + clex_hull_dist_per_atom(self.dft_hull_sel.path) + "}{1.1111}"))
-    else:
-      tooltips.append(("Ef","@formation_energy{1.1111}"))
-      tooltips.append(("clex_Ef","@{clex(formation_energy)}{1.1111}"))
-      tooltips.append(("hull_dist", "@{" + hull_dist(self.hull_sel_calculated.path) + "}{1.1111}"))
-      tooltips.append(("clex_hull_dist", "@{" + clex_hull_dist(self.hull_sel.path) + "}{1.1111}"))
-      tooltips.append(("clex_of_dft_hull_dist", "@{" + clex_hull_dist(self.dft_hull_sel.path) + "}{1.1111}"))
-    
-    for col in self.tooltips + ['project', 'selection']:
-        if col in self.tooltips_exclude:
-            continue
-        if col in float_dtypes:
-            tooltips.append((col,"@{" + col + "}{1.1111}"))
+    if self.tooltips is not None:
+        # tooltips for energy
+        if self.Ef_per_atom:
+          tooltips.append(("Ef_per_atom","@formation_energy_per_atom{1.1111}"))
+          tooltips.append(("clex_Ef_per_atom","@{clex(formation_energy,per_species)}{1.1111}"))
+          tooltips.append(("hull_dist_per_atom", "@{" + hull_dist_per_atom(self.hull_sel_calculated.path) + "}{1.1111}"))
+          tooltips.append(("clex_hull_dist_per_atom", "@{" + clex_hull_dist_per_atom(self.hull_sel.path) + "}{1.1111}"))
+          tooltips.append(("clex_of_dft_hull_dist_per_atom", "@{" + clex_hull_dist_per_atom(self.dft_hull_sel.path) + "}{1.1111}"))
         else:
-            tooltips.append((col,"@{" + col + "}"))
-    
-    # tooltips for composition
-    if self.is_comp:
-      for key in self.sel.src.data.keys():
-        if re.match('\s*comp\(.*\)\s*', key):
-          tooltips.append((key, "@{" + key + "}{1.1111}"))
-    elif self.is_comp_n:
-      for key in self.sel.src.data.keys():
-        if re.match('\s*comp_n\(.*\)\s*', key):
-          tooltips.append((key, "@{" + key + "}{1.1111}"))
-    elif self.is_atom_frac:
-      for key in self.sel.src.data.keys():
-        if re.match('\s*atom_frac\(.*\)\s*', key):
-          tooltips.append((key, "@{" + key + "}{1.1111}"))
-    
-    if tap_action is not None:
-        tap_action.add_callback(self.sel, view_on_tap, [self.r_dft, self.r_clex])
-    
-    fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r_dft, self.r_clex]))
+          tooltips.append(("Ef","@formation_energy{1.1111}"))
+          tooltips.append(("clex_Ef","@{clex(formation_energy)}{1.1111}"))
+          tooltips.append(("hull_dist", "@{" + hull_dist(self.hull_sel_calculated.path) + "}{1.1111}"))
+          tooltips.append(("clex_hull_dist", "@{" + clex_hull_dist(self.hull_sel.path) + "}{1.1111}"))
+          tooltips.append(("clex_of_dft_hull_dist", "@{" + clex_hull_dist(self.dft_hull_sel.path) + "}{1.1111}"))
+        
+        for col in self.tooltips + ['project', 'selection']:
+            if col in self.tooltips_exclude:
+                continue
+            if col in float_dtypes:
+                tooltips.append((col,"@{" + col + "}{1.1111}"))
+            else:
+                tooltips.append((col,"@{" + col + "}"))
+        
+        # tooltips for composition
+        if self.is_comp:
+          for key in self.sel.src.data.keys():
+            if re.match('\s*comp\(.*\)\s*', key):
+              tooltips.append((key, "@{" + key + "}{1.1111}"))
+        elif self.is_comp_n:
+          for key in self.sel.src.data.keys():
+            if re.match('\s*comp_n\(.*\)\s*', key):
+              tooltips.append((key, "@{" + key + "}{1.1111}"))
+        elif self.is_atom_frac:
+          for key in self.sel.src.data.keys():
+            if re.match('\s*atom_frac\(.*\)\s*', key):
+              tooltips.append((key, "@{" + key + "}{1.1111}"))
+        
+        fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r_dft, self.r_clex]))
+    else:
+        fig.add_tools(bokeh.models.HoverTool(tooltips=None, renderers=[self.r_dft, self.r_clex]))
     
   
   def _set_on_hull(self, sel, on_hull_label, hull_dist_label):
@@ -808,7 +811,7 @@ class Scatter(object):
   
   def __init__(self, data=None, project=None, selection="MASTER",
     x='comp(a)', y='formation_energy', tooltips=[], tooltips_exclude=[],
-    legend=None, style={}, index=0, type=None):
+    legend=None, style={}, index=0, series_name=None, type=None):
     """
     Arguments:
         data: PlottingData object
@@ -842,6 +845,9 @@ class Scatter(object):
         legend = y
     self.legend = legend
     self.index = index
+    if series_name is None:
+        series_name = str(self.index)
+    self.series_name = series_name
     self.style = scatter_series_style(self.index, copy.deepcopy(style))
     
     self.tooltips = tooltips
@@ -849,7 +855,9 @@ class Scatter(object):
     
     
   def query(self):
-      columns = [self.x, self.y] + self.tooltips
+      columns = [self.x, self.y]
+      if self.tooltips is not None:
+          columns += self.tooltips
       self.sel.query(columns) 
       for col in self.sel.data.columns:
           add_src_data(self.sel, col, self.sel.data.loc[:,col])
@@ -861,28 +869,19 @@ class Scatter(object):
 
 
   def plot(self, fig=None, tap_action=None):
-      tooltips = []
-        
-      for col in self.sel.data.columns:
-          if col in self.tooltips_exclude:
-              continue
-          if col in casm.plotting.float_dtypes:
-              tooltips.append((col,"@{" + col + "}{1.1111}"))
-          else:
-              tooltips.append((col,"@{" + col + "}"))
           
-      update_scatter_glyphs(self.sel, self.style, str(self.index))
+      update_scatter_glyphs(self.sel, self.style, self.series_name)
       
       self.r = getattr(fig, self.style['marker'])(
           self.x,
           self.y,
           source=self.sel.src,
-          size='radii.' + str(self.index),
-          fill_color='color.' + str(self.index),
-          fill_alpha='fill_alpha.' + str(self.index), 
-          line_color='line_color.' + str(self.index),
-          line_width='line_width.' + str(self.index),
-          line_alpha='line_alpha.' + str(self.index),
+          size='radii.' + self.series_name,
+          fill_color='color.' + self.series_name,
+          fill_alpha='fill_alpha.' + self.series_name, 
+          line_color='line_color.' + self.series_name,
+          line_width='line_width.' + self.series_name,
+          line_alpha='line_alpha.' + self.series_name,
           hover_alpha=self.style['hover_alpha'],
           hover_color=self.style['hover_color'],
           legend=self.legend)
@@ -893,8 +892,24 @@ class Scatter(object):
           fig.xaxis.axis_label = self.x
           fig.yaxis.axis_label = self.y
       
-      tap_action.add_callback(self.sel, casm.plotting.view_on_tap, [self.r])
-      fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r]))
+      if tap_action is not None:
+          tap_action.add_callback(self.sel, casm.plotting.view_on_tap, [self.r])
+      
+      
+      if self.tooltips is not None:
+          tooltips = []
+            
+          for col in self.sel.data.columns:
+              if col in self.tooltips_exclude:
+                  continue
+              if col in casm.plotting.float_dtypes:
+                  tooltips.append((col,"@{" + col + "}{1.1111}"))
+              else:
+                  tooltips.append((col,"@{" + col + "}"))
+          
+          fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r]))
+      else:
+          fig.add_tools(bokeh.models.HoverTool(tooltips=None, renderers=[self.r]))
     
 
 
