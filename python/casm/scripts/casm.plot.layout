@@ -130,7 +130,8 @@ if __name__ == "__main__":
     options = {
       'hull':casm.plotting.ConvexHullPlot,
       'scatter':casm.plotting.Scatter,
-      'rankplot':casm.plotting.RankPlot
+      'rankplot':casm.plotting.RankPlot,
+      'histogram':casm.plotting.Histogram
     }
     for subplot in layout_input['subplots']:
         for index, series in enumerate(subplot['series']):

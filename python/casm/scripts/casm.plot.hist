@@ -14,7 +14,7 @@ import bokeh.models
 input_help = "Input file"
 desc_help = "Print extended usage description"
 usage_desc = """
-Rank plot of CASM query output
+Histogram of CASM query output
 
 Before running you must start the bokeh server:
 - install bokeh with: 'pip install bokeh'
@@ -37,24 +37,11 @@ Input file attributes:
     selection: str (optional, default="MASTER")
       Path to selection to use
     
-    to_query: List[str] (optional, default=[])
-      List of queries to be made, for instance if necessary for scoring.
+    x: str
+      Query to use for x-values
     
-    scoring_query: str
-      Query to use for scoring. If not in 'query', will be added automatically
-    
-    scoring_module: str (optional, default=None)
-      If 'scoring_query' is None, will attempt load the 'scoring_function' from
-      the 'scoring_module' and use that for scoring.
-    
-    scoring_function: str (optional, default=None)
-      If 'scoring_query' is None, will attempt load the 'scoring_function' from
-      the 'scoring_module' and use that for scoring. Expected signature is:
-        pandas.Series = f(casm.project.Selection)
-    
-    tooltips: JSON array of str (optional, default=[])
-      Additional properties to query and include in 'tooltips' info that appears
-      when hovering over a data point. Set to 'null' to disable.
+    hist_kwargs: JSON object (optional, default={})
+      Arguments to pass to numpy.histogram to generate the histogram.
     
     style: JSON object (optional, default=casm.plotting.scatter_series_style(<series index>, {})
       Visual styling attribute values. Defaults are determined casm.plotting.scatter_series_style.
@@ -73,12 +60,10 @@ Example input file:
     {
       "project": null,
       "selection": "MASTER",
-      "scoring_query": "hull_dist(CALCULATED)",
-      "to_query": [
-        "configname",
-        "basis_deformation",
-        "lattice_deformation"
-      ]
+      "x": "comp(a)",
+      "hist_kwargs": {
+        "bins": 10
+      }
     }
   ]
 }
@@ -86,32 +71,16 @@ Example input file:
 'style' example:
 
 {
-  "hover_alpha": 0.7, 
-  "hover_color": "orange", 
   "selected": {
-    "line_color": "blue", 
-    "line_alpha": 0.0, 
-    "line_width": 0.0, 
     "color": "blue", 
-    "fill_alpha": 0.5, 
-    "radii": 10
-  }, 
-  "unselected": {
-    "line_color": "gray", 
-    "line_alpha": 0.0, 
-    "line_width": 0.0, 
-    "color": "gray", 
-    "fill_alpha": 0.3, 
-    "radii": 7
-  }, 
-  "marker": "circle"
+  }
 }
 
 """
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description = 'Rank plot')
+    parser = argparse.ArgumentParser(description = 'Histogram plot')
     parser.add_argument('--desc', help=desc_help, default=False, action="store_true")
     parser.add_argument('input', nargs='?', help=input_help, type=str)
     
@@ -133,7 +102,7 @@ if __name__ == "__main__":
     renderers = []
     
     for index, series in enumerate(input['series']):
-        series['self'] = casm.plotting.RankPlot(data=data, index=index, **series)
+        series['self'] = casm.plotting.Histogram(data=data, index=index, **series)
     
     # first query data necessary for all series
     for series in input['series']:

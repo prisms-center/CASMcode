@@ -3,6 +3,7 @@ import bokeh.models
 import numpy as np
 import pandas
 import uuid
+import casm
 import casm.project
 
 import os
@@ -159,7 +160,7 @@ class PlottingData(object):
         
     def project(self, proj_path=None, kwargs=dict()):
         if proj_path is None:
-            proj_path = os.getcwd()
+            proj_path = casm.project_path()
         else:
             proj_path = os.path.abspath(proj_path)
         if proj_path not in self.data_:
@@ -512,10 +513,9 @@ class ConvexHullPlot(object):
     """
     Arguments:
       data: PlottingData object
-      project: path to CASM project
+      project: path to CASM project (optional, default=casm.project_path())
       selection: path for CASM Selection
       hull_selection: path for CASM Selection to use for the hull. Default uses selection.
-      sel: A CASM Selection
       x: (str) column name to use as x axis. Default='comp(a)'. Must be 'comp(x)', 'comp_n(X)', or 'atom_frac(X)'.
       y: (str) column name to use as y axis. Default='formation_energy'. Must be 'formation_energy' or 'formation_energy_per_atom'.
       tooltips:
@@ -528,7 +528,7 @@ class ConvexHullPlot(object):
     self.data = data
     
     if project is None:
-        project = os.getcwd()
+        project = casm.project_path()
     proj = self.data.project(project)
     
     prim = proj.prim
@@ -823,11 +823,15 @@ class ConvexHullPlot(object):
 class Scatter(object):
   """
   Attributes:
-    p: a bokeh Figure containing formation energies and the convex hull
-    layout: a bokeh layout element holding p
+    data: 
     sel: a CASM Selection used to make the figure
     x: the value of the x-axis, 'comp(a)' by default
     y: the value of the y-axis, 'comp(a)' by default
+    legend:
+    index:
+    series_name:
+    style:
+    tooltips:
   """
   
   def __init__(self, data=None, project=None, selection="MASTER",
@@ -836,24 +840,23 @@ class Scatter(object):
     """
     Arguments:
         data: PlottingData object
-        project: path to CASM project
+        project: path to CASM project (optional, default=casm.project_path())
         selection: path for CASM Selection
-        hull_selection: path for CASM Selection to use for the hull. Default uses selection.
-        sel: A CASM Selection
         x: (str) column name to use as x axis. Default='comp(a)'
         y: (str) column name to use as y axis. Default='formation_energy'
         tooltips:
-        tooltips_exclude:
         legend:
         style:
         index:
+        series_name:
+        type:
     """
     if data is None:
         self.data = PlottingData()
     self.data = data
     
     if project is None:
-        project = os.getcwd()
+        project = casm.project_path()
     
     if selection is None:
       selection = "MASTER"
@@ -928,129 +931,160 @@ class Scatter(object):
           fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r]))
       else:
           fig.add_tools(bokeh.models.HoverTool(tooltips=None, renderers=[self.r]))
-    
 
 
 class Histogram(object):
   """
   Attributes:
-    p: a bokeh Figure containing formation energies and the convex hull
-    layout: a bokeh layout element holding p
+    data: 
     sel: a CASM Selection used to make the figure
     x: the value of the x-axis, 'comp(a)' by default
+    y: the value of the y-axis, 'comp(a)' by default
+    legend:
+    index:
+    series_name:
+    style:
+    tooltips:
+    
+    src:
+    y_label:
   """
   
-  def __init__(self, sel, x='comp(a)', **kwargs):
+  def __init__(self, data=None, project=None, selection="MASTER",
+    x='comp(a)', hist_kwargs={}, tooltips=[],
+    style={}, index=0, series_name=None, type=None):
     """
     Arguments:
-      sel: A CASM Selection
-      x: (str) property name to use as x axis, 'comp(a)' by default.
-      kwargs: kwargs to pass to numpy.histogram
+        data: PlottingData object
+        project: path to CASM project (optional, default=casm.project_path())
+        selection: path for CASM Selection
+        x: (str) column name to use as x axis. Default='comp(a)'
+        hist_kwargs:
+        tooltips:
+        legend:
+        style:
+        index:
+        series_name:
+        type:
     """
+    if data is None:
+        self.data = PlottingData()
+    self.data = data
     
-    self.sel = sel
+    if project is None:
+        project = casm.project_path()
+    
+    if selection is None:
+      selection = "MASTER"
+    self.sel = self.data.selection(project, selection)
     
     self.x = x
-    self.sel.add_data('configname')
-    add_src_data(self.sel, 'configname', self.sel.data['configname'])
-    self.sel.add_data(x)
+    self.hist_kwargs = hist_kwargs
     
-    if 'to_be_selected' not in self.sel.data.columns:
-      self.sel.data.loc[:,'to_be_selected'] = self.sel.data.loc[:,'selected']
-    self.kwargs = kwargs
+    self.index = index
+    if series_name is None:
+        series_name = str(self.index)
+    self.series_name = series_name
+    self.style = scatter_series_style(self.index, copy.deepcopy(style))
     
-    # TOOLS in bokeh plot
-    self.tools = "crosshair,pan,reset,resize,box_zoom"
+    self.tooltips = tooltips
     
-    # for storing histogram freq/bins 
     self.src = None
     
-    self._plot()
-    
-    # ensure that changes in 'sel.src' will update the histogram
-    self.sel.selection_callbacks.append(self.update)
-    
-    # store plot in layout
-    self.layout = self.p
-  
-  @property
-  def p(self):
-    if self.p_ is None:
-      self._plot()
-    return self.p_
-  
-  def _plot(self):
-    
-    # add 'style' to the selection if not already existing
-    if not hasattr(self.sel, 'dft_style'):
-      self.sel.dft_style = dft_style
-      update_glyphs(self.sel)
-    
-    style = self.sel.dft_style
-    
-    self.p_ = bokeh.plotting.Figure(plot_width=400, plot_height=400, tools=self.tools)
-    
-    # set data in 'self.src'
-    self.update()
-    
-    qd = self.p_.quad(top='top', bottom='bottom', left='left', right='right', source=self.src, 
-      fill_alpha=0.0, line_color='black', line_width=1)
-    
-    qd_sel = self.p_.quad(top='top_sel', bottom='bottom_sel', left='left', right='right', source=self.src, 
-      fill_alpha=style['fill_alpha'], fill_color=style['selected_color'],
-      line_alpha=0.0, line_width=0.0)
-        
-    self.p_.xaxis.axis_label = self.x
-    self.p_.yaxis.axis_label = self.y_label
-
-    # hover over a point to see 'x', and 'Freq.'
-    tooltips = [
-        (self.x,"@{left}{1.1111}"),
-        (self.y_label,"@{top}{1.1111}")
-    ]
-    
-    self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[qd]))
-  
-  def update(self):
-    """
-    Update plot data if sel.data['selected'] or sel.data['x'] change.
-    """
-    
-    # generate histogram and plot
-    tmp_kwargs = dict(self.kwargs)
-    tmp_kwargs['density'] = False
-    hist, edges = np.histogram(self.sel.data.loc[:,self.x], **tmp_kwargs)
-    
-    sel_kwargs = dict(self.kwargs)
-    sel_kwargs['bins'] = edges
-    sel_kwargs['density'] = False
-    
-    _df = self.sel.data
-    hist_sel, edges_sel = np.histogram(_df.loc[_df['to_be_selected']==True, self.x], **sel_kwargs)
-    
-    # need to do 'density' of selected by hand
-    if 'density' in self.kwargs and self.kwargs['density']:
-       hist_freq = np.array(hist)
-       width = edges[1:] - edges[:-1]
-       area = hist_freq.dot(width)
-       hist = hist_freq*width/area
-       hist_sel = hist_sel*width/area
-    
-    if self.src is None:
-      self.src = bokeh.models.ColumnDataSource()
-      self.src.data["left"] = edges[:-1]
-      self.src.data["right"] = edges[1:]
-    
-    self.src.data["top"] = hist
-    self.src.data["bottom"] = [0]*len(hist)
+  def query(self):
+      columns = [self.x]
+      self.sel.query(columns) 
+      for col in self.sel.data.columns:
+          add_src_data(self.sel, col, self.sel.data.loc[:,col])
       
-    self.src.data["top_sel"] = hist_sel
-    self.src.data["bottom_sel"] = [0]*len(hist_sel)
+      if 'to_be_selected' not in self.sel.data.columns:
+          self.sel.data.loc[:,'to_be_selected'] = self.sel.data.loc[:,'selected']
+      
+      # add project and selection path
+      N = self.sel.data.shape[0]
+      self.sel.add_data('project', [self.sel.proj.path]*N)
+      self.sel.add_data('selection', [self.sel.path]*N)
+      
+      # create histogram data
+      tmp_kwargs = dict(self.hist_kwargs)
+      tmp_kwargs['density'] = False
+      hist, edges = np.histogram(self.sel.data.loc[:,self.x], **tmp_kwargs)
+      
+      sel_kwargs = dict(self.hist_kwargs)
+      sel_kwargs['bins'] = edges
+      sel_kwargs['density'] = False
+      
+      hist_sel, edges_sel = np.histogram(
+          self.sel.data.loc[self.sel.data['to_be_selected']==True, self.x], 
+          **sel_kwargs)
+      
+      # need to do 'density' of selected by hand
+      if 'density' in self.hist_kwargs and self.hist_kwargs['density']:
+           hist_freq = np.array(hist)
+           width = edges[1:] - edges[:-1]
+           area = hist_freq.dot(width)
+           hist = hist_freq*width/area
+           hist_sel = hist_sel*width/area
+      
+      if self.src is None:
+          self.src = bokeh.models.ColumnDataSource()
+          self.src.data["left"] = edges[:-1]
+          self.src.data["right"] = edges[1:]
+      
+      self.src.data["top"] = hist
+      self.src.data["bottom"] = [0]*len(hist)
+        
+      self.src.data["top_sel"] = hist_sel
+      self.src.data["top_unsel"] = hist - hist_sel
+      self.src.data["bottom_sel"] = [0]*len(hist_sel)
+            
+      if 'density' not in self.hist_kwargs.keys() or self.hist_kwargs['density'] == False:
+          self.y_label = "Frequency"
+      else:
+          self.y_label = "Density"
+
+
+  def plot(self, fig=None, tap_action=None):
           
-    if 'density' not in self.kwargs.keys() or self.kwargs['density'] == False:
-      self.y_label = "Frequency"
-    else:
-      self.y_label = "Density"
+      update_scatter_glyphs(self.sel, self.style, self.series_name)
+      
+      self.r_quad = fig.quad(
+          top='top',
+          bottom='bottom',
+          left='left',
+          right='right',
+          source=self.src, 
+          fill_alpha=0.0,
+          line_color='black',
+          line_width=1)
+      
+      self.r_quad_sel = fig.quad(
+          top='top_sel',
+          bottom='bottom_sel',
+          left='left',
+          right='right',
+          source=self.src, 
+          fill_alpha=self.style['selected']['fill_alpha'],
+          fill_color=self.style['selected']['color'],
+          line_alpha=0.0,
+          line_width=0.0)
+      
+      self.renderers = [self.r_quad, self.r_quad_sel]
+      
+      fig.xaxis.axis_label = self.x
+      fig.yaxis.axis_label = self.y_label
+
+      if self.tooltips is not None:
+          tooltips = [
+              (self.x,"@{left}{1.1111}"),
+              ("selected","@{top_sel}{1.1111}"),
+              ("unselected","@{top_unsel}{1.1111}"),
+              ("total","@{top}{1.1111}")
+          ]
+            
+          fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r_quad]))
+      else:
+          fig.add_tools(bokeh.models.HoverTool(tooltips=None, renderers=self.renderers))
 
 
 class GridPlot(object):
@@ -1175,7 +1209,7 @@ class RankPlot(object):
     """
     Arguments:
       data: PlottingData instance
-      project: str (optional, default=os.getcwd())
+      project: str (optional, default=casm.project_path())
       selection: str (optional, default="MASTER")
       query: List[str]
       scoring_query: str
@@ -1191,7 +1225,7 @@ class RankPlot(object):
     self.data = data
     
     if project is None:
-        project = os.getcwd()
+        project = casm.project_path()
     
     if selection is None:
       selection = "MASTER"
