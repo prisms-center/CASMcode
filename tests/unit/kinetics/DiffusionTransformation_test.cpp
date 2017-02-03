@@ -12,6 +12,8 @@
 #include "casm/app/AppIO.hh"
 #include "casm/app/AppIO_impl.hh"
 #include "Common.hh"
+#include "casm/completer/Handlers.hh"
+#include "casm/app/casm_functions.hh"
 
 using namespace CASM;
 using namespace test;
@@ -139,7 +141,12 @@ BOOST_AUTO_TEST_CASE(Test0) {
     //  print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), std::cout, printer);
     //}
   }
-
+  jsonParser diff_trans_json = jsonParser::object();
+  diff_trans_json["bspecs"] = bspecs;
+  Completer::EnumOption enum_opt;
+  enum_opt.desc();
+  int success = Kinetics::DiffusionTransformationEnum::run(primclex,diff_trans_json,enum_opt);
+  BOOST_CHECK_EQUAL(success, 0);
   /*
   auto vecprinter = [=](const std::string name, const std::vector<int>& v) {
     std::cout << name << " = {";
