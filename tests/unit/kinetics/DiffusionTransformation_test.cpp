@@ -141,12 +141,14 @@ BOOST_AUTO_TEST_CASE(Test0) {
     //  print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), std::cout, printer);
     //}
   }
-  jsonParser diff_trans_json = jsonParser::object();
-  diff_trans_json["bspecs"] = bspecs;
+  
+  fs::path difftrans_path = "tests/unit/kinetics/diff_trans.json";
+  jsonParser diff_trans_json {difftrans_path};
   Completer::EnumOption enum_opt;
   enum_opt.desc();
   int success = Kinetics::DiffusionTransformationEnum::run(primclex,diff_trans_json,enum_opt);
   BOOST_CHECK_EQUAL(success, 0);
+
   /*
   auto vecprinter = [=](const std::string name, const std::vector<int>& v) {
     std::cout << name << " = {";
