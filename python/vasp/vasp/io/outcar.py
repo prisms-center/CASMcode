@@ -20,6 +20,10 @@ class Outcar(object):
         self.filename = filename
         self.complete = False
         self.slowest_loop = None
+        self.kpts = None
+        self.lorbit = 0
+        self.ispin = 1
+        self.mag = None
         self.ngx = None
         self.ngy = None
         self.ngz = None
@@ -29,7 +33,14 @@ class Outcar(object):
 
 
     def read(self):
-        """Parse OUTCAR file.  Currently just checks for completion, loop time, and kpoints."""
+        """Parse OUTCAR file.  Currently checks for:
+                completion
+                loop time
+                kpoints
+                lorbit (LORBIT value from INCAR)
+                ispin (ISPIN value from INCAR)
+                magnetization (if LORBIT = 1, 2, 11, 12)
+        """
         self.kpts = None
         if os.path.isfile(self.filename):
             if self.filename.split(".")[-1].lower() == "gz":
@@ -43,10 +54,10 @@ class Outcar(object):
 
         for line in f:
             try:
-               if re.search("generate k-points for:",line):
-                   self.kpts = map(int, line.split()[-3:])
+                if re.search("generate k-points for:", line):
+                    self.kpts = map(int, line.split()[-3:])
             except:
-               pass
+                pass
 
             try:
                 if re.search("Total CPU time used",line):
@@ -61,6 +72,32 @@ class Outcar(object):
                         self.slowest_loop = t
                     elif t > self.slowest_loop:
                         self.slowest_loop = t
+            except:
+                pass
+
+            try:
+                if re.search("LORBIT", line):
+                    self.lorbit = int(line.split()[2])
+            except:
+                pass
+
+            try:
+                if re.search("ISPIN", line):
+                    self.ispin = int(line.split()[2])
+            except:
+                pass
+
+            try:
+                if re.search(r"magnetization \(x\)", line):
+                    self.mag = []
+                    for line in f:
+                        try:
+                            if re.match("[0-9]+", line.split()[0]):
+                                self.mag.append(float(line.split()[-1]))
+                            if re.match("tot", line.split()[0]):
+                                break
+                        except:
+                            pass
             except:
                 pass
 

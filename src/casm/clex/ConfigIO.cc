@@ -140,6 +140,22 @@ namespace CASM {
       return species_frac(config);
     }
 
+    // --- MagBase implementations ---
+
+    const std::string MagBase::Name = "relaxed_mag";
+
+    const std::string MagBase::Desc =
+      "Relaxed magnetic moment on each basis site. " ;
+
+    /// \brief Returns true if the Configuration has relaxed_mag
+    bool MagBase::validate(const Configuration &config) const {
+      return config.calc_properties().contains("relaxed_mag");
+    }
+
+    /// \brief Returns the atom fraction
+    Eigen::VectorXd MagBase::evaluate(const Configuration &config) const {
+      return relaxed_mag(config);
+    }
 
     // --- Corr implementations -----------
 
@@ -494,6 +510,22 @@ namespace CASM {
                                             has_volume_relaxation);
     }
 
+    GenericConfigFormatter<double> relaxed_magmom() {
+      return GenericConfigFormatter<double>("relaxed_magmom",
+                                            "Relaxed magnetic moment, normalized per primative cell.",
+                                            CASM::relaxed_magmom,
+                                            has_relaxed_magmom);
+    }
+
+    GenericConfigFormatter<double> relaxed_magmom_per_species() {
+      return GenericConfigFormatter<double>("relaxed_magmom_per_atom",
+                                            "Relaxed magnetic moment, normalized per atom.",
+                                            CASM::relaxed_magmom_per_species,
+                                            has_relaxed_magmom);
+    }
+
+
+
     /*End ConfigIO*/
   }
 
@@ -567,7 +599,9 @@ namespace CASM {
       rms_force(),
       basis_deformation(),
       lattice_deformation(),
-      volume_relaxation()
+      volume_relaxation(),
+      relaxed_magmom(),
+      relaxed_magmom_per_species()
     );
 
     return dict;
@@ -587,7 +621,8 @@ namespace CASM {
       RelaxationStrain(),
       DoFStrain(),
       SiteFrac(),
-      StrucScore()
+      StrucScore(),
+      MagBase()
     );
 
     return dict;

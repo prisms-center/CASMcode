@@ -8,6 +8,7 @@ from math import sqrt
 from casm.project import Project, Selection, query, write_eci
 import casm.learn.linear_model
 import casm.learn.tools
+import casm.learn.selection_wrapper
 import pandas
 
 def _find_method(mods, attrname):
@@ -1637,7 +1638,7 @@ def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=
     print "# Feature Selection:"
     print json.dumps(input["feature_selection"], indent=2), "\n"
   
-  mods = [casm.learn.feature_selection, sklearn.feature_selection]
+  mods = [casm.learn.feature_selection, sklearn.feature_selection, casm.learn.selection_wrapper]
   
   selector_method = _find_method(mods, input["feature_selection"]["method"])
   
