@@ -5,6 +5,7 @@ from os.path import join
 from casm.project import syminfo
 import numpy as np
 import math
+from string import ascii_lowercase
 
 
 class ClexDescription(object):
@@ -411,6 +412,9 @@ class Project(object):
       path: str
         Path to project root directory
       
+      name: str
+        Project name
+      
       settings: casm.project.ProjectSettings instance
         Contains project settings
       
@@ -419,6 +423,13 @@ class Project(object):
       
       prim: casm.project.Prim instance
         Represents the primitive crystal structure
+      
+      composition_axes: casm.project.CompositionAxes
+        Currently selected composition axes
+      
+      all_composition_axes: dict(str:casm.project.CompositionAxes)
+        Dict containing name:CompositionAxes pairs, including both standard and
+        custom composition axes
       
       casm_exe: str
         The casm CLI executable to use when necessary
@@ -472,7 +483,18 @@ class Project(object):
       self.casm_exe = casm_exe
       self.verbose = verbose
       
-      
+      self.all_composition_axes = {}
+      if os.path.exists(self.dir.composition_axes()):
+          with open(self.dir.composition_axes(), 'r') as f:
+              data = json.load(f)
+              if "standard_axes" in data:
+                  for key, val in data["standard_axes"].iteritems():
+                      self.all_composition_axes[key] = CompositionAxes(key, val)
+              if "custom_axes" in data:
+                  for key, val in data["custom_axes"].iteritems():
+                      self.all_composition_axes[key] = CompositionAxes(key, val)
+              self.composition_axes = self.all_composition_axes[data["current_axes"]]
+    
     
     def __del__(self):
       self.__unload()
@@ -522,6 +544,10 @@ class Project(object):
         if self._prim is None:
             self._prim = Prim(self)
         return self._prim
+    
+    @property
+    def name(self):
+        return self.settings.data['name']
     
     def refresh(self, read_settings=False, read_composition=False, read_chem_ref=False, read_configs=False, clear_clex=False):
       """
@@ -606,6 +632,10 @@ class Prim(object):
         lattice_matrix: np.array of shape (3, 3)
           lattice vectors as matrix columns
         
+        lattice_parameters: dict
+          Lattice parameters and angles (in degrees), as:
+            {'a':a, 'b':b, 'c':c, 'alpha':alpha, 'beta':beta, 'gamma':gamma}
+        
         basis: List(dict)
           crystal basis, as read directly from prim.json (format may change)
         
@@ -633,6 +663,9 @@ class Prim(object):
         
         crystal_family: str
           crystal family name, ('cubic', 'hexagonal', etc.)
+        
+        space_group_number: str
+          range of possible space group number
         
         components: List[str]
           occupational components
@@ -700,6 +733,7 @@ class Prim(object):
         self.crystal_symmetry_hm = syminfo.hm_symmetry(self.crystal_symmetry_s)
         self.crystal_system = syminfo.crystal_system(self.crystal_symmetry_s)
         self.crystal_family = syminfo.crystal_family(self.crystal_symmetry_s)
+        self.space_group_number = syminfo.space_group_number_map[self.crystal_symmetry_s]
     
         # composition (v0.2.X: elements and components are identical, only 'occupation' allowed)
         with open(self.proj.dir.composition_axes()) as f:
@@ -709,6 +743,77 @@ class Prim(object):
         self.elements = self.components
         self.n_independent_compositions = raw_composition_axes['standard_axes']['0']['independent_compositions']
         self.degrees_of_freedom = ['occupation']
+
+
+class CompositionAxes(object):
+    """A composition axes object
+    
+    Attributes
+    ----------
+    
+        name: str
+          composition axes name
+        
+        components: List[str]
+          occupational components
+        
+        n_independent_compositions: int
+          number of independent composition axes
+        
+        mol_formula: str
+          number of each component in terms of the parametric compositions
+        
+        param_formula: str
+          parametric compositions in terms of the number of components
+        
+        end_members: dict of np.array of shape=(n_components,)
+          the number of components per unit cell in each end member state, in form:
+          {'origin':np.array, 'a':np.array, 'b', np.array, ...}. Order matches
+          that given by self.components.
+          
+    
+    """
+    def __init__(self, name, data):
+        self._name = name
+        self._data = data
+        
+        self._end_members = {}
+        for c in ascii_lowercase:
+            if c in self._data:
+                self.end_members[c] = np.array(self._data[c])[:,0]
+            else:
+                break
+        self._end_members['origin'] = np.array(self._data['origin'])[:,0]
+
+    @property
+    def name(self):
+        return self._name
+    
+    @property
+    def components(self):
+        return self._data['components']
+    
+    @property
+    def n_independent_compositions(self):
+        return self._data['independent_compositions']
+    
+    @property
+    def mol_formula(self):
+        return self._data['mol_formula']
+    
+    @property
+    def param_formula(self):
+        return self._data['param_formula']
+    
+    @property
+    def origin(self):
+        return self._origin
+    
+    @property
+    def end_members(self):
+        return self._end_members
+    
+    
     
     
     
