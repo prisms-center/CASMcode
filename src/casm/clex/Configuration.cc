@@ -397,6 +397,27 @@ namespace CASM {
   }
 
   //*******************************************************************************
+  
+  /// \brief Returns the point group that leaves the Configuration unchanged
+  SymGroup Configuration::point_group() const {
+    SymGroup sym_group;
+    sym_group.set_lattice(ideal_lattice());
+    std::vector<PermuteIterator> config_factor_group;
+    config_factor_group = factor_group();
+    bool new_symop;
+    for(int i = 0; i < config_factor_group.size(); i++) {
+      new_symop = true;
+      if(i > 0) {
+        if(config_factor_group[i].factor_group_index() == config_factor_group[i - 1].factor_group_index())
+          new_symop = false;
+      }
+      if(new_symop)
+         sym_group.push_back(config_factor_group[i].sym_op());
+      }
+    return sym_group;
+  }
+
+  //*******************************************************************************
 
   /// \brief Fills supercell 'scel' with reoriented configuration, op*(*this)
   Configuration Configuration::fill_supercell(Supercell &scel, const SymOp &op) const {
@@ -467,7 +488,7 @@ namespace CASM {
         if(json.contains(props[i])) {
 
           // normal by #prim cells for some properties
-          if(props[i] == "energy" || props[i] == "relaxed_energy") {
+          if(props[i] == "energy" || props[i] == "relaxed_energy" || props[i] == "relaxed_magmom") {
             parsed_props[ props[i] ] = json[props[i]].get<double>() / get_supercell().volume();
           }
           else {
@@ -476,6 +497,10 @@ namespace CASM {
         }
         else
           success = false;
+      }
+      //Get relaxed magmom:
+      if(json.contains("relaxed_magmom")) {
+        parsed_props["relaxed_magmom"] = json["relaxed_magmom"].get<double>() / get_supercell().volume();
       }
       //Get RMS force:
       if(json.contains("relaxed_forces")) {
@@ -486,6 +511,39 @@ namespace CASM {
         }
         else {
           parsed_props["rms_force"] = 0.;
+        }
+      }
+      //Get Magnetic moment per site:
+      if(json.contains("relaxed_mag_basis")) {
+
+        // get the number of each molecule type
+        std::vector<int> num_each_molecule;
+        std::vector<std::string> name_each_molecule;
+        from_json(num_each_molecule, json["atoms_per_type"]);
+        from_json(name_each_molecule, json["atom_type"]);
+
+        // need to create an unsort_dict to put measured properties in the 'right' place
+        auto struc_molecule_name = get_prim().get_struc_molecule_name();
+
+        // Initialize container
+        Eigen::VectorXd mag_each_molecule = Eigen::VectorXd::Constant(struc_molecule_name.size(), std::nan(""));
+
+        Index i; // Index for which atom_type we're looking at
+        Index j; // Index for which individual atom of that atom_type
+        Index k = 0; // Global index over all atoms in the configuration
+        double cum_molecule_mag; // Holder for the cumulative magmom for the current atom_type
+
+        for(i = 0; i < num_each_molecule.size(); i++) {
+          cum_molecule_mag = 0;
+          for(j = 0; j < num_each_molecule[i]; j++) {
+            cum_molecule_mag += json["relaxed_mag_basis"][k].get<double>();
+            k += 1;
+          }
+          auto atom_idx = std::find(struc_molecule_name.begin(), struc_molecule_name.end(), name_each_molecule[i]) - struc_molecule_name.begin();
+          if (atom_idx < struc_molecule_name.size()) {
+            mag_each_molecule[atom_idx] = cum_molecule_mag/num_each_molecule[i];
+          }
+        parsed_props["relaxed_mag"] = mag_each_molecule;
         }
       }
     }
@@ -1634,6 +1692,26 @@ namespace CASM {
     return _config.calc_properties()["volume_relaxation"].get<double>();
   }
 
+  /// \brief Returns the relaxed magnetic moment, normalized per unit cell
+  double relaxed_magmom(const Configuration &_config) {
+    return _config.calc_properties()["relaxed_magmom"].get<double>();
+  }
+
+  /// \brief Returns the relaxed magnetic moment, normalized per species
+  double relaxed_magmom_per_species(const Configuration &_config) {
+    return relaxed_magmom(_config) / n_species(_config);
+  }
+
+  /// \brief Returns the relaxed magnetic moment at each basis site
+  Eigen::VectorXd relaxed_mag_basis(const Configuration &_config) {
+    return _config.calc_properties()["relaxed_mag_basis"].get<Eigen::VectorXd>();
+  }
+
+  /// \brief Returns the relaxed magnetic moment for each molecule
+  Eigen::VectorXd relaxed_mag(const Configuration &_config) {
+    return _config.calc_properties()["relaxed_mag"].get<Eigen::VectorXd>();
+  }
+
   /// \brief returns true if _config describes primitive cell of the configuration it describes
   bool is_primitive(const Configuration &_config) {
     return _config.is_primitive();
@@ -1671,6 +1749,14 @@ namespace CASM {
 
   bool has_volume_relaxation(const Configuration &_config) {
     return _config.calc_properties().contains("volume_relaxation");
+  }
+
+  bool has_relaxed_magmom(const Configuration &_config) {
+    return _config.calc_properties().contains("relaxed_magmom");
+  }
+
+  bool has_relaxed_mag_basis(const Configuration &_config) {
+    return _config.calc_properties().contains("relaxed_mag_basis");
   }
 
   /// \brief Constructor

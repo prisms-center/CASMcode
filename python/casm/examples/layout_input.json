@@ -1,0 +1,94 @@
+{
+  "n_plots_each_row": [1, 1, 1, 2],
+  "subplots": [
+    {
+      "pos": [0, 0],
+      "figure_kwargs": {
+        "plot_height": 400,
+        "plot_width": 800,
+        "tools": "crosshair,pan,reset,resize,box_zoom"
+      },
+      "series": [
+        {
+          "type": "hull",
+          "project": null,
+          "selection": "test_sel",
+          "x": "comp(a)",
+          "y": "formation_energy"
+        }
+      ]
+    },
+    {
+      "pos": [1, 0],
+      "figure_kwargs": {
+        "plot_height": 400,
+        "plot_width": 800,
+        "tools": "crosshair,pan,reset,resize,box_zoom"
+      },
+      "series": [
+        {
+          "type": "rankplot",
+          "project": null,
+          "selection": "test_sel",
+          "scoring_query": "total_score",
+          "tooltips": null
+        }
+      ]
+    },
+    {
+      "pos": [2, 0],
+      "figure_kwargs": {
+        "plot_height": 400,
+        "plot_width": 800,
+        "tools": "crosshair,pan,reset,resize,box_zoom"
+      },
+      "series": [
+        {
+          "type": "histogram",
+          "project": null,
+          "selection": "test_sel",
+          "x": "basis_deformation",
+          "hist_kwargs": {
+            "bins": 20,
+            "density": true
+          }
+        }
+      ]
+    },
+    {
+      "pos": [3, 0],
+      "figure_kwargs": {
+        "plot_height": 400,
+        "plot_width": 400,
+        "tools": "crosshair,pan,reset,resize,box_zoom"
+      },
+      "series": [
+        {
+          "type": "scatter",
+          "project": null,
+          "selection": "test_sel",
+          "x": "comp(a)",
+          "y": "novelty(ALL)",
+          "tooltips": null
+        }
+      ]
+    },
+    {
+      "pos": [3, 1],
+      "figure_kwargs": {
+        "plot_height": 400,
+        "plot_width": 400,
+        "tools": "crosshair,pan,reset,resize,box_zoom"
+      },
+      "series": [
+        {
+          "type": "scatter",
+          "project": null,
+          "selection": "test_sel",
+          "x": "comp(a)",
+          "y": "volume_relaxation"
+        }
+      ]
+    }
+  ]
+}
