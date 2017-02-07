@@ -107,19 +107,19 @@ namespace CASM {
       /** --help option
        */
       if(vm.count("help")) {
-        std::cout << std::endl;
-        std::cout << import_opt.desc() << std::endl;
+        args.log << std::endl;
+        args.log << import_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        std::cout << "\n";
-        std::cout << import_opt.desc() << std::endl;
+        args.log << "\n";
+        args.log << import_opt.desc() << std::endl;
 
-        std::cout << "DESCRIPTION" << std::endl;
-        std::cout << "    Import structure specified by --pos. If it doesn't exist make a directory for it and copy data over" << std::endl;
-        std::cout << "    If a *.json file is specified, it will be interpreted as a 'calc.properties.json' file." << std::endl;
+        args.log << "DESCRIPTION" << std::endl;
+        args.log << "    Import structure specified by --pos. If it doesn't exist make a directory for it and copy data over" << std::endl;
+        args.log << "    If a *.json file is specified, it will be interpreted as a 'calc.properties.json' file." << std::endl;
         return 0;
       }
 
@@ -133,27 +133,27 @@ namespace CASM {
 
     }
     catch(po::error &e) {
-      std::cerr << import_opt.desc() << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << import_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return 3;
     }
     catch(std::exception &e) {
-      std::cerr << import_opt.desc() << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << import_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return 4;
 
     }
 
     if(!vm.count("pos") && !vm.count("batch")) {
-      std::cerr << import_opt.desc() << std::endl;
-      std::cerr << "No structures specified for import (specify structures using --pos or --batch)." << std::endl;
+      args.err_log << import_opt.desc() << std::endl;
+      args.err_log << "No structures specified for import (specify structures using --pos or --batch)." << std::endl;
       return 5;
     }
 
     //read all the import paths
     if(vm.count("batch")) {
       if(!fs::exists(batch_path)) {
-        std::cerr << "ERROR: Batch import file does not exist at " << batch_path << "\n";
+        args.err_log << "ERROR: Batch import file does not exist at " << batch_path << "\n";
         return 6;
       }
       fs::ifstream batchfile(batch_path);
@@ -167,18 +167,18 @@ namespace CASM {
     }
     {
       if(pos_paths.size() == 0) {
-        std::cerr <<   "ERROR: No files specified for import.\n";
+        args.err_log <<   "ERROR: No files specified for import.\n";
         if(vm.count("batch"))
-          std::cerr << "       Check batch file for errors.\n";
+          args.err_log << "       Check batch file for errors.\n";
         return 7;
       }
       bool missing_files(false);
       for(auto it = pos_paths.cbegin(); it != pos_paths.cend(); ++it) {
         if(!fs::exists(*it)) {
           if(!missing_files)
-            std::cerr << "*** ERROR: Missing file(s):\n";
+            args.err_log << "*** ERROR: Missing file(s):\n";
           missing_files = true;
-          std::cerr   << "           " << fs::absolute(*it) << "\n";
+          args.err_log   << "           " << fs::absolute(*it) << "\n";
         }
       }
       if(missing_files)
@@ -216,10 +216,10 @@ namespace CASM {
     std::vector<std::string > error_log;
     Index n_unique(0);
     // iterate over structure files
-    std::cout << "  Beginning import of " << pos_paths.size() << " configuration" << (pos_paths.size() > 1 ? "s" : "") << "...\n" << std::endl;
+    args.log << "  Beginning import of " << pos_paths.size() << " configuration" << (pos_paths.size() > 1 ? "s" : "") << "...\n" << std::endl;
     for(auto it = pos_paths.begin(); it != pos_paths.end(); ++it) {
       if(it != pos_paths.begin())
-        std::cout << "\n***************************\n" << std::endl;
+        args.log << "\n***************************\n" << std::endl;
 
       fs::path pos_path, import_path;
 
@@ -268,23 +268,23 @@ namespace CASM {
         std::vector<Index> best_assignment;
         jsonParser fullrelax_data;
         if(configmapper.import_structure_occupation(import_struc, imported_name, fullrelax_data, best_assignment, cart_op, true)) {
-          std::cout << "  " << pos_path << "\n  was imported successfully as " << imported_name << std::endl << std::endl;
+          args.log << "  " << pos_path << "\n  was imported successfully as " << imported_name << std::endl << std::endl;
           n_unique++;
           new_import = true;
         }
         else {
-          std::cout << "  " << pos_path << "\n  mapped onto pre-existing equivalent structure " << imported_name << std::endl << std::endl;
+          args.log << "  " << pos_path << "\n  mapped onto pre-existing equivalent structure " << imported_name << std::endl << std::endl;
         }
         relax_data = fullrelax_data["best_mapping"];
-        std::cout << "  Relaxation stats -> lattice_deformation = " << relax_data["lattice_deformation"].get<double>()
-                  << "      basis_deformation = " << relax_data["basis_deformation"].get<double>() << std::endl << std::endl;;
+        args.log << "  Relaxation stats -> lattice_deformation = " << relax_data["lattice_deformation"].get<double>()
+                 << "      basis_deformation = " << relax_data["basis_deformation"].get<double>() << std::endl << std::endl;;
       }
       catch(std::exception &e) {
-        std::cerr << "  ERROR: Unable to import " << pos_path << " because \n"
-                  << "    -> " << e.what() << "\n\n";
+        args.err_log << "  ERROR: Unable to import " << pos_path << " because \n"
+                     << "    -> " << e.what() << "\n\n";
         error_log.push_back(it->string() + "\n     -> " + e.what());
         if(it != pos_paths.cend()) {
-          std::cout << "  Continuing...\n";
+          args.log << "  Continuing...\n";
         }
         continue;
       }
@@ -308,7 +308,7 @@ namespace CASM {
     // All the mapping is finished; now we migrate data, if requested
     std::stringstream conflict_log;
     if(vm.count("data")) {
-      std::cout << "  Attempting to import data..." << std::endl;
+      args.log << "  Attempting to import data..." << std::endl;
       auto it(import_map.begin()), end_it(import_map.end());
       for(; it != end_it; ++it) {
         Configuration &imported_config = *(it->first);
@@ -408,9 +408,9 @@ namespace CASM {
 
         fs::path pos_path = std::get<Import_impl::path>(data_vec[best_ind]);
         if(pos_path.extension() != ".json" && pos_path.extension() != ".JSON") {
-          std::cout << "  No calculation data was found in the enclosing directory of \n"
-                    << "    " << pos_path << std::endl
-                    << "  Continuing..." << std::endl;
+          args.log << "  No calculation data was found in the enclosing directory of \n"
+                   << "    " << pos_path << std::endl
+                   << "  Continuing..." << std::endl;
           continue;
         }
 
@@ -430,7 +430,7 @@ namespace CASM {
 
         jsonParser calc_data;
         if(!imported_config.read_calc_properties(calc_data)) {
-          std::cout << "  WARNING: Some properties from " << pos_path << " were not valid. Viable values will still be recorded.\n";
+          args.log << "  WARNING: Some properties from " << pos_path << " were not valid. Viable values will still be recorded.\n";
         }
 
         jsonParser &relaxjson = std::get<Import_impl::relaxjson>(data_vec[best_ind]);
@@ -445,40 +445,40 @@ namespace CASM {
 
       }
     }
-    std::cout << "\n***************************\n" << std::endl;
+    args.log << "\n***************************\n" << std::endl;
 
-    std::cout << "  Finished importing " << pos_paths.size() <<  " structures";
+    args.log << "  Finished importing " << pos_paths.size() <<  " structures";
     if(n_unique == 0)
-      std::cout << " (none of these are new or unique)";
+      args.log << " (none of these are new or unique)";
     else if(n_unique < pos_paths.size())
-      std::cout << " (only " << n_unique << " of these " << (n_unique == 1 ? "is" : "are") << " new and unique)";
-    std::cout << "." <<  std::endl;
+      args.log << " (only " << n_unique << " of these " << (n_unique == 1 ? "is" : "are") << " new and unique)";
+    args.log << "." <<  std::endl;
 
     //Update directories
-    std::cout << "  Writing SCEL..." << std::endl;
+    args.log << "  Writing SCEL..." << std::endl;
     primclex.print_supercells();
-    std::cout << "  Writing config_list..." << std::endl << std::endl;
+    args.log << "  Writing config_list..." << std::endl << std::endl;
     primclex.write_config_list();
-    std::cout << "  DONE" << std::endl << std::endl;
+    args.log << "  DONE" << std::endl << std::endl;
 
     if(error_log.size() > 0) {
-      std::cout << "  WARNING: --The following paths could not be imported due to errors:\n";
+      args.log << "  WARNING: --The following paths could not be imported due to errors:\n";
       for(auto it = error_log.cbegin(); it != error_log.cend(); ++it) {
-        std::cout << *it
-                  << "\n        ----------------------------------------------\n" << std::endl;
+        args.log << *it
+                 << "\n        ----------------------------------------------\n" << std::endl;
       }
-      std::cout << "\n" << std::endl;
+      args.log << "\n" << std::endl;
     }
     if(conflict_log.str().size()) {
-      std::cout << "  WARNING: -- The following conflicts were found\n" << std::endl
-                << conflict_log.str() << std::endl;
+      args.log << "  WARNING: -- The following conflicts were found\n" << std::endl
+               << conflict_log.str() << std::endl;
 
-      std::cout << "  Please review these conflicts.  A different resolution can be obtained by removing datafiles from\n"
-                << "  the training_data directory and performing an import using a manually reduced set of files.\n";
+      args.log << "  Please review these conflicts.  A different resolution can be obtained by removing datafiles from\n"
+               << "  the training_data directory and performing an import using a manually reduced set of files.\n";
     }
-    std::cout << "  DONE" << std::endl << std::endl;
+    args.log << "  DONE" << std::endl << std::endl;
 
-    std::cout << std::endl;
+    args.log << std::endl;
 
     return 0;
   };
