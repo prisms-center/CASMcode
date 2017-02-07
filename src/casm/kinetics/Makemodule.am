@@ -1,4 +1,5 @@
 libcasm_la_SOURCES += ./src/casm/kinetics/DiffusionTransformation.cc\
                       ./src/casm/kinetics/DiffusionTransformationEnum.cc\
                       ./src/casm/kinetics/DoFTransformation.cc\
+                      ./src/casm/kinetics/DiffTransOrbitQuery.cc\
                       ./src/casm/kinetics/OccupationTransformation.cc

@@ -3,5 +3,6 @@ kineticsinclude_HEADERS=./include/casm/kinetics/DiffusionTransformation.hh\
                         ./include/casm/kinetics/DiffusionTransformationEnum.hh\
                         ./include/casm/kinetics/DiffusionTransformationEnum_impl.hh\
                         ./include/casm/kinetics/DoFTransformation.hh\
+                        ./include/casm/kinetics/DiffTransOrbitQuery.hh\
                         ./include/casm/kinetics/OccupationTransformation.hh
 					
