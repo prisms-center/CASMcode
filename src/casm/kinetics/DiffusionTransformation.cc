@@ -2,6 +2,8 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/crystallography/Coordinate.hh"
+
 
 namespace CASM {
 
@@ -390,20 +392,12 @@ namespace CASM {
       int post_size;
       std::map<int,std::map<int,std::map<int,int>>> unique_inds;
       //May need to sort first?
+      DiffusionTransformation s_this = this->sorted();
       std::string result = "DT" + std::to_string(size());
       std::vector<int> totals = {0,0,0,0};
-      for (auto it=specie_traj().begin(); it!=specie_traj().end();it++){
+      for (auto it=s_this.specie_traj().begin(); it!=s_this.specie_traj().end();it++){
         prev_size = nlist.size();
         nlist.expand(it->from.uccoord);
-        post_size = nlist.size();
-        if (prev_size!=post_size){
-          int idx = 0;
-          for (auto n_it = nlist.begin(); n_it != nlist.end(); n_it++){
-            unique_inds[(*n_it)(0)][(*n_it)(1)][(*n_it)(2)] = idx;
-            idx++;
-          }
-        }
-        prev_size = nlist.size();
         nlist.expand(it->to.uccoord);
         post_size = nlist.size();
         if (prev_size!=post_size){
@@ -416,24 +410,38 @@ namespace CASM {
         result+= "_" + it->from.specie().name + "(" + std::to_string(unique_inds[it->from.uccoord.unitcell(0)]
             [it->from.uccoord.unitcell(1)]
             [it->from.uccoord.unitcell(2)]*prim.basis.size() + it->from.uccoord.sublat()) ;
-        //result += std::to_string(it->from.uccoord.sublat());
 
         result += ",";
         result+= std::to_string(unique_inds[it->to.uccoord.unitcell(0)]
             [it->to.uccoord.unitcell(1)]
             [it->to.uccoord.unitcell(2)]*prim.basis.size() + it->to.uccoord.sublat()) + ")";
-
-        //totals[0] += it->from.uccoord.sublat();
-        //totals[1] += it->from.uccoord.unitcell(0);
-        //totals[2] += it->from.uccoord.unitcell(1);
-        //totals[3] += it->from.uccoord.unitcell(2);
       }
-      //for (auto it=totals.begin(); it!=totals.end();it++){
-        //result+= "_" + std::to_string(*it);
-      //}
-
-
       return result;
+    }
+
+    /// \brief Returns the distance from uccoord to the closest point on a linearly
+    /// interpolated diffusion path. (Could be an end point)
+    double DiffusionTransformation::dist_to_path(const UnitCellCoord &uccoord) const{
+      double dist = 10^10;
+      for (auto it=specie_traj().begin(); it!=specie_traj().end();it++){
+        Coordinate v1 = (uccoord.coordinate()-it->from.uccoord.coordinate());
+        Coordinate v2 = (it->to.uccoord.coordinate()-it->from.uccoord.coordinate());
+        Eigen::Vector3d v3 = v1.const_cart().dot(v2.const_cart())/(v1.const_cart().norm())/(v2.const_cart().norm())*v2.const_cart();
+        double curr_dist;
+        if (v3.norm() > v2.const_cart().norm()){
+          curr_dist = (uccoord.coordinate().const_cart()-it->to.uccoord.coordinate().const_cart()).norm();
+        }
+        else if (v3.dot(v2.const_cart()) < 0){
+          curr_dist = v1.const_cart().norm();
+        }
+        else {
+          curr_dist = (v1.const_cart()-v3).norm();
+        }
+        if (curr_dist < dist){
+          dist = curr_dist;
+        }
+      }
+      return dist;
     }
 
     Configuration &DiffusionTransformation::apply_to_impl(Configuration &config) const {

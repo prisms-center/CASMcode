@@ -292,6 +292,10 @@ namespace CASM {
       /// \brief Return a standardized name for this diffusion transformation
       std::string name() const;
 
+      /// \brief Returns the distance from uccoord to the closest point on a linearly
+      /// interpolated diffusion path. (Could be an end point)
+      double dist_to_path(const UnitCellCoord &uccoord) const;
+
     private:
 
       Configuration &apply_to_impl(Configuration &config) const override;
