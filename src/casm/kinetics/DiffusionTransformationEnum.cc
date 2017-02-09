@@ -191,6 +191,10 @@ namespace CASM {
       }
       PrototypePrinter<Kinetics::DiffusionTransformation> printer;
       print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), std::cout, printer);
+
+      for (auto it = diff_trans_orbits.begin();it!=diff_trans_orbits.end();it++){
+        std::cout << it->prototype().name() << std::endl;
+      }
       
       return 0;
     }

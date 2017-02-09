@@ -289,6 +289,9 @@ namespace CASM {
         return cluster().max_length();
       }
 
+      /// \brief Return a standardized name for this diffusion transformation
+      std::string name() const;
+
     private:
 
       Configuration &apply_to_impl(Configuration &config) const override;

@@ -28,7 +28,7 @@ namespace CASM {
 
       // --- Required implementations -----------
 
-      /// \brief Returns if all of the species in m_search_list are in the prototype
+      /// \brief Returns true if all of the species in m_search_list are in the prototype
       ///  of the orbit
       bool evaluate(const Kinetics::PrimPeriodicDiffTransOrbit &orbit) const override;
 
@@ -38,7 +38,6 @@ namespace CASM {
       }
 
       /// \brief Expects 'contains("Specie1","Specie2",...)'
-      /// 'corr(clex_name,index_expression)'
       bool parse_args(const std::string &args) override;
 
     private:
@@ -59,6 +58,8 @@ namespace CASM {
 		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> max_length();
 
 		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<std::string> species_list();
+
+		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<std::string> difftransname();
 
 	}
 

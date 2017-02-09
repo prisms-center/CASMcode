@@ -1,6 +1,7 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/symmetry/Orbit_impl.hh"
+#include "casm/clex/NeighborList.hh"
 
 namespace CASM {
 
@@ -372,13 +373,68 @@ namespace CASM {
       return !this->_lt(_tmp) && !_tmp._lt(*this);
     }
 
-    /*
-        DiffusionTransformation DiffusionTransformation::copy_apply_sym(const SymOp &op) const {
-          DiffusionTransformation t {*this};
-          t.apply_sym(op);
-          return t;
+    std::string DiffusionTransformation::name() const{
+      Structure prim(specie_traj().begin()->from.uccoord.unit());
+      std::set<int> sublat_indices;
+      for(int i = 0; i < prim.basis.size(); i++) {
+        sublat_indices.insert(i);
+      }
+
+      // construct
+      PrimNeighborList nlist(
+        PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, TOL),
+        sublat_indices.begin(),
+        sublat_indices.end()
+      );
+      int prev_size;
+      int post_size;
+      std::map<int,std::map<int,std::map<int,int>>> unique_inds;
+      //May need to sort first?
+      std::string result = "DT" + std::to_string(size());
+      std::vector<int> totals = {0,0,0,0};
+      for (auto it=specie_traj().begin(); it!=specie_traj().end();it++){
+        prev_size = nlist.size();
+        nlist.expand(it->from.uccoord);
+        post_size = nlist.size();
+        if (prev_size!=post_size){
+          int idx = 0;
+          for (auto n_it = nlist.begin(); n_it != nlist.end(); n_it++){
+            unique_inds[(*n_it)(0)][(*n_it)(1)][(*n_it)(2)] = idx;
+            idx++;
+          }
         }
-    */
+        prev_size = nlist.size();
+        nlist.expand(it->to.uccoord);
+        post_size = nlist.size();
+        if (prev_size!=post_size){
+          int idx = 0;
+          for (auto n_it = nlist.begin(); n_it != nlist.end(); n_it++){
+            unique_inds[(*n_it)(0)][(*n_it)(1)][(*n_it)(2)] = idx;
+            idx++;
+          }
+        }
+        result+= "_" + it->from.specie().name + "(" + std::to_string(unique_inds[it->from.uccoord.unitcell(0)]
+            [it->from.uccoord.unitcell(1)]
+            [it->from.uccoord.unitcell(2)]*prim.basis.size() + it->from.uccoord.sublat()) ;
+        //result += std::to_string(it->from.uccoord.sublat());
+
+        result += ",";
+        result+= std::to_string(unique_inds[it->to.uccoord.unitcell(0)]
+            [it->to.uccoord.unitcell(1)]
+            [it->to.uccoord.unitcell(2)]*prim.basis.size() + it->to.uccoord.sublat()) + ")";
+
+        //totals[0] += it->from.uccoord.sublat();
+        //totals[1] += it->from.uccoord.unitcell(0);
+        //totals[2] += it->from.uccoord.unitcell(1);
+        //totals[3] += it->from.uccoord.unitcell(2);
+      }
+      //for (auto it=totals.begin(); it!=totals.end();it++){
+        //result+= "_" + std::to_string(*it);
+      //}
+
+
+      return result;
+    }
 
     Configuration &DiffusionTransformation::apply_to_impl(Configuration &config) const {
 
