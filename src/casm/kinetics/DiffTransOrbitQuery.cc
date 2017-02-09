@@ -71,6 +71,14 @@ namespace CASM {
       });
     }
 
+    GenericDiffTransOrbitFormatter<double> min_dist_to_path() {
+      return GenericDiffTransOrbitFormatter<double>("min_dist_to_path",
+                                           "Returns the distance of the closest atom to the diffusion transformation",
+      [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> double {
+        return orbit.prototype().min_dist_to_path();
+      });
+    }
+
     GenericDiffTransOrbitFormatter<std::string> species_list() {
       return GenericDiffTransOrbitFormatter<std::string>("species_list",
                                            "Returns the species that move in this diffusion transformation",
@@ -146,7 +154,8 @@ namespace CASM {
 
     dict.insert(
       min_length(),
-      max_length()
+      max_length(),
+      min_dist_to_path()
     );
 
     return dict;

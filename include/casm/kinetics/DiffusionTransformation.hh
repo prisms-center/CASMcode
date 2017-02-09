@@ -296,6 +296,12 @@ namespace CASM {
       /// interpolated diffusion path. (Could be an end point)
       double dist_to_path(const UnitCellCoord &uccoord) const;
 
+      /// \brief Determines which site is closest to the diffusion transformation
+      UnitCellCoord path_nearest_neighbor() const;
+
+      /// \brief Determines the nearest site distance to the diffusion path
+      double min_dist_to_path() const;
+
     private:
 
       Configuration &apply_to_impl(Configuration &config) const override;
