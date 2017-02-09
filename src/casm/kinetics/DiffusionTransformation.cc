@@ -408,14 +408,14 @@ namespace CASM {
             idx++;
           }
         }
-        result+= "_" + it->from.specie().name + "(" + std::to_string(unique_inds[it->from.uccoord.unitcell(0)]
+        result+= "_" + it->from.specie().name + "-" + std::to_string(unique_inds[it->from.uccoord.unitcell(0)]
             [it->from.uccoord.unitcell(1)]
             [it->from.uccoord.unitcell(2)]*prim.basis.size() + it->from.uccoord.sublat()) ;
 
         result += ",";
         result+= std::to_string(unique_inds[it->to.uccoord.unitcell(0)]
             [it->to.uccoord.unitcell(1)]
-            [it->to.uccoord.unitcell(2)]*prim.basis.size() + it->to.uccoord.sublat()) + ")";
+            [it->to.uccoord.unitcell(2)]*prim.basis.size() + it->to.uccoord.sublat()) + "-";
       }
       return result;
     }
@@ -500,6 +500,64 @@ namespace CASM {
 
       return dist;
     }
+
+    /// \brief Determines the nearest site distance to the diffusion path
+    UnitCellCoord DiffusionTransformation::path_nearest_neighbor() const{
+      double dist = 100.0;
+      Structure prim(specie_traj().begin()->from.uccoord.unit());
+      std::set<int> sublat_indices;
+      for(int i = 0; i < prim.basis.size(); i++) {
+        sublat_indices.insert(i);
+      }
+      UnitCellCoord ret_coord(prim);
+      // construct
+      PrimNeighborList nlist(
+        PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, TOL),
+        sublat_indices.begin(),
+        sublat_indices.end()
+      );
+      UnitCell pos(1,1,1);
+      for (auto it=specie_traj().begin(); it!=specie_traj().end();it++){
+        UnitCellCoord fromcoord = it->from.uccoord;
+        UnitCellCoord tocoord = it->to.uccoord;
+
+        nlist.expand(fromcoord);
+        fromcoord += pos;
+        nlist.expand(fromcoord);
+        fromcoord -= pos;
+        fromcoord -= pos;
+        nlist.expand(fromcoord);
+        nlist.expand(tocoord);
+        tocoord += pos;
+        nlist.expand(tocoord);
+        tocoord -= pos;
+        tocoord -= pos;
+        nlist.expand(tocoord);
+      }
+      for (auto n_it = nlist.begin(); n_it != nlist.end(); n_it++){
+        for(int b = 0; b < prim.basis.size(); b++) {
+          UnitCellCoord uccoord(prim,b,*n_it);
+          bool in_diff_trans = false;
+          for (auto it=specie_traj().begin(); it!=specie_traj().end();it++){
+            if (uccoord == it->from.uccoord || uccoord == it->to.uccoord){
+              in_diff_trans = true;
+            }
+          }
+
+          if (!in_diff_trans){
+            double curr_dist = dist_to_path(uccoord);
+            if (curr_dist < dist){
+              dist = curr_dist;
+              ret_coord = uccoord;
+            }
+          }
+        }
+      }
+
+
+      return ret_coord;
+    }
+
 
     Configuration &DiffusionTransformation::apply_to_impl(Configuration &config) const {
 

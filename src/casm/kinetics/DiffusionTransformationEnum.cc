@@ -195,6 +195,7 @@ namespace CASM {
       for (auto it = diff_trans_orbits.begin();it!=diff_trans_orbits.end();it++){
         std::cout << it->prototype().name() << std::endl;
         std::cout << it->prototype().min_dist_to_path() << std::endl;
+        std::cout << it->prototype().path_nearest_neighbor() << std::endl;
       }
       
       return 0;
