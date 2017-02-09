@@ -16,7 +16,6 @@ class Neb(object):
         print "Constructing a VASP NEB  calculation object"
         sys.stdout.flush()
 
-        # store path to .../relaxdir, and create if not existing
         if calcdir is None:
             calcdir = os.getcwd()
         self.calcdir = os.path.abspath(calcdir)
@@ -52,10 +51,8 @@ class Neb(object):
     To Do:
     1) Edit io/* files for new INCAR options
     2) dig up all new error s possible for NEB calcs
+    3) make and vasp.neb, vasp.neb_setup executables along with casm-calc support to run the calculation
 
     Things to discuss
       1) possible input formats for the difussion hop settings
-      2) possible input option for various VASP options. Should we link to calctype and use a "settings/calctype.neb/" to read all the files. 
-      3) make and vasp.neb, vasp.neb_setup executables along with casm-calc support to run the calculation?? """
-
-    
+      2) possible input option for various VASP options. Should we link to calctype and use a "settings/calctype.neb/" to read all the files. """
