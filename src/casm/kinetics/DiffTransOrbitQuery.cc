@@ -103,7 +103,19 @@ namespace CASM {
       });
     }
 
+    GenericDiffTransOrbitFormatter<double> activation_barrier() {
+    return GenericDiffTransOrbitFormatter<double>("activation_barrier",
+                                         "Returns the locally cluster expanded activation barrier associated with this diffusion transformation",
+    [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> double {
+    	//TEMPORARY FUNCTION UNTIL ACTIVATION BARRIER CAN BE CALCULATED
+      return orbit.prototype().min_dist_to_path();
+    },[](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> bool {
+      return false;
+    });
+  	}
 	}
+
+    
 
 	template<>
   StringAttributeDictionary<Kinetics::PrimPeriodicDiffTransOrbit> make_string_dictionary<Kinetics::PrimPeriodicDiffTransOrbit>() {
