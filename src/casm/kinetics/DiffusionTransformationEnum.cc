@@ -193,7 +193,7 @@ namespace CASM {
       print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), std::cout, printer);
 
       for (auto it = diff_trans_orbits.begin();it!=diff_trans_orbits.end();it++){
-        std::cout << it->prototype().name() << std::endl;
+        std::cout << orbit_name(*it) << std::endl;
         std::cout << min_dist_to_path(it->prototype()) << std::endl;
         std::cout << path_nearest_neighbor(it->prototype()) << std::endl;
       }

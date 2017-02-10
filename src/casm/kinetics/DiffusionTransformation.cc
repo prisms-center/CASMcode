@@ -377,8 +377,8 @@ namespace CASM {
       return !this->_lt(_tmp) && !_tmp._lt(*this);
     }
 
-    std::string DiffusionTransformation::name() const{
-      Structure prim(specie_traj().begin()->from.uccoord.unit());
+    std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit){
+      Structure prim(orbit.prototype().specie_traj().begin()->from.uccoord.unit());
       std::set<int> sublat_indices;
       for(int i = 0; i < prim.basis.size(); i++) {
         sublat_indices.insert(i);
@@ -394,8 +394,8 @@ namespace CASM {
       int post_size;
       std::map<int,std::map<int,std::map<int,int>>> unique_inds;
       //May need to sort first?
-      DiffusionTransformation s_this = this->sorted();
-      std::string result = "DT" + std::to_string(size());
+      DiffusionTransformation s_this = orbit.prototype().sorted();
+      std::string result = "DT" + std::to_string(orbit.prototype().size());
       std::vector<int> totals = {0,0,0,0};
       for (auto it=s_this.specie_traj().begin(); it!=s_this.specie_traj().end();it++){
         prev_size = nlist.size();

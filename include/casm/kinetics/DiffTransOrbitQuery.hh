@@ -59,7 +59,7 @@ namespace CASM {
 
 		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<std::string> species_list();
 
-		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<std::string> difftransname();
+		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<std::string> diff_trans_orbitname();
 
 		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> min_dist_to_path();
 

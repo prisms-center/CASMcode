@@ -95,11 +95,11 @@ namespace CASM {
       });
     }
 
-    GenericDiffTransOrbitFormatter<std::string> difftransname() {
-      return GenericDiffTransOrbitFormatter<std::string>("difftransname",
-                                           "Returns the name of the diffusion transformation",
+    GenericDiffTransOrbitFormatter<std::string> diff_trans_orbitname() {
+      return GenericDiffTransOrbitFormatter<std::string>("diff_trans_orbitname",
+                                           "Returns the name of the diffusion transformation orbit",
       [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> std::string {
-        return orbit.prototype().name();
+        return orbit_name(orbit);
       });
     }
 
@@ -125,7 +125,7 @@ namespace CASM {
 
     dict.insert(
       species_list(),
-      difftransname()
+      diff_trans_orbitname()
     );
 
     return dict;

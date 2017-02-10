@@ -289,9 +289,6 @@ namespace CASM {
         return cluster().max_length();
       }
 
-      /// \brief Return a standardized name for this diffusion transformation
-      std::string name() const;
-
 
 
     private:
@@ -334,6 +331,9 @@ namespace CASM {
     std::ostream &operator<<(std::ostream &sout, const DiffusionTransformation &trans);
 
     typedef Orbit<DiffusionTransformation, PrimPeriodicDiffTransSymCompare> PrimPeriodicDiffTransOrbit;
+
+    /// \brief Return a standardized name for this diffusion transformation orbit
+    std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit);
 
     // \brief Returns the distance from uccoord to the closest point on a linearly
     /// interpolated diffusion path. (Could be an end point)
