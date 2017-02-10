@@ -75,7 +75,7 @@ namespace CASM {
       return GenericDiffTransOrbitFormatter<double>("min_dist_to_path",
                                            "Returns the distance of the closest atom to the diffusion transformation",
       [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> double {
-        return orbit.prototype().min_dist_to_path();
+        return min_dist_to_path(orbit.prototype());
       });
     }
 
@@ -103,12 +103,12 @@ namespace CASM {
       });
     }
 
-    GenericDiffTransOrbitFormatter<double> activation_barrier() {
-    return GenericDiffTransOrbitFormatter<double>("activation_barrier",
+    GenericDiffTransOrbitFormatter<double> min_activation_barrier() {
+    return GenericDiffTransOrbitFormatter<double>("min_activation_barrier",
                                          "Returns the locally cluster expanded activation barrier associated with this diffusion transformation",
     [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> double {
     	//TEMPORARY FUNCTION UNTIL ACTIVATION BARRIER CAN BE CALCULATED
-      return orbit.prototype().min_dist_to_path();
+      return min_dist_to_path(orbit.prototype());
     },[](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> bool {
       return false;
     });
