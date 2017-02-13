@@ -30,7 +30,7 @@ namespace CASM {
 
     bool DiffTransConfiguration::is_sorted() const{
     	Configuration to = to_config();
-    	return to < m_from_config;
+    	return m_from_config < to;
     }
 
     DiffTransConfiguration &DiffTransConfiguration::canonical_form(){
@@ -40,10 +40,14 @@ namespace CASM {
     	return *this;
     }
 
-   	DiffTransConfiguration &DiffTransConfiguration::canonical_form(){
+   	DiffTransConfiguration &DiffTransConfiguration::canonical_equiv() const{
 			DiffTransConfiguration tmp {*this};
     	return tmp.canonical_form();
     }
 
+    DiffTransConfiguration &apply_sym(SymOp &op){
+    	m_diff_trans.apply_sym(op);
+    	m_from_config.app
+    }
 	}
 }
