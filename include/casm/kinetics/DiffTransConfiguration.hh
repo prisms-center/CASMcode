@@ -37,10 +37,6 @@ namespace CASM {
 	      return this->sorted()._lt(B.sorted());
 	    }
 
-	    /// ToDo:
-	    ///   generate 'to_config' from 'from_config' and 'diff_trans'
-	    ///   if 'to_config' is lt 'from_config', from_config = to_config
-
 	    /// \brief sort DiffTransConfiguration in place
 	    DiffTransConfiguration &sort();
 
@@ -50,11 +46,15 @@ namespace CASM {
 	    /// \brief Returns true if the DiffTransConfiguration is sorted 
 	    bool is_sorted() const;
 
-	    const DiffTransConfiguration canonical_form() const;
+	    /// \brief Converts this DiffTransConfiguration to canonical form
+	    DiffTransConfiguration &canonical_form();
 
+	    /// \brief States if this DiffTransConfiguration is in canonical form
 	    bool is_canonical() const{
 	    	return m_from_config.is_canonical();
 	    }
+
+	    DiffTransConfiguration
 
 	  private:
 

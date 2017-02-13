@@ -33,11 +33,16 @@ namespace CASM {
     	return to < m_from_config;
     }
 
-    DiffTransConfiguration DiffTransConfiguration::canonical_form() const{
+    DiffTransConfiguration &DiffTransConfiguration::canonical_form(){
     	SymOp op = m_from_config.to_canonical().sym_op();
     	m_diff_trans.apply_sym(op);
     	m_from_config.canonical_form();
     	return *this;
+    }
+
+   	DiffTransConfiguration &DiffTransConfiguration::canonical_form(){
+			DiffTransConfiguration tmp {*this};
+    	return tmp.canonical_form();
     }
 
 	}
