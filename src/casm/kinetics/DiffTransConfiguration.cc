@@ -40,14 +40,24 @@ namespace CASM {
     	return *this;
     }
 
-   	DiffTransConfiguration &DiffTransConfiguration::canonical_equiv() const{
+   	DiffTransConfiguration DiffTransConfiguration::canonical_equiv() const{
 			DiffTransConfiguration tmp {*this};
     	return tmp.canonical_form();
     }
 
-    DiffTransConfiguration &apply_sym(SymOp &op){
-    	m_diff_trans.apply_sym(op);
-    	m_from_config.app
+    DiffTransConfiguration &DiffTransConfiguration::apply_sym_impl(const PermuteIterator &it){
+    	m_from_config = apply(it,m_from_config);
+    	m_diff_trans.apply_sym(it.sym_op());
+    	return *this;
+    }
+
+    DiffTransConfiguration &apply_sym(DiffTransConfiguration &diff_trans_config,const PermuteIterator &it){
+      return diff_trans_config.apply_sym_impl(it);
+    }
+
+    DiffTransConfiguration copy_apply_sym(const DiffTransConfiguration &diff_trans_config,const PermuteIterator &it){
+    	DiffTransConfiguration tmp {diff_trans_config};
+      return tmp.apply_sym_impl(it);
     }
 	}
 }

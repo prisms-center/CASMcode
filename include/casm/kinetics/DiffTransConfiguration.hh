@@ -4,11 +4,12 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/symmetry/Orbit_impl.hh"
+#include "casm/misc/Comparisons.hh"
 
 namespace CASM {
   
   namespace Kinetics {
-	  class DiffTransConfiguration {
+	  class DiffTransConfiguration : public Comparisons<DiffTransConfiguration> {
 
 	  public:
 
@@ -49,12 +50,17 @@ namespace CASM {
 	    /// \brief Converts this DiffTransConfiguration to canonical form
 	    DiffTransConfiguration &canonical_form();
 
+	    /// \brief Returns a DiffTransConfiguration that is the canonical form of this
+	    DiffTransConfiguration canonical_equiv() const;
+
 	    /// \brief States if this DiffTransConfiguration is in canonical form
 	    bool is_canonical() const{
 	    	return m_from_config.is_canonical();
 	    }
 
-	    DiffTransConfiguration
+	    /// \brief applies the symmetry op corresponding to the PermuteIterator to the 
+	    /// DiffTransConfiguration
+	    DiffTransConfiguration &apply_sym_impl(const PermuteIterator &it);
 
 	  private:
 
@@ -76,7 +82,6 @@ namespace CASM {
 	      return this->from_config() < B.from_config();
 	    }
 
-
 	    mutable Configuration m_from_config;
 
 	    // not necessary to store, could be determined by applying m_diff_trans
@@ -84,6 +89,10 @@ namespace CASM {
 
 	    mutable DiffusionTransformation m_diff_trans;
 	  };
+
+	  DiffTransConfiguration &apply_sym(DiffTransConfiguration &diff_trans_config, const PermuteIterator &it);
+
+		DiffTransConfiguration copy_apply_sym(const DiffTransConfiguration &diff_trans_config, const PermuteIterator &it);
 	}
 }
 
