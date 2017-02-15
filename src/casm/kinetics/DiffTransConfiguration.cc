@@ -1,5 +1,6 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/Supercell.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
 
@@ -34,9 +35,39 @@ namespace CASM {
     }
 
     DiffTransConfiguration &DiffTransConfiguration::canonical_form(){
-    	SymOp op = m_from_config.to_canonical().sym_op();
+    	this->sort();
+
+    	// check which supercell factor group operations 
+    	// when applied to m_diff_trans results in the greatest 
+    	// DiffusionTransformation
+    	DiffusionTransformation greatest {m_diff_trans};
+    	std::vector<PermuteIterator> checklist;
+    	for (auto it = m_from_config.supercell().permute_begin(); it != m_from_config.supercell().permute_begin(); it++){
+    		DiffusionTransformation tmp = copy_apply(it.sym_op(),m_diff_trans);
+    		if (tmp == greatest){
+    			checklist.push_back(it);
+    		}
+    		else if (tmp > greatest){
+    			checklist.clear();
+    			greatest = tmp;
+    			checklist.push_back(it);
+    		}
+    	}
+    	// of these operations check which one maximizes
+    	// the result of applying to m_from_config
+    	Configuration max_config {m_from_config};
+    	PermuteIterator canon_op_it;
+    	for (auto it = checklist.begin(); it != checklist.end();it++){
+    		Configuration tmp = copy_apply(*it,m_from_config);
+    		if (tmp > max_config){
+    			max_config = tmp;
+    			canon_op_it = *it;
+    		}
+    	}
+    	// apply the operation to both m_diff_trans and m_from_config
+    	SymOp op = canon_op_it.sym_op();
     	m_diff_trans.apply_sym(op);
-    	m_from_config.canonical_form();
+    	apply(canon_op_it,m_from_config);
     	return *this;
     }
 
@@ -45,19 +76,13 @@ namespace CASM {
     	return tmp.canonical_form();
     }
 
-    DiffTransConfiguration &DiffTransConfiguration::apply_sym_impl(const PermuteIterator &it){
+    DiffTransConfiguration &DiffTransConfiguration::apply_sym(const PermuteIterator &it){
     	m_from_config = apply(it,m_from_config);
     	m_diff_trans.apply_sym(it.sym_op());
     	return *this;
     }
 
-    DiffTransConfiguration &apply_sym(DiffTransConfiguration &diff_trans_config,const PermuteIterator &it){
-      return diff_trans_config.apply_sym_impl(it);
-    }
-
-    DiffTransConfiguration copy_apply_sym(const DiffTransConfiguration &diff_trans_config,const PermuteIterator &it){
-    	DiffTransConfiguration tmp {diff_trans_config};
-      return tmp.apply_sym_impl(it);
-    }
+   
+    
 	}
 }

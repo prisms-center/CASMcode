@@ -153,6 +153,7 @@ namespace CASM {
 
   namespace Kinetics {
     class PrimPeriodicDiffTransSymCompare;
+    class ScelPeriodicDiffTransSymCompare;
   }
 
   namespace CASM_TMP {
@@ -163,6 +164,17 @@ namespace CASM {
     struct traits<Kinetics::PrimPeriodicDiffTransSymCompare> {
 
       typedef typename Kinetics::PrimPeriodicDiffTransSymCompare MostDerived;
+      typedef typename Kinetics::DiffusionTransformation Element;
+      typedef typename Kinetics::DiffusionTransformationInvariants InvariantsType;
+
+    };
+
+    /// \brief Traits class for any ClusterSymCompare derived class
+    ///
+    template<>
+    struct traits<Kinetics::ScelPeriodicDiffTransSymCompare> {
+
+      typedef typename Kinetics::ScelPeriodicDiffTransSymCompare MostDerived;
       typedef typename Kinetics::DiffusionTransformation Element;
       typedef typename Kinetics::DiffusionTransformationInvariants InvariantsType;
 
@@ -206,6 +218,45 @@ namespace CASM {
       double m_tol;
 
     };
+
+    /// \brief Used to canonicalize DiffusionTransformations
+    class ScelPeriodicDiffTransSymCompare : public SymCompare<ScelPeriodicDiffTransSymCompare> {
+
+    public:
+
+      typedef CASM_TMP::traits<ScelPeriodicDiffTransSymCompare>::MostDerived MostDerived;
+      typedef CASM_TMP::traits<ScelPeriodicDiffTransSymCompare>::Element Element;
+      typedef CASM_TMP::traits<ScelPeriodicDiffTransSymCompare>::InvariantsType InvariantsType;
+
+      ScelPeriodicDiffTransSymCompare(const PrimGrid &prim_grid, double tol);
+
+      double tol() const {
+        return m_tol;
+      }
+
+    private:
+
+      friend class SymCompare<ScelPeriodicDiffTransSymCompare>;
+
+      Element prepare_impl(const Element &A) const;
+
+      bool compare_impl(const Element &A, const Element &B) const;
+
+      bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
+
+      /// \brief Apply symmetry to this
+      ///
+      /// - Affects no change
+      void apply_sym_impl(const SymOp &op) {
+        return;
+      }
+
+      double m_tol;
+
+      const PrimGrid &m_prim_grid;
+
+    };
+
   }
 
   namespace CASM_TMP {

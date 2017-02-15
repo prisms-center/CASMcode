@@ -3,6 +3,7 @@
 
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/Supercell.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/misc/Comparisons.hh"
 
@@ -22,8 +23,9 @@ namespace CASM {
 	    }
 
 	    /// \brief Returns the final configuration
-	    const Configuration &to_config() const{
-	    	return m_diff_trans.apply_to(m_from_config);
+	    const Configuration to_config() const{
+	    	Configuration tmp {m_from_config};
+	    	return m_diff_trans.apply_to(tmp);
 	    }
 
 	    /// \brief Returns the diffusion transformation that is occurring
@@ -32,7 +34,8 @@ namespace CASM {
 	    }
 
 	    /// \brief Compare DiffTransConfiguration
-	    ///
+	    /// Compares m_diff_trans first then
+	    /// m_from_config if m_diff_trans are equal
 	    /// - Comparison is made using the sorted forms
 	    bool operator<(const DiffTransConfiguration &B) const {
 	      return this->sorted()._lt(B.sorted());
@@ -49,6 +52,13 @@ namespace CASM {
 
 	    /// \brief Converts this DiffTransConfiguration to canonical form
 	    DiffTransConfiguration &canonical_form();
+	    /// for Permute Iterators in supercell of m_from_config 
+	    /// apply to m_diff_trans
+	    /// find the set of the greatest of these and store <- coset invariant subgroup of 
+	    /// canonical diffusion transformation (maps original m_diff_trans onto a canonical form)
+	    /// check this coset upon application results in greatest m_from_config after sorting
+	    /// Note: ScelSymCompare<IntegralCLuster> is an example do this for ScelSymCompare<DiffusionTransformation>
+	    /// Helper function canonical generator in OrbitGenerator 
 
 	    /// \brief Returns a DiffTransConfiguration that is the canonical form of this
 	    DiffTransConfiguration canonical_equiv() const;
@@ -59,8 +69,8 @@ namespace CASM {
 	    }
 
 	    /// \brief applies the symmetry op corresponding to the PermuteIterator to the 
-	    /// DiffTransConfiguration
-	    DiffTransConfiguration &apply_sym_impl(const PermuteIterator &it);
+	    /// DiffTransConfiguration in place
+	    DiffTransConfiguration &apply_sym(const PermuteIterator &it);
 
 	  private:
 
@@ -74,25 +84,17 @@ namespace CASM {
 	      }
 
 	      // if diff_trans are equal, compare 'from_config'
-	      if(B.from_config().is_equivalent(this->from_config())) {
-	        // if equal, the DiffTransConfigurations must be equal, so return false
-	        return false;
-	      }
-	      // else return (this->from_config() < B.from_config())
 	      return this->from_config() < B.from_config();
 	    }
 
-	    mutable Configuration m_from_config;
+	    Configuration m_from_config;
 
 	    // not necessary to store, could be determined by applying m_diff_trans
 	    //Configuration m_to_config;
 
-	    mutable DiffusionTransformation m_diff_trans;
+	    DiffusionTransformation m_diff_trans;
 	  };
 
-	  DiffTransConfiguration &apply_sym(DiffTransConfiguration &diff_trans_config, const PermuteIterator &it);
-
-		DiffTransConfiguration copy_apply_sym(const DiffTransConfiguration &diff_trans_config, const PermuteIterator &it);
 	}
 }
 

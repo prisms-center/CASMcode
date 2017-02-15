@@ -177,6 +177,32 @@ namespace CASM {
       return CASM::compare(A, B, tol());
     }
 
+    // ScelPeriodicDiffTransSymCompare
+
+    ScelPeriodicDiffTransSymCompare::ScelPeriodicDiffTransSymCompare(const PrimGrid &prim_grid, double tol) :
+      SymCompare<ScelPeriodicDiffTransSymCompare>(),
+      m_tol(tol), 
+      m_prim_grid(prim_grid) {}
+
+    ScelPeriodicDiffTransSymCompare::Element ScelPeriodicDiffTransSymCompare::prepare_impl(const Element &A) const {
+      if(A.occ_transform().size()) {
+        Element tmp = A.sorted();
+        tmp -= (tmp.occ_transform()[0].uccoord.unitcell() - m_prim_grid.within(tmp.occ_transform()[0].uccoord.unitcell()));
+        return tmp;
+      }
+      else {
+        return A;
+      }
+    }
+
+    bool ScelPeriodicDiffTransSymCompare::compare_impl(const Element &A, const Element &B) const {
+      return A < B;
+    }
+
+    bool ScelPeriodicDiffTransSymCompare::invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const {
+      return CASM::compare(A, B, tol());
+    }
+
 
     // DiffusionTransformation
 
