@@ -9,7 +9,8 @@ namespace CASM {
 	namespace Kinetics {
 
 
-		DiffTransConfiguration::DiffTransConfiguration(const Configuration &_from_config,const DiffusionTransformation &_diff_trans) :
+		DiffTransConfiguration::DiffTransConfiguration(const Configuration &_from_config,
+      const DiffusionTransformation &_diff_trans) :
     		m_diff_trans(_diff_trans), m_from_config(_from_config){			
     }
 
@@ -34,19 +35,19 @@ namespace CASM {
     	return m_from_config < to;
     }
 
-    DiffTransConfiguration &DiffTransConfiguration::canonical_form(){
-    	this->sort();
-
+    PermuteIterator DiffTransConfiguration::to_canonical() const{
     	// check which supercell factor group operations 
     	// when applied to m_diff_trans results in the greatest 
     	// DiffusionTransformation
     	DiffusionTransformation greatest {m_diff_trans};
     	std::vector<PermuteIterator> checklist;
-    	ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),m_from_config.supercell().crystallography_tol());
-    	for (auto it = m_from_config.supercell().permute_begin(); it != m_from_config.supercell().permute_begin(); it++){
-    		DiffusionTransformation tmp {m_diff_trans};
-    		tmp = symcompare.prepare(tmp);
-    		tmp = copy_apply(it.sym_op(),tmp);
+    	ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),
+        m_from_config.supercell().crystallography_tol());
+    	for (auto it = m_from_config.supercell().permute_begin(); 
+        it != m_from_config.supercell().permute_begin(); it++){
+        //
+        DiffusionTransformation tmp = symcompare.prepare(copy_apply(it.sym_op(),m_diff_trans));
+
     		if (tmp == greatest){
     			checklist.push_back(it);
     		}
@@ -62,28 +63,28 @@ namespace CASM {
     	PermuteIterator canon_op_it;
     	for (auto it = checklist.begin(); it != checklist.end();it++){
     		Configuration tmp = copy_apply(*it,m_from_config);
-    		DiffTransConfiguration dtc_tmp(tmp,copy_apply(it->sym_op(),m_diff_trans));
+    		DiffTransConfiguration dtc_tmp(tmp,greatest);
     		dtc_tmp.sort();
-    		if (dtc_tmp.m_from_config > max_config){
+    		if (it == checklist.begin() || dtc_tmp.m_from_config > max_config){
     			max_config = tmp;
     			canon_op_it = *it;
     		}
     	}
-    	// apply the operation to both m_diff_trans and m_from_config
-    	SymOp op = canon_op_it.sym_op();
-    	m_diff_trans.apply_sym(op);
-    	apply(canon_op_it,m_from_config);
-    	return *this;
+    	// return the operation that transforms this to canonical form
+    	return canon_op_it;
     }
 
-   	DiffTransConfiguration DiffTransConfiguration::canonical_equiv() const{
-			DiffTransConfiguration tmp {*this};
-    	return tmp.canonical_form();
+   	DiffTransConfiguration DiffTransConfiguration::canonical_form() const{
+    	return copy_apply(this->to_canonical(),*this);
     }
 
     DiffTransConfiguration &DiffTransConfiguration::apply_sym(const PermuteIterator &it){
     	m_from_config = apply(it,m_from_config);
+    	ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),
+        m_from_config.supercell().crystallography_tol());
     	m_diff_trans.apply_sym(it.sym_op());
+    	m_diff_trans = symcompare.prepare(m_diff_trans);
+
     	return *this;
     }
 

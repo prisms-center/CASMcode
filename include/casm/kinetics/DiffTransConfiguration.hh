@@ -3,7 +3,6 @@
 
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/clex/Configuration.hh"
-#include "casm/clex/Supercell.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/misc/Comparisons.hh"
 
@@ -50,22 +49,20 @@ namespace CASM {
 	    /// \brief Returns true if the DiffTransConfiguration is sorted 
 	    bool is_sorted() const;
 
-	    /// \brief Converts this DiffTransConfiguration to canonical form
-	    DiffTransConfiguration &canonical_form();
-	    /// for Permute Iterators in supercell of m_from_config 
-	    /// apply to m_diff_trans
-	    /// find the set of the greatest of these and store <- coset invariant subgroup of 
-	    /// canonical diffusion transformation (maps original m_diff_trans onto a canonical form)
-	    /// check this coset upon application results in greatest m_from_config after sorting
-	    /// Note: ScelSymCompare<IntegralCLuster> is an example do this for ScelSymCompare<DiffusionTransformation>
-	    /// Helper function canonical generator in OrbitGenerator 
-
 	    /// \brief Returns a DiffTransConfiguration that is the canonical form of this
-	    DiffTransConfiguration canonical_equiv() const;
+	    DiffTransConfiguration canonical_form() const; 
+
+	    /// \brief Returns a PermuteIterator that takes this to canonical form
+	    PermuteIterator to_canonical() const;
+
+	    /// \brief Returns a PermuteIterator that takes the canonical form of this to this
+	    PermuteIterator from_canonical() const{
+	    	return to_canonical().inverse();
+	    }
 
 	    /// \brief States if this DiffTransConfiguration is in canonical form
 	    bool is_canonical() const{
-	    	return m_from_config.is_canonical();
+	    	return (*this == this->canonical_form());
 	    }
 
 	    /// \brief applies the symmetry op corresponding to the PermuteIterator to the 
@@ -95,6 +92,9 @@ namespace CASM {
 	    DiffusionTransformation m_diff_trans;
 	  };
 
+	  DiffTransConfiguration &apply_sym(DiffTransConfiguration &diff_trans_config, const PermuteIterator &it);
+
+		DiffTransConfiguration copy_apply_sym(const DiffTransConfiguration &diff_trans_config, const PermuteIterator &it);
 	}
 }
 
