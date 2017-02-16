@@ -42,8 +42,11 @@ namespace CASM {
     	// DiffusionTransformation
     	DiffusionTransformation greatest {m_diff_trans};
     	std::vector<PermuteIterator> checklist;
+    	ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),m_from_config.supercell().crystallography_tol());
     	for (auto it = m_from_config.supercell().permute_begin(); it != m_from_config.supercell().permute_begin(); it++){
-    		DiffusionTransformation tmp = copy_apply(it.sym_op(),m_diff_trans);
+    		DiffusionTransformation tmp {m_diff_trans};
+    		tmp = symcompare.prepare(tmp);
+    		tmp = copy_apply(it.sym_op(),tmp);
     		if (tmp == greatest){
     			checklist.push_back(it);
     		}
@@ -59,7 +62,9 @@ namespace CASM {
     	PermuteIterator canon_op_it;
     	for (auto it = checklist.begin(); it != checklist.end();it++){
     		Configuration tmp = copy_apply(*it,m_from_config);
-    		if (tmp > max_config){
+    		DiffTransConfiguration dtc_tmp(tmp,copy_apply(it->sym_op(),m_diff_trans));
+    		dtc_tmp.sort();
+    		if (dtc_tmp.m_from_config > max_config){
     			max_config = tmp;
     			canon_op_it = *it;
     		}

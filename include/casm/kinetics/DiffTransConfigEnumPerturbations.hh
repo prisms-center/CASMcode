@@ -22,7 +22,7 @@ namespace CASM {
       DiffTransConfigEnumPerturbations(
         const Configuration &background_config,
         const DiffusionTransformation &diff_trans,  // or const PrimPeriodicDiffTransOrbit &diff_trans_orbit,
-        const jsonParser &local_bspecs) // or iterators over IntegralClusters);
+        const jsonParser &local_bspecs); // or iterators over IntegralClusters);
 
       std::string name() const override {
         return enumerator_name;
