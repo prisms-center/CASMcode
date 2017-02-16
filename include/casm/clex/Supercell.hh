@@ -37,10 +37,6 @@ namespace CASM {
 
   public:
 
-    typedef boost::container::stable_vector<Configuration> ConfigList;
-
-    typedef ConfigIterator<Configuration, PrimClex> config_iterator;
-    typedef ConfigIterator<const Configuration, const PrimClex> config_const_iterator;
     typedef PermuteIterator permute_const_iterator;
 
   private:
@@ -88,16 +84,8 @@ namespace CASM {
     /// Store a pointer to the canonical equivalent Supercell
     mutable Supercell *m_canonical;
 
-    // Could hold either enumerated configurations or any 'saved' configurations
-    ConfigList m_config_list;
-
-    // Improve performance of 'contains_config' by sorting Configuration
-    std::map<const Configuration *, Index, ConfigMapCompare> m_config_map;
-
     Eigen::Matrix3i m_transf_mat;
 
-    /// index into PrimClex::supercell_list, used for configuration iterators
-    Index m_id;
 
   public:
 
@@ -245,34 +233,6 @@ namespace CASM {
     const SuperNeighborList &nlist() const;
 
 
-    ConfigList &config_list() {
-      return m_config_list;
-    };
-
-    const ConfigList &config_list() const {
-      return m_config_list;
-    };
-
-    const Configuration &config(Index i) const {
-      return m_config_list[i];
-    };
-
-    Configuration &config(Index i) {
-      return m_config_list[i];
-    }
-
-    // begin and end iterators for iterating over configurations
-    config_iterator config_begin();
-    config_iterator config_end();
-
-    // begin and end const_iterators for iterating over configurations
-    config_const_iterator config_cbegin() const;
-    config_const_iterator config_cend() const;
-
-    Index id() const {
-      return m_id;
-    }
-
     /// \brief Return supercell name
     ///
     /// - If lattice is the canonical equivalent, then return 'SCELV_A_B_C_D_E_F'
@@ -314,9 +274,6 @@ namespace CASM {
     ///Return path to supercell directory
     fs::path path() const;
 
-    ///Count how many configs are selected in *this
-    Index amount_selected() const;
-
     bool is_canonical() const {
       return real_super_lattice().is_canonical();
     }
@@ -335,12 +292,7 @@ namespace CASM {
 
     bool operator<(const Supercell &B) const;
 
-    // **** Mutators ****
-
-    void set_id(Index id) {
-      m_id = id;
-    }
-
+    
     // **** Generating functions ****
 
     // Populate m_factor_group -- probably should be private
@@ -349,26 +301,6 @@ namespace CASM {
     // Populate m_trans_permute -- probably should be private
     void generate_permutations() const;
 
-
-    // **** Enumerating functions ****
-
-    bool contains_config(const Configuration &config) const;
-    bool contains_config(const Configuration &config, Index &index) const;
-    bool add_config(const Configuration &config);
-    bool add_config(const Configuration &config, Index &index, Supercell::permute_const_iterator &permute_it);
-    bool add_canon_config(const Configuration &config, Index &index);
-
-    std::pair<config_const_iterator, bool> insert_config(const Configuration &config);
-    std::pair<config_const_iterator, bool> insert_canon_config(const Configuration &config);
-    config_const_iterator find(const Configuration &config) const;
-
-    void read_config_list(const jsonParser &json);
-
-    template<typename ConfigIterType>
-    void add_unique_canon_configs(ConfigIterType it_begin, ConfigIterType it_end);
-
-    template<typename ConfigIterType>
-    void add_configs(ConfigIterType it_begin, ConfigIterType it_end);
 
     // **** Other ****
     // Reads a relaxed structure and calculates the strains and stretches using the reference structure
@@ -388,9 +320,6 @@ namespace CASM {
     //   void print_global_correlations_simple(std::ostream &corrstream) const;
     void print_sublat_to_comp(std::ostream &stream);
 
-    ///Call Configuration::write out every configuration in supercell
-    jsonParser &write_config_list(jsonParser &json);
-
     void printUCC(std::ostream &stream, COORD_TYPE mode, UnitCellCoord ucc, char term = 0, int prec = 7, int pad = 5) const;
     //\Michael 241013
 
@@ -400,8 +329,6 @@ namespace CASM {
 
     bool _eq(const Supercell &B) const;
 
-    void _add_canon_config(const Configuration &config);
-
     void _generate_name() const;
 
   };
@@ -409,47 +336,6 @@ namespace CASM {
   Supercell &apply(const SymOp &op, Supercell &scel);
 
   Supercell copy_apply(const SymOp &op, const Supercell &scel);
-
-
-  //*******************************************************************************
-  // Warning: Assumes configurations are in canonical form
-  template<typename ConfigIterType>
-  void Supercell::add_unique_canon_configs(ConfigIterType it_begin, ConfigIterType it_end) {
-    // Remember existing configs, to avoid duplicates
-    //   Enumerated configurations are added after existing configurations
-    Index N_existing = m_config_list.size();
-    Index N_existing_enumerated = 0;
-    Index index;
-    //std::cout << "ADDING CONFIGS TO SUPERCELL; N_exiting: " << N_existing << " N_enumerated: " << N_existing_enumerated << "\n";
-    //std::cout << "beginning iterator: " << it_begin->occupation() << "\n";
-    // Loops through all possible configurations
-    for(; it_begin != it_end; ++it_begin) {
-      //std::cout << "Attempting to add configuration: " << it_begin->occupation() << "\n";
-      // Adds the configuration to the list, if not among previously existing configurations
-
-      bool add = true;
-      if(N_existing_enumerated != N_existing) {
-        if(contains_config(*it_begin, index)) {
-          m_config_list[index].push_back_source(it_begin->source());
-          add = false;
-          N_existing_enumerated++;
-        }
-      }
-      if(add) {
-        _add_canon_config(*it_begin);
-      }
-    }
-
-  }
-
-  //*******************************************************************************
-
-  template<typename ConfigIterType>
-  void Supercell::add_configs(ConfigIterType it_begin, ConfigIterType it_end) {
-    for(; it_begin != it_end; ++it_begin) {
-      add_config(*it_begin);
-    }
-  }
 
   std::string generate_name(const Eigen::Matrix3i &transf_mat);
 

@@ -149,64 +149,28 @@ namespace CASM {
     Index vacancy_index() const;
 
 
-    // ** Supercell and Configuration accessors **
+    // ** Supercell, Configuration, etc. databases **
 
-    /// Access entire supercell_list
-    boost::container::stable_vector<Supercell> &supercell_list();
-
-    /// const Access entire supercell_list
-    const boost::container::stable_vector<Supercell> &supercell_list() const;
-
-    /// const Access supercell by index
-    const Supercell &supercell(Index i) const;
-
-    /// Access supercell by index
-    Supercell &supercell(Index i);
-
-    /// const Access supercell by name
-    const Supercell &supercell(std::string scellname) const;
-
-    /// Access supercell by name
-    Supercell &supercell(std::string scellname);
-
-    /// Access supercell by Lattice, adding if necessary
-    Supercell &supercell(const Lattice &lat);
-
-    /// access configuration by name (of the form "scellname/[NUMBER]", e.g., ("SCEL1_1_1_1_0_0_0/0")
-    const Configuration &configuration(const std::string &configname) const;
-    Configuration &configuration(const std::string &configname);
-
-    /// Configuration iterator: begin
-    config_iterator config_begin();
-
-    /// Configuration iterator: end
-    config_iterator config_end();
-
-    /// Configuration iterator: begin
-    config_const_iterator config_begin() const;
-
-    /// Configuration iterator: end
-    config_const_iterator config_end() const;
-
-    /// const Configuration iterator: begin
-    config_const_iterator config_cbegin() const;
-
-    /// const Configuration iterator: end
-    config_const_iterator config_cend() const;
-
-    /// Configuration iterator: begin
-    config_iterator selected_config_begin();
-
-    /// Configuration iterator: end
-    config_iterator selected_config_end();
-
-    /// const Configuration iterator: begin
-    config_const_iterator selected_config_cbegin() const;
-
-    /// const Configuration iterator: end
-    config_const_iterator selected_config_cend() const;
-
-
+    template<typename T>
+    Database<T>& db();
+    
+    template<typename T>
+    const Database<T>& db() const;
+    
+    template<typename T>
+    const Database<T>& const_db();
+    
+    
+    template<typename T>
+    Database<T>& db();
+    
+    template<typename T>
+    const Database<T>& db() const;
+    
+    template<typename T>
+    const Database<T>& const_db();
+    
+    
     // **** IO ****
 
     ///Call Configuration::write on every configuration to update files
