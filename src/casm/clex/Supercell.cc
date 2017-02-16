@@ -283,45 +283,6 @@ namespace CASM {
 
   //*******************************************************************************
 
-  void Supercell::read_config_list(const jsonParser &json) {
-
-    // Provide an error check
-    if(config_list().size() != 0) {
-      std::cerr << "Error in Supercell::read_configuration." << std::endl;
-      std::cerr << "  config_list().size() != 0, only use this once" << std::endl;
-      exit(1);
-    }
-
-    if(!json.contains("supercells")) {
-      return;
-    }
-
-    if(!json["supercells"].contains(name())) {
-      return;
-    }
-
-    // Read all configurations for this supercell. They should be numbered sequentially, so read until not found.
-    Index configid = 0;
-    while(true) {
-      std::stringstream ss;
-      ss << configid;
-
-      if(json["supercells"][name()].contains(ss.str())) {
-        config_list().push_back(Configuration(json, *this, configid));
-        m_config_map.insert(
-          std::make_pair(&config_list().back(),
-                         boost::lexical_cast<Index>(config_list().back().id())));
-      }
-      else {
-        return;
-      }
-      configid++;
-    }
-  }
-
-
-  //*******************************************************************************
-
   //Copy constructor is needed for proper initialization of m_prim_grid
   Supercell::Supercell(const Supercell &RHS) :
     m_primclex(RHS.m_primclex),
@@ -372,21 +333,6 @@ namespace CASM {
   /// \brief Get the PrimClex crystallography_tol
   double Supercell::crystallography_tol() const {
     return primclex().crystallography_tol();
-  }
-
-  //*******************************************************************************
-  /**
-   * Run through every selected Configuration in *this and call write() on it. This will
-   * update all the JSON files and also rewrite POS, DoF etc. Meant for when
-   * you calculated some properties (e.g. formation energies or correlations) and
-   * want it outputted, but didn't generate any new configurations.
-   */
-
-  jsonParser &Supercell::write_config_list(jsonParser &json) {
-    for(Index c = 0; c < config_list().size(); c++) {
-      m_config_list[c].write(json);
-    }
-    return json;
   }
 
   //***********************************************************

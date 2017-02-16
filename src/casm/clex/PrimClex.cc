@@ -143,32 +143,10 @@ namespace CASM {
 
     if(read_configs) {
 
-      m_supercell_list.clear();
+      // lazy initialization means we just need to close, and the db will be
+      // re-opened when needed
+      m_db_handler.close();
 
-      try {
-        // read supercells
-        if(fs::is_regular_file(m_dir.SCEL())) {
-          log() << "read: " << m_dir.SCEL() << "\n";
-          fs::ifstream scel(m_dir.SCEL());
-          read_supercells(scel);
-        }
-      }
-      catch(std::exception &e) {
-        err_log().error("reading SCEL");
-        err_log() << "file: " << m_dir.SCEL() << "\n" << std::endl;
-      }
-
-      try {
-        // read config_list
-        if(fs::is_regular_file(dir().config_list())) {
-          log() << "read: " << dir().config_list() << "\n";
-          read_config_list();
-        }
-      }
-      catch(std::exception &e) {
-        err_log().error("reading config_list.json");
-        err_log() << "file: " << dir().config_list() << "\n" << std::endl;
-      }
     }
 
     if(clear_clex) {
@@ -398,44 +376,6 @@ namespace CASM {
     return config_const_iterator(this, m_supercell_list.size(), 0, true);
   }
 
-
-  //*******************************************************************************************
-  // **** IO ****
-  //*******************************************************************************************
-  /**
-   * Re-write config_list.json, updating all the data
-   */
-
-  void PrimClex::write_config_list() {
-
-    fs::path config_list_path = dir().config_list();
-    if(m_supercell_list.size() == 0) {
-      fs::remove(config_list_path);
-      return;
-    }
-
-    jsonParser json;
-
-    if(fs::exists(config_list_path)) {
-      json.read(config_list_path);
-    }
-    else {
-      json.put_obj();
-    }
-
-    for(Index s = 0; s < m_supercell_list.size(); s++) {
-      m_supercell_list[s].write_config_list(json);
-    }
-
-    SafeOfstream file;
-    file.open(config_list_path);
-    json.print(file.ofstream());
-    file.close();
-
-    return;
-  }
-
-
   // **** Operators ****
 
 
@@ -579,27 +519,6 @@ namespace CASM {
 
         add_canonical_supercell(Lattice(m_prim.lattice().lat_column_mat()*mat));
       }
-    }
-  }
-
-  //*******************************************************************************************
-  /**
-   *   Read the config_list file at 'file_name' and adds config
-   *   to supercell, assuming it is already canonical.
-   *   If 'print_dirs', call Supercell::print_clex_configuration()
-   *   for each config to be made.
-   */
-  //*******************************************************************************************
-  void PrimClex::read_config_list() {
-
-    jsonParser json(dir().config_list());
-
-    if(!json.contains("supercells")) {
-      return;
-    }
-
-    for(Index i = 0; i < m_supercell_list.size(); i++) {
-      m_supercell_list[i].read_config_list(json);
     }
   }
 
