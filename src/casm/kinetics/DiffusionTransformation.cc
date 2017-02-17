@@ -25,7 +25,7 @@ namespace CASM {
       pos(_pos) {}
 
     /// \brief Print DiffusionTransformationInvariants
-    std::ostream &operator<<(std::ostream &sout, const SpecieLocation &obj) {
+    std::ostream &operator<<(std::ostream &sout, const SpecieLocation &obj)                               {
       sout << obj.uccoord << " : " << obj.occ << " " << obj.pos;
       return sout;
     }
@@ -181,7 +181,7 @@ namespace CASM {
 
     ScelPeriodicDiffTransSymCompare::ScelPeriodicDiffTransSymCompare(const PrimGrid &prim_grid, double tol) :
       SymCompare<ScelPeriodicDiffTransSymCompare>(),
-      m_tol(tol), 
+      m_tol(tol),
       m_prim_grid(prim_grid) {}
 
     ScelPeriodicDiffTransSymCompare::Element ScelPeriodicDiffTransSymCompare::prepare_impl(const Element &A) const {
