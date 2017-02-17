@@ -7,24 +7,24 @@
 namespace CASM {
 
 
-	namespace DiffTransOrbitIO{
+  namespace DiffTransOrbitIO {
 
-		template<typename ValueType>
-		using GenericDiffTransOrbitFormatter = GenericDatumFormatter<ValueType,Kinetics::PrimPeriodicDiffTransOrbit>;
+    template<typename ValueType>
+    using GenericDiffTransOrbitFormatter = GenericDatumFormatter<ValueType, Kinetics::PrimPeriodicDiffTransOrbit>;
 
-		class Contains : public BooleanAttribute<Kinetics::PrimPeriodicDiffTransOrbit> {
-		
-		public:
+    class Contains : public BooleanAttribute<Kinetics::PrimPeriodicDiffTransOrbit> {
 
-			static const std::string Name;
+    public:
+
+      static const std::string Name;
 
       static const std::string Desc;
 
-      Contains() : BooleanAttribute<Kinetics::PrimPeriodicDiffTransOrbit>(Name,Desc){ };
+      Contains() : BooleanAttribute<Kinetics::PrimPeriodicDiffTransOrbit>(Name, Desc) { };
 
       Contains(std::vector<std::string> search_list):
-      	BooleanAttribute<Kinetics::PrimPeriodicDiffTransOrbit>(Name,Desc),
-      	m_search_list(search_list){};
+        BooleanAttribute<Kinetics::PrimPeriodicDiffTransOrbit>(Name, Desc),
+        m_search_list(search_list) {};
 
       // --- Required implementations -----------
 
@@ -41,32 +41,32 @@ namespace CASM {
       bool parse_args(const std::string &args) override;
 
     private:
-    	/// \brief Clone using copy constructor
+      /// \brief Clone using copy constructor
       Contains *_clone() const override {
         return new Contains(*this);
       }
-    	mutable std::vector<std::string> m_search_list;
+      mutable std::vector<std::string> m_search_list;
 
-		};
+    };
 
-		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<Index> multiplicity();
+    DiffTransOrbitIO::GenericDiffTransOrbitFormatter<Index> multiplicity();
 
-		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<Index> cluster_size();
+    DiffTransOrbitIO::GenericDiffTransOrbitFormatter<Index> cluster_size();
 
-		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> min_length();
+    DiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> min_length();
 
-		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> max_length();
+    DiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> max_length();
 
-		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<std::string> species_list();
+    DiffTransOrbitIO::GenericDiffTransOrbitFormatter<std::string> species_list();
 
-		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<std::string> diff_trans_orbitname();
+    DiffTransOrbitIO::GenericDiffTransOrbitFormatter<std::string> diff_trans_orbitname();
 
-		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> min_dist_to_path();
+    DiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> min_dist_to_path();
 
-		DiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> activation_barrier();
-	}
+    DiffTransOrbitIO::GenericDiffTransOrbitFormatter<double> activation_barrier();
+  }
 
-	template<>
+  template<>
   StringAttributeDictionary<Kinetics::PrimPeriodicDiffTransOrbit> make_string_dictionary<Kinetics::PrimPeriodicDiffTransOrbit>();
 
   template<>
