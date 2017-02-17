@@ -78,7 +78,7 @@ namespace CASM {
       return copy_apply(this->to_canonical(), *this);
     }
 
-    bool DiffTransConfiguration::is_canonical()        const {
+    bool DiffTransConfiguration::is_canonical() const {
       return std::all_of(m_from_config.supercell().permute_begin(),
                          m_from_config.supercell().permute_begin(),
       [&](const PermuteIterator & p) {

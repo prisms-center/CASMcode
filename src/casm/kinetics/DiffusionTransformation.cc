@@ -25,7 +25,7 @@ namespace CASM {
       pos(_pos) {}
 
     /// \brief Print DiffusionTransformationInvariants
-    std::ostream &operator<<(std::ostream &sout, const SpecieLocation &obj)                               {
+    std::ostream &operator<<(std::ostream &sout, const SpecieLocation &obj) {
       sout << obj.uccoord << " : " << obj.occ << " " << obj.pos;
       return sout;
     }

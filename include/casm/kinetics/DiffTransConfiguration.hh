@@ -44,7 +44,7 @@ namespace CASM {
       DiffTransConfiguration &sort();
 
       /// \brief Returns a sorted version of this DiffTransConfiguration
-      DiffTransConfiguration sorted()           const;
+      DiffTransConfiguration sorted() const;
 
       /// \brief Returns true if the DiffTransConfiguration is sorted
       bool is_sorted() const;
