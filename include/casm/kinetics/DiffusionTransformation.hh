@@ -340,10 +340,10 @@ namespace CASM {
     double dist_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord);
 
     /// \brief Determines which site is closest to the diffusion transformation and the distance
-    std::pair<UnitCellCoord,double> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) ;
+    std::pair<UnitCellCoord, double> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) ;
 
     /// \brief Determines which site is closest to the diffusion transformation
-    UnitCellCoord path_nearest_neighbor(const DiffusionTransformation &diff_trans); 
+    UnitCellCoord path_nearest_neighbor(const DiffusionTransformation &diff_trans);
 
     /// \brief Determines the nearest site distance to the diffusion path
     double min_dist_to_path(const DiffusionTransformation &diff_trans);

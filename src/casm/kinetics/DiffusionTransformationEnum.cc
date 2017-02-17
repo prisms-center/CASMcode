@@ -55,36 +55,36 @@ namespace CASM {
 
     const std::string DiffusionTransformationEnum::enumerator_name = "DiffusionTransformationEnum";
     const std::string DiffusionTransformationEnum::interface_help =
-    "DiffusionTransformationEnum: \n\n"
+      "DiffusionTransformationEnum: \n\n"
 
-    "  bspecs: JSON object \n"
-    "    Indicate clusters to enumerate all occupational diffusion transformations. The \n"
-    "    JSON item \"bspecs\" should be a bspecs style initialization of cluster number and sizes.\n"
-    "              \n\n"
-    ""
-    "  require: JSON array of strings (optional,default=[]) \n "
-    "    Indicate required species to enforce that a given species must be a part of the diffusion \n"
-    "    transformation. The JSON array \"require\" should be an array of species names.\n"
-    "    i.e. \"require\": [\"Va\",\"O\"] \n\n"
-    "  exclude: JSON array of strings (optional,default=[]) \n "
-    "    Indicate excluded species to enforce that a given species must not be a part of the diffusion \n"
-    "    transformation. The JSON array \"exclude\" should be an array of species names.\n"
-    "    i.e. \"exclude\": [\"Al\",\"Ti\"] \n\n"
-    "  Example:\n"
-    "  {\n"
-    "   \"require\":[\"Va\"],\n"
-    "   \"exclude\":[],\n"
-    "    \"bspecs\":{\n"
-    "       \"basis_functions\" : {\n"
-    "        \"site_basis_functions\" : \"occupation\"\n"
-    "      },\n"
-    "      \"orbit_branch_specs\" : { \n"
-    "       \"2\" : {\"max_length\" : 5.01},\n"
-    "       \"3\" : {\"max_length\" : 5.01}\n"
-    "      }\n"
-    "    }\n"
-    "  }\n\n"
-    ;
+      "  bspecs: JSON object \n"
+      "    Indicate clusters to enumerate all occupational diffusion transformations. The \n"
+      "    JSON item \"bspecs\" should be a bspecs style initialization of cluster number and sizes.\n"
+      "              \n\n"
+      ""
+      "  require: JSON array of strings (optional,default=[]) \n "
+      "    Indicate required species to enforce that a given species must be a part of the diffusion \n"
+      "    transformation. The JSON array \"require\" should be an array of species names.\n"
+      "    i.e. \"require\": [\"Va\",\"O\"] \n\n"
+      "  exclude: JSON array of strings (optional,default=[]) \n "
+      "    Indicate excluded species to enforce that a given species must not be a part of the diffusion \n"
+      "    transformation. The JSON array \"exclude\" should be an array of species names.\n"
+      "    i.e. \"exclude\": [\"Al\",\"Ti\"] \n\n"
+      "  Example:\n"
+      "  {\n"
+      "   \"require\":[\"Va\"],\n"
+      "   \"exclude\":[],\n"
+      "    \"bspecs\":{\n"
+      "       \"basis_functions\" : {\n"
+      "        \"site_basis_functions\" : \"occupation\"\n"
+      "      },\n"
+      "      \"orbit_branch_specs\" : { \n"
+      "       \"2\" : {\"max_length\" : 5.01},\n"
+      "       \"3\" : {\"max_length\" : 5.01}\n"
+      "      }\n"
+      "    }\n"
+      "  }\n\n"
+      ;
 
     /// Implements increment
     void DiffusionTransformationEnum::increment() {
@@ -126,28 +126,28 @@ namespace CASM {
     }
 
     /// Implements run
-    int DiffusionTransformationEnum::run(PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt){
-      
+    int DiffusionTransformationEnum::run(PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt) {
+
       jsonParser kwargs;
       if(!_kwargs.get_if(kwargs, "bspecs")) {
-        std::cerr << "DiffusionTransformationEnum currently has no default and requires a correct JSON with a bspecs tag within it" <<std::endl;
-        std::cerr << "Core dump will occur because cannot find proper input" << std::endl; 
+        std::cerr << "DiffusionTransformationEnum currently has no default and requires a correct JSON with a bspecs tag within it" << std::endl;
+        std::cerr << "Core dump will occur because cannot find proper input" << std::endl;
       }
-      
+
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-      std::vector<std::string> filter_expr =        make_enumerator_filter_expr(_kwargs, enum_opt);
-      
+      std::vector<std::string> filter_expr =      make_enumerator_filter_expr(_kwargs, enum_opt);
+
       auto end = make_prim_periodic_orbits(
-        primclex.prim(), _kwargs["bspecs"], alloy_sites_filter,primclex.crystallography_tol(),std::back_inserter(orbits),primclex.log());
+                   primclex.prim(), _kwargs["bspecs"], alloy_sites_filter, primclex.crystallography_tol(), std::back_inserter(orbits), primclex.log());
       // Need a generator
       /*auto lambda = [&](IntegralCluster clust) {
       return notstd::make_unique<DiffusionTransformationEnum>(clust);
       };*/
-      
+
       std::vector< PrimPeriodicDiffTransOrbit > diff_trans_orbits;
       auto end2 = make_prim_periodic_diff_trans_orbits(
-        orbits.begin(),orbits.end(),primclex.crystallography_tol(),std::back_inserter(diff_trans_orbits));
-      
+                    orbits.begin(), orbits.end(), primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
+
 
       // use templating? put in Enumerator or no?
       // insert_unique_canon_difftrans
@@ -161,13 +161,13 @@ namespace CASM {
       */
       if(_kwargs.get_if(kwargs, "require")) {
         std::vector<std::string> require;
-        for (auto it = _kwargs["require"].begin(); it!= _kwargs["require"].end();++it){
+        for(auto it = _kwargs["require"].begin(); it != _kwargs["require"].end(); ++it) {
           require.push_back(from_json<std::string>(*it));
-        }              
-        for (auto it = diff_trans_orbits.begin(); it != diff_trans_orbits.end(); ++it){
+        }
+        for(auto it = diff_trans_orbits.begin(); it != diff_trans_orbits.end(); ++it) {
           auto speciemap = it->prototype().specie_count();
-          for (auto it2 = speciemap.begin(); it2 != speciemap.end();++it2){ 
-            if (std::find(require.begin(),require.end(),it2->first.name)!=require.end() && it2->second==0){
+          for(auto it2 = speciemap.begin(); it2 != speciemap.end(); ++it2) {
+            if(std::find(require.begin(), require.end(), it2->first.name) != require.end() && it2->second == 0) {
               diff_trans_orbits.erase(it);
               --it;
             }
@@ -176,13 +176,13 @@ namespace CASM {
       }
       if(_kwargs.get_if(kwargs, "exclude")) {
         std::vector<std::string> require;
-        for (auto it = _kwargs["exclude"].begin(); it!= _kwargs["exclude"].end();++it){
+        for(auto it = _kwargs["exclude"].begin(); it != _kwargs["exclude"].end(); ++it) {
           require.push_back(from_json<std::string>(*it));
-        }              
-        for (auto it = diff_trans_orbits.begin(); it != diff_trans_orbits.end(); ++it){
+        }
+        for(auto it = diff_trans_orbits.begin(); it != diff_trans_orbits.end(); ++it) {
           auto speciemap = it->prototype().specie_count();
-          for (auto it2 = speciemap.begin(); it2 != speciemap.end();++it2){ 
-            if (std::find(require.begin(),require.end(),it2->first.name)!=require.end() && it2->second!=0){
+          for(auto it2 = speciemap.begin(); it2 != speciemap.end(); ++it2) {
+            if(std::find(require.begin(), require.end(), it2->first.name) != require.end() && it2->second != 0) {
               diff_trans_orbits.erase(it);
               --it;
             }
@@ -192,12 +192,12 @@ namespace CASM {
       PrototypePrinter<Kinetics::DiffusionTransformation> printer;
       print_clust(diff_trans_orbits.begin(), diff_trans_orbits.end(), std::cout, printer);
 
-      for (auto it = diff_trans_orbits.begin();it!=diff_trans_orbits.end();it++){
+      for(auto it = diff_trans_orbits.begin(); it != diff_trans_orbits.end(); it++) {
         std::cout << orbit_name(*it) << std::endl;
         std::cout << min_dist_to_path(it->prototype()) << std::endl;
         std::cout << path_nearest_neighbor(it->prototype()) << std::endl;
       }
-      
+
       return 0;
     }
 

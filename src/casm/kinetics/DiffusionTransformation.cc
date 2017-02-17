@@ -377,7 +377,7 @@ namespace CASM {
       return !this->_lt(_tmp) && !_tmp._lt(*this);
     }
 
-    std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit){
+    std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit) {
       Structure prim(orbit.prototype().specie_traj().begin()->from.uccoord.unit());
       std::set<int> sublat_indices;
       for(int i = 0; i < prim.basis.size(); i++) {
@@ -392,31 +392,31 @@ namespace CASM {
       );
       int prev_size;
       int post_size;
-      std::map<int,std::map<int,std::map<int,int>>> unique_inds;
+      std::map<int, std::map<int, std::map<int, int>>> unique_inds;
       //May need to sort first?
       DiffusionTransformation s_this = orbit.prototype().sorted();
       std::string result = "DT" + std::to_string(orbit.prototype().size());
-      std::vector<int> totals = {0,0,0,0};
-      for (auto it=s_this.specie_traj().begin(); it!=s_this.specie_traj().end();it++){
+      std::vector<int> totals = {0, 0, 0, 0};
+      for(auto it = s_this.specie_traj().begin(); it != s_this.specie_traj().end(); it++) {
         prev_size = nlist.size();
         nlist.expand(it->from.uccoord);
         nlist.expand(it->to.uccoord);
         post_size = nlist.size();
-        if (prev_size!=post_size){
+        if(prev_size != post_size) {
           int idx = 0;
-          for (auto n_it = nlist.begin(); n_it != nlist.end(); n_it++){
+          for(auto n_it = nlist.begin(); n_it != nlist.end(); n_it++) {
             unique_inds[(*n_it)(0)][(*n_it)(1)][(*n_it)(2)] = idx;
             idx++;
           }
         }
-        result+= "_" + it->from.specie().name + "-" + std::to_string(unique_inds[it->from.uccoord.unitcell(0)]
-            [it->from.uccoord.unitcell(1)]
-            [it->from.uccoord.unitcell(2)] + it->from.uccoord.sublat()*nlist.size()) ;
+        result += "_" + it->from.specie().name + "-" + std::to_string(unique_inds[it->from.uccoord.unitcell(0)]
+                                                                      [it->from.uccoord.unitcell(1)]
+                                                                      [it->from.uccoord.unitcell(2)] + it->from.uccoord.sublat() * nlist.size()) ;
 
         result += ",";
-        result+= std::to_string(unique_inds[it->to.uccoord.unitcell(0)]
-            [it->to.uccoord.unitcell(1)]
-            [it->to.uccoord.unitcell(2)] + it->to.uccoord.sublat()*nlist.size()) + "-";
+        result += std::to_string(unique_inds[it->to.uccoord.unitcell(0)]
+                                 [it->to.uccoord.unitcell(1)]
+                                 [it->to.uccoord.unitcell(2)] + it->to.uccoord.sublat() * nlist.size()) + "-";
       }
       return result;
     }
@@ -425,27 +425,27 @@ namespace CASM {
     /// interpolated diffusion path. (Could be an end point)
     double dist_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord) {
       double dist = std::numeric_limits<double>::max();
-      for (auto it=diff_trans.specie_traj().begin(); it!=diff_trans.specie_traj().end();it++){
+      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
         //vector from -> input
-        Coordinate v1 = (uccoord.coordinate()-it->from.uccoord.coordinate());
+        Coordinate v1 = (uccoord.coordinate() - it->from.uccoord.coordinate());
         //vector from -> to
-        Coordinate v2 = (it->to.uccoord.coordinate()-it->from.uccoord.coordinate());
+        Coordinate v2 = (it->to.uccoord.coordinate() - it->from.uccoord.coordinate());
         // projection of v1 onto v2
-        Eigen::Vector3d v3 = v1.const_cart().dot(v2.const_cart())/(v1.const_cart().norm())/(v2.const_cart().norm())*v2.const_cart();
+        Eigen::Vector3d v3 = v1.const_cart().dot(v2.const_cart()) / (v1.const_cart().norm()) / (v2.const_cart().norm()) * v2.const_cart();
         double curr_dist;
         //if v3 length is greater than v2 then input is closer to "to" than the path
-        if (v3.norm() > v2.const_cart().norm()){
-          curr_dist = (uccoord.coordinate().const_cart()-it->to.uccoord.coordinate().const_cart()).norm();
+        if(v3.norm() > v2.const_cart().norm()) {
+          curr_dist = (uccoord.coordinate().const_cart() - it->to.uccoord.coordinate().const_cart()).norm();
         }
         //if v3 is in opposite direction of v2 then input is closer to "from" than the path
-        else if (v3.dot(v2.const_cart()) < 0){
+        else if(v3.dot(v2.const_cart()) < 0) {
           curr_dist = v1.const_cart().norm();
         }
         else {
           // find magnitude of v1-v3 and set to current distance
-          curr_dist = (v1.const_cart()-v3).norm();
+          curr_dist = (v1.const_cart() - v3).norm();
         }
-        if (curr_dist < dist){
+        if(curr_dist < dist) {
           dist = curr_dist;
         }
       }
@@ -453,7 +453,7 @@ namespace CASM {
     }
 
     /// \brief Determines the nearest site distance to the diffusion path
-    std::pair<UnitCellCoord,double> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) {
+    std::pair<UnitCellCoord, double> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) {
       double dist = std::numeric_limits<double>::max();
       Structure prim(diff_trans.specie_traj().begin()->from.uccoord.unit());
       std::set<int> sublat_indices;
@@ -467,8 +467,8 @@ namespace CASM {
         sublat_indices.begin(),
         sublat_indices.end()
       );
-      UnitCell pos(1,1,1);
-      for (auto it=diff_trans.specie_traj().begin(); it!=diff_trans.specie_traj().end();it++){
+      UnitCell pos(1, 1, 1);
+      for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
         UnitCellCoord fromcoord = it->from.uccoord;
         UnitCellCoord tocoord = it->to.uccoord;
 
@@ -485,19 +485,19 @@ namespace CASM {
         tocoord -= pos;
         nlist.expand(tocoord);
       }
-      for (auto n_it = nlist.begin(); n_it != nlist.end(); n_it++){
+      for(auto n_it = nlist.begin(); n_it != nlist.end(); n_it++) {
         for(int b = 0; b < prim.basis.size(); b++) {
-          UnitCellCoord uccoord(prim,b,*n_it);
+          UnitCellCoord uccoord(prim, b, *n_it);
           bool in_diff_trans = false;
-          for (auto it=diff_trans.specie_traj().begin(); it!=diff_trans.specie_traj().end();it++){
-            if (uccoord == it->from.uccoord || uccoord == it->to.uccoord){
+          for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
+            if(uccoord == it->from.uccoord || uccoord == it->to.uccoord) {
               in_diff_trans = true;
             }
           }
 
-          if (!in_diff_trans){
-            double curr_dist = dist_to_path(diff_trans,uccoord);
-            if (curr_dist < dist){
+          if(!in_diff_trans) {
+            double curr_dist = dist_to_path(diff_trans, uccoord);
+            if(curr_dist < dist) {
               dist = curr_dist;
               ret_coord = uccoord;
             }
@@ -505,17 +505,17 @@ namespace CASM {
         }
       }
 
-      std::pair<UnitCellCoord,double> pair(ret_coord,dist);
+      std::pair<UnitCellCoord, double> pair(ret_coord, dist);
       return pair;
     }
 
     /// \brief Determines which site is closest to the diffusion transformation
-    UnitCellCoord path_nearest_neighbor(const DiffusionTransformation &diff_trans){
+    UnitCellCoord path_nearest_neighbor(const DiffusionTransformation &diff_trans) {
       return _path_nearest_neighbor(diff_trans).first;
-    } 
+    }
 
     /// \brief Determines the nearest site distance to the diffusion path
-    double min_dist_to_path(const DiffusionTransformation &diff_trans){
+    double min_dist_to_path(const DiffusionTransformation &diff_trans) {
       return _path_nearest_neighbor(diff_trans).second;
     }
 

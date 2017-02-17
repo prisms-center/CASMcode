@@ -43,7 +43,7 @@ namespace CASM {
       /// Implements increment
       void increment() override;
 
-      
+
 
       // -- Unique -------------------
 
