@@ -61,9 +61,7 @@ namespace CASM {
 	    }
 
 	    /// \brief States if this DiffTransConfiguration is in canonical form
-	    bool is_canonical() const{
-	    	return (*this == this->canonical_form());
-	    }
+	    bool is_canonical() const;
 
 	    /// \brief applies the symmetry op corresponding to the PermuteIterator to the 
 	    /// DiffTransConfiguration in place

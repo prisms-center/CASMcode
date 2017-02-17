@@ -78,6 +78,14 @@ namespace CASM {
     	return copy_apply(this->to_canonical(),*this);
     }
 
+	  bool DiffTransConfiguration::is_canonical() const{
+	    	return std::all_of(m_from_config.supercell().permute_begin(),
+	    		m_from_config.supercell().permute_begin(),
+	    		[&](const PermuteIterator & p){
+	    			return copy_apply(p,*this) <= *this;
+	    		});
+	  }
+
     DiffTransConfiguration &DiffTransConfiguration::apply_sym(const PermuteIterator &it){
     	m_from_config = apply(it,m_from_config);
     	ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),
