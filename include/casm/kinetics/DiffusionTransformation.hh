@@ -340,6 +340,8 @@ namespace CASM {
         return cluster().max_length();
       }
 
+
+
     private:
 
       Configuration &apply_to_impl(Configuration &config) const override;
@@ -380,6 +382,22 @@ namespace CASM {
     std::ostream &operator<<(std::ostream &sout, const DiffusionTransformation &trans);
 
     typedef Orbit<DiffusionTransformation, PrimPeriodicDiffTransSymCompare> PrimPeriodicDiffTransOrbit;
+
+    /// \brief Return a standardized name for this diffusion transformation orbit
+    std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit);
+
+    // \brief Returns the distance from uccoord to the closest point on a linearly
+    /// interpolated diffusion path. (Could be an end point)
+    double dist_to_path(const DiffusionTransformation &diff_trans, const UnitCellCoord &uccoord);
+
+    /// \brief Determines which site is closest to the diffusion transformation and the distance
+    std::pair<UnitCellCoord, double> _path_nearest_neighbor(const DiffusionTransformation &diff_trans) ;
+
+    /// \brief Determines which site is closest to the diffusion transformation
+    UnitCellCoord path_nearest_neighbor(const DiffusionTransformation &diff_trans);
+
+    /// \brief Determines the nearest site distance to the diffusion path
+    double min_dist_to_path(const DiffusionTransformation &diff_trans);
 
   }
 

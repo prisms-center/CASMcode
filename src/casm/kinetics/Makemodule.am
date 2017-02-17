@@ -4,3 +4,5 @@ libcasm_la_SOURCES += ./src/casm/kinetics/DiffusionTransformation.cc\
                       ./src/casm/kinetics/OccupationTransformation.cc\
                       ./src/casm/kinetics/DiffTransConfiguration.cc\
                       ./src/casm/kinetics/DiffTransConfigEnumPerturbations.cc
+                      ./src/casm/kinetics/DiffTransOrbitQuery.cc
+

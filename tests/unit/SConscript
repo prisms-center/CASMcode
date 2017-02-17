@@ -51,11 +51,12 @@ unit_test = lenv.Program(os.path.join(lenv['UNIT_TEST_BINDIR'],'unit_test'),
                           lenv['boost_filesystem'],
                           lenv['boost_regex'],
                           lenv['boost_chrono'],
+                          lenv['boost_program_options'],
                           lenv['dl'],
                           'casm'])
 
 # Execute 'scons unit' to compile & run all unit tests
-env.Alias('unit', unit_test, unit_test[0].abspath + " --log_level=test_suite --catch_system_errors=no")
+lenv.Alias('unit', unit_test, "printenv && " + unit_test[0].abspath + " --log_level=test_suite --catch_system_errors=no")
 AlwaysBuild(unit_test)
 
 if 'unit' in COMMAND_LINE_TARGETS:
@@ -102,6 +103,7 @@ for i, src_name in enumerate(test_name):
                          lenv['boost_system'], 
                          lenv['boost_filesystem'],
                          lenv['boost_regex'],
+                         lenv['boost_program_options'],
                          lenv['dl'],
                          'casm'])
   
@@ -113,9 +115,9 @@ for i, src_name in enumerate(test_name):
   
   # set command line options for running the unit tests
   if sname in no_catch:
-    env.Alias(sname, test, test[0].abspath + " --log_level=test_suite --catch_system_errors=no")
+    lenv.Alias(sname, test, test[0].abspath + " --log_level=test_suite --catch_system_errors=no")
   else:
-    env.Alias(sname, test, test[0].abspath + " --log_level=test_suite")
+    lenv.Alias(sname, test, test[0].abspath + " --log_level=test_suite")
   AlwaysBuild(test)
     
   if sname in COMMAND_LINE_TARGETS:
