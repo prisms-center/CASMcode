@@ -20,7 +20,7 @@ namespace CASM {
 
       static const std::string Desc;
 
-      Contains() : BooleanAttribute<Kinetics::PrimPeriodicDiffTransOrbit>(Name,Desc){};
+      Contains() : BooleanAttribute<Kinetics::PrimPeriodicDiffTransOrbit>(Name,Desc){ };
 
       Contains(std::vector<std::string> search_list):
       	BooleanAttribute<Kinetics::PrimPeriodicDiffTransOrbit>(Name,Desc),

@@ -103,7 +103,8 @@ namespace CASM {
       });
     }
 
-    GenericDiffTransOrbitFormatter<double> min_activation_barrier() {
+    GenericDiffTransOrbitFormatter<double> min_activation_barrier()
+    {
     return GenericDiffTransOrbitFormatter<double>("min_activation_barrier",
                                          "Returns the locally cluster expanded activation barrier associated with this diffusion transformation",
     [](const Kinetics::PrimPeriodicDiffTransOrbit & orbit)-> double {
