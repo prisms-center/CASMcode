@@ -135,7 +135,7 @@ namespace CASM {
       }
       
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-      std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
+      std::vector<std::string> filter_expr =        make_enumerator_filter_expr(_kwargs, enum_opt);
       
       auto end = make_prim_periodic_orbits(
         primclex.prim(), _kwargs["bspecs"], alloy_sites_filter,primclex.crystallography_tol(),std::back_inserter(orbits),primclex.log());
