@@ -130,16 +130,9 @@ namespace CASM {
      *    calculated["energy"]
      *    calculated["relaxed_energy"]
      *
-     *  generated:
-     *    generated["is_groundstate"]
-     *	  generated["dist_from_hull"]
-     *    generated["sublat_struct_fact"]
-     *    generated["struct_fact"]
      */
     bool m_prop_updated;
     Properties m_calculated;  //Stuff you got directly from your DFT calculations
-    Properties m_generated;   //Everything else you came up with through casm
-
 
     bool m_selected;
 
@@ -160,7 +153,7 @@ namespace CASM {
     Configuration(Supercell &_supercell, const jsonParser &source = jsonParser(), const ConfigDoF &_dof = ConfigDoF());
 
     /// Construct by reading from main data file (json)
-    Configuration(const jsonParser &json, Supercell &_supercell, Index _id);
+    Configuration(const jsonParser &json, Supercell &_supercell, std::string _id);
 
 
     //********** DESTRUCTORS *********
@@ -172,7 +165,7 @@ namespace CASM {
       m_multiplicity = m;
     }
 
-    void set_id(Index _id);
+    void set_id(std::string _id);
 
     void set_source(const jsonParser &source);
 
@@ -543,8 +536,6 @@ namespace CASM {
 
     const Properties &calc_properties() const;
 
-    const Properties &generated_properties() const;
-
     // Returns composition on each sublattice: sublat_comp[ prim basis site / sublattice][ molecule_type]
     //   molucule_type is ordered as in the Prim structure's site_occupant list for that basis site (includes vacancies)
     std::vector<Eigen::VectorXd> sublattice_composition() const;
@@ -620,8 +611,8 @@ namespace CASM {
     /// - Must have the same Supercell
     bool operator<(const Configuration &B) const;
 
-    /// \brief Split configuration name string into scelname and config index
-    static std::pair<std::string, Index> split_name(std::string configname);
+    /// \brief Split configuration name string into scelname and config id
+    static std::pair<std::string, std::string> split_name(std::string configname);
 
   private:
     /// Convenience accessors:

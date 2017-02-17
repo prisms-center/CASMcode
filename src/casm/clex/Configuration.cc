@@ -34,7 +34,7 @@ namespace CASM {
 
   /// Construct a default Configuration
   Configuration::Configuration(Supercell &_supercell, const jsonParser &src, const ConfigDoF &_configdof)
-    : m_id("none"), m_supercell(&_supercell), m_source_updated(true), m_multiplicity(-1),
+    : m_id("none"), m_alias(""), m_supercell(&_supercell), m_source_updated(true), m_multiplicity(-1),
       m_configdof(_configdof), m_prop_updated(true), m_selected(false) {
     set_source(src);
   }
@@ -61,11 +61,8 @@ namespace CASM {
 
   //********** MUTATORS  ***********
 
-  void Configuration::set_id(Index _id) {
-    std::stringstream ss;
-    ss << _id;
-    m_id = ss.str();
-
+  void Configuration::set_id(std::string _id) {
+    m_id = _id;
     m_prop_updated = true;
   }
 
@@ -704,12 +701,6 @@ namespace CASM {
 
   //*********************************************************************************
 
-  const Properties &Configuration::generated_properties() const {
-    return m_generated;
-  }
-
-  //*********************************************************************************
-
   /// Returns composition on each sublattice: sublat_comp[ prim basis site / sublattice][ molecule_type]
   ///   molucule_type is ordered as in the Prim structure's site_occupant list for that basis site (includes vacancies)
   std::vector<Eigen::VectorXd> Configuration::sublattice_composition() const {
@@ -858,7 +849,6 @@ namespace CASM {
   ///
   ///   write_properties: (absolute path in config_list)
   ///     json_config["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
-  ///     json_config["CURR_CALCTYPE"]["CURR_REF"]["properties"]["generated"]
   ///
   jsonParser &Configuration::write(jsonParser &json_config) const {
 
@@ -1007,14 +997,14 @@ namespace CASM {
   ///   "json_config" corresponds (entire file)["supercells"][scelname][id]
   ///   "configname" corresponds to "scelname/id"
   ///
-  ///   read dof, source, selected: (absolute path in config_list)
+  ///   read dof, source, selected, alias: (absolute path in config_list)
   ///     json_config["dof"]
   ///     json_config["source"]
   ///     json_config["selected"]
+  ///     json_config["alias"]
   ///
   ///   read properties: (absolute path in config_list)
   ///     json_config["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
-  ///     json_config["CURR_CALCTYPE"]["CURR_REF"]["properties"]["generated"]
   ///
   void Configuration::read(const jsonParser &json_config) {
 
@@ -1026,6 +1016,7 @@ namespace CASM {
     std::string ref_string = "ref." + set.default_clex().ref;
 
     read_dof(json_config);
+    json_config.get_else(m_alias, "alias", std::string(""));
 
     // read properties: does not attempt to read in new calculation data
     if(!json_config.contains(calc_string))
@@ -1078,18 +1069,12 @@ namespace CASM {
   ///
   ///   read properties: (absolute path in config_list)
   ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
-  ///     json["supercells"]["SCEL_NAME"]["CONFIG_ID"]["CURR_CALCTYPE"]["CURR_REF"]["properties"]["generated"]
   ///
   /// Tries to read calculated from json["calc"]
-  /// Tries to read generated from json["gen"]
   ///
   void Configuration::read_properties(const jsonParser &json) {
     if(json.contains("calc")) {
       from_json(m_calculated, json["calc"]);
-    }
-
-    if(json.contains("gen")) {
-      from_json(m_generated, json["gen"]);
     }
   }
 
@@ -1217,13 +1202,6 @@ namespace CASM {
       json["calc"] = m_calculated;
     }
 
-    if(m_generated.size() == 0) {
-      json.erase("gen");
-    }
-    else {
-      json["gen"] = m_generated;
-    }
-
     return json;
 
   }
@@ -1240,25 +1218,17 @@ namespace CASM {
     return f(B);
   }
 
-  std::pair<std::string, Index> Configuration::split_name(std::string configname) {
+  std::pair<std::string, std::string> Configuration::split_name(std::string configname) {
     std::vector<std::string> splt_vec;
     boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
-    Index config_ind;
     if(splt_vec.size() != 2) {
       default_err_log().error("Parsing configuration name");
       default_err_log() << "configuration '" << configname << "' not valid." << std::endl;
+      default_err_log() << "must have form: scelname/configid" << std::endl;
       throw std::invalid_argument("Error in Configuration::split_name(const std::string &configname) const: Not valid");
     }
 
-    try {
-      config_ind = boost::lexical_cast<Index>(splt_vec[1]);
-    }
-    catch(boost::bad_lexical_cast &e) {
-      default_err_log().error("Invalid config index");
-      default_err_log() << "CRITICAL ERROR: In PrimClex::configuration(), malformed input:" << configname << "\n";
-      throw e;
-    }
-    return std::make_pair(splt_vec[0], config_ind);
+    return std::make_pair(splt_vec[0], splt_vec[1]);
   }
 
   bool Configuration::_eq(const Configuration &B) const {
