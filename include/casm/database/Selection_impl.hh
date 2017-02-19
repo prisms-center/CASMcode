@@ -56,6 +56,20 @@ namespace CASM {
       }
     }
 
+    template<typename ObjType>
+    bool Selection<ObjType>::selected(const ObjType &obj) const {
+      if(!obj.alias().empty()) {
+        auto it = m_data.find(obj.alias());
+        if(it != m_data.end() && it->second) {
+          return true;
+        }
+      }
+      auto it = m_data.find(obj.name());
+      if(it != m_data.end() && it->second) {
+        return true;
+      }
+      return false;
+    }
 
     //******************************************************************************
 

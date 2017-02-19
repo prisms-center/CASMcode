@@ -83,6 +83,8 @@ namespace CASM {
     ///
     /// - ObjType must have:
     ///   - std::string name()
+    ///   - std::string alias()
+    ///
     template<typename ObjType>
     class Selection {
 
@@ -136,6 +138,8 @@ namespace CASM {
       }
 
 
+      bool selected(const ObjType &obj) const;
+
       void read(std::istream &_input);
 
       void print(const DataFormatterDictionary<ObjType> &_dict,
@@ -152,6 +156,8 @@ namespace CASM {
     private:
 
       Database<ObjType> *m_db;
+
+      // first may be 'name' or 'alias'
       std::map<name_type, bool> m_data;
       std::vector<std::string> m_col_headers;
       std::string m_name;
