@@ -7,65 +7,103 @@ namespace CASM {
 
     template<>
     struct Traits<jsonDB> {
+
       const std::string name;
+
       static void insert(DatabaseHandler &db_handler) {
         db_handler.insert<Supercell>(name, jsonScelDatabase(db_handler.primclex()));
         db_handler.insert<Configuration>(name, jsonConfigDatabase(db_handler.primclex()));
       }
     }
 
-    /// Derived classes must implement private methods:
-    /// - name_type name() const
-    /// - bool is_end() const
-    /// - void increment()
-    /// - reference dereference() const
-    /// - DatabaseIteratorBase *_clone() const
+    /// ValueType must have:
+    /// - NameType ValueType::name() const
     ///
-    class jsonConfigDatabaseIterator : public DatabaseIteratorBase<Configuration> {
+    /// Derived classes must implement public methods:
+    /// - void DatabaseBase& open()
+    /// - void commit()
+    /// - void close()
+    /// - iterator begin()
+    /// - iterator end()
+    /// - size_type size() const
+    /// - std::pair<iterator, bool> insert(const ValueType &obj)
+    /// - iterator erase(iterator pos)
+    /// - iterator find(const name_type &name)
+    ///
+    /// Derived ScelDatabase must implement public methods:
+    /// - iterator find(const Lattice &lat)
+    /// - std::pair<iterator, bool> insert(const Lattice &lat)
+    ///
+    class jsonScelDatabase : public ScelDatabase {
 
     public:
 
-      typedef std::set<Configuration>::iterator base_iterator;
+      /// Database format version, incremented separately from casm --version
+      static const std::string version;
 
-      jsonConfigDatabaseIterator() {}
+      jsonScelDatabase(const PrimClex &_primclex) :
+        DatabaseBase(_primclex),
+        m_is_open(false) {}
 
-      jsonConfigDatabaseIterator(const jsonConfigDatabase *_db_ptr,
-                                 std::map<name_type, Configuration>::iterator _it) :
-        m_db_ptr(_db_ptr),
-        m_it(_it) {}
+      void jsonScelDatabase &open() override {
+        if(m_is_open) {
+          return *this;
+        }
 
-      std::unique_ptr<DatabaseIteratorBase<Configuration> > clone() const {
-        return std::unique_ptr<DatabaseIteratorBase<Configuration> >(this->_clone());
+        if(fs::exists(primclex.dir().scel_list())) {
+          _read_scel_list();
+        }
+        else if(fs::exists(primclex.dir().SCEL())) {
+          _read_SCEL();
+        }
+
+        m_is_open = true;
+        return *this;
       }
 
-      base_iterator base() const {
-        return m_it;
+      void commit() override {
+        ... To Do ...
       }
 
     private:
 
-      name_type name() const override {
-        return m_it->first;
+      void jsonScelDatabase &_read_scel_list() {
+        jsonParser json(primclex.dir().scel_list());
+
+        if(!json.is_array() || !json.contains("supercells")) {
+          throw std::runtime_error(
+            std::string("Error invalid format: ") + config_list_path.str());
+        }
       }
 
-      bool is_end() const override {
-        return !m_db_ptr || m_it == m_dp_ptr->m_config_list.end();
-      }
+      void jsonScelDatabase &_read_SCEL() {
+        // expect a file with format:
+        //
+        // Supercell Number: 0 Volume: 1
+        // Supercell Transformation Matrix:
+        //  1 0 0
+        //  0 1 0
+        //  0 0 1
+        //
+        // Supercell Number: 1 Volume: 2
+        // Supercell Transformation Matrix:
+        //  1 0 -1
+        //  0 1 0
+        //  0 0 2
 
-      void increment() override {
-        ++m_it;
-      }
+        Eigen::Matrix3d mat;
 
-      reference dereference() const override {
-        return m_it->second;
-      }
+        std::string s;
+        while(!stream.eof()) {
+          std::getline(stream, s);
+          if(s[0] == 'S') {
+            std::getline(stream, s);
+            stream >> mat;
 
-      jsonConfigDatabaseIterator *_clone() const override {
-        return new jsonConfigDatabaseIterator(*this);
+            this->emplace(&primclex(), Lattice(primclex().prim().lattice().lat_column_mat()*mat));
+          }
+        }
       }
-
-      const jsonConfigDatabase *m_db_ptr;
-      base_iterator m_it;
     };
 
 
@@ -80,6 +118,7 @@ namespace CASM {
     /// - iterator end()
     /// - size_type size() const
     /// - std::pair<iterator, bool> insert(const ValueType &obj)
+    /// - std::pair<iterator, bool> insert(const ValueType &&obj)
     /// - iterator erase(iterator pos)
     /// - iterator find(const name_type &name)
     ///
@@ -113,7 +152,7 @@ namespace CASM {
 
         if(!json.is_obj() || !json.contains("supercells")) {
           throw std::runtime_error(
-            std::string("Error invalid format: ") + config_list_path.str());
+            std::string("Error invalid format: ") + primclex.dir().config_list().str());
         }
 
         // check json version
@@ -203,6 +242,13 @@ namespace CASM {
         return _on_insert_or_emplace(result);
       }
 
+      std::pair<iterator, bool> insert(const Configuration &&config) override {
+
+        auto result = m_config_list.insert(std::move(config));
+
+        return _on_insert_or_emplace(result);
+      }
+
       iterator erase(iterator pos) override {
 
         // get m_config_list iterator
@@ -235,7 +281,7 @@ namespace CASM {
         if(it == m_name_and_alias.end()) {
           return _iterator(m_config_list.end());
         }
-        return _iterator(*it);
+        return _iterator(it);
       }
 
       /// For setting alias, the new alias must not already exist
@@ -264,10 +310,10 @@ namespace CASM {
         return std::make_pair(_iterator(res.first), res.second);
       }
 
-      /// For updating properties
-      iterator update(const Configuration &config) override {
+      /// Set calc properties
+      iterator set_calc_properties(const name_type &name_or_alias, const jsonParser &props) override {
         auto it = m_config_list.find(config.name());
-        it->second = config;
+        it->set_calc_properties(props);
         return _iterator(it);
       }
 
@@ -279,8 +325,12 @@ namespace CASM {
 
     private:
 
+      friend jsonConfigDatabaseIterator;
+
+      typedef std::set<Configuration>::iterator base_iterator;
+
       /// Update m_name_and_alias and m_scel_range after performing an insert or emplace
-      std::pair<iterator, bool> _on_insert_or_emplace(base_iterator result) {
+      std::pair<iterator, bool> _on_insert_or_emplace(const std::pair<base_iterator, bool> &result) {
 
         if(result.second) {
 
@@ -308,7 +358,7 @@ namespace CASM {
           }
         }
 
-        return std::make_pair(_iterator(result.first, result.second));
+        return std::make_pair(_iterator(result.first), result.second));
       }
 
       // map name and alias -> Configuration
