@@ -848,6 +848,19 @@ namespace CASM {
 
   };
 
+  template<typename DataObject>
+  GenericDatumFormatter<std::string, DataObject> name_or_alias() {
+    return GenericDatumFormatter<std::string, DataObject>(
+             "name_or_alias",
+             "Object name or alias (if exists)",
+    [](const DataObject & obj)->std::string {
+      if(obj.alias.empty()) {
+        return obj.name();
+      }
+      return obj.alias();
+    });
+  }
+
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

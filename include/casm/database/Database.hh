@@ -102,8 +102,6 @@ namespace CASM {
 
     public:
 
-      typedef ValueType value_type;
-      typedef const ValueType &reference;
       typedef NameType name_type;
 
 
