@@ -7,7 +7,6 @@
 
 #include "casm/misc/Comparisons.hh"
 #include "casm/misc/cloneable_ptr.hh"
-#include "casm/container/Array.hh"
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
@@ -32,8 +31,6 @@ namespace CASM {
   namespace ConfigIO {
     class Selected;
   }
-  template <bool IsConst> class ConfigSelection;
-  typedef ConfigSelection<true> ConstConfigSelection;
 
   template<typename DataObject> struct QueryTraits;
 
@@ -41,7 +38,6 @@ namespace CASM {
   struct QueryTraits<Configuration> {
     static const std::string name;
     typedef ConfigIO::Selected Selected;
-    typedef ConstConfigSelection Selection;
   };
 
   /// \defgroup Configuration
@@ -62,85 +58,25 @@ namespace CASM {
   ///
   struct ConfigInsertResult {
 
-    typedef ConfigIterator<const Configuration, const PrimClex> config_const_iterator;
+    typedef Database<Configuration>::iterator iterator;
 
     /// True if primitive did not exist before insertion
     bool insert_primitive;
 
     /// Iterator pointing at primitive
-    config_const_iterator primitive_it;
+    iterator primitive_it;
 
     /// True if canonical configuration did not exist before insertion
     bool insert_canonical;
 
     /// Iterator pointing at canonical, if existing
-    config_const_iterator canonical_it;
+    iterator canonical_it;
 
   };
 
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
   ///
   class Configuration : public Comparisons<Configuration> {
-  private:
-
-    /// Configuration DFT data is expected in:
-    ///   casmroot/supercells/SCEL_NAME/CONFIG_ID/CURR_CALCTYPE/properties.calc.json
-
-    /// POS files are written to:
-    ///  casmroot/supercells/SCEL_NAME/CONFIG_ID/POS
-
-
-    /// Identification
-
-    // Configuration id is the index into Supercell::config_list
-    std::string m_id;
-
-    /// const pointer to the (non-const) Supercell for this Configuration
-    Supercell *m_supercell;
-
-    ///
-    std::shared_ptr<Supercell> m_supercell_ptr;
-
-    /// a jsonParser object indicating where this Configuration came from
-    jsonParser m_source;
-    bool m_source_updated;
-
-
-    // symmetric multiplicity (i.e., size of configuration's factor_group)
-    int m_multiplicity;
-
-
-    /// Degrees of Freedom
-
-    // 'occupation' is a list of the indices describing the occupants in each crystal site.
-    //   prim().basis[ sublat(i) ].site_occupant[ occupation[i]] -> Molecule on site i
-    //   This means that for the background structure, 'occupation' is all 0
-
-    // Configuration sites are arranged by basis, and then prim:
-    //   occupation: [basis0                |basis1               |basis2          |...] up to prim.basis.size()
-    //       basis0: [prim0|prim1|prim2|...] up to supercell.volume()
-    //
-    ConfigDoF m_configdof;
-
-
-    /// Properties
-    ///Keeps track of whether the Configuration properties change since reading. Be sure to set to true in your routine if it did!
-    /// PROPERTIES (AS OF 07/27/15)
-    /*  calculated:
-     *    calculated["energy"]
-     *    calculated["relaxed_energy"]
-     *
-     */
-    bool m_prop_updated;
-    Properties m_calculated;  //Stuff you got directly from your DFT calculations
-
-    bool m_selected;
-
-    /// Remember how to copy into the canonical Supercell
-    mutable notstd::cloneable_ptr<FillSupercell> m_fill_canonical;
-
-    /// Remember name
-    mutable std::string m_name;
 
   public:
     typedef ConfigDoF::displacement_matrix_t displacement_matrix_t;
@@ -152,35 +88,83 @@ namespace CASM {
     /// Construct a default Configuration
     Configuration(Supercell &_supercell, const jsonParser &source = jsonParser(), const ConfigDoF &_dof = ConfigDoF());
 
-    /// Construct by reading from main data file (json)
-    Configuration(const jsonParser &json, Supercell &_supercell, std::string _id);
+
+    //********** Naming ***********
 
 
-    //********** DESTRUCTORS *********
+    /// \brief SCELV_A_B_C_D_E_F/i
+    std::string name() const;
 
-    //********** MUTATORS  ***********
-
-    /// \brief set symmetric multiplicity (i.e., size of configuration's factor_group)
-    void set_multiplicity(int m) {
-      m_multiplicity = m;
-    }
 
     void set_id(std::string _id);
+
+    std::string id() const;
+
+
+    void set_alias(std::string _alias);
+
+    /// \brief User-specified alternative to 'name'
+    std::string alias() const;
+
 
     void set_source(const jsonParser &source);
 
     void push_back_source(const jsonParser &source);
 
-    // ** Degrees of Freedom **
+    const jsonParser &source() const;
+
+
+    // ******** Supercell **********************
+
+    /// \brief Get the primitive Structure for this Configuration
+    const Structure &prim() const;
+
+    /// \brief Get the PrimClex for this Configuration
+    PrimClex &primclex() const;
+
+    /// \brief Get the Supercell for this Configuration
+    Supercell &supercell() const;
+
+    const Lattice &ideal_lattice() const;
+
+    ///Returns number of sites, NOT the number of primitives that fit in here
+    Index size() const;
+
+    /// \brief Get the UnitCellCoord for a given linear site index
+    UnitCellCoord uccoord(Index site_l) const;
+
+    /// \brief Return the linear index corresponding to integral coordinates
+    Index linear_index(const UnitCellCoord &bijk) const;
+
+    /// \brief Get the basis site index for a given linear linear site index
+    int sublat(Index site_l) const;
+
+
+    // ******** Degrees of Freedom **************
     //
-    // ** Note: Properties and correlations are not automatically updated when dof are changed, **
-    // **       nor are the written records automatically updated                               **
+    // ** Note: Calculated properties are not automatically updated when dof are changed, **
+    // **       nor are the written records automatically updated                         **
+
+    /// \brief const Access the DoF
+    const ConfigDoF &configdof() const {
+      return m_configdof;
+    }
+
+    /// \brief Access the DoF
+    ///
+    /// - This will invalidate the Configuration's id
+    ConfigDoF &configdof() {
+      _invalidate_id();
+      return m_configdof;
+    }
 
     /// \brief Clear all DoF
     ///
     /// - This will invalidate the Configuration's id
     void clear();
 
+
+    // ----- Occupation ------------
 
     /// \brief Set occupant variables to background structure
     ///
@@ -189,7 +173,7 @@ namespace CASM {
 
     /// \brief Set occupant variables
     ///
-    /// With one value for each site in the Configuration, this Array describes
+    /// With one value for each site in the Configuration, this std::vector describes
     /// which occupant is at each of the 'N' sites of the configuration. The
     /// occupant on site l can be obtained from the occupation variable using:
     /// \code
@@ -202,7 +186,23 @@ namespace CASM {
     ///
     /// \throws If \code newoccupation.size() != this->size() \endcode
     ///
-    void set_occupation(const Array<int> &newoccupation);
+    void set_occupation(const std::vector<int> &newoccupation);
+
+    /// \brief Occupant variables
+    ///
+    /// With one value for each site in the Configuration, this std::vector describes
+    /// which occupant is at each of the 'N' sites of the configuration. The
+    /// occupant on site l can be obtained from the occupation variable using:
+    /// \code
+    /// Molecule on_site_l = config.prim().basis[ config.sublat(l) ].site_occupant[ config.occupation()[l]];
+    /// \endcode
+    /// - For a CASM project, the occupation variables will be ordered according
+    /// to the occupant DoF in a "prim.json" file. This means that for the
+    /// background structure, 'occupation' is all 0
+    ///
+    const std::vector<int> &occupation() const {
+      return configdof().occupation();
+    }
 
     /// \brief Set occupant variable on site l
     ///
@@ -218,11 +218,41 @@ namespace CASM {
     ///
     void set_occ(Index site_l, int val);
 
+    /// \brief Occupant variable on site l
+    ///
+    /// The occupant on site l can be obtained from the occupation variable using:
+    /// \code
+    /// Molecule on_site_l = config.prim().basis[ config.sublat(l) ].site_occupant[config.occ(l)];
+    /// \endcode
+    /// - For a CASM project, the occupation variables will be ordered according
+    /// to the occupant DoF in a "prim.json" file. This means that for the
+    /// background structure, 'occupation' is all 0
+    ///
+    const int &occ(Index site_l) const {
+      return configdof().occ(site_l);
+    }
+
+    /// \brief Molecule on site l
+    ///
+    /// Equivalent to:
+    /// \code
+    /// config.prim().basis[ config.sublat(l) ].site_occupant[ config.occupation()[l]];
+    /// \endcode
+    ///
+    const Molecule &mol(Index site_l) const;
+
+    /// \brief True if Configuration has occupation DoF
+    bool has_occupation() const {
+      return configdof().has_occupation();
+    }
+
     /// \brief Clear occupation
     ///
     /// - This will invalidate the Configuration's id
     void clear_occupation();
 
+
+    // ----- Specie ID ------------
 
     /// \brief Hold vectors of specie ids, for each occupant molecule
     ///
@@ -251,11 +281,18 @@ namespace CASM {
     /// - No guarantee is made that these vectors are the correct size
     const std::vector<Index> &specie_id(Index site_l) const;
 
+    /// \brief True if Configuration has occupation DoF
+    bool has_specie_id() const {
+      return configdof().has_specie_id();
+    }
+
     /// \brief Clear specie ids
     ///
     /// - This will invalidate the Configuration's id
     void clear_specie_id();
 
+
+    // ----- Displacement ------------
 
     /// \brief Set all occupant displacements to (0.,0.,0.)
     ///
@@ -274,6 +311,17 @@ namespace CASM {
     ///
     void set_displacement(const displacement_matrix_t &_disp);
 
+    /// \brief Occupant displacements
+    ///
+    /// A displacement_t vector for each site in the Configuration to describe
+    /// displacements condensed in matrix form. This a 3xN matrix whose columns
+    /// are the displacement of each of the N sites of the configuration.
+    /// - Displacements are applied before strain.
+    ///
+    const displacement_matrix_t &displacement() const {
+      return configdof().displacement();
+    }
+
     /// \brief Set occupant displacements
     ///
     /// - A displacement_t vector to describe displacement of the occupant on site l.
@@ -282,11 +330,27 @@ namespace CASM {
     ///
     void set_disp(Index site_l, const Eigen::VectorXd &_disp);
 
+    /// \brief Occupant displacement
+    ///
+    /// - A displacement_t vector describes displacement of the occupant on site l.
+    /// - Displacements are applied before strain.
+    ///
+    const_displacement_t disp(Index site_l) const {
+      return configdof().disp(site_l);
+    }
+
+    /// \brief True if Configuration has displacement DoF
+    bool has_displacement() const {
+      return configdof().has_displacement();
+    }
+
     /// \brief Clear displacement
     ///
     /// - This will invalidate the Configuration's id
     void clear_displacement();
 
+
+    // ----- Deformation ------------
 
     /// \brief Set applied strain to Eigen::Matrix3d::Zero()
     ///
@@ -306,207 +370,6 @@ namespace CASM {
     /// - This will invalidate the Configuration's id
     ///
     void set_deformation(const Eigen::Matrix3d &_deformation);
-
-    /// \brief Clear applied strain
-    ///
-    /// - This will invalidate the Configuration's id
-    void clear_deformation();
-
-
-    /// \brief Check if this is a primitive Configuration
-    bool is_primitive() const;
-
-    /// \brief Returns a PermuteIterator corresponding to the first non-zero pure
-    /// translation that maps the Configuration onto itself.
-    PermuteIterator find_translation() const;
-
-    /// \brief Return the primitive Configuration
-    Configuration primitive() const;
-
-
-    /// \brief Check if Configuration is in the canonical form
-    bool is_canonical() const;
-
-    /// \brief Returns the operation that applied to *this returns the canonical form
-    PermuteIterator to_canonical() const;
-
-    /// \brief Returns the operation that applied to the the canonical form returns *this
-    PermuteIterator from_canonical() const;
-
-    /// \brief Returns the canonical form Configuration in the same Supercell
-    Configuration canonical_form() const;
-
-    /// \brief Returns the canonical form Configuration in the canonical Supercell
-    Configuration in_canonical_supercell() const;
-
-    /// \brief Insert this in the canonical Supercell
-    ConfigInsertResult insert(bool primitive_only) const;
-
-    /// \brief Returns the subgroup of the Supercell factor group that leaves the
-    ///        Configuration unchanged
-    std::vector<PermuteIterator> factor_group() const;
-
-    /// \brief Returns the point group that leaves the Configuration unchanged
-    SymGroup point_group() const;
-
-    /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
-    Configuration fill_supercell(Supercell &scel, const SymOp &op) const;
-
-    /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
-    Configuration fill_supercell(Supercell &scel, const SymGroup &g) const;
-
-
-    // ** Properties **
-    //
-    // ** Note: DeltaProperties are automatically updated, but not written upon changes **
-
-    /// Read calculation results into the configuration
-    //void read_calculated();
-
-    void set_calc_properties(const jsonParser &json);
-
-    bool read_calc_properties(jsonParser &parsed_props) const;
-
-    void set_selected(bool _selected) {
-      m_selected = _selected;
-    }
-
-
-    //********** ACCESSORS ***********
-
-    const Lattice &ideal_lattice()const;
-
-    std::string id() const;
-
-    /// \brief Get symmetric multiplicity (i.e., size of configuration's factor_group)
-    ///
-    /// - Must first be set via Configuration::set_multiplicity
-    int multiplicity()const {
-      return m_multiplicity;
-    }
-
-    /// \brief SCELV_A_B_C_D_E_F/i
-    std::string name() const;
-
-    std::string calc_status() const;
-
-    std::string failure_type() const;
-
-    const jsonParser &source() const;
-
-    fs::path path() const;
-
-    ///Returns number of sites, NOT the number of primitives that fit in here
-    Index size() const;
-
-    /// \brief Get the primitive Structure for this Configuration
-    const Structure &prim() const;
-
-    /// \brief True if this Configuration is currently selected in the MASTER config list
-    bool selected() const {
-      return m_selected;
-    }
-
-    /// \brief Get the PrimClex for this Configuration
-    PrimClex &primclex() const;
-
-    /// \brief Get the Supercell for this Configuration
-    Supercell &supercell() const;
-
-    /// \brief Get the PrimClex crystallography_tol
-    double crystallography_tol() const;
-
-    /// \brief Get the UnitCellCoord for a given linear site index
-    UnitCellCoord uccoord(Index site_l) const;
-
-    /// \brief Return the linear index corresponding to integral coordinates
-    Index linear_index(const UnitCellCoord &bijk) const;
-
-    /// \brief Get the basis site index for a given linear linear site index
-    int sublat(Index site_l) const;
-
-    /// \brief const Access the DoF
-    const ConfigDoF &configdof() const {
-      return m_configdof;
-    }
-
-    /// \brief Access the DoF
-    ///
-    /// - This will invalidate the Configuration's id
-    ConfigDoF &configdof() {
-      _invalidate_id();
-      return m_configdof;
-    }
-
-    /// \brief True if Configuration has occupation DoF
-    bool has_occupation() const {
-      return configdof().has_occupation();
-    }
-
-    /// \brief Occupant variables
-    ///
-    /// With one value for each site in the Configuration, this Array describes
-    /// which occupant is at each of the 'N' sites of the configuration. The
-    /// occupant on site l can be obtained from the occupation variable using:
-    /// \code
-    /// Molecule on_site_l = config.prim().basis[ config.sublat(l) ].site_occupant[ config.occupation()[l]];
-    /// \endcode
-    /// - For a CASM project, the occupation variables will be ordered according
-    /// to the occupant DoF in a "prim.json" file. This means that for the
-    /// background structure, 'occupation' is all 0
-    ///
-    const Array<int> &occupation() const {
-      return configdof().occupation();
-    }
-
-    /// \brief Occupant variable on site l
-    ///
-    /// The occupant on site l can be obtained from the occupation variable using:
-    /// \code
-    /// Molecule on_site_l = config.prim().basis[ config.sublat(l) ].site_occupant[config.occ(l)];
-    /// \endcode
-    /// - For a CASM project, the occupation variables will be ordered according
-    /// to the occupant DoF in a "prim.json" file. This means that for the
-    /// background structure, 'occupation' is all 0
-    ///
-    const int &occ(Index site_l) const {
-      return configdof().occ(site_l);
-    }
-
-    /// \brief Molecule on site l
-    ///
-    /// Equivalent to:
-    /// \code
-    /// config.prim().basis[ config.sublat(l) ].site_occupant[ config.occupation()[l]];
-    /// \endcode
-    ///
-    const Molecule &mol(Index site_l) const;
-
-
-    /// \brief True if Configuration has displacement DoF
-    bool has_displacement() const {
-      return configdof().has_displacement();
-    }
-
-    /// \brief Occupant displacements
-    ///
-    /// A displacement_t vector for each site in the Configuration to describe
-    /// displacements condensed in matrix form. This a 3xN matrix whose columns
-    /// are the displacement of each of the N sites of the configuration.
-    /// - Displacements are applied before strain.
-    ///
-    const displacement_matrix_t &displacement() const {
-      return configdof().displacement();
-    }
-
-    /// \brief Occupant displacement
-    ///
-    /// - A displacement_t vector describes displacement of the occupant on site l.
-    /// - Displacements are applied before strain.
-    ///
-    const_displacement_t disp(Index site_l) const {
-      return configdof().disp(site_l);
-    }
 
     /// \brief Applied strain
     ///
@@ -529,12 +392,93 @@ namespace CASM {
       return configdof().has_deformation();
     }
 
+    /// \brief Clear applied strain
+    ///
+    /// - This will invalidate the Configuration's id
+    void clear_deformation();
 
-    //fs::path reference_state_dir() const;
 
-    //const Properties &ref_properties() const;
+    // ******** Comparisons, Symmetry, Crystallography  ******
+
+    /// \brief Get the PrimClex crystallography_tol
+    double crystallography_tol() const;
+
+    /// \brief Check if Configuration are equivalent wrt the prim's factor group
+    ///
+    /// Equivalent to:
+    /// \code
+    /// this->primitive() == B.primitive()
+    /// \endcode
+    /// - Must have the same PrimClex
+    ///
+    bool is_equivalent(const Configuration &B) const;
+
+    /// \brief Compare Configuration, via ConfigCompare
+    ///
+    /// - Must have the same Supercell
+    bool operator<(const Configuration &B) const;
+
+    /// \brief Check if this is a primitive Configuration
+    bool is_primitive() const;
+
+    /// \brief Returns a PermuteIterator corresponding to the first non-zero pure
+    /// translation that maps the Configuration onto itself.
+    PermuteIterator find_translation() const;
+
+    /// \brief Return the primitive Configuration
+    Configuration primitive() const;
+
+    /// \brief Check if Configuration is in the canonical form
+    bool is_canonical() const;
+
+    /// \brief Returns the operation that applied to *this returns the canonical form
+    PermuteIterator to_canonical() const;
+
+    /// \brief Returns the operation that applied to the the canonical form returns *this
+    PermuteIterator from_canonical() const;
+
+    /// \brief Returns the canonical form Configuration in the same Supercell
+    Configuration canonical_form() const;
+
+    /// \brief Returns the canonical form Configuration in the canonical Supercell
+    Configuration in_canonical_supercell() const;
+
+    /// \brief Returns the subgroup of the Supercell factor group that leaves the
+    ///        Configuration unchanged
+    std::vector<PermuteIterator> factor_group() const;
+
+    /// \brief Get symmetric multiplicity (i.e., size of configuration's factor_group)
+    int multiplicity() const;
+
+    /// \brief Returns the point group that leaves the Configuration unchanged
+    SymGroup point_group() const;
+
+    /// \brief Returns the point group that leaves the Configuration unchanged
+    bool point_group_name() const;
+
+    /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
+    Configuration fill_supercell(Supercell &scel, const SymOp &op) const;
+
+    /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
+    Configuration fill_supercell(Supercell &scel, const SymGroup &g) const;
+
+
+    // ******** Calculated Properties ***********
+
+    /// \brief Set calculated properties exactly
+    void set_calc_properties(const jsonParser &json);
 
     const Properties &calc_properties() const;
+
+    /// \brief Reads from properties.calc.json files
+    ///
+    /// - Saves file modification timestamp: "data_timestamp"
+    /// - Normalizes "relaxed_energy" per primitive cell
+    /// - Calculates "rms_force" from "relaxed_forces"
+    bool read_calc_properties(jsonParser &parsed_props) const;
+
+
+    //********** Composition ***********
 
     // Returns composition on each sublattice: sublat_comp[ prim basis site / sublattice][ molecule_type]
     //   molucule_type is ordered as in the Prim structure's site_occupant list for that basis site (includes vacancies)
@@ -564,69 +508,71 @@ namespace CASM {
     Eigen::VectorXd num_each_component() const;
 
 
+    //********** Cache ***********
+
+    /// Insert data in the configuration cache, which will be saved in the database
+    ///
+    /// - For data that depends on DoF only, not calculated properties or
+    ///   composition axes
+    /// - Adding to cache is modeled as const, but a flag is set so the data
+    ///   will be written by 'to_json'
+    /// - Data only written if 'name' does not already exist in cache
+    template<typename T>
+    void cache_insert(std::string name, const T &data) const {
+      if(!m_cache.contains(name)) {
+        m_cache[name] = data;
+        m_cache_updated = true;
+        m_dof_deps_updated = true;
+      }
+    }
+
+    /// Access the configuration cache, which will be saved in the database
+    const jsonParser &cache() const {
+      return m_cache;
+    }
+
+    bool cache_updated() const {
+      return m_cache_updated;
+    }
+
+    void cache_clear() const {
+      m_cache.put_null();
+      m_cache_updated = true;
+    }
+
     //********* IO ************
+
+    /// \brief Insert this configuration (in primitive & canonical form) in the database
+    ConfigInsertResult insert(bool primitive_only) const;
 
     /// Writes the Configuration to the correct casm directory
     ///   Uses PrimClex's current settings to write the appropriate
     ///   Properties, DeltaProperties and Correlations files
-    jsonParser &write(jsonParser &json) const;
+    jsonParser &to_json(jsonParser &json) const;
+
+    /// Write the POS file to stream
+    std::ostream &write_pos(std::ostream &sout) const;
 
     /// Write the POS file to pos_path
     void write_pos() const;
-
-    // Va_mode		description
-    // 0			print no information about the vacancies
-    // 1			print only the coordinates of the vacancies
-    // 2			print the number of vacancies and the coordinates of the vacancies
-    void print(std::ostream &stream, COORD_TYPE mode, int Va_mode = 0, char term = '\n', int prec = 10, int pad = 5) const;
-
-    void print_occupation(std::ostream &stream) const;
-
-    void print_config_list(std::ostream &stream, int composition_flag) const;
-
-    void print_composition(std::ostream &stream) const;
-
-    void print_true_composition(std::ostream &stream) const;
-
-    void print_sublattice_composition(std::ostream &stream) const;
-
-
-    fs::path calc_properties_path() const;
-    fs::path calc_status_path() const;
-    /// Path to various files
-    fs::path pos_path() const;
-
-    /// \brief Check if Configuration are equivalent wrt the prim's factor group
-    ///
-    /// Equivalent to:
-    /// \code
-    /// this->primitive() == B.primitive()
-    /// \endcode
-    /// - Must have the same PrimClex
-    ///
-    bool is_equivalent(const Configuration &B) const;
-
-    /// \brief Compare Configuration, via ConfigCompare
-    ///
-    /// - Must have the same Supercell
-    bool operator<(const Configuration &B) const;
 
     /// \brief Split configuration name string into scelname and config id
     static std::pair<std::string, std::string> split_name(std::string configname);
 
   private:
-    /// Convenience accessors:
-    int &_occ(Index site_l) {
-      return m_configdof.occ(site_l);
-    }
 
-    displacement_t _disp(Index site_l) {
-      return m_configdof.disp(site_l);
-    }
+    void _modify_dof() {
+      if(m_dof_deps_updated) {
+        m_id = "none";
+        m_name.clear();
+        m_alias.clear();
 
-    void _invalidate_id() {
-      m_id = "none";
-      m_name.clear();
+        cache_clear();
+
+        m_calculated.put_null();
+
+        m_dof_deps_updated = false;
+      }
     }
 
     void _generate_name() const;
@@ -639,30 +585,66 @@ namespace CASM {
     /// - Checks that all DoF are the same, within tolerance
     bool _eq(const Configuration &B) const;
 
-    /// Reads the Configuration from the expected casm directory
+    /// Reads the Configuration from the json input
     ///   Uses PrimClex's current settings to read in the appropriate
-    ///   Properties, DeltaProperties and Correlations files if they exist
+    ///   calculated properties
     ///
-    /// This is private, because it is only called from the constructor:
-    ///   Configuration(const Supercell &_supercell, Index _id)
-    ///   It's called from the constructor because of the Supercell pointer
+    /// This is private, because it is only called from jsonConstructor<Configuration>:
     ///
-    void read(const jsonParser &json);
+    void from_json(const jsonParser &json);
 
-    /// Functions used to perform read()
-    void read_dof(const jsonParser &json);
-    void read_properties(const jsonParser &json);
+    friend jsonConstructor<Configuration>;
 
-    /// Functions used to perform write to config_list.json:
-    jsonParser &write_dof(jsonParser &json) const;
-    jsonParser &write_source(jsonParser &json) const;
-    jsonParser &write_pos(jsonParser &json) const;
-    jsonParser &write_param_composition(jsonParser &json) const;
-    jsonParser &write_properties(jsonParser &json) const;
+  private:
 
-    //bool reference_states_exist() const;
-    //void read_reference_states(Array<Properties> &ref_state_prop, Array<Eigen::VectorXd> &ref_state_comp) const;
-    //void generate_reference_scalar(std::string propname, const Array<Properties> &ref_state_prop, const Array<Eigen::VectorXd> &ref_state_comp);
+    /// Configuration DFT data is expected in:
+    ///   primclex().dir().calculated_properties(configname, calctype)
+
+    /// POS files are written to:
+    ///  primclex().POS(configname)
+
+
+    /// Identification
+
+    // Configuration id is the index into Supercell::config_list
+    std::string m_id;
+
+    /// Remember name
+    mutable std::string m_name;
+
+    // User-specified alternate name
+    std::string m_alias;
+
+    /// const pointer to the (non-const) Supercell for this Configuration
+    const Supercell *m_supercell;
+
+    /// Used when constructing temporary Configuration in non-canonical Supercell
+    std::shared_ptr<Supercell> m_supercell_ptr;
+
+    /// a jsonParser object indicating where this Configuration came from
+    jsonParser m_source;
+    bool m_source_updated;
+
+    /// Degrees of Freedom
+    ConfigDoF m_configdof;
+
+    /// Set to true when modiyfing anything that depends on dof:
+    /// - m_name, m_id, m_alias, m_cache, m_source, m_calculated
+    mutable bool m_dof_deps_updated;
+
+    /// Cache for properties that only depend on dof
+    mutable jsonParser m_cache;
+    bool m_cache_updated;
+
+    /// DFT calculated properties:
+    /// - "relaxed_energy" -> double
+    /// - "relaxation_deformation" -> matrix double
+    /// - "relaxation_displacement" -> matrix double
+    /// - "rms_force" -> double
+    /// - "volume_relaxation" -> double
+    /// - "lattice_deformation" -> double
+    Properties m_calculated;
+    bool m_prop_updated;
 
   };
 
@@ -742,19 +724,13 @@ namespace CASM {
   bool is_primitive(const Configuration &_config);
 
   /// \brief returns true if _config no symmetry transformation applied to _config will increase its lexicographic order
-  bool is_canonical(const Configuration &_config);
+  bool is_canonical(const Configuration &_config)
 
   /// \brief Status of calculation
-  inline
-  std::string calc_status(const Configuration &_config) {
-    return _config.calc_status();
-  }
+  std::string calc_status(const Configuration &_config);
 
   // \brief Reason for calculation failure.
-  inline
-  std::string failure_type(const Configuration &_config) {
-    return _config.failure_type();
-  }
+  std::string failure_type(const Configuration &_config);
 
   bool has_relaxed_energy(const Configuration &_config);
 
@@ -772,12 +748,12 @@ namespace CASM {
 
   inline
   bool has_calc_status(const Configuration &_config) {
-    return !_config.calc_status().empty();
+    return !calc_status(_config).empty();
   }
 
   inline
   bool has_failure_type(const Configuration &_config) {
-    return !_config.failure_type().empty();
+    return !_config.failure_type(_config).empty();
   }
 
   class FillSupercell {

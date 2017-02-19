@@ -74,6 +74,8 @@ namespace CASM {
     /// unique name of the supercell based on hermite normal form (see _generate_name() )
     mutable std::string m_name;
 
+    std::string alias;
+
     /// SuperNeighborList, mutable for lazy construction
     mutable notstd::cloneable_ptr<SuperNeighborList> m_nlist;
 
@@ -292,7 +294,7 @@ namespace CASM {
 
     bool operator<(const Supercell &B) const;
 
-    
+
     // **** Generating functions ****
 
     // Populate m_factor_group -- probably should be private

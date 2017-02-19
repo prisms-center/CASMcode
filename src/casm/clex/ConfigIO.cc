@@ -366,7 +366,7 @@ namespace CASM {
       return GenericConfigFormatter<Index>("multiplicity",
                                            "Symmetric multiplicity of the configuration, excluding translational equivalents.",
       [](const Configuration & config)->Index {
-        return config.prim().factor_group().size() / config.factor_group().size();
+        return config.multiplicity();
       });
     }
 
@@ -374,7 +374,7 @@ namespace CASM {
       return GenericConfigFormatter<std::string>("pointgroup_name",
                                                  "Name of the configuration's point group.",
       [](const Configuration & config)->std::string{
-        return config.point_group().get_name();
+        return config.point_group_name();
       });
     }
 

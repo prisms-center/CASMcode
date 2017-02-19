@@ -1,7 +1,9 @@
 #ifndef ConfigDoF_HH
 #define ConfigDoF_HH
 
-#include "casm/container/Array.hh"
+#include <vector>
+#include "casm/external/Eigen/Dense"
+#include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
 
@@ -15,7 +17,7 @@ namespace CASM {
   /// \brief A container class for the different degrees of freedom a Configuration
   /// might have
   ///
-  /// Contains an id, an Array<int> that tells you the current occupant of each
+  /// Contains an std::vector<int> that tells you the current occupant of each
   /// site, an Eigen::MatrixXd that tells you the displacements at each site, and
   /// a LatticeStrain that tells you the strain of the Configuration. Everything
   /// is public.
@@ -40,21 +42,24 @@ namespace CASM {
     ConfigDoF(Index N = 0, double _tol = TOL);
 
     ///Initialize with explicit occupation
-    ConfigDoF(const Array<int> &_occupation, double _tol = TOL);
+    ConfigDoF(const std::vector<int> &_occupation, double _tol = TOL);
 
     ///Initialize with explicit properties
-    ConfigDoF(const Array<int> &_occupation, const Eigen::MatrixXd &_displacement, const Eigen::Matrix3d &_deformation, double _tol = TOL);
+    ConfigDoF(const std::vector<int> &_occupation, const Eigen::MatrixXd &_displacement, const Eigen::Matrix3d &_deformation, double _tol = TOL);
 
-  public:
 
-    /// *** ACCESSORS ***
     Index size() const {
       return m_N;
     }
 
-    double tol()const {
+    double tol() const {
       return m_tol;
     }
+
+    void clear();
+
+
+    // -- Occupation ------------------
 
     int &occ(Index i) {
       return m_occupation[i];
@@ -64,9 +69,26 @@ namespace CASM {
       return m_occupation[i];
     };
 
-    const Array<int> &occupation() const {
+    /// set_occupation ensures that ConfigDoF::size() is compatible with _occupation.size()
+    /// or if ConfigDoF::size()==0, sets ConfigDoF::size() to _occupation.size()
+    void set_occupation(const std::vector<int> &_occupation);
+
+    std::vector<int> &occupation() {
       return m_occupation;
     };
+
+    const std::vector<int> &occupation() const {
+      return m_occupation;
+    };
+
+    bool has_occupation() const {
+      return size() != 0 && occupation().size() == size();
+    }
+
+    void clear_occupation();
+
+
+    // -- Displacement ------------------
 
     displacement_t disp(Index i) {
       return m_displacement.col(i);
@@ -76,9 +98,34 @@ namespace CASM {
       return m_displacement.col(i);
     };
 
+    /// set_displacement ensures that ConfigDoF::size() is compatible with
+    /// _displacement.cols() (i.e., number of sites)
+    /// or if ConfigDoF::size()==0, sets ConfigDoF::size() to _displacement.cols()
+    void set_displacement(const displacement_matrix_t &_displacement);
+
+    displacement_matrix_t &displacement() {
+      return m_displacement;
+    };
+
     const displacement_matrix_t &displacement() const {
       return m_displacement;
     };
+
+    bool has_displacement() const {
+      return size() != 0 && displacement().cols() == size();
+    }
+
+    void clear_displacement();
+
+
+    // -- Deformation ------------------
+
+    /// set_deformation sets ConfigDoF::has_deformation() to true
+    void set_deformation(const Eigen::Matrix3d &_deformation);
+
+    Eigen::Matrix3d &deformation() {
+      return m_deformation;
+    }
 
     const Eigen::Matrix3d &deformation() const {
       return m_deformation;
@@ -93,49 +140,30 @@ namespace CASM {
       return m_deformation(i, j);
     }
 
-    const std::vector<std::vector<Index> > &specie_id() const {
-      return m_specie_id;
-    }
-
     bool has_deformation() const {
       return m_has_deformation;
     }
 
-    bool has_displacement() const {
-      return size() != 0 && displacement().cols() == size();
-    }
+    void clear_deformation();
 
-    bool has_occupation() const {
-      return size() != 0 && occupation().size() == size();
-    }
 
-    bool has_specie_id() const {
-      return size() != 0 && specie_id().size() == size();
-    }
-
-    //**** MUTATORS ****
-    /// set_occupation ensures that ConfigDoF::size() is compatible with _occupation.size()
-    /// or if ConfigDoF::size()==0, sets ConfigDoF::size() to _occupation.size()
-    void set_occupation(const Array<int> &_occupation);
-
-    /// set_displacement ensures that ConfigDoF::size() is compatible with _displacement.cols() (i.e., number of sites)
-    /// or if ConfigDoF::size()==0, sets ConfigDoF::size() to _displacement.cols()
-    void set_displacement(const displacement_matrix_t &_displacement);
-
-    /// set_deformation sets ConfigDoF::has_deformation() to true
-    void set_deformation(const Eigen::Matrix3d &_deformation);
+    // -- Specie ID ------------------
 
     /// Access specie id data
     std::vector<std::vector<Index> > &specie_id() {
       return m_specie_id;
     }
 
-    void clear();
+    const std::vector<std::vector<Index> > &specie_id() const {
+      return m_specie_id;
+    }
 
-    void clear_occupation();
-    void clear_displacement();
-    void clear_deformation();
+    bool has_specie_id() const {
+      return size() != 0 && specie_id().size() == size();
+    }
+
     void clear_specie_id();
+
 
     void swap(ConfigDoF &RHS);
 
@@ -152,8 +180,19 @@ namespace CASM {
     /// \brief Number of sites in the Configuration
     Index m_N;
 
-    ///With one value for each site in the Configuration, this Array describes which occupant is at each of the 'N' sites of the configuration
-    Array<int> m_occupation;
+    /// With one value for each site in the Configuration, this std::vector
+    /// describes which occupant is at each of the 'N' sites of the configuration
+    ///
+    /// 'occupation' is a list of the indices describing the occupants in each crystal site.
+    ///   prim().basis[ sublat(i) ].site_occupant[ occupation[i]] -> Molecule on site i
+    ///   This means that for the background structure, 'occupation' is all 0
+    ///
+    /// Configuration sites are arranged by basis, and then prim:
+    ///   occupation: [basis0                |basis1               |basis2          |...] up to prim.basis.size()
+    ///       basis0: [prim0|prim1|prim2|...] up to supercell.volume()
+    ///
+    ///
+    std::vector<int> m_occupation;
 
     /// A VectorXd for each site in the Configuration to describe displacements condensed in matrix form  -- This a 3xN matrix whose columns are the displacement of
     /// each of the N sites of the configuration
@@ -165,25 +204,14 @@ namespace CASM {
 
     bool m_has_deformation;
 
+    /// Use to track specie ID during KMC, vector at each site to handle atoms
+    /// in a molecule
     std::vector<std::vector<Index> > m_specie_id;
 
     /// Tolerance used for transformation to canonical form -- used also for comparisons, since
     /// Since comparisons are only meaningful to within the tolerance used for finding the canonical form
     /// (This is relevant only for displacement and deformation degrees of freedom
     mutable double m_tol;
-
-    // *** PRIVATE NON-CONST ACCESS
-    Array<int> &_occupation() {
-      return m_occupation;
-    };
-
-    displacement_matrix_t &_displacement() {
-      return m_displacement;
-    };
-
-    Eigen::Matrix3d &_deformation() {
-      return m_deformation;
-    }
 
   };
 
