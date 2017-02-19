@@ -1,7 +1,19 @@
 #ifndef CASM_DiffTransConfigDatabase
 #define CASM_DiffTransConfigDatabase
 
-namespace {
+#include <utility>
+
+#include "casm/database/Database.hh"
+#include "casm/kinetics/DiffTransConfiguration.hh"
+
+namespace boost {
+
+  template<typename T>
+  class iterator_range;
+
+}
+
+namespace CASM {
 
   namespace DB {
 

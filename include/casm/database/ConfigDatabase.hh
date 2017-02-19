@@ -1,7 +1,18 @@
 #ifndef CASM_ConfigDatabase
 #define CASM_ConfigDatabase
 
-namespace {
+#include "casm/database/Database.hh"
+
+namespace boost {
+
+  template<typename T>
+  class iterator_range;
+
+}
+
+namespace CASM {
+
+  class Configuration;
 
   namespace DB {
 

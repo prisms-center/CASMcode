@@ -1,7 +1,13 @@
 #ifndef CASM_ScelDatabase
 #define CASM_ScelDatabase
 
-namespace {
+#include <map>
+#include <set>
+#include "casm/database/Database.hh"
+#include "casm/database/DatabaseSetIterator.hh"
+#include "casm/clex/Supercell.hh"
+
+namespace CASM {
 
   namespace DB {
 
@@ -44,15 +50,15 @@ namespace {
       }
 
       iterator find(const name_type &name_or_alias) override {
-        return _iterator(m_scel_list.find(
+        return _iterator(m_scel_list.find(name_or_alias));
       }
 
 
-                     protected:
+    protected:
 
-                       typedef DatabaseSetIterator<Supercell, ScelDatabase> base_iterator;
+      typedef DatabaseSetIterator<Supercell, ScelDatabase> base_iterator;
 
-             template<typename... Args>
+      template<typename... Args>
       std::pair<iterator, bool> emplace(Args &&... args) {
         return _on_insert_or_emplace(m_scel_list.emplace(std::forward<Args>(args)));
       }

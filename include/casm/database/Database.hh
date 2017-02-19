@@ -1,6 +1,14 @@
-#include "casm/misc/CASM_TMP.hh"
+#ifndef CASM_Database
+#define CASM_Database
+
+#include <memory>
+#include "casm/external/boost.hh"
+#include "casm/misc/cloneable_ptr.hh"
+
 
 namespace CASM {
+
+  class PrimClex;
 
   namespace DB {
 
@@ -223,3 +231,5 @@ namespace CASM {
 
   }
 }
+
+#endif

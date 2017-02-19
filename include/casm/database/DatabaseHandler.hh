@@ -1,6 +1,19 @@
+#ifndef CASM_DatabaseHandler
+#define CASM_DatabaseHandler
+
+#include <utility>
+#include <map>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <stdexcept>
+
+#include "casm/database/Database.hh"
 
 
 namespace CASM {
+
+  class PrimClex;
 
   namespace DB {
 
@@ -110,3 +123,5 @@ namespace CASM {
     };
   }
 }
+
+#endif

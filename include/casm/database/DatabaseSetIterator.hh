@@ -1,3 +1,8 @@
+#ifndef CASM_DatabaseSetIterator
+#define CASM_DatabaseSetIterator
+
+#include <memory>
+#include <set>
 
 namespace CASM {
 
@@ -63,3 +68,4 @@ namespace CASM {
   }
 }
 
+#endif
