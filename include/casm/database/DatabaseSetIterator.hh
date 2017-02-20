@@ -37,16 +37,15 @@ namespace CASM {
 
       typedef std::set<ValueType>::iterator base_iterator;
 
-      DatabaseSetIterator(base_iterator _it, base_iterator _end) :
-        m_it(_it),
-        m_end(_end) {}
+      DatabaseSetIterator(base_iterator _it) :
+        m_it(_it) {}
 
       base_iterator base() const {
         return m_it;
       }
 
-      bool is_end() const override {
-        return m_it == m_end;
+      bool equal(const DatabaseIteratorBase<ValueType, NameType> &other) const override {
+        return m_it == static_cast<const DatabaseSetIterator &>(other).m_it;
       }
 
       void increment() override {
@@ -62,7 +61,6 @@ namespace CASM {
       }
 
       base_iterator m_it;
-      base_iterator m_end;
     };
 
   }

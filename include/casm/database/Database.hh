@@ -43,7 +43,6 @@ namespace CASM {
     /// insert, or update.
     ///
     /// Derived classes must implement private methods:
-    /// - bool is_end() const
     /// - void increment()
     /// - reference dereference() const
     /// - DatabaseIteratorBase *_clone() const
@@ -67,26 +66,11 @@ namespace CASM {
 
     private:
 
-      virtual bool is_end() const = 0;
-
       virtual void increment() = 0;
 
       virtual reference dereference() const = 0;
 
-      virtual bool equal(const DatabaseIteratorBase<ValueType, NameType> &other) const {
-        bool this_is_end = this->is_end();
-        bool other_is_end = other.is_end();
-
-        if(this_is_end != other_is_end) {
-          return false;
-        }
-
-        if(this_is_end) {
-          return true;
-        }
-
-        return (this->name() == other->name());
-      }
+      virtual bool equal(const DatabaseIteratorBase<ValueType, NameType> &other) const = 0;
 
       virtual DatabaseIteratorBase *_clone() const = 0;
 
@@ -118,10 +102,6 @@ namespace CASM {
         m_ptr(notstd::clone(it)) {}
 
 
-      bool is_end() const {
-        return m_ptr->is_end();
-      }
-
       DatabaseIteratorBase<ValueType, NameType> *get() const {
         return m_ptr.unique().get();
       }
@@ -132,17 +112,17 @@ namespace CASM {
 
       /// boost::iterator_facade implementation
       void increment() {
-        m_ptr->_increment();
+        m_ptr->increment();
       }
 
       /// boost::iterator_facade implementation
       const ValueType &dereference() const {
-        return m_ptr->_dereference();
+        return m_ptr->dereference();
       }
 
       /// boost::iterator_facade implementation
       bool equal(const DatabaseIterator &B) const {
-        return m_ptr->_equal(*(B.m_ptr));
+        return m_ptr->equal(*(B.m_ptr));
       }
 
       notstd::cloneable_ptr<DatabaseIteratorBase<ValueType, NameType> > m_ptr;
@@ -186,15 +166,9 @@ namespace CASM {
 
       Database() {};
 
-      virtual iterator begin() = 0;
-      iterator begin() const {
-        return static_cast<Database<ValueType>*>(this)->begin();
-      }
+      virtual iterator begin() const = 0;
 
-      virtual iterator end() = 0;
-      iterator end() const {
-        return static_cast<Database<ValueType>*>(this)->end();
-      }
+      virtual iterator end() const = 0;
 
       virtual size_type size() const = 0;
       bool empty() const {

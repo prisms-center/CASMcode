@@ -12,12 +12,13 @@ namespace CASM {
 
   /*****************************************************************/
 
-  ReturnArray<int> Supercell::max_allowed_occupation() const {
-    Array<int> max_allowed;
+  std::vector<int> Supercell::max_allowed_occupation() const {
+    std::vector<int> max_allowed;
 
     // Figures out the maximum number of occupants in each basis site, to initialize counter with
     for(Index i = 0; i < prim().basis.size(); i++) {
-      max_allowed.append(Array<int>(volume(), prim().basis[i].site_occupant().size() - 1));
+      std::vector<int> tmp(volume(), prim().basis[i].site_occupant().size() - 1);
+      max_allowed.insert(max_allowed.end(), tmp.begin(), tmp.end());
     }
     //std::cout << "max_allowed_occupation is:  " << max_allowed << "\n\n";
     return max_allowed;
@@ -92,7 +93,7 @@ namespace CASM {
   /*****************************************************************/
 
   // PrimGrid populates translation permutations if needed
-  const Array<Permutation> &Supercell::translation_permute() const {
+  const std::vector<Permutation> &Supercell::translation_permute() const {
     return m_prim_grid.translation_permutations();
   }
 
@@ -488,7 +489,7 @@ namespace CASM {
     Configuration config(*this);
 
     // Initially set occupation to -1 (for unknown) on every site
-    config.set_occupation(Array<int>(num_sites(), -1));
+    config.set_occupation(std::vector<int>(num_sites(), -1));
 
     Index _linear_index, b;
     int val;
@@ -602,13 +603,13 @@ namespace CASM {
   }
 
   //***********************************************************
-  /**  Returns an Array<int> consistent with
+  /**  Returns an std::vector<int> consistent with
    *     Configuration::occupation that is all vacancies.
    *     A site which can not contain a vacancy is set to -1.
    */
   //***********************************************************
-  ReturnArray<int> Supercell::vacant() const {
-    Array<int> occupation = Array<int>(num_sites(), -1);
+  std::vector<int> Supercell::vacant() const {
+    std::vector<int> occupation(num_sites(), -1);
     int b, index;
     for(Index i = 0; i < num_sites(); i++) {
       b = sublat(i);

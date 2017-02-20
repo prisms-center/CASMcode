@@ -77,9 +77,9 @@ namespace CASM {
   /// \brief Construct with a Supercell, using all permutations
   ConfigEnumAllOccupations::ConfigEnumAllOccupations(Supercell &_scel) :
     m_counter(
-      Array<int>(_scel.num_sites(), 0),
+      std::vector<int>(_scel.num_sites(), 0),
       _scel.max_allowed_occupation(),
-      Array<int>(_scel.num_sites(), 1)) {
+      std::vector<int>(_scel.num_sites(), 1)) {
 
     m_current = notstd::make_cloneable<Configuration>(_scel, this->source(0), m_counter());
     reset_properties(*m_current);

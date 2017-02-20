@@ -50,7 +50,7 @@ namespace CASM {
     /// Returns true if current() is primitive and canonical
     bool _check_current() const;
 
-    Counter<Array<int> > m_counter;
+    Counter<std::vector<int> > m_counter;
     notstd::cloneable_ptr<Configuration> m_current;
   };
 

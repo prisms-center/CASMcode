@@ -22,8 +22,8 @@ namespace CASM {
     /// - void DatabaseBase& open()
     /// - void commit()
     /// - void close()
-    /// - iterator begin()
-    /// - iterator end()
+    /// - iterator begin() const
+    /// - iterator end() const
     /// - size_type size() const
     /// - std::pair<iterator, bool> insert(const ValueType &obj)
     /// - iterator erase(iterator pos)
@@ -63,8 +63,8 @@ namespace CASM {
     /// - void DatabaseBase& open()
     /// - void commit()
     /// - void close()
-    /// - iterator begin()
-    /// - iterator end()
+    /// - iterator begin() const
+    /// - iterator end() const
     /// - size_type size() const
     /// - std::pair<iterator, bool> insert(const ValueType &obj)
     /// - std::pair<iterator, bool> insert(const ValueType &&obj)
@@ -91,9 +91,9 @@ namespace CASM {
 
       void close() override;
 
-      iterator begin() override;
+      iterator begin() const override;
 
-      iterator end() override;
+      iterator end() const override;
 
       size_type size() const override ;
 

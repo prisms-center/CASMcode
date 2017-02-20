@@ -162,7 +162,7 @@ namespace CASM {
 
 
     // returns maximum allowed occupation bitstring -- used for initializing enumeration counters
-    ReturnArray<int> max_allowed_occupation() const;
+    std::vector<int> max_allowed_occupation() const;
 
     Configuration configuration(const BasicStructure<Site> &structure_to_config, double tol = TOL);
 
@@ -260,7 +260,7 @@ namespace CASM {
 
     // Const access of m_trans_permute
     // Populates m_trans_permute if needed
-    const Array<Permutation> &translation_permute() const;
+    const std::vector<Permutation> &translation_permute() const;
 
     /// \brief Begin iterator over pure translational permutations
     permute_const_iterator translate_begin() const;
@@ -312,7 +312,7 @@ namespace CASM {
 
     bool is_supercell_of(const Structure &structure) const;
     bool is_supercell_of(const Structure &structure, Eigen::Matrix3d &multimat) const;
-    ReturnArray<int> vacant()const;
+    std::vector<int> vacant()const;
 
     // **** Printing ****
 
