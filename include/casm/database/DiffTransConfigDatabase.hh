@@ -26,8 +26,8 @@ namespace CASM {
 
     public:
 
-      /// For updating properties
-      virtual std::pair<iterator, bool> update(const DiffTransConfiguration &config);
+      /// Set calc properties
+      virtual iterator set_calc_properties(const DiffTransConfiguration &config);
 
       /// Range of DiffTransConfiguration for a particular DiffTransOrbit
       virtual boost::iterator_range<iterator> orbit_range(const name_type &diff_trans_orbit_name) const;
