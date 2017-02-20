@@ -11,7 +11,7 @@ namespace {
   namespace DB {
 
     class DiffTransDatabase : public Database<PrimPeriodicDiffTransOrbit> {
-    
+
     };
 
   }

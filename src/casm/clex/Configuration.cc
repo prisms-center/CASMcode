@@ -40,11 +40,10 @@ namespace CASM {
     m_id("none"),
     m_alias(""),
     m_supercell(&_supercell),
-    m_source_updated(true),
+    m_source_updated(false),
     m_configdof(_configdof),
-    m_dof_deps_updated(true),
-    m_cache_updated(true),
-    m_prop_updated(true) {
+    m_dof_deps_updated(false),
+    m_prop_updated(false) {
 
     set_source(src);
   }
@@ -958,9 +957,7 @@ namespace CASM {
     json.get(m_configdof, "dof");
     m_dof_deps_updated = false;
 
-    json.get(m_cache, "cache");
-    m_cache_updated = false;
-
+    json.get(cache(), "cache");
 
     // read properties from 'json' input only: does not attempt to read in new
     // calculation data from the calc.properties.json file

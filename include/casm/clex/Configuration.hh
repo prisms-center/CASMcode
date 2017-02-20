@@ -13,6 +13,7 @@
 #include "casm/clex/Properties.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/ConfigIterator.hh"
+#include "casm/database/Cache.hh"
 
 namespace CASM {
 
@@ -76,7 +77,7 @@ namespace CASM {
 
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
   ///
-  class Configuration : public Comparisons<Configuration> {
+  class Configuration : public Comparisons<Configuration>, public Cache {
 
   public:
     typedef ConfigDoF::displacement_matrix_t displacement_matrix_t;
@@ -508,38 +509,6 @@ namespace CASM {
     Eigen::VectorXd num_each_component() const;
 
 
-    //********** Cache ***********
-
-    /// Insert data in the configuration cache, which will be saved in the database
-    ///
-    /// - For data that depends on DoF only, not calculated properties or
-    ///   composition axes
-    /// - Adding to cache is modeled as const, but a flag is set so the data
-    ///   will be written by 'to_json'
-    /// - Data only written if 'name' does not already exist in cache
-    template<typename T>
-    void cache_insert(std::string name, const T &data) const {
-      if(!m_cache.contains(name)) {
-        m_cache[name] = data;
-        m_cache_updated = true;
-        m_dof_deps_updated = true;
-      }
-    }
-
-    /// Access the configuration cache, which will be saved in the database
-    const jsonParser &cache() const {
-      return m_cache;
-    }
-
-    bool cache_updated() const {
-      return m_cache_updated;
-    }
-
-    void cache_clear() const {
-      m_cache.put_null();
-      m_cache_updated = true;
-    }
-
     //********* IO ************
 
     /// \brief Insert this configuration (in primitive & canonical form) in the database
@@ -566,12 +535,11 @@ namespace CASM {
         m_id = "none";
         m_name.clear();
         m_alias.clear();
-
-        cache_clear();
-
         m_calculated.put_null();
-
         m_dof_deps_updated = false;
+      }
+      if(cache_updated()) {
+        cache_clear();
       }
     }
 
@@ -631,10 +599,6 @@ namespace CASM {
     /// Set to true when modiyfing anything that depends on dof:
     /// - m_name, m_id, m_alias, m_cache, m_source, m_calculated
     mutable bool m_dof_deps_updated;
-
-    /// Cache for properties that only depend on dof
-    mutable jsonParser m_cache;
-    bool m_cache_updated;
 
     /// DFT calculated properties:
     /// - "relaxed_energy" -> double
