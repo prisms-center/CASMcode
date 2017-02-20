@@ -194,6 +194,16 @@ namespace CASM {
       return const_cast<ProjectSettings &>(*this).enumerator_handler();
     }
 
+    // ** Database **
+
+    void set_db_name(std::string _db_name) {
+      m_db_name = _db_name;
+    }
+
+    std::string db_name() const {
+      return m_db_name;
+    }
+
     // ** Queries **
 
     template<typename DataObject>
@@ -381,6 +391,8 @@ namespace CASM {
     // Linear algebra tolerance
     double m_lin_alg_tol;
 
+    // Database
+    std::string m_db_name;
   };
 
   jsonParser &to_json(const ProjectSettings &set, jsonParser &json);

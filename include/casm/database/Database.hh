@@ -1,6 +1,7 @@
 #ifndef CASM_Database
 #define CASM_Database
 
+#include <iterator>
 #include <memory>
 #include "casm/external/boost.hh"
 #include "casm/misc/cloneable_ptr.hh"
@@ -33,6 +34,9 @@ namespace CASM {
       const PrimClex *m_primclex;
     };
 
+    template<typename ValueType, typename NameType>
+    class DatabaseIterator;
+
     /// Dereferencing DatabaseIteratorBase only provides const references, whether
     /// the underlying resource is persistent (Supercell) or temporary
     /// (other types). Changing database entries must be done via copy then
@@ -51,6 +55,7 @@ namespace CASM {
 
     public:
 
+      typedef ValueType value_type;
       typedef const value_type &reference;
       typedef NameType name_type;
 
@@ -68,7 +73,7 @@ namespace CASM {
 
       virtual reference dereference() const = 0;
 
-      virtual bool equal(const DatabaseIteratorBase<ValueType, NameType> &B) const {
+      virtual bool equal(const DatabaseIteratorBase<ValueType, NameType> &other) const {
         bool this_is_end = this->is_end();
         bool other_is_end = other.is_end();
 
@@ -96,7 +101,7 @@ namespace CASM {
       public boost::iterator_facade <
       DatabaseIterator<ValueType, NameType>,
       ValueType,
-      boost::forward_iterator_tag,
+      std::forward_iterator_tag,
       const ValueType &,
       long > {
 
@@ -131,7 +136,7 @@ namespace CASM {
       }
 
       /// boost::iterator_facade implementation
-      reference dereference() const {
+      const ValueType &dereference() const {
         return m_ptr->_dereference();
       }
 
@@ -218,10 +223,7 @@ namespace CASM {
         return 0;
       }
 
-      virtual iterator find(const name_type &name_or_alias) = 0;
-      virtual const_iterator find(const name_type &name_or_alias) const {
-        return static_cast<>(this)->find(name_or_alias);
-      }
+      virtual iterator find(const name_type &name_or_alias) const = 0;
 
       virtual void commit() = 0;
 

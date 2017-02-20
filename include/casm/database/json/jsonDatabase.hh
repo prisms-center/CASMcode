@@ -27,7 +27,7 @@ namespace CASM {
     /// - size_type size() const
     /// - std::pair<iterator, bool> insert(const ValueType &obj)
     /// - iterator erase(iterator pos)
-    /// - iterator find(const name_type &name)
+    /// - iterator find(const name_type &name) const
     ///
     /// Derived ScelDatabase must implement public methods:
     /// - iterator find(const Lattice &lat)
@@ -69,7 +69,7 @@ namespace CASM {
     /// - std::pair<iterator, bool> insert(const ValueType &obj)
     /// - std::pair<iterator, bool> insert(const ValueType &&obj)
     /// - iterator erase(iterator pos)
-    /// - iterator find(const name_type &name)
+    /// - iterator find(const name_type &name) const
     ///
     /// Derived ConfigDatabase must implement public methods:
     /// - std::pair<iterator, bool> set_alias(const name_type& name_or_alias, const name_type& alias)
@@ -103,7 +103,7 @@ namespace CASM {
 
       iterator erase(iterator pos) override;
 
-      iterator find(const name_type &name_or_alias) override;
+      iterator find(const name_type &name_or_alias) const override;
 
       /// For setting alias, the new alias must not already exist
       std::pair<iterator, bool> set_alias(const name_type &name_or_alias, const name_type &alias) override;

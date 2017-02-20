@@ -19,6 +19,9 @@
 #include "casm/app/EnumeratorHandler.hh"
 #include "casm/app/QueryHandler.hh"
 
+#include "casm/database/Database.hh"
+#include "casm/database/DatabaseHandler.hh"
+
 /// Cluster expansion class
 namespace CASM {
 
@@ -57,9 +60,7 @@ namespace CASM {
     bool m_vacancy_allowed;
     Index m_vacancy_index;
 
-    /// Contains all the supercells that were involved in the enumeration.
-    boost::container::stable_vector< Supercell > m_supercell_list;
-
+    DatabaseHandler std::unique_ptr<m_db_handler>;
 
     /// CompositionConverter specifies parameteric composition axes and converts between
     ///   parametric composition and mol composition
@@ -152,25 +153,37 @@ namespace CASM {
     // ** Supercell, Configuration, etc. databases **
 
     template<typename T>
-    Database<T>& db();
-    
+    Database<T> &db() {
+      return m_db_handler->db<T>();
+    }
+
     template<typename T>
-    const Database<T>& db() const;
-    
+    const Database<T> &db() const {
+      return m_db_handler->db<T>();
+    }
+
     template<typename T>
-    const Database<T>& const_db();
-    
-    
+    const Database<T> &const_db() {
+      return m_db_handler->const_db<T>();
+    }
+
+
     template<typename T>
-    Database<T>& db();
-    
+    Database<T> &db(std::string db_name) {
+      return m_db_handler->db<T>(db_name);
+    }
+
     template<typename T>
-    const Database<T>& db() const;
-    
+    const Database<T> &db(std::string db_name) const {
+      return m_db_handler->db<T>(db_name);
+    }
+
     template<typename T>
-    const Database<T>& const_db();
-    
-    
+    const Database<T> &const_db(std::string db_name) {
+      return m_db_handler->const_db<T>(db_name);
+    }
+
+
     // **** IO ****
 
     ///Call Configuration::write on every configuration to update files

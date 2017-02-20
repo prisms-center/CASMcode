@@ -143,10 +143,14 @@ namespace CASM {
 
     if(read_configs) {
 
-      // lazy initialization means we just need to close, and the db will be
-      // re-opened when needed
-      m_db_handler.close();
-
+      if(!m_db_handler) {
+        m_db_handler = notstd::make_unique<DatabaseHandler>(*this);
+      }
+      else {
+        // lazy initialization means we just need to close, and the db will be
+        // re-opened when needed
+        m_db_handler->close();
+      }
     }
 
     if(clear_clex) {

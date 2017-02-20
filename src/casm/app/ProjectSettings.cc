@@ -93,7 +93,8 @@ namespace CASM {
   ProjectSettings::ProjectSettings(fs::path root, std::string name, const Logging &logging) :
     Logging(logging),
     m_dir(root),
-    m_name(name) {
+    m_name(name),
+    m_db_name("jsonDB") {
 
     if(fs::exists(m_dir.casm_dir())) {
       throw std::runtime_error(
@@ -120,7 +121,8 @@ namespace CASM {
   ///
   ProjectSettings::ProjectSettings(fs::path root, const Logging &logging) :
     Logging(logging),
-    m_dir(root) {
+    m_dir(root),
+    m_db_name("jsonDB") {
 
     if(fs::exists(m_dir.casm_dir())) {
 

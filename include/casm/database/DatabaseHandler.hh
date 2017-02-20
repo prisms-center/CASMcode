@@ -31,29 +31,28 @@ namespace CASM {
       ///
       /// - Uses PrimClex for constructing Supercell, etc.
       /// - Uses PrimClex.settings().db_type() to determine default database type
-      DatabaseHandler(const PrimClex &_primclex) :
-        m_primclex(&_primclex),
-        m_default_db_type(m_primclex->settings().db_type()) {
+      DatabaseHandler(const PrimClex &_primclex);
 
-        jsonDB::insert(m_db);
+      ~DatabaseHandler() {
+        close();
       }
 
       /// Access default Database<T>
       template<typename T>
       Database<T> &db() {
-        return db(m_default_db_name);
+        return db<T>(m_default_db_name);
       }
 
       /// Access default Database<T>
       template<typename T>
       const Database<T> &db() const {
-        return db(m_default_db_name);
+        return db<T>(m_default_db_name);
       }
 
       /// Access default Database<T>
       template<typename T>
       const Database<T> &const_db() {
-        return const_db(m_default_db_name);
+        return const_db<T>(m_default_db_name);
       }
 
 
@@ -89,7 +88,7 @@ namespace CASM {
 
       // std::pair<QueryTraits<ValueType>::name, db_name> -> db
       typedef std::map <
-      std::make_pair<value_name_type, std::string>,
+      std::make_pair<std::string, std::string>,
           std::unique_ptr<DatabaseBase> > map_type;
 
       template<typename T>
@@ -114,7 +113,7 @@ namespace CASM {
 
       const PrimClex *m_primclex;
 
-      std::string m_default_db_type;
+      std::string m_default_db_name;
 
       // std::pair<QueryTraits<ValueType>::name, db_name> -> db
       // mutable for lazy initialization

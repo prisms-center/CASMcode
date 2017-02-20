@@ -14,6 +14,7 @@
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/ConfigIterator.hh"
 #include "casm/database/Cache.hh"
+#include "casm/database/Database.hh"
 
 namespace CASM {
 
@@ -59,7 +60,7 @@ namespace CASM {
   ///
   struct ConfigInsertResult {
 
-    typedef Database<Configuration>::iterator iterator;
+    typedef DB::Database<Configuration>::iterator iterator;
 
     /// True if primitive did not exist before insertion
     bool insert_primitive;
@@ -77,7 +78,7 @@ namespace CASM {
 
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
   ///
-  class Configuration : public Comparisons<Configuration>, public Cache {
+  class Configuration : public Comparisons<Configuration>, public DB::Cache {
 
   public:
     typedef ConfigDoF::displacement_matrix_t displacement_matrix_t;
@@ -155,7 +156,7 @@ namespace CASM {
     ///
     /// - This will invalidate the Configuration's id
     ConfigDoF &configdof() {
-      _invalidate_id();
+      _modify_dof();
       return m_configdof;
     }
 

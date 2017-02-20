@@ -20,8 +20,8 @@ namespace CASM {
       ///
       /// - For data that depends on DoF only, not calculated properties or
       ///   composition axes
-      /// - Adding to cache is modeled as const, but a flag is set so the data
-      ///   will be written by 'to_json'
+      /// - Adding to cache is modeled as const, but a flag is set so the updated
+      ///   data can be obtained
       /// - Data only written if 'name' does not already exist in cache
       /// - Sets 'cache_updated()' to true
       template<typename T>
@@ -43,7 +43,8 @@ namespace CASM {
       }
 
       /// Clear the cache
-      ///
+      /// - Clearing cache is modeled as const, but a flag is set so the updated
+      ///   data can be obtained
       /// - Sets 'cache_updated()' to true
       void cache_clear() const {
         m_cache.put_null();
@@ -63,8 +64,8 @@ namespace CASM {
 
     private:
 
-      jsonParser m_cache;
-      bool m_cache_updated;
+      mutable jsonParser m_cache;
+      mutable bool m_cache_updated;
     };
   }
 
