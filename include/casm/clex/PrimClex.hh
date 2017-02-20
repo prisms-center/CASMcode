@@ -60,7 +60,7 @@ namespace CASM {
     bool m_vacancy_allowed;
     Index m_vacancy_index;
 
-    DatabaseHandler std::unique_ptr<m_db_handler>;
+    std::unique_ptr<DB::DatabaseHandler> m_db_handler;
 
     /// CompositionConverter specifies parameteric composition axes and converts between
     ///   parametric composition and mol composition
@@ -153,33 +153,33 @@ namespace CASM {
     // ** Supercell, Configuration, etc. databases **
 
     template<typename T>
-    Database<T> &db() {
+    DB::Database<T> &db() {
       return m_db_handler->db<T>();
     }
 
     template<typename T>
-    const Database<T> &db() const {
+    const DB::Database<T> &db() const {
       return m_db_handler->db<T>();
     }
 
     template<typename T>
-    const Database<T> &const_db() {
+    const DB::Database<T> &const_db() {
       return m_db_handler->const_db<T>();
     }
 
 
     template<typename T>
-    Database<T> &db(std::string db_name) {
+    DB::Database<T> &db(std::string db_name) {
       return m_db_handler->db<T>(db_name);
     }
 
     template<typename T>
-    const Database<T> &db(std::string db_name) const {
+    const DB::Database<T> &db(std::string db_name) const {
       return m_db_handler->db<T>(db_name);
     }
 
     template<typename T>
-    const Database<T> &const_db(std::string db_name) {
+    const DB::Database<T> &const_db(std::string db_name) {
       return m_db_handler->const_db<T>(db_name);
     }
 

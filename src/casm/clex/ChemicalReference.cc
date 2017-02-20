@@ -49,7 +49,7 @@ namespace CASM {
                                          const std::vector<std::string> &ref_config) {
       Eigen::MatrixXd _N(primclex.composition_axes().components().size(), ref_config.size());
       for(int i = 0; i < ref_config.size(); ++i) {
-        _N.col(i) = species_frac(primclex.configuration(ref_config[i]));
+        _N.col(i) = species_frac(*primclex.db<Configuration>().find(ref_config[i]));
       }
       return _N;
     }
@@ -230,8 +230,8 @@ namespace CASM {
       //   tie break goes to first Configuration with fewest atoms
       //
       //   must be Configurations for which the relaxed_energy has been calculated
-      auto begin = primclex.config_begin();
-      auto end = primclex.config_end();
+      auto begin = primclex.db<Configuration>().begin();
+      auto end = primclex.db<Configuration>().end();
       auto res = end;
       double close_dist;
       for(auto it = begin; it != end; ++it) {
@@ -289,7 +289,7 @@ namespace CASM {
     // construct ChemicalReferenceState
     std::vector<ChemicalReferenceState> ref_states;
     for(auto it = ref_config.begin(); it != ref_config.end(); ++it) {
-      ref_states.emplace_back(primclex.configuration(*it),
+      ref_states.emplace_back(*primclex.db<Configuration>().find(*it),
                               ConfigIO::SpeciesFrac(),
                               ConfigIO::relaxed_energy_per_species());
     }

@@ -148,7 +148,7 @@ namespace CASM {
     json.get_if(occupation(), "occupation");
     m_N = occupation().size();
 
-    json.get_if(_displacement(), "displacement");
+    json.get_if(displacement(), "displacement");
     if(displacement().cols() && size() && displacement().cols() != size()) {
       std::cerr << "CRITICAL ERROR: In ConfigDoF::from_json(), parsing displacement having size " << displacement().cols() << ",\n"
                 << "                which does not match initialized size of ConfigDoF -> " << size() << "\n"
@@ -158,7 +158,7 @@ namespace CASM {
     }
 
     if(json.contains("deformation")) {
-      CASM::from_json(_deformation(), json["deformation"]);
+      CASM::from_json(deformation(), json["deformation"]);
       m_has_deformation = true;
     }
 

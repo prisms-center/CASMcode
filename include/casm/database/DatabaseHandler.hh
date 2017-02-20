@@ -59,7 +59,7 @@ namespace CASM {
       /// Access specified Database<T>
       template<typename T>
       Database<T> &db(std::string db_name) {
-        auto res = _find<T>(std::string db_name);
+        auto res = _find<T>(db_name);
         return static_cast<Database<T>&>(res->second->open());
       }
 
@@ -80,7 +80,7 @@ namespace CASM {
       /// Close all databases
       void close() {
         for(auto &db : m_db) {
-          db->close();
+          db.second->close();
         }
       }
 
@@ -88,7 +88,7 @@ namespace CASM {
 
       // std::pair<QueryTraits<ValueType>::name, db_name> -> db
       typedef std::map <
-      std::make_pair<std::string, std::string>,
+      std::pair<std::string, std::string>,
           std::unique_ptr<DatabaseBase> > map_type;
 
       template<typename T>

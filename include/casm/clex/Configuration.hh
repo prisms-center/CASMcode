@@ -51,30 +51,7 @@ namespace CASM {
   /// @{
 
 
-  /// \brief Holds results of Configuration::insert
-  ///
-  /// - 'canonical' refers to the canonical form of the Configuration in it's
-  ///   canonical equivalent Supercell.  The canonical form may be primitive or
-  ///   non-primitive
-  /// - 'primitive' refers to the primitive canonical Configuration.
-  ///
-  struct ConfigInsertResult {
-
-    typedef DB::Database<Configuration>::iterator iterator;
-
-    /// True if primitive did not exist before insertion
-    bool insert_primitive;
-
-    /// Iterator pointing at primitive
-    iterator primitive_it;
-
-    /// True if canonical configuration did not exist before insertion
-    bool insert_canonical;
-
-    /// Iterator pointing at canonical, if existing
-    iterator canonical_it;
-
-  };
+  struct ConfigInsertResult;
 
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
   ///
@@ -613,6 +590,31 @@ namespace CASM {
 
   };
 
+  /// \brief Holds results of Configuration::insert
+  ///
+  /// - 'canonical' refers to the canonical form of the Configuration in it's
+  ///   canonical equivalent Supercell.  The canonical form may be primitive or
+  ///   non-primitive
+  /// - 'primitive' refers to the primitive canonical Configuration.
+  ///
+  struct ConfigInsertResult {
+
+    typedef DB::Database<Configuration>::iterator iterator;
+
+    /// True if primitive did not exist before insertion
+    bool insert_primitive;
+
+    /// Iterator pointing at primitive
+    iterator primitive_it;
+
+    /// True if canonical configuration did not exist before insertion
+    bool insert_canonical;
+
+    /// Iterator pointing at canonical, if existing
+    iterator canonical_it;
+
+  };
+
   // Calculate transformed ConfigDoF from PermuteIterator via
   //   apply(permute_iterator, dof)
   Configuration &apply(const PermuteIterator &it, Configuration &config);
@@ -689,7 +691,7 @@ namespace CASM {
   bool is_primitive(const Configuration &_config);
 
   /// \brief returns true if _config no symmetry transformation applied to _config will increase its lexicographic order
-  bool is_canonical(const Configuration &_config)
+  bool is_canonical(const Configuration &_config);
 
   /// \brief Status of calculation
   std::string calc_status(const Configuration &_config);
@@ -718,7 +720,7 @@ namespace CASM {
 
   inline
   bool has_failure_type(const Configuration &_config) {
-    return !_config.failure_type(_config).empty();
+    return !failure_type(_config).empty();
   }
 
   class FillSupercell {
