@@ -44,13 +44,13 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   //print_clust(orbits.begin(), orbits.end(), primclex.log(), ProtoSitesPrinter());
   std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
-  Kinetics::make_prim_periodic_diff_trans_orbits(orbits.begin()+4, orbits.begin()+5, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
+  Kinetics::make_prim_periodic_diff_trans_orbits(orbits.begin() + 4, orbits.begin() + 5, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
   Kinetics::DiffusionTransformation trans = diff_trans_orbits[0].prototype();
-  
+
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
 
-  Supercell scel {&primclex, Lattice(2*a, 2*b, 2*c)};
+  Supercell scel {&primclex, Lattice(2 * a, 2 * b, 2 * c)};
 
   Configuration config(scel);
   config.init_occupation();
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
   config.init_deformation();
   config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1});
   //test Constructor/field accessors
-  Kinetics::DiffTransConfiguration dtc(config,trans);
+  Kinetics::DiffTransConfiguration dtc(config, trans);
   BOOST_CHECK_EQUAL(dtc.from_config(), config);
   BOOST_CHECK_EQUAL(dtc.diff_trans(), trans);
   std::cout << config << std::endl;
@@ -70,9 +70,9 @@ BOOST_AUTO_TEST_CASE(Test0) {
   std::cout << "WHERE" << std::endl;
   //check sorting
   BOOST_CHECK_EQUAL(dtc.is_sorted(), dtc.from_config() < dtc.to_config());
-  BOOST_CHECK_EQUAL(dtc.is_sorted(),dtc == dtc.sorted());
+  BOOST_CHECK_EQUAL(dtc.is_sorted(), dtc == dtc.sorted());
 
 
-  }
+}
 
 BOOST_AUTO_TEST_SUITE_END()
