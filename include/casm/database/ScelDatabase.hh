@@ -21,7 +21,8 @@ namespace CASM {
     /// - void commit()
     /// - void close()
     ///
-    class ScelDatabase : public Database<Supercell> {
+    template<>
+    class Database<Supercell> : public ValDatabase<Supercell, std::string> {
 
     public:
 
@@ -70,9 +71,9 @@ namespace CASM {
           const value_type &obj = *result->second;
 
           // update name & alias
-          m_name_and_alias.insert(std::make_pair(obj.name(), result.first));
+          m_name_or_alias.insert(std::make_pair(obj.name(), result.first));
           if(!obj.alias().empty()) {
-            m_name_and_alias.insert(std::make_pair(obj.alias(), result.first));
+            m_name_or_alias.insert(std::make_pair(obj.alias(), result.first));
           }
 
         }

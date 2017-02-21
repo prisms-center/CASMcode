@@ -6,11 +6,13 @@
 #include "casm/database/Database.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 
-namespace {
+namespace CASM {
 
   namespace DB {
 
-    class DiffTransDatabase : public Database<PrimPeriodicDiffTransOrbit> {
+    template<>
+    class Database<PrimPeriodicDiffTransOrbit> :
+      public ValDatabase<PrimPeriodicDiffTransOrbit, std::string> {
 
     };
 

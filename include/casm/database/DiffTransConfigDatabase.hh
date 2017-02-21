@@ -1,3 +1,4 @@
+/*
 #ifndef CASM_DiffTransConfigDatabase
 #define CASM_DiffTransConfigDatabase
 
@@ -22,7 +23,9 @@ namespace CASM {
     /// - std::pair<iterator, bool> update(const Configuration &config)
     /// - boost::iterator_range<iterator> scel_range(const name_type& scelname) const
     ///
-    class DiffTransConfigDatabase : public Database<DiffTransConfiguration> {
+    template<>
+    class Database<DiffTransConfiguration> :
+      public ValDatabase<DiffTransConfiguration, std::string> {
 
     public:
 
@@ -41,3 +44,4 @@ namespace CASM {
 }
 
 #endif
+*/

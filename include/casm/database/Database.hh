@@ -155,7 +155,7 @@ namespace CASM {
     /// - iterator find(const name_type &name_or_alias)
     ///
     template<typename ValueType, typename NameType = std::string>
-    class Database : public DatabaseBase {
+    class ValDatabase : public DatabaseBase {
 
     public:
 
@@ -164,7 +164,6 @@ namespace CASM {
       typedef NameType name_type;
       typedef Index size_type;
 
-      Database() {};
 
       virtual iterator begin() const = 0;
 
@@ -180,6 +179,13 @@ namespace CASM {
 
       virtual std::pair<iterator, bool> insert(const ValueType &obj) = 0;
       virtual std::pair<iterator, bool> insert(const ValueType &&obj) = 0;
+
+      template<typename InputIt>
+      void insert(InputIt first, InputIt last) {
+        std::for_each(first, last, [&](const ValueType & obj) {
+          this->insert(obj);
+        });
+      }
 
       virtual iterator erase(iterator pos) = 0;
       size_type erase(const name_type &name_or_alias) {
@@ -202,6 +208,9 @@ namespace CASM {
       virtual void commit() = 0;
 
     };
+
+    template<typename ValueType>
+    class Database;
 
   }
 }

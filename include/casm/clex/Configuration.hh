@@ -14,7 +14,6 @@
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/ConfigIterator.hh"
 #include "casm/database/Cache.hh"
-#include "casm/database/Database.hh"
 
 namespace CASM {
 
@@ -39,7 +38,6 @@ namespace CASM {
   template<>
   struct QueryTraits<Configuration> {
     static const std::string name;
-    typedef ConfigIO::Selected Selected;
   };
 
   /// \defgroup Configuration
@@ -589,6 +587,12 @@ namespace CASM {
     bool m_prop_updated;
 
   };
+
+}
+
+#include "casm/database/ConfigDatabase.hh"
+
+namespace CASM {
 
   /// \brief Holds results of Configuration::insert
   ///

@@ -2,6 +2,7 @@
 #define CASM_ConfigDatabase
 
 #include "casm/database/Database.hh"
+#include "casm/clex/Configuration.hh"
 
 namespace boost {
 
@@ -12,8 +13,6 @@ namespace boost {
 
 namespace CASM {
 
-  class Configuration;
-
   namespace DB {
 
     /// Derived ConfigDatabase must implement public methods:
@@ -21,7 +20,8 @@ namespace CASM {
     /// - std::pair<iterator, bool> update(const Configuration &config)
     /// - boost::iterator_range<iterator> scel_range(const name_type& scelname) const
     ///
-    class ConfigDatabase : public Database<Configuration> {
+    template<>
+    class Database<Configuration> : public ValDatabase<Configuration, std::string> {
 
     public:
 

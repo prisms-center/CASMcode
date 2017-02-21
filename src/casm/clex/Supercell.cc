@@ -10,6 +10,8 @@
 
 namespace CASM {
 
+  const std::string QueryTraits<Supercell>::name = "Supercell";
+
   /*****************************************************************/
 
   std::vector<int> Supercell::max_allowed_occupation() const {

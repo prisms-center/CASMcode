@@ -25,6 +25,11 @@ namespace CASM {
 
   };
 
+  template<>
+  struct QueryTraits<Supercell> {
+    static const std::string name;
+  };
+
   /** \defgroup Supercell
    *  \ingroup Clex
    *  \brief Represents a supercell of the primitive parent crystal structure

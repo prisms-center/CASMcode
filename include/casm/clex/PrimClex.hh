@@ -19,7 +19,6 @@
 #include "casm/app/EnumeratorHandler.hh"
 #include "casm/app/QueryHandler.hh"
 
-#include "casm/database/Database.hh"
 #include "casm/database/DatabaseHandler.hh"
 
 /// Cluster expansion class

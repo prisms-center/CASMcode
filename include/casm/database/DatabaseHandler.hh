@@ -9,7 +9,10 @@
 #include <stdexcept>
 
 #include "casm/database/Database.hh"
-
+#include "casm/database/ConfigDatabase.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/database/DiffTransDatabase.hh"
+//#include "casm/database/DiffTransConfigDatabase.hh"
 
 namespace CASM {
 
@@ -104,7 +107,7 @@ namespace CASM {
       }
 
       template<typename T>
-      void _no_database_error(std::string db_name) {
+      void _no_database_error(std::string db_name) const {
         std::stringstream ss;
         ss << "Value: " << QueryTraits<T>::name;
         ss << "  Database: " << db_name;

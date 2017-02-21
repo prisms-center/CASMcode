@@ -1,6 +1,10 @@
 #ifndef CASM_jsonDatabase
 #define CASM_jsonDatabase
 
+#include "casm/database/Database.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/database/ConfigDatabase.hh"
+
 namespace CASM {
 
   namespace DB {
@@ -33,7 +37,7 @@ namespace CASM {
     /// - iterator find(const Lattice &lat)
     /// - std::pair<iterator, bool> insert(const Lattice &lat)
     ///
-    class jsonScelDatabase : public ScelDatabase {
+    class jsonScelDatabase : public Database<Supercell, std::string> {
 
     public:
 
@@ -76,7 +80,7 @@ namespace CASM {
     /// - std::pair<iterator, bool> update(const Configuration &config)
     /// - boost::iterator_range<iterator> scel_range(const name_type& scelname) const
     ///
-    class jsonConfigDatabase : public ConfigDatabase {
+    class jsonConfigDatabase : public Database<Configuration, std::string> {
 
     public:
 

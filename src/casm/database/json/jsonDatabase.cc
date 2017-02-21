@@ -134,9 +134,6 @@ namespace CASM {
 
     void jsonConfigDatabase::commit() {
 
-      // ensure commit of the Supercell db
-      primclex().db<Supercell>(Traits<jsonDB>::name).commit();
-
       fs::path config_list_path = primclex().dir().config_list();
       if(primclex().db<Supercell>(Traits<jsonDB>::name).size() == 0) {
         fs::remove(config_list_path);
