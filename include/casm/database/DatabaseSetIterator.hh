@@ -35,7 +35,7 @@ namespace CASM {
 
       friend DatabaseType;
 
-      typedef std::set<ValueType>::iterator base_iterator;
+      typedef typename std::set<ValueType>::iterator base_iterator;
 
       DatabaseSetIterator(base_iterator _it) :
         m_it(_it) {}
@@ -44,7 +44,7 @@ namespace CASM {
         return m_it;
       }
 
-      bool equal(const DatabaseIteratorBase<ValueType, NameType> &other) const override {
+      bool equal(const DatabaseIteratorBase<ValueType> &other) const override {
         return m_it == static_cast<const DatabaseSetIterator &>(other).m_it;
       }
 
@@ -52,7 +52,7 @@ namespace CASM {
         ++m_it;
       }
 
-      reference dereference() const override {
+      const ValueType &dereference() const override {
         return *m_it;
       }
 

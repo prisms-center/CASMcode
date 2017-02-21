@@ -26,11 +26,11 @@ namespace CASM {
 
     public:
 
-      iterator begin() override {
+      iterator begin() const override {
         return _iterator(m_scel_list.begin());
       }
 
-      return iterator end() override {
+      iterator end() const override {
         return _iterator(m_scel_list.begin());
       }
 
