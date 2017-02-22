@@ -79,7 +79,7 @@ namespace CASM {
     /// unique name of the supercell based on hermite normal form (see _generate_name() )
     mutable std::string m_name;
 
-    std::string alias;
+    std::string m_alias;
 
     /// SuperNeighborList, mutable for lazy construction
     mutable notstd::cloneable_ptr<SuperNeighborList> m_nlist;
@@ -252,6 +252,14 @@ namespace CASM {
       }
       return m_name;
     };
+
+    void set_alias(std::string _alias) {
+      m_alias = _alias;
+    }
+
+    std::string alias() const {
+      return m_alias;
+    }
 
     // Populates m_factor_group (if necessary) and returns it.
     const SymGroup &factor_group() const;

@@ -56,6 +56,10 @@ namespace CASM {
         return *m_it;
       }
 
+      long distance_to(const DatabaseIteratorBase<ValueType> &other) const override {
+        return std::distance(m_it, static_cast<const DatabaseSetIterator &>(other).m_it);
+      }
+
       DatabaseSetIterator *_clone() const override {
         return new DatabaseSetIterator(*this);
       }

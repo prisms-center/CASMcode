@@ -11,8 +11,8 @@ namespace CASM {
   namespace DB {
 
     template<>
-    class Database<PrimPeriodicDiffTransOrbit> :
-      public ValDatabase<PrimPeriodicDiffTransOrbit, std::string> {
+    class Database<Kinetics::PrimPeriodicDiffTransOrbit> :
+      public ValDatabase<Kinetics::PrimPeriodicDiffTransOrbit, std::string> {
 
     };
 

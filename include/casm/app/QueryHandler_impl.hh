@@ -36,9 +36,9 @@ namespace CASM {
 
   /// \brief Set the selection to be used for the 'selected' column
   ///
-  /// - ToDo: generalize ConfigIO::Selected
+  /// - ToDo: generalize Selected<DataObject>
   template<typename DataObject>
-  void QueryHandler<DataObject>::set_selected(const typename QueryTraits<DataObject>::Selected &selection) {
+  void QueryHandler<DataObject>::set_selected(const Selected<DataObject> &selection) {
     if(m_dict.find("selected") != m_dict.end()) {
       m_dict.erase("selected");
     }
@@ -55,9 +55,8 @@ namespace CASM {
   ///
   /// - ToDo: generalize ConstConfigSelection
   template<typename DataObject>
-  void QueryHandler<DataObject>::set_selected(const typename QueryTraits<DataObject>::Selection &selection) {
-    typedef typename QueryTraits<DataObject>::Selected selected_type;
-    set_selected(selected_type(selection));
+  void QueryHandler<DataObject>::set_selected(const Selection<DataObject> &selection) {
+    set_selected(Selected<DataObject>(selection));
   }
 
   /// \brief Add user-defined query alias

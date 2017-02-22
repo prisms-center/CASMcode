@@ -25,6 +25,12 @@ namespace CASM {
           "Returns true if object is specified in given selection (default MASTER). "
           "Ex: 'selected_in(myselection.txt)'") {}
 
+      explicit Selected(const Selection<ObjType> &_selection):
+        BooleanAttribute<Configuration>(
+          "selected_in",
+          "Returns true if configuration is specified in given selection (default MASTER). "
+          "Ex: 'selected_in(myselection.txt)'"),
+        m_selection(_selection) {}
 
       // --- Required implementations -----------
 

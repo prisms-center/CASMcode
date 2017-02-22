@@ -221,7 +221,7 @@ namespace CASM {
     //Inform Clexulator of the bitstring
 
     //TODO: This will probably get more complicated with displacements and stuff
-    clexulator.set_config_occ(configdof.occupation().begin());
+    clexulator.set_config_occ(configdof.occupation().data());
     //mc_clexor.set_config_disp(mc_confdof.m_displacements.begin());   //or whatever
     //mc_clexor.set_config_strain(mc_confdof.m_strain.begin());   //or whatever
 

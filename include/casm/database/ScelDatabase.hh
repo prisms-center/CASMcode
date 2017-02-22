@@ -38,11 +38,11 @@ namespace CASM {
         return m_scel_list.size()
       }
 
-      std::pair<iterator, bool> insert(const ValueType &obj) override {
+      std::pair<iterator, bool> insert(const Supercell &obj) override {
         return _on_insert_or_emplace(m_scel_list.insert(obj));
       }
 
-      std::pair<iterator, bool> insert(const ValueType &&obj) override {
+      std::pair<iterator, bool> insert(const Supercell &&obj) override {
         return _on_insert_or_emplace(m_scel_list.insert(std::move(obj)));
       }
 

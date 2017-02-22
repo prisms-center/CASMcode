@@ -11,8 +11,8 @@ namespace CASM {
 
   class ProjectSettings;
 
-  template<typename DataObject>
-  struct QueryTraits {};
+  template<typename DataObject> class Selected;
+  template<typename DataObject> class Selection;
 
   template<typename _DataObject>
   class QueryHandler : public notstd::Cloneable {
@@ -31,13 +31,13 @@ namespace CASM {
 
     /// \brief Set the selection to be used for the 'selected' column
     ///
-    /// - ToDo: generalize ConfigIO::Selected
-    void set_selected(const typename QueryTraits<DataObject>::Selected &selection);
+    /// - ToDo: generalize Selected<DataObject>
+    void set_selected(const Selected<DataObject> &selection);
 
     /// \brief Set the selection to be used for the 'selected' column
     ///
-    /// - ToDo: generalize ConstConfigSelection
-    void set_selected(const typename QueryTraits<DataObject>::Selection &selection);
+    /// - ToDo: generalize Selection<DataObject>
+    void set_selected(const Selection<DataObject> &selection);
 
     /// \brief Add user-defined query alias
     ///

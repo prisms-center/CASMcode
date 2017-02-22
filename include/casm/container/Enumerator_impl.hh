@@ -119,7 +119,7 @@ namespace CASM {
 
       auto enumerator_ptr = f(scel);
       auto &enumerator = *enumerator_ptr;
-      Index num_before = canon_scel.config_list().size();
+      Index num_before = primclex.db<Configuration>().scel_range(canon_scel.name()).size();
       if(!filter_expr.empty()) {
         try {
           auto it = filter_begin(
