@@ -156,6 +156,10 @@ namespace CASM {
         return std::make_pair(_iterator(result.first), result.second));
       }
 
+      iterator _iterator(base_iterator base_it) const {
+        return iterator(DatabaseSetIterator<Configuration, jsonConfigDatabase>(base_it));
+      }
+
       // map name and alias -> Configuration
       std::map<std::string, base_iterator> m_name_and_alias;
 

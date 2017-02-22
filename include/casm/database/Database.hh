@@ -74,7 +74,7 @@ namespace CASM {
 
       virtual DatabaseIteratorBase *_clone() const = 0;
 
-      virtual long distance_to(const DatabaseIterator &B) const = 0;
+      virtual long distance_to(const DatabaseIteratorBase<ValueType, NameType> &other) const = 0;
 
     };
 
