@@ -2,7 +2,6 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/ConfigIterator.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"

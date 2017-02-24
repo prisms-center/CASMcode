@@ -140,6 +140,8 @@ namespace CASM {
 
       bool selected(const ObjType &obj) const;
 
+      void set_selected(const ObjType &obj, bool selected) const;
+
       void read(std::istream &_input);
 
       void print(const DataFormatterDictionary<ObjType> &_dict,

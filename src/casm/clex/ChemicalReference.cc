@@ -1,7 +1,6 @@
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/Configuration.hh"
-#include "casm/clex/ConfigIterator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/CompositionConverter.hh"
 

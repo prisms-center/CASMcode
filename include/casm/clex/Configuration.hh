@@ -12,7 +12,6 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/Properties.hh"
 #include "casm/clex/ConfigDoF.hh"
-#include "casm/clex/ConfigIterator.hh"
 #include "casm/database/Cache.hh"
 
 namespace CASM {

@@ -307,8 +307,8 @@ namespace CASM {
 
       if(m_selection == "ALL") {
         selection = ConstConfigSelection(primclex);
-        for(auto it = primclex.config_cbegin(); it != primclex.config_cend(); ++it) {
-          selection.set_selected(it->name(), true);
+        for(const auto &config : primclex.db<Configuration>()) {
+          selection.set_selected(config.name(), true);
         }
       }
       else if(m_selection == "MASTER") {
@@ -316,8 +316,8 @@ namespace CASM {
       }
       else if(m_selection == "CALCULATED") {
         selection = ConstConfigSelection(primclex);
-        for(auto it = primclex.config_cbegin(); it != primclex.config_cend(); ++it) {
-          selection.set_selected(it->name(), is_calculated(*it));
+        for(const auto &config : primclex.db<Configuration>()) {
+          selection.set_selected(config.name(), is_calculated(config));
         }
 
       }

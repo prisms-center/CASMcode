@@ -71,6 +71,21 @@ namespace CASM {
       return false;
     }
 
+    void set_selected(const ObjType &obj, bool selected) const {
+      if(!obj.alias().empty()) {
+        auto it = m_data.find(obj.alias());
+        if(it != m_data.end()) {
+          it->second = selected;
+          return;
+        }
+      }
+      auto it = m_data.find(obj.name());
+      if(it != m_data.end()) {
+        it->second = selected;
+      }
+      return;
+    }
+
     //******************************************************************************
 
     template<typename ObjType>

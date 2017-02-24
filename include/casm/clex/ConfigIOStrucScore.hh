@@ -25,7 +25,7 @@ namespace CASM {
 
       StrucScore(const StrucScore &RHS) :
         VectorXdAttribute<Configuration>(RHS),
-        m_altprimclex((RHS.m_altprimclex == nullptr) ? nullptr : new PrimClex(*RHS.m_altprimclex)),
+        m_altprimclex((RHS.m_altprimclex == nullptr) ? nullptr : new PrimClex(RHS.m_altprimclex->prim())),
         m_configmapper(RHS.m_configmapper),
         m_prim_path(RHS.m_prim_path),
         m_prop_names(RHS.m_prop_names) {
