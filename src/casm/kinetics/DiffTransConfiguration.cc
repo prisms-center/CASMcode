@@ -12,6 +12,9 @@ namespace CASM {
     DiffTransConfiguration::DiffTransConfiguration(const Configuration &_from_config,
                                                    const DiffusionTransformation &_diff_trans) :
       m_diff_trans(_diff_trans), m_from_config(_from_config) {
+      ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),
+                                                 m_from_config.supercell().crystallography_tol());
+      m_diff_trans = symcompare.prepare(m_diff_trans);
     }
 
     /// \brief sort DiffTransConfiguration in place
@@ -44,28 +47,28 @@ namespace CASM {
       ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),
                                                  m_from_config.supercell().crystallography_tol());
       for(auto it = m_from_config.supercell().permute_begin();
-          it != m_from_config.supercell().permute_begin(); it++) {
+          it != m_from_config.supercell().permute_end(); ++it) {
         //
         DiffusionTransformation tmp = symcompare.prepare(copy_apply(it.sym_op(), m_diff_trans));
 
         if(tmp == greatest) {
           checklist.push_back(it);
         }
-        else if(tmp > greatest) {
+        else if(it == m_from_config.supercell().permute_begin() || tmp > greatest) {
           checklist.clear();
           greatest = tmp;
           checklist.push_back(it);
         }
       }
+
       // of these operations check which one maximizes
       // the result of applying to m_from_config
       Configuration max_config {m_from_config};
       PermuteIterator canon_op_it;
-      for(auto it = checklist.begin(); it != checklist.end(); it++) {
+      for(auto it = checklist.begin(); it != checklist.end(); ++it) {
         Configuration tmp = copy_apply(*it, m_from_config);
-        DiffTransConfiguration dtc_tmp(tmp, greatest);
-        dtc_tmp.sort();
-        if(it == checklist.begin() || dtc_tmp.m_from_config > max_config) {
+        DiffTransConfiguration dtc_tmp(tmp, symcompare.prepare(copy_apply(it->sym_op(), m_diff_trans)));//This is the problem
+        if(it == checklist.begin() || dtc_tmp.sorted().from_config() > max_config) {
           max_config = tmp;
           canon_op_it = *it;
         }
@@ -80,7 +83,7 @@ namespace CASM {
 
     bool DiffTransConfiguration::is_canonical() const {
       return std::all_of(m_from_config.supercell().permute_begin(),
-                         m_from_config.supercell().permute_begin(),
+                         m_from_config.supercell().permute_end(),
       [&](const PermuteIterator & p) {
         return copy_apply(p, *this) <= *this;
       });
@@ -88,9 +91,11 @@ namespace CASM {
 
     DiffTransConfiguration &DiffTransConfiguration::apply_sym(const PermuteIterator &it) {
       m_from_config = apply(it, m_from_config);
+
       ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),
                                                  m_from_config.supercell().crystallography_tol());
       m_diff_trans.apply_sym(it.sym_op());
+
       m_diff_trans = symcompare.prepare(m_diff_trans);
 
       return *this;

@@ -558,13 +558,11 @@ namespace CASM {
         // linear indices of 'from' and 'to' sites
         Index from_l = config.linear_index(t.from.uccoord);
         Index to_l = config.linear_index(t.to.uccoord);
-
         // if 'to' linear index not yet in _specie_id, construct with correct length
         auto it = _specie_id.find(to_l);
         if(it == _specie_id.end()) {
           it = _specie_id.insert(std::make_pair(to_l, std::vector<Index>(t.to.mol().size()))).first;
         }
-
         // copy the specie id
         it->second[t.to.pos] = config.specie_id(from_l)[t.from.pos];
       }
@@ -573,11 +571,11 @@ namespace CASM {
       for(const auto &t : m_occ_transform) {
         t.apply_to(config);
       }
-
       // copy the temporary specie_id
       for(const auto &t : _specie_id) {
         config.specie_id(t.first) = t.second;
       }
+
       return config;
     }
 

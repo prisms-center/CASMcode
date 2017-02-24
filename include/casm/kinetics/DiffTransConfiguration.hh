@@ -90,9 +90,6 @@ namespace CASM {
       DiffusionTransformation m_diff_trans;
     };
 
-    DiffTransConfiguration &apply_sym(DiffTransConfiguration &diff_trans_config, const PermuteIterator &it);
-
-    DiffTransConfiguration copy_apply_sym(const DiffTransConfiguration &diff_trans_config, const PermuteIterator &it);
   }
 }
 

@@ -11,6 +11,8 @@
 #include "Common.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/kinetics/DoFTransformation.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
@@ -44,8 +46,9 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   //print_clust(orbits.begin(), orbits.end(), primclex.log(), ProtoSitesPrinter());
   std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
-  Kinetics::make_prim_periodic_diff_trans_orbits(orbits.begin() + 4, orbits.begin() + 5, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
+  Kinetics::make_prim_periodic_diff_trans_orbits(orbits.begin() + 4, orbits.begin() + 7, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
   Kinetics::DiffusionTransformation trans = diff_trans_orbits[0].prototype();
+  Kinetics::DiffusionTransformation trans2 = diff_trans_orbits[2].prototype();
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
@@ -56,21 +59,75 @@ BOOST_AUTO_TEST_CASE(Test0) {
   config.init_occupation();
   config.init_displacement();
   config.init_deformation();
-  config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1});
+  config.init_specie_id();
+  //hardcoded occupation for trans to occur is there a way to do this generally?
+  config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1});
+
+  Configuration config2(scel);
+  config2.init_occupation();
+  config2.init_displacement();
+  config2.init_deformation();
+  config2.init_specie_id();
+  //hardcoded occupation for trans to occur is there a way to do this generally?
+  config2.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0});
+
+
+
+
   //test Constructor/field accessors
   Kinetics::DiffTransConfiguration dtc(config, trans);
   BOOST_CHECK_EQUAL(dtc.from_config(), config);
   BOOST_CHECK_EQUAL(dtc.diff_trans(), trans);
-  std::cout << config << std::endl;
   Configuration tmp {config};
 
   tmp = dtc.diff_trans().apply_to(tmp);
-  std::cout << "WHERE" << std::endl;
   BOOST_CHECK_EQUAL(dtc.to_config(), tmp);
-  std::cout << "WHERE" << std::endl;
+
+  //check comparison
+  Kinetics::DiffTransConfiguration dtc2(config2, trans2);
+  Kinetics::DiffTransConfiguration dtc3(config2, trans);
+
+  //config > config2 but trans < trans2
+  //comparing transformation takes priority
+  BOOST_CHECK_EQUAL(dtc < dtc2, trans < trans2);
+  //If the above test fails the preference of priority may have changed
+  BOOST_CHECK_EQUAL(dtc < dtc3, config < config2);
+
+  //check apply sym
+  PermuteIterator it = config.supercell().permute_begin();
+  BOOST_CHECK_EQUAL(copy_apply(it, dtc) == dtc, 1);
+
+  ++it;
+  ++it;
+  ++it;
+  ++it;
+  ++it;
+  ++it;
+  ++it;
+  ++it;
+  Configuration new_config = copy_apply(it, config);
+  Kinetics::ScelPeriodicDiffTransSymCompare symcompare(config.supercell().prim_grid(),
+                                                       config.supercell().crystallography_tol());
+
+  Kinetics::DiffusionTransformation new_trans =
+    symcompare.prepare(copy_apply(it.sym_op(), trans));
+
+  Kinetics::DiffTransConfiguration newdtc(new_config, new_trans);
+
+  BOOST_CHECK_EQUAL(copy_apply(it, dtc) == newdtc, 1);
+
   //check sorting
   BOOST_CHECK_EQUAL(dtc.is_sorted(), dtc.from_config() < dtc.to_config());
   BOOST_CHECK_EQUAL(dtc.is_sorted(), dtc == dtc.sorted());
+
+  //check canonical form
+  BOOST_CHECK_EQUAL(dtc.is_canonical(), 0);
+  std::cout << (dtc < dtc.canonical_form()) << std::endl;
+  BOOST_CHECK_EQUAL(!dtc.is_canonical(), dtc < dtc.canonical_form());
+  BOOST_CHECK_EQUAL(dtc.is_canonical(), dtc == dtc.canonical_form());
+  BOOST_CHECK_EQUAL(1, dtc.canonical_form().is_canonical());
+  BOOST_CHECK_EQUAL(1, copy_apply(dtc.to_canonical(), dtc) == dtc.canonical_form());
+  BOOST_CHECK_EQUAL(1, copy_apply(dtc.from_canonical(), dtc.canonical_form()) == dtc);
 
 
 }
