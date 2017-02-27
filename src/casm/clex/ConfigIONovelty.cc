@@ -21,7 +21,7 @@ namespace CASM {
       DB::Selection<Configuration> select(
         _tmplt.primclex().db<Configuration>(),
         m_selection);
-      mat_wrapper << m_format(select.begin(), select.end());
+      mat_wrapper << m_format(select.all().begin(), select.all().end());
 
       m_avg_corr = mat_wrapper.matrix().colwise().sum().transpose() /
                    double(mat_wrapper.matrix().cols());

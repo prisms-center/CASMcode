@@ -12,7 +12,7 @@ namespace CASM {
   namespace {
     fs::path _calc_properties_path(const Configuration &config) {
       const PrimClex &primclex = config.primclex();
-      return primclex.dir().calculated_properties(name(), primclex.settings().default_clex().calctype);
+      return primclex.dir().calculated_properties(config.name(), primclex.settings().default_clex().calctype);
     }
   }
 
