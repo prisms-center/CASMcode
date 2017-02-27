@@ -8,7 +8,7 @@
 #include "casm/clex/ConfigIONovelty.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigIOStrain.hh"
-#include "casm/clex/ConfigIOSelected.hh"
+#include "casm/database/Selected.hh"
 
 namespace CASM {
 
@@ -306,21 +306,6 @@ namespace CASM {
 
   namespace ConfigIO {
 
-    template<>
-    Selected selected_in(const ConfigSelection<true> &_selection) {
-      return Selected(_selection);
-    }
-
-    template<>
-    Selected selected_in(const ConfigSelection<false> &_selection) {
-      return Selected(_selection);
-    }
-
-    Selected selected_in() {
-      return Selected();
-    }
-
-
     GenericConfigFormatter<std::string> configname() {
       return GenericConfigFormatter<std::string>("configname",
                                                  "Configuration name, in the form 'SCEL#_#_#_#_#_#_#/#'",
@@ -370,23 +355,13 @@ namespace CASM {
       });
     }
 
-    GenericConfigFormatter<std::string> pointgroup_name() {
-      return GenericConfigFormatter<std::string>("pointgroup_name",
+    GenericConfigFormatter<std::string> point_group_name() {
+      return GenericConfigFormatter<std::string>("point_group_name",
                                                  "Name of the configuration's point group.",
-      [](const Configuration & config)->std::string{
+      [](const Configuration & config)->std::string {
         return config.point_group_name();
       });
     }
-
-    /*
-    GenericConfigFormatter<bool> selected() {
-      return GenericConfigFormatter<bool>("selected",
-                                          "Specifies whether configuration is selected (1/true) or not (0/false)",
-      [](const Configuration & config)->bool{
-        return config.selected();
-      });
-    }
-    */
 
     GenericConfigFormatter<double> relaxed_energy() {
       return GenericConfigFormatter<double>(
@@ -508,7 +483,7 @@ namespace CASM {
       scelname(),
       calc_status(),
       failure_type(),
-      pointgroup_name()
+      point_group_name()
     );
 
     return dict;
@@ -524,8 +499,7 @@ namespace CASM {
       is_calculated(),
       is_canonical(),
       is_primitive(),
-      //selected(),
-      selected_in(),
+      DB::Selected<Configuration>(),
       OnClexHull(),
       OnHull()
     );

@@ -22,7 +22,7 @@ namespace CASM {
     /// - void close()
     ///
     template<>
-    class Database<Supercell> : public ValDatabase<Supercell, std::string> {
+    class Database<Supercell> : public ValDatabase<Supercell> {
 
     public:
 
@@ -52,7 +52,7 @@ namespace CASM {
         return _iterator(m_scel_list.erase(base_it));
       }
 
-      iterator find(const name_type &name_or_alias) const override {
+      iterator find(const std::string &name_or_alias) const override {
         return _iterator(m_name_or_alias.find(name_or_alias)->second);
       }
 

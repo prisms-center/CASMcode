@@ -141,6 +141,11 @@ namespace CASM {
       return m_root / m_casm_dir / "query" / QueryTraits<DataObject>::name;
     }
 
+    template<typename DataObject>
+    fs::path master_selection() const {
+      return query_plugins<DataObject>() / "master_selection";
+    }
+
     // -- Symmetry --------
 
     /// \brief Return symmetry directory path

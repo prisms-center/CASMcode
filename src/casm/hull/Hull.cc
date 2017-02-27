@@ -15,14 +15,14 @@ namespace CASM {
   namespace Hull_impl {
 
     /// \brief Print informational message and throw exception if input data is not valid
-    void _validate_input(const ConstConfigSelection &selection,
+    void _validate_input(const DB::Selection<Configuration> &selection,
                          const Hull::CompCalculator &comp_calculator,
                          const Hull::EnergyCalculator &energy_calculator);
   }
 
 
   /// \brief Constructor for convex hull in atom_frac & Ef/atom space
-  Hull::Hull(const ConstConfigSelection &_selection,
+  Hull::Hull(const DB::Selection<Configuration> &_selection,
              const CompCalculator &_comp_calculator,
              const EnergyCalculator &_energy_calculator,
              double _singular_value_tol,
@@ -258,14 +258,14 @@ namespace CASM {
   namespace Hull_impl {
 
     /// \brief Print informational message and throw exception if input data is not valid
-    void _validate_input(const ConstConfigSelection &selection,
+    void _validate_input(const Selection<Configuration> &selection,
                          const Hull::CompCalculator &comp_calculator,
                          const Hull::EnergyCalculator &energy_calculator) {
 
       typedef std::map<std::string, std::pair<bool, bool> > CheckMap;
 
       CheckMap invalid_data;
-      for(auto it = selection.selected_config_cbegin(); it != selection.selected_config_cend(); ++it) {
+      for(auto it = selection.selected().begin(); it != selection.selected().end(); ++it) {
         if(!comp_calculator.validate(*it) || !energy_calculator.validate(*it)) {
           invalid_data[it.name()] = std::make_pair(comp_calculator.validate(*it), energy_calculator.validate(*it));
         }

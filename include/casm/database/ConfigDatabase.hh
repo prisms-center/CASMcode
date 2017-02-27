@@ -21,7 +21,7 @@ namespace CASM {
     /// - boost::iterator_range<iterator> scel_range(const name_type& scelname) const
     ///
     template<>
-    class Database<Configuration> : public ValDatabase<Configuration, std::string> {
+    class Database<Configuration> : public ValDatabase<Configuration> {
 
     public:
 
@@ -29,7 +29,7 @@ namespace CASM {
       virtual iterator set_calc_properties(const Configuration &config);
 
       /// Range of Configuration in a particular supecell
-      virtual boost::iterator_range<iterator> scel_range(const name_type &scelname) const;
+      virtual boost::iterator_range<iterator> scel_range(const std::string &scelname) const;
 
     };
 

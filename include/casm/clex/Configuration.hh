@@ -13,6 +13,7 @@
 #include "casm/clex/Properties.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/database/Cache.hh"
+#include "casm/database/Named.hh"
 
 namespace CASM {
 
@@ -52,7 +53,10 @@ namespace CASM {
 
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
   ///
-  class Configuration : public Comparisons<Configuration>, public DB::Cache {
+  class Configuration :
+    public Comparisons<Configuration>,
+    public DB::Cache,
+    public DB::Indexed<Configuration> {
 
   public:
     typedef ConfigDoF::displacement_matrix_t displacement_matrix_t;
@@ -65,23 +69,7 @@ namespace CASM {
     Configuration(Supercell &_supercell, const jsonParser &source = jsonParser(), const ConfigDoF &_dof = ConfigDoF());
 
 
-    //********** Naming ***********
-
-
-    /// \brief SCELV_A_B_C_D_E_F/i
-    std::string name() const;
-
-
-    void set_id(std::string _id);
-
-    std::string id() const;
-
-
-    void set_alias(std::string _alias);
-
-    /// \brief User-specified alternative to 'name'
-    std::string alias() const;
-
+    //********** Source ***********
 
     void set_source(const jsonParser &source);
 
@@ -430,7 +418,7 @@ namespace CASM {
     SymGroup point_group() const;
 
     /// \brief Returns the point group that leaves the Configuration unchanged
-    bool point_group_name() const;
+    std::string point_group_name() const;
 
     /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
     Configuration fill_supercell(Supercell &scel, const SymOp &op) const;
@@ -507,9 +495,7 @@ namespace CASM {
 
     void _modify_dof() {
       if(m_dof_deps_updated) {
-        m_id = "none";
-        m_name.clear();
-        m_alias.clear();
+        this->clear_name();
         m_calculated.put_null();
         m_dof_deps_updated = false;
       }
@@ -518,7 +504,8 @@ namespace CASM {
       }
     }
 
-    void _generate_name() const;
+    friend Named<Configuration>;
+    std::string generate_name() const;
 
     friend Comparisons<Configuration>;
 
@@ -546,17 +533,6 @@ namespace CASM {
     /// POS files are written to:
     ///  primclex().POS(configname)
 
-
-    /// Identification
-
-    // Configuration id is the index into Supercell::config_list
-    std::string m_id;
-
-    /// Remember name
-    mutable std::string m_name;
-
-    // User-specified alternate name
-    std::string m_alias;
 
     /// const pointer to the (non-const) Supercell for this Configuration
     const Supercell *m_supercell;

@@ -20,7 +20,7 @@ namespace CASM {
     };
 
     /// ValueType must have:
-    /// - NameType ValueType::name() const
+    /// - std::string ValueType::name() const
     ///
     /// Derived classes must implement public methods:
     /// - void DatabaseBase& open()
@@ -31,13 +31,13 @@ namespace CASM {
     /// - size_type size() const
     /// - std::pair<iterator, bool> insert(const ValueType &obj)
     /// - iterator erase(iterator pos)
-    /// - iterator find(const name_type &name) const
+    /// - iterator find(const std::string &name) const
     ///
     /// Derived ScelDatabase must implement public methods:
     /// - iterator find(const Lattice &lat)
     /// - std::pair<iterator, bool> insert(const Lattice &lat)
     ///
-    class jsonScelDatabase : public Database<Supercell, std::string> {
+    class jsonScelDatabase : public Database<Supercell> {
 
     public:
 
@@ -61,7 +61,7 @@ namespace CASM {
 
 
     /// ValueType must have:
-    /// - NameType ValueType::name() const
+    /// - std::string ValueType::name() const
     ///
     /// Derived classes must implement public methods:
     /// - void DatabaseBase& open()
@@ -73,14 +73,14 @@ namespace CASM {
     /// - std::pair<iterator, bool> insert(const ValueType &obj)
     /// - std::pair<iterator, bool> insert(const ValueType &&obj)
     /// - iterator erase(iterator pos)
-    /// - iterator find(const name_type &name) const
+    /// - iterator find(const std::string &name) const
     ///
     /// Derived ConfigDatabase must implement public methods:
-    /// - std::pair<iterator, bool> set_alias(const name_type& name_or_alias, const name_type& alias)
+    /// - std::pair<iterator, bool> set_alias(const std::string& name_or_alias, const std::string& alias)
     /// - std::pair<iterator, bool> update(const Configuration &config)
-    /// - boost::iterator_range<iterator> scel_range(const name_type& scelname) const
+    /// - boost::iterator_range<iterator> scel_range(const std::string& scelname) const
     ///
-    class jsonConfigDatabase : public Database<Configuration, std::string> {
+    class jsonConfigDatabase : public Database<Configuration> {
 
     public:
 
@@ -107,16 +107,16 @@ namespace CASM {
 
       iterator erase(iterator pos) override;
 
-      iterator find(const name_type &name_or_alias) const override;
+      iterator find(const std::string &name_or_alias) const override;
 
       /// For setting alias, the new alias must not already exist
-      std::pair<iterator, bool> set_alias(const name_type &name_or_alias, const name_type &alias) override;
+      std::pair<iterator, bool> set_alias(const std::string &name_or_alias, const std::string &alias) override;
 
       /// Set calc properties
-      iterator set_calc_properties(const name_type &name_or_alias, const jsonParser &props) override;
+      iterator set_calc_properties(const std::string &name_or_alias, const jsonParser &props) override;
 
       /// Range of Configuration in a particular supecell
-      boost::iterator_range<iterator> scel_range(const name_type &scelname) const override;
+      boost::iterator_range<iterator> scel_range(const std::string &scelname) const override;
 
     private:
 
@@ -125,36 +125,7 @@ namespace CASM {
       typedef std::set<Configuration>::iterator base_iterator;
 
       /// Update m_name_and_alias and m_scel_range after performing an insert or emplace
-      std::pair<iterator, bool> _on_insert_or_emplace(const std::pair<base_iterator, bool> &result) {
-
-        if(result.second) {
-
-          const Configuration &config = *result->second;
-
-          // update name & alias
-          m_name_and_alias.insert(std::make_pair(config.name(), result.first));
-          if(!config.alias().empty()) {
-            m_name_and_alias.insert(std::make_pair(config.alias(), result.first));
-          }
-
-          // check if scel_range needs updating
-          auto _scel_range_it = m_scel_range.find(config.supercell().name());
-          if(_scel_range_it == m_scel_range.end()) {
-            m_scel_range.insert(
-              std::make_pair(
-                config.supercell().name(),
-                std::make_pair(result, result)));
-          }
-          else if(_scel_range_it->first == std::next(result)) {
-            _scel_range_it->first = result;
-          }
-          else if(_scel_range_it->second == std::prev(result)) {
-            _scel_range_it->second = result;
-          }
-        }
-
-        return std::make_pair(_iterator(result.first), result.second));
-      }
+      std::pair<iterator, bool> _on_insert_or_emplace(const std::pair<base_iterator, bool> &result);
 
       iterator _iterator(base_iterator base_it) const {
         return iterator(DatabaseSetIterator<Configuration, jsonConfigDatabase>(base_it));
@@ -168,6 +139,9 @@ namespace CASM {
 
       // map of scelname -> begin and last (not end) configuration in scel
       std::map<std::string, std::pair<base_iterator, base_iterator> > m_scel_range;
+
+      // map of scelname -> next id to assign to a new Configuration
+      std::map<std::string, Index> m_config_id;
     };
 
   }

@@ -5,12 +5,13 @@ namespace CASM {
   namespace DB {
 
     template<typename ObjType>
-    Selection<ObjType>::Selection(const Database<ObjType> &_db, fs::path selection_path = "MASTER") :
+    Selection<ObjType>::Selection(const Database<ObjType> &_db, fs::path selection_path) :
       m_db(&_db), m_name(selection_path.string()) {
 
-      if(selection_path == "MASTER") {
-        if(fs::exists(db().primclex().master_selection())) {
-          fs::ifstream select_file(db().primclex().master_selection());
+      if(selection_path == "MASTER" || selection_path.empty()) {
+        fs::path master_selection_path = db().primclex().dir().master_selection<ObjType>();
+        if(fs::exists(master_selection_path)) {
+          fs::ifstream select_file(master_selection_path);
           read(select_file);
           select_file.close();
         }
@@ -32,7 +33,7 @@ namespace CASM {
       }
       else if(selection_path == "CALCULATED") {
         for(const auto &obj : db()) {
-          m_data.insert(std::make_pair(obj.name(), is_calculated(*it)));
+          m_data.insert(std::make_pair(obj.name(), is_calculated(obj)));
         }
       }
       else {
@@ -56,6 +57,7 @@ namespace CASM {
       }
     }
 
+    /// \brief True if obj is in Selection and is selected; false otherwise
     template<typename ObjType>
     bool Selection<ObjType>::selected(const ObjType &obj) const {
       if(!obj.alias().empty()) {
@@ -71,7 +73,9 @@ namespace CASM {
       return false;
     }
 
-    void set_selected(const ObjType &obj, bool selected) const {
+    /// \brief Ensure obj is in Selection and set selected to specified value
+    template<typename ObjType>
+    void Selection<ObjType>::set_selected(const ObjType &obj, bool selected) const {
       if(!obj.alias().empty()) {
         auto it = m_data.find(obj.alias());
         if(it != m_data.end()) {

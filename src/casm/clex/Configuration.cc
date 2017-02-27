@@ -37,8 +37,6 @@ namespace CASM {
     Supercell &_supercell,
     const jsonParser &src,
     const ConfigDoF &_configdof) :
-    m_id("none"),
-    m_alias(""),
     m_supercell(&_supercell),
     m_source_updated(false),
     m_configdof(_configdof),
@@ -46,18 +44,6 @@ namespace CASM {
     m_prop_updated(false) {
 
     set_source(src);
-  }
-
-  //********** MUTATORS  ***********
-
-  void Configuration::set_id(std::string _id) {
-    m_id = _id;
-    m_dof_deps_updated = true;
-  }
-
-  void Configuration::set_alias(std::string _alias) {
-    m_alias = _alias;
-    m_dof_deps_updated = true;
   }
 
   //*********************************************************************************
@@ -470,7 +456,7 @@ namespace CASM {
   //*******************************************************************************
 
   /// \brief Returns the point group that leaves the Configuration unchanged
-  bool Configuration::point_group_name() const  {
+  std::string Configuration::point_group_name() const  {
     if(!cache().contains("point_group_name")) {
       this->point_group();
     }
@@ -584,12 +570,6 @@ namespace CASM {
   }
 
   //*********************************************************************************
-
-  std::string Configuration::id() const {
-    return m_id;
-  }
-
-  //*********************************************************************************
   /// \brief Returns a Configuration name
   ///
   /// One of the following formats:
@@ -607,26 +587,21 @@ namespace CASM {
   ///   - Then applies prim Structure factor group op with index PRIM_FG_OP and
   ///     fills the supercell $CANON_SCELNAME.$PRIM_FG_OP1
   ///
-  std::string Configuration::name() const {
-    if(m_name.empty()) {
-      _generate_name();
-    }
-    return m_name;
-  }
+  std::string Configuration::generate_name() const {
 
-  void Configuration::_generate_name() const {
-
+    std::string result;
     // canonical forms in canonical supercells
     if(id() != "none") {
-      m_name = supercell().name() + "/" + id();
+      result = supercell().name() + "/" + id();
     }
     else if(supercell().is_canonical() && is_canonical()) {
-      m_name = supercell().name() + "/" + id();
+      result = supercell().name() + "/" + id();
     }
     else {
-      m_name = supercell().name() + "/non_canonical_equivalent";
+      result = supercell().name() + "/non_canonical_equivalent";
     }
     m_dof_deps_updated = true;
+    return result;
   }
 
   //*********************************************************************************
@@ -947,9 +922,11 @@ namespace CASM {
 
     //std::cout << "begin  Configuration::read()" << std::endl;
 
-    m_id = _id;
-    m_name.clear();
-    json.get_else(m_alias, "alias", std::string(""));
+    set_id(_id);
+
+    std::string tmp_alias;
+    json.get_else(tmp_alias, "alias", std::string(""));
+    set_alias(tmp_alias);
 
     json.get_if(m_source, "source");
     m_source_updated = false;

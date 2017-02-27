@@ -364,12 +364,7 @@ namespace CASM {
 
     ConfigIO::GenericConfigFormatter<Index> multiplicity();
 
-    ConfigIO::GenericConfigFormatter<std::string> subgroup_name();
-
-    template<bool IsConst>
-    ConfigIO::Selected selected_in(const ConfigSelection<IsConst> &_selection);
-
-    ConfigIO::Selected selected_in();
+    ConfigIO::GenericConfigFormatter<std::string> point_group_name();
 
     ConfigIO::GenericConfigFormatter<bool> is_calculated();
 

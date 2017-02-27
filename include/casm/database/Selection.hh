@@ -10,18 +10,21 @@ namespace CASM {
   namespace DB {
 
     template<typename ObjType>
+    class Selection;
+
+    template<typename ObjType>
     class SelectionIterator :
       public boost::iterator_facade <
       SelectionIterator<ObjType>,
       ObjType,
-      boost::forward_iterator_tag,
+      std::forward_iterator_tag,
       const ObjType &,
       long > {
 
     public:
 
       /// Default constructor (equals end)
-      DatabaseIterator() {}
+      SelectionIterator() {}
 
     private:
 
@@ -29,10 +32,10 @@ namespace CASM {
 
       friend Selection<ObjType>;
 
-      typedef std::map<name_type, bool>::iterator base_iterator;
+      typedef std::map<std::string, bool>::iterator base_iterator;
 
       /// Construct iterator
-      DatabaseIterator(const Selection<ObjType> &_list, base_iterator _it, bool _selected_only) :
+      SelectionIterator(const Selection<ObjType> &_list, base_iterator _it, bool _selected_only) :
         m_list(&_list),
         m_it(_it),
         m_selected_only(_selected_only) {}
@@ -46,24 +49,12 @@ namespace CASM {
       }
 
       /// boost::iterator_facade implementation
-      reference dereference() const {
+      const ObjType &dereference() const {
         return *(m_list->db()->find(m_it->first));
       }
 
       /// boost::iterator_facade implementation
       bool equal(const SelectionIterator &B) const {
-
-        bool A_is_end = (m_db == nullptr) || (m_it == m_list->data().end());
-        bool B_is_end = (B.m_db == nullptr) || (B.m_it == B.m_list->data().end());
-
-        if(A_is_end != B_is_end) {
-          return false;
-        }
-
-        if(A_is_end) {
-          return true;
-        }
-
         return m_it == B.m_it;
       }
 
@@ -91,13 +82,12 @@ namespace CASM {
     public:
 
       typedef SelectionIterator<ObjType> iterator;
-      typedef Database<ObjType>::name_type name_type;
       typedef Index size_type;
 
-      Selection(Database<ObjType> &_db) :
+      Selection(const Database<ObjType> &_db) :
         m_db(&_db) {}
 
-      Selection(Database<ObjType> &_db, fs::path selection_path = "MASTER");
+      Selection(const Database<ObjType> &_db, fs::path selection_path = "MASTER");
 
 
       Database<ObjType> &db() {
@@ -120,11 +110,11 @@ namespace CASM {
       }
 
 
-      std::map<name_type, bool> &data() {
+      std::map<std::string, bool> &data() {
         return m_data;
       }
 
-      const std::map<name_type, bool> &data() const {
+      const std::map<std::string, bool> &data() const {
         return m_data;
       }
 
@@ -138,8 +128,10 @@ namespace CASM {
       }
 
 
+      /// \brief True if obj is in Selection and is selected; false otherwise
       bool selected(const ObjType &obj) const;
 
+      /// \brief Ensure obj is in Selection and set selected to specified value
       void set_selected(const ObjType &obj, bool selected) const;
 
       void read(std::istream &_input);
@@ -157,10 +149,10 @@ namespace CASM {
 
     private:
 
-      Database<ObjType> *m_db;
+      const Database<ObjType> *m_db;
 
       // first may be 'name' or 'alias'
-      std::map<name_type, bool> m_data;
+      std::map<std::string, bool> m_data;
       std::vector<std::string> m_col_headers;
       std::string m_name;
 

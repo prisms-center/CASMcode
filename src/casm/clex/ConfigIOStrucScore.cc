@@ -9,6 +9,13 @@
 
 namespace CASM {
 
+  namespace {
+    fs::path _calc_properties_path(const Configuration &config) {
+      const PrimClex &primclex = config.primclex();
+      return primclex.dir().calculated_properties(name(), primclex.settings().default_clex().calctype);
+    }
+  }
+
   namespace ConfigIO {
     bool StrucScore::parse_args(const std::string &args) {
       std::vector<std::string> splt_vec;
@@ -60,7 +67,7 @@ namespace CASM {
     //****************************************************************************************
 
     bool StrucScore::validate(const Configuration &_config) const {
-      return fs::exists(_config.calc_properties_path());
+      return fs::exists(_calc_properties_path(_config));
     }
 
     //****************************************************************************************
@@ -103,7 +110,7 @@ namespace CASM {
         return res;
       };
 
-      from_json(simple_json(relaxed_struc, "relaxed_"), jsonParser(_config.calc_properties_path()));
+      from_json(simple_json(relaxed_struc, "relaxed_"), jsonParser(_calc_properties_path(_config)));
 
       if(!m_configmapper.struc_to_configdof(relaxed_struc, mapped_configdof, mapped_lat)) {
         for(Index i = 0; i < m_prop_names.size(); i++) {

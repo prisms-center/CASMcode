@@ -35,7 +35,16 @@ namespace CASM {
     }
 
     void jsonScelDatabase::commit() {
-      //todo
+      jsonParser json;
+
+      for(const auto &scel : *this) {
+        json[scel.name()] = scel.transf_mat();
+      }
+
+      SafeOfstream file;
+      file.open(primclex.dir().scel_list());
+      json.print(file.ofstream());
+      file.close();
     }
 
     void jsonScelDatabase::_read_scel_list() {
@@ -44,6 +53,14 @@ namespace CASM {
       if(!json.is_array() || !json.contains("supercells")) {
         throw std::runtime_error(
           std::string("Error invalid format: ") + config_list_path.str());
+      }
+
+      auto it = json.begin();
+      auto end = json.end();
+      for(; it != end; ++it) {
+        Eigen::Vector3i mat;
+        from_json(mat, *it);
+        this->emplace(&primclex(), Lattice(primclex().prim().lattice().lat_column_mat()*mat));
       }
     }
 
@@ -128,6 +145,9 @@ namespace CASM {
         }
       }
 
+      // read next config id for each supercell
+      from_json(m_config_id, json["config_id"])
+
       m_is_open = true;
       return *this;
     }
@@ -153,6 +173,8 @@ namespace CASM {
         config.write(json["supercells"][config.supercell().name()][config.id()]);
       }
 
+      json["config_id"] = m_config_id;
+
       SafeOfstream file;
       file.open(config_list_path);
       json.print(file.ofstream());
@@ -166,33 +188,33 @@ namespace CASM {
       m_is_open = false;
     }
 
-    iterator jsonConfigDatabase::begin() {
+    jsonConfigDatabase::iterator jsonConfigDatabase::begin() {
       return _iterator(m_config_list.begin());
     }
 
-    iterator jsonConfigDatabase::end() {
+    jsonConfigDatabase::iterator jsonConfigDatabase::end() {
       return _iterator(m_config_list.end());
     }
 
-    size_type jsonConfigDatabase::size() const {
+    jsonConfigDatabase::size_type jsonConfigDatabase::size() const {
       return m_config_list.size();
     }
 
-    std::pair<iterator, bool> jsonConfigDatabase::insert(const Configuration &config) {
+    std::pair<jsonConfigDatabase::iterator, bool> jsonConfigDatabase::insert(const Configuration &config) {
 
       auto result = m_config_list.insert(config);
 
       return _on_insert_or_emplace(result);
     }
 
-    std::pair<iterator, bool> jsonConfigDatabase::insert(const Configuration &&config) {
+    std::pair<jsonConfigDatabase::iterator, bool> jsonConfigDatabase::insert(const Configuration &&config) {
 
       auto result = m_config_list.insert(std::move(config));
 
       return _on_insert_or_emplace(result);
     }
 
-    iterator jsonConfigDatabase::erase(iterator pos) {
+    jsonConfigDatabase::iterator jsonConfigDatabase::erase(iterator pos) {
 
       // get m_config_list iterator
       auto base_it = static_cast<jsonConfigDatabaseIterator *>(pos.get())->base();
@@ -219,7 +241,7 @@ namespace CASM {
       return _iterator(m_config_list.erase(base_it));
     }
 
-    iterator jsonConfigDatabase::find(const name_type &name_or_alias) {
+    jsonConfigDatabase::iterator jsonConfigDatabase::find(const name_type &name_or_alias) {
       auto it = m_name_and_alias.find(name_or_alias);
       if(it == m_name_and_alias.end()) {
         return _iterator(m_config_list.end());
@@ -228,7 +250,8 @@ namespace CASM {
     }
 
     /// For setting alias, the new alias must not already exist
-    std::pair<iterator, bool> jsonConfigDatabase::set_alias(const name_type &name_or_alias, const name_type &alias) {
+    std::pair<jsonConfigDatabase::iterator, bool>
+    jsonConfigDatabase::set_alias(const name_type &name_or_alias, const name_type &alias) {
 
       // check that new alias doesn't already exist
       auto it = m_name_and_alias.find(alias);
@@ -254,16 +277,63 @@ namespace CASM {
     }
 
     /// Set calc properties
-    iterator jsonConfigDatabase::set_calc_properties(const name_type &name_or_alias, const jsonParser &props) {
+    jsonConfigDatabase::iterator
+    jsonConfigDatabase::set_calc_properties(
+      const name_type &name_or_alias,
+      const jsonParser &props) {
       auto it = m_config_list.find(config.name());
       it->set_calc_properties(props);
       return _iterator(it);
     }
 
     /// Range of Configuration in a particular supecell
-    boost::iterator_range<iterator> jsonConfigDatabase::scel_range(const name_type &scelname) const {
+    boost::iterator_range<jsonConfigDatabase::iterator>
+    jsonConfigDatabase::scel_range(const name_type &scelname) const {
       auto res = m_scel_range.find(scelname)->second;
       return boost::make_iterator_range(_iterator(res->first), _iterator(std::next(res->second)));
+    }
+
+    /// Update m_name_and_alias and m_scel_range after performing an insert or emplace
+    std::pair<jsonConfigDatabase::iterator, bool>
+    jsonConfigDatabase::_on_insert_or_emplace(const std::pair<base_iterator, bool> &result) {
+
+      if(result.second) {
+
+        Configuration &config = *result.first;
+
+        // set the config id, and increment
+        auto _config_id_it = m_config_id.find(config.supercell().name());
+        if(_config_id_it == m_config_id.end()) {
+          _config_id_it = m_config_id.insert(
+                            std::make_pair(
+                              config.supercell().name(),
+                              0));
+        }
+        config.set_id(_config_id_it->second++);
+
+        // update name & alias
+        m_name_and_alias.insert(std::make_pair(config.name(), result.first));
+        if(!config.alias().empty()) {
+          m_name_and_alias.insert(std::make_pair(config.alias(), result.first));
+        }
+
+        // check if scel_range needs updating
+        auto _scel_range_it = m_scel_range.find(config.supercell().name());
+        if(_scel_range_it == m_scel_range.end()) {
+          m_scel_range.insert(
+            std::make_pair(
+              config.supercell().name(),
+              std::make_pair(result, result)));
+        }
+        else if(_scel_range_it->first == std::next(result)) {
+          _scel_range_it->first = result;
+        }
+        else if(_scel_range_it->second == std::prev(result)) {
+          _scel_range_it->second = result;
+        }
+      }
+
+      return std::make_pair(_iterator(result.first), result.second));
     }
 
   }

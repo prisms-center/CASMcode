@@ -3,8 +3,8 @@
 
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/hull/Hull.hh"
-#include "casm/clex/ConfigIterator.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/database/Selection.hh"
 
 namespace CASM {
 
@@ -302,46 +302,22 @@ namespace CASM {
     template<typename ValueType>
     void BaseHull<ValueType>::init(const Configuration &_tmplt) const {
 
-      ConstConfigSelection selection;
-      const PrimClex &primclex = _tmplt.primclex();
-
-      if(m_selection == "ALL") {
-        selection = ConstConfigSelection(primclex);
-        for(const auto &config : primclex.db<Configuration>()) {
-          selection.set_selected(config.name(), true);
-        }
-      }
-      else if(m_selection == "MASTER") {
-        selection = ConstConfigSelection(primclex);
-      }
-      else if(m_selection == "CALCULATED") {
-        selection = ConstConfigSelection(primclex);
-        for(const auto &config : primclex.db<Configuration>()) {
-          selection.set_selected(config.name(), is_calculated(config));
-        }
-
-      }
-      else {
-        if(!fs::exists(m_selection)) {
-          throw std::runtime_error(
-            std::string("ERROR in $selection argument for '") + short_header(_tmplt) + "'." +
-            " Expected <filename>, 'ALL', 'CALCULATED', or 'MASTER' <--default" +
-            " No file named '" + m_selection + "'.");
-        }
-        selection = ConstConfigSelection(primclex, m_selection);
-      }
+      DB::Selection<Configuration> selection(
+        _tmplt.primclex().db<Configuration>(),
+        m_selection);
 
       // Hull typedefs:
       //typedef std::pair<notstd::cloneable_ptr<CompCalculator>,
       //                  notstd::cloneable_ptr<EnergyCalculator> > CalculatorPair;
       //typedef std::map<std::string, CalculatorPair> CalculatorOptions;
 
-      m_calculator_map.find(m_composition_type)->second.first->init(_tmplt);
-      m_calculator_map.find(m_composition_type)->second.second->init(_tmplt);
+      auto res = m_calculator_map.find(m_composition_type)->second;
+      res.first->init(_tmplt);
+      res.second->init(_tmplt);
 
       m_hull = std::make_shared<Hull>(selection,
-                                      *m_calculator_map.find(m_composition_type)->second.first,
-                                      *m_calculator_map.find(m_composition_type)->second.second,
+                                      *res.first,
+                                      *res.second,
                                       m_singular_value_tol,
                                       m_bottom_facet_tol);
 
