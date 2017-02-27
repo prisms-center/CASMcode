@@ -5,13 +5,11 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Clexulator.hh"
-#include "casm/crystallography/jsonStruc.hh"
+//#include "casm/crystallography/jsonStruc.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/clex/ConfigIsEquivalent.hh"
 #include "casm/clex/ConfigCompare.hh"
-#include "casm/clex/ConfigIterator.hh"
-#include "casm/clex/ConfigIOSelected.hh"
 #include "casm/app/QueryHandler_impl.hh"
 
 namespace CASM {
@@ -34,7 +32,7 @@ namespace CASM {
 
   /// Construct a default Configuration
   Configuration::Configuration(
-    Supercell &_supercell,
+    const Supercell &_supercell,
     const jsonParser &src,
     const ConfigDoF &_configdof) :
     m_supercell(&_supercell),

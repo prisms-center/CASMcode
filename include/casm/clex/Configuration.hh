@@ -66,7 +66,7 @@ namespace CASM {
     //********* CONSTRUCTORS *********
 
     /// Construct a default Configuration
-    Configuration(Supercell &_supercell, const jsonParser &source = jsonParser(), const ConfigDoF &_dof = ConfigDoF());
+    Configuration(const Supercell &_supercell, const jsonParser &source = jsonParser(), const ConfigDoF &_dof = ConfigDoF());
 
 
     //********** Source ***********
@@ -475,7 +475,7 @@ namespace CASM {
     //********* IO ************
 
     /// \brief Insert this configuration (in primitive & canonical form) in the database
-    ConfigInsertResult insert(bool primitive_only) const;
+    ConfigInsertResult insert(bool primitive_only = false) const;
 
     /// Writes the Configuration to the correct casm directory
     ///   Uses PrimClex's current settings to write the appropriate

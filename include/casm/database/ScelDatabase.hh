@@ -46,6 +46,11 @@ namespace CASM {
         return _on_insert_or_emplace(m_scel_list.insert(std::move(obj)));
       }
 
+      template<typename... Args>
+      std::pair<iterator, bool> emplace(Args &&... args) {
+        return _on_insert_or_emplace(m_scel_list.emplace(std::forward<Args>(args)...));
+      }
+
       iterator erase(iterator pos) override {
         typedef DatabaseSetIterator<Supercell, Database<Supercell> > it_type;
         base_iterator base_it = static_cast<it_type *>(pos.get())->base();
@@ -60,11 +65,6 @@ namespace CASM {
     protected:
 
       typedef std::set<Supercell>::iterator base_iterator;
-
-      template<typename... Args>
-      std::pair<iterator, bool> emplace(Args &&... args) {
-        return _on_insert_or_emplace(m_scel_list.emplace(std::forward<Args>(args)...));
-      }
 
       std::pair<iterator, bool> _on_insert_or_emplace(const std::pair<base_iterator, bool> &result) {
 

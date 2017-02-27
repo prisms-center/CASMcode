@@ -32,7 +32,7 @@ namespace CASM {
 
       friend Selection<ObjType>;
 
-      typedef std::map<std::string, bool>::iterator base_iterator;
+      typedef std::map<std::string, bool>::const_iterator base_iterator;
 
       /// Construct iterator
       SelectionIterator(const Selection<ObjType> &_list, base_iterator _it, bool _selected_only) :
@@ -50,7 +50,7 @@ namespace CASM {
 
       /// boost::iterator_facade implementation
       const ObjType &dereference() const {
-        return *(m_list->db()->find(m_it->first));
+        return *(m_list->db().find(m_it->first));
       }
 
       /// boost::iterator_facade implementation
@@ -84,16 +84,17 @@ namespace CASM {
       typedef SelectionIterator<ObjType> iterator;
       typedef Index size_type;
 
-      Selection(const Database<ObjType> &_db) :
-        m_db(&_db) {}
+      Selection(Database<ObjType> &_db) :
+        m_db(&_db),
+        m_primclex(&m_db->primclex()) {}
 
-      Selection(const Database<ObjType> &_db, fs::path selection_path = "MASTER");
+      Selection(Database<ObjType> &_db, fs::path selection_path = "MASTER");
 
-
-      Database<ObjType> &db() {
-        return *m_db;
+      const PrimClex &primclex() const {
+        return *m_primclex;
       }
-      const Database<ObjType> &db() const {
+
+      Database<ObjType> &db() const {
         return *m_db;
       }
 
@@ -105,8 +106,8 @@ namespace CASM {
 
       boost::iterator_range<iterator> selected() const {
         return boost::make_iterator_range(
-                 _iterator(*this, m_data.begin(), true),
-                 _iterator(*this, m_data.end(), true));
+                 iterator(*this, m_data.begin(), true),
+                 iterator(*this, m_data.end(), true));
       }
 
 
@@ -149,7 +150,8 @@ namespace CASM {
 
     private:
 
-      const Database<ObjType> *m_db;
+      Database<ObjType> *m_db;
+      const PrimClex *m_primclex;
 
       // first may be 'name' or 'alias'
       std::map<std::string, bool> m_data;

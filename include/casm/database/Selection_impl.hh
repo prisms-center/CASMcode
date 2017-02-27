@@ -5,11 +5,13 @@ namespace CASM {
   namespace DB {
 
     template<typename ObjType>
-    Selection<ObjType>::Selection(const Database<ObjType> &_db, fs::path selection_path) :
-      m_db(&_db), m_name(selection_path.string()) {
+    Selection<ObjType>::Selection(Database<ObjType> &_db, fs::path selection_path) :
+      m_db(&_db),
+      m_primclex(&m_db->primclex()),
+      m_name(selection_path.string()) {
 
       if(selection_path == "MASTER" || selection_path.empty()) {
-        fs::path master_selection_path = db().primclex().dir().master_selection<ObjType>();
+        fs::path master_selection_path = primclex().dir().template master_selection<ObjType>();
         if(fs::exists(master_selection_path)) {
           fs::ifstream select_file(master_selection_path);
           read(select_file);

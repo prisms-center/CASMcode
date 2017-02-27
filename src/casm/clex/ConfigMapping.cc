@@ -224,7 +224,7 @@ namespace CASM {
           // config is unchanged
           imported_name = hint_ptr->name();
           is_new_config = false;
-          it_canon = hint_ptr->get_supercell().permute_begin();
+          it_canon = hint_ptr->supercell().permute_begin();
         }
         else {
 
@@ -242,23 +242,15 @@ namespace CASM {
     }
 
     if(is_new_config) {
-      Index import_scel_index = primclex().add_supercell(mapped_lat), import_config_index;
+      const Supercell &scel = *primclex().db<Supercell>().emplace(&primclex(), mapped_lat).first;
+      Configuration import_config(scel, jsonParser(), relaxed_occ);
 
-      Configuration import_config(primclex().supercell(import_scel_index), jsonParser(), relaxed_occ);
-
-      if(m_strict_flag) {
-        it_canon = primclex().supercell(import_scel_index).permute_begin();
-        is_new_config = primclex().supercell(import_scel_index).add_canon_config(import_config, import_config_index);
-        imported_name = primclex().supercell(import_scel_index).config(import_config_index).name();
-      }
-      else {
-        is_new_config = primclex().supercell(import_scel_index).add_config(import_config, import_config_index, it_canon);
-        imported_name = primclex().supercell(import_scel_index).config(import_config_index).name();
-      }
+      // insert primitive and non-primitive, if distinct
+      auto res = import_config.insert();
+      is_new_config = (res.insert_primitive || res.insert_canonical);
+      imported_name = res.canonical_it->name();
     }
-    else {
 
-    }
     // transform deformation tensor to match canonical form and apply operation to cart_op
     ConfigDoF trans_configdof = copy_apply(it_canon, tconfigdof);
     relaxation_properties["best_mapping"]["relaxation_deformation"] = trans_configdof.deformation();
@@ -332,20 +324,16 @@ namespace CASM {
     relaxation_properties["best_mapping"]["lattice_deformation"] = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof, _struc.basis.size());
     relaxation_properties["best_mapping"]["volume_change"] = tconfigdof.deformation().determinant();
 
-    Index import_scel_index = primclex().add_supercell(mapped_lat), import_config_index;
+    const Supercell &scel = *primclex().db<Supercell>().emplace(&primclex(), mapped_lat).first;
 
-    Configuration import_config(primclex().supercell(import_scel_index), jsonParser(), tconfigdof);
+    Configuration import_config(scel, jsonParser(), tconfigdof);
+    it_canon = import_config.to_canonical();
 
-    if(m_strict_flag) {
-      it_canon = primclex().supercell(import_scel_index).permute_begin();
-      new_config_flag = primclex().supercell(import_scel_index).add_canon_config(import_config, import_config_index);
-      imported_name = primclex().supercell(import_scel_index).config(import_config_index).name();
-    }
-    else {
-      it_canon = primclex().supercell(import_scel_index).permute_begin();
-      new_config_flag = primclex().supercell(import_scel_index).add_config(import_config, import_config_index, it_canon);
-      imported_name = primclex().supercell(import_scel_index).config(import_config_index).name();
-    }
+    Configuration canon_config = copy_apply(it_canon, import_config);
+
+    // insert primitive and non-primitive, if distinct
+    auto res = canon_config.insert();
+    imported_name = res.canonical_it->name();
 
     relaxation_properties["best_mapping"]["relaxation_deformation"] = it_canon.sym_op().matrix() * tconfigdof.deformation() * it_canon.sym_op().matrix().transpose();
 
@@ -1093,7 +1081,7 @@ namespace CASM {
       // Make the assignment bitstring
       //
       // Loop through all supercell sites
-      config_dof.set_occupation(Array<int>(scel.num_sites()));
+      config_dof.set_occupation(std::vector<int>(scel.num_sites()));
       std::string rel_basis_atom;
       for(Index i = 0; i < best_assignments.size(); i++) {
         // subtract off average displacement
@@ -1271,7 +1259,7 @@ namespace CASM {
       // Make the assignment bitstring
       //
       // Loop through all supercell sites
-      config_dof.set_occupation(Array<int>(scel.num_sites()));
+      config_dof.set_occupation(std::vector<int>(scel.num_sites()));
       std::string rel_basis_atom;
       for(Index i = 0; i < best_assignments.size(); i++) {
         // subtract off average displacement (non-vacant sites only)
