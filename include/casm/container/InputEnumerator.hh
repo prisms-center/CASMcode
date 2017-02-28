@@ -258,7 +258,6 @@ namespace CASM {
     using ValEnumerator<ValueType, IsConst>::_increment_step;
     using ValEnumerator<ValueType, IsConst>::_invalidate;
     using ValEnumerator<ValueType, IsConst>::_set_current_ptr;
-    using ValEnumerator<ValueType, IsConst>::_current;
 
 
   private:

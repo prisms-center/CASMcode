@@ -50,14 +50,14 @@ namespace CASM {
     "      }' \n\n";
 
   int ConfigEnumAllOccupations::run(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
 
     std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
-    auto lambda = [&](Supercell & scel) {
+    auto lambda = [&](const Supercell & scel) {
       return notstd::make_unique<ConfigEnumAllOccupations>(scel);
     };
 
@@ -74,7 +74,7 @@ namespace CASM {
 
 
   /// \brief Construct with a Supercell, using all permutations
-  ConfigEnumAllOccupations::ConfigEnumAllOccupations(Supercell &_scel) :
+  ConfigEnumAllOccupations::ConfigEnumAllOccupations(const Supercell &_scel) :
     m_counter(
       std::vector<int>(_scel.num_sites(), 0),
       _scel.max_allowed_occupation(),
@@ -93,7 +93,7 @@ namespace CASM {
     if(valid()) {
       _set_step(0);
     }
-    _current().set_source(this->source(step()));
+    m_current->set_source(this->source(step()));
   }
 
   /// Implements _increment over all occupations
@@ -103,7 +103,7 @@ namespace CASM {
 
     while(!is_valid_config && ++m_counter) {
 
-      _current().set_occupation(m_counter());
+      m_current->set_occupation(m_counter());
       is_valid_config = _check_current();
     }
 
@@ -113,7 +113,7 @@ namespace CASM {
     else {
       this->_invalidate();
     }
-    _current().set_source(this->source(step()));
+    m_current->set_source(this->source(step()));
   }
 
   /// Returns true if current() is primitive and canonical

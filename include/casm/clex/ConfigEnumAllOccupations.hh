@@ -28,7 +28,7 @@ namespace CASM {
   public:
 
     /// \brief Construct with a Supercell, using all permutations
-    ConfigEnumAllOccupations(Supercell &_scel);
+    ConfigEnumAllOccupations(const Supercell &_scel);
 
     std::string name() const override {
       return enumerator_name;
@@ -36,7 +36,7 @@ namespace CASM {
 
     static const std::string enumerator_name;
     static const std::string interface_help;
-    static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
 
   private:
 

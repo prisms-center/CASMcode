@@ -14,6 +14,7 @@
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/database/Cache.hh"
 #include "casm/database/Named.hh"
+#include "casm/database/Database.hh"
 
 namespace CASM {
 
@@ -26,9 +27,7 @@ namespace CASM {
   class Clexulator;
   class FillSupercell;
 
-  namespace DB {
-    struct ConfigInsertResult;
-  }
+  struct ConfigInsertResult;
 
   template<typename DataObject> struct QueryTraits;
 
@@ -480,7 +479,7 @@ namespace CASM {
     //********* IO ************
 
     /// \brief Insert this configuration (in primitive & canonical form) in the database
-    DB::ConfigInsertResult insert(bool primitive_only = false) const;
+    ConfigInsertResult insert(bool primitive_only = false) const;
 
     /// Writes the Configuration to the correct casm directory
     ///   Uses PrimClex's current settings to write the appropriate
@@ -580,6 +579,31 @@ namespace CASM {
       const jsonParser &json,
       const Supercell &scel,
       const std::string &id);
+  };
+
+  /// \brief Holds results of Configuration::insert
+  ///
+  /// - 'canonical' refers to the canonical form of the Configuration in it's
+  ///   canonical equivalent Supercell.  The canonical form may be primitive or
+  ///   non-primitive
+  /// - 'primitive' refers to the primitive canonical Configuration.
+  ///
+  struct ConfigInsertResult {
+
+    typedef DB::DatabaseIterator<Configuration> iterator;
+
+    /// True if primitive did not exist before insertion
+    bool insert_primitive;
+
+    /// Iterator pointing at primitive
+    iterator primitive_it;
+
+    /// True if canonical configuration did not exist before insertion
+    bool insert_canonical;
+
+    /// Iterator pointing at canonical, if existing
+    iterator canonical_it;
+
   };
 
 

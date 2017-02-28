@@ -117,10 +117,10 @@ namespace CASM {
   };
 
   /// \brief Read unit cell transformation matrix from JSON input
-  Eigen::Matrix3i make_unit_cell(PrimClex &primclex, const jsonParser &json);
+  Eigen::Matrix3i make_unit_cell(const PrimClex &primclex, const jsonParser &json);
 
   /// \brief Make a ScelEnumProps object from JSON input
-  ScelEnumProps make_scel_enum_props(PrimClex &primclex, const jsonParser &input);
+  ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input);
 
   /**
    * Given the dimensions of a square matrix and its determinant,

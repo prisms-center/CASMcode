@@ -109,6 +109,8 @@ namespace CASM {
 
       iterator find(const std::string &name_or_alias) const override;
 
+      iterator find(const Configuration &obj) const override;
+
       /// For setting alias, the new alias must not already exist
       std::pair<iterator, bool> set_alias(const std::string &name_or_alias, const std::string &alias) override;
 

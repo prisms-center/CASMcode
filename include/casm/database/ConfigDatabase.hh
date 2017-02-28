@@ -33,31 +33,6 @@ namespace CASM {
 
     };
 
-    /// \brief Holds results of Configuration::insert
-    ///
-    /// - 'canonical' refers to the canonical form of the Configuration in it's
-    ///   canonical equivalent Supercell.  The canonical form may be primitive or
-    ///   non-primitive
-    /// - 'primitive' refers to the primitive canonical Configuration.
-    ///
-    struct ConfigInsertResult {
-
-      typedef DB::Database<Configuration>::iterator iterator;
-
-      /// True if primitive did not exist before insertion
-      bool insert_primitive;
-
-      /// Iterator pointing at primitive
-      iterator primitive_it;
-
-      /// True if canonical configuration did not exist before insertion
-      bool insert_canonical;
-
-      /// Iterator pointing at canonical, if existing
-      iterator canonical_it;
-
-    };
-
   }
 }
 

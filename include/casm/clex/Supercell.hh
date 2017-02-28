@@ -26,6 +26,10 @@ namespace CASM {
 
   };
 
+  namespace DB {
+    template<typename T> class DatabaseIterator;
+  }
+
   template<>
   struct QueryTraits<Supercell> {
     static const std::string name;
@@ -233,6 +237,8 @@ namespace CASM {
 
     bool operator<(const Supercell &B) const;
 
+    /// \brief Insert the canonical form of this into the database
+    std::pair<DB::DatabaseIterator<Supercell>, bool> insert() const;
 
     // **** Other ****
 

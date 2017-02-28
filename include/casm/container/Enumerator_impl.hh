@@ -23,7 +23,7 @@ namespace CASM {
   template<typename ScelIterator, typename ConfigEnumConstructor>
   int insert_unique_canon_configs(
     std::string method,
-    PrimClex &primclex,
+    const PrimClex &primclex,
     ScelIterator begin,
     ScelIterator end,
     ConfigEnumConstructor f,
@@ -37,7 +37,7 @@ namespace CASM {
     log.begin(method);
 
     for(auto scel_it = begin; scel_it != end; ++scel_it) {
-      Supercell &scel = *scel_it;
+      const Supercell &scel = *scel_it;
       log << "Enumerate configurations for " << scel.name() << " ...  " << std::flush;
 
       auto enumerator_ptr = f(scel);
@@ -98,7 +98,7 @@ namespace CASM {
   template<typename LatticeIterator, typename ConfigEnumConstructor>
   int insert_configs(
     std::string method,
-    PrimClex &primclex,
+    const PrimClex &primclex,
     LatticeIterator begin,
     LatticeIterator end,
     ConfigEnumConstructor f,

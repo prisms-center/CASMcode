@@ -206,6 +206,7 @@ namespace CASM {
       }
 
       virtual iterator find(const std::string &name_or_alias) const = 0;
+      virtual iterator find(const ValueType &obj) const = 0;
 
       virtual void commit() = 0;
 

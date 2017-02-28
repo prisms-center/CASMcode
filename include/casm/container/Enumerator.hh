@@ -223,7 +223,7 @@ namespace CASM {
     /// - Sets current to point at _initial
     /// - Sets step to 0
     /// - Sets valid to true
-    void _initialize(value_type *_initial) {
+    void _initialize(CASM_TMP::ConstSwitch<IsConst, value_type> *_initial) {
       _set_current_ptr(_initial);
       EnumeratorBase::_initialize();
     }
@@ -246,18 +246,13 @@ namespace CASM {
   protected:
 
     /// Change the pointer
-    void _set_current_ptr(value_type *_new) {
+    void _set_current_ptr(CASM_TMP::ConstSwitch<IsConst, value_type> *_new) {
       m_current_ptr = _new;
-    }
-
-    /// Access the current ObjectType by reference
-    value_type &_current() {
-      return *m_current_ptr;
     }
 
   private:
 
-    value_type *m_current_ptr;
+    CASM_TMP::ConstSwitch<IsConst, value_type> *m_current_ptr;
 
   };
 
@@ -408,9 +403,7 @@ namespace CASM {
   // ---- Interface ---------------------
 
   class PrimClex;
-  template<bool>
-  class ScelEnumT;
-  typedef ScelEnumT<false> ScelEnum;
+  class ScelEnum;
   class ScelEnumProps;
   class Lattice;
   template<typename T>
@@ -437,7 +430,7 @@ namespace CASM {
 
     virtual std::string name() const = 0;
 
-    virtual int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const = 0;
+    virtual int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const = 0;
 
     std::unique_ptr<EnumInterfaceBase> clone() const {
       return std::unique_ptr<EnumInterfaceBase>(this->_clone());
@@ -472,19 +465,19 @@ namespace CASM {
 
   /// \brief Standardizes parsing casm enum input options to make an ScelEnumProps
   ScelEnumProps make_enumerator_scel_enum_props(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt);
 
   /// \brief Standardizes parsing casm enum input options to make an SupercellEnumerator<Lattice>
   std::unique_ptr<SupercellEnumerator<Lattice> > make_enumerator_superlat_enum(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt);
 
   /// \brief Standardizes parsing casm enum input options to make an ScelEnum
   std::unique_ptr<ScelEnum> make_enumerator_scel_enum(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt);
 
@@ -498,7 +491,7 @@ namespace CASM {
   template<typename ScelIterator, typename ConfigEnumConstructor>
   int insert_unique_canon_configs(
     std::string method,
-    PrimClex &primclex,
+    const PrimClex &primclex,
     ScelIterator begin,
     ScelIterator end,
     ConfigEnumConstructor f,
@@ -508,7 +501,7 @@ namespace CASM {
   template<typename LatticeIterator, typename ConfigEnumConstructor>
   int insert_configs(
     std::string method,
-    PrimClex &primclex,
+    const PrimClex &primclex,
     LatticeIterator begin,
     LatticeIterator end,
     ConfigEnumConstructor f,
@@ -529,7 +522,7 @@ namespace CASM {
       return Derived::enumerator_name;
     }
 
-    int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const override {
+    int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const override {
       return Derived::run(primclex, kwargs, enum_opt);
     }
 

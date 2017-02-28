@@ -6,7 +6,6 @@
 #include <stdlib.h>
 
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/ConfigIterator.hh"
 
 namespace CASM {
 
@@ -471,6 +470,16 @@ namespace CASM {
       return volume() < B.volume();
     }
     return real_super_lattice() < B.real_super_lattice();
+  }
+
+  /// \brief Insert the canonical form of this into the database
+  std::pair<DB::DatabaseIterator<Supercell>, bool> Supercell::insert() const {
+    return primclex().emplace(
+             m_primclex,
+             canonical_equivalent_lattice(
+               real_super_lattice(),
+               prim().point_group(),
+               crystallography_tol()));
   }
 
   bool Supercell::_eq(const Supercell &B) const {

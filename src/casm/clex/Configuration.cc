@@ -432,9 +432,9 @@ namespace CASM {
   ///   always be saved in the config list.
   /// - If this is already known to be primitive & canonical, prefer to use
   ///   PrimClex::db<Configuration>.insert(config) directly.
-  DB::ConfigInsertResult Configuration::insert(bool primitive_only) const {
+  ConfigInsertResult Configuration::insert(bool primitive_only) const {
 
-    DB::ConfigInsertResult res;
+    ConfigInsertResult res;
 
     Configuration pconfig = this->primitive().in_canonical_supercell();
     std::tie(res.primitive_it, res.insert_primitive) =

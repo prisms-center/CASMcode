@@ -61,6 +61,9 @@ namespace CASM {
         return _iterator(m_name_or_alias.find(name_or_alias)->second);
       }
 
+      iterator find(const Supercell &obj) const override {
+        return _iterator(m_scel_list.find(obj));
+      }
 
     protected:
 
