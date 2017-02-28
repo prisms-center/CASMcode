@@ -11,8 +11,10 @@ namespace CASM {
 
   class ProjectSettings;
 
-  template<typename DataObject> class Selected;
-  template<typename DataObject> class Selection;
+  namespace DB {
+    template<typename DataObject> class Selected;
+    template<typename DataObject> class Selection;
+  }
 
   template<typename _DataObject>
   class QueryHandler : public notstd::Cloneable {
@@ -32,12 +34,12 @@ namespace CASM {
     /// \brief Set the selection to be used for the 'selected' column
     ///
     /// - ToDo: generalize Selected<DataObject>
-    void set_selected(const Selected<DataObject> &selection);
+    void set_selected(const DB::Selected<DataObject> &selection);
 
     /// \brief Set the selection to be used for the 'selected' column
     ///
     /// - ToDo: generalize Selection<DataObject>
-    void set_selected(const Selection<DataObject> &selection);
+    void set_selected(const DB::Selection<DataObject> &selection);
 
     /// \brief Add user-defined query alias
     ///

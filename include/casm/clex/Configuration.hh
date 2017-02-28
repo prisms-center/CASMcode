@@ -25,12 +25,9 @@ namespace CASM {
   class UnitCellCoord;
   class Clexulator;
   class FillSupercell;
-  template<typename ConfigType, typename PrimClexType>
-  class ConfigIterator;
 
-
-  namespace ConfigIO {
-    class Selected;
+  namespace DB {
+    struct ConfigInsertResult;
   }
 
   template<typename DataObject> struct QueryTraits;
@@ -48,9 +45,6 @@ namespace CASM {
   ///
   /// @{
 
-
-  struct ConfigInsertResult;
-
   /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
   ///
   class Configuration :
@@ -66,8 +60,19 @@ namespace CASM {
     //********* CONSTRUCTORS *********
 
     /// Construct a default Configuration
-    Configuration(const Supercell &_supercell, const jsonParser &source = jsonParser(), const ConfigDoF &_dof = ConfigDoF());
+    Configuration(const Supercell &_supercell,
+                  const jsonParser &source = jsonParser(),
+                  const ConfigDoF &_dof = ConfigDoF());
 
+    /// Construct a Configuration from JSON data
+    Configuration(const Supercell &_supercell,
+                  const std::string &_id,
+                  const jsonParser &_data);
+
+    /// Construct a Configuration from JSON data
+    Configuration(const PrimClex &_primclex,
+                  const std::string &_configname,
+                  const jsonParser &_data);
 
     //********** Source ***********
 
@@ -84,10 +89,10 @@ namespace CASM {
     const Structure &prim() const;
 
     /// \brief Get the PrimClex for this Configuration
-    PrimClex &primclex() const;
+    const PrimClex &primclex() const;
 
     /// \brief Get the Supercell for this Configuration
-    Supercell &supercell() const;
+    const Supercell &supercell() const;
 
     const Lattice &ideal_lattice() const;
 
@@ -475,12 +480,24 @@ namespace CASM {
     //********* IO ************
 
     /// \brief Insert this configuration (in primitive & canonical form) in the database
-    ConfigInsertResult insert(bool primitive_only = false) const;
+    DB::ConfigInsertResult insert(bool primitive_only = false) const;
 
     /// Writes the Configuration to the correct casm directory
     ///   Uses PrimClex's current settings to write the appropriate
     ///   Properties, DeltaProperties and Correlations files
     jsonParser &to_json(jsonParser &json) const;
+
+    /// Reads the Configuration from the json input
+    ///   Uses PrimClex's current settings to read in the appropriate
+    ///   calculated properties
+    ///
+    void from_json(const jsonParser &json, const Supercell &scel, std::string _id);
+
+    /// Reads the Configuration from the json input
+    ///   Uses PrimClex's current settings to read in the appropriate
+    ///   calculated properties
+    ///
+    void from_json(const jsonParser &json, const PrimClex &primclex, std::string _configname);
 
     /// Write the POS file to stream
     std::ostream &write_pos(std::ostream &sout) const;
@@ -514,18 +531,6 @@ namespace CASM {
     /// - Must have the same Supercell
     /// - Checks that all DoF are the same, within tolerance
     bool _eq(const Configuration &B) const;
-
-    /// Reads the Configuration from the json input
-    ///   Uses PrimClex's current settings to read in the appropriate
-    ///   calculated properties
-    ///
-    /// This is private, because it is only called from jsonConstructor<Configuration>:
-    ///
-    void from_json(const jsonParser &json);
-
-    friend jsonConstructor<Configuration>;
-
-  private:
 
     /// Configuration DFT data is expected in:
     ///   primclex().dir().calculated_properties(configname, calctype)
@@ -563,36 +568,20 @@ namespace CASM {
 
   };
 
-}
+  template<>
+  struct jsonConstructor<Configuration> {
 
-#include "casm/database/ConfigDatabase.hh"
+    Configuration from_json(
+      const jsonParser &json,
+      const PrimClex &primclex,
+      const std::string &configname);
 
-namespace CASM {
-
-  /// \brief Holds results of Configuration::insert
-  ///
-  /// - 'canonical' refers to the canonical form of the Configuration in it's
-  ///   canonical equivalent Supercell.  The canonical form may be primitive or
-  ///   non-primitive
-  /// - 'primitive' refers to the primitive canonical Configuration.
-  ///
-  struct ConfigInsertResult {
-
-    typedef DB::Database<Configuration>::iterator iterator;
-
-    /// True if primitive did not exist before insertion
-    bool insert_primitive;
-
-    /// Iterator pointing at primitive
-    iterator primitive_it;
-
-    /// True if canonical configuration did not exist before insertion
-    bool insert_canonical;
-
-    /// Iterator pointing at canonical, if existing
-    iterator canonical_it;
-
+    Configuration from_json(
+      const jsonParser &json,
+      const Supercell &scel,
+      const std::string &id);
   };
+
 
   // Calculate transformed ConfigDoF from PermuteIterator via
   //   apply(permute_iterator, dof)
@@ -707,11 +696,11 @@ namespace CASM {
   public:
 
     /// \brief Constructor
-    FillSupercell(Supercell &_scel, const SymOp &_op);
+    FillSupercell(const Supercell &_scel, const SymOp &_op);
 
     /// \brief Find first SymOp in the prim factor group such that apply(op, motif)
     ///        can be used to fill the Supercell
-    FillSupercell(Supercell &_scel, const Configuration &motif, double tol);
+    FillSupercell(const Supercell &_scel, const Configuration &motif, double tol);
 
     Configuration operator()(const Configuration &motif) const;
 
@@ -726,12 +715,12 @@ namespace CASM {
 
   private:
 
-    void _init(Supercell &_motif_scel) const;
+    void _init(const Supercell &_motif_scel) const;
 
-    Supercell *m_scel;
+    const Supercell *m_scel;
     const SymOp *m_op;
 
-    mutable Supercell *m_motif_scel;
+    mutable const Supercell *m_motif_scel;
     mutable std::vector<std::vector<Index> > m_index_table;
 
   };

@@ -117,9 +117,6 @@ namespace CASM {
 
     PermuteIterator operator*(const PermuteIterator &RHS) const;
 
-    jsonParser &to_json(jsonParser &json) const;
-    void from_json(const jsonParser &json);
-
     friend void swap(PermuteIterator &a, PermuteIterator &b);
 
   private:
@@ -131,7 +128,14 @@ namespace CASM {
   };
 
   jsonParser &to_json(const PermuteIterator &clust, jsonParser &json);
-  void from_json(PermuteIterator &clust, const jsonParser &json);
+
+
+  class Supercell;
+
+  template<>
+  struct jsonConstructor<PermuteIterator> {
+    static PermuteIterator from_json(const jsonParser &json, const Supercell &scel);
+  };
 
   /** @} */
 }

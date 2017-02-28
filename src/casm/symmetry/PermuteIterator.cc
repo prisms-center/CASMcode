@@ -1,6 +1,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 
 #include "casm/crystallography/PrimGrid.hh"
+#include "casm/clex/Supercell.hh"
 
 namespace CASM {
 
@@ -177,18 +178,6 @@ namespace CASM {
     return it;
   }
 
-  jsonParser &PermuteIterator::to_json(jsonParser &json) const {
-    json.put_obj();
-    json["factgrp"] = m_factor_group_index;
-    json["trans"] = m_translation_index;
-    return json;
-  }
-
-  void PermuteIterator::from_json(const jsonParser &json) {
-    CASM::from_json(m_factor_group_index, json["factgrp"]);
-    CASM::from_json(m_translation_index, json["trans"]);
-  }
-
   void swap(PermuteIterator &a, PermuteIterator &b) {
     std::swap(a.m_fg_permute_rep, b.m_fg_permute_rep);
     std::swap(a.m_prim_grid, b.m_prim_grid);
@@ -198,11 +187,16 @@ namespace CASM {
   }
 
   jsonParser &to_json(const PermuteIterator &it, jsonParser &json) {
-    return it.to_json(json);
+    json.put_obj();
+    json["factgrp"] = it.factor_group_index();
+    json["trans"] = it.translation_index();
+    return json;
   }
 
-  void from_json(PermuteIterator &it, const jsonParser &json) {
-    it.from_json(json);
+  PermuteIterator jsonConstructor<PermuteIterator>::from_json(
+    const jsonParser &json,
+    const Supercell &scel) {
+    return scel.permute_it(json["factgrp"].get<Index>(), json["trans"].get<Index>());
   }
 
 }

@@ -30,7 +30,14 @@ namespace CASM {
           "selected_in",
           "Returns true if configuration is specified in given selection (default MASTER). "
           "Ex: 'selected_in(myselection.txt)'"),
-        m_selection(_selection) {}
+        m_selection(notstd::clone(_selection)) {}
+
+      explicit Selected(std::unique_ptr<Selection<ObjType> > _selection):
+        BooleanAttribute<Configuration>(
+          "selected_in",
+          "Returns true if configuration is specified in given selection (default MASTER). "
+          "Ex: 'selected_in(myselection.txt)'"),
+        m_selection(std::move(_selection)) {}
 
       // --- Required implementations -----------
 

@@ -218,7 +218,7 @@ namespace CASM {
     Supercell::permute_const_iterator it_canon;
 
     if(hint_ptr != nullptr) {
-      Supercell &scel(hint_ptr->supercell());
+      const Supercell &scel(hint_ptr->supercell());
       if(mapped_lat.is_equivalent(scel.real_super_lattice(), m_tol)) {
         if(m_strict_flag && relaxed_occ.occupation() == (hint_ptr->configdof()).occupation()) {
           // config is unchanged

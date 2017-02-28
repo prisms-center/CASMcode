@@ -111,6 +111,16 @@ namespace CASM {
         m_id = std::to_string(_id);
       }
 
+      /// \brief Set id
+      ///
+      /// Setting id should be done through Database<Derived> implementations of
+      /// insert or emplace.
+      ///
+      /// - protected, to allow reading Derived from database and setting id
+      void set_id(std::string _id) {
+        m_id = _id;
+      }
+
 
     private:
 

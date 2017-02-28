@@ -1,6 +1,8 @@
 #include "casm/app/QueryHandler.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/database/Selection.hh"
+#include "casm/database/Selected.hh"
 
 
 namespace CASM {
@@ -38,7 +40,7 @@ namespace CASM {
   ///
   /// - ToDo: generalize Selected<DataObject>
   template<typename DataObject>
-  void QueryHandler<DataObject>::set_selected(const Selected<DataObject> &selection) {
+  void QueryHandler<DataObject>::set_selected(const DB::Selected<DataObject> &selection) {
     if(m_dict.find("selected") != m_dict.end()) {
       m_dict.erase("selected");
     }
@@ -55,8 +57,8 @@ namespace CASM {
   ///
   /// - ToDo: generalize ConstConfigSelection
   template<typename DataObject>
-  void QueryHandler<DataObject>::set_selected(const Selection<DataObject> &selection) {
-    set_selected(Selected<DataObject>(selection));
+  void QueryHandler<DataObject>::set_selected(const DB::Selection<DataObject> &selection) {
+    set_selected(DB::Selected<DataObject>(selection));
   }
 
   /// \brief Add user-defined query alias

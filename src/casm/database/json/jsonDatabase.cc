@@ -106,16 +106,16 @@ namespace CASM {
         return *this;
       }
 
-      if(!fs::exists(primclex.dir().config_list())) {
+      if(!fs::exists(primclex().dir().config_list())) {
         m_is_open = true;
         return *this;
       }
 
-      jsonParser json(primclex.dir().config_list());
+      jsonParser json(primclex().dir().config_list());
 
       if(!json.is_obj() || !json.contains("supercells")) {
         throw std::runtime_error(
-          std::string("Error invalid format: ") + primclex.dir().config_list().str());
+          std::string("Error invalid format: ") + primclex().dir().config_list().str());
       }
 
       // check json version
@@ -136,11 +136,10 @@ namespace CASM {
         auto config_it = scel_it->begin();
         auto config_end = scel_it->end();
 
+        const Supercell &scel = *primclex().db<Supercell>().find(scel_it.name());
+
         for(; config_it != config_end; ++config_it) {
-          auto result = m_config_list.emplace(
-                          *config_it,
-                          this->primclex(),
-                          scel_it.name() + "/" + config_it.name());
+          auto result = m_config_list.emplace(scel, *config_it, config_it.name());
           _on_insert_or_emplace(result);
         }
       }

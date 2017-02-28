@@ -8,7 +8,6 @@
 
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/CompositionConverter.hh"
-#include "casm/clex/Supercell.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/clex/NeighborList.hh"
@@ -16,7 +15,6 @@
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/app/EnumeratorHandler.hh"
 #include "casm/app/QueryHandler.hh"
 
 #include "casm/database/DatabaseHandler.hh"
@@ -27,6 +25,7 @@ namespace CASM {
   class ECIContainer;
 
   template<typename T, typename U> class ConfigIterator;
+
 
   /** \defgroup Clex
    *
@@ -51,29 +50,6 @@ namespace CASM {
   /// - clusters, basis sets, neighbor lists, & ECI
   /// -
   class PrimClex : public Logging {
-
-    DirectoryStructure m_dir;
-    ProjectSettings m_settings;
-
-    Structure m_prim;
-    bool m_vacancy_allowed;
-    Index m_vacancy_index;
-
-    std::unique_ptr<DB::DatabaseHandler> m_db_handler;
-
-    /// CompositionConverter specifies parameteric composition axes and converts between
-    ///   parametric composition and mol composition
-    bool m_has_composition_axes = false;
-    CompositionConverter m_comp_converter;
-
-    /// ChemicalReference specifies a reference for formation energies, chemical
-    /// potentials, etc.
-    notstd::cloneable_ptr<ChemicalReference> m_chem_ref;
-
-    /// Stores the neighboring UnitCell and which sublattices to include in neighbor lists
-    /// - mutable for lazy construction
-    mutable notstd::cloneable_ptr<PrimNeighborList> m_nlist;
-
 
   public:
 
@@ -100,10 +76,6 @@ namespace CASM {
 
     const DirectoryStructure &dir() const {
       return m_dir;
-    }
-
-    ProjectSettings &settings() {
-      return m_settings;
     }
 
     const ProjectSettings &settings() const {
@@ -152,79 +124,25 @@ namespace CASM {
     // ** Supercell, Configuration, etc. databases **
 
     template<typename T>
-    DB::Database<T> &db() {
+    DB::Database<T> &db() const {
       return m_db_handler->db<T>();
     }
 
     template<typename T>
-    const DB::Database<T> &db() const {
-      return m_db_handler->db<T>();
-    }
-
-    template<typename T>
-    const DB::Database<T> &const_db() {
+    const DB::Database<T> &const_db() const {
       return m_db_handler->const_db<T>();
     }
 
 
     template<typename T>
-    DB::Database<T> &db(std::string db_name) {
+    DB::Database<T> &db(std::string db_name) const {
       return m_db_handler->db<T>(db_name);
     }
 
     template<typename T>
-    const DB::Database<T> &db(std::string db_name) const {
-      return m_db_handler->db<T>(db_name);
-    }
-
-    template<typename T>
-    const DB::Database<T> &const_db(std::string db_name) {
+    const DB::Database<T> &const_db(std::string db_name) const {
       return m_db_handler->const_db<T>(db_name);
     }
-
-
-    // **** IO ****
-
-    ///Call Configuration::write on every configuration to update files
-    ///  - call update to also read all files
-    void write_config_list();
-
-
-    // **** Operators ****
-
-    // **** Functions for preparing CLEXulators ****
-
-    /// \brief Generate supercells of a certain volume and shape and store them in the array of supercells
-    void generate_supercells(const ScelEnumProps &enum_props);
-
-    //Enumerate configurations for all the supercells that are stored in 'supercell_list'
-    void print_enum_info(std::ostream &stream);
-    void print_supercells() const;
-    void print_supercells(std::ostream &stream) const;
-    void read_supercells(std::istream &stream);
-    void print_clex_configurations();
-
-
-    //ParamComposition i/o and calculators in PrimClex
-
-    void read_config_list();
-
-    ///Fill up props of every configuration for a partucluar supercell. This will be deprecated when props disappears
-    void read_scel_props(int scel_index, const std::string &JSON_output);
-    ///Call read_config_props on every Supercell
-    void read_all_scel_props(const std::string &JSON_output);
-
-    ///Count over the number of configurations that are selected in all supercells
-    int amount_selected() const;
-
-    bool contains_supercell(std::string scellname, Index &index) const;
-
-    bool contains_supercell(const Supercell &scel) const;
-    bool contains_supercell(const Supercell &scel, Index &index) const;
-
-    Index add_supercell(const Lattice &superlat);
-
-    Index add_canonical_supercell(const Lattice &superlat);
 
 
     bool has_orbits(const ClexDescription &key) const;
@@ -246,6 +164,28 @@ namespace CASM {
 
     /// Initialization routines
     void _init();
+
+    DirectoryStructure m_dir;
+    ProjectSettings m_settings;
+
+    Structure m_prim;
+    bool m_vacancy_allowed;
+    Index m_vacancy_index;
+
+    std::unique_ptr<DB::DatabaseHandler> m_db_handler;
+
+    /// CompositionConverter specifies parameteric composition axes and converts between
+    ///   parametric composition and mol composition
+    bool m_has_composition_axes = false;
+    CompositionConverter m_comp_converter;
+
+    /// ChemicalReference specifies a reference for formation energies, chemical
+    /// potentials, etc.
+    notstd::cloneable_ptr<ChemicalReference> m_chem_ref;
+
+    /// Stores the neighboring UnitCell and which sublattices to include in neighbor lists
+    /// - mutable for lazy construction
+    mutable notstd::cloneable_ptr<PrimNeighborList> m_nlist;
 
     mutable std::map<ClexDescription, ClexBasis> m_clex_basis;
     mutable std::map<ClexDescription, Clexulator> m_clexulator;
