@@ -84,10 +84,7 @@ namespace CASM {
       typedef SelectionIterator<ObjType> iterator;
       typedef Index size_type;
 
-      Selection(Database<ObjType> &_db) :
-        Logging(_db.primclex()),
-        m_db(&_db),
-        m_primclex(&m_db->primclex()) {}
+      Selection() {};
 
       Selection(Database<ObjType> &_db, fs::path selection_path = "MASTER");
 

@@ -5,6 +5,7 @@
 #include "casm/clex/PrimClex.hh"
 
 #include "casm/completer/Handlers.hh"
+#include "casm/database/Selection.hh"
 
 namespace CASM {
   void status_unitialized() {
@@ -524,32 +525,20 @@ Instructions for fitting ECI:                                          \n\n\
 
     std::cout << "\n3) Generate configurations \n";
 
-    int tot_gen = 0;
-    int tot_calc = 0;
-    int tot_sel = 0;
 
-    for(int i = 0; i < primclex.supercell_list().size(); i++) {
-      int gen = primclex.supercell(i).config_list().size();
-      int calc = 0, sel = 0;
-      const Supercell &scel = primclex.supercell(i);
-      for(int j = 0; j < scel.config_list().size(); j++) {
-        if(scel.config(j).selected()) {
-          sel++;
-        }
-        if(scel.config(j).calc_properties().contains("relaxed_energy")) {
-          calc++;
-        }
-      }
-      tot_gen += gen;
-      tot_calc += calc;
-      tot_sel += sel;
+    DB::Selection<Configuration> master_selection(primclex.db<Configuration>());
+    int tot_gen = master_selection.size();
+    int tot_sel = master_selection.selected_size();
+    int tot_calc = 0;
+    for(const auto &config : master_selection.all()) {
+      tot_calc += is_calculated(config);
     }
 
-    std::cout << "- Number of supercells generated: " << primclex.supercell_list().size() << "\n";
+    std::cout << "- Number of supercells generated: " << primclex.db<Supercell>().size() << "\n";
     std::cout << "- Number of configurations generated: " << tot_gen << "\n";
     std::cout << "- Number of configurations currently selected: " << tot_sel << "\n";
 
-    if(primclex.supercell_list().size() == 0) {
+    if(primclex.db<Supercell>().size() == 0) {
 
       if(vm.count("next")) {
         std::cout << "\n#################################\n\n";
@@ -598,26 +587,22 @@ Instructions for fitting ECI:                                          \n\n\
       //std::cout << std::setw(6) << " " << " " << std::setw(30) << " " << "     " << "#CONFIGS" << std::endl;
       std::cout << std::setw(6) << "INDEX" << " " << std::setw(30) << "SUPERCELL" << "     " << "#CONFIGS G / C / S" << std::endl;
       std::cout << "---------------------------------------------------------------------------" << std::endl;
-      for(int i = 0; i < primclex.supercell_list().size(); i++) {
-        int tot_gen = 0;
-        int tot_calc = 0;
-        int tot_sel = 0;
+      int i = 0;
+      for(const auto &scel : primclex.db<Supercell>()) {
 
-        int gen = primclex.supercell(i).config_list().size();
-        int calc = 0, sel = 0;
-        const Supercell &scel = primclex.supercell(i);
-        for(int j = 0; j < scel.config_list().size(); j++) {
-          if(scel.config(j).selected()) {
-            sel++;
-          }
-          if(scel.config(j).calc_properties().contains("relaxed_energy")) {
-            calc++;
-          }
+        Index gen = 0;
+        Index calc = 0;
+        Index sel = 0;
+        for(const auto &config : primclex.db<Configuration>().scel_range(scel.name())) {
+          gen++;
+          calc += is_calculated(config);
+          sel += master_selection.selected(config.name());
         }
-        tot_gen += gen;
-        tot_calc += calc;
-        tot_sel += sel;
-        std::cout << std::setw(6) << i << " " << std::setw(30) << primclex.supercell(i).name() << "     " << gen << " / " << calc << " / " << sel << std::endl;
+
+        std::cout << std::setw(6) << i << " " << std::setw(30)
+                  << scel.name() << "     "
+                  << gen << " / " << calc << " / " << sel << std::endl;
+        ++i;
       }
       std::cout << "---------------------------------------------------------------------------" << std::endl;
       std::cout << std::setw(6) << " " << " " << std::setw(30) << "TOTAL" << "     " << tot_gen << " / " << tot_calc << " / " << tot_sel << std::endl;
