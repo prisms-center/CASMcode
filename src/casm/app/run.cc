@@ -3,8 +3,7 @@
 
 #include "casm/app/casm_functions.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/ConfigIterator.hh"
-#include "casm/clex/ConfigSelection.hh"
+#include "casm/database/Selection.hh"
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {
@@ -97,37 +96,25 @@ namespace CASM {
 
     try {
       if(!vm.count("config") || (selection == "MASTER")) {
-        for(auto it = primclex.selected_config_begin(); it != primclex.selected_config_end(); ++it) {
-          if(!fs::exists(dir.POS(it->name()))) {
-            it->write_pos();
-          }
-
-          Popen process;
-
-          process.popen(run_opt.exec_str() + " " + it->path().string());
-
-          process.print(std::cout);
-        }
+        selection = "MASTER";
       }
-      else if(vm.count("config") && fs::exists(selection)) {
-        ConfigSelection<true> config_select(primclex, selection);
-        for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
-          if(!fs::exists(dir.POS(it->name()))) {
-            it->write_pos();
-          }
-
-          Popen process;
-
-          process.popen(run_opt.exec_str() + " " + it->path().string());
-
-          process.print(std::cout);
-        }
-
-      }
-      else {
+      else if(vm.count("config") && !fs::exists(selection)) {
         std::cerr << "ERROR: Invalid input. Option '--config' accepts one argument (either 'MASTER' or a path to a valid configuration selection file)." << std::endl
                   << "       Exiting...\n";
         return 1;
+      }
+
+      DB::Selection<Configuration> config_select(primclex.db<Configuration>(), selection);
+      for(const auto &config : config_select.selected()) {
+        if(!fs::exists(dir.POS(config.name()))) {
+          config.write_pos();
+        }
+
+        Popen process;
+
+        process.popen(run_opt.exec_str() + " " + primclex.dir().configuration_dir(config.name()).string());
+
+        process.print(std::cout);
       }
     }
     catch(std::exception &e) {

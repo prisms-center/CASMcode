@@ -10,9 +10,7 @@ namespace CASM {
 
     /// Derived should implement:
     /// - std::string generate_name() const
-    ///
-    /// Setting alias should be done through ValDatabase<Derived>::set_alias in
-    /// order to prevent multiple objects getting the same alias
+    /// - const PrimClex& primclex() const
     ///
     template<typename Derived>
     class Named {
@@ -20,8 +18,7 @@ namespace CASM {
     public:
 
       Named() :
-        m_name(""),
-        m_alias("") {}
+        m_name("") {}
 
       std::string name() const {
         if(m_name.empty()) {
@@ -30,36 +27,15 @@ namespace CASM {
         return m_name;
       }
 
-      /// \brief User-specified alternative to 'name'
+      /// \brief Return "alias" if object stored in database and alias exists,
+      ///        return empty string otherwise
       std::string alias() const {
-        return m_alias;
+        return derived().primclex().template db<Derived>().alias(name());
       }
 
-
-      /// \brief Return alias, if exists, else name
-      std::string alias_or_name() const {
-        if(alias().empty()) {
-          return name();
-        }
-        return alias();
-      }
-
-      /// \brief Unset "name" and "alias", if object is modified
+      /// \brief Unset "name", if object is modified
       void clear_name() {
         m_name = "";
-        m_alias.clear();
-      }
-
-    protected:
-
-      /// \brief Set alias
-      ///
-      /// Setting alias should be done through ValDatabase<Derived>::set_alias in
-      /// order to prevent multiple objects getting the same alias
-      ///
-      /// - protected, to allow reading Derived from database and setting alias
-      void set_alias(const std::string &_alias) {
-        m_alias = _alias;
       }
 
 
@@ -72,7 +48,6 @@ namespace CASM {
       }
 
       mutable std::string m_name;
-      std::string m_alias;
 
     };
 
@@ -93,7 +68,7 @@ namespace CASM {
         return m_id;
       }
 
-      /// \brief Unset "id", "name", and "alias", if object is modified
+      /// \brief Unset "id" and "name", if object is modified
       void clear_name() {
         m_id = "none";
         Named<Derived>::clear_name();

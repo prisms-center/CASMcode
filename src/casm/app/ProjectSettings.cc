@@ -4,9 +4,8 @@
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/NeighborList.hh"
-
-#include "casm/clex/ConfigIOSelected.hh"
-#include "casm/clex/ConfigSelection.hh"
+#include "casm/clex/Configuration.hh"
+#include "casm/misc/algorithm.hh"
 
 namespace CASM {
 

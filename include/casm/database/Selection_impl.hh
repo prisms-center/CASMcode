@@ -1,4 +1,5 @@
 #include "casm/database/Selection.hh"
+#include "casm/app/casm_functions.hh"
 
 namespace CASM {
 
@@ -6,6 +7,7 @@ namespace CASM {
 
     template<typename ObjType>
     Selection<ObjType>::Selection(Database<ObjType> &_db, fs::path selection_path) :
+      Logging(_db.primclex()),
       m_db(&_db),
       m_primclex(&m_db->primclex()),
       m_name(selection_path.string()) {
@@ -59,64 +61,125 @@ namespace CASM {
       }
     }
 
+    template<typename ObjType>
+    Index Selection<ObjType>::selected_size() const {
+      Index count = 0;
+      for(auto it = m_data.begin(); it != m_data.end(); ++it) {
+        count += (Index) it->second;
+      }
+      return count;
+    }
+
     /// \brief True if obj is in Selection and is selected; false otherwise
     template<typename ObjType>
-    bool Selection<ObjType>::selected(const ObjType &obj) const {
-      if(!obj.alias().empty()) {
-        auto it = m_data.find(obj.alias());
-        if(it != m_data.end() && it->second) {
-          return true;
-        }
+    bool Selection<ObjType>::selected(const std::string &name_or_alias) const {
+      auto it = m_data.find(db().name(name_or_alias));
+      if(it == m_data.end()) {
+        return false;
       }
-      auto it = m_data.find(obj.name());
-      if(it != m_data.end() && it->second) {
-        return true;
-      }
-      return false;
+      return it->second;
     }
 
-    /// \brief Ensure obj is in Selection and set selected to specified value
+    /// \brief If obj is in Selection, set selected to specified value
     template<typename ObjType>
-    void Selection<ObjType>::set_selected(const ObjType &obj, bool selected) const {
-      if(!obj.alias().empty()) {
-        auto it = m_data.find(obj.alias());
-        if(it != m_data.end()) {
-          it->second = selected;
-          return;
-        }
-      }
-      auto it = m_data.find(obj.name());
+    void Selection<ObjType>::set_selected(const std::string &name_or_alias, bool value) const {
+      auto it = m_data.find(db().name(name_or_alias));
       if(it != m_data.end()) {
-        it->second = selected;
+        it->second = value;
       }
-      return;
     }
 
-    //******************************************************************************
+    /// \brief Set selected objects to value of criteria
+    template<typename ObjType>
+    void Selection<ObjType>::set(const DataFormatterDictionary<ObjType> &dict,
+                                 const std::string &criteria) {
+      try {
+        if(criteria.size()) {
+          DataFormatter<ObjType> tformat(dict.parse(criteria));
+          for(const auto &obj : all()) {
+            ValueDataStream<bool> select_stream;
+            if(select_stream.fail()) {
+              err_log() << "Warning: Unable to apply criteria \"" << criteria
+                        << "\" to " << QueryTraits<ObjType>::name << " " << obj.name()
+                        << "\n";
+              continue;
+            }
+            select_stream << tformat(obj);
+            set_selected(obj.name(), select_stream.value());
+          }
+        }
+      }
+      catch(std::exception &e) {
+        throw std::runtime_error(
+          std::string("Failure to select using criteria \"") + criteria +
+          "\" for " << QueryTraits<ObjType>::name + "\n"
+          "    Reason:  " + e.what());
+      }
+    }
 
+    /// \brief Set selected objects to value, if criteria true
+    template<typename ObjType>
+    void Selection<ObjType>::set(const DataFormatterDictionary<ObjType> &dict,
+                                 const std::string &criteria,
+                                 bool value) {
+      try {
+        if(criteria.size()) {
+          DataFormatter<ObjType> tformat(dict.parse(criteria));
+          for(const auto &obj : all()) {
+            if(selected(obj) == value) {
+              continue;
+            }
+            ValueDataStream<bool> select_stream;
+            if(select_stream.fail()) {
+              err_log() << "Warning: Unable to apply criteria \"" << criteria
+                        << "\" to " << QueryTraits<ObjType>::name << " " <<  obj.name()
+                        << "\n";
+              continue;
+            }
+
+            select_stream << tformat(obj);
+            if(select_stream.value()) {
+              set_selected(obj.name(), value);
+            }
+          }
+        }
+        else {
+          for(const auto &obj : all()) {
+            set_selected(obj.name(), value);
+          }
+        }
+      }
+      catch(std::exception &e) {
+        throw std::runtime_error(
+          std::string("Failure to select using criteria \"") + criteria +
+          "\" for " + QueryTraits<ObjType>::name + "\n"
+          "    Reason:  " + e.what());
+      }
+    }
+
+    /// \brief Read csv selection from stream
     template<typename ObjType>
     void Selection<ObjType>::read(std::istream &_input) {
-      std::string tname;
+      std::string tname_or_alias;
       bool tselect;
       _input >> std::ws;
       if(_input.peek() == '#') {
         _input.get();
-        // discard first two columns (name, selected)
-        _input >> tname;
-        _input >> tname;
-        std::getline(_input, tname, '\n');
+        // discard first two columns (name_or_alias, selected)
+        _input >> tname_or_alias;
+        _input >> tname_or_alias;
+        std::getline(_input, tname_or_alias, '\n');
         m_col_headers.clear();
-        boost::split(m_col_headers, tname, boost::is_any_of(" \t"), boost::token_compress_on);
+        boost::split(m_col_headers, tname_or_alias, boost::is_any_of(" \t"), boost::token_compress_on);
         //_input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
       }
-      while(_input >> tname >> tselect) {
-        m_data[tname] = tselect;
+      while(_input >> tname_or_alias >> tselect) {
+        m_data[db().name(tname_or_alias)] = tselect;
         _input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
       }
     }
 
-    //******************************************************************************
-
+    /// \brief Read selection from JSON
     template<typename ObjType>
     const jsonParser &Selection<ObjType>::from_json(const jsonParser &_json) {
 
@@ -142,9 +205,9 @@ namespace CASM {
 
         for(; it != it_end; ++it) {
 
-          // for compatibility, include "configname" as "name"
-          if(it.name() == "name" || it.name() == "configname") {
-            tname = it->get<std::string>();
+          // for compatibility, include "configname" also
+          if(it.name() == "name" || it.name() == "name_or_alias" || it.name() == "configname") {
+            tname = db().name(it->get<std::string>());
             contains_name = true;
           }
           else if(it.name() == "selected") {
@@ -171,8 +234,7 @@ namespace CASM {
       return _json;
     }
 
-    //******************************************************************************
-
+    /// \brief Write selection to JSON
     template<typename ObjType>
     jsonParser &Selection<ObjType>::to_json(
       const DataFormatterDictionary<ObjType> &_dict,
@@ -196,8 +258,7 @@ namespace CASM {
       return _json;
     }
 
-    //******************************************************************************
-
+    /// \brief Print csv selection to stream
     template<typename ObjType>
     void Selection<ObjType>::print(
       const DataFormatterDictionary<ObjType> &_dict,
@@ -219,6 +280,38 @@ namespace CASM {
 
     }
 
+    /// \brief Write selection to file
+    ///
+    /// \returns 0 if successful, ERR_EXISTING_FILE if file already exists and !force
+    template<typename ObjType>
+    bool Selection<ObjType>::write(const DataFormatterDictionary<ObjType> &dict,
+                                   bool force,
+                                   const fs::path &out_path,
+                                   bool write_json,
+                                   bool only_selected) const {
+
+      if(fs::exists(out_path) && !force) {
+        err_log() << "File " << out_path
+                  << " already exists. Use --force to force overwrite." << std::endl;
+        return ERR_EXISTING_FILE;
+      }
+
+      if(write_json || out_path.extension() == ".json" || out_path.extension() == ".JSON") {
+        jsonParser json;
+        this->to_json(dict, json, only_selected);
+        SafeOfstream sout;
+        sout.open(out_path);
+        json.print(sout.ofstream());
+        sout.close();
+      }
+      else {
+        SafeOfstream sout;
+        sout.open(out_path);
+        this->print(dict, sout.ofstream(), only_selected);
+        sout.close();
+      }
+      return 0;
+    }
   }
 }
 

@@ -26,16 +26,6 @@ namespace CASM {
     /// - void DatabaseBase& open()
     /// - void commit()
     /// - void close()
-    /// - iterator begin() const
-    /// - iterator end() const
-    /// - size_type size() const
-    /// - std::pair<iterator, bool> insert(const ValueType &obj)
-    /// - iterator erase(iterator pos)
-    /// - iterator find(const std::string &name) const
-    ///
-    /// Derived ScelDatabase must implement public methods:
-    /// - iterator find(const Lattice &lat)
-    /// - std::pair<iterator, bool> insert(const Lattice &lat)
     ///
     class jsonScelDatabase : public Database<Supercell> {
 
@@ -49,6 +39,9 @@ namespace CASM {
       jsonScelDatabase &open() override;
 
       void commit() override;
+
+      void close() override;
+
 
     private:
 
@@ -76,7 +69,6 @@ namespace CASM {
     /// - iterator find(const std::string &name) const
     ///
     /// Derived ConfigDatabase must implement public methods:
-    /// - std::pair<iterator, bool> set_alias(const std::string& name_or_alias, const std::string& alias)
     /// - iterator update(const Configuration &config)
     /// - boost::iterator_range<iterator> scel_range(const std::string& scelname) const
     ///
@@ -113,9 +105,6 @@ namespace CASM {
 
       iterator find(const Configuration &obj) const override;
 
-      /// For setting alias, the new alias must not already exist
-      std::pair<iterator, bool> set_alias(const std::string &name_or_alias, const std::string &alias) override;
-
       /// Range of Configuration in a particular supecell
       boost::iterator_range<iterator> scel_range(const std::string &scelname) const override;
 
@@ -132,8 +121,8 @@ namespace CASM {
         return iterator(DatabaseSetIterator<Configuration, jsonConfigDatabase>(base_it));
       }
 
-      // map name and alias -> Configuration
-      std::map<std::string, base_iterator> m_name_and_alias;
+      // map name -> Configuration
+      std::map<std::string, base_iterator> m_name_to_config;
 
       // container of Configuration
       std::set<Configuration> m_config_list;

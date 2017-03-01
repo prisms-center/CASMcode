@@ -1,6 +1,7 @@
 #include "casm/database/json/jsonDatabase.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/casm_io/SafeOfstream.hh"
 
 namespace CASM {
 
@@ -30,6 +31,8 @@ namespace CASM {
         _read_SCEL();
       }
 
+      this->read_aliases();
+
       m_is_open = true;
       return *this;
     }
@@ -45,6 +48,13 @@ namespace CASM {
       file.open(primclex.dir().scel_list());
       json.print(file.ofstream());
       file.close();
+
+      this->write_aliases();
+    }
+
+    void jsonScelDatabase::close() {
+      m_is_open = false;
+      this->clear();
     }
 
     void jsonScelDatabase::_read_scel_list() {
@@ -147,6 +157,8 @@ namespace CASM {
       // read next config id for each supercell
       from_json(m_config_id, json["config_id"])
 
+      this->read_aliases();
+
       m_is_open = true;
       return *this;
     }
@@ -178,10 +190,12 @@ namespace CASM {
       file.open(config_list_path);
       json.print(file.ofstream());
       file.close();
+
+      this->write_aliases();
     }
 
     void jsonConfigDatabase::close() {
-      m_name_and_alias.clear();
+      m_name_to_config.clear();
       m_config_list.clear();
       m_scel_range.clear();
       m_is_open = false;
@@ -214,11 +228,14 @@ namespace CASM {
     }
 
     jsonConfigDatabase::iterator update(const Configuration &config) {
-      auto it = m_config_list.find(config);
-      if(it != m_config_list.end()) {
-        *it = config;
+
+      auto it = m_name_to_config.find(config.name());
+      if(it == m_name_to_config.end()) {
+        return _iterator(m_config_list.end());
       }
-      return _iterator(it);
+
+      *(it->second) = config;
+      return _iterator(it->second);
     }
 
     jsonConfigDatabase::iterator jsonConfigDatabase::erase(iterator pos) {
@@ -227,10 +244,7 @@ namespace CASM {
       auto base_it = static_cast<jsonConfigDatabaseIterator *>(pos.get())->base();
 
       // erase name & alias
-      m_name_and_alias.erase(base_it->name());
-      if(!base_it->alias().empty()) {
-        m_name_and_alias.erase(base_it->alias());
-      }
+      m_name_to_config.erase(base_it->name());
 
       // update scel_range
       auto _scel_range_it = m_scel_range.find(base_it->supercell().name());
@@ -249,38 +263,11 @@ namespace CASM {
     }
 
     jsonConfigDatabase::iterator jsonConfigDatabase::find(const name_type &name_or_alias) {
-      auto it = m_name_and_alias.find(name_or_alias);
-      if(it == m_name_and_alias.end()) {
+      auto it = m_name_to_config.find(this->name(name_or_alias));
+      if(it == m_name_to_config.end()) {
         return _iterator(m_config_list.end());
       }
-      return _iterator(it);
-    }
-
-    /// For setting alias, the new alias must not already exist
-    std::pair<jsonConfigDatabase::iterator, bool>
-    jsonConfigDatabase::set_alias(const name_type &name_or_alias, const name_type &alias) {
-
-      // check that new alias doesn't already exist
-      auto it = m_name_and_alias.find(alias);
-      if(it != m_name_and_alias.end()) {
-        return std::make_pair(_iterator(it), false);
-      }
-
-      // get existing pointer
-      base_iterator base_it = *(m_name_and_alias.find(name_or_alias));
-
-      // swap alias
-      std::string old_alias = base_it->alias();
-      base_it->set_alias(alias);
-
-      // erase old alias
-      if(!old_alias.empty()) {
-        m_name_or_alias.erase(old_alias);
-      }
-
-      // insert new alias
-      auto res = m_name_or_alias.insert(std::make_pair(alias, base_it))->set_alias(alias);
-      return std::make_pair(_iterator(res.first), res.second);
+      return _iterator(it->second);
     }
 
     /// Range of Configuration in a particular supecell
@@ -290,7 +277,7 @@ namespace CASM {
       return boost::make_iterator_range(_iterator(res->first), _iterator(std::next(res->second)));
     }
 
-    /// Update m_name_and_alias and m_scel_range after performing an insert or emplace
+    /// Update m_name_to_config and m_scel_range after performing an insert or emplace
     std::pair<jsonConfigDatabase::iterator, bool>
     jsonConfigDatabase::_on_insert_or_emplace(const std::pair<base_iterator, bool> &result) {
 
@@ -308,11 +295,8 @@ namespace CASM {
         }
         config.set_id(_config_id_it->second++);
 
-        // update name & alias
-        m_name_and_alias.insert(std::make_pair(config.name(), result.first));
-        if(!config.alias().empty()) {
-          m_name_and_alias.insert(std::make_pair(config.alias(), result.first));
-        }
+        // update name -> config
+        m_name_to_config.insert(std::make_pair(config.name(), result.first));
 
         // check if scel_range needs updating
         auto _scel_range_it = m_scel_range.find(config.supercell().name());

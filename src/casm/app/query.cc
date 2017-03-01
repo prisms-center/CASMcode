@@ -2,7 +2,8 @@
 #include <boost/algorithm/string.hpp>
 #include "casm/app/casm_functions.hh"
 #include "casm/clex/ConfigIO.hh"
-#include "casm/clex/ConfigIOSelected.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/database/Selection.hh"
 #include "casm/completer/Complete.hh"
 
 namespace CASM {
@@ -240,7 +241,7 @@ namespace CASM {
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex, status_log);
 
     // Get configuration selection
-    ConstConfigSelection selection(primclex, selection_str);
+    DB::Selection<Configuration> selection(primclex.db<Configuration>(), selection_str);
 
     // Print info
     status_log << "Print:" << std::endl;
@@ -280,8 +281,8 @@ namespace CASM {
 
     try {
 
-      auto begin = vm.count("all") ? selection.config_begin() : selection.selected_config_begin();
-      auto end = vm.count("all") ? selection.config_end() : selection.selected_config_end();
+      auto begin = vm.count("all") ? selection.all().begin() : selection.selected().begin();
+      auto end = vm.count("all") ? selection.all().end() : selection.selected().end();
 
       if(vm.count("write-pos")) {
         for(auto it = begin; it != end; ++it) {

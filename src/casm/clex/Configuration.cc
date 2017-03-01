@@ -853,10 +853,9 @@ namespace CASM {
   ///   "json" corresponds (entire file)["supercells"][scelname][id]
   ///   "configname" corresponds to "scelname/id"
   ///
-  ///   write_dof, source, selected: (absolute path in config_list)
+  ///   write_dof, source: (absolute path in config_list)
   ///     json["dof"]
   ///     json["source"]
-  ///     json["selected"]
   ///
   ///   write_properties: (absolute path in config_list)
   ///     json["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
@@ -944,11 +943,9 @@ namespace CASM {
   ///   "json" corresponds (entire file)["supercells"][scelname][id]
   ///   "configname" corresponds to "scelname/id"
   ///
-  ///   read dof, source, selected, alias: (absolute path in config_list)
+  ///   read dof, source: (absolute path in config_list)
   ///     json["dof"]
   ///     json["source"]
-  ///     json["selected"]
-  ///     json["alias"]
   ///
   ///   read properties: (absolute path in config_list)
   ///     json["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
@@ -961,10 +958,6 @@ namespace CASM {
 
     this->clear_name();
     this->set_id(_id);
-    auto alias_it = json.find("alias");
-    if(alias_it != json.end()) {
-      this->set_alias(alias_it->get<std::string>());
-    }
 
     json.get_if(m_source, "source");
     m_source_updated = false;

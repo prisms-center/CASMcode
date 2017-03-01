@@ -214,8 +214,12 @@ namespace CASM {
 
       //-------------------------------------------------------------------------------------//
 
-      ///Add a --output suboption. Expects to allow "STDOUT" to print to screen.
+      /// Add a --output suboption. Expects to allow "STDOUT" to print to screen.
       void add_output_suboption();
+
+      /// Add a --output suboption, with default value.
+      /// Expects to allow "STDOUT" to print to screen.
+      void add_output_suboption(const fs::path &_default);
 
       ///The path that goes with add_output_suboption
       fs::path m_output_path;

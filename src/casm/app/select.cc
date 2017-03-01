@@ -2,92 +2,11 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/clex/Configuration.hh"
-#include "casm/clex/ConfigSelection.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/database/Selection.hh"
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {
-
-  template<typename ConfigIterType>
-  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, bool mk, Log &err_log) {
-    //boost::trim(criteria);
-
-    try {
-      if(criteria.size()) {
-        DataFormatter<Configuration> tformat(dict.parse(criteria));
-        for(; begin != end; ++begin) {
-          if(begin.selected() == mk)
-            continue;
-          ValueDataStream<bool> select_stream;
-          if(select_stream.fail()) {
-            err_log << "Warning: Unable to apply criteria \"" << criteria << "\" to configuration " <<  begin.name() << "\n";
-            continue;
-          }
-
-          select_stream << tformat(*begin);
-          if(select_stream.value()) {
-            begin.set_selected(mk);
-          }
-        }
-      }
-      else {
-        for(; begin != end; ++begin) {
-          begin.set_selected(mk);
-        }
-      }
-    }
-    catch(std::exception &e) {
-      throw std::runtime_error(std::string("Failure to select using criteria \"") + criteria + "\" for configuration " + begin.name() + "\n    Reason:  " + e.what());
-    }
-    return;
-  }
-
-  template<typename ConfigIterType>
-  void set_selection(const DataFormatterDictionary<Configuration> &dict, ConfigIterType begin, ConfigIterType end, const std::string &criteria, Log &err_log) {
-    //boost::trim(criteria);
-    try {
-      if(criteria.size()) {
-        DataFormatter<Configuration> tformat(dict.parse(criteria));
-        for(; begin != end; ++begin) {
-          ValueDataStream<bool> select_stream;
-          if(select_stream.fail()) {
-            err_log << "Warning: Unable to apply criteria \"" << criteria << "\" to configuration " <<  begin.name() << "\n";
-            continue;
-          }
-          select_stream << tformat(*begin);
-          begin.set_selected(select_stream.value());
-        }
-      }
-    }
-    catch(std::exception &e) {
-      throw std::runtime_error(std::string("Failure to select using criteria \"") + criteria + "\" for configuration " + begin.name() + "\n    Reason:  " + e.what());
-    }
-
-    return;
-  }
-
-  template<bool IsConst>
-  bool write_selection(const DataFormatterDictionary<Configuration> &dict, const ConfigSelection<IsConst> &config_select, bool force, const fs::path &out_path, bool write_json, bool only_selected, Log &err_log) {
-    if(fs::exists(out_path) && !force) {
-      err_log << "File " << out_path << " already exists. Use --force to force overwrite." << std::endl;
-      return ERR_EXISTING_FILE;
-    }
-
-    if(write_json || out_path.extension() == ".json" || out_path.extension() == ".JSON") {
-      jsonParser json;
-      config_select.to_json(dict, json, only_selected);
-      SafeOfstream sout;
-      sout.open(out_path);
-      json.print(sout.ofstream());
-      sout.close();
-    }
-    else {
-      SafeOfstream sout;
-      sout.open(out_path);
-      config_select.print(dict, sout.ofstream(), only_selected);
-      sout.close();
-    }
-    return 0;
-  }
 
   void select_help(const DataFormatterDictionary<Configuration> &_dict, std::ostream &_stream, std::vector<std::string> help_opt) {
     _stream << "DESCRIPTION" << std::endl
@@ -122,7 +41,7 @@ namespace CASM {
     void SelectOption::initialize() {
       add_general_help_suboption();
       add_configlists_suboption();
-      add_output_suboption();
+      add_output_suboption("MASTER");
 
       m_desc.add_options()
       ("json", "Write JSON output (otherwise CSV, unless output extension is '.json' or '.JSON')")
@@ -141,25 +60,16 @@ namespace CASM {
 
   }
 
-  template<bool IsConst>
-  void write_selection_stats(Index Ntot, const ConfigSelection<IsConst> &config_select, Log &log, bool only_selected) {
+  void write_selection_stats(Index Ntot, const DB::Selection<Configuration> &config_select, Log &log, bool only_selected) {
 
-    auto Nselected = std::distance(config_select.selected_config_begin(), config_select.selected_config_end());
-    auto Ninclude = only_selected ? Nselected : std::distance(config_select.config_begin(), config_select.config_end());
+    auto Nselected = config_select.selected_size();
+    auto Ninclude = only_selected ? Nselected : config_select.size();
 
     log << "# configurations in this project: " << Ntot << "\n";
     log << "# configurations included in this list: " << Ninclude << "\n";
     log << "# configurations selected in this list: " << Nselected << "\n";
   }
 
-  template<bool IsConst>
-  void write_master_selection_stats(Index Ntot, const ConfigSelection<IsConst> &config_select, Log &log) {
-
-    auto Nselected = std::distance(config_select.selected_config_begin(), config_select.selected_config_end());
-
-    log << "# configurations in this project: " << Ntot << "\n";
-    log << "# configurations selected in this list: " << Nselected << "\n";
-  }
 
   // ///////////////////////////////////////
   // 'select' function for casm
@@ -306,23 +216,25 @@ namespace CASM {
     ProjectSettings &set = primclex.settings();
 
     // count total number of configurations in this project one time
-    Index Ntot = std::distance(primclex.config_begin(), primclex.config_end());
+    Index Ntot = primclex.db<Configuration>().size();
 
-
-    // load initial selection into config_select -- this is also the selection that will be printed at end
-    ConfigSelection<false> config_select(primclex, selection[0]);
+    // ---- load initial selection into config_select ----
+    // this is also the selection that will be printed at end
+    DB::Selection<Configuration> config_select(primclex.db<Configuration>(), selection[0]);
 
     std::stringstream ss;
     ss << selection[0];
 
-    std::vector<ConstConfigSelection> tselect(selection.size() - 1);
+    std::vector<DB::Selection<Configuration> > tselect;
+    tselect.reserve(selection.size() - 1);
     for(int i = 1; i < selection.size(); ++i) {
       ss << ", " << selection[i];
-      tselect.push_back(ConstConfigSelection(primclex, selection[i]));
+      tselect.emplace_back(primclex.db<Configuration>(), selection[i]);
     }
 
     set.query_handler<Configuration>().set_selected(config_select);
 
+    // ---- write starting stats ----
     args.log.custom("Input config list", selection[0].string());
     write_selection_stats(Ntot, config_select, args.log, false);
     args.log << std::endl;
@@ -333,6 +245,7 @@ namespace CASM {
       args.log << std::endl;
     }
 
+    // ---- perform requested logic ----
     if(vm.count("set-on") || vm.count("set-off") || vm.count("set")) {
       bool select_switch = vm.count("set-on");
       std::string criteria;
@@ -358,10 +271,12 @@ namespace CASM {
       args.log.begin_lap();
 
       try {
-        if(vm.count("set"))
-          set_selection(set.query_handler<Configuration>().dict(), config_select.config_begin(), config_select.config_end(), criteria, args.err_log);
-        else
-          set_selection(set.query_handler<Configuration>().dict(), config_select.config_begin(), config_select.config_end(), criteria, select_switch, args.err_log);
+        if(vm.count("set")) {
+          config_select.set(set.query_handler<Configuration>().dict(), criteria);
+        }
+        else {
+          config_select.set(set.query_handler<Configuration>().dict(), criteria, select_switch);
+        }
       }
       catch(std::exception &e) {
         args.err_log << "ERROR: " << e.what() << "\n";
@@ -388,9 +303,8 @@ namespace CASM {
       args.log.begin_lap();
 
       // loop through other lists, keeping only configurations selected in the other lists
-      auto it = config_select.config_begin();
-      for(; it != config_select.config_end(); ++it) {
-        it.set_selected(!it.selected());
+      for(const auto &val : config_select.data()) {
+        config_select.set_selected(val.first, !config_select.selected(val.first));
       }
       args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;
     }
@@ -402,8 +316,11 @@ namespace CASM {
 
       // loop through other lists, inserting all selected configurations
       for(int i = 1; i < selection.size(); i++) {
-        for(auto it = tselect[i].selected_config_cbegin(); it != tselect[i].selected_config_cend(); ++it) {
-          config_select.set_selected(it.name(), true);
+        for(const auto &val : tselect[i].data()) {
+          if(!val.second) {
+            continue;
+          }
+          config_select.set_selected(val.first, true);
         }
       }
       args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;
@@ -416,9 +333,11 @@ namespace CASM {
 
       // loop through other lists, keeping only configurations selected in the other lists
       for(int i = 1; i < selection.size(); i++) {
-        auto it = config_select.selected_config_begin();
-        for(; it != config_select.selected_config_end(); ++it) {
-          it.set_selected(tselect[i].selected(it.name()));
+        for(const auto &val : config_select.data()) {
+          if(!val.second) {
+            continue;
+          }
+          config_select.set_selected(val.first, tselect[i].selected(val.first));
         }
       }
 
@@ -435,13 +354,16 @@ namespace CASM {
       args.log.custom(selection[0].string() + " xor " + selection[1].string());
       args.log.begin_lap();
 
-      for(auto it = tselect[1].selected_config_begin(); it != tselect[1].selected_config_end(); ++it) {
+      for(const auto &val : tselect[1].data()) {
+        if(!val.second) {
+          continue;
+        }
         //If selected in both lists, deselect it
-        if(config_select.selected(it.name())) {
-          config_select.set_selected(it.name(), false);
+        if(config_select.selected(val.first)) {
+          config_select.set_selected(val.first, false);
         }
         else { // If only selected in tselect, add it to config_select
-          config_select.set_selected(it.name(), true);
+          config_select.set_selected(val.first, true);
         }
 
       }
@@ -450,41 +372,22 @@ namespace CASM {
     }
 
     /// Only write selection to disk past this point
-    if(!vm.count("output") || out_path == "MASTER") {
-      auto pc_it = primclex.config_begin(), pc_end = primclex.config_end();
-      for(; pc_it != pc_end; ++pc_it) {
-        pc_it->set_selected(false);
-      }
 
-      auto it = config_select.selected_config_begin(), it_end = config_select.selected_config_end();
-      for(; it != it_end; ++it) {
-        it->set_selected(true);
-      }
+    args.log.write("Selection");
+    int ret_code = config_select.write(
+                     set.query_handler<Configuration>().dict(),
+                     vm.count("force") || (out_path.string() == "MASTER"),
+                     out_path,
+                     vm.count("json"),
+                     only_selected);
+    args.log << "write: " << out_path << "\n" << std::endl;
 
-      args.log.write("Master config_list");
-      primclex.write_config_list();
-      args.log << "wrote: MASTER\n" << std::endl;
+    args.log.custom("Output config list", out_path.string());
+    write_selection_stats(Ntot, config_select, args.log, only_selected);
 
-      args.log.custom("Master config list");
-      write_master_selection_stats(Ntot, config_select, args.log);
+    args.log << std::endl;
+    return ret_code;
 
-      args.log << std::endl;
-      return 0;
-    }
-    else {
-
-      args.log.write("Selection");
-      int ret_code = write_selection(set.query_handler<Configuration>().dict(), config_select, vm.count("force"), out_path, vm.count("json"), only_selected, args.err_log);
-      args.log << "write: " << out_path << "\n" << std::endl;
-
-      args.log.custom("Output config list", out_path.string());
-      write_selection_stats(Ntot, config_select, args.log, only_selected);
-
-      args.log << std::endl;
-      return ret_code;
-    }
-
-    return 0;
   };
 
 }

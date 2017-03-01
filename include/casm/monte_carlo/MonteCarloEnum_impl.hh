@@ -2,7 +2,6 @@
 #define CASM_MonteCarloEnum_impl
 
 #include "casm/monte_carlo/MonteCarloEnum.hh"
-#include "casm/clex/ConfigIterator.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/clex/PrimClex.hh"
 

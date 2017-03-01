@@ -58,7 +58,7 @@ namespace CASM {
       }
 
       iterator find(const std::string &name_or_alias) const override {
-        return _iterator(m_name_or_alias.find(name_or_alias)->second);
+        return _iterator(m_name_to_scel.find(this->name(name_or_alias))->second);
       }
 
       iterator find(const Supercell &obj) const override {
@@ -75,11 +75,8 @@ namespace CASM {
 
           const value_type &obj = *result.first;
 
-          // update name & alias
-          m_name_or_alias.insert(std::make_pair(obj.name(), result.first));
-          if(!obj.alias().empty()) {
-            m_name_or_alias.insert(std::make_pair(obj.alias(), result.first));
-          }
+          // update
+          m_name_to_scel.insert(std::make_pair(obj.name(), result.first));
 
         }
 
@@ -87,7 +84,7 @@ namespace CASM {
       }
 
       void clear() {
-        m_name_or_alias.clear();
+        m_name_to_scel.clear();
         m_scel_list.clear();
       }
 
@@ -95,7 +92,7 @@ namespace CASM {
         return iterator(DatabaseSetIterator<Supercell, Database<Supercell> >(base_it));
       }
 
-      std::map<std::string, base_iterator> m_name_or_alias;
+      std::map<std::string, base_iterator> m_name_to_scel;
       std::set<Supercell> m_scel_list;
 
     };

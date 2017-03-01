@@ -77,7 +77,7 @@ namespace CASM {
     ///   - std::string alias()
     ///
     template<typename ObjType>
-    class Selection {
+    class Selection : public Logging {
 
     public:
 
@@ -85,6 +85,7 @@ namespace CASM {
       typedef Index size_type;
 
       Selection(Database<ObjType> &_db) :
+        Logging(_db.primclex()),
         m_db(&_db),
         m_primclex(&m_db->primclex()) {}
 
@@ -119,6 +120,13 @@ namespace CASM {
         return m_data;
       }
 
+      Index size() const {
+        return m_data.size();
+      }
+
+      Index selected_size() const;
+
+
 
       const std::vector<std::string> &col_headers() const {
         return m_col_headers;
@@ -130,10 +138,19 @@ namespace CASM {
 
 
       /// \brief True if obj is in Selection and is selected; false otherwise
-      bool selected(const ObjType &obj) const;
+      bool selected(const std::string &name_or_alias) const;
 
-      /// \brief Ensure obj is in Selection and set selected to specified value
-      void set_selected(const ObjType &obj, bool selected) const;
+      /// \brief If obj is in Selection, set selected to specified value
+      void set_selected(const std::string &name_or_alias, bool value) const;
+
+      /// \brief Set selected objects to value of criteria
+      void set(const DataFormatterDictionary<ObjType> &dict,
+               const std::string &criteria);
+
+      /// \brief Set selected objects to value, if criteria true
+      void set(const DataFormatterDictionary<ObjType> &dict,
+               const std::string &criteria,
+               bool selected);
 
       void read(std::istream &_input);
 
@@ -141,20 +158,28 @@ namespace CASM {
                  std::ostream &_out,
                  bool only_selected = false) const;
 
-
       const jsonParser &from_json(const jsonParser &_json);
 
       jsonParser &to_json(const DataFormatterDictionary<ObjType> &_dict,
                           jsonParser &_json,
                           bool only_selected = false) const;
 
+      bool write(const DataFormatterDictionary<ObjType> &dict,
+                 bool force,
+                 const fs::path &out_path,
+                 bool write_json,
+                 bool only_selected) const;
+
+
     private:
 
       Database<ObjType> *m_db;
       const PrimClex *m_primclex;
 
-      // first may be 'name' or 'alias'
+      // first will only be 'name', no matter whether 'name' or 'alias' is
+      // written in the selection file
       std::map<std::string, bool> m_data;
+
       std::vector<std::string> m_col_headers;
       std::string m_name;
 

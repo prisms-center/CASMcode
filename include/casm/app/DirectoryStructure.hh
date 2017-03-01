@@ -146,6 +146,11 @@ namespace CASM {
       return query_plugins<DataObject>() / "master_selection";
     }
 
+    template<typename DataObject>
+    fs::path aliases() const {
+      return query_plugins<DataObject>() / "aliases.json";
+    }
+
     // -- Symmetry --------
 
     /// \brief Return symmetry directory path

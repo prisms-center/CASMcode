@@ -325,7 +325,19 @@ namespace CASM {
 
     void OptionHandlerBase::add_output_suboption() {
       m_desc.add_options()
-      ("output,o", po::value<fs::path>(&m_output_path)->value_name(ArgHandler::path()), "Name for output file. Use STDOUT to print results without extra messages.");
+      ("output,o",
+       po::value<fs::path>(&m_output_path)->value_name(ArgHandler::path()),
+       "Name for output file. Use STDOUT to print results without extra messages.");
+      return;
+    }
+
+    void OptionHandlerBase::add_output_suboption(const fs::path &_default) {
+      m_desc.add_options()
+      ("output,o",
+       po::value<fs::path>(&m_output_path)->default_value(_default)->value_name(ArgHandler::path()),
+       std::string("Name for output file. ") +
+       "Use STDOUT to print results without extra messages."
+       "If not specified, '" + _default.string() + "' will be used.");
       return;
     }
 

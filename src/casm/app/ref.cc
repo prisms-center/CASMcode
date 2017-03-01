@@ -59,7 +59,7 @@ namespace CASM {
       ChemicalReference chem_ref = read_chemical_reference(chem_ref_path, primclex.prim(), lin_alg_tol);
 
       try {
-        const Configuration &config = primclex.configuration(configname);
+        const Configuration &config = *primclex.db<Configuration>().find(configname);
       }
       catch(...) {
         std::cerr << "Error using 'casm ref --set --configname': \n"
@@ -99,7 +99,7 @@ namespace CASM {
       ChemicalReference chem_ref = read_chemical_reference(chem_ref_path, primclex.prim(), lin_alg_tol);
 
       try {
-        const Supercell &scel = primclex.supercell(scelname);
+        const Supercell &scel = *primclex.db<Supercell>().find(scelname);
       }
       catch(...) {
         std::cerr << "Error using 'casm ref --set --scelname': \n"
