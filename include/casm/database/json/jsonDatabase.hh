@@ -77,7 +77,7 @@ namespace CASM {
     ///
     /// Derived ConfigDatabase must implement public methods:
     /// - std::pair<iterator, bool> set_alias(const std::string& name_or_alias, const std::string& alias)
-    /// - std::pair<iterator, bool> update(const Configuration &config)
+    /// - iterator update(const Configuration &config)
     /// - boost::iterator_range<iterator> scel_range(const std::string& scelname) const
     ///
     class jsonConfigDatabase : public Database<Configuration> {
@@ -105,6 +105,8 @@ namespace CASM {
 
       std::pair<iterator, bool> insert(const Configuration &&config) override;
 
+      iterator update(const Configuration &config) override;
+
       iterator erase(iterator pos) override;
 
       iterator find(const std::string &name_or_alias) const override;
@@ -113,9 +115,6 @@ namespace CASM {
 
       /// For setting alias, the new alias must not already exist
       std::pair<iterator, bool> set_alias(const std::string &name_or_alias, const std::string &alias) override;
-
-      /// Set calc properties
-      iterator set_calc_properties(const std::string &name_or_alias, const jsonParser &props) override;
 
       /// Range of Configuration in a particular supecell
       boost::iterator_range<iterator> scel_range(const std::string &scelname) const override;

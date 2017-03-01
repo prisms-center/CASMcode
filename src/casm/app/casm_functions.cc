@@ -1,6 +1,5 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/ConfigSelection.hh"
 #include "casm/external/gzstream/gzstream.h"
 #include "casm/version/version.hh"
 

@@ -68,6 +68,17 @@ namespace CASM {
 
   }
 
+  namespace {
+    fs::path _calc_properties_path(const Configuration &config) {
+      const PrimClex &primclex = config.primclex();
+      return primclex.dir().calculated_properties(config.name(), primclex.settings().default_clex().calctype);
+    }
+
+    fs::path _pos_path(const Configuration &config) {
+      return config.primclex().dir().POS(config.name());
+    }
+  }
+
   // ///////////////////////////////////////
   // 'import' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
@@ -212,7 +223,7 @@ namespace CASM {
     // import_map keeps track of mapping collisions -- only used if vm.count("data")
     // import_map[config_name] gives a list all the configuration paths that mapped onto configuration 'config_name' :  import_map[config_name][i].first
     //                         along with a list of the mapping properties {lattice_deformation, basis_deformation}  :  import_map[config_name][i].second
-    std::map<Configuration *, std::vector<Import_impl::Data> > import_map;
+    std::map<std::string, std::vector<Import_impl::Data> > import_map;
     std::vector<std::string > error_log;
     Index n_unique(0);
     // iterate over structure files
@@ -289,11 +300,9 @@ namespace CASM {
         continue;
       }
 
-      Configuration &imported_config(primclex.configuration(imported_name));
-
+      Configuration imported_config = *primclex.db<Configuration>().find(imported_name);
       imported_config.push_back_source(jsonParser(std::make_pair("import_mapped", pos_path.string())));
-
-
+      primclex.db<Configuration>().update(imported_config);
 
       //Exit if user did not request not to copy data
       if(!vm.count("data"))
@@ -301,7 +310,7 @@ namespace CASM {
 
       std::stringstream contcar_ss;
       VaspIO::PrintPOSCAR(import_struc).print(contcar_ss);
-      import_map[&imported_config].push_back(Import_impl::Data(pos_path, relax_data, contcar_ss.str(), checkenergy));
+      import_map[imported_config.name()].push_back(Import_impl::Data(pos_path, relax_data, contcar_ss.str(), checkenergy));
 
     }
 
@@ -311,12 +320,12 @@ namespace CASM {
       std::cout << "  Attempting to import data..." << std::endl;
       auto it(import_map.begin()), end_it(import_map.end());
       for(; it != end_it; ++it) {
-        Configuration &imported_config = *(it->first);
+        Configuration imported_config = *primclex.db<Configuration>().find(it->first);
         std::vector<Import_impl::Data> &data_vec(it->second);
 
-        fs::path import_path = fs::absolute(imported_config.path(), pwd);
+        fs::path import_path = fs::absolute(primclex.dir().configuration_dir(imported_config.name()), pwd);
         bool preexisting(false);
-        if(fs::exists(imported_config.calc_properties_path()))
+        if(fs::exists(_calc_properties_path(imported_config)))
           preexisting = true;
         Index mult = data_vec.size() + Index(preexisting);
         double best_weight(1e19);
@@ -418,9 +427,9 @@ namespace CASM {
         if(!fs::exists(import_target))
           fs::create_directories(import_target);
 
-        fs::copy_file(pos_path, imported_config.calc_properties_path());
+        fs::copy_file(pos_path, _calc_properties_path(imported_config));
 
-        if(!fs::exists(imported_config.pos_path()))
+        if(!fs::exists(_pos_path(imported_config)))
           imported_config.write_pos();
 
         {
@@ -442,7 +451,7 @@ namespace CASM {
         imported_config.set_calc_properties(calc_data);
 
         imported_config.push_back_source(jsonParser(std::make_pair("data_inferred_from_mapping", pos_path.string())));
-
+        primclex.db<Configuration>().update(imported_config);
       }
     }
     std::cout << "\n***************************\n" << std::endl;
@@ -455,11 +464,13 @@ namespace CASM {
     std::cout << "." <<  std::endl;
 
     //Update directories
-    std::cout << "  Writing SCEL..." << std::endl;
-    primclex.print_supercells();
-    std::cout << "  Writing config_list..." << std::endl << std::endl;
-    primclex.write_config_list();
+    std::cout << "Write supercell database..." << std::endl;
+    primclex.db<Supercell>().commit();
     std::cout << "  DONE" << std::endl << std::endl;
+
+    std::cout << "Writing configuration database..." << std::endl;
+    primclex.db<Configuration>().commit();
+    std::cout << "  DONE" << std::endl;
 
     if(error_log.size() > 0) {
       std::cout << "  WARNING: --The following paths could not be imported due to errors:\n";

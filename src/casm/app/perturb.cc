@@ -1,6 +1,5 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/clex/ConfigEnumStrain.hh"
-#include "casm/clex/ConfigSelection.hh"
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {

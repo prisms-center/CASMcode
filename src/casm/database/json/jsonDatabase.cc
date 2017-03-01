@@ -213,6 +213,14 @@ namespace CASM {
       return _on_insert_or_emplace(result);
     }
 
+    jsonConfigDatabase::iterator update(const Configuration &config) {
+      auto it = m_config_list.find(config);
+      if(it != m_config_list.end()) {
+        *it = config;
+      }
+      return _iterator(it);
+    }
+
     jsonConfigDatabase::iterator jsonConfigDatabase::erase(iterator pos) {
 
       // get m_config_list iterator
@@ -273,16 +281,6 @@ namespace CASM {
       // insert new alias
       auto res = m_name_or_alias.insert(std::make_pair(alias, base_it))->set_alias(alias);
       return std::make_pair(_iterator(res.first), res.second);
-    }
-
-    /// Set calc properties
-    jsonConfigDatabase::iterator
-    jsonConfigDatabase::set_calc_properties(
-      const name_type &name_or_alias,
-      const jsonParser &props) {
-      auto it = m_config_list.find(config.name());
-      it->set_calc_properties(props);
-      return _iterator(it);
     }
 
     /// Range of Configuration in a particular supecell
