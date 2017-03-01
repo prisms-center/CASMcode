@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include "casm/clex/PrimClex.hh"
+#include "casm/crystallography/Niggli.hh"
 
 namespace CASM {
 
@@ -18,12 +19,9 @@ namespace CASM {
     m_primclex(RHS.m_primclex),
     m_real_super_lattice(RHS.m_real_super_lattice),
     m_prim_grid((*m_primclex).prim().lattice(), m_real_super_lattice, (*m_primclex).prim().basis.size()),
-    m_name(RHS.m_name),
     m_nlist(RHS.m_nlist),
     m_canonical(nullptr),
-    m_config_list(RHS.m_config_list),
-    m_transf_mat(RHS.m_transf_mat),
-    m_id(RHS.m_id) {
+    m_transf_mat(RHS.m_transf_mat) {
   }
 
   //*******************************************************************************
@@ -96,26 +94,6 @@ namespace CASM {
     }
     return *m_nlist;
   };
-
-  /*****************************************************************/
-
-  // begin and end iterators for iterating over configurations
-  Supercell::config_iterator Supercell::config_begin() {
-    return config_iterator(m_primclex, m_id, 0);
-  }
-
-  Supercell::config_iterator Supercell::config_end() {
-    return ++config_iterator(m_primclex, m_id, config_list().size() - 1);
-  }
-
-  // begin and end const_iterators for iterating over configurations
-  Supercell::config_const_iterator Supercell::config_cbegin() const {
-    return config_const_iterator(m_primclex, m_id, 0);
-  }
-
-  Supercell::config_const_iterator Supercell::config_cend() const {
-    return ++config_const_iterator(m_primclex, m_id, config_list().size() - 1);
-  }
 
   /*****************************************************************/
 
@@ -252,19 +230,18 @@ namespace CASM {
         }
       }
 
-      m_name = canon.name() + "." + std::to_string(e.sym_op().index());
+      return canon.name() + "." + std::to_string(e.sym_op().index());
       */
 
-      Supercell &canon = canonical_form();
-      return canon.name() + ".non_canonical_equivalent";
+      return canonical_form().name() + ".non_canonical_equivalent";
     }
   }
 
   //***********************************************************
 
-  Supercell &Supercell::canonical_form() const {
+  const Supercell &Supercell::canonical_form() const {
     if(!m_canonical) {
-      m_canonical = &primclex().supercell(primclex().add_supercell(real_super_lattice()));
+      m_canonical = &*insert().first;
     }
     return *m_canonical;
   }
@@ -300,7 +277,7 @@ namespace CASM {
    *  - tested OK for perfect prim coordinates, not yet tested with relaxed coordinates using 'tol'
    */
   //***********************************************************
-  Configuration Supercell::configuration(const BasicStructure<Site> &structure_to_config, double tol) {
+  Configuration Supercell::configuration(const BasicStructure<Site> &structure_to_config, double tol) const {
     //Because the user is a fool and the supercell may not be a supercell (This still doesn't check the basis!)
     Eigen::Matrix3d transmat;
     if(!structure_to_config.lattice().is_supercell_of(prim().lattice(), prim().factor_group(), transmat)) {
@@ -427,21 +404,6 @@ namespace CASM {
 
   }
 
-  /**
-   * This is a safer version that takes an Index instead of an actual Configuration.
-   * It might be better to have the version that takes a Configuration private,
-   * that way you can't pass it anything that's incompatible.
-   */
-
-  Structure Supercell::superstructure(Index config_index) const {
-    if(config_index >= config_list().size()) {
-      std::cerr << "ERROR in Supercell::superstructure" << std::endl;
-      std::cerr << "Requested superstructure of configuration with index " << config_index << " but there are only " << config_list().size() << " configurations" << std::endl;
-      exit(185);
-    }
-    return superstructure(m_config_list[config_index]);
-  }
-
   //***********************************************************
   /**  Returns an std::vector<int> consistent with
    *     Configuration::occupation that is all vacancies.
@@ -474,7 +436,7 @@ namespace CASM {
 
   /// \brief Insert the canonical form of this into the database
   std::pair<DB::DatabaseIterator<Supercell>, bool> Supercell::insert() const {
-    return primclex().emplace(
+    return primclex().db<Supercell>().emplace(
              m_primclex,
              canonical_equivalent_lattice(
                real_super_lattice(),

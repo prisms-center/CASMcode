@@ -114,7 +114,7 @@ namespace CASM {
 
     for(auto scel_lat_it = begin; scel_lat_it != end; ++scel_lat_it) {
       Supercell scel(&primclex, *scel_lat_it);
-      Supercell &canon_scel = scel.canonical_form();
+      const Supercell &canon_scel = scel.canonical_form();
       log << "Enumerate configurations for " << canon_scel.name() << " ...  " << std::flush;
 
       auto enumerator_ptr = f(scel);

@@ -78,6 +78,10 @@ namespace CASM {
       return m_dir;
     }
 
+    ProjectSettings &settings() {
+      return m_settings;
+    }
+
     const ProjectSettings &settings() const {
       return m_settings;
     }

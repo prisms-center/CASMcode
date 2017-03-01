@@ -124,16 +124,13 @@ namespace CASM {
 
     Configuration configuration(const BasicStructure<Site> &structure_to_config, double tol = TOL) const;
 
-    // return Structure corresponding to this supercell
-    //    w/ basis site occupation as per primclex.prim
+    /// return Structure corresponding to this supercell
+    ///    w/ basis site occupation as per primclex.prim
     Structure superstructure() const;
-    //    w/ basis site occupation as per config
-    Structure superstructure(const Configuration &config) const;        //This should be private
-    ///Returns a structure corresponding to the specified configuration.
-    Structure superstructure(Index config_index) const;
-    //    w/ basis site occupation as per config
-    //    and itself as prim, not primclex->prim
 
+    /// return Structure corresponding to this supercell
+    ///    w/ basis site occupation as per config
+    Structure superstructure(const Configuration &config) const;
 
     // **** Accessors ****
 
@@ -231,7 +228,7 @@ namespace CASM {
       return real_super_lattice().from_canonical();
     }
 
-    Supercell &canonical_form() const;
+    const Supercell &canonical_form() const;
 
     bool is_equivalent(const Supercell &B) const;
 
@@ -303,7 +300,7 @@ namespace CASM {
     mutable Index m_nlist_size_at_construction;
 
     /// Store a pointer to the canonical equivalent Supercell
-    mutable Supercell *m_canonical;
+    mutable const Supercell *m_canonical;
 
     Eigen::Matrix3i m_transf_mat;
 

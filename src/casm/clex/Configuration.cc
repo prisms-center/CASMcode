@@ -410,7 +410,7 @@ namespace CASM {
   /// - Will be a Supercell included in the PrimClex.supercell_list()
   Configuration Configuration::in_canonical_supercell() const {
 
-    Supercell &canon_scel = supercell().canonical_form();
+    const Supercell &canon_scel = supercell().canonical_form();
 
     FillSupercell f(canon_scel, *this, crystallography_tol());
     Configuration in_canon = f(*this);

@@ -256,7 +256,7 @@ namespace CASM {
 
       std::vector<UnitCellCoord> const &b_permute = rep->data();
 
-      Array<Index> ipermute(b_permute.size()*size());
+      std::vector<Index> ipermute(b_permute.size()*size());
       //std::cerr << "PRINTING b_permute array for op " << ng << ":\n";
       //begin loop over sites
       for(Index nb = 0; nb < b_permute.size(); nb++) {
@@ -293,14 +293,14 @@ namespace CASM {
   }
 
   //**********************************************************************************************
-  // for Array<Array<int> > perms=prim_grid.make_translation_permutations(NB);
+  // for std::vector<std::vector<int> > perms=prim_grid.make_translation_permutations(NB);
   // perms[l] is the Supercell permutation that results when sites are translated by
   // prim_grid.uccoord(l).  In other words, site 'l' is translated so that (i,j,k)=(0,0,0)
 
-  ReturnArray<Permutation> PrimGrid::make_translation_permutations(Index NB)const {
-    Array<Permutation > perms;
+  std::vector<Permutation> PrimGrid::make_translation_permutations(Index NB)const {
+    std::vector<Permutation > perms;
     perms.reserve(size());
-    Array<Index> ipermute(NB * size(), 0);
+    std::vector<Index> ipermute(NB * size(), 0);
     UnitCell shift_mnp, mnp;
     //std::cerr << "In PrimGrid::make_translation_permutations:\n";
     Index new_l;
