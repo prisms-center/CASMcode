@@ -192,7 +192,7 @@ namespace CASM {
     ScelPeriodicDiffTransSymCompare::Element ScelPeriodicDiffTransSymCompare::prepare_impl(const Element &A) const {
       if(A.occ_transform().size()) {
         Element tmp = A.sorted();
-        tmp -= (tmp.occ_transform()[0].uccoord.unitcell() - m_prim_grid.within(tmp.occ_transform()[0].uccoord.unitcell()));
+        tmp -= (m_prim_grid.within(tmp.occ_transform()[0].uccoord).unitcell());
         return tmp;
       }
       else {

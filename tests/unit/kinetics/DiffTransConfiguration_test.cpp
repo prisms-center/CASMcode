@@ -97,18 +97,10 @@ BOOST_AUTO_TEST_CASE(Test0) {
   PermuteIterator it = config.supercell().permute_begin();
   BOOST_CHECK_EQUAL(copy_apply(it, dtc) == dtc, 1);
 
-  ++it;
-  ++it;
-  ++it;
-  ++it;
-  ++it;
-  ++it;
-  ++it;
-  ++it;
+  it = it.begin_next_fg_op();
   Configuration new_config = copy_apply(it, config);
   Kinetics::ScelPeriodicDiffTransSymCompare symcompare(config.supercell().prim_grid(),
                                                        config.supercell().crystallography_tol());
-
   Kinetics::DiffusionTransformation new_trans =
     symcompare.prepare(copy_apply(it.sym_op(), trans));
 
@@ -122,36 +114,11 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   //check canonical form
   BOOST_CHECK_EQUAL(dtc.is_canonical(), 0);
-  std::cout << (dtc < dtc.canonical_form()) << std::endl;
-  //std::cout << "dtc" << std::endl << dtc << std::endl;
-
-  //std::cout << "dtc.canonical_form" << std::endl << dtc.canonical_form() << std::endl;
-  std::cout << (dtc.from_config() == dtc.canonical_form().from_config()) << "config unchanged?" << std::endl;
-  std::cout << (dtc.from_config() < dtc.canonical_form().from_config()) << "config increased?" << std::endl;
-  std::cout << dtc.from_config().supercell().factor_group().size() << std::endl;
-  std::cout << dtc.from_config().factor_group().size() << std::endl;
-  for(auto it = dtc.from_config().supercell().permute_begin();
-      it != dtc.from_config().supercell().permute_end(); ++it) {
-    /*
-    if (copy_apply(it,dtc).diff_trans() == dtc.canonical_form().diff_trans()){
-      std::cout << "Permute It: " ;
-      it.sym_op().print(std::cout);
-      std::cout << " broke canonical by diff_trans" << std::endl;
-    }*/
-
-    std::cout << copy_apply(it, dtc);
-    if(copy_apply(it, dtc).sorted().from_config() > dtc.canonical_form().sorted().from_config()) {
-      std::cout << "Permute It: " ;
-      it.sym_op().print(std::cout);
-      std::cout << " broke canonical" << std::endl;
-    }
-  }
   BOOST_CHECK_EQUAL(!dtc.is_canonical(), dtc < dtc.canonical_form());
   BOOST_CHECK_EQUAL(dtc.is_canonical(), dtc == dtc.canonical_form());
   BOOST_CHECK_EQUAL(1, dtc.canonical_form().is_canonical());
   BOOST_CHECK_EQUAL(1, copy_apply(dtc.to_canonical(), dtc) == dtc.canonical_form());
   BOOST_CHECK_EQUAL(1, copy_apply(dtc.from_canonical(), dtc.canonical_form()) == dtc);
-
 
 }
 

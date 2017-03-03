@@ -65,33 +65,24 @@ namespace CASM {
       // the result of applying to m_from_config
       auto it = checklist.begin();
       DiffTransConfiguration max_dtc(copy_apply(*it, sorted().from_config()), greatest);
-      max_dtc.sort();
-      std::cout << "max_dtc sorted?" << max_dtc.is_sorted() << std::endl;
-
       PermuteIterator canon_op_it {*it};
       ++it;
       for(; it != checklist.end(); ++it) {
         Configuration tmp = copy_apply(*it, sorted().from_config());
 
-        //it->sym_op().print(std::cout);
         DiffTransConfiguration dtc_tmp(tmp, greatest);
-        //std::cout << dtc_tmp.sorted().from_config();
-        //std::cout << max_dtc.sorted().from_config();
-        //std::cout << (dtc_tmp.sorted().from_config() == max_dtc.sorted().from_config()) << "configs eq?" << std::endl;
-        //std::cout << (dtc_tmp.sorted().from_config() < max_dtc.sorted().from_config()) << "config lt max?" << std::endl;
+
         if(dtc_tmp > max_dtc) {
-          std::cout << "max_dtc changes " << checklist.size() << std::endl;
           max_dtc = dtc_tmp.sorted();
           canon_op_it = *it;
         }
       }
-      canon_op_it.sym_op().print(std::cout);
       // return the operation that transforms this to canonical form
       return canon_op_it;
     }
 
     DiffTransConfiguration DiffTransConfiguration::canonical_form() const {
-      return copy_apply(this->to_canonical(), *this).sorted();
+      return copy_apply(this->to_canonical(), *this);
     }
 
     bool DiffTransConfiguration::is_canonical() const {
@@ -103,11 +94,11 @@ namespace CASM {
     }
 
     DiffTransConfiguration &DiffTransConfiguration::apply_sym(const PermuteIterator &it) {
-      m_from_config = apply(it, m_from_config);
-
       ScelPeriodicDiffTransSymCompare symcompare(m_from_config.supercell().prim_grid(),
                                                  m_from_config.supercell().crystallography_tol());
-      m_diff_trans.apply_sym(it.sym_op());
+      m_from_config = apply(it, m_from_config);
+
+      m_diff_trans = apply(it.sym_op(), m_diff_trans);
 
       m_diff_trans = symcompare.prepare(m_diff_trans);
 
