@@ -9,6 +9,8 @@
 namespace CASM {
 
   namespace Kinetics {
+
+
     class DiffTransConfiguration : public Comparisons<DiffTransConfiguration> {
 
     public:
@@ -67,6 +69,8 @@ namespace CASM {
       /// DiffTransConfiguration in place
       DiffTransConfiguration &apply_sym(const PermuteIterator &it);
 
+
+
     private:
 
       bool _lt(const DiffTransConfiguration &B) const {
@@ -89,6 +93,9 @@ namespace CASM {
 
       DiffusionTransformation m_diff_trans;
     };
+
+    /// \brief prints this DiffTransConfiguration
+    std::ostream &operator<<(std::ostream &sout, const DiffTransConfiguration &dtc) ;
 
   }
 }

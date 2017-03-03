@@ -3,6 +3,7 @@
 
 #include "casm/kinetics/DoFTransformation.hh"
 #include "casm/kinetics/OccupationTransformation.hh"
+#include "casm/symmetry/PermuteIterator.hh"
 #include "casm/misc/CASM_TMP.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
@@ -340,6 +341,13 @@ namespace CASM {
         return cluster().max_length();
       }
 
+      void apply_sym(const PermuteIterator &it) {
+        apply_sym_impl(it.sym_op());
+      }
+
+      void apply_sym(const SymOp &op) {
+        apply_sym_impl(op);
+      }
 
 
     private:
