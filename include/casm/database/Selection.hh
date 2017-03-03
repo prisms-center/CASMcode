@@ -84,8 +84,13 @@ namespace CASM {
       typedef SelectionIterator<ObjType> iterator;
       typedef Index size_type;
 
+      /// \brief Default construct into invalid state
       Selection() {};
 
+      /// \brief Use default ObjType database
+      Selection(const PrimClex &_primclex, fs::path selection_path = "MASTER");
+
+      /// \brief Use specified ObjType database
       Selection(Database<ObjType> &_db, fs::path selection_path = "MASTER");
 
       const PrimClex &primclex() const {

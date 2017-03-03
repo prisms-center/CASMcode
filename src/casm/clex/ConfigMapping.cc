@@ -242,7 +242,7 @@ namespace CASM {
     }
 
     if(is_new_config) {
-      const Supercell &scel = *primclex().db<Supercell>().emplace(&primclex(), mapped_lat).first;
+      const Supercell &scel = *Supercell(&primclex(), mapped_lat).insert().first;
       Configuration import_config(scel, jsonParser(), relaxed_occ);
 
       // insert primitive and non-primitive, if distinct
@@ -324,7 +324,7 @@ namespace CASM {
     relaxation_properties["best_mapping"]["lattice_deformation"] = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof, _struc.basis.size());
     relaxation_properties["best_mapping"]["volume_change"] = tconfigdof.deformation().determinant();
 
-    const Supercell &scel = *primclex().db<Supercell>().emplace(&primclex(), mapped_lat).first;
+    const Supercell &scel = *Supercell(&primclex(), mapped_lat).insert().first;
 
     Configuration import_config(scel, jsonParser(), tconfigdof);
     it_canon = import_config.to_canonical();

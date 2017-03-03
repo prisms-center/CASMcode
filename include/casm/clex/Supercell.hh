@@ -228,6 +228,9 @@ namespace CASM {
       return real_super_lattice().from_canonical();
     }
 
+    /// \brief Return canonical equivalent Supercell
+    ///
+    /// - Will be inserted in Database if necessary
     const Supercell &canonical_form() const;
 
     bool is_equivalent(const Supercell &B) const;

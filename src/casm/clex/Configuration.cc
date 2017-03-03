@@ -29,16 +29,6 @@ namespace CASM {
       return std::vector<std::string>(tok.begin(), tok.end());
     }
 
-    fs::path _calc_properties_path(const Configuration &config) {
-      const PrimClex &primclex = config.primclex();
-      return primclex.dir().calculated_properties(config.name(), primclex.settings().default_clex().calctype);
-    }
-
-    fs::path _calc_status_path(const Configuration &config) {
-      const PrimClex &primclex = config.primclex();
-      return primclex.dir().calc_status(config.name(), primclex.settings().default_clex().calctype);
-    }
-
   }
 
 
@@ -56,6 +46,20 @@ namespace CASM {
     const jsonParser &src,
     const ConfigDoF &_configdof) :
     m_supercell(&_supercell),
+    m_source_updated(false),
+    m_configdof(_configdof),
+    m_dof_deps_updated(false),
+    m_prop_updated(false) {
+
+    set_source(src);
+  }
+
+  /// Construct a default Configuration that owns its Supercell
+  Configuration(const std::shared_ptr<Supercell> &_supercell,
+                const jsonParser &source = jsonParser(),
+                const ConfigDoF &_dof = ConfigDoF()) :
+    m_supercell(_supercell.get()),
+    m_supercell_ptr(&_supercell),
     m_source_updated(false),
     m_configdof(_configdof),
     m_dof_deps_updated(false),
@@ -407,7 +411,8 @@ namespace CASM {
 
   /// \brief Returns the canonical form Configuration in the canonical Supercell
   ///
-  /// - Will be a Supercell included in the PrimClex.supercell_list()
+  /// - Canonical Supercell will be inserted in the PrimClex.db<Supercell>() if
+  ///   necessary
   Configuration Configuration::in_canonical_supercell() const {
 
     const Supercell &canon_scel = supercell().canonical_form();
@@ -430,6 +435,7 @@ namespace CASM {
   ///
   /// - By convention, the primitive canonical form of a configuration must
   ///   always be saved in the config list.
+  /// - Supercells are inserted in the Supercell database as necessary
   /// - If this is already known to be primitive & canonical, prefer to use
   ///   PrimClex::db<Configuration>.insert(config) directly.
   ConfigInsertResult Configuration::insert(bool primitive_only) const {
@@ -562,7 +568,7 @@ namespace CASM {
     bool success = true;
     /// properties.calc.json: contains calculated properties
     ///   For default clex calctype only
-    fs::path filepath = _calc_properties_path(*this);
+    fs::path filepath = calc_properties_path(*this);
     //std::cout << "filepath: " << filepath << std::endl;
     parsed_props = jsonParser();
     if(fs::exists(filepath)) {
@@ -1260,7 +1266,7 @@ namespace CASM {
 
   /// \brief Status of calculation
   std::string calc_status(const Configuration &config) {
-    fs::path p = _calc_status_path(config);
+    fs::path p = calc_status_path(config);
     if(fs::exists(p)) {
       jsonParser json(p);
       if(json.contains("status"))
@@ -1271,7 +1277,7 @@ namespace CASM {
 
   // \brief Reason for calculation failure.
   std::string failure_type(const Configuration &config) {
-    fs::path p = _calc_status_path(config);
+    fs::path p = calc_status_path(config);
     if(fs::exists(p)) {
       jsonParser json(p);
       if(json.contains("failure_type"))

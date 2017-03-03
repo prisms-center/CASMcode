@@ -42,6 +42,31 @@ namespace CASM {
     /// (other types). Changing database entries must be done via copy then
     /// insert, or update.
     ///
+    /// DatabaseIteratorBase should always be dereferenceable (except end or when
+    /// default constructed), though the reference may be invalidated when a
+    /// second DatabaseIteratorBase is dereferenced, dereferencing the first
+    /// again should be valid (though it may require re-allocation):
+    ///
+    /// \code
+    /// DerivedDatabaseIterator A = ... get from DerivedDatabase ...;
+    /// const ValueType& A_ref1 = *A;  // ok
+    /// A_ref1.method();  // ok
+    /// A->method(); // ok
+    ///
+    /// DerivedDatabaseIterator B = ... get from DerivedDatabase ...;
+    /// const ValueType& B_ref = *B;  // ok, but now A_ref1 may be invalidated
+    /// A_ref1.method();  // maybe not ok
+    /// A->method(); // ok
+    /// B->method(); // ok
+    ///
+    /// const ValueType& A_ref2 = *A;  // ok, but now B_ref may be invalidated
+    /// A_ref1.method();  // maybe not ok
+    /// A_ref2.method();  // ok
+    /// B_ref.method(); // maybe not ok
+    /// A->method(); // ok
+    /// B->method(); // ok
+    /// \endcode
+    ///
     /// Derived classes must implement private methods:
     /// - void increment()
     /// - reference dereference() const
@@ -80,6 +105,37 @@ namespace CASM {
     /// \brief Wrapper class for specializations DatabaseIteratorBase
     ///
     /// - Gives all specialized Database<ValueType> the same iterator type
+    ///
+    /// Dereferencing DatabaseIterator only provides const references, whether
+    /// the underlying resource is persistent (Supercell) or temporary
+    /// (other types). Changing database entries must be done via copy then
+    /// insert, or update.
+    ///
+    /// DatabaseIterator should always be dereferenceable (except end or when
+    /// default constructed), though the reference may be invalidated when a
+    /// second DatabaseIterator is dereferenced, dereferencing the first
+    /// again should be valid (though it may require re-allocation):
+    ///
+    /// \code
+    /// DatabaseIterator<ValueType> A = primclex.db<ValueType>().find(A_name);
+    /// const ValueType& A_ref1 = *A;  // ok
+    /// A_ref1.method();  // ok
+    /// A->method(); // ok
+    ///
+    /// DatabaseIterator<ValueType> B = primclex.db<ValueType>().find(B_name);
+    /// const ValueType& B_ref = *B;  // ok, but now A_ref1 may be invalidated
+    /// A_ref1.method();  // maybe not ok
+    /// A->method(); // ok
+    /// B->method(); // ok
+    ///
+    /// const ValueType& A_ref2 = *A;  // ok, but now B_ref may be invalidated
+    /// A_ref1.method();  // maybe not ok
+    /// A_ref2.method();  // ok
+    /// B_ref.method(); // maybe not ok
+    /// A->method(); // ok
+    /// B->method(); // ok
+    /// \endcode
+
     template<typename ValueType>
     class DatabaseIterator :
 
@@ -155,6 +211,14 @@ namespace CASM {
     /// - std::pair<iterator, bool> insert(const ValueType &&obj)
     /// - iterator erase(iterator pos)
     /// - iterator find(const std::string &name_or_alias)
+    ///
+    /// Database insert methods by convention do not enforce canonical form or
+    /// any other logic, they simply insert as is. By convention, a
+    /// ValueType::insert method shold be implemented to enforce canonical form
+    /// and any other constraints. But in cases where it is known that ValueType
+    /// are being generated in the correct form for insertion in the database,
+    /// the Database insert methods may be used directly. For example, see
+    /// the method insert_unique_canon_configs.
     ///
     template<typename ValueType>
     class ValDatabase : public DatabaseBase {

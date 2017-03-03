@@ -2,7 +2,7 @@
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigMapping.hh"
-#include "casm/clex/ConfigSelection.hh"
+#include "casm/database/Selection.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/app/casm_functions.hh"
@@ -295,14 +295,14 @@ namespace CASM {
       // collect supercells from --scelnames
       if(vm.count("scelnames")) {
         for(auto it = scelname.begin(); it != scelname.end(); ++it) {
-          lat[*it] = primclex.supercell(*it).real_super_lattice();
+          lat[*it] = primclex.db<Supercell>().find(*it)->real_super_lattice();
         }
       }
 
       // collect configs from --confignames
       if(vm.count("confignames")) {
         for(auto it = configname.begin(); it != configname.end(); ++it) {
-          config_lat[*it] = lat[*it] = primclex.configuration(*it).supercell().real_super_lattice();
+          config_lat[*it] = lat[*it] = primclex.db<Configuration>().find(*it)->supercell().real_super_lattice();
         }
       }
 
@@ -311,26 +311,13 @@ namespace CASM {
 
         // MASTER config list if '--configs' only
         if(config_path.size() == 0) {
-          ConstConfigSelection selection(primclex);
-          for(auto it = selection.selected_config_begin(); it != selection.selected_config_end(); ++it) {
-            config_lat[it.name()] = lat[it.name()] = it->supercell().real_super_lattice();
-          }
+          config_path.push_back("MASTER");
         }
-        // all input config list if '--configs X Y ...'
-        else {
-          for(auto c_it = config_path.begin(); c_it != config_path.end(); ++c_it) {
-            if(c_it->string() == "MASTER") {
-              ConstConfigSelection selection(primclex);
-              for(auto it = selection.selected_config_begin(); it != selection.selected_config_end(); ++it) {
-                config_lat[it.name()] = lat[it.name()] = it->supercell().real_super_lattice();
-              }
-            }
-            else {
-              ConstConfigSelection selection(primclex, fs::absolute(*c_it));
-              for(auto it = selection.selected_config_begin(); it != selection.selected_config_end(); ++it) {
-                config_lat[it.name()] = lat[it.name()] = it->supercell().real_super_lattice();
-              }
-            }
+
+        for(const auto &p : config_path) {
+          DB::Selection<Configuration> selection(primclex, p);
+          for(const auto &config : selection.selected()) {
+            config_lat[config.name()] = lat[config.name()] = config.supercell().real_super_lattice();
           }
         }
 
@@ -380,12 +367,12 @@ namespace CASM {
 
       }
 
-      Index index = primclex.add_supercell(superduper);
-      Supercell &superduper_scel = primclex.supercell(index);
+      const Supercell &superduper_scel = *Supercell(&primclex, superduper).insert().first;
+      superduper = superduper_scel.real_super_lattice();
 
       std::cout << "--- Lattices as column vector matrices ---\n\n";
 
-      std::cout << "  Superdupercell: " << primclex.supercell(index).name() << "\n\n";
+      std::cout << "  Superdupercell: " << superduper_scel.name() << "\n\n";
 
       std::cout << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
 
@@ -409,9 +396,9 @@ namespace CASM {
         std::cout << "--- \n";
       }
 
-      std::cout << "  Writing SCEL..." << std::endl;
-      primclex.print_supercells();
-      std::cout << "  DONE\n";
+      std::cout << "Write supercell database..." << std::endl;
+      primclex.db<Supercell>().commit();
+      std::cout << "  DONE" << std::endl << std::endl;
 
 
       if(vm.count("add-canonical")) {
@@ -419,20 +406,15 @@ namespace CASM {
         for(auto it = config_lat.begin(); it != config_lat.end(); ++it) {
           auto res = is_supercell(superduper, it->second, begin, end, TOL);
           FillSupercell f(superduper_scel, *res.first);
-          Index config_index;
-          Supercell::permute_const_iterator permute_it;
-          bool result = superduper_scel.add_config(
-                          f(primclex.configuration(it->first)),
-                          config_index,
-                          permute_it);
-          if(result) {
-            std::cout << "  " << it->first << "  ->  " << superduper_scel.config(config_index).name() << "\n";
+          auto insert_res = f(*primclex.db<Configuration>().find(it->first)).insert();
+          if(insert_res.insert_canonical) {
+            std::cout << "  " << it->first << "  ->  " << insert_res.canonical_it->name() << "\n";
           }
         }
         std::cout << "\n";
-        std::cout << "  Writing config_list..." << std::endl << std::endl;
-        primclex.write_config_list();
-        std::cout << "  DONE\n";
+        std::cout << "Writing configuration database..." << std::endl;
+        primclex.db<Configuration>().commit();
+        std::cout << "  DONE" << std::endl;
       }
 
       return 0;
@@ -488,15 +470,14 @@ namespace CASM {
       // super lattice
       if(vm.count("scelnames")) {
 
-        Supercell &scel = primclex.supercell(scelname[0]);
+        const Supercell &scel = *primclex.db<Supercell>().find(scelname[0]);
 
         std::cout << "  Unit cell: " << scelname[0] << "\n\n";
 
         std::cout << "  Unit cell lattice: \n" << scel.real_super_lattice().lat_column_mat() << "\n\n";
 
         Lattice super_lat = make_supercell(scel.real_super_lattice(), T);
-        Index index = primclex.add_supercell(super_lat);
-        Supercell &super_scel = primclex.supercell(index);
+        const Supercell &super_scel = *Supercell(&primclex, super_lat).insert().first;
 
         std::cout << "  Add supercell: " << super_scel.name() << "\n\n";
 
@@ -504,16 +485,17 @@ namespace CASM {
 
         std::cout << "  Transformation matrix: \n" << super_scel.transf_mat() << "\n\n";
 
-        std::cout << "  Writing SCEL..." << std::endl;
-        primclex.print_supercells();
-        std::cout << "  DONE\n";
+        std::cout << "Write supercell database..." << std::endl;
+        primclex.db<Supercell>().commit();
+        std::cout << "  DONE" << std::endl << std::endl;
+
 
       }
       // super structure
       else if(vm.count("confignames")) {
 
         std::stringstream ss;
-        const Configuration &con = primclex.configuration(configname[0]);
+        const Configuration &con = *primclex.db<Configuration>().find(configname[0]);
 
         VaspIO::PrintPOSCAR p(con);
         p.sort();
@@ -567,14 +549,18 @@ namespace CASM {
 
           jsonParser json_src;
           json_src["supercell_of"] = configname[0];
-          primclex.configuration(imported_name).push_back_source(json_src);
+          Configuration imported_config = *primclex.db<Configuration>().find(configname[0]);
+          imported_config.push_back_source(json_src);
+          primclex.db<Configuration>().update(imported_config);
 
           //Update directories
-          std::cout << "  Writing SCEL..." << std::endl;
-          primclex.print_supercells();
-          std::cout << "  Writing config_list..." << std::endl << std::endl;
-          primclex.write_config_list();
+          std::cout << "Write supercell database..." << std::endl;
+          primclex.db<Supercell>().commit();
           std::cout << "  DONE" << std::endl << std::endl;
+
+          std::cout << "Writing configuration database..." << std::endl;
+          primclex.db<Configuration>().commit();
+          std::cout << "  DONE" << std::endl;
 
         }
 
@@ -635,7 +621,7 @@ namespace CASM {
       Lattice unit_lat = primclex.prim().lattice();
 
       if(vm.count("unitcell")) {
-        unit_lat = primclex.supercell(unitscelname).real_super_lattice();
+        unit_lat = primclex.db<Supercell>().find(unitscelname)->real_super_lattice();
       }
 
       Lattice super_lat;
@@ -644,7 +630,7 @@ namespace CASM {
         super_lat = BasicStructure<Site>(abs_structfile).lattice();
       }
       else if(vm.count("scelnames")) {
-        super_lat = primclex.supercell(scelname[0]).real_super_lattice();
+        super_lat = primclex.db<Supercell>().find(unitscelname)->real_super_lattice();
       }
       else {
         std::cout << "Error in 'casm super --get-transf-mat'. No --structure or --scelnames given." << std::endl << std::endl;

@@ -13,8 +13,14 @@ namespace CASM {
 
     /// Supercell references and pointers must remain valid, therefore the
     /// ScelDatabase implementation should typically be the same for different
-    /// backends, differing only for open, commit, and close. This class may
+    /// backends, differing only for open, commit, and close. This class should
     /// be inherited by those classes to implement all other required methods.
+    ///
+    /// Database insert and emplace methods by convention do not enforce
+    /// canonical forms. That logic is included in Supercell::insert, which is
+    /// the safest way to insert new Supercell in the database. But in cases
+    /// where it is known that a Supercell is generated in canonical form, the
+    /// Database insert and emplace methods may be used directly.
     ///
     /// Derived ScelDatabase must implement public methods:
     /// - void DatabaseBase& open()

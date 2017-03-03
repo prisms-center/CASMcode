@@ -68,17 +68,6 @@ namespace CASM {
 
   }
 
-  namespace {
-    fs::path _calc_properties_path(const Configuration &config) {
-      const PrimClex &primclex = config.primclex();
-      return primclex.dir().calculated_properties(config.name(), primclex.settings().default_clex().calctype);
-    }
-
-    fs::path _pos_path(const Configuration &config) {
-      return config.primclex().dir().POS(config.name());
-    }
-  }
-
   // ///////////////////////////////////////
   // 'import' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
@@ -325,7 +314,7 @@ namespace CASM {
 
         fs::path import_path = fs::absolute(primclex.dir().configuration_dir(imported_config.name()), pwd);
         bool preexisting(false);
-        if(fs::exists(_calc_properties_path(imported_config)))
+        if(fs::exists(calc_properties_path(imported_config)))
           preexisting = true;
         Index mult = data_vec.size() + Index(preexisting);
         double best_weight(1e19);
@@ -427,9 +416,9 @@ namespace CASM {
         if(!fs::exists(import_target))
           fs::create_directories(import_target);
 
-        fs::copy_file(pos_path, _calc_properties_path(imported_config));
+        fs::copy_file(pos_path, calc_properties_path(imported_config));
 
-        if(!fs::exists(_pos_path(imported_config)))
+        if(!fs::exists(pos_path(imported_config)))
           imported_config.write_pos();
 
         {

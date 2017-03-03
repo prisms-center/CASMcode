@@ -63,6 +63,12 @@ namespace CASM {
                   const jsonParser &source = jsonParser(),
                   const ConfigDoF &_dof = ConfigDoF());
 
+    /// Construct a default Configuration that owns its Supercell
+    Configuration(const std::shared_ptr<Supercell> &_supercell,
+                  const jsonParser &source = jsonParser(),
+                  const ConfigDoF &_dof = ConfigDoF());
+
+
     /// Construct a Configuration from JSON data
     Configuration(const Supercell &_supercell,
                   const std::string &_id,
@@ -443,6 +449,7 @@ namespace CASM {
     /// - Saves file modification timestamp: "data_timestamp"
     /// - Normalizes "relaxed_energy" per primitive cell
     /// - Calculates "rms_force" from "relaxed_forces"
+    /// - Called using the initial Confi
     bool read_calc_properties(jsonParser &parsed_props) const;
 
 
@@ -715,6 +722,24 @@ namespace CASM {
     return !failure_type(_config).empty();
   }
 
+  // directory structure helpers
+
+  fs::path calc_properties_path(const Configuration &config) {
+    const PrimClex &primclex = config.primclex();
+    return primclex.dir().calculated_properties(config.name(), primclex.settings().default_clex().calctype);
+  }
+
+  fs::path pos_path(const Configuration &config) {
+    return config.primclex().dir().POS(config.name());
+  }
+
+  fs::path calc_status_path(const Configuration &config) {
+    const PrimClex &primclex = config.primclex();
+    return primclex.dir().calc_status(config.name(), primclex.settings().default_clex().calctype);
+  }
+
+  /// \brief Apply SymOp not in Supercell factor group, and make supercells
+  ///
   class FillSupercell {
 
   public:

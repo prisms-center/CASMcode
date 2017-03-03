@@ -5,6 +5,11 @@ namespace CASM {
 
   namespace DB {
 
+    /// \brief Use default ObjType database
+    template<typename ObjType>
+    Selection<ObjType>::Selection(const PrimClex &_primclex, fs::path selection_path) :
+      Selection(_primclex.db<ObjType>(), selection_path) {}
+
     template<typename ObjType>
     Selection<ObjType>::Selection(Database<ObjType> &_db, fs::path selection_path) :
       Logging(_db.primclex()),
