@@ -12,20 +12,15 @@ namespace CASM {
 
     struct MakeDiffTransInvariantSubgroup {
 
-      MakeDiffTransInvariantSubgroup() {}
+      MakeDiffTransInvariantSubgroup(const Configuration &config_prim): m_config_prim(config_prim) {}
 
       template<typename PermuteOutputIterator>
-        ///  PermuteOutputIterator operator()([](const Configuration &bg_config){return bg_config.primitive().factor_group()}, PermuteIterator begin, PermuteIterator end, PermuteOutputIterator result) {
-        /// We probably need a different function for DiffTrans
-        /// ConfigIsEquivalent f(config, config.crystallography_tol());
 
-      PermuteOutputIterator operator()(const Configuration &bg_config, PermuteIterator begin, PermuteIterator end, PermuteOutputIterator result) {
-        ConfigIsEquivalent f(bg_config.primitive(), bg_config.primitive().crystallography_tol());
-
-
+      PermuteOutputIterator operator()(const DiffusionTransformation &diff_trans, PermuteIterator begin, PermuteIterator end, PermuteOutputIterator result) {
+        ConfigIsEquivalent f(m_config_prim, m_config_prim.crystallography_tol());
         return std::copy_if(begin, end, result, f);
       }
-
+      const Configuration &m_config_prim;
     };
   }
 
@@ -35,8 +30,8 @@ namespace CASM {
     const DiffusionTransformation &diff_trans,
     PermuteIterator begin,
     PermuteIterator end,
-    const Configuration &bg_config) :
-    EnumEquivalents<DiffusionTransformation, PermuteIterator, Configuration>(diff_trans.canonical_form(), begin, end, MakeDiffTransInvariantSubgroup()) {
+    const Configuration &bg_config_prim) :
+    EnumEquivalents<DiffusionTransformation, PermuteIterator>(diff_trans, begin, end, MakeDiffTransInvariantSubgroup(bg_config_prim)) {
   }
 
 }

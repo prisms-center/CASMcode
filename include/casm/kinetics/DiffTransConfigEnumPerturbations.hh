@@ -4,6 +4,7 @@
 #include "casm/container/InputEnumerator.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/symmetry/OrbitGeneration.hh"
+#include "casm/kinetics/DiffTransEnumEquivalents.hh"
 
 namespace CASM {
 
@@ -31,7 +32,7 @@ namespace CASM {
 
       static const std::string enumerator_name;
 
-      private:
+    private:
 
 
       /// Implements increment: generate the next DiffTransConfiguration
@@ -39,10 +40,10 @@ namespace CASM {
 
       ///... members necessary to do the enumeration ...
 
-        DiffTransConfiguration m_dtconfig;
+      DiffTransConfiguration m_dtconfig;
 
       /// Select unique DiffusionTransformations from PrimPeriodicDiffTransOrbit
-      DiffusionTrnasformation UniqueDiffusionTransformaitions(const PrimPeriodicDiffTransOrbit &diff_trans_orbit);
+      DiffusionTransformation UniqueDiffusionTransformaitions(const PrimPeriodicDiffTransOrbit &diff_trans_orbit);
 
       Configuration m_background_config;
 
@@ -50,7 +51,7 @@ namespace CASM {
 
       jsonParser m_local_bspecs;
 
-      };
+    };
 
   }
 }
