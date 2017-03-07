@@ -144,9 +144,9 @@ namespace CASM {
                   "    volume from MINV to MAXV (units: number of primitive \n"
                   "    cells).                                              \n\n"
 
-                  "  casm enum --configs --scellname NAME                   \n"
-                  "  - To enumerate configurations for a particular         \n"
-                  "    supercell.                                           \n\n"
+                  "  casm enum --configs --scelnames NAME1 NAME2            \n"
+                  "  - To enumerate configurations for one or more particular\n"
+                  "    supercells.                                          \n\n"
 
                   "  casm enum --configs [...] --filter '... casm query commands...' \n"
                   "  - To perform restricted enumeration of configurations  \n"
@@ -199,9 +199,9 @@ namespace CASM {
         std::cerr << "Error in 'casm enum'. If --supercells is given, --max must be given." << std::endl;
         return ERR_INVALID_ARG;
       }
-      if(vm.count("configs") && (vm.count("max") + vm.count("all") != 1)) {
+      if(vm.count("configs") && (vm.count("max") + vm.count("scelnames") + vm.count("all") != 1)) {
         std::cerr << "\n" << enum_opt.desc() << "\n" << std::endl;
-        std::cerr << "Error in 'casm enum'. If --configs is given, exactly one of either --max or --all must be given." << std::endl;
+        std::cerr << "Error in 'casm enum'. If --configs is given, exactly one of either --max, --scelnames, or --all must be given." << std::endl;
         return ERR_INVALID_ARG;
       }
     }
@@ -309,7 +309,7 @@ namespace CASM {
             }
           }
         }
-        if(vm.count("scellname")) {
+        if(vm.count("scelnames")) {
           Index j;
           std::cout << "Enumerate configurations for named supercells" << std::endl << std::endl;
           for(int i = 0; i < scellname_list.size(); i++) {
