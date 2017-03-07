@@ -205,14 +205,13 @@ namespace CASM {
   }
 
   bool Supercell::add_config(const Configuration &config, Index &index, Supercell::permute_const_iterator &permute_it) {
-    // 'canon_config' is 'config' permuted to canonical form
-    //    std::cout << "get canon_config" << std::endl;
-    Configuration canon_config = config.canonical_form();
+    // 'permut_it' stores operation that takes 'config' to its canonical form
+    permute_it = config.to_canonical();
 
     // std::cout << "    config: " << config.occupation() << std::endl;
     // std::cout << "     canon: " << canon_config.occupation() << std::endl;
 
-    return add_canon_config(canon_config, index);
+    return add_canon_config(copy_apply(permute_it, config), index);
   }
 
   //*******************************************************************************

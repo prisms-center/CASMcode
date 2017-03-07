@@ -162,7 +162,6 @@ namespace CASM {
     /// Construct by reading from main data file (json)
     Configuration(const jsonParser &json, Supercell &_supercell, Index _id);
 
-
     //********** DESTRUCTORS *********
 
     //********** MUTATORS  ***********
@@ -353,6 +352,8 @@ namespace CASM {
     ///        Configuration unchanged
     std::vector<PermuteIterator> factor_group() const;
 
+    /// \brief Returns the point group that leaves the Configuration unchanged
+    SymGroup point_group() const;
 
     /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
     Configuration fill_supercell(Supercell &scel, const SymOp &op) const;

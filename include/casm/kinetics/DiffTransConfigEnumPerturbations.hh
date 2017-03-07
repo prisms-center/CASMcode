@@ -34,7 +34,6 @@ namespace CASM {
 
     private:
 
-
       /// Implements increment: generate the next DiffTransConfiguration
       void increment() override;
 

@@ -197,10 +197,10 @@ namespace CASM {
         dof.disp(i) = new_disp.col(tperm[i]);
     }
 
-    if(dof.has_specie_id()) {
+    /*if(dof.has_specie_id()) {
       // just haven't implemented this yet...
       throw std::runtime_error("Error in apply(const PermuteIterator &it, ConfigDoF &dof): dof.has_specie_id() == true");
-    }
+    }*/
     return dof;
   }
 
