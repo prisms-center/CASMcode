@@ -19,21 +19,62 @@ class Neb(object):
         if calcdir is None:
             calcdir = os.getcwd()
         self.calcdir = os.path.abspath(calcdir)
+        ## calcdir example : $ROOT/training_data/$(config_info)/calctype.default/
 
         print "  NEB directory:", self.calcdir
         sys.stdout.flush()
 
+        # find existing .../calcdir/run.run_index directories, store paths in self.rundir list
+        self.rundir = []
+        self.errdir = []
+        self.update_rundir() ##define these functions
+        self.update_errdir()
+        
         ## setting up the settings options
         if settings is None:
             self.settings = dict()
         else:
             self.settings = settings
 
-        ##set defult values ## To be done
-        
+        ##set defult values ## To be done     
+        ##make sure all the defau;ts are set in self.settings
+
         print "VASP NEB object constructed\n"
         sys.stdout.flush()
 
+
+   def add_rundir(self):
+        """Make a new run.i directory"""
+        os.mkdir(os.path.join(self.calcdir, "run." + str(len(self.rundir))))
+        self.update_rundir()
+        self.update_errdir()
+
+
+    def update_rundir(self):
+        """Find all .../config/calctype.default/run.i directories, store paths in self.rundir list"""
+        self.rundir = []
+        run_index = len(self.rundir)
+        while os.path.isdir( os.path.join(self.calcdir, "run." + str(run_index))):
+                self.rundir.append( os.path.join(self.calcdir, "run." + str(run_index)) )
+                run_index += 1
+
+
+    def add_errdir(self):
+        """Move run.i to run.i_err.j directory"""
+        os.rename(self.rundir[-1], self.rundir[-1] + "_err." + str(len(self.errdir)))
+        self.update_errdir()
+
+
+    def update_errdir(self):
+        """Find all .../config/calctype.default/run.i_err.j directories, store paths in self.errdir list"""
+        self.errdir = []
+        if len(self.rundir) == 0:
+            pass
+        else:
+            err_index = len(self.errdir)
+            while os.path.isdir(self.rundir[-1] + "_err." + str(err_index)):
+                    self.errdir.append(self.rundir[-1] + "_err." + str(err_index))
+                    err_index += 1
 
     """ Required funtions in the class
     
