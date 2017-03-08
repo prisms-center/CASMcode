@@ -37,8 +37,9 @@ class Neb(object):
 
     """ Required funtions in the class
     
-    --> setup(self,calcdir,settings,diffusion_properties??) #sets up the folders for the images ## Also handles the errordirs if implemented
-    --> run(self): ## setup the job and runs the VASP NEB calculation
+    --> **setup(self,calcdir,settings,diffusion_properties??) #sets up the folders for the images ## Also handles the errordirs if implemented
+    --> **run(self): ## setup the job and runs the VASP NEB calculation
+    ** - Important to do
 
     other functions
     --> status(self): ## checks the status of the job
@@ -49,9 +50,11 @@ class Neb(object):
     --> def update_errdir(self):
 
     To Do:
-    1) Edit io/* files for new INCAR options
-    2) dig up all new error s possible for NEB calcs
-    3) make and vasp.neb, vasp.neb_setup executables along with casm-calc support to run the calculation
+    1) Edit io/kpoints.py file for new INCAR options
+    2) Edit io/vaspio.py and make a write_neb_vasp_input(INPUT)
+    3) dig up all new errors possible for NEB calcs
+    4) start editing neb.py at casm/vaspwrapper/ 
+    5) make vasp.neb, vasp.neb_setup executables along with casm-calc support to run the calculation
 
     Things to discuss
       1) possible input formats for the difussion hop settings
