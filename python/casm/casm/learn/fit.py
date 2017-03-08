@@ -474,12 +474,30 @@ def print_input_help():
   # The "problem_specs"/"weight" options specify the method to use for weighting 
   # training data. 
   #
-  #   If weights are included, then the linear model is changed from
-  #     X*b = y  ->  L*X*b = L*y, 
+  #   Ordinary least squares minimizes
+  #     (y-X*b).transpose() * (y-X*b)
+  #  
+  #   where 'X' is the correlation matrix of shape (Nvalue, Nbfunc), and 'y' 
+  #   is a vector of Nvalue calculated properties, and 'b' are the fitting 
+  #   coefficients (ECI).
   #
-  #   where 'X' is the correlation matrix of shape (Nvalue, Nbfunc),
-  #   and 'property' is a vector of Nvalue calculated properties, and 
-  #   W = L*L.transpose() is the weight matrix.
+  #   Weighted least squares minimizes
+  #     (y-X*b).transpose() * W * (y-X*b)
+  #  
+  #   Using the SVD, and given that W is Hermitian:
+  #     U * S * U.transpose() == W
+  #  
+  #   Define L such that:
+  #     L.transpose() = U * sqrt(S)
+  #  
+  #   Then we can write the weighted least squares problem using:
+  #     (y-X*b).transpose() * L.transpose() * L * (y-X*b)
+  #  
+  #   Or:
+  #     (L*y-L*X*b).transpose() * (L*y-L*X*b)
+  #    
+  #   So, if weights are included, then the linear model is changed from
+  #     X*b = y  ->  L*X*b = L*y
   #
   #   By default, W = np.matlib.eye(Nvalue) (unweighted).
   #
@@ -797,19 +815,27 @@ def print_input_help():
   #        with.
   #
   #     "pop_begin_filename": string, optional, default="population_begin.pkl"
-  #        Filename where the initial population is read from, if it exists.
-  #
+  #        Filename suffix where the initial population is read from, if it 
+  #        exists. For example, if "filename_prefix" is "Ef_kfold10" and 
+  #        "pop_begin_filename" is "population_begin.pkl", then the initial
+  #        population is read from the file "Ef_kfold10_population_begin.pkl".
+  #        
   #     "pop_end_filename": string, optional, default="population_end.pkl"
-  #        Filename where the final population is saved.
+  #        Filename where the final population is saved. For example, if 
+  #        "filename_prefix" is "Ef_kfold10" and "pop_end_filename" is 
+  #        "population_end.pkl", then the final population is saved to the 
+  #        file "Ef_kfold10_population_end.pkl".
   #      
   #     "halloffame_filename": string, optional, default="evolve_halloffame.pkl"
   #        Filename where a hall of fame is saved holding the best individuals 
-  #        encountered in any generation.
+  #        encountered in any generation. For example, if "filename_prefix" is 
+  #        "Ef_kfold10" and "halloffame_filename" is "evolve_halloffame.pkl", 
+  #        then it is saved to the file "Ef_kfold10_evolve_halloffame.pkl".
   #      
   #     "filename_prefix": string, optional
   #        Prefix for filenames, default uses input file filename excluding 
   #        extension. For example, if input file is named "Ef_kfold10.json", then
-  #        "Ef_kfold10_population_begin.pkl", "specs2_population_end.pkl", and 
+  #        "Ef_kfold10_population_begin.pkl", "Ef_kfold10_population_end.pkl", and 
   #        "Ef_kfold10_evolve_halloffame.pkl" are used.
   
     "feature_selection" : {
@@ -1414,11 +1440,11 @@ def read_sample_weight(input, tdata, verbose=True):
   # use method to get weights
   if specs["weight"]["method"] == "wCustom":
     if verbose:
-      print "Reading custom weights"
+      print "# Reading custom weights"
     sample_weight = tdata.data["weight"].values
   elif specs["weight"]["method"] == "wCustom2d":
     if verbose:
-      print "Reading custom2d weights"
+      print "# Reading custom2d weights"
     cols = ["weight(" + str(i) + ")" for i in xrange(tdata.n_samples)]
     sample_weight = tdata.data.loc[:,cols].values
   elif specs["weight"]["method"] == "wHullDist":
@@ -1543,7 +1569,9 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
       pickle.dump(fdata, open(fit_data_filename, 'wb'))
     
     if verbose:
-      print "# Writing problem specs to:", fit_data_filename, "\n"
+      print "# Writing problem specs to:", fit_data_filename
+      print "# To inspect or customize the problem specs further, use the '--checkspecs' method\n"
+    
   
   # during runtime only, if LinearRegression and LeaveOneOut, update fdata.cv and fdata.scoring
   # to use optimized LOOCV score method
