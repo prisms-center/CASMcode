@@ -793,8 +793,8 @@ def print_input_help():
   #   Options for "evolve_params_kwargs":
   #
   #     "n_population": int, optional, default=100
-  #        Population size. This many random initial starting individuals are 
-  #        created.
+  #        Initial population size. This many random initial starting individuals 
+  #         are created if no "pop_begin_filename" file exists.
   #     
   #     "n_halloffame": int, optional, default=25
   #        Maxsize of the hall of fame which holds the best individuals 
@@ -819,6 +819,11 @@ def print_input_help():
   #        exists. For example, if "filename_prefix" is "Ef_kfold10" and 
   #        "pop_begin_filename" is "population_begin.pkl", then the initial
   #        population is read from the file "Ef_kfold10_population_begin.pkl".
+  #
+  #        The population file may contain either a  list of individual,
+  #        as written to the "population_end.pkl" file, or a HallOfFame
+  #        instance, as written to either an "evolve_halloffame.pkl" file or
+  #        overall casm-learn "halloffame.pkl" file.
   #        
   #     "pop_end_filename": string, optional, default="population_end.pkl"
   #        Filename where the final population is saved. For example, if 
