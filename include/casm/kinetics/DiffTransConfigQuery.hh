@@ -357,7 +357,7 @@ namespace CASM {
 
       DiffTransConfigIO::GenericDiffTransConfigFormatter<bool> is_canonical();
 
-      DiffTransConfigIO::GenericDiffTransConfigFormatter<double> activation_barrier();
+      DiffTransConfigIO::GenericDiffTransConfigFormatter<double> kra_barrier();
     }
 
     template<>
