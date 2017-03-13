@@ -90,6 +90,68 @@ namespace CASM {
   }
 
 
+  /// \brief Output the neighborhood of DiffusionTransformation within max_radius of any site in transformation
+  ///
+  /// \param diff_trans DiffusionTransformation
+  /// \param max_radius The neighborhood distance cutoff
+  /// \param site_filter A filter function that returns true for CoordType that
+  ///        should be considered for the neighborhood
+  /// \param result Output iterator for container of UnitCellCoord
+  /// \param xtal_tol Crystallography tolerance used to contstruct UnitCellCoord from CoordType
+  ///
+  /// \returns Output iterator after generating the neighborhood
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename CoordType, typename OutputIterator>
+  OutputIterator neighborhood(
+    const Kinetics::DiffusionTransformation &diff_trans,
+    double max_radius,
+    std::function<bool (CoordType)> site_filter,
+    OutputIterator result,
+    double xtal_tol) {
+
+    int max_low_shift = 0;
+    int max_high_shift = 0;
+    for(auto it = diff_trans.specie_traj().begin(); it != diff_trans.specie_traj().end(); it++) {
+      Eigen::Vector3l vec = it->from.uccoord.unitcell();
+      if(vec.maxCoeff() > max_high_shift) {
+        max_high_shift = vec.maxCoeff();
+      }
+      if(vec.minCoeff() < max_low_shift) {
+        max_low_shift = vec.minCoeff();
+      }
+    }
+
+    auto dim = diff_trans.prim().lattice().enclose_sphere(max_radius);
+
+    Eigen::Vector3i ones(1, 1, 1);
+    EigenCounter<Eigen::Vector3i> grid_count(-dim + (max_low_shift * ones).cast<int>(), dim + (max_high_shift * ones).cast<int>(), Eigen::Vector3i::Constant(1));
+
+    ///lattice scaling
+    Coordinate lat_point(diff_trans.prim().lattice());
+
+    const auto &basis = diff_trans.prim().basis;
+
+    do {
+      lat_point.frac() = grid_count().cast<double>();
+
+      for(auto it = basis.begin(); it != basis.end(); ++it) {
+        if(!site_filter(*it)) {
+          continue;
+        }
+
+        Coordinate test(*it + lat_point);
+        UnitCellCoord tmp(diff_trans.prim(), test, xtal_tol);
+        if(dist_to_path(diff_trans, tmp) < max_radius && dist_to_path(diff_trans, tmp) > xtal_tol) {
+          *result++ = UnitCellCoord(diff_trans.prim(), test, xtal_tol);
+        }
+      }
+    }
+    while(++grid_count);
+    return result;
+  }
+
   // ------- Generating elements generation ------------------------------------
 
   namespace {
@@ -546,7 +608,181 @@ namespace CASM {
 
   }
 
+  /// \brief Generate Orbit<IntegralCluster> by specifying max cluster length for each branch
+  /// by specifying max cluster length for each branch and cut off radius for local environment
+  ///
+  /// \param diff_trans DiffusionTransformation
+  /// \param cutoff_radius max radius from the transformation that defines the local environment
+  /// \param max_length vector of max_length of pairs of cluster sites. Expects
+  ///        that max_length[b] is the max_length for orbit branch b. The values
+  ///        for the null cluster and point clusters are ignored.
+  /// \param custom_generators A vector of custom orbit generating clusters
+  /// \param site_filter A filter function that returns true for Site that
+  ///        should be considered for the neighborhood (i.e. to check the number
+  ///        of components)
+  /// \param xtal_tol Crystallography tolerance
+  /// \param result An output iterator for Orbit
+  /// \param status Stream for status messages
+  ///
+  /// - Uses the invariant subgroup of diff_trans as the generating group
+  /// - Uses LocalIntegralClusterSymCompare(xtal_tol) for cluster equivalence
+  /// - Figures out candidate_sites from max_length and site_filter input to
+  ///   create OrbitBranchSpecs and calls make_orbits
+  ///
+  /// \relates IntegralCluster
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_local_orbits(
+    const Kinetics::DiffusionTransformation &diff_trans,
+    const double &cutoff_radius,
+    const std::vector<double> &max_length,
+    const std::vector<IntegralCluster> &custom_generators,
+    const std::function<bool (Site)> &site_filter,
+    double xtal_tol,
+    OrbitOutputIterator result,
+    std::ostream &status) {
+
+    typedef PrimPeriodicIntegralClusterOrbit orbit_type;
+    typedef typename orbit_type::Element cluster_type;
+
+    const SymGroup &prim_grp = diff_trans.prim().factor_group();
+    SymGroup generating_grp = prim_grp;
+    /*
+    //Find which prim factor group operations make diff_trans the same.
+    //may need to do translations here?
+    for (auto it=prim_grp.begin();it!=prim_grp.end();++it){
+      if (copy_apply(*it,diff_trans)==diff_trans){
+        generating_grp.push_back(*it);
+      }
+    }*/
+    PrimPeriodicIntegralClusterSymCompare sym_compare(xtal_tol);
+
+    // collect OrbitBranchSpecs here
+    std::vector<OrbitBranchSpecs<orbit_type> > specs;
+
+    // collect the environment of sites here
+    std::vector<UnitCellCoord> candidate_sites;
+
+    // --- add specs for null cluster orbit ------------------
+    if(max_length.size() >= 1) {
+      specs.emplace_back(diff_trans.prim(),
+                         candidate_sites.begin(),
+                         candidate_sites.end(),
+                         generating_grp,
+      [](const cluster_type & test) {
+        return true;
+      },
+      sym_compare);
+    }
+    // --- add specs for asymmetric unit orbit ------------------
+    if(max_length.size() >= 2) {
+      neighborhood(diff_trans, cutoff_radius, site_filter, std::back_inserter(candidate_sites), xtal_tol);
+      specs.emplace_back(diff_trans.prim(),
+                         candidate_sites.begin(),
+                         candidate_sites.end(),
+                         generating_grp,
+      [](const cluster_type & test) {
+        return true;
+      },
+      sym_compare);
+    }
+    // --- add specs for additional orbit branches ------------------
+    for(auto it = max_length.begin() + 2; it != max_length.end(); ++it) {
+
+      // construct the neighborhood of sites to consider for the orbit
+      candidate_sites.clear();
+      neighborhood(diff_trans, cutoff_radius, site_filter, std::back_inserter(candidate_sites), xtal_tol);
+
+      auto max_length_filter = [ = ](const cluster_type & test) {
+        return test.invariants().displacement().back() < *it;
+      };
+
+      specs.emplace_back(diff_trans.prim(),
+                         candidate_sites.begin(),
+                         candidate_sites.end(),
+                         generating_grp,
+                         max_length_filter,
+                         sym_compare);
+    }
+    // now generate orbits
+    return make_orbits(specs.begin(), specs.end(), custom_generators, result, status);
+
+  }
+
+
   /// \brief Generate Orbit<IntegralCluster> from bspecs.json-type JSON input file
+  ///
+  /// \param diff_trans Kinetics::DiffusionTransformation
+  /// \param bspecs jsonParser containing bspecs.json contents
+  /// \param site_filter A filter function that returns true for Site that
+  ///        should be considered for the neighborhood (i.e. to check the number
+  ///        of components)
+  /// \param xtal_tol Crystallography tolerance
+  /// \param result An output iterator for Orbit
+  /// \param status Stream for status messages
+  ///
+  /// - Uses the invariant sub group of diff_trans as the generating group
+  /// - Uses LocalIntegralClusterSymCompare(xtal_tol) for cluster equivalence
+  /// - Converts input to max_length and custom_generators and calls make_orbits
+  ///
+  /// \relates IntegralCluster
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_local_orbits(
+    const Kinetics::DiffusionTransformation &diff_trans,
+    const jsonParser &bspecs,
+    const std::function<bool (Site)> &site_filter,
+    double xtal_tol,
+    OrbitOutputIterator result,
+    std::ostream &status) {
+
+    typedef PrimPeriodicIntegralClusterOrbit orbit_type;
+    typedef typename orbit_type::Element cluster_type;
+
+    // read max_length from bspecs
+    std::vector<double> max_length = max_length_from_bspecs(bspecs);
+
+    double cutoff_radius;
+    // read cutoff_radius from bspecs
+    if(bspecs.contains("cutoff_radius")) {
+      cutoff_radius = bspecs["cutoff_radius"].get<double>();
+    }
+    else {
+      std::cerr << "Bspecs input must contain cutoff_radius" << std::endl;
+    }
+
+    // collect custom orbit generating clusters in 'generators'
+    PrimPeriodicIntegralClusterSymCompare sym_compare(xtal_tol);
+    OrbitGenerators<orbit_type> generators(diff_trans.prim().factor_group(), sym_compare);
+
+    if(bspecs.contains("orbit_specs")) {
+
+      // for each custom orbit
+      for(auto it = bspecs["orbit_specs"].begin(); it != bspecs["orbit_specs"].end(); ++it) {
+
+        // read orbit generating cluster from bspecs
+        cluster_type input_cluster(diff_trans.prim());
+        from_json(input_cluster, *it, xtal_tol);
+
+        // check if subclusters should be included (yes by default)
+        auto f_it = it->find("include_subclusters");
+        if(f_it == it->end() ||
+           (f_it != it->end() && f_it->get<bool>())) {
+          _insert_subcluster_generators(input_cluster, generators, status);
+        }
+        else {
+          generators.insert(input_cluster);
+        }
+      }
+    }
+
+    std::vector<cluster_type> custom_generators(generators.elements.begin(), generators.elements.end());
+
+    return make_local_orbits(diff_trans, cutoff_radius, max_length, custom_generators, site_filter, xtal_tol, result, status);
+
+  }
+
+
+  /// \brief Generate Orbit<IntegralCluster> around DiffusionTransformation
+  /// from bspecs.json-type JSON input file
   ///
   /// \param prim Primitive structure
   /// \param bspecs jsonParser containing bspecs.json contents
@@ -607,7 +843,6 @@ namespace CASM {
     return make_prim_periodic_orbits(prim, max_length, custom_generators, site_filter, xtal_tol, result, status);
 
   }
-
 
   /* -- Cluster Orbit access/usage function definitions ------------------------------------- */
 
