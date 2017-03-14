@@ -146,6 +146,17 @@ namespace CASM {
         if(dist_to_path(diff_trans, tmp) < max_radius && dist_to_path(diff_trans, tmp) > xtal_tol) {
           *result++ = UnitCellCoord(diff_trans.prim(), test, xtal_tol);
         }
+        if(dist_to_path(diff_trans, tmp) < xtal_tol) {
+          auto spec_it = diff_trans.specie_traj().begin();
+          for(; spec_it != diff_trans.specie_traj().end(); ++spec_it) {
+            if(spec_it->to.uccoord == tmp || spec_it->from.uccoord == tmp) {
+              break;
+            }
+          }
+          if(spec_it == diff_trans.specie_traj().end()) {
+            *result++ = UnitCellCoord(diff_trans.prim(), test, xtal_tol);
+          }
+        }
       }
     }
     while(++grid_count);
@@ -646,15 +657,12 @@ namespace CASM {
 
     const SymGroup &prim_grp = diff_trans.prim().factor_group();
     SymGroup generating_grp = prim_grp;
-    /*
+
+    PrimPeriodicIntegralClusterSymCompare sym_compare(xtal_tol);
+    Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
     //Find which prim factor group operations make diff_trans the same.
     //may need to do translations here?
-    for (auto it=prim_grp.begin();it!=prim_grp.end();++it){
-      if (copy_apply(*it,diff_trans)==diff_trans){
-        generating_grp.push_back(*it);
-      }
-    }*/
-    PrimPeriodicIntegralClusterSymCompare sym_compare(xtal_tol);
+    //SymGroup generating_grp = invariant_subgroup(diff_trans,prim_grp,dt_sym_compare);
 
     // collect OrbitBranchSpecs here
     std::vector<OrbitBranchSpecs<orbit_type> > specs;
@@ -685,6 +693,7 @@ namespace CASM {
       },
       sym_compare);
     }
+
     // --- add specs for additional orbit branches ------------------
     for(auto it = max_length.begin() + 2; it != max_length.end(); ++it) {
 
@@ -751,8 +760,10 @@ namespace CASM {
 
     // collect custom orbit generating clusters in 'generators'
     PrimPeriodicIntegralClusterSymCompare sym_compare(xtal_tol);
+    //const SymGroup &prim_grp = diff_trans.prim().factor_group();
+    //Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
+    //OrbitGenerators<orbit_type> generators(invariant_subgroup(diff_trans,prim_grp,dt_sym_compare), sym_compare);
     OrbitGenerators<orbit_type> generators(diff_trans.prim().factor_group(), sym_compare);
-
     if(bspecs.contains("orbit_specs")) {
 
       // for each custom orbit
