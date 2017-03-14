@@ -8,7 +8,7 @@
 #include "casm/symmetry/EnumEquivalents.hh"
 
 namespace CASM {
-
+  namespace Kinetics {
   /// \brief Enumerate unique DiffusionTransformations in DiffTransOrbit.
   ///
   /// - The 'begin' DiffusionTransformation is always the prototype of the DiffTransOrbit
@@ -31,7 +31,7 @@ namespace CASM {
     static const std::string enumerator_name;
 
   };
-
+  }
 }
 
 #endif

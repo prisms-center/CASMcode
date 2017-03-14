@@ -5,6 +5,7 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/kinetics/DiffTransEnumEquivalents.hh"
+#include "casm/kinetics/DiffTransConfiguration.hh"
 
 namespace CASM {
 
@@ -42,7 +43,7 @@ namespace CASM {
       DiffTransConfiguration m_dtconfig;
 
       /// Select unique DiffusionTransformations from PrimPeriodicDiffTransOrbit
-      DiffusionTransformation UniqueDiffusionTransformaitions(const PrimPeriodicDiffTransOrbit &diff_trans_orbit);
+      //DiffusionTransformation UniqueDiffusionTransformaitions(const PrimPeriodicDiffTransOrbit &diff_trans_orbit);
 
       Configuration m_background_config;
 
