@@ -76,7 +76,8 @@ namespace CASM {
       std::vector<std::string> col;
       for(Index i = 0; i < m_prop_names.size(); i++) {
         std::stringstream t_ss;
-        t_ss << "    " << name() << '(' << m_prim_path.string() << ',' << m_prop_names[i] << ',' << m_configmapper.lattice_weight() << ')';
+        t_ss << "    " << name() << '(' << m_prim_path.string() << ','
+             << m_prop_names[i] << ',' << m_configmapper.lattice_weight() << ')';
         col.push_back(t_ss.str());
       }
       return col;
@@ -136,45 +137,7 @@ namespace CASM {
 
       return lambda(result_vec);
     }
-    /*
-        // ****************************************************************************************
-        void StrucScore::inject(const Configuration &_config, DataStream &_stream, Index) const {
-          if(!validate(_config)) {
-            _stream << DataStream::failbit << std::vector<double>(m_prop_names.size(), NAN);
-          }
-          else {
-            _stream << _evaluate(_config);
-          }
-        }
 
-        // ****************************************************************************************
-
-        void StrucScore::print(const Configuration &_config, std::ostream &_stream, Index) const {
-          _stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-          _stream.precision(8);
-
-          if(!validate(_config)) {
-            for(auto it = m_prop_names.cbegin(); it != m_prop_names.cend(); ++it)
-              _stream << "     unknown";
-          }
-
-          else {
-            std::vector<double> result_vec(_evaluate(_config));
-            for(auto it = result_vec.cbegin(); it != result_vec.cend(); ++it)
-              _stream << "     " << *it;
-          }
-
-        }
-
-        // ****************************************************************************************
-
-        jsonParser &StrucScore::to_json(const Configuration &_config, jsonParser &json)const {
-          if(validate(_config))
-            json = _evaluate(_config);
-
-          return json;
-        }
-    */
   }
 }
 

@@ -724,19 +724,11 @@ namespace CASM {
 
   // directory structure helpers
 
-  fs::path calc_properties_path(const Configuration &config) {
-    const PrimClex &primclex = config.primclex();
-    return primclex.dir().calculated_properties(config.name(), primclex.settings().default_clex().calctype);
-  }
+  fs::path calc_properties_path(const Configuration &config);
 
-  fs::path pos_path(const Configuration &config) {
-    return config.primclex().dir().POS(config.name());
-  }
+  fs::path pos_path(const Configuration &config);
 
-  fs::path calc_status_path(const Configuration &config) {
-    const PrimClex &primclex = config.primclex();
-    return primclex.dir().calc_status(config.name(), primclex.settings().default_clex().calctype);
-  }
+  fs::path calc_status_path(const Configuration &config);
 
   /// \brief Apply SymOp not in Supercell factor group, and make supercells
   ///

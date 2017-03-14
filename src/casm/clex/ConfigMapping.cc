@@ -112,19 +112,11 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  bool ConfigMapper::import_structure_occupation(const fs::path &pos_path,
-                                                 std::string &imported_name,
-                                                 jsonParser &relaxation_properties,
-                                                 std::vector<Index> &best_assignment,
-                                                 Eigen::Matrix3d &cart_op) const {
+  ConfigMapperResult ConfigMapper::import_structure_occupation(const fs::path &pos_path) const {
 
     try {
       BasicStructure<Site> tstruc(pos_path);
-      return import_structure_occupation(tstruc,
-                                         imported_name,
-                                         relaxation_properties,
-                                         best_assignment,
-                                         cart_op);
+      return import_structure_occupation(tstruc);
     }
     catch(const std::exception &ex) {
       throw std::runtime_error(std::string("Could not successfully import structure ") + pos_path.string() + ":\n" + ex.what());
@@ -135,106 +127,128 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  bool ConfigMapper::import_structure_occupation(BasicStructure<Site> &_struc,
-                                                 std::string &imported_name,
-                                                 jsonParser &relaxation_properties,
-                                                 std::vector<Index> &best_assignment,
-                                                 Eigen::Matrix3d &cart_op,
-                                                 bool update_struc) const {
-    return import_structure_occupation(_struc,
-                                       nullptr,
-                                       imported_name,
-                                       relaxation_properties,
-                                       best_assignment,
-                                       cart_op,
-                                       update_struc);
+  ConfigMapperResult ConfigMapper::import_structure_occupation(const BasicStructure<Site> &_struc) const {
+    return import_structure_occupation(_struc, nullptr);
   }
 
   //*******************************************************************************************
 
-  bool ConfigMapper::import_structure_occupation(BasicStructure<Site> &_struc,
-                                                 const Configuration *hint_ptr,
-                                                 std::string &imported_name,
-                                                 jsonParser &relaxation_properties,
-                                                 std::vector<Index> &best_assignment,
-                                                 Eigen::Matrix3d &cart_op,
-                                                 bool update_struc) const {
+  ConfigMapperResult ConfigMapper::import_structure_occupation(
+    const BasicStructure<Site> &_struc,
+    const Configuration *hint_ptr) const {
+
+    ConfigMapperResult result;
+    result.structure = _struc;
+    result.relaxation_properties.put_obj();
 
     //Indices for Configuration index and permutation operation index
-    ConfigDoF tconfigdof, suggested_configdof;
+    ConfigDoF best_configdof, suggested_configdof;
     Lattice mapped_lat;
-    bool is_new_config(true);
-    double bc(1e20), sc(1e20), hint_cost = 1e20, robust_cost = 1e20;
+    double bc(1e20), sc(1e20), best_cost = 1e20, robust_cost = 1e20;
+    bool valid_mapping;
 
-    relaxation_properties.put_obj();
-    //std::vector<Index> best_assignment;
-
+    // -------------
+    // if given a hint,
+    // - try to map to hint configuration,
+    // - get "best_cost" which will be used to limit the number of other
+    //   possibly mappings that need to be considered
+    // - get mapped_lat
+    // - store "suggested_mapping" in 'relaxation_properties, storing mapping
+    //   score for the "hinted" configuration
     if(hint_ptr != nullptr) {
-      if(ConfigMap_impl::struc_to_configdof(*hint_ptr,
-                                            _struc,
-                                            suggested_configdof,
-                                            best_assignment,
-                                            m_robust_flag, // translate_flag -- not sure what to use for this
-                                            m_tol)) {
+
+      valid_mapping = ConfigMap_impl::struc_to_configdof(
+                        *hint_ptr,
+                        result.structure,
+                        suggested_configdof,
+                        result.best_assignment,
+                        m_robust_flag, // translate_flag -- not sure what to use for this
+                        m_tol);
+
+      if(valid_mapping) {
+
         mapped_lat = (hint_ptr->supercell()).real_super_lattice();
-        bc = ConfigMapping::basis_cost(suggested_configdof, _struc.basis.size());
-        sc = ConfigMapping::strain_cost(_struc.lattice(), suggested_configdof, _struc.basis.size());
-        relaxation_properties["suggested_mapping"]["basis_deformation"] = bc;
-        relaxation_properties["suggested_mapping"]["lattice_deformation"] = sc;
-        relaxation_properties["suggested_mapping"]["volume_relaxation"] = suggested_configdof.deformation().determinant();
-        hint_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
-      }
-      else {
-        //relaxation_properties["suggested_mapping"] = "unknown";
+        bc = ConfigMapping::basis_cost(suggested_configdof, result.structure.basis.size());
+        sc = ConfigMapping::strain_cost(
+               result.structure.lattice(),
+               suggested_configdof,
+               result.structure.basis.size());
+
+        result.relaxation_properties["suggested_mapping"]["basis_deformation"] = bc;
+        result.relaxation_properties["suggested_mapping"]["lattice_deformation"] = sc;
+        result.relaxation_properties["suggested_mapping"]["volume_relaxation"] =
+          suggested_configdof.deformation().determinant();
+
+        best_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
+
       }
     }
-    if(struc_to_configdof(_struc,
-                          tconfigdof,
-                          mapped_lat,
-                          best_assignment,
-                          cart_op,
-                          hint_cost)) {
 
-      bc = ConfigMapping::basis_cost(tconfigdof, _struc.basis.size());
-      sc = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof, _struc.basis.size());
+    // -------------
+    // do a general mapping, but with limit to configurations that will improve
+    // on the "hint_cost"
+    // - try to map to best configuration,
+    // - get mapped_lat (which is the canonical_equivalent)
+    // - store "suggested_mapping" in 'relaxation_properties, storing mapping
+    //   score for the "hinted" configuration
+    valid_mapping = struc_to_configdof(
+                      result.structure,
+                      best_configdof,
+                      mapped_lat,
+                      result.best_assignment,
+                      result.cart_op,
+                      best_cost);
+
+    // if a valid mapping was found, it had a better cost than "hint"
+    // - store relaxation properties in "best_mapping"
+    if(valid_mapping) {
+
+      bc = ConfigMapping::basis_cost(best_configdof, result.structure.basis.size());
+      sc = ConfigMapping::strain_cost(
+             result.structure.lattice(),
+             best_configdof,
+             result.structure.basis.size());
       robust_cost = m_lattice_weight * sc + (1.0 - m_lattice_weight) * bc - m_tol;
-      relaxation_properties["best_mapping"]["basis_deformation"] = bc;
-      relaxation_properties["best_mapping"]["lattice_deformation"] = sc;
-      relaxation_properties["best_mapping"]["volume_relaxation"] = tconfigdof.deformation().determinant();
+      result.relaxation_properties["best_mapping"]["basis_deformation"] = bc;
+      result.relaxation_properties["best_mapping"]["lattice_deformation"] = sc;
+      result.relaxation_properties["best_mapping"]["volume_relaxation"] = best_configdof.deformation().determinant();
 
     }
+    // if no valid mapping was found, "suggested" (the mapping to hint config) is also "best"
     else {
-      if(hint_cost > 1e10)
+      if(best_cost > 1e10) {
         throw std::runtime_error("Structure is incompatible with PRIM.");
+      }
 
-      swap(tconfigdof, suggested_configdof);
-      relaxation_properties["best_mapping"] = relaxation_properties["suggested_mapping"];
+      swap(best_configdof, suggested_configdof);
+      result.relaxation_properties["best_mapping"] = result.relaxation_properties["suggested_mapping"];
     }
 
-
+    // -------------
+    // construct the 'relaxed' configuration from the mapping results
+    // and get the 'it_canon'
     ConfigDoF relaxed_occ;
+    relaxed_occ.set_occupation(best_configdof.occupation());
 
-    relaxed_occ.set_occupation(tconfigdof.occupation());
-    Supercell::permute_const_iterator it_canon;
+    PermuteIterator it_canon;
+    bool is_new_config(true);
 
     if(hint_ptr != nullptr) {
       const Supercell &scel(hint_ptr->supercell());
       if(mapped_lat.is_equivalent(scel.real_super_lattice(), m_tol)) {
         if(m_strict_flag && relaxed_occ.occupation() == (hint_ptr->configdof()).occupation()) {
-          // config is unchanged
-          imported_name = hint_ptr->name();
+          // mapped config is "hint" config
           is_new_config = false;
           it_canon = hint_ptr->supercell().permute_begin();
         }
         else {
 
-          Supercell::permute_const_iterator relaxed_it_canon = Configuration(scel, jsonParser(), relaxed_occ).to_canonical();
-          Supercell::permute_const_iterator ideal_rev_it_canon = hint_ptr->from_canonical();
+          PermuteIterator relaxed_it_canon = Configuration(scel, jsonParser(), relaxed_occ).to_canonical();
+          PermuteIterator ideal_rev_it_canon = hint_ptr->from_canonical();
           it_canon = ideal_rev_it_canon * relaxed_it_canon;
 
           if(relaxed_occ.occupation() == copy_apply(it_canon.inverse(), *hint_ptr).occupation()) {
-            // config is unchanged
-            imported_name = hint_ptr->name();
+            // mapped config is "hint" config
             is_new_config = false;
           }
         }
@@ -242,55 +256,55 @@ namespace CASM {
     }
 
     if(is_new_config) {
-      const Supercell &scel = *Supercell(&primclex(), mapped_lat).insert().first;
-      Configuration import_config(scel, jsonParser(), relaxed_occ);
+      std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), mapped_lat);
+      result.config = notstd::make_unique<Configuration>(shared_scel, jsonParser(), relaxed_occ);
 
-      // insert primitive and non-primitive, if distinct
-      auto res = import_config.insert();
-      is_new_config = (res.insert_primitive || res.insert_canonical);
-      imported_name = res.canonical_it->name();
+      if(m_strict_flag) {
+        it_canon = shared_scel->permute_begin();
+      }
+      else {
+        it_canon = result.config->to_canonical();
+      }
     }
 
-    // transform deformation tensor to match canonical form and apply operation to cart_op
-    ConfigDoF trans_configdof = copy_apply(it_canon, tconfigdof);
-    relaxation_properties["best_mapping"]["relaxation_deformation"] = trans_configdof.deformation();
-    relaxation_properties["best_mapping"]["relaxation_displacement"] = trans_configdof.displacement().transpose();
 
-    cart_op = it_canon.sym_op().matrix() * cart_op;
+    // calculate and store:
+    // - 'relaxation_deformation'
+    // - 'relaxation_displacement'
+    // - cart_op
+    // - best_assignement (excluding vacancies)
+
+    // transform deformation tensor to match canonical form and apply operation to cart_op
+    ConfigDoF trans_configdof = copy_apply(it_canon, best_configdof);
+    result.relaxation_properties["best_mapping"]["relaxation_deformation"] = trans_configdof.deformation();
+    result.relaxation_properties["best_mapping"]["relaxation_displacement"] = trans_configdof.displacement().transpose();
+
+    result.cart_op = it_canon.sym_op().matrix() * result.cart_op;
 
     // compose permutations
-    std::vector<Index>tperm = it_canon.combined_permute().permute(best_assignment);
+    std::vector<Index> tperm = it_canon.combined_permute().permute(result.best_assignment);
 
     //copy non-vacancy part of permutation into best_assignment
-    best_assignment.resize(_struc.basis.size());
-    Index num_atoms = _struc.basis.size();
+    result.best_assignment.resize(result.structure.basis.size());
+    Index num_atoms = result.structure.basis.size();
     std::copy_if(tperm.cbegin(), tperm.cend(),
-                 best_assignment.begin(),
+                 result.best_assignment.begin(),
     [num_atoms](Index i) {
       return i < num_atoms;
     });
 
-    if(update_struc) {
-      _struc.set_lattice(Lattice(cart_op.transpose()*tconfigdof.deformation()*mapped_lat.lat_column_mat()), CART);
-      _struc.set_lattice(Lattice(tconfigdof.deformation()*mapped_lat.lat_column_mat()), FRAC);
-    }
-    return is_new_config;
+    result.structure.set_lattice(Lattice(result.cart_op.transpose()*best_configdof.deformation()*mapped_lat.lat_column_mat()), CART);
+    result.structure.set_lattice(Lattice(best_configdof.deformation()*mapped_lat.lat_column_mat()), FRAC);
+
+    return result;
   }
 
   //*******************************************************************************************
 
-  bool ConfigMapper::import_structure(const fs::path &pos_path,
-                                      std::string &imported_name,
-                                      jsonParser &relaxation_properties,
-                                      std::vector<Index> &best_assignment,
-                                      Eigen::Matrix3d &cart_op) const {
+  ConfigMapperResult ConfigMapper::import_structure(const fs::path &pos_path) const {
 
     try {
-      return import_structure(BasicStructure<Site>(pos_path),
-                              imported_name,
-                              relaxation_properties,
-                              best_assignment,
-                              cart_op);
+      return import_structure(BasicStructure<Site>(pos_path));
     }
     catch(const std::exception &ex) {
       throw std::runtime_error(std::string("Could not successfully import structure ") + pos_path.string() + ":\n" + ex.what());
@@ -300,58 +314,66 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  bool ConfigMapper::import_structure(const BasicStructure<Site> &_struc,
-                                      std::string &imported_name,
-                                      jsonParser &relaxation_properties,
-                                      std::vector<Index> &best_assignment,
-                                      Eigen::Matrix3d &cart_op) const {
+  ConfigMapperResult ConfigMapper::import_structure(const BasicStructure<Site> &_struc) const {
+
+    ConfigMapperResult result;
+    result.structure = _struc;
 
     //Indices for Configuration index and permutation operation index
-    Supercell::permute_const_iterator it_canon;
+    PermuteIterator it_canon;
 
-    ConfigDoF tconfigdof;
+    ConfigDoF best_configdof;
     Lattice mapped_lat;
-    bool new_config_flag;
-    //std::vector<Index> best_assignment;
-    if(!struc_to_configdof(_struc,
-                           tconfigdof,
-                           mapped_lat,
-                           best_assignment,
-                           cart_op))
+
+    // -------------
+    // do a general mapping
+    // - try to map to best configuration,
+    // - get mapped_lat (which is the canonical_equivalent)
+    bool valid_mapping = struc_to_configdof(
+                           result.structure,
+                           best_configdof,
+                           mapped_lat, // mappe
+                           result.best_assignment,
+                           result.cart_op);
+
+    if(!valid_mapping) {
       throw std::runtime_error("Structure is incompatible with PRIM.");
+    }
 
-    relaxation_properties["best_mapping"]["basis_deformation"] = ConfigMapping::basis_cost(tconfigdof, _struc.basis.size());
-    relaxation_properties["best_mapping"]["lattice_deformation"] = ConfigMapping::strain_cost(_struc.lattice(), tconfigdof, _struc.basis.size());
-    relaxation_properties["best_mapping"]["volume_change"] = tconfigdof.deformation().determinant();
+    // store "best_mapping" in 'relaxation_properties
+    result.relaxation_properties["best_mapping"]["basis_deformation"] =
+      ConfigMapping::basis_cost(best_configdof, result.structure.basis.size());
+    result.relaxation_properties["best_mapping"]["lattice_deformation"] =
+      ConfigMapping::strain_cost(result.structure.lattice(), best_configdof, result.structure.basis.size());
+    result.relaxation_properties["best_mapping"]["volume_change"] =
+      best_configdof.deformation().determinant();
 
-    const Supercell &scel = *Supercell(&primclex(), mapped_lat).insert().first;
-
-    Configuration import_config(scel, jsonParser(), tconfigdof);
+    // store mapped Configuration
+    std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), mapped_lat);
+    Configuration import_config(shared_scel, jsonParser(), best_configdof);
     it_canon = import_config.to_canonical();
+    result.config = notstd::make_unique<Configuration>(copy_apply(it_canon, import_config));
 
-    Configuration canon_config = copy_apply(it_canon, import_config);
+    // store relaxation_properties
+    result.relaxation_properties["best_mapping"]["relaxation_deformation"] =
+      it_canon.sym_op().matrix() * best_configdof.deformation() * it_canon.sym_op().matrix().transpose();
 
-    // insert primitive and non-primitive, if distinct
-    auto res = canon_config.insert();
-    imported_name = res.canonical_it->name();
-
-    relaxation_properties["best_mapping"]["relaxation_deformation"] = it_canon.sym_op().matrix() * tconfigdof.deformation() * it_canon.sym_op().matrix().transpose();
-
-    cart_op = it_canon.sym_op().matrix() * cart_op;
+    // store cart op
+    result.cart_op = it_canon.sym_op().matrix() * result.cart_op;
 
     // compose permutations
-    std::vector<Index>tperm = it_canon.combined_permute().permute(best_assignment);
+    std::vector<Index> tperm = it_canon.combined_permute().permute(result.best_assignment);
 
     //copy non-vacancy part of permutation into best_assignment
-    best_assignment.resize(_struc.basis.size());
-    Index num_atoms = _struc.basis.size();
+    result.best_assignment.resize(result.structure.basis.size());
+    Index num_atoms = result.structure.basis.size();
     std::copy_if(tperm.cbegin(), tperm.cend(),
-                 best_assignment.begin(),
+                 result.best_assignment.begin(),
     [num_atoms](Index i) {
       return i < num_atoms;
     });
-    return new_config_flag;
 
+    return result;
   }
 
   //*******************************************************************************************
@@ -411,8 +433,10 @@ namespace CASM {
                                               Lattice &mapped_lat,
                                               std::vector<Index> &best_assignment,
                                               Eigen::Matrix3d &cart_op) const {
-    // Lattice::is_supercell_of() isn't very smart right now, and will return false if the two lattices differ by a rigid rotation
-    // In the future this may not be the case, so we will assume that struc may be rigidly rotated relative to prim
+    // Lattice::is_supercell_of() isn't very smart right now, and will return
+    // false if the two lattices differ by a rigid rotation
+    // In the future this may not be the case, so we will assume that struc may
+    // be rigidly rotated relative to prim
     Eigen::Matrix3d trans_mat;
     if(!struc.lattice().is_supercell_of(primclex().prim().lattice(), trans_mat,  m_tol)) {
       /*std::cerr << "CRITICAL ERROR: In ideal_struc_to_configdof(), primitive structure does not tile the provided\n"
@@ -423,8 +447,12 @@ namespace CASM {
     }
     BasicStructure<Site> tstruc(struc);
 
-    // We know struc.lattice() is a supercell of the prim, now we have to reorient 'struc' to match canonical lattice vectors
-    mapped_lat = canonical_equivalent_lattice(Lattice(primclex().prim().lattice().lat_column_mat() * trans_mat), primclex().prim().point_group(), m_tol);
+    // We know struc.lattice() is a supercell of the prim, now we have to
+    // reorient 'struc' to match canonical lattice vectors
+    mapped_lat = canonical_equivalent_lattice(
+                   Lattice(primclex().prim().lattice().lat_column_mat() * trans_mat),
+                   primclex().prim().point_group(),
+                   m_tol);
     Supercell scel(&primclex(), mapped_lat);
 
     // note: trans_mat gets recycled here

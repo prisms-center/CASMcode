@@ -55,17 +55,18 @@ namespace CASM {
   }
 
   /// Construct a default Configuration that owns its Supercell
-  Configuration(const std::shared_ptr<Supercell> &_supercell,
-                const jsonParser &source = jsonParser(),
-                const ConfigDoF &_dof = ConfigDoF()) :
+  Configuration::Configuration(
+    const std::shared_ptr<Supercell> &_supercell,
+    const jsonParser &source,
+    const ConfigDoF &_configdof) :
     m_supercell(_supercell.get()),
-    m_supercell_ptr(&_supercell),
+    m_supercell_ptr(_supercell),
     m_source_updated(false),
     m_configdof(_configdof),
     m_dof_deps_updated(false),
     m_prop_updated(false) {
 
-    set_source(src);
+    set_source(source);
   }
 
   /// Construct a Configuration from JSON data
@@ -1411,6 +1412,20 @@ namespace CASM {
 
   bool has_volume_relaxation(const Configuration &_config) {
     return _config.calc_properties().contains("volume_relaxation");
+  }
+
+  fs::path calc_properties_path(const Configuration &config) {
+    const PrimClex &primclex = config.primclex();
+    return primclex.dir().calculated_properties(config.name(), primclex.settings().default_clex().calctype);
+  }
+
+  fs::path pos_path(const Configuration &config) {
+    return config.primclex().dir().POS(config.name());
+  }
+
+  fs::path calc_status_path(const Configuration &config) {
+    const PrimClex &primclex = config.primclex();
+    return primclex.dir().calc_status(config.name(), primclex.settings().default_clex().calctype);
   }
 
   /// \brief Constructor
