@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
   fs::path local_bspecs_path = "tests/unit/kinetics/local_bspecs_0.json";
   jsonParser local_bspecs {local_bspecs_path};
 
-  std::vector<PrimPeriodicIntegralClusterOrbit> local_orbits;
+  std::vector<LocalIntegralClusterOrbit> local_orbits;
   make_local_orbits(
     trans,
     local_bspecs,

@@ -417,7 +417,6 @@ namespace CASM {
         all.elements.insert(all.elements.end(), *it);
       }
     };
-
     // -- construct null cluster orbit
 
     auto specs_it = begin;
@@ -425,11 +424,9 @@ namespace CASM {
 
       generators.emplace_back(begin->generating_group(), begin->sym_compare());
       _insert_null_cluster_generator(specs_it->prim(), generators.back());
-
       ++specs_it;
       insert_branch(all_generators, generators.back());
     }
-
     // -- construct additional branches
     // print status messages
     std::string clean(100, ' ');
@@ -450,7 +447,6 @@ namespace CASM {
         *specs_it,
         generators.back(),
         status);
-
       ++specs_it;
       ++prev_gen;
       insert_branch(all_generators, generators.back());
@@ -652,17 +648,17 @@ namespace CASM {
     OrbitOutputIterator result,
     std::ostream &status) {
 
-    typedef PrimPeriodicIntegralClusterOrbit orbit_type;
+    typedef LocalIntegralClusterOrbit orbit_type;
     typedef typename orbit_type::Element cluster_type;
 
     const SymGroup &prim_grp = diff_trans.prim().factor_group();
-    SymGroup generating_grp = prim_grp;
+    //SymGroup generating_grp = prim_grp;
 
-    PrimPeriodicIntegralClusterSymCompare sym_compare(xtal_tol);
+    LocalIntegralClusterSymCompare sym_compare(xtal_tol);
     Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
     //Find which prim factor group operations make diff_trans the same.
     //may need to do translations here?
-    //SymGroup generating_grp = invariant_subgroup(diff_trans,prim_grp,dt_sym_compare);
+    SymGroup generating_grp = invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
 
     // collect OrbitBranchSpecs here
     std::vector<OrbitBranchSpecs<orbit_type> > specs;
@@ -702,7 +698,8 @@ namespace CASM {
       neighborhood(diff_trans, cutoff_radius, site_filter, std::back_inserter(candidate_sites), xtal_tol);
 
       auto max_length_filter = [ = ](const cluster_type & test) {
-        return test.invariants().displacement().back() < *it;
+        double check = test.invariants().displacement().back() ;
+        return check < *it;
       };
 
       specs.emplace_back(diff_trans.prim(),
@@ -743,7 +740,7 @@ namespace CASM {
     OrbitOutputIterator result,
     std::ostream &status) {
 
-    typedef PrimPeriodicIntegralClusterOrbit orbit_type;
+    typedef LocalIntegralClusterOrbit orbit_type;
     typedef typename orbit_type::Element cluster_type;
 
     // read max_length from bspecs
@@ -759,11 +756,11 @@ namespace CASM {
     }
 
     // collect custom orbit generating clusters in 'generators'
-    PrimPeriodicIntegralClusterSymCompare sym_compare(xtal_tol);
-    //const SymGroup &prim_grp = diff_trans.prim().factor_group();
-    //Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
-    //OrbitGenerators<orbit_type> generators(invariant_subgroup(diff_trans,prim_grp,dt_sym_compare), sym_compare);
-    OrbitGenerators<orbit_type> generators(diff_trans.prim().factor_group(), sym_compare);
+    LocalIntegralClusterSymCompare sym_compare(xtal_tol);
+    const SymGroup &prim_grp = diff_trans.prim().factor_group();
+    Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
+    OrbitGenerators<orbit_type> generators(invariant_subgroup(diff_trans, prim_grp, dt_sym_compare), sym_compare);
+    //OrbitGenerators<orbit_type> generators(diff_trans.prim().factor_group(), sym_compare);
     if(bspecs.contains("orbit_specs")) {
 
       // for each custom orbit

@@ -178,7 +178,8 @@ namespace CASM {
                               const SymGroup &generating_grp,
                               const SymCompareType &sym_compare) {
     Element e(sym_compare.prepare(element));
-    SymGroup result;
+    SymGroup result = generating_grp;
+    result.clear();
     for(const auto &op : generating_grp) {
       if(sym_compare.equal(e, sym_compare.prepare(copy_apply(op, e)))) {
         result.push_back(op);
