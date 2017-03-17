@@ -186,7 +186,7 @@ namespace CASM {
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_local_orbits(
     const Kinetics::DiffusionTransformation &diff_trans,
-    const double &cutoff_radius,
+    const std::vector<double> &cutoff_radius,
     const std::vector<double> &max_length,
     const std::vector<IntegralCluster> &custom_generators,
     const std::function<bool (Site)> &site_filter,

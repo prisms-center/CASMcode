@@ -15,7 +15,6 @@ namespace CASM {
     ///
     /// \returns std::vector<double> giving 'max_length' for clusters in branch 0, 1, etc.
     ///
-    /// probably should get organized somewhere...
     std::vector<double> max_length_from_bspecs(const jsonParser &bspecs) {
 
       std::vector<double> max_length;
@@ -30,11 +29,38 @@ namespace CASM {
       if(bspecs.contains("orbit_branch_specs")) {
         const auto &j = bspecs["orbit_branch_specs"];
         for(auto it = j.begin(); it != j.end(); ++it) {
-          update_max_length(std::stoi(it.name()), it->find("max_length")->get<double>());
+          if(it->find("max_length") != it->end()) {
+            update_max_length(std::stoi(it.name()), it->find("max_length")->get<double>());
+          }
         }
       }
 
       return max_length;
+    }
+
+    /// Read cutoff_radius vector from 'bspecs' JSON
+    ///
+    /// \returns std::vector<double> giving 'cutoff_radius' for clusters in branch 0, 1, etc.
+    ///
+    std::vector<double> cutoff_radius_from_bspecs(const jsonParser &bspecs) {
+
+      std::vector<double> cutoff_radius;
+
+      auto update_cutoff_radius = [&](int branch, double length) {
+        while(branch >= cutoff_radius.size()) {
+          cutoff_radius.push_back(0.0);
+        }
+        cutoff_radius[branch] = length;
+      };
+
+      if(bspecs.contains("orbit_branch_specs")) {
+        const auto &j = bspecs["orbit_branch_specs"];
+        for(auto it = j.begin(); it != j.end(); ++it) {
+          update_cutoff_radius(std::stoi(it.name()), it->find("cutoff_radius")->get<double>());
+        }
+      }
+
+      return cutoff_radius;
     }
 
   }
@@ -640,7 +666,7 @@ namespace CASM {
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_local_orbits(
     const Kinetics::DiffusionTransformation &diff_trans,
-    const double &cutoff_radius,
+    const std::vector<double> &cutoff_radius,
     const std::vector<double> &max_length,
     const std::vector<IntegralCluster> &custom_generators,
     const std::function<bool (Site)> &site_filter,
@@ -679,7 +705,7 @@ namespace CASM {
     }
     // --- add specs for asymmetric unit orbit ------------------
     if(max_length.size() >= 2) {
-      neighborhood(diff_trans, cutoff_radius, site_filter, std::back_inserter(candidate_sites), xtal_tol);
+      neighborhood(diff_trans, cutoff_radius[1], site_filter, std::back_inserter(candidate_sites), xtal_tol);
       specs.emplace_back(diff_trans.prim(),
                          candidate_sites.begin(),
                          candidate_sites.end(),
@@ -689,13 +715,13 @@ namespace CASM {
       },
       sym_compare);
     }
-
+    int idx = 1;
     // --- add specs for additional orbit branches ------------------
     for(auto it = max_length.begin() + 2; it != max_length.end(); ++it) {
-
+      ++idx;
       // construct the neighborhood of sites to consider for the orbit
       candidate_sites.clear();
-      neighborhood(diff_trans, cutoff_radius, site_filter, std::back_inserter(candidate_sites), xtal_tol);
+      neighborhood(diff_trans, cutoff_radius[idx], site_filter, std::back_inserter(candidate_sites), xtal_tol);
 
       auto max_length_filter = [ = ](const cluster_type & test) {
         double check = test.invariants().displacement().back() ;
@@ -745,15 +771,8 @@ namespace CASM {
 
     // read max_length from bspecs
     std::vector<double> max_length = max_length_from_bspecs(bspecs);
-
-    double cutoff_radius;
     // read cutoff_radius from bspecs
-    if(bspecs.contains("cutoff_radius")) {
-      cutoff_radius = bspecs["cutoff_radius"].get<double>();
-    }
-    else {
-      std::cerr << "Bspecs input must contain cutoff_radius" << std::endl;
-    }
+    std::vector<double> cutoff_radius = cutoff_radius_from_bspecs(bspecs);
 
     // collect custom orbit generating clusters in 'generators'
     LocalIntegralClusterSymCompare sym_compare(xtal_tol);
