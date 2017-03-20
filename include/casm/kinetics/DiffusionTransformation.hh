@@ -349,6 +349,7 @@ namespace CASM {
         apply_sym_impl(op);
       }
 
+      SymGroup invariant_subgroup(double xtal_tol) const;
 
     private:
 

@@ -403,6 +403,29 @@ namespace CASM {
       return !this->_lt(_tmp) && !_tmp._lt(*this);
     }
 
+    SymGroup DiffusionTransformation::invariant_subgroup(double xtal_tol) const {
+      PrimPeriodicDiffTransSymCompare sym_compare(xtal_tol);
+      UnitCell shift1, shift2;
+      if(occ_transform().size()) {
+        shift1 = sorted().occ_transform()[0].uccoord.unitcell();
+      }
+      Coordinate pre_t(shift2.cast<double>(), prim().lattice(), FRAC);
+      DiffusionTransformation tmp = sym_compare.prepare(*this);
+      SymGroup result = prim().factor_group();
+      result.clear();
+      for(const auto &op : prim().factor_group()) {
+        if(sym_compare.equal(tmp, sym_compare.prepare(copy_apply(op, tmp)))) {
+          if(copy_apply(op, tmp).occ_transform().size()) {
+            shift2 = -copy_apply(op, tmp).sorted().occ_transform()[0].uccoord.unitcell();
+          }
+          Coordinate t(shift2.cast<double>(), prim().lattice(), FRAC);
+          result.push_back(SymOp::translation(pre_t.const_cart())*SymOp::translation(t.const_cart())*op);
+        }
+      }
+      return result;
+
+    }
+
     std::string orbit_name(const PrimPeriodicDiffTransOrbit &orbit) {
       Structure prim(orbit.prototype().specie_traj().begin()->from.uccoord.unit());
       std::set<int> sublat_indices;

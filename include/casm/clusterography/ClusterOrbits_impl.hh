@@ -172,7 +172,7 @@ namespace CASM {
         if(dist_to_path(diff_trans, tmp) < max_radius && dist_to_path(diff_trans, tmp) > xtal_tol) {
           *result++ = UnitCellCoord(diff_trans.prim(), test, xtal_tol);
         }
-        if(dist_to_path(diff_trans, tmp) < xtal_tol) {
+        if(dist_to_path(diff_trans, tmp) <= xtal_tol) {
           auto spec_it = diff_trans.specie_traj().begin();
           for(; spec_it != diff_trans.specie_traj().end(); ++spec_it) {
             if(spec_it->to.uccoord == tmp || spec_it->from.uccoord == tmp) {
@@ -299,7 +299,6 @@ namespace CASM {
 
           // add the new site
           test.elements().push_back(*site_it);
-
           // filter clusters
           if(!filter(test)) {
             continue;
@@ -684,7 +683,8 @@ namespace CASM {
     Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
     //Find which prim factor group operations make diff_trans the same.
     //may need to do translations here?
-    SymGroup generating_grp = invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
+    SymGroup generating_grp = diff_trans.invariant_subgroup(xtal_tol);
+    // SymGroup generating_grp = invariant_subgroup(diff_trans,prim_grp,dt_sym_compare);
 
     // collect OrbitBranchSpecs here
     std::vector<OrbitBranchSpecs<orbit_type> > specs;
@@ -706,6 +706,8 @@ namespace CASM {
     // --- add specs for asymmetric unit orbit ------------------
     if(max_length.size() >= 2) {
       neighborhood(diff_trans, cutoff_radius[1], site_filter, std::back_inserter(candidate_sites), xtal_tol);
+      for(auto it = candidate_sites.begin(); it != candidate_sites.end(); ++it) {
+      }
       specs.emplace_back(diff_trans.prim(),
                          candidate_sites.begin(),
                          candidate_sites.end(),
