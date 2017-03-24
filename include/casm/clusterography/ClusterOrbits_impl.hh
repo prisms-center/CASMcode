@@ -706,8 +706,7 @@ namespace CASM {
     // --- add specs for asymmetric unit orbit ------------------
     if(max_length.size() >= 2) {
       neighborhood(diff_trans, cutoff_radius[1], site_filter, std::back_inserter(candidate_sites), xtal_tol);
-      for(auto it = candidate_sites.begin(); it != candidate_sites.end(); ++it) {
-      }
+
       specs.emplace_back(diff_trans.prim(),
                          candidate_sites.begin(),
                          candidate_sites.end(),

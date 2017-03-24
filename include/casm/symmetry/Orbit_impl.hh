@@ -80,22 +80,27 @@ namespace CASM {
     for(const auto &op : g) {
       t_equiv.insert(prepare(copy_apply(op, generating_element)));
     }
+
     // sort element using each element's first equivalence map column to find prototype
     std::set<std::pair<Element, std::vector<Index> >, _EqMapCompare<Element> > _set;
     for(const auto &e : t_equiv) {
       _set.insert(std::make_pair(e, _sorter(e, t_equiv, g, m_sym_compare)));
     }
+
     // use _set.begin()->first for prototype, use _set.begin()->second to generate equiv
     for(auto op_index : _set.begin()->second) {
-      m_element.push_back(prepare(copy_apply(g[op_index], _set.begin()->first)));
+      SymOp my_op;
+      for(auto &op : g) {
+        if(op.index() == op_index)
+          my_op = op;
+      }
+      m_element.push_back(prepare(copy_apply(my_op, _set.begin()->first)));
     }
     // generate equivalence map
     m_equivalence_map.resize(m_element.size());
     for(const auto &op : g) {
       Index i = find_index(m_element, prepare(copy_apply(op, m_element[0])), equal);
-      if(i < m_element.size()) {
-        m_equivalence_map[i].push_back(op);
-      }
+      m_equivalence_map[i].push_back(op);
     }
 
   }

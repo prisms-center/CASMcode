@@ -31,7 +31,6 @@ namespace CASM {
 
   UnitCellCoord &UnitCellCoord::apply_sym(const SymOp &op) {
     const SymBasisPermute &rep = *op.get_basis_permute_rep(unit().basis_permutation_symrep_ID());
-
     unitcell() = rep.matrix() * unitcell() + rep[sublat()].unitcell() + (unit().lattice().inv_lat_column_mat() * op.tau()).cast<long>();
     sublat() = rep[sublat()].sublat();
 
