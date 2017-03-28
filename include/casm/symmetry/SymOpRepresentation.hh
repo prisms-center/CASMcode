@@ -22,7 +22,9 @@ namespace CASM {
   ///\brief SymOpRepresentation is the base class for anything describes a symmetry operation
   class SymOpRepresentation {
   public:
-    SymOpRepresentation() : m_master_group(nullptr), m_op_index(-1) {}
+    SymOpRepresentation() : m_master_group(nullptr), m_op_index(-1) {
+      _set_integral_tau();
+    }
 
     SymOpRepresentation(const MasterSymGroup &_master_group, SymGroupRepID _rep_ID, Index _op_index) :
       SymOpRepresentation(&_master_group, _rep_ID, _op_index) {}
@@ -111,7 +113,13 @@ namespace CASM {
   protected:
     /// Protected constructor to allow internal construction of masterless symops
     SymOpRepresentation(MasterSymGroup const *_master_group_ptr, SymGroupRepID _rep_ID, Index _op_index) :
-      m_master_group(_master_group_ptr), m_rep_ID(_rep_ID), m_op_index(_op_index) {}
+      m_master_group(_master_group_ptr), m_rep_ID(_rep_ID), m_op_index(_op_index) {
+      _set_integral_tau();
+    }
+
+    virtual void _set_integral_tau() {
+      return;
+    }
 
     /// Pointer to the MasterSymGroup where prototype of this SymOp lives
     MasterSymGroup const *m_master_group;
@@ -121,6 +129,7 @@ namespace CASM {
 
     ///Index into MasterSymGroup that specifies the operation
     Index m_op_index;
+
   };
 
   struct SymRepIndexCompare {

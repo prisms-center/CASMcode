@@ -182,6 +182,31 @@ namespace CASM {
       return CASM::compare(A, B, tol());
     }
 
+    // LocalDiffTransSymCompare
+
+    LocalDiffTransSymCompare::LocalDiffTransSymCompare(double tol) :
+      SymCompare<LocalDiffTransSymCompare>(),
+      m_tol(tol) {}
+
+    LocalDiffTransSymCompare::Element LocalDiffTransSymCompare::prepare_impl(const Element &A) const {
+      if(A.occ_transform().size()) {
+        Element tmp = A.sorted();
+        return tmp;
+      }
+      else {
+        return A;
+      }
+    }
+
+    bool LocalDiffTransSymCompare::compare_impl(const Element &A, const Element &B) const {
+      return A < B;
+    }
+
+    bool LocalDiffTransSymCompare::invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const {
+      return CASM::compare(A, B, tol());
+    }
+
+
     // ScelPeriodicDiffTransSymCompare
 
     ScelPeriodicDiffTransSymCompare::ScelPeriodicDiffTransSymCompare(const PrimGrid &prim_grid, double tol) :

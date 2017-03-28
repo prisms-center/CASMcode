@@ -5,12 +5,15 @@
 #include <memory>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymOp.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 
 namespace CASM {
 
   /* -- SymCompare Declarations --------------------------- */
 
   class SymOp;
+  class UnitCell;
 
   /// \brief CRTP base class for implementing element and orbit comparison
   ///
@@ -149,6 +152,8 @@ namespace CASM {
       // next lexicographical_compare of Element in A and B
       return this->compare(A, B);
     }
+
+    UnitCell m_integral_tau = Eigen::Vector3l::Zeros(3);
   };
 
   /// \brief Template class to be specialized for comparisons with aperiodic symmetry

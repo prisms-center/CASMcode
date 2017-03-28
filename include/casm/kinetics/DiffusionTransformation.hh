@@ -154,6 +154,7 @@ namespace CASM {
 
   namespace Kinetics {
     class PrimPeriodicDiffTransSymCompare;
+    class LocalDiffTransSymCompare;
     class ScelPeriodicDiffTransSymCompare;
   }
 
@@ -165,6 +166,17 @@ namespace CASM {
     struct traits<Kinetics::PrimPeriodicDiffTransSymCompare> {
 
       typedef typename Kinetics::PrimPeriodicDiffTransSymCompare MostDerived;
+      typedef typename Kinetics::DiffusionTransformation Element;
+      typedef typename Kinetics::DiffusionTransformationInvariants InvariantsType;
+
+    };
+
+    /// \brief Traits class for any ClusterSymCompare derived class
+    ///
+    template<>
+    struct traits<Kinetics::LocalDiffTransSymCompare> {
+
+      typedef typename Kinetics::LocalDiffTransSymCompare MostDerived;
       typedef typename Kinetics::DiffusionTransformation Element;
       typedef typename Kinetics::DiffusionTransformationInvariants InvariantsType;
 
@@ -220,6 +232,42 @@ namespace CASM {
 
     };
 
+    /// \brief Used to sort orbits
+    class LocalDiffTransSymCompare : public SymCompare<LocalDiffTransSymCompare> {
+
+    public:
+
+      typedef CASM_TMP::traits<LocalDiffTransSymCompare>::MostDerived MostDerived;
+      typedef CASM_TMP::traits<LocalDiffTransSymCompare>::Element Element;
+      typedef CASM_TMP::traits<LocalDiffTransSymCompare>::InvariantsType InvariantsType;
+
+      LocalDiffTransSymCompare(double tol);
+
+      double tol() const {
+        return m_tol;
+      }
+
+    private:
+
+      friend class SymCompare<LocalDiffTransSymCompare>;
+
+      Element prepare_impl(const Element &A) const;
+
+      bool compare_impl(const Element &A, const Element &B) const;
+
+      bool invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const;
+
+      /// \brief Apply symmetry to this
+      ///
+      /// - Affects no change
+      void apply_sym_impl(const SymOp &op) {
+        return;
+      }
+
+      double m_tol;
+
+    };
+
     /// \brief Used to canonicalize DiffusionTransformations
     class ScelPeriodicDiffTransSymCompare : public SymCompare<ScelPeriodicDiffTransSymCompare> {
 
@@ -257,6 +305,8 @@ namespace CASM {
       const PrimGrid &m_prim_grid;
 
     };
+
+
 
   }
 
