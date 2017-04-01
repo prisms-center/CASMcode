@@ -11,7 +11,7 @@ namespace CASM {
 
   Site::Site(const Lattice &init_home) :
     Coordinate(init_home),
-    m_nlist_ind(-1),
+    m_label(-1),
     m_type_ID(-1),
     m_site_occupant(DoFType::occupation,
                     "s", // variable name
@@ -23,7 +23,7 @@ namespace CASM {
 
   Site::Site(const Coordinate &init_pos, const std::string &occ_name) :
     Coordinate(init_pos),
-    m_nlist_ind(-1),
+    m_label(-1),
     m_type_ID(-1),
     m_site_occupant(DoFType::occupation,
                     "s", // variable name
@@ -41,7 +41,7 @@ namespace CASM {
   /// \brief Construct site with initial position and the allowed Molecule
   Site::Site(const Coordinate &init_pos, std::initializer_list<Molecule> site_occ) :
     Coordinate(init_pos),
-    m_nlist_ind(-1),
+    m_label(-1),
     m_type_ID(-1),
     m_site_occupant(DoFType::occupation,
                     "s", // variable name
@@ -59,8 +59,8 @@ namespace CASM {
 
   //****************************************************
 
-  Index Site::nlist_ind() const {
-    return m_nlist_ind;
+  Index Site::label() const {
+    return m_label;
   };
 
   //****************************************************
@@ -207,8 +207,8 @@ namespace CASM {
 
   //****************************************************
 
-  Array<std::string> Site::allowed_occupants() const {
-    Array<std::string> occ_list;
+  std::vector<std::string> Site::allowed_occupants() const {
+    std::vector<std::string> occ_list;
     for(Index i = 0; i < site_occupant().size(); i++) {
       occ_list.push_back(site_occupant()[i].name());
     }
@@ -223,22 +223,20 @@ namespace CASM {
 
   //****************************************************
 
-  void Site::set_nlist_ind(Index new_ind) {
-    if(new_ind == m_nlist_ind)
+  void Site::set_label(Index new_ind) {
+    if(new_ind == m_label)
       return;
-
-    m_site_occupant.set_ID(new_ind);
-
-    //for(Index i = 0; i < displacement.size(); i++) {
-    //displacement[i].set_ID(new_ind);
-    //}
     m_nlist_ind = new_ind;
+
+    m_type_ID = -1;
     return;
   }
 
   //****************************************************
   //   read site, including all possible occupants
   void Site::read(std::istream &stream, bool SD_is_on) {
+    set_label(-1);
+
     char ch;
 
     AtomPosition::sd_type SD_flag;
@@ -326,6 +324,8 @@ namespace CASM {
   // read site, using 'elem' as site occupant domain
   void Site::read(std::istream &stream, std::string &elem, bool SD_is_on) {
     char ch;
+
+    set_label(-1);
 
     AtomPosition::sd_type SD_flag;
 
@@ -452,8 +452,9 @@ namespace CASM {
       c2f = home().inv_lat_column_mat();
     CASM::to_json(site_occupant(), json["site_occupant"], c2f);
 
-    // int m_nlist_ind;
-    json["m_nlist_ind"] = m_nlist_ind;
+    // Index m_label
+    if(valid_index(label()))
+      json["label"] = label();
 
 
     return json;
@@ -462,31 +463,30 @@ namespace CASM {
   //****************************************************
 
   void Site::from_json(const jsonParser &json) {
-    try {
 
-      // class Site : public Coordinate
-      Coordinate &coord = *this;
-      //std::cout<<"Trying to read in the Site"<<std::endl;
-      //std::cout<<"Reading in the Coordinate"<<std::endl;
-      CASM::from_json(coord, json["coordinate"]);
+    // class Site : public Coordinate
+    Coordinate &coord = *this;
+    //std::cout<<"Trying to read in the Site"<<std::endl;
+    //std::cout<<"Reading in the Coordinate"<<std::endl;
+    CASM::from_json(coord, json["coordinate"]);
 
-      //std::cout<<"Reading in site_occupant"<<std::endl;
-      // MoleculeOccupant site_occupant;
-      if(COORD_MODE::IS_FRAC())
-        CASM::from_json(m_site_occupant, json["site_occupant"], home().inv_lat_column_mat());
-      else
-        CASM::from_json(m_site_occupant, json["site_occupant"], Eigen::Matrix3d::Identity());
+    //std::cout<<"Reading in site_occupant"<<std::endl;
+    // MoleculeOccupant site_occupant;
+    if(COORD_MODE::IS_FRAC())
+      CASM::from_json(m_site_occupant, json["site_occupant"], home().inv_lat_column_mat());
+    else
+      CASM::from_json(m_site_occupant, json["site_occupant"], Eigen::Matrix3d::Identity());
 
-      //std::cout<<"Reading in m_list_ind"<<std::endl;
-      // int m_nlist_ind;
-      CASM::from_json(m_nlist_ind, json["m_nlist_ind"]);
+    //std::cout<<"Reading in m_list_ind"<<std::endl;
+    // int m_nlist_ind;
+    CASM::from_json(m_nlist_ind, json["m_nlist_ind"]);
 
-      //std::cout<<"Finished Site::from_json"<<std::endl;
-
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
+    // Index m_label -- must be greater than zero
+    m_label = -1;
+    if(json.contains("label")) {
+      CASM::from_json(m_label, json["label"]);
+      if(!valid_index(m_label))
+        throw std::runtime_error("JSON specification of site has {\"label\" : " + std::to_string(m_label) + "}, but \"label\" must be greater than 0.\n");
     }
     m_type_ID = -1;
   };
@@ -503,7 +503,8 @@ namespace CASM {
 
   bool Site::_compare_type_no_ID(const Site &test_site) const {
     //compare domain but not value
-    return site_occupant().compare(test_site.site_occupant(), false);
+    // TODO: Add ContinuousDoF comparisons
+    return label() == test_site.label() && site_occupant().compare(test_site.site_occupant(), false);
   }
 
   //*******************************************************************************************

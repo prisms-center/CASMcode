@@ -106,6 +106,9 @@ namespace CASM {
 
     notstd::cloneable_ptr<BasisBuilder> m_basis_builder;
 
+    /// \brief Collection of all cluster orbits
+    std::vector<OrbitType> m_orbitree
+
     /// \brief Collection of all cluster BasisSets, one per cluster orbit
     std::vector<BSetOrbit> m_bset_tree;
 

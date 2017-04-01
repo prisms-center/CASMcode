@@ -27,17 +27,17 @@ namespace CASM {
       return m_site_occupant;
     }
 
-    const Array<ContinuousDoF> &displacement() const {
+    DoFSet const &displacement() const {
       return m_displacement;
     }
 
-    void update_data_members(const Site &_ref_site);
+    DoFSet const &dof(std::string const &dof_type) const;
 
     /// Checks if current occupant is a vacancy
     bool is_vacant() const;
 
-    ///access m_nlist_ind
-    Index nlist_ind() const;
+    ///access m_label;
+    Index label() const;
 
     /// Name of current occupant (name of molecule, but for single atom, molecule name is species name)
 
@@ -71,13 +71,13 @@ namespace CASM {
     }
 
 
-    Array<std::string> allowed_occupants() const;
+    std::vector<std::string> allowed_occupants() const;
 
     /// set basis_ind of site and its occupant functions
     void set_basis_ind(Index);
 
-    /// set m_nlist_ind of Site and its DoFs
-    void set_nlist_ind(Index);
+    /// set m_label of Site
+    void set_label(Index _new_label);
 
     Site &apply_sym(const SymOp &op);
     Site &apply_sym_no_trans(const SymOp &op);
@@ -97,23 +97,27 @@ namespace CASM {
     void from_json(const jsonParser &json);
 
   private:
-    static Array<Site> &_type_prototypes() {
-      static Array<Site> m_type_prototypes;
+    static std::vector<Site> &_type_prototypes() {
+      static std::vector<Site> m_type_prototypes;
       return m_type_prototypes;
     }
 
-    //Index into PrimClex neighbor list
-    Index m_nlist_ind;     //John G 230913
-    mutable Index m_type_ID;
+    /// Integer label used to differentiate sites of otherwise identical type
+    Index m_label;
 
-    // displacement degrees of freedom of the molecule.
-    // These may be x,y,z, or a subspace (e.g., displacement only in the x--y plane).
-    Array<ContinuousDoF> m_displacement;
+    mutable Index m_type_ID;
 
     // Configuration state is fundamentally different from most other degrees of freedom,
     // so we'll treat it separately. 'occupant' is the discrete degree of freedom associated
     // with the molecule that occupies the site
     MoleculeOccupant m_site_occupant;
+
+    /// displacement degrees of freedom of the molecule.
+    /// These may be x,y,z, or a subspace (e.g., displacement only in the x--y plane).
+    DoFSet m_displacement;
+
+    /// additional continuous degrees of freedom
+    std::map <std::string, DoFSet> m_dof_map;
 
     //============
 
