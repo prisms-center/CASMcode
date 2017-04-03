@@ -399,8 +399,6 @@ namespace CASM {
         apply_sym_impl(op);
       }
 
-      SymGroup invariant_subgroup(double xtal_tol) const;
-
     private:
 
       Configuration &apply_to_impl(Configuration &config) const override;

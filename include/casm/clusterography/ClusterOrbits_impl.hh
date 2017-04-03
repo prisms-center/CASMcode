@@ -683,8 +683,7 @@ namespace CASM {
     Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
     //Find which prim factor group operations make diff_trans the same.
     //may need to do translations here?
-    SymGroup generating_grp = diff_trans.invariant_subgroup(xtal_tol);
-    // SymGroup generating_grp = invariant_subgroup(diff_trans,prim_grp,dt_sym_compare);
+    SymGroup generating_grp = invariant_subgroup(diff_trans, prim_grp, dt_sym_compare);
 
     // collect OrbitBranchSpecs here
     std::vector<OrbitBranchSpecs<orbit_type> > specs;
@@ -780,7 +779,7 @@ namespace CASM {
     const SymGroup &prim_grp = diff_trans.prim().factor_group();
     Kinetics::PrimPeriodicDiffTransSymCompare dt_sym_compare(xtal_tol);
     OrbitGenerators<orbit_type> generators(invariant_subgroup(diff_trans, prim_grp, dt_sym_compare), sym_compare);
-    //OrbitGenerators<orbit_type> generators(diff_trans.prim().factor_group(), sym_compare);
+
     if(bspecs.contains("orbit_specs")) {
 
       // for each custom orbit
