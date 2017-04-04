@@ -25,8 +25,8 @@ AC_PROG_CPP
 ## FIXME: Replace `main' with a function in `-lgzstream':
 #AC_CHECK_LIB([gzstream], [main])
 ## FIXME: Replace `main' with a function in `-lz':
-AC_CHECK_LIB([z], [gzread], [], [AC_MSG_ERROR(gzread from z library not found!)])
-AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR(dlopen from dl library not found!)])
+AC_CHECK_LIB([z], [gzread], [], AC_MSG_ERROR(gzread from z library not found!))
+AC_CHECK_LIB([dl], [dlopen], [], AC_MSG_ERROR(dlopen from dl library not found!))
 #AC_CHECK_LIB([z], [gzwrite])
 #AC_CHECK_LIB([z], [gzopen])
 #AC_CHECK_LIB([z], [gzclose])
@@ -43,7 +43,7 @@ fi;
 
 AX_CXX_COMPILE_STDCXX_11
 BOOSTV=1.54
-AX_BOOST_BASE([$BOOSTV],[],[AC_MSG_ERROR(You need Boost $BOOSTV libraries or higher.)])
+AX_BOOST_BASE([$BOOSTV],[],AC_MSG_ERROR(You need Boost $BOOSTV libraries or higher.))
 AX_BOOST_FILESYSTEM
 AX_BOOST_SYSTEM
 AX_BOOST_REGEX
