@@ -77,15 +77,15 @@ BOOST_AUTO_TEST_CASE(Test0) {
   std::vector<Kinetics::DiffusionTransformation> subdifftrans;
 
 
-  for (auto it = diff_trans_unique.begin(); it != diff_trans_unique.end(); ++it) {
+  for(auto it = diff_trans_unique.begin(); it != diff_trans_unique.end(); ++it) {
     subdifftrans.push_back(*it);
   }
 
-  for (auto it = subdifftrans.begin(); it != subdifftrans.end(); ++it) {
+  for(auto it = subdifftrans.begin(); it != subdifftrans.end(); ++it) {
     std::cout << *it;
     std::cout << "\n";
   }
-//
+  //
   //diff_trans_unique.my_increment();
   //std::cout << "\n";
   //std::cout << diff_trans_unique.current();
