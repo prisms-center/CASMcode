@@ -209,6 +209,9 @@ namespace CASM {
               meets_criteria_7(compare_tol) <<
               meets_criteria_8(compare_tol) << std::endl;
 
+    std::cout << A() << " " << B() << " " << C() << " "
+              << ksi() << " " << eta() << " " << zeta() << std::endl;
+
     return;
   }
 
@@ -241,32 +244,24 @@ namespace CASM {
     if(!keep_handedness) {
       target_lat.make_right_handed();
     }
-
     const Lattice reduced_in = target_lat.get_reduced_cell();
 
-    //const Lattice reduced_in = niggli_impl::_niggli(target_lat, compare_tol);
-    Eigen::Matrix3d best_lat_mat = reduced_in.lat_column_mat();
-
     bool first_niggli = true;
+    Eigen::Matrix3d best_lat_mat = Eigen::Matrix3d::Zero();
 
     //Like the point group, but brute forcing for every possible transformation matrix ever with determinant 1 and elements -1, 0 or 1
-    std::vector<Eigen::Matrix3i> canditate_trans_mats = positive_unimodular_matrices();
+    const std::vector<Eigen::Matrix3i> &candidate_trans_mats = positive_unimodular_matrices();
 
-    for(auto it = canditate_trans_mats.begin(); it != canditate_trans_mats.end(); ++it) {
+    for(auto it = candidate_trans_mats.begin(); it != candidate_trans_mats.end(); ++it) {
       Eigen::Matrix3d candidate_lat_mat = reduced_in.lat_column_mat() * it->cast<double>();
 
-      if(is_niggli(candidate_lat_mat, compare_tol) && standard_orientation_compare(best_lat_mat, candidate_lat_mat, compare_tol)) {
-        best_lat_mat = candidate_lat_mat;
-      }
-
-      //Always accept the first niggli cell regardless of the orientation
-      else if(first_niggli && is_niggli(candidate_lat_mat, compare_tol)) {
-        best_lat_mat = candidate_lat_mat;
-        first_niggli = false;
-
+      if(is_niggli(candidate_lat_mat, compare_tol)) {
+        if(first_niggli || standard_orientation_compare(best_lat_mat, candidate_lat_mat, compare_tol)) {
+          best_lat_mat = candidate_lat_mat;
+          first_niggli = false;
+        }
       }
     }
-
     return Lattice(best_lat_mat);
   }
 
@@ -279,14 +274,19 @@ namespace CASM {
    */
 
   Lattice canonical_equivalent_lattice(const Lattice &in_lat, const SymGroup &point_grp, double compare_tol) {
+
     //Ensure you at least get *something* back that's niggli AND right handed
     Lattice most_canonical = niggli(in_lat, compare_tol, false);
     Eigen::Matrix3d most_canonical_lat_mat = most_canonical.lat_column_mat();
 
-    for(auto it = point_grp.begin(); it != point_grp.end(); ++it) {
-      Eigen::Matrix3d transformed_lat_mat = it->matrix() * in_lat.lat_column_mat();
-      Lattice transformed_lat = Lattice(transformed_lat_mat);
+    Eigen::Matrix3d ref_lat_mat = most_canonical.lat_column_mat();
 
+    for(auto it = point_grp.begin(); it != point_grp.end(); ++it) {
+
+      Eigen::Matrix3d transformed_lat_mat = it->matrix() * ref_lat_mat;
+      // Eigen::Matrix3d transformed_lat_mat = it->matrix() * in_lat.lat_column_mat();
+
+      Lattice transformed_lat(transformed_lat_mat);
       Eigen::Matrix3d candidate_lat_mat = niggli(transformed_lat, compare_tol).lat_column_mat();
 
       //Skip operations that change the handedness of the lattice

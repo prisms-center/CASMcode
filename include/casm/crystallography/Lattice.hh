@@ -139,11 +139,20 @@ namespace CASM {
     /// \brief Check if Lattice is in the canonical form
     bool is_canonical(double tol = TOL) const;
 
+    /// \brief Check if Lattice is in the canonical form
+    bool is_canonical(const SymGroup &pg, double tol = TOL) const;
+
     /// \brief Returns the operation that applied to *this returns the canonical form
     SymOp to_canonical(double tol = TOL) const;
 
+    /// \brief Returns the operation that applied to *this returns the canonical form
+    SymOp to_canonical(const SymGroup &pg, double tol = TOL) const;
+
     /// \brief Returns the operation that applied to the canonical form returns *this
     SymOp from_canonical(double tol = TOL) const;
+
+    /// \brief Returns the operation that applied to the canonical form returns *this
+    SymOp from_canonical(const SymGroup &pg, double tol = TOL) const;
 
     /// \brief Returns the canonical equivalent Lattice, using the point group of the Lattice
     Lattice canonical_form(double tol = TOL) const;

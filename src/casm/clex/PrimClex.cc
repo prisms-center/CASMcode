@@ -22,6 +22,8 @@ namespace CASM {
     Logging(logging),
     prim(_prim) {
 
+    m_settings.set_crystallography_tol(TOL);
+
     _init();
 
     return;
@@ -541,6 +543,7 @@ namespace CASM {
    */
   //*******************************************************************************************
   Index PrimClex::add_supercell(const Lattice &superlat) {
+
     return add_canonical_supercell(canonical_equivalent_lattice(superlat, prim.point_group(), crystallography_tol()));
 
   }

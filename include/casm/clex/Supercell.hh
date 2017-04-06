@@ -305,17 +305,7 @@ namespace CASM {
     }
 
     /// \brief Return supercell name
-    ///
-    /// - If lattice is the canonical equivalent, then return 'SCELV_A_B_C_D_E_F'
-    /// - Else, return 'SCELV_A_B_C_D_E_F.$FG_INDEX', where $FG_INDEX is the index of the first
-    ///   symmetry operation in the primitive structure's factor group such that the lattice
-    ///   is equivalent to `apply(fg_op, canonical equivalent)`
-    std::string get_name() const {
-      if(m_name.empty()) {
-        _generate_name();
-      }
-      return m_name;
-    };
+    std::string get_name() const;
 
     // Populates m_factor_group (if necessary) and returns it.
     const SymGroup &factor_group() const;
@@ -348,17 +338,11 @@ namespace CASM {
     ///Count how many configs are selected in *this
     Index amount_selected() const;
 
-    bool is_canonical() const {
-      return get_real_super_lattice().is_canonical();
-    }
+    bool is_canonical() const;
 
-    SymOp to_canonical() const {
-      return get_real_super_lattice().to_canonical();
-    }
+    SymOp to_canonical() const;
 
-    SymOp from_canonical() const {
-      return get_real_super_lattice().from_canonical();
-    }
+    SymOp from_canonical() const;
 
     Supercell &canonical_form() const;
 
