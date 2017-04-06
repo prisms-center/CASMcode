@@ -10,6 +10,7 @@ namespace CASM {
   /// \brief Get corresponding site
   Site UnitCellCoord::site() const {
     if(sublat() < 0 || sublat() >= unit().basis.size()) {
+      unit().print_xyz(std::cout);
       std::cerr << "CRITICAL ERROR: In BasicStructure<CoordType>::get_site(), UnitCellCoord " << *this << " is out of bounds!\n"
                 << "                Cannot index basis, which contains " << unit().basis.size() << " objects.\n";
       throw std::runtime_error("Error: in 'UnitCellCoord::site()': Cannot convert UnitCellCoord to Site");
@@ -20,6 +21,7 @@ namespace CASM {
   /// \brief Get reference to corresponding sublattice site in the unit structure
   const Site &UnitCellCoord::sublat_site() const {
     if(sublat() < 0 || sublat() >= unit().basis.size()) {
+      unit().print_xyz(std::cout);
       std::cerr << "CRITICAL ERROR: In BasicStructure<CoordType>::get_site(), UnitCellCoord " << *this << " is out of bounds!\n"
                 << "                Cannot index basis, which contains " << unit().basis.size() << " objects.\n";
       throw std::runtime_error("Error: in 'UnitCellCoord::site()': Cannot convert UnitCellCoord to Site");
@@ -29,8 +31,7 @@ namespace CASM {
 
   UnitCellCoord &UnitCellCoord::apply_sym(const SymOp &op) {
     const SymBasisPermute &rep = *op.get_basis_permute_rep(unit().basis_permutation_symrep_ID());
-
-    unitcell() = rep.matrix() * unitcell() + rep[sublat()].unitcell();
+    unitcell() = rep.matrix() * unitcell() + rep[sublat()].unitcell() + (unit().lattice().inv_lat_column_mat() * op.integral_tau()).cast<long>();
     sublat() = rep[sublat()].sublat();
 
     return *this;

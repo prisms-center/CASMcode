@@ -26,11 +26,13 @@ namespace CASM {
            almost_equal(matrix(), new_group[new_index].matrix()))) {
       m_master_group = &new_group;
       m_op_index = new_index;
+      _set_integral_tau();
     }
     else {
       m_master_group = &new_group;
       //m_master_group = NULL;
       m_op_index = -1;
+      _set_integral_tau();
     }
   }
 
@@ -87,6 +89,7 @@ namespace CASM {
     }
     else if(is_identity()) {
       t_op.m_op_index = 0;
+      t_op._set_integral_tau();
     }
 
     return t_op;
@@ -192,7 +195,7 @@ namespace CASM {
       //std::cout<<"Reading in tau_vec"<<std::endl;
       if(json.contains("tau"))
         CASM::from_json(m_tau, json["tau"]);
-
+      _set_integral_tau();
       //std::cout<<"Reading in map_error"<<std::endl;
       // double map_error;
       CASM::from_json(m_map_error, json["map_error"]);
@@ -203,6 +206,20 @@ namespace CASM {
       throw;
     }
   }
+
+
+  void SymOp::_set_integral_tau() {
+    if(has_valid_master() && valid_index(index())) {
+      m_integral_tau = tau() - master_group()[index()].tau();
+      m_valid_integral_tau = true;
+    }
+    else {
+      m_valid_integral_tau = false;
+    }
+  }
+
+
+
 
   //*******************************************************************************************
 

@@ -64,6 +64,17 @@ namespace CASM {
       return m_tau;
     }
 
+    /// Const access of the sym op's cartesian shift from its MasterSymGroup
+    inline
+    const vector_type &integral_tau() const {
+      if(m_valid_integral_tau) {
+        return m_integral_tau;
+      }
+      else {
+        std::cerr << "Attempt to access integral tau without it being valid" << std::endl;
+      }
+    }
+
     ///\brief returns true if matrix part of operation is identity
     inline
     bool is_identity() const {
@@ -152,6 +163,11 @@ namespace CASM {
     MasterSymGroup const *m_master_group;
     */
 
+    /// \brief Set the difference between the translation of this compared to
+    // its MasterSymGroup correspondent
+    void _set_integral_tau() override;
+
+
     ///matrix representation of symettry operation in
     ///Cartesian (symmetry_mat[CART])
     ///Fractional (symmetry_mat[FRAC])
@@ -160,6 +176,12 @@ namespace CASM {
     ///translation vector that is applied to
     ///a point after matrix transformation
     vector_type m_tau;
+
+    ///translation vector that maps this op's correspondent in its Master Group
+    /// to this
+    mutable vector_type m_integral_tau;
+
+    bool m_valid_integral_tau;
 
     /// This stores the mapping error associated with this SymOp, which will depend on the tolerances
     ///  you choose when you attempt to generate symmetry groups.
