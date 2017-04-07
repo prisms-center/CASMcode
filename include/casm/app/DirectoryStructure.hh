@@ -260,6 +260,11 @@ namespace CASM {
     }
 
     /// \brief Return calculated properties file path
+    fs::path configuration_calc_dir(std::string configname, std::string calctype) const {
+      return configuration_dir(configname) / _calctype(calctype);
+    }
+
+    /// \brief Return calculated properties file path
     fs::path calculated_properties(std::string configname, std::string calctype) const {
       return configuration_dir(configname) / _calctype(calctype) / "properties.calc.json";
     }

@@ -61,12 +61,18 @@ namespace CASM {
       ("rotate,r", "Rotate structure to be consistent with setting of PRIM")
       ("ideal,i", "Assume imported structures are unstrained (ideal) for faster importing. Can be slower if used on deformed structures, in which case more robust methods will be used")
       //("strict,s", "Request that symmetrically equivalent configurations be treated as distinct.")
-      ("data,d", "Attempt to extract calculation data from the enclosing directory of the structure files, if it is available");
+      ("data,d", "Attempt to extract calculation data (properties.calc.json file) from the enclosing directory of the structure files, if it is available")
+      ("copy_additional_files", "Recursively copy other files from the same directory as the properties.calc.json file.");
 
       return;
     }
 
   }
+
+  bool _has_existing_files(fs::path p);
+  fs::path _calc_properties_path(const PrimClex &primclex, fs::path pos_path);
+  void _cp_files(const fs::path &pos_path, const Configuration &config, bool copy_additional_files, Log &log);
+  void _recurs_cp_files(const fs::path &from_dir, const fs::path &to_dir, Log &log);
 
   // ///////////////////////////////////////
   // 'import' function for casm
@@ -229,22 +235,12 @@ namespace CASM {
 
       // If user requested data import, try to get structural data from properties.calc.json, instead of POS, etc.
       // Since properties.calc.json would be used during 'casm update' to validate relaxation
-      if(vm.count("data") && pos_path.extension() != ".json" && pos_path.extension() != ".JSON") {
-        fs::path dft_path = pos_path;
-        dft_path.remove_filename();
-        (dft_path /= ("calctype." + primclex.settings().default_clex().calctype)) /= "properties.calc.json";
-        if(!fs::exists(dft_path)) {
-          dft_path = pos_path;
-          dft_path.remove_filename();
-          dft_path /= "properties.calc.json";
-          if(!fs::exists(dft_path)) {
-            dft_path = fs::path();
-          }
-        }
-        if(!dft_path.empty())
+      if(vm.count("data")) {
+        fs::path dft_path = _calc_properties_path(primclex, pos_path);
+        if(!dft_path.empty()) {
           pos_path = dft_path;
+        }
       }
-
 
       //Import structure and make note of path
       bool new_import = false;
@@ -316,8 +312,9 @@ namespace CASM {
 
         fs::path import_path = fs::absolute(imported_config.get_path(), pwd);
         bool preexisting(false);
-        if(fs::exists(imported_config.calc_properties_path()))
+        if(_has_existing_files(imported_config.calc_dir())) {
           preexisting = true;
+        }
         Index mult = data_vec.size() + Index(preexisting);
         double best_weight(1e19);
         double best_energy(1e19);
@@ -415,10 +412,8 @@ namespace CASM {
         }
 
         fs::path import_target = import_path / ("calctype." + primclex.settings().default_clex().calctype);
-        if(!fs::exists(import_target))
-          fs::create_directories(import_target);
 
-        fs::copy_file(pos_path, imported_config.calc_properties_path());
+        _cp_files(pos_path, imported_config, vm.count("copy_additional_files"), args.log);
 
         if(!fs::exists(imported_config.get_pos_path()))
           imported_config.write_pos();
@@ -483,5 +478,97 @@ namespace CASM {
     return 0;
   };
 
+  bool _has_existing_files(fs::path p) {
+    if(!fs::exists(p)) {
+      return false;
+    }
+    return std::distance(fs::directory_iterator(p), fs::directory_iterator());
+  }
+
+  /// \brief Return path to properties.calc.json that will be imported
+  ///        checking a couple possible locations relative to pos_path
+  ///
+  /// checks:
+  /// 1) is a JSON file? is pos_path ends in ".json" or ".JSON", return pos_path
+  /// 2) assume pos_path is /path/to/POS, checks for /path/to/calctype.current/properties.calc.json
+  /// 3) assume pos_path is /path/to/POS, checks for /path/to/properties.calc.json
+  /// else returns empty path
+  ///
+  fs::path _calc_properties_path(const PrimClex &primclex, fs::path pos_path) {
+
+    // check 1: is a JSON file
+    if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
+      return pos_path;
+    }
+
+    // check 2: /path/to/POS -> /path/to/calctype.current/properties.calc.json
+    {
+      fs::path dft_path = pos_path;
+      dft_path.remove_filename();
+      (dft_path /= ("calctype." + primclex.settings().default_clex().calctype)) /= "properties.calc.json";
+      if(fs::exists(dft_path)) {
+        return dft_path;
+      }
+    }
+
+    // check 3: /path/to/POS -> /path/to/properties.calc.json
+    {
+      fs::path dft_path = pos_path;
+      dft_path.remove_filename();
+      dft_path /= "properties.calc.json";
+      if(fs::exists(dft_path)) {
+        return dft_path;
+      }
+    }
+
+    // not found, return empty path
+    return fs::path();
+  }
+
+  /// \brief Copy files in the same directory as properties.calc.json into the
+  ///        traning_data directory for a particular configuration
+  ///
+  /// - First: calc_props_path = _calc_properties_path(pos_path) to get properties.calc.json location
+  /// - If calc_props_path.empty(), return
+  /// - else if !copy_additional_files copy properties.calc.json file only and return
+  /// - else, recursively copy all files from calc_props_path.remove_filename()
+  ///   to the training data directory for the current calctype
+  void _cp_files(const fs::path &pos_path, const Configuration &config, bool copy_additional_files, Log &log) {
+    fs::path p = config.calc_dir();
+    if(!fs::exists(p)) {
+      fs::create_directories(p);
+    }
+
+    fs::path calc_props_path = _calc_properties_path(config.get_primclex(), pos_path);
+    if(calc_props_path.empty()) {
+      return;
+    }
+
+    log.custom(std::string("Copy calculation files: ") + config.name());
+    if(!copy_additional_files) {
+      log << "cp " << calc_props_path << " " << p << std::endl;
+      fs::copy_file(calc_props_path, p / calc_props_path.filename());
+    }
+    else {
+      _recurs_cp_files(calc_props_path.remove_filename(), p, log);
+    }
+    log << std::endl;
+  }
+
+  void _recurs_cp_files(const fs::path &from_dir, const fs::path &to_dir, Log &log) {
+    auto it = fs::directory_iterator(from_dir);
+    auto end = fs::directory_iterator();
+    for(; it != end; ++it) {
+      if(fs::is_regular_file(*it)) {
+        log << "cp " << *it << " " << to_dir << std::endl;
+        fs::copy_file(*it, to_dir / it->path().filename());
+      }
+      else {
+        fs::path new_to_dir = to_dir / it->path().filename();
+        fs::create_directories(new_to_dir);
+        _recurs_cp_files(*it, new_to_dir, log);
+      }
+    }
+  }
 }
 

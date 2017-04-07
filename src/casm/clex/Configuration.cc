@@ -1106,6 +1106,11 @@ namespace CASM {
   }
 
   //*********************************************************************************
+  fs::path Configuration::calc_dir() const {
+    return get_primclex().dir().configuration_calc_dir(name(), get_primclex().settings().default_clex().calctype);
+  }
+
+  //*********************************************************************************
   fs::path Configuration::calc_properties_path() const {
     return get_primclex().dir().calculated_properties(name(), get_primclex().settings().default_clex().calctype);
   }
