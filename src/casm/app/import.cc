@@ -62,7 +62,7 @@ namespace CASM {
       ("ideal,i", "Assume imported structures are unstrained (ideal) for faster importing. Can be slower if used on deformed structures, in which case more robust methods will be used")
       //("strict,s", "Request that symmetrically equivalent configurations be treated as distinct.")
       ("data,d", "Attempt to extract calculation data (properties.calc.json file) from the enclosing directory of the structure files, if it is available")
-      ("copy_additional_files", "Recursively copy other files from the same directory as the properties.calc.json file.");
+      ("copy-additional-files", "Recursively copy other files from the same directory as the properties.calc.json file.");
 
       return;
     }

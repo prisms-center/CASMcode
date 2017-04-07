@@ -443,10 +443,10 @@ namespace CASM {
   // **** IO ****
   //*******************************************************************************************
   /**
-   * Re-write config_list.json, updating all the data
+   * Re-write config_list.json, excluding specified scel
    */
 
-  void PrimClex::write_config_list() {
+  void PrimClex::write_config_list(std::set<std::string> scel_to_delete) {
 
     if(supercell_list.size() == 0) {
       fs::remove(get_config_list_path());
@@ -463,7 +463,12 @@ namespace CASM {
     }
 
     for(Index s = 0; s < supercell_list.size(); s++) {
-      supercell_list[s].write_config_list(json);
+      if(scel_to_delete.count(supercell_list[s].get_name())) {
+        json["supercells"].erase(supercell_list[s].get_name());
+      }
+      else {
+        supercell_list[s].write_config_list(json);
+      }
     }
 
     SafeOfstream file;
@@ -473,7 +478,6 @@ namespace CASM {
 
     return;
   }
-
 
   // **** Operators ****
 
@@ -549,7 +553,7 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  void PrimClex::print_supercells() const {
+  void PrimClex::print_supercells(std::set<std::string> scel_to_delete) const {
 
 
     // also write supercells/supercell_path directories with LAT files
@@ -563,16 +567,18 @@ namespace CASM {
 
     fs::ofstream scelfile(get_path() / "training_data" / "SCEL");
 
-    print_supercells(scelfile);
+    print_supercells(scelfile, scel_to_delete);
 
     for(Index i = 0; i < supercell_list.size(); i++) {
       try {
-        fs::create_directory(supercell_list[i].get_path());
+        if(!scel_to_delete.count(supercell_list[i].get_name())) {
+          fs::create_directory(supercell_list[i].get_path());
 
-        fs::path latpath = supercell_list[i].get_path() / "LAT";
-        if(!fs::exists(latpath)) {
-          fs::ofstream latfile(latpath);
-          supercell_list[i].get_real_super_lattice().print(latfile);
+          fs::path latpath = supercell_list[i].get_path() / "LAT";
+          if(!fs::exists(latpath)) {
+            fs::ofstream latfile(latpath);
+            supercell_list[i].get_real_super_lattice().print(latfile);
+          }
         }
       }
       catch(const fs::filesystem_error &ex) {
@@ -583,12 +589,14 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  void PrimClex::print_supercells(std::ostream &stream) const {
+  void PrimClex::print_supercells(std::ostream &stream, std::set<std::string> scel_to_delete) const {
     for(Index i = 0; i < supercell_list.size(); i++) {
-      stream << "Supercell Name: '" << supercell_list[i].get_name() << "' Number: " << i << " Volume: " << supercell_list[i].get_transf_mat().determinant() << "\n";
-      stream << "Supercell Transformation Matrix: \n";
-      stream << supercell_list[i].get_transf_mat();
-      stream << "\n";
+      if(!scel_to_delete.count(supercell_list[i].get_name())) {
+        stream << "Supercell Name: '" << supercell_list[i].get_name() << "' Number: " << i << " Volume: " << supercell_list[i].get_transf_mat().determinant() << "\n";
+        stream << "Supercell Transformation Matrix: \n";
+        stream << supercell_list[i].get_transf_mat();
+        stream << "\n";
+      }
     }
   }
 
@@ -610,7 +618,11 @@ namespace CASM {
 
     Eigen::Matrix3d mat;
 
+    // check for non-canonical
     std::vector<std::pair<Lattice, Lattice> > non_canon;
+
+    // read && sort
+    std::set<Supercell> in_scel;
 
     std::string s;
     while(!stream.eof()) {
@@ -620,7 +632,7 @@ namespace CASM {
         stream >> mat;
 
         Lattice lat(prim.lattice().lat_column_mat()*mat);
-        add_canonical_supercell(lat);
+        in_scel.emplace(this, lat);
 
         Lattice canon = canonical_equivalent_lattice(
                           lat,
@@ -631,6 +643,11 @@ namespace CASM {
           non_canon.push_back(std::make_pair(lat, canon));
         }
       }
+    }
+
+    // insert sorted
+    for(const auto &scel : in_scel) {
+      add_canonical_supercell(scel.get_real_super_lattice());
     }
 
     if(non_canon.size()) {

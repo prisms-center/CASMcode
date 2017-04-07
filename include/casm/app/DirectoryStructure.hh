@@ -17,6 +17,7 @@ namespace CASM {
 
   template<typename DataObject>
   class QueryTraits;
+  class Log;
 
   /// return path to current or parent directory containing ".casm" directory
   ///   if none found, return empty path
@@ -46,6 +47,9 @@ namespace CASM {
     }
     return relpath;
   };
+
+  /// \brief Remove files recursively
+  void recurs_rm_files(fs::path p, bool dry_run, Log &log);
 
   /// \brief Specification of CASM project directory structure
   class DirectoryStructure {

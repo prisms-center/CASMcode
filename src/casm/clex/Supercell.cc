@@ -1263,7 +1263,6 @@ namespace CASM {
     return get_transf_mat() == B.get_transf_mat();
   }
 
-
   Supercell &apply(const SymOp &op, Supercell &scel) {
     return scel = copy_apply(op, scel);
   }
