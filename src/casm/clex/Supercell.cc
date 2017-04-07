@@ -856,29 +856,7 @@ namespace CASM {
 
   void Supercell::_generate_name() const {
     //std::cout << "begin _generate_name()" << std::endl;
-    if(is_canonical()) {
-      m_name = CASM::generate_name(transf_mat);
-    }
-    else {
-      /*
-      ... to do ...
-      Supercell& canon = canonical_form();
-      ScelEnumEquivalents e(canon);
-
-      for(auto it = e.begin(); it != e.end(); ++it) {
-        if(this->is_equivalent(*it)) {
-          break;
-        }
-      }
-
-      m_name = canon.get_name() + "." + std::to_string(e.sym_op().index());
-      */
-
-      Supercell &canon = canonical_form();
-      m_name = canon.get_name() + ".non_canonical_equivalent";
-    }
-    //std::cout << "end _generate_name()" << std::endl;
-
+    m_name = CASM::generate_name(transf_mat);
   }
 
   //***********************************************************

@@ -610,6 +610,8 @@ namespace CASM {
 
     Eigen::Matrix3d mat;
 
+    std::vector<std::pair<Lattice, Lattice> > non_canon;
+
     std::string s;
     while(!stream.eof()) {
       std::getline(stream, s);
@@ -617,8 +619,35 @@ namespace CASM {
         std::getline(stream, s);
         stream >> mat;
 
-        add_canonical_supercell(Lattice(prim.lattice().lat_column_mat()*mat));
+        Lattice lat(prim.lattice().lat_column_mat()*mat);
+        add_canonical_supercell(lat);
+
+        Lattice canon = canonical_equivalent_lattice(
+                          lat,
+                          get_prim().point_group(),
+                          crystallography_tol());
+
+        if(!almost_equal(canon.lat_column_mat(), lat.lat_column_mat(), crystallography_tol())) {
+          non_canon.push_back(std::make_pair(lat, canon));
+        }
       }
+    }
+
+    if(non_canon.size()) {
+      log() << std::endl;
+
+      log().warning("Non-canonical supercells");
+      log() << "A bug in a previous version of CASM resulted in the generation \n"
+            "of the following non-canonical supercells: \n";
+      for(const auto &val : non_canon) {
+        log() << "  existing name: " << generate_name(calc_transf_mat(val.first))
+              << "  canonical name: " << generate_name(calc_transf_mat(val.second)) << "\n";
+      }
+      log() << std::endl;
+      log() << "To prevent errors, please use 'casm import' to convert existing \n"
+            "configurations and data.\n";
+      log() << std::endl;
+
     }
   }
 

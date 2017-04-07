@@ -397,7 +397,7 @@ namespace CASM {
   }
 
   //*******************************************************************************
-  
+
   /// \brief Returns the point group that leaves the Configuration unchanged
   SymGroup Configuration::point_group() const {
     SymGroup sym_group;
@@ -412,8 +412,8 @@ namespace CASM {
           new_symop = false;
       }
       if(new_symop)
-         sym_group.push_back(config_factor_group[i].sym_op());
-      }
+        sym_group.push_back(config_factor_group[i].sym_op());
+    }
     return sym_group;
   }
 
@@ -540,10 +540,10 @@ namespace CASM {
             k += 1;
           }
           auto atom_idx = std::find(struc_molecule_name.begin(), struc_molecule_name.end(), name_each_molecule[i]) - struc_molecule_name.begin();
-          if (atom_idx < struc_molecule_name.size()) {
-            mag_each_molecule[atom_idx] = cum_molecule_mag/num_each_molecule[i];
+          if(atom_idx < struc_molecule_name.size()) {
+            mag_each_molecule[atom_idx] = cum_molecule_mag / num_each_molecule[i];
           }
-        parsed_props["relaxed_mag"] = mag_each_molecule;
+          parsed_props["relaxed_mag"] = mag_each_molecule;
         }
       }
     }
@@ -591,17 +591,7 @@ namespace CASM {
   }
 
   void Configuration::_generate_name() const {
-
-    // canonical forms in canonical supercells
-    if(get_id() != "none") {
-      m_name = get_supercell().get_name() + "/" + get_id();
-    }
-    else if(get_supercell().is_canonical() && is_canonical()) {
-      m_name = get_supercell().get_name() + "/" + get_id();
-    }
-    else {
-      m_name = get_supercell().get_name() + "/non_canonical_equivalent";
-    }
+    m_name = get_supercell().get_name() + "/" + get_id();
   }
 
   //*********************************************************************************
