@@ -49,15 +49,15 @@ BOOST_AUTO_TEST_CASE(Test0) {
   /// Make background_config
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
-  Supercell scel {&primclex, Lattice(3 * a, 2 * b, 2 * c)};
+  Supercell scel {&primclex, Lattice(2 * a, 2 * b, 3 * c)};
   Configuration config(scel);
   config.init_occupation();
   config.init_displacement();
   config.init_deformation();
   config.init_specie_id();
-  config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
+  config.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0});
   config.print_occupation(std::cout);
-  //std::cout << config;
+  std::cout << config;
   Configuration bg_config_prim = config.primitive();
 
   /// Find prototype of m_diff_trans_orbit
@@ -72,15 +72,17 @@ BOOST_AUTO_TEST_CASE(Test0) {
   PermuteIterator begin = bg_config_prim.supercell().permute_begin();
   PermuteIterator end = bg_config_prim.supercell().permute_end();
   Kinetics::DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, bg_config_prim);
+  std::cout << "size of Config factor group " << diff_trans_unique.invariant_subgroup().size() << std::endl;
+  std::cout << "size of Supercell factor group " << bg_config_prim.supercell().factor_group().size() << std::endl;
+  std::cout << "size of Supercell (#prims) " << bg_config_prim.supercell().volume() << std::endl;
 
-  std::cout << "Diff_Trans_Unique_Current" << "\n";
   std::vector<Kinetics::DiffusionTransformation> subdifftrans;
 
 
   for(auto it = diff_trans_unique.begin(); it != diff_trans_unique.end(); ++it) {
     subdifftrans.push_back(*it);
   }
-
+  std::cout << "Diff_Trans_Uniques " << subdifftrans.size() << " total" << "\n";
   for(auto it = subdifftrans.begin(); it != subdifftrans.end(); ++it) {
     std::cout << *it;
     std::cout << "\n";

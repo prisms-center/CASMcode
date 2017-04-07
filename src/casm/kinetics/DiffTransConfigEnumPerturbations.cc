@@ -18,22 +18,28 @@ namespace CASM {
 
     const std::string DiffTransConfigEnumPerturbations::enumerator_name = "DiffTransConfigEnumPerturbations";
 
-    void DiffTransConfigEnumPerturbations::increment(){
+    void DiffTransConfigEnumPerturbations::increment() {
 
-    /// Find primitive cell of background_config
-    Configuration bg_config_prim = m_background_config.primitive();
+      /// Find primitive cell of background_config
+      Configuration bg_config_prim = m_background_config.primitive();
 
-    /// Find prototype of m_diff_trans_orbit
-    DiffusionTransformation diff_trans_prototype = m_diff_trans_orbit.prototype();
+      /// Find prototype of m_diff_trans_orbit
+      DiffusionTransformation diff_trans_prototype = m_diff_trans_orbit.prototype();
+      std::vector<PermuteIterator> permits = bg_config_prim.factor_group();
+      std::vector<SymOp> config_fg;
+      for(PermuteIterator i : permits) {
+        config_fg.push_back(i.sym_op());
+      }
+      /// Find unique DiffusionTransformations
+      //PermuteIterator begin = config_fg.begin();
+      //PermuteIterator end = config_fg.end();
+      auto begin = bg_config_prim.supercell().permute_begin();
+      auto end = bg_config_prim.supercell().permute_end();
+      DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, bg_config_prim);
 
-    /// Find unique DiffusionTransformations
-    PermuteIterator begin = bg_config_prim.supercell().permute_begin();
-    PermuteIterator end = bg_config_prim.supercell().permute_end();
-    DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, bg_config_prim);
 
-
-    /// Use settings from local_bspecs to add perturbations to each from_config
-    /// Use DiffTransGroup to check which perturbations are equivalent
+      /// Use settings from local_bspecs to add perturbations to each from_config
+      /// Use DiffTransGroup to check which perturbations are equivalent
 
     };
 
