@@ -423,8 +423,7 @@ namespace CASM {
     auto corr = correlations(config, _clexulator());
     double formation_energy = _eci() * corr.data();
     auto comp_x = primclex().composition_axes().param_composition(CASM::comp_n(config));
-    double Ep = formation_energy - comp_x.dot(m_condition.param_chem_pot());
-    return Ep / supercell().volume();
+    return formation_energy - comp_x.dot(m_condition.param_chem_pot());
   }
 
   /// \brief Calculate delta correlations for an event

@@ -286,7 +286,8 @@ namespace CASM {
 
     DataFormatter<ConstMonteCarloPtr> formatter;
 
-    formatter.push_back(ConstantValueFormatter<std::string, ConstMonteCarloPtr>("configname", configname));
+    bool print_json = true;
+    formatter.push_back(ConstantValueFormatter<std::string, ConstMonteCarloPtr>("configname", configname, print_json));
     formatter.push_back(MonteCarloTFormatter<GrandCanonical>());
     formatter.push_back(GrandCanonicalLTEFormatter(phi_LTE1));
     std::set<std::string> exclude;
