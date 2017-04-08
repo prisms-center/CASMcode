@@ -610,10 +610,14 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
     ### Expand remaining environment variables
     command = os.path.expandvars(command)
 
-    if not npar is None:
+    if npar is not None:
         ncore = None
 
-    io.set_incar_tag({"NPAR":npar, "NCORE":ncore, "KPAR":kpar}, jobdir)
+    if npar is not None or ncore is not None:
+        io.set_incar_tag({"NPAR":npar, "NCORE":ncore}, jobdir)
+
+    if kpar is not None:
+        io.set_incar_tag({"KPAR":kpar}, jobdir)
 
     print "  jobdir:", jobdir
     print "  exec:", command
