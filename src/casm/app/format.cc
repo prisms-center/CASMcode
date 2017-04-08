@@ -732,7 +732,7 @@ LCHARG = .FALSE.\n";
                 << "'chebychev'. Otherwise, specifies a JSON object containing a composition vector or\n"
                 << "a JSON array containing multiple composition vectors. A single composition vector\n"
                 << "is formatted as, e.g.\n"
-                << "   \"composition\" : [\"Au\" : 0.25, \"Cu\" : 0.75] \n"
+                << "   \"composition\" : {\"Au\" : 0.25, \"Cu\" : 0.75} \n"
                 << "The site basis functions will then be constructed as to be optimized for that composition.\n\n"
 
                 << "To specify different compositions on multiple sublattices, an array can be used. \n"
@@ -741,11 +741,11 @@ LCHARG = .FALSE.\n";
 
                 << "   \"site_basis_functions\" : [\n"
                 << "                                {\n"
-                << "                                  \"composition\" : [\"Ga\" : 0.3, \"In\" : 0.7],\n"
+                << "                                  \"composition\" : {\"Ga\" : 0.3, \"In\" : 0.7},\n"
                 << "                                  \"sublat_indices\" : [0]\n"
                 << "                                },\n"
                 << "                                {\n"
-                << "                                  \"composition\" : [\"Ga\" : 1.0, \"In\" : 0.0],\n"
+                << "                                  \"composition\" : {\"Ga\" : 1.0, \"In\" : 0.0},\n"
                 << "                                  \"sublat_indices\" : [1,2]\n"
                 << "                                }\n"
                 << "                             ]\n\n"

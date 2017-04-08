@@ -76,12 +76,32 @@ def set_sample_weight(sample_weight, y=None, X=None):
   """ 
   Calculate weighted data and weighted target values.
   
-  Uses sample weights to calculate
+  Ordinary least squares minimizes
+    (y-X*b).transpose() * (y-X*b)
   
-    L*X * b = L*y 
+  where 'X' is the correlation matrix of shape (Nvalue, Nbfunc), and 'y' 
+  is a vector of Nvalue calculated properties, and 'b' are the fitting 
+  coefficients (ECI).
+
+  Weighted least squares minimizes
+    (y-X*b).transpose() * W * (y-X*b)
   
-  a weighted linear model where the weights are given by W = L * L.transpose().
+  Using the SVD, and given that W is Hermitian:
+    U * S * U.transpose() == W
   
+  Define L such that:
+    L.transpose() = U * sqrt(S)
+  
+  Then we can write the weighted least squares problem using:
+    (y-X*b).transpose() * L.transpose() * L * (y-X*b)
+  
+  Or:
+    (L*y-L*X*b).transpose() * (L*y-L*X*b)
+    
+  So, if weights are included, then the linear model is changed from
+    X*b = y  ->  L*X*b = L*y
+    
+    
   Arguments
   ---------
     
@@ -142,7 +162,8 @@ def set_sample_weight(sample_weight, y=None, X=None):
     raise Exception("Error in set_sample_weight: sample_weight dimension > 2")
   
   # weighted data
-  L = np.linalg.cholesky(W)
+  U, S, V = np.linalg.svd(W)
+  L = U.dot(np.diag(np.sqrt(S))).transpose()
   
   if X is not None:
     weighted_X = np.dot(L, X)
