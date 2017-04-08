@@ -720,6 +720,32 @@ namespace CASM {
     //*****************************************************************************************************//
 
     /**
+     * Options set for `casm rm`. Get your point groups here.
+     */
+
+    class RmOption : public OptionHandlerBase {
+
+    public:
+
+      using OptionHandlerBase::selection_path;
+      using OptionHandlerBase::config_strs;
+      using OptionHandlerBase::supercell_strs;
+
+      RmOption();
+
+      bool force() const;
+
+      bool dry_run() const;
+
+    private:
+
+      void initialize() override;
+
+    };
+
+    //*****************************************************************************************************//
+
+    /**
      * Options set for `casm update`. Get your project up to date here.
      */
 

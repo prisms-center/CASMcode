@@ -584,6 +584,7 @@ namespace CASM {
     void print_sublattice_composition(std::ostream &stream) const;
 
 
+    fs::path calc_dir() const;
     fs::path calc_properties_path() const;
     fs::path calc_status_path() const;
     /// Path to various files

@@ -114,6 +114,19 @@ namespace CASM {
     return ++config_const_iterator(primclex, m_id, config_list.size() - 1);
   }
 
+  /// \brief Return supercell name
+  ///
+  /// - If lattice is the canonical equivalent, then return 'SCELV_A_B_C_D_E_F'
+  /// - Else, return 'SCELV_A_B_C_D_E_F.$FG_INDEX', where $FG_INDEX is the index of the first
+  ///   symmetry operation in the primitive structure's factor group such that the lattice
+  ///   is equivalent to `apply(fg_op, canonical equivalent)`
+  std::string Supercell::get_name() const {
+    if(m_name.empty()) {
+      _generate_name();
+    }
+    return m_name;
+  };
+
   /*****************************************************************/
 
   const SymGroup &Supercell::factor_group() const {
@@ -842,27 +855,8 @@ namespace CASM {
   //***********************************************************
 
   void Supercell::_generate_name() const {
-    if(is_canonical()) {
-      m_name = CASM::generate_name(transf_mat);
-    }
-    else {
-      /*
-      ... to do ...
-      Supercell& canon = canonical_form();
-      ScelEnumEquivalents e(canon);
-
-      for(auto it = e.begin(); it != e.end(); ++it) {
-        if(this->is_equivalent(*it)) {
-          break;
-        }
-      }
-
-      m_name = canon.get_name() + "." + std::to_string(e.sym_op().index());
-      */
-
-      Supercell &canon = canonical_form();
-      m_name = canon.get_name() + ".non_canonical_equivalent";
-    }
+    //std::cout << "begin _generate_name()" << std::endl;
+    m_name = CASM::generate_name(transf_mat);
   }
 
   //***********************************************************
@@ -888,9 +882,34 @@ namespace CASM {
 
   //***********************************************************
 
+  bool Supercell::is_canonical() const {
+    return get_real_super_lattice().is_canonical(
+             get_prim().point_group(),
+             get_primclex().crystallography_tol());
+  }
+
+  //***********************************************************
+
+  SymOp Supercell::to_canonical() const {
+    return get_real_super_lattice().to_canonical(
+             get_prim().point_group(),
+             get_primclex().crystallography_tol());
+  }
+
+  //***********************************************************
+
+  SymOp Supercell::from_canonical() const {
+    return get_real_super_lattice().from_canonical(
+             get_prim().point_group(),
+             get_primclex().crystallography_tol());
+  }
+
+  //***********************************************************
+
   Supercell &Supercell::canonical_form() const {
     if(!m_canonical) {
-      m_canonical = &get_primclex().get_supercell(get_primclex().add_supercell(get_real_super_lattice()));
+      m_canonical = &get_primclex().get_supercell(
+                      get_primclex().add_supercell(get_real_super_lattice()));
     }
     return *m_canonical;
   }
@@ -1243,7 +1262,6 @@ namespace CASM {
     }
     return get_transf_mat() == B.get_transf_mat();
   }
-
 
   Supercell &apply(const SymOp &op, Supercell &scel) {
     return scel = copy_apply(op, scel);

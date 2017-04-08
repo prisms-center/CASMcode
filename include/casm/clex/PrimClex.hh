@@ -244,7 +244,7 @@ namespace CASM {
 
     ///Call Configuration::write on every configuration to update files
     ///  - call update to also read all files
-    void write_config_list();
+    void write_config_list(std::set<std::string> scel_to_delete = {});
 
 
     // **** Operators ****
@@ -260,8 +260,8 @@ namespace CASM {
 
     //Enumerate configurations for all the supercells that are stored in 'supercell_list'
     void print_enum_info(std::ostream &stream);
-    void print_supercells() const;
-    void print_supercells(std::ostream &stream) const;
+    void print_supercells(std::set<std::string> scel_to_delete = {}) const;
+    void print_supercells(std::ostream &stream, std::set<std::string> scel_to_delete = {}) const;
     void read_supercells(std::istream &stream);
     void print_clex_configurations();
 

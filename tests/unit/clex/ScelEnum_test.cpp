@@ -21,6 +21,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   proj.check_init();
 
   PrimClex primclex(proj.dir, null_log());
+  primclex.settings().set_crystallography_tol(1e-5);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.get_prim().lattice().vectors();
@@ -29,7 +30,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   // -- Test ScelEnumByProps --------------------
   {
-    ScelEnumProps enum_props(1, 5);
+    ScelEnumProps enum_props(1, 10);
     ScelEnumByProps e(primclex, enum_props);
 
     BOOST_CHECK_EQUAL(e.name(), "ScelEnumByProps");
@@ -44,9 +45,28 @@ BOOST_AUTO_TEST_CASE(Test1) {
     Index count = 0;
     for(; it != end; ++it, ++count) {
       m_names.push_back(it->get_name());
-      //std::cout << it->get_name() << std::endl;
+
+      Lattice canon_check = canonical_equivalent_lattice(
+                              it->get_real_super_lattice(),
+                              primclex.get_prim().point_group(),
+                              primclex.crystallography_tol());
+
+      bool check = almost_equal(
+                     it->get_real_super_lattice().lat_column_mat(),
+                     canon_check.lat_column_mat(),
+                     primclex.crystallography_tol());
+
+      if(!check) {
+        std::cout << "superlat: \n" << it->get_real_super_lattice().lat_column_mat() << std::endl;
+        std::cout << "canon_check: \n" << canon_check.lat_column_mat() << std::endl;
+      }
+
+      BOOST_CHECK_EQUAL(check, true);
+
+      BOOST_CHECK_EQUAL(it->is_canonical(), true);
+
     }
-    BOOST_CHECK_EQUAL(count, 20);
+    BOOST_CHECK_EQUAL(count, 114);
     BOOST_CHECK(it == end);
   }
 
@@ -66,7 +86,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
     for(; it != end; ++it, ++count) {
       //std::cout << it->get_name() << std::endl;
     }
-    BOOST_CHECK_EQUAL(count, 20);
+    BOOST_CHECK_EQUAL(count, 114);
     BOOST_CHECK(it == end);
   }
 
