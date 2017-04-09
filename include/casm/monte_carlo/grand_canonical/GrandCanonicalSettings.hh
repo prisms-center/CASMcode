@@ -2,6 +2,7 @@
 #define CASM_GrandCanonicalSettings
 
 #include "casm/monte_carlo/MonteSettings.hh"
+#include "casm/external/boost.hh"
 
 namespace CASM {
 
@@ -43,7 +44,7 @@ namespace CASM {
 
     /// \brief Construct MonteSamplers as specified in the MonteSettings
     template<typename SamplerInsertIterator>
-    SamplerInsertIterator samplers(const PrimClex &primclex, const Configuration &config, SamplerInsertIterator result) const;
+    SamplerInsertIterator samplers(const PrimClex &primclex, SamplerInsertIterator result) const;
 
     /// \brief Return true if all correlations should be sampled
     bool all_correlations() const;
@@ -57,7 +58,7 @@ namespace CASM {
     GrandCanonicalConditions _conditions(const jsonParser &json) const;
 
     template<typename jsonParserIteratorType>
-    std::tuple<bool, double> _get_precision(jsonParserIteratorType it, std::string input_name) const;
+    std::tuple<bool, double> _get_precision(jsonParserIteratorType it) const;
 
     template<typename jsonParserIteratorType, typename SamplerInsertIterator>
     SamplerInsertIterator _make_comp_samplers(const PrimClex &primclex, jsonParserIteratorType it, SamplerInsertIterator result) const;
@@ -78,7 +79,7 @@ namespace CASM {
     SamplerInsertIterator _make_non_zero_eci_correlations_samplers(const PrimClex &primclex, jsonParserIteratorType it, SamplerInsertIterator result) const;
 
     template<typename jsonParserIteratorType, typename SamplerInsertIterator>
-    SamplerInsertIterator _make_query_samplers(const PrimClex &primclex, const Configuration &config, jsonParserIteratorType it, SamplerInsertIterator result) const;
+    SamplerInsertIterator _make_query_samplers(const PrimClex &primclex, jsonParserIteratorType it, SamplerInsertIterator result) const;
 
   };
 
@@ -91,7 +92,6 @@ namespace CASM {
   template<typename SamplerInsertIterator>
   SamplerInsertIterator GrandCanonicalSettings::samplers(
     const PrimClex &primclex,
-    const Configuration &config,
     SamplerInsertIterator result) const {
 
     if(method() == Monte::METHOD::LTE1) {//hack
@@ -149,7 +149,7 @@ namespace CASM {
         // check if property found is in list of possible scalar properties
         if(std::find(scalar_possible.cbegin(), scalar_possible.cend(), prop_name) != scalar_possible.cend()) {
 
-          std::tie(must_converge, prec) = _get_precision(it, prop_name);
+          std::tie(must_converge, prec) = _get_precision(it);
 
           // if 'must converge'
           if(must_converge) {
@@ -221,7 +221,7 @@ namespace CASM {
         }
 
         // custom query
-        _make_query_samplers(primclex, config, it, result);
+        _make_query_samplers(primclex, it, result);
 
       }
 
@@ -237,7 +237,7 @@ namespace CASM {
   }
 
   template<typename jsonParserIteratorType>
-  std::tuple<bool, double> GrandCanonicalSettings::_get_precision(jsonParserIteratorType it, std::string input_name) const {
+  std::tuple<bool, double> GrandCanonicalSettings::_get_precision(jsonParserIteratorType it) const {
     if(it->contains("precision")) {
       return std::make_tuple(true, (*it)["precision"]. template get<double>());
     }
@@ -262,7 +262,7 @@ namespace CASM {
 
       print_name = std::string("comp(") + std::string(1, (char)(i + ((int) 'a'))) + ")";
 
-      std::tie(must_converge, prec) = _get_precision(it, "comp");
+      std::tie(must_converge, prec) = _get_precision(it);
 
       // if 'must converge'
       if(must_converge) {
@@ -298,7 +298,7 @@ namespace CASM {
 
       print_name = std::string("comp_n(") + primclex.composition_axes().components()[i] + ")";
 
-      std::tie(must_converge, prec) = _get_precision(it, "comp_n");
+      std::tie(must_converge, prec) = _get_precision(it);
 
       // if 'must converge'
       if(must_converge) {
@@ -332,7 +332,7 @@ namespace CASM {
       // SiteFracMonteSampler uses 'comp_n' to calculate 'site_frac'
       print_name = std::string("site_frac(") + primclex.composition_axes().components()[i] + ")";
 
-      std::tie(must_converge, prec) = _get_precision(it, "site_frac");
+      std::tie(must_converge, prec) = _get_precision(it);
 
       // if 'must converge'
       if(must_converge) {
@@ -382,7 +382,7 @@ namespace CASM {
 
         print_name = std::string("atom_frac(") + primclex.composition_axes().components()[i] + ")";
 
-        std::tie(must_converge, prec) = _get_precision(it, "atom_frac");
+        std::tie(must_converge, prec) = _get_precision(it);
 
         // if 'must converge'
         if(must_converge) {
@@ -418,7 +418,7 @@ namespace CASM {
       prop_name = "corr";
       print_name = std::string("corr(") + std::to_string(i) + ")";
 
-      std::tie(must_converge, prec) = _get_precision(it, "all_correlations");
+      std::tie(must_converge, prec) = _get_precision(it);
 
       // if 'must converge'
       if(must_converge) {
@@ -460,7 +460,7 @@ namespace CASM {
 
       print_name = std::string("corr(") + std::to_string(i) + ")";
 
-      std::tie(must_converge, prec) = _get_precision(it, "non_zero_eci_correlations");
+      std::tie(must_converge, prec) = _get_precision(it);
 
       // if 'must converge'
       if(must_converge) {
@@ -480,7 +480,6 @@ namespace CASM {
   template<typename jsonParserIteratorType, typename SamplerInsertIterator>
   SamplerInsertIterator GrandCanonicalSettings::_make_query_samplers(
     const PrimClex &primclex,
-    const Configuration &config,
     jsonParserIteratorType it,
     SamplerInsertIterator result) const {
 
@@ -496,6 +495,10 @@ namespace CASM {
     std::shared_ptr<FormatterType> formatter = std::make_shared<FormatterType>(
                                                  dict.parse(prop_name));
 
+    // make example config to test:
+    Supercell tscel(const_cast<PrimClex *>(&primclex), simulation_cell_matrix());
+    Configuration config(tscel);
+    config.init_occupation();
     Eigen::VectorXd test = formatter->get().evaluate_as_matrix(config).row(0);
     auto col = formatter->get().col_header(config);
 
@@ -511,17 +514,20 @@ namespace CASM {
 
     for(int i = 0; i < col.size(); ++i) {
 
-      std::tie(must_converge, prec) = _get_precision(it, prop_name);
+      std::string print_name = col[i];
+      boost::algorithm::trim(print_name);
+
+      std::tie(must_converge, prec) = _get_precision(it);
 
       // if 'must converge'
       if(must_converge) {
-        ptr = new QueryMonteSampler(formatter, i, col[i], confidence(), data_maxlength);
+        ptr = new QueryMonteSampler(formatter, i, print_name, prec, confidence(), data_maxlength);
       }
       else {
-        ptr = new QueryMonteSampler(formatter, i, col[i], prec, confidence(), data_maxlength);
+        ptr = new QueryMonteSampler(formatter, i, print_name, confidence(), data_maxlength);
       }
 
-      *result++ = std::make_pair(col[i], notstd::cloneable_ptr<MonteSampler>(ptr));
+      *result++ = std::make_pair(print_name, notstd::cloneable_ptr<MonteSampler>(ptr));
 
     }
 
