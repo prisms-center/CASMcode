@@ -313,7 +313,7 @@ namespace CASM {
     m_debug(m_settings.debug()),
     m_log(_log) {
 
-    settings.samplers(primclex, m_config, std::inserter(m_sampler, m_sampler.begin()));
+    settings.samplers(primclex, std::inserter(m_sampler, m_sampler.begin()));
 
     m_must_converge = false;
     for(auto it = m_sampler.cbegin(); it != m_sampler.cend(); ++it) {
