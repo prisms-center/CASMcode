@@ -169,13 +169,7 @@ namespace CASM {
 
           args.log << "Custom enumerator plugins can be added by placing source code \n"
                    "in the CASM project directory: \n"
-                   "  " << primclex->dir().enumerator_plugins() << " \n\n"
-
-                   "For examples of how to write enumerators see: \n"
-                   "  $REPO/include/casm/enumerators \n"
-                   "  $REPO/src/casm/enumerators \n"
-                   "where: \n"
-                   "  REPO=https://github.com/prisms-center/CASMcode/tree/master \n\n";
+                   "  " << primclex->dir().enumerator_plugins() << " \n\n";
         }
 
         return 0;

@@ -29,14 +29,6 @@ namespace CASM {
    *  - ConfigEnumStrain
    *  - SuperConfigEnum
    *
-   *  Some macros and functions can be used to help implement the required
-   *  members in an Enumerator class. Most enumerators provide iterators that
-   *  dereference as const reference to the object of interest. In some cases it
-   *  may be useful to implement enumerators via a template class using a boolean
-   *  template parameter to specify whether dereferencing iterators results in a
-   *  const or non-const reference to the objects being enumerated. This is what
-   *  the VARIABLECONST macros are intended for.
-   *
    *  Enumerators are required to "know" their own name by implementing a
    *  traits class with 'name' as a const std::string member. For enumerators
    *  meant to be accessible via the 'casm enum' API, the traits class must also
