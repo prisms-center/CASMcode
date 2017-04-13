@@ -160,6 +160,360 @@ namespace CASM {
     return GenericDatumFormatter<int, std::pair<ConstMonteCarloPtr, Index> >(header, header, evaluator);
   }
 
+  /// \brief Make a observation formatter
+  ///
+  /// For csv:
+  /// \code
+  /// # Pass Step X1 X2 ...
+  /// \endcode
+  ///
+  /// For JSON:
+  /// \code
+  /// {"Pass/Step":[...], "X":[...], ...}
+  /// \endcode
+  ///
+  DataFormatter<std::pair<ConstMonteCarloPtr, Index> > make_observation_formatter(const MonteCarlo &mc) {
+
+    DataFormatter<std::pair<ConstMonteCarloPtr, Index> > formatter;
+
+    formatter.push_back(MonteCarloPassFormatter());
+    formatter.push_back(MonteCarloStepFormatter());
+    for(auto it = mc.samplers().cbegin(); it != mc.samplers().cend(); ++it) {
+      formatter.push_back(MonteCarloObservationFormatter(it->first));
+    }
+    return formatter;
+  }
+
+  /// \brief Make a trajectory formatter
+  ///
+  /// For csv:
+  /// \code
+  /// Pass Step occ(0) occ(1) ...
+  /// \endcode
+  ///
+  /// For JSON:
+  /// \code
+  /// {"Pass" : [...], "Step":[...], "occ":[[...]]}
+  /// \endcode
+  DataFormatter<std::pair<ConstMonteCarloPtr, Index> > make_trajectory_formatter(const MonteCarlo &mc) {
+    DataFormatter<std::pair<ConstMonteCarloPtr, Index> > formatter;
+    formatter.push_back(MonteCarloPassFormatter());
+    formatter.push_back(MonteCarloStepFormatter());
+
+    // this is probably not the best way...
+    for(Index i = 0; i < mc.configdof().occupation().size(); ++i) {
+      formatter.push_back(MonteCarloOccFormatter(i));
+    }
+    return formatter;
+  }
+
+  /// \brief Will create (and possibly overwrite) new file with all observations from run with conditions.cond_index
+  void write_observations(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index, Log &_log) {
+    try {
+      if(!settings.write_observations()) {
+        return;
+      }
+
+      GrandCanonicalDirectoryStructure dir(settings.output_directory());
+      fs::create_directories(dir.conditions_dir(cond_index));
+      auto formatter = make_observation_formatter(mc);
+
+      std::vector<std::pair<ConstMonteCarloPtr, Index> > observations;
+      ConstMonteCarloPtr ptr = &mc;
+      for(MonteSampler::size_type i = 0; i < mc.sample_times().size(); ++i) {
+        observations.push_back(std::make_pair(ptr, i));
+      }
+
+      if(settings.write_csv()) {
+        gz::ogzstream sout((dir.observations_csv(cond_index).string() + ".gz").c_str());
+        _log << "write: " << fs::path(dir.observations_csv(cond_index).string() + ".gz") << "\n";
+        sout << formatter(observations.cbegin(), observations.cend());
+        sout.close();
+      }
+
+      if(settings.write_json()) {
+        gz::ogzstream sout((dir.observations_json(cond_index).string() + ".gz").c_str());
+        _log << "write: " << fs::path(dir.observations_json(cond_index).string() + ".gz") << "\n";
+        jsonParser json = jsonParser::object();
+        formatter(observations.cbegin(), observations.cend()).to_json_arrays(json);
+        sout << json;
+        sout.close();
+      }
+
+    }
+    catch(...) {
+      std::cerr << "ERROR writing observations." << std::endl;
+      throw;
+    }
+  }
+
+  /// \brief Will create (and possibly overwrite) new file with all observations from run with conditions.cond_index
+  ///
+  /// - Also writes "occupation_key" file giving occupant index -> species for each prim basis site
+  ///
+  /// For csv:
+  /// \code
+  /// site_index occ_index_0 occ_index_1 ...
+  /// 0          Ni          Al
+  /// 1          Ni          -
+  /// ...
+  /// \endcode
+  ///
+  /// For JSON:
+  /// \code
+  /// [["A", "B"],["A" "C"], ... ]
+  /// \endcode
+  ///
+  void write_trajectory(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index, Log &_log) {
+    try {
+
+      if(!settings.write_trajectory()) {
+        return;
+      }
+
+      GrandCanonicalDirectoryStructure dir(settings.output_directory());
+      fs::create_directories(dir.conditions_dir(cond_index));
+      auto formatter = make_trajectory_formatter(mc);
+      const Structure &prim = mc.primclex().get_prim();
+
+      std::vector<std::pair<ConstMonteCarloPtr, Index> > observations;
+      ConstMonteCarloPtr ptr = &mc;
+      for(MonteSampler::size_type i = 0; i < mc.sample_times().size(); ++i) {
+        observations.push_back(std::make_pair(ptr, i));
+      }
+
+      if(settings.write_csv()) {
+        gz::ogzstream sout((dir.trajectory_csv(cond_index).string() + ".gz").c_str());
+        _log << "write: " << fs::path(dir.trajectory_csv(cond_index).string() + ".gz") << "\n";
+        sout << formatter(observations.cbegin(), observations.cend());
+        sout.close();
+
+        int max_allowed = 0;
+        for(int i = 0; i < prim.basis.size(); i++) {
+          if(prim.basis[i].allowed_occupants().size() > max_allowed) {
+            max_allowed = prim.basis[i].allowed_occupants().size();
+          }
+        }
+
+        // --- Write "occupation_key.csv" ------------
+        //
+        // site_index occ_index_0 occ_index_1 ...
+        // 0          Ni          Al
+        // 1          Ni          -
+        // ...
+        fs::ofstream keyout(dir.occupation_key_csv());
+        _log << "write: " << dir.occupation_key_csv() << "\n";
+        keyout << "site_index";
+        for(int i = 0; i < max_allowed; i++) {
+          keyout << "\tocc_index_" << i;
+        }
+        keyout << "\n";
+
+        for(int i = 0; i < prim.basis.size(); i++) {
+          keyout << i;
+          for(int j = 0; j < max_allowed; j++) {
+            if(j < prim.basis[i].allowed_occupants().size()) {
+              keyout << "\t" << prim.basis[i].allowed_occupants()[j];
+            }
+            else {
+              keyout << "\t-";
+            }
+          }
+          keyout << "\n";
+        }
+        keyout.close();
+
+      }
+
+      if(settings.write_json()) {
+
+        jsonParser json = jsonParser::object();
+        json["Pass"] = jsonParser::array();
+        json["Step"] = jsonParser::array();
+        json["DoF"] = jsonParser::array();
+        for(auto it = mc.sample_times().cbegin(); it != mc.sample_times().cend(); ++it) {
+          json["Pass"].push_back(it->first);
+          json["Step"].push_back(it->second);
+        }
+        for(auto it = mc.trajectory().cbegin(); it != mc.trajectory().cend(); ++it) {
+          json["DoF"].push_back(*it);
+        }
+        gz::ogzstream sout((dir.trajectory_json(cond_index).string() + ".gz").c_str());
+        _log << "write: " << fs::path(dir.trajectory_json(cond_index).string() + ".gz") << "\n";
+        sout << json;
+        sout.close();
+
+        // --- Write "occupation_key.json" ------------
+        //
+        // [["A", "B"],["A" "C"], ... ]
+
+        jsonParser key = jsonParser::array();
+        for(int i = 0; i < prim.basis.size(); i++) {
+          key.push_back(prim.basis[i].allowed_occupants());
+        }
+        key.write(dir.occupation_key_json());
+        _log << "write: " << dir.occupation_key_json() << "\n";
+
+      }
+
+    }
+    catch(...) {
+      std::cerr << "ERROR writing observations." << std::endl;
+      throw;
+    }
+
+  }
+
+  /// \brief For the initial state, write a POSCAR file.
+  ///
+  /// The current naming convention is 'POSCAR.initial'
+  void write_POSCAR_initial(const GrandCanonical &mc, Index cond_index, Log &_log) {
+
+    GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
+    fs::create_directories(dir.trajectory_dir(cond_index));
+
+    // read initial_state.json
+    ConfigDoF config_dof;
+    from_json(config_dof, jsonParser(dir.initial_state_json(cond_index)));
+
+    if(!fs::exists(dir.initial_state_json(cond_index))) {
+      throw std::runtime_error(
+        std::string("ERROR in 'write_POSCAR_initial(const GrandCanonical &mc, Index cond_index)'\n") +
+        "  File not found: " + dir.initial_state_json(cond_index).string());
+    }
+
+    // write file
+    fs::ofstream sout(dir.POSCAR_initial(cond_index));
+    _log << "write: " << dir.POSCAR_initial(cond_index) << "\n";
+    VaspIO::PrintPOSCAR p(mc.supercell(), config_dof);
+    p.sort();
+    p.print(sout);
+    return;
+  }
+
+  /// \brief For the final state, write a POSCAR file.
+  ///
+  /// The current naming convention is 'POSCAR.final'
+  void write_POSCAR_final(const GrandCanonical &mc, Index cond_index, Log &_log) {
+
+    GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
+    fs::create_directories(dir.trajectory_dir(cond_index));
+
+    // read final_state.json
+    ConfigDoF config_dof;
+    from_json(config_dof, jsonParser(dir.final_state_json(cond_index)));
+
+    if(!fs::exists(dir.final_state_json(cond_index))) {
+      throw std::runtime_error(
+        std::string("ERROR in 'write_POSCAR_final(const GrandCanonical &mc, Index cond_index)'\n") +
+        "  File not found: " + dir.final_state_json(cond_index).string());
+    }
+
+    // write file
+    fs::ofstream sout(dir.POSCAR_final(cond_index));
+    _log << "write: " << dir.POSCAR_final(cond_index) << "\n";
+    VaspIO::PrintPOSCAR p(mc.supercell(), config_dof);
+    p.sort();
+    p.print(sout);
+    return;
+  }
+
+  /// \brief For every snapshot taken, write a POSCAR file.
+  ///
+  /// The current naming convention is 'POSCAR.sample'
+  /// POSCAR title comment is printed with "Sample: #  Pass: #  Step: #"
+  void write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index, Log &_log) {
+
+    GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
+    fs::create_directories(dir.trajectory_dir(cond_index));
+
+    std::vector<Index> pass;
+    std::vector<Index> step;
+    std::vector<ConfigDoF> trajectory;
+
+    // create super structure matching supercell
+    BasicStructure<Site> primstruc = mc.supercell().get_prim();
+    BasicStructure<Site> superstruc = primstruc.create_superstruc(mc.supercell().get_real_super_lattice());
+
+    if(mc.settings().write_json()) {
+
+      std::string filename = dir.trajectory_json(cond_index).string() + ".gz";
+
+      if(!fs::exists(filename)) {
+        throw std::runtime_error(
+          std::string("ERROR in 'write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index)'\n") +
+          "  File not found: " + filename);
+      }
+
+      gz::igzstream sin(filename.c_str());
+      jsonParser json(sin);
+      for(auto it = json["Pass"].cbegin(); it != json["Pass"].cend(); ++it) {
+        pass.push_back(it->get<Index>());
+      }
+      for(auto it = json["Step"].cbegin(); it != json["Step"].cend(); ++it) {
+        step.push_back(it->get<Index>());
+      }
+      ConfigDoF config_dof;
+      for(auto it = json["DoF"].cbegin(); it != json["DoF"].cend(); ++it) {
+        from_json(config_dof, *it);
+        trajectory.push_back(config_dof);
+      }
+
+    }
+    else if(mc.settings().write_csv()) {
+
+      std::string filename = dir.trajectory_csv(cond_index).string() + ".gz";
+
+      if(!fs::exists(filename)) {
+        throw std::runtime_error(
+          std::string("ERROR in 'write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index)'\n") +
+          "  File not found: " + filename);
+      }
+
+      gz::igzstream sin(filename.c_str());
+
+      // skip the header line
+      sin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+      Index _pass, _step;
+      ConfigDoF config_dof(superstruc.basis.size());
+
+      while(sin) {
+        sin >> _pass >> _step;
+        pass.push_back(_pass);
+        step.push_back(_step);
+        for(Index i = 0; i < superstruc.basis.size(); i++) {
+          sin >> config_dof.occ(i);
+        }
+        trajectory.push_back(config_dof);
+      }
+    }
+
+    for(Index i = 0; i < trajectory.size(); i++) {
+
+      // copy occupation
+      for(Index j = 0; j < trajectory[i].size(); j++) {
+        superstruc.basis[j].set_occ_value(trajectory[i].occ(j));
+      }
+
+      // POSCAR title comment is printed with "Sample: #  Pass: #  Step: #"
+      std::stringstream ss;
+      ss << "Sample: " << i << "  Pass: " << pass[i] << "  Step: " << step[i];
+      superstruc.title = ss.str();
+
+      // write file
+      fs::ofstream sout(dir.POSCAR_snapshot(cond_index, i));
+      _log << "write: " << dir.POSCAR_snapshot(cond_index, i) << "\n";
+      VaspIO::PrintPOSCAR p(mc.supercell(), trajectory[i]);
+      p.set_title(ss.str());
+      p.sort();
+      p.print(sout);
+      sout.close();
+    }
+
+    return;
+  }
+
 
 }
 

@@ -1,18 +1,24 @@
-#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
-#include "casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh"
-#include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
+#include "casm/monte_carlo/canonical/CanonicalSettings.hh"
+#include "casm/monte_carlo/canonical/CanonicalConditions.hh"
+#include "casm/monte_carlo/canonical/CanonicalIO.hh"
 #include "casm/app/AppIO.hh"
 
 namespace CASM {
 
   std::string _help() {
     std::string s =
-      "For GrandCanonicalConditions, expect a JSON object of form:\n"
+      "For CanonicalConditions, expect a JSON object of form:\n"
       "  {\n"
-      "    \"param_chem_pot\": {\n"
-      "      \"a\" : -1.0,\n"
+      "    \"comp\": {                  // option 1: parameteric composition object\n"
+      "      \"a\" : 0.3,\n"
       "      ...\n"
       "    },\n"
+      "    \"comp\": [0.3, 0.2, ...],   // option 2: parameteric composition array\n"
+      "    \"comp_n\": {                // option 3: mol per prim composition object\n"
+      "      \"A\" : 1.2,\n"
+      "      ...\n"
+      "    },\n"
+      "    \"comp_n\": [1.2, 0.3, ...], // option 4: mol per prim composition array\n"
       "    \"temperature\" : 350.0,\n"
       "    \"tolerance\" : 0.001\n"
       "  }\n";
@@ -20,7 +26,7 @@ namespace CASM {
   }
 
   /// \brief Construct EquilibriumMonteSettings by reading a settings JSON file
-  GrandCanonicalSettings::GrandCanonicalSettings(const PrimClex &primclex, const fs::path &read_path) :
+  CanonicalSettings::CanonicalSettings(const PrimClex &primclex, const fs::path &read_path) :
     EquilibriumMonteSettings(read_path) {
 
     if(primclex.has_composition_axes()) {
@@ -32,10 +38,10 @@ namespace CASM {
 
   }
 
-  // --- GrandCanonicalConditions settings ---------------------
+  // --- CanonicalConditions settings ---------------------
 
   /// \brief Expects initial_conditions
-  GrandCanonicalConditions GrandCanonicalSettings::initial_conditions() const {
+  CanonicalConditions CanonicalSettings::initial_conditions() const {
     if(drive_mode() == Monte::DRIVE_MODE::INCREMENTAL) {
       return _conditions("initial_conditions");
     }
@@ -48,22 +54,22 @@ namespace CASM {
   }
 
   /// \brief Expects final_conditions
-  GrandCanonicalConditions GrandCanonicalSettings::final_conditions() const {
+  CanonicalConditions CanonicalSettings::final_conditions() const {
     return _conditions("final_conditions");
   }
 
   /// \brief Expects incremental_conditions
-  GrandCanonicalConditions GrandCanonicalSettings::incremental_conditions() const {
+  CanonicalConditions CanonicalSettings::incremental_conditions() const {
     return _conditions("incremental_conditions");
   }
 
   /// \brief Expects incremental_conditions
-  std::vector<GrandCanonicalConditions> GrandCanonicalSettings::custom_conditions() const {
+  std::vector<CanonicalConditions> CanonicalSettings::custom_conditions() const {
     std::string level1 = "driver";
     std::string level2 = "custom_conditions";
 
     try {
-      std::vector<GrandCanonicalConditions> cond;
+      std::vector<CanonicalConditions> cond;
       const jsonParser &json = (*this)[level1][level2];
       for(auto it = json.begin(); it != json.end(); ++it) {
         cond.push_back(_conditions(*it));
@@ -73,7 +79,7 @@ namespace CASM {
     catch(std::runtime_error &e) {
       Log &err_log = default_err_log();
       err_log.error<Log::standard>("Reading Monte Carlo settings");
-      err_log << "Tried to read an array of GrandCanonicalConditions from [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
+      err_log << "Tried to read an array of CanonicalConditions from [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
       err_log << _help() << std::endl;
       throw e;
     }
@@ -82,7 +88,7 @@ namespace CASM {
   // --- Project settings ---------------------
 
   /// \brief Get formation energy cluster expansion
-  ClexDescription GrandCanonicalSettings::formation_energy(const PrimClex &primclex) const {
+  ClexDescription CanonicalSettings::formation_energy(const PrimClex &primclex) const {
     const ProjectSettings &set = primclex.settings();
     std::string level1 = "model";
     // deprecated
@@ -130,10 +136,7 @@ namespace CASM {
   // --- Sampler settings ---------------------
 
   /// \brief Return true if all correlations should be sampled
-  bool GrandCanonicalSettings::all_correlations() const {
-    if(method() == Monte::METHOD::LTE1) { //hack
-      return false;
-    }
+  bool CanonicalSettings::all_correlations() const {
     std::string level1 = "data";
     std::string level2 = "measurements";
     try {
@@ -156,7 +159,7 @@ namespace CASM {
 
   }
 
-  GrandCanonicalConditions GrandCanonicalSettings::_conditions(std::string name) const {
+  CanonicalConditions CanonicalSettings::_conditions(std::string name) const {
 
     std::string level1 = "driver";
     std::string level2 = name;
@@ -167,14 +170,14 @@ namespace CASM {
       Log &err_log = default_err_log();
       err_log.error<Log::standard>("Reading Monte Carlo settings");
       err_log << "Error reading: " << name << std::endl;
-      err_log << "Tried to construct GrandCanonicalCondtions from [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
+      err_log << "Tried to construct CanonicalCondtions from [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
       err_log << _help() << std::endl;
       throw e;
     }
   }
 
-  GrandCanonicalConditions GrandCanonicalSettings::_conditions(const jsonParser &json) const {
-    GrandCanonicalConditions result;
+  CanonicalConditions CanonicalSettings::_conditions(const jsonParser &json) const {
+    CanonicalConditions result;
     from_json(result, m_comp_converter, json);
     return result;
   }

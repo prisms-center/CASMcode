@@ -8,6 +8,7 @@
 
 namespace CASM {
 
+  const Monte::ENSEMBLE GrandCanonical::ensemble = Monte::ENSEMBLE::GrandCanonical;
 
   /// \brief Constructs a GrandCanonical object and prepares it for running based on MonteSettings
   ///
