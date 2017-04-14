@@ -65,11 +65,14 @@ namespace CASM {
 
     //****************************************************************************************
 
-    std::string StrucScore::long_header(const Configuration &_tmplt) const {
-      std::stringstream t_ss;
-      for(Index i = 0; i < m_prop_names.size(); i++)
+    std::vector<std::string> StrucScore::col_header(const Configuration &_tmplt) const {
+      std::vector<std::string> col;
+      for(Index i = 0; i < m_prop_names.size(); i++) {
+        std::stringstream t_ss;
         t_ss << "    " << name() << '(' << m_prim_path.string() << ',' << m_prop_names[i] << ',' << m_configmapper.lattice_weight() << ')';
-      return t_ss.str();
+        col.push_back(t_ss.str());
+      }
+      return col;
     }
 
 

@@ -8,6 +8,18 @@
 
 
 namespace CASM {
+
+  /** \defgroup Symmetry
+   *  \brief Relates to symmetry operations and groups
+   */
+
+  /** \defgroup SymOp
+   *  \ingroup Symmetry
+   *  \brief Relates to symmetry operations
+   *  @{
+  */
+
+
   class MasterSymGroup;
 
   ///\brief SymOp is the Coordinate representation of a symmetry operation
@@ -161,6 +173,8 @@ namespace CASM {
 
   //std::istream& operator>> (std::istream &stream, SymOp &op){op.read(stream); return stream;};
   //std::ostream& operator<< (std::ostream &stream, SymOp &op){op.print(stream); return stream;};
+
+  /** @}*/
 
 }
 #endif

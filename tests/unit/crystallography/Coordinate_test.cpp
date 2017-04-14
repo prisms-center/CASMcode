@@ -218,7 +218,7 @@ void coordinate_periodicity_test() {
       Coordinate coord2(point_count(), lat, FRAC);
       // optimality of robust_min_dist
       BOOST_CHECK(coord1.robust_min_dist(coord2) < (coord1.min_dist(coord2) + tol));
-      //std::cout << "A: " << coord1.robust_min_dist(coord2)<< ";   B: " << coord1.min_dist(coord2)<< "\n";
+
       // commutativity of robust_min_dist
       BOOST_CHECK(almost_equal(coord2.robust_min_dist(coord1), coord1.robust_min_dist(coord2), tol));
       Coordinate trans(lat);
@@ -228,6 +228,21 @@ void coordinate_periodicity_test() {
       BOOST_CHECK(almost_equal(coord2.robust_min_dist(coord1), coord1.robust_min_dist(coord2, trans), tol));
 
       BOOST_CHECK(almost_equal(trans.const_cart().norm(), coord2.robust_min_dist(coord1)));
+    }
+
+    Eigen::MatrixXd const &vtable = lat.voronoi_table();
+    Coordinate zero_coord(Eigen::Vector3d::Zero(), lat, FRAC);
+
+    // check robustness of edge cases
+    for(Index i = 0; i < vtable.rows(); i++) {
+      {
+        Coordinate coord2((1 + tol / 2.)*vtable.row(i).transpose() / vtable.row(i).squaredNorm(), lat, CART);
+        BOOST_CHECK(coord2.robust_min_dist(zero_coord) <= coord2.const_cart().norm());
+      }
+      {
+        Coordinate coord2((1 - tol / 2.)*vtable.row(i).transpose() / vtable.row(i).squaredNorm(), lat, CART);
+        BOOST_CHECK(almost_equal(coord2.robust_min_dist(zero_coord), coord2.const_cart().norm(), tol / 2));
+      }
     }
   }
 }

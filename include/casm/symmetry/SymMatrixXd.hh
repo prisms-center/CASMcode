@@ -12,6 +12,10 @@ namespace CASM {
   class MasterSymGroup;
   class Lattice;
 
+  /** \ingroup Symmetry
+   *  @{
+   */
+
   ///\brief  Generalized symmetry matrix representation for arbitrary dimension
   /// Can be used to describe application of symmetry to N-dimensional vector spaces
   /// Use for 3-dimensional transformations if they do not describe coordinate transformations
@@ -41,5 +45,6 @@ namespace CASM {
   jsonParser &to_json(const SymMatrixXd &sym, jsonParser &json);
   void from_json(SymMatrixXd &sym, const jsonParser &json);
 
+  /** @} */
 }
 #endif

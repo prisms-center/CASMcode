@@ -165,6 +165,30 @@ namespace notstd {
       return m_keyfunc(value);
     }
 
+    /// \brief Insert single value
+    std::pair<iterator, bool> insert(const value_type &value) {
+      return _insert(value);
+    }
+
+    /// \brief Insert single value
+    iterator insert(const_iterator hint, const value_type &value) {
+      return iterator(
+               m_map.insert(
+                 hint.base(),
+                 std::make_pair(key(value), std::move(m_converter(value)))
+               )
+             );
+    }
+
+    /// \brief Insert single value
+    iterator insert(iterator hint, const value_type &value) {
+      return iterator(
+               m_map.insert(
+                 hint.base(),
+                 std::make_pair(key(value), std::move(m_converter(value)))
+               )
+             );
+    }
 
     /// \brief Variadic insert accepts as const UniqueMap& or const ValueType&
     template<typename... ValuesOrMaps>

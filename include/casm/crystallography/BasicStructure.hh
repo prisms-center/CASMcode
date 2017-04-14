@@ -19,6 +19,11 @@ namespace CASM {
   template<typename ClustType> class GenericOrbitree;
   typedef GenericOrbitree<SiteCluster> SiteOrbitree;
 
+  /** \defgroup Structure
+   *  \ingroup Crystallography
+   *  \brief Specifies the lattice and basis of a crystal
+   *  @{
+   */
 
   ///\brief BasicStructure specifies the lattice and atomic basis of a crystal
   template<typename CoordType>
@@ -206,6 +211,7 @@ namespace CASM {
   template<typename CoordType>
   void from_json(BasicStructure<CoordType> &basic, const jsonParser &json);
 
+  /** @} */
 
 };
 

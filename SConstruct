@@ -172,10 +172,15 @@ def lib_name(prefix, includename, libname):
   Uses re.match('lib(' + libname + '.*)\.(dylib|a|so).*',string) on all files
   in the prefix/lib directory to get the libname to use. If none found, return None.
   """
-  for p in os.listdir(lib_path(prefix, includename)):
-    m = re.match('lib(' + libname + '.*)\.(dylib|a|so).*',p)
-    if m:
-      return m.group(1)
+  try:
+    for p in os.listdir(lib_path(prefix, includename)):
+      if p is None:
+        continue
+      m = re.match('lib(' + libname + '.*)\.(dylib|a|so).*',p)
+      if m:
+        return m.group(1)
+  except TypeError:
+    pass
   return None
 
 def debug_level():
@@ -315,10 +320,16 @@ env['ENV']['TERM'] = os.environ['TERM']
 # set testing environment (for running tests)
 env['ENV']['PATH'] = env['BINDIR'] + ":" + env['ENV']['PATH']
 
-# set LD_LIBRARY_PATH or DYLD_FALLBACK_LIBRARY_PATH (for running configuration tests)
-for x in ['LD_LIBRARY_PATH', 'DYLD_LIBRARY_FALLBACK_PATH']:
-  if x in os.environ:
-    env['ENV'][x] = os.environ[x]
+# set execution environment variables (for running tests)
+casm_var = ['CXX', 'CASM_CXX', 'CASM_CXXFLAGS', 'CASM_SOFLAGS',
+  'CASM_BOOST_PREFIX', 'CASM_BOOST_INCLUDEDIR', 'CASM_BOOST_LIBDIR',
+  'LD_LIBRARY_PATH', 'DYLD_LIBRARY_FALLBACK_PATH']
+for var in casm_var:
+  if var in os.environ:
+    env['ENV'][var] = os.environ[var]
+
+env['ENV']['CASM_INCLUDEDIR'] = env['INCDIR']
+env['ENV']['CASM_LIBDIR'] = env['LIBDIR']
 
 # add methods to use elsewhre
 env.AddMethod(include_path)
@@ -493,6 +504,19 @@ if not env['IS_INSTALL']:
 ##### Configuration checks
 if 'configure' in COMMAND_LINE_TARGETS:
   
+  def CheckCXX11(conf):
+    conf.Message('Checking for c++11... ') 
+    
+    ret = conf.TryRun("""
+    int main() {
+      int a = 1;
+      auto b = a;
+      return 0;
+    }
+    """, '.cpp')[0]
+    conf.Result(ret)
+    return ret
+  
   def CheckBoost_prefix(conf, boost_prefix):
     conf.Message('BOOST_PREFIX: ' + str(boost_prefix) + '\n')
     conf.Message('Checking for boost headers... ') 
@@ -598,6 +622,7 @@ if 'configure' in COMMAND_LINE_TARGETS:
     env.Clone(LIBPATH=install_lib_paths,
               CPPPATH=cpppath),
     custom_tests = {
+      'CheckCXX11' : CheckCXX11,
       'CheckBoost_prefix' : CheckBoost_prefix,
       'CheckBoost_libname' : CheckBoost_libname,
       'CheckBoost_version' : CheckBoost_version,
@@ -610,6 +635,8 @@ if 'configure' in COMMAND_LINE_TARGETS:
   
   # Note: CheckLib with autoadd=1 (default), because some libraries depend on each other
   
+  if not conf.CheckCXX11():
+    if_failed("C++11 is required. Please check your compiler.")
   for x in ['z', 'dl']:
     if not conf.CheckLib(env[x]):
       if_failed("Please check your installation")

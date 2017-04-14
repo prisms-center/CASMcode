@@ -57,9 +57,11 @@ namespace CASM {
     bool parse_args(const std::string &_args) override;
 
     void inject(const DataObject &_data_obj, DataStream &_stream, Index pass_index) const override {
-      _stream << _evaluate(_data_obj);
       if(!validate(_data_obj)) {
-        _stream << DataStream::failbit;
+        _stream << DataStream::failbit << ValueType();
+      }
+      else {
+        _stream << _evaluate(_data_obj);
       }
     }
 
@@ -481,7 +483,7 @@ namespace CASM {
 
   /// \brief Implements a DatumFormatter that is an alias for a combination of others
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
   class DatumFormatterAlias: public BaseDatumFormatter<DataObject> {
@@ -521,20 +523,25 @@ namespace CASM {
       return m_formatter->validate(_data_obj);
     }
 
-    ///\brief Returns a long expression for each scalar produced by the formatter
-    /// parsing the long_header should reproduce the exact query described by the formatter
-    /// Ex: "clex(formation_energy)" or "comp(a)    comp(c)"
-    std::string long_header(const DataObject &_template_obj) const  override {
+    ///\brief Returns a std::vector<std::string> with each column header
+    ///
+    /// - Default returns: `$NAME` if only 1 column, `$NAME(i)` if >1 column
+    std::vector<std::string> col_header(const DataObject &_template_obj) const override {
+      std::vector<std::string> _col;
       CountDataStream tcount;
       m_formatter->inject(_template_obj, tcount);
-      if(tcount.count() == 1)
-        return name();
+      if(tcount.count() == 1) {
+        _col.push_back(name());
+        return _col;
+      }
 
-      std::stringstream t_ss;
-      for(Index i = 0; i < tcount.count(); i++)
-        t_ss << "       " << name() << '(' << i << ')';
+      for(Index i = 0; i < tcount.count(); i++) {
+        std::stringstream t_ss;
+        t_ss << name() << '(' << i << ')';
+        _col.push_back(t_ss.str());
+      }
 
-      return t_ss.str();
+      return _col;
     }
 
     ///\brief Returns a short expression for the formatter
@@ -635,7 +642,7 @@ namespace CASM {
 
   /// \brief Prints a string value specified at construction.  A header string can also be passed.
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename ValueType, typename DataObject>
   class ConstantValueFormatter: public BaseDatumFormatter<DataObject> {
@@ -699,7 +706,7 @@ namespace CASM {
   ///
   /// \seealso GenericDatumFormatter to specialize a scalar DatumFormatter at runtime
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename ValueType, typename DataObject>
   class BaseValueFormatter :
@@ -738,9 +745,10 @@ namespace CASM {
     ///
     /// - sets DataStream::failbit if validation fails
     virtual void inject(const DataObject &_data_obj, DataStream &_stream, Index pass_index = 0) const override {
-      _stream << this->evaluate(_data_obj);
       if(!this->validate(_data_obj))
-        _stream << DataStream::failbit;
+        _stream << DataStream::failbit << ValueType();
+      else
+        _stream << this->evaluate(_data_obj);
     }
 
     /// \brief Default implementation prints each element in a column, via operator<<
@@ -778,7 +786,7 @@ namespace CASM {
   /// \brief A DatumFormatter that returns a value of specified type, via functions
   ///        that may be specified at runtime
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename ValueType, typename DataObject>
   class GenericDatumFormatter : public BaseValueFormatter<ValueType, DataObject> {
@@ -879,7 +887,7 @@ namespace CASM {
   ///
   /// \seealso Generic1DDatumFormatter to specialize a 1D DatumFormatter at runtime.
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename Container, typename DataObject>
   class Base1DDatumFormatter :
@@ -890,6 +898,7 @@ namespace CASM {
 
     /// \brief Access methods for Container
     typedef typename ContainerTraits<Container>::Access Access;
+    typedef typename ContainerTraits<Container>::value_type ValueType;
 
 
     /// \brief Constructor
@@ -919,17 +928,19 @@ namespace CASM {
       }
     }
 
-    /// \brief Default long_header uses 'name(index)' for each column
+    /// \brief Default col_header uses 'name(index)' for each column
     ///
-    /// Ex: "corr(0)   corr(1)   corr(5)   corr(6)"
-    virtual std::string long_header(const DataObject &_template_obj) const override {
-      std::stringstream t_ss;
+    /// Ex: "corr(0)" "corr(1)" "corr(5)" "corr(6)"
+    virtual std::vector<std::string> col_header(const DataObject &_template_obj) const override {
+      std::vector<std::string> _col;
       auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
       Index s = max(8 - int(this->name().size()), 0);
       for(; it != end_it; ++it) {
-        t_ss << " " << std::string(s, ' ') << this->name() << '(' << (*it)[0] << ')';
+        std::stringstream t_ss;
+        t_ss << std::string(s, ' ') << this->name() << '(' << (*it)[0] << ')';
+        _col.push_back(t_ss.str());
       }
-      return t_ss.str();
+      return _col;
     }
 
     /// \brief Default implementation calls _parse_index_expression
@@ -950,10 +961,16 @@ namespace CASM {
 
       Container val = this->evaluate(_data_obj);
       auto it(_index_rules().cbegin()), end_it(_index_rules().cend());
-      if(!this->validate(_data_obj))
+      if(!this->validate(_data_obj)) {
         _stream << DataStream::failbit;
-      for(; it != end_it; ++it) {
-        _stream << Access::at(val, (*it)[0]);
+        for(; it != end_it; ++it) {
+          _stream << ValueType();
+        }
+      }
+      else {
+        for(; it != end_it; ++it) {
+          _stream << Access::at(val, (*it)[0]);
+        }
       }
     }
 
@@ -1000,7 +1017,7 @@ namespace CASM {
   /// \brief A DatumFormatter that returns a 1D value of specified type, via functions
   ///        that may be specified at runtime
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename Container, typename DataObject>
   class Generic1DDatumFormatter : public Base1DDatumFormatter<Container, DataObject> {
@@ -1060,7 +1077,7 @@ namespace CASM {
 
   /// \brief Template alias for BaseValueFormatter returning std::string
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
   using StringAttribute = BaseValueFormatter<std::string, DataObject>;
@@ -1082,7 +1099,7 @@ namespace CASM {
 
   /// \brief Template alias for BaseValueFormatter returning bool
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
   using BooleanAttribute = BaseValueFormatter<bool, DataObject>;
@@ -1104,7 +1121,7 @@ namespace CASM {
 
   /// \brief Template alias for BaseValueFormatter returning Index
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
   using IntegerAttribute = BaseValueFormatter<Index, DataObject>;
@@ -1126,7 +1143,7 @@ namespace CASM {
 
   /// \brief Template alias for BaseValueFormatter returning double
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
   using ScalarAttribute = BaseValueFormatter<double, DataObject>;
@@ -1148,7 +1165,7 @@ namespace CASM {
 
   /// \brief Template alias for BaseValueFormatter returning Eigen::VectorXd
   ///
-  /// \ingroup DataFormatter
+  /// \ingroup DataFormatterTypes
   ///
   template<typename DataObject>
   using VectorXdAttribute = Base1DDatumFormatter<Eigen::VectorXd, DataObject>;
@@ -1234,7 +1251,7 @@ namespace CASM {
 
       void init(const DataObject &_template_obj) const override;
 
-      std::string long_header(const DataObject &_template_obj) const override;
+      std::string col_header(const DataObject &_template_obj) const override;
       std::string short_header(const DataObject &_template_obj) const override;
 
       bool validate(const DataObject &_data_obj) const override {

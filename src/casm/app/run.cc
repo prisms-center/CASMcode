@@ -46,22 +46,22 @@ namespace CASM {
       /** --help option
        */
       if(vm.count("help")) {
-        std::cout << "\n";
-        std::cout << run_opt.desc() << std::endl;
+        args.log << "\n";
+        args.log << run_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        std::cout << "\n";
-        std::cout << run_opt.desc() << std::endl;
-        std::cout << "DESCRIPTION\n"
-                  << "    Executes the requested command for each selected configuration,\n"
-                  << "    with the path to the configuration as an argument.             \n\n"
-                  << "    Example: casm run --exec \"vasp.relax\"\n"
-                  << "    - calls:\n"
-                  << "        'vasp.relax $ROOT/training_data/$SCELNAME/$CONFIGID'\n"
-                  << "      for each config selected in config_list\n\n";
+        args.log << "\n";
+        args.log << run_opt.desc() << std::endl;
+        args.log << "DESCRIPTION\n"
+                 << "    Executes the requested command for each selected configuration,\n"
+                 << "    with the path to the configuration as an argument.             \n\n"
+                 << "    Example: casm run --exec \"vasp.relax\"\n"
+                 << "    - calls:\n"
+                 << "        'vasp.relax $ROOT/training_data/$SCELNAME/$CONFIGID'\n"
+                 << "      for each config selected in config_list\n\n";
 
         return 0;
       }
@@ -72,12 +72,12 @@ namespace CASM {
       selection = run_opt.selection_path();
     }
     catch(po::error &e) {
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      std::cerr << run_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << run_opt.desc() << std::endl;
       return 1;
     }
     catch(std::exception &e) {
-      std::cerr << "ERROR: " << e.what() << ".\n       Exiting..." << std::endl;
+      args.err_log << "ERROR: " << e.what() << ".\n       Exiting..." << std::endl;
       return 1;
 
     }
@@ -106,7 +106,7 @@ namespace CASM {
 
           process.popen(run_opt.exec_str() + " " + it->get_path().string());
 
-          process.print(std::cout);
+          process.print(args.log);
         }
       }
       else if(vm.count("config") && fs::exists(selection)) {
@@ -120,28 +120,28 @@ namespace CASM {
 
           process.popen(run_opt.exec_str() + " " + it->get_path().string());
 
-          process.print(std::cout);
+          process.print(args.log);
         }
 
       }
       else {
-        std::cerr << "ERROR: Invalid input. Option '--config' accepts one argument (either 'MASTER' or a path to a valid configuration selection file)." << std::endl
-                  << "       Exiting...\n";
+        args.err_log << "ERROR: Invalid input. Option '--config' accepts one argument (either 'MASTER' or a path to a valid configuration selection file)." << std::endl
+                     << "       Exiting...\n";
         return 1;
       }
     }
     catch(std::exception &e) {
-      std::cerr << "ERROR: Invalid input. Option '--config' accepts one argument (either 'MASTER' or a path to a valid configuration selection file)." << std::endl
-                << "       Exiting...\n";
+      args.err_log << "ERROR: Invalid input. Option '--config' accepts one argument (either 'MASTER' or a path to a valid configuration selection file)." << std::endl
+                   << "       Exiting...\n";
       return 1;
     }
 
 
 
 
-    std::cout << "\n***************************\n" << std::endl;
+    args.log << "\n***************************\n" << std::endl;
 
-    std::cout << std::endl;
+    args.log << std::endl;
 
     return 0;
   };

@@ -18,7 +18,7 @@ namespace CASM {
     m_metric_args(set.enumeration_metric_args()),
     m_check_existence(set.enumeration_check_existence()),
     m_insert_canonical(set.enumeration_insert_canonical()),
-    m_dict(primclex.settings().config_io()) {
+    m_dict(primclex.settings().query_handler<Configuration>().dict()) {
 
     m_dict.insert(
       ConfigIO::GenericConfigFormatter<double>(
@@ -58,7 +58,7 @@ namespace CASM {
     m_halloffame.unique().reset(
       new HallOfFameType(
         MonteCarloEnumMetric(m_dict.parse(metric_args())),
-        ConfigDoFOccCompare(),
+        std::less<Configuration>(),
         set.enumeration_N_halloffame(),
         set.enumeration_tol()));
 

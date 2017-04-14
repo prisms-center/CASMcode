@@ -8,6 +8,7 @@ from math import sqrt
 from casm.project import Project, Selection, query, write_eci
 import casm.learn.linear_model
 import casm.learn.tools
+import casm.learn.selection_wrapper
 import pandas
 
 def _find_method(mods, attrname):
@@ -474,12 +475,30 @@ def print_input_help():
   # The "problem_specs"/"weight" options specify the method to use for weighting 
   # training data. 
   #
-  #   If weights are included, then the linear model is changed from
-  #     X*b = y  ->  L*X*b = L*y, 
+  #   Ordinary least squares minimizes
+  #     (y-X*b).transpose() * (y-X*b)
+  #  
+  #   where 'X' is the correlation matrix of shape (Nvalue, Nbfunc), and 'y' 
+  #   is a vector of Nvalue calculated properties, and 'b' are the fitting 
+  #   coefficients (ECI).
   #
-  #   where 'X' is the correlation matrix of shape (Nvalue, Nbfunc),
-  #   and 'property' is a vector of Nvalue calculated properties, and 
-  #   W = L*L.transpose() is the weight matrix.
+  #   Weighted least squares minimizes
+  #     (y-X*b).transpose() * W * (y-X*b)
+  #  
+  #   Using the SVD, and given that W is Hermitian:
+  #     U * S * U.transpose() == W
+  #  
+  #   Define L such that:
+  #     L.transpose() = U * sqrt(S)
+  #  
+  #   Then we can write the weighted least squares problem using:
+  #     (y-X*b).transpose() * L.transpose() * L * (y-X*b)
+  #  
+  #   Or:
+  #     (L*y-L*X*b).transpose() * (L*y-L*X*b)
+  #    
+  #   So, if weights are included, then the linear model is changed from
+  #     X*b = y  ->  L*X*b = L*y
   #
   #   By default, W = np.matlib.eye(Nvalue) (unweighted).
   #
@@ -775,8 +794,8 @@ def print_input_help():
   #   Options for "evolve_params_kwargs":
   #
   #     "n_population": int, optional, default=100
-  #        Population size. This many random initial starting individuals are 
-  #        created.
+  #        Initial population size. This many random initial starting individuals 
+  #         are created if no "pop_begin_filename" file exists.
   #     
   #     "n_halloffame": int, optional, default=25
   #        Maxsize of the hall of fame which holds the best individuals 
@@ -797,19 +816,32 @@ def print_input_help():
   #        with.
   #
   #     "pop_begin_filename": string, optional, default="population_begin.pkl"
-  #        Filename where the initial population is read from, if it exists.
+  #        Filename suffix where the initial population is read from, if it 
+  #        exists. For example, if "filename_prefix" is "Ef_kfold10" and 
+  #        "pop_begin_filename" is "population_begin.pkl", then the initial
+  #        population is read from the file "Ef_kfold10_population_begin.pkl".
   #
+  #        The population file may contain either a  list of individual,
+  #        as written to the "population_end.pkl" file, or a HallOfFame
+  #        instance, as written to either an "evolve_halloffame.pkl" file or
+  #        overall casm-learn "halloffame.pkl" file.
+  #        
   #     "pop_end_filename": string, optional, default="population_end.pkl"
-  #        Filename where the final population is saved.
+  #        Filename where the final population is saved. For example, if 
+  #        "filename_prefix" is "Ef_kfold10" and "pop_end_filename" is 
+  #        "population_end.pkl", then the final population is saved to the 
+  #        file "Ef_kfold10_population_end.pkl".
   #      
   #     "halloffame_filename": string, optional, default="evolve_halloffame.pkl"
   #        Filename where a hall of fame is saved holding the best individuals 
-  #        encountered in any generation.
+  #        encountered in any generation. For example, if "filename_prefix" is 
+  #        "Ef_kfold10" and "halloffame_filename" is "evolve_halloffame.pkl", 
+  #        then it is saved to the file "Ef_kfold10_evolve_halloffame.pkl".
   #      
   #     "filename_prefix": string, optional
   #        Prefix for filenames, default uses input file filename excluding 
   #        extension. For example, if input file is named "Ef_kfold10.json", then
-  #        "Ef_kfold10_population_begin.pkl", "specs2_population_end.pkl", and 
+  #        "Ef_kfold10_population_begin.pkl", "Ef_kfold10_population_end.pkl", and 
   #        "Ef_kfold10_evolve_halloffame.pkl" are used.
   
     "feature_selection" : {
@@ -918,6 +950,10 @@ def print_input_help():
   #     "uncalculated" : Predicted ground states and near ground states that have not been calculated
   #     "below_hull" : All configurations predicted below the prediction of the DFT hull
   #
+  # primitive_only: bool, optional, default=True
+  #   If True, only use primitive configurations to construct the convex hull,
+  #   else use all selected configurations. 
+  #
   # uncalculated_range: number, optional, default=0.0
   #   Include all configurations with clex_hull_dist less than this value (+hull_tol)
   #   in the "uncalculated" configurations results. Default only includes predicted
@@ -944,6 +980,7 @@ def print_input_help():
     "checkhull" : {
       "selection": "ALL",
       "write_results": true,
+      "primitive_only": true,
       "uncalculated_range": 1e-8,
       "ranged_rms": [0.001, 0.005, 0.01, 0.05, 0.1, 0.5],
       "composition": "atom_frac",
@@ -1409,11 +1446,11 @@ def read_sample_weight(input, tdata, verbose=True):
   # use method to get weights
   if specs["weight"]["method"] == "wCustom":
     if verbose:
-      print "Reading custom weights"
+      print "# Reading custom weights"
     sample_weight = tdata.data["weight"].values
   elif specs["weight"]["method"] == "wCustom2d":
     if verbose:
-      print "Reading custom2d weights"
+      print "# Reading custom2d weights"
     cols = ["weight(" + str(i) + ")" for i in xrange(tdata.n_samples)]
     sample_weight = tdata.data.loc[:,cols].values
   elif specs["weight"]["method"] == "wHullDist":
@@ -1538,7 +1575,9 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
       pickle.dump(fdata, open(fit_data_filename, 'wb'))
     
     if verbose:
-      print "# Writing problem specs to:", fit_data_filename, "\n"
+      print "# Writing problem specs to:", fit_data_filename
+      print "# To inspect or customize the problem specs further, use the '--checkspecs' method\n"
+    
   
   # during runtime only, if LinearRegression and LeaveOneOut, update fdata.cv and fdata.scoring
   # to use optimized LOOCV score method
@@ -1637,7 +1676,7 @@ def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=
     print "# Feature Selection:"
     print json.dumps(input["feature_selection"], indent=2), "\n"
   
-  mods = [casm.learn.feature_selection, sklearn.feature_selection]
+  mods = [casm.learn.feature_selection, sklearn.feature_selection, casm.learn.selection_wrapper]
   
   selector_method = _find_method(mods, input["feature_selection"]["method"])
   
@@ -1812,12 +1851,16 @@ def checkhull(input, hall, indices=None, verbose=True):
             "gs_spurious" : Predicted ground states that are not DFT ground states
             "uncalculated" : Predicted ground states and near ground states that have not been calculated
             "below_hull" : All configurations predicted below the prediction of the DFT hull
-        
+
+        primitive_only: bool, optional, default=True
+          If True, only use primitive configurations to construct the convex hull,
+          else use all selected configurations. 
+
         uncalculated_range: number, optional, default=0.0
           Include all configurations with clex_hull_dist less than this value (+hull_tol)
           in the "uncalculated" configurations. Default only includes predicted
           ground states.
-        
+ 
         ranged_rms: List[number], optional, default=[0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
           Calculates the root-mean-square error for DFT calculated configurations
           within a particular range (in eV/unitcell) of the DFT hull. The list
@@ -1842,6 +1885,7 @@ def checkhull(input, hall, indices=None, verbose=True):
           "checkhull" : {
             "selection": "ALL",
             "write_results": True
+            "primitive_only": true,
             "uncalculated_range": 0.0,
             "ranged_rms": [0.001, 0.005, 0.01, 0.05, 0.1, 0.5],
             "composition": "atom_frac",
@@ -1877,6 +1921,7 @@ def checkhull(input, hall, indices=None, verbose=True):
   opt = {
     "selection":"ALL", 
     "write_results":False,
+    "primitive_only":True,
     "uncalculated_range":0.0,
     "hull_tol":1e-8,
     "composition":"atom_frac",
@@ -1898,11 +1943,13 @@ def checkhull(input, hall, indices=None, verbose=True):
   # tolerance for finding configurations 'on_hull'
   d = input["checkhull"]
   selection = d["selection"]
+  composition = d["composition"]
   write_results = d["write_results"]
   hull_tol = d["hull_tol"]
   uncalculated_range = d["uncalculated_range"]
   dim_tol = d["dim_tol"]
   bottom_tol = d["bottom_tol"]
+  primitive_only = d["primitive_only"]
   
   # save current default clex
   orig_clex = proj.settings.default_clex
@@ -1935,17 +1982,20 @@ def checkhull(input, hall, indices=None, verbose=True):
   is_primitive = "is_primitive"
   is_calculated = "is_calculated"
   configname = "configname"
-  dft_hull_dist_long = "hull_dist(" + dft_selection + ",atom_frac)"
+  dft_hull_dist_long = "hull_dist(" + dft_selection + "," + composition + ")"
   dft_hull_dist = "dft_hull_dist"
-  clex_hull_dist_long = "clex_hull_dist(" + selection + ",atom_frac)"
+  clex_hull_dist_long = "clex_hull_dist(" + selection + "," + composition + ")"
   clex_hull_dist = "clex_hull_dist"
-  clex_dft_hull_dist_long = "clex_hull_dist(" + dft_hull_selection + ",atom_frac)"
+  clex_dft_hull_dist_long = "clex_hull_dist(" + dft_hull_selection + "," + composition + ")"
   clex_dft_hull_dist = "clex_dft_hull_dist"
   comp = "comp"
   dft_Eform = "formation_energy"
   clex_Eform = "clex(formation_energy)"
-  
-  sel.query([comp, is_primitive, is_calculated, configname, dft_hull_dist_long, dft_Eform])
+
+  query_cols = [comp, is_calculated, configname, dft_hull_dist_long, dft_Eform]
+  if primitive_only:
+    query_cols.append(is_primitive)
+  sel.query(query_cols)
   
   
   compcol = []
@@ -1977,15 +2027,30 @@ def checkhull(input, hall, indices=None, verbose=True):
     indiv = hall[indiv_i]
     write_eci(proj, indiv.eci, fit_details=casm.learn.to_json(indiv_i, indiv), clex=clex, verbose=verbose)
     
+    if primitive_only:
+      df = sel.data[sel.data.loc[:,is_primitive] == 1].sort_values(compcol)
+    else:
+      df = sel.data.sort_values(compcol)
+    df_calc = df[df.loc[:,is_calculated] == 1].apply(pandas.to_numeric, errors='ignore')
+    dft_gs = df_calc[df_calc.loc[:,dft_hull_dist_long] < hull_tol]
+
+    # create dft hull selection
+    dft_hull_sel = Selection(proj, dft_hull_selection)
+    dft_hull_sel.save(data=dft_gs, force=True)
+
     # query:
-    sel.query([clex_hull_dist_long, clex_Eform], force=True)
+    sel.query([clex_hull_dist_long, clex_Eform, clex_dft_hull_dist_long], force=True)
     
-    df = sel.data[sel.data.loc[:,is_primitive] == 1].sort_values(compcol)
+    if primitive_only:
+      df = sel.data[sel.data.loc[:,is_primitive] == 1].sort_values(compcol)
+    else:
+      df = sel.data.sort_values(compcol)
     df.rename(
       inplace=True, 
       columns={
         dft_hull_dist_long : dft_hull_dist, 
         clex_hull_dist_long : clex_hull_dist, 
+        clex_dft_hull_dist_long : clex_dft_hull_dist
       })
     df_calc = df[df.loc[:,is_calculated] == 1].apply(pandas.to_numeric, errors='ignore')
     
@@ -1995,24 +2060,6 @@ def checkhull(input, hall, indices=None, verbose=True):
     uncalculated = df[(df.loc[:,clex_hull_dist] < uncalculated_range + hull_tol) & (df.loc[:,is_calculated] == 0)]
     gs_spurious = df_calc[(df_calc.loc[:,clex_hull_dist] < hull_tol) & ~(df_calc.loc[:,dft_hull_dist] < hull_tol)]
     gs_missing = df_calc[~(df_calc.loc[:,clex_hull_dist] < hull_tol) & (df_calc.loc[:,dft_hull_dist] < hull_tol)]
-    
-    # create dft hull selection
-    dft_hull_sel = Selection(proj, dft_hull_selection)
-    dft_hull_sel.save(data=dft_gs, force=True)
-    
-    
-    # query clex_hull_dist using dft_gs
-    sel.query([clex_dft_hull_dist_long])
-    
-    # get all predicted configurations below the predictions of the DFT gs
-    df = sel.data[sel.data.loc[:,is_primitive] == 1].sort_values(compcol)
-    df.rename(
-      inplace=True, 
-      columns={
-        dft_hull_dist_long : dft_hull_dist, 
-        clex_hull_dist_long : clex_hull_dist, 
-        clex_dft_hull_dist_long : clex_dft_hull_dist
-      })
     below_hull = df[df.loc[:,clex_dft_hull_dist] < -hull_tol]
     
     indiv.clex_gs = clex_gs
@@ -2036,7 +2083,7 @@ def checkhull(input, hall, indices=None, verbose=True):
       if df.shape[0]:
         if verbose:
           print title + ":"
-          print df.drop(to_drop, axis=1).to_string(**kwargs)
+          print df.drop(to_drop, axis=1, errors='ignore').to_string(**kwargs)
           if write_results:
             print "write:", output_name, "\n"
           else:

@@ -1,0 +1,10 @@
+appincludedir=$(includedir)/casm/app
+appinclude_HEADERS=./include/casm/app/AppIO.hh\
+				   ./include/casm/app/casm_functions.hh\
+				   ./include/casm/app/EnumeratorHandler.hh\
+				   ./include/casm/app/EnumeratorHandler_impl.hh\
+				   ./include/casm/app/DirectoryStructure.hh\
+				   ./include/casm/app/ProjectBuilder.hh\
+				   ./include/casm/app/ProjectSettings.hh\
+			           ./include/casm/app/QueryHandler.hh\
+				   ./include/casm/app/QueryHandler_impl.hh

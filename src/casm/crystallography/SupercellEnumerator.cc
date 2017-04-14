@@ -4,8 +4,106 @@
 #include "casm/external/Eigen/Dense"
 
 #include "casm/crystallography/Structure.hh"
+#include "casm/clex/PrimClex.hh"
 
 namespace CASM {
+
+  /// \brief Read unit cell transformation matrix from JSON input
+  ///
+  /// Input json with one of the following forms:
+  /// - \code
+  ///   {
+  ///     "unit_cell" : [
+  ///       [X, X, X],
+  ///       [X, X, X],
+  ///       [X, X, X]
+  ///     ]
+  ///   }
+  ///   \endcode
+  /// - \code
+  ///   { "unit_cell" : "SCEL..."}
+  ///   \endcode
+  /// - If input is null or does not contain "unit_cell", returns identity matrix.
+  ///
+  Eigen::Matrix3i make_unit_cell(PrimClex &primclex, const jsonParser &input) {
+
+    // read generating matrix (unit cell)
+    Eigen::Matrix3i generating_matrix;
+    if(input.is_null() || !input.contains("unit_cell")) {
+      generating_matrix = Eigen::Matrix3i::Identity();
+    }
+    else if(input["unit_cell"].is_array()) {
+      from_json(generating_matrix, input["unit_cell"]);
+    }
+    else if(input["unit_cell"].is_string()) {
+      generating_matrix = primclex.get_supercell(input["unit_cell"].get<std::string>()).get_transf_mat();
+    }
+    else {
+      throw std::invalid_argument(
+        "Error reading unit cell from JSON input: 'unit_cell' must be a 3x3 integer matrix or supercell name");
+    }
+    return generating_matrix;
+  }
+
+  /// \brief Make a ScelEnumProps object from JSON input
+  ///
+  /// - min: int (default=1)
+  /// - max: int (default=max existing supercell size)
+  /// - dirs: string, (default="abc")
+  /// - unit_cell: 3x3 matrix of int, or string (default=identity matrix)
+  /// \code
+  /// {
+  ///   "min" : 1,
+  ///   "max" : 5,
+  ///   "dirs" : "abc",
+  ///   "unit_cell" : [
+  ///     [0, 0, 0],
+  ///     [0, 0, 0],
+  ///     [0, 0, 0]
+  ///   ],
+  ///   "unit_cell" : "SCEL...",
+  /// }
+  /// \endcode
+  ///
+  ScelEnumProps make_scel_enum_props(PrimClex &primclex, const jsonParser &input) {
+
+    // read volume range
+    ScelEnumProps::size_type min_vol;
+    ScelEnumProps::size_type max_vol;
+
+    if(!input.contains("min")) {
+      min_vol = 1;
+    }
+    else {
+      from_json(min_vol, input["min"]);
+    }
+    if(!(min_vol > 0)) {
+      throw std::invalid_argument(
+        "Error in ScelEnumProps JSON input: 'min_volume' must be >0");
+    }
+
+    // read "max" scel size, or by default use largest existing supercell
+    ScelEnumProps::size_type max_scel_size = 1;
+    for(const auto &scel : primclex.get_supercell_list()) {
+      if(scel.volume() > max_scel_size) {
+        max_scel_size = scel.volume();
+      }
+    }
+
+    input.get_else(max_vol, "max", max_scel_size);
+    if(!(max_vol >= min_vol)) {
+      throw std::invalid_argument(
+        "Error in ScelEnumProps JSON input: 'max' must be greater than or equal to 'min'");
+    }
+
+    // read generating matrix (unit cell)
+    Eigen::Matrix3i generating_matrix = make_unit_cell(primclex, input);
+
+    std::string dirs;
+    input.get_else<std::string>(dirs, "dirs", "abc");
+
+    return ScelEnumProps(min_vol, max_vol + 1, dirs, generating_matrix);
+  }
 
   /**
    * If you really need a n x m (vs n x n) matrix, or to allow
@@ -444,17 +542,14 @@ namespace CASM {
 
   template<>
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
-                                                    double tol,
-                                                    size_type begin_volume,
-                                                    size_type end_volume,
-                                                    int init_dims,
-                                                    Eigen::Matrix3i init_gen_mat) :
+                                                    const ScelEnumProps &enum_props,
+                                                    double tol) :
     m_unit(unit),
     m_lat(unit),
-    m_begin_volume(begin_volume),
-    m_end_volume(end_volume),
-    m_dims(init_dims),
-    m_gen_mat(init_gen_mat) {
+    m_begin_volume(enum_props.begin_volume()),
+    m_end_volume(enum_props.end_volume()),
+    m_dims(enum_props.dims()),
+    m_gen_mat(enum_props.generating_matrix()) {
 
     if(m_gen_mat.determinant() < 1) {
       throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
@@ -467,23 +562,19 @@ namespace CASM {
   template<>
   SupercellEnumerator<Lattice>::SupercellEnumerator(Lattice unit,
                                                     const SymGroup &point_grp,
-                                                    size_type begin_volume,
-                                                    size_type end_volume,
-                                                    int init_dims,
-                                                    Eigen::Matrix3i init_gen_mat) :
+                                                    const ScelEnumProps &enum_props) :
     m_unit(unit),
     m_lat(unit),
     m_point_group(point_grp),
-    m_begin_volume(begin_volume),
-    m_end_volume(end_volume),
-    m_dims(init_dims),
-    m_gen_mat(init_gen_mat)
+    m_begin_volume(enum_props.begin_volume()),
+    m_end_volume(enum_props.end_volume()),
+    m_dims(enum_props.dims()),
+    m_gen_mat(enum_props.generating_matrix())
 
   {
     if(m_gen_mat.determinant() < 1) {
       throw std::runtime_error("The transformation matrix to expand into a 3x3 matrix must have a positive determinant!");
     }
-
   }
 
 
@@ -521,7 +612,7 @@ namespace CASM {
         return compactness(A) < compactness(B);
       };
 
-      SupercellEnumerator<Lattice> scel(unit, point_grp, m, m + 1);
+      SupercellEnumerator<Lattice> scel(unit, point_grp, ScelEnumProps(m, m + 1));
       auto best_it = std::min_element(scel.begin(), scel.end(), compare);
       return best_it.matrix();
     }

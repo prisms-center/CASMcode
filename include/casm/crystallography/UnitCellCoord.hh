@@ -13,6 +13,10 @@
 
 namespace CASM {
 
+  /** \ingroup Coordinate
+   *  @{
+   */
+
   /// \brief Unit Cell Indices
   ///
   /// - Integer vector to represent a particular unit cell using multiples of the unit cell vectors
@@ -134,9 +138,10 @@ namespace CASM {
   template<typename CoordType, typename StrucType>
   UnitCellCoord::UnitCellCoord(CoordType coord, const StrucType &struc, double tol) {
     for(Index b = 0; b < struc.basis.size(); ++b) {
-      auto diff = coord - struc.basis[b];
-      if(is_integer(diff.const_frac(), tol)) {
-        *this = UnitCellCoord(b, lround(diff.const_frac()));
+      //auto diff = coord - struc.basis[b];
+      //if(is_integer(diff.const_frac(), tol)) { // <-- doesn't work if sites are coincident
+      if(struc.basis[b].compare(coord, tol)) {
+        *this = UnitCellCoord(b, lround((coord - struc.basis[b]).const_frac()));
         return;
       }
     }
@@ -275,6 +280,8 @@ namespace CASM {
 
     return;
   }
+
+  /** @} */
 }
 #endif
 

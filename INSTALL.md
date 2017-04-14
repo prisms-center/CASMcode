@@ -5,7 +5,7 @@
 
 **C++11**
 
-CASM must be compiled with a compiler that supports the C++11 standard.
+CASM must be compiled with a compiler that supports the C++11 standard. Testing is done with gcc-4.8.5 and clang-800.0.42.1.
 
 **If using Mac OS X - Xcode command-line tools**
 
@@ -44,7 +44,7 @@ Scons can be downloaded and installed from source following instructions found a
 
 ### Boost
 
-CASM uses several Boost libraries, which are often available installed on many computing clusters. you can install Boost yourself via a package management tool, or by downloading from the Boost website: [http://www.boost.org](http://www.boost.org). CASM uses the system, filesystem, program_options, and unit_test_framework libraries, and their dependencies. Most CASM testing has been performed with Boost version 1.54 or later.
+CASM uses several Boost libraries, which are often available installed on many computing clusters. you can install Boost yourself via a package management tool, or by downloading from the Boost website: [http://www.boost.org](http://www.boost.org). CASM uses the system, filesystem, program_options, and unit_test_framework libraries, and their dependencies. Most CASM testing has been performed with Boost version 1.54 or later. Known bugs in version 1.53 and earlier will cause failures.
 
 *Important: Boost should be compiled using the same compiler that you will use to compile CASM.*
 

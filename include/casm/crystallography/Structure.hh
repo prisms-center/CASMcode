@@ -21,6 +21,10 @@ namespace CASM {
 
   typedef GenericOrbitree<SiteCluster> SiteOrbitree;
 
+  /** \ingroup Structure
+   *  @{
+   */
+
   ///\brief Structure specifies the lattice and atomic basis of a crystal
   class Structure : public BasicStructure<Site> {
   protected: //PROTECTED DATA MEMBERS
@@ -231,6 +235,7 @@ namespace CASM {
   ///   mol_name_list_index = converter[basis_site][site_occupant_index]
   std::vector< std::vector<Index> > get_index_converter(const Structure &struc, std::vector<std::string> mol_name_list);
 
+  /** @} */
 };
 
 //#include "casm/clusterography/Orbitree_impl.hh"

@@ -11,6 +11,12 @@
 
 namespace CASM {
 
+  /** \defgroup Molecule
+   *  \ingroup Crystallography
+   *  \brief Relates to Molecule
+   *  @{
+   */
+
   class Molecule;
   template <typename T>
   class OccupantDoF;
@@ -61,7 +67,7 @@ namespace CASM {
                  std::string sp_name,
                  const Lattice &init_lattice,
                  COORD_TYPE mode,
-                 sd_type _SD_flag = sd_type {false, false, false}) :
+    sd_type _SD_flag = sd_type {{false, false, false}}) :
       Coordinate(elem1, elem2, elem3, init_lattice, mode),
       specie(sp_name),
       SD_flag(_SD_flag) { };
@@ -84,6 +90,12 @@ namespace CASM {
   void from_json(AtomPosition &apos, const jsonParser &json);
 
   //****************************************************
+
+  /** \defgroup Molecule
+   *  \ingroup Crystallography
+   *  \brief Relates to Molecule
+   *  @{
+   */
 
   class Molecule : public Array<AtomPosition> {
 
@@ -154,5 +166,6 @@ namespace CASM {
   // Lattice must be set already
   void from_json(Molecule &mol, const jsonParser &json);
 
+  /** @} */
 };
 #endif

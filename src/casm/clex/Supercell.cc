@@ -114,6 +114,19 @@ namespace CASM {
     return ++config_const_iterator(primclex, m_id, config_list.size() - 1);
   }
 
+  /// \brief Return supercell name
+  ///
+  /// - If lattice is the canonical equivalent, then return 'SCELV_A_B_C_D_E_F'
+  /// - Else, return 'SCELV_A_B_C_D_E_F.$FG_INDEX', where $FG_INDEX is the index of the first
+  ///   symmetry operation in the primitive structure's factor group such that the lattice
+  ///   is equivalent to `apply(fg_op, canonical equivalent)`
+  std::string Supercell::get_name() const {
+    if(m_name.empty()) {
+      _generate_name();
+    }
+    return m_name;
+  };
+
   /*****************************************************************/
 
   const SymGroup &Supercell::factor_group() const {
@@ -143,6 +156,20 @@ namespace CASM {
   }
 
   /*****************************************************************/
+
+  /// \brief Begin iterator over translation permutations
+  Supercell::permute_const_iterator Supercell::translate_begin() const {
+    return permute_begin();
+  }
+
+  /*****************************************************************/
+
+  /// \brief End iterator over translation permutations
+  Supercell::permute_const_iterator Supercell::translate_end() const {
+    return permute_begin().begin_next_fg_op();
+  }
+
+  /*****************************************************************/
   /* //Example usage case:
    *  Supercell my_supercell;
    *  Configuration my_config(my_supercell, configuration_info);
@@ -150,19 +177,22 @@ namespace CASM {
    *  my_dof.is_canonical(my_supercell.permute_begin(),my_supercell.permute_end());
    */
   Supercell::permute_const_iterator Supercell::permute_begin() const {
-    return permute_const_iterator(SymGroupRep::RemoteHandle(this->factor_group(), this->permutation_symrep_ID()),
-                                  m_prim_grid,
-                                  0, 0); // starting indices
+    return permute_it(0, 0); // starting indices
   }
 
   /*****************************************************************/
 
   Supercell::permute_const_iterator Supercell::permute_end() const {
-    return permute_const_iterator(SymGroupRep::RemoteHandle(factor_group(), permutation_symrep_ID()),
-                                  m_prim_grid,
-                                  factor_group().size(), 0); // one past final indices
+    return permute_it(factor_group().size(), 0); // one past final indices
   }
 
+  /*****************************************************************/
+
+  Supercell::permute_const_iterator Supercell::permute_it(Index fg_index, Index trans_index) const {
+    return permute_const_iterator(SymGroupRep::RemoteHandle(factor_group(), permutation_symrep_ID()),
+                                  m_prim_grid,
+                                  fg_index, trans_index); // one past final indices
+  }
 
   /*****************************************************************/
 
@@ -506,15 +536,23 @@ namespace CASM {
    */
   //*******************************************************************************
   bool Supercell::contains_config(const Configuration &config, Index &index) const {
-    for(Index i = 0; i < config_list.size(); i++)
-      if(config.configdof() == config_list[i].configdof()) {
-        index = i;
-        return true;
-      }
-
-    index = config_list.size();
-    return false;
+    auto res = m_config_map.find(&config);
+    if(res == m_config_map.end()) {
+      index = config_list.size();
+      return false;
+    }
+    index = res->second;
+    return true;
   };
+
+  //*******************************************************************************
+  Supercell::config_const_iterator Supercell::find(const Configuration &config) const {
+    auto res = m_config_map.find(&config);
+    if(res == m_config_map.end()) {
+      return config_cend();
+    }
+    return config_const_iterator(&get_primclex(), get_id(), res->second);
+  }
 
   //*******************************************************************************
   /**
@@ -534,14 +572,13 @@ namespace CASM {
   }
 
   bool Supercell::add_config(const Configuration &config, Index &index, Supercell::permute_const_iterator &permute_it) {
-    // 'canon_config' is 'config' permuted to canonical form
-    //    std::cout << "get canon_config" << std::endl;
-    Configuration canon_config = config.canonical_form(permute_begin(), permute_end(), permute_it);
+    // 'permut_it' stores operation that takes 'config' to its canonical form
+    permute_it = config.to_canonical();
 
     // std::cout << "    config: " << config.occupation() << std::endl;
     // std::cout << "     canon: " << canon_config.occupation() << std::endl;
 
-    return add_canon_config(canon_config, index);
+    return add_canon_config(copy_apply(permute_it, config), index);
   }
 
   //*******************************************************************************
@@ -557,9 +594,7 @@ namespace CASM {
     //std::cout << "check if canon_config is in config_list" << std::endl;
     if(!contains_config(canon_config, index)) {
       //std::cout << "new config" << std::endl;
-      config_list.push_back(canon_config);
-      config_list.back().set_id(config_list.size() - 1);
-      config_list.back().set_selected(false);
+      _add_canon_config(canon_config);
       return true;
       //std::cout << "    added" << std::endl;
     }
@@ -567,6 +602,50 @@ namespace CASM {
       config_list[index].push_back_source(canon_config.source());
     }
     return false;
+  }
+
+  //*******************************************************************************
+
+  /// \brief Insert a configuration that may be non-canonical
+  std::pair<Supercell::config_const_iterator, bool>
+  Supercell::insert_config(const Configuration &config) {
+    return insert_canon_config(config.canonical_form());
+  }
+
+  //*******************************************************************************
+
+  /// \brief Insert a configuration that is known to be canonical
+  std::pair<Supercell::config_const_iterator, bool>
+  Supercell::insert_canon_config(const Configuration &canon_config) {
+    Index index;
+    bool inserted = false;
+    if(!contains_config(canon_config, index)) {
+      _add_canon_config(canon_config);
+      index = config_list.size() - 1;
+      inserted = true;
+    }
+    config_const_iterator it(&get_primclex(), get_id(), index);
+    return std::make_pair(it, inserted);
+  }
+
+  //*******************************************************************************
+  /**
+   *   Adds to config_list, assuming 'canon_config' is in canonical form and not
+   *   already there
+   */
+  //*******************************************************************************
+  void Supercell::_add_canon_config(const Configuration &canon_config) {
+
+    if(this != &canon_config.get_supercell()) {
+      throw std::runtime_error("Error adding Configuration to Supercell: Supercell mismatch");
+    }
+    //std::cout << "new config" << std::endl;
+    config_list.push_back(canon_config);
+    config_list.back().set_id(config_list.size() - 1);
+    m_config_map.insert(
+      std::make_pair(&config_list.back(),
+                     boost::lexical_cast<Index>(config_list.back().get_id())));
+    config_list.back().set_selected(false);
   }
 
   //*******************************************************************************
@@ -596,6 +675,9 @@ namespace CASM {
 
       if(json["supercells"][get_name()].contains(ss.str())) {
         config_list.push_back(Configuration(json, *this, configid));
+        m_config_map.insert(
+          std::make_pair(&config_list.back(),
+                         boost::lexical_cast<Index>(config_list.back().get_id())));
       }
       else {
         return;
@@ -614,8 +696,9 @@ namespace CASM {
     recip_prim_lattice(RHS.recip_prim_lattice),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
-    name(RHS.name),
+    m_name(RHS.m_name),
     m_nlist(RHS.m_nlist),
+    m_canonical(nullptr),
     config_list(RHS.config_list),
     transf_mat(RHS.transf_mat),
     scaling(RHS.scaling),
@@ -630,9 +713,9 @@ namespace CASM {
     recip_prim_lattice(real_super_lattice.get_reciprocal()),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
+    m_canonical(nullptr),
     transf_mat(transf_mat_init) {
     scaling = 1.0;
-    generate_name();
     //    fill_reciprocal_supercell();
   }
 
@@ -643,6 +726,7 @@ namespace CASM {
     //real_super_lattice((get_prim()).lattice().lat_column_mat()*transf_mat),
     real_super_lattice(superlattice),
     recip_prim_lattice(real_super_lattice.get_reciprocal()),
+    m_canonical(nullptr),
     m_prim_grid((*primclex).get_prim().lattice(), real_super_lattice, (*primclex).get_prim().basis.size()),
     recip_grid(recip_prim_lattice, (*primclex).get_prim().lattice().get_reciprocal()),
     transf_mat(primclex->calc_transf_mat(superlattice)) {
@@ -659,7 +743,6 @@ namespace CASM {
               << "\n and product with transf_mat is \n" << (*primclex).get_prim().lattice.lat_column_mat()*transf_mat << "\n";
     */
     scaling = 1.0;
-    generate_name();
 
   }
 
@@ -696,7 +779,7 @@ namespace CASM {
 
     jsonParser json = jsonParser::object();
 
-    json["supercell_name"] = name;
+    json["supercell_name"] = get_name();
     if(print_config_name) {
       json["config"] = background_config.name();
     }
@@ -771,15 +854,15 @@ namespace CASM {
 
   //***********************************************************
 
-  void Supercell::generate_name() {
-    name = CASM::generate_name(transf_mat);
-    return;
+  void Supercell::_generate_name() const {
+    //std::cout << "begin _generate_name()" << std::endl;
+    m_name = CASM::generate_name(transf_mat);
   }
 
   //***********************************************************
 
   fs::path Supercell::get_path() const {
-    return get_primclex().get_path() / "training_data" / name;
+    return get_primclex().get_path() / "training_data" / get_name();
   }
 
   /*
@@ -795,6 +878,40 @@ namespace CASM {
       }
     }
     return amount_selected;
+  }
+
+  //***********************************************************
+
+  bool Supercell::is_canonical() const {
+    return get_real_super_lattice().is_canonical(
+             get_prim().point_group(),
+             get_primclex().crystallography_tol());
+  }
+
+  //***********************************************************
+
+  SymOp Supercell::to_canonical() const {
+    return get_real_super_lattice().to_canonical(
+             get_prim().point_group(),
+             get_primclex().crystallography_tol());
+  }
+
+  //***********************************************************
+
+  SymOp Supercell::from_canonical() const {
+    return get_real_super_lattice().from_canonical(
+             get_prim().point_group(),
+             get_primclex().crystallography_tol());
+  }
+
+  //***********************************************************
+
+  Supercell &Supercell::canonical_form() const {
+    if(!m_canonical) {
+      m_canonical = &get_primclex().get_supercell(
+                      get_primclex().add_supercell(get_real_super_lattice()));
+    }
+    return *m_canonical;
   }
 
   //***********************************************************
@@ -1124,6 +1241,36 @@ namespace CASM {
     config_list[config_index].calc_struct_fact();
     return;
   }
+
+  bool Supercell::operator<(const Supercell &B) const {
+    if(&get_primclex() != &B.get_primclex()) {
+      throw std::runtime_error(
+        "Error using Supercell::operator<(const Supercell& B): "
+        "Only Supercell with the same PrimClex may be compared this way.");
+    }
+    if(volume() != B.volume()) {
+      return volume() < B.volume();
+    }
+    return get_real_super_lattice() < B.get_real_super_lattice();
+  }
+
+  bool Supercell::_eq(const Supercell &B) const {
+    if(&get_primclex() != &B.get_primclex()) {
+      throw std::runtime_error(
+        "Error using Supercell::operator==(const Supercell& B): "
+        "Only Supercell with the same PrimClex may be compared this way.");
+    }
+    return get_transf_mat() == B.get_transf_mat();
+  }
+
+  Supercell &apply(const SymOp &op, Supercell &scel) {
+    return scel = copy_apply(op, scel);
+  }
+
+  Supercell copy_apply(const SymOp &op, const Supercell &scel) {
+    return Supercell(&scel.get_primclex(), copy_apply(op, scel.get_real_super_lattice()));
+  }
+
 
   std::string generate_name(const Eigen::Matrix3i &transf_mat) {
     std::string name_str;

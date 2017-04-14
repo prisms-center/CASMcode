@@ -8,6 +8,7 @@ import deap
 import deap.tools
 import deap.algorithms
 from operator import attrgetter
+from deap.tools import HallOfFame
 
 
 def initNRandomOn(container, n_features, n_features_init):
@@ -204,6 +205,7 @@ def initialize_population(n_population, toolbox, filename=None, verbose=True):
   """
   if filename is not None and os.path.exists(filename):
     load initial population
+    # may be List[Individual] or HallOfFame, which is converted to List[Individual]
   else:
     create random initial population of size n_population via toolbox.population
   """
@@ -214,6 +216,9 @@ def initialize_population(n_population, toolbox, filename=None, verbose=True):
       print "Loading initial population:", filename
     with open(filename, 'rb') as f:
       pop = pickle.load(f)
+    if isinstance(pop, HallOfFame):
+      # convert to List
+      pop = [indiv for indiv in pop]
   else:
     if verbose:
       print "Constructing initial population"

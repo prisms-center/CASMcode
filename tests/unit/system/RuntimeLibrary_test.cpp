@@ -5,6 +5,7 @@
 #include "casm/system/RuntimeLibrary.hh"
 
 /// Dependencies
+#include "casm/casm_io/Log.hh"
 
 /// What is being used to test it:
 #include <boost/filesystem.hpp>
@@ -15,30 +16,29 @@ BOOST_AUTO_TEST_SUITE(RuntimeLibraryTest)
 
 BOOST_AUTO_TEST_CASE(FunctionTest) {
 
-  std::string cc_filename_base = "runtime_lib";
+  std::string cc_filename_base = "tests/unit/system/runtime_lib";
+  fs::path cc_filename {cc_filename_base + ".cc"};
 
-  std::string cc_file;
-  cc_file = std::string("#include <iostream>\n") +
-            "extern \"C\" int forty_two() {\n" +
-            "   return 42;\n" +
-            "}\n" +
-            "\n" +
-            "extern \"C\" int add(int a, int b) {\n" +
-            "   return a + b;\n" +
-            "}\n";
+  fs::ofstream file(cc_filename);
+  file << "#include <iostream>\n"
+          "extern \"C\" int forty_two() {\n"
+          "   return 42;\n"
+          "}\n"
+          "\n"
+          "extern \"C\" int add(int a, int b) {\n"
+          "   return a + b;\n"
+          "}\n";
+  file.close();
 
   std::string compile_opt = RuntimeLibrary::default_cxx().first + " " + RuntimeLibrary::default_cxxflags().first;
   std::string so_opt = RuntimeLibrary::default_cxx().first + " " + RuntimeLibrary::default_soflags().first;
 
-  RuntimeLibrary lib(compile_opt, so_opt);
-
-  // write the library file and compile
-  lib.compile("tests/unit/system/runtime_lib", cc_file.c_str());
-
-  BOOST_CHECK_EQUAL(true, true);
-
-  // load the library
-  lib.load("tests/unit/system/runtime_lib");
+  RuntimeLibrary lib(
+    cc_filename_base,
+    compile_opt,
+    so_opt,
+    "Compiling RuntimeLibrary test code",
+    Logging::null());
 
   BOOST_CHECK_EQUAL(true, true);
 
@@ -53,15 +53,6 @@ BOOST_AUTO_TEST_CASE(FunctionTest) {
 
   // use it to do something
   BOOST_CHECK_EQUAL(5, add(2, 3));
-
-  // close the library
-  lib.close();
-
-  BOOST_CHECK_EQUAL(true, true);
-
-  lib.close();
-
-  BOOST_CHECK_EQUAL(true, true);
 
   // delete the library
   lib.rm();

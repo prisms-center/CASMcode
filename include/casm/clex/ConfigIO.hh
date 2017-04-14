@@ -9,11 +9,11 @@
 
 namespace CASM {
 
-  /// \defgroup ConfigIO
+  /// \defgroup ConfigIO Configuration Queries
   ///
-  /// \brief DatumFormatters that act on Configuration
+  /// \brief Data formatters that return Configuration properties
   ///
-  /// \ingroup Configuration
+  /// \ingroup DataFormatter
 
 
   class Configuration;
@@ -24,14 +24,16 @@ namespace CASM {
   template<bool IsConst>
   class ConfigSelection;
 
+  /**  \addtogroup ConfigIO
+       @{
+   */
+
   namespace ConfigIO_impl {
 
     /// \brief Returns fraction of sites occupied by a species
     ///
     /// Fraction of sites occupied by a species, including vacancies. No argument
     /// prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.
-    ///
-    /// \ingroup ConfigIO
     ///
     class MolDependent : public VectorXdAttribute<Configuration> {
 
@@ -49,8 +51,8 @@ namespace CASM {
       /// \brief Adds index rules corresponding to the parsed args
       void init(const Configuration &_tmplt) const override;
 
-      /// \brief Long header returns: 'name(Au)   name(Pt)   ...'
-      std::string long_header(const Configuration &_tmplt) const override;
+      /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
+      std::vector<std::string> col_header(const Configuration &_tmplt) const override;
 
     private:
       mutable std::vector<std::string> m_mol_names;
@@ -66,8 +68,6 @@ namespace CASM {
 
     /// \brief Template alias for Configuration formatters of specified ValueType
     ///
-    /// \ingroup ConfigIO
-    ///
     template<typename ValueType>
     using GenericConfigFormatter = GenericDatumFormatter<ValueType, Configuration>;
 
@@ -77,7 +77,6 @@ namespace CASM {
 
     /// \brief Calculate param composition of a Configuration
     ///
-    /// \ingroup ConfigIO
     class Comp : public VectorXdAttribute<Configuration> {
 
     public:
@@ -110,8 +109,8 @@ namespace CASM {
       /// \brief Expects arguments of the form 'comp' or 'comp(a)', 'comp(b)', etc.
       bool parse_args(const std::string &args) override;
 
-      /// \brief Long header returns: 'comp(a)   comp(b)   ...'
-      std::string long_header(const Configuration &_tmplt) const override;
+      /// \brief col_header returns: {'comp(a)', 'comp(b)', ...'}
+      std::vector<std::string> col_header(const Configuration &_tmplt) const override;
 
     private:
 
@@ -125,7 +124,6 @@ namespace CASM {
 
     /// \brief Calculate number of each species per unit cell
     ///
-    /// \ingroup ConfigIO
     class CompN : public ConfigIO_impl::MolDependent {
 
     public:
@@ -164,8 +162,6 @@ namespace CASM {
     /// Fraction of sites occupied by a species, including vacancies. No argument
     /// prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.
     ///
-    /// \ingroup ConfigIO
-    ///
     class SiteFrac : public ConfigIO_impl::MolDependent {
 
     public:
@@ -203,8 +199,6 @@ namespace CASM {
     /// Fraction of species that are a particular species, excluding vacancies.
     /// Without argument, all values are printed. Ex: atom_frac(Au), atom_frac(Pt), etc.
     ///
-    /// \ingroup ConfigIO
-    ///
     class AtomFrac : public ConfigIO_impl::MolDependent {
 
     public:
@@ -238,12 +232,51 @@ namespace CASM {
     /// \brief In the future, AtomFrac will actually be atoms only
     typedef AtomFrac SpeciesFrac;
 
+    /// \brief Returns the site-specific magnetic moments
+    ///
+    /// Site-specific magnetic moments, should they exist
+    ///
+
+    class MagBase : public ConfigIO_impl::MolDependent {
+    /* class MagBase : public VectorXdAttribute<Configuration> { */
+
+    public:
+
+      static const std::string Name;
+
+      static const std::string Desc;
+
+
+      MagBase() : MolDependent(Name, Desc) {}
+
+      // --- Required implementations -----------
+
+      /// \brief Returns the mag sites
+      Eigen::VectorXd evaluate(const Configuration &config) const override;
+
+      /// \brief Clone using copy constructor
+      std::unique_ptr<MagBase> clone() const {
+        return std::unique_ptr<MagBase>(this->_clone());
+      }
+
+      // --- Specialized implementation -----------
+
+      /// \brief Returns true if the Configuration has relaxed_mag
+      bool validate(const Configuration &config) const override;
+
+    private:
+
+      /// \brief Clone using copy constructor
+      MagBase *_clone() const override {
+        return new MagBase(*this);
+      }
+
+    };
+
 
     /// \brief Returns correlation values
     ///
     /// Evaluated basis function values, normalized per primitive cell;
-    ///
-    /// \ingroup ConfigIO
     ///
     class Corr : public VectorXdAttribute<Configuration> {
 
@@ -297,8 +330,6 @@ namespace CASM {
     /// \brief Returns predicted formation energy
     ///
     /// Returns predicted formation energy (only formation energy for now)
-    ///
-    /// \ingroup ConfigIO
     ///
     class Clex : public ScalarAttribute<Configuration> {
 
@@ -374,6 +405,8 @@ namespace CASM {
 
     ConfigIO::GenericConfigFormatter<Index> multiplicity();
 
+    ConfigIO::GenericConfigFormatter<std::string> subgroup_name();
+
     template<bool IsConst>
     ConfigIO::Selected selected_in(const ConfigSelection<IsConst> &_selection);
 
@@ -407,6 +440,10 @@ namespace CASM {
 
     ConfigIO::GenericConfigFormatter<double> volume_relaxation();
 
+    ConfigIO::GenericConfigFormatter<double> relaxed_magmom();
+
+    ConfigIO::GenericConfigFormatter<double> relaxed_magmom_per_species();
+
   }
 
   template<>
@@ -423,6 +460,8 @@ namespace CASM {
 
   template<>
   VectorXdAttributeDictionary<Configuration> make_vectorxd_dictionary<Configuration>();
+
+  /** @} */
 
 }
 

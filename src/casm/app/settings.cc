@@ -59,7 +59,11 @@ namespace CASM {
       ("set-cxxflags", po::value<std::string>(&m_input_str), "Set the c++ compiler options. Use '' to revert to default.")
       ("set-soflags", po::value<std::string>(&m_input_str), "Set the shared library compilation options. Use '' to revert to default.")
       ("set-casm-prefix", po::value<std::string>(&m_input_str), "Set the casm prefix. Use '' to revert to default.")
-      ("set-boost-prefix", po::value<std::string>(&m_input_str), "Set the boost prefix. Use '' to revert to default.");
+      ("set-casm-includedir", po::value<std::string>(&m_input_str), "Set the casm includedir. Use '' to revert to default.")
+      ("set-casm-libdir", po::value<std::string>(&m_input_str), "Set the casm libdir. Use '' to revert to default.")
+      ("set-boost-prefix", po::value<std::string>(&m_input_str), "Set the boost prefix. Use '' to revert to default.")
+      ("set-boost-includedir", po::value<std::string>(&m_input_str), "Set the boost includedir. Use '' to revert to default.")
+      ("set-boost-libdir", po::value<std::string>(&m_input_str), "Set the boost libdir. Use '' to revert to default.");
       return;
     }
 
@@ -273,7 +277,9 @@ namespace CASM {
                                             "new-property", "new-bset", "new-calctype", "new-ref", "new-eci",
                                             "new-clex", "set-formation-energy", "erase-clex",
                                             "set-default-clex", "set-property", "set-bset", "set-calctype", "set-ref", "set-eci", "set-all",
-                                            "set-cxx", "set-cxxflags", "set-soflags", "set-casm-prefix", "set-boost-prefix",
+                                            "set-cxx", "set-cxxflags", "set-soflags",
+                                            "set-casm-prefix", "set-casm-includedir", "set-casm-libdir",
+                                            "set-boost-prefix", "set-boost-includedir", "set-boost-libdir",
                                             "set-view-command"
                                            };
         int option_count = 0;
@@ -393,24 +399,26 @@ namespace CASM {
                    "        3) \"-shared -lboost_system\" \n\n"
 
                    "      casm settings --set-casm-prefix 'casm_prefix' \n"
-                   "      - Specifies to find CASM header files in                \n"
-                   "          '$CASM_PREFIX/include', \n"
-                   "        and shared libraries in \n"
-                   "          '$CASM_PREFIX/lib'. \n"
+                   "      casm settings --set-casm-includedir 'casm_includedir' \n"
+                   "      casm settings --set-casm-libdir 'casm_libdir' \n"
+                   "      - Specifies location to find CASM header files and shared\n"
+                   "        libraries for runtime compilation and linking.         \n"
                    "        In order of priority: \n"
-                   "        1) User specified by 'casm settings --set-casm-prefix' \n"
-                   "           (use '' to clear) \n"
-                   "        2) $CASM_PREFIX \n"
-                   "        3) (default search paths) \n\n"
+                   "        1) User specified by via 'casm settings' (use '' to clear) \n"
+                   "        2) $CASM_INCLUDEDIR and $CASM_LIBDIR \n"
+                   "        3) $CASM_PREFIX/include and $CASM_PREFIX/lib \n"
+                   "        4) (default search paths) \n\n"
 
                    "      casm settings --set-boost-prefix 'boost_prefix' \n"
-                   "      - Specifies that boost libraries are expected in \n"
-                   "        '$CASM_BOOST_PREFIX/lib'. \n"
+                   "      casm settings --set-boost-includedir 'boost_includedir' \n"
+                   "      casm settings --set-boost-libdir 'boost_libdir' \n"
+                   "      - Specifies location to find boost header files and shared\n"
+                   "        libraries for runtime compilation and linking.         \n"
                    "        In order of priority: \n"
-                   "        1) User specified by 'casm settings --set-boost-prefix' \n"
-                   "           (use '' to clear) \n"
-                   "        2) $CASM_BOOST_PREFIX \n"
-                   "        3) (default search paths) \n\n"
+                   "        1) User specified by via 'casm settings' (use '' to clear) \n"
+                   "        2) $CASM_BOOST_INCLUDEDIR and $CASM_BOOST_LIBDIR \n"
+                   "        3) $CASM_BOOST_PREFIX/include and $CASM_BOOST_PREFIX/lib \n"
+                   "        4) (default search paths) \n\n"
 
                    "      casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'\n" <<
                    "      - Sets the command used by 'casm view' to open         \n" <<
@@ -434,14 +442,14 @@ namespace CASM {
 
       }
       catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
+        args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
+        args.err_log << desc << std::endl;
         return 1;
       }
     }
     catch(std::exception &e) {
-      std::cerr << "Unhandled Exception reached the top of main: "
-                << e.what() << ", application will now exit" << std::endl;
+      args.err_log << "Unhandled Exception reached the top of main: "
+                   << e.what() << ", application will now exit" << std::endl;
       return 1;
 
     }
@@ -583,9 +591,9 @@ namespace CASM {
     else if(vm.count("set-formation-energy")) {
 
       if(clex_desc.property != "formation_energy") {
-        std::cerr << "Attempting to use cluster expansion '" << clex_desc.name
-                  << "' for formation_energy, but it has 'property' value '"
-                  << clex_desc.property << "'.\n\n";
+        args.err_log << "Attempting to use cluster expansion '" << clex_desc.name
+                     << "' for formation_energy, but it has 'property' value '"
+                     << clex_desc.property << "'.\n\n";
         return ERR_INVALID_ARG;
       }
 
@@ -701,7 +709,7 @@ namespace CASM {
 
       args.log << "Set " << _wdefaultval("cxx", set.cxx());
       args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
-      args.log << "Shard object compile command is now: '" << set.so_options() << "'\n\n";
+      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
@@ -729,7 +737,7 @@ namespace CASM {
       }
 
       args.log << "Set " << _wdefaultval("soflags", set.soflags());
-      args.log << "Shard object compile command is now: '" << set.so_options() << "'\n\n";
+      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
@@ -742,24 +750,86 @@ namespace CASM {
         args.primclex->refresh(true, false, false, false, true);
       }
 
-      args.log << "Set " << _wdefaultval("casm_prefix", set.casm_prefix());
+      args.log << "Set " << _wdefaultval("casm_includedir", set.casm_includedir());
+      args.log << "Set " << _wdefaultval("casm_libdir", set.casm_libdir());
       args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
-      args.log << "Shard object compile command is now: '" << set.so_options() << "'\n\n";
+      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
+
+      return 0;
+    }
+
+    // set casm includedir
+    else if(vm.count("set-casm-includedir")) {
+      set.set_casm_includedir(single_input);
+      set.commit();
+      if(args.primclex) {
+        args.primclex->refresh(true, false, false, false, true);
+      }
+
+      args.log << "Set " << _wdefaultval("casm_includedir", set.casm_includedir());
+      args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
+
+      return 0;
+    }
+
+    // set casm libdir
+    else if(vm.count("set-casm-libdir")) {
+      set.set_casm_libdir(single_input);
+      set.commit();
+      if(args.primclex) {
+        args.primclex->refresh(true, false, false, false, true);
+      }
+
+      args.log << "Set " << _wdefaultval("casm_libdir", set.casm_libdir());
+      args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
 
     // set boost prefix
     else if(vm.count("set-boost-prefix")) {
-      set.set_casm_prefix(single_input);
+      set.set_boost_prefix(single_input);
       set.commit();
       if(args.primclex) {
         args.primclex->refresh(true, false, false, false, true);
       }
 
-      args.log << "Set " << _wdefaultval("boost_prefix", set.boost_prefix());
+      args.log << "Set " << _wdefaultval("boost_includedir", set.boost_includedir());
+      args.log << "Set " << _wdefaultval("boost_libdir", set.boost_libdir());
       args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
-      args.log << "Shard object compile command is now: '" << set.so_options() << "'\n\n";
+      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
+
+      return 0;
+    }
+
+    // set boost includedir
+    else if(vm.count("set-boost-includedir")) {
+      set.set_boost_includedir(single_input);
+      set.commit();
+      if(args.primclex) {
+        args.primclex->refresh(true, false, false, false, true);
+      }
+
+      args.log << "Set " << _wdefaultval("boost_includedir", set.boost_includedir());
+      args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
+
+      return 0;
+    }
+
+    // set boost libdir
+    else if(vm.count("set-boost-libdir")) {
+      set.set_boost_libdir(single_input);
+      set.commit();
+      if(args.primclex) {
+        args.primclex->refresh(true, false, false, false, true);
+      }
+
+      args.log << "Set " << _wdefaultval("boost_libdir", set.boost_libdir());
+      args.log << "Compile command is now: '" << set.compile_options() << "'\n\n";
+      args.log << "Shared object compile command is now: '" << set.so_options() << "'\n\n";
 
       return 0;
     }
