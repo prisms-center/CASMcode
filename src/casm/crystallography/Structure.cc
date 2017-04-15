@@ -1341,7 +1341,7 @@ namespace CASM {
 
       std::vector<std::string> site_occ_name_list;
       for(Index j = 0; j < struc.basis[i].site_occupant().size(); j++) {
-        site_occ_name_list = struc.basis[i].site_occupant()[j].name;
+        site_occ_name_list.push_back(struc.basis[i].site_occupant()[j].name);
       }
 
       for(Index j = 0; j < mol_name_list.size(); j++) {
@@ -1349,7 +1349,7 @@ namespace CASM {
       }
     }
 
-    return converter;
+    return converter_inv;
 
   }
 

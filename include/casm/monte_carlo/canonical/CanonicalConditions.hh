@@ -1,115 +1,119 @@
 #ifndef CASM_CanonicalConditions_HH
 #define CASM_CanonicalConditions_HH
 
-#include "casm/clex/PrimClex.hh"
+#include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
 
-  class MonteSettings;
+  class PrimClex;
 
-  /// Conditions for a Canonical run:
-  /// Temperature
-  /// Composition
-  /// Tolerance (for comparing conditions)
-  ///
-  class CanonicalConditions {
-  public:
+  namespace Monte {
 
-    /// \brief Default constructor
-    CanonicalConditions() {}
+    class MonteSettings;
 
-    /// \brief Constructor
+    /// Conditions for a Canonical run:
+    /// Temperature
+    /// Composition
+    /// Tolerance (for comparing conditions)
     ///
-    /// \param _primclex PrimClex
-    /// \param _temperature in K
-    /// \param _param_comp Parametric composition
-    /// \param _tol tolerance for comparing conditions
-    ///
-    CanonicalConditions(const PrimClex &_primclex,
-                        double _temperature,
-                        const Eigen::VectorXd &_param_comp,
-                        double _tol);
+    class CanonicalConditions {
+    public:
 
-    // ***************************************ACCESSORS********************************************** //
+      /// \brief Default constructor
+      CanonicalConditions() {}
 
-    const PrimClex &primclex() const;
+      /// \brief Constructor
+      ///
+      /// \param _primclex PrimClex
+      /// \param _temperature in K
+      /// \param _param_comp Parametric composition
+      /// \param _tol tolerance for comparing conditions
+      ///
+      CanonicalConditions(const PrimClex &_primclex,
+                          double _temperature,
+                          const Eigen::VectorXd &_param_comp,
+                          double _tol);
 
-    double temperature() const;
+      // ***************************************ACCESSORS********************************************** //
 
-    double beta() const;
+      const PrimClex &primclex() const;
 
-    /// \brief parametric composition: comp_x
-    Eigen::VectorXd param_composition() const;
+      double temperature() const;
 
-    /// \brief parametric composition: dcomp_x(index)
-    double param_composition(Index index) const;
+      double beta() const;
 
-    /// \brief mol composition: comp_n
-    Eigen::VectorXd mol_composition() const;
+      /// \brief parametric composition: comp_x
+      Eigen::VectorXd param_composition() const;
 
-    /// \brief mol composition: comp_n(index)
-    double mol_composition(Index index) const;
+      /// \brief parametric composition: dcomp_x(index)
+      double param_composition(Index index) const;
 
+      /// \brief mol composition: comp_n
+      Eigen::VectorXd mol_composition() const;
 
-    double tolerance() const;
-
-    // ***************************************MUTATORS*********************************************** //
-
-    ///Set the temperature of the current grand canonical condition.
-    void set_temperature(double in_temp);
-
-    ///Set parametric composition
-    void set_param_composition(const Eigen::VectorXd &in_param_comp);
-
-    ///Set a single parametric composition by specifying an index and a value.
-    void set_param_composition(Index ind, double in_param_comp);
+      /// \brief mol composition: comp_n(index)
+      double mol_composition(Index index) const;
 
 
-    // ***************************************OPERATORS********************************************** //
+      double tolerance() const;
 
-    ///Add temperature and all chemical potentials to *this
-    CanonicalConditions &operator+=(const CanonicalConditions &RHS);
+      // ***************************************MUTATORS*********************************************** //
 
-    ///Add temperature and all chemical potentials together and return a new Condition
-    CanonicalConditions operator+(const CanonicalConditions &RHS) const;
+      ///Set the temperature of the current grand canonical condition.
+      void set_temperature(double in_temp);
 
-    ///Subtract temperature and all chemical potentials to *this
-    CanonicalConditions &operator-=(const CanonicalConditions &RHS);
+      ///Set parametric composition
+      void set_param_composition(const Eigen::VectorXd &in_param_comp);
 
-    ///Subtract temperature and all chemical potentials together and return a new Condition
-    CanonicalConditions operator-(const CanonicalConditions &RHS) const;
-
-    ///Compare temperature and all chemical potentials to *this
-    bool operator==(const CanonicalConditions &RHS) const;
-
-    ///Compare temperature and all chemical potentials to *this
-    bool operator!=(const CanonicalConditions &RHS) const;
-
-    ///Divide ALL parameters and return the greatest number in absolute value
-    int operator/(const CanonicalConditions &RHS_inc) const;
+      ///Set a single parametric composition by specifying an index and a value.
+      void set_param_composition(Index ind, double in_param_comp);
 
 
-  protected:
+      // ***************************************OPERATORS********************************************** //
 
-    const PrimClex *m_primclex;
+      ///Add temperature and all chemical potentials to *this
+      CanonicalConditions &operator+=(const CanonicalConditions &RHS);
 
-    ///Temperature
-    double m_temperature;
+      ///Add temperature and all chemical potentials together and return a new Condition
+      CanonicalConditions operator+(const CanonicalConditions &RHS) const;
 
-    ///Inverse temperature. Includes Boltzmann term
-    double m_beta;
+      ///Subtract temperature and all chemical potentials to *this
+      CanonicalConditions &operator-=(const CanonicalConditions &RHS);
 
-    ///Vector of the param composition
-    Eigen::VectorXd m_param_composition;
+      ///Subtract temperature and all chemical potentials together and return a new Condition
+      CanonicalConditions operator-(const CanonicalConditions &RHS) const;
 
-    ///Tolerance for comparison operators == and !=
-    double m_tolerance;
+      ///Compare temperature and all chemical potentials to *this
+      bool operator==(const CanonicalConditions &RHS) const;
+
+      ///Compare temperature and all chemical potentials to *this
+      bool operator!=(const CanonicalConditions &RHS) const;
+
+      ///Divide ALL parameters and return the greatest number in absolute value
+      int operator/(const CanonicalConditions &RHS_inc) const;
 
 
-  };
+    protected:
 
-  std::ostream &operator<<(std::ostream &sout, const CanonicalConditions &cond);
+      const PrimClex *m_primclex;
 
+      ///Temperature
+      double m_temperature;
+
+      ///Inverse temperature. Includes Boltzmann term
+      double m_beta;
+
+      ///Vector of the param composition
+      Eigen::VectorXd m_param_composition;
+
+      ///Tolerance for comparison operators == and !=
+      double m_tolerance;
+
+
+    };
+
+    std::ostream &operator<<(std::ostream &sout, const CanonicalConditions &cond);
+  }
 }
 
 #endif

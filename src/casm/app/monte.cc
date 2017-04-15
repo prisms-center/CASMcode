@@ -4,6 +4,8 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
+#include "casm/monte_carlo/canonical/Canonical.hh"
+#include "casm/monte_carlo/canonical/CanonicalIO.hh"
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteDriver.hh"
 #include "casm/app/casm_functions.hh"
@@ -188,7 +190,7 @@ namespace CASM {
     try {
       log.read("Monte Carlo settings");
       log << "from: " << settings_path << "\n";
-      monte_settings = MonteSettings(settings_path);
+      monte_settings = MonteSettings(primclex, settings_path);
       log << "ensemble: " << monte_settings.ensemble() << "\n";
       log << "method: " << monte_settings.method() << "\n";
       if(args.log.verbosity() == 100) {
@@ -220,7 +222,7 @@ namespace CASM {
   template<typename MCType>
   int _initial_POSCAR(PrimClex &primclex, const CommandArgs &args, const Completer::MonteOption &monte_opt) {
     try {
-      MCType::SettingsType mc_settings(primclex, monte_opt.settings_path());
+      typename MCType::SettingsType mc_settings(primclex, monte_opt.settings_path());
       const MCType mc(primclex, mc_settings, args.log);
 
       args.log.write("Initial POSCAR");
@@ -239,7 +241,7 @@ namespace CASM {
   template<typename MCType>
   int _final_POSCAR(PrimClex &primclex, const CommandArgs &args, const Completer::MonteOption &monte_opt) {
     try {
-      MCType::SettingsType mc_settings(primclex, monte_opt.settings_path());
+      typename MCType::SettingsType mc_settings(primclex, monte_opt.settings_path());
       const MCType mc(primclex, mc_settings, args.log);
 
       args.log.write("Final POSCAR");
@@ -258,7 +260,7 @@ namespace CASM {
   template<typename MCType>
   int _traj_POSCAR(PrimClex &primclex, const CommandArgs &args, const Completer::MonteOption &monte_opt) {
     try {
-      MCType::SettingsType mc_settings(primclex, monte_opt.settings_path());
+      typename MCType::SettingsType mc_settings(primclex, monte_opt.settings_path());
       const MCType mc(primclex, mc_settings, args.log);
 
       args.log.write("Trajectory POSCAR");
@@ -277,7 +279,7 @@ namespace CASM {
   template<typename MCType>
   int _driver(PrimClex &primclex, const CommandArgs &args, const Completer::MonteOption &monte_opt) {
     try {
-      MCType::SettingsType mc_settings(primclex, monte_opt.settings_path());
+      typename MCType::SettingsType mc_settings(primclex, monte_opt.settings_path());
       MonteDriver<MCType> driver(primclex, mc_settings, args.log, args.err_log);
       driver.run();
       return 0;
@@ -296,6 +298,7 @@ namespace CASM {
     const Completer::MonteOption &monte_opt) {
 
     typedef GrandCanonical MCType;
+    const po::variables_map &vm = monte_opt.vm();
 
     if(vm.count("initial-POSCAR")) {
       return _initial_POSCAR<MCType>(primclex, args, monte_opt);
@@ -310,7 +313,7 @@ namespace CASM {
 
       try {
 
-        GrandCanonicalSettings gc_settings(primclex, settings_path);
+        GrandCanonicalSettings gc_settings(primclex, monte_opt.settings_path());
 
         if(gc_settings.dependent_runs()) {
           throw std::invalid_argument("ERROR in LTE1 calculation: dependents_runs must be false");
@@ -329,7 +332,7 @@ namespace CASM {
                                       "  \"driver\"/\"motif\"/\"configname\": \"restricted_auto\"");
         }
 
-        GrandCanonicalDirectoryStructure dir(gc_settings.output_directory());
+        MonteCarloDirectoryStructure dir(gc_settings.output_directory());
         if(gc_settings.write_csv()) {
           if(fs::exists(dir.results_csv())) {
             args.err_log << "Existing file at: " << dir.results_csv() << std::endl;
@@ -345,13 +348,13 @@ namespace CASM {
           }
         }
 
-        GrandCanonical gc(primclex, gc_settings, log);
+        GrandCanonical gc(primclex, gc_settings, args.log);
 
         // config, param_potential, T,
-        log.custom("LTE Calculation");
-        log << "Phi_LTE(1) = potential_energy_gs - kT*ln(Z'(1))/N" << std::endl;
-        log << "Z'(1) = sum_i(exp(-dPE_i/kT), summing over ground state and single spin flips" << std::endl;
-        log << "dPE_i: (potential_energy_i - potential_energy_gs)*N" << "\n\n" << std::endl;
+        args.log.custom("LTE Calculation");
+        args.log << "Phi_LTE(1) = potential_energy_gs - kT*ln(Z'(1))/N" << std::endl;
+        args.log << "Z'(1) = sum_i(exp(-dPE_i/kT), summing over ground state and single spin flips" << std::endl;
+        args.log << "dPE_i: (potential_energy_i - potential_energy_gs)*N" << "\n\n" << std::endl;
 
         auto init = gc_settings.initial_conditions();
         auto incr = init;
@@ -383,12 +386,12 @@ namespace CASM {
 
           double phi_LTE1 = gc.lte_grand_canonical_free_energy();
 
-          log.write("Output files");
-          write_lte_results(gc_settings, gc, phi_LTE1, configname, log);
-          log << std::endl;
+          args.log.write("Output files");
+          write_lte_results(gc_settings, gc, phi_LTE1, configname, args.log);
+          args.log << std::endl;
           cond += incr;
 
-          log << std::endl;
+          args.log << std::endl;
         }
 
         return 0;
@@ -415,7 +418,8 @@ namespace CASM {
     const CommandArgs &args,
     const Completer::MonteOption &monte_opt) {
 
-    typedef Canonical MCType;
+    typedef Monte::Canonical MCType;
+    const po::variables_map &vm = monte_opt.vm();
 
     if(vm.count("initial-POSCAR")) {
       return _initial_POSCAR<MCType>(primclex, args, monte_opt);
@@ -430,7 +434,7 @@ namespace CASM {
       return _driver<MCType>(primclex, args, monte_opt);
     }
     else {
-      args.err_log << "ERROR running " << to_string(GrandCanonical::ensemble) << " Monte Carlo. No valid option given.\n\n";
+      args.err_log << "ERROR running " << to_string(Monte::Canonical::ensemble) << " Monte Carlo. No valid option given.\n\n";
       return ERR_INVALID_INPUT_FILE;
     }
   }

@@ -2,16 +2,20 @@
 #define CASM_GrandCanonicalIO_HH
 
 #include <string>
-#include "casm/CASM_global_definitions.hh"
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
-#include "casm/monte_carlo/MonteIO.hh"
 
 namespace CASM {
 
-  template<typename T>
-  class DataFormatter;
+  template<typename T, typename U> class GenericDatumFormatter;
+  template<typename T> class DataFormatter;
+  class PrimClex;
+  class jsonParser;
 
+  class MonteCarlo;
+  typedef const MonteCarlo *ConstMonteCarloPtr;
+  class GrandCanonical;
+  class MonteSettings;
+  class Log;
+  class GrandCanonicalConditions;
 
   /// \brief Make a LTE results formatter
   DataFormatter<ConstMonteCarloPtr> make_results_formatter(const GrandCanonical &mc);
@@ -24,7 +28,7 @@ namespace CASM {
   jsonParser &to_json(const GrandCanonicalConditions &conditions, jsonParser &json);
 
   /// \brief Read GrandCanonicalConditions from JSON format
-  void from_json(GrandCanonicalConditions &conditions, const CompositionConverter &comp_converter, const jsonParser &json);
+  void from_json(GrandCanonicalConditions &conditions, const PrimClex &primclex, const jsonParser &json);
 
 
   /// \brief Print single spin flip LTE

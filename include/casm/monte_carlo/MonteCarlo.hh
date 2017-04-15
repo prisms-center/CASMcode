@@ -91,7 +91,7 @@ namespace CASM {
 
     /// \brief const Access current microstate
     const ConfigDoF &configdof() const {
-      return m_config.configdof();
+      return m_configdof;
     }
 
 
@@ -193,8 +193,16 @@ namespace CASM {
     ///
     /// - This can be used by a const member if it undoes any changes
     ///   to the ConfigDoF before returning
+    Configuration &_config() const {
+      return m_config;
+    }
+
+    /// \brief Access current microstate
+    ///
+    /// - This can be used by a const member if it undoes any changes
+    ///   to the ConfigDoF before returning
     ConfigDoF &_configdof() const {
-      return m_config.configdof();
+      return m_configdof;
     }
 
     Log &_log() const {
@@ -256,6 +264,9 @@ namespace CASM {
     /// event property values and then reverted within a const function
     mutable Configuration m_config;
 
+    /// Reference to m_config.configdof(), to avoid invalidating id every time used
+    ConfigDoF &m_configdof;
+
     /// \brief Random number generator
     MTRand m_twister;
 
@@ -309,6 +320,7 @@ namespace CASM {
     m_primclex(primclex),
     m_scel(&primclex, settings.simulation_cell_matrix()),
     m_config(m_scel),
+    m_configdof(m_config.configdof()),
     m_write_trajectory(settings.write_trajectory()),
     m_debug(m_settings.debug()),
     m_log(_log) {

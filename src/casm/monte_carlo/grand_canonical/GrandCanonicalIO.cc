@@ -1,10 +1,9 @@
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
 
-#include "casm/external/gzstream/gzstream.h"
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
-#include "casm/casm_io/VaspIO.hh"
+#include "casm/monte_carlo/MonteIO_impl.hh"
 
 namespace CASM {
 
@@ -251,19 +250,19 @@ namespace CASM {
   /// }
   /// \endcode
   ///
-  void from_json(GrandCanonicalConditions &conditions, const CompositionConverter &comp_converter, const jsonParser &json) {
+  void from_json(GrandCanonicalConditions &conditions, const PrimClex &primclex, const jsonParser &json) {
 
     double temp = json["temperature"].get<double>();
     double tol = json["tolerance"].get<double>();
 
-    int Nparam = comp_converter.independent_compositions();
+    int Nparam = primclex.composition_axes().independent_compositions();
     Eigen::VectorXd param_chem_pot(Nparam);
 
     for(int i = 0; i < Nparam; i++) {
       param_chem_pot(i) = json["param_chem_pot"][CompositionConverter::comp_var(i)].get<double>();
     }
 
-    conditions = GrandCanonicalConditions(temp, param_chem_pot, comp_converter, tol);
+    conditions = GrandCanonicalConditions(primclex, temp, param_chem_pot, tol);
   }
 
 
@@ -281,7 +280,7 @@ namespace CASM {
     try {
 
       fs::create_directories(settings.output_directory());
-      GrandCanonicalDirectoryStructure dir(settings.output_directory());
+      MonteCarloDirectoryStructure dir(settings.output_directory());
       auto formatter = make_lte_results_formatter(mc, phi_LTE1, configname);
 
       // write csv path results

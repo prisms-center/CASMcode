@@ -1,4 +1,8 @@
 #include "casm/monte_carlo/MonteIO.hh"
+#include "casm/external/gzstream/gzstream.h"
+#include "casm/casm_io/VaspIO.hh"
+#include "casm/casm_io/DataFormatter.hh"
+#include "casm/monte_carlo/MonteCarlo.hh"
 
 namespace CASM {
 
@@ -208,13 +212,13 @@ namespace CASM {
   }
 
   /// \brief Will create (and possibly overwrite) new file with all observations from run with conditions.cond_index
-  void write_observations(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index, Log &_log) {
+  void write_observations(const MonteSettings &settings, const MonteCarlo &mc, Index cond_index, Log &_log) {
     try {
       if(!settings.write_observations()) {
         return;
       }
 
-      GrandCanonicalDirectoryStructure dir(settings.output_directory());
+      MonteCarloDirectoryStructure dir(settings.output_directory());
       fs::create_directories(dir.conditions_dir(cond_index));
       auto formatter = make_observation_formatter(mc);
 
@@ -264,14 +268,14 @@ namespace CASM {
   /// [["A", "B"],["A" "C"], ... ]
   /// \endcode
   ///
-  void write_trajectory(const MonteSettings &settings, const GrandCanonical &mc, Index cond_index, Log &_log) {
+  void write_trajectory(const MonteSettings &settings, const MonteCarlo &mc, Index cond_index, Log &_log) {
     try {
 
       if(!settings.write_trajectory()) {
         return;
       }
 
-      GrandCanonicalDirectoryStructure dir(settings.output_directory());
+      MonteCarloDirectoryStructure dir(settings.output_directory());
       fs::create_directories(dir.conditions_dir(cond_index));
       auto formatter = make_trajectory_formatter(mc);
       const Structure &prim = mc.primclex().get_prim();
@@ -367,9 +371,9 @@ namespace CASM {
   /// \brief For the initial state, write a POSCAR file.
   ///
   /// The current naming convention is 'POSCAR.initial'
-  void write_POSCAR_initial(const GrandCanonical &mc, Index cond_index, Log &_log) {
+  void write_POSCAR_initial(const MonteCarlo &mc, Index cond_index, Log &_log) {
 
-    GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
+    MonteCarloDirectoryStructure dir(mc.settings().output_directory());
     fs::create_directories(dir.trajectory_dir(cond_index));
 
     // read initial_state.json
@@ -378,7 +382,7 @@ namespace CASM {
 
     if(!fs::exists(dir.initial_state_json(cond_index))) {
       throw std::runtime_error(
-        std::string("ERROR in 'write_POSCAR_initial(const GrandCanonical &mc, Index cond_index)'\n") +
+        std::string("ERROR in 'write_POSCAR_initial(const MonteCarlo &mc, Index cond_index)'\n") +
         "  File not found: " + dir.initial_state_json(cond_index).string());
     }
 
@@ -394,9 +398,9 @@ namespace CASM {
   /// \brief For the final state, write a POSCAR file.
   ///
   /// The current naming convention is 'POSCAR.final'
-  void write_POSCAR_final(const GrandCanonical &mc, Index cond_index, Log &_log) {
+  void write_POSCAR_final(const MonteCarlo &mc, Index cond_index, Log &_log) {
 
-    GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
+    MonteCarloDirectoryStructure dir(mc.settings().output_directory());
     fs::create_directories(dir.trajectory_dir(cond_index));
 
     // read final_state.json
@@ -405,7 +409,7 @@ namespace CASM {
 
     if(!fs::exists(dir.final_state_json(cond_index))) {
       throw std::runtime_error(
-        std::string("ERROR in 'write_POSCAR_final(const GrandCanonical &mc, Index cond_index)'\n") +
+        std::string("ERROR in 'write_POSCAR_final(const MonteCarlo &mc, Index cond_index)'\n") +
         "  File not found: " + dir.final_state_json(cond_index).string());
     }
 
@@ -422,9 +426,9 @@ namespace CASM {
   ///
   /// The current naming convention is 'POSCAR.sample'
   /// POSCAR title comment is printed with "Sample: #  Pass: #  Step: #"
-  void write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index, Log &_log) {
+  void write_POSCAR_trajectory(const MonteCarlo &mc, Index cond_index, Log &_log) {
 
-    GrandCanonicalDirectoryStructure dir(mc.settings().output_directory());
+    MonteCarloDirectoryStructure dir(mc.settings().output_directory());
     fs::create_directories(dir.trajectory_dir(cond_index));
 
     std::vector<Index> pass;
@@ -441,7 +445,7 @@ namespace CASM {
 
       if(!fs::exists(filename)) {
         throw std::runtime_error(
-          std::string("ERROR in 'write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index)'\n") +
+          std::string("ERROR in 'write_POSCAR_trajectory(const MonteCarlo &mc, Index cond_index)'\n") +
           "  File not found: " + filename);
       }
 
@@ -466,7 +470,7 @@ namespace CASM {
 
       if(!fs::exists(filename)) {
         throw std::runtime_error(
-          std::string("ERROR in 'write_POSCAR_trajectory(const GrandCanonical &mc, Index cond_index)'\n") +
+          std::string("ERROR in 'write_POSCAR_trajectory(const MonteCarlo &mc, Index cond_index)'\n") +
           "  File not found: " + filename);
       }
 

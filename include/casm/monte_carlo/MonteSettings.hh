@@ -60,12 +60,14 @@ namespace CASM {
     MonteSettings() {}
 
     /// \brief Construct MonteSettings by reading a settings JSON file
-    MonteSettings(const fs::path &read_path);
+    MonteSettings(const PrimClex &_primclex, const fs::path &read_path);
 
 
     // --- Project root directory ---------------------------
 
     fs::path root() const;
+
+    const PrimClex &primclex() const;
 
 
     // --- Type ---------------------------
@@ -196,6 +198,7 @@ namespace CASM {
 
     fs::path m_root;
     fs::path m_output_directory;
+    const PrimClex *m_primclex;
 
   };
 
@@ -217,8 +220,8 @@ namespace CASM {
     EquilibriumMonteSettings() {}
 
     /// \brief Construct EquilibriumMonteSettings by reading a settings JSON file
-    EquilibriumMonteSettings(const fs::path &read_path) :
-      MonteSettings(read_path) {}
+    EquilibriumMonteSettings(const PrimClex &_primclex, const fs::path &read_path) :
+      MonteSettings(_primclex, read_path) {}
 
 
     // --- MCData / Sampling ---------------------

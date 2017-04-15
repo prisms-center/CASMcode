@@ -1,26 +1,28 @@
 #ifndef CASM_CanonicalIO_HH
 #define CASM_CanonicalIO_HH
 
-#include <string>
-#include "casm/CASM_global_definitions.hh"
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/monte_carlo/canonical/Canonical.hh"
-#include "casm/monte_carlo/MonteIO.hh"
-
 namespace CASM {
+  class PrimClex;
+  class jsonParser;
+  template<typename T> class DataFormatter;
 
-  template<typename T>
-  class DataFormatter;
+  class MonteCarlo;
+  typedef const MonteCarlo *ConstMonteCarloPtr;
 
-  /// \brief Make a LTE results formatter
-  DataFormatter<ConstMonteCarloPtr> make_results_formatter(const Canonical &mc);
+  namespace Monte {
 
-  /// \brief Store CanonicalConditions in JSON format
-  jsonParser &to_json(const CanonicalConditions &conditions, jsonParser &json);
+    class Canonical;
+    class CanonicalConditions;
 
-  /// \brief Read CanonicalConditions from JSON format
-  void from_json(CanonicalConditions &conditions, const CompositionConverter &comp_converter, const jsonParser &json);
+    /// \brief Make a LTE results formatter
+    DataFormatter<ConstMonteCarloPtr> make_results_formatter(const Canonical &mc);
 
+    /// \brief Store CanonicalConditions in JSON format
+    jsonParser &to_json(const CanonicalConditions &conditions, jsonParser &json);
+
+    /// \brief Read CanonicalConditions from JSON format
+    void from_json(CanonicalConditions &conditions, const PrimClex &primclex, const jsonParser &json);
+  }
 }
 
 #endif

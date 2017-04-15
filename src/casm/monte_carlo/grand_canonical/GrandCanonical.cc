@@ -1,6 +1,7 @@
 
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 #include "casm/monte_carlo/MonteCarloEnum_impl.hh"
+#include "casm/monte_carlo/MonteIO_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigIterator.hh"
 #include "casm/clex/Norm.hh"
