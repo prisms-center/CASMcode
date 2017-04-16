@@ -8,6 +8,7 @@
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/unique_cloneable_map.hh"
 #include "casm/misc/CASM_TMP.hh"
+#include "casm/app/casm_functions.hh"
 
 namespace CASM {
 
@@ -417,46 +418,8 @@ namespace CASM {
       @{
   */
 
-  /// \brief Base class for generic use of enumerators that may be accessed through the API
-  class EnumInterfaceBase {
-
-  public:
-
-    EnumInterfaceBase() {}
-
-    virtual ~EnumInterfaceBase() {}
-
-    virtual std::string help() const = 0;
-
-    virtual std::string name() const = 0;
-
-    virtual int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt) const = 0;
-
-    std::unique_ptr<EnumInterfaceBase> clone() const {
-      return std::unique_ptr<EnumInterfaceBase>(this->_clone());
-    }
-
-  private:
-
-    virtual EnumInterfaceBase *_clone() const = 0;
-
-  };
-
-
-  /// \brief Used to hold a list of all enumerators that may be accessed via the API
-  typedef notstd::unique_cloneable_map<std::string, EnumInterfaceBase> EnumeratorMap;
-
-  /// \brief Use to construct an EnumeratorMap
-  inline EnumeratorMap make_enumerator_map() {
-
-    return EnumeratorMap(
-    [](const EnumInterfaceBase & e) -> std::string {
-      return e.name();
-    },
-    [](const EnumInterfaceBase & e) -> notstd::cloneable_ptr<EnumInterfaceBase> {
-      return notstd::clone(e);
-    });
-  }
+  typedef InterfaceBase<Completer::EnumOption> EnumInterfaceBase;
+  typedef InterfaceMap<Completer::EnumOption> EnumeratorMap;
 
   /// \brief Standardizes parsing casm enum input options to make ScelEnum JSON input
   jsonParser make_enumerator_scel_enum_input(
@@ -538,6 +501,8 @@ namespace CASM {
 
 
   };
+
+  std::unique_ptr<EnumeratorMap> make_standard_enumerator_map();
 
   /** @}*/
 

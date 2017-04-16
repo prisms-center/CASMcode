@@ -44,6 +44,14 @@ namespace CASM {
   }
 
 
+  void print_enumerator_names(std::ostream &sout, const EnumeratorMap &enumerators) {
+    sout << "The enumeration methods are:\n\n";
+
+    for(const auto &e : enumerators) {
+      sout << "  " << e.name() << std::endl;
+    }
+  }
+
   // ///////////////////////////////////////
   // 'enum' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
@@ -53,6 +61,7 @@ namespace CASM {
     //casm enum --settings input.json
     //- enumerate supercells, configs, hop local configurations, etc.
 
+    std::unique_ptr<EnumeratorMap> standard_enumerators;
     EnumeratorMap *enumerators;
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex *primclex;
@@ -86,20 +95,17 @@ namespace CASM {
         primclex = &make_primclex_if_not(args, uniq_primclex);
         enumerators = &primclex->settings().enumerator_handler().map();
       }
+      else {
+        standard_enumerators = make_standard_enumerator_map();
+        enumerators = &*standard_enumerators;
+      }
 
       /** --help option
        */
       if(vm.count("help")) {
         args.log << "\n";
         args.log << enum_opt.desc() << std::endl;
-
-        if(!root.empty()) {
-          args.log << "The enumeration methods are:\n\n";
-
-          for(const auto &e : *enumerators) {
-            args.log << "  " << e.name() << std::endl;
-          }
-        }
+        print_enumerator_names(args.log, *enumerators);
 
         args.log << "\nFor complete options description, use 'casm enum --desc MethodName'.\n\n";
 
@@ -123,14 +129,8 @@ namespace CASM {
         }
 
         if(!match) {
-
-          if(!root.empty()) {
-            args.log << "No match found. The enumeration methods are:\n\n";
-
-            for(const auto &e : *enumerators) {
-              args.log << "  " << e.name() << std::endl;
-            }
-          }
+          args.log << "No match found. ";
+          print_enumerator_names(args.log, *enumerators);
         }
 
         return 0;
@@ -156,27 +156,20 @@ namespace CASM {
                  "    }\n"
                  "\n";
 
-        if(!root.empty()) {
-          args.log << "The enumeration methods are:\n\n";
+        print_enumerator_names(args.log, *enumerators);
 
-          for(const auto &e : *enumerators) {
-            args.log << "  " << e.name() << std::endl;
-          }
+        args.log << "\nFor complete options help for a particular method, \n"
+                 "use 'casm enum --desc MethodName'.\n\n";
 
+        args.log << "Custom enumerator plugins can be added by placing source code \n"
+                 "in the CASM project directory: \n"
+                 "  " << primclex->dir().enumerator_plugins() << " \n\n"
 
-          args.log << "\nFor complete options help for a particular method, \n"
-                   "use 'casm enum --desc MethodName'.\n\n";
-
-          args.log << "Custom enumerator plugins can be added by placing source code \n"
-                   "in the CASM project directory: \n"
-                   "  " << primclex->dir().enumerator_plugins() << " \n\n"
-
-                   "For examples of how to write enumerators see: \n"
-                   "  $REPO/include/casm/enumerators \n"
-                   "  $REPO/src/casm/enumerators \n"
-                   "where: \n"
-                   "  REPO=https://github.com/prisms-center/CASMcode/tree/master \n\n";
-        }
+                 "For examples of how to write enumerators see: \n"
+                 "  $REPO/include/casm/clex \n"
+                 "  $REPO/src/casm/clex \n"
+                 "where: \n"
+                 "  REPO=https://github.com/prisms-center/CASMcode/tree/master \n\n";
 
         return 0;
       }
@@ -199,11 +192,21 @@ namespace CASM {
     else if(vm.count("input")) {
       input = jsonParser::parse(enum_opt.input_str());
     }
-    int res = enumerators->find(enum_opt.method())->run(*primclex, input, enum_opt);
 
-    args.log << std::endl;
+    auto lambda = [&](const EnumInterfaceBase & e) {
+      return e.name().substr(0, enum_opt.method().size()) == enum_opt.method();
+    };
+    auto it = std::find_if(enumerators->begin(), enumerators->end(), lambda);
 
-    return res;
+    if(it != enumerators->end()) {
+      return it->run(*primclex, input, enum_opt);
+    }
+    else {
+      args.err_log << "No match found for --method " << enum_opt.method() << std::endl;
+      print_enumerator_names(args.log, *enumerators);
+      return ERR_INVALID_ARG;
+    }
+
   };
 
 }

@@ -4,6 +4,19 @@
 
 namespace CASM {
 
+  /// \brief Use to construct an EnumeratorMap with standard Enumerators (not plugins)
+  std::unique_ptr<EnumeratorMap> make_standard_enumerator_map() {
+    std::unique_ptr<EnumeratorMap> emap = make_enumerator_map();
+
+    emap->insert(
+      EnumInterface<ScelEnum>(),
+      EnumInterface<ConfigEnumAllOccupations>(),
+      EnumInterface<SuperConfigEnum>()
+    );
+
+    return emap;
+  }
+
   /// \brief Standardizes parsing casm enum input options to make ScelEnum JSON input
   jsonParser make_enumerator_scel_enum_input(
     const jsonParser &_kwargs,

@@ -165,6 +165,23 @@ namespace CASM {
 
       //-------------------------------------------------------------------------------------//
 
+      ///Add --type suboption (default, set of short_name of allowed ConfigTypes)
+      void add_configtype_suboption(
+        std::string _default,
+        std::set<std::string> _configtype_opts);
+
+      /// User-specified config type
+      std::string m_configtype;
+
+      /// Set of valid config types
+      std::set<std::string> m_configtype_opts;
+
+      std::string configtype() const;
+
+      std::set<std::string> configtype_opts() const;
+
+      //-------------------------------------------------------------------------------------//
+
       ///Add a plain --help suboption
       void add_help_suboption();
 
@@ -512,15 +529,11 @@ namespace CASM {
 
     public:
 
+      using OptionHandlerBase::configtype;
+      using OptionHandlerBase::configtype_opts;
+
+
       ImportOption();
-
-      double vol_tolerance() const;
-
-      double lattice_weight() const;
-
-      double min_va_frac() const;
-
-      double max_va_frac() const;
 
       const std::vector<fs::path> &pos_vec() const;
 
@@ -530,14 +543,6 @@ namespace CASM {
     private:
 
       void initialize() override;
-
-      double m_vol_tolerance;
-
-      double m_lattice_weight;
-
-      double m_min_va_frac;
-
-      double m_max_va_frac;
 
       std::vector<fs::path> m_pos_vec;
 

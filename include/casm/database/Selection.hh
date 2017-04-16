@@ -26,6 +26,11 @@ namespace CASM {
       /// Default constructor (equals end)
       SelectionIterator() {}
 
+      /// \brief Name of object the iterator points at
+      std::string name() const {
+        return m_it->first;
+      }
+
     private:
 
       friend boost::iterator_core_access;
@@ -140,7 +145,7 @@ namespace CASM {
 
 
       /// \brief True if obj is in Selection and is selected; false otherwise
-      bool selected(const std::string &name_or_alias) const;
+      bool is_selected(const std::string &name_or_alias) const;
 
       /// \brief If obj is in Selection, set selected to specified value
       void set_selected(const std::string &name_or_alias, bool value) const;

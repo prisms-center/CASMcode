@@ -34,6 +34,7 @@ namespace CASM {
   template<>
   struct QueryTraits<Configuration> {
     static const std::string name;
+    static const std::string short_name;
   };
 
   /// \defgroup Configuration
@@ -444,14 +445,11 @@ namespace CASM {
 
     const Properties &calc_properties() const;
 
-    /// \brief Reads from properties.calc.json files
-    ///
-    /// - Saves file modification timestamp: "data_timestamp"
-    /// - Normalizes "relaxed_energy" per primitive cell
-    /// - Calculates "rms_force" from "relaxed_forces"
-    /// - Called using the initial Confi
-    bool read_calc_properties(jsonParser &parsed_props) const;
+    /// \brief Read properties.calc.json from training_data
+    std::tuple<jsonParser, bool, bool> read_calc_properties() const;
 
+    /// \brief Read properties.calc.json from file
+    static std::tuple<jsonParser, bool, bool> read_calc_properties(const PrimClex &primclex, const fs::path &filepath);
 
     //********** Composition ***********
 
@@ -671,8 +669,13 @@ namespace CASM {
   /// \brief Returns the formation energy, normalized per species
   double clex_formation_energy_per_species(const Configuration &config);
 
-  /// \brief Return true if all current properties have been been calculated for the configuration
+  /// \brief Return true if all required properties have been been calculated for the configuration
   bool is_calculated(const Configuration &config);
+
+  /// \brief Return true if all required properties are included in the JSON
+  bool is_calculated(
+    const jsonParser &calc_properties,
+    const std::vector<std::string> &required_properties);
 
   /// \brief Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)
   double rms_force(const Configuration &_config);
@@ -724,10 +727,13 @@ namespace CASM {
 
   // directory structure helpers
 
+  fs::path calc_properties_path(const PrimClex &primclex, const std::string &configname);
   fs::path calc_properties_path(const Configuration &config);
 
+  fs::path pos_path(const PrimClex &primclex, const std::string &configname);
   fs::path pos_path(const Configuration &config);
 
+  fs::path calc_status_path(const PrimClex &primclex, const std::string &configname);
   fs::path calc_status_path(const Configuration &config);
 
   /// \brief Apply SymOp not in Supercell factor group, and make supercells

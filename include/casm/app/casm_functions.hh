@@ -4,6 +4,8 @@
 #include <wordexp.h>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/misc/cloneable_ptr.hh"
+#include "casm/misc/unique_cloneable_map.hh"
 
 /**
  *  \defgroup API
@@ -141,11 +143,6 @@ namespace CASM {
   /// \brief Executes CASM commands specified by args
   int casm_api(const CommandArgs &args);
 
-  // /// \brief Executes casm_api in specified working directory
-  // int casm_api(const CommandArgs &args, fs::path working_dir);
-
-
-
   /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
   ///        return reference to existing or constructed PrimClex
   PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex);
@@ -204,6 +201,50 @@ namespace CASM {
   int version_command(const CommandArgs &args);
 
   int view_command(const CommandArgs &args);
+
+
+  /// \brief Base class for generic use of algorithms through the API
+  template<typename OptionType>
+  class InterfaceBase {
+
+  public:
+
+    InterfaceBase() {}
+
+    virtual ~InterfaceBase() {}
+
+    virtual std::string help() const = 0;
+
+    virtual std::string name() const = 0;
+
+    virtual int run(const PrimClex &primclex, const jsonParser &kwargs, const OptionType &opt) const = 0;
+
+    std::unique_ptr<InterfaceBase> clone() const {
+      return std::unique_ptr<InterfaceBase>(this->_clone());
+    }
+
+  private:
+
+    virtual InterfaceBase *_clone() const = 0;
+
+  };
+
+  /// \brief Used to hold a list of all algorithms that may be accessed via the API
+  template<typename OptionType>
+  using InterfaceMap = notstd::unique_cloneable_map<std::string, InterfaceBase<OptionType> >;
+
+  /// \brief Use to construct an InterfaceMap
+  template<typename OptionType>
+  std::unique_ptr<InterfaceMap<OptionType> > make_interface_map() {
+
+    return notstd::make_unique<InterfaceMap<OptionType> >(
+    [](const InterfaceBase<OptionType> &e) -> std::string {
+      return e.name();
+    },
+    [](const InterfaceBase<OptionType> &e) -> notstd::cloneable_ptr<InterfaceBase<OptionType> > {
+      return notstd::clone(e);
+    });
+  }
 
   /** @} */
 }

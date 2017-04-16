@@ -1,7 +1,7 @@
 #include "casm/clex/ConfigIO.hh"
 
 #include <functional>
-#include "casm/clex/Configuration.hh"
+//#include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Norm.hh"
 #include "casm/clex/ConfigIOHull.hh"
@@ -426,7 +426,7 @@ namespace CASM {
     GenericConfigFormatter<bool> is_calculated() {
       return GenericConfigFormatter<bool>("is_calculated",
                                           "True (1) if all current properties have been been calculated for the configuration",
-                                          CASM::is_calculated);
+                                          static_cast<bool(*)(const Configuration &)>(CASM::is_calculated));
     }
 
     GenericConfigFormatter<bool> is_primitive() {

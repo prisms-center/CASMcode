@@ -68,6 +68,7 @@ namespace CASM {
     /// \endcode
     ///
     /// Derived classes must implement private methods:
+    /// - std::string name() const
     /// - void increment()
     /// - reference dereference() const
     /// - DatabaseIteratorBase *_clone() const
@@ -83,6 +84,8 @@ namespace CASM {
       typedef const value_type &reference;
 
       DatabaseIteratorBase() {}
+
+      virtual std::string name() const = 0;
 
       std::unique_ptr<DatabaseIteratorBase> clone() const {
         return std::unique_ptr<DatabaseIteratorBase>(this->_clone());
@@ -156,6 +159,9 @@ namespace CASM {
       DatabaseIterator(const DatabaseIteratorBase<ValueType> &it) :
         m_ptr(notstd::clone(it)) {}
 
+      std::string name() const {
+        return m_ptr->name();
+      }
 
       DatabaseIteratorBase<ValueType> *get() const {
         return m_ptr.unique().get();

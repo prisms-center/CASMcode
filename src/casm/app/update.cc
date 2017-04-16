@@ -59,6 +59,22 @@ namespace CASM {
   // 'update' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
+  /// Update proceeds in two steps.
+  ///   1) For each selected configuration for which properties.calc.json exists:
+  ///       - read properties.calc.json file
+  ///       - map it onto a Configuration of the PrimClex
+  ///       - record relaxation data (lattice & basis deformation cost)
+  ///       - clear existing properties from database
+  ///
+  ///   2) Iterate over each import record and do the following:
+  ///       - Store all initial configuration -> relaxed configuration mappings,
+  ///         with both the initial and relaxed configuration
+  ///       - For all relaxed configurations, determine which properties to use:
+  ///         - if self mapped (initial config == relaxed config) and calculated,
+  ///         use those calculation results;
+  ///         - else determine which configuration is the best mapping to the
+  ///         relaxed configuration (if any) and use those calculation results
+  ///
   int update_command(const CommandArgs &args) {
 
     po::variables_map vm;

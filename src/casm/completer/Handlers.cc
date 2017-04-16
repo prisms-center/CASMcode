@@ -273,6 +273,44 @@ namespace CASM {
       return;
     }
 
+    void add_configtype_suboption(std::string _default, std::set<std::string> _configtype_opts) {
+
+      if(!_configtype_opts.size()) {
+        m_configtype_opts = config_types();
+      }
+      else {
+        m_configtype_opts = _configtype_opts;
+      }
+
+      std::stringstream help;
+      help << "Type of configurations to import. Options are: ";
+      int i = 0;
+      for(std::string s : m_configtype_opts) {
+        help << s;
+        if(s == _default) {
+          help << " (default)";
+        }
+        if(i != m_configtype_opts.size() - 1) {
+          help << ",";
+        }
+        ++i;
+      }
+      help << ".";
+
+      m_desc.add_options()
+      ("type,t",
+       po::value<std::string>(&m_configtype)->default_value(_default),
+       help.str());
+    }
+
+    std::string configtype() const {
+      return m_configtype;
+    }
+
+    std::set<std::string> configtype_opts() const {
+      return m_configtype_opts;
+    }
+
     void OptionHandlerBase::add_help_suboption() {
       m_desc.add_options()
       ("help,h", "Print help message")

@@ -15,6 +15,7 @@
 namespace CASM {
 
   const std::string QueryTraits<Configuration>::name = "Configuration";
+  const std::string QueryTraits<Configuration>::short_name = "config";
 
   template class QueryHandler<Configuration>;
 
@@ -375,7 +376,7 @@ namespace CASM {
       cache_insert("is_canonical", result);
       return result;
     }
-    return cache()["is_calculated"].get<bool>();
+    return cache()["is_canonical"].get<bool>();
   }
 
   //*******************************************************************************
@@ -564,52 +565,47 @@ namespace CASM {
 
   //*********************************************************************************
 
-  bool Configuration::read_calc_properties(jsonParser &parsed_props) const {
-    //std::cout << "begin Configuration::read_calculated()" << std::endl;
-    bool success = true;
-    /// properties.calc.json: contains calculated properties
-    ///   For default clex calctype only
-    fs::path filepath = calc_properties_path(*this);
-    //std::cout << "filepath: " << filepath << std::endl;
-    parsed_props = jsonParser();
-    if(fs::exists(filepath)) {
-      jsonParser json(filepath);
+  /// \brief Read properties.calc.json from training_data
+  ///
+  /// \returns tuple of:
+  /// - 0: JSON with calculated properties (or empty object)
+  /// - 1: bool indicating there is any data
+  /// - 2: bool indicating complete data
+  ///
+  /// JSON includes:
+  /// - file contents verbatim
+  /// -  "data_timestamp" with the last write time of the file
+  ///
+  std::tuple<jsonParser, bool, bool> Configuration::read_calc_properties() const {
+    return read_calc_properties(primclex(), calc_properties_path(*this));
+  }
 
-      //Record file timestamp
-      parsed_props["data_timestamp"] = fs::last_write_time(filepath);
+  //*********************************************************************************
 
-      std::vector<std::string> props = primclex().settings().properties();
-      for(Index i = 0; i < props.size(); i++) {
-        //std::cout << "checking for: " << props[i] << std::endl;
-        if(json.contains(props[i])) {
-
-          // normal by #prim cells for some properties
-          if(props[i] == "energy" || props[i] == "relaxed_energy") {
-            parsed_props[ props[i] ] = json[props[i]].get<double>() / supercell().volume();
-          }
-          else {
-            parsed_props[props[i]] = json[props[i]];
-          }
-        }
-        else
-          success = false;
-      }
-      //Get RMS force:
-      if(json.contains("relaxed_forces")) {
-        if(json["relaxed_forces"].size()) {
-          Eigen::MatrixXd forces;
-          json["relaxed_forces"].get(forces);
-          parsed_props["rms_force"] = sqrt((forces.transpose() * forces).trace() / double(forces.rows()));
-        }
-        else {
-          parsed_props["rms_force"] = 0.;
-        }
-      }
+  /// \brief Read properties.calc.json from file
+  ///
+  /// \returns tuple of:
+  /// - 0: JSON with calculated properties (or empty object)
+  /// - 1: bool indicating there is any data
+  /// - 2: bool indicating complete data
+  ///
+  /// JSON includes:
+  /// - file contents verbatim
+  /// - "data_timestamp" with the last write time of the file
+  ///
+  std::tuple<jsonParser, bool, bool> Configuration::read_calc_properties(const PrimClex &primclex, const fs::path &filepath) {
+    if(!fs::exists(filepath)) {
+      return std::make_tuple(jsonParser(), false, false);
     }
-    else
-      success = false;
-
-    return success;
+    jsonParser props(filepath);
+    if(!props.is_obj()) {
+      primclex.err_log() << "error parsing: " << filepath << std::endl;
+      primclex.err_log() << "not a valid properties.calc.json for Configuration: not a JSON object" << std::endl;
+      return std::make_tuple(jsonParser(), false, false);
+    }
+    props["data_timestamp"] = fs::last_write_time(filepath);
+    return std::make_tuple(props, true,
+                           is_calculated(jsonParser(filepath), primclex.settings().properties()));
   }
 
   //********** ACCESSORS ***********
@@ -1289,7 +1285,7 @@ namespace CASM {
 
   /// \brief Returns the relaxed energy, normalized per unit cell
   double relaxed_energy(const Configuration &config) {
-    return config.calc_properties()["relaxed_energy"].get<double>();
+    return config.calc_properties()["relaxed_energy"].get<double>() / config.supercell().volume();
   }
 
   /// \brief Returns the relaxed energy, normalized per species
@@ -1347,17 +1343,29 @@ namespace CASM {
 
   /// \brief Return true if all current properties have been been calculated for the configuration
   bool is_calculated(const Configuration &config) {
-    const auto &set = config.primclex().settings();
-    return std::all_of(set.properties().begin(),
-                       set.properties().end(),
+    return is_calculated(config.calc_properties(), config.primclex().settings().properties());
+  }
+
+  /// \brief Return true if all required properties are included in the JSON
+  bool is_calculated(
+    const jsonParser &calc_properties,
+    const std::vector<std::string> &required_properties) {
+
+    return std::all_of(required_properties.begin(),
+                       required_properties.end(),
     [&](const std::string & key) {
-      return config.calc_properties().contains(key);
+      return calc_properties.contains(key);
     });
   }
 
   /// \brief Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)
   double rms_force(const Configuration &_config) {
-    return _config.calc_properties()["rms_force"].get<double>();
+    //Get RMS force:
+    const jsonParser &props = _config.calc_properties();
+
+    Eigen::MatrixXd forces;
+    props["relaxed_forces"].get(forces);
+    return sqrt((forces.transpose() * forces).trace() / double(forces.rows()));
   }
 
   /// \brief Cost function that describes the degree to which basis sites have relaxed
@@ -1399,7 +1407,9 @@ namespace CASM {
   }
 
   bool has_rms_force(const Configuration &_config) {
-    return _config.calc_properties().contains("rms_force");
+    const jsonParser &props = _config.calc_properties();
+    auto it = props.find("relaxed_forces");
+    return it != props.end() && it->size();
   }
 
   bool has_basis_deformation(const Configuration &_config) {
@@ -1414,18 +1424,28 @@ namespace CASM {
     return _config.calc_properties().contains("volume_relaxation");
   }
 
+  fs::path calc_properties_path(const PrimClex &primclex, const std::string &configname) {
+    return primclex.dir().calculated_properties(configname, primclex.settings().default_clex().calctype);
+  }
+
   fs::path calc_properties_path(const Configuration &config) {
-    const PrimClex &primclex = config.primclex();
-    return primclex.dir().calculated_properties(config.name(), primclex.settings().default_clex().calctype);
+    return calc_properties_path(config.primclex(), config.name());
+  }
+
+  fs::path pos_path(const PrimClex &primclex, const std::string &configname) {
+    return primclex.dir().POS(configname);
   }
 
   fs::path pos_path(const Configuration &config) {
-    return config.primclex().dir().POS(config.name());
+    return pos_path(config.primclex(), config.name());
+  }
+
+  fs::path calc_status_path(const PrimClex &primclex, const std::string &configname) {
+    return primclex.dir().calc_status(configname, primclex.settings().default_clex().calctype);
   }
 
   fs::path calc_status_path(const Configuration &config) {
-    const PrimClex &primclex = config.primclex();
-    return primclex.dir().calc_status(config.name(), primclex.settings().default_clex().calctype);
+    return calc_status_path(config.primclex(), config.name());
   }
 
   /// \brief Constructor

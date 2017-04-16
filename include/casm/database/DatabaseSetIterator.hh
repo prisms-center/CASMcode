@@ -12,6 +12,7 @@ namespace CASM {
     ///
     /// DatabaseIterators must implement public methods:
     /// - Default constructor
+    /// - std::string name() const
     /// - std::unique_ptr<DatabaseIteratorBase<ValueType> > clone() const
     ///
     /// DatabaseIterators must implement private methods:
@@ -26,6 +27,10 @@ namespace CASM {
     public:
 
       DatabaseSetIterator() {}
+
+      std::string name() const override {
+        return m_it->name();
+      }
 
       std::unique_ptr<DatabaseIteratorBase<ValueType> > clone() const {
         return std::unique_ptr<DatabaseIteratorBase<ValueType> >(this->_clone());

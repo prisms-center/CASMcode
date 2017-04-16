@@ -35,6 +35,9 @@ namespace CASM {
           m_data.insert(std::make_pair(obj.name(), false));
         }
       }
+      else if(selection_path == "EMPTY") {
+
+      }
       else if(selection_path == "ALL") {
         for(const auto &obj : db()) {
           m_data.insert(std::make_pair(obj.name(), true));
@@ -49,7 +52,7 @@ namespace CASM {
         if(!fs::exists(selection_path)) {
           std::stringstream ss;
           ss << "ERROR in parsing configuation selection name. \n"
-             << "  Expected <filename>, 'ALL', 'NONE', 'CALCULATED', or 'MASTER' <--default \n"
+             << "  Expected <filename>, 'ALL', 'NONE', 'EMPTY', 'CALCULATED', or 'MASTER' <--default \n"
              << "  Received: '" << selection_path << "'\n"
              << "  No file named '" << selection_path << "'.";
           throw std::runtime_error(ss.str());
@@ -77,7 +80,7 @@ namespace CASM {
 
     /// \brief True if obj is in Selection and is selected; false otherwise
     template<typename ObjType>
-    bool Selection<ObjType>::selected(const std::string &name_or_alias) const {
+    bool Selection<ObjType>::is_selected(const std::string &name_or_alias) const {
       auto it = m_data.find(db().name(name_or_alias));
       if(it == m_data.end()) {
         return false;

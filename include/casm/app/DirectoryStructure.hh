@@ -18,6 +18,13 @@ namespace CASM {
   template<typename DataObject>
   class QueryTraits;
 
+  /// std::set of all QueryTraits<ConfigType>::name
+  const std::set<std::string> &config_types();
+
+  /// std::set of all QueryTraits<ConfigType>::short_name
+  const std::set<std::string> &config_types_short();
+
+
   /// return path to current or parent directory containing ".casm" directory
   ///   if none found, return empty path
   inline fs::path find_casmroot(const fs::path &cwd) {
@@ -274,14 +281,19 @@ namespace CASM {
       return configuration_dir(configname) / m_set_dir / _calctype(calctype);
     }
 
+    /// \brief Return configuration directory path (configname has format SCELV_A_B_C_D_E_F/I)
+    fs::path configuration_calc_dir(std::string configname, std::string calctype) const {
+      return configuration_dir(configname) / _calctype(calctype);
+    }
+
     /// \brief Return calculated properties file path
     fs::path calculated_properties(std::string configname, std::string calctype) const {
-      return configuration_dir(configname) / _calctype(calctype) / "properties.calc.json";
+      return configuration_calc_dir(configname, calctype) / "properties.calc.json";
     }
 
     /// \brief Return calculation status file path
     fs::path calc_status(std::string configname, std::string calctype) const {
-      return configuration_dir(configname) / _calctype(calctype) / "status.json";
+      return configuration_calc_dir(configname, calctype) / "status.json";
     }
 
 

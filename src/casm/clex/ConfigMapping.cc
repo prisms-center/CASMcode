@@ -5,6 +5,7 @@
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/LatticeMap.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/completer/Handlers.hh"
 
 namespace CASM {
   namespace ConfigMapping {
@@ -113,16 +114,8 @@ namespace CASM {
   //*******************************************************************************************
 
   ConfigMapperResult ConfigMapper::import_structure_occupation(const fs::path &pos_path) const {
-
-    try {
-      BasicStructure<Site> tstruc(pos_path);
-      return import_structure_occupation(tstruc);
-    }
-    catch(const std::exception &ex) {
-      throw std::runtime_error(std::string("Could not successfully import structure ") + pos_path.string() + ":\n" + ex.what());
-    }
-
-
+    BasicStructure<Site> tstruc(pos_path);
+    return import_structure_occupation(tstruc);
   }
 
   //*******************************************************************************************
@@ -217,7 +210,8 @@ namespace CASM {
     // if no valid mapping was found, "suggested" (the mapping to hint config) is also "best"
     else {
       if(best_cost > 1e10) {
-        throw std::runtime_error("Structure is incompatible with PRIM.");
+        result.success = false;
+        result.fail_msg = "Structure is incompatible with PRIM.";
       }
 
       swap(best_configdof, suggested_configdof);
@@ -295,6 +289,7 @@ namespace CASM {
 
     result.structure.set_lattice(Lattice(result.cart_op.transpose()*best_configdof.deformation()*mapped_lat.lat_column_mat()), CART);
     result.structure.set_lattice(Lattice(best_configdof.deformation()*mapped_lat.lat_column_mat()), FRAC);
+    result.success = true;
 
     return result;
   }
@@ -302,15 +297,7 @@ namespace CASM {
   //*******************************************************************************************
 
   ConfigMapperResult ConfigMapper::import_structure(const fs::path &pos_path) const {
-
-    try {
-      return import_structure(BasicStructure<Site>(pos_path));
-    }
-    catch(const std::exception &ex) {
-      throw std::runtime_error(std::string("Could not successfully import structure ") + pos_path.string() + ":\n" + ex.what());
-    }
-
-
+    return import_structure(BasicStructure<Site>(pos_path));
   }
 
   //*******************************************************************************************
@@ -337,7 +324,9 @@ namespace CASM {
                            result.cart_op);
 
     if(!valid_mapping) {
-      throw std::runtime_error("Structure is incompatible with PRIM.");
+      result.success = false;
+      result.fail_msg = "Structure is incompatible with PRIM.";
+      return result;
     }
 
     // store "best_mapping" in 'relaxation_properties
@@ -373,6 +362,7 @@ namespace CASM {
       return i < num_atoms;
     });
 
+    result.success = true;
     return result;
   }
 

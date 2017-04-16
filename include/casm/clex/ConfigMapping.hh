@@ -13,9 +13,15 @@ namespace CASM {
   class Coordinate;
   template<typename CoordType>
   class BasicStructure;
+  namespace Completer {
+    class ImportOption;
+  }
 
   /// Data structure holding results of ConfigMapper algorithm
   struct ConfigMapperResult {
+
+    ConfigMapperResult() :
+      success(false) {}
 
     /// Output structure, after applying lattice similarity and/or rotation to
     /// input structure.
@@ -40,6 +46,12 @@ namespace CASM {
     /// structure onto the coordinate system of the ideal crystal
     Eigen::Matrix3d cart_op;
 
+    /// True if could map to prim, false if not
+    bool success;
+
+    /// Failure message if could not map to prim
+    std::string fail_msg;
+
   };
 
 
@@ -56,6 +68,12 @@ namespace CASM {
                   strict = (1u << 1),
                   robust = (1u << 2)
                  };
+
+    /// Construct ConfigMapper from input args
+    std::unique_ptr<ConfigMapper> make(
+      const PrimClex &primclex,
+      const jsonParser &kwargs,
+      const Completer::ImportOption &import_opt);
 
     ///\brief Default construction not allowed -- this constructor provides an override
     ConfigMapper(NullInitializer) :
