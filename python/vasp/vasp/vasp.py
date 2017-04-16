@@ -362,6 +362,41 @@ class IbzkptError(_RunError):
 #                print "  Set ISYM = 0"
 #                io.set_incar_tag({"ISYM": 0}, jobdir = new_jobdir)
 
+class FEXCFError(_RunError):
+    """ERROR FEXCF: supplied exchange-correlation table"""
+
+    pattern = "ERROR FEXCF: supplied exchange-correlation table"
+
+    def __str__(self):
+        return self.pattern
+
+    def error(self, line=None, jobdir=None):
+        """ Check if pattern found in line """
+        if re.search(self.pattern, line):
+            return True
+        return False
+
+    def fix(self, err_jobdir, new_jobdir, settings):
+        """ First attempt:
+                Set IBRION = 2
+            Second attempt:
+                Reduce POTIM to 0.1
+            Final attempt:
+                Reduce POTIM to 0.01
+        """
+        continue_job(err_jobdir, new_jobdir, settings)
+        if io.get_incar_tag("IBRION", jobdir=new_jobdir) != 2:
+            print "  Set IBRION = 2"
+            io.set_incar_tag({"IBRION":2}, jobdir=new_jobdir)
+        elif io.get_incar_tag("POTIM", jobdir=new_jobdir) > 0.1:
+            print "  Set POTIM = 0.1"
+            sys.stdout.flush()
+            io.set_incar_tag({"POTIM":0.1}, jobdir=new_jobdir)
+        elif io.get_incar_tag("POTIM", jobdir=new_jobdir) > 0.01:
+            print "  Set POTIM = 0.01"
+            sys.stdout.flush()
+            io.set_incar_tag({"POTIM":0.01}, jobdir=new_jobdir)
+
 
 class SubSpaceMatrixError(_RunError):
     """WARNING: Sub-Space-Matrix is not hermitian"""
@@ -384,7 +419,7 @@ class SubSpaceMatrixError(_RunError):
             Second attempt:
                 Set IBRION = 1 and POTIM = 0.1
             Final attempt:
-                Set LREAD = .FALSE.
+                Set LREAL = .FALSE.
         """
         continue_job(err_jobdir, new_jobdir, settings)
         if io.get_incar_tag("ALGO", jobdir=new_jobdir) != "VeryFast":
@@ -394,10 +429,44 @@ class SubSpaceMatrixError(_RunError):
             print "  Set IBRION = 1 and POTIM = 0.1"
             sys.stdout.flush()
             io.set_incar_tag({"IBRION":1, "POTIM":0.1}, jobdir=new_jobdir)
-        elif io.get_incar_tag("LREAL", jobdir=new_jobdir) != False:
+        elif io.get_incar_tag("LREAL", jobdir=new_jobdir) != "False":
             print "  Set LREAL = .FALSE."
             sys.stdout.flush()
             io.set_incar_tag({"LREAL":False}, jobdir=new_jobdir)
+        else:
+            print "  Set Algo = Normal, and Unset IALGO"
+            sys.stdout.flush()
+            io.set_incar_tag({"IALGO":None, "ALGO":"Normal"}, jobdir=new_jobdir)
+
+class InisymError(_CrashError):
+    """ VASP can't figure out the (magnetic) symmetry """
+    pattern = " INISYM: ERROR: Unable to resolve symmetry "
+
+    def fix(self, err_jobdir, new_jobdir, settings):
+        """ Up symprec, or turn off symmetry"""
+        continue_job(err_jobdir, new_jobdir, settings)
+        symprec = io.get_incar_tag("SYMPREC", jobdir = new_jobdir)
+        if symprec is None or symprec > 1.1e-8:
+            print "  Set SYMPREC = 1e-8"
+            io.set_incar_tag({"SYMPREC": 1e-8}, jobdir = new_jobdir)
+        elif io.get_incar_tag("ISYM", jobdir = new_jobdir) != 0:
+            print "  Set ISYM = 0"
+            io.set_incar_tag({"ISYM": 0}, jobdir = new_jobdir)
+
+class SgrconError(_CrashError):
+    """ VASP is having yet another symmetry problem """
+    pattern = "VERY BAD NEWS! internal error in subroutine SGRCON:"
+
+    def fix(self, err_jobdir, new_jobdir, settings):
+        """ Up symprec, or turn off symmetry"""
+        continue_job(err_jobdir, new_jobdir, settings)
+        symprec = io.get_incar_tag("SYMPREC", jobdir = new_jobdir)
+        if symprec is None or symprec > 1.1e-8:
+            print "  Set SYMPREC = 1e-8"
+            io.set_incar_tag({"SYMPREC": 1e-8}, jobdir = new_jobdir)
+        elif io.get_incar_tag("ISYM", jobdir = new_jobdir) != 0:
+            print "  Set ISYM = 0"
+            io.set_incar_tag({"ISYM": 0}, jobdir = new_jobdir)
 
 class WavecarError(_CrashError):
     """ A bad WAVECAR is causing the job to crash/abort """
@@ -449,6 +518,51 @@ class NbandsError(_RunError):
                     sys.stdout.flush()
                     io.set_incar_tag({"NBANDS":int(1.1 * float(l.strip().split()[-1]))}, jobdir=new_jobdir)
                     break
+
+class NoConvergeError(_RunError):
+    """An ionic step was performed without a fully-converged density"""
+    pattern = r"[A-Za-z]+:\s+%i\s+"
+
+    def __str__(self):
+        return "VASP ran out of electronic steps before convergence was achieved!"
+
+    def error(self, line=None, jobdir=None):
+        """ Check if pattern found in line """
+        # I don't like having to open the INCAR every time...
+        nelm = io.get_incar_tag("NELM", jobdir=jobdir)
+        if nelm is None:
+            nelm = 40
+        ediff = io.get_incar_tag("EDIFF", jobdir=jobdir)
+        if ediff is None:
+            ediff = 1e-4
+        # We know the SCF ended at exactly NELM steps
+        if re.search(self.pattern % nelm, line):
+            # This may not be a SCF line at all, so pass to-float errors
+            try:
+                # Determining if the SCF came *close* to converging
+                if ediff*10. <= float(line.split()[3]):
+                    return True
+                return False
+            except:
+                return False
+
+    def fix(self, err_jobdir, new_jobdir, settings):
+        """ Try to fix the error by changing the algo"""
+        continue_job(err_jobdir, new_jobdir, settings)
+        # Replace the potentially bad POSCAR
+        shutil.copyfile(os.path.join(err_jobdir, "POSCAR"), os.path.join(new_jobdir, "POSCAR"))
+        # First, see if a change of ALGO helps
+        curr_algo = io.get_incar_tag("ALGO", new_jobdir).upper()
+        if curr_algo == 'FAST':
+            io.set_incar_tag({"ALGO":"Normal", "IALGO":None}, jobdir=new_jobdir)
+            print "  Set ALGO = Normal"
+        elif curr_algo == 'NORMAL':
+            io.set_incar_tag({"ALGO":"All", "IALGO":None}, jobdir=new_jobdir)
+            print "  Set ALGO = All"
+        elif curr_algo == 'ALL':
+            io.set_incar_tag({"ALGO":"Damped", "IALGO":None}, jobdir=new_jobdir)
+            io.set_incar_tag({"TIME":"0.4"}, jobdir=new_jobdir)
+            print "  Set ALGO = Damped, TIME = 0.4"
 
 class FreezeError(_FreezeError):
     """VASP appears frozen"""
@@ -637,7 +751,9 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
 
         if time.time() - last_check > err_check_time:
             last_check = time.time()
-            err = error_check(jobdir, os.path.join(jobdir,stdout), err_types)
+            err = crash_check(jobdir, os.path.join(jobdir, stdout), err_types)
+            if err is None:
+                err = error_check(jobdir, os.path.join(jobdir, stdout), err_types)
             if err != None:
                 # FreezeErrors are fatal and usually not helped with STOPCAR
                 if "FreezeError" in err.keys():
