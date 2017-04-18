@@ -751,9 +751,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
 
         if time.time() - last_check > err_check_time:
             last_check = time.time()
-            err = crash_check(jobdir, os.path.join(jobdir, stdout), err_types)
-            if err is None:
-                err = error_check(jobdir, os.path.join(jobdir, stdout), err_types)
+            err = error_check(jobdir, os.path.join(jobdir, stdout), err_types)
             if err != None:
                 # FreezeErrors are fatal and usually not helped with STOPCAR
                 if "FreezeError" in err.keys():
