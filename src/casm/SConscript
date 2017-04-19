@@ -10,16 +10,6 @@ Import('env')
 # build version
 SConscript(['version/SConscript'], {'env':env})
 
-# get source files
-casm_lib_src_dir = [
-  'clex', 'app', 'casm_io', 'casm_io/json_io', 'container', 'crystallography', 'symmetry', 
-  'basis_set', 'clusterography', 'kinetics', 'kspace', 'misc', 'strain', 'hull', 
-  'phonon', 'monte_carlo', 'monte_carlo/grand_canonical', 'monte_carlo/canonical',
-  'system', 'completer'
-]
-
-casm_lib_src = ['CASM_global_definitions.cc'] + [glob(join(x,'*.cc')) for x in casm_lib_src_dir]
-
 #include path
 candidates = [
   env['INCDIR'], 
@@ -27,10 +17,47 @@ candidates = [
 ]
 cpppath = [x for x in candidates if x is not None]
 
-casm_lib_sobj = env.SharedObject(casm_lib_src, 
-                                 CPPPATH=cpppath)
-env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + casm_lib_sobj
-env['CASM_SOBJ'] = env['CASM_SOBJ'] + casm_lib_sobj
+# get source files, grouped by compile alias
+#   this enables, for example:
+#   - using 'scons clex' to compile 'src/casm/clex/*'
+#   each file is also aliased, enabling, for example:
+#   - using 'scons clex/Configuration.cc' to compile just 'src/casm/clex/Configuration.cc'
+casm_lib_src_grp = {
+  'clex': ['clex'],
+  'app': ['app'],
+  'crystallography': ['crystallography'],
+  'symmetry': ['symmetry'],
+  'basis_set': ['basis_set'],
+  'kinetics': ['kinetics'],
+  'clusterography': ['clusterography'],
+  'monte_carlo': ['monte_carlo', 'monte_carlo/grand_canonical', 'monte_carlo/canonical'],
+  'other': ['casm_io', 'casm_io/json_io', 'container', 'misc', 'strain', 'hull', 'system', 'completer']
+}
+
+for name, dirs in casm_lib_src_grp.iteritems():
+  files = []
+  for x in dirs:
+    files += glob(join(x,'*.cc'))
+  
+  all_sobj = []
+  for file in files:
+    sobj = env.SharedObject(file, CPPPATH=cpppath)
+    env.Alias(file, sobj)
+    all_sobj += sobj
+  env.Alias(name, all_sobj)
+  
+  env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + sobj
+  env['CASM_SOBJ'] = env['CASM_SOBJ'] + sobj
+
+# other files:
+files = ['CASM_global_definitions.cc']
+
+for file in files:
+  sobj = env.SharedObject(file, CPPPATH=cpppath)
+  env.Alias(file, sobj)
+  env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + sobj
+  env['CASM_SOBJ'] = env['CASM_SOBJ'] + sobj
+
 
 # qhull c code
 include_qhull = join('..','..','include','casm','external','qhull','libqhull_r')
