@@ -18,9 +18,18 @@ namespace CASM {
   /// For example, Coordinates in a Cluster, basis atoms in a Structure, Clusters in an Orbit, etc.
   class SymPermutation: public SymOpRepresentation {
   public:
+
+
     /// Initialize a SymPermutation with the permutation array.
     /// The corresponding matrix is generated automatically
-    SymPermutation(const Array<Index> &init_permute) : m_permute(init_permute), m_has_mat(false) {
+    template<typename Iterator>
+    SymPermutation(Iterator begin, Iterator end) : m_permute(begin, end), m_has_mat(false) {
+
+    }
+
+    /// Initialize a SymPermutation with the permutation array.
+    /// The corresponding matrix is generated automatically
+    SymPermutation(const std::vector<Index> &init_permute) : m_permute(init_permute), m_has_mat(false) {
 
     }
 

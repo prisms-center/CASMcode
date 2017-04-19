@@ -4,6 +4,7 @@
 #include "casm/completer/Handlers.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/app/DirectoryStructure.hh"
 
 namespace CASM {
   namespace Completer {
@@ -273,7 +274,7 @@ namespace CASM {
       return;
     }
 
-    void add_configtype_suboption(std::string _default, std::set<std::string> _configtype_opts) {
+    void OptionHandlerBase::add_configtype_suboption(std::string _default, std::set<std::string> _configtype_opts) {
 
       if(!_configtype_opts.size()) {
         m_configtype_opts = config_types();
@@ -300,14 +301,14 @@ namespace CASM {
       m_desc.add_options()
       ("type,t",
        po::value<std::string>(&m_configtype)->default_value(_default),
-       help.str());
+       help.str().c_str());
     }
 
-    std::string configtype() const {
+    std::string OptionHandlerBase::configtype() const {
       return m_configtype;
     }
 
-    std::set<std::string> configtype_opts() const {
+    std::set<std::string> OptionHandlerBase::configtype_opts() const {
       return m_configtype_opts;
     }
 
@@ -373,9 +374,9 @@ namespace CASM {
       m_desc.add_options()
       ("output,o",
        po::value<fs::path>(&m_output_path)->default_value(_default)->value_name(ArgHandler::path()),
-       std::string("Name for output file. ") +
-       "Use STDOUT to print results without extra messages."
-       "If not specified, '" + _default.string() + "' will be used.");
+       (std::string("Name for output file. ") +
+        "Use STDOUT to print results without extra messages."
+        "If not specified, '" + _default.string() + "' will be used.").c_str());
       return;
     }
 

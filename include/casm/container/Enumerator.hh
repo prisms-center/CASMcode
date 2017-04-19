@@ -494,6 +494,7 @@ namespace CASM {
 
   };
 
+  auto make_enumerator_map = make_interface_map<Completer::EnumOption>;
   std::unique_ptr<EnumeratorMap> make_standard_enumerator_map();
 
   /** @}*/

@@ -10,6 +10,8 @@ namespace CASM {
   template<typename T> class BasicStructure;
   class Supercell;
   class Configuration;
+  class Coordinate;
+  class ConfigDoF;
 
   /// \brief Functions and classes related to VASP input/output
   namespace VaspIO {
@@ -196,7 +198,7 @@ namespace CASM {
 
         /// \brief Print POSCAR, provide a range of std::tuple<Atom name, Coordinate, SelectiveDynamics>
         template<typename TupleIterator>
-        void _print(std::ostream &sout, TupleIterator begin, TupleIterator end);
+        void _print(std::ostream &sout, TupleIterator begin, TupleIterator end) const;
 
       private:
 

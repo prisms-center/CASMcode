@@ -1,9 +1,11 @@
 #include "casm/symmetry/SymOp.hh"
 
+#include "casm/misc/CASM_math.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/casm_io/json_io/container.hh"
+
 namespace CASM {
 
   const double &SymOp::map_error() const {

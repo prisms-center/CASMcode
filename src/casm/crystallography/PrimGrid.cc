@@ -4,6 +4,8 @@
 #include <cmath>
 #include <cassert>
 
+#include "casm/container/Counter.hh"
+
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/UnitCellCoord.hh"

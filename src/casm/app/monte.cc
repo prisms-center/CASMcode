@@ -185,12 +185,12 @@ namespace CASM {
     //std::ofstream outsettings("monte_settings.json");
     //example_settings.print(outsettings);
 
-    MonteSettings monte_settings;
+    Monte::MonteSettings monte_settings;
 
     try {
       log.read("Monte Carlo settings");
       log << "from: " << settings_path << "\n";
-      monte_settings = MonteSettings(primclex, settings_path);
+      monte_settings = Monte::MonteSettings(primclex, settings_path);
       log << "ensemble: " << monte_settings.ensemble() << "\n";
       log << "method: " << monte_settings.method() << "\n";
       if(args.log.verbosity() == 100) {
@@ -280,7 +280,7 @@ namespace CASM {
   int _driver(PrimClex &primclex, const CommandArgs &args, const Completer::MonteOption &monte_opt) {
     try {
       typename MCType::SettingsType mc_settings(primclex, monte_opt.settings_path());
-      MonteDriver<MCType> driver(primclex, mc_settings, args.log, args.err_log);
+      Monte::MonteDriver<MCType> driver(primclex, mc_settings, args.log, args.err_log);
       driver.run();
       return 0;
     }
@@ -293,11 +293,11 @@ namespace CASM {
 
   int _run_GrandCanonical(
     PrimClex &primclex,
-    const MonteSettings &monte_settings,
+    const Monte::MonteSettings &monte_settings,
     const CommandArgs &args,
     const Completer::MonteOption &monte_opt) {
 
-    typedef GrandCanonical MCType;
+    typedef Monte::GrandCanonical MCType;
     const po::variables_map &vm = monte_opt.vm();
 
     if(vm.count("initial-POSCAR")) {
@@ -313,7 +313,7 @@ namespace CASM {
 
       try {
 
-        GrandCanonicalSettings gc_settings(primclex, monte_opt.settings_path());
+        Monte::GrandCanonicalSettings gc_settings(primclex, monte_opt.settings_path());
 
         if(gc_settings.dependent_runs()) {
           throw std::invalid_argument("ERROR in LTE1 calculation: dependents_runs must be false");
@@ -332,7 +332,7 @@ namespace CASM {
                                       "  \"driver\"/\"motif\"/\"configname\": \"restricted_auto\"");
         }
 
-        MonteCarloDirectoryStructure dir(gc_settings.output_directory());
+        Monte::MonteCarloDirectoryStructure dir(gc_settings.output_directory());
         if(gc_settings.write_csv()) {
           if(fs::exists(dir.results_csv())) {
             args.err_log << "Existing file at: " << dir.results_csv() << std::endl;
@@ -414,7 +414,7 @@ namespace CASM {
 
   int _run_Canonical(
     PrimClex &primclex,
-    const MonteSettings &monte_settings,
+    const Monte::MonteSettings &monte_settings,
     const CommandArgs &args,
     const Completer::MonteOption &monte_opt) {
 

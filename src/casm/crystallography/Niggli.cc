@@ -1,7 +1,7 @@
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/symmetry/SymGroup.hh"
-#include "casm/misc/CASM_math.hh"
+#include "casm/container/LinearAlgebra.hh"
 
 namespace CASM {
   NiggliRep::NiggliRep(const Eigen::Matrix3d &init_lat_col_mat):

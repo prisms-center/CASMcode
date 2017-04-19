@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <numeric>
+#include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
 
@@ -46,6 +47,8 @@ namespace CASM {
       std::iota(m_perm_array.begin(), m_perm_array.end(), 0);
     };
 
+    template<typename Iterator>
+    Permutation(Iterator begin, Iterator end): m_perm_array(begin, end) {};
     Permutation(const std::vector<Index> &init_perm): m_perm_array(init_perm) {};
     Permutation(std::vector<Index> &&init_perm): m_perm_array(std::move(init_perm)) {};
 

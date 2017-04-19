@@ -2,9 +2,10 @@
 
 #include "casm/external/boost.hh"
 #include "casm/external/Eigen/Dense"
-
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/database/ScelDatabase.hh"
 
 namespace CASM {
 
@@ -36,7 +37,7 @@ namespace CASM {
       from_json(generating_matrix, input["unit_cell"]);
     }
     else if(input["unit_cell"].is_string()) {
-      generating_matrix = primclex.db<Supercell>.find(input["unit_cell"].get<std::string>())->transf_mat();
+      generating_matrix = primclex.db<Supercell>().find(input["unit_cell"].get<std::string>())->transf_mat();
     }
     else {
       throw std::invalid_argument(

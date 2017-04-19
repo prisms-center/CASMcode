@@ -102,7 +102,7 @@ namespace CASM {
 
         // prepare a SymPermutation and then read from json
         Array<Index> perm;
-        SymPermutation trep(perm);
+        SymPermutation trep(perm.begin(), perm.end());
         CASM::from_json(trep, json);
 
         // copy to rep

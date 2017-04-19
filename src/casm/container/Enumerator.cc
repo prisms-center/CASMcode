@@ -1,5 +1,8 @@
 #include "casm/container/Enumerator_impl.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/clex/ConfigEnumAllOccupations.hh"
+#include "casm/clex/SuperConfigEnum.hh"
 #include "casm/clex/ScelEnum.hh"
 
 namespace CASM {

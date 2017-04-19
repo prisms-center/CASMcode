@@ -9,6 +9,7 @@
 #include "casm/external/qhull/libqhullcpp/QhullVertexSet.h"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/database/ConfigDatabase.hh"
 
 namespace CASM {
 
@@ -34,16 +35,16 @@ namespace CASM {
     Hull_impl::_validate_input(m_selection, *m_comp_calculator, *m_energy_calculator);
 
     // get the number of configurations and compositions (full composition space)
-    Index Nselected = std::distance(m_selection.selected_config_begin(), m_selection.selected_config_end());
-    Index Ncomp = composition(*m_selection.selected_config_begin()).size();
+    Index Nselected = m_selection.selected_size();
+    Index Ncomp = composition(*m_selection.selected().begin()).size();
 
     // generate initial set of points (col vector matrix)
     Eigen::MatrixXd mat(Ncomp + 1, Nselected);
 
     Index i = 0;
-    for(auto it = m_selection.selected_config_begin(); it != m_selection.selected_config_end(); ++it) {
-      mat.block(0, i, Ncomp, 1) = composition(*it);
-      mat(Ncomp, i) = energy(*it);
+    for(const auto &config : m_selection.selected()) {
+      mat.block(0, i, Ncomp, 1) = composition(config);
+      mat(Ncomp, i) = energy(config);
       ++i;
     }
 
@@ -133,7 +134,7 @@ namespace CASM {
 
   /// \brief Return the configuration corresponding to any point
   const Configuration &Hull::configuration(const orgQhull::QhullPoint &point) const {
-    auto it = m_selection.selected_config_cbegin();
+    auto it = m_selection.selected().begin();
     std::advance(it, point.id());
     return *it;
   }
@@ -258,16 +259,16 @@ namespace CASM {
   namespace Hull_impl {
 
     /// \brief Print informational message and throw exception if input data is not valid
-    void _validate_input(const Selection<Configuration> &selection,
+    void _validate_input(const DB::Selection<Configuration> &selection,
                          const Hull::CompCalculator &comp_calculator,
                          const Hull::EnergyCalculator &energy_calculator) {
 
       typedef std::map<std::string, std::pair<bool, bool> > CheckMap;
 
       CheckMap invalid_data;
-      for(auto it = selection.selected().begin(); it != selection.selected().end(); ++it) {
-        if(!comp_calculator.validate(*it) || !energy_calculator.validate(*it)) {
-          invalid_data[it.name()] = std::make_pair(comp_calculator.validate(*it), energy_calculator.validate(*it));
+      for(const auto &config : selection.selected()) {
+        if(!comp_calculator.validate(config) || !energy_calculator.validate(config)) {
+          invalid_data[config.name()] = std::make_pair(comp_calculator.validate(config), energy_calculator.validate(config));
         }
       }
 

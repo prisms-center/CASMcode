@@ -1,4 +1,6 @@
 #include "casm/container/Permutation.hh"
+#include "casm/misc/algorithm.hh"
+#include "casm/casm_io/json_io/container.hh"
 
 namespace CASM {
 
@@ -51,7 +53,7 @@ namespace CASM {
   /// does not depend on definition of permutation convention
   bool Permutation::is_perm() const {
     for(Index i = 0; i < size(); i++) {
-      if(!valid_index(m_perm_array[i]) || m_perm_array[i] >= size() || m_perm_array.find(m_perm_array[i]) < i)
+      if(!valid_index(m_perm_array[i]) || m_perm_array[i] >= size() || find_index(m_perm_array, m_perm_array[i]) < i)
         return false;
     }
     return true;
@@ -93,12 +95,12 @@ namespace CASM {
   }
 
   //**************************************************************
-  /// Construct permutation of dimension size()*block_dims.sum() that describes the effect of permuting
+  /// Construct permutation of dimension size()*sum(block_dims) that describes the effect of permuting
   /// N blocks, where the i'th block has dimension block_dims[i] (N=size()==block_dims.size())
   Permutation Permutation::make_block_permutation(const std::vector<Index> &block_dims)const {
     assert(block_dims.size() == size());
     std::vector<Index> block_perm;
-    block_perm.reserve(block_dims.sum()*size());
+    block_perm.reserve(sum(block_dims)*size());
     std::vector<Index> i_start(block_dims.size(), 0);
     for(Index i = 0; i + 1 < block_dims.size(); i++) {
       i_start[i + 1] = i_start[i] + block_dims[i];
