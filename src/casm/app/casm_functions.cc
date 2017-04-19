@@ -127,6 +127,7 @@ namespace CASM {
       {"bset", bset_command},
       {"perturb", perturb_command},
       {"run", run_command},
+      {"rm", rm_command},
       {"query", query_command},
       {"files", files_command},
       {"import", import_command},

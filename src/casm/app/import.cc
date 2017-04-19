@@ -36,7 +36,10 @@ namespace CASM {
 
       ("data,d",
        "Attempt to extract calculation data from the enclosing "
-       "directory of the structure files, if it is available");
+       "directory of the structure files, if it is available")
+
+      ("copy-additional-files",
+       "Recursively copy other files from the same directory as the properties.calc.json file.");
 
       add_configtype_suboption(
         QueryTraits<Configuration>::short_name, config_types_short());
@@ -94,19 +97,19 @@ namespace CASM {
       /** --help option
        */
       if(vm.count("help")) {
-        std::cout << std::endl;
-        std::cout << import_opt.desc() << std::endl;
+        args.log << std::endl;
+        args.log << import_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        std::cout << "\n";
-        std::cout << import_opt.desc() << std::endl;
+        args.log << "\n";
+        args.log << import_opt.desc() << std::endl;
 
-        std::cout << "DESCRIPTION" << std::endl;
-        std::cout << "    Import structure specified by --pos. If it doesn't exist make a directory for it and copy data over" << std::endl;
-        std::cout << "    If a *.json file is specified, it will be interpreted as a 'calc.properties.json' file." << std::endl;
+        args.log << "DESCRIPTION" << std::endl;
+        args.log << "    Import structure specified by --pos. If it doesn't exist make a directory for it and copy data over" << std::endl;
+        args.log << "    If a *.json file is specified, it will be interpreted as a 'calc.properties.json' file." << std::endl;
         return 0;
       }
 
@@ -115,13 +118,13 @@ namespace CASM {
 
     }
     catch(po::error &e) {
-      std::cerr << import_opt.desc() << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << import_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return 3;
     }
     catch(std::exception &e) {
-      std::cerr << import_opt.desc() << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << import_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return 4;
 
     }

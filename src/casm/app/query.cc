@@ -117,7 +117,7 @@ namespace CASM {
       if(vm.count("help")) {
         if(args.root.empty()) {
           auto dict = make_dictionary<Configuration>();
-          query_help(dict, std::cout, help_opt_vec);
+          query_help(dict, args.log, help_opt_vec);
         }
         else {
           // set status_stream: where query settings and PrimClex initialization messages are sent

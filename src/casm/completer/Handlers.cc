@@ -395,7 +395,7 @@ namespace CASM {
 
     void OptionHandlerBase::add_scelnames_suboption() {
       std::string help_str;
-      help_str = "One or more supercells to use casm" + m_tag + " with, such as 'SCEL4_2_2_1_0_0_0'";
+      help_str = "One or more supercells to use casm " + m_tag + " with, such as 'SCEL4_2_2_1_0_0_0'";
       m_desc.add_options()
       ("scelnames", po::value<std::vector<std::string> >(&m_supercell_strs)->multitoken()->value_name(ArgHandler::supercell()), help_str.c_str());
       return;
@@ -404,7 +404,7 @@ namespace CASM {
     void OptionHandlerBase::add_configname_suboption() {
       std::string help_str;
 
-      help_str = "Single configuration to use casm" + m_tag + " with, such as 'SCEL4_2_2_1_0_0_0/3'";
+      help_str = "Single configuration to use casm " + m_tag + " with, such as 'SCEL4_2_2_1_0_0_0/3'";
 
       m_desc.add_options()
       ("configname", po::value<std::string>(&m_config_str)->value_name(ArgHandler::configname()), help_str.c_str());
@@ -415,7 +415,7 @@ namespace CASM {
     void OptionHandlerBase::add_confignames_suboption() {
       std::string help_str;
 
-      help_str = "One or more configurations to use casm" + m_tag + " with, such as 'SCEL4_2_2_1_0_0_0/3'";
+      help_str = "One or more configurations to use casm " + m_tag + " with, such as 'SCEL4_2_2_1_0_0_0/3'";
 
       m_desc.add_options()
       ("confignames", po::value<std::vector<std::string> >(&m_config_strs)->multitoken()->value_name(ArgHandler::configname()), help_str.c_str());

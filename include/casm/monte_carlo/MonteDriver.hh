@@ -452,7 +452,7 @@ namespace CASM {
 
         CondType existing;
         jsonParser json(m_dir.conditions_json(i));
-        from_json(existing, primclex.composition_axes(), json);
+        from_json(existing, primclex, json);
         if(existing != custom_cond[i]) {
           m_err_log.error("Conditions mismatch");
           m_err_log << "existing conditions: " << m_dir.conditions_json(i) << "\n";
@@ -487,7 +487,7 @@ namespace CASM {
 
         CondType existing;
         jsonParser json(m_dir.conditions_json(i));
-        from_json(existing, primclex.composition_axes(), json);
+        from_json(existing, primclex, json);
         if(existing != conditions_list[i]) {
           m_err_log.error("Conditions mismatch");
           m_err_log << "existing conditions: " << m_dir.conditions_json(i) << "\n";

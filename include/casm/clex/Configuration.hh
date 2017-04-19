@@ -689,6 +689,21 @@ namespace CASM {
   /// \brief Change in volume due to relaxation, expressed as the ratio V/V_0
   double volume_relaxation(const Configuration &_config);
 
+  /// \brief Returns the relaxed magnetic moment, normalized per unit cell
+  double relaxed_magmom(const Configuration &_config);
+
+  /// \brief Returns the relaxed magnetic moment, normalized per species
+  double relaxed_magmom_per_species(const Configuration &_config);
+
+  /// \brief Returns the relaxed magnetic moment of each basis site
+  Eigen::VectorXd relaxed_mag_basis(const Configuration &_config);
+  /* std::vector<double> relaxed_mag_basis(const Configuration &_config); */
+
+  /// \brief Returns the relaxed magnetic moment for each molecule
+  Eigen::VectorXd relaxed_mag(const Configuration &_config);
+
+
+
   /// \brief returns true if _config describes primitive cell of the configuration it describes
   bool is_primitive(const Configuration &_config);
 
@@ -714,6 +729,10 @@ namespace CASM {
   bool has_lattice_deformation(const Configuration &_config);
 
   bool has_volume_relaxation(const Configuration &_config);
+
+  bool has_relaxed_magmom(const Configuration &_config);
+
+  bool has_relaxed_mag_basis(const Configuration &_config);
 
   inline
   bool has_calc_status(const Configuration &_config) {

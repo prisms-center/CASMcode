@@ -442,14 +442,14 @@ namespace CASM {
 
       }
       catch(po::error &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        std::cerr << desc << std::endl;
+        args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
+        args.err_log << desc << std::endl;
         return 1;
       }
     }
     catch(std::exception &e) {
-      std::cerr << "Unhandled Exception reached the top of main: "
-                << e.what() << ", application will now exit" << std::endl;
+      args.err_log << "Unhandled Exception reached the top of main: "
+                   << e.what() << ", application will now exit" << std::endl;
       return 1;
 
     }
@@ -591,9 +591,9 @@ namespace CASM {
     else if(vm.count("set-formation-energy")) {
 
       if(clex_desc.property != "formation_energy") {
-        std::cerr << "Attempting to use cluster expansion '" << clex_desc.name
-                  << "' for formation_energy, but it has 'property' value '"
-                  << clex_desc.property << "'.\n\n";
+        args.err_log << "Attempting to use cluster expansion '" << clex_desc.name
+                     << "' for formation_energy, but it has 'property' value '"
+                     << clex_desc.property << "'.\n\n";
         return ERR_INVALID_ARG;
       }
 

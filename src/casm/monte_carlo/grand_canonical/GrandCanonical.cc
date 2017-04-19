@@ -1,6 +1,7 @@
 
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 #include "casm/monte_carlo/MonteCarloEnum_impl.hh"
+#include "casm/monte_carlo/MonteIO_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigIterator.hh"
 #include "casm/clex/Norm.hh"
@@ -8,6 +9,7 @@
 
 namespace CASM {
 
+  const Monte::ENSEMBLE GrandCanonical::ensemble = Monte::ENSEMBLE::GrandCanonical;
 
   /// \brief Constructs a GrandCanonical object and prepares it for running based on MonteSettings
   ///
@@ -423,8 +425,7 @@ namespace CASM {
     auto corr = correlations(config, _clexulator());
     double formation_energy = _eci() * corr.data();
     auto comp_x = primclex().composition_axes().param_composition(CASM::comp_n(config));
-    double Ep = formation_energy - comp_x.dot(m_condition.param_chem_pot());
-    return Ep / supercell().volume();
+    return formation_energy - comp_x.dot(m_condition.param_chem_pot());
   }
 
   /// \brief Calculate delta correlations for an event

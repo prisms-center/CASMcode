@@ -17,6 +17,7 @@ namespace CASM {
 
   template<typename DataObject>
   class QueryTraits;
+  class Log;
 
   /// std::set of all QueryTraits<ConfigType>::name
   const std::set<std::string> &config_types();
@@ -53,6 +54,9 @@ namespace CASM {
     }
     return relpath;
   };
+
+  /// \brief Remove files recursively
+  void recurs_rm_files(fs::path p, bool dry_run, Log &log);
 
   /// \brief Specification of CASM project directory structure
   class DirectoryStructure {
@@ -282,6 +286,11 @@ namespace CASM {
     }
 
     /// \brief Return configuration directory path (configname has format SCELV_A_B_C_D_E_F/I)
+    fs::path configuration_calc_dir(std::string configname, std::string calctype) const {
+      return configuration_dir(configname) / _calctype(calctype);
+    }
+
+    /// \brief Return calculated properties file path
     fs::path configuration_calc_dir(std::string configname, std::string calctype) const {
       return configuration_dir(configname) / _calctype(calctype);
     }

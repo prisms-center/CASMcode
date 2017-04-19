@@ -14,5 +14,4 @@ containerinclude_HEADERS=./include/casm/container/Array.hh\
 						 ./include/casm/container/PolyTrie.hh\
 						 ./include/casm/container/RandomAccessEnumerator.hh\
 						 ./include/casm/container/Template_Algorithms.hh\
-						 ./include/casm/container/Tensor.hh\
-             ./include/casm/container/multivector.hh
+						 ./include/casm/container/Tensor.hh

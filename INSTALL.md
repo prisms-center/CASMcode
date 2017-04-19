@@ -5,7 +5,7 @@
 
 **C++11**
 
-CASM must be compiled with a compiler that supports the C++11 standard.
+CASM must be compiled with a compiler that supports the C++11 standard. Testing is done with gcc-4.8.5 and clang-800.0.42.1.
 
 **If using Mac OS X - Xcode command-line tools**
 

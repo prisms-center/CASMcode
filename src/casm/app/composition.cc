@@ -13,29 +13,29 @@ namespace CASM {
   void display(std::ostream &sout, const CompositionAxes &opt) {
 
     if(opt.standard.size()) {
-      std::cout << "Standard composition axes:\n\n";
+      sout << "Standard composition axes:\n\n";
       display_composition_axes(sout, opt.standard);
     }
 
     if(opt.custom.size()) {
-      std::cout << "Custom composition axes:\n\n";
+      sout << "Custom composition axes:\n\n";
       display_composition_axes(sout, opt.custom);
     }
 
-    std::cout << "\n";
+    sout << "\n";
     if(opt.has_current_axes) {
-      std::cout << "Currently selected composition axes: " << opt.curr_key << "\n";
+      sout << "Currently selected composition axes: " << opt.curr_key << "\n";
 
-      std::cout << "\n";
-      std::cout << "Parametric composition:\n";
+      sout << "\n";
+      sout << "Parametric composition:\n";
       display_comp(sout, opt.curr, 2);
 
-      std::cout << "\n";
-      std::cout << "Composition:\n";
+      sout << "\n";
+      sout << "Composition:\n";
       display_comp_n(sout, opt.curr, 2);
 
-      std::cout << "\n";
-      std::cout << "Parametric chemical potentials:\n";
+      sout << "\n";
+      sout << "Parametric chemical potentials:\n";
       display_param_chem_pot(sout, opt.curr, 2);
     }
 
@@ -81,7 +81,7 @@ namespace CASM {
       //quit out if there are no arguments
       if(!vm.count("help") && !vm.count("desc")) {
         if(vm.count("calc") + vm.count("select") + vm.count("display") + vm.count("update") != 1) {
-          std::cout << "Error in 'casm composition'. You need to use either --calc, --select, --display, or --update." << std::endl;
+          args.log << "Error in 'casm composition'. You need to use either --calc, --select, --display, or --update." << std::endl;
           call_help = true;
         }
       }
@@ -89,39 +89,39 @@ namespace CASM {
       /** --help option
        */
       if(vm.count("help") || call_help) {
-        std::cout << std::endl;
-        std::cout << comp_opt.desc() << std::endl;
+        args.log << std::endl;
+        args.log << comp_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        std::cout << std::endl;
-        std::cout << comp_opt.desc() << std::endl;
+        args.log << std::endl;
+        args.log << comp_opt.desc() << std::endl;
 
-        std::cout << "DESCRIPTION" << std::endl;
-        std::cout << "    Setup the composition axes.\n";
-        std::cout << "    - expects a PRIM file in the project root directory \n";
-        std::cout << "    - custom composition axes can be added to the 'composition_axes.json' file \n";
-        std::cout << "      and then compositions and references updated with 'casm composition --update'\n";
-        std::cout << "      (word of caution: compatibility with PRIM is currently not checked for.)\n";
-        std::cout << " \n";
-        std::cout << "    Examples:\n";
-        std::cout << "      casm composition --calc \n";
-        std::cout << "      - Calculate standard composition axes, but does not select any. \n";
-        std::cout << "\n";
-        std::cout << "      casm composition --display \n";
-        std::cout << "      - Display the possible composition axes\n";
-        std::cout << "      - Possible axes are stored in the 'composition_axes.json' file.\n";
-        std::cout << "\n";
-        std::cout << "      casm composition --select 0 \n";
-        std::cout << "      - Select the composition axes by key name.\n";
-        std::cout << "      - Updates and writes compositions and reference properties.\n";
-        std::cout << "\n";
-        /*std::cout << "      casm composition --update \n";
-        std::cout << "      - Updates and writes compositions and reference properties based.\n";
-        std::cout << "        on the contents of the 'composition_axes.json' file.\n";
-        std::cout << "\n";*/
+        args.log << "DESCRIPTION" << std::endl;
+        args.log << "    Setup the composition axes.\n";
+        args.log << "    - expects a PRIM file in the project root directory \n";
+        args.log << "    - custom composition axes can be added to the 'composition_axes.json' file \n";
+        args.log << "      and then compositions and references updated with 'casm composition --update'\n";
+        args.log << "      (word of caution: compatibility with PRIM is currently not checked for.)\n";
+        args.log << " \n";
+        args.log << "    Examples:\n";
+        args.log << "      casm composition --calc \n";
+        args.log << "      - Calculate standard composition axes, but does not select any. \n";
+        args.log << "\n";
+        args.log << "      casm composition --display \n";
+        args.log << "      - Display the possible composition axes\n";
+        args.log << "      - Possible axes are stored in the 'composition_axes.json' file.\n";
+        args.log << "\n";
+        args.log << "      casm composition --select 0 \n";
+        args.log << "      - Select the composition axes by key name.\n";
+        args.log << "      - Updates and writes compositions and reference properties.\n";
+        args.log << "\n";
+        /*args.log << "      casm composition --update \n";
+        args.log << "      - Updates and writes compositions and reference properties based.\n";
+        args.log << "        on the contents of the 'composition_axes.json' file.\n";
+        args.log << "\n";*/
         if(call_help)
           return ERR_INVALID_ARG;
 
@@ -133,13 +133,13 @@ namespace CASM {
 
     }
     catch(po::error &e) {
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      std::cerr << comp_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << comp_opt.desc() << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      std::cerr << "Unhandled Exception reached the top of main: "
-                << e.what() << ", application will now exit" << std::endl;
+      args.err_log << "Unhandled Exception reached the top of main: "
+                   << e.what() << ", application will now exit" << std::endl;
       return ERR_UNKNOWN;
 
     }
@@ -167,20 +167,20 @@ namespace CASM {
 
     if(vm.count("display")) {
 
-      std::cout << "\n***************************\n\n";
+      args.log << "\n***************************\n\n";
 
-      display(std::cout, opt);
+      display(args.log, opt);
 
-      std::cout << "\n\n";
+      args.log << "\n\n";
 
       if(opt.err_code) {
-        std::cout << opt.err_message << std::endl;
+        args.log << opt.err_message << std::endl;
       }
       else if(opt.standard.size() && !opt.has_current_axes) {
-        std::cout << "Please use 'casm composition --select' to choose your composition axes.\n\n";
+        args.log << "Please use 'casm composition --select' to choose your composition axes.\n\n";
       }
       else if(!opt.standard.size() && !opt.has_current_axes) {
-        std::cout << "Please use 'casm composition --calc' to calculate standard composition axes.\n\n";
+        args.log << "Please use 'casm composition --calc' to calculate standard composition axes.\n\n";
       }
 
       return 0;
@@ -189,12 +189,12 @@ namespace CASM {
 
       if(vm.count("calc")) {
 
-        std::cout << "\n***************************\n\n";
+        args.log << "\n***************************\n\n";
 
-        std::cout << "Using the PRIM to enumerate standard composition axes for this space.\n\n";
+        args.log << "Using the PRIM to enumerate standard composition axes for this space.\n\n";
 
         if(opt.standard.size()) {
-          std::cout << "Overwriting existing standard composition axes.\n\n";
+          args.log << "Overwriting existing standard composition axes.\n\n";
         }
 
         opt.standard.clear();
@@ -204,30 +204,30 @@ namespace CASM {
           opt.standard[std::to_string(i)] = v[i];
         }
 
-        display(std::cout, opt);
+        display(args.log, opt);
 
-        std::cout << "\n\n";
+        args.log << "\n\n";
 
 
         opt.write(comp_axes);
 
-        std::cout << "Wrote: " << comp_axes << "\n\n";
+        args.log << "Wrote: " << comp_axes << "\n\n";
 
         if(!opt.has_current_axes) {
-          std::cout << "Please use 'casm composition --select' to choose your composition axes.\n\n";
+          args.log << "Please use 'casm composition --select' to choose your composition axes.\n\n";
         }
       }
 
       if(vm.count("select")) {
 
-        std::cout << "\n***************************\n\n";
+        args.log << "\n***************************\n\n";
 
         if(opt.standard.size() + opt.custom.size() == 0) {
 
-          std::cout << "Error: No composition axes found.\n\n";
+          args.log << "Error: No composition axes found.\n\n";
 
-          std::cout << "Please use 'casm composition --calc' to calculate standard composition axes,\n" <<
-                    "or add custom composition axes to " << comp_axes << "\n\n";
+          args.log << "Please use 'casm composition --calc' to calculate standard composition axes,\n" <<
+                   "or add custom composition axes to " << comp_axes << "\n\n";
 
           return ERR_MISSING_DEPENDS;
 
@@ -236,11 +236,11 @@ namespace CASM {
         if(opt.standard.find(comp_opt.axis_choice_str()) != opt.standard.end() &&
            opt.custom.find(comp_opt.axis_choice_str()) != opt.custom.end()) {
 
-          std::cout << "Error: The selected composition axes '" << comp_opt.axis_choice_str() << "' can be \n" <<
-                    "found in both the standard and custom compostion axes. Please  \n" <<
-                    "edit the custom composition axes to remove this ambiguity.     \n\n" <<
+          args.log << "Error: The selected composition axes '" << comp_opt.axis_choice_str() << "' can be \n" <<
+                   "found in both the standard and custom compostion axes. Please  \n" <<
+                   "edit the custom composition axes to remove this ambiguity.     \n\n" <<
 
-                    "File: " << comp_axes << "\n\n";
+                   "File: " << comp_axes << "\n\n";
 
           return ERR_INVALID_INPUT_FILE;
 
@@ -248,9 +248,9 @@ namespace CASM {
         else if(opt.standard.find(comp_opt.axis_choice_str()) == opt.standard.end() &&
                 opt.custom.find(comp_opt.axis_choice_str()) == opt.custom.end()) {
 
-          std::cout << "Error: The selected composition axes '" << comp_opt.axis_choice_str() << "' can not \n" <<
-                    "be found in either the standard or custom compostion axes. Please\n" <<
-                    "re-select composition axes.                                     \n\n";
+          args.log << "Error: The selected composition axes '" << comp_opt.axis_choice_str() << "' can not \n" <<
+                   "be found in either the standard or custom compostion axes. Please\n" <<
+                   "re-select composition axes.                                     \n\n";
 
           return ERR_INVALID_INPUT_FILE;
 
@@ -258,13 +258,13 @@ namespace CASM {
 
         opt.select(comp_opt.axis_choice_str());
 
-        display(std::cout, opt);
+        display(args.log, opt);
 
-        std::cout << "\n\n";
+        args.log << "\n\n";
 
         opt.write(comp_axes);
 
-        std::cout << "Wrote: " << comp_axes << "\n\n";
+        args.log << "Wrote: " << comp_axes << "\n\n";
 
         if(args.primclex) {
           args.primclex->refresh(false, true, true, false);

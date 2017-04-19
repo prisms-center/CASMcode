@@ -68,18 +68,18 @@ namespace CASM {
       /** --help option
        */
       if(vm.count("help")) {
-        std::cout << std::endl;
-        std::cout << update_opt.desc() << std::endl;
+        args.log << std::endl;
+        args.log << update_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        std::cout << "\n";
-        std::cout << update_opt.desc() << std::endl;
-        std::cout << "DESCRIPTION" << std::endl;
-        std::cout << "    Updates all configuration properties from training data/\n";
-        std::cout << "\n";
+        args.log << "\n";
+        args.log << update_opt.desc() << std::endl;
+        args.log << "DESCRIPTION" << std::endl;
+        args.log << "    Updates all configuration properties from training data\n";
+        args.log << "\n";
 
         return 0;
       }
@@ -87,14 +87,14 @@ namespace CASM {
       po::notify(vm);
     }
     catch(po::error &e) {
-      std::cerr << update_opt.desc() << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << update_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return 1;
     }
 
     catch(std::exception &e) {
-      std::cerr << update_opt.desc() << std::endl;
-      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log << update_opt.desc() << std::endl;
+      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
       return 1;
     }
 

@@ -1,0 +1,19 @@
+{
+  "figure_kwargs": {
+    "plot_height": 400,
+    "plot_width": 800,
+    "tools": "crosshair,pan,reset,resize,box_zoom"
+  },
+  "series": [
+    {
+      "project": null,
+      "selection": "MASTER",
+      "hull_selection":"MASTER",
+      "x": "comp(a)",
+      "y": "formation_energy",
+      "tooltips": [
+        "scel_size"
+      ]
+    }
+  ]
+}

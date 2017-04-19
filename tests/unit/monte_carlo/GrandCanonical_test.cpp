@@ -21,8 +21,8 @@ BOOST_AUTO_TEST_CASE(Test0) {
   proj.check_init();
   proj.check_composition();
 
-  //Logging logging = Logging::null();
-  Logging logging;
+  Logging logging = Logging::null();
+  //Logging logging;
   PrimClex primclex(proj.dir, logging);
 
   fs::path eci_src = "tests/unit/monte_carlo/eci_0.json";

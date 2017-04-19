@@ -184,6 +184,8 @@ namespace CASM {
 
   int ref_command(const CommandArgs &args);
 
+  int rm_command(const CommandArgs &args);
+
   int run_command(const CommandArgs &args);
 
   int select_command(const CommandArgs &args);

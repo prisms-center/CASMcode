@@ -168,13 +168,8 @@ namespace CASM {
                  "in the CASM project directory: \n"
                  "  " << primclex->dir().enumerator_plugins() << " \n\n"
 
-                 "For examples of how to write enumerators see: \n"
-                 "  $REPO/include/casm/clex \n"
-                 "  $REPO/src/casm/clex \n"
-                 "where: \n"
-                 "  REPO=https://github.com/prisms-center/CASMcode/tree/master \n\n";
 
-        return 0;
+                 return 0;
       }
     }
     catch(po::error &e) {

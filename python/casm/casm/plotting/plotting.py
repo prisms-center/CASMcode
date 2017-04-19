@@ -3,16 +3,29 @@ import bokeh.models
 import numpy as np
 import pandas
 import uuid
+import casm
 import casm.project
 
 import os
 import casm.learn
-import json, pickle
+import json
+import pickle
+import re
+import copy
+import imp
 
 import bokeh.client
 import bokeh.io
 
 from bokeh.plotting import hplot, vplot
+
+int_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
+float_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
+numerics = int_dtypes + float_dtypes
+
+class Generic(object):
+    def __init__(self):
+        pass
 
 class Session(object):
   def __init__(self, doc=None):
@@ -82,6 +95,26 @@ def hull_dist_per_atom(path="CALCULATED"):
   """
   return 'hull_dist(' + path + ',atom_frac)'
 
+def clex_hull_dist(path="CALCULATED"):
+  """
+  Equivalent to 'clex_hull_dist(' + path + ',comp)'
+  
+  Arguments:
+    path: a CASM Selection path, default "CALCULATED"
+  
+  """
+  return 'clex_' + hull_dist(path)
+
+def clex_hull_dist_per_atom(path="CALCULATED"):
+  """
+  Equivalent to 'hull_dist(' + path + ',atom_frac)'
+  
+  Arguments:
+    path: a CASM Selection path, default "CALCULATED"
+  
+  """
+  return 'clex_' + hull_dist_per_atom(path)
+
 def add_src_data(sel, name, data, force=False):
   if sel.src is None:
     sel.src = bokeh.models.ColumnDataSource(data={name:data})
@@ -93,29 +126,7 @@ def add_src_data(sel, name, data, force=False):
   else:
     if name not in sel.src.data.keys() or force == True:
       sel.src.data[name] = data
-    
-def add_hull_data(sel, hull_sel=None, hull_tol=1e-8, force=False):
-  """
-  Adds hull_dist, hull_dist_per_atom, and 'on_hull' to sel.data.
-  
-  Arguments:
-    sel: a CASM Selection, to get hull distances for.
-    hull_sel: (Selection or None) a CASM Selection, to use for the hull. Default uses sel.
-    hull_tol: (number, default 1e-8) tolerance to decide if configuration is on the hull
-  """
-  if hull_sel is None:
-    hull_sel = sel
-  
-  path = hull_sel.path
-  
-  sel.add_data(hull_dist(path), force=force)
-  sel.add_data(hull_dist_per_atom(path), force=force)
-  
-  if force or 'on_hull' not in sel.data.columns:
-    sel.data.loc[_unselected(sel),'on_hull'] = False
-    on_hull = map(lambda x: abs(x) < hull_tol, sel.data.loc[_selected(sel),hull_dist_per_atom(path)])
-    sel.data.loc[_selected(sel), 'on_hull'] = on_hull
-  
+
 
 def view_on_tap(sel, attrname, old, new):
   """
@@ -128,14 +139,58 @@ def view_on_tap(sel, attrname, old, new):
     sel.proj.command(args=args)
 
 
-class ConfigurationTapAction(object):
+class PlottingData(object):
+    def __init__(self):
+        self.data_ = dict()
+        self.tap_action = TapAction(self)
+    
+    def add_project(self, proj_list):
+        for proj in proj_list:
+            if proj.path not in self.data_:
+                self.data_[proj.path] = {'project':proj, 'selections':{}}
+            else:
+                self.data_[proj.path]['project'] = proj
+    
+    def add_selection(self, sel_list):
+        for sel in sel_list:
+            if sel.proj.path not in self.data_:
+                self.data_[sel.proj.path] = {'project':sel.proj, 'selections':{sel.path:sel}}
+            else:
+                self.data_[sel.proj.path]['selections'][sel.path] = sel
+        
+    def project(self, proj_path=None, kwargs=dict()):
+        if proj_path is None:
+            proj_path = casm.project_path()
+        else:
+            proj_path = os.path.abspath(proj_path)
+        if proj_path not in self.data_:
+            proj = casm.project.Project(proj_path, **kwargs)
+            self.add_project([proj])
+        return self.data_[proj_path]['project']
+    
+    def selection(self, proj_path=None, sel_path="MASTER", kwargs=dict()):
+        proj = self.project(proj_path)
+        if sel_path is None:
+            sel_path = "MASTER"
+        if sel_path not in ["MASTER", "ALL", "CALCULATED"]:
+            sel_path = os.path.abspath(sel_path)
+        if sel_path not in self.data_[proj.path]['selections']:
+            sel = casm.project.Selection(self.project(proj.path), sel_path, **kwargs)
+            self.add_selection([sel])
+        return self.data_[proj.path]['selections'][sel_path]
+        
+        
+        
+    
+
+class TapAction(object):
   """
   Enable execution of a python function when a glyph is 'tapped' in a bokeh plot.
   
   Example:
     p = ... a Bokeh plot
     circles = p.circ(... A set of circles) 
-    my_tap_action = ConfigurationTapAction(sel)
+    my_tap_action = TapAction(sel)
     def f(sel, attrname, old, new):
       if len(sel.src.selected['1d']['indices']) == 1:
         # the index of the tapped configuration:
@@ -145,458 +200,891 @@ class ConfigurationTapAction(object):
       
     # call f when a circle is tapped
     p.add_tools(my_tap_action.tool(f, [circles]))
+  
+  Attributes:
+  
+      data: PlottingData instance
+          Use to store associated Project and Selection
+      
+      py_callback: {<sel_name>:<Python function>}
+          Dict of callback functions with signature: f(Selection, attrname, old, new).
+          Set the callback function using the 'tool' method. See 'view_on_tap'
+          for an example.
 
   """
   
-  def __init__(self, sel):
-    self.tap_indicator_src = bokeh.models.ColumnDataSource(data={"x":[0]})
+  def __init__(self, data):
+    """
+    Arguments:
+    
+        data: PlottingData instance
+    """
+    self.tap_indicator_src = bokeh.models.ColumnDataSource(data={"x":[0], "project":['None'], "selection":['None']})
     self.js_callback = bokeh.models.CustomJS(args={'src':self.tap_indicator_src}, code="""
       var data = src.get('data');
       data['x'][0] = data['x'][0] + 1;
+      data['project'][0] = cb_obj.data['project'][0];
+      data['selection'][0] = cb_obj.data['selection'][0];
+      console.log(cb_obj); // Logs output to dev tools console.
+      // alert(str); // Displays output using window.alert()
       src.set('data', data);
       """)
-    self.sel = sel
-    self.py_callback = None
+    self.data = data
+    self.py_callback = dict()
+    self.renderers = []
   
   def __call__(self, attrname, old, new):
-    self.py_callback(self.sel, attrname, old, new)
+    proj_path = new['project'][0]
+    sel_path = new['selection'][0]
+    sel = self.data.selection(proj_path, sel_path)
+    self.py_callback[sel_path](sel, attrname, old, new)
   
-  def tool(self, callback=None, renderers=None):
-    self.py_callback = callback
+  def add_callback(self, sel, callback=None, renderers=None):
+    self.py_callback[sel.path] = callback
+    self.renderers += renderers
+  
+  def tool(self):
     self.tap_indicator_src.on_change('data', self)
-    return bokeh.models.TapTool(callback=self.js_callback, renderers=renderers)
+    return bokeh.models.TapTool(callback=self.js_callback, renderers=self.renderers)
 
 
-class ConfigStyle(object):
-  def __init__(self):
-    ### style
-    self.selected_color = "blue"
-    self.selected_radii = 10
-    self.unselected_color = "green"
-    self.unselected_radii = 7
-    self.fill_alpha = 0.5
+# convex hull plot
+
+default_dft_hull_style = {
+  "marker": "circle",
+  "hover_color": "orange",
+  "hover_alpha": 0.7,
+  "fill_alpha": 0.5,
+  "selected": {
+    "color": "red",
+    "radii": 10
+  },
+  "unselected": {
+    "color": "gray",
+    "radii": 7
+  },
+  "on_hull": {
+    "line_color": "red",
+    "line_width": 2.0,
+    "line_alpha": 0.8
+  },
+  "off_hull": {
+    "line_color": "blue",
+    "line_width": 0.0,
+    "line_alpha": 0.0
+  },
+  "hull_line_width": 1.0,
+  "hull_line_dash": ""
+}
+
+default_clex_hull_style = {
+  "marker": "x",
+  "hover_color": "orange",
+  "hover_alpha": 0.7,
+  "fill_alpha": 0.5,
+  "selected": {
+    "color": "blue",
+    "radii": 10
+  },
+  "unselected": {
+    "color": "gray",
+    "radii": 7
+  },
+  "on_hull": {
+    "line_color": "blue",
+    "line_width": 2.0,
+    "line_alpha": 0.8
+  },
+  "off_hull": {
+    "line_color": "blue",
+    "line_width": 1.5,
+    "line_alpha": 0.5
+  },
+  "hull_line_width": 1.0,
+  "hull_line_dash": "",
+  "clex_of_dft_hull_line_dash": "4 4"
+}
+
+def _hull_style(input, default):
+    for val in ['marker', 'hover_color', 'hover_alpha', 'selected',
+        'hull_line_width', 'hull_line_dash', 'fill_alpha',
+        'clex_of_dft_hull_line_dash']:
+        if val in default and val not in input:
+            input[val] = default[val]
+    for tmp in ['selected', 'unselected']:
+        if tmp not in input:
+            input[tmp] = dict()
+        for val in ['color', 'radii']:
+            if val not in input[tmp]:
+                input[tmp][val] = default[tmp][val]
+    for tmp in ['on_hull', 'off_hull']:
+        if tmp not in input:
+            input[tmp] = dict()
+        for val in ['line_color', 'line_width', 'line_alpha']:
+            if val not in input[tmp]:
+                input[tmp][val] = default[tmp][val]
+    return input
+
+def dft_hull_style(input):
+    return _hull_style(input, default_dft_hull_style)
+
+def clex_hull_style(input):
+    return _hull_style(input, default_clex_hull_style)
+
+
+rank_select_cutoff_style = {
+  "color": "red",
+  "line_width": 1,
+  "alpha": 1.0
+}
+
+default_scatter_style = {
+  "marker": "circle",
+  "hover_color": "orange",
+  "hover_alpha": 0.7,
+  "selected": {
+    "color": "blue",
+    "radii": 10,
+    "line_color": "blue",
+    "line_width": 0.0,
+    "line_alpha": 0.0,
+    "fill_alpha": 0.5
+  },
+  "unselected": {
+    "color": "green",
+    "radii": 7,
+    "line_color": "gray",
+    "line_width": 0.0,
+    "line_alpha": 0.0,
+    "fill_alpha": 0.3
+  }
+}
+
+default_figure_kwargs = {
+    "plot_height": 400,
+    "plot_width": 800,
+    "tools": "crosshair,pan,reset,resize,box_zoom"
+}
+
+
+def scatter_series_style(index, input):
+  selected_color = ["blue", "red", "green", "black", "cyan", "magenta", "yellow", "orange"]
+  unselected_color = ["gray", "gray", "gray", "gray", "gray", "gray", "gray", "gray"]
+  marker = ["circle", "triangle", "square", "diamond", "x", "cross"]
+  
+  for val in ['hover_color', 'hover_alpha']:
+      if val not in input:
+          input[val] = default_scatter_style[val]
+  
+  if 'marker' not in input:
+      input['marker'] = marker[index % 6]
+  
+  if 'selected' not in input:
+      input['selected'] = copy.deepcopy(default_scatter_style['selected'])
+      input['selected']['color'] = selected_color[index % 8]
+      input['selected']['line_color'] = selected_color[index % 8]
+  else:
+      for key in ['radii', 'line_width', 'line_alpha', 'fill_alpha']:
+          if key not in input['selected']:
+              input['selected'][key] = default_scatter_style['selected'][key]
+      if 'color' not in input['selected']:
+          input['selected']['color'] = selected_color[index % 8]
+      if 'line_color' not in input['selected']:
+          input['selected']['line_color'] = selected_color[index % 8]
+  
+  if 'unselected' not in input:
+      input['unselected'] = copy.deepcopy(default_scatter_style['unselected'])
+      input['unselected']['color'] = unselected_color[index % 8]
+      input['unselected']['line_color'] = unselected_color[index % 8]
+  else:
+      for key in ['radii', 'line_width', 'line_alpha', 'fill_alpha']:
+          if key not in input['unselected']:
+              input['unselected'][key] = default_scatter_style['unselected'][key]
+      if 'color' not in input['unselected']:
+          input['unselected']['color'] = unselected_color[index % 8]
+      if 'line_color' not in input['unselected']:
+          input['unselected']['line_color'] = unselected_color[index % 8]
+  
+  return input
+
+def rankplot_style(input):
+    index = 0
     
-    self.cutoff_color = "red"
-    self.cutoff_line_width = 1
-    self.cutoff_alpha = 1.0
+    if 'selected' not in input:
+      input['selected'] = dict()
+    if 'line_width' not in input['selected']:
+      input['selected']['line_width'] = 1.0
+    if 'line_alpha' not in input['selected']:
+      input['selected']['line_alpha'] = 1.0
+    
+    if 'unselected' not in input:
+      input['unselected'] = dict()
+    if 'line_width' not in input['unselected']:
+      input['unselected']['line_width'] = 1.0
+    if 'line_alpha' not in input['selected']:
+      input['unselected']['line_alpha'] = 1.0
+   
+    return scatter_series_style(index, input)
 
-    self.off_hull_line_color = "blue"
-    self.on_hull_line_color = "#FF4105"
-    self.off_hull_line_width = 0.0
-    self.on_hull_line_width = 2.0
-    self.on_hull_line_alpha = 0.8
-    self.off_hull_line_alpha = 0.0
 
-    self.hover_color = "orange"
-    self.hover_alpha = 0.7
-
-
-def update_glyphs(sel, selected=None, on_hull=None):
+def update_dft_hull_glyphs(sel, style, selected=None):
   """
-  Use the selected and on_hull iterables to update glyph styles based on sel.style.
+  Use the selected and on_hull iterables to update glyph styles based on sel.dft_style.
+  """
+  if selected is None:
+    selected = sel.data['selected']
+  
+  ## clex points:
+  
+  for value in ['color', 'radii']:
+    cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
+    sel.src.data[value] = map(lambda x: cmap[x], selected)
+
+  on_dft_hull = None
+  if 'on_dft_hull' in sel.data.columns:
+    on_dft_hull = sel.data['on_dft_hull']
+  
+  if on_dft_hull is not None:
+    for value in ['line_color', 'line_width', 'line_alpha']:
+      cmap = dict({True:style['on_hull'][value], False:style['off_hull'][value]})
+      sel.src.data[value] = map(lambda x: cmap[x], on_dft_hull)
+
+  
+def update_clex_hull_glyphs(sel, style, selected=None):
+  """
+  Use the selected and on_hull iterables to update glyph styles based on sel.clex_style.
   """
   
   if selected is None:
     selected = sel.data['selected']
   
-  if on_hull is None:
-    if 'on_hull' in sel.data.columns:
-      on_hull = sel.data['on_hull']
+  ## clex points:
   
-  style = sel.style
+  for value in ['color', 'radii']:
+    cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
+    sel.src.data['clex_' + value] = map(lambda x: cmap[x], selected)
+
+  on_clex_hull = None
+  if 'on_clex_hull' in sel.data.columns:
+    on_clex_hull = sel.data['on_clex_hull']
   
-  # colors to plot selected (True), and unselected (False) configurations
-  colormap = dict({True:style.selected_color, False:style.unselected_color})
+  if on_clex_hull is not None:
+    for value in ['line_color', 'line_width', 'line_alpha']:
+      cmap = dict({True:style['on_hull'][value], False:style['off_hull'][value]})
+      sel.src.data['clex_' + value] = map(lambda x: cmap[x], on_clex_hull)
+
+
+def update_scatter_glyphs(sel, style, id, selected=None):
   
-  # colors to plot on_hull (True), and not on_hull (False) configurations
-  linecolormap = dict({True:style.on_hull_line_color, False:style.off_hull_line_color})
+  if selected is None:
+    selected = sel.data['selected']
   
-  # width to plot on_hull (True), and not on_hull (False) configurations
-  linewidthmap = dict({True:style.on_hull_line_width, False:style.off_hull_line_width})
+  ## clex points:
   
-  # width to plot on_hull (True), and not on_hull (False) configurations
-  linealphamap = dict({True:style.on_hull_line_alpha, False:style.off_hull_line_alpha})
-  
-  # radii to plot selected (True), and unselected (False) configurations
-  radiimap = dict({True:style.selected_radii, False:style.unselected_radii})
-  
-  sel.src.data['color'] = map(lambda x: colormap[x], selected)
-  sel.src.data['radii'] = map(lambda x: radiimap[x], selected)
-  
-  if on_hull is not None:
-    sel.src.data['line_color'] = map(lambda x: linecolormap[x], on_hull)
-    sel.src.data['line_width'] = map(lambda x: linewidthmap[x], on_hull)
-    sel.src.data['line_alpha'] = map(lambda x: linealphamap[x], on_hull)
-  
+  for value in ['color', 'radii', 'line_color', 'line_width', 'line_alpha', 'fill_alpha']:
+    cmap = dict({True:style['selected'][value], False:style['unselected'][value]})
+    sel.src.data[value + '.' + id] = map(lambda x: cmap[x], selected)
+
 
 class ConvexHullPlot(object):
   """
   Attributes:
-    p: a bokeh Figure containing formation energies and the convex hull
-    layout: a bokeh layout element holding p
-    sel: a CASM Selection used to make the figure
-    x: the value of the x-axis, 'comp(a)' by default
-    y: the value of the y-axis, 'formation_energy' by default
+      data
+      sel
+      hull_sel
+      hull_sel_calculated
+      dft_hull_sel
+      is_comp, is_comp_n, is_atom_frac
+      x, x_all, y, y_clex
+      hull_tol
+      dft_style, clex_style
+      tooltips, tooltips_exclude
+      r_dft, r_dft_hull_line
+      r_clex, r_clex_hull_line, r_clex_of_dft_hull_line
+      renderers
+      sorted_dft_hull
+      sorted_clex_hull
+      sorted_clex_of_dft_hull
   """
   
-  def __init__(self, sel, hull_sel=None, hull_tol=1e-8, x='comp(a)', y='formation_energy'):
+  def __init__(self, data=None, project=None, selection="MASTER", hull_selection=None, 
+    x='comp(a)', y='formation_energy', tooltips=[],
+    dft_style={}, clex_style={}, hull_tol=1e-8, index=0, series_name=None, type=None):
     """
     Arguments:
-      sel: A CASM Selection
-      x: (str) column name to use as x axis. Default='comp(a)'.
-      y: (str) column name to use as y axis. Default='formation_energy'.
-      hull_sel: (Selection or None) a CASM Selection, to use for the hull. Default uses sel.
+      data: PlottingData object
+      project: path to CASM project (optional, default=casm.project_path())
+      selection: path for CASM Selection
+      hull_selection: path for CASM Selection to use for the hull. Default uses selection.
+      x: (str) column name to use as x axis. Default='comp(a)'. Must be 'comp(x)', 'comp_n(X)', or 'atom_frac(X)'.
+      y: (str) column name to use as y axis. Default='formation_energy'. Must be 'formation_energy' or 'formation_energy_per_atom'.
+      tooltips:
+      dft_style:
+      clex_style:
       hull_tol: (number, default 1e-8) tolerance to decide if configuration is on the hull
     """
-    self.sel = sel
+    if data is None:
+        self.data = PlottingData()
+    self.data = data
+    
+    if project is None:
+        project = casm.project_path()
+    proj = self.data.project(project)
+    
+    prim = proj.prim
+    if prim.n_independent_compositions != 1:
+        print "in project:", proj.path
+        print "n_independent_compositions:", prim.n_independent_compositions
+        raise Exception("Currently ConvexHullPlot only works for binary alloys")
+    
+    if selection is None:
+      selection = "MASTER"
+    self.sel = self.data.selection(project, selection)
+    
+    if hull_selection is None:
+      hull_selection = selection
+    self.hull_sel = self.data.selection(project, hull_selection)
+    
+    self.hull_sel_calculated = casm.project.Selection(self.sel.proj, self.hull_sel.path + ".calculated")
+    self.dft_hull_sel = casm.project.Selection(self.sel.proj, self.hull_sel.path + ".dft_hull")
+    
+    self.data.add_selection([self.hull_sel_calculated, self.dft_hull_sel])
+    
+    self.is_comp = False
+    self.is_comp_n = False
+    self.is_atom_frac = False
+    if re.match('\s*comp\(.*\)\s*', x):
+      self.is_comp = True
+      self.x_all = "comp"
+    elif re.match('\s*comp_n\(.*\)\s*', x):
+      self.is_comp_n = True
+      self.x_all = "comp_n"
+    elif re.match('\s*atom_frac\(.*\)\s*', x):
+      self.is_atom_frac = True
+      self.x_all = "atom_frac"
+    else:
+        raise ValueError("ConvexHullPlot x: '" + x + "' is not allowed.")
     self.x = x
+    
+    if y == 'formation_energy':
+        self.Ef_per_atom = False
+        self.y_clex = 'clex(formation_energy)'
+    elif y == 'formation_energy_per_atom':
+        self.Ef_per_atom = True
+        self.y_clex = 'clex(formation_energy,per_species)'
+    else:
+        raise ValueError("ConvexHullPlot y: '" + y + "' is not allowed.")
     self.y = y
     
-    if hull_sel is None:
-      hull_sel = sel
-    self.hull_sel = hull_sel
     self.hull_tol = hull_tol
     
-    # TOOLS in bokeh plot
-    self.tools = "crosshair,pan,reset,resize,box_zoom"
+    self.dft_style = casm.plotting.dft_hull_style(copy.deepcopy(dft_style))
+    self.clex_style = casm.plotting.clex_hull_style(copy.deepcopy(clex_style))
     
-    #add data to sel.src if necessary
-    self._query()
-    
-    # will store the plot object in self.p_
-    self._plot()
-    
-    # store plot in layout
-    self.layout = self.p
-    
-    # callbacks
-    self.sel.selection_callbacks.append(self.update)
+    self.tooltips = tooltips
     
   
-  @property
-  def p(self):
-    return self.p_
-  
-  def _plot(self):
+  def plot(self, fig=None, tap_action=None):
     
-    # add 'style' to the selection if not already existing
-    if not hasattr(self.sel, 'style'):
-      self.sel.style = ConfigStyle()
-      update_glyphs(self.sel)
-    style = self.sel.style
+    if fig is None:
+        fig = bokeh.models.Figure(**default_figure_kwargs)
+    
+    update_dft_hull_glyphs(self.sel, self.dft_style)
+    update_clex_hull_glyphs(self.sel, self.clex_style)
     
     # plot formation energy vs comp, with convex hull states
-    self.p_ = bokeh.plotting.Figure(plot_width=800, plot_height=400, tools=self.tools)
-    cr = self.p_.circle(self.x, self.y, source=self.sel.src, 
-      size='radii', fill_color='color', fill_alpha=style.fill_alpha, 
+    self.renderers = []
+    
+    # dft
+    style = self.dft_style
+    
+    self.r_dft = getattr(fig, style['marker'])(self.x, self.y, source=self.sel.src, 
+      size='radii', fill_color='color', fill_alpha=style['fill_alpha'], 
       line_color='line_color', line_width='line_width', line_alpha='line_alpha',
-      hover_alpha=style.hover_alpha, hover_color=style.hover_color)
-    self.hull_line = self.p_.line(self.x, self.y, source=self.calc_hull_src, 
-      line_color=style.on_hull_line_color, line_width=1.0)
+      hover_alpha=style['hover_alpha'], hover_color=style['hover_color'],
+      legend="dft")
+    self.r_dft_hull_line = fig.line(self.x, self.y, source=self.calc_hull_src, 
+      line_color=style['on_hull']['line_color'], line_width=style['hull_line_width'],
+      line_dash=style['hull_line_dash'],
+      legend="dft")
+    
+    # clex
+    style = self.clex_style
+    self.r_clex = getattr(fig, style['marker'])(self.x, self.y_clex, source=self.sel.src, 
+      size='clex_radii', fill_color='clex_color', fill_alpha=style['fill_alpha'], 
+      line_color='clex_line_color', line_width='clex_line_width', line_alpha='clex_line_alpha',
+      hover_alpha=style['hover_alpha'], hover_color=style['hover_color'],
+      legend="clex")
+    self.r_clex_hull_line = fig.line(self.x, self.y_clex, source=self.clex_hull_src, 
+      line_color=style['on_hull']['line_color'], line_width=style['hull_line_width'],
+      line_dash=style['hull_line_dash'],
+      legend="clex")
+    
+    # clex of dft hull
+    style = self.clex_style
+    self.r_clex_of_dft_hull_line = fig.line(self.x, self.y_clex, source=self.clex_of_dft_hull_src, 
+      line_color=style['on_hull']['line_color'], line_width=style['hull_line_width'],
+      line_dash=style['clex_of_dft_hull_line_dash'],
+      legend="clex_of_dft_hull")
 
-    self.p_.xaxis.axis_label = self.x
-    self.p_.yaxis.axis_label = self.y
+    self.renderers = [self.r_dft, 
+      self.r_dft_hull_line, self.r_clex, 
+      self.r_clex_hull_line, self.r_clex_of_dft_hull_line]
+    
+    fig.xaxis.axis_label = self.x
+    fig.yaxis.axis_label = self.y
 
+    if tap_action is not None:
+        tap_action.add_callback(self.sel, view_on_tap, [self.r_dft, self.r_clex])
+    
     # hover over a point to see 'configname', 'Ef', and 'comp(a)'
     tooltips = [
-        ("configname","@configname"), 
-        ("Ef","@formation_energy{1.1111}"),
-        ("hull_dist", "@{" + hull_dist(self.hull_sel.path) + "}{1.1111}")
+        ("configname","@configname")
     ]
     
-    i = ord('a')
-    while "comp(" + chr(i) + ")" in self.sel.src.data.keys():
-      s = "comp(" + chr(i) + ")"
-      tooltips.append((s, "@{" + s + "}{1.1111}"))
-      i += 1
+    if self.tooltips is not None:
+        # tooltips for energy
+        if self.Ef_per_atom:
+          tooltips.append(("Ef_per_atom","@formation_energy_per_atom{1.1111}"))
+          tooltips.append(("clex_Ef_per_atom","@{clex(formation_energy,per_species)}{1.1111}"))
+          tooltips.append(("hull_dist_per_atom", "@{" + hull_dist_per_atom(self.hull_sel_calculated.path) + "}{1.1111}"))
+          tooltips.append(("clex_hull_dist_per_atom", "@{" + clex_hull_dist_per_atom(self.hull_sel.path) + "}{1.1111}"))
+          tooltips.append(("clex_of_dft_hull_dist_per_atom", "@{" + clex_hull_dist_per_atom(self.dft_hull_sel.path) + "}{1.1111}"))
+        else:
+          tooltips.append(("Ef","@formation_energy{1.1111}"))
+          tooltips.append(("clex_Ef","@{clex(formation_energy)}{1.1111}"))
+          tooltips.append(("hull_dist", "@{" + hull_dist(self.hull_sel_calculated.path) + "}{1.1111}"))
+          tooltips.append(("clex_hull_dist", "@{" + clex_hull_dist(self.hull_sel.path) + "}{1.1111}"))
+          tooltips.append(("clex_of_dft_hull_dist", "@{" + clex_hull_dist(self.dft_hull_sel.path) + "}{1.1111}"))
+        
+        for col in self.tooltips:
+            
+            if col in float_dtypes:
+                tooltips.append((col,"@{" + col + "}{1.1111}"))
+            else:
+                tooltips.append((col,"@{" + col + "}"))
+        
+        # tooltips for composition
+        if self.is_comp:
+          for key in self.sel.src.data.keys():
+            if re.match('\s*comp\(.*\)\s*', key):
+              tooltips.append((key, "@{" + key + "}{1.1111}"))
+        elif self.is_comp_n:
+          for key in self.sel.src.data.keys():
+            if re.match('\s*comp_n\(.*\)\s*', key):
+              tooltips.append((key, "@{" + key + "}{1.1111}"))
+        elif self.is_atom_frac:
+          for key in self.sel.src.data.keys():
+            if re.match('\s*atom_frac\(.*\)\s*', key):
+              tooltips.append((key, "@{" + key + "}{1.1111}"))
+        
+        fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r_dft, self.r_clex]))
+    else:
+        fig.add_tools(bokeh.models.HoverTool(tooltips=None, renderers=[self.r_dft, self.r_clex]))
     
-    self.tap_action = ConfigurationTapAction(self.sel)
+  
+  def _set_on_hull(self, sel, on_hull_label, hull_dist_label):
+    """
+    Use the 'hull_dist_label' column, and self.hull_tol to create the boolean
+    column 'on_hull_label' indicating which configurations are on the hull.
+    """
+    sel.data.loc[_unselected(sel), on_hull_label] = False
+    on_hull = map(lambda x: abs(x) < self.hull_tol, sel.data.loc[_selected(sel), hull_dist_label])
+    sel.data.loc[_selected(sel), on_hull_label] = on_hull
 
-    self.p_.add_tools(self.tap_action.tool(view_on_tap, [cr]))
-    self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[cr]))
-    self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[cr]))
-    self.p_.add_tools(bokeh.models.LassoSelectTool(renderers=[cr]))
   
-  def _query(self):
+  def query(self):
     
-    self.sel.add_data(self.x)
-    add_src_data(self.sel, self.x, self.sel.data.loc[:,self.x])
+    force = True
     
-    self.sel.add_data(self.y)
-    add_src_data(self.sel, self.y, self.sel.data.loc[:,self.y])
+    # check which hull_selection configurations are calculated
+    self.hull_sel.add_data('is_calculated')
     
-    add_hull_data(self.sel, self.hull_sel, self.hull_tol, force=True)
-    add_src_data(self.sel, hull_dist(self.hull_sel.path), self.sel.data.loc[:,hull_dist(self.hull_sel.path)])
+    # store hull_selection.calculated
+    self.hull_sel_calculated.save(
+      data=self.hull_sel.data[self.hull_sel.data.loc[:,'is_calculated']==True],
+      force=force)
     
-    # set hull line data
-    on_hull = self.sel.data.loc[:,'on_hull'] == True
-    df_on_hull = self.sel.data.loc[on_hull, [self.x, self.y, hull_dist(self.hull_sel.path)]]
-    sorted_df_on_hull = df_on_hull.sort_values([hull_dist(self.hull_sel.path), self.x])
-    self.sorted_hull_indices = sorted_df_on_hull.index
+    
+    # for selection query:
+    # - to plot: x_all, y, y_clex
+    # - for tooltips / dft hull: configname, x_all, hull_dist, clex_hull_dist
+    self.sel.query(['is_calculated', self.x_all, self.y, self.y_clex,
+      hull_dist(self.hull_sel_calculated.path),
+      hull_dist_per_atom(self.hull_sel_calculated.path),
+      clex_hull_dist(self.hull_sel.path),
+      clex_hull_dist_per_atom(self.hull_sel.path)] + self.tooltips,
+      force=force)
+    
+    # add project and selection path
+    N = self.sel.data.shape[0]
+    self.sel.add_data('project', [self.sel.proj.path]*N)
+    self.sel.add_data('selection', [self.sel.path]*N)
+    
+    
+    # convert to numeric (NaN) for configurations without DFT calculations 
+    self.sel.data.loc[:,hull_dist(self.hull_sel_calculated.path)] = \
+      pandas.to_numeric(self.sel.data[hull_dist(self.hull_sel_calculated.path)],
+        errors='coerce')
+    self.sel.data.loc[:,hull_dist_per_atom(self.hull_sel_calculated.path)] = \
+      pandas.to_numeric(self.sel.data[hull_dist_per_atom(self.hull_sel_calculated.path)],
+        errors='coerce')
+    
+    # find hull points
+    self._set_on_hull(self.sel, 'on_dft_hull', hull_dist_per_atom(self.hull_sel_calculated.path))
+    self._set_on_hull(self.sel, 'on_clex_hull', clex_hull_dist_per_atom(self.hull_sel.path))
+    
+    # create dft hull selection
+    self.dft_hull_sel.save(data=self.sel.data[self.sel.data.loc[:,'on_dft_hull']==True], force=force)
+    
+    # for selection query:
+    #  - for tooltips: clex_of_dft_hull_dist
+    self.sel.query([
+      clex_hull_dist(self.dft_hull_sel.path),
+      clex_hull_dist_per_atom(self.dft_hull_sel.path)],
+      force=force)
+    
+    # find clex_of_dft_hull line
+    self._set_on_hull(self.sel, 'on_clex_of_dft_hull', clex_hull_dist_per_atom(self.dft_hull_sel.path))
+    
+    
+    # source for points, tooltips
+    for col in self.sel.data.columns:
+       add_src_data(self.sel, col, self.sel.data.loc[:,col])
     
     # source for hull data
-    self.calc_hull_src = bokeh.models.ColumnDataSource(data=sorted_df_on_hull)
+    self.calc_hull_src = bokeh.models.ColumnDataSource(data=self.sort_dft_hull_line())
+    
+    # source for clex hull data
+    self.clex_hull_src = bokeh.models.ColumnDataSource(data=self.sort_clex_hull_line())
+    
+    # source for clex of dft hull data
+    self.clex_of_dft_hull_src = bokeh.models.ColumnDataSource(data=self.sort_clex_of_dft_hull_line())
+    
   
-  def update(self):
+#  def update(self):
+#    """
+#    Enable update of y values
+#    """
+#    
+#    # update y-data
+#    add_hull_data(self.sel, self.hull_sel, self.dft_hull_sel, self.hull_tol, force=True)
+#    add_src_data(self.sel, hull_dist(self.hull_sel.path), self.sel.data.loc[:,hull_dist(self.hull_sel.path)])
+#    
+#    self.update_hull_line()
+#    self.update_clex_hull_line()
+#    slef.update_clex_of_dft_hull_line()
+
+  def _sort_hull_line(self, sel, on_hull_label):
     """
-    Enable update of y values
+    Return x,y data where 'on_hull_label'==True, sorted by x 
     """
-    
-    # update y-data
-    add_hull_data(self.sel, self.hull_sel, self.hull_tol, force=True)
-    add_src_data(self.sel, hull_dist(self.hull_sel.path), self.sel.data.loc[:,hull_dist(self.hull_sel.path)])
-    
-    # set hull line data
-    on_hull = self.sel.data.loc[:,'on_hull'] == True
-    df_on_hull = self.sel.data.loc[on_hull, [self.x, self.y, hull_dist(self.hull_sel.path)]]
-    sorted_df_on_hull = df_on_hull.sort_values([hull_dist(self.hull_sel.path), self.x])
-    self.sorted_hull_indices = sorted_df_on_hull.index
-    
-    # source for hull data
-    self.calc_hull_src.data[self.x] = self.sel.data.loc[self.sorted_hull_indices, self.x]
-    self.calc_hull_src.data[self.y] = self.sel.data.loc[self.sorted_hull_indices, self.y]
+    # sort hull line data
+    on_hull = sel.data.loc[:,on_hull_label] == True
+    return sel.data.loc[on_hull, [self.x, self.y, self.y_clex]].sort_values([self.x])
   
-  def update_hull_line(self):
-    
-    # set hull line data
-    on_hull = self.sel.data.loc[:,'on_hull'] == True
-    df_on_hull = self.sel.data.loc[on_hull, [self.x, self.y, hull_dist(self.hull_sel.path)]]
-    sorted_df_on_hull = df_on_hull.sort_values([hull_dist(self.hull_sel.path), self.x])
-    self.sorted_hull_indices = sorted_df_on_hull.index
-    
-    # source for hull data
-    self.calc_hull_src.data[self.x] = self.sel.data.loc[self.sorted_hull_indices, self.x]
-    self.calc_hull_src.data[self.y] = self.sel.data.loc[self.sorted_hull_indices, self.y]
+  def sort_dft_hull_line(self):
+    """ sort dft hull line data """
+    self.sorted_dft_hull = self._sort_hull_line(self.sel, 'on_dft_hull')
+    return self.sorted_dft_hull
+  
+  def sort_clex_hull_line(self):
+    # sort clex hull line data
+    self.sorted_clex_hull = self._sort_hull_line(self.sel, 'on_clex_hull')
+    return self.sorted_clex_hull
+  
+  def sort_clex_of_dft_hull_line(self):
+    # set clex of dft hull line data
+    self.sorted_clex_of_dft_hull = self._sort_hull_line(self.sel, 'on_clex_of_dft_hull')
+    return self.sorted_clex_of_dft_hull
+  
+#  def update_hull_line(self):
+#    self.sort_hull_line()
+#    
+#    # source for hull data
+#    self.calc_hull_src.data[self.x] = self.sel.data.loc[self.sorted_dft_hull.index, self.x]
+#    self.calc_hull_src.data[self.y] = self.sel.data.loc[self.sorted_dft_hull.index, self.y]
+#
+#  def update_clex_hull_line(self):
+#    self.sort_clex_hull_line()
+#    
+#    # source for clex hull data
+#    self.clex_hull_src.data[self.x] = self.sel.data.loc[self.sorted_clex_hull.index, self.x]
+#    self.clex_hull_src.data[self.y] = self.sel.data.loc[self.sorted_clex_hull.index, self.y]
+#
+#  def update_hull_line(self):
+#    self.sort_clex_of_dft_hull_line()
+#    
+#    # source for clex of dft hull data
+#    self.clex_of_dft_hull_src.data[self.x] = self.sel.data.loc[self.sorted_clex_of_dft_hull.index, self.x]
+#    self.clex_of_dft_hull_src.data[self.y] = self.sel.data.loc[self.sorted_clex_of_dft_hull.index, self.y]
 
 
 class Scatter(object):
   """
   Attributes:
-    p: a bokeh Figure containing formation energies and the convex hull
-    layout: a bokeh layout element holding p
+    data: 
     sel: a CASM Selection used to make the figure
     x: the value of the x-axis, 'comp(a)' by default
     y: the value of the y-axis, 'comp(a)' by default
+    legend:
+    index:
+    series_name:
+    style:
+    tooltips:
   """
   
-  def __init__(self, sel, x='comp(a)', y='comp(a)'):
+  def __init__(self, data=None, project=None, selection="MASTER",
+    x='comp(a)', y='formation_energy', tooltips=[],
+    legend=None, style={}, index=0, series_name=None, type=None):
     """
     Arguments:
-      sel: A CASM Selection
-      x: (str) property name to use as x axis, 'comp(a)' by default.
-      y: (str) property name to use as y axis, 'comp(a)' by default.
+        data: PlottingData object
+        project: path to CASM project (optional, default=casm.project_path())
+        selection: path for CASM Selection
+        x: (str) column name to use as x axis. Default='comp(a)'
+        y: (str) column name to use as y axis. Default='formation_energy'
+        tooltips:
+        legend:
+        style:
+        index:
+        series_name:
+        type:
     """
+    if data is None:
+        self.data = PlottingData()
+    self.data = data
     
-    self.sel = sel
+    if project is None:
+        project = casm.project_path()
+    
+    if selection is None:
+      selection = "MASTER"
+    self.sel = self.data.selection(project, selection)
     
     self.x = x
-    self.sel.add_data('configname')
-    add_src_data(self.sel, 'configname', self.sel.data['configname'])
-    
-    self.sel.add_data(x)
-    add_src_data(self.sel, self.x, self.sel.data.loc[:,self.x])
-    
     self.y = y
-    self.sel.add_data(y)
-    add_src_data(self.sel, self.y, self.sel.data.loc[:,self.y])
     
-    # TOOLS in bokeh plot
-    self.tools = "crosshair,pan,reset,resize,box_zoom"
+    if legend is None:
+        legend = y
+    self.legend = legend
+    self.index = index
+    if series_name is None:
+        series_name = str(self.index)
+    self.series_name = series_name
+    self.style = scatter_series_style(self.index, copy.deepcopy(style))
     
-    self._plot()
-    
-    # store plot in layout
-    self.layout = self.p
-  
-  @property
-  def p(self):
-    return self.p_
-  
-  def _plot(self):
-    
-    # add 'style' to the selection if not already existing
-    if not hasattr(self.sel, 'style'):
-      self.sel.style = ConfigStyle()
-      update_glyphs(self.sel)
-    
-    style = self.sel.style
-    
-    # plot formation energy vs comp, with convex hull states
-    if True:
-      self.p_ = bokeh.plotting.Figure(plot_width=400, plot_height=400, tools=self.tools)
-      
-      cr = self.p_.circle(self.x, self.y, source=self.sel.src, 
-        size='radii', fill_color='color', fill_alpha=style.fill_alpha,
-        line_color='line_color', line_width='line_width', line_alpha='line_alpha',
-        hover_alpha=style.hover_alpha, hover_color=style.hover_color)
-    
-    else:
-      # rug plot
-      x_max = max(self.sel.src.data[self.x])
-      x_min = min(self.sel.src.data[self.x])
-      y_max = max(self.sel.src.data[self.y])
-      y_min = min(self.sel.src.data[self.y])
-      x_rug_length = (y_max - y_min)/20.0
-      y_rug_length = (x_max - x_min)/20.0
-      
-      self.p_ = bokeh.plotting.Figure(
-        plot_width=400, plot_height=400, tools=self.tools,
-        x_range=(x_min-y_rug_length, x_max+2*y_rug_length), y_range=(y_min-x_rug_length, y_max+2*x_rug_length))
-      
-      cr = self.p_.circle(self.x, self.y, source=self.sel.src, 
-        size='radii', fill_color='color', fill_alpha=style.fill_alpha,
-        line_color='line_color', line_width='line_width', line_alpha='line_alpha',
-        hover_alpha=style.hover_alpha, hover_color=style.hover_color)
-      
-      x_rug = self.p_.segment(
-        x0=self.x, x1=self.x,
-        y0=y_max + x_rug_length, y1=y_max + 2.0*x_rug_length,
-        source=self.sel.src,
-        line_color='line_color', line_width=1.0)
-      
-      y_rug = self.p_.segment(
-        x0=x_max + y_rug_length, x1=x_max + 2.0*y_rug_length,
-        y0=self.y, y1=self.y,
-        source=self.sel.src,
-        line_color='line_color', line_width=1.0)
+    self.tooltips = tooltips
     
     
-    self.p_.xaxis.axis_label = self.x
-    self.p_.yaxis.axis_label = self.y
+  def query(self):
+      columns = [self.x, self.y]
+      if self.tooltips is not None:
+          columns += self.tooltips
+      self.sel.query(columns) 
+      for col in self.sel.data.columns:
+          add_src_data(self.sel, col, self.sel.data.loc[:,col])
+          
+      # add project and selection path
+      N = self.sel.data.shape[0]
+      self.sel.add_data('project', [self.sel.proj.path]*N)
+      self.sel.add_data('selection', [self.sel.path]*N)
 
-    # hover over a point to see 'configname', 'x', and 'y'
-    tooltips = [
-        ("configname","@configname"), 
-        (self.x,"@{" + self.x + "}{1.1111}"),
-        (self.y,"@{" + self.y + "}{1.1111}")
-    ]
-    self.tap_action = ConfigurationTapAction(self.sel)
-    self.p_.add_tools(self.tap_action.tool(view_on_tap, [cr]))
-    self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[cr]))
-    self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[cr]))
-    self.p_.add_tools(bokeh.models.LassoSelectTool(renderers=[cr]))
+
+  def plot(self, fig=None, tap_action=None):
+          
+      update_scatter_glyphs(self.sel, self.style, self.series_name)
+      
+      self.r = getattr(fig, self.style['marker'])(
+          self.x,
+          self.y,
+          source=self.sel.src,
+          size='radii.' + self.series_name,
+          fill_color='color.' + self.series_name,
+          fill_alpha='fill_alpha.' + self.series_name, 
+          line_color='line_color.' + self.series_name,
+          line_width='line_width.' + self.series_name,
+          line_alpha='line_alpha.' + self.series_name,
+          hover_alpha=self.style['hover_alpha'],
+          hover_color=self.style['hover_color'],
+          legend=self.legend)
+      
+      self.renderers = [self.r]
+      
+      if self.index == 0:
+          fig.xaxis.axis_label = self.x
+          fig.yaxis.axis_label = self.y
+      
+      if tap_action is not None:
+          tap_action.add_callback(self.sel, casm.plotting.view_on_tap, [self.r])
+      
+      
+      if self.tooltips is not None:
+          tooltips = []
+            
+          for col in self.tooltips + [self.x, self.y]:
+              if col in casm.plotting.float_dtypes:
+                  tooltips.append((col,"@{" + col + "}{1.1111}"))
+              else:
+                  tooltips.append((col,"@{" + col + "}"))
+          
+          fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r]))
+      else:
+          fig.add_tools(bokeh.models.HoverTool(tooltips=None, renderers=[self.r]))
 
 
 class Histogram(object):
   """
   Attributes:
-    p: a bokeh Figure containing formation energies and the convex hull
-    layout: a bokeh layout element holding p
+    data: 
     sel: a CASM Selection used to make the figure
     x: the value of the x-axis, 'comp(a)' by default
+    y: the value of the y-axis, 'comp(a)' by default
+    legend:
+    index:
+    series_name:
+    style:
+    tooltips:
+    
+    src:
+    y_label:
   """
   
-  def __init__(self, sel, x='comp(a)', **kwargs):
+  def __init__(self, data=None, project=None, selection="MASTER",
+    x='comp(a)', hist_kwargs={}, tooltips=[],
+    style={}, index=0, series_name=None, type=None):
     """
     Arguments:
-      sel: A CASM Selection
-      x: (str) property name to use as x axis, 'comp(a)' by default.
-      kwargs: kwargs to pass to numpy.histogram
+        data: PlottingData object
+        project: path to CASM project (optional, default=casm.project_path())
+        selection: path for CASM Selection
+        x: (str) column name to use as x axis. Default='comp(a)'
+        hist_kwargs:
+        tooltips:
+        legend:
+        style:
+        index:
+        series_name:
+        type:
     """
+    if data is None:
+        self.data = PlottingData()
+    self.data = data
     
-    self.sel = sel
+    if project is None:
+        project = casm.project_path()
+    
+    if selection is None:
+      selection = "MASTER"
+    self.sel = self.data.selection(project, selection)
     
     self.x = x
-    self.sel.add_data('configname')
-    add_src_data(self.sel, 'configname', self.sel.data['configname'])
-    self.sel.add_data(x)
+    self.hist_kwargs = hist_kwargs
     
-    if 'to_be_selected' not in self.sel.data.columns:
-      self.sel.data.loc[:,'to_be_selected'] = self.sel.data.loc[:,'selected']
-    self.kwargs = kwargs
+    self.index = index
+    if series_name is None:
+        series_name = str(self.index)
+    self.series_name = series_name
+    self.style = scatter_series_style(self.index, copy.deepcopy(style))
     
-    # TOOLS in bokeh plot
-    self.tools = "crosshair,pan,reset,resize,box_zoom"
+    self.tooltips = tooltips
     
-    # for storing histogram freq/bins 
     self.src = None
     
-    self._plot()
-    
-    # ensure that changes in 'sel.src' will update the histogram
-    self.sel.selection_callbacks.append(self.update)
-    
-    # store plot in layout
-    self.layout = self.p
-  
-  @property
-  def p(self):
-    if self.p_ is None:
-      self._plot()
-    return self.p_
-  
-  def _plot(self):
-    
-    # add 'style' to the selection if not already existing
-    if not hasattr(self.sel, 'style'):
-      self.sel.style = ConfigStyle()
-      update_glyphs(self.sel)
-    
-    style = self.sel.style
-    
-    self.p_ = bokeh.plotting.Figure(plot_width=400, plot_height=400, tools=self.tools)
-    
-    # set data in 'self.src'
-    self.update()
-    
-    qd = self.p_.quad(top='top', bottom='bottom', left='left', right='right', source=self.src, 
-      fill_alpha=0.0, line_color='black', line_width=1)
-    
-    qd_sel = self.p_.quad(top='top_sel', bottom='bottom_sel', left='left', right='right', source=self.src, 
-      fill_alpha=style.fill_alpha, fill_color=style.selected_color,
-      line_alpha=0.0, line_width=0.0)
-        
-    self.p_.xaxis.axis_label = self.x
-    self.p_.yaxis.axis_label = self.y_label
-
-    # hover over a point to see 'x', and 'Freq.'
-    tooltips = [
-        (self.x,"@{left}{1.1111}"),
-        (self.y_label,"@{top}{1.1111}")
-    ]
-    
-    self.p_.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[qd]))
-  
-  def update(self):
-    """
-    Update plot data if sel.data['selected'] or sel.data['x'] change.
-    """
-    
-    # generate histogram and plot
-    tmp_kwargs = dict(self.kwargs)
-    tmp_kwargs['density'] = False
-    hist, edges = np.histogram(self.sel.data.loc[:,self.x], **tmp_kwargs)
-    
-    sel_kwargs = dict(self.kwargs)
-    sel_kwargs['bins'] = edges
-    sel_kwargs['density'] = False
-    
-    _df = self.sel.data
-    hist_sel, edges_sel = np.histogram(_df.loc[_df['to_be_selected']==True, self.x], **sel_kwargs)
-    
-    # need to do 'density' of selected by hand
-    if 'density' in self.kwargs and self.kwargs['density']:
-       hist_freq = np.array(hist)
-       width = edges[1:] - edges[:-1]
-       area = hist_freq.dot(width)
-       hist = hist_freq*width/area
-       hist_sel = hist_sel*width/area
-    
-    if self.src is None:
-      self.src = bokeh.models.ColumnDataSource()
-      self.src.data["left"] = edges[:-1]
-      self.src.data["right"] = edges[1:]
-    
-    self.src.data["top"] = hist
-    self.src.data["bottom"] = [0]*len(hist)
+  def query(self):
+      columns = [self.x]
+      self.sel.query(columns) 
+      for col in self.sel.data.columns:
+          add_src_data(self.sel, col, self.sel.data.loc[:,col])
       
-    self.src.data["top_sel"] = hist_sel
-    self.src.data["bottom_sel"] = [0]*len(hist_sel)
+      if 'to_be_selected' not in self.sel.data.columns:
+          self.sel.data.loc[:,'to_be_selected'] = self.sel.data.loc[:,'selected']
+      
+      # add project and selection path
+      N = self.sel.data.shape[0]
+      self.sel.add_data('project', [self.sel.proj.path]*N)
+      self.sel.add_data('selection', [self.sel.path]*N)
+      
+      # create histogram data
+      tmp_kwargs = dict(self.hist_kwargs)
+      tmp_kwargs['density'] = False
+      hist, edges = np.histogram(self.sel.data.loc[:,self.x], **tmp_kwargs)
+      
+      sel_kwargs = dict(self.hist_kwargs)
+      sel_kwargs['bins'] = edges
+      sel_kwargs['density'] = False
+      
+      hist_sel, edges_sel = np.histogram(
+          self.sel.data.loc[self.sel.data['to_be_selected']==True, self.x], 
+          **sel_kwargs)
+      
+      # need to do 'density' of selected by hand
+      if 'density' in self.hist_kwargs and self.hist_kwargs['density']:
+           hist_freq = np.array(hist)
+           width = edges[1:] - edges[:-1]
+           area = hist_freq.dot(width)
+           hist = hist_freq*width/area
+           hist_sel = hist_sel*width/area
+      
+      if self.src is None:
+          self.src = bokeh.models.ColumnDataSource()
+          self.src.data["left"] = edges[:-1]
+          self.src.data["right"] = edges[1:]
+      
+      self.src.data["top"] = hist
+      self.src.data["bottom"] = [0]*len(hist)
+        
+      self.src.data["top_sel"] = hist_sel
+      self.src.data["top_unsel"] = hist - hist_sel
+      self.src.data["bottom_sel"] = [0]*len(hist_sel)
+            
+      if 'density' not in self.hist_kwargs.keys() or self.hist_kwargs['density'] == False:
+          self.y_label = "Frequency"
+      else:
+          self.y_label = "Density"
+
+
+  def plot(self, fig=None, tap_action=None):
           
-    if 'density' not in self.kwargs.keys() or self.kwargs['density'] == False:
-      self.y_label = "Frequency"
-    else:
-      self.y_label = "Density"
+      update_scatter_glyphs(self.sel, self.style, self.series_name)
+      
+      self.r_quad = fig.quad(
+          top='top',
+          bottom='bottom',
+          left='left',
+          right='right',
+          source=self.src, 
+          fill_alpha=0.0,
+          line_color='black',
+          line_width=1)
+      
+      self.r_quad_sel = fig.quad(
+          top='top_sel',
+          bottom='bottom_sel',
+          left='left',
+          right='right',
+          source=self.src, 
+          fill_alpha=self.style['selected']['fill_alpha'],
+          fill_color=self.style['selected']['color'],
+          line_alpha=0.0,
+          line_width=0.0)
+      
+      self.renderers = [self.r_quad, self.r_quad_sel]
+      
+      fig.xaxis.axis_label = self.x
+      fig.yaxis.axis_label = self.y_label
+
+      if self.tooltips is not None:
+          tooltips = [
+              (self.x,"@{left}{1.1111}"),
+              ("selected","@{top_sel}{1.1111}"),
+              ("unselected","@{top_unsel}{1.1111}"),
+              ("total","@{top}{1.1111}")
+          ]
+            
+          fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r_quad]))
+      else:
+          fig.add_tools(bokeh.models.HoverTool(tooltips=None, renderers=self.renderers))
 
 
 class GridPlot(object):
@@ -708,28 +1196,64 @@ class GridPlot(object):
 class RankPlot(object):
   """
   Attributes:
-    p: a bokeh Figure containing formation energies and the convex hull
-    layout: a bokeh layout element holding p
     sel: a CASM Selection used to make the figure
-    scoring: a scoring function to operate on a DataFrame and return a Series
     score_id: a UUID to use for the 'score' column name in the sel.src ColumnDataSource
     rank_id: a UUID to use for the 'rank' column name in the sel.src ColumnDataSource
     max_score: the maximum score
     min_score: the minimum score
   """
-  
-  def __init__(self, sel, scoring, name="Score", mode='set', tooltips=None, on_tap=view_on_tap):
+  def __init__(self, data=None, project=None, selection="MASTER", to_query=[],
+    scoring_query=None, scoring_module=None, scoring_function=None,
+    tooltips=[], index=0, type=None,
+    style={}, series_name=None, name=None):
     """
     Arguments:
-      sel: A CASM Selection
-      scoring: (function) a scoring function to operate on a row of sel.data
-      name: y-axis label to describe the scoring function
-      tooltips: Customize tooltips. Default includes configname, score, and rank.
-      on_tap: Customize callback that occurs upon tapping a point. Default is view_on_tap.
+      data: PlottingData instance
+      project: str (optional, default=casm.project_path())
+      selection: str (optional, default="MASTER")
+      query: List[str]
+      scoring_query: str
+      scoring_module: str
+      scoring_function: str
+      tooltips: List[str]
+      tooltips_exclude: List[str]
+      index: int
+      type: str
     """
-    self.sel = sel
+    if data is None:
+        self.data = PlottingData()
+    self.data = data
     
-    self.scoring = scoring
+    if project is None:
+        project = casm.project_path()
+    
+    if selection is None:
+      selection = "MASTER"
+    self.sel = self.data.selection(project, selection)
+    
+    self.scoring_query = scoring_query
+    
+    self.to_query = to_query
+    self.scoring_module = scoring_module
+    self.scoring_function = scoring_function
+    
+    if self.scoring_query is not None:
+        if self.scoring_query not in self.to_query:
+            self.to_query.append(self.scoring_query)
+    
+    self.style = rankplot_style(copy.deepcopy(style))
+    
+    self.index = index
+    if series_name is None:
+        series_name = str(self.index)
+    self.series_name = series_name
+    
+    self.tooltips = tooltips
+    
+    if name is None:
+        name = scoring_query
+    if name is None:
+        name = scoring_module + '.' + scoring_function
     self.name = name
     
     self.score_id = str(uuid.uuid4())
@@ -738,62 +1262,57 @@ class RankPlot(object):
     self._max_score = None
     self._min_score = None
     
-    # TOOLS in bokeh plot
-    self.tools = "crosshair,pan,reset,resize,box_zoom"
-    self.tooltips = tooltips
-    self.on_tap = on_tap
-    
-    self.score()
-    
-    self._plot()
-    
-    # store plot in layout
-    self.layout = self.p
-    
   
-  @property
-  def p(self):
-    return self.p_
-  
-  def _plot(self):
+  def plot(self, fig=None, tap_action=None):
     
-    # add 'style' to the selection if not already existing
-    if not hasattr(self.sel, 'style'):
-      self.sel.style = ConfigStyle()
-      update_glyphs(self.sel)
+    update_scatter_glyphs(self.sel, self.style, self.series_name)
     
-    style = self.sel.style
+    self.r_stem = fig.segment(
+      self.rank_id, 0, self.rank_id, self.score_id, source=self.sel.src, 
+      line_color='line_color.' + self.series_name,
+      line_width='line_width.' + self.series_name,
+      line_alpha='line_alpha.' + self.series_name,
+      hover_alpha=self.style['hover_alpha'],
+      hover_color=self.style['hover_color'])
     
-    _tools = [self.tools]
-    
-    self.p_ = bokeh.plotting.Figure(plot_width=800, plot_height=400, tools=_tools)
-    p_stem = self.p_.segment(self.rank_id, 0, self.rank_id, self.score_id, source=self.sel.src, 
-      line_color='color', line_width=1.0,
-      hover_alpha=style.hover_alpha, hover_color=style.hover_color)
-    
-    p_circ = self.p_.circle(self.rank_id, self.score_id, source=self.sel.src, 
-      size='radii', fill_color='color', fill_alpha=style.fill_alpha,
-      line_color='line_color', line_width='line_width', line_alpha='line_alpha',
-      hover_alpha=style.hover_alpha, hover_color=style.hover_color)
+    self.r_circ = fig.circle(
+      self.rank_id,
+      self.score_id,
+      source=self.sel.src, 
+      size='radii.' + self.series_name,
+      fill_color='color.' + self.series_name,
+      fill_alpha='fill_alpha.' + self.series_name, 
+      line_width=0.,
+      line_alpha=0.,
+      hover_alpha=self.style['hover_alpha'],
+      hover_color=self.style['hover_color'])
 
-    self.p_.xaxis.axis_label = "Rank"
-    self.p_.yaxis.axis_label = self.name
+    fig.xaxis.axis_label = "Rank"
+    fig.yaxis.axis_label = self.name
     
-    if self.tooltips is None:
-      # hover over a point to see 'configname', 'score', Ef', and 'comp(a)'
-      self.tooltips = [
-          ("configname","@configname"), 
-          ("score","@{" + self.score_id + "}{1.1111}"), 
-          ("rank","@{" + self.rank_id + "}{1.1111}")
-      ]
     
-    if self.on_tap is not None:
-      self.tap_action = ConfigurationTapAction(self.sel)
-      self.p_.add_tools(self.tap_action.tool(self.on_tap, [p_circ]))
+    self.renderers = [self.r_stem, self.r_circ]
     
-    self.p_.add_tools(bokeh.models.HoverTool(tooltips=self.tooltips, renderers=[p_circ]))
-    self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[p_circ]))
-    self.p_.add_tools(bokeh.models.LassoSelectTool(renderers=[p_circ]))
+    if tap_action is not None:
+        tap_action.add_callback(self.sel, casm.plotting.view_on_tap, [self.r_circ])
+    
+    if self.tooltips is not None:
+        tooltips = []
+        
+        for col in self.tooltips + [self.score_id, self.rank_id]:
+            
+            if col == self.score_id:
+                tooltips.append(("score","@{" + self.score_id + "}{1.1111}"))
+            elif col == self.rank_id:
+                tooltips.append(("rank","@{" + self.rank_id + "}{1.1111}"))
+            elif col in casm.plotting.float_dtypes:
+                tooltips.append((col,"@{" + col + "}{1.1111}"))
+            else:
+                tooltips.append((col,"@{" + col + "}"))
+        
+        fig.add_tools(bokeh.models.HoverTool(tooltips=tooltips, renderers=[self.r_circ]))
+    else:
+        fig.add_tools(bokeh.models.HoverTool(tooltips=None, renderers=[self.r_circ]))
   
   @property
   def max_score(self):
@@ -807,31 +1326,54 @@ class RankPlot(object):
       self._min_score = min(self.sel.src.data[self.score_id])
     return self._min_score
   
-  def score(self, scoring=None):
+  def score(self):
     """
     Calculate 'score' and 'rank', but do not change selection. May also change the
     'scoring' function.
     """
-    if scoring is not None:
-      self.scoring = scoring
+    if self.scoring_query is not None:
+        self.sel.data.loc[:,self.score_id] = self.sel.data.loc[:,self.scoring_query]
+    else:
+        f, filename, description = imp.find_module(self.scoring_module)
+        try:
+            module = imp.load_module(self.scoring_module, f, filename, description)
+            self.sel.data.loc[:,self.score_id] = getattr(module, self.scoring_function)(self.sel)
+        finally:
+            if f:
+                f.close()
     
-    try:
-      # score
-      self.df = pandas.DataFrame(self.scoring(self.sel), columns=['score'])
-      self.df.loc[:,'selected'] = self.sel.data.loc[:,'selected']
-    except:
-      print "Error applying scoring function"
-      raise
-      
+    # convert to numeric (NaN) 
+    self.sel.data.loc[:,self.score_id] = pandas.to_numeric(self.sel.data[self.score_id], errors='coerce')
+    
     # add 'score' to src, as self.score_id
-    add_src_data(self.sel, self.score_id, self.df['score'], force=True)
+    add_src_data(self.sel, self.score_id, self.sel.data.loc[:,self.score_id], force=True)
     
     # rank
-    self.df.loc[self.df.sort_values(['score']).index, 'rank'] = range(self.df.shape[0])
+    self.sel.data.loc[self.sel.data.sort_values([self.score_id, 'configname']).index, self.rank_id] = range(self.sel.data.shape[0])
     
     # add 'rank' to src as self.rank_id
-    add_src_data(self.sel, self.rank_id, self.df['rank'], force=True)
+    add_src_data(self.sel, self.rank_id, self.sel.data.loc[:,self.rank_id], force=True)
     
+    self._min_score = None
+    self._max_score = None
+
+  def query(self):
+    columns = copy.deepcopy(self.to_query)
+    if self.tooltips is not None:
+        columns += self.tooltips
+    self.sel.query(columns) 
+        
+    # add project and selection path
+    N = self.sel.data.shape[0]
+    self.sel.add_data('project', [self.sel.proj.path]*N)
+    self.sel.add_data('selection', [self.sel.path]*N)
+    self.sel.add_data('configname')
+    
+    for col in self.sel.data.columns:
+        add_src_data(self.sel, col, self.sel.data.loc[:,col])
+    
+    self.score()
+        
 
 class RankSelect(object):
   """
@@ -901,23 +1443,23 @@ class RankSelect(object):
   def _plot(self):
     
     # add 'style' to the selection if not already existing
-    if not hasattr(self.sel, 'style'):
-      self.sel.style = ConfigStyle()
+    if not hasattr(self.sel, 'dft_style'):
+      self.sel.dft_style = dft_style
       update_glyphs(self.sel)
     
-    style = self.sel.style
+    style = self.sel.dft_style
     
     _tools = [self.mouse, self.tools]
     
     self.p_ = bokeh.plotting.Figure(plot_width=800, plot_height=400, tools=_tools)
     p_stem = self.p_.segment(self.rank_id, 0, self.rank_id, self.score_id, source=self.sel.src, 
       line_color='color', line_width=1.0,
-      hover_alpha=style.hover_alpha, hover_color=style.hover_color)
+      hover_alpha=style['hover_alpha'], hover_color=style['hover_color'])
     
     p_circ = self.p_.circle(self.rank_id, self.score_id, source=self.sel.src, 
-      size='radii', fill_color='color', fill_alpha=style.fill_alpha,
+      size='radii', fill_color='color', fill_alpha=style['fill_alpha'],
       line_color='line_color', line_width='line_width', line_alpha='line_alpha',
-      hover_alpha=style.hover_alpha, hover_color=style.hover_color)
+      hover_alpha=style['hover_alpha'], hover_color=style['hover_color'])
 
     self.p_.xaxis.axis_label = "Rank"
     self.p_.yaxis.axis_label = "Score"
@@ -955,7 +1497,7 @@ class RankSelect(object):
     self.p_.add_tools(bokeh.models.TapTool(callback=p_click))
     
     p_line = self.p_.line(x='x',y='y', source=self.cutoff_line_src,
-      line_width=style.cutoff_line_width, line_alpha=style.cutoff_alpha, color=style.cutoff_color)
+      line_width=style['cutoff_line_width'], line_alpha=style['cutoff_alpha'], color=style['cutoff_color'])
 
     self.p_.add_tools(bokeh.models.HoverTool(tooltips=self.tooltips, renderers=[p_circ]))
     self.p_.add_tools(bokeh.models.BoxSelectTool(renderers=[p_circ]))
@@ -1686,6 +2228,5 @@ class GUIOptions(object):
   @value.setter
   def value(self, _value):
     self.widget.value = _value
- 
- 
+
 
