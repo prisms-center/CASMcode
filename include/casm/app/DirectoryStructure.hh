@@ -285,11 +285,6 @@ namespace CASM {
       return configuration_dir(configname) / m_set_dir / _calctype(calctype);
     }
 
-    /// \brief Return configuration directory path (configname has format SCELV_A_B_C_D_E_F/I)
-    fs::path configuration_calc_dir(std::string configname, std::string calctype) const {
-      return configuration_dir(configname) / _calctype(calctype);
-    }
-
     /// \brief Return calculated properties file path
     fs::path configuration_calc_dir(std::string configname, std::string calctype) const {
       return configuration_dir(configname) / _calctype(calctype);

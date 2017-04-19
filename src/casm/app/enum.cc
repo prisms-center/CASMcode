@@ -166,10 +166,10 @@ namespace CASM {
 
         args.log << "Custom enumerator plugins can be added by placing source code \n"
                  "in the CASM project directory: \n"
-                 "  " << primclex->dir().enumerator_plugins() << " \n\n"
+                 "  " << primclex->dir().enumerator_plugins() << " \n\n";
 
 
-                 return 0;
+        return 0;
       }
     }
     catch(po::error &e) {

@@ -69,7 +69,7 @@ namespace CASM {
     Logging(logging),
     m_data(new PrimClexData(_prim)) {
 
-    m_settings.set_crystallography_tol(TOL);
+    m_data->settings.set_crystallography_tol(TOL);
 
     _init();
 

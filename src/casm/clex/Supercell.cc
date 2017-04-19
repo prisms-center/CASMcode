@@ -132,90 +132,30 @@ namespace CASM {
     return max_allowed;
   }
 
-  //***********************************************************
-
-  fs::path Supercell::get_path() const {
-    return get_primclex().get_path() / "training_data" / get_name();
-  }
-
-  /*
-   * Run through the configuration list and count how many of them
-   * have been selected then return value.
-   */
-
-  Index Supercell::amount_selected() const {
-    Index amount_selected = 0;
-    for(Index c = 0; c < config_list.size(); c++) {
-      if(config_list[c].selected()) {
-        amount_selected++;
-      }
-    }
-    return amount_selected;
-  }
-
-  //***********************************************************
-
   bool Supercell::is_canonical() const {
-    return get_real_super_lattice().is_canonical(
-             get_prim().point_group(),
-             get_primclex().crystallography_tol());
+    return real_super_lattice().is_canonical(
+             prim().point_group(),
+             primclex().crystallography_tol());
   }
-
-  //***********************************************************
 
   SymOp Supercell::to_canonical() const {
-    return get_real_super_lattice().to_canonical(
-             get_prim().point_group(),
-             get_primclex().crystallography_tol());
+    return real_super_lattice().to_canonical(
+             prim().point_group(),
+             primclex().crystallography_tol());
   }
-
-  //***********************************************************
 
   SymOp Supercell::from_canonical() const {
-    return get_real_super_lattice().from_canonical(
-             get_prim().point_group(),
-             get_primclex().crystallography_tol());
+    return real_super_lattice().from_canonical(
+             prim().point_group(),
+             primclex().crystallography_tol());
   }
 
-  //***********************************************************
-
-  Supercell &Supercell::canonical_form() const {
+  const Supercell &Supercell::canonical_form() const {
     if(!m_canonical) {
-      m_canonical = &get_primclex().get_supercell(
-                      get_primclex().add_supercell(get_real_super_lattice()));
+      m_canonical = &*insert().first;
     }
     return *m_canonical;
   }
-
-  //***********************************************************
-  /**  Check if a Structure fits in this Supercell
-   *  - Checks that 'structure'.lattice is supercell of 'real_super_lattice'
-   *  - Does *NOT* check basis sites
-   */
-  //***********************************************************
-  bool Supercell::is_supercell_of(const Structure &structure) const {
-    Eigen::Matrix3d mat;
-    return is_supercell_of(structure, mat);
-  };
-
-  //***********************************************************
-  /**  Check if a Structure fits in this Supercell
-   *  - Checks that 'structure'.lattice is supercell of 'real_super_lattice'
-   *  - Does *NOT* check basis sites
-   */
-  //***********************************************************
-  bool Supercell::is_supercell_of(const Structure &structure, Eigen::Matrix3d &mat) const {
-    Structure tstruct = structure;
-    SymGroup point_group;
-    tstruct.lattice().generate_point_group(point_group);
-    //if(real_super_lattice.is_supercell_of(tstruct.lattice, tstruct.factor_group().point_group(), mat)) {
-
-    if(real_super_lattice.is_supercell_of(tstruct.lattice(), point_group, mat)) {
-
-      return true;
-    }
-    return false;
-  };
 
   //***********************************************************
   /**  Generate a Configuration from a Structure
@@ -224,7 +164,7 @@ namespace CASM {
    *  - tested OK for perfect prim coordinates, not yet tested with relaxed coordinates using 'tol'
    */
   //***********************************************************
-  Configuration Supercell::configuration(const BasicStructure<Site> &structure_to_config, double tol) {
+  Configuration Supercell::configuration(const BasicStructure<Site> &structure_to_config, double tol) const {
     //Because the user is a fool and the supercell may not be a supercell (This still doesn't check the basis!)
     Eigen::Matrix3d transmat;
     if(!structure_to_config.lattice().is_supercell_of(prim().lattice(), prim().factor_group(), transmat)) {
@@ -475,28 +415,6 @@ namespace CASM {
                                   fg_index, trans_index); // one past final indices
   }
 
-  bool Supercell::is_canonical() const {
-    throw std::runtime_error("Pull fix");
-    return real_super_lattice().is_canonical();
-  }
-
-  SymOp Supercell::to_canonical() const {
-    throw std::runtime_error("Pull fix");
-    return real_super_lattice().to_canonical();
-  }
-
-  SymOp Supercell::from_canonical() const {
-    throw std::runtime_error("Pull fix");
-    return real_super_lattice().from_canonical();
-  }
-
-  const Supercell &Supercell::canonical_form() const {
-    if(!m_canonical) {
-      m_canonical = &*insert().first;
-    }
-    return *m_canonical;
-  }
-
   bool Supercell::operator<(const Supercell &B) const {
     if(&primclex() != &B.primclex()) {
       throw std::runtime_error(
@@ -604,7 +522,7 @@ namespace CASM {
   ///   symmetry operation in the primitive structure's factor group such that the lattice
   ///   is equivalent to `apply(fg_op, canonical equivalent)`
   std::string Supercell::_generate_name() const {
-    m_name = CASM::generate_name(m_transf_mat);
+    return CASM::generate_name(m_transf_mat);
   }
 
   Supercell &apply(const SymOp &op, Supercell &scel) {
