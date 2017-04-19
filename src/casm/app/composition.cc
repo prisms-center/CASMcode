@@ -1,11 +1,12 @@
 #include<cstring>
 
 #include "casm/CASM_global_definitions.hh"
-#include "casm/clex/PrimClex.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/completer/Handlers.hh"
+#include "casm/clex/PrimClex.hh"
 
 namespace CASM {
 

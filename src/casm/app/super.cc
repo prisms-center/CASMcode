@@ -528,28 +528,22 @@ namespace CASM {
           double lattice_weight = 0.5;
           ConfigMapper configmapper(primclex, lattice_weight, vol_tol, map_opt, tol);
 
-          std::string imported_name;
-          Eigen::Matrix3d cart_op;
-          std::vector<Index> best_assignment;
-          jsonParser fullrelax_data;
-          if(configmapper.import_structure_occupation(super,
-                                                      imported_name,
-                                                      fullrelax_data,
-                                                      best_assignment,
-                                                      cart_op,
-                                                      true)) {
+          auto map_res = configmapper.import_structure_occupation(super);
+          auto insert_res = map_res.config->insert();
+          Configuration imported_config = *insert_res.canonical_it;
+
+          if(insert_res.insert_canonical) {
             std::cout << "  The configuration was imported successfully as "
-                      << imported_name << std::endl << std::endl;
+                      << imported_config.name() << std::endl << std::endl;
 
           }
           else {
             std::cout << "  The configuration was mapped onto pre-existing equivalent structure "
-                      << imported_name << std::endl << std::endl;
+                      << imported_config.name() << std::endl << std::endl;
           }
 
           jsonParser json_src;
           json_src["supercell_of"] = configname[0];
-          Configuration imported_config = *primclex.db<Configuration>().find(configname[0]);
           imported_config.push_back_source(json_src);
           primclex.db<Configuration>().update(imported_config);
 

@@ -4,6 +4,7 @@
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/completer/Handlers.hh"
+#include "casm/database/ScelDatabase.hh"
 
 namespace CASM {
 

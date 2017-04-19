@@ -2,6 +2,8 @@
 
 #include <tuple>
 #include "casm/app/AppIO.hh"
+#include "casm/app/EnumeratorHandler.hh"
+#include "casm/app/QueryHandler.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/clex/Configuration.hh"
@@ -263,6 +265,7 @@ namespace CASM {
 
   }
 
+  ProjectSettings::~ProjectSettings() {}
 
   /// \brief Get project name
   std::string ProjectSettings::name() const {
@@ -418,6 +421,56 @@ namespace CASM {
   double ProjectSettings::lin_alg_tol() const {
     return m_lin_alg_tol;
   }
+
+
+  // ** Enumerators **
+
+  EnumeratorHandler &ProjectSettings::enumerator_handler() {
+    if(!m_enumerator_handler) {
+      m_enumerator_handler = notstd::make_cloneable<EnumeratorHandler>(*this);
+    }
+    return *m_enumerator_handler;
+  }
+
+  const EnumeratorHandler &ProjectSettings::enumerator_handler() const {
+    return const_cast<ProjectSettings &>(*this).enumerator_handler();
+  }
+
+
+  // ** Database **
+
+  void ProjectSettings::set_db_name(std::string _db_name) {
+    m_db_name = _db_name;
+  }
+
+  std::string ProjectSettings::db_name() const {
+    return m_db_name;
+  }
+
+  // ** Queries **
+
+  template<typename DataObject>
+  QueryHandler<DataObject> &ProjectSettings::query_handler() {
+    auto res = m_query_handler.find(QueryTraits<DataObject>::name);
+    if(res == m_query_handler.end()) {
+      res = m_query_handler.insert(
+              std::make_pair(
+                QueryTraits<DataObject>::name,
+                notstd::cloneable_ptr<notstd::Cloneable>(new QueryHandler<DataObject>(*this))
+              )
+            ).first;
+    }
+    return static_cast<QueryHandler<DataObject>& >(*res->second);
+  }
+
+  template QueryHandler<Configuration> &ProjectSettings::query_handler<Configuration>();
+
+  template<typename DataObject>
+  const QueryHandler<DataObject> &ProjectSettings::query_handler() const {
+    return const_cast<ProjectSettings &>(*this).query_handler<DataObject>();
+  }
+
+  template const QueryHandler<Configuration> &ProjectSettings::query_handler<Configuration>() const;
 
 
   // ** Clexulator names **

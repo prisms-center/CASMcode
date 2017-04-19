@@ -1,13 +1,15 @@
 #include "casm/clex/ConfigIO.hh"
 
 #include <functional>
-//#include "casm/clex/Configuration.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Norm.hh"
 #include "casm/clex/ConfigIOHull.hh"
 #include "casm/clex/ConfigIONovelty.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigIOStrain.hh"
+#include "casm/clex/ConfigMapping.hh"
+#include "casm/app/ProjectSettings.hh"
 #include "casm/database/Selected.hh"
 
 namespace CASM {

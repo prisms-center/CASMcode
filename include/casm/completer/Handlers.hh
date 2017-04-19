@@ -531,6 +531,8 @@ namespace CASM {
 
       using OptionHandlerBase::configtype;
       using OptionHandlerBase::configtype_opts;
+      using OptionHandlerBase::settings_path;
+      using OptionHandlerBase::input_str;
 
 
       ImportOption();
@@ -736,31 +738,17 @@ namespace CASM {
 
     public:
 
-      using OptionHandlerBase::coordtype_enum;
-
+      using OptionHandlerBase::configtype;
+      using OptionHandlerBase::configtype_opts;
+      using OptionHandlerBase::settings_path;
+      using OptionHandlerBase::input_str;
       using OptionHandlerBase::selection_path;
 
       UpdateOption();
 
-      double vol_tolerance() const;
-
-      double lattice_weight() const;
-
-      double min_va_frac() const;
-
-      double max_va_frac() const;
-
     private:
 
       void initialize() override;
-
-      double m_vol_tolerance;
-
-      double m_lattice_weight;  //TODO: Push to base? Other commands use this
-
-      double m_min_va_frac;
-
-      double m_max_va_frac;
 
     };
 

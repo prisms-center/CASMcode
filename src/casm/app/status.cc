@@ -596,7 +596,7 @@ Instructions for fitting ECI:                                          \n\n\
         for(const auto &config : primclex.db<Configuration>().scel_range(scel.name())) {
           gen++;
           calc += is_calculated(config);
-          sel += master_selection.selected(config.name());
+          sel += master_selection.is_selected(config.name());
         }
 
         std::cout << std::setw(6) << i << " " << std::setw(30)

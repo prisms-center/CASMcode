@@ -1,7 +1,12 @@
-#ifndef CONFIGMAPPING_HH
-#define CONFIGMAPPING_HH
-#include "casm/CASM_global_definitions.hh"
+#ifndef CASM_ConfigMapping
+#define CASM_ConfigMapping
+
 #include <vector>
+#include "casm/CASM_global_definitions.hh"
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Site.hh"
+#include "casm/casm_io/jsonParser.hh"
+
 namespace CASM {
   class Supercell;
   class Lattice;
@@ -9,10 +14,7 @@ namespace CASM {
   class PrimClex;
   class Configuration;
   class ConfigDoF;
-  class Site;
-  class Coordinate;
-  template<typename CoordType>
-  class BasicStructure;
+
   namespace Completer {
     class ImportOption;
   }

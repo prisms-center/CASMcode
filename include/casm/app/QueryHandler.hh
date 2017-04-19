@@ -4,11 +4,12 @@
 #include <map>
 #include <memory>
 
-#include "casm/system/RuntimeLibrary.hh"
+#include "casm/misc/cloneable_ptr.hh"
 #include "casm/casm_io/DataFormatter.hh"
 
 namespace CASM {
 
+  class RuntimeLibrary;
   class ProjectSettings;
 
   namespace DB {
@@ -77,7 +78,7 @@ namespace CASM {
 
     std::map<std::string, std::string> m_aliases;
 
-    DataFormatterDictionary<DataObject> m_dict;
+    notstd::cloneable_ptr<DataFormatterDictionary<DataObject> > m_dict;
 
     std::map<std::string, std::shared_ptr<RuntimeLibrary> > m_lib;
 

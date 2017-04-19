@@ -2,6 +2,8 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/external/gzstream/gzstream.h"
 #include "casm/version/version.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/misc/algorithm.hh"
 
 namespace CASM {
 

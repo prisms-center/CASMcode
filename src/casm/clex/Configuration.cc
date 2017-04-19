@@ -3,12 +3,18 @@
 #include <sstream>
 
 #include "casm/symmetry/PermuteIterator.hh"
+#include "casm/crystallography/Molecule.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/ConfigIsEquivalent.hh"
 #include "casm/clex/ConfigCompare.hh"
+#include "casm/clex/CompositionConverter.hh"
+#include "casm/clex/ChemicalReference.hh"
+#include "casm/database/ConfigDatabase.hh"
+#include "casm/database/ScelDatabase.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/app/QueryHandler_impl.hh"
 
@@ -632,7 +638,7 @@ namespace CASM {
   ///   - Then applies prim Structure factor group op with index PRIM_FG_OP and
   ///     fills the supercell $CANON_SCELNAME.$PRIM_FG_OP1
   ///
-  std::string Configuration::generate_name() const {
+  std::string Configuration::_generate_name() const {
 
     std::string result;
     // canonical forms in canonical supercells

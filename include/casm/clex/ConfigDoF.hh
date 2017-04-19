@@ -2,6 +2,7 @@
 #define ConfigDoF_HH
 
 #include <vector>
+#include "casm/CASM_global_definitions.hh"
 #include "casm/external/Eigen/Dense"
 #include "casm/casm_io/jsonParser.hh"
 

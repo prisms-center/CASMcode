@@ -303,8 +303,8 @@ namespace CASM {
       args.log.begin_lap();
 
       // loop through other lists, keeping only configurations selected in the other lists
-      for(const auto &val : config_select.data()) {
-        config_select.set_selected(val.first, !config_select.selected(val.first));
+      for(auto it = config_select.all().begin(); it != config_select.all().end(); ++it) {
+        it.is_selected() = !it.is_selected();
       }
       args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;
     }
@@ -320,7 +320,8 @@ namespace CASM {
           if(!val.second) {
             continue;
           }
-          config_select.set_selected(val.first, true);
+          auto res = config_select.data().insert({val.first, true});
+          res.first->second = true;
         }
       }
       args.log << "selection time: " << args.log.lap_time() << " (s)\n" << std::endl;
@@ -337,7 +338,8 @@ namespace CASM {
           if(!val.second) {
             continue;
           }
-          config_select.set_selected(val.first, tselect[i].selected(val.first));
+          auto res = config_select.data().insert({val.first, true});
+          res.first->second = tselect[i].is_selected(val.first);
         }
       }
 
@@ -355,15 +357,20 @@ namespace CASM {
       args.log.begin_lap();
 
       for(const auto &val : tselect[1].data()) {
+        // if not selected in second, use 'config_select' 'is_selected' value
         if(!val.second) {
           continue;
         }
-        //If selected in both lists, deselect it
-        if(config_select.selected(val.first)) {
-          config_select.set_selected(val.first, false);
+        // else, if selected in second:
+
+        // if not in 'config_select' insert selected
+        auto find_it = config_select.data().find(val.first);
+        if(find_it == config_select.data().end()) {
+          config_select.data().insert(val);
         }
-        else { // If only selected in tselect, add it to config_select
-          config_select.set_selected(val.first, true);
+        // else, use opposite of config_select 'is_selected' value
+        else {
+          find_it->second = !find_it->second;
         }
 
       }

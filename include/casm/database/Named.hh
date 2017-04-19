@@ -9,7 +9,7 @@ namespace CASM {
   namespace DB {
 
     /// Derived should implement:
-    /// - std::string generate_name() const
+    /// - std::string _generate_name() const
     /// - const PrimClex& primclex() const
     ///
     template<typename Derived>
@@ -22,7 +22,7 @@ namespace CASM {
 
       std::string name() const {
         if(m_name.empty()) {
-          m_name = derived().generate_name();
+          m_name = derived()._generate_name();
         }
         return m_name;
       }

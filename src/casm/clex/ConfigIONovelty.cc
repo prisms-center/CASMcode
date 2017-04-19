@@ -3,7 +3,8 @@
 #include "casm/clex/ConfigIONovelty.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/database/Selection_impl.hh"
+#include "casm/database/Selection.hh"
+#include "casm/database/ConfigDatabase.hh"
 
 namespace CASM {
 

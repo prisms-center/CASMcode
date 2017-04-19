@@ -1,10 +1,16 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigMapping.hh"
+#include "casm/clex/ConfigDoF.hh"
+#include "casm/clex/Configuration.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/clex/ParamComposition.hh"
 #include "casm/strain/StrainConverter.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/LatticeMap.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/symmetry/PermuteIterator.hh"
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {

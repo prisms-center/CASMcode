@@ -88,15 +88,6 @@ namespace CASM {
       return it->second;
     }
 
-    /// \brief If obj is in Selection, set selected to specified value
-    template<typename ObjType>
-    void Selection<ObjType>::set_selected(const std::string &name_or_alias, bool value) const {
-      auto it = m_data.find(db().name(name_or_alias));
-      if(it != m_data.end()) {
-        it->second = value;
-      }
-    }
-
     /// \brief Set selected objects to value of criteria
     template<typename ObjType>
     void Selection<ObjType>::set(const DataFormatterDictionary<ObjType> &dict,
@@ -104,16 +95,18 @@ namespace CASM {
       try {
         if(criteria.size()) {
           DataFormatter<ObjType> tformat(dict.parse(criteria));
-          for(const auto &obj : all()) {
+          auto it = all().begin();
+          auto end = all().end();
+          for(; it != end; ++it) {
             ValueDataStream<bool> select_stream;
             if(select_stream.fail()) {
               err_log() << "Warning: Unable to apply criteria \"" << criteria
-                        << "\" to " << QueryTraits<ObjType>::name << " " << obj.name()
+                        << "\" to " << QueryTraits<ObjType>::name << " " << it.name()
                         << "\n";
               continue;
             }
-            select_stream << tformat(obj);
-            set_selected(obj.name(), select_stream.value());
+            select_stream << tformat(*it);
+            it.is_selected() = select_stream.value();
           }
         }
       }
@@ -133,27 +126,31 @@ namespace CASM {
       try {
         if(criteria.size()) {
           DataFormatter<ObjType> tformat(dict.parse(criteria));
-          for(const auto &obj : all()) {
-            if(selected(obj) == value) {
+          auto it = all().begin();
+          auto end = all().end();
+          for(; it != end; ++it) {
+            if(it.is_selected() == value) {
               continue;
             }
             ValueDataStream<bool> select_stream;
             if(select_stream.fail()) {
               err_log() << "Warning: Unable to apply criteria \"" << criteria
-                        << "\" to " << QueryTraits<ObjType>::name << " " <<  obj.name()
+                        << "\" to " << QueryTraits<ObjType>::name << " " <<  it.name()
                         << "\n";
               continue;
             }
 
-            select_stream << tformat(obj);
+            select_stream << tformat(*it);
             if(select_stream.value()) {
-              set_selected(obj.name(), value);
+              it.is_selected() = value;
             }
           }
         }
         else {
-          for(const auto &obj : all()) {
-            set_selected(obj.name(), value);
+          auto it = all().begin();
+          auto end = all().end();
+          for(; it != end; ++it) {
+            it.is_selected() = value;
           }
         }
       }

@@ -1,4 +1,4 @@
-#include "casm/database/DatabaseHandler.hh"
+#include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/clex/PrimClex.hh"
 
 #include "casm/database/json/jsonDatabase.hh"
@@ -17,6 +17,10 @@ namespace CASM {
       m_default_db_name(m_primclex->settings().db_name()) {
 
       jsonDB::insert(m_db);
+    }
+
+    ~DatabaseHandler::DatabaseHandler() {
+      close();
     }
 
   }

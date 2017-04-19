@@ -12,16 +12,20 @@ namespace CASM {
     template<typename ObjType>
     class Selection;
 
-    template<typename ObjType>
+    template<typename ObjType, typename BaseIterator>
     class SelectionIterator :
       public boost::iterator_facade <
-      SelectionIterator<ObjType>,
+      SelectionIterator<ObjType, BaseIterator>,
       ObjType,
-      std::forward_iterator_tag,
+      std::bidirectional_iterator_tag,
       const ObjType &,
       long > {
 
     public:
+
+      typedef typename CASM_TMP::ConstSwitch <
+      std::is_same<BaseIterator, std::map<std::string, bool>::const_iterator>::value,
+          bool & > bool_reference;
 
       /// Default constructor (equals end)
       SelectionIterator() {}
@@ -31,16 +35,24 @@ namespace CASM {
         return m_it->first;
       }
 
+      /// \brief Reference to value 'is_selected'
+      bool_reference is_selected() {
+        return m_it->second;
+      }
+
+      /// \brief Reference to value 'is_selected'
+      bool is_selected() const {
+        return m_it->second;
+      }
+
     private:
 
       friend boost::iterator_core_access;
 
       friend Selection<ObjType>;
 
-      typedef std::map<std::string, bool>::const_iterator base_iterator;
-
       /// Construct iterator
-      SelectionIterator(const Selection<ObjType> &_list, base_iterator _it, bool _selected_only) :
+      SelectionIterator(const Selection<ObjType> &_list, BaseIterator _it, bool _selected_only) :
         m_list(&_list),
         m_it(_it),
         m_selected_only(_selected_only) {}
@@ -50,6 +62,14 @@ namespace CASM {
         ++m_it;
         while(m_selected_only && m_it != m_list->data().end() && m_it->second == false) {
           ++m_it;
+        }
+      }
+
+      /// boost::iterator_facade implementation
+      void decrement() {
+        --m_it;
+        while(m_selected_only && m_it != m_list->data().begin() && m_it->second == false) {
+          --m_it;
         }
       }
 
@@ -64,7 +84,7 @@ namespace CASM {
       }
 
       const Selection<ObjType> *m_list;
-      base_iterator m_it;
+      BaseIterator m_it;
       bool m_selected_only;
     };
 
@@ -86,7 +106,10 @@ namespace CASM {
 
     public:
 
-      typedef SelectionIterator<ObjType> iterator;
+      typedef std::map<std::string, bool>::iterator base_iterator;
+      typedef std::map<std::string, bool>::const_iterator base_const_iterator;
+      typedef SelectionIterator<ObjType, base_iterator> iterator;
+      typedef SelectionIterator<ObjType, base_const_iterator> const_iterator;
       typedef Index size_type;
 
       /// \brief Default construct into invalid state
@@ -106,16 +129,28 @@ namespace CASM {
         return *m_db;
       }
 
-      boost::iterator_range<iterator> all() const {
+      boost::iterator_range<iterator> all() {
         return boost::make_iterator_range(
                  iterator(*this, m_data.begin(), false),
                  iterator(*this, m_data.end(), false));
       }
 
-      boost::iterator_range<iterator> selected() const {
+      boost::iterator_range<const_iterator> all() const {
+        return boost::make_iterator_range(
+                 const_iterator(*this, m_data.begin(), false),
+                 const_iterator(*this, m_data.end(), false));
+      }
+
+      boost::iterator_range<iterator> selected() {
         return boost::make_iterator_range(
                  iterator(*this, m_data.begin(), true),
                  iterator(*this, m_data.end(), true));
+      }
+
+      boost::iterator_range<const_iterator> selected() const {
+        return boost::make_iterator_range(
+                 const_iterator(*this, m_data.begin(), true),
+                 const_iterator(*this, m_data.end(), true));
       }
 
 
@@ -146,9 +181,6 @@ namespace CASM {
 
       /// \brief True if obj is in Selection and is selected; false otherwise
       bool is_selected(const std::string &name_or_alias) const;
-
-      /// \brief If obj is in Selection, set selected to specified value
-      void set_selected(const std::string &name_or_alias, bool value) const;
 
       /// \brief Set selected objects to value of criteria
       void set(const DataFormatterDictionary<ObjType> &dict,

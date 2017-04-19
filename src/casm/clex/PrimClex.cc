@@ -1,42 +1,91 @@
-#include "casm/clex/PrimClex.hh"
+#include "casm/clex/PrimClex_impl.hh"
 
 #include "casm/external/boost.hh"
-
-#include "casm/clex/ECIContainer.hh"
 #include "casm/system/RuntimeLibrary.hh"
-#include "casm/casm_io/SafeOfstream.hh"
 #include "casm/crystallography/Coordinate.hh"
-#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/clex/CompositionConverter.hh"
+#include "casm/clex/Clexulator.hh"
+#include "casm/clex/ChemicalReference.hh"
+#include "casm/clex/NeighborList.hh"
+#include "casm/clex/ClexBasis.hh"
 #include "casm/clex/ECIContainer.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/EnumeratorHandler.hh"
+#include "casm/app/QueryHandler.hh"
+#include "casm/database/DatabaseHandler.hh"
+#include "casm/casm_io/SafeOfstream.hh"
+#include "casm/clusterography/IntegralCluster.hh"
 
 namespace CASM {
 
-  //*******************************************************************************************
-  //                                **** Constructors ****
-  //*******************************************************************************************
+  struct PrimClex::PrimClexData {
+
+    PrimClexData(const Structure &_prim) :
+      prim(_prim) {}
+
+    PrimClexData(const fs::path &_root) :
+      dir(_root),
+      settings(_root),
+      prim(read_prim(dir.prim())) {}
+
+    ~PrimClexData() {}
+
+    DirectoryStructure dir;
+    ProjectSettings settings;
+
+    Structure prim;
+    bool vacancy_allowed;
+    Index vacancy_index;
+
+    std::unique_ptr<DB::DatabaseHandler> db_handler;
+
+    /// CompositionConverter specifies parameteric composition axes and converts between
+    ///   parametric composition and mol composition
+    bool has_composition_axes = false;
+    CompositionConverter comp_converter;
+
+    /// ChemicalReference specifies a reference for formation energies, chemical
+    /// potentials, etc.
+    notstd::cloneable_ptr<ChemicalReference> chem_ref;
+
+    /// Stores the neighboring UnitCell and which sublattices to include in neighbor lists
+    /// - mutable for lazy construction
+    mutable notstd::cloneable_ptr<PrimNeighborList> nlist;
+
+    mutable std::map<ClexDescription, ClexBasis> clex_basis;
+    mutable std::map<ClexDescription, Clexulator> clexulator;
+    mutable std::map<ClexDescription, ECIContainer> eci;
+
+  };
+
+  //  **** Constructors ****
+
   /// Initial construction of a PrimClex, from a primitive Structure
   PrimClex::PrimClex(const Structure &_prim, const Logging &logging) :
     Logging(logging),
-    m_prim(_prim) {
+    m_data(new PrimClexData(_prim)) {
 
     _init();
 
     return;
   }
 
-
-  //*******************************************************************************************
   /// Construct PrimClex from existing CASM project directory
   ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
   PrimClex::PrimClex(const fs::path &_root, const Logging &logging):
     Logging(logging),
-    m_dir(_root),
-    m_settings(_root),
-    m_prim(read_prim(m_dir.prim())) {
+    m_data(new PrimClexData(_root)) {
 
     _init();
 
   }
+
+  /// Necessary for "pointer to implementation"
+  PrimClex::~PrimClex() {}
 
   /// Initialization routines
   ///  - If !root.empty(), read all saved data to generate all Supercells and Configurations, etc.
@@ -46,11 +95,11 @@ namespace CASM {
     log() << "from: " << dir().root_dir() << "\n" << std::endl;
 
     auto struc_mol_name = prim().struc_molecule_name();
-    m_vacancy_allowed = false;
+    m_data->vacancy_allowed = false;
     for(int i = 0; i < struc_mol_name.size(); ++i) {
       if(is_vacancy(struc_mol_name[i])) {
-        m_vacancy_allowed = true;
-        m_vacancy_index = i;
+        m_data->vacancy_allowed = true;
+        m_data->vacancy_index = i;
       }
     }
 
@@ -87,17 +136,17 @@ namespace CASM {
 
     if(read_settings) {
       try {
-        m_settings = ProjectSettings(dir().root_dir(), *this);
+        m_data->settings = ProjectSettings(dir().root_dir(), *this);
       }
       catch(std::exception &e) {
         err_log().error("reading project_settings.json");
-        err_log() << "file: " << m_dir.project_settings() << "\n" << std::endl;
+        err_log() << "file: " << m_data->dir.project_settings() << "\n" << std::endl;
       }
     }
 
     if(read_composition) {
-      m_has_composition_axes = false;
-      auto comp_axes = m_dir.composition_axes();
+      m_data->has_composition_axes = false;
+      auto comp_axes = m_data->dir.composition_axes();
 
       try {
         if(fs::is_regular_file(comp_axes)) {
@@ -106,8 +155,8 @@ namespace CASM {
           CompositionAxes opt(comp_axes);
 
           if(opt.has_current_axes) {
-            m_has_composition_axes = true;
-            m_comp_converter = opt.curr;
+            m_data->has_composition_axes = true;
+            m_data->comp_converter = opt.curr;
           }
         }
       }
@@ -120,13 +169,13 @@ namespace CASM {
     if(read_chem_ref) {
 
       // read chemical reference
-      m_chem_ref.reset();
-      auto chem_ref_path = m_dir.chemical_reference(m_settings.default_clex().calctype, m_settings.default_clex().ref);
+      m_data->chem_ref.reset();
+      auto chem_ref_path = m_data->dir.chemical_reference(m_data->settings.default_clex().calctype, m_data->settings.default_clex().ref);
 
       try {
         if(fs::is_regular_file(chem_ref_path)) {
           log() << "read: " << chem_ref_path << "\n";
-          m_chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim(), settings().lin_alg_tol()));
+          m_data->chem_ref = notstd::make_cloneable<ChemicalReference>(read_chemical_reference(chem_ref_path, prim(), settings().lin_alg_tol()));
         }
       }
       catch(std::exception &e) {
@@ -137,96 +186,130 @@ namespace CASM {
 
     if(read_configs) {
 
-      if(!m_db_handler) {
-        m_db_handler = notstd::make_unique<DB::DatabaseHandler>(*this);
+      if(!m_data->db_handler) {
+        m_data->db_handler = notstd::make_unique<DB::DatabaseHandler>(*this);
       }
       else {
         // lazy initialization means we just need to close, and the db will be
         // re-opened when needed
-        m_db_handler->close();
+        m_data->db_handler->close();
       }
     }
 
     if(clear_clex) {
-      m_nlist.reset();
-      m_clex_basis.clear();
-      m_clexulator.clear();
-      m_eci.clear();
+      m_data->nlist.reset();
+      m_data->clex_basis.clear();
+      m_data->clexulator.clear();
+      m_data->eci.clear();
       log() << "refresh cluster expansions\n";
     }
 
     log() << std::endl;
   }
 
+  const DirectoryStructure &PrimClex::dir() const {
+    return m_data->dir;
+  }
+
+  ProjectSettings &PrimClex::settings() {
+    return m_data->settings;
+  }
+
+  const ProjectSettings &PrimClex::settings() const {
+    return m_data->settings;
+  }
+
+  /// \brief Get the crystallography_tol
+  double PrimClex::crystallography_tol() const {
+    return settings().crystallography_tol();
+  }
 
   // ** Composition accessors **
 
-  //*******************************************************************************************
   /// const Access CompositionConverter object
   bool PrimClex::has_composition_axes() const {
-    return m_has_composition_axes;
+    return m_data->has_composition_axes;
   }
 
-  //*******************************************************************************************
   /// const Access CompositionConverter object
   const CompositionConverter &PrimClex::composition_axes() const {
-    return m_comp_converter;
+    return m_data->comp_converter;
   }
 
   // ** Chemical reference **
 
-  //*******************************************************************************************
   /// check if ChemicalReference object initialized
   bool PrimClex::has_chemical_reference() const {
-    return static_cast<bool>(m_chem_ref);
+    return static_cast<bool>(m_data->chem_ref);
   }
 
-  //*******************************************************************************************
   /// const Access ChemicalReference object
   const ChemicalReference &PrimClex::chemical_reference() const {
-    return *m_chem_ref;
+    return *m_data->chem_ref;
   }
 
 
   // ** Prim and Orbitree accessors **
 
-  //*******************************************************************************************
   /// const Access to primitive Structure
   const Structure &PrimClex::prim() const {
-    return m_prim;
+    return m_data->prim;
   }
-
-  //*******************************************************************************************
 
   PrimNeighborList &PrimClex::nlist() const {
 
     // lazy neighbor list generation
-    if(!m_nlist) {
+    if(!m_data->nlist) {
 
       // construct nlist
-      m_nlist = notstd::make_cloneable<PrimNeighborList>(
-                  settings().nlist_weight_matrix(),
-                  settings().nlist_sublat_indices().begin(),
-                  settings().nlist_sublat_indices().end()
-                );
+      m_data->nlist = notstd::make_cloneable<PrimNeighborList>(
+                        settings().nlist_weight_matrix(),
+                        settings().nlist_sublat_indices().begin(),
+                        settings().nlist_sublat_indices().end()
+                      );
     }
 
-    return *m_nlist;
+    return *m_data->nlist;
   }
 
-  //*******************************************************************************************
   /// returns true if vacancy are an allowed species
   bool PrimClex::vacancy_allowed() const {
-    return m_vacancy_allowed;
+    return m_data->vacancy_allowed;
   }
 
-  //*******************************************************************************************
   /// returns the index of vacancies in composition vectors
   Index PrimClex::vacancy_index() const {
-    return m_vacancy_index;
+    return m_data->vacancy_index;
   }
 
-  //*******************************************************************************************
+  template<typename T>
+  DB::Database<T> &PrimClex::db() const {
+    return m_data->db_handler->template db<T>();
+  }
+  template DB::Database<Supercell> &PrimClex::db() const;
+  template DB::Database<Configuration> &PrimClex::db() const;
+
+  template<typename T>
+  const DB::Database<T> &PrimClex::const_db() const {
+    return m_data->db_handler->template const_db<T>();
+  }
+  template const DB::Database<Supercell> &PrimClex::const_db() const;
+  template const DB::Database<Configuration> &PrimClex::const_db() const;
+
+  template<typename T>
+  DB::Database<T> &PrimClex::db(std::string db_name) const {
+    return m_data->db_handler->template db<T>(db_name);
+  }
+  template DB::Database<Supercell> &PrimClex::db(std::string db_name) const;
+  template DB::Database<Configuration> &PrimClex::db(std::string db_name) const;
+
+  template<typename T>
+  const DB::Database<T> &PrimClex::const_db(std::string db_name) const {
+    return m_data->db_handler->template const_db<T>(db_name);
+  }
+  template const DB::Database<Supercell> &PrimClex::const_db(std::string db_name) const;
+  template const DB::Database<Configuration> &PrimClex::const_db(std::string db_name) const;
+
   bool PrimClex::has_orbits(const ClexDescription &key) const {
     if(!fs::exists(dir().clust(key.bset))) {
       return false;
@@ -234,11 +317,10 @@ namespace CASM {
     return true;
   }
 
-  //*******************************************************************************************
   /// const Access to global orbitree
   bool PrimClex::has_clex_basis(const ClexDescription &key) const {
-    auto it = m_clex_basis.find(key);
-    if(it == m_clex_basis.end()) {
+    auto it = m_data->clex_basis.find(key);
+    if(it == m_data->clex_basis.end()) {
       if(!fs::exists(dir().clust(key.bset))) {
         return false;
       }
@@ -247,15 +329,13 @@ namespace CASM {
 
   };
 
-  //*******************************************************************************************
-
   /// \brief Get iterators over the range of orbits
   const ClexBasis &PrimClex::clex_basis(const ClexDescription &key) const {
 
-    auto it = m_clex_basis.find(key);
-    if(it == m_clex_basis.end()) {
+    auto it = m_data->clex_basis.find(key);
+    if(it == m_data->clex_basis.end()) {
 
-      it = m_clex_basis.insert(std::make_pair(key, ClexBasis(prim()))).first;
+      it = m_data->clex_basis.insert(std::make_pair(key, ClexBasis(prim()))).first;
 
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
 
@@ -280,11 +360,9 @@ namespace CASM {
 
   }
 
-  //*******************************************************************************************
-
   bool PrimClex::has_clexulator(const ClexDescription &key) const {
-    auto it = m_clexulator.find(key);
-    if(it == m_clexulator.end()) {
+    auto it = m_data->clexulator.find(key);
+    if(it == m_data->clexulator.end()) {
       if(!fs::exists(dir().clexulator_src(settings().name(), key.bset))) {
         return false;
       }
@@ -292,19 +370,17 @@ namespace CASM {
     return true;
   }
 
-  //*******************************************************************************************
-
   Clexulator PrimClex::clexulator(const ClexDescription &key) const {
 
-    auto it = m_clexulator.find(key);
-    if(it == m_clexulator.end()) {
+    auto it = m_data->clexulator.find(key);
+    if(it == m_data->clexulator.end()) {
 
       if(!fs::exists(dir().clexulator_src(settings().name(), key.bset))) {
         throw std::runtime_error(
           std::string("Error loading clexulator ") + key.bset + ". No basis functions exist.");
       }
 
-      it = m_clexulator.insert(
+      it = m_data->clexulator.insert(
              std::make_pair(key, Clexulator(settings().name() + "_Clexulator",
                                             dir().clexulator_dir(key.bset),
                                             nlist(),
@@ -315,23 +391,19 @@ namespace CASM {
     return it->second;
   }
 
-  //*******************************************************************************************
-
   bool PrimClex::has_eci(const ClexDescription &key) const {
 
-    auto it = m_eci.find(key);
-    if(it == m_eci.end()) {
+    auto it = m_data->eci.find(key);
+    if(it == m_data->eci.end()) {
       return fs::exists(dir().eci(key.property, key.calctype, key.ref, key.bset, key.eci));
     }
     return true;
   }
 
-  //*******************************************************************************************
-
   const ECIContainer &PrimClex::eci(const ClexDescription &key) const {
 
-    auto it = m_eci.find(key);
-    if(it == m_eci.end()) {
+    auto it = m_data->eci.find(key);
+    if(it == m_data->eci.end()) {
       fs::path eci_path = dir().eci(key.property, key.calctype, key.ref, key.bset, key.eci);
       if(!fs::exists(eci_path)) {
         throw std::runtime_error(
@@ -339,7 +411,7 @@ namespace CASM {
           + "  Expected at: " + eci_path.string());
       }
 
-      it = m_eci.insert(std::make_pair(key, read_eci(eci_path))).first;
+      it = m_data->eci.insert(std::make_pair(key, read_eci(eci_path))).first;
     }
     return it->second;
   }

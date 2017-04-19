@@ -1,11 +1,7 @@
-#include <cstring>
-#include <tuple>
-
 #include "casm/app/casm_functions.hh"
-#include "casm/crystallography/jsonStruc.hh"
-#include "casm/clex/ConfigMapping.hh"
+#include "casm/app/DirectoryStructure.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/casm_io/VaspIO.hh"
+#include "casm/clex/Configuration.hh"
 #include "casm/database/Import.hh"
 
 #include "casm/completer/Handlers.hh"
@@ -137,12 +133,12 @@ namespace CASM {
       return ERR_NO_PROJ;
     }
 
-    std::unique_ptr<Primclex> uniq_primclex;
+    std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
 
     std::vector<fs::path> pos_paths;
-    auto res = construct_pos_paths(primclex, import_opt, std::back_inserter(pos_paths));
+    auto res = DB::Import<Configuration>::construct_pos_paths(primclex, import_opt, std::back_inserter(pos_paths));
     if(res.second) {
       return res.second;
     }
@@ -156,11 +152,11 @@ namespace CASM {
     }
 
     std::unique_ptr<ImporterMap> importers = make_interface_map<Completer::ImportOption>();
-    importers->insert(ImportInterface<Configuration>());
+    importers->insert(DB::ImportInterface<Configuration>());
 
     auto it = importers->find(import_opt.configtype());
     if(it != importers->end()) {
-      return it->run(*primclex, input, enum_opt);
+      return it->run(primclex, input, import_opt);
     }
     else {
       args.err_log << "No match found for --type " << import_opt.configtype() << std::endl;

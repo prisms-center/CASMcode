@@ -1,6 +1,9 @@
 #include <cstring>
 
 #include "casm/app/casm_functions.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/EnumeratorHandler.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"

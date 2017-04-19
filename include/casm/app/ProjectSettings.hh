@@ -4,28 +4,16 @@
 #include <string>
 #include <vector>
 
-#include "casm/casm_io/SafeOfstream.hh"
-#include "casm/system/RuntimeLibrary.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/app/EnumeratorHandler.hh"
-#include "casm/app/QueryHandler.hh"
-
-#include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/casm_io/json_io/container.hh"
+#include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
 
   class Configuration;
-
-  template <bool IsConst>
-  class ConfigSelection;
-  typedef ConfigSelection<true> ConstConfigSelection;
-
-  namespace ConfigIO {
-    class Selected;
-  }
+  class jsonParser;
+  class EnumeratorHandler;
+  template<typename T> class QueryHandler;
 
   /** \defgroup Project
    *
@@ -109,6 +97,8 @@ namespace CASM {
     ///
     explicit ProjectSettings(fs::path root, const Logging &logging = Logging());
 
+    ~ProjectSettings();
+
 
     /// \brief Get project name
     std::string name() const;
@@ -183,47 +173,25 @@ namespace CASM {
 
     // ** Enumerators **
 
-    EnumeratorHandler &enumerator_handler() {
-      if(!m_enumerator_handler) {
-        m_enumerator_handler = notstd::make_cloneable<EnumeratorHandler>(*this);
-      }
-      return *m_enumerator_handler;
-    }
+    EnumeratorHandler &enumerator_handler();
 
-    const EnumeratorHandler &enumerator_handler() const {
-      return const_cast<ProjectSettings &>(*this).enumerator_handler();
-    }
+    const EnumeratorHandler &enumerator_handler() const;
+
 
     // ** Database **
 
-    void set_db_name(std::string _db_name) {
-      m_db_name = _db_name;
-    }
+    void set_db_name(std::string _db_name);
 
-    std::string db_name() const {
-      return m_db_name;
-    }
+    std::string db_name() const;
+
 
     // ** Queries **
 
     template<typename DataObject>
-    QueryHandler<DataObject> &query_handler() {
-      auto res = m_query_handler.find(QueryTraits<DataObject>::name);
-      if(res == m_query_handler.end()) {
-        res = m_query_handler.insert(
-                std::make_pair(
-                  QueryTraits<DataObject>::name,
-                  notstd::cloneable_ptr<notstd::Cloneable>(new QueryHandler<DataObject>(*this))
-                )
-              ).first;
-      }
-      return static_cast<QueryHandler<DataObject>& >(*res->second);
-    }
+    QueryHandler<DataObject> &query_handler();
 
     template<typename DataObject>
-    const QueryHandler<DataObject> &query_handler() const {
-      return const_cast<ProjectSettings &>(*this).query_handler<DataObject>();
-    }
+    const QueryHandler<DataObject> &query_handler() const;
 
 
     // ** Clexulator names **

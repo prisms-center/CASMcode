@@ -6,8 +6,6 @@
 
 #include "casm/misc/Comparisons.hh"
 #include "casm/container/Array.hh"
-#include "casm/container/LinearAlgebra.hh"
-#include "casm/container/Counter.hh"
 
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

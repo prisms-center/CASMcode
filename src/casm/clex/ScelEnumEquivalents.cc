@@ -1,5 +1,7 @@
 #include "casm/clex/ScelEnumEquivalents.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/NeighborList.hh"
 
 namespace CASM {
 

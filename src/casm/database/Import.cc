@@ -1,3 +1,4 @@
+#include "casm/database/Import.hh"
 
 namespace CASM {
   namespace DB {
@@ -28,6 +29,10 @@ namespace CASM {
       report_dir = report_dir + "." + std::to_string(i);
       fs::create_directory(report_dir);
       return report_dir;
+    }
+
+    Database<Supercell> &ImportBase::db_supercell() const {
+      return m_primclex.db<Supercell>();
     }
 
     /// \brief Return path to properties.calc.json that will be imported

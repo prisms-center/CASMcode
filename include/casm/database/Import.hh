@@ -2,10 +2,24 @@
 #define CASM_Import
 
 #include "casm/database/PropertiesDatabase.hh"
+#include "casm/app/casm_functions.hh"
+#include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/DataFormatterTools.hh"
 
 namespace CASM {
 
+  namespace Completer {
+    class ImportOption;
+    class UpdateOption;
+    class RemoveOption;
+  }
+
+  class Supercell;
+  template<typename T> class BasicStructure;
+
   namespace DB {
+
+    template<typename T> class Selection;
 
     /// Import/update/erase configurations and data, non-templated components
     class ImportBase : public Logging {
@@ -78,12 +92,13 @@ namespace CASM {
       /// Create a new report directory to avoid overwriting existing results
       static fs::path create_report_dir(fs::path report_dir);
 
+      const PrimClex &primclex() const {
+        return m_primclex;
+      }
 
     private:
 
-      DataBase<Supercell> &db_supercell() {
-        return m_primclex.db<Supercell>();
-      }
+      Database<Supercell> &db_supercell() const;
 
       /// \brief Return path to properties.calc.json that will be imported
       ///        checking a couple possible locations relative to pos_path
@@ -166,7 +181,7 @@ namespace CASM {
       /// Insert default formatters to dictionary
       void _default_formatters(
         DataFormatterDictionary<Result> &dict,
-        std::map<std::string, ImportResult> &data_results) const;
+        std::map<std::string, Result> &data_results) const;
 
 
       // --- member variables ----------------
@@ -210,7 +225,7 @@ namespace CASM {
         bool copy_additional_files,
         bool overwrite,
         fs::path report_dir) :
-        Import(primclex, import_data, copy_additional_files, overwrite, report_dir) {}
+        ImportBase(primclex, import_data, copy_additional_files, overwrite, report_dir) {}
 
       template<typename PathIterator>
       void import(PathIterator begin, PathIterator end);
@@ -233,13 +248,9 @@ namespace CASM {
 
     private:
 
-      DataBase<ConfigType> &db_config() {
-        return m_primclex.db<ConfigType>();
-      }
+      Database<ConfigType> &db_config() const;
 
-      PropertiesDatabase &db_props() {
-        return m_primclex.db_props<ConfigType>();
-      }
+      PropertiesDatabase &db_props() const;
 
       /// \brief Path to default calctype training_data directory for config
       fs::path calc_dir(const std::string configname) const;
@@ -258,21 +269,21 @@ namespace CASM {
       /// - If 'hint' is not nullptr, use hint as 'from' config, else 'from' == 'to'
       virtual import_inserter _import(
         fs::path p,
-        DataBaseIterator<ConfigType> hint,
+        DatabaseIterator<ConfigType> hint,
         import_inserter result) = 0;
 
       /// Allow ConfigType to specialize the report formatting for 'import'
       virtual DataFormatter<Result> _import_formatter(
-        std::map<std::string, ImportResult> &data_results) const = 0;
+        std::map<std::string, Result> &data_results) const = 0;
 
       // Allow ConfigType to specialize the report formatting for 'update'
       virtual DataFormatter<Result> _update_formatter(
-        std::map<std::string, ImportResult> &data_results) const = 0;
+        std::map<std::string, Result> &data_results) const = 0;
     };
 
 
     template<typename ConfigType>
-    class Import {}
+    class Import {};
 
     /// \brief Access Import<ConfigType>::import via the API
     template<typename ConfigType>
@@ -280,17 +291,14 @@ namespace CASM {
 
     public:
 
-      std::string help() const override {
-        return Import<ConfigType>::import_help;
-      }
+      std::string help() const override;
 
-      std::string name() const override {
-        return QueryTraits<ConfigType>::short_name;
-      }
+      std::string name() const override;
 
-      int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::ImportOption &import_opt) const override {
-        return Import<ConfigType>::import(primclex, kwargs, import_opt);
-      }
+      int run(
+        const PrimClex &primclex,
+        const jsonParser &kwargs,
+        const Completer::ImportOption &import_opt) const override;
 
       std::unique_ptr<InterfaceBase<Completer::ImportOption> > clone() const {
         return std::unique_ptr<InterfaceBase<Completer::ImportOption> >(this->_clone());
@@ -309,17 +317,14 @@ namespace CASM {
 
     public:
 
-      std::string help() const override {
-        return Import<ConfigType>::update_help;
-      }
+      std::string help() const override;
 
-      std::string name() const override {
-        return QueryTraits<ConfigType>::short_name;
-      }
+      std::string name() const override;
 
-      int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &update_opt) const override {
-        return Import<ConfigType>::update(primclex, kwargs, update_opt);
-      }
+      int run(
+        const PrimClex &primclex,
+        const jsonParser &kwargs,
+        const Completer::UpdateOption &update_opt) const override;
 
       std::unique_ptr<InterfaceBase<Completer::UpdateOption> > clone() const {
         return std::unique_ptr<InterfaceBase<Completer::UpdateOption> >(this->_clone());
@@ -363,13 +368,16 @@ namespace CASM {
     };
     */
 
+  }
+
+  class ConfigMapper;
+
+  namespace DB {
 
     /// Configuration-specialized Import
     template<>
     class Import<Configuration> : public ImportT<Configuration> {
     public:
-
-      typedef ConfigMapper MapperType;
 
       /// Construct ConfigMapper from input args
       std::unique_ptr<ConfigMapper> make(
@@ -388,13 +396,13 @@ namespace CASM {
         fs::path report_dir);
 
       static const std::string import_help;
-      static int import(PrimClex &primclex, const jsonParser &kwargs, const Completer::ImportOption &import_opt);
+      static int import(const PrimClex &primclex, const jsonParser &kwargs, const Completer::ImportOption &import_opt);
 
       static const std::string update_help;
-      static int update(PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &import_opt);
+      static int update(const PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &import_opt);
 
       static const std::string remove_help;
-      static int remove(PrimClex &primclex, const jsonParser &kwargs, const Completer::RemoveOption &import_opt);
+      static int remove(const PrimClex &primclex, const jsonParser &kwargs, const Completer::RemoveOption &import_opt);
 
     private:
 
@@ -404,16 +412,16 @@ namespace CASM {
       /// \brief Specialized import method for ConfigType
       import_inserter _import(
         fs::path p,
-        DataBaseIterator<Configuration> hint,
+        DatabaseIterator<Configuration> hint,
         import_inserter result) override;
 
       /// Allow ConfigType to specialize the report formatting for 'import'
       DataFormatter<Result> _import_formatter(
-        std::map<std::string, ImportResult> &data_results) const override;
+        std::map<std::string, Result> &data_results) const override;
 
       // Allow ConfigType to specialize the report formatting for 'update'
       DataFormatter<Result> _update_formatter(
-        std::map<std::string, ImportResult> &data_results) const override;
+        std::map<std::string, Result> &data_results) const override;
 
       /// \brief Read BasicStructure<Site> to be imported
       BasicStructure<Site> _make_structure(const fs::path &p);
@@ -422,7 +430,7 @@ namespace CASM {
       bool _occupation_only() const;
 
 
-      const MapperType &m_configmapper;
+      const ConfigMapper &m_configmapper;
       std::vector<std::string> m_dof;
       bool m_primitive_only;
     };
@@ -475,12 +483,16 @@ namespace CASM {
 
   }
 
-  namespace Completer {
-    class ImportOption;
-  }
-
   typedef InterfaceBase<Completer::ImportOption> ImportInterfaceBase;
   typedef InterfaceMap<Completer::ImportOption> ImporterMap;
 
+  typedef InterfaceBase<Completer::UpdateOption> UpdateInterfaceBase;
+  typedef InterfaceMap<Completer::UpdateOption> UpdaterMap;
+
+  typedef InterfaceBase<Completer::RemoveOption> RemoveInterfaceBase;
+  typedef InterfaceMap<Completer::RemoveOption> RemoverMap;
+
 
 }
+
+#endif

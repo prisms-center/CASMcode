@@ -1,6 +1,9 @@
-#include "casm/CASM_global_definitions.hh"
 #include "casm/clex/ConfigDoF.hh"
+
+#include "casm/CASM_global_definitions.hh"
+#include "casm/casm_io/json_io/container.hh"
 #include "casm/symmetry/PermuteIterator.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"

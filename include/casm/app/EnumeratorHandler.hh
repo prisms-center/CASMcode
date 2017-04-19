@@ -4,11 +4,16 @@
 #include <map>
 #include <memory>
 
-#include "casm/container/Enumerator.hh"
-#include "casm/system/RuntimeLibrary.hh"
+#include "casm/app/casm_functions.hh"
 
 namespace CASM {
 
+  namespace Completer {
+    class EnumOption;
+  }
+
+  typedef InterfaceMap<Completer::EnumOption> EnumeratorMap;
+  class RuntimeLibrary;
   class ProjectSettings;
 
   class EnumeratorHandler {

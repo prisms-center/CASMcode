@@ -6,11 +6,15 @@
 #include "casm/external/Eigen/Dense"
 #include "casm/CASM_global_definitions.hh"
 #include "casm/container/LinearAlgebra.hh"
-#include "casm/casm_io/jsonParser.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/Site.hh"
+#include "casm/misc/Comparisons.hh"
 
 namespace CASM {
+
+  class jsonParser;
+  class Coordinate;
+  class Site;
+  class Structure;
+  class SymOp;
 
   /** \ingroup Coordinate
    *  @{
@@ -88,7 +92,7 @@ namespace CASM {
 
     UnitCellCoord(UnitCellCoord &&B) = default;
 
-    UnitCellCoord &operator=(UnitCellCoord && B) = default;
+    UnitCellCoord &operator=(UnitCellCoord &&B) = default;
 
 
     /// \brief Get unit structure reference
@@ -150,6 +154,13 @@ namespace CASM {
   /// \brief Print to json as [b, i, j, k]
   jsonParser &to_json(const UnitCellCoord &ucc_val, jsonParser &fill_json);
 
+  template<>
+  struct jsonConstructor<UnitCellCoord> {
+
+    /// \brief Read from json [b, i, j, k], using 'unit' for UnitCellCoord::unit()
+    static UnitCellCoord from_json(const jsonParser &json, const Structure &unit);
+  };
+
   /// \brief Read from json [b, i, j, k]
   void from_json(UnitCellCoord &fill_value, const jsonParser &read_json);
 
@@ -169,21 +180,6 @@ namespace CASM {
     m_unitcell(i, j, k),
     m_sublat(_sublat) {}
 
-  inline UnitCellCoord::UnitCellCoord(const UnitType &unit, const Coordinate &coord, double tol) :
-    m_unit(&unit) {
-    for(Index b = 0; b < unit.basis.size(); ++b) {
-      auto diff = coord - unit.basis[b];
-      if(is_integer(diff.const_frac(), tol)) {
-        *this = UnitCellCoord(unit, b, lround(diff.const_frac()));
-        return;
-      }
-    }
-
-    throw std::runtime_error(
-      "Error in 'UnitCellCoord(CoordType coord, const StrucType& struc, double tol)'\n"
-      "  No matching basis site found.");
-  }
-
   inline const UnitCellCoord::UnitType &UnitCellCoord::unit() const {
     return *m_unit;
   }
@@ -191,11 +187,6 @@ namespace CASM {
   /// \brief Change unit structure, keeping indices constant
   inline void UnitCellCoord::set_unit(const UnitType &_unit) {
     m_unit = &_unit;
-  }
-
-  /// \brief Get corresponding coordinate
-  inline Coordinate UnitCellCoord::coordinate() const {
-    return site();
   }
 
   inline UnitCell &UnitCellCoord::unitcell() {
@@ -264,10 +255,6 @@ namespace CASM {
     return false;
   }
 
-  inline UnitCellCoord::operator Coordinate() const {
-    return coordinate();
-  }
-
   inline bool UnitCellCoord::_eq(const UnitCellCoord &B) const {
     const auto &A = *this;
     return A.unitcell()(0) == B.unitcell()(0) &&
@@ -276,39 +263,6 @@ namespace CASM {
            A.sublat() == B.sublat();
   }
 
-
-  /// \brief Print to json as [b, i, j, k]
-  inline jsonParser &to_json(const UnitCellCoord &ucc_val, jsonParser &fill_json) {
-    fill_json.put_array();
-    fill_json.push_back(ucc_val.sublat());
-    fill_json.push_back(ucc_val.unitcell()(0));
-    fill_json.push_back(ucc_val.unitcell()(1));
-    fill_json.push_back(ucc_val.unitcell()(2));
-
-    return fill_json;
-  }
-
-  template<>
-  struct jsonConstructor<UnitCellCoord> {
-
-    /// \brief Read from json [b, i, j, k], using 'unit' for UnitCellCoord::unit()
-    static UnitCellCoord from_json(const jsonParser &json, const Structure &unit) {
-      UnitCellCoord coord(unit);
-      CASM::from_json(coord, json);
-      return coord;
-    }
-  };
-
-  /// \brief Read from json [b, i, j, k], assuming fill_value.unit() is already set
-  inline void from_json(UnitCellCoord &fill_value, const jsonParser &read_json) {
-
-    fill_value.sublat() = read_json[0].get<Index>();
-    fill_value.unitcell()(0) = read_json[1].get<Index>();
-    fill_value.unitcell()(1) = read_json[2].get<Index>();
-    fill_value.unitcell()(2) = read_json[3].get<Index>();
-
-    return;
-  }
 
   /** @} */
 }

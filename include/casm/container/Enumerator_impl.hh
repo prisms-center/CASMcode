@@ -4,6 +4,10 @@
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/container/Enumerator.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/QueryHandler.hh"
+#include "casm/database/ConfigDatabase.hh"
+#include "casm/database/ScelDatabase.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
 

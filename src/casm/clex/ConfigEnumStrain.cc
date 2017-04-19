@@ -1,5 +1,6 @@
 #include "casm/clex/ConfigEnumStrain.hh"
 #include <algorithm>
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/ConfigEnumStrain.hh"

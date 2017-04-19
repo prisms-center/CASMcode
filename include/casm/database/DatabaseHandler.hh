@@ -8,17 +8,14 @@
 #include <string>
 #include <stdexcept>
 
-#include "casm/database/Database.hh"
-#include "casm/database/ConfigDatabase.hh"
-#include "casm/database/ScelDatabase.hh"
-#include "casm/database/DiffTransDatabase.hh"
-//#include "casm/database/DiffTransConfigDatabase.hh"
-
 namespace CASM {
 
   class PrimClex;
 
   namespace DB {
+
+    class DatabaseBase;
+    template<typename T> class Database;
 
     /// \brief Provides access to all databases
     ///
@@ -36,56 +33,35 @@ namespace CASM {
       /// - Uses PrimClex.settings().db_type() to determine default database type
       DatabaseHandler(const PrimClex &_primclex);
 
-      ~DatabaseHandler() {
-        close();
-      }
+      ~DatabaseHandler();
 
       /// Access default Database<T>
       template<typename T>
-      Database<T> &db() {
-        return db<T>(m_default_db_name);
-      }
+      Database<T> &db();
 
       /// Access default Database<T>
       template<typename T>
-      const Database<T> &db() const {
-        return db<T>(m_default_db_name);
-      }
+      const Database<T> &db() const;
 
       /// Access default Database<T>
       template<typename T>
-      const Database<T> &const_db() {
-        return const_db<T>(m_default_db_name);
-      }
+      const Database<T> &const_db();
 
 
       /// Access specified Database<T>
       template<typename T>
-      Database<T> &db(std::string db_name) {
-        auto res = _find<T>(db_name);
-        return static_cast<Database<T>&>(res->second->open());
-      }
+      Database<T> &db(std::string db_name);
 
       /// Access specified Database<T>
       template<typename T>
-      const Database<T> &db(std::string db_name) const {
-        auto res = _find<T>(db_name);
-        return static_cast<Database<T>&>(res->second->open());
-      }
+      const Database<T> &db(std::string db_name) const;
 
       /// Access specified Database<T>
       template<typename T>
-      const Database<T> &const_db(std::string db_name) {
-        auto res = _find<T>(db_name);
-        return static_cast<Database<T>&>(res->second->open());
-      }
+      const Database<T> &const_db(std::string db_name);
 
       /// Close all databases
-      void close() {
-        for(auto &db : m_db) {
-          db.second->close();
-        }
-      }
+      void close();
 
     private:
 
@@ -95,24 +71,10 @@ namespace CASM {
           std::unique_ptr<DatabaseBase> > map_type;
 
       template<typename T>
-      map_type::iterator _find(std::string db_name) const {
-        auto key = std::make_pair(
-                     QueryTraits<T>::name,
-                     db_name);
-        auto res = m_db.find(key);
-        if(res == m_db.end()) {
-          _no_database_error<T>(db_name);
-        }
-        return res;
-      }
+      map_type::iterator _find(std::string db_name) const;
 
       template<typename T>
-      void _no_database_error(std::string db_name) const {
-        std::stringstream ss;
-        ss << "Value: " << QueryTraits<T>::name;
-        ss << "  Database: " << db_name;
-        throw std::runtime_error("Requested database not found: " + ss.str());
-      }
+      void _no_database_error(std::string db_name) const;
 
       const PrimClex *m_primclex;
 

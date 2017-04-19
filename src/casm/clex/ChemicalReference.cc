@@ -1,8 +1,9 @@
-#include "casm/clex/ChemicalReference.hh"
+#include "casm/clex/ChemicalReference_impl.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/CompositionConverter.hh"
+#include "casm/database/ConfigDatabase.hh"
 
 #include "casm/misc/algorithm.hh"
 
@@ -107,6 +108,163 @@ namespace CASM {
 
     }
 
+  }
+
+  /// \brief Constructor
+  ///
+  /// \param _global_ref An Eigen::VectorXd giving the intercepts of the
+  ///                    hyperplane used for the global reference
+  /// \param _supercell_ref A map of scelname to Eigen::VectorXd specializing the
+  ///                       the reference value by Supercell
+  /// \param _config_ref A map of configname to Eigen::VectorXd specializing the
+  ///                       the reference value by Configuration
+  ///
+  /// A hyperplane reference, R, maps vector species_frac, x, to output
+  /// energy_per_species, y:
+  /// - \code y = R.dot(x) \endcode
+  ///
+  /// The global reference, '_global_ref', is required, but may be specialized
+  /// to give a different R for a particular Supercell or Configuration via
+  /// optional '_supercell_ref' and '_config_ref'.
+  ///
+  ChemicalReference::ChemicalReference(
+    const Structure &prim,
+    const Eigen::VectorXd &_global_ref,
+    SpecializedRef _supercell_ref,
+    SpecializedRef _config_ref) :
+    HyperPlaneReferenceBase(Name, Desc, _global_ref, ConfigIO::SpeciesFrac(), _supercell_ref, _config_ref),
+    m_prim(&prim) {}
+
+  /// \brief Clone
+  std::unique_ptr<ChemicalReference> ChemicalReference::clone() const {
+    return notstd::make_unique<ChemicalReference>(*this->_clone());
+  }
+
+  /// \brief Get primitive Structure
+  const Structure &ChemicalReference::prim() const {
+    return *m_prim;
+  }
+
+  // --- Global reference ---
+
+  /// \brief const Access the global reference
+  ///
+  const Eigen::VectorXd &ChemicalReference::global() const {
+    return HyperPlaneReferenceBase::global();
+  }
+
+  /// \brief Set global hyperplane reference
+  ///
+  /// - Erases associated RefStateVec
+  void ChemicalReference::set_global(const Eigen::VectorXd &ref) {
+    _global() = ref;
+    m_global_ref_vec.clear();
+  }
+
+  /// \brief const Access a map of configname to RefStateVec for Supercell
+  ///        specialized references
+  ///
+  /// - There may not be global reference states (maybe only the hyperplane is
+  ///   known), in which case this is 'empty' / has 'size() == 0'
+  const ChemicalReference::RefStateVec &ChemicalReference::global_ref_states() const {
+    return m_global_ref_vec;
+  }
+
+
+  // --- Supercell specialized references ---
+
+  /// \brief const Access a map of scelname to reference for Supercell
+  ///        specialized references
+  ///
+  const std::map<std::string, Eigen::VectorXd> &ChemicalReference::supercell() const {
+    return HyperPlaneReferenceBase::supercell();
+  }
+
+  /// \brief Set hyperplane reference specialized for a Supercell
+  ///
+  /// - Erases associated RefStateVec
+  void ChemicalReference::set_supercell(const std::string &scelname, const Eigen::VectorXd &ref) {
+    _supercell()[scelname] = ref;
+    m_supercell_ref_map.erase(scelname);
+  }
+
+  /// \brief Erase hyperplane reference specialized for a Supercell
+  ChemicalReference::size_type ChemicalReference::erase_supercell(const std::string &scelname) {
+    auto result = _supercell().erase(scelname);
+    m_supercell_ref_map.erase(scelname);
+    return result;
+  }
+
+  /// \brief const Access a map of configname to RefStateVec for Supercell
+  ///        specialized references
+  ///
+  /// - A configuration with a specialized reference need not have an associated
+  ///   RefStateVec
+  const ChemicalReference::RefStateMap &ChemicalReference::supercell_ref_states() const {
+    return m_supercell_ref_map;
+  }
+
+
+  // --- Configuration specialized references ---
+
+
+  /// \brief const Access a map of configname to reference for Configuration
+  ///        specialized references
+  ///
+  const std::map<std::string, Eigen::VectorXd> &ChemicalReference::config() const {
+    return HyperPlaneReferenceBase::config();
+  }
+
+  /// \brief Set hyperplane reference specialized for a Configuration
+  ///
+  /// - Erases associated RefStateVec
+  void ChemicalReference::set_config(const std::string &configname, const Eigen::VectorXd &ref) {
+    _config()[configname] = ref;
+    m_config_ref_map.erase(configname);
+  }
+
+  /// \brief Erase hyperplane reference specialized for a Configuration
+  ChemicalReference::size_type ChemicalReference::erase_config(const std::string &configname) {
+    auto result = _config().erase(configname);
+    m_config_ref_map.erase(configname);
+    return result;
+  }
+
+  /// \brief const Access a map of configname to RefStateVec for Configuration
+  ///        specialized references
+  ///
+  /// - A configuration with a specialized reference need not have an associated
+  ///   RefStateVec
+  const ChemicalReference::RefStateMap &ChemicalReference::config_ref_states() const {
+    return m_config_ref_map;
+  }
+
+  /// \brief Access the global reference
+  ///
+  Eigen::VectorXd &ChemicalReference::_global() {
+    return HyperPlaneReferenceBase::global();
+  }
+
+  /// \brief const Access a map of scelname to reference for Supercell
+  ///        specialized references
+  ///
+  std::map<std::string, Eigen::VectorXd> &ChemicalReference::_supercell() {
+    return HyperPlaneReferenceBase::supercell();
+  }
+
+  /// \brief const Access a map of configname to reference for Configuration
+  ///        specialized references
+  ///
+  std::map<std::string, Eigen::VectorXd> &ChemicalReference::_config() {
+    return HyperPlaneReferenceBase::config();
+  }
+
+
+  // --- For use in hyperplane() ------
+
+  /// \brief Clone
+  ChemicalReference *ChemicalReference::_clone() const {
+    return new ChemicalReference(*this);
   }
 
   /// \brief Convert a set of ChemicalReferenceState to a hyperplane, including checks
@@ -296,4 +454,146 @@ namespace CASM {
     return ChemicalReference(primclex.prim(), ref_states.begin(), ref_states.end(), lin_alg_tol);
   }
 
+
+  // --- ChemicalReferencePrinter implementations -----------
+
+  ChemicalReferencePrinter::ChemicalReferencePrinter(
+    std::ostream &_stream,
+    const ChemicalReference &_ref,
+    int _indent,
+    int _indent_incr) :
+    stream(_stream),
+    indent(_indent),
+    indent_incr(_indent_incr),
+    ref(_ref),
+    struc_mol_name(ref.prim().struc_molecule_name()) {}
+
+  void ChemicalReferencePrinter::incr() {
+    indent += indent_incr;
+  }
+
+  void ChemicalReferencePrinter::decr() {
+    indent -= indent_incr;
+  }
+
+  // print regular string
+  void ChemicalReferencePrinter::print(const std::string &str) {
+    stream << std::string(indent, ' ') << str << "\n";
+  }
+
+  // print plane as '<indent>mol_i(1): energy_per_species\n', for each molecule
+  void ChemicalReferencePrinter::print(const Eigen::VectorXd &plane) {
+    for(int i = 0; i < plane.size(); ++i) {
+      if(!is_vacancy(struc_mol_name[i])) {
+        stream << std::string(indent, ' ') << struc_mol_name[i] << "(1): " << plane(i) << "\n";
+      }
+    }
+  }
+
+  // print plane as:
+  // \code
+  // <indent>mol_i(N_i)mol_j(N_j)...: energy_per_species //for each ref state
+  // ...
+  // \endcode
+  void ChemicalReferencePrinter::print(const std::vector<ChemicalReferenceState> &ref_state_vec) {
+    for(auto it = ref_state_vec.begin(); it != ref_state_vec.end(); ++it) {
+
+      const ChemicalReferenceState &ref_state = *it;
+
+      stream << std::string(indent, ' ');
+      for(auto it = ref_state.species_num.begin(); it != ref_state.species_num.end(); ++it) {
+        double num = it->second;
+        if(almost_zero(num, 1e-14)) {
+          continue;
+        }
+
+        stream << it->first << "(";
+        // print integer if ~integer
+        if(almost_equal(std::round(num), num, 1e-14)) {
+          stream << std::lround(num);
+        }
+        else {
+          stream << num;
+        }
+        stream << ")";
+
+      }
+      stream << ": " << ref_state.energy_per_species << "\n";
+    }
+  }
+
+  // print supercell/config specific plane as:
+  // \code
+  // <indent>name:
+  // <indent>  mol_i: energy_per_species // for each molecule
+  // \endcode
+  void ChemicalReferencePrinter::print(const std::pair<std::string, Eigen::VectorXd> &_pair) {
+    stream << std::string(indent, ' ') << _pair.first << ":\n";
+    incr();
+    print(_pair.second);
+    decr();
+  }
+
+  // print supercell/config specific ref states as:
+  // \code
+  // <indent>name:
+  // <indent>  mol_i(N_i)mol_j(N_j)...: energy_per_species // for each ref state
+  // \endcode
+  void ChemicalReferencePrinter::print(const std::pair<std::string, std::vector<ChemicalReferenceState> > &_pair) {
+    stream << std::string(indent, ' ') << _pair.first << ":\n";
+    incr();
+    print(_pair.second);
+    decr();
+  }
+
+  void ChemicalReferencePrinter::print_global() {
+    print("Global chemical reference:");
+    incr();
+    (ref.global_ref_states().empty()) ? print(ref.global()) : print(ref.global_ref_states());
+    decr();
+  }
+
+  void ChemicalReferencePrinter::print_supercell() {
+    if(ref.supercell().size()) {
+      print("Supercell specific chemical references:");
+      for(auto it = ref.supercell().begin(); it != ref.supercell().end(); ++it) {
+        print_supercell(it->first);
+      }
+    }
+  }
+
+  void ChemicalReferencePrinter::print_supercell(const std::string &name) {
+    auto it = ref.supercell().find(name);
+    auto res = ref.supercell_ref_states().find(name);
+    auto ref_state_end = ref.supercell_ref_states().end();
+    (res != ref_state_end) ? print(*res) : print(*it);
+  }
+
+  void ChemicalReferencePrinter::print_config() {
+    if(ref.config().size()) {
+      print("Configuration specific chemical references:");
+      for(auto it = ref.config().begin(); it != ref.config().end(); ++it) {
+        print_config(it->first);
+      }
+    }
+  }
+
+  void ChemicalReferencePrinter::print_config(const std::string &name) {
+    auto it = ref.config().find(name);
+    auto res = ref.config_ref_states().find(name);
+    auto ref_state_end = ref.config_ref_states().end();
+    (res != ref_state_end) ? print(*res) : print(*it);
+  }
+
+  void ChemicalReferencePrinter::print_all() {
+    print_global();
+    if(ref.supercell().size()) {
+      print("");
+      print_supercell();
+    }
+    if(ref.config().size()) {
+      print("");
+      print_config();
+    }
+  }
 }

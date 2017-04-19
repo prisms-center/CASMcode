@@ -4,6 +4,7 @@
 #include <string>
 #include "casm/external/boost.hh"
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/database/Database.hh"
 
 namespace CASM {
 
@@ -91,7 +92,6 @@ namespace CASM {
   namespace DB {
 
 
-    template<typename ValueType>
     class PropertiesDatabaseIterator;
 
     /// Dereferencing PropertiesDatabaseIteratorBase only provides const references, whether
@@ -253,9 +253,11 @@ namespace CASM {
       ///        to a particular config
       class Compare {
 
+      public:
+
         Compare(const PropertiesDatabase *_map, std::string _to_configname, const ScoreMappedProperties &_score) :
           m_map(_map),
-          m_to(_to_configname)
+          m_to(_to_configname),
           m_score(_score) {}
 
         /// \brief Compare mapped properties 'from_A' and 'from_B', preferring self-mapped results
@@ -265,6 +267,7 @@ namespace CASM {
           return m_score;
         }
 
+      private:
         const PropertiesDatabase *m_map;
         std::string m_to;
         ScoreMappedProperties m_score;
@@ -272,7 +275,7 @@ namespace CASM {
 
       typedef MappedProperties value_type;
       typedef PropertiesDatabaseIterator iterator;
-      typedef size_type;
+      typedef Index size_type;
 
       PropertiesDatabase(const PrimClex &_primclex) :
         DatabaseBase(_primclex) {}
@@ -328,7 +331,7 @@ namespace CASM {
 
       /// \brief Score mapping 'from'->'to'
       double score(const MappedProperties &value) const {
-        return score_method(value.to)(value.mapped);
+        return score_method(value.to)(value);
       }
 
       /// \brief Insert data
@@ -351,10 +354,10 @@ namespace CASM {
     private:
 
       /// \brief Private _insert MappedProperties, without modifying 'relaxed_from'
-      virtual std::pair<iterator, bool> _insert(const MappedProperties &value) = 0
+      virtual std::pair<iterator, bool> _insert(const MappedProperties &value) = 0;
 
-                                                                                 /// \brief Private _erase MappedProperties, without modifying 'relaxed_from'
-                                                                                 virtual iterator _erase(iterator pos) = 0;
+      /// \brief Private _erase MappedProperties, without modifying 'relaxed_from'
+      virtual iterator _erase(iterator pos) = 0;
 
       /// \brief Set sorted container of names of all configurations that relaxed 'from'->'to'
       virtual void _set_relaxed_from_all(

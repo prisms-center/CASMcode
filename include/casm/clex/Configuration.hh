@@ -526,7 +526,7 @@ namespace CASM {
     }
 
     friend Named<Configuration>;
-    std::string generate_name() const;
+    std::string _generate_name() const;
 
     friend Comparisons<Configuration>;
 

@@ -1,6 +1,7 @@
 clexincludedir=$(includedir)/casm/clex
 clexinclude_HEADERS=./include/casm/clex/ChemicalReference.hh\
-					./include/casm/clex/Clex.hh\
+					./include/casm/clex/ChemicalReference_impl.hh\
+          ./include/casm/clex/Clex.hh\
 					./include/casm/clex/ClexBasis.hh\
           ./include/casm/clex/Clexulator.hh\
 					./include/casm/clex/CompositionConverter.hh\
@@ -26,6 +27,7 @@ clexinclude_HEADERS=./include/casm/clex/ChemicalReference.hh\
 					./include/casm/clex/Norm.hh\
 					./include/casm/clex/ParamComposition.hh\
 					./include/casm/clex/PrimClex.hh\
+					./include/casm/clex/PrimClex_impl.hh\
 					./include/casm/clex/Properties.hh\
 					./include/casm/clex/Reference.hh\
 					./include/casm/clex/ScelEnum.hh\

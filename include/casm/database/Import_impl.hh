@@ -1,4 +1,5 @@
 #include "casm/database/Import.hh"
+#include "casm/app/DirectoryStructure.hh"
 
 namespace CASM {
   namespace DB {
@@ -285,6 +286,16 @@ namespace CASM {
       erase(selection);
     }
 
+    template<typename _ConfigType>
+    Database<ConfigType> &ImportT<_ConfigType>::db_config() const {
+      return primclex().template db<ConfigType>();
+    }
+
+    template<typename _ConfigType>
+    PropertiesDatabase &ImportT<_ConfigType>::db_props() const {
+      return primclex().template db_props<ConfigType>();
+    }
+
     /// \brief Path to default calctype training_data directory for config
     template<typename _ConfigType>
     fs::path ImportT<_ConfigType>::calc_dir(const std::string configname) const {
@@ -397,6 +408,45 @@ namespace CASM {
 
     }
 
+
+    template<typename ConfigType>
+    std::string ImportInterface<ConfigType>::help() const {
+      return Import<ConfigType>::import_help;
+    }
+
+    template<typename ConfigType>
+    std::string ImportInterface<ConfigType>::name() const {
+      return QueryTraits<ConfigType>::short_name;
+    }
+
+    template<typename ConfigType>
+    int ImportInterface<ConfigType>::run(
+      const PrimClex &primclex,
+      const jsonParser &kwargs,
+      const Completer::ImportOption &import_opt) const {
+
+      return Import<ConfigType>::import(primclex, kwargs, import_opt);
+    }
+
+
+    template<typename ConfigType>
+    std::string UpdateInterface<ConfigType>::help() const {
+      return Import<ConfigType>::update_help;
+    }
+
+    template<typename ConfigType>
+    std::string UpdateInterface<ConfigType>::name() const {
+      return QueryTraits<ConfigType>::short_name;
+    }
+
+    template<typename ConfigType>
+    int UpdateInterface<ConfigType>::run(
+      const PrimClex &primclex,
+      const jsonParser &kwargs,
+      const Completer::UpdateOption &update_opt) const {
+
+      return Import<ConfigType>::update(primclex, kwargs, update_opt);
+    }
 
   }
 }

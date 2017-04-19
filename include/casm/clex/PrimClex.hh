@@ -1,31 +1,27 @@
-#ifndef PRIMCLEX_HH
-#define PRIMCLEX_HH
+#ifndef CASM_PrimClex
+#define CASM_PrimClex
 
+#include "casm/CASM_global_definitions.hh"
 #include "casm/external/boost.hh"
-
-#include "casm/misc/cloneable_ptr.hh"
 #include "casm/casm_io/Log.hh"
-
-#include "casm/crystallography/Structure.hh"
-#include "casm/clex/CompositionConverter.hh"
-#include "casm/clex/Clexulator.hh"
-#include "casm/clex/ChemicalReference.hh"
-#include "casm/clex/NeighborList.hh"
-#include "casm/clex/ClexBasis.hh"
-
-#include "casm/app/DirectoryStructure.hh"
-#include "casm/app/ProjectSettings.hh"
-#include "casm/app/QueryHandler.hh"
-
-#include "casm/database/DatabaseHandler.hh"
 
 /// Cluster expansion class
 namespace CASM {
 
+  class DirectoryStructure;
+  class ProjectSettings;
+  class ClexDescription;
+  class CompositionConverter;
+  class ChemicalReference;
+  class Structure;
+  class PrimNeighborList;
+  class ClexBasis;
+  class Clexulator;
   class ECIContainer;
 
-  template<typename T, typename U> class ConfigIterator;
-
+  namespace DB {
+    template<typename T> class Database;
+  }
 
   /** \defgroup Clex
    *
@@ -53,9 +49,6 @@ namespace CASM {
 
   public:
 
-    typedef ConfigIterator<Configuration, PrimClex> config_iterator;
-    typedef ConfigIterator<const Configuration, const PrimClex> config_const_iterator;
-
     // **** Constructors ****
 
     /// Initial construction of a PrimClex, from a primitive Structure
@@ -64,6 +57,8 @@ namespace CASM {
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
     explicit PrimClex(const fs::path &_root, const Logging &logging = Logging());
+
+    ~PrimClex();
 
     /// Reload PrimClex data from settings
     void refresh(bool read_settings = false,
@@ -74,22 +69,14 @@ namespace CASM {
 
     // ** Directory path and settings accessors **
 
-    const DirectoryStructure &dir() const {
-      return m_dir;
-    }
+    const DirectoryStructure &dir() const;
 
-    ProjectSettings &settings() {
-      return m_settings;
-    }
+    ProjectSettings &settings();
 
-    const ProjectSettings &settings() const {
-      return m_settings;
-    }
+    const ProjectSettings &settings() const;
 
     /// \brief Get the crystallography_tol
-    double crystallography_tol() const {
-      return settings().crystallography_tol();
-    }
+    double crystallography_tol() const;
 
 
     // ** Composition accessors **
@@ -128,25 +115,17 @@ namespace CASM {
     // ** Supercell, Configuration, etc. databases **
 
     template<typename T>
-    DB::Database<T> &db() const {
-      return m_db_handler->db<T>();
-    }
+    DB::Database<T> &db() const;
 
     template<typename T>
-    const DB::Database<T> &const_db() const {
-      return m_db_handler->const_db<T>();
-    }
+    const DB::Database<T> &const_db() const;
 
 
     template<typename T>
-    DB::Database<T> &db(std::string db_name) const {
-      return m_db_handler->db<T>(db_name);
-    }
+    DB::Database<T> &db(std::string db_name) const;
 
     template<typename T>
-    const DB::Database<T> &const_db(std::string db_name) const {
-      return m_db_handler->const_db<T>(db_name);
-    }
+    const DB::Database<T> &const_db(std::string db_name) const;
 
 
     bool has_orbits(const ClexDescription &key) const;
@@ -166,53 +145,16 @@ namespace CASM {
 
   private:
 
+    /// To avoid excessive includes, use "pointer to data"
+    /// - PrimClexData is defined in PrimClex.cc
+    struct PrimClexData;
+
     /// Initialization routines
     void _init();
 
-    DirectoryStructure m_dir;
-    ProjectSettings m_settings;
-
-    Structure m_prim;
-    bool m_vacancy_allowed;
-    Index m_vacancy_index;
-
-    std::unique_ptr<DB::DatabaseHandler> m_db_handler;
-
-    /// CompositionConverter specifies parameteric composition axes and converts between
-    ///   parametric composition and mol composition
-    bool m_has_composition_axes = false;
-    CompositionConverter m_comp_converter;
-
-    /// ChemicalReference specifies a reference for formation energies, chemical
-    /// potentials, etc.
-    notstd::cloneable_ptr<ChemicalReference> m_chem_ref;
-
-    /// Stores the neighboring UnitCell and which sublattices to include in neighbor lists
-    /// - mutable for lazy construction
-    mutable notstd::cloneable_ptr<PrimNeighborList> m_nlist;
-
-    mutable std::map<ClexDescription, ClexBasis> m_clex_basis;
-    mutable std::map<ClexDescription, Clexulator> m_clexulator;
-    mutable std::map<ClexDescription, ECIContainer> m_eci;
+    std::unique_ptr<PrimClexData> m_data;
 
   };
-
-  //*******************************************************************************************
-  template<typename OrbitOutputIterator, typename SymCompareType>
-  OrbitOutputIterator PrimClex::orbits(
-    const ClexDescription &key,
-    OrbitOutputIterator result,
-    const SymCompareType &sym_compare) const {
-
-    return read_clust(
-             result,
-             jsonParser(dir().clust(key.bset)),
-             prim(),
-             prim().factor_group(),
-             sym_compare,
-             settings().crystallography_tol());
-  }
-
 
 }
 #endif

@@ -1,13 +1,12 @@
-#ifndef SUPERCELL_HH
-#define SUPERCELL_HH
+#ifndef CASM_Supercell
+#define CASM_Supercell
 
 #include "casm/misc/cloneable_ptr.hh"
+#include "casm/misc/Comparisons.hh"
+#include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/PrimGrid.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/clex/Configuration.hh"
-#include "casm/clex/ConfigDoF.hh"
-#include "casm/clex/NeighborList.hh"
+#include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymGroupRepID.hh"
 #include "casm/database/Named.hh"
 
 namespace CASM {
@@ -17,22 +16,26 @@ namespace CASM {
   class PermuteIterator;
   class PrimClex;
   class Clexulator;
-
-  struct ConfigMapCompare {
-
-    bool operator()(const Configuration *A, const Configuration *B) const {
-      return *A < *B;
-    }
-
-  };
+  class Configuration;
+  template<typename T> class BasicStructure;
+  class Site;
+  class SuperNeighborList;
+  class Structure;
 
   namespace DB {
     template<typename T> class DatabaseIterator;
   }
 
+  class Supercell;
+  template<typename DataObject> class QueryTraits;
+
   template<>
   struct QueryTraits<Supercell> {
     static const std::string name;
+  };
+
+  struct ConfigMapCompare {
+    bool operator()(const Configuration *A, const Configuration *B) const;
   };
 
   /** \defgroup Supercell
@@ -55,68 +58,24 @@ namespace CASM {
     Supercell(const PrimClex *_prim, const Lattice &superlattice);
     Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &superlattice_matrix);
 
+    ~Supercell();
 
     // **** Coordinates ****
 
     /// \brief Return the sublattice index for a linear index
-    ///
-    /// Linear indices are grouped by sublattice, then ordered as determined by
-    /// PrimGrid. This function is equivalent to:
-    /// \code
-    /// linear_index / volume();
-    /// \endcode
-    Index sublat(Index linear_index) const {
-      return linear_index / volume();
-    }
+    Index sublat(Index linear_index) const;
 
     /// \brief Given a Coordinate and tolerance, return linear index into Configuration
-    ///
-    ///   This may be slow, first converts Coordinate -> UnitCellCoord,
-    ///   then gets linear_index from UnitCellCoord
-    ///
-    /// Implementation:
-    /// \code
-    /// Coordinate tcoord(coord);
-    /// tcoord.within();
-    /// return linear_index(UnitCellCoord(prim(), coord, tol));
-    /// \endcode
-    Index linear_index(const Coordinate &coord, double tol = TOL) const {
-      Coordinate tcoord(coord);
-      tcoord.within();
-      return linear_index(UnitCellCoord(prim(), coord, tol));
-    };
+    Index linear_index(const Coordinate &coord, double tol = TOL) const;
 
     /// \brief Return the linear index corresponding to integral coordinates
-    ///
-    /// Linear indices are grouped by sublattice, then ordered as determined by
-    /// PrimGrid. This function is equivalent to:
-    /// \code
-    /// bijk[0] * volume() + m_prim_grid.find(bijk.unitcell());
-    /// \endcode
-    Index linear_index(const UnitCellCoord &bijk) const {
-      return bijk[0] * volume() + m_prim_grid.find(bijk.unitcell());
-    }
+    Index linear_index(const UnitCellCoord &bijk) const;
 
     /// \brief Return the linear index corresponding to integral coordinates
-    ///
-    /// Equivalent to:
-    /// \code
-    /// uccoord(linear_index).coordinate()
-    /// \endcode
-    Coordinate coord(Index linear_index) const {
-      return uccoord(linear_index).coordinate();
-    }
+    Coordinate coord(Index linear_index) const;
 
     /// \brief Return the integral coordinates corresponding to a linear index
-    ///
-    /// Linear indices are grouped by sublattice, then ordered as determined by
-    /// PrimGrid. This function is equivalent to:
-    /// \code
-    /// UnitCellCoord(prim(), sublat(linear_index), m_prim_grid.unitcell(linear_index % volume()))
-    /// \endcode
-    UnitCellCoord uccoord(Index linear_index) const {
-      return UnitCellCoord(prim(), sublat(linear_index), m_prim_grid.unitcell(linear_index % volume()));
-    };
+    UnitCellCoord uccoord(Index linear_index) const;
 
 
     // returns maximum allowed occupation bitstring -- used for initializing enumeration counters
@@ -134,31 +93,21 @@ namespace CASM {
 
     // **** Accessors ****
 
-    const PrimClex &primclex() const {
-      return *m_primclex;
-    }
+    const PrimClex &primclex() const;
 
     /// \brief Get the PrimClex crystallography_tol
     double crystallography_tol() const;
 
-    const PrimGrid &prim_grid() const {
-      return m_prim_grid;
-    }
+    const PrimGrid &prim_grid() const;
 
     const Structure &prim() const;
 
     ///Return number of primitive cells that fit inside of *this
-    Index volume() const {
-      return m_prim_grid.size();
-    };
+    Index volume() const;
 
-    Index basis_size() const {
-      return prim().basis.size();
-    }
+    Index basis_size() const;
 
-    Index num_sites() const {
-      return volume() * basis_size();
-    };
+    Index num_sites() const;
 
     // the permutation_symrep is the SymGroupRep of prim().factor_group() that describes how
     // operations of m_factor_group permute sites of the Supercell.
@@ -168,23 +117,13 @@ namespace CASM {
     //       SymGroupRep::get_representation(m_factor_group[i]) or SymGroupRep::get_permutation(m_factor_group[i]),
     //       so that you don't encounter the gaps (i.e., the representation can be indexed using the
     //       SymOps of m_factor_group
-    SymGroupRepID permutation_symrep_ID() const {
-      if(m_perm_symrep_ID.empty())
-        generate_permutations();
-      return m_perm_symrep_ID;
-    }
+    SymGroupRepID permutation_symrep_ID() const;
 
-    SymGroupRep const &permutation_symrep() const {
-      return prim().factor_group().representation(permutation_symrep_ID());
-    }
+    SymGroupRep const &permutation_symrep() const;
 
-    const Eigen::Matrix3i &transf_mat() const {
-      return m_transf_mat;
-    };
+    const Eigen::Matrix3i &transf_mat() const;
 
-    const Lattice &real_super_lattice() const {
-      return m_real_super_lattice;
-    };
+    const Lattice &real_super_lattice() const;
 
     /// \brief Returns the SuperNeighborList
     const SuperNeighborList &nlist() const;
@@ -216,24 +155,16 @@ namespace CASM {
     permute_const_iterator permute_it(Index fg_index, Index trans_index) const;
 
 
-    bool is_canonical() const {
-      return real_super_lattice().is_canonical();
-    }
+    bool is_canonical() const;
 
-    SymOp to_canonical() const {
-      return real_super_lattice().to_canonical();
-    }
+    SymOp to_canonical() const;
 
-    SymOp from_canonical() const {
-      return real_super_lattice().from_canonical();
-    }
+    SymOp from_canonical() const;
 
     /// \brief Return canonical equivalent Supercell
     ///
     /// - Will be inserted in Database if necessary
     const Supercell &canonical_form() const;
-
-    bool is_equivalent(const Supercell &B) const;
 
     bool operator<(const Supercell &B) const;
 
@@ -256,12 +187,12 @@ namespace CASM {
     // **** Generating functions ****
 
     // Populate m_factor_group -- probably should be private
-    void generate_factor_group() const;
+    void _generate_factor_group() const;
 
     // Populate m_trans_permute -- probably should be private
-    void generate_permutations() const;
+    void _generate_permutations() const;
 
-    std::string generate_name() const;
+    std::string _generate_name() const;
 
 
     // pointer to Primcell containing all the cluster expansion data
