@@ -14,6 +14,9 @@ namespace CASM {
   class UnitCellCoord;
   class Molecule;
 
+}
+
+namespace CASM {
   namespace Monte {
 
     /// l: linear index into mc_scel
@@ -81,6 +84,7 @@ namespace CASM {
       /// m_species_to_occ[asym][species_index] -> occ_index
       std::vector<std::vector<Index> > m_species_to_occ;
     };
+
   }
 }
 

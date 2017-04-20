@@ -59,5 +59,6 @@ namespace CASM {
     const OccEvent &CanonicalEvent::occ_event() const {
       return m_occ_event;
     }
+
   }
 }

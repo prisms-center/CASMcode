@@ -12,6 +12,9 @@ namespace CASM {
   class Configuration;
   class ConfigDoF;
 
+}
+
+namespace CASM {
   namespace Monte {
 
     class Conversions;
@@ -21,9 +24,12 @@ namespace CASM {
 
     /// \brief Represents an indivisible molecule component
     struct Species {
+      Species(UnitCellCoord _bijk_begin) :
+        bijk_begin(_bijk_begin) {}
+
       Index species_index;           ///< Species type index
-      Index id;                    ///< Location in OccLocation.m_species
-      UnitCellCoord bijk_begin;    ///< Saves initial position
+      Index id;                      ///< Location in OccLocation.m_species
+      UnitCellCoord bijk_begin;      ///< Saves initial position
       Index mol_comp_begin;          ///< Saves initial Mol.component index
     };
 
@@ -141,6 +147,7 @@ namespace CASM {
       /// Data used by propose_canonical
       mutable std::vector<double> m_tsum;
     };
+
   }
 }
 

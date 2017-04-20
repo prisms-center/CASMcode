@@ -1,4 +1,4 @@
-#include "casm/monte_carlo/canonical/CanonicalSettings.hh"
+#include "casm/monte_carlo/canonical/CanonicalSettings_impl.hh"
 #include "casm/monte_carlo/canonical/CanonicalConditions.hh"
 #include "casm/monte_carlo/canonical/CanonicalIO.hh"
 #include "casm/app/AppIO.hh"
@@ -178,6 +178,7 @@ namespace CASM {
       from_json(result, primclex(), json);
       return result;
     }
+
   }
 }
 

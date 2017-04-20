@@ -12,9 +12,33 @@ namespace CASM {
   class jsonParser;
   template<typename T> class jsonConstructor;
 
+}
+
+namespace CASM {
   namespace Monte {
 
     class Conversions;
+    class OccCandidate;
+    class OccSwap;
+
+  }
+}
+
+namespace CASM {
+
+  template<>
+  struct jsonConstructor<Monte::OccCandidate> {
+    static Monte::OccCandidate from_json(const jsonParser &json, const Monte::Conversions &convert);
+  };
+
+  template<>
+  struct jsonConstructor<Monte::OccSwap> {
+    static Monte::OccSwap from_json(const jsonParser &json, const Monte::Conversions &convert);
+  };
+}
+
+namespace CASM {
+  namespace Monte {
 
     struct OccCandidate : public Comparisons<OccCandidate> {
 
@@ -34,15 +58,6 @@ namespace CASM {
     };
 
     jsonParser &to_json(const OccCandidate &cand, const Conversions &convert, jsonParser &json);
-
-  }
-
-  template<>
-  struct jsonConstructor<Monte::OccCandidate> {
-    static Monte::OccCandidate from_json(const jsonParser &json, const Monte::Conversions &convert);
-  };
-
-  namespace Monte {
 
     std::ostream &operator<<(std::ostream &sout, std::pair<const OccCandidate &, const Conversions &> value);
 
@@ -100,14 +115,6 @@ namespace CASM {
     };
 
     jsonParser &to_json(const OccSwap &swap, const Conversions &convert, jsonParser &json);
-  }
-
-  template<>
-  struct jsonConstructor<Monte::OccSwap> {
-    static Monte::OccSwap from_json(const jsonParser &json, const Monte::Conversions &convert);
-  };
-
-  namespace Monte {
 
     std::ostream &operator<<(std::ostream &sout, std::pair<const OccSwap &, const Conversions &> value);
 
@@ -181,6 +188,7 @@ namespace CASM {
     jsonParser &to_json(const OccCandidateList &list, const Conversions &convert, jsonParser &json);
 
     std::ostream &operator<<(std::ostream &sout, std::pair<const OccCandidateList &, const Conversions &> value);
+
   }
 }
 

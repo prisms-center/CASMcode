@@ -51,10 +51,9 @@ namespace CASM {
           if(m_kmc) {
             // only atoms now
             for(Index j = 0; j < 1; j++) {
-              Species spec;
+              Species spec(m_convert.l_to_bijk(l));
               spec.species_index = species_index;
               spec.id = m_species.size();
-              spec.bijk_begin = m_convert.l_to_bijk(l);
               mol.component.push_back(spec.id);
 
               m_species.push_back(spec);
@@ -235,5 +234,6 @@ namespace CASM {
       Index size_b = m_loc[cand_b].size();
       return _propose(e, swap, mtrand, cand_a, cand_b, size_a, size_b);
     }
+
   }
 }

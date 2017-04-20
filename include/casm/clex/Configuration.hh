@@ -432,10 +432,10 @@ namespace CASM {
     std::string point_group_name() const;
 
     /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
-    Configuration fill_supercell(Supercell &scel, const SymOp &op) const;
+    Configuration fill_supercell(const Supercell &scel, const SymOp &op) const;
 
     /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
-    Configuration fill_supercell(Supercell &scel, const SymGroup &g) const;
+    Configuration fill_supercell(const Supercell &scel, const SymGroup &g) const;
 
 
     // ******** Calculated Properties ***********

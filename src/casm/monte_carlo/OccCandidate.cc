@@ -6,6 +6,21 @@
 
 namespace CASM {
 
+  Monte::OccCandidate jsonConstructor<Monte::OccCandidate>::from_json(const jsonParser &json, const Monte::Conversions &convert) {
+    return Monte::OccCandidate(
+             json["asym"].get<Index>(),
+             convert.species_index(json["spec"].get<std::string>()));
+  }
+
+  Monte::OccSwap jsonConstructor<Monte::OccSwap>::from_json(const jsonParser &json, const Monte::Conversions &convert) {
+    return Monte::OccSwap(
+             jsonConstructor<Monte::OccCandidate>::from_json(json[0], convert),
+             jsonConstructor<Monte::OccCandidate>::from_json(json[1], convert));
+  }
+
+}
+
+namespace CASM {
   namespace Monte {
 
     jsonParser &to_json(const OccCandidate &cand, const Conversions &convert, jsonParser &json) {
@@ -14,15 +29,6 @@ namespace CASM {
       json["spec"] = convert.species_name(cand.species_index);
       return json;
     }
-  }
-
-  Monte::OccCandidate jsonConstructor<Monte::OccCandidate>::from_json(const jsonParser &json, const Monte::Conversions &convert) {
-    return Monte::OccCandidate(
-             json["asym"].get<Index>(),
-             convert.species_index(json["spec"].get<std::string>()));
-  }
-
-  namespace Monte {
 
     std::ostream &operator<<(std::ostream &sout, std::pair<const OccCandidate &, const Conversions &> value) {
       sout << "(" << value.second.species_name(value.first.species_index) << ", "
@@ -37,15 +43,6 @@ namespace CASM {
       json.push_back(to_json(swap.cand_b, convert, tmp));
       return json;
     }
-  }
-
-  Monte::OccSwap jsonConstructor<Monte::OccSwap>::from_json(const jsonParser &json, const Monte::Conversions &convert) {
-    return Monte::OccSwap(
-             jsonConstructor<Monte::OccCandidate>::from_json(json[0], convert),
-             jsonConstructor<Monte::OccCandidate>::from_json(json[1], convert));
-  }
-
-  namespace Monte {
 
     std::ostream &operator<<(std::ostream &sout, std::pair<const OccSwap &, const Conversions &> value) {
       sout << std::pair<const OccCandidate &, const Conversions &>(value.first.cand_a, value.second)
@@ -161,7 +158,7 @@ namespace CASM {
       const OccCandidateList &list = value.first;
 
       sout << "Unit cell for determining equivalent swaps: \n" <<
-           convert.unit_scel().get_transf_mat() << "\n\n";
+           convert.unit_scel().transf_mat() << "\n\n";
 
       sout << "Asymmetric Unit: " << std::endl;
       for(Index asym = 0; asym != convert.asym_size(); ++asym) {
@@ -199,5 +196,4 @@ namespace CASM {
     }
 
   }
-
 }

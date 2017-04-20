@@ -1,9 +1,10 @@
-#ifndef CASM_Monte_CanonicalEvent_HH
-#define CASM_Monte_CanonicalEvent_HH
+#ifndef CASM_Monte_CanonicalEvent
+#define CASM_Monte_CanonicalEvent
 
 #include "casm/external/Eigen/Dense"
 #include "casm/CASM_global_definitions.hh"
 #include "casm/monte_carlo/OccLocation.hh"
+#include "casm/monte_carlo/MonteDefinitions.hh"
 
 namespace CASM {
   namespace Monte {
@@ -12,8 +13,6 @@ namespace CASM {
     class CanonicalEvent {
 
     public:
-
-      typedef Index size_type;
 
       /// \brief Default constructor
       CanonicalEvent() {}
@@ -76,6 +75,7 @@ namespace CASM {
       OccEvent m_occ_event;
 
     };
+
   }
 }
 

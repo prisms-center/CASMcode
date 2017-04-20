@@ -4,12 +4,13 @@
 #include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
-
   class PrimClex;
+}
 
+namespace CASM {
   namespace Monte {
 
-    class MonteSettings;
+    class Settings;
 
     /// Conditions for a Canonical run:
     /// Temperature
@@ -113,6 +114,7 @@ namespace CASM {
     };
 
     std::ostream &operator<<(std::ostream &sout, const CanonicalConditions &cond);
+
   }
 }
 

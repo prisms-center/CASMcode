@@ -4,7 +4,6 @@
 #include "casm/clex/Clex.hh"
 #include "casm/monte_carlo/MonteDefinitions.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
-#include "casm/monte_carlo/MonteCarloEnum.hh"
 #include "casm/monte_carlo/Conversions.hh"
 #include "casm/monte_carlo/OccCandidate.hh"
 #include "casm/monte_carlo/OccLocation.hh"
@@ -35,18 +34,18 @@ namespace CASM {
 
     public:
 
-      static const Monte::ENSEMBLE ensemble;
+      static const ENSEMBLE ensemble;
       typedef CanonicalEvent EventType;
       typedef CanonicalConditions CondType;
       typedef CanonicalSettings SettingsType;
 
 
-      /// \brief Constructs a Canonical object and prepares it for running based on MonteSettings
-      Canonical(PrimClex &primclex, const SettingsType &settings, Log &_log);
+      /// \brief Constructs a Canonical object and prepares it for running based on Settings
+      Canonical(const PrimClex &primclex, const SettingsType &settings, Log &_log);
 
 
       /// \brief Return number of steps per pass. Equals number of sites with variable occupation.
-      Index steps_per_pass() const;
+      size_type steps_per_pass() const;
 
 
       /// \brief Return current conditions
@@ -80,15 +79,8 @@ namespace CASM {
       /// \brief Nothing needs to be done to reject a CanonicalEvent
       void reject(const EventType &event);
 
-      void check_corr() {
-        std::cout << "corr:" << std::endl;
-        std::cout << correlations_vec(_configdof(), supercell(), _clexulator()) << std::endl;
-        std::cout << "OK corr" << std::endl;
-      }
-
       /// \brief Write results to files
-      void write_results(Index cond_index) const;
-
+      void write_results(size_type cond_index) const;
 
       /// \brief Formation energy, normalized per primitive cell
       const double &formation_energy() const {
@@ -144,8 +136,8 @@ namespace CASM {
         return m_formation_energy_clex.eci();
       }
 
-      void _set_nlist(Index l) const;
-      void _calc_delta_point_corr(Index l, int new_occ, Eigen::VectorXd &dCorr_comp) const;
+      void _set_nlist(size_type l) const;
+      void _calc_delta_point_corr(size_type l, int new_occ, Eigen::VectorXd &dCorr_comp) const;
 
       /// \brief Calculate delta correlations for an event
       void _set_dCorr(CanonicalEvent &event) const;
@@ -229,6 +221,7 @@ namespace CASM {
       Eigen::VectorXd *m_comp_n;
 
     };
+
   }
 }
 

@@ -1,6 +1,5 @@
 #include "casm/monte_carlo/canonical/CanonicalIO.hh"
 
-#include "casm/external/gzstream/gzstream.h"
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/VaspIO.hh"
@@ -53,7 +52,7 @@ namespace CASM {
       }
 
       // always print comp_n
-      auto struc_mol_name = mc.primclex().get_prim().get_struc_molecule_name();
+      auto struc_mol_name = mc.primclex().prim().struc_molecule_name();
       for(int i = 0; i < struc_mol_name.size(); ++i) {
         name = std::string("comp_n(") + struc_mol_name[i] + ")";
         formatter.push_back(MonteCarloCompNFormatter<Canonical>(mc, i));
@@ -171,7 +170,7 @@ namespace CASM {
           }
         }
 
-        comp_n = comp_n / comp_n.sum() * primclex.get_prim().basis.size();
+        comp_n = comp_n / comp_n.sum() * primclex.prim().basis.size();
         comp = primclex.composition_axes().param_composition(comp_n);
       }
       else {
@@ -179,5 +178,6 @@ namespace CASM {
       }
       conditions = CanonicalConditions(primclex, temp, comp, tol);
     }
+
   }
 }

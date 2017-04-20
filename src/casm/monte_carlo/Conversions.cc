@@ -1,15 +1,18 @@
 #include "casm/monte_carlo/Conversions.hh"
+#include "casm/misc/algorithm.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Configuration.hh"
-#include "casm/crystallography/Structure.hh"
+#include "casm/database/ScelDatabase.hh"
 
 namespace CASM {
   namespace Monte {
 
     namespace {
-      Configuration default_prim_config(PrimClex &primclex) {
-        auto &scel = primclex.get_supercell(primclex.add_supercell(primclex.get_prim().lattice()));
+      Configuration default_prim_config(const PrimClex &primclex) {
+
+        const Supercell &scel = *primclex.db<Supercell>().emplace(&primclex, Eigen::Matrix3i::Identity()).first;
         Configuration res(scel);
         res.init_occupation();
         return res;
@@ -17,14 +20,14 @@ namespace CASM {
     }
 
     Conversions::Conversions(const Supercell &mc_scel) :
-      Conversions(default_prim_config(mc_scel.get_primclex()), mc_scel) {}
+      Conversions(default_prim_config(mc_scel.primclex()), mc_scel) {}
 
 
     Conversions::Conversions(const Configuration &unit_config, const Supercell &mc_scel) :
-      m_unit_scel(&unit_config.get_supercell()),
+      m_unit_scel(&unit_config.supercell()),
       m_mc_scel(&mc_scel),
-      m_struc_mol(m_mc_scel->get_prim().get_struc_molecule()),
-      m_struc_molname(m_mc_scel->get_prim().get_struc_molecule_name()) {
+      m_struc_mol(m_mc_scel->prim().struc_molecule()),
+      m_struc_molname(m_mc_scel->prim().struc_molecule_name()) {
 
       // make m_unitl_to_asym, m_Nasym
       Index asym = 0;
@@ -54,10 +57,10 @@ namespace CASM {
       // make m_occ_to_species and m_species_to_occ
 
       // [b][occ] -> species
-      auto index_converter = get_index_converter(m_mc_scel->get_prim(), m_struc_molname);
+      auto index_converter = make_index_converter(m_mc_scel->prim(), m_struc_molname);
 
       // [b][species] -> occ, index_converter[b].size() if not allowed
-      auto index_converter_inv = get_index_converter_inverse(m_mc_scel->get_prim(), m_struc_molname);
+      auto index_converter_inv = make_index_converter_inverse(m_mc_scel->prim(), m_struc_molname);
 
       m_occ_to_species.resize(m_Nasym);
       m_species_to_occ.resize(m_Nasym);
@@ -69,7 +72,7 @@ namespace CASM {
     }
 
     Index Conversions::l_to_b(Index l) const {
-      return m_mc_scel->get_b(l);
+      return m_mc_scel->sublat(l);
     }
     UnitCell Conversions::l_to_ijk(Index l) const {
       return m_mc_scel->prim_grid().unitcell(l % m_mc_scel->volume());
@@ -85,17 +88,17 @@ namespace CASM {
     }
 
     Index Conversions::bijk_to_l(const UnitCellCoord &bijk) const {
-      return m_mc_scel->find(bijk);
+      return m_mc_scel->linear_index(bijk);
     }
     Index Conversions::bijk_to_unitl(const UnitCellCoord &bijk) const {
-      return m_unit_scel->find(bijk);
+      return m_unit_scel->linear_index(bijk);
     }
     Index Conversions::bijk_to_asym(const UnitCellCoord &bijk) const {
       return l_to_asym(bijk_to_l(bijk));
     }
 
     Index Conversions::unitl_to_b(Index unitl) const {
-      return m_unit_scel->get_b(unitl);
+      return m_unit_scel->sublat(unitl);
     }
     UnitCellCoord Conversions::unitl_to_bijk(Index unitl) const {
       return m_unit_scel->uccoord(unitl);

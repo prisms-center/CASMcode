@@ -1,11 +1,13 @@
 #ifndef CASM_MonteDefinitions_HH
 #define CASM_MonteDefinitions_HH
 
+#include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/EnumIO.hh"
 
 namespace CASM {
-
   namespace Monte {
+
+    typedef Index size_type;
 
     /// \brief Monte Carlo ensemble type
     enum class ENSEMBLE {
@@ -47,6 +49,9 @@ namespace CASM {
     ENUM_IO(CASM::Monte::ENUM_SAMPLE_MODE)
 
   }
+}
+
+namespace CASM {
 
   ENUM_TRAITS(Monte::ENSEMBLE)
 

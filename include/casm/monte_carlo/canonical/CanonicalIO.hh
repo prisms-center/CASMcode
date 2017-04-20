@@ -5,12 +5,13 @@ namespace CASM {
   class PrimClex;
   class jsonParser;
   template<typename T> class DataFormatter;
+}
 
-  class MonteCarlo;
-  typedef const MonteCarlo *ConstMonteCarloPtr;
-
+namespace CASM {
   namespace Monte {
 
+    class MonteCarlo;
+    typedef const MonteCarlo *ConstMonteCarloPtr;
     class Canonical;
     class CanonicalConditions;
 
@@ -22,6 +23,7 @@ namespace CASM {
 
     /// \brief Read CanonicalConditions from JSON format
     void from_json(CanonicalConditions &conditions, const PrimClex &primclex, const jsonParser &json);
+
   }
 }
 

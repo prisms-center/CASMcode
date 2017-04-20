@@ -10,10 +10,6 @@ namespace CASM {
       {Monte::ENSEMBLE::Canonical, {"Canonical", "canonical"} }
     };
 
-    const std::multimap<Monte::ENSEMBLE, std::vector<std::string> > traits<Monte::ENSEMBLE>::strval = {
-      {Monte::ENSEMBLE::GrandCanonical, {"GrandCanonical", "grand_canonical"} }
-    };
-
 
     const std::string traits<Monte::METHOD>::name = "method";
 
@@ -44,6 +40,6 @@ namespace CASM {
       {Monte::ENUM_SAMPLE_MODE::ON_ACCEPT, {"on_accept"} },
       {Monte::ENUM_SAMPLE_MODE::ON_SAMPLE, {"on_sample"} }
     };
+
   }
 }
-

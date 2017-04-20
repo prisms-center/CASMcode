@@ -522,7 +522,7 @@ namespace CASM {
   //*******************************************************************************
 
   /// \brief Fills supercell 'scel' with reoriented configuration, op*(*this)
-  Configuration Configuration::fill_supercell(Supercell &scel, const SymOp &op) const {
+  Configuration Configuration::fill_supercell(const Supercell &scel, const SymOp &op) const {
     FillSupercell f(scel, op);
     return f(*this);
 
@@ -535,7 +535,7 @@ namespace CASM {
   /// \brief Fills supercell 'scel' with reoriented configuration, op*(*this)
   ///
   /// - Uses the first symop in g that such that scel is a supercell of op*(*this)
-  Configuration Configuration::fill_supercell(Supercell &scel, const SymGroup &g) const {
+  Configuration Configuration::fill_supercell(const Supercell &scel, const SymGroup &g) const {
 
     auto res = is_supercell(
                  scel.real_super_lattice(),
