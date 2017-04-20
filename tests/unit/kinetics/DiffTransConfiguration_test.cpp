@@ -71,8 +71,20 @@ BOOST_AUTO_TEST_CASE(Test0) {
   //hardcoded occupation for trans to occur is there a way to do this generally?
   config2.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0});
 
+  Configuration config3(scel);
+  config3.init_occupation();
+  config3.init_displacement();
+  config3.init_deformation();
+  config3.init_specie_id();
+  config3.set_occupation({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
 
-
+  //test make attachable
+  Configuration result = make_attachable(trans, config3);
+  BOOST_CHECK_EQUAL(config3 == result, 0);
+  for(auto traj : trans.specie_traj()) {
+    Index l = result.supercell().linear_index(traj.from.uccoord);
+    BOOST_CHECK_EQUAL(result.occ(l), traj.from.occ);
+  }
 
   //test Constructor/field accessors
   Kinetics::DiffTransConfiguration dtc(config, trans);
@@ -114,6 +126,7 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   //check canonical form
   BOOST_CHECK_EQUAL(dtc.is_canonical(), 0);
+
   BOOST_CHECK_EQUAL(!dtc.is_canonical(), dtc < dtc.canonical_form());
   BOOST_CHECK_EQUAL(dtc.is_canonical(), dtc == dtc.canonical_form());
   BOOST_CHECK_EQUAL(1, dtc.canonical_form().is_canonical());

@@ -97,6 +97,9 @@ namespace CASM {
     /// \brief prints this DiffTransConfiguration
     std::ostream &operator<<(std::ostream &sout, const DiffTransConfiguration &dtc) ;
 
+    /// \brief returns a copy of bg_config with sites altered such that diff_trans can be placed as is
+    Configuration make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config);
+
   }
 }
 

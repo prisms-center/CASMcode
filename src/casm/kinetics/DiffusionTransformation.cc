@@ -218,8 +218,8 @@ namespace CASM {
     ScelPeriodicDiffTransSymCompare::Element ScelPeriodicDiffTransSymCompare::prepare_impl(const Element &A) const {
       if(A.occ_transform().size()) {
         Element tmp = A.sorted();
-        m_integral_tau = -(m_prim_grid.within(tmp.occ_transform()[0].uccoord).unitcell());
-        tmp -= (m_prim_grid.within(tmp.occ_transform()[0].uccoord).unitcell());
+        m_integral_tau = (m_prim_grid.within(tmp.occ_transform()[0].uccoord).unitcell()) - tmp.occ_transform()[0].uccoord.unitcell();
+        tmp += m_integral_tau;
         return tmp;
       }
       else {
