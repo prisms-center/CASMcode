@@ -139,26 +139,11 @@ namespace CASM {
 
       auto end = make_prim_periodic_orbits(
                    primclex.prim(), _kwargs["bspecs"], alloy_sites_filter, primclex.crystallography_tol(), std::back_inserter(orbits), primclex.log());
-      // Need a generator
-      /*auto lambda = [&](IntegralCluster clust) {
-      return notstd::make_unique<DiffusionTransformationEnum>(clust);
-      };*/
 
       std::vector< PrimPeriodicDiffTransOrbit > diff_trans_orbits;
       auto end2 = make_prim_periodic_diff_trans_orbits(
                     orbits.begin(), orbits.end(), primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
 
-
-      // use templating? put in Enumerator or no?
-      // insert_unique_canon_difftrans
-      /*int returncode = insert_unique_canon_difftrans(
-                       enumerator_name,
-                       primclex,
-                       orbits.begin(),
-                       end,
-                       lambda,
-                       filter_expr);
-      */
       if(_kwargs.get_if(kwargs, "require")) {
         std::vector<std::string> require;
         for(auto it = _kwargs["require"].begin(); it != _kwargs["require"].end(); ++it) {
