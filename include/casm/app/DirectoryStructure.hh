@@ -15,16 +15,7 @@ namespace CASM {
    * @{
    */
 
-  template<typename DataObject>
-  class QueryTraits;
   class Log;
-
-  /// std::set of all QueryTraits<ConfigType>::name
-  const std::set<std::string> &config_types();
-
-  /// std::set of all QueryTraits<ConfigType>::short_name
-  const std::set<std::string> &config_types_short();
-
 
   /// return path to current or parent directory containing ".casm" directory
   ///   if none found, return empty path
@@ -132,7 +123,7 @@ namespace CASM {
     }
 
     /// \brief Return master scel_list.json path
-    fs::path scel_list(std::string scelname) const {
+    fs::path scel_list() const {
       return m_root / m_casm_dir / "scel_list.json";
     }
 

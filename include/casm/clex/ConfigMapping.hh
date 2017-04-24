@@ -71,12 +71,6 @@ namespace CASM {
                   robust = (1u << 2)
                  };
 
-    /// Construct ConfigMapper from input args
-    std::unique_ptr<ConfigMapper> make(
-      const PrimClex &primclex,
-      const jsonParser &kwargs,
-      const Completer::ImportOption &import_opt);
-
     ///\brief Default construction not allowed -- this constructor provides an override
     ConfigMapper(NullInitializer) :
       m_pclex(nullptr),
@@ -113,14 +107,14 @@ namespace CASM {
     ///\endparblock
     ///
     ///\param _tol tolerance for mapping comparisons
-    ConfigMapper(PrimClex &_pclex,
+    ConfigMapper(const PrimClex &_pclex,
                  double _lattice_weight,
                  double _max_volume_change = 0.5,
                  int _options = robust, // this should actually be a bitwise-OR of ConfigMapper::Options
                  double _tol = TOL);
 
 
-    PrimClex &primclex() const {
+    const PrimClex &primclex() const {
       return *m_pclex;
     }
 
@@ -263,7 +257,7 @@ namespace CASM {
 
   private:
 
-    PrimClex *m_pclex;
+    const PrimClex *m_pclex;
     mutable std::map<Index, std::vector<Lattice> > m_superlat_map;
     double m_lattice_weight;
     double m_max_volume_change;

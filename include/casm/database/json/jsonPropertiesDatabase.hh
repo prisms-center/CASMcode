@@ -4,8 +4,9 @@
 #include "casm/database/PropertiesDatabase.hh"
 
 namespace CASM {
-
   namespace DB {
+
+    class jsonPropertiesDatabase;
 
     class jsonPropertiesDatabaseIterator : public PropertiesDatabaseIteratorBase {
 
@@ -19,9 +20,10 @@ namespace CASM {
 
     private:
 
-      typedef typename std::set<MappedProperties>::iterator base_iterator;
+      typedef typename std::set<MappedProperties>::const_iterator base_iterator;
+      friend jsonPropertiesDatabase;
 
-      DatabaseSetIterator(base_iterator _it) :
+      jsonPropertiesDatabaseIterator(base_iterator _it) :
         m_it(_it) {}
 
       base_iterator base() const {
@@ -56,131 +58,64 @@ namespace CASM {
 
     public:
 
-      jsonPropertiesDatabase(const PrimClex &_primclex);
+      jsonPropertiesDatabase(const PrimClex &_primclex, fs::path location);
 
-      PropertiesDatabaseBase &open() override;
+      DatabaseBase &open() override;
 
       void commit() override;
 
       void close() override;
 
       /// \brief Begin iterator
-      iterator begin() const override {
-        return _iterator(m_data.begin());
-      }
+      iterator begin() const override;
 
       /// \brief End iterator
-      iterator end() const override {
-        return _iterator(m_data.end());
-      }
+      iterator end() const override;
 
       /// \brief Return iterator to MappedProperties that is the best mapping to specified config
       ///
       /// - Prefers self-mapped, else best scoring
-      iterator find_via_to(std::string to_configname) const override {
-        auto it = m_relaxed_from.find(to_configname);
-        if(it == m_relaxed_from.end()) {
-          return end();
-        }
-        // it->second is set of all 'from' -> 'to'
-        return find_from(*it->second.begin());
-      }
+      iterator find_via_to(std::string to_configname) const override;
 
       /// \brief Return iterator to MappedProperties that is from the specified config
-      iterator find_via_from(std::string from_configname) const override {
-        m_key.from = from_configname;
-        return m_data.find(m_key);
-      }
+      iterator find_via_from(std::string from_configname) const override;
 
 
       /// \brief Names of all configurations that relaxed 'from'->'to'
-      std::set<std::string, Compare> relaxed_from_all(std::string to_configname) const {
-        return m_relaxed_from.find(to_configname)->second;
-      }
+      std::set<std::string, Compare> relaxed_from_all(std::string to_configname) const override;
 
       /// \brief Change the score method for a single configuration
-      void set_score_method(std::string to_configname, const ScoreMappedProperties &score) {
-
-        auto it = m_relaxed_from.find(to_configname);
-        if(it == m_relaxed_from.end()) {
-
-          // do nothing if default score
-          if(score == m_default_score) {
-            return;
-          }
-
-          auto tmp = _make_set(to_configname, score);
-          m_relaxed.insert({to_configname, tmp});
-        }
-        else {
-          // if no change, return
-          if(it->second.value_comp().score_method() == score) {
-            return;
-          }
-
-          // construct new set and copy from old set
-          auto tmp = _make_set(to_configname, score);
-          for(const auto &from : it->second) {
-            tmp.insert(from);
-          }
-          it->second = tmp;
-        }
-      }
+      void set_score_method(std::string to_configname, const ScoreMappedProperties &score) override;
 
 
     private:
 
-      iterator _iterator(std::set<MappedProperties>::const_iterator _it) const {
-        return iterator(_it);
-      }
+      iterator _iterator(std::set<MappedProperties>::const_iterator _it) const;
 
       /// \brief Private _insert MappedProperties, without modifying 'relaxed_from'
-      std::pair<iterator, bool> _insert(const MappedProperties &value) override {
-        auto res = m_data.insert(value);
-        return std::make_pair(_iterator(res.first), res.second);
-      }
+      std::pair<iterator, bool> _insert(const MappedProperties &value) override;
 
       /// \brief Private _erase MappedProperties, without modifying 'relaxed_from'
-      iterator _erase(iterator pos) override {
-        auto base_it = static_cast<jsonPropertiesDatabaseIterator *>(pos.get())->base();
-        return _iterator(m_data.erase(base_it));
-      }
+      iterator _erase(iterator pos) override;
 
       /// \brief Names of all configurations that relaxed 'from'->'to'
       void _set_relaxed_from_all(
         std::string to_configname,
-        const std::set<std::string, Compare> &_set) const override {
-
-        auto it = m_relaxed_from.find(to_configname);
-        if(it == m_relaxed_from.end()) {
-          if(_set.size()) {
-            m_relaxed_from.insert({to_configname, _set});
-          }
-        }
-        else {
-          if(!_set.size()) {
-            m_relaxed_from.erase(it);
-          }
-          else {
-            it->second = _set;
-          }
-        }
-      }
+        const std::set<std::string, Compare> &_set) override;
 
       std::set<std::string, Compare> _make_set(
         std::string to_configname,
-        const ScoreMappedProperties &score) const {
-
-        return std::set<std::string, Compare>(Compare(this, to_configname, score));
-      }
+        const ScoreMappedProperties &score) const;
 
 
       bool m_is_open;
 
+      fs::path m_location;
+
       ScoreMappedProperties m_default_score;
 
       // a key whose 'from' value is modified to find MappedProperties in m_data
-      MappedProperties m_key;
+      mutable MappedProperties m_key;
 
       // the MappedProperties container
       std::set<MappedProperties> m_data;

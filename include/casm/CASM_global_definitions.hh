@@ -92,6 +92,17 @@ namespace CASM {
   ENUM_TRAITS(CELL_TYPE)
 
 
+  // -- List of ConfigTypes --
+
+  template<typename DataObject>
+  class QueryTraits;
+
+  /// std::set of all QueryTraits<ConfigType>::name
+  const std::set<std::string> &config_types();
+
+  /// std::set of all QueryTraits<ConfigType>::short_name
+  const std::set<std::string> &config_types_short();
+
 
   //************************************************************
 

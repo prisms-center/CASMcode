@@ -1,5 +1,5 @@
-#ifndef CASM_Import
-#define CASM_Import
+#ifndef CASM_DB_Import
+#define CASM_DB_Import
 
 #include "casm/database/PropertiesDatabase.hh"
 #include "casm/app/casm_functions.hh"
@@ -7,16 +7,21 @@
 #include "casm/casm_io/DataFormatterTools.hh"
 
 namespace CASM {
-
   namespace Completer {
     class ImportOption;
     class UpdateOption;
     class RemoveOption;
   }
+}
 
+namespace CASM {
   class Supercell;
-  template<typename T> class BasicStructure;
+  typedef InterfaceMap<Completer::ImportOption> ImporterMap;
+  typedef InterfaceMap<Completer::UpdateOption> UpdaterMap;
+  typedef InterfaceMap<Completer::RemoveOption> RemoverMap;
+}
 
+namespace CASM {
   namespace DB {
 
     template<typename T> class Selection;
@@ -96,9 +101,14 @@ namespace CASM {
         return m_primclex;
       }
 
-    private:
+    protected:
 
       Database<Supercell> &db_supercell() const;
+
+      virtual PropertiesDatabase &db_props() const = 0;
+
+      /// \brief Path to default calctype training_data directory for config
+      virtual fs::path _calc_dir(const std::string configname) const = 0;
 
       /// \brief Return path to properties.calc.json that will be imported
       ///        checking a couple possible locations relative to pos_path
@@ -142,7 +152,9 @@ namespace CASM {
 
       void _recurs_cp_files(const fs::path &from_dir, const fs::path &to_dir) const;
 
-      void _import_report(std::vector<Result> &results);
+      void _import_report(
+        std::vector<Result> &results,
+        const std::map<std::string, ImportData> &data_results);
 
 
       GenericDatumFormatter<std::string, Result> _pos() const;
@@ -176,14 +188,24 @@ namespace CASM {
 
       GenericDatumFormatter<double, Result> _best_score() const;
 
-      GenericDatumFormatter<std::string, Result> _selected() const;
+      GenericDatumFormatter<bool, Result> _is_best() const;
+
+      GenericDatumFormatter<bool, Result> _selected() const;
 
       /// Insert default formatters to dictionary
       void _default_formatters(
         DataFormatterDictionary<Result> &dict,
-        std::map<std::string, Result> &data_results) const;
+        const std::map<std::string, ImportData> &data_results) const;
 
+      /// Allow ConfigType to specialize the report formatting for 'import'
+      virtual DataFormatter<Result> _import_formatter(
+        const std::map<std::string, ImportData> &data_results) const = 0;
 
+      // Allow ConfigType to specialize the report formatting for 'update'
+      virtual DataFormatter<Result> _update_formatter(
+        const std::map<std::string, ImportData> &data_results) const = 0;
+
+    private:
       // --- member variables ----------------
 
       const PrimClex &m_primclex;
@@ -195,7 +217,7 @@ namespace CASM {
       fs::ofstream m_file_str;
 
       // formatting m_file_str;
-      Log m_file_log;
+      mutable Log m_file_log;
 
       // attempt to import calculation results into database, else just insert
       // configurations w/out data
@@ -246,14 +268,14 @@ namespace CASM {
       /// - The 'to' configurations are updated with the new best mapping properties
       void erase_all(const DB::Selection<ConfigType> &selection);
 
-    private:
+    protected:
 
       Database<ConfigType> &db_config() const;
 
-      PropertiesDatabase &db_props() const;
+      PropertiesDatabase &db_props() const override;
 
       /// \brief Path to default calctype training_data directory for config
-      fs::path calc_dir(const std::string configname) const;
+      fs::path _calc_dir(const std::string configname) const override;
 
       void _update_report(std::vector<Result> &results, const DB::Selection<ConfigType> &selection) const;
 
@@ -270,15 +292,8 @@ namespace CASM {
       virtual import_inserter _import(
         fs::path p,
         DatabaseIterator<ConfigType> hint,
-        import_inserter result) = 0;
+        import_inserter result) const = 0;
 
-      /// Allow ConfigType to specialize the report formatting for 'import'
-      virtual DataFormatter<Result> _import_formatter(
-        std::map<std::string, Result> &data_results) const = 0;
-
-      // Allow ConfigType to specialize the report formatting for 'update'
-      virtual DataFormatter<Result> _update_formatter(
-        std::map<std::string, Result> &data_results) const = 0;
     };
 
 
@@ -369,130 +384,6 @@ namespace CASM {
     */
 
   }
-
-  class ConfigMapper;
-
-  namespace DB {
-
-    /// Configuration-specialized Import
-    template<>
-    class Import<Configuration> : public ImportT<Configuration> {
-    public:
-
-      /// Construct ConfigMapper from input args
-      std::unique_ptr<ConfigMapper> make(
-        const PrimClex &primclex,
-        const Completer::ImportOption &import_opt);
-
-      /// \brief Constructor
-      Import(
-        const PrimClex &primclex,
-        const ConfigMapper &configmapper,
-        std::vector<std::string> dof,
-        bool primitive_only,
-        bool import_data,
-        bool copy_additional_files,
-        bool overwrite,
-        fs::path report_dir);
-
-      static const std::string import_help;
-      static int import(const PrimClex &primclex, const jsonParser &kwargs, const Completer::ImportOption &import_opt);
-
-      static const std::string update_help;
-      static int update(const PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &import_opt);
-
-      static const std::string remove_help;
-      static int remove(const PrimClex &primclex, const jsonParser &kwargs, const Completer::RemoveOption &import_opt);
-
-    private:
-
-      /// Construct ConfigMapper from input args
-      ConfigMapper _make_configmapper(const PrimClex &primclex, const jsonParser &kwargs);
-
-      /// \brief Specialized import method for ConfigType
-      import_inserter _import(
-        fs::path p,
-        DatabaseIterator<Configuration> hint,
-        import_inserter result) override;
-
-      /// Allow ConfigType to specialize the report formatting for 'import'
-      DataFormatter<Result> _import_formatter(
-        std::map<std::string, Result> &data_results) const override;
-
-      // Allow ConfigType to specialize the report formatting for 'update'
-      DataFormatter<Result> _update_formatter(
-        std::map<std::string, Result> &data_results) const override;
-
-      /// \brief Read BasicStructure<Site> to be imported
-      BasicStructure<Site> _make_structure(const fs::path &p);
-
-      /// \brief Import Configuration with only occupation DoF
-      bool _occupation_only() const;
-
-
-      const ConfigMapper &m_configmapper;
-      std::vector<std::string> m_dof;
-      bool m_primitive_only;
-    };
-
-    /*
-    /// DiffTransConfiguration-specialized Import
-    template<>
-    class Import<DiffTransConfiguration> : public ImportT<DiffTransConfiguration> {
-    public:
-
-      /// \brief Constructor
-      Import(
-        const PrimClex& primclex,
-        const DiffTransConfigMapper& configmapper,
-        bool import_data,
-        bool copy_additional_files,
-        bool overwrite,
-        fs::path report_dir = primclex.root_dir() / "import_report");
-
-      static const std::string import_help;
-      static int import(PrimClex &primclex, const jsonParser &kwargs, const Completer::ImportOption &import_opt);
-
-      static const std::string update_help;
-      static int update(PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &import_opt);
-
-      static const std::string remove_help;
-      static int remove(PrimClex &primclex, const jsonParser &kwargs, const Completer::RemoveOption &import_opt);
-
-    private:
-
-      /// \brief Specialized import method for ConfigType
-      import_inserter _import(
-        fs::path p,
-        DataBaseIterator<DiffTransConfiguration> hint,
-        import_inserter result) override;
-
-      /// Allow ConfigType to specialize the report formatting for 'import'
-      DataFormatter<Result> _import_formatter(
-        std::map<std::string, ImportResult>& data_results) const override;
-
-      // Allow ConfigType to specialize the report formatting for 'update'
-      DataFormatter<Result> _update_formatter(
-        std::map<std::string, ImportResult>& data_results) const override;
-
-    private:
-      const DiffTransConfigMapper& m_configmapper;
-
-    };
-    */
-
-  }
-
-  typedef InterfaceBase<Completer::ImportOption> ImportInterfaceBase;
-  typedef InterfaceMap<Completer::ImportOption> ImporterMap;
-
-  typedef InterfaceBase<Completer::UpdateOption> UpdateInterfaceBase;
-  typedef InterfaceMap<Completer::UpdateOption> UpdaterMap;
-
-  typedef InterfaceBase<Completer::RemoveOption> RemoveInterfaceBase;
-  typedef InterfaceMap<Completer::RemoveOption> RemoverMap;
-
-
 }
 
 #endif

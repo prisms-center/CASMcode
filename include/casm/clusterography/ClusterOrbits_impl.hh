@@ -6,6 +6,7 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/clusterography/SubClusterGenerator.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 

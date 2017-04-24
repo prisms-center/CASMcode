@@ -6,15 +6,19 @@
 #include "casm/database/ConfigDatabase.hh"
 
 namespace CASM {
-
   namespace DB {
 
     struct jsonDB {};
+    template<typename T> class Traits;
+    class DatabaseHandler;
 
     template<>
     struct Traits<jsonDB> {
 
       static const std::string name;
+
+      /// Database format version, incremented separately from casm --version
+      static const std::string version;
 
       static void insert(DatabaseHandler &db_handler);
     };
@@ -30,9 +34,6 @@ namespace CASM {
     class jsonScelDatabase : public Database<Supercell> {
 
     public:
-
-      /// Database format version, incremented separately from casm --version
-      static const std::string version;
 
       jsonScelDatabase(const PrimClex &_primclex);
 
@@ -76,10 +77,8 @@ namespace CASM {
 
     public:
 
-      /// Database format version, incremented separately from casm --version
-      static const std::string version;
-
       jsonConfigDatabase(const PrimClex &_primclex);
+
 
       jsonConfigDatabase &open() override;
 
@@ -110,16 +109,17 @@ namespace CASM {
 
     private:
 
-      friend jsonConfigDatabaseIterator;
-
+      typedef DatabaseSetIterator<Configuration, jsonConfigDatabase> db_set_iterator;
       typedef std::set<Configuration>::iterator base_iterator;
 
       /// Update m_name_and_alias and m_scel_range after performing an insert or emplace
-      std::pair<iterator, bool> _on_insert_or_emplace(const std::pair<base_iterator, bool> &result);
+      std::pair<iterator, bool> _on_insert_or_emplace(std::pair<base_iterator, bool> &result);
 
       iterator _iterator(base_iterator base_it) const {
-        return iterator(DatabaseSetIterator<Configuration, jsonConfigDatabase>(base_it));
+        return iterator(db_set_iterator(base_it));
       }
+
+      bool m_is_open;
 
       // map name -> Configuration
       std::map<std::string, base_iterator> m_name_to_config;

@@ -1,21 +1,32 @@
 #include "casm/database/json/jsonDatabase.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/casm_io/SafeOfstream.hh"
+#include "casm/casm_io/json_io/container.hh"
+#include "casm/database/DatabaseHandler.hh"
 
 namespace CASM {
-
   namespace DB {
 
     const std::string Traits<jsonDB>::name = "jsonDB";
 
+    const std::string Traits<jsonDB>::version = "1.0";
+
     void Traits<jsonDB>::insert(DatabaseHandler &db_handler) {
-      db_handler.insert<Supercell>(name, jsonScelDatabase(db_handler.primclex()));
-      db_handler.insert<Configuration>(name, jsonConfigDatabase(db_handler.primclex()));
+      db_handler.insert<Supercell>(
+        name,
+        notstd::make_unique<jsonScelDatabase>(db_handler.primclex()));
+
+      db_handler.insert<Configuration>(
+        name,
+        notstd::make_unique<jsonScelDatabase>(db_handler.primclex()));
     }
 
     jsonScelDatabase::jsonScelDatabase(const PrimClex &_primclex) :
-      DatabaseBase(_primclex),
+      Database<Supercell>(_primclex),
       m_is_open(false) {}
 
     jsonScelDatabase &jsonScelDatabase::open() {
@@ -24,10 +35,10 @@ namespace CASM {
         return *this;
       }
 
-      if(fs::exists(primclex.dir().scel_list())) {
+      if(fs::exists(primclex().dir().scel_list())) {
         _read_scel_list();
       }
-      else if(fs::exists(primclex.dir().SCEL())) {
+      else if(fs::exists(primclex().dir().SCEL())) {
         _read_SCEL();
       }
 
@@ -45,7 +56,7 @@ namespace CASM {
       }
 
       SafeOfstream file;
-      file.open(primclex.dir().scel_list());
+      file.open(primclex().dir().scel_list());
       json.print(file.ofstream());
       file.close();
 
@@ -58,19 +69,28 @@ namespace CASM {
     }
 
     void jsonScelDatabase::_read_scel_list() {
-      jsonParser json(primclex.dir().scel_list());
+      jsonParser json(primclex().dir().scel_list());
+
+      // check json version
+      if(!json.contains("version") || json["version"].get<std::string>() != Traits<jsonDB>::version) {
+        throw std::runtime_error(
+          std::string("Error jsonDB version mismatch: found: ") +
+          json["version"].get<std::string>() +
+          " expected: " +
+          Traits<jsonDB>::version);
+      }
 
       if(!json.is_array() || !json.contains("supercells")) {
         throw std::runtime_error(
-          std::string("Error invalid format: ") + config_list_path.str());
+          std::string("Error invalid format: ") + primclex().dir().scel_list().string());
       }
 
       auto it = json.begin();
       auto end = json.end();
       for(; it != end; ++it) {
-        Eigen::Vector3i mat;
+        Eigen::Matrix3i mat;
         from_json(mat, *it);
-        this->emplace(&primclex(), Lattice(primclex().prim().lattice().lat_column_mat()*mat));
+        this->emplace(&primclex(), mat);
       }
     }
 
@@ -89,26 +109,24 @@ namespace CASM {
       //  0 1 0
       //  0 0 2
 
-      Eigen::Matrix3d mat;
+      Eigen::Matrix3i mat;
 
       std::string s;
+      fs::ifstream stream(primclex().dir().SCEL());
       while(!stream.eof()) {
         std::getline(stream, s);
         if(s[0] == 'S') {
           std::getline(stream, s);
           stream >> mat;
 
-          this->emplace(&primclex(), Lattice(primclex().prim().lattice().lat_column_mat()*mat));
+          this->emplace(&primclex(), mat);
         }
       }
     }
 
 
-    /// Database format version, incremented separately from casm --version
-    const std::string jsonConfigDatabase::version = "1";
-
     jsonConfigDatabase::jsonConfigDatabase(const PrimClex &_primclex) :
-      DatabaseBase(_primclex),
+      Database<Configuration>(_primclex),
       m_is_open(false) {}
 
     jsonConfigDatabase &jsonConfigDatabase::open() {
@@ -125,11 +143,11 @@ namespace CASM {
 
       if(!json.is_obj() || !json.contains("supercells")) {
         throw std::runtime_error(
-          std::string("Error invalid format: ") + primclex().dir().config_list().str());
+          std::string("Error invalid format: ") + primclex().dir().config_list().string());
       }
 
       // check json version
-      if(!json.contains("version") || json["version"].get<std::string>() != jsonConfigDatabase::version) {
+      if(!json.contains("version") || json["version"].get<std::string>() != Traits<jsonDB>::version) {
         throw std::runtime_error(
           std::string("Error jsonDB version mismatch: found: ") +
           json["version"].get<std::string>() +
@@ -149,13 +167,13 @@ namespace CASM {
         const Supercell &scel = *primclex().db<Supercell>().find(scel_it.name());
 
         for(; config_it != config_end; ++config_it) {
-          auto result = m_config_list.emplace(scel, *config_it, config_it.name());
+          auto result = m_config_list.emplace(scel, config_it.name(), *config_it);
           _on_insert_or_emplace(result);
         }
       }
 
       // read next config id for each supercell
-      from_json(m_config_id, json["config_id"])
+      from_json(m_config_id, json["config_id"]);
 
       this->read_aliases();
 
@@ -181,7 +199,7 @@ namespace CASM {
       }
 
       for(const auto &config : m_config_list) {
-        config.write(json["supercells"][config.supercell().name()][config.id()]);
+        config.to_json(json["supercells"][config.supercell().name()][config.id()]);
       }
 
       json["config_id"] = m_config_id;
@@ -201,11 +219,11 @@ namespace CASM {
       m_is_open = false;
     }
 
-    jsonConfigDatabase::iterator jsonConfigDatabase::begin() {
+    jsonConfigDatabase::iterator jsonConfigDatabase::begin() const {
       return _iterator(m_config_list.begin());
     }
 
-    jsonConfigDatabase::iterator jsonConfigDatabase::end() {
+    jsonConfigDatabase::iterator jsonConfigDatabase::end() const {
       return _iterator(m_config_list.end());
     }
 
@@ -227,42 +245,37 @@ namespace CASM {
       return _on_insert_or_emplace(result);
     }
 
-    jsonConfigDatabase::iterator update(const Configuration &config) {
+    jsonConfigDatabase::iterator jsonConfigDatabase::update(const Configuration &config) {
 
-      auto it = m_name_to_config.find(config.name());
-      if(it == m_name_to_config.end()) {
-        return _iterator(m_config_list.end());
-      }
-
-      *(it->second) = config;
-      return _iterator(it->second);
+      ValDatabase<Configuration>::erase(config.name());
+      return insert(config).first;
     }
 
     jsonConfigDatabase::iterator jsonConfigDatabase::erase(iterator pos) {
 
       // get m_config_list iterator
-      auto base_it = static_cast<jsonConfigDatabaseIterator *>(pos.get())->base();
+      auto base_it = static_cast<db_set_iterator *>(pos.get())->base();
 
       // erase name & alias
       m_name_to_config.erase(base_it->name());
 
       // update scel_range
       auto _scel_range_it = m_scel_range.find(base_it->supercell().name());
-      if(_scel_range_it->first == _scel_range_it->second) {
+      if(_scel_range_it->second.first == _scel_range_it->second.second) {
         m_scel_range.erase(_scel_range_it);
       }
-      else if(_scel_range_it->first == base_it) {
-        ++(_scel_range_it->first);
+      else if(_scel_range_it->second.first == base_it) {
+        ++(_scel_range_it->second.first);
       }
-      else if(_scel_range_it->second == base_it) {
-        --(_scel_range_it->second);
+      else if(_scel_range_it->second.second == base_it) {
+        --(_scel_range_it->second.second);
       }
 
       // erase Configuration
       return _iterator(m_config_list.erase(base_it));
     }
 
-    jsonConfigDatabase::iterator jsonConfigDatabase::find(const name_type &name_or_alias) {
+    jsonConfigDatabase::iterator jsonConfigDatabase::find(const std::string &name_or_alias) const {
       auto it = m_name_to_config.find(this->name(name_or_alias));
       if(it == m_name_to_config.end()) {
         return _iterator(m_config_list.end());
@@ -272,49 +285,50 @@ namespace CASM {
 
     /// Range of Configuration in a particular supecell
     boost::iterator_range<jsonConfigDatabase::iterator>
-    jsonConfigDatabase::scel_range(const name_type &scelname) const {
-      auto res = m_scel_range.find(scelname)->second;
-      return boost::make_iterator_range(_iterator(res->first), _iterator(std::next(res->second)));
+    jsonConfigDatabase::scel_range(const std::string &scelname) const {
+      auto &res = m_scel_range.find(scelname)->second;
+      return boost::make_iterator_range(_iterator(res.first), _iterator(std::next(res.second)));
     }
 
     /// Update m_name_to_config and m_scel_range after performing an insert or emplace
     std::pair<jsonConfigDatabase::iterator, bool>
-    jsonConfigDatabase::_on_insert_or_emplace(const std::pair<base_iterator, bool> &result) {
+    jsonConfigDatabase::_on_insert_or_emplace(std::pair<base_iterator, bool> &result) {
 
       if(result.second) {
 
-        Configuration &config = *result.first;
+        const Configuration &config = *result.first;
 
         // set the config id, and increment
         auto _config_id_it = m_config_id.find(config.supercell().name());
         if(_config_id_it == m_config_id.end()) {
           _config_id_it = m_config_id.insert(
-                            std::make_pair(
-                              config.supercell().name(),
-                              0));
+                            std::make_pair(config.supercell().name(), 0)).first;
         }
-        config.set_id(_config_id_it->second++);
+        this->set_id(config, _config_id_it->second++);
 
         // update name -> config
         m_name_to_config.insert(std::make_pair(config.name(), result.first));
 
         // check if scel_range needs updating
         auto _scel_range_it = m_scel_range.find(config.supercell().name());
+
+        // new supercell
         if(_scel_range_it == m_scel_range.end()) {
-          m_scel_range.insert(
-            std::make_pair(
-              config.supercell().name(),
-              std::make_pair(result, result)));
+          m_scel_range.emplace(
+            config.supercell().name(),
+            std::make_pair(result.first, result.first));
         }
-        else if(_scel_range_it->first == std::next(result)) {
-          _scel_range_it->first = result;
+        // if new 'begin' of scel range
+        else if(_scel_range_it->second.first == std::next(result.first)) {
+          _scel_range_it->second.first = result.first;
         }
-        else if(_scel_range_it->second == std::prev(result)) {
-          _scel_range_it->second = result;
+        // if new 'end' of scel range (!= past-the-last config in scel)
+        else if(_scel_range_it->second.second == std::prev(result.first)) {
+          _scel_range_it->second.second = result.first;
         }
       }
 
-      return std::make_pair(_iterator(result.first), result.second));
+      return std::make_pair(_iterator(result.first), result.second);
     }
 
   }

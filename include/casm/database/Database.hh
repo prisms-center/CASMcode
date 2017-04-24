@@ -21,6 +21,8 @@ namespace CASM {
       DatabaseBase(const PrimClex &_primclex) :
         m_primclex(&_primclex) {}
 
+      virtual ~DatabaseBase() {}
+
       virtual DatabaseBase &open() = 0;
       virtual void commit() = 0;
       virtual void close() = 0;
@@ -235,6 +237,11 @@ namespace CASM {
       typedef ValueType value_type;
       typedef Index size_type;
 
+      ValDatabase(const PrimClex &_primclex) :
+        DatabaseBase(_primclex) {}
+
+      virtual ~ValDatabase() {}
+
 
       virtual iterator begin() const = 0;
 
@@ -383,6 +390,16 @@ namespace CASM {
         jsonParser json(m_name_to_alias);
         json.print(file.ofstream());
         file.close();
+      }
+
+      /// Only ValDatabase<ValueType> is allowed to do a const name change
+      void set_name(const ValueType &obj, std::string name) const {
+        obj.set_name(name);
+      }
+
+      /// Only ValDatabase<ValueType> is allowed to do a const id change
+      void set_id(const ValueType &obj, Index id) const {
+        obj.set_id(id);
       }
 
     private:

@@ -639,7 +639,7 @@ namespace CASM {
     typedef typename UniqueMapType::const_iterator const_iterator;
 
     DataFormatterDictionary() :
-      UniqueMapType([](const value_type &value)->std::string {
+      UniqueMapType([](const value_type & value)->std::string {
       return value.name();
     },
     DictionaryConverter<DataObject, DatumFormatterType>()) {}
@@ -692,6 +692,9 @@ namespace CASM {
 
     /// \brief Use a single string to build a DataFormatter<DataObject>
     DataFormatter<DataObject> parse(const std::vector<std::string> &input) const;
+
+    /// \brief Use a single string to build a DataFormatter<DataObject>
+    DataFormatter<DataObject> parse(std::initializer_list<std::string> input) const;
 
   };
 

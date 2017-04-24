@@ -32,6 +32,12 @@ namespace CASM {
 
     public:
 
+      Database(const PrimClex &_primclex) :
+        ValDatabase<Supercell>(_primclex) {}
+
+      virtual ~Database() {}
+
+
       iterator begin() const override;
 
       iterator end() const override;

@@ -4,14 +4,15 @@
 #include <utility>
 #include <map>
 #include <memory>
-#include <sstream>
 #include <string>
-#include <stdexcept>
 
 namespace CASM {
 
   class PrimClex;
 
+}
+
+namespace CASM {
   namespace DB {
 
     class DatabaseBase;
@@ -34,6 +35,12 @@ namespace CASM {
       DatabaseHandler(const PrimClex &_primclex);
 
       ~DatabaseHandler();
+
+      const PrimClex &primclex() const;
+
+      /// Insert a database
+      template<typename T>
+      void insert(std::string db_name, std::unique_ptr<DatabaseBase> &&value);
 
       /// Access default Database<T>
       template<typename T>
@@ -85,6 +92,7 @@ namespace CASM {
       mutable map_type m_db;
 
     };
+
   }
 }
 

@@ -32,6 +32,12 @@ namespace CASM {
 
     public:
 
+      Database(const PrimClex &_primclex) :
+        ValDatabase<Configuration>(_primclex) {}
+
+      virtual ~Database() {}
+
+
       /// Update record
       virtual iterator update(const Configuration &config);
 

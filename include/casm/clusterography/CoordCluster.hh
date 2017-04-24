@@ -5,6 +5,7 @@
 
 #include "casm/clusterography/GenericCluster.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/crystallography/Coordinate.hh"
 
 namespace CASM {
 
@@ -81,7 +82,7 @@ namespace CASM {
     CoordCluster(CoordCluster &&other) = default;
 
     /// \brief Default move assignment
-    CoordCluster &operator=(CoordCluster && other) = default;
+    CoordCluster &operator=(CoordCluster &&other) = default;
 
 
     /// \brief Return a reference to the primitive Structure

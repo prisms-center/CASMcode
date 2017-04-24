@@ -1,3 +1,6 @@
+#ifndef CASM_DB_Import_impl
+#define CASM_DB_Import_impl
+
 #include "casm/database/Import.hh"
 #include "casm/app/DirectoryStructure.hh"
 
@@ -74,7 +77,7 @@ namespace CASM {
     template<typename PathIterator>
     void ImportT<_ConfigType>::import(PathIterator begin, PathIterator end) {
 
-      // vector of Mapping results
+      // vector of Mapping results, may be >1 per input if primitive and non-primitive
       std::vector<Result> results;
 
       // map of data import results
@@ -298,7 +301,7 @@ namespace CASM {
 
     /// \brief Path to default calctype training_data directory for config
     template<typename _ConfigType>
-    fs::path ImportT<_ConfigType>::calc_dir(const std::string configname) const {
+    fs::path ImportT<_ConfigType>::_calc_dir(const std::string configname) const {
       return primclex().dir().calc_dir<ConfigType>(configname);
     }
 
@@ -450,3 +453,5 @@ namespace CASM {
 
   }
 }
+
+#endif

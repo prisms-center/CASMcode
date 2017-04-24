@@ -1,10 +1,20 @@
-#ifndef CASM_DatabaseHandler
-#define CASM_DatabaseHandler
+#ifndef CASM_DatabaseHandler_impl
+#define CASM_DatabaseHandler_impl
 
+#include "casm/CASM_global_definitions.hh"
 #include "casm/database/DatabaseHandler.hh"
+#include "casm/database/Database.hh"
 
 namespace CASM {
   namespace DB {
+
+    /// Insert a database
+    template<typename T>
+    void DatabaseHandler::insert(std::string db_name, std::unique_ptr<DatabaseBase> &&value) {
+      m_db.emplace(
+        std::make_pair(QueryTraits<T>::name, db_name),
+        std::move(value));
+    }
 
     /// Access default Database<T>
     template<typename T>

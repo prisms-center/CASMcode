@@ -30,6 +30,7 @@ casm_lib_src_grp = {
   'basis_set': ['basis_set'],
   'kinetics': ['kinetics'],
   'clusterography': ['clusterography'],
+  'database': ['database', 'database/json'],
   'monte_carlo': ['monte_carlo', 'monte_carlo/grand_canonical', 'monte_carlo/canonical'],
   'other': ['casm_io', 'casm_io/json_io', 'container', 'misc', 'strain', 'hull', 'system', 'completer']
 }

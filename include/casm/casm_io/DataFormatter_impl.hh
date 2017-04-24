@@ -390,4 +390,11 @@ namespace CASM {
     return formatter;
   }
 
+  /// \brief Use a initializer list of string to build a DataFormatter<DataObject>
+  template<typename DataObject, typename DatumFormatterType>
+  DataFormatter<DataObject> DataFormatterDictionary<DataObject, DatumFormatterType>::parse(
+    std::initializer_list<std::string> input) const {
+    return parse(std::vector<std::string>(input));
+  }
+
 }

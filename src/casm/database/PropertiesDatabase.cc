@@ -1,15 +1,45 @@
 #include "casm/database/PropertiesDatabase.hh"
 
 namespace CASM {
+  namespace CASM_TMP {
 
+    const std::string traits<DB::ScoreMappedProperties::Method>::name = "method";
+
+    const std::multimap<DB::ScoreMappedProperties::Method, std::vector<std::string> > traits<DB::ScoreMappedProperties::Method>::strval = {
+      {DB::ScoreMappedProperties::Method::deformation_cost, {"deformation_cost"} },
+      {DB::ScoreMappedProperties::Method::minimum, {"minimum"} },
+      {DB::ScoreMappedProperties::Method::maximum, {"maximum"} },
+      {DB::ScoreMappedProperties::Method::direct_selection, {"direct_selection"} }
+    };
+
+  }
+}
+
+namespace CASM {
   namespace DB {
+
+    jsonParser &to_json(const MappedProperties &obj, jsonParser &json) {
+      json.put_obj();
+      json["from"] = obj.from;
+      json["to"] = obj.to;
+      json["unmapped"] = obj.unmapped;
+      json["mapped"] = obj.mapped;
+      return json;
+    }
+
+    void from_json(MappedProperties &obj, const jsonParser &json) {
+      from_json(obj.from, json["from"]);
+      from_json(obj.to, json["to"]);
+      from_json(obj.unmapped, json["unmapped"]);
+      from_json(obj.mapped, json["mapped"]);
+    }
 
     /// \brief Default uses minimum relaxed_energy
     ScoreMappedProperties::ScoreMappedProperties() :
       ScoreMappedProperties(jsonParser()) {}
 
     ScoreMappedProperties::ScoreMappedProperties(const jsonParser &_params) :
-      m_param(_params) {
+      m_params(_params) {
 
       // default to minimum "relaxed_energy"
       if(m_params.is_null() || m_params.size() == 0) {
@@ -44,14 +74,14 @@ namespace CASM {
 
       switch(m_method) {
       case Method::minimum: {
-        return obj.mapped.get<double>(m_propname);
+        return obj.mapped[m_propname].get<double>();
       }
       case Method::maximum: {
-        return -1.0 * obj.mapped.get<double>(m_propname);
+        return -1.0 * obj.mapped[m_propname].get<double>();
       }
       case Method::deformation_cost: {
-        double ld = obj.mapped.get<double>("lattice_deformation_cost");
-        double bd = obj.mapped.get<double>("basis_deformation_cost");
+        double ld = obj.mapped["lattice_deformation_cost"].get<double>();
+        double bd = obj.mapped["basis_deformation_cost"].get<double>();
         return ld * m_lattice_weight + bd * (1.0 - m_lattice_weight);
       }
       case Method::direct_selection: {
@@ -87,20 +117,26 @@ namespace CASM {
       }
     }
 
-  } // namespace DB
+    bool ScoreMappedProperties::operator==(const ScoreMappedProperties &B) const {
+      return m_params == B.m_params;
+    }
 
-  namespace CASM_TMP {
-    const std::string traits<DB::ScoreMappedProperties::Method>::name = "method";
+    bool ScoreMappedProperties::operator!=(const ScoreMappedProperties &B) const {
+      return !(*this == B);
+    }
 
-    const std::multimap<DB::ScoreMappedProperties::Method, std::vector<std::string> > traits<DB::ScoreMappedProperties::Method>::strval = {
-      {DB::ScoreMappedProperties::Method::deformation_cost, {"deformation_cost"} }
-      {DB::ScoreMappedProperties::Method::minimum, {"minimum"} }
-      {DB::ScoreMappedProperties::Method::maximum, {"maximum"} }
-      {DB::ScoreMappedProperties::Method::direct_selection, {"direct_selection"} },
-    };
-  }
+    const jsonParser &ScoreMappedProperties::params() const {
+      return m_params;
+    }
 
-  namespace DB {
+    jsonParser &to_json(const ScoreMappedProperties &score, jsonParser &json) {
+      json = score.params();
+      return json;
+    }
+
+    void from_json(ScoreMappedProperties &score, const jsonParser &json) {
+      score = ScoreMappedProperties(json);
+    }
 
     /// \brief Compare mapped properties 'from_A' and 'from_B', preferring self-mapped results
     bool PropertiesDatabase::Compare::operator()(
@@ -113,14 +149,15 @@ namespace CASM {
       if(from_A == m_to) {
         return true;
       }
-      if(from_b == m_to) {
+      if(from_B == m_to) {
         return false;
       }
-      return m_score(m_map->find_via_from(from_A)->mapped) < m_score(m_map->find_via_from(from_B)->mapped);
+      return m_score(*m_map->find_via_from(from_A)) < m_score(*m_map->find_via_from(from_B));
     }
 
     /// \brief Insert data
-    std::pair<iterator, bool> PropertiesDatabase::insert(const MappedProperties &value) {
+    std::pair<PropertiesDatabase::iterator, bool> PropertiesDatabase::insert(
+      const MappedProperties &value) {
 
       // insert data
       auto res = _insert(value);
@@ -131,20 +168,21 @@ namespace CASM {
       // insert 'to' -> 'from' link
       auto tset = relaxed_from_all(value.to);
       tset.insert(value.from);
-      _set_relaxed_from_all(tset);
+      _set_relaxed_from_all(value.to, tset);
 
       return res;
     }
 
     /// \brief Erase the data 'from' from_configname
-    iterator PropertiesDatabase::erase(iterator pos) {
+    PropertiesDatabase::iterator PropertiesDatabase::erase(iterator pos) {
 
       auto tset = relaxed_from_all(pos->to);
       tset.erase(pos->from);
-      _set_relaxed_from_all(tset);
+      _set_relaxed_from_all(pos->to, tset);
 
       return _erase(pos);
     }
+
   }
 }
 

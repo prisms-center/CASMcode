@@ -5,8 +5,9 @@
 #include "casm/database/Database.hh"
 
 namespace CASM {
-
   namespace DB {
+
+    template<typename Derived> class Indexed;
 
     /// Derived should implement:
     /// - std::string _generate_name() const
@@ -38,10 +39,10 @@ namespace CASM {
         m_name = "";
       }
 
-
     private:
 
       friend ValDatabase<Derived>;
+      friend Indexed<Derived>;
 
       const Derived &derived() const {
         return *static_cast<const Derived *>(this);
@@ -82,8 +83,9 @@ namespace CASM {
       /// insert or emplace.
       ///
       /// - protected, to allow reading Derived from database and setting id
-      void set_id(Index _id) {
+      void set_id(Index _id) const {
         m_id = std::to_string(_id);
+        this->m_name = "";
       }
 
       /// \brief Set id
@@ -92,8 +94,9 @@ namespace CASM {
       /// insert or emplace.
       ///
       /// - protected, to allow reading Derived from database and setting id
-      void set_id(std::string _id) {
+      void set_id(std::string _id) const {
         m_id = _id;
+        this->m_name = "";
       }
 
 
@@ -101,7 +104,7 @@ namespace CASM {
 
       friend ValDatabase<Derived>;
 
-      std::string m_id;
+      mutable std::string m_id;
     };
 
   }

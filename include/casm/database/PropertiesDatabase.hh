@@ -7,7 +7,6 @@
 #include "casm/database/Database.hh"
 
 namespace CASM {
-
   namespace DB {
 
     struct MappedProperties {
@@ -26,6 +25,11 @@ namespace CASM {
       /// Parsed & mapped properties, as from ConfigMapper::import_structure output
       jsonParser mapped;
     };
+
+    jsonParser &to_json(const MappedProperties &score, jsonParser &json);
+
+    void from_json(MappedProperties &score, const jsonParser &json);
+
 
     /// Compare via A.from < B.from
     ///
@@ -72,6 +76,12 @@ namespace CASM {
 
       bool validate(const MappedProperties &obj) const;
 
+      bool operator==(const ScoreMappedProperties &B) const;
+
+      bool operator!=(const ScoreMappedProperties &B) const;
+
+      const jsonParser &params() const;
+
     private:
 
       jsonParser m_params;
@@ -83,13 +93,11 @@ namespace CASM {
       std::string m_direct_selection_name;
     };
 
+    jsonParser &to_json(const ScoreMappedProperties &score, jsonParser &json);
+
+    void from_json(ScoreMappedProperties &score, const jsonParser &json);
+
     ENUM_IO(CASM::DB::ScoreMappedProperties::Method)
-
-  }
-
-  ENUM_TRAITS(CASM::DB::ScoreMappedProperties::Method)
-
-  namespace DB {
 
 
     class PropertiesDatabaseIterator;
@@ -367,6 +375,10 @@ namespace CASM {
     };
 
   }
+}
+
+namespace CASM {
+  ENUM_TRAITS(CASM::DB::ScoreMappedProperties::Method)
 }
 
 #endif

@@ -2,7 +2,7 @@
 #include "casm/clex/PrimClex.hh"
 
 #include "casm/database/json/jsonDatabase.hh"
-
+#include "casm/app/ProjectSettings.hh"
 
 namespace CASM {
 
@@ -16,11 +16,15 @@ namespace CASM {
       m_primclex(&_primclex),
       m_default_db_name(m_primclex->settings().db_name()) {
 
-      jsonDB::insert(m_db);
+      Traits<jsonDB>::insert(*this);
     }
 
-    ~DatabaseHandler::DatabaseHandler() {
+    DatabaseHandler::~DatabaseHandler() {
       close();
+    }
+
+    const PrimClex &DatabaseHandler::primclex() const {
+      return *m_primclex;
     }
 
   }
