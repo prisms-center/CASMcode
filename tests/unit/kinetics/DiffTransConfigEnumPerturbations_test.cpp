@@ -70,13 +70,17 @@ BOOST_AUTO_TEST_CASE(Test0) {
   std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits;
   Kinetics::make_prim_periodic_diff_trans_orbits(orbits.begin() + 2, orbits.begin() + 3, primclex.crystallography_tol(), std::back_inserter(diff_trans_orbits));
   Kinetics::DiffusionTransformation diff_trans_prototype = diff_trans_orbits[0].prototype();
+  std::cout << diff_trans_orbits.size() << "\n";
 
-  //std::cout << "Prototype Diff Trans:" << "\n" << diff_trans_prototype << "\n";
+  std::cout << "Prototype Diff Trans:" << "\n" << diff_trans_prototype << "\n";
 
   /// Find unique DiffusionTransformations
-  PermuteIterator begin = bg_config_prim.supercell().permute_begin();
-  PermuteIterator end = bg_config_prim.supercell().permute_end();
-  Kinetics::DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, bg_config_prim);
+//  PermuteIterator begin = bg_config_prim.supercell().permute_begin();
+//  PermuteIterator end = bg_config_prim.supercell().permute_end();
+//  Kinetics::DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, bg_config_prim);
+  PermuteIterator begin = config.supercell().permute_begin();
+  PermuteIterator end = config.supercell().permute_end();
+  Kinetics::DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, config);
 
   //  std::cout << "Config factor groups" << "\n";
   //  for ( auto &g: diff_trans_unique.invariant_subgroup()){
@@ -96,11 +100,13 @@ BOOST_AUTO_TEST_CASE(Test0) {
   }
 
   /// Check if number of unique diff trans is what we expect
-  // Size of diff trans factor group should be equal to (size of scel fg)*(volume of scel)/(size of bg_config fg)
-  //  std::cout << "size of Config factor group " << diff_trans_unique.invariant_subgroup().size() << std::endl;
-  //  std::cout << "size of Supercell factor group " << bg_config_prim.supercell().factor_group().size() << std::endl;
-  //  std::cout << "size of Supercell (#prims) " << bg_config_prim.supercell().volume() << std::endl;
-  //  std::cout << "size of diff trans unique " << subdifftrans.size() << std::endl;
+  //Size of diff trans factor group should be equal to (size of scel fg)*(volume of scel)/(size of bg_config fg)
+  std::cout << "size of Config factor group " << diff_trans_unique.invariant_subgroup().size() << std::endl;
+  std::cout << "size of Supercell factor group " << bg_config_prim.supercell().factor_group().size() << std::endl;
+  std::cout << "size of Supercell (#prims) " << bg_config_prim.supercell().volume() << std::endl;
+  std::cout << "size of non-prim Supercell factor group " << config.supercell().factor_group().size() << std::endl;
+  std::cout << "size of non-prim Supercell (#prims) " << config.supercell().volume() << std::endl;
+  std::cout << "size of diff trans unique " << subdifftrans.size() << std::endl;
 
   int config_fg_int = static_cast<int>(diff_trans_unique.invariant_subgroup().size());
   int scel_fg_int = static_cast<int>(bg_config_prim.supercell().factor_group().size());
@@ -210,9 +216,9 @@ BOOST_AUTO_TEST_CASE(Test0) {
       Kinetics::SpecieLocation tmpto = it2->to;
       UnitCellCoord tmpfromcoord = tmpfrom.uccoord;
       UnitCellCoord tmptocoord = tmpto.uccoord;
-      std::cout << "tmp from coord: " << tmpfromcoord << std::endl;
-      tmpfromcoord.coordinate().print(std::cout);
-      std::cout << "\n";
+      //std::cout << "tmp from coord: " << tmpfromcoord << std::endl;
+      //tmpfromcoord.coordinate().print(std::cout);
+      //std::cout << "\n";
       //tmpfromcoord.unit().main_print(std::cout, FRAC, true, 0);
     }
   }
