@@ -5,7 +5,7 @@ import casm
 import casm.project
 import vaspwrapper
 
-class Relax(object):
+class Neb(object):
     """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
 
         The relaxation creates the following directory structure:
@@ -51,7 +51,7 @@ class Relax(object):
     """
     def __init__(self, configdir=None, auto=True, sort=True):
         """
-        Construct a VASP relaxation job object.
+        Construct a VASP neb job object.
 
         Arguments
         ----------
@@ -75,20 +75,23 @@ class Relax(object):
 
         # get the configname from the configdir path
         #_res = os.path.split(configdir)
-        _res = configdir.strip().split('/') 
+        _res = configdir.strip().split('/')
         self.configname = _res[-2] + "/" + _res[-1]
         tmp_index = _res.index("training_data")
-        self.run_subdir = ""
-        ## anything between "training_data" and "configname" is dumped into run_subdir
-        if temp_index < len(_res)-3:
-            for i in range(tmp_index+1,len(_res)-2)]:
-                self.run_subdir += _res[i] + "/"
-            self.run_subdir = run_subdir[:-1] ##remove the trailing "/"
-                
+        self.calc_subdir = ""
+        ## anything between "training_data" and "configname" is dumped into calc_subdir
+        if tmp_index < len(_res)-3:
+            for i in range(tmp_index+1, len(_res)-2):
+                self.calc_subdir += _res[i] + "/"
+            self.calc_subdir = self.calc_subdir[:-1] ##remove the trailing "/"
+
         print "  Configuration:", self.configname
 
         print "  Reading CASM settings"
-        self.casm_directories=casm.project.DirectoryStructure(configdir)
+
+        ### fix the paths in this block to run in none configname folder. write comment on what each path is??
+        #*********************************
+        self.casm_directories = casm.project.DirectoryStructure(configdir)
         self.casm_settings = casm.project.ProjectSettings(configdir)
         if self.casm_settings is None:
             raise vaspwrapper.VaspWrapperError("Not in a CASM project. The file '.casm' directory was not found.")
@@ -104,20 +107,17 @@ class Relax(object):
         self.clex = self.casm_settings.default_clex
 
         # store path to .../config/calctype.name, and create if not existing
-        self.calcdir = self.casm_directories.calctype_dir(self.configname, self.clex)
-        try:
-            os.mkdir(self.calcdir)
-        except:
-            pass
-        print "  Calculations directory:", self.calcdir
+        # will be appended by n_images at the end after reading the settings file
+        self.calcdir = self.casm_directories.calctype_dir(self.configname, self.clex, self.calc_subdir)
+        #***********************************
 
         # read the settings json file
-        print "  Reading relax.json settings file"
+        print "  Reading neb.json settings file"
         sys.stdout.flush()
-        setfile = self.casm_directories.settings_path_crawl("relax.json", self.configname, self.clex)
+        setfile = self.casm_directories.settings_path_crawl("neb.json", self.configname, self.clex)
 
         if setfile is None:
-            raise vaspwrapper.VaspWrapperError("Could not find \"relax.json\" in an appropriate \"settings\" directory")
+            raise vaspwrapper.VaspWrapperError("Could not find \"neb.json\" in an appropriate \"settings\" directory")
             sys.stdout.flush()
 
         else:
@@ -144,13 +144,404 @@ class Relax(object):
 
         self.auto = auto
         self.sort = sort
+        self.n_images = self.settings["n_images"]
+        # append the n_images to calcdir
+        self.calcdir = os.path.join(self.calcdir, "N_images_{}".format(self.n_images))
+        try:
+            os.mkdir(self.calcdir)
+        except:
+            pass
+        print "  Calculations directory:", self.calcdir
         print "  DONE\n"
         sys.stdout.flush()
 
+    @property
+    def configdir(self): ## check the path
+        return self.casm_directories.configuration_dir(self.configname, self.calc_subdir)
+
+    def setup(self):
+        ## has to implement image making and potcars
+        """ Setup initial relaxation run
+
+            Uses the following files from the most local .../settings/calctype.name directory:
+                INCAR: VASP input settings
+                KPOINTS: VASP kpoints settings
+                POSCAR: reference for KPOINTS if KPOINTS mode is not A/AUTO/Automatic
+                SPECIES: info for each species such as which POTCAR files to use, MAGMOM, GGA+U, etc.
+
+            Uses the following files from the .../config directory:
+                POS: structure of the configuration to be relaxed
 
         """
-        To Do:
-        1) Find the best way to edit DirectoryStructure to perform calculations in KMC directory struc
+        # Find required input files in CASM project directory tree
+        vaspfiles = casm.vaspwrapper.vasp_input_file_names(self.casm_directories, self.configname,
+                                                           self.clex, self.calc_subdir)
+        incarfile, prim_kpointsfile, prim_poscarfile, temp_poscarfile, speciesfile = vaspfiles
+
+        # Find optional input files
+        extra_input_files = []
+        for s in self.settings["extra_input_files"]:
+            extra_input_files.append(self.casm_directories.settings_path_crawl(s, self.configname, self.clex, self.calc_subdir))
+            if extra_input_files[-1] is None:
+                raise vasp.VaspError("Neb.setup failed. Extra input file " + s + " not found in CASM project.")
+        if self.settings["initial"]:
+            extra_input_files += [self.casm_directories.settings_path_crawl(self.settings["initial"],
+                                                                            self.configname, self.clex, self.calc_subdir)]
+            if extra_input_files[-1] is None:
+                raise vasp.VaspError("Neb.setup failed. No initial INCAR file " + self.settings["initial"] + " found in CASM project.")
+        if self.settings["final"]:
+            extra_input_files += [self.casm_directories.settings_path_crawl(self.settings["final"],
+                                                                            self.configname, self.clex, self.calc_subdir)]
+            if extra_input_files[-1] is None:
+                raise vasp.VaspError("Neb.setup failed. No final INCAR file " + self.settings["final"] + " found in CASM project.")
+        sys.stdout.flush()
+        
+        #make image folders to store image poscars
+        for i in range(self.settings["n_images"]+2):
+            os.mkdir(os.path.join(self.calcdir, str(i).zfill(2)))
+        ## yet to implement a python wrapper for casm api to enumerate image poscars
+        #make vasp input files
+        sample_super_poscarfile = vasp.io.Poscar(os.path.join(self.calcdir,"00","POSCAR"))
+        vasp.io.write_vasp_input(self.calcdir, incarfile, prim_kpointsfile, prim_poscarfile,
+                                 sample_super_poscarfile, speciesfile, self.sort, extra_input_files,
+                                 self.settings["strict_kpoints"])
+        # remove the poscar file or rename it to POSCAR.start from caldir??? 
+        #store a sample poscar while enumeration to write a potcar
+        # or may be send the sample_poscar as super_poscarfile?? 
+        #print "  Writing POTCAR:", os.path.join(self.calcdir, 'POTCAR')
+        #vasp.io.write_potcar(os.path.join(self.calcdir, "POTCAR"), sample_poscar,
+        #                     vasp.io.species.species_settings(speciesfile))
+
+    def submit(self):
+        """Submit a PBS job for this VASP relaxation"""
+
+        print "Submitting..."
+        print "Configuration:", self.configname
+        # first, check if the job has already been submitted and is not completed
+        db = pbs.JobDB()
+        print "Calculation directory:", self.calcdir
+        id = db.select_regex_id("rundir", self.calcdir)
+        print "JobID:", id
+        sys.stdout.flush()
+        if id != []:
+            for j in id:
+                job = db.select_job(j)
+                # taskstatus = ["Incomplete","Complete","Continued","Check","Error:.*","Aborted"]
+                # jobstatus = ["C","Q","R","E","W","H","M"]
+                if job["jobstatus"] != "C":
+                    print "JobID:", job["jobid"], "  Jobstatus:", job["jobstatus"], "  Not submitting."
+                    sys.stdout.flush()
+                    return
+                #elif job["taskstatus"] in ["Complete", "Check"] or re.match( "Error:.*", job["taskstatus"]):
+                #    print "JobID:", job["jobid"], "  Taskstatus:", job["taskstatus"], "  Not submitting."
+                #    sys.stdout.flush()
+                #    return
 
 
-        """
+        # second, only submit a job if relaxation status is "incomplete"
+
+        # construct the Relax object
+        calculation = vasp.Neb(self.calcdir, self.run_settings())
+
+        # check the current status
+        (status, task) = calculation.status()
+
+        if status == "complete":
+            print "Status:", status, "  Not submitting."
+            sys.stdout.flush()
+
+            # ensure job marked as complete in db
+            if self.auto:
+                for j in id:
+                    job = db.select_job(j)
+                    if job["taskstatus"] == "Incomplete":
+                        try:
+                            pbs.complete_job(jobid=j)
+                        except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                            print str(e)
+                            sys.stdout.flush()
+
+            # ensure results report written
+            if not os.path.isfile(os.path.join(self.calcdir, "properties.calc.json")):
+                self.finalize()
+
+            return
+
+        elif status == "not_converging":
+            print "Status:", status, "  Not submitting."
+            sys.stdout.flush()
+            return
+
+        elif status != "incomplete":
+            raise vaspwrapper.VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+            sys.stdout.flush()
+            return
+
+
+        print "Preparing to submit a VASP relaxation PBS job"
+        sys.stdout.flush()
+
+        # cd to configdir, submit jobs from configdir, then cd back to currdir
+        currdir = os.getcwd()
+        os.chdir(self.calcdir)
+
+        # determine the number of atoms in the configuration
+        #print "Counting atoms in the POSCAR"
+        #sys.stdout.flush()
+        #pos = vasp.io.Poscar(os.path.join(self.configdir,"POS"))
+        #N = len(pos.basis)
+
+        # determine the number of nodes from settings
+        # still has to implement a option to use either atoms_per_proc or nodes_per_image or images_per_node
+        nodes = int(self.n_images) * float(self.settings["nodes_per_image"])
+        # construct command to be run
+        cmd = ""
+        if self.settings["preamble"] is not None:
+        # Append any instructions given in the 'preamble' file, if given
+            preamble = self.casm_directories.settings_path_crawl(self.settings["preamble"],
+                                                                 self.configname, self.clex,
+                                                                 self.calc_subdir)
+            with open(preamble) as my_preamble:
+                cmd += "".join(my_preamble)
+        # Or just execute a single prerun line, if given
+        if self.settings["prerun"] is not None:
+            cmd += self.settings["prerun"] + "\n"
+        cmd += "python -c \"import casm.vaspwrapper; casm.vaspwrapper.Neb('" + self.configdir + "').run()\"\n"
+        if self.settings["postrun"] is not None:
+            cmd += self.settings["postrun"] + "\n"
+
+        print "Constructing a PBS job"
+        sys.stdout.flush()
+        # construct a pbs.Job
+        job = pbs.Job(name=casm.jobname(self.configdir),\
+                      account=self.settings["account"],\
+                      nodes=int(nodes),
+                      ppn=int(self.settings["ppn"]),\
+                      walltime=self.settings["walltime"],\
+                      pmem=self.settings["pmem"],\
+                      qos=self.settings["qos"],\
+                      queue=self.settings["queue"],\
+                      message=self.settings["message"],\
+                      email=self.settings["email"],\
+                      priority=self.settings["priority"],\
+                      command=cmd,\
+                      auto=self.auto)
+
+        print "Submitting"
+        sys.stdout.flush()
+        # submit the job
+        job.submit()
+        self.report_status("submitted")
+
+        # return to current directory
+        os.chdir(currdir)
+
+        print "CASM VASPWrapper relaxation PBS job submission complete\n"
+        sys.stdout.flush()
+
+
+    def run_settings(self):
+        """ Set default values based on runtime environment"""
+        settings = dict(self.settings)
+
+        # set default values
+
+        if settings["npar"] == "CASM_DEFAULT":
+            if "PBS_NUM_NODES" in os.environ:
+                settings["npar"] = int(os.environ["PBS_NUM_NODES"])
+            elif "SLURM_JOB_NUM_NODES" in os.environ:
+                settings["npar"] = int(os.environ["SLURM_JOB_NUM_NODES"])
+            else:
+                settings["npar"] = None
+        elif settings["npar"] == "VASP_DEFAULT":
+            settings["npar"] = None
+
+        if settings["npar"] is None:
+            if settings["ncore"] == "CASM_DEFAULT":
+                if "PBS_NUM_PPN" in os.environ:
+                    settings["ncore"] = int(os.environ["PBS_NUM_PPN"])
+                elif "SLURM_CPUS_ON_NODE" in os.environ:
+                    settings["ncore"] = int(os.environ["SLURM_CPUS_ON_NODE"])
+                else:
+                    settings["ncore"] = None
+            elif settings["ncore"] == "VASP_DEFAULT":
+                settings["ncore"] = 1
+        else:
+            settings["ncore"] = None
+
+        if settings["ncpus"] is None or settings["ncpus"] == "CASM_DEFAULT":
+            if "PBS_NP" in os.environ:
+                settings["ncpus"] = int(os.environ["PBS_NP"])
+            elif "SLURM_NTASKS" in os.environ:
+                settings["ncpus"] = int(os.environ["SLURM_NTASKS"])
+            else:
+                settings["ncpus"] = None
+
+        if settings["run_limit"] is None or settings["run_limit"] == "CASM_DEFAULT":
+            settings["run_limit"] = 10
+
+        return settings
+
+    def run(self):
+        """ Setup input files, run a vasp relaxation, and report results """
+
+        # construct the Neb object
+        calculation = vasp.Neb(self.calcdir, self.run_settings())
+
+        # check the current status
+        (status, task) = calculation.status()
+
+        if status == "complete":
+            print "Status:", status
+            sys.stdout.flush()
+
+            # mark job as complete in db
+            if self.auto:
+                try:
+                    pbs.complete_job()
+                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                    print str(e)
+                    sys.stdout.flush()
+
+            # write results to properties.calc.json
+            self.finalize()
+            return
+
+        elif status == "not_converging":
+            print "Status:", status
+            self.report_status("failed","run_limit")
+            print "Returning"
+            sys.stdout.flush()
+            return
+
+        elif status == "incomplete":
+
+            if task == "setup":
+                self.setup()
+
+            self.report_status("started")
+            (status, task) = calculation.run()
+
+        else:
+            self.report_status("failed", "unknown")
+            raise vaspwrapper.VaspWrapperError("unexpected relaxation status: '" + status + "' and task: '" + task + "'")
+            sys.stdout.flush()
+
+
+        # once the run is done, update database records accordingly
+
+        if status == "not_converging":
+
+            # mark error
+            if self.auto:
+                try:
+                    pbs.error_job("Not converging")
+                except (pbs.PBSError, pbs.JobDBError) as e:
+                    print str(e)
+                    sys.stdout.flush()
+
+            print "Not Converging!"
+            sys.stdout.flush()
+            self.report_status("failed", "run_limit")
+
+            # print a local settings file, so that the run_limit can be extended if the
+            #   convergence problems are fixed
+
+            config_set_dir = self.casm_directories.configuration_calc_settings_dir(self.configname, self.clex, self.calc_subdir)
+
+            try:
+                os.makedirs(config_set_dir)
+            except:
+                pass
+            settingsfile = os.path.join(config_set_dir, "neb.json")
+            vaspwrapper.write_settings(self.settings, settingsfile)
+
+            print "Writing:", settingsfile
+            print "Edit the 'run_limit' property if you wish to continue."
+            sys.stdout.flush()
+            return
+
+        elif status == "complete":
+
+            # mark job as complete in db
+            if self.auto:
+                try:
+                    pbs.complete_job()
+                except (pbs.PBSError, pbs.JobDBError, pbs.EligibilityError) as e:
+                    print str(e)
+                    sys.stdout.flush()
+
+            # write results to properties.calc.json
+            self.finalize()
+
+        else:
+            self.report_status("failed", "unknown")
+            raise vaspwrapper.VaspWrapperError("vasp relaxation complete with unexpected status: '" + status + "' and task: '" + task + "'")
+            sys.stdout.flush()
+
+    def report_status(self, status, failure_type=None):
+        """Report calculation status to status.json file in configuration directory.
+
+        Args:
+            status: string describing calculation status. Currently used values are
+                 not_submitted
+                 submitted
+                 complete
+                 failed
+             failure_type: optional string describing reason for failure. Currently used values are
+                 unknown
+                 electronic_convergence
+                 run_limit"""
+
+        output = dict()
+        output["status"] = status
+        if failure_type is not None:
+            output["failure_type"] = failure_type
+
+        outputfile = os.path.join(self.calcdir, "status.json")
+        with open(outputfile, 'w') as file:
+            file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
+        print "Wrote " + outputfile
+        sys.stdout.flush()
+
+
+    def finalize(self):
+        if self.is_converged():
+        # write properties.calc.json
+            vaspdir = os.path.join(self.calcdir, "run.final")
+            super_poscarfile = os.path.join(self.calcdir,"run.final","00","POSCAR")
+            speciesfile = self.casm_directories.settings_path_crawl("SPECIES", self.configname, self.clex, self.calc_subdir)
+            output = self.properties(vaspdir, super_poscarfile, speciesfile)
+            outputfile = os.path.join(self.calcdir, "properties.calc.json")
+            with open(outputfile, 'w') as file:
+                file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
+            print "Wrote " + outputfile
+            sys.stdout.flush()
+            self.report_status('complete')
+
+    def is_converged(self):
+        # Check for electronic convergence in completed calculations. Returns True or False.
+
+        # Verify that the last relaxation reached electronic convergence
+        calculation = vasp.Neb(self.calcdir, self.run_settings())
+        for i in range(len(calculation.rundir)):
+            try:
+                vrun = vasp.io.Vasprun( os.path.join(self.calcdir, calculation.rundir[-i-1], "vasprun.xml"))
+                if len(vrun.all_e_0[-1]) >= vrun.nelm:
+                    print('The last relaxation run (' +
+                          os.path.basename(relaxation.rundir[-i-1]) +
+                          ') failed to achieve electronic convergence; properties.calc.json will not be written.\n')
+                    self.report_status('failed', 'electronic_convergence')
+                    return False
+                break
+            except:
+                pass
+
+        # Verify that the final static run reached electronic convergence
+        vrun = vasp.io.Vasprun(os.path.join(self.calcdir, "run.final", "vasprun.xml"))
+        if len(vrun.all_e_0[0]) >= vrun.nelm:
+            print('The final run failed to achieve electronic convergence; properties.calc.json will not be written.\n')
+            self.report_status('failed', 'electronic_convergence')
+            return False
+
+        return True

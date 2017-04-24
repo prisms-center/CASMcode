@@ -30,7 +30,7 @@ class ClexDescription(object):
         ECI set name
       
     """
-    def __init__(self, name, property, calctype, ref, bset, eci):
+    def __init__(self, name, property, calctype, ref, bset, eci, calc_subdir = ""): ## clean it up
       self.name = name
       self.property = property
       self.calctype = calctype
@@ -228,7 +228,7 @@ class DirectoryStructure(object):
 
     # -- Calculations and reference --------
 
-    def settings_path_crawl(self, filename, configname, clex):
+    def settings_path_crawl(self, filename, configname, clex, calc_subdir = ""):
         """
         Returns the path to the first file named 'filename' found in the settings 
         directories.
@@ -261,12 +261,12 @@ class DirectoryStructure(object):
             directories, or None if not found.
       
         """
-        filepath = join(self.configuration_calc_settings_dir(configname, clex), filename)
+        filepath = join(self.configuration_calc_settings_dir(configname, clex, calc_subdir), filename)
         if os.path.exists(filepath):
           return filepath
         
         scelname = configname.split('/')[0]
-        filepath = join(self.supercell_calc_settings_dir(scelname, clex), filename)
+        filepath = join(self.supercell_calc_settings_dir(scelname, clex, calc_subdir), filename)
         if os.path.exists(filepath):
           return filepath
         
@@ -276,37 +276,37 @@ class DirectoryStructure(object):
         
         return None
 
-    def supercell_dir(self, scelname):
+    def supercell_dir(self, scelname, calc_subdir = ""):
       """Return supercell directory path (scelname has format SCELV_A_B_C_D_E_F)"""
-      return join(self.path, self.__calc_dir, scelname)
+      return join(self.path, self.__calc_dir, calc_subdir, scelname)
 
-    def configuration_dir(self, configname):
+    def configuration_dir(self, configname, calc_subdir = ""):
       """Return configuration directory path (configname has format SCELV_A_B_C_D_E_F/I)"""
-      return join(self.path, self.__calc_dir, configname)
+      return join(self.path, self.__calc_dir, calc_subdir, configname)
     
-    def POS(self, configname):
+    def POS(self, configname, calc_subdir = ""):
       """Return path to POS file"""
-      return join(self.configuration_dir(configname), "POS")
+      return join(self.configuration_dir(configname, calc_subdir), "POS")
     
-    def calctype_dir(self, configname, clex):
-      """Return calctype directory path (e.g. training_data/SCEL_...../0/calctype.default"""
-      return join(self.configuration_dir(configname),self.__calctype(clex.calctype))
+    def calctype_dir(self, configname, clex, calc_subdir = ""):
+      """Return calctype directory path (e.g. training_data/$(calc_subdir)/SCEL_...../0/calctype.default"""
+      return join(self.configuration_dir(configname,calc_subdir),self.__calctype(clex.calctype))
 
     def calc_settings_dir(self, clex):
       """Return calculation settings directory path, for global settings"""
       return join(self.path, self.__calc_dir, self.__set_dir, self.__calctype(clex.calctype))
 
-    def supercell_calc_settings_dir(self, scelname, clex):
+    def supercell_calc_settings_dir(self, scelname, clex, calc_subdir = "" ):
       """Return calculation settings directory path, for supercell specific settings"""
-      return join(self.supercell_dir(scelname), self.__set_dir, self.__calctype(clex.calctype))
+      return join(self.supercell_dir(scelname, calc_subdir), self.__set_dir, self.__calctype(clex.calctype))
 
-    def configuration_calc_settings_dir(self, configname, clex):
+    def configuration_calc_settings_dir(self, configname, clex, calc_subdir = ""):
       """Return calculation settings directory path, for configuration specific settings"""
-      return join(self.configuration_dir(configname), self.__set_dir, self.__calctype(clex.calctype))
+      return join(self.configuration_dir(configname, calc_subdir), self.__set_dir, self.__calctype(clex.calctype))
 
-    def calculated_properties(self, configname, clex):
+    def calculated_properties(self, configname, clex, calc_subdir = ""):
       """Return calculated properties file path"""
-      return join(self.configuration_dir(configname), self.__calctype(clex.calctype), "properties.calc.json")
+      return join(self.configuration_dir(configname, calc_subdir), self.__calctype(clex.calctype), "properties.calc.json")
 
 
     def ref_dir(self, clex):

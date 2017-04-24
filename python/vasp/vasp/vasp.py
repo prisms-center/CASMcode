@@ -190,6 +190,70 @@ def continue_job(jobdir, contdir, settings):
             f_in.close()
             # Remove original target file
             os.remove(os.path.join(jobdir,file))
+
+    # check if the run is a neb job and copy the image CONTCAR to POSCAR
+    # if "n_images" is a key available to the settings then it is assumed that its a neb run 
+    if "n_images" in settings:
+        # go through each image folder, make a new image folder in contdir and copy CONTCAR
+        i = 0
+        while os.path.isdir(os.path.join(jobdir, str(i).zfill(2))):
+            img_dir = str(i).zfill(2)
+            os.makedirs(os.path.join(contdir, img_dir))
+            if os.path.isfile(os.path.join(jobdir, img_dir, "CONTCAR")) and os.path.getsize(os.path.join(jobdir, img_dir, "CONTCAR")) > 0:
+                shutil.copyfile(os.path.join(jobdir, img_dir, "CONTCAR"), os.path.join(contdir, img_dir, "POSCAR"))
+                print "  cp {0}/CONTCAR -> {0}/POSCAR".format(img_dir)
+            else:
+                shutil.copyfile(os.path.join(jobdir, img_dir, "POSCAR"), os.path.join(contdir, img_dir, "POSCAR"))
+                print "  no {0}/CONTCAR: cp {0}/POSCAR -> {0}/POSCAR".format(img_dir)
+
+            # move files
+            print "  mv:",
+            for file in move:
+                print file,
+                # This prevents a missing file from crashing the vasprun (e.g. a missing WAVECAR)
+                if os.path.isfile(os.path.join(jobdir, img_dir, file)):
+                    os.rename(os.path.join(jobdir, img_dir, file),
+                              os.path.join(contdir, img_dir, file))
+                else:
+                    print "Could not find file %s, skipping!" % file
+                print ""
+
+            # copy files
+            print "  cp:",
+            for file in copy:
+                print file,
+                # This prevents a missing file from crashing the vasprun (e.g. a missing WAVECAR)
+                if os.path.isfile(os.path.join(jobdir, img_dir, file)):
+                    shutil.copyfile(os.path.join(jobdir, img_dir, file),
+                                    os.path.join(contdir, img_dir, file))
+                else:
+                    print "Could not find file %s, skipping!" % file
+            print ""
+
+            # remove files
+            print "  rm:",
+            for file in remove:
+                if os.path.isfile(os.path.join(jobdir, img_dir, file)):
+                    print file,
+                    os.remove(os.path.join(jobdir, img_dir, file))
+            print ""
+
+            # compress files
+            print " gzip:",
+            for file in compress:
+                if os.path.isfile(os.path.join(jobdir, img_dir, file)):
+                    print file,
+                    # Open target file, target file.gz
+                    f_in = open(os.path.join(jobdir, img_dir, file), 'rb')
+                    f_out = gzip.open(os.path.join(jobdir, img_dir, file)+'.gz', 'wb')
+                    # Compress, close files
+                    f_out.writelines(f_in)
+                    f_out.close()
+                    f_in.close()
+                    # Remove original target file
+                    os.remove(os.path.join(jobdir, img_dir, file))
+            i += 1
+
     print ""
     print ""
     sys.stdout.flush()

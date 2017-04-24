@@ -10,20 +10,20 @@ class Neb(object):
 
     ##write more intro
 
-    def __init__(self, calcdir = None, settings = None):
+    def __init__(self, calcdir=None, settings=None):
         """
            Construct a VASP NEB calculation object
         
            Reads the settings from a neb.json """
         ## write more intro
-           
+        
         print "Constructing a VASP NEB  calculation object"
         sys.stdout.flush()
 
         if calcdir is None:
             calcdir = os.getcwd()
         self.calcdir = os.path.abspath(calcdir)
-        ## calcdir example : $ROOT/training_data/$(config_info)/calctype.default/
+        ## calcdir example : $ROOT/training_data/$(calc_subdir)/$(config_info)/calctype.default/N_images_X
 
         print "  NEB directory:", self.calcdir
         sys.stdout.flush()
@@ -31,7 +31,7 @@ class Neb(object):
         # find existing .../calcdir/run.run_index directories, store paths in self.rundir list
         self.rundir = []
         self.errdir = [] ## keeps track of the error directories of present run only
-        self.update_rundir() 
+        self.update_rundir()
         self.update_errdir() ## redundent but keep it for the flow
         
         ## setting up the settings options
@@ -61,12 +61,13 @@ class Neb(object):
             self.settings["err_types"] = ['SubSpaceMatrixError']
 
         ## temporary for testing
-        if not "extra_input_files" in self.settings:
-            self.settings["extra_input_files"] = []
-        if not "initial" in self.settings:
-            self.settings["initial"] = None
-        if not "n_images" in self.settings:
-            self.settings["n_images"] = 3
+        if settings is None:
+            if not "extra_input_files" in self.settings:
+                self.settings["extra_input_files"] = []
+            if not "initial" in self.settings:
+                self.settings["initial"] = None
+            if not "n_images" in self.settings:
+                self.settings["n_images"] = 3
 
         ##make sure all the defaults are set in self.settings
 
@@ -85,9 +86,9 @@ class Neb(object):
         """Find all .../config/calctype.default/run.i directories, store paths in self.rundir list"""
         self.rundir = []
         run_index = len(self.rundir)
-        while os.path.isdir( os.path.join(self.calcdir, "run." + str(run_index))):
-                self.rundir.append( os.path.join(self.calcdir, "run." + str(run_index)) )
-                run_index += 1
+        while os.path.isdir(os.path.join(self.calcdir, "run." + str(run_index))):
+            self.rundir.append(os.path.join(self.calcdir, "run." + str(run_index)))
+            run_index += 1
 
 
     def add_errdir(self):
@@ -104,9 +105,8 @@ class Neb(object):
         else:
             err_index = len(self.errdir)
             while os.path.isdir(self.rundir[-1] + "_err." + str(err_index)):
-                    self.errdir.append(self.rundir[-1] + "_err." + str(err_index))
-                    err_index += 1
-                
+                self.errdir.append(self.rundir[-1] + "_err." + str(err_index))
+                err_index += 1
 
     def setup(self, initdir, settings):
         """ mv all files and directories (besides initdir) into initdir """
@@ -116,21 +116,21 @@ class Neb(object):
         initdir = os.path.abspath(initdir)
         for p in os.listdir(self.calcdir):
             if (p in (io.VASP_INPUT_FILE_LIST + self.settings["extra_input_files"])) and (os.path.join(self.calcdir, p) != initdir):
-                os.rename(os.path.join(self.calcdir,p), os.path.join(initdir,p))
+                os.rename(os.path.join(self.calcdir, p), os.path.join(initdir, p))
         ## copying the folders with image poscars into initdir
         for i in range(settings["n_images"]+2):
-            folder_name = str(i).zfill(max(2, len(str(settings["n_images"]))+1 ))
+            folder_name = str(i).zfill(2) #max(2, len(str(settings["n_images"]))+1 )) ##too fancy!!!
             shutil.move(os.path.join(self.calcdir,folder_name),initdir)
 
         print ""
         sys.stdout.flush()
 
         # Keep a backup copy of the base INCAR
-        shutil.copyfile(os.path.join(initdir,"INCAR"),os.path.join(self.calcdir,"INCAR.base"))
-
+        shutil.copyfile(os.path.join(initdir, "INCAR"), os.path.join(self.calcdir, "INCAR.base"))
+        os.rename(os.path.join(initdir, "POSCAR"), os.path.join(self.calcdir, "POSCAR.start"))
         # If an initial incar is called for, copy it in and set the appropriate flag ## is this required?
         if (self.settings["initial"] != None) and (os.path.isfile(os.path.join(self.calcdir,self.settings["initial"]))):
-            new_values = io.Incar(os.path.join(self.calcdir,self.settings["initial"])).tags
+            new_values = io.Incar(os.path.join(self.calcdir, self.settings["initial"])).tags
             io.set_incar_tag(new_values, initdir)
             print "  Set INCAR tags:", new_values, "\n"
             sys.stdout.flush()
@@ -141,12 +141,13 @@ class Neb(object):
 
            Completion criteria: self.calcdir/self.rundir[-1]/OUTCAR exists and is complete
         """
-        ## test if this gives write output when job is still running 
-        outcarfile = os.path.join(self.rundir[-1],"OUTCAR")
-        if not os.path.isfile(outcarfile):
-            return False
-        if not io.Outcar(outcarfile).complete(): ## check this
-            return False
+        ## test if this gives write output when job is still running
+        for img in range(1, settings["n_images"]+1):
+            outcarfile = os.path.join(self.rundir[-1],str(img).zfill(2), "OUTCAR")
+            if not os.path.isfile(outcarfile):
+                return False
+            if not io.Outcar(outcarfile).complete(): ## check this
+                return False
         return True
 
 
@@ -187,19 +188,24 @@ class Neb(object):
 
             elif task == "new_run":
                 self.add_rundir()
+                # if "n_images" in settings then image CONTCARs will be copied
                 vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
-                shutil.copyfile(os.path.join(self.relaxdir,"INCAR.base"),os.path.join(self.rundir[-1],"INCAR")) ## should it be enforced??
-                #self.continue_neb_job(self.rundir[-2], self.rundir[-1], self.settings) ##makes sure neb files are properly copied ## to be written
-
+                shutil.copyfile(os.path.join(self.calcdir, "INCAR.base"),
+                                os.path.join(self.rundir[-1], "INCAR")) ## should it be enforced??
+            elif task == "constant":
+                self.add_rundir()
+                # if "n_images" in settings then image CONTCARs will be copied
+                vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
             else: ## redundent
                 self.add_rundir()
                 vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
-                #self.continue_neb_job(self.rundir[-2], self.rundir[-1], self.settings) ##makes sure neb files are properly copied ## to be written
 
             while True:
                 # run vasp
-                result = vasp.run(self.rundir[-1], npar=self.settings["npar"],ncore=self.settings["ncore"],command=self.settings["vasp_cmd"],
-                                  ncpus=self.settings["ncpus"],kpar=self.settings["kpar"],err_types=self.settings["err_types"])
+                result = vasp.run(self.rundir[-1], npar=self.settings["npar"],
+                                  ncore=self.settings["ncore"], command=self.settings["vasp_cmd"],
+                                  ncpus=self.settings["ncpus"], kpar=self.settings["kpar"],
+                                  err_types=self.settings["err_types"])
 
                 # if no errors, continue
                 if result is None or self.not_converging():
@@ -262,6 +268,5 @@ class Neb(object):
     To Do:
     1) write continue_neb_job() function
     2) dig up all new errors possible for NEB calcs
-    3) start editing neb.py at casm/vaspwrapper/ 
-    4) make vasp.neb, vasp.neb_setup executables along with casm-calc support to run the calculation
+    3) make vasp.neb, vasp.neb_setup executables along with casm-calc support to run the calculation
     """
