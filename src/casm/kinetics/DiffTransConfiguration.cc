@@ -68,11 +68,12 @@ namespace CASM {
       PermuteIterator canon_op_it {*it};
       ++it;
       for(; it != checklist.end(); ++it) {
+
         Configuration tmp = copy_apply(*it, sorted().from_config());
 
         DiffTransConfiguration dtc_tmp(tmp, greatest);
 
-        if(dtc_tmp > max_dtc) {
+        if(dtc_tmp.sorted() >= max_dtc) {
           max_dtc = dtc_tmp.sorted();
           canon_op_it = *it;
         }
@@ -98,7 +99,7 @@ namespace CASM {
                                                  m_from_config.supercell().crystallography_tol());
       m_from_config = apply(it, m_from_config);
 
-      m_diff_trans = apply(it.sym_op(), m_diff_trans);
+      m_diff_trans = apply(it, m_diff_trans);
 
       m_diff_trans = symcompare.prepare(m_diff_trans);
 
@@ -110,6 +111,28 @@ namespace CASM {
       sout << dtc.diff_trans();
       sout << dtc.from_config();
       return sout;
+    }
+
+    /// \brief returns a copy of bg_config with sites altered such that diff_trans can be placed as is
+    Configuration make_attachable(const DiffusionTransformation &diff_trans, const Configuration &bg_config) {
+      Configuration result = bg_config;
+      ScelPeriodicDiffTransSymCompare symcompare(bg_config.supercell().prim_grid(),
+                                                 bg_config.supercell().crystallography_tol());
+      if(diff_trans != symcompare.prepare(diff_trans)) {
+        std::cerr << "Diffusion Transformation is not based in this Configuration's supercell!" << std::endl;
+      }
+      for(auto traj : diff_trans.specie_traj()) {
+        Index l = bg_config.supercell().linear_index(traj.from.uccoord);
+        if(bg_config.occ(l) != traj.from.occ) {
+          if(traj.from.occ < bg_config.supercell().max_allowed_occupation()[l]) {
+            result.set_occ(l, traj.from.occ);
+          }
+          else {
+            std::cerr << "Diffusion Transformation does not have valid starting occupant for this position in this Configuration" << std::endl;
+          }
+        }
+      }
+      return result;
     }
 
   }
