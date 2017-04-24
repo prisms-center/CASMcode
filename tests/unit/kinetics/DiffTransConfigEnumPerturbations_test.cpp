@@ -75,9 +75,9 @@ BOOST_AUTO_TEST_CASE(Test0) {
   std::cout << "Prototype Diff Trans:" << "\n" << diff_trans_prototype << "\n";
 
   /// Find unique DiffusionTransformations
-  //  PermuteIterator begin = bg_config_prim.supercell().permute_begin();
-  //  PermuteIterator end = bg_config_prim.supercell().permute_end();
-  //  Kinetics::DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, bg_config_prim);
+//    PermuteIterator begin = bg_config_prim.supercell().permute_begin();
+//    PermuteIterator end = bg_config_prim.supercell().permute_end();
+//    Kinetics::DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, bg_config_prim);
   PermuteIterator begin = config.supercell().permute_begin();
   PermuteIterator end = config.supercell().permute_end();
   Kinetics::DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, config);
@@ -85,13 +85,8 @@ BOOST_AUTO_TEST_CASE(Test0) {
   //  std::cout << "Config factor groups" << "\n";
   //  for ( auto &g: diff_trans_unique.invariant_subgroup()){
   //  g.sym_op().print(std::cout);
-  //  }
-  std::cout << "size of Config factor group " << diff_trans_unique.invariant_subgroup().size() << std::endl;
-  std::cout << "size of Supercell factor group " << bg_config_prim.supercell().factor_group().size() << std::endl;
-  std::cout << "size of Supercell (#prims) " << bg_config_prim.supercell().volume() << std::endl;
 
   std::vector<Kinetics::DiffusionTransformation> subdifftrans;
-
 
   for(auto it = diff_trans_unique.begin(); it != diff_trans_unique.end(); ++it) {
     subdifftrans.push_back(*it);
