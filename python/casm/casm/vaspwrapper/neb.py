@@ -1,4 +1,4 @@
-import os, math, sys, json, re, warnings
+import os, math, sys, json, re, warnings, shutil
 import pbs
 import vasp
 import casm
@@ -89,8 +89,6 @@ class Neb(object):
 
         print "  Reading CASM settings"
 
-        ### fix the paths in this block to run in none configname folder. write comment on what each path is??
-        #*********************************
         self.casm_directories = casm.project.DirectoryStructure(configdir)
         self.casm_settings = casm.project.ProjectSettings(configdir)
         if self.casm_settings is None:
@@ -109,7 +107,7 @@ class Neb(object):
         # store path to .../config/calctype.name, and create if not existing
         # will be appended by n_images at the end after reading the settings file
         self.calcdir = self.casm_directories.calctype_dir(self.configname, self.clex, self.calc_subdir)
-        #***********************************
+
 
         # read the settings json file
         print "  Reading neb.json settings file"
@@ -123,6 +121,11 @@ class Neb(object):
         else:
             print "  Read settings from:", setfile
         self.settings = vaspwrapper.read_settings(setfile)
+
+        ## write a error message if "n_images" not present in settings
+        if not "n_images" in self.settings:
+            raise vaspwrapper.VaspWrapperError("Could not find \"n_images\" in \"neb.json\" in an appropriate \"settings\" directory")
+            sys.stdout.flush()
 
         # set default settings if not present
         if not "ncore" in self.settings:
@@ -148,7 +151,7 @@ class Neb(object):
         # append the n_images to calcdir
         self.calcdir = os.path.join(self.calcdir, "N_images_{}".format(self.n_images))
         try:
-            os.mkdir(self.calcdir)
+            os.makedirs(self.calcdir)
         except:
             pass
         print "  Calculations directory:", self.calcdir
@@ -195,22 +198,19 @@ class Neb(object):
             if extra_input_files[-1] is None:
                 raise vasp.VaspError("Neb.setup failed. No final INCAR file " + self.settings["final"] + " found in CASM project.")
         sys.stdout.flush()
-        
+
         #make image folders to store image poscars
         for i in range(self.settings["n_images"]+2):
             os.mkdir(os.path.join(self.calcdir, str(i).zfill(2)))
-        ## yet to implement a python wrapper for casm api to enumerate image poscars
+            ## yet to implement a python wrapper for casm api to enumerate image poscars
+            ##for testing
+            shutil.copy(os.path.join(self.configdir, "POSCAR"),
+                        os.path.join(os.path.join(self.calcdir, str(i).zfill(2), "POSCAR")))
         #make vasp input files
-        sample_super_poscarfile = vasp.io.Poscar(os.path.join(self.calcdir,"00","POSCAR"))
+        sample_super_poscarfile = os.path.join(self.calcdir, "00", "POSCAR")
         vasp.io.write_vasp_input(self.calcdir, incarfile, prim_kpointsfile, prim_poscarfile,
                                  sample_super_poscarfile, speciesfile, self.sort, extra_input_files,
                                  self.settings["strict_kpoints"])
-        # remove the poscar file or rename it to POSCAR.start from caldir??? 
-        #store a sample poscar while enumeration to write a potcar
-        # or may be send the sample_poscar as super_poscarfile?? 
-        #print "  Writing POTCAR:", os.path.join(self.calcdir, 'POTCAR')
-        #vasp.io.write_potcar(os.path.join(self.calcdir, "POTCAR"), sample_poscar,
-        #                     vasp.io.species.species_settings(speciesfile))
 
     def submit(self):
         """Submit a PBS job for this VASP relaxation"""

@@ -66,17 +66,23 @@ def read_settings(filename):
         print "Error reading settings file:", filename
         raise e
 
-    required = ["queue", "ppn", "atom_per_proc", "walltime"]
+    required = ["queue", "ppn", "walltime"]
+
+    either_or = [["atom_per_proc","nodes_per_image"]]
 
     optional = ["account","pmem","priority","message","email","qos","npar","ncore",
                 "kpar", "ncpus","vasp_cmd","run_limit","nrg_convergence",
                 "encut", "kpoints","extra_input_files", "move", "copy", "remove",
                 "compress", "backup", "initial", "final", "strict_kpoints", "err_types",
                 "preamble", "prerun", "postrun", "prop", "prop_start", "prop_stop",
-                "prop_step", "tol", "tol_amount", "name", "fine_ngx"]
+                "prop_step", "tol", "tol_amount", "name", "fine_ngx", "CI_neb", "n_images"]
     for key in required:
         if not key in settings:
             raise VaspWrapperError( key + "' missing from: '" + filename + "'")
+
+    for key_list in either_or:
+        if not [key in settings for key in key_list].count(True) == 1:
+            raise VaspWrapperError("Declare one and only of the following options: '" + "' or '".join(key_list) + "' in file: '" + filename + "'")
 
     for key in optional:
         if not key in settings:
@@ -108,9 +114,8 @@ def read_settings(filename):
     if settings["fine_ngx"] == None:
         settings["fine_ngx"] = False
     for k in settings.keys():
-        if k not in required:
-            if k not in optional:
-                raise VaspWrapperError("unknown key '" + k + "' found in: '" + filename + "'")
+        if k not in required + optional + [key for key_list in either_or for key in key_list]:
+            raise VaspWrapperError("unknown key '" + k + "' found in: '" + filename + "'")
 
     return settings
 

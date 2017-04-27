@@ -33,7 +33,9 @@ class Neb(object):
         self.errdir = [] ## keeps track of the error directories of present run only
         self.update_rundir()
         self.update_errdir() ## redundent but keep it for the flow
-        
+
+        self.finaldir = os.path.join(self.calcdir, "run.final")
+
         ## setting up the settings options
         if settings is None:
             self.settings = dict()
@@ -66,6 +68,8 @@ class Neb(object):
                 self.settings["extra_input_files"] = []
             if not "initial" in self.settings:
                 self.settings["initial"] = None
+            if not "final" in self.settings:
+                self.settings["final"] = None
             if not "n_images" in self.settings:
                 self.settings["n_images"] = 3
 
@@ -128,8 +132,8 @@ class Neb(object):
         # Keep a backup copy of the base INCAR
         shutil.copyfile(os.path.join(initdir, "INCAR"), os.path.join(self.calcdir, "INCAR.base"))
         os.rename(os.path.join(initdir, "POSCAR"), os.path.join(self.calcdir, "POSCAR.start"))
-        # If an initial incar is called for, copy it in and set the appropriate flag ## is this required?
-        if (self.settings["initial"] != None) and (os.path.isfile(os.path.join(self.calcdir,self.settings["initial"]))):
+        # If an initial incar is called for, copy it in and set the appropriate flag
+        if (self.settings["initial"] != None) and (os.path.isfile(os.path.join(self.calcdir, self.settings["initial"]))):
             new_values = io.Incar(os.path.join(self.calcdir, self.settings["initial"])).tags
             io.set_incar_tag(new_values, initdir)
             print "  Set INCAR tags:", new_values, "\n"
@@ -142,8 +146,8 @@ class Neb(object):
            Completion criteria: self.calcdir/self.rundir[-1]/OUTCAR exists and is complete
         """
         ## test if this gives write output when job is still running
-        for img in range(1, settings["n_images"]+1):
-            outcarfile = os.path.join(self.rundir[-1],str(img).zfill(2), "OUTCAR")
+        for img in range(1, self.settings["n_images"]+1):
+            outcarfile = os.path.join(self.rundir[-1], str(img).zfill(2), "OUTCAR")
             if not os.path.isfile(outcarfile):
                 return False
             if not io.Outcar(outcarfile).complete(): ## check this
@@ -196,6 +200,23 @@ class Neb(object):
                 self.add_rundir()
                 # if "n_images" in settings then image CONTCARs will be copied
                 vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
+
+                # set INCAR to ISIF = 2, ISMEAR = -5, NSW = 0, IBRION = -1
+                if (self.settings["final"] != None) and (os.path.isfile(os.path.join(self.calcdir, self.settings["final"]))):
+                    new_values = io.Incar(os.path.join(self.calcdir, self.settings["final"])).tags
+                else:
+                    new_values = {"ISIF":2, "ISMEAR":-5, "NSW":0, "IBRION":-1}
+
+                # set INCAR system tag to denote 'final'
+                if io.get_incar_tag("SYSTEM", self.rundir[-1]) is None:
+                    new_values["SYSTEM"] = "final"
+                else:
+                    new_values["SYSTEM"] = io.get_incar_tag("SYSTEM", self.rundir[-1]) + " final"
+
+                io.set_incar_tag(new_values, self.rundir[-1])
+                print "  Set INCAR tags:", new_values, "\n"
+                sys.stdout.flush()
+
             else: ## redundent
                 self.add_rundir()
                 vasp.continue_job(self.rundir[-2], self.rundir[-1], self.settings)
@@ -221,13 +242,22 @@ class Neb(object):
                 sys.stdout.flush()
 
                 print "Attempting to fix error:", str(err)
-                err.fix(self.errdir[-1],self.rundir[-1], self.settings)
+                err.fix(self.errdir[-1], self.rundir[-1], self.settings)
                 print ""
                 sys.stdout.flush()
 
             (status, task) = self.status()
             print "\n++  status:", status, "  next task:", task
             sys.stdout.flush()
+
+        if status == "complete":
+            if not os.path.isdir(self.finaldir):
+                # mv final results to relax.final
+                print "mv", os.path.basename(self.rundir[-1]), os.path.basename(self.finaldir)
+                sys.stdout.flush()
+                os.rename(self.rundir[-1], self.finaldir)
+                self.rundir.pop()
+                vasp.complete_job(self.finaldir, self.settings)
 
         return (status, task)
 
@@ -246,6 +276,10 @@ class Neb(object):
             "new_run" indicates another calculation job is required as present run is incomplete and need to start a next run.
         """
 
+        # check if all complete
+        if io.job_complete(self.finaldir):
+            return ("complete", None)
+
         # check status of relaxation runs
         self.update_rundir()
 
@@ -255,10 +289,32 @@ class Neb(object):
 
         # check if all complete
         if io.job_complete(self.rundir[-1]):
-            return ("complete",None)
+            # if it is a final constant volume run
+            if io.get_incar_tag("SYSTEM", self.rundir[-1]) != None:
+                if io.get_incar_tag("SYSTEM", self.rundir[-1]).split()[-1].strip().lower() == "final":
+                    return ("complete", None)
+
+            # elif constant volume run (but not the final one)
+            if io.get_incar_tag("ISIF", self.rundir[-1]) in [0, 1, 2]:
+                if io.get_incar_tag("NSW", self.rundir[-1]) == len(io.Oszicar(os.path.join(self.rundir[-1], "OSZICAR")).E):
+                    return ("incomplete", "new_run")    # static run hit NSW limit and so isn't "done"
+                else:
+                    return ("incomplete", "constant")
+
+            # elif convergence criteria met
+            if self.converged():
+                return ("incomplete", "constant")
+
+            # elif not converging, return 'not_converging' error
+            if self.not_converging():
+                return ("not_converging", None)
+
+            # else continue relaxing
+            else:
+                return ("incomplete", "new_run")
 
         # elif not converging, return 'not_converging' error
-        if self.not_converging():
+        elif self.not_converging():
             return ("not_converging", None)
 
         # else if the latest run is not complete, continue with a new run
