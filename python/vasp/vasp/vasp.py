@@ -622,7 +622,7 @@ def crash_check(jobdir, stdoutfile, crash_types):
     else:
         return {err.__class__.__name__: err}
 
-def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=None, command=None, ncpus=None, kpar=None, poll_check_time = 5.0, err_check_time = 60.0, err_types=None):
+def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=None, command=None, ncpus=None, kpar=None, poll_check_time = 5.0, err_check_time = 60.0, err_types=None, is_neb = False):
     """ Run vasp using subprocess.
 
         The 'command' is executed in the directory 'jobdir'.
@@ -683,10 +683,15 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
     print "  exec:", command
     sys.stdout.flush()
 
-    sout = open(os.path.join(jobdir,stdout),'w')
-    serr = open(os.path.join(jobdir,stderr),'w')
+    if is_neb:
+        checkdir = os.path.join(jobdir, "01")
+        sout = open(os.path.join(jobdir, "01", stdout), 'w')
+    else:
+        checkdir = jobdir
+        sout = open(os.path.join(jobdir, stdout), 'w')
+    serr = open(os.path.join(jobdir, stderr), 'w')
     err = None
-    p = subprocess.Popen(command.split(),stdout=sout, stderr=serr)
+    p = subprocess.Popen(command.split(), stdout=sout, stderr=serr)
 
     # wait for process to end, and periodically check for errors
     poll = p.poll()
@@ -697,7 +702,7 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
 
         if time.time() - last_check > err_check_time:
             last_check = time.time()
-            err = error_check(jobdir, os.path.join(jobdir,stdout), err_types)
+            err = error_check(checkdir, os.path.join(checkdir, stdout), err_types)
             if err != None:
                 # FreezeErrors are fatal and usually not helped with STOPCAR
                 if "FreezeError" in err.keys():
@@ -745,9 +750,9 @@ def run(jobdir = None, stdout = "std.out", stderr = "std.err", npar=None, ncore=
     # check finished job for errors
     if err is None:
         # Crash-type errors take priority over any other error that may show up
-        err = crash_check(jobdir, os.path.join(jobdir, stdout), err_types)
+        err = crash_check(checkdir, os.path.join(checkdir, stdout), err_types)
         if err is None:
-            err = error_check(jobdir, os.path.join(jobdir,stdout), err_types)
+            err = error_check(checkdir, os.path.join(checkdir, stdout), err_types)
     if err != None:
         print "  Found errors:",
         for e in err:

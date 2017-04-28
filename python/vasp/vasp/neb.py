@@ -223,10 +223,11 @@ class Neb(object):
 
             while True:
                 # run vasp
-                result = vasp.run(self.rundir[-1], npar=self.settings["npar"],
-                                  ncore=self.settings["ncore"], command=self.settings["vasp_cmd"],
-                                  ncpus=self.settings["ncpus"], kpar=self.settings["kpar"],
-                                  err_types=self.settings["err_types"])
+                result = vasp.run(self.rundir[-1], stdout="stdout",
+                                  npar=self.settings["npar"], ncore=self.settings["ncore"],
+                                  command=self.settings["vasp_cmd"], ncpus=self.settings["ncpus"],
+                                  kpar=self.settings["kpar"], err_types=self.settings["err_types"],
+                                  is_neb=True)
 
                 # if no errors, continue
                 if result is None or self.not_converging():
