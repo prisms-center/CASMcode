@@ -7,13 +7,14 @@ VASP_TAG_INT_LIST = ['ialgo','ibrion','icharg','images','ismear','ispin',\
                      'ngy','ngyf','ngz','ngzf','npar','ncore','spind','nsw',\
                      'isif', 'kpar', 'voskown', 'nsim', 'nedos', 'lmaxfock',\
                      'lmaxmix', 'nkred','ivdw','nelmin', 'nelm', 'nelmdl',\
-                     'ldautype','ldauprint', 'ldauprint']
+                     'ldautype','ldauprint', 'ldauprint', 'ichain']
 VASP_TAG_FLOAT_LIST = ['ediff','ediffg','emax','emin','encut','potim','sigma',\
-                     'enmax','symprec', 'time', 'hfscreen','amix','bmix',\
-                     'amix_mag', 'bmix_mag']
+                       'enmax','symprec', 'time', 'hfscreen','amix','bmix',\
+                       'amix_mag', 'bmix_mag', 'spring']
 VASP_TAG_BOOL_LIST = ['lcharg','lsorbit','lwave','lscalapack', 'lscalu',\
                      'lplane', 'lhfcalc', 'shiftred', 'evenonly', 'oddonly',\
-                     'addgrid', 'ldau', 'lasph']
+                      'addgrid', 'ldau', 'lasph', 'lclimb', 'ldneb',\
+                      'lnebcell', 'ltangentold']
 # Site-wise list of arrays of FLOAT
 VASP_TAG_SITEF_LIST = ['magmom','rwigs']
 # Species-wise list of arrays of FLOAT

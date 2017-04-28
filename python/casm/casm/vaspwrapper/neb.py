@@ -211,6 +211,9 @@ class Neb(object):
         vasp.io.write_vasp_input(self.calcdir, incarfile, prim_kpointsfile, prim_poscarfile,
                                  sample_super_poscarfile, speciesfile, self.sort, extra_input_files,
                                  self.settings["strict_kpoints"])
+        ## settings the images tag in incar file
+        tmp_dict = {"images": self.settings["n_images"]}
+        vasp.io.set_incar_tag(tmp_dict, self.calcdir)
 
     def submit(self):
         """Submit a PBS job for this VASP relaxation"""
