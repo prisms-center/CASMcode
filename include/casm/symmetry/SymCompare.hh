@@ -184,7 +184,9 @@ namespace CASM {
   class ScelPeriodicSymCompare {};
 
   /// \brief Return subgroup that leaves an element unchanged
-  ///
+  /// THIS FUNCTION CURRENTLY ONLY WORKS FOR LOCAL OBJECTS.
+  /// if the element has supercell periodicity with a group
+  /// that has prim periodicity this will not be correct.
   /// All SymOp such that:
   /// \code
   /// Element e = sym_compare.prepare(generating_element);

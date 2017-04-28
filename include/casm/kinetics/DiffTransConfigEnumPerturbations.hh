@@ -34,7 +34,7 @@ namespace CASM {
       static const std::string enumerator_name;
       static const std::string interface_help;
 
-      static int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+      static int run(PrimClex &primclex, const jsonParser &_kwargs, const Completer::EnumOption &enum_opt);
 
     private:
 
@@ -55,11 +55,10 @@ namespace CASM {
 
       /// Select unique DiffusionTransformations from PrimPeriodicDiffTransOrbit
       //DiffusionTransformation UniqueDiffusionTransformaitions(const PrimPeriodicDiffTransOrbit &diff_trans_orbit);
-      /*
-      more stuff about perturbation index and such
-      std::set<PerturbationType> m_perturbations;
-      std::set<PerturbationType>::iterator m_perturb_it;
-      */
+
+      typedef std::pair<IntegralCluster, std::vector<OccupationTransformation>> Perturbation;
+      std::vector<Perturbation> m_perturbations;
+      std::vector<Perturbation>::iterator m_perturb_it;
 
       std::set<DiffusionTransformation>::iterator m_unique_dts_it;
       std::set<DiffusionTransformation> m_unique_dts;

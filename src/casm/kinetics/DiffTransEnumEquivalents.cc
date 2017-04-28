@@ -21,7 +21,11 @@ namespace CASM {
 
         PermuteOutputIterator operator()(const DiffusionTransformation &diff_trans, PermuteIterator begin, PermuteIterator end, PermuteOutputIterator result) {
           ConfigIsEquivalent f(m_config_prim, m_config_prim.crystallography_tol());
-          return std::copy_if(begin, end, result, f);
+          ScelPeriodicDiffTransSymCompare symcompare(m_config_prim.supercell().prim_grid(),
+                                                     m_config_prim.supercell().crystallography_tol());
+          return std::copy_if(begin, end, result, [&](const PermuteIterator & p) {
+            return (f(p) || !symcompare.compare(diff_trans, copy_apply(p, diff_trans)));
+          });
         }
         const Configuration &m_config_prim;
       };
