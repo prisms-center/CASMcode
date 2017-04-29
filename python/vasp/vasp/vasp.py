@@ -142,9 +142,11 @@ def continue_job(jobdir, contdir, settings):
     if os.path.isfile(os.path.join(jobdir, "CONTCAR")) and os.path.getsize(os.path.join(jobdir, "CONTCAR")) > 0:
         shutil.copyfile(os.path.join(jobdir, "CONTCAR"), os.path.join(contdir, "POSCAR"))
         print "  cp CONTCAR -> POSCAR"
-    else:
+    elif os.path.isfile(os.path.join(jobdir,"POSCAR")):
         shutil.copyfile(os.path.join(jobdir, "POSCAR"), os.path.join(contdir, "POSCAR"))
         print "  no CONTCAR: cp POSCAR -> POSCAR"
+    elif not "n_images" in settings: #raise error if its not an Neb run
+        print VaspError("no CONTCAR or POSCAR avaiable for continuation of the job\n")
 
     # move files
     print "  mv:",
