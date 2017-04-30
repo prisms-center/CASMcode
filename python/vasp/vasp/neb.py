@@ -289,7 +289,7 @@ class Neb(object):
             return ("incomplete", "setup")
 
         # check if all complete
-        if io.job_complete(self.rundir[-1]):
+        if io.job_complete(os.path.join(self.rundir[-1], "01")):
             # if it is a final constant volume run
             if io.get_incar_tag("SYSTEM", self.rundir[-1]) != None:
                 if io.get_incar_tag("SYSTEM", self.rundir[-1]).split()[-1].strip().lower() == "final":
@@ -297,7 +297,7 @@ class Neb(object):
 
             # elif constant volume run (but not the final one)
             if io.get_incar_tag("ISIF", self.rundir[-1]) in [0, 1, 2]:
-                if io.get_incar_tag("NSW", self.rundir[-1]) == len(io.Oszicar(os.path.join(self.rundir[-1], "OSZICAR")).E):
+                if io.get_incar_tag("NSW", self.rundir[-1]) == len(io.Oszicar(os.path.join(self.rundir[-1], "01",  "OSZICAR")).E):
                     return ("incomplete", "new_run")    # static run hit NSW limit and so isn't "done"
                 else:
                     return ("incomplete", "constant")

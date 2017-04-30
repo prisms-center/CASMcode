@@ -192,6 +192,7 @@ def continue_job(jobdir, contdir, settings):
             f_in.close()
             # Remove original target file
             os.remove(os.path.join(jobdir,file))
+    print ""
 
     # check if the run is a neb job and copy the image CONTCAR to POSCAR
     # if "n_images" is a key available to the settings then it is assumed that its a neb run 
@@ -200,6 +201,7 @@ def continue_job(jobdir, contdir, settings):
         i = 0
         while os.path.isdir(os.path.join(jobdir, str(i).zfill(2))):
             img_dir = str(i).zfill(2)
+            print "Image directory: {}".format(img_dir)
             os.makedirs(os.path.join(contdir, img_dir))
             if os.path.isfile(os.path.join(jobdir, img_dir, "CONTCAR")) and os.path.getsize(os.path.join(jobdir, img_dir, "CONTCAR")) > 0:
                 shutil.copyfile(os.path.join(jobdir, img_dir, "CONTCAR"), os.path.join(contdir, img_dir, "POSCAR"))
@@ -216,7 +218,7 @@ def continue_job(jobdir, contdir, settings):
                 if os.path.isfile(os.path.join(jobdir, img_dir, file)):
                     os.rename(os.path.join(jobdir, img_dir, file),
                               os.path.join(contdir, img_dir, file))
-                else:
+                elif file not in ["POTCAR"]:
                     print "Could not find file %s, skipping!" % file
                 print ""
 
@@ -228,7 +230,7 @@ def continue_job(jobdir, contdir, settings):
                 if os.path.isfile(os.path.join(jobdir, img_dir, file)):
                     shutil.copyfile(os.path.join(jobdir, img_dir, file),
                                     os.path.join(contdir, img_dir, file))
-                else:
+                elif file not in ["INCAR","KPOINTS"]:
                     print "Could not find file %s, skipping!" % file
             print ""
 
@@ -254,6 +256,7 @@ def continue_job(jobdir, contdir, settings):
                     f_in.close()
                     # Remove original target file
                     os.remove(os.path.join(jobdir, img_dir, file))
+            print ""
             i += 1
 
     print ""
