@@ -102,10 +102,10 @@ namespace CASM {
       return m_type_prototypes;
     }
 
+    mutable Index m_type_ID;
+
     /// Integer label used to differentiate sites of otherwise identical type
     Index m_label;
-
-    mutable Index m_type_ID;
 
     // Configuration state is fundamentally different from most other degrees of freedom,
     // so we'll treat it separately. 'occupant' is the discrete degree of freedom associated

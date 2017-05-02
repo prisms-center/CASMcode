@@ -1,7 +1,5 @@
 #include "casm/crystallography/Site.hh"
 
-#include "casm/basis_set/FunctionVisitor.hh"
-
 #include "casm/casm_io/json_io/container.hh"
 
 #include "casm/basis_set/DoFTraits.hh"
@@ -226,7 +224,7 @@ namespace CASM {
   void Site::set_label(Index new_ind) {
     if(new_ind == m_label)
       return;
-    m_nlist_ind = new_ind;
+    m_label = new_ind;
 
     m_type_ID = -1;
     return;
@@ -421,21 +419,6 @@ namespace CASM {
     return stream;
   }
 
-  //\John G 011013
-
-  void Site::update_data_members(const Site &_ref_site) {
-    //    std::cout<<"Updating data members"<<std::endl;
-    m_site_occupant = _ref_site.site_occupant();
-    //displacement = _ref_site.displacement;
-
-    m_site_occupant.set_ID(m_nlist_ind);
-    //for(Index i = 0; i < displacement.size(); i++) {
-    //displacement[i].set_ID(m_nlist_ind);
-    //}
-    m_type_ID = -1;
-    return;
-  }
-
   //****************************************************
 
   jsonParser &Site::to_json(jsonParser &json) const {
@@ -476,10 +459,6 @@ namespace CASM {
       CASM::from_json(m_site_occupant, json["site_occupant"], home().inv_lat_column_mat());
     else
       CASM::from_json(m_site_occupant, json["site_occupant"], Eigen::Matrix3d::Identity());
-
-    //std::cout<<"Reading in m_list_ind"<<std::endl;
-    // int m_nlist_ind;
-    CASM::from_json(m_nlist_ind, json["m_nlist_ind"]);
 
     // Index m_label -- must be greater than zero
     m_label = -1;
