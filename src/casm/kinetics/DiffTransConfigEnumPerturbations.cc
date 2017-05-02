@@ -19,39 +19,41 @@ namespace CASM {
 
   namespace Kinetics {
 
+    class Perturbation;
+
     DiffTransConfigEnumPerturbations::DiffTransConfigEnumPerturbations(
       const Configuration &background_config,
       const PrimPeriodicDiffTransOrbit &diff_trans_orbit, // or const DiffusionTransformation &diff_trans
       const jsonParser &local_bspecs // or iterators over IntegralClusters
     ) :
-      m_background_config(background_config), m_diff_trans_orbit(diff_trans_orbit), m_local_bspecs(local_bspecs), m_base_dtc(background_config, diff_trans_orbit.prototype()) {
+      m_background_config(background_config), m_diff_trans_orbit(diff_trans_orbit),
+      m_local_bspecs(local_bspecs), m_base_config(background_config, diff_trans_orbit.prototype()) {
 
       //Enumerate unique diffusion transformation set for this background config
-      _init_unique_dts();
+      _init_unique_difftrans();
 
 
-      if(!m_unique_dts.size()) {
+      if(!m_unique_difftrans.size()) {
         _invalidate();
       }
 
       //Pick the first base DiffTransConfiguration
-      _init_base_dtc();
+      _init_base_config();
 
       //Initialize perturbation set for m_base_dtc
       _init_perturbations();
-
-      //Set current DiffTransConfiguration
-      _set_current();
-
-      /*
-      if (check for m_current viability here){
-        increment();
-      }*/
 
       if(!m_perturbations.size()) {
         _invalidate();
       }
 
+      //Set current DiffTransConfiguration
+      _set_current();
+
+
+      if(false) {
+        increment();
+      }
       else {
         this-> _initialize(&(*m_current));
         _set_step(0);
@@ -102,7 +104,7 @@ namespace CASM {
 
     void DiffTransConfigEnumPerturbations::increment() {
       if(m_perturb_it == m_perturbations.end()) {
-        _increment_base_dtc();
+        _increment_base_config();
         _init_perturbations();
         m_perturb_it = m_perturbations.begin();
       }
@@ -162,18 +164,18 @@ namespace CASM {
 
     ///------------------------------------Internal functions-------------------------------///
 
-    ///sets the first m_base_dtc as the orbit prototype placed in m_background_config
-    void DiffTransConfigEnumPerturbations::_init_base_dtc() {
-      Configuration bg_config = make_attachable(*(m_unique_dts.begin()), m_background_config);
-      DiffTransConfiguration tmp(bg_config, *(m_unique_dts.begin()));
-      m_base_dtc = tmp.canonical_form();
-      ++m_unique_dts_it;
+    ///sets the first m_base_config as the orbit prototype placed in m_background_config
+    void DiffTransConfigEnumPerturbations::_init_base_config() {
+      Configuration bg_config = make_attachable(*(m_unique_difftrans.begin()), m_background_config);
+      DiffTransConfiguration tmp(bg_config, *(m_unique_difftrans.begin()));
+      m_base_config = tmp.canonical_form();
+      ++m_unique_difftrans_it;
       return;
     }
 
     /// Uses DiffTransEnumEquivalents to initialize set of the unique diffusion transformations in
     /// this configuration
-    void DiffTransConfigEnumPerturbations::_init_unique_dts() {
+    void DiffTransConfigEnumPerturbations::_init_unique_difftrans() {
       /// Need to find sub prototypes
       /* Inefficient but correct
         for (auto &e : m_diff_trans_orbit){
@@ -186,7 +188,7 @@ namespace CASM {
         auto begin = m_background_config.supercell().permute_begin();
         auto end = m_background_config.supercell().permute_end();
         DiffTransEnumEquivalents diff_trans_unique(*it, begin, end, m_background_config);
-        m_unique_dts.insert(diff_trans_unique.begin(), diff_trans_unique.end());
+        m_unique_difftrans.insert(diff_trans_unique.begin(), diff_trans_unique.end());
       }
       return;
     }
@@ -195,29 +197,43 @@ namespace CASM {
     /// this configuration
     void DiffTransConfigEnumPerturbations::_init_perturbations() {
       m_perturbations.clear();
+      const SymGroup &scel_grp = m_base_config.from_config().supercell().factor_group();
+      Kinetics::ScelPeriodicDiffTransSymCompare dt_sym_compare(m_base_config.from_config().supercell().prim_grid(),
+                                                               m_base_config.from_config().primclex().crystallography_tol());
+      SymGroup generating_group = invariant_subgroup(m_base_config.diff_trans(), scel_grp, dt_sym_compare);
       std::vector<LocalIntegralClusterOrbit> local_orbits;
       make_local_orbits(
-        m_base_dtc.diff_trans(),
+        m_base_config.diff_trans(),
         m_local_bspecs,
         alloy_sites_filter,
-        m_base_dtc.from_config().primclex().crystallography_tol(),
+        m_base_config.from_config().primclex().crystallography_tol(),
         std::back_inserter(local_orbits),
-        m_base_dtc.from_config().primclex().log());
+        m_base_config.from_config().primclex().log(),
+        generating_group);
 
       for(const auto &orbit : local_orbits) {
         Eigen::VectorXi max_count(orbit.prototype().size());
         for(int i = 0; i < max_count.size(); ++i) {
-          max_count(i) = m_base_dtc.from_config().supercell().max_allowed_occupation()[m_base_dtc.from_config().supercell().linear_index(orbit.prototype()[i])];
+          max_count(i) = m_base_config.from_config().supercell().max_allowed_occupation()
+                         [m_base_config.from_config().supercell().linear_index(orbit.prototype()[i])];
         }
         EigenCounter<Eigen::VectorXi> occ_counter(Eigen::VectorXi::Zero(orbit.prototype().size()),
                                                   max_count, Eigen::VectorXi::Constant(orbit.prototype().size(), 1));
         do {
-          std::vector<OccupationTransformation> my_occ_transforms;
+          std::set<OccupationTransformation> my_occ_transforms;
           for(int i = 0; i < orbit.prototype().size(); ++i) {
-            my_occ_transforms.emplace_back(orbit.prototype()[i],
-                                           m_base_dtc.from_config().occ(m_base_dtc.from_config().supercell().linear_index(orbit.prototype()[i])), occ_counter()[i]);
+            my_occ_transforms.emplace(orbit.prototype()[i],
+                                      m_base_config.from_config().occ(m_base_config.from_config().supercell().linear_index(orbit.prototype()[i])),
+                                      occ_counter()[i]);
           }
-          m_perturbations.emplace_back(orbit.prototype(), my_occ_transforms);
+          Perturbation proto_perturb(my_occ_transforms);
+          Perturbation max_perturbation = proto_perturb;
+          for(auto &op : generating_group) {
+            if(copy_apply(op, proto_perturb) > max_perturbation) {
+              max_perturbation = copy_apply(op, proto_perturb);
+            }
+          }
+          m_perturbations.insert(max_perturbation);
         }
         while(++occ_counter);
 
@@ -226,30 +242,55 @@ namespace CASM {
       return;
     }
 
-    /// Applies current perturbation to m_base_dtc and stores result in m_current
+    /// Applies current perturbation to m_base_config and stores result in m_current
     void DiffTransConfigEnumPerturbations::_set_current() {
       /// apply_perturbation(perturb,m_base_dtc);
-      Configuration tmp {m_base_dtc.from_config()};
-      for(const auto &occ_trans : m_perturb_it->second) {
+      Configuration tmp {m_base_config.from_config()};
+      for(const auto &occ_trans : *m_perturb_it) {
         occ_trans.apply_to(tmp);
       }
-      DiffTransConfiguration ret_dtc(tmp, m_base_dtc.diff_trans());
+      DiffTransConfiguration ret_dtc(tmp, m_base_config.diff_trans());
       *m_current = ret_dtc;
       return;
     }
 
     /// Moves to next unique diffusion transformation and places in m_background_config
-    void DiffTransConfigEnumPerturbations::_increment_base_dtc() {
-      if(m_unique_dts_it != m_unique_dts.end()) {
-        Configuration bg_config = make_attachable(*m_unique_dts_it, m_background_config);
-        DiffTransConfiguration tmp(bg_config, *m_unique_dts_it);
-        m_base_dtc = tmp.canonical_form();
-        ++m_unique_dts_it;
+    void DiffTransConfigEnumPerturbations::_increment_base_config() {
+      if(m_unique_difftrans_it != m_unique_difftrans.end()) {
+        Configuration bg_config = make_attachable(*m_unique_difftrans_it, m_background_config);
+        DiffTransConfiguration tmp(bg_config, *m_unique_difftrans_it);
+        m_base_config = tmp.canonical_form();
+        ++m_unique_difftrans_it;
       }
       else {
         _invalidate();
       }
       return;
+    }
+
+    bool has_local_bubble_overlap(std::vector<LocalIntegralClusterOrbit> &local_orbits, const Supercell &scel) {
+      std::set<int> present;
+      for(auto &orbit : local_orbits) {
+        for(auto &cluster : orbit) {
+          for(int i = 0; i < cluster.size(); ++i) {
+            if(!(present.insert(scel.linear_index(cluster[i])).second)) {
+              return true;
+            }
+          }
+        }
+      }
+      //If no set insertion collision then no problems
+      return false;
+    }
+
+    std::vector<Supercell> viable_supercells(std::vector<LocalIntegralClusterOrbit> &local_orbits, std::vector<Supercell> scel_options) {
+      std::vector<Supercell> results;
+      for(auto &scel : scel_options) {
+        if(!has_local_bubble_overlap(local_orbits, scel)) {
+          results.push_back(scel);
+        }
+      }
+      return results;
     }
 
   }
