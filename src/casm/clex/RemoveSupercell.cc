@@ -4,6 +4,9 @@
 #include "casm/database/ScelDatabase.hh"
 #include "casm/app/rm.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/database/DatabaseTypes.hh"
+#include "casm/database/ConfigImport.hh"
+#include "casm/database/DatabaseDefs.hh"
 
 namespace CASM {
   namespace DB {
@@ -47,7 +50,7 @@ namespace CASM {
       }
 
       template<typename T>
-      Index count_remaining() {
+      void count_remaining() {
         if(!dry_run) {
           remaining += remover.primclex().db<T>().scel_range(scelname).size();
         }
@@ -56,7 +59,7 @@ namespace CASM {
           auto it = primclex.db<T>().scel_range(scelname).begin();
           auto end = primclex.db<T>().scel_range(scelname).end();
           for(; it != end; ++it) {
-            if(data.has_existing_data_or_files(it.name)) {
+            if(data.has_existing_data_or_files(it.name())) {
               remaining++;
             }
           }
@@ -79,9 +82,9 @@ namespace CASM {
       template<typename T>
       void eval() {
         Remove<T> f(primclex, remover.report_dir(), remover.file_log());
-        DB::Selection<T> selection = make_selection<T>(primclex, scelname);
+        DB::Selection<T> selection = make_selection<T>();
         f.erase(selection, dry_run);
-        remaining += count_remaining<T>(primclex, scelname);
+        count_remaining<T>();
       }
     };
 
@@ -93,9 +96,9 @@ namespace CASM {
       template<typename T>
       void eval() {
         Remove<T> f(primclex, remover.report_dir(), remover.file_log());
-        DB::Selection<T> selection = make_selection<T>(primclex, scelname);
+        DB::Selection<T> selection = make_selection<T>();
         f.erase_data(selection, dry_run);
-        remaining += count_remaining<T>(primclex, scelname);
+        count_remaining<T>();
       }
     };
 
@@ -108,9 +111,9 @@ namespace CASM {
       template<typename T>
       void eval() {
         Remove<T> f(primclex, remover.report_dir(), remover.file_log());
-        DB::Selection<T> selection = make_selection<T>(primclex, scelname);
+        DB::Selection<T> selection = make_selection<T>();
         f.erase_all(selection, dry_run);
-        remaining += count_remaining<T>(primclex, scelname);
+        count_remaining<T>();
       }
 
     };

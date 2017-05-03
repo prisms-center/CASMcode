@@ -150,8 +150,6 @@ namespace CASM {
         return m_file_log;
       }
 
-    protected:
-
       Database<Supercell> &db_supercell() const;
 
       virtual PropertiesDatabase &db_props() const = 0;

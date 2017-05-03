@@ -19,6 +19,7 @@ namespace CASM {
     class GrandCanonical;
     class Settings;
     class GrandCanonicalConditions;
+    class MonteSettings;
 
     /// \brief Make a LTE results formatter
     DataFormatter<ConstMonteCarloPtr> make_results_formatter(const GrandCanonical &mc);

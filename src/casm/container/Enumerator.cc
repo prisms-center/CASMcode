@@ -4,6 +4,7 @@
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/SuperConfigEnum.hh"
 #include "casm/clex/ScelEnum.hh"
+#include "casm/app/enum.hh"
 
 namespace CASM {
 

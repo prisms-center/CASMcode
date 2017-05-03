@@ -62,17 +62,15 @@ namespace CASM {
   template<typename _Container, typename _value_type, typename _size_type, typename _Access, typename _Compare>
   class IsoCounter;
 
-  namespace CASM_TMP {
-    template<typename _Container, typename _value_type, typename _size_type, typename _Access, typename _Compare>
-    struct traits<IsoCounter<_Container, _value_type, _size_type, _Access, _Compare> > {
-      typedef BaseCounter<IsoCounter<_Container, _value_type, _size_type, _Access, _Compare> > Base;
-      typedef _Container Container;
-      typedef _value_type value_type;
-      typedef _size_type size_type;
-      typedef _Access Access;
-      typedef _Compare Compare;
-    };
-  }
+  template<typename _Container, typename _value_type, typename _size_type, typename _Access, typename _Compare>
+  struct traits<IsoCounter<_Container, _value_type, _size_type, _Access, _Compare> > {
+    typedef BaseCounter<IsoCounter<_Container, _value_type, _size_type, _Access, _Compare> > Base;
+    typedef _Container Container;
+    typedef _value_type value_type;
+    typedef _size_type size_type;
+    typedef _Access Access;
+    typedef _Compare Compare;
+  };
 
   template < typename _Container,
              typename _value_type = typename _Container::value_type,

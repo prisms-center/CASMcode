@@ -47,8 +47,8 @@ for name, dirs in casm_lib_src_grp.iteritems():
     all_sobj += sobj
   env.Alias(name, all_sobj)
   
-  env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + sobj
-  env['CASM_SOBJ'] = env['CASM_SOBJ'] + sobj
+  env['COMPILE_TARGETS'] = env['COMPILE_TARGETS'] + all_sobj
+  env['CASM_SOBJ'] = env['CASM_SOBJ'] + all_sobj
 
 # other files:
 files = ['CASM_global_definitions.cc']
