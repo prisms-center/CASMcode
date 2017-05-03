@@ -270,13 +270,17 @@ namespace CASM {
 
     bool has_local_bubble_overlap(std::vector<LocalIntegralClusterOrbit> &local_orbits, const Supercell &scel) {
       std::set<int> present;
+      std::set<UnitCellCoord> coords;
       for(auto &orbit : local_orbits) {
         for(auto &cluster : orbit) {
           for(int i = 0; i < cluster.size(); ++i) {
-            if(!(present.insert(scel.linear_index(cluster[i])).second)) {
-              return true;
-            }
+            coords.insert(cluster[i]);
           }
+        }
+      }
+      for(auto &coord : coords) {
+        if(!present.insert(scel.linear_index(coord)).second) {
+          return true;
         }
       }
       //If no set insertion collision then no problems

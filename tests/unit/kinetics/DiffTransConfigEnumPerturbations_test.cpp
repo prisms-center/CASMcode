@@ -45,10 +45,11 @@ BOOST_AUTO_TEST_CASE(Test0) {
     std::back_inserter(orbits),
     primclex.log());
 
-
-  /// Make background_config
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
+
+
+  /// Make background_config
   Supercell scel {&primclex, Lattice(2 * a, 2 * b, 3 * c)};
   Configuration config(scel);
   config.init_occupation();
@@ -74,10 +75,41 @@ BOOST_AUTO_TEST_CASE(Test0) {
 
   std::cout << "Prototype Diff Trans:" << "\n" << diff_trans_prototype << "\n";
 
+  /// Test bubble checkers
+  ///Make various supercells
+  Supercell scel1 {&primclex, Lattice(2 * a, 2 * b, 3 * c)};
+  Supercell scel2 {&primclex, Lattice(4 * a, 4 * b, 3 * c)};
+  Supercell scel3 {&primclex, Lattice(8 * a, 2 * b, 3 * c)};
+  Supercell scel4 {&primclex, Lattice(4 * a, 3 * b, 4 * c)};
+  std::vector<Supercell> scel_list;
+  scel_list.push_back(scel1);
+  scel_list.push_back(scel2);
+  scel_list.push_back(scel3);
+  scel_list.push_back(scel4);
+  ///make local orbits
+  fs::path local_bspecs_path = "tests/unit/kinetics/local_bspecs_0.json";
+  jsonParser local_bspecs {local_bspecs_path};
+  std::vector<LocalIntegralClusterOrbit> local_orbits;
+  make_local_orbits(
+    diff_trans_prototype,
+    local_bspecs,
+    alloy_sites_filter,
+    primclex.crystallography_tol(),
+    std::back_inserter(local_orbits),
+    primclex.log());
+
+  BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel1), 1);
+  BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel2), 0);
+  BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel3), 1);
+  BOOST_CHECK_EQUAL(Kinetics::has_local_bubble_overlap(local_orbits, scel4), 1);
+  std::vector<Supercell> result = Kinetics::viable_supercells(local_orbits, scel_list);
+  BOOST_CHECK_EQUAL(*(result.begin()) == scel2, 1);
+
+
   /// Find unique DiffusionTransformations
-//    PermuteIterator begin = bg_config_prim.supercell().permute_begin();
-//    PermuteIterator end = bg_config_prim.supercell().permute_end();
-//    Kinetics::DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, bg_config_prim);
+  //    PermuteIterator begin = bg_config_prim.supercell().permute_begin();
+  //    PermuteIterator end = bg_config_prim.supercell().permute_end();
+  //    Kinetics::DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, bg_config_prim);
   PermuteIterator begin = config.supercell().permute_begin();
   PermuteIterator end = config.supercell().permute_end();
   Kinetics::DiffTransEnumEquivalents diff_trans_unique(diff_trans_prototype, begin, end, config);
