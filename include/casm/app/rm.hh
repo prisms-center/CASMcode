@@ -48,6 +48,8 @@ namespace CASM {
 
     RmCommand(const CommandArgs &_args, Completer::RmOption &_opt);
 
+    ~RmCommand();
+
     int vm_count_check() const override;
 
     int help() const override;

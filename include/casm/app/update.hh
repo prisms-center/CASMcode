@@ -42,6 +42,8 @@ namespace CASM {
 
     UpdateCommand(const CommandArgs &_args, Completer::UpdateOption &_opt);
 
+    ~UpdateCommand();
+
     int vm_count_check() const override;
 
     int help() const override;

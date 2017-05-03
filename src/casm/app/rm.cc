@@ -142,8 +142,12 @@ namespace CASM {
 
   // -- class RmCommand ----------------------------------------------------
 
+  const std::string RmCommand::name = "rm";
+
   RmCommand::RmCommand(const CommandArgs &_args, Completer::RmOption &_opt) :
     APICommand<Completer::RmOption>(_args, _opt) {}
+
+  RmCommand::~RmCommand() {}
 
   int RmCommand::vm_count_check() const {
     return 0;

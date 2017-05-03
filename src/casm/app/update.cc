@@ -132,8 +132,12 @@ namespace CASM {
 
   // -- class UpdateCommand ----------------------------------------------------
 
+  const std::string UpdateCommand::name = "update";
+
   UpdateCommand::UpdateCommand(const CommandArgs &_args, Completer::UpdateOption &_opt) :
     APICommand<Completer::UpdateOption>(_args, _opt) {}
+
+  UpdateCommand::~UpdateCommand() {}
 
   int UpdateCommand::vm_count_check() const {
     return 0;

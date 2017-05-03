@@ -422,8 +422,12 @@ namespace CASM {
 
   // -- class SelectCommand ----------------------------------------------------
 
+  const std::string SelectCommand::name = "select";
+
   SelectCommand::SelectCommand(const CommandArgs &_args, Completer::SelectOption &_opt) :
     APICommand<Completer::SelectOption>(_args, _opt) {}
+
+  SelectCommand::~SelectCommand() {}
 
   int SelectCommand::vm_count_check() const {
     std::string cmd;

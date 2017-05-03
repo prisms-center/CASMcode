@@ -62,6 +62,8 @@ namespace CASM {
 
     QueryCommand(const CommandArgs &_args, Completer::QueryOption &_opt);
 
+    ~QueryCommand();
+
     int vm_count_check() const override;
 
     int help() const override;

@@ -155,8 +155,12 @@ namespace CASM {
 
   // -- class ImportCommand ----------------------------------------------------
 
+  const std::string ImportCommand::name = "import";
+
   ImportCommand::ImportCommand(const CommandArgs &_args, Completer::ImportOption &_opt) :
     APICommand<Completer::ImportOption>(_args, _opt) {}
+
+  ImportCommand::~ImportCommand() {}
 
   int ImportCommand::vm_count_check() const {
     if(!count("pos") && !count("batch")) {

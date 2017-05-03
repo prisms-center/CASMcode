@@ -52,6 +52,8 @@ namespace CASM {
 
     ImportCommand(const CommandArgs &_args, Completer::ImportOption &_opt);
 
+    ~ImportCommand();
+
     int vm_count_check() const override;
 
     int help() const override;

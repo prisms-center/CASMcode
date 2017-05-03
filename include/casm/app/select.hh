@@ -58,6 +58,8 @@ namespace CASM {
 
     SelectCommand(const CommandArgs &_args, Completer::SelectOption &_opt);
 
+    ~SelectCommand();
+
     int vm_count_check() const override;
 
     int help() const override;

@@ -386,8 +386,12 @@ namespace CASM {
 
   // -- class QueryCommand ----------------------------------------------------
 
+  const std::string QueryCommand::name = "query";
+
   QueryCommand::QueryCommand(const CommandArgs &_args, Completer::QueryOption &_opt) :
     APICommand<Completer::QueryOption>(_args, _opt) {}
+
+  QueryCommand::~QueryCommand() {}
 
   int QueryCommand::vm_count_check() const {
     std::string cmd;
