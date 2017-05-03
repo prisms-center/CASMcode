@@ -260,5 +260,55 @@ BOOST_AUTO_TEST_CASE(Test0) {
   //DiffTransEnumEquivalents diff_trans_enum;
   //diff_trans_enum.current()
 
+  test::FCCTernaryProj proj2;
+  proj2.check_init();
+  proj2.check_composition();
+
+  Logging logging2 = Logging::null();
+  PrimClex primclex2(proj2.dir, logging2);
+
+  std::vector<PrimPeriodicIntegralClusterOrbit> orbits2;
+  make_prim_periodic_orbits(
+    primclex2.prim(),
+    bspecs,
+    alloy_sites_filter,
+    primclex2.crystallography_tol(),
+    std::back_inserter(orbits2),
+    primclex2.log());
+
+  Eigen::Vector3d a2, b2, c2;
+  std::tie(a2, b2, c2) = primclex2.prim().lattice().vectors();
+
+  /// Make background_config
+  Supercell fcc_scel {&primclex2, Lattice(2 * a2, 2 * b2, 2 * c2)};
+  Configuration l12(fcc_scel);
+  l12.init_occupation();
+  l12.init_displacement();
+  l12.init_deformation();
+  l12.init_specie_id();
+  l12.set_occupation({0, 0, 0, 1, 1, 0, 0, 0});
+
+  /// Find prototype of m_diff_trans_orbit
+  std::vector<Kinetics::PrimPeriodicDiffTransOrbit> diff_trans_orbits2;
+  Kinetics::make_prim_periodic_diff_trans_orbits(orbits2.begin() + 2, orbits2.begin() + 3, primclex2.crystallography_tol(), std::back_inserter(diff_trans_orbits2));
+  Kinetics::DiffusionTransformation diff_trans_prototype2 = diff_trans_orbits2[4].prototype();
+
+  std::cout << "Prototype Diff Trans:" << "\n" << diff_trans_prototype2 << "\n";
+
+  //For this hop and configuration
+  // Expect 2 unique transformations A site to B site (16 total in scel) or A site to A site (32 total in scel)
+
+
+  /// Make background_config
+  Supercell fcc_scel2 {&primclex2, Lattice(4 * a2, 2 * b2, 2 * c2)};
+  Configuration l12_ext(fcc_scel2);
+  l12_ext.init_occupation();
+  l12_ext.init_displacement();
+  l12_ext.init_deformation();
+  l12_ext.init_specie_id();
+  l12_ext.set_occupation({0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0});
+
+  ///For this hop and configuration
+  ///Expect the A to B site along c axis (32 total) A to A site along a axis (32 total) and A to A along B (32 total)
 }
 BOOST_AUTO_TEST_SUITE_END()
