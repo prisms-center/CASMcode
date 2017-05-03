@@ -246,14 +246,14 @@ namespace CASM {
   ///   - In header:
   ///     - ENUMERATOR_TRAITS(MyDerivedEnumClass)
   ///   - In the source code file:
-  ///     - const std::string CASM_TMP::traits<MyDerivedEnumClass>::name = "MyDerivedEnumClass";
+  ///     - const std::string traits<MyDerivedEnumClass>::name = "MyDerivedEnumClass";
   /// - For enumerators only meant to be added to the API:
   ///   - In header:
   ///     - ENUMERATOR_INTERFACE_TRAITS(MyDerivedClass)
   ///   - In the source code file:
   ///     - \code
-  ///       const std::string CASM_TMP::traits<MyDerivedEnumClass>::name = "MyDerivedEnumClass";
-  ///       const std::string CASM_TMP::traits<MyDerivedEnumClass>::help =
+  ///       const std::string traits<MyDerivedEnumClass>::name = "MyDerivedEnumClass";
+  ///       const std::string traits<MyDerivedEnumClass>::help =
   ///         "MyDerivedEnumClass: \n\n"
   ///
   ///         "  kwarg1: type (default=X) \n"

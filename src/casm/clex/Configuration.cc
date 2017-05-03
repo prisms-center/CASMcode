@@ -20,9 +20,6 @@
 
 namespace CASM {
 
-  const std::string QueryTraits<Configuration>::name = "Configuration";
-  const std::string QueryTraits<Configuration>::short_name = "config";
-
   template class QueryHandler<Configuration>;
 
   namespace {
@@ -610,8 +607,10 @@ namespace CASM {
       return std::make_tuple(jsonParser(), false, false);
     }
     props["data_timestamp"] = fs::last_write_time(filepath);
-    return std::make_tuple(props, true,
-                           is_calculated(jsonParser(filepath), primclex.settings().properties()));
+
+    const auto &prop_vec = primclex.settings().properties(traits<Configuration>::name);
+    bool is_calc = is_calculated(jsonParser(filepath), prop_vec);
+    return std::make_tuple(props, true, is_calc);
   }
 
   //********** ACCESSORS ***********
@@ -742,7 +741,7 @@ namespace CASM {
     Index i;
 
     // [basis_site][site_occupant_index]
-    auto convert = index_converter(prim(), prim().struc_molecule());
+    auto convert = make_index_converter(prim(), prim().struc_molecule());
 
     // create an array to count the number of each molecule
     std::vector<Eigen::VectorXi> sublat_num_each_molecule;
@@ -823,7 +822,7 @@ namespace CASM {
     Eigen::VectorXd num_each_component = Eigen::VectorXd::Zero(components.size());
 
     // [basis_site][site_occupant_index]
-    auto convert = index_converter(prim(), components);
+    auto convert = make_index_converter(prim(), components);
 
     // count the number of each component
     for(Index i = 0; i < size(); i++) {
@@ -1336,7 +1335,8 @@ namespace CASM {
 
   /// \brief Return true if all current properties have been been calculated for the configuration
   bool is_calculated(const Configuration &config) {
-    return is_calculated(config.calc_properties(), config.primclex().settings().properties());
+    const auto &props = config.primclex().settings().properties(traits<Configuration>::name);
+    return is_calculated(config.calc_properties(), props);
   }
 
   /// \brief Return true if all required properties are included in the JSON

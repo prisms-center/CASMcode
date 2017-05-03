@@ -126,7 +126,7 @@ namespace CASM {
       const OccCandidateList &m_cand;
 
       /// Gives a list of all Mol of the same {asym, species}-type allowed to mutate
-      ///   m_loc[asym][i] -> m_mol index
+      ///   m_loc[cand_index][i] -> m_mol index
       std::vector<std::vector<Index> > m_loc;
 
       /// Holds Monte::Species objects

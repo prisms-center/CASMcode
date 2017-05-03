@@ -12,7 +12,7 @@ namespace CASM {
     /// \return pair of OutputIterator, returncode
     ///
     template<typename OutputIterator>
-    std::pair<OutputIterator, int> Import::construct_pos_paths(
+    std::pair<OutputIterator, int> construct_pos_paths(
       const PrimClex &primclex,
       const Completer::ImportOption &import_opt,
       OutputIterator result) {
@@ -73,6 +73,27 @@ namespace CASM {
       return std::make_pair<result, 0>;
     }
 
+    // --- class ConfigData ---
+
+    template<typename _ConfigType>
+    Database<_ConfigType> &ConfigData<_ConfigType>::db_config() const {
+      return primclex().template db<ConfigType>();
+    }
+
+    template<typename _ConfigType>
+    PropertiesDatabase &ConfigData<_ConfigType>::db_props() const {
+      return primclex().template db_props<ConfigType>();
+    }
+
+    /// \brief Path to default calctype training_data directory for config
+    template<typename _ConfigType>
+    fs::path ConfigData<_ConfigType>::calc_dir(const std::string configname) const {
+      return m_primclex.dir().calc_dir<ConfigType>(configname);
+    }
+
+
+    // --- ImportT ---
+
     template<typename _ConfigType>
     template<typename PathIterator>
     void ImportT<_ConfigType>::import(PathIterator begin, PathIterator end) {
@@ -91,7 +112,7 @@ namespace CASM {
 
         // Outputs one or more mapping results from the structure located at specied path
         //   See _import documentation for more.
-        _import(*it, db_config().end(), std::back_inserter(tvec));
+        m_structure_mapper.map(*it, db_config().end(), std::back_inserter(tvec));
 
         for(auto &res : tvec) {
 
@@ -169,8 +190,9 @@ namespace CASM {
 
           // copy files:
           //   there might be existing files in cases of import conflicts
-          _rm_files(from);
-          std::tie(data_res.copy_data, data_res.copy_more) = _cp_files(res.pos, from);
+          rm_files(from, false);
+          std::tie(data_res.copy_data, data_res.copy_more) =
+            cp_files(res.pos, from, false, m_copy_additional_files);
         }
 
       }
@@ -178,13 +200,133 @@ namespace CASM {
       _import_report(results, data_results);
 
       db_supercell().commit();
-      db_config<ConfigType>().commit();
-      db_props<ConfigType>().commit();
+      db_config().commit();
+      db_props().commit();
     }
+
+    template<typename _ConfigType>
+    void ConfigDataGeneric::_import_report(
+      std::vector<ConfigIO::Result> &results,
+      const std::map<std::string, ConfigIO::ImportData> &data_results) {
+
+      // map_fail: could not map
+      // map_success: could map
+      // import_data_fail: would import but couldn't (score < best_score && !data_results.count(from))
+      // import_data_conflicts: conflicts with other in import batch && preexisting
+      // - pos, config, score_method, chosen?, overwrite?, import data?, import additional files?, score, best_score, is_preexisting?
+
+
+      // list of structures that could not be mapped
+      std::vector<ConfigIO::Result> map_fail;
+
+      // list of structures that could be mapped
+      std::vector<ConfigIO::Result> map_success;
+
+      // list of structures that would be imported except preexisting data prevents it
+      std::vector<ConfigIO::Result> import_data_fail;
+
+      std::string prefix = "import_";
+      prefix += traits<ConfigType>::short_name;
+
+      for(long i = 0; i < results.size(); ++i) {
+        const auto &res = results[i];
+        if(res.mapped_props.to.empty()) {
+          map_fail.push_back(res);
+        }
+        else {
+          map_success.push_back(res);
+          if(res.has_data && db_props().score(res.mapped_props) < db_props().best_score(res.mapped_props.to)) {
+            import_data_fail.push_back(res);
+          }
+        }
+      }
+
+      // list of conflicts (multiple config with same 'from')
+      std::map<std::string, std::vector<long> > conflict_count;
+      std::vector<ConfigIO::Result> conflict;
+
+      for(long i = 0; i < results.size(); ++i) {
+        const auto &res = results[i];
+        auto it = conflict_count.find(res.mapped_props.from);
+        if(it == conflict_count.end()) {
+          conflict_count[res.mapped_props.from] = std::vector<long>(1, i);
+        }
+        else {
+          it->second.push_back(i);
+        }
+      }
+      for(const auto &val : conflict_count) {
+        if(val.second.size() > 1) {
+          for(const auto &i : val.second) {
+            conflict.push_back(results[i]);
+          }
+        }
+      }
+
+
+      // output a 'batch' file with paths to structures that could not be imported
+      if(map_fail.size()) {
+
+        fs::path p = m_report_dir / (prefix + "_map_fail");
+        fs::ofstream sout(p);
+
+        log() << "WARNING: Could not import " << map_fail.size() << " structures." << std::endl;
+        log() << "  See: " << p << " for details" << std::endl << std::endl;
+
+        DataFormatterDictionary<Result> dict;
+        dict.insert(_pos(), _fail_msg());
+        auto formatter = dict.parse({"pos", "fail_msg"});
+        sout << formatter(map_fail.begin(), map_fail.end());
+      }
+
+      // - pos, config, score_method, import data?, import additional files?, score, best_score, is_preexisting?
+      auto formatter = this->_import_formatter(data_results);
+
+      if(map_success.size()) {
+
+        fs::path p = m_report_dir / (prefix + "_map_success");
+        fs::ofstream sout(p);
+
+        log() << "Successfully imported " << map_success.size() << " structures." << std::endl;
+        log() << "  See: " << p << " for details" << std::endl << std::endl;
+
+        sout << formatter(map_success.begin(), map_success.end());
+      }
+
+      if(import_data_fail.size()) {
+
+        fs::path p = m_report_dir / (prefix + "_data_fail");
+        fs::ofstream sout(p);
+
+        log() << "WARNING: Did not import data from "
+              << import_data_fail.size() << " structures which have are a mapping score"
+              " better than the existing data." << std::endl;
+        log() << "  You may wish to inspect these structures and allow overwriting "
+              "or remove existing data manually." << std::endl;
+        log() << "  See: " << p << " for details" << std::endl << std::endl;
+
+        sout << formatter(import_data_fail.begin(), import_data_fail.end());
+      }
+
+      if(conflict.size()) {
+        fs::path p = m_report_dir / (prefix + "_conflict");
+        fs::ofstream sout(p);
+
+        log() << "WARNING: Imported data from structures that mapped to the same configuration." << std::endl
+              << "  Data can only be imported from one of the conflicting structures." << std::endl
+              << "  Based on the current conflict resolution method the 'best' result was automatically chosen, " << std::endl
+              << "  but you may wish to inspect these results and manually select which structures to import." << std::endl;
+        log() << "  See: " << p << " for details" << std::endl << std::endl;
+
+        sout << formatter(conflict.begin(), conflict.end());
+      }
+    }
+
+    // --- UpdateT ---
 
     /// \brief Re-parse calculations 'from' all selected configurations
     template<typename _ConfigType>
-    void ImportT<_ConfigType>::update(const DB::Selection<ConfigType> &selection, bool force) {
+    void UpdateT<_ConfigType>::update(const DB::Selection<ConfigType> &selection, bool force) {
 
       // vector of Mapping results
       std::vector<Result> results;
@@ -223,7 +365,7 @@ namespace CASM {
 
         std::vector<Result> tvec;
         auto config_it = db_config().find(name);
-        _import(pos, config_it, std::back_inserter(tvec));
+        m_structure_mapper.map(pos, config_it, std::back_inserter(tvec));
 
         for(auto &res : tvec) {
 
@@ -245,70 +387,8 @@ namespace CASM {
       db_props().commit();
     }
 
-    /// \brief Erase Configurations that have no data
     template<typename _ConfigType>
-    void ImportT<_ConfigType>::erase(const DB::Selection<ConfigType> &selection) {
-      std::vector<std::string> fail;
-      for(const auto &val : selection.data()) {
-        if(!_has_existing_data_or_files(val.first)) {
-          db_config<ConfigType>().erase(val.first);
-        }
-        else {
-          m_fail.push_back(val.first);
-        }
-      }
-
-      _erase_fail_report(fail);
-      db_config().commit();
-    }
-
-    /// \brief Erase data and files (permanently), but not Configuration
-    template<typename _ConfigType>
-    void ImportT<_ConfigType>::erase_data(const DB::Selection<ConfigType> &selection) {
-      // erase data
-      for(const auto &val : selection.data()) {
-        auto it = db_props<ConfigType>().find_via_from(val.first);
-        db_props<ConfigType>().erase(it);
-        _rm_files(val.first);
-      }
-      db_props().commit();
-    }
-
-    /// \brief Removes Configurations and data and files (permanently)
-    ///
-    /// - Data are always associated with one 'from' configuration, so the
-    ///   selection here indicates 'from' configurations
-    /// - The 'to' configurations are updated with the new best mapping properties
-    template<typename _ConfigType>
-    void ImportT<_ConfigType>::erase_all(const DB::Selection<ConfigType> &selection) {
-
-      // erase data
-      erase_data(selection);
-
-      // erase configs
-      erase(selection);
-    }
-
-    template<typename _ConfigType>
-    Database<ConfigType> &ImportT<_ConfigType>::db_config() const {
-      return primclex().template db<ConfigType>();
-    }
-
-    template<typename _ConfigType>
-    PropertiesDatabase &ImportT<_ConfigType>::db_props() const {
-      return primclex().template db_props<ConfigType>();
-    }
-
-    /// \brief Path to default calctype training_data directory for config
-    template<typename _ConfigType>
-    fs::path ImportT<_ConfigType>::_calc_dir(const std::string configname) const {
-      return primclex().dir().calc_dir<ConfigType>(configname);
-    }
-
-    // --- Specializations ---
-
-    template<typename _ConfigType>
-    void ImportT<_ConfigType>::_update_report(std::vector<Result> &results, const DB::Selection<ConfigType> &selection) const {
+    void UpdateT<_ConfigType>::_update_report(std::vector<Result> &results, const DB::Selection<ConfigType> &selection) const {
 
       // report:
       //   update_map_fail: all 'from' config that were not successfully mapped
@@ -324,6 +404,9 @@ namespace CASM {
       std::vector<Result> conflict;
       std::vector<Result> unstable;
       std::vector<Result> unselected;
+
+      std::string prefix = "update_";
+      prefix += traits<ConfigType>::short_name;
 
       std::set<std::string> all_to;
 
@@ -355,7 +438,7 @@ namespace CASM {
 
       if(fail.size()) {
 
-        fs::path p = m_report_dir / "update_map_fail";
+        fs::path p = m_report_dir / (prefix + "_fail");
         fs::ostream sout(p);
 
         log() << "WARNING: Could not map " << fail.size() << " results." << std::endl;
@@ -366,7 +449,7 @@ namespace CASM {
 
       if(success.size()) {
 
-        fs::path p = m_report_dir / "update_map_success";
+        fs::path p = m_report_dir / (prefix + "_map_success");
         fs::ostream sout(p);
 
         log() << "Successfully mapped " << success.size() << " results." << std::endl;
@@ -377,7 +460,7 @@ namespace CASM {
 
       if(conflict.size()) {
 
-        fs::path p = m_report_dir / "update_map_conflict";
+        fs::path p = m_report_dir / (prefix + "_map_conflict");
         fs::ostream sout(p);
 
         log() << "WARNING: Found " << conflict.size() << " conflicting relaxation results." << std::endl;
@@ -388,7 +471,7 @@ namespace CASM {
 
       if(unstable.size()) {
 
-        fs::path p = m_report_dir / "update_unstable";
+        fs::path p = m_report_dir / (prefix + "_unstable");
         fs::ostream sout(p);
 
         log() << "WARNING: Found " << unstable.size() << " unstable relaxations." << std::endl;
@@ -399,7 +482,7 @@ namespace CASM {
 
       if(unselected.size()) {
 
-        fs::path p = m_report_dir / "update_unselected";
+        fs::path p = m_report_dir / (prefix + "_unselected");
         fs::ostream sout(p);
 
         log() << "WARNING: Found " << unselected.size() << " unstable relaxations to unselected configurations." << std::endl;
@@ -412,45 +495,68 @@ namespace CASM {
     }
 
 
-    template<typename ConfigType>
-    std::string ImportInterface<ConfigType>::help() const {
-      return Import<ConfigType>::import_help;
+    // --- RemoveT ---
+
+    /// \brief Erase Configurations that have no data
+    template<typename _ConfigType>
+    void RemoveT<_ConfigType>::erase(const DB::Selection<ConfigType> &selection, bool dry_run) {
+      std::vector<std::string> fail;
+      for(const auto &val : selection.data()) {
+        if(!_has_existing_data_or_files(val.first)) {
+          db_config().erase(val.first);
+        }
+        else {
+          log() << "skipping " << val.first << ": has existing data or files" << std::endl;
+          m_fail.push_back(val.first);
+        }
+      }
+
+      if(fail.size()) {
+        _erase_report(fail);
+        log() << "Skipped " << fail.size() << " " << ConfigType::name << std::endl;
+        log() << "  See " << m_report_dir / "remove_fail" << std::endl;
+        s
+      }
+      db_config().commit();
     }
 
-    template<typename ConfigType>
-    std::string ImportInterface<ConfigType>::name() const {
-      return QueryTraits<ConfigType>::short_name;
+    /// \brief Erase data and files (permanently), but not Configuration
+    template<typename _ConfigType>
+    void RemoveT<_ConfigType>::erase_data(const DB::Selection<ConfigType> &selection, bool dry_run) {
+      // erase data
+      for(const auto &val : selection.data()) {
+        auto it = db_props().find_via_from(val.first);
+        db_props().erase(it);
+        rm_files(val.first, dry_run);
+      }
+      db_props().commit();
     }
 
-    template<typename ConfigType>
-    int ImportInterface<ConfigType>::run(
-      const PrimClex &primclex,
-      const jsonParser &kwargs,
-      const Completer::ImportOption &import_opt) const {
+    /// \brief Removes Configurations and data and files (permanently)
+    ///
+    /// - Data are always associated with one 'from' configuration, so the
+    ///   selection here indicates 'from' configurations
+    /// - The 'to' configurations are updated with the new best mapping properties
+    template<typename _ConfigType>
+    void RemoveT<_ConfigType>::erase_all(const DB::Selection<ConfigType> &selection, bool dry_run) {
 
-      return Import<ConfigType>::import(primclex, kwargs, import_opt);
+      // erase data
+      erase_data(selection);
+
+      // erase configs
+      erase(selection);
     }
 
-
-    template<typename ConfigType>
-    std::string UpdateInterface<ConfigType>::help() const {
-      return Import<ConfigType>::update_help;
+    template<typename _ConfigType>
+    void RemoveT<_ConfigType>::_erase_report(const std::vector<std::string> &fail) {
+      std::string prefix {"remove_"};
+      prefix += traits<ConfigType>::short_name;
+      fs::ofstream file(m_report_dir / (prefix + "_fail"));
+      for(const auto &val : fail) {
+        file << val << std::endl;
+      }
+      file.close();
     }
-
-    template<typename ConfigType>
-    std::string UpdateInterface<ConfigType>::name() const {
-      return QueryTraits<ConfigType>::short_name;
-    }
-
-    template<typename ConfigType>
-    int UpdateInterface<ConfigType>::run(
-      const PrimClex &primclex,
-      const jsonParser &kwargs,
-      const Completer::UpdateOption &update_opt) const {
-
-      return Import<ConfigType>::update(primclex, kwargs, update_opt);
-    }
-
   }
 }
 

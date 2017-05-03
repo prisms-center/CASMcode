@@ -96,7 +96,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  ConfigMapper::ConfigMapper(PrimClex &_pclex,
+  ConfigMapper::ConfigMapper(const PrimClex &_pclex,
                              double _lattice_weight,
                              double _max_volume_change/*=0.5*/,
                              int options/*=robust*/,

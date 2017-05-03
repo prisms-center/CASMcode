@@ -92,13 +92,13 @@ namespace CASM {
 
   int _run_GrandCanonical(
     PrimClex &primclex,
-    const MonteSettings &monte_settings,
+    const Monte::MonteSettings &monte_settings,
     const CommandArgs &args,
     const Completer::MonteOption &monte_opt);
 
   int _run_Canonical(
     PrimClex &primclex,
-    const MonteSettings &monte_settings,
+    const Monte::MonteSettings &monte_settings,
     const CommandArgs &args,
     const Completer::MonteOption &monte_opt);
 
@@ -348,7 +348,7 @@ namespace CASM {
           }
         }
 
-        GrandCanonical gc(primclex, gc_settings, args.log);
+        Monte::GrandCanonical gc(primclex, gc_settings, args.log);
 
         // config, param_potential, T,
         args.log.custom("LTE Calculation");
@@ -404,10 +404,10 @@ namespace CASM {
       }
     }
     else if(monte_settings.method() == Monte::METHOD::Metropolis) {
-      return _driver<GrandCanonical>(primclex, args, monte_opt);
+      return _driver<Monte::GrandCanonical>(primclex, args, monte_opt);
     }
     else {
-      args.err_log << "ERROR running " << to_string(GrandCanonical::ensemble) << " Monte Carlo. No valid option given.\n\n";
+      args.err_log << "ERROR running " << to_string(Monte::GrandCanonical::ensemble) << " Monte Carlo. No valid option given.\n\n";
       return ERR_INVALID_INPUT_FILE;
     }
   }

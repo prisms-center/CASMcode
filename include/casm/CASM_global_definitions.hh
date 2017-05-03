@@ -51,6 +51,8 @@ namespace CASM {
     return _in;
   }
 
+  template<typename T> struct traits;
+
   ///For long integer indexing:
   typedef EigenIndex Index;
   bool valid_index(Index i);
@@ -90,18 +92,6 @@ namespace CASM {
 
   ENUM_IO(CELL_TYPE)
   ENUM_TRAITS(CELL_TYPE)
-
-
-  // -- List of ConfigTypes --
-
-  template<typename DataObject>
-  class QueryTraits;
-
-  /// std::set of all QueryTraits<ConfigType>::name
-  const std::set<std::string> &config_types();
-
-  /// std::set of all QueryTraits<ConfigType>::short_name
-  const std::set<std::string> &config_types_short();
 
 
   //************************************************************

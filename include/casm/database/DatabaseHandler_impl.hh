@@ -12,7 +12,7 @@ namespace CASM {
     template<typename T>
     void DatabaseHandler::insert(std::string db_name, std::unique_ptr<DatabaseBase> &&value) {
       m_db.emplace(
-        std::make_pair(QueryTraits<T>::name, db_name),
+        std::make_pair(traits<T>::name, db_name),
         std::move(value));
     }
 
@@ -66,7 +66,7 @@ namespace CASM {
     template<typename T>
     DatabaseHandler::map_type::iterator DatabaseHandler::_find(std::string db_name) const {
       auto key = std::make_pair(
-                   QueryTraits<T>::name,
+                   traits<T>::name,
                    db_name);
       auto res = m_db.find(key);
       if(res == m_db.end()) {
@@ -78,7 +78,7 @@ namespace CASM {
     template<typename T>
     void DatabaseHandler::_no_database_error(std::string db_name) const {
       std::stringstream ss;
-      ss << "Value: " << QueryTraits<T>::name;
+      ss << "Value: " << traits<T>::name;
       ss << "  Database: " << db_name;
       throw std::runtime_error("Requested database not found: " + ss.str());
     }

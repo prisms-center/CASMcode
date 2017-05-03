@@ -1,12 +1,13 @@
-#include "casm/crystallography/CoordinateSystems.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/app/ProjectSettings.hh"
-#include "casm/app/DirectoryStructure.hh"
-#include "casm/app/AppIO.hh"
-#include "casm/app/casm_functions.hh"
-#include "casm/clex/ConfigSelection.hh"
+#include "casm/app/rm.hh"
+#include "casm/app/DBInterface.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/Configuration.hh"
+#include "casm/database/Import.hh"
+#include "casm/database/DatabaseTypeTraits.hh"
 
-#include "casm/completer/Handlers.hh"
+// need to add specializations here
+#include "casm/clex/RemoveSupercell.hh"
+#include "casm/database/ConfigImport.hh"
 
 namespace CASM {
 
@@ -21,219 +22,182 @@ namespace CASM {
       return vm().count("dry-run");
     }
 
+    bool RmOption::data() const {
+      return vm().count("data");
+    }
+
     void RmOption::initialize() {
       add_help_suboption();
-      add_scelnames_suboption();
-      add_confignames_suboption();
-      add_configlist_nodefault_suboption();
+      add_names_suboption();
+      add_selection_suboption();
+      add_db_type_suboption(traits<Configuration>::short_name, DB::types_short());
 
       m_desc.add_options()
       ("dry-run,n", "Dry run")
-      ("force,f", "Force remove.");
+      ("data,d", "Remove calculation data only.")
+      ("force,f", "Force remove including data and dependent objects (for --type=scel).");
 
       return;
     }
   }
 
-  int _rm_configs(const CommandArgs &args, const Completer::RmOption &rm_opt);
-  int _rm_scel(const CommandArgs &args, const Completer::RmOption &rm_opt);
 
-  // ///////////////////////////////////////
-  // 'rm' function for casm
+  // -- RmCommandImplBase --------------------------------------------
 
-  int rm_command(const CommandArgs &args) {
+  /// Defaults used if DataObject type doesn't matter or not given
+  class RmCommandImplBase : public Logging {
+  public:
+
+    RmCommandImplBase(const RmCommand &cmd);
+
+    virtual ~RmCommandImplBase() {}
+
+    virtual int help() const;
+
+    virtual int desc() const;
+
+    virtual int run() const;
+
+  protected:
+
+    const RmCommand &m_cmd;
+  };
 
 
-    /// Set command line options using boost program_options
-    Completer::RmOption rm_opt;
-    po::variables_map &vm = rm_opt.vm();
+  RmCommandImplBase::RmCommandImplBase(const RmCommand &cmd) :
+    Logging(cmd),
+    m_cmd(cmd) {}
 
-    bool rm_config = false;
-    bool rm_scel = false;
+  int RmCommandImplBase::help() const {
+    log() << std::endl << m_cmd.opt().desc() << std::endl;
+    m_cmd.print_names(log());
+    m_cmd.print_config_names(log());
+    return 0;
+  }
 
-    try {
-      po::store(po::parse_command_line(args.argc, args.argv, rm_opt.desc()), vm); // can throw
+  int RmCommandImplBase::desc() const {  // -- custom --
+    help();
 
-      bool call_help = false;
+    log() <<
+          "Erase objects specified by --names or --selection, and data if applicable. \n\n"
 
-      // allow --config && --confignames   or  --scelnames,  but not both
-      if(!vm.count("help") && !vm.count("desc")) {
+          "Calculated structures are mapped to the closest matching configuration \n"
+          "consistent with the primitive crystal structure. \n\n"
 
-        rm_config = vm.count("config") + vm.count("confignames");
-        rm_scel = vm.count("scelnames");
+          "For complete update options description for a particular config type, use\n"
+          "--desc along with '--type <typename>'.\n\n";
 
-        if(!rm_config && !rm_scel) {
-          args.log << "Error in 'casm rm': At least one of --config, "
-                   "--confignames, --scelnames must be given." << std::endl;
-          call_help = true;
-        }
+    return 0;
+  }
 
-        if(rm_config + rm_scel > 1) {
-          args.log << "Error in 'casm rm': May not delete multiple types at the same time." << std::endl;
-          call_help = true;
-        }
-      }
-
-      /** --help option
-      */
-      if(vm.count("help") || call_help) {
-        args.log << "\n";
-        args.log << rm_opt.desc() << std::endl;
-
-        return 0;
-      }
-
-      if(vm.count("desc")) {
-        args.log << "\n";
-        args.log << rm_opt.desc() << std::endl;
-        args.log << "DESCRIPTION" << std::endl;
-        args.log << "  Remove configuration data and supercells.\n"
-
-                 "  Can remove: \n"
-                 "  - A supercell, including all enumerated configurations   \n"
-                 "    and data (for all calctypes) via --scelnames.\n"
-                 "  - Calculation data (for the current calctype) for \n"
-                 "    individual configurations via --config or --confignames.\n\n"
-
-                 "  Cannot remove: \n"
-                 "  - Specific enumerated configuration. The current version \n"
-                 "    of CASM is restricted to consequitively numbered       \n"
-                 "    configurations in each supercell, so configurations may\n"
-                 "    only be erased by erasing a supercell.\n\n";
-
-        return 0;
-      }
-
-      po::notify(vm); // throws on error, so do after help in case
-      // there are any problems
-
-    }
-    catch(po::error &e) {
-      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
-      args.err_log << rm_opt.desc() << std::endl;
-      return ERR_INVALID_ARG;
-    }
-    catch(std::exception &e) {
-      args.err_log << "Unhandled Exception reached the top of main: "
-                   << e.what() << ", application will now exit" << std::endl;
-      return ERR_UNKNOWN;
-
-    }
-
-    const fs::path &root = args.root;
-    if(root.empty()) {
-      args.err_log.error("No casm project found");
-      args.err_log << std::endl;
-      return ERR_NO_PROJ;
-    }
-
-    // Only allow erasing one type at a time (check is above to call help):
-    // - configurations: --config / --confignames
-    // - supercells: --scelnames
-    if(rm_config) {
-      return _rm_configs(args, rm_opt);
-    }
-    else if(rm_scel) {
-      return _rm_scel(args, rm_opt);
-    }
+  int RmCommandImplBase::run() const {
+    err_log() << "ERROR: No --type\n";
+    m_cmd.print_names(err_log());
     return ERR_INVALID_ARG;
   }
 
-  int _rm_configs(const CommandArgs &args, const Completer::RmOption &rm_opt) {
 
-    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
-    // Then whichever exists, store reference in 'primclex'
-    std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+  // -- RmCommandImpl -----------------
 
-    // if selection of configurations
-    std::unique_ptr<ConstConfigSelection> selection;
-    if(rm_opt.vm().count("config")) {
-      selection = notstd::make_unique<ConstConfigSelection>(primclex, rm_opt.selection_path());
-    }
-    else if(rm_opt.vm().count("confignames")) {
-      selection = notstd::make_unique<ConstConfigSelection>(primclex, fs::path("NONE"));
-      for(const auto &configname : rm_opt.config_strs()) {
-        selection->set_selected(configname, true);
-      }
-    }
+  /// 'casm query' implementation, templated by type
+  ///
+  /// This:
+  /// - holds a DB::InterfaceData object which stores dictionaries and selections
+  /// - provides the implementation for 'help' (i.e. print allowed import options)
+  /// - provides the implementation for 'run' (i.e. perform query)
+  ///
+  template<typename DataObject>
+  class RmCommandImpl : public RmCommandImplBase {
+  public:
+    RmCommandImpl(const RmCommand &cmd) :
+      RmCommandImplBase(cmd) {}
 
-    if(rm_opt.dry_run()) {
-      args.log << "dry-run...\n\n";
-    }
+    int help() const override;
 
-    for(auto it = selection->selected_config_begin(); it != selection->selected_config_end(); ++it) {
-      args.log.custom(std::string("Erase ") + it->name() + " data");
-      if(rm_opt.force() && fs::exists(it->calc_dir())) {
-        recurs_rm_files(it->calc_dir(), rm_opt.dry_run(), args.log);
-      }
-      else if(fs::exists(it->calc_dir())) {
-        args.log << "skipping " << it->name() << " data: --force option not given\n";
-      }
-      else {
-        args.log << "skipping " << it->name() << " data: no data\n";
-      }
-      args.log << "\n";
-    }
+    int desc() const override;
 
+    int run() const override;
+
+  };
+
+  template<typename DataObject>
+  int RmCommandImpl<DataObject>::help() const {
+    log() << std::endl << m_cmd.opt().desc() << std::endl
+          << "For complete options description for a particular config type, use:\n"
+          << "  casm " << RmCommand::name << " --desc --type " << traits<DataObject>::short_name << "\n\n";
     return 0;
   }
 
-  int _rm_scel(const CommandArgs &args, const Completer::RmOption &rm_opt) {
+  template<typename DataObject>
+  int RmCommandImpl<DataObject>::desc() const {
+    log() << DB::Remove<DataObject>::desc << std::endl;
+    return 0;
+  }
 
-    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
-    // Then whichever exists, store reference in 'primclex'
-    std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+  template<typename DataObject>
+  int RmCommandImpl<DataObject>::run() const {
+    return DB::Remove<DataObject>::run(m_cmd.primclex(), m_cmd.opt());
+  }
 
-    // collect supercells to delete
-    std::set<std::string> scel_to_delete;
 
-    bool msg = false;
-    args.log.custom("Check supercells");
-    for(const auto &scelname : rm_opt.supercell_strs()) {
-      Index index;
-      if(!primclex.contains_supercell(scelname, index)) {
-        args.log << "skipping " << scelname << ": does not exist.\n";
-        msg = true;
-        continue;
-      }
+  // -- class RmCommand ----------------------------------------------------
 
-      const Supercell &scel = primclex.get_supercell(index);
+  RmCommand::RmCommand(const CommandArgs &_args, Completer::RmOption &_opt) :
+    APICommand<Completer::RmOption>(_args, _opt) {}
 
-      if(!rm_opt.force() && scel.get_config_list().size()) {
-        args.log << "skipping " << scelname << ": has "
-                 << scel.get_config_list().size() << " configurations and --force not given.\n";
-        msg = true;
+  int RmCommand::vm_count_check() const {
+    return 0;
+  }
+
+  int RmCommand::help() const {
+    return impl().help();
+  }
+
+  int RmCommand::desc() const {
+    return impl().desc();
+  }
+
+  int RmCommand::run() const {
+    return impl().run();
+  }
+
+  RmCommandImplBase &RmCommand::impl() const {
+    if(!m_impl) {
+      if(vm().count("type")) {
+        if(DB::types_short().count(opt().db_type())) {
+          DB::for_type(opt().db_type(), DB::ConstructImpl<RmCommand>(m_impl, *this));
+        }
+        else {
+          std::stringstream msg;
+          msg << "--type " << opt().db_type() << " is not allowed for 'casm " << name << "'.";
+          print_names(err_log());
+          throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
+        }
       }
       else {
-        args.log << "will erase " << scelname << "\n";
-        scel_to_delete.insert(scelname);
+        m_impl = notstd::make_unique<RmCommandImplBase>(*this);
       }
     }
+    return *m_impl;
+  }
 
-    args.log << std::endl;
+  void RmCommand::print_names(std::ostream &sout) const {
+    sout << "The allowed types are:\n\n";
 
-    // Erase supercells from SCEL and config_list.json
-    if(!scel_to_delete.size()) {
-      args.log << "No supercells to erase\n";
+    for(const auto &db_type : opt().db_type_opts()) {
+      sout << "  " << db_type << std::endl;
     }
-    else {
-      for(const auto &scelname : scel_to_delete) {
-        args.log.custom(std::string("Erase ") + scelname);
-        const Supercell &scel = primclex.get_supercell(scelname);
-        recurs_rm_files(scel.get_path(), rm_opt.dry_run(), args.log);
-        args.log << "\n";
-      }
+  }
 
-      if(!rm_opt.dry_run()) {
-        primclex.print_supercells(scel_to_delete);
-        primclex.write_config_list(scel_to_delete);
+  void RmCommand::print_config_names(std::ostream &sout) const {
+    sout << "The allowed types with --data option are:\n\n";
+
+    for(const auto &db_type : opt().db_type_opts()) {
+      if(DB::config_types_short().count(db_type)) {
+        sout << "  " << db_type << std::endl;
       }
     }
-    return 0;
-
-  };
+  }
 
 }
 

@@ -1,12 +1,10 @@
 #include "casm/database/json/jsonDatabase.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/clex/Configuration.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/casm_io/json_io/container.hh"
 #include "casm/database/DatabaseHandler.hh"
+#include "casm/database/DatabaseTypeDefs.hh"
 
 namespace CASM {
   namespace DB {

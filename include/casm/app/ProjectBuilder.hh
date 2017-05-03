@@ -66,8 +66,9 @@ namespace CASM {
     std::string m_property;
 
     // allow default initialization:
-
-    std::vector<std::string> m_properties {"relaxed_energy"};
+    std::map<std::string, std::vector<std::string> > m_properties {
+      {"Configuration", {"relaxed_energy"}}
+    };
     double m_crystallography_tol = CASM::TOL;
     double m_lin_alg_tol = 1e-10;
 

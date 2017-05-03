@@ -1,10 +1,13 @@
-#include "casm/app/casm_functions.hh"
-#include "casm/app/DirectoryStructure.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/app/import.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/database/DatabaseTypeTraits.hh"
 #include "casm/database/Import.hh"
+#include "casm/app/DBInterface.hh"
+#include "casm/clex/PrimClex.hh"
 
-#include "casm/completer/Handlers.hh"
+// need to add specializations here
+#include "casm/database/ConfigImport.hh"
+
 
 namespace CASM {
 
@@ -42,7 +45,7 @@ namespace CASM {
        "Recursively copy other files from the same directory as the properties.calc.json file.");
 
       add_configtype_suboption(
-        QueryTraits<Configuration>::short_name, config_types_short());
+        traits<Configuration>::short_name, DB::config_types_short());
       bool required = false;
       add_settings_suboption(required);
       add_input_suboption(required);
@@ -50,122 +53,169 @@ namespace CASM {
 
       return;
     }
-
   }
 
-  void print_names(std::ostream &sout, const ImporterMap &importers) {
-    sout << "The import type options are:\n\n";
+  // -- class ImportCommandImplBase --------------------------------------------
 
-    for(const auto &f : importers) {
-      sout << "  " << f.name() << std::endl;
-    }
+  /// Defaults used if DataObject type doesn't matter or not given
+  class ImportCommandImplBase : public Logging {
+  public:
+
+    ImportCommandImplBase(const ImportCommand &cmd);
+
+    virtual ~ImportCommandImplBase() {}
+
+    virtual int help() const;
+
+    virtual int desc() const;
+
+    virtual int run() const;
+
+  protected:
+
+    const ImportCommand &m_cmd;
+  };
+
+  ImportCommandImplBase::ImportCommandImplBase(const ImportCommand &cmd) :
+    Logging(cmd),
+    m_cmd(cmd) {}
+
+  int ImportCommandImplBase::help() const {
+    log() << std::endl << m_cmd.opt().desc() << std::endl;
+    m_cmd.print_names(log());
+    return 0;
   }
 
-  // ///////////////////////////////////////
-  // 'import' function for casm
-  //    (add an 'if-else' statement in casm.cpp to call this)
+  int ImportCommandImplBase::desc() const {  // -- custom --
+    help();
 
-  /// Import proceeds in two steps.
-  ///   1) for each file:
-  ///       - read Structure
-  ///       - map it onto a Configuration of the PrimClex
-  ///       - record relaxation data (lattice & basis deformation cost)
+    log() <<
+          "Import structures or calculation data specified by --pos or --batch. \n\n"
+
+          "Structures are mapped to the closest matching configuration consistent \n"
+          "with the primitive crystal structure. If a JSON file is specified, it \n"
+          "will be interpreted as a 'properties.calc.json' file.\n\n"
+
+          "For complete import options description for a particular config type, use\n"
+          "--desc along with '--type <typename>'.\n\n";
+
+    return 0;
+  }
+
+  int ImportCommandImplBase::run() const {
+    err_log() << "ERROR: No --type\n";
+    m_cmd.print_names(err_log());
+    return ERR_INVALID_ARG;
+  }
+
+
+  // -- template<typename DataObject> class ImportCommandImpl -----------------
+
+  /// 'casm query' implementation, templated by type
   ///
-  ///   2) If data import was requested, iterate over each import record and do
-  ///      the following:
-  ///       - if multiple imported structures map onto a configuration for which
-  ///         there is no calculation data, import calculation data from the
-  ///         structure with the lowest mapping cost
-  ///       - if one or more imported structuress map onto a configuration for
-  ///         which calculation data already exist, do not import any new data
-  ///       - if data is imported, the corresponding properties.calc.json file is
-  ///         copied into the directory of the mapped configuration. A structure
-  ///         file, relaxed_structure.vasp is also written to the directory.
-  ///       - relaxed_structure.vasp gives the relaxed structure in a setting and
-  ///         orientation that matches the generated POS file
+  /// This:
+  /// - holds a DB::InterfaceData object which stores dictionaries and selections
+  /// - provides the implementation for 'help' (i.e. print allowed import options)
+  /// - provides the implementation for 'run' (i.e. perform query)
   ///
-  int import_command(const CommandArgs &args) {
+  template<typename DataObject>
+  class ImportCommandImpl : public ImportCommandImplBase {
+  public:
+    ImportCommandImpl(const ImportCommand &cmd) :
+      ImportCommandImplBase(cmd) {}
 
-    /// Set command line options using boost program_options
-    Completer::ImportOption import_opt;
-    po::variables_map &vm = import_opt.vm();
+    int help() const override;
 
-    try {
+    int desc() const override;
 
-      po::store(po::parse_command_line(args.argc, args.argv, import_opt.desc()), import_opt.vm()); // can throw
+    int run() const override;
 
-      /** --help option
-       */
-      if(vm.count("help")) {
-        args.log << std::endl;
-        args.log << import_opt.desc() << std::endl;
+  };
 
-        return 0;
-      }
+  template<typename DataObject>
+  int ImportCommandImpl<DataObject>::help() const {
+    log() << std::endl << m_cmd.opt().desc() << "\n\n"
 
-      if(vm.count("desc")) {
-        args.log << "\n";
-        args.log << import_opt.desc() << std::endl;
+          << "For complete options description for a particular config type, use:\n"
+          "  casm " << ImportCommand::name << " --desc --type " << traits<DataObject>::short_name << "\n\n";
+    return 0;
+  }
 
-        args.log << "DESCRIPTION" << std::endl;
-        args.log << "    Import structure specified by --pos. If it doesn't exist make a directory for it and copy data over" << std::endl;
-        args.log << "    If a *.json file is specified, it will be interpreted as a 'calc.properties.json' file." << std::endl;
-        return 0;
-      }
+  template<typename DataObject>
+  int ImportCommandImpl<DataObject>::desc() const {
+    log() << DB::Import<DataObject>::desc << std::endl;
+    return 0;
+  }
 
-      po::notify(import_opt.vm()); // throws on error, so do after help in case
-      // there are any problems
-
-    }
-    catch(po::error &e) {
-      args.err_log << import_opt.desc() << std::endl;
-      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
-      return 3;
-    }
-    catch(std::exception &e) {
-      args.err_log << import_opt.desc() << std::endl;
-      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
-      return 4;
-
-    }
-
-    const fs::path &root = args.root;
-    if(root.empty()) {
-      args.err_log.error("No casm project found");
-      args.err_log << std::endl;
-      return ERR_NO_PROJ;
-    }
-
-    std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+  template<typename DataObject>
+  int ImportCommandImpl<DataObject>::run() const {
+    return DB::Import<DataObject>::run(m_cmd.primclex(), m_cmd.input(), m_cmd.opt());
+  }
 
 
-    std::vector<fs::path> pos_paths;
-    auto res = DB::Import<Configuration>::construct_pos_paths(primclex, import_opt, std::back_inserter(pos_paths));
-    if(res.second) {
-      return res.second;
-    }
+  // -- class ImportCommand ----------------------------------------------------
 
-    jsonParser input;
-    if(vm.count("settings")) {
-      input = jsonParser {import_opt.settings_path()};
-    }
-    else if(vm.count("input")) {
-      input = jsonParser::parse(import_opt.input_str());
-    }
+  ImportCommand::ImportCommand(const CommandArgs &_args, Completer::ImportOption &_opt) :
+    APICommand<Completer::ImportOption>(_args, _opt) {}
 
-    std::unique_ptr<ImporterMap> importers = make_interface_map<Completer::ImportOption>();
-    importers->insert(DB::ImportInterface<Configuration>());
-
-    auto it = importers->find(import_opt.configtype());
-    if(it != importers->end()) {
-      return it->run(primclex, input, import_opt);
-    }
-    else {
-      args.err_log << "No match found for --type " << import_opt.configtype() << std::endl;
-      print_names(args.log, *importers);
+  int ImportCommand::vm_count_check() const {
+    if(!count("pos") && !count("batch")) {
+      err_log() << "Error in 'casm import'. "
+                "Use --pos or --batch to specify structures to be imported" << std::endl;
       return ERR_INVALID_ARG;
     }
+
+    return 0;
+  }
+
+  int ImportCommand::help() const {
+    return impl().help();
+  }
+
+  int ImportCommand::desc() const {
+    return impl().desc();
+  }
+
+  int ImportCommand::run() const {
+    return impl().run();
+  }
+
+  ImportCommandImplBase &ImportCommand::impl() const {
+    if(!m_impl) {
+      if(vm().count("type")) {
+        if(!opt().configtype_opts().count(opt().configtype())) {
+          std::stringstream msg;
+          msg << "--type " << opt().configtype() << " is not allowed for 'casm " << name << "'.";
+          print_names(err_log());
+          throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
+        }
+
+        DB::for_config_type(opt().configtype(), DB::ConstructImpl<ImportCommand>(m_impl, *this));
+      }
+      else {
+        m_impl = notstd::make_unique<ImportCommandImplBase>(*this);
+      }
+    }
+    return *m_impl;
+  }
+
+  void ImportCommand::print_names(std::ostream &sout) const {
+    sout << "The allowed types are:\n\n";
+
+    for(const auto &configtype : opt().configtype_opts()) {
+      sout << "  " << configtype << std::endl;
+    }
+  }
+
+  jsonParser ImportCommand::input() const {
+    if(count("settings")) {
+      return jsonParser {opt().settings_path()};
+    }
+    else if(count("input")) {
+      return jsonParser::parse(opt().input_str());
+    }
+    // use defaults
+    return jsonParser();
   }
 
 }

@@ -6,6 +6,9 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/app/import.hh"
+#include "casm/app/update.hh"
+#include "casm/app/rm.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/PropertiesDatabase.hh"
 #include "casm/database/Selection.hh"
@@ -16,94 +19,75 @@ namespace CASM {
 
     // --- Configuration specializations ---------------------------------------
 
-    /*
+    // --- Import<Configuration> ---
 
-    still need to devide interface for setting conflict score methods
-
-    "    conflict_score: JSON object (optional, default= see below)\n"
-    "        Which metric should be used to determine which calculation results \n"
-    "        should be used for a particular configuration if multiple results\n"
-    "        map to the same configuration and the self-mapping result is not \n"
-    "        available. Should consist of a \"method\" and method-dependent \n"
-    "        parameters. The \"method\" options and associated parameters are: \n"
-
-    "          \"deformation_cost\":\n"
-    "             \"lattice_weight\": number, in range [0, 1.0]\n"
-
-    "             Uses a weighted sum of cost functions for lattice and basis \n"
-    "             deformation. See below for complete definition.\n"
-
-    "          \"minimum\":\n"
-    "             \"property\": property name (ex: \"relaxed_energy\")\n"
-
-    "             Reads the specified property from the mapped properties and\n"
-    "             selects the minimum to be the best mapping.\n"
-
-    "          \"maximum\":\n"
-    "             \"property\": property name (ex: \"some property\")\n"
-
-    "             Reads the specified property from the mapped properties and\n"
-    "             selects the maximum to be the best mapping.\n"
-
-    "          \"direct_selection\":\n"
-    "             \"name\": configname to force as 'best' (ex: \"SCEL3_1_1_3_0_0_0/4\")\n"
-
-    "             Directly specify which configuration's properties should\n"
-
-    "        The default value is:\n"
-    "          \"conflict_score\" : {\n"
-    "             \"method\": \"minimum\",\n"
-    "             \"property\": \"relaxed_energy\"\n"
-    "          }\n\n"
-
-    "  Deformation cost:\n"
-
-    "        The \"deformation_cost\" is:\n\n"
-
-    "            deformation_cost = w*lattice_deformation_cost + \n"
-    "                               (1.0-w)*basis_deformation_cost,\n\n"
-
-    "        where \"w\" is the \"lattice_weight\" factor (default=0.5),\n\n"
-
-    "        the \"lattice_deformation_cost\" is the mean-square displacement of a \n"
-    "        points on the surface of a sphere of volume equal to the atomic volume \n"
-    "        when  it is deformed by the volume preserving deviatoric deformation \n"
-    "        matrix, F_deviatoric:\n\n"
-
-    "            V = relaxed_atomic_volume;\n"
-    "            F = deformation matrix (lattice_relaxed = F*lattice_ideal);\n"
-    "            F_deviatoric = F/pow(F.determinant(), 1./3.);\n"
-    "            I = 3x3 identity matrix;\n\n"
-
-    "            lattice_deformation_cost = pow( 3.*V / (4.*pi), 2.0/3.0) / 3.0 * \n"
-    "                (0.5 * (F.t * F / pow(std::abs(F.determinant()), 2.0/3.0) - I)).squaredNorm()\n\n"
-
-    "        and the \"basis_deformation_cost\" is a cost function for the amount of\n"
-    "        basis site relaxation:\n\n"
-
-    "            D = 3xN matrix of basis site displacements (displacements are applied \n"
-    "                before strain)\n"
-    "            Natoms = number of atoms in configuration\n"
-    "            basis_deformation_cost = (F*D * D.transpose() * F.transpose()).trace() \n"
-    "                / (max(Natoms, 1.))\n\n"
-
-    */
-
-    /// \brief Constructor
-    Import<Configuration>::Import(
+    /// Construct with PrimClex and by moving a ConfigMapper
+    StructureMap<Configuration>::StructureMap(
       const PrimClex &primclex,
-      const ConfigMapper &configmapper,
-      std::vector<std::string> dof,
+      std::unique_ptr<ConfigMapper> mapper,
       bool primitive_only,
-      bool import_data,
-      bool copy_additional_files,
-      bool overwrite,
-      fs::path report_dir) :
+      std::vector<std::string> dof) :
+      ConfigData<Configuration>(primclex, null_log()),
+      m_configmapper(std::move(mapper)),
+      m_primitive_only(primitive_only),
+      m_dof(dof) {}
 
-      ImportT(primclex, import_data, copy_additional_files, overwrite, report_dir),
-      m_configmapper(configmapper),
-      m_dof(dof),
-      m_primitive_only(primitive_only) {}
+    /// Construct with PrimClex and JSON settings (see Import / Update desc)
+    StructureMap<Configuration>::StructureMap(
+      const PrimClex &primclex,
+      const jsonParser &kwargs,
+      bool primitive_only,
+      std::vector<std::string> dof) :
+      ConfigData<Configuration>(primclex, null_log()),
+      m_primitive_only(primitive_only),
+      m_dof(dof) {
+
+      // -- read settings --
+      bool rotate = true;
+      bool strict = false;
+      bool ideal;
+      kwargs.get_else(ideal, "ideal", false);
+
+      double lattice_weight;
+      kwargs.get_else(lattice_weight, "lattice_weight", 0.5);
+
+      double max_vol_change;
+      kwargs.get_else(max_vol_change, "max_vol_change", 0.3);
+
+      double min_va_frac;
+      kwargs.get_else(min_va_frac, "min_va_frac", 0.0);
+
+      double max_va_frac;
+      kwargs.get_else(max_va_frac, "max_va_frac", 0.5);
+
+      // -- collect settings used --
+      m_used.put_obj();
+      m_used["ideal"] = ideal;
+      m_used["lattice_weight"] = lattice_weight;
+      m_used["max_vol_change"] = max_vol_change;
+      m_used["min_va_frac"] = min_va_frac;
+      m_used["max_va_frac"] = max_va_frac;
+
+      // -- construct ConfigMapper --
+      int map_opt = ConfigMapper::none;
+      if(rotate) map_opt |= ConfigMapper::rotate;
+      if(strict) map_opt |= ConfigMapper::strict;
+      if(!ideal) map_opt |= ConfigMapper::robust;
+
+      m_configmapper.reset(new ConfigMapper(
+                             primclex,
+                             lattice_weight,
+                             max_vol_change,
+                             map_opt,
+                             primclex.crystallography_tol()));
+      m_configmapper->set_min_va_frac(min_va_frac);
+      m_configmapper->set_max_va_frac(max_va_frac);
+
+    }
+
+    const jsonParser &StructureMap<Configuration>::used() const {
+      return m_used;
+    }
 
     /// \brief Specialized import method for ConfigType
     ///
@@ -115,10 +99,10 @@ namespace CASM {
     /// - >1 result handles case of non-primitive configurations
     /// - responsible for filling in Result data structure
     /// - If 'hint' is not nullptr, use hint as 'from' config, else 'from' == 'to'
-    ImportBase::import_inserter Import<Configuration>::_import(
+    StructureMap<Configuration>::map_result_inserter StructureMap<Configuration>::map(
       fs::path p,
       DatabaseIterator<Configuration> hint,
-      import_inserter result) const {
+      map_result_inserter result) const {
 
       // need to set Result data (w/ defaults):
       // - fs::path pos = "";
@@ -131,9 +115,9 @@ namespace CASM {
       // get path to properties.calc.json that will be imported
       //   (checking a couple possible locations relative to pos_path),
       //   or empty if none could be found
-      fs::path prop_path = _calc_properties_path(p);
+      fs::path prop_path = this->calc_properties_path(p);
 
-      Result res;
+      ConfigIO::Result res;
       res.pos = (prop_path.empty() ? p : prop_path);
 
       std::unique_ptr<Configuration> hint_config;
@@ -143,15 +127,15 @@ namespace CASM {
       }
 
       // read from structure file or properties.calc.json file (if exists)
-      BasicStructure<Site> struc = _make_structure(res.pos);
+      BasicStructure<Site> struc = this->_make_structure(res.pos);
 
       // do mapping
       ConfigMapperResult map_result;
       if(_occupation_only()) {
-        map_result = m_configmapper.import_structure_occupation(struc, hint_config.get());
+        map_result = m_configmapper->import_structure_occupation(struc, hint_config.get());
       }
       else {
-        map_result =  m_configmapper.import_structure(struc);
+        map_result =  m_configmapper->import_structure(struc);
       }
 
       if(!map_result.success) {
@@ -188,7 +172,7 @@ namespace CASM {
       //   was also inserted in the database,
       // - but don't try to scale the data for the primitive
       if(insert_result.canonical_it != insert_result.primitive_it) {
-        Result prim_res;
+        ConfigIO::Result prim_res;
         prim_res.pos = res.pos;
         prim_res.mapped_props.from = insert_result.primitive_it.name();
         prim_res.mapped_props.to = insert_result.primitive_it.name();
@@ -199,8 +183,47 @@ namespace CASM {
       return result;
     }
 
+    /// \brief Read BasicStructure<Site> to be imported
+    ///
+    /// If 'p.extension()' == ".json" or ".JSON", read as properties.calc.json
+    /// Else, read as VASP POSCAR
+    BasicStructure<Site> StructureMap<Configuration>::_make_structure(const fs::path &p) const {
 
-    const std::string Import<Configuration>::import_help =
+      BasicStructure<Site> struc;
+      if(p.extension() == ".json" || p.extension() == ".JSON") {
+        jsonParser json(p);
+        from_json(simple_json(struc, "relaxed_"), json);
+      }
+      else {
+        fs::ifstream struc_stream(p);
+        struc.read(struc_stream);
+      }
+      return struc;
+    }
+
+    /// \brief Import Configuration with only occupation DoF
+    bool StructureMap<Configuration>::_occupation_only() const {
+      return m_dof.size() == 1 && m_dof[0] == "occupation";
+    }
+
+
+    // --- Import<Configuration> ---
+
+    /// \brief Constructor
+    Import<Configuration>::Import(
+      const PrimClex &primclex,
+      const StructureMap<Configuration> &mapper,
+      bool import_data,
+      bool copy_additional_files,
+      bool overwrite,
+      fs::path report_dir,
+      Log &file_log) :
+
+      ImportT(primclex, mapper, import_data, copy_additional_files, overwrite,
+              report_dir, file_log) {}
+
+
+    const std::string Import<Configuration>::desc =
 
       "Import Configuration: \n\n"
 
@@ -315,7 +338,7 @@ namespace CASM {
       "        for the configuration being mapped to will be improved.\n\n";
 
 
-    int Import<Configuration>::import(
+    int Import<Configuration>::run(
       const PrimClex &primclex,
       const jsonParser &kwargs,
       const Completer::ImportOption &import_opt) {
@@ -333,13 +356,13 @@ namespace CASM {
 
       // get input report_dir, check if exists, and create new report_dir.i if necessary
       fs::path report_dir = primclex.dir().root_dir() / "import_report";
-      report_dir = ImportBase::create_report_dir(report_dir);
+      report_dir = create_report_dir(report_dir);
 
       // 'mapping' subsettings are used to construct ConfigMapper, and also returns
       // the 'used' settings
-      auto val = _make_configmapper(primclex, kwargs);
-      const ConfigMapper &configmapper = val.first;
-      used["mapping"] = val.second;
+      std::vector<std::string> dof {"occupation"};
+      StructureMap<Configuration> mapper(primclex, kwargs["mapping"], primitive_only, dof);
+      used["mapping"] = mapper.used();
 
       // 'data' subsettings
       jsonParser data;
@@ -370,17 +393,16 @@ namespace CASM {
       // -- construct Import --
       Import<Configuration> f(
         primclex,
-        configmapper,
-      {"occupation"}, // still need to figure out how to specify this in general
-      primitive_only,
-      import_data,
-      copy_additional_files,
-      overwrite,
-      report_dir);
+        mapper,
+        import_data,
+        copy_additional_files,
+        overwrite,
+        report_dir,
+        primclex.log());
 
       // -- read structure file paths --
       std::vector<fs::path> pos;
-      auto res = ImportBase::construct_pos_paths(primclex, import_opt, std::back_inserter(pos));
+      auto res = construct_pos_paths(primclex, import_opt, std::back_inserter(pos));
       if(res.second) {
         return res.second;
       }
@@ -391,7 +413,8 @@ namespace CASM {
       return 0;
     }
 
-    const std::string Import<Configuration>::update_help =
+
+    const std::string Update<Configuration>::desc =
 
       "Update Configuration calculation results: \n\n"
 
@@ -406,7 +429,13 @@ namespace CASM {
       "     - Initial configuration and relaxed configuration \n\n"
       "   - If multiple configurations relax onto a configuration for which there \n"
       "     is no calculation data, the calculation data from the with the lowest \n"
-      "     \"conflict_score\" is used for the relaxed configuration.\n\n"
+      "     conflict resolution score is used for the relaxed configuration.\n"
+      "   - Both default and configuration-specific conflict resolution scoring\n"
+      "     method can be set via: \n"
+      "       'casm update --set-default-conflict-score -i <JSON>'\n"
+      "       'casm update --set-default-conflict-score -s <JSON filename>'\n"
+      "       'casm update --set-conflict-score configname -i <JSON>'\n"
+      "       'casm update --set-conflict-score configname -s <JSON filename>'\n"
 
       "Settings: \n\n"
 
@@ -454,10 +483,107 @@ namespace CASM {
       "    ideal: bool (optional, default=false)\n"
       "        Assume imported structures are unstrained (ideal) for faster importing.\n"
       "        Can be slower if used on deformed structures, in which case more \n"
-      "        robust methods will be used\n\n";
+      "        robust methods will be used\n\n"
+
+      "Conflict Resolution: \n\n"
+
+      "  Which metric should be used to determine which calculation results \n"
+      "  should be used for a particular configuration if multiple results\n"
+      "  map to the same configuration and the self-mapping result is not \n"
+      "  available. Should consist of a \"method\" and method-dependent \n"
+      "  parameters. The \"method\" options and associated parameters are: \n"
+
+      "    \"deformation_cost\":\n"
+      "       \"lattice_weight\": number, in range [0, 1.0]\n"
+
+      "       Uses a weighted sum of cost functions for lattice and basis \n"
+      "       deformation. See below for complete definition. Ex: \n"
+      "         {\"method\":\"deformation_cost\":, \"lattice_weight\":0.5} \n\n"
+
+      "    \"minimum\":\n"
+      "       \"property\": property name (ex: \"relaxed_energy\")\n"
+
+      "       Reads the specified property from the mapped properties and\n"
+      "       selects the minimum to be the best mapping. Ex: \n"
+      "         {\"method\":\"minimum\":, \"property\": \"relaxed_energy\"} \n\n"
+
+      "    \"maximum\":\n"
+      "       \"property\": property name (ex: \"relaxed_energy\")\n"
+
+      "       Reads the specified property from the mapped properties and\n"
+      "       selects the maximum to be the best mapping. Ex: \n"
+      "         {\"method\":\"maximum\":, \"property\": \"relaxed_energy\"} \n\n"
+
+      "    \"direct_selection\":\n"
+      "       \"name\": configname to force as 'best' (ex: \"SCEL3_1_1_3_0_0_0/4\")\n"
+
+      "       Directly specify which configuration's properties should be used. Ex: \n"
+      "         {\"method\":\"direct_selection\":, \"name\": \"SCEL3_1_1_3_0_0_0/4\"} \n\n"
+
+      "  The default value used by CASM is:\n"
+      "    {\"method\": \"minimum\", \"property\": \"relaxed_energy\"}\n\n"
+
+      "Deformation cost:\n"
+
+      "  The \"deformation_cost\" is:\n\n"
+
+      "      deformation_cost = w*lattice_deformation_cost + \n"
+      "                         (1.0-w)*basis_deformation_cost,\n\n"
+
+      "  where \"w\" is the \"lattice_weight\" factor (default=0.5),\n\n"
+
+      "  the \"lattice_deformation_cost\" is the mean-square displacement of a \n"
+      "  points on the surface of a sphere of volume equal to the atomic volume \n"
+      "  when  it is deformed by the volume preserving deviatoric deformation \n"
+      "  matrix, F_deviatoric:\n\n"
+
+      "      V = relaxed_atomic_volume;\n"
+      "      F = deformation matrix (lattice_relaxed = F*lattice_ideal);\n"
+      "      F_deviatoric = F/pow(F.determinant(), 1./3.);\n"
+      "      I = 3x3 identity matrix;\n\n"
+
+      "      lattice_deformation_cost = pow( 3.*V / (4.*pi), 2.0/3.0) / 3.0 * \n"
+      "          (0.5 * (F.t * F / pow(std::abs(F.determinant()), 2.0/3.0) - I)).squaredNorm()\n\n"
+
+      "  and the \"basis_deformation_cost\" is a cost function for the amount of\n"
+      "  basis site relaxation:\n\n"
+
+      "      D = 3xN matrix of basis site displacements (displacements are applied \n"
+      "          before strain)\n"
+      "      Natoms = number of atoms in configuration\n"
+      "      basis_deformation_cost = (F*D * D.transpose() * F.transpose()).trace() \n"
+      "          / (max(Natoms, 1.))\n\n";
 
 
-    int Import<Configuration>::update(
+
+    /// Allow ConfigType to specialize the report formatting for 'import'
+    DataFormatter<ConfigIO::Result> Import<Configuration>::_import_formatter(
+      const std::map<std::string, ConfigIO::ImportData> &data_results) const {
+
+      DataFormatterDictionary<ConfigIO::Result> dict;
+      ConfigIO::default_formatters(dict, db_props(), data_results);
+
+      std::vector<std::string> col = {
+        "configname", "selected", "pos", "has_data", "has_complete_data",
+        "import_data", "import_additional_files", "score", "best_score", "is_best",
+        "lattice_deformation_cost", "basis_deformation_cost", "deformation_cost",
+        "relaxed_energy"
+      };
+
+      return dict.parse(col);
+    }
+
+
+    // --- Update<Configuration> ---
+
+    /// \brief Constructor
+    Update<Configuration>::Update(
+      const PrimClex &primclex,
+      const StructureMap<Configuration> &mapper,
+      fs::path report_dir) :
+      UpdateT(primclex, mapper, report_dir) {}
+
+    int Update<Configuration>::run(
       const PrimClex &primclex,
       const jsonParser &kwargs,
       const Completer::UpdateOption &update_opt) {
@@ -466,7 +592,6 @@ namespace CASM {
 
       const po::variables_map &vm = update_opt.vm();
       jsonParser used;
-      jsonParser _default;
 
       // general settings
       bool primitive_only = false;
@@ -482,12 +607,13 @@ namespace CASM {
 
       // get input report_dir, check if exists, and create new report_dir.i if necessary
       fs::path report_dir = primclex.dir().root_dir() / "update_report";
-      report_dir = ImportBase::create_report_dir(report_dir);
+      report_dir = create_report_dir(report_dir);
 
       // 'mapping' subsettings are used to construct ConfigMapper and return 'used' settings values
-      auto val = Import<Configuration>::_make_configmapper(primclex, kwargs);
-      const ConfigMapper &configmapper = val.first;
-      used["mapping"] = val.second;
+      // still need to figure out how to specify this in general
+      std::vector<std::string> dof {"occupation"};
+      StructureMap<Configuration> mapper(primclex, kwargs["mapping"], primitive_only, dof);
+      used["mapping"] = mapper.used();
 
       // 'data' subsettings
       bool import_data = true;
@@ -499,16 +625,11 @@ namespace CASM {
       log.read("Settings");
       log << used << std::endl << std::endl;
 
-      // -- construct Import --
-      Import<Configuration> f(
+      // -- construct Update --
+      Update<Configuration> f(
         primclex,
-        configmapper,
-      {"occupation"}, // still need to figure out how to specify this in general
-      primitive_only,
-      import_data,
-      import_additional_files,
-      overwrite,
-      report_dir);
+        mapper,
+        report_dir);
 
       // -- read selection --
       DB::Selection<Configuration> sel(primclex, update_opt.selection_path());
@@ -519,87 +640,12 @@ namespace CASM {
       return 0;
     }
 
-    const std::string Import<Configuration>::remove_help = "ToDo";
-
-    int Import<Configuration>::remove(
-      const PrimClex &primclex,
-      const jsonParser &kwargs,
-      const Completer::RemoveOption &remove_opt) {
-      return 0;
-    }
-
-    /// Construct ConfigMapper from input args
-    std::pair<ConfigMapper, jsonParser> Import<Configuration>::_make_configmapper(
-      const PrimClex &primclex,
-      const jsonParser &kwargs) {
-
-      // -- read settings --
-      bool rotate = true;
-      bool strict = false;
-      bool ideal;
-      kwargs.get_else(ideal, "ideal", false);
-
-      double lattice_weight;
-      kwargs.get_else(lattice_weight, "lattice_weight", 0.5);
-
-      double max_vol_change;
-      kwargs.get_else(max_vol_change, "max_vol_change", 0.3);
-
-      double min_va_frac;
-      kwargs.get_else(min_va_frac, "min_va_frac", 0.0);
-
-      double max_va_frac;
-      kwargs.get_else(max_va_frac, "max_va_frac", 0.5);
-
-      // -- collect settings used --
-      jsonParser used;
-      used["ideal"] = ideal;
-      used["lattice_weight"] = lattice_weight;
-      used["max_vol_change"] = max_vol_change;
-      used["min_va_frac"] = min_va_frac;
-      used["max_va_frac"] = max_va_frac;
-
-      // -- construct ConfigMapper --
-      int map_opt = ConfigMapper::none;
-      if(rotate) map_opt |= ConfigMapper::rotate;
-      if(strict) map_opt |= ConfigMapper::strict;
-      if(!ideal) map_opt |= ConfigMapper::robust;
-
-      ConfigMapper configmapper(
-        primclex,
-        lattice_weight,
-        max_vol_change,
-        map_opt,
-        primclex.crystallography_tol());
-      configmapper.set_min_va_frac(min_va_frac);
-      configmapper.set_max_va_frac(max_va_frac);
-
-      return std::make_pair(configmapper, used);
-    }
-
-    /// Allow ConfigType to specialize the report formatting for 'import'
-    DataFormatter<ImportBase::Result> Import<Configuration>::_import_formatter(
-      const std::map<std::string, ImportData> &data_results) const {
-
-      DataFormatterDictionary<Result> dict;
-      _default_formatters(dict, data_results);
-
-      std::vector<std::string> col = {
-        "configname", "selected", "pos", "has_data", "has_complete_data",
-        "import_data", "import_additional_files", "score", "best_score", "is_best",
-        "lattice_deformation_cost", "basis_deformation_cost", "deformation_cost",
-        "relaxed_energy"
-      };
-
-      return dict.parse(col);
-    }
-
     // Allow ConfigType to specialize the report formatting for 'update'
-    DataFormatter<ImportBase::Result> Import<Configuration>::_update_formatter(
-      const std::map<std::string, ImportData> &data_results) const {
+    DataFormatter<ConfigIO::Result> Update<Configuration>::_update_formatter(
+      const std::map<std::string, ConfigIO::ImportData> &data_results) const {
 
-      DataFormatterDictionary<Result> dict;
-      _default_formatters(dict, data_results);
+      DataFormatterDictionary<ConfigIO::Result> dict;
+      ConfigIO::default_formatters(dict, db_props(), data_results);
 
       std::vector<std::string> col = {
         "configname", "selected", "to_configname", "has_data", "has_complete_data",
@@ -611,27 +657,67 @@ namespace CASM {
       return dict.parse(col);
     }
 
-    /// \brief Read BasicStructure<Site> to be imported
-    ///
-    /// If 'p.extension()' == ".json" or ".JSON", read as properties.calc.json
-    /// Else, read as VASP POSCAR
-    BasicStructure<Site> Import<Configuration>::_make_structure(const fs::path &p) const {
 
-      BasicStructure<Site> struc;
-      if(p.extension() == ".json" || p.extension() == ".JSON") {
-        jsonParser json(p);
-        from_json(simple_json(struc, "relaxed_"), json);
+    // --- Remove<Configuration> ---
+
+    Remove<Configuration>::Remove(
+      const PrimClex &primclex,
+      fs::path report_dir,
+      Log &_file_log) :
+      RemoveT(primclex, report_dir, _file_log) {}
+
+    const std::string Remove<Configuration>::desc =
+
+      "Remove enumerated configurations and calculation results: \n\n"
+
+      "  'casm remove --type config' options: \n\n"
+
+      "  - Configurations to be erased can be specified with the --names and \n"
+      "    --selection options.\n"
+      "  - Use without additional options to only remove enumerated configurations\n"
+      "    that do not have any associated files or data.\n"
+      "  - Use --data (-d) to remove data only, not enumerated configurations. \n"
+      "  - Use --force (-f) to remove data and enumerated configurations. \n"
+      "  - Use --dry-run (-n) to do a \"dry-run\". \n\n"
+
+      "  After removing a configuration it may be re-enumerated but will have a new\n"
+      "  index because indices will not be repeated.\n\n";
+
+
+    int Remove<Configuration>::run(
+      const PrimClex &primclex,
+      const Completer::RmOption &opt) {
+
+      // -- read selection --
+      DB::Selection<Configuration> selection(primclex, opt.selection_path());
+      for(const auto &name : opt.name_strs()) {
+        if(primclex.db<Configuration>().count(name)) {
+          selection.data()[name] = true;
+        }
+        else {
+          std::stringstream msg;
+          msg << "Invalid Configuration name: " << name;
+          throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
+        }
+      }
+
+      // get remove report_dir, check if exists, and create new report_dir.i if necessary
+      fs::path report_dir = primclex.dir().root_dir() / "remove_report";
+      report_dir = create_report_dir(report_dir);
+
+      // -- erase --
+      Remove<Configuration> f(primclex, report_dir, primclex.log());
+
+      if(opt.force()) {
+        f.erase_all(selection, opt.dry_run());
+      }
+      else if(opt.data()) {
+        f.erase_data(selection, opt.dry_run());
       }
       else {
-        fs::ifstream struc_stream(p);
-        struc.read(struc_stream);
+        f.erase(selection, opt.dry_run());
       }
-      return struc;
-    }
-
-    /// \brief Import Configuration with only occupation DoF
-    bool Import<Configuration>::_occupation_only() const {
-      return m_dof.size() == 1 && m_dof[0] == "occupation";
+      return 0;
     }
 
   }

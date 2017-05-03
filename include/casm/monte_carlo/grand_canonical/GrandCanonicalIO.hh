@@ -38,7 +38,7 @@ namespace CASM {
     GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalLTEFormatter(const double &phi_LTE1);
 
     /// \brief Will create new file or append to existing results file the results of the latest run
-    void write_lte_results(const Settings &settings, const GrandCanonical &mc, const double &phi_LTE1, const std::string &configname, Log &_log);
+    void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc, const double &phi_LTE1, const std::string &configname, Log &_log);
 
   }
 }

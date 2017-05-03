@@ -18,8 +18,6 @@ namespace CASM {
     return *A < *B;
   }
 
-  const std::string QueryTraits<Supercell>::name = "Supercell";
-
   //Copy constructor is needed for proper initialization of m_prim_grid
   Supercell::Supercell(const Supercell &RHS) :
     m_primclex(RHS.m_primclex),
@@ -532,7 +530,6 @@ namespace CASM {
   Supercell copy_apply(const SymOp &op, const Supercell &scel) {
     return Supercell(&scel.primclex(), copy_apply(op, scel.real_super_lattice()));
   }
-
 
   std::string generate_name(const Eigen::Matrix3i &transf_mat) {
     std::string name_str;

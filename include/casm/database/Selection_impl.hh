@@ -5,6 +5,12 @@ namespace CASM {
 
   namespace DB {
 
+    /// boost::iterator_facade implementation
+    template<typename ObjType, typename BaseIterator>
+    const ObjType &SelectionIterator<ObjType, BaseIterator>::dereference() const {
+      return *(m_list->db().find(m_it->first));
+    }
+
     /// \brief Use default ObjType database
     template<typename ObjType>
     Selection<ObjType>::Selection(const PrimClex &_primclex, fs::path selection_path) :

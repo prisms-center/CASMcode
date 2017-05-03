@@ -23,18 +23,14 @@ namespace CASM {
     typename SymOpCompare >
   class EnumEquivalents;
 
-  namespace CASM_TMP {
-
-    template <
-      typename ObjectType,
-      typename SymOpIterator,
-      typename SymOpType,
-      typename SymOpCompare >
-    struct traits<EnumEquivalents<ObjectType, SymOpIterator, SymOpType, SymOpCompare> > {
-      static const std::string name;
-    };
-
-  }
+  template <
+    typename ObjectType,
+    typename SymOpIterator,
+    typename SymOpType,
+    typename SymOpCompare >
+  struct traits<EnumEquivalents<ObjectType, SymOpIterator, SymOpType, SymOpCompare> > {
+    static const std::string name;
+  };
 
   /// \brief Enumerate over all equivalents
   ///
@@ -160,16 +156,12 @@ namespace CASM {
     SymOpCompare m_compare;
   };
 
-  namespace CASM_TMP {
-
-    template <
-      typename ObjectType,
-      typename SymOpIterator,
-      typename SymOpType,
-      typename SymOpCompare >
-    const std::string traits<EnumEquivalents<ObjectType, SymOpIterator, SymOpType, SymOpCompare> >::name = "EnumEquivalents";
-
-  }
+  template <
+    typename ObjectType,
+    typename SymOpIterator,
+    typename SymOpType,
+    typename SymOpCompare >
+  const std::string traits<EnumEquivalents<ObjectType, SymOpIterator, SymOpType, SymOpCompare> >::name = "EnumEquivalents";
 
 }
 

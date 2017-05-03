@@ -49,6 +49,9 @@ namespace CASM {
   /// \brief Remove files recursively
   void recurs_rm_files(fs::path p, bool dry_run, Log &log);
 
+  /// \brief Copy files recursively
+  void recurs_cp_files(const fs::path &from_dir, const fs::path &to_dir, bool dry_run, Log &log);
+
   /// \brief Specification of CASM project directory structure
   class DirectoryStructure {
 
@@ -140,7 +143,7 @@ namespace CASM {
     /// \brief Return enumerators plugin dir
     template<typename DataObject>
     fs::path query_plugins() const {
-      return m_root / m_casm_dir / "query" / QueryTraits<DataObject>::name;
+      return m_root / m_casm_dir / "query" / traits<DataObject>::name;
     }
 
     template<typename DataObject>

@@ -5,6 +5,7 @@
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/database/DatabaseTypes.hh"
 
 namespace CASM {
   namespace Completer {
@@ -157,10 +158,17 @@ namespace CASM {
      * this is the first time someone is asking for those values, which we set through the
      * initialize routine. If there are values there already, just hand them back.
      */
-
     const po::options_description &OptionHandlerBase::desc() {
       if(m_desc.options().size() == 0) {
         initialize();
+      }
+
+      return m_desc;
+    }
+
+    const po::options_description &OptionHandlerBase::desc() const {
+      if(m_desc.options().size() == 0) {
+        throw std::logic_error("code error: Options must be initialized by calling non-const desc()");
       }
 
       return m_desc;
@@ -236,6 +244,16 @@ namespace CASM {
       return selected_mode;
     }
 
+    void OptionHandlerBase::add_selection_suboption(const fs::path &_default) {
+      m_desc.add_options()
+      ("selection,c",
+       po::value<fs::path>(&m_selection_path)->default_value(_default)->value_name(ArgHandler::path()),
+       (std::string("Only consider the selected objects from the given selection file. "
+                    "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
+                    "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
+      return;
+    }
+
     void OptionHandlerBase::add_configlist_suboption(const fs::path &_default) {
       m_desc.add_options()
       ("config,c",
@@ -246,11 +264,21 @@ namespace CASM {
       return;
     }
 
+    void OptionHandlerBase::add_selections_suboption(const fs::path &_default) {
+      m_desc.add_options()
+      ("selections,c",
+       po::value<std::vector<fs::path> >(&m_selection_paths)->default_value(std::vector<fs::path> {_default})->value_name(ArgHandler::path()),
+       (std::string("Only consider the selected objects from the given selection file. "
+                    "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
+                    "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
+      return;
+    }
+
     void OptionHandlerBase::add_configlists_suboption(const fs::path &_default) {
       m_desc.add_options()
       ("configs,c",
        po::value<std::vector<fs::path> >(&m_selection_paths)->default_value(std::vector<fs::path> {_default})->value_name(ArgHandler::path()),
-       (std::string("Only consider the selected configurations of the given selection file2. "
+       (std::string("Only consider the selected configurations of the given selection file. "
                     "Standard selections are 'MASTER', 'CALCULATED', 'ALL', or 'NONE'. "
                     "If not specified, '") + _default.string() + std::string("' will be used.")).c_str());
       return;
@@ -277,14 +305,14 @@ namespace CASM {
     void OptionHandlerBase::add_configtype_suboption(std::string _default, std::set<std::string> _configtype_opts) {
 
       if(!_configtype_opts.size()) {
-        m_configtype_opts = config_types();
+        m_configtype_opts = DB::config_types_short();
       }
       else {
         m_configtype_opts = _configtype_opts;
       }
 
       std::stringstream help;
-      help << "Type of configurations to import. Options are: ";
+      help << "Type of configurations. Options are: ";
       int i = 0;
       for(std::string s : m_configtype_opts) {
         help << s;
@@ -312,6 +340,44 @@ namespace CASM {
       return m_configtype_opts;
     }
 
+    void OptionHandlerBase::add_db_type_suboption(std::string _default, std::set<std::string> _db_type_opts) {
+
+      if(!_db_type_opts.size()) {
+        m_db_type_opts = DB::types_short();
+      }
+      else {
+        m_db_type_opts = _db_type_opts;
+      }
+
+      std::stringstream help;
+      help << "Type of database objects. Options are: ";
+      int i = 0;
+      for(std::string s : m_db_type_opts) {
+        help << s;
+        if(s == _default) {
+          help << " (default)";
+        }
+        if(i != m_db_type_opts.size() - 1) {
+          help << ",";
+        }
+        ++i;
+      }
+      help << ".";
+
+      m_desc.add_options()
+      ("type,t",
+       po::value<std::string>(&m_db_type)->default_value(_default),
+       help.str().c_str());
+    }
+
+    std::string OptionHandlerBase::db_type() const {
+      return m_db_type;
+    }
+
+    std::set<std::string> OptionHandlerBase::db_type_opts() const {
+      return m_db_type_opts;
+    }
+
     void OptionHandlerBase::add_help_suboption() {
       m_desc.add_options()
       ("help,h", "Print help message")
@@ -321,7 +387,10 @@ namespace CASM {
 
     void OptionHandlerBase::add_general_help_suboption() {
       m_desc.add_options()
-      ("help,h", po::value<std::vector<std::string> >(&m_help_opt_vec)->multitoken()->zero_tokens(), "Print general help. Use '--help properties' for a list of query-able properties or '--help operators' for a list of query operators");
+      ("help,h",
+       po::value<std::vector<std::string> >(&m_help_opt_vec)->multitoken()->zero_tokens(),
+       "Print general help. Use '--help properties' for a list of query-able "
+       "properties or '--help operators' for a list of query operators");
       return;
     }
 
@@ -420,6 +489,17 @@ namespace CASM {
 
       m_desc.add_options()
       ("confignames", po::value<std::vector<std::string> >(&m_config_strs)->multitoken()->value_name(ArgHandler::configname()), help_str.c_str());
+
+      return;
+    }
+
+    void OptionHandlerBase::add_names_suboption() {
+      std::string help_str;
+
+      help_str = "One or more object names to use casm " + m_tag + " with, such as 'SCEL4_2_2_1_0_0_0/3'";
+
+      m_desc.add_options()
+      ("names", po::value<std::vector<std::string> >(&m_name_strs)->multitoken()->value_name(ArgHandler::configname()), help_str.c_str());
 
       return;
     }

@@ -1,18 +1,16 @@
 #include "casm/database/PropertiesDatabase.hh"
 
 namespace CASM {
-  namespace CASM_TMP {
 
-    const std::string traits<DB::ScoreMappedProperties::Method>::name = "method";
+  const std::string traits<DB::ScoreMappedProperties::Method>::name = "method";
 
-    const std::multimap<DB::ScoreMappedProperties::Method, std::vector<std::string> > traits<DB::ScoreMappedProperties::Method>::strval = {
-      {DB::ScoreMappedProperties::Method::deformation_cost, {"deformation_cost"} },
-      {DB::ScoreMappedProperties::Method::minimum, {"minimum"} },
-      {DB::ScoreMappedProperties::Method::maximum, {"maximum"} },
-      {DB::ScoreMappedProperties::Method::direct_selection, {"direct_selection"} }
-    };
+  const std::multimap<DB::ScoreMappedProperties::Method, std::vector<std::string> > traits<DB::ScoreMappedProperties::Method>::strval = {
+    {DB::ScoreMappedProperties::Method::deformation_cost, {"deformation_cost"} },
+    {DB::ScoreMappedProperties::Method::minimum, {"minimum"} },
+    {DB::ScoreMappedProperties::Method::maximum, {"maximum"} },
+    {DB::ScoreMappedProperties::Method::direct_selection, {"direct_selection"} }
+  };
 
-  }
 }
 
 namespace CASM {

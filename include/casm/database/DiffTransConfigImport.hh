@@ -21,13 +21,13 @@ namespace CASM {
         bool overwrite,
         fs::path report_dir = primclex.root_dir() / "import_report");
 
-      static const std::string import_help;
+      static const std::string import_desc;
       static int import(PrimClex &primclex, const jsonParser &kwargs, const Completer::ImportOption &import_opt);
 
-      static const std::string update_help;
+      static const std::string update_desc;
       static int update(PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &import_opt);
 
-      static const std::string remove_help;
+      static const std::string remove_desc;
       static int remove(PrimClex &primclex, const jsonParser &kwargs, const Completer::RemoveOption &import_opt);
 
     private:

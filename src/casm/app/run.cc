@@ -2,9 +2,12 @@
 #include<unistd.h>
 
 #include "casm/app/casm_functions.hh"
+#include "casm/app/DirectoryStructure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/database/Selection.hh"
 #include "casm/completer/Handlers.hh"
+#include "casm/database/ConfigTypeDefs.hh"
+#include "casm/system/Popen.hh"
 
 namespace CASM {
 

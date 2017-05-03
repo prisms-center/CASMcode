@@ -4,9 +4,9 @@
 #include <map>
 #include "casm/external/boost.hh"
 #include "casm/database/Database.hh"
+#include "casm/casm_io/DataFormatter.hh"
 
 namespace CASM {
-
   namespace DB {
 
     template<typename ObjType>
@@ -74,9 +74,7 @@ namespace CASM {
       }
 
       /// boost::iterator_facade implementation
-      const ObjType &dereference() const {
-        return *(m_list->db().find(m_it->first));
-      }
+      const ObjType &dereference() const;
 
       /// boost::iterator_facade implementation
       bool equal(const SelectionIterator &B) const {
@@ -225,7 +223,6 @@ namespace CASM {
     };
 
   }
-
 }
 
 #endif

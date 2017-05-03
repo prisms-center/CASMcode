@@ -2,10 +2,14 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/symmetry/SymGroup.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
-
+#include "casm/clex/ECIContainer.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/Selection.hh"
+#include "casm/database/DatabaseTypeDefs.hh"
+#include "casm/database/DatabaseDefs.hh"
 
 namespace CASM {
   void status_unitialized(const CommandArgs &args) {

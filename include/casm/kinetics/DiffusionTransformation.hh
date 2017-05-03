@@ -3,7 +3,6 @@
 
 #include "casm/kinetics/DoFTransformation.hh"
 #include "casm/kinetics/OccupationTransformation.hh"
-#include "casm/misc/CASM_TMP.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clusterography/ClusterInvariants.hh"
@@ -155,19 +154,16 @@ namespace CASM {
     class PrimPeriodicDiffTransSymCompare;
   }
 
-  namespace CASM_TMP {
+  /// \brief Traits class for any ClusterSymCompare derived class
+  ///
+  template<>
+  struct traits<Kinetics::PrimPeriodicDiffTransSymCompare> {
 
-    /// \brief Traits class for any ClusterSymCompare derived class
-    ///
-    template<>
-    struct traits<Kinetics::PrimPeriodicDiffTransSymCompare> {
+    typedef typename Kinetics::PrimPeriodicDiffTransSymCompare MostDerived;
+    typedef typename Kinetics::DiffusionTransformation Element;
+    typedef typename Kinetics::DiffusionTransformationInvariants InvariantsType;
 
-      typedef typename Kinetics::PrimPeriodicDiffTransSymCompare MostDerived;
-      typedef typename Kinetics::DiffusionTransformation Element;
-      typedef typename Kinetics::DiffusionTransformationInvariants InvariantsType;
-
-    };
-  }
+  };
 
   namespace Kinetics {
 
@@ -176,9 +172,9 @@ namespace CASM {
 
     public:
 
-      typedef CASM_TMP::traits<PrimPeriodicDiffTransSymCompare>::MostDerived MostDerived;
-      typedef CASM_TMP::traits<PrimPeriodicDiffTransSymCompare>::Element Element;
-      typedef CASM_TMP::traits<PrimPeriodicDiffTransSymCompare>::InvariantsType InvariantsType;
+      typedef traits<PrimPeriodicDiffTransSymCompare>::MostDerived MostDerived;
+      typedef traits<PrimPeriodicDiffTransSymCompare>::Element Element;
+      typedef traits<PrimPeriodicDiffTransSymCompare>::InvariantsType InvariantsType;
 
       PrimPeriodicDiffTransSymCompare(double tol);
 
@@ -208,19 +204,16 @@ namespace CASM {
     };
   }
 
-  namespace CASM_TMP {
+  /// \brief Traits class for DiffusionTransformation
+  ///
+  template<>
+  struct traits<Kinetics::DiffusionTransformation> {
 
-    /// \brief Traits class for DiffusionTransformation
-    ///
-    template<>
-    struct traits<Kinetics::DiffusionTransformation> {
+    typedef typename Kinetics::DiffusionTransformation MostDerived;
+    typedef typename Kinetics::DiffusionTransformation Element;
+    typedef typename Kinetics::DiffusionTransformationInvariants InvariantsType;
 
-      typedef typename Kinetics::DiffusionTransformation MostDerived;
-      typedef typename Kinetics::DiffusionTransformation Element;
-      typedef typename Kinetics::DiffusionTransformationInvariants InvariantsType;
-
-    };
-  }
+  };
 
   namespace Kinetics {
 

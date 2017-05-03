@@ -10,26 +10,41 @@ namespace CASM {
   namespace Completer {
     class ImportOption;
     class UpdateOption;
-    class RemoveOption;
+    class RmOption;
   }
 }
 
 namespace CASM {
   class Supercell;
-  typedef InterfaceMap<Completer::ImportOption> ImporterMap;
-  typedef InterfaceMap<Completer::UpdateOption> UpdaterMap;
-  typedef InterfaceMap<Completer::RemoveOption> RemoverMap;
 }
+
+// To be specialized for calculable 'ConfigType' classes:
+//   StructureMap<ConfigType>::map(fs::path, DatabaseIterator<ConfigType> hint, inserter result)
+//   Import<ConfigType>::desc
+//   Import<ConfigType>::run
+//   Import<ConfigType>::_import_formatter
+//   Update<ConfigType>::desc
+//   Update<ConfigType>::run
+//   Update<ConfigType>::_update_formatter
+//   Remove<ConfigType>::desc
+//   Remove<ConfigType>::run
 
 namespace CASM {
   namespace DB {
 
     template<typename T> class Selection;
 
-    /// Import/update/erase configurations and data, non-templated components
-    class ImportBase : public Logging {
+    /// Create a new report directory to avoid overwriting existing results
+    fs::path create_report_dir(fs::path report_dir);
 
-    public:
+    /// Construct pos_paths from input args --pos && --batch
+    template<typename OutputIterator>
+    std::pair<OutputIterator, int> construct_pos_paths(
+      const PrimClex &primclex,
+      const Completer::ImportOption &import_opt,
+      OutputIterator result);
+
+    namespace ConfigIO {
 
       /// Data structure for mapping / import results
       struct Result {
@@ -77,28 +92,62 @@ namespace CASM {
         fs::path last_insert;
       };
 
-      typedef std::back_insert_iterator<std::vector<Result> > import_inserter;
+      GenericDatumFormatter<std::string, Result> pos();
 
-      /// \brief Constructor
-      ImportBase(
-        const PrimClex &primclex,
-        bool import_data,
-        bool copy_additional_files,
-        bool overwrite,
-        fs::path report_dir);
+      GenericDatumFormatter<std::string, Result> fail_msg();
 
-      /// Construct pos_paths from input args
-      template<typename OutputIterator>
-      static std::pair<OutputIterator, int> construct_pos_paths(
-        const PrimClex &primclex,
-        const Completer::ImportOption &import_opt,
-        OutputIterator result);
+      /// Use 'from_configname' as 'configname'
+      GenericDatumFormatter<std::string, Result> configname();
 
-      /// Create a new report directory to avoid overwriting existing results
-      static fs::path create_report_dir(fs::path report_dir);
+      GenericDatumFormatter<std::string, Result> from_configname();
+
+      GenericDatumFormatter<std::string, Result> to_configname();
+
+      GenericDatumFormatter<bool, Result> has_data();
+
+      GenericDatumFormatter<bool, Result> has_complete_data();
+
+      GenericDatumFormatter<bool, Result> preexisting_data(const std::map<std::string, ImportData> &data_results);
+
+      GenericDatumFormatter<bool, Result> import_data(const std::map<std::string, ImportData> &data_results);
+
+      GenericDatumFormatter<bool, Result> import_additional_files(const std::map<std::string, ImportData> &data_results);
+
+      GenericDatumFormatter<double, Result> lattice_deformation_cost();
+
+      GenericDatumFormatter<double, Result> basis_deformation_cost();
+
+      GenericDatumFormatter<double, Result> relaxed_energy();
+
+      GenericDatumFormatter<double, Result> score();
+
+      GenericDatumFormatter<double, Result> best_score();
+
+      GenericDatumFormatter<bool, Result> is_best();
+
+      GenericDatumFormatter<bool, Result> selected();
+
+      /// Insert default formatters to dictionary
+      void default_formatters(
+        DataFormatterDictionary<Result> &dict,
+        PropertiesDatabase &db_props,
+        const std::map<std::string, ImportData> &data_results);
+
+    }
+
+
+    class ConfigDataGeneric {
+
+    public:
+
+      ConfigDataGeneric(const PrimClex &_primclex, Log &_file_log);
 
       const PrimClex &primclex() const {
         return m_primclex;
+      }
+
+      Log &file_log() const {
+        return m_file_log;
       }
 
     protected:
@@ -108,7 +157,7 @@ namespace CASM {
       virtual PropertiesDatabase &db_props() const = 0;
 
       /// \brief Path to default calctype training_data directory for config
-      virtual fs::path _calc_dir(const std::string configname) const = 0;
+      virtual fs::path calc_dir(const std::string configname) const = 0;
 
       /// \brief Return path to properties.calc.json that will be imported
       ///        checking a couple possible locations relative to pos_path
@@ -119,165 +168,76 @@ namespace CASM {
       /// 3) assume pos_path is /path/to/POS, checks for /path/to/properties.calc.json
       /// else returns empty path
       ///
-      fs::path _calc_properties_path(fs::path pos_path) const;
+      fs::path calc_properties_path(fs::path pos_path) const;
 
       /// \brief Return true if there are existing files in the traning_data directory
       ///        for a particular configuration
-      bool _has_existing_files(const std::string &from_configname) const;
+      bool has_existing_files(const std::string &from_configname) const;
 
       /// \brief Return true if there are existing files in the traning_data directory
       ///        for a particular configuration
-      bool _has_existing_data(const std::string &from_configname) const;
+      bool has_existing_data(const std::string &from_configname) const;
 
-      bool _has_existing_data_or_files(const std::string &from_configname) const;
+      bool has_existing_data_or_files(const std::string &from_configname) const;
 
       /// Check if 'properties.calc.json' file has not changed since last read
-      bool _no_change(const std::string &configname) const;
+      bool no_change(const std::string &configname) const;
 
       /// \brief Remove existing files in the traning_data directory for a particular
       ///        configuration
-      void _rm_files(const std::string &configname) const;
-
-      void _recurs_rm_files(const fs::path &p) const;
+      void rm_files(const std::string &configname, bool dry_run) const;
 
       /// \brief Copy files in the same directory as properties.calc.json into the
       ///        traning_data directory for a particular configuration
       ///
       /// - First: calc_props_path = _calc_properties_path(pos_path) to get properties.calc.json location
       /// - If calc_props_path.empty(), return
-      /// - else if !m_copy_additional_files copy properties.calc.json file only and return
+      /// - else if !copy_additional_files copy properties.calc.json file only and return
       /// - else, recursively copy all files from calc_props_path.remove_filename()
       ///   to the training data directory for the current calctype
-      void _cp_files(const fs::path &pos_path, const std::string &configname) const;
+      void cp_files(
+        const fs::path &pos_path,
+        const std::string &configname,
+        bool dry_run,
+        bool copy_additional_files) const;
 
-      void _recurs_cp_files(const fs::path &from_dir, const fs::path &to_dir) const;
+
+    protected:
 
       void _import_report(
-        std::vector<Result> &results,
-        const std::map<std::string, ImportData> &data_results);
-
-
-      GenericDatumFormatter<std::string, Result> _pos() const;
-
-      GenericDatumFormatter<std::string, Result> _fail_msg() const;
-
-      /// Use 'from_configname' as 'configname'
-      GenericDatumFormatter<std::string, Result> _configname() const;
-
-      GenericDatumFormatter<std::string, Result> _from_configname() const;
-
-      GenericDatumFormatter<std::string, Result> _to_configname() const;
-
-      GenericDatumFormatter<bool, Result> _has_data() const;
-
-      GenericDatumFormatter<bool, Result> _has_complete_data() const;
-
-      GenericDatumFormatter<bool, Result> _preexisting_data(const std::map<std::string, ImportData> &data_results) const;
-
-      GenericDatumFormatter<bool, Result> _import_data(const std::map<std::string, ImportData> &data_results) const;
-
-      GenericDatumFormatter<bool, Result> _import_additional_files(const std::map<std::string, ImportData> &data_results) const;
-
-      GenericDatumFormatter<double, Result> _lattice_deformation_cost() const;
-
-      GenericDatumFormatter<double, Result> _basis_deformation_cost() const;
-
-      GenericDatumFormatter<double, Result> _relaxed_energy() const;
-
-      GenericDatumFormatter<double, Result> _score() const;
-
-      GenericDatumFormatter<double, Result> _best_score() const;
-
-      GenericDatumFormatter<bool, Result> _is_best() const;
-
-      GenericDatumFormatter<bool, Result> _selected() const;
-
-      /// Insert default formatters to dictionary
-      void _default_formatters(
-        DataFormatterDictionary<Result> &dict,
-        const std::map<std::string, ImportData> &data_results) const;
-
-      /// Allow ConfigType to specialize the report formatting for 'import'
-      virtual DataFormatter<Result> _import_formatter(
-        const std::map<std::string, ImportData> &data_results) const = 0;
-
-      // Allow ConfigType to specialize the report formatting for 'update'
-      virtual DataFormatter<Result> _update_formatter(
-        const std::map<std::string, ImportData> &data_results) const = 0;
+        std::vector<ConfigIO::Result> &results,
+        const std::map<std::string, ConfigIO::ImportData> &data_results);
 
     private:
-      // --- member variables ----------------
-
       const PrimClex &m_primclex;
-
-      // path to directory where files are written
-      fs::path m_report_dir;
-
-      // log file to show file rm and cp
-      fs::ofstream m_file_str;
-
-      // formatting m_file_str;
-      mutable Log m_file_log;
-
-      // attempt to import calculation results into database, else just insert
-      // configurations w/out data
-      bool m_import_data;
-
-      // attempt to copy extra files from the directory where the structure is
-      // being imported from to the training_data directory
-      bool m_copy_additional_files;
-
-      // Allow overwriting of existing data by 'casm import'
-      bool m_overwrite;
+      Log &m_file_log;
     };
 
 
-    /// Generic ConfigType-dependent part of Import
     template<typename _ConfigType>
-    class ImportT: public ImportBase {
-
+    class ConfigData : public ConfigDataGeneric {
     public:
-
       typedef _ConfigType ConfigType;
 
-      /// \brief Constructor
-      ImportT(
-        const PrimClex &primclex,
-        bool import_data,
-        bool copy_additional_files,
-        bool overwrite,
-        fs::path report_dir) :
-        ImportBase(primclex, import_data, copy_additional_files, overwrite, report_dir) {}
-
-      template<typename PathIterator>
-      void import(PathIterator begin, PathIterator end);
-
-      /// \brief Re-parse calculations 'from' all selected configurations
-      void update(const DB::Selection<ConfigType> &selection, bool force);
-
-      /// \brief Erase Configurations that have no data
-      void erase(const DB::Selection<ConfigType> &selection);
-
-      /// \brief Erase data and files (permanently), but not Configuration
-      void erase_data(const DB::Selection<ConfigType> &selection);
-
-      /// \brief Removes Configurations and data and files (permanently)
-      ///
-      /// - Data are always associated with one 'from' configuration, so the
-      ///   selection here indicates 'from' configurations
-      /// - The 'to' configurations are updated with the new best mapping properties
-      void erase_all(const DB::Selection<ConfigType> &selection);
-
-    protected:
+      ConfigData(const PrimClex &_primclex, Log &_file_log) :
+        ConfigDataGeneric(_primclex, _file_log) {}
 
       Database<ConfigType> &db_config() const;
 
       PropertiesDatabase &db_props() const override;
 
       /// \brief Path to default calctype training_data directory for config
-      fs::path _calc_dir(const std::string configname) const override;
+      fs::path calc_dir(const std::string configname) const override;
+    };
 
-      void _update_report(std::vector<Result> &results, const DB::Selection<ConfigType> &selection) const;
+
+    // To be specialized for ConfigType (no default implemenation exists)
+    template<typename ConfigType>
+    class StructureMap {
+
+    public:
+
+      typedef std::back_insert_iterator<std::vector<ConfigIO::Result> > map_result_inserter;
 
       /// \brief Specialized import method for ConfigType
       ///
@@ -289,100 +249,166 @@ namespace CASM {
       /// - >1 result handles case of non-primitive configurations
       /// - responsible for filling in Result data structure
       /// - If 'hint' is not nullptr, use hint as 'from' config, else 'from' == 'to'
-      virtual import_inserter _import(
+      map_result_inserter map(
         fs::path p,
         DatabaseIterator<ConfigType> hint,
-        import_inserter result) const = 0;
-
+        map_result_inserter result) const;
     };
 
 
-    template<typename ConfigType>
-    class Import {};
-
-    /// \brief Access Import<ConfigType>::import via the API
-    template<typename ConfigType>
-    class ImportInterface : public InterfaceBase<Completer::ImportOption> {
+    /// Generic ConfigType-dependent part of Import
+    template<typename _ConfigType>
+    class ImportT : protected ConfigData<_ConfigType> {
 
     public:
 
-      std::string help() const override;
+      typedef _ConfigType ConfigType;
 
-      std::string name() const override;
-
-      int run(
+      /// \brief Constructor
+      ImportT(
         const PrimClex &primclex,
-        const jsonParser &kwargs,
-        const Completer::ImportOption &import_opt) const override;
+        const StructureMap<ConfigType> &mapper,
+        bool import_data,
+        bool copy_additional_files,
+        bool overwrite,
+        fs::path report_dir,
+        Log &_file_log) :
+        ConfigData<_ConfigType>(primclex, _file_log),
+        m_structure_mapper(mapper),
+        m_import_data(import_data),
+        m_copy_additional_files(copy_additional_files),
+        m_overwrite(overwrite),
+        m_report_dir(report_dir) {}
 
-      std::unique_ptr<InterfaceBase<Completer::ImportOption> > clone() const {
-        return std::unique_ptr<InterfaceBase<Completer::ImportOption> >(this->_clone());
-      }
+      template<typename PathIterator>
+      void import(PathIterator begin, PathIterator end);
 
     private:
 
-      ImportInterface<ConfigType> *_clone() const override {
-        return new ImportInterface<ConfigType>(*this);
-      }
+      /// Allow ConfigType to specialize the report formatting for 'import'
+      virtual DataFormatter<ConfigIO::Result> _import_formatter(
+        const std::map<std::string, ConfigIO::ImportData> &data_results) const = 0;
+
+
+      const StructureMap<ConfigType> &m_structure_mapper;
+
+      // attempt to import calculation results into database, else just insert
+      // configurations w/out data
+      bool m_import_data;
+
+      // attempt to copy extra files from the directory where the structure is
+      // being imported from to the training_data directory
+      bool m_copy_additional_files;
+
+      // Allow overwriting of existing data by 'casm import'
+      bool m_overwrite;
+
+      fs::path m_report_dir;
     };
 
-    /// \brief Access Import<ConfigType>::update via the API
-    template<typename ConfigType>
-    class UpdateInterface : public InterfaceBase<Completer::UpdateOption> {
+
+    /// Generic ConfigType-dependent part of Import
+    template<typename _ConfigType>
+    class UpdateT : protected ConfigData<_ConfigType> {
 
     public:
 
-      std::string help() const override;
+      typedef _ConfigType ConfigType;
 
-      std::string name() const override;
-
-      int run(
+      /// \brief Constructor
+      UpdateT(
         const PrimClex &primclex,
-        const jsonParser &kwargs,
-        const Completer::UpdateOption &update_opt) const override;
+        const StructureMap<ConfigType> &mapper,
+        fs::path report_dir) :
+        ConfigData<_ConfigType>(primclex, null_log()),
+        m_structure_mapper(mapper),
+        m_report_dir(report_dir) {}
 
-      std::unique_ptr<InterfaceBase<Completer::UpdateOption> > clone() const {
-        return std::unique_ptr<InterfaceBase<Completer::UpdateOption> >(this->_clone());
-      }
+      /// \brief Re-parse calculations 'from' all selected configurations
+      void update(const DB::Selection<ConfigType> &selection, bool force);
+
+    protected:
+
+      // Allow ConfigType to specialize the report formatting for 'update'
+      virtual DataFormatter<ConfigIO::Result> _update_formatter(
+        const std::map<std::string, ConfigIO::ImportData> &data_results) const = 0;
+
+      void _update_report(std::vector<ConfigIO::Result> &results, const DB::Selection<ConfigType> &selection) const;
 
     private:
 
-      UpdateInterface<ConfigType> *_clone() const override {
-        return new UpdateInterface<ConfigType>(*this);
-      }
+      const StructureMap<ConfigType> &m_structure_mapper;
+
+      fs::path m_report_dir;
     };
 
-    /*
-    /// \brief Access Import<ConfigType>::remove via the API
-    template<typename ConfigType>
-    class RemoveInterface : public InterfaceBase<Completer::RemoveOption> {
+
+    /// Generic ConfigType-dependent part of Remove
+    template<typename _ConfigType>
+    class RemoveT : protected ConfigData<_ConfigType> {
 
     public:
 
-      std::string help() const override {
-        return Import<ConfigType>::remove_help;
-      }
+      typedef _ConfigType ConfigType;
 
-      std::string name() const override {
-        return QueryTraits<ConfigType>::short_name;
-      }
+      RemoveT(const PrimClex &primclex, fs::path report_dir, Log &_file_log) :
+        ConfigData<_ConfigType>(primclex, _file_log),
+        m_report_dir(report_dir) {}
 
-      int run(PrimClex &primclex, const jsonParser &kwargs, const Completer::RemoveOption &remove_opt) const override {
-        return Import<ConfigType>::remove(primclex, kwargs, update_opt);
-      }
+      /// \brief Erase Configurations that have no data
+      void erase(const DB::Selection<ConfigType> &selection, bool dry_run);
 
-      std::unique_ptr<InterfaceBase<Completer::RemoveOption> > clone() const {
-        return std::unique_ptr<InterfaceBase<Completer::RemoveOption> >(this->_clone());
-      }
+      /// \brief Erase data and files (permanently), but not Configuration
+      void erase_data(const DB::Selection<ConfigType> &selection, bool dry_run);
+
+      /// \brief Removes Configurations and data and files (permanently)
+      ///
+      /// - Data are always associated with one 'from' configuration, so the
+      ///   selection here indicates 'from' configurations
+      /// - The 'to' configurations are updated with the new best mapping properties
+      void erase_all(const DB::Selection<ConfigType> &selection, bool dry_run);
+
 
     private:
 
-      RemoveInterface<ConfigType> *_clone() const override {
-        return new RemoveInterface<ConfigType>(*this);
-      }
-    };
-    */
+      void _erase_fail_report(std::vector<std::string> fail);
 
+      fs::path m_report_dir;
+    };
+
+    // To be specialized for ConfigType (no default implemenation exists)
+    template<typename ConfigType>
+    class Import : public ImportT<ConfigType> {
+    public:
+      static const std::string desc;
+      int run(const PrimClex &, const jsonParser &input, const Completer::ImportOption &opt);
+
+    private:
+      // Allow ConfigType to specialize the report formatting for 'import'
+      DataFormatter<ConfigIO::Result> _import_formatter(
+        const std::map<std::string, ConfigIO::ImportData> &data_results) const override;
+    };
+
+    // To be specialized for ConfigType (no default implemenation exists)
+    template<typename ConfigType>
+    class Update : public UpdateT<ConfigType> {
+    public:
+      static const std::string desc;
+      int run(const PrimClex &, const jsonParser &input, const Completer::UpdateOption &opt);
+
+    private:
+      // Allow ConfigType to specialize the report formatting for 'update'
+      DataFormatter<ConfigIO::Result> _update_formatter(
+        const std::map<std::string, ConfigIO::ImportData> &data_results) const override;
+    };
+
+    // To be specialized for ConfigType (no default implemenation exists)
+    template<typename ConfigType>
+    class Remove : public RemoveT<ConfigType> {
+    public:
+      static const std::string desc;
+      int run(const PrimClex &, const Completer::RmOption &opt);
+    };
   }
 }
 

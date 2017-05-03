@@ -3,6 +3,8 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/database/Selection.hh"
+#include "casm/database/DatabaseDefs.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/app/casm_functions.hh"

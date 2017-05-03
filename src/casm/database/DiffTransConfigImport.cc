@@ -18,7 +18,7 @@ namespace CASM {
       ImportT(primclex, import_data, copy_additional_files, overwrite, report_dir) :
       m_configmapper(configmapper) {}
 
-    const std::string Import<DiffTransConfiguration>::import_help = "ToDo";
+    const std::string Import<DiffTransConfiguration>::import_desc = "ToDo";
 
     int Import<DiffTransConfiguration>::import(
       PrimClex &primclex,
@@ -27,7 +27,7 @@ namespace CASM {
 
     }
 
-    const std::string Import<DiffTransConfiguration>::update_help = "ToDo";
+    const std::string Import<DiffTransConfiguration>::update_desc = "ToDo";
 
     int Import<DiffTransConfiguration>::update(
       PrimClex &primclex,
@@ -36,7 +36,7 @@ namespace CASM {
 
     }
 
-    const std::string Import<DiffTransConfiguration>::remove_help = "ToDo";
+    const std::string Import<DiffTransConfiguration>::remove_desc = "ToDo";
 
     int Import<DiffTransConfiguration>::remove(
       PrimClex &primclex,

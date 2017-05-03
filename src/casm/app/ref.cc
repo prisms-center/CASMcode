@@ -1,8 +1,13 @@
 #include "casm/app/casm_functions.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/json_io/clex.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/Supercell.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/completer/Handlers.hh"
+#include "casm/database/ConfigDatabase.hh"
+#include "casm/database/ScelDatabase.hh"
 
 namespace CASM {
 

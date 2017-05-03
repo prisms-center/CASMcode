@@ -12,6 +12,7 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/Properties.hh"
 #include "casm/clex/ConfigDoF.hh"
+#include "casm/clex/ConfigurationTraits.hh"
 #include "casm/database/Cache.hh"
 #include "casm/database/Named.hh"
 #include "casm/database/Database.hh"
@@ -22,20 +23,11 @@ namespace CASM {
   class Structure;
   class PrimClex;
   class Supercell;
-  class Configuration;
   class UnitCellCoord;
   class Clexulator;
   class FillSupercell;
 
   struct ConfigInsertResult;
-
-  template<typename DataObject> struct QueryTraits;
-
-  template<>
-  struct QueryTraits<Configuration> {
-    static const std::string name;
-    static const std::string short_name;
-  };
 
   /// \defgroup Configuration
   ///

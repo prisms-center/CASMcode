@@ -1,5 +1,6 @@
 #include "casm/clex/ScelEnum_impl.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/app/enum.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_ScelEnum_interface() {

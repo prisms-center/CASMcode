@@ -1,8 +1,31 @@
 #include "casm/app/casm_functions.hh"
+
+#include "casm/app/bset.hh"
+#include "casm/app/composition.hh"
+#include "casm/app/enum.hh"
+#include "casm/app/files.hh"
+#include "casm/app/format.hh"
+#include "casm/app/import.hh"
+#include "casm/app/init.hh"
+#include "casm/app/monte.hh"
+#include "casm/app/query.hh"
+#include "casm/app/ref.hh"
+#include "casm/app/rm.hh"
+#include "casm/app/run.hh"
+#include "casm/app/select.hh"
+#include "casm/app/settings.hh"
+#include "casm/app/status.hh"
+#include "casm/app/super.hh"
+#include "casm/app/sym.hh"
+#include "casm/app/update.hh"
+#include "casm/app/view.hh"
+
+#include "casm/app/APICommand.hh"
+#include "casm/app/DirectoryStructure.hh"
+
 #include "casm/clex/PrimClex.hh"
 #include "casm/external/gzstream/gzstream.h"
 #include "casm/version/version.hh"
-#include "casm/app/DirectoryStructure.hh"
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {
@@ -121,7 +144,7 @@ namespace CASM {
       {"composition", composition_command},
       {"ref", ref_command},
       {"update", update_command},
-      {"enum", enum_command},
+      {EnumCommand::name, run_api_command<EnumCommand>},
       {"super", super_command},
       {"select", select_command},
       {"bset", bset_command},

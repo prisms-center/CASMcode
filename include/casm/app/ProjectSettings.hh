@@ -107,8 +107,8 @@ namespace CASM {
       return m_dir;
     }
 
-    /// \brief Get current properties
-    const std::vector<std::string> &properties() const;
+    /// \brief const Access current properties required for a ConfigType to be considered calculated
+    const std::vector<std::string> &properties(std::string config_type_name) const;
 
 
     const std::map<std::string, ClexDescription> &cluster_expansions() const;
@@ -234,8 +234,11 @@ namespace CASM {
 
     // ** Change current settings **
 
-    /// \brief Access current properties
-    std::vector<std::string> &properties();
+    /// \brief Access current properties required for a ConfigType to be considered calculated
+    std::map<std::string, std::vector<std::string>> &properties();
+
+    /// \brief Access current properties required for a ConfigType to be considered calculated
+    std::vector<std::string> &properties(std::string config_type_name);
 
 
     /// \brief Set neighbor list weight matrix (will delete existing Clexulator
@@ -313,6 +316,10 @@ namespace CASM {
     /// \brief initialize default compiler options
     void _load_default_options();
 
+    /// \brief add aliases to QueryHandler dictionary
+    template<typename DataObject>
+    void _add_aliases();
+
 
     DirectoryStructure m_dir;
 
@@ -333,8 +340,9 @@ namespace CASM {
     Eigen::Matrix3l m_nlist_weight_matrix;
     std::set<int> m_nlist_sublat_indices;
 
-    // Properties to read from calculations
-    std::vector<std::string> m_properties;
+    // Properties required to be read from calculations
+    // ConfigType::name -> {prop1, prop2, ...}
+    std::map<std::string, std::vector<std::string> > m_properties;
 
     // Runtime library compilation settings: compilation options
     std::pair<std::string, std::string> m_cxx;

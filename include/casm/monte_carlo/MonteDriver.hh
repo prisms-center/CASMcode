@@ -24,14 +24,14 @@ namespace CASM {
      */
 
     template<typename RunType>
-    class Driver {
+    class MonteDriver {
 
     public:
       typedef typename RunType::CondType CondType;
       typedef typename RunType::SettingsType SettingsType;
 
       /// \brief Constructor via MonteSettings
-      MonteDriver(PrimClex &primclex, const SettingsType &settings, Log &_log, Log &_err_log);
+      MonteDriver(const PrimClex &primclex, const SettingsType &settings, Log &_log, Log &_err_log);
 
       /// \brief Run everything requested by the MonteSettings
       void run();
@@ -88,7 +88,7 @@ namespace CASM {
 
 
     template<typename RunType>
-    MonteDriver<RunType>::MonteDriver(PrimClex &primclex, const SettingsType &settings, Log &_log, Log &_err_log):
+    MonteDriver<RunType>::MonteDriver(const PrimClex &primclex, const SettingsType &settings, Log &_log, Log &_err_log):
       m_log(_log),
       m_err_log(_err_log),
       m_settings(settings),
@@ -530,5 +530,6 @@ namespace CASM {
     }
 
   }
+}
 
 #endif

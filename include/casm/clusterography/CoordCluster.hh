@@ -28,19 +28,16 @@ namespace CASM {
       \ingroup Clusterography
   */
 
-  namespace CASM_TMP {
-
-    /// \brief Traits class for CoordCluster<CoordType>
-    ///
-    /// \ingroup CoordCluster
-    ///
-    template<typename CoordType>
-    struct traits<CoordCluster<CoordType> > {
-      typedef CoordCluster<CoordType> MostDerived;
-      typedef CoordType Element;
-      typedef ClusterInvariants<CoordCluster<CoordType> > InvariantsType;
-    };
-  }
+  /// \brief Traits class for CoordCluster<CoordType>
+  ///
+  /// \ingroup CoordCluster
+  ///
+  template<typename CoordType>
+  struct traits<CoordCluster<CoordType> > {
+    typedef CoordCluster<CoordType> MostDerived;
+    typedef CoordType Element;
+    typedef ClusterInvariants<CoordCluster<CoordType> > InvariantsType;
+  };
 
   /// \brief A cluster of Coordinate-like elements
   ///

@@ -60,6 +60,23 @@ namespace CASM {
 
   class PrimClex;
 
+  class runtime_error : public std::runtime_error {
+  public:
+    runtime_error(std::string _what, int _code = ERR_UNKNOWN) :
+      std::runtime_error(_what),
+      m_code(_code) {}
+
+    virtual ~runtime_error() {}
+
+    int code() const {
+      return m_code;
+    }
+
+  private:
+    std::string m_what;
+    int m_code;
+  };
+
   /**
    *  \defgroup API
    *
@@ -162,11 +179,11 @@ namespace CASM {
 
   int help_command(const CommandArgs &args);
 
-  int bset_command(const CommandArgs &args);
+  //int bset_command(const CommandArgs &args);
 
   int composition_command(const CommandArgs &args);
 
-  int enum_command(const CommandArgs &args);
+  //int enum_command(const CommandArgs &args);
 
   int files_command(const CommandArgs &args);
 

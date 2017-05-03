@@ -33,13 +33,9 @@ namespace CASM {
     const DataFormatterDictionary<DataObject> &dict() const;
 
     /// \brief Set the selection to be used for the 'selected' column
-    ///
-    /// - ToDo: generalize Selected<DataObject>
     void set_selected(const DB::Selected<DataObject> &selection);
 
     /// \brief Set the selection to be used for the 'selected' column
-    ///
-    /// - ToDo: generalize Selection<DataObject>
     void set_selected(const DB::Selection<DataObject> &selection);
 
     /// \brief Add user-defined query alias

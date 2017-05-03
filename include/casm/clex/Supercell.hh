@@ -7,10 +7,10 @@
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
+#include "casm/clex/SupercellTraits.hh"
 #include "casm/database/Named.hh"
 
 namespace CASM {
-
 
   template<typename T, typename U> class ConfigIterator;
   class PermuteIterator;
@@ -25,14 +25,6 @@ namespace CASM {
   namespace DB {
     template<typename T> class DatabaseIterator;
   }
-
-  class Supercell;
-  template<typename DataObject> class QueryTraits;
-
-  template<>
-  struct QueryTraits<Supercell> {
-    static const std::string name;
-  };
 
   struct ConfigMapCompare {
     bool operator()(const Configuration *A, const Configuration *B) const;

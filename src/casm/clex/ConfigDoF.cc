@@ -253,7 +253,7 @@ namespace CASM {
   Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
 
     // [basis_site][site_occupant_index]
-    auto convert = index_converter(scel.prim(), scel.prim().struc_molecule());
+    auto convert = make_index_converter(scel.prim(), scel.prim().struc_molecule());
 
     // create an array to count the number of each molecule
     Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(scel.prim().struc_molecule().size());

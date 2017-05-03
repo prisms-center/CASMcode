@@ -1,5 +1,6 @@
 #include <cstring>
 
+#include "casm/app/enum.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
@@ -11,8 +12,8 @@
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {
-
   namespace Completer {
+
     EnumOption::EnumOption(): OptionHandlerBase("enum") {}
 
     void EnumOption::initialize() {
@@ -47,165 +48,141 @@ namespace CASM {
   }
 
 
-  void print_enumerator_names(std::ostream &sout, const EnumeratorMap &enumerators) {
+  const std::string EnumCommand::name = "enum";
+
+  EnumCommand::EnumCommand(const CommandArgs &_args, Completer::EnumOption &_opt) :
+    APICommand<Completer::EnumOption>(_args, _opt) {}
+
+  int EnumCommand::vm_count_check() const {
+    if(!vm().count("help") && !vm().count("desc")) {
+
+      if(root().empty()) {
+        err_log().error("No casm project found");
+        err_log() << std::endl;
+        return ERR_NO_PROJ;
+      }
+
+      if(vm().count("method") != 1) {
+        err_log() << "Error in 'casm enum'. The --method option is required." << std::endl;
+        return ERR_INVALID_ARG;
+      }
+
+      if(vm().count("settings") + vm().count("input") == 2) {
+        err_log() << "Error in 'casm enum'. The options --settings or --input may not both be chosen." << std::endl;
+        return ERR_INVALID_ARG;
+      }
+    }
+    return 0;
+  }
+
+  int EnumCommand::help() const {
+    log() << "\n";
+    log() << opt().desc() << std::endl;
+    print_names(log(), enumerators());
+
+    log() << "\nFor complete options description, use 'casm enum --desc MethodName'.\n\n";
+
+    return 0;
+  }
+
+  int EnumCommand::desc() const {
+    if(opt().desc_vec().size()) {
+      log() << "\n";
+
+      bool match = false;
+      for(const auto &in_name : opt().desc_vec()) {
+        for(const auto &e : enumerators()) {
+          if(e.name().substr(0, in_name.size()) == in_name) {
+            log() << e.help() << std::endl;
+            match = true;
+          }
+        }
+      }
+
+      if(!match) {
+        log() << "No match found. ";
+        print_names(log(), enumerators());
+      }
+
+      return 0;
+    }
+    else {
+      log() << "\n";
+      log() << opt().desc() << std::endl;
+
+      log() << "DESCRIPTION\n" << std::endl;
+
+      log() << "  casm enum --settings input.json                                      \n"
+            "  casm enum --input '{...JSON...}'                                     \n"
+            "  - Input settings in JSON format to run an enumeration. The expected  \n"
+            "    format is:                                                         \n"
+            "\n"
+            "    {\n"
+            "      \"MethodName\": {\n"
+            "        \"option1\" : ...,\n"
+            "        \"option2\" : ...,\n"
+            "         ...\n"
+            "      }\n"
+            "    }\n"
+            "\n";
+
+      print_names(log(), enumerators());
+
+      log() << "\nFor complete options help for a particular method, \n"
+            "use 'casm enum --desc MethodName'.\n\n";
+
+      log() << "Custom enumerator plugins can be added by placing source code \n"
+            "in the CASM project directory: \n"
+            "  " << primclex().dir().enumerator_plugins() << " \n\n";
+
+      return 0;
+    }
+  }
+
+  int EnumCommand::run() const {
+    jsonParser input;
+    if(vm().count("settings")) {
+      input = jsonParser {opt().settings_path()};
+    }
+    else if(vm().count("input")) {
+      input = jsonParser::parse(opt().input_str());
+    }
+
+    auto lambda = [&](const EnumInterfaceBase & e) {
+      return e.name().substr(0, opt().method().size()) == opt().method();
+    };
+    auto it = std::find_if(enumerators().begin(), enumerators().end(), lambda);
+
+    if(it != enumerators().end()) {
+      return it->run(primclex(), input, opt());
+    }
+    else {
+      err_log() << "No match found for --method " << opt().method() << std::endl;
+      print_names(err_log(), enumerators());
+      return ERR_INVALID_ARG;
+    }
+  }
+
+  const EnumeratorMap &EnumCommand::enumerators() const {
+    if(!m_enumerators) {
+      if(in_project()) {
+        m_enumerators = &primclex().settings().enumerator_handler().map();
+      }
+      else {
+        m_standard_enumerators = make_standard_enumerator_map();
+        m_enumerators = m_standard_enumerators.get();
+      }
+    }
+    return *m_enumerators;
+  }
+
+  void EnumCommand::print_names(std::ostream &sout, const EnumeratorMap &enumerators) const {
     sout << "The enumeration methods are:\n\n";
 
     for(const auto &e : enumerators) {
       sout << "  " << e.name() << std::endl;
     }
   }
-
-  // ///////////////////////////////////////
-  // 'enum' function for casm
-  //    (add an 'if-else' statement in casm.cpp to call this)
-
-  int enum_command(const CommandArgs &args) {
-
-    //casm enum --settings input.json
-    //- enumerate supercells, configs, hop local configurations, etc.
-
-    std::unique_ptr<EnumeratorMap> standard_enumerators;
-    EnumeratorMap *enumerators;
-    std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex *primclex;
-    Completer::EnumOption enum_opt;
-    po::variables_map &vm = enum_opt.vm();
-    const fs::path &root = args.root;
-
-    try {
-      po::store(po::parse_command_line(args.argc, args.argv, enum_opt.desc()), vm); // can throw
-
-      if(!vm.count("help") && !vm.count("desc")) {
-
-        if(root.empty()) {
-          args.err_log.error("No casm project found");
-          args.err_log << std::endl;
-          return ERR_NO_PROJ;
-        }
-
-        if(vm.count("method") != 1) {
-          args.err_log << "Error in 'casm enum'. The --method option is required." << std::endl;
-          return ERR_INVALID_ARG;
-        }
-
-        if(vm.count("settings") + vm.count("input") == 2) {
-          args.err_log << "Error in 'casm enum'. The options --settings or --input may not both be chosen." << std::endl;
-          return ERR_INVALID_ARG;
-        }
-      }
-
-      if(!root.empty()) {
-        primclex = &make_primclex_if_not(args, uniq_primclex);
-        enumerators = &primclex->settings().enumerator_handler().map();
-      }
-      else {
-        standard_enumerators = make_standard_enumerator_map();
-        enumerators = &*standard_enumerators;
-      }
-
-      /** --help option
-       */
-      if(vm.count("help")) {
-        args.log << "\n";
-        args.log << enum_opt.desc() << std::endl;
-        print_enumerator_names(args.log, *enumerators);
-
-        args.log << "\nFor complete options description, use 'casm enum --desc MethodName'.\n\n";
-
-        return 0;
-      }
-
-      po::notify(vm); // throws on error, so do after help in case
-      // there are any problems
-
-      if(vm.count("desc") && enum_opt.desc_vec().size()) {
-        args.log << "\n";
-
-        bool match = false;
-        for(const auto &in_name : enum_opt.desc_vec()) {
-          for(const auto &e : *enumerators) {
-            if(e.name().substr(0, in_name.size()) == in_name) {
-              args.log << e.help() << std::endl;
-              match = true;
-            }
-          }
-        }
-
-        if(!match) {
-          args.log << "No match found. ";
-          print_enumerator_names(args.log, *enumerators);
-        }
-
-        return 0;
-      }
-
-      if(vm.count("desc")) {
-        args.log << "\n";
-        args.log << enum_opt.desc() << std::endl;
-
-        args.log << "DESCRIPTION\n" << std::endl;
-
-        args.log << "  casm enum --settings input.json                                      \n"
-                 "  casm enum --input '{...JSON...}'                                     \n"
-                 "  - Input settings in JSON format to run an enumeration. The expected  \n"
-                 "    format is:                                                         \n"
-                 "\n"
-                 "    {\n"
-                 "      \"MethodName\": {\n"
-                 "        \"option1\" : ...,\n"
-                 "        \"option2\" : ...,\n"
-                 "         ...\n"
-                 "      }\n"
-                 "    }\n"
-                 "\n";
-
-        print_enumerator_names(args.log, *enumerators);
-
-        args.log << "\nFor complete options help for a particular method, \n"
-                 "use 'casm enum --desc MethodName'.\n\n";
-
-        args.log << "Custom enumerator plugins can be added by placing source code \n"
-                 "in the CASM project directory: \n"
-                 "  " << primclex->dir().enumerator_plugins() << " \n\n";
-
-
-        return 0;
-      }
-    }
-    catch(po::error &e) {
-      args.err_log << enum_opt.desc() << std::endl;
-      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
-      return ERR_INVALID_ARG;
-    }
-    catch(std::exception &e) {
-      args.err_log << enum_opt.desc() << std::endl;
-      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
-      return ERR_UNKNOWN;
-    }
-
-    jsonParser input;
-    if(vm.count("settings")) {
-      input = jsonParser {enum_opt.settings_path()};
-    }
-    else if(vm.count("input")) {
-      input = jsonParser::parse(enum_opt.input_str());
-    }
-
-    auto lambda = [&](const EnumInterfaceBase & e) {
-      return e.name().substr(0, enum_opt.method().size()) == enum_opt.method();
-    };
-    auto it = std::find_if(enumerators->begin(), enumerators->end(), lambda);
-
-    if(it != enumerators->end()) {
-      return it->run(*primclex, input, enum_opt);
-    }
-    else {
-      args.err_log << "No match found for --method " << enum_opt.method() << std::endl;
-      print_enumerator_names(args.log, *enumerators);
-      return ERR_INVALID_ARG;
-    }
-
-  };
 
 }
 
