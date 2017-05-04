@@ -4,7 +4,7 @@
 #include "casm/casm_io/DataFormatterTools.hh"
 #include "casm/database/Selection.hh"
 #include "casm/database/Selected.hh"
-
+#include "casm/system/RuntimeLibrary.hh"
 
 namespace CASM {
 
@@ -51,7 +51,7 @@ namespace CASM {
       datum_formatter_alias(
         "selected",
         selection,
-        "Returns true if configuration is specified in the input selection"
+        "Returns true if object is specified in the input selection"
       )
     );
   }

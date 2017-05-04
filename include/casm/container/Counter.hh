@@ -1,6 +1,8 @@
 #ifndef COUNTER_HH
 #define COUNTER_HH
 
+#include <iostream>
+#include "casm/CASM_global_Eigen.hh"
 #include "casm/container/BaseCounter.hh"
 #include "casm/misc/CASM_math.hh"
 

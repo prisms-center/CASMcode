@@ -1,4 +1,5 @@
 #include "casm/casm_io/DataStream.hh"
+#include <boost/tokenizer.hpp>
 #include "casm/container/Counter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
 #include "casm/casm_io/EigenDataStream.hh"

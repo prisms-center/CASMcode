@@ -2,28 +2,37 @@
 #define CASM_DatabaseTypes
 
 #include <set>
+#include <boost/preprocessor/seq/for_each.hpp>
+#include <boost/preprocessor/seq/enum.hpp>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/misc/CASM_TMP.hh"
 
+// 1) add Database types here
+#define CASM_DB_NONCONFIG_TYPES (Supercell)
+#define CASM_DB_CONFIG_TYPES (Configuration)
+
+// 2) add #include locations as appropriate to:
+//    DatabaseTypeDefs.hh, DatabaseTypeTraits.hh,
+//    ConfigTypeDefs.hh, ConfigTypeTraits.hh
+
+
+// --- the rest works based on ^ -----------------------------------------------
+
+#define CASM_DB_TYPES CASM_DB_NONCONFIG_TYPES CASM_DB_CONFIG_TYPES
+
+// forward declare classes
+#define DB_CLASS_DECL(r, data, elem) class elem;
+BOOST_PP_SEQ_FOR_EACH(DB_CLASS_DECL, _, CASM_DB_TYPES)
+
 namespace CASM {
-
-  // add Database types:
-  // 1) here
-  // 2) in DataObjectTypeTuple & ConfigTypeTuple if appropriate
-  // 3) in DatabaseDefs.hh & ConfigDatabaseDefs.hh if appropriate
-  // 4) in DatabaseTypeTraits.hh & ConfigTypeTraits.hh if appropriate
-  // 5) in DatabaseTypeDefs.hh & ConfigTypeDefs.hh if appropriate
-
-  class Supercell;
-  class Configuration;
 
   namespace DB {
 
     // List of all types stored in a Database
-    typedef std::tuple<Supercell, Configuration> DataObjectTypeTuple;
+    typedef std::tuple<BOOST_PP_SEQ_ENUM(CASM_DB_TYPES)> DataObjectTypeTuple;
 
     // List of all configtypes which have calculations stored in a PropertiesDatabase
-    typedef std::tuple<Configuration> ConfigTypeTuple;
+    typedef std::tuple<BOOST_PP_SEQ_ENUM(CASM_DB_CONFIG_TYPES)> ConfigTypeTuple;
 
 
     // -- List of Database DataObject and ConfigType --

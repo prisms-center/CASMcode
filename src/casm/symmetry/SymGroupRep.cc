@@ -1,8 +1,12 @@
 #include "casm/symmetry/SymGroupRep.hh"
 
 #include <numeric>
+#include "casm/CASM_global_Eigen.hh"
 #include "casm/external/Eigen/CASM_AddOns"
+#include "casm/casm_io/jsonParser.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/misc/CASM_Array_math.hh"
 
 #include "casm/container/Permutation.hh"
 #include "casm/symmetry/SymMatrixXd.hh"

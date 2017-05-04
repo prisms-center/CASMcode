@@ -13,6 +13,7 @@
 #include "casm/clex/Supercell.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/EnumeratorHandler.hh"
 #include "casm/app/QueryHandler.hh"

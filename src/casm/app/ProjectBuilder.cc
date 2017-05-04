@@ -1,7 +1,40 @@
 #include "casm/app/ProjectBuilder.hh"
+
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <boost/regex.hpp>
+#include "casm/app/AppIO.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ClexDescription.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/symmetry/SymGroup.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/NeighborList.hh"
 
 namespace CASM {
+
+  /// \brief Construct a CASM ProjectBuilder
+  ///
+  /// \param _root The directory where a new CASM project should be created.
+  /// \param _name The name of the CASM project. Should be a short name suitable for prepending to files.
+  /// \param _property The name of the default cluster expansion property, i.e. "formation_energy"
+  ///
+  ProjectBuilder::ProjectBuilder(fs::path _root, std::string _name, std::string _property) :
+    m_root(_root),
+    m_name(_name),
+    m_property(_property) {
+
+    /// check if m_name is suitable:
+    if(!boost::regex_match(m_name, boost::regex(R"([_a-zA-Z]\w*)"))) {
+      throw std::runtime_error(
+        std::string("Error constructing ProjectBuilder.\n") +
+        "  Invalid Project name: '" + m_name + "'\n"
+        "  Must be a valid C++ identifier: \n"
+        "  - only alphanumeric characters and underscores allowed\n"
+        "  - cannot start with a number");
+    }
+
+  }
 
   /// \brief Builds a new CASM project
   ///

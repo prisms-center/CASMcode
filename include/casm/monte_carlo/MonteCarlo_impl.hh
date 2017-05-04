@@ -4,6 +4,7 @@
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/ConfigDoF.hh"

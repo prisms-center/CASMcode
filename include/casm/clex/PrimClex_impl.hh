@@ -3,6 +3,7 @@
 
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/crystallography/Structure.hh"
 

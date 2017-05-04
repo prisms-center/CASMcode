@@ -2,8 +2,10 @@
 #define CASM_PropertiesDatabase
 
 #include <string>
-#include "casm/external/boost.hh"
+#include <set>
+#include <boost/iterator/iterator_facade.hpp>
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/EnumIO.hh"
 #include "casm/database/Database.hh"
 
 namespace CASM {
@@ -96,8 +98,6 @@ namespace CASM {
     jsonParser &to_json(const ScoreMappedProperties &score, jsonParser &json);
 
     void from_json(ScoreMappedProperties &score, const jsonParser &json);
-
-    ENUM_IO(CASM::DB::ScoreMappedProperties::Method)
 
 
     class PropertiesDatabaseIterator;
@@ -378,6 +378,7 @@ namespace CASM {
 }
 
 namespace CASM {
+  ENUM_IO_DEF(CASM::DB::ScoreMappedProperties::Method)
   ENUM_TRAITS(CASM::DB::ScoreMappedProperties::Method)
 }
 

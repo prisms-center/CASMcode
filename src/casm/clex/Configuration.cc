@@ -16,6 +16,7 @@
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/casm_io/VaspIO.hh"
+#include "casm/casm_io/stream_io/container.hh"
 #include "casm/app/QueryHandler_impl.hh"
 
 namespace CASM {
@@ -698,7 +699,7 @@ namespace CASM {
   }
 
   //*********************************************************************************
-  const Properties &Configuration::calc_properties() const {
+  const jsonParser &Configuration::calc_properties() const {
     return m_calculated;
   }
 

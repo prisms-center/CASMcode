@@ -2,7 +2,7 @@
 #define CASM_MonteDriver_HH
 
 #include <string>
-#include "casm/external/boost.hh"
+#include <boost/filesystem.hpp>
 
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"

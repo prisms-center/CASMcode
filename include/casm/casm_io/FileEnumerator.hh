@@ -1,14 +1,14 @@
 #ifndef CASM_FileEnumerator
 #define CASM_FileEnumerator
 
+#include <boost/filesystem.hpp>
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/EnumeratorHandler.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/database/ScelDatabase.hh"
-#include "casm/database/ConfigDatabase.hh"
+#include "casm/database/DatabaseDefs.hh"
 
 namespace CASM {
 

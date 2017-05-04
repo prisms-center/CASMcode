@@ -4,7 +4,7 @@
 #include<boost/algorithm/string.hpp>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/container/Array.hh"
-#include "casm/misc/CASM_math.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
 
 //#include "../basis_set/MathExpressions.cc"
@@ -396,15 +396,7 @@ namespace CASM {
       return new ContinuousDoF(*this);
     }
 
-    jsonParser &to_json(jsonParser &json) const {
-      json.put_obj();
-      json["DoF_type"] = "ContinuousDoF";
-      json["m_type_name"] = m_type_name;
-      json["min"] = min_val;
-      json["max"] = max_val;
-      json["current"] = current_val;
-      return json;
-    }
+    jsonParser &to_json(jsonParser &json) const;
 
   };
 

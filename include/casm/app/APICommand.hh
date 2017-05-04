@@ -1,6 +1,7 @@
 #ifndef CASM_APICommand
 #define CASM_APICommand
 
+#include <boost/program_options.hpp>
 #include "casm/app/casm_functions.hh"
 #include "casm/casm_io/Log.hh"
 

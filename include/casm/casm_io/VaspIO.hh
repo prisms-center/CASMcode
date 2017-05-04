@@ -2,6 +2,7 @@
 #define CASM_VaspIO
 
 #include "casm/CASM_global_definitions.hh"
+#include "casm/CASM_global_enum.hh"
 #include "casm/crystallography/Lattice.hh"
 
 namespace CASM {

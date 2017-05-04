@@ -1,4 +1,7 @@
 #include <cstring>
+
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include "casm/app/casm_functions.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/ProjectSettings.hh"
@@ -8,6 +11,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {

@@ -1,7 +1,9 @@
 #ifndef CASM_jsonPropertiesDatabase
 #define CASM_jsonPropertiesDatabase
 
+#include <boost/filesystem/path.hpp>
 #include "casm/database/PropertiesDatabase.hh"
+
 
 namespace CASM {
   namespace DB {

@@ -1,7 +1,7 @@
 #ifndef CASM_Log
 #define CASM_Log
 
-#include "casm/external/boost.hh"
+#include <boost/chrono.hpp>
 
 namespace CASM {
 

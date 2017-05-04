@@ -3,9 +3,8 @@
 
 #include <iostream>
 
-#include "casm/external/Eigen/Dense"
 #include "casm/CASM_global_definitions.hh"
-#include "casm/container/LinearAlgebra.hh"
+#include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/Comparisons.hh"
 
 namespace CASM {
@@ -153,6 +152,8 @@ namespace CASM {
 
   /// \brief Print to json as [b, i, j, k]
   jsonParser &to_json(const UnitCellCoord &ucc_val, jsonParser &fill_json);
+
+  template<typename T> struct jsonConstructor;
 
   template<>
   struct jsonConstructor<UnitCellCoord> {

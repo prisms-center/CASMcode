@@ -1,11 +1,16 @@
 #include <cstring>
 
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include "casm/CASM_global_definitions.hh"
+#include "casm/casm_io/jsonParser.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/app/AppIO.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 

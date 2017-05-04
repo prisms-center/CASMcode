@@ -2,6 +2,7 @@
 #define CASM_algorithm
 
 #include <algorithm>
+#include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
 

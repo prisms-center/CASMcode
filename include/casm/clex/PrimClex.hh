@@ -2,7 +2,6 @@
 #define CASM_PrimClex
 
 #include "casm/CASM_global_definitions.hh"
-#include "casm/external/boost.hh"
 #include "casm/casm_io/Log.hh"
 
 /// Cluster expansion class

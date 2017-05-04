@@ -2,7 +2,6 @@
 #define CASM_GrandCanonicalSettings
 
 #include "casm/monte_carlo/MonteSettings.hh"
-#include "casm/external/boost.hh"
 
 namespace CASM {
   namespace Monte {

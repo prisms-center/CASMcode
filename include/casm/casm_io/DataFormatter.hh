@@ -6,7 +6,6 @@
 #include <sstream>
 #include <vector>
 #include <functional>
-#include "casm/external/boost.hh"
 #include "casm/CASM_global_definitions.hh"
 #include "casm/container/multivector.hh"
 #include "casm/misc/CASM_math.hh"

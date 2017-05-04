@@ -1,5 +1,7 @@
 #include "casm/app/casm_functions.hh"
 
+#include <boost/filesystem.hpp>
+
 #include "casm/app/bset.hh"
 #include "casm/app/composition.hh"
 #include "casm/app/enum.hh"
@@ -29,6 +31,22 @@
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {
+
+  void print_splash(std::ostream &out) {
+
+    out << "       .::::::::.        .:::::.         .::::::.          .:.       .:.     \n"
+        << "     .:::::::::::.      .:::::::.      .::::::::::.       .:::.     .:::.    \n"
+        << "    .:::'     ':::.    .:::' ':::.    .:::'   '::::      .:::::.   .:::::.   \n"
+        << "    ::::       ::::   .:::'   ':::.   ::::     '::'     .:::::::. .:::::::.  \n"
+        << "    ::::              ::::     ::::   '::::.            ::::'':::.:::''::::  \n"
+        << "    ::::              ::::     ::::    '::::::.         ::::  ':::::'  ::::  \n"
+        << "    ::::              :::::::::::::      ''::::::.      ::::   ':::'   ::::  \n"
+        << "    ::::              :::::::::::::         '::::::     ::::    ':'    ::::  \n"
+        << "    ::::      .::::   ::::     ::::            :::::    ::::           ::::  \n"
+        << "    ':::.    .::::'   ::::     ::::   .::.     .::::    ::::           ::::  \n"
+        << "     '::::::::::'     ::::     ::::   :::::...:::::'    ::::           ::::  \n"
+        << "        ':::::'       '::'     '::'   ':::::::::::'     '::'           '::'  \n";
+  }
 
   /// \brief CommandArgs constructor - specify logging
   ///
@@ -148,7 +166,6 @@ namespace CASM {
       {"super", super_command},
       {SelectCommand::name, run_api_command<SelectCommand>},
       {"bset", bset_command},
-      {"perturb", perturb_command},
       {"run", run_command},
       {RmCommand::name, run_api_command<RmCommand>},
       {QueryCommand::name, run_api_command<QueryCommand>},
@@ -246,25 +263,6 @@ namespace CASM {
       return ERR_INVALID_ARG;
     }
   }
-
-  /*
-  /// \brief Executes casm_api in specified working directory
-  int casm_api(const CommandArgs &args, fs::path working_dir) {
-    fs::path prev = fs::current_path();
-    fs::current_path(working_dir);
-    int res;
-
-    try {
-      res = casm_api(args);
-    }
-    catch(...) {
-      fs::current_path(prev);
-      throw;
-    }
-    return res;
-  }
-  */
-
 
 
   /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then

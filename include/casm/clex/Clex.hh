@@ -4,7 +4,7 @@
 
 #include "casm/CASM_global_definitions.hh"
 #include "casm/clex/Clexulator.hh"
-#include "casm/app/ProjectSettings.hh"
+#include "casm/app/ClexDescription.hh"
 
 namespace CASM {
 

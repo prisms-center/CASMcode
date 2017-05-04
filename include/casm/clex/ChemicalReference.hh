@@ -2,7 +2,6 @@
 #define CASM_ChemicalReference
 
 #include "casm/clex/Reference.hh"
-#include "casm/misc/algorithm.hh"
 
 namespace CASM {
 

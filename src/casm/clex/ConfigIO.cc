@@ -9,6 +9,7 @@
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/ConfigMapping.hh"
+#include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/database/Selected.hh"
 

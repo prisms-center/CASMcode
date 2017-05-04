@@ -1,5 +1,8 @@
-#include<cstring>
+#include "casm/app/composition.hh"
 
+#include <cstring>
+
+#include <boost/filesystem.hpp>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"

@@ -1,3 +1,7 @@
-#include "casm/database/DatabaseTypes.hh"
-#include "casm/database/ConfigTypeTraits.hh"
+#ifndef CASM_ConfigTypeDefs
+#define CASM_ConfigTypeDefs
+
 #include "casm/clex/Configuration.hh"
+#include "casm/database/DatabaseTypes.hh"
+
+#endif

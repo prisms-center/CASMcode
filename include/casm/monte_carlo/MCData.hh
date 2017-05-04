@@ -2,6 +2,7 @@
 #define MCData_HH
 
 #include "casm/CASM_global_definitions.hh"
+#include "casm/CASM_global_Eigen.hh"
 #include "casm/monte_carlo/MonteDefinitions.hh"
 
 namespace CASM {

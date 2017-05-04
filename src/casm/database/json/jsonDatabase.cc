@@ -1,4 +1,7 @@
 #include "casm/database/json/jsonDatabase.hh"
+
+#include <boost/filesystem.hpp>
+#include <boost/range/iterator_range.hpp>
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/casm_io/SafeOfstream.hh"

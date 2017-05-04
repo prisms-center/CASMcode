@@ -2,6 +2,7 @@
 #define CASM_MonteIO_impl_HH
 
 #include "casm/monte_carlo/MonteIO.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
   namespace Monte {

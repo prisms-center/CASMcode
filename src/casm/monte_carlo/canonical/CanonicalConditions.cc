@@ -2,6 +2,7 @@
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteSettings.hh"
 
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/clex/PrimClex.hh"
 
 namespace CASM {

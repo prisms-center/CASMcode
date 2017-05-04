@@ -3,14 +3,11 @@
 
 #include <map>
 
-#include "casm/external/boost.hh"
-
 #include "casm/misc/Comparisons.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/clex/Properties.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/ConfigurationTraits.hh"
 #include "casm/database/Cache.hh"
@@ -435,7 +432,7 @@ namespace CASM {
     /// \brief Set calculated properties exactly
     void set_calc_properties(const jsonParser &json);
 
-    const Properties &calc_properties() const;
+    const jsonParser &calc_properties() const;
 
     /// \brief Read properties.calc.json from training_data
     std::tuple<jsonParser, bool, bool> read_calc_properties() const;
@@ -478,21 +475,13 @@ namespace CASM {
     /// \brief Insert this configuration (in primitive & canonical form) in the database
     ConfigInsertResult insert(bool primitive_only = false) const;
 
-    /// Writes the Configuration to the correct casm directory
-    ///   Uses PrimClex's current settings to write the appropriate
-    ///   Properties, DeltaProperties and Correlations files
+    /// Writes the Configuration to JSON
     jsonParser &to_json(jsonParser &json) const;
 
-    /// Reads the Configuration from the json input
-    ///   Uses PrimClex's current settings to read in the appropriate
-    ///   calculated properties
-    ///
+    /// Reads the Configuration from JSON
     void from_json(const jsonParser &json, const Supercell &scel, std::string _id);
 
-    /// Reads the Configuration from the json input
-    ///   Uses PrimClex's current settings to read in the appropriate
-    ///   calculated properties
-    ///
+    /// Reads the Configuration from JSON
     void from_json(const jsonParser &json, const PrimClex &primclex, std::string _configname);
 
     /// Write the POS file to stream
@@ -559,7 +548,7 @@ namespace CASM {
     /// - "rms_force" -> double
     /// - "volume_relaxation" -> double
     /// - "lattice_deformation" -> double
-    Properties m_calculated;
+    jsonParser m_calculated;
     bool m_prop_updated;
 
   };

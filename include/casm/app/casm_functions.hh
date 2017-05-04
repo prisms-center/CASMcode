@@ -2,6 +2,7 @@
 #define CASM_FUNCTIONS_HH
 
 #include <wordexp.h>
+#include <boost/filesystem/path.hpp>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/misc/cloneable_ptr.hh"
@@ -58,7 +59,10 @@
 /// \brief Main CASM namespace
 namespace CASM {
 
+  void print_splash(std::ostream &out);
+
   class PrimClex;
+  class jsonParser;
 
   class runtime_error : public std::runtime_error {
   public:
@@ -179,47 +183,7 @@ namespace CASM {
 
   int help_command(const CommandArgs &args);
 
-  //int bset_command(const CommandArgs &args);
-
-  int composition_command(const CommandArgs &args);
-
-  //int enum_command(const CommandArgs &args);
-
-  int files_command(const CommandArgs &args);
-
-  int format_command(const CommandArgs &args);
-
-  int import_command(const CommandArgs &args);
-
-  int init_command(const CommandArgs &args);
-
-  int monte_command(const CommandArgs &args);
-
-  int perturb_command(const CommandArgs &args);
-
-  int query_command(const CommandArgs &args);
-
-  int ref_command(const CommandArgs &args);
-
-  int rm_command(const CommandArgs &args);
-
-  int run_command(const CommandArgs &args);
-
-  int select_command(const CommandArgs &args);
-
-  int settings_command(const CommandArgs &args);
-
-  int status_command(const CommandArgs &args);
-
-  int super_command(const CommandArgs &args);
-
-  int sym_command(const CommandArgs &args);
-
-  int update_command(const CommandArgs &args);
-
   int version_command(const CommandArgs &args);
-
-  int view_command(const CommandArgs &args);
 
 
   /// \brief Base class for generic use of algorithms through the API

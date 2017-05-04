@@ -1,3 +1,4 @@
+/*
 #ifndef CASM_ConfigImport
 #define CASM_ConfigImport
 
@@ -15,3 +16,4 @@ namespace CASM {
 }
 
 #endif
+*/

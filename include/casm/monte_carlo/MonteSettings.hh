@@ -43,7 +43,7 @@ namespace CASM {
      */
 
     /// \brief Settings for Monte Carlo calculations
-    class MonteSettings: protected jsonParser {
+    class MonteSettings: protected CASM::jsonParser {
 
     public:
 

@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cassert>
 
+#include "casm/CASM_global_enum.hh"
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/container/Permutation.hh"
 

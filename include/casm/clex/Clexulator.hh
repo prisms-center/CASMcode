@@ -2,7 +2,7 @@
 #define CLEXULATOR_HH
 #include <cstddef>
 
-#include "casm/external/boost.hh"
+#include <boost/filesystem/path.hpp>
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/NeighborList.hh"
@@ -267,13 +267,11 @@ namespace CASM {
     /// than construct another using this constructor which will re-load the library.
     ///
     Clexulator(std::string name,
-               boost::filesystem::path dirpath,
+               fs::path dirpath,
                PrimNeighborList &nlist,
                const Logging &logging,
                std::string compile_options,
                std::string so_options) {
-
-      namespace fs = boost::filesystem;
 
       // Construct the RuntimeLibrary that will store the loaded clexulator library
       m_lib = std::make_shared<RuntimeLibrary>(

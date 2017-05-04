@@ -4,7 +4,10 @@
 #include <string>
 #include <vector>
 #include <boost/program_options.hpp>
+#include <boost/filesystem/path.hpp>
+#include "casm/casm_io/stream_io/container.hh"
 #include "casm/CASM_global_definitions.hh"
+#include "casm/CASM_global_enum.hh"
 
 namespace CASM {
   namespace Completer {

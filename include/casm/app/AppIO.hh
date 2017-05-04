@@ -3,9 +3,12 @@
 
 #include <string>
 #include <map>
-
+#include <boost/filesystem/path.hpp>
 #include "casm/CASM_global_definitions.hh"
+#include "casm/CASM_global_enum.hh"
+#include "casm/casm_io/jsonParser.hh"
 #include "casm/clex/CompositionConverter.hh"
+#include "casm/crystallography/CoordinateSystems.hh"
 
 namespace CASM {
 
@@ -20,6 +23,8 @@ namespace CASM {
   class UnitCellCoord;
   typedef CoordCluster<UnitCellCoord> IntegralCluster;
   template<typename Element, typename SymCompareType> class Orbit;
+  class SymGroup;
+
   /** \defgroup ProjectIO
    *
    *  \ingroup Project

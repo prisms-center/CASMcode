@@ -1,5 +1,7 @@
 #include "casm/database/PropertiesDatabase.hh"
 
+#include "casm/casm_io/jsonParser.hh"
+
 namespace CASM {
 
   const std::string traits<DB::ScoreMappedProperties::Method>::name = "method";
@@ -11,9 +13,12 @@ namespace CASM {
     {DB::ScoreMappedProperties::Method::direct_selection, {"direct_selection"} }
   };
 
+  ENUM_IO_DECL(CASM::DB::ScoreMappedProperties::Method)
+
 }
 
 namespace CASM {
+
   namespace DB {
 
     jsonParser &to_json(const MappedProperties &obj, jsonParser &json) {

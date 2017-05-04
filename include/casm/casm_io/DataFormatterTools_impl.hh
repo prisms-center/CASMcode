@@ -1,5 +1,5 @@
 #include <algorithm>
-#include "casm/external/boost.hh"
+
 namespace CASM {
 
   template<typename ValueType, typename ArgType, typename DataObject>

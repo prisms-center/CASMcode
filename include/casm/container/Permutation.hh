@@ -3,11 +3,14 @@
 #ifndef PERMUTATION_HH
 #define PERMUTATION_HH
 
+#include <cassert>
 #include <vector>
 #include <numeric>
 #include "casm/CASM_global_definitions.hh"
 
 namespace CASM {
+
+  class jsonParser;
 
   /// Permutation is a an operator that permutes indices or items in a list.
   /// Permutations are defined such that for an initial array

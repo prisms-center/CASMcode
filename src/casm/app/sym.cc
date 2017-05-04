@@ -1,3 +1,4 @@
+#include <boost/filesystem/fstream.hpp>
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/app/ProjectSettings.hh"

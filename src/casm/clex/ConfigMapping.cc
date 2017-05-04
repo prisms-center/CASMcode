@@ -1,5 +1,7 @@
-#include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigMapping.hh"
+
+#include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"

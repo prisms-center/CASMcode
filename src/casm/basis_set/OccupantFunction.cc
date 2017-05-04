@@ -1,6 +1,6 @@
-
 #include "casm/basis_set/OccupantFunction.hh"
 
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 

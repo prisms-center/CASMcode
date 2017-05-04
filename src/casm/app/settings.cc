@@ -1,3 +1,4 @@
+#include <boost/filesystem.hpp>
 #include "casm/app/casm_functions.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"

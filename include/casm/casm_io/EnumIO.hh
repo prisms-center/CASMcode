@@ -5,10 +5,13 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
+#include <map>
+#include <vector>
 #include "casm/misc/CASM_TMP.hh"
-#include "casm/casm_io/jsonParser.hh"
 
 namespace CASM {
+
+  class jsonParser;
 
   /// \defgroup casmIO IO
   ///
@@ -110,7 +113,37 @@ namespace CASM {
   \
   };
 
-#define ENUM_IO(ENUM) \
+#define ENUM_IO_DECL(ENUM) \
+  std::ostream &operator<<(std::ostream &sout, const ENUM& val); \
+  \
+  std::istream &operator>>(std::istream &sin, ENUM& val); \
+  \
+  jsonParser &to_json(const ENUM &val, jsonParser &json); \
+  \
+  void from_json(ENUM& val, const jsonParser& json); \
+
+#define ENUM_IO_DEF(ENUM) \
+  std::ostream &operator<<(std::ostream &sout, const ENUM& val) { \
+    sout << to_string<ENUM>(val); \
+    return sout; \
+  } \
+  \
+  std::istream &operator>>(std::istream &sin, ENUM& val) { \
+    std::string s; \
+    sin >> s; \
+    val = from_string<ENUM>(s); \
+    return sin; \
+  } \
+  \
+  jsonParser &to_json(const ENUM &val, jsonParser &json) { \
+    return to_json(to_string<ENUM>(val), json); \
+  } \
+  \
+  void from_json(ENUM& val, const jsonParser& json) { \
+    val = from_string<ENUM>(json.get<std::string>()); \
+  } \
+
+#define ENUM_IO_INLINE(ENUM) \
   inline std::ostream &operator<<(std::ostream &sout, const ENUM& val) { \
     sout << to_string<ENUM>(val); \
     return sout; \
@@ -130,7 +163,6 @@ namespace CASM {
   inline void from_json(ENUM& val, const jsonParser& json) { \
     val = from_string<ENUM>(json.get<std::string>()); \
   } \
-
 
 }
 

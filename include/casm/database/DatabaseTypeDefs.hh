@@ -1,4 +1,8 @@
-#include "casm/database/DatabaseTypes.hh"
-#include "casm/database/DatabaseTypeTraits.hh"
+#ifndef CASM_DatabaseTypeDefs
+#define CASM_DatabaseTypeDefs
+
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/database/DatabaseTypes.hh"
+
+#endif

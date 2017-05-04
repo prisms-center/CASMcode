@@ -3,6 +3,7 @@
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/casm_io/DataFormatter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteSettings.hh"
 

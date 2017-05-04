@@ -3,8 +3,7 @@
 
 #include <vector>
 #include "casm/CASM_global_definitions.hh"
-#include "casm/external/Eigen/Dense"
-#include "casm/casm_io/jsonParser.hh"
+#include "casm/CASM_global_Eigen.hh"
 
 namespace CASM {
 
@@ -13,7 +12,7 @@ namespace CASM {
   class PrimClex;
   class Supercell;
   class Clexulator;
-
+  class jsonParser;
 
   /// \brief A container class for the different degrees of freedom a Configuration
   /// might have

@@ -1,6 +1,7 @@
 #ifndef CASM_SubClusterGenerator
 #define CASM_SubClusterGenerator
 
+#include <boost/iterator/iterator_facade.hpp>
 #include "casm/container/Counter.hh"
 
 namespace CASM {

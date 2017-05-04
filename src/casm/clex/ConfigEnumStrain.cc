@@ -6,6 +6,7 @@
 #include "casm/clex/ConfigEnumStrain.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"
 
 extern "C" {

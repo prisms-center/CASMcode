@@ -5,6 +5,7 @@
 #include <string>
 #include <iomanip>
 
+#include "casm/CASM_global_enum.hh"
 #include "casm/symmetry/SymOp.hh"
 
 namespace CASM {

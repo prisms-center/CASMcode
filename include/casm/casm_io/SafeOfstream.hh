@@ -3,7 +3,8 @@
 
 #include <string>
 #include <vector>
-#include "casm/external/boost.hh"
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include "casm/CASM_global_definitions.hh"
 
 namespace CASM {

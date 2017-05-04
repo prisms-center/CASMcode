@@ -1,5 +1,8 @@
 #include "casm/database/json/jsonPropertiesDatabase.hh"
+
+#include <boost/filesystem.hpp>
 #include "casm/casm_io/json_io/container.hh"
+#include "casm/casm_io/SafeOfstream.hh"
 
 namespace CASM {
   namespace DB {

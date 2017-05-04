@@ -4,7 +4,8 @@
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include "casm/misc/algorithm.hh"
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/symmetry/SymGroupRep.hh"

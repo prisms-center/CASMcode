@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cmath>
 
+#include "casm/CASM_global_Eigen.hh"
 #include "casm/misc/Comparisons.hh"
 #include "casm/container/Array.hh"
 
@@ -13,6 +14,7 @@ namespace CASM {
   class SymGroup;
   class SymOp;
   class ScelEnumProps;
+  class jsonParser;
 
   /** \defgroup Crystallography
    *

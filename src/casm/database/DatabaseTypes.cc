@@ -1,9 +1,23 @@
 #include "casm/database/DatabaseTypes.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/database/DatabaseTypeTraits.hh"
-#include "casm/database/DatabaseDefs.hh"
+//#include "casm/clex/PrimClex.hh"
+//#include "casm/database/DatabaseTypeTraits.hh"
+//#include "casm/database/DatabaseDefs.hh"
+//#include "casm/clex/ConfigurationTraits.hh"
 
 namespace CASM {
+
+  template<>
+  struct traits<Configuration> {
+    static const std::string name;
+    static const std::string short_name;
+  };
+
+  template<>
+  struct traits<Supercell> {
+    static const std::string name;
+    static const std::string short_name;
+  };
+
   namespace DB {
     namespace {
 
@@ -25,6 +39,7 @@ namespace CASM {
         }
       };
 
+      /*
       struct ConfigCountImpl {
         ConfigCountImpl(std::string _scelname, const PrimClex &_primclex) :
           count(0), scelname(_scelname), primclex(_primclex) {}
@@ -38,6 +53,7 @@ namespace CASM {
         std::string scelname;
         const PrimClex &primclex;
       };
+      */
     }
 
     const std::set<std::string> &types() {
@@ -73,15 +89,15 @@ namespace CASM {
       return _config_types_short;
     };
 
-
-    /// Total number of configs of all types in a supercell
-    Index config_count(std::string scelname, const PrimClex &primclex) {
-      ConfigCountImpl f(scelname, primclex);
-      if(primclex.db<Supercell>().count(scelname)) {
-        for_each_config_type(f);
-      }
-      return f.count;
-    }
-
+    /*
+        /// Total number of configs of all types in a supercell
+        Index config_count(std::string scelname, const PrimClex &primclex) {
+          ConfigCountImpl f(scelname, primclex);
+          if(primclex.db<Supercell>().count(scelname)) {
+            for_each_config_type(f);
+          }
+          return f.count;
+        }
+    */
   }
 }

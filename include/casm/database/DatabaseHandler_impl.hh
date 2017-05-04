@@ -1,6 +1,7 @@
 #ifndef CASM_DatabaseHandler_impl
 #define CASM_DatabaseHandler_impl
 
+#include <sstream>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/database/DatabaseHandler.hh"
 #include "casm/database/Database.hh"

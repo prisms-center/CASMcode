@@ -1,30 +1,41 @@
 #ifndef CASM_jsonIO_container
 #define CASM_jsonIO_container
 
+#include <set>
 #include "casm/casm_io/jsonParser.hh"
 #include "casm/CASM_global_definitions.hh"
+#include "casm/CASM_global_Eigen.hh"
+#include "casm/container/Array.hh"
 
-//#include "casm/container/Array.hh"
 //#include "casm/container/LinearAlgebra.hh"
 
 namespace CASM {
-  /*
-    // --- Array<T> ------------------------------
 
-    /// Converts to a JSON array
-    template<typename T>
-    jsonParser &to_json(const Array<T> &value, jsonParser &json) {
-      return json.put_array(value.begin(), value.end());
-    }
+  // --- Array<T> ------------------------------
 
-    /// This requires that 'T::T()' exists, if not, you must do this by hand
-    template<typename T>
-    void from_json(Array<T> &value, const jsonParser &json) {
+  template<typename T>
+  jsonParser &to_json(const Array<T> &value, jsonParser &json) {
+    json.put_array();
+    for(Index i = 0; i < value.size(); i++)
+      json.push_back(value[i]);
+    return json;
+  }
+
+  /// This requires that 'T::T()' exists, if not, you must do this by hand
+  template<typename T>
+  void from_json(Array<T> &value, const jsonParser &json) {
+    try {
       value.resize(json.size());
       for(int i = 0; i < json.size(); i++)
         from_json(value[i], json[i]);
     }
+    catch(...) {
+      /// re-throw exceptions
+      throw;
+    }
+  }
 
+  /*
     // --- Matrix & Vector -----------------------
 
     /// Converts to a JSON array of arrays

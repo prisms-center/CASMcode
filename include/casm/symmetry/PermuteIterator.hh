@@ -131,6 +131,7 @@ namespace CASM {
 
 
   class Supercell;
+  template<typename T> struct jsonConstructor;
 
   template<>
   struct jsonConstructor<PermuteIterator> {

@@ -1,5 +1,5 @@
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
-
+#include "casm/crystallography/Site.hh"
 namespace CASM {
 
   namespace Kinetics {

@@ -15,7 +15,7 @@ namespace CASM {
       Canonical
     };
 
-    ENUM_IO(CASM::Monte::ENSEMBLE)
+    ENUM_IO_DECL(CASM::Monte::ENSEMBLE)
 
 
     /// \brief Monte Carlo method type
@@ -23,7 +23,7 @@ namespace CASM {
       Metropolis, LTE1
     };
 
-    ENUM_IO(CASM::Monte::METHOD)
+    ENUM_IO_DECL(CASM::Monte::METHOD)
 
 
     ///How often to sample runs
@@ -31,7 +31,7 @@ namespace CASM {
       STEP, PASS
     };
 
-    ENUM_IO(CASM::Monte::SAMPLE_MODE)
+    ENUM_IO_DECL(CASM::Monte::SAMPLE_MODE)
 
 
     ///How to change conditions
@@ -39,14 +39,14 @@ namespace CASM {
       INCREMENTAL, CUSTOM
     };
 
-    ENUM_IO(CASM::Monte::DRIVE_MODE)
+    ENUM_IO_DECL(CASM::Monte::DRIVE_MODE)
 
     ///How often to sample runs
     enum class ENUM_SAMPLE_MODE {
       ON_SAMPLE, ON_ACCEPT
     };
 
-    ENUM_IO(CASM::Monte::ENUM_SAMPLE_MODE)
+    ENUM_IO_DECL(CASM::Monte::ENUM_SAMPLE_MODE)
 
   }
 }
