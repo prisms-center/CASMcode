@@ -67,9 +67,13 @@ namespace CASM {
       void close();
 
 
-      /// Insert a database
+      /// Insert a Database
       template<typename T>
       void insert(std::string db_name, std::unique_ptr<DatabaseBase> &&value);
+
+      /// Insert a PropertiesDatabase
+      template<typename T>
+      void insert_props(std::string db_name, std::unique_ptr<PropertiesDatabase> &&value);
 
 
       // --- Access non-default database (i.e. jsonDB, lmdbDB, mongoDB) ---
@@ -104,24 +108,39 @@ namespace CASM {
 
     private:
 
-      // std::pair<QueryTraits<ValueType>::name, db_name> -> db
+      // std::pair<traits<ValueType>::name, db_name> -> db
       typedef std::map <
       std::pair<std::string, std::string>,
           std::unique_ptr<DatabaseBase> > map_type;
+
+      // std::pair<traits<ValueType>::name, db_name> -> db
+      typedef std::map <
+      std::pair<std::string, std::string>,
+          std::unique_ptr<PropertiesDatabase> > props_map_type;
 
       template<typename T>
       map_type::iterator _find(std::string db_name) const;
 
       template<typename T>
+      props_map_type::iterator _find_props(std::string db_name) const;
+
+      template<typename T>
       void _no_database_error(std::string db_name) const;
+
+      template<typename T>
+      void _no_props_database_error(std::string db_name) const;
 
       const PrimClex *m_primclex;
 
       std::string m_default_db_name;
 
-      // std::pair<QueryTraits<ValueType>::name, db_name> -> db
+      // std::pair<traits<ValueType>::name, db_name> -> db
       // mutable for lazy initialization
       mutable map_type m_db;
+
+      // std::pair<traits<ValueType>::name, db_name> -> db_props
+      // mutable for lazy initialization
+      mutable props_map_type m_db_props;
 
     };
 

@@ -426,10 +426,14 @@ namespace CASM {
 #define INST_PrimClex(r, data, type) \
 template DB::Database<type> &PrimClex::db<type>() const; \
 template const DB::Database<type> &PrimClex::const_db<type>() const; \
+
+// explicit template instantiations
+#define INST_PrimClexProps(r, data, type) \
 template DB::PropertiesDatabase &PrimClex::db_props<type>() const; \
 template const DB::PropertiesDatabase &PrimClex::const_db_props<type>() const; \
 
 namespace CASM {
   BOOST_PP_SEQ_FOR_EACH(INST_PrimClex, _, CASM_DB_TYPES)
+  BOOST_PP_SEQ_FOR_EACH(INST_PrimClexProps, _, CASM_DB_CONFIG_TYPES)
 }
 
