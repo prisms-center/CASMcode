@@ -29,8 +29,8 @@ namespace CASM {
   /// \brief Remove files recursively
   void recurs_rm_files(fs::path p, bool dry_run, Log &log);
 
-  /// \brief Copy files recursively
-  void recurs_cp_files(const fs::path &from_dir, const fs::path &to_dir, bool dry_run, Log &log);
+  /// \brief Copy files recursively, and returns a count of copied files
+  Index recurs_cp_files(const fs::path &from_dir, const fs::path &to_dir, bool dry_run, Log &log);
 
   /// \brief Specification of CASM project directory structure
   class DirectoryStructure {
@@ -179,10 +179,10 @@ namespace CASM {
     /// \brief Return calculation settings directory path, for configuration specific settings
     fs::path configuration_calc_settings_dir(std::string configname, std::string calctype) const;
 
-    /// \brief Return calculated properties file path
+    /// \brief Return directory containing properties.calc.json
     fs::path configuration_calc_dir(std::string configname, std::string calctype) const;
 
-    /// \brief Return calculated properties file path
+    /// \brief Return properties.calc.json file path
     fs::path calculated_properties(std::string configname, std::string calctype) const;
 
     /// \brief Return calculation status file path

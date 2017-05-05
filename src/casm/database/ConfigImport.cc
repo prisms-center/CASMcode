@@ -11,8 +11,9 @@
 #include "casm/app/rm.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/PropertiesDatabase.hh"
-#include "casm/database/Selection_impl.hh"
-#include "casm/completer/Handlers.hh"
+#include "casm/database/Selection.hh"
+#include "casm/database/Import_impl.hh"
+#include "casm/database/Update_impl.hh"
 
 namespace CASM {
   namespace DB {
@@ -401,8 +402,8 @@ namespace CASM {
         primclex.log());
 
       // -- read structure file paths --
-      std::vector<fs::path> pos;
-      auto res = construct_pos_paths(primclex, import_opt, std::back_inserter(pos));
+      std::set<fs::path> pos;
+      auto res = construct_pos_paths(primclex, import_opt, std::inserter(pos, pos.end()));
       if(res.second) {
         return res.second;
       }
@@ -561,11 +562,12 @@ namespace CASM {
       const std::map<std::string, ConfigIO::ImportData> &data_results) const {
 
       DataFormatterDictionary<ConfigIO::Result> dict;
-      ConfigIO::default_formatters(dict, db_props(), data_results);
+      ConfigIO::default_import_formatters(dict, db_props(), data_results);
 
       std::vector<std::string> col = {
         "configname", "selected", "pos", "has_data", "has_complete_data",
-        "import_data", "import_additional_files", "score", "best_score", "is_best",
+        "preexisting_data", "import_data", "import_additional_files",
+        "score", "best_score", "is_best",
         "lattice_deformation_cost", "basis_deformation_cost", "deformation_cost",
         "relaxed_energy"
       };
@@ -641,11 +643,10 @@ namespace CASM {
     }
 
     // Allow ConfigType to specialize the report formatting for 'update'
-    DataFormatter<ConfigIO::Result> Update<Configuration>::_update_formatter(
-      const std::map<std::string, ConfigIO::ImportData> &data_results) const {
+    DataFormatter<ConfigIO::Result> Update<Configuration>::_update_formatter() const {
 
       DataFormatterDictionary<ConfigIO::Result> dict;
-      ConfigIO::default_formatters(dict, db_props(), data_results);
+      ConfigIO::default_update_formatters(dict, db_props());
 
       std::vector<std::string> col = {
         "configname", "selected", "to_configname", "has_data", "has_complete_data",

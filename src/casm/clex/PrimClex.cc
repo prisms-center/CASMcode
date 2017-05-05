@@ -289,29 +289,29 @@ namespace CASM {
   DB::Database<T> &PrimClex::db() const {
     return m_data->db_handler->template db<T>();
   }
-  template DB::Database<Supercell> &PrimClex::db() const;
-  template DB::Database<Configuration> &PrimClex::db() const;
 
   template<typename T>
   const DB::Database<T> &PrimClex::const_db() const {
     return m_data->db_handler->template const_db<T>();
   }
-  template const DB::Database<Supercell> &PrimClex::const_db() const;
-  template const DB::Database<Configuration> &PrimClex::const_db() const;
 
   template<typename T>
-  DB::Database<T> &PrimClex::db(std::string db_name) const {
-    return m_data->db_handler->template db<T>(db_name);
+  DB::PropertiesDatabase &PrimClex::db_props() const {
+    return m_data->db_handler->template db_props<T>();
   }
-  template DB::Database<Supercell> &PrimClex::db(std::string db_name) const;
-  template DB::Database<Configuration> &PrimClex::db(std::string db_name) const;
 
   template<typename T>
-  const DB::Database<T> &PrimClex::const_db(std::string db_name) const {
-    return m_data->db_handler->template const_db<T>(db_name);
+  const DB::PropertiesDatabase &PrimClex::const_db_props() const {
+    return m_data->db_handler->template const_db_props<T>();
   }
-  template const DB::Database<Supercell> &PrimClex::const_db(std::string db_name) const;
-  template const DB::Database<Configuration> &PrimClex::const_db(std::string db_name) const;
+
+  DB::DatabaseHandler &PrimClex::db_handler() const {
+    return *m_data->db_handler;
+  }
+
+  const DB::DatabaseHandler &PrimClex::const_db_handler() const {
+    return *m_data->db_handler;
+  }
 
   bool PrimClex::has_orbits(const ClexDescription &key) const {
     if(!fs::exists(dir().clust(key.bset))) {
@@ -418,6 +418,18 @@ namespace CASM {
     }
     return it->second;
   }
+}
 
+#include "casm/database/DatabaseTypes.hh"
+
+// explicit template instantiations
+#define INST_PrimClex(r, data, type) \
+template DB::Database<type> &PrimClex::db<type>() const; \
+template const DB::Database<type> &PrimClex::const_db<type>() const; \
+template DB::PropertiesDatabase &PrimClex::db_props<type>() const; \
+template const DB::PropertiesDatabase &PrimClex::const_db_props<type>() const; \
+
+namespace CASM {
+  BOOST_PP_SEQ_FOR_EACH(INST_PrimClex, _, CASM_DB_TYPES)
 }
 

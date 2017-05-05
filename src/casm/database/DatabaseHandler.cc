@@ -16,7 +16,7 @@ namespace CASM {
       m_primclex(&_primclex),
       m_default_db_name(m_primclex->settings().db_name()) {
 
-      Traits<jsonDB>::insert(*this);
+      jsonDB::insert(*this);
     }
 
     DatabaseHandler::~DatabaseHandler() {

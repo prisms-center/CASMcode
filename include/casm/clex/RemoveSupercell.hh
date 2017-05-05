@@ -3,12 +3,12 @@
 
 #include <string>
 #include "casm/CASM_global_definitions.hh"
-#include "casm/database/Import.hh"
-#include "casm/clex/Supercell.hh"
+#include "casm/database/Remove.hh"
 
 namespace CASM {
 
   class PrimClex;
+  class Supercell;
   class Log;
 
   namespace Completer {

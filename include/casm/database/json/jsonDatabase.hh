@@ -6,22 +6,31 @@
 #include "casm/database/ConfigDatabase.hh"
 
 namespace CASM {
-  namespace DB {
 
-    struct jsonDB {};
-    template<typename T> class Traits;
+  template<typename T> struct traits;
+
+  namespace DB {
+    template<typename DataObject> class jsonDatabase;
     class DatabaseHandler;
 
-    template<>
-    struct Traits<jsonDB> {
-
-      static const std::string name;
-
-      /// Database format version, incremented separately from casm --version
-      static const std::string version;
-
-      static void insert(DatabaseHandler &db_handler);
+    struct jsonDB {
+      static void insert(DatabaseHandler &);
     };
+
+  }
+
+  template<>
+  struct traits<DB::jsonDB> {
+
+    static const std::string name;
+
+    /// Database format version, incremented separately from casm --version
+    static const std::string version;
+
+    static void insert(DB::DatabaseHandler &db_handler);
+  };
+
+  namespace DB {
 
     /// ValueType must have:
     /// - std::string ValueType::name() const
@@ -31,13 +40,14 @@ namespace CASM {
     /// - void commit()
     /// - void close()
     ///
-    class jsonScelDatabase : public Database<Supercell> {
+    template<>
+    class jsonDatabase<Supercell> : public Database<Supercell> {
 
     public:
 
-      jsonScelDatabase(const PrimClex &_primclex);
+      jsonDatabase<Supercell>(const PrimClex &_primclex);
 
-      jsonScelDatabase &open() override;
+      jsonDatabase<Supercell> &open() override;
 
       void commit() override;
 
@@ -73,14 +83,15 @@ namespace CASM {
     /// - iterator update(const Configuration &config)
     /// - boost::iterator_range<iterator> scel_range(const std::string& scelname) const
     ///
-    class jsonConfigDatabase : public Database<Configuration> {
+    template<>
+    class jsonDatabase<Configuration> : public Database<Configuration> {
 
     public:
 
-      jsonConfigDatabase(const PrimClex &_primclex);
+      jsonDatabase<Configuration>(const PrimClex &_primclex);
 
 
-      jsonConfigDatabase &open() override;
+      jsonDatabase<Configuration> &open() override;
 
       void commit() override;
 
@@ -109,7 +120,7 @@ namespace CASM {
 
     private:
 
-      typedef DatabaseSetIterator<Configuration, jsonConfigDatabase> db_set_iterator;
+      typedef DatabaseSetIterator<Configuration, jsonDatabase<Configuration>> db_set_iterator;
       typedef std::set<Configuration>::iterator base_iterator;
 
       /// Update m_name_and_alias and m_scel_range after performing an insert or emplace

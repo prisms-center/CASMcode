@@ -63,24 +63,36 @@ namespace CASM {
     }
   }
 
-  void recurs_cp_files(const fs::path &from_dir, const fs::path &to_dir, bool dry_run, Log &log) {
-    auto it = fs::directory_iterator(from_dir);
-    auto end = fs::directory_iterator();
-    for(; it != end; ++it) {
-      if(fs::is_regular_file(*it)) {
-        log << "cp " << *it << " " << to_dir << std::endl;
-        if(!dry_run) {
-          fs::copy_file(*it, to_dir / it->path().filename());
+  namespace {
+    /// \brief Copy files recursively, and returns a count of copied files
+    Index recurs_cp_files_impl(const fs::path &from_dir, const fs::path &to_dir, bool dry_run, Index count, Log &log) {
+      auto it = fs::directory_iterator(from_dir);
+      auto end = fs::directory_iterator();
+      for(; it != end; ++it) {
+        if(fs::is_regular_file(*it)) {
+          log << "cp " << *it << " " << to_dir << std::endl;
+          count++;
+          if(!dry_run) {
+            fs::copy_file(*it, to_dir / it->path().filename());
+          }
+        }
+        else {
+          fs::path new_to_dir = to_dir / it->path().filename();
+          if(!dry_run) {
+            fs::create_directories(new_to_dir);
+          }
+          count = recurs_cp_files_impl(*it, new_to_dir, dry_run, count, log);
         }
       }
-      else {
-        fs::path new_to_dir = to_dir / it->path().filename();
-        if(!dry_run) {
-          fs::create_directories(new_to_dir);
-        }
-        recurs_cp_files(*it, new_to_dir, dry_run, log);
-      }
+      return count;
     }
+  }
+
+  /// \brief Copy files recursively, and returns a count of copied files
+  Index recurs_cp_files(const fs::path &from_dir, const fs::path &to_dir, bool dry_run, Log &log) {
+    Index count = 0;
+    recurs_cp_files_impl(from_dir, to_dir, dry_run, count, log);
+    return count;
   }
 
   DirectoryStructure::DirectoryStructure(const fs::path _root) {
@@ -303,12 +315,12 @@ namespace CASM {
     return configuration_dir(configname) / m_set_dir / _calctype(calctype);
   }
 
-  /// \brief Return calculated properties file path
+  /// \brief Return directory containing properties.calc.json
   fs::path DirectoryStructure::configuration_calc_dir(std::string configname, std::string calctype) const {
     return configuration_dir(configname) / _calctype(calctype);
   }
 
-  /// \brief Return calculated properties file path
+  /// \brief Return properties.calc.json file path
   fs::path DirectoryStructure::calculated_properties(std::string configname, std::string calctype) const {
     return configuration_calc_dir(configname, calctype) / "properties.calc.json";
   }

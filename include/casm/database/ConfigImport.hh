@@ -6,6 +6,8 @@
 #include <string>
 #include <memory>
 #include "casm/CASM_global_definitions.hh"
+#include "casm/database/ConfigData.hh"
+#include "casm/database/Update.hh"
 #include "casm/database/Import.hh"
 
 namespace CASM {
@@ -123,17 +125,7 @@ namespace CASM {
     private:
 
       // Allow ConfigType to specialize the report formatting for 'update'
-      DataFormatter<ConfigIO::Result> _update_formatter(
-        const std::map<std::string, ConfigIO::ImportData> &data_results) const override;
-
-    };
-
-    template<>
-    class Remove<Configuration> : public RemoveT<Configuration> {
-    public:
-      Remove(const PrimClex &primclex, fs::path report_dir, Log &_file_log);
-      static const std::string desc;
-      static int run(const PrimClex &primclex, const Completer::RmOption &import_opt);
+      DataFormatter<ConfigIO::Result> _update_formatter() const override;
 
     };
 

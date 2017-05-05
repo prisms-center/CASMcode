@@ -10,13 +10,11 @@ namespace CASM {
 
   class PrimClex;
 
-}
-
-namespace CASM {
   namespace DB {
 
     class DatabaseBase;
     template<typename T> class Database;
+    class PropertiesDatabase;
 
     /// \brief Provides access to all databases
     ///
@@ -38,9 +36,6 @@ namespace CASM {
 
       const PrimClex &primclex() const;
 
-      /// Insert a database
-      template<typename T>
-      void insert(std::string db_name, std::unique_ptr<DatabaseBase> &&value);
 
       /// Access default Database<T>
       template<typename T>
@@ -55,6 +50,32 @@ namespace CASM {
       const Database<T> &const_db();
 
 
+      /// Access default PropertiesDatabase
+      template<typename T>
+      PropertiesDatabase &db_props();
+
+      /// Access default PropertiesDatabase
+      template<typename T>
+      const PropertiesDatabase &db_props() const;
+
+      /// Access default PropertiesDatabase
+      template<typename T>
+      const PropertiesDatabase &const_db_props();
+
+
+      /// Close all databases
+      void close();
+
+
+      /// Insert a database
+      template<typename T>
+      void insert(std::string db_name, std::unique_ptr<DatabaseBase> &&value);
+
+
+      // --- Access non-default database (i.e. jsonDB, lmdbDB, mongoDB) ---
+      //  - This would be used to migrate from one to the other, so it it not
+      //    a common use case
+
       /// Access specified Database<T>
       template<typename T>
       Database<T> &db(std::string db_name);
@@ -67,8 +88,19 @@ namespace CASM {
       template<typename T>
       const Database<T> &const_db(std::string db_name);
 
-      /// Close all databases
-      void close();
+
+      /// Access specified PropertiesDatabase
+      template<typename T>
+      PropertiesDatabase &db_props(std::string db_name);
+
+      /// Access specified PropertiesDatabase
+      template<typename T>
+      const PropertiesDatabase &db_props(std::string db_name) const;
+
+      /// Access specified PropertiesDatabase
+      template<typename T>
+      const PropertiesDatabase &const_db_props(std::string db_name);
+
 
     private:
 

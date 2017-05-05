@@ -20,6 +20,8 @@ namespace CASM {
 
   namespace DB {
     template<typename T> class Database;
+    class PropertiesDatabase;
+    class DatabaseHandler;
   }
 
   /** \defgroup Clex
@@ -121,10 +123,15 @@ namespace CASM {
 
 
     template<typename T>
-    DB::Database<T> &db(std::string db_name) const;
+    DB::PropertiesDatabase &db_props() const;
 
     template<typename T>
-    const DB::Database<T> &const_db(std::string db_name) const;
+    const DB::PropertiesDatabase &const_db_props() const;
+
+
+    DB::DatabaseHandler &db_handler() const;
+
+    const DB::DatabaseHandler &const_db_handler() const;
 
 
     bool has_orbits(const ClexDescription &key) const;
@@ -141,6 +148,7 @@ namespace CASM {
 
     bool has_eci(const ClexDescription &key) const;
     const ECIContainer &eci(const ClexDescription &key) const;
+
 
   private:
 

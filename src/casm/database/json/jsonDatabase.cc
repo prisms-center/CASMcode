@@ -11,27 +11,37 @@
 #include "casm/database/DatabaseTypeDefs.hh"
 
 namespace CASM {
+
+  const std::string traits<DB::jsonDB>::name = "jsonDB";
+
+  const std::string traits<DB::jsonDB>::version = "1.0";
+
   namespace DB {
 
-    const std::string Traits<jsonDB>::name = "jsonDB";
+    namespace {
+      struct InsertImpl {
+        InsertImpl(DatabaseHandler &_db_handler) : db_handler(_db_handler) {}
+        DatabaseHandler &db_handler;
 
-    const std::string Traits<jsonDB>::version = "1.0";
-
-    void Traits<jsonDB>::insert(DatabaseHandler &db_handler) {
-      db_handler.insert<Supercell>(
-        name,
-        notstd::make_unique<jsonScelDatabase>(db_handler.primclex()));
-
-      db_handler.insert<Configuration>(
-        name,
-        notstd::make_unique<jsonScelDatabase>(db_handler.primclex()));
+        template<typename T>
+        void eval() {
+          db_handler.insert<T>(
+            traits<jsonDB>::name,
+            notstd::make_unique<jsonDatabase<T> >(db_handler.primclex()));
+        }
+      };
     }
 
-    jsonScelDatabase::jsonScelDatabase(const PrimClex &_primclex) :
+
+    void jsonDB::insert(DatabaseHandler &db_handler) {
+      DB::for_each_type(InsertImpl(db_handler));
+    }
+
+    jsonDatabase<Supercell>::jsonDatabase(const PrimClex &_primclex) :
       Database<Supercell>(_primclex),
       m_is_open(false) {}
 
-    jsonScelDatabase &jsonScelDatabase::open() {
+    jsonDatabase<Supercell> &jsonDatabase<Supercell>::open() {
 
       if(m_is_open) {
         return *this;
@@ -50,7 +60,7 @@ namespace CASM {
       return *this;
     }
 
-    void jsonScelDatabase::commit() {
+    void jsonDatabase<Supercell>::commit() {
       jsonParser json;
 
       for(const auto &scel : *this) {
@@ -65,21 +75,21 @@ namespace CASM {
       this->write_aliases();
     }
 
-    void jsonScelDatabase::close() {
+    void jsonDatabase<Supercell>::close() {
       m_is_open = false;
       this->clear();
     }
 
-    void jsonScelDatabase::_read_scel_list() {
+    void jsonDatabase<Supercell>::_read_scel_list() {
       jsonParser json(primclex().dir().scel_list());
 
       // check json version
-      if(!json.contains("version") || json["version"].get<std::string>() != Traits<jsonDB>::version) {
+      if(!json.contains("version") || json["version"].get<std::string>() != traits<jsonDB>::version) {
         throw std::runtime_error(
           std::string("Error jsonDB version mismatch: found: ") +
           json["version"].get<std::string>() +
           " expected: " +
-          Traits<jsonDB>::version);
+          traits<jsonDB>::version);
       }
 
       if(!json.is_array() || !json.contains("supercells")) {
@@ -96,7 +106,7 @@ namespace CASM {
       }
     }
 
-    void jsonScelDatabase::_read_SCEL() {
+    void jsonDatabase<Supercell>::_read_SCEL() {
       // expect a file with format:
       //
       // Supercell Number: 0 Volume: 1
@@ -127,11 +137,11 @@ namespace CASM {
     }
 
 
-    jsonConfigDatabase::jsonConfigDatabase(const PrimClex &_primclex) :
+    jsonDatabase<Configuration>::jsonDatabase(const PrimClex &_primclex) :
       Database<Configuration>(_primclex),
       m_is_open(false) {}
 
-    jsonConfigDatabase &jsonConfigDatabase::open() {
+    jsonDatabase<Configuration> &jsonDatabase<Configuration>::open() {
       if(m_is_open) {
         return *this;
       }
@@ -149,12 +159,12 @@ namespace CASM {
       }
 
       // check json version
-      if(!json.contains("version") || json["version"].get<std::string>() != Traits<jsonDB>::version) {
+      if(!json.contains("version") || json["version"].get<std::string>() != traits<jsonDB>::version) {
         throw std::runtime_error(
           std::string("Error jsonDB version mismatch: found: ") +
           json["version"].get<std::string>() +
           " expected: " +
-          Traits<jsonDB>::version);
+          traits<jsonDB>::version);
       }
 
       // read config list contents
@@ -166,7 +176,8 @@ namespace CASM {
         auto config_it = scel_it->begin();
         auto config_end = scel_it->end();
 
-        const Supercell &scel = *primclex().db<Supercell>().find(scel_it.name());
+        const Supercell &scel = *primclex().db_handler().
+                                db<Supercell>(traits<jsonDB>::name).find(scel_it.name());
 
         for(; config_it != config_end; ++config_it) {
           auto result = m_config_list.emplace(scel, config_it.name(), *config_it);
@@ -183,10 +194,10 @@ namespace CASM {
       return *this;
     }
 
-    void jsonConfigDatabase::commit() {
+    void jsonDatabase<Configuration>::commit() {
 
       fs::path config_list_path = primclex().dir().config_list();
-      if(primclex().db<Supercell>(Traits<jsonDB>::name).size() == 0) {
+      if(primclex().db_handler().db<Supercell>(traits<jsonDB>::name).size() == 0) {
         fs::remove(config_list_path);
         return;
       }
@@ -214,46 +225,46 @@ namespace CASM {
       this->write_aliases();
     }
 
-    void jsonConfigDatabase::close() {
+    void jsonDatabase<Configuration>::close() {
       m_name_to_config.clear();
       m_config_list.clear();
       m_scel_range.clear();
       m_is_open = false;
     }
 
-    jsonConfigDatabase::iterator jsonConfigDatabase::begin() const {
+    jsonDatabase<Configuration>::iterator jsonDatabase<Configuration>::begin() const {
       return _iterator(m_config_list.begin());
     }
 
-    jsonConfigDatabase::iterator jsonConfigDatabase::end() const {
+    jsonDatabase<Configuration>::iterator jsonDatabase<Configuration>::end() const {
       return _iterator(m_config_list.end());
     }
 
-    jsonConfigDatabase::size_type jsonConfigDatabase::size() const {
+    jsonDatabase<Configuration>::size_type jsonDatabase<Configuration>::size() const {
       return m_config_list.size();
     }
 
-    std::pair<jsonConfigDatabase::iterator, bool> jsonConfigDatabase::insert(const Configuration &config) {
+    std::pair<jsonDatabase<Configuration>::iterator, bool> jsonDatabase<Configuration>::insert(const Configuration &config) {
 
       auto result = m_config_list.insert(config);
 
       return _on_insert_or_emplace(result);
     }
 
-    std::pair<jsonConfigDatabase::iterator, bool> jsonConfigDatabase::insert(const Configuration &&config) {
+    std::pair<jsonDatabase<Configuration>::iterator, bool> jsonDatabase<Configuration>::insert(const Configuration &&config) {
 
       auto result = m_config_list.insert(std::move(config));
 
       return _on_insert_or_emplace(result);
     }
 
-    jsonConfigDatabase::iterator jsonConfigDatabase::update(const Configuration &config) {
+    jsonDatabase<Configuration>::iterator jsonDatabase<Configuration>::update(const Configuration &config) {
 
       ValDatabase<Configuration>::erase(config.name());
       return insert(config).first;
     }
 
-    jsonConfigDatabase::iterator jsonConfigDatabase::erase(iterator pos) {
+    jsonDatabase<Configuration>::iterator jsonDatabase<Configuration>::erase(iterator pos) {
 
       // get m_config_list iterator
       auto base_it = static_cast<db_set_iterator *>(pos.get())->base();
@@ -277,7 +288,7 @@ namespace CASM {
       return _iterator(m_config_list.erase(base_it));
     }
 
-    jsonConfigDatabase::iterator jsonConfigDatabase::find(const std::string &name_or_alias) const {
+    jsonDatabase<Configuration>::iterator jsonDatabase<Configuration>::find(const std::string &name_or_alias) const {
       auto it = m_name_to_config.find(this->name(name_or_alias));
       if(it == m_name_to_config.end()) {
         return _iterator(m_config_list.end());
@@ -286,15 +297,15 @@ namespace CASM {
     }
 
     /// Range of Configuration in a particular supecell
-    boost::iterator_range<jsonConfigDatabase::iterator>
-    jsonConfigDatabase::scel_range(const std::string &scelname) const {
+    boost::iterator_range<jsonDatabase<Configuration>::iterator>
+    jsonDatabase<Configuration>::scel_range(const std::string &scelname) const {
       auto &res = m_scel_range.find(scelname)->second;
       return boost::make_iterator_range(_iterator(res.first), _iterator(std::next(res.second)));
     }
 
     /// Update m_name_to_config and m_scel_range after performing an insert or emplace
-    std::pair<jsonConfigDatabase::iterator, bool>
-    jsonConfigDatabase::_on_insert_or_emplace(std::pair<base_iterator, bool> &result) {
+    std::pair<jsonDatabase<Configuration>::iterator, bool>
+    jsonDatabase<Configuration>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result) {
 
       if(result.second) {
 
