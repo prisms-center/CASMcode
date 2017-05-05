@@ -3,6 +3,7 @@
 
 #include "casm/app/APICommand.hh"
 #include "casm/completer/Handlers.hh"
+#include "casm/app/DBInterface.hh"
 
 namespace CASM {
   namespace Completer {
@@ -81,6 +82,7 @@ namespace CASM {
   private:
     mutable std::unique_ptr<QueryCommandImplBase> m_impl;
   };
+
 }
 
 #endif

@@ -6,7 +6,8 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/casm_io/json_io/container.hh"
-#include "casm/database/DatabaseHandler.hh"
+#include "casm/database/DatabaseHandler_impl.hh"
+#include "casm/database/Database_impl.hh"
 #include "casm/database/DatabaseTypeDefs.hh"
 
 namespace CASM {

@@ -59,7 +59,7 @@ namespace CASM {
 
   /// \brief Standardizes parsing casm enum input options to make an ScelEnumProps
   ScelEnumProps make_enumerator_scel_enum_props(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
 
@@ -72,7 +72,7 @@ namespace CASM {
   ///
   /// See SuperConfigEnum for example documentation
   std::unique_ptr<SupercellEnumerator<Lattice> > make_enumerator_superlat_enum(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
 
@@ -93,7 +93,7 @@ namespace CASM {
   ///
   /// See ConfigEnumAllOccupations for example documentation
   std::unique_ptr<ScelEnum> make_enumerator_scel_enum(
-    PrimClex &primclex,
+    const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOption &enum_opt) {
 

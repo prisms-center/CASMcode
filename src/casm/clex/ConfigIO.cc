@@ -11,7 +11,7 @@
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/database/Selected.hh"
+#include "casm/database/Selected_impl.hh"
 
 namespace CASM {
 
@@ -360,7 +360,7 @@ namespace CASM {
 
     GenericConfigFormatter<Index> scel_size() {
       return GenericConfigFormatter<Index>("scel_size",
-                                           "Supercell volume, given as the integer number of unit cells",
+                                           "Supercell volume, given as the integer number of primitive cells",
       [](const Configuration & config)->Index {
         return config.supercell().volume();
       });
@@ -581,6 +581,13 @@ namespace CASM {
       relaxed_magmom_per_species()
     );
 
+    return dict;
+  }
+
+  template<>
+  VectorXiAttributeDictionary<Configuration> make_vectorxi_dictionary<Configuration>() {
+    using namespace ConfigIO;
+    VectorXiAttributeDictionary<Configuration> dict;
     return dict;
   }
 

@@ -14,7 +14,7 @@ namespace CASM {
       template<typename SymOpIterator, typename SymOpOutputIterator>
       SymOpOutputIterator operator()(const Supercell &scel, SymOpIterator begin, SymOpIterator end, SymOpOutputIterator result) {
         double tol = scel.primclex().crystallography_tol();
-        return scel.real_super_lattice().find_invariant_subgroup(begin, end, result, tol);
+        return scel.lattice().find_invariant_subgroup(begin, end, result, tol);
       }
     };
 

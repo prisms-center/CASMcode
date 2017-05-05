@@ -1,22 +1,11 @@
+#include <boost/range/iterator_range.hpp>
+#include "casm/clex/PrimClex.hh"
+#include "casm/database/Import.hh"
+#include "casm/database/DatabaseTypeTraits.hh"
+#include "casm/database/DatabaseDefs.hh"
 #include "casm/database/DatabaseTypes.hh"
-//#include "casm/clex/PrimClex.hh"
-//#include "casm/database/DatabaseTypeTraits.hh"
-//#include "casm/database/DatabaseDefs.hh"
-//#include "casm/clex/ConfigurationTraits.hh"
 
 namespace CASM {
-
-  template<>
-  struct traits<Configuration> {
-    static const std::string name;
-    static const std::string short_name;
-  };
-
-  template<>
-  struct traits<Supercell> {
-    static const std::string name;
-    static const std::string short_name;
-  };
 
   namespace DB {
     namespace {
@@ -39,21 +28,53 @@ namespace CASM {
         }
       };
 
-      /*
-      struct ConfigCountImpl {
-        ConfigCountImpl(std::string _scelname, const PrimClex &_primclex) :
+      struct ConfigCountImplBase {
+        ConfigCountImplBase(std::string _scelname, const PrimClex &_primclex) :
           count(0), scelname(_scelname), primclex(_primclex) {}
-
-        template<typename T>
-        void eval() {
-          count += primclex.db<T>().scel_range(scelname).size();
-        }
 
         Index count;
         std::string scelname;
         const PrimClex &primclex;
       };
-      */
+
+      struct ConfigCountImpl : public ConfigCountImplBase {
+        using ConfigCountImplBase::ConfigCountImplBase;
+
+        template<typename T>
+        void eval() {
+          count += primclex.db<T>().scel_range(scelname).size();
+        }
+      };
+
+      struct ConfigCalculatedCountImpl : public ConfigCountImplBase {
+        using ConfigCountImplBase::ConfigCountImplBase;
+
+        template<typename T>
+        void eval() {
+          for(const auto &config : primclex.db<T>().scel_range(scelname)) {
+            if(is_calculated(config)) {
+              count += 1;
+            }
+          }
+        }
+      };
+
+      struct ConfigDataCountImpl : public ConfigCountImplBase {
+        using ConfigCountImplBase::ConfigCountImplBase;
+
+        template<typename T>
+        void eval() {
+          ConfigData<T> data(primclex, null_log());
+          auto it = primclex.db<T>().scel_range(scelname).begin();
+          auto end = primclex.db<T>().scel_range(scelname).end();
+          for(; it != end; ++it) {
+            if(data.has_existing_data_or_files(it.name())) {
+              count += 1;
+            }
+          }
+        }
+      };
+
     }
 
     const std::set<std::string> &types() {
@@ -89,15 +110,59 @@ namespace CASM {
       return _config_types_short;
     };
 
-    /*
-        /// Total number of configs of all types in a supercell
-        Index config_count(std::string scelname, const PrimClex &primclex) {
-          ConfigCountImpl f(scelname, primclex);
-          if(primclex.db<Supercell>().count(scelname)) {
-            for_each_config_type(f);
-          }
-          return f.count;
-        }
-    */
+    /// Total number of configs of all types in a supercell
+    Index config_count(std::string scelname, const PrimClex &primclex) {
+      ConfigCountImpl f(scelname, primclex);
+      if(primclex.db<Supercell>().count(scelname)) {
+        for_each_config_type(f);
+      }
+      return f.count;
+    }
+
+    /// Total number of configs of a specific type in a supercell
+    Index config_count(std::string configtype, std::string scelname, const PrimClex &primclex) {
+      ConfigCountImpl f(scelname, primclex);
+      if(primclex.db<Supercell>().count(scelname)) {
+        for_config_type(configtype, f);
+      }
+      return f.count;
+    }
+
+    /// Total number of calculated configs of all types in a supercell
+    Index config_calculated_count(std::string scelname, const PrimClex &primclex) {
+      ConfigCalculatedCountImpl f(scelname, primclex);
+      if(primclex.db<Supercell>().count(scelname)) {
+        for_each_config_type(f);
+      }
+      return f.count;
+    }
+
+    /// Total number of calculated configs of a specific type in a supercell
+    Index config_calculated_count(std::string configtype, std::string scelname, const PrimClex &primclex) {
+      ConfigCalculatedCountImpl f(scelname, primclex);
+      if(primclex.db<Supercell>().count(scelname)) {
+        for_config_type(configtype, f);
+      }
+      return f.count;
+    }
+
+    /// Total number of configs w/ data or files of all types in a supercell
+    Index config_data_count(std::string scelname, const PrimClex &primclex) {
+      ConfigDataCountImpl f(scelname, primclex);
+      if(primclex.db<Supercell>().count(scelname)) {
+        for_each_config_type(f);
+      }
+      return f.count;
+    }
+
+    /// Total number of configs w/ data or files of a specific type in a supercell
+    Index config_data_count(std::string configtype, std::string scelname, const PrimClex &primclex) {
+      ConfigDataCountImpl f(scelname, primclex);
+      if(primclex.db<Supercell>().count(scelname)) {
+        for_config_type(configtype, f);
+      }
+      return f.count;
+    }
+
   }
 }

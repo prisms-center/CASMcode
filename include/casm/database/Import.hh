@@ -140,7 +140,8 @@ namespace CASM {
 
     public:
 
-      ConfigDataGeneric(const PrimClex &_primclex, Log &_file_log);
+      ConfigDataGeneric(const PrimClex &_primclex, Log &_file_log) :
+        m_primclex(_primclex), m_file_log(_file_log) {}
 
       const PrimClex &primclex() const {
         return m_primclex;
@@ -400,7 +401,7 @@ namespace CASM {
         const std::map<std::string, ConfigIO::ImportData> &data_results) const override;
     };
 
-    // To be specialized for ConfigType (no default implemenation exists)
+    // To be specialized for ConfigType (default implemenation exists for ConfigTypes)
     template<typename ConfigType>
     class Remove : public RemoveT<ConfigType> {
     public:

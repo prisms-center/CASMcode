@@ -11,7 +11,7 @@
 #include "casm/app/rm.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/PropertiesDatabase.hh"
-#include "casm/database/Selection.hh"
+#include "casm/database/Selection_impl.hh"
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {
@@ -655,69 +655,6 @@ namespace CASM {
       };
 
       return dict.parse(col);
-    }
-
-
-    // --- Remove<Configuration> ---
-
-    Remove<Configuration>::Remove(
-      const PrimClex &primclex,
-      fs::path report_dir,
-      Log &_file_log) :
-      RemoveT(primclex, report_dir, _file_log) {}
-
-    const std::string Remove<Configuration>::desc =
-
-      "Remove enumerated configurations and calculation results: \n\n"
-
-      "  'casm remove --type config' options: \n\n"
-
-      "  - Configurations to be erased can be specified with the --names and \n"
-      "    --selection options.\n"
-      "  - Use without additional options to only remove enumerated configurations\n"
-      "    that do not have any associated files or data.\n"
-      "  - Use --data (-d) to remove data only, not enumerated configurations. \n"
-      "  - Use --force (-f) to remove data and enumerated configurations. \n"
-      "  - Use --dry-run (-n) to do a \"dry-run\". \n\n"
-
-      "  After removing a configuration it may be re-enumerated but will have a new\n"
-      "  index because indices will not be repeated.\n\n";
-
-
-    int Remove<Configuration>::run(
-      const PrimClex &primclex,
-      const Completer::RmOption &opt) {
-
-      // -- read selection --
-      DB::Selection<Configuration> selection(primclex, opt.selection_path());
-      for(const auto &name : opt.name_strs()) {
-        if(primclex.db<Configuration>().count(name)) {
-          selection.data()[name] = true;
-        }
-        else {
-          std::stringstream msg;
-          msg << "Invalid Configuration name: " << name;
-          throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
-        }
-      }
-
-      // get remove report_dir, check if exists, and create new report_dir.i if necessary
-      fs::path report_dir = primclex.dir().root_dir() / "remove_report";
-      report_dir = create_report_dir(report_dir);
-
-      // -- erase --
-      Remove<Configuration> f(primclex, report_dir, primclex.log());
-
-      if(opt.force()) {
-        f.erase_all(selection, opt.dry_run());
-      }
-      else if(opt.data()) {
-        f.erase_data(selection, opt.dry_run());
-      }
-      else {
-        f.erase(selection, opt.dry_run());
-      }
-      return 0;
     }
 
   }

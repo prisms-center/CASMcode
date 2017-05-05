@@ -41,6 +41,32 @@ namespace CASM {
     }
   }
 
+  /*
+    namespace DB {
+
+      template<>
+      class MakeInterfaceData<RmCommand> {
+
+        template<typename DataObject>
+        static InterfaceData<DataObject> eval(
+          const RmCommand& cmd,
+          InterfaceData<DataObject>& data) {
+
+          // set 'selected' column
+          if(cmd.in_project() && cmd.vm.count("selection")) {
+            data.m_sel.resize(1);
+            data.m_sel[0].reset(
+              new Selection<DataObject>(
+                cmd.primclex().db<DataObject>(),
+                cmd.opt().selection_path()));
+            data.m_ss << cmd.opt().selection_path();
+          }
+        }
+
+      };
+
+    }
+  */
 
   // -- RmCommandImplBase --------------------------------------------
 
@@ -102,7 +128,6 @@ namespace CASM {
   /// 'casm query' implementation, templated by type
   ///
   /// This:
-  /// - holds a DB::InterfaceData object which stores dictionaries and selections
   /// - provides the implementation for 'help' (i.e. print allowed import options)
   /// - provides the implementation for 'run' (i.e. perform query)
   ///

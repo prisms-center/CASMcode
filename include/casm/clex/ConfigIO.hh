@@ -20,10 +20,6 @@ namespace CASM {
   template<typename DataObject>
   class Norm;
 
-  ///
-  template<bool IsConst>
-  class ConfigSelection;
-
   /**  \addtogroup ConfigIO
        @{
    */
@@ -64,7 +60,7 @@ namespace CASM {
   /// Contains ConfigIO classes and functions
   namespace ConfigIO {
 
-    class Selected;
+    template<typename T> class Selected;
 
     /// \brief Template alias for Configuration formatters of specified ValueType
     ///

@@ -368,7 +368,7 @@ namespace CASM {
     /// described by the formatter.
     /// Ex: "clex(formation_energy)" or "comp(a)", "comp(c)"
     ///
-    /// - Default uses col_header
+    /// - Default uses short_header
     virtual std::vector<std::string> col_header(const DataObject &_template_obj) const {
       return std::vector<std::string> {this->short_header(_template_obj)};
     }

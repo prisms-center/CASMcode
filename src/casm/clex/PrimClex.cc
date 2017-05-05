@@ -17,7 +17,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/EnumeratorHandler.hh"
 #include "casm/app/QueryHandler.hh"
-#include "casm/database/DatabaseHandler.hh"
+#include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 

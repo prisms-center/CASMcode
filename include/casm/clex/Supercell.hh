@@ -115,11 +115,11 @@ namespace CASM {
 
     const Eigen::Matrix3i &transf_mat() const;
 
-    const Lattice &real_super_lattice() const;
+    /// \brief The super lattice
+    const Lattice &lattice() const;
 
     /// \brief Returns the SuperNeighborList
     const SuperNeighborList &nlist() const;
-
 
     // Populates m_factor_group (if necessary) and returns it.
     const SymGroup &factor_group() const;
@@ -191,7 +191,7 @@ namespace CASM {
     const PrimClex *m_primclex;
 
     // lattice of supercell in real space
-    Lattice m_real_super_lattice;
+    Lattice m_lattice;
 
     // superlattice arithmetic
     PrimGrid m_prim_grid;

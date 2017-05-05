@@ -1,5 +1,5 @@
 #include "casm/app/query.hh"
-#include "casm/app/DBInterface.hh"
+#include "casm/app/DBInterface_impl.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler.hh"
 #include "casm/clex/PrimClex.hh"
@@ -46,6 +46,7 @@ namespace CASM {
     }
 
   }
+
 
   // -- QueryCommandImplBase --------------------------------------------
 

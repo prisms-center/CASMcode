@@ -26,6 +26,8 @@ BOOST_PP_SEQ_FOR_EACH(DB_CLASS_DECL, _, CASM_DB_TYPES)
 
 namespace CASM {
 
+  class PrimClex;
+
   namespace DB {
 
     // List of all types stored in a Database
@@ -72,7 +74,22 @@ namespace CASM {
     const std::set<std::string> &config_types_short();
 
     /// Total number of configs of all types in a supercell
-    Index config_count(std::string scelname);
+    Index config_count(std::string scelname, const PrimClex &primclex);
+
+    /// Total number of configs of a specific type in a supercell
+    Index config_count(std::string configtype, std::string scelname, const PrimClex &primclex);
+
+    /// Total number of calculated configs of all types in a supercell
+    Index config_calculated_count(std::string scelname, const PrimClex &primclex);
+
+    /// Total number of calculated configs of a specific type in a supercell
+    Index config_calculated_count(std::string configtype, std::string scelname, const PrimClex &primclex);
+
+    /// Total number of configs w/ data or files of all types in a supercell
+    Index config_data_count(std::string scelname, const PrimClex &primclex);
+
+    /// Total number of configs w/ data or files of a specific type in a supercell
+    Index config_data_count(std::string configtype, std::string scelname, const PrimClex &primclex);
 
   }
 }

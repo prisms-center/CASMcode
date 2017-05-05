@@ -1,10 +1,11 @@
 #include "casm/clex/RemoveSupercell.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/database/Selection.hh"
-#include "casm/database/ScelDatabase.hh"
 #include "casm/app/rm.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/database/Selection_impl.hh"
+#include "casm/database/ScelDatabase.hh"
 #include "casm/database/DatabaseTypes.hh"
+#include "casm/database/Import.hh"
 #include "casm/database/ConfigImport.hh"
 #include "casm/database/DatabaseDefs.hh"
 

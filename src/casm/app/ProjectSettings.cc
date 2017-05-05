@@ -249,6 +249,11 @@ namespace CASM {
     return m_name;
   }
 
+  /// \brief Access current properties required for a ConfigType to be considered calculated
+  std::map<std::string, std::vector<std::string>> &ProjectSettings::properties() {
+    return m_properties;
+  }
+
   /// \brief Access current properties
   std::vector<std::string> &ProjectSettings::properties(std::string config_type_name) {
     if(!DB::config_types().count(config_type_name)) {

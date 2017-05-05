@@ -3,6 +3,8 @@
 
 #include "casm/database/Import.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/app/import.hh"
+#include "casm/clex/PrimClex.hh"
 
 namespace CASM {
   namespace DB {
@@ -17,7 +19,7 @@ namespace CASM {
       const Completer::ImportOption &import_opt,
       OutputIterator result) {
 
-      po::variables_map &vm = import_opt.vm();
+      const po::variables_map &vm = import_opt.vm();
       Index count = 0;
       bool missing_files(false);
 
@@ -88,7 +90,7 @@ namespace CASM {
     /// \brief Path to default calctype training_data directory for config
     template<typename _ConfigType>
     fs::path ConfigData<_ConfigType>::calc_dir(const std::string configname) const {
-      return m_primclex.dir().calc_dir<ConfigType>(configname);
+      return primclex().dir().template calc_dir<ConfigType>(configname);
     }
 
 
@@ -99,20 +101,20 @@ namespace CASM {
     void ImportT<_ConfigType>::import(PathIterator begin, PathIterator end) {
 
       // vector of Mapping results, may be >1 per input if primitive and non-primitive
-      std::vector<Result> results;
+      std::vector<ConfigIO::Result> results;
 
       // map of data import results
       //   'configname' -> 'preexisting?, copy_data?, copy_more?, last_import
-      std::map<std::string, ImportData> data_results;
+      std::map<std::string, ConfigIO::ImportData> data_results;
 
       auto it = begin;
       for(; it != end; ++it) {
 
-        std::vector<Result> tvec;
+        std::vector<ConfigIO::Result> tvec;
 
         // Outputs one or more mapping results from the structure located at specied path
         //   See _import documentation for more.
-        m_structure_mapper.map(*it, db_config().end(), std::back_inserter(tvec));
+        m_structure_mapper.map(*it, this->db_config().end(), std::back_inserter(tvec));
 
         for(auto &res : tvec) {
 
@@ -158,10 +160,10 @@ namespace CASM {
           // store info about data import, note if preexisting data before this batch
           auto data_res_it = data_results.find(from);
           if(data_res_it == data_results.end()) {
-            data_res_it = data_res_it.insert({from, ImportResult()}).first;
-            data_res_it->preexisting = _has_existing_data_or_files(from);
+            data_res_it = data_results.insert(std::make_pair(from, ConfigIO::Result())).first;
+            data_res_it->second.preexisting = has_existing_data_or_files(from);
           }
-          ImportResult &data_res = data_res_it->second;
+          ConfigIO::Result &data_res = data_res_it->second;
 
           // if preexisting data, do not import new data unless overwrite option set
           if(data_res.preexisting && !m_overwrite) {
@@ -170,7 +172,7 @@ namespace CASM {
 
           // if existing data (could be from this batch), check if score would
           //   be improved
-          if(db_props().find_via_to(to) != db_props().end()) {
+          if(this->db_props().find_via_to(to) != db_props().end()) {
             double score = db_props().score(res.mapped_props);
             double best_score = db_props().best_score(to);
             if(score >= best_score) {
@@ -557,6 +559,71 @@ namespace CASM {
       }
       file.close();
     }
+
+    // --- Remove<Configuration> ---
+
+    template<typename ConfigType>
+    Remove<ConfigType>::Remove(
+      const PrimClex &primclex,
+      fs::path report_dir,
+      Log &_file_log) :
+      RemoveT(primclex, report_dir, _file_log) {}
+
+    template<typename ConfigType>
+    const std::string Remove<ConfigType>::desc = std::string("") +
+
+                                                 "Remove enumerated configurations and calculation results: \n\n"
+
+                                                 "  'casm remove --type " + traits<ConfigType>::short_name + "' options: \n\n"
+
+                                                 "  - Configurations to be erased can be specified with the --names and \n"
+                                                 "    --selection options.\n"
+                                                 "  - Use without additional options to only remove enumerated configurations\n"
+                                                 "    that do not have any associated files or data.\n"
+                                                 "  - Use --data (-d) to remove data only, not enumerated configurations. \n"
+                                                 "  - Use --force (-f) to remove data and enumerated configurations. \n"
+                                                 "  - Use --dry-run (-n) to do a \"dry-run\". \n\n"
+
+                                                 "  After removing a configuration it may be re-enumerated but will have a new\n"
+                                                 "  index because indices will not be repeated.\n\n";
+
+    template<typename ConfigType>
+    int Remove<ConfigType>::run(
+      const PrimClex &primclex,
+      const Completer::RmOption &opt) {
+
+      // -- read selection --
+      DB::Selection<ConfigType> selection(primclex, opt.selection_path());
+      for(const auto &name : opt.name_strs()) {
+        if(primclex.db<ConfigType>().count(name)) {
+          selection.data()[name] = true;
+        }
+        else {
+          std::stringstream msg;
+          msg << "Invalid Configuration name: " << name;
+          throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
+        }
+      }
+
+      // get remove report_dir, check if exists, and create new report_dir.i if necessary
+      fs::path report_dir = primclex.dir().root_dir() / "remove_report";
+      report_dir = create_report_dir(report_dir);
+
+      // -- erase --
+      Remove<ConfigType> f(primclex, report_dir, primclex.log());
+
+      if(opt.force()) {
+        f.erase_all(selection, opt.dry_run());
+      }
+      else if(opt.data()) {
+        f.erase_data(selection, opt.dry_run());
+      }
+      else {
+        f.erase(selection, opt.dry_run());
+      }
+      return 0;
+    }
+
   }
 }
 

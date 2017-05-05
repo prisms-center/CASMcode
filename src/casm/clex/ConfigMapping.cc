@@ -168,7 +168,7 @@ namespace CASM {
 
       if(valid_mapping) {
 
-        mapped_lat = (hint_ptr->supercell()).real_super_lattice();
+        mapped_lat = (hint_ptr->supercell()).lattice();
         bc = ConfigMapping::basis_cost(suggested_configdof, result.structure.basis.size());
         sc = ConfigMapping::strain_cost(
                result.structure.lattice(),
@@ -237,7 +237,7 @@ namespace CASM {
 
     if(hint_ptr != nullptr) {
       const Supercell &scel(hint_ptr->supercell());
-      if(mapped_lat.is_equivalent(scel.real_super_lattice(), m_tol)) {
+      if(mapped_lat.is_equivalent(scel.lattice(), m_tol)) {
         if(m_strict_flag && relaxed_occ.occupation() == (hint_ptr->configdof()).occupation()) {
           // mapped config is "hint" config
           is_new_config = false;
@@ -747,7 +747,7 @@ namespace CASM {
         mapped_lat = imposed_lat;
       }
       // This finds first decomposition:
-      //            struc.lattice() =  deformation*(supercell_list[import_scel_index].real_super_lattice())*equiv_mat
+      //            struc.lattice() =  deformation*(supercell_list[import_scel_index].lattice())*equiv_mat
       //   that has cost function less than best_cost
       strain_cost = lw * strainmap.next_mapping_better_than(best_cost).strain_cost();
     }
@@ -791,7 +791,7 @@ namespace CASM {
      * Finding the cost_matrix given the relaxed structure
      * This will always return a square matrix with the extra elements
      * reflecting the vacancies specified in the ideal supercell.
-     * Costs are calculated in context of the real_super_lattice.
+     * Costs are calculated in context of the lattice.
      */
     //****************************************************************************************************************
 
@@ -811,7 +811,7 @@ namespace CASM {
       // loop through all the sites of the structure
       Index j = 0;
       for(; j < rstruc.basis.size(); j++) {
-        Coordinate current_relaxed_coord(rstruc.basis[j].frac(), scel.real_super_lattice(), FRAC);
+        Coordinate current_relaxed_coord(rstruc.basis[j].frac(), scel.lattice(), FRAC);
         current_relaxed_coord.cart() += trans.cart();
         // loop through all the sites in the supercell
         inf_counter = 0;
@@ -878,7 +878,7 @@ namespace CASM {
       // loop through all the sites of the structure
       Index j;
       for(j = 0; j < rstruc.basis.size(); j++) {
-        Coordinate current_relaxed_coord(rstruc.basis[j].frac(), scel.real_super_lattice(), FRAC);
+        Coordinate current_relaxed_coord(rstruc.basis[j].frac(), scel.lattice(), FRAC);
         current_relaxed_coord.cart() += trans.cart();
         // loop through all the sites in the supercell
         inf_counter = 0;
@@ -941,9 +941,9 @@ namespace CASM {
                             std::vector<Index> &best_assignments,
                             const bool translate_flag,
                             const double _tol) {
-      Eigen::Matrix3d deformation = rstruc.lattice().lat_column_mat() * scel.real_super_lattice().inv_lat_column_mat();
+      Eigen::Matrix3d deformation = rstruc.lattice().lat_column_mat() * scel.lattice().inv_lat_column_mat();
       // un-deform rstruc
-      rstruc.set_lattice(scel.real_super_lattice(), FRAC);
+      rstruc.set_lattice(scel.lattice(), FRAC);
       return preconditioned_struc_to_configdof(scel, rstruc, deformation, config_dof, best_assignments, translate_flag, _tol);
     }
 
@@ -960,7 +960,7 @@ namespace CASM {
                             std::vector<Index> &best_assignments,
                             const bool translate_flag,
                             const double _tol) {
-      const Lattice &mapped_lat(config.supercell().real_super_lattice());
+      const Lattice &mapped_lat(config.supercell().lattice());
       Eigen::Matrix3d deformation = rstruc.lattice().lat_column_mat() * mapped_lat.inv_lat_column_mat();
       // un-deform rstruc
       rstruc.set_lattice(mapped_lat, FRAC);
@@ -1195,7 +1195,7 @@ namespace CASM {
         if(n > 0 && config.mol(0).name != rstruc.basis[n - 1].occ_name())
           continue;
 
-        Coordinate translation(scel.real_super_lattice());
+        Coordinate translation(scel.lattice());
 
         // Always try the non-translated case (n==0), in case it gives best result
         // Also try translating first basis atom onto each chemically compatible site of PRIM (n>0)

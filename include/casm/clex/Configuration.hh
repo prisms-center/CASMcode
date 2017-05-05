@@ -411,7 +411,7 @@ namespace CASM {
     ///        Configuration unchanged
     std::vector<PermuteIterator> factor_group() const;
 
-    /// \brief Get symmetric multiplicity (i.e., size of configuration's factor_group)
+    /// \brief Get symmetric multiplicity, excluding translations
     int multiplicity() const;
 
     /// \brief Returns the point group that leaves the Configuration unchanged

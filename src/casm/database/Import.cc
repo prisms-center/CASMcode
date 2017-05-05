@@ -1,12 +1,31 @@
-#include "casm/database/Import.hh"
+#include "casm/database/Import_impl.hh"
 
 #include <ctime>
 #include "casm/app/ProjectSettings.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/external/boost.hh"
+#include "casm/database/ConfigTypeTraits.hh"
+
+typedef std::back_insert_iterator<std::vector<CASM::fs::path> > vector_path_back_inserter;
+
+// explicit template instantiations
+#define INST_Import(r, data, type) \
+template class ConfigData<type>; \
+template class StructureMap<type>; \
+template class Remove<type>; \
 
 namespace CASM {
   namespace DB {
+
+    template std::pair<vector_path_back_inserter, int>
+    construct_pos_paths<vector_path_back_inserter>(
+      const PrimClex &primclex,
+      const Completer::ImportOption &import_opt,
+      vector_path_back_inserter result);
+
+
+    BOOST_PP_SEQ_FOR_EACH(INST_Import, _, CASM_DB_CONFIG_TYPES)
+
 
     /// Create a new report directory to avoid overwriting existing results
     fs::path create_report_dir(fs::path report_dir) {

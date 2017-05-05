@@ -5,6 +5,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/clex/ChemicalReference_impl.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/ConfigDatabase.hh"

@@ -1,5 +1,10 @@
 #include "casm/database/Selection.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/casm_io/SafeOfstream.hh"
+#include "casm/casm_io/stream_io/container.hh"
+#include "casm/database/DatabaseDefs.hh"
+#include "casm/database/Selected.hh"
 
 namespace CASM {
 
@@ -107,7 +112,7 @@ namespace CASM {
             ValueDataStream<bool> select_stream;
             if(select_stream.fail()) {
               err_log() << "Warning: Unable to apply criteria \"" << criteria
-                        << "\" to " << QueryTraits<ObjType>::name << " " << it.name()
+                        << "\" to " << traits<ObjType>::name << " " << it.name()
                         << "\n";
               continue;
             }
@@ -119,7 +124,7 @@ namespace CASM {
       catch(std::exception &e) {
         throw std::runtime_error(
           std::string("Failure to select using criteria \"") + criteria +
-          "\" for " << QueryTraits<ObjType>::name + "\n"
+          "\" for " + traits<ObjType>::name + "\n"
           "    Reason:  " + e.what());
       }
     }
@@ -141,7 +146,7 @@ namespace CASM {
             ValueDataStream<bool> select_stream;
             if(select_stream.fail()) {
               err_log() << "Warning: Unable to apply criteria \"" << criteria
-                        << "\" to " << QueryTraits<ObjType>::name << " " <<  it.name()
+                        << "\" to " << traits<ObjType>::name << " " <<  it.name()
                         << "\n";
               continue;
             }
@@ -163,7 +168,7 @@ namespace CASM {
       catch(std::exception &e) {
         throw std::runtime_error(
           std::string("Failure to select using criteria \"") + criteria +
-          "\" for " + QueryTraits<ObjType>::name + "\n"
+          "\" for " + traits<ObjType>::name + "\n"
           "    Reason:  " + e.what());
       }
     }
@@ -217,7 +222,7 @@ namespace CASM {
         for(; it != it_end; ++it) {
 
           // for compatibility, include "configname" also
-          if(it.name() == "name" || it.name() == "name_or_alias" || it.name() == "configname") {
+          if(it.name() == "name" || it.name() == "alias" || it.name() == "name_or_alias" || it.name() == "configname") {
             tname = db().name(it->get<std::string>());
             contains_name = true;
           }
@@ -255,7 +260,7 @@ namespace CASM {
 
       DataFormatter<ObjType> tformat(
         name_or_alias<ObjType>(),
-        datum_formatter_alias("selected", selected_in(*this)));
+        datum_formatter_alias("selected", Selected<ObjType>(*this)));
 
       tformat.append(_dict.parse(m_col_headers));
 
@@ -278,7 +283,7 @@ namespace CASM {
 
       DataFormatter<ObjType> tformat(
         name_or_alias<ObjType>(),
-        datum_formatter_alias("selected", selected_in(*this)));
+        datum_formatter_alias("selected", Selected<ObjType>(*this)));
 
       tformat.append(_dict.parse(m_col_headers));
 

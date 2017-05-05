@@ -165,7 +165,7 @@ namespace CASM {
     /// - assumes all species are atomic
     ///
     PrintPOSCAR::PrintPOSCAR(const Configuration &config) :
-      vaspio_impl::PrintPOSCARBase(config.supercell().real_super_lattice()) {
+      vaspio_impl::PrintPOSCARBase(config.supercell().lattice()) {
 
       set_title(config.name());
 
@@ -200,7 +200,7 @@ namespace CASM {
     /// - assumes all species are atomic
     ///
     PrintPOSCAR::PrintPOSCAR(const Supercell &scel, const ConfigDoF &configdof) :
-      vaspio_impl::PrintPOSCARBase(scel.real_super_lattice()) {
+      vaspio_impl::PrintPOSCARBase(scel.lattice()) {
 
       // get occupant name for site i in configdof
       auto occ_name = [&](int i) {

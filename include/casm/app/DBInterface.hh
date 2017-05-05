@@ -8,6 +8,8 @@
 namespace CASM {
 
   class APICommandBase;
+  class QueryCommand;
+  class SelectCommand;
 
   namespace DB {
 
@@ -37,57 +39,8 @@ namespace CASM {
     class InterfaceData {
     public:
 
-      template<typename CommandType>
-      InterfaceData(const CommandType &cmd);
-
-      /*
-      InterfaceData(SelectCommand& cmd) {
-
-        // set 'selected' column
-        if(cmd.in_project() && cmd.vm.count("selections")) {
-          m_sel.resize(cmd.opt().selection_paths().size());
-          for(int i=0; i < cmd.opt().selection_paths().size(); ++i) {
-            if(i!=0) {
-              m_ss << ", ";
-            }
-            m_ss << cmd.opt().selection_paths()[i];
-            m_sel[i].reset(
-              new Selection<DataObject>(
-                cmd.primclex().db<DataObject>(),
-                cmd.opt().selection_paths()[i]));
-          }
-
-          cmd.primclex().settings().query_handler<DataObject>().set_selected(sel(0));
-        }
-      }
-
-      InterfaceData(QueryCommand& cmd) {
-
-        // set 'selected' column
-        if(cmd.in_project() && cmd.vm().count("selection")) {
-          m_sel.resize(1);
-          m_sel[0].reset(
-            new Selection<DataObject>(
-              cmd.primclex().db<DataObject>(),
-              cmd.opt().selection_path()));
-          m_ss << cmd.opt().selection_path();
-          cmd.primclex().settings().query_handler<DataObject>().set_selected(sel(0));
-        }
-      }
-
-      InterfaceData(RmCommand& cmd) {
-        // set 'selected' column
-        if(cmd.in_project() && cmd.vm.count("selection")) {
-            m_sel.resize(1);
-            m_sel[0].reset(
-              new Selection<DataObject>(
-                cmd.primclex().db<DataObject>(),
-                cmd.opt().selection_path()));
-            m_ss << cmd.opt().selection_path();
-          }
-        }
-      }
-      */
+      InterfaceData(const QueryCommand &cmd);
+      InterfaceData(const SelectCommand &cmd);
 
       const DataFormatterDictionary<DataObject> &dict() const {
         return *m_dict;
@@ -110,6 +63,7 @@ namespace CASM {
       }
 
     private:
+
 
       void _make_dict(const APICommandBase &cmd);
 

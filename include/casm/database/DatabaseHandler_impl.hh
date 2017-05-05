@@ -5,6 +5,7 @@
 #include "casm/CASM_global_definitions.hh"
 #include "casm/database/DatabaseHandler.hh"
 #include "casm/database/Database.hh"
+#include "casm/database/DatabaseDefs.hh"
 
 namespace CASM {
   namespace DB {

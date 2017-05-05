@@ -55,6 +55,7 @@ namespace CASM {
     }
   }
 
+
   // -- class ImportCommandImplBase --------------------------------------------
 
   /// Defaults used if DataObject type doesn't matter or not given
@@ -114,7 +115,6 @@ namespace CASM {
   /// 'casm query' implementation, templated by type
   ///
   /// This:
-  /// - holds a DB::InterfaceData object which stores dictionaries and selections
   /// - provides the implementation for 'help' (i.e. print allowed import options)
   /// - provides the implementation for 'run' (i.e. perform query)
   ///

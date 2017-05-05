@@ -441,7 +441,7 @@ namespace CASM {
 
       // create super structure matching supercell
       BasicStructure<Site> primstruc = mc.supercell().prim();
-      BasicStructure<Site> superstruc = primstruc.create_superstruc(mc.supercell().real_super_lattice());
+      BasicStructure<Site> superstruc = primstruc.create_superstruc(mc.supercell().lattice());
 
       if(mc.settings().write_json()) {
 

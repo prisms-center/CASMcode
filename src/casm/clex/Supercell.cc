@@ -21,8 +21,8 @@ namespace CASM {
   //Copy constructor is needed for proper initialization of m_prim_grid
   Supercell::Supercell(const Supercell &RHS) :
     m_primclex(RHS.m_primclex),
-    m_real_super_lattice(RHS.m_real_super_lattice),
-    m_prim_grid((*m_primclex).prim().lattice(), m_real_super_lattice, (*m_primclex).prim().basis.size()),
+    m_lattice(RHS.m_lattice),
+    m_prim_grid((*m_primclex).prim().lattice(), m_lattice, (*m_primclex).prim().basis.size()),
     m_nlist(RHS.m_nlist),
     m_canonical(nullptr),
     m_transf_mat(RHS.m_transf_mat) {
@@ -30,8 +30,8 @@ namespace CASM {
 
   Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
     m_primclex(_prim),
-    m_real_super_lattice((*m_primclex).prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
-    m_prim_grid((*m_primclex).prim().lattice(), m_real_super_lattice, (*m_primclex).prim().basis.size()),
+    m_lattice((*m_primclex).prim().lattice().lat_column_mat() * transf_mat_init.cast<double>()),
+    m_prim_grid((*m_primclex).prim().lattice(), m_lattice, (*m_primclex).prim().basis.size()),
     m_canonical(nullptr),
     m_transf_mat(transf_mat_init) {
     //    fill_reciprocal_supercell();
@@ -39,9 +39,9 @@ namespace CASM {
 
   Supercell::Supercell(const PrimClex *_prim, const Lattice &superlattice) :
     m_primclex(_prim),
-    m_real_super_lattice(superlattice),
+    m_lattice(superlattice),
     m_canonical(nullptr),
-    m_prim_grid((*m_primclex).prim().lattice(), m_real_super_lattice, (*m_primclex).prim().basis.size()) {
+    m_prim_grid((*m_primclex).prim().lattice(), m_lattice, (*m_primclex).prim().basis.size()) {
 
     auto res = is_supercell(superlattice, prim().lattice(), primclex().settings().crystallography_tol());
     if(!res.first) {
@@ -131,19 +131,19 @@ namespace CASM {
   }
 
   bool Supercell::is_canonical() const {
-    return real_super_lattice().is_canonical(
+    return lattice().is_canonical(
              prim().point_group(),
              primclex().crystallography_tol());
   }
 
   SymOp Supercell::to_canonical() const {
-    return real_super_lattice().to_canonical(
+    return lattice().to_canonical(
              prim().point_group(),
              primclex().crystallography_tol());
   }
 
   SymOp Supercell::from_canonical() const {
-    return real_super_lattice().from_canonical(
+    return lattice().from_canonical(
              prim().point_group(),
              primclex().crystallography_tol());
   }
@@ -179,7 +179,7 @@ namespace CASM {
     const Structure &prim = (*m_primclex).prim();
 
     // create a 'superstruc' that fills '*this'
-    BasicStructure<Site> superstruc = structure_to_config.create_superstruc(m_real_super_lattice);
+    BasicStructure<Site> superstruc = structure_to_config.create_superstruc(m_lattice);
 
     //std::cout << "superstruc:\n";
     //superstruc.print(std::cout);
@@ -244,7 +244,7 @@ namespace CASM {
   ///
   Structure Supercell::superstructure() const {
     // create a 'superstruc' that fills '*this'
-    Structure superstruc = (*m_primclex).prim().create_superstruc(m_real_super_lattice);
+    Structure superstruc = (*m_primclex).prim().create_superstruc(m_lattice);
 
     // sort basis sites so that they agree with config_index_to_bijk
     //   This sorting may not be necessary,
@@ -338,8 +338,8 @@ namespace CASM {
     return m_transf_mat;
   };
 
-  const Lattice &Supercell::real_super_lattice() const {
-    return m_real_super_lattice;
+  const Lattice &Supercell::lattice() const {
+    return m_lattice;
   };
 
   /// \brief Returns the SuperNeighborList
@@ -422,7 +422,7 @@ namespace CASM {
     if(volume() != B.volume()) {
       return volume() < B.volume();
     }
-    return real_super_lattice() < B.real_super_lattice();
+    return lattice() < B.lattice();
   }
 
   /// \brief Insert the canonical form of this into the database
@@ -430,13 +430,13 @@ namespace CASM {
     return primclex().db<Supercell>().emplace(
              m_primclex,
              canonical_equivalent_lattice(
-               real_super_lattice(),
+               lattice(),
                prim().point_group(),
                crystallography_tol()));
   }
 
   ///  Check if a Structure fits in this Supercell
-  ///  - Checks that 'structure'.lattice is supercell of 'real_super_lattice'
+  ///  - Checks that 'structure'.lattice is supercell of 'lattice'
   ///  - Does *NOT* check basis sites
   ///
   bool Supercell::is_supercell_of(const Structure &structure) const {
@@ -445,14 +445,14 @@ namespace CASM {
   };
 
   ///  Check if a Structure fits in this Supercell
-  ///  - Checks that 'structure'.lattice is supercell of 'real_super_lattice'
+  ///  - Checks that 'structure'.lattice is supercell of 'lattice'
   ///  - Does *NOT* check basis sites
   ///
   bool Supercell::is_supercell_of(const Structure &structure, Eigen::Matrix3d &mat) const {
     Structure tstruct = structure;
     SymGroup point_group;
     tstruct.lattice().generate_point_group(point_group);
-    return m_real_super_lattice.is_supercell_of(tstruct.lattice(), point_group, mat);
+    return m_lattice.is_supercell_of(tstruct.lattice(), point_group, mat);
   };
 
   ///  Returns an std::vector<int> consistent with
@@ -481,8 +481,8 @@ namespace CASM {
   }
 
   void Supercell::_generate_factor_group()const {
-    m_real_super_lattice.find_invariant_subgroup(prim().factor_group(), m_factor_group);
-    m_factor_group.set_lattice(m_real_super_lattice);
+    m_lattice.find_invariant_subgroup(prim().factor_group(), m_factor_group);
+    m_factor_group.set_lattice(m_lattice);
     return;
   }
 
@@ -528,7 +528,7 @@ namespace CASM {
   }
 
   Supercell copy_apply(const SymOp &op, const Supercell &scel) {
-    return Supercell(&scel.primclex(), copy_apply(op, scel.real_super_lattice()));
+    return Supercell(&scel.primclex(), copy_apply(op, scel.lattice()));
   }
 
   std::string generate_name(const Eigen::Matrix3i &transf_mat) {

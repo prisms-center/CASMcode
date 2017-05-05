@@ -77,7 +77,7 @@ namespace CASM {
 
     auto check_is_supercell = [&](const Lattice & plat) {
       auto end = primclex.prim().factor_group().end();
-      return is_supercell(unit_cell.real_super_lattice(),
+      return is_supercell(unit_cell.lattice(),
                           plat,
                           primclex.prim().factor_group().begin(),
                           end,
@@ -220,8 +220,8 @@ namespace CASM {
 
     // construct PrimGrid
     m_prim_grid = notstd::make_cloneable<PrimGrid>(
-                    _sub_supercell().real_super_lattice(),
-                    _target_supercell().real_super_lattice()
+                    _sub_supercell().lattice(),
+                    _target_supercell().lattice()
                   );
 
     // initialize 'm_counter' to count over all possible sub-config on

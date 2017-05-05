@@ -32,6 +32,20 @@ namespace CASM {
     }
   };
 
+  /// \brief Eigen::VectorXd container traits
+  template<>
+  struct ContainerTraits<Eigen::VectorXi> {
+    typedef Eigen::VectorXi Container;
+    typedef Eigen::VectorXi::Index size_type;
+    typedef Eigen::VectorXi::Scalar value_type;
+    typedef CASM_TMP::ParenthesesAccess<Container, value_type, size_type> Access;
+
+    /// \brief Return size of container
+    static size_type size(const Eigen::VectorXi &vec) {
+      return vec.size();
+    }
+  };
+
 }
 
 #endif

@@ -5,6 +5,7 @@
 #include "casm/external/boost.hh"
 #include "casm/database/Database.hh"
 #include "casm/casm_io/DataFormatter.hh"
+#include "casm/casm_io/Log.hh"
 
 namespace CASM {
   namespace DB {

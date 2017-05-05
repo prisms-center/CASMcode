@@ -297,14 +297,14 @@ namespace CASM {
       // collect supercells from --scelnames
       if(vm.count("scelnames")) {
         for(auto it = scelname.begin(); it != scelname.end(); ++it) {
-          lat[*it] = primclex.db<Supercell>().find(*it)->real_super_lattice();
+          lat[*it] = primclex.db<Supercell>().find(*it)->lattice();
         }
       }
 
       // collect configs from --confignames
       if(vm.count("confignames")) {
         for(auto it = configname.begin(); it != configname.end(); ++it) {
-          config_lat[*it] = lat[*it] = primclex.db<Configuration>().find(*it)->supercell().real_super_lattice();
+          config_lat[*it] = lat[*it] = primclex.db<Configuration>().find(*it)->supercell().lattice();
         }
       }
 
@@ -319,7 +319,7 @@ namespace CASM {
         for(const auto &p : config_path) {
           DB::Selection<Configuration> selection(primclex, p);
           for(const auto &config : selection.selected()) {
-            config_lat[config.name()] = lat[config.name()] = config.supercell().real_super_lattice();
+            config_lat[config.name()] = lat[config.name()] = config.supercell().lattice();
           }
         }
 
@@ -370,7 +370,7 @@ namespace CASM {
       }
 
       const Supercell &superduper_scel = *Supercell(&primclex, superduper).insert().first;
-      superduper = superduper_scel.real_super_lattice();
+      superduper = superduper_scel.lattice();
 
       args.log << "--- Lattices as column vector matrices ---\n\n";
 
@@ -476,14 +476,14 @@ namespace CASM {
 
         args.log << "  Unit cell: " << scelname[0] << "\n\n";
 
-        args.log << "  Unit cell lattice: \n" << scel.real_super_lattice().lat_column_mat() << "\n\n";
+        args.log << "  Unit cell lattice: \n" << scel.lattice().lat_column_mat() << "\n\n";
 
-        Lattice super_lat = make_supercell(scel.real_super_lattice(), T);
+        Lattice super_lat = make_supercell(scel.lattice(), T);
         const Supercell &super_scel = *Supercell(&primclex, super_lat).insert().first;
 
         args.log << "  Add supercell: " << super_scel.name() << "\n\n";
 
-        args.log << "  Supercell lattice: \n" << super_scel.real_super_lattice().lat_column_mat() << "\n\n";
+        args.log << "  Supercell lattice: \n" << super_scel.lattice().lat_column_mat() << "\n\n";
 
         args.log << "  Transformation matrix: \n" << super_scel.transf_mat() << "\n\n";
 
@@ -617,7 +617,7 @@ namespace CASM {
       Lattice unit_lat = primclex.prim().lattice();
 
       if(vm.count("unitcell")) {
-        unit_lat = primclex.db<Supercell>().find(unitscelname)->real_super_lattice();
+        unit_lat = primclex.db<Supercell>().find(unitscelname)->lattice();
       }
 
       Lattice super_lat;
@@ -626,7 +626,7 @@ namespace CASM {
         super_lat = BasicStructure<Site>(abs_structfile).lattice();
       }
       else if(vm.count("scelnames")) {
-        super_lat = primclex.db<Supercell>().find(unitscelname)->real_super_lattice();
+        super_lat = primclex.db<Supercell>().find(unitscelname)->lattice();
       }
       else {
         args.log << "Error in 'casm super --get-transf-mat'. No --structure or --scelnames given." << std::endl << std::endl;

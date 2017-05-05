@@ -326,7 +326,7 @@ namespace CASM {
     Configuration tconfig {*this};
     /*
     std::cout << "T: \n" << tconfig.supercell().transf_mat() << std::endl;
-    std::cout << "L: \n" << tconfig.supercell().real_super_lattice().lat_column_mat() << std::endl;
+    std::cout << "L: \n" << tconfig.supercell().lattice().lat_column_mat() << std::endl;
     */
 
     std::unique_ptr<Supercell> next_scel;
@@ -348,7 +348,7 @@ namespace CASM {
       next_scel.reset(new Supercell(&primclex(), new_lat));
       /*
       std::cout << "T: \n" << next_scel->transf_mat() << std::endl;
-      std::cout << "L: \n" << next_scel->real_super_lattice().lat_column_mat() << std::endl;
+      std::cout << "L: \n" << next_scel->lattice().lat_column_mat() << std::endl;
       */
 
       // create a sub configuration in the new supercell
@@ -536,7 +536,7 @@ namespace CASM {
   Configuration Configuration::fill_supercell(const Supercell &scel, const SymGroup &g) const {
 
     auto res = is_supercell(
-                 scel.real_super_lattice(),
+                 scel.lattice(),
                  ideal_lattice(),
                  g.begin(),
                  g.end(),
@@ -617,7 +617,7 @@ namespace CASM {
   //********** ACCESSORS ***********
 
   const Lattice &Configuration::ideal_lattice()const {
-    return supercell().real_super_lattice();
+    return supercell().lattice();
   }
 
   //*********************************************************************************
@@ -704,7 +704,9 @@ namespace CASM {
   }
 
   //*********************************************************************************
-  /// \brief Get symmetric multiplicity (i.e., size of configuration's factor_group)
+  /// \brief Get symmetric multiplicity, excluding translations
+  ///
+  /// - equal to prim.factor_group().size() / this->factor_group().size()
   int Configuration::multiplicity() const {
     if(!cache().contains("multiplicity")) {
       this->factor_group();
@@ -1446,6 +1448,28 @@ namespace CASM {
     return _config.calc_properties().contains("relaxed_mag_basis");
   }
 
+  fs::path calc_properties_path(const PrimClex &primclex, const std::string &configname) {
+    return primclex.dir().calculated_properties(configname, primclex.settings().default_clex().calctype);
+  }
+  fs::path calc_properties_path(const Configuration &config) {
+    return calc_properties_path(config.primclex(), config.name());
+  }
+
+  fs::path pos_path(const PrimClex &primclex, const std::string &configname) {
+    return primclex.dir().POS(configname);
+  }
+  fs::path pos_path(const Configuration &config) {
+    return pos_path(config.primclex(), config.name());
+  }
+
+  fs::path calc_status_path(const PrimClex &primclex, const std::string &configname) {
+    return primclex.dir().calc_status(configname, primclex.settings().default_clex().calctype);
+  }
+  fs::path calc_status_path(const Configuration &config) {
+    return calc_status_path(config.primclex(), config.name());
+  }
+
+
   /// \brief Constructor
   ///
   /// \param _scel Supercell to be filled
@@ -1518,8 +1542,8 @@ namespace CASM {
   ///        can be used to fill the Supercell
   const SymOp *FillSupercell::find_symop(const Configuration &motif, double tol) {
 
-    const Lattice &motif_lat = motif.supercell().real_super_lattice();
-    const Lattice &scel_lat = m_scel->real_super_lattice();
+    const Lattice &motif_lat = motif.supercell().lattice();
+    const Lattice &scel_lat = m_scel->lattice();
     auto begin = m_scel->primclex().prim().factor_group().begin();
     auto end = m_scel->primclex().prim().factor_group().end();
 
@@ -1547,11 +1571,11 @@ namespace CASM {
     m_motif_scel = &_motif_scel;
 
     // ------- site dof ----------
-    Lattice oriented_motif_lat = copy_apply(*m_op, m_motif_scel->real_super_lattice());
+    Lattice oriented_motif_lat = copy_apply(*m_op, m_motif_scel->lattice());
 
     // Create a PrimGrid linking the prim and the oriented motif each to the supercell
     // So we can tile the decoration of the motif config onto the supercell correctly
-    PrimGrid prim_grid(oriented_motif_lat, m_scel->real_super_lattice());
+    PrimGrid prim_grid(oriented_motif_lat, m_scel->lattice());
 
     //std::cout << "m_op->matrix(): \n" << m_op->matrix() << std::endl;
     //std::cout << "m_op->tau(): \n" << m_op->tau() << std::endl;

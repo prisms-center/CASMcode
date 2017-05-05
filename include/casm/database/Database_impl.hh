@@ -11,7 +11,7 @@ namespace CASM {
 
     /// For setting an alias
     template<typename ValueType>
-    std::pair<ValDatabase<ValueType>::iterator, bool>
+    std::pair<typename ValDatabase<ValueType>::iterator, bool>
     ValDatabase<ValueType>::set_alias(const std::string &name_or_alias, const std::string &alias) {
 
       auto it = find(name_or_alias);
