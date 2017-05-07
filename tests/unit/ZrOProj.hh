@@ -4,7 +4,6 @@
 #include "Proj.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/ConfigIterator.hh"
 
 using namespace CASM;
 
@@ -143,7 +142,7 @@ namespace test {
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);
-        BOOST_CHECK_MESSAGE(primclex.supercell_list().size() == 147, m_p.gets());
+        BOOST_CHECK_MESSAGE(primclex.db<Supercell>().size() == 147, m_p.gets());
       }
 
       {
@@ -151,7 +150,7 @@ namespace test {
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);
-        BOOST_CHECK_MESSAGE(std::distance(primclex.config_begin(), primclex.config_end()) == 5763, m_p.gets());
+        BOOST_CHECK_MESSAGE(primclex.db<Configuration>().size() == 5763, m_p.gets());
       }
     }
 

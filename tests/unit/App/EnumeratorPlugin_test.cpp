@@ -9,6 +9,9 @@
 
 #include "Common.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/app/APICommand.hh"
+#include "casm/app/enum.hh"
+
 
 using namespace CASM;
 
@@ -45,7 +48,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   auto check = [&](std::string str) {
     CommandArgs args(str, &primclex, primclex.dir().root_dir(), primclex);
-    BOOST_CHECK(!enum_command(args));
+    BOOST_CHECK(!run_api_command<EnumCommand>(args));
   };
 
   check(R"(enum -h)");
@@ -54,7 +57,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   check(R"(enum --method TestEnum -i '{"supercells": {"max": 4}}')");
 
-  BOOST_CHECK_EQUAL(std::distance(primclex.config_begin(), primclex.config_end()), 336);
+  BOOST_CHECK_EQUAL(primclex.db<Configuration>().size(), 336);
 
 }
 

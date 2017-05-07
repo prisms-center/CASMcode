@@ -1,14 +1,16 @@
 #ifndef CASMtest_FCCTernaryProj
 #define CASMtest_FCCTernaryProj
 
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+
 #include "Proj.hh"
 #include "casm/CASM_global_definitions.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/ConfigIterator.hh"
-
+#include "casm/database/DatabaseDefs.hh"
 
 using namespace CASM;
 
@@ -203,7 +205,7 @@ namespace test {
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);
-        BOOST_CHECK_MESSAGE(primclex.supercell_list().size() == 87, m_p.gets());
+        BOOST_CHECK_MESSAGE(primclex.db<Supercell>().size() == 87, m_p.gets());
       }
 
       {
@@ -211,7 +213,7 @@ namespace test {
         std::stringstream ss;
         Log log(ss);
         PrimClex primclex(dir, log);
-        BOOST_CHECK_MESSAGE(std::distance(primclex.config_begin(), primclex.config_end()) == 1081, m_p.gets());
+        BOOST_CHECK_MESSAGE(primclex.db<Configuration>().size() == 1081, m_p.gets());
       }
     }
 
