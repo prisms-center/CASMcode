@@ -10,8 +10,23 @@
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/database/DatabaseTypeTraits.hh"
 
 namespace CASM {
+
+  namespace {
+    struct SetPropsImpl {
+      typedef std::map<std::string, std::vector<std::string> > map_type;
+      ProjectSettings &set;
+      map_type props;
+      SetPropsImpl(ProjectSettings &_set, const map_type &_props):
+        set(_set), props(_props) {}
+      template<typename T> void eval() {
+        set.properties<T>() = props[traits<T>::name];
+      }
+    };
+  }
+
 
   /// \brief Construct a CASM ProjectBuilder
   ///
@@ -84,7 +99,7 @@ namespace CASM {
           "  Could not set " + type);
       };
 
-      set.properties() = m_properties;
+      DB::for_each_config_type(SetPropsImpl(set, m_properties));
 
       ClexDescription desc("formation_energy", "formation_energy", "default", "default", "default", "default");
       set.new_clex(desc);

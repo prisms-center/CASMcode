@@ -1,7 +1,8 @@
 
 #include "casm/monte_carlo/canonical/Canonical.hh"
 #include "casm/monte_carlo/MonteCarlo_impl.hh"
-#include "casm/monte_carlo/MonteIO.hh"
+#include "casm/monte_carlo/MonteIO_impl.hh"
+#include "casm/monte_carlo/canonical/CanonicalIO.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/misc/algorithm.hh"
 

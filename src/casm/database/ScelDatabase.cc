@@ -36,11 +36,6 @@ namespace CASM {
       return _iterator(m_name_to_scel.find(this->name(name_or_alias))->second);
     }
 
-    Database<Supercell>::iterator
-    Database<Supercell>::find(const Supercell &obj) const {
-      return _iterator(m_scel_list.find(obj));
-    }
-
     std::pair<Database<Supercell>::iterator, bool>
     Database<Supercell>::_on_insert_or_emplace(
       const std::pair<base_iterator, bool> &result) {

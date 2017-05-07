@@ -293,7 +293,9 @@ namespace CASM {
       }
 
       virtual iterator find(const std::string &name_or_alias) const = 0;
-      virtual iterator find(const ValueType &obj) const = 0;
+      iterator find(const ValueType &obj) const {
+        return find(obj.name());
+      }
 
       virtual void commit() = 0;
 
@@ -303,13 +305,9 @@ namespace CASM {
 
       void write_aliases();
 
-      /// Only ValDatabase<ValueType> is allowed to do a const name change
-      void set_name(const ValueType &obj, std::string name) const {
-        obj.set_name(name);
-      }
-
       /// Only ValDatabase<ValueType> is allowed to do a const id change
-      void set_id(const ValueType &obj, Index id) const {
+      template<typename _ValueType>
+      void set_id(const _ValueType &obj, Index id) const {
         obj.set_id(id);
       }
 

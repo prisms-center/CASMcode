@@ -26,7 +26,7 @@ namespace CASM {
 
       typedef typename CASM_TMP::ConstSwitch <
       std::is_same<BaseIterator, std::map<std::string, bool>::const_iterator>::value,
-          bool & > bool_reference;
+          bool > bool_type;
 
       /// Default constructor (equals end)
       SelectionIterator() {}
@@ -37,7 +37,7 @@ namespace CASM {
       }
 
       /// \brief Reference to value 'is_selected'
-      bool_reference is_selected() {
+      bool_type &is_selected() {
         return m_it->second;
       }
 

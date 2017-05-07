@@ -5,24 +5,26 @@
 
 namespace CASM {
   namespace Monte {
-    std::string _help() {
-      std::string s =
-        "For CanonicalConditions, expect a JSON object of form:\n"
-        "  {\n"
-        "    \"comp\": {                  // option 1: parameteric composition object\n"
-        "      \"a\" : 0.3,\n"
-        "      ...\n"
-        "    },\n"
-        "    \"comp\": [0.3, 0.2, ...],   // option 2: parameteric composition array\n"
-        "    \"comp_n\": {                // option 3: mol per prim composition object\n"
-        "      \"A\" : 1.2,\n"
-        "      ...\n"
-        "    },\n"
-        "    \"comp_n\": [1.2, 0.3, ...], // option 4: mol per prim composition array\n"
-        "    \"temperature\" : 350.0,\n"
-        "    \"tolerance\" : 0.001\n"
-        "  }\n";
-      return s;
+    namespace {
+      std::string _help() {
+        std::string s =
+          "For CanonicalConditions, expect a JSON object of form:\n"
+          "  {\n"
+          "    \"comp\": {                  // option 1: parameteric composition object\n"
+          "      \"a\" : 0.3,\n"
+          "      ...\n"
+          "    },\n"
+          "    \"comp\": [0.3, 0.2, ...],   // option 2: parameteric composition array\n"
+          "    \"comp_n\": {                // option 3: mol per prim composition object\n"
+          "      \"A\" : 1.2,\n"
+          "      ...\n"
+          "    },\n"
+          "    \"comp_n\": [1.2, 0.3, ...], // option 4: mol per prim composition array\n"
+          "    \"temperature\" : 350.0,\n"
+          "    \"tolerance\" : 0.001\n"
+          "  }\n";
+        return s;
+      }
     }
 
     /// \brief Construct EquilibriumMonteSettings by reading a settings JSON file

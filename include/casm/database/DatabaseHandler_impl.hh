@@ -106,14 +106,6 @@ namespace CASM {
       return static_cast<PropertiesDatabase &>(res->second->open());
     }
 
-
-    /// Close all databases
-    void DatabaseHandler::close() {
-      for(auto &db : m_db) {
-        db.second->close();
-      }
-    }
-
     template<typename T>
     DatabaseHandler::map_type::iterator DatabaseHandler::_find(std::string db_name) const {
       auto key = std::make_pair(traits<T>::name, db_name);

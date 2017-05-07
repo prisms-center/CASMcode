@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include <boost/filesystem/path.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include "casm/CASM_global_definitions.hh"
 

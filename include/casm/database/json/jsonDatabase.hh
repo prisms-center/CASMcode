@@ -113,8 +113,6 @@ namespace CASM {
 
       iterator find(const std::string &name_or_alias) const override;
 
-      iterator find(const Configuration &obj) const override;
-
       /// Range of Configuration in a particular supecell
       boost::iterator_range<iterator> scel_range(const std::string &scelname) const override;
 

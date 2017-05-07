@@ -8,7 +8,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clusterography/IntegralCluster.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/clex/PrimClex_impl.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/crystallography/Structure.hh"

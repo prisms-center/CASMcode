@@ -454,3 +454,15 @@ namespace CASM {
 
 }
 
+#include "casm/database/DatabaseTypeTraits.hh"
+
+// explicit instantiations
+#define INST_DirectoryStructure_all(r, data, type) \
+template fs::path DirectoryStructure::query_plugins<type>() const; \
+template fs::path DirectoryStructure::master_selection<type>() const; \
+template fs::path DirectoryStructure::aliases<type>() const;
+
+namespace CASM {
+  BOOST_PP_SEQ_FOR_EACH(INST_DirectoryStructure_all, _, CASM_DB_TYPES)
+}
+

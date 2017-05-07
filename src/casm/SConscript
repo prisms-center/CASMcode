@@ -51,7 +51,7 @@ for name, dirs in casm_lib_src_grp.iteritems():
   env['CASM_SOBJ'] = env['CASM_SOBJ'] + all_sobj
 
 # other files:
-files = ['CASM_global_definitions.cc']
+files = ['CASM_global_definitions.cc', 'CASM_global_enum.cc']
 
 for file in files:
   sobj = env.SharedObject(file, CPPPATH=cpppath)

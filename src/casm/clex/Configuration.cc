@@ -609,7 +609,7 @@ namespace CASM {
     }
     props["data_timestamp"] = fs::last_write_time(filepath);
 
-    const auto &prop_vec = primclex.settings().properties(traits<Configuration>::name);
+    const auto &prop_vec = primclex.settings().properties<Configuration>();
     bool is_calc = is_calculated(jsonParser(filepath), prop_vec);
     return std::make_tuple(props, true, is_calc);
   }
@@ -1338,7 +1338,7 @@ namespace CASM {
 
   /// \brief Return true if all current properties have been been calculated for the configuration
   bool is_calculated(const Configuration &config) {
-    const auto &props = config.primclex().settings().properties(traits<Configuration>::name);
+    const auto &props = config.primclex().settings().properties<Configuration>();
     return is_calculated(config.calc_properties(), props);
   }
 

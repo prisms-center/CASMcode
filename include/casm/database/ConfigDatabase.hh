@@ -39,10 +39,10 @@ namespace CASM {
 
 
       /// Update record
-      virtual iterator update(const Configuration &config);
+      virtual iterator update(const Configuration &config) = 0;
 
       /// Range of Configuration in a particular supecell
-      virtual boost::iterator_range<iterator> scel_range(const std::string &scelname) const;
+      virtual boost::iterator_range<iterator> scel_range(const std::string &scelname) const = 0;
 
     };
 

@@ -67,7 +67,7 @@ namespace CASM {
   }
 
   /// \brief Print to json as [b, i, j, k]
-  inline jsonParser &to_json(const UnitCellCoord &ucc_val, jsonParser &fill_json) {
+  jsonParser &to_json(const UnitCellCoord &ucc_val, jsonParser &fill_json) {
     fill_json.put_array();
     fill_json.push_back(ucc_val.sublat());
     fill_json.push_back(ucc_val.unitcell()(0));

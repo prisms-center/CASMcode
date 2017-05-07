@@ -5,6 +5,7 @@
 // explicit template instantiations
 #define INST_Remove(r, data, type) \
 template class Remove<type>; \
+template class RemoveT<type>; \
 
 namespace CASM {
   namespace DB {

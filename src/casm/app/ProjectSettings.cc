@@ -122,10 +122,10 @@ namespace CASM {
         fs::ifstream file(m_dir.project_settings());
         jsonParser settings(file);
 
-        if(settings.contains("curr_properties")) { // deprecated
+        if(settings.contains("curr_properties")) { // deprecated after v0.2.X
           from_json(m_properties, settings["curr_properties"]);
         }
-        else {
+        else { // v0.3+
           from_json(m_properties, settings["properties"]);
         }
 
@@ -249,13 +249,10 @@ namespace CASM {
     return m_name;
   }
 
-  /// \brief Access current properties required for a ConfigType to be considered calculated
-  std::map<std::string, std::vector<std::string>> &ProjectSettings::properties() {
-    return m_properties;
-  }
-
   /// \brief Access current properties
-  std::vector<std::string> &ProjectSettings::properties(std::string config_type_name) {
+  template<typename DataObject>
+  std::vector<std::string> &ProjectSettings::properties() {
+    std::string config_type_name = traits<DataObject>::name;
     if(!DB::config_types().count(config_type_name)) {
       std::stringstream msg;
       msg << "Unrecognized config type: " << config_type_name;
@@ -515,8 +512,9 @@ namespace CASM {
   // ** Change current settings **
 
   /// \brief const Access current properties
-  const std::vector<std::string> &ProjectSettings::properties(std::string config_type_name) const {
-    return m_properties.find(config_type_name)->second;
+  template<typename DataObject>
+  const std::vector<std::string> &ProjectSettings::properties() const {
+    return const_cast<ProjectSettings &>(*this).properties<DataObject>();
   }
 
 
@@ -799,4 +797,22 @@ namespace CASM {
   }
 
 }
+
+// explicit instantiations
+#include "casm/database/DatabaseTypeTraits.hh"
+
+#define INST_ProjectSettings_all(r, data, type) \
+template QueryHandler<type> &ProjectSettings::query_handler<type>(); \
+template const QueryHandler<type> &ProjectSettings::query_handler<type>() const;
+
+#define INST_ProjectSettings_config(r, data, type) \
+template std::vector<std::string> &ProjectSettings::properties<type>(); \
+template const std::vector<std::string> &ProjectSettings::properties<type>() const;
+
+namespace CASM {
+  BOOST_PP_SEQ_FOR_EACH(INST_ProjectSettings_all, _, CASM_DB_TYPES)
+  BOOST_PP_SEQ_FOR_EACH(INST_ProjectSettings_config, _, CASM_DB_CONFIG_TYPES)
+}
+
+
 

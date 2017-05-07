@@ -33,7 +33,7 @@ namespace CASM {
     /// Compare via A.from < B.from
     ///
     /// - Enforces one calculated properties per starting configuration
-    bool operator<(const MappedProperties &A, const MappedProperties &B) {
+    inline bool operator<(const MappedProperties &A, const MappedProperties &B) {
       return A.from < B.from;
     }
 
@@ -100,7 +100,7 @@ namespace CASM {
 }
 
 namespace CASM {
-  ENUM_IO_DEF(CASM::DB::ScoreMappedProperties::Method)
+  ENUM_IO_DECL(CASM::DB::ScoreMappedProperties::Method)
   ENUM_TRAITS(CASM::DB::ScoreMappedProperties::Method)
 }
 

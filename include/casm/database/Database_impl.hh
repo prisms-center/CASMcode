@@ -4,6 +4,9 @@
 #include "casm/database/Database.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/casm_io/jsonParser.hh"
+#include "casm/casm_io/json_io/container.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/clex/PrimClex.hh"
 
 
 namespace CASM {
@@ -37,7 +40,7 @@ namespace CASM {
         auto old_alias_it = m_name_to_alias.find(name);
         // if there is an old_alias, erase it
         if(old_alias_it != m_name_to_alias.end()) {
-          m_alias_to_name.erase(*old_alias_it);
+          m_alias_to_name.erase(old_alias_it->second);
         }
       }
       // if name_or_alias is old_alias

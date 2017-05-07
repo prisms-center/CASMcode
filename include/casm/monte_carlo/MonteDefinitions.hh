@@ -63,8 +63,8 @@ namespace CASM {
 
   ENUM_TRAITS(Monte::ENUM_SAMPLE_MODE)
 
-
 }
+
 #endif
 
 

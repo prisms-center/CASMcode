@@ -14,9 +14,6 @@ namespace CASM {
   class UnitCellCoord;
   class Molecule;
 
-}
-
-namespace CASM {
   namespace Monte {
 
     /// l: linear index into mc_scel

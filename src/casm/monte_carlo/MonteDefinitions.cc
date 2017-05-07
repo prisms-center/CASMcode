@@ -11,8 +11,9 @@ namespace CASM {
     {Monte::ENSEMBLE::Canonical, {"Canonical", "canonical"} }
   };
 
-  ENUM_IO_DEF(CASM::Monte::ENSEMBLE)
-
+  namespace Monte {
+    ENUM_IO_DEF(CASM::Monte::ENSEMBLE)
+  }
 
   const std::string traits<Monte::METHOD>::name = "method";
 
@@ -21,8 +22,9 @@ namespace CASM {
     {Monte::METHOD::LTE1, {"LTE1", "lte1"} }
   };
 
-  ENUM_IO_DEF(CASM::Monte::METHOD)
-
+  namespace Monte {
+    ENUM_IO_DEF(CASM::Monte::METHOD)
+  }
 
   const std::string traits<Monte::SAMPLE_MODE>::name = "sample_by";
 
@@ -31,8 +33,9 @@ namespace CASM {
     {Monte::SAMPLE_MODE::PASS, {"Pass", "pass"} }
   };
 
-  ENUM_IO_DEF(CASM::Monte::SAMPLE_MODE)
-
+  namespace Monte {
+    ENUM_IO_DEF(CASM::Monte::SAMPLE_MODE)
+  }
 
   const std::string traits<Monte::DRIVE_MODE>::name = "mode";
 
@@ -41,8 +44,9 @@ namespace CASM {
     {Monte::DRIVE_MODE::CUSTOM, {"Custom", "custom"} }
   };
 
-  ENUM_IO_DEF(CASM::Monte::DRIVE_MODE)
-
+  namespace Monte {
+    ENUM_IO_DEF(CASM::Monte::DRIVE_MODE)
+  }
 
   const std::string traits<Monte::ENUM_SAMPLE_MODE>::name = "sample_mode";
 
@@ -51,6 +55,7 @@ namespace CASM {
     {Monte::ENUM_SAMPLE_MODE::ON_SAMPLE, {"on_sample"} }
   };
 
-  ENUM_IO_DEF(CASM::Monte::ENUM_SAMPLE_MODE)
-
+  namespace Monte {
+    ENUM_IO_DEF(CASM::Monte::ENUM_SAMPLE_MODE)
+  }
 }

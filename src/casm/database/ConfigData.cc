@@ -227,6 +227,11 @@ namespace CASM {
       m_primclex(_primclex), m_file_log(_file_log) {}
 
     /// \brief Path to default calctype training_data directory for config
+    Database<Supercell> &ConfigDataGeneric::db_supercell() const {
+      return primclex().db<Supercell>();
+    }
+
+    /// \brief Path to default calctype training_data directory for config
     fs::path ConfigDataGeneric::calc_dir(const std::string configname) const {
       return primclex().dir().configuration_calc_dir(configname,
                                                      primclex().settings().default_clex().calctype);

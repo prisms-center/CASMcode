@@ -2,7 +2,10 @@
 #define CASM_GrandCanonicalSettings_impl
 
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
+#include "casm/casm_io/stream_io/container.hh"
 #include "casm/app/QueryHandler.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
   namespace Monte {
@@ -458,5 +461,6 @@ namespace CASM {
 
     }
   }
+}
 
 #endif

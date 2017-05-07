@@ -57,8 +57,7 @@ namespace CASM {
       iterator erase(iterator pos) override;
 
       iterator find(const std::string &name_or_alias) const override;
-
-      iterator find(const Supercell &obj) const override;
+      using ValDatabase<Supercell>::find;
 
     protected:
 

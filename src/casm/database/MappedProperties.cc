@@ -13,7 +13,7 @@ namespace CASM {
     {DB::ScoreMappedProperties::Method::direct_selection, {"direct_selection"} }
   };
 
-  ENUM_IO_DECL(CASM::DB::ScoreMappedProperties::Method)
+  ENUM_IO_DEF(CASM::DB::ScoreMappedProperties::Method)
 
 }
 

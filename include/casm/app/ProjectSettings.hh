@@ -70,7 +70,8 @@ namespace CASM {
     }
 
     /// \brief const Access current properties required for a ConfigType to be considered calculated
-    const std::vector<std::string> &properties(std::string config_type_name) const;
+    template<typename DataObject>
+    const std::vector<std::string> &properties() const;
 
 
     const std::map<std::string, ClexDescription> &cluster_expansions() const;
@@ -197,10 +198,8 @@ namespace CASM {
     // ** Change current settings **
 
     /// \brief Access current properties required for a ConfigType to be considered calculated
-    std::map<std::string, std::vector<std::string>> &properties();
-
-    /// \brief Access current properties required for a ConfigType to be considered calculated
-    std::vector<std::string> &properties(std::string config_type_name);
+    template<typename DataObject>
+    std::vector<std::string> &properties();
 
 
     /// \brief Set neighbor list weight matrix (will delete existing Clexulator
@@ -277,10 +276,6 @@ namespace CASM {
 
     /// \brief initialize default compiler options
     void _load_default_options();
-
-    /// \brief add aliases to QueryHandler dictionary
-    template<typename DataObject>
-    void _add_aliases();
 
 
     DirectoryStructure m_dir;

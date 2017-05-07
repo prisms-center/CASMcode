@@ -4,6 +4,8 @@
 
 // explicit template instantiations
 #define INST_Selection(r, data, type) \
+template class SelectionIterator<type,Selection<type>::base_iterator>; \
+template class SelectionIterator<type,Selection<type>::base_const_iterator>; \
 template class Selection<type>; \
 
 namespace CASM {

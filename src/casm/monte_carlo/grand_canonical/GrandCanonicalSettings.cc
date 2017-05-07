@@ -7,18 +7,20 @@
 namespace CASM {
   namespace Monte {
 
-    std::string _help() {
-      std::string s =
-        "For GrandCanonicalConditions, expect a JSON object of form:\n"
-        "  {\n"
-        "    \"param_chem_pot\": {\n"
-        "      \"a\" : -1.0,\n"
-        "      ...\n"
-        "    },\n"
-        "    \"temperature\" : 350.0,\n"
-        "    \"tolerance\" : 0.001\n"
-        "  }\n";
-      return s;
+    namespace {
+      std::string _help() {
+        std::string s =
+          "For GrandCanonicalConditions, expect a JSON object of form:\n"
+          "  {\n"
+          "    \"param_chem_pot\": {\n"
+          "      \"a\" : -1.0,\n"
+          "      ...\n"
+          "    },\n"
+          "    \"temperature\" : 350.0,\n"
+          "    \"tolerance\" : 0.001\n"
+          "  }\n";
+        return s;
+      }
     }
 
     /// \brief Construct EquilibriumMonteSettings by reading a settings JSON file

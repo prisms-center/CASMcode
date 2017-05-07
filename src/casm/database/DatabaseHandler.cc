@@ -27,6 +27,13 @@ namespace CASM {
       return *m_primclex;
     }
 
+    /// Close all databases
+    void DatabaseHandler::close() {
+      for(auto &db : m_db) {
+        db.second->close();
+      }
+    }
+
   }
 
 }

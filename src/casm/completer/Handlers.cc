@@ -504,6 +504,10 @@ namespace CASM {
       return;
     }
 
+    const std::vector<std::string> &OptionHandlerBase::name_strs() const {
+      return m_name_strs;
+    }
+
 
     void OptionHandlerBase::add_coordtype_suboption() {
       m_desc.add_options()

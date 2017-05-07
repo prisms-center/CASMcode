@@ -494,7 +494,9 @@ namespace CASM {
 
   };
 
-  auto make_enumerator_map = make_interface_map<Completer::EnumOption>;
+  /// \brief Use to construct an InterfaceMap
+  std::unique_ptr<InterfaceMap<Completer::EnumOption> > make_enumerator_map();
+
   std::unique_ptr<EnumeratorMap> make_standard_enumerator_map();
 
   /** @}*/
