@@ -285,7 +285,7 @@ namespace CASM {
         return this->erase(obj.name());
       }
 
-      virtual size_type count(const std::string &name_or_alias) {
+      virtual size_type count(const std::string &name_or_alias) const {
         if(this->find(name_or_alias) != this->end()) {
           return 1;
         }

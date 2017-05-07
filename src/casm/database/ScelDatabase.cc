@@ -8,7 +8,7 @@ namespace CASM {
     }
 
     Database<Supercell>::iterator Database<Supercell>::end() const {
-      return _iterator(m_scel_list.begin());
+      return _iterator(m_scel_list.end());
     }
 
     Database<Supercell>::size_type Database<Supercell>::size() const {
@@ -33,7 +33,14 @@ namespace CASM {
 
     Database<Supercell>::iterator
     Database<Supercell>::find(const std::string &name_or_alias) const {
-      return _iterator(m_name_to_scel.find(this->name(name_or_alias))->second);
+      std::string name = this->name(name_or_alias);
+      auto it = m_name_to_scel.find(name);
+      if(it == m_name_to_scel.end()) {
+        return _iterator(m_scel_list.end());
+      }
+      else {
+        return _iterator(it->second);
+      }
     }
 
     std::pair<Database<Supercell>::iterator, bool>

@@ -55,6 +55,13 @@ namespace CASM {
       m_dims(dirs.size()),
       m_dirs(dirs) {
 
+      if(begin_volume < 1) {
+        std::string msg = "Error constructing ScelEnumProps: begin_volume < 1";
+        default_err_log().error("Constructing ScelEnumProps");
+        default_err_log() << msg << "\n" << std::endl;
+        throw std::invalid_argument(msg);
+      }
+
       for(int i = 0; i < m_dirs.size(); i++) {
         if(m_dirs[i] != 'a' && m_dirs[i] != 'b' && m_dirs[i] != 'c') {
           std::string msg = "Error constructing ScelEnumProps: an element of dirs != 'a', 'b', or 'c'";
