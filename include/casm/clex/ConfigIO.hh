@@ -60,8 +60,6 @@ namespace CASM {
   /// Contains ConfigIO classes and functions
   namespace ConfigIO {
 
-    template<typename T> class Selected;
-
     /// \brief Template alias for Configuration formatters of specified ValueType
     ///
     template<typename ValueType>

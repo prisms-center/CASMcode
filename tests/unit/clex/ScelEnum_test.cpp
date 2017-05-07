@@ -10,6 +10,8 @@
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/Niggli.hh"
 
 using namespace CASM;
 
@@ -47,17 +49,17 @@ BOOST_AUTO_TEST_CASE(Test1) {
       m_names.push_back(it->name());
 
       Lattice canon_check = canonical_equivalent_lattice(
-                              it->real_super_lattice(),
+                              it->lattice(),
                               primclex.prim().point_group(),
                               primclex.crystallography_tol());
 
       bool check = almost_equal(
-                     it->real_super_lattice().lat_column_mat(),
+                     it->lattice().lat_column_mat(),
                      canon_check.lat_column_mat(),
                      primclex.crystallography_tol());
 
       if(!check) {
-        std::cout << "superlat: \n" << it->real_super_lattice().lat_column_mat() << std::endl;
+        std::cout << "superlat: \n" << it->lattice().lat_column_mat() << std::endl;
         std::cout << "canon_check: \n" << canon_check.lat_column_mat() << std::endl;
       }
 
@@ -72,7 +74,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
 
   // -- use results to Test ScelEnumByName --------------------
   {
-    ScelEnumByNameT<false> e(primclex, m_names.begin(), m_names.end());
+    ScelEnumByName e(primclex, m_names.begin(), m_names.end());
     BOOST_CHECK_EQUAL(e.name(), "ScelEnumByName");
 
     auto it = e.begin();

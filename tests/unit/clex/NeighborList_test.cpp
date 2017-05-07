@@ -8,6 +8,7 @@
 
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clusterography/IntegralCluster.hh"
+#include "casm/crystallography/Structure.hh"
 #include "Common.hh"
 
 using namespace CASM;

@@ -8,6 +8,8 @@
 /// What is being used to test it:
 
 #include "casm/app/ProjectBuilder.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/crystallography/Structure.hh"
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 

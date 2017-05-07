@@ -8,6 +8,8 @@
 
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/clex/NeighborList.hh"
 
 using namespace CASM;
 

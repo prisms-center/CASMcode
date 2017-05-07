@@ -59,6 +59,8 @@ namespace CASM {
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
     explicit PrimClex(const fs::path &_root, const Logging &logging = Logging());
 
+    PrimClex(const PrimClex &) = delete;
+
     ~PrimClex();
 
     /// Reload PrimClex data from settings

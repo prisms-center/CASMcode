@@ -7,6 +7,7 @@
 /// What is being used to test it:
 
 #include "casm/app/ProjectBuilder.hh"
+#include "casm/crystallography/Structure.hh"
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 
@@ -22,10 +23,6 @@ BOOST_AUTO_TEST_CASE(Basics) {
   // Construct from prim
   PrimClex primclex(prim, null_log());
   BOOST_CHECK_EQUAL(primclex.prim().basis.size(), 1);
-
-  // Copy construct
-  PrimClex primclex2(primclex);
-  BOOST_CHECK_EQUAL(primclex2.prim().basis.size(), 1);
 
 }
 
