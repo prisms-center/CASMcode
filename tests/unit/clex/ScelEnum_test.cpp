@@ -3,7 +3,7 @@
 
 /// What is being tested:
 #include "casm/clex/ScelEnum.hh"
-//#include "casm/clex/ScelEnum_impl.hh"
+#include "casm/clex/ScelEnum_impl.hh"
 
 /// What is being used to test it:
 

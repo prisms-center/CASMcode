@@ -5,6 +5,7 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/app/ProjectBuilder.hh"
+#include "casm/app/AppIO.hh"
 
 namespace test {
 

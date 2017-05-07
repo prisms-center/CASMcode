@@ -328,6 +328,8 @@ namespace CASM {
       return d;
     }
 
+    template class BaseHull<bool>;
+    template class BaseHull<double>;
   }
 }
 

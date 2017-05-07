@@ -8,6 +8,8 @@
 #include "casm/container/LinearAlgebra.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SupercellEnumerator.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/clex/ScelEnum.hh"
 #include "ZrOProj.hh"
 
 namespace CASM {
@@ -128,11 +130,12 @@ namespace CASM {
     // enumerate size 5 supercells
     bool verbose = false;
     ScelEnumProps enum_props(5, 6);
-    primclex.generate_supercells(enum_props);
+    ScelEnumByProps scel_enum(primclex, enum_props);
+    for(const auto &scel : scel_enum) {}
 
     // there will be 7
     int scel_list_size = 7;
-    BOOST_CHECK_EQUAL(primclex.supercell_list().size(), scel_list_size);
+    BOOST_CHECK_EQUAL(primclex.db<Supercell>().size(), scel_list_size);
 
     // check if the canonical equivalent lattice of this volume 5 left handed
     // lattice is among the enumerated lattices
@@ -145,8 +148,8 @@ namespace CASM {
     // this should generate the canonical equivalent lattice and add it, but
     // since we already enumerated supercells the supercell list size should
     // not increase
-    Index scel_index = primclex.add_supercell(test_lat);
-    BOOST_CHECK_EQUAL(primclex.supercell_list().size(), scel_list_size);
+    Supercell(&primclex, test_lat).insert();
+    BOOST_CHECK_EQUAL(primclex.db<Supercell>().size(), scel_list_size);
   }
 
   void ZrO_supercell_enum_test2() {
