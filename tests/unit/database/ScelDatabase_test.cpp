@@ -15,7 +15,7 @@
 
 using namespace CASM;
 
-BOOST_AUTO_TEST_SUITE(jsonDatabase_Supercell_Test)
+BOOST_AUTO_TEST_SUITE(ScelDatabase_Test)
 
 BOOST_AUTO_TEST_CASE(Test1) {
 

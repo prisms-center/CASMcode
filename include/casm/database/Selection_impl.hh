@@ -302,9 +302,15 @@ namespace CASM {
     template<typename ObjType>
     bool Selection<ObjType>::write(const DataFormatterDictionary<ObjType> &dict,
                                    bool force,
-                                   const fs::path &out_path,
+                                   const fs::path &_out_path,
                                    bool write_json,
                                    bool only_selected) const {
+
+      fs::path out_path(_out_path);
+      if(out_path.string() == "MASTER") {
+        out_path = primclex().dir().template master_selection<ObjType>();
+        force = true;
+      }
 
       if(fs::exists(out_path) && !force) {
         err_log() << "File " << out_path

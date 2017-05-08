@@ -187,6 +187,7 @@ namespace CASM {
     return query_plugins<DataObject>() / "master_selection";
   }
 
+  /// \brief File containing DataObject name aliases (not query function aliases)
   template<typename DataObject>
   fs::path DirectoryStructure::aliases() const {
     return query_plugins<DataObject>() / "aliases.json";

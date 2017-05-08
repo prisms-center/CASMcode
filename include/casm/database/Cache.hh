@@ -47,7 +47,7 @@ namespace CASM {
       ///   data can be obtained
       /// - Sets 'cache_updated()' to true
       void cache_clear() const {
-        m_cache.put_null();
+        m_cache.put_obj();
         m_cache_updated = true;
       }
 

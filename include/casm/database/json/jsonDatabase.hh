@@ -1,6 +1,7 @@
 #ifndef CASM_jsonDatabase
 #define CASM_jsonDatabase
 
+#include "casm/app/DirectoryStructure.hh"
 #include "casm/database/Database.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/database/ConfigDatabase.hh"
@@ -13,10 +14,7 @@ namespace CASM {
     template<typename DataObject> class jsonDatabase;
     class DatabaseHandler;
 
-    struct jsonDB {
-      static void insert(DatabaseHandler &);
-    };
-
+    struct jsonDB;
   }
 
   template<>
@@ -31,6 +29,27 @@ namespace CASM {
   };
 
   namespace DB {
+
+    struct jsonDB {
+      static void insert(DatabaseHandler &);
+
+      class DirectoryStructure {
+      public:
+        DirectoryStructure(const fs::path _root);
+
+        template<typename DataObject>
+        fs::path obj_list() const;
+
+        template<typename DataObject>
+        fs::path props_list(std::string calctype) const;
+
+      private:
+        std::string _calctype(std::string calctype) const;
+
+        CASM::DirectoryStructure m_dir;
+      };
+    };
+
 
     /// ValueType must have:
     /// - std::string ValueType::name() const

@@ -54,6 +54,25 @@ namespace CASM {
       DB::for_each_config_type(InsertPropsImpl(db_handler));
     }
 
+    jsonDB::DirectoryStructure::DirectoryStructure(const fs::path _root) :
+      m_dir(_root) {}
+
+    template<typename DataObject>
+    fs::path jsonDB::DirectoryStructure::obj_list() const {
+      return m_dir.casm_dir() / traits<jsonDB>::name / (traits<DataObject>::short_name + "_list.json");
+    }
+
+    template<typename DataObject>
+    fs::path jsonDB::DirectoryStructure::props_list(std::string calctype) const {
+      return m_dir.casm_dir() / traits<jsonDB>::name / _calctype(calctype) / (traits<DataObject>::short_name + "_props.json");
+    }
+
+
+    std::string jsonDB::DirectoryStructure::_calctype(std::string calctype) const {
+      return std::string("calctype.") + calctype;
+    }
+
+
     jsonDatabase<Supercell>::jsonDatabase(const PrimClex &_primclex) :
       Database<Supercell>(_primclex),
       m_is_open(false) {}
@@ -64,7 +83,8 @@ namespace CASM {
         return *this;
       }
 
-      if(fs::exists(primclex().dir().scel_list())) {
+      jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
+      if(fs::exists(dir.obj_list<Supercell>())) {
         _read_scel_list();
       }
       else if(fs::exists(primclex().dir().SCEL())) {
@@ -79,13 +99,17 @@ namespace CASM {
 
     void jsonDatabase<Supercell>::commit() {
       jsonParser json;
+      json["version"] = traits<jsonDB>::version;
 
       for(const auto &scel : *this) {
-        json[scel.name()] = scel.transf_mat();
+        json["supercells"][scel.name()] = scel.transf_mat();
       }
 
+      jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
+
       SafeOfstream file;
-      file.open(primclex().dir().scel_list());
+      fs::create_directories(dir.obj_list<Supercell>().parent_path());
+      file.open(dir.obj_list<Supercell>());
       json.print(file.ofstream());
       file.close();
 
@@ -98,7 +122,8 @@ namespace CASM {
     }
 
     void jsonDatabase<Supercell>::_read_scel_list() {
-      jsonParser json(primclex().dir().scel_list());
+      jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
+      jsonParser json(dir.obj_list<Supercell>());
 
       // check json version
       if(!json.contains("version") || json["version"].get<std::string>() != traits<jsonDB>::version) {
@@ -109,13 +134,13 @@ namespace CASM {
           traits<jsonDB>::version);
       }
 
-      if(!json.is_array() || !json.contains("supercells")) {
+      if(!json.is_obj() || !json.contains("supercells")) {
         throw std::runtime_error(
-          std::string("Error invalid format: ") + primclex().dir().scel_list().string());
+          std::string("Error invalid format: ") + dir.obj_list<Supercell>().string());
       }
 
-      auto it = json.begin();
-      auto end = json.end();
+      auto it = json["supercells"].begin();
+      auto end = json["supercells"].end();
       for(; it != end; ++it) {
         Eigen::Matrix3i mat;
         from_json(mat, *it);
@@ -163,16 +188,19 @@ namespace CASM {
         return *this;
       }
 
-      if(!fs::exists(primclex().dir().config_list())) {
+      jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
+      fs::path config_list_path = dir.obj_list<Configuration>();
+
+      if(!fs::exists(config_list_path)) {
         m_is_open = true;
         return *this;
       }
 
-      jsonParser json(primclex().dir().config_list());
+      jsonParser json(config_list_path);
 
       if(!json.is_obj() || !json.contains("supercells")) {
         throw std::runtime_error(
-          std::string("Error invalid format: ") + primclex().dir().config_list().string());
+          std::string("Error invalid format: ") + config_list_path.string());
       }
 
       // check json version
@@ -213,7 +241,8 @@ namespace CASM {
 
     void jsonDatabase<Configuration>::commit() {
 
-      fs::path config_list_path = primclex().dir().config_list();
+      jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
+      fs::path config_list_path = dir.obj_list<Configuration>();
       if(primclex().db_handler().db<Supercell>(traits<jsonDB>::name).size() == 0) {
         fs::remove(config_list_path);
         return;
@@ -235,6 +264,7 @@ namespace CASM {
       json["config_id"] = m_config_id;
 
       SafeOfstream file;
+      fs::create_directories(config_list_path.parent_path());
       file.open(config_list_path);
       json.print(file.ofstream());
       file.close();

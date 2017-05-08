@@ -99,6 +99,7 @@ namespace CASM {
     template<typename DataObject>
     fs::path master_selection() const;
 
+    /// \brief File containing DataObject name aliases (not query function aliases)
     template<typename DataObject>
     fs::path aliases() const;
 
@@ -224,7 +225,7 @@ namespace CASM {
     /// \brief Returns path to eci.out
     fs::path eci_out(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const;
 
-    /// \brief Query aliases file
+    /// \brief Query aliases file (deprecated: now stored in project_settings.json)
     fs::path query_alias() const;
 
 
