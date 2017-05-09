@@ -13,10 +13,12 @@ class Oszicar(object):
 
        Currently, just contains:
            self.E = list of ionic step E0 values
+           self.nelm = list of number of electronic steps in each ionic step
     """
     def __init__(self,filename):
         self.filename = filename
         self.E = []
+        self.num_elm = []
         try:
             self.read()
         except OszicarError as e:
@@ -38,6 +40,8 @@ class Oszicar(object):
         for line in f:
             if re.search("E0",line):
                 self.E.append(float(line.split()[4]))
+                self.num_elm.append(int(prev_line.split()[1]))
+            prev_line = str(line) ## previous line
         f.close()
 
 

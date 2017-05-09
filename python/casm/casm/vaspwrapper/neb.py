@@ -163,7 +163,6 @@ class Neb(object):
         return self.casm_directories.configuration_dir(self.configname, self.calc_subdir)
 
     def setup(self):
-        ## has to implement image making and potcars
         """ Setup initial relaxation run
 
             Uses the following files from the most local .../settings/calctype.name directory:
@@ -203,7 +202,7 @@ class Neb(object):
         for i in range(self.settings["n_images"]+2):
             os.mkdir(os.path.join(self.calcdir, str(i).zfill(2)))
             ## yet to implement a python wrapper for casm api to enumerate image poscars
-            ##for testing
+            ##for testing ##TODO
             shutil.copy(os.path.join(self.configdir, "POSCAR"),
                         os.path.join(os.path.join(self.calcdir, str(i).zfill(2), "POSCAR")))
         #make vasp input files
@@ -294,7 +293,7 @@ class Neb(object):
         #pos = vasp.io.Poscar(os.path.join(self.configdir,"POS"))
         #N = len(pos.basis)
 
-        # determine the number of nodes from settings
+        # determine the number of nodes from settings #TODO
         # still has to implement a option to use either atoms_per_proc or nodes_per_image or images_per_node
         nodes = int(self.n_images) * float(self.settings["nodes_per_image"])
         # construct command to be run
@@ -512,9 +511,8 @@ class Neb(object):
         if self.is_converged():
         # write properties.calc.json
             vaspdir = os.path.join(self.calcdir, "run.final")
-            super_poscarfile = os.path.join(self.calcdir,"run.final","00","POSCAR")
             speciesfile = self.casm_directories.settings_path_crawl("SPECIES", self.configname, self.clex, self.calc_subdir)
-            output = self.properties(vaspdir, super_poscarfile, speciesfile)
+            output = self.properties(vaspdir, True, speciesfile)
             outputfile = os.path.join(self.calcdir, "properties.calc.json")
             with open(outputfile, 'w') as file:
                 file.write(json.dumps(output, file, cls=casm.NoIndentEncoder, indent=4, sort_keys=True))
@@ -529,8 +527,11 @@ class Neb(object):
         calculation = vasp.Neb(self.calcdir, self.run_settings())
         for i in range(len(calculation.rundir)):
             try:
-                vrun = vasp.io.Vasprun( os.path.join(self.calcdir, calculation.rundir[-i-1], "vasprun.xml"))
-                if len(vrun.all_e_0[-1]) >= vrun.nelm:
+                #vrun = vasp.io.Vasprun(os.path.join(self.calcdir, calculation.rundir[-i-1], "vasprun.xml"))
+                vrun_oszicar = vasp.io.Oszicar(os.path.join(self.calcdir, calculation.rundir[-i-1], "01", "OSZICAR"))
+                vrun_nelm = vasp.io.get_incar_tag("NELM", os.path.join(self.calcdir, calculation.rundir[-i-1]))
+                if vrun_nelm == None: vrun_nelm = 60 ##pushing the default. may be write an addon to get it from outcar
+                if len(vrun_oszicar.num_elm[-1]) >= vrun_nelm:
                     print('The last relaxation run (' +
                           os.path.basename(relaxation.rundir[-i-1]) +
                           ') failed to achieve electronic convergence; properties.calc.json will not be written.\n')
@@ -541,10 +542,62 @@ class Neb(object):
                 pass
 
         # Verify that the final static run reached electronic convergence
-        vrun = vasp.io.Vasprun(os.path.join(self.calcdir, "run.final", "vasprun.xml"))
-        if len(vrun.all_e_0[0]) >= vrun.nelm:
+        #vrun = vasp.io.Vasprun(os.path.join(self.calcdir, "run.final", "vasprun.xml"))
+        vrun_oszicar = vasp.io.Oszicar(os.path.join(self.calcdir, "run.final", "01", "OSZICAR"))
+        vrun_nelm = vasp.io.get_incar_tag("NELM", os.path.join(self.calcdir, "run.final"))
+        if vrun_nelm == None: vrun_nelm = 60 ##pushing the default. may be write an addon to get it from outcar
+        if vrun_oszicar.num_elm[-1] >= vrun_nelm:
             print('The final run failed to achieve electronic convergence; properties.calc.json will not be written.\n')
             self.report_status('failed', 'electronic_convergence')
             return False
 
         return True
+
+    @staticmethod
+    def properties(vaspdir, use_poscarfile=False, speciesfile=None):
+        """Report results to properties.calc.json file in configuration directory, after checking for electronic convergence."""
+        final_output = []
+        num_images = vasp.io.get_incar_tag("IMAGES", vaspdir)
+        for img in [str(j).zfill(2) for j in range(1, num_images+1)]:
+            output = dict()
+            #vrun = vasp.io.Vasprun( os.path.join(vaspdir, "vasprun.xml") )
+            vrun_oszicar = vasp.io.Oszicar(os.path.join(vaspdir, img, "OSZICAR"))
+            vrun_outcar = vasp.io.Outcar(os.path.join(vaspdir, img, "OUTCAR"))
+
+            # the calculation is run on the 'sorted' POSCAR, need to report results 'unsorted'
+
+            if (use_poscarfile is not None) and (speciesfile is not None):
+                species_settings = vasp.io.species_settings(speciesfile)
+                super_poscar = vasp.io.Poscar(os.path.join(vaspdir, img, "POSCAR"), species_settings)
+                super_contcar = vasp.io.Poscar(os.path.join(vaspdir, img, "CONTCAR"), species_settings)
+                unsort_dict = super_poscar.unsort_dict()
+            else: # not implemented #TODO
+                # fake unsort_dict (unsort_dict[i] == i)
+                unsort_dict = dict(zip(range(0, len(vrun.basis)), range(0, len(vrun.basis))))
+                super_poscar = vasp.io.Poscar(os.path.join(vaspdir, "POSCAR"))
+
+            # unsort_dict:
+            #   Returns 'unsort_dict', for which: unsorted_dict[orig_index] == sorted_index;
+            #   unsorted_dict[sorted_index] == orig_index
+            #   For example:
+            #     'unsort_dict[0]' returns the index into the unsorted POSCAR of the first atom in the sorted POSCAR
+
+            output["Image_number"] = img
+            output["atom_type"] = super_poscar.type_atoms
+            output["atoms_per_type"] = super_poscar.num_atoms
+            output["coord_mode"] = super_poscar.coord_mode
+
+            # as lists
+            output["relaxed_forces"] = [ None for i in range(len(vrun_outcar.forces))]
+            for i, v in enumerate(vrun_outcar.forces):
+                output["relaxed_forces"][unsort_dict[i] ] = casm.NoIndent(vrun_outcar.forces[i])
+
+            output["relaxed_lattice"] = [casm.NoIndent(list(v)) for v in super_contcar.lattice()]
+            output["relaxed_basis"] = [None for i in range(len(super_contcar.basis))]
+            for i, v in enumerate(super_contcar.basis):
+                output["relaxed_basis"][unsort_dict[i]] = casm.NoIndent(list(super_contcar.basis[i].position))
+
+            output["relaxed_energy"] = vrun_oszicar.E[-1]
+            final_output.append(output)
+
+        return final_output
