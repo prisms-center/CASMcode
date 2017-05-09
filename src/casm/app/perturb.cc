@@ -52,29 +52,29 @@ namespace CASM {
     Completer::PerturbOption perturb_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, perturb_opt.desc()), vm); // can throw
+      po::store(po::parse_command_line(args.argc(), args.argv(), perturb_opt.desc()), vm); // can throw
 
       // --help option
       if(vm.count("help")) {
-        args.log << "\n";
-        args.log << perturb_opt.desc() << std::endl;
+        args.log() << "\n";
+        args.log() << perturb_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        args.log << "\n";
-        args.log << perturb_opt.desc() << std::endl;
+        args.log() << "\n";
+        args.log() << perturb_opt.desc() << std::endl;
 
-        args.log << "DESCRIPTION" << std::endl;
-        args.log << "    Generate supercells that are perturbations of a reference\n";
-        args.log << "    configuration.                                           \n";
-        args.log << "    - using the --cspecs option, a bspecs.json type file is  \n";
-        args.log << "      required to determine the extent of the perturbations. \n";
-        args.log << "      Currently only 'orbit_branch_specs' are supported.     \n";
-        args.log << "    - perturbations are generated about selected reference   \n";
-        args.log << "      configurations                                         \n";
-        args.log << std::endl;
+        args.log() << "DESCRIPTION" << std::endl;
+        args.log() << "    Generate supercells that are perturbations of a reference\n";
+        args.log() << "    configuration.                                           \n";
+        args.log() << "    - using the --cspecs option, a bspecs.json type file is  \n";
+        args.log() << "      required to determine the extent of the perturbations. \n";
+        args.log() << "      Currently only 'orbit_branch_specs' are supported.     \n";
+        args.log() << "    - perturbations are generated about selected reference   \n";
+        args.log() << "      configurations                                         \n";
+        args.log() << std::endl;
 
         return 0;
       }
@@ -86,12 +86,12 @@ namespace CASM {
       selection = perturb_opt.selection_path();
     }
     catch(po::error &e) {
-      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
-      args.err_log << perturb_opt.desc() << std::endl;
+      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log() << perturb_opt.desc() << std::endl;
       return 1;
     }
     catch(std::exception &e) {
-      args.err_log << "Unhandled Exception reached the top of main: "
+      args.err_log() << "Unhandled Exception reached the top of main: "
                    << e.what() << ", application will now exit" << std::endl;
       return 1;
 
@@ -101,8 +101,8 @@ namespace CASM {
 
     const fs::path &root = args.root;
     if(root.empty()) {
-      args.err_log.error("No casm project found");
-      args.err_log << std::endl;
+      args.err_log().error("No casm project found");
+      args.err_log() << std::endl;
       return ERR_NO_PROJ;
     }
 
@@ -154,16 +154,16 @@ namespace CASM {
       mfile << "];\n";
       mfile.close();
       if(num_sub != subgrids.size() || num_sub != mags.size()) {
-        args.log << "Option --strain selected.  Based on crystal symmetry, strains can be independently enumerated in the following subspaces:\n";
+        args.log() << "Option --strain selected.  Based on crystal symmetry, strains can be independently enumerated in the following subspaces:\n";
 
-        static_cast<std::ostream &>(args.log).precision(8);
-        static_cast<std::ostream &>(args.log).flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+        static_cast<std::ostream &>(args.log()).precision(8);
+        static_cast<std::ostream &>(args.log()).flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
         Index nc = 0;
         for(Index i = 0; i < num_sub; i++) {
-          args.log << " Subspace " << i + 1 << ":\n";
-          args.log << wedges[i].transpose() << "\n\n";
+          args.log() << " Subspace " << i + 1 << ":\n";
+          args.log() << wedges[i].transpose() << "\n\n";
         }
-        args.log << "To proceed, you must specify " << num_sub << " values for both '--mag' and '--subgrids'\n";
+        args.log() << "To proceed, you must specify " << num_sub << " values for both '--mag' and '--subgrids'\n";
         return 1;
       }
 
@@ -175,9 +175,9 @@ namespace CASM {
         config_select = ConfigSelection<false>(primclex, selection);
       }
 
-      args.log << "\n***************************\n" << std::endl;
+      args.log() << "\n***************************\n" << std::endl;
 
-      args.log << "Generating perturbations about configurations " << std::endl << std::endl;
+      args.log() << "Generating perturbations about configurations " << std::endl << std::endl;
 
       bool verbose = false;
       bool print = true;
@@ -185,7 +185,7 @@ namespace CASM {
         Index num_before = (it->get_supercell()).get_config_list().size();
         ConfigEnumStrain enumerator(it->get_supercell(), *it, subgrids, mags, strain_mode);
         (it->get_supercell()).add_unique_canon_configs(enumerator.begin(), enumerator.end());
-        args.log << "Enumerated " << (it->get_supercell()).get_config_list().size() - num_before << " deformations.\n";
+        args.log() << "Enumerated " << (it->get_supercell()).get_config_list().size() - num_before << " deformations.\n";
       }
     }
     else if(vm.count("occ")) {
@@ -202,41 +202,41 @@ namespace CASM {
         config_select = ConfigSelection<false>(primclex, selection);
       }
 
-      args.log << "\n***************************\n" << std::endl;
+      args.log() << "\n***************************\n" << std::endl;
 
-      args.log << "Generating perturbations about configurations " << std::endl << std::endl;
+      args.log() << "Generating perturbations about configurations " << std::endl << std::endl;
 
       bool verbose = false;
       bool print = true;
       for(auto it = config_select.selected_config_begin(); it != config_select.selected_config_end(); ++it) {
-        args.log << "  " << it->get_supercell().get_name() << "/" << it->get_id() << std::endl;
+        args.log() << "  " << it->get_supercell().get_name() << "/" << it->get_id() << std::endl;
         it->get_supercell().enumerate_perturb_configurations(*it, abs_cspecs_path, tol, verbose, print);
       }
     }
     else {
-      args.log << "\n";
-      args.log << perturb_opt.desc() << std::endl;
+      args.log() << "\n";
+      args.log() << perturb_opt.desc() << std::endl;
 
-      args.log << "DESCRIPTION" << std::endl;
-      args.log << "    Generate supercells that are perturbations of a reference\n";
-      args.log << "    configuration.                                           \n";
-      args.log << "    - using the --cspecs option, a bspecs.json type file is  \n";
-      args.log << "      required to determine the extent of the perturbations. \n";
-      args.log << "      Currently only 'orbit_branch_specs' are supported.     \n";
-      args.log << "    - perturbations are generated about selected reference   \n";
-      args.log << "      configurations                                         \n";
-      args.log << std::endl;
+      args.log() << "DESCRIPTION" << std::endl;
+      args.log() << "    Generate supercells that are perturbations of a reference\n";
+      args.log() << "    configuration.                                           \n";
+      args.log() << "    - using the --cspecs option, a bspecs.json type file is  \n";
+      args.log() << "      required to determine the extent of the perturbations. \n";
+      args.log() << "      Currently only 'orbit_branch_specs' are supported.     \n";
+      args.log() << "    - perturbations are generated about selected reference   \n";
+      args.log() << "      configurations                                         \n";
+      args.log() << std::endl;
 
       return 1;
     }
 
-    args.log << std::endl << "  DONE." << std::endl << std::endl;
+    args.log() << std::endl << "  DONE." << std::endl << std::endl;
 
-    args.log << "Writing config_list..." << std::endl;
+    args.log() << "Writing config_list..." << std::endl;
     primclex.write_config_list();
-    args.log << "  DONE" << std::endl;
+    args.log() << "  DONE" << std::endl;
 
-    args.log << std::endl;
+    args.log() << std::endl;
 
     return 0;
     */

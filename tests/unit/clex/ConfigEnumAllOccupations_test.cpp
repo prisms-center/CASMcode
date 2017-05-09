@@ -12,6 +12,8 @@
 #include "casm/database/DatabaseDefs.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/ProjectBuilder.hh"
+#include "casm/app/enum.hh"
+#include "casm/app/CLIParse.hh"
 #include "Common.hh"
 
 using namespace CASM;
@@ -85,12 +87,38 @@ BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsTest) {
 
     // ... add more here ...
 
-
     // clean up test proj
     if(fs::exists(test_proj_dir / ".casm")) {
       fs::remove_all(test_proj_dir);
     }
   }
 }
+
+BOOST_AUTO_TEST_CASE(ConfigEnumAllOccupationsRunTest) {
+
+  // create a project
+  test::FCCTernaryProj proj;
+  proj.check_init();
+
+  // construct PrimClex
+  PrimClex primclex(proj.dir, null_log());
+
+  {
+    Completer::EnumOption opt;
+    parse_args(opt, "casm enum --method ScelEnum --max 4", primclex);
+    ScelEnum::run(primclex, jsonParser(), opt);
+  }
+  BOOST_CHECK_EQUAL(primclex.db<Supercell>().size(), 13);
+
+  {
+    Completer::EnumOption opt;
+    parse_args(opt, "casm enum --method ConfigEnumAllOccupations -a", primclex);
+    ConfigEnumAllOccupations::run(primclex, jsonParser(), opt);
+  }
+  BOOST_CHECK_EQUAL(primclex.db<Configuration>().size(), 126);
+
+}
+
+
 
 BOOST_AUTO_TEST_SUITE_END()

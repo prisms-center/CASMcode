@@ -1,4 +1,4 @@
-#include "casm/clex/ConfigEnumAllOccupations.hh"
+#include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/PrimClex.hh"
@@ -57,21 +57,8 @@ namespace CASM {
     std::unique_ptr<ScelEnum> scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 
-    auto lambda = [&](const Supercell & scel) {
-      return notstd::make_unique<ConfigEnumAllOccupations>(scel);
-    };
-
-    int returncode = insert_unique_canon_configs(
-                       enumerator_name,
-                       primclex,
-                       scel_enum->begin(),
-                       scel_enum->end(),
-                       lambda,
-                       filter_expr);
-
-    return returncode;
+    return run(primclex, scel_enum->begin(), scel_enum->end(), filter_expr);
   }
-
 
   /// \brief Construct with a Supercell, using all permutations
   ConfigEnumAllOccupations::ConfigEnumAllOccupations(const Supercell &_scel) :

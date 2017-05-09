@@ -83,7 +83,7 @@ namespace CASM {
     typename CommandType::OptionType opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, opt.desc()), opt.vm());
+      po::store(po::parse_command_line(args.argc(), args.argv(), opt.desc()), opt.vm());
 
       // gets default values
       po::notify(opt.vm());
@@ -113,18 +113,18 @@ namespace CASM {
 
     }
     catch(po::error &e) {
-      args.err_log << opt.desc() << std::endl;
-      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log() << opt.desc() << std::endl;
+      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(CASM::runtime_error &e) {
-      args.err_log << opt.desc() << std::endl;
-      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log() << opt.desc() << std::endl;
+      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
       return e.code();
     }
     catch(std::exception &e) {
-      args.err_log << opt.desc() << std::endl;
-      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log() << opt.desc() << std::endl;
+      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_UNKNOWN;
     }
   }

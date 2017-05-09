@@ -25,8 +25,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   PrimClex primclex(proj.dir, null_log());
   const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);
-
-  BOOST_CHECK_EQUAL(proj.dir, primclex.dir().root_dir());
+  BOOST_CHECK_EQUAL(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);
 
   DB::jsonDatabase<Supercell> db_scel(primclex);
   BOOST_CHECK_EQUAL(1, 1);

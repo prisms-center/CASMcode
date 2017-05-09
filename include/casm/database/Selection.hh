@@ -56,7 +56,11 @@ namespace CASM {
       SelectionIterator(const Selection<ObjType> &_list, BaseIterator _it, bool _selected_only) :
         m_list(&_list),
         m_it(_it),
-        m_selected_only(_selected_only) {}
+        m_selected_only(_selected_only) {
+        if(m_selected_only && m_it != m_list->data().end() && m_it->second == false) {
+          increment();
+        }
+      }
 
       /// boost::iterator_facade implementation
       void increment() {
@@ -82,6 +86,13 @@ namespace CASM {
         return m_it == B.m_it;
       }
 
+      /*
+      long distance_to(const SelectionIterator &B) const {
+        Do not define this or boost::iterator_range<T>::size will compile but
+        cause runtime errors. Use boost::distance instead.
+      }
+      */
+
       const Selection<ObjType> *m_list;
       BaseIterator m_it;
       bool m_selected_only;
@@ -104,6 +115,12 @@ namespace CASM {
     class Selection : public Logging {
 
     public:
+
+      struct Compare {
+        bool operator()(std::string A, std::string B) const {
+          return traits<ObjType>::name_compare(A, B);
+        }
+      };
 
       typedef std::map<std::string, bool>::iterator base_iterator;
       typedef std::map<std::string, bool>::const_iterator base_const_iterator;
@@ -153,11 +170,11 @@ namespace CASM {
       }
 
 
-      std::map<std::string, bool> &data() {
+      std::map<std::string, bool, Compare> &data() {
         return m_data;
       }
 
-      const std::map<std::string, bool> &data() const {
+      const std::map<std::string, bool, Compare> &data() const {
         return m_data;
       }
 
@@ -216,7 +233,7 @@ namespace CASM {
 
       // first will only be 'name', no matter whether 'name' or 'alias' is
       // written in the selection file
-      std::map<std::string, bool> m_data;
+      std::map<std::string, bool, Compare> m_data;
 
       std::vector<std::string> m_col_headers;
       std::string m_name;

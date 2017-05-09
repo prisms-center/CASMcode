@@ -1,10 +1,10 @@
 #ifndef CASM_FUNCTIONS_HH
 #define CASM_FUNCTIONS_HH
 
-#include <wordexp.h>
 #include <boost/filesystem/path.hpp>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/app/CLIParse.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/unique_cloneable_map.hh"
 
@@ -90,7 +90,7 @@ namespace CASM {
    */
 
   /// \brief Data structure holding basic CASM command info
-  struct CommandArgs : public Logging {
+  struct CommandArgs : public CLIParse {
 
     /// \brief CommandArgs constructor
     CommandArgs(int _argc,
@@ -131,27 +131,22 @@ namespace CASM {
     /// \brief CommandArgs destructor
     ~CommandArgs();
 
-    int argc;
-    char **argv;
-    PrimClex *primclex;
-    fs::path root;
-    Log &log;
-    Log &err_log;
 
-    /// stores error codes when attempting to parse std::string _args -> argc, argv
-    int parse_result;
+    PrimClex *primclex;
+
+    fs::path root;
 
     bool is_help;
+
+    // if LOG should be written
     bool write_log;
+
+    // which casm sub-command ('init', 'enum', etc.)
     std::string command;
 
   private:
 
     void _init();
-
-    /// Used when parsing std::string args -> argc, argv
-    bool m_free_p;
-    wordexp_t m_p;
 
   };
 

@@ -51,7 +51,7 @@ namespace CASM {
       template<typename T>
       void count_remaining() {
         if(!dry_run) {
-          remaining += remover.primclex().db<T>().scel_range(scelname).size();
+          remaining += boost::distance(remover.primclex().db<T>().scel_range(scelname));
         }
         else {
           ConfigData<T> data(remover.primclex(), null_log());

@@ -104,8 +104,9 @@ namespace CASM {
 
       virtual DatabaseIteratorBase *_clone() const = 0;
 
+      /* Do not implement this
       virtual long distance_to(const DatabaseIteratorBase<ValueType> &other) const = 0;
-
+      */
     };
 
     /// \brief Wrapper class for specializations DatabaseIteratorBase
@@ -189,9 +190,12 @@ namespace CASM {
         return m_ptr->equal(*(B.m_ptr));
       }
 
+      /*
       long distance_to(const DatabaseIterator &B) const {
-        return m_ptr->distance_to(*(B.m_ptr));
+        Do not define this or boost::iterator_range<T>::size will compile but
+        cause runtime errors. Use boost::distance instead.
       }
+      */
 
       notstd::cloneable_ptr<DatabaseIteratorBase<ValueType> > m_ptr;
     };

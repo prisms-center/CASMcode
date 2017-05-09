@@ -4,6 +4,7 @@
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/container/Enumerator.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler.hh"
 #include "casm/database/ConfigDatabase.hh"
@@ -34,8 +35,12 @@ namespace CASM {
     std::vector<std::string> filter_expr) {
 
     Log &log = primclex.log();
+    auto &db_config = primclex.db<Configuration>();
+    auto distance = [&](const std::string & scelname) {
+      return db_config.scel_range_size(scelname);
+    };
 
-    Index Ninit = primclex.db<Configuration>().size();
+    Index Ninit = db_config.size();
     log << "# configurations in this project: " << Ninit << "\n" << std::endl;
 
     log.begin(method);
@@ -46,7 +51,7 @@ namespace CASM {
 
       auto enumerator_ptr = f(scel);
       auto &enumerator = *enumerator_ptr;
-      Index num_before = primclex.db<Configuration>().scel_range(scel.name()).size();
+      Index num_before = distance(scel.name());
       if(!filter_expr.empty()) {
         try {
           primclex.db<Configuration>().insert(
@@ -66,11 +71,11 @@ namespace CASM {
         primclex.db<Configuration>().insert(enumerator.begin(), enumerator.end());
       }
 
-      log << (primclex.db<Configuration>().scel_range(scel.name()).size() - num_before) << " configs." << std::endl;
+      log << (distance(scel.name()) - num_before) << " configs." << std::endl;
     }
     log << "  DONE." << std::endl << std::endl;
 
-    Index Nfinal = primclex.db<Configuration>().size();
+    Index Nfinal = db_config.size();
 
     log << "# new configurations: " << Nfinal - Ninit << "\n";
     log << "# configurations in this project: " << Nfinal << "\n" << std::endl;
@@ -80,7 +85,7 @@ namespace CASM {
     log << "  DONE" << std::endl << std::endl;
 
     log << "Writing configuration database..." << std::endl;
-    primclex.db<Configuration>().commit();
+    db_config.commit();
     log << "  DONE" << std::endl;
 
     return 0;
@@ -110,8 +115,12 @@ namespace CASM {
     bool primitive_only) {
 
     Log &log = primclex.log();
+    auto &db_config = primclex.db<Configuration>();
+    auto distance = [&](const std::string & scelname) {
+      return db_config.scel_range_size(scelname);
+    };
 
-    Index Ninit = primclex.db<Configuration>().size();
+    Index Ninit = db_config.size();
     log << "# configurations in this project: " << Ninit << "\n" << std::endl;
 
     log.begin(method);
@@ -123,7 +132,7 @@ namespace CASM {
 
       auto enumerator_ptr = f(scel);
       auto &enumerator = *enumerator_ptr;
-      Index num_before = primclex.db<Configuration>().scel_range(canon_scel.name()).size();
+      Index num_before = distance(canon_scel.name());
       if(!filter_expr.empty()) {
         try {
           auto it = filter_begin(
@@ -149,7 +158,7 @@ namespace CASM {
         }
       }
 
-      log << (primclex.db<Configuration>().scel_range(canon_scel.name()).size() - num_before) << " configs." << std::endl;
+      log << (distance(canon_scel.name()) - num_before) << " configs." << std::endl;
     }
     log << "  DONE." << std::endl << std::endl;
 
@@ -163,7 +172,7 @@ namespace CASM {
     log << "  DONE" << std::endl << std::endl;
 
     log << "Writing configuration database..." << std::endl;
-    primclex.db<Configuration>().commit();
+    db_config.commit();
     log << "  DONE" << std::endl;
 
     return 0;

@@ -121,21 +121,21 @@ namespace CASM {
     Completer::SuperOption super_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, super_opt.desc()), vm); // can throw
+      po::store(po::parse_command_line(args.argc(), args.argv(), super_opt.desc()), vm); // can throw
 
       if(!vm.count("help") && !vm.count("desc")) {
         if(!vm.count("duper")) {
           if(vm.count("transf-mat") + vm.count("get-transf-mat") != 1) {
-            args.err_log << "Error in 'casm super'. Only one of --transf-mat or --get-transf-mat may be chosen." << std::endl;
+            args.err_log() << "Error in 'casm super'. Only one of --transf-mat or --get-transf-mat may be chosen." << std::endl;
             return ERR_INVALID_ARG;
           }
           if(configname.size() > 1 || scelname.size() > 1 || tmatfile.size() > 1) {
-            args.err_log << "ERROR: more than one --confignames, --scelnames, or --transf-mat argument "
-                         "is only allowed for option --duper" << std::endl;
+            args.err_log() << "ERROR: more than one --confignames, --scelnames, or --transf-mat argument "
+                           "is only allowed for option --duper" << std::endl;
             return ERR_INVALID_ARG;
           }
           if(config_path.size() > 0) {
-            args.err_log << "ERROR: the --configs option is only allowed with option --duper" << std::endl;
+            args.err_log() << "ERROR: the --configs option is only allowed with option --duper" << std::endl;
             return ERR_INVALID_ARG;
           }
         }
@@ -144,43 +144,43 @@ namespace CASM {
       /** --help option
       */
       if(vm.count("help")) {
-        args.log << "\n";
-        args.log << super_opt.desc() << std::endl;
+        args.log() << "\n";
+        args.log() << super_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        args.log << "\n";
-        args.log << super_opt.desc() << std::endl;
-        args.log << "DESCRIPTION" << std::endl;
-        args.log << "                                                                      \n" <<
-                 "  casm super --transf-mat T                                           \n" <<
-                 "  - Print super lattice of the PRIM lattice                           \n" <<
-                 "                                                                      \n" <<
-                 "  casm super --structure POSCAR --transf-mat T                        \n" <<
-                 "  - Print superstructure of a POSCAR                                  \n" <<
-                 "                                                                      \n" <<
-                 "  casm super --confignames configname --transf-mat T                   \n" <<
-                 "  - Print superstructure of a configuration                           \n" <<
-                 "                                                                      \n" <<
-                 "  casm super --structure POSCAR --unitcell scelname --get-transf-mat  \n" <<
-                 "  - Check if POSCAR lattice is a supercell of unit cell lattice and   \n" <<
-                 "    if so print the transformation matrix                             \n" <<
-                 "  - Uses primitive cell for unitcell if none given                    \n" <<
-                 "                                                                      \n" <<
-                 "  casm super --scelnames scelname --unitcell scelname --get-transf-mat\n" <<
-                 "  - Check if configuration lattice is a supercell of unit cell lattice.\n" <<
-                 "    and print the transformation matrix                               \n" <<
-                 "  - Uses primitive cell for unitcell if none given                    \n\n" <<
+        args.log() << "\n";
+        args.log() << super_opt.desc() << std::endl;
+        args.log() << "DESCRIPTION" << std::endl;
+        args.log() << "                                                                      \n" <<
+                   "  casm super --transf-mat T                                           \n" <<
+                   "  - Print super lattice of the PRIM lattice                           \n" <<
+                   "                                                                      \n" <<
+                   "  casm super --structure POSCAR --transf-mat T                        \n" <<
+                   "  - Print superstructure of a POSCAR                                  \n" <<
+                   "                                                                      \n" <<
+                   "  casm super --confignames configname --transf-mat T                   \n" <<
+                   "  - Print superstructure of a configuration                           \n" <<
+                   "                                                                      \n" <<
+                   "  casm super --structure POSCAR --unitcell scelname --get-transf-mat  \n" <<
+                   "  - Check if POSCAR lattice is a supercell of unit cell lattice and   \n" <<
+                   "    if so print the transformation matrix                             \n" <<
+                   "  - Uses primitive cell for unitcell if none given                    \n" <<
+                   "                                                                      \n" <<
+                   "  casm super --scelnames scelname --unitcell scelname --get-transf-mat\n" <<
+                   "  - Check if configuration lattice is a supercell of unit cell lattice.\n" <<
+                   "    and print the transformation matrix                               \n" <<
+                   "  - Uses primitive cell for unitcell if none given                    \n\n" <<
 
-                 "  casm super --duper --scelnames scel1 [scel2 ...] --confignames con1 [con2 ...]\n"
-                 "    --configs [mylist ...] --transf-mat M1 [M2 ...]                    \n" <<
-                 "  - Makes the superdupercell of the lattices of all inputs            \n" <<
-                 "  - Using '--configs' with no arguments is equivalent to '--configs MASTER',\n" <<
-                 "    which uses the master config list                                 \n" <<
-                 "  - Default applies prim point group ops to try to find minimum volume\n" <<
-                 "    superdupercell, disable with '--fixed-orientation'                \n\n";
+                   "  casm super --duper --scelnames scel1 [scel2 ...] --confignames con1 [con2 ...]\n"
+                   "    --configs [mylist ...] --transf-mat M1 [M2 ...]                    \n" <<
+                   "  - Makes the superdupercell of the lattices of all inputs            \n" <<
+                   "  - Using '--configs' with no arguments is equivalent to '--configs MASTER',\n" <<
+                   "    which uses the master config list                                 \n" <<
+                   "  - Default applies prim point group ops to try to find minimum volume\n" <<
+                   "    superdupercell, disable with '--fixed-orientation'                \n\n";
 
         return 0;
       }
@@ -199,13 +199,13 @@ namespace CASM {
       coordtype = super_opt.coordtype_enum();
     }
     catch(po::error &e) {
-      args.err_log << "ERROR: " << e.what() << std::endl << std::endl;
-      args.err_log << super_opt.desc() << std::endl;
+      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
+      args.err_log() << super_opt.desc() << std::endl;
       return 1;
     }
     catch(std::exception &e) {
-      args.err_log << "Unhandled Exception reached the top of main: "
-                   << e.what() << ", application will now exit" << std::endl;
+      args.err_log() << "Unhandled Exception reached the top of main: "
+                     << e.what() << ", application will now exit" << std::endl;
       return 1;
 
     }
@@ -223,7 +223,7 @@ namespace CASM {
         printer.set_atom_names_off();
       }
       printer.set_coord_mode(coordtype);
-      printer.print(args.log);
+      printer.print(args.log());
     };
 
 
@@ -239,14 +239,14 @@ namespace CASM {
     if(vm.count("structure") && vm.count("transf-mat")) {
 
       if(!fs::exists(abs_structfile)) {
-        args.log << "ERROR: " << abs_tmatfile[0] << " not found." << std::endl;
+        args.log() << "ERROR: " << abs_tmatfile[0] << " not found." << std::endl;
         return 1;
       }
       BasicStructure<Site> unitcell(abs_structfile);
 
       // -- read transf matrix ---
       if(!fs::exists(abs_tmatfile[0])) {
-        args.log << "ERROR: " << abs_tmatfile[0] << " not found." << std::endl;
+        args.log() << "ERROR: " << abs_tmatfile[0] << " not found." << std::endl;
         return 1;
       }
       Eigen::Matrix3i Tm;
@@ -265,8 +265,8 @@ namespace CASM {
 
     const fs::path &root = args.root;
     if(root.empty()) {
-      args.err_log.error("No casm project found");
-      args.err_log << std::endl;
+      args.err_log().error("No casm project found");
+      args.err_log() << std::endl;
       return ERR_NO_PROJ;
     }
 
@@ -341,20 +341,20 @@ namespace CASM {
       /// enforce a minimum volume
       if(vm.count("min-volume")) {
 
-        args.log << "  Enforcing minimum volume: " << min_vol;
+        args.log() << "  Enforcing minimum volume: " << min_vol;
         if(vm.count("fixed-shape")) {
-          args.log << " (with fixed shape)";
+          args.log() << " (with fixed shape)";
         }
-        args.log << "\n\n";
+        args.log() << "\n\n";
 
         auto prim_lat = primclex.prim().lattice();
         const SymGroup &pg = primclex.prim().point_group();
         auto T = is_supercell(superduper, prim_lat, TOL).second;
 
-        args.log << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
+        args.log() << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
 
-        args.log << "    Initial transformation matrix:\n" << T
-                 << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
+        args.log() << "    Initial transformation matrix:\n" << T
+                   << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
 
         auto M = enforce_min_volume(prim_lat, T, pg, min_vol, vm.count("fixed-shape"));
 
@@ -362,61 +362,61 @@ namespace CASM {
 
         auto S = is_supercell(superduper, prim_lat, TOL).second;
 
-        args.log << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
+        args.log() << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
 
-        args.log << "    Transformation matrix, after enforcing mininum volume:\n"
-                 << S << "\n    (volume = " << S.cast<double>().determinant() << ")\n\n";
+        args.log() << "    Transformation matrix, after enforcing mininum volume:\n"
+                   << S << "\n    (volume = " << S.cast<double>().determinant() << ")\n\n";
 
       }
 
       const Supercell &superduper_scel = *Supercell(&primclex, superduper).insert().first;
       superduper = superduper_scel.lattice();
 
-      args.log << "--- Lattices as column vector matrices ---\n\n";
+      args.log() << "--- Lattices as column vector matrices ---\n\n";
 
-      args.log << "  Superdupercell: " << superduper_scel.name() << "\n\n";
+      args.log() << "  Superdupercell: " << superduper_scel.name() << "\n\n";
 
-      args.log << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
+      args.log() << "  Superdupercell lattice: \n" << superduper.lat_column_mat() << "\n\n";
 
-      args.log << "  Transformation matrix, relative the primitive cell:\n";
-      args.log << is_supercell(superduper, primclex.prim().lattice(), TOL).second << "\n\n";
+      args.log() << "  Transformation matrix, relative the primitive cell:\n";
+      args.log() << is_supercell(superduper, primclex.prim().lattice(), TOL).second << "\n\n";
 
       if(vm.count("verbose")) {
-        args.log << "Transformation matrices: \n";
+        args.log() << "Transformation matrices: \n";
         for(auto it = lat.begin(); it != lat.end(); ++it) {
-          args.log << "--- \n";
-          args.log << "  Unit: " << it->first << ":\n"
-                   << it->second.lat_column_mat() << "\n\n";
+          args.log() << "--- \n";
+          args.log() << "  Unit: " << it->first << ":\n"
+                     << it->second.lat_column_mat() << "\n\n";
 
           auto res = is_supercell(superduper, it->second, begin, end, TOL);
-          args.log << "  Superduper = (op*unit) * T\n\nop:\n";
-          args.log << res.first->matrix() << "\n\n";
-          args.log << "  T:\n";
-          args.log << res.second << "\n\n";
+          args.log() << "  Superduper = (op*unit) * T\n\nop:\n";
+          args.log() << res.first->matrix() << "\n\n";
+          args.log() << "  T:\n";
+          args.log() << res.second << "\n\n";
 
         }
-        args.log << "--- \n";
+        args.log() << "--- \n";
       }
 
-      args.log << "Write supercell database..." << std::endl;
+      args.log() << "Write supercell database..." << std::endl;
       primclex.db<Supercell>().commit();
-      args.log << "  DONE" << std::endl << std::endl;
+      args.log() << "  DONE" << std::endl << std::endl;
 
 
       if(vm.count("add-canonical")) {
-        args.log << "Add super configurations:\n";
+        args.log() << "Add super configurations:\n";
         for(auto it = config_lat.begin(); it != config_lat.end(); ++it) {
           auto res = is_supercell(superduper, it->second, begin, end, TOL);
           FillSupercell f(superduper_scel, *res.first);
           auto insert_res = f(*primclex.db<Configuration>().find(it->first)).insert();
           if(insert_res.insert_canonical) {
-            args.log << "  " << it->first << "  ->  " << insert_res.canonical_it->name() << "\n";
+            args.log() << "  " << it->first << "  ->  " << insert_res.canonical_it->name() << "\n";
           }
         }
-        args.log << "\n";
-        args.log << "Writing configuration database..." << std::endl;
+        args.log() << "\n";
+        args.log() << "Writing configuration database..." << std::endl;
         primclex.db<Configuration>().commit();
-        args.log << "  DONE" << std::endl;
+        args.log() << "  DONE" << std::endl;
       }
 
       return 0;
@@ -426,33 +426,33 @@ namespace CASM {
 
       Eigen::Matrix3i T;
       if(!fs::exists(abs_tmatfile[0])) {
-        args.log << "ERROR: " << abs_tmatfile[0] << " not found." << std::endl;
+        args.log() << "ERROR: " << abs_tmatfile[0] << " not found." << std::endl;
         return 1;
       }
       fs::ifstream file(abs_tmatfile[0]);
       file >> T;
       file.close();
 
-      args.log << "Read transformation matrix, T: \n" << T << "\n\n";
+      args.log() << "Read transformation matrix, T: \n" << T << "\n\n";
 
       /// enforce a minimum volume
       if(vm.count("min-volume")) {
 
         if(!vm.count("fixed-shape")) {
-          args.log << "  Enforcing minimum volume: \n";
-          args.log << "    Finding T' = T*M, such that (T').determinant() >= " << min_vol;
+          args.log() << "  Enforcing minimum volume: \n";
+          args.log() << "    Finding T' = T*M, such that (T').determinant() >= " << min_vol;
         }
         else {
-          args.log << "  Enforcing minimum volume (with fixed shape): \n";
-          args.log << "    Finding T' = T*m*I, such that (T').determinant() >= " << min_vol;
+          args.log() << "  Enforcing minimum volume (with fixed shape): \n";
+          args.log() << "    Finding T' = T*m*I, such that (T').determinant() >= " << min_vol;
         }
-        args.log << "\n\n";
+        args.log() << "\n\n";
 
         auto prim_lat = primclex.prim().lattice();
         const SymGroup &pg = primclex.prim().point_group();
 
-        args.log << "    Initial transformation matrix:\n" << T
-                 << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
+        args.log() << "    Initial transformation matrix:\n" << T
+                   << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
 
         auto M = enforce_min_volume(
                    primclex.prim().lattice(),
@@ -464,8 +464,8 @@ namespace CASM {
         Lattice niggli_lat = canonical_equivalent_lattice(make_supercell(prim_lat, T * M), pg, TOL);
         T = is_supercell(niggli_lat, prim_lat, TOL).second;
 
-        args.log << "    Transformation matrix, after enforcing mininum volume:\n"
-                 << T << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
+        args.log() << "    Transformation matrix, after enforcing mininum volume:\n"
+                   << T << "\n    (volume = " << T.cast<double>().determinant() << ")\n\n";
       }
 
 
@@ -474,22 +474,22 @@ namespace CASM {
 
         const Supercell &scel = *primclex.db<Supercell>().find(scelname[0]);
 
-        args.log << "  Unit cell: " << scelname[0] << "\n\n";
+        args.log() << "  Unit cell: " << scelname[0] << "\n\n";
 
-        args.log << "  Unit cell lattice: \n" << scel.lattice().lat_column_mat() << "\n\n";
+        args.log() << "  Unit cell lattice: \n" << scel.lattice().lat_column_mat() << "\n\n";
 
         Lattice super_lat = make_supercell(scel.lattice(), T);
         const Supercell &super_scel = *Supercell(&primclex, super_lat).insert().first;
 
-        args.log << "  Add supercell: " << super_scel.name() << "\n\n";
+        args.log() << "  Add supercell: " << super_scel.name() << "\n\n";
 
-        args.log << "  Supercell lattice: \n" << super_scel.lattice().lat_column_mat() << "\n\n";
+        args.log() << "  Supercell lattice: \n" << super_scel.lattice().lat_column_mat() << "\n\n";
 
-        args.log << "  Transformation matrix: \n" << super_scel.transf_mat() << "\n\n";
+        args.log() << "  Transformation matrix: \n" << super_scel.transf_mat() << "\n\n";
 
-        args.log << "Write supercell database..." << std::endl;
+        args.log() << "Write supercell database..." << std::endl;
         primclex.db<Supercell>().commit();
-        args.log << "  DONE" << std::endl << std::endl;
+        args.log() << "  DONE" << std::endl << std::endl;
 
 
       }
@@ -507,20 +507,20 @@ namespace CASM {
         BasicStructure<Site> unit;
         unit.read(iss);
 
-        args.log << "Unit structure:";
-        args.log << "\n------\n";
+        args.log() << "Unit structure:";
+        args.log() << "\n------\n";
         print(unit);
-        args.log << "\n------\n";
-        args.log << "\n\n";
+        args.log() << "\n------\n";
+        args.log() << "\n\n";
 
 
         BasicStructure<Site> super = unit.create_superstruc(make_supercell(unit.lattice(), T));
         super.title = std::string("Supercell of ") + con.name();
 
-        args.log << "Super structure:";
-        args.log << "\n------\n";
+        args.log() << "Super structure:";
+        args.log() << "\n------\n";
         print(super);
-        args.log << "\n------\n";
+        args.log() << "\n------\n";
 
         if(vm.count("add-canonical")) {
 
@@ -535,13 +535,13 @@ namespace CASM {
           Configuration imported_config = *insert_res.canonical_it;
 
           if(insert_res.insert_canonical) {
-            args.log << "  The configuration was imported successfully as "
-                     << imported_config.name() << std::endl << std::endl;
+            args.log() << "  The configuration was imported successfully as "
+                       << imported_config.name() << std::endl << std::endl;
 
           }
           else {
-            args.log << "  The configuration was mapped onto pre-existing equivalent structure "
-                     << imported_config.name() << std::endl << std::endl;
+            args.log() << "  The configuration was mapped onto pre-existing equivalent structure "
+                       << imported_config.name() << std::endl << std::endl;
           }
 
           jsonParser json_src;
@@ -550,13 +550,13 @@ namespace CASM {
           primclex.db<Configuration>().update(imported_config);
 
           //Update directories
-          args.log << "Write supercell database..." << std::endl;
+          args.log() << "Write supercell database..." << std::endl;
           primclex.db<Supercell>().commit();
-          args.log << "  DONE" << std::endl << std::endl;
+          args.log() << "  DONE" << std::endl << std::endl;
 
-          args.log << "Writing configuration database..." << std::endl;
+          args.log() << "Writing configuration database..." << std::endl;
           primclex.db<Configuration>().commit();
-          args.log << "  DONE" << std::endl;
+          args.log() << "  DONE" << std::endl;
 
         }
 
@@ -586,26 +586,26 @@ namespace CASM {
         // S = U*T;
         // S_canon = op_canon*S = U*T', where H_canon*V = U.inv*op_canon*U*T = T'
 
-        args.log << "--- Lattices as column vector matrices ---\n\n";
+        args.log() << "--- Lattices as column vector matrices ---\n\n";
 
-        args.log << "Prim lattice, U:\n" << U << "\n\n";
+        args.log() << "Prim lattice, U:\n" << U << "\n\n";
 
-        args.log << "Super lattice, S = U*T:\n" << S << "\n\n";
+        args.log() << "Super lattice, S = U*T:\n" << S << "\n\n";
 
-        args.log << "This is equivalent to '" << s_name.str() << "', the equivalent super lattice \n" <<
-                 "in the standard orientation niggli cell, S_niggli:\n" << S_niggli << "\n\n";
+        args.log() << "This is equivalent to '" << s_name.str() << "', the equivalent super lattice \n" <<
+                   "in the standard orientation niggli cell, S_niggli:\n" << S_niggli << "\n\n";
 
-        args.log << "The transformation matrix (S_niggli = U*T) for '" << s_name.str() << "' is:\n" << T_niggli << "\n\n";
+        args.log() << "The transformation matrix (S_niggli = U*T) for '" << s_name.str() << "' is:\n" << T_niggli << "\n\n";
 
 
-        args.log << "--- Lattices as row vector matrices ---\n\n";
+        args.log() << "--- Lattices as row vector matrices ---\n\n";
 
-        args.log << "Prim lattice:\n" << U.transpose() << "\n\n";
+        args.log() << "Prim lattice:\n" << U.transpose() << "\n\n";
 
-        args.log << "Super lattice:\n" << S.transpose() << "\n\n";
+        args.log() << "Super lattice:\n" << S.transpose() << "\n\n";
 
-        args.log << "This is equivalent to '" << s_name.str() << "', the equivalent super lattice \n" <<
-                 "in the standard orientation niggli cell:\n" << S_niggli.transpose() << "\n\n";
+        args.log() << "This is equivalent to '" << s_name.str() << "', the equivalent super lattice \n" <<
+                   "in the standard orientation niggli cell:\n" << S_niggli.transpose() << "\n\n";
 
         return 0;
       }
@@ -629,29 +629,29 @@ namespace CASM {
         super_lat = primclex.db<Supercell>().find(unitscelname)->lattice();
       }
       else {
-        args.log << "Error in 'casm super --get-transf-mat'. No --structure or --scelnames given." << std::endl << std::endl;
+        args.log() << "Error in 'casm super --get-transf-mat'. No --structure or --scelnames given." << std::endl << std::endl;
         return 1;
       }
 
-      args.log << "--- Lattices as column vector matrices ---\n\n";
+      args.log() << "--- Lattices as column vector matrices ---\n\n";
 
-      args.log << "Unit lattice, U:\n" << unit_lat.lat_column_mat() << "\n\n";
+      args.log() << "Unit lattice, U:\n" << unit_lat.lat_column_mat() << "\n\n";
 
-      args.log << "Super lattice, S:\n" << super_lat.lat_column_mat() << "\n\n";
+      args.log() << "Super lattice, S:\n" << super_lat.lat_column_mat() << "\n\n";
 
       // see if super_lat is a supercell of unitlat
       // S == U*T
       Eigen::Matrix3d T = unit_lat.lat_column_mat().inverse() * super_lat.lat_column_mat();
 
       if(is_integer(T, TOL) && !almost_zero(T, TOL)) {
-        args.log << "The super lattice is a supercell of the unit lattice.\n\n";
+        args.log() << "The super lattice is a supercell of the unit lattice.\n\n";
 
-        args.log << "The transformation matrix, T, where S = U*T, is: \n" << iround(T) << "\n\n";
+        args.log() << "The transformation matrix, T, where S = U*T, is: \n" << iround(T) << "\n\n";
       }
       else {
-        args.log << "The super lattice is NOT a supercell of the unit lattice.\n\n";
+        args.log() << "The super lattice is NOT a supercell of the unit lattice.\n\n";
 
-        args.log << "The transformation matrix, T, where S = U*T, is: \n" << T << "\n\n";
+        args.log() << "The transformation matrix, T, where S = U*T, is: \n" << T << "\n\n";
       }
 
       return 0;

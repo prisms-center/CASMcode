@@ -133,18 +133,22 @@ namespace CASM {
       iterator find(const std::string &name_or_alias) const override;
 
       /// Range of Configuration in a particular supecell
+      ///
+      /// - Should return range {end(), end()} if no Configuration in specified Supercell
+      /// - Note: boost::iterator_range<iterator>::size is not valid for
+      ///   DatabaseIterator.  Use boost::distance instead.
       boost::iterator_range<iterator> scel_range(const std::string &scelname) const override;
 
     private:
 
-      typedef DatabaseSetIterator<Configuration, jsonDatabase<Configuration>> db_set_iterator;
       typedef std::set<Configuration>::iterator base_iterator;
+      typedef DatabaseSetIterator<Configuration, jsonDatabase<Configuration> > db_set_iterator;
 
       /// Update m_name_and_alias and m_scel_range after performing an insert or emplace
-      std::pair<iterator, bool> _on_insert_or_emplace(std::pair<base_iterator, bool> &result);
+      std::pair<iterator, bool> _on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new);
 
-      iterator _iterator(base_iterator base_it) const {
-        return iterator(db_set_iterator(base_it));
+      iterator _iterator(base_iterator name_it) const {
+        return iterator(db_set_iterator(name_it));
       }
 
       bool m_is_open;

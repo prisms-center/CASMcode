@@ -1,5 +1,5 @@
-#ifndef CASM_DatabaseSetIterator
-#define CASM_DatabaseSetIterator
+#ifndef CASM_DatabaseNameIterator
+#define CASM_DatabaseNameIterator
 
 #include <memory>
 #include <set>
@@ -8,7 +8,14 @@ namespace CASM {
 
   namespace DB {
 
-    /// \brief DatabaseIterator for implementations using std::set<ValueType>
+    /// \brief DatabaseIterator for implementations using std::map<std::string, ObjIterator>
+    ///
+    /// For example, jsonDatabase<Configuration>, stores:
+    /// - a std::set<Configuration> to efficiently check for unique Configuration
+    /// - and a std::map<std::string, std::set<Configuration>::iterator> to
+    ///   efficiently find Configuration by name.
+    /// By iterating over the map, configurations will be iterated in name order
+    /// rather than Configuration sort order.
     ///
     /// DatabaseIterators must implement public methods:
     /// - Default constructor
@@ -21,15 +28,15 @@ namespace CASM {
     /// - reference dereference() const
     /// - DatabaseIteratorBase *_clone() const
     ///
-    template<typename ValueType, typename DatabaseType>
-    class DatabaseSetIterator : public DatabaseIteratorBase<ValueType> {
+    template<typename ValueType, typename DatabaseType, typename ObjIterator>
+    class DatabaseNameIterator : public DatabaseIteratorBase<ValueType> {
 
     public:
 
-      DatabaseSetIterator() {}
+      DatabaseNameIterator() {}
 
       std::string name() const override {
-        return m_it->name();
+        return m_it->first;
       }
 
       std::unique_ptr<DatabaseIteratorBase<ValueType> > clone() const {
@@ -40,9 +47,9 @@ namespace CASM {
 
       friend DatabaseType;
 
-      typedef typename std::set<ValueType>::iterator base_iterator;
+      typedef typename std::map<std::string, ObjIterator>::const_iterator base_iterator;
 
-      DatabaseSetIterator(base_iterator _it) :
+      DatabaseNameIterator(base_iterator _it) :
         m_it(_it) {}
 
       base_iterator base() const {
@@ -50,7 +57,7 @@ namespace CASM {
       }
 
       bool equal(const DatabaseIteratorBase<ValueType> &other) const override {
-        return m_it == static_cast<const DatabaseSetIterator &>(other).m_it;
+        return m_it == static_cast<const DatabaseNameIterator &>(other).m_it;
       }
 
       void increment() override {
@@ -58,17 +65,17 @@ namespace CASM {
       }
 
       const ValueType &dereference() const override {
-        return *m_it;
+        return *(m_it->second);
       }
 
       /*
       long distance_to(const DatabaseIteratorBase<ValueType> &other) const override {
-        return std::distance(m_it, static_cast<const DatabaseSetIterator &>(other).m_it);
+        return std::distance(m_it, static_cast<const DatabaseNameIterator &>(other).m_it);
       }
       */
 
-      DatabaseSetIterator *_clone() const override {
-        return new DatabaseSetIterator(*this);
+      DatabaseNameIterator *_clone() const override {
+        return new DatabaseNameIterator(*this);
       }
 
       base_iterator m_it;

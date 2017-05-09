@@ -36,7 +36,15 @@ namespace CASM {
 
     static const std::string enumerator_name;
     static const std::string interface_help;
+
     static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt);
+
+    template<typename ScelIterator>
+    static int run(
+      const PrimClex &primclex,
+      ScelIterator begin,
+      ScelIterator end,
+      const std::vector<std::string> &filter_expr = {});
 
   private:
 

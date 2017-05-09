@@ -82,11 +82,7 @@ namespace CASM {
 
     template<typename ObjType>
     Index Selection<ObjType>::selected_size() const {
-      Index count = 0;
-      for(auto it = m_data.begin(); it != m_data.end(); ++it) {
-        count += (Index) it->second;
-      }
-      return count;
+      return boost::distance(selected());
     }
 
     /// \brief True if obj is in Selection and is selected; false otherwise

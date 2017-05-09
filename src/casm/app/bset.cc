@@ -46,25 +46,25 @@ namespace CASM {
     Completer::BsetOption bset_opt;
 
     try {
-      po::store(po::parse_command_line(args.argc, args.argv, bset_opt.desc()), vm); // can throw
+      po::store(po::parse_command_line(args.argc(), args.argv(), bset_opt.desc()), vm); // can throw
       bool call_help = false;
 
       /** --help option
        */
       if(vm.count("help") || call_help) {
-        args.log << "\n";
-        args.log << bset_opt.desc() << std::endl;
+        args.log() << "\n";
+        args.log() << bset_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        args.log << "\n";
-        args.log << bset_opt.desc() << std::endl;
-        args.log << "DESCRIPTION" << std::endl;
-        args.log << "    Generate and inspect cluster basis functions. A bspecs.json file should be available at\n"
-                 << "        $ROOT/basis_set/$current_bset/bspecs.json\n"
-                 << "    Run 'casm format --bspecs' for an example file.\n\n" ;
+        args.log() << "\n";
+        args.log() << bset_opt.desc() << std::endl;
+        args.log() << "DESCRIPTION" << std::endl;
+        args.log() << "    Generate and inspect cluster basis functions. A bspecs.json file should be available at\n"
+                   << "        $ROOT/basis_set/$current_bset/bspecs.json\n"
+                   << "    Run 'casm format --bspecs' for an example file.\n\n" ;
 
         return 0;
       }
@@ -73,21 +73,21 @@ namespace CASM {
       // there are any problems
     }
     catch(po::error &e) {
-      args.err_log << bset_opt.desc() << std::endl;
-      args.err_log << "\nERROR: " << e.what() << std::endl << std::endl;
+      args.err_log() << bset_opt.desc() << std::endl;
+      args.err_log() << "\nERROR: " << e.what() << std::endl << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      args.err_log << bset_opt.desc() << std::endl;
-      args.err_log << "\nERROR: "  << e.what() << std::endl;
+      args.err_log() << bset_opt.desc() << std::endl;
+      args.err_log() << "\nERROR: "  << e.what() << std::endl;
       return ERR_UNKNOWN;
 
     }
 
     const fs::path &root = args.root;
     if(root.empty()) {
-      args.err_log.error("No casm project found");
-      args.err_log << std::endl;
+      args.err_log().error("No casm project found");
+      args.err_log() << std::endl;
       return ERR_NO_PROJ;
     }
 
@@ -109,8 +109,8 @@ namespace CASM {
     else {
       auto it = set.cluster_expansions().find(vm["clex"].as<std::string>());
       if(it == set.cluster_expansions().end()) {
-        args.err_log.error("Invalid --clex value");
-        args.err_log << vm["clex"].as<std::string>() << " not found.";
+        args.err_log().error("Invalid --clex value");
+        args.err_log() << vm["clex"].as<std::string>() << " not found.";
         return ERR_INVALID_ARG;
       }
       clex_desc = it->second;
@@ -123,8 +123,8 @@ namespace CASM {
       Structure prim = primclex.prim();
 
       if(!fs::is_regular_file(dir.bspecs(bset))) {
-        args.err_log.error("'bspecs.json' file not found");
-        args.err_log << "expected basis set specifications file at: " << dir.bspecs(bset) << "\n" << std::endl;
+        args.err_log().error("'bspecs.json' file not found");
+        args.err_log() << "expected basis set specifications file at: " << dir.bspecs(bset) << "\n" << std::endl;
         return ERR_MISSING_INPUT_FILE;
       }
 
@@ -142,16 +142,16 @@ namespace CASM {
       [&](const fs::path & p) {
         if(fs::exists(p)) {
           if(!any_existing_files) {
-            args.log.custom("Found existing files");
+            args.log().custom("Found existing files");
             any_existing_files = true;
           }
-          args.log << "found: " << p << "\n";
+          args.log() << "found: " << p << "\n";
         }
       });
 
       if(any_existing_files) {
         if(vm.count("force")) {
-          args.log << "Using --force. Will overwrite existing files.\n" << std::endl;
+          args.log() << "Using --force. Will overwrite existing files.\n" << std::endl;
           fs::remove(dir.clexulator_src(set.name(), bset));
           fs::remove(dir.clexulator_o(set.name(), bset));
           fs::remove(dir.clexulator_so(set.name(), bset));
@@ -160,7 +160,7 @@ namespace CASM {
           }
         }
         else {
-          args.log << "Exiting due to existing files.  Use --force to force overwrite.\n" << std::endl;
+          args.log() << "Exiting due to existing files.  Use --force to force overwrite.\n" << std::endl;
           return ERR_EXISTING_FILE;
         }
       }
@@ -172,8 +172,8 @@ namespace CASM {
       try {
         jsonParser bspecs_json(dir.bspecs(bset));
 
-        args.log.construct("Orbitree");
-        args.log << std::endl;
+        args.log().construct("Orbitree");
+        args.log() << std::endl;
 
         make_prim_periodic_orbits(
           prim,
@@ -181,14 +181,14 @@ namespace CASM {
           alloy_sites_filter,
           set.crystallography_tol(),
           std::back_inserter(orbits),
-          args.log);
+          args.log());
 
         clex_basis.reset(new ClexBasis(prim));
         clex_basis->generate(orbits.begin(), orbits.end(), bspecs_json, dof_keys);
 
       }
       catch(std::exception &e) {
-        args.err_log << e.what() << std::endl;
+        args.err_log() << e.what() << std::endl;
         return ERR_INVALID_INPUT_FILE;
       }
 
@@ -198,8 +198,8 @@ namespace CASM {
         write_clust(orbits.begin(), orbits.end(), clust_json, ProtoSitesPrinter(), bspecs_json);
         clust_json.write(dir.clust(bset));
 
-        args.log.write(dir.clust(bset).string());
-        args.log << std::endl;
+        args.log().write(dir.clust(bset).string());
+        args.log() << std::endl;
       }
 
 
@@ -209,8 +209,8 @@ namespace CASM {
         write_clust(orbits.begin(), orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis), bspecs_json);
         basis_json.write(dir.basis(bset));
 
-        args.log.write(dir.basis(bset).string());
-        args.log << std::endl;
+        args.log().write(dir.basis(bset).string());
+        args.log() << std::endl;
       }
 
 
@@ -235,8 +235,8 @@ namespace CASM {
         //print_clexulator(...);
         outfile.close();
 
-        args.log.write(dir.clexulator_src(set.name(), bset).string());
-        args.log << std::endl;
+        args.log().write(dir.clexulator_src(set.name(), bset).string());
+        args.log() << std::endl;
       }
 
       // compile clexulator
@@ -245,8 +245,8 @@ namespace CASM {
     else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
 
       if(!fs::exists(dir.clust(bset))) {
-        args.err_log.error("No 'clust.json' file found");
-        args.err_log << "Make sure to update your basis set with 'casm bset -u'.\n" << std::endl;
+        args.err_log().error("No 'clust.json' file found");
+        args.err_log() << "Make sure to update your basis set with 'casm bset -u'.\n" << std::endl;
         return ERR_MISSING_DEPENDS;
       }
 
@@ -258,22 +258,22 @@ namespace CASM {
         orbit_type::SymCompareType(set.crystallography_tol()));
 
       if(vm.count("orbits")) {
-        print_clust(orbits.begin(), orbits.end(), args.log, ProtoSitesPrinter());
+        print_clust(orbits.begin(), orbits.end(), args.log(), ProtoSitesPrinter());
       }
       if(vm.count("clusters")) {
-        print_clust(orbits.begin(), orbits.end(), args.log, FullSitesPrinter());
+        print_clust(orbits.begin(), orbits.end(), args.log(), FullSitesPrinter());
       }
       if(vm.count("functions")) {
         print_clust(
           orbits.begin(),
           orbits.end(),
-          args.log,
+          args.log(),
           ProtoFuncsPrinter(primclex.clex_basis(clex_desc)));
       }
     }
     else {
-      args.err_log.error("Unknown error");
-      args.err_log << bset_opt.desc() << "\n" << std::endl;
+      args.err_log().error("Unknown error");
+      args.err_log() << bset_opt.desc() << "\n" << std::endl;
     }
 
     return 0;

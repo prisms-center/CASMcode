@@ -11,6 +11,9 @@
 #include "casm/database/Database_impl.hh"
 #include "casm/database/DatabaseTypeDefs.hh"
 
+//for testing:
+#include "casm/casm_io/stream_io/container.hh"
+
 namespace CASM {
 
   const std::string traits<DB::jsonDB>::name = "jsonDB";
@@ -215,6 +218,7 @@ namespace CASM {
       // read config list contents
       auto scel_it = json["supercells"].begin();
       auto scel_end = json["supercells"].end();
+      bool is_new = false;
 
       for(; scel_it != scel_end; ++scel_it) {
 
@@ -226,7 +230,7 @@ namespace CASM {
 
         for(; config_it != config_end; ++config_it) {
           auto result = m_config_list.emplace(scel, config_it.name(), *config_it);
-          _on_insert_or_emplace(result);
+          _on_insert_or_emplace(result, is_new);
         }
       }
 
@@ -256,6 +260,7 @@ namespace CASM {
       else {
         json.put_obj();
       }
+      json["version"] = traits<jsonDB>::version;
 
       for(const auto &config : m_config_list) {
         config.to_json(json["supercells"][config.supercell().name()][config.id()]);
@@ -266,8 +271,11 @@ namespace CASM {
       SafeOfstream file;
       fs::create_directories(config_list_path.parent_path());
       file.open(config_list_path);
-      json.print(file.ofstream());
-      file.close();
+      //json.print(file.ofstream());
+      int indent = 0;
+      int prec = 12;
+      json_spirit::write_stream((json_spirit::mValue &) json, file.ofstream(), indent, prec),
+                  file.close();
 
       this->write_aliases();
     }
@@ -295,14 +303,14 @@ namespace CASM {
 
       auto result = m_config_list.insert(config);
 
-      return _on_insert_or_emplace(result);
+      return _on_insert_or_emplace(result, true);
     }
 
     std::pair<jsonDatabase<Configuration>::iterator, bool> jsonDatabase<Configuration>::insert(const Configuration &&config) {
 
       auto result = m_config_list.insert(std::move(config));
 
-      return _on_insert_or_emplace(result);
+      return _on_insert_or_emplace(result, true);
     }
 
     jsonDatabase<Configuration>::iterator jsonDatabase<Configuration>::update(const Configuration &config) {
@@ -346,25 +354,33 @@ namespace CASM {
     /// Range of Configuration in a particular supecell
     boost::iterator_range<jsonDatabase<Configuration>::iterator>
     jsonDatabase<Configuration>::scel_range(const std::string &scelname) const {
-      auto &res = m_scel_range.find(scelname)->second;
-      return boost::make_iterator_range(_iterator(res.first), _iterator(std::next(res.second)));
+      auto it = m_scel_range.find(scelname);
+      if(it == m_scel_range.end()) {
+        return boost::make_iterator_range(end(), end());
+      }
+      else {
+        auto &res = it->second;
+        return boost::make_iterator_range(_iterator(res.first), _iterator(std::next(res.second)));
+      }
     }
 
     /// Update m_name_to_config and m_scel_range after performing an insert or emplace
     std::pair<jsonDatabase<Configuration>::iterator, bool>
-    jsonDatabase<Configuration>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result) {
+    jsonDatabase<Configuration>::_on_insert_or_emplace(std::pair<base_iterator, bool> &result, bool is_new) {
 
       if(result.second) {
 
         const Configuration &config = *result.first;
 
-        // set the config id, and increment
-        auto _config_id_it = m_config_id.find(config.supercell().name());
-        if(_config_id_it == m_config_id.end()) {
-          _config_id_it = m_config_id.insert(
-                            std::make_pair(config.supercell().name(), 0)).first;
+        if(is_new) {
+          // set the config id, and increment
+          auto _config_id_it = m_config_id.find(config.supercell().name());
+          if(_config_id_it == m_config_id.end()) {
+            _config_id_it = m_config_id.insert(
+                              std::make_pair(config.supercell().name(), 0)).first;
+          }
+          this->set_id(config, _config_id_it->second++);
         }
-        this->set_id(config, _config_id_it->second++);
 
         // update name -> config
         m_name_to_config.insert(std::make_pair(config.name(), result.first));
@@ -391,5 +407,20 @@ namespace CASM {
       return std::make_pair(_iterator(result.first), result.second);
     }
 
+  }
+}
+
+// explicit template instantiations
+#define INST_jsonDB(r, data, type) \
+template fs::path jsonDB::DirectoryStructure::obj_list<type>() const; \
+
+#define INST_jsonDB_config(r, data, type) \
+template fs::path jsonDB::DirectoryStructure::props_list<type>(std::string calctype) const; \
+
+namespace CASM {
+  namespace DB {
+
+    BOOST_PP_SEQ_FOR_EACH(INST_jsonDB, _, CASM_DB_TYPES)
+    BOOST_PP_SEQ_FOR_EACH(INST_jsonDB_config, _, CASM_DB_CONFIG_TYPES)
   }
 }

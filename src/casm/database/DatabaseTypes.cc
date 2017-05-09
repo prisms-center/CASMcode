@@ -42,7 +42,7 @@ namespace CASM {
 
         template<typename T>
         void eval() {
-          count += primclex.db<T>().scel_range(scelname).size();
+          count += primclex.db<T>().scel_range_size(scelname);
         }
       };
 

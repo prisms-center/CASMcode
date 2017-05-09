@@ -42,8 +42,14 @@ namespace CASM {
       virtual iterator update(const Configuration &config) = 0;
 
       /// Range of Configuration in a particular supecell
+      ///
+      /// - Should return range {end(), end()} if no Configuration in specified Supercell
+      /// - Note: boost::iterator_range<iterator>::size is not valid for
+      ///   DatabaseIterator.  Use boost::distance instead.
       virtual boost::iterator_range<iterator> scel_range(const std::string &scelname) const = 0;
 
+      /// Number of Configuration in a particular supecell
+      Index scel_range_size(const std::string &scelname) const;
     };
 
   }

@@ -846,17 +846,11 @@ namespace CASM {
 
 
   /// Writes the Configuration to a json object (the config list)
-  ///   Uses PrimClex's current default settings to write the appropriate properties
   ///
-  ///   "json" corresponds (entire file)["supercells"][scelname][id]
-  ///   "configname" corresponds to "scelname/id"
-  ///
-  ///   write_dof, source: (absolute path in config_list)
+  ///   writes: dof, source, cache:
   ///     json["dof"]
   ///     json["source"]
-  ///
-  ///   write_properties: (absolute path in config_list)
-  ///     json["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
+  ///     json["cache"]
   ///
   jsonParser &Configuration::to_json(jsonParser &json) const {
 
@@ -864,37 +858,11 @@ namespace CASM {
 
     json.put_obj();
 
-    jsonParser &dof = json["dof"];
-    if(occupation().size()) {
-      dof["occupation"] = occupation();
-    }
-    if(displacement().size()) {
-      dof["displacement"] = displacement();
-    }
-    if(has_deformation()) {
-      dof["deformation"] = deformation();
-    }
-
-    json["source"] = m_source;
+    CASM::to_json(m_configdof, json["dof"]);
+    CASM::to_json(m_source, json["source"]);
 
     if(cache_updated()) {
       json["cache"] = cache();
-    }
-
-    if(m_prop_updated) {
-      const ProjectSettings &set = primclex().settings();
-      std::string calc_string = "calctype." + set.default_clex().calctype;
-      std::string ref_string = "ref." + set.default_clex().ref;
-
-      jsonParser &json_ref = json[calc_string][ref_string];
-      jsonParser &json_prop = json_ref["properties"];
-
-      if(m_calculated.size() == 0) {
-        json.erase("calc");
-      }
-      else {
-        json["calc"] = m_calculated;
-      }
     }
 
     //std::cout << "finish Configuration::to_json(jsonParser& json)" << std::endl;

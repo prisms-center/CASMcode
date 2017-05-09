@@ -14,6 +14,7 @@
 #include "casm/crystallography/SupercellEnumerator.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/database/ScelDatabase.hh"
+#include "casm/casm_io/stream_io/container.hh"
 
 using namespace CASM;
 
@@ -27,8 +28,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   PrimClex primclex(proj.dir, null_log());
   const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);
-
-  BOOST_CHECK_EQUAL(proj.dir, primclex.dir().root_dir());
+  BOOST_CHECK_EQUAL(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);
 
   DB::jsonDatabase<Configuration> db_config(primclex);
 
@@ -46,6 +46,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   Configuration config(scel, jsonParser(), ConfigDoF({0, 0, 0, 0}));
   auto res = db_config.insert(config);
   BOOST_CHECK_EQUAL(db_config.size(), 1);
+  BOOST_CHECK_EQUAL(db_config.begin()->id(), "0");
 
   db_config.erase(res.first);
   BOOST_CHECK_EQUAL(db_config.size(), 0);
@@ -54,8 +55,50 @@ BOOST_AUTO_TEST_CASE(Test1) {
   for(const auto &config : enum_config) {
     db_config.insert(config);
   }
+  db_config.commit();
   BOOST_CHECK_EQUAL(db_config.size(), 12);
+  BOOST_CHECK_EQUAL(db_config.begin()->id(), "1");
+  for(const auto &config : db_config) {
+    //std::cout << "id: " << config.id() << "  occ: " << config.occupation() << std::endl;
+    BOOST_CHECK_EQUAL(config.cache().contains("multiplicity"), false);
+    BOOST_CHECK_EQUAL(config.multiplicity() != 0, true);
+    BOOST_CHECK_EQUAL(config.cache().contains("multiplicity"), true);
+  }
+  db_config.commit();
 
+  {
+    auto next = db_config.begin();
+    auto it = next++;
+    auto end = db_config.end();
+    for(; next != end; ++it, ++next) {
+      BOOST_CHECK_EQUAL(*it < *next, true);
+    }
+  }
+
+  DB::jsonDB::DirectoryStructure jsonDB_dir(primclex.dir().root_dir());
+  //jsonParser file(jsonDB_dir.obj_list<Configuration>());
+  //file.print(std::cout);
+  //fs::ifstream file(jsonDB_dir.obj_list<Configuration>());
+  //std::cout << file.rdbuf() << std::endl;
+
+  db_config.close();
+  BOOST_CHECK_EQUAL(db_config.size(), 0);
+
+  db_config.open();
+  BOOST_CHECK_EQUAL(db_config.size(), 12);
+  BOOST_CHECK_EQUAL(db_config.begin()->id(), "1");
+  for(const auto &config : db_config) {
+    //std::cout << "id: " << config.id() << "  occ: " << config.occupation() << std::endl;
+    BOOST_CHECK_EQUAL(config.cache().contains("multiplicity"), true);
+  }
+  {
+    auto next = db_config.begin();
+    auto it = next++;
+    auto end = db_config.end();
+    for(; next != end; ++it, ++next) {
+      BOOST_CHECK_EQUAL(*it < *next, true);
+    }
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

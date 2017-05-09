@@ -103,6 +103,8 @@ for i, src_name in enumerate(test_name):
                          lenv['boost_system'], 
                          lenv['boost_filesystem'],
                          lenv['boost_regex'],
+                         lenv['boost_chrono'],
+                         lenv['boost_program_options'],
                          lenv['dl'],
                          'casm'])
   

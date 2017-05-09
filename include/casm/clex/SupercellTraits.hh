@@ -12,6 +12,7 @@ namespace CASM {
   struct traits<Supercell> {
     static const std::string name;
     static const std::string short_name;
+    static bool name_compare(std::string A, std::string B);
   };
 }
 
