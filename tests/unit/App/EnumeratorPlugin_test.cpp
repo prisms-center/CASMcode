@@ -41,6 +41,7 @@ BOOST_AUTO_TEST_CASE(Test1) {
   };
 
   cp("TestEnum.hh");
+  cp("TestEnum_impl.hh");
   cp("TestEnum.cc");
 
   // refresh to load plugins
@@ -58,7 +59,6 @@ BOOST_AUTO_TEST_CASE(Test1) {
   check(R"(enum --method TestEnum -i '{"supercells": {"max": 4}}')");
 
   BOOST_CHECK_EQUAL(primclex.db<Configuration>().size(), 336);
-
 }
 
 BOOST_AUTO_TEST_SUITE_END()

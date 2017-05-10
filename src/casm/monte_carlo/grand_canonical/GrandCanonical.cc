@@ -13,6 +13,7 @@ namespace CASM {
   namespace Monte {
 
     template MonteCarlo::MonteCarlo(const PrimClex &primclex, const GrandCanonicalSettings &settings, Log &_log);
+    template MonteCarloEnum::MonteCarloEnum(const PrimClex &primclex, const GrandCanonicalSettings &settings, Log &log, GrandCanonical &mc);
 
     const Monte::ENSEMBLE GrandCanonical::ensemble = Monte::ENSEMBLE::GrandCanonical;
 

@@ -3,10 +3,12 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumEquivalents.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/app/enum.hh"
 #include "casm/container/Enumerator_impl.hh"
 #include "casm/database/Selection.hh"
+#include "casm/database/ConfigDatabase.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_SuperConfigEnum_interface() {

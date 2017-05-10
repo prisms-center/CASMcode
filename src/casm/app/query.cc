@@ -1,5 +1,5 @@
 #include "casm/app/query.hh"
-#include "casm/app/DBInterface_impl.hh"
+#include "casm/app/DBInterface.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler.hh"
 #include "casm/clex/PrimClex.hh"
@@ -95,9 +95,7 @@ namespace CASM {
   }
 
   int QueryCommandImplBase::run() const {
-    err_log() << "ERROR: No --type\n";
-    m_cmd.print_names(err_log());
-    return ERR_INVALID_ARG;
+    throw CASM::runtime_error("Unknown error in 'casm query'.", ERR_UNKNOWN);
   }
 
 
@@ -227,6 +225,7 @@ namespace CASM {
 
   template<typename DataObject>
   int QueryCommandImpl<DataObject>::run() const {
+
     if(_count("alias")) {
       return _alias();
     }
@@ -395,6 +394,12 @@ namespace CASM {
   QueryCommand::~QueryCommand() {}
 
   int QueryCommand::vm_count_check() const {
+    if(!in_project()) {
+      err_log().error("No casm project found");
+      err_log() << std::endl;
+      return ERR_NO_PROJ;
+    }
+
     std::string cmd;
     std::vector<std::string> allowed_cmd = {"alias", "columns", "write-pos"};
 
@@ -407,7 +412,7 @@ namespace CASM {
     }
 
     if(num_cmd != 1) {
-      err_log() << "Error in 'casm select'. Exactly one of the following must be used: "
+      err_log() << "Error in 'casm query'. Exactly one of the following must be used: "
                 << allowed_cmd << std::endl;
       return ERR_INVALID_ARG;
     }
@@ -428,7 +433,7 @@ namespace CASM {
 
   QueryCommandImplBase &QueryCommand::impl() const {
     if(!m_impl) {
-      if(vm().count("type")) {
+      if(in_project()) {
         if(!opt().db_type_opts().count(opt().db_type())) {
           std::stringstream msg;
           msg << "--type " << opt().db_type() << " is not allowed for 'casm " << name << "'.";
@@ -436,7 +441,7 @@ namespace CASM {
           throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
         }
 
-        DB::for_config_type(opt().db_type(), DB::ConstructImpl<QueryCommand>(m_impl, *this));
+        DB::for_config_type_short(opt().db_type(), DB::ConstructImpl<QueryCommand>(m_impl, *this));
       }
       else {
         m_impl = notstd::make_unique<QueryCommandImplBase>(*this);
@@ -446,7 +451,7 @@ namespace CASM {
   }
 
   void QueryCommand::print_names(std::ostream &sout) const {
-    sout << "The allowed types are:\n\n";
+    sout << "The allowed types are:\n";
 
     for(const auto &db_type : opt().db_type_opts()) {
       sout << "  " << db_type << std::endl;

@@ -191,7 +191,6 @@ namespace test {
   void Proj::check_query() {
     m_p.popen(cd_and() + "casm query --columns comp");
     BOOST_CHECK_MESSAGE(m_p.exit_code() == 0, m_p.gets());
-
   }
 
 }

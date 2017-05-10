@@ -1,19 +1,19 @@
-#ifndef CASM_ConfigEnumAllOccupations_impl
-#define CASM_ConfigEnumAllOccupations_impl
+#ifndef CASM_TestEnum_impl
+#define CASM_TestEnum_impl
 
-#include "casm/clex/ConfigEnumAllOccupations.hh"
+#include "TestEnum.hh"
 
 namespace CASM {
 
   template<typename ScelIterator>
-  int ConfigEnumAllOccupations::run(
+  int TestEnum::run(
     const PrimClex &primclex,
     ScelIterator begin,
     ScelIterator end,
     const std::vector<std::string> &filter_expr) {
 
     auto lambda = [&](const Supercell & scel) {
-      return notstd::make_unique<ConfigEnumAllOccupations>(scel);
+      return notstd::make_unique<TestEnum>(scel);
     };
 
     int returncode = insert_unique_canon_configs(

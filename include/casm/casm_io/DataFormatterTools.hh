@@ -1,5 +1,5 @@
-#ifndef DATAFORMATTERTOOLS_HH
-#define DATAFORMATTERTOOLS_HH
+#ifndef CASM_DataFormatterTools
+#define CASM_DataFormatterTools
 #include <numeric>
 #include <iterator>
 #include "casm/external/boost.hh"
@@ -852,7 +852,7 @@ namespace CASM {
   GenericDatumFormatter<std::string, DataObject> name() {
     return GenericDatumFormatter<std::string, DataObject>(
              "name",
-             "Object name",
+             traits<DataObject>::name + " name",
     [](const DataObject & obj)->std::string {
       return obj.name();
     });
@@ -862,7 +862,7 @@ namespace CASM {
   GenericDatumFormatter<std::string, DataObject> alias() {
     return GenericDatumFormatter<std::string, DataObject>(
              "alias",
-             "Object alias (if exists, else \"none\")",
+             traits<DataObject>::name + " alias (if exists, else \"none\")",
     [](const DataObject & obj)->std::string {
       std::string alias = obj.alias();
       if(alias.empty()) {
@@ -873,10 +873,10 @@ namespace CASM {
   }
 
   template<typename DataObject>
-  GenericDatumFormatter<std::string, DataObject> name_or_alias() {
+  GenericDatumFormatter<std::string, DataObject> alias_or_name() {
     return GenericDatumFormatter<std::string, DataObject>(
              "name_or_alias",
-             "Object name or alias (if exists)",
+             traits<DataObject>::name + " alias (if exists), else name",
     [](const DataObject & obj)->std::string {
       std::string alias = obj.alias();
       if(alias.empty()) {
@@ -1366,5 +1366,4 @@ namespace CASM {
 
 }
 
-#include "casm/casm_io/DataFormatterTools_impl.hh"
 #endif

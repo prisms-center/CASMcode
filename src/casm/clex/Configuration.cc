@@ -17,16 +17,13 @@
 #include "casm/database/ScelDatabase.hh"
 #include "casm/casm_io/VaspIO.hh"
 #include "casm/casm_io/stream_io/container.hh"
-#include "casm/app/QueryHandler_impl.hh"
+#include "casm/app/QueryHandler.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/DirectoryStructure.hh"
 
 namespace CASM {
 
-  template class QueryHandler<Configuration>;
-
   namespace {
-    typedef std::insert_iterator<std::map<std::string, std::shared_ptr<RuntimeLibrary> > > runtimelib_it_type;
-    typedef std::insert_iterator<DataFormatterDictionary<Configuration> > config_dict_it_type;
-
     std::vector<std::string> split(std::string s, char delim) {
       typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
       boost::char_separator<char> sep(&delim);
@@ -35,14 +32,6 @@ namespace CASM {
     }
 
   }
-
-
-
-  template std::pair<config_dict_it_type, runtimelib_it_type> load_query_plugins(
-    const ProjectSettings &set,
-    config_dict_it_type dict_it,
-    runtimelib_it_type lib_it);
-
 
 
   /// Construct a default Configuration

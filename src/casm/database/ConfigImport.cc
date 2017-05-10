@@ -14,8 +14,12 @@
 #include "casm/database/Selection.hh"
 #include "casm/database/Import_impl.hh"
 #include "casm/database/Update_impl.hh"
+#include "casm/casm_io/DataFormatter_impl.hh"
 
 namespace CASM {
+
+  template class DataFormatter<DB::ConfigIO::Result>;
+
   namespace DB {
 
     // --- Configuration specializations ---------------------------------------

@@ -1,5 +1,9 @@
-#include "casm/casm_io/DataStream.hh"
+#ifndef CASM_DataFormatter_impl
+#define CASM_DataFormatter_impl
+#include "casm/casm_io/DataFormatter.hh"
+
 #include <boost/tokenizer.hpp>
+#include "casm/casm_io/DataStream.hh"
 #include "casm/container/Counter.hh"
 #include "casm/casm_io/DataFormatterTools.hh"
 #include "casm/casm_io/EigenDataStream.hh"
@@ -399,3 +403,5 @@ namespace CASM {
   }
 
 }
+
+#endif

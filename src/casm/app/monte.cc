@@ -1,14 +1,15 @@
 #include <string>
 #include <iostream>
 
+#include <boost/filesystem.hpp>
 #include "casm/clex/PrimClex.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
-#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings_impl.hh"
+#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
 #include "casm/monte_carlo/canonical/Canonical.hh"
 #include "casm/monte_carlo/canonical/CanonicalIO.hh"
-#include "casm/monte_carlo/canonical/CanonicalSettings_impl.hh"
+#include "casm/monte_carlo/canonical/CanonicalSettings.hh"
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteDriver.hh"
 #include "casm/app/casm_functions.hh"

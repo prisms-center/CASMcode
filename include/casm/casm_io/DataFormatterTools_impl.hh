@@ -1,4 +1,8 @@
+#ifndef CASM_DataFormatterTools_impl
+#define CASM_DataFormatterTools_impl
+
 #include <algorithm>
+#include "casm/casm_io/DataFormatterTools.hh"
 
 namespace CASM {
 
@@ -95,3 +99,5 @@ namespace CASM {
   }
 
 }
+
+#endif

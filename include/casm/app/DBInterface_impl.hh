@@ -8,6 +8,7 @@
 #include "casm/app/select.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/casm_io/DataFormatter.hh"
+#include "casm/database/Selection.hh"
 
 namespace CASM {
   namespace DB {
@@ -25,6 +26,7 @@ namespace CASM {
         m_ss << cmd.opt().selection_path();
         cmd.primclex().settings().query_handler<DataObject>().set_selected(sel(0));
       }
+      _make_dict(cmd);
     }
 
     template<typename DataObject>
@@ -46,6 +48,7 @@ namespace CASM {
 
         cmd.primclex().settings().query_handler<DataObject>().set_selected(sel(0));
       }
+      _make_dict(cmd);
     }
 
 

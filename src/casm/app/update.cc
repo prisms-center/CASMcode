@@ -165,7 +165,7 @@ namespace CASM {
           throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
         }
 
-        DB::for_config_type(opt().configtype(), DB::ConstructImpl<UpdateCommand>(m_impl, *this));
+        DB::for_config_type_short(opt().configtype(), DB::ConstructImpl<UpdateCommand>(m_impl, *this));
       }
       else {
         m_impl = notstd::make_unique<UpdateCommandImplBase>(*this);
@@ -175,7 +175,7 @@ namespace CASM {
   }
 
   void UpdateCommand::print_names(std::ostream &sout) const {
-    sout << "The allowed types are:\n\n";
+    sout << "The allowed types are:\n";
 
     for(const auto &configtype : opt().configtype_opts()) {
       sout << "  " << configtype << std::endl;

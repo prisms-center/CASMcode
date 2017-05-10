@@ -1,5 +1,7 @@
 #include "casm/monte_carlo/MonteCarloEnum_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
+#include "casm/monte_carlo/canonical/CanonicalSettings.hh"
+#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
 
 namespace CASM {
   namespace Monte {

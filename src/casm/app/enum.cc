@@ -10,6 +10,7 @@
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/SuperConfigEnum.hh"
 #include "casm/completer/Handlers.hh"
+#include "casm/casm_io/stream_io/container.hh"
 
 namespace CASM {
   namespace Completer {
@@ -51,32 +52,30 @@ namespace CASM {
   const std::string EnumCommand::name = "enum";
 
   EnumCommand::EnumCommand(const CommandArgs &_args, Completer::EnumOption &_opt) :
-    APICommand<Completer::EnumOption>(_args, _opt) {}
+    APICommand<Completer::EnumOption>(_args, _opt),
+    m_enumerators(nullptr) {}
 
   int EnumCommand::vm_count_check() const {
-    if(!vm().count("help") && !vm().count("desc")) {
-
-      if(root().empty()) {
-        err_log().error("No casm project found");
-        err_log() << std::endl;
-        return ERR_NO_PROJ;
-      }
-
-      if(vm().count("method") != 1) {
-        err_log() << "Error in 'casm enum'. The --method option is required." << std::endl;
-        return ERR_INVALID_ARG;
-      }
-
-      if(vm().count("settings") + vm().count("input") == 2) {
-        err_log() << "Error in 'casm enum'. The options --settings or --input may not both be chosen." << std::endl;
-        return ERR_INVALID_ARG;
-      }
+    if(!in_project()) {
+      err_log().error("No casm project found");
+      err_log() << std::endl;
+      return ERR_NO_PROJ;
     }
+
+    if(vm().count("method") != 1) {
+      err_log() << "Error in 'casm enum'. The --method option is required." << std::endl;
+      return ERR_INVALID_ARG;
+    }
+
+    if(vm().count("settings") + vm().count("input") == 2) {
+      err_log() << "Error in 'casm enum'. The options --settings or --input may not both be chosen." << std::endl;
+      return ERR_INVALID_ARG;
+    }
+
     return 0;
   }
 
   int EnumCommand::help() const {
-    log() << "\n";
     log() << opt().desc() << std::endl;
     print_names(log(), enumerators());
 
@@ -95,6 +94,7 @@ namespace CASM {
           if(e.name().substr(0, in_name.size()) == in_name) {
             log() << e.help() << std::endl;
             match = true;
+            break;
           }
         }
       }
@@ -151,13 +151,19 @@ namespace CASM {
     auto lambda = [&](const EnumInterfaceBase & e) {
       return e.name().substr(0, opt().method().size()) == opt().method();
     };
-    auto it = std::find_if(enumerators().begin(), enumerators().end(), lambda);
+    int count = std::count_if(enumerators().begin(), enumerators().end(), lambda);
 
-    if(it != enumerators().end()) {
+    if(count == 1) {
+      auto it = std::find_if(enumerators().begin(), enumerators().end(), lambda);
       return it->run(primclex(), input, opt());
     }
-    else {
+    else if(count < 1) {
       err_log() << "No match found for --method " << opt().method() << std::endl;
+      print_names(err_log(), enumerators());
+      return ERR_INVALID_ARG;
+    }
+    else if(count > 1) {
+      err_log() << "Multiple matches found for --method " << opt().method() << std::endl;
       print_names(err_log(), enumerators());
       return ERR_INVALID_ARG;
     }
@@ -177,7 +183,7 @@ namespace CASM {
   }
 
   void EnumCommand::print_names(std::ostream &sout, const EnumeratorMap &enumerators) const {
-    sout << "The enumeration methods are:\n\n";
+    sout << "The enumeration methods are:\n";
 
     for(const auto &e : enumerators) {
       sout << "  " << e.name() << std::endl;

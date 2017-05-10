@@ -1,13 +1,25 @@
 #include "casm/clex/SupercellIO.hh"
+#include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/casm_io/DataFormatterTools_impl.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/database/Selected_impl.hh"
+#include "casm/database/Selected.hh"
 #include "casm/database/DatabaseDefs.hh"
 #include "casm/database/ConfigTypeDefs.hh"
 
 namespace CASM {
+
+  template class BaseDatumFormatter<Supercell>;
+  template class DataFormatterOperator<bool, std::string, Supercell>;
+  template class DataFormatterOperator<bool, bool, Supercell>;
+  template class DataFormatterOperator<bool, double, Supercell>;
+  template class DataFormatterOperator<double, double, Supercell>;
+  template class DataFormatterOperator<Index, double, Supercell>;
+  template class DataFormatter<Supercell>;
+  template class DataFormatterDictionary<Supercell>;
+
   namespace ScelIO {
 
     // --- template<typename Base> class SupercellCheckBase ---
@@ -302,37 +314,6 @@ namespace CASM {
 
     // --- GenericDatumFormatter generating functions ---
 
-    GenericScelFormatter<std::string> name() {
-      return GenericScelFormatter<std::string>(
-               "name",
-               "Supercell name, in the form 'SCEL#_#_#_#_#_#_#'",
-      [](const Supercell & scel)->std::string {
-        return scel.name();
-      });
-    }
-
-    GenericScelFormatter<std::string> alias() {
-      return GenericScelFormatter<std::string>(
-               "alias",
-               "Supercell alias, or empty string if none.",
-      [](const Supercell & scel)->std::string {
-        return scel.alias();
-      });
-    }
-
-    GenericScelFormatter<std::string> name_or_alias() {
-      return GenericScelFormatter<std::string>(
-               "name_or_alias",
-               "Supercell alias, or name if no alias.",
-      [](const Supercell & scel)->std::string {
-        std::string alias = scel.alias();
-        if(alias.empty()) {
-          return scel.name();
-        }
-        return alias;
-      });
-    }
-
     GenericScelFormatter<std::string> pointgroup_name() {
       return GenericScelFormatter<std::string>(
                "pointgroup_name",
@@ -409,9 +390,9 @@ namespace CASM {
     StringAttributeDictionary<Supercell> dict;
 
     dict.insert(
-      name(),
-      alias(),
-      name_or_alias(),
+      name<Supercell>(),
+      alias<Supercell>(),
+      alias_or_name<Supercell>(),
       pointgroup_name()
     );
 

@@ -123,7 +123,7 @@ namespace CASM {
     Index config_count(std::string configtype, std::string scelname, const PrimClex &primclex) {
       ConfigCountImpl f(scelname, primclex);
       if(primclex.db<Supercell>().count(scelname)) {
-        for_config_type(configtype, f);
+        for_config_type_short(configtype, f);
       }
       return f.count;
     }
@@ -141,7 +141,7 @@ namespace CASM {
     Index config_calculated_count(std::string configtype, std::string scelname, const PrimClex &primclex) {
       ConfigCalculatedCountImpl f(scelname, primclex);
       if(primclex.db<Supercell>().count(scelname)) {
-        for_config_type(configtype, f);
+        for_config_type_short(configtype, f);
       }
       return f.count;
     }
@@ -159,7 +159,7 @@ namespace CASM {
     Index config_data_count(std::string configtype, std::string scelname, const PrimClex &primclex) {
       ConfigDataCountImpl f(scelname, primclex);
       if(primclex.db<Supercell>().count(scelname)) {
-        for_config_type(configtype, f);
+        for_config_type_short(configtype, f);
       }
       return f.count;
     }

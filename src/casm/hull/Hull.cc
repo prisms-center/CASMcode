@@ -7,13 +7,14 @@
 #include "casm/external/Eigen/Dense"
 #include "casm/external/qhull/libqhullcpp/QhullFacetList.h"
 #include "casm/external/qhull/libqhullcpp/QhullVertexSet.h"
-#include "casm/casm_io/DataFormatter.hh"
-#include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/casm_io/DataFormatter_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
 
 namespace CASM {
 
-  namespace Hull_impl {
+  template class DataFormatter<std::pair<std::string, std::pair<bool, bool>>>;
+
+                               namespace Hull_impl {
 
     /// \brief Print informational message and throw exception if input data is not valid
     void _validate_input(const DB::Selection<Configuration> &selection,

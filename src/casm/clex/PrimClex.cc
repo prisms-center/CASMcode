@@ -420,6 +420,16 @@ namespace CASM {
   }
 }
 
+#define INST_PrimClex_orbits_vec(OrbitType, SymCompareType) \
+  template std::back_insert_iterator<std::vector<OrbitType>> PrimClex::orbits( \
+    const ClexDescription &, \
+    std::back_insert_iterator<std::vector<OrbitType>>, \
+    const SymCompareType&) const;
+
+namespace CASM {
+  INST_PrimClex_orbits_vec(PrimPeriodicIntegralClusterOrbit, PrimPeriodicIntegralClusterSymCompare);
+}
+
 #include "casm/database/DatabaseTypes.hh"
 
 // explicit template instantiations

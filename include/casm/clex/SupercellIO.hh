@@ -202,10 +202,6 @@ namespace CASM {
 
     typedef Generic1DDatumFormatter<Eigen::VectorXd, Supercell> GenericVectorXdScelFormatter;
 
-    GenericScelFormatter<std::string> name();
-    GenericScelFormatter<std::string> alias();
-    GenericScelFormatter<std::string> name_or_alias();
-    GenericScelFormatter<std::string> scelname();
     GenericScelFormatter<std::string> pointgroup_name();
     GenericScelFormatter<Index> scel_size();
     GenericScelFormatter<Index> multiplicity();

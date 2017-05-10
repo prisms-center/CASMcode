@@ -1,10 +1,12 @@
 #ifndef CASM_CanonicalSettings_impl
 #define CASM_CanonicalSettings_impl
 
+#include <boost/algorithm/string/trim.hpp>
 #include "casm/monte_carlo/canonical/CanonicalSettings.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/casm_io/stream_io/container.hh"
 
 namespace CASM {
   namespace Monte {

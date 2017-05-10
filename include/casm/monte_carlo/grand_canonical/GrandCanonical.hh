@@ -8,7 +8,7 @@
 #include "casm/monte_carlo/SiteExchanger.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalEvent.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh"
-#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
+#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings_impl.hh"
 
 
 namespace CASM {

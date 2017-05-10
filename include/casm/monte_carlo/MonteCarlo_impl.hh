@@ -2,8 +2,8 @@
 #define CASM_MonteCarlo_impl
 
 #include "casm/monte_carlo/MonteCarlo.hh"
-#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings_impl.hh"
-#include "casm/monte_carlo/canonical/CanonicalSettings_impl.hh"
+#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
+#include "casm/monte_carlo/canonical/CanonicalSettings.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/crystallography/Structure.hh"

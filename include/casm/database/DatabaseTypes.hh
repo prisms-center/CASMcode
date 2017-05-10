@@ -49,6 +49,11 @@ namespace CASM {
       return CASM_TMP::for_type<DataObjectTypeTuple, F>(name, f);
     }
 
+    template<typename F>
+    void for_type_short(std::string short_name, F f) {
+      return CASM_TMP::for_type_short<DataObjectTypeTuple, F>(short_name, f);
+    }
+
     /// std::set of all QueryTraits<DataObject>::name
     const std::set<std::string> &types();
 
@@ -65,6 +70,11 @@ namespace CASM {
     template<typename F>
     void for_config_type(std::string name, F f) {
       return CASM_TMP::for_type<ConfigTypeTuple, F>(name, f);
+    }
+
+    template<typename F>
+    void for_config_type_short(std::string short_name, F f) {
+      return CASM_TMP::for_type_short<ConfigTypeTuple, F>(short_name, f);
     }
 
     /// std::set of all QueryTraits<ConfigType>::name

@@ -1,14 +1,21 @@
+#include <boost/filesystem.hpp>
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/external/gzstream/gzstream.h"
 #include "casm/casm_io/VaspIO.hh"
-#include "casm/casm_io/DataFormatter.hh"
-#include "casm/casm_io/DataFormatterTools.hh"
+#include "casm/casm_io/DataFormatter_impl.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteSettings.hh"
 
 namespace CASM {
+
+  template class DataFormatter<Monte::MonteCarlo const *>;
+  template class DataFormatter<std::pair<Monte::MonteCarlo const *, Index> >;
+
   namespace Monte {
+
+    MonteCarloDirectoryStructure::MonteCarloDirectoryStructure(fs::path output_dir) :
+      m_output_dir(fs::absolute(output_dir)) {}
 
     /// \brief Print mean property values: <prop_name>
     GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloMeanFormatter(std::string prop_name) {

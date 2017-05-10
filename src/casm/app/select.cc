@@ -1,11 +1,11 @@
 #include "casm/app/select.hh"
-#include "casm/app/DBInterface_impl.hh"
+#include "casm/app/DBInterface.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/database/DatabaseTypeTraits.hh"
 #include "casm/database/DatabaseDefs.hh"
-#include "casm/database/Selection_impl.hh"
+#include "casm/database/Selection.hh"
 
 namespace CASM {
 
@@ -90,9 +90,7 @@ namespace CASM {
   }
 
   int SelectCommandImplBase::run() const {
-    err_log() << "ERROR: No --type\n";
-    m_cmd.print_names(err_log());
-    return ERR_INVALID_ARG;
+    throw CASM::runtime_error("Unknown error in 'casm select'.", ERR_UNKNOWN);
   }
 
 
@@ -192,7 +190,8 @@ namespace CASM {
   SelectCommandImpl<DataObject>::SelectCommandImpl(const SelectCommand &cmd) :
     SelectCommandImplBase(cmd),
     m_data(cmd),
-    m_Ntot(m_cmd.primclex().template db<DataObject>().size()) {}
+    m_Ntot(m_cmd.primclex().template db<DataObject>().size()) {
+  }
 
   template<typename DataObject>
   int SelectCommandImpl<DataObject>::help() const {
@@ -207,11 +206,11 @@ namespace CASM {
       }
 
       if(str[0] == 'o') {
-        m_cmd.log() << "Available operators for use within selection criteria:" << std::endl;
+        log() << "Available operators for use within selection criteria:" << std::endl;
         _dict().print_help(log(), BaseDatumFormatter<DataObject>::Operator);
       }
       else if(str[0] == 'p') {
-        m_cmd.log() << "Available property tags are currently:" << std::endl;
+        log() << "Available property tags are currently:" << std::endl;
         _dict().print_help(log(), BaseDatumFormatter<DataObject>::Property);
       }
       log() << std::endl;
@@ -430,6 +429,12 @@ namespace CASM {
   SelectCommand::~SelectCommand() {}
 
   int SelectCommand::vm_count_check() const {
+    if(!in_project()) {
+      err_log().error("No casm project found");
+      err_log() << std::endl;
+      return ERR_NO_PROJ;
+    }
+
     std::string cmd;
     std::vector<std::string> allowed_cmd = {"and", "or", "xor", "not", "set-on", "set-off", "set"};
 
@@ -485,7 +490,7 @@ namespace CASM {
 
   SelectCommandImplBase &SelectCommand::impl() const {
     if(!m_impl) {
-      if(vm().count("type")) {
+      if(in_project()) {
         if(!opt().db_type_opts().count(opt().db_type())) {
           std::stringstream msg;
           msg << "--type " << opt().db_type() << " is not allowed for 'casm " << name << "'.";
@@ -493,7 +498,7 @@ namespace CASM {
           throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
         }
 
-        DB::for_config_type(opt().db_type(), DB::ConstructImpl<SelectCommand>(m_impl, *this));
+        DB::for_config_type_short(opt().db_type(), DB::ConstructImpl<SelectCommand>(m_impl, *this));
       }
       else {
         m_impl = notstd::make_unique<SelectCommandImplBase>(*this);
@@ -503,7 +508,7 @@ namespace CASM {
   }
 
   void SelectCommand::print_names(std::ostream &sout) const {
-    sout << "The allowed types are:\n\n";
+    sout << "The allowed types are:\n";
 
     for(const auto &db_type : opt().db_type_opts()) {
       sout << "  " << db_type << std::endl;

@@ -13,6 +13,8 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/clex/ScelEnum.hh"
+#include "casm/app/QueryHandler.hh"
+#include "casm/container/Enumerator_impl.hh"
 
 using namespace CASM;
 

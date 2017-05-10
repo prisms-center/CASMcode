@@ -218,7 +218,7 @@ namespace CASM {
         for(; it != it_end; ++it) {
 
           // for compatibility, include "configname" also
-          if(it.name() == "name" || it.name() == "alias" || it.name() == "name_or_alias" || it.name() == "configname") {
+          if(it.name() == "name" || it.name() == "alias" || it.name() == "alias_or_name" || it.name() == "configname") {
             tname = db().name(it->get<std::string>());
             contains_name = true;
           }
@@ -255,7 +255,7 @@ namespace CASM {
       _json.put_array();
 
       DataFormatter<ObjType> tformat(
-        name_or_alias<ObjType>(),
+        alias_or_name<ObjType>(),
         datum_formatter_alias("selected", Selected<ObjType>(*this)));
 
       tformat.append(_dict.parse(m_col_headers));
@@ -278,7 +278,7 @@ namespace CASM {
       bool only_selected) const {
 
       DataFormatter<ObjType> tformat(
-        name_or_alias<ObjType>(),
+        alias_or_name<ObjType>(),
         datum_formatter_alias("selected", Selected<ObjType>(*this)));
 
       tformat.append(_dict.parse(m_col_headers));

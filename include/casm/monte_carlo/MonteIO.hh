@@ -1,6 +1,7 @@
 #ifndef CASM_MonteIO_HH
 #define CASM_MonteIO_HH
 
+#include <boost/filesystem/path.hpp>
 #include <string>
 #include "casm/CASM_global_definitions.hh"
 #include "casm/monte_carlo/MonteSampler.hh"
@@ -21,8 +22,7 @@ namespace CASM {
 
     public:
 
-      MonteCarloDirectoryStructure(fs::path output_dir) :
-        m_output_dir(fs::absolute(output_dir)) {}
+      MonteCarloDirectoryStructure(fs::path output_dir);
 
       /// \brief "output_dir/"
       fs::path output_dir() const {

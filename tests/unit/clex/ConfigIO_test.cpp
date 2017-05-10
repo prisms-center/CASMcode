@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE(AllTest) {
   proj.check_enum();
   std::cout << "DONE" << std::endl;
 
-  Log log = default_log();
+  Log log = null_log();
   PrimClex primclex(proj.dir, log);
 
   log << "---- Comp -------------" << std::endl;

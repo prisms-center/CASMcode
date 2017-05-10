@@ -1,6 +1,7 @@
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteSettings.hh"
+#include "casm/casm_io/json_io/container.hh"
 
 #include "casm/clex/PrimClex.hh"
 

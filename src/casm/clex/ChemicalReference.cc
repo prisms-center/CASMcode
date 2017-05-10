@@ -9,6 +9,13 @@
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {
+  namespace {
+    typedef std::vector<ChemicalReferenceState>::iterator RefStateIterator;
+  }
+  template ChemicalReference::ChemicalReference(const Structure &, RefStateIterator, RefStateIterator, double);
+  template void ChemicalReference::set_config<RefStateIterator>(const std::string &, RefStateIterator, RefStateIterator, double);
+  template void ChemicalReference::set_supercell<RefStateIterator>(const std::string &, RefStateIterator, RefStateIterator, double);
+  template void ChemicalReference::set_global<RefStateIterator>(RefStateIterator, RefStateIterator, double);
 
   /// \brief Construct using the results of n(config), and e(config)
   ///

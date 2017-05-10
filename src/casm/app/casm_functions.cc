@@ -1,6 +1,7 @@
 #include "casm/app/casm_functions.hh"
 
 #include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 
 #include "casm/app/bset.hh"
 #include "casm/app/composition.hh"
@@ -24,6 +25,7 @@
 
 #include "casm/app/APICommand.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/app/APICommand_impl.hh"
 
 #include "casm/clex/PrimClex.hh"
 #include "casm/external/gzstream/gzstream.h"

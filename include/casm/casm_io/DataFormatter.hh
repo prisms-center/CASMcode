@@ -1,5 +1,5 @@
-#ifndef DATAFORMATTER_HH
-#define DATAFORMATTER_HH
+#ifndef CASM_DataFormatter
+#define CASM_DataFormatter
 
 #include <iostream>
 #include <string>
@@ -742,7 +742,5 @@ namespace CASM {
 
 
 }
-
-#include "casm/casm_io/DataFormatter_impl.hh"
 
 #endif

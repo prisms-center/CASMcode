@@ -315,12 +315,12 @@ namespace CASM {
       help << "Type of configurations. Options are: ";
       int i = 0;
       for(std::string s : m_configtype_opts) {
-        help << s;
+        help << "\"" << s << "\"";
         if(s == _default) {
           help << " (default)";
         }
         if(i != m_configtype_opts.size() - 1) {
-          help << ",";
+          help << ", ";
         }
         ++i;
       }
@@ -353,12 +353,12 @@ namespace CASM {
       help << "Type of database objects. Options are: ";
       int i = 0;
       for(std::string s : m_db_type_opts) {
-        help << s;
+        help << "\"" << s << "\"";
         if(s == _default) {
           help << " (default)";
         }
         if(i != m_db_type_opts.size() - 1) {
-          help << ",";
+          help << ", ";
         }
         ++i;
       }

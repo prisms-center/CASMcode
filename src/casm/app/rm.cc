@@ -175,6 +175,12 @@ namespace CASM {
   RmCommand::~RmCommand() {}
 
   int RmCommand::vm_count_check() const {
+    if(!in_project()) {
+      err_log().error("No casm project found");
+      err_log() << std::endl;
+      return ERR_NO_PROJ;
+    }
+
     return 0;
   }
 
@@ -192,9 +198,9 @@ namespace CASM {
 
   RmCommandImplBase &RmCommand::impl() const {
     if(!m_impl) {
-      if(vm().count("type")) {
+      if(in_project()) {
         if(DB::types_short().count(opt().db_type())) {
-          DB::for_type(opt().db_type(), DB::ConstructImpl<RmCommand>(m_impl, *this));
+          DB::for_type_short(opt().db_type(), DB::ConstructImpl<RmCommand>(m_impl, *this));
         }
         else {
           std::stringstream msg;
@@ -211,7 +217,7 @@ namespace CASM {
   }
 
   void RmCommand::print_names(std::ostream &sout) const {
-    sout << "The allowed types are:\n\n";
+    sout << "The allowed types are:\n";
 
     for(const auto &db_type : opt().db_type_opts()) {
       sout << "  " << db_type << std::endl;
@@ -219,7 +225,7 @@ namespace CASM {
   }
 
   void RmCommand::print_config_names(std::ostream &sout) const {
-    sout << "The allowed types with --data option are:\n\n";
+    sout << "The allowed types with --data option are:\n";
 
     for(const auto &db_type : opt().db_type_opts()) {
       if(DB::config_types_short().count(db_type)) {

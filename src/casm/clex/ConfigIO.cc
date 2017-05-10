@@ -9,11 +9,25 @@
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/ConfigMapping.hh"
+#include "casm/casm_io/DataFormatter_impl.hh"
+#include "casm/casm_io/DataFormatterTools_impl.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/database/Selected_impl.hh"
+#include "casm/database/Selected.hh"
+#include "casm/database/DatabaseDefs.hh"
 
 namespace CASM {
+
+  template class BaseDatumFormatter<Configuration>;
+  template class DataFormatterOperator<bool, std::string, Configuration>;
+  template class DataFormatterOperator<bool, bool, Configuration>;
+  template class DataFormatterOperator<bool, double, Configuration>;
+  template class DataFormatterOperator<double, double, Configuration>;
+  template class DataFormatterOperator<Index, double, Configuration>;
+  template class DataFormatter<Configuration>;
+  template bool DataFormatter<Configuration>::evaluate_as_scalar<bool>(Configuration const &) const;
+  template double DataFormatter<Configuration>::evaluate_as_scalar<double>(Configuration const &) const;
+  template class DataFormatterDictionary<Configuration>;
 
   namespace ConfigIO_impl {
 
@@ -514,7 +528,10 @@ namespace CASM {
     StringAttributeDictionary<Configuration> dict;
 
     dict.insert(
+      name<Configuration>(),
       configname(),
+      alias<Configuration>(),
+      alias_or_name<Configuration>(),
       scelname(),
       calc_status(),
       failure_type(),

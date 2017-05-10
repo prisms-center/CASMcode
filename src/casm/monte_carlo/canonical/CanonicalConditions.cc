@@ -3,6 +3,7 @@
 #include "casm/monte_carlo/MonteSettings.hh"
 
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/casm_io/json_io/container.hh"
 #include "casm/clex/PrimClex.hh"
 
 namespace CASM {

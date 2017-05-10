@@ -2,6 +2,7 @@
 #include "casm/monte_carlo/canonical/Canonical.hh"
 #include "casm/monte_carlo/MonteCarlo_impl.hh"
 #include "casm/monte_carlo/MonteIO_impl.hh"
+#include "casm/monte_carlo/MonteCarloEnum_impl.hh"
 #include "casm/monte_carlo/canonical/CanonicalIO.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/misc/algorithm.hh"
@@ -10,7 +11,7 @@ namespace CASM {
   namespace Monte {
 
     template MonteCarlo::MonteCarlo(const PrimClex &primclex, const CanonicalSettings &settings, Log &_log);
-
+    template MonteCarloEnum::MonteCarloEnum(const PrimClex &primclex, const CanonicalSettings &settings, Log &log, Canonical &mc);
 
     const ENSEMBLE Canonical::ensemble = ENSEMBLE::Canonical;
 

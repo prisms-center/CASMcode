@@ -254,6 +254,36 @@ namespace CASM {
     void for_type(std::string name, F f = F()) {
       return for_type_impl<std::tuple_size<TupleType>::value>::template eval<TupleType, F>(name, f);
     }
+
+    // ----------------------------------------
+
+    template<int I>
+    struct for_type_short_impl {
+      template<typename TupleType, typename F>
+      static void eval(std::string short_name, F f) {
+        typedef typename std::tuple_element < I - 1, TupleType >::type ElementType;
+        if(traits<ElementType>::short_name == short_name) {
+          f.template eval<ElementType>();
+        }
+        for_type_short_impl < I - 1 >::template eval<TupleType, F>(short_name, f);
+      }
+    };
+
+    template<>
+    struct for_type_short_impl<1> {
+      template<typename TupleType, typename F>
+      static void eval(std::string short_name, F f) {
+        typedef typename std::tuple_element<0, TupleType>::type ElementType;
+        if(traits<ElementType>::short_name == short_name) {
+          f.template eval<ElementType>();
+        }
+      }
+    };
+
+    template<typename TupleType, typename F>
+    void for_type_short(std::string short_name, F f = F()) {
+      return for_type_short_impl<std::tuple_size<TupleType>::value>::template eval<TupleType, F>(short_name, f);
+    }
   }
 
 }
