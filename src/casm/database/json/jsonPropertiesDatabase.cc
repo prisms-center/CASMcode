@@ -13,7 +13,7 @@ namespace CASM {
       m_location(location) {}
 
     DatabaseBase &jsonPropertiesDatabase::open() {
-      if(m_is_open) {
+      if(m_is_open || !fs::exists(m_location)) {
         return *this;
       }
 
@@ -59,8 +59,11 @@ namespace CASM {
 
       SafeOfstream file;
       file.open(m_location);
-      json.print(file.ofstream());
-      file.close();
+      //json.print(file.ofstream());
+      int indent = 0;
+      int prec = 12;
+      json_spirit::write_stream((json_spirit::mValue &) json, file.ofstream(), indent, prec),
+                  file.close();
     }
 
     void jsonPropertiesDatabase::close() {
@@ -77,6 +80,10 @@ namespace CASM {
     /// \brief End iterator
     jsonPropertiesDatabase::iterator jsonPropertiesDatabase::end() const {
       return _iterator(m_data.end());
+    }
+
+    jsonPropertiesDatabase::size_type jsonPropertiesDatabase::size() const {
+      return m_data.size();
     }
 
     /// \brief Return iterator to MappedProperties that is the best mapping to specified config
@@ -101,7 +108,13 @@ namespace CASM {
     /// \brief Names of all configurations that relaxed 'from'->'to'
     std::set<std::string, PropertiesDatabase::Compare>
     jsonPropertiesDatabase::relaxed_from_all(std::string to_configname) const {
-      return m_relaxed_from.find(to_configname)->second;
+      auto it = m_relaxed_from.find(to_configname);
+      if(it == m_relaxed_from.end()) {
+        return _make_set(to_configname, m_default_score);
+      }
+      else {
+        return it->second;
+      }
     }
 
     /// \brief Change the score method for a single configuration

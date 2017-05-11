@@ -205,6 +205,11 @@ namespace CASM {
       /// \brief End iterator over pair<from_configname, data>
       virtual iterator end() const = 0;
 
+      virtual size_type size() const = 0;
+      bool empty() const {
+        return this->size() == 0;
+      }
+
       /// \brief Return iterator to pair<from_configname, data> that is the best mapping to specified config
       ///
       /// - Prefers self-mapped, else best scoring
@@ -227,6 +232,8 @@ namespace CASM {
       }
 
       /// \brief Names of all configurations that relaxed 'from'->'to'
+      ///
+      /// - Empty set if none
       virtual std::set<std::string, Compare> relaxed_from_all(std::string to_configname) const = 0;
 
       /// \brief Change the score method for a single configuration

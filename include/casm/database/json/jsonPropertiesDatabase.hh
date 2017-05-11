@@ -74,6 +74,8 @@ namespace CASM {
       /// \brief End iterator
       iterator end() const override;
 
+      size_type size() const override;
+
       /// \brief Return iterator to MappedProperties that is the best mapping to specified config
       ///
       /// - Prefers self-mapped, else best scoring
