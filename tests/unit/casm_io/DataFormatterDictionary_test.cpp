@@ -4,6 +4,7 @@
 /// What is being tested:
 #include "casm/casm_io/DataFormatter.hh"
 
+#include <sstream>
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "casm/clex/PrimClex.hh"
@@ -44,7 +45,8 @@ BOOST_AUTO_TEST_CASE(Test1) {
   std::vector<std::string> all_col = {"name", "selected", "comp"};
   auto formatter = dict.parse(all_col);
 
-  std::cout << formatter(selection.all().begin(), selection.all().end()) << std::endl;
+  std::stringstream ss;
+  ss << formatter(selection.all().begin(), selection.all().end()) << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

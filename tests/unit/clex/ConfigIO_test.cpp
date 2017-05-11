@@ -193,13 +193,9 @@ BOOST_AUTO_TEST_CASE(Make) {
 BOOST_AUTO_TEST_CASE(AllTest) {
 
   test::FCCTernaryProj proj;
-  std::cout << "check init" << std::endl;
   proj.check_init();
-  std::cout << "check composition" << std::endl;
   proj.check_composition();
-  std::cout << "check enum" << std::endl;
   proj.check_enum();
-  std::cout << "DONE" << std::endl;
 
   Log log = null_log();
   PrimClex primclex(proj.dir, log);

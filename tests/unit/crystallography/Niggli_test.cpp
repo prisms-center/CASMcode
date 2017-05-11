@@ -124,8 +124,9 @@ namespace CASM {
     BOOST_TEST_MESSAGE("Checking known ZrO lattices");
 
     // ZrO prim
-    Structure prim(test::ZrO_prim());
-    PrimClex primclex(prim, null_log());
+    test::ZrOProj proj;
+    proj.check_init();
+    PrimClex primclex(proj.dir, null_log());
 
     // enumerate size 5 supercells
     bool verbose = false;

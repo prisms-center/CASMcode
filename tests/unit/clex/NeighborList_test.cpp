@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(Proj) {
                             alloy_sites_filter,
                             crystallography_tol,
                             std::back_inserter(orbits),
-                            std::cout);
+                            null_log());
 
   // expand the nlist to contain 'tree'
   std::set<UnitCellCoord> nbors;
